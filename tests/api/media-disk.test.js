@@ -114,3 +114,18 @@ describe('the disk-full failures go back to the queue', () => {
     vi.doUnmock('../../api/lib/db.js'); vi.resetModules();
   });
 });
+
+describe('jobs/ as a symlink to a data volume (10-23: off the root disk)', () => {
+  it('df counts the jobs and the janitor cleans through the link', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'gate-ln-')), vol = mkdtempSync(join(tmpdir(), 'vol-'));
+    copyFileSync(new URL('../../scripts/media/boss-asr-gate.sh', import.meta.url), join(dir, 'asr-gate.sh'));
+    mkdirSync(join(vol, 'jobs'));
+    execFileSync('ln', ['-s', join(vol, 'jobs'), join(dir, 'jobs')]);
+    for (const [id, h] of [['old1', 10], ['new1', 1]]) { const p = join(vol, 'jobs', id); mkdirSync(p); writeFileSync(join(p, 'pid'), '0'); const t = (Date.now() - h * 3600_000) / 1000; utimesSync(p, t, t); }
+    const gate = (cmd) => execFileSync('bash', [join(dir, 'asr-gate.sh')], { env: { ...process.env, SSH_ORIGINAL_COMMAND: cmd }, input: '', encoding: 'utf8' }).trim();
+    expect(JSON.parse(gate('df')).jobs).toBe(2);
+    try { gate('start flac j-xx1 --verb nope'); } catch { /* bad verb: exit 2 after the janitor */ }
+    expect(existsSync(join(vol, 'jobs', 'old1'))).toBe(false);
+    expect(existsSync(join(vol, 'jobs', 'new1'))).toBe(true);
+  });
+});

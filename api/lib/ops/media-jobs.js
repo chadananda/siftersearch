@@ -864,6 +864,51 @@ export async function mediaRelinkJob({ write = false, ids = null, why = 'Covenan
   return out;
 }
 
+/** media-safe-listening { write, ids?, limit? } (Chad 10-23, by ear: the DFN / restored listening copies "badly mangled"
+ *  the words): every published talk's listening copy becomes the ORIGINAL with transparent processing only (enhance.js
+ *  safeChain), re-encoded with the fullband Ogg — a ['web', 'trim', 'update'] re-run per talk, low priority in the pipeline
+ *  lane. A talk whose copies already carry the current settings (meta.web_codec) is left alone; busy talks are skipped.
+ *  DFN stays the ASR input where it was chosen. → counts */
+export async function mediaSafeListeningJob({ write = false, ids = null, limit = Infinity } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const queue = deps.queue || enqueue;
+  const { safeChain, WEB_CODEC } = await import('../media/enhance.js');
+  const read = deps.readMeta || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8')));
+  const writeMeta = deps.writeMeta || (async (dir, m) => (await import('fs/promises')).writeFile(join(dir, 'meta.json'), JSON.stringify(m, null, 2)));
+  // two runs for one talk at once would race on its meta.json: a talk with any run in hand is skipped (a later pass takes
+  // it) — except a QUEUED relink ([links, update]), which is cancelled and folded into this talk's one re-run
+  const pending = (await Promise.all(['media-item', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n)))).flat();
+  const relinkOf = new Map(pending.filter((r) => r.status === 'queued' && JSON.stringify(r.params?.redo || []) === '["links","update"]').map((r) => [Number(r.params?.id), r.id]));
+  const busy = new Set(pending.filter((r) => !relinkOf.has(Number(r.params?.id)) || relinkOf.get(Number(r.params?.id)) !== r.id).map((r) => Number(r.params?.id)).filter(Boolean));
+  const out = { talks: 0, from: {}, queued: 0, current: 0, skipped_busy: 0, relinks_folded: 0 };
+  for (const id of ids || await repo.doneItemIds()) {
+    if (out.queued >= limit) break;
+    const it = await repo.getMediaItem(id);
+    if (!it?.dir) continue;
+    const meta = await read(it.dir).catch(() => null);
+    if (!meta?.enhancement) continue;
+    out.talks++;
+    const was = meta.enhancement.listening || 'none';
+    if (was === 'safe' && meta.web_codec === WEB_CODEC) { out.current++; continue; }
+    out.from[was] = (out.from[was] || 0) + 1;
+    if (!write) continue;
+    if (busy.has(it.id)) { out.skipped_busy++; continue; }
+    const vs = meta.enhancement.variants || [];
+    const orig = vs.find((v) => v.name === 'original') || {};
+    meta.enhancement.variants = [...vs.filter((v) => v.name !== 'safe'), { name: 'safe', file: orig.file || meta.original, af: safeChain(orig), chain: 'transparent: high-pass, hum notch when measured, loudness' }];
+    if (was !== 'safe') meta.enhancement.listening_before = { name: was, why: meta.enhancement.listening_why || null };
+    meta.enhancement.listening = 'safe';
+    meta.enhancement.listening_why = 'the original, transparent processing only (Chad 10-23: denoised / restored copies clipped words)';
+    meta.version = (meta.version || 1) + 1;   // new audio URLs (?v=): no cached denoised copy is served
+    await writeMeta(it.dir, meta);
+    const redo = ['web', 'trim', 'update'];
+    if (relinkOf.has(it.id)) { await ops.cancel(relinkOf.get(it.id)); redo.splice(2, 0, 'links'); out.relinks_folded++; }
+    await queue('media-item', { id: it.id, redo }, 'media-safe-listening'); out.queued++;
+  }
+  return out;
+}
+
 /** media-trim-audit { write, ids? }: the leading/trailing silence and dead gaps of each published talk (trim.js plan from
  *  its words + waveform). write: an ['trim', 'update'] re-run where the lead or tail is ≥ 5 s or a gap is marked (busy
  *  talks skipped). → the distribution (talks, minutes trimmed, the longest leads) */

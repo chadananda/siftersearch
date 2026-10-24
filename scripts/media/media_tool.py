@@ -518,8 +518,10 @@ def cmd_grade(a):
 ENCODE_FILTERS = {'highpass', 'lowpass', 'bandreject', 'adeclick', 'afftdn', 'loudnorm', 'dynaudnorm', 'acompressor', 'volume', 'equalizer'}
 RECIPES = {
     'light': lambda af: ['-vn', '-ac', '1', '-af', f'{af},aresample=48000,asetnsamples=n=4096:p=0', '-ar', '48000', '-c:a', 'flac', '-f', 'flac'],   # loudnorm works at 192 kHz in big frames: back to 48 kHz in FLAC-sized frames (ffmpeg 9 refuses 95,984-sample blocks)
-    'ogg': lambda af: ['-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', '-f', 'ogg'],
-    'm4a': lambda af: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4'],
+    # the web copies: the listening source's transparent chain (af) applied; Opus 'audio' (fullband) at 56 kbps — 32 kbps
+    # 'voip' capped every talk at ~4 kHz (10-23)
+    'ogg': lambda af: ['-ac', '1'] + (['-af', af] if af != 'anull' else []) + ['-ar', '48000', '-c:a', 'libopus', '-b:a', '56k', '-application', 'audio', '-f', 'ogg'],
+    'm4a': lambda af: ['-ac', '1'] + (['-af', af] if af != 'anull' else []) + ['-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4'],
 }
 
 

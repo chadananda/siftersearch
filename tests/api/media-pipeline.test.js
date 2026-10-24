@@ -95,8 +95,9 @@ describe('enhancement by measurement', () => {
   it('processing must clearly help recognition to be used for it', () => {
     expect(chooseAsrInput([{ name: 'original', avg_logprob: -0.31, words: 290 }, { name: 'light', avg_logprob: -0.328, words: 292 }]).name).toBe('original');
     expect(chooseAsrInput([{ name: 'original', avg_logprob: -0.6, words: 200 }, { name: 'light', avg_logprob: -0.4, words: 210 }, { name: 'dfn', avg_logprob: -0.41, words: 205 }]).name).toBe('light');
-    expect(chooseListening([{ name: 'light', snr_db: 20, avg_logprob: -0.4 }, { name: 'dfn', snr_db: 27, avg_logprob: -0.42 }]).name).toBe('dfn');
-    expect(chooseListening([{ name: 'light', snr_db: 20, avg_logprob: -0.4 }, { name: 'dfn', snr_db: 27, avg_logprob: -0.6 }]).name).toBe('light');
+  });
+  it('the LISTENING copy is always the transparent original, whatever the SNR (Chad 10-23: DFN and restoration mangled words)', () => {
+    expect(chooseListening([{ name: 'light', snr_db: 20, avg_logprob: -0.4 }, { name: 'dfn', snr_db: 60, avg_logprob: -0.1 }]).name).toBe('safe');
   });
 });
 
@@ -311,5 +312,48 @@ describe('the passage gate keeps long prose (10-22 audit: 49 real passages were 
     expect(passageGate(se)).toBeNull();
     const run = { title: 'A Book', author: 'Someone', text: Array.from({ length: 60 }, (_, i) => `word${i}`).join(' ') + '.' };
     expect(passageGate(run)).toMatch(/sentence-level/);
+  });
+});
+
+describe('the transparent listening chain and its source (Chad 10-23)', async () => {
+  const { safeChain, listeningSource, OGG_ARGS } = await import('../../api/lib/media/enhance.js');
+  it('high-pass + loudness; a narrow hum notch only when hum is measured; never a denoiser or gate', () => {
+    expect(safeChain({})).toBe('highpass=f=70,loudnorm=I=-18:TP=-1.5:LRA=11');
+    expect(safeChain({ hum60_db: 14 })).toBe('highpass=f=70,bandreject=f=60:width_type=q:w=12,bandreject=f=120:width_type=q:w=12,loudnorm=I=-18:TP=-1.5:LRA=11');
+    expect(safeChain({ hum50_db: 30 })).not.toMatch(/afftdn|agate|anlmdn|arnndn|compand/);
+  });
+  it('the safe source is the ORIGINAL with the chain; an old dfn listening pick still reads its own file', () => {
+    const meta = { original: 'original/x.mp3', enhancement: { listening: 'safe', variants: [{ name: 'original', file: 'original/x.mp3' }, { name: 'safe', file: 'original/x.mp3', af: 'highpass=f=70,loudnorm=I=-18:TP=-1.5:LRA=11' }] } };
+    expect(listeningSource(meta, '/d')).toEqual({ src: '/d/original/x.mp3', af: 'highpass=f=70,loudnorm=I=-18:TP=-1.5:LRA=11' });
+    expect(listeningSource({ ...meta, enhancement: { ...meta.enhancement, listening: 'dfn', variants: [...meta.enhancement.variants, { name: 'dfn', file: 'enhanced/dfn.flac' }] } }, '/d')).toEqual({ src: '/d/enhanced/dfn.flac', af: null });
+  });
+  it('the web Ogg is fullband Opus, not 32 kbps voip', () => {
+    expect(OGG_ARGS).toEqual(['-c:a', 'libopus', '-b:a', '56k', '-application', 'audio']);
+  });
+});
+
+describe('media-safe-listening: every published talk → the transparent original, one re-run each', () => {
+  it('switches dfn/light/restored to safe, bumps the version, folds a queued relink, skips busy and current talks', async () => {
+    const { mediaSafeListeningJob } = await import('../../api/lib/ops/media-jobs.js');
+    const metas = {
+      '/a': { original: 'original/a.mp3', enhancement: { listening: 'dfn', variants: [{ name: 'original', file: 'original/a.mp3', hum60_db: 2 }, { name: 'dfn', file: 'enhanced/dfn.flac' }] }, version: 2 },
+      '/b': { original: 'original/b.mp3', enhancement: { listening: 'restored', variants: [{ name: 'original', file: 'original/b.mp3' }] } },
+      '/c': { original: 'original/c.mp3', enhancement: { listening: 'safe', variants: [{ name: 'original', file: 'original/c.mp3' }] }, web_codec: 'safe+opus56audio' },
+      '/d': { original: 'original/d.mp3', enhancement: { listening: 'light', variants: [{ name: 'original', file: 'original/d.mp3' }] } },
+    };
+    const items = { 1: { id: 1, dir: '/a' }, 2: { id: 2, dir: '/b' }, 3: { id: 3, dir: '/c' }, 4: { id: 4, dir: '/d' } };
+    const queued = [], written = {}, cancelled = [];
+    const deps = { repo: { doneItemIds: async () => [1, 2, 3, 4], getMediaItem: async (id) => items[id] }, readMeta: async (d) => structuredClone(metas[d]), writeMeta: async (d, m) => { written[d] = m; },
+      ops: { pendingRuns: async (n) => (n === 'media-item' ? [{ id: 70, status: 'queued', params: { id: 2, redo: ['links', 'update'] } }, { id: 71, status: 'running', params: { id: 4, redo: ['quotes'] } }] : []), cancel: async (id) => cancelled.push(id) },
+      queue: async (n, p) => queued.push(p) };
+    const dry = await mediaSafeListeningJob({}, deps);
+    expect(dry).toMatchObject({ talks: 4, current: 1, from: { dfn: 1, restored: 1, light: 1 }, queued: 0 });
+    const r = await mediaSafeListeningJob({ write: true }, deps);
+    expect(r).toMatchObject({ queued: 2, skipped_busy: 1, relinks_folded: 1 });
+    expect(queued).toEqual([{ id: 1, redo: ['web', 'trim', 'update'] }, { id: 2, redo: ['web', 'trim', 'links', 'update'] }]);
+    expect(cancelled).toEqual([70]);
+    expect(written['/a'].enhancement).toMatchObject({ listening: 'safe', listening_before: { name: 'dfn' } });
+    expect(written['/a'].enhancement.variants.find((v) => v.name === 'safe')).toMatchObject({ file: 'original/a.mp3', af: 'highpass=f=70,loudnorm=I=-18:TP=-1.5:LRA=11' });
+    expect(written['/a'].version).toBe(3);
   });
 });

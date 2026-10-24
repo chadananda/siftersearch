@@ -24,3 +24,12 @@ export async function syntaxProblems(files = [], { root = process.cwd(), check }
   }
   return out;
 }
+
+// CLI (10-23: run as `node scripts/lib/syntax-gate.mjs <files…>` before a push it printed nothing and checked nothing — the
+// module had no entry point): every problem printed, exit 1 when any file does not parse
+if (process.argv[1] && import.meta.url === (await import('url')).pathToFileURL(process.argv[1]).href) {
+  const bad = await syntaxProblems(process.argv.slice(2));
+  for (const b of bad) console.error(`SYNTAX ${b.file}: ${b.error}`);
+  console.log(bad.length ? `${bad.length} file(s) do not parse` : `${codeFiles(process.argv.slice(2)).length} file(s) parse`);
+  process.exit(bad.length ? 1 : 0);
+}

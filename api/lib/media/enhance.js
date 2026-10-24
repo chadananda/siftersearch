@@ -37,11 +37,34 @@ export function chooseAsrInput(variants, { margin = 0.03 } = {}) {
 }
 
 /** The listening copy: DeepFilterNet when it raised the measured SNR by ≥ 3 dB and did not cost recognition, else light. */
-export function chooseListening(variants) {
-  const by = Object.fromEntries(variants.filter(Boolean).map((v) => [v.name, v]));
-  const l = by.light, d = by.dfn;
-  if (d && l && d.snr_db != null && l.snr_db != null && d.snr_db - l.snr_db >= 3 && (d.avg_logprob ?? -9) >= (l.avg_logprob ?? -9) - 0.05) {
-    return { name: 'dfn', why: `DeepFilterNet SNR +${(d.snr_db - l.snr_db).toFixed(1)} dB, ASR not worse` };
-  }
-  return { name: 'light', why: d ? 'DeepFilterNet did not clearly help' : 'light chain' };
+/** The LISTENING copy is the ORIGINAL with transparent processing only (Chad 10-23, by ear on Ioas: the DeepFilterNet and
+ *  restored copies "badly mangled" the words — denoise gates speech onsets and quiet syllables). Light (afftdn) and dfn stay
+ *  ASR inputs only; no neural or denoised copy is ever picked for listening until Chad approves a chain by ear. */
+export function chooseListening() {
+  return { name: 'safe', why: 'the original, transparent processing only (high-pass, loudness; hum notch when measured) — Chad 10-23' };
+}
+
+/** The transparent chain: a 70 Hz high-pass (rumble), a narrow notch at the hum fundamental and 2nd harmonic only when hum
+ *  is measured (≥ 10 dB prominence), loudness −18 LUFS. No denoise, no gating, no bandwidth synthesis. */
+export function safeChain(metrics = {}) {
+  const f = ['highpass=f=70'];
+  const hum = (metrics.hum50_db || 0) > (metrics.hum60_db || 0) ? { f: 50, v: metrics.hum50_db } : { f: 60, v: metrics.hum60_db || 0 };
+  if (hum.v >= 10) for (const h of [1, 2]) f.push(`bandreject=f=${hum.f * h}:width_type=q:w=12`);
+  f.push('loudnorm=I=-18:TP=-1.5:LRA=11');
+  return f.join(',');
+}
+
+/** The web Ogg: Opus in 'audio' mode (fullband) at 56 kbps — the old 32 kbps 'voip' setting capped every talk at ~4 kHz. */
+export const OGG_ARGS = ['-c:a', 'libopus', '-b:a', '56k', '-application', 'audio'];
+/** The web copies' settings, recorded per talk (meta.web_codec): the transparent listening source + the encoders above. */
+export const WEB_CODEC = 'safe+opus56audio';
+
+/** Where the listening copy is encoded from: the 'safe' variant is the original + its chain at encode time; any other
+ *  variant is its own file. → { src, af } */
+export function listeningSource(meta = {}, dir = '') {
+  const vs = meta.enhancement?.variants || [];
+  const v = vs.find((x) => x.name === meta.enhancement?.listening) || vs.find((x) => x.name === 'safe');
+  const join = (a, b) => (a ? `${a.replace(/\/$/, '')}/${b}` : b);
+  if (!v || v.name === 'safe') return { src: join(dir, meta.original), af: v?.af || safeChain(vs.find((x) => x.name === 'original') || {}) };
+  return { src: join(dir, v.file), af: null };
 }

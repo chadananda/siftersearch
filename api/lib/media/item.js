@@ -8,7 +8,7 @@ import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
 import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
-import { lightChain, probeStarts, chooseAsrInput, chooseListening } from './enhance.js';
+import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, listeningSource, OGG_ARGS, WEB_CODEC } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
 import { revertInsertions } from './faithfulness.js';
@@ -304,6 +304,8 @@ export async function runItem(item, opts = {}, deps = {}) {
         Object.assign(v, { avg_logprob: p.avg_logprob, words: p.words, probe_s: p.seconds, sample: p.excerpts?.[0]?.text?.slice(0, 200), languages: p.excerpts?.map((e) => e.language) });
       }));
       const asr = chooseAsrInput(variants), listen = chooseListening(variants);
+      // the listening copy: the original + the transparent chain, applied at encode time (no file of its own)
+      variants.push({ name: 'safe', file: orig, af: safeChain(m0), chain: 'transparent: high-pass, hum notch when measured, loudness' });
       meta.enhancement = { chain, variants: variants.map(({ file, ...v }) => ({ ...v, file: relative(dir, file) })), asr_input: asr.name, asr_why: asr.why, listening: listen.name, listening_why: listen.why };
       delete meta.enh_ck;
       rec.threads = th;
@@ -311,19 +313,20 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'web') {
       delete meta.trim;   // fresh, untrimmed web copies (the 'trim' stage cuts them again from the words)
-      const v = meta.enhancement.variants.find((x) => x.name === meta.enhancement.listening) || meta.enhancement.variants[1];
-      const src = join(dir, v.file);
+      const { src, af } = listeningSource(meta, dir);   // the original + the transparent chain (Chad 10-23)
+      const afArgs = af ? ['-af', af] : [];
       await mkdir(join(dir, 'web'), { recursive: true });
       const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
-      const oggLocal = () => towerLight(() => tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', ogg], { stop }));
-      const m4aLocal = () => towerLight(() => tools.ffmpeg(['-i', src, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop }));
+      const oggLocal = () => towerLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '48000', ...OGG_ARGS, ogg], { stop }));
+      const m4aLocal = () => towerLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', m4a], { stop }));
       if (tools.encodeRemote) {
         meta.enc_jobs = meta.enc_jobs || {};
         for (const k of ['ogg', 'm4a']) meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110);
         await save();
-        await Promise.all([tools.encodeRemote('ogg', src, ogg, { job: meta.enc_jobs.ogg, stop, local: oggLocal }), tools.encodeRemote('m4a', src, m4a, { job: meta.enc_jobs.m4a, stop, local: m4aLocal })]);
+        await Promise.all([tools.encodeRemote('ogg', src, ogg, { af: af || '', job: meta.enc_jobs.ogg, stop, local: oggLocal }), tools.encodeRemote('m4a', src, m4a, { af: af || '', job: meta.enc_jobs.m4a, stop, local: m4aLocal })]);
       } else await Promise.all([oggLocal(), m4aLocal()]);
       delete meta.enc_jobs;
+      meta.web_codec = WEB_CODEC;   // the encode settings these copies were made with (media-safe-listening re-renders older ones)
       // the DURATION from the web encode (QA 10-22: the original's header under-reported by ~6 s on 31 talks)
       const enc = tools.ffprobe ? await tools.ffprobe(m4a).catch(() => null) : null;
       if (enc?.duration_s && enc.duration_s > (meta.duration_s || 0)) meta.duration_s = Math.round(enc.duration_s * 100) / 100;
@@ -470,11 +473,12 @@ export async function runItem(item, opts = {}, deps = {}) {
       rec.lead_s = plan.lead_s; rec.gaps = plan.gaps.length;
       const cutting = plan.start_s > 0 || plan.end_s != null;
       if (cutting) {
-        const v = meta.enhancement.variants.find((x) => x.name === meta.enhancement.listening) || meta.enhancement.variants[1];
-        const src = join(dir, v.file), { pre, af } = T.trimArgs(plan, meta.duration_s);
+        const ls = listeningSource(meta, dir);   // the same source and transparent chain as the web stage, then the trim's fades
+        const src = ls.src, { pre, af: trimAf } = T.trimArgs(plan, meta.duration_s);
+        const af = [ls.af, trimAf].filter(Boolean).join(',');
         const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
         await Promise.all([
-          towerLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '32k', '-application', 'voip', `${ogg}.trim.ogg`], { stop })),
+          towerLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', ...OGG_ARGS, `${ogg}.trim.ogg`], { stop })),
           towerLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop }))]);
         await rename(`${ogg}.trim.ogg`, ogg); await rename(`${m4a}.trim.m4a`, m4a);
         meta.version = (meta.version || 1) + 1;   // new audio URLs (?v=): no cached untrimmed copy is paired with the offset
