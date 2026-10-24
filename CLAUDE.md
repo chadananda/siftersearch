@@ -43,6 +43,19 @@ substitute the local database and do not estimate.
   attributed in `db_write_stats` (minute × caller × name; live view `GET 127.0.0.1:7849/stats`).
 * Enforced by `tests/api/db-access-ratchet.test.js` + `tests/api/scripts-api-clients-ratchet.test.js`; legacy lists only shrink. Plan: planning/architecture-data-access-20261009.md.
 
+## ⛔ Tower placement — tower serves; workers process (Chad 10-24)
+
+"We want the search and the site to be responsive all the time. And this is for only one user. What happens when we have 300?"
+* **Tower runs:** the API and search, the DB and the single writer, orchestration, Dewey (text matching and decisions) and publishing.
+* **Tower does NOT run:** media processing (ffmpeg, media_tool, ASR, diarize, grade, dfn, realign, encode, the word guard), OCR/conversion, bulk jobs,
+  and it does not serve media bytes (edge/R2). Anything heavy goes to a worker (RunPod pod, aorus, boss) through the job processor
+  (`scripts/media/worker/`, image `ghcr.io/chadananda/sifter-media-worker`) or to the edge.
+* **Backstop:** the media and indexer services start under `scripts/ops/in-slice.sh` → `sifter-bulk.slice` (CPU 25 % of the box, low weight, memory cap),
+  children included, so even code that wrongly runs work here cannot starve search. Slice file: `~/.config/systemd/user/sifter-bulk.slice` (copy in `docs/ops/`).
+* **Ratchet:** `tests/api/tower-placement-ratchet.test.js` fails on any NEW server-side file that spawns heavy processes; `tests/api/tower-placement-legacy.json`
+  lists the rest with a plan and a date and may only shrink. **system-checks** warns/CRITICALs on heavy media cores running on tower, naming the kind.
+* **Remaster:** `MEDIA_REMASTER_STRICT=1` means tower takes only complete worker results (guard, alignment, encodes, verdict) — it never reprocesses audio.
+
 > **Full coding principles**: See [planning/coding-principles-guide.md](planning/coding-principles-guide.md)
 
 ## Quick Reference

@@ -109,6 +109,12 @@ let drainSeen = state.drainSeen || {};
     // showed as 'draining 13 min'): CRITICAL, with its commit and last beat
     const silent = services.filter((x) => (x.health === 'silent' || Number(x.age_s) > 300) && !power?.stopped?.includes(x.name));
     add('Services alive', !silent.length, 'critical', silent.length ? silent.map((x) => `${x.name} silent ${Math.round(Number(x.age_s) / 60)} min (last beat ${x.beat_at}, commit ${String(x.commit || '').slice(0, 8)})`).join(' · ') : 'ok');
+    // heavy media processing running ON TOWER (Chad 10-24): counted in cores, named by process kind
+    try {
+      const { towerHeavy, towerHeavyVerdict } = await import('./lib/tower-heavy.mjs');
+      const v = towerHeavyVerdict(towerHeavy(execSync('ps -eo pcpu=,args= --sort=-pcpu | head -80', { encoding: 'utf8', timeout: 10000 })), { warn: Number(process.env.TOWER_HEAVY_WARN_CORES || 6), crit: Number(process.env.TOWER_HEAVY_CRIT_CORES || 20) });
+      add('Heavy media work on tower', v.ok, v.level, v.detail);
+    } catch { /* ps unavailable */ }
     // paid GPU pods: rented-but-idle, billing with no lane, low efficiency, spend near the cap are CRITICAL (Chad 10-24)
     try {
       const { podChecks } = await import('./lib/pod-checks.mjs');

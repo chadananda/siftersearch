@@ -662,6 +662,7 @@ module.exports = {
       // keyword fill, the coverage ledger — its own small import graph, so deploys that change other services leave it running.
       name: 'siftersearch-indexer',
       script: 'api/workers/indexer-worker.js',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),   // capped bulk slice (CPU 25 %, low weight, memory limit): can never starve search / the site
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
@@ -694,6 +695,7 @@ module.exports = {
       // stage held dewey-ocr, source-links-build and every other lane in 'draining'). Its long stages stop at once on a drain.
       name: 'siftersearch-media',
       script: 'api/workers/media-worker.js',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),   // capped bulk slice (CPU 25 %, low weight, memory limit): can never starve search / the site
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',

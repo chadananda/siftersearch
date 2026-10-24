@@ -1,0 +1,10 @@
+[Unit]
+Description=Bulk media + indexing work: capped so it can never starve search and the site (Chad 10-24)
+[Slice]
+CPUAccounting=yes
+MemoryAccounting=yes
+CPUQuota=2000%
+CPUWeight=20
+MemoryHigh=44G
+MemoryMax=56G
+TasksMax=4096
