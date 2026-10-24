@@ -203,7 +203,7 @@ def main():
         if ctl.state == 'drain' and not active:
             terminate_self('unstable worker: repeated failures'); sys.exit(0)
         ready = sorted(glob.glob(os.path.join(a.spool, '*', 'ready')), key=os.path.getmtime)
-        if not ready or len(active) >= 3 or not ctl.admit('unipase'):
+        if not ready or len(active) >= 6 or not ctl.admit('unipase'):
             if not ready and not active and time.time() - last > a.idle_min * 60:
                 terminate_self(f'idle {a.idle_min:g} min')
                 sys.exit(0)
