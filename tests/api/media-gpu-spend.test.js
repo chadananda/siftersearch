@@ -390,3 +390,14 @@ describe('work orders: cleanup and post runs join the running lane', () => {
     expect(await C.takeOrders(ordersFile)).toEqual([]);
   });
 });
+
+describe('RunPod calls never hang the lane', () => {
+  it('retries a network error and a 502, gives a timeout signal to every call, and gives up after the last try', async () => {
+    let n = 0, signals = 0;
+    const flaky = async (url, init) => { signals += init.signal ? 1 : 0; n++; if (n === 1) throw new TypeError('fetch failed'); if (n === 2) return { status: 502, ok: false, text: async () => 'bad gateway' }; return { status: 200, ok: true, text: async () => '{"id":"p"}' }; };
+    expect(await C.getPod('p', { fetchFn: flaky })).toEqual({ id: 'p' }); expect(n).toBe(3); expect(signals).toBe(3);
+    await expect(C.fetchRetry('https://x', {}, { fetchFn: async () => { throw new TypeError('fetch failed'); }, tries: 2, backoffMs: 1 })).rejects.toThrow('fetch failed');
+    const e = await C.getPod('p', { fetchFn: async () => ({ status: 404, ok: false, text: async () => 'nope' }) }).catch((x) => x);
+    expect(e.message).toMatch(/404/);   // a real answer is not retried
+  });
+});

@@ -28,14 +28,27 @@ export const CLOUD = {
 
 // ── RunPod API ──
 const key = () => process.env.RUNPOD_API_KEY;
+/** fetch with a hard timeout and retries on network errors / 5xx / 429 (10-24: a RunPod call that never answered froze the whole lane for 10 min). */
+export async function fetchRetry(url, init, { fetchFn = fetch, tries = 4, timeoutMs = 30_000, backoffMs = 1500 } = {}) {
+  let last;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetchFn(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+      if (r.status < 500 && r.status !== 429) return r;
+      last = new Error(`HTTP ${r.status}`);
+    } catch (err) { last = err; }
+    if (i < tries - 1) await new Promise((res) => setTimeout(res, backoffMs * (i + 1)));
+  }
+  throw last;
+}
 async function rest(method, path, body, { fetchFn = fetch } = {}) {
-  const r = await fetchFn(`https://rest.runpod.io/v1${path}`, { method, headers: { Authorization: `Bearer ${key()}`, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const r = await fetchRetry(`https://rest.runpod.io/v1${path}`, { method, headers: { Authorization: `Bearer ${key()}`, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }, { fetchFn });
   const t = await r.text();
   if (!r.ok) throw new Error(`runpod ${method} ${path} → ${r.status} ${t.slice(0, 300)}`);
   return t ? JSON.parse(t) : {};
 }
 export async function accountBalance({ fetchFn = fetch } = {}) {
-  const r = await fetchFn('https://api.runpod.io/graphql', { method: 'POST', headers: { Authorization: `Bearer ${key()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ query: 'query { myself { clientBalance currentSpendPerHr } }' }) });
+  const r = await fetchRetry('https://api.runpod.io/graphql', { method: 'POST', headers: { Authorization: `Bearer ${key()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ query: 'query { myself { clientBalance currentSpendPerHr } }' }) }, { fetchFn });
   const j = await r.json();
   return { balance: j?.data?.myself?.clientBalance ?? null, spendPerHr: j?.data?.myself?.currentSpendPerHr ?? null };
 }
