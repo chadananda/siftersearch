@@ -1,6 +1,6 @@
 {
  "generated": "2026-10-23",
- "note": "Counsellor members of the International Teaching Centre appointed before 1988 (Chad 10-23: 'We also want ITC members before 88'). Membership: bahaipedia.org/International_Teaching_Centre (membership table), UHJ message 19 May 1983 (Carney, Khamsi, Khan, Sabri), UHJ 4 July 1979 (Bopp). 1988 appointees (Arbab, Grossmann, King, Rogers, Stevenson, Vuyiya) are not 'before 88'. Read by media-rank (section itc_pre_1988); local recordings are already in the archive (media-scan) and ranked through data/media-speaker-people.json historical: first-hand.",
+ "note": "Counsellor members of the International Teaching Centre appointed before 1988 (Chad 10-23: 'We also want ITC members before 88'). Membership: bahaipedia.org/International_Teaching_Centre (membership table), UHJ message 19 May 1983 (Carney, Khamsi, Khan, Sabri), UHJ 4 July 1979 (Bopp). 1988 appointees (Arbab, Grossmann, King, Rogers, Stevenson, Vuyiya) are not 'before 88'. Read by media-rank (section itc_pre_1988); local recordings are already in the archive (media-scan) and ranked through data/media-speaker-people.json historical: first-hand. Section first_hand: International Bahá’í Council members and pilgrims of the Guardian's time (Chad 10-23). Furútan was NOT an IBC member (Wikipedia's membership table).",
  "members": [
   {
    "name": "Hooper Dunbar",
@@ -54,6 +54,70 @@
    "url": "https://www.youtube.com/watch?v=8ZqO39d_Vfg",
    "video_id": "8ZqO39d_Vfg",
    "note": "recollections session at the Second Bahá’í World Congress; several speakers"
+  },
+  {
+   "section": "itc_pre_1988",
+   "speaker": "Mas‘úd Khamsí",
+   "role": "ITC Counsellor (pre-1988)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Baha'i World Congress 1963 - Mas'ud Khamsi - Opening of New Territories",
+   "url": "https://www.youtube.com/watch?v=puSZcbDlVOM",
+   "video_id": "puSZcbDlVOM"
+  },
+  {
+   "section": "itc_pre_1988",
+   "speaker": "Mas‘úd Khamsí",
+   "role": "ITC Counsellor (pre-1988)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Interview with Mr. Mas'ud Khamsi",
+   "url": "https://www.youtube.com/watch?v=r4PtfFuG2Ek",
+   "video_id": "r4PtfFuG2Ek",
+   "note": "an interview: two voices"
+  },
+  {
+   "section": "itc_pre_1988",
+   "speaker": "Mas‘úd Khamsí",
+   "role": "ITC Counsellor (pre-1988)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Masud Khamsi",
+   "url": "https://www.youtube.com/watch?v=yW2UjUyvKO0",
+   "video_id": "yW2UjUyvKO0",
+   "note": "title names only him; content unchecked"
+  },
+  {
+   "section": "itc_pre_1988",
+   "speaker": "Isobel Sabri",
+   "role": "ITC Counsellor (pre-1988); pilgrim",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Meeting the Guardian on Baha'i Pilgrimage - Isobel Sabri (1924 - 1992)",
+   "url": "https://www.youtube.com/watch?v=YeEbkK275X8",
+   "video_id": "YeEbkK275X8"
+  },
+  {
+   "section": "itc_pre_1988",
+   "speaker": "‘Azíz Yazdí",
+   "role": "ITC Counsellor (pre-1988)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Remembrances of Abdu'l Baha by Aziz Yazdi",
+   "url": "https://www.youtube.com/watch?v=qzGFA9ssWeQ",
+   "video_id": "qzGFA9ssWeQ",
+   "duplicate_group": "yazdi-remembers-abdul-baha"
+  },
+  {
+   "section": "itc_pre_1988",
+   "speaker": "‘Azíz Yazdí",
+   "role": "ITC Counsellor (pre-1988)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Aziz Yazdi Remembers Abdu'l-Baha",
+   "url": "https://www.youtube.com/watch?v=hkyXFJfD5y8",
+   "video_id": "hkyXFJfD5y8",
+   "duplicate_group": "yazdi-remembers-abdul-baha"
   }
  ],
  "local": {
@@ -89,5 +153,113 @@
   "Magdalene Carney (not searched: web search budget spent)",
   "Isobel Sabri on YouTube (not searched)",
   "Mas‘úd Khamsí on YouTube (not searched)"
+ ],
+ "first_hand": [
+  {
+   "section": "first_hand",
+   "speaker": "Mildred Mottahedeh",
+   "role": "International Bahá’í Council (1961–63)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "'Interweaving Themes of World Culture; Past, Present, and Future' by Mildred Mottahedeh",
+   "url": "https://www.youtube.com/watch?v=FyeeUukLIEM",
+   "video_id": "FyeeUukLIEM"
+  },
+  {
+   "section": "first_hand",
+   "speaker": "Sheila Banani",
+   "role": "pilgrim of the Guardian’s time (1956)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Shoghi Effendi Illuminated through a 1956 Pilgrimage: Sheila Banani’s Memoirs #1",
+   "url": "https://www.youtube.com/watch?v=hIx18YPmO30",
+   "video_id": "hIx18YPmO30",
+   "note": "Wilmette Institute webinar (host + Banani)",
+   "duplicate_group": "banani-1"
+  },
+  {
+   "section": "first_hand",
+   "speaker": "Sheila Banani",
+   "role": "pilgrim of the Guardian’s time (1956)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Shoghi Effendi Illuminated through a 1956 Pilgrimage: Sheila Banani’s Memoirs #2",
+   "url": "https://www.youtube.com/watch?v=lLNnTXD_BII",
+   "video_id": "lLNnTXD_BII",
+   "note": "Wilmette Institute webinar (host + Banani)"
+  },
+  {
+   "section": "first_hand",
+   "speaker": "Sheila Banani",
+   "role": "pilgrim of the Guardian’s time (1956)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Shoghi Effendi Illuminated through a 1956 Pilgrimage: Sheila Banani’s Memoirs #3",
+   "url": "https://www.youtube.com/watch?v=cogBugD3yu8",
+   "video_id": "cogBugD3yu8",
+   "note": "Wilmette Institute webinar (host + Banani)"
+  },
+  {
+   "section": "first_hand",
+   "speaker": "Sheila Banani",
+   "role": "pilgrim of the Guardian’s time (1956)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Shoghi Effendi Illuminated through a 1956 Pilgrimage: Sheila Banani’s Memoirs #4",
+   "url": "https://www.youtube.com/watch?v=kTLEfrewlSQ",
+   "video_id": "kTLEfrewlSQ",
+   "note": "Wilmette Institute webinar (host + Banani)"
+  },
+  {
+   "section": "first_hand",
+   "speaker": "Sheila Banani",
+   "role": "pilgrim of the Guardian’s time (1956)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Shoghi Effendi Illuminated through a 1956 Pilgrimage: Sheila Banani’s Memoirs #5",
+   "url": "https://www.youtube.com/watch?v=4Z6Fk6X4Q5g",
+   "video_id": "4Z6Fk6X4Q5g",
+   "note": "Wilmette Institute webinar (host + Banani)"
+  },
+  {
+   "section": "first_hand",
+   "speaker": "Sheila Banani",
+   "role": "pilgrim of the Guardian’s time (1956)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Shoghi Effendi Illuminated through a 1956 Pilgrimage: Sheila Banani’s Memoirs #6",
+   "url": "https://www.youtube.com/watch?v=fqyVYinPj-0",
+   "video_id": "fqyVYinPj-0",
+   "note": "Wilmette Institute webinar (host + Banani)"
+  },
+  {
+   "section": "first_hand",
+   "speaker": "Sheila Banani",
+   "role": "pilgrim of the Guardian’s time (1956)",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Sheila Banani - Meeting Shoghi Effendi on Pilgrimage in 1956 (Harry's Deepenings)",
+   "url": "https://www.youtube.com/watch?v=4tYjlfTIRdk",
+   "video_id": "4tYjlfTIRdk"
+  },
+  {
+   "section": "first_hand",
+   "speaker": "Sheila Banani",
+   "role": "pilgrim",
+   "relation": "speaker",
+   "confidence": "high",
+   "title": "Banani Memoirs #1 (second upload)",
+   "url": "https://www.youtube.com/watch?v=6s4Y5X_EmxY",
+   "video_id": "6s4Y5X_EmxY",
+   "duplicate_group": "banani-1"
+  }
+ ],
+ "held_for_chad": [
+  {
+   "video_id": "8rA5gDAuL5U",
+   "title": "Mason Remey from Those Who Were There",
+   "channel": "orthodoxbahai",
+   "why": "Remey talks count only BEFORE Ridván 1960 (cb_from); this clip is undated and on a Covenant-breaker group's channel — not queued"
+  }
  ]
 }

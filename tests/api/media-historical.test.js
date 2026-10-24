@@ -45,3 +45,29 @@ describe('queue rank', () => {
     expect(other).toBe(rankOf(4, 1988, 9));
   });
 });
+
+describe('International Bahá’í Council members and pilgrims of the Guardian’s time are first-hand (Chad 10-23)', () => {
+  it('the verified IBC list and the local pilgrim recollections', () => {
+    for (const n of ['Amelia Collins', 'Jessie Revell', 'Ethel Revell', 'Lutfullah Hakim', 'Sylvia Ioas', 'Borrah Kavelin', 'Mildred Mottahedeh', 'Ben Weeden', 'Gladys Weeden',
+      'Sheila Banani', 'Catharine Nourse', 'Ted Cardell', 'Aziz Panahi', 'Jalal Khazeh']) expect(of(n)?.historical, n).toBe('first-hand');
+    expect(people.find((p) => p.key === 'leroy-ioas').historical_basis).toMatch(/International Bahá’í Council/);
+    expect(people.find((p) => p.key === 'ali-akbar-furutan').historical_basis).not.toMatch(/Council/);   // not an IBC member
+  });
+});
+
+describe('media-rank reads the ITC and first-hand target sections and ranks them with the Hands', () => {
+  it('registers the new targets; a first-hand speaker lands in tier 2', async () => {
+    const { mkdtempSync, writeFileSync } = await import('fs'); const { join } = await import('path'); const { tmpdir } = await import('os');
+    const { mediaRankJob } = await import('../../api/lib/ops/media-jobs.js');
+    const d = mkdtempSync(join(tmpdir(), 'rk-'));
+    writeFileSync(join(d, 'youtube-talks.json'), JSON.stringify({ hands_uhj: [] }));
+    writeFileSync(join(d, 'itc-talks.json'), JSON.stringify({ itc_pre_1988: [{ video_id: 'k1', speaker: 'Mas‘úd Khamsí', title: 'Opening of New Territories 1963' }],
+      first_hand: [{ video_id: 'b1', speaker: 'Sheila Banani', title: 'Memoirs #1' }] }));
+    const created = [], ranks = [];
+    const repo = { findMediaByYoutube: async () => null, createMediaItem: async (r) => { created.push(r.youtube_id); return { id: created.length }; },
+      rankRows: async () => created.map((y, i) => ({ id: i + 1, source_kind: 'youtube', youtube_id: y })), setQueueRanks: async (r) => ranks.push(...r) };
+    await mediaRankJob({ talks: join(d, 'youtube-talks.json') }, { repo, listing: { speakerRole: () => 'scholar' }, excluded: () => false });
+    expect(created).toEqual(['k1', 'b1']);
+    for (const r of ranks) expect(Math.floor(r.rank / 1e7)).toBe(2);
+  });
+});

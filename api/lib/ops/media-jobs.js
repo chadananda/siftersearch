@@ -400,6 +400,7 @@ export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'me
   // ITC Counsellors appointed before 1988 (Chad 10-23), kept in their own targets file
   const itc = JSON.parse(await rf(deps.itcTalks || join(dirname(talks), 'itc-talks.json'), 'utf8').catch(() => '{}'));
   t.itc_pre_1988 = itc.itc_pre_1988 || [];
+  t.first_hand = itc.first_hand || [];   // International Bahá'í Council members, pilgrims of the Guardian's time (Chad 10-23)
   const historicalOf = deps.historicalOf || historicalIndex(await loadSpeakerPeople());
   const { decide } = await import('../media/exclusions.js');
   const excludedTarget = deps.excluded || ((x) => !!decide({ speakers: [x.speaker], title: x.title || '' })?.excluded);
@@ -407,7 +408,7 @@ export async function mediaRankJob({ talks = join(process.cwd(), 'planning', 'me
   const registered = [];
   const seenGroup = new Set();
   let order = 0;
-  for (const sec of ['hands_uhj', 'hooper_dunbar', 'itc_pre_1988', 'curated_sacred_traditions']) {
+  for (const sec of ['hands_uhj', 'hooper_dunbar', 'itc_pre_1988', 'first_hand', 'curated_sacred_traditions']) {
     for (const x of t[sec] || []) {
       if (!x.video_id || x.is_short || x.relation === 'about') continue;
       if (excludedTarget(x)) continue;   // data/media-exclusions.json (Chad 10-23)

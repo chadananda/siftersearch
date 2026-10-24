@@ -76,7 +76,7 @@
     "The Ministry of the Custodians"
    ],
    "historical": "first-hand",
-   "historical_basis": "Hand of the Cause"
+   "historical_basis": "Hand of the Cause; International Bahá’í Council 1951–61 (liaison with Shoghi Effendi)"
   },
   {
    "key": "zikrullah-khadem",
@@ -198,7 +198,7 @@
     "Shoghi Effendi: Recollections"
    ],
    "historical": "first-hand",
-   "historical_basis": "Hand of the Cause"
+   "historical_basis": "Hand of the Cause; International Bahá’í Council 1952–61"
   },
   {
    "key": "rahmatullah-muhajir",
@@ -298,7 +298,7 @@
    "role": "uhj",
    "uhj_elected": 1963,
    "historical": "first-hand",
-   "historical_basis": "UHJ 1963; served under the Guardian"
+   "historical_basis": "UHJ 1963; served under the Guardian; International Bahá’í Council 1961–63 (president)"
   },
   {
    "key": "violette-nakhjavani",
@@ -361,7 +361,7 @@
    "died": 1965,
    "role": "hand",
    "historical": "first-hand",
-   "historical_basis": "Hand of the Cause"
+   "historical_basis": "Hand of the Cause; International Bahá’í Council 1952–61 (secretary-general)"
   },
   {
    "key": "peter-khan",
@@ -401,7 +401,7 @@
     "Elsie Austin, Knight of Bahá'u'lláh"
    ],
    "historical": "first-hand",
-   "historical_basis": "Knight of Bahá’u’lláh (Morocco, 1953)"
+   "historical_basis": "Knight of Bahá’u’lláh (Morocco, 1953); pilgrim of the Guardian’s time (1953)"
   },
   {
    "key": "baharieh-rouhani-maani",
@@ -733,7 +733,7 @@
    "role": "itc",
    "itc_appointed": 1983,
    "historical": "first-hand",
-   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1992)"
+   "historical_basis": "ITC pre-1988 (Counsellor member 1983-1992); pilgrim of the Guardian’s time"
   },
   {
    "key": "hushmand-fatheazam",
@@ -756,7 +756,7 @@
    "role": "uhj",
    "uhj_elected": 1963,
    "historical": "first-hand",
-   "historical_basis": "UHJ 1963; served under the Guardian"
+   "historical_basis": "UHJ 1963; served under the Guardian; International Bahá’í Council 1961–63"
   },
   {
    "key": "charles-wolcott",
@@ -767,7 +767,7 @@
    "role": "uhj",
    "uhj_elected": 1963,
    "historical": "first-hand",
-   "historical_basis": "UHJ 1963; served under the Guardian"
+   "historical_basis": "UHJ 1963; served under the Guardian; International Bahá’í Council 1961–63"
   },
   {
    "key": "david-hofman",
@@ -897,6 +897,128 @@
    "cb_from": "1960-04",
    "historical": "first-hand",
    "historical_basis": "Hand of the Cause; President of the International Bahá’í Council — talks before his Ridván 1960 claim only (Chad 10-23)"
+  },
+  {
+   "key": "amelia-collins",
+   "name": "Amelia Collins",
+   "aliases": [
+    "Milly Collins",
+    "Amelia E. Collins"
+   ],
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause; International Bahá’í Council 1951–61 (vice-president)"
+  },
+  {
+   "key": "jessie-revell",
+   "name": "Jessie Revell",
+   "aliases": [],
+   "historical": "first-hand",
+   "historical_basis": "International Bahá’í Council 1951–63 (treasurer)"
+  },
+  {
+   "key": "ethel-revell",
+   "name": "Ethel Revell",
+   "aliases": [],
+   "historical": "first-hand",
+   "historical_basis": "International Bahá’í Council 1951–63"
+  },
+  {
+   "key": "lutfullah-hakim",
+   "name": "Luṭfu’lláh Ḥakím",
+   "aliases": [
+    "Lutfullah Hakim",
+    "Dr. Lutfullah Hakim",
+    "Luṭfu’lláh Ḥakím"
+   ],
+   "role": "uhj",
+   "uhj_elected": 1963,
+   "historical": "first-hand",
+   "historical_basis": "International Bahá’í Council 1951–63; UHJ 1963"
+  },
+  {
+   "key": "ben-weeden",
+   "name": "Ben Weeden",
+   "aliases": [],
+   "historical": "first-hand",
+   "historical_basis": "International Bahá’í Council 1951–52"
+  },
+  {
+   "key": "gladys-weeden",
+   "name": "Gladys Weeden",
+   "aliases": [],
+   "historical": "first-hand",
+   "historical_basis": "International Bahá’í Council 1951–52"
+  },
+  {
+   "key": "sylvia-ioas",
+   "name": "Sylvia Ioas",
+   "aliases": [],
+   "historical": "first-hand",
+   "historical_basis": "International Bahá’í Council 1955–63"
+  },
+  {
+   "key": "borrah-kavelin",
+   "name": "Borrah Kavelin",
+   "aliases": [],
+   "role": "uhj",
+   "uhj_elected": 1963,
+   "historical": "first-hand",
+   "historical_basis": "International Bahá’í Council 1961–63; UHJ 1963"
+  },
+  {
+   "key": "mildred-mottahedeh",
+   "name": "Mildred Mottahedeh",
+   "aliases": [
+    "Mildred R. Mottahedeh"
+   ],
+   "historical": "first-hand",
+   "historical_basis": "International Bahá’í Council 1961–63"
+  },
+  {
+   "key": "catharine-nourse",
+   "name": "Catharine Nourse",
+   "aliases": [
+    "Catherine Nourse"
+   ],
+   "historical": "first-hand",
+   "historical_basis": "pilgrim of the Guardian’s time (1922)"
+  },
+  {
+   "key": "ted-cardell",
+   "name": "Ted Cardell",
+   "aliases": [],
+   "historical": "first-hand",
+   "historical_basis": "pilgrim of the Guardian’s time (1952)"
+  },
+  {
+   "key": "aziz-panahi",
+   "name": "Aziz Panahi",
+   "aliases": [
+    "‘Azíz Panáhí"
+   ],
+   "historical": "first-hand",
+   "historical_basis": "pilgrim of the Guardian’s time (1952)"
+  },
+  {
+   "key": "sheila-banani",
+   "name": "Sheila Banani",
+   "aliases": [
+    "Mrs. Banani"
+   ],
+   "historical": "first-hand",
+   "historical_basis": "pilgrim of the Guardian’s time (1956)"
+  },
+  {
+   "key": "jalal-khazeh",
+   "name": "Jalál Kházeh",
+   "aliases": [
+    "Jalal Khazeh",
+    "Mr. Khazeh"
+   ],
+   "role": "hand",
+   "historical": "first-hand",
+   "historical_basis": "Hand of the Cause"
   }
  ],
  "not_speakers": [
