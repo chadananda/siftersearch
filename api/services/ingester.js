@@ -1330,7 +1330,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         language = ?,
         year = ?,
         description = ?,
-        encumbered = ?,
+        encumbered = CASE WHEN rights_reason IS NOT NULL THEN encumbered ELSE ? END,   -- a per-document rights ruling (rights_reason, 10-23) beats shelf defaults
         metadata = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
@@ -1721,7 +1721,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         paragraph_count = ?,
         slug = ?,
         auto_segmented = ?,
-        encumbered = ?,
+        encumbered = CASE WHEN rights_reason IS NOT NULL THEN encumbered ELSE ? END,   -- a per-document rights ruling (rights_reason, 10-23) beats shelf defaults
         metadata = ?,
         file_mtime = COALESCE(?, file_mtime),
         updated_at = CURRENT_TIMESTAMP

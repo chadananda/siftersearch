@@ -879,7 +879,8 @@ async function handleMetaYamlChange(filePath) {
 
     // Update encumbered in SQLite (authority is calculated on-the-fly, but encumbered is stored)
     for (const update of meiliDocUpdates) {
-      await query('UPDATE docs SET encumbered = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [update.encumbered, update.id]);
+      // a per-document rights ruling (rights_reason: Chad's ISBN / publisher / open decisions, 10-23) beats the shelf default
+      await query('UPDATE docs SET encumbered = CASE WHEN rights_reason IS NOT NULL THEN encumbered ELSE ? END, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [update.encumbered, update.id]);
     }
 
     // Update Meilisearch documents
