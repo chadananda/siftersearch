@@ -11,6 +11,10 @@
 #   running <tool>                                          the ids of the live detached jobs of that kind
 #   clean <job>                                             remove a finished job's folder (tower has fetched its result)
 #   df                                                      free space where the jobs live (+ the jobs' own size)
+#   hoststat <since-epoch>                                  read-only host resources for system-checks (./host-stat.sh,
+#                                                          a copy of scripts/ops/host-stat.sh beside this gate)
+# jobs/ and tmp/ may be SYMLINKS to a data volume (aorus /data/media-gpu, boss /mnt/data4tb/media-asr — 10-23: off the root
+# disk); every find / du here goes through 'jobs/' (trailing slash) so the link is followed, and df measures that volume.
 # JANITOR (on 'start', at most every 10 min): job folders older than MEDIA_JOB_KEEP_HOURS (6) and not running are removed,
 # then the oldest finished ones until the jobs use ≤ MEDIA_JOB_CAP_GB (60). 10-23 16:09: aorus's 234 GB disk filled with
 # 1,484 job folders (169 GB) — nothing ever removed them — and every enhance/transcribe/diarize failed "No space left".
@@ -37,6 +41,11 @@ if [[ "$verb" == "short" ]]; then
   py=$!; watch_parent "$py" & wait "$py"
   cat "$job/out.mp4"; exit 0
 fi
+if [[ "$verb" == "hoststat" ]]; then
+  since="${A[1]:-0}"; [[ "$since" =~ ^[0-9]{1,12}$ ]] || since=0
+  [[ -f host-stat.sh ]] || { echo '{"error":"no host-stat.sh"}'; exit 2; }
+  exec bash ./host-stat.sh "$since"
+fi
 [[ "$verb" =~ ^(probe|langid|transcribe|diarize|start|poll|fetch|fetch-file|cancel|running|clean|df)$ ]] || { echo '{"error":"verb not allowed"}'; exit 2; }
 
 job_alive() { local pid; pid=$(cat "$1/pid" 2>/dev/null || echo 0); [[ "$pid" =~ ^[0-9]+$ && "$pid" != 0 ]] && kill -0 "$pid" 2>/dev/null; }
@@ -45,8 +54,8 @@ janitor() {
   [[ -f "$stamp" && -z "$(find "$stamp" -mmin +10 2>/dev/null)" ]] && return 0
   touch "$stamp"
   local keep_min=$(( ${MEDIA_JOB_KEEP_HOURS:-6} * 60 )) cap_kb=$(( ${MEDIA_JOB_CAP_GB:-60} * 1024 * 1024 )) d
-  while IFS= read -r d; do job_alive "$d" || rm -rf "$d"; done < <(find jobs -mindepth 1 -maxdepth 1 -type d -mmin +"$keep_min" 2>/dev/null)
-  local used; used=$(du -sk jobs 2>/dev/null | cut -f1)
+  while IFS= read -r d; do job_alive "$d" || rm -rf "$d"; done < <(find jobs/ -mindepth 1 -maxdepth 1 -type d -mmin +"$keep_min" 2>/dev/null)
+  local used; used=$(du -sk jobs/ 2>/dev/null | cut -f1)
   if (( ${used:-0} > cap_kb )); then
     while IFS= read -r d; do
       (( ${used:-0} <= cap_kb )) && break
@@ -58,7 +67,7 @@ janitor() {
 if [[ "$verb" == "df" ]]; then
   mkdir -p jobs
   read -r size avail pcent < <(df -Pk jobs | awk 'NR==2 {gsub("%","",$5); print $2, $4, $5}')
-  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs -mindepth 1 -maxdepth 1 -type d | wc -l)"
+  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)"
   exit 0
 fi
 if [[ "$verb" == "clean" ]]; then

@@ -2,7 +2,8 @@
 //   */30 * * * *  --check   → email ONLY when something critical breaks (rate-limited)
 //   05 7 * * *    --daily   → ALWAYS email the morning ops digest (silence is never ambiguous)
 // Checks: service health (api/writer/meili/tunnel/site) · pm2 anomalies · grounding progress,
-// stalls + failure storms · AI spend · embedding backlog · answer cache · disk · widget traffic.
+// stalls + failure storms · AI spend · embedding backlog · answer cache · widget traffic · HOSTS (tower/aorus/boss: disk,
+// memory, OOM, load, GPU — scripts/lib/host-resources.mjs, deduped alerts).
 // Email via api/services/email.js (EMAIL_PROVIDER). State in logs/system-checks-state.json.
 import dotenv from 'dotenv';
 import fs from 'fs';
@@ -230,17 +231,38 @@ let newGpuIdleAt = state.gpuIdleAt || 0;
   }
 }
 
-// ── the compute hosts' disks (media job folders live there; 10-23 aorus filled up): WARN 85 %, CRITICAL 95 % ──
+// ── HOSTS: disk, memory/swap, OOM, load, GPU on EVERY machine we use — tower, aorus, boss (10-23 16:09: aorus's disk filled
+// with media job folders and nothing alerted until jobs failed; Chad: "I have to trust you to keep an eye on the computers").
+// One read-only snapshot per host (scripts/ops/host-stat.sh): tower locally, aorus over ssh (Tailscale SSH → a shell), boss
+// through its gate's 'hoststat' verb (tower's key there is a forced command). Thresholds + dedupe: scripts/lib/host-resources.mjs.
+const hostRes = { ...(state.hostRes || {}) };
+const hostChecks = [];
 {
-  const { diskCheck } = await import('./lib/host-disk.mjs');
-  const { gateWrap } = await import('../api/lib/media/tools.js');
-  const hosts = [process.env.MEDIA_GPU_HOST ?? 'aorus', process.env.MEDIA_ASR_HOST ?? 'boss'].filter(Boolean).filter((h, i, a) => a.indexOf(h) === i);
-  for (const host of hosts) {
-    let df = null;
-    try { df = JSON.parse(execSync(`ssh -o BatchMode=yes -o ConnectTimeout=8 ${host} ${JSON.stringify(gateWrap(host, 'df'))}`, { encoding: 'utf8', timeout: 30000 }).trim().split('\n').pop()); } catch { /* unreachable */ }
-    const c = diskCheck(host, df);
-    add(c.name, c.ok, c.level, c.detail);
+  const { parseHostStat, evaluateHost, unreachableCheck } = await import('./lib/host-resources.mjs');
+  const since = Math.floor((hostRes.lastCheckAt || Date.now() - 30 * 60_000) / 1000);
+  const script = fs.readFileSync(new URL('./ops/host-stat.sh', import.meta.url), 'utf8');
+  const ssh = (host, cmd, input) => execSync(`ssh -o BatchMode=yes -o ConnectTimeout=8 ${input == null ? '-n ' : ''}${host} ${JSON.stringify(cmd)}`, { encoding: 'utf8', timeout: 60_000, input, stdio: ['pipe', 'pipe', 'pipe'] });
+  const HOSTS = [
+    { host: 'tower', role: 'monitor', run: () => execSync(`bash -s -- ${since}`, { encoding: 'utf8', timeout: 60_000, input: script, stdio: ['pipe', 'pipe', 'pipe'] }) },
+    { host: process.env.MEDIA_GPU_HOST || 'aorus', role: 'compute', run: (h) => ssh(h, `bash -s -- ${since}`, script) },
+    { host: process.env.MEDIA_ASR_HOST || 'boss', role: 'none', run: (h) => ssh(h, `hoststat ${since}`) },
+  ];
+  hostRes.hosts = { ...(hostRes.hosts || {}) };
+  for (const { host, role, run } of HOSTS) {
+    const prev = hostRes.hosts[host] || {};
+    let out = null, err = '';
+    try { out = run(host); } catch (e) { err = String(e.stderr || e.message || e).split('\n').filter(Boolean).pop()?.slice(0, 120) || ''; }
+    if (!out || !out.includes('@@end')) {
+      const u = unreachableCheck(host, prev.misses || 0, out && /verb not allowed|no host-stat/.test(out) ? `its gate has no 'hoststat' yet: ${out.trim().slice(0, 80)}` : err);
+      hostRes.hosts[host] = { ...prev, misses: u.misses };
+      hostChecks.push(u.check);
+      continue;
+    }
+    const { checks: hc, state: st } = evaluateHost(host, parseHostStat(out), { role, prev });
+    hostRes.hosts[host] = { ...st, misses: 0 };
+    hostChecks.push(...hc);
   }
+  for (const c of hostChecks) checks.push(c);
 }
 
 // ── 5. Corpus + cache + widget metrics (report-only) ─────────────────────────
@@ -380,16 +402,6 @@ const agoOf = (at) => {
   } catch { /* table predates migration 109 on an un-upgraded DB */ }
 }
 
-// ── 6. Disk ──────────────────────────────────────────────────────────────────
-try {
-  const df = execSync('df -h / /fast /tank 2>/dev/null | tail -n +2', { encoding: 'utf8', timeout: 10000 });
-  for (const line of df.trim().split('\n')) {
-    const cols = line.split(/\s+/);
-    const pct = parseInt(cols[4], 10);
-    add(`Disk ${cols[5]}`, pct < 90, pct >= 90 ? 'critical' : pct >= 80 ? 'warn' : 'info', `${cols[4]} used (${cols[3]} free)`);
-  }
-} catch { add('Disk', true, 'warn', 'df failed'); }
-
 // ── 7. DB ship (scripts/ops/db-ship.sh): the newest /tank copy of the live DB is under 2 h old ─
 try {
   const last = execSync('sudo -n zfs list -t snapshot -H -o name -s creation tank/backups/siftersearch-db 2>/dev/null | grep @ship- | tail -1', { encoding: 'utf8', timeout: 10000 }).trim();
@@ -429,11 +441,38 @@ console.log(text);
 fs.mkdirSync('logs', { recursive: true });
 const newState = { ...state, gpuIdleAt: newGpuIdleAt, restarts, drainSeen, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, lastRun: Date.now() };
 
+// HOST alerts (disk / memory / OOM / load / GPU / unreachable): their own deduped path — a condition mails ONCE, again only
+// when it escalates (warn → critical), re-arms when it clears; WARNs mail too (a disk filling at 85 % must not wait for the
+// morning digest). One mail per run; a CRITICAL disk is a [PAGE].
+{
+  const { alertPlan } = await import('./lib/host-resources.mjs');
+  const plan = alertPlan(hostChecks, hostRes.seen || {});
+  // a host tower could not read keeps its known conditions (no re-mail of the same full disk when it answers again)
+  const dark = Object.entries(hostRes.hosts || {}).filter(([, v]) => v.misses > 0).map(([h]) => `${h}:`);
+  for (const [k, v] of Object.entries(hostRes.seen || {})) if (dark.some((h) => k.startsWith(h)) && !(k in plan.seen)) plan.seen[k] = v;
+  let delivered = true;
+  if (plan.send.length) {
+    const { actionRequired } = await import('../api/lib/ops/alert.js');
+    const crit = plan.send.filter((c) => c.level === 'critical');
+    const page = crit.some((c) => /:disk /.test(c.key));
+    const head = crit[0] || plan.send[0];
+    delivered = await actionRequired({
+      key: 'host-resources', quietMs: 0, severity: page ? 'page' : 'action',
+      subject: `${head.level === 'critical' ? 'CRITICAL' : 'WARN'} ${head.name}${plan.send.length > 1 ? ` (+${plan.send.length - 1} more)` : ''}`,
+      text: [`New or escalated host conditions (${new Date().toISOString()}):`, '',
+        ...plan.send.map((c) => `- **${c.level.toUpperCase()}** ${c.name}: ${c.detail}`), '', 'All host checks:', '',
+        ...hostChecks.map((c) => `- ${mark(c)} ${c.name}: ${c.detail}`)].join('\n'),
+    });
+    console.log(`[system-checks] host alert ${delivered ? 'sent' : 'NOT sent'}: ${plan.send.map((c) => `${c.level} ${c.name}`).join(' · ')}`);
+  }
+  newState.hostRes = { ...hostRes, seen: delivered ? plan.seen : (hostRes.seen || {}), lastCheckAt: Date.now() };
+}
+
 // Decide whether to email. --daily always sends; --check only on criticals, and not the same
-// alert-set more than once per 6h (a down service at 2am = one email, not twelve).
-const alertKey = criticals.map((c) => c.name).sort().join('|');
+// alert-set more than once per 6h (a down service at 2am = one email, not twelve). Host criticals went out above, deduped.
+const alertKey = criticals.filter((c) => !c.host).map((c) => c.name).sort().join('|');
 const recentlyAlerted = state.alertKey === alertKey && Date.now() - (state.alertAt || 0) < 6 * 3600 * 1000;
-let shouldSend = MODE === 'daily' || (criticals.length > 0 && !recentlyAlerted);
+let shouldSend = MODE === 'daily' || (criticals.some((c) => !c.host) && !recentlyAlerted);
 
 if (shouldSend && TO) {
   const { sendEmail } = await import('../api/services/email.js');
