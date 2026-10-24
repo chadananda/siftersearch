@@ -29,7 +29,7 @@ async function mediaDropLoop() {
 // …and DOWNLOADS (YouTube into the archive, paced, independent of processing). The pipeline lane runs N items at once.
 export const MEDIA_LANES = { pipeline: Object.keys(MEDIA_REGISTRY).filter((j) => !['media-short', 'media-portraits-extend', 'media-speakers', 'media-fetch', 'media-rank',
   'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-trim-audit', 'media-remaster', 'media-cloud-remaster', 'media-remaster-review-pack', 'media-remaster-decide'].includes(j)),
-  compute: ['media-compute'], asr: ['media-asr'], diar: ['media-diar'], llm: ['media-llm'], remaster: ['media-remaster'],   // saturated by the backfill: nothing else waits behind it (10-24: the work orders sat behind 209 queued runs) cloud: ['media-cloud-remaster'],
+  compute: ['media-compute'], asr: ['media-asr'], diar: ['media-diar'], llm: ['media-llm'], remaster: ['media-remaster'], /* saturated by the backfill: nothing else waits behind it (10-24: the work orders sat behind 209 queued runs) */ cloud: ['media-cloud-remaster'],
   shorts: ['media-short'], portraits: ['media-portraits-extend', 'media-speakers', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-trim-audit'], downloads: ['media-fetch'] };
 // speaker galleries (Chad 10-23): the portraits lane (an image call each at most; never behind transcription)
 Object.assign(MEDIA_REGISTRY, { 'media-gallery': mediaGalleryJob, 'media-portrait-inventory': mediaPortraitInventoryJob });

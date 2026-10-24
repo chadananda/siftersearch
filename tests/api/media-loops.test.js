@@ -118,3 +118,11 @@ describe('quote hunts run two at a time, results in order (10-23 quotes latency)
     expect(r.rejected.map((x) => x.i)).toEqual([1, 2, 3, 4]);
   });
 });
+
+describe('the cloud lane exists (10-24: a // comment swallowed `cloud:` from MEDIA_LANES and the backfill silently stopped for an hour)', () => {
+  it('media-worker.js declares cloud: [media-cloud-remaster] outside any line comment', () => {
+    const line = readFileSync(new URL('../../api/workers/media-worker.js', import.meta.url), 'utf8').split('\n').find((l) => l.includes("cloud: ['media-cloud-remaster']"));
+    expect(line).toBeTruthy();
+    expect(line.slice(0, line.indexOf("cloud: ['media-cloud-remaster']"))).not.toMatch(/\/\//);
+  });
+});
