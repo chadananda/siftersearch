@@ -8,6 +8,17 @@ import { ApiError } from '../lib/errors.js';
 
 export default async function opsReportRoutes(fastify) {
   const known = (name) => { if (!reportNames().includes(name)) throw ApiError.notFound?.(`unknown report ${name}`) ?? Object.assign(new Error(`unknown report ${name}`), { statusCode: 404 }); };
+  // Biography slugs, minted in small batches through the single writer (never one large UPDATE): call repeatedly until left = 0.
+  fastify.post('/ops/bio-slugs/backfill', { preHandler: requireInternal }, async (req) => {
+    const limit = Math.min(Math.max(Number(req.body?.limit) || 25, 1), 50);
+    const { listBioPersons } = await import('../lib/bio.js');
+    const { unslugged, ensureBioSlug, slugsFor } = await import('../lib/repos/bio-slug-repo.js');
+    const ids = (await listBioPersons()).persons.map((p) => p.id);
+    const todo = await unslugged(ids, limit); const minted = [];
+    for (const id of todo) minted.push({ id, slug: await ensureBioSlug(id) });
+    const have = await slugsFor(ids);
+    return { minted, with_slug: have.size, total: ids.length, left: ids.length - have.size };
+  });
   // Index coverage (planning/index-coverage-plan.md): every layer by tradition × scope, or one document — ledger reads only
   fastify.get('/ops/coverage', { preHandler: requireInternal }, async () => (await import('../lib/repos/coverage-repo.js')).coverageSummary());
   fastify.get('/ops/coverage/:docId', { preHandler: requireInternal }, async (req) => ({ doc_id: Number(req.params.docId),

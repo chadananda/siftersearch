@@ -14,6 +14,7 @@ import fs from 'fs';
 import { Worker } from 'worker_threads';
 import path from 'path';
 import { PROSE_SQL, DISAMB_DONE_SQL, HYPE_DONE_SQL } from './pipeline/processed.js';
+import { slugsFor, ensureBioSlug } from './repos/bio-slug-repo.js';
 import { LIVE_SQL, isLiveRow } from './entity-live.js';   // ONE definition of live/merged (see entity-live.js header)
 
 export const BIO_ROOT = path.join(process.env.HOME || '/home/chad', 'sifter', 'bio-assets');
@@ -490,6 +491,7 @@ export async function listBioPersons() {
     WHERE ge.entity_type = 'person' AND ge.religion = ''
       AND ${LIVE_SQL('ge.')}
     ORDER BY (ge.importance IS NULL), ge.importance DESC, ge.canonical_name`);
+  const slugOf = await slugsFor(rows.map(r => r.id)).catch(() => new Map());   // minted slugs only (the ops backfill + first visit mint them)
   const persons = rows.map(r => {
     let aliases = [], kinship = [], death = null;
     // Malformed JSON here does not crash the page — it silently DELETES a person's aliases, kin, or death
@@ -500,7 +502,7 @@ export async function listBioPersons() {
     try { kinship = JSON.parse(r.kinship || '[]'); } catch (err) { swallow(err, 'bio.person.kinship', { id: r.id }); }
     try { death = JSON.parse(r.research_notes || '{}').death || null; } catch (err) { swallow(err, 'bio.person.research_notes', { id: r.id }); }
     const m = man[r.id]; const hasPortrait = !!(m && m.cdn);
-    return { id: r.id, name: r.name, importance: r.importance || 0, side: r.side || null,
+    return { id: r.id, slug: slugOf.get(r.id) || null, name: r.name, importance: r.importance || 0, side: r.side || null,
       summary: r.summary || null, aliases, kinship, death, hasPortrait, sources: [...(bookOf[r.id] || [])],
       portrait: m?.cdn || null,
       wiki: m?.title ? `https://en.wikipedia.org/wiki/${encodeURIComponent(String(m.title).replace(/ /g, '_'))}` : null };
@@ -621,7 +623,8 @@ async function buildBioPerson(id, claimsMax) {
   // life timeline (events · relationships · journeys), synthesized from these facts by scripts/bio/build-timelines.mjs
   let timeline = null;
   try { timeline = JSON.parse(fs.readFileSync(path.join(BIO_ROOT, 'timelines', `${id}.json`), 'utf8')); } catch { /* not built yet */ }
-  return { timeline, id: row.id, name: row.name, importance: row.importance || 0, side: row.side || null,
+  const slug = claimsMax === Infinity ? null : await ensureBioSlug(row.id).catch(() => null);   // offline builders never write
+  return { timeline, id: row.id, slug, name: row.name, importance: row.importance || 0, side: row.side || null,
     summary: row.summary || null, aliases: arr(row.aliases), kinship: arr(row.kinship), relations: arr(row.relations),
     dates: arr(row.dates), death: notes.death || null, characterizations, characterizationsTotal: claimRows.length ? claimsTotal : characterizations.length,
     facts: notes.facts || [], firewall: notes.firewall || [], contested: notes.contested || [],

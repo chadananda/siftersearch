@@ -14,6 +14,7 @@
 import { listBioPersons, getBioPerson, bioSearch, getIntegrationProgress } from '../lib/bio.js';
 import { queryAll } from '../lib/db.js';
 import { Readable } from 'node:stream';
+import { resolveBioKey, ensureBioSlug, slugsFor, unslugged } from '../lib/repos/bio-slug-repo.js';
 import { entityLookup, entityDossier, entitySearch, searchTerms, foldText } from '../lib/entity-api.js';
 import { alignAnswer } from '../lib/people-answer.js';
 import { listEntities, exportEntities, resolveKeys, changesSince, graphVersion, naturalKey, ENTITY_FIELDS } from '../lib/entity-catalog.js';
@@ -406,6 +407,24 @@ export default async function peopleRoutes(server) {
     const q = request.query?.q;
     const { peopleSearch } = await import('../lib/people-search.js');
     return peopleSearch(q);
+  });
+
+  // /biography/<slug>: key (slug | old slug | numeric id) → { kind: 'current'|'alias'|'id', id, slug }. The page 301s unless kind is 'current'.
+  server.get('/people/slug/:key', { schema: { tags: ['Entities'], summary: 'Resolve a biography slug (or old slug / id) to the person and current slug',
+    params: { type: 'object', properties: { key: { type: 'string' } }, required: ['key'] } } }, async (request, reply) => {
+    const r = await resolveBioKey(request.params.key);
+    if (!r) { reply.code(404); return { error: 'not found' }; }
+    reply.header('Cache-Control', 'public, max-age=60, s-maxage=900, stale-while-revalidate=3600');
+    return r;
+  });
+
+  // the biography sitemap's rows: { id, slug }. Mints up to 25 missing slugs per call (the ops backfill does the rest in batches).
+  server.get('/people/sitemap', { schema: { tags: ['Entities'], summary: 'Biography pages for the sitemap (slugs)' } }, async (request, reply) => {
+    const ids = (await listBioPersons()).persons.map((p) => p.id);
+    for (const id of await unslugged(ids, 25)) await ensureBioSlug(id);
+    const m = await slugsFor(ids);
+    reply.header('Cache-Control', 'public, max-age=300, s-maxage=3600');
+    return { people: ids.filter((i) => m.has(i)).map((i) => ({ id: i, slug: m.get(i) })) };
   });
 
   server.get('/people/:id', {

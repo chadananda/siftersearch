@@ -1981,6 +1981,17 @@ export const migrations = {
     }
     logger.info('Migration 181 complete: content FK child keys indexed');
   },
+  182: async () => {
+    // Biography URLs by name (/biography/<slug>, not the DB id). graph_entities.slug: a nullable ADD COLUMN is metadata-only and the
+    // partial unique index starts over all-NULL rows, so neither moves the writer. Slugs are minted lazily + by small batches
+    // (api/lib/bio-slug.js, ops backfill) — never one large UPDATE. Old slugs are kept in bio_slug_aliases and 301 to the current one.
+    try { await query('ALTER TABLE graph_entities ADD COLUMN slug TEXT'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    await query(`CREATE TABLE IF NOT EXISTS bio_slug_aliases (slug TEXT PRIMARY KEY, entity_id INTEGER NOT NULL, created_at INTEGER DEFAULT (unixepoch()))`);
+    await query('CREATE INDEX IF NOT EXISTS idx_bio_slug_alias_entity ON bio_slug_aliases(entity_id)');
+    await ensureIndex(query, { label: 'migration 182 idx_ge_slug', table: 'graph_entities', columns: ['slug'],
+      sql: 'CREATE UNIQUE INDEX IF NOT EXISTS idx_ge_slug ON graph_entities(slug) WHERE slug IS NOT NULL' });
+    logger.info('Migration 182 complete: graph_entities.slug + bio_slug_aliases');
+  },
 };
 
 export const graphMigrations = {

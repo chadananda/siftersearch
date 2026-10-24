@@ -131,7 +131,7 @@ export async function linkMentions(mentions, headings, deps, { minConf = MIN_CON
     const r = cache.get(key);
     if (r.why) { unresolved.push({ ...m, why: r.why }); continue; }
     const base = { kind: m.kind, para: m.para, i0: m.i0, i1: m.i1, text: m.text, confidence: m.confidence, basis: r.basis };
-    if (m.kind === 'person') links.push({ ...base, entity_id: r.entity_id, name: r.name, url: `/biography/${r.entity_id}` });
+    if (m.kind === 'person') links.push({ ...base, entity_id: r.entity_id, name: r.name, url: `/biography/${index.byId.get(r.entity_id)?.slug || r.entity_id}` });
     else {
       const sec = r.section;
       const url = deps.linkFor(sec ? { ...r.doc, external_para_id: sec.first_para_id ?? r.doc.external_para_id } : r.doc, sec ? sec.start_index : undefined)?.url;

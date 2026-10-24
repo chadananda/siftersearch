@@ -8,7 +8,7 @@ const pol = (p, method = 'GET', h = {}) => policyFor(U(p), method, H(h));
 
 describe('policyFor', () => {
   it('caches public SSR pages as html', () => {
-    for (const p of ['/', '/media', '/media/some-talk', '/media/some-talk/clip/1-2', '/media/x/m/abc', '/library', '/library/bahai/x', '/biography/12', '/docs', '/docs/api', '/about']) {
+    for (const p of ['/', '/media', '/media/some-talk', '/media/some-talk/clip/1-2', '/media/x/m/abc', '/library', '/library/bahai/x', '/biography/12', '/biography/abdul-baha-abbas-effendi', '/docs', '/docs/api', '/about']) {
       expect(pol(p)).toMatchObject({ mode: 'cache', kind: 'html', l2: true });
     }
   });
@@ -20,6 +20,8 @@ describe('policyFor', () => {
     expect(pol('/api/media/a-talk')).toMatchObject({ mode: 'cache', fresh: 120 });
     expect(pol('/api/library/tree')).toMatchObject({ mode: 'cache' });
     expect(pol('/api/v1/people/123')).toMatchObject({ mode: 'cache' });
+    expect(pol('/api/v1/people/slug/abdul-baha-abbas-effendi')).toMatchObject({ mode: 'cache', kind: 'api' });
+    expect(pol('/sitemap-biography.xml')).toMatchObject({ mode: 'cache', kind: 'xml' });
     // the reader (SSR first view + load-more) and its tablet box; a signed-in editor (Authorization) bypasses
     expect(pol('/api/library/by-path/bahai/bahaullah/bahaullah_the-kitab-i-iqan?limit=40')).toMatchObject({ mode: 'cache', fresh: 300, l2: false });
     expect(pol('/api/documents/20810/about')).toMatchObject({ mode: 'cache', fresh: 300 });

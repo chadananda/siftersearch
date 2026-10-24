@@ -33,6 +33,7 @@ const API_ROUTES = [
   [/^\/api\/documents\/\d+\/about$/, 300, false],               // the reader's "About this tablet" box
   [/^\/api\/v1\/people$/, 900, true],
   [/^\/api\/v1\/people\/[^/]+$/, 900, true],
+  [/^\/api\/v1\/people\/slug\/[^/]+$/, 900, true],           // /biography/<slug> resolver (slug | old slug | id)
   [/^\/api\/v1\/entities\/[^/]+$/, 900, false],
   [/^\/api\/v1\/pages(\/[^/]+)?$/, 300, true],
   [/^\/api\/search\/stats$/, 300, true],
@@ -43,7 +44,7 @@ const API_ROUTES = [
 // Public SSR pages (none reads cookies; only /admin's middleware does). Fresh = the page's own s-maxage, else 60 s.
 const HTML_PAGES = /^\/(|media(\/.*)?|library(\/.*)?|biography(\/.*)?|docs(\/.*)?|who-was-at\/.+|dialogue(\/.*)?|research(\/.*)?|document\/.+|m\/.+|about|changelog|privacy|terms|contact|contribute|dewey|sourcehunt)\/?$/;
 // The library sitemap (index + parts): SSR endpoints rendering XML, cached like pages but validated as a whole sitemap.
-const XML_PAGES = /^\/sitemap-library(-[a-z0-9-]+)?\.xml$/;
+const XML_PAGES = /^\/sitemap-(library(-[a-z0-9-]+)?|biography)\.xml$/;
 const HTML_NEVER = /^\/(admin|profile|settings|referrals|print|community\/(new|post)|support\/success)(\/|$)/;
 const TRACKING = /^(utm_.*|fbclid|gclid|msclkid|mc_cid|mc_eid|ref)$/;
 

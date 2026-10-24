@@ -33,5 +33,8 @@ else if (cmd === 'report' && name) {
     }
     await out(run);
   }
-} else { console.error('usage: ops.mjs reports | report <name> [--days N] [--wait] [--latest]'); process.exit(2); }
+} else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until none are left
+  let r; do { r = await call('POST', '/ops/bio-slugs/backfill', { limit: 25 }); console.error(`minted ${r.minted.length}; ${r.with_slug}/${r.total}`); } while (r.minted.length && r.left > 0);
+  await out(r);
+} else { console.error('usage: ops.mjs bio-slugs | ops.mjs reports | report <name> [--days N] [--wait] [--latest]'); process.exit(2); }
 process.exit(0);

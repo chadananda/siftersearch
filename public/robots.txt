@@ -17,6 +17,8 @@ Disallow: /_astro/
 Sitemap: https://siftersearch.com/sitemap-index.xml
 # Library sitemap INDEX: every public reader page, per tradition in parts of <=25k URLs, + tradition/collection pages
 Sitemap: https://siftersearch.com/sitemap-library.xml
+# Biography pages by name (/biography/<slug>)
+Sitemap: https://siftersearch.com/sitemap-biography.xml
 
 # Crawl delay (optional, be nice to crawlers)
 Crawl-delay: 1
