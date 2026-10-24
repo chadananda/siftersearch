@@ -68,15 +68,27 @@ def env_lag(dry, wet, max_lag_ms=100, span_s=600):
     return (int(np.argmax(c)) - L) * n
 
 
-def sentences_of(work):
-    """→ [(paragraph n, sentence index, words [{w, s, e}])] from transcript.work.json (paragraph sentences = word index ranges)."""
+def sentences_of(work, max_s=20.0, chunk_s=15.0):
+    """→ [(paragraph n, sentence index, words [{w, s, e}])] from transcript.work.json (paragraph sentences = word index ranges).
+    A 'sentence' longer than max_s (paragraphs with no sentence breaks: 6-8 minute windows were seen) is cut into chunks of
+    at most chunk_s by word times, so one flag never swaps minutes of audio. The index k stays the sentence's."""
     out = []
     for p in work.get('paragraphs', []):
         ws = p.get('words') or []
         for k, (i0, i1) in enumerate(p.get('sentences') or [[0, len(ws)]]):
             sw = [w for w in ws[i0:i1] if w.get('s') is not None and w.get('e') is not None]
-            if sw:
+            if not sw:
+                continue
+            if sw[-1]['e'] - sw[0]['s'] <= max_s:
                 out.append((p.get('n'), k, sw))
+                continue
+            cur = []
+            for w in sw:
+                if cur and w['e'] - cur[0]['s'] > chunk_s:
+                    out.append((p.get('n'), k, cur)); cur = []
+                cur.append(w)
+            if cur:
+                out.append((p.get('n'), k, cur))
     return out
 
 
