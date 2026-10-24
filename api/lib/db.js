@@ -631,12 +631,28 @@ export function getTelemetryStore({ create = false } = {}) {
   telStore = db;
   return db;
 }
-/** Create the telemetry tables + indexes from the content DB's own DDL (exactly production's shape). Idempotent. */
+// The tables' own DDL, for when sifter.db no longer has them (dropped 10-24 in the night maintenance: they had moved here).
+const TELEMETRY_DDL = [
+  { type: 'table', name: 'slow_query_log', tbl_name: 'slow_query_log', sql: `CREATE TABLE slow_query_log (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL DEFAULT (unixepoch()),
+    proc TEXT NOT NULL, db_name TEXT, kind TEXT NOT NULL, duration_ms INTEGER NOT NULL, fingerprint TEXT NOT NULL, sql_sample TEXT, query_plan TEXT, name TEXT, name_backfill TEXT)` },
+  { type: 'table', name: 'query_stats', tbl_name: 'query_stats', sql: `CREATE TABLE query_stats (hour INTEGER NOT NULL, proc TEXT NOT NULL, db_name TEXT, kind TEXT NOT NULL,
+    label TEXT NOT NULL, name TEXT, fingerprint TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, total_ms INTEGER NOT NULL DEFAULT 0, max_ms INTEGER NOT NULL DEFAULT 0,
+    sql_sample TEXT, PRIMARY KEY (hour, proc, kind, label))` },
+  { type: 'table', name: 'db_write_stats', tbl_name: 'db_write_stats', sql: `CREATE TABLE db_write_stats (minute TEXT NOT NULL, caller TEXT NOT NULL, name TEXT NOT NULL,
+    batches INTEGER NOT NULL DEFAULT 0, statements INTEGER NOT NULL DEFAULT 0, changes INTEGER NOT NULL DEFAULT 0, errors INTEGER NOT NULL DEFAULT 0,
+    ms_total INTEGER NOT NULL DEFAULT 0, ms_max INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (minute, caller, name))` },
+  { type: 'index', name: 'idx_slowq_at', tbl_name: 'slow_query_log', sql: 'CREATE INDEX idx_slowq_at ON slow_query_log(at)' },
+  { type: 'index', name: 'idx_slowq_fp', tbl_name: 'slow_query_log', sql: 'CREATE INDEX idx_slowq_fp ON slow_query_log(fingerprint, at)' },
+  { type: 'index', name: 'idx_qstats_hour', tbl_name: 'query_stats', sql: 'CREATE INDEX idx_qstats_hour ON query_stats(hour)' },
+];
+/** Create the telemetry tables + indexes from the content DB's own DDL (exactly production's shape), or from TELEMETRY_DDL
+ *  once sifter.db no longer carries them. Idempotent. */
 export function ensureTelemetrySchema(tel, content) {
   tel.exec('CREATE TABLE IF NOT EXISTS telemetry_meta (k TEXT PRIMARY KEY, v TEXT)');
   const have = new Set(tel.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all().map((r) => r.name));
-  const ddl = content.prepare(`SELECT type, name, tbl_name, sql FROM sqlite_master WHERE tbl_name IN (${TELEMETRY_TABLES.map(() => '?').join(',')})
-    AND sql IS NOT NULL ORDER BY type = 'table' DESC`).all(...TELEMETRY_TABLES);
+  const fromContent = content ? content.prepare(`SELECT type, name, tbl_name, sql FROM sqlite_master WHERE tbl_name IN (${TELEMETRY_TABLES.map(() => '?').join(',')})
+    AND sql IS NOT NULL ORDER BY type = 'table' DESC`).all(...TELEMETRY_TABLES) : [];
+  const ddl = [...fromContent, ...TELEMETRY_DDL.filter((d) => !fromContent.some((o) => o.tbl_name === d.tbl_name))];
   for (const o of ddl) {
     if (o.type === 'table' && have.has(o.name)) continue;
     if (o.type === 'trigger') continue;   // none today; a trigger would need its own review before moving

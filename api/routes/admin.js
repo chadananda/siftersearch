@@ -5190,8 +5190,10 @@ Collection: ${paragraph.collection || 'Unknown'}
     `);
 
     // Graph pipeline stats
-    const graphExtracted   = await queryOne('SELECT COUNT(*) as c FROM content WHERE graph_enriched = 1 AND deleted_at IS NULL');
-    const graphPending     = await queryOne('SELECT COUNT(*) as c FROM content WHERE graph_enriched = 0 AND deleted_at IS NULL AND length(text) > 50');
+    // graph_enriched is the retired graph extractor's flag (07-10): both counts were whole-table scans (the = 0 one rode
+    // idx_content_graph_unsync, dropped 10-24 with the flag's other index). Reported as -1 = "not populated", as progress.js.
+    const graphExtracted   = { c: -1 };
+    const graphPending     = { c: -1 };
     const extractUnresolved = await queryOne('SELECT COUNT(*) as c FROM paragraph_extractions WHERE resolved = 0');
     const promotionPending = await queryOne('SELECT COUNT(*) as c FROM promotion_queue WHERE resolved = 0');
     const aliasCount       = await queryOne('SELECT COUNT(*) as c FROM entity_aliases');

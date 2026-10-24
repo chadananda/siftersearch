@@ -151,3 +151,38 @@ I did not drop them, because each either belongs to a code path that still exist
   is null for translator, translation_by, has_original, hype_hash and graph_unsync), so the planner is guessing there.
 * `index-sizes` (heavy lane) measures true per-index bytes with dbstat. It walks every page, so run it when the host is
   calm, not under load 60+.
+
+## 6. Night maintenance, 10-24 02:00 MST (Chad: already decided, no further approval needed)
+
+`scripts/ops/db-maintenance.sh` runs the named steps in `api/lib/repos/maintenance-repo.js` (`POST /api/admin/ops/maintenance/:step` on
+siftersearch-ops) one at a time. Each step runs inside a writer drain that uses the power-mode flag in `draining` mode, so
+writes still land and no new work starts. The runService apps are SIGHUP-drained and park until the flag clears; the other
+writers are pm2-stopped. The script waits for the writer to be quiet, runs the step, clears the flag, restarts the
+writers, and pauses (120 s after a DROP). No arbitrary SQL goes over HTTP. Results go to
+`logs/db-maintenance-20261024.jsonl` on tower: wall ms, drain seconds, and the freelist delta (exact bytes freed) for each
+step.
+
+Order:
+1. probe-before: 200 INSERTs into a live doc, then a forced PK failure so the writer rolls the whole request back.
+2. Twelve index drops: `doc_graph`, `graph_unsync`, `needs_thesis`, `enhanced_unsynced`, `synced`, `synced_deleted`,
+   `hash_embed_length`, `embed_length`, `recently_synced`, `sync_lookup`, `not_duplicate`, `needs_context`.
+3. The 12 `table_counts` triggers, in one step.
+4. `query_stats`, `slow_query_log` and `db_write_stats` in sifter.db. Each is skipped unless telemetry.db holds all three
+   and has a `db_write_stats` row from the last 30 minutes.
+5. `ANALYZE content`, with `analysis_limit` 1000.
+6. probe-after.
+
+The four indexes earlier marked "depends on feature" were verified in code and are included:
+- `recently_synced`: its only reader is the Meili full-sync check, and on tower MEILI_WRITES=off and
+  MEILISEARCH_ENABLED=false. The health route migration 77 indexed it for no longer exists.
+- `sync_lookup`: same WHERE clause and same leading `doc_id` as `dirty_doc_updated`.
+- `not_duplicate`: no query filters `is_duplicate = 0`; the live ones use `COALESCE(is_duplicate, 0) = 0`.
+- `needs_context`: only `getUndisambiguated` reads it, and its `enhancement-worker` is started by nothing.
+
+Code changed alongside:
+- `/api/admin/pipeline/health` no longer counts `graph_enriched`, which would have become a whole-table scan once its
+  indexes were gone; it reports -1, as progress.js does.
+- `ensureTelemetrySchema` carries its own DDL, so a new telemetry.db no longer depends on sifter.db's copies.
+
+Still for later: `idx_content_translation_by`, which needs a partial rebuild (a full-table CREATE INDEX, so measure it
+first), and `idx_content_deleted_at`, which one plan still uses (the live-paras COUNT).

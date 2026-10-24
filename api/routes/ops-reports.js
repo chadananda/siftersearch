@@ -29,6 +29,15 @@ export default async function opsReportRoutes(fastify) {
     const { powerState, powerLine } = await import('../lib/power-mode.js');
     return { head: headCommit(), power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers };
   });
+  // NIGHT SCHEMA MAINTENANCE (10-24): named steps only — scripts/ops/db-maintenance.sh calls them one at a time with the
+  // writers drained around each (a DROP frees a whole b-tree inside the single writer). No arbitrary SQL. maintenance-repo.js
+  fastify.get('/ops/maintenance', { preHandler: requireInternal }, async () => {
+    const { MAINTENANCE_STEPS, existing } = await import('../lib/repos/maintenance-repo.js');
+    const present = new Set(await existing(MAINTENANCE_STEPS.filter((s) => s.kind === 'index' || s.kind === 'table').map((s) => s.name)));
+    return { steps: MAINTENANCE_STEPS.map((s) => ({ name: s.name, kind: s.kind, why: s.why, ...(s.kind === 'index' || s.kind === 'table' ? { exists: present.has(s.name) } : {}) })) };
+  });
+  fastify.post('/ops/maintenance/:step', { preHandler: requireInternal }, async (req) =>
+    (await import('../lib/repos/maintenance-repo.js')).runMaintenanceStep(req.params.step));
   fastify.get('/ops/reports', { preHandler: requireInternal }, async () => ({ reports: reportNames(), recent: await recent(20) }));
   fastify.post('/ops/reports/:name', { preHandler: requireInternal }, async (req) => {
     known(req.params.name);
