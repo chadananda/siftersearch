@@ -16,12 +16,14 @@ describe('publishers', () => {
   it('classes', () => {
     expect(publisherClass('George Ronald, Oxford')).toEqual({ name: 'George Ronald', class: 'commercial' });
     expect(publisherClass('Kalimát Press')).toMatchObject({ class: 'commercial' });
-    expect(publisherClass('Bahá’í Publishing Trust, Wilmette')).toMatchObject({ class: 'review' });
+    expect(publisherClass('Bahá’í Publishing Trust, Wilmette')).toMatchObject({ class: 'institutional' });   // Chad 10-23
+    expect(publisherClass('Association for Bahá’í Studies')).toMatchObject({ class: 'institutional' });
+    expect(publisherClass('Bahá’í Publications Australia')).toMatchObject({ class: 'review' });
     expect(publisherClass('Bahá’í World Centre')).toMatchObject({ class: 'institutional' });
     expect(publisherClass('Oxford University Press')).toMatchObject({ class: 'commercial' });
     expect(publisherClass('John Smith')).toBe(null);
     expect(publisherClass('G. Ronald')).toMatchObject({ name: 'George Ronald' });
-    expect(publisherClass("Bahá'í  Pub. Trust")).toMatchObject({ class: 'review' });
+    expect(publisherClass("Bahá'í  Pub. Trust")).toMatchObject({ class: 'institutional' });
   });
   it('reads the imprint from the copyright page, not from "also by" lists', () => {
     const r = imprintFromText(p(['The Book', 'BY THE SAME AUTHOR Iran’s Secret Pogrom (Neville Spearman)', 'GEORGE RONALD, Publisher 46 High Street, Kidlington, Oxford',
@@ -47,7 +49,7 @@ describe('a publisher named elsewhere is not the imprint (10-23 dry run)', () =>
   it('still reads a real imprint line', () => {
     expect(imprintFromText(p(['Approved by the National Spiritual Assembly', 'GEORGE RONALD OXFORD'])).publisher.value).toBe('George Ronald');
     expect(imprintFromText(p(['Bahá’í Publishing Trust, 27 Rutland Gate, London SW7 1PD Copyright Rúḥíyyih Rabbání 1988 All rights reserved'])).publisher)
-      .toMatchObject({ value: 'Bahá’í Publishing Trust', class: 'review' });
+      .toMatchObject({ value: 'Bahá’í Publishing Trust', class: 'institutional' });
   });
 });
 
@@ -173,7 +175,7 @@ describe('jobs', () => {
     expect(w.covers).toBe(1);
     expect(setCover).toHaveBeenCalledWith(1, '/img/covers/1?v=abc');
   });
-  it('rights-publisher: commercial press or found ISBN → encumber; BPT → review; canonical and non-books untouched; dry run', async () => {
+  it('rights-publisher: commercial press or found ISBN → encumber; a Publishing Trust is institutional (Chad 10-23); canonical and non-books untouched; dry run', async () => {
     const found = (o) => JSON.stringify({ fields: o });
     const rows = async () => [
       { doc_id: 1, found: found({ publisher: { value: 'George Ronald', conf: 'high', source: 'copyright-page', evidence: 'GEORGE RONALD Oxford' } }) },
@@ -186,7 +188,7 @@ describe('jobs', () => {
     const encumber = vi.fn();
     const r = await rightsPublisherJob({}, { page, rows: rows6, encumber });
     docs.pop();
-    expect(r).toMatchObject({ would_encumber: 2, review: 2, by_reason: { 'publisher-commercial': 1, 'isbn-noncanonical': 1 } });
+    expect(r).toMatchObject({ would_encumber: 2, review: 0, institutional: 2, by_reason: { 'publisher-commercial': 1, 'isbn-noncanonical': 1 } });
     expect(r.flagged_ids).toEqual([1, 5]);
     expect(r.george_ronald.map((x) => x.id)).toEqual([1]);
     expect(encumber).not.toHaveBeenCalled();
@@ -227,5 +229,47 @@ describe('the Google retry pass', () => {
     const fetchImpl = vi.fn(async (url) => (/googleapis/.test(url) ? { ok: false, status: 429, json: async () => ({}) } : { ok: false, status: 404, json: async () => null }));
     const r = await huntBook({ doc: { id: 1, title: 'X Book', author: 'A B' }, paragraphs: [] }, { fetchImpl });
     expect(r.google).toBe('quota');
+  });
+});
+
+describe("Chad's rights decisions (10-23)", () => {
+  const docs = [
+    { id: 1, title: 'BPT Book', author: 'B', religion: "Baha'i", collection: 'Books', paragraph_count: 500, encumbered: 1, rights_reason: null },
+    { id: 2, title: 'ABS Book', author: 'C', religion: "Baha'i", collection: 'Books', paragraph_count: 500, encumbered: 0 },
+    { id: 3, title: 'GR Book', author: 'D', religion: "Baha'i", collection: 'Books', paragraph_count: 500, encumbered: 1 },
+    { id: 4, title: 'Emergence', author: 'E', religion: "Baha'i", collection: 'Books', paragraph_count: 500, encumbered: 1 },
+    { id: 5, title: 'Reflections on the Life of the Spirit', author: 'Ruhi Institute', religion: "Baha'i", collection: 'Books', paragraph_count: 300, encumbered: 0 },
+    { id: 6, title: 'Ruhi Institute', author: 'The Universal House of Justice', religion: "Baha'i", collection: 'Administrative', paragraph_count: 20 },
+    { id: 7, title: 'Rúhíyyih Khánum in America', author: 'Rúhíyyih Khánum', religion: "Baha'i", collection: 'Books', paragraph_count: 300 },
+    { id: 8, title: 'Walking Together on a Path of Service', author: 'X', religion: "Baha'i", collection: 'Books', paragraph_count: 300, file_path: 'Bahai/Books/Ruhi Book 7.md' },
+  ];
+  const page = async ({ afterId }) => docs.filter((d) => d.id > afterId);
+  const f = (value, source = 'copyright-page') => JSON.stringify({ fields: { publisher: { value, conf: 'high', source, evidence: value } } });
+  const rows = async () => [{ doc_id: 1, found: f('Bahá’í Publishing Trust') }, { doc_id: 2, found: f('Association for Bahá’í Studies') },
+    { doc_id: 3, found: f('George Ronald') }, { doc_id: 4, found: f('Bahá’í Publishing Trust') }];
+  it('opens encumbered books from Publishing Trusts / ABS / Wilmette, except those kept, only on write', async () => {
+    const { rightsOpenPublisherJob } = await import('../../api/lib/ops/book-hunt-job.js');
+    const open = vi.fn(async () => ({ changed: 1 }));
+    const dry = await rightsOpenPublisherJob({ except: [4] }, { page, rows, open });
+    expect(dry).toMatchObject({ matched: 3, already_open: 1 });
+    expect(dry.would_open.map((x) => x.id)).toEqual([1]);
+    expect(dry.kept_by_exception.map((x) => x.id)).toEqual([4]);
+    expect(open).not.toHaveBeenCalled();
+    expect((await rightsOpenPublisherJob({ write: true, except: [4] }, { page, rows, open })).opened).toBe(1);
+  });
+  it('Ruhi books are found (author, title, file) and only soft-deleted on write; letters about Ruhi and Rúhíyyih stay', async () => {
+    const { excludeRuhiJob } = await import('../../api/lib/ops/book-hunt-job.js');
+    const del = vi.fn(async (ids) => ({ deleted: ids.length, refused: [] }));
+    const dry = await excludeRuhiJob({}, { page, rows, del });
+    expect(dry.docs.map((d) => d.id)).toEqual([5, 8]);
+    expect(del).not.toHaveBeenCalled();
+    const w = await excludeRuhiJob({ write: true }, { page, rows, del });
+    expect(del).toHaveBeenCalledWith([5, 8], { reason: 'excluded: Ruhi (Chad 10-23)', allowLastCopy: true });
+    expect(w.deleted).toBe(2);
+  });
+  it('rights-publisher and rights-isbn skip books Chad keeps open', async () => {
+    const r = await rightsPublisherJob({ except: [3] }, { page: async ({ afterId }) => docs.filter((d) => d.id > afterId).map((d) => ({ ...d, encumbered: 0 })), rows, encumber: vi.fn() });
+    expect(r.flagged_ids).not.toContain(3);
+    expect(r.kept_open).toEqual([3]);
   });
 });

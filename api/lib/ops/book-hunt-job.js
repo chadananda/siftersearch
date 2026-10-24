@@ -145,7 +145,8 @@ export async function bookMetaCoverageReport(_params = {}, deps = {}) {
  * sample (20 with evidence), george_ronald (all) }. A finding counts at 'high' confidence, or at 'medium' when it is a publisher
  * our own copyright page names. write: encumbers the would_encumber list (never un-encumbers).
  */
-export async function rightsPublisherJob({ write = false, samples = 20, random = Math.random } = {}, deps = {}) {
+export async function rightsPublisherJob({ write = false, samples = 20, random = Math.random, except = [] } = {}, deps = {}) {
+  const skipIds = new Set((except || []).map(Number));
   const { page = huntScanPage, rows = allHuntRows, encumber = encumberForPublisher } = deps;
   const hunted = new Map((await rows()).map((r) => [r.doc_id, parse(r.found)]));
   const out = { write, books: 0, noncanonical: 0, already_encumbered: 0, would_encumber: 0, review: 0, no_evidence: 0, institutional: 0,
@@ -169,6 +170,7 @@ export async function rightsPublisherJob({ write = false, samples = 20, random =
     const reason = cls === 'commercial' ? 'publisher-commercial' : isbn ? 'isbn-noncanonical' : null;
     if (!reason) { out.no_evidence++; continue; }
     if (d.encumbered) { out.already_encumbered++; continue; }
+    if (skipIds.has(d.id)) { (out.kept_open ||= []).push(d.id); continue; }
     out.would_encumber++;
     out.by_reason[reason] = (out.by_reason[reason] || 0) + 1;
     if (pub) { const nm = publisherClass(pub.value)?.name || pub.value; out.by_publisher[nm] = (out.by_publisher[nm] || 0) + 1; }
@@ -197,4 +199,54 @@ export async function bookAuthorPhotoSetJob({ fixes = [], write = false } = {}, 
     if (f.url) out.replaced++; else out.removed++;
   }
   return out;
+}
+
+// ── Chad's rights decisions (10-23, decisions page) ─────────────────────────────────────────────────────────────────────
+/** Publishing Trusts, the Association for Bahá'í Studies and the Wilmette Institute are INSTITUTIONAL (open): every
+ *  non-canonical book whose own pages (or a high-confidence match) name one of them is made fully readable. `except` keeps
+ *  books Chad ruled encumbered on other grounds. params { write, except } — dry run unless write. */
+export const OPEN_PUBLISHERS = Object.freeze(['Bahá’í Publishing Trust', 'Bahá’í Publishing (US)', 'Association for Bahá’í Studies', 'Wilmette Institute']);
+export async function rightsOpenPublisherJob({ write = false, except = [] } = {}, deps = {}) {
+  const { page = huntScanPage, rows = allHuntRows, open = (await import('../repos/book-hunt-repo.js')).openForPublisher } = deps;
+  const hunted = new Map((await rows()).map((r) => [r.doc_id, parse(r.found)]));
+  const skip = new Set(except.map(Number));
+  const out = { write, matched: 0, already_open: 0, opened: 0, would_open: [], kept_by_exception: [] };
+  for await (const d of books(page)) {
+    if (canonicalOf(d).canonical) continue;
+    const f = hunted.get(d.id)?.fields?.publisher;
+    if (!f || !(f.conf === 'high' || f.source === 'copyright-page')) continue;
+    const name = publisherClass(f.value)?.name;
+    if (!OPEN_PUBLISHERS.includes(name)) continue;
+    out.matched++;
+    if (skip.has(d.id)) { out.kept_by_exception.push({ id: d.id, title: d.title, publisher: name }); continue; }
+    if (!d.encumbered) { out.already_open++; continue; }
+    out.would_open.push({ id: d.id, title: d.title, author: d.author, publisher: name, was: d.rights_reason || 'collection default', evidence: f.evidence });
+    if (write) { const r = await open(d.id, `open: institutional publisher ${name} (Chad 10-23)`); if (r.changed) out.opened++; }
+  }
+  return out;
+}
+
+/** Chad 10-23 on Ruhi books: "Exclude entirely" — soft-deleted (de-indexed by the outbox triggers; files kept). A Ruhi BOOK:
+ *  credited to / published by the Ruhi Institute (or Foundation), or titled as a Ruhi course book. Letters ABOUT the
+ *  institute (the House of Justice's, canonical) stay. params { write, reason } — dry run unless write. */
+export const RUHI = /\bruhi (institute|foundation|book|course|sequence)\b|\binstituto ruhi\b|\bfundacion ruhi\b/;
+export async function excludeRuhiJob({ write = false, reason = 'excluded: Ruhi (Chad 10-23)' } = {}, deps = {}) {
+  const { page = huntScanPage, rows = allHuntRows, del = async (ids, o) => (await import('../docs-repo.js')).softDeleteDocs(ids, o) } = deps;
+  const { norm } = await import('../rights/canonical.js');
+  const hunted = new Map((await rows()).map((r) => [r.doc_id, parse(r.found)]));
+  const hits = [];
+  for (let afterId = 0; ;) {
+    const docs = await page({ afterId, limit: 500 });
+    if (!docs.length) break;
+    afterId = docs[docs.length - 1].id;
+    for (const d of docs) {
+      if (canonicalOf(d).canonical) continue;
+      const pub = hunted.get(d.id)?.fields?.publisher?.value || d.publisher || '';
+      const hay = norm([d.author, pub, d.title, d.file_path].join(' | '));
+      if (RUHI.test(hay)) hits.push({ id: d.id, title: d.title, author: d.author, collection: d.collection, publisher: pub || null, file_path: d.file_path });
+    }
+  }
+  let res = null;
+  if (write && hits.length) res = await del(hits.map((h) => h.id), { reason, allowLastCopy: true });
+  return { write, count: hits.length, docs: hits, deleted: res?.deleted ?? 0, refused: res?.refused || [] };
 }

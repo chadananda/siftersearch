@@ -69,3 +69,10 @@ export async function setAuthorImage(docId, url, evidence) {
   [url ?? null, JSON.stringify({ author_image: url ? evidence : null, author_image_removed: url ? null : evidence }), Number(docId)], 'book-hunt:set-author-image');
   return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
 }
+
+/** Make a book fully readable for its institutional publisher (Chad's ruling 10-23 — the one sanctioned un-encumber). */
+export async function openForPublisher(docId, reason) {
+  const r = await query(`UPDATE docs SET encumbered = 0, rights_reason = ?, rights_checked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ? AND deleted_at IS NULL AND encumbered = 1`, [reason, Number(docId)], 'book-hunt:open');
+  return { changed: r?.rows?.[0]?.changes ?? r?.changes ?? 0 };
+}

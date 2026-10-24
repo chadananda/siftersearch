@@ -3,7 +3,8 @@
 //   commercial  — a commercial or private press (George Ronald, Kalimát, Oneworld, Palabra, Nur, Juxta, university and trade
 //                 presses …) → its books are encumbered
 //   institutional — a Bahá'í institution publishing its own texts (UHJ, BWC, BIC, an NSA in its own name) → never
-//   review      — a Bahá'í Publishing Trust / national Bahá'í publishing house: Chad's pending question, never decided here
+//   review      — not yet ruled (Bahá’í Publications Australia, Distribution Service). Chad 10-23: Publishing Trusts, ABS and
+//                 the Wilmette Institute are institutional; Ruhi books are excluded from the library (excludeRuhiJob)
 import { norm } from '../rights/canonical.js';
 
 // [display name, pattern on the normalised text, class]
@@ -17,10 +18,10 @@ export const KNOWN_PUBLISHERS = Object.freeze([
   ['Naturegraph', /\bnaturegraph\b/, 'commercial'],
   ['Global Perspective', /\bglobal perspective\b/, 'commercial'],
   ['Baha’i Studies Review / Intellect', /\bintellect (books|ltd)\b/, 'commercial'],
-  ['Association for Bahá’í Studies', /\bassociation for bahai studies\b/, 'review'],   // an agency of a National Assembly?
-  ['Wilmette Institute', /\bwilmette institute\b/, 'review'],
-  ['Bahá’í Publishing Trust', /\bbahai (publishing|pub|publ) trust\b|\bb p t\b/, 'review'],
-  ['Bahá’í Publishing (US)', /\bbahai publishing\b(?! trust)/, 'review'],
+  ['Association for Bahá’í Studies', /\bassociation for bahai studies\b/, 'institutional'],   // Chad 10-23: institutional (open)
+  ['Wilmette Institute', /\bwilmette institute\b/, 'institutional'],   // Chad 10-23
+  ['Bahá’í Publishing Trust', /\bbahai (publishing|pub|publ) trust\b|\bb p t\b/, 'institutional'],   // Chad 10-23: Publishing Trusts are institutional
+  ['Bahá’í Publishing (US)', /\bbahai publishing\b(?! trust)/, 'institutional'],   // the US Publishing Trust's imprint
   ['Bahá’í Publications Australia', /\bbahai publications australia\b/, 'review'],
   ['Bahá’í Distribution Service', /\bbahai distribution service\b/, 'review'],
   ['Bahá’í World Centre', /\bbahai world cent(re|er)\b/, 'institutional'],

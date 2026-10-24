@@ -13,7 +13,8 @@ import { ownIsbn, FRONT_PARAGRAPHS } from '../rights/isbn.js';
 const parseJson = (s) => { if (!s) return null; if (typeof s === 'object') return s; try { return JSON.parse(s); } catch { return null; } };
 const bump = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
 
-export async function rightsIsbnJob({ write = false, ids = null, limit = Infinity, samples = 30, checks = 10 } = {}, deps = {}) {
+export async function rightsIsbnJob({ write = false, ids = null, limit = Infinity, samples = 30, checks = 10, except = [] } = {}, deps = {}) {
+  const skipIds = new Set((except || []).map(Number));   // books Chad keeps open (decisions page, 10-23)
   const { page = rightsScanPage, front = frontParagraphs, record = recordIsbnRights,
     readText = (p) => readFile(p, 'utf8'),
     parseFm = async (t) => (await import('../../services/ingester.js')).parseMarkdownFrontmatter(t).metadata,
@@ -44,7 +45,7 @@ export async function rightsIsbnJob({ write = false, ids = null, limit = Infinit
       const own = ownIsbn({ meta, paragraphs: await front(d.id, FRONT_PARAGRAPHS) });
       if (!own) continue;
       bump(out.own_isbn_by_type, type); bump(out.own_isbn_by_source, own.source);
-      const encumber = type === 'book';
+      const encumber = type === 'book' && !skipIds.has(d.id);
       if (encumber) {
         if (d.encumbered) out.already_encumbered_books++;
         else {
