@@ -1,6 +1,146 @@
 {
-  "generated": "2026-10-24T04:59:45.771Z",
+  "generated": "2026-10-24T15:24:00.968Z",
   "entries": [
+    {
+      "hash": "5f52fddf",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Live restoration readout on /media — published/planned, restored, held, five latest; /api/media/restored edge-cached 30 s; verdict summary refreshed every 5 min by the media service",
+      "scope": "media"
+    },
+    {
+      "hash": "4a1106f0",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Worker does the heavy half — word guard, realign and 4 encodes run on the pod (post.py); feedback controller, Dewey stage-0 preview, quality verdicts, baked GHCR image, -Infinity grade fix",
+      "scope": "media"
+    },
+    {
+      "hash": "b14eb708",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "GPU spend proportional to work - rent only for >= 2 audio h per pod, backpressure on tower's backlog, pod dead-man switch, independent reaper, 8 min boot deadline, rented-vs-busy ledger",
+      "scope": "media"
+    },
+    {
+      "hash": "8c4307e0",
+      "date": "2026-10-24",
+      "type": "Performance",
+      "description": "Remaster pods prefer an RTX 4090 (twice the speed of the A4500 / A40 / 3090 they got, about the same $ per audio hour)",
+      "scope": "media"
+    },
+    {
+      "hash": "f26dd9af",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "One remaster run per talk at a time — duplicate runs (pod collection, re-score, resume) raced on meta.json and a stale run overwrote a newer verdict (938: guard 7.4 %, meta kept 35.5 %)",
+      "scope": "media"
+    },
+    {
+      "hash": "b6493d8c",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The word guard cuts windows over 20 s into <= 15 s chunks (paragraphs with no sentence breaks gave 6-8 min windows: one flag swapped minutes) — Gibson 8.9 %, Cardell 7.0 %, Grossmann 6.8 %, Bahai History 8.7 %",
+      "scope": "media"
+    },
+    {
+      "hash": "9f5c058f",
+      "date": "2026-10-23",
+      "type": "Performance",
+      "description": "Cloud remaster pods are worked concurrently — one pod's 100+ MB download (~7 MB/s per transfer) no longer idles the others' GPUs",
+      "scope": "media"
+    },
+    {
+      "hash": "dc4f42ca",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A resumed cloud-remaster run keeps its queue (the pilot's ids were re-queued on every drain — talks redone)",
+      "scope": "media"
+    },
+    {
+      "hash": "99074513",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A remaster held on re-score goes back to the previous copy and is re-encoded (3 pilot talks published at 25-35 % fallback under the interim 40 % rule)",
+      "scope": "media"
+    },
+    {
+      "hash": "001651d8",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Morning review for held remasters — media-remaster-review-pack (40 s A/B clips: original vs full UniPASE, the flagged sentences) and media-remaster-decide (publish the full remaster / keep the original)",
+      "scope": "media"
+    },
+    {
+      "hash": "e829ddb0",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The word guard counts a loss only where the original's ASR was CONFIDENT (p >= 0.8); copy confidence > 0.2 below → fall back; review bar 15 % of sentences",
+      "scope": "media"
+    },
+    {
+      "hash": "d1f36ee1",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Home hosts take remaster work only while no transcription waits (aorus ran UniPASE at 83 °C with 0.9 GB left — new talks' ASR first); first-failure errors kept in the state",
+      "scope": "media"
+    },
+    {
+      "hash": "12148de2",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "Remaster guard judged against the FINAL text, both copies through the same ASR; per-language runs; chant unguardable; own tower pool",
+      "scope": "media"
+    },
+    {
+      "hash": "905190fb",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Remaster confirmation — multilingual word checks (Persian holds; interpreted and chant cannot be word-guarded), screen.py language per clip + 90 °C guard + optional GPU ASR",
+      "scope": "media"
+    },
+    {
+      "hash": "55f2ecb7",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Sketch backfill — every published speaker who still showed a photo is now drawn (style A): Fatheazam, 'Alá'í, Hermann Grossmann, Isobel Sabri, Darius Shahrokh (likeness 0.45–0.73, skin tone checked by eye), Curtis Kelsey drawing 3 (Chad's choice); the name forms ruhiyyih-khan / ruhiyyih-rabbani share Rúhíyyih Khánum's drawing. Speakers with no gallery draw from the portrait in use (tmp extra-sources). Tonight $0.21 Gemini (all-time $3.48).",
+      "scope": "media"
+    },
+    {
+      "hash": "d2906bf3",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "The pod bootstrap runs DETACHED (pip + the verified weight fetch took the whole loop: one pod booting blocked the other pods and every poll); a failed bootstrap closes the pod",
+      "scope": "media"
+    },
+    {
+      "hash": "b00a7c27",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "Home hosts join the remaster backfill — aorus when its card has ~6 GB free and an ASR slot is open, boss only when cool; the money stops the pods, not the backfill",
+      "scope": "media"
+    },
+    {
+      "hash": "6de1f485",
+      "date": "2026-10-23",
+      "type": "Fixed",
+      "description": "A re-encode of a published talk bumps meta.version (new ?v= audio URLs) — a remaster with nothing to trim kept its old URL",
+      "scope": "media"
+    },
+    {
+      "hash": "08224c7a",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "UniPASE remaster backfill — RunPod pods (pinned, sha-verified weights; inference only), tower word guard + realign + publish, worst-first queue",
+      "scope": "media"
+    },
+    {
+      "hash": "c923c004",
+      "date": "2026-10-23",
+      "type": "New",
+      "description": "\"Original\" A/B button under Play on every talk page — a remastered talk plays its kept original from the same moment (and back), one copy at a time; highlight follows s0 while the original plays",
+      "scope": "media"
+    },
     {
       "hash": "10d1bc80",
       "date": "2026-10-23",
@@ -3360,150 +3500,152 @@
       "type": "Fixed",
       "description": "Position planner covers the related doctrines a scholar would cite (property as an institution, the state, taxation and the rights of subjects, trade, materialist ideologies), up to 7 themes / 20 passages; the 'kinds of authority' opening is dropped",
       "scope": "anis"
-    },
-    {
-      "hash": "5d231b67",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Letters (email) and position answers get room — the 700-token chat cap cut both mid-sentence; a reply that hits the cap is logged",
-      "scope": "anis"
-    },
-    {
-      "hash": "e773f46b",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "DOCTRINE apart from opinion in position answers (Chad 10-19: 'separate actual doctrine [from] human fad opinions … authority is everything'): only the writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi and the UHJ carry the answer — a pilgrim note never, a writer's view only labelled [opinion] and set against the texts; each passage reaches the writer marked [doctrine]/[opinion] with its theme; the planner answers in lines (its JSON broke on a quoted title and the answer fell back silently)",
-      "scope": "anis"
-    },
-    {
-      "hash": "a88a0064",
-      "date": "2026-10-19",
-      "type": "Chore",
-      "description": "Position research logs its themes, failures and counts (it fell back silently on tower)",
-      "scope": "anis"
-    },
-    {
-      "hash": "278ca552",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "POSITION questions researched theme by theme, authoritative texts first (Chad 10-19: the socialism/equality/property answer came from pilgrim notes and secondary articles — 'extremely shallow and wishy washy'): one planning call names the themes and the works that address them (where to look, never the answer); each theme searched within the Faith's texts; passages ranked Central Figures / Shoghi Effendi / UHJ first, secondary only to fill, unsegmented whole-book 'paragraphs' dropped; the reply goes theme by theme, quoting the authoritative texts, without hedging or 'the library has nothing' when passages exist. House style: authority order in every answer",
-      "scope": "anis"
-    },
-    {
-      "hash": "9479017a",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The English of a quoted passage is the ORIGINAL's own linked translation (Gleanings ¶606 for Muntakhabát 136) — the phrase search's top hits were all compilations quoting it",
-      "scope": "anis"
-    },
-    {
-      "hash": "67b47323",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The English of a quoted passage comes from the original's own author's work (Gleanings) before any compilation quoting it; the lookup's shortlist is 10, not 3",
-      "scope": "anis"
-    },
-    {
-      "hash": "40b8e126",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The English is taken from the work itself, ranked by the library's authority (not a memoir quoting it — the reply named 'Fires in Many Hearts' for Gleanings CXXXVI); a work the seeker named that the passage is not in is corrected in one gentle sentence; the 'As for the authorities behind these sources' paragraph is dropped. The auditor ALERTS Chad at once when an answer falls short (Chad 10-19: 'every single interaction with Anis should be audited immediately after for quality')",
-      "scope": "anis"
-    },
-    {
-      "hash": "5d34bd39",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "ANY quoted passage → its original (Chad 10-19: 'fix Anis'). The original-wording step knew only the Hidden Words; Lal's 'chamber' (Gleanings CXXXVI, no quotation marks, an Aqdas attribution and a P.S.) was looked up as one text and Anís answered 'I couldn't find it'. Now each passage the seeker quoted runs through the library's English→original lookup (findOriginals) and the reply is written from the English passage and its Arabic/Persian, naming where the passage actually appears",
-      "scope": "anis"
-    },
-    {
-      "hash": "a1c35dba",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "The daily digest shows her CONVERSATIONS like Jafar's — numbers, the replies the auditor flagged first (with its reasons), who asked, every question and answer as the reader saw it; the mail activity after (Chad 10-19: 'follow conversations early on to head off poor answers')",
-      "scope": "anis mail"
-    },
-    {
-      "hash": "2d614e43",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "The day's conversations for the daily digest — GET /api/v1/anis/digest (internal): every round answered in the window, grouped by person, each with its audit; the reviewer's own questions excluded",
-      "scope": "anis"
-    },
-    {
-      "hash": "5ca6858f",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A reply to anyone who writes goes at once — never a draft for approval (Chad 10-19: 'if someone asks a question of Anis, they should get an immediate answer'); the engagement rules still decide in deliver(). A stale 10-08 test draft that the daily digest kept listing was discarded",
-      "scope": "anis mail"
-    },
-    {
-      "hash": "62d4b937",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "An SLP job cancelled at SLP while the item is still wanted is forgotten and a new one started (the Greek New Testament looped on its cancelled job)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "bc7c111b",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "TRUNCATED BOOKS caught by the book's own apparatus — the highest page its contents point to, its index cites, its printed page numbers reach, against the PDF's length (ported from SearchLayerPDF's completeness.js, same tests; Chad 10-19 via the SLP session: 'so we do not accidentally think we have a book when we do not'). Checked for every offer (scouts, folder sweeps) and at intake (a text layer's first/last 20 pages; OCR Markdown's printed page labels) — a suspect copy goes to the acquire list with the evidence, never imported as the book. SLP's new awaiting_approval status: Dewey's own page gate already decided, so the job is approved once and read",
-      "scope": "dewey"
-    },
-    {
-      "hash": "9be70733",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "'Put it on the acquire list' — an item that is only part of a book goes on the to-buy list with its copy kept as evidence (Chad 10-19)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "9023f2a1",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "ONLY A WHOLE COPY IS OFFERED (Chad 10-19: 'do not propose books that are incomplete. That is a trap'): a contents/index/appendix/excerpt/sample file, preview wording, a 'book' of a few thousand words, a PDF far shorter than its edition — passed over; the scout searches on for a whole copy, and an incomplete copy only puts the work on the ACQUIRE list ('such books might inform us of the existence of the actual book'); same for folder-sweep offers",
-      "scope": "dewey"
-    },
-    {
-      "hash": "94cbab0e",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "The Review popup shows a document's total size (a PDF's pages, a text's words) and loads its whole text as you scroll",
-      "scope": "dewey"
-    },
-    {
-      "hash": "c33133e0",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The Review popup shows a document's WHOLE text (the first 4,000 characters read as a cut-off book — Chad 10-19: 'I don't want to reject a book because it is not complete'); the folder sweep waits out the key's hourly limit instead of recording 429s, and re-checks erred files on resume",
-      "scope": "dewey"
-    },
-    {
-      "hash": "512db78c",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Folder-sweep finds become OFFERS (dewey-offer-paths: each missing file checked again, appraised, offered under Found with its verdict and nearest library copy — never imported unasked); the sweep skips helper files (.debug, .sample, images)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "01b28801",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The spot-check always reads PAGE 1 (the title page — skipped, a body sentence or the author's name became the title) and spreads the rest to the last page",
-      "scope": "dewey"
-    },
-    {
-      "hash": "d200a6be",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A title must look like one (capital start, ≤ 20 words, no trailing comma, mostly capitalised) — a body sentence was taken as the title after the author line",
-      "scope": "dewey"
     }
   ],
   "grouped": {
+    "2026-10-24": [
+      {
+        "hash": "5f52fddf",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Live restoration readout on /media — published/planned, restored, held, five latest; /api/media/restored edge-cached 30 s; verdict summary refreshed every 5 min by the media service",
+        "scope": "media"
+      },
+      {
+        "hash": "4a1106f0",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Worker does the heavy half — word guard, realign and 4 encodes run on the pod (post.py); feedback controller, Dewey stage-0 preview, quality verdicts, baked GHCR image, -Infinity grade fix",
+        "scope": "media"
+      },
+      {
+        "hash": "b14eb708",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "GPU spend proportional to work - rent only for >= 2 audio h per pod, backpressure on tower's backlog, pod dead-man switch, independent reaper, 8 min boot deadline, rented-vs-busy ledger",
+        "scope": "media"
+      },
+      {
+        "hash": "8c4307e0",
+        "date": "2026-10-24",
+        "type": "Performance",
+        "description": "Remaster pods prefer an RTX 4090 (twice the speed of the A4500 / A40 / 3090 they got, about the same $ per audio hour)",
+        "scope": "media"
+      },
+      {
+        "hash": "f26dd9af",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "One remaster run per talk at a time — duplicate runs (pod collection, re-score, resume) raced on meta.json and a stale run overwrote a newer verdict (938: guard 7.4 %, meta kept 35.5 %)",
+        "scope": "media"
+      }
+    ],
     "2026-10-23": [
+      {
+        "hash": "b6493d8c",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The word guard cuts windows over 20 s into <= 15 s chunks (paragraphs with no sentence breaks gave 6-8 min windows: one flag swapped minutes) — Gibson 8.9 %, Cardell 7.0 %, Grossmann 6.8 %, Bahai History 8.7 %",
+        "scope": "media"
+      },
+      {
+        "hash": "9f5c058f",
+        "date": "2026-10-23",
+        "type": "Performance",
+        "description": "Cloud remaster pods are worked concurrently — one pod's 100+ MB download (~7 MB/s per transfer) no longer idles the others' GPUs",
+        "scope": "media"
+      },
+      {
+        "hash": "dc4f42ca",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A resumed cloud-remaster run keeps its queue (the pilot's ids were re-queued on every drain — talks redone)",
+        "scope": "media"
+      },
+      {
+        "hash": "99074513",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A remaster held on re-score goes back to the previous copy and is re-encoded (3 pilot talks published at 25-35 % fallback under the interim 40 % rule)",
+        "scope": "media"
+      },
+      {
+        "hash": "001651d8",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Morning review for held remasters — media-remaster-review-pack (40 s A/B clips: original vs full UniPASE, the flagged sentences) and media-remaster-decide (publish the full remaster / keep the original)",
+        "scope": "media"
+      },
+      {
+        "hash": "e829ddb0",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The word guard counts a loss only where the original's ASR was CONFIDENT (p >= 0.8); copy confidence > 0.2 below → fall back; review bar 15 % of sentences",
+        "scope": "media"
+      },
+      {
+        "hash": "d1f36ee1",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Home hosts take remaster work only while no transcription waits (aorus ran UniPASE at 83 °C with 0.9 GB left — new talks' ASR first); first-failure errors kept in the state",
+        "scope": "media"
+      },
+      {
+        "hash": "12148de2",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "Remaster guard judged against the FINAL text, both copies through the same ASR; per-language runs; chant unguardable; own tower pool",
+        "scope": "media"
+      },
+      {
+        "hash": "905190fb",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Remaster confirmation — multilingual word checks (Persian holds; interpreted and chant cannot be word-guarded), screen.py language per clip + 90 °C guard + optional GPU ASR",
+        "scope": "media"
+      },
+      {
+        "hash": "55f2ecb7",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Sketch backfill — every published speaker who still showed a photo is now drawn (style A): Fatheazam, 'Alá'í, Hermann Grossmann, Isobel Sabri, Darius Shahrokh (likeness 0.45–0.73, skin tone checked by eye), Curtis Kelsey drawing 3 (Chad's choice); the name forms ruhiyyih-khan / ruhiyyih-rabbani share Rúhíyyih Khánum's drawing. Speakers with no gallery draw from the portrait in use (tmp extra-sources). Tonight $0.21 Gemini (all-time $3.48).",
+        "scope": "media"
+      },
+      {
+        "hash": "d2906bf3",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "The pod bootstrap runs DETACHED (pip + the verified weight fetch took the whole loop: one pod booting blocked the other pods and every poll); a failed bootstrap closes the pod",
+        "scope": "media"
+      },
+      {
+        "hash": "b00a7c27",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "Home hosts join the remaster backfill — aorus when its card has ~6 GB free and an ASR slot is open, boss only when cool; the money stops the pods, not the backfill",
+        "scope": "media"
+      },
+      {
+        "hash": "6de1f485",
+        "date": "2026-10-23",
+        "type": "Fixed",
+        "description": "A re-encode of a published talk bumps meta.version (new ?v= audio URLs) — a remaster with nothing to trim kept its old URL",
+        "scope": "media"
+      },
+      {
+        "hash": "08224c7a",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "UniPASE remaster backfill — RunPod pods (pinned, sha-verified weights; inference only), tower word guard + realign + publish, worst-first queue",
+        "scope": "media"
+      },
+      {
+        "hash": "c923c004",
+        "date": "2026-10-23",
+        "type": "New",
+        "description": "\"Original\" A/B button under Play on every talk page — a remastered talk plays its kept original from the same moment (and back), one copy at a time; highlight follows s0 while the original plays",
+        "scope": "media"
+      },
       {
         "hash": "10d1bc80",
         "date": "2026-10-23",
@@ -6871,146 +7013,6 @@
         "type": "Fixed",
         "description": "Position planner covers the related doctrines a scholar would cite (property as an institution, the state, taxation and the rights of subjects, trade, materialist ideologies), up to 7 themes / 20 passages; the 'kinds of authority' opening is dropped",
         "scope": "anis"
-      },
-      {
-        "hash": "5d231b67",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Letters (email) and position answers get room — the 700-token chat cap cut both mid-sentence; a reply that hits the cap is logged",
-        "scope": "anis"
-      },
-      {
-        "hash": "e773f46b",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "DOCTRINE apart from opinion in position answers (Chad 10-19: 'separate actual doctrine [from] human fad opinions … authority is everything'): only the writings of Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi and the UHJ carry the answer — a pilgrim note never, a writer's view only labelled [opinion] and set against the texts; each passage reaches the writer marked [doctrine]/[opinion] with its theme; the planner answers in lines (its JSON broke on a quoted title and the answer fell back silently)",
-        "scope": "anis"
-      },
-      {
-        "hash": "a88a0064",
-        "date": "2026-10-19",
-        "type": "Chore",
-        "description": "Position research logs its themes, failures and counts (it fell back silently on tower)",
-        "scope": "anis"
-      },
-      {
-        "hash": "278ca552",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "POSITION questions researched theme by theme, authoritative texts first (Chad 10-19: the socialism/equality/property answer came from pilgrim notes and secondary articles — 'extremely shallow and wishy washy'): one planning call names the themes and the works that address them (where to look, never the answer); each theme searched within the Faith's texts; passages ranked Central Figures / Shoghi Effendi / UHJ first, secondary only to fill, unsegmented whole-book 'paragraphs' dropped; the reply goes theme by theme, quoting the authoritative texts, without hedging or 'the library has nothing' when passages exist. House style: authority order in every answer",
-        "scope": "anis"
-      },
-      {
-        "hash": "9479017a",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The English of a quoted passage is the ORIGINAL's own linked translation (Gleanings ¶606 for Muntakhabát 136) — the phrase search's top hits were all compilations quoting it",
-        "scope": "anis"
-      },
-      {
-        "hash": "67b47323",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The English of a quoted passage comes from the original's own author's work (Gleanings) before any compilation quoting it; the lookup's shortlist is 10, not 3",
-        "scope": "anis"
-      },
-      {
-        "hash": "40b8e126",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The English is taken from the work itself, ranked by the library's authority (not a memoir quoting it — the reply named 'Fires in Many Hearts' for Gleanings CXXXVI); a work the seeker named that the passage is not in is corrected in one gentle sentence; the 'As for the authorities behind these sources' paragraph is dropped. The auditor ALERTS Chad at once when an answer falls short (Chad 10-19: 'every single interaction with Anis should be audited immediately after for quality')",
-        "scope": "anis"
-      },
-      {
-        "hash": "5d34bd39",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "ANY quoted passage → its original (Chad 10-19: 'fix Anis'). The original-wording step knew only the Hidden Words; Lal's 'chamber' (Gleanings CXXXVI, no quotation marks, an Aqdas attribution and a P.S.) was looked up as one text and Anís answered 'I couldn't find it'. Now each passage the seeker quoted runs through the library's English→original lookup (findOriginals) and the reply is written from the English passage and its Arabic/Persian, naming where the passage actually appears",
-        "scope": "anis"
-      },
-      {
-        "hash": "a1c35dba",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "The daily digest shows her CONVERSATIONS like Jafar's — numbers, the replies the auditor flagged first (with its reasons), who asked, every question and answer as the reader saw it; the mail activity after (Chad 10-19: 'follow conversations early on to head off poor answers')",
-        "scope": "anis mail"
-      },
-      {
-        "hash": "2d614e43",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "The day's conversations for the daily digest — GET /api/v1/anis/digest (internal): every round answered in the window, grouped by person, each with its audit; the reviewer's own questions excluded",
-        "scope": "anis"
-      },
-      {
-        "hash": "5ca6858f",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A reply to anyone who writes goes at once — never a draft for approval (Chad 10-19: 'if someone asks a question of Anis, they should get an immediate answer'); the engagement rules still decide in deliver(). A stale 10-08 test draft that the daily digest kept listing was discarded",
-        "scope": "anis mail"
-      },
-      {
-        "hash": "62d4b937",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "An SLP job cancelled at SLP while the item is still wanted is forgotten and a new one started (the Greek New Testament looped on its cancelled job)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "bc7c111b",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "TRUNCATED BOOKS caught by the book's own apparatus — the highest page its contents point to, its index cites, its printed page numbers reach, against the PDF's length (ported from SearchLayerPDF's completeness.js, same tests; Chad 10-19 via the SLP session: 'so we do not accidentally think we have a book when we do not'). Checked for every offer (scouts, folder sweeps) and at intake (a text layer's first/last 20 pages; OCR Markdown's printed page labels) — a suspect copy goes to the acquire list with the evidence, never imported as the book. SLP's new awaiting_approval status: Dewey's own page gate already decided, so the job is approved once and read",
-        "scope": "dewey"
-      },
-      {
-        "hash": "9be70733",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "'Put it on the acquire list' — an item that is only part of a book goes on the to-buy list with its copy kept as evidence (Chad 10-19)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "9023f2a1",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "ONLY A WHOLE COPY IS OFFERED (Chad 10-19: 'do not propose books that are incomplete. That is a trap'): a contents/index/appendix/excerpt/sample file, preview wording, a 'book' of a few thousand words, a PDF far shorter than its edition — passed over; the scout searches on for a whole copy, and an incomplete copy only puts the work on the ACQUIRE list ('such books might inform us of the existence of the actual book'); same for folder-sweep offers",
-        "scope": "dewey"
-      },
-      {
-        "hash": "94cbab0e",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "The Review popup shows a document's total size (a PDF's pages, a text's words) and loads its whole text as you scroll",
-        "scope": "dewey"
-      },
-      {
-        "hash": "c33133e0",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The Review popup shows a document's WHOLE text (the first 4,000 characters read as a cut-off book — Chad 10-19: 'I don't want to reject a book because it is not complete'); the folder sweep waits out the key's hourly limit instead of recording 429s, and re-checks erred files on resume",
-        "scope": "dewey"
-      },
-      {
-        "hash": "512db78c",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Folder-sweep finds become OFFERS (dewey-offer-paths: each missing file checked again, appraised, offered under Found with its verdict and nearest library copy — never imported unasked); the sweep skips helper files (.debug, .sample, images)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "01b28801",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The spot-check always reads PAGE 1 (the title page — skipped, a body sentence or the author's name became the title) and spreads the rest to the last page",
-        "scope": "dewey"
-      },
-      {
-        "hash": "d200a6be",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A title must look like one (capital start, ≤ 20 words, no trailing comma, mostly capitalised) — a body sentence was taken as the title after the author line",
-        "scope": "dewey"
       }
     ]
   }
