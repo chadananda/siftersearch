@@ -1185,13 +1185,15 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               await C.podSsh(run, p, 'mkdir -p /workspace/spool && echo ok', { timeoutMs: 60_000 });
               await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
               await C.podPut(run, p, C.REPO_TGZ(), '/workspace/unipase-repo.tgz');
-              await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && bash /workspace/bootstrap.sh', { input: C.BOOTSTRAP, timeoutMs: 900_000 });
+              // DETACHED on the pod (pip + a ~3.7 GB verified fetch take minutes): the loop keeps feeding the other pods meanwhile
+              await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: C.BOOTSTRAP, timeoutMs: 120_000 });
               p.status = 'warming'; p.lastOk = now();
             } else if (now() - p.created > C.CLOUD.bootTimeoutMs) { await closePod(p, 'boot timeout'); st.pod_failures++; }
           } else if (p.status === 'warming') {
-            const { stdout } = await C.podSsh(run, p, 'test -f /workspace/spool/.worker-ready && echo READY; tail -2 /workspace/worker.log 2>/dev/null; true', { timeoutMs: 60_000 });
+            const { stdout } = await C.podSsh(run, p, 'test -f /workspace/spool/.worker-ready && echo READY; [ -f /workspace/boot.rc ] && [ "$(cat /workspace/boot.rc)" != 0 ] && { echo BOOTFAIL; tail -c 400 /workspace/boot.log; }; tail -2 /workspace/worker.log 2>/dev/null; true', { timeoutMs: 60_000 });
             p.lastOk = now();
             if (/READY/.test(stdout)) p.status = 'ready';
+            else if (/BOOTFAIL/.test(stdout)) { p.boot_log = stdout.slice(-400); st.last_error = `boot failed on ${p.name}: ${stdout.slice(-200)}`; await closePod(p, 'bootstrap failed'); st.pod_failures++; }
             else if (now() - p.created > C.CLOUD.bootTimeoutMs) { p.boot_log = stdout.slice(-400); await closePod(p, 'warm-up timeout'); st.pod_failures++; }
           } else if (p.status === 'ready') {
             const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; [ -f "$d/done.json" ] && echo "DONE $d"; [ -f "$d/failed" ] && echo "FAIL $d"; done; true', { timeoutMs: 60_000 });

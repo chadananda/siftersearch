@@ -131,6 +131,7 @@ rm -rf /workspace/unipase && mkdir -p /workspace/unipase && tar xzf /workspace/u
 CUDNN=$(python -c 'import os, nvidia.cudnn; print(os.path.dirname(nvidia.cudnn.__file__) + "/lib")' 2>/dev/null || true)
 CUBLAS=$(python -c 'import os, nvidia.cublas; print(os.path.dirname(nvidia.cublas.__file__) + "/lib")' 2>/dev/null || true)
 export LD_LIBRARY_PATH="$CUDNN:$CUBLAS:\${LD_LIBRARY_PATH:-}" HF_HUB_OFFLINE=1
+pkill -f runpod_worker.py || true
 nohup python /workspace/runpod_worker.py --repo /workspace/unipase --weights $W --spool /workspace/spool --idle-min 15 > /workspace/worker.log 2>&1 < /dev/null &
 echo started`;
 
