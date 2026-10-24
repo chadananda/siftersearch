@@ -6,6 +6,10 @@ describe('idle lanes', () => {
   it('compute idle with 327 waiting but 12 prepped and ASR running → backpressure, no warning', () => {
     expect(idleLanes({ compute_backlog: 327, compute_running: 0, asr_backlog: 12, asr_running: 6 }).compute).toBe(false);
   });
+  it('17:09: 10 prepped/queued + 10 transcribing (20 ≥ 3 × 6 ASR slots) is the feed pausing prep on purpose → no warning', () => {
+    expect(idleLanes({ compute_backlog: 345, compute_running: 0, asr_backlog: 10, asr_running: 10 }).compute).toBe(false);
+    expect(idleLanes({ compute_backlog: 345, compute_running: 0, asr_backlog: 10, asr_running: 6 }).compute).toBe(true);   // 16 < 18: prep should run
+  });
   it('compute idle while the ASR buffer is low → warn', () => {
     expect(idleLanes({ compute_backlog: 327, compute_running: 0, asr_backlog: 2, asr_running: 6 }).compute).toBe(true);
   });
