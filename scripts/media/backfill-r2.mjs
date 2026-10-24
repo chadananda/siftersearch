@@ -10,7 +10,7 @@ const SITE = process.env.SITE || 'https://siftersearch.com';
 mkdirSync('tmp', { recursive: true });
 const log = (m) => { const l = `${new Date().toISOString()} ${m}`; console.log(l); appendFileSync('tmp/backfill-r2.log', l + '\n'); };
 const GATEWAY = process.env.GATEWAY || 'http://127.0.0.1:7839';   // the index from tower's own gateway (no tunnel round trip)
-const retry = async (f, n = 4) => { for (let i = 1; ; i++) { try { return await f(); } catch (e) { if (i >= n) throw e; await new Promise((res) => setTimeout(res, 3000 * i)); } } };
+const retry = async (f, n = 4) => { for (let i = 1; ; i++) { try { return await f(); } catch (e) { if (i >= n || e.name === 'TimeoutError') throw e; await new Promise((res) => setTimeout(res, 3000 * i)); } } };
 const idx = await retry(async () => (await fetch(`${GATEWAY}/api/media/index`, { signal: AbortSignal.timeout(60_000) })).json());
 const talks = idx.items.filter((t) => t.pb === 'full' && t.v).sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
 log(`backfill: ${talks.length} full-playback talks (${Math.round(idx.hours)} h), formats ${fmts.join('+')}`);
@@ -20,7 +20,7 @@ for (const fmt of fmts) {
   for (const t of talks) {
     if (n++ >= limit) break;
     try {
-      const j = await retry(async () => (await fetch(`${SITE}/_media/warm?slug=${t.s}&v=${t.v}&fmt=${fmt}&copy=${COPY}`, { method: 'POST', signal: AbortSignal.timeout(240_000) })).json());
+      const j = await retry(async () => (await fetch(`${SITE}/_media/warm?slug=${t.s}&v=${t.v}&fmt=${fmt}&copy=${COPY}`, { method: 'POST', signal: AbortSignal.timeout(150_000) })).json());
       for (const [name, st] of Object.entries(j.files || {})) { if (st === 'filled') filled++; else if (st === 'present') present++; else if (st === 'failed' && !/original/.test(name)) failed++; }
       log(`${fmt} ${t.s}: ${JSON.stringify(j.files)}`);
     } catch (e) { failed++; log(`${fmt} ${t.s}: ERROR ${e.message}`); }
