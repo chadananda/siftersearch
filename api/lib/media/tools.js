@@ -250,13 +250,31 @@ const asrWaiters = [];
 function releaseAsr(host) { asrBusy.set(host, Math.max(0, (asrBusy.get(host) || 1) - 1)); asrWaiters.shift()?.(); }
 /** A host with a FREE transcription slot (fastest first), the slot taken at once — waits while every host is full, so new
  *  transcriptions queue here instead of piling onto a busy host. release() if the job is never started. */
-export async function acquireAsrHost(hosts = asrHosts()) {
+// the HOST's own count of live transcriptions (gate 'running transcribe'), at most every 15 s per host: after a restart,
+// jobs started before it are re-attached only when their lane run is claimed, and a new dispatch could take their slot
+// first (10-23 16:4x: three transcriptions on aorus, cap 2 — the diarization cap's twin)
+const asrRemote = new Map();   // host → { n, at }
+async function remoteAsrCount(host, { now = Date.now(), running = runningOn } = {}) {
+  const c = asrRemote.get(host);
+  if (c && now - c.at < 15_000) return c.n;
+  const ids = await running(host, 'transcribe').catch(() => null);
+  const n = Array.isArray(ids) ? ids.length : null;
+  asrRemote.set(host, { n, at: now });
+  return n;
+}
+export async function acquireAsrHost(hosts = asrHosts(), { running = runningOn } = {}) {
   if (!hosts.length) return { host: null, release: () => {} };
   for (;;) {
-    const h = hosts.find((x) => (asrBusy.get(x.host) || 0) < x.slots && diskOk(x.host));
+    let h = null;
+    for (const x of hosts) {
+      if ((asrBusy.get(x.host) || 0) >= x.slots || !diskOk(x.host)) continue;
+      const remote = await remoteAsrCount(x.host, { running });
+      if (remote != null && Math.max(remote, asrBusy.get(x.host) || 0) >= x.slots) continue;
+      if ((asrBusy.get(x.host) || 0) < x.slots) { h = x; break; }   // re-checked after the await
+    }
     if (h) { asrBusy.set(h.host, (asrBusy.get(h.host) || 0) + 1); let done = false; return { host: h.host, release: () => { if (!done) { done = true; releaseAsr(h.host); } } }; }
-    // a slot frees, or a minute passes (a host low on disk may have been cleaned)
-    await new Promise((r) => { const t = setTimeout(() => { const i = asrWaiters.indexOf(go); if (i >= 0) asrWaiters.splice(i, 1); r(); }, 60_000); const go = () => { clearTimeout(t); r(); }; asrWaiters.push(go); });
+    // a slot frees here, or 20 s pass (a job of a previous process finished on its host; a host low on disk was cleaned)
+    await new Promise((r) => { const t = setTimeout(() => { const i = asrWaiters.indexOf(go); if (i >= 0) asrWaiters.splice(i, 1); r(); }, 20_000); const go = () => { clearTimeout(t); r(); }; asrWaiters.push(go); });
   }
 }
 const diarBusy = new Map();

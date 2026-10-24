@@ -168,10 +168,11 @@ describe('transcription slots are separate from diarization (10-23)', () => {
   it('acquireAsrHost waits while every host is full; diarizations never take a slot', async () => {
     const { acquireAsrHost } = await import('../../api/lib/media/tools.js');
     const hosts = [{ host: 'ga', slots: 1 }, { host: 'gb', slots: 1 }];
-    const a = await acquireAsrHost(hosts), b = await acquireAsrHost(hosts);
+    const none = { running: async () => [] };
+    const a = await acquireAsrHost(hosts, none), b = await acquireAsrHost(hosts, none);
     expect([a.host, b.host]).toEqual(['ga', 'gb']);
     let got = null;
-    const c = acquireAsrHost(hosts).then((x) => { got = x; });
+    const c = acquireAsrHost(hosts, none).then((x) => { got = x; });
     await new Promise((r) => setTimeout(r, 20));
     expect(got).toBeNull();
     a.release(); a.release();   // idempotent
@@ -237,6 +238,15 @@ describe('the diarization cap holds after a restart (10-23: aorus ran 3 against 
     onHost = ['old-1'];
     await p;
     expect(started).toBe(true);
+  });
+});
+
+describe('the transcription cap counts what the host is already running (10-23: three on aorus, cap 2)', () => {
+  it('a host whose own count fills its slots is skipped; the next host takes the job', async () => {
+    const { acquireAsrHost } = await import('../../api/lib/media/tools.js');
+    const running = async (h) => (h === 'ra' ? ['old-1', 'old-2'] : []);   // two jobs from before a restart on ra
+    const got = await acquireAsrHost([{ host: 'ra', slots: 2 }, { host: 'rb', slots: 4 }], { running });
+    expect(got.host).toBe('rb'); got.release();
   });
 });
 

@@ -25,7 +25,7 @@ describe('dispatch skips a host low on disk', () => {
     expect(t.diskOk('dfull', { refresh: noop })).toBe(false);
     expect(t.diskOk('dok', { refresh: noop })).toBe(true);
     expect(t.diskOk('never-seen', { refresh: noop })).toBe(true);
-    const got = await t.acquireAsrHost([{ host: 'dfull', slots: 2 }, { host: 'dok', slots: 2 }]);
+    const got = await t.acquireAsrHost([{ host: 'dfull', slots: 2 }, { host: 'dok', slots: 2 }], { running: async () => [] });
     expect(got.host).toBe('dok'); got.release();
   });
 });
