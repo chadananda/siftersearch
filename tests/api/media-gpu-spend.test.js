@@ -49,7 +49,8 @@ describe('the reaper touches only idle / stuck / unreachable / old / orphan / la
   it('healthy → null; each failure mode → a reason', () => {
     expect(reapReason(pod(), st().pods.x, st(), now)).toBeNull();
     expect(reapReason(pod(), st({ idle_since: now - 11 * MIN }).pods.x, st({ idle_since: now - 11 * MIN }), now)).toMatch(/idle 11/);
-    expect(reapReason(pod(), st({ quiet_since: now - 16 * MIN }).pods.x, st({ quiet_since: now - 16 * MIN }), now)).toMatch(/stuck/);
+    expect(reapReason(pod(), st({ quiet_since: now - 16 * MIN }).pods.x, st({ quiet_since: now - 16 * MIN }), now)).toBeNull();   // transfers keep the GPU quiet most of the time
+    expect(reapReason(pod(), st({ quiet_since: now - 61 * MIN }).pods.x, st({ quiet_since: now - 61 * MIN }), now)).toMatch(/stuck/);
     expect(reapReason(pod(), st({ lastOk: now - 11 * MIN }).pods.x, st({ lastOk: now - 11 * MIN }), now)).toBeNull();   // a long upload queue is not unreachability
     expect(reapReason(pod(), st({ lastOk: now - 26 * MIN }).pods.x, st({ lastOk: now - 26 * MIN }), now)).toMatch(/unreachable/);
     expect(reapReason(pod({ lastStartedAt: '2026-10-24 05:00:00.000 +0000 UTC' }), st().pods.x, st(), now)).toMatch(/lifetime/);

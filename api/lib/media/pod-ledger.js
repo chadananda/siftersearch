@@ -6,7 +6,7 @@ export const LEDGER = {
   windowMs: 30 * 60_000,            // the efficiency window
   idleMs: 10 * 60_000,              // a rented pod with no work this long is terminated
   unreachableMs: 25 * 60_000,       // no successful contact with the lane this long (transfers refresh it, so a busy lane keeps it fresh)
-  quietMs: 15 * 60_000,             // work assigned but the GPU quiet this long = stuck
+  quietMs: 60 * 60_000,             // work assigned but the GPU quiet this long = stuck (the GPU is busy ~1 min of each ~7 per talk: transfers dominate, so this is a last resort)
   maxLifeMs: 8 * 3600_000,          // no pod lives longer than this
   bootMs: 15 * 60_000,              // no SSH-reachable pod after this → terminate and replace (cold pull of the 23 GB image: 5-12 min)
   warmMs: 20 * 60_000,              // bootstrap (pip + weights) must finish in this
