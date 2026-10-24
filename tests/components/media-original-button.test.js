@@ -58,14 +58,14 @@ describe('MediaPlayer SSR: Original | Remastered switch', () => {
   const rem = { ...plain, remastered: true, original_url: '/o.m4a', original_ogg: '/o.ogg' };
   it('a remastered talk shows the radiogroup, Remastered checked by default, no old Original button', () => {
     const { body } = render(MediaPlayer, { props: { item: full(rem) } });
-    expect(body).toMatch(/Listen to/);
-    expect(body).toMatch(/role="radiogroup"[^>]*aria-labelledby="ab-label"/);
-    expect(body).toMatch(/role="radio" aria-checked="true"[^>]*class="ab-opt[^"]* on"[^>]*>Remastered</);
-    expect(body).toMatch(/role="radio" aria-checked="false"[^>]*>Original</);
+    expect(body).not.toMatch(/>Listen</);
+    expect(body).toMatch(/role="radiogroup"[^>]*aria-label="Audio version"/);
+    expect(body).toMatch(/role="radio" aria-checked="true"[^>]*class="ab-opt[^"]* on"[^>]*>[\s\S]*?Remastered/);
+    expect(body).toMatch(/role="radio" aria-checked="false"[^>]*>[\s\S]*?Original/);
   });
   it('a talk not remastered shows no switch group (nothing reserved)', () => {
     const { body } = render(MediaPlayer, { props: { item: full(plain) } });
-    expect(body).not.toMatch(/radiogroup|Listen to/);
+    expect(body).not.toMatch(/radiogroup/);
   });
   it('a clips-level talk has neither', () => {
     const { body } = render(MediaPlayer, { props: { item: { ...base, clip_url: '/clip' } } });
