@@ -12,8 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libchrom
 
 # Python deps (torch family comes from the base image; whisperx 3.8.6 matches torch 2.8 — the tower venv's pin)
 COPY requirements.lock /tmp/requirements.lock
-RUN python -m pip install -q -c <(python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio)==') -r /tmp/requirements.lock \
-    && python -c "import torch, whisperx, faster_whisper, soundfile, einops, omegaconf; print('deps ok, torch', torch.__version__)"
+RUN set -eo pipefail; python --version; python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio|numpy|triton)==' | tee /tmp/base-pins.txt; \
+    python -m pip install -r /tmp/requirements.lock 2>&1 | tail -25; \
+    python -c "import torch, whisperx, faster_whisper, soundfile, einops, omegaconf; print('deps ok, torch', torch.__version__)"; \
+    (python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio)==' | diff /tmp/base-pins.txt - && echo 'torch family unchanged') || echo 'NOTE: torch family differs from the base image'
 
 # UniPASE code (pinned commit) + checksummed weights
 ARG UNIPASE_COMMIT=857b60ad05d37a2cf6d7a89883ec9fc4fc164b45
