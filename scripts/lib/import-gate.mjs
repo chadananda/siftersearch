@@ -37,7 +37,8 @@ export function importsOf(src) {
   return out;
 }
 /** late('<repo path>') (api/lib/media/late.js): a repo-root-relative path. */
-export const latesOf = (src) => [...stripComments(src).matchAll(/\blate\(\s*['"]([^'"]+)['"]\s*\)/g)].map((m) => m[1]);
+// a path built at run time ('${p}' inside a template — 10-23 the gate refused itself on its own error message) is not a literal
+export const latesOf = (src) => [...stripComments(src).matchAll(/\blate\(\s*['"]([^'"]+)['"]\s*\)/g)].map((m) => m[1]).filter((p) => !/\$\{|[<>]/.test(p));
 
 /** The names a module exports (null = cannot tell: `export *`). */
 export function exportsOf(src) {
