@@ -391,6 +391,10 @@ export async function runItem(item, opts = {}, deps = {}) {
             if (meta.enhancement.listening !== 'unipase') meta.enhancement.listening_before = { name: meta.enhancement.listening, why: meta.enhancement.listening_why || null };
             meta.enhancement.listening = 'unipase';
             meta.enhancement.listening_why = `UniPASE remaster (Chad 10-23): ${g.swapped} of ${g.sentences} sentences (${g.swapped_pct} %) kept from the original by the word guard`;
+          } else if (meta.enhancement.listening === 'unipase') {
+            // held on a re-score: a remaster published under an older rule goes back to the copy before it
+            meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe';
+            meta.enhancement.listening_why = 'remaster held for review (word guard) — the previous copy restored';
           }
           meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? 'pass-auto' : 'review', ...(pass ? {} : { why: `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): kept the original — a human listens` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };

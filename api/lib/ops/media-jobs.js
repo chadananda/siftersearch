@@ -1000,7 +1000,9 @@ export async function mediaRemasterJob({ id, ...rest } = {}, deps = {}) {
     const repo0 = deps.repo || await import('../repos/media-repo.js');
     const it0 = await repo0.getMediaItem(Number(id));
     const m0 = it0?.dir ? JSON.parse(await (await import('fs/promises')).readFile(join(it0.dir, 'meta.json'), 'utf8').catch(() => '{}')) : {};
-    if (m0.remaster?.status === 'done' && m0.enhancement?.listening === 'unipase') r = await mediaItemJob({ id, ...rest, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, deps);
+    const take = m0.remaster?.status === 'done' && m0.enhancement?.listening === 'unipase';
+    const undo = m0.enhancement?.listening !== 'unipase' && (m0.web_original || (m0.aligned_to && m0.aligned_to !== 'safe'));   // a remaster still published but no longer chosen
+    if (take || undo) r = await mediaItemJob({ id, ...rest, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, deps);
   }
   // one line per finished talk → the backfill's progress file (data/run/remaster-results.jsonl; read by the overnight status)
   try {
