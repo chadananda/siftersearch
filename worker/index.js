@@ -17,7 +17,7 @@ import { mailRoute, mailCron } from './mail/index.js';
 import { deweyEmail } from './mail/dewey.js';
 import { mediaFile, MEDIA_FILE } from './media.js';
 import { version as BUILD_VERSION } from '../package.json';
-import { als, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
+import { als, evict, installFetchCache, policyFor, cacheKey, serveCached, apiProducer, API_ORIGIN } from './edge-cache.js';
 
 // SSR's own fetches to the API share the edge cache (worker/edge-cache.js), so a render never waits on the tunnel for
 // data the edge already holds.
@@ -112,6 +112,14 @@ export function createExports(manifest) {
           const t0 = Date.now();
           const report = await warm(env, ctx, { refreshStale: url.searchParams.has('stale') });
           return Response.json({ version: BUILD_VERSION, ms: Date.now() - t0, report });
+        }
+        if (url.pathname === '/_edge/purge' && request.method === 'POST') {   // a talk's page + API entry (tower: api/lib/media/edge-purge.js)
+          if (!env.S1_KEY || request.headers.get('x-internal-key') !== env.S1_KEY) return Response.json({ error: 'unauthorized' }, { status: 401 });
+          const slug = url.searchParams.get('slug') || '';
+          if (!/^[a-z0-9][a-z0-9-]{0,160}$/.test(slug)) return Response.json({ error: 'bad slug' }, { status: 400 });
+          const keys = [cacheKey(new URL(`https://siftersearch.com/media/${slug}`), 'html', BUILD_VERSION), cacheKey(new URL(`https://siftersearch.com/api/media/${slug}`), 'api', BUILD_VERSION)];
+          await Promise.all(keys.map((k) => evict(k, env)));
+          return Response.json({ purged: keys });
         }
         if (url.pathname === '/_s1/run' && request.method === 'POST') return systemOneRun(request, env);
         if (url.pathname.startsWith('/_mail/')) return (await mailRoute(request, env)) ?? new Response('not found', { status: 404 });

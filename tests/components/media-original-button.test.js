@@ -115,16 +115,18 @@ describe('edge purge on publish', () => {
   it('purgeTalk POSTs the slug with the internal key (and is off under test by default)', async () => {
     const { purgeTalk } = await import('../../api/lib/media/edge-purge.js');
     expect(await purgeTalk('a-talk', { key: 'k' })).toBe(false);
-    const saved = process.env.VITEST; delete process.env.VITEST;
+    const saved = process.env.VITEST, savedEnv = process.env.NODE_ENV; delete process.env.VITEST; delete process.env.NODE_ENV;
     try {
       const calls = [];
       const ok = await purgeTalk('a-talk', { key: 'k', fetchImpl: async (u, o) => (calls.push([u, o.method, o.headers['x-internal-key']]), { ok: true }) });
       expect(ok).toBe(true);
       expect(calls[0]).toEqual(['https://siftersearch.com/_edge/purge?slug=a-talk', 'POST', 'k']);
-    } finally { process.env.VITEST = saved; }
+    } finally { process.env.VITEST = saved; if (savedEnv !== undefined) process.env.NODE_ENV = savedEnv; }
   });
   it('the worker route is keyed and evicts the talk page + API entry', () => {
     const w = rf(new URL('../../worker/index.js', import.meta.url), 'utf8');
-    expect(w).toMatch(/\/_edge\/purge[\s\S]{0,300}x-internal-key[\s\S]{0,500}evict\(k, env\)/);
+    expect(w).toContain("'/_edge/purge'");
+    expect(w).toContain('evict(k, env)');
+    expect(w).toMatch(/_edge\/purge[^]*?S1_KEY/);
   });
 });

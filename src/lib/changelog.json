@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-24T16:39:10.798Z",
+  "generated": "2026-10-24T16:43:19.619Z",
   "entries": [
+    {
+      "hash": "3ca57b07",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Work orders for the running cloud lane — post (finish results tower holds on a worker) and cleanup (held talks); backfill relief for tower's queue",
+      "scope": "media"
+    },
+    {
+      "hash": "763c05ac",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Original",
+      "scope": "media"
+    },
+    {
+      "hash": "e7b08963",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Restoration tiers — every talk gets a restored copy and a raw original (light backfill on boss, low priority); audio.remaster_tier = heavy",
+      "scope": "media"
+    },
     {
       "hash": "43429056",
       "date": "2026-10-24",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Language questions get their own shape — answered from knowledge of the language and the passage under discussion, no padding search; authority shown by use, never described (Chad 10-19, Lal's 'fí baytihi')",
       "scope": "anis"
-    },
-    {
-      "hash": "4fe9ac27",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Explore, never shut a question down — language knowledge (word meanings, which Arabic/Persian words carry an idea, grammar) is his to give; a reader's spelling/grammar slip is never corrected; the auditor judges exploration first and flags 'shut-down' replies (Chad 10-19, Lal's 'chamber' follow-up)",
-      "scope": "anis"
-    },
-    {
-      "hash": "58c22d99",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "The main ingester HOLDS a file whose 'paragraph' is a whole book (>8,000 chars) even when it declares its paragraphing — nothing is cut, nothing unsegmented gets in (Chad 10-19)",
-      "scope": "ingest"
-    },
-    {
-      "hash": "8f3f1163",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Quality gate before ingestion — repair then judge; below the bar is HELD, never ingested (Chad 10-19)",
-      "scope": "dewey"
     }
   ],
   "grouped": {
     "2026-10-24": [
+      {
+        "hash": "3ca57b07",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Work orders for the running cloud lane — post (finish results tower holds on a worker) and cleanup (held talks); backfill relief for tower's queue",
+        "scope": "media"
+      },
+      {
+        "hash": "763c05ac",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Original",
+        "scope": "media"
+      },
+      {
+        "hash": "e7b08963",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Restoration tiers — every talk gets a restored copy and a raw original (light backfill on boss, low priority); audio.remaster_tier = heavy",
+        "scope": "media"
+      },
       {
         "hash": "43429056",
         "date": "2026-10-24",
@@ -6992,27 +7013,6 @@
         "type": "New",
         "description": "Language questions get their own shape — answered from knowledge of the language and the passage under discussion, no padding search; authority shown by use, never described (Chad 10-19, Lal's 'fí baytihi')",
         "scope": "anis"
-      },
-      {
-        "hash": "4fe9ac27",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Explore, never shut a question down — language knowledge (word meanings, which Arabic/Persian words carry an idea, grammar) is his to give; a reader's spelling/grammar slip is never corrected; the auditor judges exploration first and flags 'shut-down' replies (Chad 10-19, Lal's 'chamber' follow-up)",
-        "scope": "anis"
-      },
-      {
-        "hash": "58c22d99",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "The main ingester HOLDS a file whose 'paragraph' is a whole book (>8,000 chars) even when it declares its paragraphing — nothing is cut, nothing unsegmented gets in (Chad 10-19)",
-        "scope": "ingest"
-      },
-      {
-        "hash": "8f3f1163",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Quality gate before ingestion — repair then judge; below the bar is HELD, never ingested (Chad 10-19)",
-        "scope": "dewey"
       }
     ]
   }
