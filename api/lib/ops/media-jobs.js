@@ -1251,6 +1251,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   }
   if (!write) return { queue: st.queue.length, jobs: Object.keys(st.jobs || {}).length, spent_usd: C.spendOf(st, now()) };
   st.started = st.started || now(); st.pods = st.pods || {}; st.jobs = st.jobs || {}; st.attempts = st.attempts || {}; st.done = st.done || []; st.failed = st.failed || [];
+  // a run that ended on "N pods failed to start" starts clean (only the money stops a run for good: cap / balance)
+  if (/pods failed to start/.test(st.cloud_stopped || '')) { st.cloud_stopped = null; st.pod_failures = 0; }
   st.pod_failures = st.pod_failures || 0; st.home = st.home || {}; st.home_done = st.home_done || 0;
   // the legacy home-host path (the gate's 'unipase' verb) has no worker result for tower to take: off in cleanup runs and in STRICT mode (workers only)
   const homeHosts = (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));

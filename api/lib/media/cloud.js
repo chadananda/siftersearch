@@ -20,7 +20,7 @@ export const CLOUD = {
   gpuTypes: ['NVIDIA GeForce RTX 4090', 'NVIDIA RTX A5000', 'NVIDIA GeForce RTX 3090', 'NVIDIA RTX A4500', 'NVIDIA A40', 'NVIDIA RTX A6000'],
   image: 'runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04',
   perPod: 2,            // jobs in flight per pod (one running, one uploaded and waiting)
-  bootTimeoutMs: 8 * 60_000,      // no SSH after this → terminate and replace (10-24: pods 8 and 10 never came up and billed)
+  bootTimeoutMs: 15 * 60_000,     // no SSH after this → terminate and replace (the 23 GB baked image takes 5-12 min to pull on a cold host; 10-24 measured)
   warmTimeoutMs: 20 * 60_000,     // the bootstrap (pip + the verified weights) must finish in this
   deadAfterMs: 4 * 60_000,
   maxPodFailures: 3,

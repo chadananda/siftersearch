@@ -55,7 +55,7 @@ describe('the reaper touches only idle / stuck / unreachable / old / orphan / la
     expect(reapReason(pod(), null, st(), now)).toMatch(/orphan/);
     expect(reapReason(pod({ lastStartedAt: '2026-10-24 14:58:00.000 +0000 UTC' }), null, st(), now)).toBeNull();   // just created: the lane has not saved it yet
     expect(reapReason(pod(), st().pods.x, { ...st(), updated: now - 11 * MIN }, now)).toMatch(/lane is not running/);
-    expect(reapReason(pod({ lastStartedAt: '2026-10-24 14:45:00.000 +0000 UTC' }), { id: 'x', status: 'booting' }, st(), now)).toMatch(/boot deadline/);
+    expect(reapReason(pod({ lastStartedAt: '2026-10-24 14:40:00.000 +0000 UTC' }), { id: 'x', status: 'booting' }, st(), now)).toMatch(/boot deadline/);
   });
   it('never touches a pod that is not named sifter-unipase-*', () => {
     expect(reapReason(pod({ name: 'searchlayerpdf-1', lastStartedAt: '2020-01-01 00:00:00.000 +0000 UTC' }), null, null, now)).toBeNull();
@@ -162,10 +162,10 @@ describe('the lane: GPU is rented only for work', () => {
     const st = JSON.parse(readFileSync(x.deps.stateFile, 'utf8'));
     expect(Object.values(st.pods).every((p) => p.rented_ms > 0 && p.busy_ms > 0)).toBe(true);
   });
-  it('a boot failure (no SSH within 8 min) is terminated and replaced', async () => {
+  it('a boot failure (no SSH within 15 min) is terminated and replaced', async () => {
     let boots = 0;
     const x = setup({ talks: 2, seconds: 3600 });
-    x.cloud.getPod = vi.fn(async () => (++boots <= 40 ? {} : { publicIp: '1.2.3.4', portMappings: { 22: 2222 }, machine: {} }));   // 40 polls × 15 s = 10 min of nothing
+    x.cloud.getPod = vi.fn(async () => (++boots <= 80 ? {} : { publicIp: '1.2.3.4', portMappings: { 22: 2222 }, machine: {} }));   // 80 polls × 15 s = 20 min of nothing
     const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, minHours: 2 });
     expect(x.cloud.createPod.mock.calls.length).toBeGreaterThanOrEqual(2);
     expect(x.killed).toContain('p1'); expect(r.done).toBe(2);

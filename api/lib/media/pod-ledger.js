@@ -7,7 +7,7 @@ export const LEDGER = {
   idleMs: 10 * 60_000,              // a rented pod with no work this long is terminated
   quietMs: 15 * 60_000,             // work assigned but the GPU quiet this long = stuck
   maxLifeMs: 8 * 3600_000,          // no pod lives longer than this
-  bootMs: 8 * 60_000,               // no SSH-reachable pod after this → terminate and replace
+  bootMs: 15 * 60_000,              // no SSH-reachable pod after this → terminate and replace (cold pull of the 23 GB image: 5-12 min)
   warmMs: 20 * 60_000,              // bootstrap (pip + weights) must finish in this
   laneStaleMs: 10 * 60_000,         // the lane's state not refreshed this long = the lane is not running
   minEfficiency: 0.7,
