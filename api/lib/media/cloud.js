@@ -181,7 +181,7 @@ W_PY=/workspace/runpod_worker.py; [ -f /workspace/scripts/media/runpod_worker.py
 nohup bash -c 'while true; do python '$W_PY' --repo /workspace/unipase --weights '$W' --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
 echo started`;
 
-export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_tool.py', 'worker/post.py', 'worker/controller.py', 'worker/cleanup.py'];   // shipped to the pod beside the worker (guard, realign, encodes run there)
+export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_tool.py', 'worker/post.py', 'worker/controller.py', 'worker/cleanup.py', 'worker/selftest.py'];   // shipped to the pod beside the worker (guard, realign, encodes run there)
 /** Start of a pod from the BAKED image (ghcr.io/chadananda/sifter-media-worker): code, UniPASE, whisper and aligners are already inside — seconds, no downloads. */
 export const BOOTSTRAP_BAKED = `set -e
 mkdir -p /workspace/spool && touch /workspace/spool/.tower-hb
@@ -191,6 +191,9 @@ export HF_HOME=/opt/models/hf TORCH_HOME=/opt/models/torch SIFTER_WEIGHTS=/opt/m
 for v in RUNPOD_POD_ID RP_TERMINATE_KEY; do val=$(tr '\\0' '\\n' < /proc/1/environ | grep "^$v=" | head -1 | cut -d= -f2-); [ -n "$val" ] && export $v="$val"; done
 # the image carries a pinned copy of the job code; the lane ships the current one (small) on top, so a code fix needs no image rebuild
 [ -f /workspace/media-scripts.tgz ] && tar xzf /workspace/media-scripts.tgz -C /opt/sifter/media
+# SELFTEST before anything is rented against: a pod that cannot pass it says why (boot.log) and the lane retires it — no job is ever sent to it
+export HF_HUB_OFFLINE=0
+python /opt/sifter/media/worker/selftest.py > /workspace/selftest.json 2>&1 || { echo 'SELFTEST FAILED'; tail -c 900 /workspace/selftest.json; exit 3; }
 pkill -f runpod_worker.py || true
 nohup bash -c 'while true; do python /opt/sifter/media/runpod_worker.py --repo /opt/unipase --weights /opt/models/weights --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
 echo started`;

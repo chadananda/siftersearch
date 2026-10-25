@@ -86,6 +86,15 @@ async function lightBackfillLoop() {
     await nap(180_000);
   }
 }
+// the LANE KEEPER: a cloud lane that is not running while talks wait for it is started again (restart, crash, a run that ended on a money stop that has cleared)
+async function laneKeeperLoop() {
+  const { laneKeeperPass } = await import('../lib/ops/media-jobs.js');
+  while (!isDraining()) {
+    try { const r = await laneKeeperPass(); if (r.action === 'queued') logger.warn(r, 'lane keeper: cloud lane restarted'); }
+    catch (err) { logger.warn({ err: err.message }, 'lane keeper pass failed'); }
+    await nap(60_000);
+  }
+}
 async function backfillStatusLoop() {
   const { pullLocal, render } = await import('../../scripts/media/remaster-backfill-status.mjs');
   const { writeFile, mkdir } = await import('fs/promises');
@@ -97,4 +106,4 @@ async function backfillStatusLoop() {
     await nap(300_000);
   }
 }
-await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop, qualityLoop, lightBackfillLoop] });
+await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop, qualityLoop, lightBackfillLoop, laneKeeperLoop] });

@@ -69,6 +69,7 @@ export function ledgerSummary(st, now = Date.now(), spendOf = () => st.spent_usd
   const usd = (p, ms) => (p.costPerHr || 0) * ms / 3600_000;
   return {
     lane_updated_s: st.updated ? Math.round((now - st.updated) / 1000) : null,
+    money_stopped: st.cloud_stopped || null, wasted_usd: st.wasted_usd || 0, breaker_until: st.breaker_until && st.breaker_until > now ? st.breaker_until : null, breaker_reason: st.breaker_until > now ? st.breaker_reason : null, proven: !!st.proven, waste_log: (st.waste_log || []).slice(-8),
     running: !!st.started && !st.finished,
     spent_usd: spendOf(st, now), cap_usd: cap,
     rented_usd: r2(pods.reduce((a, p) => a + usd(p, p.rented_ms || 0), 0)),

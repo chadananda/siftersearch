@@ -1273,6 +1273,16 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const closePod = async (p, why) => {
     try { await C.terminatePod(p.id, deps); } catch (err) { p.terminate_error = String(err.message).slice(0, 200); return false; }
     p.terminated = now(); p.why = why;
+    // a pod that never took a job is WASTED rent (10-25: 56 of 75 pods booted, idled or died without working: $20 of the first $52). Three in a row
+    // open the circuit breaker: no new rentals for 30 min, then ONE canary must prove itself before the pool grows again.
+    if (!(p.jobs_assigned > 0) && /unreachable|boot|warm|bootstrap|worker stopped|idle|no SSH|selftest|canary/i.test(String(why)) && !/^(cap|account balance|the next 10 min)/.test(String(why))) {
+      const wasted = (p.costPerHr || 0) * Math.max(0, p.terminated - p.created) / 3600_000;
+      st.wasted_usd = Math.round(((st.wasted_usd || 0) + wasted) * 100) / 100;
+      st.boot_fails = (st.boot_fails || 0) + 1;
+      (st.waste_log ||= []).push({ at: now(), pod: p.name, why: String(why).slice(0, 120), usd: Math.round(wasted * 100) / 100, host: p.host_key || null, boot_s: p.ready_at ? Math.round((p.ready_at - p.created) / 1000) : null });
+      st.waste_log = st.waste_log.slice(-30);
+      if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} pods in a row never worked (last: ${String(why).slice(0, 100)})`; st.proven = false; st.boot_fails = 0; }
+    }
     st.spent_closed = Math.round(((st.spent_closed || 0) + (p.costPerHr || 0) * Math.max(0, p.terminated - p.created) / 3600_000) * 100) / 100;
     for (const [j, x] of Object.entries(st.jobs)) if (x.pod === p.id) { st.queue.unshift(x.itemId); delete st.jobs[j]; }
     return true;
@@ -1289,7 +1299,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (draining()) { yielded = true; await Promise.allSettled([...homeTasks.values()]); break; }
       if (now() - balAt > 120_000) { balance = (await C.accountBalance(deps).catch(() => ({ balance }))).balance; balAt = now(); }
       // the money stops the PODS, not the backfill: the home hosts carry on (and the log says how far the cloud got)
-      const why = st.cloud_stopped || C.budgetStop(st, balance, now()) || (st.pod_failures >= C.CLOUD.maxPodFailures && !Object.values(st.pods).some((q) => !q.terminated) ? `${st.pod_failures} pods failed to start` : null);
+      // a money stop is not for ever: when the cap is raised or the balance topped up the stop clears (10-25: a sticky "balance < $90" ended the run and nothing restarted it)
+      if (st.cloud_stopped && /^(cap|account balance|the next 10 min)/.test(st.cloud_stopped) && !C.budgetStop(st, balance, now())) { st.cloud_stopped = null; st.cloud_stopped_at = null; }
+      const why = st.cloud_stopped || C.budgetStop(st, balance, now());
       if (why && !st.cloud_stopped) {
         st.cloud_stopped = why; st.cloud_stopped_at = now(); st.cloud_done_at_stop = st.done.length;
         for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, why);
@@ -1351,13 +1363,16 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (!st.queue.length && !inflight && !homeTasks.size) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
-      const want = st.cloud_stopped ? 0 : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
+      const rampCap = st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
+      const wantRaw = st.cloud_stopped ? 0 : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
+      const want = Math.min(wantRaw, rampCap);
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
-      if (!want && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
-      if (live.length < want && !held && st.pod_failures < C.CLOUD.maxPodFailures) {
+      if (!wantRaw && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
+      const breakerOn = !!st.breaker_until && now() < st.breaker_until;
+      if (live.length < want && !held && !breakerOn) {
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
         const pod = await C.createPod(name, pub, deps).catch((err) => ({ error: err.message }));
-        if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; }
+        if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
         else st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting' };
       }
       const utilBy = {};
@@ -1398,7 +1413,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           } else if (p.status === 'warming') {
             const { stdout } = await C.podSsh(run, p, 'test -f /workspace/spool/.worker-ready && echo READY; [ -f /workspace/boot.rc ] && [ "$(cat /workspace/boot.rc)" != 0 ] && { echo BOOTFAIL; tail -c 400 /workspace/boot.log; }; tail -2 /workspace/worker.log 2>/dev/null; touch /workspace/spool/.tower-hb; true', { timeoutMs: 60_000 });
             p.lastOk = now();
-            if (/READY/.test(stdout)) p.status = 'ready';
+            if (/READY/.test(stdout)) { p.status = 'ready'; p.ready_at = now(); }
             else if (/BOOTFAIL/.test(stdout)) { p.boot_log = stdout.slice(-400); st.last_error = `boot failed on ${p.name}: ${stdout.slice(-200)}`; await closePod(p, 'bootstrap failed'); st.pod_failures++; }
             else if (now() - p.created > C.CLOUD.warmTimeoutMs) { p.boot_log = stdout.slice(-400); await closePod(p, 'warm-up timeout'); st.pod_failures++; }
           } else if (p.status === 'ready') {
@@ -1440,6 +1455,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 await fs.writeFile(join(enh, 'unipase.done.json'), JSON.stringify(dj));
                 await C.podSsh(run, p, `rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).catch(() => {});
                 delete st.jobs[job];
+                p.jobs_done = (p.jobs_done || 0) + 1; st.boot_fails = 0; st.proven = true;   // a pod that finished a talk proves the pool
                 const imode = st.items?.[it.id]?.mode || 'restore';
                 if (st.done.some((d) => d.id === it.id && (d.mode || 'restore') === imode)) continue;   // idempotent: a second result for a talk never queues a second run
                 st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode, cycle_s: Math.round((now() - x.since) / 1000), upload_s: x.uploaded_s, pod_s: dj.seconds, post_s: dj.post_s ?? null, at: now() });
@@ -1481,6 +1497,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 if (post.mode === 'cleanup') await C.podPut(run, p, join(it.dir, 'transcript.raw.json'), `/workspace/spool/${job}/asr_orig.json`);   // the original's own transcript: the guard's reference
               }
               await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s), ...(post ? { post } : {}) }) });
+              p.jobs_assigned = (p.jobs_assigned || 0) + 1;
               st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: tAssign, uploaded_s: Math.round((now() - tAssign) / 1000) };
             }
           }
@@ -1525,6 +1542,27 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
 
 /** media-preview { fingerprint?, text, duration_s }: Dewey's stage 0 answer (api/lib/media/preview.js) — "duplicate of <slug>" or "new". Text only. */
 export async function mediaPreviewJob(params = {}, deps = {}) { return (deps.preview || await import('../media/preview.js')).previewVerdict(params, deps); }
+
+/** THE LANE KEEPER (10-25: the cloud lane stayed down for hours after a restart — the run had ended on a sticky money stop and nothing
+ *  queued a new one). One pass: if the state file says work is waiting (queue or jobs, not finished) and no media-cloud-remaster run is
+ *  queued or running, queue one — unless the money says stop (re-evaluated: a topped-up balance or a raised cap clears it). Runs every minute
+ *  in the media service. → { action: 'queued' | 'running' | 'idle' | 'money' | 'breaker', ... } */
+export async function laneKeeperPass(deps = {}) {
+  const C = deps.cloud || await import('../media/cloud.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const queue = deps.queue || enqueue;
+  const st = deps.state !== undefined ? deps.state : await C.loadState(deps.stateFile);
+  const now = (deps.now || Date.now)();
+  if (!st?.started || st.finished || !((st.queue || []).length || Object.keys(st.jobs || {}).length)) return { action: 'idle' };
+  const pending = await ops.pendingRuns('media-cloud-remaster');
+  if (pending.length) return { action: 'running', runs: pending.map((r) => r.id) };
+  if (st.cloud_stopped && /^(cap|account balance|the next 10 min)/.test(st.cloud_stopped)) {
+    const bal = deps.balance !== undefined ? deps.balance : (await C.accountBalance(deps).catch(() => ({ balance: null }))).balance;
+    if (C.budgetStop(st, bal, now)) return { action: 'money', why: st.cloud_stopped };
+  }
+  await queue('media-cloud-remaster', { write: true, maxPods: deps.maxPods ?? 3, resume: (st.resumes || 0) + 1 }, 'lane-keeper');
+  return { action: 'queued' };
+}
 
 /** media-cloud-order { mode: 'cleanup' | 'post', ids?, limit? }: put work on the cloud lane without restarting it (orders are taken in on its next tick).
  *  cleanup: talks the word guard held (review / kept / deferred) get the deterministic cleanup on a worker. post: results tower holds in its own

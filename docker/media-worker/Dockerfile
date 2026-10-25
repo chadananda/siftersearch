@@ -51,6 +51,9 @@ RUN python -m venv /opt/gate/venv-dfn \
  && /opt/gate/venv-dfn/bin/python -c "from df.enhance import init_df; init_df(); print('dfn model cached')" \
  && du -sh /opt/gate /root/.cache /root/.torchmetrics 2>/dev/null
 
+# the checksum manifest the selftest re-verifies on every boot (a truncated pull or a bad layer is caught before a paid job runs)
+RUN cd /opt/models && find weights clearvoice -type f ! -name '*.ok' ! -name '.lock' -print0 | xargs -0 sha256sum > weights.sha256 && wc -l weights.sha256
+
 # Job code, pinned by the image tag
 COPY media/ /opt/sifter/media/
 RUN python -m py_compile /opt/sifter/media/runpod_worker.py /opt/sifter/media/worker/*.py \
