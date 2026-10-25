@@ -205,7 +205,7 @@ echo started`;
 export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_tool.py', 'worker/post.py', 'worker/controller.py', 'worker/cleanup.py', 'worker/selftest.py'];   // shipped to the pod beside the worker (guard, realign, encodes run there)
 /** Start of a pod from the BAKED image (ghcr.io/chadananda/sifter-media-worker): code, UniPASE, whisper and aligners are already inside — seconds, no downloads. */
 export const BOOTSTRAP_BAKED = `set -e
-mkdir -p /workspace/spool && touch /workspace/spool/.tower-hb
+mkdir -p /workspace/spool && touch /workspace/spool/.tower-hb /workspace/.lane-seen   # (the entrypoint ends a pod no lane ever reached within 25 min)
 # the image's ENV is not in an ssh session: without HF_HOME the BAKED aligners are not found and whisperx downloads (and fails) at run time (10-24: every Persian talk 'placed 0 words')
 export HF_HOME=/opt/models/hf TORCH_HOME=/opt/models/torch SIFTER_WEIGHTS=/opt/models/weights
 # the container's own env (RUNPOD_POD_ID, the terminate key) is not in an ssh session: the dead-man switch needs it to end the pod

@@ -230,3 +230,14 @@ describe('alert dedupe', () => {
     expect(alertPlan([c('a', 'info'), c('b', 'warn', true)], {}).send).toEqual([]);
   });
 });
+
+describe('docker data room (10-25: a 64 GB image filled aorus root)', () => {
+  const snap = (availKb, ver = 1) => `@@version ${ver}\n@@host h\n@@nproc 8\n@@loadavg 1 1 1\n@@dockerroot /var/lib/docker\n@@meminfo\nMemTotal: 1000 kB\nMemAvailable: 900 kB\n@@df\n/dev/x ext4 244000000 ${244000000 - availKb} ${availKb} 50% /\n`;
+  it('warns under 30 GB free where docker keeps images, critical under 10', async () => {
+    const m = await import('../../scripts/lib/host-resources.mjs');
+    const ev = (kb) => m.evaluateHost('aorus', m.parseHostStat(snap(kb, m.HOST_STAT_VERSION)), { role: 'compute', expectVersion: m.HOST_STAT_VERSION }).checks.find((c) => c.name === 'aorus docker data');
+    expect(ev(20 * 1048576)).toMatchObject({ ok: false, level: 'warn' });
+    expect(ev(5 * 1048576)).toMatchObject({ ok: false, level: 'critical' });
+    expect(ev(100 * 1048576).ok).toBe(true);
+  });
+});

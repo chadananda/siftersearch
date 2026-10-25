@@ -1,21 +1,25 @@
-# SIFTER MEDIA WORKER image (ghcr.io/chadananda/sifter-media-worker, PRIVATE: pyannote-class weights have licence terms; no secrets inside).
+# SIFTER MEDIA WORKER image (ghcr.io/chadananda/sifter-media-worker, PUBLIC by decision 10-24: no secrets, keys or private data in any layer).
 # One image for every worker (RunPod pod; the same entrypoint runs from a venv on aorus / boss): UniPASE + faster-whisper + whisperx aligners
 # + the pinned job code, all baked, so a pod starts in seconds and downloads nothing. Built by .github/workflows/build-media-worker.yml.
 # Weights come from weights.tsv (generated from api/lib/media/cloud.js WEIGHTS, sha256-checked): ONE source of truth for the pins.
-FROM runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04
+# Base: the OFFICIAL pytorch runtime image (12 GB; STABLE torch 2.8.0+cu128). 10-25 root cause of a 64 GB image: the RunPod devel base (28 GB) carries a
+# torch 2.8.0.dev NIGHTLY, so whisperx's torch~=2.8.0 made pip install a second full torch + CUDA wheels (7.9 GB duplicate layer) on top of its own 6.9 GB one.
+FROM pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
 
 SHELL ["/bin/bash", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive PIP_NO_CACHE_DIR=1 HF_HOME=/opt/models/hf HF_HUB_OFFLINE=0 SIFTER_WEIGHTS=/opt/models/weights
 
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libchromaprint-tools git curl ca-certificates procps \
+# openssh-server + the entrypoint replace the RunPod base's start.sh: the lane reaches a pod over ssh (PUBLIC_KEY), exactly as before
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libchromaprint-tools git curl ca-certificates procps openssh-server \
+    && mkdir -p /var/run/sshd /root/.ssh && ln -sf /opt/conda/bin/python /usr/local/bin/python && ln -sf /opt/conda/bin/pip /usr/local/bin/pip \
     && rm -rf /var/lib/apt/lists/*
 
 # Python deps (torch family comes from the base image; whisperx 3.8.6 matches torch 2.8 — the tower venv's pin)
 COPY requirements.lock /tmp/requirements.lock
-RUN set -eo pipefail; python --version; python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio|numpy|triton)==' | tee /tmp/base-pins.txt; \
+RUN set -eo pipefail; python --version; python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio|triton)==' | tee /tmp/base-pins.txt; \
     python -m pip install -r /tmp/requirements.lock 2>&1 | tail -25; \
     python -c "import torch, whisperx, faster_whisper, soundfile, einops, omegaconf; print('deps ok, torch', torch.__version__)"; \
-    (python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio)==' | diff /tmp/base-pins.txt - && echo 'torch family unchanged') || echo 'NOTE: torch family differs from the base image'
+    python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio|triton)==' | diff /tmp/base-pins.txt - && echo 'torch family unchanged (no second torch)'
 
 # UniPASE code (pinned commit) + checksummed weights
 ARG UNIPASE_COMMIT=857b60ad05d37a2cf6d7a89883ec9fc4fc164b45
@@ -56,5 +60,10 @@ RUN cd /opt/models && find weights clearvoice -type f ! -name '*.ok' ! -name '.l
 
 # Job code, pinned by the image tag
 COPY media/ /opt/sifter/media/
-RUN python -m py_compile /opt/sifter/media/runpod_worker.py /opt/sifter/media/worker/*.py \
+COPY entrypoint.sh self-terminate.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/self-terminate.sh && printf 'PermitRootLogin prohibit-password\nPasswordAuthentication no\nUseDNS no\n' > /etc/ssh/sshd_config.d/sifter.conf \
+    && python -m py_compile /opt/sifter/media/runpod_worker.py /opt/sifter/media/worker/*.py \
     && echo "sifter-media-worker $(date -u +%Y-%m-%d) ${GITHUB_SHA:-local}" > /opt/sifter-image-version
+
+# the entrypoint: authorize the lane's key (RunPod passes PUBLIC_KEY), keep the pod's environment for ssh sessions, the zombie guards, sshd
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

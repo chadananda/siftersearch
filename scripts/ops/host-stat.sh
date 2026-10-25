@@ -9,6 +9,7 @@ echo "@@version $HOST_STAT_VERSION"
 echo "@@host $(hostname)"
 echo "@@nproc $(nproc)"
 echo "@@loadavg $(cut -d' ' -f1-3 /proc/loadavg)"
+if command -v docker >/dev/null 2>&1; then echo "@@dockerroot $(docker info --format '{{.DockerRootDir}}' 2>/dev/null || sudo -n docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo /var/lib/docker)"; fi
 echo "@@meminfo"; grep -E '^(MemTotal|MemAvailable|SwapTotal|SwapFree):' /proc/meminfo
 echo "@@df"; df -PkT 2>/dev/null | tail -n +2
 if command -v zpool >/dev/null 2>&1; then

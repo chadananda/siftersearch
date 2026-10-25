@@ -11,8 +11,9 @@ const kb = (n) => Number(n) * 1024;
 export const gb = (bytes) => (bytes / 1024 ** 3).toFixed(bytes >= 100 * 1024 ** 3 ? 0 : 1);
 
 /** host-stat.sh text → structured snapshot. */
+export const DOCKER_MIN_FREE_GB = 30;
 export function parseHostStat(text) {
-  const out = { version: 0, host: null, nproc: 0, load: [], mem: {}, df: [], zpool: [], zfs: {}, du: {}, oomCount: 0, oom: [], xid: [], nvsmi: null, nvdev: null, journalErr: null };
+  const out = { version: 0, host: null, nproc: 0, load: [], mem: {}, df: [], zpool: [], zfs: {}, du: {}, oomCount: 0, oom: [], xid: [], nvsmi: null, nvdev: null, journalErr: null, dockerRoot: null };
   let sec = null;
   for (const raw of String(text || '').split('\n')) {
     const line = raw.trimEnd();
@@ -26,6 +27,7 @@ export function parseHostStat(text) {
       else if (k === 'loadavg') out.load = v.split(/\s+/).map(Number);
       else if (k === 'oomcount') out.oomCount = Number(v) || 0;
       else if (k === 'journal_err') out.journalErr = v;
+      else if (k === 'dockerroot') out.dockerRoot = v.trim() || null;
       else if (k === 'nvsmi') out.nvsmi = [];
       else if (k === 'nvdev') out.nvdev = [];
       continue;
@@ -115,6 +117,11 @@ export function evaluateHost(host, s, { role = 'none', prev = {}, now = Date.now
   const add = (cond, ok, level, detail) => checks.push({ name: `${host} ${cond}`, key: `${host}:${cond}`, ok, level, detail, host: true });
   const state = { samples: {}, du: { ...s.du, ...s.zfs }, vramHigh: false };
 
+  // ── docker data (10-25: a 64 GB image pulled onto aorus's 234 GB root filled it) ──
+  if (s.dockerRoot) {
+    const mnt = mountOf(s.dockerRoot, s), fs = s.df.find((d) => d.mount === mnt);
+    if (fs) { const free = fs.avail / 1024 ** 3; add('docker data', free >= DOCKER_MIN_FREE_GB, free < 10 ? 'critical' : 'warn', `${s.dockerRoot} on ${mnt}: ${Math.round(free)} GB free${free < DOCKER_MIN_FREE_GB ? ` (< ${DOCKER_MIN_FREE_GB} GB: a 25 GB image needs room; move Docker's data-root to the big disk)` : ''}`); }
+  }
   // ── disk ──
   for (const f of filesystems(s)) {
     const pct = usedPct(f);
