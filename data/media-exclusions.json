@@ -44,12 +44,13 @@
     {
       "slug": "jones-01-thursday",
       "title": "Early Days Teaching in Bucharest",
-      "decision": "exclude",
+      "decision": "restore",
       "hidden": true,
       "was": "done",
       "reason": "hidden for now (Chad 10-25), restore on request",
       "decided": "Chad 10-25: 'let's hide the talk from Chad Jones for the time being'",
-      "hidden_at": "2026-10-25"
+      "hidden_at": "2026-10-25",
+      "restored": "Chad 10-25: hide cancelled, leave all seven talks visible"
     }
   ],
   "dropped_targets": [
