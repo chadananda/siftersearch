@@ -1277,6 +1277,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     for (const [j, x] of Object.entries(st.jobs)) if (x.pod === p.id) { st.queue.unshift(x.itemId); delete st.jobs[j]; }
     return true;
   };
+  const requireGate = process.env.MEDIA_POOL_REQUIRE_GATE === '1';   // pods must carry /opt/gate (the new image): older ones finish their jobs and are replaced
   let balance = null, balAt = 0, stop = null, yielded = false;
   // the dead-man heartbeat must not depend on how long a tick takes (10-24: a 10-minute upload queue starved it and a pod shut itself down)
   const pump = setInterval(() => {
@@ -1371,7 +1372,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             if (g.publicIp && port) {
               p.ip = g.publicIp; p.port = port;
               await C.podSsh(run, p, 'mkdir -p /workspace/spool && echo ok', { timeoutMs: 60_000 });
-              const baked = /BAKED/.test((await C.podSsh(run, p, 'test -f /opt/sifter-image-version && echo BAKED; true', { timeoutMs: 60_000 })).stdout || '');
+              const probeOut = (await C.podSsh(run, p, 'test -f /opt/sifter-image-version && echo BAKED; test -x /opt/gate/asr-gate.sh && echo GATE; true', { timeoutMs: 60_000 })).stdout || '';
+              const baked = /BAKED/.test(probeOut); p.gate = /GATE/.test(probeOut);
               if (baked) {
                 p.baked = true;   // the image carries code + weights + aligners: nothing to upload or download
                 try {   // the current job code on top of the image's pinned copy
@@ -1455,7 +1457,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             }
             // keep the pod fed (one running, one waiting)
             // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
-            while (!held && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(C.CLOUD.perPod, Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
+            while (!held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(C.CLOUD.perPod, Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
               const itemId = st.queue.shift(); const tAssign = now();
               const it = await repo.getMediaItem(itemId);
               const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
@@ -1491,13 +1493,15 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // the READY, baked pods join the worker pool (pool.js): prep / probe / grade / dfn / encodes may use them as hosts of the same gate
       try {
         const P = await import('../media/pool.js');
-        const ready = Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && q.baked && q.ip && q.port && !q.dead_worker && !(q.idle_since && now() - q.idle_since > 8 * 60_000));
+        const ready = Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && q.baked && q.gate && q.ip && q.port && !q.dead_worker && !(q.idle_since && now() - q.idle_since > 8 * 60_000));
         const sig = ready.map((q) => `${P.podName(q)}@${q.ip}:${q.port}`).sort().join(',');
         if (sig !== st.pool_sig) { P.publishPool(ready.map((q) => ({ host: P.podName(q), ip: q.ip, port: q.port }))); st.pool_sig = sig; }
       } catch (err) { st.pool_error = String(err.message).slice(0, 160); }
       // the LEDGER (rented vs busy minutes, $ rented vs $ productive) and the lane's own idle rule; pod-reaper.js is the independent second path
       L.ledgerTick(st, Object.values(st.pods).filter((q) => !q.terminated), utilBy, now());
       for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.idle_since && now() - q.idle_since > L.LEDGER.idleMs)) await closePod(p, `idle ${Math.round((now() - p.idle_since) / 60_000)} min`);
+      // a pod from an older image (no gate: it cannot be a prep / encode host) is retired once its own jobs are done
+      if (requireGate) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && !q.gate)) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'retired: image without the gate');
       // an idle pod (nothing left to give it) is terminated at once
       if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'queue empty');
       st.spent_usd = C.spendOf(st, now()); st.updated = now();
