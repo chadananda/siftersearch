@@ -20,7 +20,7 @@ import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
-import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaCloudOrderJob, mediaRemasterQualityJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
+import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRestoreJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaCloudOrderJob, mediaRemasterQualityJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
 import { mediaGalleryJob, mediaPortraitInventoryJob } from './media-gallery-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
@@ -236,6 +236,7 @@ REPORTS['media-meta-fix'] = mediaMetaFixJob;
 REPORTS['media-trim-audit'] = mediaTrimAuditJob;   // { write } — leading/trailing silence + dead gaps of published talks
 REPORTS['media-exclude'] = mediaExcludeJob;   // { write } — talks by excluded speakers (data/media-speaker-people.json `exclude`) out of the library; run by the reports service (never waits on a media drain)
 REPORTS['media-talk-identities'] = mediaTalkIdentitiesJob;
+REPORTS['media-restore'] = mediaRestoreJob;   // params: { write } — bring back talks whose decision in data/media-exclusions.json is 'restore' (media-hidden.md)
 REPORTS['media-remaster'] = mediaRemasterJob;   // { id } — a talk's tower part of the remaster (word guard, realign, encode, update)
 REPORTS['media-remaster-revert'] = mediaRemasterRevertJob;   // { ids } — back to the transparent original
 REPORTS['media-cloud-remaster'] = mediaCloudRemasterJob;

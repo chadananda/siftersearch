@@ -137,4 +137,26 @@ describe('per-talk identities from the evidence (Chad 10-23)', async () => {
     expect((await mediaTalkIdentitiesJob({ write: true }, deps)).unchanged).toBe(1);
     expect(data.talk_identities.find((t) => t.slug === 'jones-01-thursday').title).toBe('Early Days Teaching in Bucharest');
   });
+  it('hiding by slug excludes the talk (reason recorded) and purges the edge; a restore decision brings it back — exact, nothing deleted', async () => {
+    const { mediaExcludeJob, mediaRestoreJob } = await import('../../api/lib/ops/media-jobs.js');
+    const hold = { slug: 'jones-01-thursday', decision: 'exclude', reason: 'hidden for now (Chad 10-25), restore on request' };
+    const calls = { excluded: [], docs: [], purged: [], restored: [], queued: [] };
+    const row = { id: 7, slug: 'jones-01-thursday', title: 'T', speaker: 'Chad Jones', state: 'done', doc_id: 55, dir: null };
+    const repo = { exclusionCandidates: async () => [row], excludeItems: async (ids, why) => calls.excluded.push([ids, why]) };
+    const ex = await mediaExcludeJob({ write: true }, { repo, ops: { pendingRuns: async () => [] }, rules: [], targets: new Map(), talks: [hold], tools: { cancelRemote: async () => false },
+      docs: { softDeleteDocs: async (ids) => { calls.docs.push(ids); return { deleted: ids.length, refused: [] }; } }, purge: async (s) => { calls.purged.push(s); return true; } });
+    expect(ex.matched).toBe(1);
+    expect(calls.excluded).toEqual([[[7], 'hidden for now (Chad 10-25), restore on request']]);
+    expect(calls.docs).toEqual([[55]]); expect(calls.purged).toEqual(['jones-01-thursday']);
+    // once the decision says restore, the exclude job leaves it alone and the restore job undoes the hide
+    const back = { ...hold, decision: 'restore', hidden_at: '2026-10-25' };
+    expect((await mediaExcludeJob({ write: false }, { repo, ops: {}, rules: [], targets: new Map(), talks: [back] })).matched).toBe(0);
+    const rrepo = { itemsBySlugs: async () => [{ ...row, state: 'excluded' }], restoreItems: async (ids) => calls.restored.push(ids) };
+    const content = { restoreRetiredDocs: async (ids, o) => { calls.restored.push(['docs', ids, o.since]); return { restored: 1 }; } };
+    const plan = await mediaRestoreJob({ write: false }, { repo: rrepo, talks: [back] });
+    expect(plan).toMatchObject({ restorable: ['jones-01-thursday'], not_excluded: [] }); expect(calls.restored).toEqual([]);
+    const done = await mediaRestoreJob({ write: true }, { repo: rrepo, talks: [back], content, queue: async (n, p) => calls.queued.push(p), purge: async () => true });
+    expect(done.restored).toEqual(['jones-01-thursday']);
+    expect(calls.restored).toEqual([[7], ['docs', [55], '2026-10-25']]); expect(calls.queued).toEqual([{ id: 7, redo: ['update'] }]);
+  });
 });

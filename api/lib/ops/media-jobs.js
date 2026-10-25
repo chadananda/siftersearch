@@ -803,6 +803,7 @@ export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
   const unsure = [];   // surname only (Chad 10-23: "spelling is not trustworthy") — listed for Chad, NOT excluded
   // Chad's per-talk decisions (data/media-exclusions.json `talks`): exclude, or needs_listen (stays as it is, listed)
   const decided = new Map((deps.talks || JSON.parse(await (await import('fs/promises')).readFile(join(process.cwd(), 'data', 'media-exclusions.json'), 'utf8').catch(() => '{}')).talks || []).map((t) => [Number(t.id), t]));
+  const decidedBySlug = new Map((deps.talks || JSON.parse(await (await import('fs/promises')).readFile(join(process.cwd(), 'data', 'media-exclusions.json'), 'utf8').catch(() => '{}')).talks || []).filter((t) => t.slug).map((t) => [t.slug, t]));
   const needs_listen = [];
   for (const it of await repo.exclusionCandidates()) {
     const meta = it.dir ? await read(it.dir).catch(() => null) : null;
@@ -813,7 +814,8 @@ export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
     const m = dec?.excluded;
     const row = { id: it.id, slug: it.slug, title: it.title || meta?.title || t?.title || null, speaker: it.speaker || meta?.speaker || t?.speaker || null, state: it.state,
       published: it.state === 'done', doc_id: it.doc_id || meta?.doc_id || null, year: meta?.year || null };
-    const td = decided.get(Number(it.id));
+    const td = decided.get(Number(it.id)) || decidedBySlug.get(it.slug);   // a hold may name the talk by slug (Chad 10-25)
+    if (td?.decision === 'restore') continue;   // brought back on purpose (media-restore): never excluded again
     if (td?.decision === 'needs_listen') { needs_listen.push({ ...row, why: td.reason }); continue; }
     if (td?.decision === 'exclude') { hits.push({ ...row, person: row.speaker, reason: td.reason, evidence: `Chad decided this talk: ${td.decided}`, jobs: ['asr_job', 'diar_job'].map((k) => meta?.[k]).filter((j) => j?.id && j?.host) }); continue; }
     if (m) { hits.push({ ...row, person: m.person, reason: m.reason, evidence: m.evidence, jobs: ['asr_job', 'diar_job'].map((k) => meta?.[k]).filter((j) => j?.id && j?.host) }); continue; }
@@ -847,6 +849,36 @@ export async function mediaExcludeJob({ write = false } = {}, deps = {}) {
     const r = await docs.softDeleteDocs(docIds.slice(i, i + 20), { reason: `media-exclude: ${hits[0].reason}`, allowLastCopy: true });
     out.docs_deleted += r.deleted || 0; out.docs_refused.push(...(r.refused || []));
   }
+  // 5. the edge copies of their pages gone (the page and API entry; the listing refreshes with the next warm)
+  const purge = deps.purge || (await import('../media/edge-purge.js')).purgeTalk;
+  out.purged = 0;
+  for (const h of hits.filter((x) => x.published)) if (await purge(h.slug)) out.purged++;
+  return out;
+}
+
+/** media-restore { write, since? }: bring back talks a decision marks 'restore' (data/media-exclusions.json `talks`, by id or
+ *  slug) that are currently excluded: state 'done' again, the transcript document and its paragraphs restored (re-indexed by
+ *  the worker), an 'update' run queued (page, catalogue), the edge copies purged. Nothing was ever deleted, so this is exact.
+ *  write=false: the plan. */
+export async function mediaRestoreJob({ write = false } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const talks = deps.talks || JSON.parse(await (await import('fs/promises')).readFile(join(process.cwd(), 'data', 'media-exclusions.json'), 'utf8').catch(() => '{}')).talks || [];
+  const want = talks.filter((t) => t.decision === 'restore' && t.slug);
+  const rows = (await repo.itemsBySlugs(want.map((t) => t.slug))).filter((r) => r.state === 'excluded');
+  const out = { decisions: want.length, restorable: rows.map((r) => r.slug), not_excluded: want.filter((t) => !rows.some((r) => r.slug === t.slug)).map((t) => t.slug) };
+  if (!write || !rows.length) return out;
+  const { content } = deps.content ? { content: deps.content } : await import('../content.js');
+  const queue = deps.queue || enqueue;
+  const purge = deps.purge || (await import('../media/edge-purge.js')).purgeTalk;
+  await repo.restoreItems(rows.map((r) => r.id), 'done');
+  out.docs_restored = 0;
+  for (const r of rows) {
+    const t = want.find((x) => x.slug === r.slug);
+    if (r.doc_id) out.docs_restored += (await content.restoreRetiredDocs([r.doc_id], { since: t.hidden_at || '2000-01-01', reason: `media-restore: ${r.slug}` })).restored || 0;
+    await queue('media-item', { id: r.id, redo: ['update'] }, 'media-restore');
+    await purge(r.slug);
+  }
+  out.restored = rows.map((r) => r.slug);
   return out;
 }
 

@@ -51,6 +51,17 @@ export async function excludeItems(ids = [], why) {
   return ids.length;
 }
 
+/** Undo excludeItems for talks hidden on purpose (media-restore): an EXCLUDED row goes back to `state` (default 'done'). → how many */
+export async function restoreItems(ids = [], state = 'done') {
+  await transaction(ids.map((id) => ({ sql: `UPDATE media_items SET state = ?, why = NULL, updated_at = ? WHERE id = ? AND state = 'excluded'`, args: [state, now(), Number(id)] })), 'media:restore');
+  return ids.length;
+}
+/** Slugs → rows (any state), for the restore job. */
+export async function itemsBySlugs(slugs = []) {
+  if (!slugs.length) return [];
+  return queryAll(`SELECT id, slug, title, state, doc_id FROM media_items WHERE slug IN (${slugs.map(() => '?').join(',')})`, slugs, 'media:by-slugs');
+}
+
 /** YouTube items held by a bot check / rate limit within the last `hours` (the cool-down before any YouTube work). */
 export const youtubeHeldSince = async (hours) => (await queryOne(`SELECT COUNT(*) n, MAX(updated_at) last FROM media_items WHERE source_kind = 'youtube' AND state = 'held'
   AND updated_at >= ?`, [new Date(Date.now() - hours * 3600_000).toISOString()], 'media:youtube-held'));

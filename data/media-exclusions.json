@@ -40,6 +40,16 @@
       "decision": "exclude",
       "reason": "newer-generation: UHJ member, not historical (Chad 10-23, per talk)",
       "decided": "Chad 10-23: 'Dr. Mohajer' = Payman Mohajer — exclude"
+    },
+    {
+      "slug": "jones-01-thursday",
+      "title": "Early Days Teaching in Bucharest",
+      "decision": "exclude",
+      "hidden": true,
+      "was": "done",
+      "reason": "hidden for now (Chad 10-25), restore on request",
+      "decided": "Chad 10-25: 'let's hide the talk from Chad Jones for the time being'",
+      "hidden_at": "2026-10-25"
     }
   ],
   "dropped_targets": [
