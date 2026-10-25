@@ -29,6 +29,8 @@ process.once('exit', () => { for (const c of live) { try { c.kill('SIGTERM'); } 
 
 /** The error a child process ends with when the service drains mid-stage: the stage is redone after the restart. */
 export class DrainAbort extends Error { constructor(what) { super(`${what}: stopped for an update drain — redone after the restart`); this.code = 'DRAIN'; } }
+import { poolHosts, isPod, GATE_PATH, POD_SLOTS } from './pool.js';
+
 // ── TOWER PLACEMENT (Chad 10-24: "tower must stay responsive … what happens when we have 300?") ──────────────────────────────
 // Every media process tower starts passes THIS gate. HEAVY work never runs here: it waits for a worker (WorkerWait — the item is put
 // back in the queue and retried), whatever fallback code asked for it. What is left is bounded: web encodes (libopus / aac: the
@@ -274,7 +276,7 @@ const probeBusy = new Map();
 const probeWaiters = [];
 // probes: aorus 4 (its GPU memory lock paces them; ~10 s each) before boss 2 (~80 s each on CPU) — 07:37: 16 prep runs all
 // waiting in enhance on probes queued for boss
-export async function withProbeHost(fn, { long = false, hosts = (long ? [[asrHost(), 3]] : [[gpuHost(), 4], [asrHost(), 2]]).filter(([h]) => h) } = {}) {
+export async function withProbeHost(fn, { long = false, hosts = [...(long ? [[asrHost(), 3]] : [[gpuHost(), 4], [asrHost(), 2]]), ...(long ? [] : poolHosts().map((h) => [h, POD_SLOTS.probe]))].filter(([h]) => h) } = {}) {
   // long: a recording over 90 min is probed on boss only (128 GB) — decoding it whole beside two transcriptions ran aorus's
   // 15 GB out (10-23: Taherzadeh's 2½-hour talks failed enhance three times)
   const uniq0 = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
@@ -300,7 +302,7 @@ export const asrLoad = () => Object.fromEntries(asrHosts().map((h) => [h.host, {
  *  explicitly: MEDIA_GATE_<HOST>=<path to asr-gate.sh>. The gate still checks every verb and argument (its charset has no quote). */
 const GATES = { aorus: '~/media-gpu/asr-gate.sh' };   // (10-22) aorus: Tailscale SSH → a shell, so the gate by path
 export function gateWrap(host, cmd) {
-  const gate = process.env[`MEDIA_GATE_${String(host || '').toUpperCase().replace(/[^A-Z0-9]/g, '_')}`] ?? GATES[host];
+  const gate = process.env[`MEDIA_GATE_${String(host || '').toUpperCase().replace(/[^A-Z0-9]/g, '_')}`] ?? GATES[host] ?? (isPod(host) ? GATE_PATH : undefined);   // a pod's ssh lands in a shell: the gate by path
   return gate ? `SSH_ORIGINAL_COMMAND='${String(cmd).replace(/'/g, '')}' ${gate}` : cmd;
 }
 export const asrThreads = () => Number(process.env.MEDIA_ASR_THREADS) || Math.max(4, Math.floor(BOSS_THREADS / mediaParallel()) - 2);
@@ -700,19 +702,34 @@ export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, 
 let encBusy = 0;
 const encWait = [];
 const overflowOff = () => process.env.MEDIA_ENCODE_OVERFLOW === '0';
-export async function encodeRemote(recipe, input, output, { af = '', job, stop, local, slots = Number(process.env.MEDIA_ENCODE_SLOTS) || 4 } = {}) {   // boss prep 4 at a time (10-23 06:09: boss at load 9, prep the limit)
-  const host = process.env.MEDIA_ENCODE_HOST ?? asrHost();
-  if (host && job && diskOk(host, { kind: 'encode' })) {
-    // at most 2 encodes on the ASR host at once (10-23: 5 encodes beside its transcriptions took boss to load 56)
-    // boss's encode slots full → the tower encodes it now (its own light slots pace it) instead of queueing behind them
-    if (encBusy >= slots && local && !overflowOff()) return local();
-    while (encBusy >= slots) await slotWait(encWait, 'an encode slot');
-    encBusy++;
-    try { return await remoteJob('encode', input, { recipe, ...(af ? { af } : {}), output, threads: 2 }, { host, job, stop, file: true }); }   // 2 threads each (was 8)
-    catch (err) { if (err instanceof DrainAbort) throw err; console.warn(`[media] encode ${recipe} on ${host} failed — tower: ${String(err.message).slice(0, 300)}`); }
-    finally { encBusy--; encWait.shift()?.(); }
+const encBusyBy = new Map();
+export async function encodeRemote(recipe, input, output, { af = '', job, stop, local, slots = Number(process.env.MEDIA_ENCODE_SLOTS) || 4, window = null } = {}) {   // boss prep 4 at a time (10-23 06:09: boss at load 9, prep the limit)
+  // the hosts that may encode: the ASR host (boss) and every rented pod. A pod is preferred (it is rented for exactly this and is idle between
+  // GPU stages); boss takes at most `slots` beside its transcriptions. No host free → WAIT (the old tower fallback is gone: the tower gate
+  // lets only a bounded local() through, and only when there is no pool at all).
+  const bossHost = process.env.MEDIA_ENCODE_HOST ?? asrHost();
+  const hostsNow = () => [...poolHosts().map((h) => [h, POD_SLOTS.encode]), ...(bossHost ? [[bossHost, slots]] : [])];
+  if (!job || !hostsNow().length) return local();
+  let failures = 0;
+  for (;;) {
+    const pick = hostsNow().find(([h, n]) => (encBusyBy.get(h) || 0) < n && diskOk(h, { kind: 'encode' }));
+    if (!pick) {
+      if (!poolHosts().length && local && !overflowOff() && [...encBusyBy.values()].reduce((a, b) => a + b, 0) >= slots) return local();   // no pool and boss is full: the tower's bounded slot
+      if (stop?.()) throw new DrainAbort('encode (waiting for a host)');
+      await slotWait(encWait, 'an encode host');
+      continue;
+    }
+    const host = pick[0];
+    encBusyBy.set(host, (encBusyBy.get(host) || 0) + 1);
+    try { return await remoteJob('encode', input, { recipe, ...(af ? { af } : {}), ...(window ? { ss: window.ss, t: window.t } : {}), output, threads: 2 }, { host, job: `${job}`.slice(0, 100), stop, file: true }); }   // 2 threads each (was 8)
+    catch (err) {
+      if (err instanceof DrainAbort) throw err;
+      console.warn(`[media] encode ${recipe} on ${host} failed: ${String(err.message).slice(0, 300)}`);
+      if (++failures >= 4) throw err;
+      if (isPod(host)) continue;   // that pod is going or gone: another host
+      if (local) return local();
+    } finally { encBusyBy.set(host, encBusyBy.get(host) - 1); encWait.shift()?.(); }
   }
-  return local();
 }
 
 /** grade / dfn on the GPU host when it answers, else the tower's detached process (re-attached by pid file). */
@@ -722,8 +739,8 @@ const offWait = [];
  *  transcriptions) and OVERFLOWS to boss's CPU venv (2 at a time; Chad 10-23: "free to use boss"); the grade to aorus only. */
 // boss's CPU DeepFilterNet (venv-dfn, installed 10-23) is OFF by default: on a loaded boss it took 20+ min for a 66-min talk
 // that aorus's GPU does in under a minute — MEDIA_DFN_OVERFLOW=boss uses it (1 at a time)
-export const offloadHosts = (sub) => (sub === 'dfn' ? [[gpuHost(), 2], [process.env.MEDIA_DFN_OVERFLOW || null, 1]] : [[gpuHost(), 3]]).filter(([h]) => h)
-  .filter(([h], i, a) => a.findIndex(([x]) => x === h) === i);
+export const offloadHosts = (sub) => [...(sub === 'dfn' ? [[gpuHost(), 2], [process.env.MEDIA_DFN_OVERFLOW || null, 1]] : [[gpuHost(), 3]]), ...poolHosts().map((h) => [h, POD_SLOTS[sub === 'dfn' ? 'dfn' : 'grade']])].filter(([h]) => h)
+  .filter(([h], i, a) => a.findIndex(([x]) => x === h) === i);   // + the rented pods (pool.js)
 export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python = null, file = false, slot = (fn) => fn(), hosts = offloadHosts(sub), exec, pollMs, needGb = null } = {}) {
   if (hosts.length && job) {
     // a job already started on one of the hosts (before a restart) is re-attached THERE (the job id carries the host)

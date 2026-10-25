@@ -3,7 +3,7 @@ name: Build media worker image
 on:
   push:
     branches: [main]
-    paths: ['docker/media-worker/**', 'scripts/media/runpod_worker.py', 'scripts/media/remaster_guard.py', 'scripts/media/media_tool.py', 'scripts/media/worker/**', 'api/lib/media/cloud.js']
+    paths: ['docker/media-worker/**', 'scripts/media/runpod_worker.py', 'scripts/media/remaster_guard.py', 'scripts/media/media_tool.py', 'scripts/media/boss-asr-gate.sh', 'scripts/ops/host-stat.sh', 'scripts/media/worker/**', 'api/lib/media/cloud.js']
   workflow_dispatch:
     inputs:
       tag:
@@ -35,6 +35,7 @@ jobs:
           cp docker/media-worker/* ctx/
           cp scripts/media/runpod_worker.py scripts/media/remaster_guard.py scripts/media/media_tool.py ctx/media/
           cp scripts/media/worker/*.py ctx/media/worker/
+          mkdir -p ctx/gate && cp scripts/media/boss-asr-gate.sh ctx/gate/asr-gate.sh && cp scripts/ops/host-stat.sh ctx/gate/host-stat.sh && cp scripts/media/media_tool.py ctx/gate/media_tool.py
           # one source of truth for the pins: cloud.js WEIGHTS -> weights.tsv
           node -e "import('./api/lib/media/cloud.js').then(c => console.log(c.WEIGHTS.map(w => w.join('\t')).join('\n')))" > ctx/weights.tsv
           node -e "import('./api/lib/media/cloud.js').then(c => console.log(c.CLEANUP_WEIGHTS.map(w => w.join('\t')).join('\n')))" > ctx/weights-cleanup.tsv

@@ -476,6 +476,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       // the worker's four encodes of this remaster (post.py), when its transcript hash still matches and the listening copy is the guarded one
       const podW = remastered && meta.enhancement?.listening === 'unipase' ? await podPost(dir, { needFlac: false }) : null;
       const podWeb = podW?.web && ['ogg', 'm4a', 'orig_ogg', 'orig_m4a'].every((k) => existsSync(join(podDir(dir), 'web', podW.web[k]))) ? podW.web : null;
+      // every web encode goes to the worker pool first (pods, boss): tower's bounded local slot is only the no-pool fallback (Chad 10-24)
+      meta.enc_jobs = meta.enc_jobs || {};
+      const encJob = (k) => (meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110));
+      const webEnc = (k, recipe, inp, outp, afStr, localFn) => (tools.encodeRemote ? tools.encodeRemote(recipe, inp, outp, { af: afStr || '', job: encJob(k), stop, local: localFn }) : localFn());
       const oggLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '48000', ...(remastered ? OGG_ARGS_REMASTER : OGG_ARGS), ogg], { stop }));
       const m4aLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', remastered ? '48000' : '44100', '-c:a', 'aac', '-b:a', remastered ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', m4a], { stop }));
       // the ORIGINAL (transparent) copy beside a remaster — the talk page's "Original" button (audio.original_url)
@@ -486,18 +490,15 @@ export async function runItem(item, opts = {}, deps = {}) {
         const safeSrc = listeningSource({ ...meta, enhancement: { ...meta.enhancement, listening: 'safe' } }, dir);
         const oo = join(dir, 'web', `${meta.slug}.original.ogg`), om = join(dir, 'web', `${meta.slug}.original.m4a`);
         const sa = safeSrc.af ? ['-af', safeSrc.af] : [];
-        await Promise.all([slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '48000', ...OGG_ARGS, oo], { stop })),
-          slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', om], { stop }))]);
+        await save();
+        await Promise.all([webEnc('oogg', 'ogg', safeSrc.src, oo, safeSrc.af, () => slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '48000', ...OGG_ARGS, oo], { stop }))),
+          webEnc('om4a', 'm4a', safeSrc.src, om, safeSrc.af, () => slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', om], { stop })))]);
         meta.web_original = { ogg: `web/${meta.slug}.original.ogg`, m4a: `web/${meta.slug}.original.m4a` };
       } else if (meta.remaster_tier !== 'light') delete meta.web_original;   // the light tier keeps its raw-original encodes across re-runs
-      // a RE-RUN of a published talk encodes on tower in its own slot — never in boss's encode slots, which new talks' prep
-      // needs (21:30: ~600 backfill re-runs held all 4 boss encode slots and 16 prep runs waited behind them)
-      if (tools.encodeRemote && slotLight === towerLight && !remastered) {
-        meta.enc_jobs = meta.enc_jobs || {};
-        for (const k of ['ogg', 'm4a']) meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110);
+      if (!podWeb) {
         await save();
-        await Promise.all([tools.encodeRemote('ogg', src, ogg, { af: af || '', job: meta.enc_jobs.ogg, stop, local: oggLocal }), tools.encodeRemote('m4a', src, m4a, { af: af || '', job: meta.enc_jobs.m4a, stop, local: m4aLocal })]);
-      } else if (!podWeb) await Promise.all([oggLocal(), m4aLocal()]);
+        await Promise.all([webEnc('ogg', remastered ? 'oggR' : 'ogg', src, ogg, af, oggLocal), webEnc('m4a', remastered ? 'm4aR' : 'm4a', src, m4a, af, m4aLocal)]);
+      }
       delete meta.enc_jobs;
       if (podWeb) await podForget(dir);   // consumed: a later re-encode runs here
       meta.web_codec = remastered ? WEB_CODEC_REMASTER : WEB_CODEC;   // the encode settings these copies were made with
@@ -651,9 +652,16 @@ export async function runItem(item, opts = {}, deps = {}) {
         const src = ls.src, { pre, af: trimAf } = T.trimArgs(plan, meta.duration_s);
         const af = [ls.af, trimAf].filter(Boolean).join(',');
         const ogg = join(dir, 'web', `${meta.slug}.ogg`), m4a = join(dir, 'web', `${meta.slug}.m4a`);
+        // the cut goes to the worker pool too (media_tool encode --ss/--t, recipes ogg / oggR / m4a / m4aR): tower's local slot is only the no-pool fallback
+        const win = { ss: Number(pre[1]), t: Number(pre[3]) };
+        const rem = isRemastered(meta);
+        meta.enc_jobs = meta.enc_jobs || {};
+        const tj = (k) => (meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110));
+        const trimEnc = (k, recipe, inp, outp, afStr, localFn) => (tools.encodeRemote ? tools.encodeRemote(recipe, inp, outp, { af: afStr, job: tj(k), stop, window: win, local: localFn }) : localFn());
+        await save();
         await Promise.all([
-          slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', ...(isRemastered(meta) ? OGG_ARGS_REMASTER : OGG_ARGS), `${ogg}.trim.ogg`], { stop })),
-          slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', isRemastered(meta) ? '48000' : '44100', '-c:a', 'aac', '-b:a', isRemastered(meta) ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop }))]);
+          trimEnc('togg', rem ? 'oggR' : 'ogg', src, `${ogg}.trim.ogg`, af, () => slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', ...(isRemastered(meta) ? OGG_ARGS_REMASTER : OGG_ARGS), `${ogg}.trim.ogg`], { stop }))),
+          trimEnc('tm4a', rem ? 'm4aR' : 'm4a', src, `${m4a}.trim.m4a`, af, () => slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', isRemastered(meta) ? '48000' : '44100', '-c:a', 'aac', '-b:a', isRemastered(meta) ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop })))]);
         await rename(`${ogg}.trim.ogg`, ogg); await rename(`${m4a}.trim.m4a`, m4a);
         // the ORIGINAL copy beside a remaster gets the same cut (one audio.offset_s serves both)
         if (meta.web_original) {
@@ -661,10 +669,11 @@ export async function runItem(item, opts = {}, deps = {}) {
           const af2 = [so.af, trimAf].filter(Boolean).join(',');
           const oo = join(dir, meta.web_original.ogg), om = join(dir, meta.web_original.m4a);
           await Promise.all([
-            slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-af', af2, '-ac', '1', '-ar', '48000', ...OGG_ARGS, `${oo}.trim.ogg`], { stop })),
-            slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-af', af2, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${om}.trim.m4a`], { stop }))]);
+            trimEnc('toogg', 'ogg', so.src, `${oo}.trim.ogg`, af2, () => slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-af', af2, '-ac', '1', '-ar', '48000', ...OGG_ARGS, `${oo}.trim.ogg`], { stop }))),
+            trimEnc('tom4a', 'm4a', so.src, `${om}.trim.m4a`, af2, () => slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-af', af2, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${om}.trim.m4a`], { stop })))]);
           await rename(`${oo}.trim.ogg`, oo); await rename(`${om}.trim.m4a`, om);
         }
+        delete meta.enc_jobs;
         meta.version = (meta.version || 1) + 1;   // new audio URLs (?v=): no cached untrimmed copy is paired with the offset
         rec.trimmed_s = Math.round(((plan.start_s || 0) + (plan.end_s != null ? meta.duration_s - plan.end_s : 0)) * 10) / 10;
       }

@@ -34,6 +34,23 @@ RUN python -m venv --system-site-packages /opt/cv && /opt/cv/bin/pip install cle
 COPY preload-aligners.py /tmp/
 RUN python /tmp/preload-aligners.py en fa ar && du -sh $HF_HOME
 
+# THE GATE: a pod is a HOST of the same gate as boss / aorus (scripts/media/boss-asr-gate.sh runs from its own directory with venv/, venv-dfn/ and
+# models/). Tower dispatches probe / langid / grade / dfn / encode jobs here over ssh — prep leaves tower (Chad 10-24). Everything baked, offline.
+COPY gate/ /opt/gate/
+RUN chmod +x /opt/gate/*.sh && mkdir -p /opt/gate/jobs /opt/gate/tmp /opt/gate/models /root/.cache \
+ && ln -sfn /opt/models/hf /root/.cache/huggingface \
+ && python -m venv --system-site-packages /opt/gate/venv \
+ && /opt/gate/venv/bin/pip install torchmetrics librosa onnxruntime requests pyloudnorm 2>&1 | tail -3 \
+ && /opt/gate/venv/bin/python -c "from faster_whisper import WhisperModel; WhisperModel('large-v3-turbo', device='cpu'); print('whisper cached')" \
+ && ffmpeg -nostdin -v error -f lavfi -i "sine=frequency=300:duration=8" -ac 1 -ar 16000 /tmp/t.wav \
+ && /opt/gate/venv/bin/python /opt/gate/media_tool.py grade /tmp/t.wav --models /opt/gate/models --threads 2 | tail -c 300
+# DeepFilterNet needs its own old torch (0.5.6 / torch 2.0.1, CPU wheels: small) and its model cached
+RUN python -m venv /opt/gate/venv-dfn \
+ && /opt/gate/venv-dfn/bin/pip install "numpy<2" torch==2.0.1 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cpu 2>&1 | tail -2 \
+ && /opt/gate/venv-dfn/bin/pip install deepfilternet==0.5.6 soundfile 2>&1 | tail -2 \
+ && /opt/gate/venv-dfn/bin/python -c "from df.enhance import init_df; init_df(); print('dfn model cached')" \
+ && du -sh /opt/gate /root/.cache /root/.torchmetrics 2>/dev/null
+
 # Job code, pinned by the image tag
 COPY media/ /opt/sifter/media/
 RUN python -m py_compile /opt/sifter/media/runpod_worker.py /opt/sifter/media/worker/*.py \

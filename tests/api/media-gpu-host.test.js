@@ -399,11 +399,13 @@ describe('a finished transcription is noticed within seconds (21:05: a 15 s poll
   });
 });
 
-describe('prep never queues behind full encode slots (21:30: 16 prep runs waited on boss’s 4 encode slots)', () => {
-  it('a full set of boss encode slots overflows to the tower; re-runs of published talks never take a boss slot', async () => {
+describe('encodes go to the worker pool (10-24: web encodes leave tower)', () => {
+  it('encodeRemote picks a pod or boss with a free slot and WAITS otherwise; the tower slot is only the no-pool fallback; item.js sends every web / trim encode through it', async () => {
     const { readFileSync } = await import('fs');
-    // encodeRemote's remote path needs ssh (no exec injection), so the two rules are checked in the source
-    expect(readFileSync(new URL('../../api/lib/media/tools.js', import.meta.url), 'utf8')).toMatch(/if \(encBusy >= slots && local && !overflowOff\(\)\) return local\(\);/);
-    expect(readFileSync(new URL('../../api/lib/media/item.js', import.meta.url), 'utf8')).toMatch(/if \(tools\.encodeRemote && slotLight === towerLight && !remastered\)/);
+    const tools = readFileSync(new URL('../../api/lib/media/tools.js', import.meta.url), 'utf8');
+    expect(tools).toMatch(/hostsNow\(\)\.find\(\(\[h, n\]\) => \(encBusyBy\.get\(h\) \|\| 0\) < n && diskOk\(h, \{ kind: 'encode' \}\)\)/);
+    expect(tools).toMatch(/await slotWait\(encWait, 'an encode host'\)/);
+    const item = readFileSync(new URL('../../api/lib/media/item.js', import.meta.url), 'utf8');
+    for (const k of ["webEnc('ogg'", "webEnc('m4a'", "trimEnc('togg'", "trimEnc('tm4a'", "trimEnc('toogg'", "trimEnc('tom4a'"]) expect(item).toContain(k);
   });
 });

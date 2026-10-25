@@ -1488,6 +1488,13 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         }
       }));
       for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.dead_worker)) { await closePod(p, `worker stopped (no status for ${Math.round((now() - p.worker_seen) / 60_000)} min)`); st.pod_failures = Math.max(0, st.pod_failures); }
+      // the READY, baked pods join the worker pool (pool.js): prep / probe / grade / dfn / encodes may use them as hosts of the same gate
+      try {
+        const P = await import('../media/pool.js');
+        const ready = Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && q.baked && q.ip && q.port && !q.dead_worker && !(q.idle_since && now() - q.idle_since > 8 * 60_000));
+        const sig = ready.map((q) => `${P.podName(q)}@${q.ip}:${q.port}`).sort().join(',');
+        if (sig !== st.pool_sig) { P.publishPool(ready.map((q) => ({ host: P.podName(q), ip: q.ip, port: q.port }))); st.pool_sig = sig; }
+      } catch (err) { st.pool_error = String(err.message).slice(0, 160); }
       // the LEDGER (rented vs busy minutes, $ rented vs $ productive) and the lane's own idle rule; pod-reaper.js is the independent second path
       L.ledgerTick(st, Object.values(st.pods).filter((q) => !q.terminated), utilBy, now());
       for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.idle_since && now() - q.idle_since > L.LEDGER.idleMs)) await closePod(p, `idle ${Math.round((now() - p.idle_since) / 60_000)} min`);
@@ -1499,6 +1506,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     }
   } finally {
     clearInterval(hb); clearInterval(pump);
+    try { (await import('../media/pool.js')).publishPool([]); st.pool_sig = ''; } catch { /* no pool file */ }   // the lane is ending: its pods leave the pool
     // the queue is done, the budget is spent or something failed: NO pod is left running (a drain leaves them working)
     if (!yielded) for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, stop || 'finished');
     st.spent_usd = C.spendOf(st, now()); st.updated = now();

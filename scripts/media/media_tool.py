@@ -656,13 +656,16 @@ def cmd_grade(a):
     print(jdumps(out))
 
 
-ENCODE_FILTERS = {'highpass', 'lowpass', 'bandreject', 'adeclick', 'afftdn', 'loudnorm', 'dynaudnorm', 'acompressor', 'volume', 'equalizer'}
+ENCODE_FILTERS = {'highpass', 'lowpass', 'bandreject', 'adeclick', 'afftdn', 'loudnorm', 'dynaudnorm', 'acompressor', 'volume', 'equalizer', 'afade'}
 RECIPES = {
     'light': lambda af: ['-vn', '-ac', '1', '-af', f'{af},aresample=48000,asetnsamples=n=4096:p=0', '-ar', '48000', '-c:a', 'flac', '-f', 'flac'],   # loudnorm works at 192 kHz in big frames: back to 48 kHz in FLAC-sized frames (ffmpeg 9 refuses 95,984-sample blocks)
     # the web copies: the listening source's transparent chain (af) applied; Opus 'audio' (fullband) at 56 kbps — 32 kbps
     # 'voip' capped every talk at ~4 kHz (10-23)
     'ogg': lambda af: ['-ac', '1'] + (['-af', af] if af != 'anull' else []) + ['-ar', '48000', '-c:a', 'libopus', '-b:a', '56k', '-application', 'audio', '-f', 'ogg'],
     'm4a': lambda af: ['-ac', '1'] + (['-af', af] if af != 'anull' else []) + ['-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4'],
+    # the REMASTERED listening copy's web files (48 kHz source: Opus 96k / AAC 128k so the restored band survives)
+    'oggR': lambda af: ['-ac', '1'] + (['-af', af] if af != 'anull' else []) + ['-ar', '48000', '-c:a', 'libopus', '-b:a', '96k', '-application', 'audio', '-f', 'ogg'],
+    'm4aR': lambda af: ['-ac', '1'] + (['-af', af] if af != 'anull' else []) + ['-ar', '48000', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-f', 'mp4'],
 }
 
 
@@ -676,7 +679,9 @@ def cmd_encode(a):
         if part.split('=')[0] not in ENCODE_FILTERS | {'anull'}:
             raise SystemExit(f'filter not allowed: {part}')
     t0 = time.time()
-    subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-threads', str(a.threads), '-i', a.input, '-threads', str(a.threads)]
+    # the TRIM window (leading / trailing silence off the web copies): -ss / -t before the input, exactly as tower's trim stage cut them
+    win = (['-ss', f'{a.ss:.2f}'] if a.ss is not None else []) + (['-t', f'{a.t:.2f}'] if a.t is not None else [])
+    subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-threads', str(a.threads)] + win + ['-i', a.input, '-threads', str(a.threads)]
                    + RECIPES[a.recipe](af) + [a.output], check=True)
     print(jdumps({'output': a.output, 'recipe': a.recipe, 'seconds': round(time.time() - t0, 1)}))
 
@@ -725,6 +730,8 @@ def main():
         s.add_argument('--segments', default='')   # spkscreen: the transcript JSON whose segments are the speech
         s.add_argument('--every', type=float, default=10.0)
         s.add_argument('--emb-out', default='')
+        s.add_argument('--ss', type=float, default=None)   # encode: window start (s)
+        s.add_argument('--t', type=float, default=None)    # encode: window length (s)
         s.add_argument('--spans', default='')   # spkmerge: the speakers' spans JSON
     a = p.parse_args()
     os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))   # a retry after an OOM sets more
