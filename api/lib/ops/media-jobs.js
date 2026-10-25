@@ -124,6 +124,12 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
     await logActivity('media', `▶ media ${r.slug}: ${r.done.join(' → ') || 'nothing to do'}`).catch(() => {});
     return { id, slug: r.slug, done: r.done, cost_usd: r.meta?.cost?.usd ?? null, stages: r.meta?.stages };
   } catch (err) {
+    // no worker could take the stage (tower never does heavy work): not a failure — the item goes back in the queue and is retried after a pause
+    if (err.code === 'WORKER_WAIT') {
+      if (!(item.state === 'done' || item.published_at || /,catalog,/.test(item.stages_done || ''))) await updateMediaItem(id, { state: 'queued', why: `waiting for a worker: ${String(err.message).slice(0, 200)}` }).catch(() => {});
+      await new Promise((r) => setTimeout(r, deps.waitMs ?? 90_000));   // damps the retry loop: each lane worker retries at most once a minute and a half
+      return { id, waiting: true, why: String(err.message).slice(0, 200) };
+    }
     // a bot check / rate limit is not a failure (no alert mail): the item waits out the YouTube cool-down and is retried
     if (err.code === 'BOT_CHECK') {
       await updateMediaItem(id, { state: 'held', why: String(err.message).slice(0, 500) }).catch(() => {});

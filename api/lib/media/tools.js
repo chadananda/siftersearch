@@ -29,6 +29,42 @@ process.once('exit', () => { for (const c of live) { try { c.kill('SIGTERM'); } 
 
 /** The error a child process ends with when the service drains mid-stage: the stage is redone after the restart. */
 export class DrainAbort extends Error { constructor(what) { super(`${what}: stopped for an update drain — redone after the restart`); this.code = 'DRAIN'; } }
+// ── TOWER PLACEMENT (Chad 10-24: "tower must stay responsive … what happens when we have 300?") ──────────────────────────────
+// Every media process tower starts passes THIS gate. HEAVY work never runs here: it waits for a worker (WorkerWait — the item is put
+// back in the queue and retried), whatever fallback code asked for it. What is left is bounded: web encodes (libopus / aac: the
+// trim stage and the encode fallback — no worker recipe yet) ONE at a time; light analysis (metrics, probe, 16 kHz conversions,
+// waveform decode) TWO at a time. CLAUDE.md "Tower placement"; tests/api/tower-guard.test.js. MEDIA_TOWER_HEAVY=1 lifts it (maintenance only).
+export class WorkerWait extends Error { constructor(what) { super(`${what}: waiting for a worker (aorus, boss or a pod) — never run on tower`); this.code = 'WORKER_WAIT'; } }
+const HEAVY_SUBS = new Set(['dfn', 'grade', 'diarize', 'transcribe', 'realign', 'langid', 'unipase', 'encode', 'probe']);
+/** 'refuse' | 'encode' | 'light' for a command tower is about to spawn. Pure. */
+export function towerClass(cmd, args = []) {
+  const name = String(cmd).split('/').pop();
+  const a = args.map(String);
+  if (/^python/.test(name) || name === 'python3') {
+    const script = a.find((x) => /media_tool\.py$|remaster_guard\.py$|unipase_job\.py$|cleanup\.py$/.test(x));
+    if (!script) return 'light';
+    if (/remaster_guard|unipase_job|cleanup/.test(script)) return 'refuse';
+    const sub = a[a.indexOf(script) + 1];
+    return HEAVY_SUBS.has(sub) ? 'refuse' : 'light';
+  }
+  if (name === 'ffmpeg') {
+    const j = a.join(' ');
+    if (/libopus|\baac\b|libmp3lame|-c:a flac/.test(j) && !/-f s16le|-f f32le/.test(j)) return 'encode';
+    if (/loudnorm|highpass|dynaudnorm|equalizer|compand/.test(j) && !/-f s16le|-f f32le|-f null/.test(j)) return 'refuse';   // the prep 'light'/'safe chain' file: a worker recipe exists
+    return 'light';
+  }
+  return 'free';
+}
+const towerSlots = { encode: [Number(process.env.MEDIA_TOWER_ENCODE_SLOTS) || 1, 0, []], light: [Number(process.env.MEDIA_TOWER_LIGHT_SLOTS) || 2, 0, []] };
+async function towerAdmit(kind, label) {
+  const t = towerSlots[kind];
+  if (!t) return () => {};
+  while (t[1] >= t[0]) await slotWait(t[2], `a tower ${kind} slot (${label})`);
+  t[1]++;
+  return () => { t[1]--; t[2].shift()?.(); };
+}
+export const towerGuardState = () => Object.fromEntries(Object.entries(towerSlots).map(([k, v]) => [k, { running: v[1], limit: v[0], waiting: v[2].length }]));
+
 /** A SLOT WAIT that a drain never hangs on (10-23: a diarization at 17:59 and two compute jobs at 19:44 held the media drain
  *  in plain slot waits): resolves when woken or after `ms` (the caller re-checks its condition), and throws DrainAbort when
  *  the service is draining. queue: the array of wakers. */
@@ -78,7 +114,13 @@ export function errSummary(err = '') {
  *  stop: () => boolean, polled every pollMs — true (the service is draining) kills the child and rejects with DrainAbort, so a
  *  long transcription never holds a drain (10-21: a 37-minute stage parked every reports lane). */
 export const liveChildren = () => live.size;
-export function run(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null, input = null, onStdout = null, stop = null, pollMs = 2000 } = {}) {
+export async function run(cmd, args, o = {}) {
+  const cls = process.env.MEDIA_TOWER_HEAVY === '1' ? 'free' : towerClass(cmd, args);
+  if (cls === 'refuse') throw new WorkerWait(`${String(cmd).split('/').pop()} ${(args.find((x) => /media_tool\.py$/.test(String(x))) ? args[args.indexOf(args.find((x) => /media_tool\.py$/.test(String(x)))) + 1] : '')}`.trim());
+  const release = await towerAdmit(cls, String(cmd).split('/').pop());
+  try { return await runNow(cmd, args, o); } finally { release(); }
+}
+function runNow(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null, input = null, onStdout = null, stop = null, pollMs = 2000 } = {}) {
   return new Promise((resolve, reject) => {
     const tenv = threads ? { OMP_NUM_THREADS: String(threads), MKL_NUM_THREADS: String(threads), OPENBLAS_NUM_THREADS: String(threads) } : {};
     const p = spawn(LOW[0], [...LOW.slice(1), cmd, ...args], { env: { ...process.env, ...tenv, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
@@ -458,6 +500,7 @@ export async function detachedTool(sub, input, opts = {}, { pidFile, threads = d
   const alive = (pid) => { try { process.kill(pid, 0); } catch { return false; } try { return readFileSync(`/proc/${pid}/cmdline`, 'utf8').includes('media_tool'); } catch { return true; } };
   let pid = Number(await readFile(pidFile, 'utf8').catch(() => 0)) || 0;
   if (!pid || !alive(pid)) {
+    if (process.env.MEDIA_TOWER_HEAVY !== '1' && HEAVY_SUBS.has(sub)) throw new WorkerWait(`media_tool ${sub}`);   // (a job already running on tower is still re-attached above)
     if (pid && existsSync(outFile) && (await readFile(outFile, 'utf8')).trim()) return JSON.parse((await readFile(outFile, 'utf8')).trim().split('\n').pop());
     const args = [TOOL, sub, input, '--threads', String(threads)];
     for (const [k, v] of Object.entries(opts)) { if (v === true) args.push(`--${k}`); else if (v != null && v !== false && v !== '') args.push(`--${k}`, String(v)); }

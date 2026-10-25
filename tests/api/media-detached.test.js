@@ -37,12 +37,12 @@ describe('detachedTool (tower-side, survives a drain)', () => {
     const fake = join(dir, 'fakepy.sh');
     // stands in for python media_tool.py: a second of work, then its JSON line (the name keeps "media_tool" in argv)
     writeFileSync(fake, '#!/bin/sh\nsleep 1\necho \'{"ok":true}\'\n'); chmodSync(fake, 0o755);
-    process.env.MEDIA_PYTHON = fake;
+    process.env.MEDIA_PYTHON = fake; process.env.MEDIA_TOWER_HEAVY = '1';   // this tests the detached MECHANISM; the tower gate has its own test
     const pidFile = join(dir, 'diarization.pid');
     await expect(detachedTool('diarize', 'in.flac', {}, { pidFile, stop: () => true, pollMs: 20 })).rejects.toMatchObject({ code: 'DRAIN' });
     const r = await detachedTool('diarize', 'in.flac', {}, { pidFile, pollMs: 50 });
     expect(r).toEqual({ ok: true });
-    delete process.env.MEDIA_PYTHON;
+    delete process.env.MEDIA_PYTHON; delete process.env.MEDIA_TOWER_HEAVY;
   });
 });
 
