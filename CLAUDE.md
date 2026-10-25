@@ -54,6 +54,7 @@ substitute the local database and do not estimate.
   children included, so even code that wrongly runs work here cannot starve search. Slice file: `~/.config/systemd/user/sifter-bulk.slice` (copy in `docs/ops/`).
 * **Ratchet:** `tests/api/tower-placement-ratchet.test.js` fails on any NEW server-side file that spawns heavy processes; `tests/api/tower-placement-legacy.json`
   lists the rest with a plan and a date and may only shrink. **system-checks** warns/CRITICALs on heavy media cores running on tower, naming the kind.
+* **The gate (the real enforcement):** every process tower starts goes through `run()` in `api/lib/media/tools.js`. Heavy stages (dfn, grade, diarize, transcribe, realign, langid, probe, the word guard, prep encodes) throw `WorkerWait` — the item goes back to the queue and retries — so there is NO tower fallback. Left on tower, bounded: web encodes (1 at a time), light analysis (metrics, 16 kHz conversions, waveform decode; 2 at a time). `tests/api/tower-guard.test.js`.
 * **Remaster:** `MEDIA_REMASTER_STRICT=1` means tower takes only complete worker results (guard, alignment, encodes, verdict) — it never reprocesses audio.
 
 > **Full coding principles**: See [planning/coding-principles-guide.md](planning/coding-principles-guide.md)
