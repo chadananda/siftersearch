@@ -1281,7 +1281,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       st.boot_fails = (st.boot_fails || 0) + 1;
       (st.waste_log ||= []).push({ at: now(), pod: p.name, why: String(why).slice(0, 120), usd: Math.round(wasted * 100) / 100, host: p.host_key || null, boot_s: p.ready_at ? Math.round((p.ready_at - p.created) / 1000) : null });
       st.waste_log = st.waste_log.slice(-30);
-      if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} pods in a row never worked (last: ${String(why).slice(0, 100)})`; st.proven = false; st.boot_fails = 0; }
+      if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} pods in a row never worked (last: ${String(why).slice(0, 100)})`; st.proven = false; st.boot_fails = 0; st.breaker_trips = (st.breaker_trips || 0) + 1; }
     }
     st.spent_closed = Math.round(((st.spent_closed || 0) + (p.costPerHr || 0) * Math.max(0, p.terminated - p.created) / 3600_000) * 100) / 100;
     for (const [j, x] of Object.entries(st.jobs)) if (x.pod === p.id) { st.queue.unshift(x.itemId); delete st.jobs[j]; }
@@ -1371,7 +1371,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const breakerOn = !!st.breaker_until && now() < st.breaker_until;
       if (live.length < want && !held && !breakerOn) {
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
-        const pod = await C.createPod(name, pub, deps).catch((err) => ({ error: err.message }));
+        const pod = await C.createPod(name, pub, { ...deps, prefer: C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
         if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
         else st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting' };
       }
@@ -1383,6 +1383,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             const g = await C.getPod(p.id, deps);
             if (p.costPerHr == null) p.costPerHr = g.costPerHr ?? g.adjustedCostPerHr ?? null;
             p.gpu = g.machine?.gpuDisplayName || g.gpu?.displayName || p.gpu || null;
+            p.dc = g.machine?.dataCenterId || g.dataCenterId || p.dc || null; p.host_key = g.machineId || g.machine?.id || p.host_key || null; p.cloud = g.cloudType || g.machine?.cloudType || p.cloud || null;
             const port = g.portMappings?.['22'];
             if (g.publicIp && port) {
               p.ip = g.publicIp; p.port = port;

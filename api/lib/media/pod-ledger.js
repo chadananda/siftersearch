@@ -69,7 +69,7 @@ export function ledgerSummary(st, now = Date.now(), spendOf = () => st.spent_usd
   const usd = (p, ms) => (p.costPerHr || 0) * ms / 3600_000;
   return {
     lane_updated_s: st.updated ? Math.round((now - st.updated) / 1000) : null,
-    money_stopped: st.cloud_stopped || null, wasted_usd: st.wasted_usd || 0, breaker_until: st.breaker_until && st.breaker_until > now ? st.breaker_until : null, breaker_reason: st.breaker_until > now ? st.breaker_reason : null, proven: !!st.proven, waste_log: (st.waste_log || []).slice(-8),
+    money_stopped: st.cloud_stopped || null, wasted_usd: st.wasted_usd || 0, breaker_until: st.breaker_until && st.breaker_until > now ? st.breaker_until : null, breaker_reason: st.breaker_until > now ? st.breaker_reason : null, proven: !!st.proven, waste_log: (st.waste_log || []).slice(-8), hosts: st.pods ? hostStatsLite(st) : null,
     running: !!st.started && !st.finished,
     spent_usd: spendOf(st, now), cap_usd: cap,
     rented_usd: r2(pods.reduce((a, p) => a + usd(p, p.rented_ms || 0), 0)),
@@ -100,4 +100,16 @@ export function reapReason(pod, entry, st, now, cfg = LEDGER) {
   if (entry.quiet_since && now - entry.quiet_since > cfg.quietMs) return `GPU quiet ${min(now - entry.quiet_since)} min (stuck)`;
   if (entry.status === 'ready' && entry.lastOk && now - entry.lastOk > (cfg.unreachableMs || cfg.idleMs)) return `unreachable ${min(now - entry.lastOk)} min`;
   return null;
+}
+
+function hostStatsLite(st) {
+  const out = {};
+  for (const p of Object.values(st.pods || {})) {
+    const dc = p.dc || p.host_key || 'unknown';
+    const e = (out[dc] ||= { pods: 0, booted: 0, boot_s: 0, never_worked: 0 });
+    e.pods++; if (p.ready_at) { e.booted++; e.boot_s += (p.ready_at - p.created) / 1000; }
+    if (p.terminated && !(p.jobs_assigned > 0)) e.never_worked++;
+  }
+  for (const e of Object.values(out)) { e.avg_boot_s = e.booted ? Math.round(e.boot_s / e.booted) : null; delete e.boot_s; }
+  return out;
 }

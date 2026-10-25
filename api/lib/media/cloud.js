@@ -59,11 +59,13 @@ export async function createPod(name, publicKey, deps = {}) {
   // a 4090 FIRST (10-24 measured GPU-min per audio hour: 4090 2.4-3.2 · 3090 4.4 · A40 5.4 · A4500 6.1 — about the same $ per
   // audio hour, twice the speed), community then secure; only then any card on the list
   const tries = [];
-  for (const types of [CLOUD.gpuTypes.slice(0, 1), CLOUD.gpuTypes]) for (const cloudType of vol ? ['SECURE'] : ['COMMUNITY', 'SECURE']) tries.push([types, cloudType]);
+  // deps.prefer = { cloud: 'SECURE' | 'COMMUNITY', dcs: [data-centre ids that booted fast] } learned from the ledger (st.hosts); secure first after the breaker has tripped
+  const order = vol ? ['SECURE'] : deps.prefer?.cloud === 'SECURE' ? ['SECURE', 'COMMUNITY'] : ['COMMUNITY', 'SECURE'];
+  for (const types of [CLOUD.gpuTypes.slice(0, 1), CLOUD.gpuTypes]) for (const cloudType of order) tries.push([types, cloudType]);
   for (const [types, cloudType] of tries) {
     try {
       return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
-        containerDiskInGb: 60, ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true,
+        containerDiskInGb: 60, ...(deps.prefer?.dcs?.length ? { dataCenterIds: deps.prefer.dcs } : {}), ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true,
         env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key() } }, deps);
     } catch (err) { lastErr = err; }
   }
@@ -72,6 +74,25 @@ export async function createPod(name, publicKey, deps = {}) {
 export const listPods = (deps) => rest('GET', '/pods', null, deps);
 export const getPod = (id, deps) => rest('GET', `/pods/${id}`, null, deps);
 export const terminatePod = (id, deps) => rest('DELETE', `/pods/${id}`, null, deps).catch((err) => (/404/.test(err.message) ? {} : Promise.reject(err)));
+
+/** Per data-centre boot statistics (the ledger's host table): { dc: { n, boot_s, fails } }. Pure. */
+export function hostStats(st) {
+  const out = {};
+  for (const p of Object.values(st.pods || {})) {
+    const dc = p.dc || p.host_key; if (!dc) continue;
+    const e = (out[dc] ||= { n: 0, boot_s: 0, ok: 0, fails: 0 });
+    e.n++;
+    if (p.ready_at) { e.ok++; e.boot_s += (p.ready_at - p.created) / 1000; }
+    if (!(p.jobs_assigned > 0) && p.terminated) e.fails++;
+  }
+  for (const e of Object.values(out)) { e.avg_boot_s = e.ok ? Math.round(e.boot_s / e.ok) : null; delete e.boot_s; }
+  return out;
+}
+/** The rental preference learned so far: data centres with >= 2 boots, none wasted, average boot < 7 min; SECURE once the breaker has tripped. */
+export function rentalPrefer(st) {
+  const good = Object.entries(hostStats(st)).filter(([, e]) => e.ok >= 2 && e.fails === 0 && e.avg_boot_s != null && e.avg_boot_s < 420).sort((a, b) => a[1].avg_boot_s - b[1].avg_boot_s).map(([dc]) => dc);
+  return { dcs: good.slice(0, 3), cloud: (st.breaker_trips || 0) >= 1 ? 'SECURE' : 'COMMUNITY' };
+}
 
 /** Our spend so far: closed pods' cost + each live pod's cost per hour × its age. */
 export function spendOf(state, now = Date.now()) {

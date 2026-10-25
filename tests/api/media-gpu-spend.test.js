@@ -515,3 +515,14 @@ describe('rental circuit breaker + canary', () => {
     const st = JSON.parse(readFileSync(x.deps.stateFile, 'utf8')); expect(st.proven).toBe(true);
   });
 });
+
+describe('host preference learned from the ledger', () => {
+  it('data centres that booted twice, fast and worked are preferred; SECURE after a breaker trip; per-dc boot times are in the stats', () => {
+    const st = { pods: {
+      a: { dc: 'EU-1', created: 0, ready_at: 200_000, jobs_assigned: 3, terminated: 1 }, b: { dc: 'EU-1', created: 0, ready_at: 260_000, jobs_assigned: 2, terminated: 1 },
+      c: { dc: 'US-9', created: 0, ready_at: 900_000, jobs_assigned: 1, terminated: 1 }, d: { dc: 'US-9', created: 0, jobs_assigned: 0, terminated: 1 }, e: { dc: 'US-9', created: 0, ready_at: 500_000, jobs_assigned: 0, terminated: 1 } } };
+    expect(C.hostStats(st)['EU-1']).toMatchObject({ n: 2, ok: 2, fails: 0, avg_boot_s: 230 });
+    expect(C.rentalPrefer(st)).toEqual({ dcs: ['EU-1'], cloud: 'COMMUNITY' });
+    expect(C.rentalPrefer({ ...st, breaker_trips: 1 }).cloud).toBe('SECURE');
+  });
+});
