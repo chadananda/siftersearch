@@ -1,6 +1,97 @@
 {
-  "generated": "2026-10-24T21:16:51.356Z",
+  "generated": "2026-10-25T15:22:36.254Z",
   "entries": [
+    {
+      "hash": "e073fd6a",
+      "date": "2026-10-25",
+      "type": "New",
+      "description": "Per-data-centre boot times and wasted rent in the ledger; rentals prefer the data centres that booted fast and worked, SECURE after a breaker trip",
+      "scope": "media"
+    },
+    {
+      "hash": "63d9855b",
+      "date": "2026-10-25",
+      "type": "New",
+      "description": "Lane keeper (the cloud lane always comes back), non-sticky money stop, canary-first rental with a 3-strike circuit breaker and wasted-$ ledger, image selftest",
+      "scope": "media"
+    },
+    {
+      "hash": "b782122b",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Pods without the gate are retired after their jobs (MEDIA_POOL_REQUIRE_GATE); only gate pods join the pool",
+      "scope": "media"
+    },
+    {
+      "hash": "593c7129",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "Rented pods join the worker pool as hosts of the same gate — prep (probe, grade, dfn) and every web / trim-window encode dispatch to pods, aorus and boss; image carries the gate (venv, DeepFilterNet venv, cached Whisper + DNSMOS/NISQA)",
+      "scope": "media"
+    },
+    {
+      "hash": "e05c3b47",
+      "date": "2026-10-24",
+      "type": "Docs",
+      "description": "The tower gate in CLAUDE.md",
+      "scope": null
+    },
+    {
+      "hash": "6b3ff83b",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Tower never runs heavy media work — a central gate in tools.js: dfn/grade/diarize/transcribe/realign/langid/probe/guard/prep-encodes WAIT for a worker (item back in the queue), web encodes one at a time, light analysis two",
+      "scope": "media"
+    },
+    {
+      "hash": "4ca04bbc",
+      "date": "2026-10-24",
+      "type": "Performance",
+      "description": "4 talks in flight per pod with a fair share (GPU is ~70 s of a ~12 min cycle: uploads, the CPU half and downloads overlap the next talks)",
+      "scope": "media"
+    },
+    {
+      "hash": "ca188938",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Explicit redo orders (restore mode) re-run talks the first pass got wrong",
+      "scope": "media"
+    },
+    {
+      "hash": "a6dff914",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "The worker finds the BAKED aligners (HF_HOME was unset in the ssh-started worker: every Persian talk 'placed 0 words' and was held)",
+      "scope": "media"
+    },
+    {
+      "hash": "b10595ec",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Dewey-discard can be limited to one member via the by param",
+      "scope": "dewey"
+    },
+    {
+      "hash": "9968a283",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "Dead-worker detection starts its clock on the first status read (a state file carrying an old status never tripped it)",
+      "scope": "media"
+    },
+    {
+      "hash": "5c894397",
+      "date": "2026-10-24",
+      "type": "Fixed",
+      "description": "A pod whose worker stopped is replaced (it idled itself out and then took jobs for an hour: nothing completed); the pod's terminate call sends a User-Agent (urllib's got 403); per-talk cycle timings recorded",
+      "scope": "media"
+    },
+    {
+      "hash": "274d4ae3",
+      "date": "2026-10-24",
+      "type": "New",
+      "description": "R2 fills are parallel multipart (4 x 8 MB ranged parts); POST /_media/ensure (internal key) fills one file now and says if present, incl. <slug>/src/original.<ext>; backfill orders the remaster queue (grade E,D,C,B) first",
+      "scope": "media"
+    },
     {
       "hash": "a0e7eeb8",
       "date": "2026-10-24",
@@ -3409,101 +3500,103 @@
       "type": "Performance",
       "description": "The monitors stop evicting the database cache — pipeline-snapshot reuses any probe that took ≥2 s for up to an hour, system-checks scans content only in the daily run, stall-guard uses MAX(rowid) and an index-friendly date filter. Whole-table scans every 5/30/60 min kept SQLite pages out of ZFS ARC: search hydration (primary-key lookups) 200–1000 ms, searches 5–15 s",
       "scope": "search"
-    },
-    {
-      "hash": "809e8ee9",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "/gateway/health lists the last 20 unavailable answers (time, service, path, error) and logs each — the count rose 1→3 with nothing to trace it",
-      "scope": "gateway"
-    },
-    {
-      "hash": "6570130c",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A resumable long job YIELDS to a drain between books (result.yielded → run left 'running', requeued on restart) — a multi-hour paragraph-authors run held the whole reports service in 'draining', so no lane (Phelps ingest, slow-queries) could run",
-      "scope": "ops"
-    },
-    {
-      "hash": "526b16d1",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Phelps' provisional English renderings of the tablets → library files (Tablet Translations/Stephen Phelps (provisional)/<author>/<PIN>.md), labelled provisional-phelps, credited to the tablet's author, linked to the original by PIN; official translations and unsegmented texts skipped (Chad 10-19)",
-      "scope": "library"
-    },
-    {
-      "hash": "10dbbfb0",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Reads in batch loops (indexer, reports-carry, embedding, audit) are not 'blocking' — no request waits on them",
-      "scope": "system-checks"
-    },
-    {
-      "hash": "6c0aa009",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Person search off the serving thread — entitySearch scanned+folded all entity_claims per call (10–13 s, ~200×/day on api and anis main threads: the slow-query emails); claims now held folded on one worker thread (claim-search.js), queries scan in memory",
-      "scope": "blocking"
-    },
-    {
-      "hash": "299f6bc9",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Paragraph-authors job has a spend cap (maxLlm Haiku calls, default 20,000) — no new book past it; the rest resume next run",
-      "scope": "authorship"
-    },
-    {
-      "hash": "0c477195",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A process mid-reload is given its own drain time (kill_timeout) + 1 min before it pages — the writer drains its batch and took >60 s on an ordinary deploy (false critical 'siftersearch-worker stopping')",
-      "scope": "system-checks"
-    },
-    {
-      "hash": "e27eeaa7",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Trailer paragraphs still get the classifier's quoted voices (author stays locked) — the 20804 dry run lost ~1,000 quoted voices by skipping them",
-      "scope": "authorship"
-    },
-    {
-      "hash": "e62ed885",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Keyword-fill points carry voices_fold too — a gap-filled paragraph quoting the Báb is findable by 'the Báb' at once, not after the next stamp-voices pass",
-      "scope": "search"
-    },
-    {
-      "hash": "6a29cce8",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Attribution trailers are EVIDENCE in the paragraph-authors job — a quotation followed by '(From a letter written on behalf of Shoghi Effendi …)' takes that writer (basis trailer) before the classifier runs; pandoc attribute tails stripped (Lights of Guidance quotations were labelled the compiler)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "ad8980ee",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A service mid-reload (launching/stopping) is looked at again for up to 60 s before it pages anyone — graceful deploys were false criticals; the macro-services (gateway, anis, ops, indexer, reports) are now required and watched",
-      "scope": "system-checks"
-    },
-    {
-      "hash": "12010d00",
-      "date": "2026-10-19",
-      "type": "New",
-      "description": "Every VOICE is findable by author — points carry voices_fold (the paragraph's author + every quoted voice); an author filter matches writer OR quoted voice; stamp-voices job (indexer service) stamps existing points by paragraph, payload only; keyword indexer writes it (Chad 10-19: the Báb quoted by Mázandarání answers 'what did the Báb say')",
-      "scope": "search"
-    },
-    {
-      "hash": "7eb8e1ba",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "A Bahá'í compilation (author, author_2, … in the frontmatter) is credited to its compiler in the MAIN library ingester too — one shared rule (library/compilation-author.js); its copy of Lights of Guidance was 'by Bahá'u'lláh'. compilation-authors ops job finds and (with write) corrects existing library records (Chad 10-19)",
-      "scope": "ingest"
     }
   ],
   "grouped": {
+    "2026-10-25": [
+      {
+        "hash": "e073fd6a",
+        "date": "2026-10-25",
+        "type": "New",
+        "description": "Per-data-centre boot times and wasted rent in the ledger; rentals prefer the data centres that booted fast and worked, SECURE after a breaker trip",
+        "scope": "media"
+      },
+      {
+        "hash": "63d9855b",
+        "date": "2026-10-25",
+        "type": "New",
+        "description": "Lane keeper (the cloud lane always comes back), non-sticky money stop, canary-first rental with a 3-strike circuit breaker and wasted-$ ledger, image selftest",
+        "scope": "media"
+      }
+    ],
     "2026-10-24": [
+      {
+        "hash": "b782122b",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Pods without the gate are retired after their jobs (MEDIA_POOL_REQUIRE_GATE); only gate pods join the pool",
+        "scope": "media"
+      },
+      {
+        "hash": "593c7129",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "Rented pods join the worker pool as hosts of the same gate — prep (probe, grade, dfn) and every web / trim-window encode dispatch to pods, aorus and boss; image carries the gate (venv, DeepFilterNet venv, cached Whisper + DNSMOS/NISQA)",
+        "scope": "media"
+      },
+      {
+        "hash": "e05c3b47",
+        "date": "2026-10-24",
+        "type": "Docs",
+        "description": "The tower gate in CLAUDE.md",
+        "scope": null
+      },
+      {
+        "hash": "6b3ff83b",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Tower never runs heavy media work — a central gate in tools.js: dfn/grade/diarize/transcribe/realign/langid/probe/guard/prep-encodes WAIT for a worker (item back in the queue), web encodes one at a time, light analysis two",
+        "scope": "media"
+      },
+      {
+        "hash": "4ca04bbc",
+        "date": "2026-10-24",
+        "type": "Performance",
+        "description": "4 talks in flight per pod with a fair share (GPU is ~70 s of a ~12 min cycle: uploads, the CPU half and downloads overlap the next talks)",
+        "scope": "media"
+      },
+      {
+        "hash": "ca188938",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Explicit redo orders (restore mode) re-run talks the first pass got wrong",
+        "scope": "media"
+      },
+      {
+        "hash": "a6dff914",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "The worker finds the BAKED aligners (HF_HOME was unset in the ssh-started worker: every Persian talk 'placed 0 words' and was held)",
+        "scope": "media"
+      },
+      {
+        "hash": "b10595ec",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Dewey-discard can be limited to one member via the by param",
+        "scope": "dewey"
+      },
+      {
+        "hash": "9968a283",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "Dead-worker detection starts its clock on the first status read (a state file carrying an old status never tripped it)",
+        "scope": "media"
+      },
+      {
+        "hash": "5c894397",
+        "date": "2026-10-24",
+        "type": "Fixed",
+        "description": "A pod whose worker stopped is replaced (it idled itself out and then took jobs for an hour: nothing completed); the pod's terminate call sends a User-Agent (urllib's got 403); per-talk cycle timings recorded",
+        "scope": "media"
+      },
+      {
+        "hash": "274d4ae3",
+        "date": "2026-10-24",
+        "type": "New",
+        "description": "R2 fills are parallel multipart (4 x 8 MB ranged parts); POST /_media/ensure (internal key) fills one file now and says if present, incl. <slug>/src/original.<ext>; backfill orders the remaster queue (grade E,D,C,B) first",
+        "scope": "media"
+      },
       {
         "hash": "a0e7eeb8",
         "date": "2026-10-24",
@@ -6922,97 +7015,6 @@
         "type": "Performance",
         "description": "The monitors stop evicting the database cache — pipeline-snapshot reuses any probe that took ≥2 s for up to an hour, system-checks scans content only in the daily run, stall-guard uses MAX(rowid) and an index-friendly date filter. Whole-table scans every 5/30/60 min kept SQLite pages out of ZFS ARC: search hydration (primary-key lookups) 200–1000 ms, searches 5–15 s",
         "scope": "search"
-      },
-      {
-        "hash": "809e8ee9",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "/gateway/health lists the last 20 unavailable answers (time, service, path, error) and logs each — the count rose 1→3 with nothing to trace it",
-        "scope": "gateway"
-      },
-      {
-        "hash": "6570130c",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A resumable long job YIELDS to a drain between books (result.yielded → run left 'running', requeued on restart) — a multi-hour paragraph-authors run held the whole reports service in 'draining', so no lane (Phelps ingest, slow-queries) could run",
-        "scope": "ops"
-      },
-      {
-        "hash": "526b16d1",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Phelps' provisional English renderings of the tablets → library files (Tablet Translations/Stephen Phelps (provisional)/<author>/<PIN>.md), labelled provisional-phelps, credited to the tablet's author, linked to the original by PIN; official translations and unsegmented texts skipped (Chad 10-19)",
-        "scope": "library"
-      },
-      {
-        "hash": "10dbbfb0",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Reads in batch loops (indexer, reports-carry, embedding, audit) are not 'blocking' — no request waits on them",
-        "scope": "system-checks"
-      },
-      {
-        "hash": "6c0aa009",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Person search off the serving thread — entitySearch scanned+folded all entity_claims per call (10–13 s, ~200×/day on api and anis main threads: the slow-query emails); claims now held folded on one worker thread (claim-search.js), queries scan in memory",
-        "scope": "blocking"
-      },
-      {
-        "hash": "299f6bc9",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Paragraph-authors job has a spend cap (maxLlm Haiku calls, default 20,000) — no new book past it; the rest resume next run",
-        "scope": "authorship"
-      },
-      {
-        "hash": "0c477195",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A process mid-reload is given its own drain time (kill_timeout) + 1 min before it pages — the writer drains its batch and took >60 s on an ordinary deploy (false critical 'siftersearch-worker stopping')",
-        "scope": "system-checks"
-      },
-      {
-        "hash": "e27eeaa7",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Trailer paragraphs still get the classifier's quoted voices (author stays locked) — the 20804 dry run lost ~1,000 quoted voices by skipping them",
-        "scope": "authorship"
-      },
-      {
-        "hash": "e62ed885",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Keyword-fill points carry voices_fold too — a gap-filled paragraph quoting the Báb is findable by 'the Báb' at once, not after the next stamp-voices pass",
-        "scope": "search"
-      },
-      {
-        "hash": "6a29cce8",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Attribution trailers are EVIDENCE in the paragraph-authors job — a quotation followed by '(From a letter written on behalf of Shoghi Effendi …)' takes that writer (basis trailer) before the classifier runs; pandoc attribute tails stripped (Lights of Guidance quotations were labelled the compiler)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "ad8980ee",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A service mid-reload (launching/stopping) is looked at again for up to 60 s before it pages anyone — graceful deploys were false criticals; the macro-services (gateway, anis, ops, indexer, reports) are now required and watched",
-        "scope": "system-checks"
-      },
-      {
-        "hash": "12010d00",
-        "date": "2026-10-19",
-        "type": "New",
-        "description": "Every VOICE is findable by author — points carry voices_fold (the paragraph's author + every quoted voice); an author filter matches writer OR quoted voice; stamp-voices job (indexer service) stamps existing points by paragraph, payload only; keyword indexer writes it (Chad 10-19: the Báb quoted by Mázandarání answers 'what did the Báb say')",
-        "scope": "search"
-      },
-      {
-        "hash": "7eb8e1ba",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "A Bahá'í compilation (author, author_2, … in the frontmatter) is credited to its compiler in the MAIN library ingester too — one shared rule (library/compilation-author.js); its copy of Lights of Guidance was 'by Bahá'u'lláh'. compilation-authors ops job finds and (with write) corrects existing library records (Chad 10-19)",
-        "scope": "ingest"
       }
     ]
   }
