@@ -17,6 +17,21 @@ STAGES = {
 }
 LIMITS = {'vram_pct': 90, 'ram_pct': 90, 'temp_c': 83, 'disk_free_gb': 5, 'margin_gb': 0.5}
 
+def network_bytes():
+    try:
+        total=0
+        for line in open('/proc/net/dev'):
+            if ':' not in line:continue
+            name,values=line.split(':',1)
+            if name.strip()=='lo':continue
+            nums=values.split();total+=int(nums[0])+int(nums[8])
+        return total
+    except (OSError,ValueError,IndexError):return 0
+
+def useful_activity(active,ready,network_delta):
+    # Data transfer is useful work. SSH heartbeats are too small to extend idle.
+    return bool(active or ready or network_delta>=16384)
+
 
 def read_nvidia():
     try:

@@ -109,3 +109,10 @@ with tempfile.TemporaryDirectory() as d:
     expect(o).toEqual({ advanced: true, running: 1, admitting: false, stopped: true });
   });
 });
+it('treats file transfer progress as useful work while excluding tiny heartbeats',()=>{
+ const r=JSON.parse(execFileSync('python3',['-c',`
+import json
+from scripts.media.worker.controller import useful_activity
+print(json.dumps([useful_activity({},[],2000),useful_activity({},[],20000),useful_activity({'a':1},[],0),useful_activity({},['ready'],0)]))`],{encoding:'utf8'}));
+ expect(r).toEqual([false,true,true,true]);
+});

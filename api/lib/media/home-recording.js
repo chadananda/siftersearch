@@ -66,7 +66,7 @@ export async function homeWholeRecording(it,m,{T,image,legacyLock=true,stop=()=>
    // A short dispatch lock closes the race between concurrent API jobs. GPU/RAM
    // stages additionally share the process reservation registry inside the image.
    const legacy=legacyLock?'-v /home/chad/media-gpu/.gpu.lock:/gpu.lock -e SIFTER_LEGACY_GPU_LOCK=/gpu.lock':'';
-   const launch=`if [ "$(docker ps --filter name=whole- --format '{{.Names}}' | wc -l)" -lt 2 ]; then docker run -d --name ${q(name)} --gpus all --network none --cpus 8 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} ${legacy} -e SIFTER_GPU_LEASES=1 --entrypoint /usr/local/bin/node ${q(image)} /opt/sifter/api/lib/media/whole-recording.mjs /job; fi`;
+   const launch=`if [ "$(docker ps --filter 'name=^/whole-[0-9]+-' --format '{{.Names}}' | wc -l)" -lt 2 ]; then docker run -d --name ${q(name)} --gpus all --network none --cpus 8 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} ${legacy} -e SIFTER_GPU_LEASES=1 --entrypoint /usr/local/bin/node ${q(image)} /opt/sifter/api/lib/media/whole-recording.mjs /job; fi`;
    await run(`flock -x ${q(root+'/dispatch.lock')} bash -c ${q(launch)}`);
    if(!await state())await nap(10000);
   }

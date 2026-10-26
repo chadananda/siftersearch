@@ -11,3 +11,10 @@ it('streams transfer input from disk through the process runner',async()=>{
  expect((await run('cat',[],{inputFile:file,timeoutMs:5000})).stdout).toBe('streamed file input');
  await expect(run('cat',[],{inputFile:file+'-missing',timeoutMs:5000})).rejects.toThrow('ENOENT');
 });
+it('counts only production recording containers when admitting a whole job',async()=>{
+ const {homeWholeRecording}=await import('../../api/lib/media/home-recording.js');
+ const dir=await mkdtemp(join(tmpdir(),'whole-capacity-'));await writeFile(join(dir,'in.mp3'),'original');let launched=false,command='';
+ const T={run:async(cmd,args)=>{const text=args.at(-1);if(cmd==='ssh'&&text.includes('docker inspect'))return{stdout:launched?'{"Running":true}':'null'};if(cmd==='ssh'&&text.includes('flock -x')){command=text;launched=true;}return{stdout:''};}};
+ await expect(homeWholeRecording({id:1,dir},{slug:'test',original:'in.mp3',stages:{archive:{at:'now'}}},{T,image:'image',legacyLock:false,stop:()=>launched})).rejects.toMatchObject({code:'DRAIN'});
+ expect(command).toContain('name=^/whole-[0-9]+-');
+});

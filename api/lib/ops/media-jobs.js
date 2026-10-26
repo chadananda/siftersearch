@@ -1549,6 +1549,53 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             // a worker that stopped (idled itself out, crashed, drained) leaves a pod that bills and takes jobs it will never run: replace it, its jobs go back to the queue
             if (p.worker_seen && now() - p.worker_seen > 240_000 && !stdout.includes('READY')) { p.dead_worker = true; }
             if (!wm && p.status === 'ready' && !p.worker_seen) p.worker_seen = now();   // the worker's live controller numbers (limit, VRAM, heat, state)
+            const finishedJobs=new Set(stdout.split('\n').filter(l=>/^(DONE|FAIL) /.test(l)).map(l=>l.trim().split(' ')[1]));
+            // keep the pod fed (one running, one waiting)
+            // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
+            let uploadsThisPass = 0;
+            while (uploadsThisPass < 1 && Object.values(st.jobs).filter(j=>j.pod===p.id).length<2*C.CLOUD.perPod && !staleImage && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.entries(st.jobs).filter(([id,j]) => j.pod === p.id&&!finishedJobs.has(id)).length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:(acceptedWorker?.max_inflight_per_pod||C.CLOUD.perPod), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
+              const eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||(!acceptedWorker?.hold_whole&&p.image===acceptedWorker?.image));
+              if(eligible<0)break;
+              const itemId = st.queue.splice(eligible,1)[0]; const tAssign = now();
+              const it = await repo.getMediaItem(itemId);
+              const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
+              const whole=st.items?.[itemId]?.kind==='whole';
+              if (!whole&&decided(m,itemId)) continue;
+              if (!m?.original) { st.failed.push({ id: itemId, slug: it?.slug, error: 'no original' }); continue; }
+              const job = C.jobIdOf(it), src = join(it.dir, m.original), ext = (extname(src).slice(1) || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
+              uploadsThisPass++;
+              try {
+              st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,status:'uploading',...(whole?{kind:'whole',input_sha:await (await import('../media/whole-result.js')).fileSha(src)}:{})};
+              await save(st);
+              await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
+              await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}.part`);
+              await C.podSsh(run,p,`mv /workspace/spool/${job}/in.${ext}.part /workspace/spool/${job}/in.${ext}`,{timeoutMs:60000});
+              if(whole){
+                const W=await import('../media/whole-result.js'),sha=st.jobs[job].input_sha;
+                await C.podSsh(run,p,`cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`,{timeoutMs:60000,input:JSON.stringify({...W.wholeJob(it,m,sha),threads:Math.max(2,Math.min(6,Math.floor((p.cpu_count||16)/6)))})});
+                p.jobs_assigned=(p.jobs_assigned||0)+1;
+                st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,uploaded_s:Math.round((now()-tAssign)/1000),kind:'whole',input_sha:sha};
+                continue;
+              }
+              const work = await fs.readFile(join(it.dir, 'transcript.work.json'), 'utf8').then(JSON.parse).catch(() => null);
+              // the rest of the remaster runs on the pod too (word guard, realign, 4 web encodes — scripts/media/worker/post.py); tower validates and publishes
+              let post;
+              if (work?.paragraphs?.length && m.enhancement && deps.podPost !== false) {
+                const E = await import('../media/enhance.js'), PP = await import('../media/pod-post.js');
+                const orig = (m.enhancement.variants || []).find((v) => v.name === 'original') || {};
+                const raw = m.quality?.raw || {}, hum = Math.max(raw.hum50_db ?? 0, raw.hum60_db ?? 0) >= 10 ? ((raw.hum50_db ?? 0) >= (raw.hum60_db ?? 0) ? 50 : 60) : null;
+                post = { mode: st.items?.[itemId]?.mode || 'restore', cleanup: !acceptedWorker, ...(acceptedWorker ? {assess_quality:true,trim:m.trim} : {}), bw_khz: raw.bandwidth_khz ?? null, hum_hz: hum, audio_s: m.duration_s || it.duration_s, af: E.safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15, slug: m.slug || it.slug, work_sha: await PP.sha256File(join(it.dir, 'transcript.work.json')),
+                  ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS_REMASTER], m4a: ['-ac', '1', '-ar', '48000', '-c:a', 'aac', '-b:a', E.M4A_BITRATE_REMASTER, '-movflags', '+faststart'],
+                  orig_ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS], orig_m4a: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart'] };
+                if (post.mode === 'post') for (const [f, to] of [['unipase.cloud.flac', 'out.flac'], ['unipase.asr.json', 'asr.json'], ['unipase.asr_orig.json', 'asr_orig.json']]) { const lf = join(it.dir, 'enhanced', f); if (existsSync(lf)) await C.podPut(run, p, lf, `/workspace/spool/${job}/${to}`); }   // a result tower holds: the pod finishes it
+                await C.podPut(run, p, join(it.dir, 'transcript.work.json'), `/workspace/spool/${job}/work.json`);
+                if (post.mode === 'cleanup') await C.podPut(run, p, join(it.dir, 'transcript.raw.json'), `/workspace/spool/${job}/asr_orig.json`);   // the original's own transcript: the guard's reference
+              }
+              await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s), ...(post ? { post } : {}) }) });
+              p.jobs_assigned = (p.jobs_assigned || 0) + 1;
+              st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: tAssign, uploaded_s: Math.round((now() - tAssign) / 1000) };
+              } catch(error){delete st.jobs[job];if(!st.queue.includes(itemId))st.queue.unshift(itemId);await save(st);throw error;}
+            }
             let resultsThisPass = 0;
             for (const line of stdout.split('\n')) {
               const [kind, job] = line.trim().split(' ');
@@ -1617,52 +1664,6 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   if(x.kind==='whole')await repo.updateMediaItem(x.itemId,{state:'failed',why:err.slice(-500)});
                 }
               }
-            }
-            // keep the pod fed (one running, one waiting)
-            // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
-            let uploadsThisPass = 0;
-            while (uploadsThisPass < 1 && !staleImage && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:(acceptedWorker?.max_inflight_per_pod||C.CLOUD.perPod), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
-              const eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||(!acceptedWorker?.hold_whole&&p.image===acceptedWorker?.image));
-              if(eligible<0)break;
-              const itemId = st.queue.splice(eligible,1)[0]; const tAssign = now();
-              const it = await repo.getMediaItem(itemId);
-              const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
-              const whole=st.items?.[itemId]?.kind==='whole';
-              if (!whole&&decided(m,itemId)) continue;
-              if (!m?.original) { st.failed.push({ id: itemId, slug: it?.slug, error: 'no original' }); continue; }
-              const job = C.jobIdOf(it), src = join(it.dir, m.original), ext = (extname(src).slice(1) || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
-              uploadsThisPass++;
-              try {
-              st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,status:'uploading',...(whole?{kind:'whole',input_sha:await (await import('../media/whole-result.js')).fileSha(src)}:{})};
-              await save(st);
-              await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
-              await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}.part`);
-              await C.podSsh(run,p,`mv /workspace/spool/${job}/in.${ext}.part /workspace/spool/${job}/in.${ext}`,{timeoutMs:60000});
-              if(whole){
-                const W=await import('../media/whole-result.js'),sha=st.jobs[job].input_sha;
-                await C.podSsh(run,p,`cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`,{timeoutMs:60000,input:JSON.stringify({...W.wholeJob(it,m,sha),threads:Math.max(2,Math.min(6,Math.floor((p.cpu_count||16)/6)))})});
-                p.jobs_assigned=(p.jobs_assigned||0)+1;
-                st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,uploaded_s:Math.round((now()-tAssign)/1000),kind:'whole',input_sha:sha};
-                continue;
-              }
-              const work = await fs.readFile(join(it.dir, 'transcript.work.json'), 'utf8').then(JSON.parse).catch(() => null);
-              // the rest of the remaster runs on the pod too (word guard, realign, 4 web encodes — scripts/media/worker/post.py); tower validates and publishes
-              let post;
-              if (work?.paragraphs?.length && m.enhancement && deps.podPost !== false) {
-                const E = await import('../media/enhance.js'), PP = await import('../media/pod-post.js');
-                const orig = (m.enhancement.variants || []).find((v) => v.name === 'original') || {};
-                const raw = m.quality?.raw || {}, hum = Math.max(raw.hum50_db ?? 0, raw.hum60_db ?? 0) >= 10 ? ((raw.hum50_db ?? 0) >= (raw.hum60_db ?? 0) ? 50 : 60) : null;
-                post = { mode: st.items?.[itemId]?.mode || 'restore', cleanup: !acceptedWorker, ...(acceptedWorker ? {assess_quality:true,trim:m.trim} : {}), bw_khz: raw.bandwidth_khz ?? null, hum_hz: hum, audio_s: m.duration_s || it.duration_s, af: E.safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15, slug: m.slug || it.slug, work_sha: await PP.sha256File(join(it.dir, 'transcript.work.json')),
-                  ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS_REMASTER], m4a: ['-ac', '1', '-ar', '48000', '-c:a', 'aac', '-b:a', E.M4A_BITRATE_REMASTER, '-movflags', '+faststart'],
-                  orig_ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS], orig_m4a: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart'] };
-                if (post.mode === 'post') for (const [f, to] of [['unipase.cloud.flac', 'out.flac'], ['unipase.asr.json', 'asr.json'], ['unipase.asr_orig.json', 'asr_orig.json']]) { const lf = join(it.dir, 'enhanced', f); if (existsSync(lf)) await C.podPut(run, p, lf, `/workspace/spool/${job}/${to}`); }   // a result tower holds: the pod finishes it
-                await C.podPut(run, p, join(it.dir, 'transcript.work.json'), `/workspace/spool/${job}/work.json`);
-                if (post.mode === 'cleanup') await C.podPut(run, p, join(it.dir, 'transcript.raw.json'), `/workspace/spool/${job}/asr_orig.json`);   // the original's own transcript: the guard's reference
-              }
-              await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s), ...(post ? { post } : {}) }) });
-              p.jobs_assigned = (p.jobs_assigned || 0) + 1;
-              st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: tAssign, uploaded_s: Math.round((now() - tAssign) / 1000) };
-              } catch(error){delete st.jobs[job];if(!st.queue.includes(itemId))st.queue.unshift(itemId);await save(st);throw error;}
             }
             if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id)) await closePod(p, `pool reduced to ${maxPods}`);
           }
