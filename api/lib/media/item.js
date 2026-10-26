@@ -480,8 +480,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       meta.enc_jobs = meta.enc_jobs || {};
       const encJob = (k) => (meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110));
       const webEnc = (k, recipe, inp, outp, afStr, localFn) => (tools.encodeRemote ? tools.encodeRemote(recipe, inp, outp, { af: afStr || '', job: encJob(k), stop, local: localFn }) : localFn());
-      const oggLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', '48000', ...(remastered ? OGG_ARGS_REMASTER : OGG_ARGS), ogg], { stop }));
-      const m4aLocal = () => slotLight(() => tools.ffmpeg(['-i', src, ...afArgs, '-ac', '1', '-ar', remastered ? '48000' : '44100', '-c:a', 'aac', '-b:a', remastered ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', m4a], { stop }));
+      const oggLocal = () => slotLight(() => tools.ffmpeg(['-i', src, '-map', '0:a:0', '-vn', ...afArgs, '-ac', '1', '-ar', '48000', ...(remastered ? OGG_ARGS_REMASTER : OGG_ARGS), ogg], { stop }));
+      const m4aLocal = () => slotLight(() => tools.ffmpeg(['-i', src, '-map', '0:a:0', '-vn', ...afArgs, '-ac', '1', '-ar', remastered ? '48000' : '44100', '-c:a', 'aac', '-b:a', remastered ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', m4a], { stop }));
       // the ORIGINAL (transparent) copy beside a remaster — the talk page's "Original" button (audio.original_url)
       if (podWeb) {
         for (const [k, dst] of [['ogg', ogg], ['m4a', m4a], ['orig_ogg', join(dir, 'web', `${meta.slug}.original.ogg`)], ['orig_m4a', join(dir, 'web', `${meta.slug}.original.m4a`)]]) await podTake(dir, join('web', podWeb[k]), dst);
@@ -491,8 +491,8 @@ export async function runItem(item, opts = {}, deps = {}) {
         const oo = join(dir, 'web', `${meta.slug}.original.ogg`), om = join(dir, 'web', `${meta.slug}.original.m4a`);
         const sa = safeSrc.af ? ['-af', safeSrc.af] : [];
         await save();
-        await Promise.all([webEnc('oogg', 'ogg', safeSrc.src, oo, safeSrc.af, () => slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '48000', ...OGG_ARGS, oo], { stop }))),
-          webEnc('om4a', 'm4a', safeSrc.src, om, safeSrc.af, () => slotLight(() => tools.ffmpeg(['-i', safeSrc.src, ...sa, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', om], { stop })))]);
+        await Promise.all([webEnc('oogg', 'ogg', safeSrc.src, oo, safeSrc.af, () => slotLight(() => tools.ffmpeg(['-i', safeSrc.src, '-map', '0:a:0', '-vn', ...sa, '-ac', '1', '-ar', '48000', ...OGG_ARGS, oo], { stop }))),
+          webEnc('om4a', 'm4a', safeSrc.src, om, safeSrc.af, () => slotLight(() => tools.ffmpeg(['-i', safeSrc.src, '-map', '0:a:0', '-vn', ...sa, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', om], { stop })))]);
         meta.web_original = { ogg: `web/${meta.slug}.original.ogg`, m4a: `web/${meta.slug}.original.m4a` };
       } else if (meta.remaster_tier !== 'light') delete meta.web_original;   // the light tier keeps its raw-original encodes across re-runs
       if (!podWeb) {
@@ -660,8 +660,8 @@ export async function runItem(item, opts = {}, deps = {}) {
         const trimEnc = (k, recipe, inp, outp, afStr, localFn) => (tools.encodeRemote ? tools.encodeRemote(recipe, inp, outp, { af: afStr, job: tj(k), stop, window: win, local: localFn }) : localFn());
         await save();
         await Promise.all([
-          trimEnc('togg', rem ? 'oggR' : 'ogg', src, `${ogg}.trim.ogg`, af, () => slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', '48000', ...(isRemastered(meta) ? OGG_ARGS_REMASTER : OGG_ARGS), `${ogg}.trim.ogg`], { stop }))),
-          trimEnc('tm4a', rem ? 'm4aR' : 'm4a', src, `${m4a}.trim.m4a`, af, () => slotLight(() => tools.ffmpeg([...pre, '-i', src, '-af', af, '-ac', '1', '-ar', isRemastered(meta) ? '48000' : '44100', '-c:a', 'aac', '-b:a', isRemastered(meta) ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop })))]);
+          trimEnc('togg', rem ? 'oggR' : 'ogg', src, `${ogg}.trim.ogg`, af, () => slotLight(() => tools.ffmpeg([...pre, '-i', src, '-map', '0:a:0', '-vn', '-af', af, '-ac', '1', '-ar', '48000', ...(isRemastered(meta) ? OGG_ARGS_REMASTER : OGG_ARGS), `${ogg}.trim.ogg`], { stop }))),
+          trimEnc('tm4a', rem ? 'm4aR' : 'm4a', src, `${m4a}.trim.m4a`, af, () => slotLight(() => tools.ffmpeg([...pre, '-i', src, '-map', '0:a:0', '-vn', '-af', af, '-ac', '1', '-ar', isRemastered(meta) ? '48000' : '44100', '-c:a', 'aac', '-b:a', isRemastered(meta) ? M4A_BITRATE_REMASTER : '64k', '-movflags', '+faststart', '-f', 'mp4', `${m4a}.trim.m4a`], { stop })))]);
         await rename(`${ogg}.trim.ogg`, ogg); await rename(`${m4a}.trim.m4a`, m4a);
         // the ORIGINAL copy beside a remaster gets the same cut (one audio.offset_s serves both)
         if (meta.web_original) {
@@ -669,8 +669,8 @@ export async function runItem(item, opts = {}, deps = {}) {
           const af2 = [so.af, trimAf].filter(Boolean).join(',');
           const oo = join(dir, meta.web_original.ogg), om = join(dir, meta.web_original.m4a);
           await Promise.all([
-            trimEnc('toogg', 'ogg', so.src, `${oo}.trim.ogg`, af2, () => slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-af', af2, '-ac', '1', '-ar', '48000', ...OGG_ARGS, `${oo}.trim.ogg`], { stop }))),
-            trimEnc('tom4a', 'm4a', so.src, `${om}.trim.m4a`, af2, () => slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-af', af2, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${om}.trim.m4a`], { stop })))]);
+            trimEnc('toogg', 'ogg', so.src, `${oo}.trim.ogg`, af2, () => slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-map', '0:a:0', '-vn', '-af', af2, '-ac', '1', '-ar', '48000', ...OGG_ARGS, `${oo}.trim.ogg`], { stop }))),
+            trimEnc('tom4a', 'm4a', so.src, `${om}.trim.m4a`, af2, () => slotLight(() => tools.ffmpeg([...pre, '-i', so.src, '-map', '0:a:0', '-vn', '-af', af2, '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', '-f', 'mp4', `${om}.trim.m4a`], { stop })))]);
           await rename(`${oo}.trim.ogg`, oo); await rename(`${om}.trim.m4a`, om);
         }
         delete meta.enc_jobs;

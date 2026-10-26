@@ -681,7 +681,7 @@ def cmd_encode(a):
     t0 = time.time()
     # the TRIM window (leading / trailing silence off the web copies): -ss / -t before the input, exactly as tower's trim stage cut them
     win = (['-ss', f'{a.ss:.2f}'] if a.ss is not None else []) + (['-t', f'{a.t:.2f}'] if a.t is not None else [])
-    subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-threads', str(a.threads)] + win + ['-i', a.input, '-threads', str(a.threads)]
+    subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-threads', str(a.threads)] + win + ['-i', a.input, '-map', '0:a:0', '-vn', '-threads', str(a.threads)]
                    + RECIPES[a.recipe](af) + [a.output], check=True)
     print(jdumps({'output': a.output, 'recipe': a.recipe, 'seconds': round(time.time() - t0, 1)}))
 

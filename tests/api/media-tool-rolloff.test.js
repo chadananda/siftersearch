@@ -34,6 +34,20 @@ describe.skipIf(!ok)('rolloff_hz', () => {
 });
 
 describe.skipIf(!ok || spawnSync('ffmpeg', ['-version']).status !== 0)('media_tool encode', () => {
+  it('encodes audio with odd-height attached artwork without starting a video encoder', async () => {
+    const { mkdtempSync, rmSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const d = mkdtempSync(join(tmpdir(), 'enc-art-'));
+    try {
+      const input = join(d, 'art.mp3'), output = join(d, 'out.m4a');
+      const made = spawnSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'sine=d=1', '-f', 'lavfi', '-i', 'color=s=230x283,format=rgb24', '-map', '0:a', '-map', '1:v', '-frames:v', '1', '-c:a', 'libmp3lame', '-c:v', 'png', '-disposition:v', 'attached_pic', input], { encoding: 'utf8' });
+      expect(made.status, made.stderr).toBe(0);
+      const r = spawnSync('python3', [join(process.cwd(), 'scripts/media/media_tool.py'), 'encode', input, '--recipe', 'm4a', '--output', output, '--threads', '1'], { encoding: 'utf8' });
+      expect(r.status, r.stderr).toBe(0);
+      const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type', '-of', 'json', output], { encoding: 'utf8' });
+      expect(JSON.parse(probe.stdout).streams.map(s => s.codec_type)).toEqual(['audio']);
+    } finally { rmSync(d, { recursive: true, force: true }); }
+  });
   it('a fixed recipe encodes; an unknown filter is refused', async () => {
     const { mkdtempSync } = await import('fs');
     const { tmpdir } = await import('os');
