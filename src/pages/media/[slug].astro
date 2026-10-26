@@ -6,6 +6,8 @@
 import Layout from '../../layouts/Layout.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 import MediaPlayer from '../../components/media/MediaPlayer.svelte';
+import SeriesNav from '../../components/media/SeriesNav.astro';
+import { seriesNavigation } from '../../lib/media-series.js';
 import TalkHero from '../../components/media/TalkHero.svelte';
 import { eraVar } from '../../lib/media-listing.js';
 import { parseRange } from '../../../api/lib/media/range.js';
@@ -40,6 +42,7 @@ Astro.response.headers.set('Cache-Control', item ? 'public, s-maxage=120, stale-
 if (item) index = await getIndex;
 if (index) index = safeIndex(index);
 const me = index?.items?.find((x) => x.s === item?.slug);
+const series = item && index ? seriesNavigation(index.items, item.slug) : null;
 const related = item && index ? relatedTalks(index.items, item.slug, 6) : [];
 const speakersByKey = Object.fromEntries((index?.speakers || []).filter((s) => related.some((r) => r.k === s.k)).map((s) => [s.k, { n: s.n, p: s.p }]));
 
@@ -65,7 +68,7 @@ const ld = item ? [{
   ...(item.audio?.m4a ? { contentUrl: `https://siftersearch.com${item.audio.m4a}` } : {}),
   ...(image ? { thumbnailUrl: image } : {}), ...(item.topics?.length ? { keywords: item.topics.join(', ') } : {}),
   transcript: transcriptText.slice(0, 20000),
-  isPartOf: { '@type': 'Collection', name: 'The Fireside Room — SifterSearch Media', url: 'https://siftersearch.com/media' },
+  isPartOf: series ? { '@type': 'CreativeWorkSeries', name: series.name, url: `https://siftersearch.com${series.href}` } : { '@type': 'Collection', name: 'The Fireside Room — SifterSearch Media', url: 'https://siftersearch.com/media' },
 }, {
   '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'The Fireside Room', item: 'https://siftersearch.com/media' },
@@ -87,7 +90,9 @@ const ld = item ? [{
       {item ? (
         <div style={`--tint:${eraVar(item.year)}`}>
           <TalkHero {item} speakerKey={me?.k || null} />
+          <SeriesNav {series} slug={item.slug} />
           <MediaPlayer client:load {item} {initialRange} {related} speakerKey={me?.k || null} {speakersByKey} />
+          <SeriesNav {series} slug={item.slug} compact />
         </div>
       ) : (
         <section class="py-24 text-center">

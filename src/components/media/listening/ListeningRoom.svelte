@@ -3,6 +3,7 @@
   // decades + one voice), loads the full listing index (GET /api/media/index) after first paint, and lays the page out:
   // On Air hero → ticker → tuner → voices → jukebox → topics → eras, plus the docked preview player. SSR renders the first
   // view from the same pure plan (src/lib/media-listing.js), so hydration keeps every card in place.
+  import { buildSeries } from '../../../lib/media-series.js';
   import { onMount } from 'svelte';
   import Ticker from './Ticker.svelte';
   import Voices from './Voices.svelte';
@@ -36,6 +37,10 @@
   let preset = $state(initialState.preset || '');
   let decade = $state(initialState.era ? Number(initialState.era) : null);
   let speaker = $state(initialState.speaker || '');
+  let series = $state(initialState.series || '');
+  const seriesGroups = $derived(buildSeries(items));
+  const selectedSeries = $derived(seriesGroups.find(g => g.id === series));
+  const seriesSlugs = $derived(new Set(selectedSeries?.items.map(i => i.s) || []));
   let reduced = $state(false);
   let limit = $state(30);
   let shareHit = $state(null);   // the hit whose share row is open
@@ -56,8 +61,9 @@
   }
   let qTimer, hitTimer, hitSeq = 0, hitAbort = null;
 
-  const active = $derived(!!(q.trim() || preset || decade || speaker));
-  const results = $derived(active ? searchItems(index, { q, preset, decade, speaker }, speakersByKey) : items);
+  const active = $derived(!!(q.trim() || preset || decade || speaker || series));
+  const matched = $derived(active ? searchItems(index, { q, preset, decade, speaker }, speakersByKey) : items);
+  const results = $derived(series ? matched.filter(i => seriesSlugs.has(i.s)) : matched);
   const cards = $derived(!active && !complete && initial.cards ? initial.cards : planLayout(results, speakersByKey, { seed }));
   const shown = $derived(cards.slice(0, limit));
   const eraList = $derived(complete ? erasOf(items) : initial.eras || []);
@@ -72,6 +78,7 @@
     if (preset) p.set('p', preset);
     if (decade) p.set('era', String(decade));
     if (speaker) p.set('speaker', speaker);
+    if (series) p.set('series', series);
     const qs = p.toString();
     history.replaceState(history.state, '', `/media${qs ? `?${qs}` : ''}`);
   }
@@ -116,9 +123,10 @@
 
   const setPreset = (id) => { preset = preset === id ? '' : id; limit = 30; loadAll(); sync(); };
   const setDecade = (d) => { decade = decade === d ? null : d; limit = 30; loadAll(); sync(); };
-  function setSpeaker(k) { speaker = k; limit = 30; loadAll(); sync(); document.getElementById('tuner')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
+  function setSpeaker(k) { series = ''; speaker = k; limit = 30; loadAll(); sync(); document.getElementById('tuner')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
+  function setSeries(g) { series = g.id; speaker = g.speakerKey; qInput = ''; q = ''; preset = ''; decade = null; limit = 30; loadAll(); sync(); document.getElementById('jb-h')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
   function setTopic(t) { qInput = t; q = t; limit = 30; loadAll(); sync(); document.getElementById('tuner')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
-  function clearAll() { qInput = ''; q = ''; preset = ''; decade = null; speaker = ''; hits = null; limit = 30; sync(); }
+  function clearAll() { qInput = ''; q = ''; preset = ''; decade = null; speaker = ''; series = ''; hits = null; limit = 30; sync(); }
   function onDecadeSection(d) { setDecade(d); document.getElementById('tuner')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
 
   let sentinel, live = $state(false);
@@ -196,9 +204,9 @@
   {/if}
 
   <section class="mt-12" aria-labelledby="jb-h" use:pauseOffscreen>
-    <h2 id="jb-h" class="mb-4 font-marquee text-3xl text-radio-ink sm:text-4xl">{active ? 'On this frequency' : 'The jukebox'}</h2>
+    <h2 id="jb-h" class="mb-4 font-marquee text-3xl text-radio-ink sm:text-4xl">{selectedSeries ? selectedSeries.name : active ? 'On this frequency' : 'The jukebox'}</h2>
     {#if shown.length}
-      <Jukebox cards={shown} {speakersByKey} onspeaker={setSpeaker} {reduced} />
+      <Jukebox cards={shown} {speakersByKey} onspeaker={setSpeaker} onseries={setSeries} {reduced} />
     {:else}
       <p class="rounded-2xl bg-radio-panel px-6 py-10 text-center text-radio-ink-soft">Nothing on this frequency yet. <button type="button" class="font-semibold text-radio-ink underline" onclick={clearAll}>Clear the tuner</button></p>
     {/if}

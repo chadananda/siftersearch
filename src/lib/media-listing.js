@@ -3,6 +3,7 @@
 // generative record-label pattern. No DOM. Rows are GET /api/media/index rows (api/lib/media/listing-index.js).
 // Tested in tests/api/media-listing.test.js.
 import { fold } from '../../api/lib/media/listing-index.js';
+import { buildSeries } from './media-series.js';
 import { svcFixed } from './imagekit.js';
 
 export { fold };
@@ -164,7 +165,8 @@ const QUOTE_MIN = 70;
 export const weight = (it) => (it.qn || 0) * 0.6 + (it.cn || 0) * 0.4 + Math.min(it.d / 1800, 2) + ({ A: 1.5, B: 1, C: 0.5 }[it.g] || 0) + (it.h?.length ? 0.5 : 0);
 
 /**
- * The jukebox: rows (already filtered/ranked) → cards. Speakers with ≥ boxMin talks in view become ONE box-set card (one
+ * The jukebox: numbered/book series get separate boxes, ordered by installment, with every available recording.
+ * Remaining talks by speakers with ≥ boxMin talks in view become ONE speaker box-set card (one
  * portrait + record spines), placed where their first talk falls; each box set may also send one portrait-less feature
  * (quote/question) card further down. Other talks become quote / question / portrait / waveform cards by what they hold
  * and a seeded draw; a portrait card never repeats a face shown in the last `faceGap` cards. Size: 'lg' (2×2), 'wide'
@@ -172,8 +174,9 @@ export const weight = (it) => (it.qn || 0) * 0.6 + (it.cn || 0) * 0.4 + Math.min
  */
 export function planLayout(rows, speakersByKey = new Map(), { seed = 'x', boxMin = 3, faceGap = 6, spines = 12 } = {}) {
   const r = rng(`${seed}:${rows.length}`);
+  const series = buildSeries(rows), seriesBySlug = new Map(series.flatMap(g => g.items.map(it => [it.s, g])));
   const byK = new Map();
-  for (const it of rows) if (it.k && it.sp) (byK.get(it.k) || byK.set(it.k, []).get(it.k)).push(it);
+  for (const it of rows) if (!seriesBySlug.has(it.s) && it.k && it.sp) (byK.get(it.k) || byK.set(it.k, []).get(it.k)).push(it);
   const boxed = new Set([...byK].filter(([, v]) => v.length >= boxMin).map(([k]) => k));
   const cards = [], recentFaces = [], deferred = [];
   const faceOk = (k) => !recentFaces.slice(-faceGap).includes(k);
@@ -200,6 +203,17 @@ export function planLayout(rows, speakersByKey = new Map(), { seed = 'x', boxMin
   for (const it of rows) {
     // a deferred feature card whose distance has come up
     while (deferred.length && deferred[0].at <= cards.length) cards.push(deferred.shift().card);
+    const group = seriesBySlug.get(it.s);
+    if (group) {
+      const id = `series:${group.id}`;
+      if (seenBox.has(id)) continue;
+      seenBox.add(id);
+      const s = speakersByKey.get(it.k) || { k: it.k, n: it.sp };
+      cards.push({ id, kind: 'box', size: group.items.length >= 8 ? 'lg' : 'tall', speaker: s, series: group,
+        total: group.items.length, talks: group.items });
+      pushFace(it.k);
+      continue;
+    }
     if (it.k && boxed.has(it.k)) {
       if (seenBox.has(it.k)) continue;
       seenBox.add(it.k);

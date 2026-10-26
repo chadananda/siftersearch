@@ -11,7 +11,7 @@
   import { preview, playExcerpt } from '../../../lib/media-preview.svelte.js';
   import { dayPick } from '../../../lib/speaker-gallery.js';
 
-  let { cards = [], speakersByKey = new Map(), onspeaker = () => {}, reduced = false } = $props();
+  let { cards = [], speakersByKey = new Map(), onspeaker = () => {}, onseries = () => {}, reduced = false } = $props();
 
   const ROLE = { hand: 'Hand of the Cause', uhj: 'Universal House of Justice' };
   const playing = (it) => preview.item?.s === it.s && preview.playing;
@@ -52,6 +52,9 @@
     } };
   }
 
+  const boxHref = (c) => `/media?speaker=${encodeURIComponent(c.speaker.k)}${c.series ? `&series=${encodeURIComponent(c.series.id)}` : ''}`;
+  const toBox = (e, c) => { if (!plain(e)) return; e.preventDefault(); if (c.series) onseries(c.series); else onspeaker(c.speaker.k); };
+
   // the radial waveform disc: 48 peaks as spokes around a ring
   function spokes(w) {
     const h = waveHeights(w);
@@ -88,20 +91,21 @@
       {#if c.kind === 'box'}
         {@const s = dayPick(c.speaker)}   <!-- today's photo from the speaker's gallery (Chad 10-23) -->
         <!-- tall and wide crops use the EXTENDED master (outpainted once per portrait, media agent) when there is one -->
-        {@const pic = s.p ? portraitTall(tallSrc(s), c.size === 'lg' ? 220 : 160) : null}
+        {@const pic = !c.series && s.p ? portraitTall(tallSrc(s), c.size === 'lg' ? 220 : 160) : null}
         <article class="box h-full">
-          <a href={`/media?speaker=${encodeURIComponent(s.k)}`} class="box-head flex gap-4" onclick={(e) => toSpeaker(e, s.k)} aria-label={`All ${s.c || c.total} talks by ${s.n}`}>
+          <a href={boxHref(c)} class="box-head flex gap-4" onclick={(e) => toBox(e, c)} aria-label={c.series ? `${c.series.name}: ${c.total} talks by ${s.n}` : `All ${s.c || c.total} talks by ${s.n}`}>
             <div class="box-pic">
               {#if pic}
                 <img src={pic.src} srcset={pic.srcset} alt={s.n} title={s.cr ? `${s.n} — photo: ${s.cr}` : s.n} width={c.size === 'lg' ? 220 : 160} height={Math.round((c.size === 'lg' ? 220 : 160) * 1.25)} loading="lazy" decoding="async" class="h-full w-full object-cover" />
               {:else}
-                <div class="h-full w-full p-2"><RecordLabel name={s.n} year={s.y0} size={120} /></div>
+                <div class="h-full w-full p-2"><RecordLabel name={c.series?.name || s.n} year={c.series?.y0 || s.y0} size={120} /></div>
               {/if}
             </div>
             <div class="min-w-0 self-end">
-              <p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass-bright">Box set{ROLE[s.role] ? ` · ${ROLE[s.role]}` : ''}</p>
-              <h3 class="box-name font-marquee text-2xl leading-tight text-radio-on-dark sm:text-3xl">{s.n}</h3>
-              <p class="mt-1 font-dial text-base font-semibold uppercase tracking-wider text-radio-on-dark opacity-80">{s.c || c.total} talks{s.y0 ? ` · ${s.y0}${s.y1 && s.y1 !== s.y0 ? `–${s.y1}` : ''}` : ''}</p>
+              <p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass-bright">{c.series ? 'Series box set' : 'Box set'}{!c.series && ROLE[s.role] ? ` · ${ROLE[s.role]}` : ''}</p>
+              <h3 class="box-name font-marquee text-2xl leading-tight text-radio-on-dark sm:text-3xl">{c.series?.name || s.n}</h3>
+              {#if c.series}<p class="mt-1 text-sm text-radio-on-dark">{s.n}</p>{/if}
+              <p class="mt-1 font-dial text-base font-semibold uppercase tracking-wider text-radio-on-dark opacity-80">{c.series ? c.total : s.c || c.total} talks{(c.series || s).y0 ? ` · ${(c.series || s).y0}${(c.series || s).y1 && (c.series || s).y1 !== (c.series || s).y0 ? `–${(c.series || s).y1}` : ''}` : ''}</p>
             </div>
           </a>
           <div class="spines" use:loopSpines={reduced || c.talks.length <= 4}>
@@ -110,7 +114,7 @@
               {#each c.talks as t, j (t.s)}
                 <!-- the row is the link to the talk; the round button beside it plays an excerpt here -->
                 <li class="spine-row"><a href={`/media/${t.s}`} class="spine" tabindex={repeat ? -1 : undefined} style={`--st:${eraVar(t.y)};--j:${j}`} title={`Open “${t.t}”`}>
-                  <span class="truncate">{t.t}</span><span class="spine-meta">{t.y || ''}{t.y ? ' · ' : ''}{duration(t.d)}</span>
+                  <span class="truncate">{c.series && t.part ? `${t.part}. ` : ''}{t.t}</span><span class="spine-meta">{t.y || ''}{t.y ? ' · ' : ''}{duration(t.d)}</span>
                   <svg class="spine-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                 </a><button type="button" class="spine-play" tabindex={repeat ? -1 : undefined} class:on={playing(t)} onclick={(e) => { e.stopPropagation(); playExcerpt(t, s); }}
                   aria-label={playing(t) ? `Pause the excerpt of ${t.t}` : `Play 20 seconds of ${t.t} here`} title={playing(t) ? 'Pause' : 'Play 20 s here'}>
@@ -121,7 +125,7 @@
             </ol>
             {/each}
           </div>
-          <a href={`/media?speaker=${encodeURIComponent(s.k)}`} class="box-all" onclick={(e) => toSpeaker(e, s.k)}>All {s.c || c.total} talks by {s.n} <span aria-hidden="true">→</span></a>
+          <a href={boxHref(c)} class="box-all" onclick={(e) => toBox(e, c)}>{c.series ? `All ${c.total} talks in this series` : `All ${s.c || c.total} talks by ${s.n}`} <span aria-hidden="true">→</span></a>
         </article>
       {:else if c.kind === 'quote'}
         {@const it = c.it}

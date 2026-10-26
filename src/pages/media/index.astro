@@ -47,11 +47,12 @@ const seed = daySeed();
 const params = Astro.url.searchParams;
 let speakerParam = params.get('speaker') || '';
 if (speakerParam && !byKey.has(speakerParam)) speakerParam = speakers.find((s) => fold(s.n) === fold(speakerParam))?.k || fold(speakerParam).replace(/ /g, '-');
-const initialState = { q: params.get('q') || '', preset: params.get('p') || '', era: params.get('era') || '', speaker: speakerParam };
+const initialState = { q: params.get('q') || '', preset: params.get('p') || '', era: params.get('era') || '', speaker: speakerParam, series: params.get('series') || '' };
 
 const [progress, live, restored] = await Promise.all([progressP, liveP, restoredP]);
 const SSR_MAX = 160;
-const complete = items.length <= SSR_MAX && !data?.pending;
+const filtered = !!(initialState.q || initialState.preset || initialState.era || initialState.speaker || initialState.series);
+const complete = (filtered || items.length <= SSR_MAX) && !data?.pending;
 const plan = planLayout(items, byKey, { seed });
 const cards = plan.slice(0, 30);
 const years = items.map((i) => i.y).filter(Boolean);
