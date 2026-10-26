@@ -5,6 +5,7 @@
   // stable). FLIP reflow on filtering, staggered entrance for new cards, scroll-driven rise (CSS view() timeline).
   import { flip } from 'svelte/animate';
   import { fly } from 'svelte/transition';
+  import SeriesCover from './SeriesCover.svelte';
   import RecordLabel from './RecordLabel.svelte';
   import Wave from './Wave.svelte';
   import { tallSrc, portraitTall, portraitSquare, portraitCard, duration, eraVar, waveHeights } from '../../../lib/media-listing.js';
@@ -95,7 +96,9 @@
         <article class="box h-full" class:box-series={!!c.series}>
           <a href={boxHref(c)} class="box-head flex gap-4" onclick={(e) => toBox(e, c)} aria-label={c.series ? `${c.series.name}: ${c.total} talks by ${s.n}` : `All ${s.c || c.total} talks by ${s.n}`}>
             <div class="box-pic">
-              {#if pic}
+              {#if c.series}
+                <SeriesCover series={c.series} speaker={s} width={c.size === 'lg' ? 220 : 160} />
+              {:else if pic}
                 <img src={pic.src} srcset={pic.srcset} alt={s.n} title={s.cr ? `${s.n} — photo: ${s.cr}` : s.n} width={c.size === 'lg' ? 220 : 160} height={Math.round((c.size === 'lg' ? 220 : 160) * (c.series ? 1 : 1.25))} loading="lazy" decoding="async" class="h-full w-full object-cover" />
               {:else}
                 <div class="h-full w-full p-2"><RecordLabel name={s.n} year={c.series?.y0 || s.y0} size={120} /></div>
@@ -186,7 +189,7 @@
 </ul>
 
 <style>
-  .jukebox { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); grid-auto-rows: 7.25rem; grid-auto-flow: dense; }
+  .jukebox { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); grid-auto-rows: 7.25rem; grid-auto-flow: row; }
   .card { grid-row: span 2; min-width: 0; border-radius: 1.1rem; overflow: hidden; position: relative; transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.4, 1), box-shadow 0.35s; }
   .s-tall { grid-row: span 4; }
   .s-wide { grid-row: span 2; grid-column: span 2; }
@@ -228,9 +231,8 @@
   .box-head:hover .box-pic { box-shadow: 0 0 0 3px var(--radio-amber), 0 6px 16px rgba(0, 0, 0, 0.4); }
   .box-pic { flex: none; transition: box-shadow 0.2s; width: 5.5rem; height: 6.9rem; border-radius: 0.6rem; overflow: hidden; box-shadow: 0 0 0 2px var(--radio-brass), 0 6px 16px rgba(0, 0, 0, 0.4); background: var(--radio-walnut-deep); }
   .s-lg .box-pic { width: 7.5rem; height: 9.4rem; }
-  .box-series .box-pic { height: 5.5rem; }
-  .s-lg .box-series .box-pic { height: 7.5rem; }
-  .box-series .box-pic img { filter: sepia(0.18); }
+  .box-series .box-pic { height: 6.9rem; border-radius: 0.25rem; }
+  .s-lg .box-series .box-pic { height: 9.4rem; }
   .box-series .box-name { margin-top: 0.35rem; }
   .spines { position: relative; flex: 1; min-height: 0; margin-top: 0.9rem; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; scrollbar-width: thin; scrollbar-color: var(--radio-brass) transparent; }
   .spine-list { display: flex; flex-direction: column; gap: 3px; padding: 0 0 3px; }

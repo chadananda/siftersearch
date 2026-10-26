@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {buildSeries,seriesLabel,seriesNavigation} from '../../src/lib/media-series.js';
-import {planLayout} from '../../src/lib/media-listing.js';
+import {planLayout,spreadSpeakers} from '../../src/lib/media-listing.js';
 const talk=(t,s,extra={})=>({t,s,k:'hooper-dunbar',sp:'Hooper Dunbar',col:'Archive',y:1989,d:1200,hl:[10,30],v:1,...extra});
 
 describe('recording series box sets',()=>{
@@ -42,5 +42,19 @@ describe('talk-page series navigation',()=>{
  });
  it('does not wrap the course endpoints or invent sets for standalone talks',()=>{
   expect(seriesNavigation(rows,'g1').previous).toBeNull();expect(seriesNavigation(rows,'g10').next).toBeNull();expect(seriesNavigation(rows,'other')).toBeNull();
+ });
+});
+
+describe('interleaving speaker batches',()=>{
+ it('spreads one speaker’s series throughout other voices without losing cards or installment order',()=>{
+  const cards=[...Array.from({length:12},(_,i)=>({id:`d${i}`,kind:'box',speaker:{k:'dunbar'}})),...Array.from({length:72},(_,i)=>({id:`x${i}`,kind:'wave',it:{k:`other-${i}`}}))];
+  const out=spreadSpeakers(cards);const positions=out.flatMap((c,i)=>c.speaker?.k==='dunbar'?[i]:[]);
+  expect(positions.every((p,i)=>!i||p-positions[i-1]>=7)).toBe(true);
+  expect(new Set(out.map(c=>c.id))).toEqual(new Set(cards.map(c=>c.id)));
+  expect(out.filter(c=>c.speaker?.k==='dunbar').map(c=>c.id)).toEqual(cards.slice(0,12).map(c=>c.id));
+  expect(spreadSpeakers(cards)).toEqual(out);
+ });
+ it('keeps a single-speaker selection usable and never drops its series',()=>{
+  const cards=Array.from({length:10},(_,i)=>({id:`d${i}`,kind:'box',speaker:{k:'dunbar'}}));expect(spreadSpeakers(cards)).toEqual(cards);
  });
 });

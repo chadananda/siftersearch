@@ -172,6 +172,30 @@ export const weight = (it) => (it.qn || 0) * 0.6 + (it.cn || 0) * 0.4 + Math.min
  * and a seeded draw; a portrait card never repeats a face shown in the last `faceGap` cards. Size: 'lg' (2×2), 'wide'
  * (2×1), 'tall' (1×2), 'sm'. Deterministic for (rows, seed). → [{ id, kind, size, it?, speaker?, talks? }]
  */
+// Last-update batches often contain one speaker. Distribute their cards across
+// the page instead, retaining each speaker's internal order and every card ID.
+export function spreadSpeakers(cards, gap = 6) {
+  const voices = new Map();
+  for (const c of cards) {
+    const key = c.speaker?.k || c.it?.k || c.id;
+    if (!voices.has(key)) voices.set(key, { key, cards: [], used: 0 });
+    voices.get(key).cards.push(c);
+  }
+  const queues = [...voices.values()], out = [], recent = [];
+  while (out.length < cards.length) {
+    const available = queues.filter(q => q.used < q.cards.length);
+    const spaced = available.filter(q => !recent.slice(-gap).includes(q.key));
+    const choices = spaced.length ? spaced : available;
+    // Choose the voice furthest behind its proportional share at this point.
+    // Comparing only per-voice progress would leave prolific speakers in a tail.
+    const due = q => q.cards.length * (out.length + 1) / cards.length - q.used;
+    const pick = choices.reduce((best, q) => !best || due(q) > due(best) ? q : best, null);
+    const card = pick.cards[pick.used++];
+    out.push(card); recent.push(pick.key);
+  }
+  return out;
+}
+
 export function planLayout(rows, speakersByKey = new Map(), { seed = 'x', boxMin = 3, faceGap = 6, spines = 12 } = {}) {
   const r = rng(`${seed}:${rows.length}`);
   const series = buildSeries(rows), seriesBySlug = new Map(series.flatMap(g => g.items.map(it => [it.s, g])));
@@ -231,7 +255,7 @@ export function planLayout(rows, speakersByKey = new Map(), { seed = 'x', boxMin
     cards.push(single(it));
   }
   for (const d of deferred) cards.push(d.card);
-  return cards;
+  return spreadSpeakers(cards, faceGap);
 }
 
 // ── hero highlights, eras, topics, ticker ──
