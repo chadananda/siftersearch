@@ -13,8 +13,7 @@ def post_only(d):
     done = json.load(open(os.path.join(d, 'restore-result.json')))
     with open(os.path.join(d, 'progress.json'), 'w') as f:
         json.dump({'stage':'guard','at':time.time()},f)
-    with lease('guard'):
-        worker.finalize(d, done)
+    worker.finalize(d, done)
     post_file = os.path.join(d, 'post.json')
     post = json.load(open(post_file)) if os.path.exists(post_file) else None
     if not post or not post.get('ok') or not (post.get('held') or post.get('web')):
@@ -64,8 +63,7 @@ def main(d):
         with open(os.path.join(d, 'restore-result.json'), 'w') as f:json.dump(done,f)
         os.execve(sys.executable,[sys.executable,__file__,'--post',d],dict(os.environ))
     stage('guard')
-    with lease('guard'):
-        worker.finalize(d, done)
+    worker.finalize(d, done)
     post_file = os.path.join(d, 'post.json')
     post = json.load(open(post_file)) if os.path.exists(post_file) else None
     if not post or not post.get('ok') or not (post.get('held') or post.get('web')):

@@ -64,7 +64,11 @@ def verdict(method, g, g_first, bw, max_pct, why=None):
 def guard(py, tools, src, copy, work, asr, ref, af, out_flac, out_json, runner):
     cmd = [py, os.path.join(tools, 'remaster_guard.py'), '--original', src, '--unipase', copy, '--work', work, '--asr', asr, '--af', af or '',
            '--output', out_flac, '--report', out_json] + (['--ref', ref] if os.path.exists(ref) else [])
-    return json.loads(sh(cmd, runner).strip().split('\n')[-1])
+    return json.loads(cpu_phase(sh,cmd,runner).strip().split('\n')[-1])
+
+def cpu_phase(fn,*args,**kwargs):
+    from gpu_lease import lease
+    with lease('guard'):return fn(*args,**kwargs)
 
 
 def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe=None, cv_python=None):
@@ -126,7 +130,7 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
             # the restoration environment has a different torchmetrics version.
             python = os.environ.get('MEDIA_QUALITY_PYTHON', '/opt/gate/venv/bin/python')
             quality = os.path.join(os.path.dirname(__file__), 'quality.py')
-            assessment = json.loads(subprocess.check_output([python, quality, src, flac, af or '', str(cfg.get('threads', 2))], text=True))
+            assessment = json.loads(cpu_phase(subprocess.check_output,[python, quality, src, flac, af or '', str(cfg.get('threads', 2))], text=True))
         except Exception as err:
             assessment = {'version': 1, 'status': 'failed', 'passed': False, 'error': str(err)[-500:]}
         out['qa']['output_assessment'] = assessment
@@ -178,7 +182,7 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
         # output recipes. Loudnorm was the same expensive pass in two processes.
         if not (cfg.get('reuse_original_web') and all(os.path.getsize(os.path.join(post, web[k])) > 0 for k in ['orig_ogg', 'orig_m4a'])):
             graph = '[0:a]' + ((af + ',') if af else '') + 'asplit=2[ogg][aac]'
-            sh(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', src,
+            sh(['ffmpeg', '-nostdin', '-v', 'error', '-y'] + window + ['-i', src,
                 '-filter_complex', graph, '-map', '[ogg]'] + cfg['orig_ogg'] + [os.path.join(post, web['orig_ogg']),
                 '-map', '[aac]'] + cfg['orig_m4a'] + [os.path.join(post, web['orig_m4a'])], runner)
     except Exception as err:

@@ -1,3 +1,4 @@
+import {speakerKey} from './speaker-key.js';
 // ONE MEDIA ITEM through the pipeline (planning/media-library-plan.md): archive → enhance → web → transcribe → correct →
 // describe → headings → quotes → links → assess → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
@@ -900,7 +901,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // faithfulness in the quality report: what the edit passes tried to add to the heard words and was reverted
       if (meta.quality) meta.quality.insertions_reverted = (meta.faithfulness?.correct || 0) + (meta.faithfulness?.clean || 0);
       const qj = await readJson(join(dir, 'quotes.json'), { quotes: [], teachings: [] });
-      await repo.updateMediaItem(item.id, { speaker_key: meta.speaker_key || (meta.speaker ? (await import('./speakers.js')).speakerKey(meta.speaker) : null), title: meta.title, speaker: meta.speaker, language: meta.language, year: meta.year ? Number(meta.year) : null, date: meta.date,
+      await repo.updateMediaItem(item.id, { speaker_key: meta.speaker_key || (meta.speaker ? speakerKey(meta.speaker) : null), title: meta.title, speaker: meta.speaker, language: meta.language, year: meta.year ? Number(meta.year) : null, date: meta.date,
         doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
         asr_conf: meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null, cost_usd: Math.round(spend.usd * 10000) / 10000,
         meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, headings_n: (meta.headings || []).length, audience_intro: meta.audience?.intro || [], rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
@@ -930,7 +931,7 @@ export async function finishQuality(meta, dir, d, item) {
   const turnsFile = existsSync(join(dir, 'diarization.json')) ? join(dir, 'diarization.json') : join(dir, 'transcript.raw.json');
   const levels = (await d.tools.tool('levels', join(dir, meta.original), { output: turnsFile }, { threads: 2 }).catch(() => null))?.speakers || null;
   const tiers = (await readJson(join(process.cwd(), 'data', 'media-speaker-tiers.json'), { tiers: {} })).tiers || {};
-  const key = meta.speaker_key || (meta.speaker ? (await import('./speakers.js')).speakerKey(meta.speaker) : null);
+  const key = meta.speaker_key || (meta.speaker ? speakerKey(meta.speaker) : null);
   const copies = d.repo.sameTalkCount && meta.speaker && meta.title ? await d.repo.sameTalkCount(meta.speaker, meta.title).catch(() => 1) : 1;
   const tier = tiers[key] || 1;
   meta.quality = { ...meta.quality, ...gradeReport(meta.quality.raw, { asr, levels }), asr, levels, final: true, tier, unique: copies <= 1 };

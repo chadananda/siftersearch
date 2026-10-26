@@ -9,6 +9,8 @@ import * as local from '../../../api/lib/media/tools.js';
 import {toParagraphs,paragraphText,flattenWords} from '../../../api/lib/media/paragraphs.js';
 import {safeChain,OGG_ARGS,OGG_ARGS_REMASTER,M4A_BITRATE_REMASTER} from '../../../api/lib/media/enhance.js';
 import {buildVocab,CORE_TERMS} from '../../../api/lib/media/vocab.js';
+import {computePeaks,normalizePeaks} from '../../../api/lib/media/peaks.js';
+import {trimPlan,peaksOf} from '../../../api/lib/media/trim.js';
 
 const jobDir=resolve(process.argv[2]||'.');
 const job=JSON.parse(await readFile(join(jobDir,'job.json'),'utf8'));
@@ -57,7 +59,7 @@ const tools={...local,tool,searchLatency:async()=>0,threadsFor:()=>threads,
  encodeRemote:(recipe,input,output,opts={})=>tool('encode',input,{recipe,output,...(opts.af?{af:opts.af}:{}),...(opts.window?{ss:opts.window.ss,t:opts.window.t}:{})})};
 const item={id:job.id||1,slug:meta.slug,dir,state:'running',speaker:meta.speaker,source_kind:'file'};
 const deps={detachedWorker:true,tools,llm:{},repo:{getMediaItem:async()=>item,updateMediaItem:async()=>{}},cbPeople:async()=>job.people||[],loadVocab:async()=>buildVocab([CORE_TERMS,job.vocab||[]]),now:()=>new Date().toISOString(),draining:async()=>false,drainingNow:()=>false};
-let result=await runItem(item,{only:['grade','enhance','web','transcribe','diarize','trim'],threads},deps);
+let result=await runItem(item,{only:['grade','enhance','transcribe','diarize'],threads},deps);
 if(result.yielded||result.excluded||result.held)throw Error('Recording did not finish audio processing');
 await finishQuality(result.meta,dir,deps,item);
 await writeFile(join(dir,'meta.json'),JSON.stringify(result.meta));
@@ -66,6 +68,14 @@ await writeFile(join(dir,'meta.json'),JSON.stringify(result.meta));
 if(job.restore!==false && !result.meta.stages.remaster?.at){
  if(job.device==='cpu')throw Error('Restoration requires a GPU-capable worker');
  const raw=JSON.parse(await readFile(join(dir,'transcript.raw.json'),'utf8'));
+  // Determine the cut from speech AND source energy without encoding throwaway
+  // listening copies. The final selected copy is encoded only after assessment.
+  const parts=[];await local.pcmStream(join(dir,original),8000,f=>parts.push(f));
+  const pcm=new Float32Array(parts.reduce((n,p)=>n+p.length,0));let offset=0;
+  for(const p of parts){pcm.set(p,offset);offset+=p.length;}
+  const wave=normalizePeaks(computePeaks(pcm,8000,{pixelsPerSecond:20}));
+  await writeFile(join(dir,'waveform.json'),JSON.stringify(wave));
+  const {peaks,pps}=peaksOf(wave),trim=trimPlan({words:flattenWords(raw.segments||[]),peaks,pps,duration:meta.duration_s});
  const paragraphs=toParagraphs(raw.segments||[]);
  if(paragraphs.length){
   const restore=join(jobDir,'restore');await mkdir(restore,{recursive:true});
@@ -73,7 +83,7 @@ if(job.restore!==false && !result.meta.stages.remaster?.at){
   await link(src,input).catch(()=>copyFile(src,input));
   const work=JSON.stringify({paragraphs});await writeFile(join(dir,'transcript.work.json'),work);await writeFile(join(restore,'work.json'),work);
   const metrics=result.meta.enhancement.variants.find(v=>v.name==='original')||{};
-  const cfg={mode:'restore',cleanup:false,assess_quality:true,slug:meta.slug,audio_s:meta.duration_s,af:safeChain(metrics),bw_khz:result.meta.quality.raw?.bandwidth_khz??null,
+  const cfg={mode:'restore',cleanup:false,assess_quality:true,trim,slug:meta.slug,audio_s:meta.duration_s,af:safeChain(metrics),bw_khz:result.meta.quality.raw?.bandwidth_khz??null,
    max_fallback_pct:15,work_sha:createHash('sha256').update(work).digest('hex'),
    ogg:['-ac','1','-ar','48000',...OGG_ARGS_REMASTER],m4a:['-ac','1','-ar','48000','-c:a','aac','-b:a',M4A_BITRATE_REMASTER,'-movflags','+faststart'],
    orig_ogg:['-ac','1','-ar','48000',...OGG_ARGS],orig_m4a:['-ac','1','-ar','44100','-c:a','aac','-b:a','64k','-movflags','+faststart']};
@@ -98,6 +108,7 @@ if(job.restore!==false && !result.meta.stages.remaster?.at){
   }
  }
 }
+if(!result.meta.stages.web?.at)result=await runItem(item,{only:['web','trim'],threads},deps);
 await writeFile(join(dir,'meta.json'),JSON.stringify(result.meta));
 await state('complete');
 const files=[];

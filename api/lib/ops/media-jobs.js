@@ -1475,7 +1475,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const breakerOn = !!st.breaker_until && now() < st.breaker_until;
       if (live.length < want && !held && !breakerOn) {
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
-        const pod = await C.createPod(name, pub, { ...deps, prefer: C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
+        const pod = await C.createPod(name, pub, { ...deps, prefer: acceptedWorker?.prefer_community?{cloud:'COMMUNITY',dcs:[]}:C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
         if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
         else {
           st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting',image:acceptedWorker?.image||null };
@@ -1491,6 +1491,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             let g = await C.getPod(p.id, deps);
             p.image=g.imageName||acceptedWorker?.image||null;
             p.cpu_count=g.vcpuCount||null;
+            p.max_jobs=Number(g.memoryInGb)>=32?8:6;
             if((!g.publicIp||!g.portMappings?.['22'])&&C.getPodConnection)g={...g,...await C.getPodConnection(p.id,deps)};
             if (p.costPerHr == null) p.costPerHr = g.costPerHr ?? g.adjustedCostPerHr ?? null;
             p.gpu = g.machine?.gpuDisplayName || g.gpu?.displayName || p.gpu || null;
@@ -1508,7 +1509,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   await run('tar', ['czf', tgz, '-C', join(dirname(C.WORKER_FILE)), ...C.MEDIA_SCRIPTS], { timeoutMs: 60_000 });
                   await C.podPut(run, p, tgz, '/workspace/media-scripts.tgz');
                 } catch { /* the image's own copy runs */ }
-                await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: acceptedWorker ? C.BOOTSTRAP_WHOLE : C.BOOTSTRAP_BAKED, timeoutMs: 120_000 });
+                await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: acceptedWorker ? C.BOOTSTRAP_WHOLE.replace('--max-jobs 6',`--max-jobs ${p.max_jobs}`) : C.BOOTSTRAP_BAKED, timeoutMs: 120_000 });
               } else {
                 await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
                 await C.podPut(run, p, C.REPO_TGZ(), '/workspace/unipase-repo.tgz');
@@ -1554,7 +1555,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
             let uploadsThisPass = 0;
             while (uploadsThisPass < 1 && Object.values(st.jobs).filter(j=>j.pod===p.id).length<2*C.CLOUD.perPod && !staleImage && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.entries(st.jobs).filter(([id,j]) => j.pod === p.id&&!finishedJobs.has(id)).length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:(acceptedWorker?.max_inflight_per_pod||C.CLOUD.perPod), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
-              const eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||(!acceptedWorker?.hold_whole&&p.image===acceptedWorker?.image));
+              let eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||(!acceptedWorker?.hold_whole&&p.image===acceptedWorker?.image));
+              if((p.whole_since_restore||0)>=2){const repair=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'&&(st.items?.[id]?.mode||'restore')==='restore');if(repair>=0)eligible=repair;}
               if(eligible<0)break;
               const itemId = st.queue.splice(eligible,1)[0]; const tAssign = now();
               const it = await repo.getMediaItem(itemId);
@@ -1572,8 +1574,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               await C.podSsh(run,p,`mv /workspace/spool/${job}/in.${ext}.part /workspace/spool/${job}/in.${ext}`,{timeoutMs:60000});
               if(whole){
                 const W=await import('../media/whole-result.js'),sha=st.jobs[job].input_sha;
-                await C.podSsh(run,p,`cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`,{timeoutMs:60000,input:JSON.stringify({...W.wholeJob(it,m,sha),threads:Math.max(2,Math.min(6,Math.floor((p.cpu_count||16)/6)))})});
+                await C.podSsh(run,p,`cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`,{timeoutMs:60000,input:JSON.stringify({...W.wholeJob(it,m,sha),threads:Math.max(2,Math.min(6,Math.floor((p.cpu_count||16)/(p.max_jobs||6))))})});
                 p.jobs_assigned=(p.jobs_assigned||0)+1;
+                p.whole_since_restore=(p.whole_since_restore||0)+1;
                 st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,uploaded_s:Math.round((now()-tAssign)/1000),kind:'whole',input_sha:sha};
                 continue;
               }
@@ -1593,6 +1596,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               }
               await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s), ...(post ? { post } : {}) }) });
               p.jobs_assigned = (p.jobs_assigned || 0) + 1;
+              p.whole_since_restore=0;
               st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: tAssign, uploaded_s: Math.round((now() - tAssign) / 1000) };
               } catch(error){delete st.jobs[job];if(!st.queue.includes(itemId))st.queue.unshift(itemId);await save(st);throw error;}
             }
