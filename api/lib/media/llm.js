@@ -1,6 +1,7 @@
 // The media pipeline's model calls (roles in model-roles.js: media-meta, media-correct, media-quotes, media-verify — all
 // Haiku-class, never a hard-coded model). Each returns its result + the tokens it used; the guard in vocab.js decides what
 // a correction may change. Deps injected: create = roleCreate.
+import { BAHAI_GREETING_HINT } from './editing-context.js';
 import { DESCRIPTION_STYLE, descriptionEvidence, validDescription } from './descriptions.js';
 import { roleCreate } from '../role-client.js';
 import { getModel } from '../model-registry.js';
@@ -110,6 +111,7 @@ export async function correctParagraphs(paragraphs, vocab, { chunkWords = 1500, 
     if (!sus.length) return null;
     const offered = [...new Set(sus.flatMap((s) => s.candidates))];
     return ask('media-correct', `You correct a speech-recognition transcript of a talk about the Bahá'í Faith. Fix ONLY proper names and religious terms that were misheard, replacing them with the exact spelling from VOCABULARY. Never change any other word; never rephrase, never fix grammar, never add or remove words. When unsure, leave it.
+${BAHAI_GREETING_HINT}
 SUSPECTS (paragraph: heard → possible spellings):
 ${sus.map((s) => `[${s.p}] ${s.from} → ${s.candidates.join(' | ')}`).join('\n')}
 VOCABULARY: ${offered.join(' | ')}

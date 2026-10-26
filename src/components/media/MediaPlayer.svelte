@@ -6,6 +6,7 @@
   // position; wheel/touch/scroll keys drop Follow. ?t=a / ?t=a-b / #t=a,b set the start / a played-and-shaded range.
   import { onMount, tick } from 'svelte';
   import { media } from '../../lib/api.js';
+  import { audioReady } from '../../lib/media-ready.js';
   import { liveRefresh } from '../../lib/live-data.js';
   import { flattenWords, flattenOriginalStarts, mapTime, wordAt, youtubeAtTime, picture } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
@@ -163,14 +164,14 @@
     t = Math.max(0, Math.min(t, Math.max(0, duration - 0.5)));
     const fresh = !unlocked;
     unlock();
-    limit = end; note = ''; started = true;
+    limit = end; note = ''; started = true; current = t;
     follow = true; anchorY = anchorFor(el || wordEls[wordAt(flat.starts, t + 0.02)]); lastLineTop = null;
     try {
       if (level === 'full') {
         const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
         const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
           : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
-        if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want) { busy = true; try { if (!(await ready(want))) throw new Error('the audio is still being prepared; it will start shortly'); note = ''; } finally { busy = false; } audio.src = media.href(want); loaded = want; }
+        if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want || audio.error) { busy = true; try { if (!(await ready(want))) throw new Error('Audio is still preparing. Press Play to try again.'); note = ''; } finally { busy = false; } audio.src = media.href(want); loaded = want; }
         await waitMeta();
         audio.currentTime = Math.max(0, copyTime(t) - offset);   // recording time → the trimmed web copy's time (same trim on both copies)
       } else {
@@ -197,7 +198,7 @@
     if (playing) { audio.pause(); return; }
     const t = started ? now() : startAt;
     if (limit != null && t >= limit - 0.1) return playFrom(range?.start ?? startAt, { end: range?.end ?? null });   // replay the range
-    if (!started) return playFrom(startAt, { end: limit });
+    if (!started || (level === 'full' && (!loaded || audio.src.startsWith('blob:') || audio.error))) return playFrom(started ? current : startAt, { end: limit });
     if (level === 'clips' && (!clip || t >= clip.end - 0.3)) return playFrom(t, { end: limit });        // next clip
     follow = true; anchorY = anchorFor(wordEls[curK]); lastLineTop = null;
     audio.play().catch((e) => (note = `Could not play: ${e.message}`));
@@ -206,19 +207,8 @@
    *  the first switch). Rate and volume are kept; a stalled load gives up after 10 s and says so. */
   let switching = false;
   const ogg = () => (typeof Audio !== 'undefined' && new Audio().canPlayType('audio/ogg; codecs="opus"') ? 'ogg' : 'm4a');
-  /** Both copies are warmed into the edge store on load (one-time, idempotent: worker /_media/warm). */
-  const warmAudio = (only = null) => { const v = /[?&]v=(\d+)/.exec(audioInfo?.m4a || '')?.[1]; if (v) fetch(media.href(`/_media/warm?slug=${encodeURIComponent(item.slug)}&v=${v}&fmt=${ogg()}&copy=${only || (hasOriginal ? 'both' : 'main')}`), { method: 'POST' }).catch(() => {}); };
   /** Wait until the audio object is in the edge store (202 + Retry-After while it is being prepared): "preparing audio". */
-  async function ready(path) {
-    const t0 = Date.now();
-    for (;;) {
-      const r = await fetch(media.href(path), { headers: { range: 'bytes=0-0' } });
-      if (r.status !== 202) return r.ok;
-      if (Date.now() - t0 > 3000) note = 'Getting the audio ready…';   // under 3 s: just the spinner
-      if (Date.now() - t0 > 180000) return false;
-      await new Promise((res) => setTimeout(res, (Number(r.headers.get('retry-after')) || 4) * 1000));
-    }
-  }
+  const ready = path => audioReady(media.href(path), { onWaiting: () => { note = 'Getting the audio ready…'; } });
   let loadingCopy = $state(false);   // the other copy is buffering (shown beside the switch)
   const warmed = new Set();
   /** Hover/focus on the switch: read the other copy's first 64 KB so the switch finds it warm at the edge. */
@@ -227,7 +217,6 @@
     if (!u || warmed.has(u) || which === copy) return;
     warmed.add(u);
     fetch(media.href(u), { headers: { range: 'bytes=0-65535' } }).catch(() => {});
-    if (which === 'original') warmAudio('original');   // start the original's fill now (restored copy first was already warmed on load)
   }
   async function switchCopy(which) {
     if (!canPlay || !hasOriginal || which === copy || switching) return;
@@ -354,11 +343,10 @@
         description.textContent = d.summary;
         description.hidden = !d.summary;
       }
-      if (d.audio?.remastered) { audioInfo = d.audio; s0paras = d.paragraphs; warmAudio(); }
+      if (d.audio?.remastered) { audioInfo = d.audio; s0paras = d.paragraphs; }
     }, {every:60_000, idle:false, initial:{summary:item.summary,audio:item.audio},
       same:(a,b)=>a.summary===b.summary && JSON.stringify(a.audio)===JSON.stringify(b.audio)});
     cleanups.push(stopMetadata);
-    if (level === 'full' && canPlay) warmAudio();   // loading the page warms both copies at the edge (idempotent)
     if (canPlay) sessionSetup();
     const silent = () => audio.src.startsWith('blob:');   // the unlock blip, not the talk
     const onPlay = () => { if (silent()) return; playing = true; startedAt = performance.now(); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); };
@@ -412,7 +400,7 @@
       {/if}
     {:else if hasOriginal}
       <div class="ab mx-auto" role="radiogroup" aria-label="Audio version" data-original-slot>
-        {#each [['original', 'Original', 'Orig'], ['main', 'Remastered', 'Rem']] as [k, label, short] (k)}
+        {#each [['original', 'Original', 'Orig'], ['main', audioInfo?.remaster_tier === 'light' ? 'Light cleanup' : 'Remastered', audioInfo?.remaster_tier === 'light' ? 'Clean' : 'Rem']] as [k, label, short] (k)}
           <button type="button" role="radio" aria-checked={copy === k} aria-busy={loadingCopy && copy === k} class="ab-opt" class:on={copy === k} class:buffering={loadingCopy && copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}><span class="sm:hidden" aria-hidden="true">{short}</span><span class="hidden sm:inline">{label}</span></button>
         {/each}
       </div>
@@ -434,7 +422,8 @@
               {:else if playing}
                 <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
               {:else}
-                <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+                <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">{#if audioInfo?.restoration_status === 'pending'}<p class="mt-3 text-sm text-radio-ink">Full restoration is pending. This listening copy has only basic cleanup.</p>{/if}
+        <path d="M7 4.5v15l13-7.5z"/></svg>
               {/if}
             </button>
             <div class="min-w-0 flex-1">

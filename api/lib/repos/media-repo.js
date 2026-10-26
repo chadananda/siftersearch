@@ -144,9 +144,9 @@ export async function importProgress() {
     SUM(CASE WHEN stages_done LIKE '%,transcribe,%' THEN 1 ELSE 0 END) aligned, SUM(CASE WHEN stages_done LIKE '%,quotes,%' THEN 1 ELSE 0 END) cross_referenced,
     SUM(COALESCE(quotes_n, 0)) quote_links, SUM(COALESCE(crs_n, 0)) concept_crs
     FROM media_items WHERE state != 'duplicate' GROUP BY 1`, [], 'media:import-progress');
-  const since = new Date(Date.now() - 6 * 3600_000).toISOString();
-  const recent = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE published_at >= ?`, [since], 'media:published-6h'))?.n || 0;
-  return { rows, published_6h: recent };
+  const since = new Date(Date.now() - 30 * 60_000).toISOString();
+  const recent = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state = 'done' AND published_at >= ?`, [since], 'media:published-30m'))?.n || 0;
+  return { rows, published_30m: recent };
 }
 /** The items being worked on now (downloading / processing / being enriched after publication): a handful of rows. */
 export const queuedCount = async () => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state IN ('queued', 'scheduled')`, [], 'media:queued-count'))?.n || 0;

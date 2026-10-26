@@ -67,3 +67,13 @@ describe('restoration tiers (every talk has a restored copy; light, cleaned or h
     expect(summarize([{ slug: 'a', hours: 1, grade: 'A', qa: q }]).by_tier).toEqual({ light: 1 });
   });
 });
+
+describe('poor-source restoration requirement (Sabri regression)',()=>{
+ it('never accepts D/E basic cleanup as a completed restoration',()=>{
+  for(const grade of ['D','E']){
+   const q=qualityOf({remaster_tier:'light',web_original:{m4a:'original.m4a'},enhancement:{listening:'safe'},quality:{overall:grade},remaster:null});
+   expect(q).toMatchObject({verdict:'pending',tier:null});
+   expect(summarize([{slug:'sabri-pilgrimage-1989',grade,qa:q}]).insufficient_restoration).toBe(1);
+  }
+ });
+});

@@ -1,6 +1,7 @@
 // The Fireside Room's ONE preview player: every "play excerpt" button on /media goes through here, so one sound plays at a
 // time. A 'full' talk streams its web rendition from the highlight's start and stops after the window; a 'clips' talk asks
 // for a signed clip. Media Session metadata (title, speaker, portrait) for the lock screen. Browser only; play on click only.
+import { audioReady } from './media-ready.js';
 import { media } from './api.js';
 import { portraitSquare } from './media-listing.js';
 import { audioUrls } from '../../api/lib/media/listing-index.js';
@@ -55,7 +56,7 @@ function unlock(a) {
 /** Play (or toggle) the ~20 s highlight of a listing row. */
 export async function playExcerpt(it, speaker = null) {
   const a = ensure();
-  if (preview.item?.s === it.s && a.src) {
+  if (preview.item?.s === it.s && a.src && !a.src.startsWith('blob:') && !a.error) {
     if (preview.playing) { a.pause(); return; }
     if (a.currentTime + off < stopAt - 0.5) { a.play().catch(() => {}); return; }
   }
@@ -67,7 +68,9 @@ export async function playExcerpt(it, speaker = null) {
     // a moment/clip page passes the item's own audio URLs as `audio` (index rows' `au` is the AUDIENCE level, not audio)
     const au = (it.audio?.ogg || it.audio?.m4a) ? it.audio : audioUrls(it);
     if (au) {
-      a.src = media.href(canOgg() ? au.ogg : au.m4a);
+      const source = media.href(canOgg() ? au.ogg : au.m4a);
+      if (!(await audioReady(source))) throw Error('Audio is still preparing; try again.');
+      a.src = source;
       stopAt = end;
       a.currentTime = 0;
       await new Promise((res, rej) => { a.addEventListener('loadedmetadata', res, { once: true }); a.addEventListener('error', rej, { once: true }); a.load(); });

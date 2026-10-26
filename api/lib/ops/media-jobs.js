@@ -1679,7 +1679,7 @@ export async function mediaLightBackfillJob({ limit = 3, write = true } = {}, de
   const fs = await import('fs/promises');
   const busy = new Set((await Promise.all(['media-item', 'media-remaster', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n).catch(() => [])))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
   const out = { done: [], waiting: [], skipped: 0, remaining: 0 };
-  for (const it of await repo.remasterCandidates(['A', 'B', 'C', 'D', 'E'])) {
+  for (const it of await repo.remasterCandidates(['A', 'B', 'C'])) {
     if (draining()) break;
     if (!it.dir || busy.has(it.id)) { out.skipped++; continue; }
     const mf = join(it.dir, 'meta.json');

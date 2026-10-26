@@ -35,7 +35,7 @@
     <p class="headline">
       <span class="num"><Odometer value={h.published} label="talks on the air" /></span> talks on the air
       <span class="dot" aria-hidden="true">·</span> <span class="num"><Odometer value={h.total} label="processing" /></span> processing
-      {#if h.perHour}<span class="dot" aria-hidden="true">·</span> <span class="num plus">+{Math.round(h.perHour)}</span> an hour{/if}
+      {#if data?.items_per_hour != null}<span class="dot" aria-hidden="true">·</span> <span title="Newly published talks in the last 30 minutes, expressed per hour"><span class="num plus">{Math.round(h.perHour)}</span> talks/hr <span class="rate-window">(last 30 min)</span></span>{/if}
       {#if h.today}<span class="today">added today: {fmt(h.today)}</span>{/if}
     </p>
     <div class="seg" role="img" aria-label={`${fmt(h.published)} on the air, ${fmt(h.inProgress)} in progress, ${fmt(h.queued)} queued, of ${fmt(h.total)}`}>

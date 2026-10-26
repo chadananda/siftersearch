@@ -1,3 +1,4 @@
+import { qualityOf } from './remaster-quality.js';
 // The talk API's audio block + the original copy's word starts (the "Original" A/B button, Chad 10-23). Pure.
 // The remaster stage writes meta.web_original {ogg, m4a} (paths under the item dir) + meta.aligned_to ('unipase'|'safe');
 // transcript words carry s/e on the MAIN copy and s0/e0 on the original. One trim (offset_s) applies to both copies.
@@ -20,7 +21,7 @@ export function isRemastered(meta = {}) { return remasterTier(meta) != null; }
 export function talkAudio({ slug, level, meta = {} }) {
   if (level !== 'full') return null;
   const v = meta.version || 1, base = `/api/media/${slug}`;
-  const out = { ogg: `${base}/file/web/${slug}.ogg?v=${v}`, m4a: `${base}/file/web/${slug}.m4a?v=${v}`, offset_s: meta.trim?.start_s || 0, end_s: meta.trim?.end_s ?? null, remastered: false, remaster_tier: null };
+  const out = { ogg: `${base}/file/web/${slug}.ogg?v=${v}`, m4a: `${base}/file/web/${slug}.m4a?v=${v}`, offset_s: meta.trim?.start_s || 0, end_s: meta.trim?.end_s ?? null, remastered: false, remaster_tier: null, restoration_status: qualityOf(meta).verdict };
   if (isRemastered(meta)) {
     const wo = meta.web_original, f = (p) => (p ? `${base}/file/${String(p).replace(/^\/+/, '')}?v=${v}` : null);
     Object.assign(out, { remastered: true, remaster_tier: remasterTier(meta), original_url: f(wo.m4a || wo.ogg), original_ogg: f(wo.ogg) });

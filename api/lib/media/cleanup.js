@@ -9,6 +9,7 @@
 // paragraphs, framed with who is speaking, the title and date, and uses its OWN knowledge of Bahá'í history, texts, names
 // and Shoghi Effendi's transliteration to respell misheard names and titles (kind 'name'); it also returns the works and
 // people the talk names (mentions) for the link stage. Every respelling still passes the guard; nothing is ever added.
+import { BAHAI_GREETING_HINT } from './editing-context.js';
 import { keyOf, levenshtein, findSpan, applyEdits, addsWords } from './vocab.js';
 import { sentencesOf } from './paragraphs.js';
 
@@ -172,6 +173,7 @@ export function cleanPrompt(ctx, lines) {
 ${about}
 
 Use your own knowledge of Bahá'í history, the Writings, the names of people, places and works, and Shoghi Effendi's system of transliteration (as printed in Bahá'í books: Bahá’u’lláh, ‘Abdu’l-Bahá, the Báb, Ṭáhirih, Mullá Ḥusayn, Nabíl’s Narrative, Kitáb-i-Íqán) to correct OBVIOUS mishearings, e.g. "Nabips Narrative" → "Nabíl’s Narrative", "the Baab" → "the Báb".
+${BAHAI_GREETING_HINT}
 Keep it VERBATIM-FAITHFUL: never paraphrase, summarise, reorder, add words or improve the speaker's wording; never add titles, dates, volume numbers or explanations; quotations stay exactly as spoken.
 Edit kinds:
 - name: a misheard or misspelt proper name, title of a work, or religious term → its correct spelling (as few words as possible; never more words than were heard)

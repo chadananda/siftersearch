@@ -155,7 +155,7 @@ describe('R2-first web audio (worker/media.js)', () => {
       EDGE_CACHE: { get: async (k) => locks.get(k) || null, put: async (k, v) => locks.set(k, v), delete: async (k) => locks.delete(k) } };
     const orig = globalThis.fetch; globalThis.fetch = vi.fn();
     try {
-      const j = await (await warmMedia(new URL('https://x/_media/warm?slug=a-talk&v=3&fmt=ogg&copy=both'), { ...env, EDGE_CACHE: { ...env.EDGE_CACHE, get: async (k) => (k.includes('original') ? '1' : null) } }, 'https://api.example')).json();
+      const j = await (await warmMedia(new URL('https://x/_media/warm?slug=a-talk&v=3&fmt=ogg&copy=both'), { ...env, EDGE_CACHE: { ...env.EDGE_CACHE, get: async (k) => (k.includes('original') ? String(Date.now()) : null) } }, 'https://api.example')).json();
       expect(j.files).toEqual({ 'web/a-talk.ogg': 'present', 'web/a-talk.original.ogg': 'busy' });
       expect(globalThis.fetch).not.toHaveBeenCalled();
       expect((await warmMedia(new URL('https://x/_media/warm?slug=../x&v=3'), env, 'https://api.example')).status).toBe(400);
@@ -198,4 +198,17 @@ describe('parallel multipart fill + ensure', () => {
     expect(ok).toMatchObject({ present: true, key: 'a-talk/src/original.wav@3' });
     expect((await ensureMedia(new URL('https://x/_media/ensure?slug=a-talk&v=3&kind=zip'), env, 'https://o')).status).toBe(400);
   });
+});
+
+describe('abandoned edge audio transfers',()=>{
+ it('reclaims an expired transfer lease and fills the requested copy without fetching the other one',async()=>{
+  const {warmMedia}=await import('../../worker/media.js');
+  const key='a-talk/web/a-talk.m4a@3',locks=new Map([[`fill:${key}`,String(Date.now()-180000)]]),store=new Set();
+  const env={EDGE_CACHE:{get:async k=>locks.get(k)||null,put:async(k,v)=>locks.set(k,v),delete:async k=>locks.delete(k)},MEDIA_BUCKET:{head:async k=>store.has(k)?{}:null,createMultipartUpload:async k=>({uploadPart:async partNumber=>({partNumber,etag:'part'}),complete:async()=>store.add(k),abort:async()=>{}})}};
+  const original=globalThis.fetch;globalThis.fetch=vi.fn(async()=>new Response(new Uint8Array(32),{status:206,headers:{'content-range':'bytes 0-31/32','content-type':'audio/mp4'}}));
+  try{
+   const result=await(await warmMedia(new URL('https://x/_media/warm?slug=a-talk&v=3&fmt=m4a&copy=main'),env,'https://origin')).json();
+   expect(result.files).toEqual({'web/a-talk.m4a':'filled'});expect([...store]).toEqual([key]);expect(locks.has(`fill:${key}`)).toBe(false);
+  }finally{globalThis.fetch=original;}
+ });
 });

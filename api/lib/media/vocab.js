@@ -259,7 +259,7 @@ export function promptTerms({ title = '', speaker = '', extra = [] } = {}, vocab
   const meta = `${title} ${speaker}`;
   const inMeta = vocab.keys.filter((e) => e.key.length >= 4 && keyOf(meta).includes(e.key)).map((e) => e.term);
   // the words talks use most that Whisper mishears (10-22: "foreigner" for Forerunner, "Real Testament", "Nabips Narrative")
-  const first = ['Bahá’u’lláh', '‘Abdu’l-Bahá', 'the Báb', 'Shoghi Effendi', 'the Guardian', 'Bahá’í', 'Universal House of Justice', 'Covenant',
+  const first = ['Alláh-u-Abhá', 'Yá Bahá’u’l-Abhá', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'the Báb', 'Shoghi Effendi', 'the Guardian', 'Bahá’í', 'Universal House of Justice', 'Covenant',
     'Will and Testament', 'World Order', 'Forerunner', 'Bayán', 'Kitáb-i-Aqdas', 'Kitáb-i-Íqán', 'The Dawn-Breakers', 'Nabíl’s Narrative', 'Hands of the Cause',
     'Riḍván', 'Ṭáhirih', 'Quddús', 'Mullá Ḥusayn', '‘Akká', 'Bahjí', 'Haifa', 'Ḥuqúqu’lláh', 'Mashriqu’l-Adhkár'];
   return [...new Set([...inMeta, ...extra, ...first, ...CORE_TERMS])].slice(0, max);

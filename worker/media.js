@@ -72,7 +72,7 @@ const PART = 8 * 1024 * 1024, PARALLEL = 4;
 
 /** Copy one origin object into R2 as a parallel multipart upload (PARALLEL ranged 8 MB parts (4 × 8 MB stays inside the isolate's 128 MB) at once): the uplink
  *  is the limit, one connection never fills it. → { bytes, ms } or throws. */
-export async function fillParallel(env, key, url, headers = {}) {
+export async function fillParallel(env, key, url, headers = {}, { onProgress = async () => {} } = {}) {
   const t0 = Date.now();
   const head = await fetch(url, { headers: { ...headers, range: 'bytes=0-0' } });
   const total = Number(/\/(\d+)$/.exec(head.headers.get('content-range') || '')?.[1] || 0);
@@ -88,6 +88,7 @@ export async function fillParallel(env, key, url, headers = {}) {
         const r = await fetch(url, { headers: { ...headers, range: `bytes=${start}-${end}` } });
         if (r.status !== 206 && !(r.status === 200 && nParts === 1)) throw new Error(`part ${i}: origin ${r.status}`);
         parts[i] = await mp.uploadPart(i + 1, await r.arrayBuffer());
+        await onProgress();
       }
     }));
     await mp.complete(parts);
@@ -107,10 +108,28 @@ function target(slug, v, fmt, kind, ext = 'm4a') {
 async function fillOne(env, origin, t) {
   if (await env.MEDIA_BUCKET.head(t.key)) return 'present';
   const lock = `fill:${t.key}`;
-  if (env.EDGE_CACHE && await env.EDGE_CACHE.get(lock)) return 'busy';
-  if (env.EDGE_CACHE) await env.EDGE_CACHE.put(lock, String(Date.now()), { expirationTtl: 600 });
-  try { await fillParallel(env, t.key, `${origin}${t.path}`, t.internal && env.S1_KEY ? { 'x-internal-key': env.S1_KEY } : {}); return 'filled'; }
-  catch { return 'failed'; } finally { if (env.EDGE_CACHE) await env.EDGE_CACHE.delete(lock).catch(() => {}); }
+  const held = env.EDGE_CACHE ? await env.EDGE_CACHE.get(lock) : null;
+  const stamp = value => { try { return Number(JSON.parse(value)?.at ?? value); } catch { return Number(value); } };
+  if (held && (!Number.isFinite(stamp(held)) || Date.now() - stamp(held) < 90_000)) return 'busy';
+  const owner = crypto.randomUUID();
+  let lastBeat = Date.now();
+  const lease = () => JSON.stringify({owner,at:Date.now()});
+  if (env.EDGE_CACHE) await env.EDGE_CACHE.put(lock, lease(), {expirationTtl:600});
+  const renew = async () => {
+    if (!env.EDGE_CACHE || Date.now()-lastBeat < 15000) return;
+    lastBeat=Date.now();
+    const current=await env.EDGE_CACHE.get(lock).catch(()=>null);
+    if (!current?.includes(owner)) return;
+    await env.EDGE_CACHE.put(lock,lease(),{expirationTtl:600}).catch(()=>{});
+  };
+  try { await fillParallel(env, t.key, `${origin}${t.path}`, t.internal && env.S1_KEY ? {'x-internal-key':env.S1_KEY} : {}, {onProgress:renew}); return 'filled'; }
+  catch { return 'failed'; }
+  finally {
+    if (env.EDGE_CACHE) {
+      const current=await env.EDGE_CACHE.get(lock).catch(()=>null);
+      if (current && current.includes(owner)) await env.EDGE_CACHE.delete(lock).catch(()=>{});
+    }
+  }
 }
 
 /** POST /_media/ensure?slug=&v=&kind=main|original|src&fmt=ogg|m4a  (x-internal-key): put this file FIRST — fill it now (the
