@@ -224,6 +224,30 @@ describe('the lane: GPU is rented only for work', () => {
     await mediaCloudRemasterJob({ write: true, maxPods: 2 }, x.deps);
     expect(recorded[0]).toBe(true);
   });
+  it('drains surplus pods under the configured cap without discarding assigned work or feeding them again', async () => {
+    const x = setup({ talks: 4, seconds: 3600 });
+    const before = process.env.MEDIA_CLOUD_MAX_PODS;
+    process.env.MEDIA_CLOUD_MAX_PODS = '1';
+    const events = [], run = x.deps.run, terminate = x.cloud.terminatePod;
+    for (const id of [1, 2]) x.spool[`j${id}`] = 'ready';
+    const pod = (id, ip, created) => ({ id, name: id, status: 'ready', ip, port: 2222, created, costPerHr: 0.34 });
+    writeFileSync(x.deps.stateFile, JSON.stringify({ started: 1, proven: true, pods: { keep: pod('keep', '1.2.3.4', x.clock() - 2000), drain: pod('drain', '2.2.2.2', x.clock() - 1000) },
+      jobs: { j1: { itemId: 1, pod: 'keep', since: x.clock() }, j2: { itemId: 2, pod: 'drain', since: x.clock() } },
+      queue: [3, 4], attempts: {}, done: [], failed: [], items: Object.fromEntries([1, 2, 3, 4].map(id => [id, { duration_s: 3600 }])), spent_closed: 0 }));
+    x.deps.run = async (cmd, args, opts) => {
+      if (cmd === 'scp' && args.at(-2).endsWith('/j2/done.json')) events.push('fetched-surplus');
+      if (cmd === 'scp' && /\/spool\/.*\/in\./.test(args.at(-1))) expect(args.at(-1)).not.toContain('2.2.2.2');
+      return run(cmd, args, opts);
+    };
+    x.cloud.terminatePod = async (id) => { events.push(`closed-${id}`); return terminate(id); };
+    try {
+      const r = await mediaCloudRemasterJob({ write: true, maxPods: 3 }, x.deps);
+      expect(r.done).toBe(4);
+      expect(events.indexOf('closed-drain')).toBeGreaterThan(events.indexOf('fetched-surplus'));
+      expect(events).toContain('fetched-surplus');
+      expect(x.cloud.createPod).not.toHaveBeenCalled();
+    } finally { if (before === undefined) delete process.env.MEDIA_CLOUD_MAX_PODS; else process.env.MEDIA_CLOUD_MAX_PODS = before; }
+  });
   it('an empty queue launches no pod', async () => {
     const x = setup({ talks: 0 });
     const r = await mediaCloudRemasterJob({ write: true, ids: null }, { ...x.deps, minHours: 2 });

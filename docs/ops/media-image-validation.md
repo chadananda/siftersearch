@@ -87,3 +87,7 @@ Restarting during a slow batch could also lose a newly rented pod before the nex
 Background light backfill now stops between recordings and passes its drain callback into remote encodes; it no longer holds a manager reload behind unrelated work. The targeted GPU host/spending suites pass 82 tests after these fixes.
 
 Prep/ASR lane transitions now exclude `waiting:true` results: remote-worker backpressure must leave unfinished work queued, rather than advancing it to the next stage. Intake/throughput regression suites pass 36 tests, including this case. During recovery the manager reconciled the old fleet and requeued four unfinished recordings; originals and completed results were retained.
+
+### Measured uplink limit: overnight pool capped at one
+
+With two simultaneous input transfers, 78 MB and 95 MB Opus sources were still staging after more than eight minutes, while GPU stages for shorter talks finished in 34–119 seconds. Extra cards waited on Tower’s shared uplink. The overnight application setting is now `MEDIA_CLOUD_MAX_PODS=1` (the $88 cumulative spend cap and $50 account reserve are unchanged). The runtime cap also applies to lane-keeper resumes. Surplus pods finish their assigned results and then retire; they receive no new recordings. A regression verifies that their result is fetched before termination and that queued work moves to the kept pod. This is a measured network cap, not a GPU-capacity limit; raise it only when transfer throughput can keep more cards fed.

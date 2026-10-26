@@ -1240,6 +1240,8 @@ export function worstFirst(talks) {
  *  fatal error, or (their own watchdog) after 15 idle minutes; a drain YIELDS — pods and jobs in flight live in the state
  *  file and are re-attached on the next start. → summary (spend, $/audio-hour, done, failed) */
 export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000, force = false, mode = 'restore' } = {}, deps = {}) {
+  const configuredPods = Number(process.env.MEDIA_CLOUD_MAX_PODS);
+  if (Number.isInteger(configuredPods) && configuredPods > 0) maxPods = Math.min(maxPods, Math.floor(configuredPods));
   const cleanupMode = mode === 'cleanup';   // talks the word guard held (review / kept / deferred): the deterministic cleanup only, no generative copy
   const C = deps.cloud || await import('../media/cloud.js');
   const L = deps.ledger || await import('../media/pod-ledger.js');
@@ -1404,6 +1406,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const rampCap = st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
       const wantRaw = st.cloud_stopped || rentalPause ? 0 : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
+      const keepPods = new Set([...live].sort((a, b) => Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, maxPods).map(p => p.id));
+      const surplusPods = new Set(maxPods > 0 ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
       if (!wantRaw && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
       const breakerOn = !!st.breaker_until && now() < st.breaker_until;
@@ -1417,9 +1421,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         }
       }
       const utilBy = {};
-      // every pod at once: a pod's downloads / uploads (~7 MB/s each over the tunnel) never hold the other pods' GPUs idle
+      // Transfer each pod's bounded batch in parallel; the uplink, not the GPU, can be the limiting resource.
       await Promise.all(live.map(async (p) => {
         try {
+          if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id)) { await closePod(p, `pool reduced to ${maxPods}`); return; }
           if (p.status === 'booting') {
             const g = await C.getPod(p.id, deps);
             if (p.costPerHr == null) p.costPerHr = g.costPerHr ?? g.adjustedCostPerHr ?? null;
@@ -1518,7 +1523,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             // keep the pod fed (one running, one waiting)
             // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
             let uploadsThisPass = 0;
-            while (uploadsThisPass < 1 && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(C.CLOUD.perPod, Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
+            while (uploadsThisPass < 1 && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(C.CLOUD.perPod, Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
               const itemId = st.queue.shift(); const tAssign = now();
               const it = await repo.getMediaItem(itemId);
               const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
@@ -1546,6 +1551,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               p.jobs_assigned = (p.jobs_assigned || 0) + 1;
               st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: tAssign, uploaded_s: Math.round((now() - tAssign) / 1000) };
             }
+            if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id)) await closePod(p, `pool reduced to ${maxPods}`);
           }
         } catch (err) {
           p.last_error = String(err.message).slice(0, 300);
