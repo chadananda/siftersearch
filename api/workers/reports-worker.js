@@ -23,7 +23,7 @@ async function telemetryLoop() {
       await repo.saveSnapshot(snap.at, snap, seriesOf(snap));
       await repo.pruneSnapshots();
       const v = snap.vectors || {}, h = snap.health;
-      logActivity('telemetry', `snapshot · ${fmt(snap.corpus.paragraphs)} ¶ · phrase ${fmt(v.phrases)} · hype ${fmt(v.hype)} · concepts ${fmt(v.concepts)}${h ? ` · load ${h.cpu.load_pct}% · tank ${h.storage.find((s) => s.dev === 'sdc')?.io?.busy_pct ?? '—'}% busy` : ''}`);
+      logActivity('telemetry', `snapshot · ${fmt(snap.corpus.paragraphs)} ¶ · phrase ${fmt(v.phrases)} · hype ${fmt(v.hype)} · concepts ${fmt(v.concepts)}${h ? ` · load ${h.cpu.load_pct}% · tank ${h.storage.find((s) => s.mount === '/tank')?.io?.busy_pct ?? '—'}% busy` : ''}`);
     } catch (err) { logger.warn({ err: err.message }, 'telemetry: snapshot failed'); }
     await nap(5 * 60_000);
   }

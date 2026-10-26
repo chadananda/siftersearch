@@ -6,14 +6,22 @@ import os from 'os';
 import { statfsSync, readFileSync } from 'fs';
 import { execFileSync } from 'child_process';
 
-// What each device IS — the public label. /tank's note is the planned move (the 4 TB NVMe, ~10-24).
+// Serving-path storage first, then operating system, bulk library and backups.
+// RAM has no block-device counters or SMART; the two /faster filesystems share one physical NVMe.
 export const DEVICES = {
-  sdd: { mount: '/crutch', label: 'Interim SSD', kind: 'ssd', role: 'indexer stores — a crutch until the 4 TB NVMe' },
-  nvme0n1: { mount: '/fast', label: 'Index NVMe', kind: 'nvme', role: 'Qdrant · SQLite' },
-  sdc: { mount: '/tank', label: 'Bulk HDD', kind: 'hdd', role: 'backups · bulk storage' },
-  sda: { mount: '/vault', label: 'Vault HDD', kind: 'hdd', role: 'archive' },
-  sdb: { mount: '/', label: 'System SSD', kind: 'ssd', role: 'OS · services · logs' },
+  ram: { mount: '/srv/qram', label: 'Search RAM disk', kind: 'ram', role: 'hot search indexes · volatile memory' },
+  nvme1n1: { mount: '/faster/vectors', label: 'Search NVMe', kind: 'nvme', role: 'vector indexes · partition of the 4 TB NVMe' },
+  nvme0n1: { mount: '/fast', label: 'Database NVMe', kind: 'nvme', role: 'SQLite · database storage' },
+  sdc: { mount: '/crutch', label: 'Interim SSD', kind: 'ssd', role: 'indexer stores' },
+  sdb: { mount: '/', label: 'System SSD', kind: 'ssd', role: 'OS · services' },
+  sdd: { mount: '/tank', label: 'Library HDD', kind: 'hdd', role: 'audio · documents · bulk storage' },
+  sda: { mount: '/vault', label: 'Backup HDD', kind: 'hdd', role: 'archive · snapshots' },
 };
+export const STORAGE = [
+  ...Object.entries(DEVICES).slice(0, 3).map(([dev, d]) => ({ dev, ...d })),
+  { dev: 'nvme1n1', mount: '/faster', label: 'Workspace NVMe', kind: 'nvme', role: 'workspace · other partition of the 4 TB NVMe' },
+  ...Object.entries(DEVICES).slice(3).map(([dev, d]) => ({ dev, ...d })),
+];
 
 /** Pure: device busy % and MB/s between two /proc/diskstats readings `ms` apart. */
 export function ioBetween(a, b, ms) {
@@ -29,10 +37,10 @@ export function ioBetween(a, b, ms) {
   return out;
 }
 
-function storage() {
-  return Object.entries(DEVICES).map(([dev, d]) => {
+export function storage({ statfs = statfsSync } = {}) {
+  return STORAGE.map(({ dev, ...d }) => {
     try {
-      const s = statfsSync(d.mount);
+      const s = statfs(d.mount);
       const size = s.blocks * s.bsize, free = s.bavail * s.bsize;
       return { dev, ...d, size_gb: Math.round(size / 1e9), used_gb: Math.round((size - free) / 1e9), used_pct: Math.round(((size - free) / size) * 100) };
     } catch { return { dev, ...d, size_gb: null, used_gb: null, used_pct: null }; }
@@ -81,6 +89,7 @@ export function parseSmart(dev, json, nvme = false) {
 function drives() {
   const out = [];
   for (const dev of Object.keys(DEVICES)) {
+    if (DEVICES[dev].kind === 'ram') continue;
     try {
       const nvme = dev.startsWith('nvme');
       const raw = nvme

@@ -55,7 +55,7 @@
     if (pulse?.writer) out.push(`writer · ${exact(pulse.writer.rows)} rows in the last minute · ${exact(pulse.writer.batches)} batches`);
     const io = pulse?.io || {};
     const busy = (d) => (io[d] ? `${io[d].busy_pct}%` : '—');
-    out.push(`io · index NVMe ${busy('nvme0n1')} busy · bulk HDD ${busy('sdc')} · system SSD ${busy('sdb')} · cpu ${pulse?.cpu?.load_pct ?? snap.health?.cpu?.load_pct ?? '—'}% load`);
+    out.push(`io · search NVMe ${busy('nvme1n1')} busy · database NVMe ${busy('nvme0n1')} · bulk HDD ${busy('sdd')} · system SSD ${busy('sdb')} · cpu ${pulse?.cpu?.load_pct ?? snap.health?.cpu?.load_pct ?? '—'}% load`);
     out.push(`index · ${snap.rings.filter((r) => !r.planned).map((r) => `${r.short.toLowerCase()} ${pct(r.done, r.total)}`).join(' · ')}`);
     const c = snap.capability?.variants;
     if (c) out.push(`findability · 10 words ${Math.round((c.exact10?.production?.at10 || 0) * 100)}% · 3 words ${Math.round((c.words3?.production?.at10 || 0) * 100)}% · misspelled ${Math.round((c.typo3?.production?.at10 || 0) * 100)}% (top 10)`);
@@ -218,14 +218,19 @@
         <h2>System health <span class="h-sub">the machine itself</span></h2>
         {#if snap?.health}
           {@const h = snap.health}
-          {#each h.storage.filter((s) => s.size_gb).map((s) => ({ ...s, io: pulse?.io?.[s.dev] || s.io })) as s (s.dev)}
+          <div class="vitals mono">
+            <div><span class="mute">CPU</span> {h.cpu.cores} cores · load {pulse?.cpu?.load_pct ?? h.cpu.load_pct}%</div>
+            <div><span class="mute">RAM</span> {h.memory.total_gb} GB · {h.memory.used_pct}% used</div>
+          </div>
+          {#each h.storage.filter((s) => s.size_gb).map((s) => ({ ...s, io: pulse?.io?.[s.dev] || s.io })) as s (s.mount)}
             {@const dr = (h.drives || []).find((d) => d.dev === s.dev)}
             <div class="disk">
               <div class="disk-top"><span>{s.label} <span class="mute mono">{s.mount}</span></span><span class="mono">{s.used_pct}% of {s.size_gb >= 1000 ? `${(s.size_gb / 1000).toFixed(0)} TB` : `${s.size_gb} GB`}</span></div>
+              <div class="disk-note">{s.role}</div>
               <div class="bar thin"><span style={`width:${s.used_pct}%`}></span></div>
               <div class="iometer" aria-hidden="true"><span class={levelOf(s.io?.busy_pct)} style={`width:${Math.max(2, s.io?.busy_pct ?? 0)}%`}></span></div>
               <div class="disk-io mono">
-                <span class={`io ${levelOf(s.io?.busy_pct)}`}>I/O {s.io ? `${s.io.busy_pct}% busy` : '—'}</span>
+                <span class={`io ${levelOf(s.io?.busy_pct)}`}>I/O {s.kind === 'ram' ? 'RAM filesystem · no physical disk I/O' : s.io ? `${s.io.busy_pct}% busy` : 'I/O unavailable'}</span>
                 {#if s.io}<span class="mute">↓{s.io.read_mb_s} ↑{s.io.write_mb_s} MB/s</span>{/if}
               </div>
               {#if s.note}<div class="disk-note">→ {s.note}</div>{/if}
@@ -243,8 +248,6 @@
             </div>
           {/each}
           <div class="vitals mono">
-            <div><span class="mute">CPU</span> {h.cpu.cores} cores · load {pulse?.cpu?.load_pct ?? h.cpu.load_pct}%</div>
-            <div><span class="mute">RAM</span> {h.memory.total_gb} GB · {h.memory.used_pct}% used</div>
             {#if h.services}<div><span class="mute">Services</span> {h.services.online} online{h.services.errored ? ` · ${h.services.errored} errored` : ''}</div>{/if}
             <div><span class="mute">Vector indexes</span> {#each Object.entries(h.vectors || {}) as [c, st] (c)}<span class={`dot ${st}`} title={`${c}: ${st}`}></span>{/each}</div>
             {#if h.slow_queries_24h}<div><span class="mute">Blocking queries 24 h</span> {h.slow_queries_24h.n} over {h.slow_queries_24h.min_ms / 1000} s</div>{/if}
