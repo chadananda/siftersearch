@@ -173,7 +173,8 @@ def main():
     p.add_argument('--ref', default='')   # transcript.raw.json: the original's own ASR words
     p.add_argument('--af', default='highpass=f=70,loudnorm=I=-18:TP=-1.5:LRA=11')
     a = p.parse_args()
-    dry = decode(a.original, a.af)
+    # Transcript differences are diagnostics, never permission to splice source audio.
+    dry = decode(a.original)
     wet = decode(a.unipase, 'loudnorm=I=-18:TP=-1.5:LRA=11,alimiter=limit=0.891:level=disabled')   # spec: -18 LUFS, -1 dBFS limiter
     lag = env_lag(dry, wet)
     wet = np.roll(wet, -lag)[: len(dry)] if lag else wet[: len(dry)]
@@ -185,14 +186,14 @@ def main():
     sents = sentences_of(work)
     ref_words = [w for sg in json.load(open(a.ref)).get('segments', []) for w in (sg.get('words') or [])] if a.ref else None
     dec = decide(sents, asr_words, lag_s=0.0, ref_words=ref_words)   # the copy's ASR ran on the unshifted copy: its times are already ≈ the original's ± lag
-    out, merged = splice(wet, dry, [(d['s'], d['e']) for d in dec if d['swap']])
+    out, merged = wet, []
     import soundfile as sf
     sf.write(a.output, np.clip(out, -1, 1), SR, format='FLAC', subtype='PCM_24')
     total = sum(d['e'] - d['s'] for d in dec) or 1
     swapped_s = sum(e - s for s, e in merged)
     ung = [d for d in dec if d.get('unguardable')]
-    rep = {'sentences': len(dec), 'swapped': sum(d['swap'] for d in dec), 'swapped_s': round(swapped_s, 1), 'swapped_pct': round(100 * swapped_s / total, 1),
-           'fallback_sent_pct': round(100 * sum(d['swap'] for d in dec) / max(1, len(dec)), 1), 'unguardable': len(ung), 'unguardable_s': round(sum(d['e'] - d['s'] for d in ung), 1),
+    rep = {'sentences': len(dec), 'mode': 'audit', 'swapped': 0, 'flagged_sentences': sum(d['swap'] for d in dec), 'swapped_s': round(swapped_s, 1), 'swapped_pct': round(100 * swapped_s / total, 1),
+           'fallback_sent_pct': 0.0, 'flagged_sent_pct': round(100 * sum(d['swap'] for d in dec) / max(1, len(dec)), 1), 'unguardable': len(ung), 'unguardable_s': round(sum(d['e'] - d['s'] for d in ung), 1),
            'lag_ms': round(1000 * lag / SR, 1), 'windows': len(merged), 'detail': [d for d in dec if d['swap']][:400]}
     json.dump(rep, open(a.report, 'w'))
     print(json.dumps({k: v for k, v in rep.items() if k != 'detail'}))

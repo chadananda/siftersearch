@@ -39,9 +39,9 @@
   // so a talk remastered after its page was cached still shows the switch within a minute
   let audioInfo = $state(item.audio), s0paras = $state(item.paragraphs);
   const gain = $derived(audioInfo?.improvement);
-  const remasterLabel = $derived(audioInfo?.remaster_tier === 'light' ? 'Light cleanup' : gain ? `Remastered · ~${gain.percent}% score gain` : 'Remastered');
+  const remasterLabel = $derived(audioInfo?.remaster_tier === 'light' ? 'Light cleanup' : gain ? `Remastered · ~${gain.percent}% improved` : 'Remastered');
   const remasterShort = $derived(audioInfo?.remaster_tier === 'light' ? 'Clean' : gain ? `Rem ~${gain.percent}%` : 'Rem');
-  const remasterTitle = $derived(gain ? `Estimated quality-score increase: ${gain.before} → ${gain.after} out of 5 (${gain.model}), measured on ${gain.samples} matching excerpts.` : 'Compare the processed listening copy with the original');
+  const remasterTitle = $derived(gain ? `Estimated improvement from before-and-after audio checks: ${gain.quality_before} → ${gain.quality_after} out of 100, measured on ${gain.samples} matching excerpts.` : 'Compare the processed listening copy with the original');
 
   const hasOriginal = $derived(level === 'full' && !!audioInfo?.remastered && !!(audioInfo.original_url || audioInfo.original_ogg));
   const starts0 = $derived(hasOriginal ? flattenOriginalStarts(s0paras) : null);

@@ -1,10 +1,10 @@
 import { expect, it } from 'vitest';
 import { remasterImprovement } from '../../api/lib/media/talk-audio.js';
 import { qualityOf } from '../../api/lib/media/remaster-quality.js';
-const meta = () => ({ web_original: { ogg: 'original.ogg' }, remaster_tier: 'heavy', remaster: { status: 'done' }, qa: { remaster: { output_assessment: { passed: true, reference: { nisqa: [1.49] }, restored: { nisqa: [3.13] }, samples: [{},{},{}] } } } });
+const meta = () => ({ web_original: { ogg: 'original.ogg' }, remaster_tier: 'heavy', remaster: { status: 'done' }, qa: { remaster: { output_assessment: { passed: true, reference: { nisqa: [1.4863405227661133] }, restored: { nisqa: [3.1255233883857727] }, samples: [{},{},{}] } } } });
 it('shows paired model-score improvement and retains its measurement through QA refresh', () => {
-  const m = meta(); expect(remasterImprovement(m)).toMatchObject({ percent: 110, before: 1.49, after: 3.13, estimated: true });
-  m.qa.remaster = qualityOf(m); expect(remasterImprovement(m).percent).toBe(110);
+  const m = meta(); expect(remasterImprovement(m)).toMatchObject({ percent: 340, before: 1.49, after: 3.13, estimated: true });
+  m.qa.remaster = qualityOf(m); expect(remasterImprovement(m).percent).toBe(340);
 });
 it('does not invent gains for unassessed, held, light-only or worse results', () => {
   expect(remasterImprovement({})).toBeNull();

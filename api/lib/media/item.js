@@ -476,6 +476,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // the worker's four encodes of this remaster (post.py), when its transcript hash still matches and the listening copy is the guarded one
       const podW = remastered && meta.enhancement?.listening === 'unipase' ? await podPost(dir, { needFlac: false }) : null;
       const podWeb = podW?.web && ['ogg', 'm4a', 'orig_ogg', 'orig_m4a'].every((k) => existsSync(join(podDir(dir), 'web', podW.web[k]))) ? podW.web : null;
+      if (podWeb && podW.trim) { meta.trim = podW.trim; meta.worker_trim = podW.trim; }
       // every web encode goes to the worker pool first (pods, boss): tower's bounded local slot is only the no-pool fallback (Chad 10-24)
       meta.enc_jobs = meta.enc_jobs || {};
       const encJob = (k) => (meta.enc_jobs[k] = meta.enc_jobs[k] || `${meta.slug}-${k}-${Date.now().toString(36)}`.slice(0, 110));
@@ -642,7 +643,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (meta.asr) meta.asr.speakers = rec.speakers;
     }
 
-    if (stage === 'trim') {
+    if (stage === 'trim' && meta.worker_trim) {
+      meta.trim = meta.worker_trim; delete meta.worker_trim;
+      rec.lead_s = meta.trim.lead_s; rec.gaps = (meta.trim.gaps || []).length; rec.worker = true;
+    } else if (stage === 'trim') {
       // LEADING / TRAILING SILENCE off the WEB copies only (the master is never touched); inner dead gaps marked to skip.
       // All times stay original; the player, the clip cut and the short cut convert with trim.js webTime()
       const T = await import('./trim.js');

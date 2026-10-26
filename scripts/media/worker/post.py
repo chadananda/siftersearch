@@ -51,7 +51,7 @@ def verdict(method, g, g_first, bw, max_pct, why=None):
     metrics = {'source_bandwidth_khz': bw, 'fallback_pct': fb, 'restored_fallback_pct': first, 'sentences': (g or {}).get('sentences'), 'sentences_from_original': (g or {}).get('swapped'),
                'unguardable_s': (g or {}).get('unguardable_s'), 'method': method}
     if method == 'restored':
-        v, r = ('partial', f'{fb} % of sentences are the original') if fb is not None and fb > 5 else ('usable', 'passed the word guard')
+        v, r = ('partial', f'{fb} % of sentences are the original') if fb is not None and fb > 5 else ('usable', 'continuous restored audio; transcript differences are review notes' if (g or {}).get('mode') == 'audit' else 'passed the word guard')
     elif method == 'cleaned':
         v, r = 'cleaned', f'deterministic cleanup (the generative copy fell back on {first} % of sentences)'
     elif bw is not None and bw <= UNREPAIRABLE_BW_KHZ and first is not None and first > max_pct:
@@ -148,27 +148,32 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
     # 4. the four web copies
     t3 = time.time()
     slug = cfg['slug']
-    ff = lambda inp, a, args, dst: sh(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', inp] + (['-af', a] if a else []) + args + [dst], runner)
+    trim = cfg.get('trim')
+    window = ['-ss', str(trim.get('start_s', 0))] if trim else []
+    if trim and trim.get('end_s') is not None: window += ['-t', str(trim['end_s'] - trim.get('start_s', 0))]
+    ff = lambda inp, a, args, dst: sh(['ffmpeg', '-nostdin', '-v', 'error', '-y'] + window + ['-i', inp] + (['-af', a] if a else []) + args + [dst], runner)
     web = {'ogg': f'{slug}.ogg', 'm4a': f'{slug}.m4a', 'orig_ogg': f'{slug}.original.ogg', 'orig_m4a': f'{slug}.original.m4a'}
     try:
         ff(flac, None, cfg['ogg'], os.path.join(post, web['ogg']))
         ff(flac, None, cfg['m4a'], os.path.join(post, web['m4a']))
         # Decode and normalize the original once, then split to both unchanged
         # output recipes. Loudnorm was the same expensive pass in two processes.
-        graph = '[0:a]' + ((af + ',') if af else '') + 'asplit=2[ogg][aac]'
-        sh(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', src,
-            '-filter_complex', graph, '-map', '[ogg]'] + cfg['orig_ogg'] + [os.path.join(post, web['orig_ogg']),
-            '-map', '[aac]'] + cfg['orig_m4a'] + [os.path.join(post, web['orig_m4a'])], runner)
+        if not (cfg.get('reuse_original_web') and all(os.path.getsize(os.path.join(post, web[k])) > 0 for k in ['orig_ogg', 'orig_m4a'])):
+            graph = '[0:a]' + ((af + ',') if af else '') + 'asplit=2[ogg][aac]'
+            sh(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', src,
+                '-filter_complex', graph, '-map', '[ogg]'] + cfg['orig_ogg'] + [os.path.join(post, web['orig_ogg']),
+                '-map', '[aac]'] + cfg['orig_m4a'] + [os.path.join(post, web['orig_m4a'])], runner)
     except Exception as err:
         out['ok'] = True; out['why'] = f'encode failed here: {str(err)[-160:]}'
         return out
+    if trim: out['trim'] = trim
     out['web'] = web; out['steps']['encode'] = round(time.time() - t3, 1)
-    pcm = runner(['ffmpeg', '-nostdin', '-v', 'error', '-i', os.path.join(post, web['ogg']),
+    pcm = runner(['ffmpeg', '-nostdin', '-v', 'error', '-i', flac if trim else os.path.join(post, web['ogg']),
                   '-ac', '1', '-ar', '8000', '-f', 's16le', '-'], capture_output=True, check=True).stdout
     peaks = waveform(pcm.encode() if isinstance(pcm, str) else pcm)
     json.dump(peaks, open(os.path.join(post, 'waveform.json'), 'w'))
     out['waveform_file'] = 'waveform.json'
-    probe = sh(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', os.path.join(post, web['m4a'])], runner)
+    probe = sh(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', flac if trim else os.path.join(post, web['m4a'])], runner)
     out['duration_s'] = float((json.loads(probe or '{}').get('format') or {}).get('duration') or cfg.get('audio_s') or 0)
     out['ok'] = True; out['seconds'] = round(time.time() - t0, 1)
     return out

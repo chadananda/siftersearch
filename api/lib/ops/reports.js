@@ -1,3 +1,4 @@
+import { mediaBiographyAudit } from './media-biography-audit.js';
 import { mediaGreetingsJob } from './media-greetings.js';
 import { mediaDescriptionsJob } from './media-descriptions.js';
 import { mediaPersonApplyJob } from './media-person-apply.js';
@@ -56,6 +57,7 @@ import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
 export const REPORTS = {
+  'media-biography-audit': mediaBiographyAudit,
   'media-greetings': mediaGreetingsJob,
   'media-person-review': mediaPersonReviewJob,
   'media-person-apply': mediaPersonApplyJob,

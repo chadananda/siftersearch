@@ -15,7 +15,7 @@ Qayyúmu’l-Asmá’|Dalá’il-i-Sab‘ih|Kitáb-i-‘Ahd|Lawḥ-i-Karmil|Tabl
 Epistle to the Son of the Wolf|Some Answered Questions|The Secret of Divine Civilization|Tablets of the Divine Plan|Will and Testament|
 The Dispensation of Bahá’u’lláh|God Passes By|The Advent of Divine Justice|The Promised Day Is Come|The World Order of Bahá’u’lláh|The Dawn-Breakers|Nabíl’s Narrative|
 Universal House of Justice|Local Spiritual Assembly|National Spiritual Assembly|Continental Board of Counsellors|Auxiliary Board|Covenant-breaker|
-Covenant-breakers|Most Great Peace|Lesser Peace|Most Great Name|Alláh-u-Abhá|Yá Bahá’u’l-Abhá|Abhá Kingdom|Abhá Beauty|Blessed Beauty|Ancient Beauty|
+Covenant-breakers|Most Great Peace|Lesser Peace|Most Great Name|Ikhtifál|Alláh-u-Abhá|Yá Bahá’u’l-Abhá|Abhá Kingdom|Abhá Beauty|Blessed Beauty|Ancient Beauty|
 Greatest Holy Leaf|Purest Branch|Most Great Branch|Qá’im|Imám Ḥusayn|Imám ‘Alí|Muḥammad|Qur’án|Islám|Zoroaster|Ḥájí|Mírzá|Siyyid|Mullá|Shaykh|Khánum|Áqá|
 Karbilá|Najaf|Mount Carmel|Shrine of the Báb|Mansion of Bahjí|Mazra‘ih|Riḍván Garden|‘Iráq|Kurdistán|Sulaymáníyyih|Ḥájí Mírzá Áqásí|Muḥammad Sháh|
 Náṣiri’d-Dín Sháh|Sulṭán ‘Abdu’l-‘Azíz|Khadíjih Bagum|Mírzá Badí‘u’lláh|Ḥájí Mírzá Ḥaydar-‘Alí|Ṭarázu’lláh Samandarí|‘Alí-Akbar Furútan|Furútan|
@@ -259,7 +259,7 @@ export function promptTerms({ title = '', speaker = '', extra = [] } = {}, vocab
   const meta = `${title} ${speaker}`;
   const inMeta = vocab.keys.filter((e) => e.key.length >= 4 && keyOf(meta).includes(e.key)).map((e) => e.term);
   // the words talks use most that Whisper mishears (10-22: "foreigner" for Forerunner, "Real Testament", "Nabips Narrative")
-  const first = ['Alláh-u-Abhá', 'Yá Bahá’u’l-Abhá', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'the Báb', 'Shoghi Effendi', 'the Guardian', 'Bahá’í', 'Universal House of Justice', 'Covenant',
+  const first = ['Ikhtifál', 'Alláh-u-Abhá', 'Yá Bahá’u’l-Abhá', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'the Báb', 'Shoghi Effendi', 'the Guardian', 'Bahá’í', 'Universal House of Justice', 'Covenant',
     'Will and Testament', 'World Order', 'Forerunner', 'Bayán', 'Kitáb-i-Aqdas', 'Kitáb-i-Íqán', 'The Dawn-Breakers', 'Nabíl’s Narrative', 'Hands of the Cause',
     'Riḍván', 'Ṭáhirih', 'Quddús', 'Mullá Ḥusayn', '‘Akká', 'Bahjí', 'Haifa', 'Ḥuqúqu’lláh', 'Mashriqu’l-Adhkár'];
   return [...new Set([...inMeta, ...extra, ...first, ...CORE_TERMS])].slice(0, max);

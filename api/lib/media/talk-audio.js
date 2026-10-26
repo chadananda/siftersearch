@@ -22,8 +22,8 @@ export function remasterImprovement(meta = {}) {
   if (!isRemastered(meta) || meta.remaster?.status !== 'done' || meta.remaster_tier === 'light') return null;
   const a = meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment;
   const before = a?.reference?.nisqa?.[0], after = a?.restored?.nisqa?.[0];
-  if (!a?.passed || !Number.isFinite(before) || !Number.isFinite(after) || before < 1 || after > 5 || after <= before) return null;
-  return { percent: Math.round((after - before) / before * 100), before: +before.toFixed(2), after: +after.toFixed(2), model: 'NISQA', estimated: true, samples: a.samples?.length || 0 };
+  if (!a?.passed || !Number.isFinite(before) || !Number.isFinite(after) || before <= 1 || after > 5 || after <= before) return null;
+  return { percent: Math.round((after - before) / (before - 1) * 10) * 10, before: +before.toFixed(2), after: +after.toFixed(2), model: 'NISQA', scale_floor: 1, quality_before: Math.round((before-1)*25), quality_after: Math.round((after-1)*25), estimated: true, samples: a.samples?.length || 0 };
 }
 
 /** The `audio` block of GET /api/media/:slug (null unless full playback). */
