@@ -204,8 +204,8 @@
           {#each h.storage.filter((s) => s.size_gb).map((s) => ({ ...s, io: pulse?.io?.[s.dev] || s.io })) as s (s.mount)}
             {@const dr = (h.drives || []).find((d) => d.dev === s.dev)}
             <div class="disk">
-              <div class="disk-top"><span>{s.label} <span class="mute mono">{s.mount}</span></span><span class="mono">{s.used_pct}% of {s.size_gb >= 1000 ? `${(s.size_gb / 1000).toFixed(0)} TB` : `${s.size_gb} GB`}</span></div>
-              <div class="disk-note">{s.role}</div>
+              <div class="disk-top"><span><strong class="mono">{s.mount}</strong> · {s.label} · <span class="mute">{s.role}</span></span></div>
+              <div class="disk-io mono"><span>{s.used_pct}% used · {s.used_gb} GB of {s.size_gb >= 1000 ? `${(s.size_gb / 1000).toFixed(1)} TB` : `${s.size_gb} GB`}</span></div>
               <div class="bar thin"><span style={`width:${s.used_pct}%`}></span></div>
               <div class="iometer" aria-hidden="true"><span class={levelOf(s.io?.busy_pct)} style={`width:${Math.max(2, s.io?.busy_pct ?? 0)}%`}></span></div>
               <div class="disk-io mono">
