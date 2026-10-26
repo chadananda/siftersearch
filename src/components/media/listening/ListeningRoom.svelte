@@ -230,8 +230,8 @@
                 <span class="h-8 w-8 flex-none overflow-hidden rounded-full"><RecordLabel name={t.s?.n || t.sp || t.title} photo={t.s?.p} year={t.y} size={32} /></span>
                 <span class="min-w-0 flex-1 leading-tight">
                   {#if t.k && t.s}
-                    <a href={`/media?speaker=${encodeURIComponent(t.k)}`} class="heard-voice"
-                      onclick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; e.preventDefault(); setSpeaker(t.k); }}>{t.sp || t.s.n}</a>
+                    <a href={`/media/speakers/${encodeURIComponent(t.k)}`} class="heard-voice"
+                      >{t.sp || t.s.n}</a>
                   {:else}
                     <span class="block truncate text-sm font-semibold text-radio-ink">{t.sp || 'Unknown voice'}</span>
                   {/if}

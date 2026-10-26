@@ -36,20 +36,29 @@ export function buildSeries(items) {
     if(!item.k)continue;
     const label=seriesLabel(item);if(!label)continue;
     const id=`${item.k}:${label.key}:${hash(fold(item.col||''))}`;
-    if(!buckets.has(id))buckets.set(id,{id,name:label.name,speakerKey:item.k,book:label.book,items:[]});
+    if(!buckets.has(id))buckets.set(id,{id,name:label.name,speakerKey:item.k,collection:item.col||'',book:label.book,items:[]});
     buckets.get(id).items.push({...item,part:label.part});
   }
-  return [...buckets.values()].filter(g=>g.items.length>=2 && (g.book || new Set(g.items.map(i=>i.part).filter(n=>n!=null)).size>=2)).map(g=>{
+  const groups = [...buckets.values()].filter(g=>g.items.length>=2 && (g.book || new Set(g.items.map(i=>i.part).filter(n=>n!=null)).size>=2)).map(g=>{
     g.items.sort((a,b)=>(a.part??Infinity)-(b.part??Infinity)||(a.y??Infinity)-(b.y??Infinity)||a.s.localeCompare(b.s));
     const years=g.items.map(i=>i.y).filter(Boolean);
     return {...g,y0:years.length?Math.min(...years):null,y1:years.length?Math.max(...years):null};
   });
+  return groups.map(g=>{
+    const base=g.id.split(':')[1], siblings=groups.filter(s=>s.speakerKey===g.speakerKey && s.id.split(':')[1]===base);
+    const years=g.y0?`${g.y0}${g.y1!==g.y0?`-${g.y1}`:''}`:'';
+    const sameYears=siblings.filter(s=>s.y0===g.y0 && s.y1===g.y1).length;
+    const suffix=years && sameYears===1?years:fold(g.collection).replace(/ /g,'-')||'archive';
+    return {...g,slug:base+(siblings.length>1?`-${suffix}`:'')};
+  });
 }
+
+export const seriesHref = group => `/media/sets/${encodeURIComponent(group.speakerKey)}/${encodeURIComponent(group.slug)}`;
 
 export function seriesNavigation(items, slug) {
   const group=buildSeries(items).find(g=>g.items.some(i=>i.s===slug));
   if(!group)return null;
   const position=group.items.findIndex(i=>i.s===slug);
   return {...group,position,previous:group.items[position-1]||null,next:group.items[position+1]||null,
-    href:`/media?speaker=${encodeURIComponent(group.speakerKey)}&series=${encodeURIComponent(group.id)}`};
+    href:seriesHref(group)};
 }

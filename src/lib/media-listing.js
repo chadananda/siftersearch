@@ -307,7 +307,7 @@ export function topTopics(items, n = 18) {
 export function tickerLines(items, speakers = [], { n = 10 } = {}) {
   const lines = [];
   for (const it of [...items].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 3)) lines.push({ tag: 'Just added', text: `${it.t}${it.sp ? ` · ${it.sp}` : ''}`, href: `/media/${it.s}` });
-  for (const s of [...speakers].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 2)) lines.push({ tag: 'New voice', text: `${s.n} · ${s.c} talk${s.c === 1 ? '' : 's'}`, href: `/media?speaker=${encodeURIComponent(s.k)}` });
+  for (const s of [...speakers].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 2)) lines.push({ tag: 'New voice', text: `${s.n} · ${s.c} talk${s.c === 1 ? '' : 's'}`, href: `/media/speakers/${encodeURIComponent(s.k)}` });
   for (const it of items.filter((x) => x.q?.x && x.q.x.length < 120).slice(0, 3)) lines.push({ tag: 'Heard', text: `“${it.q.x}” — ${it.q.c || it.sp || ''}`, href: `/media/${it.s}` });
   const oldest = items.filter((x) => x.y).sort((a, b) => a.y - b.y)[0];
   if (oldest) lines.push({ tag: 'From the vault', text: `${oldest.y} · ${oldest.t}`, href: `/media/${oldest.s}` });

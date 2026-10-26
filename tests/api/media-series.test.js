@@ -38,7 +38,7 @@ describe('recording series box sets',()=>{
 describe('talk-page series navigation',()=>{
  const rows=[talk('Gleanings Part 10','g10'),talk('Gleanings Part 2','g2'),talk('Gleanings Part 1','g1'),talk('Unrelated talk','other')];
  it('links to adjacent available installments and every recording in the same set',()=>{
-  const nav=seriesNavigation(rows,'g2');expect(nav.previous.s).toBe('g1');expect(nav.next.s).toBe('g10');expect(nav.position).toBe(1);expect(nav.items.map(i=>i.s)).toEqual(['g1','g2','g10']);expect(nav.href).toContain('speaker=hooper-dunbar&series=');
+  const nav=seriesNavigation(rows,'g2');expect(nav.previous.s).toBe('g1');expect(nav.next.s).toBe('g10');expect(nav.position).toBe(1);expect(nav.items.map(i=>i.s)).toEqual(['g1','g2','g10']);expect(nav.href).toBe('/media/sets/hooper-dunbar/gleanings');
  });
  it('does not wrap the course endpoints or invent sets for standalone talks',()=>{
   expect(seriesNavigation(rows,'g1').previous).toBeNull();expect(seriesNavigation(rows,'g10').next).toBeNull();expect(seriesNavigation(rows,'other')).toBeNull();

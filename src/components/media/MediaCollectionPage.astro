@@ -1,0 +1,44 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../common/NavBar.svelte';
+import TalkCollection from './TalkCollection.svelte';
+import SeriesCover from './listening/SeriesCover.svelte';
+import {portraitSquare,duration} from '../../lib/media-listing.js';
+import {speakerPath,seriesPath} from '../../lib/media-collection.js';
+const {collection:c} = Astro.props;
+const description=`${c.group?`${c.name} by ${c.speaker.n}`:c.speaker.n}: ${c.items.length} recorded talks, with summaries, topics, audio previews and transcripts.`;
+const pic=portraitSquare(c.speaker.p,160);
+const total=c.items.reduce((n,it)=>n+(it.d||0),0);
+---
+<Layout title={`${c.name} — ${c.group?'Box set':'Talks'} — SifterSearch Media`} {description}>
+  <NavBar client:idle currentPage="media" />
+  <main class="bg-radio-room text-radio-ink">
+    <div class="mx-auto max-w-5xl px-4 pb-28 pt-6 sm:px-6 lg:pt-10">
+      <nav aria-label="Breadcrumb" class="mb-6 flex flex-wrap gap-2 text-sm text-radio-ink-soft">
+        <a href="/media" class="underline underline-offset-4">The Fireside Room</a>
+        {c.group && <><span aria-hidden="true">/</span><a href={speakerPath(c.speaker.k)} class="underline underline-offset-4">{c.speaker.n}</a></>}
+      </nav>
+      <header class="flex items-start gap-5 sm:gap-7">
+        <div class="w-28 flex-none overflow-hidden rounded-lg sm:w-40">
+          {c.group ? <SeriesCover series={c.group} speaker={c.speaker} width={240} /> : pic && <img src={pic.src} srcset={pic.srcset} width="160" height="160" alt={c.speaker.n} class="h-auto w-full" />}
+        </div>
+        <div class="min-w-0">
+          <p class="font-dial text-sm font-bold uppercase tracking-wider text-radio-brass">{c.group?'Series box set':'Speaker collection'}</p>
+          <h1 class="mt-2 font-marquee text-3xl leading-tight sm:text-5xl">{c.name}</h1>
+          {c.group && <p class="mt-3 text-xl"><a href={speakerPath(c.speaker.k)} class="font-semibold underline decoration-radio-brass underline-offset-4">{c.speaker.n}</a></p>}
+          <p class="mt-3 text-radio-ink-soft">{c.items.length} available recordings · {duration(total)}</p>
+        </div>
+      </header>
+      {!c.group && c.groups.length>0 && <section class="mt-10" aria-labelledby="sets-h">
+        <h2 id="sets-h" class="font-marquee text-3xl">Series and box sets</h2>
+        <ul class="mt-4 grid gap-3 sm:grid-cols-2">
+          {c.groups.map(group=><li><a href={seriesPath(group)} class="flex h-full items-center gap-4 rounded-xl border border-radio-line bg-radio-panel p-4 hover:bg-radio-paper">
+            <div class="w-16 flex-none"><SeriesCover series={group} speaker={c.speaker} width={120} /></div>
+            <span><span class="block font-marquee text-lg">{group.name}</span><span class="mt-1 block text-sm text-radio-ink-soft">{group.items.length} talks · Open box set →</span></span>
+          </a></li>)}
+        </ul>
+      </section>}
+      <TalkCollection client:load items={c.items} speaker={c.speaker} series={!!c.group} />
+    </div>
+  </main>
+</Layout>

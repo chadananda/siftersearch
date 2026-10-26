@@ -5,6 +5,7 @@
   // stable). FLIP reflow on filtering, staggered entrance for new cards, scroll-driven rise (CSS view() timeline).
   import { flip } from 'svelte/animate';
   import { fly } from 'svelte/transition';
+  import { speakerPath, seriesPath } from '../../../lib/media-collection.js';
   import SeriesCover from './SeriesCover.svelte';
   import RecordLabel from './RecordLabel.svelte';
   import Wave from './Wave.svelte';
@@ -53,8 +54,7 @@
     } };
   }
 
-  const boxHref = (c) => `/media?speaker=${encodeURIComponent(c.speaker.k)}${c.series ? `&series=${encodeURIComponent(c.series.id)}` : ''}`;
-  const toBox = (e, c) => { if (!plain(e)) return; e.preventDefault(); if (c.series) onseries(c.series); else onspeaker(c.speaker.k); };
+  const boxHref = (c) => c.series ? seriesPath(c.series) : speakerPath(c.speaker.k);
 
   // the radial waveform disc: 48 peaks as spokes around a ring
   function spokes(w) {
@@ -94,7 +94,7 @@
         <!-- tall and wide crops use the EXTENDED master (outpainted once per portrait, media agent) when there is one -->
         {@const pic = s.p ? (c.series ? portraitSquare : portraitTall)(tallSrc(s), c.size === 'lg' ? 220 : 160) : null}
         <article class="box h-full" class:box-series={!!c.series}>
-          <a href={boxHref(c)} class="box-head flex gap-4" onclick={(e) => toBox(e, c)} aria-label={c.series ? `${c.series.name}: ${c.total} talks by ${s.n}` : `All ${s.c || c.total} talks by ${s.n}`}>
+          <a href={boxHref(c)} class="box-head flex gap-4" aria-label={c.series ? `${c.series.name}: ${c.total} talks by ${s.n}` : `All ${s.c || c.total} talks by ${s.n}`}>
             <div class="box-pic">
               {#if c.series}
                 <SeriesCover series={c.series} speaker={s} width={c.size === 'lg' ? 220 : 160} />
@@ -128,7 +128,7 @@
             </ol>
             {/each}
           </div>
-          <a href={boxHref(c)} class="box-all" onclick={(e) => toBox(e, c)}>{c.series ? `All ${c.total} talks in this series` : `All ${s.c || c.total} talks by ${s.n}`} <span aria-hidden="true">→</span></a>
+          <a href={boxHref(c)} class="box-all">{c.series ? `All ${c.total} talks in this series` : `All ${s.c || c.total} talks by ${s.n}`} <span aria-hidden="true">→</span></a>
         </article>
       {:else if c.kind === 'quote'}
         {@const it = c.it}

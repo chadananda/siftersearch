@@ -1,8 +1,9 @@
 <script>
   // VOICES: every speaker ONCE, as a record in a slowly drifting rack (two rows going opposite ways on wide screens) —
   // portrait label (face-centred) or a generated one, name, talk count. Hover spins the record; click tunes the listing to
-  // that voice (the link works without JS: /media?speaker=<key>). Drift pauses on hover/focus/offscreen; reduced motion →
+  // that voice’s collection page. Drift pauses on hover/focus/offscreen; reduced motion →
   // a still, scrollable shelf.
+  import { speakerPath } from '../../../lib/media-collection.js';
   import { onMount } from 'svelte';
   import RecordLabel from './RecordLabel.svelte';
   import { dayPick } from '../../../lib/speaker-gallery.js';
@@ -20,8 +21,6 @@
     return () => io.disconnect();
   });
 
-  // a plain click tunes the listing in place; cmd/ctrl/shift-click and middle-click open /media?speaker= in a new tab
-  const pick = (e, s) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; e.preventDefault(); onpick(s.k); };
 </script>
 
 <section bind:this={root} class="voices relative -mx-4 sm:-mx-6 lg:-mx-8" class:lr-paused={offscreen} aria-labelledby="voices-h">
@@ -35,8 +34,8 @@
         {#each [0, 1] as copy (copy)}
           {#each row as s (s.k + copy)}
             <li aria-hidden={copy ? 'true' : undefined}>
-              <a href={`/media?speaker=${encodeURIComponent(s.k)}`} tabindex={copy ? -1 : undefined} class="voice group" class:active={active === s.k}
-                onclick={(e) => pick(e, s)} title={ROLE[s.role] || undefined}>
+              <a href={speakerPath(s.k)} tabindex={copy ? -1 : undefined} class="voice group" class:active={active === s.k}
+                title={ROLE[s.role] || undefined}>
                 <span class="disc"><span class="label"><RecordLabel name={s.n} photo={dayPick(s).p} year={s.y0} size={64} /></span></span>
                 <span class="min-w-0">
                   <span class="block truncate font-marquee text-lg leading-tight text-radio-ink group-hover:text-radio-amber">{s.n}</span>

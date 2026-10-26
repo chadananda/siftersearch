@@ -54,7 +54,7 @@
           {#if m.context}<p class="text-base text-radio-on-dark opacity-80 sm:text-lg">{m.context}</p>{/if}
           <blockquote class="quote mt-3" class:long={m.text.length > 160} class:xlong={m.text.length > 420}><p>{m.text}</p></blockquote>
           <p class="mt-5 text-lg text-radio-on-dark">
-            — {#if speaker?.k}<a href={`/media?speaker=${encodeURIComponent(speaker.k)}`} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber">{m.speaker}</a>{:else}<span class="font-semibold">{m.speaker || 'Unknown voice'}</span>{/if},
+            — {#if speaker?.k}<a href={`/media/speakers/${encodeURIComponent(speaker.k)}`} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber">{m.speaker}</a>{:else}<span class="font-semibold">{m.speaker || 'Unknown voice'}</span>{/if},
             in <a href={`/media/${m.slug}`} class="italic underline decoration-radio-brass underline-offset-4 hover:text-radio-amber">{m.title}</a>{m.year ? ` (${m.year})` : ''}
           </p>
         </div>
@@ -136,7 +136,7 @@
           </li>
         {/each}
       </ul>
-      {#if speaker?.k}<p class="mt-4"><a class="back" href={`/media?speaker=${encodeURIComponent(speaker.k)}`}>Every talk by {m.speaker} in the Fireside Room</a></p>{/if}
+      {#if speaker?.k}<p class="mt-4"><a class="back" href={`/media/speakers/${encodeURIComponent(speaker.k)}`}>Every talk by {m.speaker} in the Fireside Room</a></p>{/if}
     </section>
   {/if}
   <p class="mt-10"><a class="back" href="/media">Back to the Fireside Room</a></p>

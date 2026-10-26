@@ -1,0 +1,17 @@
+---
+import CollectionPage from '../../../../components/media/MediaCollectionPage.astro';
+import {safeIndex} from '../../../../lib/media-listing.js';
+import {resolveCollection} from '../../../../lib/media-collection.js';
+export const prerender = false;
+const API_BASE=import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+let data;
+try {
+ const response=await fetch(`${API_BASE}/api/media/index`,{signal:AbortSignal.timeout(15000)});
+ if(!response.ok)throw Error('Listing unavailable');
+ data=safeIndex(await response.json());
+} catch {return new Response('Recording collection temporarily unavailable',{status:502});}
+const collection=resolveCollection(data,'series',{speaker:Astro.params.speaker,slug:Astro.params.set});
+if(!collection)return new Response('Recording collection not found',{status:404});
+Astro.response.headers.set('Cache-Control','public, s-maxage=60, stale-while-revalidate=120');
+---
+<CollectionPage {collection} />

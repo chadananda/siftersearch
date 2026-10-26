@@ -2,6 +2,7 @@
   // /media/<slug> BROADCAST CARD (top half): server-rendered only — no hydration — so the title and summary paint as soon
   // as they arrive, before the island's large transcript props. MediaPlayer (the island below) continues the cabinet with
   // the player and toggles .spinning / .live here while playing.
+  import { speakerPath } from '../../lib/media-collection.js';
   import RecordLabel from './listening/RecordLabel.svelte';
   import { eraVar, duration as dur } from '../../lib/media-listing.js';
   import { sketchOf } from '../../lib/speaker-gallery.js';
@@ -45,7 +46,7 @@
           <h1 class="mt-2 font-marquee text-[2.1rem] leading-[1.02] text-radio-on-dark sm:text-5xl lg:text-6xl">{item.title}</h1>
           {#if item.speaker}
             <p class="mt-3 text-lg text-radio-on-dark sm:text-xl">
-              {#if speakerKey}<a href={`/media?speaker=${encodeURIComponent(speakerKey)}`} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber">{item.speaker}</a>{:else}<span class="font-semibold">{item.speaker}</span>{/if}
+              {#if speakerKey}<a href={speakerPath(speakerKey)} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber">{item.speaker}</a>{:else}<span class="font-semibold">{item.speaker}</span>{/if}
             </p>
           {/if}
           {#if when.length > (item.year && !item.date ? 1 : 0)}<p class="mt-1 text-sm text-radio-on-dark opacity-75">{when.join(' · ')}</p>{/if}

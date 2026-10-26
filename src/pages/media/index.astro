@@ -3,6 +3,7 @@
 // back to the paged listing + speakers when the index is not there) and renders the first view complete: hero highlight,
 // ticker, the first jukebox cards (same seeded plan the client uses), eras. The ListeningRoom island then filters the
 // whole index as you type. ?q= ?p= ?era= ?speaker= are honoured on the server too, so shared links render filtered.
+import { resolveCollection } from '../../lib/media-collection.js';
 import Layout from '../../layouts/Layout.astro';
 import NavBar from '../../components/common/NavBar.svelte';
 import ListeningRoom from '../../components/media/listening/ListeningRoom.svelte';
@@ -47,6 +48,11 @@ const seed = daySeed();
 const params = Astro.url.searchParams;
 let speakerParam = params.get('speaker') || '';
 if (speakerParam && !byKey.has(speakerParam)) speakerParam = speakers.find((s) => fold(s.n) === fold(speakerParam))?.k || fold(speakerParam).replace(/ /g, '-');
+// Old author/set query links have permanent, readable collection destinations.
+if (speakerParam && !params.get('q') && !params.get('p') && !params.get('era')) {
+  const c = resolveCollection(data || {items:[],speakers:[]}, params.get('series') ? 'series' : 'speaker', params.get('series') || speakerParam);
+  if (c) return Astro.redirect(c.path, 301);
+}
 const initialState = { q: params.get('q') || '', preset: params.get('p') || '', era: params.get('era') || '', speaker: speakerParam, series: params.get('series') || '' };
 
 const [progress, live, restored] = await Promise.all([progressP, liveP, restoredP]);
