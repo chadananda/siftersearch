@@ -750,3 +750,7 @@ it('reports restoration throughput separately from new whole-recording work over
  const {processingRates}=await import('../../api/lib/media/pod-ledger.js');
  expect(processingRates({done:[{at:10000000,audio_s:1800},{at:9999999,audio_s:900,mode:'whole'},{at:1,audio_s:9999},{audio_s:9999}]},10000000)).toEqual({restoration_checks_per_hour:2,audio_jobs_per_hour:4,audio_hours_per_hour:1.5});
 });
+it('keeps complete remote recordings visible after the short dispatch run has finished',async()=>{
+ const {activeRecordings}=await import('../../api/lib/media/pod-ledger.js');
+ expect(activeRecordings({jobs:{j:{itemId:7,pod:'p',since:100}},pods:{p:{worker:{jobs:[{id:'j',stage:'restore_asr',at:200}]}}},home:{boss:{itemId:8,since:150}}})).toEqual([{id:7,stage:'transcribe',since:100,stage_at:200},{id:8,stage:'enhance',since:150}]);
+});

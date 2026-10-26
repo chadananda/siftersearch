@@ -566,6 +566,7 @@ async function laneJob(id, rest, deps, only, next) {
 export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
   const cloud=deps.cloud||await import('../media/cloud.js');
   const accepted=cloud.acceptedWorker?await cloud.acceptedWorker(deps.acceptedWorkerFile):null;
+  if(rest.require_whole&&accepted?.whole_imports!=='cloud')throw Error('Whole-recording farm is not enabled');
   if(!accepted?.whole_imports)return laneJob(id,rest,deps,PREP_STAGES,'prepped');
   const repo=deps.repo||await import('../repos/media-repo.js');
   let item=await repo.getMediaItem(id);
@@ -608,6 +609,8 @@ export async function mediaLanesFeedPass(deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const queue = deps.queue || ops.enqueue;
+  const accepted=deps.acceptedWorker??await (await import('../media/cloud.js')).acceptedWorker();
+  const wholeInputs=accepted?.whole_imports==='cloud';
   // compute runs in hand (queued + running) = 3 × the compute workers: always ≥ 2 × the workers WAITING (10-22: aorus at
   // 27× real time starves on a shallow queue)
   const computeWorkers = deps.computeWorkers ?? (await import('../media/tools.js')).asrHosts().reduce((n, h) => n + h.slots, 0);
@@ -638,10 +641,11 @@ export async function mediaLanesFeedPass(deps = {}) {
   out.compute_pending = compute.length;
   const buffered = (repo.preppedCount ? await repo.preppedCount() : 0) + asr.length;
   // in hand: at least the prep workers (16) so none idles; stop once 3 × the ASR slots are prepped or queued for ASR
-  const wantPrep = buffered >= 3 * (computeWorkers || 4) ? 0 : Math.max(0, Math.max(computeDepth, deps.computeDepth != null ? 0 : (Number(process.env.MEDIA_PREP_WORKERS) || 16)) - compute.length);
+  const inputs=wholeInputs?await ops.pendingRuns('media-whole-input'):[];
+  const wantPrep = wholeInputs?Math.max(0,4-inputs.length):buffered >= 3 * (computeWorkers || 4) ? 0 : Math.max(0, Math.max(computeDepth, deps.computeDepth != null ? 0 : (Number(process.env.MEDIA_PREP_WORKERS) || 16)) - compute.length);
   for (const it of await repo.nextToProcess(wantPrep)) {
     await repo.updateMediaItem(it.id, { state: 'scheduled' });
-    await queue('media-compute', { id: it.id, priority: true }, 'media-feed');
+    await queue(wholeInputs?'media-whole-input':'media-compute', { id: it.id, priority: true }, 'media-feed');
     out.compute.push(it.id);
   }
   const llm = await ops.pendingRuns('media-llm');

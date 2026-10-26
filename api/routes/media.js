@@ -534,19 +534,22 @@ export default async function mediaRoutes(fastify) {
       // what is RUNNING NOW: the media runs in progress → their items (a stopped re-run leaves no 'in progress' ghost)
       const { runningRuns } = await import('../lib/repos/ops-report-repo.js');
       const { liveItemsByIds } = await import('../lib/repos/media-repo.js');
-      const ids = [...new Set((await runningRuns(['media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-item', 'media-fetch'])).flatMap((r) => [].concat(r.params?.id ?? r.params?.ids ?? [])).map(Number).filter(Boolean))];
+      const [C,L]=await Promise.all([import('../lib/media/cloud.js'),import('../lib/media/pod-ledger.js')]);
+      const farm=new Map(L.activeRecordings(await C.loadState()).map(j=>[Number(j.id),j]));
+      const ids = [...new Set([...farm.keys(),...(await runningRuns(['media-compute','media-whole-input','media-remaster', 'media-asr', 'media-diar', 'media-llm', 'media-item', 'media-fetch'])).flatMap((r) => [].concat(r.params?.id ?? r.params?.ids ?? [])).map(Number).filter(Boolean)])];
       const rows = (await liveItemsByIds(ids.slice(0, 60))).slice(0, 40);
       const recent = await recentlyPublished(6);
       const people = new Map((await spk([...new Set([...rows, ...recent].map((r) => r.speaker_key).filter(Boolean))])).map((s) => [s.key, sketchOf(s.key)?.square || null]));
       const in_progress = await Promise.all(rows.map(async (r) => {
+        const active=farm.get(r.id);if(active)r={...r,stage:active.stage};
         const meta = r.dir ? await readJson(join(r.dir, 'meta.json')) : null;
         const stages = meta?.stages || {};
-        const startedAt = Object.values(stages).map((x) => x?.at).filter(Boolean).sort()[0] || r.updated_at;
+        const startedAt = active?.since?new Date(active.since).toISOString():Object.values(stages).map((x) => x?.at).filter(Boolean).sort()[0] || r.updated_at;
         return { slug: r.slug, title: r.title || meta?.title || null, speaker: r.speaker || meta?.speaker || null, source: sourceOfRank(r.queue_rank), thumb: people.get(r.speaker_key) || null,
           duration_s: r.duration_s || meta?.duration_s || null, started_at: startedAt, stage: r.stage, stage_started_at: r.updated_at, stages: stepsOf(stages, r.stage, r.state) };
       }));
       const by_stage = byStage(in_progress.map((x) => ({ ...x, started_at: x.stage_started_at })));
-      liveMemo = { at: Date.now(), value: { in_progress, by_stage, queued: await queuedCount(), recently_published: recent.map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker, thumb: people.get(x.speaker_key) || null,
+      liveMemo = { at: Date.now(), value: { in_progress, by_stage, queued: Math.max(0,(await queuedCount())-rows.filter(r=>farm.has(r.id)&&['queued','scheduled'].includes(r.state)).length), recently_published: recent.map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker, thumb: people.get(x.speaker_key) || null,
         duration_s: x.duration_s, published_at: x.published_at })), health: await liveHealth(pipelineHealth, runningRuns), updated_at: new Date().toISOString() } };
     }
     pub(reply, 10);

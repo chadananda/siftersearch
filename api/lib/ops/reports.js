@@ -244,6 +244,7 @@ REPORTS['media-rank'] = mediaRankJob;
 REPORTS['media-stages-sync'] = mediaStagesSyncJob;
 REPORTS['media-quote-audit'] = mediaQuoteAuditJob;
 REPORTS['media-compute'] = mediaComputeJob;   // { id } — PREP: archive … web (LAN only) → 'prepped'
+REPORTS['media-whole-input'] = p=>mediaComputeJob({...p,require_whole:true}); // metadata/archive only
 REPORTS['media-meta-fix'] = mediaMetaFixJob;
 REPORTS['media-trim-audit'] = mediaTrimAuditJob;   // { write } — leading/trailing silence + dead gaps of published talks
 REPORTS['media-exclude'] = mediaExcludeJob;   // { write } — talks by excluded speakers (data/media-speaker-people.json `exclude`) out of the library; run by the reports service (never waits on a media drain)

@@ -6,6 +6,16 @@ export function processingRates(state,now=Date.now()){
   return {restoration_checks_per_hour:recent.filter(d=>d.mode!=='whole').length*2,
     audio_jobs_per_hour:recent.length*2,audio_hours_per_hour:Math.round(recent.reduce((s,d)=>s+(Number(d.audio_s)||0),0)/1800*10)/10};
 }
+export function activeRecordings(state){
+  const stage=s=>({unipase:'enhance',guard:'enhance',quality:'enhance',dfn:'enhance',probe:'enhance',encode:'enhance',restore_asr:'transcribe',realign:'transcribe',whole:'enhance',complete:'render'}[s]||s||'enhance');
+  const out=[];
+  for(const [key,j] of Object.entries(state?.jobs||{})){
+    const p=state.pods?.[j.pod];if(p?.terminated)continue;
+    const w=p?.worker?.jobs?.find(w=>w.id===key);out.push({id:j.itemId,stage:stage(w?.stage),since:j.since,stage_at:w?.at});
+  }
+  for(const j of Object.values(state?.home||{}))out.push({id:j.itemId,stage:'enhance',since:j.since});
+  return out;
+}
 export const LEDGER = {
   busyUtil: 15,                     // GPU utilisation % at or above which a sampled tick counts as busy
   windowMs: 30 * 60_000,            // the efficiency window
