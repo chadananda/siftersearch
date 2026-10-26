@@ -193,27 +193,6 @@
     <!-- right: capability + health -->
     <div class="right">
       <ObservatoryTerminal {status} />
-      <section class="panel" aria-label="Findability">
-        <h2>Findability <span class="h-sub">can it find what a reader remembers?</span></h2>
-        {#if snap?.capability?.variants}
-          {#each VARIANTS as v (v.id)}
-            {@const m = snap.capability.variants[v.id]?.production}
-            {#if m}
-              <div class="cap">
-                <div class="cap-top"><span>{v.label}</span><span class="cap-note">{v.note}</span></div>
-                <div class="cap-bars">
-                  <div class="cap-bar"><span class="cap-k">first</span><div class="bar"><span class="b1" style={`width:${m.at1 * 100}%`}></span></div><span class="mono">{Math.round(m.at1 * 100)}%</span></div>
-                  <div class="cap-bar"><span class="cap-k">top 10</span><div class="bar"><span class="b10" style={`width:${m.at10 * 100}%`}></span></div><span class="mono">{Math.round(m.at10 * 100)}%</span></div>
-                </div>
-              </div>
-            {/if}
-          {/each}
-          <p class="fine mono">known-item test #{snap.capability.run} · {snap.capability.paragraphs} real paragraphs, doctrinal core sampled 3× · {snap.capability.finished_at?.slice(0, 16).replace('T', ' ')} UTC</p>
-        {:else}
-          <p class="fine">The first run of the findability test is in progress — watch its probes stream through the terminal below.</p>
-        {/if}
-      </section>
-
       <section class="panel" aria-label="System health">
         <h2>System health <span class="h-sub">the machine itself</span></h2>
         {#if snap?.health}
@@ -253,6 +232,27 @@
             {#if h.slow_queries_24h}<div><span class="mute">Blocking queries 24 h</span> {h.slow_queries_24h.n} over {h.slow_queries_24h.min_ms / 1000} s</div>{/if}
           </div>
         {:else}<p class="fine">Measuring…</p>{/if}
+      </section>
+
+      <section class="panel" aria-label="Findability">
+        <h2>Findability <span class="h-sub">can it find what a reader remembers?</span></h2>
+        {#if snap?.capability?.variants}
+          {#each VARIANTS as v (v.id)}
+            {@const m = snap.capability.variants[v.id]?.production}
+            {#if m}
+              <div class="cap">
+                <div class="cap-top"><span>{v.label}</span><span class="cap-note">{v.note}</span></div>
+                <div class="cap-bars">
+                  <div class="cap-bar"><span class="cap-k">first</span><div class="bar"><span class="b1" style={`width:${m.at1 * 100}%`}></span></div><span class="mono">{Math.round(m.at1 * 100)}%</span></div>
+                  <div class="cap-bar"><span class="cap-k">top 10</span><div class="bar"><span class="b10" style={`width:${m.at10 * 100}%`}></span></div><span class="mono">{Math.round(m.at10 * 100)}%</span></div>
+                </div>
+              </div>
+            {/if}
+          {/each}
+          <p class="fine mono">known-item test #{snap.capability.run} · {snap.capability.paragraphs} real paragraphs, doctrinal core sampled 3× · {snap.capability.finished_at?.slice(0, 16).replace('T', ' ')} UTC</p>
+        {:else}
+          <p class="fine">The first run of the findability test is in progress — watch its probes stream through the terminal above.</p>
+        {/if}
       </section>
     </div>
   </div>
@@ -464,7 +464,7 @@
   @keyframes flow { to { background-position: -200% 0; } }
   @keyframes blink { 50% { opacity: 0.3; } }
   @keyframes spin { to { transform: rotate(360deg); } }
-  /* medium: the dial + one side column (terminal, findability, health); index state drops below */
+  /* medium: the dial + one side column (terminal, health, findability); index state drops below */
   @media (max-width: 1279px) {
     .grid { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); grid-template-areas: 'dial right' 'stages stages'; }
     .stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 18px; }
