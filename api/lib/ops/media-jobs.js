@@ -1470,9 +1470,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             const wm = /^STATUS (\{.*\})$/m.exec(stdout); if (wm) { try { const w = JSON.parse(wm[1]); if (w.at !== p.worker?.at || !p.worker_seen) p.worker_seen = now(); p.worker = { ...w, ready_jobs: (stdout.match(/^WAIT /gm) || []).length }; } catch { /* partial write */ } }
             // A live heartbeat is not progress: cached VRAM can strand a worker
             // with staged inputs and no active work indefinitely.
-            const blocked = p.worker?.ready_jobs > 0 && p.worker.running === 0 && p.worker.cpu_jobs === 0 && p.worker.gpu_util < 5;
+            const blocked = p.worker?.ready_jobs > 0 && p.worker.running === 0 && p.worker.cpu_jobs === 0 && p.worker.gpu_util < 5 && !/^DONE /m.test(stdout);
             if (blocked) p.admission_blocked_since ||= now(); else delete p.admission_blocked_since;
             if (p.admission_blocked_since && now() - p.admission_blocked_since > 5 * 60_000) {
+              const gate = await C.podSsh(run, p, "pgrep -fc '^[^ ]*python[^ ]* .*media_tool.py' || true", { timeoutMs: 30_000 });
+              if (Number(gate.stdout.trim()) !== 0) return;  // auxiliary jobs must finish before recycling this rental
               await closePod(p, 'admission stalled: staged inputs without active work for 5 min');
               return;
             }
@@ -1487,6 +1489,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               if ((kind === 'DONE' || kind === 'FAIL') && resultsThisPass++ >= 1) break;  // large result batches must not stall every other pod's next poll
               const it = await repo.getMediaItem(x.itemId);
               if (kind === 'DONE' && it?.dir) {
+                const fetchAt = now();
+                let postSteps = null;
                 const enh = join(it.dir, 'enhanced');
                 await fs.mkdir(enh, { recursive: true });
                 // when the worker finished guard + alignment + encodes the raw generative copy is not needed here (the guarded one is): skip ~200 MB per audio hour of downlink
@@ -1502,6 +1506,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   const pd = join(enh, 'pod'); await fs.rm(pd, { recursive: true, force: true }); await fs.mkdir(join(pd, 'web'), { recursive: true });
                   await C.podGet(run, p, `/workspace/spool/${job}/post.json`, join(pd, 'post.json'));
                   const pj = JSON.parse(await fs.readFile(join(pd, 'post.json'), 'utf8'));
+                  postSteps = pj.steps || null;
                   if (pj.guard) {
                     for (const f of ['unipase.flac', 'unipase.guard.json', ...(pj.realign ? ['realign.json'] : [])]) await C.podGet(run, p, `/workspace/spool/${job}/post/${f}`, join(pd, f));
                     for (const f of Object.values(pj.web || {})) await C.podGet(run, p, `/workspace/spool/${job}/post/${f}`, join(pd, 'web', f));
@@ -1515,7 +1520,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 p.jobs_done = (p.jobs_done || 0) + 1; st.boot_fails = 0; st.proven = true;   // a pod that finished a talk proves the pool
                 const imode = st.items?.[it.id]?.mode || 'restore';
                 if (st.done.some((d) => d.id === it.id && (d.mode || 'restore') === imode)) continue;   // idempotent: a second result for a talk never queues a second run
-                st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode, cycle_s: Math.round((now() - x.since) / 1000), upload_s: x.uploaded_s, pod_s: dj.seconds, post_s: dj.post_s ?? null, at: now() });
+                st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode, cycle_s: Math.round((now() - x.since) / 1000), upload_s: x.uploaded_s, pod_s: dj.seconds, post_s: dj.post_s ?? null, download_s: Math.round((now() - fetchAt) / 1000), post_steps: postSteps, at: now() });
                 // a 'post' result for a talk tower has already finished itself is stale: drop it; otherwise tower's queued run takes it in seconds
                 const mt = await readMeta(it.dir).catch(() => null);
                 if (imode === 'post' && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); continue; }

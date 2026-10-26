@@ -139,8 +139,12 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
     try:
         ff(flac, None, cfg['ogg'], os.path.join(post, web['ogg']))
         ff(flac, None, cfg['m4a'], os.path.join(post, web['m4a']))
-        ff(src, af, cfg['orig_ogg'], os.path.join(post, web['orig_ogg']))
-        ff(src, af, cfg['orig_m4a'], os.path.join(post, web['orig_m4a']))
+        # Decode and normalize the original once, then split to both unchanged
+        # output recipes. Loudnorm was the same expensive pass in two processes.
+        graph = '[0:a]' + ((af + ',') if af else '') + 'asplit=2[ogg][aac]'
+        sh(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', src,
+            '-filter_complex', graph, '-map', '[ogg]'] + cfg['orig_ogg'] + [os.path.join(post, web['orig_ogg']),
+            '-map', '[aac]'] + cfg['orig_m4a'] + [os.path.join(post, web['orig_m4a'])], runner)
     except Exception as err:
         out['ok'] = True; out['why'] = f'encode failed here: {str(err)[-160:]}'
         return out

@@ -152,6 +152,7 @@ const setup = ({ talks = 2, seconds = 600, poll = null } = {}) => {
   const run = vi.fn(async (cmd, args) => {
     const last = args.at(-1);
     if (poll) { const r = poll(cmd, last, args); if (r) return r; }
+    if (cmd === 'ssh' && last.startsWith('pgrep -fc')) return { stdout: '0' };
     if (cmd === 'scp') {
       const [src, dst] = args.slice(-2);
       if (dst.includes('/spool/') && dst.includes('/in.')) spool[dst.split('/spool/')[1].split('/')[0]] = 'uploaded';
@@ -384,7 +385,7 @@ print(json.dumps({'r': {k: v for k, v in r.items() if k != 'guard'}, 'calls': ca
   };
   it('a passing talk: guard, realign, 4 encodes', () => {
     const o = run(4);
-    expect(o.calls).toEqual(['remaster_guard.py', 'media_tool.py', 'ffmpeg', 'ffmpeg', 'ffmpeg', 'ffmpeg']);
+    expect(o.calls).toEqual(['remaster_guard.py', 'media_tool.py', 'ffmpeg', 'ffmpeg', 'ffmpeg']);
     expect(o.r.web).toMatchObject({ ogg: 's.ogg', orig_m4a: 's.original.m4a' });
   });
   it('a held talk (> 15 %) stops after the guard — no GPU / CPU wasted on realign or encodes', () => {
@@ -563,8 +564,9 @@ print(json.dumps({'envs': envs, 'held': r.get('held'), 'web': bool(r.get('web'))
 
 describe('a pod whose worker stopped is replaced and its talks go back to the queue', () => {
   it('replaces a heartbeating worker stranded on staged inputs and requeues every talk', async () => {
-    let x;
+    let x, gatePolls = 0;
     x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => {
+      if (cmd === 'ssh' && last.startsWith('pgrep -fc')) return { stdout: ++gatePolls < 3 ? '2' : '0' };
       if (cmd === 'ssh' && last.startsWith('cd /workspace/spool') && !x.killed.length) {
         return { stdout: `WAIT stranded\nUTIL 0\nSTATUS ${JSON.stringify({ at: x.clock(), running: 0, cpu_jobs: 0, gpu_util: 0 })}` };
       }
@@ -573,6 +575,7 @@ describe('a pod whose worker stopped is replaced and its talks go back to the qu
     const result = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, minHours: 2 });
     expect(result).toMatchObject({ done: 2, failed: 0 });
     expect(x.killed).toContain('p1');
+    expect(gatePolls).toBe(3);  // wait for auxiliary jobs before retiring the stalled worker
     expect(x.queued.map(([, p]) => p.id).sort()).toEqual([1, 2]);
     const state = JSON.parse(readFileSync(x.deps.stateFile, 'utf8'));
     expect(state.pods.p1.why).toMatch(/admission stalled/);
