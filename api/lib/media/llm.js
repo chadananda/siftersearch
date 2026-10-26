@@ -155,10 +155,11 @@ Return JSON {"title": "…", "speaker": "main speaker's full name or null", "spe
 
 /** Re-describe an existing talk without touching its title, attribution or transcript. */
 export async function rewriteDescription(paragraphs, hints={}, opts={}) {
+ const {previous_summary: _previous, ...context}=hints;
  const evidence=descriptionEvidence(paragraphs);
  if(!evidence.length)throw Error('No transcript evidence');
  const out=await ask('media-meta', `${DESCRIPTION_STYLE}
-Catalogue context (identification only; do not repeat it as the lead): ${JSON.stringify(hints)}
+Catalogue context (identification only; do not repeat it as the lead): ${JSON.stringify(context)}
 Transcript evidence, sampled throughout the recording: ${JSON.stringify(evidence)}
 Return JSON {"summary":"description", "evidence":[paragraph numbers supporting its specific claims]}.`, {...opts,max:6000});
  if(!out)throw Error('No complete JSON description: model output may have been truncated');

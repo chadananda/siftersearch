@@ -23,7 +23,7 @@ export async function mediaDescriptionsJob({write=false,ids=null,speaker=null,li
   try{
    const work=await read(join(row.dir,'transcript.work.json'))||await read(join(row.dir,'transcript.json'));
    if(!work?.paragraphs?.length){out.skipped.push({id:row.id,why:'no transcript'});continue;}
-   const result=await llm.rewriteDescription(work.paragraphs,{title:meta.title,speaker:meta.speaker,previous_summary:meta.summary,topics:meta.topics,headings:(meta.headings||[]).map(h=>h.text)},{spend:out.spend});
+   const result=await llm.rewriteDescription(work.paragraphs,{title:meta.title,speaker:meta.speaker,topics:meta.topics,headings:(meta.headings||[]).map(h=>h.text)},{spend:out.spend});
    // A pipeline stage may have started while the model was writing. Never replace its metadata.
    const fresh=await repo.getMediaItem(row.id),current=await read(join(row.dir,'meta.json'));
    if(fresh?.state!=='done'||!current||current.summary!==meta.summary){out.skipped.push({id:row.id,why:'changed while describing'});continue;}

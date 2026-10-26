@@ -11,6 +11,7 @@ describe('concept-first talk descriptions',()=>{
   const text='The speaker discusses the World Order and introduces its historical comparisons with the Roman Empire.';
   expect(validDescription('Part seven moves from institutional history to individual duty. The account examines several conditions that shaped the succession.')).toBe(false);
   expect(validDescription('Religious truth is relative, and this session examines that doctrine. A schooling analogy illustrates the relationship.')).toBe(false);
+  expect(validDescription('Rather than institutional history, this installment asks about religious authority. The discussion offers a historical comparison.')).toBe(false);
   expect(validDescription(text)).toBe(false);expect(validDescription(text.replace('The speaker','Hooper Dunbar'),'Hooper Dunbar')).toBe(false);
   expect(validDescription('Political unity can outlast the institutions that first establish it. The comparison with the Roman Empire distinguishes administrative continuity from religious authority.')).toBe(true);
  });
