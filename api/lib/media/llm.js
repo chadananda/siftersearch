@@ -160,7 +160,8 @@ export async function rewriteDescription(paragraphs, hints={}, opts={}) {
  const out=await ask('media-meta', `${DESCRIPTION_STYLE}
 Catalogue context (identification only; do not repeat it as the lead): ${JSON.stringify(hints)}
 Transcript evidence, sampled throughout the recording: ${JSON.stringify(evidence)}
-Return JSON {"summary":"description", "evidence":[paragraph numbers supporting its specific claims]}.`, {...opts,max:1000});
+Return JSON {"summary":"description", "evidence":[paragraph numbers supporting its specific claims]}.`, {...opts,max:6000});
+ if(!out)throw Error('No complete JSON description: model output may have been truncated');
  const cited=Array.isArray(out?.evidence)?out.evidence.map(Number):[];
  if(!validDescription(out?.summary,hints.speaker) || !cited.length || cited.some(n=>!evidence.some(p=>p.n===n)))throw Error('Description failed editorial/evidence checks');
  return {summary:out.summary.trim(),evidence:cited};
