@@ -563,7 +563,24 @@ async function laneJob(id, rest, deps, only, next) {
   if (!r?.failed && !r?.held && !r?.yielded && !r?.waiting) await (deps.repo?.updateMediaItem || updateMediaItem)(id, { state: before?.state === 'done' ? 'done' : next });
   return failedRun(r);
 }
-export const mediaComputeJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, PREP_STAGES, 'prepped');
+export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
+  const cloud=deps.cloud||await import('../media/cloud.js');
+  const accepted=cloud.acceptedWorker?await cloud.acceptedWorker(deps.acceptedWorkerFile):null;
+  if(!accepted?.whole_imports)return laneJob(id,rest,deps,PREP_STAGES,'prepped');
+  const repo=deps.repo||await import('../repos/media-repo.js');
+  let item=await repo.getMediaItem(id);
+  if(item?.state==='done')return laneJob(id,rest,deps,PREP_STAGES,'prepped');
+  if(!item?.dir){await (deps.runItem||(await import('../media/item.js')).runItem)(item,{only:['archive']});item=await repo.getMediaItem(id);}
+  const fs=await import('node:fs/promises');
+  const meta=JSON.parse(await fs.readFile(join(item.dir,'meta.json'),'utf8'));
+  const T=deps.tools||await import('../media/tools.js');
+  const stop=deps.draining||(await import('../drain.js')).isDraining;
+  try {
+    const m=await (deps.homeWholeRecording||(await import('../media/home-recording.js')).homeWholeRecording)(item,meta,{T,image:accepted.image,stop});
+    await repo.updateMediaItem(id,{state:'transcribed',stage:null,stages_done:','+Object.keys(m.stages).join(',')+','});
+    return {id,whole_worker:true,stages:Object.keys(m.stages)};
+  } catch(err){if(err.code==='DRAIN')return {id,yielded:true};throw err;}
+}
 export const mediaAsrJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['transcribe'], 'asr_done');
 // DIARIZE (its own lane, 10-23 04:29): the ASR worker never waits on a diarization
 export const mediaDiarJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['diarize', 'trim'], 'transcribed');   // + the silence trim (words known)
@@ -1297,10 +1314,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   if (/pods failed to start/.test(st.cloud_stopped || '')) { st.cloud_stopped = null; st.pod_failures = 0; }
   st.pod_failures = st.pod_failures || 0; st.home = st.home || {}; st.home_done = st.home_done || 0;
   // the legacy home-host path (the gate's 'unipase' verb) has no worker result for tower to take: off in cleanup runs and in STRICT mode (workers only)
-  const homeHosts = (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
+  const homeHosts = acceptedWorker ? ['aorus','aorus-2'] : (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
   const homeTasks = new Map();   // host → promise (in this process)
   // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
-  const decided = (m) => !force && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
+  const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
   const beatFile = `${deps.stateFile || C.STATE_FILE}.beat`;   // the lane's liveness, written on its own timer: a long transfer must not look like a dead lane to the reaper
   const beat = () => fs.writeFile(beatFile, String(now())).catch(() => {});
   beat();
@@ -1359,7 +1376,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         for (const o of taken) {
           if (o.redo) st.done = st.done.filter((d) => d.id !== o.id);   // an explicit redo (the first pass was wrong, e.g. the aligner was not found)
           if ((!o.redo && st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode)) || st.queue.includes(o.id) || Object.values(st.jobs).some((j) => j.itemId === o.id)) continue;
-          st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode };
+          st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, redo:!!o.redo };
           st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
         }
       }
@@ -1379,17 +1396,19 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         const opsRepo = deps.ops || await import('../repos/ops-report-repo.js');
         st.asr_waiting = (await opsRepo.pendingRuns('media-asr').catch(() => [])).filter((r) => r.status === 'queued').length; st.asr_checked = now();
       }
-      for (const h of rentalPause ? [] : homeHosts) {
+      for (const h of rentalPause && !acceptedWorker ? [] : homeHosts) {
         if (homeTasks.has(h)) continue;
-        const cur = st.home[h] || (st.queue.length && !held && !st.asr_waiting && homeEligible(h, T) ? { itemId: st.queue.shift(), since: now() } : null);
+        const cur = st.home[h] || (st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.shift(), since: now() } : null);
         if (!cur) continue;
         st.home[h] = cur;
         homeTasks.set(h, (async () => {
           const it = await repo.getMediaItem(cur.itemId);
           const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
           if (!m?.original) throw new Error('no original');
-          if (decided(m)) return;
-          const dj = await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
+          if (decided(m,it.id)) return;
+          const dj = acceptedWorker
+            ? await (await import('../media/home-recording.js')).homeRecording('aorus',it,m,{T,image:acceptedWorker.image,mode:st.items?.[it.id]?.mode||'restore',stop:draining})
+            : await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
           if (st.done.some((d) => d.id === it.id)) return;   // a duplicate result never double-publishes
           st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h });
           st.home_done++;
@@ -1545,7 +1564,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               const itemId = st.queue.shift(); const tAssign = now();
               const it = await repo.getMediaItem(itemId);
               const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
-              if (decided(m)) continue;
+              if (decided(m,it.id)) continue;
               if (!m?.original) { st.failed.push({ id: itemId, slug: it?.slug, error: 'no original' }); continue; }
               const job = C.jobIdOf(it), src = join(it.dir, m.original), ext = (extname(src).slice(1) || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
               uploadsThisPass++;

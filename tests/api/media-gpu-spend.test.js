@@ -9,13 +9,23 @@ import * as C from '../../api/lib/media/cloud.js';
 import { podsWanted, ledgerTick, efficiency, ledgerSummary, reapReason, runpodTime, LEDGER } from '../../api/lib/media/pod-ledger.js';
 import { reapPass } from '../../api/lib/media/pod-reaper.js';
 import { podChecks } from '../../scripts/lib/pod-checks.mjs';
-import { mediaCloudRemasterJob, laneKeeperPass } from '../../api/lib/ops/media-jobs.js';
+import { mediaCloudRemasterJob, mediaComputeJob, laneKeeperPass } from '../../api/lib/ops/media-jobs.js';
 import { runItem } from '../../api/lib/media/item.js';
 import { sha256File } from '../../api/lib/media/pod-post.js';
 import { createHash } from 'crypto';
 
 const MIN = 60_000;
 describe('persistent operator rental pause', () => {
+  it('new-import dispatch adopts the whole worker result and proceeds directly to text enrichment', async () => {
+    const dir=mkdtempSync(join(tmpdir(),'whole-dispatch-'));
+    try {
+      writeFileSync(join(dir,'meta.json'),JSON.stringify({slug:'test',original:'original/test.mp3',stages:{archive:{at:'now'}}}));
+      const updateMediaItem=vi.fn(),homeWholeRecording=vi.fn(async()=>({stages:{archive:{},grade:{},enhance:{},remaster:{},web:{},transcribe:{},diarize:{},trim:{}}}));
+      const r=await mediaComputeJob({id:1},{cloud:{acceptedWorker:async()=>({image:'accepted-digest',whole_imports:true})},repo:{getMediaItem:async()=>({id:1,dir,state:'scheduled'}),updateMediaItem},tools:{},draining:()=>false,homeWholeRecording});
+      expect(r.whole_worker).toBe(true);expect(homeWholeRecording).toHaveBeenCalledOnce();
+      expect(updateMediaItem).toHaveBeenCalledWith(1,expect.objectContaining({state:'transcribed'}));
+    } finally {rmSync(dir,{recursive:true,force:true});}
+  });
   it('accepts only an immutable image with recorded Aorus acceptance', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'accepted-worker-'));
     const file = join(directory, 'accepted.json');

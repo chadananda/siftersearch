@@ -35,7 +35,9 @@ def main(d):
             worker.ASR_MODEL.clear()
             del asr
         del up; gc.collect(); torch.cuda.empty_cache()
-    stage('guard'); worker.finalize(d, done)
+    stage('guard')
+    with lease('guard'):
+        worker.finalize(d, done)
     post_file = os.path.join(d, 'post.json')
     post = json.load(open(post_file)) if os.path.exists(post_file) else None
     if not post or not post.get('ok') or not (post.get('held') or post.get('web')):

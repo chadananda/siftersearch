@@ -16,6 +16,7 @@ root=tempfile.mkdtemp();ctx=mp.get_context('fork');q=ctx.Queue();release=ctx.Eve
 def worker(n):
  os.environ.update(SIFTER_GPU_LEASES='1',SIFTER_GPU_LEASE_DIR=root,CUDA_VISIBLE_DEVICES='0')
  g.shutil.which=lambda x:'/bin/true';g.sample=lambda:(20,24,60)
+ g.os.readlink=lambda x:'test-pid-namespace'
  c.read_system=lambda:{'ram_total_gb':64,'ram_avail_gb':40}
  with g.lease('unipase',timeout=5):
   q.put(n)
@@ -31,4 +32,12 @@ release.set();assert q.get(timeout=3)==3
 for p in ps:p.join(3);assert p.exitcode==0
 print('serialized')`],{encoding:'utf8',timeout:10000});
  expect(r.trim()).toBe('serialized');
+});
+it('keeps a live reservation from another container with the same PID',()=>{
+ const r=JSON.parse(execFileSync('python3',['-c',`
+import json
+from scripts.media.worker.gpu_lease import live_reservations
+s={'other:1':{'namespace':'other','pid':1,'identity':'different','at':100,'need':6.5}}
+print(json.dumps([list(live_reservations(s,'mine',110)),list(live_reservations(s,'mine',161))]))`],{encoding:'utf8'}));
+ expect(r).toEqual([['other:1'],[]]);
 });
