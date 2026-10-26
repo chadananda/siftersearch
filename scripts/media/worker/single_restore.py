@@ -11,7 +11,8 @@ import runpod_worker as worker
 def main(d):
     import torch
     os.environ['HF_HUB_OFFLINE'] = '1'; os.environ['TRANSFORMERS_OFFLINE'] = '1'
-    os.environ.setdefault('NLTK_DATA', '/opt/models/nltk_data')
+    from worker.language_data import prepare
+    prepare()
     os.environ['TORCH_HOME'] = '/root/.cache/torch'; torch.set_num_threads(2)
     def stage(name):
         tmp = os.path.join(d, 'progress.json.tmp')
