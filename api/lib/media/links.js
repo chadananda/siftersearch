@@ -41,6 +41,9 @@ export function bioIndex(bio = []) {
     const k = keyOf(n); if (k.length >= 3) { if (!idx.has(k)) idx.set(k, new Set()); idx.get(k).add(p.id); }
     entries.push({ id: p.id, toks: toks(n) });
   }
+  // Reviewed full-name destinations disambiguate duplicate extraction records.
+  // Surnames and other partial names retain every candidate; no graph merge.
+  for(const p of bio)for(const n of p.preferred_names||[])if(toks(n).filter(t=>!TITLE_WORDS.test(t)).length>=2)idx.set(keyOf(n),new Set([p.id]));
   return { idx, entries, byId: new Map(bio.map((p) => [p.id, p])) };
 }
 const indexes=new WeakMap();

@@ -5,8 +5,8 @@ const mention=(text,confidence=.9)=>({text,canonical:text,kind:'person',confiden
 it('links source-backed later figures absent from the book-scoped biography browser',async()=>{
  const additionalBio=transcriptBiographyPeople([
   {id:1263765,name:'David Hofman'},{id:1303022,name:'David Hofman'},{id:1306157,name:'David Hofman'},
-  {id:1261686,name:'Marion Hofman'},{id:1287389,name:'Leroy Ioas'},
-  {id:1251371,name:'Mrs. Amelia Collins'},{id:1300673,name:'Amelia Collins, Hand of the Cause'},
+  {id:1261686,name:'Marion Hofman'},{id:1287389,name:'Leroy Ioas'}, {id:1309690,name:'Leroy Ioas'}, {id:1309740,name:'Leroy Ioas'}, {id:1305710,name:'Leroy Ioas'},
+  {id:1251371,name:'Mrs. Amelia Collins'},{id:1300673,name:'Amelia Collins, Hand of the Cause'},{id:1311507,name:'Amelia Collins'},
   {id:1309849,name:'Amelia Bowman'},{id:1306943,name:'Charlotte Linfoot'},
  ]);
  const cases=[['David Hoffman',.7,1263765],['David Hofman',.9,1263765],['Marian Holley',.8,1261686],['Leroy Ioas',.9,1287389],['Amelia Collins',.9,1251371],['Amelia Bowman',.4,1309849],['Charlotte Linfoot',.9,1306943]];
