@@ -9,6 +9,11 @@ const people = JSON.parse(readFileSync(new URL('../../data/media-speaker-people.
 const faizi = people.find((p) => p.key === 'abul-qasim-faizi');
 
 describe('name forms', () => {
+  it('resolves Chad’s confirmed Dunbar label to Hooper without merging Khamsi-Dunbar', () => {
+    const actual = JSON.parse(readFileSync(new URL('../../data/media-speaker-people.json', import.meta.url), 'utf8')).people;
+    expect(resolveSpeaker('Dunbar', actual)).toMatchObject({ key: 'hooper-dunbar', display: 'Hooper Dunbar' });
+    expect(resolveSpeaker('Khamsi-Dunbar, M.', actual).key).not.toBe('hooper-dunbar');
+  });
   it('folds diacritics, apostrophes, hyphens, titles', () => {
     expect(nameTokens("Abu'l-Qásim Faizí")).toEqual(['abul', 'qasim', 'faizi']);
     expect(nameTokens('Abul-Qasim Faizi')).toEqual(['abul', 'qasim', 'faizi']);

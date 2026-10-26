@@ -334,6 +334,10 @@
   {
    "key": "hooper-dunbar",
    "name": "Hooper Dunbar",
+   "confirmed": [
+    "Dunbar"
+   ],
+   "confirmed_basis": "Chad confirmed 2026-10-26: Dunbar is Hooper Dunbar",
    "aliases": [
     "Hooper C. Dunbar",
     "H. Dunbar"
