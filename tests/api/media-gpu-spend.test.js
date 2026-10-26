@@ -562,6 +562,21 @@ print(json.dumps({'envs': envs, 'held': r.get('held'), 'web': bool(r.get('web'))
 });
 
 describe('a pod whose worker stopped is replaced and its talks go back to the queue', () => {
+  it('replaces a heartbeating worker stranded on staged inputs and requeues every talk', async () => {
+    let x;
+    x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => {
+      if (cmd === 'ssh' && last.startsWith('cd /workspace/spool') && !x.killed.length) {
+        return { stdout: `WAIT stranded\nUTIL 0\nSTATUS ${JSON.stringify({ at: x.clock(), running: 0, cpu_jobs: 0, gpu_util: 0 })}` };
+      }
+      return null;
+    } });
+    const result = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, minHours: 2 });
+    expect(result).toMatchObject({ done: 2, failed: 0 });
+    expect(x.killed).toContain('p1');
+    expect(x.queued.map(([, p]) => p.id).sort()).toEqual([1, 2]);
+    const state = JSON.parse(readFileSync(x.deps.stateFile, 'utf8'));
+    expect(state.pods.p1.why).toMatch(/admission stalled/);
+  });
   it('no status change for 4 min on a ready pod with jobs: closed, jobs requeued, a new pod takes them', async () => {
     let calls = 0;
     const x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => {

@@ -133,6 +133,21 @@ ASR_LOCK = threading.Lock()
 ASR_MODEL = {}
 
 
+def reclaim_idle_cuda(torch=None):
+    """Return unused PyTorch reservations before admission samples driver memory.
+
+    Run only between GPU jobs with no postprocessing active. Live model tensors
+    remain resident; a fragmented allocator cache must not block its next job.
+    """
+    import gc
+    if torch is None:
+        import torch
+    gc.collect()
+    before = torch.cuda.memory_reserved()
+    torch.cuda.empty_cache()
+    return max(0, before - torch.cuda.memory_reserved())
+
+
 def _transcribe_locked(path, meta):
     with ASR_LOCK:      # the GPU thread and the CPU threads share one Whisper model
         return transcribe(ASR_MODEL['asr'], path, meta.get('prompt'), meta.get('runs'))
@@ -161,7 +176,8 @@ def worker_heartbeat(ctl, spool, active, lock, stop, interval=5):
         try:
             with lock:
                 ctl.tick()
-                status = {**ctl.heartbeat(), 'at': time.time(), 'cpu_jobs': len(active)}
+                status = {**ctl.heartbeat(), 'at': time.time(), 'cpu_jobs': len(active),
+                          'ready_jobs': len(glob.glob(os.path.join(spool, '*', 'ready')))}
             tmp = os.path.join(spool, '.worker-status.tmp')
             with open(tmp, 'w') as f:
                 json.dump(status, f)
@@ -220,6 +236,13 @@ def main():
         if ready and len(active) < 6:
             with ctl_lock:
                 admitted = ctl.admit('unipase')
+            if not admitted and not active:
+                freed = reclaim_idle_cuda()
+                if freed:
+                    print(f'{time.strftime("%H:%M:%S")} reclaimed {freed / 2**30:.2f} GB idle CUDA cache', flush=True)
+                with ctl_lock:
+                    ctl.tick()
+                    admitted = ctl.admit('unipase')
         if not ready or len(active) >= 6 or not admitted:
             if not ready and not active and time.time() - last > a.idle_min * 60:
                 terminate_self(f'idle {a.idle_min:g} min')

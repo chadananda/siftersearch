@@ -68,6 +68,22 @@ l = Leak(1.5); out['r'] = [l.check(3.0), l.check(3.4), l.check(4.2), l.check(5.0
 });
 
 describe('worker liveness during long GPU stages', () => {
+  it('returns unused CUDA reservations without unloading model allocations', () => {
+    const o = run(`
+sys.path.insert(0, 'scripts/media')
+from runpod_worker import reclaim_idle_cuda
+class CUDA:
+    reserved = 19 * 2**30
+    allocated = 5 * 2**30
+    def memory_reserved(self): return self.reserved
+    def empty_cache(self): self.reserved = self.allocated
+class Torch: cuda = CUDA()
+torch = Torch()
+out['freed'] = reclaim_idle_cuda(torch) / 2**30
+out['allocated'] = torch.cuda.allocated / 2**30
+out['again'] = reclaim_idle_cuda(torch)`);
+    expect(o).toEqual({ freed: 14, allocated: 5, again: 0 });
+  });
   it('keeps reporting and sampling pressure while the job thread is blocked', () => {
     const o = run(`
 import tempfile, threading, time, os
