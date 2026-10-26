@@ -13,6 +13,16 @@ import { homedir } from 'os';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 export const STATE_FILE = join(ROOT, 'data', 'run', 'cloud-remaster.json');
 export const RENTAL_PAUSE_FILE = join(ROOT, 'data', 'run', 'cloud-rentals.pause');
+export const RENTAL_CAPACITY_FILE = join(ROOT, 'data', 'run', 'cloud-capacity.json');
+/** Runtime capacity survives deploys and can change without draining all media lanes. */
+export async function rentalCapacity(requested, file = RENTAL_CAPACITY_FILE) {
+  let cap = Number(process.env.MEDIA_CLOUD_MAX_PODS);
+  try {
+    const settings = JSON.parse(await readFile(file, 'utf8'));
+    if (Number.isInteger(settings.maxPods) && settings.maxPods > 0) cap = settings.maxPods;
+  } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  return Number.isInteger(cap) && cap > 0 ? Math.min(requested, cap) : requested;
+}
 export async function rentalPauseReason(file = RENTAL_PAUSE_FILE) {
   try { return (await readFile(file, 'utf8')).trim() || 'operator pause'; }
   catch (error) { if (error.code === 'ENOENT') return null; throw error; }

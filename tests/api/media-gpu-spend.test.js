@@ -16,6 +16,17 @@ import { createHash } from 'crypto';
 
 const MIN = 60_000;
 describe('persistent operator rental pause', () => {
+  it('changes rental capacity from a durable runtime file without changing the requested maximum', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'rental-capacity-'));
+    const file = join(directory, 'capacity.json');
+    try {
+      writeFileSync(file, JSON.stringify({ maxPods: 1 }));
+      expect(await C.rentalCapacity(3, file)).toBe(1);
+      writeFileSync(file, JSON.stringify({ maxPods: 2 }));
+      expect(await C.rentalCapacity(3, file)).toBe(2);
+      expect(await C.rentalCapacity(1, file)).toBe(1);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
   it('blocks the rental API before any request, until the pause file is removed', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'rental-pause-'));
     const pauseFile = join(directory, 'hold');

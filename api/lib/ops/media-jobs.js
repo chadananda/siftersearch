@@ -1332,6 +1332,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   try {
     for (;;) {
       if (draining()) { yielded = true; await Promise.allSettled([...homeTasks.values()]); break; }
+      if (C.rentalCapacity) maxPods = await C.rentalCapacity(requestedMaxPods);
+      st.capacity_target = maxPods;
       const rentalPause = await C.rentalPauseReason?.();
       if (rentalPause && !Object.keys(st.jobs).length) {
         await Promise.allSettled([...homeTasks.values()]);
