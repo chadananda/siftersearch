@@ -26,6 +26,20 @@ def sh(cmd, runner=subprocess.run):
     return runner(cmd, capture_output=True, text=True, check=True).stdout
 
 
+def waveform(pcm, sr=8000, pps=20):
+    """Same normalized BBC peak format as api/lib/media/peaks.js, on the worker."""
+    import numpy as np
+    x = np.frombuffer(pcm, dtype='<i2').astype(np.float32) / 32768
+    spp = max(1, round(sr / pps)); data = []
+    q = lambda v: max(-128, min(127, int(np.floor(v * 127 + 0.5))))
+    for start in range(0, len(x), spp):
+        part = x[start:start+spp]
+        data += [q(min(0, float(part.min()))), q(max(0, float(part.max())))]
+    peak = max([1] + [abs(v) for v in data]); k = 127 / peak
+    data = [max(-128, min(127, int(np.floor(v * k + 0.5)))) for v in data]
+    return dict(version=2, channels=1, sample_rate=sr, samples_per_pixel=spp, bits=8, length=len(data)//2, data=data)
+
+
 def pct_of(g):
     return g.get('fallback_sent_pct') if g.get('fallback_sent_pct') is not None else g.get('swapped_pct')
 
@@ -149,6 +163,13 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
         out['ok'] = True; out['why'] = f'encode failed here: {str(err)[-160:]}'
         return out
     out['web'] = web; out['steps']['encode'] = round(time.time() - t3, 1)
+    pcm = runner(['ffmpeg', '-nostdin', '-v', 'error', '-i', os.path.join(post, web['ogg']),
+                  '-ac', '1', '-ar', '8000', '-f', 's16le', '-'], capture_output=True, check=True).stdout
+    peaks = waveform(pcm.encode() if isinstance(pcm, str) else pcm)
+    json.dump(peaks, open(os.path.join(post, 'waveform.json'), 'w'))
+    out['waveform_file'] = 'waveform.json'
+    probe = sh(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', os.path.join(post, web['m4a'])], runner)
+    out['duration_s'] = float((json.loads(probe or '{}').get('format') or {}).get('duration') or cfg.get('audio_s') or 0)
     out['ok'] = True; out['seconds'] = round(time.time() - t0, 1)
     return out
 

@@ -500,16 +500,20 @@ export async function runItem(item, opts = {}, deps = {}) {
         await Promise.all([webEnc('ogg', remastered ? 'oggR' : 'ogg', src, ogg, af, oggLocal), webEnc('m4a', remastered ? 'm4aR' : 'm4a', src, m4a, af, m4aLocal)]);
       }
       delete meta.enc_jobs;
-      if (podWeb) await podForget(dir);   // consumed: a later re-encode runs here
       meta.web_codec = remastered ? WEB_CODEC_REMASTER : WEB_CODEC;   // the encode settings these copies were made with
       // the DURATION from the web encode (QA 10-22: the original's header under-reported by ~6 s on 31 talks)
-      const enc = tools.ffprobe ? await tools.ffprobe(m4a).catch(() => null) : null;
+      const enc = podW?.waveform_file ? { duration_s: podW.duration_s } : tools.ffprobe ? await tools.ffprobe(m4a).catch(() => null) : null;
       if (enc?.duration_s && enc.duration_s > (meta.duration_s || 0)) meta.duration_s = Math.round(enc.duration_s * 100) / 100;
+      if (podWeb && podW.waveform_file) {
+        await podTake(dir, podW.waveform_file, join(dir, 'waveform.json'));
+      } else {
       const parts = [];
       await tools.pcmStream(ogg, 8000, (f) => parts.push(f));
       const all = new Float32Array(parts.reduce((a, p) => a + p.length, 0));
       let o = 0; for (const p of parts) { all.set(p, o); o += p.length; }
       await writeJson(join(dir, 'waveform.json'), normalizePeaks(computePeaks(all, 8000, { pixelsPerSecond: 20 })));
+      }
+      if (podWeb) await podForget(dir);
       rec.bytes = { ogg: (await stat(ogg)).size, m4a: (await stat(m4a)).size };
     }
 

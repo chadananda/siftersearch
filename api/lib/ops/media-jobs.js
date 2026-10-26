@@ -1513,6 +1513,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   if (pj.guard) {
                     for (const f of ['unipase.flac', 'unipase.guard.json', ...(pj.realign ? ['realign.json'] : [])]) await C.podGet(run, p, `/workspace/spool/${job}/post/${f}`, join(pd, f));
                     for (const f of Object.values(pj.web || {})) await C.podGet(run, p, `/workspace/spool/${job}/post/${f}`, join(pd, 'web', f));
+                    if (pj.waveform_file) await C.podGet(run, p, `/workspace/spool/${job}/post/${pj.waveform_file}`, join(pd, pj.waveform_file));
                   }
                 } catch { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); }
                 const dj = JSON.parse(await fs.readFile(join(enh, 'unipase.done.json'), 'utf8'));

@@ -395,7 +395,7 @@ sys.path.insert(0, 'scripts/media/worker')
 import post
 calls = []
 def runner(cmd, **kw):
-    calls.append(cmd[1].split('/')[-1] if cmd[0] != 'ffmpeg' else 'ffmpeg')
+    calls.append(cmd[0] if cmd[0] in ('ffmpeg', 'ffprobe') else cmd[1].split('/')[-1])
     if 'remaster_guard.py' in cmd[1]: return types.SimpleNamespace(stdout=json.dumps({'sentences': 10, 'fallback_sent_pct': ${guardPct}, 'swapped_pct': ${guardPct}}) + '\\n')
     if 'media_tool.py' in cmd[1]:
         if not ${realignOk ? 'True' : 'False'}: raise RuntimeError('no whisperx')
@@ -407,7 +407,8 @@ print(json.dumps({'r': {k: v for k, v in r.items() if k != 'guard'}, 'calls': ca
   };
   it('a passing talk: guard, realign, 4 encodes', () => {
     const o = run(4);
-    expect(o.calls).toEqual(['remaster_guard.py', 'media_tool.py', 'ffmpeg', 'ffmpeg', 'ffmpeg']);
+    expect(o.calls).toEqual(['remaster_guard.py', 'media_tool.py', 'ffmpeg', 'ffmpeg', 'ffmpeg', 'ffmpeg', 'ffprobe']);
+    expect(o.r.waveform_file).toBe('waveform.json');
     expect(o.r.web).toMatchObject({ ogg: 's.ogg', orig_m4a: 's.original.m4a' });
   });
   it('a held talk (> 15 %) stops after the guard — no GPU / CPU wasted on realign or encodes', () => {
