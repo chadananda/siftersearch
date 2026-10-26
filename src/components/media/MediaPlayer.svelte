@@ -143,11 +143,25 @@
   }
 
   // ── playback ──
-  const waitMeta = () => new Promise((res) => {
+  const waitMeta = () => new Promise((res, rej) => {
     if (audio.readyState >= 1) return res();
-    audio.addEventListener('loadedmetadata', res, { once: true });
-    audio.addEventListener('error', res, { once: true });
+    const clear = () => { clearTimeout(timer); audio.removeEventListener('loadedmetadata', ok); audio.removeEventListener('error', fail); };
+    const ok = () => { clear(); res(); };
+    const fail = () => { clear(); rej(new Error('Audio could not be loaded.')); };
+    const timer = setTimeout(() => { clear(); rej(new Error('Audio is taking too long to load. Try again.')); }, 25000);
+    audio.addEventListener('loadedmetadata', ok, { once: true });
+    audio.addEventListener('error', fail, { once: true });
   });
+  async function loadCopy(want) {
+    // A cached file goes straight to the media element. Only a failed media
+    // load needs the preparation endpoint and its one-time Tower → R2 copy.
+    audio.src = media.href(want); loaded = want;
+    try { await waitMeta(); }
+    catch {
+      if (!(await ready(want))) throw new Error('Audio is still preparing. Press Play to try again.');
+      note = ''; audio.src = media.href(want); await waitMeta();
+    }
+  }
 
   // iOS/Safari allow play() only inside the user gesture; the clip fetch / metadata wait come after an await. Playing a
   // tiny silent WAV synchronously in the gesture unlocks this element for the real source that follows.
@@ -176,8 +190,7 @@
         const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
         const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
           : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
-        if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want || audio.error) { busy = true; try { if (!(await ready(want))) throw new Error('Audio is still preparing. Press Play to try again.'); note = ''; } finally { busy = false; } audio.src = media.href(want); loaded = want; }
-        await waitMeta();
+        if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want || audio.error) { busy = true; try { await loadCopy(want); note = ''; } finally { busy = false; } }
         audio.currentTime = Math.max(0, copyTime(t) - offset);   // recording time → the trimmed web copy's time (same trim on both copies)
       } else {
         const want = end ?? t + (item.rights.clip_cap || 180);
@@ -233,9 +246,7 @@
       const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
       const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
         : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
-      if (!(await ready(want))) throw new Error('the other copy is still being prepared');
-      note = ''; audio.src = media.href(want); loaded = want;
-      await Promise.race([waitMeta(), new Promise((_, rej) => setTimeout(() => rej(new Error('the other copy is slow to load — try again')), 25000))]);
+      await loadCopy(want); note = '';
       audio.currentTime = Math.max(0, copyTime(t) - offset);
       audio.playbackRate = rate;
       if (wasPlaying) await audio.play();
@@ -357,7 +368,7 @@
     const onPlay = () => { if (silent()) return; playing = true; startedAt = performance.now(); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); };
     const onPause = () => { if (silent()) return; playing = false; cancelAnimationFrame(raf); frame(); if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; sessionPosition(); };
     const onEnded = () => { if (silent()) return; onPause(); if (level === 'clips' && clip && clip.end < duration - 1 && (limit == null || clip.end < limit - 0.5)) note = 'Excerpt ended — press play to continue.'; };
-    const onErr = () => { if (silent()) return; note = 'The audio could not be loaded.'; busy = false; };
+    const onErr = () => { if (silent() || busy || switching) return; note = 'The audio could not be loaded.'; };
     audio.addEventListener('play', onPlay); audio.addEventListener('pause', onPause); audio.addEventListener('ended', onEnded);
     audio.addEventListener('error', onErr); audio.addEventListener('seeked', sessionPosition);
     window.addEventListener('keydown', onKey);

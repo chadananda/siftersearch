@@ -86,7 +86,8 @@ describe('switchCopy contract', () => {
     expect(fn).toMatch(/audio\.currentTime = Math\.max\(0, copyTime\(t\) - offset\)/);
     expect(fn).toMatch(/audio\.playbackRate = rate/);
     expect(fn).toMatch(/if \(wasPlaying\) await audio\.play\(\)/);
-    expect(fn).toMatch(/25000/);   // stall guard (a visible 'loading the other copy' state meanwhile)
+    expect(fn).toContain('await loadCopy(want)');
+    expect(src).toMatch(/25000/);   // shared metadata-load timeout also protects copy switching
     expect(fn).toMatch(/loadingCopy = true/);
     expect(src).toMatch(/preload="metadata"/);
     expect(src).toMatch(/onpointerenter=\{\(\) => warm\(k\)\}/);
