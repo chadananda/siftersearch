@@ -1,6 +1,7 @@
 // Text-only, resumable editorial backfill. No audio stages, title changes or DB access outside named repos.
 import {readFile,writeFile,mkdir,rename} from 'node:fs/promises';
 import {join} from 'node:path';
+import {validDescription} from '../media/descriptions.js';
 const read=path=>readFile(path,'utf8').then(JSON.parse).catch(()=>null);
 export async function mediaDescriptionsJob({write=false,ids=null,speaker=null,limit=12,maxUsd=1}={},deps={}) {
  const repo=deps.repo||await import('../repos/media-repo.js'),ops=deps.ops||await import('../repos/ops-report-repo.js');
@@ -16,7 +17,7 @@ export async function mediaDescriptionsJob({write=false,ids=null,speaker=null,li
   if(out.spend.usd>=Math.max(0.01,Number(maxUsd)||1)){out.stopped='spend cap';break;}
   if(busy.has(row.id)){out.skipped.push({id:row.id,why:'busy'});continue;}
   const meta=row.dir?await read(join(row.dir,'meta.json')):null;
-  if(!meta||meta.description_version>=2)continue;
+  if(!meta||(meta.description_version>=2 && validDescription(meta.summary,meta.speaker)))continue;
   out.eligible++;
   if(!write){out.changed.push({id:row.id,slug:row.slug,title:meta.title,summary:meta.summary});continue;}
   try{

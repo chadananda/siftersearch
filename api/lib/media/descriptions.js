@@ -1,6 +1,6 @@
 // Editorial policy shared by new recordings and the metadata-only backfill.
 export const DESCRIPTION_STYLE = `Write a useful editorial description, not a report about a recording.
-Lead immediately with the particular idea, question, tension, historical example, or comparison developed here. The opening sentence must distinguish this installment from its neighbours in the same series.
+Lead immediately with the particular idea, question, tension, historical example, or comparison developed here. The opening sentence must distinguish this installment from its neighbours in the same series. It must stand on its own as a concrete statement or substantive question, ideally under 25 words. Do not narrate what happens in the recording, announce a part number, or refer to last week, an earlier session, or a previous reading.
 Use 2-3 natural sentences, usually 45-85 words. Include 2-3 concrete details when the transcript supports them; explain how the ideas connect instead of listing topics.
 Do not open with the speaker's name, "the speaker", "this talk", "this session", "in this lecture", or a restatement of the title or book being studied. Do not announce that someone discusses, explores, examines, or delves into a subject. Begin with the subject itself.
 Vary the structure according to the content. Avoid a repeated template, sales language, generic praise, and promises about what listeners will learn. Preserve qualifications; do not present a question or quoted view as the speaker's settled conclusion. Use only the supplied evidence. Do not invent names, examples, comparisons, or conclusions. Do not rename the talk.`;
@@ -9,7 +9,10 @@ export function validDescription(summary, speaker='') {
  const s=String(summary||'').trim();
  if(s.length<80 || s.length>1200)return false;
  if(/^(?:the speaker\b|this (?:talk|session|lecture|recording)\b|in this\b|here[,]?\s+(?:the speaker|we)\b)/i.test(s))return false;
- if(speaker && s.toLocaleLowerCase().startsWith(speaker.toLocaleLowerCase()))return false;
+ const lead=s.split(/[.!?]/)[0];
+ if(/^(?:where (?:last|earlier|the (?:last|earlier))|part\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\b|a (?:study|class|discussion|lecture)\b)/i.test(lead) || /\b(?:this (?:session|talk|lecture)|the speaker)\b/i.test(lead))return false;
+ const names=[speaker,...String(speaker).split(/\s+/).slice(-1)].filter(n=>n.length>3);
+ if(names.some(n=>s.toLocaleLowerCase().startsWith(n.toLocaleLowerCase())))return false;
  return true;
 }
 
