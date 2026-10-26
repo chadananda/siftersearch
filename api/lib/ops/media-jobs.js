@@ -576,7 +576,7 @@ export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
   const meta=JSON.parse(await fs.readFile(join(item.dir,'meta.json'),'utf8'));
   if(accepted.whole_imports==='cloud'){
     await cloud.addOrders([{id:item.id,slug:item.slug,duration_s:meta.duration_s||item.duration_s||0,mode:'whole',kind:'whole'}]);
-    await repo.updateMediaItem(id,{state:'whole_queued',stage:'whole'});
+    await repo.updateMediaItem(id,{state:'scheduled',stage:'whole'});
     return {id,whole_queued:true};
   }
   const T=deps.tools||await import('../media/tools.js');
@@ -1415,7 +1415,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       }
       for (const h of rentalPause && !acceptedWorker ? [] : homeHosts) {
         if (homeTasks.has(h)) continue;
-        const eligibleIndex=acceptedWorker&&h.startsWith('boss')?st.queue.findIndex(id=>st.items?.[id]?.mode==='post'):0;
+        const eligibleIndex=st.queue.findIndex(id=>(!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')&&(!h.startsWith('boss')||!acceptedWorker||st.items?.[id]?.mode==='post'));
         const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
         if (!cur) continue;
         if(acceptedWorker&&!cur.image)cur.image=acceptedWorker.image;
@@ -1434,7 +1434,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             ? await (await import('../media/home-recording.js')).homeRecording(h.startsWith('boss')?'boss':'aorus',it,m,{T,image:cur.image||acceptedWorker.image,mode:st.items?.[it.id]?.mode||'restore',stop:draining})
             : await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
           if (st.done.some((d) => d.id === it.id)) return;   // a duplicate result never double-publishes
-          st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h });
+          st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h,at:now(),mode:st.items?.[it.id]?.mode||'restore' });
           st.home_done++;
           await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');
         })().then(() => { delete st.home[h]; }, async (err) => {
@@ -1454,7 +1454,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const inflight = Object.keys(st.jobs).length;
       if (!st.queue.length && !inflight && !homeTasks.size) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
-      const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
+      const waitingH = hoursOf(st.queue.filter(id=>!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
       const rampCap = st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
       const wantRaw = st.cloud_stopped || rentalPause ? 0 : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
@@ -1611,7 +1611,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
             let uploadsThisPass = 0;
             while (uploadsThisPass < 1 && !staleImage && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(acceptedWorker?.max_inflight_per_pod||C.CLOUD.perPod, Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
-              const itemId = st.queue.shift(); const tAssign = now();
+              const eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||(!acceptedWorker?.hold_whole&&p.image===acceptedWorker?.image));
+              if(eligible<0)break;
+              const itemId = st.queue.splice(eligible,1)[0]; const tAssign = now();
               const it = await repo.getMediaItem(itemId);
               const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
               const whole=st.items?.[itemId]?.kind==='whole';

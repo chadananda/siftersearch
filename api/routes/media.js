@@ -505,6 +505,8 @@ export default async function mediaRoutes(fastify) {
     if (!progressMemo || Date.now() - progressMemo.at > 60_000) {
       const { importProgress, SOURCES } = await import('../lib/repos/media-repo.js');
       progressMemo = { at: Date.now(), value: shapeProgress(await importProgress(), SOURCES) };
+      const [C,L]=await Promise.all([import('../lib/media/cloud.js'),import('../lib/media/pod-ledger.js')]);
+      Object.assign(progressMemo.value,L.processingRates(await C.loadState()));
     }
     pub(reply, 60);
     return progressMemo.value;

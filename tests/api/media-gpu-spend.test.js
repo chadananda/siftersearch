@@ -38,7 +38,7 @@ describe('persistent operator rental pause', () => {
       const addOrders=vi.fn(),updateMediaItem=vi.fn();
       const r=await mediaComputeJob({id:1},{cloud:{acceptedWorker:async()=>({image:'accepted-digest',whole_imports:'cloud'}),addOrders},repo:{getMediaItem:async()=>({id:1,dir,slug:'test',state:'scheduled'}),updateMediaItem}});
       expect(r.whole_queued).toBe(true);expect(addOrders).toHaveBeenCalledWith([expect.objectContaining({id:1,kind:'whole',mode:'whole'})]);
-      expect(updateMediaItem).toHaveBeenCalledWith(1,expect.objectContaining({state:'whole_queued'}));
+      expect(updateMediaItem).toHaveBeenCalledWith(1,expect.objectContaining({state:'scheduled',stage:'whole'}));
     }finally{rmSync(dir,{recursive:true,force:true});}
   });
   it('new-import dispatch adopts the whole worker result and proceeds directly to text enrichment', async () => {
@@ -745,4 +745,8 @@ describe('host preference learned from the ledger', () => {
     expect(C.rentalPrefer(st)).toEqual({ dcs: ['EU-1'], cloud: 'COMMUNITY' });
     expect(C.rentalPrefer({ ...st, breaker_trips: 1 }).cloud).toBe('SECURE');
   });
+});
+it('reports restoration throughput separately from new whole-recording work over 30 minutes',async()=>{
+ const {processingRates}=await import('../../api/lib/media/pod-ledger.js');
+ expect(processingRates({done:[{at:10000000,audio_s:1800},{at:9999999,audio_s:900,mode:'whole'},{at:1,audio_s:9999},{audio_s:9999}]},10000000)).toEqual({restoration_checks_per_hour:2,audio_jobs_per_hour:4,audio_hours_per_hour:1.5});
 });

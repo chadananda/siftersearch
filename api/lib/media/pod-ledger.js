@@ -1,6 +1,11 @@
 // GPU spend ∝ work done (Chad 10-24): the rent rule (work first, rent second), the per-pod ledger (rented vs busy minutes, $ rented vs
 // $ productive) and the reaper's verdicts. Pure — the cloud lane (media-jobs.js) ticks it, pod-reaper.js and system-checks read it.
 export const POD_PREFIX = 'sifter-unipase-';
+export function processingRates(state,now=Date.now()){
+  const recent=(state?.done||[]).filter(d=>Number.isFinite(d.at)&&d.at>=now-1800000&&d.at<=now);
+  return {restoration_checks_per_hour:recent.filter(d=>d.mode!=='whole').length*2,
+    audio_jobs_per_hour:recent.length*2,audio_hours_per_hour:Math.round(recent.reduce((s,d)=>s+(Number(d.audio_s)||0),0)/1800*10)/10};
+}
 export const LEDGER = {
   busyUtil: 15,                     // GPU utilisation % at or above which a sampled tick counts as busy
   windowMs: 30 * 60_000,            // the efficiency window
