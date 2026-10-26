@@ -1,7 +1,7 @@
 // GPU spend ∝ work done (Chad 10-24): rent rule, ledger, reaper, dead-man switch, duplicate results, boot deadline, pod loss, system checks.
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
@@ -15,6 +15,27 @@ import { sha256File } from '../../api/lib/media/pod-post.js';
 import { createHash } from 'crypto';
 
 const MIN = 60_000;
+describe('persistent operator rental pause', () => {
+  it('blocks the rental API before any request, until the pause file is removed', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'rental-pause-'));
+    const pauseFile = join(directory, 'hold');
+    const fetchFn = vi.fn();
+    try {
+      writeFileSync(pauseFile, 'Awaiting Aorus image validation');
+      expect(await C.rentalPauseReason(pauseFile)).toBe('Awaiting Aorus image validation');
+      await expect(C.createPod('sifter-unipase-test', 'public-key', { pauseFile, fetchFn })).rejects.toThrow(/rentals paused/);
+      expect(fetchFn).not.toHaveBeenCalled();
+      rmSync(pauseFile);
+      expect(await C.rentalPauseReason(pauseFile)).toBeNull();
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+  it('prevents the lane keeper from restarting paid work after a reboot', async () => {
+    const queue = vi.fn();
+    const result = await laneKeeperPass({ cloud: { rentalPauseReason: async () => 'Awaiting Aorus image validation' }, queue });
+    expect(result).toEqual({ action: 'paused', why: 'Awaiting Aorus image validation' });
+    expect(queue).not.toHaveBeenCalled();
+  });
+});
 describe('rent rule: work first, rent second', () => {
   it('no queue → no pod; under minHours → none; pods = min(max, floor(hours / minHours))', () => {
     expect(podsWanted({ queueHours: 0, maxPods: 3, minHours: 2 })).toBe(0);
@@ -97,6 +118,11 @@ describe('system checks: CRITICAL findings for paid GPU', () => {
   const g = (o = {}) => ({ running: true, lane_updated_s: 20, spent_usd: 10, cap_usd: 60, efficiency_30m: 0.9, rented_usd: 5, productive_usd: 4.5, pods: [{ name: 'p1', live: true, idle_min: 0, cost_per_hr: 0.9 }], ...o });
   const bad = (x) => podChecks(x).filter((c) => !c.ok).map((c) => c.name);
   it('healthy → nothing', () => expect(bad(g())).toEqual([]));
+  it('an intentional rental pause is healthy with no pods, but still flags pods billing without a lane', () => {
+    const paused = { rentals_paused: 'Aorus validation pending', queue: 20, lane_updated_s: 900 };
+    expect(bad(g({ ...paused, pods: [] }))).toEqual([]);
+    expect(bad(g({ ...paused, running: false }))).toEqual(['GPU pods without a lane']);
+  });
   it('pods with no lane, an idle pod, low efficiency, spend near the cap', () => {
     expect(bad(g({ running: false }))).toEqual(['GPU pods without a lane']);
     expect(bad(g({ lane_updated_s: 900 }))).toEqual(['GPU pods without a lane']);
@@ -145,6 +171,19 @@ const setup = ({ talks = 2, seconds = 600, poll = null } = {}) => {
 };
 
 describe('the lane: GPU is rented only for work', () => {
+  it('a persistent pause drains assigned work, leaves queued talks untouched, and closes the existing pod', async () => {
+    const x = setup({ talks: 2, seconds: 3600 });
+    x.cloud.rentalPauseReason = async () => 'Aorus validation pending';
+    x.spool.j1 = 'ready';
+    writeFileSync(x.deps.stateFile, JSON.stringify({ started: 1, pods: { p1: { id: 'p1', name: 'test-pod', status: 'ready', ip: '1.2.3.4', port: 2222, created: x.clock() - 1000, costPerHr: 0.34 } },
+      jobs: { j1: { itemId: 1, pod: 'p1', since: x.clock() - 1000 } }, queue: [2], attempts: {}, done: [], failed: [],
+      items: { 1: { duration_s: 3600 }, 2: { duration_s: 3600 } }, spent_closed: 0 }));
+    const result = await mediaCloudRemasterJob({ write: true, maxPods: 0 }, x.deps);
+    expect(result).toMatchObject({ done: 1, queue: 1, in_flight: 0, stop: 'operator pause: Aorus validation pending' });
+    expect(x.cloud.createPod).not.toHaveBeenCalled();
+    expect(x.killed).toEqual(['p1']);
+    expect(x.queued.map(([, params]) => params.id)).toEqual([1]);
+  });
   it('an empty queue launches no pod', async () => {
     const x = setup({ talks: 0 });
     const r = await mediaCloudRemasterJob({ write: true, ids: null }, { ...x.deps, minHours: 2 });
@@ -456,6 +495,7 @@ describe('a pod whose worker stopped is replaced and its talks go back to the qu
 describe('the baked image is found by the worker', () => {
   it('the bootstrap exports HF_HOME for the pre-loaded aligners (an ssh session has no image ENV)', () => {
     expect(C.BOOTSTRAP_BAKED).toMatch(/export HF_HOME=\/opt\/models\/hf/);
+    expect(C.BOOTSTRAP_BAKED).toContain('TORCH_HOME=/root/.cache/torch');
     expect(C.BOOTSTRAP_BAKED.indexOf('export HF_HOME')).toBeLessThan(C.BOOTSTRAP_BAKED.indexOf('runpod_worker.py'));
   });
 });

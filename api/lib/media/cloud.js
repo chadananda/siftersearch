@@ -12,6 +12,11 @@ import { homedir } from 'os';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 export const STATE_FILE = join(ROOT, 'data', 'run', 'cloud-remaster.json');
+export const RENTAL_PAUSE_FILE = join(ROOT, 'data', 'run', 'cloud-rentals.pause');
+export async function rentalPauseReason(file = RENTAL_PAUSE_FILE) {
+  try { return (await readFile(file, 'utf8')).trim() || 'operator pause'; }
+  catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+}
 export const CLOUD = {
   maxPods: 3,
   capUsd: () => Number(process.env.MEDIA_CLOUD_CAP_USD) || 60,
@@ -53,6 +58,8 @@ export async function accountBalance({ fetchFn = fetch } = {}) {
   return { balance: j?.data?.myself?.clientBalance ?? null, spendPerHr: j?.data?.myself?.currentSpendPerHr ?? null };
 }
 export async function createPod(name, publicKey, deps = {}) {
+  const pause = await rentalPauseReason(deps.pauseFile);
+  if (pause) throw new Error(`RunPod rentals paused: ${pause}`);
   let lastErr = null;
   // a network volume (weights fetched once) pins the pods to its data centre and to Secure Cloud; without one, community first
   const vol = process.env.MEDIA_CLOUD_VOLUME_ID;
@@ -64,10 +71,12 @@ export async function createPod(name, publicKey, deps = {}) {
   for (const types of [CLOUD.gpuTypes.slice(0, 1), CLOUD.gpuTypes]) for (const cloudType of order) tries.push([types, cloudType]);
   for (const [types, cloudType] of tries) {
     try {
+      const pause = await rentalPauseReason(deps.pauseFile);
+      if (pause) throw Object.assign(new Error(`RunPod rentals paused: ${pause}`), { rentalsPaused: true });
       return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
         containerDiskInGb: 60, ...(deps.prefer?.dcs?.length ? { dataCenterIds: deps.prefer.dcs } : {}), ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true,
         env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key() } }, deps);
-    } catch (err) { lastErr = err; }
+    } catch (err) { if (err.rentalsPaused) throw err; lastErr = err; }
   }
   throw lastErr;
 }
@@ -207,7 +216,7 @@ export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_to
 export const BOOTSTRAP_BAKED = `set -e
 mkdir -p /workspace/spool && touch /workspace/spool/.tower-hb /workspace/.lane-seen   # (the entrypoint ends a pod no lane ever reached within 25 min)
 # the image's ENV is not in an ssh session: without HF_HOME the BAKED aligners are not found and whisperx downloads (and fails) at run time (10-24: every Persian talk 'placed 0 words')
-export HF_HOME=/opt/models/hf TORCH_HOME=/opt/models/torch SIFTER_WEIGHTS=/opt/models/weights
+export HF_HOME=/opt/models/hf TORCH_HOME=/root/.cache/torch SIFTER_WEIGHTS=/opt/models/weights
 # the container's own env (RUNPOD_POD_ID, the terminate key) is not in an ssh session: the dead-man switch needs it to end the pod
 for v in RUNPOD_POD_ID RP_TERMINATE_KEY; do val=$(tr '\\0' '\\n' < /proc/1/environ | grep "^$v=" | head -1 | cut -d= -f2-); [ -n "$val" ] && export $v="$val"; done
 # the image carries a pinned copy of the job code; the lane ships the current one (small) on top, so a code fix needs no image rebuild

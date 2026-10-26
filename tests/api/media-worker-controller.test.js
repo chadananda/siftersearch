@@ -66,3 +66,30 @@ l = Leak(1.5); out['r'] = [l.check(3.0), l.check(3.4), l.check(4.2), l.check(5.0
     expect(o.r).toEqual([false, false, false, true]);
   });
 });
+
+describe('worker liveness during long GPU stages', () => {
+  it('keeps reporting and sampling pressure while the job thread is blocked', () => {
+    const o = run(`
+import tempfile, threading, time, os
+sys.path.insert(0, 'scripts/media')
+from runpod_worker import worker_heartbeat
+with tempfile.TemporaryDirectory() as d:
+    lock, stop = threading.RLock(), threading.Event()
+    with lock: c.job_started('long-talk', 'unipase')
+    th = threading.Thread(target=worker_heartbeat, args=(c, d, {}, lock, stop, 0.01))
+    th.start()
+    try:
+        path = os.path.join(d, '.worker-status.json')
+        deadline = time.time() + 2
+        while not os.path.exists(path) and time.time() < deadline: time.sleep(0.005)
+        first = json.load(open(path))
+        with lock: cur['vram_used_gb'] = 23
+        time.sleep(0.08)  # the synchronous GPU job cannot service the main loop here
+        second = json.load(open(path))
+        out = dict(advanced=second['at'] > first['at'], running=second['running'], admitting=second['admitting'])
+    finally:
+        stop.set(); th.join(timeout=2)
+    out['stopped'] = not th.is_alive()`);
+    expect(o).toEqual({ advanced: true, running: 1, admitting: false, stopped: true });
+  });
+});

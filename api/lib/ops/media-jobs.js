@@ -1329,6 +1329,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   try {
     for (;;) {
       if (draining()) { yielded = true; await Promise.allSettled([...homeTasks.values()]); break; }
+      const rentalPause = await C.rentalPauseReason?.();
+      if (rentalPause && !Object.keys(st.jobs).length) {
+        await Promise.allSettled([...homeTasks.values()]);
+        stop = `operator pause: ${rentalPause}`;
+        break;
+      }
       if (now() - balAt > 120_000) { balance = (await C.accountBalance(deps).catch(() => ({ balance }))).balance; balAt = now(); }
       // the money stops the PODS, not the backfill: the home hosts carry on (and the log says how far the cloud got)
       // a money stop is not for ever: when the cap is raised or the balance topped up the stop clears (10-25: a sticky "balance < $90" ended the run and nothing restarted it)
@@ -1367,7 +1373,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         const opsRepo = deps.ops || await import('../repos/ops-report-repo.js');
         st.asr_waiting = (await opsRepo.pendingRuns('media-asr').catch(() => [])).filter((r) => r.status === 'queued').length; st.asr_checked = now();
       }
-      for (const h of homeHosts) {
+      for (const h of rentalPause ? [] : homeHosts) {
         if (homeTasks.has(h)) continue;
         const cur = st.home[h] || (st.queue.length && !held && !st.asr_waiting && homeEligible(h, T) ? { itemId: st.queue.shift(), since: now() } : null);
         if (!cur) continue;
@@ -1396,7 +1402,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
       const rampCap = st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
-      const wantRaw = st.cloud_stopped ? 0 : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
+      const wantRaw = st.cloud_stopped || rentalPause ? 0 : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
       if (!wantRaw && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
@@ -1506,7 +1512,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             }
             // keep the pod fed (one running, one waiting)
             // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
-            while (!held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(C.CLOUD.perPod, Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
+            while (!rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(C.CLOUD.perPod, Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
               const itemId = st.queue.shift(); const tAssign = now();
               const it = await repo.getMediaItem(itemId);
               const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
@@ -1543,7 +1549,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // the READY, baked pods join the worker pool (pool.js): prep / probe / grade / dfn / encodes may use them as hosts of the same gate
       try {
         const P = await import('../media/pool.js');
-        const ready = Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && q.baked && q.gate && q.ip && q.port && !q.dead_worker && !(q.idle_since && now() - q.idle_since > 8 * 60_000));
+        const ready = Object.values(st.pods).filter((q) => !rentalPause && !q.terminated && q.status === 'ready' && q.baked && q.gate && q.ip && q.port && !q.dead_worker && !(q.idle_since && now() - q.idle_since > 8 * 60_000));
         const sig = ready.map((q) => `${P.podName(q)}@${q.ip}:${q.port}`).sort().join(',');
         if (sig !== st.pool_sig) { P.publishPool(ready.map((q) => ({ host: P.podName(q), ip: q.ip, port: q.port }))); st.pool_sig = sig; }
       } catch (err) { st.pool_error = String(err.message).slice(0, 160); }
@@ -1582,6 +1588,8 @@ export async function mediaPreviewJob(params = {}, deps = {}) { return (deps.pre
  *  in the media service. → { action: 'queued' | 'running' | 'idle' | 'money' | 'breaker', ... } */
 export async function laneKeeperPass(deps = {}) {
   const C = deps.cloud || await import('../media/cloud.js');
+  const rentalPause = await C.rentalPauseReason?.();
+  if (rentalPause) return { action: 'paused', why: rentalPause };
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const queue = deps.queue || enqueue;
   const st = deps.state !== undefined ? deps.state : await C.loadState(deps.stateFile);

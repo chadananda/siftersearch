@@ -48,7 +48,7 @@ export default async function opsReportRoutes(fastify) {
       const st = JSON.parse(await fs.readFile(C.STATE_FILE, 'utf8')), beat = Number(await fs.readFile(`${C.STATE_FILE}.beat`, 'utf8').catch(() => 0));
       if (beat > (st.updated || 0)) st.updated = beat;
       const reaper = await fs.readFile((await import('../lib/media/pod-reaper.js')).REAPER_FILE, 'utf8').then(JSON.parse).catch(() => null);
-      cloud_gpu = { ...ledgerSummary(st, Date.now(), C.spendOf, C.CLOUD.capUsd()), reaper: reaper ? { at: reaper.at, seen: reaper.seen, reaped: reaper.history?.slice(0, 5) || [] } : null };
+      cloud_gpu = { ...ledgerSummary(st, Date.now(), C.spendOf, C.CLOUD.capUsd()), rentals_paused: await C.rentalPauseReason(), reaper: reaper ? { at: reaper.at, seen: reaper.seen, reaped: reaper.history?.slice(0, 5) || [] } : null };
     } catch { /* no cloud run yet */ }
     let remaster_quality = null;
     try { remaster_quality = JSON.parse(await (await import('fs/promises')).readFile(join(dirname((await import('../lib/media/cloud.js')).STATE_FILE), 'remaster-quality.json'), 'utf8')); remaster_quality.review = remaster_quality.review?.length; remaster_quality.unrepairable = remaster_quality.unrepairable?.length; } catch { /* not run yet */ }

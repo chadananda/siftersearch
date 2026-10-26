@@ -155,6 +155,22 @@ def finalize(d, done):
     os.replace(os.path.join(d, 'done.json.tmp'), os.path.join(d, 'done.json'))
 
 
+def worker_heartbeat(ctl, spool, active, lock, stop, interval=5):
+    """Status must advance during long synchronous GPU jobs, not just between talks."""
+    while not stop.is_set():
+        try:
+            with lock:
+                ctl.tick()
+                status = {**ctl.heartbeat(), 'at': time.time(), 'cpu_jobs': len(active)}
+            tmp = os.path.join(spool, '.worker-status.tmp')
+            with open(tmp, 'w') as f:
+                json.dump(status, f)
+            os.replace(tmp, os.path.join(spool, '.worker-status.json'))
+        except Exception:
+            traceback.print_exc()  # a transient sample/write failure retries on the next beat
+        stop.wait(interval)
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--repo', default='/workspace/unipase')
@@ -176,13 +192,13 @@ def main():
     active = {}     # job dir -> future (CPU half)
     last = born = time.time()
     hbf = os.path.join(a.spool, '.tower-hb')
-    last_tick = 0.0
-    def beat():
-        json.dump({**ctl.heartbeat(), 'at': time.time(), 'cpu_jobs': len(active)}, open(os.path.join(a.spool, '.worker-status.tmp'), 'w'))
-        os.replace(os.path.join(a.spool, '.worker-status.tmp'), os.path.join(a.spool, '.worker-status.json'))
+    ctl_lock = threading.RLock()
+    hb_stop = threading.Event()
+    threading.Thread(target=worker_heartbeat, args=(ctl, a.spool, active, ctl_lock, hb_stop), daemon=True).start()
     def done_cb(d):
         def cb(fut):
-            ctl.job_finished(d + '#cpu')
+            with ctl_lock:
+                ctl.job_finished(d + '#cpu')
             active.pop(d, None)
             try:
                 fut.result()
@@ -195,15 +211,14 @@ def main():
         if why:
             terminate_self(why)
             sys.exit(0)
-        if time.time() - last_tick > 5:       # LIVE feedback (VRAM / RAM / swap / heat / OOM), never a startup estimate
-            last_tick = time.time()
-            for j in ctl.tick():
-                pass                           # shed: the lane re-queues any job whose done.json never appears
-            beat()
         if ctl.state == 'drain' and not active:
             terminate_self('unstable worker: repeated failures'); sys.exit(0)
         ready = sorted(glob.glob(os.path.join(a.spool, '*', 'ready')), key=os.path.getmtime)
-        if not ready or len(active) >= 6 or not ctl.admit('unipase'):
+        admitted = False
+        if ready and len(active) < 6:
+            with ctl_lock:
+                admitted = ctl.admit('unipase')
+        if not ready or len(active) >= 6 or not admitted:
             if not ready and not active and time.time() - last > a.idle_min * 60:
                 terminate_self(f'idle {a.idle_min:g} min')
                 sys.exit(0)
@@ -211,14 +226,17 @@ def main():
             continue
         d = os.path.dirname(ready[0])
         os.rename(ready[0], os.path.join(d, 'running'))
-        ctl.job_started(d, 'unipase')
+        with ctl_lock:
+            ctl.job_started(d, 'unipase')
         try:
             r = run_job(d, up, IL, asr)
             print(f'{time.strftime("%H:%M:%S")} {os.path.basename(d)} gpu done {r}', flush=True)
-            ctl.job_finished(d); ctl.job_started(d + '#cpu', 'guard')
+            with ctl_lock:
+                ctl.job_finished(d); ctl.job_started(d + '#cpu', 'guard')
             active[d] = ex.submit(finalize, d, r); active[d].add_done_callback(done_cb(d))
         except Exception:
-            ctl.job_failed(d, 'gpu stage')
+            with ctl_lock:
+                ctl.job_failed(d, 'gpu stage')
             open(os.path.join(d, 'error.txt'), 'w').write(traceback.format_exc()[-3000:])
             open(os.path.join(d, 'failed'), 'w').close()
             print(f'{time.strftime("%H:%M:%S")} {os.path.basename(d)} FAILED', flush=True)
