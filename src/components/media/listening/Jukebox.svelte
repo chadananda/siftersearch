@@ -21,6 +21,37 @@
   const plain = (e) => !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0);
   const toSpeaker = (e, k) => { if (!plain(e)) return; e.preventDefault(); onspeaker(k); };
 
+  // Scroll the real viewport, never translate links outside its reachable scroll area.
+  function loopSpines(node, disabled) {
+    let frame, last = 0, position = node.scrollTop, paused = false;
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    const pause = () => { paused = true; };
+    const resume = () => { paused = node.matches(':hover, :focus-within'); last = 0; position = node.scrollTop; };
+    const tick = (now) => {
+      const cycle = node.firstElementChild?.offsetHeight || 0;
+      node.classList.toggle('loopable', !disabled && !motion.matches && cycle > node.clientHeight);
+      if (node.classList.contains('loopable') && !disabled && !motion.matches && !paused && !document.hidden && !node.closest('.lr-paused') && node.scrollHeight > node.clientHeight && cycle) {
+        if (last) position += Math.min(now - last, 50) * 0.014;
+        if (position >= cycle) position -= cycle;
+        node.scrollTop = position;
+      }
+      last = now;
+      frame = requestAnimationFrame(tick);
+    };
+    node.addEventListener('pointerenter', pause);
+    node.addEventListener('pointerleave', resume);
+    node.addEventListener('focusin', pause);
+    node.addEventListener('focusout', resume);
+    frame = requestAnimationFrame(tick);
+    return { update(value) { disabled = value; }, destroy() {
+      cancelAnimationFrame(frame);
+      node.removeEventListener('pointerenter', pause);
+      node.removeEventListener('pointerleave', resume);
+      node.removeEventListener('focusin', pause);
+      node.removeEventListener('focusout', resume);
+    } };
+  }
+
   // the radial waveform disc: 48 peaks as spokes around a ring
   function spokes(w) {
     const h = waveHeights(w);
@@ -73,20 +104,22 @@
               <p class="mt-1 font-dial text-base font-semibold uppercase tracking-wider text-radio-on-dark opacity-80">{s.c || c.total} talks{s.y0 ? ` · ${s.y0}${s.y1 && s.y1 !== s.y0 ? `–${s.y1}` : ''}` : ''}</p>
             </div>
           </a>
-          <div class="spines" style={`--n:${c.talks.length}`}>
-            <ol class="spine-list" class:riffle={c.talks.length > 4 && !reduced}>
+          <div class="spines" use:loopSpines={reduced || c.talks.length <= 4}>
+            {#each c.talks.length > 4 && !reduced ? [false, true] : [false] as repeat}
+            <ol class="spine-list" aria-hidden={repeat ? true : undefined}>
               {#each c.talks as t, j (t.s)}
                 <!-- the row is the link to the talk; the round button beside it plays an excerpt here -->
-                <li class="spine-row"><a href={`/media/${t.s}`} class="spine" style={`--st:${eraVar(t.y)};--j:${j}`} title={`Open “${t.t}”`}>
+                <li class="spine-row"><a href={`/media/${t.s}`} class="spine" tabindex={repeat ? -1 : undefined} style={`--st:${eraVar(t.y)};--j:${j}`} title={`Open “${t.t}”`}>
                   <span class="truncate">{t.t}</span><span class="spine-meta">{t.y || ''}{t.y ? ' · ' : ''}{duration(t.d)}</span>
                   <svg class="spine-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-                </a><button type="button" class="spine-play" class:on={playing(t)} onclick={(e) => { e.stopPropagation(); playExcerpt(t, s); }}
+                </a><button type="button" class="spine-play" tabindex={repeat ? -1 : undefined} class:on={playing(t)} onclick={(e) => { e.stopPropagation(); playExcerpt(t, s); }}
                   aria-label={playing(t) ? `Pause the excerpt of ${t.t}` : `Play 20 seconds of ${t.t} here`} title={playing(t) ? 'Pause' : 'Play 20 s here'}>
                   {#if playing(t)}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
                   {:else}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>{/if}
                 </button></li>
               {/each}
             </ol>
+            {/each}
           </div>
           <a href={`/media?speaker=${encodeURIComponent(s.k)}`} class="box-all" onclick={(e) => toSpeaker(e, s.k)}>All {s.c || c.total} talks by {s.n} <span aria-hidden="true">→</span></a>
         </article>
@@ -186,19 +219,14 @@
   /* box set: walnut case, portrait, a riffling stack of record spines */
   .box { background: var(--radio-walnut); color: var(--radio-on-dark);
     background-image: repeating-linear-gradient(95deg, transparent 0 9px, color-mix(in srgb, var(--radio-walnut-deep) 20%, transparent) 9px 10px, transparent 10px 23px); }
-  .box-head { border-radius: 0.6rem; }
+  .box-head { flex-shrink: 0; border-radius: 0.6rem; }
   .box-head:hover .box-name, .box-head:focus-visible .box-name { color: var(--radio-amber); text-decoration: underline; text-decoration-color: var(--radio-brass); text-decoration-thickness: 2px; text-underline-offset: 5px; }
   .box-head:hover .box-pic { box-shadow: 0 0 0 3px var(--radio-amber), 0 6px 16px rgba(0, 0, 0, 0.4); }
   .box-pic { flex: none; transition: box-shadow 0.2s; width: 5.5rem; height: 6.9rem; border-radius: 0.6rem; overflow: hidden; box-shadow: 0 0 0 2px var(--radio-brass), 0 6px 16px rgba(0, 0, 0, 0.4); background: var(--radio-walnut-deep); }
   .s-lg .box-pic { width: 7.5rem; height: 9.4rem; }
-  .spines { position: relative; flex: 1; min-height: 0; margin-top: 0.9rem; overflow: hidden; mask-image: linear-gradient(transparent, #000 10%, #000 88%, transparent); }
-  .spines:hover, .spines:focus-within { overflow-y: auto; }
-  .spine-list { display: flex; flex-direction: column; gap: 3px; padding: 0.4rem 0; }
-  .spine-list.riffle { animation: riffle calc(var(--n) * 2.6s) ease-in-out infinite alternate; }
-  .spines:hover .spine-list, .spines:focus-within .spine-list, :global(.lr-paused) .spine-list { animation-play-state: paused; }
-  @keyframes riffle { from { transform: translateY(0); } to { transform: translateY(calc(-100% + 9rem)); } }
-  .s-tall .spine-list.riffle { animation-name: riffle-s; }
-  @keyframes riffle-s { from { transform: translateY(0); } to { transform: translateY(calc(-100% + 7rem)); } }
+  .spines { position: relative; flex: 1; min-height: 0; margin-top: 0.9rem; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; scrollbar-width: thin; scrollbar-color: var(--radio-brass) transparent; }
+  .spine-list { display: flex; flex-direction: column; gap: 3px; padding: 0 0 3px; }
+  .spines:not(.loopable) .spine-list + .spine-list { display: none; }
   .spine-row { display: flex; gap: 3px; }
   .spine { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.6rem; padding: 0.42rem 0.5rem 0.42rem 0.7rem; border-radius: 0.3rem; font-size: 0.9rem; color: var(--radio-on-dark);
     background: linear-gradient(90deg, var(--st) 0 6px, color-mix(in srgb, var(--radio-walnut-deep) 70%, transparent) 6px);
@@ -212,7 +240,7 @@
     background: color-mix(in srgb, var(--radio-walnut-deep) 70%, transparent); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.3); transition: background 0.2s, color 0.2s; }
   .spine-play svg { width: 0.95rem; height: 0.95rem; }
   .spine-play:hover, .spine-play.on { background: var(--radio-amber); color: var(--radio-walnut-deep); }
-  .box-all { margin-top: 0.75rem; align-self: flex-start; font-weight: 600; font-size: 0.95rem; color: var(--radio-on-dark); text-decoration: underline; text-decoration-color: var(--radio-brass); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+  .box-all { flex-shrink: 0; margin-top: 0.75rem; align-self: flex-start; font-weight: 600; font-size: 0.95rem; color: var(--radio-on-dark); text-decoration: underline; text-decoration-color: var(--radio-brass); text-decoration-thickness: 2px; text-underline-offset: 4px; }
   .box-all:hover { color: var(--radio-amber); text-decoration-color: var(--radio-amber); }
 
   /* pull-quote: cream paper, a huge brass quotation mark */
@@ -265,7 +293,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .card, .card:hover { transition: none; transform: none; }
-    .spine-list.riffle, .pbtn.on { animation: none; }
+    .pbtn.on { animation: none; }
     .spines { overflow-y: auto; }
     .card:hover .portrait-img, .card:hover .disc-wave { transform: none; }
   }

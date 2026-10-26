@@ -1,6 +1,83 @@
 {
-  "generated": "2026-10-25T15:22:36.254Z",
+  "generated": "2026-10-26T12:51:02.833Z",
   "entries": [
+    {
+      "hash": "a99eea6d",
+      "date": "2026-10-25",
+      "type": "Fixed",
+      "description": "Drain excess rentals when the uplink limits throughput",
+      "scope": "media"
+    },
+    {
+      "hash": "6f8dd79c",
+      "date": "2026-10-25",
+      "type": "Fixed",
+      "description": "Keep unfinished stages queued under worker backpressure",
+      "scope": "media"
+    },
+    {
+      "hash": "b8b0aed1",
+      "date": "2026-10-25",
+      "type": "Fixed",
+      "description": "Survive worker backpressure and persist rental allocations",
+      "scope": "media"
+    },
+    {
+      "hash": "0b0efd02",
+      "date": "2026-10-25",
+      "type": "Fixed",
+      "description": "Bound transfer batches so rental workers stay fed",
+      "scope": "media"
+    },
+    {
+      "hash": "c657767c",
+      "date": "2026-10-25",
+      "type": "Fixed",
+      "description": "Keep GPU work buffered through long postprocessing tails",
+      "scope": "media"
+    },
+    {
+      "hash": "0c8108ba",
+      "date": "2026-10-25",
+      "type": "Fixed",
+      "description": "Keep rental workers observable during long jobs",
+      "scope": "media"
+    },
+    {
+      "hash": "81a40a15",
+      "date": "2026-10-25",
+      "type": "New",
+      "description": "Slim image on the official pytorch runtime base (no nightly-torch duplicate: 64 GB -> ~25 GB), ssh entrypoint with zombie guards, local image test harness, docker-data-room host check",
+      "scope": "media"
+    },
+    {
+      "hash": "7370ef7c",
+      "date": "2026-10-25",
+      "type": "New",
+      "description": "Descriptive titles for the six untitled Chad Jones talks (from their summaries and chapters); jones-01 unchanged",
+      "scope": "media"
+    },
+    {
+      "hash": "46c1bda3",
+      "date": "2026-10-25",
+      "type": "Chore",
+      "description": "Hide of jones-01-thursday cancelled (Chad 10-25) — decision restore",
+      "scope": "media"
+    },
+    {
+      "hash": "40c34657",
+      "date": "2026-10-25",
+      "type": "New",
+      "description": "Reversible hide — talk decisions by slug, edge purge after exclude, media-restore job (decision 'restore'); jones-01-thursday hidden for now (Chad 10-25), restore command in planning/media-hidden.md",
+      "scope": "media"
+    },
+    {
+      "hash": "7a39af68",
+      "date": "2026-10-25",
+      "type": "New",
+      "description": "The remastering demo link is a compact pill above the hero (one link, above the fold; the lower card is gone)",
+      "scope": "media"
+    },
     {
       "hash": "e073fd6a",
       "date": "2026-10-25",
@@ -3423,87 +3500,87 @@
       "type": "New",
       "description": "A RUNNING ops run can be cancelled — marked now, stops at its next yield point when the service drains, keeps 'cancelled' through finish, never requeued",
       "scope": "ops"
-    },
-    {
-      "hash": "398fff28",
-      "date": "2026-10-20",
-      "type": "Docs",
-      "description": "Bio citation labels",
-      "scope": "blocking-queries"
-    },
-    {
-      "hash": "3c9d64fb",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Person-page citation labels query content per document (index is doc_id, external_para_id) — a bare external_para_id IN (…) scanned all of content, 7 s on the API main thread",
-      "scope": "blocking"
-    },
-    {
-      "hash": "8d5e2763",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "An unnamed slow write batch logs its first statement's SQL — 4–15 s single-statement writes from reports could not be traced",
-      "scope": "writer"
-    },
-    {
-      "hash": "73b2578e",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Detached batch runs (hype-many, complete-concepts, complete-book) read in their own processes — not 'blocking'",
-      "scope": "system-checks"
-    },
-    {
-      "hash": "fe87a654",
-      "date": "2026-10-20",
-      "type": "Docs",
-      "description": "Concept_entities full rebuild",
-      "scope": "blocking-queries"
-    },
-    {
-      "hash": "50aa6309",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Concept promote writes a DIFF of concept_entities in ≤500-statement chunks, not DELETE-all + ~29,000 INSERTs in one transaction — eight concept runs finishing together held the single writer 1.5–3 s each and the WAL churn stalled other writes 8–15 s (10-20); unchanged rows keep their ids",
-      "scope": "writer"
-    },
-    {
-      "hash": "a5eca859",
-      "date": "2026-10-19",
-      "type": "Docs",
-      "description": "Log the 10-19 writer, CLI-orphan and monitor-scan causes",
-      "scope": "blocking-queries"
-    },
-    {
-      "hash": "3a8a46a4",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "HyPE sidecar sync marks rows it will never index as synced (paragraphs of deleted documents, empty question lists) — skipped-but-unmarked rows stayed in the partial index and every batch re-read them on the single writer's thread (24 s batch → /health dead → watchdog restarts 17:35Z, 04:02Z, 05:37Z ×2); v14+ question objects were indexed as '[object Object]'",
-      "scope": "writer"
-    },
-    {
-      "hash": "7c06e511",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Deep-research-runner exits when its mode is done — imported refresh timers kept a 10-11 '--status' alive for 8 days running retired 26–83 s graph_enriched scans (the night's 'worst blocking query'); orphan killed",
-      "scope": "scripts"
-    },
-    {
-      "hash": "258bdf0e",
-      "date": "2026-10-19",
-      "type": "Fixed",
-      "description": "Ingest-files yields to a drain between files (a 10,797-file run held reports in 'draining'); the gateway answers a request its service cut off after the retry window as 504 upstream_timeout, counted apart — 'unavailable' now means restarts only (all 10 were 30 s searches under load)",
-      "scope": "ops,gateway"
-    },
-    {
-      "hash": "faa85398",
-      "date": "2026-10-19",
-      "type": "Performance",
-      "description": "The monitors stop evicting the database cache — pipeline-snapshot reuses any probe that took ≥2 s for up to an hour, system-checks scans content only in the daily run, stall-guard uses MAX(rowid) and an index-friendly date filter. Whole-table scans every 5/30/60 min kept SQLite pages out of ZFS ARC: search hydration (primary-key lookups) 200–1000 ms, searches 5–15 s",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-25": [
+      {
+        "hash": "a99eea6d",
+        "date": "2026-10-25",
+        "type": "Fixed",
+        "description": "Drain excess rentals when the uplink limits throughput",
+        "scope": "media"
+      },
+      {
+        "hash": "6f8dd79c",
+        "date": "2026-10-25",
+        "type": "Fixed",
+        "description": "Keep unfinished stages queued under worker backpressure",
+        "scope": "media"
+      },
+      {
+        "hash": "b8b0aed1",
+        "date": "2026-10-25",
+        "type": "Fixed",
+        "description": "Survive worker backpressure and persist rental allocations",
+        "scope": "media"
+      },
+      {
+        "hash": "0b0efd02",
+        "date": "2026-10-25",
+        "type": "Fixed",
+        "description": "Bound transfer batches so rental workers stay fed",
+        "scope": "media"
+      },
+      {
+        "hash": "c657767c",
+        "date": "2026-10-25",
+        "type": "Fixed",
+        "description": "Keep GPU work buffered through long postprocessing tails",
+        "scope": "media"
+      },
+      {
+        "hash": "0c8108ba",
+        "date": "2026-10-25",
+        "type": "Fixed",
+        "description": "Keep rental workers observable during long jobs",
+        "scope": "media"
+      },
+      {
+        "hash": "81a40a15",
+        "date": "2026-10-25",
+        "type": "New",
+        "description": "Slim image on the official pytorch runtime base (no nightly-torch duplicate: 64 GB -> ~25 GB), ssh entrypoint with zombie guards, local image test harness, docker-data-room host check",
+        "scope": "media"
+      },
+      {
+        "hash": "7370ef7c",
+        "date": "2026-10-25",
+        "type": "New",
+        "description": "Descriptive titles for the six untitled Chad Jones talks (from their summaries and chapters); jones-01 unchanged",
+        "scope": "media"
+      },
+      {
+        "hash": "46c1bda3",
+        "date": "2026-10-25",
+        "type": "Chore",
+        "description": "Hide of jones-01-thursday cancelled (Chad 10-25) — decision restore",
+        "scope": "media"
+      },
+      {
+        "hash": "40c34657",
+        "date": "2026-10-25",
+        "type": "New",
+        "description": "Reversible hide — talk decisions by slug, edge purge after exclude, media-restore job (decision 'restore'); jones-01-thursday hidden for now (Chad 10-25), restore command in planning/media-hidden.md",
+        "scope": "media"
+      },
+      {
+        "hash": "7a39af68",
+        "date": "2026-10-25",
+        "type": "New",
+        "description": "The remastering demo link is a compact pill above the hero (one link, above the fold; the lower card is gone)",
+        "scope": "media"
+      },
       {
         "hash": "e073fd6a",
         "date": "2026-10-25",
@@ -6936,85 +7013,6 @@
         "type": "New",
         "description": "A RUNNING ops run can be cancelled — marked now, stops at its next yield point when the service drains, keeps 'cancelled' through finish, never requeued",
         "scope": "ops"
-      },
-      {
-        "hash": "398fff28",
-        "date": "2026-10-20",
-        "type": "Docs",
-        "description": "Bio citation labels",
-        "scope": "blocking-queries"
-      },
-      {
-        "hash": "3c9d64fb",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Person-page citation labels query content per document (index is doc_id, external_para_id) — a bare external_para_id IN (…) scanned all of content, 7 s on the API main thread",
-        "scope": "blocking"
-      },
-      {
-        "hash": "8d5e2763",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "An unnamed slow write batch logs its first statement's SQL — 4–15 s single-statement writes from reports could not be traced",
-        "scope": "writer"
-      },
-      {
-        "hash": "73b2578e",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Detached batch runs (hype-many, complete-concepts, complete-book) read in their own processes — not 'blocking'",
-        "scope": "system-checks"
-      },
-      {
-        "hash": "fe87a654",
-        "date": "2026-10-20",
-        "type": "Docs",
-        "description": "Concept_entities full rebuild",
-        "scope": "blocking-queries"
-      },
-      {
-        "hash": "50aa6309",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Concept promote writes a DIFF of concept_entities in ≤500-statement chunks, not DELETE-all + ~29,000 INSERTs in one transaction — eight concept runs finishing together held the single writer 1.5–3 s each and the WAL churn stalled other writes 8–15 s (10-20); unchanged rows keep their ids",
-        "scope": "writer"
-      }
-    ],
-    "2026-10-19": [
-      {
-        "hash": "a5eca859",
-        "date": "2026-10-19",
-        "type": "Docs",
-        "description": "Log the 10-19 writer, CLI-orphan and monitor-scan causes",
-        "scope": "blocking-queries"
-      },
-      {
-        "hash": "3a8a46a4",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "HyPE sidecar sync marks rows it will never index as synced (paragraphs of deleted documents, empty question lists) — skipped-but-unmarked rows stayed in the partial index and every batch re-read them on the single writer's thread (24 s batch → /health dead → watchdog restarts 17:35Z, 04:02Z, 05:37Z ×2); v14+ question objects were indexed as '[object Object]'",
-        "scope": "writer"
-      },
-      {
-        "hash": "7c06e511",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Deep-research-runner exits when its mode is done — imported refresh timers kept a 10-11 '--status' alive for 8 days running retired 26–83 s graph_enriched scans (the night's 'worst blocking query'); orphan killed",
-        "scope": "scripts"
-      },
-      {
-        "hash": "258bdf0e",
-        "date": "2026-10-19",
-        "type": "Fixed",
-        "description": "Ingest-files yields to a drain between files (a 10,797-file run held reports in 'draining'); the gateway answers a request its service cut off after the retry window as 504 upstream_timeout, counted apart — 'unavailable' now means restarts only (all 10 were 30 s searches under load)",
-        "scope": "ops,gateway"
-      },
-      {
-        "hash": "faa85398",
-        "date": "2026-10-19",
-        "type": "Performance",
-        "description": "The monitors stop evicting the database cache — pipeline-snapshot reuses any probe that took ≥2 s for up to an hour, system-checks scans content only in the daily run, stall-guard uses MAX(rowid) and an index-friendly date filter. Whole-table scans every 5/30/60 min kept SQLite pages out of ZFS ARC: search hydration (primary-key lookups) 200–1000 ms, searches 5–15 s",
-        "scope": "search"
       }
     ]
   }
