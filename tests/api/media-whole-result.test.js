@@ -22,3 +22,14 @@ it('rejects damaged, stale, unsafe and unassessed results before adoption',async
   const {root,sha,r}=await fixture();mutate(r);await writeFile(join(root,'result.json'),JSON.stringify(r));await expect(validateWholeResult(root,sha,'test')).rejects.toThrow();
  }
 });
+it('validates a cloud return and does not overwrite later text work when the result is replayed',async()=>{
+ const {copyFile}=await import('node:fs/promises');const {takeCloudRecording}=await import('../../api/lib/media/cloud-recording.js');
+ const {root,dir,sha}=await fixture();let downloads=0;
+ const C={podGet:async(_run,_p,from,to)=>{downloads++;const rel=from.endsWith('/result.json')?'result.json':'item/'+from.split('/item/')[1];await copyFile(join(root,rel),to);}};
+ const meta={slug:'test',original:'original/archive.mp3',source:{kind:'file'}};
+ const m=await takeCloudRecording({C,p:{},job:'test-job',item:{dir,slug:'test'},meta,inputSha:sha});
+ expect(m.worker_result.input_sha).toBe(sha);const before=downloads;
+ await writeFile(join(dir,'transcript.work.json'),'later editorial changes');
+ await takeCloudRecording({C,p:{},job:'test-job',item:{dir,slug:'test'},meta:m,inputSha:sha});
+ expect(downloads).toBe(before);expect(await readFile(join(dir,'transcript.work.json'),'utf8')).toBe('later editorial changes');
+});

@@ -200,16 +200,24 @@ def cmd_dfn(a):
     import soundfile as sf
     model, state, _ = init_df(log_level='ERROR')
     sr = state.sr()
-    x = load(a.input, sr=sr)
-    chunk = sr * 60   # one minute at a time keeps memory flat on 2-hour talks
-    out = []
+    # Decode and write incrementally: a two-hour source must not retain the
+    # input, all outputs and a concatenated output in RAM simultaneously.
+    chunk = sr * 60
+    proc = subprocess.Popen(['ffmpeg','-nostdin','-v','error','-i',a.input,'-ac','1','-ar',str(sr),'-f','f32le','-'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     t0 = time.time()
-    for i in range(0, len(x), chunk):
-        seg = torch.from_numpy(x[i:i + chunk]).unsqueeze(0)
-        y = enhance(model, state, seg, atten_lim_db=a.atten)
-        out.append(y.squeeze(0).numpy())
-    y = np.concatenate(out) if out else np.zeros(1, dtype=np.float32)
-    sf.write(a.output, y, sr, format='FLAC', subtype='PCM_16')
+    try:
+        with sf.SoundFile(a.output,'w',samplerate=sr,channels=1,format='FLAC',subtype='PCM_16') as output:
+            while True:
+                block=proc.stdout.read(chunk*4)
+                if not block:break
+                seg=torch.from_numpy(np.frombuffer(block,dtype='<f4').copy()).unsqueeze(0)
+                with torch.inference_mode():y=enhance(model,state,seg,atten_lim_db=a.atten)
+                output.write(y.squeeze(0).cpu().numpy())
+        stderr=proc.stderr.read();code=proc.wait()
+        if code:raise RuntimeError('DFN source decode failed: '+stderr.decode(errors='replace')[-300:])
+    finally:
+        proc.stdout.close()
+        if proc.poll() is None:proc.terminate();proc.wait()
     print(jdumps({'output': a.output, 'sr': sr, 'seconds': round(time.time() - t0, 1), 'atten_lim_db': a.atten}))
 
 
@@ -540,13 +548,15 @@ def cmd_realign(a):
         except Exception as err:
             print(f'realign: no alignment model for {lang} ({err}) — those paragraphs keep their times', file=sys.stderr)
             continue
+        from worker.alignment_windows import windows
         for p in ps:
-            seg = [{'start': max(0.0, p['t0'] - 1.0), 'end': p['t1'] + 1.0, 'text': ' '.join(w.get('w', '') for w in p['words'])}]
-            try:
-                r = whisperx.align(seg, am, meta, audio, dev, return_char_alignments=False)
-                aligned[p.get('n')] = [w for sg in r.get('segments', []) for w in sg.get('words', [])]
-            except Exception as err:
-                print(f'realign: paragraph {p.get("n")} failed ({err})', file=sys.stderr)
+            aligned[p.get('n')] = []
+            for seg in windows(p):
+                try:
+                    r = whisperx.align([seg], am, meta, audio, dev, return_char_alignments=False)
+                    aligned[p.get('n')].extend(w for sg in r.get('segments', []) for w in sg.get('words', []))
+                except Exception as err:
+                    print(f'realign: paragraph {p.get("n")} window failed ({err})', file=sys.stderr)
     times, placed, total = realign_words(work.get('paragraphs', []), aligned)
     json.dump({'times': {str(k): v for k, v in times.items()}, 'placed': placed, 'total': total}, open(a.output, 'w'))
     print(jdumps({'placed': placed, 'total': total, 'seconds': round(time.time() - t0, 1)}))

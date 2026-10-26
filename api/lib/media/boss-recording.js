@@ -1,6 +1,6 @@
 // Restricted gate transport for Boss: fixed image, cached restoration, CPU only.
 import {join,extname} from 'node:path';
-import {mkdir,readFile,rename,rm,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,rename,rm,writeFile,stat} from 'node:fs/promises';
 import {createWriteStream} from 'node:fs';
 import {finished} from 'node:stream/promises';
 import {sha256File,podComplete} from './pod-post.js';
@@ -9,7 +9,10 @@ export async function bossPostRecording(it,m,{T,job,cfg,stop,nap}){
  const poll=async()=>JSON.parse((await call(`whole-poll ${job}`)).stdout);
  let s=await poll();
  if(!s){
-  for(const [file,name] of [[join(it.dir,m.original),'in'+extname(m.original).toLowerCase()],[join(it.dir,'transcript.work.json'),'work.json'],...['unipase.cloud.flac','unipase.asr.json','unipase.asr_orig.json'].map((f,i)=>[join(it.dir,'enhanced',f),['out.flac','asr.json','asr_orig.json'][i]])])await call(`whole-put ${job} ${name}`,{inputFile:file});
+  for(const [file,name] of [[join(it.dir,m.original),'in'+extname(m.original).toLowerCase()],[join(it.dir,'transcript.work.json'),'work.json'],...['unipase.cloud.flac','unipase.asr.json','unipase.asr_orig.json'].map((f,i)=>[join(it.dir,'enhanced',f),['out.flac','asr.json','asr_orig.json'][i]])]){
+    if(name==='asr_orig.json'&&!await stat(file).catch(()=>null))continue;
+    await call(`whole-put ${job} ${name}`,{inputFile:file});
+  }
   await call(`whole-put ${job} job.json`,{input:JSON.stringify({post:cfg})});
   while(!s){if(stop()){const e=Error('Boss job staged for reattachment');e.code='DRAIN';throw e;}await call(`whole-start ${job}`);s=await poll();if(!s)await nap(10000);}
  }

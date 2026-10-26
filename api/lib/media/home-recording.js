@@ -21,7 +21,10 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
  const state=JSON.parse((await run(`${docker} inspect ${q(job)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());
  if(!state){
   await put(join(it.dir,m.original),remote+'/in'+extname(m.original));await put(work,remote+'/work.json');
-  if(mode==='post')for(const [a,b] of [['unipase.cloud.flac','out.flac'],['unipase.asr.json','asr.json'],['unipase.asr_orig.json','asr_orig.json']])await put(join(it.dir,'enhanced',a),remote+'/'+b);
+  if(mode==='post')for(const [a,b] of [['unipase.cloud.flac','out.flac'],['unipase.asr.json','asr.json'],['unipase.asr_orig.json','asr_orig.json']]){
+    const file=join(it.dir,'enhanced',a);if(b==='asr_orig.json'&&!await fs.stat(file).catch(()=>null))continue;
+    await put(file,remote+'/'+b);
+  }
   await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify({post:cfg})});
   const accelerator=host==='aorus'?'--gpus all -v /home/chad/media-gpu/.gpu.lock:/gpu.lock -e SIFTER_LEGACY_GPU_LOCK=/gpu.lock':'-e MEDIA_DEVICE=cpu -e CUDA_VISIBLE_DEVICES=';
   await run(`${docker} run -d --name ${q(job)} ${accelerator} --network none --cpus 4 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} -e SIFTER_GPU_LEASES=1 --entrypoint python ${q(image)} /opt/sifter/media/worker/single_restore.py /job`);
@@ -50,6 +53,7 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
 export async function homeWholeRecording(it,m,{T,image,stop=()=>false,nap=ms=>new Promise(r=>setTimeout(r,ms))}) {
  const {fileSha,adoptWholeResult,wholeJob}=await import('./whole-result.js');
  const input=join(it.dir,m.original),sha=await fileSha(input),root='/data/sifter-whole-home';
+ if(m.worker_result?.input_sha===sha)return m;
  const name=`whole-${it.id}-${sha.slice(0,8)}-${image.slice(-8)}`,remote=`${root}/${name}`,host='aorus';
  const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,...opts});
  const state=async()=>JSON.parse((await run(`docker inspect ${q(name)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());

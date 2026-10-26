@@ -2,6 +2,7 @@ import {join} from 'node:path';
 import {mkdir,readFile} from 'node:fs/promises';
 import {adoptWholeResult} from './whole-result.js';
 export async function takeCloudRecording({C,run,p,job,item,meta,inputSha}){
+ if(meta.worker_result?.input_sha===inputSha)return meta;
  const stage=join(item.dir,'.whole-worker',job);await mkdir(join(stage,'item'),{recursive:true});
  const remote='/workspace/spool/'+job;
  await C.podGet(run,p,remote+'/result.json',join(stage,'result.json'));

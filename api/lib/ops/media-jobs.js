@@ -570,6 +570,7 @@ export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
   const repo=deps.repo||await import('../repos/media-repo.js');
   let item=await repo.getMediaItem(id);
   if(item?.state==='done')return laneJob(id,rest,deps,PREP_STAGES,'prepped');
+  try {
   if(!item?.dir){await (deps.runItem||(await import('../media/item.js')).runItem)(item,{only:['archive']});item=await repo.getMediaItem(id);}
   const fs=await import('node:fs/promises');
   const meta=JSON.parse(await fs.readFile(join(item.dir,'meta.json'),'utf8'));
@@ -580,11 +581,14 @@ export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
   }
   const T=deps.tools||await import('../media/tools.js');
   const stop=deps.draining||(await import('../drain.js')).isDraining;
-  try {
     const m=await (deps.homeWholeRecording||(await import('../media/home-recording.js')).homeWholeRecording)(item,meta,{T,image:accepted.image,stop});
     await repo.updateMediaItem(id,{state:'transcribed',stage:null,stages_done:','+Object.keys(m.stages).join(',')+','});
     return {id,whole_worker:true,stages:Object.keys(m.stages)};
-  } catch(err){if(err.code==='DRAIN')return {id,yielded:true};throw err;}
+  } catch(err){
+    if(err.code==='DRAIN')return {id,yielded:true};
+    await repo.updateMediaItem(id,{state:err.code==='WORKER_WAIT'?'queued':'failed',why:String(err.message).slice(0,500)});
+    throw err;
+  }
 }
 export const mediaAsrJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, ['transcribe'], 'asr_done');
 // DIARIZE (its own lane, 10-23 04:29): the ASR worker never waits on a diarization
@@ -1419,7 +1423,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (!m?.original) throw new Error('no original');
           if (st.items?.[it.id]?.kind==='whole'){
             const completed=await (await import('../media/home-recording.js')).homeWholeRecording(it,m,{T,image:acceptedWorker.image,stop:draining});
-            await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
+            if(['whole_queued','scheduled','queued','running'].includes((await repo.getMediaItem(it.id))?.state))await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
             st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,gpu:h,pod:h,at:now()});st.home_done++;return;
           }
           if (decided(m,it.id)) return;
@@ -1430,11 +1434,14 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h });
           st.home_done++;
           await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');
-        })().then(() => { delete st.home[h]; }, (err) => {
+        })().then(() => { delete st.home[h]; }, async (err) => {
           if (err?.code === 'DRAIN') return;   // left running on the host; re-attached next start
           delete st.home[h];
           st.attempts[cur.itemId] = (st.attempts[cur.itemId] || 0) + 1;
-          if (st.attempts[cur.itemId] < 2) st.queue.push(cur.itemId); else st.failed.push({ id: cur.itemId, error: `${h}: ${String(err?.message || err).slice(-300)}` });
+          if (st.attempts[cur.itemId] < 2) st.queue.push(cur.itemId); else {
+            st.failed.push({ id: cur.itemId, error: `${h}: ${String(err?.message || err).slice(-300)}` });
+            if(st.items?.[cur.itemId]?.kind==='whole')await repo.updateMediaItem(cur.itemId,{state:'failed',why:String(err.message).slice(0,500)});
+          }
           st.home_errors = (st.home_errors || 0) + 1; st.home_last_error = `${h} #${cur.itemId}: ${String(err?.message || err).slice(-300)}`;
         }).finally(() => homeTasks.delete(h)));
       }
@@ -1505,7 +1512,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             else if (/BOOTFAIL/.test(stdout)) { p.boot_log = stdout.slice(-400); st.last_error = `boot failed on ${p.name}: ${stdout.slice(-200)}`; await closePod(p, 'bootstrap failed'); st.pod_failures++; }
             else if (now() - p.created > C.CLOUD.warmTimeoutMs) { p.boot_log = stdout.slice(-400); await closePod(p, 'warm-up timeout'); st.pod_failures++; }
           } else if (p.status === 'ready') {
-            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; if [ -f "$d/done.json" ] || { [ -f "$d/result.json" ] && [ -f "$d/complete" ]; }; then echo "DONE $d"; fi; [ -f "$d/failed" ] && echo "FAIL $d"; [ -f "$d/ready" ] && echo "WAIT $d"; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
+            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; if [ -f "$d/done.json" ] || { [ -f "$d/result.json" ] && [ -f "$d/complete" ]; }; then echo "DONE $d"; fi; [ -f "$d/failed" ] && echo "FAIL $d"; [ -f "$d/ready" ] && echo "WAIT $d"; if [ -f "$d/ready" ] || [ -f "$d/running" ] || [ -f "$d/done.json" ] || [ -f "$d/complete" ]; then echo "STAGED $d"; else echo "PARTIAL $d"; fi; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
             p.lastOk = now();
             const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]);
             const wm = /^STATUS (\{.*\})$/m.exec(stdout); if (wm) { try { const w = JSON.parse(wm[1]); if (w.at !== p.worker?.at || !p.worker_seen) p.worker_seen = now(); p.worker = { ...w, ready_jobs: (stdout.match(/^WAIT /gm) || []).length }; } catch { /* partial write */ } }
@@ -1527,13 +1534,15 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               const [kind, job] = line.trim().split(' ');
               const x = st.jobs[job];
               if (!x || x.pod !== p.id) continue;
+              if(kind==='STAGED'&&x.status==='uploading'){x.status='assigned';continue;}
+              if(kind==='PARTIAL'&&x.status==='uploading'){delete st.jobs[job];if(!st.queue.includes(x.itemId))st.queue.unshift(x.itemId);continue;}
               if ((kind === 'DONE' || kind === 'FAIL') && resultsThisPass++ >= 1) break;  // large result batches must not stall every other pod's next poll
               const it = await repo.getMediaItem(x.itemId);
               if (kind === 'DONE' && it?.dir) {
                 if(x.kind==='whole'){
                   const m=await readMeta(it.dir);
                   const completed=await (await import('../media/cloud-recording.js')).takeCloudRecording({C,run,p,job,item:it,meta:m,inputSha:x.input_sha});
-                  await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
+                  if(['whole_queued','scheduled','queued','running'].includes(it.state))await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
                   await C.podSsh(run,p,`rm -rf /workspace/spool/${job}`,{timeoutMs:60000});
                   delete st.jobs[job];p.jobs_done=(p.jobs_done||0)+1;st.proven=true;st.boot_fails=0;
                   st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,pod:p.name,at:now(),cycle_s:Math.round((now()-x.since)/1000)});
@@ -1577,29 +1586,38 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 if (imode === 'post' && !st.items?.[it.id]?.redo && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); continue; }
                 await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');   // tower takes the finished result (seconds); an identical queued run is not doubled
               } else if (kind === 'FAIL') {
-                const err = await C.podSsh(run, p, `tail -c 600 /workspace/spool/${job}/error.txt; rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).then((r) => r.stdout).catch(() => '');
+                const err = await C.podSsh(run, p, `for f in error.txt worker.log post.error.txt; do [ ! -f /workspace/spool/${job}/$f ] || tail -c 2000 /workspace/spool/${job}/$f; done; true`, { timeoutMs: 60_000 }).then((r) => r.stdout).catch(() => '');
                 delete st.jobs[job];
                 st.attempts[x.itemId] = (st.attempts[x.itemId] || 0) + 1;
-                st.last_job_error = `${x.slug}: ${err.slice(-300)}`;
-                if (st.attempts[x.itemId] < 2) st.queue.push(x.itemId); else st.failed.push({ id: x.itemId, slug: x.slug, error: err.slice(-300) });
+                st.last_job_error = `${x.slug}: ${err.slice(-1500)}`;
+                (st.failure_log||=[]).push({at:now(),id:x.itemId,pod:p.name,error:err.slice(-2000)});st.failure_log=st.failure_log.slice(-30);
+                await C.podSsh(run,p,`mkdir -p /workspace/failed-jobs; mv /workspace/spool/${job} /workspace/failed-jobs/${job}-${now()}`,{timeoutMs:60000});
+                if (st.attempts[x.itemId] < 2) st.queue.push(x.itemId); else {
+                  st.failed.push({ id: x.itemId, slug: x.slug, error: err.slice(-300) });
+                  if(x.kind==='whole')await repo.updateMediaItem(x.itemId,{state:'failed',why:err.slice(-500)});
+                }
               }
             }
             // keep the pod fed (one running, one waiting)
             // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
             let uploadsThisPass = 0;
-            while (uploadsThisPass < 1 && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(C.CLOUD.perPod, Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
+            while (uploadsThisPass < 1 && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.values(st.jobs).filter((j) => j.pod === p.id).length < Math.min(acceptedWorker?.max_inflight_per_pod||C.CLOUD.perPod, Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
               const itemId = st.queue.shift(); const tAssign = now();
               const it = await repo.getMediaItem(itemId);
               const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
               const whole=st.items?.[itemId]?.kind==='whole';
-              if (!whole&&decided(m,it.id)) continue;
+              if (!whole&&decided(m,itemId)) continue;
               if (!m?.original) { st.failed.push({ id: itemId, slug: it?.slug, error: 'no original' }); continue; }
               const job = C.jobIdOf(it), src = join(it.dir, m.original), ext = (extname(src).slice(1) || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
               uploadsThisPass++;
+              try {
+              st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,status:'uploading',...(whole?{kind:'whole',input_sha:await (await import('../media/whole-result.js')).fileSha(src)}:{})};
+              await save(st);
               await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
-              await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}`);
+              await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}.part`);
+              await C.podSsh(run,p,`mv /workspace/spool/${job}/in.${ext}.part /workspace/spool/${job}/in.${ext}`,{timeoutMs:60000});
               if(whole){
-                const W=await import('../media/whole-result.js'),sha=await W.fileSha(src);
+                const W=await import('../media/whole-result.js'),sha=st.jobs[job].input_sha;
                 await C.podSsh(run,p,`cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`,{timeoutMs:60000,input:JSON.stringify(W.wholeJob(it,m,sha))});
                 p.jobs_assigned=(p.jobs_assigned||0)+1;
                 st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,uploaded_s:Math.round((now()-tAssign)/1000),kind:'whole',input_sha:sha};
@@ -1622,6 +1640,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s), ...(post ? { post } : {}) }) });
               p.jobs_assigned = (p.jobs_assigned || 0) + 1;
               st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: tAssign, uploaded_s: Math.round((now() - tAssign) / 1000) };
+              } catch(error){delete st.jobs[job];if(!st.queue.includes(itemId))st.queue.unshift(itemId);await save(st);throw error;}
             }
             if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id)) await closePod(p, `pool reduced to ${maxPods}`);
           }
