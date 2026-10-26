@@ -16,6 +16,31 @@ import { createHash } from 'crypto';
 
 const MIN = 60_000;
 describe('persistent operator rental pause', () => {
+  it('uses actual runtime SSH ports when the REST networking fields are empty',async()=>{
+    const c=await C.getPodConnection('p',{fetchFn:async()=>({status:200,json:async()=>({data:{myself:{pods:[{id:'p',runtime:{ports:[{ip:'10.0.0.1',privatePort:22,publicPort:22,type:'tcp',isIpPublic:false},{ip:'1.2.3.4',privatePort:22,publicPort:2222,type:'tcp',isIpPublic:true}]},machine:{gpuDisplayName:'RTX 4090'}}]}}})})});
+    expect(c).toEqual({publicIp:'1.2.3.4',portMappings:{22:2222},machine:{gpuDisplayName:'RTX 4090'}});
+  });
+  it('keeps concurrent import orders and acknowledges only the exact persisted tickets', async()=>{
+    const dir=mkdtempSync(join(tmpdir(),'concurrent-orders-')),file=join(dir,'orders.json');
+    try{
+      await Promise.all(Array.from({length:12},(_,i)=>C.addOrders([{id:i+1,mode:'whole',kind:'whole'}],file)));
+      const pending=await C.peekOrders(file);expect(pending).toHaveLength(12);
+      await C.addOrders([{id:1,mode:'whole',kind:'whole',redo:true}],file);
+      await C.ackOrders(pending,file);
+      const remaining=await C.peekOrders(file);expect(remaining).toHaveLength(1);expect(remaining[0]).toMatchObject({id:1,redo:true});
+      await C.ackOrders(remaining,file);expect(await C.peekOrders(file)).toEqual([]);
+    }finally{rmSync(dir,{recursive:true,force:true});}
+  });
+  it('routes imports into the durable whole-recording farm queue without starting per-stage work',async()=>{
+    const dir=mkdtempSync(join(tmpdir(),'whole-farm-dispatch-'));
+    try{
+      writeFileSync(join(dir,'meta.json'),JSON.stringify({slug:'test',duration_s:100,original:'original/test.mp3',stages:{archive:{at:'now'}}}));
+      const addOrders=vi.fn(),updateMediaItem=vi.fn();
+      const r=await mediaComputeJob({id:1},{cloud:{acceptedWorker:async()=>({image:'accepted-digest',whole_imports:'cloud'}),addOrders},repo:{getMediaItem:async()=>({id:1,dir,slug:'test',state:'scheduled'}),updateMediaItem}});
+      expect(r.whole_queued).toBe(true);expect(addOrders).toHaveBeenCalledWith([expect.objectContaining({id:1,kind:'whole',mode:'whole'})]);
+      expect(updateMediaItem).toHaveBeenCalledWith(1,expect.objectContaining({state:'whole_queued'}));
+    }finally{rmSync(dir,{recursive:true,force:true});}
+  });
   it('new-import dispatch adopts the whole worker result and proceeds directly to text enrichment', async () => {
     const dir=mkdtempSync(join(tmpdir(),'whole-dispatch-'));
     try {
@@ -181,6 +206,7 @@ const setup = ({ talks = 2, seconds = 600, poll = null } = {}) => {
   let t = 1_800_000_000_000, pods = 0;
   const spool = {}, queued = [], killed = [];
   const cloud = { ...C,
+    peekOrders:vi.fn(async()=>[]),ackOrders:vi.fn(async()=>{}),getPodConnection:vi.fn(async()=>({})),
     createPod: vi.fn(async () => ({ id: `p${++pods}`, costPerHr: 0.34 })),
     getPod: vi.fn(async () => ({ publicIp: '1.2.3.4', portMappings: { 22: 2222 }, machine: { gpuDisplayName: 'RTX 4090' } })),
     terminatePod: vi.fn(async (id) => { killed.push(id); return {}; }),

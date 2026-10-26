@@ -48,17 +48,15 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
 
 /** New imports return every audio stage; only metadata/text publishing remains. */
 export async function homeWholeRecording(it,m,{T,image,stop=()=>false,nap=ms=>new Promise(r=>setTimeout(r,ms))}) {
- const {fileSha,adoptWholeResult}=await import('./whole-result.js');
+ const {fileSha,adoptWholeResult,wholeJob}=await import('./whole-result.js');
  const input=join(it.dir,m.original),sha=await fileSha(input),root='/data/sifter-whole-home';
  const name=`whole-${it.id}-${sha.slice(0,8)}-${image.slice(-8)}`,remote=`${root}/${name}`,host='aorus';
  const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,...opts});
  const state=async()=>JSON.parse((await run(`docker inspect ${q(name)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());
  await run(`mkdir -p ${q(remote)} ${q(root+'/leases')}; docker image inspect ${q(image)} >/dev/null`);
  if(!await state()){
-  await T.run('rsync',['-a','--protect-args',input,`${host}:${remote+'/in'+extname(m.original)}`],{timeoutMs:600000});
-  const fresh={...m,stages:{archive:m.stages.archive}};
-  for(const k of ['enhancement','quality','qa','remaster','aligned_to','trim','enh_ck','asr_job','diar_job','dfn_job','enc_jobs'])delete fresh[k];
-  await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify({v:1,id:it.id,input:'in'+extname(m.original),input_sha:sha,threads:2,meta:fresh})});
+  await T.run('rsync',['-a','--protect-args',input,`${host}:${remote+'/in'+extname(m.original).toLowerCase()}`],{timeoutMs:600000});
+  await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify(wholeJob(it,m,sha))});
   while(!await state()){
    if(stop()){const e=Error('Awaiting home slot');e.code='DRAIN';throw e;}
    // A short dispatch lock closes the race between concurrent API jobs. GPU/RAM

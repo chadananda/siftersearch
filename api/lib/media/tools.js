@@ -143,7 +143,7 @@ function runNow(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null,
     p.stdin.on('error', () => {});   // a killed child closes its stdin under us
     if (inputFile) {
       const source=createReadStream(inputFile);
-      source.on('error',e=>p.stdin.destroy(e));p.on('close',()=>source.destroy());source.pipe(p.stdin);
+      source.on('error',e=>{p.stdin.destroy();reject(e);});p.on('close',()=>source.destroy());source.pipe(p.stdin);
     } else if (input != null) p.stdin.end(input); else p.stdin.end();
   });
 }

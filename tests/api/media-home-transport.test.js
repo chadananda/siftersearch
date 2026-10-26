@@ -9,4 +9,5 @@ it('passes rsync protected paths as raw arguments rather than literal shell quot
 it('streams transfer input from disk through the process runner',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'worker-input-')),file=join(dir,'source');await writeFile(file,'streamed file input');
  expect((await run('cat',[],{inputFile:file,timeoutMs:5000})).stdout).toBe('streamed file input');
+ await expect(run('cat',[],{inputFile:file+'-missing',timeoutMs:5000})).rejects.toThrow('ENOENT');
 });

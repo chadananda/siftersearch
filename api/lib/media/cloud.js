@@ -101,6 +101,15 @@ export async function createPod(name, publicKey, deps = {}) {
 }
 export const listPods = (deps) => rest('GET', '/pods', null, deps);
 export const getPod = (id, deps) => rest('GET', `/pods/${id}`, null, deps);
+/** REST can report RUNNING with empty networking after the pod is already up.
+ * Runtime ports are authoritative; otherwise a healthy GPU bills while we wait. */
+export async function getPodConnection(id,{fetchFn=fetch}={}){
+  const query='query { myself { pods { id runtime { ports { ip isIpPublic privatePort publicPort type } } machine { gpuDisplayName dataCenterId } } } }';
+  const r=await fetchRetry('https://api.runpod.io/graphql',{method:'POST',headers:{Authorization:`Bearer ${key()}`,'Content-Type':'application/json'},body:JSON.stringify({query})},{fetchFn});
+  const j=await r.json();if(j.errors)throw Error('RunPod runtime lookup failed: '+j.errors.map(e=>e.message).join(';'));
+  const p=j.data?.myself?.pods?.find(p=>p.id===id),port=p?.runtime?.ports?.find(x=>x.isIpPublic&&Number(x.privatePort)===22&&x.type==='tcp');
+  return port?{publicIp:port.ip,portMappings:{22:port.publicPort},machine:p.machine||{}}:{};
+}
 export const terminatePod = (id, deps) => rest('DELETE', `/pods/${id}`, null, deps).catch((err) => (/404/.test(err.message) ? {} : Promise.reject(err)));
 
 /** Per data-centre boot statistics (the ledger's host table): { dc: { n, boot_s, fails } }. Pure. */
@@ -152,18 +161,19 @@ export async function saveState(state, file = STATE_FILE) {
 
 // ── work orders for the running lane (media-cloud-order writes, the lane takes them in) ──
 export const ORDERS_FILE = join(dirname(STATE_FILE), 'cloud-orders.json');
+async function orderOperation(operation, orders, file) {
+  // Kernel flock releases on exit, including crashes. Both producers and the
+  // consumer use it, so concurrent imports cannot overwrite each other's jobs.
+  const {run}=await import('./tools.js');
+  const r=await run('python3',[join(ROOT,'scripts/media/worker_orders.py'),operation,file],{input:JSON.stringify(orders),timeoutMs:15000});
+  return JSON.parse(r.stdout);
+}
 export async function addOrders(orders, file = ORDERS_FILE) {
-  if (!orders.length) return;
-  const have = await readFile(file, 'utf8').then(JSON.parse).catch(() => []);
-  const seen = new Set(have.map((o) => `${o.mode}:${o.id}`));
-  await mkdir(dirname(file), { recursive: true });
-  await writeFile(file, JSON.stringify([...have, ...orders.filter((o) => !seen.has(`${o.mode}:${o.id}`))]));
+  if(orders.length)await orderOperation('add',orders,file);
 }
-export async function takeOrders(file = ORDERS_FILE) {
-  const got = await readFile(file, 'utf8').then(JSON.parse).catch(() => []);
-  if (got.length) await rename(file, `${file}.taken`).catch(() => {});
-  return got;
-}
+export async function takeOrders(file = ORDERS_FILE) {return orderOperation('take',[],file);}
+export async function peekOrders(file = ORDERS_FILE) {return orderOperation('peek',[],file);}
+export async function ackOrders(orders,file = ORDERS_FILE) {return orderOperation('ack',orders,file);}
 
 // ── ssh / scp to a pod ──
 const sshOpts = (p) => ['-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', '-o', 'ServerAliveInterval=30', '-o', 'LogLevel=ERROR'];

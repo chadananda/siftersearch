@@ -573,6 +573,11 @@ export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
   if(!item?.dir){await (deps.runItem||(await import('../media/item.js')).runItem)(item,{only:['archive']});item=await repo.getMediaItem(id);}
   const fs=await import('node:fs/promises');
   const meta=JSON.parse(await fs.readFile(join(item.dir,'meta.json'),'utf8'));
+  if(accepted.whole_imports==='cloud'){
+    await cloud.addOrders([{id:item.id,slug:item.slug,duration_s:meta.duration_s||item.duration_s||0,mode:'whole',kind:'whole'}]);
+    await repo.updateMediaItem(id,{state:'whole_queued',stage:'whole'});
+    return {id,whole_queued:true};
+  }
   const T=deps.tools||await import('../media/tools.js');
   const stop=deps.draining||(await import('../drain.js')).isDraining;
   try {
@@ -1372,20 +1377,22 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // holding in its own queue onto the workers. Taken in here so the one persistent lane (state file, budget, pods) serves every kind of work.
       if (now() - (st.orders_checked || 0) > 20_000) {
         st.orders_checked = now();
-        const taken = await C.takeOrders(deps.ordersFile).catch(() => []);
+        const taken = await (C.peekOrders?C.peekOrders(deps.ordersFile):C.takeOrders(deps.ordersFile));
         for (const o of taken) {
           if (o.redo) {
             st.done = st.done.filter((d) => d.id !== o.id);
             st.failed = st.failed.filter(d=>d.id!==o.id);delete st.attempts[o.id];
-            st.items[o.id]={slug:o.slug,grade:o.grade,duration_s:o.duration_s,mode:o.mode,redo:true};
+            st.items[o.id]={slug:o.slug,grade:o.grade,duration_s:o.duration_s,mode:o.mode,kind:o.kind,redo:true};
           }
           if ((!o.redo && st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode)) || st.queue.includes(o.id) || Object.values(st.jobs).some((j) => j.itemId === o.id)) continue;
-          st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, redo:!!o.redo };
+          st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind:o.kind, redo:!!o.redo };
           st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
         }
+        if(taken.length&&C.ackOrders){await save(st);await C.ackOrders(taken,deps.ordersFile);}
       }
       // fresh talks before 'post' work (stable), whatever order an earlier version queued them in
       if (st.queue.some((id) => st.items?.[id]?.mode === 'post')) st.queue = [...st.queue.filter((id) => st.items?.[id]?.mode !== 'post'), ...st.queue.filter((id) => st.items?.[id]?.mode === 'post')];
+      if(st.queue.some(id=>st.items?.[id]?.kind==='whole'))st.queue=[...st.queue.filter(id=>st.items?.[id]?.kind==='whole'),...st.queue.filter(id=>st.items?.[id]?.kind!=='whole')];
       // BACKPRESSURE (Chad 10-24): never hand out a new talk while more than N finished results wait for tower's word guard / realign /
       // encode — GPUs would be paid for output nobody can consume. Pods that go without work idle out (10 min) and are terminated.
       if (now() - (st.backlog_checked || 0) > 30_000) {
@@ -1410,6 +1417,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           const it = await repo.getMediaItem(cur.itemId);
           const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
           if (!m?.original) throw new Error('no original');
+          if (st.items?.[it.id]?.kind==='whole'){
+            const completed=await (await import('../media/home-recording.js')).homeWholeRecording(it,m,{T,image:acceptedWorker.image,stop:draining});
+            await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
+            st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,gpu:h,pod:h,at:now()});st.home_done++;return;
+          }
           if (decided(m,it.id)) return;
           const dj = acceptedWorker
             ? await (await import('../media/home-recording.js')).homeRecording(h.startsWith('boss')?'boss':'aorus',it,m,{T,image:acceptedWorker.image,mode:st.items?.[it.id]?.mode||'restore',stop:draining})
@@ -1454,7 +1466,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         try {
           if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id)) { await closePod(p, `pool reduced to ${maxPods}`); return; }
           if (p.status === 'booting') {
-            const g = await C.getPod(p.id, deps);
+            let g = await C.getPod(p.id, deps);
+            if((!g.publicIp||!g.portMappings?.['22'])&&C.getPodConnection)g={...g,...await C.getPodConnection(p.id,deps)};
             if (p.costPerHr == null) p.costPerHr = g.costPerHr ?? g.adjustedCostPerHr ?? null;
             p.gpu = g.machine?.gpuDisplayName || g.gpu?.displayName || p.gpu || null;
             p.dc = g.machine?.dataCenterId || g.dataCenterId || p.dc || null; p.host_key = g.machineId || g.machine?.id || p.host_key || null; p.cloud = g.cloudType || g.machine?.cloudType || p.cloud || null;
@@ -1492,7 +1505,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             else if (/BOOTFAIL/.test(stdout)) { p.boot_log = stdout.slice(-400); st.last_error = `boot failed on ${p.name}: ${stdout.slice(-200)}`; await closePod(p, 'bootstrap failed'); st.pod_failures++; }
             else if (now() - p.created > C.CLOUD.warmTimeoutMs) { p.boot_log = stdout.slice(-400); await closePod(p, 'warm-up timeout'); st.pod_failures++; }
           } else if (p.status === 'ready') {
-            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; [ -f "$d/done.json" ] && echo "DONE $d"; [ -f "$d/failed" ] && echo "FAIL $d"; [ -f "$d/ready" ] && echo "WAIT $d"; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
+            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; if [ -f "$d/done.json" ] || { [ -f "$d/result.json" ] && [ -f "$d/complete" ]; }; then echo "DONE $d"; fi; [ -f "$d/failed" ] && echo "FAIL $d"; [ -f "$d/ready" ] && echo "WAIT $d"; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
             p.lastOk = now();
             const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]);
             const wm = /^STATUS (\{.*\})$/m.exec(stdout); if (wm) { try { const w = JSON.parse(wm[1]); if (w.at !== p.worker?.at || !p.worker_seen) p.worker_seen = now(); p.worker = { ...w, ready_jobs: (stdout.match(/^WAIT /gm) || []).length }; } catch { /* partial write */ } }
@@ -1517,6 +1530,15 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               if ((kind === 'DONE' || kind === 'FAIL') && resultsThisPass++ >= 1) break;  // large result batches must not stall every other pod's next poll
               const it = await repo.getMediaItem(x.itemId);
               if (kind === 'DONE' && it?.dir) {
+                if(x.kind==='whole'){
+                  const m=await readMeta(it.dir);
+                  const completed=await (await import('../media/cloud-recording.js')).takeCloudRecording({C,run,p,job,item:it,meta:m,inputSha:x.input_sha});
+                  await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
+                  await C.podSsh(run,p,`rm -rf /workspace/spool/${job}`,{timeoutMs:60000});
+                  delete st.jobs[job];p.jobs_done=(p.jobs_done||0)+1;st.proven=true;st.boot_fails=0;
+                  st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,pod:p.name,at:now(),cycle_s:Math.round((now()-x.since)/1000)});
+                  continue;
+                }
                 const fetchAt = now();
                 let postSteps = null;
                 const enh = join(it.dir, 'enhanced');
@@ -1569,12 +1591,20 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               const itemId = st.queue.shift(); const tAssign = now();
               const it = await repo.getMediaItem(itemId);
               const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
-              if (decided(m,it.id)) continue;
+              const whole=st.items?.[itemId]?.kind==='whole';
+              if (!whole&&decided(m,it.id)) continue;
               if (!m?.original) { st.failed.push({ id: itemId, slug: it?.slug, error: 'no original' }); continue; }
               const job = C.jobIdOf(it), src = join(it.dir, m.original), ext = (extname(src).slice(1) || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
               uploadsThisPass++;
               await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
               await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}`);
+              if(whole){
+                const W=await import('../media/whole-result.js'),sha=await W.fileSha(src);
+                await C.podSsh(run,p,`cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`,{timeoutMs:60000,input:JSON.stringify(W.wholeJob(it,m,sha))});
+                p.jobs_assigned=(p.jobs_assigned||0)+1;
+                st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,uploaded_s:Math.round((now()-tAssign)/1000),kind:'whole',input_sha:sha};
+                continue;
+              }
               const work = await fs.readFile(join(it.dir, 'transcript.work.json'), 'utf8').then(JSON.parse).catch(() => null);
               // the rest of the remaster runs on the pod too (word guard, realign, 4 web encodes — scripts/media/worker/post.py); tower validates and publishes
               let post;
