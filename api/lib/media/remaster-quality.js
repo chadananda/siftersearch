@@ -17,7 +17,7 @@ export function qualityOf(meta = {}) {
     realign_unplaced_pct: num(r?.realign_unplaced_pct), listening: meta.enhancement?.listening ?? null,
   };
   const tierOf = (v) => ({ usable: 'heavy', partial: 'heavy', cleaned: 'cleaned', light: 'light' }[v] || null);
-  const out = (verdict, reason) => ({ verdict, tier: tierOf(verdict), reason, metrics, at: new Date().toISOString() });
+  const out = (verdict, reason) => ({ verdict, tier: tierOf(verdict), reason, metrics, ...(meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment ? { output_assessment: meta.remaster?.output_assessment || meta.qa.remaster.output_assessment } : {}), at: new Date().toISOString() });
   if (meta.remaster_tier === 'light' && meta.enhancement?.listening !== 'unipase') {
     if (['D','E'].includes(meta.quality?.overall)) return out(r?.status === 'review' ? 'review' : 'pending', 'poor-quality source has only basic cleanup; full restoration has not passed the publication checks');
     return out('light', 'deterministic light restoration (high-pass, hum notch, loudness); the raw original is kept beside it');

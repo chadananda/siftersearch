@@ -38,6 +38,11 @@
   // audioInfo/s0paras start as the SSR data and are refreshed once on load (liveRefresh below): the page HTML is edge-cached,
   // so a talk remastered after its page was cached still shows the switch within a minute
   let audioInfo = $state(item.audio), s0paras = $state(item.paragraphs);
+  const gain = $derived(audioInfo?.improvement);
+  const remasterLabel = $derived(audioInfo?.remaster_tier === 'light' ? 'Light cleanup' : gain ? `Remastered · ~${gain.percent}% score gain` : 'Remastered');
+  const remasterShort = $derived(audioInfo?.remaster_tier === 'light' ? 'Clean' : gain ? `Rem ~${gain.percent}%` : 'Rem');
+  const remasterTitle = $derived(gain ? `Estimated quality-score increase: ${gain.before} → ${gain.after} out of 5 (${gain.model}), measured on ${gain.samples} matching excerpts.` : 'Compare the processed listening copy with the original');
+
   const hasOriginal = $derived(level === 'full' && !!audioInfo?.remastered && !!(audioInfo.original_url || audioInfo.original_ogg));
   const starts0 = $derived(hasOriginal ? flattenOriginalStarts(s0paras) : null);
   let copy = $state('main');                   // 'main' | 'original': which copy the <audio> holds
@@ -393,15 +398,15 @@
     {#if slim}
       {#if hasOriginal}
         <div class="ab" role="radiogroup" aria-label="Audio version">
-          {#each [['original', 'Orig.'], ['main', audioInfo?.remaster_tier === 'light' ? 'Light cleanup' : 'Remastered']] as [k, label] (k)}
-            <button type="button" role="radio" aria-checked={copy === k} class="ab-opt ab-opt-slim" class:on={copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}>{label}</button>
+          {#each [['original', 'Orig.'], ['main', remasterLabel]] as [k, label] (k)}
+            <button type="button" role="radio" aria-checked={copy === k} title={k === 'main' ? remasterTitle : 'Original recording'} class="ab-opt ab-opt-slim" class:on={copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}>{label}</button>
           {/each}
         </div>
       {/if}
     {:else if hasOriginal}
       <div class="ab mx-auto" role="radiogroup" aria-label="Audio version" data-original-slot>
-        {#each [['original', 'Original', 'Orig'], ['main', audioInfo?.remaster_tier === 'light' ? 'Light cleanup' : 'Remastered', audioInfo?.remaster_tier === 'light' ? 'Clean' : 'Rem']] as [k, label, short] (k)}
-          <button type="button" role="radio" aria-checked={copy === k} aria-busy={loadingCopy && copy === k} class="ab-opt" class:on={copy === k} class:buffering={loadingCopy && copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}><span class="sm:hidden" aria-hidden="true">{short}</span><span class="hidden sm:inline">{label}</span></button>
+        {#each [['original', 'Original', 'Orig'], ['main', remasterLabel, remasterShort]] as [k, label, short] (k)}
+          <button type="button" role="radio" aria-checked={copy === k} title={k === 'main' ? remasterTitle : 'Original recording'} aria-busy={loadingCopy && copy === k} class="ab-opt" class:on={copy === k} class:buffering={loadingCopy && copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}><span class="sm:hidden" aria-hidden="true">{short}</span><span class="hidden sm:inline">{label}</span></button>
         {/each}
       </div>
     {/if}
