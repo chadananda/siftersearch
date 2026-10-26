@@ -60,13 +60,13 @@ export async function homeWholeRecording(it,m,{T,image,legacyLock=true,stop=()=>
  await run(`mkdir -p ${q(remote)} ${q(root+'/leases')}; docker image inspect ${q(image)} >/dev/null`);
  if(!await state()){
   await T.run('rsync',['-a','--protect-args',input,`${host}:${remote+'/in'+extname(m.original).toLowerCase()}`],{timeoutMs:600000,stop});
-  await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify({...wholeJob(it,m,sha),threads:6})});
+  await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify({...wholeJob(it,m,sha),threads:4})});
   while(!await state()){
    if(stop()){const e=Error('Awaiting home slot');e.code='DRAIN';throw e;}
    // A short dispatch lock closes the race between concurrent API jobs. GPU/RAM
    // stages additionally share the process reservation registry inside the image.
    const legacy=legacyLock?'-v /home/chad/media-gpu/.gpu.lock:/gpu.lock -e SIFTER_LEGACY_GPU_LOCK=/gpu.lock':'';
-   const launch=`if [ "$(docker ps --filter 'name=^/whole-[0-9]+-' --format '{{.Names}}' | wc -l)" -lt 2 ]; then docker run -d --name ${q(name)} --gpus all --network none --cpus 8 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} ${legacy} -e SIFTER_GPU_LEASES=1 --entrypoint /usr/local/bin/node ${q(image)} /opt/sifter/api/lib/media/whole-recording.mjs /job; fi`;
+   const launch=`if [ "$(docker ps --filter 'name=^/whole-[0-9]+-' --format '{{.Names}}' | wc -l)" -lt 4 ]; then docker run -d --name ${q(name)} --gpus all --network none --cpus 6 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} ${legacy} -e SIFTER_GPU_LEASES=1 --entrypoint /usr/local/bin/node ${q(image)} /opt/sifter/api/lib/media/whole-recording.mjs /job; fi`;
    await run(`flock -x ${q(root+'/dispatch.lock')} bash -c ${q(launch)}`);
    if(!await state())await nap(10000);
   }

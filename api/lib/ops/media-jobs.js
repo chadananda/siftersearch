@@ -1328,7 +1328,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   if (/pods failed to start/.test(st.cloud_stopped || '')) { st.cloud_stopped = null; st.pod_failures = 0; }
   st.pod_failures = st.pod_failures || 0; st.home = st.home || {}; st.home_done = st.home_done || 0;
   // the legacy home-host path (the gate's 'unipase' verb) has no worker result for tower to take: off in cleanup runs and in STRICT mode (workers only)
-  let homeHosts = acceptedWorker ? [...(acceptedWorker.boss_cpu?['boss','boss-2']:[]),'aorus','aorus-2'] : (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
+  const acceptedHomeHosts=a=>[...(a.boss_cpu?['boss','boss-2']:[]),...Array.from({length:Math.max(2,Math.min(4,Number(a.aorus_slots)||2))},(_,i)=>i?'aorus-'+(i+1):'aorus')];
+  let homeHosts = acceptedWorker ? acceptedHomeHosts(acceptedWorker) : (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
   const homeTasks = new Map();   // host → promise (in this process)
   // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
   const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
@@ -1365,7 +1366,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     for (;;) {
       if (draining()) { yielded = true; await Promise.allSettled([...homeTasks.values()]); break; }
       for(const cur of Object.values(st.home))if(!cur.image&&acceptedWorker)cur.image=acceptedWorker.image;
-      if(C.acceptedWorker){acceptedWorker=await C.acceptedWorker(deps.acceptedWorkerFile);if(acceptedWorker)homeHosts=[...(acceptedWorker.boss_cpu?['boss','boss-2']:[]),'aorus','aorus-2'];}
+      if(C.acceptedWorker){acceptedWorker=await C.acceptedWorker(deps.acceptedWorkerFile);if(acceptedWorker)homeHosts=acceptedHomeHosts(acceptedWorker);}
       for(const [h,cur] of Object.entries(st.home))if(!homeTasks.has(h)&&acceptedWorker?.reset_home_ids?.includes(cur.itemId)&&cur.image!==acceptedWorker.image){
         delete st.home[h];delete st.attempts[cur.itemId];if(!st.queue.includes(cur.itemId))st.queue.unshift(cur.itemId);
         (st.home_recoveries||=[]).push({id:cur.itemId,at:now(),from_image:cur.image,reason:'operator verified stalled before restoration; original retained; old process left untouched'});
