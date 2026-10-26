@@ -1,6 +1,7 @@
 // The media pipeline's model calls (roles in model-roles.js: media-meta, media-correct, media-quotes, media-verify — all
 // Haiku-class, never a hard-coded model). Each returns its result + the tokens it used; the guard in vocab.js decides what
 // a correction may change. Deps injected: create = roleCreate.
+import { DESCRIPTION_STYLE, descriptionEvidence, validDescription } from './descriptions.js';
 import { roleCreate } from '../role-client.js';
 import { getModel } from '../model-registry.js';
 import { modelFor } from '../model-roles.js';
@@ -146,9 +147,23 @@ export async function describeTalk(paragraphs, hints = {}, opts = {}) {
 Give its catalogue description from what the recording itself says (and the hints). Never invent: null when not stated.
 - speakers: each voice label (S1, S2…) → the person's name if stated, else a role ("Questioner", "Interpreter", "Chair").
 - chapters: a section title every 5-15 minutes where the subject changes, by the paragraph number it starts at.
+- summary: ${DESCRIPTION_STYLE}
 ${text}
 Return JSON {"title": "…", "speaker": "main speaker's full name or null", "speakers": {"S1": "…"}, "date": "YYYY-MM-DD or null", "year": number|null, "place": "…|null", "event": "…|null", "language": "en|fa|…", "summary": "2-3 plain sentences", "topics": ["5-10 short topics"], "chapters": [{"p": number, "title": "…"}]}`, { ...opts, max: 8000 });
   return out || {};
+}
+
+/** Re-describe an existing talk without touching its title, attribution or transcript. */
+export async function rewriteDescription(paragraphs, hints={}, opts={}) {
+ const evidence=descriptionEvidence(paragraphs);
+ if(!evidence.length)throw Error('No transcript evidence');
+ const out=await ask('media-meta', `${DESCRIPTION_STYLE}
+Catalogue context (identification only; do not repeat it as the lead): ${JSON.stringify(hints)}
+Transcript evidence, sampled throughout the recording: ${JSON.stringify(evidence)}
+Return JSON {"summary":"description", "evidence":[paragraph numbers supporting its specific claims]}.`, {...opts,max:1000});
+ const cited=Array.isArray(out?.evidence)?out.evidence.map(Number):[];
+ if(!validDescription(out?.summary,hints.speaker) || !cited.length || cited.some(n=>!evidence.some(p=>p.n===n)))throw Error('Description failed editorial/evidence checks');
+ return {summary:out.summary.trim(),evidence:cited};
 }
 
 /**

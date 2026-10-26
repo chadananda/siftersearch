@@ -107,7 +107,7 @@ export function shapeRow(row, { meta = null, quotes = [], wave = null } = {}) {
     s: row.slug, t: row.title || meta?.title || row.slug, sp: row.speaker || null, k: groupKey(row), y: row.year || null,
     d: Math.round(row.duration_s || 0), l: (row.language || 'en').toLowerCase().slice(0, 2), vid: !!row.has_video, yt: row.source_kind === 'youtube',
     g: row.grade || null, pb: playback, col: row.collection || null, at: row.updated_at ? String(row.updated_at).slice(0, 19) : null, qn: row.quotes_n || 0,
-    cn: row.crs_n || 0, sum: meta?.summary ? pullQuote(meta.summary, 150) : null,
+    cn: row.crs_n || 0, sum: meta?.summary ? String(meta.summary).trim() : null,
     tp: (meta?.topics || []).filter((x) => typeof x === 'string').slice(0, 4), h: heads, q: quote, w: waveString(wave),
     hl: highlightWindow({ quote, heads, duration: row.duration_s }),
     // audience 1–5 (assess stage) and up to three verified moments (key, words, start ms, kind) for the dial / ticker

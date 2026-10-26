@@ -1,3 +1,4 @@
+import { mediaDescriptionsJob } from './media-descriptions.js';
 import { mediaPersonApplyJob } from './media-person-apply.js';
 import { mediaPersonReviewJob } from './media-person-review.js';
 // Ops reports — the named, server-side answers to "is the library healthy?". Each runs inside siftersearch-reports (never
@@ -56,6 +57,7 @@ import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 export const REPORTS = {
   'media-person-review': mediaPersonReviewJob,
   'media-person-apply': mediaPersonApplyJob,
+  'media-descriptions': mediaDescriptionsJob,
   /** The Anís audits as a ranked strategy work queue (also /admin/anis#threads). params: { days } */
   async 'strategy-gaps'({ days = 30 } = {}) { return { days, ...strategyGaps(auditsSince(days)) }; },
   /** Who-translated-what coverage (content.translator by basis, translation_by, docs.translators). */

@@ -725,7 +725,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       }
       const desc = await llm.describeTalk(work.paragraphs, { title: meta.title, speaker: meta.speaker, date: meta.date, year: meta.year, event: meta.event, place: meta.place, series: meta.series, source: meta.source?.kind === 'youtube' ? { channel: meta.source.channel, title: meta.source.title } : null }, { spend });
       const byN = new Map(work.paragraphs.map((p) => [p.n, p]));
-      meta.summary = desc.summary || null; meta.topics = desc.topics || [];
+      meta.summary = desc.summary || null; meta.description_version = 2; meta.topics = desc.topics || [];
       // a file-name title that names nothing ("01 (thursday)", "Class 5", "Part 2") gives way to the recording's own subject
       if (desc.title && (String(meta.title || '').length < 14 || /^(?:\d+\b|part\b|class\b|session\b|day\b|talk\b|track\b|untitled)/i.test(String(meta.title || '').trim()))) {
         meta.file_title = meta.title; meta.title = String(desc.title).slice(0, 160);

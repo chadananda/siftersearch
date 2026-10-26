@@ -82,7 +82,7 @@ const heardCache = new Map();    // query → transcript hits (2 min)
 async function loadIndexCache() {
   if (indexCache) return indexCache;
   const saved = await readJson(INDEX_FILE);
-  indexCache = new Map(saved?.v === 1 ? saved.rows.map((x) => [x.id, { at: x.at, row: x.row }]) : []);
+  indexCache = new Map(saved?.v === 2 ? saved.rows.map((x) => [x.id, { at: x.at, row: x.row }]) : []);
   return indexCache;
 }
 async function readIndexFiles(r) {
@@ -99,7 +99,7 @@ async function mediaIndex(budget) {
   const built = await buildIndex(rows, { exclude: (r) => decide({ speakers: [r.speaker], title: r.title || '' })?.excluded, readItem: readIndexFiles, cache, budget: indexBuilding && budget !== Infinity ? 0 : budget });
   if (built.read) {
     const tmp = `${INDEX_FILE}.${process.pid}.tmp`;
-    writeFile(tmp, JSON.stringify({ v: 1, rows: [...cache].map(([id, x]) => ({ id, at: x.at, row: x.row })) })).then(() => rename(tmp, INDEX_FILE)).catch(() => {});
+    writeFile(tmp, JSON.stringify({ v: 2, rows: [...cache].map(([id, x]) => ({ id, at: x.at, row: x.row })) })).then(() => rename(tmp, INDEX_FILE)).catch(() => {});
   }
   if (built.pending && !indexBuilding) indexBuilding = mediaIndex(Infinity).catch(() => null).finally(() => { indexBuilding = null; });
   return built;
