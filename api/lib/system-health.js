@@ -10,16 +10,16 @@ import { execFileSync } from 'child_process';
 // RAM has no block-device counters or SMART; the two /faster filesystems share one physical NVMe.
 export const DEVICES = {
   ram: { mount: '/srv/qram', label: 'Search RAM disk', kind: 'ram', role: 'hot search indexes · volatile memory' },
-  nvme1n1: { mount: '/faster/vectors', label: 'Search NVMe', kind: 'nvme', role: 'vector indexes · partition of the 4 TB NVMe' },
-  nvme0n1: { mount: '/fast', label: 'Database NVMe', kind: 'nvme', role: 'SQLite · database storage' },
-  sdc: { mount: '/crutch', label: 'Interim SSD', kind: 'ssd', role: 'indexer stores' },
+  nvme1n1: { mount: '/faster/vectors', label: '4 TB NVMe · vector partition', kind: 'nvme', role: 'stored vector data · not the active search index' },
+  nvme0n1: { mount: '/fast', label: '1 TB NVMe', kind: 'nvme', role: 'SQLite · active persistent search indexes' },
+  sdc: { mount: '/crutch', label: 'Interim SSD', kind: 'ssd', role: 'legacy index files · older snapshots' },
   sdb: { mount: '/', label: 'System SSD', kind: 'ssd', role: 'OS · services' },
   sdd: { mount: '/tank', label: 'Library HDD', kind: 'hdd', role: 'audio · documents · bulk storage' },
   sda: { mount: '/vault', label: 'Backup HDD', kind: 'hdd', role: 'archive · snapshots' },
 };
 export const STORAGE = [
-  ...Object.entries(DEVICES).slice(0, 3).map(([dev, d]) => ({ dev, ...d })),
-  { dev: 'nvme1n1', mount: '/faster', label: 'Workspace NVMe', kind: 'nvme', role: 'workspace · other partition of the 4 TB NVMe' },
+  ...['ram', 'nvme0n1', 'nvme1n1'].map(dev => ({ dev, ...DEVICES[dev] })),
+  { dev: 'nvme1n1', mount: '/faster', label: '4 TB NVMe · workspace partition', kind: 'nvme', role: 'RAM index recovery snapshots' },
   ...Object.entries(DEVICES).slice(3).map(([dev, d]) => ({ dev, ...d })),
 ];
 
