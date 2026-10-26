@@ -7,9 +7,9 @@ const q=s=>"'"+String(s).replaceAll("'", "'\\''")+"'";
 export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>false,nap=ms=>new Promise(r=>setTimeout(r,ms))}) {
  if(host!=='aorus'&&!(host==='boss'&&mode==='post'))throw Error('Restoration requires Aorus; Boss accepts cached CPU tails');
  const root=host==='boss'?'/home/chad/sifter-whole-home':'/data/sifter-whole-home',docker=host==='boss'?'sudo -n docker':'docker';
- const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,...opts});
- const put=(file,to)=>T.run('rsync',['-a','--protect-args',file,`${host}:${to}`],{timeoutMs:600000});
- const get=(from,to)=>T.run('rsync',['-a','--protect-args',`${host}:${from}`,to],{timeoutMs:600000});
+ const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,stop,...opts});
+ const put=(file,to)=>T.run('rsync',['-a','--partial','--protect-args',file,`${host}:${to}`],{timeoutMs:600000,stop});
+ const get=(from,to)=>T.run('rsync',['-a','--partial','--protect-args',`${host}:${from}`,to],{timeoutMs:600000,stop});
  const work=join(it.dir,'transcript.work.json'), workSha=await sha256File(work);
  const job=`recording-${it.id}-${workSha.slice(0,8)}-${image.slice(-8)}`,remote=`${root}/${job}`;
  const original=(m.enhancement?.variants||[]).find(v=>v.name==='original')||{};
@@ -50,22 +50,23 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
 }
 
 /** New imports return every audio stage; only metadata/text publishing remains. */
-export async function homeWholeRecording(it,m,{T,image,stop=()=>false,nap=ms=>new Promise(r=>setTimeout(r,ms))}) {
+export async function homeWholeRecording(it,m,{T,image,legacyLock=true,stop=()=>false,nap=ms=>new Promise(r=>setTimeout(r,ms))}) {
  const {fileSha,adoptWholeResult,wholeJob}=await import('./whole-result.js');
  const input=join(it.dir,m.original),sha=await fileSha(input),root='/data/sifter-whole-home';
  if(m.worker_result?.input_sha===sha)return m;
  const name=`whole-${it.id}-${sha.slice(0,8)}-${image.slice(-8)}`,remote=`${root}/${name}`,host='aorus';
- const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,...opts});
+ const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,stop,...opts});
  const state=async()=>JSON.parse((await run(`docker inspect ${q(name)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());
  await run(`mkdir -p ${q(remote)} ${q(root+'/leases')}; docker image inspect ${q(image)} >/dev/null`);
  if(!await state()){
-  await T.run('rsync',['-a','--protect-args',input,`${host}:${remote+'/in'+extname(m.original).toLowerCase()}`],{timeoutMs:600000});
-  await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify(wholeJob(it,m,sha))});
+  await T.run('rsync',['-a','--protect-args',input,`${host}:${remote+'/in'+extname(m.original).toLowerCase()}`],{timeoutMs:600000,stop});
+  await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify({...wholeJob(it,m,sha),threads:6})});
   while(!await state()){
    if(stop()){const e=Error('Awaiting home slot');e.code='DRAIN';throw e;}
    // A short dispatch lock closes the race between concurrent API jobs. GPU/RAM
    // stages additionally share the process reservation registry inside the image.
-   const launch=`if [ "$(docker ps --filter name=whole- --format '{{.Names}}' | wc -l)" -lt 2 ]; then docker run -d --name ${q(name)} --gpus all --network none --cpus 4 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} -v /home/chad/media-gpu/.gpu.lock:/gpu.lock -e SIFTER_GPU_LEASES=1 -e SIFTER_LEGACY_GPU_LOCK=/gpu.lock --entrypoint /usr/local/bin/node ${q(image)} /opt/sifter/api/lib/media/whole-recording.mjs /job; fi`;
+   const legacy=legacyLock?'-v /home/chad/media-gpu/.gpu.lock:/gpu.lock -e SIFTER_LEGACY_GPU_LOCK=/gpu.lock':'';
+   const launch=`if [ "$(docker ps --filter name=whole- --format '{{.Names}}' | wc -l)" -lt 2 ]; then docker run -d --name ${q(name)} --gpus all --network none --cpus 8 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} ${legacy} -e SIFTER_GPU_LEASES=1 --entrypoint /usr/local/bin/node ${q(image)} /opt/sifter/api/lib/media/whole-recording.mjs /job; fi`;
    await run(`flock -x ${q(root+'/dispatch.lock')} bash -c ${q(launch)}`);
    if(!await state())await nap(10000);
   }
@@ -77,7 +78,7 @@ export async function homeWholeRecording(it,m,{T,image,stop=()=>false,nap=ms=>ne
   await nap(10000);
  }
  const staging=join(it.dir,'.whole-worker');await fs.mkdir(staging,{recursive:true});
- await T.run('rsync',['-a','--protect-args','--exclude','original',`${host}:${remote+'/item'}`,staging+'/'],{timeoutMs:600000});
- await T.run('rsync',['-a','--protect-args',`${host}:${remote+'/result.json'}`,staging+'/result.json'],{timeoutMs:600000});
+ await T.run('rsync',['-a','--protect-args','--exclude','original',`${host}:${remote+'/item'}`,staging+'/'],{timeoutMs:600000,stop});
+ await T.run('rsync',['-a','--protect-args',`${host}:${remote+'/result.json'}`,staging+'/result.json'],{timeoutMs:600000,stop});
  return adoptWholeResult(staging,it.dir,m,sha);
 }

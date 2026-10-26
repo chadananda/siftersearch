@@ -40,12 +40,8 @@ def main(d):
         with open(tmp, 'w') as f: json.dump({'stage': name, 'at': time.time()}, f)
         os.replace(tmp, os.path.join(d, 'progress.json'))
     stage('unipase')
-    small = torch.cuda.get_device_properties(0).total_memory < 12 * 2**30
-    required = (6.5 if small else 7) * 2**30
-    deadline = time.time() + 1800
-    while torch.cuda.mem_get_info()[0] < required:
-        if time.time() > deadline: raise RuntimeError('GPU headroom did not become available')
-        time.sleep(5)
+    # NVML admission must precede CUDA initialization. Pending processes that
+    # create contexts first can consume the headroom they are all waiting for.
     from worker.gpu_lease import lease
     with contextlib.ExitStack() as phase:
         phase.enter_context(lease('unipase'))

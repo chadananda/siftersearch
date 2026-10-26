@@ -1,7 +1,7 @@
 """Atomic per-stage GPU reservations shared by all recording processes in a worker."""
 import contextlib, fcntl, json, os, shutil, subprocess, time, threading
 
-NEEDS = {'transcribe':4.5,'restore_asr':3.0,'probe':2.5,'langid':2.5,'dfn':1.2,'realign':3.5,'unipase':7.0,'grade':1.0,'guard':0.0}
+NEEDS = {'transcribe':4.5,'restore_asr':3.0,'probe':2.5,'langid':2.5,'dfn':1.2,'realign':3.5,'unipase':5.5,'grade':1.0,'guard':0.0}
 RAM_NEEDS={'transcribe':3.5,'restore_asr':3.5,'probe':2.5,'langid':2.0,'dfn':2.0,'realign':2.5,'unipase':3.5,'grade':3.0,'guard':3.0}
 
 def fits(free, total, reserved, need, margin=.25):
@@ -55,7 +55,6 @@ def lease(stage, need=None, timeout=1800):
                 state=live_reservations(state,namespace,time.time())
                 free,total,temp=sample() if gpu_enabled else (0,0,0)
                 mem=read_system()
-                if stage=='unipase' and gpu_enabled and total<12:need=6.5
                 gpu_ok=not need or (fits(free,total,sum(v['need'] for v in state.values()),need) and temp<87)
                 ram_ok=mem['ram_avail_gb']>=ram+.25 and sum(v.get('ram',0) for v in state.values())+ram+.25<=mem['ram_total_gb']*.9
                 if gpu_ok and ram_ok:

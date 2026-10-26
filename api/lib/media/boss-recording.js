@@ -5,7 +5,7 @@ import {createWriteStream} from 'node:fs';
 import {finished} from 'node:stream/promises';
 import {sha256File,podComplete} from './pod-post.js';
 export async function bossPostRecording(it,m,{T,job,cfg,stop,nap}){
- const call=(verb,opts={})=>T.run('ssh',['-o','BatchMode=yes','boss',verb],{timeoutMs:600000,...opts});
+ const call=(verb,opts={})=>T.run('ssh',['-o','BatchMode=yes','boss',verb],{timeoutMs:600000,stop,...opts});
  const poll=async()=>JSON.parse((await call(`whole-poll ${job}`)).stdout);
  let s=await poll();
  if(!s){
