@@ -8,7 +8,7 @@ import argparse, glob, json, os, subprocess, sys, time
 sys.path.insert(0, '/opt/sifter/media/worker')
 from controller import Controller, sample, STAGES
 
-GPU_STAGE = {'transcribe': 'asr', 'probe': 'asr', 'langid': 'asr', 'unipase': 'unipase', 'grade': 'grade', 'realign': 'realign'}
+GPU_STAGE = {'transcribe': 'asr', 'restore_asr':'asr', 'probe': 'asr', 'langid': 'asr', 'unipase': 'unipase', 'grade': 'grade', 'realign': 'realign'}
 
 def atomic(path, value):
     with open(path + '.tmp', 'w') as f: json.dump(value, f)

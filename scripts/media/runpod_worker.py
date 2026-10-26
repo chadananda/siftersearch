@@ -100,7 +100,7 @@ def transcribe(asr, path, prompt=None, runs=None):
 MODEL_TAG = 'large-v3-turbo (faster-whisper ct2 @0a363e91; no VAD; per-language runs)'
 
 
-def run_job(d, up, inference_file, asr):
+def run_job(d, up, inference_file, asr, release_restore=None):
     import torch
     meta0 = json.load(open(os.path.join(d, 'job.json'))) if os.path.exists(os.path.join(d, 'job.json')) else {}
     if (meta0.get('post') or {}).get('mode') in ('cleanup', 'post'):     # a talk the guard held earlier: only the deterministic cleanup runs (no UniPASE, no ASR here)
@@ -118,9 +118,13 @@ def run_job(d, up, inference_file, asr):
     os.replace(os.path.join(d, 'out.flac.tmp'), os.path.join(d, 'out.flac'))
     t1 = time.time()
     if asr is None:
-        # 8 GB cards run restoration then transcription, never both models in VRAM.
-        up.cpu()
+        # A one-recording worker never needs these weights again. Discard them
+        # before Whisper, rather than holding an unused restoration model in
+        # VRAM throughout transcription (or copying gigabytes into host RAM).
+        if release_restore:up.to_empty(device='cpu')
+        else:up.cpu()
         reclaim_idle_cuda(torch)
+        if release_restore:release_restore()
         from faster_whisper import WhisperModel
         asr = WhisperModel('/opt/models/weights/whisper', device='cuda', compute_type='float16', cpu_threads=2)
         ASR_MODEL['asr'] = asr

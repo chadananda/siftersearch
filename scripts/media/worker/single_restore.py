@@ -4,7 +4,7 @@ On 8 GB cards, restoration and Whisper use the GPU sequentially. Process
 exit releases all model/cache allocations; the container daemon admits other
 recordings while this one guards, aligns and encodes.
 """
-import gc, glob, json, os, sys, time
+import gc, glob, json, os, sys, time, contextlib
 sys.path.insert(0, '/opt/sifter/media')
 import runpod_worker as worker
 
@@ -41,16 +41,21 @@ def main(d):
         os.replace(tmp, os.path.join(d, 'progress.json'))
     stage('unipase')
     small = torch.cuda.get_device_properties(0).total_memory < 12 * 2**30
-    required = (6.5 if small else 8) * 2**30
+    required = (6.5 if small else 7) * 2**30
     deadline = time.time() + 1800
     while torch.cuda.mem_get_info()[0] < required:
         if time.time() > deadline: raise RuntimeError('GPU headroom did not become available')
         time.sleep(5)
     from worker.gpu_lease import lease
-    with lease('unipase'):
-        up, inference, asr = worker.load_models('/opt/unipase', '/opt/models/weights', asr_device='deferred' if small else 'cuda')
+    with contextlib.ExitStack() as phase:
+        phase.enter_context(lease('unipase'))
+        up, inference, asr = worker.load_models('/opt/unipase', '/opt/models/weights', asr_device='deferred')
         worker.ASR_MODEL['asr'] = asr
-        done = worker.run_job(d, up, inference, asr)
+        def restore_finished():
+            phase.close()
+            stage('restore_asr')
+            phase.enter_context(lease('restore_asr'))
+        done = worker.run_job(d, up, inference, asr, release_restore=restore_finished)
         cfg = json.load(open(os.path.join(d, 'job.json'))).get('post') or {}
         if not cfg.get('cleanup', True):
             worker.ASR_MODEL.clear()

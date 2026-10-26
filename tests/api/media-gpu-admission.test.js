@@ -18,7 +18,7 @@ def worker(n):
  g.shutil.which=lambda x:'/bin/true';g.sample=lambda:(20,24,60)
  g.os.readlink=lambda x:'test-pid-namespace'
  c.read_system=lambda:{'ram_total_gb':64,'ram_avail_gb':40}
- with g.lease('unipase',timeout=5):
+ with g.lease('unipase',need=8,timeout=5):
   q.put(n)
   if n<3:release.wait(4)
 ps=[ctx.Process(target=worker,args=(n,)) for n in [1,2]]

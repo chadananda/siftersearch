@@ -258,7 +258,9 @@ export async function cleanRemote(host, job, { exec = run } = {}) {
 export function asrHosts() {
   const spec = process.env.MEDIA_ASR_HOSTS ?? 'aorus:2,boss:4';   // '' → MEDIA_ASR_HOST alone
   if (!spec) return asrHost() ? [{ host: asrHost(), slots: mediaParallel() }] : [];
-  return spec.split(',').map((x) => x.trim()).filter(Boolean).map((x) => { const [host, n] = x.split(':'); return { host, slots: Math.max(1, Number(n) || 1) }; });
+  let hosts=spec.split(',').map((x) => x.trim()).filter(Boolean).map((x) => { const [host, n] = x.split(':'); return { host, slots: Math.max(1, Number(n) || 1) }; });
+  try{const role=JSON.parse(readFileSync(join(ROOT,'data/run/media-worker-accepted.json'),'utf8'));if(role.reserve_aorus_for_whole)hosts=hosts.filter(h=>h.host!=='aorus');}catch{}
+  return hosts;
 }
 const asrBusy = new Map();   // host → jobs this process has in hand there
 /** The host for a NEW transcription: the first (fastest) with a free slot, else the least loaded. Re-attached jobs keep
