@@ -16,7 +16,21 @@ export function greetingEdits(work) {
   }
   return { edits, review };
 }
-export async function mediaGreetingsJob({ ids = null, write = false, limit = 20, after = 0 } = {}, deps = {}) {
+export function approvedWordEdits(work, replacements = []) {
+  const edits = [];
+  for (const p of work.paragraphs || []) for (const [index, word] of (p.words || []).entries()) {
+    const rule = replacements.find(r => fold(r.before) === fold(word.w));
+    if (!rule) continue;
+    const prefix = word.w.match(/^[^\p{L}]*/u)?.[0] || '';
+    const suffix = word.w.match(/[^\p{L}]*$/u)?.[0] || '';
+    const after = prefix + rule.after + suffix;
+    if (after !== word.w) edits.push({ paragraph: p.n, index, before: word.w, after, context: (p.words || []).slice(Math.max(0,index-8),index+9).map(w=>w.w).join(' '), basis: 'user correction' });
+  }
+  return edits;
+}
+export async function mediaGreetingsJob({ ids = null, write = false, limit = 20, after = 0, replacements = [] } = {}, deps = {}) {
+  if (!Array.isArray(replacements) || replacements.length > 20 || replacements.some(r => !r.before || !r.after || /\s/.test(r.before + r.after) || r.before.length > 80 || r.after.length > 80)) throw new Error('Expected at most 20 explicit word replacements');
+  if (replacements.length && (!Array.isArray(ids) || !ids.length)) throw new Error('Explicit corrections require item ids');
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const rows = (await repo.mediaIndexRows()).filter(r => r.id > after && (!ids || ids.includes(r.id))).sort((a,b) => a.id-b.id).slice(0, Math.max(1, Math.min(100, limit)));
@@ -29,7 +43,7 @@ export async function mediaGreetingsJob({ ids = null, write = false, limit = 20,
     if (!row.dir) continue;
     const file = join(row.dir, 'transcript.work.json');
     let raw; try { raw = await readFile(file, 'utf8'); } catch { continue; }
-    const work = JSON.parse(raw), found = greetingEdits(work); result.scanned++;
+    const work = JSON.parse(raw), found = greetingEdits(work); found.edits.push(...approvedWordEdits(work, replacements).filter(e => !found.edits.some(f => f.paragraph === e.paragraph && f.index === e.index))); result.scanned++;
     result.review.push(...found.review.map(r => ({ id: row.id, slug: row.slug, ...r })));
     if (!found.edits.length) continue;
     if (write) {

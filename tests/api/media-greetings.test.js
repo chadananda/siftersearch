@@ -11,3 +11,9 @@ it('holds genuine quotations and ambiguous uses for review', () => {
     const r = greetingEdits(work(text)); expect(r.edits).toEqual([]); expect(r.review).toHaveLength(1);
   }
 });
+it('applies approved spellings to exact tokens and preserves punctuation', async () => {
+  const { approvedWordEdits } = await import('../../api/lib/ops/media-greetings.js');
+  const edits = approvedWordEdits(work('The Ictafal, and Iktubal were mentioned.'), [{before:'Ictafal',after:'Ikhtifal'},{before:'Iktubal',after:'Ikhtifal'}]);
+  expect(edits.map(e=>e.after)).toEqual(['Ikhtifal,','Ikhtifal']);
+  expect(approvedWordEdits(work('An unrelated word.'), [{before:'Ictafal',after:'Ikhtifal'}])).toEqual([]);
+});
