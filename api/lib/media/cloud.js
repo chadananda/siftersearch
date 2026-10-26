@@ -24,7 +24,7 @@ export const CLOUD = {
   // best $ / throughput with ≥ 16 GB (UniPASE peaks at ~4 GB; Whisper turbo ~2 GB): community first
   gpuTypes: ['NVIDIA GeForce RTX 4090', 'NVIDIA RTX A5000', 'NVIDIA GeForce RTX 3090', 'NVIDIA RTX A4500', 'NVIDIA A40', 'NVIDIA RTX A6000'],
   image: 'runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04',
-  perPod: 4,            // jobs in flight per pod (10-24 measured: GPU ~70 s of a ~12 min cycle — uploads, the CPU half and downloads overlap the next talks' GPU time)
+  perPod: 6,            // prefetch only: match the worker's six post slots so four long CPU tails cannot starve its GPU; live controller still admits work
   bootTimeoutMs: 15 * 60_000,     // no SSH after this → terminate and replace (the 23 GB baked image takes 5-12 min to pull on a cold host; 10-24 measured)
   warmTimeoutMs: 20 * 60_000,     // the bootstrap (pip + the verified weights) must finish in this
   deadAfterMs: 4 * 60_000,

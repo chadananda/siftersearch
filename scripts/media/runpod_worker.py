@@ -214,6 +214,8 @@ def main():
         if ctl.state == 'drain' and not active:
             terminate_self('unstable worker: repeated failures'); sys.exit(0)
         ready = sorted(glob.glob(os.path.join(a.spool, '*', 'ready')), key=os.path.getmtime)
+        if active:
+            last = time.time()  # long CPU tails are useful work, not time spent idle
         admitted = False
         if ready and len(active) < 6:
             with ctl_lock:
