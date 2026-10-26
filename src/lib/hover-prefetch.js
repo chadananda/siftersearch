@@ -1,4 +1,4 @@
-// Hover/focus/touch on a link to a talk page: prefetch its HTML and warm its audio at the edge (POST /_media/warm), so the
+// Hover/focus/touch on a link to a talk page: prefetch its HTML only, so the
 // click lands on a warm page (Chad 10-24). ~65 ms dwell skips fly-bys; once per talk per session; at most 2 at a time;
 // never on Save-Data or a 2g/3g connection. Browser only.
 export const TALK_HREF = /^\/media\/([a-z0-9][a-z0-9-]{0,99})\/?$/;
@@ -15,13 +15,7 @@ export function startHoverPrefetch({ dwell = 65, max = 2 } = {}) {
     done.add(slug); active++;
     try {
       const l = document.createElement('link'); l.rel = 'prefetch'; l.as = 'document'; l.href = `/media/${slug}`; document.head.appendChild(l);
-      const r = await fetch(`/api/media/${slug}`);   // edge-cached; says which files exist and at which version
-      if (!r.ok) return;
-      const a = (await r.json()).audio;
-      const v = /[?&]v=(\d+)/.exec(a?.m4a || '')?.[1];
-      if (!v) return;
-      const fmt = new Audio().canPlayType('audio/ogg; codecs="opus"') ? 'ogg' : 'm4a';
-      await fetch(`/_media/warm?slug=${slug}&v=${v}&fmt=${fmt}&copy=${a.remastered ? 'both' : 'main'}`, { method: 'POST' });
+
     } catch { /* a prefetch never matters */ } finally { active--; }
   };
   const slugOf = (e) => talkSlug(e.target?.closest?.('a[href]')?.getAttribute('href'));
@@ -32,7 +26,7 @@ export function startHoverPrefetch({ dwell = 65, max = 2 } = {}) {
   document.addEventListener('pointerout', out, { passive: true });
   document.addEventListener('focusin', now);
   document.addEventListener('touchstart', now, { passive: true });
-  // talk cards scrolling into view (dwell ~700 ms, at most one at a time): the audio fill starts before anyone points at them
+  // Talk cards scrolling into view may prefetch HTML; audio transfers require an actual playback request.
   let seen = 0; const dwellers = new Map();
   const io = typeof IntersectionObserver === 'function' ? new IntersectionObserver((es) => es.forEach((e) => {
     const slug = talkSlug(e.target.getAttribute('href'));

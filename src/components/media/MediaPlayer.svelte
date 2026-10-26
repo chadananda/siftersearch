@@ -393,7 +393,7 @@
     {#if slim}
       {#if hasOriginal}
         <div class="ab" role="radiogroup" aria-label="Audio version">
-          {#each [['original', 'Orig.'], ['main', 'Remastered']] as [k, label] (k)}
+          {#each [['original', 'Orig.'], ['main', audioInfo?.remaster_tier === 'light' ? 'Light cleanup' : 'Remastered']] as [k, label] (k)}
             <button type="button" role="radio" aria-checked={copy === k} class="ab-opt ab-opt-slim" class:on={copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}>{label}</button>
           {/each}
         </div>
@@ -409,6 +409,7 @@
 {/snippet}
 
 <article class="talk">
+  {#if audioInfo?.restoration_status === 'pending'}<p class="mt-3 text-sm text-radio-ink">Full restoration is pending. This listening copy has only basic cleanup.</p>{/if}
   <!-- the broadcast card continues from TalkHero (SSR-only, above this island): the player on the dial glass -->
   <div class="cabinet-tail rounded-b-3xl bg-radio-walnut-deep px-2.5 pb-2.5 sm:px-3 sm:pb-3">
     <div class="cabinet-inner rounded-b-2xl bg-radio-walnut px-4 pb-5 pt-1 sm:px-8 sm:pb-7">
@@ -422,8 +423,7 @@
               {:else if playing}
                 <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
               {:else}
-                <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">{#if audioInfo?.restoration_status === 'pending'}<p class="mt-3 text-sm text-radio-ink">Full restoration is pending. This listening copy has only basic cleanup.</p>{/if}
-        <path d="M7 4.5v15l13-7.5z"/></svg>
+                <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
               {/if}
             </button>
             <div class="min-w-0 flex-1">

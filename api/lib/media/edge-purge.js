@@ -4,8 +4,7 @@ export async function purgeTalk(slug, { version = null, fetchImpl = fetch, key =
   if (!slug || !key || process.env.VITEST || process.env.NODE_ENV === 'test') return false;
   try {
     const r = await fetchImpl(`${origin}/_edge/purge?slug=${encodeURIComponent(slug)}`, { method: 'POST', headers: { 'x-internal-key': key }, signal: AbortSignal.timeout(10_000) });
-    // then warm both audio copies into R2 (idempotent; missing objects only: the one time the tower serves these bytes)
-    if (r.ok && version) for (const fmt of ['ogg', 'm4a']) await fetchImpl(`${origin}/_media/warm?slug=${encodeURIComponent(slug)}&v=${version}&fmt=${fmt}&copy=both`, { method: 'POST', signal: AbortSignal.timeout(300_000) }).catch(() => {});
+    // Metadata publication must not copy audio through the public tunnel. Playback requests warm only the selected file.
     return r.ok;
   } catch { return false; }
 }
