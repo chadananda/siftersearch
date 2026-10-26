@@ -59,7 +59,7 @@
           </div>
         </div>
       </div>
-      {#if item.summary}<p class="mt-6 max-w-3xl text-base leading-relaxed text-radio-on-dark opacity-90 sm:text-lg">{item.summary}</p>{/if}
+      <p data-talk-description hidden={!item.summary} class="mt-6 max-w-3xl text-base leading-relaxed text-radio-on-dark opacity-90 sm:text-lg">{item.summary || ''}</p>
     </div>
   </header>
 </div>

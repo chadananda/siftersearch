@@ -1,10 +1,19 @@
 <script>
-  import { duration, fold } from '../../lib/media-listing.js';
+  import { onMount } from 'svelte';
+  import { media } from '../../lib/api.js';
+  import { liveRefresh } from '../../lib/live-data.js';
+  import { resolveCollection } from '../../lib/media-collection.js';
+  import { duration, fold, safeIndex } from '../../lib/media-listing.js';
   import { playExcerpt, preview } from '../../lib/media-preview.svelte.js';
   import MiniPlayer from './listening/MiniPlayer.svelte';
-  let { items = [], speaker, series = false } = $props();
+  let { items = [], speaker, series = false, collectionKey = null } = $props();
   let query = $state('');
-  const shown = $derived(query.trim() ? items.filter(it=>fold([it.t,it.sum,...(it.tp||[])].join(' ')).includes(fold(query))) : items);
+  let rows = $state(items);
+  onMount(() => liveRefresh(async () => {
+    const data = safeIndex(await media.index());
+    return resolveCollection(data, series ? 'series' : 'speaker', collectionKey || speaker.k)?.items || null;
+  }, fresh => { rows = fresh; }, {every:60_000, idle:false, initial:items}));
+  const shown = $derived(query.trim() ? rows.filter(it=>fold([it.t,it.sum,...(it.tp||[])].join(' ')).includes(fold(query))) : rows);
   const language = code => ({en:'English',fa:'Persian',pe:'Persian',ar:'Arabic',es:'Spanish',fr:'French',de:'German'}[code]||code);
 </script>
 <section aria-labelledby="recordings-h" class="mt-10">

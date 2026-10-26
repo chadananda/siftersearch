@@ -343,11 +343,21 @@
       range = r.end != null ? r : null;
       tick().then(() => { const k = wordAt(flat.starts, r.start + 0.02); mark(k); wordEls[k]?.scrollIntoView({ block: 'center' }); });
     }
-    if (level === 'full' && !hasOriginal) {   // a talk remastered after its page was cached: fetch the current audio block once
-      const stop = liveRefresh(async () => { const r = await fetch(media.href(`/api/media/${encodeURIComponent(item.slug)}?live=${Math.floor(Date.now() / 60000)}`)); if (!r.ok) throw new Error(String(r.status)); const d = await r.json(); return d.audio?.remastered ? { audio: d.audio, paragraphs: d.paragraphs } : null; },
-        (d) => { if (d) { audioInfo = d.audio; s0paras = d.paragraphs; warmAudio(); } }, { every: 0, initial: null });
-      cleanups.push(stop);
-    }
+    // The hero is server-rendered outside this island. Refresh its description
+    // along with the audio metadata so a cached page cannot hide editorial updates.
+    const stopMetadata = liveRefresh(async () => {
+      const d = await media.get(item.slug);
+      return {summary:d.summary, audio:d.audio, paragraphs:d.paragraphs};
+    }, d => {
+      const description = document.querySelector('.talk-hero [data-talk-description]');
+      if (description && typeof d.summary === 'string') {
+        description.textContent = d.summary;
+        description.hidden = !d.summary;
+      }
+      if (d.audio?.remastered) { audioInfo = d.audio; s0paras = d.paragraphs; warmAudio(); }
+    }, {every:60_000, idle:false, initial:{summary:item.summary,audio:item.audio},
+      same:(a,b)=>a.summary===b.summary && JSON.stringify(a.audio)===JSON.stringify(b.audio)});
+    cleanups.push(stopMetadata);
     if (level === 'full' && canPlay) warmAudio();   // loading the page warms both copies at the edge (idempotent)
     if (canPlay) sessionSetup();
     const silent = () => audio.src.startsWith('blob:');   // the unlock blip, not the talk

@@ -38,7 +38,7 @@ const total=c.items.reduce((n,it)=>n+(it.d||0),0);
           </a></li>)}
         </ul>
       </section>}
-      <TalkCollection client:load items={c.items} speaker={c.speaker} series={!!c.group} />
+      <TalkCollection client:load items={c.items} speaker={c.speaker} series={!!c.group} collectionKey={c.group ? {speaker:c.group.speakerKey,slug:c.group.slug} : c.speaker.k} />
     </div>
   </main>
 </Layout>
