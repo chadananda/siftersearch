@@ -7,7 +7,7 @@
   import { fly } from 'svelte/transition';
   import RecordLabel from './RecordLabel.svelte';
   import Wave from './Wave.svelte';
-  import { tallSrc, portraitTall, portraitCard, duration, eraVar, waveHeights } from '../../../lib/media-listing.js';
+  import { tallSrc, portraitTall, portraitSquare, portraitCard, duration, eraVar, waveHeights } from '../../../lib/media-listing.js';
   import { preview, playExcerpt } from '../../../lib/media-preview.svelte.js';
   import { dayPick } from '../../../lib/speaker-gallery.js';
 
@@ -91,20 +91,20 @@
       {#if c.kind === 'box'}
         {@const s = dayPick(c.speaker)}   <!-- today's photo from the speaker's gallery (Chad 10-23) -->
         <!-- tall and wide crops use the EXTENDED master (outpainted once per portrait, media agent) when there is one -->
-        {@const pic = !c.series && s.p ? portraitTall(tallSrc(s), c.size === 'lg' ? 220 : 160) : null}
-        <article class="box h-full">
+        {@const pic = s.p ? (c.series ? portraitSquare : portraitTall)(tallSrc(s), c.size === 'lg' ? 220 : 160) : null}
+        <article class="box h-full" class:box-series={!!c.series}>
           <a href={boxHref(c)} class="box-head flex gap-4" onclick={(e) => toBox(e, c)} aria-label={c.series ? `${c.series.name}: ${c.total} talks by ${s.n}` : `All ${s.c || c.total} talks by ${s.n}`}>
             <div class="box-pic">
               {#if pic}
-                <img src={pic.src} srcset={pic.srcset} alt={s.n} title={s.cr ? `${s.n} — photo: ${s.cr}` : s.n} width={c.size === 'lg' ? 220 : 160} height={Math.round((c.size === 'lg' ? 220 : 160) * 1.25)} loading="lazy" decoding="async" class="h-full w-full object-cover" />
+                <img src={pic.src} srcset={pic.srcset} alt={s.n} title={s.cr ? `${s.n} — photo: ${s.cr}` : s.n} width={c.size === 'lg' ? 220 : 160} height={Math.round((c.size === 'lg' ? 220 : 160) * (c.series ? 1 : 1.25))} loading="lazy" decoding="async" class="h-full w-full object-cover" />
               {:else}
-                <div class="h-full w-full p-2"><RecordLabel name={c.series?.name || s.n} year={c.series?.y0 || s.y0} size={120} /></div>
+                <div class="h-full w-full p-2"><RecordLabel name={s.n} year={c.series?.y0 || s.y0} size={120} /></div>
               {/if}
             </div>
             <div class="min-w-0 self-end">
               <p class="font-dial text-xs font-bold uppercase tracking-[0.22em] text-radio-brass-bright">{c.series ? 'Series box set' : 'Box set'}{!c.series && ROLE[s.role] ? ` · ${ROLE[s.role]}` : ''}</p>
+              {#if c.series}<p class="box-speaker mt-1 font-dial text-2xl font-bold leading-tight text-radio-brass-bright">{s.n}</p>{/if}
               <h3 class="box-name font-marquee text-2xl leading-tight text-radio-on-dark sm:text-3xl">{c.series?.name || s.n}</h3>
-              {#if c.series}<p class="mt-1 text-sm text-radio-on-dark">{s.n}</p>{/if}
               <p class="mt-1 font-dial text-base font-semibold uppercase tracking-wider text-radio-on-dark opacity-80">{c.series ? c.total : s.c || c.total} talks{(c.series || s).y0 ? ` · ${(c.series || s).y0}${(c.series || s).y1 && (c.series || s).y1 !== (c.series || s).y0 ? `–${(c.series || s).y1}` : ''}` : ''}</p>
             </div>
           </a>
@@ -228,6 +228,10 @@
   .box-head:hover .box-pic { box-shadow: 0 0 0 3px var(--radio-amber), 0 6px 16px rgba(0, 0, 0, 0.4); }
   .box-pic { flex: none; transition: box-shadow 0.2s; width: 5.5rem; height: 6.9rem; border-radius: 0.6rem; overflow: hidden; box-shadow: 0 0 0 2px var(--radio-brass), 0 6px 16px rgba(0, 0, 0, 0.4); background: var(--radio-walnut-deep); }
   .s-lg .box-pic { width: 7.5rem; height: 9.4rem; }
+  .box-series .box-pic { height: 5.5rem; }
+  .s-lg .box-series .box-pic { height: 7.5rem; }
+  .box-series .box-pic img { filter: sepia(0.18); }
+  .box-series .box-name { margin-top: 0.35rem; }
   .spines { position: relative; flex: 1; min-height: 0; margin-top: 0.9rem; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; scrollbar-width: thin; scrollbar-color: var(--radio-brass) transparent; }
   .spine-list { display: flex; flex-direction: column; gap: 3px; padding: 0 0 3px; }
   .spines:not(.loopable) .spine-list + .spine-list { display: none; }

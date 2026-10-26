@@ -30,7 +30,7 @@ export const eraVar = (y) => `var(--era-${eraKey(y)})`;
 const str = (v) => (typeof v === 'string' ? v : v == null ? null : String(v));
 const num = (v) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null);
 const arr = (v) => (Array.isArray(v) ? v : []);
-const md = (t) => String(t || '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/^[\s*#>_-]+/, '').replace(/[*_`#]+/g, '').replace(/\s+/g, ' ').trim();
+const md = (t) => String(t || '').replace(/\\([\\`*{}\[\]()#+\-.!_>|~])/g, '$1').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/^[\s*#>_-]+/, '').replace(/[*_`#]+/g, '').replace(/\s+/g, ' ').trim();
 /** A citation that is really a file slug or path ("pdf-b-bahaullah, bahaullah_abdul-baha_sacred_writings_book") is not shown. */
 export const slugLike = (c) => !c || /(^|[\s,])pdf-|_[a-z]|^[a-z0-9]+(?:[-_][a-z0-9]+){2,}$/.test(String(c).trim()) || /\.(pdf|md|html?)\b/i.test(c);
 /** A "quote" that is a table of contents (numbered entries, mostly Title-Cased fragments, a Preface/Contents header). */

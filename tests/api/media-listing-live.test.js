@@ -50,6 +50,11 @@ describe('the /media page renders the live index', () => {
 });
 
 describe('pull-quotes are made safe to show (10-22: a TOC with markdown and a slug as citation was rotating)', () => {
+  it('renders escaped note brackets without exposing Markdown backslashes', () => {
+    const q = safeQuote({ x: String.raw`God testifieth that there is no God but He, \[20\] and He that hath appeared \[21\] is the Preserved Treasure.`, c: String.raw`Bahá’u’lláh, Tablet \(Visitation\)` });
+    expect(q.x).toBe('God testifieth that there is no God but He, [20] and He that hath appeared [21] is the Preserved Treasure.');
+    expect(q.c).toBe('Bahá’u’lláh, Tablet (Visitation)');
+  });
   it('drops tables of contents and slug citations, strips markdown', () => {
     expect(safeQuote({ x: '* * Bahá’í Sacred Writings Preface I. The Báb II. Bahá’u’lláh III. ‘Abdu’l-Bahá', c: 'pdf-b-bahaullah, bahaullah_abdul-baha_sacred_writings_book' })).toBe(null);
     expect(safeQuote({ x: '**Say:** the soul is a [sign](https://x) of God, and its station is exalted above all.', c: 'bahaullah_gleanings' })).toEqual({ x: 'Say: the soul is a sign of God, and its station is exalted above all.', c: null, t0: 0, t1: null });
