@@ -1,8 +1,8 @@
 """Atomic per-stage GPU reservations shared by all recording processes in a worker."""
 import contextlib, fcntl, json, os, shutil, subprocess, time, threading
 
-NEEDS = {'transcribe':4.5,'restore_asr':3.0,'probe':2.5,'langid':2.5,'dfn':1.2,'realign':3.5,'unipase':5.5,'grade':1.0,'guard':0.0}
-RAM_NEEDS={'transcribe':3.5,'restore_asr':3.5,'probe':2.5,'langid':2.0,'dfn':2.0,'realign':2.5,'unipase':3.5,'grade':3.0,'guard':3.0}
+NEEDS = {'transcribe':4.5,'restore_asr':3.0,'probe':2.5,'langid':2.5,'diarize':1.5,'dfn':1.2,'realign':3.5,'unipase':5.5,'grade':1.0,'guard':0.0}
+RAM_NEEDS={'transcribe':3.5,'restore_asr':3.5,'probe':2.5,'langid':2.0,'diarize':2.0,'dfn':2.0,'realign':2.5,'unipase':3.5,'grade':3.0,'guard':3.0}
 
 def fits(free, total, reserved, need, margin=.25):
     return free >= need+margin and reserved+need+margin <= total*.9

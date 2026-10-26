@@ -6,3 +6,4 @@ COPY rootfs/ /
 
 ENV PYTHONPATH="/opt/worker-extras:/opt/sifter/media"
 ENV NLTK_DATA="/opt/models/nltk_data"
+ENV LD_LIBRARY_PATH="/opt/conda/lib/python3.11/site-packages/nvidia/cudnn/lib:/opt/conda/lib/python3.11/site-packages/nvidia/cublas/lib:/opt/conda/lib/python3.11/site-packages/nvidia/cuda_runtime/lib:/opt/conda/lib/python3.11/site-packages/nvidia/curand/lib:/opt/conda/lib/python3.11/site-packages/nvidia/cufft/lib:/opt/conda/lib/python3.11/site-packages/nvidia/cusolver/lib:/opt/conda/lib/python3.11/site-packages/nvidia/cusparse/lib:/opt/conda/lib/python3.11/site-packages/nvidia/nvjitlink/lib:${LD_LIBRARY_PATH}"

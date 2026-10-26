@@ -749,7 +749,7 @@ def main():
     os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))   # a retry after an OOM sets more
     fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels, 'spkscreen': cmd_spkscreen, 'spkmerge': cmd_spkmerge, 'realign': cmd_realign}[a.cmd]
     try:
-        if os.environ.get('SIFTER_GPU_LEASES') == '1' and a.cmd in ['transcribe','probe','langid','dfn','realign','grade']:
+        if os.environ.get('SIFTER_GPU_LEASES') == '1' and a.cmd in ['transcribe','probe','langid','diarize','dfn','realign','grade']:
             from worker.gpu_lease import lease
             with lease(a.cmd): fn(a)
         else: fn(a)

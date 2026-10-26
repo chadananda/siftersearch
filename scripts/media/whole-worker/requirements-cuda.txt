@@ -1,0 +1,3 @@
+# Optional CUDA diarization runtime baked alongside the CPU runtime.
+# Same API/model version as the tested Aorus host. Download during image build only.
+https://huggingface.co/csukuangfj2/sherpa-onnx-wheels/resolve/main/cuda/1.13.8/sherpa_onnx-1.13.8%2Bcuda12.cudnn9.onnxruntime1.28.2-cp311-cp311-linux_x86_64.whl#sha256=638f7e897afaf83e6bf40bc2d5f3f9a2b7483957ddedc61c26080c03b2f99c28

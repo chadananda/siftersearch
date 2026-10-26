@@ -18,7 +18,8 @@ if(job.v!==1 || !/^in\.[a-z0-9]{2,5}$/.test(job.input||'') || !job.meta?.slug)th
 const threads=Math.max(1,Math.min(8,job.threads||2));
 process.env.SIFTER_GPU_LEASES='1';process.env.HF_HUB_OFFLINE='1';process.env.TRANSFORMERS_OFFLINE='1';process.env.TORCH_HOME='/root/.cache/torch';
 process.env.MEDIA_TOWER_HEAVY='1'; // this executable runs ONLY inside the worker
-process.env.NLTK_DATA='/opt/models/nltk_data';process.env.PYTHONPATH='/opt/worker-extras';process.env.PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True';
+process.env.NLTK_DATA='/opt/models/nltk_data';process.env.PYTHONPATH=(job.device==='cpu'?'':'/opt/worker-cuda:')+'/opt/worker-extras';process.env.PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True';
+process.env.MEDIA_DIAR_PROVIDER=job.device==='cpu'?'cpu':'cuda';process.env.MEDIA_DIAR_NO_CPU='1';
 process.env.MEDIA_PYTHON='/opt/gate/venv/bin/python';
 process.env.MEDIA_DFN_PYTHON='/opt/gate/venv-dfn/bin/python';
 process.env.MEDIA_REMASTER_STRICT='0';process.env.MEDIA_REMASTER_GRADES='A,B,C,D,E';
@@ -42,7 +43,7 @@ await writeFile(join(dir,'meta.json'),JSON.stringify(meta));
 const state=async stage=>writeFile(join(jobDir,'progress.json'),JSON.stringify({at:Date.now(),stage}));
 const tool=async(sub,input,opts={},ctl={})=>{
  await state(sub);
- const args=['/opt/sifter/media/media_tool.py',sub,input,'--threads',String(threads),'--models','/opt/gate/models'];
+ const args=['/opt/sifter/media/media_tool.py',sub,input,'--threads',String(sub==='diarize'&&job.device!=='cpu'?1:threads),'--models','/opt/gate/models'];
  for(const [k,v] of Object.entries(opts)){if(v===true)args.push('--'+k);else if(v!==null&&v!==undefined&&v!==false&&v!=='')args.push('--'+k,String(v));}
  const python=sub==='dfn'?process.env.MEDIA_DFN_PYTHON:process.env.MEDIA_PYTHON;
  const env={...(job.device==='cpu'?{CUDA_VISIBLE_DEVICES:'',MEDIA_DEVICE:'cpu'}:{}),...(ctl.needGb?{MEDIA_STAGE_RAM_GB:String(ctl.needGb)}:{})};
