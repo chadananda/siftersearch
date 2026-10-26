@@ -343,7 +343,7 @@ export async function asr(sub, input, opts = {}, { host = asrHost(), threads = a
     if (r.error) throw new Error(`asr gate: ${r.error}`);
     return { ...r, host };
   } catch (err) {
-    if (err.code !== 'DRAIN' && /ssh exit 255|Connection|timed out|No route/i.test(err.message)) return local(sub, input, opts, { timeoutMs, stop });   // host unreachable → tower
+    if (err.code !== 'DRAIN' && /ssh exit 255|Connection|timed out|No route/i.test(err.message)) return await local(sub, input, opts, { timeoutMs, stop });   // host unreachable → tower
     throw err;
   } finally { await unlink(flac).catch(() => {}); }
 }

@@ -1411,7 +1411,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
         const pod = await C.createPod(name, pub, { ...deps, prefer: C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
         if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
-        else st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting' };
+        else {
+          st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting' };
+          await save(st);  // persist the paid allocation before slow audio transfers or a process restart
+        }
       }
       const utilBy = {};
       // every pod at once: a pod's downloads / uploads (~7 MB/s each over the tunnel) never hold the other pods' GPUs idle
@@ -1647,6 +1650,7 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
  *  stamps meta.remaster_tier = 'light' and bumps meta.version. Encodes run on boss (encodeRemote), never on tower: when boss has no free slot the
  *  talk simply waits for the next pass. A few talks per pass, low priority. → { done, waiting, skipped } */
 export async function mediaLightBackfillJob({ limit = 3, write = true } = {}, deps = {}) {
+  const draining = deps.draining || (await import('../drain.js')).isDraining;
   const repo = deps.repo || await import('../repos/media-repo.js');
   const T = deps.tools || await import('../media/tools.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
@@ -1654,6 +1658,7 @@ export async function mediaLightBackfillJob({ limit = 3, write = true } = {}, de
   const busy = new Set((await Promise.all(['media-item', 'media-remaster', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n).catch(() => [])))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
   const out = { done: [], waiting: [], skipped: 0, remaining: 0 };
   for (const it of await repo.remasterCandidates(['A', 'B', 'C', 'D', 'E'])) {
+    if (draining()) break;
     if (!it.dir || busy.has(it.id)) { out.skipped++; continue; }
     const mf = join(it.dir, 'meta.json');
     const m = JSON.parse(await fs.readFile(mf, 'utf8').catch(() => 'null'));
@@ -1665,8 +1670,8 @@ export async function mediaLightBackfillJob({ limit = 3, write = true } = {}, de
     const ogg = join(web, `${m.slug}.original.ogg`), m4a = join(web, `${m.slug}.original.m4a`);
     const refuse = () => { throw new Error('no free encode host: not on tower'); };
     try {
-      await Promise.all([T.encodeRemote('ogg', src, ogg, { af: '', job: `${m.slug}-lo-ogg`.slice(0, 110), local: refuse }), T.encodeRemote('m4a', src, m4a, { af: '', job: `${m.slug}-lo-m4a`.slice(0, 110), local: refuse })]);
-    } catch (err) { out.waiting.push(`${m.slug}: ${String(err.message).slice(0, 80)}`); continue; }
+      await Promise.all([T.encodeRemote('ogg', src, ogg, { af: '', job: `${m.slug}-lo-ogg`.slice(0, 110), local: refuse, stop: draining }), T.encodeRemote('m4a', src, m4a, { af: '', job: `${m.slug}-lo-m4a`.slice(0, 110), local: refuse, stop: draining })]);
+    } catch (err) { if (err.code === 'DRAIN') break; out.waiting.push(`${m.slug}: ${String(err.message).slice(0, 80)}`); continue; }
     const fresh = JSON.parse(await fs.readFile(mf, 'utf8').catch(() => 'null'));
     if (!fresh || fresh.web_original || fresh.original !== m.original) continue;   // a run changed the talk meanwhile
     fresh.web_original = { ogg: `web/${m.slug}.original.ogg`, m4a: `web/${m.slug}.original.m4a` };

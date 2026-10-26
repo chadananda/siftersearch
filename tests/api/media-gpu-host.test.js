@@ -409,3 +409,18 @@ describe('encodes go to the worker pool (10-24: web encodes leave tower)', () =>
     for (const k of ["webEnc('ogg'", "webEnc('m4a'", "trimEnc('togg'", "trimEnc('tm4a'", "trimEnc('toogg'", "trimEnc('tom4a'"]) expect(item).toContain(k);
   });
 });
+
+describe('an unreachable probe host while Tower refuses heavy work', () => {
+  it('returns WorkerWait to the caller without an unhandled rejection during temp-file cleanup', async () => {
+    const { execFileSync } = await import('node:child_process');
+    const out = execFileSync(process.execPath, ['--input-type=module', '-e', `
+      import { asr, WorkerWait } from ${JSON.stringify(new URL('../../api/lib/media/tools.js', import.meta.url).href)};
+      let caught;
+      try { await asr('probe', '/nonexistent', {}, { host: 'no-such-media-host.invalid', local: async () => { throw new WorkerWait('probe'); } }); }
+      catch (error) { caught = error.code; }
+      await new Promise(resolve => setTimeout(resolve, 20));
+      console.log(JSON.stringify({ caught }));
+    `], { encoding: 'utf8', timeout: 20000 });
+    expect(JSON.parse(out.trim())).toEqual({ caught: 'WORKER_WAIT' });
+  });
+});

@@ -212,6 +212,18 @@ describe('the lane: GPU is rented only for work', () => {
     expect(times).toHaveLength(3);
     expect(new Set(times).size).toBe(3);
   });
+  it('persists a paid allocation before an existing pod starts a slow audio transfer', async () => {
+    const x = setup({ talks: 4, seconds: 3600 });
+    writeFileSync(x.deps.stateFile, JSON.stringify({ started: 1, proven: true, pods: { old: { id: 'old', name: 'old-pod', status: 'ready', ip: '1.2.3.4', port: 2222, created: x.clock() - 1000, costPerHr: 0.34 } },
+      jobs: {}, queue: [1, 2, 3, 4], attempts: {}, done: [], failed: [], items: Object.fromEntries([1, 2, 3, 4].map(id => [id, { duration_s: 3600 }])), spent_closed: 0 }));
+    const recorded = [], run = x.deps.run;
+    x.deps.run = async (cmd, args, opts) => {
+      if (cmd === 'scp' && /\/spool\/.*\/in\./.test(args.at(-1))) recorded.push(!!JSON.parse(readFileSync(x.deps.stateFile, 'utf8')).pods.p1);
+      return run(cmd, args, opts);
+    };
+    await mediaCloudRemasterJob({ write: true, maxPods: 2 }, x.deps);
+    expect(recorded[0]).toBe(true);
+  });
   it('an empty queue launches no pod', async () => {
     const x = setup({ talks: 0 });
     const r = await mediaCloudRemasterJob({ write: true, ids: null }, { ...x.deps, minHours: 2 });
@@ -438,6 +450,26 @@ describe('light tier backfill: raw original beside the playing copy, encoded on 
     expect(m).toMatchObject({ remaster_tier: 'light', version: 3, web_original: { ogg: 'web/t1.original.ogg', m4a: 'web/t1.original.m4a' } });
     expect(m.qa.remaster).toMatchObject({ verdict: 'light', tier: 'light' });
     expect(enc.mock.calls.every(([, , out]) => out.endsWith('.original.ogg') || out.endsWith('.original.m4a'))).toBe(true);
+  });
+});
+
+describe('light backfill drains without holding the rental manager', () => {
+  it('passes the stop callback into encodes and starts no later talk after a drain', async () => {
+    const { mediaLightBackfillJob } = await import('../../api/lib/ops/media-jobs.js');
+    const dir = mkdtempSync(join(tmpdir(), 'lt-drain-'));
+    writeFileSync(join(dir, 'meta.json'), JSON.stringify({ slug: 'first', original: 'o.mp3' }));
+    let draining = false;
+    const stop = () => draining;
+    const encodeRemote = vi.fn(async (recipe, input, output, opts) => {
+      expect(opts.stop).toBe(stop);
+      draining = true;
+      throw Object.assign(new Error('draining'), { code: 'DRAIN' });
+    });
+    const r = await mediaLightBackfillJob({ limit: 5 }, { draining: stop, tools: { encodeRemote }, ops: { pendingRuns: async () => [] },
+      repo: { remasterCandidates: async () => [{ id: 1, dir }, { id: 2, dir }] } });
+    expect(encodeRemote).toHaveBeenCalledTimes(2);
+    expect(r.done).toEqual([]);
+    expect(r.waiting).toEqual([]);
   });
 });
 

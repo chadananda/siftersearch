@@ -77,3 +77,11 @@ The canary completed and published a real result (Ḥuqúqu’lláh, 460 seconds
 ### Bound orchestration passes
 
 Observed a second worker reach model-ready but receive no work while the shared orchestration tick transferred a large batch for the first pod. It idled out. Each ready pod now handles at most one finished-result download and one new upload per pass; uploads also stop as soon as the service is draining. This keeps startup/status checks moving and bounds graceful reload latency while retaining the six-job prefetch target. Two regression tests verify that four uploads and three completed results are spread over separate passes. GPU spending suite: 48 passed after this change.
+
+### Resource-wait crash and allocation recovery
+
+Reproduced a media-manager crash in a standalone Node child: `asr()` returned a rejected local fallback promise, then awaited temporary-file cleanup in `finally`, allowing `WORKER_WAIT` to become unhandled before the caller could receive it. `return await local(...)` fixes that ordering; the child-process regression now survives and receives `WORKER_WAIT` normally.
+
+Restarting during a slow batch could also lose a newly rented pod before the next full state save. New paid allocations are now saved immediately, before any existing pod’s audio transfer. A regression checks the state file at that exact transfer boundary. During recovery, new rentals were paused and four unrecorded SifterSearch allocations were retired; other projects were untouched. The original canary returned eight results before ending.
+
+Background light backfill now stops between recordings and passes its drain callback into remote encodes; it no longer holds a manager reload behind unrelated work. The targeted GPU host/spending suites pass 82 tests after these fixes.
