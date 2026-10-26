@@ -154,10 +154,10 @@ async function defaults() {
 
 /** The link stage's lookups (server-side: bio set, identity lookup index, document finder, section index, link policy). */
 async function linkDeps() {
-  const [{ listBioPersons }, { entityLookup }, { findDocuments }, { findSections }, { linkFor }] = await Promise.all([
-    late('api/lib/bio.js'), late('api/lib/entity-api.js'), late('api/lib/docs-repo.js'), late('api/lib/repos/sections-repo.js'), late('api/lib/source-links.js')]);
+  const [{ listBioPersons }, { mediaBiographyCandidates }, { findDocuments }, { findSections }, { linkFor }, {ensureBioSlug}] = await Promise.all([
+    late('api/lib/bio.js'), import('./biography-candidates.js'), late('api/lib/docs-repo.js'), late('api/lib/repos/sections-repo.js'), late('api/lib/source-links.js'), late('api/lib/repos/bio-slug-repo.js')]);
   const bio = (await listBioPersons())?.persons || [];
-  return { bio, lookup: (n) => entityLookup(n, { type: 'person', limit: 10 }), sections: (t) => findSections(t, { limit: 20 }), linkFor,
+  return { bio, additionalBio:await mediaBiographyCandidates(), personUrl:async id=>{const slug=await ensureBioSlug(id);return slug?`/biography/${slug}`:null;}, sections: (t) => findSections(t, { limit: 20 }), linkFor,
     find: async (t) => (await findDocuments(t, { limit: 12, fields: 'id,title,author,religion,collection,language,source_site,source_url,slug,paragraph_count,external_id' }))?.docs || [] };
 }
 

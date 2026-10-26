@@ -38,11 +38,11 @@ describe('works', () => {
 describe('linkMentions', () => {
   it('first mention per section, confident only; person → /biography/<id>; work → linkFor', async () => {
     const mentions = [m({ para: 1, text: 'the Master', canonical: '‘Abdu’l-Bahá' }), m({ para: 2, text: '‘Abdu’l-Bahá', canonical: '‘Abdu’l-Bahá' }),
-      m({ para: 5, text: 'the Master', canonical: '‘Abdu’l-Bahá' }), m({ para: 5, text: 'Shoghi Effendi', canonical: 'Shoghi Effendi', confidence: 0.5 }),
+      m({ para: 5, text: 'the Master', canonical: '‘Abdu’l-Bahá' }), m({ para: 5, text: 'Shoghi Effendi', canonical: 'Shoghi Effendi', confidence: 0.5 }), m({para:5,text:'Effendi',canonical:'an unidentified Effendi',confidence:0.5}),
       m({ para: 6, kind: 'work', text: 'the Íqán', canonical: 'Kitáb-i-Íqán' })];
     const linkFor = vi.fn((doc) => ({ url: `https://oceanlibrary.com/${doc.id}` }));
     const r = await linkMentions(mentions, [{ p: 4 }], { bio, find: async () => [{ id: 44, title: 'Kitáb-i-Íqán', source_site: 'oceanlibrary.com', language: 'en' }], linkFor });
-    expect(r.links.map((l) => [l.para, l.url])).toEqual([[1, '/biography/7'], [5, '/biography/7'], [6, 'https://oceanlibrary.com/44']]);
+    expect(r.links.map((l) => [l.para, l.url])).toEqual([[1, '/biography/7'], [5, '/biography/7'], [5, '/biography/9'], [6, 'https://oceanlibrary.com/44']]);
     expect(r.unresolved.map((u) => u.why)).toEqual(['low confidence (0.5)']);
   });
   it('a quote wins where it overlaps a link', () => {

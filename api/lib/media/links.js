@@ -43,6 +43,8 @@ export function bioIndex(bio = []) {
   }
   return { idx, entries, byId: new Map(bio.map((p) => [p.id, p])) };
 }
+const indexes=new WeakMap();
+function cachedIndex(people){if(!indexes.has(people))indexes.set(people,bioIndex(people));return indexes.get(people);}
 /** The people whose name or alias is, or contains as a contiguous run, the mention's words (titles dropped). */
 export function candidatesFor(index, text) {
   const exact = index.idx.get(keyOf(text));
@@ -60,7 +62,7 @@ export function candidatesFor(index, text) {
 export async function resolvePerson(m, { index }) {
   const cands = candidatesFor(index, m.text);
   if (!cands.length) return { why: 'no biography page for these words' };
-  if (cands.length === 1) return { entity_id: cands[0], name: index.byId.get(cands[0])?.name, basis: 'name' };
+  if (cands.length === 1) return { entity_id: cands[0], name: index.byId.get(cands[0])?.name, basis: 'name', exactFullName:!!index.idx.get(keyOf(m.text))?.has(cands[0]) && toks(m.text).filter(t=>!TITLE_WORDS.test(t)).length>=2 };
   // several people carry these words: the model's canonical name may choose — only among them
   const ck = keyOf(m.canonical || '');
   const pick = ck ? cands.filter((id) => namesOf(index.byId.get(id)).some((n) => keyOf(n) === ck)) : [];
@@ -121,17 +123,29 @@ export async function resolveWork(m, { find, sections = null, lang = 'en' }) {
  * deps: { bio: [...], lookup, find, sections, linkFor(doc, paragraphIndex) → { url } }
  */
 export async function linkMentions(mentions, headings, deps, { minConf = MIN_CONF } = {}) {
-  const index = bioIndex(deps.bio || []);
+  const index = cachedIndex(deps.bio || []);
+  const additional = deps.additionalBio ? cachedIndex(deps.additionalBio) : null;
   const links = [], unresolved = [];
   const cache = new Map();
+  const urls = new Map();
   for (const m of firstPerSection((mentions || []).filter((x) => x && x.text), headings)) {
-    if ((m.confidence ?? 0) < minConf) { unresolved.push({ ...m, why: `low confidence (${m.confidence})` }); continue; }
     const key = `${m.kind}|${keyOf(m.text)}|${keyOf(m.canonical || '')}|${m.section || ''}`;
-    if (!cache.has(key)) cache.set(key, m.kind === 'person' ? await resolvePerson(m, { index }) : await resolveWork(m, deps));
+    if (!cache.has(key)) {
+      let found=m.kind === 'person' ? await resolvePerson(m, { index }) : null;
+      if(m.kind==='person'&&additional&&found.why==='no biography page for these words')found=await resolvePerson(m,{index:additional});
+      const low=(m.confidence??0)<minConf;
+      cache.set(key,low&&!found?.exactFullName?{why:`low confidence (${m.confidence})`}:found||await resolveWork(m,deps));
+    }
     const r = cache.get(key);
     if (r.why) { unresolved.push({ ...m, why: r.why }); continue; }
     const base = { kind: m.kind, para: m.para, i0: m.i0, i1: m.i1, text: m.text, confidence: m.confidence, basis: r.basis };
-    if (m.kind === 'person') links.push({ ...base, entity_id: r.entity_id, name: r.name, url: `/biography/${index.byId.get(r.entity_id)?.slug || r.entity_id}` });
+    if (m.kind === 'person') {
+      const person=index.byId.get(r.entity_id)||additional?.byId.get(r.entity_id);
+      if(!urls.has(r.entity_id))urls.set(r.entity_id,person?.slug?`/biography/${person.slug}`:deps.personUrl?await deps.personUrl(r.entity_id):`/biography/${r.entity_id}`);
+      const url=urls.get(r.entity_id);
+      if(!url){unresolved.push({...m,why:'biography URL unavailable'});continue;}
+      links.push({ ...base, entity_id: r.entity_id, name: r.name, url });
+    }
     else {
       const sec = r.section;
       const url = deps.linkFor(sec ? { ...r.doc, external_para_id: sec.first_para_id ?? r.doc.external_para_id } : r.doc, sec ? sec.start_index : undefined)?.url;

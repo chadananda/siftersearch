@@ -17,3 +17,16 @@ export async function biographyNameAudit(terms = []) {
     ORDER BY CASE WHEN lower(statement) LIKE '%hand of the cause%' THEN 0 ELSE 1 END, doc_id LIMIT 3`, [row.id], 'media:biography-name-evidence');
   return rows;
 }
+
+/** Link candidates across all books/religions, including NULL religion. Evidence
+ * is required; ungrounded extraction artifacts and merged records stay out. */
+export async function listMediaBiographyPersons(){
+ const rows=await queryAll(`SELECT ge.id, ge.canonical_name AS name, ge.slug, er.aliases
+  FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name=ge.canonical_name AND er.entity_type='person'
+  WHERE ge.entity_type='person' AND ${LIVE_SQL('ge.')} AND (
+   EXISTS (SELECT 1 FROM entity_claims c WHERE c.entity_id=ge.id AND (c.status IS NULL OR c.status='supported')) OR
+   EXISTS (SELECT 1 FROM entity_mentions_v2 m WHERE m.entity_id=ge.id AND m.status='active'))
+  ORDER BY ge.id LIMIT 100001`,[],'media:biography-link-candidates');
+ if(rows.length>100000)throw Error('Biography link candidate bound exceeded');
+ return rows;
+}
