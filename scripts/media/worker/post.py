@@ -1,5 +1,5 @@
 # The WORKER's half of a remaster (Chad 10-24: tower does only Dewey, orchestration and publishing — it never reprocesses audio).
-# Everything that decides the outcome runs here: the word guard (original spliced back for every sentence the copy lost), the
+# Everything that decides the outcome runs here: transcript diagnostics (which never splice listening audio), the
 # deterministic cleanup for talks the guard holds, the forced re-alignment, the four web encodes, and the quality VERDICT. Tower
 # validates the manifest (post.json), records the verdict, places the files and publishes.
 #   job.json['post'] = { af, max_fallback_pct, slug, work_sha, ogg, m4a, orig_ogg, orig_m4a, bw_khz, hum_hz, cleanup: bool, mode }
@@ -119,6 +119,24 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
     if method is None:
         out['ok'] = True; out['held'] = True       # tower records the verdict; no realign / encode is wasted on a held talk
         return out
+    # Quality is measured on both copies; uncertain/worse results keep the existing listening copy.
+    if cfg.get('assess_quality'):
+        try:
+            # The gate environment owns the pinned quality-model dependencies;
+            # the restoration environment has a different torchmetrics version.
+            python = os.environ.get('MEDIA_QUALITY_PYTHON', '/opt/gate/venv/bin/python')
+            quality = os.path.join(os.path.dirname(__file__), 'quality.py')
+            assessment = json.loads(subprocess.check_output([python, quality, src, flac, af or '', str(cfg.get('threads', 2))], text=True))
+        except Exception as err:
+            assessment = {'version': 1, 'status': 'failed', 'passed': False, 'error': str(err)[-500:]}
+        out['qa']['output_assessment'] = assessment
+        json.dump(assessment, open(os.path.join(d, 'output-assessment.json'), 'w'))
+        if not assessment.get('passed'):
+            out['ok'] = True; out['held'] = True
+            out['qa']['verdict'] = 'review'
+            out['qa']['reason'] = 'paired listening-quality assessment did not demonstrate reliable improvement'
+            out['why'] = out['qa']['reason']
+            return out
     # 3. forced re-alignment of the final transcript on the chosen copy
     t2 = time.time()
     rj = os.path.join(post, 'realign.json')

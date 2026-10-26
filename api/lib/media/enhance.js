@@ -64,10 +64,10 @@ export const M4A_BITRATE_REMASTER = '128k';
 export const WEB_CODEC_REMASTER = 'unipase+opus96audio';
 /** Is the talk's listening copy a remaster (a variant that shifts time)? */
 export const isRemastered = (meta = {}) => !!(meta.enhancement?.variants || []).find((v) => v.name === meta.enhancement?.listening)?.shifts_time;
-/** Remaster eligibility (Chad 10-23: every talk graded B or worse; A stays transparent — MEDIA_REMASTER_GRADES; the
+/** Remaster eligibility (Chad 10-26: every grade is assessed; use the remaster only when it improves the original — MEDIA_REMASTER_GRADES; the
  *  non-English skip is a flag, default OFF — Chad: "this is working fine with non-English"). → { ok, why } */
 export function remasterEligible(meta = {}, paragraphs = [], env = process.env) {
-  const grades = String(env.MEDIA_REMASTER_GRADES || 'B,C,D,E').split(',').map((x) => x.trim().toUpperCase());
+  const grades = String(env.MEDIA_REMASTER_GRADES || 'A,B,C,D,E').split(',').map((x) => x.trim().toUpperCase());
   const g = String(meta.quality?.overall || '').toUpperCase();
   if (!grades.includes(g)) return { ok: false, why: `grade ${g || '?'} (remaster grades ${grades.join('')})` };
   if (env.MEDIA_REMASTER_SKIP_NONEN === '1') {

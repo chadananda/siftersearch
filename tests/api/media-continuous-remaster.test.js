@@ -9,14 +9,18 @@ p=tempfile.mkdtemp()
 for name in ['work','asr']:
  json.dump({'segments':[]},open(p+'/'+name,'w'))
 wet=np.full(48000,.2,dtype=np.float32);dry=np.full(48000,.8,dtype=np.float32)
-g.decode=lambda path,af=None: dry if path=='original' else wet
+g.decode=lambda path,af=None,**kwargs: dry if path=='original' else wet
 g.env_lag=lambda *a:0
 g.sentences_of=lambda w:[]
 g.decide=lambda *a,**k:[{'s':0,'e':1,'swap':True,'lost':['Shoghi'],'unguardable':False}]
 def forbid(*a):raise AssertionError('source splicing is forbidden')
 g.splice=forbid
 saved=[]
-sys.modules['soundfile']=types.SimpleNamespace(write=lambda path,a,*args,**kw:saved.append(a.copy()))
+sys.modules['soundfile']=types.SimpleNamespace(info=lambda path:types.SimpleNamespace(duration=1))
+def encode(cmd,**kw):
+    assert cmd[cmd.index('-i')+1]=='wet'
+    saved.append(wet.copy())
+g.subprocess.run=encode
 sys.argv=['guard','--original','original','--unipase','wet','--work',p+'/work','--asr',p+'/asr','--output',p+'/audio','--report',p+'/report']
 g.main()
 assert np.array_equal(saved[0],wet)

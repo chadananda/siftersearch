@@ -1,0 +1,8 @@
+# rootfs contains the pinned Node binary, DB-free media bundle, processing code,
+# curated decision data, and checksum-verified speaker models. Build and accept
+# this exact artifact on Aorus before publishing/pinning it for rental workers.
+FROM ghcr.io/chadananda/sifter-media-worker@sha256:f6bbfcc807ebbe68a8faf54c133c1d58a6ad4c31e4297328de31dbb9f317b8ea
+COPY rootfs/ /
+
+ENV PYTHONPATH="/opt/worker-extras:/opt/sifter/media"
+ENV NLTK_DATA="/opt/models/nltk_data"

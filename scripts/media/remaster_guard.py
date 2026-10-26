@@ -1,9 +1,5 @@
-# REMASTER WORD GUARD (Chad 10-23: "never worse than the original"; planning/remaster-rnd-20261023.md §UniPASE production
-# plan 2): the UniPASE copy is transcribed, and every SENTENCE of the talk's final transcript whose words the copy does not
-# carry as well as the original's own ASR does (the final text is the yardstick; churn floor max(1, 6 %), or ANY lost number / name) is replaced in the listening
-# copy by the ORIGINAL (transparent chain) for that sentence, with 150 ms equal-power crossfades. Runs on tower (CPU,
-# numpy + soundfile + ffmpeg). Prints ONE JSON line (the report also goes to --report).
-#   python remaster_guard.py --original O --unipase U --work transcript.work.json --asr unipase.asr.json --af CHAIN --output G.flac --report R.json
+# Transcript-comparison diagnostics for a continuous remaster. Disagreements are
+# review notes; original audio is never spliced into the listening copy.
 import argparse, json, math, re, subprocess, sys, unicodedata
 import numpy as np
 
@@ -11,8 +7,9 @@ SR = 48000
 XF = 0.150   # crossfade seconds
 
 
-def decode(path, af=None):
+def decode(path, af=None, duration=None):
     cmd = ['ffmpeg', '-nostdin', '-v', 'error', '-i', path] + (['-af', af] if af else []) + ['-ac', '1', '-ar', str(SR), '-f', 'f32le', '-']
+    if duration is not None: cmd[cmd.index('-i'):cmd.index('-i')] = ['-t', str(duration)]
     return np.frombuffer(subprocess.run(cmd, capture_output=True, check=True).stdout, dtype=np.float32).copy()
 
 
@@ -173,22 +170,25 @@ def main():
     p.add_argument('--ref', default='')   # transcript.raw.json: the original's own ASR words
     p.add_argument('--af', default='highpass=f=70,loudnorm=I=-18:TP=-1.5:LRA=11')
     a = p.parse_args()
-    # Transcript differences are diagnostics, never permission to splice source audio.
-    dry = decode(a.original)
-    wet = decode(a.unipase, 'loudnorm=I=-18:TP=-1.5:LRA=11,alimiter=limit=0.891:level=disabled')   # spec: -18 LUFS, -1 dBFS limiter
+    # Lag needs at most ten minutes; full-length audio stays in ffmpeg's bounded stream.
+    dry = decode(a.original, duration=600)
+    wet = decode(a.unipase, duration=600)
     lag = env_lag(dry, wet)
-    wet = np.roll(wet, -lag)[: len(dry)] if lag else wet[: len(dry)]
-    if len(wet) < len(dry):
-        wet = np.pad(wet, (0, len(dry) - len(wet)))
+    del dry, wet
     work = json.load(open(a.work))
     raw = json.load(open(a.asr))
     asr_words = [w for sg in raw.get('segments', []) for w in (sg.get('words') or [])]
     sents = sentences_of(work)
     ref_words = [w for sg in json.load(open(a.ref)).get('segments', []) for w in (sg.get('words') or [])] if a.ref else None
     dec = decide(sents, asr_words, lag_s=0.0, ref_words=ref_words)   # the copy's ASR ran on the unshifted copy: its times are already ≈ the original's ± lag
-    out, merged = wet, []
+    merged = []
     import soundfile as sf
-    sf.write(a.output, np.clip(out, -1, 1), SR, format='FLAC', subtype='PCM_24')
+    duration = sf.info(a.unipase).duration
+    chain = []
+    if lag > 0: chain += [f'atrim=start={lag/SR}', 'asetpts=PTS-STARTPTS', f'apad=pad_dur={lag/SR}']
+    elif lag < 0: chain += [f'adelay={-lag/SR*1000}:all=1']
+    chain += [f'atrim=duration={duration}', 'loudnorm=I=-18:TP=-1.5:LRA=11', 'alimiter=limit=0.891:level=disabled']
+    subprocess.run(['ffmpeg','-nostdin','-v','error','-y','-i',a.unipase,'-af',','.join(chain),'-ac','1','-ar',str(SR),'-c:a','flac','-sample_fmt','s32',a.output],check=True)
     total = sum(d['e'] - d['s'] for d in dec) or 1
     swapped_s = sum(e - s for s, e in merged)
     ung = [d for d in dec if d.get('unguardable')]

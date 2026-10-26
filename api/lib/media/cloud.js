@@ -14,6 +14,14 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 export const STATE_FILE = join(ROOT, 'data', 'run', 'cloud-remaster.json');
 export const RENTAL_PAUSE_FILE = join(ROOT, 'data', 'run', 'cloud-rentals.pause');
 export const RENTAL_CAPACITY_FILE = join(ROOT, 'data', 'run', 'cloud-capacity.json');
+export const ACCEPTED_WORKER_FILE = join(ROOT, 'data', 'run', 'media-worker-accepted.json');
+export async function acceptedWorker(file = ACCEPTED_WORKER_FILE) {
+  try {
+    const a = JSON.parse(await readFile(file, 'utf8'));
+    if (!/^ghcr\.io\/chadananda\/sifter-media-worker@sha256:[a-f0-9]{64}$/.test(a.image || '') || !a.aorus_accepted_at) throw Error('Invalid accepted worker image');
+    return a;
+  } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+}
 /** Runtime capacity survives deploys and can change without draining all media lanes. */
 export async function rentalCapacity(requested, file = RENTAL_CAPACITY_FILE) {
   let cap = Number(process.env.MEDIA_CLOUD_MAX_PODS);
@@ -71,6 +79,7 @@ export async function createPod(name, publicKey, deps = {}) {
   const pause = await rentalPauseReason(deps.pauseFile);
   if (pause) throw new Error(`RunPod rentals paused: ${pause}`);
   let lastErr = null;
+  const accepted = await acceptedWorker(deps.acceptedWorkerFile);
   // a network volume (weights fetched once) pins the pods to its data centre and to Secure Cloud; without one, community first
   const vol = process.env.MEDIA_CLOUD_VOLUME_ID;
   // a 4090 FIRST (10-24 measured GPU-min per audio hour: 4090 2.4-3.2 · 3090 4.4 · A40 5.4 · A4500 6.1 — about the same $ per
@@ -83,7 +92,7 @@ export async function createPod(name, publicKey, deps = {}) {
     try {
       const pause = await rentalPauseReason(deps.pauseFile);
       if (pause) throw Object.assign(new Error(`RunPod rentals paused: ${pause}`), { rentalsPaused: true });
-      return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
+      return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: accepted?.image || process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
         containerDiskInGb: 60, ...(deps.prefer?.dcs?.length ? { dataCenterIds: deps.prefer.dcs } : {}), ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true,
         env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key() } }, deps);
     } catch (err) { if (err.rentalsPaused) throw err; lastErr = err; }
@@ -236,6 +245,18 @@ export HF_HUB_OFFLINE=0
 python /opt/sifter/media/worker/selftest.py > /workspace/selftest.json 2>&1 || { echo 'SELFTEST FAILED'; tail -c 900 /workspace/selftest.json; exit 3; }
 pkill -f runpod_worker.py || true
 nohup bash -c 'while true; do python /opt/sifter/media/runpod_worker.py --repo /opt/unipase --weights /opt/models/weights --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
+echo started`;
+/** Immutable, Aorus-accepted image: no runtime code overlays or model downloads. */
+export const BOOTSTRAP_WHOLE = `set -e
+mkdir -p /workspace/spool
+touch /workspace/spool/.tower-hb /workspace/.lane-seen
+export HF_HOME=/opt/models/hf TORCH_HOME=/root/.cache/torch SIFTER_WEIGHTS=/opt/models/weights
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=/opt/worker-extras:/opt/sifter/media NLTK_DATA=/opt/models/nltk_data
+for v in RUNPOD_POD_ID RP_TERMINATE_KEY; do val=$(tr '\\0' '\\n' < /proc/1/environ | grep "^$v=" | head -1 | cut -d= -f2-); [ -n "$val" ] && export $v="$val"; done
+test -f /opt/sifter/media/worker/farm_worker.py
+if ! pgrep -f '^python /opt/sifter/media/worker/farm_worker.py' >/dev/null; then
+  nohup python /opt/sifter/media/worker/farm_worker.py --spool /workspace/spool --max-jobs 6 >> /workspace/worker.log 2>&1 < /dev/null &
+fi
 echo started`;
 export const WORKER_FILE = join(ROOT, 'scripts', 'media', 'runpod_worker.py');
 export const REPO_TGZ = () => process.env.MEDIA_UNIPASE_REPO_TGZ || join(homedir(), 'sifter', 'remaster', 'cloud', `unipase-${UNIPASE_COMMIT.slice(0, 8)}.tgz`);

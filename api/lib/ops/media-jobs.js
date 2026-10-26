@@ -1245,6 +1245,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   if (Number.isInteger(configuredPods) && configuredPods > 0) maxPods = Math.min(maxPods, Math.floor(configuredPods));
   const cleanupMode = mode === 'cleanup';   // talks the word guard held (review / kept / deferred): the deterministic cleanup only, no generative copy
   const C = deps.cloud || await import('../media/cloud.js');
+  const acceptedWorker = C.acceptedWorker ? await C.acceptedWorker(deps.acceptedWorkerFile) : null;
   const L = deps.ledger || await import('../media/pod-ledger.js');
   const minHours = deps.minHours ?? L.LEDGER.minHoursPerPod();   // WORK FIRST, RENT SECOND: a pod only where ≥ this many audio hours wait for it
   const repo = deps.repo || await import('../repos/media-repo.js');
@@ -1441,12 +1442,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               const baked = /BAKED/.test(probeOut); p.gate = /GATE/.test(probeOut);
               if (baked) {
                 p.baked = true;   // the image carries code + weights + aligners: nothing to upload or download
-                try {   // the current job code on top of the image's pinned copy
+                if (!acceptedWorker) try {   // legacy images only; accepted images are immutable
                   const tgz = join((await import('os')).tmpdir(), `media-scripts-${process.pid}.tgz`);
                   await run('tar', ['czf', tgz, '-C', join(dirname(C.WORKER_FILE)), ...C.MEDIA_SCRIPTS], { timeoutMs: 60_000 });
                   await C.podPut(run, p, tgz, '/workspace/media-scripts.tgz');
                 } catch { /* the image's own copy runs */ }
-                await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: C.BOOTSTRAP_BAKED, timeoutMs: 120_000 });
+                await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: acceptedWorker ? C.BOOTSTRAP_WHOLE : C.BOOTSTRAP_BAKED, timeoutMs: 120_000 });
               } else {
                 await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
                 await C.podPut(run, p, C.REPO_TGZ(), '/workspace/unipase-repo.tgz');
@@ -1557,7 +1558,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 const E = await import('../media/enhance.js'), PP = await import('../media/pod-post.js');
                 const orig = (m.enhancement.variants || []).find((v) => v.name === 'original') || {};
                 const raw = m.quality?.raw || {}, hum = Math.max(raw.hum50_db ?? 0, raw.hum60_db ?? 0) >= 10 ? ((raw.hum50_db ?? 0) >= (raw.hum60_db ?? 0) ? 50 : 60) : null;
-                post = { mode: st.items?.[itemId]?.mode || 'restore', cleanup: true, bw_khz: raw.bandwidth_khz ?? null, hum_hz: hum, audio_s: m.duration_s || it.duration_s, af: E.safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15, slug: m.slug || it.slug, work_sha: await PP.sha256File(join(it.dir, 'transcript.work.json')),
+                post = { mode: st.items?.[itemId]?.mode || 'restore', cleanup: !acceptedWorker, ...(acceptedWorker ? {assess_quality:true,trim:m.trim} : {}), bw_khz: raw.bandwidth_khz ?? null, hum_hz: hum, audio_s: m.duration_s || it.duration_s, af: E.safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15, slug: m.slug || it.slug, work_sha: await PP.sha256File(join(it.dir, 'transcript.work.json')),
                   ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS_REMASTER], m4a: ['-ac', '1', '-ar', '48000', '-c:a', 'aac', '-b:a', E.M4A_BITRATE_REMASTER, '-movflags', '+faststart'],
                   orig_ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS], orig_m4a: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart'] };
                 if (post.mode === 'post') for (const [f, to] of [['unipase.cloud.flac', 'out.flac'], ['unipase.asr.json', 'asr.json'], ['unipase.asr_orig.json', 'asr_orig.json']]) { const lf = join(it.dir, 'enhanced', f); if (existsSync(lf)) await C.podPut(run, p, lf, `/workspace/spool/${job}/${to}`); }   // a result tower holds: the pod finishes it
@@ -1579,7 +1580,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // the READY, baked pods join the worker pool (pool.js): prep / probe / grade / dfn / encodes may use them as hosts of the same gate
       try {
         const P = await import('../media/pool.js');
-        const ready = Object.values(st.pods).filter((q) => !rentalPause && !q.terminated && q.status === 'ready' && q.baked && q.gate && q.ip && q.port && !q.dead_worker && !(q.idle_since && now() - q.idle_since > 8 * 60_000));
+        const ready = Object.values(st.pods).filter((q) => !acceptedWorker && !rentalPause && !q.terminated && q.status === 'ready' && q.baked && q.gate && q.ip && q.port && !q.dead_worker && !(q.idle_since && now() - q.idle_since > 8 * 60_000));
         const sig = ready.map((q) => `${P.podName(q)}@${q.ip}:${q.port}`).sort().join(',');
         if (sig !== st.pool_sig) { P.publishPool(ready.map((q) => ({ host: P.podName(q), ip: q.ip, port: q.port }))); st.pool_sig = sig; }
       } catch (err) { st.pool_error = String(err.message).slice(0, 160); }

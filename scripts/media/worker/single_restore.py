@@ -25,10 +25,16 @@ def main(d):
     while torch.cuda.mem_get_info()[0] < required:
         if time.time() > deadline: raise RuntimeError('GPU headroom did not become available')
         time.sleep(5)
-    up, inference, asr = worker.load_models('/opt/unipase', '/opt/models/weights', asr_device='deferred' if small else 'cuda')
-    worker.ASR_MODEL['asr'] = asr
-    done = worker.run_job(d, up, inference, asr)
-    del up; gc.collect(); torch.cuda.empty_cache()
+    from worker.gpu_lease import lease
+    with lease('unipase'):
+        up, inference, asr = worker.load_models('/opt/unipase', '/opt/models/weights', asr_device='deferred' if small else 'cuda')
+        worker.ASR_MODEL['asr'] = asr
+        done = worker.run_job(d, up, inference, asr)
+        cfg = json.load(open(os.path.join(d, 'job.json'))).get('post') or {}
+        if not cfg.get('cleanup', True):
+            worker.ASR_MODEL.clear()
+            del asr
+        del up; gc.collect(); torch.cuda.empty_cache()
     stage('guard'); worker.finalize(d, done)
     post_file = os.path.join(d, 'post.json')
     post = json.load(open(post_file)) if os.path.exists(post_file) else None

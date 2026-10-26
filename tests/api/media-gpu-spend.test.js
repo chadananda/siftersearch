@@ -16,6 +16,21 @@ import { createHash } from 'crypto';
 
 const MIN = 60_000;
 describe('persistent operator rental pause', () => {
+  it('accepts only an immutable image with recorded Aorus acceptance', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'accepted-worker-'));
+    const file = join(directory, 'accepted.json');
+    try {
+      expect(await C.acceptedWorker(file)).toBeNull();
+      writeFileSync(file, JSON.stringify({ image:'ghcr.io/chadananda/sifter-media-worker:latest', aorus_accepted_at:'2026-10-26' }));
+      await expect(C.acceptedWorker(file)).rejects.toThrow('Invalid accepted worker');
+      const accepted = {image:'ghcr.io/chadananda/sifter-media-worker@sha256:'+'a'.repeat(64),aorus_accepted_at:'2026-10-26'};
+      writeFileSync(file, JSON.stringify(accepted));
+      expect(await C.acceptedWorker(file)).toEqual(accepted);
+      expect(C.BOOTSTRAP_WHOLE).toContain('HF_HUB_OFFLINE=1');
+      expect(C.BOOTSTRAP_WHOLE).not.toMatch(/pkill|pip install|tar xzf/);
+      expect(C.BOOTSTRAP_WHOLE).toContain('farm_worker.py');
+    } finally { rmSync(directory, {recursive:true,force:true}); }
+  });
   it('changes rental capacity from a durable runtime file without changing the requested maximum', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'rental-capacity-'));
     const file = join(directory, 'capacity.json');

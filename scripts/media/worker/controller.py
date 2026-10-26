@@ -36,9 +36,29 @@ def read_system():
     except Exception:
         pass
     st = os.statvfs('/workspace') if os.path.exists('/workspace') else os.statvfs('/')
-    return {'ram_total_gb': mem.get('MemTotal', 0), 'ram_avail_gb': mem.get('MemAvailable', 0),
+    total, available = mem.get('MemTotal', 0), mem.get('MemAvailable', 0)
+    cpus = os.cpu_count() or 1
+    # Container limits, not the host's hundreds of GB/cores, govern admission.
+    for limit_file, used_file in [('/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory.current'),
+                                  ('/sys/fs/cgroup/memory/memory.limit_in_bytes', '/sys/fs/cgroup/memory/memory.usage_in_bytes')]:
+        try:
+            limit = int(open(limit_file).read()) / 2**30
+            used = int(open(used_file).read()) / 2**30
+            if 0 < limit < total: total, available = limit, min(available, max(0, limit - used))
+            break
+        except (OSError, ValueError): pass
+    try:
+        quota, period = open('/sys/fs/cgroup/cpu.max').read().split()
+        if quota != 'max': cpus = min(cpus, max(1, int(quota) / int(period)))
+    except (OSError, ValueError):
+        try:
+            quota = int(open('/sys/fs/cgroup/cpu/cpu.cfs_quota_us').read())
+            period = int(open('/sys/fs/cgroup/cpu/cpu.cfs_period_us').read())
+            if quota > 0: cpus = min(cpus, max(1, quota / period))
+        except (OSError, ValueError): pass
+    return {'ram_total_gb': total, 'ram_avail_gb': available,
             'swap_used_gb': mem.get('SwapTotal', 0) - mem.get('SwapFree', 0),
-            'disk_free_gb': st.f_bavail * st.f_frsize / 1e9, 'load': os.getloadavg()[0], 'cpus': os.cpu_count() or 1}
+            'disk_free_gb': st.f_bavail * st.f_frsize / 1e9, 'load': os.getloadavg()[0], 'cpus': cpus}
 
 
 def oom_count():
@@ -95,7 +115,7 @@ class Controller:
     def admit(self, stage):
         """Live headroom must cover this stage's need plus a safety margin, and we must be under the live limit."""
         gpu = [j for j, r in self.running.items() if self.stages[r['stage']]['vram'] > 0 and r['stage'] != 'realign']   # the CPU half of a job never blocks the next GPU job
-        if not self.admitting or len(gpu) >= self.limit or self.state == 'drain': return False
+        if not self.admitting or (self.stages[stage]['vram'] > 0 and len(gpu) >= self.limit) or self.state == 'drain': return False
         s = self.sampler(); need = self.stages[stage]; m = self.limits['margin_gb']
         free_vram = s['vram_total_gb'] * self.limits['vram_pct'] / 100 - s['vram_used_gb']
         if need['vram'] and s['vram_total_gb'] and free_vram < need['vram'] + m: return False

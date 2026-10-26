@@ -125,6 +125,8 @@ def device():
             return _device
     except Exception:
         return _device
+    if os.environ.get('SIFTER_GPU_LEASES') == '1':
+        _device = ('cuda', 'float16'); return _device
     import fcntl, threading
     need = float(os.environ.get('MEDIA_GPU_NEED_GB') or 1.0) * 2 ** 30
     lock = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.gpu.lock'), 'w')
@@ -737,8 +739,15 @@ def main():
     os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))   # a retry after an OOM sets more
     fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels, 'spkscreen': cmd_spkscreen, 'spkmerge': cmd_spkmerge, 'realign': cmd_realign}[a.cmd]
     try:
-        fn(a)
+        if os.environ.get('SIFTER_GPU_LEASES') == '1' and a.cmd in ['transcribe','probe','langid','dfn','realign','grade']:
+            from worker.gpu_lease import lease
+            with lease(a.cmd): fn(a)
+        else: fn(a)
     except RuntimeError as err:
+        if os.environ.get('SIFTER_GPU_LEASES') == '1':
+            # A rented GPU must never silently spend hours retrying ASR on CPU.
+            # The scheduler records the failure and retries with fresh resources.
+            raise
         # the GPU is shared (transcriptions, probes, DeepFilterNet on an 8 GB card). Out of GPU memory → START AGAIN as a fresh
         # process (an in-process CPU retry kept the dead CUDA model's 2.2 GB and ran for 30+ min, 10-22): first back on the GPU
         # (waiting for free memory under the lock), and only a second time out of memory on the CPU

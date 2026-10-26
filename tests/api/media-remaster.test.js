@@ -132,7 +132,7 @@ describe('the RunPod backfill', () => {
 describe('remaster eligibility', () => {
   it('B–E by default, A transparent; the non-English skip is a flag, off by default', () => {
     expect(remasterEligible({ quality: { overall: 'B' } }).ok).toBe(true);
-    expect(remasterEligible({ quality: { overall: 'A' } }).ok).toBe(false);
+    expect(remasterEligible({ quality: { overall: 'A' } }).ok).toBe(true);
     const ps = [{ t0: 0, t1: 100, lang: 'fa' }, { t0: 100, t1: 600, lang: 'en' }];
     expect(remasterEligible({ quality: { overall: 'D' } }, ps).ok).toBe(true);
     expect(remasterEligible({ quality: { overall: 'D' } }, ps, { MEDIA_REMASTER_SKIP_NONEN: '1' }).ok).toBe(false);
@@ -156,6 +156,20 @@ describe('tower stages: guard verdict, realign keeps the original times, revert'
     const deps = { tools, llm: {}, repo: { updateMediaItem: async () => ({}), getMediaItem: async () => ({ state: 'done' }) }, draining: async () => false, loadVocab: async () => ({}), now: () => 't' };
     return { dir, deps, tools, item: { id: 5, dir, state: 'done', source_kind: 'file' } };
   };
+  it('applies a replacement worker alignment even when the variant name stays unipase, and preserves the worker signature', async () => {
+    const t = talk(0), { createHash } = await import('node:crypto');
+    const mf = join(t.dir, 'meta.json'), wf = join(t.dir, 'transcript.work.json');
+    const m = JSON.parse(readFileSync(mf, 'utf8')); m.enhancement.listening = 'unipase'; m.aligned_to = 'unipase'; m.remaster = {status:'done'};
+    m.enhancement.variants.push({name:'unipase',file:'enhanced/unipase.flac',shifts_time:true}); writeFileSync(mf,JSON.stringify(m));
+    const pd=join(t.dir,'enhanced/pod'); mkdirSync(pd);
+    const hash=()=>createHash('sha256').update(readFileSync(wf)).digest('hex');
+    writeFileSync(join(pd,'post.json'),JSON.stringify({ok:true,guard:{},work_sha:hash(),realign:{placed:3,total:3}}));
+    writeFileSync(join(pd,'realign.json'),JSON.stringify({placed:3,total:3,times:{'1':[[1.1,1.6],[1.6,1.8],[1.8,2.1]]}}));
+    await runItem(t.item,{redo:['realign'],only:['realign']},t.deps);
+    expect(JSON.parse(readFileSync(wf,'utf8')).paragraphs[0].words[0].s).toBe(1.1);
+    expect(JSON.parse(readFileSync(join(pd,'post.json'),'utf8')).work_sha).toBe(hash());
+    expect(t.tools.tool).not.toHaveBeenCalled();
+  });
   it('a guard that kept 5 % → the UniPASE copy is the listening copy; words re-aligned with s0/e0 kept; moments follow', async () => {
     const t = talk(5);
     await runItem(t.item, { redo: ['remaster', 'realign'], only: ['remaster', 'realign'], remaster: true }, t.deps);

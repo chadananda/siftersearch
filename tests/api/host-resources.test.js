@@ -140,10 +140,10 @@ describe('fill-rate projection', () => {
 });
 
 describe('memory, OOM, load', () => {
-  it('tower swap 88 % → WARN; RAM 43 % available is fine', () => {
+  it('idle swap occupancy does not warn while RAM has headroom', () => {
     const m = byName(evaluateHost('tower', parseHostStat(TOWER), { role: 'monitor' }).checks, 'memory');
-    expect(m).toMatchObject({ ok: false, level: 'warn' });
-    expect(m.detail).toMatch(/SWAP >50 %/);
+    expect(m.ok).toBe(true);
+    expect(m.detail).toMatch(/occupancy alone/);
     expect(m.detail).not.toMatch(/LOW MEMORY/);
   });
   it('under 10 % RAM available → WARN', () => {

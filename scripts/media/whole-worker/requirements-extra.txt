@@ -1,0 +1,3 @@
+# Match the tested host's diarization API; CPU runtime works on Aorus/Boss/pods.
+sherpa-onnx==1.13.8
+sherpa-onnx-core==1.13.8

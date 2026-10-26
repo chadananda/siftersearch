@@ -171,7 +171,9 @@ export async function loadVocab(file = process.env.MEDIA_VOCAB_FILE || join(proc
  * → { slug, done: [stages run], meta } or { yielded: true } when the service drains between stages.
  */
 export async function runItem(item, opts = {}, deps = {}) {
-  const d = { ...(await defaults()), ...deps };
+  // A container worker receives explicit local tools and a job-local catalogue
+  // adapter. It must never import the production DB or acquire server clients.
+  const d = { ...(deps.detachedWorker ? {} : await defaults()), ...deps };
   const { tools, llm, repo } = d;
   let meta = item.dir ? await readJson(join(item.dir, 'meta.json'), {}) : {};
   meta.stages ||= {}; meta.cost ||= { usd: 0, calls: 0, in: 0, out: 0 };
@@ -216,7 +218,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       return { excluded: true, reason: ex.reason, slug: meta.slug, done };
     }
     // a Covenant-breaker BY DATE (cb-date.js; Chad 10-23): before the break → as normal; on or after → excluded; undated → held
-    const cbp = cbPerson(meta.speaker || item.speaker, await cbPeople());
+    const cbp = cbPerson(meta.speaker || item.speaker, await (d.cbPeople ? d.cbPeople() : cbPeople()));
     if (cbp) {
       const v = cbVerdict(cbp.cb_from, meta.date || meta.year || item.year || null);
       if (v !== 'include') {
@@ -392,7 +394,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           // publish unless > 15 % of sentences fell back (the coordinator's review bar, 10-23); > 40 % is listed as 'high fallback'
           // for Chad to hear; the transparent copy stays. Chant / prayer the ASR cannot read is 'unguardable' and kept.
           const maxPct = Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15;
-          const pass = (g.fallback_sent_pct ?? g.swapped_pct) <= maxPct;
+          const pass = !pod?.held && pod?.qa?.output_assessment?.passed !== false && (g.fallback_sent_pct ?? g.swapped_pct) <= maxPct;
           const vs = meta.enhancement.variants.filter((v) => v.name !== 'unipase');
           vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: pod?.method === 'cleaned' ? 'deterministic cleanup (MossFormer2-SE 60 %, mud cut, dereverb, de-ess) + word guard at −18 LUFS' : 'UniPASE (long-form, 48 kHz) + word guard (original for lost sentences) at −18 LUFS', guard: g });
           meta.enhancement.variants = vs;
@@ -407,7 +409,7 @@ export async function runItem(item, opts = {}, deps = {}) {
             meta.enhancement.listening_why = 'remaster held for review (word guard) — the previous copy restored';
             delete meta.remaster_tier;
           }
-          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
+          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
           meta.qa = { ...(meta.qa || {}), remaster: pod?.qa ? { ...pod.qa, at: new Date().toISOString() } : qualityOf(meta) };   // the worker decided the verdict; tower records it
@@ -423,11 +425,12 @@ export async function runItem(item, opts = {}, deps = {}) {
       let podSigned = false;   // the worker's result was valid for the transcript before this alignment: re-sign it for the aligned one
       if (work?.paragraphs?.length && meta.enhancement) {
         const target = meta.enhancement.listening;
-        if (isRemastered(meta) && meta.aligned_to !== target) {
+        const workerAlignment = target === 'unipase' ? await podPost(dir, { needFlac: false }) : null;
+        if (isRemastered(meta) && (meta.aligned_to !== target || workerAlignment?.realign)) {
           const v = meta.enhancement.variants.find((x) => x.name === target);
           const out = join(dir, 'enhanced', 'realign.json');
           // the worker's alignment of THIS transcript on the guarded copy, when it ran (post.py): no alignment CPU on tower
-          const pod = target === 'unipase' ? await podPost(dir, { needFlac: false }) : null;
+          const pod = workerAlignment;
           const podAligned = pod?.realign && existsSync(join(podDir(dir), 'realign.json'));
           if (podAligned) await podTake(dir, 'realign.json', out);
           podSigned = !!pod;

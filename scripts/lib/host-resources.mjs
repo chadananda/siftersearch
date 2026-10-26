@@ -144,9 +144,9 @@ export function evaluateHost(host, s, { role = 'none', prev = {}, now = Date.now
   if (mt) {
     const availPct = Math.round((ma / mt) * 1000) / 10;
     const swapPct = st ? Math.round(((st - sf) / st) * 1000) / 10 : 0;
-    const low = availPct < 10, swapHigh = swapPct > 50;
-    add('memory', !(low || swapHigh), 'warn', `${availPct}% RAM available (${gb(ma)} of ${gb(mt)} GB) · swap ${swapPct}% used (${gb(st - sf)} of ${gb(st)} GB)`
-      + (low ? ' — LOW MEMORY (<10 % available)' : '') + (swapHigh ? ' — SWAP >50 %' : ''));
+    const low = availPct < 10; // Occupied swap can remain idle after pressure ends (including compressed zram).
+    add('memory', !low, 'warn', `${availPct}% RAM available (${gb(ma)} of ${gb(mt)} GB) · swap ${swapPct}% used (${gb(st - sf)} of ${gb(st)} GB)`
+      + (low ? ' — LOW MEMORY (<10 % available)' : '') + (swapPct > 50 && !low ? ' — occupancy alone does not indicate active swapping' : ''));
   }
   if (s.journalErr) add('OOM events', true, 'info', `kernel log unreadable (${s.journalErr})`);
   else add('OOM events', !s.oomCount, 'warn', s.oomCount ? `${s.oomCount} process(es) killed by the OOM killer since the last check — last: ${shortOom(s.oom[s.oom.length - 1])}` : 'none since the last check');
