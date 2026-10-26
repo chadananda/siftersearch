@@ -34,6 +34,7 @@ watch_parent() { local sshd=$PPID; while kill -0 "$1" 2>/dev/null; do kill -0 "$
 if [[ "$verb" == "install-tool" ]]; then cat > media_tool.py.new && mv media_tool.py.new media_tool.py && echo '{"installed":true}'; exit 0; fi
 if [[ "$verb" == "install-renderer" ]]; then cat > render_short.py.new && mv render_short.py.new render_short.py && echo '{"installed":true}'; exit 0; fi
 if [[ "$verb" == "install-unipase" ]]; then cat > unipase_job.py.new && mv unipase_job.py.new unipase_job.py && echo '{"installed":true}'; exit 0; fi
+if [[ "$verb" =~ ^whole-(put|start|poll|fetch)$ ]]; then exec python3 whole_gate.py "${A[@]}"; fi
 # an audiogram SHORT: a tar (spec.json, audio.m4a, captions.ass, portrait.jpg?, qr.png) in, the MP4 out; fixed recipes only;
 # killed when the caller's ssh session goes (same watcher as the ASR verbs)
 if [[ "$verb" == "short" ]]; then

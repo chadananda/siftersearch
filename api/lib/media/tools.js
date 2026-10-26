@@ -2,7 +2,7 @@
 // ffprobe and yt-dlp — every one at nice 19 with a thread cap, so a transcription never costs a reader their search. The
 // thread cap follows measured search latency on the gateway (MEDIA_THREADS default; halved while search is slow).
 import { spawn } from 'child_process';
-import { readFileSync } from 'fs';
+import { readFileSync, createReadStream } from 'fs';
 import { homedir } from 'os';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -122,7 +122,7 @@ export async function run(cmd, args, o = {}) {
   const release = await towerAdmit(cls, String(cmd).split('/').pop());
   try { return await runNow(cmd, args, o); } finally { release(); }
 }
-function runNow(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null, input = null, onStdout = null, stop = null, pollMs = 2000 } = {}) {
+function runNow(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null, input = null, inputFile = null, onStdout = null, stop = null, pollMs = 2000 } = {}) {
   return new Promise((resolve, reject) => {
     const tenv = threads ? { OMP_NUM_THREADS: String(threads), MKL_NUM_THREADS: String(threads), OPENBLAS_NUM_THREADS: String(threads) } : {};
     const p = spawn(LOW[0], [...LOW.slice(1), cmd, ...args], { env: { ...process.env, ...tenv, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
@@ -141,7 +141,10 @@ function runNow(cmd, args, { timeoutMs = 6 * 3600_000, env = {}, threads = null,
       else reject(new Error(`${cmd.split('/').pop()} exit ${code ?? sig}: ${errSummary(err)}`));
     });
     p.stdin.on('error', () => {});   // a killed child closes its stdin under us
-    if (input != null) p.stdin.end(input); else p.stdin.end();
+    if (inputFile) {
+      const source=createReadStream(inputFile);
+      source.on('error',e=>p.stdin.destroy(e));p.on('close',()=>source.destroy());source.pipe(p.stdin);
+    } else if (input != null) p.stdin.end(input); else p.stdin.end();
   });
 }
 

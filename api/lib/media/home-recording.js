@@ -8,14 +8,15 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
  if(host!=='aorus'&&!(host==='boss'&&mode==='post'))throw Error('Restoration requires Aorus; Boss accepts cached CPU tails');
  const root=host==='boss'?'/home/chad/sifter-whole-home':'/data/sifter-whole-home',docker=host==='boss'?'sudo -n docker':'docker';
  const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,...opts});
- const put=(file,to)=>T.run('rsync',['-a',file,`${host}:${q(to)}`],{timeoutMs:600000});
- const get=(from,to)=>T.run('rsync',['-a',`${host}:${q(from)}`,to],{timeoutMs:600000});
+ const put=(file,to)=>T.run('rsync',['-a','--protect-args',file,`${host}:${to}`],{timeoutMs:600000});
+ const get=(from,to)=>T.run('rsync',['-a','--protect-args',`${host}:${from}`,to],{timeoutMs:600000});
  const work=join(it.dir,'transcript.work.json'), workSha=await sha256File(work);
  const job=`recording-${it.id}-${workSha.slice(0,8)}-${image.slice(-8)}`,remote=`${root}/${job}`;
  const original=(m.enhancement?.variants||[]).find(v=>v.name==='original')||{};
  const cfg={mode,cleanup:false,assess_quality:true,trim:m.trim,slug:m.slug,audio_s:m.duration_s,work_sha:workSha,af:safeChain(original),bw_khz:m.quality?.raw?.bandwidth_khz,
   ogg:['-ac','1','-ar','48000',...OGG_ARGS_REMASTER],m4a:['-ac','1','-ar','48000','-c:a','aac','-b:a',M4A_BITRATE_REMASTER,'-movflags','+faststart'],
   orig_ogg:['-ac','1','-ar','48000',...OGG_ARGS],orig_m4a:['-ac','1','-ar','44100','-c:a','aac','-b:a','64k','-movflags','+faststart']};
+ if(host==='boss')return (await import('./boss-recording.js')).bossPostRecording(it,m,{T,job,cfg,stop,nap});
  await run(`mkdir -p ${q(remote)} ${q(root+'/leases')}; ${docker} image inspect ${q(image)} >/dev/null`);
  const state=JSON.parse((await run(`${docker} inspect ${q(job)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());
  if(!state){
@@ -54,7 +55,7 @@ export async function homeWholeRecording(it,m,{T,image,stop=()=>false,nap=ms=>ne
  const state=async()=>JSON.parse((await run(`docker inspect ${q(name)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());
  await run(`mkdir -p ${q(remote)} ${q(root+'/leases')}; docker image inspect ${q(image)} >/dev/null`);
  if(!await state()){
-  await T.run('rsync',['-a',input,`${host}:${q(remote+'/in'+extname(m.original))}`],{timeoutMs:600000});
+  await T.run('rsync',['-a','--protect-args',input,`${host}:${remote+'/in'+extname(m.original)}`],{timeoutMs:600000});
   const fresh={...m,stages:{archive:m.stages.archive}};
   for(const k of ['enhancement','quality','qa','remaster','aligned_to','trim','enh_ck','asr_job','diar_job','dfn_job','enc_jobs'])delete fresh[k];
   await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify({v:1,id:it.id,input:'in'+extname(m.original),input_sha:sha,threads:2,meta:fresh})});
@@ -74,7 +75,7 @@ export async function homeWholeRecording(it,m,{T,image,stop=()=>false,nap=ms=>ne
   await nap(10000);
  }
  const staging=join(it.dir,'.whole-worker');await fs.mkdir(staging,{recursive:true});
- await T.run('rsync',['-a','--exclude','original',`${host}:${q(remote+'/item')}`,staging+'/'],{timeoutMs:600000});
- await T.run('rsync',['-a',`${host}:${q(remote+'/result.json')}`,staging+'/result.json'],{timeoutMs:600000});
+ await T.run('rsync',['-a','--protect-args','--exclude','original',`${host}:${remote+'/item'}`,staging+'/'],{timeoutMs:600000});
+ await T.run('rsync',['-a','--protect-args',`${host}:${remote+'/result.json'}`,staging+'/result.json'],{timeoutMs:600000});
  return adoptWholeResult(staging,it.dir,m,sha);
 }

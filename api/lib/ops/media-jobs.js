@@ -1374,7 +1374,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         st.orders_checked = now();
         const taken = await C.takeOrders(deps.ordersFile).catch(() => []);
         for (const o of taken) {
-          if (o.redo) st.done = st.done.filter((d) => d.id !== o.id);   // an explicit redo (the first pass was wrong, e.g. the aligner was not found)
+          if (o.redo) {
+            st.done = st.done.filter((d) => d.id !== o.id);
+            st.failed = st.failed.filter(d=>d.id!==o.id);delete st.attempts[o.id];
+            st.items[o.id]={slug:o.slug,grade:o.grade,duration_s:o.duration_s,mode:o.mode,redo:true};
+          }
           if ((!o.redo && st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode)) || st.queue.includes(o.id) || Object.values(st.jobs).some((j) => j.itemId === o.id)) continue;
           st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, redo:!!o.redo };
           st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
