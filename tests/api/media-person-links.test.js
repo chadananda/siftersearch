@@ -59,5 +59,7 @@ describe('media-relink: talks whose person mentions the retired guard refused ge
     expect(queued).toEqual([]);
     expect(await mediaRelinkJob({ write: true }, deps)).toMatchObject({ affected: 2, queued: 1, skipped_busy: 1 });
     expect(queued).toEqual([['media-item', { id: 1, redo: ['links', 'update'] }]]);
+    queued.length=0;await mediaRelinkJob({write:true,only:['links','update']},deps);
+    expect(queued).toEqual([['media-item',{id:1,redo:['links','update'],only:['links','update']}]]);
   });
 });

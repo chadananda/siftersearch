@@ -916,7 +916,7 @@ export async function mediaRestoreJob({ write = false } = {}, deps = {}) {
  *  holds (default: the retired Covenant-breaker guard — Chad 10-23 "we should link to them accurately"; it also refused
  *  'the Guardian' and '‘Abdu’l-Bahá') → a ['links', 'update'] re-run (stored mentions re-resolved, no model call; busy talks
  *  skipped). → counts */
-export async function mediaRelinkJob({ write = false, ids = null, why = 'Covenant-breaker' } = {}, deps = {}) {
+export async function mediaRelinkJob({ write = false, ids = null, why = 'Covenant-breaker', only = null } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const queue = deps.queue || enqueue;
@@ -933,7 +933,7 @@ export async function mediaRelinkJob({ write = false, ids = null, why = 'Covenan
     out.affected++; out.mentions += n;
     if (!write) continue;
     if (busy.has(it.id)) { out.skipped_busy++; continue; }
-    await queue('media-item', { id: it.id, redo: ['links', 'update'] }, 'media-relink'); out.queued++;
+    await queue('media-item', { id: it.id, redo: ['links', 'update'], ...(only?{only}:{}) }, 'media-relink'); out.queued++;
   }
   return out;
 }
