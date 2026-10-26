@@ -5,8 +5,8 @@ import {sha256File,podComplete} from './pod-post.js';
 import {safeChain,OGG_ARGS,OGG_ARGS_REMASTER,M4A_BITRATE_REMASTER} from './enhance.js';
 const q=s=>"'"+String(s).replaceAll("'", "'\\''")+"'";
 export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>false,nap=ms=>new Promise(r=>setTimeout(r,ms))}) {
- if(host!=='aorus')throw Error('This worker requires a tested CUDA home host');
- const root='/data/sifter-whole-home';
+ if(host!=='aorus'&&!(host==='boss'&&mode==='post'))throw Error('Restoration requires Aorus; Boss accepts cached CPU tails');
+ const root=host==='boss'?'/home/chad/sifter-whole-home':'/data/sifter-whole-home',docker=host==='boss'?'sudo -n docker':'docker';
  const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,...opts});
  const put=(file,to)=>T.run('rsync',['-a',file,`${host}:${q(to)}`],{timeoutMs:600000});
  const get=(from,to)=>T.run('rsync',['-a',`${host}:${q(from)}`,to],{timeoutMs:600000});
@@ -16,18 +16,19 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
  const cfg={mode,cleanup:false,assess_quality:true,trim:m.trim,slug:m.slug,audio_s:m.duration_s,work_sha:workSha,af:safeChain(original),bw_khz:m.quality?.raw?.bandwidth_khz,
   ogg:['-ac','1','-ar','48000',...OGG_ARGS_REMASTER],m4a:['-ac','1','-ar','48000','-c:a','aac','-b:a',M4A_BITRATE_REMASTER,'-movflags','+faststart'],
   orig_ogg:['-ac','1','-ar','48000',...OGG_ARGS],orig_m4a:['-ac','1','-ar','44100','-c:a','aac','-b:a','64k','-movflags','+faststart']};
- await run(`mkdir -p ${q(remote)} ${q(root+'/leases')}; docker image inspect ${q(image)} >/dev/null`);
- const state=JSON.parse((await run(`docker inspect ${q(job)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());
+ await run(`mkdir -p ${q(remote)} ${q(root+'/leases')}; ${docker} image inspect ${q(image)} >/dev/null`);
+ const state=JSON.parse((await run(`${docker} inspect ${q(job)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());
  if(!state){
   await put(join(it.dir,m.original),remote+'/in'+extname(m.original));await put(work,remote+'/work.json');
   if(mode==='post')for(const [a,b] of [['unipase.cloud.flac','out.flac'],['unipase.asr.json','asr.json'],['unipase.asr_orig.json','asr_orig.json']])await put(join(it.dir,'enhanced',a),remote+'/'+b);
   await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify({post:cfg})});
-  await run(`docker run -d --name ${q(job)} --gpus all --network none --cpus 4 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} -v /home/chad/media-gpu/.gpu.lock:/gpu.lock -e SIFTER_GPU_LEASES=1 -e SIFTER_LEGACY_GPU_LOCK=/gpu.lock --entrypoint python ${q(image)} /opt/sifter/media/worker/single_restore.py /job`);
+  const accelerator=host==='aorus'?'--gpus all -v /home/chad/media-gpu/.gpu.lock:/gpu.lock -e SIFTER_LEGACY_GPU_LOCK=/gpu.lock':'-e MEDIA_DEVICE=cpu -e CUDA_VISIBLE_DEVICES=';
+  await run(`${docker} run -d --name ${q(job)} ${accelerator} --network none --cpus 4 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} -e SIFTER_GPU_LEASES=1 --entrypoint python ${q(image)} /opt/sifter/media/worker/single_restore.py /job`);
  }
  while(true){
   if(stop()){const e=Error('Worker continues; coordinator will reattach');e.code='DRAIN';throw e;}
-  const state=JSON.parse((await run(`docker inspect ${q(job)} --format '{{json .State}}'`)).stdout.trim());
-  if(!state.Running){if(state.ExitCode)throw Error(`Worker exited ${state.ExitCode}: `+(await run(`docker logs --tail 8 ${q(job)}`)).stdout.slice(-700));break;}
+  const state=JSON.parse((await run(`${docker} inspect ${q(job)} --format '{{json .State}}'`)).stdout.trim());
+  if(!state.Running){if(state.ExitCode)throw Error(`Worker exited ${state.ExitCode}: `+(await run(`${docker} logs --tail 8 ${q(job)}`)).stdout.slice(-700));break;}
   await nap(10000);
  }
  const enh=join(it.dir,'enhanced'),stage=join(enh,'pod-stage');await fs.mkdir(stage,{recursive:true});

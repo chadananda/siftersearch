@@ -1314,7 +1314,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   if (/pods failed to start/.test(st.cloud_stopped || '')) { st.cloud_stopped = null; st.pod_failures = 0; }
   st.pod_failures = st.pod_failures || 0; st.home = st.home || {}; st.home_done = st.home_done || 0;
   // the legacy home-host path (the gate's 'unipase' verb) has no worker result for tower to take: off in cleanup runs and in STRICT mode (workers only)
-  const homeHosts = acceptedWorker ? ['aorus','aorus-2'] : (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
+  const homeHosts = acceptedWorker ? [...(acceptedWorker.boss_cpu?['boss','boss-2']:[]),'aorus','aorus-2'] : (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
   const homeTasks = new Map();   // host → promise (in this process)
   // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
   const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
@@ -1398,7 +1398,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       }
       for (const h of rentalPause && !acceptedWorker ? [] : homeHosts) {
         if (homeTasks.has(h)) continue;
-        const cur = st.home[h] || (st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.shift(), since: now() } : null);
+        const eligibleIndex=acceptedWorker&&h.startsWith('boss')?st.queue.findIndex(id=>st.items?.[id]?.mode==='post'):0;
+        const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
         if (!cur) continue;
         st.home[h] = cur;
         homeTasks.set(h, (async () => {
@@ -1407,7 +1408,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (!m?.original) throw new Error('no original');
           if (decided(m,it.id)) return;
           const dj = acceptedWorker
-            ? await (await import('../media/home-recording.js')).homeRecording('aorus',it,m,{T,image:acceptedWorker.image,mode:st.items?.[it.id]?.mode||'restore',stop:draining})
+            ? await (await import('../media/home-recording.js')).homeRecording(h.startsWith('boss')?'boss':'aorus',it,m,{T,image:acceptedWorker.image,mode:st.items?.[it.id]?.mode||'restore',stop:draining})
             : await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
           if (st.done.some((d) => d.id === it.id)) return;   // a duplicate result never double-publishes
           st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h });
@@ -1547,7 +1548,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode, cycle_s: Math.round((now() - x.since) / 1000), upload_s: x.uploaded_s, pod_s: dj.seconds, post_s: dj.post_s ?? null, download_s: Math.round((now() - fetchAt) / 1000), post_steps: postSteps, at: now() });
                 // a 'post' result for a talk tower has already finished itself is stale: drop it; otherwise tower's queued run takes it in seconds
                 const mt = await readMeta(it.dir).catch(() => null);
-                if (imode === 'post' && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); continue; }
+                if (imode === 'post' && !st.items?.[it.id]?.redo && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); continue; }
                 await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');   // tower takes the finished result (seconds); an identical queued run is not doubled
               } else if (kind === 'FAIL') {
                 const err = await C.podSsh(run, p, `tail -c 600 /workspace/spool/${job}/error.txt; rm -rf /workspace/spool/${job}`, { timeoutMs: 60_000 }).then((r) => r.stdout).catch(() => '');
@@ -1658,7 +1659,7 @@ export async function laneKeeperPass(deps = {}) {
 /** media-cloud-order { mode: 'cleanup' | 'post', ids?, limit? }: put work on the cloud lane without restarting it (orders are taken in on its next tick).
  *  cleanup: talks the word guard held (review / kept / deferred) get the deterministic cleanup on a worker. post: results tower holds in its own
  *  media-remaster queue (a pod's copy is already on disk) get their guard, alignment and encodes done on a worker instead — oldest queued first. */
-export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60 } = {}, deps = {}) {
+export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60, redo = false } = {}, deps = {}) {
   const C = deps.cloud || await import('../media/cloud.js');
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
@@ -1676,12 +1677,12 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
     if (!it?.dir) continue;
     const m = await readMeta(it.dir).catch(() => null);
     if (!m) continue;
-    const has = existsSync(join(it.dir, 'enhanced', 'unipase.cloud.flac')) && existsSync(join(it.dir, 'enhanced', 'unipase.asr.json'));
+    const has = await fs.stat(join(it.dir,'enhanced/unipase.cloud.flac')).then(s=>s.size>1024).catch(()=>false) && await fs.stat(join(it.dir,'enhanced/unipase.asr.json')).then(s=>s.size>10).catch(()=>false);
     const held = ['review', 'kept', 'deferred'].includes(m.remaster?.status);
     if (mode === 'restore' && !ids) continue;   // a redo is always explicit: the ids Chad / the agent names
-    if (mode === 'post' && (!has || ['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status) || existsSync(join(it.dir, 'enhanced', 'pod', 'post.json')))) continue;
+    if (mode === 'post' && (!has || (!redo && (['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status) || existsSync(join(it.dir, 'enhanced', 'pod', 'post.json')))))) continue;
     if (mode === 'cleanup' && (!held || m.remaster?.method === 'cleaned')) continue;
-    orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode, ...(mode === 'restore' ? { redo: true } : {}) });
+    orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode, ...((mode === 'restore'||redo) ? { redo: true } : {}) });
   }
   await C.addOrders(orders, deps.ordersFile);
   return { mode, ordered: orders.length, sample: orders.slice(0, 5).map((o) => o.slug) };

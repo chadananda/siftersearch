@@ -550,7 +550,11 @@ describe('work orders: cleanup and post runs join the running lane', () => {
   it('orders are written once, taken once; post orders are queued after the fresh talks (their upload is five times the bytes) and a stale post result is dropped', async () => {
     const { mediaCloudOrderJob } = await import('../../api/lib/ops/media-jobs.js');
     const x = setup({ talks: 3, seconds: 3600 });
-    for (const id of [1, 2]) { mkdirSync(join(x.items[id].dir, 'enhanced'), { recursive: true }); for (const f of ['unipase.cloud.flac', 'unipase.asr.json']) writeFileSync(join(x.items[id].dir, 'enhanced', f), '{}'); }
+    for (const id of [1, 2]) {
+      mkdirSync(join(x.items[id].dir,'enhanced'),{recursive:true});
+      writeFileSync(join(x.items[id].dir,'enhanced/unipase.cloud.flac'),Buffer.alloc(2048));
+      writeFileSync(join(x.items[id].dir,'enhanced/unipase.asr.json'),'{"segments":[]}');
+    }
     writeFileSync(join(x.items[3].dir, 'meta.json'), JSON.stringify({ original: 'original/a.mp3', duration_s: 3600, remaster: { status: 'review' } }));
     const ordersFile = join(x.root, 'orders.json');
     const ops = { pendingRuns: async () => [{ status: 'queued', params: { id: 2 } }, { status: 'queued', params: { id: 1 } }, { status: 'running', params: { id: 3 } }] };
