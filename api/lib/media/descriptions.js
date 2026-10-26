@@ -11,7 +11,7 @@ export function validDescription(summary, speaker='') {
  if(/^(?:the speaker\b|this (?:talk|session|lecture|recording)\b|in this\b|here[,]?\s+(?:the speaker|we)\b)/i.test(s))return false;
  const lead=s.split(/[.!?]/)[0];
  if(/^(?:where (?:last|earlier|the (?:last|earlier))|part\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\b|a (?:study|class|discussion|lecture)\b)/i.test(lead) || /\b(?:this (?:session|talk|lecture)|the speaker)\b/i.test(lead))return false;
- const names=[speaker,...String(speaker).split(/\s+/).slice(-1)].filter(n=>n.length>3);
+ const names=[String(speaker||''),...String(speaker||'').split(/\s+/).slice(-1)].filter(n=>n.length>3);
  if(names.some(n=>s.toLocaleLowerCase().startsWith(n.toLocaleLowerCase())))return false;
  return true;
 }
