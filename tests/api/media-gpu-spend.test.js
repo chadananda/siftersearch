@@ -184,6 +184,34 @@ describe('the lane: GPU is rented only for work', () => {
     expect(x.killed).toEqual(['p1']);
     expect(x.queued.map(([, params]) => params.id)).toEqual([1]);
   });
+  it('stages only one recording per pod per pass so other pods are polled between uploads', async () => {
+    const x = setup({ talks: 4, seconds: 3600 });
+    const times = [], run = x.deps.run;
+    x.deps.run = async (cmd, args, opts) => {
+      if (cmd === 'scp' && /\/spool\/.*\/in\./.test(args.at(-1))) times.push(x.clock());
+      return run(cmd, args, opts);
+    };
+    const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, x.deps);
+    expect(r.done).toBe(4);
+    expect(times).toHaveLength(4);
+    expect(new Set(times).size).toBe(4);
+  });
+  it('fetches only one completed recording per pod per pass, including a backlog of ready results', async () => {
+    const x = setup({ talks: 3 });
+    const times = [], run = x.deps.run;
+    for (const id of [1, 2, 3]) x.spool[`j${id}`] = 'ready';
+    writeFileSync(x.deps.stateFile, JSON.stringify({ started: 1, pods: { p1: { id: 'p1', name: 'test-pod', status: 'ready', ip: '1.2.3.4', port: 2222, created: x.clock() - 1000, costPerHr: 0.34 } },
+      jobs: Object.fromEntries([1, 2, 3].map(id => [`j${id}`, { itemId: id, pod: 'p1', since: x.clock() - 1000 }])),
+      queue: [], attempts: {}, done: [], failed: [], items: {}, spent_closed: 0 }));
+    x.deps.run = async (cmd, args, opts) => {
+      if (cmd === 'scp' && args.at(-2).endsWith('/done.json')) times.push(x.clock());
+      return run(cmd, args, opts);
+    };
+    const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, x.deps);
+    expect(r.done).toBe(3);
+    expect(times).toHaveLength(3);
+    expect(new Set(times).size).toBe(3);
+  });
   it('an empty queue launches no pod', async () => {
     const x = setup({ talks: 0 });
     const r = await mediaCloudRemasterJob({ write: true, ids: null }, { ...x.deps, minHours: 2 });

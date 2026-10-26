@@ -73,3 +73,7 @@ First new rental: `sifter-unipase-99`, RunPod ID `967v58xw4qhdp9`, 24 GB GPU, $0
 ### Overnight continuation
 
 The canary completed and published a real result (Ḥuqúqu’lláh, 460 seconds), with the original retained. A 97-minute talk completed UniPASE plus both ASR passes in 274 seconds (~21x real time). Continuation run 22674 raises the pool limit to three while preserving the canary and its pending results. Prefetch depth raised from four to six after observing the GPU waiting on four CPU postprocessing tails; execution admission and memory/temperature limits remain controlled by the worker. The idle clock now also advances during CPU postprocessing, so a long useful tail does not consume the worker’s idle allowance.
+
+### Bound orchestration passes
+
+Observed a second worker reach model-ready but receive no work while the shared orchestration tick transferred a large batch for the first pod. It idled out. Each ready pod now handles at most one finished-result download and one new upload per pass; uploads also stop as soon as the service is draining. This keeps startup/status checks moving and bounds graceful reload latency while retaining the six-job prefetch target. Two regression tests verify that four uploads and three completed results are spread over separate passes. GPU spending suite: 48 passed after this change.
