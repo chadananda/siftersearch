@@ -560,7 +560,7 @@ export const PREP_STAGES = ['archive', 'grade', 'enhance', 'web'];
 async function laneJob(id, rest, deps, only, next) {
   const before = await (deps.repo?.getMediaItem || getMediaItem)(id);
   const r = await mediaItemJob({ id, ...rest, only }, deps);
-  if (!r?.failed && !r?.held && !r?.yielded) await (deps.repo?.updateMediaItem || updateMediaItem)(id, { state: before?.state === 'done' ? 'done' : next });
+  if (!r?.failed && !r?.held && !r?.yielded && !r?.waiting) await (deps.repo?.updateMediaItem || updateMediaItem)(id, { state: before?.state === 'done' ? 'done' : next });
   return failedRun(r);
 }
 export const mediaComputeJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, rest, deps, PREP_STAGES, 'prepped');

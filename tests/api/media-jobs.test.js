@@ -129,3 +129,16 @@ describe('media-grade back-fill', () => {
     expect(await mediaGradeJob({}, { repo, runItem, draining: () => ++n > 1 })).toMatchObject({ yielded: true, resume: { after: 1 } });
   });
 });
+
+
+describe('worker backpressure keeps the current pipeline stage', () => {
+  it('leaves prep queued instead of advancing an unfinished recording to transcription', async () => {
+    const { mediaComputeJob } = await import('../../api/lib/ops/media-jobs.js');
+    const repo = await import('../../api/lib/repos/media-repo.js');
+    store.items.push({ id: 1, state: 'queued', source_kind: 'file', source_ref: '/recording.mp3' });
+    const r = await mediaComputeJob({ id: 1 }, { repo, waitMs: 0, runItem: async () => { throw Object.assign(new Error('no remote probe slot'), { code: 'WORKER_WAIT' }); } });
+    expect(r.waiting).toBe(true);
+    expect(store.items[0].state).toBe('queued');
+    expect(store.items[0].why).toMatch(/waiting for a worker/);
+  });
+});

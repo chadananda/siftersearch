@@ -85,3 +85,5 @@ Reproduced a media-manager crash in a standalone Node child: `asr()` returned a 
 Restarting during a slow batch could also lose a newly rented pod before the next full state save. New paid allocations are now saved immediately, before any existing pod’s audio transfer. A regression checks the state file at that exact transfer boundary. During recovery, new rentals were paused and four unrecorded SifterSearch allocations were retired; other projects were untouched. The original canary returned eight results before ending.
 
 Background light backfill now stops between recordings and passes its drain callback into remote encodes; it no longer holds a manager reload behind unrelated work. The targeted GPU host/spending suites pass 82 tests after these fixes.
+
+Prep/ASR lane transitions now exclude `waiting:true` results: remote-worker backpressure must leave unfinished work queued, rather than advancing it to the next stage. Intake/throughput regression suites pass 36 tests, including this case. During recovery the manager reconciled the old fleet and requeued four unfinished recordings; originals and completed results were retained.
