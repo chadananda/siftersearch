@@ -41,7 +41,7 @@ def terminate_self(reason):
             print('terminate failed:', err, flush=True)
 
 
-def load_models(repo, weights):
+def load_models(repo, weights, asr_device='cuda'):
     """R&D spec 10-23: pinned, sha-verified weights from the volume; no espnet (shim), no Hub at run time."""
     import torch
     espnet_shim()
@@ -55,12 +55,15 @@ def load_models(repo, weights):
     os.chdir(repo)
     sys.path.insert(0, repo)
     from models.unipase import UniPASE
-    from inference.inference_long import inference_file
+    from worker.long_restore import inference_file
     V = os.path.join(weights, 'unipase')
     model = UniPASE(dewavlm_ckpt_path=V + '/DeWavLM-Omni.pt', adapter_ckpt_path=V + '/Adapter.pt',
                     vocoder_ckpt_path=V + '/Vocoder_DWO-L1.pt', postnet_ckpt_path=V + '/PostNet.pt').cuda().eval()
+    if asr_device == 'deferred':
+        return model, inference_file, None
     from faster_whisper import WhisperModel
-    asr = WhisperModel(os.path.join(weights, 'whisper'), device='cuda', compute_type='float16')
+    asr = WhisperModel(os.path.join(weights, 'whisper'), device=asr_device,
+                       compute_type='int8' if asr_device == 'cpu' else 'float16', cpu_threads=2)
     return model, inference_file, asr
 
 
@@ -114,6 +117,13 @@ def run_job(d, up, inference_file, asr):
     subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', wav_out, '-ac', '1', '-ar', str(SR), '-c:a', 'flac', '-sample_fmt', 's16', '-f', 'flac', os.path.join(d, 'out.flac.tmp')], check=True)
     os.replace(os.path.join(d, 'out.flac.tmp'), os.path.join(d, 'out.flac'))
     t1 = time.time()
+    if asr is None:
+        # 8 GB cards run restoration then transcription, never both models in VRAM.
+        up.cpu()
+        reclaim_idle_cuda(torch)
+        from faster_whisper import WhisperModel
+        asr = WhisperModel('/opt/models/weights/whisper', device='cuda', compute_type='float16', cpu_threads=2)
+        ASR_MODEL['asr'] = asr
     # BOTH copies through the SAME model and settings (no VAD: it dropped 20 s of speech on a UniPASE copy, 10-23 pilot),
     # so the word guard compares like with like — the production transcript came from another model with a prompt
     for src_wav, name in ((wav_out, 'asr.json'), (wav_in, 'asr_orig.json')):
