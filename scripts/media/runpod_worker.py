@@ -136,8 +136,8 @@ ASR_MODEL = {}
 def reclaim_idle_cuda(torch=None):
     """Return unused PyTorch reservations before admission samples driver memory.
 
-    Run only between GPU jobs with no postprocessing active. Live model tensors
-    remain resident; a fragmented allocator cache must not block its next job.
+    Run between GPU jobs. Live model tensors remain resident; subprocesses and
+    CTranslate2 postprocessing do not use this process's PyTorch allocator cache.
     """
     import gc
     if torch is None:
@@ -236,7 +236,7 @@ def main():
         if ready and len(active) < 6:
             with ctl_lock:
                 admitted = ctl.admit('unipase')
-            if not admitted and not active:
+            if not admitted:
                 freed = reclaim_idle_cuda()
                 if freed:
                     print(f'{time.strftime("%H:%M:%S")} reclaimed {freed / 2**30:.2f} GB idle CUDA cache', flush=True)
