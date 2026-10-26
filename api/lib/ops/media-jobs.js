@@ -1240,6 +1240,7 @@ export function worstFirst(talks) {
  *  fatal error, or (their own watchdog) after 15 idle minutes; a drain YIELDS — pods and jobs in flight live in the state
  *  file and are re-attached on the next start. → summary (spend, $/audio-hour, done, failed) */
 export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000, force = false, mode = 'restore' } = {}, deps = {}) {
+  const requestedMaxPods = maxPods;
   const configuredPods = Number(process.env.MEDIA_CLOUD_MAX_PODS);
   if (Number.isInteger(configuredPods) && configuredPods > 0) maxPods = Math.min(maxPods, Math.floor(configuredPods));
   const cleanupMode = mode === 'cleanup';   // talks the word guard held (review / kept / deferred): the deterministic cleanup only, no generative copy
@@ -1602,7 +1603,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const audioH = st.done.reduce((a, d) => a + (d.audio_s || 0), 0) / 3600;
   const summary = { done: st.done.length, failed: st.failed.length, queue: st.queue.length, in_flight: Object.keys(st.jobs).length, spent_usd: st.spent_usd,
     usd_per_audio_hour: audioH ? Math.round((st.spent_usd / audioH) * 100) / 100 : null, home_done: st.home_done, cloud_stopped: st.cloud_stopped || null, audio_hours: Math.round(audioH * 10) / 10, stop, pods: Object.values(st.pods).map((p) => ({ name: p.name, gpu: p.gpu, cost_per_hr: p.costPerHr, status: p.terminated ? `terminated (${p.why})` : p.status })) };
-  return yielded ? { ...summary, yielded: true, resume: { write: true, maxPods } } : summary;
+  return yielded ? { ...summary, yielded: true, resume: { write: true, maxPods: requestedMaxPods } } : summary;
 }
 
 /** media-preview { fingerprint?, text, duration_s }: Dewey's stage 0 answer (api/lib/media/preview.js) — "duplicate of <slug>" or "new". Text only. */

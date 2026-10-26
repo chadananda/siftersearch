@@ -172,6 +172,17 @@ const setup = ({ talks = 2, seconds = 600, poll = null } = {}) => {
 };
 
 describe('the lane: GPU is rented only for work', () => {
+  it('preserves the requested pool size across a drain under a temporary lower cap', async () => {
+    const x = setup({ talks: 2, seconds: 3600 });
+    const before = process.env.MEDIA_CLOUD_MAX_PODS;
+    process.env.MEDIA_CLOUD_MAX_PODS = '1';
+    let stop = false;
+    try {
+      const r = await mediaCloudRemasterJob({ write: true, maxPods: 3 }, { ...x.deps, draining: () => stop, nap: async () => { stop = true; } });
+      expect(r).toMatchObject({ yielded: true, resume: { maxPods: 3 } });
+      expect(x.cloud.createPod).toHaveBeenCalledTimes(1);
+    } finally { if (before === undefined) delete process.env.MEDIA_CLOUD_MAX_PODS; else process.env.MEDIA_CLOUD_MAX_PODS = before; }
+  });
   it('a persistent pause drains assigned work, leaves queued talks untouched, and closes the existing pod', async () => {
     const x = setup({ talks: 2, seconds: 3600 });
     x.cloud.rentalPauseReason = async () => 'Aorus validation pending';
