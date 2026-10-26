@@ -92,7 +92,7 @@ describe("Chad's decisions 10-23 (the answers collection)", async () => {
   it('the confirmed identities: surname-only labels resolve to the person Chad named', () => {
     const notSpeakers = [];
     for (const [form, key] of [['Furútan', 'ali-akbar-furutan'], ['Nakhjavání', 'ali-nakhjavani'], ['Grossmann', 'hartmut-grossmann'], ['Taherzadeh', 'adib-taherzadeh'],
-      ['Sabri', 'isobel-sabri'], ['Khamsi-Dunbar,M.', 'masud-khamsi'], ['Faizi', 'abul-qasim-faizi'], ['Dr. Mohajer', 'payman-mohajer']]) {
+      ['Sabri', 'isobel-sabri'], ['Faizi', 'abul-qasim-faizi'], ['Dr. Mohajer', 'payman-mohajer']]) {
       expect(resolveSpeaker(form, people, {}, { notSpeakers }).key, form).toBe(key);
     }
   });

@@ -702,7 +702,7 @@ export async function mediaMetaFixJob({ write = false, ids = null } = {}, deps =
 
 // ── SPEAKER IDENTITY (Chad 10-23: one person, many name forms; api/lib/media/identity.js, data/media-speaker-people.json) ──
 export async function loadSpeakerPeople(read = async () => (await import('fs/promises')).readFile(join(process.cwd(), 'data', 'media-speaker-people.json'), 'utf8')) {
-  try { const d = JSON.parse(await read()); const people = d.people || []; people.notSpeakers = d.not_speakers || []; return people; } catch { return []; }
+  try { const d = JSON.parse(await read()); const people = d.people || []; people.notSpeakers = d.not_speakers || []; return (await import('../media/speaker-decisions.js')).peopleWithDecisions(people); } catch { return []; }
 }
 /** The identity context of one item (evidence for a surname-only or ambiguous name). */
 export function identityContext(item, meta = {}) {

@@ -3,6 +3,7 @@
 // Writes go through the single writer (transaction). Callers: routes/media.js, ops/media-jobs.js. Deps: db.js.
 import { queryAll, queryOne, transaction } from '../db.js';
 import { LIVE_SQL } from '../entity-live.js';
+import { approvedSpeakerLabel, canonicalSpeakerKey, speakerDecisions } from '../media/speaker-decisions.js';
 
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
@@ -27,6 +28,9 @@ export const mediaByDocIds = async (ids) => (ids.length ? (await queryAll(`SELEC
 /** Change fields (unknown keys are ignored; meta is JSON). */
 export async function updateMediaItem(id, fields = {}) {
   const set = Object.fromEntries(Object.entries(fields).filter(([k]) => COLS.has(k)));
+  const approved = set.speaker !== undefined ? approvedSpeakerLabel(set.speaker) : null;
+  if (approved) { set.speaker = approved.name; set.speaker_key = approved.key; }
+  else if (set.speaker_key) set.speaker_key = canonicalSpeakerKey(set.speaker_key);
   if (set.meta !== undefined && typeof set.meta !== 'string') set.meta = JSON.stringify(set.meta);
   if (set.has_video !== undefined) set.has_video = set.has_video ? 1 : 0;
   set.updated_at = now();
@@ -192,6 +196,7 @@ export const publishedSince = async (iso) => (await queryOne(`SELECT COUNT(*) n,
 
 /** The /media listing: published items (state 'done'), filtered. → { items, total } */
 export async function listMedia({ speaker, tradition, collection, year, language, minDur, maxDur, hasVideo, ids, grade, issue, audience, state = 'done', sort = 'recent', limit = 50, offset = 0 } = {}) {
+  speaker = approvedSpeakerLabel(speaker)?.name || speaker;
   const where = ['state = ?'], args = [state];
   const eq = (col, v) => { if (v != null && v !== '') { where.push(`${col} = ?`); args.push(v); } };
   eq('speaker', speaker); eq('tradition', tradition); eq('collection', collection); eq('language', language); eq('primary_issue', issue);
@@ -254,16 +259,51 @@ export const vocabularyNames = async ({ limit = 6000 } = {}) => queryAll(`SELECT
   AND ${LIVE_SQL()} ORDER BY COALESCE(importance, 0) DESC LIMIT ?`, [limit], 'media:vocab-names');
 
 // ── speaker portraits (migration 164) ──
-export const getSpeaker = async (key) => queryOne('SELECT * FROM media_speakers WHERE key = ?', [String(key)], 'media:speaker');
+export const getSpeaker = async (key) => queryOne('SELECT * FROM media_speakers WHERE key = ?', [String(canonicalSpeakerKey(key))], 'media:speaker');
 export const speakersByKeys = async (keys) => (keys.length ? queryAll(`SELECT * FROM media_speakers WHERE key IN (${keys.map(() => '?').join(',')})`, keys, 'media:speakers') : []);
 export const listSpeakers = async () => queryAll('SELECT * FROM media_speakers ORDER BY name', [], 'media:speakers-all');
+export const itemsBySpeakerKeys = async (keys) => keys.length ? queryAll(`SELECT id, slug, dir, speaker, speaker_key, state, doc_id FROM media_items WHERE speaker_key IN (${keys.map(() => '?').join(',')})`, keys, 'media:items-speaker-keys') : [];
 const SPK = ['name', 'entity_id', 'file', 'sha', 'width', 'height', 'origin', 'source_url', 'page_url', 'credit', 'licence', 'fetched_at', 'tried_at', 'note', 'ext_file', 'ext_sha', 'ext_of', 'ext_model', 'ext_prompt', 'ext_usd', 'ext_at', 'ext_error'];
 export async function upsertSpeaker(row) {
+  const key = canonicalSpeakerKey(row.key);
+  if (key !== row.key) {
+    const decision = (speakerDecisions().profile_merges || []).find(x => x.from === row.key);
+    row = { ...row, key, name: decision?.name || row.name };
+    const current = await getSpeaker(key);
+    if (current?.entity_id) row.entity_id = current.entity_id;
+    if (current?.file && current.file !== row.file) for (const field of SPK.filter(k => !['name', 'entity_id', 'note'].includes(k))) row[field] = undefined;
+  }
   const vals = SPK.map((k) => (row[k] === undefined ? null : row[k]));
   await transaction([{ sql: `INSERT INTO media_speakers (key, ${SPK.join(', ')}, updated_at) VALUES (?, ${SPK.map(() => '?').join(', ')}, ?)
     ON CONFLICT(key) DO UPDATE SET ${SPK.map((k) => `${k} = COALESCE(excluded.${k}, ${k})`).join(', ')}, updated_at = excluded.updated_at`,
   args: [String(row.key), ...vals, now()] }], 'media:speaker-upsert');
   return getSpeaker(row.key);
+}
+/** Consolidate only explicitly approved profile keys. Preserve canonical fields,
+ * gallery originals/extensions and alternate entity references in the merge note.
+ * No recording, graph person, or media byte is deleted. */
+export async function mergeSpeakerProfiles({ from, to, name }, decisions = speakerDecisions()) {
+  if (from === to || !(decisions.profile_merges || []).some(x => x.from === from && x.to === to && x.name === name)) throw new Error('Speaker profile merge was not approved');
+  const profiles = await speakersByKeys([from, to]);
+  const source = profiles.find(p => p.key === from), target = profiles.find(p => p.key === to);
+  if (!source) return { from, to, already_merged: true };
+  const merged = { ...source, ...(target || {}), key: to, name };
+  for (const field of SPK) if (merged[field] == null) merged[field] = source[field] ?? null;
+  if (target?.file) for (const field of SPK.filter(k => !['name', 'entity_id', 'note'].includes(k))) merged[field] = target[field] ?? null;
+  merged.note = [target?.note, source.note, `Merged ${from} into ${to}; source entity ${source.entity_id ?? 'none'}; preserved source portrait ${source.file ?? 'none'}`].filter(Boolean).join('\n');
+  const at = now(), vals = SPK.map(k => merged[k] ?? null);
+  const galleryCols = [...GAL, 'ext_file', 'ext_sha', 'ext_model', 'ext_usd', 'ext_at', 'ext_error'];
+  const ops = [{ sql: `INSERT INTO media_speakers (key, ${SPK.join(', ')}, updated_at) VALUES (?, ${SPK.map(() => '?').join(', ')}, ?)
+    ON CONFLICT(key) DO UPDATE SET ${SPK.map(k => `${k} = excluded.${k}`).join(', ')}, updated_at = excluded.updated_at`, args: [to, ...vals, at] },
+    { sql: 'UPDATE media_items SET speaker_key = ?, speaker = ?, updated_at = ? WHERE speaker_key = ?', args: [to, name, at, from] },
+    { sql: `INSERT INTO media_speaker_photos (speaker_key, sha, ${galleryCols.join(', ')}, updated_at)
+      SELECT ?, sha, ${galleryCols.join(', ')}, ? FROM media_speaker_photos WHERE speaker_key = ? ON CONFLICT(speaker_key, sha) DO NOTHING`, args: [to, at, from] }];
+  if (source.file && source.sha) ops.push({ sql: `INSERT INTO media_speaker_photos (speaker_key, sha, file, rank, width, height, origin, source_url, page_url, credit, licence, note, needs_ext, ext_file, ext_sha, ext_model, ext_usd, ext_at, ext_error, updated_at)
+    VALUES (?, ?, ?, 100, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(speaker_key, sha) DO NOTHING`,
+    args: [to, source.sha, source.file, source.width ?? null, source.height ?? null, source.origin ?? null, source.source_url ?? null, source.page_url ?? null, source.credit ?? null, source.licence ?? null, `Preserved from approved merge of ${from}`, source.ext_file ?? null, source.ext_sha ?? null, source.ext_model ?? null, source.ext_usd ?? null, source.ext_at ?? null, source.ext_error ?? null, at] });
+  ops.push({ sql: 'DELETE FROM media_speaker_photos WHERE speaker_key = ?', args: [from] }, { sql: 'DELETE FROM media_speakers WHERE key = ?', args: [from] });
+  await transaction(ops, 'media:approved-speaker-merge');
+  return { from, to, merged: true, source_entity_id: source.entity_id ?? null, canonical_entity_id: merged.entity_id ?? null };
 }
 /** Distinct speakers of the catalogue (with their items' ids) — the portrait job's work list. */
 export const mediaSpeakerNames = async () => queryAll(`SELECT speaker, speaker_key, COUNT(*) n FROM media_items WHERE speaker IS NOT NULL AND speaker != ''
@@ -358,11 +398,15 @@ export async function setSpeakerExtension(key, f = {}) {
 
 // ── speaker galleries (migration 174) ──
 /** Gallery rows of these people (all when keys is null), in rank order. */
-export const galleryRows = async (keys = null) => (keys && !keys.length ? [] : queryAll(`SELECT * FROM media_speaker_photos${keys ? ` WHERE speaker_key IN (${keys.map(() => '?').join(',')})` : ''}
-  ORDER BY speaker_key, rank`, keys || [], 'media:gallery'));
+export const galleryRows = async (keys = null) => {
+  keys = keys ? [...new Set(keys.map(k => canonicalSpeakerKey(k)))] : null;
+  return keys && !keys.length ? [] : queryAll(`SELECT * FROM media_speaker_photos${keys ? ` WHERE speaker_key IN (${keys.map(() => '?').join(',')})` : ''}
+    ORDER BY speaker_key, rank`, keys || [], 'media:gallery');
+};
 const GAL = ['rank', 'file', 'phash', 'width', 'height', 'face', 'origin', 'source_url', 'page_url', 'credit', 'licence', 'year', 'note', 'needs_ext'];
 /** Apply one person's gallery sync (planGallerySync): upserts keep any extended master already made; deletes by sha. */
 export async function applyGallery(key, { upserts = [], deletes = [] }) {
+  key = canonicalSpeakerKey(key);
   const ops = deletes.map((sha) => ({ sql: 'DELETE FROM media_speaker_photos WHERE speaker_key = ? AND sha = ?', args: [String(key), sha] }));
   for (const r of upserts) ops.push({ sql: `INSERT INTO media_speaker_photos (speaker_key, sha, ${GAL.join(', ')}, updated_at) VALUES (?, ?, ${GAL.map(() => '?').join(', ')}, ?)
     ON CONFLICT(speaker_key, sha) DO UPDATE SET ${GAL.map((k) => `${k} = excluded.${k}`).join(', ')}, updated_at = excluded.updated_at`,
@@ -372,6 +416,7 @@ export async function applyGallery(key, { upserts = [], deletes = [] }) {
 }
 /** Record a gallery photo's AI-extended master (or its failure). */
 export async function setGalleryExtension(key, sha, f = {}) {
+  key = canonicalSpeakerKey(key);
   const cols = ['ext_file', 'ext_sha', 'ext_model', 'ext_usd', 'ext_at', 'ext_error'].filter((k) => f[k] !== undefined);
   if (cols.length) await transaction([{ sql: `UPDATE media_speaker_photos SET ${cols.map((k) => `${k} = ?`).join(', ')}, updated_at = ? WHERE speaker_key = ? AND sha = ?`,
     args: [...cols.map((k) => f[k]), now(), String(key), sha] }], 'media:gallery-ext');

@@ -1,0 +1,698 @@
+{
+ "v": 1,
+ "source_page": "page_7715815f63948191a57020b3abf6f200",
+ "source_url": "https://chatgpt.com/space/page_7715815f63948191a57020b3abf6f200",
+ "approved_at": "2026-10-26T12:30:37.467Z",
+ "selected_decisions": 55,
+ "profile_merges": [
+  {
+   "from": "a-taherzadeh",
+   "to": "adib-taherzadeh",
+   "name": "Adib Taherzadeh",
+   "kind": "person"
+  },
+  {
+   "from": "ali-yullah-nakhjavani",
+   "to": "ali-nakhjavani",
+   "name": "‘Alí Nakhjavání",
+   "kind": "person"
+  },
+  {
+   "from": "bill-sears",
+   "to": "william-sears",
+   "name": "William Sears",
+   "kind": "person"
+  },
+  {
+   "from": "mary-sutherland-maxwell",
+   "to": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum",
+   "kind": "person"
+  },
+  {
+   "from": "stephen-phelps",
+   "to": "steven-phelps",
+   "name": "Steven Phelps",
+   "kind": "person"
+  },
+  {
+   "from": "a-q-faizi",
+   "to": "abul-qasim-faizi",
+   "name": "Abu’l-Qásim Faizí",
+   "kind": "person"
+  },
+  {
+   "from": "abul-qasim-fayzi",
+   "to": "abul-qasim-faizi",
+   "name": "Abu’l-Qásim Faizí",
+   "kind": "person"
+  },
+  {
+   "from": "a-furutan",
+   "to": "ali-akbar-furutan",
+   "name": "‘Alí-Akbar Furútan",
+   "kind": "person"
+  },
+  {
+   "from": "d-khadem",
+   "to": "zikrullah-khadem",
+   "name": "Dhikru’lláh Khádem",
+   "kind": "person"
+  },
+  {
+   "from": "dhikrullah-khadem",
+   "to": "zikrullah-khadem",
+   "name": "Dhikru’lláh Khádem",
+   "kind": "person"
+  },
+  {
+   "from": "glenford-eckleton-mitchell",
+   "to": "glenford-mitchell",
+   "name": "Glenford Mitchell",
+   "kind": "person"
+  },
+  {
+   "from": "h-collis-featherstone",
+   "to": "collis-featherstone",
+   "name": "H. Collis Featherstone",
+   "kind": "person"
+  },
+  {
+   "from": "martha-louise-root",
+   "to": "martha-root",
+   "name": "Martha Root",
+   "kind": "person"
+  },
+  {
+   "from": "t-samandari",
+   "to": "tarazullah-samandari",
+   "name": "Ṭarázu’lláh Samandarí",
+   "kind": "person"
+  },
+  {
+   "from": "h-baluyzi",
+   "to": "hasan-balyuzi",
+   "name": "Ḥasan M. Balyuzi",
+   "kind": "person"
+  },
+  {
+   "from": "hasan-muvaqqar-balyuzi",
+   "to": "hasan-balyuzi",
+   "name": "Ḥasan M. Balyuzi",
+   "kind": "person"
+  },
+  {
+   "from": "v-nakhjavani",
+   "to": "violette-nakhjavani",
+   "name": "Violette Nakhjavání",
+   "kind": "person"
+  },
+  {
+   "from": "violet-nakhjavani",
+   "to": "violette-nakhjavani",
+   "name": "Violette Nakhjavání",
+   "kind": "person"
+  },
+  {
+   "from": "ali-muhammad-varqa-trustee-of-huququllah",
+   "to": "ali-muhammad-varqa",
+   "name": "‘Alí-Muḥammad Varqá",
+   "kind": "person"
+  },
+  {
+   "from": "dorothy-beecher-baker",
+   "to": "dorothy-baker",
+   "name": "Dorothy Baker",
+   "kind": "person"
+  },
+  {
+   "from": "elsie-austin-knight",
+   "to": "elsie-austin",
+   "name": "Elsie Austin",
+   "kind": "person"
+  },
+  {
+   "from": "jena-khodadad",
+   "to": "jena-khadem-khodadad",
+   "name": "Jena Khadem Khodadad",
+   "kind": "person"
+  },
+  {
+   "from": "steve-birkland",
+   "to": "stephen-birkland",
+   "name": "Stephen Birkland",
+   "kind": "person"
+  },
+  {
+   "from": "baharieh-maani-rohani",
+   "to": "baharieh-rouhani-maani",
+   "name": "Baharieh Rouhani Ma’ani",
+   "kind": "person"
+  },
+  {
+   "from": "corinne-knight-true",
+   "to": "corinne-true",
+   "name": "Corinne True",
+   "kind": "person"
+  },
+  {
+   "from": "edward-price",
+   "to": "ed-price",
+   "name": "Ed Price",
+   "kind": "person"
+  },
+  {
+   "from": "edward-prine",
+   "to": "ed-price",
+   "name": "Ed Price",
+   "kind": "person"
+  },
+  {
+   "from": "j-douglas-martin",
+   "to": "douglas-martin",
+   "name": "J. Douglas Martin",
+   "kind": "person"
+  },
+  {
+   "from": "sears-w",
+   "to": "william-sears",
+   "name": "William Sears",
+   "kind": "person"
+  },
+  {
+   "from": "adib-tahirzadih",
+   "to": "adib-taherzadeh",
+   "name": "Adib Taherzadeh",
+   "kind": "person"
+  },
+  {
+   "from": "hushmand-fath-i-azam",
+   "to": "hushmand-fatheazam",
+   "name": "Hushmand Fatheazam",
+   "kind": "person"
+  },
+  {
+   "from": "houshmand-fath-i-azam",
+   "to": "hushmand-fatheazam",
+   "name": "Hushmand Fatheazam",
+   "kind": "person"
+  },
+  {
+   "from": "hooshmand-fath-i-azam",
+   "to": "hushmand-fatheazam",
+   "name": "Hushmand Fatheazam",
+   "kind": "person"
+  },
+  {
+   "from": "ruhiyyih-rabbani",
+   "to": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum",
+   "kind": "person"
+  },
+  {
+   "from": "ruhiyyih-khan",
+   "to": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum",
+   "kind": "person"
+  },
+  {
+   "from": "benjamin-schewel",
+   "to": "ben-schewel",
+   "name": "Ben Schewel",
+   "kind": "person"
+  },
+  {
+   "from": "maani-b",
+   "to": "baharieh-rouhani-maani",
+   "name": "Baharieh Rouhani Ma’ani",
+   "kind": "person"
+  },
+  {
+   "from": "sandra-hutchinson",
+   "to": "sandra-lynn-hutchison",
+   "name": "Sandra Lynn Hutchison",
+   "kind": "person"
+  },
+  {
+   "from": "sandra-hutchins",
+   "to": "sandra-lynn-hutchison",
+   "name": "Sandra Lynn Hutchison",
+   "kind": "person"
+  },
+  {
+   "from": "hanson-h",
+   "to": "h-hanson",
+   "name": "H. Hanson",
+   "kind": "person"
+  },
+  {
+   "from": "hassan-sabri",
+   "to": "hasan-sabri",
+   "name": "Hasan Sabri",
+   "kind": "person"
+  },
+  {
+   "from": "h-sabri",
+   "to": "hasan-sabri",
+   "name": "Hasan Sabri",
+   "kind": "person"
+  },
+  {
+   "from": "sabri-h",
+   "to": "hasan-sabri",
+   "name": "Hasan Sabri",
+   "kind": "person"
+  },
+  {
+   "from": "ruhe-dr-and-mrs",
+   "to": "dr-and-mrs-ruhe",
+   "name": "Dr. and Mrs. Ruhe",
+   "kind": "joint"
+  },
+  {
+   "from": "sabri-iqan",
+   "to": "hasan-sabri",
+   "name": "Hasan Sabri",
+   "kind": "person"
+  }
+ ],
+ "aliases": [
+  {
+   "label": "Dunbar",
+   "key": "hooper-dunbar",
+   "name": "Hooper Dunbar"
+  },
+  {
+   "label": "A. Taherzadeh",
+   "key": "adib-taherzadeh",
+   "name": "Adib Taherzadeh"
+  },
+  {
+   "label": "Ali-Yullah Nakhjavani",
+   "key": "ali-nakhjavani",
+   "name": "‘Alí Nakhjavání"
+  },
+  {
+   "label": "Bill Sears",
+   "key": "william-sears",
+   "name": "William Sears"
+  },
+  {
+   "label": "Mary Sutherland Maxwell",
+   "key": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum"
+  },
+  {
+   "label": "Stephen Phelps",
+   "key": "steven-phelps",
+   "name": "Steven Phelps"
+  },
+  {
+   "label": "A.Q. Faizi",
+   "key": "abul-qasim-faizi",
+   "name": "Abu’l-Qásim Faizí"
+  },
+  {
+   "label": "Abul-Qasim Fayzi",
+   "key": "abul-qasim-faizi",
+   "name": "Abu’l-Qásim Faizí"
+  },
+  {
+   "label": "A. Furutan",
+   "key": "ali-akbar-furutan",
+   "name": "‘Alí-Akbar Furútan"
+  },
+  {
+   "label": "D Khadem",
+   "key": "zikrullah-khadem",
+   "name": "Dhikru’lláh Khádem"
+  },
+  {
+   "label": "Dhikrullah Khadem",
+   "key": "zikrullah-khadem",
+   "name": "Dhikru’lláh Khádem"
+  },
+  {
+   "label": "Glenford Eckleton Mitchell",
+   "key": "glenford-mitchell",
+   "name": "Glenford Mitchell"
+  },
+  {
+   "label": "H. Collis Featherstone",
+   "key": "collis-featherstone",
+   "name": "H. Collis Featherstone"
+  },
+  {
+   "label": "Martha Louise Root",
+   "key": "martha-root",
+   "name": "Martha Root"
+  },
+  {
+   "label": "T. Samandari",
+   "key": "tarazullah-samandari",
+   "name": "Ṭarázu’lláh Samandarí"
+  },
+  {
+   "label": "H. Baluyzi",
+   "key": "hasan-balyuzi",
+   "name": "Ḥasan M. Balyuzi"
+  },
+  {
+   "label": "Hasan Muvaqqar Balyuzi",
+   "key": "hasan-balyuzi",
+   "name": "Ḥasan M. Balyuzi"
+  },
+  {
+   "label": "V. Nakhjavani",
+   "key": "violette-nakhjavani",
+   "name": "Violette Nakhjavání"
+  },
+  {
+   "label": "Violet Nakhjavani",
+   "key": "violette-nakhjavani",
+   "name": "Violette Nakhjavání"
+  },
+  {
+   "label": "Ali-Muhammad Varqa (Trustee of Huququllah)",
+   "key": "ali-muhammad-varqa",
+   "name": "‘Alí-Muḥammad Varqá"
+  },
+  {
+   "label": "Dorothy Beecher Baker",
+   "key": "dorothy-baker",
+   "name": "Dorothy Baker"
+  },
+  {
+   "label": "Elsie Austin Knight",
+   "key": "elsie-austin",
+   "name": "Elsie Austin"
+  },
+  {
+   "label": "Jena Khodadad",
+   "key": "jena-khadem-khodadad",
+   "name": "Jena Khadem Khodadad"
+  },
+  {
+   "label": "Steve Birkland",
+   "key": "stephen-birkland",
+   "name": "Stephen Birkland"
+  },
+  {
+   "label": "Baharieh Maani Rohani",
+   "key": "baharieh-rouhani-maani",
+   "name": "Baharieh Rouhani Ma’ani"
+  },
+  {
+   "label": "Corinne Knight True",
+   "key": "corinne-true",
+   "name": "Corinne True"
+  },
+  {
+   "label": "Edward Price",
+   "key": "ed-price",
+   "name": "Ed Price"
+  },
+  {
+   "label": "Edward Prine",
+   "key": "ed-price",
+   "name": "Ed Price"
+  },
+  {
+   "label": "J. Douglas Martin",
+   "key": "douglas-martin",
+   "name": "J. Douglas Martin"
+  },
+  {
+   "label": "Sears, W.",
+   "key": "william-sears",
+   "name": "William Sears"
+  },
+  {
+   "label": "Nakhjavani,V.",
+   "key": "violette-nakhjavani",
+   "name": "Violette Nakhjavání"
+  },
+  {
+   "label": "Adíb Ṭáhirzádih",
+   "key": "adib-taherzadeh",
+   "name": "Adib Taherzadeh"
+  },
+  {
+   "label": "Adíb Táhirzádih",
+   "key": "adib-taherzadeh",
+   "name": "Adib Taherzadeh"
+  },
+  {
+   "label": "Hushmand Fatḥ-i-A'ẓam",
+   "key": "hushmand-fatheazam",
+   "name": "Hushmand Fatheazam"
+  },
+  {
+   "label": "Hushmand Fath-i-A'zam",
+   "key": "hushmand-fatheazam",
+   "name": "Hushmand Fatheazam"
+  },
+  {
+   "label": "Houshmand Fath-i-A'zam",
+   "key": "hushmand-fatheazam",
+   "name": "Hushmand Fatheazam"
+  },
+  {
+   "label": "Hushmand Fatḥ-i-A‘ẓam",
+   "key": "hushmand-fatheazam",
+   "name": "Hushmand Fatheazam"
+  },
+  {
+   "label": "Hooshmand Fath-i-A'zam",
+   "key": "hushmand-fatheazam",
+   "name": "Hushmand Fatheazam"
+  },
+  {
+   "label": "Rúhíyyih Rabbání",
+   "key": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum"
+  },
+  {
+   "label": "Amatu'l-Bahá Rúhíyyih Rabbani",
+   "key": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum"
+  },
+  {
+   "label": "Rúhíyyih Rabbani",
+   "key": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum"
+  },
+  {
+   "label": "Amatu'l-Bahá Rúhíyyih Khánum Rabbání",
+   "key": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum"
+  },
+  {
+   "label": "Ruhiyyih Khan",
+   "key": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum"
+  },
+  {
+   "label": "Amatu'l-Bahá",
+   "key": "ruhiyyih-khanum",
+   "name": "Rúhíyyih Khánum"
+  },
+  {
+   "label": "Benjamin Schewel",
+   "key": "ben-schewel",
+   "name": "Ben Schewel"
+  },
+  {
+   "label": "Ma'ani, B.",
+   "key": "baharieh-rouhani-maani",
+   "name": "Baharieh Rouhani Ma’ani"
+  },
+  {
+   "label": "Arbab",
+   "key": "farzam-arbab",
+   "name": "Farzam Arbab"
+  },
+  {
+   "label": "Dr. Arbab",
+   "key": "farzam-arbab",
+   "name": "Farzam Arbab"
+  },
+  {
+   "label": "Semple",
+   "key": "ian-semple",
+   "name": "Ian Semple"
+  },
+  {
+   "label": "Mitchell",
+   "key": "glenford-mitchell",
+   "name": "Glenford Mitchell"
+  },
+  {
+   "label": "Ruhe",
+   "key": "david-ruhe",
+   "name": "David Ruhe"
+  },
+  {
+   "label": "Dr. Ruhe",
+   "key": "david-ruhe",
+   "name": "David Ruhe"
+  },
+  {
+   "label": "Samandari",
+   "key": "tarazullah-samandari",
+   "name": "Ṭarázu’lláh Samandarí"
+  },
+  {
+   "label": "Sandra Hutchinson",
+   "key": "sandra-lynn-hutchison",
+   "name": "Sandra Lynn Hutchison"
+  },
+  {
+   "label": "Sandra Hutchins",
+   "key": "sandra-lynn-hutchison",
+   "name": "Sandra Lynn Hutchison"
+  },
+  {
+   "label": "Hanson, H.",
+   "key": "h-hanson",
+   "name": "H. Hanson"
+  },
+  {
+   "label": "Hassan Sabri",
+   "key": "hasan-sabri",
+   "name": "Hasan Sabri"
+  },
+  {
+   "label": "H. Sabri",
+   "key": "hasan-sabri",
+   "name": "Hasan Sabri"
+  },
+  {
+   "label": "Sabri, H.",
+   "key": "hasan-sabri",
+   "name": "Hasan Sabri"
+  },
+  {
+   "label": "Ruhe, Dr. and Mrs.",
+   "key": "dr-and-mrs-ruhe",
+   "name": "Dr. and Mrs. Ruhe",
+   "kind": "joint"
+  },
+  {
+   "label": "Sabri Iqan",
+   "key": "hasan-sabri",
+   "name": "Hasan Sabri",
+   "subject": "Kitáb-i-Íqán",
+   "basis": "Chad clarified name and subject; source filename identifies Sabri, H."
+  }
+ ],
+ "hold_labels": [
+  "Semple, N.",
+  "Ma'ani, S.",
+  "Fatheazam, S.",
+  "Shahrokh",
+  "Nakhjavanis",
+  "Grossman-Mitchell",
+  "Nakhjavani-Semple",
+  "Grossmann-Muhlschlegel",
+  "Ruhe-Sabri",
+  "Violet Nakhjavání, Isabel Sabri, S. Fathe",
+  "Chad Acuto",
+  "Amatu'l-Bahá Rogers-Stevensen",
+  "Khamsi-Dunbar",
+  "Khamsi-Dunbar, M.",
+  "Khamsi-Dunbar,M."
+ ],
+ "non_person_labels": [
+  "Acuto",
+  "Toronto",
+  "Various",
+  "Early Believers"
+ ],
+ "holds": [
+  {
+   "block_id": "12830074-497e-4cf8-b7f6-72d70c75e025",
+   "decision": "- [x] **Keep N. Semple separate from Ian Semple for now.** The first initial differs; the source is Memories of growing up at BWC (1989). Identify N. before considering a merge."
+  },
+  {
+   "block_id": "ebac3a81-dd8d-4541-a8b9-cec806d1ef02",
+   "decision": "- [x] **Keep S. Ma’ani separate from Baharieh Rouhani Ma’ani.** The initial differs. Sovaida Ma’ani Ewing is another registered person; the source is Memories of the World Centre (1989), which does not settle attribution."
+  },
+  {
+   "block_id": "3f950684-d326-4ebd-a187-2f1e0f80638f",
+   "decision": "- [x] **Keep S. Fatheazam separate from Hushmand Fatheazam for now.** The S. initial differs. The source is Early Experiences at the BWC (2000); a separate joint recording also credits S. Fathe."
+  },
+  {
+   "block_id": "ab61fd68-082a-4606-a7a7-e8389dd3f1b7",
+   "decision": "- [x] **Hold Shahrokh.** Darius Shahrokh is one registry candidate, but Shahrokh Monjazeb is also a registered full name. A single token does not identify which person is speaking."
+  },
+  {
+   "block_id": "616cee45-7cce-43ed-9708-aa5b1f88f219",
+   "decision": "- [x] **Keep the Nakhjavanis as a joint credit until the participants are identified.** Do not collapse the plural credit into ‘Alí or Violette alone."
+  },
+  {
+   "block_id": "de677127-6668-479e-a67d-ad752be72cd9",
+   "decision": "- [x] **Split Grossman-Mitchell into participant identities.** The combined label indicates a joint credit; the recording evidence must establish which Grossmann and which Mitchell."
+  },
+  {
+   "block_id": "be3d31d7-347b-412e-af7f-7ee658b0b950",
+   "decision": "- [x] **Split Nakhjavani-Semple into participant identities.** The source explicitly credits a joint 1987 Huqúqu’lláh recording; confirm each participant."
+  },
+  {
+   "block_id": "46f8b70c-d0de-4f58-901b-7f0ba56cc82a",
+   "decision": "- [x] **Split Grossmann-Muhlschlegel into participant identities.** Keep the combined recording credit while identifying the individuals."
+  },
+  {
+   "block_id": "356f4ba9-1a16-4c2f-ba25-d146a3492215",
+   "decision": "- [x] **Split Ruhe-Sabri into participant identities.** Confirm which Sabri; do not infer Isobel from the surname alone."
+  },
+  {
+   "block_id": "840c8ce0-48cf-4a2f-80f7-20f9cb8d5955",
+   "decision": "- [x] **Preserve Violet Nakhjavání, Isabel Sabri, S. Fathe as a multi-person recording.** Violette and Isobel are plausible normalized spellings; identify S. Fathe separately."
+  },
+  {
+   "block_id": "a3758f8f-cfa5-4a70-859a-e3cb40764bbd",
+   "decision": "- [x] **Treat Acuto as an event/collection label pending speaker identification.** Its 28 recordings include different class titles and source subfolders such as Orlando 2012; no registered person matches the label."
+  },
+  {
+   "block_id": "d9e37578-b2ce-4917-b1af-cebdd352c0c8",
+   "decision": "- [x] **Review Toronto, Various and Early Believers as collection/group labels.** Identify actual speakers rather than creating or merging these into individual people."
+  },
+  {
+   "block_id": "865127b3-d476-4593-9d0a-7c9a2cf452df",
+   "decision": "- [x] **Review Chad Acuto against Chad Jones.** The source label includes a location/event term; confirm the voice before assigning the existing Chad Jones identity."
+  },
+  {
+   "block_id": "3b5f4d65-98be-431a-bf3c-83f6ef44c5d0",
+   "decision": "- [x] **Keep Amatu’l-Bahá Rogers-Stevensen separate from Rúhíyyih Khánum.** The source explicitly names Rogers-Stevensen in a Developing ITC talk (1988); sharing an honorific does not establish identity."
+  }
+ ],
+ "explicitly_unapproved": [
+  "khamsi-dunbar-m -> masud-khamsi"
+ ],
+ "joint_credits": [
+  {
+   "label": "Khamsi-Dunbar",
+   "forms": [
+    "Khamsi-Dunbar",
+    "Khamsi-Dunbar, M.",
+    "Khamsi-Dunbar,M."
+   ],
+   "participants": [
+    "masud-khamsi",
+    "hooper-dunbar"
+   ],
+   "basis": "Chad corrected 2026-10-26: Khamsi-Dunbar is two people; Dunbar is Hooper Dunbar"
+  }
+ ],
+ "corrections": [
+  {
+   "label": "Khamsi-Dunbar",
+   "decision": "Two people, preserve joint credit"
+  },
+  {
+   "label": "Sabri Iqan",
+   "decision": "Hasan Sabri, subject Kitáb-i-Íqán"
+  }
+ ]
+}

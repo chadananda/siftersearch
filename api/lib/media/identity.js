@@ -64,6 +64,7 @@ export function evidenceFor(p, ctx = {}) {
  */
 export function resolveSpeaker(name, people = [], ctx = {}, { notSpeakers = [] } = {}) {
   const toks = nameTokens(name);
+  if ((people.reviewedHolds || []).some(n => nameTokens(n).join(' ') === toks.join(' '))) return { review: 'Chad selected keep separate / identify participants before merging', candidates: [] };
   // a series or programme name taken for a speaker ("Echoes from the Lotus")
   if (notSpeakers.some((n) => nameTokens(n).join(' ') === toks.join(' '))) return { not_speaker: true };
   if (!toks.length || /^(?:audience|questioner|interpreter|narrator|chair|various|unknown|misc|speaker)$/.test(toks.join(' '))) return { unknown: true };

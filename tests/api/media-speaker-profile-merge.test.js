@@ -1,0 +1,25 @@
+import {beforeEach,afterEach,it,expect,vi} from 'vitest';
+import Database from 'better-sqlite3';
+let db;
+vi.mock('../../api/lib/db.js',()=>({queryAll:async(sql,args=[])=>db.prepare(sql).all(...args),queryOne:async(sql,args=[])=>db.prepare(sql).get(...args),transaction:async ops=>db.transaction(()=>ops.forEach(o=>db.prepare(o.sql).run(...o.args)))()}));
+import {mergeSpeakerProfiles} from '../../api/lib/repos/media-repo.js';
+const speakerCols=['name','entity_id','file','sha','width','height','origin','source_url','page_url','credit','licence','fetched_at','tried_at','note','ext_file','ext_sha','ext_of','ext_model','ext_prompt','ext_usd','ext_at','ext_error'];
+const galleryCols=['rank','file','phash','width','height','face','origin','source_url','page_url','credit','licence','year','note','needs_ext','ext_file','ext_sha','ext_model','ext_usd','ext_at','ext_error'];
+beforeEach(()=>{db=new Database(':memory:');db.exec(`CREATE TABLE media_speakers(key TEXT PRIMARY KEY,${speakerCols.map(c=>c+' '+(c==='entity_id'?'INTEGER':'TEXT')).join(',')},updated_at TEXT);CREATE TABLE media_speaker_photos(speaker_key TEXT,sha TEXT,${galleryCols.map(c=>c+' TEXT').join(',')},updated_at TEXT,PRIMARY KEY(speaker_key,sha));CREATE TABLE media_items(id INTEGER PRIMARY KEY,speaker_key TEXT,speaker TEXT,updated_at TEXT);`);});
+afterEach(()=>db.close());
+it('merges approved profiles atomically, preserves portraits/extensions and recordings, and is idempotent',async()=>{
+ db.prepare('INSERT INTO media_speakers(key,name,entity_id,file,sha,width,ext_file) VALUES(?,?,?,?,?,?,?)').run('short','Short',12,'old.jpg','old',400,'old-ext.jpg');
+ db.prepare('INSERT INTO media_speakers(key,name,entity_id,file,sha) VALUES(?,?,?,?,?)').run('full','Full Name',34,'keep.jpg','keep');
+ db.prepare('INSERT INTO media_items VALUES(1,?,?,?)').run('short','Short','old');
+ db.prepare('INSERT INTO media_speaker_photos(speaker_key,sha,file,ext_file) VALUES(?,?,?,?)').run('short','gallery','gallery.jpg','gallery-ext.jpg');
+ const decision={from:'short',to:'full',name:'Full Name'},approved={profile_merges:[decision]};
+ await mergeSpeakerProfiles(decision,approved);
+ expect(db.prepare('SELECT COUNT(*) n FROM media_items').get().n).toBe(1);
+ expect(db.prepare('SELECT speaker_key,speaker FROM media_items').get()).toEqual({speaker_key:'full',speaker:'Full Name'});
+ const p=db.prepare('SELECT * FROM media_speakers WHERE key=?').get('full');expect(p.file).toBe('keep.jpg');expect(p.entity_id).toBe(34);expect(p.width).toBeNull();expect(p.note).toContain('source entity 12');
+ expect(db.prepare('SELECT ext_file FROM media_speaker_photos WHERE sha=?').get('old').ext_file).toBe('old-ext.jpg');
+ expect(db.prepare('SELECT ext_file FROM media_speaker_photos WHERE sha=?').get('gallery').ext_file).toBe('gallery-ext.jpg');
+ expect(db.prepare('SELECT * FROM media_speakers WHERE key=?').get('short')).toBeUndefined();
+ expect(await mergeSpeakerProfiles(decision,approved)).toMatchObject({already_merged:true});
+ await expect(mergeSpeakerProfiles({from:'unchecked',to:'full',name:'Full Name'},approved)).rejects.toThrow(/not approved/);
+});
