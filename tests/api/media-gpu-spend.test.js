@@ -418,8 +418,11 @@ describe('the pod does the heavy half of a remaster; tower validates and places'
   };
   it('guard, alignment and the four encodes come from the worker: tower runs no guard, no aligner, no ffmpeg', async () => {
     const t = await talk();
+    const before=JSON.parse(readFileSync(join(t.dir,'meta.json'),'utf8'));
+    Object.assign(before,{version:12,audio_version:7});writeFileSync(join(t.dir,'meta.json'),JSON.stringify(before));
     await runItem(t.item, { redo: ['remaster', 'realign', 'web'], only: ['remaster', 'realign', 'web'], remaster: true }, t.deps);
     const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
+    expect(meta.version).toBe(13);expect(meta.audio_version).toBe(13);
     expect(meta.enhancement.listening).toBe('unipase'); expect(meta.aligned_to).toBe('unipase');
     expect(t.tools.remasterGuard).not.toHaveBeenCalled(); expect(t.tools.tool).not.toHaveBeenCalled(); expect(t.tools.ffmpeg).not.toHaveBeenCalled();
     expect(readFileSync(join(t.dir, 'web', 'x.ogg'), 'utf8')).toBe('x.ogg'); expect(readFileSync(join(t.dir, 'web', 'x.original.m4a'), 'utf8')).toBe('x.original.m4a');

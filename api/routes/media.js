@@ -9,7 +9,7 @@ import { mediaIndexRows, momentByKey, listMoments, introClips, repairList, grade
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
 import { canServeFile, clipQuery, verifyClip, CLIP_CAP, LEVELS } from '../lib/media/rights.js';
-import { talkAudio, isRemastered, originalField } from '../lib/media/talk-audio.js';
+import { talkAudio, isRemastered, originalField, audioVersion } from '../lib/media/talk-audio.js';
 import { parseRange, clampClip } from '../lib/media/range.js';
 import { run } from '../lib/media/tools.js';
 import { youtubeAt } from '../lib/media/render.js';
@@ -375,7 +375,7 @@ export default async function mediaRoutes(fastify) {
       audio: talkAudio({ slug: it.slug, level, meta }),
       skips: meta.trim?.gaps || [],
       clip_url: level === 'clips' ? `${base}/clip-url` : null,
-      waveform: `${base}/file/waveform.json?v=${v}`, page: `${base}/file/page.html?v=${v}`,
+      waveform: `${base}/file/waveform.json?v=${audioVersion(meta)}`, page: `${base}/file/page.html?v=${v}`,
       thumb: portrait || (meta.thumb?.file && meta.thumb.kind !== 'photo' ? { url: `${base}/file/${meta.thumb.file}?v=${v}`, kind: meta.thumb.kind, licence: meta.thumb.licence || null, artist: meta.thumb.artist || null, source_url: meta.thumb.source_url || null } : null),
       // compact transcript: words as [text, start, end]
       // s0: the words' starts on the ORIGINAL copy (remastered talks only) — highlight + position while Original plays

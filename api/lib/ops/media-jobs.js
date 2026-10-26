@@ -7,6 +7,7 @@
 //               yields to a drain between stages and resumes where it stopped.
 //   media-vocab { minMentions? } — the controlled vocabulary's names from the entity graph → data/media-vocab.json.
 import { late } from '../media/late.js';
+import {audioVersion} from '../media/talk-audio.js';
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
 import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
@@ -974,7 +975,8 @@ export async function mediaSafeListeningJob({ write = false, ids = null, limit =
     if (was !== 'safe') meta.enhancement.listening_before = { name: was, why: meta.enhancement.listening_why || null };
     meta.enhancement.listening = 'safe';
     meta.enhancement.listening_why = 'the original, transparent processing only (Chad 10-23: denoised / restored copies clipped words)';
-    meta.version = (meta.version || 1) + 1;   // new audio URLs (?v=): no cached denoised copy is served
+    meta.audio_version = audioVersion(meta);
+    meta.version = (meta.version || 1) + 1;   // web stage publishes the new audio version after encoding
     await writeMeta(it.dir, meta);
     const redo = ['web', 'trim', 'update'];
     if (relinkOf.has(it.id)) { await ops.cancel(relinkOf.get(it.id)); redo.splice(2, 0, 'links'); out.relinks_folded++; }
@@ -1116,6 +1118,7 @@ export async function mediaRemasterRevertJob({ ids = [] } = {}, deps = {}) {
     m.enhancement.listening = 'safe';
     m.enhancement.listening_why = 'reverted to the transparent original (media-remaster-revert)';
     m.remaster = { ...(m.remaster || {}), status: 'reverted', at: new Date().toISOString() };
+    m.audio_version = audioVersion(m);
     m.version = (m.version || 1) + 1;
     await wf(join(it.dir, 'meta.json'), JSON.stringify(m, null, 2));
     await queue('media-item', { id: it.id, redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-revert');
@@ -1802,6 +1805,7 @@ export async function mediaLightBackfillJob({ limit = 3, write = true } = {}, de
     if (!fresh || fresh.web_original || fresh.original !== m.original) continue;   // a run changed the talk meanwhile
     fresh.web_original = { ogg: `web/${m.slug}.original.ogg`, m4a: `web/${m.slug}.original.m4a` };
     fresh.remaster_tier = 'light'; fresh.version = (fresh.version || 1) + 1;
+    fresh.audio_version = fresh.version;
     const Q = deps.quality || await import('../media/remaster-quality.js');
     fresh.qa = { ...(fresh.qa || {}), remaster: Q.qualityOf(fresh) };
     await fs.writeFile(mf, JSON.stringify(fresh, null, 2));

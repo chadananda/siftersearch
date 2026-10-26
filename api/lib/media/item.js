@@ -1,4 +1,5 @@
 import {speakerKey} from './speaker-key.js';
+import {audioVersion} from './talk-audio.js';
 // ONE MEDIA ITEM through the pipeline (planning/media-library-plan.md): archive → enhance → web → transcribe → correct →
 // describe → headings → quotes → links → assess → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
@@ -177,6 +178,7 @@ export async function runItem(item, opts = {}, deps = {}) {
   const d = { ...(deps.detachedWorker ? {} : await defaults()), ...deps };
   const { tools, llm, repo } = d;
   let meta = item.dir ? await readJson(join(item.dir, 'meta.json'), {}) : {};
+  meta.audio_version = audioVersion(meta);
   meta.stages ||= {}; meta.cost ||= { usd: 0, calls: 0, in: 0, out: 0 };
   if (opts.from) for (const s of STAGES.slice(STAGES.indexOf(opts.from))) delete meta.stages[s];
   // redo: only these stages again (a back-fill of a new stage: [new, 'update'] — update re-renders, re-ingests, re-catalogues), the rest kept
@@ -472,6 +474,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'web') {
       delete meta.trim;   // fresh, untrimmed web copies (the 'trim' stage cuts them again from the words)
       if (meta.stages?.catalog?.at || item.published_at) meta.version = (meta.version || 1) + 1;   // a re-encode of a published talk (remaster / revert / chain change): new ?v= URLs, no stale edge copy
+      meta.audio_version = meta.version || 1;
       const { src, af } = listeningSource(meta, dir);   // the original + the transparent chain (Chad 10-23), or the remaster
       const remastered = isRemastered(meta);
       const afArgs = af ? ['-af', af] : [];
@@ -687,6 +690,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         }
         delete meta.enc_jobs;
         meta.version = (meta.version || 1) + 1;   // new audio URLs (?v=): no cached untrimmed copy is paired with the offset
+        meta.audio_version = meta.version;
         rec.trimmed_s = Math.round(((plan.start_s || 0) + (plan.end_s != null ? meta.duration_s - plan.end_s : 0)) * 10) / 10;
       }
       meta.trim = cutting || plan.gaps.length ? { start_s: plan.start_s, end_s: plan.end_s, gaps: plan.gaps, lead_s: plan.lead_s, tail_s: plan.tail_s, at: new Date().toISOString() } : null;
@@ -863,7 +867,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       await writeFile(join(dir, 'transcript.md'), transcriptMarkdown({ meta, paragraphs: work.paragraphs, quotes, links, chapters: meta.chapters, headings: meta.headings || [] }));
       const api = `/api/media/${meta.slug}`;
       await writeFile(join(dir, 'page.html'), pageHtml({ meta, paragraphs: work.paragraphs, quotes, links, crs: breakoutsOf([...quotes, ...crs]), chapters: meta.chapters, headings: meta.headings || [], speakers: meta.speakers,
-        audio: meta.rights.playback === 'full' ? `web/${meta.slug}.ogg` : null, clipUrl: meta.rights.playback === 'clips' ? `${api}/clip-url` : null,
+        audio: meta.rights.playback === 'full' ? `web/${meta.slug}.ogg?v=${audioVersion(meta)}` : null, clipUrl: meta.rights.playback === 'clips' ? `${api}/clip-url` : null,
         pageUrl: `https://siftersearch.com/media/${meta.slug}`, thumb: meta.thumb?.file ? `${api}/file/${meta.thumb.file}` : null }));
       meta.words_n = work.paragraphs.reduce((a, p) => a + p.words.length, 0);
       meta.version = (meta.version || 1) + (meta.stages.render ? 1 : 0);

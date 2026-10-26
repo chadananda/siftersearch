@@ -1,4 +1,6 @@
 import { qualityOf } from './remaster-quality.js';
+// Text/page revisions must not invalidate already cached audio bytes.
+export const audioVersion = (meta = {}) => meta.audio_version ?? meta.version ?? 1;
 // The talk API's audio block + the original copy's word starts (the "Original" A/B button, Chad 10-23). Pure.
 // The remaster stage writes meta.web_original {ogg, m4a} (paths under the item dir) + meta.aligned_to ('unipase'|'safe');
 // transcript words carry s/e on the MAIN copy and s0/e0 on the original. One trim (offset_s) applies to both copies.
@@ -29,7 +31,7 @@ export function remasterImprovement(meta = {}) {
 /** The `audio` block of GET /api/media/:slug (null unless full playback). */
 export function talkAudio({ slug, level, meta = {} }) {
   if (level !== 'full') return null;
-  const v = meta.version || 1, base = `/api/media/${slug}`;
+  const v = audioVersion(meta), base = `/api/media/${slug}`;
   const out = { ogg: `${base}/file/web/${slug}.ogg?v=${v}`, m4a: `${base}/file/web/${slug}.m4a?v=${v}`, offset_s: meta.trim?.start_s || 0, end_s: meta.trim?.end_s ?? null, remastered: false, remaster_tier: null, restoration_status: qualityOf(meta).verdict };
   if (isRemastered(meta)) {
     const wo = meta.web_original, f = (p) => (p ? `${base}/file/${String(p).replace(/^\/+/, '')}?v=${v}` : null);
