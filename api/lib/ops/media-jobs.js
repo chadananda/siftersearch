@@ -7,7 +7,7 @@
 //               yields to a drain between stages and resumes where it stopped.
 //   media-vocab { minMentions? } — the controlled vocabulary's names from the entity graph → data/media-vocab.json.
 import { late } from '../media/late.js';
-import {audioVersion} from '../media/talk-audio.js';
+import {audioVersion, markAudioPending} from '../media/talk-audio.js';
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
 import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
@@ -971,6 +971,7 @@ export async function mediaSafeListeningJob({ write = false, ids = null, limit =
     if (busy.has(it.id)) { out.skipped_busy++; continue; }
     const vs = meta.enhancement.variants || [];
     const orig = vs.find((v) => v.name === 'original') || {};
+    markAudioPending(meta);
     meta.enhancement.variants = [...vs.filter((v) => v.name !== 'safe'), { name: 'safe', file: orig.file || meta.original, af: safeChain(orig), chain: 'transparent: high-pass, hum notch when measured, loudness' }];
     if (was !== 'safe') meta.enhancement.listening_before = { name: was, why: meta.enhancement.listening_why || null };
     meta.enhancement.listening = 'safe';
@@ -1115,6 +1116,7 @@ export async function mediaRemasterRevertJob({ ids = [] } = {}, deps = {}) {
     if (!it?.dir) continue;
     const m = JSON.parse(await readFile(join(it.dir, 'meta.json'), 'utf8'));
     if (!m.enhancement) continue;
+    markAudioPending(m);
     m.enhancement.listening = 'safe';
     m.enhancement.listening_why = 'reverted to the transparent original (media-remaster-revert)';
     m.remaster = { ...(m.remaster || {}), status: 'reverted', at: new Date().toISOString() };
@@ -1196,6 +1198,7 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
     const m = JSON.parse(await fs.readFile(mf, 'utf8'));
     const at = new Date().toISOString();
     if (pk.choice === 'publish') {
+      markAudioPending(m);
       const cloud = join(it.dir, 'enhanced', 'unipase.cloud.flac'), full = join(it.dir, 'enhanced', 'unipase.full.flac');
       await T.ffmpeg(['-i', cloud, '-af', 'loudnorm=I=-18:TP=-1.5:LRA=11,alimiter=limit=0.891:level=disabled', '-ac', '1', '-ar', '48000', '-c:a', 'flac', full]);
       const vs = (m.enhancement.variants || []).filter((v) => v.name !== 'unipase');

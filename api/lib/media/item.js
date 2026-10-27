@@ -1,5 +1,5 @@
 import {speakerKey} from './speaker-key.js';
-import {audioVersion} from './talk-audio.js';
+import {audioVersion, audioAlignment, listeningVariant, markAudioPending, timingSignature} from './talk-audio.js';
 // ONE MEDIA ITEM through the pipeline (planning/media-library-plan.md): archive → enhance → web → transcribe → correct →
 // describe → headings → quotes → links → assess → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
@@ -179,6 +179,7 @@ export async function runItem(item, opts = {}, deps = {}) {
   const { tools, llm, repo } = d;
   let meta = item.dir ? await readJson(join(item.dir, 'meta.json'), {}) : {};
   meta.audio_version = audioVersion(meta);
+  if (item.published_at && meta.web_listening == null) meta.web_listening = listeningVariant(meta); // legacy published copy, before any source change
   meta.stages ||= {}; meta.cost ||= { usd: 0, calls: 0, in: 0, out: 0 };
   if (opts.from) for (const s of STAGES.slice(STAGES.indexOf(opts.from))) delete meta.stages[s];
   // redo: only these stages again (a back-fill of a new stage: [new, 'update'] — update re-renders, re-ingests, re-catalogues), the rest kept
@@ -401,6 +402,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           const vs = meta.enhancement.variants.filter((v) => v.name !== 'unipase');
           vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: pod?.method === 'cleaned' ? 'deterministic cleanup (MossFormer2-SE 60 %, mud cut, dereverb, de-ess) + word guard at −18 LUFS' : 'UniPASE (long-form, 48 kHz) + word guard (original for lost sentences) at −18 LUFS', guard: g });
           meta.enhancement.variants = vs;
+          const listeningBefore = meta.enhancement.listening || 'safe';
           if (pass) {
             if (meta.enhancement.listening !== 'unipase') meta.enhancement.listening_before = { name: meta.enhancement.listening, why: meta.enhancement.listening_why || null };
             meta.enhancement.listening = 'unipase';
@@ -412,6 +414,7 @@ export async function runItem(item, opts = {}, deps = {}) {
             meta.enhancement.listening_why = 'remaster held for review (word guard) — the previous copy restored';
             delete meta.remaster_tier;
           }
+          if ((meta.enhancement.listening || 'safe') !== listeningBefore) markAudioPending(meta);
           meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
@@ -444,6 +447,16 @@ export async function runItem(item, opts = {}, deps = {}) {
             meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe';
             meta.remaster = { ...(meta.remaster || {}), status: 'review', verdict: 'review', why: `realign placed ${r.placed} of ${r.total} words — still playing the original audio`, realign_unplaced_pct: Math.round(unplaced * 10000) / 100, at: d.now() };
             meta.qa = { ...(meta.qa || {}), remaster: qualityOf(meta) };
+            // The transcript's existing s/e values may belong to the remaster. Revert them to the saved original
+            // timings when available; otherwise leave publication blocked until a successful safe-copy realignment.
+            let restored = true;
+            for (const p of work.paragraphs) {
+              for (const w of p.words || []) { if (w.s0 == null) restored = false; else { w.s = w.s0; w.e = w.e0; } }
+              const ts = p.words.filter((w) => w.s != null);
+              if (ts.length) { p.t0 = ts[0].s; p.t1 = ts[ts.length - 1].e; }
+            }
+            if (restored) meta.aligned_to = 'safe';
+            markAudioPending(meta);
           } else {
             for (const p of work.paragraphs) {
               const tm = times[String(p.n)] || [];
@@ -463,6 +476,9 @@ export async function runItem(item, opts = {}, deps = {}) {
           }
           meta.aligned_to = 'safe';
         }
+        meta.audio_alignment_hash = timingSignature(work.paragraphs);
+        const alignment = audioAlignment(meta, { allowPending: true });
+        meta.audio_alignment_version = alignment.ready ? alignment.audio_version : null;
         // moments follow their words (i1 exclusive)
         const byN = new Map(work.paragraphs.map((p) => [p.n, p]));
         for (const m of meta.moments || []) { const p = byN.get(m.para); if (p?.words?.[m.i0]?.s != null && p.words[m.i1 - 1]?.e != null) { m.t0_ms = Math.round(p.words[m.i0].s * 1000); m.t1_ms = Math.round(p.words[m.i1 - 1].e * 1000); } }
@@ -473,8 +489,9 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'web') {
       delete meta.trim;   // fresh, untrimmed web copies (the 'trim' stage cuts them again from the words)
-      if (meta.stages?.catalog?.at || item.published_at) meta.version = (meta.version || 1) + 1;   // a re-encode of a published talk (remaster / revert / chain change): new ?v= URLs, no stale edge copy
-      meta.audio_version = meta.version || 1;
+      const published = !!(meta.stages?.catalog?.at || item.published_at);
+      const nextAudioVersion = published ? audioVersion(meta) + 1 : audioVersion(meta);
+      markAudioPending(meta); // don't let a lazy R2 fill see a half-written file under either version
       const { src, af } = listeningSource(meta, dir);   // the original + the transparent chain (Chad 10-23), or the remaster
       const remastered = isRemastered(meta);
       const afArgs = af ? ['-af', af] : [];
@@ -523,6 +540,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       }
       if (podWeb) await podForget(dir);
       rec.bytes = { ogg: (await stat(ogg)).size, m4a: (await stat(m4a)).size };
+      meta.audio_version = nextAudioVersion;
+      meta.web_listening = listeningVariant(meta);
+      const alignedTarget = meta.aligned_to || meta.web_listening;
+      meta.audio_alignment_version = alignedTarget === meta.web_listening ? meta.audio_version : null;
     }
 
     if (stage === 'transcribe') {
@@ -663,6 +684,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       rec.lead_s = plan.lead_s; rec.gaps = plan.gaps.length;
       const cutting = plan.start_s > 0 || plan.end_s != null;
       if (cutting) {
+        markAudioPending(meta);
+        await save();
         const ls = listeningSource(meta, dir);   // the same source and transparent chain as the web stage, then the trim's fades
         const src = ls.src, { pre, af: trimAf } = T.trimArgs(plan, meta.duration_s);
         const af = [ls.af, trimAf].filter(Boolean).join(',');
@@ -689,8 +712,10 @@ export async function runItem(item, opts = {}, deps = {}) {
           await rename(`${oo}.trim.ogg`, oo); await rename(`${om}.trim.m4a`, om);
         }
         delete meta.enc_jobs;
-        meta.version = (meta.version || 1) + 1;   // new audio URLs (?v=): no cached untrimmed copy is paired with the offset
-        meta.audio_version = meta.version;
+        meta.audio_version = audioVersion(meta) + 1;   // immutable new key; the old key can never be filled from these new bytes
+        meta.web_listening = listeningVariant(meta);
+        const alignedTarget = meta.aligned_to || meta.web_listening;
+        meta.audio_alignment_version = alignedTarget === meta.web_listening ? meta.audio_version : null;
         rec.trimmed_s = Math.round(((plan.start_s || 0) + (plan.end_s != null ? meta.duration_s - plan.end_s : 0)) * 10) / 10;
       }
       meta.trim = cutting || plan.gaps.length ? { start_s: plan.start_s, end_s: plan.end_s, gaps: plan.gaps, lead_s: plan.lead_s, tail_s: plan.tail_s, at: new Date().toISOString() } : null;
@@ -851,6 +876,15 @@ export async function runItem(item, opts = {}, deps = {}) {
       // the PUBLISH GATE (QA 10-22): a loop, a lossy decode (U+FFFD) or mojibake left in the text → not published
       const problems = publishProblems(work.paragraphs || []);
       if (problems.length) { meta.publish_blocked = problems.slice(0, 20); await save(); throw new Error(`publish blocked: ${problems.length} text problem(s) — ${problems.slice(0, 3).map((x) => `p${x.p} ${x.kind} "${x.text}"`).join('; ')}`); }
+      const timeHash = timingSignature(work.paragraphs);
+      if (meta.audio_alignment_hash && meta.audio_alignment_hash !== timeHash) throw new Error('publish blocked: transcript timing changed after alignment; realign it against the selected audio before publishing');
+      if (meta.rights?.playback === 'full') {
+        const sync = audioAlignment(meta, { allowPending: true });
+        if (!sync.ready) throw new Error(`publish blocked: selected audio (${sync.listening}) does not match transcript alignment (${sync.aligned_to}) or audio revision ${sync.audio_version}`);
+        meta.web_listening = sync.listening;
+        meta.audio_alignment_version = sync.audio_version;
+        meta.audio_alignment_hash = timeHash;
+      }
       delete meta.publish_blocked;
       const qj = await readJson(join(dir, 'quotes.json'), { quotes: [], teachings: [] });
       const quotes = qj.quotes || [], crs = [...(qj.teachings || [])];
@@ -882,6 +916,15 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'catalog' || stage === 'update') {
+      if (meta.rights?.playback === 'full') {
+        const publishedTranscript = await readJson(join(dir, 'transcript.json'), { paragraphs: [] });
+        const timeHash = timingSignature(publishedTranscript.paragraphs);
+        if (meta.audio_alignment_hash && meta.audio_alignment_hash !== timeHash) throw new Error('publish blocked: published transcript timing no longer matches the audio alignment');
+        const sync = audioAlignment(meta, { allowPending: true });
+        if (!sync.ready) throw new Error(`publish blocked: audio ${sync.audio_version} is not aligned to the selected transcript`);
+        meta.audio_alignment_version = sync.audio_version;
+        meta.audio_alignment_hash = timeHash;
+      }
       // SPEAKER IDENTITY: the name as said → one person (house-style name, the person's key); never a new person per
       // spelling (identity.js). A YouTube year after the speaker's death is the UPLOAD year (Chad 10-23).
       if (meta.speaker) {
@@ -910,6 +953,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         asr_conf: meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null, cost_usd: Math.round(spend.usd * 10000) / 10000,
         meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, headings_n: (meta.headings || []).length, audience_intro: meta.audience?.intro || [], rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
         state: 'done', stage: 'catalog', why: null, ...(item.published_at ? {} : { published_at: d.now() }), audience: meta.audience?.score ?? null, ...(meta.quality ? { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority } : {}) });
+      meta.audio_publish_pending = false;
     }
 
     } catch (err) {

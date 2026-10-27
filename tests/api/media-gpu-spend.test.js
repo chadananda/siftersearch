@@ -422,7 +422,8 @@ describe('the pod does the heavy half of a remaster; tower validates and places'
     Object.assign(before,{version:12,audio_version:7});writeFileSync(join(t.dir,'meta.json'),JSON.stringify(before));
     await runItem(t.item, { redo: ['remaster', 'realign', 'web'], only: ['remaster', 'realign', 'web'], remaster: true }, t.deps);
     const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
-    expect(meta.version).toBe(13);expect(meta.audio_version).toBe(13);
+    expect(meta.version).toBe(12);expect(meta.audio_version).toBe(8);
+    expect(meta.audio_publish_pending).toBe(true);expect(meta.audio_alignment_version).toBe(8);
     expect(meta.enhancement.listening).toBe('unipase'); expect(meta.aligned_to).toBe('unipase');
     expect(t.tools.remasterGuard).not.toHaveBeenCalled(); expect(t.tools.tool).not.toHaveBeenCalled(); expect(t.tools.ffmpeg).not.toHaveBeenCalled();
     expect(readFileSync(join(t.dir, 'web', 'x.ogg'), 'utf8')).toBe('x.ogg'); expect(readFileSync(join(t.dir, 'web', 'x.original.m4a'), 'utf8')).toBe('x.original.m4a');

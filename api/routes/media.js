@@ -9,7 +9,7 @@ import { mediaIndexRows, momentByKey, listMoments, introClips, repairList, grade
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
 import { canServeFile, clipQuery, verifyClip, CLIP_CAP, LEVELS } from '../lib/media/rights.js';
-import { talkAudio, isRemastered, originalField, audioVersion } from '../lib/media/talk-audio.js';
+import { talkAudio, isRemastered, originalField, audioVersion, timingSignature } from '../lib/media/talk-audio.js';
 import { parseRange, clampClip } from '../lib/media/range.js';
 import { run } from '../lib/media/tools.js';
 import { youtubeAt } from '../lib/media/render.js';
@@ -359,6 +359,8 @@ export default async function mediaRoutes(fastify) {
     const level = LEVELS.includes(it.playback) ? it.playback : 'clips';
     const tStart = new Map(tr.paragraphs.map((p) => [p.n, p.t0]));
     const remastered = level === 'full' && isRemastered(meta);
+    const audio = talkAudio({ slug: it.slug, level, meta });
+    if (audio?.sync_ready && meta.audio_alignment_hash && meta.audio_alignment_hash !== timingSignature(tr.paragraphs)) audio.sync_ready = false;
     pub(reply, 300);
     return {
       slug: it.slug, title: meta.title, speaker: meta.speaker, speakers: meta.speakers || {}, date: meta.date, year: meta.year, uploaded_year: meta.uploaded_year ?? null, date_flag: meta.date_flag ?? null, place: meta.place, event: meta.event,
@@ -372,7 +374,7 @@ export default async function mediaRoutes(fastify) {
       // offset_s: the web copy starts this many seconds into the recording (silence trimmed; every other time here is the
       // recording's own): the player seeks to t − offset_s. skips: dead gaps (a tape flip) the player jumps over
       // remastered: the main copy is a remaster; original_url/original_ogg = the kept original (the page's "Original" A/B button)
-      audio: talkAudio({ slug: it.slug, level, meta }),
+      audio,
       skips: meta.trim?.gaps || [],
       clip_url: level === 'clips' ? `${base}/clip-url` : null,
       waveform: `${base}/file/waveform.json?v=${audioVersion(meta)}`, page: `${base}/file/page.html?v=${v}`,
@@ -421,6 +423,12 @@ export default async function mediaRoutes(fastify) {
     const name = normalize(String(req.params['*'] || '')).replace(/^(\.\.(\/|$))+/, '');
     if (!it || it.state !== 'done' || !it.dir || name.includes('..')) return reply.code(404).send({ error: 'NotFound' });
     if (!canServeFile(it.playback, name)) return reply.code(403).send({ error: 'Forbidden', why: `playback level '${it.playback}'` });
+    if (/^web\/[^/]+(?:\.original)?\.(?:ogg|m4a)$/.test(name) && req.query?.v != null) {
+      const meta = await readJson(join(it.dir, 'meta.json'), {});
+      reply.header('Cache-Control', 'no-store');
+      if (meta.audio_publish_pending) return reply.code(503).send({ error: 'Audio revision is being published.' });
+      if (Number(req.query.v) !== audioVersion(meta)) return reply.code(410).send({ error: 'Audio revision expired.' });
+    }
     const path = join(it.dir, name);
     if (!existsSync(path)) return reply.code(404).send({ error: 'NotFound' });
     const size = statSync(path).size;

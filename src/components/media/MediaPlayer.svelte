@@ -22,7 +22,9 @@
   let { item, initialRange = null, related = [], speakerKey = null, speakersByKey = {} } = $props();
 
   const level = item.rights?.playback || 'search';
-  const canPlay = (level === 'full' && !!item.audio) || (level === 'clips' && !!item.clip_url);
+  let updatedTalkAvailable = $state(false);
+  let audioInfo = $state(item.audio), s0paras = $state(item.paragraphs);
+  const canPlay = $derived(!updatedTalkAvailable && ((level === 'full' && !!audioInfo && audioInfo.sync_ready !== false) || (level === 'clips' && !!item.clip_url)));
   const duration = Number(item.duration_s) || 0;
   // the contents list: the topic subheaders (each a #slug anchor), else the coarser chapters
   const toc = item.headings?.length ? item.headings.map((h) => ({ p: h.p, t: h.t, title: h.text, slug: h.slug })) : (item.chapters || []);
@@ -37,7 +39,6 @@
   // on the original (s0). No s0 → positions map 1:1 and the highlight pauses while Original plays.
   // audioInfo/s0paras start as the SSR data and are refreshed once on load (liveRefresh below): the page HTML is edge-cached,
   // so a talk remastered after its page was cached still shows the switch within a minute
-  let audioInfo = $state(item.audio), s0paras = $state(item.paragraphs);
   const gain = $derived(audioInfo?.improvement);
   const remasterLabel = $derived(audioInfo?.remaster_tier === 'light' ? 'Light cleanup' : gain ? `Remastered · ~${gain.percent}% improved` : 'Remastered');
   const remasterShort = $derived(audioInfo?.remaster_tier === 'light' ? 'Clean' : gain ? `Rem ~${gain.percent}%` : 'Rem');
@@ -62,7 +63,6 @@
   let started = $state(false);
   let busy = $state(false);
   let note = $state('');
-  let updatedTalkAvailable = $state(false);
   let follow = $state(true);
   let anchorY = 0;
   let clip = null;                             // { start, end } of the loaded clip ('clips' level)
@@ -379,8 +379,8 @@
       }
       // SSR HTML and the refreshed API payload must be one transcript/audio snapshot. Never pair
       // a fresh immutable audio URL with word timings from older cached HTML.
-      if (!sameMediaRevision(item.version, d.version)) { updatedTalkAvailable = true; return; }
-      if (d.audio?.remastered) { audioInfo = d.audio; s0paras = d.paragraphs; }
+      if (!sameMediaRevision(item.version, d.version)) { updatedTalkAvailable = true; audio?.pause(); return; }
+      if (d.audio) { audioInfo = d.audio; s0paras = d.paragraphs; }
     }, {every:60_000, idle:false, initial:{version:item.version,summary:item.summary,audio:item.audio},
       same:(a,b)=>a.version===b.version && a.summary===b.summary && JSON.stringify(a.audio)===JSON.stringify(b.audio)});
     cleanups.push(stopMetadata);
@@ -492,7 +492,13 @@
           {#if note}<p class="mt-2 text-sm font-semibold text-radio-needle" role="status">{note}</p>{/if}
           {#if updatedTalkAvailable}<p class="mt-2 text-sm text-radio-dial-ink" role="status">This talk was updated while the page was open. <button type="button" class="font-semibold underline underline-offset-2" onclick={() => location.reload()}>Reload the matching transcript and audio</button>.</p>{/if}
         {:else}
-          <p class="text-sm text-radio-dial-ink">Text only — audio is not available for this recording{item.source?.kind === 'youtube' ? '; the full talk is on YouTube' : ''}.</p>
+          {#if updatedTalkAvailable}
+            <p class="text-sm text-radio-dial-ink" role="status">This talk was updated while the page was open. <button type="button" class="font-semibold underline underline-offset-2" onclick={() => location.reload()}>Reload the matching transcript and audio</button>.</p>
+          {:else if item.audio?.sync_ready === false}
+            <p class="text-sm text-radio-dial-ink" role="status">Playback is paused until this transcript and its matching audio are ready.</p>
+          {:else}
+            <p class="text-sm text-radio-dial-ink">Text only — audio is not available for this recording{item.source?.kind === 'youtube' ? '; the full talk is on YouTube' : ''}.</p>
+          {/if}
         {/if}
         <!-- svelte-ignore a11y_media_has_caption — the transcript below is the caption track -->
         <audio bind:this={audio} preload="metadata" class="hidden"></audio>
