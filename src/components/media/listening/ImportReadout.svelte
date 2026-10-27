@@ -34,7 +34,7 @@
     <p class="live"><span class="lamp" aria-hidden="true"></span>Live · importing</p>
     <p class="headline">
       <span class="num"><Odometer value={h.published} label="talks on the air" /></span> talks on the air
-      <span class="dot" aria-hidden="true">·</span> <span class="num"><Odometer value={h.total} label="processing" /></span> processing
+      <span class="dot" aria-hidden="true">·</span> <span class="num"><Odometer value={Math.max(0, h.total - h.published)} label="remaining" /></span> remaining
       {#if data?.items_per_hour != null}<span class="dot" aria-hidden="true">·</span> <span title="Remastered talks per hour"><span class="num plus">{Math.round(h.perHour)}</span> remastered talks/hr</span>{/if}
       {#if data?.restoration_checks_per_hour>0}<span class="dot" aria-hidden="true">·</span><span title="Completed audio restoration assessments over the last 30 minutes, including recordings where the original was retained"><span class="num plus">{Math.round(data.restoration_checks_per_hour)}</span> restoration checks/hr</span>{/if}
       {#if h.today}<span class="today">added today: {fmt(h.today)}</span>{/if}
