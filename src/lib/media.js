@@ -60,6 +60,12 @@ export function picture(url, w, h = w, { photo = true } = {}) {
 /** The published file URL of an item (thumb.jpg, waveform.json, …), relative to the API origin. */
 export const mediaFile = (slug, name) => `/api/media/${encodeURIComponent(slug)}/file/${String(name).split('/').map(encodeURIComponent).join('/')}`;
 
+/** A cached page and refreshed talk API are safe to combine only when they share a published item revision. */
+export function sameMediaRevision(pageVersion, apiVersion) {
+  const page = Number(pageVersion), fresh = Number(apiVersion);
+  return Number.isSafeInteger(page) && page > 0 && page === fresh;
+}
+
 /** Paragraphs ([{ words: [[text, s, e], …] }]) → flat arrays in reading order: starts, ends, paragraph index, word index. */
 export function flattenWords(paragraphs = []) {
   const n = paragraphs.reduce((a, p) => a + (p.words?.length || 0), 0);

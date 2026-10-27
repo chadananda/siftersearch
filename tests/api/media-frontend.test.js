@@ -1,7 +1,7 @@
 // src/lib/media.js — the /media pages' pure helpers (query ↔ URL, word lookup, quote segments, speaker turns, waveform).
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-import { filtersFromParams, pageQuery, apiQuery, flattenWords, wordAt, paragraphSegments, speakerLabels, youtubeAtTime, waveformBars, mediaFile } from '../../src/lib/media.js';
+import { filtersFromParams, pageQuery, apiQuery, flattenWords, wordAt, paragraphSegments, speakerLabels, youtubeAtTime, waveformBars, mediaFile, sameMediaRevision } from '../../src/lib/media.js';
 
 const item = JSON.parse(readFileSync(new URL('../fixtures/media-item.json', import.meta.url), 'utf8'));
 
@@ -26,6 +26,12 @@ describe('listing query', () => {
   });
   it('file urls are encoded under the item', () => {
     expect(mediaFile('a-b', 'thumb.jpg')).toBe('/api/media/a-b/file/thumb.jpg');
+  });
+  it('only combines SSR transcript and refreshed audio from the same published revision', () => {
+    expect(sameMediaRevision(13, 13)).toBe(true);
+    expect(sameMediaRevision('13', 13)).toBe(true);
+    expect(sameMediaRevision(12, 13)).toBe(false);
+    expect(sameMediaRevision(undefined, 13)).toBe(false);
   });
 });
 

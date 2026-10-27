@@ -8,7 +8,7 @@
   import { media } from '../../lib/api.js';
   import { audioReady } from '../../lib/media-ready.js';
   import { liveRefresh } from '../../lib/live-data.js';
-  import { flattenWords, flattenOriginalStarts, mapTime, wordAt, youtubeAtTime, picture } from '../../lib/media.js';
+  import { flattenWords, flattenOriginalStarts, mapTime, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
   import MediaTranscript from './MediaTranscript.svelte';
   import MediaWaveform from './MediaWaveform.svelte';
@@ -62,6 +62,7 @@
   let started = $state(false);
   let busy = $state(false);
   let note = $state('');
+  let updatedTalkAvailable = $state(false);
   let follow = $state(true);
   let anchorY = 0;
   let clip = null;                             // { start, end } of the loaded clip ('clips' level)
@@ -352,16 +353,19 @@
     // along with the audio metadata so a cached page cannot hide editorial updates.
     const stopMetadata = liveRefresh(async () => {
       const d = await media.get(item.slug);
-      return {summary:d.summary, audio:d.audio, paragraphs:d.paragraphs};
+      return {version:d.version, summary:d.summary, audio:d.audio, paragraphs:d.paragraphs};
     }, d => {
       const description = document.querySelector('.talk-hero [data-talk-description]');
       if (description && typeof d.summary === 'string') {
         description.textContent = d.summary;
         description.hidden = !d.summary;
       }
+      // SSR HTML and the refreshed API payload must be one transcript/audio snapshot. Never pair
+      // a fresh immutable audio URL with word timings from older cached HTML.
+      if (!sameMediaRevision(item.version, d.version)) { updatedTalkAvailable = true; return; }
       if (d.audio?.remastered) { audioInfo = d.audio; s0paras = d.paragraphs; }
-    }, {every:60_000, idle:false, initial:{summary:item.summary,audio:item.audio},
-      same:(a,b)=>a.summary===b.summary && JSON.stringify(a.audio)===JSON.stringify(b.audio)});
+    }, {every:60_000, idle:false, initial:{version:item.version,summary:item.summary,audio:item.audio},
+      same:(a,b)=>a.version===b.version && a.summary===b.summary && JSON.stringify(a.audio)===JSON.stringify(b.audio)});
     cleanups.push(stopMetadata);
     if (canPlay) sessionSetup();
     const silent = () => audio.src.startsWith('blob:');   // the unlock blip, not the talk
@@ -469,6 +473,7 @@
             <span class="hidden sm:inline">Space = play/pause · click any word to play from it · select text to share a passage</span>
           </div>
           {#if note}<p class="mt-2 text-sm font-semibold text-radio-needle" role="status">{note}</p>{/if}
+          {#if updatedTalkAvailable}<p class="mt-2 text-sm text-radio-dial-ink" role="status">This talk was updated while the page was open. <button type="button" class="font-semibold underline underline-offset-2" onclick={() => location.reload()}>Reload the matching transcript and audio</button>.</p>{/if}
         {:else}
           <p class="text-sm text-radio-dial-ink">Text only — audio is not available for this recording{item.source?.kind === 'youtube' ? '; the full talk is on YouTube' : ''}.</p>
         {/if}
@@ -514,20 +519,6 @@
             </ol>
           </nav>
         {/if}
-        {#if item.topics?.length}
-          <div>
-            <h2 class="mb-2 font-dial text-sm font-bold uppercase tracking-[0.22em] text-radio-ink-soft">On the program</h2>
-            <ul class="flex flex-wrap gap-1.5">
-              {#each item.topics as t (t)}<li><a href={`/media?q=${encodeURIComponent(t)}`} class="topic">{t}</a></li>{/each}
-            </ul>
-          </div>
-        {/if}
-        {#if item.quotes?.length || item.cross_references?.length}
-          <p class="font-dial text-sm font-semibold uppercase tracking-wider text-radio-ink-soft">
-            {item.quotes?.length || 0} quotation{item.quotes?.length === 1 ? '' : 's'} linked to source ·
-            {item.cross_references?.length || 0} cross-reference{item.cross_references?.length === 1 ? '' : 's'}
-          </p>
-        {/if}
       </div>
     </aside>
 
@@ -546,6 +537,25 @@
         speakers={item.speakers || {}} {range} {canPlay} {playing} {playingPara} {onword} {onpara}
         {moments} slug={item.slug} speaker={item.speaker || ''} portrait={photo ? item.thumb.url : null} year={item.year} {onmoment} {momentNow} {skips} />
     </div>
+
+    {#if item.topics?.length || item.quotes?.length || item.cross_references?.length}
+      <aside class="mt-10 space-y-8 lg:order-3 lg:col-span-4 lg:mt-0" aria-label="About this talk">
+        {#if item.topics?.length}
+          <div>
+            <h2 class="mb-2 font-dial text-sm font-bold uppercase tracking-[0.22em] text-radio-ink-soft">On the program · topics</h2>
+            <ul class="flex flex-wrap gap-1.5">
+              {#each item.topics as t (t)}<li><a href={`/media?q=${encodeURIComponent(t)}`} class="topic">{t}</a></li>{/each}
+            </ul>
+          </div>
+        {/if}
+        {#if item.quotes?.length || item.cross_references?.length}
+          <p class="font-dial text-sm font-semibold uppercase tracking-wider text-radio-ink-soft">
+            {item.quotes?.length || 0} quotation{item.quotes?.length === 1 ? '' : 's'} linked to source ·
+            {item.cross_references?.length || 0} cross-reference{item.cross_references?.length === 1 ? '' : 's'}
+          </p>
+        {/if}
+      </aside>
+    {/if}
   </div>
 
   {#if related.length}

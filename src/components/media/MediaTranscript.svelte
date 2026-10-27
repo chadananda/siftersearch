@@ -149,9 +149,9 @@
   .voice { margin-bottom: 0.15rem; font: 700 0.85rem/1.2 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--radio-brass); }
 
   /* the play button per paragraph: in the left margin from lg, floated inline below */
-  .pplay { float: left; margin: 0.2rem 0.6rem 0 0; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+  .pplay { position: relative; z-index: 2; float: left; margin: 0.2rem 0.6rem 0 0; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
   @media (min-width: 1024px) { .pplay { position: absolute; float: none; margin: 0; left: -4.5rem; top: 0.15rem; width: 3rem; } .pplay.with-label { top: 1.4rem; } }
-  .pbtn { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 9999px; color: var(--radio-amber); background: var(--radio-paper);
+  .pbtn { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 9999px; color: var(--radio-amber); background: var(--radio-paper); touch-action: manipulation;
     box-shadow: inset 0 0 0 1.5px var(--radio-line); transition: box-shadow 0.2s, transform 0.2s, background 0.2s; }
   .pbtn svg { width: 0.95rem; height: 0.95rem; }
   .pbtn:hover { box-shadow: inset 0 0 0 2px var(--radio-amber); transform: scale(1.06); }
