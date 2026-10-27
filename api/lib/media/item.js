@@ -126,7 +126,7 @@ export async function searchFollowUp(docId, { queue = null } = {}) {
 // the speaker identities (data/media-speaker-people.json), loaded once per process
 let speakerPeople = null;
 
-export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'realign', 'web', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
+export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'realign', 'web', 'transcribe', 'preview', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
@@ -626,6 +626,27 @@ export async function runItem(item, opts = {}, deps = {}) {
         aligned: raw.aligned, align_score: raw.align_score, timings: raw.timings, host: r.host || 'tower', threads: r.host ? null : th, rtf: Math.round((r.seconds / Math.max(1, raw.duration_s)) * 1000) / 1000, input: meta.enhancement.asr_input,
         speakers: new Set((raw.turns || []).map((t) => t.speaker)).size };
       rec.rtf = meta.asr.rtf;
+    }
+
+    if (stage === 'preview') {
+      // Compare both the opening and a middle sample. A shared lecture-series introduction is only overlap; Dewey only
+      // marks an automatic duplicate when both independent regions match, otherwise an opening match is a review hold.
+      const raw = await readJson(join(dir, 'transcript.raw.json'), { segments: [] });
+      const text = (raw.segments || []).map((s) => s.text || (s.words || []).map((w) => w.w || '').join(' ')).join(' ');
+      const verdict = await (await import('./preview.js')).previewVerdict({ text, duration_s: meta.duration_s, title: meta.title, excludeId: item.id }, { repo });
+      meta.dedup = { ...verdict, at: d.now() };
+      rec.dedup = meta.dedup;
+      await save();
+      if (verdict.verdict === 'duplicate') {
+        const why = `Dewey duplicate of ${verdict.of} (${verdict.by}, score ${verdict.score})`;
+        await repo.updateMediaItem(item.id, { state: 'duplicate', why, stage: 'preview' });
+        return { duplicate: true, of: verdict.of, score: verdict.score, slug: meta.slug, done };
+      }
+      if (verdict.verdict === 'review') {
+        const why = `Dewey transcript overlap with ${verdict.of} (score ${verdict.score}); review before publication`;
+        await repo.updateMediaItem(item.id, { state: 'review', why, stage: 'preview' });
+        return { review: true, of: verdict.of, score: verdict.score, slug: meta.slug, done };
+      }
     }
 
     if (stage === 'diarize') {

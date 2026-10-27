@@ -1885,7 +1885,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   return yielded ? { ...summary, yielded: true, resume: { write: true, maxPods: requestedMaxPods } } : summary;
 }
 
-/** media-preview { fingerprint?, text, duration_s }: Dewey's stage 0 answer (api/lib/media/preview.js) — "duplicate of <slug>" or "new". Text only. */
+/** media-preview { fingerprint?, text, windows?, title?, duration_s }: Dewey compares separate transcript samples; a lone opening match is review only. */
 export async function mediaPreviewJob(params = {}, deps = {}) { return (deps.preview || await import('../media/preview.js')).previewVerdict(params, deps); }
 
 /** THE LANE KEEPER (10-25: the cloud lane stayed down for hours after a restart — the run had ended on a sticky money stop and nothing
