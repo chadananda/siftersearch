@@ -35,7 +35,7 @@
     <p class="headline">
       <span class="num"><Odometer value={h.published} label="talks on the air" /></span> talks on the air
       <span class="dot" aria-hidden="true">·</span> <span class="num"><Odometer value={h.total} label="processing" /></span> processing
-      {#if data?.items_per_hour != null}<span class="dot" aria-hidden="true">·</span> <span title="Newly published talks in the last 30 minutes, expressed per hour"><span class="num plus">{Math.round(h.perHour)}</span> new talks/hr <span class="rate-window">(last 30 min)</span></span>{/if}
+      {#if data?.items_per_hour != null}<span class="dot" aria-hidden="true">·</span> <span title="Remastered talks per hour"><span class="num plus">{Math.round(h.perHour)}</span> remastered talks/hr</span>{/if}
       {#if data?.restoration_checks_per_hour>0}<span class="dot" aria-hidden="true">·</span><span title="Completed audio restoration assessments over the last 30 minutes, including recordings where the original was retained"><span class="num plus">{Math.round(data.restoration_checks_per_hour)}</span> restoration checks/hr</span>{/if}
       {#if h.today}<span class="today">added today: {fmt(h.today)}</span>{/if}
     </p>
