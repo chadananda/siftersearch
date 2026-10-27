@@ -446,7 +446,7 @@
               <MediaWaveform url={item.waveform} {duration} {current} {range} onseek={seek} {ticks} {pins} />
             </div>
           </div>
-          <div class="mt-2 flex flex-nowrap items-center gap-x-3 text-sm text-radio-dial-ink">
+          <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-radio-dial-ink">
             <span class="flex-none font-dial text-lg font-bold tabular-nums tracking-wider">{formatTime(current)} <span class="opacity-60">/ {formatTime(duration)}</span></span>
             {#if nowSection}<span class="min-w-0 truncate opacity-80">§ {nowSection.title}</span>{/if}
             {@render abToggle()}

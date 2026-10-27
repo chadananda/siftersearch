@@ -30,7 +30,7 @@
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0 flex-1">
               {#if series && it.part}<p class="mb-1 font-dial text-sm font-bold uppercase tracking-wider text-radio-brass">Part {it.part}</p>{/if}
-              <h3 class="font-marquee text-xl leading-tight text-radio-ink sm:text-2xl"><a href={`/media/${it.s}`} class="hover:text-radio-amber hover:underline">{it.t}</a></h3>
+              <h3 class="break-words font-marquee text-xl leading-tight text-radio-ink sm:text-2xl"><a href={`/media/${it.s}`} class="hover:text-radio-amber hover:underline">{it.t}</a></h3>
               <p class="mt-2 text-sm text-radio-ink-soft">{[it.y,duration(it.d),language(it.l),it.g?`Audio ${it.g}`:null].filter(Boolean).join(' · ')}</p>
             </div>
             <button type="button" class="rounded-full bg-radio-amber px-4 py-2 font-dial text-base font-bold text-radio-walnut-deep" onclick={()=>playExcerpt(it,speaker)} aria-label={`Play 20 seconds of ${it.t}`}>

@@ -234,6 +234,7 @@
   .box-series .box-pic { height: 6.9rem; border-radius: 0.25rem; }
   .s-lg .box-series .box-pic { height: 9.4rem; }
   .box-series .box-name { margin-top: 0.35rem; }
+  @media (max-width: 559px) { .box-name, .box-speaker { overflow-wrap: anywhere; } }
   .spines { position: relative; flex: 1; min-height: 0; margin-top: 0.9rem; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; scrollbar-width: thin; scrollbar-color: var(--radio-brass) transparent; }
   .spine-list { display: flex; flex-direction: column; gap: 3px; padding: 0 0 3px; }
   .spines:not(.loopable) .spine-list + .spine-list { display: none; }
