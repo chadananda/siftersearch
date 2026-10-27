@@ -13,7 +13,7 @@ import { createReadStream, createWriteStream, existsSync } from 'fs';
 import { Readable } from 'stream';
 import { pipeline as streamPipeline } from 'stream/promises';
 import { createHash } from 'crypto';
-import { join, extname, dirname } from 'path';
+import { join, extname, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { parseMediaPath, seriesTitle, partTitle } from '../media/names.js';
 import { historicalIndex, historicalTier } from '../media/historical.js';
