@@ -9,16 +9,18 @@ import requests, numpy as np, cv2
 from PIL import Image, ImageOps
 
 ROOT = os.getcwd()
-OUT = os.path.join(ROOT, 'tmp', 'speaker-sketch'); os.makedirs(OUT, exist_ok=True)
-YUNET = os.path.join(ROOT, 'tmp', 'speaker-gallery', 'yunet.onnx')
-SFACE = os.path.join(ROOT, 'tmp', 'speaker-gallery', 'sface.onnx')
+OUT = os.environ.get('SPEAKER_SKETCH_OUT', os.path.join(ROOT, 'tmp', 'speaker-sketch')); os.makedirs(OUT, exist_ok=True)
+YUNET = os.environ.get('SPEAKER_SKETCH_YUNET', os.path.join(ROOT, 'tmp', 'speaker-gallery', 'yunet.onnx'))
+SFACE = os.environ.get('SPEAKER_SKETCH_SFACE', os.path.join(ROOT, 'tmp', 'speaker-gallery', 'sface.onnx'))
 CDN = 'https://siftersearch.com/img/cdn/siftersearch.com/'
 MODEL = 'gemini-3.1-flash-image'
 GALLERY = json.load(open(os.path.join(ROOT, 'data', 'media-speaker-gallery.json')))['speakers']
 # a speaker with no gallery yet: the portrait already in use (an identity anchor), listed by hand in extra-sources.json
-_EXTRA = os.path.join(ROOT, 'tmp', 'speaker-sketch', 'extra-sources.json')
+_EXTRA = os.environ.get('SPEAKER_SKETCH_EXTRA_SOURCES', os.path.join(ROOT, 'tmp', 'speaker-sketch', 'extra-sources.json'))
 if os.path.exists(_EXTRA):
-    for _k, _l in json.load(open(_EXTRA)).items(): GALLERY.setdefault(_k, _l)
+    # The media job passes the current repo-backed gallery so newly found photos and supplied anchors are immediately usable.
+    for _k, _l in json.load(open(_EXTRA)).items():
+        if _l: GALLERY[_k] = _l + [x for x in GALLERY.get(_k, []) if x.get('sha') not in {e.get('sha') for e in _l}]
 S = requests.Session(); S.headers['User-Agent'] = 'SifterSearch media library (https://siftersearch.com)'
 rec = cv2.FaceRecognizerSF.create(SFACE, '')
 

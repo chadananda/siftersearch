@@ -263,7 +263,8 @@ export const getSpeaker = async (key) => queryOne('SELECT * FROM media_speakers 
 export const speakersByKeys = async (keys) => (keys.length ? queryAll(`SELECT * FROM media_speakers WHERE key IN (${keys.map(() => '?').join(',')})`, keys, 'media:speakers') : []);
 export const listSpeakers = async () => queryAll('SELECT * FROM media_speakers ORDER BY name', [], 'media:speakers-all');
 export const itemsBySpeakerKeys = async (keys) => keys.length ? queryAll(`SELECT id, slug, dir, speaker, speaker_key, state, doc_id FROM media_items WHERE speaker_key IN (${keys.map(() => '?').join(',')})`, keys, 'media:items-speaker-keys') : [];
-const SPK = ['name', 'entity_id', 'file', 'sha', 'width', 'height', 'origin', 'source_url', 'page_url', 'credit', 'licence', 'fetched_at', 'tried_at', 'note', 'ext_file', 'ext_sha', 'ext_of', 'ext_model', 'ext_prompt', 'ext_usd', 'ext_at', 'ext_error'];
+const SPK = ['name', 'entity_id', 'file', 'sha', 'width', 'height', 'origin', 'source_url', 'page_url', 'credit', 'licence', 'fetched_at', 'tried_at', 'note', 'ext_file', 'ext_sha', 'ext_of', 'ext_model', 'ext_prompt', 'ext_usd', 'ext_at', 'ext_error',
+  'sketch_file', 'sketch_sha', 'sketch_sq_file', 'sketch_sq_sha', 'sketch_width', 'sketch_height', 'sketch_model', 'sketch_source_sha', 'sketch_source_file', 'sketch_source_credit', 'sketch_source_licence', 'sketch_source_url', 'sketch_likeness', 'sketch_usd', 'sketch_at', 'sketch_state', 'sketch_attempted_at', 'sketch_error'];
 export async function upsertSpeaker(row) {
   const key = canonicalSpeakerKey(row.key);
   if (key !== row.key) {
@@ -394,6 +395,27 @@ export async function setSpeakerExtension(key, f = {}) {
   if (!cols.length) return getSpeaker(key);
   await transaction([{ sql: `UPDATE media_speakers SET ${cols.map((k) => `${k} = ?`).join(', ')}, updated_at = ? WHERE key = ?`, args: [...cols.map((k) => f[k]), now(), String(key)] }], 'media:speaker-ext');
   return getSpeaker(key);
+}
+
+/** Persist an automatically generated speaker sketch and its retry state. The image bytes live in R2; only provenance and
+ *  immutable, content-addressed paths belong in the catalogue. */
+export async function setSpeakerSketch(key, f = {}) {
+  const cols = ['sketch_file', 'sketch_sha', 'sketch_sq_file', 'sketch_sq_sha', 'sketch_width', 'sketch_height', 'sketch_model',
+    'sketch_source_sha', 'sketch_source_file', 'sketch_source_credit', 'sketch_source_licence', 'sketch_source_url', 'sketch_likeness',
+    'sketch_usd', 'sketch_at', 'sketch_state', 'sketch_attempted_at', 'sketch_error'].filter((k) => f[k] !== undefined);
+  if (!cols.length) return getSpeaker(key);
+  const vals = cols.map((k) => k === 'sketch_likeness' && f[k] != null && typeof f[k] !== 'string' ? JSON.stringify(f[k]) : f[k]);
+  await transaction([{ sql: `UPDATE media_speakers SET ${cols.map((k) => `${k} = ?`).join(', ')}, updated_at = ? WHERE key = ?`, args: [...vals, now(), String(key)] }], 'media:speaker-sketch');
+  return getSpeaker(key);
+}
+
+/** The model's measured cost for today's successful and failed attempts. */
+export const speakerSketchSpendSince = async (since) => Number((await queryOne(
+  'SELECT COALESCE(SUM(usd), 0) usd FROM media_speaker_sketch_runs WHERE at >= ?', [String(since)], 'media:speaker-sketch-spend'))?.usd || 0);
+
+export async function recordSpeakerSketchRun({ key, at = now(), usd = 0, status, source_sha = null, error = null }) {
+  await transaction([{ sql: `INSERT INTO media_speaker_sketch_runs (speaker_key, at, usd, status, source_sha, error) VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [String(key), String(at), Number(usd) || 0, String(status), source_sha, error ? String(error).slice(0, 500) : null] }], 'media:speaker-sketch-run');
 }
 
 // ── speaker galleries (migration 174) ──

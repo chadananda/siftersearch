@@ -9,7 +9,9 @@
 import { late } from '../media/late.js';
 import {audioVersion, markAudioPending} from '../media/talk-audio.js';
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
-import { createReadStream, existsSync } from 'fs';
+import { createReadStream, createWriteStream, existsSync } from 'fs';
+import { Readable } from 'stream';
+import { pipeline as streamPipeline } from 'stream/promises';
 import { createHash } from 'crypto';
 import { join, extname, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -19,6 +21,9 @@ import { createMediaItem, findMediaBySha, findMediaBySource, findMediaByYoutube,
 import { enqueue } from '../repos/ops-report-repo.js';
 import { logActivity } from '../repos/activity-repo.js';
 import { youtubeId, COOL_HOURS } from '../media/youtube.js';
+import { execFile as execFileCb } from 'child_process';
+import { promisify } from 'util';
+const execFile = promisify(execFileCb);
 
 export const MEDIA_EXT = new Set(['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'opus', 'aiff', 'aif', 'wma', 'mp4', 'm4v', 'mov', 'mkv', 'webm', 'avi']);
 export const deweyMediaDir = () => process.env.DEWEY_MEDIA_DIR || '/tank/dewey-ingest/media';
@@ -81,6 +86,66 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
   if (remaining > 0 && batch > 0) await queue('media-scan', { batch, round: round + 1, queueOnly: true }, by);
   await logActivity('media', `media scan round ${round}: ${out.added.length} added, ${out.held.length} held, ${out.queued.length} queued, ${remaining} waiting`).catch(() => {});
   return { ...out, remaining };
+}
+
+/** Fetch an Internet Archive audio item's MP3s into Dewey's inbox. Exact SHA-256 holdings are rejected before media-scan;
+ *  media-scan repeats the check atomically at catalogue insertion, then the normal feed starts unique talks. */
+export async function mediaArchiveImportJob({ identifier, pauseMs = 2000, limit = 100 } = {}, deps = {}) {
+  if (!/^[a-z0-9][a-z0-9_-]{2,100}$/i.test(String(identifier || ''))) throw new Error('valid Archive.org identifier required');
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const fetchImpl = deps.fetchImpl || fetch;
+  const sleep = deps.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
+  const fs = deps.fs || await import('fs/promises');
+  const inbox = deps.inbox || deweyMediaDir();
+  const metadataUrl = `https://archive.org/metadata/${encodeURIComponent(identifier)}`;
+  const mr = await fetchImpl(metadataUrl, { signal: AbortSignal.timeout(60_000) });
+  if (!mr.ok) throw new Error(`Archive.org metadata HTTP ${mr.status}`);
+  const metadata = await mr.json();
+  const files = (metadata.files || []).filter((f) => f.source === 'original' && /^audio\/mpeg$|^VBR MP3$|\.mp3$/i.test(`${f.format || ''} ${f.name || ''}`))
+    .slice(0, Math.max(1, Math.min(500, Number(limit) || 100)));
+  if (!files.length) throw new Error(`no original MP3s found in Archive.org item ${identifier}`);
+  await mkdir(inbox, { recursive: true });
+  const seenMd5 = new Map(), out = { identifier, listed: files.length, downloaded: [], duplicates: [], failed: [] };
+  for (const f of files) {
+    const dest = join(inbox, basename(f.name));
+    const temp = `${dest}.download-${process.pid}.part`;
+    if (f.md5 && seenMd5.has(String(f.md5).toLowerCase())) {
+      out.duplicates.push({ name: f.name, duplicate_of: seenMd5.get(String(f.md5).toLowerCase()), by: 'archive-md5' });
+      continue;
+    }
+    if (f.md5) seenMd5.set(String(f.md5).toLowerCase(), f.name);
+    try {
+      let sha;
+      if (existsSync(dest)) sha = await sha256Of(dest);
+      else {
+        const url = `https://archive.org/download/${encodeURIComponent(identifier)}/${encodeURIComponent(f.name)}`;
+        const r = await fetchImpl(url, { signal: AbortSignal.timeout(30 * 60_000) });
+        if (!r.ok || !r.body) throw new Error(`download HTTP ${r.status}`);
+        await streamPipeline(Readable.fromWeb(r.body), createWriteStream(temp, { flags: 'wx' }));
+        sha = await sha256Of(temp);
+        const held = await repo.findMediaBySha(sha);
+        if (held) {
+          await fs.rm(temp, { force: true });
+          out.duplicates.push({ name: f.name, duplicate_of: held.slug || held.id, by: 'sha256' });
+          continue;
+        }
+        await rename(temp, dest);
+      }
+      const held = await repo.findMediaBySha(sha);
+      if (held) { out.duplicates.push({ name: f.name, duplicate_of: held.slug || held.id, by: 'sha256' }); continue; }
+      const sidecar = { provider: 'archive.org', identifier, name: f.name, url: `https://archive.org/details/${identifier}`, file_url: `https://archive.org/download/${identifier}/${encodeURIComponent(f.name)}`,
+        md5: f.md5 || null, sha1: f.sha1 || null, sha256: sha, bytes: Number(f.size) || null, license: metadata.metadata?.licenseurl || null };
+      await fs.writeFile(`${dest}.source.json`, JSON.stringify(sidecar, null, 1));
+      const scan = await mediaScanJob({ roots: [], paths: [dest], batch: 1 }, { repo, ...deps });
+      out.downloaded.push({ name: f.name, sha256: sha, added: scan.added || [], duplicates: scan.skipped || 0 });
+    } catch (err) {
+      await fs.rm(temp, { force: true }).catch(() => {});
+      out.failed.push({ name: f.name, error: String(err.message).slice(0, 180) });
+    }
+    await sleep(Math.max(0, Math.min(30_000, Number(pauseMs) || 0)));
+  }
+  await logActivity('media', `Archive.org ${identifier}: ${out.downloaded.length} files downloaded, ${out.duplicates.length} exact duplicates, ${out.failed.length} failed`).catch(() => {});
+  return out;
 }
 
 export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null, feed = null, merge_speakers = false, remaster = false } = {}, deps = {}) {
@@ -179,7 +244,7 @@ export async function mediaDropPass(deps = {}) {
 export const speakerDir = () => process.env.MEDIA_SPEAKER_DIR || '/tank/media/speakers';
 /** One person's canonical portrait: kept when held (unless refresh), retried after retryDays, else found (overrides first),
  *  downloaded once into MEDIA_SPEAKER_DIR and recorded. → 'kept' | 'found' | 'none' (with the record). */
-export async function ensurePortrait(name, { refresh = false, retryDays = 7, overrides = null } = {}, deps = {}) {
+export async function ensurePortrait(name, { refresh = false, retryDays = 7, overrides = null, queueSketch = true } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const sp = deps.speakers || await import('../media/speakers.js');
   const fetchImpl = deps.fetchImpl || fetch;
@@ -187,7 +252,7 @@ export async function ensurePortrait(name, { refresh = false, retryDays = 7, ove
   const key = sp.speakerKey(name);
   if (!key) return { status: 'none', key: null };
   const cur = await repo.getSpeaker(key);
-  if (cur?.file && !refresh) return { status: 'kept', key, record: cur };
+  if (cur?.file && !refresh) { if (queueSketch) await queueSpeakerSketch(key, { repo, queue: deps.queue }); return { status: 'kept', key, record: cur }; }
   if (!refresh && cur?.tried_at && Date.now() - Date.parse(cur.tried_at) < retryDays * 86400_000 && !ov[key]) return { status: 'none', key, record: cur };
   const clean = sp.cleanName(name), parts = sp.ascii(clean).split(/\s+/);
   const entity_id = await repo.personEntityId(sp.ascii(clean).replace(/[^a-zA-Z]/g, '').toLowerCase(), parts[parts.length - 1]).catch(() => null);
@@ -197,6 +262,7 @@ export async function ensurePortrait(name, { refresh = false, retryDays = 7, ove
   if (bio?.cdn) {
     const record = await repo.upsertSpeaker({ key, name: clean, entity_id, file: bio.cdn, sha: createHash('sha256').update(bio.cdn).digest('hex'), origin: 'biography',
       source_url: bio.source_url || bio.url || null, page_url: `https://siftersearch.com/biography/${entity_id}`, credit: bio.credit || bio.author || null, licence: bio.license || null, fetched_at: at, tried_at: at });
+    if (queueSketch) await queueSpeakerSketch(key, { repo, queue: deps.queue });
     return { status: 'found', key, record, origin: 'biography' };
   }
   // 2) the web (hand-found overrides, Bahaipedia/bahai.media, Wikidata/Commons, Wikipedia)
@@ -217,7 +283,108 @@ export async function ensurePortrait(name, { refresh = false, retryDays = 7, ove
   const file = await (deps.putCdn || sp.putCdnPortrait)(`media-speakers/${key}.${ext}`, bytes, type, { fetchImpl });
   const record = await repo.upsertSpeaker({ key, name: clean, entity_id, file, sha, width: p.width || null, height: p.height || null, origin: p.origin,
     source_url: p.source_url || p.url, page_url: p.page_url || null, credit: p.credit || null, licence: p.licence || null, fetched_at: at, tried_at: at });
+  if (queueSketch) await queueSpeakerSketch(key, { repo, queue: deps.queue });
   return { status: 'found', key, record, origin: p.origin };
+}
+
+/** Queue one sketch when the speaker has a source portrait. New and already catalogued speakers share the same path. */
+export async function queueSpeakerSketch(key, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const queue = deps.queue || enqueue;
+  const s = await repo.getSpeaker(key);
+  if (!s?.file || s.sketch_file || s.sketch_state === 'held') return { queued: false };
+  if (s.sketch_state === 'failed' && Date.now() - Date.parse(s.sketch_attempted_at || 0) < 24 * 3600_000) return { queued: false, cooldown: true };
+  const pending = deps.pendingRuns || (await import('../repos/ops-report-repo.js')).pendingRuns;
+  if ((await pending('media-speaker-sketch')).some((r) => r.params?.key === key)) return { queued: false, busy: true };
+  const day = new Date(); day.setUTCHours(0, 0, 0, 0);
+  const cap = Number(process.env.MEDIA_SPEAKER_SKETCH_DAILY_USD || 2);
+  if (await repo.speakerSketchSpendSince(day.toISOString()) >= cap) return { queued: false, budget: true };
+  await repo.setSpeakerSketch(key, { sketch_state: 'queued', sketch_error: null });
+  await queue('media-speaker-sketch', { key }, 'media-speaker-sketch');
+  return { queued: true };
+}
+
+/** Generate, likeness-check, upload and record one speaker drawing. The Python renderer remains an implementation detail
+ *  invoked by this pipeline stage; it is never a separate manual publishing step. */
+export async function mediaSpeakerSketchJob({ key } = {}, deps = {}) {
+  if (!key) throw new Error('speaker key required');
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const sp = deps.speakers || await import('../media/speakers.js');
+  const s = await repo.getSpeaker(key);
+  if (!s) return { key, skipped: 'speaker missing' };
+  if (s.sketch_file) return { key, kept: true };
+  const at = new Date().toISOString();
+  const day = new Date(); day.setUTCHours(0, 0, 0, 0);
+  const cap = Number(process.env.MEDIA_SPEAKER_SKETCH_DAILY_USD || 2);
+  if (await repo.speakerSketchSpendSince(day.toISOString()) >= cap) {
+    await repo.setSpeakerSketch(key, { sketch_state: 'waiting-budget', sketch_attempted_at: at });
+    return { key, waiting_budget: true };
+  }
+  let usd = 0, sourceSha = s.sha || null;
+  try {
+    if (!s.file || !s.sha) {
+      const r = await ensurePortrait(s.name, { queueSketch: false }, { repo, speakers: sp });
+      if (!r.record?.file || !r.record?.sha) throw new Error('no source portrait found');
+      Object.assign(s, r.record); sourceSha = s.sha;
+    }
+    const outDir = process.env.SPEAKER_SKETCH_OUT || join(process.cwd(), 'tmp', 'speaker-sketch');
+    await mkdir(outDir, { recursive: true });
+    const extraPath = join(outDir, 'pipeline-sources.json');
+    const gallery = await repo.galleryRows([key]);
+    const sources = [
+      { sha: s.sha, file: s.file, origin: 'current-primary', source_url: s.source_url, credit: s.credit, licence: s.licence },
+      ...gallery.map((p) => ({ sha: p.sha, file: p.file, origin: p.origin, source_url: p.source_url, credit: p.credit, licence: p.licence, face: p.face ? JSON.parse(p.face) : null })),
+    ].filter((x, i, a) => x.sha && a.findIndex((y) => y.sha === x.sha) === i);
+    await writeFile(extraPath, JSON.stringify({ [key]: sources }));
+    const script = join(process.cwd(), 'scripts', 'media', 'speaker_sketch.py');
+    await execFile(process.env.PYTHON || 'python3', [script, 'batch', key], { cwd: process.cwd(), timeout: 30 * 60_000,
+      env: { ...process.env, SPEAKER_SKETCH_EXTRA_SOURCES: extraPath, SPEAKER_SKETCH_OUT: outDir } });
+    const ledger = JSON.parse(await (await import('fs/promises')).readFile(join(outDir, 'ledger.json'), 'utf8'));
+    const finalName = ledger.final?.[key];
+    const d = finalName && ledger.drawings?.[finalName];
+    usd = Number(d?.usd || 0);
+    if (!d || !d.likeness?.pass) throw new Error(ledger.held?.[key] || 'likeness gate did not pass');
+    const tall = Buffer.from(await (await import('fs/promises')).readFile(join(outDir, `${finalName}.jpg`)));
+    const square = Buffer.from(await (await import('fs/promises')).readFile(join(outDir, `${finalName}-sq.jpg`)));
+    const tallSha = createHash('sha256').update(tall).digest('hex');
+    const sqSha = createHash('sha256').update(square).digest('hex');
+    const file = await sp.putCdnPortrait(`media-speakers/${key}/sketch-${tallSha}.jpg`, tall, 'image/jpeg');
+    const sqFile = await sp.putCdnPortrait(`media-speakers/${key}/sketch-sq-${sqSha}.jpg`, square, 'image/jpeg');
+    await repo.setSpeakerSketch(key, { sketch_file: file, sketch_sha: tallSha, sketch_sq_file: sqFile, sketch_sq_sha: sqSha,
+      sketch_width: d.w, sketch_height: d.h, sketch_model: d.model, sketch_source_sha: d.source_sha, sketch_source_file: d.source_file,
+      sketch_source_credit: d.source_credit, sketch_source_licence: sources.find((x) => x.sha === d.source_sha)?.licence || null,
+      sketch_source_url: sources.find((x) => x.sha === d.source_sha)?.source_url || null, sketch_likeness: d.likeness,
+      sketch_usd: usd, sketch_at: at, sketch_state: 'ready', sketch_attempted_at: at, sketch_error: null });
+    await repo.recordSpeakerSketchRun({ key, at, usd, status: 'ready', source_sha: d.source_sha });
+    return { key, ready: true, usd, likeness: d.likeness };
+  } catch (err) {
+    const status = /no take passed|likeness gate/.test(String(err.message)) ? 'held' : /no source portrait/.test(String(err.message)) ? 'no-source' : 'failed';
+    await repo.setSpeakerSketch(key, { sketch_state: status, sketch_attempted_at: at, sketch_usd: usd, sketch_error: String(err.message).slice(0, 300) }).catch(() => {});
+    await repo.recordSpeakerSketchRun({ key, at, usd, status, source_sha: sourceSha, error: err.message }).catch(() => {});
+    return { key, failed: true, why: String(err.message).slice(0, 200), usd };
+  }
+}
+
+/** Low-rate backfill pass; schedules one eligible catalogued speaker per pass. */
+export async function mediaSpeakerSketchSweepJob() {
+  const repo = await import('../repos/media-repo.js');
+  const sp = await import('../media/speakers.js');
+  for (const { speaker } of await repo.mediaSpeakerNames()) {
+    const key = sp.speakerKey(speaker);
+    if (!key) continue;
+    const s = await repo.getSpeaker(key);
+    if (s?.file && !s.sketch_file && !['held', 'no-source'].includes(s.sketch_state)) {
+      const r = await queueSpeakerSketch(key, { repo });
+      if (r.queued) return { queued: key };
+      continue;
+    }
+    if (!s?.file && (!s?.tried_at || Date.now() - Date.parse(s.tried_at) >= 7 * 86400_000)) {
+      const r = await ensurePortrait(speaker, { queueSketch: false }, { repo, speakers: sp });
+      if (r.record?.file) { await queueSpeakerSketch(key, { repo }); return { searched: key, portrait: 'found', queued: key }; }
+      return { searched: key, portrait: 'none' };
+    }
+  }
+  return { queued: null };
 }
 
 export async function mediaSpeakersJob({ refresh = false, names = [], pauseMs = 1200, retryDays = 7 } = {}, deps = {}) {
@@ -283,9 +450,9 @@ export async function mediaShortJob(params = {}, deps = {}) {
   const item = await repo.getMediaBySlug(params.slug);
   const portraitUrl = async (it) => {
     // the speaker's DRAWING (Chad 10-23: the courtroom-sketch portrait is primary everywhere) — drawn at 9:16, no stretching
-    const sk = (deps.sketchOf || (await import('../media/sketch.js')).sketchOf)(it.speaker_key);
-    if (sk) return sk.url;
     const sp = it.speaker_key ? await repo.getSpeaker(it.speaker_key) : null;
+    const sk = (deps.sketchOf || (await import('../media/sketch.js')).speakerSketchOrStatic)(sp);
+    if (sk) return sk.url;
     // the extended 9:16 master when there is one for the current portrait (no stretching, room for every crop)
     if (sp?.ext_file && sp.ext_sha && sp.ext_of === sp.sha) return `https://siftersearch.com/img/cdn/siftersearch.com/${sp.ext_file}?v=${sp.ext_sha.slice(0, 16)}`;
     return sp?.file && sp.sha ? `https://siftersearch.com/img/cdn/siftersearch.com/${sp.file}?v=${sp.sha.slice(0, 16)}` : null;

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 import { CDN } from './gallery.js';
 
 const FILE = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'media-speaker-sketches.json');
-const FILE_RE = /^media-speakers\/[a-z0-9-]+\/sketch-[a-z0-9-]+\.jpe?g$/;
+const FILE_RE = /^media-speakers\/[a-z0-9-]+\/sketch(?:-sq)?-[a-f0-9]{16,64}\.jpe?g$/;
 
 /** One manifest entry → the sketch as pages use it, or null when the entry is unusable. Pure. */
 export function shapeSketch(e) {
@@ -17,6 +17,19 @@ export function shapeSketch(e) {
   return { url: `${CDN}${e.file}?v=${e.sha.slice(0, 16)}`, square: `${CDN}${e.sq_file}?v=${e.sq_sha.slice(0, 16)}`, width: e.width || 768, height: e.height || 1376,
     ai_rendered: true, model: e.model || null, source_sha: e.source_sha, source_credit: e.source_credit || null };
 }
+
+/** A database speaker row produced by the automatic sketch pipeline, or null before a likeness-approved drawing exists. */
+export function speakerSketch(row) {
+  if (!row?.sketch_file) return null;
+  return shapeSketch({
+    file: row.sketch_file, sha: row.sketch_sha, sq_file: row.sketch_sq_file, sq_sha: row.sketch_sq_sha,
+    width: row.sketch_width, height: row.sketch_height, source_sha: row.sketch_source_sha,
+    source_credit: row.sketch_source_credit, model: row.sketch_model,
+  });
+}
+
+/** Prefer the live pipeline row; retain the checked-in manifest as a compatibility fallback for existing drawings. */
+export const speakerSketchOrStatic = (row, map = loadSketches()) => speakerSketch(row) || sketchOf(row?.key, map);
 
 let cache = { mtime: 0, map: new Map() };
 /** The manifest (re-read when the file changes) → Map key → sketch. A missing or broken file means no sketches. */

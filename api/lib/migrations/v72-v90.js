@@ -1992,6 +1992,24 @@ export const migrations = {
       sql: 'CREATE UNIQUE INDEX IF NOT EXISTS idx_ge_slug ON graph_entities(slug) WHERE slug IS NOT NULL' });
     logger.info('Migration 182 complete: graph_entities.slug + bio_slug_aliases');
   },
+  183: async () => {
+    // Speaker art is produced by the media pipeline, not by a manual manifest publish. Keep its R2 references and retry
+    // state beside the speaker, and account for each model attempt so the background queue can honor a daily spend cap.
+    for (const col of [
+      'sketch_file TEXT', 'sketch_sha TEXT', 'sketch_sq_file TEXT', 'sketch_sq_sha TEXT', 'sketch_width INTEGER', 'sketch_height INTEGER',
+      'sketch_model TEXT', 'sketch_source_sha TEXT', 'sketch_source_file TEXT', 'sketch_source_credit TEXT', 'sketch_source_licence TEXT',
+      'sketch_source_url TEXT', 'sketch_likeness TEXT', 'sketch_usd REAL', 'sketch_at TEXT', 'sketch_state TEXT',
+      'sketch_attempted_at TEXT', 'sketch_error TEXT',
+    ]) {
+      try { await query(`ALTER TABLE media_speakers ADD COLUMN ${col}`); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    }
+    await query(`CREATE TABLE IF NOT EXISTS media_speaker_sketch_runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, speaker_key TEXT NOT NULL, at TEXT NOT NULL, usd REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL, source_sha TEXT, error TEXT
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_media_sketch_runs_at ON media_speaker_sketch_runs(at)');
+    logger.info('Migration 183 complete: media speaker sketch pipeline state and spend ledger');
+  },
 };
 
 export const graphMigrations = {

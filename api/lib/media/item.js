@@ -249,6 +249,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         const known = d.repo?.listSpeakers ? (await d.repo.listSpeakers().catch(() => [])).map((x) => x.name).filter(Boolean) : [];
         hints = parseMediaPath(relative(join(mediaRoot(), traditionOf(src)), src).replace(/^talks\//, ''), { known });
       }
+      const archiveSource = !isYt ? await readJson(`${src}.source.json`) : null;
       const named = await llm.nameItem({ rel: isYt ? `${info.channel} / ${info.title}` : relative(mediaRoot(), src), tags: isYt ? { description: info.description.slice(0, 600), tags: info.tags } : probe.tags,
         hints, duration: isYt ? info.duration_s : probe.duration_s }, { spend })
         // naming is a convenience: when the API cannot be reached the parsed path names the item (compute never waits on the internet)
@@ -291,7 +292,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         kind: named.kind || null, language_hint: named.language_hint || null, tradition, collection, series: hints.series || null, part: hints.part || null,
         duration_s: probe.duration_s, has_video: !!probe.has_video,
         source: isYt ? { kind: 'youtube', download, url: info.url, youtube_id: info.youtube_id, channel: info.channel, channel_id: info.channel_id, channel_url: info.channel_url, upload_date: info.upload_date, title: info.title, license: info.license }
-          : { kind: 'file', path: src, sha256: sha, bytes: (await stat(original)).size, probe },
+          : { kind: 'file', path: src, sha256: sha, bytes: (await stat(original)).size, probe, ...(archiveSource ? { archive: archiveSource } : {}) },
         original: relative(dir, original), version: 1 };
       // every YouTube channel gets its own permission record (Chad can switch one to clips/search if its owner objects)
       let channel = isYt && info.channel_id ? await repo.getChannel(info.channel_id) : null;

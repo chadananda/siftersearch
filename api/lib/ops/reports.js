@@ -26,7 +26,7 @@ import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
-import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRestoreJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaCloudOrderJob, mediaRemasterQualityJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
+import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRestoreJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaCloudOrderJob, mediaRemasterQualityJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaArchiveImportJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaSpeakerSketchJob, mediaPlaybackJob, mediaGradeJob } from './media-jobs.js';
 import { mediaGalleryJob, mediaPortraitInventoryJob } from './media-gallery-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
@@ -236,6 +236,7 @@ REPORTS['rights-open-publisher'] = rightsOpenPublisherJob;   // params { write, 
 REPORTS['exclude-ruhi'] = excludeRuhiJob;   // params { write } — Ruhi books soft-deleted from the library, files kept (Chad 10-23)
 REPORTS['paragraph-authors'] = paragraphAuthorsJob;   // params { religion, ids?, write, limit?, concurrency, outDir } — every paragraph its author (Chad 10-19)
 REPORTS['media-scan'] = mediaScanJob;   // params { roots?, paths?, urls?, batch?, round? } — new recordings → items; queues media-item one at a time (planning/media-library-plan.md)
+REPORTS['media-archive-import'] = mediaArchiveImportJob; // params { identifier, pauseMs?, limit? } — Archive.org MP3s → Dewey inbox, exact-hash duplicate gate
 REPORTS['media-item'] = mediaItemJob;   // params { id, from?, only?, threads?, lang?, model? } — one recording through the media pipeline (resumable)
 REPORTS['media-vocab'] = mediaVocabJob;
 REPORTS['media-playback'] = mediaPlaybackJob;   // params { level = 'full', sourceKind? } — every item's playback level, pages re-rendered
@@ -271,6 +272,7 @@ REPORTS['media-shorts-moments'] = mediaShortsMomentsJob;   // params { per?, rol
 REPORTS['media-short'] = mediaShortJob;   // params { slug, start, end, format?, template? } — an audiogram short
 REPORTS['media-grade'] = mediaGradeJob;   // params { ids?, after? } — quality grade back-fill for processed items
 REPORTS['media-speakers'] = mediaSpeakersJob;   // params { refresh?, names? } — one canonical portrait per speaker (web search; face-centred crops via the image worker)   // params { minMentions? } — names for the transcript corrector's controlled vocabulary
+REPORTS['media-speaker-sketch'] = mediaSpeakerSketchJob;
 REPORTS['media-gallery'] = mediaGalleryJob;   // { write, keys?, extend, maxUsd } — speaker galleries from data/media-speaker-gallery.json (+ AI-extended masters once)
 REPORTS['media-portrait-inventory'] = mediaPortraitInventoryJob;   // every speaker of the catalogue (published + queued), talks and photos
 REPORTS['pipeline-snapshot'] = (p = {}) => pipelineSnapshotJob(p);   // params { rebaseIntegrity?, force? } — data/pipeline-status.json now (also every 10 min from the reports-worker loop)
@@ -343,7 +345,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-remaster', 'media-remaster-revert', 'media-cloud-remaster', 'media-cloud-order', 'media-light-backfill', 'media-preview', 'media-remaster-quality', 'media-remaster-review-pack', 'media-remaster-decide', 'media-trim-audit'];
-MEDIA_JOBS.push('media-gallery', 'media-portrait-inventory');
+MEDIA_JOBS.push('media-gallery', 'media-portrait-inventory', 'media-speaker-sketch', 'media-archive-import');
 export { LANE_WORKERS } from './lane-workers.js';
 
 export const reportNames = () => Object.keys(REPORTS);
