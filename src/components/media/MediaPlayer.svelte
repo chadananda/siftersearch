@@ -144,23 +144,49 @@
   }
 
   // ── playback ──
-  const waitMeta = () => new Promise((res, rej) => {
-    if (audio.readyState >= 1) return res();
+  const waitMeta = (source) => new Promise((res, rej) => {
+    const expected = new URL(source, document.baseURI).href;
+    const matching = () => audio.readyState >= 1 && audio.currentSrc === expected;
+    if (matching()) return res();
     const clear = () => { clearTimeout(timer); audio.removeEventListener('loadedmetadata', ok); audio.removeEventListener('error', fail); };
-    const ok = () => { clear(); res(); };
-    const fail = () => { clear(); rej(new Error('Audio could not be loaded.')); };
+    const ok = () => { if (!matching()) return; clear(); res(); };
+    const fail = () => { if (audio.currentSrc !== expected) return; clear(); rej(new Error('Audio could not be loaded.')); };
     const timer = setTimeout(() => { clear(); rej(new Error('Audio is taking too long to load. Try again.')); }, 25000);
-    audio.addEventListener('loadedmetadata', ok, { once: true });
-    audio.addEventListener('error', fail, { once: true });
+    audio.addEventListener('loadedmetadata', ok);
+    audio.addEventListener('error', fail);
   });
+  async function setSourceAndWait(source) {
+    // readyState can still describe the previous source (including the silent iOS unlock clip).
+    // Attach the source-specific waiter before changing src so a fast cached response is not missed.
+    const ready = waitMeta(source);
+    audio.src = source;
+    await ready;
+  }
+  function seekAndWait(time) {
+    const target = Math.max(0, Math.min(time, Number.isFinite(audio.duration) ? audio.duration : time));
+    if (!audio.seeking && Math.abs(audio.currentTime - target) < 0.05) return Promise.resolve();
+    return new Promise((res, rej) => {
+      const clear = () => { clearTimeout(timer); audio.removeEventListener('seeked', done); audio.removeEventListener('error', fail); };
+      const done = () => {
+        if (audio.seeking || audio.currentSrc === '' || Math.abs(audio.currentTime - target) > 1) return;
+        clear(); res();
+      };
+      const fail = () => { clear(); rej(new Error('Audio seek failed.')); };
+      const timer = setTimeout(() => { clear(); rej(new Error('Audio seek is taking too long. Try again.')); }, 15000);
+      audio.addEventListener('seeked', done);
+      audio.addEventListener('error', fail, { once: true });
+      audio.currentTime = target;
+      done();
+    });
+  }
   async function loadCopy(want) {
     // A cached file goes straight to the media element. Only a failed media
     // load needs the preparation endpoint and its one-time Tower → R2 copy.
-    audio.src = media.href(want); loaded = want;
-    try { await waitMeta(); }
+    loaded = want;
+    try { await setSourceAndWait(media.href(want)); }
     catch {
       if (!(await ready(want))) throw new Error('Audio is still preparing. Press Play to try again.');
-      note = ''; audio.src = media.href(want); await waitMeta();
+      note = ''; await setSourceAndWait(media.href(want));
     }
   }
 
@@ -192,7 +218,7 @@
         const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
           : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
         if (fresh || !audio.src || audio.src.startsWith('blob:') || loaded !== want || audio.error) { busy = true; try { await loadCopy(want); note = ''; } finally { busy = false; } }
-        audio.currentTime = Math.max(0, copyTime(t) - offset);   // recording time → the trimmed web copy's time (same trim on both copies)
+        await seekAndWait(copyTime(t) - offset);   // recording time → trimmed web copy time; wait for mobile range seek to finish
       } else {
         const want = end ?? t + (item.rights.clip_cap || 180);
         if (fresh || !clip || t < clip.start || t >= clip.end - 0.5 || (end != null && end > clip.end + 0.1)) {
@@ -200,10 +226,9 @@
           const stop = Math.min(want, t + (item.rights.clip_cap || 180), duration || Infinity);
           const c = await media.clip(item.clip_url, t.toFixed(1), stop.toFixed(1), audio.canPlayType('audio/ogg; codecs="opus"') ? null : 'm4a');
           clip = { start: c.start, end: c.end };
-          audio.src = media.href(c.url);
-          await waitMeta();
+          await setSourceAndWait(media.href(c.url));
         }
-        audio.currentTime = Math.max(0, t - clip.start);
+        await seekAndWait(t - clip.start);
       }
       audio.playbackRate = rate;
       await audio.play();
@@ -229,14 +254,6 @@
   /** Wait until the audio object is in the edge store (202 + Retry-After while it is being prepared): "preparing audio". */
   const ready = path => audioReady(media.href(path), { onWaiting: () => { note = 'Getting the audio ready…'; } });
   let loadingCopy = $state(false);   // the other copy is buffering (shown beside the switch)
-  const warmed = new Set();
-  /** Hover/focus on the switch: read the other copy's first 64 KB so the switch finds it warm at the edge. */
-  function warm(which) {
-    const u = which === 'original' ? audioInfo?.original_ogg || audioInfo?.original_url : audioInfo?.ogg || audioInfo?.m4a;
-    if (!u || warmed.has(u) || which === copy) return;
-    warmed.add(u);
-    fetch(media.href(u), { headers: { range: 'bytes=0-65535' } }).catch(() => {});
-  }
   async function switchCopy(which) {
     if (!canPlay || !hasOriginal || which === copy || switching) return;
     const t = started ? now() : startAt, wasPlaying = playing;
@@ -248,7 +265,7 @@
       const want = onOriginal() ? (ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg)
         : (ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg);
       await loadCopy(want); note = '';
-      audio.currentTime = Math.max(0, copyTime(t) - offset);
+      await seekAndWait(copyTime(t) - offset);
       audio.playbackRate = rate;
       if (wasPlaying) await audio.play();
     } catch (e) {
@@ -414,14 +431,14 @@
       {#if hasOriginal}
         <div class="ab" role="radiogroup" aria-label="Audio version">
           {#each [['original', 'Orig.'], ['main', remasterLabel]] as [k, label] (k)}
-            <button type="button" role="radio" aria-checked={copy === k} title={k === 'main' ? remasterTitle : 'Original recording'} class="ab-opt ab-opt-slim" class:on={copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}>{label}</button>
+          <button type="button" role="radio" aria-checked={copy === k} title={k === 'main' ? remasterTitle : 'Original recording'} class="ab-opt ab-opt-slim" class:on={copy === k} onclick={() => switchCopy(k)}>{label}</button>
           {/each}
         </div>
       {/if}
     {:else if hasOriginal}
       <div class="ab mx-auto" role="radiogroup" aria-label="Audio version" data-original-slot>
         {#each [['original', 'Original', 'Orig'], ['main', remasterLabel, remasterShort]] as [k, label, short] (k)}
-          <button type="button" role="radio" aria-checked={copy === k} title={k === 'main' ? remasterTitle : 'Original recording'} aria-busy={loadingCopy && copy === k} class="ab-opt" class:on={copy === k} class:buffering={loadingCopy && copy === k} onclick={() => switchCopy(k)} onpointerenter={() => warm(k)} onfocus={() => warm(k)}><span class="sm:hidden" aria-hidden="true">{short}</span><span class="hidden sm:inline">{label}</span></button>
+          <button type="button" role="radio" aria-checked={copy === k} title={k === 'main' ? remasterTitle : 'Original recording'} aria-busy={loadingCopy && copy === k} class="ab-opt" class:on={copy === k} class:buffering={loadingCopy && copy === k} onclick={() => switchCopy(k)}><span class="sm:hidden" aria-hidden="true">{short}</span><span class="hidden sm:inline">{label}</span></button>
         {/each}
       </div>
     {/if}
