@@ -11,7 +11,7 @@ const OLD = arg('old', 'http://127.0.0.1:6333'), OLDC = arg('oldColl', 'phrases'
 const K = process.env.QDRANT_KEY || '';
 const qd = async (base, path, body) => { const r = await fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': K }, body: JSON.stringify(body) }); if (!r.ok) throw new Error(`${path} ${r.status} ${(await r.text()).slice(0, 150)}`); return r.json(); };
 const params = { quantization: { rescore: true, oversampling: 4 } };
-const search = async (base, coll, vector, filter) => { const t = performance.now(); const r = await qd(base, `/collections/${coll}/points/query`, { query: vector, using: 'literal', limit: 40, with_payload: ['paragraph_id'], params, ...(filter ? { filter } : {}) }); return { ms: performance.now() - t, pts: r.result.points }; };
+const search = async (base, coll, vector, filter, prm = params) => { const t = performance.now(); const r = await qd(base, `/collections/${coll}/points/query`, { query: vector, using: 'literal', limit: 40, with_payload: ['paragraph_id'], params: prm, ...(filter ? { filter } : {}) }); return { ms: performance.now() - t, pts: r.result.points }; };
 const embed = async (q) => (await (await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent?key=${process.env.GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ model: 'models/gemini-embedding-2', content: { parts: [{ text: `task: search result | query: ${q}` }] }, outputDimensionality: 3072 }) })).json()).embedding.values;
 
@@ -27,6 +27,16 @@ try {
   for (const f of fx) queries.push({ kind: 'query', q: f.query, vector: await embed(f.query) });
 } catch (e) { console.error('fixture queries skipped:', e.message); }
 
+// --truth: a high-effort reference (hnsw_ef 1024, oversampling 40, run on the NEW collection) — recall@10 of each side's PRODUCTION params against it
+if (process.argv.includes('--truth')) {
+  const ref = { hnsw_ef: 1024, quantization: { rescore: true, oversampling: 40 } }, sc = { old: 0, new: 0, n: 0 };
+  for (const q of queries.slice(0, 60)) {
+    const t = new Set((await search(NEW, NEWC, q.vector, null, ref)).pts.slice(0, 10).map((p) => p.id));
+    const o = await search(OLD, OLDC, q.vector), n = await search(NEW, NEWC, q.vector);
+    sc.old += o.pts.slice(0, 10).filter((p) => t.has(p.id)).length / 10; sc.new += n.pts.slice(0, 10).filter((p) => t.has(p.id)).length / 10; sc.n++;
+  }
+  console.log(JSON.stringify({ truth: 'new @ ef1024 oversampling40', queries: sc.n, recall10_old: +(sc.old / sc.n).toFixed(4), recall10_new: +(sc.new / sc.n).toFixed(4) }));
+}
 const stat = { point: { n: 0, o10: 0, p10: 0, p40: 0, top1: 0, a: [], b: [] }, query: { n: 0, o10: 0, p10: 0, p40: 0, top1: 0, a: [], b: [] } };
 for (const [i, q] of queries.entries()) {
   const first = i % 2 ? [NEW, NEWC, OLD, OLDC] : [OLD, OLDC, NEW, NEWC];   // alternate order: page cache fairness

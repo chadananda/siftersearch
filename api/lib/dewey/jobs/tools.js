@@ -7,8 +7,11 @@ import { whoOf, isAdmin } from './policy.js';
 import * as repo from '../../repos/dewey-jobs-repo.js';
 import { wantsEmail } from './notify.js';
 
-/** "Rights asserted" (Chad 10-28: nothing we handle is copyright-encumbered): explicit value wins, else on for operators. Caps and the quality gate still apply. */
-export const rightsOf = (rights, by) => (rights === undefined || rights === null ? true : !!rights);
+/** The rights flag as DATA: an explicit true/false is kept; unknown stays null. Books are often copyright-encumbered and that is normal (served in search under the
+ *  encumbered-aware link rules) - never defaulted. Only MEDIA is treated as unencumbered by default (Chad 10-28: "our media is all non-copyright encumbered"). */
+export const rightsOf = (rights) => (rights === undefined || rights === null ? null : !!rights);
+/** Media children: rights default to asserted unless the submitter said otherwise. */
+export const mediaRights = (rights) => rights !== false;
 const swallow = async (p) => { try { return await p; } catch { return null; } };
 
 /** Start fetching a web address (a file, an archive, or a media page handed to the media library). → { job_id, ... } | { error } */
@@ -23,7 +26,7 @@ export async function fetchUrl({ url, by, channel = 'chat', emailMe = false, rig
     await trackMedia({ url: u.toString(), run: run?.id ?? null }, { by, channel });
     return { media: true, run: run?.id ?? null, note: 'that is a recording page — I sent it to the media library, which checks holdings, transcribes and publishes it at /media' };
   }
-  const r = await reg.startJob({ kind: 'fetch', by, channel, key: idemKey('fetch', by, canonicalUrl(u.toString())), params: { url: canonicalUrl(u.toString()), rights: rightsOf(rights, by) }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) } });
+  const r = await reg.startJob({ kind: 'fetch', by, channel, key: idemKey('fetch', by, canonicalUrl(u.toString())), params: { url: canonicalUrl(u.toString()), rights: rightsOf(rights) }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) } });
   if (r.refused) return { error: r.reason, refused: r.refused };
   return { job_id: r.job.id, already: !r.created, state: r.job.state, note: r.created ? 'queued; a worker machine downloads it (never the main server), then each file is checked against the library. Ask me for status any time.' : 'that link is already being handled' };
 }
@@ -31,6 +34,6 @@ export async function fetchUrl({ url, by, channel = 'chat', emailMe = false, rig
 /** An uploaded ZIP (R2 key) → an archive job. Called from the upload finish route (internal). */
 export async function startArchive({ key, name, size, by, channel = 'upload', emailMe = false, rights }, { reg = registry, rp = repo } = {}) {
   const pref = await swallow(rp.getFlag(`email-pref:${whoOf(by)}`));
-  const r = await reg.startJob({ kind: 'archive', by, channel, key: idemKey('archive', by, key), params: { key, name, size, rights: rightsOf(rights, by) }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) }, caps: { bytes: 0 } });
+  const r = await reg.startJob({ kind: 'archive', by, channel, key: idemKey('archive', by, key), params: { key, name, size, rights: rightsOf(rights) }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) }, caps: { bytes: 0 } });
   return r;
 }

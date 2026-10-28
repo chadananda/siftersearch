@@ -51,7 +51,7 @@ export async function tick(deps = {}) {
     }
     if (to === 'skipped') extra = { result: { outcome: m.reason, reason: m.reason, title: item.title, why: m.detail, duplicate_of: item.log?.at(-1)?.why } };
     if (to === 'failed') extra = { error: String(item.log?.at(-1)?.why || 'processing failed').slice(0, 300) };
-    if (to === 'awaiting-decision') extra = { question: { text: `“${item.title}” is new to the library — add it?`, item_id: item.id, options: [{ id: 'add', label: 'Add it to the library' }, { id: 'skip', label: 'Keep it out' }] }, result: { outcome: 'needs-decision', title: item.title, author: item.author, item_id: item.id } };
+    if (to === 'awaiting-decision') extra = { question: { text: `Waiting for approval: “${item.title}”${item.author ? ` by ${item.author}` : ''} is new to the library — ${String(item.log?.at(-1)?.why || 'worth adding?').slice(0, 160)}`, item_id: item.id, options: [{ id: 'add', label: 'Add it to the library' }, { id: 'skip', label: 'Keep it out' }] }, result: { outcome: 'needs-decision', title: item.title, author: item.author, item_id: item.id } };
     const before = job.state + job.step;
     await reg.advance(job.id, to, { step: m.step, detail: extra.detail || m.detail, itemId: item.id, ...(extra.result ? { result: extra.result } : {}), ...(extra.question ? { question: extra.question } : {}), ...(extra.error ? { error: extra.error } : {}) });
     if (!isTerminal(to)) await repo.schedule(job.id, soon(to === 'processing' && m.step === 'indexing' ? 120 : 60));
@@ -78,10 +78,10 @@ export async function tick(deps = {}) {
     if (v === 'undetermined' || String(v || '').startsWith('error')) { await reg.advance(job.id, 'failed', { error: 'could not read enough of it to check the library' }); return null; }
     const id = doc.identified || {}, by = job.created_by;
     const admin = isAdmin(by), autoKey = `${AUTO}:${whoOf(by)}`, sure = p.rights !== false && !!whoOf(by).includes('@') && (await repo.usageOf(autoKey)).jobs < AUTO_PER_DAY;   // known contributor + rights not denied + clean check (duplicates/unreadable returned above) + under their daily allowance
-    const auto = admin || sure;
+    const auto = false;   // Chad 10-28: NO book/document is added without his yes (talks/media are taken in by trust elsewhere); `admin`/`sure` stay for the record
     const arc = await archive(p.path, { itemId: null, by, job: job.id });
     const item = await it.createItem({ title: id.title || p.name, author: id.author || null, kind: id.kind || null, identified: { ...id, _text: undefined, file_name: p.name, job: job.id }, by: `${whoOf(by)} (job ${job.id})`,
-      state: auto ? 'source' : 'offered', why: auto ? `taken in from a ${job.channel || ''} job (${admin ? 'operator' : 'trusted contributor'}): ${p.name}` : `new to the library, waiting for a yes: ${p.name}` });
+      state: 'offered', why: `waiting for approval - ${id.title || p.name}${id.author ? ` by ${id.author}` : ''} (from ${admin ? 'the operator' : whoOf(by)}'s ${job.channel || ''} job, ${p.name})` });
     await it.updateItem(item.id, { original_path: arc.path, sha256: arc.sha256 }, `source archived (${Math.round(arc.bytes / 1024)} KB)`);
     if (auto) { await q('dewey-intake', { id: item.id }, by || 'dewey-jobs'); if (sure && !admin) await repo.bumpUsage(autoKey, { jobs: 1 }); }
     await repo.updateJob(job.id, { item_id: item.id });

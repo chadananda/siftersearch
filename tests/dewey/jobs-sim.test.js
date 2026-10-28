@@ -59,12 +59,12 @@ const append = async (uid, role, text, parts) => { chat.push({ uid, role, text, 
 const ZIP = async () => zipBuf([['Pamphlets/Valleys of Light.pdf', PDF('valleys')], ['Pamphlets/Hidden Words.pdf', PDF('hidden')], ['Pamphlets/dup Kitab.pdf', PDF('dup')], ['talk.mp3', Buffer.from('ID3\x04\0\0\0\0\0\0audio')], ['installer.exe', Buffer.from('MZ\x90\0bad')]]);
 
 describe('rights asserted', () => {
-  it('defaults on for everyone (contributors are trusted); an explicit no wins; children inherit it', async () => {
+  it('books keep the rights flag as data (null = unknown, never defaulted); an explicit value wins', async () => {
     const op = await fetchUrl({ url: 'https://example.org/op-rights.pdf', by: 'chadananda@gmail.com' }, { reg });
     const sam = await fetchUrl({ url: 'https://example.org/sam-rights.pdf', by: 'sam@example.org' }, { reg });
     const samYes = await fetchUrl({ url: 'https://example.org/sam-rights2.pdf', by: 'sam@example.org', rights: true }, { reg });
-    expect((await repo.getJob(op.job_id)).params.rights).toBe(true);
-    expect((await repo.getJob(sam.job_id)).params.rights).toBe(true);
+    expect((await repo.getJob(op.job_id)).params.rights).toBe(null);
+    expect((await repo.getJob(sam.job_id)).params.rights).toBe(null);
     expect((await repo.getJob((await fetchUrl({ url: 'https://example.org/no.pdf', by: 'sam@example.org', rights: false }, { reg })).job_id)).params.rights).toBe(false);
     expect((await repo.getJob(samYes.job_id)).params.rights).toBe(true);
   });
@@ -146,12 +146,12 @@ describe('email only when asked for', () => {
     const c = await fetchUrl({ url: 'https://example.org/c.pdf', by: 'lee@example.org' }, { reg });
     expect((await repo.getJob(a.job_id)).notify.email).toBe(true); expect((await repo.getJob(b.job_id)).notify.email).toBe(true); expect((await repo.getJob(c.job_id)).notify.email).toBe(false);
   });
-  it('the operator’s own request is taken in without asking', async () => {
+  it('the operator’s own book request still waits for approval', async () => {
     const zip = await zipBuf([['Gleanings.pdf', PDF('gleanings')]]);
     const r = await fetchUrl({ url: 'https://example.org/g.zip', by: 'chadananda@gmail.com' }, { reg });
     await workerRun(() => zip); await tick(towerDeps());
-    expect(queued.filter(([n]) => n === 'dewey-intake')).toHaveLength(1); expect(items.rows[0].state).toBe('source');
-    expect((await repo.getJob(r.job_id)).state).toBe('processing');
+    expect(queued.filter(([n]) => n === 'dewey-intake')).toHaveLength(0); expect(items.rows[0].state).toBe('offered');
+    expect((await repo.getJob(r.job_id)).state).toBe('awaiting-decision');
   });
 });
 
@@ -235,12 +235,12 @@ describe('the emailFor letter', () => {
 });
 
 describe('trusted contributors', () => {
-  it('are added without asking (rights default asserted, clean check), up to 100 a day each', async () => {
+  it('books from a trusted contributor still wait for Chad (offered, never auto-added)', async () => {
     const zip = await zipBuf([['Valleys.pdf', PDF('valleys2')]]);
     const r = await fetchUrl({ url: 'https://example.org/trusted.zip', by: 'new.person@example.org' }, { reg });
     await workerRun(() => zip); await tick(towerDeps());
-    expect(queued.filter(([n]) => n === 'dewey-intake')).toHaveLength(1); expect(items.rows.at(-1).state).toBe('source');
-    expect((await repo.usageOf('dewey:auto:new.person@example.org')).jobs).toBe(1);
+    expect(queued.filter(([n]) => n === 'dewey-intake')).toHaveLength(0); expect(items.rows.at(-1).state).toBe('offered');
+    expect(items.rows.at(-1).log.map((l) => l.why).join(' | ')).toMatch(/waiting for approval/);
     expect(r.job_id).toBeTruthy();
   });
 });

@@ -84,7 +84,7 @@ export function makeWorkerApi({ repo = realRepo, reg = makeRegistry(repo), count
     let n = 0;
     for (const e of entries) {
       const key = `child:${id}:${e.sha256 || e.name}:${n++}`;
-      const params = { name: e.name, from: e.from || null, bytes: e.bytes || 0, sha256: e.sha256 || null, rights: !!job.params?.rights };
+      const params = { name: e.name, from: e.from || null, bytes: e.bytes || 0, sha256: e.sha256 || null, rights: e.kind === 'media' ? job.params?.rights !== false : (job.params?.rights ?? null) };   // media default unencumbered; books keep the flag as data (null = unknown)
       if (e.status === 'ok' && e.kind === 'media') await writeSidecar(blobPath(id, 'media', e.name), { provider: new URL(job.params?.url || 'https://unknown.invalid').hostname, name: e.name, url: job.params?.page || job.params?.url || null, source_url: job.params?.url || null, file_url: result.source?.url || null, title: job.params?.title || null, speaker: job.params?.speaker || null, year: job.params?.year || null, sha256: e.sha256 || null, bytes: e.bytes || null }).catch(() => {});
       if (e.status === 'ok' && e.kind === 'media') await reg.startJob({ kind: 'media', by: job.created_by, channel: job.channel, parentId: id, key, params: { ...params, path: blobPath(id, 'media', e.name) }, free: true });
       else if (e.status === 'ok') await reg.startJob({ kind: 'file', by: job.created_by, channel: job.channel, parentId: id, key, params: { ...params, path: blobPath(id, 'doc', e.name) }, free: true });

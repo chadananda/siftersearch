@@ -27,7 +27,7 @@ const HELD_WHY = 'ingest folder: already in the library';
 const GENERIC = /^(?:pilgrim(?:'?s)? notes?|notes?|letters?|untitled|talks?|diary|memoirs?|recollections|reminiscences|an? (?:letter|talk|account)|account|transcript|interview|excerpts?|chapter \w+)$/;
 export const workKey = (t) => { const f = String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘'ʼ`]/g, '').toLowerCase(); const head = f.split(':')[0].replace(/[^\p{L}\p{N}]+/gu, ' ').trim(); return GENERIC.test(head) || head.split(' ').length < 2 ? f.replace(/[^\p{L}\p{N}]+/gu, ' ').trim() : head; };
 
-const DONE = new Set(['source', 'processing', 'ingested', 'needs-ocr', 'needs-human', 'failed']);
+const DONE = new Set(['offered', 'source','processing', 'ingested', 'needs-ocr', 'needs-human', 'failed']);
 
 /** The folder's documents, easiest first: by format, then size. */
 export async function easiestFirst(dir) {
@@ -117,6 +117,13 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
     if (hold) {
       await updateItem(item.id, { state: 'needs-human', sha256: hash, original_path: f.path, identified: { ...item.identified, appraisal: a || null, shelf: a?.shelf || null } },
         `ingest folder: ${hold} — add it by hand if you want it`);
+      out.needs_person.push(f.path);
+      continue;
+    }
+    if (!approved && known?.state !== 'declined') {   // (a file Chad once declined and has now placed here is a yes)
+      // Chad 10-28: no book is imported without his yes; _add-anyway/ is that yes
+      await updateItem(item.id, { state: 'offered', sha256: hash, original_path: f.path, title: a.title, author: a.author || item.author || null, identified: { ...item.identified, appraisal: a, shelf: a.shelf || item.identified?.shelf || null } },
+        `ingest folder (round ${round}): ${doc.result.verdict} — waiting for approval before it is added (move it to _add-anyway/ or say yes)`);
       out.needs_person.push(f.path);
       continue;
     }

@@ -88,7 +88,7 @@ export function chatText(job, kids, stage) {
   for (const l of groupLines(s.failed).slice(0, 8)) lines.push(`- Could not fetch or read: ${l}`);
   for (const l of groupLines(s.cancelled).slice(0, 5)) lines.push(`- Stopped: ${l}`);
   for (const d of s.handed.slice(0, 10)) lines.push(`- ${d.name}: ${d.note}`);
-  if (s.needs.length) lines.push(`- Waiting for you: ${s.needs.slice(0, 10).map((n) => n.name).join('; ')}${s.needs.length > 10 ? '…' : ''} — answer in the Review list or reply “add them” here.`);
+  if (s.needs.length) lines.push(`- Waiting for approval:${s.needs.slice(0, 10).map((n) => n.name).join('; ')}${s.needs.length > 10 ? '…' : ''} — answer in the Review list or reply “add them” here.`);
   return lines.join('\n');
 }
 
@@ -115,7 +115,7 @@ export function emailFor(job, kids, stage, { name = null, to = null } = {}) {
   list('Sent to the media library', s.handed, (d) => `${cell(d.name)} — ${cell(d.note)}`);
   const glist = (title, rows) => { if (rows.length) { md.push(`**${title} (${rows.length})**`, ''); for (const l of groupLines(rows).slice(0, MAX_ROWS)) md.push(`- ${cell(l)}`); md.push(''); } };
   glist('Skipped, and why', s.skipped); glist('Could not be fetched or read, and why', s.failed); glist('Stopped, and why', s.cancelled);
-  list('Needs you', s.needs, (d) => cell(d.name));
+  list('Waiting for approval', s.needs, (d) => cell(d.name));
   if (s.indexing.length) md.push(`${plural(s.indexing.length, 'work')} still being made searchable; the report page shows when they are live.`, '');
   md.push('With thanks,');
   const buttons = [];

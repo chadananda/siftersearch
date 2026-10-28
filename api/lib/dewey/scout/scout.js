@@ -15,6 +15,7 @@ import { UA } from './ris.js';
 import { toMarkdownText } from '../convert.js';
 import { wholeWork, estimatedWords, tocCheck } from '../whole.js';
 
+export const BOOKS_NEED_APPROVAL = true;   // Chad 10-28: books/documents wait for his yes; only talks (media) are taken in by trust
 export const scoutDir = () => process.env.DEWEY_SCOUT_DIR || '/tank/dewey-ingest/scout';
 const BY = 'dewey-scout';
 const DOWNLOADABLE = ['pdf', 'text', 'epub', 'html', 'docx', 'doc', 'rtf'];
@@ -144,11 +145,12 @@ export async function scoutWork(work, deps = {}) {
     const arc = await archive(path, { itemId: item.id, title: item.title, kind: item.kind });
     await update(item.id, { source_url: c.url, original_path: arc.path, sha256: arc.sha256 });
     await unlink(path).catch(() => {});
-    // THE DAILY PULSE ADDS the most important finds itself (Chad 10-18: "adding to the library, the most important first"):
+    // Chad 10-28: NO book is imported without his yes - the pulse offers, it does not add (BOOKS_NEED_APPROVAL).
+    // THE DAILY PULSE ADDED the most important finds itself (Chad 10-18: "adding to the library, the most important first"):
     // important (≥ 4), not held by its text, judged in scope and worth adding — straight to intake, where every guard
     // (whole work, fragments, previews, published length) still applies. The rest wait under Found for a yes.
     // …and only when the copy IS the work sought — its appraised title the sought title (10-19: two wrong works imported)
-    if (deps.autoAdd?.(work, a, doc) && (sameWork(work.title, a?.title) || sameWork(a?.title, work.title))) {
+    if (!BOOKS_NEED_APPROVAL && deps.autoAdd?.(work, a, doc) && (sameWork(work.title, a?.title) || sameWork(a?.title, work.title))) {
       await update(item.id, { state: 'source' }, `added by the daily pulse (importance ${work.importance}; ${doc.result?.verdict}; appraisal: ${a?.recommendation})`);
       await (deps.queue || (await import('../../repos/ops-report-repo.js')).enqueue)('dewey-intake', { id: item.id }, BY);
       return { state: 'added', item: item.id, from: c.url };

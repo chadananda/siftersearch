@@ -30,20 +30,20 @@ describe('dewey-ingest-folder', () => {
   it('takes a batch easiest first, skips a copy already held, queues intakes then the next round', async () => {
     const queued = [];
     const r = await deweyIngestFolderJob({ batch: 3 }, deps(queued));
-    expect(r.queued).toEqual(['/in/letter.txt', '/in/notes.docx']);   // txt, docx … then the held .doc counts toward the batch
+    expect(r.needs_person).toEqual(['/in/letter.txt', '/in/notes.docx']);   // txt, docx … then the held .doc counts toward the batch
     expect(r.held).toEqual(['/in/held-copy.doc']);
-    expect(queued.map(([n]) => n)).toEqual(['dewey-intake', 'dewey-intake', 'dewey-ingest-folder']);
+    expect(queued.map(([n]) => n)).toEqual(['dewey-ingest-folder']);   // no book goes to intake without Chad's yes
     expect(queued.at(-1)[1]).toEqual({ batch: 3, round: 2 });
-    expect(items.find((i) => i.original_path === '/in/letter.txt')).toMatchObject({ state: 'source', title: 'Real Title', identified: { shelf: { collection: 'Pilgrim Notes' } } });
+    expect(items.find((i) => i.original_path === '/in/letter.txt')).toMatchObject({ state: 'offered', title: 'Real Title', identified: { shelf: { collection: 'Pilgrim Notes' } } });
   });
   it('the next round skips what is handled and finishes without queueing another', async () => {
     const queued = [];
     await deweyIngestFolderJob({ batch: 3 }, deps(queued));
     queued.length = 0;
     const r = await deweyIngestFolderJob({ batch: 3, round: 2 }, deps(queued));
-    expect(r.queued).toEqual(['/in/small.pdf', '/in/big-book.pdf']);
+    expect(r.needs_person).toEqual(expect.arrayContaining(['/in/small.pdf']));   // books wait for approval
     expect(r.skipped).toBe(3);
-    expect(queued.map(([n]) => n)).toEqual(['dewey-intake', 'dewey-intake']);   // nothing left → no round 3
+    expect(queued.map(([n]) => n)).toEqual([]);   // nothing left → no round 3
   });
   it('a file once declined but placed in the folder is a yes', async () => {
     items.push({ id: 1, sha256: 'sha:/in/letter.txt', state: 'declined', log: [{ why: 'declined by chad' }] });
@@ -66,9 +66,9 @@ describe('dewey-ingest-folder', () => {
     const body = Array.from({ length: 120 }, (_, i) => `station${i % 7} claim${(i * 3) % 11} chapter${i}`).join(' ');   // varied, like a real text
     const d = { ...deps(queued), appraise: async () => ({ title: "The Station and Claims of Bahá'u'llah" }),
       check: async ({ path }) => ({ identified: Object.defineProperty({ title: path }, '_text', { value: body }), excerpt: body, result: { verdict: 'not-held', candidates: [] } }),
-      recent: async () => items.filter((i) => i.state === 'source'), textOf: async () => body };
+      recent: async () => items.filter((i) => ['source', 'offered'].includes(i.state)), textOf: async () => body };
     const r = await deweyIngestFolderJob({ batch: 3 }, d);
-    expect(r.queued).toHaveLength(1);
+    expect(r.needs_person).toHaveLength(1);
     expect(r.held).toHaveLength(2);
     expect(items.filter((i) => i.state === 'declined').every((i) => /the same work as item 1/.test(i.log.at(-1).why))).toBe(true);
   });
