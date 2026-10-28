@@ -2018,6 +2018,13 @@ export const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_ops_report_runs_queued ON ops_report_runs(name, id) WHERE status = 'queued'`);
     logger.info('Migration 184 complete: idx_ops_report_runs_queued (partial)');
   },
+  185: async () => {
+    // DEWEY JOB REGISTRY (planning/dewey-v2-design-20261028.md): dewey_jobs + event log + per-user/day usage + operator flags.
+    // New EMPTY tables, one statement each (no backfill, no ALTER of a live table): the single writer is never held.
+    const { DEWEY_JOBS_SQL } = await import('../dewey/jobs/schema.js');
+    for (const sql of DEWEY_JOBS_SQL) await query(sql);
+    logger.info('Migration 185 complete: dewey_jobs, dewey_job_events, dewey_usage, dewey_flags');
+  },
 };
 
 export const graphMigrations = {

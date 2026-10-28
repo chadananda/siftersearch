@@ -1,3 +1,4 @@
+import { deweyJobsReport } from './dewey-jobs-job.js';
 import { mediaBiographyAudit } from './media-biography-audit.js';
 import { mediaWorkerAudit } from './media-worker-audit.js';
 import { mediaGreetingsJob } from './media-greetings.js';
@@ -208,6 +209,7 @@ REPORTS['keyword-fill-sites'] = (params = {}) => keywordFillJob({ ...params, sco
 REPORTS['episode-extract'] = episodeExtractJob;   // params: { doc, titles?, limit? } — a predigested history's episodes (Chad 10-17)
 REPORTS['refs-assign'] = refsAssignJob;   // params: { doc, scheme, dry? } — traditional numbering, checked against the work's totals (Chad 10-17)
 REPORTS['structure-infer'] = structureInferJob;   // params: { ids? | candidates?, limit?, dry? } — structure for books that do not mark it (Chad 10-17)
+REPORTS['dewey-jobs'] = deweyJobsReport;   // the Dewey job registry: by state, stuck, failures, cost, usage, pause flag (read-only)
 REPORTS['dewey-research'] = deweyResearchJob;   // params: { id } — research a wanted work: ISBN, publisher, cover (Chad 10-17)
 REPORTS['dewey-ingest-folder'] = deweyIngestFolderJob;   // params: { batch?, round? } — the ingest folder, a few at a time, easiest first
 REPORTS['dewey-received'] = deweyReceivedJob;   // params: { id } — a member's uploaded document: R2 → ingest folder

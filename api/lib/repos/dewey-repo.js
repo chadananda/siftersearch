@@ -100,3 +100,7 @@ export const receivedBytesBy = async (email) => Number((await queryOne(`SELECT C
 
 /** An item already recorded for this R2 key (finish is idempotent: a retried "complete" must not make a second item). */
 export const findByUploadKey = async (key) => parse(await queryOne(`SELECT * FROM dewey_items WHERE json_extract(identified, '$.upload.key') = ? LIMIT 1`, [String(key)], 'dewey:by-upload-key'));
+
+/** How many of this contributor's items were accepted (the trust measure: 15 = proven). */
+export const acceptedCountBy = async (email) => Number((await queryOne(`SELECT COUNT(*) AS n FROM dewey_items WHERE (LOWER(created_by) = LOWER(?) OR LOWER(created_by) LIKE LOWER(?))
+  AND state IN (${ACCEPTED.map(() => '?').join(', ')})`, [String(email), `${String(email)} (%`, ...ACCEPTED], 'dewey:accepted-count'))?.n) || 0;

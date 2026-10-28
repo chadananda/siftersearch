@@ -130,6 +130,20 @@ let drainSeen = state.drainSeen || {};
   }
 }
 
+// ── 2b. Dewey job registry (Chad 10-28): jobs by state, stuck jobs, pause flag, spend — from the `dewey-jobs` ops REPORT (never a direct query)
+try {
+  const r = await http('http://127.0.0.1:7839/api/admin/ops/reports/dewey-jobs/latest', { headers: H, timeout: 15000 });
+  const rep = r.status === 200 ? JSON.parse(r.body) : null;
+  fetch('http://127.0.0.1:7839/api/admin/ops/reports/dewey-jobs', { method: 'POST', headers: { ...H, 'content-type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(8000) }).catch(() => {});   // refresh for next time (the queue dedupes)
+  if (!rep?.result) add('Dewey jobs', true, 'info', 'no report yet');
+  else {
+    const j = rep.result, open = (j.by_state || []).filter((x) => !['published', 'failed', 'cancelled', 'skipped', 'handed-off'].includes(x.state)).reduce((a, x) => a + x.n, 0);
+    add('Dewey jobs stuck', !(j.stuck || []).length, 'warn', (j.stuck || []).length ? j.stuck.slice(0, 5).map((x) => `#${x.id} ${x.kind}/${x.state}${x.step ? `:${x.step}` : ''} since ${String(x.updated_at).slice(11, 16)}Z`).join(' · ') : `ok · ${open} open`);
+    add('Dewey jobs paused', !j.paused && j.valve_env !== 'off', 'warn', j.paused ? `paused: ${String(j.paused).slice(0, 100)}` : j.valve_env === 'off' ? 'DEWEY_V2=0' : 'running');
+    add('Dewey spend today', j.spend_today_usd < j.ceiling_usd * 0.8, 'warn', `$${Number(j.spend_today_usd).toFixed(2)} of $${j.ceiling_usd}`);
+  }
+} catch (e) { add('Dewey jobs', true, 'info', `unavailable (${e.message})`); }
+
 // ── 3. Grounding pipeline ────────────────────────────────────────────────────
 let mode = '?', queueDepth = 0, liveRuns = 0, failed24 = 0, done24 = 0;
 const modeRes = await http('http://127.0.0.1:7839/api/admin/grounding/mode', { headers: H });
