@@ -65,8 +65,7 @@ export default async function deweyJobsOps(fastify) {
       const hit = Object.entries(map).find(([from]) => from && k.params?.url && k.params.url.endsWith(from));
       if (!hit || k.kind !== 'fetch' || isTerminal(k.state)) continue;
       try { parseTarget(hit[1]); } catch { continue; }
-      await repo.updateJob(k.id, { params: { ...k.params, page: k.params.url, url: hit[1], resolve: undefined }, lease_until: null, worker: null, next_run_at: null, attempts: 0 });
-      if (k.state !== 'received') await reg.advance(k.id, 'received', { step: 'retry', detail: 'source changed' }).catch(() => {});
+      await repo.updateJob(k.id, { params: { ...k.params, page: k.params.page || k.params.url, url: hit[1], resolve: undefined }, state: 'received', step: 'retry', lease_until: null, worker: null, next_run_at: null, attempts: 0 });
       await repo.addEvent(k.id, 'repointed', { from: k.params.url, to: hit[1] });
       done.push(k.id);
     }
