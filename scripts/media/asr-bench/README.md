@@ -1,0 +1,1 @@
+ASR engine benchmark (10-28), run on boss in /mnt/data4tb/asr-bench. 5 x 600 s clips (talks 331 clean, 1425 muffled, 1432 noisy, 1162 fa, 1003 interpreted) scored by score.py against the corrected transcript.json words. whisper.cpp HIP (gfx1151) won: see planning/worker-image-design-20261028.md.
