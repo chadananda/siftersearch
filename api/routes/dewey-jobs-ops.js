@@ -5,7 +5,8 @@ import { createReadStream } from 'node:fs';
 import { requireInternal } from '../lib/auth.js';
 import * as repo from '../lib/repos/dewey-jobs-repo.js';
 import { makeWorkerApi } from '../lib/dewey/jobs/worker.js';
-import { makeRegistry } from '../lib/dewey/jobs/registry.js';
+import { parseTarget } from '../lib/dewey/net-guard.js';
+import { makeRegistry, canonicalUrl } from '../lib/dewey/jobs/registry.js';
 import { whoOf } from '../lib/dewey/jobs/policy.js';
 
 export default async function deweyJobsOps(fastify) {
@@ -33,6 +34,26 @@ export default async function deweyJobsOps(fastify) {
     const job = await repo.getJob(Number(req.params.id));
     if (!job) return reply.code(404).send({ error: 'no such job' });
     return { job, children: await repo.childrenOf(job.id), events: await repo.eventsOf(job.id, 100) };
+  });
+  // a batch: a parent job with one fetch child per page/link, in the order given (workers claim by id). Used by operators for lists of talks.
+  // body { by, channel?, name, emailMe?, items:[{ url, title?, speaker?, year?, resolve?: 'audio-page' }] }
+  fastify.post('/ops/dewey-jobs/start-batch', guard, async (req, reply) => {
+    const { by, channel = 'email', name = 'a list of links', emailMe = true } = req.body || {}, items = Array.isArray(req.body?.items) ? req.body.items.slice(0, 700) : [];
+    if (!whoOf(by).includes('@') || !items.length) return reply.code(400).send({ error: 'by (an email) and items are required' });
+    const reg = makeRegistry(repo);
+    const parent = await reg.startJob({ kind: 'batch', by, channel, params: { name, count: items.length, first: items[0].url }, notify: { chat: true, email: !!emailMe } });
+    if (parent.refused) return reply.code(429).send(parent);
+    if (!parent.created) return { job_id: parent.job.id, already: true };
+    let n = 0;
+    for (const [i, it] of items.entries()) {
+      try { parseTarget(it.url); } catch { continue; }
+      const r = await reg.startJob({ kind: 'fetch', by, channel, parentId: parent.job.id, key: `batch:${parent.job.id}:${i}`, free: true,
+        params: { url: canonicalUrl(it.url), ...(it.resolve === 'audio-page' ? { resolve: 'audio-page' } : {}), title: it.title || null, speaker: it.speaker || null, year: it.year || null } });
+      if (r.created) n++;
+    }
+    await reg.advance(parent.job.id, 'processing', { step: 'children', detail: `${n} links` });
+    await reg.rollup(parent.job.id);
+    return { job_id: parent.job.id, children: n };
   });
   fastify.post('/ops/dewey-jobs/:id/cancel', guard, async (req) => {
     const reg = makeRegistry(repo), job = await repo.getJob(Number(req.params.id));

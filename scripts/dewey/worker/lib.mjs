@@ -77,6 +77,22 @@ export async function unpackZip(zipPath, ctx, depth = 1, prefix = '', budget = {
   return { files, skipped };
 }
 
+/** An Images International-style talk page → its audio file URL (+ a readable file name from the order's title/speaker/year). Polite: robots-checked, 1 request/s. */
+export async function resolveAudioPage(order, ctx, { request = guardedRequest } = {}) {
+  const ok = await (ctx.robots || robotsAllowed)(order.url);
+  if (!ok.allowed) throw new OrderError(ok.why || 'robots.txt does not allow fetching this page');
+  const { res, url: finalUrl } = await request(order.url, { polite: true });
+  if (res.statusCode >= 400) { res.resume(); throw new OrderError(`the site answered ${res.statusCode}`, res.statusCode >= 500 || res.statusCode === 429); }
+  let html = ''; for await (const c of res) { html += c; if (html.length > 2e6) break; }
+  const m = /(?:https?:)?\/\/[^"'\s<>]+?\.(?:mp3|m4a)\b/i.exec(html);
+  if (!m) throw new OrderError('no audio file is linked from that page');
+  await new Promise((r) => setTimeout(r, 1000));
+  const url = new URL(m[0].startsWith('//') ? `https:${m[0]}` : m[0], finalUrl).toString(), p = order.params || {};
+  const ext = /\.(\w+)$/.exec(new URL(url).pathname)?.[1] || 'mp3';
+  const nameHint = p.title ? flatName(`${p.title.replace(/&amp;/g, '&').replace(/&#0?39;/g, "'")} - ${String(p.speaker || 'unknown').replace(/&#0?39;/g, "'")} (${p.year || 'n.d.'}).${ext}`) : null;
+  return { url, nameHint };
+}
+
 /** Download a URL (resumable, size-capped, every hop SSRF-checked). → { path, name, bytes, contentType, finalUrl } */
 export async function download(order, ctx, { request = guardedRequest } = {}) {
   const { api, scratch } = ctx, L = order.limits || {};
@@ -108,7 +124,7 @@ export async function download(order, ctx, { request = guardedRequest } = {}) {
   };
   await pipeline(res, guard, sink);
   const head = await headOf(part);
-  const name = nameFromResponse(finalUrl, res.headers, head);
+  const name = order.nameHint || nameFromResponse(finalUrl, res.headers, head);
   const path = join(scratch, name);
   await rename(part, path);
   return { path, name, bytes, contentType: ctype, finalUrl };
@@ -122,6 +138,7 @@ export async function runOrder(order, { api, scratchRoot, scan = null, request, 
   let src;
   if (order.op === 'fetch') {
     await api.event(order.id, { type: 'progress', step: 'download', detail: 'connecting' });
+    if (order.params?.resolve === 'audio-page') { const r = await resolveAudioPage(order, ctx, { request }); order = { ...order, url: r.url, nameHint: r.nameHint }; }
     src = await download(order, ctx, { request });
   } else if (order.op === 'unpack') {
     await api.event(order.id, { type: 'progress', step: 'download', detail: 'copying the upload from storage' });
