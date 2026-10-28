@@ -43,7 +43,7 @@ export async function updateMediaItem(id, fields = {}) {
 
 /** Archived file talks (folder + source), id order, a page after `afterId` — for the tag-hint backfill and review. */
 /** Items whose source path/URL contains `like` (a bounded lookup for operators, ≤ 20). */
-export const mediaBySourceLike = (like, limit = 20) => queryAll('SELECT id, slug, state, stage, queue_rank, speaker, title, source_ref, updated_at FROM media_items WHERE source_ref LIKE ? ORDER BY id LIMIT ?', [`%${String(like).replace(/[%_]/g, '')}%`, Math.min(20, Number(limit) || 20)], 'media:by-source-like');
+export const mediaBySourceLike = (like, limit = 20) => queryAll('SELECT id, slug, state, stage, queue_rank, speaker, title, source_ref, updated_at, sha256, why FROM media_items WHERE source_ref LIKE ? ORDER BY id LIMIT ?', [`%${String(like).replace(/[%_]/g, '')}%`, Math.min(20, Number(limit) || 20)], 'media:by-source-like');
 export const hintItems = async ({ afterId = 0, limit = 25 } = {}) => queryAll(`SELECT id, slug, dir, state, source_ref FROM media_items
   WHERE dir IS NOT NULL AND source_kind = 'file' AND state NOT IN ('duplicate', 'excluded') AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Math.max(1, Math.min(500, Number(limit) || 25))], 'media:hint-items');
 
