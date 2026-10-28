@@ -12,7 +12,7 @@ import { vectorsForPoints } from '../repos/phrase-vector-read-repo.js';
 
 const KEY = () => process.env.QDRANT_KEY || '';
 export const DEFAULTS = { src: 'http://127.0.0.1:6333', srcColl: 'phrases', hot: 'http://127.0.0.1:6335', hotColl: 'phrases_hot',
-  dst: 'http://127.0.0.1:6343', dstColl: 'phrases_f16', batch: 1000, conc: 4, state: '/faster/qdrant/phrase-f16-state.json', health: 'http://127.0.0.1:7839/api/health' };
+  dst: 'http://127.0.0.1:6343', dstColl: 'phrases_f16', batch: 1000, conc: 4, state: '/faster/qdrant/phrase-f16-state.json', health: 'http://127.0.0.1:7839/healthz' };
 
 /** All 65,536 half-precision values as JSON number text (5 significant digits round-trips f16 exactly). Pure. */
 export function f16Table() {
@@ -162,6 +162,7 @@ const save = (p, st) => { try { mkdirSync(dirname(p.state), { recursive: true })
 
 export async function runBuild(params = {}) {
   const p = { ...DEFAULTS, ...params, mode: params.mode || 'copy' };
+  if (!['setup', 'copy', 'reconcile', 'finish'].includes(p.mode)) throw new Error(`phrase-f16-build: unknown mode '${p.mode}'`);
   let st = {}; try { st = JSON.parse(readFileSync(p.state, 'utf8')); } catch { /* fresh */ }
   st.started ??= new Date().toISOString();
   if (p.mode === 'setup') return setup(p);
