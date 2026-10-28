@@ -68,3 +68,13 @@ describe('logical bytes per caller (storage-wear 10-28)', () => {
     const w = threadWchar(); expect(w === null || typeof w === 'number').toBe(true);
   });
 });
+
+describe('unnamed batch label', () => {
+  it('names an unnamed batch by its first statement', async () => {
+    const { unnamedLabel } = await import('../../api/lib/write-stats.js');
+    expect(unnamedLabel('UPDATE content SET synced = 0 WHERE doc_id = ?')).toBe('unnamed:UPDATE content');
+    expect(unnamedLabel('  insert or replace into docs (a) values (?)')).toBe('unnamed:insert or replace into docs');
+    expect(unnamedLabel('DELETE FROM content WHERE id IN (1)')).toBe('unnamed:DELETE FROM content');
+    expect(unnamedLabel('')).toBe('unnamed');
+  });
+});

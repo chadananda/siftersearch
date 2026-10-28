@@ -19,7 +19,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 import { createServer } from 'node:http';
 import { query, queryOne, queryAll, getSiteDb, getDb, getTelemetryStore, ensureTelemetryStore, contentDbPath } from '../lib/db.js';
 import { applyWriteBatch, createGroupCommitter, stmtCacheStats } from '../lib/write-server.js';
-import { recordWrite, recordCommit, drainWriteStats, peekWriteStats, latencySummary } from '../lib/write-stats.js';
+import { unnamedLabel, recordWrite, recordCommit, drainWriteStats, peekWriteStats, latencySummary } from '../lib/write-stats.js';
 import { isPowerReadOnly, isPowerHold, powerState } from '../lib/power-mode.js';
 import { startCheckpointThread } from '../lib/repos/wal-checkpoint-thread.js';
 import { statSync, readFileSync } from 'node:fs';
@@ -1106,7 +1106,7 @@ function startWriteServer() {
   let lastContentWriteAt = 0;   // GET /power: the UPS drain waits for content writes to go quiet
   const onRequest = ({ meta, ms, bytes, statements, changes, error }) => {
     if (!String(meta.name || '').endsWith('@telemetry') && meta.name !== 'telemetry') lastContentWriteAt = Date.now();
-    recordWrite({ caller: meta.caller, name: meta.name, statements, changes, bytes, ms: Math.round(ms), error: !!error });
+    recordWrite({ caller: meta.caller, name: meta.name || unnamedLabel(meta.sql0), statements, changes, bytes, ms: Math.round(ms), error: !!error });
     if (error) logger.error({ err: error.message, caller: meta.caller, name: meta.name }, 'Write batch failed');
     // an UNNAMED slow batch names itself by its first statement (10-20: 4–15 s single-statement writes from reports
     // could not be traced to a job)

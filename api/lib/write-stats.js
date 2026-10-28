@@ -6,6 +6,12 @@
 const buckets = new Map();
 const minuteOf = (t) => new Date(t).toISOString().slice(0, 16);
 
+/** Label for an UNNAMED batch from its first statement: 'unnamed:UPDATE content' (storage-wear 10-28: 'unnamed' hid 90 % of bytes). */
+export function unnamedLabel(sql0) {
+  const m = /^\s*(INSERT(?:\s+OR\s+\w+)?\s+INTO\s+["`]?\w+|REPLACE\s+INTO\s+\w+|UPDATE(?:\s+OR\s+\w+)?\s+["`]?\w+|DELETE\s+FROM\s+["`]?\w+|\w+)/i.exec(String(sql0 || ''));
+  return m ? `unnamed:${m[1].replace(/\s+/g, ' ')}` : 'unnamed';
+}
+
 /** Record one batch. caller = process identity (x-sifter-caller), name = the batch's own label. */
 export function recordWrite({ caller, name, statements = 0, changes = 0, bytes = 0, ms = 0, error = false, at = Date.now() }) {
   const k = `${minuteOf(at)}\u0000${caller || 'unknown'}\u0000${name || 'unnamed'}`;
