@@ -5,7 +5,8 @@
 ARG CUDA_IMAGE=ghcr.io/chadananda/sifter-media-worker@sha256:6e4d5e414a0b46058156dd3faadb227c9ca6ee7ed359f4e3d93f53eaeab21abf
 FROM ${CUDA_IMAGE} AS assets
 
-FROM rocm/dev-ubuntu-22.04:7.2.4 AS wcpp  # must match the HOST driver stack (boss: ROCm 7.2.4); a 7.0 userspace segfaults in libhsa on this kernel
+# the HIP build stage must match the HOST driver stack (boss: ROCm 7.2.4); a 7.0 userspace segfaults in libhsa on this kernel
+FROM rocm/dev-ubuntu-22.04:7.2.4 AS wcpp
 ARG WHISPER_CPP_COMMIT=284029c07012d2000941a08d38a31ffb71f4734e
 ARG GGML_SHA256=1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69
 RUN apt-get update && apt-get install -y --no-install-recommends cmake git ninja-build curl ca-certificates hipblas-dev rocblas-dev rocsolver-dev libdrm-amdgpu1 \
@@ -41,7 +42,7 @@ RUN uv venv --python 3.11 /opt/gate/venv-dfn && uv pip install --python /opt/gat
     && uv pip install --python /opt/gate/venv-dfn/bin/python deepfilternet==0.5.6 soundfile --extra-index-url https://pypi.org/simple \
     && HF_HOME=/tmp/hf /opt/gate/venv-dfn/bin/python -c "from df.enhance import init_df; init_df(); print('dfn model cached')"
 # runtime libs the ROCm torch wheels link against (found by the host self-test, which refuses to start without them)
-RUN apt-get update && apt-get install -y --no-install-recommends libatomic1 libgfortran5 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libatomic1 libgfortran5 libstdc++-12-dev libc6-dev && rm -rf /var/lib/apt/lists/*
 COPY --from=assets /opt/models /opt/models
 COPY --from=assets /opt/unipase /opt/unipase
 COPY --from=assets /opt/gate/models /opt/gate/models
@@ -52,7 +53,8 @@ COPY --from=wcpp /out/bin /opt/whispercpp/bin
 COPY --from=wcpp /out/lib /opt/whispercpp/lib
 COPY --from=wcpp /out/model /opt/models/whispercpp
 COPY rootfs/opt/sifter /opt/sifter
-ENV WHISPER_CPP=/opt/whispercpp/bin/whisper-cli WHISPER_CPP_MODEL=/opt/models/whispercpp/ggml-large-v3-turbo.bin NLTK_DATA=/opt/models/nltk_data PYTHONPATH=/opt/worker-extras:/opt/sifter/media
+# MIOpen JIT-compiles kernels (RNN etc.) on first use: the headers above, and a cache directory the host mounts so each container does not recompile
+ENV MIOPEN_USER_DB_PATH=/cache/miopen MIOPEN_CUSTOM_CACHE_DIR=/cache/miopen TRITON_CACHE_DIR=/cache/triton WHISPER_CPP=/opt/whispercpp/bin/whisper-cli WHISPER_CPP_MODEL=/opt/models/whispercpp/ggml-large-v3-turbo.bin NLTK_DATA=/opt/models/nltk_data PYTHONPATH=/opt/worker-extras:/opt/sifter/media
 # 'python' = the venv (a symlink to a venv python loses its pyvenv.cfg): a wrapper
 RUN rm -f /usr/local/bin/python && printf '#!/bin/sh\nexec /opt/gate/venv/bin/python "$@"\n' > /usr/local/bin/python && chmod +x /usr/local/bin/python
 RUN python -m py_compile /opt/sifter/media/*.py /opt/sifter/media/worker/*.py && echo "sifter-media-worker rocm $(date -u +%Y-%m-%d)" > /opt/sifter-image-version

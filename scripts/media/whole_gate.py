@@ -33,10 +33,10 @@ def start_whole(job,d):
         busy=docker('ps','--filter','label=io.sifter.cpu-post=1','--format','{{.Names}}').stdout.splitlines()
         avail=next((int(l.split()[1])/1048576 for l in open('/proc/meminfo') if l.startswith('MemAvailable:')),0)
         if len(busy)>=1 or avail<WHOLE_MEM_GB+MEM_RESERVE_GB:print('{"waiting":true}');return
-        (ROOT/'leases').mkdir(exist_ok=True)
+        (ROOT/'leases').mkdir(exist_ok=True);(ROOT/'cache').mkdir(exist_ok=True)
         gids=[str(os.stat(p).st_gid) for p in ('/dev/kfd','/dev/dri/renderD128') if os.path.exists(p)]
         grp=[x for g in dict.fromkeys(gids) for x in ('--group-add',g)]
-        docker('run','-d','--name',job,'--label','io.sifter.cpu-post=1','--device','/dev/kfd','--device','/dev/dri',*grp,'--network','none','--cpus','8','--memory',f'{WHOLE_MEM_GB}g','--memory-swap',f'{WHOLE_MEM_GB}g','--oom-score-adj','900','--pids-limit','512','-v',str(d)+':/job','-v',str(ROOT/'leases')+':/workspace/.gpu-admission','-e','SIFTER_GPU_LEASES=1','--entrypoint','/usr/local/bin/node',image,'/opt/sifter/api/lib/media/whole-recording.mjs','/job')
+        docker('run','-d','--name',job,'--label','io.sifter.cpu-post=1','--device','/dev/kfd','--device','/dev/dri',*grp,'--network','none','--cpus','8','--memory',f'{WHOLE_MEM_GB}g','--memory-swap',f'{WHOLE_MEM_GB}g','--oom-score-adj','900','--pids-limit','512','-v',str(d)+':/job','-v',str(ROOT/'leases')+':/workspace/.gpu-admission','-v',str(ROOT/'cache')+':/cache','-e','SIFTER_GPU_LEASES=1','--entrypoint','/usr/local/bin/node',image,'/opt/sifter/api/lib/media/whole-recording.mjs','/job')
     print('{"started":true}')
 
 def main(args):
