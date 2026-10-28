@@ -71,6 +71,12 @@ export default async function opsReportRoutes(fastify) {
   });
   fastify.post('/ops/maintenance/:step', { preHandler: requireInternal }, async (req) =>
     (await import('../lib/repos/maintenance-repo.js')).runMaintenanceStep(req.params.step));
+  // MEDIA SUPERSEDE (Chad 10-28): replace a published talk's source audio, keep the old original + meta (original-superseded/vN), revert any time.
+  // Body { slug, newSource, evidence: { duration_s, sample_text|overlap }, reason, by, force, write }. write=false answers the plan only.
+  const supersede = async (req, action) => (await import('../lib/media/supersede.js')).mediaSupersede({ ...(req.body || {}), action, by: req.body?.by || req.user?.email || 'internal' });
+  fastify.post('/ops/media/supersede', { preHandler: requireInternal }, async (req) => supersede(req, req.body?.write ? 'apply' : 'plan'));
+  fastify.post('/ops/media/supersede/revert', { preHandler: requireInternal }, async (req) => supersede(req, 'revert'));
+  fastify.get('/ops/media/supersede/:slug', { preHandler: requireInternal }, async (req) => (await import('../lib/media/supersede.js')).mediaSupersede({ action: 'history', slug: req.params.slug }));
   fastify.get('/ops/reports', { preHandler: requireInternal }, async () => ({ reports: reportNames(), recent: await recent(20) }));
   fastify.post('/ops/reports/:name', { preHandler: requireInternal }, async (req) => {
     known(req.params.name);

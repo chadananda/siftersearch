@@ -15,6 +15,7 @@ import { createHash } from 'crypto';
 import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
 import { purgeTalk } from './edge-purge.js';
+import { archiveSuperseded } from './supersede.js';
 import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, listeningSource, OGG_ARGS, WEB_CODEC, OGG_ARGS_REMASTER, M4A_BITRATE_REMASTER, WEB_CODEC_REMASTER, isRemastered, remasterEligible } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
@@ -238,7 +239,15 @@ export async function runItem(item, opts = {}, deps = {}) {
     const rec = {};
     try {
 
-    if (stage === 'archive') {
+    // a SUPERSEDED talk (media-supersede): the new original is linked in and probed; slug, title, speaker, tags and the folder stay
+    if (stage === 'archive' && meta.supersede_pending && item.source_kind !== 'youtube') {
+      const sup = await archiveSuperseded({ item, meta, dir, tools });
+      Object.assign(meta, sup.patch);
+      rec.superseded = meta.supersede_pending.n; delete meta.supersede_pending;
+      markAudioPending(meta);
+      await repo.updateMediaItem(item.id, { duration_s: sup.probe.duration_s, has_video: sup.probe.has_video, sha256: meta.source.sha256 });
+      await applyTagHints(meta, sup.probe, { filename: item.source_ref });
+    } else if (stage === 'archive') {
       const isYt = item.source_kind === 'youtube';
       let src = item.source_ref, probe, info = null, hints, download = null;
       if (isYt) {

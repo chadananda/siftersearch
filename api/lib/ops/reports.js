@@ -255,6 +255,7 @@ REPORTS['media-trim-audit'] = mediaTrimAuditJob;   // { write } — leading/trai
 REPORTS['media-exclude'] = mediaExcludeJob;   // { write } — talks by excluded speakers (data/media-speaker-people.json `exclude`) out of the library; run by the reports service (never waits on a media drain)
 REPORTS['media-talk-identities'] = mediaTalkIdentitiesJob;
 REPORTS['media-restore'] = mediaRestoreJob;   // params: { write } — bring back talks whose decision in data/media-exclusions.json is 'restore' (media-hidden.md)
+REPORTS['media-supersede'] = (params, deps) => import('../media/supersede.js').then((m) => m.mediaSupersede(params || {}, deps || {}));   // { action: plan|apply|revert|history, slug, newSource, evidence, reason, by, write } — replace a talk's source audio, old original kept under original-superseded/vN
 REPORTS['media-remaster'] = mediaRemasterJob;   // { id } — a talk's tower part of the remaster (word guard, realign, encode, update)
 REPORTS['media-remaster-revert'] = mediaRemasterRevertJob;   // { ids } — back to the transparent original
 REPORTS['media-cloud-remaster'] = mediaCloudRemasterJob;

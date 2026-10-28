@@ -25,6 +25,18 @@ export const findMediaBySource = async (ref) => parse(await queryOne('SELECT * F
 export const slugTaken = async (slug) => !!(await queryOne('SELECT 1 x FROM media_items WHERE slug = ?', [String(slug)], 'media:slug-taken'));
 export const mediaByDocIds = async (ids) => (ids.length ? (await queryAll(`SELECT * FROM media_items WHERE doc_id IN (${ids.map(() => '?').join(',')})`, ids.map(Number), 'media:by-docs')).map(parse) : []);
 
+/** Point a talk at a new source file (media-supersede): source_ref + sha256 (+ duration) change in ONE guarded UPDATE — only while the
+ *  row still holds `expect_sha256` (a second supersede racing the first changes nothing). meta.json stays the file's business. → the row. */
+export async function supersedeMediaSource(id, { source_ref, sha256, duration_s = null, expect_sha256 = null }) {
+  if (!source_ref || !sha256) throw new Error('supersedeMediaSource needs source_ref and sha256');
+  const at = now();
+  await transaction([{ sql: `UPDATE media_items SET source_ref = ?, sha256 = ?, duration_s = COALESCE(?, duration_s), updated_at = ? WHERE id = ? AND (sha256 IS ? OR sha256 = ? OR sha256 = ?)`,
+    args: [source_ref, sha256, duration_s, at, Number(id), expect_sha256, expect_sha256, sha256] }], 'media:supersede-source');
+  const row = await getMediaItem(id);
+  if (row?.sha256 !== sha256) throw new Error(`media item ${id} changed under the supersede (sha256 is ${row?.sha256?.slice(0, 12)})`);
+  return row;
+}
+
 /** Change fields (unknown keys are ignored; meta is JSON). */
 export async function updateMediaItem(id, fields = {}) {
   const set = Object.fromEntries(Object.entries(fields).filter(([k]) => COLS.has(k)));
