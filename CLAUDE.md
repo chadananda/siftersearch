@@ -62,6 +62,8 @@ substitute the local database and do not estimate.
 Before `git push`: `node scripts/ops/precheck.mjs` (syntax + import check of what you changed). After: `node scripts/ops/deploy-check.mjs`
 (polls tower's updater; exit 0 deployed, 1 refused + reason, 2 still pending). Refused = fix and re-push yourself; don't wait for Chad's email.
 
+* **Archive triage tool:** `scripts/archive-sifter/README.md` (browser tool for big copied drives under /tank/archives → Dewey intake; Tailscale :7860).
+
 > **Full coding principles**: See [planning/coding-principles-guide.md](planning/coding-principles-guide.md)
 
 ## Quick Reference

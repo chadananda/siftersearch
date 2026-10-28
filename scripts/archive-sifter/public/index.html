@@ -1,0 +1,88 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Archive Sifter</title>
+<style>
+:root{--bg:#14161a;--p:#1d2026;--p2:#252932;--b:#343a46;--t:#e4e7ec;--m:#8c95a6;--g:#3fb56b;--a:#e0a43a;--gr:#6b7280;--bl:#4c8dff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:13px/1.4 system-ui,sans-serif;height:100vh;display:grid;grid-template-columns:270px 1fr 360px;grid-template-rows:auto 1fr}
+header{grid-column:1/4;background:var(--p);border-bottom:1px solid var(--b);padding:6px 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#tree{background:var(--p);border-right:1px solid var(--b);overflow:auto;padding:4px 0}#main{display:flex;flex-direction:column;min-width:0;overflow:hidden}#detail{background:var(--p);border-left:1px solid var(--b);overflow:auto;padding:10px}
+.tn{padding:2px 6px;cursor:pointer;white-space:nowrap;display:flex;gap:4px;align-items:center}.tn:hover{background:var(--p2)}.tn.sel{background:#2b3a57}.tn .nm{overflow:hidden;text-overflow:ellipsis;flex:1}
+.c{font-size:11px;padding:0 4px;border-radius:8px}.c.i{background:#1f4d33;color:#8fe0ae}.c.s{background:#3a3d44;color:#aab}.c.l{background:#5a4412;color:#f2c867}.c.d{background:#1f3a66;color:#9cc0ff}
+.bar{height:6px;background:var(--b);border-radius:3px;overflow:hidden;min-width:120px}.bar i{display:block;height:100%;background:var(--bl)}
+button,select,input{background:var(--p2);color:var(--t);border:1px solid var(--b);border-radius:4px;padding:3px 8px;font:inherit}button{cursor:pointer}button:hover{border-color:var(--bl)}
+button.g{background:#1f4d33}button.a{background:#5a4412}button.k{background:#3a3d44}
+.tools{padding:6px 8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--b)}
+#tw{flex:1;overflow:auto}table{border-collapse:collapse;width:100%}th{position:sticky;top:0;background:var(--p);text-align:left;padding:4px 6px;cursor:pointer;border-bottom:1px solid var(--b);white-space:nowrap}
+td{padding:2px 6px;border-bottom:1px solid #22262d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}tr.row:hover{background:#1a1d23}tr.focus{outline:1px solid var(--bl);background:#1e2735}
+.s-import{box-shadow:inset 3px 0 var(--g)}.s-skip{box-shadow:inset 3px 0 var(--gr);color:var(--m)}.s-look{box-shadow:inset 3px 0 var(--a)}
+.tag{padding:0 6px;border-radius:8px;font-size:11px}.tag.import{background:#1f4d33;color:#8fe0ae}.tag.skip{background:#3a3d44}.tag.look{background:#5a4412;color:#f2c867}.tag.hold{background:#4a2c63;color:#d9b3ff}
+#pg{padding:4px 8px;border-top:1px solid var(--b);display:flex;gap:8px;align-items:center}pre{white-space:pre-wrap;background:var(--bg);padding:8px;border-radius:4px;max-height:300px;overflow:auto;font-size:12px}
+.k2{color:var(--m)}h4{margin:10px 0 4px}audio,video{width:100%}#login{position:fixed;inset:0;background:var(--bg);display:none;place-items:center;z-index:9}#modal{position:fixed;inset:0;background:#000a;display:none;place-items:center;z-index:8}#modal>div{background:var(--p);border:1px solid var(--b);padding:16px;border-radius:8px;min-width:340px}
+</style></head><body>
+<div id="login"><div><h3>Archive Sifter</h3><input id="tok" type="password" placeholder="token (~/.archive-sifter-token on tower)" size="38"> <button onclick="login()">Enter</button><div id="lerr" class="k2"></div></div></div>
+<div id="modal"><div id="mbody"></div></div>
+<header><b>Archive Sifter</b><select id="arch" onchange="setArch()"></select><span id="prog"></span><div class="bar"><i id="pbar" style="width:0"></i></div><span id="scan" class="k2"></span>
+<button onclick="rescan()">Rescan</button><button onclick="undo()">Undo last bulk</button><button class="g" onclick="importDlg()">Import selected...</button>
+<span class="k2">keys: j/k move, space check, a import, s skip, h hold</span></header>
+<div id="tree"></div>
+<div id="main"><div class="tools">
+<input id="q" placeholder="search name / title / artist" size="26" oninput="dq()">
+<select id="ftype" onchange="reload()"><option value="">all types</option><option>audio</option><option>video</option><option>pdf</option><option>docx</option><option>doc</option><option>epub</option><option>txt</option><option>image</option><option>other</option><option>junk</option></select>
+<select id="fsug" onchange="reload()"><option value="">any suggestion</option><option value="import">suggest import</option><option value="skip">suggest skip</option><option value="look">needs a look</option><option value="none">no suggestion</option></select>
+<select id="fdec" onchange="reload()"><option value="">any decision</option><option value="undecided">undecided</option><option value="decided">decided</option><option value="import_media">import media</option><option value="import_book">import book</option><option value="skip">skip</option><option value="hold">hold</option><option value="imported">imported</option></select>
+size MB <input id="minsize" size="4" onchange="reload()" placeholder="min"><input id="maxsize" size="4" onchange="reload()" placeholder="max"> minutes <input id="mindur" size="3" onchange="reload()" placeholder="min"><input id="maxdur" size="3" onchange="reload()" placeholder="max">
+<label><input type="checkbox" id="sub" checked onchange="reload()"> subfolders</label>
+</div><div class="tools">
+<button onclick="selAll()">Select all in filter</button><button onclick="sel.clear();desel.clear();render()">Clear</button><span id="selc" class="k2"></span>
+<button class="g" onclick="act('import')">Import</button><button class="k" onclick="act('skip')">Skip</button><button class="a" onclick="act('hold')">Hold</button><button onclick="act('clear')">Clear decision</button>
+| whole filter: <button onclick="bulk('accept')">Accept suggestions</button><button onclick="bulk('import')">Import all</button><button onclick="bulk('skip')">Skip all</button>
+</div><div id="tw"><table><thead><tr id="th"></tr></thead><tbody id="tb"></tbody></table></div>
+<div id="pg"><button onclick="page(-1)">Prev</button><span id="pgi"></span><button onclick="page(1)">Next</button></div></div>
+<div id="detail"><span class="k2">Select a row</span></div>
+<script>
+const $=id=>document.getElementById(id);let A=null,F={},rows=[],total=0,off=0,focus=-1,sel=new Set(),desel=new Set(),last=-1,folder='',treeData=[],open=new Set(['']),timer=null;
+const q=s=>encodeURIComponent(s);
+const api=async(p,o)=>{const r=await fetch(p,o&&{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(o)});if(r.status===401){$('login').style.display='grid';throw 0}return r.json()};
+const fm=n=>n==null?'':n>=1e9?(n/1e9).toFixed(1)+'G':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'K':n;
+const fd=s=>s==null?'':s>=3600?Math.floor(s/3600)+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0'):Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function login(){const r=await fetch('/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:$('tok').value})});if(r.ok){$('login').style.display='none';init()}else $('lerr').textContent='bad token'}
+async function init(){try{const l=await api('/api/archives');$('arch').innerHTML=l.map(a=>`<option>${e(a.name)}</option>`).join('');A=localStorage.arch&&l.find(a=>a.name==localStorage.arch)?localStorage.arch:l[0]?.name;$('arch').value=A;if(A)setArch()}catch{}}
+function setArch(){A=$('arch').value;localStorage.arch=A;folder='';sel.clear();desel.clear();off=0;loadTree();reload();progress();clearInterval(timer);timer=setInterval(progress,5000)}
+let dqt;function dq(){clearTimeout(dqt);dqt=setTimeout(reload,300)}
+function filt(){return{folder,sub:$('sub').checked,q:$('q').value,type:$('ftype').value,sug:$('fsug').value,dec:$('fdec').value,minsize:+$('minsize').value||0,maxsize:+$('maxsize').value||0,mindur:+$('mindur').value||0,maxdur:+$('maxdur').value||0,sort:F.sort||'folder',desc:F.desc,offset:off}}
+async function progress(){if(!A)return;const p=await api(`/api/${q(A)}/progress?folder=${q(folder)}`);const x=p.folder||p.all;$('prog').textContent=`${x.decided||0}/${x.total} decided, ${x.imported||0} imported`+(p.folder?` (this folder; all: ${p.all.decided||0}/${p.all.total})`:'');$('pbar').style.width=(x.total?100*(x.decided||0)/x.total:0)+'%';const s=p.scan;$('scan').textContent=s?(s.running?`scanning ${s.seen} files... ${(s.dir||'').slice(0,40)}`:`scan done: ${s.seen} files (+${s.added} new)${s.error?' ERR '+s.error:''}`):''}
+async function loadTree(){treeData=await api(`/api/${q(A)}/tree`);buildTree()}
+function buildTree(){const n={'':{k:'',name:A,ch:{},n:0,si:0,ss:0,sl:0,d:0}};
+for(const r of treeData){const parts=r.folder?r.folder.split('/'):[];let cur=n[''],path='';cur.n+=r.n;cur.si+=r.si;cur.ss+=r.ss;cur.sl+=r.sl;cur.d+=r.d;for(const p of parts){path=path?path+'/'+p:p;cur.ch[p]=cur.ch[p]||(n[path]={k:path,name:p,ch:{},n:0,si:0,ss:0,sl:0,d:0});cur=cur.ch[p];cur.n+=r.n;cur.si+=r.si;cur.ss+=r.ss;cur.sl+=r.sl;cur.d+=r.d}}
+let h='';const walk=(x,dep)=>{const kids=Object.values(x.ch).sort((a,b)=>a.name.localeCompare(b.name));h+=`<div class="tn ${x.k===folder?'sel':''}" style="padding-left:${6+dep*12}px" data-k="${e(x.k)}"><span class="tg" style="width:12px">${kids.length?(open.has(x.k)?'v':'>'):''}</span><span class="nm" title="${e(x.name)}">${e(x.name)}</span>${x.si?`<span class="c i">${x.si}</span>`:''}${x.sl?`<span class="c l">${x.sl}</span>`:''}${x.ss?`<span class="c s">${x.ss}</span>`:''}<span class="c d">${x.d}/${x.n}</span></div>`;if(open.has(x.k))kids.forEach(c=>walk(c,dep+1))};walk(n[''],0);$('tree').innerHTML=h;
+$('tree').querySelectorAll('.tn').forEach(el=>{el.onclick=ev=>{const k=el.dataset.k;if(ev.target.classList.contains('tg')){open.has(k)?open.delete(k):open.add(k);buildTree();return}folder=k;off=0;buildTree();reload();progress()}})}
+async function reload(){off=0;await load()}
+async function load(){const r=await api(`/api/${q(A)}/files?f=${q(JSON.stringify(filt()))}`);rows=r.rows;total=r.total;for(const x of rows)if(x.sug==='import'&&!x.dec&&!desel.has(x.id))sel.add(x.id);focus=rows.length?0:-1;render();showDetail()}
+function page(d){const n=off+d*200;if(n<0||n>=total)return;off=n;load()}
+const COLS=[['name','name'],['folder','folder'],['type','type'],['size','size'],['dur','dur'],['title','tags'],['sug','suggestion'],['dec','decision']];
+function render(){$('th').innerHTML='<th></th>'+COLS.map(([k,l])=>`<th onclick="srt('${k}')">${l}${F.sort===k?(F.desc?' v':' ^'):''}</th>`).join('');
+$('tb').innerHTML=rows.map((r,i)=>`<tr class="row s-${r.sug||''} ${i===focus?'focus':''}" data-i="${i}"><td><input type="checkbox" ${sel.has(r.id)?'checked':''}></td><td title="${e(r.rel)}">${e(r.name)}</td><td title="${e(r.folder)}">${e(r.folder)}</td><td>${r.cls}</td><td>${fm(r.size)}</td><td>${fd(r.dur)}</td><td>${e([r.title,r.artist,r.year].filter(Boolean).join(' / '))}</td><td title="${e(r.why)}">${r.sug?`<span class="tag ${r.sug}">${r.sug}</span> ${e((r.why||'').slice(0,40))}`:''}</td><td>${r.dec?`<span class="tag ${r.dec.split('_')[0]}">${r.dec}${r.imported?' (imported)':''}</span>`:''}</td></tr>`).join('');
+$('tb').querySelectorAll('tr').forEach(tr=>tr.onclick=ev=>click(+tr.dataset.i,ev));$('selc').textContent=`${sel.size} checked`;$('pgi').textContent=`${total?off+1:0}-${Math.min(off+200,total)} of ${total}`}
+function srt(k){F.desc=F.sort===k?!F.desc:false;F.sort=k;reload()}
+function click(i,ev){const id=rows[i].id;if(ev.shiftKey&&last>=0){const a=Math.min(last,i),b=Math.max(last,i);for(let j=a;j<=b;j++){sel.add(rows[j].id);desel.delete(rows[j].id)}}else if(ev.target.type==='checkbox')toggle(id);last=i;focus=i;render();showDetail()}
+function toggle(id){if(sel.has(id)){sel.delete(id);desel.add(id)}else{sel.add(id);desel.delete(id)}}
+async function selAll(){const ids=await api(`/api/${q(A)}/ids?f=${q(JSON.stringify(filt()))}`);ids.forEach(i=>{sel.add(i);desel.delete(i)});render()}
+async function refresh(){sel.clear();await Promise.all([load(),loadTree(),progress()])}
+async function act(d){let ids=[...sel];if(!ids.length&&focus>=0)ids=[rows[focus].id];if(!ids.length)return;await api(`/api/${q(A)}/decide`,{ids,dec:d});await refresh()}
+async function bulk(d){if(!confirm(`Apply "${d}" to all ${total} files in the current filter?`))return;await api(`/api/${q(A)}/decide`,{filter:filt(),dec:d});await refresh()}
+async function undo(){const r=await api(`/api/${q(A)}/undo`,{});alert(r.undone?`Undone: ${r.what}`:'nothing to undo');await refresh()}
+async function rescan(){await api(`/api/${q(A)}/scan`,{});setTimeout(progress,1000)}
+async function showDetail(){const el=$('detail');if(focus<0||!rows[focus]){el.innerHTML='<span class="k2">Select a row</span>';return}const id=rows[focus].id,r=await api(`/api/${q(A)}/file/${id}`);if(rows[focus]?.id!==id)return;
+const raw=`/raw/${q(A)}/${id}`;let h=`<b>${e(r.name)}</b><div class="k2" style="word-break:break-all">${e(r.rel)}</div><div>${r.cls} - ${fm(r.size)}B ${r.dur?'- '+fd(r.dur):''}</div>`;
+if(r.title||r.artist||r.year)h+=`<h4>Tags</h4>${e([r.title,r.artist,r.year].filter(Boolean).join(' / '))}`;
+h+=`<h4>Suggestion</h4>${r.sug?`<span class="tag ${r.sug}">${r.sug}</span> ${e(r.why)}`:'<span class="k2">none</span>'}`;
+if(r.dec)h+=`<h4>Decision</h4>${r.dec} by ${r.dec_by} ${r.dec_at||''} ${r.imported?'- imported ('+e(r.import_note)+')':''}`;
+if(r.near.length)h+=`<h4>Nearest held</h4>`+r.near.map(n=>n.kind==='library'?`<div>${e(n.title)} <span class="k2">${fd(n.dur)} ${n.conf!=null?'conf '+n.conf:''}</span> <a style="color:var(--bl)" target="_blank" href="https://siftersearch.com/media/${q(n.slug)}">open</a></div>`:`<div>on drive: ${e(n.ref)}</div>`).join('');
+if(r.cls==='audio')h+=`<h4>Play</h4><audio controls preload="none" src="${raw}"></audio>`;else if(r.cls==='video'&&/mp4|m4v|webm/.test(r.ext))h+=`<h4>Play</h4><video controls preload="none" src="${raw}"></video>`;
+h+=`<div style="margin-top:8px"><a style="color:var(--bl)" target="_blank" href="${raw}">open raw file</a></div><div id="pv"></div>`;el.innerHTML=h;
+if(['pdf','txt','docx','epub'].includes(r.cls)){$('pv').innerHTML='<h4>Text</h4><span class="k2">loading...</span>';api(`/api/${q(A)}/preview/${id}`).then(p=>{if(rows[focus]?.id===id)$('pv').innerHTML=`<h4>Text</h4><pre>${e(p.text)}</pre>`})}}
+async function importDlg(){const r=await api(`/api/${q(A)}/import`,{confirm:false});$('modal').style.display='grid';$('mbody').innerHTML=`<h3>Import to Dewey intake</h3><p>${r.media} media item(s) to media/golden-age-approved<br>${r.books} book/document(s) to new/_add-anyway/golden-age</p><div class="k2">${r.samples.map(e).join('<br>')}</div><p>Files are hard-linked (no copy) with a .source.json. Already-imported files are skipped.</p><button class="g" onclick="doImport()" ${r.media+r.books?'':'disabled'}>Confirm import</button> <button onclick="$('modal').style.display='none'">Cancel</button>`}
+async function doImport(){$('mbody').innerHTML='importing...';const r=await api(`/api/${q(A)}/import`,{confirm:true});$('mbody').innerHTML=`<h3>Done</h3><p>linked ${r.linked}, already present ${r.existed}, errors ${r.errors}<br>(${r.media} media, ${r.books} books)</p><button onclick="$('modal').style.display='none';load();progress()">Close</button>`}
+document.addEventListener('keydown',ev=>{if(/INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)&&ev.target.type!=='checkbox')return;const k=ev.key;if(k==='j'||k==='k'){focus=Math.max(0,Math.min(rows.length-1,focus+(k==='j'?1:-1)));last=focus;render();showDetail();document.querySelector('tr.focus')?.scrollIntoView({block:'nearest'});ev.preventDefault()}
+else if(k===' '&&focus>=0){toggle(rows[focus].id);render();ev.preventDefault()}else if(k==='a')act('import');else if(k==='s')act('skip');else if(k==='h')act('hold')});
+init();
+</script></body></html>

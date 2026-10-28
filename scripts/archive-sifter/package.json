@@ -1,0 +1,1 @@
+{ "name": "archive-sifter", "private": true, "type": "module", "dependencies": { "music-metadata": "^11.0.0" } }
