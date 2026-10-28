@@ -22,7 +22,7 @@
 //        --collection concepts --budget-key concepts-build --embed --qdrant --max-usd 5
 //        (concept claims: each proof-checked claim statement is a unit, point id = paragraph × 1000 + k; only docs with claims)
 import Database from 'better-sqlite3';
-import { limiterFromEnv, retryAfterMs } from './embed-limiter.mjs';
+import { limiterFromEnv, stateFileFor, retryAfterMs } from './embed-limiter.mjs';
 import dotenv from 'dotenv';
 import { mkdirSync, statfsSync } from 'fs';
 import { dirname, join } from 'path';
@@ -87,18 +87,18 @@ const spentRow = () => store.prepare('SELECT tokens, usd FROM spend WHERE budget
 const addSpend = store.prepare(`INSERT INTO spend (budget, tokens, usd, at) VALUES (@b, @t, @u, @at)
   ON CONFLICT(budget) DO UPDATE SET tokens = tokens + @t, usd = usd + @u, at = @at`);
 
-// Adaptive (AIMD) concurrency up to --concurrency; EMBED_RPM / EMBED_TPM (the account's AI Studio quota) add token buckets (defaults 3000 RPM / 1M TPM at 80 %, see embed-limiter.mjs).
-const limiter = limiterFromEnv(process.env, { max: CONC });
+// Adaptive (AIMD) concurrency up to --concurrency; EMBED_RPM / EMBED_TPM (the account's AI Studio quota) are optional hard caps; the ceiling is learned from 429s and shared via a state file (embed-limiter.mjs).
+const limiter = limiterFromEnv(process.env, { max: Math.max(CONC, 32), start: Math.min(4, CONC), name: `embed-${MODEL}`, stateFile: stateFileFor(MODEL, process.env.GEMINI_API_KEY) });
 async function embedBatch(texts) {
   const body = { requests: texts.map((t) => ({ model: `models/${MODEL}`, content: { parts: [{ text: `title: none | text: ${t}` }] }, outputDimensionality: DIMS })) };
   for (let attempt = 0; ; attempt++) {
     await limiter.acquire(texts.reduce((n, t) => n + estTokens(t), 0));
-    let status = 0, retryAfter = null;
+    let status = 0, retryAfter = null; const t0 = Date.now();
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(120000) });
       status = r.status;
-      if (r.ok) { limiter.release({ status }); status = -1; return (await r.json()).embeddings.map((e) => e.values); }
+      if (r.ok) { limiter.release({ status, ms: Date.now() - t0 }); status = -1; return (await r.json()).embeddings.map((e) => e.values); }
       const errText = await r.clone().text(); retryAfter = retryAfterMs(r.headers, errText);
       noteProviderError('Gemini', { status: r.status, message: errText });   // out of credit → immediate email (not per-minute 429s)
       if (isExhaustion({ status: r.status, message: errText })) throw Object.assign(new Error(`gemini out of credit: ${errText.slice(0, 200)}`), { fatal: true });
