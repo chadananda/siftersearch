@@ -51,6 +51,13 @@ describe('batch embedder', () => {
     const v = await b.embed(reqs(3), { tokens: 10, sync: syncFn });
     expect([...v]).toEqual([[0], ['sync'], [2]]); expect(v.mode).toBe('mixed');
   });
+  it('a job that outlives maxWaitMs is cancelled and done synchronously', async () => {
+    const srv = fakeServer({ pollsToDone: 1e9 }); let t = 1e12; const cancels = [];
+    const f = async (u, i) => { if (u.endsWith(':cancel')) { cancels.push(u); return { ok: true, status: 200, headers: new Headers(), text: async () => '{}' }; } return srv.fetchFn(u, i); };
+    const b = createBatchEmbedder({ ...base({ fetchFn: f }), now: () => t, sleep: async (ms) => { t += ms; }, maxWaitMs: 60000, pollMs: 20000 });
+    const v = await b.embed(reqs(2), { tokens: 10, sync: syncFn });
+    expect(v.mode).toBe('sync'); expect(cancels.length).toBe(1);
+  });
   it('restart resumes the same job (persisted by request hash) instead of re-submitting', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'emb-')); const f = batchStateFileFor('m', 'k', dir);
     const srv = fakeServer({ pollsToDone: 2 }); let polls = 0;

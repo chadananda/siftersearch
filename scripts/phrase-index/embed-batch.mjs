@@ -15,7 +15,7 @@ export const batchStateFileFor = (model, key = '', dir = join(process.cwd(), 'da
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const FAILED = /FAILED|CANCELLED|EXPIRED/;
 
-export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens = 400000, pollMs = 20000, fallbackWaitMs = 1800000, disableMs = 3600000,
+export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens = 400000, pollMs = 20000, fallbackWaitMs = 1800000, disableMs = 3600000, maxWaitMs = 46 * 3600000,
   fetchFn = (u, i) => resilientFetch(u, i, { onRetry: (x) => { local.retries++; onRetry?.(x); } }), onRetry = null, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), name = `embed-batch-${model}` } = {}) {
   let local = { jobs: {}, disabledUntil: 0, submitted: 0, collected: 0, retries: 0, fellBack: 0, pid: process.pid };
   const read = () => { try { return JSON.parse(readFileSync(stateFile, 'utf8')); } catch { return null; } };
@@ -41,8 +41,9 @@ export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens
     if (!r.ok) throw Object.assign(new Error(`batch submit ${r.status} ${text.slice(0, 200)}`), { status: r.status, retryAfter: retryAfterMs(r.headers, text) });
     const op = JSON.parse(text); return op.name || op.metadata?.name;
   }
-  async function poll(jobName) {
+  async function poll(jobName, t0 = now()) {
     for (;;) {
+      if (now() - t0 > maxWaitMs) throw Object.assign(new Error('batch wait limit'), { terminal: true, cancel: jobName });
       let r; try { r = await fetchFn(`${API}/${jobName}`, { headers: hdr }); } catch (e) { if (!isTransientError(e)) throw e; await sleep(pollMs); continue; }
       if (!r.ok && r.status !== 429 && r.status < 500) throw Object.assign(new Error(`batch poll ${r.status}`), { status: r.status });
       if (r.ok) {
@@ -90,12 +91,13 @@ export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens
       }
     }
     try {
-      const op = await poll(job.name); const vecs = await results(op, requests.length);
+      const op = await poll(job.name, job.at); const vecs = await results(op, requests.length);
       delete local.jobs[k]; local.collected++; save();
       const missing = vecs.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);   // per-request failures: redo only those synchronously
       if (missing.length) { const fix = await sync(missing.map((i) => requests[i])); missing.forEach((i, j) => { vecs[i] = fix[j]; }); local.fellBack++; }
       vecs.mode = missing.length ? 'mixed' : 'batch'; return vecs;
     } catch (e) {
+      if (e.cancel) await fetchFn(`${API}/${e.cancel}:cancel`, { method: 'POST', headers: hdr }).catch(() => {});   // too slow for this caller: stop paying, go sync
       if (e.terminal || e.status) { delete local.jobs[k]; save(); return viaSync(requests); }
       throw e;   // transient (network, kill): keep the job in state so a retry/restart resumes it
     }

@@ -94,6 +94,7 @@ const limiter = limiterFromEnv(process.env, { max: Math.max(CONC, 32), start: Ma
 // Bulk builds use the async Batch API (50 % price, <=24 h) unless --embed-mode sync / EMBED_MODE=sync; sync (adaptive limiter) is the fallback.
 const EMBED_MODE = arg('embed-mode', process.env.EMBED_MODE || 'batch');
 const batcher = EMBED_MODE === 'batch' ? createBatchEmbedder({ model: MODEL, apiKey: process.env.GEMINI_API_KEY, stateFile: batchStateFileFor(MODEL, process.env.GEMINI_API_KEY),
+  maxWaitMs: DOCS.length ? 20 * 60000 : 46 * 3600000,   // a single talk is published when it is searchable: don't wait 24 h for it
   capTokens: Math.floor(+(process.env.EMBED_BATCH_CAP || 500000) * 0.8), onRetry: () => limiter.penalize() }) : null;
 const JOB_REQS = +arg('job-requests', 500);
 const buildReqs = (texts) => texts.map((t) => ({ model: `models/${MODEL}`, content: { parts: [{ text: `title: none | text: ${t}` }] }, outputDimensionality: DIMS }));
