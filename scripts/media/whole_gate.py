@@ -6,7 +6,8 @@ ROOT=Path.home()/'sifter-whole-home'
 INPUT=re.compile(r'^(in\.[a-z0-9]{2,5}|out\.flac|asr\.json|asr_orig\.json|work\.json|job\.json)$')
 OUTPUT=re.compile(r'^(post\.json|done\.json|post/(unipase\.flac|[a-zA-Z0-9_.-]+\.(json|ogg|m4a)))$')
 WHOLE_OUT=re.compile(r'^(result\.json|item/[A-Za-z0-9_.\-]+(/[A-Za-z0-9_.\-]+)*)$')   # a whole recording's manifest + files (tower verifies every sha256)
-WHOLE_MEM_GB=10   # whole = ASR + alignment + UniPASE + encodes in ONE container on the GPU
+WHOLE_MEM_GB=10   # container cap (whole = ASR + alignment + UniPASE + encodes in ONE container on the GPU)
+WHOLE_ADMIT_GB=8  # admission need: measured cgroup peak 7.5 GB incl. reclaimable page cache (10-28, memory.peak); cap + oom_score_adj 900 + the 13 GB reserve are the guard rails
 IMAGE_RE=re.compile(r'^(ghcr\.io/chadananda/sifter-media-worker@sha256:[a-f0-9]{64}|sifter-media-worker:rocm-[a-z0-9-]{1,40})$')
 
 def job_dir(job):
@@ -32,7 +33,7 @@ def start_whole(job,d):
         if existing:print(json.dumps(existing));return
         busy=docker('ps','--filter','label=io.sifter.cpu-post=1','--format','{{.Names}}').stdout.splitlines()
         avail=next((int(l.split()[1])/1048576 for l in open('/proc/meminfo') if l.startswith('MemAvailable:')),0)
-        if len(busy)>=1 or avail<WHOLE_MEM_GB+MEM_RESERVE_GB:print('{"waiting":true}');return
+        if len(busy)>=1 or avail<WHOLE_ADMIT_GB+MEM_RESERVE_GB:print('{"waiting":true}');return
         (ROOT/'leases').mkdir(exist_ok=True);(ROOT/'cache').mkdir(exist_ok=True)
         gids=[str(os.stat(p).st_gid) for p in ('/dev/kfd','/dev/dri/renderD128') if os.path.exists(p)]
         grp=[x for g in dict.fromkeys(gids) for x in ('--group-add',g)]

@@ -3,6 +3,8 @@ import {join,extname} from 'node:path';
 import * as fs from 'node:fs/promises';
 import {sha256File,podComplete} from './pod-post.js';
 import {safeChain,OGG_ARGS,OGG_ARGS_REMASTER,M4A_BITRATE_REMASTER} from './enhance.js';
+// A 15 GB host (aorus) cannot hold 4 x 10 GB container caps: a container starts only while the HOST has this much MemAvailable (VRAM is admitted by the in-container GPU leases)
+export const WHOLE_HOST_MIN_AVAIL_GB=5;
 const q=s=>"'"+String(s).replaceAll("'", "'\\''")+"'";
 export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>false,nap=ms=>new Promise(r=>setTimeout(r,ms))}) {
  if(host!=='aorus'&&!(host==='boss'&&mode==='post'))throw Error('Restoration requires Aorus; Boss accepts cached CPU tails');
@@ -68,7 +70,7 @@ export async function homeWholeRecording(it,m,{T,host='aorus',image,legacyLock=t
    // A short dispatch lock closes the race between concurrent API jobs. GPU/RAM
    // stages additionally share the process reservation registry inside the image.
    const legacy=legacyLock?'-v /home/chad/media-gpu/.gpu.lock:/gpu.lock -e SIFTER_LEGACY_GPU_LOCK=/gpu.lock':'';
-   const launch=`if [ "$(docker ps --filter 'name=^/whole-[0-9]+-' --format '{{.Names}}' | wc -l)" -lt 4 ]; then docker run -d --name ${q(name)} --gpus all --network none --cpus 6 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} ${legacy} -e SIFTER_GPU_LEASES=1 --entrypoint /usr/local/bin/node ${q(image)} /opt/sifter/api/lib/media/whole-recording.mjs /job; fi`;
+   const launch=`if [ "$(docker ps --filter 'name=^/whole-[0-9]+-' --format '{{.Names}}' | wc -l)" -lt 4 ] && [ "$(awk '/MemAvailable/{print int($2/1048576)}' /proc/meminfo)" -ge ${WHOLE_HOST_MIN_AVAIL_GB} ]; then docker run -d --name ${q(name)} --gpus all --network none --cpus 6 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} ${legacy} -e SIFTER_GPU_LEASES=1 --entrypoint /usr/local/bin/node ${q(image)} /opt/sifter/api/lib/media/whole-recording.mjs /job; fi`;
    await run(`flock -x ${q(root+'/dispatch.lock')} bash -c ${q(launch)}`);
    if(!await state())await nap(10000);
   }

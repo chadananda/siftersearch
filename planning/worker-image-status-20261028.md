@@ -24,3 +24,10 @@
 ## Needs Chad
 - Aorus was offline for hours earlier today and is back (4 slots); it still has the pre-cap `capped.sh` / old gate to copy when convenient.
 - Decide boss memory option (a/b) in docs/ops/boss-memory.md; the whole container needs MemAvailable >= 23 GB, which boss often lacks while llama-coder/laya are resident, so boss whole orders will wait on that rule, by design.
+
+## Update (later 10-28)
+- **Boss whole memory**: option (a) kept (no BIOS/kernel change; llama-coder stays stopped). Measured cgroup peak of a whole container = 7.5 GB (incl. reclaimable cache), so admission is now MemAvailable >= 8 + 13 reserve (was 10 + 13); the 10 GB cap, oom_score_adj 900, PSI/thermal rules are unchanged. Boss was at 24 GB available, so whole orders flow (container recording-w1528 running).
+- **Capability-ranked scheduling** (`updateRate`, `rankedSlots` in media-jobs.js; state `st.rates`): per-slot EWMA audio-s/wall-s from completed home orders; each tick a host keeps round(max slots x its rate / best rate) slots (min 1; unmeasured hosts keep all). Vendor-blind; one-host-per-order unchanged. Tests in media-whole-dispatch.test.js.
+- **Aorus (RTX 3070 8 GB, 15 GB RAM) with 4 whole containers**: VRAM is fine (3 GB used with 4 running; in-container GPU leases serialise the heavy stages), but RAM was the real limit (4 x 10 GB caps on 15 GB). A container now starts only while the host has >= 5 GB MemAvailable (`WHOLE_HOST_MIN_AVAIL_GB`). Deployed to aorus only via tower (no change needed on aorus).
+- `:rocm` in CI: not done (the build copies data assets from the CUDA image, so it is built on boss).
+- GHCR push of `:rocm` from boss: all layers pushed except the final manifest at time of writing; check `/mnt/data4tb/rocm-push.log`, then `docker logout ghcr.io` on boss.

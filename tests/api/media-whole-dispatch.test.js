@@ -31,3 +31,21 @@ describe('whole dispatch', () => {
     expect(src.match(/st\.queue\.splice\(eligibleIndex,1\)/g)?.length).toBe(1);
   });
 });
+
+import { updateRate, rankedSlots } from '../../api/lib/ops/media-jobs.js';
+describe('capability-ranked slots', () => {
+  it('EWMA of audio-seconds per wall-second per host; vendor-blind', () => {
+    const r = {};
+    updateRate(r, 'aorus-2', 3600, 3600); updateRate(r, 'boss', 3600, 1200);
+    expect(r.aorus.rate).toBeCloseTo(1); expect(r.boss.rate).toBeCloseTo(3);
+    updateRate(r, 'boss', 3600, 3600); expect(r.boss.rate).toBeCloseTo(2.4);
+  });
+  it('the stronger host keeps its slots, the weaker is cut in proportion, never below 1, unmeasured keeps all', () => {
+    const r = { boss: { rate: 3 }, aorus: { rate: 0.75 } };
+    expect(rankedSlots(r, 'boss', 2)).toBe(2);
+    expect(rankedSlots(r, 'aorus-3', 4)).toBe(1);
+    expect(rankedSlots({ boss: { rate: 3 }, aorus: { rate: 1.5 } }, 'aorus', 4)).toBe(2);
+    expect(rankedSlots({ boss: { rate: 3 } }, 'aorus', 4)).toBe(4);
+    expect(updateRate({}, 'boss', 100, 5)).toEqual({});   // too short to measure
+  });
+});

@@ -1459,6 +1459,20 @@ export function worstFirst(talks) {
  *  fatal error, or (their own watchdog) after 15 idle minutes; a drain YIELDS — pods and jobs in flight live in the state
  *  file and are re-attached on the next start. → summary (spend, $/audio-hour, done, failed) */
 
+/** Measured host capability (Chad 10-28): EWMA of audio-seconds processed per wall-second PER SLOT, from completed orders. Vendor-blind. */
+export function updateRate(rates, host, audioS, wallS, alpha = 0.3) {
+  if (!(audioS > 0) || !(wallS > 30)) return rates;
+  const h = host.replace(/-\d+$/, ''), r = audioS / wallS;
+  rates[h] = { rate: rates[h] ? rates[h].rate * (1 - alpha) + r * alpha : r, n: (rates[h]?.n || 0) + 1 };
+  return rates;
+}
+/** Slots a host may use concurrently: its physical maximum scaled by measured per-slot speed against the best host (never below 1; unmeasured hosts get the maximum so they get measured). */
+export function rankedSlots(rates, host, maxSlots) {
+  const mine = rates[host.replace(/-\d+$/, '')]?.rate, best = Math.max(0, ...Object.values(rates).map((x) => x.rate));
+  if (!mine || !best) return maxSlots;
+  return Math.max(1, Math.min(maxSlots, Math.round(maxSlots * mine / best)));
+}
+
 /** May home host `h` take queued order `id`? ONE host per order (Chad 10-28: upload is the bottleneck — the same audio never goes to two computers):
  *  an order another host holds is never eligible, and a whole order runs every stage on the host that takes it. Vendor-blind: boss (AMD) takes whole
  *  orders as soon as its GPU path is accepted (`boss_whole`), exactly like aorus (NVIDIA). */
@@ -1533,6 +1547,13 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   // the legacy home-host path (the gate's 'unipase' verb) has no worker result for tower to take: off in cleanup runs and in STRICT mode (workers only)
   const acceptedHomeHosts=a=>[...(a.boss_cpu?['boss','boss-2']:[]),...Array.from({length:Math.max(2,Math.min(4,Number(a.aorus_slots)||2))},(_,i)=>i?'aorus-'+(i+1):'aorus')];
   let homeHosts = acceptedWorker ? acceptedHomeHosts(acceptedWorker) : (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
+  const allHomeHosts=homeHosts;
+  const rankedHosts=()=>{   // stronger host keeps more concurrent slots; a slower one is cut to what its measured speed earns (re-evaluated every tick)
+    if(!acceptedWorker||!st.rates)return allHomeHosts;
+    const baseOf=h=>h.replace(/-\d+$/,''), maxOf={}, used={};
+    for(const h of allHomeHosts)maxOf[baseOf(h)]=(maxOf[baseOf(h)]||0)+1;
+    return allHomeHosts.filter(h=>{const b=baseOf(h);used[b]=(used[b]||0)+1;return used[b]<=rankedSlots(st.rates,b,maxOf[b])||!!st.home?.[h];});
+  };
   const homeTasks = new Map();   // host → promise (in this process)
   // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
   const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
@@ -1626,7 +1647,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         const opsRepo = deps.ops || await import('../repos/ops-report-repo.js');
         st.asr_waiting = (await opsRepo.pendingRuns('media-asr').catch(() => [])).filter((r) => r.status === 'queued').length; st.asr_checked = now();
       }
-      for (const h of rentalPause && !acceptedWorker ? [] : homeHosts) {
+      for (const h of rentalPause && !acceptedWorker ? [] : rankedHosts()) {
         if (homeTasks.has(h)) continue;
         if ((st.host_down?.[h.replace(/-\d+$/, '')] || 0) > now()) continue;   // a host that stopped answering is left alone for a while (10-28: boss went offline and 41 talks burned their attempts in minutes)
         // boss: hot, or short of RAM for our job on top of the 13 GB reserved for Chad's own services (MemAvailable, read live from the gate every 30 s)
@@ -1643,7 +1664,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (st.items?.[it.id]?.kind==='whole'){
             const completed=await (await import('../media/home-recording.js')).homeWholeRecording(it,m,{T,host:h.startsWith('boss')?'boss':'aorus',image:h.startsWith('boss')?(acceptedWorker.boss_image||acceptedWorker.image):(cur.image||acceptedWorker.image),legacyLock:acceptedWorker.aorus_legacy_lock!==false,stop:draining});
             if(['whole_queued','scheduled','queued','running'].includes((await repo.getMediaItem(it.id))?.state))await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
-            st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,gpu:h,pod:h,at:now()});st.home_done++;return;
+            st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,gpu:h,pod:h,at:now()});updateRate(st.rates||={},h,m.duration_s,(now()-cur.since)/1000);st.home_done++;return;
           }
           if (decided(m,it.id)) return;
           const wantMode = st.items?.[it.id]?.mode || 'restore';
@@ -1656,7 +1677,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             : await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
           if (st.done.some((d) => d.id === it.id)) return;   // a duplicate result never double-publishes
           st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h,at:now(),mode:st.items?.[it.id]?.mode||'restore' });
-          st.home_done++;
+          updateRate(st.rates||={},h,dj.audio_s||m.duration_s,(now()-cur.since)/1000);st.home_done++;
           await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');
         })().then(() => { delete st.home[h]; }, async (err) => {
           if (err?.code === 'DRAIN') return;   // left running on the host; re-attached next start
