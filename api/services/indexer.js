@@ -637,6 +637,7 @@ export async function removeDocument(documentId) {
  */
 export async function getIndexingStatus() {
   const meili = getMeili();
+  if (!meili) return { pending: 0, tasks: [] };   // Meilisearch retired 10-21: the library watcher crash-looped here and re-scanned the library every 2.5 min
 
   // Note: Meilisearch JS v0.50+ uses client.tasks.getTasks() instead of client.getTasks()
   const tasks = await meili.tasks.getTasks({
