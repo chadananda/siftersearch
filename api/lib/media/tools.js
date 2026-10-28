@@ -538,13 +538,32 @@ export async function detachedTool(sub, input, opts = {}, { pidFile, threads = d
 }
 
 export async function ffprobe(path) {
-  const { stdout } = await run('ffprobe', ['-v', 'error', '-show_format', '-show_streams', '-of', 'json', path], { timeoutMs: 120_000 });
-  const j = JSON.parse(stdout);
+  // WAV/ID3-wrapped mp3s: the first look can fail or give no duration — retry with a deeper probe before giving up
+  let j;
+  for (const extra of [[], ['-probesize', '100M', '-analyzeduration', '100M']]) {
+    try { const { stdout } = await run('ffprobe', ['-v', 'error', ...extra, '-show_format', '-show_streams', '-of', 'json', path], { timeoutMs: 120_000 }); j = JSON.parse(stdout); if (Number(j.format?.duration) > 0) break; }
+    catch (err) { if (extra.length) throw err; }
+  }
+  if (!j) throw new Error('ffprobe could not read the file');
   const a = (j.streams || []).find((s) => s.codec_type === 'audio');
   const v = (j.streams || []).find((s) => s.codec_type === 'video' && !s.disposition?.attached_pic);
   return { duration_s: Number(j.format?.duration) || null, format: j.format?.format_name, bit_rate: Number(j.format?.bit_rate) || null,
     sample_rate: Number(a?.sample_rate) || null, channels: a?.channels || null, codec: a?.codec_name || null, has_video: !!v,
     tags: Object.fromEntries(Object.entries({ ...(j.format?.tags || {}) }).map(([k, x]) => [k.toLowerCase(), String(x).slice(0, 300)])) };
+}
+
+/** Tags + duration only, for the backfill: format-only look, deeper retry, never throws. → { ok, tags, duration_s, bit_rate, error? } */
+export async function ffprobeTags(path) {
+  let last = null;
+  for (const extra of [[], ['-probesize', '100M', '-analyzeduration', '100M']]) {
+    try {
+      const { stdout } = await run('ffprobe', ['-v', 'error', ...extra, '-show_entries', 'format=duration,bit_rate:format_tags', '-of', 'json', path], { timeoutMs: 60_000 });
+      const f = JSON.parse(stdout).format || {};
+      return { ok: true, duration_s: Number(f.duration) || null, bit_rate: Number(f.bit_rate) || null,
+        tags: Object.fromEntries(Object.entries(f.tags || {}).map(([k, x]) => [k.toLowerCase(), String(x).slice(0, 300)])) };
+    } catch (err) { last = err; }
+  }
+  return { ok: false, tags: {}, duration_s: null, bit_rate: null, error: String(last?.message || last).slice(0, 160) };
 }
 
 /** An image's pixel size (ffprobe's first video stream). → { w, h } */

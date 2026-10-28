@@ -29,6 +29,7 @@ import { classifyScreen, screenEnabled, singleTurns } from './spkscreen.js';
 import { cbPerson, cbVerdict } from './cb-date.js';
 import { decide } from './exclusions.js';
 import { gradeReport, asrConfidence, priorityOf } from './grade.js';
+import { applyTagHints } from './tag-hints.js';
 
 // tower's MODEL work (grade: DNSMOS/NISQA · enhance: DeepFilterNet) runs in TWO slots at 4 threads even when more items are
 // in flight (10-22: four in parallel took on-tower search p90 to 5.3 s)
@@ -294,6 +295,8 @@ export async function runItem(item, opts = {}, deps = {}) {
         source: isYt ? { kind: 'youtube', download, url: info.url, youtube_id: info.youtube_id, channel: info.channel, channel_id: info.channel_id, channel_url: info.channel_url, upload_date: info.upload_date, title: info.title, license: info.license }
           : { kind: 'file', path: src, sha256: sha, bytes: (await stat(original)).size, probe, ...(archiveSource ? { archive: archiveSource } : {}) },
         original: relative(dir, original), version: 1 };
+      // container tags (ID3/MP4/Vorbis) = hints only: recorded, compared, never applied (api/lib/media/tag-hints.js)
+      if (!isYt) await applyTagHints(meta, probe, { filename: src });
       // every YouTube channel gets its own permission record (Chad can switch one to clips/search if its owner objects)
       let channel = isYt && info.channel_id ? await repo.getChannel(info.channel_id) : null;
       if (isYt && info.channel_id && !channel) channel = await repo.upsertChannel({ channel_id: info.channel_id, name: info.channel, playback: youtubeDefault(), granted_by: YOUTUBE_GRANT });

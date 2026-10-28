@@ -41,6 +41,10 @@ export async function updateMediaItem(id, fields = {}) {
   return getMediaItem(id);
 }
 
+/** Archived file talks (folder + source), id order, a page after `afterId` — for the tag-hint backfill and review. */
+export const hintItems = async ({ afterId = 0, limit = 25 } = {}) => queryAll(`SELECT id, slug, dir, state, source_ref FROM media_items
+  WHERE dir IS NOT NULL AND source_kind = 'file' AND state NOT IN ('duplicate', 'excluded') AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Math.max(1, Math.min(500, Number(limit) || 25))], 'media:hint-items');
+
 /** Published talks the remaster backfill may take (Chad 10-23: graded B or worse), best first. */
 export const remasterCandidates = async (grades = ['B', 'C', 'D', 'E']) => queryAll(`SELECT id, slug, dir, duration_s, grade FROM media_items
   WHERE state = 'done' AND grade IN (${grades.map(() => '?').join(',')}) ORDER BY COALESCE(priority, -1) DESC, id`, grades, 'media:remaster-candidates');

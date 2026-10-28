@@ -4,6 +4,7 @@ import { mediaGreetingsJob } from './media-greetings.js';
 import { mediaDescriptionsJob } from './media-descriptions.js';
 import { mediaPersonApplyJob } from './media-person-apply.js';
 import { mediaPersonReviewJob } from './media-person-review.js';
+import { mediaTagsBackfillJob, mediaHintReviewJob } from './media-hints.js';
 // Ops reports — the named, server-side answers to "is the library healthy?". Each runs inside siftersearch-reports (never
 // the API: they scan whole tables), one at a time, and returns plain JSON stored in ops_report_runs. Add a report here,
 // not a script. Deps: integrity-repo, language-repo, phrase-store-repo, language-codes.
@@ -263,6 +264,8 @@ REPORTS['media-remaster-decide'] = mediaRemasterDecideJob;   // { picks: [{id|sl
 REPORTS['media-speaker-merge'] = mediaSpeakerMergeJob;   // { write } — invented second speakers back to the main speaker (voice-checked per paragraph)
 REPORTS['media-safe-listening'] = mediaSafeListeningJob;   // { write } — every published talk's listening copy → the transparent original + fullband Ogg
 REPORTS['media-relink'] = mediaRelinkJob;   // { write } — re-resolve person links refused by a retired rule (links + update re-run)
+REPORTS['media-tags-backfill'] = mediaTagsBackfillJob;   // { afterId?, limit<=40, pauseMs } — tag_hints for imported talks (hints only), paced pages
+REPORTS['media-hint-review'] = mediaHintReviewJob;   // read-only: tag/filename/transcript disagreements and tag-added speaker/title/series
 REPORTS['media-identity'] = mediaIdentityJob;   // { write } — one person per speaker (identity.js); recording vs upload years   // { write } — speakers from file names + series siblings, one series title pattern
 REPORTS['media-diar'] = mediaDiarJob;   // { id } — who speaks when (boss CPU first) → 'transcribed'
 REPORTS['media-asr'] = mediaAsrJob;   // { id } — transcribe (+ align + diarize) on the ASR hosts → 'transcribed'
@@ -345,7 +348,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-remaster', 'media-remaster-revert', 'media-cloud-remaster', 'media-cloud-order', 'media-light-backfill', 'media-preview', 'media-remaster-quality', 'media-remaster-review-pack', 'media-remaster-decide', 'media-trim-audit'];
-MEDIA_JOBS.push('media-gallery', 'media-portrait-inventory', 'media-speaker-sketch', 'media-archive-import');
+MEDIA_JOBS.push('media-tags-backfill', 'media-hint-review', 'media-gallery', 'media-portrait-inventory', 'media-speaker-sketch', 'media-archive-import');
 export { LANE_WORKERS } from './lane-workers.js';
 
 export const reportNames = () => Object.keys(REPORTS);
