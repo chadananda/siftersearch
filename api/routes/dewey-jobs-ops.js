@@ -56,6 +56,22 @@ export default async function deweyJobsOps(fastify) {
     await reg.rollup(parent.job.id);
     return { job_id: parent.job.id, children: n };
   });
+  // repoint children of a batch to working source URLs: body { parent, map: { "<original page url or path ending>": "<new url>" } }; the child is retried at once.
+  fastify.post('/ops/dewey-jobs/repoint', guard, async (req, reply) => {
+    const { parent, map } = req.body || {};
+    if (!parent || !map || typeof map !== 'object') return reply.code(400).send({ error: 'parent and map required' });
+    const reg = makeRegistry(repo), done = [];
+    for (const k of await repo.childrenOf(Number(parent))) {
+      const hit = Object.entries(map).find(([from]) => from && k.params?.url && k.params.url.endsWith(from));
+      if (!hit || k.kind !== 'fetch' || isTerminal(k.state)) continue;
+      try { parseTarget(hit[1]); } catch { continue; }
+      await repo.updateJob(k.id, { params: { ...k.params, page: k.params.url, url: hit[1], resolve: undefined }, lease_until: null, worker: null, next_run_at: null, attempts: 0 });
+      if (k.state !== 'received') await reg.advance(k.id, 'received', { step: 'retry', detail: 'source changed' }).catch(() => {});
+      await repo.addEvent(k.id, 'repointed', { from: k.params.url, to: hit[1] });
+      done.push(k.id);
+    }
+    return { repointed: done.length, ids: done };
+  });
   fastify.post('/ops/dewey-jobs/:id/cancel', guard, async (req) => {
     const reg = makeRegistry(repo), job = await repo.getJob(Number(req.params.id));
     if (!job) return { status: 'none' };
