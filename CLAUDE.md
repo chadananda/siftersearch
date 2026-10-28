@@ -57,6 +57,11 @@ substitute the local database and do not estimate.
 * **The gate (the real enforcement):** every process tower starts goes through `run()` in `api/lib/media/tools.js`. Heavy stages (dfn, grade, diarize, transcribe, realign, langid, probe, the word guard, prep encodes) throw `WorkerWait` — the item goes back to the queue and retries — so there is NO tower fallback. Left on tower, bounded: web encodes (1 at a time), light analysis (metrics, 16 kHz conversions, waveform decode; 2 at a time). `tests/api/tower-guard.test.js`.
 * **Remaster:** `MEDIA_REMASTER_STRICT=1` means tower takes only complete worker results (guard, alignment, encodes, verdict) — it never reprocesses audio.
 
+## Deploy discipline
+
+Before `git push`: `node scripts/ops/precheck.mjs` (syntax + import check of what you changed). After: `node scripts/ops/deploy-check.mjs`
+(polls tower's updater; exit 0 deployed, 1 refused + reason, 2 still pending). Refused = fix and re-push yourself; don't wait for Chad's email.
+
 > **Full coding principles**: See [planning/coding-principles-guide.md](planning/coding-principles-guide.md)
 
 ## Quick Reference

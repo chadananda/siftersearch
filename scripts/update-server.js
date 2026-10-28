@@ -51,6 +51,7 @@ const execAsync = promisify(exec);
 import { touchesRuntime } from './lib/runtime-files.js';
 import { syntaxProblems } from './lib/syntax-gate.mjs';
 import { importProblems } from './lib/import-gate.mjs';
+import { recordDeploy } from '../api/lib/ops/deploy-status.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
 
@@ -451,6 +452,8 @@ async function isProcessKnown(name) {
 // previous commit's config; alert immediately; a watchdog every loop restarts and alerts on a missing/unhealthy API.
 let prevSha = null;          // the commit the running processes were started from (set before each pull)
 let failedVerifications = 0; // consecutive aborted deploys (alert at 3)
+const DEPLOY_STATUS = join(PROJECT_ROOT, 'data/run/deploy-status.json');
+const markDeploy = (commit, status, reason) => { if (commit) recordDeploy(DEPLOY_STATUS, { commit, status, reason: reason ? String(reason).slice(0, 1500) : null }); };
 let blockedRemote = null;    // a remote commit refused for an invalid config — not retried until a newer one arrives
 let apiHealthFails = 0;
 
@@ -743,6 +746,7 @@ async function applyUpdates() {
     return false;
   }
   log('info', 'Pull successful');
+  markDeploy((await run('git rev-parse HEAD')).stdout.trim(), 'pending', 'pulled; gates running');
 
   // The new PM2 config must be one PM2 accepts BEFORE any process is touched (10-10 outage). If not: back to the running
   // commit, block this one until a newer commit arrives, alert.
@@ -752,6 +756,7 @@ async function applyUpdates() {
     log('error', `Refusing deploy of ${bad}: invalid ecosystem.config.cjs — ${ecoProblems.join('; ')}`);
     if (prevSha) await run(`git reset --hard ${prevSha}`);
     blockedRemote = bad;
+    markDeploy(bad, 'refused', `invalid ecosystem.config.cjs: ${ecoProblems.join('; ')}`);
     await alertNow('deploy-blocked', 'SifterSearch deploy refused — invalid PM2 config',
       `Commit ${bad} was NOT deployed; tower stays on ${prevSha}.\n\nProblems:\n- ${ecoProblems.join('\n- ')}\n\nFix and push a new commit.`);
     return false;
@@ -767,6 +772,7 @@ async function applyUpdates() {
       log('error', `Refusing deploy of ${head}: ${bad.length} file(s) do not parse — ${bad.map((b) => `${b.file}: ${b.error}`).join('; ')}`);
       await run(`git reset --hard ${prevSha}`);
       blockedRemote = head;
+      markDeploy(head, 'refused', `syntax: ${bad.map((b) => `${b.file}: ${b.error}`).join('; ')}`);
       await alertNow('deploy-blocked', 'SifterSearch deploy refused — a file does not parse',
         `Commit ${head} was NOT deployed; tower stays on ${prevSha} (every process keeps running).\n\n${bad.map((b) => `- ${b.file}: ${b.error}`).join('\n')}\n\nFix and push a new commit.`);
       return false;
@@ -782,6 +788,7 @@ async function applyUpdates() {
       log('error', `Refusing deploy of ${head}: ${broken.length} broken import(s) — ${broken.map((b) => `${b.file}:${b.line} ${b.error}`).join('; ')}`);
       await run(`git reset --hard ${prevSha}`);
       blockedRemote = head;
+      markDeploy(head, 'refused', `import: ${broken.map((b) => `${b.file}:${b.line} ${b.error}`).join('; ')}`);
       await alertNow('deploy-blocked', 'SifterSearch deploy refused — a module would not load',
         `Commit ${head} was NOT deployed; tower stays on ${prevSha} (every process keeps running).\n\n${broken.map((b) => `- ${b.file}:${b.line} ${b.error}`).join('\n')}\n\nCommit the missing file (or fix the import) and push a new commit.`);
       return false;
@@ -834,6 +841,7 @@ async function applyUpdates() {
     const bad = (await run('git rev-parse HEAD')).stdout.trim();
     if (prevSha && prevSha !== bad) await run(`git reset --hard ${prevSha}`);
     failedVerifications++;
+    markDeploy(bad, 'refused', 'pre-deploy smoke test failed (test API did not boot or answer); retried next poll');
     log('error', `New code failed verification — aborting deploy, old server stays running; ${bad} will be retried next poll (${failedVerifications} in a row)`);
     if (failedVerifications === 3) {
       await alertNow('deploy-verification', 'SifterSearch deploy failing verification',
@@ -898,6 +906,7 @@ async function applyUpdates() {
 
   if (failed) {
     log('error', 'Some processes failed to start');
+    markDeploy((await run('git rev-parse HEAD')).stdout.trim(), 'refused', 'one or more services failed to start/reload after the swap (see updater log)');
     return false;
   }
 
@@ -915,6 +924,7 @@ async function applyUpdates() {
   const cp = await run('node scripts/ops/critical-path.mjs --local --alert', { timeout: 180000 });
   log(cp.success ? 'info' : 'error', `Critical path ${cp.success ? 'passed' : 'FAILED'}:\n${(cp.stdout || cp.error || '').trim()}`);
 
+  markDeploy((await run('git rev-parse HEAD')).stdout.trim(), 'deployed', null);
   log('info', 'All PM2 processes recreated');
   return true;
 }
@@ -1026,6 +1036,7 @@ async function runOnce() {
     const pulled = await run(`git pull --ff-only ${REMOTE} ${BRANCH}`);
     if (pulled.success) {
       lastReloadedCommitHash = (await run('git rev-parse HEAD')).stdout.trim() || lastReloadedCommitHash;
+      markDeploy(lastReloadedCommitHash, 'deployed', 'no runtime code touched');
       log('info', `Pulled ${updateCheck.commits.length} commit(s) touching no runtime code (${updateCheck.files.slice(0, 4).join(', ')}${updateCheck.files.length > 4 ? ', …' : ''}) — no reload`);
       return true;
     }

@@ -5,6 +5,7 @@ import { requireInternal } from '../lib/auth.js';
 import { enqueue, getRun, latest, recent, cancel } from '../lib/repos/ops-report-repo.js';
 import { reportNames } from '../lib/ops/reports.js';
 import { ApiError } from '../lib/errors.js';
+import { readDeployStatus } from '../lib/ops/deploy-status.js';
 import deweyJobsOps from './dewey-jobs-ops.js';
 
 export default async function opsReportRoutes(fastify) {
@@ -32,6 +33,8 @@ export default async function opsReportRoutes(fastify) {
   // WHAT IS SIFTERSEARCH WORKING ON (Chad 10-19: "I cannot see what siftersearch is working on"; "a coordinator service and
   // an internal API with health for each service"): every service's heartbeat (version, health, work in flight), the ops
   // jobs running now, and the Anís answers being researched (api/lib/service-heartbeat.js, jobs/async-jobs.js)
+  // DEPLOY STATUS: every updater attempt (deployed|refused|pending + reason) so the pushing agent can check its own commit — scripts/ops/deploy-check.mjs
+  fastify.get('/ops/deploy', { preHandler: requireInternal }, async () => readDeployStatus(join(process.cwd(), 'data', 'run', 'deploy-status.json')));
   fastify.get('/ops/services', { preHandler: requireInternal }, async () => {
     const { readServices, headCommit } = await import('../lib/service-heartbeat.js');
     // the job store's own view: a record whose process died or that outran MAX_RUNNING_MS is reaped as 'lost', not listed
@@ -56,7 +59,8 @@ export default async function opsReportRoutes(fastify) {
     try { host_memory = JSON.parse(await (await import('fs/promises')).readFile(join(dirname((await import('../lib/media/cloud.js')).STATE_FILE), 'host-memory.json'), 'utf8')); host_memory.age_s = Math.round((Date.now() - host_memory.at) / 1000); } catch { /* not written yet */ }
     let remaster_quality = null;
     try { remaster_quality = JSON.parse(await (await import('fs/promises')).readFile(join(dirname((await import('../lib/media/cloud.js')).STATE_FILE), 'remaster-quality.json'), 'utf8')); remaster_quality.review = remaster_quality.review?.length; remaster_quality.unrepairable = remaster_quality.unrepairable?.length; } catch { /* not run yet */ }
-    return { head: headCommit(), power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers, cloud_gpu, remaster_quality, host_memory };
+    const { attempts: _a, ...deploy } = readDeployStatus(join(process.cwd(), 'data', 'run', 'deploy-status.json'));
+    return { head: headCommit(), deploy, power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers, cloud_gpu, remaster_quality, host_memory };
   });
   // NIGHT SCHEMA MAINTENANCE (10-24): named steps only — scripts/ops/db-maintenance.sh calls them one at a time with the
   // writers drained around each (a DROP frees a whole b-tree inside the single writer). No arbitrary SQL. maintenance-repo.js
