@@ -1,18 +1,18 @@
 # Qdrant HOT: rebuildable collections on the RAM disk (storage plan §6, §6.6). Restores missing collections from the newest
 # complete snapshot at start; flushes changed collections BEFORE SIGTERM at stop. Starts before pm2 (indexer, search).
-# PHASE 0 (until the MP44): snapshots on /crutch/qram-snapshots. R14: /faster/qram-snapshots (sed the three paths).
+# PHASE 0 (until the MP44): snapshots on /faster/qram-snapshots (R14 done 10-28; was /crutch until the MP44).
 [Unit]
 Description=Qdrant HOT (RAM disk; rebuildable collections)
 Requires=srv-qram.mount
 After=srv-qram.mount network.target zfs-mount.service
 Before=pm2-chad.service
-RequiresMountsFor=/crutch/qram-snapshots
+RequiresMountsFor=/faster/qram-snapshots
 [Service]
 User=chad
 Group=chad
 EnvironmentFile=/home/chad/qdrant-next/env
 Environment=QDRANT__STORAGE__STORAGE_PATH=/srv/qram/storage
-Environment=QDRANT__STORAGE__SNAPSHOTS_PATH=/crutch/qram-snapshots
+Environment=QDRANT__STORAGE__SNAPSHOTS_PATH=/faster/qram-snapshots
 # temp_path stays on the RAM disk (Qdrant's default): CLI snapshot recovery unpacks into temp_path and RENAMES it into storage,
 # which fails across filesystems (measured 10-21: a /crutch temp_path made every restore panic). The indexer keeps free RAM
 # disk ≥ the hot data size so snapshot temp files always fit.
@@ -23,7 +23,7 @@ Environment=QDRANT__SERVICE__GRPC_PORT=6336
 Environment=QDRANT__TELEMETRY_DISABLED=true
 Environment=QRAM_URL=http://127.0.0.1:6335
 Environment=QRAM_STORAGE=/srv/qram/storage
-Environment=QRAM_SNAPSHOTS=/crutch/qram-snapshots
+Environment=QRAM_SNAPSHOTS=/faster/qram-snapshots
 ExecStartPre=/bin/mkdir -p /srv/qram/storage
 # `$$` keeps systemd from expanding the shell's command substitution
 ExecStart=/bin/sh -c 'exec /home/chad/qdrant-next/qdrant $$(/usr/local/bin/qram-restore --args)'
