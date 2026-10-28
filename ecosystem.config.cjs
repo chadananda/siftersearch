@@ -714,6 +714,23 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // Dewey's plain downloads run ON TOWER (Chad 10-28: audio/files are always gathered to /tank by Tower, never by another machine), in the
+      // capped bulk slice, 1 req/s per host, SSRF guard + robots + resume. Archive unpacking/scanning stays on worker boxes (DEWEY_OPS=fetch only).
+      name: 'siftersearch-dewey-fetch',
+      script: 'scripts/dewey/worker/dewey-worker.mjs',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      restart_delay: 15000,
+      watch: false,
+      env: { NODE_ENV: 'production', DEWEY_TOWER: 'http://127.0.0.1:7839', DEWEY_OPS: 'fetch', DEWEY_WORKER: 'tower-fetch', DEWEY_SCRATCH: '/tank/dewey-ingest/scratch' },
+      error_file: './logs/dewey-fetch-error.log',
+      out_file: './logs/dewey-fetch-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // Monthly model re-assessment (Chad 10-11): roles × registry × 30-day spend → ONE [ACTION] email listing roles to
       // re-measure (scripts/ops/model-review.mjs, table in api/lib/model-roles.js). 1st of the month, 08:00.
       name: 'siftersearch-model-review',

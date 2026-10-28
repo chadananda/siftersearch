@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Dewey worker (run on aorus / boss / a pod — NEVER on tower): claims fetch / unpack orders from tower's internal API, does the download,
 // the unzip and the scan locally, streams the surviving files back, reports. Env: DEWEY_TOWER (default http://tower-nas:7839),
-// INTERNAL_API_KEY, DEWEY_WORKER (name), DEWEY_SCRATCH (default /tmp/dewey-worker). Until the one-image worker (planning/worker-image-
+// INTERNAL_API_KEY (tower's X-Internal-Key = its DEPLOY_SECRET; either name), DEWEY_OPS (fetch,unpack), DEWEY_WORKER (name), DEWEY_SCRATCH (default /tmp/dewey-worker). Until the one-image worker (planning/worker-image-
 // design-20261028.md) carries it, run `node scripts/dewey/worker/dewey-worker.mjs` under systemd/pm2 on a worker box.
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
@@ -9,7 +9,8 @@ import { hostname } from 'node:os';
 import { Readable } from 'node:stream';
 import { runOrder, makeScanner, errorKind } from './lib.mjs';
 
-const TOWER = process.env.DEWEY_TOWER || 'http://tower-nas:7839', KEY = process.env.INTERNAL_API_KEY, WORKER = process.env.DEWEY_WORKER || hostname();
+try { (await import('dotenv')).default.config({ path: '.env-secrets', quiet: true }); } catch { /* a bare worker box has no dotenv: env comes from the shell */ }
+const TOWER = process.env.DEWEY_TOWER || 'http://tower-nas:7839', KEY = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY, WORKER = process.env.DEWEY_WORKER || hostname();
 const H = { 'x-internal-key': KEY, 'x-dewey-worker': WORKER };
 const base = `${TOWER}/api/admin/ops/dewey-jobs`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
