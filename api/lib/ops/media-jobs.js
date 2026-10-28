@@ -1604,6 +1604,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       }
       for (const h of rentalPause && !acceptedWorker ? [] : homeHosts) {
         if (homeTasks.has(h)) continue;
+        if ((st.host_down?.[h.replace(/-\d+$/, '')] || 0) > now()) continue;   // a host that stopped answering is left alone for a while (10-28: boss went offline and 41 talks burned their attempts in minutes)
         const bossBlocked=h.startsWith('boss')&&T.coolEnough&&!T.coolEnough('boss');
         const eligibleIndex=bossBlocked?-1:st.queue.findIndex(id=>(!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')&&(!h.startsWith('boss')||!acceptedWorker||st.items?.[id]?.mode==='post'||(h==='boss'&&st.items?.[id]?.kind!=='whole'&&(st.items?.[id]?.mode||'restore')==='restore'&&process.env.MEDIA_BOSS_RESTORE!=='0'))&&(!acceptedWorker?.reserve_aorus_for_whole||h.startsWith('boss')||st.items?.[id]?.kind==='whole'));
         const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
@@ -1635,6 +1636,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         })().then(() => { delete st.home[h]; }, async (err) => {
           if (err?.code === 'DRAIN') return;   // left running on the host; re-attached next start
           delete st.home[h];
+          // the HOST is unreachable, not the talk: back to the front of the queue, no attempt used, the host rests 10 min
+          if (/ssh exit 255|Connection timed out|Operation timed out|No route to host|Connection refused|Connection closed|Connection reset/i.test(String(err?.message || err))) {
+            (st.host_down ||= {})[h.replace(/-\d+$/, '')] = now() + (deps.hostRestMs ?? 10 * 60_000);
+            st.queue.unshift(cur.itemId); st.home_last_error = `${h} #${cur.itemId}: host unreachable — resting 10 min`;
+            return;
+          }
           st.attempts[cur.itemId] = (st.attempts[cur.itemId] || 0) + 1;
           if (st.attempts[cur.itemId] < 2) st.queue.push(cur.itemId); else {
             st.failed.push({ id: cur.itemId, error: `${h}: ${String(err?.message || err).slice(-300)}` });

@@ -781,3 +781,11 @@ describe('boss restores, aorus keeps the whole imports (Chad 10-28)', () => {
     expect(taken.map((o) => o.id)).toEqual([2, 1, 4]); expect(taken.every((o) => o.mode === 'restore' && !o.redo)).toBe(true);
   });
 });
+
+describe('a home host that stops answering rests; its talk goes back, no attempt used (10-28: boss offline, 41 talks lost their attempts)', () => {
+  it('the error handler source carries the rule', () => {
+    const src = readFileSync(join(import.meta.dirname, '../../api/lib/ops/media-jobs.js'), 'utf8');
+    expect(src).toMatch(/host_down/); expect(src).toMatch(/st\.queue\.unshift\(cur\.itemId\); st\.home_last_error = `\$\{h\} #\$\{cur\.itemId\}: host unreachable/);
+    expect(src).toMatch(/\(st\.host_down\?\.\[h\.replace\(\/-\\d\+\$\/, ''\)\] \|\| 0\) > now\(\)/);
+  });
+});
