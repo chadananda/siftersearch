@@ -22,7 +22,7 @@ export function limiterFromEnv(env = process.env, opts = {}) {
 export function createLimiter({ max = 32, start = 4, step = 10, rpm = 0, tpm = 0, frac = 0.8, quietMs = 600000, slowFactor = 2, stateFile = null, name = 'embed',
   now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   let limit = Math.min(start, max), active = 0, ok = 0, pauseUntil = 0, waiters = [];
-  let ceiling = max, lastCut = 0, n429 = 0, n5xx = 0, baseMs = 0, lastSync = 0, lastWrite = 0, workers = 1; const win = [];   // win: [t, tokens]
+  let lastPen = 0, ceiling = max, lastCut = 0, n429 = 0, n5xx = 0, baseMs = 0, lastSync = 0, lastWrite = 0, workers = 1; const win = [];   // win: [t, tokens]
   const pid = process.pid;
   const read = () => { try { return JSON.parse(readFileSync(stateFile, 'utf8')); } catch { return null; } };
   const write = (force) => {
@@ -60,6 +60,8 @@ export function createLimiter({ max = 32, start = 4, step = 10, rpm = 0, tpm = 0
   if (stateFile) { const cur = read(); if (cur?.ceiling) { ceiling = Math.max(1, Math.min(max, cur.ceiling)); limit = Math.max(1, Math.min(limit, ceiling)); lastCut = cur.last_cut_at || 0; } }
   return {
     get limit() { return limit; }, get active() { return active; }, get ceiling() { return ceiling; },
+    /** A retried network failure (connect timeout, reset) counts like a 429 for concurrency: halve, at most once a second. */
+    penalize() { const t = now(); if (t - lastPen < 1000) return; lastPen = t; n5xx++; limit = Math.max(1, Math.floor(limit / 2)); ok = 0; },
     get stats() { return { concurrency: limit, ceiling, active, n429, n5xx, tokens_per_min: tokensPerMin(), workers }; },
     async acquire(tokens = 0) {
       sync();

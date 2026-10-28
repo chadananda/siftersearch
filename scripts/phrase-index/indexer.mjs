@@ -23,6 +23,7 @@
 //        (concept claims: each proof-checked claim statement is a unit, point id = paragraph × 1000 + k; only docs with claims)
 import Database from 'better-sqlite3';
 import { limiterFromEnv, stateFileFor, retryAfterMs } from './embed-limiter.mjs';
+import { resilientFetch } from '../../api/lib/resilient-fetch.js';
 import { createBatchEmbedder, batchStateFileFor } from './embed-batch.mjs';
 import dotenv from 'dotenv';
 import { mkdirSync, statfsSync } from 'fs';
@@ -93,7 +94,7 @@ const limiter = limiterFromEnv(process.env, { max: Math.max(CONC, 32), start: Ma
 // Bulk builds use the async Batch API (50 % price, <=24 h) unless --embed-mode sync / EMBED_MODE=sync; sync (adaptive limiter) is the fallback.
 const EMBED_MODE = arg('embed-mode', process.env.EMBED_MODE || 'batch');
 const batcher = EMBED_MODE === 'batch' ? createBatchEmbedder({ model: MODEL, apiKey: process.env.GEMINI_API_KEY, stateFile: batchStateFileFor(MODEL, process.env.GEMINI_API_KEY),
-  capTokens: Math.floor(+(process.env.EMBED_BATCH_CAP || 500000) * 0.8) }) : null;
+  capTokens: Math.floor(+(process.env.EMBED_BATCH_CAP || 500000) * 0.8), onRetry: () => limiter.penalize() }) : null;
 const JOB_REQS = +arg('job-requests', 500);
 const buildReqs = (texts) => texts.map((t) => ({ model: `models/${MODEL}`, content: { parts: [{ text: `title: none | text: ${t}` }] }, outputDimensionality: DIMS }));
 async function embedBatch(texts) {
@@ -107,8 +108,8 @@ async function embedSync(requests) {
     await limiter.acquire(requests.reduce((n, r) => n + estTokens(r.content.parts[0].text), 0));
     let status = 0, retryAfter = null; const t0 = Date.now();
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(120000) });
+      const r = await resilientFetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(120000) }, { tries: 3, onRetry: () => limiter.penalize() });
       status = r.status;
       if (r.ok) { limiter.release({ status, ms: Date.now() - t0 }); status = -1; return (await r.json()).embeddings.map((e) => e.values); }
       const errText = await r.clone().text(); retryAfter = retryAfterMs(r.headers, errText);

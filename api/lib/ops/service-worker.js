@@ -5,13 +5,14 @@
 // service restarting must never requeue — and so double-run — another's live job). Deps: ops-report-repo, drain, heartbeat.
 import os from 'os';
 import { logger } from '../logger.js';
-import { claimNext, finish, requeueStale, saveResume } from '../repos/ops-report-repo.js';
+import { claimNext, finish, requeueStale, saveResume, enqueue } from '../repos/ops-report-repo.js';
 import { sendEmail } from '../../services/email.js';
 import { logActivity } from '../repos/activity-repo.js';
 import { drainOnSignals, isDraining, nap, startDrain } from '../drain.js';
 import { watchPower, waitForNormalPower } from '../power-mode.js';
 import { startHeartbeat } from '../service-heartbeat.js';
 import { throttleStoppedShort } from './alert-throttle.js';
+import { nextRetry, retryDelayMs, MAX_RETRIES } from './retry-policy.js';
 
 const IDLE_MS = 15_000;
 
@@ -90,7 +91,13 @@ export async function runService({ name, registry, lanes = {}, laneWorkers = {},
         if (!isDraining() && /exit null|SIGTERM|SIGINT|SIGKILL/.test(String(err.message))) await new Promise((r) => setTimeout(r, 2000));
         if (isDraining() && /exit null|SIGTERM|SIGINT|SIGKILL/.test(String(err.message))) { logger.warn({ id: run.id, name: run.name, lane: laneName }, 'job interrupted by shutdown — requeued on next start'); break; }
         await finish(run.id, { error: String(err.message || err).slice(0, 500), ms: Date.now() - t0 }).catch(() => {});
-        await alert(run, 'FAILED', String(err.message || err).slice(0, 1500));
+        const retry = nextRetry(run, err.message || err);
+        if (retry) {
+          logActivity('job', `↻ ${run.name} · #${run.id} transient failure — retry ${retry}/${MAX_RETRIES} in ${Math.round(retryDelayMs(retry) / 1000)} s`);
+          logger.warn({ id: run.id, name: run.name, retry, err: String(err.message).slice(0, 200) }, 'job failed transiently — requeueing with backoff');
+          await nap(retryDelayMs(retry));
+          await enqueue(run.name, { ...(run.params || {}), _attempt: retry }, 'retry').catch((e) => logger.warn({ err: e.message }, 'ops: retry enqueue failed'));
+        } else await alert(run, 'FAILED', String(err.message || err).slice(0, 1500) + ((run.params?._attempt || 0) ? `\n\nRetries exhausted (${run.params._attempt} before this).` : ''));
         logActivity('job', `✗ ${run.name} · #${run.id} failed`);
         logger.error({ id: run.id, name: run.name, lane: laneName, err: err.message }, 'report failed');
       } finally { inHand.delete(laneName); }

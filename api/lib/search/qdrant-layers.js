@@ -4,6 +4,7 @@
 // Deps: keyword-tokens.js (same tokenizer as the index). Env: QDRANT_URL, QDRANT_KEY, GEMINI_API_KEY.
 // :rules: query prefix "task: search result | query:" (measured; documents were embedded with "title: none | text:").
 import { noteProviderError } from '../spend-alerts.js';
+import { resilientFetch } from '../resilient-fetch.js';
 import { bm25Query } from '../keyword-tokens.js';
 import { excludedDocIds } from './excluded-docs.js';
 import { docIdsInYearRange } from '../docs-repo.js';
@@ -39,10 +40,10 @@ export function geminiQueryVector(text) {
   const key = String(text ?? '');
   const hit = memo.get(key);
   if (hit && Date.now() - hit.at < 600000) return hit.p;
-  const p = fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:embedContent?key=${process.env.GEMINI_API_KEY}`, {
+  const p = resilientFetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:embedContent?key=${process.env.GEMINI_API_KEY}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
     body: JSON.stringify({ model: `models/${MODEL}`, content: { parts: [{ text: `task: search result | query: ${key}` }] }, outputDimensionality: DIMS }),
-  }).then(async (r) => {
+  }, { tries: 2, baseMs: 300 }).then(async (r) => {
     if (!r.ok) {
       const text = (await r.text()).slice(0, 300);
       noteProviderError('Gemini', { status: r.status, message: text });

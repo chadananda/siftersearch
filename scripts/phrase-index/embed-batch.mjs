@@ -7,6 +7,7 @@ import { mkdirSync, writeFileSync, renameSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { retryAfterMs } from './embed-limiter.mjs';
+import { resilientFetch, isTransientError } from '../../api/lib/resilient-fetch.js';
 
 export const BATCH_PRICE_FACTOR = 0.5;
 export const batchStateFileFor = (model, key = '', dir = join(process.cwd(), 'data', 'run', 'services')) =>
@@ -15,8 +16,8 @@ const API = 'https://generativelanguage.googleapis.com/v1beta';
 const FAILED = /FAILED|CANCELLED|EXPIRED/;
 
 export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens = 400000, pollMs = 20000, fallbackWaitMs = 1800000, disableMs = 3600000,
-  fetchFn = (...a) => fetch(...a), now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), name = `embed-batch-${model}` } = {}) {
-  let local = { jobs: {}, disabledUntil: 0, submitted: 0, collected: 0, fellBack: 0, pid: process.pid };
+  fetchFn = (u, i) => resilientFetch(u, i, { onRetry: (x) => { local.retries++; onRetry?.(x); } }), onRetry = null, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), name = `embed-batch-${model}` } = {}) {
+  let local = { jobs: {}, disabledUntil: 0, submitted: 0, collected: 0, retries: 0, fellBack: 0, pid: process.pid };
   const read = () => { try { return JSON.parse(readFileSync(stateFile, 'utf8')); } catch { return null; } };
   const load = () => {   // jobs older than 48 h have expired at Google
     const c = stateFile ? read() : null; if (c?.jobs) local.jobs = Object.fromEntries(Object.entries(c.jobs).filter(([, j]) => now() - j.at < 48 * 3600000));  if (c?.disabledUntil) local.disabledUntil = c.disabledUntil; };
@@ -42,7 +43,7 @@ export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens
   }
   async function poll(jobName) {
     for (;;) {
-      const r = await fetchFn(`${API}/${jobName}`, { headers: hdr });
+      let r; try { r = await fetchFn(`${API}/${jobName}`, { headers: hdr }); } catch (e) { if (!isTransientError(e)) throw e; await sleep(pollMs); continue; }
       if (!r.ok && r.status !== 429 && r.status < 500) throw Object.assign(new Error(`batch poll ${r.status}`), { status: r.status });
       if (r.ok) {
         const op = await r.json(); const st = String(op.metadata?.state || op.state || '');
@@ -99,5 +100,5 @@ export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens
       throw e;   // transient (network, kill): keep the job in state so a retry/restart resumes it
     }
   }
-  return { embed, get enqueued() { return enqueued(); }, get stats() { return { enqueued_tokens: enqueued(), cap_tokens: capTokens, jobs: Object.keys(local.jobs).length, submitted: local.submitted, collected: local.collected, fell_back: local.fellBack }; } };
+  return { embed, get enqueued() { return enqueued(); }, get stats() { return { enqueued_tokens: enqueued(), cap_tokens: capTokens, jobs: Object.keys(local.jobs).length, submitted: local.submitted, collected: local.collected, fell_back: local.fellBack, net_retries: local.retries }; } };
 }
