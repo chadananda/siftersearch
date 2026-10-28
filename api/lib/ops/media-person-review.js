@@ -9,9 +9,9 @@ export async function mediaPersonReviewJob(params={},deps={}) {
  const data=deps.data||JSON.parse(await readFile(join(process.cwd(),'data/media-speaker-people.json'),'utf8'));
  const [rows,profiles,published]=await Promise.all([repo.rankRows(),repo.listSpeakers(),repo.mediaIndexRows()]);
  const links=new Map(published.map(x=>[x.id,x.slug]));
- const forms=new Map();
+ const forms=new Map(),unattributed=[];
  for(const row of rows){
-  const label=String(row.speaker||'').trim();if(!label)continue;
+  const label=String(row.speaker||'').trim();if(!label){unattributed.push({id:row.id,title:row.title||null,collection:row.collection||null,state:row.state,source:String(row.source_ref||'').replace(/^\/tank\/media\//,'')});continue;}
   const r=resolveSpeaker(label,data.people,{title:row.title||'',collection:row.collection||'',source_kind:row.source_kind,recorded_year:row.source_kind==='youtube'?null:row.year},{notSpeakers:data.not_speakers||[]});
   if(!forms.has(label))forms.set(label,{label,count:0,states:{},resolutions:{},unresolved:[],examples:[]});
   const f=forms.get(label);f.count++;f.states[row.state]=(f.states[row.state]||0)+1;
@@ -23,7 +23,7 @@ export async function mediaPersonReviewJob(params={},deps={}) {
   if(f.examples.length<12)f.examples.push(evidence);
  }
  return {at:new Date().toISOString(),scope:'All non-duplicate audio items with speaker labels, plus existing speaker profiles',items_scanned:rows.length,
-  items_with_speaker:[...forms.values()].reduce((a,f)=>a+f.count,0),forms:[...forms.values()].sort((a,b)=>b.count-a.count),
+  unattributed,items_with_speaker:[...forms.values()].reduce((a,f)=>a+f.count,0),forms:[...forms.values()].sort((a,b)=>b.count-a.count),
   profiles:profiles.map(p=>({key:p.key,name:p.name,entity_id:p.entity_id||null})),
-  people:data.people.map(p=>({key:p.key,name:p.name,aliases:p.aliases||[],confirmed:p.confirmed||[],confirmed_basis:p.confirmed_basis||null,role:p.role||null,born:p.born||null,died:p.died||null,works:p.works||[]}))};
+  people:data.people.map(p=>({key:p.key,name:p.name,aliases:p.aliases||[],confirmed:p.confirmed||[],confirmed_basis:p.confirmed_basis||null,role:p.role||null,cb:!!p.cb,exclude:p.exclude||null,born:p.born||null,died:p.died||null,works:p.works||[]}))};
 }

@@ -670,7 +670,8 @@ describe('a pod whose worker stopped is replaced and its talks go back to the qu
     } });
     const sleeps = { n: 0 }; x.deps.nap = async (ms) => { sleeps.n++; };
     let t = 1_800_000_000_000; x.deps.now = () => (t += 20_000);
-    const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, minHours: 2 });
+    let loops = 0; x.deps.draining = () => ++loops > 60;   // the workers never come back: the run is stopped by a drain once the replacement has been rented
+    await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, minHours: 2 });
     expect(x.killed.length).toBeGreaterThanOrEqual(1);
     expect(x.cloud.createPod.mock.calls.length).toBeGreaterThanOrEqual(2);
   });

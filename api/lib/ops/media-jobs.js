@@ -1605,7 +1605,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       for (const h of rentalPause && !acceptedWorker ? [] : homeHosts) {
         if (homeTasks.has(h)) continue;
         if ((st.host_down?.[h.replace(/-\d+$/, '')] || 0) > now()) continue;   // a host that stopped answering is left alone for a while (10-28: boss went offline and 41 talks burned their attempts in minutes)
-        const bossBlocked=h.startsWith('boss')&&T.coolEnough&&!T.coolEnough('boss');
+        // boss: hot, or short of RAM for our job on top of the 13 GB reserved for Chad's own services (MemAvailable, read live from the gate every 30 s)
+        const bossBlocked=h.startsWith('boss')&&((T.coolEnough&&!T.coolEnough('boss'))||(T.diskOk&&!T.diskOk('boss',{kind:h==='boss'?'unipase':'post'})));
         const eligibleIndex=bossBlocked?-1:st.queue.findIndex(id=>(!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')&&(!h.startsWith('boss')||!acceptedWorker||st.items?.[id]?.mode==='post'||(h==='boss'&&st.items?.[id]?.kind!=='whole'&&(st.items?.[id]?.mode||'restore')==='restore'&&process.env.MEDIA_BOSS_RESTORE!=='0'))&&(!acceptedWorker?.reserve_aorus_for_whole||h.startsWith('boss')||st.items?.[id]?.kind==='whole'));
         const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
         if (!cur) continue;

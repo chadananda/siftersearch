@@ -1,5 +1,6 @@
 """Restricted home CPU worker protocol; no arbitrary commands or image names."""
 import fcntl,json,os,re,shutil,subprocess,sys
+MEM_NEED_GB=6;MEM_RESERVE_GB=13   # a CPU tail needs 6 GB; 13 GB stay free for the host and Chad's own services
 from pathlib import Path
 ROOT=Path.home()/'sifter-whole-home'
 INPUT=re.compile(r'^(in\.[a-z0-9]{2,5}|out\.flac|asr\.json|asr_orig\.json|work\.json|job\.json)$')
@@ -45,9 +46,12 @@ def main(args):
             existing=state(job)
             if existing:print(json.dumps(existing));return
             busy=docker('ps','--filter','label=io.sifter.cpu-post=1','--format','{{.Names}}').stdout.splitlines()
-            if len(busy)>=2:print('{"waiting":true}');return
+            # ONE container at a time, and only with RAM to spare: boss has 31 GB and Chad's own services (llama-coder 22 GB peak, laya) come first
+            # (10-28: our jobs overran it, tailscaled was OOM-killed and the box left the network)
+            avail=next((int(l.split()[1])/1048576 for l in open('/proc/meminfo') if l.startswith('MemAvailable:')),0)
+            if len(busy)>=1 or avail<MEM_NEED_GB+MEM_RESERVE_GB:print('{"waiting":true}');return
             (ROOT/'leases').mkdir(exist_ok=True)
-            docker('run','-d','--name',job,'--label','io.sifter.cpu-post=1','--network','none','--cpus','4','--memory','10g','--pids-limit','256','-v',str(d)+':/job','-v',str(ROOT/'leases')+':/workspace/.gpu-admission','-e','SIFTER_GPU_LEASES=1','-e','MEDIA_DEVICE=cpu','-e','CUDA_VISIBLE_DEVICES=','--entrypoint','python',image,'/opt/sifter/media/worker/single_restore.py','/job')
+            docker('run','-d','--name',job,'--label','io.sifter.cpu-post=1','--network','none','--cpus','4','--memory','6g','--memory-swap','6g','--oom-score-adj','900','--pids-limit','256','-v',str(d)+':/job','-v',str(ROOT/'leases')+':/workspace/.gpu-admission','-e','SIFTER_GPU_LEASES=1','-e','MEDIA_DEVICE=cpu','-e','CUDA_VISIBLE_DEVICES=','--entrypoint','python',image,'/opt/sifter/media/worker/single_restore.py','/job')
         print('{"started":true}');return
     if verb=='whole-poll':print(json.dumps(state(job)));return
     if verb=='whole-fetch':

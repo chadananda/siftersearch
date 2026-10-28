@@ -175,9 +175,11 @@ export const asrHost = () => (process.env.MEDIA_ASR_HOST ?? 'boss') || null;
 const diskInfo = new Map();   // host → { free_gb, used_pct, mem_avail_gb, at, warnedAt }
 const diskMinGb = () => Number(process.env.MEDIA_HOST_MIN_FREE_GB) || 20;
 /** RAM a job of each kind needs on a compute host (GB, measured RSS + headroom). */
-export const MEM_BUDGET = { unipase: 4, transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
+export const MEM_BUDGET = { unipase: 4, post: 6, whole: 6, transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
 /** RAM kept free on each host whatever runs (GB). */
-const MEM_RESERVE = { boss: 5, aorus: 2 };
+// boss: 31 GB of system RAM (96 GB of its 128 GB is the GPU carve-out) shared with Chad's llama-coder (22 GB peak) and laya: 13 GB stay free, and
+// every job we start there is also capped by its own cgroup (scripts/media/capped.sh) and made the OOM killer's first victim (10-28: tailscaled was OOM-killed)
+const MEM_RESERVE = { boss: 13, aorus: 2 };
 const memReserve = (host) => Number(process.env[`MEDIA_MEM_RESERVE_${String(host).toUpperCase()}`]) || MEM_RESERVE[host] || 2;
 /** GPU memory each kind needs on the GPU host (MiB; measured resident + load peak). */
 export const VRAM_NEED_MB = { unipase: 6000, transcribe: 3500, probe: 2000, dfn: 1500, grade: 1200, diarize: 1536 };

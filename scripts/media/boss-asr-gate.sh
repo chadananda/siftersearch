@@ -136,31 +136,31 @@ if [[ "$verb" == "start" ]]; then
   export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1   # every model is local: no internet in the compute lane
   if [[ "$tool" == "grade" ]]; then
     # the grade's JSON is its last stdout line: out.json is written when it ends
-    nohup setsid bash -c 'nice -n 10 venv/bin/python media_tool.py grade "$1" --models "$2" "${@:4}" > "$3.tmp" && tail -1 "$3.tmp" > "$3" && rm -f "$3.tmp"' _ "$d/in.$ext" "$PWD/models" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
+    nohup setsid ./capped.sh ${MEDIA_JOB_MEM_GB:-5} bash -c 'nice -n 10 venv/bin/python media_tool.py grade "$1" --models "$2" "${@:4}" > "$3.tmp" && tail -1 "$3.tmp" > "$3" && rm -f "$3.tmp"' _ "$d/in.$ext" "$PWD/models" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "dfn" ]]; then
     [[ -x venv-dfn/bin/python ]] || { echo '{"error":"no DeepFilterNet venv on this host"}'; exit 2; }
-    nohup setsid bash -c 'nice -n 10 venv-dfn/bin/python media_tool.py dfn "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
+    nohup setsid ./capped.sh ${MEDIA_JOB_MEM_GB:-5} bash -c 'nice -n 10 venv-dfn/bin/python media_tool.py dfn "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "unipase" ]]; then
     # UniPASE (GPU only, offline, local weights) → out.file (48 kHz FLAC), then the out.json marker
     [[ -f unipase.conf && -f unipase_job.py ]] || { echo '{"error":"UniPASE not installed on this host"}'; exit 2; }
     # shellcheck disable=SC1091
     source ./unipase.conf
     [[ -x "${UNIPASE_PY:-}" ]] || { echo '{"error":"no UniPASE venv"}'; exit 2; }
-    nohup setsid env HF_HOME="$UNIPASE_HF" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True bash -c 'nice -n 10 "$1" unipase_job.py "$2" --output "$3" --repo "$4" > "$5" && tail -1 "$5" > "$6.tmp" && mv "$6.tmp" "$6"' _ "$UNIPASE_PY" "$d/in.$ext" "$d/out.file" "$UNIPASE_REPO" "$d/summary.json" "$d/out.json" 2>"$d/err.txt" </dev/null &
+    nohup setsid ./capped.sh ${MEDIA_UNIPASE_MEM_GB:-8} env HF_HOME="$UNIPASE_HF" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True bash -c 'nice -n 10 "$1" unipase_job.py "$2" --output "$3" --repo "$4" > "$5" && tail -1 "$5" > "$6.tmp" && mv "$6.tmp" "$6"' _ "$UNIPASE_PY" "$d/in.$ext" "$d/out.file" "$UNIPASE_REPO" "$d/summary.json" "$d/out.json" 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "encode" ]]; then
     # a fixed encode recipe (media_tool.py encode: light chain / ogg / m4a) → out.file, then the out.json marker
-    nohup setsid bash -c 'nice -n 10 venv/bin/python media_tool.py encode "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
+    nohup setsid ./capped.sh ${MEDIA_JOB_MEM_GB:-5} bash -c 'nice -n 10 venv/bin/python media_tool.py encode "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "diarize" ]]; then
     # nice 19: a diarization (CPU) yields to the transcriptions feeding the GPU (10-23: ten on aorus starved its GPU)
     # a host with venv-diar (aorus: sherpa-onnx built for CUDA) diarizes on its GPU, the CUDA libraries from the main venv
     if [[ -x venv-diar/bin/python ]]; then
       NV=$(ls -d "$PWD"/venv/lib/python3*/site-packages/nvidia/*/lib 2>/dev/null | tr '\n' ':')
-      LD_LIBRARY_PATH="$NV${LD_LIBRARY_PATH:-}" MEDIA_DIAR_PROVIDER=cuda MEDIA_DIAR_NO_CPU=1 nohup setsid nice -n 19 venv-diar/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} --threads 1 >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+      LD_LIBRARY_PATH="$NV${LD_LIBRARY_PATH:-}" MEDIA_DIAR_PROVIDER=cuda MEDIA_DIAR_NO_CPU=1 nohup setsid ./capped.sh ${MEDIA_JOB_MEM_GB:-5} nice -n 19 venv-diar/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} --threads 1 >"$d/summary.json" 2>"$d/err.txt" </dev/null &
     else
-      nohup setsid nice -n 19 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+      nohup setsid ./capped.sh ${MEDIA_JOB_MEM_GB:-5} nice -n 19 venv/bin/python media_tool.py diarize "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
     fi
   else
-    nohup setsid nice -n 10 venv/bin/python media_tool.py transcribe "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" --prompt "$prompt" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
+    nohup setsid ./capped.sh ${MEDIA_JOB_MEM_GB:-5} nice -n 10 venv/bin/python media_tool.py transcribe "$d/in.$ext" --output "$d/out.json" --models "$PWD/models" --prompt "$prompt" ${rest2[@]+"${rest2[@]}"} >"$d/summary.json" 2>"$d/err.txt" </dev/null &
   fi
   echo $! > "$d/pid"
   printf '{"job":"%s","started":true}\n' "$id"
@@ -173,11 +173,11 @@ cat > "$job/in.$ext"
 # attached work runs in the background and is killed when the caller's ssh session goes away (tower stopped it for a
 # drain) — it must never keep burning boss's CPU for a result nobody will read
 if [[ "$verb" == "transcribe" ]]; then
-  nice -n 10 venv/bin/python media_tool.py transcribe "$job/in.$ext" --output "$job/out.json" --models "$PWD/models" --prompt "$prompt" ${args[@]+"${args[@]}"} >"$job/summary.json" &
+  ./capped.sh ${MEDIA_JOB_MEM_GB:-5} nice -n 10 venv/bin/python media_tool.py transcribe "$job/in.$ext" --output "$job/out.json" --models "$PWD/models" --prompt "$prompt" ${args[@]+"${args[@]}"} >"$job/summary.json" &
   py=$!; watch_parent "$py" & wait "$py"
   cat "$job/out.json"
 else
-  nice -n 10 venv/bin/python media_tool.py "$verb" "$job/in.$ext" --models "$PWD/models" --prompt "$prompt" ${args[@]+"${args[@]}"} >"$job/res.txt" &
+  ./capped.sh ${MEDIA_JOB_MEM_GB:-5} nice -n 10 venv/bin/python media_tool.py "$verb" "$job/in.$ext" --models "$PWD/models" --prompt "$prompt" ${args[@]+"${args[@]}"} >"$job/res.txt" &
   py=$!; watch_parent "$py" & wait "$py"
   tail -1 "$job/res.txt"
 fi

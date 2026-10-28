@@ -428,3 +428,24 @@ describe('an unreachable probe host while Tower refuses heavy work', () => {
     expect(JSON.parse(out.trim())).toEqual({ caught: 'WORKER_WAIT' });
   });
 });
+
+describe('boss memory safety (10-28: our jobs overran its 31 GB, tailscaled was OOM-killed, the box left the network)', () => {
+  it('13 GB stay free on boss: a job is admitted only when MemAvailable covers its budget plus the reserve', async () => {
+    const t = await import('../../api/lib/media/tools.js');
+    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 20 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(true);    // 20 >= 4 + 13
+    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 16 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(false);   // llama-coder woke up
+    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 18 }); expect(t.diskOk('boss', { kind: 'post' })).toBe(false);      // 18 < 6 + 13
+    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 25 }); expect(t.diskOk('boss', { kind: 'post' })).toBe(true);
+    expect(t.MEM_BUDGET.post).toBe(6);
+  });
+  it('every job the gate starts on a host runs inside capped.sh (hard MemoryMax, no swap, oom_score_adj 900); the CPU-tail container is 6 GB, 1 at a time, first to be killed', async () => {
+    const { readFileSync } = await import('fs');
+    const gate = readFileSync(new URL('../../scripts/media/boss-asr-gate.sh', import.meta.url), 'utf8');
+    expect(gate.match(/nohup setsid/g).length).toBe(gate.match(/nohup setsid [^\n]*?\.\/capped\.sh|nohup setsid \.\/capped\.sh/g).length);
+    expect(gate).toMatch(/\.\/capped\.sh \$\{MEDIA_JOB_MEM_GB:-5\} nice -n 10 venv\/bin\/python media_tool\.py transcribe/);
+    const cap = readFileSync(new URL('../../scripts/media/capped.sh', import.meta.url), 'utf8');
+    expect(cap).toMatch(/MemoryMax=\$\{G\}G/); expect(cap).toMatch(/MemorySwapMax=0/); expect(cap).toMatch(/oom_score_adj/);
+    const wg = readFileSync(new URL('../../scripts/media/whole_gate.py', import.meta.url), 'utf8');
+    expect(wg).toContain("'--memory','6g','--memory-swap','6g','--oom-score-adj','900'"); expect(wg).toMatch(/len\(busy\)>=1 or avail<MEM_NEED_GB\+MEM_RESERVE_GB/);
+  });
+});
