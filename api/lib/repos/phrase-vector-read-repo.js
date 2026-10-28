@@ -1,4 +1,4 @@
-// phrase-store-repo — READ-ONLY access to the phrase vector store (vectors.db: paid Gemini embeddings, half precision).
+// phrase-vector-read-repo — READ-ONLY access to the phrase vector store (vectors.db: paid Gemini embeddings, half precision).
 // Named reads for server-side jobs (the f16 Qdrant build); never writes. Short statements only: no open read transaction,
 // so the indexer's WAL can checkpoint. Deps: better-sqlite3.
 import Database from 'better-sqlite3';

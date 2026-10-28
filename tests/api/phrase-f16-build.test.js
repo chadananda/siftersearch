@@ -1,6 +1,6 @@
 // phrase-f16-build: the JSON text of a stored half-precision vector round-trips to the same f16 values; bulk-mode collection body.
 import { describe, it, expect, vi } from 'vitest';
-vi.mock('../../api/lib/repos/phrase-store-repo.js', () => ({ vectorsForPoints: () => new Map() }));
+vi.mock('../../api/lib/repos/phrase-vector-read-repo.js', () => ({ vectorsForPoints: () => new Map() }));
 const { vectorJson, pointJson, createBody, f16Table } = await import('../../api/lib/ops/phrase-f16-build.js');
 
 describe('phrase-f16-build', () => {

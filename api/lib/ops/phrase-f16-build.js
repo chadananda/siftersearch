@@ -3,12 +3,12 @@
 // collection (so deleted points stay deleted and every stamp is kept); the VECTOR comes from vectors.db (repo; half precision
 // is lossless). Runs as a niced child of the job (event loop and writer untouched: only a state FILE is written, no SQLite).
 // Resumable by scroll offset (idempotent upserts). Modes: setup | copy | reconcile | finish. params: { mode, src, srcColl,
-// dst, dstColl, batch, conc, state }. Deps: phrase-store-repo, Qdrant HTTP (QDRANT_KEY).
+// dst, dstColl, batch, conc, state }. Deps: phrase-vector-read-repo, Qdrant HTTP (QDRANT_KEY).
 import { spawn } from 'child_process';
 import { readFileSync, writeFileSync, mkdirSync, renameSync } from 'fs';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { vectorsForPoints } from '../repos/phrase-store-repo.js';
+import { vectorsForPoints } from '../repos/phrase-vector-read-repo.js';
 
 const KEY = () => process.env.QDRANT_KEY || '';
 export const DEFAULTS = { src: 'http://127.0.0.1:6333', srcColl: 'phrases', hot: 'http://127.0.0.1:6335', hotColl: 'phrases_hot',
