@@ -81,9 +81,10 @@ export function makeRegistry(repo = realRepo, { now = iso, sendNote = null } = {
     if (!job || isTerminal(job.state)) return job;
     await repo.addEvent(id, 'error', { error: msg, attempt: job.attempts });
     if (retryable && job.attempts < job.max_attempts) {
-      const wait = 30_000 * 4 ** Math.max(0, job.attempts - 1);
+      const down = /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EHOSTUNREACH|ECONNRESET|EAI_AGAIN|answered 5\d\d|answered 429/.test(msg);   // the SOURCE is not answering: wait an hour, don't burn attempts fast
+      const wait = down ? 3600_000 : 30_000 * 4 ** Math.max(0, job.attempts - 1);
       await repo.updateJob(id, { lease_until: null, worker: null, error: msg, next_run_at: new Date(Date.parse(now()) + wait).toISOString() });
-      return advance(id, 'received', { step: 'retry', detail: `try ${job.attempts + 1} of ${job.max_attempts} in ${Math.round(wait / 1000)} s` , nextRunAt: new Date(Date.parse(now()) + wait).toISOString() });
+      return advance(id, 'received', { step: 'retry', detail: down ? `the source is not answering (${msg.slice(0, 80)}); trying again in an hour (try ${job.attempts + 1} of ${job.max_attempts})` : `try ${job.attempts + 1} of ${job.max_attempts} in ${Math.round(wait / 1000)} s`, nextRunAt: new Date(Date.parse(now()) + wait).toISOString() });
     }
     return advance(id, 'failed', { error: msg });
   }

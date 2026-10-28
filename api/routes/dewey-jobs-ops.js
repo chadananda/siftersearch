@@ -8,6 +8,7 @@ import { makeWorkerApi } from '../lib/dewey/jobs/worker.js';
 import { parseTarget } from '../lib/dewey/net-guard.js';
 import { makeRegistry, canonicalUrl } from '../lib/dewey/jobs/registry.js';
 import { whoOf } from '../lib/dewey/jobs/policy.js';
+import { isTerminal } from '../lib/dewey/jobs/states.js';
 
 export default async function deweyJobsOps(fastify) {
   const api = makeWorkerApi();
@@ -15,7 +16,7 @@ export default async function deweyJobsOps(fastify) {
   fastify.addContentTypeParser('application/octet-stream', (req, payload, done) => done(null, payload));
   const guard = { preHandler: requireInternal };
 
-  fastify.post('/ops/dewey-jobs/claim', guard, async (req) => api.claim(worker(req) || 'worker'));
+  fastify.post('/ops/dewey-jobs/claim', guard, async (req) => api.claim(worker(req) || 'worker', req.body?.ops));
   fastify.post('/ops/dewey-jobs/:id/event', guard, async (req) => api.event(Number(req.params.id), worker(req), req.body || {}));
   fastify.post('/ops/dewey-jobs/:id/complete', guard, async (req) => api.complete(Number(req.params.id), worker(req), req.body?.result || {}));
   fastify.post('/ops/dewey-jobs/:id/fail', guard, async (req) => api.fail(Number(req.params.id), worker(req), req.body?.error, req.body?.retryable !== false));
@@ -47,7 +48,7 @@ export default async function deweyJobsOps(fastify) {
     let n = 0;
     for (const [i, it] of items.entries()) {
       try { parseTarget(it.url); } catch { continue; }
-      const r = await reg.startJob({ kind: 'fetch', by, channel, parentId: parent.job.id, key: `batch:${parent.job.id}:${i}`, free: true,
+      const r = await reg.startJob({ kind: 'fetch', by, channel, parentId: parent.job.id, key: `batch:${parent.job.id}:${i}`, free: true, maxAttempts: 48,
         params: { url: canonicalUrl(it.url), ...(it.resolve === 'audio-page' ? { resolve: 'audio-page' } : {}), title: it.title || null, speaker: it.speaker || null, year: it.year || null } });
       if (r.created) n++;
     }
@@ -58,8 +59,12 @@ export default async function deweyJobsOps(fastify) {
   fastify.post('/ops/dewey-jobs/:id/cancel', guard, async (req) => {
     const reg = makeRegistry(repo), job = await repo.getJob(Number(req.params.id));
     if (!job) return { status: 'none' };
-    for (const k of await repo.childrenOf(job.id)) await reg.advance(k.id, 'cancelled', { result: { reason: 'cancelled' } }).catch(() => {});
-    return { job: await reg.advance(job.id, 'cancelled', { result: { reason: 'cancelled by an operator' } }) };
+    const b = req.body || {}, why = String(b.reason || '').slice(0, 400) || null, result = { reason: why || 'cancelled', by: b.by || 'an operator', did: b.did || null, next: b.next || null };
+    await repo.addEvent(job.id, 'cancel', { reason: why || '(none recorded)', by: result.by, did: result.did, next: result.next });
+    if (isTerminal(job.state)) return { job, note: 'already finished; the reason was recorded as an event' };
+    const done = await reg.advance(job.id, 'cancelled', { result });   // the parent first, so the roll-up cannot call it "skipped"
+    for (const k of await repo.childrenOf(job.id)) await reg.advance(k.id, 'cancelled', { result: { reason: 'cancelled', why: why || 'the job was cancelled', by: result.by } }).catch(() => {});
+    return { job: done };
   });
   // the operator valve: {off:true, reason?} pauses all new Dewey jobs; {off:false} lifts it. DEWEY_V2=0 in the environment does the same at boot.
   fastify.post('/ops/dewey-jobs/pause', guard, async (req) => {

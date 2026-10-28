@@ -19,7 +19,7 @@ const json = async (path, body, method = 'POST') => {
   return r.json();
 };
 export const api = {
-  claim: () => json('/claim', { worker: WORKER, ops: ['fetch', 'unpack'] }),
+  claim: () => json('/claim', { worker: WORKER, ops: (process.env.DEWEY_OPS || 'fetch,unpack').split(',') }),   // tower's own fetcher runs DEWEY_OPS=fetch under in-slice.sh
   event: (id, ev) => json(`/${id}/event`, ev).catch(() => ({})),
   complete: (id, result) => json(`/${id}/complete`, { result }),
   fail: (id, error, retryable) => json(`/${id}/fail`, { error, retryable }),

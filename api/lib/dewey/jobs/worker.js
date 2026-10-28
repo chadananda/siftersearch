@@ -2,7 +2,7 @@
 // result, receive each surviving file as a streamed blob (disk only — no processing on tower), then turn entries into child jobs.
 // Tower never fetches or unpacks: with no worker the job waits (state received, "waiting for a worker").
 import { createWriteStream } from 'node:fs';
-import { mkdir, rename, rm } from 'node:fs/promises';
+import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { pipeline } from 'node:stream/promises';
@@ -19,6 +19,9 @@ export const mediaDir = () => process.env.DEWEY_MEDIA_DIR || join(dirname(inboxD
 export const safeBlobName = (n) => String(n).split(/[\\/]/).pop().normalize('NFC').replace(/[\u0000-\u001f]/g, '').replace(/[^\p{L}\p{N}._ ()&,'’-]+/gu, '_').replace(/^\.+/, '').slice(0, 150) || 'file';
 export const blobPath = (jobId, kind, name) => join(kind === 'media' ? mediaDir() : join(inboxDir(), 'jobs'), String(Number(jobId)), safeBlobName(name));
 
+/** Provenance beside a dropped media file (<file>.source.json), like the Archive.org imports write. */
+const writeSidecar = (file, data) => writeFile(`${file}.source.json`, JSON.stringify(data, null, 1));
+
 export function makeWorkerApi({ repo = realRepo, reg = makeRegistry(repo), countAccepted = async (e) => (await import('../../repos/dewey-repo.js')).acceptedCountBy(e), trust = null, power = isPowerHold } = {}) {
   const trustOf = (by) => (trust ? trust(by) : trustLevel(by, countAccepted));
 
@@ -33,9 +36,10 @@ export function makeWorkerApi({ repo = realRepo, reg = makeRegistry(repo), count
   }
 
   /** A worker asks for work. Nothing while the operator valve is off or the UPS has the box draining. → { order } | { order: null } */
-  async function claim(worker) {
+  async function claim(worker, ops = null) {
     if (power() || !(await valve(repo)).on) return { order: null };
-    const job = await repo.claimOrder(String(worker).slice(0, 60), ['fetch', 'archive']);
+    const want = Array.isArray(ops) && ops.length ? ['fetch', 'archive'].filter((k) => ops.includes(k === 'archive' ? 'unpack' : k)) : ['fetch', 'archive'];   // ops: what this worker can do ('fetch' | 'unpack')
+    const job = want.length ? await repo.claimOrder(String(worker).slice(0, 60), want) : null;
     if (!job) return { order: null };
     await repo.addEvent(job.id, 'claimed', { worker, attempt: job.attempts });
     return { order: await buildOrder(job) };
@@ -81,6 +85,7 @@ export function makeWorkerApi({ repo = realRepo, reg = makeRegistry(repo), count
     for (const e of entries) {
       const key = `child:${id}:${e.sha256 || e.name}:${n++}`;
       const params = { name: e.name, from: e.from || null, bytes: e.bytes || 0, sha256: e.sha256 || null, rights: !!job.params?.rights };
+      if (e.status === 'ok' && e.kind === 'media') await writeSidecar(blobPath(id, 'media', e.name), { provider: new URL(job.params?.url || 'https://unknown.invalid').hostname, name: e.name, url: job.params?.url || null, file_url: result.source?.url || null, title: job.params?.title || null, speaker: job.params?.speaker || null, year: job.params?.year || null, sha256: e.sha256 || null, bytes: e.bytes || null }).catch(() => {});
       if (e.status === 'ok' && e.kind === 'media') await reg.startJob({ kind: 'media', by: job.created_by, channel: job.channel, parentId: id, key, params: { ...params, path: blobPath(id, 'media', e.name) }, free: true });
       else if (e.status === 'ok') await reg.startJob({ kind: 'file', by: job.created_by, channel: job.channel, parentId: id, key, params: { ...params, path: blobPath(id, 'doc', e.name) }, free: true });
       else {

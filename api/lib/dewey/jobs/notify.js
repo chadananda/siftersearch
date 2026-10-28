@@ -13,7 +13,8 @@ const secret = () => process.env.INTERNAL_API_KEY || '';
 export const jobSig = (id, action = 'view') => createHmac('sha256', secret()).update(`dewey-job:${Number(id)}:${action}`).digest('hex').slice(0, 24);
 export const jobSigOk = (id, t, action = 'view') => typeof t === 'string' && t.length === 24 && t === jobSig(id, action);
 export const jobUrl = (id) => `${SITE}/dewey/job/${Number(id)}?t=${jobSig(id)}`;
-const first = (n) => String(n || '').trim().split(/\s+/)[0] || 'there';
+const GENERIC = /^(admin|administrator|user|member|there)$/i;
+const first = (n, email = null) => { const f = String(n || '').trim().split(/\s+/)[0]; if (f && !GENERIC.test(f)) return f; return (email && (process.env.DEWEY_ADMIN_EMAILS || 'chadananda@gmail.com').toLowerCase().split(',').map((x) => x.trim()).includes(String(email).toLowerCase()) ? (process.env.DEWEY_ADMIN_NAME || 'Chad') : 'there'); };
 const plural = (n, w, ws = `${w}s`) => `${n} ${n === 1 ? w : ws}`;
 const cell = (s) => String(s ?? '—').replace(/\|/g, '/').replace(/\s+/g, ' ').trim() || '—';
 const MAX_ROWS = 25;
@@ -21,15 +22,31 @@ const MAX_ROWS = 25;
 /** Should this job's finish be emailed? Asked per job (notify.email), started by email, or the person's standing setting. */
 export const wantsEmail = ({ channel, emailMe = false, pref = false }) => channel === 'email' || !!emailMe || !!pref;
 
+/** A child named for a person: title (speaker, year) when known, else the file name — never "the file". */
+export const nameOf = (k) => {
+  const p = k.params || {}, r = k.result || {};
+  if (p.title) return `“${p.title}”${p.speaker ? ` — ${String(p.speaker).replace(/^(Dr|Mr|Ms|Mrs)\.?\s+/i, '')}` : ''}${p.year ? ` (${p.year})` : ''}`;
+  return p.name || r.title || labelOf(k).replace(/[“”]/g, '');
+};
+
+/** Group rows by identical reason: [{ why, n, examples:[names] }], biggest first. */
+export function groupByWhy(rows, examples = 3) {
+  const g = new Map();
+  for (const r of rows) { const k = String(r.why || ''); const e = g.get(k) || { why: k, n: 0, examples: [] }; e.n++; if (e.examples.length < examples) e.examples.push(r.name); g.set(k, e); }
+  return [...g.values()].sort((a, b) => b.n - a.n);
+}
+const groupLines = (rows) => groupByWhy(rows).map((g) => (g.n === 1 ? `${g.examples[0]} — ${g.why}` : `${g.n} items — ${g.why} (for example ${g.examples.join('; ')}${g.n > g.examples.length ? '…' : ''})`));
+
 /** The facts of a finished (or waiting) job, from its children. Pure. */
 export function summarize(job, kids = []) {
   const rows = kids.length ? kids : [job];
-  const out = { label: labelOf(job), added: [], dupes: [], skipped: [], failed: [], needs: [], handed: [], indexing: [], total: kids.length || 1 };
+  const out = { label: labelOf(job), added: [], dupes: [], skipped: [], failed: [], cancelled: [], needs: [], handed: [], indexing: [], total: kids.length || 1 };
   for (const k of rows) {
-    const r = k.result || {}, name = k.params?.name || r.title || labelOf(k).replace(/[“”]/g, '');
+    const r = k.result || {}, name = nameOf(k);
     if (k.state === 'published') out.added.push({ title: r.title || name, author: r.author || null, url: r.url || (r.doc_id ? docUrl(r.doc_id) : null) });
     else if (k.state === 'handed-off') out.handed.push({ name: r.title || name, note: r.note || 'sent to the media library' });
-    else if (k.state === 'skipped' || k.state === 'cancelled') (r.reason === 'duplicate' ? out.dupes : out.skipped).push({ name, why: r.reason === 'duplicate' ? (r.why || 'already in the library') : (r.why || r.reason || 'skipped'), matched: r.duplicate_of || null });
+    else if (k.state === 'cancelled') out.cancelled.push({ name, why: r.why || r.reason || 'stopped' });
+    else if (k.state === 'skipped') (r.reason === 'duplicate' ? out.dupes : out.skipped).push({ name, why: r.reason === 'duplicate' ? (r.why || 'already in the library') : (r.why || r.reason || 'skipped'), matched: r.duplicate_of || null });
     else if (k.state === 'failed') out.failed.push({ name, why: k.error || 'could not be read' });
     else if (k.state === 'awaiting-decision') out.needs.push({ name: r.title || name, item_id: k.item_id || r.item_id || null });
     else if (r.outcome === 'indexing') out.indexing.push({ name: r.title || name });
@@ -37,8 +54,17 @@ export function summarize(job, kids = []) {
   return out;
 }
 
+/** Why a job was stopped, in plain words: cause, who/what, what Dewey did, what happens next. Honest when no reason was recorded. */
+export function stoppedText(job, s) {
+  const r = job.result || {}, why = r.reason && r.reason !== 'cancelled' ? r.reason : null;
+  return [`${up(s.label)} was stopped before it finished — ${s.cancelled.length || s.total} item${(s.cancelled.length || s.total) === 1 ? '' : 's'} not downloaded.`,
+    `Why: ${why || 'it was cancelled by an operator and no reason was recorded, which is not good enough — I have flagged it'}${r.by ? ` (${r.by})` : ''}.`,
+    `What I did: ${r.did || 'nothing was added or changed in the library'}.`,
+    `What happens next: ${r.next || 'nothing automatic; say “try again” and I will start a new job'}.`];
+}
 const up = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 const headline = (s, job) => {
+  if (job.state === 'cancelled' || (s.cancelled.length && s.cancelled.length === s.total)) return stoppedText(job, s)[0];
   if (job.state === 'failed') return up(`${s.label} did not work out: ${job.error || 'an error'}.`);
   const bits = [];
   if (s.added.length) bits.push(`${plural(s.added.length, 'work')} added to the library`);
@@ -53,24 +79,31 @@ const headline = (s, job) => {
 /** The chat message (Markdown) for a stage. */
 export function chatText(job, kids, stage) {
   const s = summarize(job, kids);
+  if (job.state === 'cancelled' || (s.cancelled.length && s.cancelled.length === s.total)) return stoppedText(job, s).join('\n');
   const lines = [stage === 'decision' ? `**${headline(s, job)}**` : `**Finished.** ${headline(s, job)}`];
   for (const a of s.added.slice(0, MAX_ROWS)) lines.push(`- Added: ${a.url ? `[${a.title}](${a.url})` : a.title}${a.author ? ` — ${a.author}` : ''}`);
   if (s.added.length > MAX_ROWS) lines.push(`- …and ${s.added.length - MAX_ROWS} more added`);
   for (const d of s.dupes.slice(0, 10)) lines.push(`- Already in the library: ${d.name}${d.why && d.why !== 'already in the library' ? ` (${d.why})` : ''}`);
-  for (const d of s.skipped.slice(0, 10)) lines.push(`- Skipped: ${d.name} — ${d.why}`);
-  for (const d of s.failed.slice(0, 10)) lines.push(`- Could not read: ${d.name} — ${d.why}`);
+  for (const l of groupLines(s.skipped).slice(0, 8)) lines.push(`- Skipped: ${l}`);
+  for (const l of groupLines(s.failed).slice(0, 8)) lines.push(`- Could not fetch or read: ${l}`);
+  for (const l of groupLines(s.cancelled).slice(0, 5)) lines.push(`- Stopped: ${l}`);
   for (const d of s.handed.slice(0, 10)) lines.push(`- ${d.name}: ${d.note}`);
   if (s.needs.length) lines.push(`- Waiting for you: ${s.needs.slice(0, 10).map((n) => n.name).join('; ')}${s.needs.length > 10 ? '…' : ''} — answer in the Review list or reply “add them” here.`);
   return lines.join('\n');
 }
 
 /** The email for a stage: { subject, md, buttons:[{label,url}] }. Buttons name their outcomes. */
-export function emailFor(job, kids, stage, { name = null } = {}) {
+export function emailFor(job, kids, stage, { name = null, to = null } = {}) {
   const s = summarize(job, kids);
+  const stopped = job.state === 'cancelled' || (s.cancelled.length && s.cancelled.length === s.total);
+  if (stopped) {
+    const t = stoppedText(job, s);
+    return { subject: `Dewey: stopped — ${s.label.replace(/[“”]/g, '')} (${plural(s.total, 'item')}, none added)`, md: [`Dear ${first(name, to)},`, '', ...t.flatMap((x) => [x, '']), 'With thanks,'].join('\n'), buttons: [{ label: 'See the full report', url: jobUrl(job.id) }] };
+  }
   const subject = job.state === 'failed' ? `Dewey: ${s.label} did not work out`
     : stage === 'decision' ? `Dewey: ${s.needs.length} of ${s.total} files need your decision (${s.label})`
       : `Dewey: ${s.added.length} of ${plural(s.total, 'file')} added from ${s.label.replace(/[“”]/g, '').replace(/^your ZIP /, '').replace(/^the file from /, '')}`;
-  const md = [`Dear ${first(name)},`, '', headline(s, job), ''];
+  const md = [`Dear ${first(name, to)},`, '', headline(s, job), ''];
   if (s.added.length) {
     md.push(`**Added to the library (${s.added.length})**`, '', '| Title | Author | Link |', '| --- | --- | --- |');
     for (const a of s.added.slice(0, MAX_ROWS)) md.push(`| ${cell(a.title)} | ${cell(a.author)} | ${a.url ? `[read it](${a.url})` : '—'} |`);
@@ -80,8 +113,8 @@ export function emailFor(job, kids, stage, { name = null } = {}) {
   const list = (title, rows, f) => { if (rows.length) { md.push(`**${title} (${rows.length})**`, ''); for (const r of rows.slice(0, MAX_ROWS)) md.push(`- ${f(r)}`); md.push(''); } };
   list('Already in the library', s.dupes, (d) => `${cell(d.name)}${d.why && d.why !== 'already in the library' ? ` — ${cell(d.why)}` : ''}`);
   list('Sent to the media library', s.handed, (d) => `${cell(d.name)} — ${cell(d.note)}`);
-  list('Skipped, and why', s.skipped, (d) => `${cell(d.name)} — ${cell(d.why)}`);
-  list('Could not be read', s.failed, (d) => `${cell(d.name)} — ${cell(d.why)}`);
+  const glist = (title, rows) => { if (rows.length) { md.push(`**${title} (${rows.length})**`, ''); for (const l of groupLines(rows).slice(0, MAX_ROWS)) md.push(`- ${cell(l)}`); md.push(''); } };
+  glist('Skipped, and why', s.skipped); glist('Could not be fetched or read, and why', s.failed); glist('Stopped, and why', s.cancelled);
   list('Needs you', s.needs, (d) => cell(d.name));
   if (s.indexing.length) md.push(`${plural(s.indexing.length, 'work')} still being made searchable; the report page shows when they are live.`, '');
   md.push('With thanks,');
@@ -121,7 +154,7 @@ export async function outbox({ repo = realRepo, nameOf = async () => null, admin
     const stage = stageOf(job);
     if (!job.notify?.email || job.notify?.emailed?.[stage] || !job.created_by) continue;
     const kids = await repo.childrenOf(job.id), to = whoOf(job.created_by);
-    mails.push({ key: `job:${job.id}:${stage}`, to, ...emailFor(job, kids, stage, { name: await nameOf(to) }) });
+    mails.push({ key: `job:${job.id}:${stage}`, to, ...emailFor(job, kids, stage, { name: await nameOf(to), to }) });
   }
   const day = repo.dayOf(), n80 = await repo.getFlag(`note80:${day}`);
   if (n80 && !(await repo.getFlag(`note80-sent:${day}`))) {
