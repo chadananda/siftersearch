@@ -2,8 +2,14 @@
 // /start route and the queue supervisor, so an operator-launched run and an auto-advanced one are identical.
 // Deps: node:child_process (detached executor), node:fs (per-doc log fd).
 import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { logger } from '../logger.js';
+
+// Background runs live in the capped TIER-2 slice (scripts/ops/in-slice.sh → sifter-bulk.slice: low CPU weight, memory ceiling, killed first)
+// so a dozen complete-book.mjs can never take memory from search or indexing (Chad 10-28 memory budget). Falls back to plain node.
+const IN_SLICE = fileURLToPath(new URL('../../../scripts/ops/in-slice.sh', import.meta.url));
+const RUNNER = fs.existsSync(IN_SLICE) ? IN_SLICE : process.execPath;
 
 /** The environment of a background run the API launches — ONE definition, because the concepts launcher once lacked
  *  SIFTER_WRITER_URL and its children wrote SQLite directly: "database is locked" on every write (10-13).
@@ -27,7 +33,7 @@ export function spawnGrounding(docId, { from, only, to, readjudicate, rehype, hy
   // Send output to a per-doc log — stdio:'ignore' once hid a silent mid-stage exit and made it undiagnosable.
   let outFd = 'ignore';
   try { outFd = fs.openSync(`${process.cwd()}/logs/grounding-${Number(docId)}.log`, 'a'); } catch { outFd = 'ignore'; }
-  const child = spawn(process.execPath, args, {
+  const child = spawn(RUNNER, args, {
     cwd: process.cwd(), detached: true, stdio: ['ignore', outFd, outFd],
     env: backgroundEnv('siftersearch-grounding'),
   });
@@ -50,7 +56,7 @@ export function spawnHypeMany(docIds, { noDisambig = false, rehype = false, cc =
   fs.writeFileSync(list, JSON.stringify(docIds.map(Number)));
   const args = [`${process.cwd()}/scripts/hype-many.mjs`, list, `--cc=${Number(cc) || 60}`, ...(noDisambig ? ['--no-disambig'] : []), ...(rehype ? ['--rehype'] : [])];
   const out = fs.openSync(log, 'a');
-  const child = spawn(process.execPath, args, { detached: true, stdio: ['ignore', out, out], env: backgroundEnv('siftersearch-hype-many') });
+  const child = spawn(RUNNER, args, { detached: true, stdio: ['ignore', out, out], env: backgroundEnv('siftersearch-hype-many') });
   child.unref();
   logger.info({ docs: docIds.length, pid: child.pid, tag, noDisambig, rehype }, 'hype-many launched');
   return { pid: child.pid, log: `logs/hype-many-${tag}.log` };
@@ -63,7 +69,7 @@ export function spawnConcepts(docId, { only, from, limit, dry } = {}) {
   if (limit) args.push(`--limit=${limit}`);
   if (dry) args.push('--dry');
   const out = fs.openSync(`${process.cwd()}/logs/concepts-${docId}.log`, 'a');
-  const child = spawn(process.execPath, args, { detached: true, stdio: ['ignore', out, out], env: backgroundEnv('siftersearch-concepts') });
+  const child = spawn(RUNNER, args, { detached: true, stdio: ['ignore', out, out], env: backgroundEnv('siftersearch-concepts') });
   child.unref();
   logger.info({ docId, pid: child.pid, args: args.slice(1) }, 'concepts run launched');
   return child.pid;

@@ -679,7 +679,7 @@ module.exports = {
       autorestart: true,
       restart_delay: 30000,
       watch: false,
-      env: { NODE_ENV: 'production', SIFTER_WRITER_URL: 'http://127.0.0.1:7849' },
+      env: { NODE_ENV: 'production', SIFTER_WRITER_URL: 'http://127.0.0.1:7849', SIFTER_SLICE: 'sifter-index.slice', SIFTER_OOM_ADJ: '0' },   // TIER 1 indexing slice (memory budget 10-28)
       error_file: './logs/indexer-error.log',
       out_file: './logs/indexer-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
