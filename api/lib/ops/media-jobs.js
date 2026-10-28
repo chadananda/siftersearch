@@ -1638,7 +1638,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (err?.code === 'DRAIN') return;   // left running on the host; re-attached next start
           delete st.home[h];
           // the HOST is unreachable, not the talk: back to the front of the queue, no attempt used, the host rests 10 min
-          if (/ssh exit 255|Connection timed out|Operation timed out|No route to host|Connection refused|Connection closed|Connection reset/i.test(String(err?.message || err))) {
+          if (/ssh exit (255|SIGKILL|SIGTERM)|rsync exit (10|12|30|35|255)|Connection timed out|Operation timed out|No route to host|Connection refused|Connection closed|Connection reset|timed out/i.test(String(err?.message || err))) {
             (st.host_down ||= {})[h.replace(/-\d+$/, '')] = now() + (deps.hostRestMs ?? 10 * 60_000);
             st.queue.unshift(cur.itemId); st.home_last_error = `${h} #${cur.itemId}: host unreachable — resting 10 min`;
             return;
