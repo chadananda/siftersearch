@@ -80,7 +80,7 @@ export function makeWorkerApi({ repo = realRepo, reg = makeRegistry(repo), count
     let n = 0;
     for (const e of entries) {
       const key = `child:${id}:${e.sha256 || e.name}:${n++}`;
-      const params = { name: e.name, from: e.from || null, bytes: e.bytes || 0, sha256: e.sha256 || null };
+      const params = { name: e.name, from: e.from || null, bytes: e.bytes || 0, sha256: e.sha256 || null, rights: !!job.params?.rights };
       if (e.status === 'ok' && e.kind === 'media') await reg.startJob({ kind: 'media', by: job.created_by, channel: job.channel, parentId: id, key, params: { ...params, path: blobPath(id, 'media', e.name) }, free: true });
       else if (e.status === 'ok') await reg.startJob({ kind: 'file', by: job.created_by, channel: job.channel, parentId: id, key, params: { ...params, path: blobPath(id, 'doc', e.name) }, free: true });
       else {

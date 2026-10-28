@@ -67,7 +67,7 @@ export const TOOLS = [
   { type: 'function', function: { name: 'status', description: 'How is it going? The member\'s jobs in plain words: what Dewey is doing now, how far along, what is waiting for them. Call it for "status", "progress", "how is it going", "is it done".',
     parameters: { type: 'object', properties: { job_id: { type: 'integer', description: 'one job; omit for all of the member\'s active jobs' } } } } },
   { type: 'function', function: { name: 'fetch_url', description: 'Download a file from a web address (PDF, Word, EPUB, a ZIP of files, an audio/video page) on a worker machine, check every file against the library and report. Use when the member gives a link to a file or says "get this". Returns a job id at once; answer "how is it going" with status.',
-    parameters: { type: 'object', properties: { url: { type: 'string' }, email_me: { type: 'boolean', description: 'true only if the member asked to be emailed when it finishes' } }, required: ['url'] } } },
+    parameters: { type: 'object', properties: { url: { type: 'string' }, email_me: { type: 'boolean', description: 'true only if the member asked to be emailed when it finishes' }, rights: { type: 'boolean', description: 'true when the member states they may share the material; defaults on for the operator' } }, required: ['url'] } } },
   { type: 'function', function: { name: 'email_notices', description: 'Set whether the member is emailed when their jobs finish (the default is chat only). Call when they say "email me when things finish" or "stop emailing me".',
     parameters: { type: 'object', properties: { on: { type: 'boolean' } }, required: ['on'] } } },
   { type: 'function', function: { name: 'list_wanted', description: 'The wanted list and intake queue: open items with their state.', parameters: { type: 'object', properties: {} } } },
@@ -135,8 +135,8 @@ export function makeTools({ by, emit, attachSource, accept }) {
       await setFlag(`email-pref:${whoOf(by)}`, on ? '1' : '0');
       return JSON.stringify({ email_when_done: !!on });
     },
-    async fetch_url({ url, email_me = false }) {
-      const r = await fetchUrl({ url, by, channel: 'chat', emailMe: !!email_me });
+    async fetch_url({ url, email_me = false, rights }) {
+      const r = await fetchUrl({ url, by, channel: 'chat', emailMe: !!email_me, rights });
       if (r.job_id) emit({ type: 'status', text: 'Queued the download…' });
       return JSON.stringify(r);
     },

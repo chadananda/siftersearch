@@ -3,14 +3,16 @@
 import { registry } from './registry.js';
 import { canonicalUrl, idemKey } from './registry.js';
 import { parseTarget, isMediaPage, GuardError } from '../net-guard.js';
-import { whoOf } from './policy.js';
+import { whoOf, isAdmin } from './policy.js';
 import * as repo from '../../repos/dewey-jobs-repo.js';
 import { wantsEmail } from './notify.js';
 
+/** "Rights asserted" (Chad 10-28: nothing we handle is copyright-encumbered): explicit value wins, else on for operators. Caps and the quality gate still apply. */
+export const rightsOf = (rights, by) => (rights === undefined || rights === null ? isAdmin(by) : !!rights);
 const swallow = async (p) => { try { return await p; } catch { return null; } };
 
 /** Start fetching a web address (a file, an archive, or a media page handed to the media library). → { job_id, ... } | { error } */
-export async function fetchUrl({ url, by, channel = 'chat', emailMe = false }, { reg = registry, enqueue = null, rp = repo } = {}) {
+export async function fetchUrl({ url, by, channel = 'chat', emailMe = false, rights }, { reg = registry, enqueue = null, rp = repo } = {}) {
   let u;
   try { u = parseTarget(url); } catch (e) { return { error: e instanceof GuardError ? `I will not fetch that address: ${e.message}.` : 'that does not look like a web address' }; }
   const pref = await swallow(rp.getFlag(`email-pref:${whoOf(by)}`));
@@ -21,14 +23,14 @@ export async function fetchUrl({ url, by, channel = 'chat', emailMe = false }, {
     await trackMedia({ url: u.toString(), run: run?.id ?? null }, { by, channel });
     return { media: true, run: run?.id ?? null, note: 'that is a recording page — I sent it to the media library, which checks holdings, transcribes and publishes it at /media' };
   }
-  const r = await reg.startJob({ kind: 'fetch', by, channel, params: { url: canonicalUrl(u.toString()) }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) } });
+  const r = await reg.startJob({ kind: 'fetch', by, channel, params: { url: canonicalUrl(u.toString()), rights: rightsOf(rights, by) }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) } });
   if (r.refused) return { error: r.reason, refused: r.refused };
   return { job_id: r.job.id, already: !r.created, state: r.job.state, note: r.created ? 'queued; a worker machine downloads it (never the main server), then each file is checked against the library. Ask me for status any time.' : 'that link is already being handled' };
 }
 
 /** An uploaded ZIP (R2 key) → an archive job. Called from the upload finish route (internal). */
-export async function startArchive({ key, name, size, by, channel = 'upload', emailMe = false }, { reg = registry, rp = repo } = {}) {
+export async function startArchive({ key, name, size, by, channel = 'upload', emailMe = false, rights }, { reg = registry, rp = repo } = {}) {
   const pref = await swallow(rp.getFlag(`email-pref:${whoOf(by)}`));
-  const r = await reg.startJob({ kind: 'archive', by, channel, key: idemKey('archive', by, key), params: { key, name, size }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) }, caps: { bytes: 0 } });
+  const r = await reg.startJob({ kind: 'archive', by, channel, key: idemKey('archive', by, key), params: { key, name, size, rights: rightsOf(rights, by) }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) }, caps: { bytes: 0 } });
   return r;
 }

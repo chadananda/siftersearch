@@ -58,6 +58,17 @@ const towerDeps = (extra = {}) => ({ repo, reg, items, live: async (id) => ({ li
 const append = async (uid, role, text, parts) => { chat.push({ uid, role, text, parts }); };
 const ZIP = async () => zipBuf([['Pamphlets/Valleys of Light.pdf', PDF('valleys')], ['Pamphlets/Hidden Words.pdf', PDF('hidden')], ['Pamphlets/dup Kitab.pdf', PDF('dup')], ['talk.mp3', Buffer.from('ID3\x04\0\0\0\0\0\0audio')], ['installer.exe', Buffer.from('MZ\x90\0bad')]]);
 
+describe('rights asserted', () => {
+  it('defaults on for the operator, off for others, explicit wins; children inherit it', async () => {
+    const op = await fetchUrl({ url: 'https://example.org/op-rights.pdf', by: 'chadananda@gmail.com' }, { reg });
+    const sam = await fetchUrl({ url: 'https://example.org/sam-rights.pdf', by: 'sam@example.org' }, { reg });
+    const samYes = await fetchUrl({ url: 'https://example.org/sam-rights2.pdf', by: 'sam@example.org', rights: true }, { reg });
+    expect((await repo.getJob(op.job_id)).params.rights).toBe(true);
+    expect((await repo.getJob(sam.job_id)).params.rights).toBe(false);
+    expect((await repo.getJob(samYes.job_id)).params.rights).toBe(true);
+  });
+});
+
 describe('fetch → ZIP → children → notification (ask-first contributor, chat only)', () => {
   it('runs the whole path and tells the person in chat, without emailing', async () => {
     const zip = await ZIP();

@@ -39,13 +39,13 @@ export default async function deweyUploadRoutes(fastify) {
 
   fastify.post('/finish', async (request, reply) => {
     if (!secret() || request.headers['x-internal-key'] !== secret()) return reply.code(401).send({ error: 'unauthorized' });
-    const { key, size, name, kind, userId, email } = request.body || {};
+    const { key, size, name, kind, userId, email, rights } = request.body || {};
     if (!String(key || '').startsWith(PREFIX) || !email) return reply.code(400).send({ error: 'bad request' });
     const have = await findByUploadKey(key);
     if (have) return { item: have, duplicate: true };
     if (kind === 'archive') {   // a ZIP: a registry job a worker unpacks (api/lib/dewey/jobs); no item of its own
       const { startArchive } = await import('../lib/dewey/jobs/tools.js');
-      const r = await startArchive({ key, name, size, by: email });
+      const r = await startArchive({ key, name, size, by: email, rights });
       if (r.refused) return reply.code(429).send({ error: r.reason });
       return { job: r.job, duplicate: !r.created };
     }
