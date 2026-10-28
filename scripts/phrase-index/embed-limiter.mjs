@@ -6,7 +6,15 @@ export function retryAfterMs(headers, bodyText = '') {
   const m = /"retryDelay"\s*:\s*"([\d.]+)s"/.exec(bodyText);   // google.rpc.RetryInfo
   return m ? Math.ceil(Number(m[1]) * 1000) : null;
 }
-export function createLimiter({ max = 16, start = 4, step = 10, rpm = 0, tpm = 0, frac = 0.85, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+// Google publishes no per-model embedding RPM/TPM in its docs (only "view in AI Studio", per project + tier). Defaults are the
+// last published paid Tier-1 embedding figures (3000 RPM / 1M TPM); override with EMBED_RPM / EMBED_TPM from your AI Studio page.
+// EMBED_RPM=0 / EMBED_TPM=0 disables a bucket. Headroom: EMBED_FRAC (default 0.8 = 20 %).
+export const DEFAULT_RPM = 3000, DEFAULT_TPM = 1_000_000, DEFAULT_FRAC = 0.8;
+export function limiterFromEnv(env = process.env, opts = {}) {
+  const num = (v, d) => (v === undefined || v === '' || Number.isNaN(Number(v)) ? d : Number(v));
+  return createLimiter({ rpm: num(env.EMBED_RPM, DEFAULT_RPM), tpm: num(env.EMBED_TPM, DEFAULT_TPM), frac: num(env.EMBED_FRAC, DEFAULT_FRAC), ...opts });
+}
+export function createLimiter({ max = 16, start = 4, step = 10, rpm = 0, tpm = 0, frac = DEFAULT_FRAC, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   let limit = Math.min(start, max), active = 0, ok = 0, pauseUntil = 0, waiters = [];
   const buckets = [[rpm * frac, 1], [tpm * frac, 0]].map(([perMin, isReq]) => ({ perMin, isReq, level: perMin, at: now() }));
   const take = async (tokens) => {

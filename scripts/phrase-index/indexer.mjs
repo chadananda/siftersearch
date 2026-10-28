@@ -22,7 +22,7 @@
 //        --collection concepts --budget-key concepts-build --embed --qdrant --max-usd 5
 //        (concept claims: each proof-checked claim statement is a unit, point id = paragraph × 1000 + k; only docs with claims)
 import Database from 'better-sqlite3';
-import { createLimiter, retryAfterMs } from './embed-limiter.mjs';
+import { limiterFromEnv, retryAfterMs } from './embed-limiter.mjs';
 import dotenv from 'dotenv';
 import { mkdirSync, statfsSync } from 'fs';
 import { dirname, join } from 'path';
@@ -87,8 +87,8 @@ const spentRow = () => store.prepare('SELECT tokens, usd FROM spend WHERE budget
 const addSpend = store.prepare(`INSERT INTO spend (budget, tokens, usd, at) VALUES (@b, @t, @u, @at)
   ON CONFLICT(budget) DO UPDATE SET tokens = tokens + @t, usd = usd + @u, at = @at`);
 
-// Adaptive (AIMD) concurrency up to --concurrency; EMBED_RPM / EMBED_TPM (the account's AI Studio quota) add token buckets at 85 %.
-const limiter = createLimiter({ max: CONC, rpm: +(process.env.EMBED_RPM || 0), tpm: +(process.env.EMBED_TPM || 0) });
+// Adaptive (AIMD) concurrency up to --concurrency; EMBED_RPM / EMBED_TPM (the account's AI Studio quota) add token buckets (defaults 3000 RPM / 1M TPM at 80 %, see embed-limiter.mjs).
+const limiter = limiterFromEnv(process.env, { max: CONC });
 async function embedBatch(texts) {
   const body = { requests: texts.map((t) => ({ model: `models/${MODEL}`, content: { parts: [{ text: `title: none | text: ${t}` }] }, outputDimensionality: DIMS })) };
   for (let attempt = 0; ; attempt++) {
