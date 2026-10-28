@@ -5,8 +5,10 @@ import { requireInternal } from '../lib/auth.js';
 import { enqueue, getRun, latest, recent, cancel } from '../lib/repos/ops-report-repo.js';
 import { reportNames } from '../lib/ops/reports.js';
 import { ApiError } from '../lib/errors.js';
+import deweyJobsOps from './dewey-jobs-ops.js';
 
 export default async function opsReportRoutes(fastify) {
+  await fastify.register(deweyJobsOps);   // Dewey's job registry + worker contract (api/routes/dewey-jobs-ops.js)
   const known = (name) => { if (!reportNames().includes(name)) throw ApiError.notFound?.(`unknown report ${name}`) ?? Object.assign(new Error(`unknown report ${name}`), { statusCode: 404 }); };
   // Biography slugs, minted in small batches through the single writer (never one large UPDATE): call repeatedly until left = 0.
   fastify.post('/ops/bio-slugs/backfill', { preHandler: requireInternal }, async (req) => {

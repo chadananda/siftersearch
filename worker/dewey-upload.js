@@ -8,6 +8,7 @@ export const KINDS = {
   image: { ext: 'jpg jpeg png tif tiff heic webp gif', max: 1 * GB },
   audio: { ext: 'mp3 m4a aac wav flac ogg opus aiff aif wma', max: 50 * GB },
   video: { ext: 'mp4 m4v mov mkv webm avi', max: 50 * GB },
+  archive: { ext: 'zip', max: 2 * GB },   // unpacked on a worker (entries <= 500, nested depth 2) — Chad 10-28
 };
 export const PART_SIZE = 32 * MB;          // R2 parts must be equal-sized except the last; 5 MiB minimum
 export const MAX_PART = 96 * MB;           // a part above this is refused (Worker request bodies are limited, ~100 MB)

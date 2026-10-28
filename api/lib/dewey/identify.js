@@ -2,6 +2,7 @@
 // a file, a URL or typed text → the fields a holdings check searches on: title, author, edition, language, kind, and
 // printed lines (verbatim text, the strongest evidence — it finds a work under any title). Photos are read by a vision
 // model; files through convert.js (any format → Markdown); URLs by oEmbed (video) or the page itself.
+import { boundedGet } from './net-guard.js';
 import { roleCreate } from '../role-client.js';
 import { toMarkdownText } from './convert.js';
 
@@ -30,13 +31,19 @@ export async function identifyUrl(url, { fetchImpl = fetch } = {}) {
     const r = await fetchImpl(oembed, { signal: AbortSignal.timeout(10000) }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
     return { title: r?.title || null, author: r?.author_name || null, kind: 'video', url, from: 'url' };
   }
-  const res = await fetchImpl(url, { signal: AbortSignal.timeout(20000), redirect: 'follow' });
-  if (!res.ok) throw new Error(`could not fetch the URL (${res.status})`);
-  const type = res.headers.get('content-type') || '';
+  // Tower never downloads big files or fetches unguarded (Chad 10-28): a SSRF-guarded GET capped at 5 MB, robots-aware for pages. Bigger
+  // files are for fetch_url (a worker downloads them). `fetchImpl` (tests) replaces the guarded fetch.
+  let type, raw, status;
+  if (fetchImpl !== fetch) {
+    const res = await fetchImpl(url, { signal: AbortSignal.timeout(20000), redirect: 'follow' });
+    status = res.status ?? (res.ok ? 200 : 500); type = res.headers.get('content-type') || '';
+    raw = status >= 400 ? Buffer.alloc(0) : res.arrayBuffer ? Buffer.from(await res.arrayBuffer()) : Buffer.from(await res.text());
+  } else ({ status, type, buf: raw } = await boundedGet(url));
+  if (status >= 400) throw new Error(`could not fetch the URL (${status})`);
   if (/pdf|officedocument|msword/i.test(type) || /\.(pdf|docx?)(\?|$)/i.test(url)) {
-    return { ...(await identifyFile({ name: url.split('/').pop(), bytes: new Uint8Array(await res.arrayBuffer()) })), url, from: 'url' };
+    return { ...(await identifyFile({ name: url.split('/').pop(), bytes: new Uint8Array(raw) })), url, from: 'url' };
   }
-  const html = (await res.text()).slice(0, 2_000_000);
+  const html = raw.toString('utf8').slice(0, 2_000_000);
   const meta = (name) => html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]+content=["']([^"']+)`, 'i'))?.[1] || null;
   const title = meta('og:title') || meta('citation_title') || html.match(/<title[^>]*>([^<]+)/i)?.[1]?.trim() || null;
   const body = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, '\n').replace(/&nbsp;/g, ' ');
