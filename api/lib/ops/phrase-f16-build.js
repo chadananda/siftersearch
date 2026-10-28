@@ -12,7 +12,7 @@ import { vectorsForPoints } from '../repos/phrase-vector-read-repo.js';
 
 const KEY = () => process.env.QDRANT_KEY || '';
 export const DEFAULTS = { src: 'http://127.0.0.1:6333', srcColl: 'phrases', hot: 'http://127.0.0.1:6335', hotColl: 'phrases_hot',
-  dst: 'http://127.0.0.1:6343', dstColl: 'phrases_f16', batch: 1000, conc: 4, state: '/faster/qdrant/phrase-f16-state.json', health: 'http://127.0.0.1:7839/healthz' };
+  dst: 'http://127.0.0.1:6343', dstColl: 'phrases_f16', batch: 1000, conc: 3, shards: 8, state: '/faster/qdrant/phrase-f16-state.json', health: 'http://127.0.0.1:7839/healthz' };
 
 /** All 65,536 half-precision values as JSON number text (5 significant digits round-trips f16 exactly). Pure. */
 export function f16Table() {
@@ -73,7 +73,7 @@ async function guard(p, st) {
   }
 }
 
-async function copy(p, from, fromColl, st, stateKey) {
+async function copy(p, from, fromColl, st, stateKey, range = null) {
   let offset = st[stateKey]?.next ?? null;
   const done = st[stateKey]?.done;
   if (done) { log({ step: 'copy', from: fromColl, skipped: 'already complete' }); return; }
@@ -81,7 +81,7 @@ async function copy(p, from, fromColl, st, stateKey) {
   const t0 = Date.now(); let n0 = st[stateKey]?.copied || 0;
   for (let i = 0; ; i++) {
     if (i % 25 === 0) await guard(p, st);
-    const sc = (await qd(from, 'POST', `/collections/${fromColl}/points/scroll`, j({ offset, limit: p.batch, with_payload: true, with_vector: false }))).result;
+    const sc = (await qd(from, 'POST', `/collections/${fromColl}/points/scroll`, j({ offset, limit: p.batch, with_payload: true, with_vector: false, ...(range ? { filter: { must: [{ key: 'paragraph_id', range }] } } : {}) }))).result;
     const pts = sc.points;
     if (!pts.length) break;
     const vecs = vectorsForPoints(pts.map((x) => Number(x.id)));
@@ -147,6 +147,32 @@ async function reconcile(p, st) {
   return { deleted_extra: extra.length, missing: missing.length };
 }
 
+/** paragraph_id boundaries that split the main collection into n ranges of about equal point count (bisect on counts). */
+async function shardRanges(p, n) {
+  const edge = async (dir) => (await qd(p.src, 'POST', `/collections/${p.srcColl}/points/scroll`, j({ limit: 1, order_by: { key: 'paragraph_id', direction: dir }, with_payload: ['paragraph_id'], with_vector: false }))).result.points[0].payload.paragraph_id;
+  const lo = await edge('asc'), hi = (await edge('desc')) + 1;
+  const count = async (gte, lt) => (await qd(p.src, 'POST', `/collections/${p.srcColl}/points/count`, j({ exact: false, filter: { must: [{ key: 'paragraph_id', range: { gte, lt } }] } }))).result.count;
+  const total = await count(lo, hi), cuts = [lo];
+  for (let i = 1; i < n; i++) {
+    let a = cuts[i - 1], b = hi;
+    while (b - a > 1000) { const m = Math.floor((a + b) / 2); if ((await count(lo, m)) < (total * i) / n) a = m; else b = m; }
+    cuts.push(b);
+  }
+  cuts.push(hi);
+  return cuts.slice(0, -1).map((c, i) => ({ gte: c, lt: cuts[i + 1] }));
+}
+
+async function copyMain(p, st) {
+  if (!(p.shards > 1) || p.range) return copy(p, p.src, p.srcColl, st, 'main', p.range || null);
+  const ranges = (st.ranges ??= await shardRanges(p, p.shards)); save(p, st);
+  log({ step: 'shards', ranges });
+  await Promise.all(ranges.map((range, i) => new Promise((resolve, reject) => {
+    const child = spawn('nice', ['-n', '15', process.execPath, '--max-old-space-size=4096', fileURLToPath(import.meta.url), j({ ...p, shards: 1, range, state: `${p.state}.s${i}` })], { env: process.env });
+    child.stdout.on('data', (b) => process.stdout.write(b)); child.stderr.on('data', (b) => process.stderr.write(b));
+    child.on('exit', (c) => (c === 0 ? resolve() : reject(new Error(`shard ${i} exit ${c}`))));
+  })));
+}
+
 /** Bulk mode off: turn indexing on (HNSW + quantisation built once per segment), wait for green. */
 async function finish(p) {
   await qd(p.dst, 'PATCH', `/collections/${p.dstColl}`, j({ optimizers_config: { indexing_threshold: 20000 } }));
@@ -168,8 +194,8 @@ export async function runBuild(params = {}) {
   if (p.mode === 'setup') return setup(p);
   if (p.mode === 'finish') return finish(p);
   if (p.mode === 'reconcile') { const r = await reconcile(p, st); st.reconciled = { at: new Date().toISOString(), ...r }; save(p, st); return r; }
-  await copy(p, p.src, p.srcColl, st, 'main');
-  await copy(p, p.hot, p.hotColl, st, 'hot');
+  await copyMain(p, st);
+  if (!p.range) await copy(p, p.hot, p.hotColl, st, 'hot');
   st.copied_at = new Date().toISOString(); save(p, st);
   return { main: st.main, hot: st.hot, no_vector: st.no_vector || 0, rate_per_h: st.rate_per_h };
 }
