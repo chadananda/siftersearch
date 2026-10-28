@@ -225,18 +225,26 @@ async function refreshDisk(host, { exec = run } = {}) {
 /** HEAT (10-23 monitor: aorus GPU 88 °C thermally throttling at 209 W, CPU Tctl 95 °C; boss Tctl 99.9 °C): the slots a host
  *  may fill now. GPU ≥ 83 °C → 1 transcription on the GPU host (2 again under 83); CPU Tctl ≥ 95 °C → no new job; ≥ 90 °C →
  *  half the slots (at least 1). Read from the gate's 'df' (≤ every 30 s). */
+export const BOSS_HEAT = { slots: 96, pause: 99, resume: 93 };
 export function thermalSlots(host, base, { now = Date.now() } = {}) {
   const d = diskInfo.get(host);
   if (!d || now - (d.at || 0) > 5 * 60_000) return base;   // no fresh reading: as configured
   let n = base;
   if (d.gpu_temp != null && host === gpuHost() && d.gpu_temp >= 83) n = Math.min(n, 1);
-  if (d.cpu_tctl != null && d.cpu_tctl >= 95) n = 0;
+  if (host !== gpuHost()) {
+    // BOSS (Chad 10-28, measured: a 70 s full load on 32 threads holds Tctl at 90-92 °C, the clock stays at 4.25 GHz with NO throttling, and it
+    // falls to 55 °C seconds after): halve the slots only at 96 °C, pause new jobs at 99 °C, resume below 93 °C (hysteresis).
+    const t = d.cpu_tctl;
+    if (t != null) { if (t >= BOSS_HEAT.pause) d.heatPaused = true; else if (t < BOSS_HEAT.resume) d.heatPaused = false; }
+    if (d.heatPaused) n = 0;
+    else if (t != null && t >= BOSS_HEAT.slots) n = Math.min(n, Math.max(1, Math.floor(base / 2)));
+  } else if (d.cpu_tctl != null && d.cpu_tctl >= 95) n = 0;
   else if (d.cpu_tctl != null && d.cpu_tctl >= 90) n = Math.min(n, Math.max(1, Math.floor(base / 2)));
   if (n < base && (!d.heatWarnedAt || now - d.heatWarnedAt > 10 * 60_000)) { d.heatWarnedAt = now; console.warn(`[media] WARN ${host} hot (GPU ${d.gpu_temp} °C, CPU ${d.cpu_tctl} °C): ${n} of ${base} slots`); }
   return n;
 }
 /** May the GPU host take CPU-side work (probes) now? Not when warm (GPU ≥ 80 °C or CPU ≥ 85 °C). */
-export const coolEnough = (host) => { const d = diskInfo.get(host); return !d || ((d.gpu_temp ?? 0) < 80 && (d.cpu_tctl ?? 0) < 85); };
+export const coolEnough = (host) => { const d = diskInfo.get(host); if (!d) return true; if (host !== gpuHost()) return !d.heatPaused && (d.cpu_tctl ?? 0) < BOSS_HEAT.slots; return (d.gpu_temp ?? 0) < 80 && (d.cpu_tctl ?? 0) < 85; };   // boss: see BOSS_HEAT
 /** A GRADE's RAM: it decodes the whole recording at its native rate (several float32 copies) besides DNSMOS/NISQA —
  *  10-23 19:15 the OOM killer took one on aorus at 7.7 GB. → GB */
 export const gradeNeedGb = (durationS = 3600, sampleRate = 48000) => Math.round((1.5 + (durationS || 3600) * (sampleRate || 48000) * 4 * 4 / 1e9) * 10) / 10;

@@ -292,8 +292,12 @@ describe('heat guard (10-23: aorus GPU 88 °C throttling, CPU Tctl 95 °C; boss 
     const t = await import('../../api/lib/media/tools.js');
     t.noteDisk('aorus', { gpu_temp: 86, cpu_tctl: 80 }); expect(t.thermalSlots('aorus', 2)).toBe(1);
     t.noteDisk('aorus', { gpu_temp: 70, cpu_tctl: 80 }); expect(t.thermalSlots('aorus', 2)).toBe(2);
+    // BOSS (10-28, measured: 90-92 °C under a full 32-thread load, 4.25 GHz held, NO throttling): halve at 96, pause at 99, resume below 93
+    t.noteDisk('boss', { gpu_temp: null, cpu_tctl: 92 }); expect(t.thermalSlots('boss', 4)).toBe(4); expect(t.coolEnough('boss')).toBe(true);
+    t.noteDisk('boss', { gpu_temp: null, cpu_tctl: 96 }); expect(t.thermalSlots('boss', 4)).toBe(2); expect(t.coolEnough('boss')).toBe(false);
     t.noteDisk('boss', { gpu_temp: null, cpu_tctl: 99 }); expect(t.thermalSlots('boss', 4)).toBe(0);
-    t.noteDisk('boss', { gpu_temp: null, cpu_tctl: 92 }); expect(t.thermalSlots('boss', 4)).toBe(2);
+    t.noteDisk('boss', { gpu_temp: null, cpu_tctl: 95 }); expect(t.thermalSlots('boss', 4)).toBe(0);   // hysteresis: still paused until it falls under 93
+    t.noteDisk('boss', { gpu_temp: null, cpu_tctl: 92 }); expect(t.thermalSlots('boss', 4)).toBe(4);   // resumed
     t.noteDisk('aorus', { gpu_temp: 81, cpu_tctl: 70 }); expect(t.coolEnough('aorus')).toBe(false);
     t.noteDisk('aorus', { gpu_temp: 70, cpu_tctl: 70 }); expect(t.coolEnough('aorus')).toBe(true);
     delete process.env.MEDIA_GPU_HOST;

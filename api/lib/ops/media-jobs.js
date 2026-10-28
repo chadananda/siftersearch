@@ -1396,6 +1396,12 @@ export function homeEligible(host, T) {
   const load = T.asrLoad?.()[host];
   return !load || load.busy < load.slots;
 }
+/** Boss: UniPASE (ROCm, gate verb) + the copy's transcript, then the CPU tail in the accepted worker image ('post'). → the done record */
+export async function bossRestoreChain(it, m, { T, C, fs, image, stop, deps = {} }) {
+  const first = await (deps.homeRemaster || homeRemaster)('boss', it, m, { T, C, fs, stop });
+  const tail = await (deps.homeRecording || (await import('../media/home-recording.js')).homeRecording)('boss', it, m, { T, image, mode: 'post', stop });
+  return { ...first, ...tail, unipase_s: first.unipase_s, asr_s: first.asr_s, post_s: tail?.post_s ?? null, seconds: (first.seconds || 0) + (tail?.seconds || 0), gpu: 'boss' };
+}
 export async function homeRemaster(host, it, m, { T, C, fs, stop }) {
   const enh = join(it.dir, 'enhanced');
   await fs.mkdir(enh, { recursive: true });
@@ -1599,7 +1605,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       for (const h of rentalPause && !acceptedWorker ? [] : homeHosts) {
         if (homeTasks.has(h)) continue;
         const bossBlocked=h.startsWith('boss')&&T.coolEnough&&!T.coolEnough('boss');
-        const eligibleIndex=bossBlocked?-1:st.queue.findIndex(id=>(!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')&&(!h.startsWith('boss')||!acceptedWorker||st.items?.[id]?.mode==='post')&&(!acceptedWorker?.reserve_aorus_for_whole||h.startsWith('boss')||st.items?.[id]?.kind==='whole'));
+        const eligibleIndex=bossBlocked?-1:st.queue.findIndex(id=>(!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')&&(!h.startsWith('boss')||!acceptedWorker||st.items?.[id]?.mode==='post'||(h==='boss'&&st.items?.[id]?.kind!=='whole'&&(st.items?.[id]?.mode||'restore')==='restore'&&process.env.MEDIA_BOSS_RESTORE!=='0'))&&(!acceptedWorker?.reserve_aorus_for_whole||h.startsWith('boss')||st.items?.[id]?.kind==='whole'));
         const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
         if (!cur) continue;
         if(acceptedWorker&&!cur.image)cur.image=acceptedWorker.image;
@@ -1614,8 +1620,13 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,gpu:h,pod:h,at:now()});st.home_done++;return;
           }
           if (decided(m,it.id)) return;
+          const wantMode = st.items?.[it.id]?.mode || 'restore';
           const dj = acceptedWorker
-            ? await (await import('../media/home-recording.js')).homeRecording(h.startsWith('boss')?'boss':'aorus',it,m,{T,image:cur.image||acceptedWorker.image,mode:st.items?.[it.id]?.mode||'restore',stop:draining})
+            ? (h === 'boss' && wantMode === 'restore'
+              // BOSS RESTORES (Chad 10-28): UniPASE on its ROCm iGPU through the gate's 'unipase' verb + the copy's ASR, then the worker container's CPU tail
+              // (word guard, realign, encodes, verdict) on the same box; tower only takes the complete result
+              ? await bossRestoreChain(it, m, { T, C, fs, image: cur.image || acceptedWorker.image, stop: draining })
+              : await (await import('../media/home-recording.js')).homeRecording(h.startsWith('boss')?'boss':'aorus',it,m,{T,image:cur.image||acceptedWorker.image,mode:wantMode,stop:draining}))
             : await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
           if (st.done.some((d) => d.id === it.id)) return;   // a duplicate result never double-publishes
           st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h,at:now(),mode:st.items?.[it.id]?.mode||'restore' });
@@ -1914,13 +1925,28 @@ export async function laneKeeperPass(deps = {}) {
 /** media-cloud-order { mode: 'cleanup' | 'post', ids?, limit? }: put work on the cloud lane without restarting it (orders are taken in on its next tick).
  *  cleanup: talks the word guard held (review / kept / deferred) get the deterministic cleanup on a worker. post: results tower holds in its own
  *  media-remaster queue (a pod's copy is already on disk) get their guard, alignment and encodes done on a worker instead — oldest queued first. */
-export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60, redo = false } = {}, deps = {}) {
+export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60, redo = false, grades = null } = {}, deps = {}) {
   const C = deps.cloud || await import('../media/cloud.js');
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const fs = await import('fs/promises');
   const readMeta = deps.readMeta || (async (dir) => JSON.parse(await fs.readFile(join(dir, 'meta.json'), 'utf8')));
   let list;
+  if (mode === 'backfill') {
+    // the grade D/E / C / B talks that still have only the basic cleanup, WORST FIRST (bandwidth, then SNR): the home hosts take them in this order
+    const want = String(grades || 'D,E').split(',').map((g) => g.trim().toUpperCase());
+    const cands = [];
+    for (const it of await repo.remasterCandidates(want)) {
+      if (!it?.dir) continue;
+      const m = await readMeta(it.dir).catch(() => null);
+      if (!m?.original || ['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status) || m.remaster_tier === 'heavy') continue;
+      const raw = m.quality?.raw || {};
+      cands.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, bw: raw.bandwidth_khz ?? null, snr: raw.snr_db ?? null, duration_s: it.duration_s || m.duration_s || 0 });
+    }
+    const ordered = worstFirst(cands).slice(0, limit);
+    await C.addOrders(ordered.map((x) => ({ id: x.id, slug: x.slug, grade: x.grade, duration_s: x.duration_s, mode: 'restore' })), deps.ordersFile);
+    return { mode, ordered: ordered.length, grades: want, hours: Math.round(ordered.reduce((a, x) => a + x.duration_s, 0) / 360) / 10, sample: ordered.slice(0, 5).map((x) => `${x.grade} ${x.bw ?? '?'}kHz ${x.slug}`) };
+  }
   if (ids) list = (await Promise.all([].concat(ids).map((x) => (/^\d+$/.test(String(x)) ? repo.getMediaItem(Number(x)) : repo.getMediaBySlug(String(x)))))).filter(Boolean);
   else if (mode === 'post') {
     const pending = (await ops.pendingRuns('media-remaster')).filter((r) => r.status === 'queued').map((r) => Number(r.params?.id)).filter(Boolean);

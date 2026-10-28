@@ -758,3 +758,26 @@ it('keeps complete remote recordings visible after the short dispatch run has fi
  const {activeRecordings}=await import('../../api/lib/media/pod-ledger.js');
  expect(activeRecordings({jobs:{j:{itemId:7,pod:'p',since:100}},pods:{p:{worker:{jobs:[{id:'j',stage:'restore_asr',at:200}]}}},home:{boss:{itemId:8,since:150}}})).toEqual([{id:7,stage:'transcribe',since:100,stage_at:200},{id:8,stage:'enhance',since:150}]);
 });
+
+describe('boss restores, aorus keeps the whole imports (Chad 10-28)', () => {
+  it('the boss chain runs UniPASE (ROCm gate) first, then the CPU tail in the worker image; its record carries both timings', async () => {
+    const { bossRestoreChain } = await import('../../api/lib/ops/media-jobs.js');
+    const calls = [];
+    const r = await bossRestoreChain({ id: 1, slug: 's' }, { duration_s: 600 }, { T: {}, C: {}, fs: {}, image: 'img@sha256:x', stop: () => false,
+      deps: { homeRemaster: async (h) => { calls.push(['unipase', h]); return { unipase_s: 90, asr_s: 40, seconds: 130, audio_s: 600 }; },
+        homeRecording: async (h, it, m, o) => { calls.push(['post', h, o.mode]); return { seconds: 50, post_s: 50 }; } } });
+    expect(calls).toEqual([['unipase', 'boss'], ['post', 'boss', 'post']]);
+    expect(r).toMatchObject({ unipase_s: 90, asr_s: 40, post_s: 50, seconds: 180, gpu: 'boss' });
+  });
+  it('the backfill order lists the D/E talks that have only the basic cleanup, worst first, and none already restored / held / decided', async () => {
+    const { mediaCloudOrderJob } = await import('../../api/lib/ops/media-jobs.js');
+    const metas = { 1: { original: 'o', remaster: null, quality: { overall: 'E', raw: { bandwidth_khz: 3, snr_db: 10 } } }, 2: { original: 'o', quality: { overall: 'E', raw: { bandwidth_khz: 2, snr_db: 8 } } },
+      3: { original: 'o', remaster: { status: 'done' }, quality: { overall: 'E', raw: {} } }, 4: { original: 'o', quality: { overall: 'D', raw: { bandwidth_khz: 5 } } }, 5: { original: 'o', remaster: { status: 'kept' }, quality: { overall: 'E', raw: {} } } };
+    const file = join(mkdtempSync(join(tmpdir(), 'bf-')), 'orders.json');
+    const items = Object.keys(metas).map((id) => ({ id: Number(id), slug: `t${id}`, dir: `/x/${id}`, duration_s: 3600, grade: metas[id].quality.overall }));
+    const r = await mediaCloudOrderJob({ mode: 'backfill', grades: 'D,E' }, { repo: { remasterCandidates: async () => items }, cloud: C, ordersFile: file, readMeta: async (dir) => metas[dir.split('/').pop()] });
+    expect(r.ordered).toBe(3); expect(r.sample[0]).toMatch(/^E 2kHz t2/);
+    const taken = await C.takeOrders(file);
+    expect(taken.map((o) => o.id)).toEqual([2, 1, 4]); expect(taken.every((o) => o.mode === 'restore' && !o.redo)).toBe(true);
+  });
+});
