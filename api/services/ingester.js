@@ -11,6 +11,7 @@ import { normLangOrNull } from '../lib/language-codes.js';
 import { createHash } from 'crypto';
 import { readFile, writeFile, rename, copyFile, mkdir } from 'fs/promises';
 import { join, dirname, basename } from 'path';
+import { existsSync } from 'fs';
 import { query, queryOne, queryAll, transaction } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
@@ -1112,6 +1113,11 @@ function extractHeading(_fullContent, _chunkText) {
  * @param {string} relativePath - Relative path from library base (canonical identifier)
  * @returns {Object} - { documentId, paragraphCount, status }
  */
+/** The doc's recorded file still exists in the library (so another file with the same hash is a copy, not a move). */
+export function isStillOnDisk(relPath) {
+  try { return !!relPath && existsSync(join(config.library.basePath, relPath)); } catch { return false; }
+}
+
 export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // CRITICAL: Every document MUST have a file_path - no exceptions
   // The file_path is the canonical identifier and enables the UNIQUE constraint
@@ -1182,6 +1188,13 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       [fileHash]
     );
 
+    // A SECOND file with the same bytes (a Dewey '-dewey661' copy, a dropbox conflict copy) is not a move: the doc's own file
+    // is still on disk. Treating it as one flipped the doc between the two paths on every scan and marked every paragraph
+    // dirty each time (10-28: 2.1 GB of writer bytes in 30 min, 99 % of the EVO's logical writes).
+    if (movedDoc && movedDoc.file_path !== relativePath && isStillOnDisk(movedDoc.file_path)) {
+      logger.debug({ documentId: movedDoc.id, keptPath: movedDoc.file_path, duplicatePath: relativePath }, 'Duplicate file (same hash, original still present) — skipping');
+      return { documentId: movedDoc.id, paragraphCount: 0, status: 'unchanged', skipped: true, duplicateOf: movedDoc.file_path };
+    }
     if (movedDoc) {
       // File was moved! Use existing doc and update path-derived fields
       existingDoc = movedDoc;
@@ -1263,8 +1276,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         WHERE id = ?
       `, [relativePath, newReligion, newCollection, existingDoc.id]);
 
-      // Mark all paragraphs as unsynced so religion/collection updates propagate to search
-      const updateResult = await contentStore.markDocDirty(existingDoc.id);
+      // Mark all paragraphs as unsynced so religion/collection updates propagate to search — only when they changed (a rename
+      // within the same shelf changes no indexed field; rewriting every paragraph row for it was pure wear)
+      const shelfChanged = newReligion !== existingDoc.religion || newCollection !== existingDoc.collection;
+      const updateResult = shelfChanged ? await contentStore.markDocDirty(existingDoc.id) : { changes: 0 };
 
       logger.info({
         documentId: existingDoc.id,
