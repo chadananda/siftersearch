@@ -22,6 +22,7 @@ ExecStart=%h/qdrant-next/qdrant
 LimitNOFILE=1048576
 Restart=on-failure
 Nice=5
+MemoryMax=125G
 
 [Install]
 WantedBy=default.target
