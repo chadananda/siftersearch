@@ -21,7 +21,7 @@ dotenv.config({ path: join(ROOT, '.env-secrets') });
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const has = (k) => process.argv.includes(`--${k}`);
 const DB = arg('db', join(ROOT, 'data', 'sifter.db'));
-const QD = arg('qdrant-url', 'http://127.0.0.1:6333'), QK = process.env.QDRANT_KEY || '', COLL = arg('collection', 'paragraphs_kw');
+const QD = arg('qdrant-url', process.env.QDRANT_URL || 'http://127.0.0.1:6333'), QK = process.env.QDRANT_KEY || '', COLL = arg('collection', 'paragraphs_kw');
 const SCOPE = arg('scope', 'library'), DB_SCOPE = SCOPE === 'supplemental' ? 'supplemental' : 'primary';
 const CKPT = arg('checkpoint', SCOPE === 'supplemental' ? '/tank/sifter/phrase-vectors/keyword-index-supplemental.json' : '/tank/sifter/phrase-vectors/keyword-index.json'), LIMIT = +arg('limit', 0), BATCH = 500, MAX_TERMS = 150000;   // Qdrant drops oversized requests (EPIPE) — cap by terms too
 const log = (o) => console.log(JSON.stringify({ at: new Date().toISOString(), ...o }));

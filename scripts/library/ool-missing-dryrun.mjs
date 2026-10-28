@@ -13,7 +13,7 @@ import { bm25Query, tokens } from '../../api/lib/keyword-tokens.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const [DIR, OUT] = process.argv.slice(2);
-const QD = 'http://127.0.0.1:6333', QK = process.env.QDRANT_KEY || '';
+const QD = process.env.QDRANT_URL || 'http://127.0.0.1:6333', QK = process.env.QDRANT_KEY || '';
 const db = new Database(join(ROOT, 'data', 'sifter.db'), { readonly: true });
 const para = db.prepare(`SELECT c.id, c.doc_id, c.paragraph_index pidx, c.text, d.title, d.collection, d.scope, d.file_path
   FROM content c JOIN docs d ON d.id = c.doc_id WHERE c.id = ?`);

@@ -50,7 +50,7 @@ const DOCS = (arg('docs', '') || '').split(',').map(Number).filter(Boolean);
 const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concurrency', 16), LIMIT = +arg('limit', 0);
 const CHUNK = +arg('chunk', 20000);                       // paragraphs per embed→upsert cycle
 const MAX_USD = +arg('max-usd', 0), BUDGET = arg('budget-key', 'library-build'), PRICE = 0.20;   // $ per 1M tokens (online)
-const QD = arg('qdrant-url', 'http://127.0.0.1:6333'), QK = process.env.QDRANT_KEY || '', COLL = arg('collection', 'phrases');
+const QD = arg('qdrant-url', process.env.QDRANT_URL || 'http://127.0.0.1:6333'), QK = process.env.QDRANT_KEY || '', COLL = arg('collection', 'phrases');
 // PHASE 0 HOT LAYER (planning/storage-wear-ram-plan.md §6.6): --hot-url sends NEW points to --hot-collection in qdrant-hot (RAM
 // disk) instead of COLL on /fast; those units are marked upserted = 2 so --reconcile-hot can re-send any the RAM disk lost
 // (crash before a flush). Stale deletes go to both. Stops cleanly when the RAM disk (--hot-path) has < --hot-min-free-gb free.

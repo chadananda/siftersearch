@@ -25,7 +25,7 @@ dotenv.config({ path: join(ROOT, '.env-secrets') });
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const has = (k) => process.argv.includes(`--${k}`);
 const DIR = arg('dir', '/tank/sifter/citations'), LIMIT = +arg('limit', 0), MAX_USD = +arg('max-usd', 40);
-const QD = arg('qdrant-url', 'http://127.0.0.1:6333'), QK = process.env.QDRANT_KEY || '', COLL = arg('collection', 'phrases');
+const QD = arg('qdrant-url', process.env.QDRANT_URL || 'http://127.0.0.1:6333'), QK = process.env.QDRANT_KEY || '', COLL = arg('collection', 'phrases');
 const log = (o) => console.log(JSON.stringify({ at: new Date().toISOString(), ...o }));
 const PRICE = { in: 15, out: 75 };                       // Opus $/M tokens (as used for the 09-30 verification run)
 

@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
-const QD = 'http://127.0.0.1:6333', QK = process.env.QDRANT_KEY || '';
+const QD = process.env.QDRANT_URL || 'http://127.0.0.1:6333', QK = process.env.QDRANT_KEY || '';
 const backups = process.argv.flatMap((a, i) => (process.argv[i - 1] === '--backup' ? [a] : []));
 const ids = [...new Set(backups.flatMap((f) => JSON.parse(readFileSync(f, 'utf8')).map((p) => p.id)))];
 
