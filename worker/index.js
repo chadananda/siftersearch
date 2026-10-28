@@ -131,6 +131,10 @@ export function createExports(manifest) {
         { const up = await deweyUploadRoute(request, env); if (up) return up; }   // Dewey's browser-direct R2 multipart uploads (worker/dewey-upload.js)
         if (url.pathname.startsWith('/_mail/')) return (await mailRoute(request, env)) ?? new Response('not found', { status: 404 });
         // a contributor's item page from Dewey's receipts (signed link, rendered on tower; never cached)
+        if (/^\/dewey\/job\/\d+(\/decide)?$/.test(url.pathname) && ['GET', 'POST'].includes(request.method)) {   // Dewey's job page + its decide buttons (signed links, Chad 10-28)
+          const path = url.pathname.replace('/dewey/job/', '/api/v1/dewey-mail/job/');
+          return fetch(`${API_ORIGIN}${path}${url.search}`, request.method === 'POST' ? { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'text/html' }, body: await request.text() } : { headers: { accept: 'text/html' } });
+        }
         if (request.method === 'GET' && /^\/dewey\/item\/\d+$/.test(url.pathname)) return fetch(`${API_ORIGIN}/api/v1/dewey-mail/item/${url.pathname.split('/').pop()}${url.search}`, { headers: { accept: 'text/html' } });
         if (url.pathname.startsWith('/_work/')) return workRoute(request, env);
         // media files: R2 at the edge (worker/media.js); falls through to the plain proxy when not cacheable

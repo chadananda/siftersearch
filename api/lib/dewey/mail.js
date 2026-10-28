@@ -37,12 +37,13 @@ export function titleLike(s) {
 /** A letter → the verbs to run. Pure: { photos:[att], files:[att], urls:[], titles:[], status, refused:[lines], unread:[{name, why}] }.
  *  attachments: [{ name, type, size }] (data travels alongside, untouched here). */
 export function planVerbs({ subject = '', text = '', attachments = [] } = {}) {
-  const plan = { photos: [], files: [], urls: [], media: [], titles: [], passages: [], status: false, refused: [], unread: [] };
+  const plan = { photos: [], files: [], archives: [], urls: [], media: [], titles: [], passages: [], status: false, refused: [], unread: [] };
   for (const a of attachments) {
     const name = a.name || 'attachment', type = a.type || '';
     if (a.size > LIMITS.fileBytes) plan.unread.push({ name, why: 'too large to take by email (25 MB at most) — please upload it at https://siftersearch.com/dewey (the "Upload files" box takes big files and whole folders, and carries on if the connection drops), or send a link' });
     else if (HEIC.test(type) || /\.hei[cf]$/i.test(name)) plan.unread.push({ name, why: 'an HEIC photo, which I cannot open' });
     else if (IMAGE.test(type) || IMAGE_EXT.test(name)) (plan.photos.length < LIMITS.photos ? plan.photos : plan.unread).push(plan.photos.length < LIMITS.photos ? a : { name, why: `more than ${LIMITS.photos} photos in one letter` });
+    else if (/\.zip$/i.test(name) || /zip/i.test(type)) (plan.archives.length < 2 ? plan.archives : plan.unread).push(plan.archives.length < 2 ? a : { name, why: 'more than 2 ZIP files in one letter' });   // unpacked on a worker (Chad 10-28)
     else if (DOC_TYPE.test(type) || DOC_EXT.test(name)) (plan.files.length < LIMITS.files ? plan.files : plan.unread).push(plan.files.length < LIMITS.files ? a : { name, why: `more than ${LIMITS.files} files in one letter` });
     else if (/\.(mp3|m4a|wav|flac|ogg|opus|mp4|m4v|mov|mkv|webm|avi)$/i.test(name)) plan.unread.push({ name, why: 'audio and video are too big for email — please upload it at https://siftersearch.com/dewey ("Upload files")' });
     else plan.unread.push({ name, why: 'not a kind of file I can read' });
@@ -139,6 +140,16 @@ export async function runVerbs(plan, attachments, deps, by) {
       results.push(out);
     }, unread);
   }
+  for (const a of plan.archives || []) {
+    await safe(a.name, async () => {
+      const data = dataOf(a);
+      if (!data) throw new Error('the attachment arrived empty');
+      if (!deps.startMailArchive) throw new Error('archives are not available right now');
+      const r = await deps.startMailArchive({ name: a.name, data }, by);
+      if (r.error) throw new Error(r.error);
+      results.push({ verb: 'archive', label: a.name, job_id: r.job_id, already: !!r.already, url: r.url || null });
+    }, unread);
+  }
   for (const u of plan.urls) await safe(u, async () => holdings('link', u, await deps.identifyUrl(u)), unread);
   for (const u of plan.media) {
     await safe(u, async () => {
@@ -154,7 +165,8 @@ export async function runVerbs(plan, attachments, deps, by) {
   if (plan.status) {
     const email = by.replace(/\s*\(.*$/, '');
     const items = await deps.itemsCreatedBy(email, 12);
-    results.push({ verb: 'status', items: items.map((i) => ({ id: i.id, title: i.title, state: i.state, doc_id: i.doc_id || null, updated_at: i.updated_at })) });
+    const jobs = deps.statusFor ? (await deps.statusFor(email).catch(() => ({ jobs: [] }))).jobs : [];   // the job registry first (Chad 10-28): steps, counts, ETA
+    results.push({ verb: 'status', jobs, items: items.map((i) => ({ id: i.id, title: i.title, state: i.state, doc_id: i.doc_id || null, updated_at: i.updated_at })) });
   }
   return { results, unread, refused: plan.refused };
 }
@@ -189,7 +201,7 @@ export const isQuestion = (text = '') => /\?/.test(text) || /^\s*(how|what|where
 export function workRows(results = [], unread = []) {
   const rows = [];
   for (const r of results) {
-    if (r.verb === 'status') continue;
+    if (r.verb === 'status' || r.verb === 'archive') continue;
     if (r.verb === 'media') {
       const w = { title: r.title || r.label, author: r.author || null, media: true };
       if (r.status === 'held') rows.push({ ...w, status: 'held', link: r.link, note: r.how === 'title' ? 'matched by title — a different upload of a talk we hold' : null });
@@ -248,6 +260,7 @@ export function composeReply({ name = null, results = [], unread = [], refused =
   const rows = workRows(results, unread);
   const status = results.filter((r) => r.verb === 'status').flatMap((r) => (r.items.length ? r.items.map((i) => `- ${named(i)} — ${STATE[i.state] || i.state}${i.state === 'ingested' && i.doc_id ? ` · [read it here](${docLink(i.doc_id)})` : ''}`) : ['- I have nothing from you on file yet.']));
   const parts = [];
+  for (const r of results.filter((x) => x.verb === 'archive')) parts.push(`**Received: ${r.label}**\n\n${r.already ? 'I already have this archive and am working through it.' : 'I am unpacking it and checking every file against the library.'} When it is finished I will email you a summary of what was added (with links), what we already held and what I had to skip.${r.url ? ` [Follow its progress](${r.url}).` : ''}`);
   if (rows.length === 1) parts.push(single(rows[0]));
   if (rows.length > 1) {
     const linkWord = (r) => (r.media ? 'listen' : ['held', 'possibly held', 'held in part'].includes(r.status) ? 'read it' : 'progress');
@@ -261,6 +274,8 @@ export function composeReply({ name = null, results = [], unread = [], refused =
     if (fix.length) notes.push(`Could not read: ${fix.map((r) => `*${r.title}* (${r.note})`).join('; ')}. Please send ${fix.length > 1 ? 'them' : 'it'} again as a PDF, EPUB, Word or text file, or a JPEG photo.`);
     if (notes.length) parts.push(notes.join(' '));
   }
+  const jobLines = results.filter((r) => r.verb === 'status').flatMap((r) => (r.jobs || []).filter((j) => j.kind !== 'intake').map((j) => `- ${j.line}${j.url ? ` [open](${j.url})` : ''}`));
+  if (jobLines.length) parts.push(`**What I am working on for you**\n\n${jobLines.join('\n')}`);
   if (status.length) parts.push(`**Your contributions**\n\n${status.join('\n')}`);
   if (!parts.length) return null;
   const lines = [`Dear ${first(name)},`, '', 'Thank you for writing.', '', parts.join('\n\n')];

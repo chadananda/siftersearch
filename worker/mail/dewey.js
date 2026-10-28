@@ -74,12 +74,15 @@ export function doorRule(mail, { from = '', to = DEWEY_ADDR } = {}) {
 }
 
 /** Dewey's letter: Markdown body + his signature (+ an optional footer line), both parts, the shared renderer. Pure. */
-export function deweyLetter(md, { footer = null } = {}) {
+export function deweyLetter(md, { footer = null, buttons = null } = {}) {
   const body = String(md || '').replace(/\s+$/, '').replace(/\n+\s*[—–-]?\s*Dewey\s*$/i, '');
   const sigHtml = `<p style="margin:22px 0 2px;font-family:'Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;font-style:italic;font-size:24px;color:#6b4f2a">— ${DEWEY_NAME}</p>`
     + `<p style="margin:0;font-size:12.5px;letter-spacing:.02em;color:#8f8a7e">${SIGN_TITLE} · <a href="${SITE}/dewey" style="color:#8f8a7e">siftersearch.com/dewey</a></p>`
     + (footer ? `<p style="margin:26px 0 0;font-size:12px;color:#8f8a7e"><a href="${esc(footer.url)}" style="color:#8f8a7e">${esc(footer.label)}</a></p>` : '');
-  return renderEmail({ text: `${plainText(body)}\n\n— ${DEWEY_NAME}\n${SIGN_TITLE}${footer ? `\n\n—\n${footer.label}: ${footer.url}` : ''}`, html: wrapHtml(`${bodyHtml(body)}${sigHtml}`) });
+  const btns = (buttons || []).filter((b) => b?.label && /^https:\/\//.test(b.url || '')).slice(0, 4);   // buttons name their outcomes (Chad 10-28)
+  const btnHtml = btns.length ? `<p style="margin:20px 0 6px">${btns.map((b) => `<a href="${esc(b.url)}" style="display:inline-block;margin:0 8px 8px 0;padding:11px 20px;background:#6b4f2a;color:#fff;text-decoration:none;border-radius:6px;font-family:Arial,Helvetica,sans-serif;font-size:15px">${esc(b.label)}</a>`).join('')}</p>` : '';
+  const btnText = btns.length ? `\n\n${btns.map((b) => `${b.label}: ${b.url}`).join('\n')}` : '';
+  return renderEmail({ text: `${plainText(body)}${btnText}\n\n— ${DEWEY_NAME}\n${SIGN_TITLE}${footer ? `\n\n—\n${footer.label}: ${footer.url}` : ''}`, html: wrapHtml(`${bodyHtml(body)}${btnHtml}${sigHtml}`) });
 }
 
 /** The note a stranger gets (once in a while): what Dewey is and how to become a contributor. Pure. */
@@ -167,7 +170,7 @@ export async function deliverDewey(env, row, { send = zeptoSend } = {}) {
   if (await db.prepare('SELECT 1 x FROM mail_suppression WHERE email = ?').bind(lower(row.to_addr)).first()) return done('suppressed', 'address bounced or complained');
   const today = await db.prepare(`SELECT count(*) n FROM mail_messages WHERE mailbox = 'dewey' AND direction = 'out' AND status = 'sent' AND to_addr = ? AND sent_at > datetime('now', '-1 day')`).bind(lower(row.to_addr)).first();
   if ((today?.n ?? 0) >= Number(settings.dewey_per_sender_daily || 10)) return done('blocked', 'daily cap for this address');
-  const { text, html } = deweyLetter(row.text, { footer: meta.footer || null });
+  const { text, html } = deweyLetter(row.text, { footer: meta.footer || null, buttons: meta.buttons || null });
   const tk = row.thread_key, irt = row.in_reply_to;
   const r = await send(env, { from: DEWEY_ADDR, fromName: DEWEY_NAME, to: lower(row.to_addr), toName: meta.toName || null, subject: row.subject, text, html, inReplyTo: irt,
     references: tk && tk !== irt ? `${tk} ${irt || ''}`.trim() : irt, reference: `dewey-${row.id}`, headers: meta.footer?.unsubscribe ? { 'List-Unsubscribe': `<${meta.footer.url}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } : null });
@@ -180,7 +183,7 @@ export async function deliverDewey(env, row, { send = zeptoSend } = {}) {
 export async function sendDewey(env, { to, toName = null, subject, md, inReplyTo = null, threadKey: tk = null, kind = 'reply', meta = null, footer = null, hold = null }, opts = {}) {
   const db = env.ANIS_DB;
   const m = { ...(meta || {}), ...(toName ? { toName } : {}), ...(footer ? { footer } : {}) };
-  const { html } = deweyLetter(md, { footer });
+  const { html } = deweyLetter(md, { footer, buttons: m.buttons || null });
   const row = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, in_reply_to, thread_key, meta_json, error)
     VALUES ('dewey', ?, 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(kind, DEWEY_ADDR, lower(to), subject, md, html, inReplyTo, tk, JSON.stringify(m), hold).first();
   if (hold) return { id: row.id, status: 'draft', error: hold };
@@ -320,6 +323,20 @@ export async function deweyCron(env, { limit = 5, call, now } = {}) {
     catch (e) { await db.prepare('UPDATE mail_messages SET error = ? WHERE id = ?').bind(String(e.message).slice(0, 300), m.id).run(); }
   }
   return { screened: fresh.length, started: groups.length, working: working.length };
+}
+
+// ── job notices (Chad 10-28): HTML email ONLY when the person asked for it (or started the job by email) — tower decides and supplies the
+// letters at /outbox; this sends them (ZeptoMail via sendDewey) and acks. Runs every minute with the other Dewey letters.
+export async function deweyJobMail(env, { call = tower, send = sendDewey } = {}) {
+  const db = env.ANIS_DB;
+  const { mails = [] } = await call(env, '/outbox');
+  let sent = 0;
+  for (const m of mails.slice(0, 10)) {
+    if (await db.prepare(`SELECT 1 x FROM mail_messages WHERE mailbox = 'dewey' AND direction = 'out' AND kind = 'job' AND meta_json LIKE ?`).bind(`%"key":"${m.key}"%`).first()) { await call(env, '/outbox/ack', { key: m.key }); continue; }
+    const r = await send(env, { to: m.to, toName: m.name || null, subject: m.subject, md: m.md, kind: 'job', meta: { type: 'job', key: m.key, buttons: m.buttons || [] } });
+    if (r.status !== 'draft') { await call(env, '/outbox/ack', { key: m.key }); sent += r.status === 'sent' ? 1 : 0; }
+  }
+  return { sent, waiting: mails.length };
 }
 
 // ── daily: "now live" notes ──

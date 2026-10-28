@@ -143,6 +143,23 @@ async function ocrLoop() {
   }
 }
 
+// DEWEY JOB REGISTRY (Chad 10-28): every 15 s one dispatcher pass (follow items and ingest-folder children, reap dead worker leases, move
+// jobs along) and one notice pass (chat cards when a job finishes or waits for a decision). Tower decides here; fetch / unzip / scan run on
+// a worker (api/lib/dewey/jobs/worker.js). Holds off entirely while the UPS has the box draining or read-only.
+async function deweyJobsLoop() {
+  const { tick } = await import('../lib/dewey/jobs/tick.js');
+  const { noticePass } = await import('../lib/dewey/jobs/notify.js');
+  const { isPowerHold } = await import('../lib/power-mode.js');
+  await nap(20_000);
+  while (!isDraining()) {
+    if (!isPowerHold()) {
+      try { await tick({ power: isPowerHold }); } catch (err) { logger.warn({ err: err.message }, 'dewey job tick failed'); }
+      try { await noticePass(); } catch (err) { logger.warn({ err: err.message }, 'dewey notice pass failed'); }
+    }
+    await nap(15_000);
+  }
+}
+
 // BOOK-GOOGLE PULSE (10-23): Google Books' free daily quota ran out during the book hunt. Once a day, after the quota
 // resets (midnight Pacific ≈ 08:00 UTC), queue a `book-hunt {retryGoogle:true}` — it re-asks only the books Google never
 // answered that still lack a high-confidence ISBN, and does nothing when there are none. Once per UTC day.
@@ -168,4 +185,4 @@ const ONLY = String(process.env.OPS_ONLY || '').split(',').map((x) => x.trim()).
 const CARRY = ['reingest-carry'];   // siftersearch-reports-carry's jobs (and MEDIA_JOBS, siftersearch-media's) — the main worker never claims (or requeues) them
 if (ONLY.length) await runService({ name: process.env.name || 'siftersearch-reports-carry', registry: REPORTS, only: ONLY });
 else await runService({ name: process.env.name || 'siftersearch-reports', registry: REPORTS, lanes: LANES, laneWorkers: LANE_WORKERS,
-  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop, pipelineSnapshotLoop, bookGooglePulse] });
+  main: true, foreign: [...INDEX_JOB_NAMES, ...CARRY, ...MEDIA_JOBS], loops: [telemetryLoop, pulseLoop, scoutPulse, ocrLoop, pipelineSnapshotLoop, bookGooglePulse, deweyJobsLoop] });

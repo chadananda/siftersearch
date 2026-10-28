@@ -4,6 +4,11 @@
 // the model streams its reply with tools to check more titles, put works on the wanted list and attach a source. It
 // reports only what the tools found. An UPLOAD we lack is appraised from its own text and kept as an OFFERED item; the member
 // is asked, and add_offered imports it on yes (nothing is imported unasked). Events out: status · holdings · research · appraisal · item · delta · done. Deps injectable for tests.
+import { trackItem, trackMedia } from './jobs/track.js';
+import { statusFor } from './jobs/status.js';
+import { fetchUrl } from './jobs/tools.js';
+import { setFlag } from '../repos/dewey-jobs-repo.js';
+import { whoOf } from './jobs/policy.js';
 import { roleCreate } from '../role-client.js';
 import { identifyPhotos, identifyUrl, identifyText } from './identify.js';
 import { checkHoldingsOffThread as checkHoldings, identifyAndCheckOffThread } from './holdings.js';   // off the event loop (a check once froze the API)
@@ -40,6 +45,8 @@ Assume every message is about a work they have found — do we have it, and if n
 - When a work is NOT held, an appraisal follows (web research → in scope?, which shelf, value to the collection, price, a free
   text online). Give your verdict from it in two or three sentences — belongs or not, where, worth adding at what price —
   and offer to add it. For a typed title that is not held, call appraise_work.
+- A link to a FILE or an archive ("get this", a PDF, a ZIP): call fetch_url — a worker downloads it, never the main server — then tell them it is queued and that status shows progress. A link to a web page about a book is checked, not downloaded.
+- "How is it going?", "status", "is it done": call status and answer from it in plain words. Finished jobs appear in this chat by themselves; an email is sent only if they ask ("email me when it's done" → email_me).
 Be brief, warm and exact. No sign-off.`;
 
 export const TOOLS = [
@@ -57,6 +64,12 @@ export const TOOLS = [
   // pipeline (holdings check by sha256 / YouTube id, enhance, transcribe, quotes, page, search) — one at a time, paced
   { type: 'function', function: { name: 'add_media', description: 'Add a recorded talk (audio/video) to the media library: a YouTube URL, or a file path on the server. The pipeline checks it is not already held, then transcribes it and publishes it at /media.',
     parameters: { type: 'object', properties: { url: { type: 'string' }, path: { type: 'string' } } } } },
+  { type: 'function', function: { name: 'status', description: 'How is it going? The member\'s jobs in plain words: what Dewey is doing now, how far along, what is waiting for them. Call it for "status", "progress", "how is it going", "is it done".',
+    parameters: { type: 'object', properties: { job_id: { type: 'integer', description: 'one job; omit for all of the member\'s active jobs' } } } } },
+  { type: 'function', function: { name: 'fetch_url', description: 'Download a file from a web address (PDF, Word, EPUB, a ZIP of files, an audio/video page) on a worker machine, check every file against the library and report. Use when the member gives a link to a file or says "get this". Returns a job id at once; answer "how is it going" with status.',
+    parameters: { type: 'object', properties: { url: { type: 'string' }, email_me: { type: 'boolean', description: 'true only if the member asked to be emailed when it finishes' } }, required: ['url'] } } },
+  { type: 'function', function: { name: 'email_notices', description: 'Set whether the member is emailed when their jobs finish (the default is chat only). Call when they say "email me when things finish" or "stop emailing me".',
+    parameters: { type: 'object', properties: { on: { type: 'boolean' } }, required: ['on'] } } },
   { type: 'function', function: { name: 'list_wanted', description: 'The wanted list and intake queue: open items with their state.', parameters: { type: 'object', properties: {} } } },
 ];
 
@@ -92,6 +105,7 @@ export function makeTools({ by, emit, attachSource, accept }) {
       if (existing) { emit({ type: 'item', item: existing }); return JSON.stringify({ already_wanted: true, id: existing.id, state: existing.state }); }
       const item = await createItem({ title, author, kind, identified: { title, author, kind }, by });
       await enqueue('dewey-research', { id: item.id }, by || 'dewey');
+      trackItem(item, { by, channel: 'chat' });
       emit({ type: 'item', item });
       return JSON.stringify({ added: true, id: item.id, research: 'queued' });
     },
@@ -109,7 +123,22 @@ export function makeTools({ by, emit, attachSource, accept }) {
       if (path && !/^\/tank\/(media|dewey-ingest)\//.test(String(path)) || String(path || '').includes('..')) return JSON.stringify({ error: 'the path must be under /tank/media or /tank/dewey-ingest' });
       if (url && !/^https?:\/\//.test(String(url))) return JSON.stringify({ error: 'not a URL' });
       const run = await enqueue('media-scan', { urls: url ? [url] : [], paths: path ? [path] : [], roots: [], batch: 1 }, by || 'dewey');
+      trackMedia({ url, path, run: run?.id ?? null }, { by, channel: 'chat' });
       return JSON.stringify({ queued: true, run: run?.id ?? null, note: 'the media pipeline will check holdings, then transcribe and publish it at /media' });
+    },
+    async status({ job_id = null }) {
+      const s = await statusFor(whoOf(by), { jobId: job_id });
+      emit({ type: 'jobs', jobs: s.jobs });
+      return JSON.stringify({ text: s.text, jobs: s.jobs.map((j) => ({ id: j.id, kind: j.kind, state: j.state, line: j.line, url: j.url || undefined })) });
+    },
+    async email_notices({ on }) {
+      await setFlag(`email-pref:${whoOf(by)}`, on ? '1' : '0');
+      return JSON.stringify({ email_when_done: !!on });
+    },
+    async fetch_url({ url, email_me = false }) {
+      const r = await fetchUrl({ url, by, channel: 'chat', emailMe: !!email_me });
+      if (r.job_id) emit({ type: 'status', text: 'Queued the download…' });
+      return JSON.stringify(r);
     },
     async list_wanted() {
       return JSON.stringify((await listItems({ limit: 30 })).map((i) => ({ id: i.id, title: i.title, author: i.author, state: i.state, isbn: i.research?.isbn13 || null, shelf: i.identified?.shelf || null })));

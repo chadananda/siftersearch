@@ -9,6 +9,7 @@ import { ApiError } from '../lib/errors.js';
 import { checkStart, signToken, safeName, partSizeFor, partCount, PREFIX } from '../../worker/dewey-upload.js';
 import { createItem, updateItem, receivedBytesBy, findByUploadKey } from '../lib/repos/dewey-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
+import { trackItem } from '../lib/dewey/jobs/track.js';
 
 export const QUOTA_BYTES = 500 * 1024 ** 3;       // held, not yet processed, per member
 export const START_LIMIT = { max: 300, windowMs: 3600_000 };   // upload starts per member per hour
@@ -42,10 +43,17 @@ export default async function deweyUploadRoutes(fastify) {
     if (!String(key || '').startsWith(PREFIX) || !email) return reply.code(400).send({ error: 'bad request' });
     const have = await findByUploadKey(key);
     if (have) return { item: have, duplicate: true };
+    if (kind === 'archive') {   // a ZIP: a registry job a worker unpacks (api/lib/dewey/jobs); no item of its own
+      const { startArchive } = await import('../lib/dewey/jobs/tools.js');
+      const r = await startArchive({ key, name, size, by: email });
+      if (r.refused) return reply.code(429).send({ error: r.reason });
+      return { job: r.job, duplicate: !r.created };
+    }
     const upload = { key, size, name, kind, userId };
     const doc = kind === 'document' && size <= HANDOFF_MAX;
     const item = await createItem({ title: name, kind, identified: { file_name: name, upload }, by: email, state: 'received',
       why: doc ? 'received; Dewey will check the library and appraise it' : kind === 'document' ? 'received (large document); awaiting the conversion worker' : `received (${kind}); awaiting processing by the media worker — fingerprint and a first transcript to catch duplicates` });
+    trackItem(item, { by: email, channel: 'upload' });
     if (doc) await enqueue('dewey-received', { id: item.id }, email);
     return { item };
   });

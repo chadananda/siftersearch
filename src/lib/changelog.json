@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-28T14:03:38.188Z",
+  "generated": "2026-10-28T14:20:43.094Z",
   "entries": [
+    {
+      "hash": "4f38196c",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Qdrant scripts default to QDRANT_URL (so one env var moves the engine); f16 recall check script",
+      "scope": null
+    },
+    {
+      "hash": "2d04ddce",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Qram units snapshot to /faster/qram-snapshots (drop-ins as installed on tower)",
+      "scope": null
+    },
+    {
+      "hash": "bacb0699",
+      "date": "2026-10-28",
+      "type": "Fixed",
+      "description": "No more CD-style spinning portraits — portraits are still; playing = a quiet pulsing ring; hover spins/tilts on disc portraits removed; reduced motion = none",
+      "scope": "media"
+    },
     {
       "hash": "f257ef6e",
       "date": "2026-10-28",
@@ -3479,31 +3500,31 @@
       "type": "Other",
       "description": "The authoritative pass runs only in a Bahá'í-scoped search again — unscoped it displaced other traditions (battery 66 → 60: karma, wu wei, nirvana, fasting). SEARCH_VERSION bumped",
       "scope": "search"
-    },
-    {
-      "hash": "3241bdc4",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "Under SEARCH_QDRANT=only hybridSearch / keywordSearch / searchHypeQuestions answer from Qdrant (authority-ranked multiIndexSearch with Meili off; BM25 for keyword mode) — every direct Meili caller (public /v1/search, keyword route, chat, deep research, grounding counts) moves at once; site-only scopes stay on Meili for now (Chad 10-20: retire Meilisearch)",
-      "scope": "search"
-    },
-    {
-      "hash": "ff21e14b",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Meili retirement — direct search callers inventoried; documents/deep_research write-only",
-      "scope": null
-    },
-    {
-      "hash": "f6351209",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "The authoritative pass also runs in UNSCOPED searches (most readers never pick a tradition — 'detachment from the world' found no Hidden Words) as candidates; the Bahá'í tier weights still apply only in a Bahá'í search, so interfaith slots stay fair. SEARCH_VERSION bumped",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-28": [
+      {
+        "hash": "4f38196c",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Qdrant scripts default to QDRANT_URL (so one env var moves the engine); f16 recall check script",
+        "scope": null
+      },
+      {
+        "hash": "2d04ddce",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Qram units snapshot to /faster/qram-snapshots (drop-ins as installed on tower)",
+        "scope": null
+      },
+      {
+        "hash": "bacb0699",
+        "date": "2026-10-28",
+        "type": "Fixed",
+        "description": "No more CD-style spinning portraits — portraits are still; playing = a quiet pulsing ring; hover spins/tilts on disc portraits removed; reduced motion = none",
+        "scope": "media"
+      },
       {
         "hash": "f257ef6e",
         "date": "2026-10-28",
@@ -6993,27 +7014,6 @@
         "date": "2026-10-20",
         "type": "Other",
         "description": "The authoritative pass runs only in a Bahá'í-scoped search again — unscoped it displaced other traditions (battery 66 → 60: karma, wu wei, nirvana, fasting). SEARCH_VERSION bumped",
-        "scope": "search"
-      },
-      {
-        "hash": "3241bdc4",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "Under SEARCH_QDRANT=only hybridSearch / keywordSearch / searchHypeQuestions answer from Qdrant (authority-ranked multiIndexSearch with Meili off; BM25 for keyword mode) — every direct Meili caller (public /v1/search, keyword route, chat, deep research, grounding counts) moves at once; site-only scopes stay on Meili for now (Chad 10-20: retire Meilisearch)",
-        "scope": "search"
-      },
-      {
-        "hash": "ff21e14b",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Meili retirement — direct search callers inventoried; documents/deep_research write-only",
-        "scope": null
-      },
-      {
-        "hash": "f6351209",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "The authoritative pass also runs in UNSCOPED searches (most readers never pick a tradition — 'detachment from the world' found no Hidden Words) as candidates; the Bahá'í tier weights still apply only in a Bahá'í search, so interfaith slots stay fair. SEARCH_VERSION bumped",
         "scope": "search"
       }
     ]

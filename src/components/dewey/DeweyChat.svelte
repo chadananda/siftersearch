@@ -83,6 +83,7 @@
     const out = [];
     for (const m of messages) {
       if (m.role === 'user') out.push({ id: m.id, you: { text: m.content || '', photos: m.parts?.thumbs || [], file: m.parts?.file ? { name: m.parts.file } : null }, parts: [], busy: false, error: null });
+      else if (m.role === 'notice') out.push({ id: m.id, you: null, parts: m.parts?.parts || [{ kind: 'text', text: m.content || '' }], busy: false, error: null });   // a job finished (Chad 10-28)
       else if (out.length) out.at(-1).parts = m.parts?.parts || (m.content ? [{ kind: 'text', text: m.content }] : []);
       lastId = Math.max(lastId, m.id);
     }
@@ -134,6 +135,7 @@
           else if (e.type === 'research') t.parts.push({ kind: 'research', r: e });
           else if (e.type === 'appraisal') t.parts.push({ kind: 'appraisal', a: e });
           else if (e.type === 'item') t.parts.push({ kind: 'item', item: e.item });
+          else if (e.type === 'jobs') t.parts.push({ kind: 'jobs', jobs: e.jobs });
           else if (e.type === 'error') t.error = e.message;
           turns = [...turns];
           scrollDown();
@@ -189,12 +191,12 @@
     <!-- Dewey's introduction: the first bubble of every conversation (Chad 10-17) -->
     <div class="row"><img class="avatar" src="/dewey/avatar-96.jpg" alt="Dewey" width="40" height="40" /><div class="dewey"><div class="card intro"><p class="text-primary">Hi, I'm Dewey, your AI librarian. I'm here to help you add new documents!</p></div></div></div>
     {#each turns as t (t.id)}
-      <div class="you">
+      {#if t.you}<div class="you">
         {#if t.you.text}<p class="whitespace-pre-wrap">{t.you.text}</p>{/if}
         <!-- every photo taken goes into the conversation as a thumbnail (Chad 10-17) -->
         {#if t.you.photos.length}<div class="flex flex-wrap gap-1.5 justify-end">{#each t.you.photos as p, i (i)}<img src={p} alt="Photo {i + 1}" class="thumb" />{/each}</div>{/if}
         {#if t.you.file}<p class="text-sm mt-1">📄 {t.you.file.name}</p>{/if}
-      </div>
+      </div>{/if}
       <div class="row"><img class="avatar" src="/dewey/avatar-96.jpg" alt="Dewey" width="40" height="40" /><div class="dewey">
         {#if !t.parts.length && t.busy && !t.status}<p class="text-secondary">Looking…</p>{/if}
         {#each t.parts as p, k (k)}
@@ -221,6 +223,17 @@
               {#if p.r.verdict !== 'held' && id.title}
                 <button class="act primary mt-2" onclick={() => want(p.r)}>Add to wanted</button>
               {/if}
+            </div>
+          {:else if p.kind === 'job'}
+            <div class="card">
+              <p class="text-primary whitespace-pre-wrap">{@html md(p.text)}</p>
+              {#if p.url}<a class="act primary mt-2 inline-block" href={p.url} target="_blank" rel="noopener">Open the full report</a>{/if}
+            </div>
+          {:else if p.kind === 'jobs'}
+            <div class="card">
+              <p class="text-xs uppercase tracking-wide text-muted">Progress</p>
+              {#each p.jobs as j (j.id)}<p class="text-sm text-primary">{j.line}{#if j.url} <a class="text-accent" href={j.url} target="_blank" rel="noopener">open</a>{/if}</p>{/each}
+              {#if !p.jobs.length}<p class="text-sm text-secondary">Nothing is in progress right now.</p>{/if}
             </div>
           {:else if p.kind === 'research'}
             <details class="card">

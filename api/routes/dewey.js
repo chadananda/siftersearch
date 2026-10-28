@@ -223,6 +223,7 @@ export default async function deweyRoutes(fastify) {
       else if (e.type === 'research') parts.push({ kind: 'research', r: e });
       else if (e.type === 'appraisal') parts.push({ kind: 'appraisal', a: e });
       else if (e.type === 'item') parts.push({ kind: 'item', item: e.item });
+      else if (e.type === 'jobs') parts.push({ kind: 'jobs', jobs: e.jobs });
     };
     const save = () => appendMessage(uid, 'assistant', parts.filter((p) => p.kind === 'text').map((p) => p.text).join('').trim(), { parts }).catch(() => {});
     const turn = (emit) => deweyTurn({ messages: [...history.slice(-12), { role: 'user', content: text || (attach.images?.length ? 'Do we have this?' : 'Do we have this?') }]
