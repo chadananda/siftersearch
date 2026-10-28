@@ -238,6 +238,7 @@ REPORTS['book-author-photo-set'] = bookAuthorPhotoSetJob;   // params { fixes:[{
 REPORTS['rights-open-publisher'] = rightsOpenPublisherJob;   // params { write, except } — Publishing Trusts / ABS / Wilmette are institutional: open (Chad 10-23)
 REPORTS['exclude-ruhi'] = excludeRuhiJob;   // params { write } — Ruhi books soft-deleted from the library, files kept (Chad 10-23)
 REPORTS['paragraph-authors'] = paragraphAuthorsJob;   // params { religion, ids?, write, limit?, concurrency, outDir } — every paragraph its author (Chad 10-19)
+REPORTS['media-find'] = mediaFindJob;   // params { like, rank?, speaker?, title? } — items by source path; optional rank/speaker/title write
 REPORTS['media-scan'] = mediaScanJob;   // params { roots?, paths?, urls?, batch?, round? } — new recordings → items; queues media-item one at a time (planning/media-library-plan.md)
 REPORTS['media-archive-import'] = mediaArchiveImportJob; // params { identifier, pauseMs?, limit? } — Archive.org MP3s → Dewey inbox, exact-hash duplicate gate
 REPORTS['media-item'] = mediaItemJob;   // params { id, from?, only?, threads?, lang?, model? } — one recording through the media pipeline (resumable)

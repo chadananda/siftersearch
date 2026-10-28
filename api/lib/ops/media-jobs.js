@@ -46,6 +46,16 @@ export async function mediaFiles(dir) {
 
 export const feedOn = () => process.env.MEDIA_FEED !== '0';
 
+/** media-find { like, rank?, speaker?, title? } — which items came from a path/URL containing `like`; optional write: queue_rank (lower = sooner), speaker, title (only when given). */
+export async function mediaFindJob({ like, rank = null, speaker = null, title = null } = {}, deps = {}) {
+  if (!like || String(like).length < 3) throw new Error('like (3+ characters) required');
+  const R = deps.repo || await import('../repos/media-repo.js');
+  const rows = await R.mediaBySourceLike(like);
+  const set = Object.fromEntries(Object.entries({ queue_rank: rank, speaker, title }).filter(([, v]) => v != null));
+  if (Object.keys(set).length) for (const r of rows) await R.updateMediaItem(r.id, set);
+  return { items: rows, wrote: Object.keys(set).length ? { fields: Object.keys(set), items: rows.length } : null };
+}
+
 export async function mediaScanJob({ roots = null, paths = [], urls = [], batch = 1, round = 1, queueOnly = false } = {}, deps = {}) {
   const { list = mediaFiles, sha = sha256Of, queue = enqueue, by = 'media-scan' } = deps;
   const out = { round, added: [], held: [], queued: [], skipped: 0 };

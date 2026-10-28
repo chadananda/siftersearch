@@ -142,3 +142,16 @@ describe('worker backpressure keeps the current pipeline stage', () => {
     expect(store.items[0].why).toMatch(/waiting for a worker/);
   });
 });
+
+describe('media-find', () => {
+  it('looks items up by source path and writes rank/speaker/title only when given', async () => {
+    const { mediaFindJob } = await import('../../api/lib/ops/media-jobs.js');
+    const rows = [{ id: 7, source_ref: '/x/Ruhiyyih Khanum.mp3' }], upd = vi.fn(async () => {});
+    const R = { mediaBySourceLike: vi.fn(async () => rows), updateMediaItem: upd };
+    expect((await mediaFindJob({ like: 'Khanum' }, { repo: R })).wrote).toBeNull();
+    expect(upd).not.toHaveBeenCalled();
+    const w = await mediaFindJob({ like: 'Khanum', rank: 1, speaker: 'S' }, { repo: R });
+    expect(upd).toHaveBeenCalledWith(7, { queue_rank: 1, speaker: 'S' }); expect(w.wrote.items).toBe(1);
+    await expect(mediaFindJob({ like: 'a' }, { repo: R })).rejects.toThrow();
+  });
+});
