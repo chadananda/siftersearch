@@ -23,6 +23,7 @@
 //        (concept claims: each proof-checked claim statement is a unit, point id = paragraph × 1000 + k; only docs with claims)
 import Database from 'better-sqlite3';
 import { limiterFromEnv, stateFileFor, retryAfterMs } from './embed-limiter.mjs';
+import { createBatchEmbedder, batchStateFileFor } from './embed-batch.mjs';
 import dotenv from 'dotenv';
 import { mkdirSync, statfsSync } from 'fs';
 import { dirname, join } from 'path';
@@ -89,10 +90,21 @@ const addSpend = store.prepare(`INSERT INTO spend (budget, tokens, usd, at) VALU
 
 // Adaptive (AIMD) concurrency up to --concurrency; EMBED_RPM / EMBED_TPM (the account's AI Studio quota) are optional hard caps; the ceiling is learned from 429s and shared via a state file (embed-limiter.mjs).
 const limiter = limiterFromEnv(process.env, { max: Math.max(CONC, 32), start: Math.min(4, CONC), name: `embed-${MODEL}`, stateFile: stateFileFor(MODEL, process.env.GEMINI_API_KEY) });
+// Bulk builds use the async Batch API (50 % price, <=24 h) unless --embed-mode sync / EMBED_MODE=sync; sync (adaptive limiter) is the fallback.
+const EMBED_MODE = arg('embed-mode', process.env.EMBED_MODE || 'batch');
+const batcher = EMBED_MODE === 'batch' ? createBatchEmbedder({ model: MODEL, apiKey: process.env.GEMINI_API_KEY, stateFile: batchStateFileFor(MODEL, process.env.GEMINI_API_KEY),
+  capTokens: Math.floor(+(process.env.EMBED_BATCH_CAP || 500000) * 0.8) }) : null;
+const JOB_REQS = +arg('job-requests', 500);
+const buildReqs = (texts) => texts.map((t) => ({ model: `models/${MODEL}`, content: { parts: [{ text: `title: none | text: ${t}` }] }, outputDimensionality: DIMS }));
 async function embedBatch(texts) {
-  const body = { requests: texts.map((t) => ({ model: `models/${MODEL}`, content: { parts: [{ text: `title: none | text: ${t}` }] }, outputDimensionality: DIMS })) };
+  const requests = buildReqs(texts);
+  if (!batcher) { const v = await embedSync(requests); v.mode = 'sync'; return v; }
+  return batcher.embed(requests, { tokens: texts.reduce((n, t) => n + estTokens(t), 0), sync: embedSync });
+}
+async function embedSync(requests) {
+  const body = { requests };
   for (let attempt = 0; ; attempt++) {
-    await limiter.acquire(texts.reduce((n, t) => n + estTokens(t), 0));
+    await limiter.acquire(requests.reduce((n, r) => n + estTokens(r.content.parts[0].text), 0));
     let status = 0, retryAfter = null; const t0 = Date.now();
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
@@ -218,19 +230,21 @@ async function embedPending(pending) {
   const entries = [...pending.entries()]; let next = 0, done = 0;
   async function worker() {
     while (next < entries.length && !stopped) {
-      const chunk = entries.slice(next, next += BATCH);
+      let take = BATCH; if (batcher) { let tk = 0; take = 0; while (take < JOB_REQS && next + take < entries.length && (tk += estTokens(entries[next + take][1])) < batcher.stats.cap_tokens / 4) take++; take = Math.max(1, take); }
+      const chunk = entries.slice(next, next += take);
       const tokens = chunk.reduce((s, [, t]) => s + estTokens(t), 0), usd = tokens / 1e6 * PRICE;
       if (MAX_USD && spentRow().usd + usd > MAX_USD) { stopped = `budget ${BUDGET} would pass $${MAX_USD}`; break; }
       if (MONTHLY && monthSpent() + usd > MONTHLY) { stopped = `monthly cap: ${thisMonth()} would pass $${MONTHLY}`; break; }
       const vs = await embedBatch(chunk.map(([, t]) => t));
+      const usd2 = vs.mode === 'batch' ? usd * 0.5 : usd;   // batch = half price
       store.transaction(() => {
         chunk.forEach(([k], i) => putVec.run(k, MODEL, DIMS, packF16(vs[i]), Date.now()));
-        addSpend.run({ b: BUDGET, t: tokens, u: usd, at: Date.now() });
+        addSpend.run({ b: BUDGET, t: tokens, u: usd2, at: Date.now() });
       })();
-      addMonth.run(thisMonth(), BUDGET, tokens, usd);
+      addMonth.run(thisMonth(), BUDGET, tokens, usd2);
       // The shared ledger (ai_usage) is where all spend is read (analytics, Anís costs). gemini-spend.db stays as this
       // script's own monthly cap counter; until 10-10 it was the ONLY record, so $322 of vectors never showed (Chad 10-10).
-      logAIUsage({ provider: 'google', model: MODEL, serviceType: 'embedding', promptTokens: tokens, caller: `phrase-index:${BUDGET}` });
+      logAIUsage({ provider: 'google', model: MODEL, serviceType: 'embedding', promptTokens: tokens, batch: vs.mode === 'batch', caller: `phrase-index:${BUDGET}` });
       done += chunk.length;
     }
   }
