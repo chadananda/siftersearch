@@ -123,28 +123,45 @@ async function* idPages(base, coll, limit = 10000) {
   }
 }
 
-/** After the copy: ids the sources no longer have are deleted from the new collection; ids it lacks are re-copied (the
- *  `copy` pass runs again over the hot collection and the missing main ids). Reports counts. */
+/** Flatten id pages into one ascending id stream. */
+async function* idStream(base, coll) { for await (const page of idPages(base, coll)) yield* page; }
+/** Union of two ascending streams (the hot ids are mostly inside main). */
+async function* union(a, b) {
+  let x = await a.next(), y = await b.next();
+  while (!x.done || !y.done) {
+    if (y.done || (!x.done && x.value < y.value)) { yield x.value; x = await a.next(); }
+    else if (x.done || y.value < x.value) { yield y.value; y = await b.next(); }
+    else { yield x.value; x = await a.next(); y = await b.next(); }
+  }
+}
+
+/** After the copy: ids the sources no longer have are deleted from the new collection; ids it lacks are copied (by id, from
+ *  whichever source holds them). Streaming merge-diff of ascending id streams (a JS Set tops out at 16.7 M entries). */
 async function reconcile(p, st) {
-  const have = new Set();
-  for await (const ids of idPages(p.dst, p.dstColl)) ids.forEach((i) => have.add(i));
-  const want = new Set();
-  for (const [b, c] of [[p.src, p.srcColl], [p.hot, p.hotColl]]) for await (const ids of idPages(b, c)) ids.forEach((i) => want.add(i));
-  const extra = [...have].filter((i) => !want.has(i)), missing = [...want].filter((i) => !have.has(i));
-  for (let i = 0; i < extra.length; i += 1000) await qd(p.dst, 'POST', `/collections/${p.dstColl}/points/delete?wait=true`, j({ points: extra.slice(i, i + 1000) }));
-  log({ step: 'reconcile', new_points: have.size, wanted: want.size, deleted_extra: extra.length, missing: missing.length });
-  // missing points: copy them by id from whichever source holds them
-  for (const [b, c] of [[p.src, p.srcColl], [p.hot, p.hotColl]]) {
-    const ids = missing.filter((x) => x != null);
-    for (let i = 0; i < ids.length; i += p.batch) {
-      const got = (await qd(b, 'POST', `/collections/${c}/points`, j({ ids: ids.slice(i, i + p.batch), with_payload: true, with_vector: false }))).result;
-      if (!got.length) continue;
+  const want = union(idStream(p.src, p.srcColl), idStream(p.hot, p.hotColl)), have = idStream(p.dst, p.dstColl);
+  let w = await want.next(), h = await have.next(), n = 0, extra = [], missing = [], deleted = 0, copied = 0;
+  const flush = async () => {
+    for (const [b, c] of [[p.src, p.srcColl], [p.hot, p.hotColl]]) {
+      if (!missing.length) break;
+      const got = (await qd(b, 'POST', `/collections/${c}/points`, j({ ids: missing, with_payload: true, with_vector: false }))).result;
       const vecs = vectorsForPoints(got.map((x) => Number(x.id)));
       const items = got.filter((x) => vecs.has(Number(x.id))).map((x) => pointJson(Number(x.id), vectorJson(vecs.get(Number(x.id))), x.payload));
-      if (items.length) await qd(p.dst, 'PUT', `/collections/${p.dstColl}/points?wait=true`, `{"points":[${items.join(',')}]}`);
+      if (items.length) { await qd(p.dst, 'PUT', `/collections/${p.dstColl}/points?wait=true`, `{"points":[${items.join(',')}]}`); copied += items.length; }
+      const have_ = new Set(got.map((x) => Number(x.id))); missing = missing.filter((m) => !have_.has(m));
     }
+    missing = [];
+    if (extra.length) { await qd(p.dst, 'POST', `/collections/${p.dstColl}/points/delete?wait=true`, j({ points: extra })); deleted += extra.length; extra = []; }
+  };
+  while (!w.done || !h.done) {
+    n++;
+    if (h.done || (!w.done && w.value < h.value)) { missing.push(w.value); w = await want.next(); }
+    else if (w.done || h.value < w.value) { extra.push(h.value); h = await have.next(); }
+    else { w = await want.next(); h = await have.next(); }
+    if (missing.length >= 500 || extra.length >= 500) await flush();
   }
-  return { deleted_extra: extra.length, missing: missing.length };
+  await flush();
+  log({ step: 'reconcile', compared: n, deleted_extra: deleted, copied_missing: copied });
+  return { compared: n, deleted_extra: deleted, copied_missing: copied };
 }
 
 /** paragraph_id boundaries that split the main collection into n ranges of about equal point count (bisect on counts). */
