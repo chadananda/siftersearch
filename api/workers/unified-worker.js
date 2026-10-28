@@ -22,7 +22,7 @@ import { applyWriteBatch, createGroupCommitter, stmtCacheStats } from '../lib/wr
 import { recordWrite, recordCommit, drainWriteStats, peekWriteStats, latencySummary } from '../lib/write-stats.js';
 import { isPowerReadOnly, isPowerHold, powerState } from '../lib/power-mode.js';
 import { startCheckpointThread } from '../lib/repos/wal-checkpoint-thread.js';
-import { statSync } from 'node:fs';
+import { statSync, readFileSync } from 'node:fs';
 import { logger } from '../lib/logger.js';
 import { getMeili, syncHypeBatch, syncEntityMentionsBatch } from '../lib/search.js';
 import { syncAliasesToMeili } from '../lib/graph-meili-sync.js';
