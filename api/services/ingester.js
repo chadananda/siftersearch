@@ -1113,6 +1113,12 @@ function extractHeading(_fullContent, _chunkText) {
  * @param {string} relativePath - Relative path from library base (canonical identifier)
  * @returns {Object} - { documentId, paragraphCount, status }
  */
+/** A reused paragraph row already holds the heading/blocktype/pdf_page/block_attrs the re-parse produced (null-safe). Pure. */
+export function isSameReuse(row, { heading, blocktype, pdfPage, blockAttrsJson }) {
+  const n = (v) => (v === undefined || v === '' ? null : v);
+  return n(row.heading) === n(heading) && n(row.blocktype) === n(blocktype) && n(row.pdf_page) === n(pdfPage) && n(row.block_attrs) === n(blockAttrsJson);
+}
+
 /** The doc's recorded file still exists in the library (so another file with the same hash is a copy, not a move). */
 export function isStillOnDisk(relPath) {
   try { return !!relPath && existsSync(join(config.library.basePath, relPath)); } catch { return false; }
@@ -1398,7 +1404,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Use word hashes (ignoring markers) so re-segmentation preserves embeddings
   if (existingDoc) {
     const paragraphs = await queryAll(
-      'SELECT id, text, content_hash, embedding, synced, paragraph_index FROM content WHERE doc_id = ? AND deleted_at IS NULL',
+      'SELECT id, text, content_hash, embedding, synced, paragraph_index, heading, blocktype, pdf_page, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL',
       [existingDoc.id]
     );
     for (const p of paragraphs) {
@@ -1907,6 +1913,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       // Only mark as needing sync if position changed
       // TODO: migrate to content.bulkReplace() for full content API coverage
       const positionChanged = existing.paragraph_index !== index;
+      const newHeading = extractHeading(content, reuseText);
+      // NO-OP UPDATE SKIPPED (10-28 storage wear): a re-scan that changed only the frontmatter rewrote every reused row
+      // (row + 5 index entries each) with the values it already had.
+      if (!positionChanged && isSameReuse(existing, { heading: newHeading, blocktype, pdfPage, blockAttrsJson })) continue;
       updateStatements.push({
         sql: `
           UPDATE content
@@ -1915,7 +1925,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         `,
         args: [
           index,
-          extractHeading(content, reuseText),
+          newHeading,
           blocktype,
           pdfPage,
           blockAttrsJson,

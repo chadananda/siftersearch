@@ -1095,6 +1095,10 @@ function shutdown() {
 // connection; other processes POST {statements:[{sql,args}]} to /write and we
 // apply them as one atomic transaction. better-sqlite3 is synchronous, so
 // these never interleave with the worker loop's own writes.
+/** Whole-process write counters (all threads: WAL appends + the checkpoint thread's page writes) — diff two reads for MB/s. */
+function procIo() {
+  try { const o = {}; for (const l of readFileSync('/proc/self/io', 'utf8').split('\n')) { const [k, v] = l.split(': '); if (k) o[k] = Number(v); } return { wchar: o.wchar, write_bytes: o.write_bytes, at: Date.now() }; } catch { return null; }
+}
 function startWriteServer() {
   const port = parseInt(process.env.SIFTER_WRITER_PORT || '', 10);
   if (!port) return;
@@ -1132,7 +1136,7 @@ function startWriteServer() {
     // exact batch latency + busy % from the in-memory ring (db_write_stats keeps only per-minute total + max)
     if (req.method === 'GET' && req.url.startsWith('/latency')) {
       const minutes = Number(new URL(req.url, 'http://x').searchParams.get('minutes')) || 15;
-      json(res, 200, { ...latencySummary({ minutes }), group: committer.stats(), telemetry_group: telCommitter.stats(), stmt_cache: stmtCacheStats(), checkpoint: checkpointer?.stats() || null });
+      json(res, 200, { ...latencySummary({ minutes }), group: committer.stats(), telemetry_group: telCommitter.stats(), stmt_cache: stmtCacheStats(), checkpoint: checkpointer?.stats() || null, io: procIo() });
       return;
     }
     if (req.method === 'GET' && req.url === '/stats') { json(res, 200, peekWriteStats()); return; }

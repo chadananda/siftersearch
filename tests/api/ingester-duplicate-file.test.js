@@ -35,3 +35,13 @@ describe('duplicate file vs real move', () => {
     expect(dirty).not.toHaveBeenCalled();
   });
 });
+
+describe('reused paragraph no-op detection', () => {
+  it('isSameReuse is null-safe and detects a real change', async () => {
+    const { isSameReuse } = await import('../../api/services/ingester.js');
+    const row = { heading: null, blocktype: 'paragraph', pdf_page: null, block_attrs: null };
+    expect(isSameReuse(row, { heading: '', blocktype: 'paragraph', pdfPage: null, blockAttrsJson: null })).toBe(true);
+    expect(isSameReuse(row, { heading: 'H', blocktype: 'paragraph', pdfPage: null, blockAttrsJson: null })).toBe(false);
+    expect(isSameReuse(row, { heading: null, blocktype: 'paragraph', pdfPage: 3, blockAttrsJson: null })).toBe(false);
+  });
+});
