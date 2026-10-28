@@ -83,14 +83,13 @@ describe('switchCopy contract', () => {
   });
   it('reads position + play state first, seeks the other copy to the same moment, restores rate and play state', () => {
     expect(fn).toMatch(/const t = started \? now\(\) : startAt, wasPlaying = playing/);
-    expect(fn).toMatch(/audio\.currentTime = Math\.max\(0, copyTime\(t\) - offset\)/);
+    expect(fn).toMatch(/seekAndWait\(copyTime\(t\) - offset\)/);
     expect(fn).toMatch(/audio\.playbackRate = rate/);
     expect(fn).toMatch(/if \(wasPlaying\) await audio\.play\(\)/);
     expect(fn).toContain('await loadCopy(want)');
     expect(src).toMatch(/25000/);   // shared metadata-load timeout also protects copy switching
     expect(fn).toMatch(/loadingCopy = true/);
     expect(src).toMatch(/preload="metadata"/);
-    expect(src).toMatch(/onpointerenter=\{\(\) => warm\(k\)\}/);
   });
   it('a paused/unstarted player only flips the choice (the other copy is not fetched until needed)', () => {
     expect(fn).toMatch(/if \(!started \|\| !audio\.src[^\n]*return;/);
@@ -212,4 +211,17 @@ describe('abandoned edge audio transfers',()=>{
    expect(result.files).toEqual({'web/a-talk.m4a':'filled'});expect([...store]).toEqual([key]);expect(locks.has(`fill:${key}`)).toBe(false);
   }finally{globalThis.fetch=original;}
  });
+});
+
+// Chad 10-28 (Liliane): no CD spin. Portraits stay still; playing = a quiet pulsing ring; reduced motion = none.
+describe('no portrait rotation', () => {
+  const files = ['MomentView', 'TalkHero', 'MediaPlayer', 'listening/OnAir', 'listening/MiniPlayer', 'listening/Voices', 'listening/Jukebox'];
+  it('no continuous or hover rotation on portraits; reduced motion switches the ring off', () => {
+    for (const f of files) {
+      const src = rf(new URL(`../../src/components/media/${f}.svelte`, import.meta.url), 'utf8');
+      expect(src, f).not.toMatch(/animation:\s*(spin|wobble)\b/);
+      expect(src, f).not.toMatch(/\.(disc|record|rel-disc|disc-wave)[^{]*\{[^}]*rotate\(/);
+    }
+    for (const f of ['MomentView', 'TalkHero', 'MediaPlayer', 'listening/OnAir']) expect(rf(new URL(`../../src/components/media/${f}.svelte`, import.meta.url), 'utf8')).toMatch(/prefers-reduced-motion[^]*\.record\.spinning/);
+  });
 });

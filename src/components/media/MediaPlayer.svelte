@@ -668,10 +668,9 @@
   .vinyl { background-image: repeating-radial-gradient(circle at 50% 50%, var(--radio-groove) 0 2px, color-mix(in srgb, var(--radio-groove) 80%, var(--radio-on-dark)) 2px 3px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
   .vinyl::after { content: ''; position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(from 30deg, transparent 0 10%, var(--radio-groove-sheen) 14%, transparent 22% 55%, var(--radio-groove-sheen) 62%, transparent 70%); }
-  .record { animation: spin 2s linear infinite; animation-play-state: paused; }
-  .record.spinning { animation-play-state: running; }
-  .spin { animation: spin 1.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .record { border-radius: 9999px; }
+  .record.spinning, .spin { animation: ring 2.4s ease-in-out infinite; }   /* playing = a quiet pulsing ring, never a spin */
+  @keyframes ring { 0%, 100% { box-shadow: 0 0 0 0 var(--radio-glow); } 50% { box-shadow: 0 0 0 7px var(--radio-glow); } }
   .label-ring { box-shadow: 0 0 0 2px var(--radio-brass); }
   .cabinet-tail .cabinet-inner { background-image: repeating-linear-gradient(97deg, transparent 0 7px, color-mix(in srgb, var(--radio-walnut-deep) 18%, transparent) 7px 8px, transparent 8px 19px);
     box-shadow: inset 1px -1px 0 color-mix(in srgb, var(--radio-brass) 45%, transparent), inset -1px 0 0 color-mix(in srgb, var(--radio-brass) 45%, transparent); }
@@ -732,7 +731,6 @@
   .rel:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 2px var(--rt), 0 8px 20px var(--radio-brass-soft); }
   .rel-disc { position: relative; flex: none; width: 4.2rem; height: 4.2rem; border-radius: 9999px;
     background: repeating-radial-gradient(circle, var(--radio-groove) 0 1.5px, color-mix(in srgb, var(--radio-groove) 78%, var(--radio-on-dark)) 1.5px 2.5px); transition: transform 0.6s; }
-  .rel:hover .rel-disc { transform: rotate(200deg); }
   .rel-label { position: absolute; inset: 16%; border-radius: 9999px; overflow: hidden; box-shadow: 0 0 0 2px var(--radio-brass); }
 
   /* sticky slim bar + FAB */
@@ -743,7 +741,7 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 0 4px var(--radio-glow); }
   .follow { min-height: 2.5rem; padding: 0 1rem; border-radius: 9999px; font-weight: 600; font-size: 0.9rem; background: var(--radio-walnut-deep); color: var(--radio-amber); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), inset 0 0 0 1px var(--radio-brass); }
   @media (prefers-reduced-motion: reduce) {
-    .record, .spin, .lamp.live, .slimbar { animation: none; }
+    .record, .record.spinning, .spin, .lamp.live, .slimbar { animation: none; }
     .rel, .rel-disc, .bigplay { transition: none; }
   }
 </style>

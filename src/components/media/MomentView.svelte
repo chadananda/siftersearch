@@ -154,9 +154,10 @@
   .quote.long { font-size: clamp(1.5rem, 3.2vw, 2.5rem); line-height: 1.18; }
   .quote.xlong { font-size: clamp(1.25rem, 2.2vw, 1.8rem); line-height: 1.3; }
   .quote p::before { content: '“'; color: var(--radio-amber); } .quote p::after { content: '”'; color: var(--radio-amber); }
-  .record { position: relative; animation: spin 2s linear infinite; animation-play-state: paused; }
-  .record.spinning { animation-play-state: running; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .record { position: relative; border-radius: 9999px; }   /* the portrait stays still; playing = a quiet pulsing ring
+  */
+  .record.spinning { animation: ring 2.4s ease-in-out infinite; }
+  @keyframes ring { 0%, 100% { box-shadow: 0 0 0 0 var(--radio-glow); } 50% { box-shadow: 0 0 0 7px var(--radio-glow); } }
   .vinyl { background-image: repeating-radial-gradient(circle at 50% 50%, var(--radio-groove) 0 2px, color-mix(in srgb, var(--radio-groove) 80%, var(--radio-on-dark)) 2px 3px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
   .label-ring { box-shadow: 0 0 0 2px var(--radio-brass); }
   .dial { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--radio-brass) 70%, transparent), inset 0 6px 18px rgba(0, 0, 0, 0.22); background-image: radial-gradient(60% 140% at 50% 100%, var(--radio-glow), transparent 70%); }
@@ -187,5 +188,5 @@
   .back { font-weight: 600; color: var(--radio-ink); text-decoration: underline; text-decoration-color: var(--radio-amber); text-decoration-thickness: 2px; text-underline-offset: 4px; }
   .back:hover { color: var(--radio-amber); }
   a:focus-visible, button:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
-  @media (prefers-reduced-motion: reduce) { .record { animation: none; } .bigplay, .ticket, .rel { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .record, .record.spinning { animation: none; } .bigplay, .ticket, .rel { transition: none; } }
 </style>

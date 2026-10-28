@@ -78,11 +78,11 @@
 .vinyl { background-image: repeating-radial-gradient(circle at 50% 50%, var(--radio-groove) 0 2px, color-mix(in srgb, var(--radio-groove) 80%, var(--radio-on-dark)) 2px 3px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
 .vinyl::after { content: ''; position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(from 30deg, transparent 0 10%, var(--radio-groove-sheen) 14%, transparent 22% 55%, var(--radio-groove-sheen) 62%, transparent 70%); }
-.record { animation: spin 2s linear infinite; animation-play-state: paused; }
-.record.spinning { animation-play-state: running; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.record { border-radius: 9999px; }   /* still portrait; playing = a quiet pulsing ring (never a spin) */
+.record.spinning { animation: ring 2.4s ease-in-out infinite; }
+@keyframes ring { 0%, 100% { box-shadow: 0 0 0 0 var(--radio-glow); } 50% { box-shadow: 0 0 0 7px var(--radio-glow); } }
 .label-ring { box-shadow: 0 0 0 2px var(--radio-brass); }
 .tube { display: inline-flex; align-items: center; padding: 0.25rem 0.7rem; border-radius: 9999px; font: 700 0.85rem/1.2 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--radio-on-dark); background: color-mix(in srgb, var(--radio-walnut-deep) 55%, transparent); box-shadow: inset 0 0 0 1px var(--radio-brass); }
-  @media (prefers-reduced-motion: reduce) { .record, .lamp.live { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .record, .record.spinning, .lamp.live { animation: none; } }
 </style>

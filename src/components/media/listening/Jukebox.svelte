@@ -288,7 +288,6 @@
   .disc-wave { position: absolute; z-index: -1; width: 10rem; height: 10rem; right: calc(2.575rem - 5rem); bottom: calc(2.475rem - 5rem); opacity: 0.95;
     transition: transform 1.2s cubic-bezier(0.3, 0.7, 0.4, 1); }
   .s-wide .disc-wave { width: 12rem; height: 12rem; right: calc(2.575rem - 6rem); bottom: calc(2.475rem - 6rem); }
-  .card:hover .disc-wave { transform: rotate(40deg) scale(1.05); }
   .wavecard h3, .wavecard p { max-width: 85%; }
   .s-wide .wavecard h3, .s-wide .wavecard p { max-width: 70%; }
   .wave-sum { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }

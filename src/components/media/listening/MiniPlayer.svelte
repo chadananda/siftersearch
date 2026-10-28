@@ -47,7 +47,7 @@
   .ctl.open:hover { color: var(--radio-amber); box-shadow: inset 0 0 0 2px var(--radio-amber); }
   .ctl.ghost { background: transparent; color: var(--radio-on-dark); box-shadow: inset 0 0 0 1px var(--radio-brass); }
   .ctl:focus-visible, a:focus-visible { outline: 3px solid var(--radio-amber); outline-offset: 2px; }
-  .spin { animation: spin 1.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { border-radius: 9999px; animation: ring 2.4s ease-in-out infinite; }   /* playing = a pulsing ring, never a spin */
+  @keyframes ring { 0%, 100% { box-shadow: 0 0 0 0 var(--radio-glow); } 50% { box-shadow: 0 0 0 7px var(--radio-glow); } }
   @media (prefers-reduced-motion: reduce) { .dock, .spin { animation: none; } .bar { transition: none; } }
 </style>

@@ -64,8 +64,6 @@
     background: repeating-radial-gradient(circle, var(--radio-groove) 0 1.5px, color-mix(in srgb, var(--radio-groove) 78%, var(--radio-on-dark)) 1.5px 2.5px);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3); transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.4, 1); }
   .label { position: absolute; inset: 14%; border-radius: 9999px; overflow: hidden; box-shadow: 0 0 0 2px var(--radio-brass); }
-  .voice:hover .disc, .voice:focus-visible .disc { animation: spin 1.6s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) {
     .rack { overflow-x: auto; mask-image: none; }
     .track { animation: none; }

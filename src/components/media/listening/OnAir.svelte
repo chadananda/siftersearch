@@ -150,11 +150,9 @@
   .vinyl { background-image: repeating-radial-gradient(circle at 50% 50%, var(--radio-groove) 0 2px, color-mix(in srgb, var(--radio-groove) 80%, var(--radio-on-dark)) 2px 3px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 1px var(--radio-groove-sheen); }
   .vinyl::after { content: ''; position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(from 30deg, transparent 0 10%, var(--radio-groove-sheen) 14%, transparent 22% 55%, var(--radio-groove-sheen) 62%, transparent 70%); }
-  .record { animation: spin 9s linear infinite; animation-play-state: paused; }
-  .record.spinning { animation-play-state: running; animation-duration: 1.8s; }
-  .record:not(.spinning) { animation: wobble 7s ease-in-out infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes wobble { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+  .record { border-radius: 9999px; }   /* the portrait is still; playing = a quiet pulsing ring (Liliane / Chad 10-28: no CD spin) */
+  .record.spinning { animation: ring 2.4s ease-in-out infinite; }
+  @keyframes ring { 0%, 100% { box-shadow: 0 0 0 0 var(--radio-glow); } 50% { box-shadow: 0 0 0 7px var(--radio-glow); } }
   .play-btn { box-shadow: 0 0 0 0 var(--radio-glow); transition: transform 0.2s, box-shadow 0.3s; }
   .open-talk { box-shadow: inset 0 0 0 2px var(--radio-brass); transition: box-shadow 0.2s, color 0.2s; }
   .open-talk:hover { color: var(--radio-amber); box-shadow: inset 0 0 0 2px var(--radio-amber); }
@@ -170,7 +168,7 @@
   .station-dot:focus-visible { outline: 2px solid var(--radio-amber); }
   .lr-paused .onair-lamp, .lr-paused .dial-glow, .lr-paused .needle i, .lr-paused .vu-needle, .lr-paused .record { animation-play-state: paused; }
   @media (prefers-reduced-motion: reduce) {
-    .onair-lamp, .dial-glow, .needle i, .vu-needle, .record, .record:not(.spinning) { animation: none; }
+    .onair-lamp, .dial-glow, .needle i, .vu-needle, .record, .record.spinning { animation: none; }
     .needle { transition: none; }
   }
 </style>

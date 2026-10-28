@@ -1,6 +1,111 @@
 {
-  "generated": "2026-10-27T15:45:51.202Z",
+  "generated": "2026-10-28T14:03:38.188Z",
   "entries": [
+    {
+      "hash": "f257ef6e",
+      "date": "2026-10-28",
+      "type": "Test",
+      "description": "Update expected report names list (13 added by other agents)",
+      "scope": "ops"
+    },
+    {
+      "hash": "2529c1e0",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "A same-hash second file is a duplicate, not a move (watcher flipped paths every scan, dirtying paragraphs: 99% of writer bytes); same-shelf rename does not dirty",
+      "scope": null
+    },
+    {
+      "hash": "63769646",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "F16 build in 8 paragraph_id shards (one node thread + one qdrant connection thread each capped at ~1k pts/s)",
+      "scope": null
+    },
+    {
+      "hash": "66b79a25",
+      "date": "2026-10-28",
+      "type": "Docs",
+      "description": "Design note — one hardware-adaptive worker image, HTTP inputs for pods, tower-assign + pull results",
+      "scope": "media"
+    },
+    {
+      "hash": "a5c3442e",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "F16 build health probe is /healthz (404 on /api/health made the guard wait forever); reject unknown modes",
+      "scope": null
+    },
+    {
+      "hash": "b337b607",
+      "date": "2026-10-28",
+      "type": "New",
+      "description": "Boss is two memory pools — the monitor reads system RAM, PSI pressure, zram, VRAM, GTT, GPU busy/temp, per-process VRAM and service memory; guards admit by VRAM free + MemAvailable + pressure; docs/ops/boss-memory.md",
+      "scope": "ops"
+    },
+    {
+      "hash": "be2ca6bf",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Point the f16 build at phrase-vector-read-repo",
+      "scope": null
+    },
+    {
+      "hash": "f1a3e536",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Restore phrase-store-repo (clobbered), vectors.db f16 reader is phrase-vector-read-repo",
+      "scope": null
+    },
+    {
+      "hash": "8ef24140",
+      "date": "2026-10-28",
+      "type": "Fixed",
+      "description": "SIGKILL / rsync timeouts also mean an unreachable host (aorus offline: its talks used attempts)",
+      "scope": "media"
+    },
+    {
+      "hash": "66d163b9",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Phrase-f16-build job (phrases main+hot -> float16 collection on qdrant-main /faster), vectors.db read repo, qdrant-main unit",
+      "scope": null
+    },
+    {
+      "hash": "ecbb5e67",
+      "date": "2026-10-28",
+      "type": "Fixed",
+      "description": "Boss memory safety — every gate job in a hard cgroup (capped.sh: MemoryMax, no swap, oom_score_adj 900), CPU-tail container 6 GB x 1 with a RAM check, 13 GB MemAvailable reserve checked live before any boss job",
+      "scope": "media"
+    },
+    {
+      "hash": "f56e3020",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Logical bytes per caller x name (per-thread wchar split by payload) in db_write_stats, /stats and write-stats report",
+      "scope": null
+    },
+    {
+      "hash": "9e8f3fe0",
+      "date": "2026-10-28",
+      "type": "Fixed",
+      "description": "An unreachable home host rests 10 min and its talk goes back to the front without using an attempt (boss went offline: 41 talks burned their attempts)",
+      "scope": "media"
+    },
+    {
+      "hash": "a5a0491e",
+      "date": "2026-10-28",
+      "type": "New",
+      "description": "Audio tags (ID3/MP4/Vorbis) as hints for speaker, title, series; media-hint-review report and media-tags-backfill job",
+      "scope": "media"
+    },
+    {
+      "hash": "56c3541e",
+      "date": "2026-10-28",
+      "type": "New",
+      "description": "Boss restores D/E talks (UniPASE on its ROCm iGPU + the worker-image CPU tail) beside aorus's whole imports; boss heat limits 96/99/93 (measured: no throttling at 90-92 C); media-cloud-order backfill mode, worst grade first",
+      "scope": "media"
+    },
     {
       "hash": "a99eea6d",
       "date": "2026-10-25",
@@ -3395,114 +3500,116 @@
       "type": "Fixed",
       "description": "The authoritative pass also runs in UNSCOPED searches (most readers never pick a tradition — 'detachment from the world' found no Hidden Words) as candidates; the Bahá'í tier weights still apply only in a Bahá'í search, so interfaith slots stay fair. SEARCH_VERSION bumped",
       "scope": "search"
-    },
-    {
-      "hash": "12e7dbd5",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "Qdrant ranks alone (SEARCH_QDRANT=only) — with doctrinal-authority fusion the type battery scores 66/83 vs 63/83 on Meili, p50 1.6 s vs 4.4 s, p95 4.2 s vs 18 s (Chad 10-20: retire Meilisearch). Meili still receives writes; rollback = phrase,keyword",
-      "scope": "search"
-    },
-    {
-      "hash": "50673f8f",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Person-search claims (bioSearch hay_folded LIKE scan, 5.8 s) run on the claim-search worker thread's own connection — no longer on the API's event loop",
-      "scope": "blocking"
-    },
-    {
-      "hash": "718f27e4",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Each writer cycle leaves a phase breadcrumb (/tmp/siftersearch-writer-phase.json) and the watchdog logs it when it restarts the writer — a 45 s freeze at 07:08 left no trace (killed before any slow-query log); the watchdog never restarts twice within 2 min (the old writer is still draining)",
-      "scope": "writer"
-    },
-    {
-      "hash": "0859aaa1",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Bahá'í doctrinal tiers and the authoritative pass apply only inside a Bahá'í-scoped search — unscoped interfaith queries ('what is nirvana', Qur'anic patience, karma) were handed Bahá'í texts first; across traditions each passage ranks by its own authority within its tradition's slots. SEARCH_VERSION bumped",
-      "scope": "search"
-    },
-    {
-      "hash": "4dcfe658",
-      "date": "2026-10-20",
-      "type": "Chore",
-      "description": "Bump SEARCH_VERSION — doctrinal-authority ranking invalidates cached results",
-      "scope": "search"
-    },
-    {
-      "hash": "9670835e",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "The authoritative pass filters on the indexed author_fold only (a should over the unindexed voices_fold scanned 35M points — it timed out on every query) and also searches the doctrinal HyPE questions; voices_fold payload indexes created on phrases/hype/paragraphs_kw",
-      "scope": "search"
-    },
-    {
-      "hash": "8bcf9e96",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "The 'answers the question' band is measured within each tradition — interfaith results give each tradition its own slots, so a Bahá'í passage is judged against the best Bahá'í passage (a secondary book had taken the Bahá'í slot from Bahá'u'lláh's Tablets)",
-      "scope": "search"
-    },
-    {
-      "hash": "c7f033f1",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "Authenticated text first — a central figure's words count in full only in an authoritative book (own works, compilations of the Writings, the House's); quoted or recalled in a secondary book their doctrinal factor is capped at 1.3, so the original outranks the account ('Visiting the Bahá'í World Centre' outranked the Íqán). Hits carry book_authority",
-      "scope": "search"
-    },
-    {
-      "hash": "00b2da7b",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "A question is not a quotation — the verbatim lead no longer promotes a passage that merely restates the question ('what is the purpose of prayer' led with a PDF over 'Abdu'l-Bahá's answer), and only an authoritative copy (doctrinal factor ≥ 1) leads a quotation",
-      "scope": "search"
-    },
-    {
-      "hash": "da42344a",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "DOCTRINAL AUTHORITY throughout ranking (Chad 10-20: authority from the outset; dedup favours canonical; re-rank favours the authoritative passage that answers) — Qdrant layers carry the writer (author_fold/scope/collection) and fusion weighs each contribution by it (Revelation ×3 > interpretation ×2.6 > the House ×1.6 > others; pilgrim notes ×0.4; scraped-site copies ×0.7); an authoritative pass retrieves the doctrinal writers' passages so they are always candidates; duplicate passages collapse to their most authoritative copy; final re-rank multiplies by the PARAGRAPH writer's factor within the answer band (≥½ the top score). Was: ×1.2 post-hoc blend on the book's author, skipped for some query shapes",
-      "scope": "search"
-    },
-    {
-      "hash": "2f7a8b4c",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Pre-deploy test boots run the production boot order (API_PREBOOT=1) under a 50 s deadline below pm2's 60 s listen_timeout — the fork-mode test listened first and passed in 5 s while the real preboot hung (10-20 search outage)",
-      "scope": "deploy"
-    },
-    {
-      "hash": "a4cf9d0f",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "The concept lexicon load blocked the API's event loop for minutes at boot (proofParagraph re-parsed/re-folded every row per entry) — the new search instance never listened and pm2 stopped the old one after listen_timeout. Rows indexed once (map lookup), yields every 200 entries; no lexicon warm-up at boot",
-      "scope": "outage"
-    },
-    {
-      "hash": "2c903108",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Meilisearch retirement plan — inventory of indexes and callers; Qdrant-only battery loses famous passages to secondary copies (no authority fusion) → authority-aware fusion first",
-      "scope": null
-    },
-    {
-      "hash": "876178b9",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "Concept and entity layers read SQLite, not Meilisearch (Chad 10-20: retire Meilisearch) — the cited lexicon held in memory (warmed at boot, 30 min refresh), entity mentions by entity_id via entity-mentions-repo ranked by the paragraph author's authority",
-      "scope": "search"
-    },
-    {
-      "hash": "5cb231a9",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "A RUNNING ops run can be cancelled — marked now, stops at its next yield point when the service drains, keeps 'cancelled' through finish, never requeued",
-      "scope": "ops"
     }
   ],
   "grouped": {
+    "2026-10-28": [
+      {
+        "hash": "f257ef6e",
+        "date": "2026-10-28",
+        "type": "Test",
+        "description": "Update expected report names list (13 added by other agents)",
+        "scope": "ops"
+      },
+      {
+        "hash": "2529c1e0",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "A same-hash second file is a duplicate, not a move (watcher flipped paths every scan, dirtying paragraphs: 99% of writer bytes); same-shelf rename does not dirty",
+        "scope": null
+      },
+      {
+        "hash": "63769646",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "F16 build in 8 paragraph_id shards (one node thread + one qdrant connection thread each capped at ~1k pts/s)",
+        "scope": null
+      },
+      {
+        "hash": "66b79a25",
+        "date": "2026-10-28",
+        "type": "Docs",
+        "description": "Design note — one hardware-adaptive worker image, HTTP inputs for pods, tower-assign + pull results",
+        "scope": "media"
+      },
+      {
+        "hash": "a5c3442e",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "F16 build health probe is /healthz (404 on /api/health made the guard wait forever); reject unknown modes",
+        "scope": null
+      },
+      {
+        "hash": "b337b607",
+        "date": "2026-10-28",
+        "type": "New",
+        "description": "Boss is two memory pools — the monitor reads system RAM, PSI pressure, zram, VRAM, GTT, GPU busy/temp, per-process VRAM and service memory; guards admit by VRAM free + MemAvailable + pressure; docs/ops/boss-memory.md",
+        "scope": "ops"
+      },
+      {
+        "hash": "be2ca6bf",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Point the f16 build at phrase-vector-read-repo",
+        "scope": null
+      },
+      {
+        "hash": "f1a3e536",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Restore phrase-store-repo (clobbered), vectors.db f16 reader is phrase-vector-read-repo",
+        "scope": null
+      },
+      {
+        "hash": "8ef24140",
+        "date": "2026-10-28",
+        "type": "Fixed",
+        "description": "SIGKILL / rsync timeouts also mean an unreachable host (aorus offline: its talks used attempts)",
+        "scope": "media"
+      },
+      {
+        "hash": "66d163b9",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Phrase-f16-build job (phrases main+hot -> float16 collection on qdrant-main /faster), vectors.db read repo, qdrant-main unit",
+        "scope": null
+      },
+      {
+        "hash": "ecbb5e67",
+        "date": "2026-10-28",
+        "type": "Fixed",
+        "description": "Boss memory safety — every gate job in a hard cgroup (capped.sh: MemoryMax, no swap, oom_score_adj 900), CPU-tail container 6 GB x 1 with a RAM check, 13 GB MemAvailable reserve checked live before any boss job",
+        "scope": "media"
+      },
+      {
+        "hash": "f56e3020",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Logical bytes per caller x name (per-thread wchar split by payload) in db_write_stats, /stats and write-stats report",
+        "scope": null
+      },
+      {
+        "hash": "9e8f3fe0",
+        "date": "2026-10-28",
+        "type": "Fixed",
+        "description": "An unreachable home host rests 10 min and its talk goes back to the front without using an attempt (boss went offline: 41 talks burned their attempts)",
+        "scope": "media"
+      },
+      {
+        "hash": "a5a0491e",
+        "date": "2026-10-28",
+        "type": "New",
+        "description": "Audio tags (ID3/MP4/Vorbis) as hints for speaker, title, series; media-hint-review report and media-tags-backfill job",
+        "scope": "media"
+      },
+      {
+        "hash": "56c3541e",
+        "date": "2026-10-28",
+        "type": "New",
+        "description": "Boss restores D/E talks (UniPASE on its ROCm iGPU + the worker-image CPU tail) beside aorus's whole imports; boss heat limits 96/99/93 (measured: no throttling at 90-92 C); media-cloud-order backfill mode, worst grade first",
+        "scope": "media"
+      }
+    ],
     "2026-10-25": [
       {
         "hash": "a99eea6d",
@@ -6908,111 +7015,6 @@
         "type": "Fixed",
         "description": "The authoritative pass also runs in UNSCOPED searches (most readers never pick a tradition — 'detachment from the world' found no Hidden Words) as candidates; the Bahá'í tier weights still apply only in a Bahá'í search, so interfaith slots stay fair. SEARCH_VERSION bumped",
         "scope": "search"
-      },
-      {
-        "hash": "12e7dbd5",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "Qdrant ranks alone (SEARCH_QDRANT=only) — with doctrinal-authority fusion the type battery scores 66/83 vs 63/83 on Meili, p50 1.6 s vs 4.4 s, p95 4.2 s vs 18 s (Chad 10-20: retire Meilisearch). Meili still receives writes; rollback = phrase,keyword",
-        "scope": "search"
-      },
-      {
-        "hash": "50673f8f",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Person-search claims (bioSearch hay_folded LIKE scan, 5.8 s) run on the claim-search worker thread's own connection — no longer on the API's event loop",
-        "scope": "blocking"
-      },
-      {
-        "hash": "718f27e4",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Each writer cycle leaves a phase breadcrumb (/tmp/siftersearch-writer-phase.json) and the watchdog logs it when it restarts the writer — a 45 s freeze at 07:08 left no trace (killed before any slow-query log); the watchdog never restarts twice within 2 min (the old writer is still draining)",
-        "scope": "writer"
-      },
-      {
-        "hash": "0859aaa1",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Bahá'í doctrinal tiers and the authoritative pass apply only inside a Bahá'í-scoped search — unscoped interfaith queries ('what is nirvana', Qur'anic patience, karma) were handed Bahá'í texts first; across traditions each passage ranks by its own authority within its tradition's slots. SEARCH_VERSION bumped",
-        "scope": "search"
-      },
-      {
-        "hash": "4dcfe658",
-        "date": "2026-10-20",
-        "type": "Chore",
-        "description": "Bump SEARCH_VERSION — doctrinal-authority ranking invalidates cached results",
-        "scope": "search"
-      },
-      {
-        "hash": "9670835e",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "The authoritative pass filters on the indexed author_fold only (a should over the unindexed voices_fold scanned 35M points — it timed out on every query) and also searches the doctrinal HyPE questions; voices_fold payload indexes created on phrases/hype/paragraphs_kw",
-        "scope": "search"
-      },
-      {
-        "hash": "8bcf9e96",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "The 'answers the question' band is measured within each tradition — interfaith results give each tradition its own slots, so a Bahá'í passage is judged against the best Bahá'í passage (a secondary book had taken the Bahá'í slot from Bahá'u'lláh's Tablets)",
-        "scope": "search"
-      },
-      {
-        "hash": "c7f033f1",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "Authenticated text first — a central figure's words count in full only in an authoritative book (own works, compilations of the Writings, the House's); quoted or recalled in a secondary book their doctrinal factor is capped at 1.3, so the original outranks the account ('Visiting the Bahá'í World Centre' outranked the Íqán). Hits carry book_authority",
-        "scope": "search"
-      },
-      {
-        "hash": "00b2da7b",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "A question is not a quotation — the verbatim lead no longer promotes a passage that merely restates the question ('what is the purpose of prayer' led with a PDF over 'Abdu'l-Bahá's answer), and only an authoritative copy (doctrinal factor ≥ 1) leads a quotation",
-        "scope": "search"
-      },
-      {
-        "hash": "da42344a",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "DOCTRINAL AUTHORITY throughout ranking (Chad 10-20: authority from the outset; dedup favours canonical; re-rank favours the authoritative passage that answers) — Qdrant layers carry the writer (author_fold/scope/collection) and fusion weighs each contribution by it (Revelation ×3 > interpretation ×2.6 > the House ×1.6 > others; pilgrim notes ×0.4; scraped-site copies ×0.7); an authoritative pass retrieves the doctrinal writers' passages so they are always candidates; duplicate passages collapse to their most authoritative copy; final re-rank multiplies by the PARAGRAPH writer's factor within the answer band (≥½ the top score). Was: ×1.2 post-hoc blend on the book's author, skipped for some query shapes",
-        "scope": "search"
-      },
-      {
-        "hash": "2f7a8b4c",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Pre-deploy test boots run the production boot order (API_PREBOOT=1) under a 50 s deadline below pm2's 60 s listen_timeout — the fork-mode test listened first and passed in 5 s while the real preboot hung (10-20 search outage)",
-        "scope": "deploy"
-      },
-      {
-        "hash": "a4cf9d0f",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "The concept lexicon load blocked the API's event loop for minutes at boot (proofParagraph re-parsed/re-folded every row per entry) — the new search instance never listened and pm2 stopped the old one after listen_timeout. Rows indexed once (map lookup), yields every 200 entries; no lexicon warm-up at boot",
-        "scope": "outage"
-      },
-      {
-        "hash": "2c903108",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Meilisearch retirement plan — inventory of indexes and callers; Qdrant-only battery loses famous passages to secondary copies (no authority fusion) → authority-aware fusion first",
-        "scope": null
-      },
-      {
-        "hash": "876178b9",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "Concept and entity layers read SQLite, not Meilisearch (Chad 10-20: retire Meilisearch) — the cited lexicon held in memory (warmed at boot, 30 min refresh), entity mentions by entity_id via entity-mentions-repo ranked by the paragraph author's authority",
-        "scope": "search"
-      },
-      {
-        "hash": "5cb231a9",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "A RUNNING ops run can be cancelled — marked now, stops at its next yield point when the service drains, keeps 'cancelled' through finish, never requeued",
-        "scope": "ops"
       }
     ]
   }
