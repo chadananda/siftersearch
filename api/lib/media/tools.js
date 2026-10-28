@@ -184,7 +184,7 @@ export const MEM_BUDGET = { unipase: 3, post: 6, whole: 10, transcribe: 3, diari
 const MEM_RESERVE = { boss: 13, aorus: 2 };
 const memReserve = (host) => Number(process.env[`MEDIA_MEM_RESERVE_${String(host).toUpperCase()}`]) || MEM_RESERVE[host] || 2;
 /** GPU memory each kind needs on the GPU host (MiB; measured resident + load peak). */
-export const VRAM_NEED_MB = { unipase: 6000, transcribe: 3500, probe: 2000, dfn: 1500, grade: 1200, diarize: 1536 };
+export const VRAM_NEED_MB = { whole: 8000, unipase: 6000, transcribe: 3500, probe: 2000, dfn: 1500, grade: 1200, diarize: 1536 };
 const gpuReserved = new Map();   // host → [{ mb, at }] dispatched, maybe not resident yet
 /** Count a job just dispatched to the GPU host against its free memory until the next readings show it. */
 // A reservation ends when its job ENDS (release → the reading is re-taken at once) or when a reading taken ≥ 30 s after the
