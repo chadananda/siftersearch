@@ -1,0 +1,6 @@
+# Qdrant move to /faster: status 2026-10-28 10:15 MST
+
+1. **f16 build:** 100% copied (36,308,176 of 36,308,176 points; main 35.42 M + hot 0.88 M), HNSW built on 24 of 26 segments; two ~1.5 M-vector segments finish indexing in about 25 min. Copy took 92 min (about 23.6 M points/h with 8 shards). 264 GB vs 388 GB before.
+2. **Stores to /faster:** done: `faster/vectors` (three vectors.db, R10/R11), `/faster/qram-snapshots` (R14), `qdrant-main` unit (:6343) holding phrases_f16 + hype + concepts + t_ar + t_en + paragraphs_kw (snapshot-recovered). Left: re-sync hype and paragraphs_kw (they changed on the old instance after the copy), validation, then the switch.
+3. **Memory budget:** applied (see planning/tower-memory-budget-20261028.md): swappiness 1, ARC max 56 GiB, MemoryMin tiers (search 56 G, pm2/API 14 G, qdrant-hot 8 G), Tier-2 bulk slice High 14 G / Max 20 G, indexer on its own Tier-1 slice, grounding runs launched inside Tier 2.
+4. **Unblocks search + indexing at pace:** the switch of `QDRANT_URL` to :6343 after the recall/latency check passes (about 60-75 min from now). Then search no longer reads the worn EVO (the 400-500 MB/s disk reads), and qdrant-next idles as the 7-day rollback.

@@ -1,0 +1,10 @@
+[Unit]
+Description=TIER 1 indexing (indexer; the qdrant build is its own unit): generous memory, high CPU weight, a ceiling so one job cannot take the box (Chad 10-28)
+[Slice]
+CPUAccounting=yes
+MemoryAccounting=yes
+CPUWeight=100
+CPUQuota=4000%
+MemoryHigh=40G
+MemoryMax=60G
+TasksMax=8192
