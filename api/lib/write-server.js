@@ -147,3 +147,36 @@ export function createGroupCommitter(getDb, { windowMs = Number(process.env.SIFT
   }
   return { submit, flush, stats: () => ({ ...counters, pending: queue.length }) };
 }
+
+/**
+ * DEFER LANE (storage-wear 10-28; Chad: UPS + ECC, accept ~2 min loss of re-derivable writes). Batches whose name is in
+ * `names` are answered at once (empty results) and held in RAM; every `everyMs` they are applied in ARRIVAL order as ONE
+ * group through the committer, so repeated touches/log rows share pages and one WAL append. Only for write-and-forget
+ * statements nobody reads back within the window (coverage age marks, activity log). flush() is wired to POST /power/flush,
+ * SIGTERM and the power-mode enter path. A crash loses at most `everyMs` of them.
+ */
+export function createDeferLane(committer, { names = [], everyMs = 30000, maxHeld = 20000, onError = () => {} } = {}) {
+  const set = new Set(names);
+  let held = [], timer = null, flushing = Promise.resolve();
+  const stats = { deferred: 0, flushes: 0, statements: 0 };
+  const flush = () => {
+    if (!held.length) return flushing;
+    const batch = held; held = [];
+    const all = batch.flatMap((b) => b.statements);
+    stats.flushes++; stats.statements += all.length;
+    flushing = flushing.then(() => committer.submit(all, { caller: 'defer-lane', name: 'defer-lane:flush' })).catch(onError);
+    return flushing;
+  };
+  return {
+    wants: (name) => set.has(name),
+    /** Hold a batch; resolves with placeholder results. */
+    hold(statements, meta) {
+      held.push({ statements, meta }); stats.deferred++;
+      if (held.reduce((n, b) => n + b.statements.length, 0) >= maxHeld) flush();
+      else if (!timer && everyMs > 0) { timer = setInterval(flush, everyMs); timer.unref?.(); }
+      return statements.map(() => ({ lastInsertRowid: 0, changes: 0, deferred: true }));
+    },
+    flush, stop: () => { if (timer) clearInterval(timer); timer = null; },
+    stats: () => ({ ...stats, held: held.length }),
+  };
+}

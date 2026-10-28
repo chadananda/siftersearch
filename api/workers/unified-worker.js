@@ -18,7 +18,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { createServer } from 'node:http';
 import { query, queryOne, queryAll, getSiteDb, getDb, getTelemetryStore, ensureTelemetryStore, contentDbPath } from '../lib/db.js';
-import { applyWriteBatch, createGroupCommitter, stmtCacheStats } from '../lib/write-server.js';
+import { applyWriteBatch, createGroupCommitter, createDeferLane, stmtCacheStats } from '../lib/write-server.js';
 import { unnamedLabel, recordWrite, recordCommit, drainWriteStats, peekWriteStats, latencySummary } from '../lib/write-stats.js';
 import { isPowerReadOnly, isPowerHold, powerState } from '../lib/power-mode.js';
 import { startCheckpointThread } from '../lib/repos/wal-checkpoint-thread.js';
@@ -99,6 +99,7 @@ let lastEntitySyncTime = 0;
 let lastAliasSyncTime = 0;
 let lastWalCheckpointTime = 0;
 let lastTelemetryPruneTime = Date.now();
+let deferLane = null;   // RAM-held write-and-forget batches (createDeferLane); flushed on shutdown and power flush
 let checkpointer = null;   // the WAL checkpoint thread (startWriteServer)
 let activeHeartbeatInterval = null;
 
@@ -1078,6 +1079,7 @@ async function workerLoop() {
 // ============================================================
 
 function shutdown() {
+  try { deferLane?.flush(); } catch { /* best effort */ }
   logger.info('Unified worker shutting down (finishing current work)...');
   isShuttingDown = true;
   if (activeHeartbeatInterval) {
@@ -1118,6 +1120,9 @@ function startWriteServer() {
   let telReady = null;
   const telDb = () => (telReady ||= ensureTelemetryStore().catch((err) => { telReady = null; throw err; }));
   const telCommitter = createGroupCommitter(telDb, { onRequest: (r) => onRequest({ ...r, meta: { ...r.meta, name: r.meta.name ? `${r.meta.name}@telemetry` : 'telemetry' } }) });
+  const defer = createDeferLane(committer, { names: (process.env.SIFTER_DEFER_NAMES ?? 'coverage:touch,activity:log').split(',').filter(Boolean),
+    everyMs: Number(process.env.SIFTER_DEFER_MS ?? 30000), onError: (err) => logger.warn({ err: err.message }, 'defer-lane flush failed') });
+  deferLane = defer;
   telDb().catch((err) => logger.warn({ err: err.message }, 'telemetry store not ready — telemetry writes will retry'));
   // checkpoints off the write path
   checkpointer = startCheckpointThread({ path: contentDbPath(), onPassive: (r) => { if (r.ms > 2000 || r.error) logger.warn(r, 'WAL checkpoint (PASSIVE, off-thread) slow or failed'); },
@@ -1136,7 +1141,7 @@ function startWriteServer() {
     // exact batch latency + busy % from the in-memory ring (db_write_stats keeps only per-minute total + max)
     if (req.method === 'GET' && req.url.startsWith('/latency')) {
       const minutes = Number(new URL(req.url, 'http://x').searchParams.get('minutes')) || 15;
-      json(res, 200, { ...latencySummary({ minutes }), group: committer.stats(), telemetry_group: telCommitter.stats(), stmt_cache: stmtCacheStats(), checkpoint: checkpointer?.stats() || null, io: procIo() });
+      json(res, 200, { ...latencySummary({ minutes }), group: committer.stats(), defer: defer.stats(), telemetry_group: telCommitter.stats(), stmt_cache: stmtCacheStats(), checkpoint: checkpointer?.stats() || null, io: procIo() });
       return;
     }
     if (req.method === 'GET' && req.url === '/stats') { json(res, 200, peekWriteStats()); return; }
@@ -1145,6 +1150,7 @@ function startWriteServer() {
     // file and truncate it, so the files on disk are complete by themselves.
     if (req.method === 'POST' && req.url === '/power/flush') {
       (async () => {
+        await Promise.allSettled([defer.flush()]);   // RAM-held batches first (they go through the committer)
         await Promise.allSettled([committer.flush(), telCommitter.flush()]);
         const out = { content: checkpointer ? await checkpointer.truncate(30000) : (await getDb()).pragma('wal_checkpoint(TRUNCATE)')[0] };
         const tel = getTelemetryStore();
@@ -1168,6 +1174,7 @@ function startWriteServer() {
       if (isPowerReadOnly()) { json(res, 503, { error: 'read-only (power): tower is on UPS battery; writes resume when mains is back', readonly: true }); return; }
       const meta = { caller, name, sql0: String(statements?.[0]?.sql || '').replace(/\s+/g, ' ').slice(0, 160) };
       try {
+        if (db !== 'telemetry' && defer.wants(name)) { json(res, 200, { results: defer.hold(statements || [], meta) }); return; }
         const results = await (db === 'telemetry' ? telCommitter : committer).submit(statements || [], meta);
         json(res, 200, { results });
       } catch (err) {

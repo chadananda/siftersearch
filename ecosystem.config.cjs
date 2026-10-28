@@ -214,7 +214,11 @@ module.exports = {
         // 10-28 storage-health: coalesce page rewrites. Checkpoint thread 5 s -> 120 s, inline autocheckpoint 20k -> 100k pages (400 MB WAL),
         // journal limit 256 -> 1024 MB. Durability-neutral (the WAL is still written at commit; only the copy into the DB file is later).
         // ROLLBACK: delete these three lines (-> 5000 / 20000 / 256). Measured before: writer 3 MB/s (178 MB/min) for ~2-4k row changes/min.
-        SIFTER_CHECKPOINT_MS: '120000',
+        // 10-28 (Chad: take more RAM risk): checkpoint every 300 s (ZFS txg is 120 s), group-commit window 25 ms, write-and-forget
+        // batches (coverage:touch, activity:log) held in RAM 30 s. ROLLBACK: SIFTER_CHECKPOINT_MS 120000, delete the other two lines.
+        SIFTER_GROUP_COMMIT_MS: '25',
+        SIFTER_DEFER_MS: '30000',
+        SIFTER_CHECKPOINT_MS: '300000',
         SQLITE_WAL_AUTOCHECKPOINT: '100000',
         SQLITE_JOURNAL_LIMIT_MB: '1024',
         // 120s busy_timeout: with 7 concurrent writers (watcher, embedding, graph extractor,
@@ -725,7 +729,7 @@ module.exports = {
       autorestart: true,
       restart_delay: 15000,
       watch: false,
-      env: { NODE_ENV: 'production', DEWEY_TOWER: 'http://127.0.0.1:7839', DEWEY_OPS: 'fetch', DEWEY_WORKER: 'tower-fetch', DEWEY_SCRATCH: '/tank/dewey-ingest/scratch' },
+      env: { NODE_ENV: 'production', DEWEY_TOWER: 'http://127.0.0.1:7843' /* the ops service directly: the gateway buffers bodies, media files stream */, DEWEY_OPS: 'fetch', DEWEY_WORKER: 'tower-fetch', DEWEY_SCRATCH: '/tank/dewey-ingest/scratch' },
       error_file: './logs/dewey-fetch-error.log',
       out_file: './logs/dewey-fetch-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
