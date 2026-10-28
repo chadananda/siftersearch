@@ -1,0 +1,27 @@
+# Qdrant MAIN (storage plan R12): the search engine's main storage on the MP44 XFS /faster (phrases as float16, hype, concepts, t_*, paragraphs_kw).
+# User unit: ~/.config/systemd/user/qdrant-main.service. temp_path on the same filesystem (snapshot recovery renames across it).
+# Ports 6343/6344. qdrant-next (6333, /fast) stays up as the 7-day rollback, then is dropped.
+[Unit]
+Description=Qdrant MAIN (/faster XFS; phrases float16)
+After=network.target
+
+[Service]
+EnvironmentFile=%h/qdrant-next/env
+Environment=QDRANT__SERVICE__HOST=127.0.0.1
+Environment=QDRANT__SERVICE__HTTP_PORT=6343
+Environment=QDRANT__SERVICE__GRPC_PORT=6344
+Environment=QDRANT__STORAGE__STORAGE_PATH=/faster/qdrant/storage
+Environment=QDRANT__STORAGE__SNAPSHOTS_PATH=/faster/qdrant/snapshots
+Environment=QDRANT__STORAGE__TEMP_PATH=/faster/qdrant/tmp
+Environment=QDRANT__TELEMETRY_DISABLED=true
+Environment=QDRANT__STORAGE__PERFORMANCE__MAX_OPTIMIZATION_THREADS=8
+Environment=QDRANT__STORAGE__PERFORMANCE__MAX_SEARCH_THREADS=0
+WorkingDirectory=%h/qdrant-next
+ExecStartPre=/bin/mkdir -p /faster/qdrant/storage /faster/qdrant/snapshots /faster/qdrant/tmp
+ExecStart=%h/qdrant-next/qdrant
+LimitNOFILE=1048576
+Restart=on-failure
+Nice=5
+
+[Install]
+WantedBy=default.target

@@ -9,6 +9,7 @@ import { coverageRefreshJob } from './coverage-job.js';
 import { stampVoicesJob } from './stamp-voices-job.js';
 import { stampSiteJob } from './stamp-site-job.js';
 import { vectorsBackupJob } from './vectors-backup-job.js';
+import { phraseF16BuildJob } from './phrase-f16-build.js';
 
 export const INDEX_REPORTS = {
   'phrase-index': phraseIndexJob,       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time
@@ -16,6 +17,7 @@ export const INDEX_REPORTS = {
   // HyPE questions and concept claims each have their OWN vector store + collection, so they index beside the phrase build
   'hype-index': (p = {}) => phraseIndexJob({ ...p, field: 'hype' }),
   'concept-index': (p = {}) => phraseIndexJob({ ...p, field: 'concepts' }),
+  'phrase-f16-build': phraseF16BuildJob,   // storage plan R12: phrases (main+hot) → float16 collection on qdrant-main (/faster); params { mode: setup|copy|reconcile|finish }
   'section-index': sectionIndexJob,
   'keyword-fill': keywordFillJob,       // params: { ids?, limit?, scope?, significant? } — BM25 gaps from the ledger, core first (Chad 10-16)
   'coverage-refresh': coverageRefreshJob,   // params: { ids? | limit? } — re-measure docs into index_coverage
@@ -25,5 +27,5 @@ export const INDEX_REPORTS = {
 };
 // lanes: phrase indexing alone (measured: one at a time is fastest on the interim SSD); HyPE/concepts/sections beside it;
 // BM25 on /fast in its own lane; coverage re-measures
-export const INDEX_LANES = { index: ['phrase-index', 'phrase-hot-reconcile'], backup: ['vectors-backup'], index2: ['hype-index', 'concept-index', 'section-index'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices', 'stamp-site'] };
+export const INDEX_LANES = { index: ['phrase-index', 'phrase-hot-reconcile'], backup: ['vectors-backup'], f16: ['phrase-f16-build'], index2: ['hype-index', 'concept-index', 'section-index'], keyword: ['keyword-fill'], coverage: ['coverage-refresh', 'stamp-voices', 'stamp-site'] };
 export const INDEX_JOB_NAMES = Object.keys(INDEX_REPORTS);
