@@ -3,7 +3,7 @@
 // Alerts are deduped by alertPlan(): a condition mails once, again only when it escalates; a cleared one re-arms.
 
 export const DISK_WARN = 85, DISK_CRIT = 92, PROJECT_HOURS = 24, SAMPLES = 6;
-export const HOST_STAT_VERSION = 1;   // = HOST_STAT_VERSION in scripts/ops/host-stat.sh
+export const HOST_STAT_VERSION = 2;   // = HOST_STAT_VERSION in scripts/ops/host-stat.sh
 // processes allowed to hold TOWER's GPU (it drives the monitor only): display server, desktop shell, portals, stat viewers
 const MONITOR_OK = /^(Xorg|Xwayland|gnome-s|gnome-shell|mutter|snapd|xdg-desk|gsd-|ibus|btop|nvtop|gdm|kwin|plasmashell)/;
 
@@ -13,7 +13,7 @@ export const gb = (bytes) => (bytes / 1024 ** 3).toFixed(bytes >= 100 * 1024 ** 
 /** host-stat.sh text → structured snapshot. */
 export const DOCKER_MIN_FREE_GB = 30;
 export function parseHostStat(text) {
-  const out = { version: 0, host: null, nproc: 0, load: [], mem: {}, df: [], zpool: [], zfs: {}, du: {}, oomCount: 0, oom: [], xid: [], nvsmi: null, nvdev: null, journalErr: null, dockerRoot: null };
+  const out = { version: 0, host: null, nproc: 0, load: [], mem: {}, df: [], zpool: [], zfs: {}, du: {}, oomCount: 0, oom: [], xid: [], nvsmi: null, nvdev: null, journalErr: null, dockerRoot: null, psi: {}, zram: [], amd: null, vramProc: [], svc: {}, ours: {} };
   let sec = null;
   for (const raw of String(text || '').split('\n')) {
     const line = raw.trimEnd();
@@ -28,6 +28,7 @@ export function parseHostStat(text) {
       else if (k === 'oomcount') out.oomCount = Number(v) || 0;
       else if (k === 'journal_err') out.journalErr = v;
       else if (k === 'dockerroot') out.dockerRoot = v.trim() || null;
+      else if (k === 'amd') out.amd = {};
       else if (k === 'nvsmi') out.nvsmi = [];
       else if (k === 'nvdev') out.nvdev = [];
       continue;
@@ -44,6 +45,11 @@ export function parseHostStat(text) {
     else if (sec === 'xid') out.xid.push(line);
     else if (sec === 'nvsmi') out.nvsmi.push(line);
     else if (sec === 'nvdev') out.nvdev.push(line.trim());
+    else if (sec === 'psi') { const m = line.match(/^(some|full)\s+avg10=([\d.]+)\s+avg60=([\d.]+)/); if (m) out.psi[m[1]] = { avg10: +m[2], avg60: +m[3] }; }
+    else if (sec === 'zram') { const [name, size, data, total] = line.trim().split(/\s+/); if (name) out.zram.push({ name, size: +size, data: +data, total: +total }); }
+    else if (sec === 'amd') { const [k, v] = line.trim().split(/\s+/); if (k && out.amd) out.amd[k] = +v; }
+    else if (sec === 'vramproc') { const m = line.trim().match(/^(\d+) (\d+) (\d+) (\d*) ?(.*)$/); if (m) out.vramProc.push({ pid: +m[1], vramKb: +m[2], gttKb: +m[3], rssKb: +m[4] || 0, cmd: m[5] }); }
+    else if (sec === 'svc') { const m = line.trim().match(/^(\S+)\s+(\[not set\]|\S+)\s*(\S*)$/); if (m) { if (/^ours/.test(m[1])) out.ours[m[1]] = m[2]; else out.svc[m[1]] = { current: Number(m[2]) || null, peak: Number(m[3]) || null }; } }
   }
   return out;
 }
@@ -117,6 +123,9 @@ export function evaluateHost(host, s, { role = 'none', prev = {}, now = Date.now
   const add = (cond, ok, level, detail) => checks.push({ name: `${host} ${cond}`, key: `${host}:${cond}`, ok, level, detail, host: true });
   const state = { samples: {}, du: { ...s.du, ...s.zfs }, vramHigh: false };
 
+  // ── MEMORY POOLS (Chad 10-28): system RAM + pressure + (AMD unified-memory hosts) VRAM / GTT, labelled so nobody reads `free` as the whole machine ──
+  const pools = memoryPools(s);
+  if (pools) add('unified pools', pools.ok, pools.level, pools.label);
   // ── docker data (10-25: a 64 GB image pulled onto aorus's 234 GB root filled it) ──
   if (s.dockerRoot) {
     const mnt = mountOf(s.dockerRoot, s), fs = s.df.find((d) => d.mount === mnt);
@@ -209,4 +218,32 @@ export function alertPlan(checks, seen = {}) {
     if (!was || RANK[c.level] > RANK[was]) send.push(c);
   }
   return { send, seen: next };
+}
+
+const GiB = 1024 ** 3;
+const g1 = (b) => (Math.round((b / GiB) * 10) / 10).toString().replace(/\.0$/, '');
+/** One host's memory picture → { label, ok, level, ... } or null. The label names every pool: "system RAM 17 of 31 GB free, pressure 0.0 %, GPU VRAM 13 of 96 GB used, GTT 0.1 of 15.5 GB". Pure. */
+export function memoryPools(s) {
+  if (!s?.mem?.MemTotal) return null;
+  const total = s.mem.MemTotal, avail = s.mem.MemAvailable ?? 0;
+  const some = s.psi?.some?.avg10 ?? null, full = s.psi?.full?.avg10 ?? null;
+  const swapUsed = (s.mem.SwapTotal ?? 0) - (s.mem.SwapFree ?? 0), zramUsed = (s.zram || []).reduce((a, z) => a + (z.total || 0), 0);
+  const parts = [`system RAM ${g1(total - avail)} of ${g1(total)} GB used (${g1(avail)} GB available)`, `memory pressure some ${some ?? '?'} % / full ${full ?? '?'} % (10 s)`, `swap ${g1(swapUsed)} GB used${zramUsed ? ` (zram holds ${g1(zramUsed)} GB compressed)` : ''}`];
+  let vramPct = 0;
+  if (s.amd?.mem_info_vram_total) {
+    const vt = s.amd.mem_info_vram_total, vu = s.amd.mem_info_vram_used ?? 0, gt = s.amd.mem_info_gtt_total ?? 0, gu = s.amd.mem_info_gtt_used ?? 0;
+    vramPct = vu / vt * 100;
+    parts.push(`GPU VRAM ${g1(vu)} of ${g1(vt)} GB used`, `GTT ${g1(gu)} of ${g1(gt)} GB used`, `GPU busy ${s.amd.gpu_busy_percent ?? '?'} %`);
+    if (s.amd.edge_temp_mc) parts.push(`GPU edge ${Math.round(s.amd.edge_temp_mc / 1000)} °C`);
+    const top = (s.vramProc || []).slice(0, 3).map((p) => `${(p.cmd || '').split(/\s+/).slice(0, 2).join(' ').slice(-40)} ${g1(p.vramKb * 1024)} GB`).join(' · ');
+    if (top) parts.push(`top VRAM: ${top}`);
+  }
+  const svc = Object.entries(s.svc || {}).map(([n, v]) => `${n} ${v.current != null ? g1(v.current) : 'idle'} GB now / peak ${v.peak != null ? g1(v.peak) : '?'} GB`).join(', ');
+  if (svc) parts.push(`services: ${svc}`);
+  const ours = Number(s.ours?.['ours-capped-scopes'] || 0);
+  if (ours) parts.push(`our capped jobs ${g1(ours)} GB`);
+  const availGb = avail / GiB;
+  const critical = (some ?? 0) >= 20 || availGb < 3 || vramPct >= 97;
+  const warn = (some ?? 0) >= 5 || availGb < 8 || vramPct >= 92 || (full ?? 0) >= 1;
+  return { label: `${s.host || 'host'} ${parts.join(' · ')}`, ok: !critical && !warn, level: critical ? 'critical' : 'warn', avail_gb: availGb, psi_some10: some, psi_full10: full, vram_pct: vramPct };
 }

@@ -432,8 +432,8 @@ describe('an unreachable probe host while Tower refuses heavy work', () => {
 describe('boss memory safety (10-28: our jobs overran its 31 GB, tailscaled was OOM-killed, the box left the network)', () => {
   it('13 GB stay free on boss: a job is admitted only when MemAvailable covers its budget plus the reserve', async () => {
     const t = await import('../../api/lib/media/tools.js');
-    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 20 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(true);    // 20 >= 4 + 13
-    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 16 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(false);   // llama-coder woke up
+    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 20 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(true);    // 20 >= 3 + 13
+    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 15 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(false);   // llama-coder woke up
     t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 18 }); expect(t.diskOk('boss', { kind: 'post' })).toBe(false);      // 18 < 6 + 13
     t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 25 }); expect(t.diskOk('boss', { kind: 'post' })).toBe(true);
     expect(t.MEM_BUDGET.post).toBe(6);
@@ -447,5 +447,17 @@ describe('boss memory safety (10-28: our jobs overran its 31 GB, tailscaled was 
     expect(cap).toMatch(/MemoryMax=\$\{G\}G/); expect(cap).toMatch(/MemorySwapMax=0/); expect(cap).toMatch(/oom_score_adj/);
     const wg = readFileSync(new URL('../../scripts/media/whole_gate.py', import.meta.url), 'utf8');
     expect(wg).toContain("'--memory','6g','--memory-swap','6g','--oom-score-adj','900'"); expect(wg).toMatch(/len\(busy\)>=1 or avail<MEM_NEED_GB\+MEM_RESERVE_GB/);
+  });
+});
+
+describe('boss admission reads the right pool (VRAM for the GPU, MemAvailable + pressure for system RAM)', () => {
+  it('a UniPASE job needs ~6 GB of VRAM free (+1.5 margin) and no memory pressure; llama-coder holding 63 GB of VRAM blocks it, a stalled system blocks everything', async () => {
+    const t = await import('../../../api/lib/media/tools.js').catch(() => import('../../api/lib/media/tools.js'));
+    const base = { free_gb: 900, mem_avail_gb: 25, psi_some10: 0, vram_total_gb: 96, vram_used_gb: 13, vram_free_mb: 85000 };
+    t.noteDisk('boss', base); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(true);
+    t.noteDisk('boss', { ...base, vram_free_mb: 6000 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(false);       // 6000 < 6000 + 1500
+    t.noteDisk('boss', { ...base, psi_some10: 8 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(false);           // pressure above 3 %
+    t.noteDisk('boss', { ...base, vram_free_mb: 3000 }); expect(t.diskOk('boss', { kind: 'post' })).toBe(true);        // a CPU tail needs no VRAM
+    expect(t.hostMemoryLabel('boss')).toMatch(/system RAM 25 of 31|system RAM 25 GB available|GPU VRAM 13 of 96 GB used/);
   });
 });

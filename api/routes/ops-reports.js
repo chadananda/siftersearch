@@ -50,9 +50,11 @@ export default async function opsReportRoutes(fastify) {
       const reaper = await fs.readFile((await import('../lib/media/pod-reaper.js')).REAPER_FILE, 'utf8').then(JSON.parse).catch(() => null);
       cloud_gpu = { ...ledgerSummary(st, Date.now(), C.spendOf, C.CLOUD.capUsd()), rentals_paused: await C.rentalPauseReason(), reaper: reaper ? { at: reaper.at, seen: reaper.seen, reaped: reaper.history?.slice(0, 5) || [] } : null };
     } catch { /* no cloud run yet */ }
+    let host_memory = null;
+    try { host_memory = JSON.parse(await (await import('fs/promises')).readFile(join(dirname((await import('../lib/media/cloud.js')).STATE_FILE), 'host-memory.json'), 'utf8')); host_memory.age_s = Math.round((Date.now() - host_memory.at) / 1000); } catch { /* not written yet */ }
     let remaster_quality = null;
     try { remaster_quality = JSON.parse(await (await import('fs/promises')).readFile(join(dirname((await import('../lib/media/cloud.js')).STATE_FILE), 'remaster-quality.json'), 'utf8')); remaster_quality.review = remaster_quality.review?.length; remaster_quality.unrepairable = remaster_quality.unrepairable?.length; } catch { /* not run yet */ }
-    return { head: headCommit(), power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers, cloud_gpu, remaster_quality };
+    return { head: headCommit(), power: powerState() ? { ...powerState(), line: powerLine() } : { mode: 'normal' }, services: readServices(), ops_jobs: runs, anis_answers: answers, cloud_gpu, remaster_quality, host_memory };
   });
   // NIGHT SCHEMA MAINTENANCE (10-24): named steps only — scripts/ops/db-maintenance.sh calls them one at a time with the
   // writers drained around each (a DROP frees a whole b-tree inside the single writer). No arbitrary SQL. maintenance-repo.js

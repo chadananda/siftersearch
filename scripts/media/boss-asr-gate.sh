@@ -76,7 +76,22 @@ if [[ "$verb" == "df" ]]; then
   gpu=$( (nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null || true) | head -1 | tr -dc '0-9' || true); gpu=${gpu:-null}   # a host without a GPU / sensors: null, never an exit (set -e)
   vfree=$( (nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits 2>/dev/null || true) | head -1 | tr -dc '0-9' || true); vfree=${vfree:-null}
   tctl=$( (sensors 2>/dev/null || true) | awk '/^Tctl:/ {gsub(/[^0-9.]/,"",$2); print int($2); exit}' || true); tctl=${tctl:-null}
-  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s,"gpu_temp":%s,"cpu_tctl":%s,"gpu_free_mb":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}" "$gpu" "$tctl" "$vfree"
+  # BOSS is TWO memory pools (Chad 10-28): ~31 GB of system RAM (MemAvailable / pressure) and a 96 GB BIOS carve-out that the GPU uses as VRAM (sysfs), plus GTT
+  # (system memory the GPU can map, ~15.5 GB). `free` shows only the first. UniPASE lands in VRAM (~5-6 GB) + ~2.2 GB RSS; llama-coder holds ~50 GB of VRAM.
+  amd=""; for c in /sys/class/drm/card*/device; do [[ -r "$c/mem_info_vram_total" ]] && { amd="$c"; break; }; done
+  gb() { awk -v b="${1:-0}" 'BEGIN{printf "%.1f", b/1073741824}'; }
+  vt=null; vu=null; vfm=null; gtt=null; gtu=null; busy=null
+  if [[ -n "$amd" ]]; then
+    vtb=$(cat "$amd/mem_info_vram_total" 2>/dev/null || echo 0); vub=$(cat "$amd/mem_info_vram_used" 2>/dev/null || echo 0)
+    vt=$(gb "$vtb"); vu=$(gb "$vub"); vfm=$(( (vtb - vub) / 1048576 ))
+    gtt=$(gb "$(cat "$amd/mem_info_gtt_total" 2>/dev/null || echo 0)"); gtu=$(gb "$(cat "$amd/mem_info_gtt_used" 2>/dev/null || echo 0)")
+    busy=$(cat "$amd/gpu_busy_percent" 2>/dev/null | tr -dc '0-9' || true); busy=${busy:-null}
+    if [[ "$gpu" == "null" ]]; then t=$( (cat "$amd"/hwmon/hwmon*/temp1_input 2>/dev/null || true) | head -1 | tr -dc '0-9' || true); [[ -n "$t" ]] && gpu=$(( t / 1000 )); fi
+  fi
+  psi=$(awk '/^some/ {split($2,a,"="); print a[2]}' /proc/pressure/memory 2>/dev/null || true); psi=${psi:-null}
+  psif=$(awk '/^full/ {split($2,a,"="); print a[2]}' /proc/pressure/memory 2>/dev/null || true); psif=${psif:-null}
+  memtot=$(awk '/^MemTotal:/ {print int($2/1048576*10)/10}' /proc/meminfo 2>/dev/null || echo null)
+  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s,"gpu_temp":%s,"cpu_tctl":%s,"gpu_free_mb":%s,"mem_total_gb":%s,"psi_some10":%s,"psi_full10":%s,"vram_total_gb":%s,"vram_used_gb":%s,"vram_free_mb":%s,"gtt_total_gb":%s,"gtt_used_gb":%s,"gpu_busy":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}" "$gpu" "$tctl" "$vfree" "${memtot:-null}" "$psi" "$psif" "$vt" "$vu" "$vfm" "$gtt" "$gtu" "$busy"
   exit 0
 fi
 if [[ "$verb" == "clean" ]]; then
@@ -146,7 +161,7 @@ if [[ "$verb" == "start" ]]; then
     # shellcheck disable=SC1091
     source ./unipase.conf
     [[ -x "${UNIPASE_PY:-}" ]] || { echo '{"error":"no UniPASE venv"}'; exit 2; }
-    nohup setsid ./capped.sh ${MEDIA_UNIPASE_MEM_GB:-8} env HF_HOME="$UNIPASE_HF" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True bash -c 'nice -n 10 "$1" unipase_job.py "$2" --output "$3" --repo "$4" > "$5" && tail -1 "$5" > "$6.tmp" && mv "$6.tmp" "$6"' _ "$UNIPASE_PY" "$d/in.$ext" "$d/out.file" "$UNIPASE_REPO" "$d/summary.json" "$d/out.json" 2>"$d/err.txt" </dev/null &
+    nohup setsid ./capped.sh ${MEDIA_UNIPASE_MEM_GB:-4} env HF_HOME="$UNIPASE_HF" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True bash -c 'nice -n 10 "$1" unipase_job.py "$2" --output "$3" --repo "$4" > "$5" && tail -1 "$5" > "$6.tmp" && mv "$6.tmp" "$6"' _ "$UNIPASE_PY" "$d/in.$ext" "$d/out.file" "$UNIPASE_REPO" "$d/summary.json" "$d/out.json" 2>"$d/err.txt" </dev/null &
   elif [[ "$tool" == "encode" ]]; then
     # a fixed encode recipe (media_tool.py encode: light chain / ogg / m4a) → out.file, then the out.json marker
     nohup setsid ./capped.sh ${MEDIA_JOB_MEM_GB:-5} bash -c 'nice -n 10 venv/bin/python media_tool.py encode "$1" --output "$2" "${@:5}" > "$3" && echo "{\"done\":true}" > "$3.ok" && mv "$3.ok" "$4"' _ "$d/in.$ext" "$d/out.file" "$d/summary.json" "$d/out.json" ${rest2[@]+"${rest2[@]}"} 2>"$d/err.txt" </dev/null &

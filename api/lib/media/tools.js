@@ -175,7 +175,9 @@ export const asrHost = () => (process.env.MEDIA_ASR_HOST ?? 'boss') || null;
 const diskInfo = new Map();   // host → { free_gb, used_pct, mem_avail_gb, at, warnedAt }
 const diskMinGb = () => Number(process.env.MEDIA_HOST_MIN_FREE_GB) || 20;
 /** RAM a job of each kind needs on a compute host (GB, measured RSS + headroom). */
-export const MEM_BUDGET = { unipase: 4, post: 6, whole: 6, transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
+export const PSI_ADMIT_MAX = Number(process.env.MEDIA_PSI_ADMIT_MAX ?? 3);   // % of the last 10 s some task stalled on memory: above this no NEW job is admitted
+// measured 10-28 on boss: a UniPASE job = ~2.2 GB RSS (system RAM), 5-6 GB VRAM, 8 MB GTT
+export const MEM_BUDGET = { unipase: 3, post: 6, whole: 6, transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
 /** RAM kept free on each host whatever runs (GB). */
 // boss: 31 GB of system RAM (96 GB of its 128 GB is the GPU carve-out) shared with Chad's llama-coder (22 GB peak) and laya: 13 GB stay free, and
 // every job we start there is also capped by its own cgroup (scripts/media/capped.sh) and made the OOM killer's first victim (10-28: tailscaled was OOM-killed)
@@ -212,6 +214,13 @@ export function diskOk(host, { now = Date.now(), refresh = refreshDisk, kind = n
     const pending = pendingVram(host, d, now);
     if (d.gpu_free_mb - pending < vneed + 300) why.push(`${d.gpu_free_mb - pending} MiB GPU memory free (< ${vneed + 300} for a ${kind})`);
   }
+  // a unified-memory host (boss: 31 GB system RAM + a 96 GB GPU carve-out): the GPU pool is admitted by VRAM FREE, system RAM by MemAvailable AND by pressure
+  // (PSI some avg10 — the best early-OOM signal; Chad 10-28). `free` alone would call a box with 63 GB of VRAM in use "idle".
+  if (kind && d.vram_free_mb != null && host !== gpuHost() && VRAM_NEED_MB[kind]) {
+    const pendingV = pendingVram(host, d, now);
+    if (d.vram_free_mb - pendingV < VRAM_NEED_MB[kind] + 1500) why.push(`${d.vram_free_mb - pendingV} MiB VRAM free of ${Math.round((d.vram_total_gb || 0) * 1024)} (< ${VRAM_NEED_MB[kind] + 1500} for a ${kind})`);
+  }
+  if (kind && d.psi_some10 != null && d.psi_some10 > PSI_ADMIT_MAX) why.push(`memory pressure ${d.psi_some10} % (> ${PSI_ADMIT_MAX} %)`);
   const need = (needGb ?? MEM_BUDGET[kind] ?? 0) + memReserve(host);
   if (kind && d.mem_avail_gb != null && d.mem_avail_gb < need) why.push(`${d.mem_avail_gb} GB RAM available (< ${Math.round(need * 10) / 10} GB for a ${kind})`);
   if (why.length && (!d.warnedAt || now - d.warnedAt > 10 * 60_000)) { d.warnedAt = now; console.warn(`[media] WARN ${host}: ${why.join(', ')} — no new jobs there`); }
@@ -221,7 +230,7 @@ async function refreshDisk(host, { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'df')], { timeoutMs: 30_000 });
   const j = JSON.parse(stdout.trim().split('\n').pop());
   setImmediate(() => { for (const w of asrWaiters.splice(0)) w(); });   // a fresh reading may admit a waiting transcription
-  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, gpu_temp: j.gpu_temp ?? null, cpu_tctl: j.cpu_tctl ?? null, gpu_free_mb: j.gpu_free_mb ?? null, pending: false });
+  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, gpu_temp: j.gpu_temp ?? null, cpu_tctl: j.cpu_tctl ?? null, gpu_free_mb: j.gpu_free_mb ?? null, mem_total_gb: j.mem_total_gb ?? null, psi_some10: j.psi_some10 ?? null, psi_full10: j.psi_full10 ?? null, vram_total_gb: j.vram_total_gb ?? null, vram_used_gb: j.vram_used_gb ?? null, vram_free_mb: j.vram_free_mb ?? null, gtt_total_gb: j.gtt_total_gb ?? null, gtt_used_gb: j.gtt_used_gb ?? null, gpu_busy: j.gpu_busy ?? null, pending: false });
   return j;
 }
 /** HEAT (10-23 monitor: aorus GPU 88 °C thermally throttling at 209 W, CPU Tctl 95 °C; boss Tctl 99.9 °C): the slots a host
@@ -801,4 +810,24 @@ export async function gpuOrTower(sub, input, opts, { job, pidFile, stop, python 
     finally { unreserve(); if (took) { offBusy.set(host, offBusy.get(host) - 1); offWait.shift()?.(); } }
   }
   return slot(() => detachedTool(sub, input, opts, { pidFile, threads: 4, stop, python }));   // the tower's 8-thread budget (towerSlot)
+}
+
+/** The memory picture of each compute host, labelled for people ("boss system RAM 17 of 31 GB free, pressure 0 %, GPU VRAM 13 of 96 GB used, GTT 0.1 of 15.5 GB"). */
+export function hostMemoryLabel(host, d = diskInfo.get(host)) {
+  if (!d) return null;
+  const parts = [];
+  if (d.mem_total_gb != null) parts.push(`system RAM ${d.mem_avail_gb} of ${d.mem_total_gb} GB available`);
+  else if (d.mem_avail_gb != null) parts.push(`system RAM ${d.mem_avail_gb} GB available`);
+  if (d.psi_some10 != null) parts.push(`memory pressure ${d.psi_some10} %`);
+  if (d.vram_total_gb != null) parts.push(`GPU VRAM ${d.vram_used_gb} of ${d.vram_total_gb} GB used`, `GTT ${d.gtt_used_gb} of ${d.gtt_total_gb} GB used`);
+  else if (d.gpu_free_mb != null) parts.push(`GPU memory ${d.gpu_free_mb} MiB free`);
+  if (d.gpu_busy != null) parts.push(`GPU busy ${d.gpu_busy} %`);
+  if (d.gpu_temp != null) parts.push(`GPU ${d.gpu_temp} °C`);
+  if (d.cpu_tctl != null) parts.push(`CPU Tctl ${d.cpu_tctl} °C`);
+  return `${host}: ${parts.join(' · ')}`;
+}
+export async function hostMemorySnapshot(hosts = [gpuHost(), asrHost()].filter(Boolean)) {
+  const out = {};
+  for (const h of [...new Set(hosts)]) { try { await refreshDisk(h); } catch { /* unreachable: keep the last reading */ } out[h] = { label: hostMemoryLabel(h), at: diskInfo.get(h)?.at ?? null }; }
+  return out;
 }

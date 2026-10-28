@@ -95,6 +95,18 @@ async function laneKeeperLoop() {
     await nap(60_000);
   }
 }
+// host memory (boss is TWO pools — system RAM + a 96 GB GPU carve-out): read live from the gates every minute, labelled, for /ops/services and system-checks
+async function hostMemoryLoop() {
+  const T = await import('../lib/media/tools.js');
+  const { writeFile, mkdir } = await import('fs/promises');
+  const { STATE_FILE } = await import('../lib/media/cloud.js');
+  const { dirname, join } = await import('path');
+  while (!isDraining()) {
+    try { const snap = await T.hostMemorySnapshot(['aorus', 'boss']); await mkdir(dirname(STATE_FILE), { recursive: true }); await writeFile(join(dirname(STATE_FILE), 'host-memory.json'), JSON.stringify({ at: Date.now(), hosts: snap })); }
+    catch (err) { logger.warn({ err: err.message }, 'host memory pass failed'); }
+    await nap(60_000);
+  }
+}
 async function backfillStatusLoop() {
   const { pullLocal, render } = await import('../../scripts/media/remaster-backfill-status.mjs');
   const { writeFile, mkdir } = await import('fs/promises');
@@ -107,4 +119,4 @@ async function backfillStatusLoop() {
   }
 }
 async function speakerSketchLoop() { while (!isDraining()) { try { await mediaSpeakerSketchSweepJob(); } catch (err) { logger.warn({ err: err.message }, 'speaker sketch sweep failed'); } await nap(10 * 60_000); } }
-await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [speakerSketchLoop, mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop, qualityLoop, lightBackfillLoop, laneKeeperLoop] });
+await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [speakerSketchLoop, mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop, qualityLoop, lightBackfillLoop, laneKeeperLoop, hostMemoryLoop] });

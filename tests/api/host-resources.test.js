@@ -241,3 +241,27 @@ describe('docker data room (10-25: a 64 GB image filled aorus root)', () => {
     expect(ev(100 * 1048576).ok).toBe(true);
   });
 });
+
+describe('boss memory is TWO pools (Chad 10-28)', () => {
+  const GiB = 1024 ** 3;
+  const text = (o = {}) => [`@@version 2`, `@@host Boss`, `@@nproc 32`, `@@loadavg 2 2 2`, `@@psi`, `some avg10=${o.some ?? 0} avg60=0.00 avg300=0.00 total=1`, `full avg10=${o.full ?? 0} avg60=0.00 avg300=0.00 total=1`,
+    `@@zram`, `/dev/zram0 33413922816 50634752 14700544`, `@@amd`, `mem_info_vram_total ${96 * GiB}`, `mem_info_vram_used ${(o.vram ?? 13) * GiB}`, `mem_info_gtt_total ${15.56 * GiB}`, `mem_info_gtt_used ${0.08 * GiB}`, `gpu_busy_percent 100`, `edge_temp_mc 66000`,
+    `@@vramproc`, `27533 6065732 8252 2246848 /mnt/data4tb/remaster-rnd/venvs/rocm/bin/python unipase_job.py jobs/um-x`, `@@svc`, `llama-coder [not set] 23742345216`, `laya 2475548672 2833276928`, `ours-capped-scopes 1904271360 -`,
+    `@@meminfo`, `MemTotal: 32631588 kB`, `MemAvailable: ${(o.avail ?? 17) * 1048576} kB`, `SwapTotal: 65262372 kB`, `SwapFree: 65211216 kB`, `@@df`, `/dev/x ext4 1000000000 100000000 900000000 10% /`].join('\n');
+  it('reads both pools, pressure, per-process VRAM and the services, and labels them plainly', async () => {
+    const m = await import('../../scripts/lib/host-resources.mjs');
+    const s = m.parseHostStat(text());
+    expect(s.amd.mem_info_vram_total).toBe(96 * GiB); expect(s.psi.some.avg10).toBe(0); expect(s.vramProc[0]).toMatchObject({ pid: 27533, vramKb: 6065732 });
+    expect(s.svc['llama-coder'].peak).toBe(23742345216); expect(s.zram[0].total).toBe(14700544);
+    const p = m.memoryPools(s);
+    expect(p.label).toMatch(/system RAM \d+(\.\d)? of 31(\.1)? GB used \(17 GB available\)/);
+    expect(p.label).toMatch(/memory pressure some 0 % \/ full 0 %/); expect(p.label).toMatch(/GPU VRAM 13 of 96 GB used/); expect(p.label).toMatch(/GTT 0\.1 of 15\.6 GB used/);
+    expect(p.label).toMatch(/llama-coder idle GB now \/ peak 22\.1 GB|llama-coder idle GB now/); expect(p.label).toMatch(/top VRAM: .*unipase_job\.py/); expect(p.ok).toBe(true);
+  });
+  it('warns on pressure / low MemAvailable / full VRAM, critical on heavy stalls', async () => {
+    const m = await import('../../scripts/lib/host-resources.mjs');
+    const lv = (o) => { const p = m.memoryPools(m.parseHostStat(text(o))); return p.ok ? 'ok' : p.level; };
+    expect(lv({})).toBe('ok'); expect(lv({ some: 6 })).toBe('warn'); expect(lv({ avail: 6 })).toBe('warn'); expect(lv({ vram: 93 })).toBe('warn');
+    expect(lv({ some: 25 })).toBe('critical'); expect(lv({ avail: 2 })).toBe('critical'); expect(lv({ full: 2 })).toBe('warn');
+  });
+});
