@@ -30,3 +30,30 @@ export async function bossPostRecording(it,m,{T,job,cfg,stop,nap}){
  await writeFile(join(it.dir,'enhanced/unipase.cloud.flac'),'');await writeFile(join(it.dir,'enhanced/unipase.asr.json'),'{}');
  return JSON.parse(await readFile(join(it.dir,'enhanced/unipase.done.json'),'utf8'));
 }
+
+/** A WHOLE order on Boss (AMD ROCm, 10-28): every stage of one recording on this one host (grade, enhance, ASR on whisper.cpp HIP, diarize, UniPASE,
+ *  guard, encodes), through the restricted gate. The original is uploaded once; results are fetched file by file and verified by sha256 on tower. */
+export async function bossWholeRecording(it,m,{T,stop,nap,sha}) {
+ const {wholeJob,adoptWholeResult}=await import('./whole-result.js');
+ const {createHash}=await import('node:crypto');
+ const job=`recording-w${it.id}-${sha.slice(0,8)}`;
+ const call=(verb,opts={})=>T.run('ssh',['-o','BatchMode=yes','boss',verb],{timeoutMs:600000,stop,...opts});
+ const poll=async()=>JSON.parse((await call(`whole-poll ${job}`)).stdout);
+ let s=await poll();
+ if(!s){
+  await call(`whole-put ${job} in${extname(m.original).toLowerCase()}`,{inputFile:join(it.dir,m.original)});
+  await call(`whole-put ${job} job.json`,{input:JSON.stringify({...wholeJob(it,m,sha),device:'rocm',threads:6})});
+  while(!s){if(stop()){const e=Error('Boss whole job staged for reattachment');e.code='DRAIN';throw e;}await call(`whole-start ${job}`);s=await poll();if(!s)await nap(15000);}
+ }
+ while(s.Running){if(stop()){const e=Error('Boss whole recording continues');e.code='DRAIN';throw e;}await nap(15000);s=await poll();}
+ if(s.ExitCode)throw Error('Boss whole recording failed with exit '+s.ExitCode);
+ const staging=join(it.dir,'.whole-worker');await rm(staging,{recursive:true,force:true});await mkdir(join(staging,'item'),{recursive:true});
+ const get=async(name,to)=>{await mkdir(join(to,'..'),{recursive:true});const output=createWriteStream(to);const h=createHash('sha256');try{await call(`whole-fetch ${job} ${name}`,{onStdout:b=>{h.update(b);output.write(b);}});output.end();await finished(output);return h.digest('hex');}catch(e){output.destroy();throw e;}};
+ await get('result.json',join(staging,'result.json'));
+ const r=JSON.parse(await readFile(join(staging,'result.json'),'utf8'));
+ for(const f of r.files||[]){
+  if(!f.path||f.path.split('/').some(x=>!x||x==='.'||x==='..')||!/^[A-Za-z0-9_.\-\/]+$/.test(f.path))throw Error('Unsafe worker output path');
+  if(await get('item/'+f.path,join(staging,'item',f.path))!==f.sha256)throw Error('Worker output checksum mismatch: '+f.path);
+ }
+ return adoptWholeResult(staging,it.dir,m,sha);
+}

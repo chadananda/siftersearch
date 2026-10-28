@@ -5,6 +5,9 @@ from pathlib import Path
 ROOT=Path.home()/'sifter-whole-home'
 INPUT=re.compile(r'^(in\.[a-z0-9]{2,5}|out\.flac|asr\.json|asr_orig\.json|work\.json|job\.json)$')
 OUTPUT=re.compile(r'^(post\.json|done\.json|post/(unipase\.flac|[a-zA-Z0-9_.-]+\.(json|ogg|m4a)))$')
+WHOLE_OUT=re.compile(r'^(result\.json|item/[A-Za-z0-9_.\-]+(/[A-Za-z0-9_.\-]+)*)$')   # a whole recording's manifest + files (tower verifies every sha256)
+WHOLE_MEM_GB=10   # whole = ASR + alignment + UniPASE + encodes in ONE container on the GPU
+IMAGE_RE=re.compile(r'^(ghcr\.io/chadananda/sifter-media-worker@sha256:[a-f0-9]{64}|sifter-media-worker:rocm-[a-z0-9-]{1,40})$')
 
 def job_dir(job):
     if not re.fullmatch(r'recording-[a-z0-9-]{1,100}',job):raise ValueError('Invalid job identity')
@@ -18,6 +21,23 @@ def docker(*args,check=True):
 def state(job):
     r=docker('inspect',job,'--format','{{json .State}}',check=False)
     return json.loads(r.stdout) if r.returncode==0 else None
+
+def start_whole(job,d):
+    """A whole recording on the AMD GPU: the accepted :rocm image, no network, memory/pids bounded, first thing the kernel kills. ONE at a time."""
+    image=(Path(__file__).parent/'whole-image-rocm.txt').read_text().strip()
+    if not IMAGE_RE.fullmatch(image):raise ValueError('No accepted rocm image')
+    with open(ROOT/'dispatch.lock','a') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        existing=state(job)
+        if existing:print(json.dumps(existing));return
+        busy=docker('ps','--filter','label=io.sifter.cpu-post=1','--format','{{.Names}}').stdout.splitlines()
+        avail=next((int(l.split()[1])/1048576 for l in open('/proc/meminfo') if l.startswith('MemAvailable:')),0)
+        if len(busy)>=1 or avail<WHOLE_MEM_GB+MEM_RESERVE_GB:print('{"waiting":true}');return
+        (ROOT/'leases').mkdir(exist_ok=True)
+        gids=[str(os.stat(p).st_gid) for p in ('/dev/kfd','/dev/dri/renderD128') if os.path.exists(p)]
+        grp=[x for g in dict.fromkeys(gids) for x in ('--group-add',g)]
+        docker('run','-d','--name',job,'--label','io.sifter.cpu-post=1','--device','/dev/kfd','--device','/dev/dri',*grp,'--network','none','--cpus','8','--memory',f'{WHOLE_MEM_GB}g','--memory-swap',f'{WHOLE_MEM_GB}g','--oom-score-adj','900','--pids-limit','512','-v',str(d)+':/job','-v',str(ROOT/'leases')+':/workspace/.gpu-admission','-e','SIFTER_GPU_LEASES=1','--entrypoint','/usr/local/bin/node',image,'/opt/sifter/api/lib/media/whole-recording.mjs','/job')
+    print('{"started":true}')
 
 def main(args):
     verb,job=args[:2];d=job_dir(job);ROOT.mkdir(exist_ok=True)
@@ -37,7 +57,9 @@ def main(args):
                 f.write(b)
         os.replace(d/(name+'.part'),d/name);print('{"staged":true}');return
     if verb=='whole-start':
-        cfg=json.load(open(d/'job.json')).get('post',{})
+        jj=json.load(open(d/'job.json'))
+        if jj.get('v')==1 and jj.get('device')=='rocm' and not jj.get('post'):return start_whole(job,d)
+        cfg=jj.get('post',{})
         if cfg.get('mode')!='post' or cfg.get('cleanup') is not False or not cfg.get('assess_quality'):raise ValueError('Only assessed cached restorations are accepted')
         image=(Path(__file__).parent/'whole-image.txt').read_text().strip()
         if not re.fullmatch(r'ghcr.io/chadananda/sifter-media-worker@sha256:[a-f0-9]{64}',image):raise ValueError('No accepted image')
@@ -56,7 +78,7 @@ def main(args):
     if verb=='whole-poll':print(json.dumps(state(job)));return
     if verb=='whole-fetch':
         name=args[2]
-        if not OUTPUT.fullmatch(name):raise ValueError('Unexpected output')
+        if not (OUTPUT.fullmatch(name) or WHOLE_OUT.fullmatch(name)) or '..' in name.split('/'):raise ValueError('Unexpected output')
         p=d/name
         if p.is_symlink() or p.parent.is_symlink():raise ValueError('Symlink output')
         with open(p,'rb') as f:shutil.copyfileobj(f,sys.stdout.buffer,1024*1024)

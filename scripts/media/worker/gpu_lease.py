@@ -21,7 +21,26 @@ def live_reservations(state, namespace, now):
             (v.get('namespace') != namespace and now-v.get('at',0) < 60)}
 
 
+def amd_card():
+    import glob
+    for d in sorted(glob.glob('/sys/class/drm/card[0-9]*/device')):
+        if os.path.exists(d+'/mem_info_vram_total') and os.path.exists(d+'/gpu_busy_percent'):return d
+    return None
+
+
+def backend():
+    """'nvidia' (nvidia-smi), 'amd' (amdgpu sysfs), or None. Vendor only selects how memory is read; admission is the same."""
+    if shutil.which('nvidia-smi'):return 'nvidia'
+    return 'amd' if amd_card() else None
+
+
 def sample():
+    if not shutil.which('nvidia-smi') and amd_card():
+        d=amd_card();rd=lambda f:float(open(d+'/'+f).read())
+        total,used=rd('mem_info_vram_total')/2**30,rd('mem_info_vram_used')/2**30
+        import glob
+        temps=[float(open(t).read())/1000 for t in glob.glob(d+'/hwmon/hwmon*/temp1_input')]
+        return total-used,total,max(temps or [0])
     r=subprocess.run(['nvidia-smi','--query-gpu=memory.free,memory.total,temperature.gpu','--format=csv,noheader,nounits'],capture_output=True,text=True,check=True,timeout=5)
     free,total,temp=map(float,r.stdout.splitlines()[0].split(','));return free/1024,total/1024,temp
 
@@ -34,7 +53,7 @@ def lease(stage, need=None, timeout=1800):
     pid=os.getpid();token=identity(pid);namespace=os.readlink('/proc/self/ns/pid')
     key=namespace+':'+str(pid);path=root+'/leases.json';started=time.monotonic()
     need=NEEDS[stage] if need is None else need
-    gpu_enabled=os.environ.get('CUDA_VISIBLE_DEVICES')!='' and os.environ.get('MEDIA_DEVICE')!='cpu' and bool(shutil.which('nvidia-smi'))
+    gpu_enabled=os.environ.get('CUDA_VISIBLE_DEVICES')!='' and os.environ.get('MEDIA_DEVICE')!='cpu' and backend() is not None
     if not gpu_enabled:need=0
     ram=float(os.environ.get('MEDIA_STAGE_RAM_GB') or RAM_NEEDS[stage])
     try:from .controller import read_system

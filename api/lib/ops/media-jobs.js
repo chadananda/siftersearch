@@ -1458,6 +1458,20 @@ export function worstFirst(talks) {
  *  folder and the talk's media-remaster run is queued. Budget-capped (cloud.js), every pod terminated at the end, on a
  *  fatal error, or (their own watchdog) after 15 idle minutes; a drain YIELDS — pods and jobs in flight live in the state
  *  file and are re-attached on the next start. → summary (spend, $/audio-hour, done, failed) */
+
+/** May home host `h` take queued order `id`? ONE host per order (Chad 10-28: upload is the bottleneck — the same audio never goes to two computers):
+ *  an order another host holds is never eligible, and a whole order runs every stage on the host that takes it. Vendor-blind: boss (AMD) takes whole
+ *  orders as soon as its GPU path is accepted (`boss_whole`), exactly like aorus (NVIDIA). */
+export function homeEligibleItem(h, id, st, acceptedWorker, env = process.env) {
+  const it = st.items?.[id], whole = it?.kind === 'whole';
+  if (Object.values(st.home || {}).some((c) => c?.itemId === id)) return false;
+  if (acceptedWorker?.hold_whole && whole) return false;
+  const bossOk = !h.startsWith('boss') || !acceptedWorker || it?.mode === 'post'
+    || (h === 'boss' && whole && acceptedWorker.boss_whole === true)
+    || (h === 'boss' && !whole && (it?.mode || 'restore') === 'restore' && env.MEDIA_BOSS_RESTORE !== '0');
+  return bossOk && (!acceptedWorker?.reserve_aorus_for_whole || h.startsWith('boss') || whole);
+}
+
 export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000, force = false, mode = 'restore' } = {}, deps = {}) {
   const requestedMaxPods = maxPods;
   const configuredPods = Number(process.env.MEDIA_CLOUD_MAX_PODS);
@@ -1616,8 +1630,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         if (homeTasks.has(h)) continue;
         if ((st.host_down?.[h.replace(/-\d+$/, '')] || 0) > now()) continue;   // a host that stopped answering is left alone for a while (10-28: boss went offline and 41 talks burned their attempts in minutes)
         // boss: hot, or short of RAM for our job on top of the 13 GB reserved for Chad's own services (MemAvailable, read live from the gate every 30 s)
-        const bossBlocked=h.startsWith('boss')&&((T.coolEnough&&!T.coolEnough('boss'))||(T.diskOk&&!T.diskOk('boss',{kind:h==='boss'?'unipase':'post'})));
-        const eligibleIndex=bossBlocked?-1:st.queue.findIndex(id=>(!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')&&(!h.startsWith('boss')||!acceptedWorker||st.items?.[id]?.mode==='post'||(h==='boss'&&st.items?.[id]?.kind!=='whole'&&(st.items?.[id]?.mode||'restore')==='restore'&&process.env.MEDIA_BOSS_RESTORE!=='0'))&&(!acceptedWorker?.reserve_aorus_for_whole||h.startsWith('boss')||st.items?.[id]?.kind==='whole'));
+        const bossBlocked=h.startsWith('boss')&&((T.coolEnough&&!T.coolEnough('boss'))||(T.diskOk&&!T.diskOk('boss',{kind:h==='boss'&&acceptedWorker?.boss_whole&&st.queue.some(id=>st.items?.[id]?.kind==='whole'&&homeEligibleItem(h,id,st,acceptedWorker))?'whole':h==='boss'?'unipase':'post'})));
+        const eligibleIndex=bossBlocked?-1:st.queue.findIndex(id=>homeEligibleItem(h,id,st,acceptedWorker));
         const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
         if (!cur) continue;
         if(acceptedWorker&&!cur.image)cur.image=acceptedWorker.image;
@@ -1627,7 +1641,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
           if (!m?.original) throw new Error('no original');
           if (st.items?.[it.id]?.kind==='whole'){
-            const completed=await (await import('../media/home-recording.js')).homeWholeRecording(it,m,{T,image:cur.image||acceptedWorker.image,legacyLock:acceptedWorker.aorus_legacy_lock!==false,stop:draining});
+            const completed=await (await import('../media/home-recording.js')).homeWholeRecording(it,m,{T,host:h.startsWith('boss')?'boss':'aorus',image:h.startsWith('boss')?(acceptedWorker.boss_image||acceptedWorker.image):(cur.image||acceptedWorker.image),legacyLock:acceptedWorker.aorus_legacy_lock!==false,stop:draining});
             if(['whole_queued','scheduled','queued','running'].includes((await repo.getMediaItem(it.id))?.state))await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
             st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,gpu:h,pod:h,at:now()});st.home_done++;return;
           }

@@ -1,0 +1,58 @@
+# SIFTER MEDIA WORKER, AMD target (:rocm). Public, no secrets. Same job code as the CUDA image (/opt/sifter, built by whole-worker/prepare-image.mjs);
+# only the GPU backends differ: whisper.cpp HIP for ASR/langid (measured 10-28 on boss gfx1151: WER 2.7-8.3 %, RTF 0.023-0.05), AMD TheRock ROCm
+# torch for UniPASE + wav2vec2 alignment. Data assets (UniPASE weights, aligners, speaker models, Node, NLTK, Silero) are copied from the accepted
+# CUDA image, so there is ONE source of weights. Build on a host that has that image (boss): scripts/media/whole-worker/build-rocm.sh.
+ARG CUDA_IMAGE=ghcr.io/chadananda/sifter-media-worker@sha256:6e4d5e414a0b46058156dd3faadb227c9ca6ee7ed359f4e3d93f53eaeab21abf
+FROM ${CUDA_IMAGE} AS assets
+
+FROM rocm/dev-ubuntu-22.04:7.2.4 AS wcpp  # must match the HOST driver stack (boss: ROCm 7.2.4); a 7.0 userspace segfaults in libhsa on this kernel
+ARG WHISPER_CPP_COMMIT=284029c07012d2000941a08d38a31ffb71f4734e
+ARG GGML_SHA256=1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69
+RUN apt-get update && apt-get install -y --no-install-recommends cmake git ninja-build curl ca-certificates hipblas-dev rocblas-dev rocsolver-dev libdrm-amdgpu1 \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone -q https://github.com/ggml-org/whisper.cpp /src && git -C /src checkout -q $WHISPER_CPP_COMMIT
+WORKDIR /src
+RUN export PATH=/opt/rocm/bin:$PATH HIPCXX=/opt/rocm/lib/llvm/bin/clang HIP_PATH=/opt/rocm \
+    && cmake -B build -G Ninja -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1151 -DCMAKE_BUILD_TYPE=Release -DWHISPER_BUILD_TESTS=OFF >/dev/null \
+    && cmake --build build --target whisper-cli -j"$(nproc)" 2>&1 | tail -3
+# the runtime closure of whisper-cli (ROCm libs it links + the gfx1151 rocBLAS kernels); nothing else of the 20 GB dev image
+RUN set -e; mkdir -p /out/bin /out/lib/rocblas/library && cp build/bin/whisper-cli /out/bin/ && cp -a build/bin/*.so* /out/lib/ \
+    && export LD_LIBRARY_PATH=$PWD/build/bin \
+    && for l in $(ldd build/bin/whisper-cli | awk '/=> \//{print $3}' | grep -E '^/(opt/rocm|usr/lib/x86_64-linux-gnu/(libdrm|libnuma|libelf|libtinfo|libz))'); do cp -L "$l" /out/lib/; done \
+    && for l in $(ldd build/bin/libggml-hip.so.0 | awk '/=> \//{print $3}' | grep -E '^/opt/rocm'); do cp -L "$l" /out/lib/; done \
+    && cp /opt/rocm/lib/rocblas/library/*gfx1151* /out/lib/rocblas/library/ && cp /opt/rocm/lib/rocblas/library/TensileManifest.txt /out/lib/rocblas/library/ \
+    && ls /out/lib | wc -l && du -sh /out && ls /out/lib | grep -E 'whisper|ggml|hip|rocblas'
+RUN mkdir -p /out/model && curl -fL -o /out/model/ggml-large-v3-turbo.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin \
+    && echo "$GGML_SHA256  /out/model/ggml-large-v3-turbo.bin" | sha256sum -c -
+
+FROM python:3.11-slim-bookworm
+ENV DEBIAN_FRONTEND=noninteractive PIP_NO_CACHE_DIR=1 HF_HOME=/opt/models/hf SIFTER_WEIGHTS=/opt/models/weights
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg libsndfile1 libchromaprint-tools git curl ca-certificates procps libnuma1 libdrm2 libdrm-amdgpu1 libelf1 libgomp1 \
+    && rm -rf /var/lib/apt/lists/* && pip install uv==0.5.* >/dev/null
+# AMD TheRock gfx1151 wheels carry their own ROCm runtime (a mixed system stack segfaults in libhsa; bossllm SETUP.md). Pinned like boss's venv.
+RUN uv venv --python 3.11 /opt/gate/venv && uv pip install --python /opt/gate/venv/bin/python --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ \
+      --extra-index-url https://pypi.org/simple --index-strategy unsafe-best-match --prerelease=allow "torch==2.9.1+rocm7.13.0a20260501" "torchaudio==2.9.0+rocm7.13.0a20260501" \
+    && uv pip install --python /opt/gate/venv/bin/python --no-deps whisperx==3.8.6 \
+    && uv pip install --python /opt/gate/venv/bin/python "numpy<2" ctranslate2 faster-whisper nltk pandas "transformers==4.44.2" omegaconf soundfile scipy einops nara_wpe \
+      librosa torchmetrics onnxruntime requests pyloudnorm sherpa-onnx==1.13.8 sherpa-onnx-core==1.13.8 huggingface_hub pyannote.audio \
+    && ln -sf /opt/gate/venv/bin/python /usr/local/bin/python
+# DeepFilterNet keeps its own old CPU torch (as in the CUDA image)
+RUN uv venv --python 3.11 /opt/gate/venv-dfn && uv pip install --python /opt/gate/venv-dfn/bin/python "numpy<2" torch==2.0.1 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cpu \
+    && uv pip install --python /opt/gate/venv-dfn/bin/python deepfilternet==0.5.6 soundfile --extra-index-url https://pypi.org/simple \
+    && HF_HOME=/tmp/hf /opt/gate/venv-dfn/bin/python -c "from df.enhance import init_df; init_df(); print('dfn model cached')"
+# runtime libs the ROCm torch wheels link against (found by the host self-test, which refuses to start without them)
+RUN apt-get update && apt-get install -y --no-install-recommends libatomic1 libgfortran5 && rm -rf /var/lib/apt/lists/*
+COPY --from=assets /opt/models /opt/models
+COPY --from=assets /opt/unipase /opt/unipase
+COPY --from=assets /opt/gate/models /opt/gate/models
+COPY --from=assets /opt/worker-extras /opt/worker-extras
+COPY --from=assets /root/.cache/torch /root/.cache/torch
+COPY --from=assets /usr/local/bin/node /usr/local/bin/node
+COPY --from=wcpp /out/bin /opt/whispercpp/bin
+COPY --from=wcpp /out/lib /opt/whispercpp/lib
+COPY --from=wcpp /out/model /opt/models/whispercpp
+COPY rootfs/opt/sifter /opt/sifter
+ENV WHISPER_CPP=/opt/whispercpp/bin/whisper-cli WHISPER_CPP_MODEL=/opt/models/whispercpp/ggml-large-v3-turbo.bin NLTK_DATA=/opt/models/nltk_data PYTHONPATH=/opt/worker-extras:/opt/sifter/media
+# 'python' = the venv (a symlink to a venv python loses its pyvenv.cfg): a wrapper
+RUN rm -f /usr/local/bin/python && printf '#!/bin/sh\nexec /opt/gate/venv/bin/python "$@"\n' > /usr/local/bin/python && chmod +x /usr/local/bin/python
+RUN python -m py_compile /opt/sifter/media/*.py /opt/sifter/media/worker/*.py && echo "sifter-media-worker rocm $(date -u +%Y-%m-%d)" > /opt/sifter-image-version

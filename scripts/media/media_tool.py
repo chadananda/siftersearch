@@ -1,7 +1,7 @@
 # Media pipeline worker (runs in ~/sifter/venvs/media on tower; spawned by api/lib/media/run-tool.js at nice 19).
 # Subcommands print ONE JSON object on stdout: metrics · probe · langid · dfn · transcribe. Thread cap: --threads.
 # Deps: numpy, soundfile, faster-whisper, whisperx, sherpa-onnx, deepfilternet (all user-space).
-import argparse, json, os, subprocess, sys, time
+import argparse, json, os, re, subprocess, sys, time
 
 import numpy as np
 
@@ -155,7 +155,40 @@ def device():
 def whisper_model(name, threads):
     from faster_whisper import WhisperModel
     dev, ct = device()
+    if is_rocm():   # CTranslate2 has no ROCm build; probe excerpts are CPU-suited (a few 30 s windows)
+        dev, ct = 'cpu', 'int8'
     return WhisperModel(name, device=dev, compute_type=ct, cpu_threads=threads)
+
+
+def is_rocm():
+    try:
+        import torch
+        return bool(torch.version.hip)
+    except Exception:
+        return False
+
+
+def _cpp():
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker'))
+    import cpp_asr
+    return cpp_asr
+
+
+def asr_engine():
+    """'whispercpp' (HIP/ROCm GPU) on an AMD host that has it, else faster-whisper (CUDA). MEDIA_ASR_ENGINE overrides. NO CPU fallback for ASR:
+    cpp_asr refuses to run when the GPU backend is not the one in use."""
+    e = os.environ.get('MEDIA_ASR_ENGINE', 'auto')
+    if e in ('whispercpp', 'fasterwhisper'):
+        return e
+    try:
+        return 'whispercpp' if _cpp().available() else 'fasterwhisper'
+    except Exception:
+        return 'fasterwhisper'
+
+
+def cpp_asr(audio, lang, prompt, threads, detect_only=False):
+    r = _cpp().run(audio, lang, prompt, threads, detect_only)
+    return [{k: v for k, v in sg.items() if k != 'words'} for sg in r['segments']], r['language']
 
 
 def cmd_probe(a):
@@ -180,6 +213,14 @@ def cmd_probe(a):
 
 
 def cmd_langid(a):
+    if asr_engine() == 'whispercpp':
+        res = []
+        for st in [float(v) for v in a.starts.split(',')]:
+            x = load(a.input, start=st, dur=a.len if a.len and a.len < 30 else 30)
+            _, lang = cpp_asr(x, None, None, a.threads, detect_only=True)
+            res.append({'start': st, 'language': lang, 'prob': None, 'top': [(lang, None)]})
+        print(jdumps({'excerpts': res, 'engine': 'whispercpp'}))
+        return
     m = whisper_model(a.model, a.threads)
     res = []
     for s in [float(v) for v in a.starts.split(',')]:
@@ -310,8 +351,9 @@ def cmd_transcribe(a):
     multi = a.lang == 'multi'
     asr_opts = {'initial_prompt': a.prompt or None, 'condition_on_previous_text': False, 'beam_size': 5}
     dev, ct = device()
-    model = whisperx.load_model(a.model, dev, compute_type=ct, language=None if multi else (a.lang or None), asr_options=asr_opts,
-                                vad_method='silero', threads=a.threads)
+    cpp = asr_engine() == 'whispercpp'
+    model = None if cpp else whisperx.load_model(a.model, dev, compute_type=ct, language=None if multi else (a.lang or None), asr_options=asr_opts,
+                                                 vad_method='silero', threads=a.threads)
     turns = []
     if a.diarize or multi:
         t2 = time.time()
@@ -326,12 +368,17 @@ def cmd_transcribe(a):
         for b in blocks_of(turns):
             s, e = int(b['start'] * SR), int(b['end'] * SR)
             chunk = audio[s:e]
-            try:
-                lang = model.detect_language(chunk[: SR * 30])
-            except Exception:
-                lang = 'en'
+            if cpp:
+                r_segs, lang = cpp_asr(chunk, None, a.prompt, a.threads)
+                r = {'segments': r_segs}
+            else:
+                try:
+                    lang = model.detect_language(chunk[: SR * 30])
+                except Exception:
+                    lang = 'en'
             langs[lang] = langs.get(lang, 0) + (b['end'] - b['start'])
-            r = model.transcribe(chunk, batch_size=a.batch, language=lang)
+            if not cpp:
+                r = model.transcribe(chunk, batch_size=a.batch, language=lang)
             for sg in r['segments']:
                 sg['start'] += b['start']
                 sg['end'] += b['start']
@@ -342,7 +389,11 @@ def cmd_transcribe(a):
         t1 = time.time()
         segs, align_ok = align_groups(whisperx, segs_by_lang, audio)
     else:
-        res = model.transcribe(audio, batch_size=a.batch, language=a.lang or None)
+        if cpp:
+            c_segs, c_lang = cpp_asr(audio, a.lang or None, a.prompt, a.threads)
+            res = {'segments': c_segs, 'language': c_lang}
+        else:
+            res = model.transcribe(audio, batch_size=a.batch, language=a.lang or None)
         lang = res.get('language') or a.lang
         timings['asr'] = round(time.time() - t0 - timings.get('diarize', 0), 1)
         del model

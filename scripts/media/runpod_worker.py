@@ -61,10 +61,20 @@ def load_models(repo, weights, asr_device='cuda'):
                     vocoder_ckpt_path=V + '/Vocoder_DWO-L1.pt', postnet_ckpt_path=V + '/PostNet.pt').cuda().eval()
     if asr_device == 'deferred':
         return model, inference_file, None
+    return model, inference_file, new_asr(os.path.join(weights, 'whisper'), asr_device)
+
+
+def new_asr(model_dir, device='cuda'):
+    """The copy's ASR engine. AMD (ROCm torch): whisper.cpp on the GPU (CTranslate2 has no ROCm build); NVIDIA: faster-whisper CUDA. No CPU engine on a GPU worker."""
+    import torch
+    if getattr(torch.version, 'hip', None) and os.environ.get('MEDIA_ASR_ENGINE', 'auto') != 'fasterwhisper':
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker'))
+        import cpp_asr
+        if not cpp_asr.available():
+            raise RuntimeError('AMD host without whisper.cpp / its model / /dev/kfd: refusing (no CPU ASR)')
+        return cpp_asr.CppWhisper(threads=4)
     from faster_whisper import WhisperModel
-    asr = WhisperModel(os.path.join(weights, 'whisper'), device=asr_device,
-                       compute_type='int8' if asr_device == 'cpu' else 'float16', cpu_threads=2)
-    return model, inference_file, asr
+    return WhisperModel(model_dir, device=device, compute_type='int8' if device == 'cpu' else 'float16', cpu_threads=2)
 
 
 def _segments(segs, info, offset=0.0, lang=None):
@@ -125,8 +135,7 @@ def run_job(d, up, inference_file, asr, release_restore=None):
         else:up.cpu()
         reclaim_idle_cuda(torch)
         if release_restore:release_restore()
-        from faster_whisper import WhisperModel
-        asr = WhisperModel('/opt/models/weights/whisper', device='cuda', compute_type='float16', cpu_threads=2)
+        asr = new_asr('/opt/models/weights/whisper', 'cuda')
         ASR_MODEL['asr'] = asr
     # BOTH copies through the SAME model and settings (no VAD: it dropped 20 s of speech on a UniPASE copy, 10-23 pilot),
     # so the word guard compares like with like — the production transcript came from another model with a prompt
@@ -211,6 +220,18 @@ def main():
     p.add_argument('--max-hours', type=float, default=8)    # hard maximum lifetime
     a = p.parse_args()
     os.makedirs(a.spool, exist_ok=True)
+    # HOST ADMISSION (Chad 10-28): a working GPU (NVIDIA or AMD, proven by a tiny run), plenty of VRAM + RAM, usable CPU — else REFUSE to claim orders;
+    # a rented pod then ends itself (no billing for a worker that cannot work)
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker'))
+    import capabilities
+    manifest = capabilities.assess()
+    json.dump(manifest, open(os.path.join(a.spool, '.capabilities.json'), 'w'))
+    if not manifest['ok']:
+        why = 'host refused: ' + '; '.join(manifest['reasons'])
+        print(why, file=sys.stderr, flush=True)
+        if os.environ.get('RUNPOD_POD_ID'):
+            terminate_self(why)
+        sys.exit(3)
     up, IL, asr = load_models(a.repo, a.weights)
     ASR_MODEL['asr'] = asr
     open(os.path.join(a.spool, '.worker-ready'), 'w').write(str(os.getpid()))

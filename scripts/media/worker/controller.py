@@ -2,7 +2,8 @@
 # Samples VRAM / GPU util+temp / CPU / RAM+swap / disk / OOM events; admits a job only with live headroom for its stage; AIMD:
 # multiplicative decrease the moment pressure shows, additive increase after a stable window; repeated failures -> 1 -> drain.
 # Pure logic + an injectable sampler, so fault injection (low VRAM, RAM pressure, OOM) is a unit test, not a hope.
-import os, subprocess, time
+import os, shutil, subprocess, time
+shutil_which = shutil.which
 
 # measured per-stage needs (GB of VRAM / RAM) — UniPASE 3.2-4.1, ASR 2-3.5, diarize 1.5 (planning/remaster-rnd-20261023.md, media-gpu-host tests)
 STAGES = {
@@ -33,7 +34,40 @@ def useful_activity(active,ready,network_delta):
     return bool(active or ready or network_delta>=16384)
 
 
+def read_amd():
+    """AMD GPU from amdgpu sysfs (the same fields as nvidia-smi gives): VRAM used/total, busy %, edge temperature."""
+    import glob
+    for d in sorted(glob.glob('/sys/class/drm/card[0-9]*/device')):
+        if os.path.exists(d + '/mem_info_vram_total') and os.path.exists(d + '/gpu_busy_percent'):
+            try:
+                rd = lambda f: float(open(d + '/' + f).read())
+                temps = [float(open(t).read()) / 1000 for t in glob.glob(d + '/hwmon/hwmon*/temp1_input')]
+                return {'vram_used_gb': rd('mem_info_vram_used') / 2**30, 'vram_total_gb': rd('mem_info_vram_total') / 2**30, 'gpu_util': rd('gpu_busy_percent'), 'temp_c': max(temps or [0.0])}
+            except (OSError, ValueError):
+                return None
+    return None
+
+
+_CPU_PREV = [None]
+
+
+def cpu_busy_pct():
+    """CPU busy % since the previous call."""
+    try:
+        f = open('/proc/stat').readline().split()[1:]
+        idle, total = int(f[3]) + int(f[4]), sum(int(x) for x in f)
+        p, _CPU_PREV[0] = _CPU_PREV[0], (idle, total)
+        if p is None or total == p[1]:
+            return 0.0
+        return round(100 * (1 - (idle - p[0]) / (total - p[1])), 1)
+    except (OSError, ValueError, IndexError):
+        return 0.0
+
+
 def read_nvidia():
+    amd = read_amd() if not shutil_which('nvidia-smi') else None
+    if amd:
+        return amd
     try:
         o = subprocess.run(['nvidia-smi', '--query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu', '--format=csv,noheader,nounits'],
                            capture_output=True, text=True, timeout=5).stdout.strip().splitlines()[0]
@@ -85,7 +119,7 @@ def oom_count():
 
 
 def sample():
-    s = {**read_nvidia(), **read_system()}
+    s = {**read_nvidia(), **read_system(), 'cpu_busy_pct': cpu_busy_pct()}
     s['oom'] = oom_count()
     return s
 
@@ -151,7 +185,7 @@ class Controller:
     def heartbeat(self):
         """The live numbers tower keeps in the ledger and /ops/services."""
         s = self.last
-        return {'limit': self.limit, 'running': len(self.running), 'state': self.state, 'admitting': self.admitting, 'gpu_util': s['gpu_util'], 'temp_c': s['temp_c'],
+        return {'limit': self.limit, 'running': len(self.running), 'state': self.state, 'admitting': self.admitting, 'gpu_util': s['gpu_util'], 'gpu_busy_pct': s['gpu_util'], 'cpu_busy_pct': s.get('cpu_busy_pct', 0), 'temp_c': s['temp_c'],
                 'vram_used_gb': round(s['vram_used_gb'], 2), 'vram_total_gb': round(s['vram_total_gb'], 2), 'ram_avail_gb': round(s['ram_avail_gb'], 1),
                 'swap_used_gb': round(s['swap_used_gb'], 2), 'disk_free_gb': round(s['disk_free_gb'], 1), 'load': s['load'], 'failures_15m': len(self.failures)}
 

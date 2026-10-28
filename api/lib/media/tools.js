@@ -177,7 +177,7 @@ const diskMinGb = () => Number(process.env.MEDIA_HOST_MIN_FREE_GB) || 20;
 /** RAM a job of each kind needs on a compute host (GB, measured RSS + headroom). */
 export const PSI_ADMIT_MAX = Number(process.env.MEDIA_PSI_ADMIT_MAX ?? 3);   // % of the last 10 s some task stalled on memory: above this no NEW job is admitted
 // measured 10-28 on boss: a UniPASE job = ~2.2 GB RSS (system RAM), 5-6 GB VRAM, 8 MB GTT
-export const MEM_BUDGET = { unipase: 3, post: 6, whole: 6, transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
+export const MEM_BUDGET = { unipase: 3, post: 6, whole: 10, transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
 /** RAM kept free on each host whatever runs (GB). */
 // boss: 31 GB of system RAM (96 GB of its 128 GB is the GPU carve-out) shared with Chad's llama-coder (22 GB peak) and laya: 13 GB stay free, and
 // every job we start there is also capped by its own cgroup (scripts/media/capped.sh) and made the OOM killer's first victim (10-28: tailscaled was OOM-killed)

@@ -50,11 +50,13 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
 }
 
 /** New imports return every audio stage; only metadata/text publishing remains. */
-export async function homeWholeRecording(it,m,{T,image,legacyLock=true,stop=()=>false,nap=ms=>new Promise(r=>setTimeout(r,ms))}) {
+export async function homeWholeRecording(it,m,{T,host='aorus',image,legacyLock=true,stop=()=>false,nap=ms=>new Promise(r=>setTimeout(r,ms))}) {
  const {fileSha,adoptWholeResult,wholeJob}=await import('./whole-result.js');
  const input=join(it.dir,m.original),sha=await fileSha(input),root='/data/sifter-whole-home';
  if(m.worker_result?.input_sha===sha)return m;
- const name=`whole-${it.id}-${sha.slice(0,8)}-${image.slice(-8)}`,remote=`${root}/${name}`,host='aorus';
+ // Boss (AMD): the same whole job through its restricted gate — every stage on that one host, the audio uploaded once
+ if(host==='boss')return (await import('./boss-recording.js')).bossWholeRecording(it,m,{T,image,stop,nap,sha});
+ const name=`whole-${it.id}-${sha.slice(0,8)}-${image.slice(-8)}`,remote=`${root}/${name}`;
  const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,stop,...opts});
  const state=async()=>JSON.parse((await run(`docker inspect ${q(name)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());
  await run(`mkdir -p ${q(remote)} ${q(root+'/leases')}; docker image inspect ${q(image)} >/dev/null`);
