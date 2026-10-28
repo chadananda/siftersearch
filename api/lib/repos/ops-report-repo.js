@@ -14,8 +14,9 @@ export async function enqueue(name, params = null, requestedBy = 'internal') {
   return getRun(Number(r.lastInsertRowid));
 }
 
-/** Queued or running runs of one job — to tell "already on its way" when params differ (a priority flag). */
-export const pendingRuns = async (name) => (await queryAll(`SELECT id, params, status FROM ops_report_runs INDEXED BY idx_ops_report_runs_status WHERE status IN ('queued', 'running') AND name = ?`, [name])   // by status: ≈ a handful of live rows, not the name's ~37k finished ones (14 s worst, 10-28)).map(parse);
+/** Queued or running runs of one job — to tell "already on its way" when params differ (a priority flag).
+ *  Uses the status index: a handful of live rows, not the name's ~37k finished ones (14 s worst scan, 10-28). */
+export const pendingRuns = async (name) => (await queryAll(`SELECT id, params, status FROM ops_report_runs INDEXED BY idx_ops_report_runs_status WHERE status IN ('queued', 'running') AND name = ?`, [name])).map(parse);
 
 /** RUNNING runs of these jobs (the live views: what is being worked on now). */
 export const runningRuns = async (names = []) => (names.length ? (await queryAll(`SELECT id, name, params FROM ops_report_runs WHERE status = 'running' AND name IN (${names.map(() => '?').join(',')})`, names)).map(parse) : []);
