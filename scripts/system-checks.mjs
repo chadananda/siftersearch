@@ -280,6 +280,24 @@ const hostChecks = [];
 }
 
 // ── 5. Corpus + cache + widget metrics (report-only) ─────────────────────────
+// Drive wear (Chad 10-28): per-device TB/day from /proc/diskstats deltas between DAILY runs, projected life, top writer
+let wearNow = null;
+if (MODE === 'daily') {
+  try {
+    const { parseDiskBytes, wearRates, dominantWriter, wearVerdict } = await import('./lib/storage-wear.mjs');
+    const procs = {};
+    for (const pid of execSync('pgrep -u $(id -u) -f "node|qdrant"', { encoding: 'utf8', shell: '/bin/bash' }).split('\n').filter(Boolean)) {
+      try {
+        const w = /write_bytes: (\d+)/.exec(fs.readFileSync(`/proc/${pid}/io`, 'utf8'))?.[1];
+        const c = fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8').replace(/\0/g, ' ').trim().split(' ').slice(0, 3).join(' ').slice(0, 60);
+        if (w) procs[`${pid} ${c}`] = Number(w);
+      } catch { /* process ended */ }
+    }
+    wearNow = { t: Date.now(), bytes: parseDiskBytes(fs.readFileSync('/proc/diskstats', 'utf8')), procs };
+    const v = wearVerdict(wearRates(state.wear, wearNow), { writer: dominantWriter(state.wear?.procs, procs) });
+    add('Drive wear', v.ok, v.level, v.detail);
+  } catch { /* not Linux */ }
+}
 const metrics = {};
 if (db) {
   const g = (sql, label) => { try { return (/\bslow_query_log\b/.test(sql) ? tdb : db).prepare(sql).get(); } catch { return null; } };
@@ -453,7 +471,7 @@ console.log(text);
 
 // Persist state for delta checks.
 fs.mkdirSync('logs', { recursive: true });
-const newState = { ...state, gpuIdleAt: newGpuIdleAt, restarts, drainSeen, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, lastRun: Date.now() };
+const newState = { ...state, gpuIdleAt: newGpuIdleAt, restarts, drainSeen, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, wear: wearNow ?? state.wear, lastRun: Date.now() };
 
 // HOST alerts (disk / memory / OOM / load / GPU / unreachable): their own deduped path — a condition mails ONCE, again only
 // when it escalates (warn → critical), re-arms when it clears; WARNs mail too (a disk filling at 85 % must not wait for the

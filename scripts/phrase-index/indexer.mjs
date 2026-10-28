@@ -186,7 +186,8 @@ function unitize(paras) {
       for (const { point_id: id } of unitsInBlock.all(p.id * 1000, p.id * 1000 + 999)) if (!keep.has(id)) { dropUnit.run(id); stale.push(id); }
     }
     for (const u of units) {
-      const key = vecKey(MODEL, DIMS, u.embedText), old = haveUnit.get(u.pointId);
+      const key = vecKey(MODEL, DIMS, u.embedText), tl = performance.now(), old = haveUnit.get(u.pointId);
+      T.lookup_ms += performance.now() - tl;
       const same = old && old.seg_v === u.segV && old.key === key;
       if (!same)
         buf.push({ ...u, pid: String(p.id), doc: String(p.doc_id), key, fa: faShare(u.embedText), religion: p.religion, author: paragraphAuthor(p),
@@ -194,13 +195,17 @@ function unitize(paras) {
       // An unchanged unit already UPSERTED had its vector (the upsert joins vec), so skip the lookup: vec's key index is
       // gigabytes on /tank's spinning disk and one random seek per unit held a re-run of already-indexed documents to a
       // crawl (10-14, job 92: 36 s CPU in 15 min, sdc 93% busy). A stored-but-never-upserted unit is still checked.
-      if (!(same && old.upserted) && !haveVec.get(key)) pending.set(key, u.embedText);
+      if (!(same && old.upserted)) { const tv = performance.now(), have = haveVec.get(key); T.lookup_ms += performance.now() - tv; if (!have) pending.set(key, u.embedText); }
     }
   }
   tx(buf);
   return { pending, units: buf.length };
 }
 
+// Where the time goes (ms, summed over the run; embed is wall time of the concurrent API calls): logged on every chunk/done line
+const T = { unitize_ms: 0, lookup_ms: 0, embed_ms: 0, qdrant_ms: 0, sqlite_ms: 0 };   // lookup_ms (vectors.db already-embedded checks) is INSIDE unitize_ms
+const cpu0 = process.cpuUsage();
+const timing = () => { const c = process.cpuUsage(cpu0); return { ...Object.fromEntries(Object.entries(T).map(([k, v]) => [k, Math.round(v)])), cpu_ms: Math.round((c.user + c.system) / 1000) }; };
 let stopped = null;
 async function embedPending(pending) {
   const entries = [...pending.entries()]; let next = 0, done = 0;
@@ -296,12 +301,16 @@ async function upsert() {
       const free = hotFree(), need = hotNeedFree(hotUsed(), HOT_MIN_FREE);
       if (free != null && free < need) { stopped = `hot RAM disk ${HOT_PATH} has ${(free / 1e9).toFixed(1)} GB free (< ${(need / 1e9).toFixed(1)} GB: min ${HOT_MIN_FREE / 1e9} GB and room for a snapshot): fold into main or enlarge before indexing more`; break; }
     }
+    let t1 = Date.now();
     const rows = page.all(); if (!rows.length) break;
+    T.sqlite_ms += Date.now() - t1; t1 = Date.now();
     await qd('PUT', `/collections/${UP.coll}/points?wait=true`, { points: rows.map((r) => ({ id: r.point_id, vector: { literal: unpackF16(r.v) },
       payload: { paragraph_id: Number(r.paragraph_id), doc_id: Number(r.doc_id), k: r.k, start: r.start, end: r.end, seg_v: r.seg_v,
         lang_group: r.lang_group || 'ar-fa', fa_share: r.fa_share, religion: r.religion, author: r.author, author_fold: authorKey(r.author), collection: r.collection,
         lang_label: r.lang_label, field: r.field || 'text', scope: r.scope || 'primary', ...(r.field === 'hype' ? { is_thesis: r.k === 999 } : {}) } })) }, UP.url);
+    T.qdrant_ms += Date.now() - t1; t1 = Date.now();
     store.transaction(() => rows.forEach((r) => mark.run(UP.mark, r.point_id)))();
+    T.sqlite_ms += Date.now() - t1;
     sent += rows.length;
   }
   return sent;
@@ -330,11 +339,13 @@ async function build() {
   const { src, rows } = source(); const t0 = Date.now();
   let paras = 0, units = 0, embedded = 0, sent = 0, batch = [];
   const flush = async () => {
-    const r = unitize(batch); units += r.units; batch = [];
+    let t1 = Date.now();
+    const r = unitize(batch); units += r.units; batch = []; T.unitize_ms += Date.now() - t1; t1 = Date.now();
     if (has('embed')) embedded += await embedPending(r.pending);
+    T.embed_ms += Date.now() - t1;
     if (has('qdrant')) sent += await upsert();
     log({ phase: 'chunk', paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
-      paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)) });
+      paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)), timing: timing() });
   };
   for (const p of rows.iterate()) {
     if (!keep(p.text)) continue;
@@ -345,7 +356,7 @@ async function build() {
   if (batch.length && !stopped) await flush();
   src.close();
   log({ phase: stopped ? 'stopped' : 'done', reason: stopped, paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(),
-    minutes: +((Date.now() - t0) / 6e4).toFixed(1) });
+    minutes: +((Date.now() - t0) / 6e4).toFixed(1), timing: timing() });
 }
 
 if (has('scan-only')) await scanOnly();

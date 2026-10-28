@@ -2010,6 +2010,14 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_sketch_runs_at ON media_speaker_sketch_runs(at)');
     logger.info('Migration 183 complete: media speaker sketch pipeline state and spend ledger');
   },
+  184: async () => {
+    // claimNext (ops-report-repo.js) polls `status='queued' AND name IN (...) ORDER BY <CASE>, id LIMIT 1` every 12-30 s per lane;
+    // with ~37k finished rows the planner walked idx_ops_report_runs_name over every row of those names (150-260 ms, 10-28).
+    // A PARTIAL index holds only the queued rows (a handful): the poll reads those and sorts them. Building it scans the table
+    // once reading status/name/id only; no data is rewritten, so the single writer is held for the scan, not for a copy.
+    await query(`CREATE INDEX IF NOT EXISTS idx_ops_report_runs_queued ON ops_report_runs(name, id) WHERE status = 'queued'`);
+    logger.info('Migration 184 complete: idx_ops_report_runs_queued (partial)');
+  },
 };
 
 export const graphMigrations = {

@@ -5,13 +5,13 @@
 import { spawn } from 'child_process';
 
 const FIELD_TARGET = { hype: ['/tank/sifter/hype-vectors/vectors.db', 'hype'], concepts: ['/tank/sifter/concept-vectors/vectors.db', 'concepts'] };
-export function indexerArgs({ docs = null, scope = null, maxUsd, budgetKey = 'ops-phrase-index', field = null } = {}) {
+export function indexerArgs({ docs = null, scope = null, maxUsd, budgetKey = 'ops-phrase-index', field = null, limit = 0 } = {}) {
   if (!(maxUsd > 0)) throw new Error('phrase-index: maxUsd is required (spend cap)');
   if (field && !FIELD_TARGET[field]) throw new Error(`phrase-index: unknown field '${field}' (hype | concepts)`);
   const [store, collection] = FIELD_TARGET[field] || [];
   return ['scripts/phrase-index/indexer.mjs', ...(docs?.length ? ['--docs', docs.join(',')] : scope ? ['--scope', scope] : []),
     ...(field ? ['--field', field, '--store', store, '--collection', collection] : hotArgs()),
-    '--embed', '--qdrant', '--max-usd', String(maxUsd), '--budget-key', budgetKey];
+    '--embed', '--qdrant', '--max-usd', String(maxUsd), '--budget-key', budgetKey, ...(limit > 0 ? ['--limit', String(Math.floor(limit))] : [])];
 }
 
 /** Phase 0 (storage plan §6.6): with QDRANT_HOT_URL set, NEW phrase points go to the RAM-disk Qdrant, not `phrases` on /fast. */

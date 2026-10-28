@@ -13,4 +13,8 @@ describe('phrase-index ops job', () => {
     expect(indexerArgs({ docs: [1], field: 'hype', maxUsd: 1 })).toContain('/tank/sifter/hype-vectors/vectors.db');
     expect(() => indexerArgs({ docs: [1], field: 'phrases', maxUsd: 1 })).toThrow(/unknown field/);
   });
+  it('limit caps the paragraphs read (bounded benchmark runs)', () => {
+    expect(indexerArgs({ docs: [1], maxUsd: 1, limit: 6000 }).slice(-2)).toEqual(['--limit', '6000']);
+    expect(indexerArgs({ docs: [1], maxUsd: 1 })).not.toContain('--limit');
+  });
 });
