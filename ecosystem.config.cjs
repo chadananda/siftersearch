@@ -211,6 +211,12 @@ module.exports = {
         //  · checkpoints run on a thread (api/lib/repos/wal-checkpoint-thread.js); the inline autocheckpoint is a safety net
         SQLITE_CACHE_MB: '8192',
         SQLITE_SYNCHRONOUS: 'OFF',
+        // 10-28 storage-health: coalesce page rewrites. Checkpoint thread 5 s -> 120 s, inline autocheckpoint 20k -> 100k pages (400 MB WAL),
+        // journal limit 256 -> 1024 MB. Durability-neutral (the WAL is still written at commit; only the copy into the DB file is later).
+        // ROLLBACK: delete these three lines (-> 5000 / 20000 / 256). Measured before: writer 3 MB/s (178 MB/min) for ~2-4k row changes/min.
+        SIFTER_CHECKPOINT_MS: '120000',
+        SQLITE_WAL_AUTOCHECKPOINT: '100000',
+        SQLITE_JOURNAL_LIMIT_MB: '1024',
         // 120s busy_timeout: with 7 concurrent writers (watcher, embedding, graph extractor,
         // graph resolver, graph validator, graph promoter, sync), write lock contention can
         // exceed 30s. 30s was causing repeated "database is locked" failures mid-sync.

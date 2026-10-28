@@ -22,6 +22,7 @@
 //        --collection concepts --budget-key concepts-build --embed --qdrant --max-usd 5
 //        (concept claims: each proof-checked claim statement is a unit, point id = paragraph × 1000 + k; only docs with claims)
 import Database from 'better-sqlite3';
+import { createLimiter, retryAfterMs } from './embed-limiter.mjs';
 import dotenv from 'dotenv';
 import { mkdirSync, statfsSync } from 'fs';
 import { dirname, join } from 'path';
@@ -86,20 +87,26 @@ const spentRow = () => store.prepare('SELECT tokens, usd FROM spend WHERE budget
 const addSpend = store.prepare(`INSERT INTO spend (budget, tokens, usd, at) VALUES (@b, @t, @u, @at)
   ON CONFLICT(budget) DO UPDATE SET tokens = tokens + @t, usd = usd + @u, at = @at`);
 
+// Adaptive (AIMD) concurrency up to --concurrency; EMBED_RPM / EMBED_TPM (the account's AI Studio quota) add token buckets at 85 %.
+const limiter = createLimiter({ max: CONC, rpm: +(process.env.EMBED_RPM || 0), tpm: +(process.env.EMBED_TPM || 0) });
 async function embedBatch(texts) {
   const body = { requests: texts.map((t) => ({ model: `models/${MODEL}`, content: { parts: [{ text: `title: none | text: ${t}` }] }, outputDimensionality: DIMS })) };
   for (let attempt = 0; ; attempt++) {
+    await limiter.acquire(texts.reduce((n, t) => n + estTokens(t), 0));
+    let status = 0, retryAfter = null;
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(120000) });
-      if (r.ok) return (await r.json()).embeddings.map((e) => e.values);
-      const errText = await r.clone().text();
+      status = r.status;
+      if (r.ok) { limiter.release({ status }); status = -1; return (await r.json()).embeddings.map((e) => e.values); }
+      const errText = await r.clone().text(); retryAfter = retryAfterMs(r.headers, errText);
       noteProviderError('Gemini', { status: r.status, message: errText });   // out of credit → immediate email (not per-minute 429s)
       if (isExhaustion({ status: r.status, message: errText })) throw Object.assign(new Error(`gemini out of credit: ${errText.slice(0, 200)}`), { fatal: true });
       if (attempt >= 20 || ![429, 500, 502, 503, 504].includes(r.status)) throw new Error(`gemini ${r.status} ${(await r.text()).slice(0, 200)}`);
-    } catch (e) { if (e.fatal || attempt >= 20) throw e; }   // no credit: stop now, don't wait out a 429 that won't clear
+    } catch (e) { if (status !== -1) limiter.release({ status: status || 599, retryAfter }); status = -1; if (e.fatal || attempt >= 20) throw e; }   // no credit: stop now, don't wait out a 429 that won't clear
     // per-minute quota (429) clears in minutes — wait it out (up to 5 min per try) instead of failing the run
-    await new Promise((res) => setTimeout(res, Math.min(300000, 3000 * 2 ** attempt)));
+    if (status !== -1) limiter.release({ status: status || 599, retryAfter });
+    await new Promise((res) => setTimeout(res, retryAfter ?? Math.min(300000, 3000 * 2 ** attempt)));
   }
 }
 

@@ -23,7 +23,12 @@ export function wearRates(prev, cur, minMs = 3600e3) {
   }
   return out;
 }
-export const yearsLeft = ({ ratedTbw, lifeLeftPct }, tbDay) => (tbDay > 0 ? +(((ratedTbw * lifeLeftPct) / 100 / tbDay) / 365).toFixed(1) : Infinity);
+/** Years left at tbDay. With SMART (writtenTb, lifeLeftPct) the wear so far is extrapolated linearly (TB per % used); without it, rated TBW × life left. */
+export const yearsLeft = ({ ratedTbw, lifeLeftPct, writtenTb = null }, tbDay) => {
+  if (!(tbDay > 0)) return Infinity;
+  const remainingTb = writtenTb > 0 && lifeLeftPct < 100 ? (lifeLeftPct / (100 - lifeLeftPct)) * writtenTb : (ratedTbw * lifeLeftPct) / 100;
+  return +(remainingTb / tbDay / 365).toFixed(1);
+};
 /** Biggest per-process write_bytes growth: procs = { 'pid name': bytes }. Restarted (shrunk) processes are skipped. */
 export function dominantWriter(prev = {}, cur = {}) {
   let best = null, total = 0;
@@ -35,13 +40,13 @@ export function dominantWriter(prev = {}, cur = {}) {
   }
   return best ? { ...best, share_pct: total ? Math.round((best.bytes / total) * 100) : 0 } : null;
 }
-/** → { ok, level, detail } for the system-checks line. `smart` optionally overrides lifeLeftPct per dev ({dev: pctLeft}). */
+/** → { ok, level, detail } for the system-checks line. `smart` = { dev: { life_left_pct, written_tb } } from the Observatory snapshot (optional). */
 export function wearVerdict(rates, { writer = null, smart = {}, minYears = 5, devices = WEAR_DEVICES } = {}) {
   const parts = [], bad = [];
   for (const [dev, cfg] of Object.entries(devices)) {
     const r = rates[dev];
     if (r == null) continue;
-    const y = yearsLeft({ ...cfg, lifeLeftPct: smart[dev] ?? cfg.lifeLeftPct }, r);
+    const sm = smart[dev], y = yearsLeft({ ...cfg, lifeLeftPct: sm?.life_left_pct ?? cfg.lifeLeftPct, writtenTb: sm?.written_tb ?? null }, r);
     parts.push(`${cfg.label} ${r} TB/day, ~${y === Infinity ? '∞' : y} y left`);
     if (r > cfg.warnTbDay || y < minYears) bad.push(dev);
   }

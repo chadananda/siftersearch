@@ -14,6 +14,9 @@ describe('storage wear', () => {
   });
   it('EVO at 0.33 TB/day warns (about 2.2 y left); 0.1 TB/day is fine', () => {
     expect(yearsLeft({ ratedTbw: 600, lifeLeftPct: 45 }, 0.33)).toBeCloseTo(2.2, 1);
+    // SMART extrapolation: 55 % used after 528 TB leaves ~432 TB
+    expect(yearsLeft({ ratedTbw: 600, lifeLeftPct: 45, writtenTb: 528 }, 0.33)).toBeCloseTo(3.6, 1);
+    expect(wearVerdict({ nvme0n1: 0.2 }, { smart: { nvme0n1: { life_left_pct: 45, written_tb: 528 } } }).ok).toBe(false);   // 0.2 > 0.15 cap
     expect(wearVerdict({ nvme0n1: 0.33 }).ok).toBe(false);
     expect(wearVerdict({ nvme0n1: 0.1, nvme1n1: 0.2 }).ok).toBe(true);
   });

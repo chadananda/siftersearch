@@ -294,7 +294,9 @@ if (MODE === 'daily') {
       } catch { /* process ended */ }
     }
     wearNow = { t: Date.now(), bytes: parseDiskBytes(fs.readFileSync('/proc/diskstats', 'utf8')), procs };
-    const v = wearVerdict(wearRates(state.wear, wearNow), { writer: dominantWriter(state.wear?.procs, procs) });
+    const smart = {};
+    try { for (const d of JSON.parse((await http('https://api.siftersearch.com/api/observatory/telemetry')).body).snapshot?.health || []) smart[d.dev] = d; } catch { /* SMART panel unavailable: rated TBW is used */ }
+    const v = wearVerdict(wearRates(state.wear, wearNow), { writer: dominantWriter(state.wear?.procs, procs), smart });
     add('Drive wear', v.ok, v.level, v.detail);
   } catch { /* not Linux */ }
 }
