@@ -46,3 +46,25 @@ describe('write-stats report summary + exact latency (db-write-path-20261023)', 
     expect(s.commits.n).toBe(1);
   });
 });
+
+describe('logical bytes per caller (storage-wear 10-28)', () => {
+  it('records bytes, drains them into the upsert, and ranks top_bytes', async () => {
+    const { recordWrite, drainWriteStats, summarizeWriteStats } = await import('../../api/lib/write-stats.js');
+    const at = Date.parse('2026-10-28T10:00:10Z');
+    recordWrite({ caller: 'media', name: 'a', statements: 1, changes: 1, bytes: 3 * 1048576, ms: 1, at });
+    recordWrite({ caller: 'media', name: 'a', statements: 1, changes: 1, bytes: 1048576, ms: 1, at });
+    const [st] = drainWriteStats();
+    expect(st.sql).toMatch(/bytes = bytes \+ excluded.bytes/);
+    expect(st.args.at(-1)).toBe(4 * 1048576);
+    const s = summarizeWriteStats([
+      { minute: '2026-10-28T10:00', caller: 'media', name: 'a', batches: 1, statements: 1, changes: 1, bytes: 3 * 1048576, errors: 0, ms_total: 5, ms_max: 5 },
+      { minute: '2026-10-28T10:00', caller: 'indexer', name: 'b', batches: 1, statements: 1, changes: 1, bytes: 1048576, errors: 0, ms_total: 50, ms_max: 5 }], { hours: 1 });
+    expect(s.top_bytes[0]).toMatchObject({ caller: 'media', mb: 3, share_pct: 75 });
+    expect(s.logical_mb).toBe(4);
+  });
+  it('payloadBytes counts sql + args; threadWchar is a number or null', async () => {
+    const { payloadBytes, threadWchar } = await import('../../api/lib/write-server.js');
+    expect(payloadBytes([{ sql: 'abc', args: ['xy', 5] }])).toBe(3 + 2 + 8);
+    const w = threadWchar(); expect(w === null || typeof w === 'number').toBe(true);
+  });
+});

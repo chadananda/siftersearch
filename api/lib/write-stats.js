@@ -7,10 +7,10 @@ const buckets = new Map();
 const minuteOf = (t) => new Date(t).toISOString().slice(0, 16);
 
 /** Record one batch. caller = process identity (x-sifter-caller), name = the batch's own label. */
-export function recordWrite({ caller, name, statements = 0, changes = 0, ms = 0, error = false, at = Date.now() }) {
+export function recordWrite({ caller, name, statements = 0, changes = 0, bytes = 0, ms = 0, error = false, at = Date.now() }) {
   const k = `${minuteOf(at)}\u0000${caller || 'unknown'}\u0000${name || 'unnamed'}`;
-  const b = buckets.get(k) || { batches: 0, statements: 0, changes: 0, errors: 0, ms_total: 0, ms_max: 0 };
-  b.batches++; b.statements += statements; b.changes += changes; b.errors += error ? 1 : 0;
+  const b = buckets.get(k) || { batches: 0, statements: 0, changes: 0, bytes: 0, errors: 0, ms_total: 0, ms_max: 0 };
+  b.batches++; b.statements += statements; b.changes += changes; b.bytes += bytes; b.errors += error ? 1 : 0;
   b.ms_total += ms; b.ms_max = Math.max(b.ms_max, ms);
   buckets.set(k, b);
   recordLatency(ms, at);
@@ -21,13 +21,13 @@ export function drainWriteStats() {
   const stmts = [...buckets].map(([k, b]) => {
     const [minute, caller, name] = k.split('\u0000');
     return {
-      sql: `INSERT INTO db_write_stats (minute, caller, name, batches, statements, changes, errors, ms_total, ms_max)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      sql: `INSERT INTO db_write_stats (minute, caller, name, batches, statements, changes, errors, ms_total, ms_max, bytes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (minute, caller, name) DO UPDATE SET batches = batches + excluded.batches,
               statements = statements + excluded.statements, changes = changes + excluded.changes,
               errors = errors + excluded.errors, ms_total = ms_total + excluded.ms_total,
-              ms_max = MAX(ms_max, excluded.ms_max)`,
-      args: [minute, caller, name, b.batches, b.statements, b.changes, b.errors, b.ms_total, b.ms_max],
+              ms_max = MAX(ms_max, excluded.ms_max), bytes = bytes + excluded.bytes`,
+      args: [minute, caller, name, b.batches, b.statements, b.changes, b.errors, b.ms_total, b.ms_max, b.bytes],
     };
   });
   buckets.clear();
@@ -71,20 +71,21 @@ export function summarizeWriteStats(rows, { hours = 24, top = 25 } = {}) {
     const ph = perHour.get(h) || { ms: 0, batches: 0 };
     ph.ms += r.ms_total; ph.batches += r.batches; perHour.set(h, ph);
     const k = `${r.caller}\u0000${r.name}`;
-    const e = by.get(k) || { caller: r.caller, name: r.name, batches: 0, statements: 0, changes: 0, errors: 0, ms_total: 0, ms_max: 0, minutes: [], maxes: [], hours: {} };
-    e.batches += r.batches; e.statements += r.statements; e.changes += r.changes; e.errors += r.errors;
+    const e = by.get(k) || { caller: r.caller, name: r.name, batches: 0, statements: 0, changes: 0, bytes: 0, errors: 0, ms_total: 0, ms_max: 0, minutes: [], maxes: [], hours: {} };
+    e.batches += r.batches; e.statements += r.statements; e.changes += r.changes; e.bytes += r.bytes || 0; e.errors += r.errors;
     e.ms_total += r.ms_total; e.ms_max = Math.max(e.ms_max, r.ms_max);
     e.minutes.push(r.minute); e.maxes.push(r.ms_max);
     const hod = r.minute.slice(11, 13); e.hours[hod] = (e.hours[hod] || 0) + r.batches;
     by.set(k, e);
   }
-  const allMs = [...by.values()].reduce((n, e) => n + e.ms_total, 0);
+  const allMs = [...by.values()].reduce((n, e) => n + e.ms_total, 0), allBytes = [...by.values()].reduce((n, e) => n + e.bytes, 0);
   const minuteMs = [...perMinute.values()].sort((a, b) => a - b);
   const contenders = [...by.values()].sort((a, b) => b.ms_total - a.ms_total).slice(0, top).map((e) => {
     const ts = e.minutes.map((m) => Date.parse(`${m}:00Z`)).sort((a, b) => a - b);
     const gaps = ts.slice(1).map((t, i) => (t - ts[i]) / 60000).sort((a, b) => a - b);
     return { caller: e.caller, name: e.name, batches: e.batches, batches_per_hour: +(e.batches / hours).toFixed(1),
-      statements: e.statements, changes: e.changes, errors: e.errors, ms_total: e.ms_total, ms_max: e.ms_max,
+      statements: e.statements, changes: e.changes, mb: +(e.bytes / 1048576).toFixed(1), mb_per_hour: +(e.bytes / 1048576 / hours).toFixed(1),
+      bytes_share_pct: allBytes ? +(100 * e.bytes / allBytes).toFixed(1) : 0, errors: e.errors, ms_total: e.ms_total, ms_max: e.ms_max,
       avg_ms: +(e.ms_total / Math.max(1, e.batches)).toFixed(1), p95_minute_worst_ms: pct([...e.maxes].sort((a, b) => a - b), 0.95),
       share_pct: allMs ? +(100 * e.ms_total / allMs).toFixed(1) : 0, active_minutes: ts.length,
       median_gap_min: gaps.length ? pct(gaps, 0.5) : null,
@@ -95,6 +96,8 @@ export function summarizeWriteStats(rows, { hours = 24, top = 25 } = {}) {
     busiest_minute_pct: +(100 * (minuteMs.at(-1) || 0) / 60000).toFixed(1),
     p95_minute_busy_pct: +(100 * pct(minuteMs, 0.95) / 60000).toFixed(1),
     by_hour: [...perHour].sort().map(([h, v]) => ({ hour: h, batches: v.batches, busy_pct: +(100 * v.ms / 3600000).toFixed(2) })),
+    logical_mb: +(allBytes / 1048576).toFixed(1), logical_tb_per_day: +(allBytes / 1e12 * 24 / hours).toFixed(4),
+    top_bytes: [...contenders].sort((a, b) => b.mb - a.mb).slice(0, 10).map((c) => ({ caller: c.caller, name: c.name, mb: c.mb, share_pct: c.bytes_share_pct })),
     contenders,
   };
 }

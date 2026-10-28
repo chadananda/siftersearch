@@ -1100,9 +1100,9 @@ function startWriteServer() {
   if (!port) return;
   // GROUP COMMIT (db-write-path-20261023): requests arriving within a few ms share one transaction, each in its own savepoint.
   let lastContentWriteAt = 0;   // GET /power: the UPS drain waits for content writes to go quiet
-  const onRequest = ({ meta, ms, statements, changes, error }) => {
+  const onRequest = ({ meta, ms, bytes, statements, changes, error }) => {
     if (!String(meta.name || '').endsWith('@telemetry') && meta.name !== 'telemetry') lastContentWriteAt = Date.now();
-    recordWrite({ caller: meta.caller, name: meta.name, statements, changes, ms: Math.round(ms), error: !!error });
+    recordWrite({ caller: meta.caller, name: meta.name, statements, changes, bytes, ms: Math.round(ms), error: !!error });
     if (error) logger.error({ err: error.message, caller: meta.caller, name: meta.name }, 'Write batch failed');
     // an UNNAMED slow batch names itself by its first statement (10-20: 4–15 s single-statement writes from reports
     // could not be traced to a job)

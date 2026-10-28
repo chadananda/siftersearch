@@ -47,6 +47,24 @@ export function cachedPrepare(db, sql) {
   return st;
 }
 
+// ── logical bytes per request (storage-wear 10-28) ──────────────────────────────────────────────────────────────────────
+// The group runs synchronously on the main thread, so the main thread's write() byte counter before/after is exactly what
+// this group wrote (WAL appends, inline checkpoints); /proc/thread-self/io is per THREAD, so the checkpoint thread never
+// leaks in. Split over the group's requests by payload size. Off Linux (dev) the payload size stands in.
+import { readFileSync } from 'node:fs';
+export function threadWchar() {
+  try { const m = /^wchar:\s*(\d+)/m.exec(readFileSync('/proc/thread-self/io', 'utf8')); return m ? Number(m[1]) : null; } catch { return null; }
+}
+/** Payload size of a request: SQL text + bound args (strings, buffers, numbers). */
+export function payloadBytes(statements = []) {
+  let n = 0;
+  for (const s of statements) {
+    n += String(s?.sql || '').length;
+    for (const a of s?.args || []) n += typeof a === 'string' ? Buffer.byteLength(a) : a && typeof a === 'object' ? (a.data?.length ?? 8) : 8;
+  }
+  return n;
+}
+
 // Apply [{sql, args}] as a single atomic transaction. Returns per-statement
 // {lastInsertRowid, changes}. Throws (and rolls back) on any statement error.
 // Inside an open transaction (group commit) better-sqlite3 makes this a SAVEPOINT: a throw rolls back this batch only.
@@ -85,6 +103,7 @@ export function createGroupCommitter(getDb, { windowMs = Number(process.env.SIFT
     let db;
     try { db = await getDb(); } catch (err) { for (const r of group) r.reject(err); return; }
     const t0 = now();
+    const w0 = threadWchar();
     let applyMs = 0;
     const run = () => { for (const r of group) {
       const s = now();
@@ -94,14 +113,17 @@ export function createGroupCommitter(getDb, { windowMs = Number(process.env.SIFT
     try {
       if (enabled && group.length > 1) db.transaction(run)(); else run();
     } catch (err) { for (const r of group) if (!r.error) { r.error = err; r.results = null; } }   // COMMIT itself failed
+    const w1 = threadWchar();
+    const sizes = group.map((r) => payloadBytes(r.statements)), sizeSum = sizes.reduce((n, x) => n + x, 0) || 1;
+    const groupBytes = w0 != null && w1 != null ? w1 - w0 : sizeSum;
     const total = now() - t0, overhead = Math.max(0, total - applyMs) / group.length;
     counters.groups++; counters.requests += group.length; if (group.length > 1) counters.grouped += group.length;
-    try { onCommit({ ms: total, requests: group.length, statements: group.reduce((n, r) => n + r.statements.length, 0) }); } catch { /* stats only */ }
-    for (const r of group) {
-      const ms = r.ms + overhead;
-      try { onRequest({ meta: r.meta, ms, statements: r.statements.length, changes: r.results ? r.results.reduce((n, x) => n + (x.changes || 0), 0) : 0, error: r.error }); } catch { /* stats only */ }
+    try { onCommit({ ms: total, bytes: groupBytes, requests: group.length, statements: group.reduce((n, r) => n + r.statements.length, 0) }); } catch { /* stats only */ }
+    group.forEach((r, i) => {
+      const ms = r.ms + overhead, bytes = Math.round(groupBytes * sizes[i] / sizeSum);
+      try { onRequest({ meta: r.meta, ms, bytes, statements: r.statements.length, changes: r.results ? r.results.reduce((n, x) => n + (x.changes || 0), 0) : 0, error: r.error }); } catch { /* stats only */ }
       if (r.error) r.reject(r.error); else r.resolve(r.results);
-    }
+    });
   }
   const enqueueGroup = (group) => { chain = chain.then(() => runGroup(group)); return chain; };
   const cancel = () => { if (timer) { if (windowMs > 0) clearTimeout(timer); else clearImmediate(timer); timer = null; } };

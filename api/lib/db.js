@@ -640,7 +640,7 @@ const TELEMETRY_DDL = [
     sql_sample TEXT, PRIMARY KEY (hour, proc, kind, label))` },
   { type: 'table', name: 'db_write_stats', tbl_name: 'db_write_stats', sql: `CREATE TABLE db_write_stats (minute TEXT NOT NULL, caller TEXT NOT NULL, name TEXT NOT NULL,
     batches INTEGER NOT NULL DEFAULT 0, statements INTEGER NOT NULL DEFAULT 0, changes INTEGER NOT NULL DEFAULT 0, errors INTEGER NOT NULL DEFAULT 0,
-    ms_total INTEGER NOT NULL DEFAULT 0, ms_max INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (minute, caller, name))` },
+    ms_total INTEGER NOT NULL DEFAULT 0, ms_max INTEGER NOT NULL DEFAULT 0, bytes INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (minute, caller, name))` },
   { type: 'index', name: 'idx_slowq_at', tbl_name: 'slow_query_log', sql: 'CREATE INDEX idx_slowq_at ON slow_query_log(at)' },
   { type: 'index', name: 'idx_slowq_fp', tbl_name: 'slow_query_log', sql: 'CREATE INDEX idx_slowq_fp ON slow_query_log(fingerprint, at)' },
   { type: 'index', name: 'idx_qstats_hour', tbl_name: 'query_stats', sql: 'CREATE INDEX idx_qstats_hour ON query_stats(hour)' },
@@ -658,6 +658,8 @@ export function ensureTelemetrySchema(tel, content) {
     if (o.type === 'trigger') continue;   // none today; a trigger would need its own review before moving
     tel.exec(String(o.sql).replace(/^CREATE\s+(UNIQUE\s+)?(TABLE|INDEX)\s+(?!IF NOT EXISTS)/i, (m, u, k) => `CREATE ${u || ''}${k} IF NOT EXISTS `));
   }
+  // bytes (storage-wear 10-28): logical bytes written per caller × name; tables made before it get the column here
+  if (!tel.prepare(`SELECT 1 FROM pragma_table_info('db_write_stats') WHERE name = 'bytes'`).get()) tel.exec('ALTER TABLE db_write_stats ADD COLUMN bytes INTEGER NOT NULL DEFAULT 0');
   return TELEMETRY_TABLES.filter((t) => !have.has(t) && ddl.some((o) => o.name === t));
 }
 // recent history only: these tables answer "the last day or two"; older rows stay readable in sifter.db until dropped
