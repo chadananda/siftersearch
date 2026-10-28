@@ -8,7 +8,7 @@ import { rm } from 'node:fs/promises';
 import { isTerminal } from './states.js';
 import { isLive, docUrl } from './live.js';
 
-const AUTO = 'dewey:auto', AUTO_PER_DAY = 15;
+const AUTO = 'dewey:auto', AUTO_PER_DAY = 100;   // per contributor per day (Chad 10-28: contributors are trusted; was 15 for everyone)
 const HELD_PREFIX = 'ingest folder: already in the library';
 const soon = (s) => new Date(Date.now() + s * 1000).toISOString();
 
@@ -77,13 +77,13 @@ export async function tick(deps = {}) {
     }
     if (v === 'undetermined' || String(v || '').startsWith('error')) { await reg.advance(job.id, 'failed', { error: 'could not read enough of it to check the library' }); return null; }
     const id = doc.identified || {}, by = job.created_by;
-    const admin = isAdmin(by), sure = !!p.rights && (await trustLevel(by, it.acceptedCountBy)) >= 1 && (await repo.usageOf(AUTO)).jobs < AUTO_PER_DAY;
+    const admin = isAdmin(by), autoKey = `${AUTO}:${whoOf(by)}`, sure = p.rights !== false && !!whoOf(by).includes('@') && (await repo.usageOf(autoKey)).jobs < AUTO_PER_DAY;   // known contributor + rights not denied + clean check (duplicates/unreadable returned above) + under their daily allowance
     const auto = admin || sure;
     const arc = await archive(p.path, { itemId: null, by, job: job.id });
     const item = await it.createItem({ title: id.title || p.name, author: id.author || null, kind: id.kind || null, identified: { ...id, _text: undefined, file_name: p.name, job: job.id }, by: `${whoOf(by)} (job ${job.id})`,
-      state: auto ? 'source' : 'offered', why: auto ? `taken in from a ${job.channel || ''} job (${admin ? 'operator' : 'rights asserted, trusted contributor'}): ${p.name}` : `new to the library, waiting for a yes: ${p.name}` });
+      state: auto ? 'source' : 'offered', why: auto ? `taken in from a ${job.channel || ''} job (${admin ? 'operator' : 'trusted contributor'}): ${p.name}` : `new to the library, waiting for a yes: ${p.name}` });
     await it.updateItem(item.id, { original_path: arc.path, sha256: arc.sha256 }, `source archived (${Math.round(arc.bytes / 1024)} KB)`);
-    if (auto) { await q('dewey-intake', { id: item.id }, by || 'dewey-jobs'); if (sure && !admin) await repo.bumpUsage(AUTO, { jobs: 1 }); }
+    if (auto) { await q('dewey-intake', { id: item.id }, by || 'dewey-jobs'); if (sure && !admin) await repo.bumpUsage(autoKey, { jobs: 1 }); }
     await repo.updateJob(job.id, { item_id: item.id });
     await remove(p.path);
     return { item: await it.getItem(item.id) };

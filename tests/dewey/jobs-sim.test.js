@@ -59,20 +59,21 @@ const append = async (uid, role, text, parts) => { chat.push({ uid, role, text, 
 const ZIP = async () => zipBuf([['Pamphlets/Valleys of Light.pdf', PDF('valleys')], ['Pamphlets/Hidden Words.pdf', PDF('hidden')], ['Pamphlets/dup Kitab.pdf', PDF('dup')], ['talk.mp3', Buffer.from('ID3\x04\0\0\0\0\0\0audio')], ['installer.exe', Buffer.from('MZ\x90\0bad')]]);
 
 describe('rights asserted', () => {
-  it('defaults on for the operator, off for others, explicit wins; children inherit it', async () => {
+  it('defaults on for everyone (contributors are trusted); an explicit no wins; children inherit it', async () => {
     const op = await fetchUrl({ url: 'https://example.org/op-rights.pdf', by: 'chadananda@gmail.com' }, { reg });
     const sam = await fetchUrl({ url: 'https://example.org/sam-rights.pdf', by: 'sam@example.org' }, { reg });
     const samYes = await fetchUrl({ url: 'https://example.org/sam-rights2.pdf', by: 'sam@example.org', rights: true }, { reg });
     expect((await repo.getJob(op.job_id)).params.rights).toBe(true);
-    expect((await repo.getJob(sam.job_id)).params.rights).toBe(false);
+    expect((await repo.getJob(sam.job_id)).params.rights).toBe(true);
+    expect((await repo.getJob((await fetchUrl({ url: 'https://example.org/no.pdf', by: 'sam@example.org', rights: false }, { reg })).job_id)).params.rights).toBe(false);
     expect((await repo.getJob(samYes.job_id)).params.rights).toBe(true);
   });
 });
 
-describe('fetch → ZIP → children → notification (ask-first contributor, chat only)', () => {
+describe('fetch → ZIP → children → notification (rights denied, so ask first; contributor, chat only)', () => {
   it('runs the whole path and tells the person in chat, without emailing', async () => {
     const zip = await ZIP();
-    const r = await fetchUrl({ url: 'https://example.org/pamphlets.zip?utm_source=x', by: 'Sam@Example.org', channel: 'chat' }, { reg });
+    const r = await fetchUrl({ url: 'https://example.org/pamphlets.zip?utm_source=x', by: 'Sam@Example.org', channel: 'chat', rights: false }, { reg });
     expect(r.job_id).toBeTruthy();
     const again = await fetchUrl({ url: 'https://example.org/pamphlets.zip', by: 'sam@example.org' }, { reg });
     expect(again).toMatchObject({ job_id: r.job_id, already: true });                       // idempotent
@@ -120,7 +121,7 @@ describe('fetch → ZIP → children → notification (ask-first contributor, ch
 describe('email only when asked for', () => {
   it('a job started by email (or asked for) produces ONE HTML-ready letter with buttons that name outcomes; ack stops it', async () => {
     const zip = await ZIP();
-    const r = await fetchUrl({ url: 'https://example.org/p2.zip', by: 'sam@example.org', channel: 'email' }, { reg });
+    const r = await fetchUrl({ url: 'https://example.org/p2.zip', by: 'sam@example.org', channel: 'email', rights: false }, { reg });
     await workerRun(() => zip); await tick(towerDeps());
     const mails = await outbox({ repo, nameOf: async () => 'Sam Rivers' });
     expect(mails).toHaveLength(1);
@@ -230,5 +231,16 @@ describe('the emailFor letter', () => {
     const kids = [{ state: 'published', params: { name: 'a' }, result: { title: 'Pipe | Title <b>', author: 'A|B', url: 'https://siftersearch.com/document/1' } }];
     const m = emailFor(job, kids, 'final', { name: 'Zed Zee' });
     expect(m.md).toMatch(/Pipe \/ Title <b> \| A\/B/); expect(m.md).not.toMatch(/\|\s*\|\s*\|\s*\n.*\|.*\|.*\|.*\|.*\|/);
+  });
+});
+
+describe('trusted contributors', () => {
+  it('are added without asking (rights default asserted, clean check), up to 100 a day each', async () => {
+    const zip = await zipBuf([['Valleys.pdf', PDF('valleys2')]]);
+    const r = await fetchUrl({ url: 'https://example.org/trusted.zip', by: 'new.person@example.org' }, { reg });
+    await workerRun(() => zip); await tick(towerDeps());
+    expect(queued.filter(([n]) => n === 'dewey-intake')).toHaveLength(1); expect(items.rows.at(-1).state).toBe('source');
+    expect((await repo.usageOf('dewey:auto:new.person@example.org')).jobs).toBe(1);
+    expect(r.job_id).toBeTruthy();
   });
 });

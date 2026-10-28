@@ -8,7 +8,7 @@ import * as repo from '../../repos/dewey-jobs-repo.js';
 import { wantsEmail } from './notify.js';
 
 /** "Rights asserted" (Chad 10-28: nothing we handle is copyright-encumbered): explicit value wins, else on for operators. Caps and the quality gate still apply. */
-export const rightsOf = (rights, by) => (rights === undefined || rights === null ? isAdmin(by) : !!rights);
+export const rightsOf = (rights, by) => (rights === undefined || rights === null ? true : !!rights);
 const swallow = async (p) => { try { return await p; } catch { return null; } };
 
 /** Start fetching a web address (a file, an archive, or a media page handed to the media library). → { job_id, ... } | { error } */
@@ -23,7 +23,7 @@ export async function fetchUrl({ url, by, channel = 'chat', emailMe = false, rig
     await trackMedia({ url: u.toString(), run: run?.id ?? null }, { by, channel });
     return { media: true, run: run?.id ?? null, note: 'that is a recording page — I sent it to the media library, which checks holdings, transcribes and publishes it at /media' };
   }
-  const r = await reg.startJob({ kind: 'fetch', by, channel, params: { url: canonicalUrl(u.toString()), rights: rightsOf(rights, by) }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) } });
+  const r = await reg.startJob({ kind: 'fetch', by, channel, key: idemKey('fetch', by, canonicalUrl(u.toString())), params: { url: canonicalUrl(u.toString()), rights: rightsOf(rights, by) }, notify: { chat: true, email: wantsEmail({ channel, emailMe, pref: pref === '1' }) } });
   if (r.refused) return { error: r.reason, refused: r.refused };
   return { job_id: r.job.id, already: !r.created, state: r.job.state, note: r.created ? 'queued; a worker machine downloads it (never the main server), then each file is checked against the library. Ask me for status any time.' : 'that link is already being handled' };
 }
