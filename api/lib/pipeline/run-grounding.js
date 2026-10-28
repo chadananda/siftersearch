@@ -11,6 +11,17 @@ const { rag, withUsageScope, langOf } = await import('../rag-adapter/index.js');
 const { setAIContext } = await import('../ai-context.js');   // stamp the live stage onto the metering scope
 const { acquireGraphBand, releaseGraphBand } = await import('./lock.js'); // graph-band mutex (project→dedup only)
 
+// HYPE_MODE=batch (default): the hype stage goes through the persisted batch runner (pipeline/hype-batch.js) — Message Batches,
+// half price, restart-safe. HYPE_MODE=sync (urgent single-doc work) or a non-Anthropic model override keeps the live path.
+async function hypeStage(docId, opts) {
+  const { hypeMode } = await import('./hype-batch.js');
+  if (hypeMode() === 'sync' || (opts.model && !/^claude/i.test(opts.model))) return rag.retrieval.index(docId, opts);
+  const { makeHypeBatch } = await import('./hype-batch-app.js');
+  const r = await makeHypeBatch().run([docId], { noDisambig: opts.noDisambig, upgrade: opts.upgrade, ...(opts.model ? { model: opts.model } : {}) });
+  opts.onProgress?.(r.written, r.written);
+  return { mode: 'batch', version: (await import('../rag/enrich/retrieval.js')).HYPE_VERSION, ...r };
+}
+
 // Full Definition-of-Done sequence, in order. Must stay in lockstep with the rag stage set.
 export const GROUNDING_STAGES = ['disambiguate', 'mentions', 'claims', 'reconcile', 'research', 'project', 'link', 'merge', 'dedup', 'hype', 'verify'];
 
@@ -102,7 +113,7 @@ export async function runGrounding(docId, opts = {}) {
     // concurrency: cc — HyPE was the ONE stage that never received it, so --cc did nothing here at all and
     // every run used the stage default. That is why cc=6 and cc=32 produced the same throughput (Chad,
     // 2026-08-26: "5 par/minute is painfully slow", then "parallelizing so we don't take a year").
-    if (want('hype'))         { await enter('hype'); emit('hype', await rag.retrieval.index(docId, { upgrade: rehype, concurrency: cc, noDisambig, ...(hypeModel ? { model: hypeModel } : {}), onProgress })); }   // rehype = version-aware upgrade; hypeModel = flagship model override
+    if (want('hype'))         { await enter('hype'); emit('hype', await hypeStage(docId, { upgrade: rehype, concurrency: cc, noDisambig, ...(hypeModel ? { model: hypeModel } : {}), onProgress })); }   // rehype = version-aware upgrade; hypeModel = flagship model override
 
     if (want('verify')) {
       await enter('verify');

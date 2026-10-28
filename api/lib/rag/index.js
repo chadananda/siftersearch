@@ -41,6 +41,9 @@ export function createCorpusRAG(deps = {}) {
         const { run } = await import('./enrich/retrieval.js'); // HyPE
         return run(ctx, docId, opts);
       },
+      // The host's batch seam: plan() → requests to transport; settle() ← raw replies, validated and written (enrich/retrieval.js)
+      async plan(docId, opts)   { return (await import('./enrich/retrieval.js')).plan(ctx, docId, opts); },
+      async settle(docId, outcomes, opts) { return (await import('./enrich/retrieval.js')).settle(ctx, docId, outcomes, opts); },
     },
 
     entities: {

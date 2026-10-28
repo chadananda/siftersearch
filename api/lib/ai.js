@@ -250,6 +250,39 @@ async function collectBatch(batchId, ids) {
   }
 }
 
+/**
+ * PERSISTENT BATCH TRANSPORT for the HyPE batch runner (pipeline/hype-batch.js) — the batch counterpart of the in-process queue
+ * above, but fire-and-forget: create() returns the batch id, the caller stores it and may collect hours (or a restart) later.
+ * Requests are { custom_id, system, user, maxTokens }; the shared system prefix is cached for an hour (batches finish well after
+ * the 5-minute default expires); thinking is off (reasoning tokens bill as output and empty the reply — see DeepSeek 08-27).
+ * Same fail-closed spend gate as every Anthropic call.
+ */
+export function anthropicBatchTransport({ stage = 'hype', client = null } = {}) {
+  const api = () => client || getAnthropic();
+  return {
+    async create(requests, { model }) {
+      assertAnthropicAllowed({ provider: 'anthropic', model, stage, caller: 'hype-batch' });
+      const b = await api().messages.batches.create({ requests: requests.map((r) => ({ custom_id: r.custom_id, params: {
+        model, max_tokens: r.maxTokens, thinking: { type: 'disabled' },
+        system: [{ type: 'text', text: r.system, cache_control: { type: 'ephemeral', ttl: '1h' } }],
+        messages: [{ role: 'user', content: r.user }] } })) });
+      return b.id;
+    },
+    async status(id) {
+      const b = await api().messages.batches.retrieve(id);
+      return { ended: b.processing_status === 'ended', counts: b.request_counts || null };
+    },
+    async *results(id) {
+      for await (const r of await api().messages.batches.results(id)) {
+        const m = r.result?.type === 'succeeded' ? r.result.message : null;
+        yield { custom_id: r.custom_id, ok: !!m, error: m ? null : `${r.result?.type}: ${r.result?.error?.error?.message || ''}`.slice(0, 200),
+          text: m ? (m.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('') : null, stopReason: m?.stop_reason || null,
+          usage: m ? { input: m.usage?.input_tokens || 0, output: m.usage?.output_tokens || 0, cacheRead: m.usage?.cache_read_input_tokens || 0, cacheWrite: m.usage?.cache_creation_input_tokens || 0 } : null };
+      }
+    },
+  };
+}
+
 async function chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache = false }) {
   const anthropic = getAnthropic();
   if (batchEligible({ provider: 'anthropic', stage: currentAIContext().stage, stream })) {

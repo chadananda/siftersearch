@@ -66,26 +66,35 @@ const MAX_FACTS_PER_PARA = 24;  // sanity slice only — the densest observed pa
 const SLICE_CHARS = 4000;       // paragraphs longer than this get sliced
 const SLICE_TARGET = 1500;      // aim ~this many chars of focus text per slice call
 
-export async function run(ctx, docId, opts = {}) {
-  // noDisambig (Chad 10-14, cost cut 1): scripture, prayers and short tablets name few people to resolve — HyPE reads
-  // them without a disambiguation pass ($0.44 of ~$1.02 per 1,000 paragraphs). History/narrative keep the gate.
-  if (!opts.noDisambig) await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? DISAMB_THRESHOLD });
+// The document as HyPE reads it: profile, metadata, prose, cast, cited facts, concept claims. Shared by run() (synchronous
+// calls) and plan()/settle() (the host's batch transport) so both read the same paragraphs the same way.
+async function loadDoc(ctx, docId, opts) {
   const profile = await profileFor(ctx, docId);
   // noDisambig runs (scripture, prayers, tablets) skip the book cast: a 4 s graph query per document that, over 22k small
   // tablets, was a day of heavy reads for texts that name few people (10-14)
   const [meta, all, cast, facts, conceptClaims] = await Promise.all([
     ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId), opts.noDisambig ? '' : castOf(ctx, docId), factsOf(ctx, docId), conceptsOf(ctx, docId)]);
   const long = all.filter((p) => p.text.length >= (opts.minLen ?? MIN_LEN));
-  // upgrade: version-aware resume — "done" means at the CURRENT generator version, so re-hyping a book skips
-  // paragraphs already upgraded and redoes the rest. A killed upgrade run therefore RESUMES where it died on
-  // retry instead of restarting from zero (resume:false remains the unconditional full redo).
+  return { profile, meta, all, long, cast, facts, conceptClaims };
+}
+
+// upgrade: version-aware resume — "done" means at the CURRENT generator version, so re-hyping a book skips
+// paragraphs already upgraded and redoes the rest. A killed upgrade run therefore RESUMES where it died on
+// retry instead of restarting from zero (resume:false remains the unconditional full redo).
+function pending(long, opts) {
   const doneP = opts.upgrade ? (p) => p.hypModel === HYPE_VERSION && isDone(p) : isDone;
   let paras = (opts.resume ?? true) ? long.filter((p) => !doneP(p)) : long;
   // SAMPLE (dryRun review of a prompt change): only the listed paragraph indexes, or the first `limit`
   if (opts.pids?.length) paras = paras.filter((p) => opts.pids.includes(Number(p.pidx)));
+  if (opts.ids?.length) paras = paras.filter((p) => opts.ids.includes(p.id));
+  if (opts.exclude?.size) paras = paras.filter((p) => !opts.exclude.has(p.id));   // already in flight in a batch
   if (opts.limit) paras = paras.slice(0, opts.limit);
-  // TWIN REUSE (cost cut 4): a paragraph whose identical text elsewhere already carries current questions takes them —
-  // no model call. Supplemental-site copies, duplicate editions and whole-passage quotations are most of these.
+  return paras;
+}
+
+// TWIN REUSE (cost cut 4): a paragraph whose identical text elsewhere already carries current questions takes them —
+// no model call. Supplemental-site copies, duplicate editions and whole-passage quotations are most of these.
+async function reuseTwins(ctx, paras, opts) {
   let twinCopied = 0;
   if (!opts.dryRun && ctx.store.hypeTwins && paras.length) {
     const twins = await ctx.store.hypeTwins(paras.map((p) => p.id), HYPE_VERSION).catch(() => new Map());
@@ -99,6 +108,15 @@ export async function run(ctx, docId, opts = {}) {
     }
     if (twinCopied) paras = paras.filter((p) => !twins.has(p.id));
   }
+  return { paras, twinCopied };
+}
+
+export async function run(ctx, docId, opts = {}) {
+  // noDisambig (Chad 10-14, cost cut 1): scripture, prayers and short tablets name few people to resolve — HyPE reads
+  // them without a disambiguation pass ($0.44 of ~$1.02 per 1,000 paragraphs). History/narrative keep the gate.
+  if (!opts.noDisambig) await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? DISAMB_THRESHOLD });
+  const { profile, meta, long, cast, facts, conceptClaims } = await loadDoc(ctx, docId, opts);
+  let { paras, twinCopied } = await reuseTwins(ctx, pending(long, opts), opts);
   const segs = segment(paras, { mode: profile.segmentation, segMax: opts.segMax ?? 60 });
   const system = buildSystem(profile, meta, cast);
   const route = { model: opts.model ?? profile.models.hype, fallback: opts.fallback ?? profile.fallback };
@@ -167,45 +185,7 @@ export async function run(ctx, docId, opts = {}) {
         if (items.length && thesis) parsed = { items, thesis };
         stats.sliced = (stats.sliced || 0) + 1;
       }
-      if (parsed?.items) {
-        // ENFORCE THE INVARIANT. A question whose claimed answer is not in either text is not a question
-        // about this paragraph. A question with no usable span is KEPT and counted — an unverifiable claim is
-        // a reason to look, never a reason to delete a reader's route to the passage.
-        const kept = [];
-        for (const it of parsed.items) {
-          const fault = questionFault(it.q, meta.title, { seeker: it.seeker });
-          if (fault) { stats[fault] = (stats[fault] || 0) + 1; continue; }
-          const present = spanIsPresent(it.a, [p.text, p.original, p.partner?.text]);
-          if (present === false) { stats.unanswered = (stats.unanswered || 0) + 1; continue; }
-          if (present === null) stats.unverified = (stats.unverified || 0) + 1;
-          kept.push(it);
-        }
-        parsed = kept.length ? { questions: dedupeTiers(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis, items: kept } : null;
-      }
-      if (!parsed) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
-      if (opts.dryRun) (stats.samples ||= []).push({ pidx: p.pidx, text: p.text.slice(0, 400), thesis: parsed.thesis, items: parsed.items });
-      if (!opts.dryRun) {
-        await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
-        // Questions this paragraph received from a linked source before its own turn ('linked:' stamp) are KEPT.
-        if (String(p.hypModel || '').startsWith('linked:') && ctx.store.mergeHype) {
-          let prior = []; try { prior = JSON.parse(p.hyp || '[]'); } catch { /* legacy text */ }
-          if (Array.isArray(prior) && prior.length) await ctx.store.mergeHype([p.id], prior, null, HYPE_VERSION);
-        }
-        // EVERY LINKED PARAGRAPH gets these questions (Chad, 2026-09-30) — merged into what it already has, never replacing:
-        //  · the translation partner (the other language of this very passage): all of them;
-        //  · paragraphs joined by a SOURCE link — quotes of this passage or of its translation, duplicate copies — only the
-        //    questions whose answer span is in THEIR text, because a quote often carries only part of the source.
-        const partnerIds = p.partner?.ids || [];
-        if (partnerIds.length && ctx.store.mergeHype) {
-          stats.partnerMerged = (stats.partnerMerged || 0) + await ctx.store.mergeHype(partnerIds, parsed.questions, parsed.thesis, HYPE_VERSION);
-        }
-        if (ctx.store.getSourceLinked && ctx.store.mergeHype) {
-          for (const n of await ctx.store.getSourceLinked([p.id, ...partnerIds])) {
-            const qs = parsed.items.filter((it) => spanIsPresent(it.a, [n.text]) === true).map((it) => it.q);
-            if (qs.length) stats.quoteMerged = (stats.quoteMerged || 0) + await ctx.store.mergeHype([n.id], qs, null, HYPE_VERSION, { samePassage: false });
-          }
-        }
-      }
+      if (!(await commitHype(ctx, p, meta, parsed, opts, stats))) { await markHypeExhausted(ctx, p, opts, stats); report(); return; }
       stats.done++; if (escalated) stats.escalated++; report();
     } catch (e) {
       if (e?.fatal) throw e;
@@ -217,6 +197,145 @@ export async function run(ctx, docId, opts = {}) {
   return stats;
 }
 
+
+// ── BATCH SEAM: plan() builds the requests, the HOST transports them, settle() validates + writes the replies ──────────────
+// The library names no provider and sends nothing; the host (pipeline/hype-batch) submits the requests however it likes and,
+// possibly hours and a restart later, hands the raw replies back. Same prompt, same parser, same gates, same stamp as run().
+
+// Characters per token, deliberately pessimistic — the cap is a ceiling, not an estimate to be clever about.
+const estTokens = (s) => Math.ceil(String(s).length / (NON_LATIN.test(String(s).slice(0, 600)) ? 2 : 3.2));
+export const BATCH_MAX_INPUT_TOKENS = 12000;   // per request: system + user. Far under the model's 100k long-context price break
+export const BATCH_MAX_OUTPUT_TOKENS = 4096;   // hard cap; the densest observed paragraph needs ~2.5k
+
+// One request's user text, shrunk by dropping optional context — never by growing the window — until it fits the cap:
+// 1) the parallel-text block, 2) facts/concepts to a few, 3) the whole-paragraph context of a slice to the focus + its edges.
+// null = cannot be made to fit (the system prompt alone is over the cap): the caller skips it, loudly.
+function fitUser(p, facts, concepts, slice, systemTokens, cap) {
+  const fits = (u) => systemTokens + estTokens(u) <= cap;
+  const variants = [
+    () => buildUser(p, facts, slice, concepts),
+    () => buildUser({ ...p, partner: null }, facts, slice, concepts),
+    () => buildUser({ ...p, partner: null }, facts?.slice(0, 6), slice, concepts?.slice(0, 4)),
+    () => buildUser({ ...p, partner: null, text: slice ? slice.focus.slice(0, 3000) : p.text }, facts?.slice(0, 4), slice, concepts?.slice(0, 3)),
+  ];
+  for (const v of variants) { const u = v(); if (fits(u)) return u; }
+  return null;
+}
+
+/**
+ * Build the batch requests for one document. Returns { system, model, maxTokens, units, skipped, stats }:
+ *   units   — [{ id, pid, parts: [user text per slice] }] for the paragraphs still needing questions at the CURRENT version;
+ *   skipped — [{ id, reason }] ('overCap': cannot fit the input cap even split — never silently dropped).
+ * opts: limit, ids, pids, noDisambig, minLen, maxInputTokens, maxTokens, split (ids to cut finer — a prior reply was truncated).
+ */
+export async function plan(ctx, docId, opts = {}) {
+  if (!opts.noDisambig) await assertDisambiguated(ctx, docId, { threshold: opts.threshold ?? DISAMB_THRESHOLD });
+  const { profile, meta, long, cast, facts, conceptClaims } = await loadDoc(ctx, docId, opts);
+  const { paras, twinCopied } = await reuseTwins(ctx, pending(long, opts), opts);
+  const system = buildSystem(profile, meta, cast);
+  const cap = opts.maxInputTokens ?? BATCH_MAX_INPUT_TOKENS, sysTokens = estTokens(system);
+  const model = opts.model ?? profile.models.hype;
+  const units = [], skipped = [], stats = { paras: paras.length, twinCopied, sliced: 0 };
+  if (sysTokens >= cap) { for (const p of paras) skipped.push({ id: p.id, reason: 'overCap' }); return { system, model, maxTokens: opts.maxTokens ?? BATCH_MAX_OUTPUT_TOKENS, units, skipped, stats, docId }; }
+  for (const p of paras) {
+    const finer = opts.split?.has?.(p.id);
+    let slices = sliceParagraph(p.text, finer ? { chars: 1200, target: 600, hard: true } : {});
+    // a paragraph too big for one request is split, never sent whole
+    const lim = (cap - sysTokens) * 3.2 * 0.6;
+    if (slices.length === 1 && p.text.length > lim) slices = sliceParagraph(p.text, { chars: lim, target: Math.min(SLICE_TARGET, lim / 2), hard: true });
+    const pf = facts[p.pid] || null, pc = conceptClaims?.[p.pid] || null;
+    const parts = slices.map((focus, i) => fitUser(p, pf, pc, slices.length > 1 ? { focus, part: i + 1, parts: slices.length } : null, sysTokens, cap));
+    if (parts.some((u) => u == null)) { skipped.push({ id: p.id, reason: 'overCap' }); continue; }
+    if (slices.length > 1) stats.sliced++;
+    units.push({ id: p.id, pid: p.pid, parts });
+  }
+  return { system, model, maxTokens: opts.maxTokens ?? BATCH_MAX_OUTPUT_TOKENS, units, skipped, stats, docId };
+}
+
+/**
+ * Validate and write the replies for one document. outcomes: [{ id, replies: [raw text | null per part] }].
+ * Idempotent: a paragraph already stamped at the current version is left alone (a duplicate collect, a racing sync run).
+ * Unparseable replies are NOT stamped — they come back in `failed` for the host to retry; ids in opts.exhaust are stamped
+ * empty (the host's retry budget is spent). Returns { written, failed, exhausted, alreadyDone, stats }.
+ */
+export async function settle(ctx, docId, outcomes, opts = {}) {
+  const [meta, all] = await Promise.all([ctx.store.getDocMeta(docId), ctx.store.getParagraphs(docId)]);
+  const byId = new Map(all.map((p) => [p.id, p]));
+  const stats = { version: HYPE_VERSION }, res = { written: 0, failed: [], exhausted: 0, alreadyDone: 0, gone: 0, stats };
+  for (const o of outcomes) {
+    const p = byId.get(o.id);
+    if (!p) { res.gone++; continue; }
+    if (!opts.dryRun && isDone(p)) { res.alreadyDone++; continue; }
+    const parts = (o.replies || []).map((raw, i) => (raw ? (i === 0 ? parseHype(raw) : parseHypeSlice(raw)) : null));
+    const parsed = parts.length === 1 ? parts[0] : combineSlices(parts);
+    if (parsed && await commitHype(ctx, p, meta, parsed, opts, stats)) { res.written++; continue; }
+    if (opts.exhaust?.has?.(p.id)) { await markHypeExhausted(ctx, p, opts, stats); res.exhausted++; } else res.failed.push(p.id);
+  }
+  return res;
+}
+
+/**
+ * VALIDATE + WRITE one paragraph's parsed reply: the code gates (yes/no, self-reference, book title, answer span), dedupe by
+ * answer, save, and merge into linked paragraphs. The ONE write path — the synchronous run() and the host's batch settle()
+ * both end here, so a batch result is held to exactly the standard of a live call. True when questions were written, false
+ * when nothing survived (the caller decides whether that paragraph is stamped exhausted).
+ */
+async function commitHype(ctx, p, meta, parsed, opts, stats) {
+  if (parsed?.items) {
+    // ENFORCE THE INVARIANT. A question whose claimed answer is not in either text is not a question
+    // about this paragraph. A question with no usable span is KEPT and counted — an unverifiable claim is
+    // a reason to look, never a reason to delete a reader's route to the passage.
+    const kept = [];
+    for (const it of parsed.items) {
+      const fault = questionFault(it.q, meta.title, { seeker: it.seeker });
+      if (fault) { stats[fault] = (stats[fault] || 0) + 1; continue; }
+      const present = spanIsPresent(it.a, [p.text, p.original, p.partner?.text]);
+      if (present === false) { stats.unanswered = (stats.unanswered || 0) + 1; continue; }
+      if (present === null) stats.unverified = (stats.unverified || 0) + 1;
+      kept.push(it);
+    }
+    parsed = kept.length ? { questions: dedupeTiers(kept).slice(0, QUESTION_CEILING), thesis: parsed.thesis, items: kept } : null;
+  }
+  if (!parsed) return false;
+  if (opts.dryRun) (stats.samples ||= []).push({ pidx: p.pidx, text: p.text.slice(0, 400), thesis: parsed.thesis, items: parsed.items });
+  if (!opts.dryRun) {
+    await ctx.store.saveHype(p.id, parsed.questions, parsed.thesis, HYPE_VERSION);
+    // Questions this paragraph received from a linked source before its own turn ('linked:' stamp) are KEPT.
+    if (String(p.hypModel || '').startsWith('linked:') && ctx.store.mergeHype) {
+      let prior = []; try { prior = JSON.parse(p.hyp || '[]'); } catch { /* legacy text */ }
+      if (Array.isArray(prior) && prior.length) await ctx.store.mergeHype([p.id], prior, null, HYPE_VERSION);
+    }
+    // EVERY LINKED PARAGRAPH gets these questions (Chad, 2026-09-30) — merged into what it already has, never replacing:
+    //  · the translation partner (the other language of this very passage): all of them;
+    //  · paragraphs joined by a SOURCE link — quotes of this passage or of its translation, duplicate copies — only the
+    //    questions whose answer span is in THEIR text, because a quote often carries only part of the source.
+    const partnerIds = p.partner?.ids || [];
+    if (partnerIds.length && ctx.store.mergeHype) {
+      stats.partnerMerged = (stats.partnerMerged || 0) + await ctx.store.mergeHype(partnerIds, parsed.questions, parsed.thesis, HYPE_VERSION);
+    }
+    if (ctx.store.getSourceLinked && ctx.store.mergeHype) {
+      for (const n of await ctx.store.getSourceLinked([p.id, ...partnerIds])) {
+        const qs = parsed.items.filter((it) => spanIsPresent(it.a, [n.text]) === true).map((it) => it.q);
+        if (qs.length) stats.quoteMerged = (stats.quoteMerged || 0) + await ctx.store.mergeHype([n.id], qs, null, HYPE_VERSION, { samePassage: false });
+      }
+    }
+  }
+  return true;
+}
+
+/** The slices of one paragraph's replies → one parsed result (slice 1 carries the thesis; duplicates by question are dropped). */
+function combineSlices(parts) {
+  const items = []; let thesis = '';
+  parts.forEach((r, si) => {
+    if (!r) return;                                   // a lost slice costs coverage, not the paragraph
+    if (si === 0) thesis = r.thesis;
+    for (const it of r.items || []) {
+      const k = String(it.q).toLowerCase().replace(/[^a-z0-9 ]/g, '');
+      if (!items.some((e) => e.k === k)) items.push({ ...it, k });
+    }
+  });
+  return items.length && thesis ? { items, thesis } : null;
+}
 
 /**
  * A paragraph the generator could not produce questions for, after its full ladder, has still been
@@ -457,13 +576,16 @@ ${bookMeta}${cast ? `\n\nBOOK CAST (who's-who — resolve a name to the right fi
 
 // Split a long paragraph into sentence groups of ~SLICE_TARGET chars. Sentence-boundary regex covers
 // Latin + Arabic-script terminators; a paragraph with no detectable boundaries stays one slice.
-export function sliceParagraph(text) {
-  if (text.length <= SLICE_CHARS) return [text];
+export function sliceParagraph(text, { chars = SLICE_CHARS, target = SLICE_TARGET, hard = false } = {}) {
+  if (text.length <= chars) return [text];
   const sentences = text.split(/(?<=[.!?؟۔…])\s+/u).filter((s) => s.trim());
-  if (sentences.length < 2) return [text];
+  // hard: a paragraph with no usable sentence boundary (a long verse run, an OCR block) is cut at word breaks instead of
+  // being sent whole — the batch path never enlarges the context to fit text, it splits the text
+  const pieces = sentences.length >= 2 ? sentences : hard ? text.match(new RegExp(`[\\s\\S]{1,${target}}(?:\\s+|$)`, 'g')) || [text] : [text];
+  if (pieces.length < 2) return [text];
   const slices = []; let cur = '';
-  for (const s of sentences) {
-    if (cur && cur.length + s.length > SLICE_TARGET) { slices.push(cur.trim()); cur = ''; }
+  for (const s of pieces) {
+    if (cur && cur.length + s.length > target) { slices.push(cur.trim()); cur = ''; }
     cur += (cur ? ' ' : '') + s;
   }
   if (cur.trim()) slices.push(cur.trim());
