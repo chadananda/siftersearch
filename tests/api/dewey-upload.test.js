@@ -163,7 +163,7 @@ describe('browser queue', () => {
   it('resumes after a refresh: only the missing parts are sent, with no new start', async () => {
     const storage = mem(), f = file('big.wav', PART_SIZE * 4);
     const a = server(); const q1 = new UploadQueue({ ...a, storage, sleep: async () => {} });
-    let calls = 0; const realPut = q1.putPart; q1.putPart = async (...x) => { if (++calls > 2) { q1.pause(1); return { status: 503, body: {} }; } return realPut(...x); };
+    let calls = 0; const inflight = []; const realPut = q1.putPart; q1.putPart = async (...x) => { if (++calls > 2) { await Promise.all(inflight); q1.pause(1); return { status: 503, body: {} }; } const r = realPut(...x); inflight.push(r); return r; };   // pause only after the two good parts have landed (parts upload in parallel)
     q1.add([f]); await settle(q1);
     expect(q1.items[0].state).toBe('paused'); expect(JSON.parse(storage.getItem('dewey-uploads-v1'))[fingerprint(f)].etags).toBeDefined();
     const b = server(), q2 = new UploadQueue({ ...b, storage, sleep: async () => {} });   // "after a refresh": new queue, same storage
