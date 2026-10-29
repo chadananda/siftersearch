@@ -348,6 +348,7 @@ export async function setPlayback(level, { sourceKind = null } = {}) {
 }
 /** Published rows whose restored flag was never set (before migration 186): the backfill's work list, and its answer. */
 export const unclassifiedDone = async (limit = 50) => queryAll(`SELECT id, dir FROM media_items WHERE state = 'done' AND restored IS NULL ORDER BY id LIMIT ?`, [Number(limit) || 50], 'media:restored-todo');
+export const restoredRows = async (afterId = 0, limit = 200) => queryAll(`SELECT id, dir FROM media_items WHERE state = 'done' AND restored = 1 AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 200], 'media:restored-verify');
 export const setRestored = async (id, flag) => transaction([{ sql: 'UPDATE media_items SET restored = ? WHERE id = ?', args: [flag ? 1 : 0, Number(id)] }], 'media:set-restored');
 export const doneItemIds = async () => (await queryAll(`SELECT id FROM media_items WHERE state = 'done' ORDER BY id`, [], 'media:done-ids')).map((r) => r.id);
 

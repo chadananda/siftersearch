@@ -39,6 +39,9 @@ export function remasterTier(meta = {}) {
   return null;
 }
 
+/** ON THE AIR = a real remaster (heavy or cleaned). The bulk 'light' tier (high-pass, hum notch, loudness) is NOT restoration. */
+export function isRestored(meta = {}) { const t = remasterTier(meta); return t === 'heavy' || t === 'cleaned'; }
+
 /** True when the talk's main copy is a restored copy (any tier) with a kept original web encode. */
 export function isRemastered(meta = {}) { return remasterTier(meta) != null; }
 

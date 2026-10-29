@@ -9,7 +9,7 @@ vi.mock('../../api/lib/db.js', () => ({
   transaction: async (ops) => { for (const o of ops) db.prepare(o.sql).run(...(o.args || [])); return {}; },
 }));
 import * as repo from '../../api/lib/repos/media-repo.js';
-import { backfillRestored } from '../../api/lib/ops/media-jobs.js';
+import { backfillRestored, resetRestoredVerify } from '../../api/lib/ops/media-jobs.js';
 
 const row = (id, restored, extra = {}) => ({ id, slug: 's' + id, state: 'done', restored, dir: '/x/' + id, source_kind: 'youtube', speaker: 'A', duration_s: 60, ...extra });
 beforeEach(() => {
@@ -39,5 +39,12 @@ describe('backfillRestored', () => {
     expect(n).toBe(1);
     expect(db.prepare('SELECT restored r FROM media_items WHERE id = 3').get().r).toBe(1);
     expect((await repo.unclassifiedDone()).length).toBe(0);
+  });
+  it('the bulk light tier is not restoration, and rows already flagged under the looser rule are corrected', async () => {
+    resetRestoredVerify();
+    const metas = { '/x/1': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'light' }, '/x/3': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'light' }, '/x/4': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'cleaned' } };
+    await backfillRestored({ repo, readMeta: async (d) => metas[d] || Promise.reject(new Error('nope')) });
+    const r = (id) => db.prepare('SELECT restored r FROM media_items WHERE id = ?').get(id).r;
+    expect([r(1), r(3), r(4)]).toEqual([0, 0, 1]);
   });
 });

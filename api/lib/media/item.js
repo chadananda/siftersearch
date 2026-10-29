@@ -16,7 +16,7 @@ import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
 import { purgeTalk } from './edge-purge.js';
 import { archiveSuperseded } from './supersede.js';
-import { remasterTier } from './talk-audio.js';
+import { isRestored } from './talk-audio.js';
 import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, listeningSource, OGG_ARGS, WEB_CODEC, OGG_ARGS_REMASTER, M4A_BITRATE_REMASTER, WEB_CODEC_REMASTER, isRemastered, remasterEligible } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
@@ -952,7 +952,7 @@ export async function runItem(item, opts = {}, deps = {}) {
 
     if (stage === 'catalog' || stage === 'update') {
       // only RESTORED audio goes on air (Chad 10-29): a talk with no restored copy (any tier) stays in the pipeline, unpublished
-      if (!item.published_at && !opts.publishUnrestored && meta.rights?.playback === 'full' && remasterTier(meta) == null) throw new Error('publish blocked: no restored audio copy yet (stays in the pipeline)');
+      if (!item.published_at && !opts.publishUnrestored && meta.rights?.playback === 'full' && !isRestored(meta)) throw new Error('publish blocked: no restored audio copy yet (stays in the pipeline)');
       if (meta.rights?.playback === 'full') {
         const publishedTranscript = await readJson(join(dir, 'transcript.json'), { paragraphs: [] });
         const timeHash = timingSignature(publishedTranscript.paragraphs);
@@ -986,7 +986,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (meta.quality) meta.quality.insertions_reverted = (meta.faithfulness?.correct || 0) + (meta.faithfulness?.clean || 0);
       const qj = await readJson(join(dir, 'quotes.json'), { quotes: [], teachings: [] });
       await repo.updateMediaItem(item.id, { speaker_key: meta.speaker_key || (meta.speaker ? speakerKey(meta.speaker) : null), title: meta.title, speaker: meta.speaker, language: meta.language, year: meta.year ? Number(meta.year) : null, date: meta.date,
-        restored: remasterTier(meta) != null ? 1 : 0, doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
+        restored: isRestored(meta) ? 1 : 0, doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
         asr_conf: meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null, cost_usd: Math.round(spend.usd * 10000) / 10000,
         meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, headings_n: (meta.headings || []).length, audience_intro: meta.audience?.intro || [], rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
         state: 'done', stage: 'catalog', why: null, ...(item.published_at ? {} : { published_at: d.now() }), audience: meta.audience?.score ?? null, ...(meta.quality ? { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority } : {}) });
