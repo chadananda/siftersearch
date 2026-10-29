@@ -255,6 +255,7 @@ export async function ensureMedia(url, env, origin) {
   let ext = url.searchParams.get('ext') || 'm4a'; if (!/^[a-z0-9]{2,5}$/.test(ext)) ext = 'm4a';
   const t = target(slug, v, fmt, kind, ext);
   if (!t) return Response.json({ error: 'bad file' }, { status: 400 });
+  t.internal = true;   // pods read unpublished talks too (the tower serves their files only to the internal key)
   const state = await fillOne(env, origin, t);
   return Response.json({ slug, kind, key: t.key, present: state === 'present' || state === 'filled', state }, { headers: { 'cache-control': 'no-store' } });
 }

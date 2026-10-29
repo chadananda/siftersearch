@@ -8,6 +8,7 @@ import { join, dirname, normalize, extname } from 'path';
 import { mediaIndexRows, momentByKey, listMoments, introClips, repairList, gradeCounts, listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
+const isInternal = (req) => !!process.env.DEPLOY_SECRET && req.headers['x-internal-key'] === process.env.DEPLOY_SECRET;
 import { canServeFile, clipQuery, verifyClip, CLIP_CAP, LEVELS } from '../lib/media/rights.js';
 import { talkAudio, isRemastered, originalField, audioVersion, timingSignature } from '../lib/media/talk-audio.js';
 import { parseRange, clampClip } from '../lib/media/range.js';
@@ -349,7 +350,9 @@ export default async function mediaRoutes(fastify) {
   // one item: what the player needs (no audio bytes)
   fastify.get('/:slug', async (req, reply) => {
     const it = await getMediaBySlug(req.params.slug);
-    if (!it || it.state !== 'done' || !it.dir) { reply.header('Cache-Control', 'public, max-age=60, s-maxage=60'); return reply.code(404).send({ error: 'NotFound' }); }
+    // NOT PUBLISHED until properly remastered (Chad 10-29: "don't let them have a published state until properly remastered"):
+    // a talk without a passed remaster (restored = 1) is not served to the public at all; internal tools still read it
+    if (!it || it.state !== 'done' || !it.dir || (it.restored !== 1 && !isInternal(req))) { reply.header('Cache-Control', 'public, max-age=60, s-maxage=60'); return reply.code(404).send({ error: 'NotFound' }); }
     const [meta, tr, spk] = await Promise.all([readJson(join(it.dir, 'meta.json')), readJson(join(it.dir, 'transcript.json')), it.speaker_key ? getSpeaker(it.speaker_key) : null]);
     // Photos are never shown (Chad 10-24): the portrait is the speaker's DRAWING, else the generated tile/initials
     const sketch = await sketchForKey(it.speaker_key);
@@ -422,7 +425,7 @@ export default async function mediaRoutes(fastify) {
   fastify.get('/:slug/file/*', async (req, reply) => {
     const it = await getMediaBySlug(req.params.slug);
     const name = normalize(String(req.params['*'] || '')).replace(/^(\.\.(\/|$))+/, '');
-    if (!it || it.state !== 'done' || !it.dir || name.includes('..')) return reply.code(404).send({ error: 'NotFound' });
+    if (!it || it.state !== 'done' || !it.dir || name.includes('..') || (it.restored !== 1 && !isInternal(req))) return reply.code(404).send({ error: 'NotFound' });   // unpublished: no files either
     if (!canServeFile(it.playback, name)) return reply.code(403).send({ error: 'Forbidden', why: `playback level '${it.playback}'` });
     if (/^web\/[^/]+(?:\.original)?\.(?:ogg|m4a)$/.test(name) && req.query?.v != null) {
       const meta = await readJson(join(it.dir, 'meta.json'), {});
