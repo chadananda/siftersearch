@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-29T20:41:45.880Z",
+  "generated": "2026-10-29T20:55:00.044Z",
   "entries": [
+    {
+      "hash": "b7597be4",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Web audio streams from R2 while it uploads — pieces (512 KB first, then 4 MB), a read waits only for its piece; a GET miss starts the copy; the page warms both copies",
+      "scope": null
+    },
     {
       "hash": "b0e1bd4e",
       "date": "2026-10-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "One hunt at a time + 1.5 s pause — two concurrent hunts took search from 1.6 s to 5–11 s (10-21 09:49)",
       "scope": "source-links-build"
-    },
-    {
-      "hash": "aa9b75c8",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Fall back to the next considered candidate that is the writer's own work; approved spend for citation linking (Chad 10-21)",
-      "scope": "source-links-build"
     }
   ],
   "grouped": {
     "2026-10-29": [
+      {
+        "hash": "b7597be4",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Web audio streams from R2 while it uploads — pieces (512 KB first, then 4 MB), a read waits only for its piece; a GET miss starts the copy; the page warms both copies",
+        "scope": null
+      },
       {
         "hash": "b0e1bd4e",
         "date": "2026-10-29",
@@ -7007,13 +7014,6 @@
         "date": "2026-10-21",
         "type": "Fixed",
         "description": "One hunt at a time + 1.5 s pause — two concurrent hunts took search from 1.6 s to 5–11 s (10-21 09:49)",
-        "scope": "source-links-build"
-      },
-      {
-        "hash": "aa9b75c8",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Fall back to the next considered candidate that is the writer's own work; approved spend for citation linking (Chad 10-21)",
         "scope": "source-links-build"
       }
     ]

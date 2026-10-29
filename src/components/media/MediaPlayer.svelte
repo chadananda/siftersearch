@@ -353,7 +353,8 @@
       const main = ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg;
       const orig = ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg;
       const warms = [main, hasOriginal && orig].filter(Boolean).map((p) => audioWarmPath(media.href(p))).filter(Boolean);
-      warms.reduce((prev, w) => prev.then(() => fetch(w, { method: 'POST' }).catch(() => {})), Promise.resolve());
+      // both copies copy to R2 while the listener reads the page; the restored one gets a 3 s head start (it plays first)
+      warms.forEach((w, i) => setTimeout(() => fetch(w, { method: 'POST' }).catch(() => {}), i * 3000));
     }
     wordEls = Array.from(root.querySelectorAll('[data-k]'));
     let r = rangeFrom({ search: location.search, hash: location.hash });

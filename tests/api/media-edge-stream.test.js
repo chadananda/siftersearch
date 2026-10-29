@@ -69,4 +69,26 @@ describe('reading while the copy lands', () => {
       expect(fetchMock.mock.calls.every(([u]) => u.startsWith('https://origin/api/media/t/file/web/t.ogg?v=3'))).toBe(true);
     } finally { vi.unstubAllGlobals(); }
   });
+  // 10-29: Chrome reads an Ogg's END for its duration before it plays; the end landing last held metadata for 18 s
+  it('the last piece lands right after the first, and a seek copies its own piece instead of waiting', async () => {
+    const size = FIRST_PIECE + 3 * PIECE + 100, file = Uint8Array.from({ length: size }, (_, i) => i % 251);
+    let gate; const held = new Promise((r) => { gate = r; });
+    const fetchMock = vi.fn(async (url, { headers } = {}) => {
+      const [, a, z] = /bytes=(\d+)-(\d+)/.exec(headers.range), s = Number(a), end = Math.min(Number(z), size - 1);
+      if (s > FIRST_PIECE && s < FIRST_PIECE + 3 * PIECE && fetchMock.mock.calls.length < 4) await held;   // the fill's middle pieces stall
+      return new Response(file.slice(s, end + 1), { status: 206, headers: { 'content-range': `bytes ${a}-${end}/${size}`, 'content-type': 'audio/ogg' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const env = { MEDIA_BUCKET: bucket() }, waits = [];
+      const ask = (range) => mediaFile(new Request('https://siftersearch.com/api/media/t/file/web/t.ogg?v=3', { headers: { range } }), env, { waitUntil: (p) => waits.push(p) }, 'https://origin');
+      const r0 = await ask('bytes=0-0'); await r0.arrayBuffer();
+      const tail = await ask(`bytes=${size - 50}-`);
+      expect(new Uint8Array(await tail.arrayBuffer())).toEqual(file.slice(size - 50));
+      expect(fetchMock.mock.calls[1][1].headers.range).toBe(`bytes=${FIRST_PIECE + 3 * PIECE}-${size - 1}`);   // the fill's second request
+      const mid = FIRST_PIECE + 2 * PIECE + 7, seek = await ask(`bytes=${mid}-${mid + 9}`);
+      expect(new Uint8Array(await seek.arrayBuffer())).toEqual(file.slice(mid, mid + 10));
+      gate(); await Promise.all(waits);
+    } finally { vi.unstubAllGlobals(); }
+  });
 });

@@ -54,7 +54,7 @@ export async function mediaFile(request, env, ctx, origin) {
     const m = MEDIA_FILE.exec(url.pathname), t = { name: decodeURIComponent(m[2]), key, path: url.pathname + url.search, internal: false };
     let failed = false;
     ctx.waitUntil(fillOne(env, origin, t, { chunked: true }).then((s) => { failed = s === 'failed'; }, () => { failed = true; }));   // no-op when complete or another request is filling it (resumes a cut-off copy)
-    const r = await chunkedResponse(env, key, range, request.method === 'HEAD', { gaveUp: () => failed });
+    const r = await chunkedResponse(env, key, range, request.method === 'HEAD', { gaveUp: () => failed, fetchPiece: (man, i) => loadPiece(env, key, man, i, origin + t.path) });
     return r || new Response(JSON.stringify({ preparing: true }), { status: 202, headers: { 'content-type': 'application/json', 'retry-after': '2', 'cache-control': 'no-store', 'x-sifter-audio': 'preparing' } });
   }
   // miss: answer from the origin (Range passed through), and fill R2 with the whole file in the background
@@ -104,7 +104,7 @@ export async function fillParallel(env, key, url, headers = {}, { onProgress = a
 }
 
 // ── chunked web audio: "<key>~m" = { size, ct, bounds }, pieces "<key>~<i>", filled in order (first piece small: playback starts at once)
-export const FIRST_PIECE = 512 * 1024, PIECE = 4 * 1024 * 1024, PIECE_PARALLEL = 3;
+export const FIRST_PIECE = 512 * 1024, PIECE = 2 * 1024 * 1024, PIECE_PARALLEL = 3;   // 2 MB: a seek that copies its own piece waits ~2 s, not ~5
 export function pieceBounds(size) {
   const b = [0];
   for (let at = Math.min(size, FIRST_PIECE); at < size; at = Math.min(size, at + PIECE)) b.push(at);
@@ -136,15 +136,23 @@ async function fillChunked(env, key, url, headers = {}, { onProgress = async () 
   const n = man.bounds.length - 1;
   const piece = async (i) => {
     if (await env.MEDIA_BUCKET.head(`${key}~${i}`)) return;   // resumable: a cut-off copy continues where it stopped
-    const r = await fetch(url, { headers: { ...headers, range: `bytes=${man.bounds[i]}-${man.bounds[i + 1] - 1}` } });
-    if (r.status !== 206 && !(r.status === 200 && n === 1)) throw new Error(`piece ${i}: origin ${r.status}`);
-    await env.MEDIA_BUCKET.put(`${key}~${i}`, await r.arrayBuffer());
+    await loadPiece(env, key, man, i, url, headers);
     await onProgress();
   };
   await piece(0);   // alone, on the whole uplink: the listener's first second
+  if (n > 1) await piece(n - 1);   // then the LAST piece: browsers read an Ogg's end for its duration before they play (10-29: 18 s)
   let next = 1;
-  await Promise.all(Array.from({ length: Math.min(PIECE_PARALLEL, n - 1) }, async () => { while (next < n) await piece(next++); }));
+  await Promise.all(Array.from({ length: Math.min(PIECE_PARALLEL, n - 2) }, async () => { while (next < n - 1) await piece(next++); }));
   return { bytes: man.size, ms: Date.now() - t0 };
+}
+
+/** Copy piece i from the tower into R2 → its bytes. A read that needs a piece the fill has not reached calls this itself (a seek). */
+async function loadPiece(env, key, man, i, url, headers = {}) {
+  const r = await fetch(url, { headers: { ...headers, range: `bytes=${man.bounds[i]}-${man.bounds[i + 1] - 1}` } });
+  if (r.status !== 206 && !(r.status === 200 && man.bounds.length === 2)) throw new Error(`piece ${i}: origin ${r.status}`);
+  const buf = await r.arrayBuffer();
+  await env.MEDIA_BUCKET.put(`${key}~${i}`, buf);
+  return buf;
 }
 
 async function piecesComplete(env, key) {
@@ -158,7 +166,8 @@ async function waitFor(get, ms = 25_000, every = 250, gaveUp = () => false) {
   for (const until = Date.now() + ms; ; await wait(every)) { const v = await get().catch(() => null); if (v || gaveUp() || Date.now() > until) return v; }
 }
 /** A Range read from the pieces, waiting for each piece as the copy lands it. → Response, or null when the copy has not begun in time. */
-export async function chunkedResponse(env, key, rangeHeader, headOnly = false, { waitMs = 25_000, gaveUp } = {}) {
+const PIECE_PATIENCE = 1500;   // a read waits this long for the fill to land a piece, then copies that piece itself
+export async function chunkedResponse(env, key, rangeHeader, headOnly = false, { waitMs = 25_000, gaveUp, fetchPiece } = {}) {
   const man = await waitFor(() => env.MEDIA_BUCKET.get(`${key}~m`).then((o) => o?.json()), waitMs, 250, gaveUp);
   if (!man) return null;
   const r = parseRange(rangeHeader, man.size);
@@ -167,17 +176,27 @@ export async function chunkedResponse(env, key, rangeHeader, headOnly = false, {
   const h = new Headers({ 'content-type': man.ct, 'accept-ranges': 'bytes', 'cache-control': 'public, max-age=31536000, immutable', 'content-length': String(end - start + 1), 'x-sifter-audio': 'streaming' });
   if (r) h.set('content-range', `bytes ${start}-${end}/${man.size}`);
   const first = pieceOf(man.bounds, start);
-  if (!(await waitFor(() => env.MEDIA_BUCKET.head(`${key}~${first}`), waitMs, 250, gaveUp))) return null;
-  if (headOnly) return new Response(null, { status: r ? 206 : 200, headers: h });
+  // the piece now: in R2, landing within PIECE_PATIENCE, or copied by this read → { bytes of [a, z] }
+  const take = async (i, a, z) => {
+    const lo = man.bounds[i], get = () => env.MEDIA_BUCKET.get(`${key}~${i}`, { range: { offset: a - lo, length: z - a + 1 } }).then((o) => o && o.arrayBuffer());
+    const got = await waitFor(get, fetchPiece ? PIECE_PATIENCE : 60_000, 250);
+    if (got || !fetchPiece) return got;
+    const buf = await fetchPiece(man, i).catch(() => null);
+    return buf ? buf.slice(a - lo, z - lo + 1) : waitFor(get, 60_000, 250);
+  };
+  if (headOnly) return new Response(null, { status: r ? 206 : 200, headers: h });   // the manifest knows the size
+  let firstBytes = null;   // the first piece decides the answer: no bytes in time → null (the caller says 202)
+  if (!(await waitFor(() => env.MEDIA_BUCKET.head(`${key}~${first}`), fetchPiece ? PIECE_PATIENCE : waitMs, 250, gaveUp))
+      && !(fetchPiece && (firstBytes = await fetchPiece(man, first).catch(() => null)))) return null;
   let i = first;
   const body = new ReadableStream({
     async pull(ctl) {
       const lo = man.bounds[i], hi = man.bounds[i + 1] - 1;
       if (lo > end) return ctl.close();
       const a = Math.max(start, lo), z = Math.min(end, hi);
-      const obj = await waitFor(() => env.MEDIA_BUCKET.get(`${key}~${i}`, { range: { offset: a - lo, length: z - a + 1 } }), 60_000);
-      if (!obj) return ctl.error(new Error(`piece ${i} did not arrive`));
-      ctl.enqueue(new Uint8Array(await obj.arrayBuffer()));
+      const bytes = i === first && firstBytes ? firstBytes.slice(a - lo, z - lo + 1) : await take(i, a, z);
+      if (!bytes) return ctl.error(new Error(`piece ${i} did not arrive`));
+      ctl.enqueue(new Uint8Array(bytes));
       i++;
       if (z >= end) ctl.close();
     },
@@ -200,13 +219,16 @@ async function fillOne(env, origin, t, { chunked = false } = {}) {
   const lock = `fill:${t.key}`;
   const held = env.EDGE_CACHE ? await env.EDGE_CACHE.get(lock) : null;
   const stamp = value => { try { return Number(JSON.parse(value)?.at ?? value); } catch { return Number(value); } };
-  if (held && (!Number.isFinite(stamp(held)) || Date.now() - stamp(held) < 45_000)) return 'busy';
+  // a chunked fill from a GET runs in waitUntil, which Cloudflare cancels ~30 s after that response: its lock must go stale fast
+  // or the page's warm (which lives as long as the page) is told 'busy' while nobody fills
+  const staleMs = chunked ? 20_000 : 45_000, beatMs = chunked ? 5_000 : 10_000;
+  if (held && (!Number.isFinite(stamp(held)) || Date.now() - stamp(held) < staleMs)) return 'busy';
   const owner = crypto.randomUUID();
   let lastBeat = Date.now();
   const lease = () => JSON.stringify({owner,at:Date.now()});
   if (env.EDGE_CACHE) await env.EDGE_CACHE.put(lock, lease(), {expirationTtl:600});
   const renew = async () => {
-    if (!env.EDGE_CACHE || Date.now()-lastBeat < 10000) return;
+    if (!env.EDGE_CACHE || Date.now()-lastBeat < beatMs) return;
     lastBeat=Date.now();
     const current=await env.EDGE_CACHE.get(lock).catch(()=>null);
     if (!current?.includes(owner)) return;
