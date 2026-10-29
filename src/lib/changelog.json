@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-29T14:18:30.071Z",
+  "generated": "2026-10-29T16:44:57.429Z",
   "entries": [
+    {
+      "hash": "f4c307bd",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Remastered/hr counts COMPLETIONS (completed_at, migration 188), not first publications",
+      "scope": null
+    },
+    {
+      "hash": "6f479a4a",
+      "date": "2026-10-29",
+      "type": "Test",
+      "description": "Dewey-upload resume — pause only after the good parts land (race)",
+      "scope": null
+    },
+    {
+      "hash": "bf0c63c7",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Index stages + audio quality (migration 187): stages_missing, next_stage, verdict, NISQA in/out, bandwidth in/out; backfill + per-stage maintenance",
+      "scope": null
+    },
+    {
+      "hash": "16f47561",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Media-stages report/job — per-talk missing stages, queue exactly those (or forced redo) through the engine",
+      "scope": null
+    },
+    {
+      "hash": "4f529cff",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "On air = COMPLETE (all stages done + passed remaster assessment); flag recomputed after every stage",
+      "scope": null
+    },
+    {
+      "hash": "799d677e",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "On air = real remaster only (heavy/cleaned), not the bulk light tier; re-verify rows flagged under the looser rule",
+      "scope": null
+    },
+    {
+      "hash": "49e0d71f",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Restored-only on-air, machine-agnostic host registry, page-open edge warm",
+      "scope": null
+    },
     {
       "hash": "6cafd040",
       "date": "2026-10-28",
@@ -3451,58 +3500,60 @@
       "type": "New",
       "description": "Doc-corrections job — a person's author/translator corrections through docs-repo (dry run first); docs-repo setDocTranslators (Chad 10-21)",
       "scope": "ops"
-    },
-    {
-      "hash": "41680ec4",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Settled-book memo 6 h (30 min = the health probe's interval, so every /grounding/exhaustion probe walked cold, 26 s → gateway 30 s timeout 10-20 23:49); overlapping exhaustion calls share one walk",
-      "scope": "grounding"
-    },
-    {
-      "hash": "768a80de",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "A writer freeze is CRITICAL only within the last 3 h — a fixed 6-hour-old 46.7 s write re-paged as critical while ageing out of the 24 h window",
-      "scope": "system-checks"
-    },
-    {
-      "hash": "9d1d5f21",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "Ingest folder _add-anyway/ — a person's decision adds a file the check calls held (the library copy is an excerpt; pilgrim notes held at 30–77%) (Chad 10-20)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "730a86f9",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Prune keeps 6 hourly + 3 daily DB snapshots on /fast, hourly cron (Chad 10-20: 24 hourlies pinned 62 GB, /fast 90%)",
-      "scope": "disk"
-    },
-    {
-      "hash": "e54f28c1",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Failed service probes report why (timeout/DNS/TLS/refused) — the 10-20 18:00 'Public API (tunnel): status 0' alert could not be traced",
-      "scope": "system-checks"
-    },
-    {
-      "hash": "6db12a4b",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Review popup on the solid surface (surface-1 is 80% alpha — the chat showed through the document)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "1cfe8209",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "RTF/Word/WordPerfect/ODT/EPUB originals readable in the Review popup (server-converted, sanitised, sandboxed) + 'View it' on offer cards — read before Add it / Not this one (Chad 10-20)",
-      "scope": "dewey"
     }
   ],
   "grouped": {
+    "2026-10-29": [
+      {
+        "hash": "f4c307bd",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Remastered/hr counts COMPLETIONS (completed_at, migration 188), not first publications",
+        "scope": null
+      },
+      {
+        "hash": "6f479a4a",
+        "date": "2026-10-29",
+        "type": "Test",
+        "description": "Dewey-upload resume — pause only after the good parts land (race)",
+        "scope": null
+      },
+      {
+        "hash": "bf0c63c7",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Index stages + audio quality (migration 187): stages_missing, next_stage, verdict, NISQA in/out, bandwidth in/out; backfill + per-stage maintenance",
+        "scope": null
+      },
+      {
+        "hash": "16f47561",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Media-stages report/job — per-talk missing stages, queue exactly those (or forced redo) through the engine",
+        "scope": null
+      },
+      {
+        "hash": "4f529cff",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "On air = COMPLETE (all stages done + passed remaster assessment); flag recomputed after every stage",
+        "scope": null
+      },
+      {
+        "hash": "799d677e",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "On air = real remaster only (heavy/cleaned), not the bulk light tier; re-verify rows flagged under the looser rule",
+        "scope": null
+      },
+      {
+        "hash": "49e0d71f",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Restored-only on-air, machine-agnostic host registry, page-open edge warm",
+        "scope": null
+      }
+    ],
     "2026-10-28": [
       {
         "hash": "6cafd040",
@@ -6964,57 +7015,6 @@
         "type": "New",
         "description": "Doc-corrections job — a person's author/translator corrections through docs-repo (dry run first); docs-repo setDocTranslators (Chad 10-21)",
         "scope": "ops"
-      },
-      {
-        "hash": "41680ec4",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Settled-book memo 6 h (30 min = the health probe's interval, so every /grounding/exhaustion probe walked cold, 26 s → gateway 30 s timeout 10-20 23:49); overlapping exhaustion calls share one walk",
-        "scope": "grounding"
-      }
-    ],
-    "2026-10-20": [
-      {
-        "hash": "768a80de",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "A writer freeze is CRITICAL only within the last 3 h — a fixed 6-hour-old 46.7 s write re-paged as critical while ageing out of the 24 h window",
-        "scope": "system-checks"
-      },
-      {
-        "hash": "9d1d5f21",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "Ingest folder _add-anyway/ — a person's decision adds a file the check calls held (the library copy is an excerpt; pilgrim notes held at 30–77%) (Chad 10-20)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "730a86f9",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Prune keeps 6 hourly + 3 daily DB snapshots on /fast, hourly cron (Chad 10-20: 24 hourlies pinned 62 GB, /fast 90%)",
-        "scope": "disk"
-      },
-      {
-        "hash": "e54f28c1",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Failed service probes report why (timeout/DNS/TLS/refused) — the 10-20 18:00 'Public API (tunnel): status 0' alert could not be traced",
-        "scope": "system-checks"
-      },
-      {
-        "hash": "6db12a4b",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Review popup on the solid surface (surface-1 is 80% alpha — the chat showed through the document)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "1cfe8209",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "RTF/Word/WordPerfect/ODT/EPUB originals readable in the Review popup (server-converted, sanitised, sandboxed) + 'View it' on offer cards — read before Add it / Not this one (Chad 10-20)",
-        "scope": "dewey"
       }
     ]
   }

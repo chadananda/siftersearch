@@ -26,8 +26,20 @@ export function seriesLabel(item) {
   // Some archive titles lost the part number, while their original slug kept it.
   // A numeric collision suffix AFTER the year is deliberately not a part number.
   if(part==null){const m=String(item.s||'').match(/-(?:part-)?(\d{1,3})-(?:19|20)\d{2}$/);if(m)part=Number(m[1]);}
+  // A bare trailing number with no year (enrolling-the-masses-4) is the part, unless it follows a year (collision suffix).
+  if(part==null){const sl=String(item.s||'');if(!/(?:19|20)\d{2}-\d+$/.test(sl)){const m=sl.match(/-(?:part-)?(\d{1,3})$/);if(m&&!/^(?:19|20)\d{2}$/.test(m[1]))part=Number(m[1]);}}
   if(!title || /^\d+(?:\s+\d+)*$/.test(title))return null;
   return {name:title,key:fold(title).replace(/ /g,'-'),part,book:!!book};
+}
+
+// Unnumbered recordings of a numbered series (the archive dropped their number) take the lowest unclaimed part numbers,
+// in upload order (plain slug, then -2, -3 collision suffixes; then year).
+const collision = (s) => Number(String(s).match(/-(\d{1,2})$/)?.[1] || 1);
+function fillGaps(items) {
+  const taken = new Set(items.map(i => i.part).filter(n => n != null));
+  const loose = items.filter(i => i.part == null).sort((a, b) => (a.y ?? Infinity) - (b.y ?? Infinity) || collision(a.s) - collision(b.s) || a.s.localeCompare(b.s));
+  let n = 0;
+  for (const it of loose) { while (taken.has(++n)); it.part = n; it.inferred = true; }
 }
 
 export function buildSeries(items) {
@@ -40,6 +52,7 @@ export function buildSeries(items) {
     buckets.get(id).items.push({...item,part:label.part});
   }
   const groups = [...buckets.values()].filter(g=>g.items.length>=2 && (g.book || new Set(g.items.map(i=>i.part).filter(n=>n!=null)).size>=2)).map(g=>{
+    fillGaps(g.items);
     g.items.sort((a,b)=>(a.part??Infinity)-(b.part??Infinity)||(a.y??Infinity)-(b.y??Infinity)||a.s.localeCompare(b.s));
     const years=g.items.map(i=>i.y).filter(Boolean);
     return {...g,y0:years.length?Math.min(...years):null,y1:years.length?Math.max(...years):null};

@@ -58,3 +58,15 @@ describe('interleaving speaker batches',()=>{
   const cards=Array.from({length:10},(_,i)=>({id:`d${i}`,kind:'box',speaker:{k:'dunbar'}}));expect(spreadSpeakers(cards)).toEqual(cards);
  });
 });
+
+describe('series installment order for unnumbered recordings',()=>{
+ it('reads a bare trailing slug number as the part, but not a post-year collision suffix',()=>{
+  expect(seriesLabel(talk('Enrolling The Masses','sears-enrolling-the-masses-4',{y:null})).part).toBe(4);
+  expect(seriesLabel(talk('Gems','gems-of-divine-mysteries-2014-2')).part).toBeNull();
+ });
+ it('puts unnumbered recordings into the unclaimed slots in upload order, not at the end',()=>{
+  const rows=[talk('Gems Part 3 of 14','g-3'),talk('Gems Part 6 of 14','g-6'),talk('Gems','gems-2014'),talk('Gems','gems-2014-2')];
+  const [g]=buildSeries(rows);
+  expect(g.items.map(i=>[i.part,i.s])).toEqual([[1,'gems-2014'],[2,'gems-2014-2'],[3,'g-3'],[6,'g-6']]);
+ });
+});
