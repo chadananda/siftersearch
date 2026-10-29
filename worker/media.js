@@ -104,7 +104,9 @@ export async function fillParallel(env, key, url, headers = {}, { onProgress = a
 }
 
 // ── chunked web audio: "<key>~m" = { size, ct, bounds }, pieces "<key>~<i>", filled in order (first piece small: playback starts at once)
-export const FIRST_PIECE = 512 * 1024, PIECE = 2 * 1024 * 1024, PIECE_PARALLEL = 3;   // 2 MB: a seek that copies its own piece waits ~2 s, not ~5
+export const FIRST_PIECE = 512 * 1024, PIECE = 2 * 1024 * 1024, PIECE_PARALLEL = 1;
+// 2 MB: a seek that copies its own piece waits ~2 s. ONE piece at a time: the tower uplink is ~0.93 MB/s and a listener needs
+// ~12 KB/s, so a serial copy stays far ahead of the playhead and leaves the uplink to what a listener is waiting on (a seek)
 export function pieceBounds(size) {
   const b = [0];
   for (let at = Math.min(size, FIRST_PIECE); at < size; at = Math.min(size, at + PIECE)) b.push(at);
