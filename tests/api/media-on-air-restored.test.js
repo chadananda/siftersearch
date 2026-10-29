@@ -14,7 +14,7 @@ import { backfillRestored, resetRestoredVerify } from '../../api/lib/ops/media-j
 const row = (id, restored, extra = {}) => ({ id, slug: 's' + id, state: 'done', restored, dir: '/x/' + id, source_kind: 'youtube', speaker: 'A', duration_s: 60, ...extra });
 beforeEach(() => {
   db = new Database(':memory:');
-  db.exec(`CREATE TABLE media_items(id INTEGER PRIMARY KEY, slug TEXT, title TEXT, speaker TEXT, speaker_key TEXT, tradition TEXT, collection TEXT, language TEXT, year INTEGER, date TEXT, duration_s REAL, has_video INTEGER DEFAULT 0, source_kind TEXT, source_ref TEXT, youtube_id TEXT, channel TEXT, playback TEXT, thumb TEXT, quotes_n INTEGER, crs_n INTEGER, words_n INTEGER, doc_id INTEGER, grade TEXT, primary_issue TEXT, chain_key TEXT, priority REAL, audience INTEGER, queue_rank INTEGER, stage TEXT, state TEXT, why TEXT, dir TEXT, stages_done TEXT, restored INTEGER, published_at TEXT, updated_at TEXT)`);
+  db.exec(`CREATE TABLE media_items(id INTEGER PRIMARY KEY, slug TEXT, title TEXT, speaker TEXT, speaker_key TEXT, tradition TEXT, collection TEXT, language TEXT, year INTEGER, date TEXT, duration_s REAL, has_video INTEGER DEFAULT 0, source_kind TEXT, source_ref TEXT, youtube_id TEXT, channel TEXT, playback TEXT, thumb TEXT, quotes_n INTEGER, crs_n INTEGER, words_n INTEGER, doc_id INTEGER, grade TEXT, primary_issue TEXT, chain_key TEXT, priority REAL, audience INTEGER, queue_rank INTEGER, stage TEXT, state TEXT, why TEXT, dir TEXT, stages_done TEXT, restored INTEGER, stages_missing INTEGER, next_stage TEXT, verdict TEXT, in_quality REAL, out_quality REAL, in_bw_khz REAL, out_bw_khz REAL, published_at TEXT, updated_at TEXT)`);
   for (const r of [row(1, 1), row(2, 0), row(3, null), row(4, 1)]) {
     const k = Object.keys(r); db.prepare(`INSERT INTO media_items(${k.join(',')},updated_at) VALUES(${k.map(() => '?').join(',')},'2026-10-29')`).run(...Object.values(r));
   }
@@ -38,7 +38,7 @@ describe('backfillRestored', () => {
   it('flags unclassified published rows from meta.json (restored tier → 1, none → 0, unreadable → 0)', async () => {
     const metas = { '/x/3': good() };
     const n = await backfillRestored({ repo, readMeta: async (d) => { if (!metas[d]) throw new Error('nope'); return metas[d]; } });
-    expect(n).toBe(1);
+    expect(n).toBe(4);
     expect(db.prepare('SELECT restored r FROM media_items WHERE id = 3').get().r).toBe(1);
     expect((await repo.unclassifiedDone()).length).toBe(0);
   });
@@ -54,5 +54,15 @@ describe('backfillRestored', () => {
     await backfillRestored({ repo, readMeta: async (d) => metas[d] || Promise.reject(new Error('nope')) });
     const r = (id) => db.prepare('SELECT restored r FROM media_items WHERE id = ?').get(id).r;
     expect([r(1), r(3), r(4)]).toEqual([0, 0, 1]);
+  });
+});
+
+describe('stage + quality index', () => {
+  it('backfill fills stages_missing, next_stage, verdict and NISQA in/out so the pipeline is one indexed read', async () => {
+    resetRestoredVerify();
+    const m = { ...good(), stages: { ...ALL, links: undefined, assess: undefined }, remaster: { status: 'done', method: 'pod', output_assessment: { passed: true, reference: { nisqa: [2.1] }, restored: { nisqa: [3.9] } } } };
+    await backfillRestored({ repo, readMeta: async (d) => (d === '/x/3' ? m : Promise.reject(new Error('x'))) });
+    const r = db.prepare('SELECT restored, stages_missing sm, next_stage ns, verdict v, in_quality i, out_quality o FROM media_items WHERE id = 3').get();
+    expect(r).toMatchObject({ restored: 0, sm: 2, ns: 'links', v: 'usable', i: 2.1, o: 3.9 });
   });
 });

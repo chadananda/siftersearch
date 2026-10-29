@@ -2032,6 +2032,20 @@ export const migrations = {
     try { await query('ALTER TABLE media_items ADD COLUMN restored INTEGER'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
     logger.info('Migration 186 complete: media_items.restored');
   },
+
+  187: async () => {
+    // STAGE + QUALITY INDEX (Chad 10-29): "what needs doing" and "best/worst audio" are single indexed reads.
+    // stages_missing = COMPLETE stages not yet done, next_stage = the first of them in engine order, verdict = remaster assessment,
+    // in_/out_quality = NISQA (1-5) before/after, in_/out_bw_khz = source/output bandwidth. NULL until the media worker's backfill reads meta.json.
+    for (const [c, t] of [['stages_missing', 'INTEGER'], ['next_stage', 'TEXT'], ['verdict', 'TEXT'], ['in_quality', 'REAL'], ['out_quality', 'REAL'], ['in_bw_khz', 'REAL'], ['out_bw_khz', 'REAL']]) {
+      try { await query(`ALTER TABLE media_items ADD COLUMN ${c} ${t}`); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    }
+    await query('CREATE INDEX IF NOT EXISTS idx_media_missing ON media_items(state, stages_missing)');
+    await query('CREATE INDEX IF NOT EXISTS idx_media_next_stage ON media_items(next_stage, queue_rank)');
+    await query('CREATE INDEX IF NOT EXISTS idx_media_verdict_out ON media_items(verdict, out_quality)');
+    await query('CREATE INDEX IF NOT EXISTS idx_media_in_quality ON media_items(in_quality)');
+    logger.info('Migration 187 complete: media_items stage + quality index');
+  },
 };
 
 export const graphMigrations = {

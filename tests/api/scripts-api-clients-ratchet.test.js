@@ -12,7 +12,8 @@ const codeOnly = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/
 const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.name === 'node_modules' || e.name.startsWith('.') ? []
   : e.isDirectory() ? walk(join(d, e.name)) : /\.(js|mjs|cjs)$/.test(e.name) ? [join(d, e.name)] : []));
 const LEGACY = new Set(JSON.parse(readFileSync(join(ROOT, 'tests/api/scripts-db-legacy.json'), 'utf8')).legacy);
-const found = walk(join(ROOT, 'scripts')).map((f) => relative(ROOT, f)).filter((f) => RE.test(codeOnly(readFileSync(join(ROOT, f), 'utf8')))).sort();
+const found = walk(join(ROOT, 'scripts')).map((f) => relative(ROOT, f)).filter((f) => !f.startsWith('scripts/archive-sifter/'))   // the triage tool's OWN SQLite file (~/archive-sifter), never the Sifter DB
+  .filter((f) => RE.test(codeOnly(readFileSync(join(ROOT, f), 'utf8')))).sort();
 
 describe('scripts are internal-API clients (hard rule)', () => {
   it('no NEW script reaches production data directly', () => {

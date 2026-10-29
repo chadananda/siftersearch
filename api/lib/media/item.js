@@ -135,6 +135,13 @@ export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'realign', 'we
  *  that passed assessment (usable/cleaned/partial). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
 export const COMPLETE_STAGES = ['remaster', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
 export const isComplete = (meta = {}) => isRestored(meta) && ['usable', 'cleaned', 'partial'].includes(qualityOf(meta).verdict) && COMPLETE_STAGES.every((s) => meta.stages?.[s]?.at);
+/** The indexed columns for one talk (migration 187): what is missing, the next stage, the remaster verdict, NISQA in/out, bandwidth in/out, and the complete flag. */
+export function indexFields(meta = {}) {
+  const missing = COMPLETE_STAGES.filter((s) => !meta.stages?.[s]?.at), q = qualityOf(meta);
+  const a = meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment || {}, n = (v) => (Number.isFinite(Number(v)) && v != null ? Math.round(Number(v) * 100) / 100 : null);
+  return { restored: isComplete(meta) ? 1 : 0, stages_missing: missing.length, next_stage: STAGES.find((s) => missing.includes(s)) || null, verdict: q.verdict,
+    in_quality: n(a.reference?.nisqa?.[0]), out_quality: n(a.restored?.nisqa?.[0]), in_bw_khz: n(q.metrics.source_bandwidth_khz), out_bw_khz: n(q.metrics.output_bandwidth_khz) };
+}
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
 export const mediaRoot = () => process.env.MEDIA_SOURCE_ROOT || '/tank/media';
 const TRADITION_DIR = { "Baha'i": 'bahai', Islam: 'islam' };
@@ -990,7 +997,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (meta.quality) meta.quality.insertions_reverted = (meta.faithfulness?.correct || 0) + (meta.faithfulness?.clean || 0);
       const qj = await readJson(join(dir, 'quotes.json'), { quotes: [], teachings: [] });
       await repo.updateMediaItem(item.id, { speaker_key: meta.speaker_key || (meta.speaker ? speakerKey(meta.speaker) : null), title: meta.title, speaker: meta.speaker, language: meta.language, year: meta.year ? Number(meta.year) : null, date: meta.date,
-        restored: isComplete({ ...meta, stages: { ...meta.stages, catalog: { at: 1 } } }) ? 1 : 0, doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
+        ...indexFields({ ...meta, stages: { ...meta.stages, catalog: { at: 1 } } }), doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
         asr_conf: meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null, cost_usd: Math.round(spend.usd * 10000) / 10000,
         meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, headings_n: (meta.headings || []).length, audience_intro: meta.audience?.intro || [], rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
         state: 'done', stage: 'catalog', why: null, ...(item.published_at ? {} : { published_at: d.now() }), audience: meta.audience?.score ?? null, ...(meta.quality ? { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority } : {}) });
@@ -1005,7 +1012,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     meta.stages[stage] = { at: d.now(), ms: Date.now() - t0, ...rec };
     done.push(stage);
     await save();
-    await repo.updateMediaItem(item.id, { stages_done: stagesDone(meta.stages), ...(item.published_at || meta.stages.catalog ? { restored: isComplete(meta) ? 1 : 0 } : {}) }).catch(() => {});
+    await repo.updateMediaItem(item.id, { stages_done: stagesDone(meta.stages), ...indexFields(meta) }).catch(() => {});
   }
   if (done.length) purgeTalk(meta.slug, { version: meta.version || 1 });   // the edge-cached page + API entry of this talk: new audio/data shows within seconds
   return { slug: meta.slug, done, meta };

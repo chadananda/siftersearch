@@ -14,7 +14,8 @@ const codeOnly = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/
 const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.name === 'node_modules' || e.name.startsWith('.') ? []
   : e.isDirectory() ? walk(join(d, e.name)) : /\.(js|mjs|cjs)$/.test(e.name) ? [join(d, e.name)] : []));
 /** Allowed for good: the connection, the single writer, migrations, and the repos themselves. */
-const isInfra = (f) => ['api/lib/db.js', 'api/lib/write-server.js', 'api/workers/unified-worker.js'].includes(f)
+const isInfra = (f) => f.startsWith('scripts/archive-sifter/')   // the triage tool's OWN SQLite file (~/archive-sifter), never the Sifter DB
+  || ['api/lib/db.js', 'api/lib/write-server.js', 'api/workers/unified-worker.js'].includes(f)
   || f.includes('/migrations/') || /^api\/lib\/(repos\/.*|[^/]*-repo)\.js$/.test(f);
 const LEGACY = new Set(JSON.parse(readFileSync(join(ROOT, 'tests/api/db-access-legacy.json'), 'utf8')).legacy);
 
