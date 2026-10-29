@@ -25,6 +25,10 @@ describe('verdicts', () => {
     expect(s.by_verdict).toEqual({ unrepairable: 1, review: 1, unknown: 1 }); expect(s.published_without_verdict).toBe(1);
     expect(deferredMarkdown(s)).toMatch(/\| a \| E \| 1 \| 1.95 \| 21 \|/);
   });
+  it('counts publishable talks shown better (assessed) vs only shown different', () => {
+    const s = summarize([{ slug: 'p', qa: { verdict: 'usable', output_assessment: { passed: true } } }, { slug: 'n', qa: { verdict: 'partial' } }, { slug: 'r', qa: { verdict: 'review' } }]);
+    expect(s.assessment).toEqual({ passed: 1, failed: 0, none: 1 }); expect(s.unassessed).toEqual(['n']);
+  });
 });
 
 describe('proof of improvement (10-29: Dunbar passed with a copy identical to the original)', () => {

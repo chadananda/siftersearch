@@ -48,6 +48,7 @@ export function qualityOf(meta = {}) {
 export function summarize(rows) {
   const by = {}, byGrade = {}, byTier = {}, review = [], unrepairable = [], insufficient = [];
   let noVerdict = 0;
+  const assessment = { passed: 0, failed: 0, none: 0 }, unassessed = [];
   for (const x of rows) {
     const v = x.qa?.verdict || 'unknown';
     by[v] = (by[v] || 0) + 1;
@@ -57,8 +58,14 @@ export function summarize(rows) {
     if (v === 'pending') insufficient.push(row);
     if (v === 'review') review.push(row); else if (v === 'unrepairable') unrepairable.push(row);
     if (x.published_remaster && !(x.stored ?? !!x.qa?.verdict)) noVerdict++;
+    // publishable on level-change proof alone = different, not shown BETTER (no paired listening assessment): the re-assess queue
+    if (['usable', 'partial', 'cleaned'].includes(v)) {
+      const a = x.qa?.output_assessment?.passed;
+      assessment[a === true ? 'passed' : a === false ? 'failed' : 'none']++;
+      if (a !== true) unassessed.push(x.slug);
+    }
   }
-  return { by_verdict: by, by_tier: byTier, by_grade: byGrade, review, unrepairable, insufficient_restoration: insufficient.length, insufficient, published_without_verdict: noVerdict, at: new Date().toISOString() };
+  return { by_verdict: by, by_tier: byTier, by_grade: byGrade, review, unrepairable, insufficient_restoration: insufficient.length, insufficient, published_without_verdict: noVerdict, assessment, unassessed, at: new Date().toISOString() };
 }
 
 export function deferredMarkdown(sum) {
