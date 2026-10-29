@@ -32,17 +32,25 @@ describe('only restored talks are on the air', () => {
   });
 });
 
+const ALL = Object.fromEntries(['remaster', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'].map((k) => [k, { at: 1 }]));
+const good = (tier = 'heavy') => ({ web_original: { m4a: 'a.m4a' }, remaster_tier: tier, remaster: { status: 'done', method: tier === 'cleaned' ? 'cleaned' : 'pod' }, enhancement: { listening: 'unipase' }, stages: ALL });
 describe('backfillRestored', () => {
   it('flags unclassified published rows from meta.json (restored tier → 1, none → 0, unreadable → 0)', async () => {
-    const metas = { '/x/3': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'heavy' } };
+    const metas = { '/x/3': good() };
     const n = await backfillRestored({ repo, readMeta: async (d) => { if (!metas[d]) throw new Error('nope'); return metas[d]; } });
     expect(n).toBe(1);
     expect(db.prepare('SELECT restored r FROM media_items WHERE id = 3').get().r).toBe(1);
     expect((await repo.unclassifiedDone()).length).toBe(0);
   });
+  it('complete = every stage done and a passed remaster: a restored talk with a stage missing is still in the pipeline', async () => {
+    resetRestoredVerify();
+    db.prepare('UPDATE media_items SET restored = NULL WHERE id = 2').run();
+    await backfillRestored({ repo, readMeta: async (d) => ({ '/x/2': { ...good(), stages: { ...ALL, quotes: undefined } } })[d] || Promise.reject(new Error('x')) });
+    expect(db.prepare('SELECT restored r FROM media_items WHERE id = 2').get().r).toBe(0);
+  });
   it('the bulk light tier is not restoration, and rows already flagged under the looser rule are corrected', async () => {
     resetRestoredVerify();
-    const metas = { '/x/1': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'light' }, '/x/3': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'light' }, '/x/4': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'cleaned' } };
+    const metas = { '/x/1': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'light' }, '/x/3': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'light' }, '/x/4': good('cleaned'), '/x/2': { ...good(), stages: { ...ALL, quotes: undefined } } };
     await backfillRestored({ repo, readMeta: async (d) => metas[d] || Promise.reject(new Error('nope')) });
     const r = (id) => db.prepare('SELECT restored r FROM media_items WHERE id = ?').get(id).r;
     expect([r(1), r(3), r(4)]).toEqual([0, 0, 1]);

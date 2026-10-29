@@ -782,14 +782,14 @@ function failedRun(r) { return r?.failed ? { ...r, outcome: 'item-failed' } : r;
 let verifyCursor = 0, verifyDone = false;
 export const resetRestoredVerify = () => { verifyCursor = 0; verifyDone = false; };
 export async function backfillRestored({ repo, readMeta, limit = 40 } = {}) {
-  const { isRestored } = await import('../media/talk-audio.js');
+  const { isComplete } = await import('../media/item.js');
   const fs = await import('fs/promises');
   const read = readMeta || (async (dir) => JSON.parse(await fs.readFile(join(dir, 'meta.json'), 'utf8')));
   let n = 0;
   for (const r of await repo.unclassifiedDone(limit)) {
     const m = r.dir ? await read(r.dir).catch(() => null) : null;
     if (!m) { await repo.setRestored(r.id, false); n++; continue; }
-    await repo.setRestored(r.id, isRestored(m)); n++;
+    await repo.setRestored(r.id, isComplete(m)); n++;
   }
   // one pass per process over rows already flagged: a flag set under an older, looser definition (light tier) is corrected
   if (!verifyDone && repo.restoredRows) {
@@ -798,7 +798,7 @@ export async function backfillRestored({ repo, readMeta, limit = 40 } = {}) {
     for (const r of rows) {
       verifyCursor = r.id;
       const m = r.dir ? await read(r.dir).catch(() => null) : null;
-      if (m && !isRestored(m)) { await repo.setRestored(r.id, false); n++; }
+      if (m && !isComplete(m)) { await repo.setRestored(r.id, false); n++; }
     }
   }
   return n;
