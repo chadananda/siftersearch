@@ -1,6 +1,6 @@
 // Per-talk remaster quality verdict (Chad 10-24: which talks are usable, which must be archived). Pure: meta.json → meta.qa.remaster.
 // usable (generative copy published, <= 5 % of sentences from the original) · cleaned (deterministic cleanup published) · partial (published, 5-15 %) · review (fallback > 15 %, original kept, Chad listens)
-// · unrepairable (still playing the original audio: ~2 kHz source or decided by Chad; archive candidate) · skipped (grade A, duplicate, ineligible) · unknown.
+// · unchanged (measured: no different from the original) · unverified (no measurement yet) · unrepairable (still playing the original audio: ~2 kHz source or decided by Chad; archive candidate) · skipped (grade A, duplicate, ineligible) · unknown.
 const num = (v) => (v == null || Number.isNaN(Number(v)) ? null : Math.round(Number(v) * 100) / 100);
 export const UNREPAIRABLE_BW_KHZ = 2.5;
 
@@ -34,6 +34,9 @@ export function qualityOf(meta = {}) {
   }
   if (s === 'done') {
     if (meta.enhancement?.listening !== 'unipase') return out('unknown', 'marked done but the listening copy is not the remaster');
+    // MEASURED PROOF (Chad 10-29): published only if the audio is shown to differ — the worker's paired quality check passed, or the verify stage measured a change
+    const assessed = (r.output_assessment || meta.qa?.remaster?.output_assessment)?.passed === true, ck = r.check?.verdict;
+    if (!assessed && ck !== 'changed') return ['unchanged', 'suspect'].includes(ck) ? out('unchanged', r.check.why || 'the remaster is not measurably different from the original') : out('unverified', 'no measured proof that the remaster differs from, or improves on, the original');
     if (r.method === 'cleaned') return out('cleaned', 'deterministic cleanup published (the generative copy was held by the word guard)');
     if (r.verdict === 'pass-human-full') return out('usable', 'published in full by Chad (no sentence splicing)');
     return fb != null && fb > 5 ? out('partial', `${fb} % of sentences are the original`) : out('usable', fb != null ? `${fb} % of sentences from the original` : 'passed the word guard');

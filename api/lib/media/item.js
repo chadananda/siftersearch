@@ -16,7 +16,8 @@ import { join, basename, extname, relative } from 'path';
 import { slugify, makeSlug, parseMediaPath } from './names.js';
 import { purgeTalk } from './edge-purge.js';
 import { archiveSuperseded } from './supersede.js';
-import { isRestored } from './talk-audio.js';
+import { isRestored, remasterTier } from './talk-audio.js';
+import { verifyRemaster } from './remaster-audit.js';
 import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, listeningSource, OGG_ARGS, WEB_CODEC, OGG_ARGS_REMASTER, M4A_BITRATE_REMASTER, WEB_CODEC_REMASTER, isRemastered, remasterEligible } from './enhance.js';
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
@@ -129,11 +130,11 @@ export async function searchFollowUp(docId, { queue = null } = {}) {
 // the speaker identities (data/media-speaker-people.json), loaded once per process
 let speakerPeople = null;
 
-export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'realign', 'web', 'transcribe', 'preview', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
+export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'web', 'transcribe', 'preview', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 /** COMPLETE (Chad 10-29) = every stage done (remaster, transcribe, diarize, correct, headings, quotes, links, moments/assess, ingest, catalog) AND a remaster
- *  that passed assessment (usable/cleaned/partial). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
-export const COMPLETE_STAGES = ['remaster', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
+ *  that passed assessment (usable/cleaned/partial) WITH MEASURED PROOF it differs from the original (the verify stage, or a passed paired-quality assessment). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
+export const COMPLETE_STAGES = ['remaster', 'verify', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
 export const isComplete = (meta = {}) => isRestored(meta) && ['usable', 'cleaned', 'partial'].includes(qualityOf(meta).verdict) && COMPLETE_STAGES.every((s) => meta.stages?.[s]?.at);
 /** The indexed columns for one talk (migration 187): what is missing, the next stage, the remaster verdict, NISQA in/out, bandwidth in/out, and the complete flag. */
 export function indexFields(meta = {}) {
@@ -443,9 +444,31 @@ export async function runItem(item, opts = {}, deps = {}) {
           if ((meta.enhancement.listening || 'safe') !== listeningBefore) markAudioPending(meta);
           meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
+          delete meta.stages.verify;   // a new remaster result must be measured again
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
           meta.qa = { ...(meta.qa || {}), remaster: pod?.qa ? { ...pod.qa, at: new Date().toISOString() } : qualityOf(meta) };   // the worker decided the verdict; tower records it
         }
+      }
+    }
+
+    if (stage === 'verify') {
+      // MEASURED PROOF the remaster is a different, better signal (Chad 10-29: a copy that is "different, just not better" must never count as remastered):
+      // ffmpeg levels of the same 60 s window of the original and the remaster (bandwidth above 4 / 8 kHz, noise floor). No measurable change = held for review, the original plays.
+      const assessed = (meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment)?.passed === true;   // the worker's paired NISQA/DNSMOS check already measured a gain
+      if (meta.enhancement?.listening !== 'unipase' || !['heavy', 'cleaned'].includes(meta.remaster_tier || remasterTier(meta))) rec.skipped = 'not remastered';
+      else if (assessed) rec.assessed = true;
+      else {
+        const copy = join(dir, 'enhanced', 'unipase.flac'), orig = meta.original ? join(dir, meta.original) : null;
+        const c = await (d.verifyRemaster || verifyRemaster)({ run: tools.run, original: orig, remaster: copy, durationS: meta.duration_s, tier: meta.remaster_tier || remasterTier(meta) });
+        meta.remaster = { ...(meta.remaster || {}), check: { ...c, at: d.now() } };
+        rec.verdict = c.verdict; if (c.delta) rec.delta = c.delta;
+        if (['unchanged', 'suspect'].includes(c.verdict)) {
+          if (meta.enhancement.listening === 'unipase') { meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe'; markAudioPending(meta); }
+          meta.enhancement.listening_why = `remaster held: ${c.why}`;
+          delete meta.remaster_tier;
+          meta.remaster = { ...meta.remaster, status: 'review', verdict: 'review', why: c.why };
+        }
+        meta.qa = { ...(meta.qa || {}), remaster: { ...(meta.qa?.remaster || {}), ...qualityOf(meta) } };   // the stored verdict follows the measurement
       }
     }
 

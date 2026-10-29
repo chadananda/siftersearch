@@ -4,7 +4,7 @@ vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), query
 import { execFileSync } from 'child_process';
 import { qualityOf, summarize, deferredMarkdown } from '../../api/lib/media/remaster-quality.js';
 
-const m = (remaster, o = {}) => ({ quality: { overall: 'E', raw: { bandwidth_khz: 5, snr_db: 12 } }, enhancement: { listening: remaster?.status === 'done' ? 'unipase' : 'safe', variants: [] }, remaster, ...o });
+const m = (remaster, o = {}) => ({ quality: { overall: 'E', raw: { bandwidth_khz: 5, snr_db: 12 } }, enhancement: { listening: remaster?.status === 'done' ? 'unipase' : 'safe', variants: [] }, remaster: remaster?.status === 'done' && !remaster.check && !remaster.output_assessment ? { ...remaster, check: { verdict: 'changed' } } : remaster, ...o });
 describe('verdicts', () => {
   it('usable / partial / review / unrepairable / skipped / unknown', () => {
     expect(qualityOf(m({ status: 'done', verdict: 'pass-auto', fallback_sent_pct: 2, swapped: 2, sentences: 100 })).verdict).toBe('usable');
@@ -24,6 +24,22 @@ describe('verdicts', () => {
     const s = summarize(rows);
     expect(s.by_verdict).toEqual({ unrepairable: 1, review: 1, unknown: 1 }); expect(s.published_without_verdict).toBe(1);
     expect(deferredMarkdown(s)).toMatch(/\| a \| E \| 1 \| 1.95 \| 21 \|/);
+  });
+});
+
+describe('proof of improvement (10-29: Dunbar passed with a copy identical to the original)', () => {
+  const done = { status: 'done', verdict: 'pass-auto', fallback_sent_pct: 1 };
+  const bare = (r) => ({ quality: { overall: 'E', raw: {} }, enhancement: { listening: 'unipase', variants: [] }, remaster: r });
+  it('no measurement and no assessment is unverified, never usable', () => {
+    expect(qualityOf(bare(done)).verdict).toBe('unverified');
+  });
+  it('a copy measured as unchanged or suspect is unchanged', () => {
+    expect(qualityOf(bare({ ...done, check: { verdict: 'unchanged', why: 'same' } })).verdict).toBe('unchanged');
+    expect(qualityOf(bare({ ...done, check: { verdict: 'suspect' } })).verdict).toBe('unchanged');
+  });
+  it('a passed worker assessment or a changed measurement is usable', () => {
+    expect(qualityOf(bare({ ...done, output_assessment: { passed: true } })).verdict).toBe('usable');
+    expect(qualityOf(bare({ ...done, check: { verdict: 'changed' } })).verdict).toBe('usable');
   });
 });
 

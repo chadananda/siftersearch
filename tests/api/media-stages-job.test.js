@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { mediaStagesJob } from '../../api/lib/ops/media-jobs.js';
 
-const items = { 1: { id: 1, restored: 1, published_at: 'x', stages_done: ',remaster,transcribe,diarize,correct,headings,quotes,links,assess,ingest,catalog,' },
-  2: { id: 2, restored: 0, published_at: 'x', stages_done: ',remaster,transcribe,diarize,correct,headings,' }, 3: { id: 3, restored: 0, published_at: null, stages_done: ',transcribe,' } };
+const items = { 1: { id: 1, restored: 1, published_at: 'x', stages_done: ',remaster,verify,transcribe,diarize,correct,headings,quotes,links,assess,ingest,catalog,' },
+  2: { id: 2, restored: 0, published_at: 'x', stages_done: ',remaster,verify,transcribe,diarize,correct,headings,' }, 3: { id: 3, restored: 0, published_at: null, stages_done: ',transcribe,' } };
 const deps = (queued) => ({ repo: { doneItemIds: async () => [1, 2, 3], getMediaItem: async (i) => items[i] }, ops: { pendingRuns: async () => [{ params: { id: 3 } }] }, queue: async (n, p) => queued.push([n, p]) });
 
 describe('media-stages', () => {

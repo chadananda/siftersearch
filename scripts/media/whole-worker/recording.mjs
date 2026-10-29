@@ -101,7 +101,7 @@ if(job.restore!==false && !result.meta.stages.remaster?.at){
   const post=JSON.parse(await readFile(join(restore,'post.json'),'utf8'));
   if(post.web){await mkdir(join(dir,'enhanced/pod/web'),{recursive:true});for(const f of Object.values(post.web))await copyFile(join(restore,'post',f),join(dir,'enhanced/pod/web',f));}
   for(const [a,b] of [['out.flac','unipase.cloud.flac'],['asr.json','unipase.asr.json'],['asr_orig.json','unipase.asr_orig.json'],['done.json','unipase.done.json']])await copyFile(join(restore,a),join(dir,'enhanced',b));
-  result=await runItem(item,{only:['remaster','realign','web','trim'],redo:['remaster','realign','web','trim'],remaster:true,threads},deps);
+  result=await runItem(item,{only:['remaster','verify','realign','web','trim'],redo:['remaster','verify','realign','web','trim'],remaster:true,threads},deps);
   if(result.meta.aligned_to==='unipase'){
    const aligned=JSON.parse(await readFile(join(dir,'transcript.work.json'),'utf8')).paragraphs;
    const originalWords=flattenWords(raw.segments);let index=0;

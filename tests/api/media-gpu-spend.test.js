@@ -420,7 +420,7 @@ describe('the pod does the heavy half of a remaster; tower validates and places'
     const t = await talk();
     const before=JSON.parse(readFileSync(join(t.dir,'meta.json'),'utf8'));
     Object.assign(before,{version:12,audio_version:7});writeFileSync(join(t.dir,'meta.json'),JSON.stringify(before));
-    await runItem(t.item, { redo: ['remaster', 'realign', 'web'], only: ['remaster', 'realign', 'web'], remaster: true }, t.deps);
+    await runItem(t.item, { redo: ['remaster', 'verify', 'realign', 'web'], only: ['remaster', 'verify', 'realign', 'web'], remaster: true }, { ...t.deps, verifyRemaster: async () => ({ verdict: 'changed' }) });
     const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
     expect(meta.version).toBe(12);expect(meta.audio_version).toBe(8);
     expect(meta.audio_publish_pending).toBe(true);expect(meta.audio_alignment_version).toBe(8);
@@ -429,6 +429,16 @@ describe('the pod does the heavy half of a remaster; tower validates and places'
     expect(readFileSync(join(t.dir, 'web', 'x.ogg'), 'utf8')).toBe('x.ogg'); expect(readFileSync(join(t.dir, 'web', 'x.original.m4a'), 'utf8')).toBe('x.original.m4a');
     expect(meta.web_original).toEqual({ ogg: 'web/x.original.ogg', m4a: 'web/x.original.m4a' });
     expect(meta.qa.remaster.verdict).toMatch(/usable|partial/);
+  });
+  it('verify: a remaster measured as unchanged is demoted to review, the listening copy reverts, the tier is dropped, and it is not complete', async () => {
+    const t = await talk();
+    await runItem(t.item, { redo: ['remaster', 'verify'], only: ['remaster', 'verify'], remaster: true }, { ...t.deps, verifyRemaster: async () => ({ verdict: 'unchanged', why: 'no measurable change vs original' }) });
+    const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
+    expect(meta.stages.verify.verdict).toBe('unchanged');
+    expect(meta.enhancement.listening).not.toBe('unipase');
+    expect(meta.remaster_tier).toBeUndefined();
+    expect(meta.remaster).toMatchObject({ status: 'review', verdict: 'review' });
+    expect(meta.qa.remaster.verdict).not.toMatch(/usable|partial/);
   });
   it('a worker result made for a DIFFERENT transcript is ignored: tower computes everything itself', async () => {
     const t = await talk({ stale: true });

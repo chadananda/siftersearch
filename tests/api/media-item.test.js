@@ -88,14 +88,14 @@ describe('media item stage machine', () => {
   });
 
   it('yields to a drain between stages and resumes where it stopped', async () => {
-    const first = await runItem({ id: 2, source_kind: 'file', source_ref: src }, {}, fakes({ drainAfter: 6 }));
+    const first = await runItem({ id: 2, source_kind: 'file', source_ref: src }, {}, fakes({ drainAfter: 7 }));
     expect(first.yielded).toBe(true);
     expect(first.resume).toEqual({ id: 2, stage: 'transcribe' });
-    expect(first.done).toEqual(['archive', 'grade', 'enhance', 'remaster', 'realign', 'web']);
+    expect(first.done).toEqual(['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'web']);
     const dir = join(root, 'library', 'bahai', 'grossman-various', first.slug);
     const d = fakes();
     const rest = await runItem({ id: 2, source_kind: 'file', source_ref: src, dir, slug: first.slug }, {}, d);
-    expect(rest.done).toEqual(STAGES.slice(6));
+    expect(rest.done).toEqual(STAGES.slice(7));
     expect(d.tools.ffprobe).not.toHaveBeenCalled();   // archive not redone
   });
 
@@ -114,9 +114,9 @@ describe('media item stage machine', () => {
     const r = await runItem({ id: 4, source_kind: 'file', source_ref: src }, {}, d);
     expect(Date.now() - t0).toBeLessThan(10000);
     expect(r).toMatchObject({ yielded: true, resume: { id: 4, stage: 'transcribe' } });
-    expect(r.done).toEqual(['archive', 'grade', 'enhance', 'remaster', 'realign', 'web']);
+    expect(r.done).toEqual(['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'web']);
     const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
-    expect(Object.keys(JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8')).stages)).toEqual(['archive', 'grade', 'enhance', 'remaster', 'realign', 'web']);
+    expect(Object.keys(JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8')).stages)).toEqual(['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'web']);
     const rest = await runItem({ id: 4, source_kind: 'file', source_ref: src, dir, slug: r.slug }, {}, fakes());
     expect(rest.done[0]).toBe('transcribe');
   });
