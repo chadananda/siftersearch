@@ -1366,7 +1366,7 @@ export async function mediaRemasterRevertJob({ ids = [] } = {}, deps = {}) {
  *  (transparent chain) vs the FULL UniPASE copy, no splice — from the stretch with the most flagged sentences, and those
  *  sentences' text (published text · the original's ASR · the copy's ASR). Incremental: clips already cut are kept.
  *  → writes <out>/clips/*.m4a + <out>/review.json; returns the counts */
-export async function mediaRemasterReviewPackJob({ out = null, clipS = 40 } = {}, deps = {}) {
+export async function mediaRemasterReviewPackJob({ out = null, clipS = 40, ids = null } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const T = deps.tools || await import('../media/tools.js');
   const { safeChain } = await import('../media/enhance.js');
@@ -1376,9 +1376,10 @@ export async function mediaRemasterReviewPackJob({ out = null, clipS = 40 } = {}
   const rd = async (f, d = null) => JSON.parse(await fs.readFile(f, 'utf8').catch(() => 'null')) ?? d;
   const exists = (f) => fs.stat(f).then(() => true, () => false);
   const words = (asr, s, e) => (asr?.segments || []).flatMap((g) => g.words || []).filter((w) => w.s >= s - 0.3 && w.s <= e + 0.3).map((w) => w.w).join(' ').trim();
-  const entries = [];
+  const entries = [], skipped = [];
   let cut = 0;
   for (const it of await repo.remasterCandidates(['B', 'C', 'D', 'E'])) {
+    if (ids?.length && !ids.includes(it.id)) continue;
     const m = it.dir ? await rd(join(it.dir, 'meta.json')) : null;
     if (m?.remaster?.status !== 'review' || m.remaster.fallback_sent_pct == null) continue;
     const enh = join(it.dir, 'enhanced');
@@ -1391,11 +1392,11 @@ export async function mediaRemasterReviewPackJob({ out = null, clipS = 40 } = {}
     const orig = (m.enhancement?.variants || []).find((v) => v.name === 'original') || {};
     const co = join(dir, 'clips', `${it.slug}.orig.m4a`), cu = join(dir, 'clips', `${it.slug}.unipase.m4a`);
     const enc = ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '48k', '-movflags', '+faststart'];
-    if (!(await exists(co)) || !(await exists(cu))) {
+    if (!(await exists(co)) || !(await exists(cu))) try {
       await T.ffmpeg(['-ss', String(best.t), '-t', String(clipS), '-i', join(it.dir, m.original), '-af', safeChain(orig), ...enc, co]);
       await T.ffmpeg(['-ss', String(best.t), '-t', String(clipS), '-i', join(enh, 'unipase.cloud.flac'), '-af', 'loudnorm=I=-18:TP=-1.5:LRA=11,alimiter=limit=0.891:level=disabled', ...enc, cu]);
       cut++;
-    }
+    } catch (err) { skipped.push({ id: it.id, slug: it.slug, error: String(err.message).slice(0, 200) }); continue; }
     const work = await rd(join(it.dir, 'transcript.work.json'), { paragraphs: [] });
     const ao = await rd(join(enh, 'unipase.asr_orig.json')) || await rd(join(it.dir, 'transcript.raw.json'));
     const au = await rd(join(enh, 'unipase.asr.json'));
@@ -1410,7 +1411,7 @@ export async function mediaRemasterReviewPackJob({ out = null, clipS = 40 } = {}
   }
   entries.sort((a, b) => b.fallback_pct - a.fallback_pct);
   await fs.writeFile(join(dir, 'review.json'), JSON.stringify(entries, null, 1));
-  return { held: entries.length, clips_cut: cut, dir };
+  return { held: entries.length, clips_cut: cut, skipped, dir };
 }
 
 /** media-remaster-decide { picks: [{ id | slug, choice: 'publish' | 'keep' }] }: Chad's morning picks from the review page.
