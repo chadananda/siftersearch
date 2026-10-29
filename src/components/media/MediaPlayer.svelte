@@ -346,11 +346,14 @@
 
   const cleanups = [];
   onMount(() => {
-    // Opening a talk is the only thing that sends its audio to the edge store (idempotent; the other copy waits for its first use)
+    // Opening a talk sends both copies this browser plays to the edge store (Chad 10-29), the playing copy first, then the
+    // original; each streams from R2 while it lands (idempotent: a present copy answers at once)
     if (level === 'full' && audioInfo && audio) {
-      const want = audio.canPlayType('audio/ogg; codecs="opus"') && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg;
-      const warm = want && audioWarmPath(media.href(want));
-      if (warm) fetch(warm, { method: 'POST' }).catch(() => {});
+      const ogg = audio.canPlayType('audio/ogg; codecs="opus"');
+      const main = ogg && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg;
+      const orig = ogg && audioInfo.original_ogg ? audioInfo.original_ogg : audioInfo.original_url || audioInfo.original_ogg;
+      const warms = [main, hasOriginal && orig].filter(Boolean).map((p) => audioWarmPath(media.href(p))).filter(Boolean);
+      warms.reduce((prev, w) => prev.then(() => fetch(w, { method: 'POST' }).catch(() => {})), Promise.resolve());
     }
     wordEls = Array.from(root.querySelectorAll('[data-k]'));
     let r = rangeFrom({ search: location.search, hash: location.hash });

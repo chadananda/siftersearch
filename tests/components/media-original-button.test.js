@@ -134,16 +134,18 @@ describe('edge purge on publish', () => {
 });
 
 describe('R2-first web audio (worker/media.js)', () => {
-  it('a web-audio miss is a 202 with Retry-After, never proxied from the tower; other files keep the old path', async () => {
+  it('a web-audio miss starts the copy into R2; when the tower cannot give it, a quick 202, never tower bytes to the listener', async () => {
     const { mediaFile, isWebAudio } = await import('../../worker/media.js');
-    const env = { MEDIA_BUCKET: { get: async () => null } };
-    const origin = vi.fn();
+    const env = { MEDIA_BUCKET: { get: async () => null, head: async () => null, put: async () => {} } };
+    const origin = vi.fn(async () => new Response('pending', { status: 503 }));
     const orig = globalThis.fetch; globalThis.fetch = origin;
     try {
+      const t0 = Date.now();
       const r = await mediaFile(new Request('https://siftersearch.com/api/media/a-talk/file/web/a-talk.ogg?v=3'), env, { waitUntil() {} }, 'https://api.example');
       expect(r.status).toBe(202);
-      expect(r.headers.get('retry-after')).toBe('4');
-      expect(origin).not.toHaveBeenCalled();
+      expect(r.headers.get('retry-after')).toBe('2');
+      expect(Date.now() - t0).toBeLessThan(3000);
+      expect(origin.mock.calls.map(([, o]) => o.headers.range)).toEqual(['bytes=0-524287']);   // the copy's first piece only
     } finally { globalThis.fetch = orig; }
     expect(isWebAudio('/api/media/a-talk/file/web/a-talk.original.m4a')).toBe(true);
     expect(isWebAudio('/api/media/a-talk/file/waveform.json')).toBe(false);
@@ -151,7 +153,7 @@ describe('R2-first web audio (worker/media.js)', () => {
   it('warm: present objects are never fetched again; a lock makes concurrent page loads one fill', async () => {
     const { warmMedia } = await import('../../worker/media.js');
     const store = new Set(['a-talk/web/a-talk.ogg@3']), locks = new Map(), puts = [];
-    const env = { MEDIA_BUCKET: { head: async (k) => (store.has(k) ? {} : null), put: async (k) => puts.push(k) },
+    const env = { MEDIA_BUCKET: { head: async (k) => (store.has(k) ? {} : null), get: async () => null, put: async (k) => puts.push(k) },
       EDGE_CACHE: { get: async (k) => locks.get(k) || null, put: async (k, v) => locks.set(k, v), delete: async (k) => locks.delete(k) } };
     const orig = globalThis.fetch; globalThis.fetch = vi.fn();
     try {
@@ -204,11 +206,11 @@ describe('abandoned edge audio transfers',()=>{
  it('reclaims an expired transfer lease and fills the requested copy without fetching the other one',async()=>{
   const {warmMedia}=await import('../../worker/media.js');
   const key='a-talk/web/a-talk.m4a@3',locks=new Map([[`fill:${key}`,String(Date.now()-180000)]]),store=new Set();
-  const env={EDGE_CACHE:{get:async k=>locks.get(k)||null,put:async(k,v)=>locks.set(k,v),delete:async k=>locks.delete(k)},MEDIA_BUCKET:{head:async k=>store.has(k)?{}:null,createMultipartUpload:async k=>({uploadPart:async partNumber=>({partNumber,etag:'part'}),complete:async()=>store.add(k),abort:async()=>{}})}};
+  const env={EDGE_CACHE:{get:async k=>locks.get(k)||null,put:async(k,v)=>locks.set(k,v),delete:async k=>locks.delete(k)},MEDIA_BUCKET:{head:async k=>store.has(k)?{}:null,get:async()=>null,put:async k=>store.add(k)}};
   const original=globalThis.fetch;globalThis.fetch=vi.fn(async()=>new Response(new Uint8Array(32),{status:206,headers:{'content-range':'bytes 0-31/32','content-type':'audio/mp4'}}));
   try{
    const result=await(await warmMedia(new URL('https://x/_media/warm?slug=a-talk&v=3&fmt=m4a&copy=main'),env,'https://origin')).json();
-   expect(result.files).toEqual({'web/a-talk.m4a':'filled'});expect([...store]).toEqual([key]);expect(locks.has(`fill:${key}`)).toBe(false);
+   expect(result.files).toEqual({'web/a-talk.m4a':'filled'});expect([...store]).toEqual([`${key}~0`,`${key}~m`]);expect(locks.has(`fill:${key}`)).toBe(false);
   }finally{globalThis.fetch=original;}
  });
 });

@@ -1,6 +1,69 @@
 {
-  "generated": "2026-10-29T16:44:57.429Z",
+  "generated": "2026-10-29T20:41:45.880Z",
   "entries": [
+    {
+      "hash": "b0e1bd4e",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Worker verdict and public readout drop 'partial' — any sentence from the original is 'spliced', never counted as restored",
+      "scope": null
+    },
+    {
+      "hash": "6c649653",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "NEVER A SPLICE — a remaster with any sentence from the original is never published ('spliced' verdict; 'partial' removed)",
+      "scope": null
+    },
+    {
+      "hash": "ce0bb313",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Media-cloud-order post lists talks with no restored copy on tower (no_copy) — those need a full redo to be re-assessed",
+      "scope": null
+    },
+    {
+      "hash": "e4cf4a10",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Quality report counts publishable remasters with/without a passed listening assessment (+ unassessed list)",
+      "scope": null
+    },
+    {
+      "hash": "3ecffb17",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Verify parses -inf/'through' levels and names the failing measure; ops.mjs run <id>",
+      "scope": null
+    },
+    {
+      "hash": "1808c2fd",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Media-remaster-review-pack honours ids and skips a talk whose clip fails instead of failing the job",
+      "scope": null
+    },
+    {
+      "hash": "ea98f8e2",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Failures — failed ops jobs queryable (GET /ops/failures, ops.mjs failures) so FAILED mails need not be pasted",
+      "scope": null
+    },
+    {
+      "hash": "fc6df897",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Verify stage — a remaster must be measurably different from the original, or it is held for review and is never complete/on air",
+      "scope": null
+    },
+    {
+      "hash": "a2a5aebd",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Box sets order unnumbered recordings into the unclaimed part slots; bare trailing slug number is a part",
+      "scope": null
+    },
     {
       "hash": "f4c307bd",
       "date": "2026-10-29",
@@ -3437,73 +3500,73 @@
       "type": "New",
       "description": "Fall back to the next considered candidate that is the writer's own work; approved spend for citation linking (Chad 10-21)",
       "scope": "source-links-build"
-    },
-    {
-      "hash": "8e4e8749",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "The SOURCE decides whose words — a compilation's voice tag is only a hint (sample 2 rejected Hidden Words / Messages to America matches); source must be one of the four writers' own non-compilation work",
-      "scope": "source-links-build"
-    },
-    {
-      "hash": "0fff17b7",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Gates from the 10-21 sample — hunt only real quotations (≥12 words, not metadata/citation fragments, the writer's own voice) in library/OceanLibrary compilations; accept only the writer's OWN work (not mirrors, not secondary books) with verbatim or ≥0.3 shared wording; rejects counted by reason",
-      "scope": "source-links-build"
-    },
-    {
-      "hash": "fb61e80e",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Source-links-build — compilation quotes of Bahá'u'lláh/the Báb/'Abdu'l-Bahá/Shoghi Effendi → their source via SourceHunt (own work first, compilation excluded; verbatim vs translation); dry run default, limit, drain-resumable, own 'linking' lane (Chad 10-21)",
-      "scope": "ops"
-    },
-    {
-      "hash": "33b76324",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Source-link-coverage report — per compilation, paragraphs voicing Bahá'u'lláh/the Báb/'Abdu'l-Bahá/Shoghi Effendi and how many link to their source (citation plan step 0, Chad 10-21)",
-      "scope": "ops"
-    },
-    {
-      "hash": "c6093c1e",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "One letter, one answer — a range found as chapter and dated message listed once",
-      "scope": "letters"
-    },
-    {
-      "hash": "10f28e47",
-      "date": "2026-10-21",
-      "type": "Other",
-      "description": "Every citation a real link — detect → resolve (source links, refs, letter lookup, pagination, phrase) → linkFor → render → measure (Chad 10-21)",
-      "scope": null
-    },
-    {
-      "hash": "0af772a0",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Letter lookup — an author's letters as books, chapters and dated messages (work_letters, migr 162; letters-index job; GET /api/library/letters?date&title&book → canonical link + reader range). Timeline benchmark: 97/103 top-1 (rest = same-date twins / sub-section). schema-contract test now parses single-line CREATEs (Chad 10-21)",
-      "scope": "library"
-    },
-    {
-      "hash": "0dac8a84",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "/document/:id generates the slug when none is stored (OceanLibrary canonicals — every Anís/Jafar citation to them landed on /library/); a duplicate holding a slug yields to its canonical on the page (Bahá’í Administration served dup #16278 not #20880)",
-      "scope": "library"
-    },
-    {
-      "hash": "969f9ce6",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Doc-corrections job — a person's author/translator corrections through docs-repo (dry run first); docs-repo setDocTranslators (Chad 10-21)",
-      "scope": "ops"
     }
   ],
   "grouped": {
     "2026-10-29": [
+      {
+        "hash": "b0e1bd4e",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Worker verdict and public readout drop 'partial' — any sentence from the original is 'spliced', never counted as restored",
+        "scope": null
+      },
+      {
+        "hash": "6c649653",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "NEVER A SPLICE — a remaster with any sentence from the original is never published ('spliced' verdict; 'partial' removed)",
+        "scope": null
+      },
+      {
+        "hash": "ce0bb313",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Media-cloud-order post lists talks with no restored copy on tower (no_copy) — those need a full redo to be re-assessed",
+        "scope": null
+      },
+      {
+        "hash": "e4cf4a10",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Quality report counts publishable remasters with/without a passed listening assessment (+ unassessed list)",
+        "scope": null
+      },
+      {
+        "hash": "3ecffb17",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Verify parses -inf/'through' levels and names the failing measure; ops.mjs run <id>",
+        "scope": null
+      },
+      {
+        "hash": "1808c2fd",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Media-remaster-review-pack honours ids and skips a talk whose clip fails instead of failing the job",
+        "scope": null
+      },
+      {
+        "hash": "ea98f8e2",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Failures — failed ops jobs queryable (GET /ops/failures, ops.mjs failures) so FAILED mails need not be pasted",
+        "scope": null
+      },
+      {
+        "hash": "fc6df897",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Verify stage — a remaster must be measurably different from the original, or it is held for review and is never complete/on air",
+        "scope": null
+      },
+      {
+        "hash": "a2a5aebd",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Box sets order unnumbered recordings into the unclaimed part slots; bare trailing slug number is a part",
+        "scope": null
+      },
       {
         "hash": "f4c307bd",
         "date": "2026-10-29",
@@ -6952,69 +7015,6 @@
         "type": "New",
         "description": "Fall back to the next considered candidate that is the writer's own work; approved spend for citation linking (Chad 10-21)",
         "scope": "source-links-build"
-      },
-      {
-        "hash": "8e4e8749",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "The SOURCE decides whose words — a compilation's voice tag is only a hint (sample 2 rejected Hidden Words / Messages to America matches); source must be one of the four writers' own non-compilation work",
-        "scope": "source-links-build"
-      },
-      {
-        "hash": "0fff17b7",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Gates from the 10-21 sample — hunt only real quotations (≥12 words, not metadata/citation fragments, the writer's own voice) in library/OceanLibrary compilations; accept only the writer's OWN work (not mirrors, not secondary books) with verbatim or ≥0.3 shared wording; rejects counted by reason",
-        "scope": "source-links-build"
-      },
-      {
-        "hash": "fb61e80e",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Source-links-build — compilation quotes of Bahá'u'lláh/the Báb/'Abdu'l-Bahá/Shoghi Effendi → their source via SourceHunt (own work first, compilation excluded; verbatim vs translation); dry run default, limit, drain-resumable, own 'linking' lane (Chad 10-21)",
-        "scope": "ops"
-      },
-      {
-        "hash": "33b76324",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Source-link-coverage report — per compilation, paragraphs voicing Bahá'u'lláh/the Báb/'Abdu'l-Bahá/Shoghi Effendi and how many link to their source (citation plan step 0, Chad 10-21)",
-        "scope": "ops"
-      },
-      {
-        "hash": "c6093c1e",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "One letter, one answer — a range found as chapter and dated message listed once",
-        "scope": "letters"
-      },
-      {
-        "hash": "10f28e47",
-        "date": "2026-10-21",
-        "type": "Other",
-        "description": "Every citation a real link — detect → resolve (source links, refs, letter lookup, pagination, phrase) → linkFor → render → measure (Chad 10-21)",
-        "scope": null
-      },
-      {
-        "hash": "0af772a0",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Letter lookup — an author's letters as books, chapters and dated messages (work_letters, migr 162; letters-index job; GET /api/library/letters?date&title&book → canonical link + reader range). Timeline benchmark: 97/103 top-1 (rest = same-date twins / sub-section). schema-contract test now parses single-line CREATEs (Chad 10-21)",
-        "scope": "library"
-      },
-      {
-        "hash": "0dac8a84",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "/document/:id generates the slug when none is stored (OceanLibrary canonicals — every Anís/Jafar citation to them landed on /library/); a duplicate holding a slug yields to its canonical on the page (Bahá’í Administration served dup #16278 not #20880)",
-        "scope": "library"
-      },
-      {
-        "hash": "969f9ce6",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Doc-corrections job — a person's author/translator corrections through docs-repo (dry run first); docs-repo setDocTranslators (Chad 10-21)",
-        "scope": "ops"
       }
     ]
   }
