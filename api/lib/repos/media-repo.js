@@ -8,7 +8,7 @@ import { approvedSpeakerLabel, canonicalSpeakerKey, speakerDecisions } from '../
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
 const COLS = new Set(['stages_done', 'published_at', 'queue_rank', 'audience', 'grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
-  'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta', 'restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz']);
+  'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta', 'restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz', 'completed_at']);
 
 export async function createMediaItem({ source_kind, source_ref, sha256 = null, youtube_id = null, channel = null, tradition = null, collection = null, state = 'queued', why = null }) {
   const at = now();
@@ -163,7 +163,7 @@ export async function importProgress() {
     SUM(COALESCE(quotes_n, 0)) quote_links, SUM(COALESCE(crs_n, 0)) concept_crs
     FROM media_items WHERE state != 'duplicate' GROUP BY 1`, [], 'media:import-progress');
   const since = new Date(Date.now() - 30 * 60_000).toISOString();
-  const recent = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state = 'done' AND restored = 1 AND published_at >= ?`, [since], 'media:published-30m'))?.n || 0;
+  const recent = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state = 'done' AND restored = 1 AND completed_at >= ?`, [since], 'media:published-30m'))?.n || 0;
   return { rows, published_30m: recent };
 }
 /** The items being worked on now (downloading / processing / being enriched after publication): a handful of rows. */
@@ -347,9 +347,9 @@ export async function setPlayback(level, { sourceKind = null } = {}) {
   return r?.n || 0;
 }
 /** Published rows whose restored flag was never set (before migration 186): the backfill's work list, and its answer. */
-export const unclassifiedDone = async (limit = 50) => queryAll(`SELECT id, dir FROM media_items WHERE dir IS NOT NULL AND state != 'duplicate' AND (restored IS NULL OR stages_missing IS NULL) ORDER BY (state = 'done') DESC, id LIMIT ?`, [Number(limit) || 50], 'media:restored-todo');
+export const unclassifiedDone = async (limit = 50) => queryAll(`SELECT id, dir FROM media_items WHERE dir IS NOT NULL AND state != 'duplicate' AND (restored IS NULL OR stages_missing IS NULL OR (restored = 1 AND completed_at IS NULL)) ORDER BY (state = 'done') DESC, id LIMIT ?`, [Number(limit) || 50], 'media:restored-todo');
 export const restoredRows = async (afterId = 0, limit = 200) => queryAll(`SELECT id, dir FROM media_items WHERE state = 'done' AND restored = 1 AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 200], 'media:restored-verify');
-const IDX = ['restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz'];
+const IDX = ['restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz', 'completed_at'];
 export const setIndex = async (id, f) => transaction([{ sql: `UPDATE media_items SET ${IDX.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, args: [...IDX.map((c) => f[c] ?? null), Number(id)] }], 'media:set-index');
 export const setRestored = async (id, flag) => transaction([{ sql: 'UPDATE media_items SET restored = ? WHERE id = ?', args: [flag ? 1 : 0, Number(id)] }], 'media:set-restored');
 export const doneItemIds = async () => (await queryAll(`SELECT id FROM media_items WHERE state = 'done' ORDER BY id`, [], 'media:done-ids')).map((r) => r.id);

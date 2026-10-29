@@ -139,7 +139,8 @@ export const isComplete = (meta = {}) => isRestored(meta) && ['usable', 'cleaned
 export function indexFields(meta = {}) {
   const missing = COMPLETE_STAGES.filter((s) => !meta.stages?.[s]?.at), q = qualityOf(meta);
   const a = meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment || {}, n = (v) => (Number.isFinite(Number(v)) && v != null ? Math.round(Number(v) * 100) / 100 : null);
-  return { restored: isComplete(meta) ? 1 : 0, stages_missing: missing.length, next_stage: STAGES.find((s) => missing.includes(s)) || null, verdict: q.verdict,
+  const done = isComplete(meta), at = done ? COMPLETE_STAGES.map((s) => meta.stages?.[s]?.at).filter((v) => v != null).map(String).sort().pop() || null : null;
+  return { restored: done ? 1 : 0, completed_at: at, stages_missing: missing.length, next_stage: STAGES.find((s) => missing.includes(s)) || null, verdict: q.verdict,
     in_quality: n(a.reference?.nisqa?.[0]), out_quality: n(a.restored?.nisqa?.[0]), in_bw_khz: n(q.metrics.source_bandwidth_khz), out_bw_khz: n(q.metrics.output_bandwidth_khz) };
 }
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';

@@ -2046,6 +2046,13 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_in_quality ON media_items(in_quality)');
     logger.info('Migration 187 complete: media_items stage + quality index');
   },
+
+  188: async () => {
+    // completed_at = when the last required stage finished (the "remastered/hr" rate counts completions, not first publications)
+    try { await query('ALTER TABLE media_items ADD COLUMN completed_at TEXT'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    await query('CREATE INDEX IF NOT EXISTS idx_media_completed ON media_items(completed_at)');
+    logger.info('Migration 188 complete: media_items.completed_at');
+  },
 };
 
 export const graphMigrations = {
