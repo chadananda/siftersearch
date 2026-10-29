@@ -45,13 +45,13 @@ def pct_of(g):
 
 
 def verdict(method, g, g_first, bw, max_pct, why=None):
-    """usable / partial (generative copy published) · cleaned (deterministic cleanup published) · review · unrepairable. Mirrors api/lib/media/remaster-quality.js."""
+    """usable (pure generative copy published) · spliced (any sentence from the original: NEVER published, Chad 10-29) · cleaned (deterministic cleanup published) · review · unrepairable. Mirrors api/lib/media/remaster-quality.js."""
     fb = pct_of(g) if g else None
     first = pct_of(g_first) if g_first else None
     metrics = {'source_bandwidth_khz': bw, 'fallback_pct': fb, 'restored_fallback_pct': first, 'sentences': (g or {}).get('sentences'), 'sentences_from_original': (g or {}).get('swapped'),
                'unguardable_s': (g or {}).get('unguardable_s'), 'method': method}
     if method == 'restored':
-        v, r = ('partial', f'{fb} % of sentences are the original') if fb is not None and fb > 5 else ('usable', 'continuous restored audio; transcript differences are review notes' if (g or {}).get('mode') == 'audit' else 'passed the word guard')
+        v, r = ('spliced', f'{fb} % of sentences are the original: never published') if (fb or 0) > 0 or ((g or {}).get('swapped') or 0) > 0 else ('usable', 'continuous restored audio; transcript differences are review notes' if (g or {}).get('mode') == 'audit' else 'passed the word guard')
     elif method == 'cleaned':
         v, r = 'cleaned', f'deterministic cleanup (the generative copy fell back on {first} % of sentences)'
     elif bw is not None and bw <= UNREPAIRABLE_BW_KHZ and first is not None and first > max_pct:

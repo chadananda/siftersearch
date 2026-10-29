@@ -63,7 +63,7 @@ print(ns['jdumps']({'hum': float('-inf'), 'x': [float('nan'), 1.5]}))`], { encod
 describe('the public /media restoration readout', () => {
   it('counts and the latest five only: no workers, cost or tool names', async () => {
     const { restoredShape } = await import('../../api/routes/media.js');
-    const r = restoredShape({ total_targets: 1386, published: 900 }, { by_verdict: { usable: 150, partial: 20, review: 22, unrepairable: 2 }, recent: Array.from({ length: 8 }, (_, i) => ({ slug: `t${i}`, title: `T${i}`, speaker: 'S' })), at: 'now' });
+    const r = restoredShape({ total_targets: 1386, published: 900 }, { by_verdict: { usable: 150, cleaned: 20, spliced: 9, review: 22, unrepairable: 2 }, recent: Array.from({ length: 8 }, (_, i) => ({ slug: `t${i}`, title: `T${i}`, speaker: 'S' })), at: 'now' });
     expect(r).toMatchObject({ planned: 1386, published: 900, restored: 170, held: 22 });
     expect(r.recent).toHaveLength(5);
     expect(JSON.stringify(r).toLowerCase()).not.toMatch(/unipase|pod|runpod|usd|cost|spend/);

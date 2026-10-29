@@ -142,7 +142,7 @@ export const sourceOfRank = (rank) => ([null, 'historic', 'hands', 'uhj', 'histo
 /** The /media restoration readout (public: counts and the latest five, nothing else). Pure (exported for tests). */
 export function restoredShape(prog = {}, q = {}) {
   const by = q.by_verdict || {};
-  return { planned: prog.total_targets ?? null, published: prog.published ?? null, restored: (by.usable || 0) + (by.partial || 0), usable: by.usable || 0, partial: by.partial || 0, held: by.review || 0,
+  return { planned: prog.total_targets ?? null, published: prog.published ?? null, restored: (by.usable || 0) + (by.cleaned || 0), usable: by.usable || 0, held: by.review || 0,
     recent: (q.recent || []).slice(0, 5).map((x) => ({ slug: String(x.slug), title: String(x.title || x.slug), speaker: x.speaker || null })), updated_at: q.at || null };
 }
 

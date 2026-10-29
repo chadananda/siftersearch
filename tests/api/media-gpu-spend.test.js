@@ -510,9 +510,9 @@ r = post.process(${JSON.stringify(dir)}, runner=runner, transcribe=lambda p: {'s
 print(json.dumps({'method': r.get('method'), 'qa': r['qa'], 'held': r.get('held'), 'calls': calls, 'web': bool(r.get('web'))}))`], { encoding: 'utf8' });
     return JSON.parse(out);
   };
-  it('a passing generative copy: usable / partial by fallback', () => {
-    expect(run([3])).toMatchObject({ method: 'restored', qa: { verdict: 'usable' } });
-    expect(run([11])).toMatchObject({ method: 'restored', qa: { verdict: 'partial' } });
+  it('a pure generative copy is usable; any sentence from the original is spliced, never published (Chad 10-29)', () => {
+    expect(run([0])).toMatchObject({ method: 'restored', qa: { verdict: 'usable' } });
+    expect(run([3])).toMatchObject({ method: 'restored', qa: { verdict: 'spliced' } });
   });
   it('a held copy gets the deterministic cleanup, the SAME guard, and is published as cleaned', () => {
     const o = run([40, 2]);
@@ -642,7 +642,7 @@ import post
 envs = []
 def runner(cmd, **kw):
     name = cmd[1].split('/')[-1] if cmd[0] != 'ffmpeg' else 'ffmpeg'
-    if name == 'remaster_guard.py': return types.SimpleNamespace(stdout=json.dumps({'sentences': 10, 'fallback_sent_pct': 3, 'swapped_pct': 3}) + '\\n', stderr='')
+    if name == 'remaster_guard.py': return types.SimpleNamespace(stdout=json.dumps({'sentences': 10, 'fallback_sent_pct': 0, 'swapped_pct': 0, 'swapped': 0}) + '\\n', stderr='')
     if name == 'media_tool.py':
         cpu = (kw.get('env') or {}).get('CUDA_VISIBLE_DEVICES') == ''
         envs.append(cpu)
