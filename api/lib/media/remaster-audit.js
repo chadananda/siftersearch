@@ -4,7 +4,10 @@
 /** main/original: { all, hf4, hf8, trough } dB (mean volume overall, above 4 kHz, above 8 kHz; RMS trough = noise-floor proxy). */
 export function compareCopies(main, original, tier = 'heavy') {
   const ok = (m) => m && ['all', 'hf4', 'hf8', 'trough'].every((k) => Number.isFinite(m[k]));
-  if (!ok(main) || !ok(original)) return { verdict: 'error', why: 'measurement failed' };
+  if (!ok(main) || !ok(original)) {
+    const bad = (m, who) => ['all', 'hf4', 'hf8', 'trough'].filter((k) => !Number.isFinite(m?.[k])).map((k) => `${who}.${k}`);
+    return { verdict: 'error', why: `measurement failed: ${[...bad(main, 'remaster'), ...bad(original, 'original')].join(', ')}` };
+  }
   // high-band energy relative to the whole signal: bandwidth restoration raises it, noise removal lowers it
   const rel4 = (main.hf4 - main.all) - (original.hf4 - original.all);
   const rel8 = (main.hf8 - main.all) - (original.hf8 - original.all);
@@ -17,14 +20,15 @@ export function compareCopies(main, original, tier = 'heavy') {
 }
 
 import { existsSync } from 'node:fs';
-const dbOf = (txt, re) => { const m = re.exec(txt || ''); return m ? Number(m[1]) : NaN; };
+// '-inf' (digital silence) and the -195 dB a silent stretch gives are clamped to -120 dB, so a talk with a gap still measures
+const dbOf = (txt, re) => { const m = re.exec(txt || ''); return !m ? NaN : m[1] === '-inf' ? -120 : Math.max(-120, Number(m[1])); };
 
 /** Levels of one 60 s window (starting at 40 % of the talk): overall, above 4 kHz, above 8 kHz, RMS trough (noise-floor proxy). */
 export async function measureCopy(run, file, durationS = 0) {
   const ss = String(Math.max(0, Math.min(Math.round((durationS || 600) * 0.4), Math.max(0, (durationS || 600) - 70))));
   const pass = async (af) => (await run('ffmpeg', ['-nostdin', '-v', 'info', '-ss', ss, '-t', '60', '-i', file, '-af', af, '-f', 'null', '-'])).stderr;
-  const level = async (af) => dbOf(await pass(`${af},volumedetect`), /mean_volume: (-?[\d.]+) dB/);
-  const trough = dbOf(await pass('astats=metadata=0'), /RMS trough dB: (-?[\d.]+)/);
+  const level = async (af) => dbOf(await pass(`${af},volumedetect`), /mean_volume: (-inf|-?[\d.]+) dB/);
+  const trough = dbOf(await pass('astats=metadata=0'), /RMS th?rough dB: (-inf|-?[\d.]+)/);
   return { all: await level('anull'), hf4: await level('highpass=f=4000'), hf8: await level('highpass=f=8000'), trough };
 }
 

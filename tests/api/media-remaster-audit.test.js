@@ -25,3 +25,11 @@ describe('compareCopies', () => {
     expect(r.verdict).toBe('unverifiable');
   });
 });
+
+describe('measurement failures name the failing measure', () => {
+  it('error says which value is missing', () => {
+    const r = compareCopies({ all: -20, hf4: -40, hf8: NaN, trough: -60 }, { all: -20, hf4: -40, hf8: -50, trough: -60 });
+    expect(r.verdict).toBe('error');
+    expect(r.why).toContain('remaster.hf8');
+  });
+});

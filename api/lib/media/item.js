@@ -461,7 +461,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         const copy = join(dir, 'enhanced', 'unipase.flac'), orig = meta.original ? join(dir, meta.original) : null;
         const c = await (d.verifyRemaster || verifyRemaster)({ run: tools.run, original: orig, remaster: copy, durationS: meta.duration_s, tier: meta.remaster_tier || remasterTier(meta) });
         meta.remaster = { ...(meta.remaster || {}), check: { ...c, at: d.now() } };
-        rec.verdict = c.verdict; if (c.delta) rec.delta = c.delta;
+        rec.verdict = c.verdict; if (c.delta) rec.delta = c.delta; if (c.verdict !== 'changed') rec.why = c.why;
         if (['unchanged', 'suspect'].includes(c.verdict)) {
           if (meta.enhancement.listening === 'unipase') { meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe'; markAudioPending(meta); }
           meta.enhancement.listening_why = `remaster held: ${c.why}`;
