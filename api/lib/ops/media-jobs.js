@@ -1118,6 +1118,33 @@ export async function mediaRestoreJob({ write = false } = {}, deps = {}) {
   return out;
 }
 
+/** media-stages { write?, ids?, stages?, redo?, state? }: which stages each talk still needs, and (write) queue exactly those through the engine.
+ *  Report: how many talks are complete, and the count missing each stage. `stages` = the stages that must be done (default COMPLETE_STAGES);
+ *  `redo` = stages to re-run for the selected talks even when done; `ids` narrows the talks. Queues media-item { id, redo } — no direct DB or tower work. */
+export async function mediaStagesJob({ write = false, ids = null, stages = null, redo = null, limit = 500 } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const queue = deps.queue || enqueue;
+  const { COMPLETE_STAGES, STAGES } = deps.stages || await import('../media/item.js');
+  const need = (stages || COMPLETE_STAGES).filter((s) => STAGES.includes(s));
+  const forced = (redo || []).filter((s) => STAGES.includes(s));
+  const busy = new Set((await Promise.all(['media-item', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n)))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
+  const out = { talks: 0, complete: 0, missing: Object.fromEntries(need.map((s) => [s, 0])), queued: 0, skipped_busy: 0 };
+  for (const id of ids || await repo.doneItemIds()) {
+    const it = await repo.getMediaItem(id);
+    if (!it) continue;
+    out.talks++;
+    const done = String(it.stages_done || '');
+    const miss = need.filter((s) => !done.includes(`,${s},`));
+    for (const s of miss) out.missing[s]++;
+    if (!miss.length && it.restored === 1) out.complete++;
+    const todo = [...new Set([...miss, ...forced])];
+    if (!write || !todo.length || out.queued >= limit) continue;
+    if (busy.has(it.id)) { out.skipped_busy++; continue; }
+    await queue('media-item', { id: it.id, redo: STAGES.filter((s) => todo.includes(s)).concat(it.published_at && !todo.includes('update') ? ['update'] : []) }, 'media-stages'); out.queued++;
+  }
+  return out;
+}
 /** media-relink { write, ids?, why? }: published talks whose links.json refused person mentions for a reason that no longer
  *  holds (default: the retired Covenant-breaker guard — Chad 10-23 "we should link to them accurately"; it also refused
  *  'the Guardian' and '‘Abdu’l-Bahá') → a ['links', 'update'] re-run (stored mentions re-resolved, no model call; busy talks

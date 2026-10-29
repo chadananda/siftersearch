@@ -28,7 +28,7 @@ import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
-import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRestoreJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaCloudOrderJob, mediaRemasterQualityJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaArchiveImportJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaSpeakerSketchJob, mediaPlaybackJob, mediaGradeJob, mediaFindJob } from './media-jobs.js';
+import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaStagesJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRestoreJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaCloudOrderJob, mediaRemasterQualityJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaArchiveImportJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaSpeakerSketchJob, mediaPlaybackJob, mediaGradeJob, mediaFindJob } from './media-jobs.js';
 import { mediaGalleryJob, mediaPortraitInventoryJob } from './media-gallery-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
@@ -267,6 +267,7 @@ REPORTS['media-remaster-review-pack'] = mediaRemasterReviewPackJob;   // { out? 
 REPORTS['media-remaster-decide'] = mediaRemasterDecideJob;   // { picks: [{id|slug, choice}] } — Chad's review picks   // { write, ids?, limit? } — UniPASE on RunPod pods (budget-capped)   // { write } — per-talk speaker decisions from the evidence (data: talk_identities)
 REPORTS['media-speaker-merge'] = mediaSpeakerMergeJob;   // { write } — invented second speakers back to the main speaker (voice-checked per paragraph)
 REPORTS['media-safe-listening'] = mediaSafeListeningJob;   // { write } — every published talk's listening copy → the transparent original + fullband Ogg
+REPORTS['media-stages'] = mediaStagesJob;   // { write, ids?, stages?, redo?, limit } — which stages each talk lacks; write queues just those (or the forced redo) through the engine
 REPORTS['media-relink'] = mediaRelinkJob;   // { write } — re-resolve person links refused by a retired rule (links + update re-run)
 REPORTS['media-tags-backfill'] = mediaTagsBackfillJob;   // { afterId?, limit<=40, pauseMs } — tag_hints for imported talks (hints only), paced pages
 REPORTS['media-hint-review'] = mediaHintReviewJob;   // read-only: tag/filename/transcript disagreements and tag-added speaker/title/series
