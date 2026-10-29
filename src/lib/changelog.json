@@ -1,6 +1,153 @@
 {
-  "generated": "2026-10-28T14:20:43.094Z",
+  "generated": "2026-10-29T14:18:30.071Z",
   "entries": [
+    {
+      "hash": "6cafd040",
+      "date": "2026-10-28",
+      "type": "New",
+      "description": "Browser triage tool for big copied drives (catalog, suggestions, decisions, Dewey import)",
+      "scope": "archive-sifter"
+    },
+    {
+      "hash": "702faa13",
+      "date": "2026-10-28",
+      "type": "Docs",
+      "description": "Archives sift plan and handoff (design only, no code)",
+      "scope": "dewey"
+    },
+    {
+      "hash": "b4f49304",
+      "date": "2026-10-28",
+      "type": "Docs",
+      "description": "Boss whole status, hipFFT open bug",
+      "scope": "media"
+    },
+    {
+      "hash": "938440b3",
+      "date": "2026-10-28",
+      "type": "New",
+      "description": "Capability-ranked slots (EWMA per host), boss whole admission from measured peak, aorus container start needs host RAM",
+      "scope": "media"
+    },
+    {
+      "hash": "20f756a5",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "HyPE core batch status 10-28",
+      "scope": null
+    },
+    {
+      "hash": "ad1998ff",
+      "date": "2026-10-28",
+      "type": "Docs",
+      "description": "Worker image / AMD GPU status and handoff",
+      "scope": "media"
+    },
+    {
+      "hash": "608b82a9",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "F16 reconcile as a streaming merge-diff (JS Set caps at 16.7M entries)",
+      "scope": null
+    },
+    {
+      "hash": "b9353bfa",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "No book is imported without Chad approval - books and documents stop at offered everywhere (fetch, upload, ZIP, pulse, folder sweep); trust and rights default apply to media only",
+      "scope": null
+    },
+    {
+      "hash": "769c780d",
+      "date": "2026-10-28",
+      "type": "New",
+      "description": "Whole orders need 8 GB VRAM free on the GPU host",
+      "scope": "media"
+    },
+    {
+      "hash": "03b019d1",
+      "date": "2026-10-28",
+      "type": "New",
+      "description": ":rocm image fixes (matching ROCm userspace, MIOpen headers + cache), design update",
+      "scope": "media"
+    },
+    {
+      "hash": "2314d662",
+      "date": "2026-10-28",
+      "type": "New",
+      "description": "Supersede path - replace a talk source audio, keep the old original and meta under original-superseded/vN, revert any time",
+      "scope": "media"
+    },
+    {
+      "hash": "af211ea5",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "RAM defer lane for write-and-forget batches (30 s), 25 ms group window, checkpoint 300 s; flushed on power flush and shutdown",
+      "scope": null
+    },
+    {
+      "hash": "4c7f9f9f",
+      "date": "2026-10-28",
+      "type": "New",
+      "description": "AMD GPU worker path - whisper.cpp HIP ASR, :rocm image, host admission (refuse without proven GPU), boss whole orders, one host per order",
+      "scope": "media"
+    },
+    {
+      "hash": "3860d1d7",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Repoint batch children to working source URLs (ops endpoint); sidecar records page and real source URL",
+      "scope": null
+    },
+    {
+      "hash": "13305ff0",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Contributors are trusted - rights default asserted, clean works added without asking, 100 auto-adds/contributor/day",
+      "scope": null
+    },
+    {
+      "hash": "692e92a4",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Plain downloads run on tower (siftersearch-dewey-fetch, bulk slice, fetch only); worker accepts DEPLOY_SECRET and DEWEY_OPS",
+      "scope": null
+    },
+    {
+      "hash": "9dfe285d",
+      "date": "2026-10-28",
+      "type": "Fixed",
+      "description": "Import mediaFindJob in reports.js (media-find registration referenced it unimported)",
+      "scope": null
+    },
+    {
+      "hash": "b3fe5edc",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Add remaining ASR bench scripts",
+      "scope": "media"
+    },
+    {
+      "hash": "4cf4734f",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "ASR engine benchmark harness (whisper.cpp HIP wins on boss: WER 2.7-8.3%, RTF 0.023-0.05)",
+      "scope": "media"
+    },
+    {
+      "hash": "f812c523",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Import readFileSync for /latency io counters",
+      "scope": null
+    },
+    {
+      "hash": "3b135e91",
+      "date": "2026-10-28",
+      "type": "Other",
+      "description": "Skip no-op UPDATE of reused paragraphs; writer /latency exposes process io counters",
+      "scope": null
+    },
     {
       "hash": "4f38196c",
       "date": "2026-10-28",
@@ -3353,157 +3500,157 @@
       "type": "New",
       "description": "RTF/Word/WordPerfect/ODT/EPUB originals readable in the Review popup (server-converted, sanitised, sandboxed) + 'View it' on offer cards — read before Add it / Not this one (Chad 10-20)",
       "scope": "dewey"
-    },
-    {
-      "hash": "877c7da2",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Read roots include Public/Ocean-books and Public/pilgrim-notes (Chad's 10-20 sweeps were refused 400 'outside the folders Dewey may read'); test pin SEARCH_VERSION 2026-10-20.4",
-      "scope": "dewey"
-    },
-    {
-      "hash": "bf664bd9",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Migration 161 unreachable (CURRENT_VERSION not bumped) → every holdings check 500'd 'no such table: dewey_checks'; the memo read is now an optimisation — a failure is a miss, never a failed check",
-      "scope": "dewey"
-    },
-    {
-      "hash": "5d65908f",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "Holdings-check memo — file content sha256 → last verdict (dewey_checks, migr 161); the same book checked again (renamed, moved) answers instantly; held stands while its document is live, other verdicts 7 days; ?fresh=1 (Chad 10-20)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "2b36e133",
-      "date": "2026-10-20",
-      "type": "Performance",
-      "description": "MEILI_WRITES=off — stop pushing paragraphs/HyPE/mentions/aliases to Meilisearch (retirement step 5); it was the largest I/O on /fast (20 MB/s r, 13 MB/s w) though search reads only Qdrant, while writes took 9–27 s and hydration 2–6 s. Dirty rows settled; removals still reach Qdrant",
-      "scope": "worker"
-    },
-    {
-      "hash": "5bb81653",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Stamp-voices/stamp-site yield to a drain and resume where they stopped — #973 held the indexer in 'draining' for hours; a yielding job's resume params are saved on the run (saveResume) so the requeue continues, not restarts",
-      "scope": "ops"
-    },
-    {
-      "hash": "05aaf916",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Two 30 s main-thread reads behind 10-20 gateway timeouts — library slug fallback read every docs row (now matching collections only, via docs-repo.docsForPathSlugs); planExhaustion prose check GROUP BY over ~600 books' paragraphs → EXISTS per book",
-      "scope": "api"
-    },
-    {
-      "hash": "b10d2cb2",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Settled plan books are not re-probed — refill (every 3 min) and planExhaustion walked all ~600 finished books on the API main thread each time (5–8 s resume-stage spikes); null answers remembered 30 min, each probe yields the loop",
-      "scope": "grounding"
-    },
-    {
-      "hash": "b39bc79c",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "The grounding exhaustion probe gets 30 s (it checks every plan book, 5–6 s) — the default 8 s timeout made an exhausted plan a CRITICAL 'nothing queued' alarm",
-      "scope": "system-checks"
-    },
-    {
-      "hash": "791a3b06",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Rights classes per Chad's rule — Writings, institutional and anything online are shareable in full; only privately published books not found online are restricted",
-      "scope": null
-    },
-    {
-      "hash": "a97903a9",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Rights — the old encumbered flag is overly broad (collection/religion defaults); restrict only on per-document evidence, unknown stays shareable and goes to review; measure current breadth first (Chad 10-20)",
-      "scope": null
-    },
-    {
-      "hash": "81ac2d91",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Rights replaces the encumbered flag — per-document class + evidence, one servingPolicy module; encumbered derived then retired (Chad 10-20)",
-      "scope": null
-    },
-    {
-      "hash": "41d7f96d",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Rights classification — shareable in full vs copyrighted (encumbered) for every document; Dewey sets it at intake, backfill for the library (Chad 10-20)",
-      "scope": null
-    },
-    {
-      "hash": "eaf82123",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Keep only the newest 3 daily DB snapshots on /fast (Chad 10-20) — 31 dailies pinned ~60 GB of churned DB blocks and the pool hit 96%; full daily copies live on /tank",
-      "scope": null
-    },
-    {
-      "hash": "8bb2cf6b",
-      "date": "2026-10-20",
-      "type": "Docs",
-      "description": "Coverage one pass",
-      "scope": "blocking-queries"
-    },
-    {
-      "hash": "bb79d6eb",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Book coverage (prose/disamb/hyped/extracted/hypeable) is ONE pass over the book's rows, not five COUNT subqueries — grounding:resume-stage took 8.8 s on the API main thread for large books",
-      "scope": "blocking"
-    },
-    {
-      "hash": "37c5d4b5",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "Site DBs — the per-site store already exists for site-only (getSiteDb); step 2 extends it",
-      "scope": null
-    },
-    {
-      "hash": "953f952a",
-      "date": "2026-10-20",
-      "type": "New",
-      "description": "Stamp-site job — every scraped site's Qdrant points carry `site` (payload only, by doc-id batches, keyword index) so site scopes filter in Qdrant and hits can hydrate from per-site stores (planning/site-databases-plan.md step 1)",
-      "scope": "indexer"
-    },
-    {
-      "hash": "29b5b2da",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "One database per scraped site (bahai-library, oceanoflights, bahaiteachings); OceanLibrary.com stays in the primary DB as the canonical English collection (Chad 10-20)",
-      "scope": null
-    },
-    {
-      "hash": "6d3d616b",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "With no --qdrant flag the type battery uses the server's default search config — it sent qdrant:false and silently measured the legacy Meili path",
-      "scope": "battery"
-    },
-    {
-      "hash": "032ad179",
-      "date": "2026-10-20",
-      "type": "Fixed",
-      "description": "Spending Chad approved is not an alarm — the 24 h spend alert fires only above the base threshold plus the active approved allowances (data/approved-spend.json: doctrinal index 00/day, authorship 0/day, until 10-27)",
-      "scope": "alerts"
-    },
-    {
-      "hash": "46d01023",
-      "date": "2026-10-20",
-      "type": "Other",
-      "description": "The authoritative pass runs only in a Bahá'í-scoped search again — unscoped it displaced other traditions (battery 66 → 60: karma, wu wei, nirvana, fasting). SEARCH_VERSION bumped",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-10-28": [
+      {
+        "hash": "6cafd040",
+        "date": "2026-10-28",
+        "type": "New",
+        "description": "Browser triage tool for big copied drives (catalog, suggestions, decisions, Dewey import)",
+        "scope": "archive-sifter"
+      },
+      {
+        "hash": "702faa13",
+        "date": "2026-10-28",
+        "type": "Docs",
+        "description": "Archives sift plan and handoff (design only, no code)",
+        "scope": "dewey"
+      },
+      {
+        "hash": "b4f49304",
+        "date": "2026-10-28",
+        "type": "Docs",
+        "description": "Boss whole status, hipFFT open bug",
+        "scope": "media"
+      },
+      {
+        "hash": "938440b3",
+        "date": "2026-10-28",
+        "type": "New",
+        "description": "Capability-ranked slots (EWMA per host), boss whole admission from measured peak, aorus container start needs host RAM",
+        "scope": "media"
+      },
+      {
+        "hash": "20f756a5",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "HyPE core batch status 10-28",
+        "scope": null
+      },
+      {
+        "hash": "ad1998ff",
+        "date": "2026-10-28",
+        "type": "Docs",
+        "description": "Worker image / AMD GPU status and handoff",
+        "scope": "media"
+      },
+      {
+        "hash": "608b82a9",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "F16 reconcile as a streaming merge-diff (JS Set caps at 16.7M entries)",
+        "scope": null
+      },
+      {
+        "hash": "b9353bfa",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "No book is imported without Chad approval - books and documents stop at offered everywhere (fetch, upload, ZIP, pulse, folder sweep); trust and rights default apply to media only",
+        "scope": null
+      },
+      {
+        "hash": "769c780d",
+        "date": "2026-10-28",
+        "type": "New",
+        "description": "Whole orders need 8 GB VRAM free on the GPU host",
+        "scope": "media"
+      },
+      {
+        "hash": "03b019d1",
+        "date": "2026-10-28",
+        "type": "New",
+        "description": ":rocm image fixes (matching ROCm userspace, MIOpen headers + cache), design update",
+        "scope": "media"
+      },
+      {
+        "hash": "2314d662",
+        "date": "2026-10-28",
+        "type": "New",
+        "description": "Supersede path - replace a talk source audio, keep the old original and meta under original-superseded/vN, revert any time",
+        "scope": "media"
+      },
+      {
+        "hash": "af211ea5",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "RAM defer lane for write-and-forget batches (30 s), 25 ms group window, checkpoint 300 s; flushed on power flush and shutdown",
+        "scope": null
+      },
+      {
+        "hash": "4c7f9f9f",
+        "date": "2026-10-28",
+        "type": "New",
+        "description": "AMD GPU worker path - whisper.cpp HIP ASR, :rocm image, host admission (refuse without proven GPU), boss whole orders, one host per order",
+        "scope": "media"
+      },
+      {
+        "hash": "3860d1d7",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Repoint batch children to working source URLs (ops endpoint); sidecar records page and real source URL",
+        "scope": null
+      },
+      {
+        "hash": "13305ff0",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Contributors are trusted - rights default asserted, clean works added without asking, 100 auto-adds/contributor/day",
+        "scope": null
+      },
+      {
+        "hash": "692e92a4",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Plain downloads run on tower (siftersearch-dewey-fetch, bulk slice, fetch only); worker accepts DEPLOY_SECRET and DEWEY_OPS",
+        "scope": null
+      },
+      {
+        "hash": "9dfe285d",
+        "date": "2026-10-28",
+        "type": "Fixed",
+        "description": "Import mediaFindJob in reports.js (media-find registration referenced it unimported)",
+        "scope": null
+      },
+      {
+        "hash": "b3fe5edc",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Add remaining ASR bench scripts",
+        "scope": "media"
+      },
+      {
+        "hash": "4cf4734f",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "ASR engine benchmark harness (whisper.cpp HIP wins on boss: WER 2.7-8.3%, RTF 0.023-0.05)",
+        "scope": "media"
+      },
+      {
+        "hash": "f812c523",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Import readFileSync for /latency io counters",
+        "scope": null
+      },
+      {
+        "hash": "3b135e91",
+        "date": "2026-10-28",
+        "type": "Other",
+        "description": "Skip no-op UPDATE of reused paragraphs; writer /latency exposes process io counters",
+        "scope": null
+      },
       {
         "hash": "4f38196c",
         "date": "2026-10-28",
@@ -6868,153 +7015,6 @@
         "type": "New",
         "description": "RTF/Word/WordPerfect/ODT/EPUB originals readable in the Review popup (server-converted, sanitised, sandboxed) + 'View it' on offer cards — read before Add it / Not this one (Chad 10-20)",
         "scope": "dewey"
-      },
-      {
-        "hash": "877c7da2",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Read roots include Public/Ocean-books and Public/pilgrim-notes (Chad's 10-20 sweeps were refused 400 'outside the folders Dewey may read'); test pin SEARCH_VERSION 2026-10-20.4",
-        "scope": "dewey"
-      },
-      {
-        "hash": "bf664bd9",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Migration 161 unreachable (CURRENT_VERSION not bumped) → every holdings check 500'd 'no such table: dewey_checks'; the memo read is now an optimisation — a failure is a miss, never a failed check",
-        "scope": "dewey"
-      },
-      {
-        "hash": "5d65908f",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "Holdings-check memo — file content sha256 → last verdict (dewey_checks, migr 161); the same book checked again (renamed, moved) answers instantly; held stands while its document is live, other verdicts 7 days; ?fresh=1 (Chad 10-20)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "2b36e133",
-        "date": "2026-10-20",
-        "type": "Performance",
-        "description": "MEILI_WRITES=off — stop pushing paragraphs/HyPE/mentions/aliases to Meilisearch (retirement step 5); it was the largest I/O on /fast (20 MB/s r, 13 MB/s w) though search reads only Qdrant, while writes took 9–27 s and hydration 2–6 s. Dirty rows settled; removals still reach Qdrant",
-        "scope": "worker"
-      },
-      {
-        "hash": "5bb81653",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Stamp-voices/stamp-site yield to a drain and resume where they stopped — #973 held the indexer in 'draining' for hours; a yielding job's resume params are saved on the run (saveResume) so the requeue continues, not restarts",
-        "scope": "ops"
-      },
-      {
-        "hash": "05aaf916",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Two 30 s main-thread reads behind 10-20 gateway timeouts — library slug fallback read every docs row (now matching collections only, via docs-repo.docsForPathSlugs); planExhaustion prose check GROUP BY over ~600 books' paragraphs → EXISTS per book",
-        "scope": "api"
-      },
-      {
-        "hash": "b10d2cb2",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Settled plan books are not re-probed — refill (every 3 min) and planExhaustion walked all ~600 finished books on the API main thread each time (5–8 s resume-stage spikes); null answers remembered 30 min, each probe yields the loop",
-        "scope": "grounding"
-      },
-      {
-        "hash": "b39bc79c",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "The grounding exhaustion probe gets 30 s (it checks every plan book, 5–6 s) — the default 8 s timeout made an exhausted plan a CRITICAL 'nothing queued' alarm",
-        "scope": "system-checks"
-      },
-      {
-        "hash": "791a3b06",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Rights classes per Chad's rule — Writings, institutional and anything online are shareable in full; only privately published books not found online are restricted",
-        "scope": null
-      },
-      {
-        "hash": "a97903a9",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Rights — the old encumbered flag is overly broad (collection/religion defaults); restrict only on per-document evidence, unknown stays shareable and goes to review; measure current breadth first (Chad 10-20)",
-        "scope": null
-      },
-      {
-        "hash": "81ac2d91",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Rights replaces the encumbered flag — per-document class + evidence, one servingPolicy module; encumbered derived then retired (Chad 10-20)",
-        "scope": null
-      },
-      {
-        "hash": "41d7f96d",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Rights classification — shareable in full vs copyrighted (encumbered) for every document; Dewey sets it at intake, backfill for the library (Chad 10-20)",
-        "scope": null
-      },
-      {
-        "hash": "eaf82123",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Keep only the newest 3 daily DB snapshots on /fast (Chad 10-20) — 31 dailies pinned ~60 GB of churned DB blocks and the pool hit 96%; full daily copies live on /tank",
-        "scope": null
-      },
-      {
-        "hash": "8bb2cf6b",
-        "date": "2026-10-20",
-        "type": "Docs",
-        "description": "Coverage one pass",
-        "scope": "blocking-queries"
-      },
-      {
-        "hash": "bb79d6eb",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Book coverage (prose/disamb/hyped/extracted/hypeable) is ONE pass over the book's rows, not five COUNT subqueries — grounding:resume-stage took 8.8 s on the API main thread for large books",
-        "scope": "blocking"
-      },
-      {
-        "hash": "37c5d4b5",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "Site DBs — the per-site store already exists for site-only (getSiteDb); step 2 extends it",
-        "scope": null
-      },
-      {
-        "hash": "953f952a",
-        "date": "2026-10-20",
-        "type": "New",
-        "description": "Stamp-site job — every scraped site's Qdrant points carry `site` (payload only, by doc-id batches, keyword index) so site scopes filter in Qdrant and hits can hydrate from per-site stores (planning/site-databases-plan.md step 1)",
-        "scope": "indexer"
-      },
-      {
-        "hash": "29b5b2da",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "One database per scraped site (bahai-library, oceanoflights, bahaiteachings); OceanLibrary.com stays in the primary DB as the canonical English collection (Chad 10-20)",
-        "scope": null
-      },
-      {
-        "hash": "6d3d616b",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "With no --qdrant flag the type battery uses the server's default search config — it sent qdrant:false and silently measured the legacy Meili path",
-        "scope": "battery"
-      },
-      {
-        "hash": "032ad179",
-        "date": "2026-10-20",
-        "type": "Fixed",
-        "description": "Spending Chad approved is not an alarm — the 24 h spend alert fires only above the base threshold plus the active approved allowances (data/approved-spend.json: doctrinal index 00/day, authorship 0/day, until 10-27)",
-        "scope": "alerts"
-      },
-      {
-        "hash": "46d01023",
-        "date": "2026-10-20",
-        "type": "Other",
-        "description": "The authoritative pass runs only in a Bahá'í-scoped search again — unscoped it displaced other traditions (battery 66 → 60: karma, wu wei, nirvana, fasting). SEARCH_VERSION bumped",
-        "scope": "search"
       }
     ]
   }

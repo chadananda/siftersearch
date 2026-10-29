@@ -20,7 +20,7 @@ const total=c.items.reduce((n,it)=>n+(it.d||0),0);
       </nav>
       <header class="flex items-start gap-5 sm:gap-7">
         <div class="w-28 flex-none overflow-hidden rounded-lg sm:w-40">
-          {c.group ? <SeriesCover series={c.group} speaker={c.speaker} width={240} /> : pic && <img src={pic.src} srcset={pic.srcset} width="160" height="160" alt={c.speaker.n} class="h-auto w-full" />}
+          {c.group ? <SeriesCover series={c.group} speaker={c.speaker} width={240} /> : pic && <img src={pic.src} srcset={pic.srcset} width="160" height="160" alt={c.speaker.n} class="h-auto w-full object-cover" />}
         </div>
         <div class="min-w-0">
           <p class="font-dial text-sm font-bold uppercase tracking-wider text-radio-brass">{c.group?'Series box set':'Speaker collection'}</p>

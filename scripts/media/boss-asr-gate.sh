@@ -91,7 +91,7 @@ if [[ "$verb" == "df" ]]; then
   psi=$(awk '/^some/ {split($2,a,"="); print a[2]}' /proc/pressure/memory 2>/dev/null || true); psi=${psi:-null}
   psif=$(awk '/^full/ {split($2,a,"="); print a[2]}' /proc/pressure/memory 2>/dev/null || true); psif=${psif:-null}
   memtot=$(awk '/^MemTotal:/ {print int($2/1048576*10)/10}' /proc/meminfo 2>/dev/null || echo null)
-  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s,"gpu_temp":%s,"cpu_tctl":%s,"gpu_free_mb":%s,"mem_total_gb":%s,"psi_some10":%s,"psi_full10":%s,"vram_total_gb":%s,"vram_used_gb":%s,"vram_free_mb":%s,"gtt_total_gb":%s,"gtt_used_gb":%s,"gpu_busy":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}" "$gpu" "$tctl" "$vfree" "${memtot:-null}" "$psi" "$psif" "$vt" "$vu" "$vfm" "$gtt" "$gtu" "$busy"
+  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s,"gpu_temp":%s,"cpu_tctl":%s,"gpu_free_mb":%s,"mem_total_gb":%s,"psi_some10":%s,"psi_full10":%s,"vram_total_gb":%s,"vram_used_gb":%s,"vram_free_mb":%s,"gtt_total_gb":%s,"gtt_used_gb":%s,"gpu_busy":%s,"cpu_cores":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}" "$gpu" "$tctl" "$vfree" "${memtot:-null}" "$psi" "$psif" "$vt" "$vu" "$vfm" "$gtt" "$gtu" "$busy" "$(nproc 2>/dev/null || echo null)"
   exit 0
 fi
 if [[ "$verb" == "clean" ]]; then

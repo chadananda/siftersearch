@@ -183,8 +183,9 @@ describe('transcription slots are separate from diarization (10-23)', () => {
 });
 
 describe('diarization slots per host', () => {
-  it('3 at a time on one host', async () => {
-    const { diarSlot } = await import('../../api/lib/media/tools.js');
+  it('a host that reports 6 cores takes 3 at a time (2 cores each); with no reading, 1', async () => {
+    const { diarSlot, noteDisk } = await import('../../api/lib/media/tools.js');
+    noteDisk('h1', { cpu_cores: 6 });
     let live = 0, peak = 0;
     await Promise.all(Array.from({ length: 7 }, () => diarSlot('h1', async () => { live++; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 10)); live--; })));
     expect(peak).toBe(3);
@@ -430,12 +431,13 @@ describe('an unreachable probe host while Tower refuses heavy work', () => {
 });
 
 describe('boss memory safety (10-28: our jobs overran its 31 GB, tailscaled was OOM-killed, the box left the network)', () => {
-  it('13 GB stay free on boss: a job is admitted only when MemAvailable covers its budget plus the reserve', async () => {
+  it('a share of each host’s own RAM stays free: a job is admitted only when MemAvailable covers its budget plus the reserve', async () => {
     const t = await import('../../api/lib/media/tools.js');
-    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 20 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(true);    // 20 >= 3 + 13
-    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 15 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(false);   // llama-coder woke up
-    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 18 }); expect(t.diskOk('boss', { kind: 'post' })).toBe(false);      // 18 < 6 + 13
-    t.noteDisk('boss', { free_gb: 900, mem_avail_gb: 25 }); expect(t.diskOk('boss', { kind: 'post' })).toBe(true);
+    const T = 31;   // reserve = 12 % of the host's own total = 3.72 GB
+    t.noteDisk('boss', { free_gb: 900, mem_total_gb: T, mem_avail_gb: 8 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(true);    // 8 >= 3 + 3.72
+    t.noteDisk('boss', { free_gb: 900, mem_total_gb: T, mem_avail_gb: 6 }); expect(t.diskOk('boss', { kind: 'unipase' })).toBe(false);   // a big tenant woke up
+    t.noteDisk('boss', { free_gb: 900, mem_total_gb: T, mem_avail_gb: 9 }); expect(t.diskOk('boss', { kind: 'post' })).toBe(false);      // 9 < 6 + 3.72
+    t.noteDisk('boss', { free_gb: 900, mem_total_gb: T, mem_avail_gb: 10 }); expect(t.diskOk('boss', { kind: 'post' })).toBe(true);
     expect(t.MEM_BUDGET.post).toBe(6);
   });
   it('every job the gate starts on a host runs inside capped.sh (hard MemoryMax, no swap, oom_score_adj 900); the CPU-tail container is 6 GB, 1 at a time, first to be killed', async () => {
@@ -446,7 +448,7 @@ describe('boss memory safety (10-28: our jobs overran its 31 GB, tailscaled was 
     const cap = readFileSync(new URL('../../scripts/media/capped.sh', import.meta.url), 'utf8');
     expect(cap).toMatch(/MemoryMax=\$\{G\}G/); expect(cap).toMatch(/MemorySwapMax=0/); expect(cap).toMatch(/oom_score_adj/);
     const wg = readFileSync(new URL('../../scripts/media/whole_gate.py', import.meta.url), 'utf8');
-    expect(wg).toContain("'--memory','6g','--memory-swap','6g','--oom-score-adj','900'"); expect(wg).toMatch(/len\(busy\)>=1 or avail<MEM_NEED_GB\+MEM_RESERVE_GB/);
+    expect(wg).toContain("'--memory','6g','--memory-swap','6g','--oom-score-adj','900'"); expect(wg).toMatch(/not admit\(busy,MEM_NEED_GB\)/); expect(wg).toMatch(/return not loading and avail>=need\+mem_reserve\(\)/);
   });
 });
 

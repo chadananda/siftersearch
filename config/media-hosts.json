@@ -1,0 +1,4 @@
+{ "hosts": [
+  { "name": "aorus", "transport": "ssh-docker", "gate": "~/media-gpu/asr-gate.sh", "root": "/data/sifter-whole-home", "docker": "docker", "gpu_lock": "/home/chad/media-gpu/.gpu.lock" },
+  { "name": "boss", "transport": "gate", "root": "/home/chad/sifter-whole-home", "docker": "sudo -n docker" }
+] }

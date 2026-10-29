@@ -197,7 +197,7 @@ export default async function mediaRoutes(fastify) {
       hits = [];
       for (const id of order) {
         const r = byId.get(id); const it = r && byDoc.get(r.doc_id);
-        if (!it || it.state !== 'done') continue;
+        if (!it || it.state !== 'done' || it.restored !== 1) continue;   // only restored talks are on the air
         let a = {}; try { a = JSON.parse(r.block_attrs || '{}'); } catch { /* none */ }
         if (a.t0 == null) continue;   // a chapter heading or the summary line: not a moment in the recording
         hits.push({ slug: it.slug, item_id: it.id, t0: Number(a.t0) || 0, t1: Number(a.t1) || null, text: stripMdLinks(r.text).slice(0, 400) });
@@ -330,7 +330,7 @@ export default async function mediaRoutes(fastify) {
     const hits = [];
     for (const id of order) {
       const r = byId.get(id); const it = r && byDoc.get(r.doc_id);
-      if (!it || it.state !== 'done') continue;
+      if (!it || it.state !== 'done' || it.restored !== 1) continue;   // only restored talks are on the air
       let a = {}; try { a = JSON.parse(r.block_attrs || '{}'); } catch { /* none */ }
       if (a.t0 == null) continue;   // a heading or the summary line: not a moment in the recording
       hits.push({ slug: it.slug, title: it.title, speaker: it.speaker, speaker_key: it.speaker_key, year: it.year, t0: Number(a.t0) || 0, t1: Number(a.t1) || null,
@@ -364,7 +364,7 @@ export default async function mediaRoutes(fastify) {
     if (audio?.sync_ready && meta.audio_alignment_hash && meta.audio_alignment_hash !== timingSignature(tr.paragraphs)) audio.sync_ready = false;
     pub(reply, 300);
     return {
-      slug: it.slug, title: meta.title, speaker: meta.speaker, speakers: meta.speakers || {}, date: meta.date, year: meta.year, uploaded_year: meta.uploaded_year ?? null, date_flag: meta.date_flag ?? null, place: meta.place, event: meta.event,
+      pending: it.restored !== 1, slug: it.slug, title: meta.title, speaker: meta.speaker, speakers: meta.speakers || {}, date: meta.date, year: meta.year, uploaded_year: meta.uploaded_year ?? null, date_flag: meta.date_flag ?? null, place: meta.place, event: meta.event,
       language: meta.language, duration_s: meta.duration_s, has_video: meta.has_video, summary: meta.summary, topics: meta.topics || [], chapters: meta.chapters || [],
       // topic subheaders: structure only (no audio of their own); t = the paragraph they open, for the contents list
       headings: (meta.headings || []).filter((h) => tStart.has(h.p)).map((h) => ({ p: h.p, t: tStart.get(h.p), text: h.text, form: h.form, slug: h.slug })),

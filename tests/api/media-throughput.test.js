@@ -244,7 +244,7 @@ describe('prep and ASR are separate lanes (10-22: ASR slots waited on tower prep
   });
   it('prep ends prepped; ASR ends asr_done; diarize ends transcribed', async () => {
     const src = (await import('fs')).readFileSync(new URL('../../api/lib/ops/media-jobs.js', import.meta.url), 'utf8');
-    expect(src).toMatch(/mediaComputeJob = .*PREP_STAGES, 'prepped'\)/);
+    expect(src).toMatch(/function mediaComputeJob[\s\S]*?PREP_STAGES,\s*'prepped'\)/);
     expect(src).toMatch(/mediaAsrJob = .*\['transcribe'\], 'asr_done'\)/);
     expect(src).toMatch(/mediaDiarJob = .*\['diarize', 'trim'\], 'transcribed'\)/);
   });
@@ -301,5 +301,15 @@ describe('diarization has its own lane (10-23 04:29)', () => {
     expect(pickDiarHost(new Map([['aorus', 2]]))).toBe('boss');
     expect(pickDiarHost(new Map([['aorus', 2], ['boss', 3]]))).toBe('aorus');
     delete process.env.MEDIA_ASR_HOST; delete process.env.MEDIA_GPU_HOST;
+  });
+});
+
+describe('slots follow each machine’s live capacity', () => {
+  it('uses the configured floor with no reading, the core count with one, and holds when the GPU is saturated', async () => {
+    const t = await import('../../api/lib/media/tools.js');
+    expect(t.slotCeiling('nohost', 2)).toBe(2);
+    t.noteDisk('big', { cpu_cores: 32, gpu_busy: 40 }); expect(t.slotCeiling('big', 2, 3)).toBe(16);
+    t.noteDisk('small', { cpu_cores: 8, gpu_busy: 40 }); expect(t.slotCeiling('small', 1, 0)).toBe(4);
+    t.noteDisk('small', { gpu_busy: 99 }); expect(t.slotCeiling('small', 1, 2)).toBe(2);
   });
 });

@@ -8,7 +8,7 @@ import { approvedSpeakerLabel, canonicalSpeakerKey, speakerDecisions } from '../
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
 const COLS = new Set(['stages_done', 'published_at', 'queue_rank', 'audience', 'grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
-  'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta']);
+  'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta', 'restored']);
 
 export async function createMediaItem({ source_kind, source_ref, sha256 = null, youtube_id = null, channel = null, tradition = null, collection = null, state = 'queued', why = null }) {
   const at = now();
@@ -121,10 +121,10 @@ export async function setQueueRanks(rows = []) {
 export const rankRows = async () => queryAll(`SELECT id, source_kind, source_ref, youtube_id, speaker, year, collection, title, state FROM media_items WHERE state NOT IN ('duplicate')`, [], 'media:rank-rows');
 /** Progress by source: downloaded (in the archive) / published / failed / held / waiting. */
 export const progressCounts = async () => queryAll(`SELECT source_kind source, COUNT(*) total,
-  SUM(CASE WHEN dir IS NOT NULL THEN 1 ELSE 0 END) downloaded, SUM(CASE WHEN state = 'done' THEN 1 ELSE 0 END) published,
+  SUM(CASE WHEN dir IS NOT NULL THEN 1 ELSE 0 END) downloaded, SUM(CASE WHEN state = 'done' AND restored = 1 THEN 1 ELSE 0 END) published,
   SUM(CASE WHEN state = 'failed' THEN 1 ELSE 0 END) failed, SUM(CASE WHEN state = 'held' THEN 1 ELSE 0 END) held,
   SUM(CASE WHEN state IN ('scheduled', 'running', 'prepped', 'asr_queued', 'asr_done', 'diar_queued', 'transcribed', 'llm_queued') THEN 1 ELSE 0 END) in_progress, SUM(CASE WHEN state = 'queued' THEN 1 ELSE 0 END) waiting,
-  SUM(CASE WHEN state = 'done' THEN COALESCE(duration_s, 0) ELSE 0 END) published_s
+  SUM(CASE WHEN state = 'done' AND restored = 1 THEN COALESCE(duration_s, 0) ELSE 0 END) published_s
   FROM media_items WHERE state != 'duplicate' GROUP BY source_kind`, [], 'media:progress');
 /** FAILED items go back to the queue after 30 min, at most twice ("retry:N" leads their reason) — every failure except the
  *  ones a retry cannot fix (a removed video, a missing file). A failure must never just sit (10-22: a gate bug failed every
@@ -156,14 +156,14 @@ const LATER = "'correct','clean','describe','headings','quotes','links','assess'
 export async function importProgress() {
   const bucket = `CASE ${SOURCES.map(([k, , lo, hi]) => `WHEN COALESCE(queue_rank, 900000000) >= ${lo} AND COALESCE(queue_rank, 900000000) < ${hi} THEN '${k}'`).join(' ')} ELSE 'scholars' END`;
   const rows = await queryAll(`SELECT ${bucket} source, COUNT(*) total, SUM(CASE WHEN dir IS NOT NULL THEN 1 ELSE 0 END) downloaded,
-    SUM(CASE WHEN state = 'done' OR stage IN (${LATER}) THEN 1 ELSE 0 END) transcribed, SUM(CASE WHEN state = 'done' THEN 1 ELSE 0 END) published,
+    SUM(CASE WHEN state = 'done' OR stage IN (${LATER}) THEN 1 ELSE 0 END) transcribed, SUM(CASE WHEN state = 'done' AND restored = 1 THEN 1 ELSE 0 END) published,
     SUM(CASE WHEN state = 'failed' THEN 1 ELSE 0 END) failed,
     SUM(CASE WHEN stages_done LIKE '%,enhance,%' THEN 1 ELSE 0 END) enhanced, SUM(CASE WHEN stages_done LIKE '%,remaster,%' THEN 1 ELSE 0 END) remastered,
     SUM(CASE WHEN stages_done LIKE '%,transcribe,%' THEN 1 ELSE 0 END) aligned, SUM(CASE WHEN stages_done LIKE '%,quotes,%' THEN 1 ELSE 0 END) cross_referenced,
     SUM(COALESCE(quotes_n, 0)) quote_links, SUM(COALESCE(crs_n, 0)) concept_crs
     FROM media_items WHERE state != 'duplicate' GROUP BY 1`, [], 'media:import-progress');
   const since = new Date(Date.now() - 30 * 60_000).toISOString();
-  const recent = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state = 'done' AND published_at >= ?`, [since], 'media:published-30m'))?.n || 0;
+  const recent = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state = 'done' AND restored = 1 AND published_at >= ?`, [since], 'media:published-30m'))?.n || 0;
   return { rows, published_30m: recent };
 }
 /** The items being worked on now (downloading / processing / being enriched after publication): a handful of rows. */
@@ -175,7 +175,7 @@ export const liveItemsByIds = async (ids = []) => (ids.length ? (await queryAll(
 export const liveItems = async (limit = 12) => (await queryAll(`SELECT id, slug, title, speaker, speaker_key, source_kind, youtube_id, duration_s, dir, state, stage, queue_rank, updated_at
   FROM media_items WHERE state = 'running' OR (state = 'done' AND stage IS NOT NULL AND stage NOT IN ('catalog')) ORDER BY updated_at DESC LIMIT ?`, [limit], 'media:live')).map(parse);
 export const recentlyPublished = async (limit = 6) => queryAll(`SELECT slug, title, speaker, speaker_key, duration_s, published_at FROM media_items
-  WHERE state = 'done' AND published_at IS NOT NULL ORDER BY published_at DESC LIMIT ?`, [limit], 'media:recent-published');
+  WHERE state = 'done' AND restored = 1 AND published_at IS NOT NULL ORDER BY published_at DESC LIMIT ?`, [limit], 'media:recent-published');
 /** PIPELINE HEALTH for the watchdog (system-checks) and /progress/live: failures in the window (by stage), items running,
  *  and the backlog each lane could be working on — a backlog with nothing running is an IDLE lane. One group-by. */
 export async function pipelineHealth({ sinceIso = new Date(Date.now() - 3600_000).toISOString() } = {}) {
@@ -213,9 +213,10 @@ export const publishedProblemIds = async () => (await queryAll(`SELECT id FROM m
 export const publishedSince = async (iso) => (await queryOne(`SELECT COUNT(*) n, SUM(COALESCE(duration_s, 0)) secs FROM media_items WHERE state = 'done' AND updated_at >= ?`, [iso], 'media:published-since')) || { n: 0, secs: 0 };
 
 /** The /media listing: published items (state 'done'), filtered. → { items, total } */
-export async function listMedia({ speaker, tradition, collection, year, language, minDur, maxDur, hasVideo, ids, grade, issue, audience, state = 'done', sort = 'recent', limit = 50, offset = 0 } = {}) {
+export async function listMedia({ speaker, tradition, collection, year, language, minDur, maxDur, hasVideo, ids, grade, issue, audience, state = 'done', sort = 'recent', limit = 50, offset = 0, includePending = false } = {}) {
   speaker = approvedSpeakerLabel(speaker)?.name || speaker;
   const where = ['state = ?'], args = [state];
+  if (state === 'done' && !includePending) where.push('restored = 1');   // on the air = a restored copy exists (Chad 10-29); the rest is pending
   const eq = (col, v) => { if (v != null && v !== '') { where.push(`${col} = ?`); args.push(v); } };
   eq('speaker', speaker); eq('tradition', tradition); eq('collection', collection); eq('language', language); eq('primary_issue', issue);
   if (grade) { const gs = String(grade).toUpperCase().split(/[,\s]+/).filter((x) => /^[A-E]$/.test(x)); if (gs.length) { where.push(`grade IN (${gs.map(() => '?').join(',')})`); args.push(...gs); } }
@@ -239,13 +240,13 @@ export async function listMedia({ speaker, tradition, collection, year, language
 
 /** Every published item, the columns the /media listing index needs (+ dir to read its files), newest first. */
 export const mediaIndexRows = async () => queryAll(`SELECT id, slug, title, speaker, speaker_key, collection, language, year, duration_s, has_video, source_kind,
-  playback, thumb, quotes_n, crs_n, grade, priority, dir, updated_at FROM media_items WHERE state = 'done' ORDER BY updated_at DESC, id DESC`, [], 'media:index-rows');
+  playback, thumb, quotes_n, crs_n, grade, priority, dir, updated_at FROM media_items WHERE state = 'done' AND restored = 1 ORDER BY updated_at DESC, id DESC`, [], 'media:index-rows');
 
 /** Filter facets for the listing: value → count, published items only. */
 export async function mediaFacets() {
-  const facet = async (col) => (await queryAll(`SELECT ${col} v, COUNT(*) n FROM media_items WHERE state = 'done' AND ${col} IS NOT NULL GROUP BY ${col} ORDER BY n DESC LIMIT 200`, [], `media:facet-${col}`));
+  const facet = async (col) => (await queryAll(`SELECT ${col} v, COUNT(*) n FROM media_items WHERE state = 'done' AND restored = 1 AND ${col} IS NOT NULL GROUP BY ${col} ORDER BY n DESC LIMIT 200`, [], `media:facet-${col}`));
   const [speaker, tradition, collection, year, language, audience] = await Promise.all(['speaker', 'tradition', 'collection', 'year', 'language', 'audience'].map(facet));
-  const video = await queryOne(`SELECT SUM(has_video) v, COUNT(*) n, SUM(duration_s) secs FROM media_items WHERE state = 'done'`, [], 'media:facet-video');
+  const video = await queryOne(`SELECT SUM(has_video) v, COUNT(*) n, SUM(duration_s) secs FROM media_items WHERE state = 'done' AND restored = 1`, [], 'media:facet-video');
   return { speaker, tradition, collection, year, language, audience, video: video?.v || 0, total: video?.n || 0, hours: Math.round((video?.secs || 0) / 360) / 10 };
 }
 
@@ -345,6 +346,9 @@ export async function setPlayback(level, { sourceKind = null } = {}) {
   await transaction([{ sql: `UPDATE media_items SET playback = ?, updated_at = ? WHERE playback != ?${sourceKind ? ' AND source_kind = ?' : ''}`, args: sourceKind ? [level, now(), level, sourceKind] : [level, now(), level] }], 'media:set-playback');
   return r?.n || 0;
 }
+/** Published rows whose restored flag was never set (before migration 186): the backfill's work list, and its answer. */
+export const unclassifiedDone = async (limit = 50) => queryAll(`SELECT id, dir FROM media_items WHERE state = 'done' AND restored IS NULL ORDER BY id LIMIT ?`, [Number(limit) || 50], 'media:restored-todo');
+export const setRestored = async (id, flag) => transaction([{ sql: 'UPDATE media_items SET restored = ? WHERE id = ?', args: [flag ? 1 : 0, Number(id)] }], 'media:set-restored');
 export const doneItemIds = async () => (await queryAll(`SELECT id FROM media_items WHERE state = 'done' ORDER BY id`, [], 'media:done-ids')).map((r) => r.id);
 
 /** The repair list: graded published items worth fixing, grouped by their recommended fix chain, most urgent first. */

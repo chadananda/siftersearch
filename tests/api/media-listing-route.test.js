@@ -16,9 +16,10 @@ vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), query
 vi.mock('../../api/lib/repos/media-repo.js', async (orig) => ({
   ...(await orig()),
   mediaIndexRows: vi.fn(async () => rows),
+  getSpeaker: vi.fn(async (key) => ({ key })),
   mediaParagraphs: vi.fn(async () => [{ id: 501, doc_id: 77, text: 'The soul is a sign of God, he said.', block_attrs: JSON.stringify({ t0: 61.5, t1: 70 }) },
     { id: 502, doc_id: 77, text: 'Summary line', block_attrs: '{}' }]),
-  mediaByDocIds: vi.fn(async () => [{ doc_id: 77, slug: 'dunbar-soul-1988', title: 'Soul', speaker: 'Hooper Dunbar', speaker_key: 'hooper-dunbar', year: 1988, state: 'done' }]),
+  mediaByDocIds: vi.fn(async () => [{ doc_id: 77, slug: 'dunbar-soul-1988', title: 'Soul', speaker: 'Hooper Dunbar', speaker_key: 'hooper-dunbar', year: 1988, state: 'done', restored: 1 }]),
   listSpeakers: vi.fn(async () => [{ key: 'hooper-dunbar', name: 'Hooper Dunbar', file: 'media-speakers/hooper-dunbar.jpg', sha: 'abcdef0123456789abcd' }]),
 }));
 
@@ -26,7 +27,7 @@ vi.mock('../../api/lib/repos/media-repo.js', async (orig) => ({
 const SKETCH = { url: 'https://cdn.test/media-speakers/hooper-dunbar/sketch-aa.jpg?v=aa', square: 'https://cdn.test/media-speakers/hooper-dunbar/sketch-sq-bb.jpg?v=bb',
   width: 768, height: 1376, ai_rendered: true };
 const sketches = new Map([['hooper-dunbar', SKETCH]]);
-vi.mock('../../api/lib/media/sketch.js', async (orig) => ({ ...(await orig()), sketchOf: (k) => (k ? sketches.get(k) || null : null) }));
+vi.mock('../../api/lib/media/sketch.js', async (orig) => ({ ...(await orig()), speakerSketchOrStatic: (row) => (row?.key ? sketches.get(row.key) || null : null) }));
 
 vi.mock('../../api/lib/search.js', () => ({ multiIndexSearch: vi.fn(async (q, o) => ({ hits: o.filters?.collection === 'Media'
   ? [{ paragraph_id: 501, _formatted: { text: 'The <em>soul</em> is a sign' } }, { paragraph_id: 502 }] : [] })) }));

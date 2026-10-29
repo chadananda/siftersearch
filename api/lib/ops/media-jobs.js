@@ -7,6 +7,7 @@
 //               yields to a drain between stages and resumes where it stopped.
 //   media-vocab { minMentions? } — the controlled vocabulary's names from the entity graph → data/media-vocab.json.
 import { late } from '../media/late.js';
+import { hostProfile, hostRegistry } from '../media/tools.js';
 import {audioVersion, markAudioPending} from '../media/talk-audio.js';
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
 import { createReadStream, createWriteStream, existsSync } from 'fs';
@@ -776,6 +777,20 @@ export const mediaDiarJob = ({ id, ...rest } = {}, deps = {}) => laneJob(id, res
 // the run's result carries failed:true, the item its 'failed' state + reason, /api/media/progress/live → health counts them,
 // system-checks WARNs past MEDIA_FAIL_WARN an hour, and the feed's capped retry brings the item back
 function failedRun(r) { return r?.failed ? { ...r, outcome: 'item-failed' } : r; }
+/** ON THE AIR = RESTORED (Chad 10-29): flag the published rows nobody has classified yet (migration 186) from each item's meta.json,
+ *  a bounded batch per feed tick, so the count and the listing hold only talks with a restored copy. → how many were flagged */
+export async function backfillRestored({ repo, readMeta, limit = 40 } = {}) {
+  const { remasterTier } = await import('../media/talk-audio.js');
+  const fs = await import('fs/promises');
+  const read = readMeta || (async (dir) => JSON.parse(await fs.readFile(join(dir, 'meta.json'), 'utf8')));
+  let n = 0;
+  for (const r of await repo.unclassifiedDone(limit)) {
+    const m = r.dir ? await read(r.dir).catch(() => null) : null;
+    if (!m) { await repo.setRestored(r.id, false); n++; continue; }
+    await repo.setRestored(r.id, remasterTier(m) != null); n++;
+  }
+  return n;
+}
 export async function mediaLlmJob({ id, ...rest } = {}, deps = {}) {
   // everything after the compute stages (they are recorded done, so runItem skips them)
   return failedRun(await mediaItemJob({ id, ...rest }, deps));
@@ -796,6 +811,7 @@ export async function mediaLanesFeedPass(deps = {}) {
   const llmDepth = deps.llmDepth ?? (Number(process.env.MEDIA_LLM_DEPTH) || 8);
   const out = { compute: [], llm: [] };
   if (repo.restorePublished) { const back = await repo.restorePublished(); if (back.length) out.restored = back; }
+  if (repo.unclassifiedDone) { const n = await backfillRestored({ repo, readMeta: deps.readMeta }); if (n) out.restored_flagged = n; }
   if (repo.retryTransientFailures) { const back = await repo.retryTransientFailures(); if (back.length) out.retried = back; }
   // ASR: every slot busy, as many again waiting — from the PREPPED buffer
   const asr = await ops.pendingRuns('media-asr');
@@ -1402,15 +1418,15 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
  *  where the pods' land and the talk's media-remaster run is queued. Re-attaches by job id after a restart. */
 export function homeEligible(host, T) {
   if (!T.diskOk(host, { kind: 'unipase' })) return false;
-  if (host === 'boss' && !T.coolEnough(host)) return false;
+  if (!T.coolEnough(host)) return false;
   const load = T.asrLoad?.()[host];
   return !load || load.busy < load.slots;
 }
-/** Boss: UniPASE (ROCm, gate verb) + the copy's transcript, then the CPU tail in the accepted worker image ('post'). → the done record */
-export async function bossRestoreChain(it, m, { T, C, fs, image, stop, deps = {} }) {
-  const first = await (deps.homeRemaster || homeRemaster)('boss', it, m, { T, C, fs, stop });
-  const tail = await (deps.homeRecording || (await import('../media/home-recording.js')).homeRecording)('boss', it, m, { T, image, mode: 'post', stop });
-  return { ...first, ...tail, unipase_s: first.unipase_s, asr_s: first.asr_s, post_s: tail?.post_s ?? null, seconds: (first.seconds || 0) + (tail?.seconds || 0), gpu: 'boss' };
+/** A gate-transport host: UniPASE (gate verb) + the copy's transcript, then the CPU tail in the accepted worker image ('post'). → the done record */
+export async function gateRestoreChain(host, it, m, { T, C, fs, image, stop, deps = {} }) {
+  const first = await (deps.homeRemaster || homeRemaster)(host, it, m, { T, C, fs, stop });
+  const tail = await (deps.homeRecording || (await import('../media/home-recording.js')).homeRecording)(host, it, m, { T, image, mode: 'post', stop });
+  return { ...first, ...tail, unipase_s: first.unipase_s, asr_s: first.asr_s, post_s: tail?.post_s ?? null, seconds: (first.seconds || 0) + (tail?.seconds || 0), gpu: host };
 }
 export async function homeRemaster(host, it, m, { T, C, fs, stop }) {
   const enh = join(it.dir, 'enhanced');
@@ -1477,13 +1493,20 @@ export function rankedSlots(rates, host, maxSlots) {
  *  an order another host holds is never eligible, and a whole order runs every stage on the host that takes it. Vendor-blind: boss (AMD) takes whole
  *  orders as soon as its GPU path is accepted (`boss_whole`), exactly like aorus (NVIDIA). */
 export function homeEligibleItem(h, id, st, acceptedWorker, env = process.env) {
+  const whole = st.items?.[id]?.kind === 'whole';
+  if (acceptedWorker?.hold_whole && whole) return false;
+  if (!homeCanTake(h, id, st, acceptedWorker, env)) return false;
+  // Published talks first (Chad 10-28): a new-talk (whole) order takes a host only when no queued remaster work can run there. Both get processed.
+  return !(whole && st.queue?.some((q) => q !== id && st.items?.[q]?.kind !== 'whole' && homeCanTake(h, q, st, acceptedWorker, env)));
+}
+const baseHost = (h) => String(h).replace(/-\d+$/, '');
+const isGateHost = (h) => hostProfile(baseHost(h)).transport === 'gate';
+function homeCanTake(h, id, st, acceptedWorker, env) {
   const it = st.items?.[id], whole = it?.kind === 'whole';
   if (Object.values(st.home || {}).some((c) => c?.itemId === id)) return false;
-  if (acceptedWorker?.hold_whole && whole) return false;
-  const bossOk = !h.startsWith('boss') || !acceptedWorker || it?.mode === 'post'
-    || (h === 'boss' && whole && acceptedWorker.boss_whole === true)
-    || (h === 'boss' && !whole && (it?.mode || 'restore') === 'restore' && env.MEDIA_BOSS_RESTORE !== '0');
-  return bossOk && (!acceptedWorker?.reserve_aorus_for_whole || h.startsWith('boss') || whole);
+  return !isGateHost(h) || !acceptedWorker || it?.mode === 'post'
+    || (whole && (acceptedWorker.gate_whole ?? acceptedWorker.boss_whole) === true)
+    || (!whole && (it?.mode || 'restore') === 'restore' && (env.MEDIA_GATE_RESTORE ?? env.MEDIA_BOSS_RESTORE) !== '0');
 }
 
 export async function mediaCloudRemasterJob({ write = false, ids = null, limit = null, maxPods = 3, tickMs = 15_000, force = false, mode = 'restore' } = {}, deps = {}) {
@@ -1545,8 +1568,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   if (/pods failed to start/.test(st.cloud_stopped || '')) { st.cloud_stopped = null; st.pod_failures = 0; }
   st.pod_failures = st.pod_failures || 0; st.home = st.home || {}; st.home_done = st.home_done || 0;
   // the legacy home-host path (the gate's 'unipase' verb) has no worker result for tower to take: off in cleanup runs and in STRICT mode (workers only)
-  const acceptedHomeHosts=a=>[...(a.boss_cpu?['boss','boss-2']:[]),...Array.from({length:Math.max(2,Math.min(4,Number(a.aorus_slots)||2))},(_,i)=>i?'aorus-'+(i+1):'aorus')];
-  let homeHosts = acceptedWorker ? acceptedHomeHosts(acceptedWorker) : (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? 'aorus,boss').split(',').map((h) => h.trim()).filter(Boolean));
+  const acceptedHomeHosts=a=>hostRegistry().flatMap(({name})=>isGateHost(name)
+    ?((a.gate_cpu??a.boss_cpu)?[name,name+'-2']:[])
+    :Array.from({length:Math.max(2,Math.min(4,Number(a.docker_slots??a.aorus_slots)||2))},(_,i)=>i?name+'-'+(i+1):name));
+  let homeHosts = acceptedWorker ? acceptedHomeHosts(acceptedWorker) : (cleanupMode || process.env.MEDIA_REMASTER_STRICT === '1') ? [] : (deps.homeHosts ?? String(process.env.MEDIA_HOME_REMASTER_HOSTS ?? hostRegistry().map((x) => x.name).join(',')).split(',').map((h) => h.trim()).filter(Boolean));
   const allHomeHosts=homeHosts;
   const rankedHosts=()=>{   // stronger host keeps more concurrent slots; a slower one is cut to what its measured speed earns (re-evaluated every tick)
     if(!acceptedWorker||!st.rates)return allHomeHosts;
@@ -1650,8 +1675,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       for (const h of rentalPause && !acceptedWorker ? [] : rankedHosts()) {
         if (homeTasks.has(h)) continue;
         if ((st.host_down?.[h.replace(/-\d+$/, '')] || 0) > now()) continue;   // a host that stopped answering is left alone for a while (10-28: boss went offline and 41 talks burned their attempts in minutes)
-        // boss: hot, or short of RAM for our job on top of the 13 GB reserved for Chad's own services (MemAvailable, read live from the gate every 30 s)
-        const bossBlocked=h.startsWith('boss')&&((T.coolEnough&&!T.coolEnough('boss'))||(T.diskOk&&!T.diskOk('boss',{kind:h==='boss'&&acceptedWorker?.boss_whole&&st.queue.some(id=>st.items?.[id]?.kind==='whole'&&homeEligibleItem(h,id,st,acceptedWorker))?'whole':h==='boss'?'unipase':'post'})));
+        // any home host: hot, or short of RAM for our job on top of its own capacity-derived reserve (MemAvailable, read live from the gate every 30 s)
+        const hostBase=h.replace(/-\d+$/,''); const bossBlocked=((T.coolEnough&&!T.coolEnough(hostBase))||(T.diskOk&&!T.diskOk(hostBase,{kind:(acceptedWorker?.gate_whole??acceptedWorker?.boss_whole)&&st.queue.some(id=>st.items?.[id]?.kind==='whole'&&homeEligibleItem(h,id,st,acceptedWorker))?'whole':'unipase'})));
         const eligibleIndex=bossBlocked?-1:st.queue.findIndex(id=>homeEligibleItem(h,id,st,acceptedWorker));
         const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
         if (!cur) continue;
@@ -1662,18 +1687,18 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           const m = it?.dir ? await readMeta(it.dir).catch(() => null) : null;
           if (!m?.original) throw new Error('no original');
           if (st.items?.[it.id]?.kind==='whole'){
-            const completed=await (await import('../media/home-recording.js')).homeWholeRecording(it,m,{T,host:h.startsWith('boss')?'boss':'aorus',image:h.startsWith('boss')?(acceptedWorker.boss_image||acceptedWorker.image):(cur.image||acceptedWorker.image),legacyLock:acceptedWorker.aorus_legacy_lock!==false,stop:draining});
+            const completed=await (await import('../media/home-recording.js')).homeWholeRecording(it,m,{T,host:baseHost(h),image:isGateHost(h)?((acceptedWorker.gate_image??acceptedWorker.boss_image)||acceptedWorker.image):(cur.image||acceptedWorker.image),legacyLock:acceptedWorker.aorus_legacy_lock!==false,stop:draining});
             if(['whole_queued','scheduled','queued','running'].includes((await repo.getMediaItem(it.id))?.state))await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
             st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,gpu:h,pod:h,at:now()});updateRate(st.rates||={},h,m.duration_s,(now()-cur.since)/1000);st.home_done++;return;
           }
           if (decided(m,it.id)) return;
           const wantMode = st.items?.[it.id]?.mode || 'restore';
           const dj = acceptedWorker
-            ? (h === 'boss' && wantMode === 'restore'
+            ? (isGateHost(h) && wantMode === 'restore'
               // BOSS RESTORES (Chad 10-28): UniPASE on its ROCm iGPU through the gate's 'unipase' verb + the copy's ASR, then the worker container's CPU tail
               // (word guard, realign, encodes, verdict) on the same box; tower only takes the complete result
-              ? await bossRestoreChain(it, m, { T, C, fs, image: cur.image || acceptedWorker.image, stop: draining })
-              : await (await import('../media/home-recording.js')).homeRecording(h.startsWith('boss')?'boss':'aorus',it,m,{T,image:cur.image||acceptedWorker.image,mode:wantMode,stop:draining}))
+              ? await gateRestoreChain(baseHost(h), it, m, { T, C, fs, image: cur.image || acceptedWorker.image, stop: draining })
+              : await (await import('../media/home-recording.js')).homeRecording(baseHost(h),it,m,{T,image:cur.image||acceptedWorker.image,mode:wantMode,stop:draining}))
             : await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
           if (st.done.some((d) => d.id === it.id)) return;   // a duplicate result never double-publishes
           st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h,at:now(),mode:st.items?.[it.id]?.mode||'restore' });

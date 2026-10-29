@@ -6,7 +6,9 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, statSync, mkdirSy
 import { tmpdir } from 'os';
 import { join } from 'path';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
-import { runItem, STAGES } from '../../api/lib/media/item.js';
+import { runItem as runItemGated, STAGES } from '../../api/lib/media/item.js';
+// the fixtures publish talks with no restored copy, so they opt out of the restored-only gate (the gate has its own test below)
+const runItem = (item, opts = {}, deps) => runItemGated(item, { publishUnrestored: true, ...opts }, deps);
 import { applyEdits, buildVocab } from '../../api/lib/media/vocab.js';
 
 let root, src;
@@ -46,7 +48,7 @@ function fakes({ drainAfter = Infinity } = {}) {
     proposeHeadings: vi.fn(async () => []),
     assessTalk: vi.fn(async () => ({ audience: { score: 3, rationale: 'r' }, sections: [], moments: [] })), verifyMoment: vi.fn(async () => ({ ok: true })),
   };
-  const repo = { updateMediaItem: vi.fn(async () => ({})), slugTaken: vi.fn(async () => false), getChannel: vi.fn(async () => null), upsertChannel: vi.fn(async (c) => c) };
+  const repo = { updateMediaItem: vi.fn(async () => ({})), itemsNearDuration: vi.fn(async () => []), slugTaken: vi.fn(async () => false), getChannel: vi.fn(async () => null), upsertChannel: vi.fn(async (c) => c) };
   return {
     tools, llm, repo, now: () => '2026-10-21T00:00:00Z', loadVocab: async () => buildVocab(),
     draining: async () => ++stagesSeen > drainAfter,
@@ -333,5 +335,15 @@ describe('re-runs of published talks never take the light slots new talks need (
     await Promise.all([job(), job(), job(), towerLight(async () => { lightRan = true; })]);
     expect(peak).toBe(1);
     expect(lightRan).toBe(true);
+  });
+});
+
+describe('only restored audio is published (Chad 10-29)', () => {
+  it('a first publish with no restored copy is blocked and stays in the pipeline', async () => {
+    await expect(runItemGated({ id: 90, source_kind: 'file', source_ref: src }, {}, fakes())).rejects.toThrow(/no restored audio copy/);
+  });
+  it('publishUnrestored forces it, and an already published talk keeps updating', async () => {
+    const r = await runItemGated({ id: 91, source_kind: 'file', source_ref: src }, { publishUnrestored: true }, fakes());
+    expect(r.done).toEqual(STAGES);
   });
 });

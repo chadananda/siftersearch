@@ -235,7 +235,7 @@ let newGpuIdleAt = state.gpuIdleAt || 0;
     const { idleLanes } = await import('./lib/lane-idle.mjs');
     const { compute: idleCompute, llm: idleLlm } = idleLanes(h);
     // the GPU host (aorus): no media_tool running and no job started in 10 min while compute work waits = IDLE (10-22)
-    const gpu = process.env.MEDIA_GPU_HOST ?? 'aorus';
+    const gpu = (await import('./lib/media-hosts.mjs')).shellGpuHost();
     if (gpu && h.compute_backlog > 0) {
       let g = null;
       // TRANSCRIPTIONS running on the GPU host (grades/probes/dfn are not GPU transcription work) and the newest one's age
@@ -267,13 +267,15 @@ const hostRes = { ...(state.hostRes || {}) };
 const hostChecks = [];
 {
   const { parseHostStat, evaluateHost, unreachableCheck } = await import('./lib/host-resources.mjs');
+  const { mediaHosts } = await import('./lib/media-hosts.mjs');
   const since = Math.floor((hostRes.lastCheckAt || Date.now() - 30 * 60_000) / 1000);
   const script = fs.readFileSync(new URL('./ops/host-stat.sh', import.meta.url), 'utf8');
   const ssh = (host, cmd, input) => execSync(`ssh -o BatchMode=yes -o ConnectTimeout=8 ${input == null ? '-n ' : ''}${host} ${JSON.stringify(cmd)}`, { encoding: 'utf8', timeout: 60_000, input, stdio: ['pipe', 'pipe', 'pipe'] });
   const HOSTS = [
     { host: 'tower', role: 'monitor', run: () => execSync(`bash -s -- ${since}`, { encoding: 'utf8', timeout: 60_000, input: script, stdio: ['pipe', 'pipe', 'pipe'] }) },
-    { host: process.env.MEDIA_GPU_HOST || 'aorus', role: 'compute', run: (h) => ssh(h, `bash -s -- ${since}`, script) },
-    { host: process.env.MEDIA_ASR_HOST || 'boss', role: 'none', run: (h) => ssh(h, `hoststat ${since}`) },
+    ...mediaHosts().map((h) => (h.transport || 'ssh-docker') === 'gate'
+      ? { host: h.name, role: 'none', run: (n) => ssh(n, `hoststat ${since}`) }
+      : { host: h.name, role: 'compute', run: (n) => ssh(n, `bash -s -- ${since}`, script) }),
   ];
   hostRes.hosts = { ...(hostRes.hosts || {}) };
   for (const { host, role, run } of HOSTS) {

@@ -2025,6 +2025,13 @@ export const migrations = {
     for (const sql of DEWEY_JOBS_SQL) await query(sql);
     logger.info('Migration 185 complete: dewey_jobs, dewey_job_events, dewey_usage, dewey_flags');
   },
+
+  186: async () => {
+    // ON THE AIR = RESTORED (Chad 10-29): media_items.restored 1 when the talk has a restored audio copy, 0 when not, NULL until checked
+    // (the media worker's backfill reads each published item's meta.json once). Nullable ADD COLUMN is metadata-only.
+    try { await query('ALTER TABLE media_items ADD COLUMN restored INTEGER'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    logger.info('Migration 186 complete: media_items.restored');
+  },
 };
 
 export const graphMigrations = {

@@ -762,9 +762,9 @@ it('keeps complete remote recordings visible after the short dispatch run has fi
 
 describe('boss restores, aorus keeps the whole imports (Chad 10-28)', () => {
   it('the boss chain runs UniPASE (ROCm gate) first, then the CPU tail in the worker image; its record carries both timings', async () => {
-    const { bossRestoreChain } = await import('../../api/lib/ops/media-jobs.js');
+    const { gateRestoreChain } = await import('../../api/lib/ops/media-jobs.js');
     const calls = [];
-    const r = await bossRestoreChain({ id: 1, slug: 's' }, { duration_s: 600 }, { T: {}, C: {}, fs: {}, image: 'img@sha256:x', stop: () => false,
+    const r = await gateRestoreChain('boss', { id: 1, slug: 's' }, { duration_s: 600 }, { T: {}, C: {}, fs: {}, image: 'img@sha256:x', stop: () => false,
       deps: { homeRemaster: async (h) => { calls.push(['unipase', h]); return { unipase_s: 90, asr_s: 40, seconds: 130, audio_s: 600 }; },
         homeRecording: async (h, it, m, o) => { calls.push(['post', h, o.mode]); return { seconds: 50, post_s: 50 }; } } });
     expect(calls).toEqual([['unipase', 'boss'], ['post', 'boss', 'post']]);

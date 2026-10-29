@@ -33,17 +33,16 @@
   {#if h.total}
     <p class="live"><span class="lamp" aria-hidden="true"></span>Live · importing</p>
     <p class="headline">
-      <span class="num"><Odometer value={h.published} label="talks on the air" /></span> talks on the air
-      <span class="dot" aria-hidden="true">·</span> <span class="num"><Odometer value={Math.max(0, h.total - h.published)} label="remaining" /></span> remaining
-      {#if data?.items_per_hour != null}<span class="dot" aria-hidden="true">·</span> <span title="Remastered talks per hour"><span class="num plus">{Math.round(h.perHour)}</span> remastered talks/hr</span>{/if}
-      {#if data?.restoration_checks_per_hour>0}<span class="dot" aria-hidden="true">·</span><span title="Completed audio restoration assessments over the last 30 minutes, including recordings where the original was retained"><span class="num plus">{Math.round(data.restoration_checks_per_hour)}</span> restoration checks/hr</span>{/if}
+      <span class="num"><Odometer value={h.published} label="talks on the air" /></span> talks on air,
+      <span class="num"><Odometer value={Math.max(0, h.total - h.published)} label="queued" /></span> queued,
+      {#if data?.items_per_hour != null}<span title="Talks remastered (completed) per hour"><span class="num plus">{Math.round(h.perHour)}</span> remastered/hr</span>{/if}
       {#if h.today}<span class="today">added today: {fmt(h.today)}</span>{/if}
     </p>
-    <div class="seg" role="img" aria-label={`${fmt(h.published)} on the air, ${fmt(h.inProgress)} in progress, ${fmt(h.queued)} queued, of ${fmt(h.total)}`}>
+    <div class="seg" role="img" aria-label={`${fmt(h.published)} on the air, ${fmt(h.inProgress)} pending restoration, ${fmt(h.queued)} queued, of ${fmt(h.total)}`}>
       <i class="s-pub" style={`width:${pct(h.published)}%`}></i><i class="s-prog" style={`width:${pct(h.inProgress)}%`}></i>
     </div>
     <p class="legend">
-      <span><b class="k pub"></b>on the air {fmt(h.published)}</span><span><b class="k prog"></b>in progress {fmt(h.inProgress)}</span><span><b class="k q"></b>queued {fmt(h.queued)}</span>
+      <span><b class="k pub"></b>on the air {fmt(h.published)}</span><span><b class="k prog"></b>pending restoration {fmt(h.inProgress)}</span><span><b class="k q"></b>queued {fmt(h.queued)}</span>
       {#if stats.hours || stats.voices}<span class="eta">{[stats.hours ? `${stats.hours} hours` : '', stats.voices ? `${stats.voices} voices` : '', stats.span || ''].filter(Boolean).join(' · ')} to hear</span>{/if}
       {#if eta}<span class="eta">{eta}</span>{/if}
       <button type="button" class="src-btn" aria-expanded={open} onclick={() => (open = !open)}>by source</button>

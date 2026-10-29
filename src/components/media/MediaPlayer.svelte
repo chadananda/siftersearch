@@ -6,7 +6,7 @@
   // position; wheel/touch/scroll keys drop Follow. ?t=a / ?t=a-b / #t=a,b set the start / a played-and-shaded range.
   import { onMount, tick } from 'svelte';
   import { media } from '../../lib/api.js';
-  import { audioReady } from '../../lib/media-ready.js';
+  import { audioReady, audioWarmPath } from '../../lib/media-ready.js';
   import { liveRefresh } from '../../lib/live-data.js';
   import { flattenWords, flattenOriginalStarts, mapTime, wordAt, youtubeAtTime, picture, sameMediaRevision } from '../../lib/media.js';
   import { rangeFrom, formatTime, rangeParam } from '../../../api/lib/media/range.js';
@@ -346,6 +346,12 @@
 
   const cleanups = [];
   onMount(() => {
+    // Opening a talk is the only thing that sends its audio to the edge store (idempotent; the other copy waits for its first use)
+    if (level === 'full' && audioInfo && audio) {
+      const want = audio.canPlayType('audio/ogg; codecs="opus"') && audioInfo.ogg ? audioInfo.ogg : audioInfo.m4a || audioInfo.ogg;
+      const warm = want && audioWarmPath(media.href(want));
+      if (warm) fetch(warm, { method: 'POST' }).catch(() => {});
+    }
     wordEls = Array.from(root.querySelectorAll('[data-k]'));
     let r = rangeFrom({ search: location.search, hash: location.hash });
     // ?p=<paragraph_index> — a search hit on the transcript document: start at that paragraph
@@ -486,6 +492,7 @@
             {:else if !started && startAt > 0}
               <span>Starts at {formatTime(startAt)}</span>
             {/if}
+            {#if item.pending}<span class="font-semibold text-radio-amber" title="Only talks with restored audio go on the air">Pending restoration — the restored audio is not ready yet</span>{/if}
             {#if level === 'clips'}<span title={item.rights?.basis || ''}>Plays in excerpts of up to {Math.round((item.rights?.clip_cap || 180) / 60)} min</span>{/if}
             <span class="hidden sm:inline">Space = play/pause · click any word to play from it · select text to share a passage</span>
           </div>

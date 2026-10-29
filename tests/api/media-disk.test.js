@@ -134,10 +134,11 @@ describe('RAM guard (10-23: boss at 8 % free with six transcriptions; aorus OOM-
   it('a job goes to a host only when MemAvailable covers its budget plus the host reserve', async () => {
     const t = await import('../../api/lib/media/tools.js');
     const noop = async () => ({});
-    t.noteDisk('boss', { free_gb: 1600, mem_avail_gb: 6 });   // reserve 5 GB on boss
-    expect(t.diskOk('boss', { refresh: noop, kind: 'encode' })).toBe(true);        // 0.5 + 5 ≤ 6
-    expect(t.diskOk('boss', { refresh: noop, kind: 'transcribe' })).toBe(false);   // 3 + 5 > 6
-    t.noteDisk('aorus', { free_gb: 3000, mem_avail_gb: 5.5 });   // reserve 2 GB
+    expect(t.memReserveFor(15)).toBe(2); expect(t.memReserveFor(128)).toBeCloseTo(15.36);   // 12 % of the host's own RAM, floor 2 GB
+    t.noteDisk('boss', { free_gb: 1600, mem_avail_gb: 6, mem_total_gb: 31 });   // reserve 3.72 GB, derived from its own total
+    expect(t.diskOk('boss', { refresh: noop, kind: 'encode' })).toBe(true);        // 0.5 + 3.72 ≤ 6
+    expect(t.diskOk('boss', { refresh: noop, kind: 'transcribe' })).toBe(false);   // 3 + 3.72 > 6
+    t.noteDisk('aorus', { free_gb: 3000, mem_avail_gb: 5.5, mem_total_gb: 15 });   // reserve 2 GB
     expect(t.diskOk('aorus', { refresh: noop, kind: 'transcribe' })).toBe(true);
     expect(t.diskOk('aorus', { refresh: noop, kind: 'transcribe', now: Date.now() })).toBe(true);
     const got = await t.acquireAsrHost([{ host: 'boss', slots: 4 }, { host: 'aorus', slots: 2 }], { running: async () => [] });

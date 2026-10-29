@@ -15,8 +15,7 @@
 
 <section class="restored mx-auto max-w-6xl rounded-2xl border border-radio-line bg-radio-paper px-5 py-4" bind:this={root} aria-label="Restoration progress">
   <div class="stats">
-    <div><b>{n(d?.published)}</b><span>published of {n(d?.planned)} planned</span></div>
-    <div><b>{n(d?.restored)}</b><span>restored</span></div>
+    <div><b>{n(d?.published)}</b><span>completed of {n(d?.planned)} planned</span></div>
     <div><b>{n(d?.held)}</b><span>held for review</span></div>
   </div>
   <div class="strip">

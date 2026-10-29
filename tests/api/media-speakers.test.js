@@ -84,7 +84,7 @@ describe('ensurePortrait', () => {
   });
   it('a held portrait is reused; a recent miss is not searched again', async () => {
     const speakers = { ...(await import('../../api/lib/media/speakers.js')), portraitFor: vi.fn() };
-    expect((await ensurePortrait('Hooper Dunbar', {}, { repo: repoOf({ file: '/x.jpg' }), speakers, overrides: {} })).status).toBe('kept');
+    expect((await ensurePortrait('Hooper Dunbar', { queueSketch: false }, { repo: repoOf({ file: '/x.jpg' }), speakers, overrides: {} })).status).toBe('kept');
     expect((await ensurePortrait('Hooper Dunbar', {}, { repo: repoOf({ tried_at: new Date().toISOString() }), speakers, overrides: {} })).status).toBe('none');
     expect(speakers.portraitFor).not.toHaveBeenCalled();
   });

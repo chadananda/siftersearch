@@ -68,9 +68,9 @@ export async function previewVerdict({ fingerprint = null, text = '', windows = 
 /** Queue order: previews first (Dewey waits for them, and a duplicate must never reach a pod), then bulk. Stable. */
 export const previewFirst = (jobs) => [...jobs].sort((a, b) => (b.kind === 'preview') - (a.kind === 'preview'));
 
-/** Where a preview runs: a free local worker (boss below 85 °C, aorus with no ASR waiting and VRAM free), a pod only when neither is free. */
-export function previewHost({ boss = {}, aorus = {}, pod = null } = {}) {
-  if (boss.ok && boss.temp_c < 85) return 'boss';
-  if (aorus.ok && !aorus.asr_waiting && aorus.vram_free_gb >= 1.5) return 'aorus';
-  return pod ? 'pod' : null;
+/** Where a preview runs: the first free worker of `hosts` (ranked, each { name, ok, temp_c?, asr_waiting?, vram_free_gb? }): reachable, below 85 °C,
+ *  no ASR waiting, GPU memory free when it has a GPU; a pod only when none is free. */
+export function previewHost({ hosts = [], pod = null } = {}) {
+  const free = hosts.find((h) => h.ok && !(h.temp_c >= 85) && !h.asr_waiting && !(h.vram_free_gb != null && h.vram_free_gb < 1.5));
+  return free ? free.name : pod ? 'pod' : null;
 }

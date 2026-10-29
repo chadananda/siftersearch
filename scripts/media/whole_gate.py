@@ -1,14 +1,25 @@
 """Restricted home CPU worker protocol; no arbitrary commands or image names."""
 import fcntl,json,os,re,shutil,subprocess,sys
-MEM_NEED_GB=6;MEM_RESERVE_GB=13   # a CPU tail needs 6 GB; 13 GB stay free for the host and Chad's own services
+MEM_NEED_GB=6   # a CPU tail needs 6 GB; the reserve is a share of this machine's own RAM (mem_reserve), not a per-host number
 from pathlib import Path
 ROOT=Path.home()/'sifter-whole-home'
 INPUT=re.compile(r'^(in\.[a-z0-9]{2,5}|out\.flac|asr\.json|asr_orig\.json|work\.json|job\.json)$')
 OUTPUT=re.compile(r'^(post\.json|done\.json|post/(unipase\.flac|[a-zA-Z0-9_.-]+\.(json|ogg|m4a)))$')
 WHOLE_OUT=re.compile(r'^(result\.json|item/[A-Za-z0-9_.\-]+(/[A-Za-z0-9_.\-]+)*)$')   # a whole recording's manifest + files (tower verifies every sha256)
 WHOLE_MEM_GB=10   # container cap (whole = ASR + alignment + UniPASE + encodes in ONE container on the GPU)
-WHOLE_ADMIT_GB=8  # admission need: measured cgroup peak 7.5 GB incl. reclaimable page cache (10-28, memory.peak); cap + oom_score_adj 900 + the 13 GB reserve are the guard rails
+WHOLE_ADMIT_GB=8  # admission need: measured cgroup peak 7.5 GB incl. reclaimable page cache (10-28, memory.peak); the cap + oom_score_adj 900 + the floor are the guard rails
 IMAGE_RE=re.compile(r'^(ghcr\.io/chadananda/sifter-media-worker@sha256:[a-f0-9]{64}|sifter-media-worker:rocm-[a-z0-9-]{1,40})$')
+
+def mem_reserve():
+    """Floor of 2 GB or 12 % of this host's MemTotal (same rule as api/lib/media/tools.js memReserveFor)."""
+    tot=next((int(l.split()[1])/1048576 for l in open('/proc/meminfo') if l.startswith('MemTotal:')),0)
+    return max(2,tot*.12)
+
+def admit(busy,need):
+    """Capacity-driven: another job starts when measured free RAM covers its need and no job is still loading (its memory is not yet visible)."""
+    avail=next((int(l.split()[1])/1048576 for l in open('/proc/meminfo') if l.startswith('MemAvailable:')),0)
+    loading=any('second' in x or x.startswith('Less') for x in docker('ps','--filter','label=io.sifter.cpu-post=1','--format','{{.RunningFor}}').stdout.splitlines())
+    return not loading and avail>=need+mem_reserve()
 
 def job_dir(job):
     if not re.fullmatch(r'recording-[a-z0-9-]{1,100}',job):raise ValueError('Invalid job identity')
@@ -33,7 +44,7 @@ def start_whole(job,d):
         if existing:print(json.dumps(existing));return
         busy=docker('ps','--filter','label=io.sifter.cpu-post=1','--format','{{.Names}}').stdout.splitlines()
         avail=next((int(l.split()[1])/1048576 for l in open('/proc/meminfo') if l.startswith('MemAvailable:')),0)
-        if len(busy)>=1 or avail<WHOLE_ADMIT_GB+MEM_RESERVE_GB:print('{"waiting":true}');return
+        if not admit(busy,WHOLE_ADMIT_GB):print('{"waiting":true}');return
         (ROOT/'leases').mkdir(exist_ok=True);(ROOT/'cache').mkdir(exist_ok=True)
         gids=[str(os.stat(p).st_gid) for p in ('/dev/kfd','/dev/dri/renderD128') if os.path.exists(p)]
         grp=[x for g in dict.fromkeys(gids) for x in ('--group-add',g)]
@@ -72,7 +83,7 @@ def main(args):
             # ONE container at a time, and only with RAM to spare: boss has 31 GB and Chad's own services (llama-coder 22 GB peak, laya) come first
             # (10-28: our jobs overran it, tailscaled was OOM-killed and the box left the network)
             avail=next((int(l.split()[1])/1048576 for l in open('/proc/meminfo') if l.startswith('MemAvailable:')),0)
-            if len(busy)>=1 or avail<MEM_NEED_GB+MEM_RESERVE_GB:print('{"waiting":true}');return
+            if not admit(busy,MEM_NEED_GB):print('{"waiting":true}');return
             (ROOT/'leases').mkdir(exist_ok=True)
             docker('run','-d','--name',job,'--label','io.sifter.cpu-post=1','--network','none','--cpus','4','--memory','6g','--memory-swap','6g','--oom-score-adj','900','--pids-limit','256','-v',str(d)+':/job','-v',str(ROOT/'leases')+':/workspace/.gpu-admission','-e','SIFTER_GPU_LEASES=1','-e','MEDIA_DEVICE=cpu','-e','CUDA_VISIBLE_DEVICES=','--entrypoint','python',image,'/opt/sifter/media/worker/single_restore.py','/job')
         print('{"started":true}');return

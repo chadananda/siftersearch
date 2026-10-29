@@ -162,10 +162,35 @@ export async function tool(sub, input, opts = {}, { python = PY(), threads = def
 
 // ── ASR on boss (measured 10-21: Zen 5 runs Whisper turbo at RTF 0.06 vs 0.36 on tower's Xeons; tower's search stays
 // untouched). Through a forced-command key (scripts/media/boss-asr-gate.sh): audio on stdin, JSON on stdout. ──
-export const asrHost = () => (process.env.MEDIA_ASR_HOST ?? 'boss') || null;
-/** The ASR HOSTS and their slots, fastest first: MEDIA_ASR_HOSTS="aorus:2,boss:4" (default: MEDIA_ASR_HOST with mediaParallel()
- *  slots). Measured 10-22 on a 46-min talk: aorus (RTX 3070, fp16) 26.6 audio-min per wall-min for ONE job; boss 14.4 for
- *  four jobs together. */
+/** The machines that may run media work: config/media-hosts.json (or MEDIA_HOSTS="name[=gate path],…"). Names only — what each one
+ *  can do (cores, RAM, GPU vendor and free memory, heat) is read from the machine itself (the gate's 'df'), and roles follow from that. */
+let registryFile = null;
+export function hostRegistry(env = process.env) {
+  if (env.MEDIA_HOSTS != null) return env.MEDIA_HOSTS.split(',').map((x) => x.trim()).filter(Boolean).map((x) => { const [name, gate] = x.split('='); return { name, gate }; });
+  registryFile ??= (() => { try { return JSON.parse(readFileSync(new URL('../../../config/media-hosts.json', import.meta.url), 'utf8')).hosts || []; } catch { return []; } })();
+  return registryFile;
+}
+/** A host's profile: how to reach it ('ssh-docker' = ssh + docker; 'gate' = the restricted forced-command gate), where its job folders live,
+ *  how it runs docker, its legacy GPU lock. The GPU vendor is NOT here: it is read from the machine (hostVendor). */
+export function hostProfile(name) {
+  const h = hostRegistry().find((x) => x.name === name) || {};
+  return { name, transport: h.transport || 'ssh-docker', root: h.root || '/data/sifter-whole-home', docker: h.docker || 'docker', gpu_lock: h.gpu_lock || null, gate: h.gate };
+}
+export const hostCores = (name) => diskInfo.get(name)?.cpu_cores || null;
+/** 'nvidia' | 'amd' | 'cpu', from the telemetry the machine reports. */
+export const hostVendor = (name) => { const d = diskInfo.get(name); return d?.gpu_free_mb != null ? 'nvidia' : d?.vram_free_mb != null ? 'amd' : 'cpu'; };
+const hasGpu = (d) => d && (d.gpu_free_mb != null || d.vram_free_mb != null);
+const gpuRoom = (d) => d?.gpu_free_mb ?? d?.vram_free_mb ?? 0;
+/** Registered hosts, most capable first: GPU hosts by free GPU memory, then by cores. */
+export function rankedRegistry() {
+  return hostRegistry().map((h) => h.name).sort((a, b) => { const x = diskInfo.get(a), y = diskInfo.get(b); return (hasGpu(y) - hasGpu(x)) || (gpuRoom(y) - gpuRoom(x)) || ((y?.cpu_cores || 0) - (x?.cpu_cores || 0)); });
+}
+/** The host for CPU-side work (render, encode, long probes): the registered host with the most cores (MEDIA_ASR_HOST overrides; '' → none). */
+export const asrHost = () => {
+  if (process.env.MEDIA_ASR_HOST != null) return process.env.MEDIA_ASR_HOST || null;
+  const names = hostRegistry().map((h) => h.name);
+  return names.sort((a, b) => ((diskInfo.get(b)?.cpu_cores || 0) - (diskInfo.get(a)?.cpu_cores || 0)))[0] || null;
+};
 // ── REMOTE DISK (10-23 16:09: aorus's disk filled with job folders — 28 failures "No space left on device", the GPU idle):
 // a host with < MEDIA_HOST_MIN_FREE_GB (20) free takes no NEW job; its free space (gate 'df') is re-read at most every
 // minute, in the background — a picker never waits on it. Unknown → OK (an unreachable host fails on its own).
@@ -178,11 +203,11 @@ const diskMinGb = () => Number(process.env.MEDIA_HOST_MIN_FREE_GB) || 20;
 export const PSI_ADMIT_MAX = Number(process.env.MEDIA_PSI_ADMIT_MAX ?? 3);   // % of the last 10 s some task stalled on memory: above this no NEW job is admitted
 // measured 10-28 on boss: a UniPASE job = ~2.2 GB RSS (system RAM), 5-6 GB VRAM, 8 MB GTT
 export const MEM_BUDGET = { unipase: 3, post: 6, whole: 8, transcribe: 3, diarize: 2, dfn: 2, grade: 2, probe: 1.5, encode: 0.5 };
-/** RAM kept free on each host whatever runs (GB). */
-// boss: 31 GB of system RAM (96 GB of its 128 GB is the GPU carve-out) shared with Chad's llama-coder (22 GB peak) and laya: 13 GB stay free, and
-// every job we start there is also capped by its own cgroup (scripts/media/capped.sh) and made the OOM killer's first victim (10-28: tailscaled was OOM-killed)
-const MEM_RESERVE = { boss: 13, aorus: 2 };
-const memReserve = (host) => Number(process.env[`MEDIA_MEM_RESERVE_${String(host).toUpperCase()}`]) || MEM_RESERVE[host] || 2;
+/** RAM kept free on a host whatever runs (GB): a share of ITS OWN measured total (no per-machine table), so a 15 GB box keeps ~2 GB and a
+ *  128 GB box ~15 GB. Other tenants (a coding model, services) are already out of MemAvailable and memory pressure (PSI) is checked
+ *  separately; every remote job is also capped by its own cgroup (scripts/media/capped.sh). MEDIA_MEM_RESERVE_FRAC / _MIN_GB tune ALL hosts. */
+export const memReserveFor = (totalGb) => Math.max(Number(process.env.MEDIA_MEM_RESERVE_MIN_GB) || 2, (Number(totalGb) || 0) * (Number(process.env.MEDIA_MEM_RESERVE_FRAC) || 0.12));
+const memReserve = (host) => memReserveFor(diskInfo.get(host)?.mem_total_gb);
 /** GPU memory each kind needs on the GPU host (MiB; measured resident + load peak). */
 export const VRAM_NEED_MB = { whole: 8000, unipase: 6000, transcribe: 3500, probe: 2000, dfn: 1500, grade: 1200, diarize: 1536 };
 const gpuReserved = new Map();   // host → [{ mb, at }] dispatched, maybe not resident yet
@@ -190,7 +215,7 @@ const gpuReserved = new Map();   // host → [{ mb, at }] dispatched, maybe not 
 // A reservation ends when its job ENDS (release → the reading is re-taken at once) or when a reading taken ≥ 30 s after the
 // dispatch shows it resident (20:50: a 3.5 GB hold outlived its short job by a minute and aorus sat idle between talks).
 export function reserveGpu(host, kind, now = Date.now()) {
-  if (host !== gpuHost() || !VRAM_NEED_MB[kind]) return () => {};
+  if (!VRAM_NEED_MB[kind]) return () => {};   // diskOk reads telemetry, not host names
   const r = { mb: VRAM_NEED_MB[kind], at: now };
   gpuReserved.set(host, [...(gpuReserved.get(host) || []).filter((x) => now - x.at < 90_000), r]);
   return () => { gpuReserved.set(host, (gpuReserved.get(host) || []).filter((x) => x !== r)); staleDisk(host); };
@@ -209,14 +234,14 @@ export function diskOk(host, { now = Date.now(), refresh = refreshDisk, kind = n
   if (d.free_gb != null && d.free_gb < diskMinGb()) why.push(`${d.free_gb} GB disk free (< ${diskMinGb()} GB)`);
   // VRAM on the GPU host (10-23 20:12: a DFN job OOM'd beside two transcriptions): free − what this process dispatched
   // there in the last 90 s (not resident yet) must cover the kind's need
-  const vneed = host === gpuHost() ? VRAM_NEED_MB[kind] : null;
+  const vneed = d.gpu_free_mb != null ? VRAM_NEED_MB[kind] : null;   // NVIDIA: nvidia-smi free memory
   if (vneed && d.gpu_free_mb != null) {
     const pending = pendingVram(host, d, now);
     if (d.gpu_free_mb - pending < vneed + 300) why.push(`${d.gpu_free_mb - pending} MiB GPU memory free (< ${vneed + 300} for a ${kind})`);
   }
   // a unified-memory host (boss: 31 GB system RAM + a 96 GB GPU carve-out): the GPU pool is admitted by VRAM FREE, system RAM by MemAvailable AND by pressure
   // (PSI some avg10 — the best early-OOM signal; Chad 10-28). `free` alone would call a box with 63 GB of VRAM in use "idle".
-  if (kind && d.vram_free_mb != null && host !== gpuHost() && VRAM_NEED_MB[kind]) {
+  if (kind && d.vram_free_mb != null && d.gpu_free_mb == null && VRAM_NEED_MB[kind]) {   // AMD: amdgpu sysfs (unified memory shares system RAM)
     const pendingV = pendingVram(host, d, now);
     if (d.vram_free_mb - pendingV < VRAM_NEED_MB[kind] + 1500) why.push(`${d.vram_free_mb - pendingV} MiB VRAM free of ${Math.round((d.vram_total_gb || 0) * 1024)} (< ${VRAM_NEED_MB[kind] + 1500} for a ${kind})`);
   }
@@ -230,32 +255,36 @@ async function refreshDisk(host, { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'df')], { timeoutMs: 30_000 });
   const j = JSON.parse(stdout.trim().split('\n').pop());
   setImmediate(() => { for (const w of asrWaiters.splice(0)) w(); });   // a fresh reading may admit a waiting transcription
-  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, gpu_temp: j.gpu_temp ?? null, cpu_tctl: j.cpu_tctl ?? null, gpu_free_mb: j.gpu_free_mb ?? null, mem_total_gb: j.mem_total_gb ?? null, psi_some10: j.psi_some10 ?? null, psi_full10: j.psi_full10 ?? null, vram_total_gb: j.vram_total_gb ?? null, vram_used_gb: j.vram_used_gb ?? null, vram_free_mb: j.vram_free_mb ?? null, gtt_total_gb: j.gtt_total_gb ?? null, gtt_used_gb: j.gtt_used_gb ?? null, gpu_busy: j.gpu_busy ?? null, pending: false });
+  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, gpu_temp: j.gpu_temp ?? null, cpu_tctl: j.cpu_tctl ?? null, gpu_free_mb: j.gpu_free_mb ?? null, mem_total_gb: j.mem_total_gb ?? null, psi_some10: j.psi_some10 ?? null, psi_full10: j.psi_full10 ?? null, vram_total_gb: j.vram_total_gb ?? null, vram_used_gb: j.vram_used_gb ?? null, vram_free_mb: j.vram_free_mb ?? null, gtt_total_gb: j.gtt_total_gb ?? null, gtt_used_gb: j.gtt_used_gb ?? null, gpu_busy: j.gpu_busy ?? null, cpu_cores: j.cpu_cores ?? null, pending: false });
   return j;
 }
-/** HEAT (10-23 monitor: aorus GPU 88 °C thermally throttling at 209 W, CPU Tctl 95 °C; boss Tctl 99.9 °C): the slots a host
- *  may fill now. GPU ≥ 83 °C → 1 transcription on the GPU host (2 again under 83); CPU Tctl ≥ 95 °C → no new job; ≥ 90 °C →
- *  half the slots (at least 1). Read from the gate's 'df' (≤ every 30 s). */
-export const BOSS_HEAT = { slots: 96, pause: 99, resume: 93 };
+/** HEAT: one policy for every machine, applied to whichever sensors it reports. GPU ≥ 83 °C → 1 job; CPU (measured 10-28: a 70 s full
+ *  load holds Tctl at 90-92 °C with no throttling) halves the slots at 96 °C, pauses new jobs at 99 °C, resumes below 93 °C (hysteresis). */
+export const HEAT = { gpu: 83, slots: 96, pause: 99, resume: 93 };
+/** How many jobs of one kind this host can take AT THIS MOMENT. `configured` is only the floor used while the host reports nothing; with a
+ *  fresh reading the ceiling is its own core count (CORES_PER_JOB each) and the real limit is live admission (diskOk: free RAM, VRAM,
+ *  memory pressure, disk) plus heat. A GPU already saturated (busy ≥ 95 %) takes no more than it is running. */
+export const CORES_PER_JOB = 2;
+export function slotCeiling(host, configured, busyNow = 0, { now = Date.now() } = {}) {
+  const d = diskInfo.get(host);
+  if (!d?.cpu_cores || now - (d.at || 0) > 5 * 60_000) return configured;
+  if (d.gpu_busy != null && d.gpu_busy >= 95 && busyNow >= 1) return Math.max(1, busyNow);
+  return Math.max(configured, Math.floor(d.cpu_cores / CORES_PER_JOB));
+}
 export function thermalSlots(host, base, { now = Date.now() } = {}) {
   const d = diskInfo.get(host);
   if (!d || now - (d.at || 0) > 5 * 60_000) return base;   // no fresh reading: as configured
   let n = base;
-  if (d.gpu_temp != null && host === gpuHost() && d.gpu_temp >= 83) n = Math.min(n, 1);
-  if (host !== gpuHost()) {
-    // BOSS (Chad 10-28, measured: a 70 s full load on 32 threads holds Tctl at 90-92 °C, the clock stays at 4.25 GHz with NO throttling, and it
-    // falls to 55 °C seconds after): halve the slots only at 96 °C, pause new jobs at 99 °C, resume below 93 °C (hysteresis).
-    const t = d.cpu_tctl;
-    if (t != null) { if (t >= BOSS_HEAT.pause) d.heatPaused = true; else if (t < BOSS_HEAT.resume) d.heatPaused = false; }
-    if (d.heatPaused) n = 0;
-    else if (t != null && t >= BOSS_HEAT.slots) n = Math.min(n, Math.max(1, Math.floor(base / 2)));
-  } else if (d.cpu_tctl != null && d.cpu_tctl >= 95) n = 0;
-  else if (d.cpu_tctl != null && d.cpu_tctl >= 90) n = Math.min(n, Math.max(1, Math.floor(base / 2)));
+  if (d.gpu_temp != null && d.gpu_temp >= HEAT.gpu) n = Math.min(n, 1);
+  const t = d.cpu_tctl;
+  if (t != null) { if (t >= HEAT.pause) d.heatPaused = true; else if (t < HEAT.resume) d.heatPaused = false; }
+  if (d.heatPaused) n = 0;
+  else if (t != null && t >= HEAT.slots) n = Math.min(n, Math.max(1, Math.floor(base / 2)));
   if (n < base && (!d.heatWarnedAt || now - d.heatWarnedAt > 10 * 60_000)) { d.heatWarnedAt = now; console.warn(`[media] WARN ${host} hot (GPU ${d.gpu_temp} °C, CPU ${d.cpu_tctl} °C): ${n} of ${base} slots`); }
   return n;
 }
-/** May the GPU host take CPU-side work (probes) now? Not when warm (GPU ≥ 80 °C or CPU ≥ 85 °C). */
-export const coolEnough = (host) => { const d = diskInfo.get(host); if (!d) return true; if (host !== gpuHost()) return !d.heatPaused && (d.cpu_tctl ?? 0) < BOSS_HEAT.slots; return (d.gpu_temp ?? 0) < 80 && (d.cpu_tctl ?? 0) < 85; };   // boss: see BOSS_HEAT
+/** May a host take CPU-side work (probes) now? Not when warm (GPU ≥ 80 °C or CPU ≥ 96 °C). */
+export const coolEnough = (host) => { const d = diskInfo.get(host); if (!d) return true; return !d.heatPaused && (d.gpu_temp ?? 0) < 80 && (d.cpu_tctl ?? 0) < HEAT.slots; };
 /** A GRADE's RAM: it decodes the whole recording at its native rate (several float32 copies) besides DNSMOS/NISQA —
  *  10-23 19:15 the OOM killer took one on aorus at 7.7 GB. → GB */
 export const gradeNeedGb = (durationS = 3600, sampleRate = 48000) => Math.round((1.5 + (durationS || 3600) * (sampleRate || 48000) * 4 * 4 / 1e9) * 10) / 10;
@@ -275,11 +304,9 @@ export async function cleanRemote(host, job, { exec = run } = {}) {
 }
 
 export function asrHosts() {
-  const spec = process.env.MEDIA_ASR_HOSTS ?? 'aorus:2,boss:4';   // '' → MEDIA_ASR_HOST alone
-  if (!spec) return asrHost() ? [{ host: asrHost(), slots: mediaParallel() }] : [];
-  let hosts=spec.split(',').map((x) => x.trim()).filter(Boolean).map((x) => { const [host, n] = x.split(':'); return { host, slots: Math.max(1, Number(n) || 1) }; });
-  try{const role=JSON.parse(readFileSync(join(ROOT,'data/run/media-worker-accepted.json'),'utf8'));if(role.reserve_aorus_for_whole)hosts=hosts.filter(h=>h.host!=='aorus');}catch{}
-  return hosts;
+  // slots here are only the FLOOR used before a host has reported; slotCeiling() grows them from the host's live capacity
+  if (process.env.MEDIA_ASR_HOSTS) return process.env.MEDIA_ASR_HOSTS.split(',').map((x) => x.trim()).filter(Boolean).map((x) => { const [host, n] = x.split(':'); return { host, slots: Math.max(1, Number(n) || 1) }; });
+  return rankedRegistry().map((host) => ({ host, slots: 1 }));
 }
 const asrBusy = new Map();   // host → jobs this process has in hand there
 /** The host for a NEW transcription: the first (fastest) with a free slot, else the least loaded. Re-attached jobs keep
@@ -304,12 +331,12 @@ export async function withProbeHost(fn, { long = false, hosts = [...(long ? [[as
   // long: a recording over 90 min is probed on boss only (128 GB) — decoding it whole beside two transcriptions ran aorus's
   // 15 GB out (10-23: Taherzadeh's 2½-hour talks failed enhance three times)
   const uniq0 = hosts.filter(([h], i) => hosts.findIndex(([x]) => x === h) === i);
-  const okHost = ([h]) => diskOk(h, { kind: 'probe' }) && (h !== gpuHost() || coolEnough(h));   // no probes on a warm aorus (10-23 heat)
-  const uniq = uniq0.filter(okHost).length ? uniq0.filter(okHost) : uniq0.filter(([h]) => h !== gpuHost() || coolEnough(h));
+  const okHost = ([h]) => diskOk(h, { kind: 'probe' }) && coolEnough(h);   // no probes on a warm aorus (10-23 heat)
+  const uniq = uniq0.filter(okHost).length ? uniq0.filter(okHost) : uniq0.filter(([h]) => coolEnough(h));
   if (!uniq.length) return fn(null);
   let host = null;
   for (;;) {
-    host = uniq.find(([h, n]) => (probeBusy.get(h) || 0) < n)?.[0] || null;
+    host = uniq.find(([h, n]) => (probeBusy.get(h) || 0) < slotCeiling(h, n, probeBusy.get(h) || 0))?.[0] || null;
     if (host) break;
     await slotWait(probeWaiters, 'a probe host');
   }
@@ -324,9 +351,8 @@ export const asrLoad = () => Object.fromEntries(asrHosts().map((h) => [h.host, {
 
 /** A host whose sshd is bypassed by Tailscale SSH (aorus: tower's key lands in a shell, not the forced command) runs the gate
  *  explicitly: MEDIA_GATE_<HOST>=<path to asr-gate.sh>. The gate still checks every verb and argument (its charset has no quote). */
-const GATES = { aorus: '~/media-gpu/asr-gate.sh' };   // (10-22) aorus: Tailscale SSH → a shell, so the gate by path
 export function gateWrap(host, cmd) {
-  const gate = process.env[`MEDIA_GATE_${String(host || '').toUpperCase().replace(/[^A-Z0-9]/g, '_')}`] ?? GATES[host] ?? (isPod(host) ? GATE_PATH : undefined);   // a pod's ssh lands in a shell: the gate by path
+  const gate = process.env[`MEDIA_GATE_${String(host || '').toUpperCase().replace(/[^A-Z0-9]/g, '_')}`] ?? hostRegistry().find((h) => h.name === host)?.gate ?? (isPod(host) ? GATE_PATH : undefined);   // a pod's ssh lands in a shell: the gate by path
   return gate ? `SSH_ORIGINAL_COMMAND='${String(cmd).replace(/'/g, '')}' ${gate}` : cmd;
 }
 export const asrThreads = () => Number(process.env.MEDIA_ASR_THREADS) || Math.max(4, Math.floor(BOSS_THREADS / mediaParallel()) - 2);
@@ -408,7 +434,7 @@ export async function acquireAsrHost(hosts = asrHosts(), { running = runningOn, 
     if (stop?.()) throw new DrainAbort('transcription waiting for a host slot');   // a drain never waits on a slot
     let h = null;
     for (const x of hosts) {
-      const slots = thermalSlots(x.host, x.slots);   // fewer when the host runs hot
+      const slots = thermalSlots(x.host, slotCeiling(x.host, x.slots, asrBusy.get(x.host) || 0));   // as many as it can take now; fewer when hot
       if ((asrBusy.get(x.host) || 0) >= slots || !diskOk(x.host, { kind: 'transcribe' })) continue;
       const remote = await remoteAsrCount(x.host, { running });
       if (remote != null && Math.max(remote, asrBusy.get(x.host) || 0) >= slots) continue;
@@ -424,7 +450,6 @@ const diarWait = new Map();
 // per host: aorus 2 (≈1.5 GB RAM each on a 15 GB box beside two transcriptions; 10-23 watch: 6 at once, load 55, 3 GB free)
 // aorus diarizes on its GPU (venv-diar: sherpa-onnx built for CUDA; 600 s of audio in ~100 s at ONE CPU thread, vs boss's
 // CPU 112 s at 4 threads under load) — 2 at a time, ≥ 1.5 GB free or its CPU; boss is the overflow at 3 (10-23)
-const DIAR_SLOTS = { aorus: 1, boss: 3 };   // aorus 1 (10-23 heat: GPU 88 °C throttling)
 // a slot is a JOB ID held on its host; a new diarization starts only while BOTH this process's ids and the ids the host
 // reports running (gate verb 'running diarize') stay under the cap. 10-23 14:30: after a restart four re-attached jobs sat
 // on aorus (cap 2); each one that finished woke a waiter that never re-checked the cap, so aorus ran 3 all afternoon.
@@ -439,8 +464,9 @@ const waitDiar = (h, ms) => new Promise((r) => {
   q.push(go); if (ms) t = setTimeout(go, ms);
 });
 let diarSeq = 0;
-export async function diarSlot(host, fn, slots = DIAR_SLOTS[host] || 3, { job = `local-${++diarSeq}`, running = null, recheckMs = 30_000, stop = null } = {}) {
+export async function diarSlot(host, fn, slots0 = 1, { job = `local-${++diarSeq}`, running = null, recheckMs = 30_000, stop = null } = {}) {
   for (;;) {
+    const slots = slotCeiling(host, slots0, idsOn(host).size);
     // a drain must never wait on a slot (10-23 18:00: one diarization waiting here held the media drain 12+ min)
     while (idsOn(host).size >= slots) { if (stop?.()) throw new DrainAbort(`diarize waiting for a slot on ${host}`); await waitDiar(host, Math.min(5_000, recheckMs)); }   // a WHILE: whoever woke us, the cap is checked again
     if (stop?.()) throw new DrainAbort(`diarize waiting for a slot on ${host}`);
@@ -471,7 +497,7 @@ export function pickDiarHost(busy = diarBusy) {
   const all = [gpuHost(), asrHost()].filter(Boolean).filter((h, i, a) => a.indexOf(h) === i);   // the GPU host first
   const order = all.filter((h) => diskOk(h, { kind: 'diarize' }));   // never onto a full disk or a host short of RAM
   if (!order.length) return all[0] || null;   // every host short: the first (its slot wait paces it)
-  return order.find((h) => (busy.get(h) || 0) < (DIAR_SLOTS[h] || 3)) || order[0] || null;
+  return order.find((h) => (busy.get(h) || 0) < slotCeiling(h, 1, busy.get(h) || 0)) || order[0] || null;
 }
 /** Where diarizations run: aorus's CPU (24 threads, idle beside its GPU transcriptions) unless set (MEDIA_DIAR_HOST). */
 export const diarHost = () => process.env.MEDIA_DIAR_HOST ?? asrHost();
@@ -671,9 +697,9 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
       // ran on aorus, whose cap is 1) — pickDiarHost sees it
       // NOT started yet and its host is full while another has a free slot → move there before it starts (10-23 19:41: five
       // diarizations kept aorus — host chosen before a restart — and queued for its single slot while boss had room)
-      if (live !== 'running' && live !== 'done' && idsOn(host).size >= (DIAR_SLOTS[host] || 3)) {
+      if (live !== 'running' && live !== 'done' && idsOn(host).size >= (1)) {
         const alt = pickDiarHost();
-        if (alt && alt !== host && idsOn(alt).size < (DIAR_SLOTS[alt] || 3)) { host = alt; await deps.onHost?.(alt); }
+        if (alt && alt !== host && idsOn(alt).size < 1) { host = alt; await deps.onHost?.(alt); }
       }
       const go = () => (deps.asrJob || asrJob)(input, { verb: 'diarize', output }, { host, job, threads, stop, count: false });
       const r = live === 'running' || live === 'done' ? await countDiar(host, go, job) : await diarSlot(host, go, undefined, { job, stop, running: deps.running || (deps.asrJob ? null : () => runningOn(host)) });
@@ -704,7 +730,12 @@ export async function diarize(input, output, { host = asrHost(), job = null, dep
 
 // ── the GPU compute host (aorus: RTX 3070, CUDA): grade (DNSMOS/NISQA) and DeepFilterNet as DETACHED jobs through the same
 // gate as boss (start … --verb grade|dfn, re-attached by job id after a restart; the original audio staged over the tailnet)
-export const gpuHost = () => (process.env.MEDIA_GPU_HOST ?? 'aorus') || null;   // MEDIA_GPU_HOST='' → the tower does grade + dfn
+/** The GPU host: the registered machine reporting the most free GPU memory (NVIDIA or AMD alike); MEDIA_GPU_HOST overrides ('' → none). */
+export const gpuHost = () => {
+  if (process.env.MEDIA_GPU_HOST != null) return process.env.MEDIA_GPU_HOST || null;
+  const r = rankedRegistry();
+  return r.find((h) => hasGpu(diskInfo.get(h))) ?? r[0] ?? null;
+};
 const installedGpu = new Set();   // hosts this process has sent media_tool.py to
 /** A detached job on a compute host: the input file is sent as-is; → the JSON result, or (file) writes opts.output. */
 export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, stop = null, pollMs = 5000, file = false, exec = run, probeOnly = false } = {}) {

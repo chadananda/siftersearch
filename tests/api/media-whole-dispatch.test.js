@@ -4,23 +4,31 @@ import { describe, it, expect } from 'vitest';
 import { homeEligibleItem } from '../../api/lib/ops/media-jobs.js';
 import { readFileSync } from 'fs';
 
+const wholeOnly = { queue: [1] };
 const st = (extra = {}) => ({ items: { 1: { kind: 'whole' }, 2: { mode: 'restore' } }, home: {}, queue: [1, 2], ...extra });
-const accepted = { reserve_aorus_for_whole: true, boss_whole: true };
+const accepted = { boss_whole: true };
 
 describe('whole dispatch', () => {
   it('boss takes a whole order once its GPU path is accepted; before that it does not', () => {
-    expect(homeEligibleItem('boss', 1, st(), accepted)).toBe(true);
-    expect(homeEligibleItem('boss', 1, st(), { ...accepted, boss_whole: false })).toBe(false);
+    expect(homeEligibleItem('boss', 1, st(wholeOnly), accepted)).toBe(true);
+    expect(homeEligibleItem('boss', 1, st(wholeOnly), { ...accepted, boss_whole: false })).toBe(false);
   });
-  it('aorus takes whole orders too (no vendor preference), but not restores while reserved for whole', () => {
-    expect(homeEligibleItem('aorus-1', 1, st(), accepted)).toBe(true);
-    expect(homeEligibleItem('aorus-1', 2, st(), accepted)).toBe(false);
+  it('aorus takes whole orders and restores alike — no host is reserved for new talks', () => {
+    expect(homeEligibleItem('aorus-1', 1, st(wholeOnly), accepted)).toBe(true);
+    expect(homeEligibleItem('aorus-1', 2, st(), accepted)).toBe(true);
   });
   it('an order another host holds is never eligible: the same audio is not sent to two hosts', () => {
     const s = st({ home: { 'aorus-1': { itemId: 1 } } });
     expect(homeEligibleItem('boss', 1, s, accepted)).toBe(false);
     expect(homeEligibleItem('aorus-2', 1, s, accepted)).toBe(false);
     expect(homeEligibleItem('boss', 2, s, accepted)).toBe(true);   // other orders are unaffected
+  });
+  it('published talks first: a whole order waits while a remaster the host can take is queued, then runs', () => {
+    expect(homeEligibleItem('aorus-1', 1, st(), accepted)).toBe(false);          // restore 2 is waiting
+    expect(homeEligibleItem('aorus-1', 2, st(), accepted)).toBe(true);
+    expect(homeEligibleItem('aorus-1', 1, st({ queue: [1] }), accepted)).toBe(true);   // none waiting: new talks run
+    const s = st({ items: { 1: { kind: 'whole' }, 2: { mode: 'restore' } }, home: { aorus: { itemId: 2 } } });
+    expect(homeEligibleItem('aorus-1', 1, s, accepted)).toBe(true);              // the only restore is already held by another host
   });
   it('hold_whole still keeps whole orders back everywhere', () => {
     expect(homeEligibleItem('boss', 1, st(), { ...accepted, hold_whole: true })).toBe(false);
