@@ -405,12 +405,12 @@ describe('the pod does the heavy half of a remaster; tower validates and places'
     writeFileSync(join(pod, 'realign.json'), JSON.stringify({ times: { 1: [[1.03, 1.52], [1.53, 1.72], null] } }));
     const web = { ogg: 'x.ogg', m4a: 'x.m4a', orig_ogg: 'x.original.ogg', orig_m4a: 'x.original.m4a' };
     for (const f of Object.values(web)) writeFileSync(join(pod, 'web', f), f);
-    writeFileSync(join(pod, 'post.json'), JSON.stringify({ ok: true, work_sha: sha, guard: { sentences: 20, swapped: 1, swapped_pct: 5, fallback_sent_pct: 5, lag_ms: 20 }, realign: { placed: 2, total: 2 }, web }));
+    writeFileSync(join(pod, 'post.json'), JSON.stringify({ ok: true, work_sha: sha, guard: { sentences: 20, swapped: 0, swapped_pct: 0, fallback_sent_pct: 0, lag_ms: 20 }, realign: { placed: 2, total: 2 }, web }));
     const meta = { slug: 'x', original: 'original/a.mp3', duration_s: 3, quality: { overall: 'D' }, moments: [{ para: 1, i0: 0, i1: 3, t0_ms: 1000, t1_ms: 2000 }],
       enhancement: { listening: 'safe', variants: [{ name: 'original', file: 'original/a.mp3' }, { name: 'safe', file: 'original/a.mp3', af: 'loudnorm' }] },
       stages: Object.fromEntries(['archive', 'grade', 'enhance', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog', 'headings', 'quotes', 'links', 'assess', 'update'].map((k) => [k, { at: 'x' }])) };
     writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta));
-    const tools = { remasterGuard: vi.fn(async () => ({ sentences: 20, swapped: 1, swapped_pct: 5, fallback_sent_pct: 5, lag_ms: 25 })),
+    const tools = { remasterGuard: vi.fn(async () => ({ sentences: 20, swapped: 0, swapped_pct: 0, fallback_sent_pct: 0, lag_ms: 25 })),
       tool: vi.fn(async (sub, input, opts) => { writeFileSync(opts.output, JSON.stringify({ times: { 1: [[1.03, 1.52], [1.53, 1.72], null] } })); return { placed: 2, total: 2 }; }),
       ffmpeg: vi.fn(async (args) => writeFileSync(args.at(-1), 'enc')), ffprobe: vi.fn(async () => ({ duration_s: 3 })), pcmStream: vi.fn(async () => {}) };
     const deps = { tools, llm: {}, repo: { updateMediaItem: async () => ({}), getMediaItem: async () => ({ state: 'done' }) }, draining: async () => false, loadVocab: async () => ({}), now: () => 't' };

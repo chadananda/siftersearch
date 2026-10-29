@@ -133,9 +133,9 @@ let speakerPeople = null;
 export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'web', 'transcribe', 'preview', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 /** COMPLETE (Chad 10-29) = every stage done (remaster, transcribe, diarize, correct, headings, quotes, links, moments/assess, ingest, catalog) AND a remaster
- *  that passed assessment (usable/cleaned/partial) WITH MEASURED PROOF it differs from the original (the verify stage, or a passed paired-quality assessment). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
+ *  that passed assessment (usable/cleaned — never a splice of original + remaster, Chad 10-29) WITH MEASURED PROOF it differs from the original (the verify stage, or a passed paired-quality assessment). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
 export const COMPLETE_STAGES = ['remaster', 'verify', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
-export const isComplete = (meta = {}) => isRestored(meta) && ['usable', 'cleaned', 'partial'].includes(qualityOf(meta).verdict) && COMPLETE_STAGES.every((s) => meta.stages?.[s]?.at);
+export const isComplete = (meta = {}) => isRestored(meta) && ['usable', 'cleaned'].includes(qualityOf(meta).verdict) && COMPLETE_STAGES.every((s) => meta.stages?.[s]?.at);
 /** The indexed columns for one talk (migration 187): what is missing, the next stage, the remaster verdict, NISQA in/out, bandwidth in/out, and the complete flag. */
 export function indexFields(meta = {}) {
   const missing = COMPLETE_STAGES.filter((s) => !meta.stages?.[s]?.at), q = qualityOf(meta);
@@ -425,7 +425,9 @@ export async function runItem(item, opts = {}, deps = {}) {
           // publish unless > 15 % of sentences fell back (the coordinator's review bar, 10-23); > 40 % is listed as 'high fallback'
           // for Chad to hear; the transparent copy stays. Chant / prayer the ASR cannot read is 'unguardable' and kept.
           const maxPct = Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15;
-          const pass = !pod?.held && pod?.qa?.output_assessment?.passed !== false && (g.fallback_sent_pct ?? g.swapped_pct) <= maxPct;
+          // NEVER A SPLICE (Chad 10-29: "We cannot mix remastered and non-remastered audio together"): a copy with any sentence from the original is not published
+          const spliced = (g.swapped || 0) > 0 || (g.fallback_sent_pct || 0) > 0;
+          const pass = !spliced && !pod?.held && pod?.qa?.output_assessment?.passed !== false && (g.fallback_sent_pct ?? g.swapped_pct) <= maxPct;
           const vs = meta.enhancement.variants.filter((v) => v.name !== 'unipase');
           vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: pod?.method === 'cleaned' ? 'deterministic cleanup (MossFormer2-SE 60 %, mud cut, dereverb, de-ess) + word guard at −18 LUFS' : 'UniPASE (long-form, 48 kHz) + word guard (original for lost sentences) at −18 LUFS', guard: g });
           meta.enhancement.variants = vs;
@@ -442,7 +444,7 @@ export async function runItem(item, opts = {}, deps = {}) {
             delete meta.remaster_tier;
           }
           if ((meta.enhancement.listening || 'safe') !== listeningBefore) markAudioPending(meta);
-          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
+          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: spliced ? `the copy mixes original and remastered audio (${g.swapped} sentences from the original): never published — re-render the pure copy` : pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), at: d.now() };
           delete meta.stages.verify;   // a new remaster result must be measured again
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;

@@ -6,15 +6,18 @@ import { qualityOf, summarize, deferredMarkdown } from '../../api/lib/media/rema
 
 const m = (remaster, o = {}) => ({ quality: { overall: 'E', raw: { bandwidth_khz: 5, snr_db: 12 } }, enhancement: { listening: remaster?.status === 'done' ? 'unipase' : 'safe', variants: [] }, remaster: remaster?.status === 'done' && !remaster.check && !remaster.output_assessment ? { ...remaster, check: { verdict: 'changed' } } : remaster, ...o });
 describe('verdicts', () => {
-  it('usable / partial / review / unrepairable / skipped / unknown', () => {
-    expect(qualityOf(m({ status: 'done', verdict: 'pass-auto', fallback_sent_pct: 2, swapped: 2, sentences: 100 })).verdict).toBe('usable');
+  it('usable / spliced / review / unrepairable / skipped / unknown', () => {
+    expect(qualityOf(m({ status: 'done', verdict: 'pass-auto', fallback_sent_pct: 0, swapped: 0, sentences: 100 })).verdict).toBe('usable');
+    // NEVER A SPLICE (Chad 10-29): one sentence from the original is enough to keep a copy off the air
+    expect(qualityOf(m({ status: 'done', verdict: 'pass-auto', fallback_sent_pct: 2, swapped: 2, sentences: 100 })).verdict).toBe('spliced');
     const p = qualityOf(m({ status: 'done', verdict: 'pass-auto', fallback_sent_pct: 11 }));
-    expect(p.verdict).toBe('partial'); expect(p.reason).toMatch(/11 %/);
+    expect(p.verdict).toBe('spliced'); expect(p.reason).toMatch(/11 %/);
     expect(qualityOf(m({ status: 'review', fallback_sent_pct: 21 })).verdict).toBe('review');
     const lo = m({ status: 'review', fallback_sent_pct: 21.9 }); lo.quality.raw.bandwidth_khz = 1.95;
     expect(qualityOf(lo).verdict).toBe('unrepairable');
     expect(qualityOf(m({ status: 'kept', verdict: 'keep-human', fallback_sent_pct: 16.1 })).verdict).toBe('unrepairable');
-    expect(qualityOf(m({ status: 'done', verdict: 'pass-cleaned', method: 'cleaned', fallback_sent_pct: 1 })).verdict).toBe('cleaned');
+    expect(qualityOf(m({ status: 'done', verdict: 'pass-cleaned', method: 'cleaned', fallback_sent_pct: 0 })).verdict).toBe('cleaned');
+    expect(qualityOf(m({ status: 'done', verdict: 'pass-cleaned', method: 'cleaned', fallback_sent_pct: 1 })).verdict).toBe('spliced');
     expect(qualityOf(m({ status: 'skipped', why: 'grade A' })).verdict).toBe('skipped');
     expect(qualityOf(m(null)).verdict).toBe('unknown');
     expect(qualityOf(m({ status: 'done', fallback_sent_pct: 1 }, { enhancement: { listening: 'safe', variants: [] } })).verdict).toBe('unknown');
@@ -26,13 +29,13 @@ describe('verdicts', () => {
     expect(deferredMarkdown(s)).toMatch(/\| a \| E \| 1 \| 1.95 \| 21 \|/);
   });
   it('counts publishable talks shown better (assessed) vs only shown different', () => {
-    const s = summarize([{ slug: 'p', qa: { verdict: 'usable', output_assessment: { passed: true } } }, { slug: 'n', qa: { verdict: 'partial' } }, { slug: 'r', qa: { verdict: 'review' } }]);
-    expect(s.assessment).toEqual({ passed: 1, failed: 0, none: 1 }); expect(s.unassessed).toEqual(['n']);
+    const s = summarize([{ slug: 'p', qa: { verdict: 'usable', output_assessment: { passed: true } } }, { slug: 'n', qa: { verdict: 'usable' } }, { slug: 'r', qa: { verdict: 'review' } }, { slug: 'x', qa: { verdict: 'spliced' } }]);
+    expect(s.assessment).toEqual({ passed: 1, failed: 0, none: 1 }); expect(s.unassessed).toEqual(['n']); expect(s.spliced).toEqual(['x']);
   });
 });
 
 describe('proof of improvement (10-29: Dunbar passed with a copy identical to the original)', () => {
-  const done = { status: 'done', verdict: 'pass-auto', fallback_sent_pct: 1 };
+  const done = { status: 'done', verdict: 'pass-auto', fallback_sent_pct: 0 };
   const bare = (r) => ({ quality: { overall: 'E', raw: {} }, enhancement: { listening: 'unipase', variants: [] }, remaster: r });
   it('no measurement and no assessment is unverified, never usable', () => {
     expect(qualityOf(bare(done)).verdict).toBe('unverified');
@@ -83,7 +86,7 @@ describe('restoration tiers (every talk has a restored copy; light, cleaned or h
   it('light verdict + tier in the quality summary', () => {
     const q = qualityOf({ remaster_tier: 'light', web_original: { m4a: 'a' }, enhancement: { listening: 'safe', variants: [] }, quality: { overall: 'A' } });
     expect(q).toMatchObject({ verdict: 'light', tier: 'light' });
-    expect(qualityOf(m({ status: 'done', verdict: 'pass-cleaned', method: 'cleaned', fallback_sent_pct: 1 }))).toMatchObject({ verdict: 'cleaned', tier: 'cleaned' });
+    expect(qualityOf(m({ status: 'done', verdict: 'pass-cleaned', method: 'cleaned', fallback_sent_pct: 0 }))).toMatchObject({ verdict: 'cleaned', tier: 'cleaned' });
     expect(summarize([{ slug: 'a', hours: 1, grade: 'A', qa: q }]).by_tier).toEqual({ light: 1 });
   });
 });

@@ -151,7 +151,7 @@ describe('tower stages: guard verdict, realign keeps the original times, revert'
       enhancement: { listening: 'safe', variants: [{ name: 'original', file: 'original/a.mp3' }, { name: 'safe', file: 'original/a.mp3', af: 'loudnorm' }] },
       stages: Object.fromEntries(['archive', 'grade', 'enhance', 'web', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog', 'headings', 'quotes', 'links', 'assess', 'update'].map((k) => [k, { at: 'x' }])) };
     writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta));
-    const tools = { remasterGuard: vi.fn(async () => ({ sentences: 20, swapped: 1, swapped_pct: guardPct, fallback_sent_pct: guardPct, lag_ms: 25 })),
+    const tools = { remasterGuard: vi.fn(async () => ({ sentences: 20, swapped: guardPct ? 1 : 0, swapped_pct: guardPct, fallback_sent_pct: guardPct, lag_ms: 25 })),
       tool: vi.fn(async (sub, input, opts) => { writeFileSync(opts.output, JSON.stringify({ times: { 1: [[1.03, 1.52], [1.53, 1.72], null] } })); return { placed: 2, total: 2 }; }) };
     const deps = { tools, llm: {}, repo: { updateMediaItem: async () => ({}), getMediaItem: async () => ({ state: 'done' }) }, draining: async () => false, loadVocab: async () => ({}), now: () => 't' };
     return { dir, deps, tools, item: { id: 5, dir, state: 'done', source_kind: 'file' } };
@@ -170,13 +170,13 @@ describe('tower stages: guard verdict, realign keeps the original times, revert'
     expect(JSON.parse(readFileSync(join(pd,'post.json'),'utf8')).work_sha).toBe(hash());
     expect(t.tools.tool).not.toHaveBeenCalled();
   });
-  it('a guard that kept 5 % → the UniPASE copy is the listening copy; words re-aligned with s0/e0 kept; moments follow', async () => {
-    const t = talk(5);
+  it('a continuous copy (no sentence from the original) → the UniPASE copy is the listening copy; words re-aligned with s0/e0 kept; moments follow', async () => {
+    const t = talk(0);
     await runItem(t.item, { redo: ['remaster', 'realign'], only: ['remaster', 'realign'], remaster: true }, t.deps);
     const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
     expect(meta.enhancement.listening).toBe('unipase');
     expect(isRemastered(meta)).toBe(true);
-    expect(meta.remaster).toMatchObject({ status: 'done', verdict: 'pass-auto', swapped_pct: 5 });
+    expect(meta.remaster).toMatchObject({ status: 'done', verdict: 'pass-auto', swapped_pct: 0 });
     expect(meta.aligned_to).toBe('unipase');
     const w = JSON.parse(readFileSync(join(t.dir, 'transcript.work.json'), 'utf8')).paragraphs[0].words;
     expect(w[0]).toMatchObject({ s: 1.03, e: 1.52, s0: 1.0, e0: 1.5 });
@@ -190,6 +190,13 @@ describe('tower stages: guard verdict, realign keeps the original times, revert'
     expect(meta.enhancement.listening).toBe('safe');
     expect(meta.remaster).toMatchObject({ status: 'review', verdict: 'review' });
     expect(t.tools.tool).not.toHaveBeenCalled();
+  });
+  it('NEVER A SPLICE (Chad 10-29): a copy with even one sentence from the original is held, never the listening copy', async () => {
+    const t = talk(5);
+    await runItem(t.item, { redo: ['remaster'], only: ['remaster'], remaster: true }, t.deps);
+    const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
+    expect(meta.enhancement.listening).not.toBe('unipase');
+    expect(meta.remaster.status).toBe('review'); expect(meta.remaster.why).toMatch(/mixes original and remastered/);
   });
   it('without a remaster run the stages do nothing', async () => {
     const t = talk(5);
