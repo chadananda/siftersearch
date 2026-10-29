@@ -2070,7 +2070,7 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
     const pending = (await ops.pendingRuns('media-remaster')).filter((r) => r.status === 'queued').map((r) => Number(r.params?.id)).filter(Boolean);
     list = (await Promise.all([...new Set(pending)].map((id) => repo.getMediaItem(id)))).filter(Boolean);
   } else list = await repo.remasterCandidates(['B', 'C', 'D', 'E']);
-  const orders = [];
+  const orders = [], noCopy = [];
   for (const it of list) {
     if (orders.length >= limit) break;
     if (!it?.dir) continue;
@@ -2079,12 +2079,13 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
     const has = await fs.stat(join(it.dir,'enhanced/unipase.cloud.flac')).then(s=>s.size>1024).catch(()=>false) && await fs.stat(join(it.dir,'enhanced/unipase.asr.json')).then(s=>s.size>10).catch(()=>false);
     const held = ['review', 'kept', 'deferred'].includes(m.remaster?.status);
     if (mode === 'restore' && !ids) continue;   // a redo is always explicit: the ids Chad / the agent names
+    if (mode === 'post' && !has) noCopy.push(it.slug);   // the restored copy is not on tower: only a full restore redo can re-assess it
     if (mode === 'post' && (!has || (!redo && (['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status) || existsSync(join(it.dir, 'enhanced', 'pod', 'post.json')))))) continue;
     if (mode === 'cleanup' && (!held || m.remaster?.method === 'cleaned')) continue;
     orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode, ...((mode === 'restore'||redo) ? { redo: true } : {}) });
   }
   await C.addOrders(orders, deps.ordersFile);
-  return { mode, ordered: orders.length, sample: orders.slice(0, 5).map((o) => o.slug) };
+  return { mode, ordered: orders.length, sample: orders.slice(0, 5).map((o) => o.slug), ...(noCopy.length ? { no_copy: noCopy } : {}) };
 }
 
 /** media-light-backfill { limit?, write? }: the LIGHT tier for every published talk that has no kept original yet (Chad 10-24: every talk has a
