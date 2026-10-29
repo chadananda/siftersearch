@@ -9,6 +9,7 @@
 //   2. emails a distinct ALARM (not the cheerful digest, so it can't be ignored like the digests were).
 // Requires TWO consecutive stall hours before halting (one slow hour on a big book is normal). Auto-resumes
 // (mode→plan) and emails an all-clear when the done-count advances again. Touches no writer/grounding code.
+import { apiBase } from './lib/api-base.mjs';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -25,7 +26,7 @@ const { sendEmail } = await import('../api/services/email.js');
 const { logger } = await import('../api/lib/logger.js');
 
 const STATE = join(ROOT, 'logs', 'stall-guard-state.json');
-const API = process.env.INTERNAL_API_URL || 'http://127.0.0.1:7839';
+const API = process.env.INTERNAL_API_URL || apiBase();
 const KEY = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY || '';
 const TO = process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL || '';
 const SPEND_THRESHOLD = Number(process.env.STALL_SPEND_USD || 20); // $ spent in the hour that DEMANDS ≥1 completion

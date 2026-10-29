@@ -2,11 +2,12 @@
 // Ops CLI — an HTTP client of the internal API, never the database (Chad 10-11). Reports run server-side.
 //   node scripts/ops/ops.mjs reports                         list reports + recent runs
 //   node scripts/ops/ops.mjs report <name> [--days 14 | --ids 1,2,3 | --params '{json}'] [--wait] [--latest]
-// Env: SIFTER_API (default http://127.0.0.1:7839 on tower), DEPLOY_SECRET (X-Internal-Key).
+// Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key).
+import { apiBase } from '../lib/api-base.mjs';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
-const API = process.env.SIFTER_API || 'http://127.0.0.1:7839';
+const API = apiBase();
 const headers = { 'Content-Type': 'application/json', 'X-Internal-Key': process.env.DEPLOY_SECRET || '' };
 const call = async (method, path, body) => {
   const r = await fetch(`${API}/api/admin${path}`, { method, headers, ...(body ? { body: JSON.stringify(body) } : {}) });

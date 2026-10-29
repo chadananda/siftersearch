@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // After `git push`: poll GET /api/admin/ops/deploy until the commit is deployed (exit 0), refused (reason, exit 1) or ~8 min pass (exit 2).
-//   node scripts/ops/deploy-check.mjs [commit]   Env: SIFTER_API (default http://127.0.0.1:7839), DEPLOY_SECRET; DEPLOY_CHECK_MS to shorten.
+//   node scripts/ops/deploy-check.mjs [commit]   Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET; DEPLOY_CHECK_MS to shorten.
+import { apiBase } from '../lib/api-base.mjs';
 import dotenv from 'dotenv';
 import { execFileSync } from 'child_process';
 import { pathToFileURL } from 'url';
@@ -27,7 +28,7 @@ export async function check(commit, { fetchStatus, timeoutMs = 8 * 60_000, every
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
-  const API = process.env.SIFTER_API || 'http://127.0.0.1:7839';
+  const API = apiBase();
   const commit = process.argv[2] || execFileSync('git', ['rev-parse', 'HEAD']).toString().trim();
   const fetchStatus = async () => {
     const r = await fetch(`${API}/api/admin/ops/deploy`, { headers: { 'X-Internal-Key': process.env.DEPLOY_SECRET || '' } });

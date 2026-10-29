@@ -8,12 +8,13 @@
 // Checks go through the internal control API (never raw SQL over SSH) so they read exactly what the
 // application reads. Adding a check: add the entry to docs/audit-checklist.md, then add it below.
 // Deps: .env-secrets (DEPLOY_SECRET), a reachable API.
+import { apiBase } from './lib/api-base.mjs';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 
 const JSON_OUT = process.argv.includes('--json');
-const BASE = process.env.AUDIT_API_BASE || 'http://127.0.0.1:7839';
+const BASE = process.env.AUDIT_API_BASE || apiBase();
 const KEY = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
 
 async function get(path) {
