@@ -2,7 +2,7 @@
 // queued here and executed by siftersearch-reports; nothing in this route scans a table. Auth: requireInternal.
 import { join, dirname } from 'path';
 import { requireInternal } from '../lib/auth.js';
-import { enqueue, getRun, latest, recent, cancel } from '../lib/repos/ops-report-repo.js';
+import { enqueue, getRun, latest, recent, failed, cancel } from '../lib/repos/ops-report-repo.js';
 import { reportNames } from '../lib/ops/reports.js';
 import { ApiError } from '../lib/errors.js';
 import { readDeployStatus } from '../lib/ops/deploy-status.js';
@@ -77,6 +77,8 @@ export default async function opsReportRoutes(fastify) {
   fastify.post('/ops/media/supersede', { preHandler: requireInternal }, async (req) => supersede(req, req.body?.write ? 'apply' : 'plan'));
   fastify.post('/ops/media/supersede/revert', { preHandler: requireInternal }, async (req) => supersede(req, 'revert'));
   fastify.get('/ops/media/supersede/:slug', { preHandler: requireInternal }, async (req) => (await import('../lib/media/supersede.js')).mediaSupersede({ action: 'history', slug: req.params.slug }));
+  // Failed ops jobs (the same ones that email "FAILED"): `ops.mjs failures [--hours N]` so nobody pastes mail.
+  fastify.get('/ops/failures', { preHandler: requireInternal }, async (req) => ({ failures: await failed(req.query?.hours, req.query?.limit) }));
   fastify.get('/ops/reports', { preHandler: requireInternal }, async () => ({ reports: reportNames(), recent: await recent(20) }));
   fastify.post('/ops/reports/:name', { preHandler: requireInternal }, async (req) => {
     known(req.params.name);

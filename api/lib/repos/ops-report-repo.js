@@ -23,6 +23,7 @@ export const runningRuns = async (names = []) => (names.length ? (await queryAll
 
 export const getRun = async (id) => parse(await queryOne('SELECT * FROM ops_report_runs WHERE id = ?', [id]));
 export const latest = async (name) => parse(await queryOne(`SELECT * FROM ops_report_runs WHERE name = ? AND status = 'done' ORDER BY id DESC LIMIT 1`, [name]));
+export const failed = async (hours = 24, limit = 50) => (await queryAll("SELECT id, name, params, status, requested_at, finished_at, ms, error FROM ops_report_runs WHERE status = 'failed' AND finished_at >= ? ORDER BY id DESC LIMIT ?", [new Date(Date.now() - Math.max(1, Math.min(720, Number(hours) || 24)) * 3600e3).toISOString(), Math.min(200, Number(limit) || 50)])).map(parse);
 export const recent = async (limit = 20) => (await queryAll('SELECT id, name, params, status, requested_at, finished_at, ms, error FROM ops_report_runs ORDER BY id DESC LIMIT ?', [limit])).map(parse);
 
 /** Oldest queued run → mark running. → run or null */

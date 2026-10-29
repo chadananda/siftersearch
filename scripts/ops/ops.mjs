@@ -34,7 +34,8 @@ else if (cmd === 'report' && name) {
     }
     await out(run);
   }
-} else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until none are left
+} else if (cmd === 'failures') await out(await call('GET', `/ops/failures?hours=${val('--hours') || 24}`));   // failed ops jobs (what the FAILED mails report)
+else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until none are left
   let r; do { r = await call('POST', '/ops/bio-slugs/backfill', { limit: 25 }); console.error(`minted ${r.minted.length}; ${r.with_slug}/${r.total}`); } while (r.minted.length && r.left > 0);
   await out(r);
 } else if (cmd === 'dewey-allow') {   // dewey-allow add <email> [note] | remove <email> [--revoke] | list
@@ -43,5 +44,5 @@ else if (cmd === 'report' && name) {
   else if (sub === 'add' && email) await out(await call('POST', '/ops/dewey-allow', { email, note: note.join(' ') || null }));
   else if (sub === 'remove' && email) await out(await call('POST', '/ops/dewey-allow/remove', { email, revoke: flag('--revoke') }));
   else { console.error('usage: ops.mjs dewey-allow add <email> [note] | remove <email> [--revoke] | list'); process.exit(2); }
-} else { console.error('usage: ops.mjs dewey-allow | bio-slugs | ops.mjs reports | report <name> [--days N] [--wait] [--latest]'); process.exit(2); }
+} else { console.error('usage: ops.mjs failures [--hours N] | dewey-allow | bio-slugs | ops.mjs reports | report <name> [--days N] [--wait] [--latest]'); process.exit(2); }
 process.exit(0);
