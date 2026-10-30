@@ -1,7 +1,7 @@
 // GPU spend ∝ work done (Chad 10-24): rent rule, ledger, reaper, dead-man switch, duplicate results, boot deadline, pod loss, system checks.
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
@@ -346,6 +346,28 @@ describe('the lane: GPU is rented only for work', () => {
     expect(await stageTick(st, opts)).toBe('full');   // 2 h staged
     expect(Object.keys(st.staged)).toEqual(['1', '3']);
     expect(puts[0]).toMatch(/^stage\/3-/);
+  });
+  it('stage-ahead skips what pods may not take, and a video sends only its audio track (Chad 10-30: "pushing video around to process audio is simply absurd")', async () => {
+    const { stageTick, audioDemuxer } = await import('../../api/lib/media/r2-stage.js');
+    const x = setup({ talks: 3, seconds: 3600 }), puts = [], demuxed = [];
+    for (const id of [1, 2, 3]) { const f = join(x.items[id].dir, 'meta.json'); const m = JSON.parse(readFileSync(f, 'utf8')); m.original = 'original/talk.mp4'; writeFileSync(f, JSON.stringify(m)); }
+    const tmpA = join(x.items[1].dir, 'a.m4a'); writeFileSync(tmpA, 'aud');
+    const store = { put: async (k, path) => { puts.push([k, path]); return 3; }, remove: async () => {}, signed: async (k) => k };
+    const st = { queue: [1, 2, 3], jobs: {}, items: { 1: { kind: 'whole' }, 3: { kind: 'whole' } }, staged: {} };
+    const opts = { store, getItem: async (id) => x.items[id], readMeta: async (d) => JSON.parse(readFileSync(join(d, 'meta.json'), 'utf8')), eligible: (id) => st.items[id]?.kind !== 'whole', demux: async (src) => { demuxed.push(src); return { file: tmpA, ext: 'm4a' }; }, now: 1000 };
+    expect(await stageTick(st, opts)).toBe('uploaded');
+    expect(Object.keys(st.staged)).toEqual(['2']);   // the whole recordings ahead of it are left for the home worker
+    expect(puts[0][0]).toMatch(/^stage\/2-.*\.m4a$/);
+    expect(puts[0][1]).toBe(tmpA);
+    expect(st.staged[2]).toMatchObject({ ext: 'm4a', audio_only: true, src: join(x.items[2].dir, 'original/talk.mp4') });
+    expect(existsSync(tmpA)).toBe(false);   // the temp audio is removed once uploaded
+    // the demuxer: ffprobe names the codec, ffmpeg stream-copies it into a container that holds it as-is — never a re-encode
+    const calls = []; const fake = async (cmd, args) => { calls.push([cmd, ...args]); return { stdout: cmd === 'ffprobe' ? 'aac\n' : '' }; };
+    const a = await audioDemuxer(fake, '/tmp')('/x/talk.mp4');
+    expect(a.ext).toBe('m4a');
+    expect(calls[1]).toEqual(expect.arrayContaining(['-vn', '-c:a', 'copy', '-map', '0:a:0']));
+    expect(calls[1].join(' ')).not.toMatch(/libopus|-c:a aac|loudnorm|highpass/);
+    expect(await audioDemuxer(async () => ({ stdout: 'pcm_s24le\n' }), '/tmp')('/x/t.mov')).toBeNull();   // no safe container → the original is sent
   });
   it('a staged talk is pulled by the pod from R2, not pushed over tower\'s uplink', async () => {
     const x = setup({ talks: 1, seconds: 3 * 3600 });

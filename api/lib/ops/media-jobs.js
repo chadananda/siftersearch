@@ -1680,13 +1680,14 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   pump.unref?.();
   // STAGE AHEAD (Chad 10-30): the uplink fills R2 with the next ~100 audio-hours of originals whether or not pods are up; pods pull in seconds
   const R2S = await import('../media/r2-stage.js');
+  const demux = deps.demux !== undefined ? deps.demux : R2S.audioDemuxer(run);   // a video's audio track only, stream-copied (Chad 10-30)
   const stageStore = deps.stageStore !== undefined ? deps.stageStore : (process.env.VITEST || process.env.MEDIA_STAGE === '0' ? null : await R2S.r2StageStore().catch(() => null));
   let stagerStop = false;
   const busyItem = (id) => staging.has(Number(id)) || staging.has(id) || Object.values(st.jobs).some((j) => String(j.itemId) === String(id));
   const stager = stageStore && (async () => {
     while (!stagerStop) {
       let r;
-      try { r = await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, now: now() }); st.stage_error = null; }
+      try { r = await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, eligible: (id) => st.items?.[id]?.kind !== 'whole' || !acceptedWorker?.hold_whole, demux, now: now() }); st.stage_error = null; }
       catch (err) { st.stage_error = String(err?.message || err).slice(0, 200); r = 'error'; }
       if (r !== 'uploaded') await new Promise((res) => setTimeout(res, r === 'error' ? 60_000 : 20_000).unref?.());
     }
@@ -1921,13 +1922,18 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,status:'uploading',...(whole?{kind:'whole',input_sha:await (await import('../media/whole-result.js')).fileSha(src)}:{})};
               await save(st);
               await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
-              const sg = st.staged?.[itemId]; let pulled = false;
+              const sg = st.staged?.[itemId]; let pulled = false, inExt = ext;
               if (sg && stageStore && sg.src === src) {   // staged in R2: the pod pulls it at datacenter speed
-                try { await C.podSsh(run, p, `curl -fsS --retry 3 --connect-timeout 20 --max-time 1200 -o /workspace/spool/${job}/in.${ext}.part '${await stageStore.signed(sg.key)}'`, { timeoutMs: 1_260_000 }); pulled = true; st.stage_pulls = (st.stage_pulls || 0) + 1; }
+                try { await C.podSsh(run, p, `curl -fsS --retry 3 --connect-timeout 20 --max-time 1200 -o /workspace/spool/${job}/in.${sg.ext}.part '${await stageStore.signed(sg.key)}'`, { timeoutMs: 1_260_000 }); pulled = true; inExt = sg.ext; st.stage_pulls = (st.stage_pulls || 0) + 1; }
                 catch (err) { p.stage_pull_error = String(err?.message || err).slice(0, 160); }
               }
-              if (!pulled) { await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}.part`); st.stage_direct = (st.stage_direct || 0) + 1; }
-              await C.podSsh(run,p,`mv /workspace/spool/${job}/in.${ext}.part /workspace/spool/${job}/in.${ext}`,{timeoutMs:60000});
+              if (!pulled) {   // direct from tower: a video still sends only its audio track (whole items keep the file their input_sha names)
+                const a = !whole && R2S.VIDEO.has(ext) && demux ? await demux(src).catch(() => null) : null;
+                if (a) inExt = a.ext;
+                try { await C.podPut(run, p, a?.file || src, `/workspace/spool/${job}/in.${inExt}.part`); } finally { if (a) await fs.rm(a.file, { force: true }).catch(() => {}); }
+                st.stage_direct = (st.stage_direct || 0) + 1;
+              }
+              await C.podSsh(run,p,`mv /workspace/spool/${job}/in.${inExt}.part /workspace/spool/${job}/in.${inExt}`,{timeoutMs:60000});
               if(whole){
                 const W=await import('../media/whole-result.js'),sha=st.jobs[job].input_sha;
                 await C.podSsh(run,p,`cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`,{timeoutMs:60000,input:JSON.stringify({...W.wholeJob(it,m,sha),threads:Math.max(2,Math.min(6,Math.floor((p.cpu_count||16)/(p.max_jobs||6))))})});
