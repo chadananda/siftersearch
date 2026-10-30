@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-30T13:39:27.243Z",
+  "generated": "2026-10-30T15:50:13.553Z",
   "entries": [
+    {
+      "hash": "cbc2cc59",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "New pods no longer end themselves before their first talk — the image's worker self-ended after 120 s idle / 3 min without a tower heartbeat, and tower's first look at a warming pod comes a lane tick (~3.5 min) later (351-353 all closed 'unreachable'); the worker now runs without RUNPOD_POD_ID and a keeper script holds the safety nets (tower silent 30 min, 24 h life); speech-coverage check (worker-only, refuses on tower) gates publishing; ops-reports names test lists media-cloud-capacity + media-quiet-repair",
+      "scope": null
+    },
+    {
+      "hash": "3fa8804b",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Rent 32 vCPUs first and scale max_jobs with vCPU (the worker runs min(max_jobs, vCPU/2); #349's 18 vCPUs left 7 jobs in CPU post and the GPU at 0 %); the reaper spares a productive pod past 8 h (hard cap 24 h; pod-side cap 24 h for the next image); a pod the reaper took is closed as 'reaped: <why>', not 'unreachable'; /media machine cards compact so six fit one row",
+      "scope": null
+    },
     {
       "hash": "94e5398a",
       "date": "2026-10-30",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Db-ship never touches the 03:00 backup's snapshot; system-checks 'DB ship to /tank' freshness; prune-db-snapshots retired (db-ship keeps one SSD base). Plan: citations render as markdown links, DB stores the source record",
       "scope": "backup"
-    },
-    {
-      "hash": "e4793108",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Db-ship — hourly ZFS snapshot on the SSD, incremental send to /tank, SSD keeps one base (Chad 10-21: fast backup then migrate off SSD; same for /faster)",
-      "scope": "backup"
-    },
-    {
-      "hash": "347e3995",
-      "date": "2026-10-21",
-      "type": "Other",
-      "description": "Chad's 10-21 decisions — on-behalf letters are Shoghi Effendi's; page cites link by quoted text",
-      "scope": "citations"
     }
   ],
   "grouped": {
     "2026-10-30": [
+      {
+        "hash": "cbc2cc59",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "New pods no longer end themselves before their first talk — the image's worker self-ended after 120 s idle / 3 min without a tower heartbeat, and tower's first look at a warming pod comes a lane tick (~3.5 min) later (351-353 all closed 'unreachable'); the worker now runs without RUNPOD_POD_ID and a keeper script holds the safety nets (tower silent 30 min, 24 h life); speech-coverage check (worker-only, refuses on tower) gates publishing; ops-reports names test lists media-cloud-capacity + media-quiet-repair",
+        "scope": null
+      },
+      {
+        "hash": "3fa8804b",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Rent 32 vCPUs first and scale max_jobs with vCPU (the worker runs min(max_jobs, vCPU/2); #349's 18 vCPUs left 7 jobs in CPU post and the GPU at 0 %); the reaper spares a productive pod past 8 h (hard cap 24 h; pod-side cap 24 h for the next image); a pod the reaper took is closed as 'reaped: <why>', not 'unreachable'; /media machine cards compact so six fit one row",
+        "scope": null
+      },
       {
         "hash": "94e5398a",
         "date": "2026-10-30",
@@ -7003,20 +7017,6 @@
         "type": "New",
         "description": "Db-ship never touches the 03:00 backup's snapshot; system-checks 'DB ship to /tank' freshness; prune-db-snapshots retired (db-ship keeps one SSD base). Plan: citations render as markdown links, DB stores the source record",
         "scope": "backup"
-      },
-      {
-        "hash": "e4793108",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Db-ship — hourly ZFS snapshot on the SSD, incremental send to /tank, SSD keeps one base (Chad 10-21: fast backup then migrate off SSD; same for /faster)",
-        "scope": "backup"
-      },
-      {
-        "hash": "347e3995",
-        "date": "2026-10-21",
-        "type": "Other",
-        "description": "Chad's 10-21 decisions — on-behalf letters are Shoghi Effendi's; page cites link by quoted text",
-        "scope": "citations"
       }
     ]
   }
