@@ -1,0 +1,13 @@
+// siftersearch-queue — media job queue (worker/queue/index.js). Deploy: npx wrangler deploy -c worker/queue/wrangler.jsonc
+// Route /_q/* is more specific than the site Worker's /*. Secrets: QUEUE_KEY (machines), ADMIN_KEY (= tower INTERNAL_API_KEY), R2_KEY_ID, R2_SECRET.
+{
+  "name": "siftersearch-queue",
+  "main": "index.js",
+  "compatibility_date": "2025-11-01",
+  "routes": [{ "pattern": "siftersearch.com/_q/*", "zone_name": "siftersearch.com" }],
+  "durable_objects": { "bindings": [{ "name": "QUEUE", "class_name": "MediaQueue" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MediaQueue"] }],
+  // staged inputs (stage/…) and results (results/<job>/…); ack deletes both
+  "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "siftersearch-media" }],
+  "vars": { "R2_ACCOUNT": "b750d0f7242bbc76f115f72840453083", "R2_BUCKET": "siftersearch-media" }
+}
