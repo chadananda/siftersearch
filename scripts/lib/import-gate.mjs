@@ -14,6 +14,8 @@ const SCAN_DIRS = ['api', 'scripts', 'worker'];   // what the updater reloads (s
 const IN_SCOPE = /^(?:api|scripts|worker)\//;
 const SKIP = { test: (f) => !IN_SCOPE.test(f) || /^scripts\/wip\//.test(f) || /\.test\.m?js$/.test(f) };
 const BUILTIN = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]));
+// cloudflare:* (cloudflare:workers, cloudflare:sockets…) is provided by the Workers runtime (worker/queue — 10-30 the gate refused it)
+const RUNTIME = /^cloudflare:/;
 
 /** Code without the comment LINES (a line starting with //, /*, or * — JSDoc). Only whole lines: a '/*' or '//' inside a
  *  string ('/api/*', a URL) must never swallow code (the first version ate http-server.js's exports). */
@@ -62,7 +64,7 @@ export function exportsOf(src) {
 
 const tryFiles = (p) => [p, `${p}.js`, `${p}.mjs`, join(p, 'index.js')].find((x) => existsSync(x) && statSync(x).isFile()) || null;
 function bareResolves(spec, root) {
-  if (BUILTIN.has(spec) || BUILTIN.has(spec.split('/')[0])) return true;
+  if (RUNTIME.test(spec) || BUILTIN.has(spec) || BUILTIN.has(spec.split('/')[0])) return true;
   const pkg = spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
   for (let d = root; ; d = dirname(d)) { if (existsSync(join(d, 'node_modules', pkg))) return true; if (dirname(d) === d) return false; }
 }
