@@ -28,7 +28,7 @@ import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
 import { deweyReimportJob } from './dewey-reimport-job.js';
-import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaStagesJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRestoreJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaCloudOrderJob, mediaRemasterQualityJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaArchiveImportJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaSpeakerSketchJob, mediaPlaybackJob, mediaGradeJob, mediaFindJob } from './media-jobs.js';
+import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaExcludeJob, mediaRelinkJob, mediaStagesJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRestoreJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaCloudOrderJob, mediaQuietRepairJob, mediaRemasterQualityJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaTrimAuditJob, mediaQuoteAuditJob, mediaStagesSyncJob, mediaFetchJob, mediaRankJob, mediaPortraitsExtendJob, mediaShortsMomentsJob, mediaShortJob, mediaScanJob, mediaArchiveImportJob, mediaItemJob, mediaVocabJob, mediaSpeakersJob, mediaSpeakerSketchJob, mediaPlaybackJob, mediaGradeJob, mediaFindJob } from './media-jobs.js';
 import { mediaGalleryJob, mediaPortraitInventoryJob } from './media-gallery-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
@@ -259,6 +259,7 @@ REPORTS['media-supersede'] = (params, deps) => import('../media/supersede.js').t
 REPORTS['media-remaster'] = mediaRemasterJob;   // { id } — a talk's tower part of the remaster (word guard, realign, encode, update)
 REPORTS['media-remaster-revert'] = mediaRemasterRevertJob;   // { ids } — back to the transparent original
 REPORTS['media-cloud-remaster'] = mediaCloudRemasterJob;
+REPORTS['media-quiet-repair'] = mediaQuietRepairJob;   // { ids, limit?, host?, parallel? } — silence-only repair of published remasters on a home host
 REPORTS['media-cloud-order'] = mediaCloudOrderJob;   // { mode: cleanup|post, ids?, limit? } — work for the running cloud lane
 REPORTS['media-cloud-capacity'] = async (params = {}) => {   // { maxPods?, capUsd? } — pod count + spend cap, read by the lane every tick (no env edit)
   const C = await import('../media/cloud.js'), st = await C.loadState();
@@ -357,7 +358,7 @@ export const LANES = { extract: ['episode-extract', 'structure-infer'],
   quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'triggers', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
-export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-remaster', 'media-remaster-revert', 'media-cloud-remaster', 'media-cloud-order', 'media-light-backfill', 'media-preview', 'media-remaster-quality', 'media-remaster-review-pack', 'media-remaster-decide', 'media-trim-audit'];
+export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-remaster', 'media-remaster-revert', 'media-cloud-remaster', 'media-cloud-order', 'media-quiet-repair', 'media-light-backfill', 'media-preview', 'media-remaster-quality', 'media-remaster-review-pack', 'media-remaster-decide', 'media-trim-audit'];
 MEDIA_JOBS.push('media-tags-backfill', 'media-hint-review', 'media-gallery', 'media-portrait-inventory', 'media-speaker-sketch', 'media-archive-import');
 export { LANE_WORKERS } from './lane-workers.js';
 

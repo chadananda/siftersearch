@@ -2138,6 +2138,47 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
   return { mode, ordered: orders.length, sample: orders.slice(0, 5).map((o) => o.slug), ...(noCopy.length ? { no_copy: noCopy } : {}) };
 }
 
+/** media-quiet-repair { ids, limit?, host?, image?, parallel? }: silence-only repair of PUBLISHED remasters (Chad 10-30): the kept master is silenced where
+ *  nobody speaks on a home host (media/quiet-repair.js), then a media-item redo re-encodes the web copies on the worker pool and bumps audio_version.
+ *  Idempotent (meta.remaster.quiet marks a done talk); a talk with media-item/remaster work in flight waits for the next run. → { repaired, unchanged, skipped, failed } */
+export async function mediaQuietRepairJob({ ids = null, limit = 300, host = 'aorus', image = null, parallel = 2 } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const T = deps.tools || await import('../media/tools.js');
+  const QR = deps.quiet || await import('../media/quiet-repair.js');
+  const draining = deps.draining || (await import('../drain.js')).isDraining;
+  const queue = deps.queue || enqueue;
+  const fs = await import('fs/promises');
+  const readMeta = deps.readMeta || (async (dir) => JSON.parse(await fs.readFile(join(dir, 'meta.json'), 'utf8')));
+  const writeMeta = deps.writeMeta || (async (dir, m) => { const f = join(dir, 'meta.json'); await fs.writeFile(f + '.tmp', JSON.stringify(m, null, 2)); await fs.rename(f + '.tmp', f); });
+  if (!ids) throw Error('media-quiet-repair: ids are required (the talks a scan found with loud word-free noise)');
+  const img = image || Object.values(HOME_BUILDS).at(-1)?.[baseHost(host)];
+  if (!img) throw Error(`media-quiet-repair: no image for ${host}`);
+  const busy = new Set((await Promise.all(['media-item', 'media-remaster'].map((n) => ops.pendingRuns(n).catch(() => [])))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
+  const list = (await Promise.all([].concat(ids).map((x) => (/^\d+$/.test(String(x)) ? repo.getMediaItem(Number(x)) : repo.getMediaBySlug(String(x)))))).filter(Boolean).slice(0, limit);
+  const out = { repaired: [], unchanged: [], skipped: [], failed: [], silenced_s: 0, noise_silenced_s: 0 };
+  const todo = [...list];
+  const one = async (it) => {
+    const m = await readMeta(it.dir).catch(() => null);
+    if (!m || m.enhancement?.listening !== 'unipase' || m.remaster?.status !== 'done') return out.skipped.push(`${it.slug}: not a published remaster`);
+    if (m.remaster?.quiet?.v >= QR.QUIET_REPAIR_VERSION) return out.skipped.push(`${it.slug}: already silenced`);
+    if (busy.has(it.id)) return out.skipped.push(`${it.slug}: media work in flight`);
+    try {
+      const r = await QR.quietMaster(it, { T, host, image: img, stop: draining });
+      const fresh = await readMeta(it.dir);   // re-read: the master swap took minutes
+      fresh.remaster = { ...(fresh.remaster || {}), quiet: { ...r.record, host, at: new Date().toISOString(), ...(r.changed ? { backup: 'enhanced/unipase.prequiet.flac' } : {}) } };
+      await writeMeta(it.dir, fresh);
+      if (!r.changed) return out.unchanged.push(it.slug);
+      await queue('media-item', { id: it.id, remaster: true, redo: ['web', 'trim', 'update'] }, 'media-quiet-repair');
+      out.repaired.push(it.slug); out.silenced_s += r.record.quiet_s; out.noise_silenced_s += r.record.noise_silenced_s;
+    } catch (err) { if (err.code === 'DRAIN') { todo.unshift(it); return; } out.failed.push(`${it.slug}: ${String(err.message).slice(0, 200)}`); }
+  };
+  await Promise.all(Array.from({ length: Math.max(1, parallel) }, async () => { while (todo.length && !draining()) await one(todo.shift()); }));
+  out.silenced_s = Math.round(out.silenced_s); out.noise_silenced_s = Math.round(out.noise_silenced_s);
+  out.remaining = todo.length;
+  return out;
+}
+
 /** media-light-backfill { limit?, write? }: the LIGHT tier for every published talk that has no kept original yet (Chad 10-24: every talk has a
  *  restored version and an untouched original). The restored copy is the one already playing (the deterministic safe chain: high-pass, hum
  *  notch, loudness — linear, cannot change a word); this adds the RAW source encoded to Opus + m4a with no processing (the "Original" button),
