@@ -34,6 +34,7 @@ import graphRoutes from '../graph.js';
 import peopleRoutes from '../people.js';
 import deepResearchRoutes from '../deep-research.js';
 import mediaRoutes, { speakerRoutes } from '../media.js';
+import importsRoutes from '../imports.js';
 
 export const SEARCH_ROUTES = [
   [authRoutes, { prefix: '/api/auth' }],
@@ -49,6 +50,7 @@ export const SEARCH_ROUTES = [
   [workplanAdminRoutes, { prefix: '/api/admin' }],   // the WorkPlan page (D1 via the edge)
   [ingestRoutes, { prefix: '/api/admin' }],
   [bookNotesRoutes, { prefix: '/api/admin' }],
+  [importsRoutes, { prefix: '/api/admin' }],   // donor-drive review (/admin/imports; archives-repo)
   [companionRoutes, { prefix: '/api/admin' }],
   [documentsRoutes, { prefix: '/api/documents' }],
   [coverRoutes, { prefix: '/api/covers' }],   // book covers (api/lib/covers.js), edge-cached by the Worker

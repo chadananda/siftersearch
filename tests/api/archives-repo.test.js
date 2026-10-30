@@ -39,6 +39,23 @@ describe('archives repo', () => {
     expect(await repo.listItems('d1')).toHaveLength(2);
     expect(await repo.itemCounts('d1')).toEqual(expect.arrayContaining([expect.objectContaining({ decision: 'approve', n: 1 })]));
   });
+  it('listItems filters by match (list) and text; decideItems sets one decision on many', async () => {
+    await repo.upsertItems('d2', [item('a/One_100%.pdf', { match: 'new', title: 'Gleanings 100%', score: 9 }), item('b.pdf', { match: 'held', creator: 'Shoghi Effendi', score: 8 }),
+      item('c.pdf', { match: 'unsure', score: 7 }), item('d.pdf', { match: 'junk', score: 1 })]);
+    expect((await repo.listItems('d2', { match: 'new,unsure' })).map((x) => x.primary_rel)).toEqual(['a/One_100%.pdf', 'c.pdf']);
+    expect((await repo.listItems('d2', { match: ['held'] }))).toHaveLength(1);
+    expect((await repo.listItems('d2', { q: 'shoghi' })).map((x) => x.primary_rel)).toEqual(['b.pdf']);
+    expect((await repo.listItems('d2', { q: '100%' })).map((x) => x.primary_rel)).toEqual(['a/One_100%.pdf']);
+    expect(await repo.listItems('d2', { q: '_' })).toHaveLength(1);   // LIKE wildcards are literal
+    const ids = (await repo.listItems('d2', { match: 'new,unsure' })).map((x) => x.id);
+    expect(await repo.decideItems([...ids, ids[0], 'x'], { decision: 'deny', by: 'chad' })).toBe(2);
+    expect((await repo.listItems('d2', { decision: 'deny' })).map((x) => x.decided_by)).toEqual(['chad', 'chad']);
+    expect(await repo.listItems('d2', { decision: 'undecided' })).toHaveLength(2);
+    await expect(repo.decideItems(ids, { decision: 'maybe' })).rejects.toThrow();
+    await repo.decideItems(ids, { decision: null });
+    expect(await repo.listItems('d2', { decision: 'undecided' })).toHaveLength(4);
+    expect(await repo.getItem(ids[0])).toMatchObject({ decision: null, decided_at: null });
+  });
   it('driveReport lists imported items', async () => {
     await repo.upsertDonor({ id: 'x', name: 'X' }); await repo.upsertDrive({ id: 'dr', donor_id: 'x' });
     await repo.upsertItems('dr', [item('a.pdf')]);

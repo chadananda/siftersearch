@@ -973,6 +973,16 @@ export const admin = {
   async getMediaQuality(slug) { return request(`/api/media/admin/quality/${encodeURIComponent(slug)}`); },
   async getMediaGraded(query = '') { return request(`/api/media?facets=0&limit=200&sort=priority${query ? `&${query}` : ''}`); },
 
+  // Donor-drive review (/admin/imports): donors → drives with counts, paged items, decisions, the per-drive report
+  async getImportsDonorsDrives() { return request('/api/admin/imports/donors-drives'); },
+  async getImportItems(driveId, filters = {}) {
+    const p = new URLSearchParams(Object.entries(filters).filter(([, v]) => v !== '' && v != null));
+    return request(`/api/admin/imports/drives/${encodeURIComponent(driveId)}/items?${p}`);
+  },
+  async decideImportItem(id, decision, note = null) { return request(`/api/admin/imports/items/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, note }) }); },
+  async decideImportItems(ids, decision, note = null) { return request('/api/admin/imports/items/decision-bulk', { method: 'POST', body: JSON.stringify({ ids, decision, note }) }); },
+  async getImportReport(driveId) { return request(`/api/admin/imports/drives/${encodeURIComponent(driveId)}/report`); },
+
   // Missing-books triage (snapshot-backed; see /admin/missing-books)
   async getMissingBooks() {
     return request('/api/admin/library/missing-books');

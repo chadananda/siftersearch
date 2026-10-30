@@ -1,5 +1,5 @@
 // archives-repo — donors, drives (custody) and intake_items (migration 189). Re-cataloguing refreshes catalogue fields but NEVER Chad's decisions/imports.
-// Callers: ops/archive-adopt-job.js. Deps: db.js.
+// Callers: ops/archive-adopt-job.js, routes/imports.js (/admin/imports). Deps: db.js.
 import { query, queryOne, queryAll, transaction } from '../db.js';
 
 const now = () => new Date().toISOString();
@@ -64,14 +64,19 @@ export async function upsertItems(driveId, items, { batch = 500 } = {}) {
 /** Undecided, unimported items a re-catalogue no longer produced (its upsert stamped everything else at or after `before`). Decisions are never deleted. */
 export async function pruneStale(driveId, before) {
   const r = await query('DELETE FROM intake_items WHERE drive_id = ? AND updated_at < ? AND decision IS NULL AND imported_at IS NULL', [driveId, before], 'archives:items-prune');
-  return r?.changes ?? 0;
+  return r?.changes ?? r?.rows?.[0]?.changes ?? 0;
 }
 
-export async function listItems(driveId, { section, kind, decision, limit = 200, offset = 0 } = {}) {
+/** Filters: section, kind, match (one or a comma list), decision ('undecided' = none yet), q (title/creator/path substring). Sorted score desc. */
+export async function listItems(driveId, { section, kind, match, decision, q, limit = 200, offset = 0 } = {}) {
   const w = ['drive_id = ?'], p = [driveId];
   if (section) { w.push('section = ?'); p.push(section); }
   if (kind) { w.push('kind = ?'); p.push(kind); }
+  const matches = (Array.isArray(match) ? match : String(match ?? '').split(',')).map((m) => m.trim()).filter(Boolean);
+  if (matches.length) { w.push(`match IN (${matches.map(() => '?').join(', ')})`); p.push(...matches); }
   if (decision === 'undecided') w.push('decision IS NULL'); else if (decision) { w.push('decision = ?'); p.push(decision); }
+  const needle = String(q ?? '').trim();
+  if (needle) { w.push("(title LIKE ? ESCAPE '\\' OR creator LIKE ? ESCAPE '\\' OR primary_rel LIKE ? ESCAPE '\\')"); const l = `%${needle.replace(/[\\%_]/g, (c) => '\\' + c)}%`; p.push(l, l, l); }
   const rows = await queryAll(`SELECT * FROM intake_items WHERE ${w.join(' AND ')} ORDER BY score DESC, id LIMIT ? OFFSET ?`, [...p, Math.min(Number(limit) || 200, 1000), Number(offset) || 0], 'archives:items-list');
   return rows.map(parseItem);
 }
@@ -82,7 +87,23 @@ export const itemCounts = (driveId) => queryAll(`SELECT section, kind, match, de
 export async function decideItem(id, { decision, note = null, by = null }) {
   if (decision != null && !DECISIONS.includes(decision)) throw new Error(`bad decision: ${decision}`);
   await query('UPDATE intake_items SET decision = ?, decision_note = ?, decided_by = ?, decided_at = ?, updated_at = ? WHERE id = ?', [decision ?? null, note, by, decision ? now() : null, now(), id], 'archives:item-decide');
-  return parseItem(await queryOne('SELECT * FROM intake_items WHERE id = ?', [id], 'archives:item-get'));
+  return getItem(id);
+}
+export const getItem = async (id) => parseItem(await queryOne('SELECT * FROM intake_items WHERE id = ?', [id], 'archives:item-get'));
+
+/** One decision for many items in one transaction (bulk approve/deny of a page). Returns the distinct ids sent. */
+export async function decideItems(ids, { decision, note = null, by = null }) {
+  if (decision != null && !DECISIONS.includes(decision)) throw new Error(`bad decision: ${decision}`);
+  const clean = [...new Set((ids || []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  if (!clean.length) return 0;
+  const t = now(), sts = [];
+  for (let i = 0; i < clean.length; i += 500) {
+    const chunk = clean.slice(i, i + 500);
+    sts.push({ sql: `UPDATE intake_items SET decision = ?, decision_note = ?, decided_by = ?, decided_at = ?, updated_at = ? WHERE id IN (${chunk.map(() => '?').join(', ')})`,
+      args: [decision ?? null, note, by, decision ? t : null, t, ...chunk] });
+  }
+  await transaction(sts, 'archives:items-decide-bulk');
+  return clean.length;
 }
 
 export async function driveReport(driveId) {

@@ -1,0 +1,10 @@
+---
+// Donor imports (planning/donor-intake-plan-20261030.md phase C): a tab per donated drive; approve / deny / more info per item.
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import DonorImports from '../../components/admin/DonorImports.svelte';
+---
+
+<AdminLayout title="Donor imports">
+  <DonorImports client:only="svelte"><IslandSkeleton slot="fallback" /></DonorImports>
+</AdminLayout>
