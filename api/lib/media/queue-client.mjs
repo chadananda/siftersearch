@@ -8,6 +8,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
 export const DEFAULT_BASE = 'https://siftersearch.com/_q';
+export const DIRECT_MAX = 90e6;   // matches worker/queue/index.js
 const enc = (p) => p.split('/').map(encodeURIComponent).join('/');
 
 export function queueClient({ base = process.env.MEDIA_QUEUE_URL || DEFAULT_BASE, key, fetch: f = globalThis.fetch, timeoutMs = 120_000 } = {}) {
@@ -34,8 +35,9 @@ export function queueClient({ base = process.env.MEDIA_QUEUE_URL || DEFAULT_BASE
     const bytes = (await stat(file)).size;
     const send = (url, headers) => f(url, { method: 'PUT', headers: { ...headers, 'content-length': String(bytes) }, body: Readable.toWeb(createReadStream(file)), duplex: 'half', redirect: 'manual', signal: AbortSignal.timeout(30 * 60_000) });
     const url = `${base}/${kind}/${enc(id)}/${enc(name)}${lease ? `?lease=${encodeURIComponent(lease)}` : ''}`;
-    let r = await send(url, hdr);
-    if (r.status === 307) r = await send(r.headers.get('location'), {});   // > 90 MB: straight to R2 on a signed url
+    // > 90 MB: Cloudflare's edge 413s bodies over 100 MB before the Worker runs, so ask with an EMPTY put (the Worker answers 307 to a signed url)
+    let r = bytes > DIRECT_MAX ? await f(url, { method: 'PUT', headers: { ...hdr, 'content-length': '0' }, body: '', redirect: 'manual', signal: AbortSignal.timeout(timeoutMs) }) : await send(url, hdr);
+    if (r.status === 307) r = await send(r.headers.get('location'), {});   // straight to R2 on the signed url
     if (!r.ok) throw await fail(`put ${kind}/${id}/${name}`, r);
     return { key: `${kind === 'files' ? 'stage' : 'results'}/${id}/${name}`, bytes };
   }
