@@ -1547,17 +1547,27 @@ export function rankedSlots(rates, host, maxSlots) {
 /** May home host `h` take queued order `id`? ONE host per order (Chad 10-28: upload is the bottleneck — the same audio never goes to two computers):
  *  an order another host holds is never eligible, and a whole order runs every stage on the host that takes it. Vendor-blind: boss (AMD) takes whole
  *  orders as soon as its GPU path is accepted (`boss_whole`), exactly like aorus (NVIDIA). */
-export function homeEligibleItem(h, id, st, acceptedWorker, env = process.env) {
+export function homeEligibleItem(h, id, st, acceptedWorker, env = process.env, held = false) {
   const whole = st.items?.[id]?.kind === 'whole';
   if (!silences(h, acceptedWorker)) return false;
   if (!homeCanTake(h, id, st, acceptedWorker, env)) return false;
   // Published talks first (Chad 10-28): a new-talk (whole) order takes a host only when no queued remaster work can run there. Both get processed.
-  return !(whole && st.queue?.some((q) => q !== id && st.items?.[q]?.kind !== 'whole' && homeCanTake(h, q, st, acceptedWorker, env)));
+  // …unless the lane is held: then the waiting remaster cannot run anyway, and must not keep the host idle
+  return !(whole && st.queue?.some((q) => q !== id && st.items?.[q]?.kind !== 'whole' && (!held || !feedsBacklog(st, q)) && homeCanTake(h, q, st, acceptedWorker, env)));
 }
-/** Queue index a free home host takes next, -1 for none. A held lane (backpressure) still hands out 'post' orders (10-30: aorus idle for hours):
- *  they take the guard / realign / encodes OFF tower's backlog, so holding them kept the lane held. */
+// A whole talk finishes on the worker (tower only marks it transcribed) and a post order drains tower's backlog — neither feeds the
+// media-remaster backlog, so the hold never stops them (10-30: 1483 whole talks waited while every pod idled out behind a 38-run backlog).
+export const feedsBacklog = (st, id) => st.items?.[id]?.kind !== 'whole' && st.items?.[id]?.mode !== 'post';
+/** The queue index a pod takes next: whole talks only on the accepted image; while held, nothing that feeds the backlog; after two
+ *  whole talks in a row a restore cuts in (published talks first) unless held. */
+export function podPick(st, p, acceptedWorker, held) {
+  const ok = (id) => (st.items?.[id]?.kind !== 'whole' || p.image === acceptedWorker?.image) && (!held || !feedsBacklog(st, id));
+  if (!held && (p.whole_since_restore || 0) >= 2) { const r = st.queue.findIndex((id) => st.items?.[id]?.kind !== 'whole' && (st.items?.[id]?.mode || 'restore') === 'restore'); if (r >= 0) return r; }
+  return st.queue.findIndex(ok);
+}
+/** Queue index a free home host takes next, -1 for none. A held lane (backpressure) still hands out whole and 'post' orders. */
 export const homePick = (h, st, acceptedWorker, held, env = process.env) =>
-  st.queue.findIndex((id) => (!held || st.items?.[id]?.mode === 'post') && homeEligibleItem(h, id, st, acceptedWorker, env));
+  st.queue.findIndex((id) => (!held || !feedsBacklog(st, id)) && homeEligibleItem(h, id, st, acceptedWorker, env, held));
 const baseHost = (h) => String(h).replace(/-\d+$/, '');
 /** Home builds of an accepted image: FROM <digest> + the worker code pods get in the script overlay, built and tagged on each host
  *  (scratchpad Dockerfile: COPY media/ → /opt/sifter/media + /opt/sifter/scripts/media). Keyed by the digest, so a newly accepted image drops them
@@ -1823,7 +1833,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
       if (!wantRaw && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
       const breakerOn = !!st.breaker_until && now() < st.breaker_until;
-      if (live.length < want && !held && !breakerOn) {
+      if (live.length < want && (!held || st.queue.some((id) => !feedsBacklog(st, id))) && !breakerOn) {
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
         const pod = await C.createPod(name, pub, { ...deps, prefer: acceptedWorker?.prefer_community?{cloud:'COMMUNITY',dcs:[]}:C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
         if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
@@ -1926,9 +1936,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             // Chad 10-30: stage ahead so a pod never starves — its worker's slots + STAGE_AHEAD waiting, up to STAGE_BATCH sent at once (one at a time held each pod to ~4 of 12 slots)
             let uploadsThisPass = 0; const batch = [];
             const mine = [...staging.values()].filter((s) => s.pod === p.id), pre = mine.filter((s) => !s.job).length;   // background uploads not yet in st.jobs
-            while (batch.length + mine.length < C.CLOUD.stageBatch && batch.length + staging.size < (C.CLOUD.stageGlobal ?? Infinity) && Object.entries(st.jobs).filter(([id,j])=>j.pod===p.id&&!finishedJobs.has(id)).length + pre + batch.length < stageTarget(p) && !staleImage && !p.dead_worker && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.entries(st.jobs).filter(([id,j]) => j.pod === p.id&&!finishedJobs.has(id)).length + pre + batch.length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:stageTarget(p), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
-              let eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||p.image===acceptedWorker?.image);
-              if((p.whole_since_restore||0)>=2){const repair=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'&&(st.items?.[id]?.mode||'restore')==='restore');if(repair>=0)eligible=repair;}
+            while (batch.length + mine.length < C.CLOUD.stageBatch && batch.length + staging.size < (C.CLOUD.stageGlobal ?? Infinity) && Object.entries(st.jobs).filter(([id,j])=>j.pod===p.id&&!finishedJobs.has(id)).length + pre + batch.length < stageTarget(p) && !staleImage && !p.dead_worker && !surplusPods.has(p.id) && !draining() && !rentalPause && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.entries(st.jobs).filter(([id,j]) => j.pod === p.id&&!finishedJobs.has(id)).length + pre + batch.length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:stageTarget(p), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
+              const eligible=podPick(st,p,acceptedWorker,held);
               if(eligible<0)break;
               batch.push(st.queue.splice(eligible,1)[0]);
             }

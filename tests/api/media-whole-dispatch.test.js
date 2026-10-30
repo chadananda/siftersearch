@@ -1,7 +1,7 @@
 // Whole-order dispatch (Chad 10-28): vendor-blind (boss AMD and aorus NVIDIA both take whole orders), and ONE host per order — upload is the
 // bottleneck, so the same audio never goes to two computers.
 import { describe, it, expect } from 'vitest';
-import { homeEligibleItem, homePick, homeImage, silences, HOME_BUILDS } from '../../api/lib/ops/media-jobs.js';
+import { homeEligibleItem, homePick, podPick, homeImage, silences, HOME_BUILDS } from '../../api/lib/ops/media-jobs.js';
 import { readFileSync } from 'fs';
 
 const wholeOnly = { queue: [1] };
@@ -21,7 +21,17 @@ describe('whole dispatch', () => {
     const s = { items: { 1: { kind: 'whole' }, 2: { mode: 'restore' }, 3: { mode: 'post' } }, home: {}, queue: [1, 2, 3] };
     expect(homePick('aorus-1', s, accepted, true)).toBe(2);    // index of the post order
     expect(homePick('aorus-1', s, accepted, false)).toBe(1);   // not held: the restore first, as before
-    expect(homePick('aorus-1', { ...s, queue: [1, 2] }, accepted, true)).toBe(-1);
+    expect(homePick('aorus-1', { ...s, queue: [2] }, accepted, true)).toBe(-1);
+  });
+  it('a held lane still hands out whole talks — they finish on the worker and never feed tower\'s backlog — to home hosts and pods', () => {
+    const s = { items: { 1: { kind: 'whole' }, 2: { mode: 'restore' } }, home: {}, queue: [2, 1] };
+    expect(homePick('aorus-1', s, accepted, true)).toBe(1);    // the waiting restore cannot run, so it does not keep the host idle
+    expect(homePick('aorus-1', s, accepted, false)).toBe(0);   // not held: published talks first
+    const pod = { image: 'img' }, aw = { image: 'img' };
+    expect(podPick(s, pod, aw, true)).toBe(1);
+    expect(podPick(s, pod, aw, false)).toBe(0);
+    expect(podPick(s, { image: 'old' }, aw, true)).toBe(-1);   // whole talks only on the accepted image
+    expect(podPick(s, { ...pod, whole_since_restore: 2 }, aw, false)).toBe(0);
   });
   it('an order another host holds is never eligible: the same audio is not sent to two hosts', () => {
     const s = st({ home: { 'aorus-1': { itemId: 1 } } });
