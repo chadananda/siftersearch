@@ -18,46 +18,51 @@
 </script>
 
 <section class="restored mx-auto max-w-6xl rounded-2xl border border-radio-line bg-radio-paper px-5 py-4" bind:this={root} aria-label="Restoration progress">
-  <div class="stats">
-    <div><b>{n(d?.published)}</b><span>completed of {n(d?.planned)} planned</span></div>
-    <div><b>{n(d?.held)}</b><span>held for review</span></div>
-    {#if workers.length}
-      <ul class="machines" aria-label="Machines at work">
-        {#each workers as w (w.key)}
-          <li class="card" title={`${w.name}: ${w.status}${w.jobs ? `, ${w.jobs} at work` : ''}`}>
-            <div class="head"><i class={`lamp ${LAMP[w.status] || 'dim'}`}></i><b>{w.name}</b><em>{w.jobs ? `${w.jobs} at work` : w.status}</em></div>
-            <div class="role">{w.role}</div>
-            <div class="spec"><span>GPU</span>{w.gpu}</div>
-            <div class="spec"><span>RAM</span>{w.ram}</div>
-            {#if w.key !== 'tower'}
-              <div class="speed"><div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : 'no work in 3 h'}</span></div>
-            {/if}
-          </li>
-        {/each}
-      </ul>
-    {/if}
+  <div class="left">
+    <div class="stats">
+      <div><b>{n(d?.published)}</b><span>completed of {n(d?.planned)} planned</span></div>
+      <div><b>{n(d?.held)}</b><span>held for review</span></div>
+    </div>
+    <div class="strip">
+      <span class="lbl">Just restored</span>
+      {#each recent as x (x.slug)}
+        <a href={`/media/${x.slug}`} class="chip" title={`${x.title}${x.speaker ? ` · ${x.speaker}` : ''}`}>{x.title}</a>
+      {:else}
+        <span class="chip empty">The next talks appear here as they are published</span>
+      {/each}
+    </div>
   </div>
-  <div class="strip">
-    <span class="lbl">Just restored</span>
-    {#each recent as x (x.slug)}
-      <a href={`/media/${x.slug}`} class="chip" title={x.speaker || ''}>{x.title}</a>
-    {:else}
-      <span class="chip empty">The next talks appear here as they are published</span>
-    {/each}
-  </div>
+  {#if workers.length}
+    <ul class="machines" aria-label="Machines at work">
+      {#each workers as w (w.key)}
+        <li class="card" title={`${w.name}: ${w.status}${w.jobs ? `, ${w.jobs} at work` : ''}`}>
+          <div class="head"><i class={`lamp ${LAMP[w.status] || 'dim'}`}></i><b>{w.name}</b><em>{w.jobs ? `${w.jobs} at work` : w.status}</em></div>
+          <div class="role">{w.role}</div>
+          <div class="spec"><span>GPU</span>{w.gpu}</div>
+          <div class="spec"><span>RAM</span>{w.ram}</div>
+          <div class="speed">
+            {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : 'no work in 3 h'}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
+          </div>
+        </li>
+      {/each}
+    </ul>
+  {/if}
 </section>
 
 <style>
-  .restored { min-height: 11rem; }
-  .machines { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
-  .card { width: 10.5rem; padding: 0.45rem 0.6rem; border: 1px solid var(--radio-line); border-radius: 0.6rem; background: var(--radio-panel); font-size: 0.72rem; line-height: 1.3; color: var(--radio-ink-soft); }
+  .restored { min-height: 9rem; display: flex; gap: 1rem 1.25rem; align-items: stretch; }
+  .left { flex: 1 1 14rem; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6rem; }
+  .machines { flex: 0 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
+  .card { display: flex; flex-direction: column; }
+  .card .speed { margin-top: auto; padding-top: 0.3rem; }
+  @media (max-width: 52rem) { .restored { flex-direction: column; } .machines { justify-content: flex-start; } }
+  .card { width: 9.75rem; padding: 0.45rem 0.6rem; border: 1px solid var(--radio-line); border-radius: 0.6rem; background: var(--radio-panel); font-size: 0.72rem; line-height: 1.3; color: var(--radio-ink-soft); }
   .card .head { display: flex; align-items: center; gap: 0.35rem; }
   .card .head b { font-size: 0.82rem; color: var(--radio-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card .head em { margin-left: auto; font-style: normal; font-size: 0.65rem; opacity: 0.8; white-space: nowrap; }
   .card .role { color: var(--radio-brass); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.15rem; }
   .card .spec { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card .spec span { display: inline-block; width: 2.1rem; font-size: 0.6rem; letter-spacing: 0.1em; opacity: 0.7; }
-  .card .speed { margin-top: 0.3rem; }
   .card .speed span { font-variant-numeric: tabular-nums; font-size: 0.68rem; }
   .bar { height: 0.3rem; border-radius: 999px; background: var(--radio-brass-soft); overflow: hidden; margin-bottom: 0.15rem; }
   .bar i { display: block; height: 100%; background: var(--radio-amber); border-radius: 999px; transition: width 0.6s ease; }
@@ -71,9 +76,9 @@
   .stats div { display: flex; flex-direction: column; min-width: 7rem; }
   .stats b { font-size: 1.6rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
   .stats span { font-size: 0.8rem; opacity: 0.75; }
-  .strip { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.9rem; min-height: 4.2rem; align-content: flex-start; }
-  .lbl { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; margin-right: 0.25rem; }
-  .chip { display: inline-block; max-width: 18rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0.25rem 0.7rem; border: 1px solid currentColor; border-radius: 999px; font-size: 0.85rem; text-decoration: none; opacity: 0.9; }
+  .strip { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; align-content: flex-start; }
+  .lbl { width: 100%; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; margin-right: 0.25rem; }
+  .chip { display: inline-block; max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0.1rem 0.5rem; border: 1px solid currentColor; border-radius: 999px; font-size: 0.75rem; text-decoration: none; opacity: 0.9; }
   .chip.empty { opacity: 0.5; border-style: dashed; }
   a.chip:hover { opacity: 1; }
 </style>

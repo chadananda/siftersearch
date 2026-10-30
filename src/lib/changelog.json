@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-30T01:49:24.088Z",
+  "generated": "2026-10-30T01:51:12.445Z",
   "entries": [
+    {
+      "hash": "a7ea9577",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Click the version tag to copy it (shows 'copied ✓'); no longer navigates home",
+      "scope": null
+    },
     {
       "hash": "bec69978",
       "date": "2026-10-29",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Hidden traditions — meta.yaml hidden: true ('Other': works spanning traditions, related ideas, contrasting beliefs) are searchable but never shelved or listed (shelves, library religions, public API) (Chad 10-21)",
       "scope": "library"
-    },
-    {
-      "hash": "1fd7625e",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Paced by the clock — overnight 2 at a time, by day one at a time with a 30 s pause; a sweep's back-to-back holdings checks drove Qdrant reads to ~300 MB/s and search to 4–14 s (paused: 2–4 s)",
-      "scope": "dewey-sweep"
     }
   ],
   "grouped": {
     "2026-10-29": [
+      {
+        "hash": "a7ea9577",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Click the version tag to copy it (shows 'copied ✓'); no longer navigates home",
+        "scope": null
+      },
       {
         "hash": "bec69978",
         "date": "2026-10-29",
@@ -7008,13 +7015,6 @@
         "type": "New",
         "description": "Hidden traditions — meta.yaml hidden: true ('Other': works spanning traditions, related ideas, contrasting beliefs) are searchable but never shelved or listed (shelves, library religions, public API) (Chad 10-21)",
         "scope": "library"
-      },
-      {
-        "hash": "1fd7625e",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Paced by the clock — overnight 2 at a time, by day one at a time with a 30 s pause; a sweep's back-to-back holdings checks drove Qdrant reads to ~300 MB/s and search to 4–14 s (paused: 2–4 s)",
-        "scope": "dewey-sweep"
       }
     ]
   }
