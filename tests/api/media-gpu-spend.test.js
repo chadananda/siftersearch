@@ -890,4 +890,11 @@ describe('talks taken off the air go first (Chad 10-29)', () => {
     const r = await mediaCloudOrderJob({ mode: 'withdraw', ids: [7] }, { cloud: { addOrders: async (o) => added.push(...o) }, repo: { getMediaItem: async (id) => ({ id, slug: 's', dir: '/x' }) }, ops: {}, readMeta: async () => { throw new Error('not read'); } });
     expect(r.ordered).toBe(1); expect(added).toEqual([{ id: 7, slug: 's', mode: 'withdraw', withdraw: true }]);
   });
+  it('an item whose mode is withdraw is never work: intake withdraws it, the lane drops any already queued (10-30)', async () => {
+    const { intakeOrder, dropWithdrawn } = await import('../../api/lib/ops/media-jobs.js');
+    const st = { jobs: {}, home: {}, queue: [7, 2, 8], done: [], failed: [], attempts: {}, items: { 7: { mode: 'restore', redo: true }, 2: { mode: 'withdraw' }, 8: { mode: 'post' } } };
+    intakeOrder(st, { id: 7, mode: 'withdraw' });
+    expect(st.queue).toEqual([2, 8]); expect(st.items[7]).toBeUndefined();
+    expect(dropWithdrawn(st)).toEqual([8]); expect(st.items[2]).toBeUndefined();
+  });
 });

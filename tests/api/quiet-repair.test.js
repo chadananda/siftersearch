@@ -58,19 +58,23 @@ describe('quiet repair', () => {
     const it0 = talk(); writeFileSync(join(it0.dir, 'enhanced', 'realign.json'), ''); await import('fs').then((f) => f.rmSync(join(it0.dir, 'enhanced', 'realign.json')));
     await expect(quietMaster(it0, { T: fakeT({}), host: 'aorus', image: 'img' })).rejects.toThrow(/realign/);
   });
-  it('the job records meta.remaster.quiet, queues the web redo, skips done / busy / unpublished talks', async () => {
+  it('the job records meta.remaster.quiet, queues the web redo, skips done / busy / unpublished talks, takes back a withdrawn-redo waiting talk', async () => {
     const metas = { 1: { enhancement: { listening: 'unipase' }, remaster: { status: 'done' } }, 2: { enhancement: { listening: 'unipase' }, remaster: { status: 'done', quiet: { v: 1 } } },
-      3: { enhancement: { listening: 'unipase' }, remaster: { status: 'done' } }, 4: { enhancement: { listening: 'safe' } } };
-    const items = [1, 2, 3, 4].map((id) => ({ id, slug: `t${id}`, dir: `/d/${id}` }));
+      3: { enhancement: { listening: 'unipase' }, remaster: { status: 'done' } }, 4: { enhancement: { listening: 'safe' } },
+      5: { enhancement: { listening: 'unipase' }, remaster: { status: 'waiting', why: 'no valid worker result (transcript changed or missing): back to a worker', method: 'unipase' } },
+      6: { enhancement: { listening: 'unipase' }, remaster: { status: 'waiting', why: 'no UniPASE copy yet' } } };
+    const items = [1, 2, 3, 4, 5, 6].map((id) => ({ id, slug: `t${id}`, dir: `/d/${id}` }));
     const queued = [];
-    const out = await mediaQuietRepairJob({ ids: [1, 2, 3, 4], image: 'img' }, {
+    const out = await mediaQuietRepairJob({ ids: [1, 2, 3, 4, 5, 6], image: 'img' }, {
       repo: { getMediaItem: async (id) => items[id - 1] }, ops: { pendingRuns: async (n) => (n === 'media-item' ? [{ params: { id: 3 } }] : []) },
       tools: {}, draining: () => false, queue: async (...a) => queued.push(a),
       quiet: { QUIET_REPAIR_VERSION: 1, quietMaster: async () => ({ changed: true, record: quietRecord({ quiet_s: 40, stretches: 3, loud_s: 25 }) }) },
       readMeta: async (dir) => structuredClone(metas[dir.split('/').at(-1)]), writeMeta: async (dir, m) => { metas[dir.split('/').at(-1)] = m; } });
-    expect(out.repaired).toEqual(['t1']);
-    expect(out.skipped).toHaveLength(3);
+    expect(out.repaired).toEqual(['t1', 't5']);
+    expect(out.skipped).toHaveLength(4);
+    expect(metas[5].remaster).toMatchObject({ status: 'done', method: 'unipase', quiet: { v: 1 } }); expect(metas[5].remaster.why).toBeUndefined();
     expect(metas[1].remaster.quiet).toMatchObject({ v: 1, quiet_s: 40, noise_silenced_s: 25, backup: 'enhanced/unipase.prequiet.flac' });
-    expect(queued).toEqual([['media-item', { id: 1, remaster: true, redo: ['web', 'trim', 'update'] }, 'media-quiet-repair']]);
+    expect(queued.map((q) => q[1].id)).toEqual([1, 5]);
+    expect(queued[0]).toEqual(['media-item', { id: 1, remaster: true, redo: ['web', 'trim', 'update'] }, 'media-quiet-repair']);
   });
 });

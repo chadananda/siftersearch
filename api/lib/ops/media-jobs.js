@@ -1709,7 +1709,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         for (const o of taken) intakeOrder(st, o);
         if(taken.length&&C.ackOrders){await save(st);await C.ackOrders(taken,deps.ordersFile);}
       }
-      st.queue = laneOrder(st.queue, st.items);
+      st.queue = laneOrder(dropWithdrawn(st), st.items);
       // BACKPRESSURE (Chad 10-24): never hand out a new talk while more than N finished results wait for tower's word guard / realign /
       // encode — GPUs would be paid for output nobody can consume. Pods that go without work idle out (10 min) and are terminated.
       if (now() - (st.backlog_checked || 0) > 30_000) {
@@ -2072,7 +2072,7 @@ export async function laneKeeperPass(deps = {}) {
 export function intakeOrder(st, o) {
   const running = Object.values(st.jobs).some((j) => j.itemId === o.id) || Object.values(st.home || {}).some((c) => c.itemId === o.id);
   // a WITHDRAWN order leaves the queue (10-30: 218 restore redos queued where a silence-only repair of the kept master was enough); one already running finishes
-  if (o.withdraw) { st.queue = st.queue.filter((x) => x !== o.id); if (!running) delete st.items[o.id]; return; }
+  if (o.withdraw || o.mode === 'withdraw') { st.queue = st.queue.filter((x) => x !== o.id); if (!running) delete st.items[o.id]; return; }
   if (o.redo) {
     st.done = st.done.filter((d) => d.id !== o.id);
     st.failed = st.failed.filter((d) => d.id !== o.id); delete st.attempts[o.id];
@@ -2082,6 +2082,13 @@ export function intakeOrder(st, o) {
   if ((!o.redo && st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode)) || st.queue.includes(o.id) || running) return;
   st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind, redo: !!o.redo, ...(o.first ? { first: true } : {}) };
   st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
+}
+
+/** The queue without items whose mode is 'withdraw' (10-30: a lane on pre-withdraw code took 193 withdraw orders in as ordinary work items). Mutates st.items. */
+export function dropWithdrawn(st) {
+  const gone = st.queue.filter((id) => st.items?.[id]?.mode === 'withdraw');
+  for (const id of gone) delete st.items[id];
+  return gone.length ? st.queue.filter((id) => !gone.includes(id)) : st.queue;
 }
 
 export function laneOrder(queue, items = {}) {
@@ -2160,13 +2167,16 @@ export async function mediaQuietRepairJob({ ids = null, limit = 300, host = 'aor
   const todo = [...list];
   const one = async (it) => {
     const m = await readMeta(it.dir).catch(() => null);
-    if (!m || m.enhancement?.listening !== 'unipase' || m.remaster?.status !== 'done') return out.skipped.push(`${it.slug}: not a published remaster`);
+    // 'waiting' for a worker result = a withdrawn restore redo touched it (10-30: 128 talks); the published master is still the one playing
+    const waiting = m?.remaster?.status === 'waiting' && /no valid worker result/.test(m.remaster.why || '');
+    if (!m || m.enhancement?.listening !== 'unipase' || (m.remaster?.status !== 'done' && !waiting)) return out.skipped.push(`${it.slug}: not a published remaster`);
     if (m.remaster?.quiet?.v >= QR.QUIET_REPAIR_VERSION) return out.skipped.push(`${it.slug}: already silenced`);
     if (busy.has(it.id)) return out.skipped.push(`${it.slug}: media work in flight`);
     try {
       const r = await QR.quietMaster(it, { T, host, image: img, stop: draining });
       const fresh = await readMeta(it.dir);   // re-read: the master swap took minutes
       fresh.remaster = { ...(fresh.remaster || {}), quiet: { ...r.record, host, at: new Date().toISOString(), ...(r.changed ? { backup: 'enhanced/unipase.prequiet.flac' } : {}) } };
+      if (waiting && fresh.remaster.status === 'waiting') { fresh.remaster.status = 'done'; delete fresh.remaster.why; }   // back to done: no lane or backfill re-picks it
       await writeMeta(it.dir, fresh);
       if (!r.changed) return out.unchanged.push(it.slug);
       await queue('media-item', { id: it.id, remaster: true, redo: ['web', 'trim', 'update'] }, 'media-quiet-repair');
