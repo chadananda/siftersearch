@@ -1,8 +1,10 @@
 <script>
   // The restoration readout on /media (Chad 10-24): talks published of those planned, held for review, and the latest 30 as box-set spines in a scrolling list (Chad 10-29);
   // beside them a small card per machine doing the work (Chad 10-29): role, GPU, RAM, speed (× real time over the last hour, bar vs the fastest).
-  // Six cards fit one row beside the list (Chad 10-30: Tower, Boss, Aorus and three RunPods). A pod card carries a CPU and a GPU dial (Chad 10-30):
-  // busy % of the pod's CPU quota and of the GPU's power limit (api/lib/media/worker-cards.js readGauges).
+  // Six cards fit one row beside the list (Chad 10-30: Tower, Boss, Aorus and three RunPods). Each card is a little machine (Chad 10-30: "half-oldtime-radio,
+  // half-computer", "a CRT ... green scanline, slightly rounded Apple-II"): walnut chassis, brass name plate + pilot jewel, a phosphor CRT, two needle meters
+  // (CPU = busy % of the machine's CPU quota, GPU = % of its power limit: api/lib/media/worker-cards.js readGauges) and a vent grille.
+  // A working machine's CRT types a work-log tail, faster the busier it is (Chad 10-30: "frenetic activity ... typing") — decoration, not a real log.
   // Cached SSR first view, then liveRefresh (src/lib/live-data.js) every 30 s while on screen. The block's height is reserved, so a patch never shifts the page.
   import { onMount } from 'svelte';
   import { liveRefresh } from '../../../lib/live-data.js';
@@ -22,12 +24,56 @@
   const playing = (slug) => preview.item?.s === slug && preview.playing;
   const recent = $derived(Array.isArray(d?.recent) ? d.recent.filter((x) => x?.slug) : []);
   onMount(() => liveRefresh(() => media.restored(), (next) => { d = next; }, { every: 30_000, el: root, initial }));
+
+  // the analog meters: a 110° scale (pivot 24,29, radius 19), ticks every 10 %, a red zone past 90 %
+  const ang = (v) => -55 + (Math.max(0, Math.min(100, v)) / 100) * 110;
+  const pt = (deg, r) => { const a = (deg * Math.PI) / 180; return [24 + r * Math.sin(a), 29 - r * Math.cos(a)].map((x) => x.toFixed(2)); };
+  const arc = (from, to) => { const [x1, y1] = pt(ang(from), 19), [x2, y2] = pt(ang(to), 19); return `M${x1} ${y1} A19 19 0 0 1 ${x2} ${y2}`; };
+  const TICKS = Array.from({ length: 11 }, (_, i) => { const [x1, y1] = pt(ang(i * 10), i % 5 ? 16.8 : 15.2), [x2, y2] = pt(ang(i * 10), 19.6); return { x1, y1, x2, y2, major: !(i % 5) }; });
+  const SCALE = arc(0, 90), REDZONE = arc(90, 100);
+
+  // the CRT tail: a work-log that types itself in bursts while a machine works
+  const VERBS = { cloud: ['UNIPASE', 'DENOISE', 'DEREVERB', 'STFT', 'ISTFT', 'LUFS', 'GUARD', 'VAD', 'BLK', 'FLAC'], tower: ['STAGE', 'R2 PUT', 'R2 GET', 'POLL', 'LEDGER', 'SYNC', 'FEED'], home: ['WHISPER', 'ASR', 'DIARIZE', 'GRADE', 'DFN', 'ALIGN'] };
+  const kind = (w) => (w.key === 'tower' ? 'tower' : /^sifter-/.test(w.key) ? 'cloud' : 'home');
+  const hex = () => Math.floor(Math.random() * 65536).toString(16).toUpperCase().padStart(4, '0');
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const logLine = (w) => { const r = Math.random(); return `>${pick(VERBS[kind(w)])} ${hex()}${r < 0.4 ? ` ${Math.floor(Math.random() * 100)}%` : r < 0.7 ? ' OK' : ` ${hex()}`}`; };
+  const busy = (w) => w.status === 'working' || w.status === 'conducting';
+  const pace = (w) => { const g = w.gauges; const a = g ? Math.max(g.cpu ?? 0, g.gpu ?? 0) / 100 : w.jobs ? 0.6 : 0.3; return 0.25 + a * 2.6; };   // characters per tick
+  let tty = $state({});   // key → { done: [two finished lines], typing, target, carry }
+  onMount(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let seen = false;
+    const io = new IntersectionObserver(([e]) => { seen = e.isIntersecting; });
+    io.observe(root);
+    const id = setInterval(() => {
+      if (!seen || document.hidden) return;
+      const next = {};
+      for (const w of workers) {
+        if (!busy(w)) continue;
+        const t = tty[w.key] ? { ...tty[w.key] } : { done: [], typing: '', target: logLine(w), carry: Math.random() * 3 };
+        t.carry += pace(w) * (Math.random() < 0.15 ? 0 : 0.4 + Math.random() * 1.4);   // bursts and pauses, not a metronome
+        const k = Math.floor(t.carry); t.carry -= k;
+        t.typing = t.target.slice(0, t.typing.length + k);
+        if (t.typing.length >= t.target.length) { t.done = [...t.done, t.target].slice(-2); t.typing = ''; t.target = logLine(w); }
+        next[w.key] = t;
+      }
+      tty = next;
+    }, 60);
+    return () => { clearInterval(id); io.disconnect(); };
+  });
 </script>
 
-{#snippet dial(label, v, of)}
-  <div class="dial" title={v == null ? `${label}: measuring…` : `${label} ${v}% busy (${of})`}>
-    <svg viewBox="0 0 40 23" aria-hidden="true"><path d="M5 20 A15 15 0 0 1 35 20" class="track" /><path d="M5 20 A15 15 0 0 1 35 20" class="val" class:hot={v >= 90} pathLength="100" style={`stroke-dasharray:${v ?? 0} 100`} /></svg>
-    <span><b>{v == null ? '–' : v}</b>{v == null ? '' : '%'} {label}</span>
+{#snippet meter(label, v, of)}
+  <div class="meter" class:off={v == null} title={v == null ? `${label}: not reported by this machine` : `${label} ${v}% busy (${of})`}>
+    <svg viewBox="0 0 48 31" aria-hidden="true">
+      <rect class="face" width="48" height="31" rx="2.5" />
+      <path class="scale" d={SCALE} /><path class="red" d={REDZONE} />
+      {#each TICKS as t, i (i)}<line class:major={t.major} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} />{/each}
+      <text x="3" y="29" class="lbl">{label}</text><text x="45" y="29" class="num" text-anchor="end">{v == null ? '—' : `${v}%`}</text>
+      <line class="needle" x1="24" y1="29" x2="24" y2="11.5" style={`transform: rotate(${ang(v ?? 0)}deg)`} />
+      <circle class="hub" cx="24" cy="29" r="2.6" />
+    </svg>
   </div>
 {/snippet}
 
@@ -57,14 +103,23 @@
   {#if workers.length}
     <ul class="machines" aria-label="Machines at work">
       {#each workers as w (w.key)}
-        <li class="card" title={`${w.name}: ${w.status}${w.jobs ? `, ${w.jobs} at work` : ''}`}>
-          <div class="head"><i class={`lamp ${LAMP[w.status] || 'dim'}`}></i><b>{w.name}</b></div>
-          <div class="role">{w.role}</div>
-          {#each w.specs || [['GPU', w.gpu], ['RAM', w.ram]] as [k, v] (k)}<div class="spec"><span>{k}</span>{v}</div>{/each}
-          {#if w.gauges}<div class="dials">{@render dial('CPU', w.gauges.cpu, 'of its CPU quota')}{@render dial('GPU', w.gauges.gpu, 'of the GPU power limit')}</div>{/if}
-          <div class="speed">
-            {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : w.jobs ? 'first talks under way' : w.status === 'idle' ? 'no work in the last hour' : w.status}{w.jobs ? ` · ${w.jobs} at work` : ''}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
-          </div>
+        <li class="unit" title={`${w.name}: ${w.status}${w.jobs ? `, ${w.jobs} at work` : ''}`}>
+          <div class="plate"><i class={`jewel ${LAMP[w.status] || 'dim'}`}></i><b>{w.name}</b></div>
+          <div class="bezel"><div class="screen">
+            <div class="ln hd">{w.role}</div>
+            {#each w.specs || [['GPU', w.gpu], ['RAM', w.ram]] as [k, v] (k)}<div class="ln"><span class="k">{k}</span>{v}</div>{/each}
+            {#if w.key !== 'tower'}
+              <div class="cells" aria-hidden="true">{#each Array(10) as _, i (i)}<i class:lit={i < Math.round(((w.speed || 0) / fastest) * 10)}></i>{/each}</div>
+              <div class="ln">{w.speed ? `${w.speed}× real time` : w.jobs ? 'first talks under way' : w.status === 'idle' ? 'no work last hour' : w.status}</div>
+            {/if}
+            {#if w.jobs}<div class="ln">{w.key === 'tower' ? `${w.jobs} talks in hand` : `${w.jobs} at work`}</div>{/if}
+            <div class="tty" aria-hidden="true">
+              {#each tty[w.key]?.done || [] as l, i (i)}<div class="ln dim">{l}</div>{/each}
+              <div class="ln">{busy(w) ? (tty[w.key]?.typing || '>') : ']'}<span class="cur"></span></div>
+            </div>
+          </div></div>
+          <div class="meters">{@render meter('CPU', w.gauges?.cpu ?? null, 'of its CPU quota')}{@render meter('GPU', w.gauges?.gpu ?? null, 'of the GPU power limit')}</div>
+          <div class="grille" aria-hidden="true"></div>
         </li>
       {/each}
     </ul>
@@ -72,7 +127,7 @@
 </section>
 
 <style>
-  .restored { min-height: 8.5rem; display: flex; gap: 1rem 1.25rem; align-items: stretch; }
+  .restored { min-height: 12rem; display: flex; gap: 1rem 1.25rem; align-items: stretch; }
   .left { flex: 1 1 16rem; min-width: 0; display: flex; flex-direction: column; gap: 0.45rem; }
   .stats { margin: 0; font-size: 0.8rem; color: var(--radio-ink-soft); }
   .stats b { font-size: 1.15rem; color: var(--radio-ink); font-variant-numeric: tabular-nums; }
@@ -95,33 +150,75 @@
   .spine-play:hover, .spine-play.on { background: var(--radio-amber); color: var(--radio-walnut-deep); }
   .empty { font-size: 0.8rem; opacity: 0.6; padding: 0.3rem 0; }
   @media (max-width: 52rem) { .spines { min-height: 9rem; } }
-  .machines { flex: 0 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 0.4rem; list-style: none; margin: 0; padding: 0; }
-  .card { display: flex; flex-direction: column; }
-  .card .speed { margin-top: auto; padding-top: 0.3rem; }
+  .machines { flex: 0 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
   @media (max-width: 52rem) { .restored { flex-direction: column; } .machines { justify-content: flex-start; } }
-  .card { width: 7.4rem; padding: 0.4rem 0.5rem; border: 1px solid var(--radio-line); border-radius: 0.55rem; background: var(--radio-panel); font-size: 0.66rem; line-height: 1.28; color: var(--radio-ink-soft); }
-  .card .head { display: flex; align-items: center; gap: 0.35rem; }
-  .card .head b { font-size: 0.76rem; min-width: 0; color: var(--radio-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card .role { color: var(--radio-brass); font-size: 0.58rem; letter-spacing: 0.02em; text-transform: uppercase; margin-bottom: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card .spec { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card .spec span { display: inline-block; width: 2.1rem; font-size: 0.55rem; letter-spacing: 0.1em; opacity: 0.7; }
-  .card .speed span { font-variant-numeric: tabular-nums; font-size: 0.62rem; }
-  .dials { display: flex; gap: 0.2rem; margin-top: 0.25rem; }
-  .dial { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
-  .dial svg { width: 100%; max-width: 2.9rem; height: auto; overflow: visible; }
-  .dial path { fill: none; stroke-width: 4.5; stroke-linecap: round; }
-  .dial .track { stroke: var(--radio-brass-soft); }
-  .dial .val { stroke: var(--radio-amber); transition: stroke-dasharray 0.6s ease; }
-  .dial .val.hot { stroke: var(--radio-needle); }
-  .dial span { margin-top: -0.25rem; font-size: 0.55rem; letter-spacing: 0.06em; white-space: nowrap; }
-  .dial b { font-size: 0.72rem; color: var(--radio-ink); font-variant-numeric: tabular-nums; }
-  @media (prefers-reduced-motion: reduce) { .dial .val { transition: none; } }
-  .bar { height: 0.3rem; border-radius: 999px; background: var(--radio-brass-soft); overflow: hidden; margin-bottom: 0.15rem; }
-  .bar i { display: block; height: 100%; background: var(--radio-amber); border-radius: 999px; transition: width 0.6s ease; }
-  .lamp { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex: none; background: var(--radio-ink-soft); opacity: 0.35; }
-  .lamp.on { background: var(--radio-amber); opacity: 1; box-shadow: 0 0 0.4rem var(--radio-glow); }
-  .lamp.dim { background: var(--radio-brass); opacity: 0.6; }
-  .lamp.blink { background: var(--radio-amber); animation: blink 1.2s ease-in-out infinite; }
-  @keyframes blink { 50% { opacity: 0.2; } }
-  @media (prefers-reduced-motion: reduce) { .lamp.blink { animation: none; } .bar i { transition: none; } }
+
+  /* the chassis: a walnut cabinet with four brass screws, lit from above */
+  .unit { --screw: radial-gradient(circle, var(--radio-brass-bright) 0 1.3px, var(--radio-brass) 1.4px 1.9px, rgba(0, 0, 0, 0.5) 2px 2.4px, transparent 2.5px);
+    width: 8.2rem; display: flex; flex-direction: column; gap: 0.3rem; padding: 0.4rem 0.4rem 0.35rem; border-radius: 0.6rem; color: var(--radio-phosphor);
+    background:
+      var(--screw) 0.2rem 0.2rem / 6px 6px no-repeat, var(--screw) calc(100% - 0.2rem) 0.2rem / 6px 6px no-repeat,
+      var(--screw) 0.2rem calc(100% - 0.2rem) / 6px 6px no-repeat, var(--screw) calc(100% - 0.2rem) calc(100% - 0.2rem) / 6px 6px no-repeat,
+      repeating-linear-gradient(97deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 5px, rgba(0, 0, 0, 0.06) 5px 6px, transparent 6px 11px),
+      linear-gradient(180deg, var(--radio-walnut), var(--radio-walnut-deep));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 0 rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 16px -10px rgba(0, 0, 0, 0.6); }
+
+  /* brass name plate, engraved, with a pilot-light jewel */
+  .plate { display: flex; align-items: center; gap: 0.3rem; margin: 0 0.45rem; padding: 0.12rem 0.35rem; border-radius: 2px;
+    background: linear-gradient(180deg, var(--radio-brass-bright), var(--radio-brass) 60%, color-mix(in srgb, var(--radio-brass) 70%, black));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 1px 1px rgba(0, 0, 0, 0.5); }
+  .plate b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 0.7rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif;
+    letter-spacing: 0.09em; text-transform: uppercase; color: #2a1a0e; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4); }
+  .jewel { flex: none; width: 0.48rem; height: 0.48rem; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8 0 15%, #5a3a22 40%, #2a1a0e);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.5); }
+  .jewel.on { background: radial-gradient(circle at 35% 30%, #fff 0 12%, #ffd27a 30%, #ff9a1f 60%, #b45309); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 6px 1px rgba(255, 170, 60, 0.8); }
+  .jewel.dim { background: radial-gradient(circle at 35% 30%, #fff6 0 12%, #9a7330 45%, #4a3018); }
+  .jewel.blink { background: radial-gradient(circle at 35% 30%, #fff 0 12%, #ffd27a 30%, #ff9a1f 60%, #b45309); animation: blink 1.1s steps(2, jump-none) infinite; }
+  @keyframes blink { 50% { opacity: 0.25; box-shadow: none; } }
+
+  /* the CRT: a dark rim, then a rounded, slightly barrelled tube with scanlines, glow and a glass glare */
+  .bezel { flex: 1; display: flex; padding: 3px; border-radius: 0.7rem / 0.8rem; background: linear-gradient(180deg, #1a1712, #050403);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 1px 0 rgba(255, 255, 255, 0.12), 0 -1px 0 rgba(0, 0, 0, 0.5); }
+  .screen { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; padding: 0.3rem 0.4rem 0.25rem;
+    border-radius: 0.6rem / 0.75rem; background: radial-gradient(ellipse 120% 100% at 50% 40%, color-mix(in srgb, var(--radio-phosphor) 9%, var(--radio-crt)) 0%, var(--radio-crt) 70%, #010402 100%);
+    box-shadow: inset 0 0 0.5rem rgba(0, 0, 0, 0.95), inset 0 0 1.5rem rgba(0, 0, 0, 0.55);
+    font: 400 0.84rem/0.82 'VT323', 'IBM Plex Mono', ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.02em;
+    text-shadow: 0 0 1px var(--radio-phosphor), 0 0 5px color-mix(in srgb, var(--radio-phosphor) 55%, transparent); animation: hum 7s steps(1) infinite; }
+  .screen::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.32) 0 1px, transparent 1px 3px); }
+  .screen::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; border-radius: inherit;
+    background: radial-gradient(ellipse 90% 45% at 30% 0%, rgba(255, 255, 255, 0.10), transparent 70%), radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.45) 100%); }
+  @keyframes hum { 0%, 100% { opacity: 1; } 47% { opacity: 0.94; } 48% { opacity: 1; } 83% { opacity: 0.97; } }
+  .ln { white-space: nowrap; overflow: hidden; text-overflow: clip; }
+  .ln.hd { color: color-mix(in srgb, var(--radio-phosphor) 70%, var(--radio-crt)); margin-bottom: 0.1rem; }
+  .ln .k { display: inline-block; width: 2.3em; opacity: 0.6; }
+  .ln.dim { opacity: 0.55; }
+  .cells { display: flex; gap: 1px; margin: 0.15rem 0 0.12rem; }
+  .cells i { flex: 1; height: 0.32rem; background: color-mix(in srgb, var(--radio-phosphor) 14%, transparent); }
+  .cells i.lit { background: var(--radio-phosphor); box-shadow: 0 0 4px color-mix(in srgb, var(--radio-phosphor) 70%, transparent); }
+  .tty { margin-top: auto; padding-top: 0.15rem; height: 2.6em; display: flex; flex-direction: column; justify-content: flex-end; }
+  .cur { display: inline-block; width: 0.5em; height: 0.72em; margin-left: 1px; vertical-align: -0.04em; background: var(--radio-phosphor); box-shadow: 0 0 4px var(--radio-phosphor); animation: cur 1s steps(1) infinite; }
+  @keyframes cur { 50% { opacity: 0; } }
+
+  /* two analog meters behind brass bezels: CPU and GPU */
+  .meters { display: flex; gap: 0.25rem; }
+  .meter { flex: 1; padding: 2px; border-radius: 4px; background: linear-gradient(180deg, var(--radio-brass-bright), var(--radio-brass) 55%, color-mix(in srgb, var(--radio-brass) 60%, black));
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+  .meter svg { display: block; width: 100%; height: auto; border-radius: 2.5px; box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.6); }
+  .meter .face { fill: var(--radio-dial); }
+  .meter .scale { fill: none; stroke: var(--radio-dial-ink); stroke-width: 0.6; opacity: 0.7; }
+  .meter .red { fill: none; stroke: var(--radio-needle); stroke-width: 2; }
+  .meter line { stroke: var(--radio-dial-ink); stroke-width: 0.5; opacity: 0.7; }
+  .meter line.major { stroke-width: 0.9; opacity: 1; }
+  .meter text { font: 700 5.6px/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; fill: var(--radio-dial-ink); }
+  .meter .num { font-variant-numeric: tabular-nums; }
+  .meter .needle { stroke: var(--radio-needle); stroke-width: 0.9; stroke-linecap: round; opacity: 1; transform-box: view-box; transform-origin: 24px 29px; transition: transform 1.2s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  .meter .hub { fill: #1b1410; stroke: var(--radio-brass); stroke-width: 0.6; }
+  .meter.off .face { opacity: 0.55; }
+  .meter.off .needle { opacity: 0.45; }
+
+  /* the vent grille under it all */
+  .grille { height: 0.4rem; margin: 0 0.5rem; border-radius: 2px; background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0 2px, transparent 2px 4px);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.08); }
+
+  @media (prefers-reduced-motion: reduce) { .jewel.blink, .screen, .cur { animation: none; } .meter .needle { transition: none; } }
 </style>
