@@ -36,7 +36,7 @@ export async function quietMaster(it, { T, host, image, stop = () => false, nap 
   const enh = join(it.dir, 'enhanced'), master = join(enh, 'unipase.flac'), work = join(it.dir, 'transcript.work.json'), realign = join(enh, 'realign.json');
   if (!existsSync(realign)) throw Error('no realign.json on the master: needs a full redo');
   const s0 = await fs.stat(master);
-  if (s0.size < 1e6) throw Error('master missing or empty');
+  if (s0.size < 1e4) throw Error('master missing or empty');   // 10 KB, not more: a 37 s talk's master is 159 KB
   const prof = hostProfile(host), root = prof.root, docker = prof.docker;
   if (prof.transport === 'gate') throw Error(`${host}: gate transport takes no quiet jobs; use a docker host`);
   const name = `quiet-${it.id}-${s0.size.toString(36)}-${Math.round(s0.mtimeMs).toString(36)}`, remote = `${root}/${name}`;
@@ -72,7 +72,7 @@ export async function quietMaster(it, { T, host, image, stop = () => false, nap 
   await get(remote + '/out.flac', staged);
   const s1 = await fs.stat(master);
   if (s1.size !== s0.size || s1.mtimeMs !== s0.mtimeMs) { await fs.rm(staged, { force: true }); throw Error('master changed while it was being silenced'); }
-  if ((await fs.stat(staged)).size < 1e6) throw Error('silenced copy came back empty');
+  if ((await fs.stat(staged)).size < 1e4) throw Error('silenced copy came back empty');
   await fs.rename(master, join(enh, 'unipase.prequiet.flac'));   // rollback: rename it back and redo web/trim/update
   await fs.rename(staged, master);
   await cleanup();
