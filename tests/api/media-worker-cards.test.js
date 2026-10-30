@@ -26,12 +26,13 @@ describe('workerCards', () => {
     expect(by.aorus).toMatchObject({ status: 'working', jobs: 2, speed: 1 });
     expect(by.boss).toMatchObject({ status: 'resting', jobs: 0, speed: null });
     expect(by.tower).toMatchObject({ status: 'conducting', jobs: 3 });
-    expect(by['sifter-unipase-342']).toMatchObject({ name: 'RunPod #342', gpu: 'RTX 4090 · 24 GB', ram: '24 GB free', status: 'working', jobs: 1, speed: 3 });
+    expect(Object.fromEntries(by.tower.specs)).toMatchObject({ CPU: expect.any(String), Cores: expect.any(String), Drives: expect.any(String), Store: expect.any(String) });
+    expect(by['sifter-unipase-342']).toMatchObject({ name: 'RunPod #342', specs: [['GPU', 'RTX 4090 · 24 GB'], ['RAM', '24 GB free']], status: 'working', jobs: 1, speed: 3 });
   });
   it('a booting pod has no GPU yet; nothing private is exposed', () => {
     const c = workerCards({ pods: { q: { id: 'q', name: 'sifter-unipase-9', status: 'booting', costPerHr: 0.5 } } }, now).at(-1);
-    expect(c).toMatchObject({ status: 'starting', gpu: 'assigning…', ram: '—' });
-    expect(workerCards({ pods: { q: { id: 'q', name: 'x', status: 'ready', gpu: null, worker: { vram_total_gb: 23.99 } } } }, now).at(-1).gpu).toBe('NVIDIA · 24 GB');
+    expect(c).toMatchObject({ status: 'starting', specs: [['GPU', 'assigning…'], ['RAM', '—']] });
+    expect(workerCards({ pods: { q: { id: 'q', name: 'x', status: 'ready', gpu: null, worker: { vram_total_gb: 23.99 } } } }, now).at(-1).specs[0][1]).toBe('NVIDIA · 24 GB');
     expect(JSON.stringify(cards)).not.toMatch(/1\.2\.3\.4|costPerHr|0\.34|temp/);
   });
 });

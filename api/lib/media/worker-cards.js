@@ -2,9 +2,10 @@
 // Pure: the lane state (cloud.js STATE_FILE) → cards. Speed = audio processed per wall-clock hour over the last 3 h (× real time).
 // Hardware is a fixed table (home machines) or the pod's own report (RunPod). No temperatures, costs or addresses leave here.
 export const MACHINES = [
-  { key: 'tower', name: 'Tower', role: 'Conductor', gpu: 'none, serves only', ram: '188 GB' },
-  { key: 'boss', name: 'Boss', role: 'Remaster + transcribe', gpu: 'Radeon 8060S (Strix Halo)', ram: '128 GB unified' },
-  { key: 'aorus', name: 'Aorus', role: 'Remaster + checks', gpu: 'RTX 3070 · 8 GB', ram: '16 GB' },
+  // tower = storage (Chad 10-29): read off the box 10-29 (lscpu, lsblk: 2 SAS HDD + 2 SAS SSD + 2 NVMe + 1 USB, ~32 TB raw)
+  { key: 'tower', name: 'Tower', role: 'Storage + conductor', specs: [['CPU', '2 × Xeon E5-2698'], ['Cores', '40 · 80 threads'], ['Drives', '7'], ['Store', '32 TB']] },
+  { key: 'boss', name: 'Boss', role: 'Remaster + transcribe', specs: [['GPU', 'Radeon 8060S (Strix Halo)'], ['RAM', '128 GB unified']] },
+  { key: 'aorus', name: 'Aorus', role: 'Remaster + checks', specs: [['GPU', 'RTX 3070 · 8 GB'], ['RAM', '16 GB']] },
 ];
 export const SPEED_WINDOW_MS = 3 * 3600_000;
 const base = (h) => String(h || '').replace(/-\d+$/, '');
@@ -34,7 +35,7 @@ export function workerCards(st = {}, now = Date.now()) {
     const jobs = Object.values(st.jobs || {}).filter((j) => j.pod === p.id).length;
     const vram = w.vram_total_gb ? ` · ${Math.round(w.vram_total_gb)} GB` : '';
     cards.push({ key: p.name, name: `RunPod ${String(p.name).replace(/^sifter-unipase-/, '#')}`, role: 'Cloud remaster',
-      gpu: p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : vram ? `NVIDIA${vram}` : 'assigning…', ram: w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—',
+      specs: [['GPU', p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : vram ? `NVIDIA${vram}` : 'assigning…'], ['RAM', w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—']],
       status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? null });
   }
   return cards;
