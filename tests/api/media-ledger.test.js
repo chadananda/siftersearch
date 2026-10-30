@@ -24,6 +24,9 @@ describe('media stage ledger', () => {
       { stage: 'archive', status: 'done', at: '2026-10-30T01:00:00Z', ms: 12, host: null, detail: null },
       { stage: 'remaster', status: 'failed', at: null, ms: null, host: null, detail: '{"error":"guard"}' },
     ]);
+    expect(stageRows({ web: { at: true, worker: { id: 'x' }, ms: 'n' }, x: { at: 1761786000000, host: 'boss' } })).toEqual([
+      { stage: 'web', status: 'done', at: null, ms: null, host: null, detail: null },
+      { stage: 'x', status: 'done', at: new Date(1761786000000).toISOString(), ms: null, host: 'boss', detail: null }]);   // only scalars reach SQLite
     expect(stageDiff([{ stage: 'x', status: 'done', at: '1', ms: 1, host: null, detail: null }], [])).toEqual({ upsert: [], remove: ['x'] });
   });
   it('sync writes only the difference; a redo (stage cleared in meta) removes the row', async () => {
