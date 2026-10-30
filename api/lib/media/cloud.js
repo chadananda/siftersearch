@@ -140,6 +140,8 @@ export function hostStats(st) {
   for (const e of Object.values(out)) { e.avg_boot_s = e.ok ? Math.round(e.boot_s / e.ok) : null; delete e.boot_s; }
   return out;
 }
+/** Machines whose GPU failed the CUDA proof: never worth booting again. Pure. */
+export const brokenHosts = (st) => new Set(Object.values(st.pods || {}).filter((p) => p.gpu_broken && p.host_key).map((p) => p.host_key));
 /** The rental preference learned so far: data centres with >= 2 boots, none wasted, average boot < 7 min; SECURE once the breaker has tripped. */
 export function rentalPrefer(st) {
   const good = Object.entries(hostStats(st)).filter(([, e]) => e.ok >= 2 && e.fails === 0 && e.avg_boot_s != null && e.avg_boot_s < 420).sort((a, b) => a[1].avg_boot_s - b[1].avg_boot_s).map(([dc]) => dc);

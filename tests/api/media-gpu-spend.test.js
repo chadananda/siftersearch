@@ -386,6 +386,10 @@ describe('the lane: GPU is rented only for work', () => {
     expect(st.pods.p1.jobs_assigned || 0).toBe(0);
     expect(st.done.every((d) => d.pod !== 'p1')).toBe(true);
   });
+  it('a machine whose GPU failed the proof is never booted again (343 landed on 342\'s machine)', async () => {
+    const { brokenHosts } = await import('../../api/lib/media/cloud.js');
+    expect([...brokenHosts({ pods: { a: { host_key: 'm1', gpu_broken: true }, b: { host_key: 'm2' }, c: { gpu_broken: true } } })]).toEqual(['m1']);
+  });
   it('a pod whose talks keep failing (3 in 15 min, none finished) is dropped; the replacement does them', async () => {
     let n = 0;
     const x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => (cmd === 'ssh' && last.startsWith('cd /workspace/spool') && n === 1

@@ -1798,6 +1798,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             if (p.costPerHr == null) p.costPerHr = g.costPerHr ?? g.adjustedCostPerHr ?? null;
             p.gpu = g.machine?.gpuDisplayName || g.gpu?.displayName || p.gpu || null;
             p.dc = g.machine?.dataCenterId || g.dataCenterId || p.dc || null; p.host_key = g.machineId || g.machine?.id || p.host_key || null; p.cloud = g.cloudType || g.machine?.cloudType || p.cloud || null;
+            // RunPod cannot exclude a machine at rent time: a pod landing on one whose GPU already failed the proof is closed before it boots (10-29: #343 = #342's machine)
+            if (p.host_key && C.brokenHosts(st).has(p.host_key)) { await closePod(p, 'machine already failed the GPU proof'); return; }
             const port = g.portMappings?.['22'];
             if (g.publicIp && port) {
               p.ip = g.publicIp; p.port = port;
