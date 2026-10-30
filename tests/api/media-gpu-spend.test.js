@@ -65,6 +65,11 @@ describe('persistent operator rental pause', () => {
       expect(C.BOOTSTRAP_WHOLE).not.toMatch(/pkill|pip install|tar xzf/);
       expect(C.BOOTSTRAP_WHOLE).toContain('farm_worker.py');
       expect(C.BOOTSTRAP_WHOLE).toMatch(/\^LD_LIBRARY_PATH=[\s\S]*export LD_LIBRARY_PATH[\s\S]*farm_worker\.py --spool/);   // the image ENV never reaches an ssh session
+      // a pod booted with an older BOOTSTRAP_WHOLE drains like a stale image (no new talks, closed when its own finish)
+      expect(C.BOOT_V).toMatch(/^[0-9a-f]{12}$/);
+      const lane = readFileSync(join(import.meta.dirname, '../../api/lib/ops/media-jobs.js'), 'utf8');
+      expect(lane).toMatch(/p\.boot_v = C\.BOOT_V/);
+      expect(lane).toMatch(/outdated=\(p\)=>p\.image!==acceptedWorker\.image\|\|p\.boot_v!==C\.BOOT_V/);
       // the worker never ends its own pod (it idled new pods out before their first talk); the keeper holds the safety nets
       expect(C.BOOTSTRAP_WHOLE).toMatch(/env -u RUNPOD_POD_ID python \/opt\/sifter\/media\/worker\/farm_worker\.py/);
       expect(C.BOOTSTRAP_WHOLE).toMatch(/keeper\.sh[\s\S]*1800[\s\S]*86400[\s\S]*terminate_self/);

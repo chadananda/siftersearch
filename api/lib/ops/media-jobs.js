@@ -1829,7 +1829,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const imageStarting=acceptedWorker&&live.some(p=>p.image===acceptedWorker.image&&p.status!=='ready');
-      const imageDrainId=acceptedWorker&&!imageStarting?live.filter(p=>p.image&&p.image!==acceptedWorker.image).sort((a,b)=>a.created-b.created)[0]?.id:null;
+      const outdated=(p)=>p.image!==acceptedWorker.image||p.boot_v!==C.BOOT_V;   // an older image, or booted by an older BOOTSTRAP_WHOLE
+      const imageDrainId=acceptedWorker&&!imageStarting?live.filter(p=>p.image&&outdated(p)).sort((a,b)=>a.created-b.created)[0]?.id:null;
       const inflight = Object.keys(st.jobs).length + staging.size + collecting.size;
       if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
@@ -1880,6 +1881,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   await run('tar', ['czf', tgz, '-C', join(dirname(C.WORKER_FILE)), ...C.MEDIA_SCRIPTS], { timeoutMs: 60_000 });
                   await C.podPut(run, p, tgz, '/workspace/media-scripts.tgz');
                 } catch { /* the image's own copy runs */ }
+                if (acceptedWorker) p.boot_v = C.BOOT_V;
                 await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: acceptedWorker ? C.BOOTSTRAP_WHOLE.replace('--max-jobs 6',`--max-jobs ${p.max_jobs}`) : C.BOOTSTRAP_BAKED, timeoutMs: 120_000 });
               } else {
                 await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
@@ -1912,8 +1914,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               else { p.gpu_broken = true; p.boot_log = String(cu.stdout || '').slice(-300); st.last_error = `GPU unusable on ${p.name}: ${p.boot_log.slice(-160)}`; await closePod(p, 'GPU unusable: CUDA does not initialise'); st.pod_failures++; return; }
             }
             if(acceptedWorker&&!p.image)p.image=(await C.getPod(p.id,deps)).imageName||acceptedWorker.image;
-            const staleImage=acceptedWorker&&p.image!==acceptedWorker.image&&p.id===imageDrainId;
-            if(staleImage&&!Object.values(st.jobs).some(j=>j.pod===p.id)){await closePod(p,'accepted image updated; finished recordings drained');return;}
+            const staleImage=acceptedWorker&&outdated(p)&&p.id===imageDrainId;
+            if(staleImage&&!Object.values(st.jobs).some(j=>j.pod===p.id)){await closePod(p,p.image!==acceptedWorker.image?'accepted image updated; finished recordings drained':'bootstrap updated; finished recordings drained');return;}
             const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; if [ -f "$d/done.json" ] || { [ -f "$d/result.json" ] && [ -f "$d/complete" ]; }; then echo "DONE $d"; fi; [ -f "$d/failed" ] && echo "FAIL $d"; [ -f "$d/ready" ] && echo "WAIT $d"; if [ -f "$d/ready" ] || [ -f "$d/running" ] || [ -f "$d/done.json" ] || [ -f "$d/complete" ]; then echo "STAGED $d"; else echo "PARTIAL $d"; fi; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); u=$(awk \'/^usage_usec/{print $2}\' /sys/fs/cgroup/cpu.stat 2>/dev/null); pw=$(nvidia-smi --query-gpu=power.draw,power.limit --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d \' \'); echo GAUGE ${u:--} $(cat /sys/fs/cgroup/cpu.max 2>/dev/null || echo max 100000) $(nproc) ${pw:--}; echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
             p.lastOk = now();
             const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]); { const g = WC.readGauges(stdout, p.gauge, now()); if (g) p.gauge = { ...g, cpu: g.cpu ?? p.gauge?.cpu ?? null }; }   // the CPU / GPU dials on /media (Chad 10-30)

@@ -10,6 +10,7 @@ import { readFileSync } from 'fs';
 import { join, dirname, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
+import { createHash } from 'crypto';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 export const STATE_FILE = join(ROOT, 'data', 'run', 'cloud-remaster.json');
@@ -316,6 +317,8 @@ if ! pgrep -f '^python /opt/sifter/media/worker/farm_worker.py' >/dev/null; then
   nohup env -u RUNPOD_POD_ID python /opt/sifter/media/worker/farm_worker.py --spool /workspace/spool --max-jobs 6 >> /workspace/worker.log 2>&1 < /dev/null &
 fi
 echo started`;
+/** Which BOOTSTRAP_WHOLE a pod was started with: a pod booted with an older one drains like a stale image (10-30: the LD_LIBRARY_PATH fix). */
+export const BOOT_V = createHash('sha256').update(BOOTSTRAP_WHOLE).digest('hex').slice(0, 12);
 export const WORKER_FILE = join(ROOT, 'scripts', 'media', 'runpod_worker.py');
 export const REPO_TGZ = () => process.env.MEDIA_UNIPASE_REPO_TGZ || join(homedir(), 'sifter', 'remaster', 'cloud', `unipase-${UNIPASE_COMMIT.slice(0, 8)}.tgz`);
 export const jobIdOf = (item) => `${String(item.slug || item.id).replace(/[^a-z0-9-]/gi, '').slice(0, 80)}-${item.id}`;
