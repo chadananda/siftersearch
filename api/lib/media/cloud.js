@@ -59,6 +59,9 @@ export const CLOUD = {
   gpuTypes: ['NVIDIA GeForce RTX 4090', 'NVIDIA RTX A5000', 'NVIDIA GeForce RTX 3090', 'NVIDIA RTX A4500', 'NVIDIA A40', 'NVIDIA RTX A6000'],
   image: 'runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04',
   minVcpu: 32,          // rent this many vCPUs per GPU first (10-30: #349 had 18 → 7 jobs in CPU post steps, GPU at 0 %); any vCPU count if none is free
+  stageAhead: 4,        // Chad 10-30: talks staged on a pod beyond its worker's slots, so a finished slot never waits on tower
+  stageBatch: 4,        // uploads sent at once per pod per pass (tower's link was 15 of 1000 Mbit/s busy sending one at a time)
+  resultsPerPass: 3,    // finished talks fetched per pod per pass
   perPod: 6,            // prefetch only: match the worker's six post slots so four long CPU tails cannot starve its GPU; live controller still admits work
   bootTimeoutMs: 15 * 60_000,     // no SSH after this → terminate and replace (the 23 GB baked image takes 5-12 min to pull on a cold host; 10-24 measured)
   warmTimeoutMs: 20 * 60_000,     // the bootstrap (pip + the verified weights) must finish in this
@@ -177,9 +180,10 @@ export function budgetStop(state, balance, now = Date.now()) {
 export async function loadState(file = STATE_FILE) {
   try { return JSON.parse(await readFile(file, 'utf8')); } catch { return { pods: {}, jobs: {}, queue: [], attempts: {}, done: [], failed: [], spent_closed: 0, started: null }; }
 }
+let saveSeq = 0;
 export async function saveState(state, file = STATE_FILE) {
   await mkdir(dirname(file), { recursive: true });
-  const tmp = `${file}.${process.pid}.tmp`;
+  const tmp = `${file}.${process.pid}.${++saveSeq}.tmp`;   // concurrent stagings save at once: one tmp each
   await writeFile(tmp, JSON.stringify(state, null, 1));
   await rename(tmp, file);
 }
