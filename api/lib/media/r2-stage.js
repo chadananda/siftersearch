@@ -8,7 +8,7 @@ import { stat } from 'fs/promises';
 export const STAGE = {
   aheadS: Number(process.env.MEDIA_STAGE_AHEAD_H ?? 100) * 3600,   // audio staged ahead of the pods (≈ 4 h of 3-5 pods)
   maxBytes: Number(process.env.MEDIA_STAGE_MAX_GB ?? 30) * 1e9,
-  maxAgeMs: 7 * 86400_000,
+  maxAgeMs: 36 * 3600_000,         // re-staged before the bucket rule media-stage-expire deletes stage/ objects at 2 days (the backstop for orphans)
   prefix: 'stage/',
 };
 

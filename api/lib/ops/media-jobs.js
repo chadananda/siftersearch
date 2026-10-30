@@ -1692,7 +1692,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   })();
   try {
     for (;;) {
-      if (draining()) { yielded = true; await Promise.allSettled([...homeTasks.values()]); break; }
+      // 10-30: an `ssh boss start` that ignored the stop held a drain 7+ min — no state written, pods starved; home jobs re-attach on the next start
+      if (draining()) { yielded = true; await Promise.race([Promise.allSettled([...homeTasks.values()]), new Promise((res) => setTimeout(res, deps.drainWaitMs ?? 30_000).unref?.())]); break; }
       for(const [h,cur] of Object.entries(st.home))if(!cur.image&&acceptedWorker)cur.image=homeImage(h,acceptedWorker);
       if(C.acceptedWorker){acceptedWorker=await C.acceptedWorker(deps.acceptedWorkerFile);if(acceptedWorker)homeHosts=acceptedHomeHosts(acceptedWorker);}
       for(const [h,cur] of Object.entries(st.home))if(!homeTasks.has(h)&&acceptedWorker?.reset_home_ids?.includes(cur.itemId)&&cur.image!==acceptedWorker.image){
