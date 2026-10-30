@@ -85,16 +85,20 @@
         <div class="min-w-0" aria-live="polite">
           {#key cur.s}
             <div in:fade={{ duration: reduced ? 0 : 600, delay: reduced ? 0 : 150 }}>
-              <p class="font-dial text-xs font-semibold uppercase tracking-[0.24em] text-radio-brass-bright">
+              <p class="truncate font-dial text-xs font-semibold uppercase tracking-[0.24em] text-radio-brass-bright">
                 {line.kind === 'quote' ? 'Quoted in this talk' : line.kind === 'question' ? 'A question this talk takes up' : 'Now playing'}{cur.y ? ` · tuned to ${cur.y}` : ''}
               </p>
-              {#if line.kind === 'quote'}
-                <blockquote class="mt-2 line-clamp-4 font-quote text-lg italic leading-snug text-radio-on-dark sm:line-clamp-3 sm:text-2xl">“{line.text}”</blockquote>
-                {#if line.cite}<p class="mt-1 text-sm text-radio-on-dark opacity-75">— {line.cite}</p>{/if}
-              {:else}
-                <p class="mt-2 line-clamp-3 font-marquee text-2xl leading-tight text-radio-on-dark sm:line-clamp-2 sm:text-4xl">{line.text}</p>
-              {/if}
-              <p class="mt-3 text-sm text-radio-on-dark opacity-90 sm:text-base">
+              <!-- fixed height (Chad 10-30: the box resizing on every rotation jumped the whole page): three quote lines,
+                   one reference line, one title line — each clamped, the space reserved even when a part is empty -->
+              <div class="lines mt-2">
+                {#if line.kind === 'quote'}
+                  <blockquote class="line-clamp-3 font-quote text-lg italic leading-snug text-radio-on-dark sm:text-2xl">“{line.text}”</blockquote>
+                {:else}
+                  <p class="line-clamp-3 font-marquee text-xl leading-tight text-radio-on-dark sm:text-2xl">{line.text}</p>
+                {/if}
+              </div>
+              <p class="mt-1 h-5 truncate text-sm leading-5 text-radio-on-dark opacity-75">{#if line.kind === 'quote' && line.cite}— {line.cite}{/if}</p>
+              <p class="mt-3 truncate text-sm leading-6 text-radio-on-dark opacity-90 sm:text-base">
                 <a href={`/media/${cur.s}`} class="font-semibold underline decoration-radio-brass decoration-2 underline-offset-4 hover:text-radio-amber hover:decoration-radio-amber focus-visible:outline-2 focus-visible:outline-radio-amber">{cur.t}</a>
                 {#if cur.sp}<span class="opacity-80"> · {cur.sp}</span>{/if}
                 <span class="opacity-70"> · {duration(cur.d)}</span>
@@ -134,6 +138,9 @@
       radial-gradient(120% 90% at 20% 0%, color-mix(in srgb, var(--radio-brass) 22%, transparent), transparent 60%);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radio-brass) 45%, transparent), inset 0 2px 30px rgba(0, 0, 0, 0.35);
   }
+  /* 3 lines of the quote (text-lg / sm:text-2xl, leading-snug 1.375); the question font fits the same box (3 × 1.25 leading-tight) */
+  .lines { height: calc(3 * 1.125rem * 1.375); overflow: hidden; }
+  @media (min-width: 640px) { .lines { height: calc(3 * 1.5rem * 1.375); } }
   .onair-lamp { width: 0.7rem; height: 0.7rem; border-radius: 9999px; background: var(--radio-needle); box-shadow: 0 0 10px 2px var(--radio-needle); animation: lamp 2.4s ease-in-out infinite; }
   @keyframes lamp { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
   .dial { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--radio-brass) 70%, transparent), inset 0 6px 18px rgba(0, 0, 0, 0.25); }
