@@ -1,10 +1,11 @@
 <script>
-  // The restoration readout on /media (Chad 10-24): talks published of those planned, talks restored, held for review, and the five latest;
+  // The restoration readout on /media (Chad 10-24): talks published of those planned, held for review, and the latest 30 as box-set spines in a scrolling list (Chad 10-29);
   // beside them a small card per machine doing the work (Chad 10-29): role, GPU, RAM, speed (× real time over 3 h, bar vs the fastest).
   // Cached SSR first view, then liveRefresh (src/lib/live-data.js) every 30 s while on screen. The block's height is reserved, so a patch never shifts the page.
   import { onMount } from 'svelte';
   import { liveRefresh } from '../../../lib/live-data.js';
   import { media } from '../../../lib/api.js';
+  import { eraVar, duration } from '../../../lib/media-listing.js';
 
   let { initial = null } = $props();
   let d = $state(initial);
@@ -19,17 +20,17 @@
 
 <section class="restored mx-auto max-w-6xl rounded-2xl border border-radio-line bg-radio-paper px-5 py-4" bind:this={root} aria-label="Restoration progress">
   <div class="left">
-    <div class="stats">
-      <div><b>{n(d?.published)}</b><span>completed of {n(d?.planned)} planned</span></div>
-      <div><b>{n(d?.held)}</b><span>held for review</span></div>
-    </div>
-    <div class="strip">
-      <span class="lbl">Just restored</span>
-      {#each recent as x (x.slug)}
-        <a href={`/media/${x.slug}`} class="chip" title={`${x.title}${x.speaker ? ` · ${x.speaker}` : ''}`}>{x.title}</a>
-      {:else}
-        <span class="chip empty">The next talks appear here as they are published</span>
-      {/each}
+    <p class="stats"><b>{n(d?.published)}</b> completed of {n(d?.planned)} planned <span class="sep">·</span> <b>{n(d?.held)}</b> held for review</p>
+    <div class="spines">
+      <ol aria-label="Just restored">
+        {#each recent as x (x.slug)}
+          <li><a href={`/media/${x.slug}`} class="spine" style={`--st:${eraVar(x.year)}`} title={`${x.title}${x.speaker ? ` · ${x.speaker}` : ''}`}>
+            <span class="truncate">{x.title}</span><span class="spine-meta">{x.year || ''}{x.year && x.d ? ' · ' : ''}{x.d ? duration(x.d) : ''}</span>
+          </a></li>
+        {:else}
+          <li class="empty">The next talks appear here as they are published</li>
+        {/each}
+      </ol>
     </div>
   </div>
   {#if workers.length}
@@ -49,8 +50,21 @@
 </section>
 
 <style>
-  .restored { min-height: 9rem; display: flex; gap: 1rem 1.25rem; align-items: stretch; }
-  .left { flex: 1 1 14rem; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6rem; }
+  .restored { min-height: 8.5rem; display: flex; gap: 1rem 1.25rem; align-items: stretch; }
+  .left { flex: 1 1 16rem; min-width: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .stats { margin: 0; font-size: 0.8rem; color: var(--radio-ink-soft); }
+  .stats b { font-size: 1.15rem; color: var(--radio-ink); font-variant-numeric: tabular-nums; }
+  .stats .sep { margin: 0 0.35rem; opacity: 0.5; }
+  /* the list never sets the box height: the cards do; it scrolls inside what they leave */
+  .spines { position: relative; flex: 1; min-height: 6.5rem; }
+  .spines ol { position: absolute; inset: 0; margin: 0; padding: 0 0.2rem 0 0; list-style: none; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin; scrollbar-color: var(--radio-brass) transparent; }
+  .spine { display: flex; align-items: center; gap: 0.6rem; padding: 0.28rem 0.55rem 0.28rem 0.75rem; border-radius: 0.3rem; font-size: 0.8rem; color: var(--radio-on-dark); text-decoration: none;
+    background: linear-gradient(90deg, var(--st) 0 5px, color-mix(in srgb, var(--radio-walnut-deep) 82%, transparent) 5px); }
+  .spine:hover, .spine:focus-visible { background: linear-gradient(90deg, var(--st) 0 5px, var(--radio-walnut-deep) 5px); color: var(--radio-amber); }
+  .spine .truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spine-meta { margin-left: auto; flex: none; font: 600 0.72rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; opacity: 0.75; }
+  .empty { font-size: 0.8rem; opacity: 0.6; padding: 0.3rem 0; }
+  @media (max-width: 52rem) { .spines { min-height: 9rem; } }
   .machines { flex: 0 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
   .card { display: flex; flex-direction: column; }
   .card .speed { margin-top: auto; padding-top: 0.3rem; }
@@ -71,13 +85,4 @@
   .lamp.blink { background: var(--radio-amber); animation: blink 1.2s ease-in-out infinite; }
   @keyframes blink { 50% { opacity: 0.2; } }
   @media (prefers-reduced-motion: reduce) { .lamp.blink { animation: none; } .bar i { transition: none; } }
-  .stats { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; }
-  .stats div { display: flex; flex-direction: column; min-width: 7rem; }
-  .stats b { font-size: 1.6rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
-  .stats span { font-size: 0.8rem; opacity: 0.75; }
-  .strip { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; align-content: flex-start; }
-  .lbl { width: 100%; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; margin-right: 0.25rem; }
-  .chip { display: inline-block; max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0.1rem 0.5rem; border: 1px solid currentColor; border-radius: 999px; font-size: 0.75rem; text-decoration: none; opacity: 0.9; }
-  .chip.empty { opacity: 0.5; border-style: dashed; }
-  a.chip:hover { opacity: 1; }
 </style>
