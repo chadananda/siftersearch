@@ -19,6 +19,7 @@ vi.mock('../../api/lib/repos/archives-repo.js', () => ({
   decideItem: async (id, d) => { calls.push(['decide', id, d]); return { id, ...d }; },
   decideItems: async (ids, d) => { calls.push(['bulk', ids, d]); return ids.length; },
   driveReport: async (id) => (id === 'golden-age' ? { drive: { id }, imported: [], counts: rows } : null),
+  donorReport: async (id) => (id === 'duane' ? { donor: { id }, drives: [{ drive: { id: 'golden-age' }, imported: [], selected: [], counts: rows, buckets: { items: 17 } }], buckets: { items: 17 }, files: 9 } : null),
 }));
 
 let app;
@@ -57,5 +58,12 @@ describe('imports routes', () => {
     const r = (await get('/drives/golden-age/report')).json();
     expect(r.summary.kind).toMatchObject({ book: 5, talk: 2, junk: 10 });
     expect((await get('/drives/x/report')).statusCode).toBe(404);
+  });
+  it('donor report: every drive with its folded summary; 404 for an unknown donor; admin only', async () => {
+    const r = (await app.inject({ method: 'GET', url: '/api/admin/imports/donors/duane/report', headers: { 'x-internal-key': 'ik' } })).json();
+    expect(r).toMatchObject({ donor: { id: 'duane' }, buckets: { items: 17 }, files: 9 });
+    expect(r.drives[0].summary).toMatchObject({ total: 17, section: { main: 7 } });
+    expect((await app.inject({ method: 'GET', url: '/api/admin/imports/donors/nobody/report', headers: { 'x-internal-key': 'ik' } })).statusCode).toBe(404);
+    expect((await app.inject({ method: 'GET', url: '/api/admin/imports/donors/duane/report', headers: { 'x-internal-key': 'no' } })).statusCode).toBe(401);
   });
 });

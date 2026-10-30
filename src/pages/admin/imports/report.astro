@@ -1,0 +1,10 @@
+---
+// Printable donor report (plan step 9): ?drive=<id> for one drive, ?donor=<id> for everything a donor sent. Mailed back with the drive.
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../../components/common/IslandSkeleton.astro';
+import DonorReport from '../../../components/admin/DonorReport.svelte';
+---
+
+<AdminLayout title="Donor report">
+  <DonorReport client:only="svelte"><IslandSkeleton slot="fallback" /></DonorReport>
+</AdminLayout>

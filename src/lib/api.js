@@ -982,6 +982,7 @@ export const admin = {
   async decideImportItem(id, decision, note = null) { return request(`/api/admin/imports/items/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, note }) }); },
   async decideImportItems(ids, decision, note = null) { return request('/api/admin/imports/items/decision-bulk', { method: 'POST', body: JSON.stringify({ ids, decision, note }) }); },
   async getImportReport(driveId) { return request(`/api/admin/imports/drives/${encodeURIComponent(driveId)}/report`); },
+  async getDonorImportReport(donorId) { return request(`/api/admin/imports/donors/${encodeURIComponent(donorId)}/report`); },
 
   // Missing-books triage (snapshot-backed; see /admin/missing-books)
   async getMissingBooks() {

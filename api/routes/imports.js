@@ -1,4 +1,4 @@
-// /api/admin/imports — donor-drive review (the /admin/imports page): donors → drives → intake_items, decisions, the per-drive report.
+// /api/admin/imports — donor-drive review (the /admin/imports page): donors → drives → intake_items, decisions, the per-drive and per-donor reports (/admin/imports/report).
 // Admin-only (requireInternal: X-Internal-Key or admin session). Deps: repos/archives-repo.js. Plan: planning/donor-intake-plan-20261030.md.
 import { requireInternal } from '../lib/auth.js';
 import { ApiError } from '../lib/errors.js';
@@ -65,5 +65,12 @@ export default async function importsRoutes(fastify) {
     const r = await archives.driveReport(req.params.id);
     if (!r) throw ApiError.notFound('no such drive');
     return { ...r, summary: summarize(r.counts) };
+  });
+
+  // The cumulative report for one donor: every drive they sent (the printable page /admin/imports/report?donor=<id>).
+  fastify.get('/imports/donors/:id/report', admin, async (req) => {
+    const r = await archives.donorReport(req.params.id);
+    if (!r) throw ApiError.notFound('no such donor');
+    return { ...r, drives: r.drives.map((d) => ({ ...d, summary: summarize(d.counts) })) };
   });
 }

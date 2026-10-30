@@ -106,10 +106,38 @@ export async function decideItems(ids, { decision, note = null, by = null }) {
   return clean.length;
 }
 
+/** Each item lands in exactly one report bucket, first match wins: set aside (junk/copies, never listed), imported, selected (approved, not yet
+ *  imported), held (the library already has it), declined (denied), pending (undecided or more info). */
+const BUCKET_SQL = `CASE WHEN section = 'set-aside' THEN 'set_aside' WHEN imported_at IS NOT NULL THEN 'imported' WHEN decision = 'approve' THEN 'selected'
+  WHEN match = 'held' THEN 'held' WHEN decision = 'deny' THEN 'declined' ELSE 'pending' END`;
+export const REPORT_BUCKETS = ['imported', 'selected', 'held', 'declined', 'pending', 'set_aside'];
+const REPORT_LIST_MAX = 10000;
+/** Public link for an imported item: imported_ref when it is a URL or a site path, else metadata.link; null until the import records one. */
+export const linkOf = (it) => (/^(https?:\/\/|\/)\S+$/.test(it.imported_ref ?? '') ? it.imported_ref : it.metadata?.link ?? null);
+const reportItem = (r) => { const it = parseItem(r); return { id: it.id, kind: it.kind, section: it.section, title: it.title, creator: it.creator, year: it.year,
+  files: it.files, duration_s: it.duration_s, imported_at: it.imported_at, link: linkOf(it) }; };
+
 export async function driveReport(driveId) {
   const drive = await getDrive(driveId);
   if (!drive) return null;
-  const [donor, imported, counts] = await Promise.all([getDonor(drive.donor_id),
-    queryAll('SELECT * FROM intake_items WHERE drive_id = ? AND imported_at IS NOT NULL ORDER BY kind, title', [driveId], 'archives:report-imported'), itemCounts(driveId)]);
-  return { drive, donor, imported: imported.map(parseItem), counts };
+  const listed = (where, tag) => queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND section != 'set-aside' AND ${where} ORDER BY kind, title COLLATE NOCASE, id LIMIT ?`,
+    [driveId, REPORT_LIST_MAX], tag);
+  const [donor, imported, selected, counts, bucketRows] = await Promise.all([getDonor(drive.donor_id),
+    listed('imported_at IS NOT NULL', 'archives:report-imported'), listed("imported_at IS NULL AND decision = 'approve'", 'archives:report-selected'), itemCounts(driveId),
+    queryAll(`SELECT ${BUCKET_SQL} AS bucket, COUNT(*) AS n FROM intake_items WHERE drive_id = ? GROUP BY bucket`, [driveId], 'archives:report-buckets')]);
+  const buckets = Object.fromEntries(REPORT_BUCKETS.map((b) => [b, 0]));
+  for (const r of bucketRows) buckets[r.bucket] = r.n;
+  buckets.items = REPORT_BUCKETS.reduce((n, b) => n + buckets[b], 0);
+  buckets.reviewed = buckets.items - buckets.set_aside;
+  return { drive, donor, imported: imported.map(reportItem), selected: selected.map(reportItem), counts, buckets };
+}
+
+/** Every drive the donor sent, each with its own report, plus the buckets summed across them (the cumulative thank-you). */
+export async function donorReport(donorId) {
+  const donor = await getDonor(donorId);
+  if (!donor) return null;
+  const drives = (await Promise.all((await listDrives({ donorId })).map((d) => driveReport(d.id)))).filter(Boolean);
+  const buckets = {};
+  for (const r of drives) for (const [k, n] of Object.entries(r.buckets)) buckets[k] = (buckets[k] || 0) + n;
+  return { donor, drives, buckets, files: drives.reduce((n, r) => n + (r.drive.files || 0), 0) };
 }

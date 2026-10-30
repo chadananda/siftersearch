@@ -63,6 +63,31 @@ describe('archives repo', () => {
     rig.query("UPDATE intake_items SET imported_at = '2026-11-01'");
     expect((await repo.driveReport('dr')).imported).toHaveLength(1);
   });
+  it('report buckets: each item counted once; junk/copies never listed; approved-not-imported listed as selected; donor report sums drives', async () => {
+    await repo.upsertDonor({ id: 'duane', name: 'Duane Troxel' });
+    await repo.upsertDrive({ id: 'g1', donor_id: 'duane', label: 'ONE', files: 100 });
+    await repo.upsertDrive({ id: 'g2', donor_id: 'duane', label: 'TWO', files: 50 });
+    await repo.upsertItems('g1', [item('imp.pdf', { title: 'Imported' }), item('sel.pdf', { title: 'Selected' }), item('held.pdf', { match: 'held' }),
+      item('no.pdf'), item('open.pdf'), item('j.db', { section: 'set-aside', kind: 'junk', match: 'junk' }), item('c.pdf', { section: 'set-aside', match: 'copy' })]);
+    await repo.upsertItems('g2', [item('x.mp3', { kind: 'talk', title: 'A talk' })]);
+    const id = async (d, rel) => (await repo.listItems(d, { limit: 100 })).find((x) => x.primary_rel === rel).id;
+    await repo.decideItem(await id('g1', 'sel.pdf'), { decision: 'approve' });
+    await repo.decideItem(await id('g1', 'imp.pdf'), { decision: 'approve' });
+    await repo.decideItem(await id('g1', 'no.pdf'), { decision: 'deny' });
+    await repo.decideItem(await id('g1', 'c.pdf'), { decision: 'approve' });   // set-aside wins: never listed
+    rig.query("UPDATE intake_items SET imported_at = '2026-11-01', imported_ref = '/library/x' WHERE primary_rel = 'imp.pdf'");
+    const r = await repo.driveReport('g1');
+    expect(r.buckets).toEqual({ imported: 1, selected: 1, held: 1, declined: 1, pending: 1, set_aside: 2, items: 7, reviewed: 5 });
+    expect(r.imported).toEqual([expect.objectContaining({ title: 'Imported', link: '/library/x' })]);
+    expect(r.selected.map((x) => x.title)).toEqual(['Selected']);
+    expect(r.imported[0]).not.toHaveProperty('primary_rel');
+    const d = await repo.donorReport('duane');
+    expect(d.drives.map((x) => x.drive.label)).toEqual(['ONE', 'TWO']);
+    expect(d).toMatchObject({ files: 150, buckets: { items: 8, reviewed: 6, pending: 2, imported: 1 } });
+    expect(await repo.donorReport('nobody')).toBeNull();
+    expect(repo.linkOf({ imported_ref: 'doc:77', metadata: null })).toBeNull();
+    expect(repo.linkOf({ imported_ref: 'doc:77', metadata: { link: 'https://x.org/a' } })).toBe('https://x.org/a');
+  });
 });
 
 describe('archive-adopt report', () => {

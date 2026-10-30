@@ -173,7 +173,7 @@
     <div class="flex flex-wrap gap-x-6 gap-y-2 border-b border-border mb-4" role="tablist">
       {#each donors.filter((d) => d.drives.length) as dn (dn.id)}
         <div class="flex items-end gap-1">
-          <span class="text-xs text-muted pb-2 mr-1">{dn.name}</span>
+          <span class="text-xs text-muted pb-2 mr-1">{dn.name}{#if dn.drives.length > 1} <a class="text-accent hover:text-accent-hover" href="/admin/imports/report?donor={encodeURIComponent(dn.id)}" title="Printable report covering every drive from {dn.name}">report</a>{/if}</span>
           {#each dn.drives as dr (dr.id)}
             <button role="tab" aria-selected={drive?.id === dr.id} onclick={() => pickDrive(dr.id)}
               class="px-3 py-2 text-sm font-medium border-b-2 -mb-px {drive?.id === dr.id ? 'border-accent text-primary' : 'border-transparent text-muted hover:text-primary'}">
@@ -190,6 +190,8 @@
         <b class="text-primary">{drive.label || drive.id}</b> · {drive.status} · {fmtN(drive.counts?.total)} items
         {#each Object.entries(drive.counts?.match ?? {}) as [m, n] (m)}<span class="ml-2"><span class={(BADGE[m] ?? 'text-muted').split(' ')[0]}>{m}</span> {fmtN(n)}</span>{/each}
         · <span class="text-success">{fmtN(drive.counts?.decision?.approve)} approved</span> · <span class="text-error">{fmtN(drive.counts?.decision?.deny)} denied</span> · <span class="text-warning">{fmtN(drive.counts?.decision?.more_info)} more info</span>
+        · <a class="text-accent hover:text-accent-hover" href="/admin/imports/report?drive={encodeURIComponent(drive.id)}">Printable report</a>
+        · <a class="text-accent hover:text-accent-hover" href="/admin/imports/report?donor={encodeURIComponent(drive.donor_id)}">all from {donors.find((x) => x.id === drive.donor_id)?.name ?? 'this donor'}</a>
       </p>
 
       <div class="flex flex-wrap gap-3 items-center mb-5 text-sm">
