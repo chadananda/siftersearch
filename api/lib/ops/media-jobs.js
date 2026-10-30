@@ -1689,15 +1689,14 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             st.failed = st.failed.filter(d=>d.id!==o.id);delete st.attempts[o.id];
             st.items[o.id]={slug:o.slug,grade:o.grade,duration_s:o.duration_s,mode:o.mode,kind:o.kind,redo:true};
           }
+          if (o.first) { st.items[o.id] = { ...(st.items[o.id] || { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind }), first: true }; if (!st.queue.includes(o.id) && !Object.values(st.jobs).some((j) => j.itemId === o.id)) st.queue.push(o.id); }
           if ((!o.redo && st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode)) || st.queue.includes(o.id) || Object.values(st.jobs).some((j) => j.itemId === o.id)) continue;
-          st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind:o.kind, redo:!!o.redo };
+          st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind:o.kind, redo:!!o.redo, ...(o.first ? { first: true } : {}) };
           st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
         }
         if(taken.length&&C.ackOrders){await save(st);await C.ackOrders(taken,deps.ordersFile);}
       }
-      // fresh talks before 'post' work (stable), whatever order an earlier version queued them in
-      if (st.queue.some((id) => st.items?.[id]?.mode === 'post')) st.queue = [...st.queue.filter((id) => st.items?.[id]?.mode !== 'post'), ...st.queue.filter((id) => st.items?.[id]?.mode === 'post')];
-      if(st.queue.some(id=>st.items?.[id]?.kind==='whole'))st.queue=[...st.queue.filter(id=>st.items?.[id]?.kind==='whole'),...st.queue.filter(id=>st.items?.[id]?.kind!=='whole')];
+      st.queue = laneOrder(st.queue, st.items);
       // BACKPRESSURE (Chad 10-24): never hand out a new talk while more than N finished results wait for tower's word guard / realign /
       // encode — GPUs would be paid for output nobody can consume. Pods that go without work idle out (10 min) and are terminated.
       if (now() - (st.backlog_checked || 0) > 30_000) {
@@ -2040,10 +2039,17 @@ export async function laneKeeperPass(deps = {}) {
   return { action: 'queued' };
 }
 
+/** The lane's queue order (stable within each band): FIRST talks (Chad 10-29: taken off the air, reverted for splicing — ahead of
+ *  everything, whatever their mode), then whole imports, then fresh talks, then 'post' work (its upload is five times the bytes). */
+export function laneOrder(queue, items = {}) {
+  const band = (id) => (items?.[id]?.first ? 0 : items?.[id]?.kind === 'whole' ? 1 : items?.[id]?.mode === 'post' ? 3 : 2);
+  return queue.map((id, i) => [band(id), i, id]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map((x) => x[2]);
+}
+
 /** media-cloud-order { mode: 'cleanup' | 'post', ids?, limit? }: put work on the cloud lane without restarting it (orders are taken in on its next tick).
  *  cleanup: talks the word guard held (review / kept / deferred) get the deterministic cleanup on a worker. post: results tower holds in its own
  *  media-remaster queue (a pod's copy is already on disk) get their guard, alignment and encodes done on a worker instead — oldest queued first. */
-export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60, redo = false, grades = null } = {}, deps = {}) {
+export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60, redo = false, grades = null, first = false } = {}, deps = {}) {
   const C = deps.cloud || await import('../media/cloud.js');
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
@@ -2082,7 +2088,7 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
     if (mode === 'post' && !has) noCopy.push(it.slug);   // the restored copy is not on tower: only a full restore redo can re-assess it
     if (mode === 'post' && (!has || (!redo && (['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status) || existsSync(join(it.dir, 'enhanced', 'pod', 'post.json')))))) continue;
     if (mode === 'cleanup' && (!held || m.remaster?.method === 'cleaned')) continue;
-    orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode, ...((mode === 'restore'||redo) ? { redo: true } : {}) });
+    orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode, ...((mode === 'restore'||redo) ? { redo: true } : {}), ...(first ? { first: true } : {}) });
   }
   await C.addOrders(orders, deps.ordersFile);
   return { mode, ordered: orders.length, sample: orders.slice(0, 5).map((o) => o.slug), ...(noCopy.length ? { no_copy: noCopy } : {}) };

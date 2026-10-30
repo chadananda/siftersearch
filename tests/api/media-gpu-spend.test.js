@@ -800,3 +800,18 @@ describe('a home host that stops answering rests; its talk goes back, no attempt
     expect(src).toMatch(/\(st\.host_down\?\.\[h\.replace\(\/-\\d\+\$\/, ''\)\] \|\| 0\) > now\(\)/);
   });
 });
+
+describe('talks taken off the air go first (Chad 10-29)', () => {
+  it('first > whole > fresh > post, stable inside each band', async () => {
+    const { laneOrder } = await import('../../api/lib/ops/media-jobs.js');
+    const items = { 1: { mode: 'post' }, 2: {}, 3: { kind: 'whole' }, 4: { mode: 'post', first: true }, 5: { mode: 'restore', first: true }, 6: {} };
+    expect(laneOrder([1, 2, 3, 4, 5, 6], items)).toEqual([4, 5, 3, 2, 6, 1]);
+  });
+  it('an order with first carries the flag', async () => {
+    const { mediaCloudOrderJob } = await import('../../api/lib/ops/media-jobs.js');
+    const x = setup({ talks: 1, seconds: 3600 });
+    const ordersFile = join(x.root, 'orders-first.json');
+    await mediaCloudOrderJob({ mode: 'restore', ids: [1], first: true }, { ...x.deps, ordersFile });
+    expect((await C.takeOrders(ordersFile))[0]).toMatchObject({ id: 1, mode: 'restore', redo: true, first: true });
+  });
+});
