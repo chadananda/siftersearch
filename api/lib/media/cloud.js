@@ -135,7 +135,7 @@ export function hostStats(st) {
     const e = (out[dc] ||= { n: 0, boot_s: 0, ok: 0, fails: 0 });
     e.n++;
     if (p.ready_at) { e.ok++; e.boot_s += (p.ready_at - p.created) / 1000; }
-    if (!(p.jobs_assigned > 0) && p.terminated) e.fails++;
+    if ((!(p.jobs_assigned > 0) || p.gpu_broken) && p.terminated) e.fails++;
   }
   for (const e of Object.values(out)) { e.avg_boot_s = e.ok ? Math.round(e.boot_s / e.ok) : null; delete e.boot_s; }
   return out;
@@ -194,6 +194,8 @@ export async function ackOrders(orders,file = ORDERS_FILE) {return orderOperatio
 const sshOpts = (p) => ['-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', '-o', 'ServerAliveInterval=30', '-o', 'LogLevel=ERROR'];
 // every successful transfer proves the pod is alive: lastOk moves with it (10-24: a 10-minute upload queue left lastOk stale and the reaper killed three healthy pods mid-work)
 const alive = (p) => (r) => { p.lastOk = Date.now(); return r; };
+/** Run on a pod before it is 'ready': torch must open the GPU and do arithmetic on it. Prints CUDA_OK or the error. */
+export const CUDA_PROBE = `python -c "import torch; x = torch.ones(256, 256, device='cuda'); assert float((x @ x).sum()) > 0; print('CUDA_OK', torch.cuda.get_device_name(0))" 2>&1 | tail -3`;
 export const podSsh = (run, p, cmd, o = {}) => run('ssh', [...sshOpts(p), '-p', String(p.port), `root@${p.ip}`, cmd], { timeoutMs: 600_000, ...o }).then(alive(p));
 export const podPut = (run, p, local, remote) => run('scp', [...sshOpts(p), '-P', String(p.port), local, `root@${p.ip}:${remote}`], { timeoutMs: 3600_000 }).then(alive(p));
 export const podGet = (run, p, remote, local) => run('scp', [...sshOpts(p), '-P', String(p.port), `root@${p.ip}:${remote}`, local], { timeoutMs: 3600_000 }).then(alive(p));

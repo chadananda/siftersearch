@@ -49,6 +49,8 @@ describe('the RunPod backfill', () => {
         return { stdout: '' };
       }
       if (last.includes('.worker-ready')) return { stdout: 'READY' };
+      if (last.includes("device='cuda'")) return { stdout: 'CUDA_OK RTX 4090' };
+    if (last.includes("device='cuda'")) return { stdout: 'CUDA_OK RTX 4090' };
       if (last.startsWith('cd /workspace/spool')) return { stdout: Object.keys(spool).filter((j) => spool[j] === 'ready').map((j) => `DONE ${j}`).join('\n') };
       const m = /touch \/workspace\/spool\/([^/]+)\/ready/.exec(last); if (m) spool[m[1]] = 'ready';
       const r = /rm -rf \/workspace\/spool\/(\S+)/.exec(last); if (r) delete spool[r[1]];

@@ -1828,10 +1828,20 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           } else if (p.status === 'warming') {
             const { stdout } = await C.podSsh(run, p, 'test -f /workspace/spool/.worker-ready && echo READY; [ -f /workspace/boot.rc ] && [ "$(cat /workspace/boot.rc)" != 0 ] && { echo BOOTFAIL; tail -c 400 /workspace/boot.log; }; tail -2 /workspace/worker.log 2>/dev/null; touch /workspace/spool/.tower-hb; true', { timeoutMs: 60_000 });
             p.lastOk = now();
-            if (/READY/.test(stdout)) { p.status = 'ready'; p.ready_at = now(); }
+            if (/READY/.test(stdout)) {
+              // nvidia-smi can see a card CUDA cannot open (pod 342, 10-29: every job died "CUDA unknown error"): prove the GPU before it gets work
+              const cu = await C.podSsh(run, p, C.CUDA_PROBE, { timeoutMs: 120_000 }).catch((e) => ({ stdout: String(e.message || e) }));
+              if (/CUDA_OK/.test(cu.stdout || '')) { p.status = 'ready'; p.ready_at = now(); p.cuda_ok = true; }
+              else { p.gpu_broken = true; p.boot_log = String(cu.stdout || '').slice(-300); st.last_error = `GPU unusable on ${p.name}: ${p.boot_log.slice(-160)}`; await closePod(p, 'GPU unusable: CUDA does not initialise'); st.pod_failures++; }
+            }
             else if (/BOOTFAIL/.test(stdout)) { p.boot_log = stdout.slice(-400); st.last_error = `boot failed on ${p.name}: ${stdout.slice(-200)}`; await closePod(p, 'bootstrap failed'); st.pod_failures++; }
             else if (now() - p.created > C.CLOUD.warmTimeoutMs) { p.boot_log = stdout.slice(-400); await closePod(p, 'warm-up timeout'); st.pod_failures++; }
           } else if (p.status === 'ready') {
+            if (!p.cuda_ok) {   // a pod made ready before the probe existed is proved once too
+              const cu = await C.podSsh(run, p, C.CUDA_PROBE, { timeoutMs: 120_000 }).catch((e) => ({ stdout: String(e.message || e) }));
+              if (/CUDA_OK/.test(cu.stdout || '')) p.cuda_ok = true;
+              else { p.gpu_broken = true; p.boot_log = String(cu.stdout || '').slice(-300); st.last_error = `GPU unusable on ${p.name}: ${p.boot_log.slice(-160)}`; await closePod(p, 'GPU unusable: CUDA does not initialise'); st.pod_failures++; return; }
+            }
             if(acceptedWorker&&!p.image)p.image=(await C.getPod(p.id,deps)).imageName||acceptedWorker.image;
             const staleImage=acceptedWorker&&p.image!==acceptedWorker.image&&p.id===imageDrainId;
             if(staleImage&&!Object.values(st.jobs).some(j=>j.pod===p.id)){await closePod(p,'accepted image updated; finished recordings drained');return;}

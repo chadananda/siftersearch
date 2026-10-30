@@ -237,6 +237,7 @@ const setup = ({ talks = 2, seconds = 600, poll = null } = {}) => {
       return { stdout: '' };
     }
     if (last.includes('.worker-ready')) return { stdout: 'READY' };
+    if (last.includes("device='cuda'")) return { stdout: 'CUDA_OK RTX 4090' };
     if (last.startsWith('cd /workspace/spool')) return { stdout: `${Object.keys(spool).filter((j) => spool[j] === 'ready').map((j) => `DONE ${j}`).join('\n')}\nUTIL 90` };
     const m = /touch \/workspace\/spool\/([^/]+)\/ready/.exec(last); if (m) spool[m[1]] = 'ready';
     const r = /rm -rf \/workspace\/spool\/(\S+)/.exec(last); if (r) delete spool[r[1]];
@@ -372,6 +373,18 @@ describe('the lane: GPU is rented only for work', () => {
     const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, minHours: 2 });
     expect(r).toMatchObject({ done: 2, failed: 0 });
     expect(x.queued.filter(([, p]) => p.id === 1)).toHaveLength(1);   // queued for its tower run exactly once
+  });
+  it('a pod whose GPU CUDA cannot open is closed before it gets a talk; the replacement does them (pod 342, 10-29)', async () => {
+    let n = 0;
+    const x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => (cmd === 'ssh' && last.includes("device='cuda'") && n === 1 ? { stdout: 'RuntimeError: CUDA unknown error' } : null) });
+    const orig = x.cloud.createPod;
+    x.cloud.createPod = vi.fn(async (...a) => { n++; return orig(...a); });
+    const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, minHours: 2 });
+    expect(r).toMatchObject({ done: 2, failed: 0 });
+    const st = JSON.parse(readFileSync(x.deps.stateFile, 'utf8'));
+    expect(st.pods.p1).toMatchObject({ gpu_broken: true, why: 'GPU unusable: CUDA does not initialise' });
+    expect(st.pods.p1.jobs_assigned || 0).toBe(0);
+    expect(st.done.every((d) => d.pod !== 'p1')).toBe(true);
   });
   it('a duplicate result for a talk already done never queues a second tower run', async () => {
     const x = setup({ talks: 2, seconds: 3600 });
