@@ -2,6 +2,7 @@
  * Pino Logger Configuration
  */
 
+import './ipv4-first.js';
 import pino from 'pino';
 
 const isDev = process.env.NODE_ENV !== 'production';
