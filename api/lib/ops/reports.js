@@ -1,3 +1,4 @@
+import { archiveAdoptJob } from './archive-adopt-job.js';
 import { deweyJobsReport } from './dewey-jobs-job.js';
 import { mediaBiographyAudit } from './media-biography-audit.js';
 import { mediaWorkerAudit } from './media-worker-audit.js';
@@ -347,7 +348,8 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
  *  `heavy` lane — not by waiting for 22:00. Heavy scans also no longer wait behind multi-day ingest in the main lane. */
 // the INDEXING jobs belong to siftersearch-indexer (index-reports.js): in this registry for queueing, never in these lanes
 Object.assign(REPORTS, INDEX_REPORTS);
-export const LANES = { extract: ['episode-extract', 'structure-infer'],
+REPORTS['archive-adopt'] = archiveAdoptJob;   // params: { drive, donor, donorName, label, source, catalog }
+export const LANES = { archive: ['archive-adopt'], extract: ['episode-extract', 'structure-infer'],
   heavy: ['index-sizes', 'hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-received', 'dewey-discard', 'dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake

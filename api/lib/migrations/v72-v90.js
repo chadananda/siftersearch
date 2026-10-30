@@ -2053,6 +2053,13 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_completed ON media_items(completed_at)');
     logger.info('Migration 188 complete: media_items.completed_at');
   },
+
+  189: async () => {
+    // DONOR INTAKE (planning/donor-intake-plan-20261030.md): donors → drives (custody) → intake_items (decision per book/talk/scan). New EMPTY tables only.
+    const { ARCHIVES_SQL } = await import('../archives/schema.js');
+    for (const sql of ARCHIVES_SQL) await query(sql);
+    logger.info('Migration 189 complete: donors, drives, intake_items');
+  },
 };
 
 export const graphMigrations = {
