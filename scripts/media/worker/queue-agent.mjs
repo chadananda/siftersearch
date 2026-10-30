@@ -4,6 +4,10 @@
 // Stage 'whole' = the image's whole-recording.mjs over a job dir (in.<ext> + job.json → item/ + result.json); outputs go back under results/<job id>/.
 // Args: --host aorus --slots 4 --root /data/sifter-queue --run docker|local --image <ref> [--gpu-lock /path] [--min-avail-gb 5] [--once]
 import { spawn } from 'node:child_process';
+import dns from 'node:dns';
+import net from 'node:net';
+// Node's happy-eyeballs gives each address 250 ms — too short from home links (aorus: every fetch UND_ERR_CONNECT_TIMEOUT while curl -4 worked)
+dns.setDefaultResultOrder('ipv4first'); net.setDefaultAutoSelectFamily(false);
 import { readFileSync } from 'node:fs';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join, relative } from 'node:path';
