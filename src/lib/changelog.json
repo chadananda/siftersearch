@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-30T15:50:13.553Z",
+  "generated": "2026-10-30T16:18:04.519Z",
   "entries": [
+    {
+      "hash": "1b9a8431",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Clearing a decision clears its note and decider too",
+      "scope": null
+    },
     {
       "hash": "cbc2cc59",
       "date": "2026-10-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "'(Ibid.)' trailers inherit the previous trailer's writer; a trailer ending ')<br>' before its attribute tail is still a trailer (10-21: ~110 Lights of Guidance quotations had no author)",
       "scope": "authorship"
-    },
-    {
-      "hash": "3a1b58c1",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Db-ship never touches the 03:00 backup's snapshot; system-checks 'DB ship to /tank' freshness; prune-db-snapshots retired (db-ship keeps one SSD base). Plan: citations render as markdown links, DB stores the source record",
-      "scope": "backup"
     }
   ],
   "grouped": {
     "2026-10-30": [
+      {
+        "hash": "1b9a8431",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Clearing a decision clears its note and decider too",
+        "scope": null
+      },
       {
         "hash": "cbc2cc59",
         "date": "2026-10-30",
@@ -7010,13 +7017,6 @@
         "type": "Fixed",
         "description": "'(Ibid.)' trailers inherit the previous trailer's writer; a trailer ending ')<br>' before its attribute tail is still a trailer (10-21: ~110 Lights of Guidance quotations had no author)",
         "scope": "authorship"
-      },
-      {
-        "hash": "3a1b58c1",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Db-ship never touches the 03:00 backup's snapshot; system-checks 'DB ship to /tank' freshness; prune-db-snapshots retired (db-ship keeps one SSD base). Plan: citations render as markdown links, DB stores the source record",
-        "scope": "backup"
       }
     ]
   }
