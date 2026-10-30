@@ -38,8 +38,7 @@
         <li class="card" title={`${w.name}: ${w.status}${w.jobs ? `, ${w.jobs} at work` : ''}`}>
           <div class="head"><i class={`lamp ${LAMP[w.status] || 'dim'}`}></i><b>{w.name}</b><em>{w.jobs ? `${w.jobs} at work` : w.status}</em></div>
           <div class="role">{w.role}</div>
-          <div class="spec"><span>GPU</span>{w.gpu}</div>
-          <div class="spec"><span>RAM</span>{w.ram}</div>
+          {#each w.specs || [['GPU', w.gpu], ['RAM', w.ram]] as [k, v] (k)}<div class="spec"><span>{k}</span>{v}</div>{/each}
           <div class="speed">
             {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : 'no work in 3 h'}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
           </div>
@@ -62,7 +61,7 @@
   .card .head em { margin-left: auto; font-style: normal; font-size: 0.65rem; opacity: 0.8; white-space: nowrap; }
   .card .role { color: var(--radio-brass); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.15rem; }
   .card .spec { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card .spec span { display: inline-block; width: 2.1rem; font-size: 0.6rem; letter-spacing: 0.1em; opacity: 0.7; }
+  .card .spec span { display: inline-block; width: 2.6rem; font-size: 0.6rem; letter-spacing: 0.1em; opacity: 0.7; }
   .card .speed span { font-variant-numeric: tabular-nums; font-size: 0.68rem; }
   .bar { height: 0.3rem; border-radius: 999px; background: var(--radio-brass-soft); overflow: hidden; margin-bottom: 0.15rem; }
   .bar i { display: block; height: 100%; background: var(--radio-amber); border-radius: 999px; transition: width 0.6s ease; }
