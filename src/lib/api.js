@@ -981,6 +981,7 @@ export const admin = {
   },
   async decideImportItem(id, decision, note = null) { return request(`/api/admin/imports/items/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, note }) }); },
   async decideImportItems(ids, decision, note = null) { return request('/api/admin/imports/items/decision-bulk', { method: 'POST', body: JSON.stringify({ ids, decision, note }) }); },
+  async getImportClip(id) { return request(`/api/admin/imports/items/${id}/clip`); },   // → { url } signed R2, first minute of a talk
   async getImportReport(driveId) { return request(`/api/admin/imports/drives/${encodeURIComponent(driveId)}/report`); },
   async getDonorImportReport(donorId) { return request(`/api/admin/imports/donors/${encodeURIComponent(donorId)}/report`); },
 

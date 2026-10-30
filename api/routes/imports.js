@@ -27,6 +27,8 @@ const decisionOf = (body) => {
 };
 const who = (req) => req.user?.email || String(req.user?.sub ?? 'admin');
 
+let clipStore = null;   // one R2 client per process (creating one verifies the token)
+
 export default async function importsRoutes(fastify) {
   const admin = { preHandler: requireInternal };
 
@@ -52,6 +54,17 @@ export default async function importsRoutes(fastify) {
     if (!Number.isInteger(id) || id < 1) throw ApiError.badRequest('numeric item id required');
     if (!(await archives.getItem(id))) throw ApiError.notFound('no such item');
     return { item: await archives.decideItem(id, { ...decisionOf(req.body), by: who(req) }) };
+  });
+
+  // A talk's first-minute clip → { url }: a short-lived signed R2 URL (tower never serves the bytes). JSON, not a redirect: admin auth is a Bearer header an <audio> can't send.
+  fastify.get('/imports/items/:id/clip', admin, async (req) => {
+    const it = await archives.getItem(Number(req.params.id));
+    const key = it?.sample?.clip?.key;
+    if (!key) throw ApiError.notFound('no clip for this item');
+    clipStore ||= (await import('../lib/media/r2-stage.js')).r2StageStore().catch(() => null);
+    const store = await clipStore;
+    if (!store) { clipStore = null; throw ApiError.internal('no R2 store'); }
+    return { url: await store.signed(key, 3600), secs: it.sample.clip.secs, ext: it.sample.clip.ext };
   });
 
   fastify.post('/imports/items/decision-bulk', admin, async (req) => {

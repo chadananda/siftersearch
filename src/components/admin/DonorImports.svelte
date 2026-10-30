@@ -100,6 +100,10 @@
     } catch (e) { alert(e.message); } finally { busy = false; }
   }
   const copy = (t) => navigator.clipboard?.writeText(t).catch(() => {});
+  let clips = $state({});           // item id → signed R2 url of its first minute (fetched on Listen; admin auth is a header, so no bare src)
+  async function listen(it) {
+    try { clips[it.id] = (await admin.getImportClip(it.id)).url; } catch (e) { clips[it.id] = null; alert(e.message); }
+  }
 </script>
 
 {#snippet row(it, key)}
@@ -117,6 +121,10 @@
         <span class="text-xs text-muted">{it.kind} · {fmtN(it.files)} file{it.files === 1 ? '' : 's'}{copies > 1 ? ` · ${copies} copies` : ''}{it.bytes ? ` · ${fmtBytes(it.bytes)}` : ''}{it.duration_s ? ` · ${fmtDur(it.duration_s)}` : ''}{it.score != null ? ` · score ${Math.round(it.score)}` : ''}</span>
       </div>
       {#if it.why}<p class="text-sm text-secondary mt-0.5">{it.why}</p>{/if}
+      {#if it.sample?.clip?.key}
+        {#if clips[it.id]}<audio class="mt-1 w-full max-w-md h-8" controls autoplay preload="none" src={clips[it.id]}></audio>
+        {:else}<button class="text-xs text-accent hover:text-accent-hover mt-0.5" onclick={() => listen(it)}>▶ First minute</button>{/if}
+      {:else if it.sample?.clip?.error}<p class="text-xs text-muted mt-0.5">No clip: {it.sample.clip.error}</p>{/if}
       {#if it.destination}<p class="text-xs text-muted mt-0.5">→ {it.destination}</p>{/if}
       <button class="text-xs text-muted hover:text-primary mt-0.5 text-left break-all font-mono" title="Copy path" onclick={() => copy(it.primary_rel)}>{it.primary_rel}</button>
       {#if dec}

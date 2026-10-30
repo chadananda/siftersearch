@@ -7,7 +7,7 @@ const DRIVE_ID = /^[a-z0-9-]{2,40}$/;
 const STATUSES = ['received', 'copying', 'cataloged', 'reviewing', 'importing', 'imported', 'returned'];
 const DECISIONS = ['approve', 'deny', 'more_info'];
 const json = (v) => (v == null ? null : JSON.stringify(v));
-const parseItem = (r) => (r ? { ...r, rel_paths: r.rel_paths ? JSON.parse(r.rel_paths) : [], metadata: r.metadata ? JSON.parse(r.metadata) : null } : null);
+const parseItem = (r) => (r ? { ...r, rel_paths: r.rel_paths ? JSON.parse(r.rel_paths) : [], metadata: r.metadata ? JSON.parse(r.metadata) : null, sample: r.sample ? JSON.parse(r.sample) : null } : null);
 
 export async function upsertDonor({ id, name, contact = null, mail_address = null, notes = null }) {
   if (!id || !name) throw new Error('donor needs id and name');
@@ -90,6 +90,18 @@ export async function decideItem(id, { decision, note = null, by = null }) {
   return getItem(id);
 }
 export const getItem = async (id) => parseItem(await queryOne('SELECT * FROM intake_items WHERE id = ?', [id], 'archives:item-get'));
+
+/** Talks worth a listen with no sample yet: main section, not held/copy/junk, undecided, best score first. */
+export async function itemsToSample(driveId, { kinds = ['talk', 'video'], limit = 100 } = {}) {
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND sample IS NULL AND decision IS NULL AND section IN ('main', 'covenant-breaker')
+    AND match IN ('new', 'version', 'unsure') AND kind IN (${kinds.map(() => '?').join(', ')}) ORDER BY score DESC, id LIMIT ?`, [driveId, ...kinds, Math.min(Number(limit) || 100, 1000)], 'archives:items-to-sample');
+  return rows.map(parseItem);
+}
+/** Record (or merge into) an item's sample: { clip: {key, ext, secs, at} | {error}, text?, … }. */
+export async function setSample(id, patch) {
+  const cur = (await getItem(id))?.sample || {};
+  await query('UPDATE intake_items SET sample = ? WHERE id = ?', [JSON.stringify({ ...cur, ...patch }), id], 'archives:item-sample');
+}
 
 /** One decision for many items in one transaction (bulk approve/deny of a page). Returns the distinct ids sent. */
 export async function decideItems(ids, { decision, note = null, by = null }) {

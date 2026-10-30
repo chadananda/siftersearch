@@ -36,13 +36,13 @@ const AUDIO_EXT = { aac: 'm4a', alac: 'm4a', mp3: 'mp3', opus: 'ogg', vorbis: 'o
 
 /** The audio track of a video, stream-copied (no re-encode) to a temp file → { file, ext }, or null (no audio / a codec with no safe
  *  container: the original is sent). `run` is tower's process gate (tools.js run: ffmpeg -c:a copy is 'light'). */
-export function audioDemuxer(run, tmpDir = tmpdir()) {
+export function audioDemuxer(run, tmpDir = tmpdir(), { seconds = null } = {}) {   // seconds: only the first N s (a listening sample)
   return async (src) => {
     const { stdout } = await run('ffprobe', ['-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=codec_name', '-of', 'csv=p=0', src], { timeoutMs: 60_000 });
     const ext = AUDIO_EXT[String(stdout).trim().split('\n')[0]];
     if (!ext) return null;
-    const file = join(tmpDir, `sifter-stage-${process.pid}-${createHash('sha1').update(src).digest('hex').slice(0, 12)}.${ext}`);
-    await run('ffmpeg', ['-nostdin', '-y', '-v', 'error', '-i', src, '-map', '0:a:0', '-vn', '-c:a', 'copy', ...(ext === 'm4a' ? ['-movflags', '+faststart'] : []), file], { timeoutMs: 600_000 });
+    const file = join(tmpDir, `sifter-stage-${process.pid}-${createHash('sha1').update(src).digest('hex').slice(0, 12)}${seconds ? `-${seconds}s` : ''}.${ext}`);
+    await run('ffmpeg', ['-nostdin', '-y', '-v', 'error', '-i', src, '-map', '0:a:0', '-vn', ...(seconds ? ['-t', String(seconds)] : []), '-c:a', 'copy', ...(ext === 'm4a' ? ['-movflags', '+faststart'] : []), file], { timeoutMs: 600_000 });
     return { file, ext };
   };
 }

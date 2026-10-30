@@ -2067,6 +2067,12 @@ export const migrations = {
     for (const sql of MEDIA_LEDGER_SQL) await query(sql);
     logger.info('Migration 190 complete: media_stages');
   },
+
+  191: async () => {
+    // DONOR INTAKE samples: a talk's first-minute clip (R2 key) + later its transcript. Own column — a re-catalogue rewrites metadata, never this.
+    try { await query('ALTER TABLE intake_items ADD COLUMN sample TEXT'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    logger.info('Migration 191 complete: intake_items.sample');
+  },
 };
 
 export const graphMigrations = {

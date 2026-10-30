@@ -1,4 +1,5 @@
 import { archiveAdoptJob } from './archive-adopt-job.js';
+import { archiveSampleJob } from './archive-sample-job.js';
 import { deweyJobsReport } from './dewey-jobs-job.js';
 import { mediaBiographyAudit } from './media-biography-audit.js';
 import { mediaWorkerAudit } from './media-worker-audit.js';
@@ -351,7 +352,8 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
 // the INDEXING jobs belong to siftersearch-indexer (index-reports.js): in this registry for queueing, never in these lanes
 Object.assign(REPORTS, INDEX_REPORTS);
 REPORTS['archive-adopt'] = archiveAdoptJob;   // params: { drive, donor, donorName, label, source, catalog }
-export const LANES = { archive: ['archive-adopt'], extract: ['episode-extract', 'structure-infer'],
+REPORTS['archive-sample'] = archiveSampleJob;   // params: { drive, limit } — first-minute clips of candidate talks → R2 (stream copy only)
+export const LANES = { archive: ['archive-adopt', 'archive-sample'], extract: ['episode-extract', 'structure-infer'],
   heavy: ['index-sizes', 'hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-received', 'dewey-discard', 'dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake
