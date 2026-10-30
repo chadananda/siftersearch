@@ -1,7 +1,7 @@
 // Whole-order dispatch (Chad 10-28): vendor-blind (boss AMD and aorus NVIDIA both take whole orders), and ONE host per order — upload is the
 // bottleneck, so the same audio never goes to two computers.
 import { describe, it, expect } from 'vitest';
-import { homeEligibleItem, homeImage, silences, HOME_BUILDS } from '../../api/lib/ops/media-jobs.js';
+import { homeEligibleItem, homePick, homeImage, silences, HOME_BUILDS } from '../../api/lib/ops/media-jobs.js';
 import { readFileSync } from 'fs';
 
 const wholeOnly = { queue: [1] };
@@ -16,6 +16,12 @@ describe('whole dispatch', () => {
   it('aorus takes whole orders and restores alike — no host is reserved for new talks', () => {
     expect(homeEligibleItem('aorus-1', 1, st(wholeOnly), accepted)).toBe(true);
     expect(homeEligibleItem('aorus-1', 2, st(), accepted)).toBe(true);
+  });
+  it('a held lane (tower backlog) still hands a home host post orders — they drain that backlog — and nothing else', () => {
+    const s = { items: { 1: { kind: 'whole' }, 2: { mode: 'restore' }, 3: { mode: 'post' } }, home: {}, queue: [1, 2, 3] };
+    expect(homePick('aorus-1', s, accepted, true)).toBe(2);    // index of the post order
+    expect(homePick('aorus-1', s, accepted, false)).toBe(1);   // not held: the restore first, as before
+    expect(homePick('aorus-1', { ...s, queue: [1, 2] }, accepted, true)).toBe(-1);
   });
   it('an order another host holds is never eligible: the same audio is not sent to two hosts', () => {
     const s = st({ home: { 'aorus-1': { itemId: 1 } } });
@@ -50,9 +56,9 @@ describe('whole dispatch', () => {
     expect(silences('aorus-1', { image: 'ghcr.io/x@sha256:new' })).toBe(false);
     expect(homeImage('aorus-1', { image: 'ghcr.io/x@sha256:new' })).toBe('ghcr.io/x@sha256:new');
   });
-  it('the dispatcher picks through homeEligibleItem and splices exactly once', () => {
+  it('the dispatcher picks through homePick (→ homeEligibleItem) and splices exactly once', () => {
     const src = readFileSync('api/lib/ops/media-jobs.js', 'utf8');
-    expect(src).toMatch(/st\.queue\.findIndex\(id=>homeEligibleItem\(h,id,st,acceptedWorker\)\)/);
+    expect(src).toMatch(/eligibleIndex=bossBlocked\?-1:homePick\(h,st,acceptedWorker,held\)/);
     expect(src.match(/st\.queue\.splice\(eligibleIndex,1\)/g)?.length).toBe(1);
   });
 });

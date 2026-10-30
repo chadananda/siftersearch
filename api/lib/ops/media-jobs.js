@@ -1555,6 +1555,10 @@ export function homeEligibleItem(h, id, st, acceptedWorker, env = process.env) {
   // Published talks first (Chad 10-28): a new-talk (whole) order takes a host only when no queued remaster work can run there. Both get processed.
   return !(whole && st.queue?.some((q) => q !== id && st.items?.[q]?.kind !== 'whole' && homeCanTake(h, q, st, acceptedWorker, env)));
 }
+/** Queue index a free home host takes next, -1 for none. A held lane (backpressure) still hands out 'post' orders (10-30: aorus idle for hours):
+ *  they take the guard / realign / encodes OFF tower's backlog, so holding them kept the lane held. */
+export const homePick = (h, st, acceptedWorker, held, env = process.env) =>
+  st.queue.findIndex((id) => (!held || st.items?.[id]?.mode === 'post') && homeEligibleItem(h, id, st, acceptedWorker, env));
 const baseHost = (h) => String(h).replace(/-\d+$/, '');
 /** Home builds of an accepted image: FROM <digest> + the worker code pods get in the script overlay, built and tagged on each host
  *  (scratchpad Dockerfile: COPY media/ → /opt/sifter/media + /opt/sifter/scripts/media). Keyed by the digest, so a newly accepted image drops them
@@ -1759,8 +1763,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         if ((st.host_down?.[h.replace(/-\d+$/, '')] || 0) > now()) continue;   // a host that stopped answering is left alone for a while (10-28: boss went offline and 41 talks burned their attempts in minutes)
         // any home host: hot, or short of RAM for our job on top of its own capacity-derived reserve (MemAvailable, read live from the gate every 30 s)
         const hostBase=h.replace(/-\d+$/,''); const bossBlocked=((T.coolEnough&&!T.coolEnough(hostBase))||(T.diskOk&&!T.diskOk(hostBase,{kind:(acceptedWorker?.gate_whole??acceptedWorker?.boss_whole)&&st.queue.some(id=>st.items?.[id]?.kind==='whole'&&homeEligibleItem(h,id,st,acceptedWorker))?'whole':'unipase'})));
-        const eligibleIndex=bossBlocked?-1:st.queue.findIndex(id=>homeEligibleItem(h,id,st,acceptedWorker));
-        const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
+        const eligibleIndex=bossBlocked?-1:homePick(h,st,acceptedWorker,held);
+        const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
         if (!cur) continue;
         if(acceptedWorker&&!cur.image)cur.image=homeImage(h,acceptedWorker);
         st.home[h] = cur;
