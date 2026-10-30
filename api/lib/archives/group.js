@@ -1,6 +1,7 @@
 // groupFiles(catalogue rows) → intake items (pure). Needs WHOLE folders: callers pass every row. Never invents speakers; creator = artist tag only.
 // Identical items (same fingerprints) kept in many folders — a drive of backups of backups: 82k book files, 27k distinct — become ONE item (collapseCopies).
 import { createHash } from 'crypto';
+import { covenantBreaker } from './covenant-breakers.js';
 const BOOK = new Set(['pdf', 'epub', 'doc', 'docx', 'rtf', 'txt', 'mobi']);
 const WEB_CRUFT = new Set(['html', 'htm', 'xml', 'csv', 'md']);
 const HQ = new Set(['wav', 'flac', 'aif', 'aiff']);
@@ -24,9 +25,11 @@ function item(kind, section, rows, primary, title) {
   const p = primary;
   const fps = rows.map((r) => r.fp).filter(Boolean);
   const fp = fps.length !== rows.length ? null : fps.length === 1 ? fps[0] : createHash('sha1').update([...fps].sort().join('|')).digest('hex').slice(0, 24);
-  return { kind, section, title: title || clean(p.title || p.name), creator: String(p.artist || '').trim() || null, year: yearOf(p.year, p.name, p.folder),
+  const t = title || clean(p.title || p.name), creator = String(p.artist || '').trim() || null, year = yearOf(p.year, p.name, p.folder);
+  const cb = kind === 'junk' ? null : covenantBreaker(year, creator, t, p.rel);   // kept apart; ones written before the break may be imported
+  return { kind, section: cb ? 'covenant-breaker' : section, title: t, creator, year,
     lang: null, primary_rel: p.rel, rel_paths: rows.map((r) => r.rel), files: rows.length, bytes: rows.reduce((n, r) => n + (r.size || 0), 0),
-    duration_s: p.dur || null, metadata: { fp, sug: p.sug || null, near: p.near || null, catalog_why: p.why || null, cls: p.cls, ext: ext(p) } };
+    duration_s: p.dur || null, metadata: { fp, sug: p.sug || null, near: p.near || null, catalog_why: p.why || null, cls: p.cls, ext: ext(p), ...(cb ? { cb } : {}) } };
 }
 
 export function groupFiles(rows) {
@@ -78,7 +81,7 @@ export function collapseCopies(items) {
     const [keep, ...rest] = [...g].sort(lessPlain);
     const verdict = g.find((x) => x.metadata.catalog_why && !COPY_WHY.test(x.metadata.catalog_why))?.metadata || keep.metadata;   // the catalogue's own verdict, not its "copy of"
     out.push({ ...keep, section: g.some((x) => x.section === 'covenant-breaker') ? 'covenant-breaker' : keep.section, year: keep.year ?? rest.find((x) => x.year)?.year ?? null,
-      metadata: { ...keep.metadata, sug: verdict.sug, near: verdict.near, catalog_why: verdict.catalog_why, copies: g.length, also: rest.slice(0, 5).map((x) => x.primary_rel) } });
+      metadata: { ...keep.metadata, ...(g.find((x) => x.metadata.cb) ? { cb: g.find((x) => x.metadata.cb).metadata.cb } : {}), sug: verdict.sug, near: verdict.near, catalog_why: verdict.catalog_why, copies: g.length, also: rest.slice(0, 5).map((x) => x.primary_rel) } });
   }
   return out;
 }

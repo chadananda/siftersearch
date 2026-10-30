@@ -10,6 +10,10 @@ describe('recommend', () => {
     expect(recommend(it1('book', 'excluded')).match).toBe('junk');
     expect(recommend(it1('book', null)).match).toBe('unsure');
   });
+  it('a covenant-breaker item says whose and whether it predates the break', () => {
+    const r = recommend(it1('book', 'import', { year: 1923, metadata: { sug: 'import', cb: { name: 'Ahmad Sohrab', broke: 1929, before: true } } }));
+    expect(r.why).toMatch(/By Ahmad Sohrab, who broke the Covenant c\. 1929: written before the break\./);
+  });
   it('orders new > version > unsure > held > junk', () => {
     const s = ['new', 'version', 'unsure', 'duplicate', 'excluded'].map((x) => recommend(it1('book', x)).score);
     expect(s).toEqual([...s].sort((a, b) => b - a)); expect(new Set(s).size).toBe(5);

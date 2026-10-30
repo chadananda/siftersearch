@@ -40,6 +40,7 @@ export function recommend(item) {
   if (md.copies > 1) bits.push(`${md.copies} copies on the drive`);
   const ref = md.lib?.title ? `${md.lib.title}${md.lib.id ? ` #${md.lib.id}` : ''}` : md.near;
   const near = ref ? ` (${String(ref).slice(0, 80)})` : '';
-  const why = `${OPEN[match]}${match === 'new' ? '' : near}; ${bits.join(', ')}.`;
+  const cb = md.cb ? ` By ${md.cb.name}, who broke the Covenant c. ${md.cb.broke}: ${md.cb.before === true ? 'written before the break' : md.cb.before === false ? 'written after the break' : 'date unknown'}.` : '';
+  const why = `${OPEN[match]}${match === 'new' ? '' : near}; ${bits.join(', ')}.${cb}`;
   return { match, score: Math.max(0, Math.min(100, score)), why, destination };
 }

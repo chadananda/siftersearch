@@ -31,6 +31,14 @@ describe('groupFiles', () => {
     expect(r.find((x) => x.kind === 'book').section).toBe('covenant-breaker');
     expect(r.find((x) => x.kind === 'video').creator).toBeNull();
   });
+  it('a known covenant-breaker author → covenant-breaker section, flagged before/after the break; narrow names only', () => {
+    const r = groupFiles([f('Books/Ahmad Sohrab - I Heard Him Say 1937.pdf'), f('Books/Remey/Observations 1950.pdf'), f('Talks/Sohrab Sepehri poems.pdf'), f('Talks/z.mp3', { artist: 'Ruth White' })]);
+    const by = (t) => r.find((x) => x.primary_rel.includes(t));
+    expect(by('Sohrab -')).toMatchObject({ section: 'covenant-breaker', metadata: { cb: { name: 'Ahmad Sohrab', broke: 1929, before: false } } });
+    expect(by('Remey').metadata.cb).toMatchObject({ name: 'Charles Mason Remey', before: true });
+    expect(by('Sepehri').section).toBe('main');   // a bare 'Sohrab' is not Ahmad Sohrab
+    expect(by('z.mp3').metadata.cb).toMatchObject({ name: 'Ruth White', before: null });
+  });
   it('identical files in many folders collapse to one item under the plainest path; the catalogue verdict survives', () => {
     const r = groupFiles([f('Desktop Clear/Copy of Books/Iqan.pdf', { fp: 'k1' }), f('Books/Iqan.pdf', { fp: 'k1' }), f('Backup/Books_by_Covenant-Breakers/Iqan.pdf', { fp: 'k1' }),
       f('A/talk.mp3', { fp: 't1', dur: 900, why: 'duplicate: identical size+duration inside drive' }), f('Z/deep/er/talk.mp3', { fp: 't1', dur: 900, why: 'new', sug: 'import' }), f('Books/Other.pdf', { fp: 'k2' })]);
