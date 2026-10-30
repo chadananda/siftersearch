@@ -118,7 +118,8 @@ export function reapReason(pod, entry, st, now, cfg = LEDGER) {
   if (entry.status === 'warming' && age > cfg.warmMs) return `worker not ready after ${min(age)} min`;
   if (entry.idle_since && now - entry.idle_since > cfg.idleMs) return `idle ${min(now - entry.idle_since)} min`;
   // 10-30: pod 350 read GPU 0 % for an hour while finishing 8 talks in 30 min (the sample misses the short GPU bursts) and was reaped: a pod that finished a talk within the window is not stuck
-  const lastDone = Math.max(0, ...(st?.done || []).filter((x) => x.pod === entry.id).map((x) => x.at || 0));
+  // done records the pod by NAME (10-30: matching only the id spared nothing)
+  const lastDone = Math.max(0, ...(st?.done || []).filter((x) => x.pod === entry.id || x.pod === pod.name).map((x) => x.at || 0));
   if (entry.quiet_since && now - entry.quiet_since > cfg.quietMs && now - lastDone > cfg.quietMs) return `GPU quiet ${min(now - entry.quiet_since)} min (stuck)`;
   if (entry.status === 'ready' && entry.lastOk && now - entry.lastOk > (cfg.unreachableMs || cfg.idleMs)) return `unreachable ${min(now - entry.lastOk)} min`;
   return null;

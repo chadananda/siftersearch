@@ -161,7 +161,7 @@ describe('the reaper touches only idle / stuck / unreachable / old / orphan / la
     expect(reapReason(pod(), st({ idle_since: now - 11 * MIN }).pods.x, st({ idle_since: now - 11 * MIN }), now)).toMatch(/idle 11/);
     expect(reapReason(pod(), st({ quiet_since: now - 16 * MIN }).pods.x, st({ quiet_since: now - 16 * MIN }), now)).toBeNull();   // transfers keep the GPU quiet most of the time
     expect(reapReason(pod(), st({ quiet_since: now - 61 * MIN }).pods.x, st({ quiet_since: now - 61 * MIN }), now)).toMatch(/stuck/);
-    const working = { ...st({ quiet_since: now - 62 * MIN }), done: [{ pod: 'x', at: now - 3 * MIN }] };
+    const working = { ...st({ quiet_since: now - 62 * MIN }), pods: { x: { ...st().pods.x, name: 'sifter-unipase-1', quiet_since: now - 62 * MIN } }, done: [{ pod: 'sifter-unipase-1', at: now - 3 * MIN }] };   // done keys the pod by name
     expect(reapReason(pod(), working.pods.x, working, now)).toBeNull();   // 10-30 pod 350: GPU read 0 % while finishing talks
     expect(reapReason(pod(), st({ lastOk: now - 11 * MIN }).pods.x, st({ lastOk: now - 11 * MIN }), now)).toBeNull();   // a long upload queue is not unreachability
     expect(reapReason(pod(), st({ lastOk: now - 26 * MIN }).pods.x, st({ lastOk: now - 26 * MIN }), now)).toMatch(/unreachable/);
