@@ -11,16 +11,17 @@ export const SPEED_WINDOW_MS = 3 * 3600_000;
 const base = (h) => String(h || '').replace(/-\d+$/, '');
 const r1 = (x) => Math.round(x * 10) / 10;
 
-/** audio seconds finished per host key in the window → × real time */
-function speeds(done, now) {
+/** audio seconds finished per host key in the window → × real time. A pod younger than the window is divided by its own age
+ *  (10-30: a 55-minute-old pod at 9.7× showed 3.2× — its hour of work spread over 3 h). since: { key → ms it started } */
+export function speeds(done, now, since = {}) {
   const out = {};
   for (const d of done || []) if (d.at > now - SPEED_WINDOW_MS && d.at <= now && d.audio_s > 0) { const k = /^sifter-unipase-/.test(d.pod || '') ? d.pod : base(d.gpu || d.pod); out[k] = (out[k] || 0) + d.audio_s; }
-  for (const k of Object.keys(out)) out[k] = r1(out[k] / (SPEED_WINDOW_MS / 1000));
+  for (const k of Object.keys(out)) out[k] = r1(out[k] / (Math.min(SPEED_WINDOW_MS, Math.max(now - (since[k] || 0), 600_000)) / 1000));
   return out;
 }
 
 export function workerCards(st = {}, now = Date.now()) {
-  const sp = speeds(st.done, now);
+  const sp = speeds(st.done, now, Object.fromEntries(Object.values(st.pods || {}).filter((p) => p.created).map((p) => [p.name, p.created])));
   const homeJobs = {};
   for (const h of Object.keys(st.home || {})) homeJobs[base(h)] = (homeJobs[base(h)] || 0) + 1;
   const cards = MACHINES.map((m) => {

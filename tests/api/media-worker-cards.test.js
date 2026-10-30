@@ -1,6 +1,6 @@
 // /media machine cards: role, RAM, GPU, speed per machine from the lane state; nothing private leaves.
 import { describe, it, expect } from 'vitest';
-import { workerCards, SPEED_WINDOW_MS } from '../../api/lib/media/worker-cards.js';
+import { workerCards, speeds, SPEED_WINDOW_MS } from '../../api/lib/media/worker-cards.js';
 
 const now = 1_800_000_000_000;
 describe('workerCards', () => {
@@ -34,5 +34,11 @@ describe('workerCards', () => {
     expect(c).toMatchObject({ status: 'starting', specs: [['GPU', 'assigning…'], ['RAM', '—']] });
     expect(workerCards({ pods: { q: { id: 'q', name: 'x', status: 'ready', gpu: null, worker: { vram_total_gb: 23.99 } } } }, now).at(-1).specs[0][1]).toBe('NVIDIA · 24 GB');
     expect(JSON.stringify(cards)).not.toMatch(/1\.2\.3\.4|costPerHr|0\.34|temp/);
+  });
+  it('a pod younger than the window is timed over its own age, not the whole window (10-30: 9.7x showed as 3.2x)', () => {
+    const t = 1e12, done = [{ at: t - 60_000, pod: 'sifter-unipase-349', audio_s: 3600 * 9.7 }];
+    expect(speeds(done, t, { 'sifter-unipase-349': t - 3600_000 })['sifter-unipase-349']).toBe(9.7);
+    expect(speeds(done, t)['sifter-unipase-349']).toBe(3.2);   // no start known: the 3 h window
+    expect(speeds(done, t, { 'sifter-unipase-349': t - 1000 })['sifter-unipase-349']).toBe(58.2);   // floor of 10 min, never divide by seconds
   });
 });
