@@ -1,6 +1,6 @@
 // /media machine cards: role, RAM, GPU, speed per machine from the lane state; nothing private leaves.
 import { describe, it, expect } from 'vitest';
-import { workerCards, speeds, readGauges, SPEED_WINDOW_MS } from '../../api/lib/media/worker-cards.js';
+import { workerCards, speeds, readGauges, SPEED_WINDOW_MS, podName, POD_NAMES } from '../../api/lib/media/worker-cards.js';
 
 const now = 1_800_000_000_000;
 describe('workerCards', () => {
@@ -27,7 +27,7 @@ describe('workerCards', () => {
     expect(by.boss).toMatchObject({ status: 'resting', jobs: 0, speed: null });
     expect(by.tower).toMatchObject({ status: 'conducting', jobs: 3 });
     expect(Object.fromEntries(by.tower.specs)).toMatchObject({ CPU: expect.any(String), Cores: expect.any(String), Drives: expect.any(String), Store: expect.any(String) });
-    expect(by['sifter-unipase-342']).toMatchObject({ name: 'RunPod #342', specs: [['GPU', 'RTX 4090 · 24 GB'], ['RAM', '24 GB free']], status: 'working', jobs: 1, speed: 3 });
+    expect(by['sifter-unipase-342']).toMatchObject({ name: podName('sifter-unipase-342'), specs: [['GPU', 'RTX 4090 · 24 GB'], ['RAM', '24 GB free']], status: 'working', jobs: 1, speed: 3 });
   });
   it('a booting pod has no GPU yet; nothing private is exposed', () => {
     const c = workerCards({ pods: { q: { id: 'q', name: 'sifter-unipase-9', status: 'booting', costPerHr: 0.5 } } }, now).at(-1);
@@ -53,5 +53,15 @@ describe('workerCards', () => {
     expect(pod({ ...b, at: now - 60_000 })).toEqual({ cpu: 50, gpu: 100 });
     expect(pod({ ...b, at: now - 10 * 60_000 })).toBeNull();
     expect(pod(undefined)).toBeNull();
+  });
+});
+
+describe('podName', () => {
+  it('is a stable Pod* name, distinct for neighbouring pods', () => {
+    const names = [356, 357, 358, 359].map((n) => podName(`sifter-unipase-${n}`));
+    expect(new Set(names).size).toBe(4);
+    expect(names.every((x) => /^Pod[a-z]+$/.test(x) && POD_NAMES.includes(x))).toBe(true);
+    expect(podName('sifter-unipase-356')).toBe(names[0]);
+    expect(podName('no-number')).toMatch(/^Pod/);
   });
 });

@@ -7,6 +7,16 @@ export const MACHINES = [
   { key: 'boss', name: 'Boss', role: 'Remaster + ASR', specs: [['GPU', 'Radeon 8060S (Strix Halo)'], ['RAM', '128 GB unified']] },
   { key: 'aorus', name: 'Aorus', role: 'Remaster + checks', specs: [['GPU', 'RTX 3070 · 8 GB'], ['RAM', '16 GB']] },
 ];
+// A pod's card name (Chad 10-30: "a random cute name starting with Pod"): stable per pod — picked by its number, so neighbouring pods differ
+export const POD_NAMES = ['Podcat', 'Podfish', 'Podgate', 'Podmunk', 'Podpuff', 'Podsnail', 'Podwhistle', 'Podnoodle', 'Podpickle', 'Podbadger',
+  'Podmuffin', 'Podotter', 'Podbiscuit', 'Podwombat', 'Podsprocket', 'Podbeetle', 'Podkettle', 'Podsquid', 'Podwaffle', 'Podgoose', 'Podturnip',
+  'Podnugget', 'Podmoth', 'Podcrumpet', 'Podbumble', 'Podfrog', 'Podteapot', 'Podgizmo', 'Podpanda', 'Podsock', 'Podwiggle', 'Podsparrow',
+  'Podpudding', 'Podhedgehog', 'Podyak', 'Podlantern', 'Podmitten', 'Podquokka', 'Podgumdrop', 'Podnewt', 'Podpretzel'];   // 41: prime, so n·17 mod 41 never repeats in a run of 41
+export function podName(name) {
+  const s = String(name || ''), m = s.match(/(\d+)$/);
+  const n = m ? Number(m[1]) : [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+  return POD_NAMES[(n * 17) % POD_NAMES.length];
+}
 export const SPEED_WINDOW_MS = 3600_000;   // one hour: a current snapshot (Chad 10-30)
 const base = (h) => String(h || '').replace(/-\d+$/, '');
 const r1 = (x) => Math.round(x * 10) / 10;
@@ -53,7 +63,7 @@ export function workerCards(st = {}, now = Date.now()) {
     const w = p.worker || {};
     const jobs = Object.values(st.jobs || {}).filter((j) => j.pod === p.id).length;
     const vram = w.vram_total_gb ? ` · ${Math.round(w.vram_total_gb)} GB` : '';
-    cards.push({ key: p.name, name: `RunPod ${String(p.name).replace(/^sifter-unipase-/, '#')}`, role: 'Cloud remaster',
+    cards.push({ key: p.name, name: podName(p.name), role: 'Cloud remaster',
       specs: [['GPU', p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : vram ? `NVIDIA${vram}` : 'assigning…'], ['RAM', w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—']],
       status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? null,
       gauges: p.gauge && now - p.gauge.at < GAUGE_FRESH_MS ? { cpu: p.gauge.cpu, gpu: p.gauge.gpu } : null });

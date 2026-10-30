@@ -73,6 +73,13 @@
   --radio-needle: light-dark(#b42318, #ff5a3c);
   --radio-phosphor: #8dffa6;                 /* the machine cards' CRT (/media, Chad 10-30): green phosphor on a dark tube in both themes */
   --radio-crt: #04110a;
+  --radio-vfd: #ffb347;                      /* Tower's console (the coordinator, Chad 10-30): an amber display instead of green */
+  --radio-vfd-tube: #140a02;
+  --radio-enamel: #3d4448;                   /* Tower's cabinet: enamelled steel, not walnut */
+  --radio-enamel-deep: #1d2124;
+  --radio-meter-face: #fbf0d2;               /* card meters: a backlit cream face + near-black ink in BOTH themes, for contrast (Chad 10-30) */
+  --radio-meter-ink: #160d05;
+  --radio-meter-needle: #c8120a;
   --radio-groove: light-dark(#1b1410, #0a0705);
   --radio-groove-sheen: light-dark(rgba(255, 255, 255, 0.10), rgba(255, 220, 160, 0.08));
   --radio-on-dark: #f8ecd4;
