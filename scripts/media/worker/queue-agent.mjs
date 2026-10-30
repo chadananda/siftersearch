@@ -10,7 +10,7 @@ import net from 'node:net';
 dns.setDefaultResultOrder('ipv4first'); net.setDefaultAutoSelectFamily(false);
 import { readFileSync } from 'node:fs';
 import { mkdir, readdir, rm } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { join, relative, dirname, basename } from 'node:path';
 
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
@@ -32,6 +32,14 @@ function runner(job, dir) {
   return spawn('docker', ['run', '--rm', '--name', `q-${job.id}`, '--gpus', 'all', '--network', 'none', '--cpus', '6', '--memory', '10g', '-v', `${dir}:/job`,
     '-v', `${ROOT}/leases:/workspace/.gpu-admission`, '-e', 'SIFTER_GPU_LEASES=1', ...lock, '--entrypoint', '/usr/local/bin/node', IMAGE, WHOLE, '/job'], { stdio: ['ignore', 'ignore', 'pipe'] });
 }
+// the container writes as root: a plain rm then fails with EACCES (10-30: #1915 failed every retry on its own leftovers), so docker removes it
+async function scrub(dir) {
+  try { await rm(dir, { recursive: true, force: true }); } catch (e) {
+    if (RUN !== 'docker' || e.code !== 'EACCES') throw e;
+    await new Promise((r) => spawn('docker', ['run', '--rm', '--network', 'none', '-v', `${dirname(dir)}:/r`, '--entrypoint', 'rm', IMAGE, '-rf', `/r/${basename(dir)}`], { stdio: 'ignore' }).on('close', r));
+    await rm(dir, { recursive: true, force: true });
+  }
+}
 async function walk(dir) {
   const out = [];
   for (const e of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
@@ -49,7 +57,7 @@ async function work(job) {
   }), 120_000);
   try {
     if (!job.stages.every((s) => s === 'whole')) throw new Error(`stages ${job.stages} not runnable here`);
-    await rm(dir, { recursive: true, force: true }); await mkdir(join(ROOT, 'leases'), { recursive: true });
+    await scrub(dir); await mkdir(join(ROOT, 'leases'), { recursive: true });
     for (const f of await q.list('files', job.file_id)) await q.get('files', job.file_id, f.name, join(dir, f.name));
     child = runner(job, dir);
     let tail = '';
@@ -68,7 +76,7 @@ async function work(job) {
     if (!lost) await q.fail({ id: job.id, lease: job.lease, error: `${HOST}: ${String(e.message).slice(-900)}` }).catch(() => {});
   } finally {
     clearInterval(beat);
-    await rm(dir, { recursive: true, force: true }).catch(() => {});
+    await scrub(dir).catch((e) => log('cleanup failed', { job: job.id, error: e.message }));
   }
 }
 
