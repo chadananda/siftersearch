@@ -10,6 +10,15 @@
   // App version (set by Vite define from package.json)
   const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.1';
   const SHORT_VERSION = APP_VERSION.replace(/^0\./, '');
+  // Click the version tag → copy it (Chad 10-29: "so I can paste it for reference"); it sits inside the home link, so the click must not navigate.
+  let versionCopied = $state(false);
+  async function copyVersion(e) {
+    e.preventDefault(); e.stopPropagation();
+    const text = `v.${SHORT_VERSION}`;
+    try { await navigator.clipboard.writeText(text); }
+    catch { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+    versionCopied = true; setTimeout(() => { versionCopied = false; }, 1500);
+  }
 
   const auth = getAuthState();
 
@@ -150,7 +159,7 @@
         <span class="navbar-title">
           <span class="title-full">SifterSearch</span>
           <span class="title-short">Sifter</span>
-          <span class="version" title="v.{SHORT_VERSION}">v.{SHORT_VERSION}</span>
+          <span class="version" role="button" tabindex="0" title="Copy version v.{SHORT_VERSION}" onclick={copyVersion} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && copyVersion(e)}>{versionCopied ? 'copied ✓' : `v.${SHORT_VERSION}`}</span>
         </span>
       </a>
     {/if}
@@ -438,6 +447,7 @@
     margin-left: 0.25rem;
     text-decoration: none;
     transition: background 0.15s ease;
+    cursor: copy;
   }
 
   .version:hover {
