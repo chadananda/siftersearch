@@ -2070,7 +2070,9 @@ export async function laneKeeperPass(deps = {}) {
 /** One work order onto the lane state (mutates st). redo clears done/failed/attempts; first = the very front — the newest 'first' order jumps every
  *  earlier one (10-29: 259 older 'first' talks held a spot-check redo back for days). Pure apart from st. */
 export function intakeOrder(st, o) {
-  const running = Object.values(st.jobs).some((j) => j.itemId === o.id);
+  const running = Object.values(st.jobs).some((j) => j.itemId === o.id) || Object.values(st.home || {}).some((c) => c.itemId === o.id);
+  // a WITHDRAWN order leaves the queue (10-30: 218 restore redos queued where a silence-only repair of the kept master was enough); one already running finishes
+  if (o.withdraw) { st.queue = st.queue.filter((x) => x !== o.id); if (!running) delete st.items[o.id]; return; }
   if (o.redo) {
     st.done = st.done.filter((d) => d.id !== o.id);
     st.failed = st.failed.filter((d) => d.id !== o.id); delete st.attempts[o.id];
@@ -2121,9 +2123,10 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
   for (const it of list) {
     if (orders.length >= limit) break;
     if (!it?.dir) continue;
+    if (mode === 'withdraw' && ids) { orders.push({ id: it.id, slug: it.slug, mode, withdraw: true }); continue; }
     const m = await readMeta(it.dir).catch(() => null);
     if (!m) continue;
-    const has = await fs.stat(join(it.dir,'enhanced/unipase.cloud.flac')).then(s=>s.size>1024).catch(()=>false) && await fs.stat(join(it.dir,'enhanced/unipase.asr.json')).then(s=>s.size>10).catch(()=>false);
+    const has =await fs.stat(join(it.dir,'enhanced/unipase.cloud.flac')).then(s=>s.size>1024).catch(()=>false) && await fs.stat(join(it.dir,'enhanced/unipase.asr.json')).then(s=>s.size>10).catch(()=>false);
     const held = ['review', 'kept', 'deferred'].includes(m.remaster?.status);
     if (mode === 'restore' && !ids) continue;   // a redo is always explicit: the ids Chad / the agent names
     if (mode === 'post' && !has) noCopy.push(it.slug);   // the restored copy is not on tower: only a full restore redo can re-assess it

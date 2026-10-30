@@ -877,5 +877,17 @@ describe('talks taken off the air go first (Chad 10-29)', () => {
     expect(st.done).toEqual([]); expect(st.attempts[7]).toBeUndefined();
     intakeOrder(st, { id: 9, mode: 'restore', first: true });   // already running: not queued twice
     expect(st.queue).toEqual([7, 2, 3, 4]);
+    st.home = { 'boss-2': { itemId: 5 } };
+    intakeOrder(st, { id: 5, mode: 'restore', first: true });   // running on a home host counts as running too
+    expect(st.queue).toEqual([7, 2, 3, 4]);
+  });
+  it('a withdrawn order leaves the queue; a running one keeps its item and finishes (10-30)', async () => {
+    const { intakeOrder, mediaCloudOrderJob } = await import('../../api/lib/ops/media-jobs.js');
+    const st = { jobs: { a: { itemId: 9 } }, home: {}, queue: [7, 2], done: [], failed: [], attempts: {}, items: { 7: { redo: true }, 9: { redo: true }, 2: {} } };
+    intakeOrder(st, { id: 7, withdraw: true }); intakeOrder(st, { id: 9, withdraw: true });
+    expect(st.queue).toEqual([2]); expect(st.items[7]).toBeUndefined(); expect(st.items[9]).toEqual({ redo: true });
+    const added = [];
+    const r = await mediaCloudOrderJob({ mode: 'withdraw', ids: [7] }, { cloud: { addOrders: async (o) => added.push(...o) }, repo: { getMediaItem: async (id) => ({ id, slug: 's', dir: '/x' }) }, ops: {}, readMeta: async () => { throw new Error('not read'); } });
+    expect(r.ordered).toBe(1); expect(added).toEqual([{ id: 7, slug: 's', mode: 'withdraw', withdraw: true }]);
   });
 });
