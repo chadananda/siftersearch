@@ -291,13 +291,20 @@ def diarize(audio, threads, models_dir, num_speakers=-1, threshold=0.5, emb_name
             if time.time() - t_wait > 1800:
                 raise RuntimeError(f'GPU memory never freed ({free} MiB) in 30 min — diarize retried later (no CPU fallback on this host)')
             time.sleep(20)
-    cfg = sherpa_onnx.OfflineSpeakerDiarizationConfig(
-        segmentation=sherpa_onnx.OfflineSpeakerSegmentationModelConfig(
-            pyannote=sherpa_onnx.OfflineSpeakerSegmentationPyannoteModelConfig(model=seg), num_threads=threads, provider=prov),
-        embedding=sherpa_onnx.SpeakerEmbeddingExtractorConfig(model=emb, num_threads=threads, provider=prov),
-        clustering=sherpa_onnx.FastClusteringConfig(num_clusters=num_speakers, threshold=threshold),
-        min_duration_on=0.3, min_duration_off=0.5)
-    sd = sherpa_onnx.OfflineSpeakerDiarization(cfg)
+    def make(p):
+        return sherpa_onnx.OfflineSpeakerDiarization(sherpa_onnx.OfflineSpeakerDiarizationConfig(
+            segmentation=sherpa_onnx.OfflineSpeakerSegmentationModelConfig(
+                pyannote=sherpa_onnx.OfflineSpeakerSegmentationPyannoteModelConfig(model=seg), num_threads=threads, provider=p),
+            embedding=sherpa_onnx.SpeakerEmbeddingExtractorConfig(model=emb, num_threads=threads, provider=p),
+            clustering=sherpa_onnx.FastClusteringConfig(num_clusters=num_speakers, threshold=threshold),
+            min_duration_on=0.3, min_duration_off=0.5))
+    try:
+        sd = make(prov)
+    except RuntimeError as e:   # 10-30 pods: the CUDA provider can't load (libcublasLt.so.12 missing) — every 'unsure' talk failed AFTER its GPU remaster
+        if prov == 'cpu':
+            raise
+        print(f'diarize: {prov} provider unavailable ({str(e)[:160]}) — diarizing on the CPU', file=sys.stderr)
+        sd = make('cpu')
     res = sd.process(audio).sort_by_start_time()
     return [{'start': round(r.start, 3), 'end': round(r.end, 3), 'speaker': f'S{r.speaker + 1}'} for r in res]
 

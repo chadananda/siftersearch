@@ -64,6 +64,7 @@ describe('persistent operator rental pause', () => {
       expect(C.BOOTSTRAP_WHOLE).toContain('HF_HUB_OFFLINE=1');
       expect(C.BOOTSTRAP_WHOLE).not.toMatch(/pkill|pip install|tar xzf/);
       expect(C.BOOTSTRAP_WHOLE).toContain('farm_worker.py');
+      expect(C.BOOTSTRAP_WHOLE).toMatch(/\^LD_LIBRARY_PATH=[\s\S]*export LD_LIBRARY_PATH[\s\S]*farm_worker\.py --spool/);   // the image ENV never reaches an ssh session
       // the worker never ends its own pod (it idled new pods out before their first talk); the keeper holds the safety nets
       expect(C.BOOTSTRAP_WHOLE).toMatch(/env -u RUNPOD_POD_ID python \/opt\/sifter\/media\/worker\/farm_worker\.py/);
       expect(C.BOOTSTRAP_WHOLE).toMatch(/keeper\.sh[\s\S]*1800[\s\S]*86400[\s\S]*terminate_self/);

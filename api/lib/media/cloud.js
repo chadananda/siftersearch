@@ -296,6 +296,9 @@ touch /workspace/spool/.tower-hb /workspace/.lane-seen
 export HF_HOME=/opt/models/hf TORCH_HOME=/root/.cache/torch SIFTER_WEIGHTS=/opt/models/weights
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=/opt/worker-extras:/opt/sifter/media NLTK_DATA=/opt/models/nltk_data
 for v in RUNPOD_POD_ID RP_TERMINATE_KEY; do val=$(tr '\\0' '\\n' < /proc/1/environ | grep "^$v=" | head -1 | cut -d= -f2-); [ -n "$val" ] && export $v="$val"; done
+# 10-30: the image's LD_LIBRARY_PATH (cublas/cudnn wheels) is not in an ssh session either — sherpa's CUDA provider then can't load
+# libcublasLt.so.12 and every 'unsure' talk failed at diarize, after its GPU remaster (~30 failures / 30 min on 3 pods)
+val=$(tr '\\0' '\\n' < /proc/1/environ | grep '^LD_LIBRARY_PATH=' | head -1 | cut -d= -f2-); [ -n "$val" ] && export LD_LIBRARY_PATH="$val"
 test -f /opt/sifter/media/worker/farm_worker.py
 # 10-30: the image's worker ended its own pod after 120 s idle or 3 min without a tower heartbeat; tower's first look at a warming pod
 # comes one lane tick (~3.5 min) later, so pods 351-353 died before their first talk. The worker runs without RUNPOD_POD_ID (no self-end);
