@@ -1691,7 +1691,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     return true;
   };
   const requireGate = process.env.MEDIA_POOL_REQUIRE_GATE === '1';   // pods must carry /opt/gate (the new image): older ones finish their jobs and are replaced
-  let balance = null, balAt = 0, stop = null, yielded = false;
+  let balance = null, balAt = 0, stop = null, yielded = false, qPass = null;
+  // EDGE QUEUE (worker/queue, Chad 10-30): in the background, pull finished queue jobs and keep ~2.5 h of whole talks queued for the machines pulling
+  const queueKey = deps.queueKey !== undefined ? deps.queueKey : deps.repo || process.env.MEDIA_QUEUE_FEED === '0' ? null : process.env.INTERNAL_API_KEY;   // tests inject theirs
   // the dead-man heartbeat must not depend on how long a tick takes (10-24: a 10-minute upload queue starved it and a pod shut itself down)
   const pump = setInterval(() => {
     for (const q of Object.values(st.pods)) if (!q.terminated && q.ip && q.port && q.status !== 'booting') C.podSsh(run, q, 'touch /workspace/spool/.tower-hb', { timeoutMs: 30_000 }).catch(() => {});
@@ -1818,11 +1820,18 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           st.home_errors = (st.home_errors || 0) + 1; st.home_last_error = `${h} #${cur.itemId}: ${String(err?.message || err).slice(-300)}`;
         }).finally(() => homeTasks.delete(h)));
       }
+      if (queueKey && !qPass && now() - (st.q_checked || 0) > 60_000) {
+        st.q_checked = now();
+        qPass = (async () => {
+          const [QF, { queueClient }, wr] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js')]);
+          st.q_last = { at: now(), ...await QF.tick(st, { q: queueClient({ key: queueKey }), repo, wr, now }) };
+        })().catch((e) => { st.q_last = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { qPass = null; });
+      }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const imageStarting=acceptedWorker&&live.some(p=>p.image===acceptedWorker.image&&p.status!=='ready');
       const imageDrainId=acceptedWorker&&!imageStarting?live.filter(p=>p.image&&p.image!==acceptedWorker.image).sort((a,b)=>a.created-b.created)[0]?.id:null;
       const inflight = Object.keys(st.jobs).length + staging.size + collecting.size;
-      if (!st.queue.length && !inflight && !homeTasks.size) break;
+      if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
       const rampCap = st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
