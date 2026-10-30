@@ -34,6 +34,10 @@ Tables via a repo (`api/lib/repos/archives-repo.js`), never direct DB from scrip
   librarian title index; junk+copies set aside. GOLDEN AGE: 283,964 files → 143,705 items; main 25,076, covenant-breaker 34.
 - C done (622427e9, 1b9a8431): /admin/imports + /api/admin/imports/*. Gaps: creator mostly empty (CB authors); "More info" only records the
   request (no worker deep look yet); no printable report page yet (API only).
+- Covenant-breaker authors (00be3b68, api/lib/archives/covenant-breakers.js: name + approximate year of the break) match on creator/title/path,
+  not only the folder; the why says whose and whether written before the break. Re-adopt run 53357 (10:37): covenant-breaker 34 → 346,
+  main 24,764, set-aside 118,595. Matches: new 15,982 · held 2,769 · unsure 6,294 · better version 65.
+- Next: B = worker samples (first-minute transcript + 60 s clip for talks, title-page OCR for scans) on workers, never tower.
 
 ## Order
 A: repo + tables + donors/drives + adopt golden-age catalog; grouping + match (pure, tested). B: recommendation + worker samples. C: admin page + decisions. D: import + report. E: backfill old collections.
