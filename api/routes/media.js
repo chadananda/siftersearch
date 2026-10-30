@@ -524,15 +524,16 @@ export default async function mediaRoutes(fastify) {
     return progressMemo.value;
   });
 
-  // THE RESTORATION READOUT for the /media page (Chad 10-24: "I should be able to see the rapid updates"): counts and the latest five only —
-  // nothing about workers, cost or tools. Memoised 20 s, edge-cached 30 s.
+  // THE RESTORATION READOUT for the /media page (Chad 10-24: "I should be able to see the rapid updates"): counts, the latest five, and a card per
+  // machine (Chad 10-29: role, RAM, GPU, speed — worker-cards.js; never cost, addresses or temperatures). Memoised 20 s, edge-cached 30 s.
   let restoredMemo = null;
   fastify.get('/restored', async (req, reply) => {
     if (!restoredMemo || Date.now() - restoredMemo.at > 20_000) {
       const { importProgress, SOURCES } = await import('../lib/repos/media-repo.js');
       const prog = shapeProgress(await importProgress(), SOURCES);
-      const q = (await readJson(join(dirname((await import('../lib/media/cloud.js')).STATE_FILE), 'remaster-quality.json'))) || {};
-      restoredMemo = { at: Date.now(), value: restoredShape(prog, q) };
+      const [C, W] = await Promise.all([import('../lib/media/cloud.js'), import('../lib/media/worker-cards.js')]);
+      const q = (await readJson(join(dirname(C.STATE_FILE), 'remaster-quality.json'))) || {};
+      restoredMemo = { at: Date.now(), value: { ...restoredShape(prog, q), workers: W.workerCards((await readJson(C.STATE_FILE)) || {}) } };
     }
     pub(reply, 30);
     return restoredMemo.value;

@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-29T23:24:27.374Z",
+  "generated": "2026-10-30T01:45:12.249Z",
   "entries": [
+    {
+      "hash": "bec69978",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Pod count + spend cap set through ops (media-cloud-capacity → data/run/cloud-capacity.json; capUsd there wins over MEDIA_CLOUD_CAP_USD), bounded and tested",
+      "scope": null
+    },
+    {
+      "hash": "36e74b89",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Cloud orders can go FIRST — talks taken off the air (reverted for splicing) lead the lane queue whatever their mode; queue order is one tested function (laneOrder)",
+      "scope": null
+    },
+    {
+      "hash": "db16c066",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "A talk without a passed remaster has no published state — its page JSON and files 404 to the public (internal key still reads them; pod ensure sends it)",
+      "scope": null
+    },
     {
       "hash": "b7597be4",
       "date": "2026-10-29",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "Paced by the clock — overnight 2 at a time, by day one at a time with a 30 s pause; a sweep's back-to-back holdings checks drove Qdrant reads to ~300 MB/s and search to 4–14 s (paused: 2–4 s)",
       "scope": "dewey-sweep"
-    },
-    {
-      "hash": "2db2c910",
-      "date": "2026-10-21",
-      "type": "Other",
-      "description": "Daily backup runs at idle CPU+IO priority (nice 19, ionice idle) — at normal priority its quick_check took search to 39 s; idled live, search back to 0.3–0.6 s",
-      "scope": "backup"
-    },
-    {
-      "hash": "3506cd29",
-      "date": "2026-10-21",
-      "type": "Other",
-      "description": "Daily backup at 03:00 local — tower cron runs on MST, so '0 10' (meant as 10 UTC) ran the 58 GB copy + quick_check at 10 AM, slowing search to 2–7 s every morning",
-      "scope": "backup"
-    },
-    {
-      "hash": "948d1a31",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "One hunt at a time + 1.5 s pause — two concurrent hunts took search from 1.6 s to 5–11 s (10-21 09:49)",
-      "scope": "source-links-build"
     }
   ],
   "grouped": {
     "2026-10-29": [
+      {
+        "hash": "bec69978",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Pod count + spend cap set through ops (media-cloud-capacity → data/run/cloud-capacity.json; capUsd there wins over MEDIA_CLOUD_CAP_USD), bounded and tested",
+        "scope": null
+      },
+      {
+        "hash": "36e74b89",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Cloud orders can go FIRST — talks taken off the air (reverted for splicing) lead the lane queue whatever their mode; queue order is one tested function (laneOrder)",
+        "scope": null
+      },
+      {
+        "hash": "db16c066",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "A talk without a passed remaster has no published state — its page JSON and files 404 to the public (internal key still reads them; pod ensure sends it)",
+        "scope": null
+      },
       {
         "hash": "b7597be4",
         "date": "2026-10-29",
@@ -6994,27 +7015,6 @@
         "type": "Fixed",
         "description": "Paced by the clock — overnight 2 at a time, by day one at a time with a 30 s pause; a sweep's back-to-back holdings checks drove Qdrant reads to ~300 MB/s and search to 4–14 s (paused: 2–4 s)",
         "scope": "dewey-sweep"
-      },
-      {
-        "hash": "2db2c910",
-        "date": "2026-10-21",
-        "type": "Other",
-        "description": "Daily backup runs at idle CPU+IO priority (nice 19, ionice idle) — at normal priority its quick_check took search to 39 s; idled live, search back to 0.3–0.6 s",
-        "scope": "backup"
-      },
-      {
-        "hash": "3506cd29",
-        "date": "2026-10-21",
-        "type": "Other",
-        "description": "Daily backup at 03:00 local — tower cron runs on MST, so '0 10' (meant as 10 UTC) ran the 58 GB copy + quick_check at 10 AM, slowing search to 2–7 s every morning",
-        "scope": "backup"
-      },
-      {
-        "hash": "948d1a31",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "One hunt at a time + 1.5 s pause — two concurrent hunts took search from 1.6 s to 5–11 s (10-21 09:49)",
-        "scope": "source-links-build"
       }
     ]
   }
