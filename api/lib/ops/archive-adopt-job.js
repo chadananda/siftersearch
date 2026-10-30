@@ -34,7 +34,9 @@ export async function archiveAdoptJob({ drive, donor, donorName, label, source, 
   const items = groupFiles(rows).map((it) => {
     const m = libraryMatch(lib, it);
     const x = m ? { ...it, metadata: { ...it.metadata, lib: m } } : it;
-    return { ...x, ...recommend(x), match_ref: m?.id ? `doc:${m.id}` : it.metadata?.near || null };
+    const r = recommend(x);
+    // excluded clips and in-drive copies are not candidates: set aside with the junk, never in the main ranking
+    return { ...x, ...r, section: ['junk', 'copy'].includes(r.match) ? 'set-aside' : x.section, match_ref: m?.id ? `doc:${m.id}` : it.metadata?.near || null };
   });
   await upsertItems(drive, items, { batch: 500 });
   const pruned = await pruneStale(drive, started);

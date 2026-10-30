@@ -102,11 +102,24 @@ describe('archive-adopt report', () => {
     const held = (await repo.listItems('kanz-1')).find((x) => x.match === 'held');
     expect(held).toMatchObject({ primary_rel: 'B/Some_Answered_Questions_OCRd.pdf', match_ref: 'doc:77' });
     expect(held.why).toBe('Already in the library (Some Answered Questions #77); book, 2 copies on the drive.');
+    expect((await repo.listItems('kanz-1')).every((x) => x.section === 'main')).toBe(true);
     const gone = (await repo.listItems('kanz-1')).find((x) => x.title === 'Gone Later Item');
     c.prepare('DELETE FROM files WHERE fp = ?').run('c'); c.prepare('DELETE FROM files WHERE fp = ?').run('b'); c.close();
     await repo.decideItem(gone.id, { decision: 'more_info' });
     await new Promise((r) => setTimeout(r, 5));
     expect(await archiveAdoptJob(p)).toMatchObject({ items: 1, pruned: 1 });
     expect((await repo.listItems('kanz-1', { limit: 100 })).map((x) => x.title).sort()).toEqual(['Gone Later Item', 'Some Answered Questions']);
+  });
+  it('excluded clips and in-drive copies are set aside, not ranked in main', async () => {
+    const path = join(mkdtempSync(join(tmpdir(), 'cat-')), 'i.db');
+    const c = new Database(path);
+    c.exec('CREATE TABLE files(id INTEGER PRIMARY KEY, rel, folder, name, ext, cls, size, mtime, fp, dur, title, artist, year, sug, why, near)');
+    const ins = c.prepare('INSERT INTO files(rel, folder, name, ext, cls, size, fp, dur, sug, why) VALUES (?,?,?,?,?,?,?,?,?,?)');
+    ins.run('A/jingle.mp3', 'A', 'jingle.mp3', 'mp3', 'audio', 900, 'j', 30, 'skip', 'excluded: under 60 s');
+    ins.run('A/talk b.mp3', 'A', 'talk b.mp3', 'mp3', 'audio', 900, 'k', 3000, 'skip', 'duplicate: same name+duration inside drive; kept higher bitrate');
+    ins.run('A/talk.mp3', 'A', 'talk.mp3', 'mp3', 'audio', 900, 'l', 3000, 'import', 'new');
+    c.close();
+    const r = await archiveAdoptJob({ drive: 'kanz-2', donor: 'kanz', catalog: path, index: buildIndex([]) });
+    expect(r).toMatchObject({ section: { 'set-aside': 2, main: 1 }, match: { junk: 1, copy: 1, new: 1 } });
   });
 });
