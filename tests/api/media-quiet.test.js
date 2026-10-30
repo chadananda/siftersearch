@@ -17,6 +17,7 @@ describe('quiet.py', () => {
     expect(py(`print(json.dumps(quiet.quiet_spans([(5.0, 8.0), (9.0, 12.0), (20.0, 30.0)], 40.0)))`))
       .toEqual([[0, 5], [12, 20], [30, 40]]);
     expect(py(`print(json.dumps(quiet.quiet_spans([(0.5, 40.0)], 40.0)))`)).toEqual([]);
+    expect(py(`print(json.dumps(quiet.quiet_spans([(5.0, 8.0), (50.0, 52.0), (60.0, 61.0)], 40.0)))`)).toEqual([[0, 5], [8, 40]]);   // words past the end
   });
   it('gain is 0 inside, ramps at inner edges only, 1 in speech', () => {
     const g = py(`print(json.dumps([round(float(x), 3) for x in quiet.gain([0.0, 4.0, 4.95, 5.0, 6.0, 12.0, 12.05, 15.0, 39.99], [(0, 5), (12, 20), (30, 40)], 40.0)]))`);

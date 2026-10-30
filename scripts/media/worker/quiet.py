@@ -35,8 +35,10 @@ def quiet_spans(speech, dur, min_s=MIN_S):
     """The word-free stretches of [0, dur] at least min_s long (lead, gaps, tail). Pure."""
     out, t = [], 0.0
     for s, e in speech + [(dur, dur)]:
-        if s - t >= min_s: out.append((t, min(s, dur)))
+        s = min(s, dur)
+        if s - t >= min_s: out.append((t, s))
         t = max(t, e)
+        if t >= dur: break       # words timed past the end of the copy add nothing
     return out
 
 
