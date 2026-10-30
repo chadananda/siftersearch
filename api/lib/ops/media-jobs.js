@@ -7,6 +7,7 @@
 //               yields to a drain between stages and resumes where it stopped.
 //   media-vocab { minMentions? } — the controlled vocabulary's names from the entity graph → data/media-vocab.json.
 import { late } from '../media/late.js';
+import * as WC from '../media/worker-cards.js';
 import { hostProfile, hostRegistry } from '../media/tools.js';
 import {audioVersion, markAudioPending} from '../media/talk-audio.js';
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
@@ -1880,9 +1881,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             if(acceptedWorker&&!p.image)p.image=(await C.getPod(p.id,deps)).imageName||acceptedWorker.image;
             const staleImage=acceptedWorker&&p.image!==acceptedWorker.image&&p.id===imageDrainId;
             if(staleImage&&!Object.values(st.jobs).some(j=>j.pod===p.id)){await closePod(p,'accepted image updated; finished recordings drained');return;}
-            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; if [ -f "$d/done.json" ] || { [ -f "$d/result.json" ] && [ -f "$d/complete" ]; }; then echo "DONE $d"; fi; [ -f "$d/failed" ] && echo "FAIL $d"; [ -f "$d/ready" ] && echo "WAIT $d"; if [ -f "$d/ready" ] || [ -f "$d/running" ] || [ -f "$d/done.json" ] || [ -f "$d/complete" ]; then echo "STAGED $d"; else echo "PARTIAL $d"; fi; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
+            const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; if [ -f "$d/done.json" ] || { [ -f "$d/result.json" ] && [ -f "$d/complete" ]; }; then echo "DONE $d"; fi; [ -f "$d/failed" ] && echo "FAIL $d"; [ -f "$d/ready" ] && echo "WAIT $d"; if [ -f "$d/ready" ] || [ -f "$d/running" ] || [ -f "$d/done.json" ] || [ -f "$d/complete" ]; then echo "STAGED $d"; else echo "PARTIAL $d"; fi; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); u=$(awk \'/^usage_usec/{print $2}\' /sys/fs/cgroup/cpu.stat 2>/dev/null); pw=$(nvidia-smi --query-gpu=power.draw,power.limit --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d \' \'); echo GAUGE ${u:--} $(cat /sys/fs/cgroup/cpu.max 2>/dev/null || echo max 100000) $(nproc) ${pw:--}; echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
             p.lastOk = now();
-            const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]);
+            const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]); { const g = WC.readGauges(stdout, p.gauge, now()); if (g) p.gauge = { ...g, cpu: g.cpu ?? p.gauge?.cpu ?? null }; }   // the CPU / GPU dials on /media (Chad 10-30)
             const wm = /^STATUS (\{.*\})$/m.exec(stdout); if (wm) { try { const w = JSON.parse(wm[1]); if (w.at !== p.worker?.at || !p.worker_seen) p.worker_seen = now(); p.worker = { ...w, ready_jobs: (stdout.match(/^WAIT /gm) || []).length }; } catch { /* partial write */ } }
             // A live heartbeat is not progress: cached VRAM can strand a worker
             // with staged inputs and no active work indefinitely.

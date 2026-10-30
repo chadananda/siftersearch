@@ -1,6 +1,6 @@
 // /media machine cards: role, RAM, GPU, speed per machine from the lane state; nothing private leaves.
 import { describe, it, expect } from 'vitest';
-import { workerCards, speeds, SPEED_WINDOW_MS } from '../../api/lib/media/worker-cards.js';
+import { workerCards, speeds, readGauges, SPEED_WINDOW_MS } from '../../api/lib/media/worker-cards.js';
 
 const now = 1_800_000_000_000;
 describe('workerCards', () => {
@@ -40,5 +40,18 @@ describe('workerCards', () => {
     expect(speeds(done, t, { 'sifter-unipase-349': t - 1800_000 })['sifter-unipase-349']).toBe(9.7);   // 30 min old
     expect(speeds(done, t)['sifter-unipase-349']).toBe(4.9);   // no start known: the one-hour window
     expect(speeds(done, t, { 'sifter-unipase-349': t - 1000 })['sifter-unipase-349']).toBe(29.1);   // floor of 10 min, never divide by seconds
+  });
+  it('CPU / GPU dials: cgroup CPU time over the pod\'s quota, GPU power over its limit; only while fresh', () => {
+    const a = readGauges('UTIL 100\nGAUGE 1000000000 1360000 100000 128 301.5,450.00\nSTATUS {}', {}, now);
+    expect(a).toMatchObject({ usage_us: 1e9, cpu: null, gpu: 67 });   // the first sample has no CPU interval yet; 100 % "util" was 67 % of power
+    const b = readGauges('GAUGE 1408000000 1360000 100000 128 450,450', a, now + 60_000);   // 408 CPU-s in 60 s on 13.6 CPUs = 50 %
+    expect(b).toMatchObject({ cpu: 50, gpu: 100 });
+    expect(readGauges('GAUGE 900 max 100000 4 -', { usage_us: 0, at: now }, now + 1000)).toMatchObject({ cpu: 0, gpu: null });   // no quota: nproc; no nvidia-smi
+    expect(readGauges('GAUGE - max 100000 4 -', a, now + 1000)).toMatchObject({ cpu: null, gpu: null });   // cgroup v1: no CPU dial
+    expect(readGauges('UTIL 9', {}, now)).toBeNull();
+    const pod = (gauge) => workerCards({ pods: { p: { id: 'p', name: 'sifter-unipase-5', status: 'ready', gauge } } }, now).at(-1).gauges;
+    expect(pod({ ...b, at: now - 60_000 })).toEqual({ cpu: 50, gpu: 100 });
+    expect(pod({ ...b, at: now - 10 * 60_000 })).toBeNull();
+    expect(pod(undefined)).toBeNull();
   });
 });

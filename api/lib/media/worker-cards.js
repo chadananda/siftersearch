@@ -20,6 +20,24 @@ export function speeds(done, now, since = {}) {
   return out;
 }
 
+const pct = (x) => (Number.isFinite(x) && x >= 0 ? Math.min(100, Math.round(x)) : null);
+export const GAUGE_FRESH_MS = 5 * 60_000;
+/** The pod poll's GAUGE line (media-jobs.js) → { usage_us, at, cpu, gpu } busy %. CPU = the container's cgroup CPU time since the previous poll ÷ its CPU
+ *  quota (the host's 128 cores are not the pod's ~14). GPU = power draw ÷ power limit: nvidia-smi's utilization reads 98-100 % on an underfed card
+ *  (10-30: 100 % "util" at 290 of 450 W) — any kernel in the sample window counts. prev = the pod's last sample. */
+export function readGauges(stdout, prev = {}, now = Date.now()) {
+  const m = /^GAUGE (\S+) (\S+) (\S+) (\S+)(?: (\S+))?/m.exec(stdout || '');
+  if (!m) return null;
+  const [, u, quota, period, nproc, power] = m;
+  const cpus = quota !== 'max' && Number(quota) > 0 && Number(period) > 0 ? Math.min(Number(nproc) || Infinity, quota / period) : Number(nproc) || null;
+  const usage = /^\d+$/.test(u) ? Number(u) : null;
+  const out = { usage_us: usage, at: now, cpu: null, gpu: null };
+  if (usage != null && prev?.usage_us != null && now > prev.at && cpus) out.cpu = pct((usage - prev.usage_us) / 1e3 / ((now - prev.at) * cpus) * 100);
+  const [draw, limit] = String(power || '').split(',').map(Number);
+  if (draw >= 0 && limit > 0) out.gpu = pct((draw / limit) * 100);
+  return out;
+}
+
 export function workerCards(st = {}, now = Date.now()) {
   const sp = speeds(st.done, now, Object.fromEntries(Object.values(st.pods || {}).filter((p) => p.created).map((p) => [p.name, p.created])));
   const homeJobs = {};
@@ -37,7 +55,8 @@ export function workerCards(st = {}, now = Date.now()) {
     const vram = w.vram_total_gb ? ` · ${Math.round(w.vram_total_gb)} GB` : '';
     cards.push({ key: p.name, name: `RunPod ${String(p.name).replace(/^sifter-unipase-/, '#')}`, role: 'Cloud remaster',
       specs: [['GPU', p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : vram ? `NVIDIA${vram}` : 'assigning…'], ['RAM', w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—']],
-      status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? null });
+      status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? null,
+      gauges: p.gauge && now - p.gauge.at < GAUGE_FRESH_MS ? { cpu: p.gauge.cpu, gpu: p.gauge.gpu } : null });
   }
   return cards;
 }

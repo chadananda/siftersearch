@@ -1,6 +1,83 @@
 {
-  "generated": "2026-10-30T16:18:04.519Z",
+  "generated": "2026-10-30T19:54:07.523Z",
   "entries": [
+    {
+      "hash": "d2fb6737",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Collect results in the background, a finished talk frees its slot (10-30: pods ran at 1/3-1/4)",
+      "scope": null
+    },
+    {
+      "hash": "cea1fd16",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "The stage ledger (Chad 10-30: \"a lightweight sqlite table managing the stages of each staged or published audio file\") — media_stages (migr 190), one row per (talk, stage), mirrored from meta.json at every save + whole/cloud results; media-ledger-reconcile report walks every folder and reports drift. Internal API /api/admin/ops/media/{progress,items,items/:ref,items/:id/redo} + ops.mjs media …; Dewey tools media_progress, media_status",
+      "scope": null
+    },
+    {
+      "hash": "2b35266c",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Send audio, never video (Chad 10-30: \"pushing video around to process audio is simply absurd\") — a video original's audio track is stream-copied (ffmpeg -vn -c:a copy, bit for bit, tower 'light') before it goes to R2 or a pod; whole recordings keep their file (input_sha). The stager now stages only what pods may take (it had staged held-back whole mp4s: pulls 0, direct 8)",
+      "scope": null
+    },
+    {
+      "hash": "1a966ad1",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "The lane's 60 s heartbeat saves its state too (10-30: a pass collecting results ran 9+ min unsaved — staging progress and new jobs invisible)",
+      "scope": null
+    },
+    {
+      "hash": "795c56ff",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "A drain waits at most 30 s for home jobs (10-30: an ssh boss start that ignored the stop held the lane 7+ min — no state written, 3 pods starved); staged R2 objects re-staged after 36 h, before the 2-day bucket rule deletes them",
+      "scope": null
+    },
+    {
+      "hash": "1cd9b4c1",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Stage ahead in R2 (Chad 10-30) — the lane uploads queued originals to R2 continuously, ~100 audio-hours ahead, pods up or not; a pod pulls its input from a signed URL in seconds (direct upload stays the fallback). Uploads still in flight count as work, so the lane no longer closes a pod or ends while one is being assigned. Summary shows staged talks/h/GB, pulls vs direct",
+      "scope": null
+    },
+    {
+      "hash": "a9942419",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Uploads run in the background — the pass no longer waits on them (10-30: 12 at once over tower's ~18 Mbit/s real uplink made one pass 10 min, so no results came back and no pod was fed). 2 per pod, 4 in all; a .part still being sent is not requeued as a leftover",
+      "scope": null
+    },
+    {
+      "hash": "482d22f7",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Stage ahead so pods never starve (Chad 10-30) — each pod is kept at its worker's slots + 4 waiting, up to 4 uploads sent at once per pass and 3 results fetched; one-at-a-time held a 12-slot 4090 to ~4 jobs (13-15 min cycle for ~6 min of work) while tower's link sat at 15 of 1000 Mbit/s. saveState tmp names are unique so concurrent stagings don't clobber",
+      "scope": null
+    },
+    {
+      "hash": "6146ea01",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "The capacity report's maxPods now sets the pod count both ways — it could only lower the lane's launch request, so a lane started at 2 ignored the operator's 3",
+      "scope": null
+    },
+    {
+      "hash": "769c439a",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "The reaper's 'finished a talk recently' check matched done by pod id, but done records the pod by name — it spared nothing; match either",
+      "scope": null
+    },
+    {
+      "hash": "639395dc",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "The reaper no longer takes a working pod as 'GPU quiet (stuck)' — pod 350 read 0 % GPU for an hour while finishing 8 talks in 30 min (sampling misses the short GPU bursts) and was reaped; a pod that finished a talk within the quiet window is spared",
+      "scope": null
+    },
     {
       "hash": "1b9a8431",
       "date": "2026-10-30",
@@ -3423,87 +3500,87 @@
       "type": "New",
       "description": "Vectors-backup job — online SQLite backup of the three paid vectors.db stores to /tank/sifter/backups/vectors, paced in a nice-19 worker thread, copy verified (page count, size, quick/integrity check) before rotation; index lane, refuses while a writer runs, yields to drains (storage plan R1)",
       "scope": "ops"
-    },
-    {
-      "hash": "424e10c8",
-      "date": "2026-10-21",
-      "type": "Other",
-      "description": "MP44 specs (TLC, 2,000 TBW, HMB), 7910 slot map (Slot1 Gen3 x4 CPU1 free), drive install steps, keep GTX 1070 / pull K4000",
-      "scope": null
-    },
-    {
-      "hash": "c9fc194f",
-      "date": "2026-10-21",
-      "type": "Other",
-      "description": "Storage wear + RAM plan — measured baseline (NVMe 6.2 TB/day 10-13..20 → 0.09 after MEILI_WRITES=off), RAM budget, RAM disk + flush, per-device layout, UPS sizing",
-      "scope": null
-    },
-    {
-      "hash": "9ea40d83",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "SearchGrounded reads bound claims once per process, not a LIKE scan per cluster",
-      "scope": "grounding"
-    },
-    {
-      "hash": "d3378832",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Anís overview off the event loop; docs listing counts once and pages by id",
-      "scope": "api"
-    },
-    {
-      "hash": "fb7e5cf2",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Paragraph-authors refuses without ids unless all:true; saved labels read once (an existsSync per sort comparison over 57,903 books froze the reports event loop — 'silent', cancel and drain unheard, 10-21)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "f1bb121f",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Paragraph-authors checkpoints every 20 windows and yields to a drain INSIDE a book, resuming there (10-21: a 15,600-paragraph Bahá'í World volume held the reports service draining 70+ min)",
-      "scope": "authorship"
-    },
-    {
-      "hash": "8cf87ae2",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Db-ship's /tank copy takes no auto-snapshots (inherited from tank, they break incrementals); system-checks reads the newest SHIP snapshot (paged CRITICAL on a 'frequent' auto-snap)",
-      "scope": "backup"
-    },
-    {
-      "hash": "ef30afc5",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Doc-overlap report — per section, paragraphs held word for word elsewhere (Compilation of Compilations: extract what is missing, then retire)",
-      "scope": "ops"
-    },
-    {
-      "hash": "5e42366f",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Reparse flag — a parser change (Ibid expansion) reaches unchanged files; ingest-files { reparse }",
-      "scope": "ingest"
-    },
-    {
-      "hash": "dae2e020",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Ibid. expanded to the reference it stands for — compilation trailers and footnotes (Chad 10-21: 'Ibid does not work for RAG'); library files keep their wording",
-      "scope": "ingest"
-    },
-    {
-      "hash": "e3737a91",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "'(Ibid.)' trailers inherit the previous trailer's writer; a trailer ending ')<br>' before its attribute tail is still a trailer (10-21: ~110 Lights of Guidance quotations had no author)",
-      "scope": "authorship"
     }
   ],
   "grouped": {
     "2026-10-30": [
+      {
+        "hash": "d2fb6737",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Collect results in the background, a finished talk frees its slot (10-30: pods ran at 1/3-1/4)",
+        "scope": null
+      },
+      {
+        "hash": "cea1fd16",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "The stage ledger (Chad 10-30: \"a lightweight sqlite table managing the stages of each staged or published audio file\") — media_stages (migr 190), one row per (talk, stage), mirrored from meta.json at every save + whole/cloud results; media-ledger-reconcile report walks every folder and reports drift. Internal API /api/admin/ops/media/{progress,items,items/:ref,items/:id/redo} + ops.mjs media …; Dewey tools media_progress, media_status",
+        "scope": null
+      },
+      {
+        "hash": "2b35266c",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Send audio, never video (Chad 10-30: \"pushing video around to process audio is simply absurd\") — a video original's audio track is stream-copied (ffmpeg -vn -c:a copy, bit for bit, tower 'light') before it goes to R2 or a pod; whole recordings keep their file (input_sha). The stager now stages only what pods may take (it had staged held-back whole mp4s: pulls 0, direct 8)",
+        "scope": null
+      },
+      {
+        "hash": "1a966ad1",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "The lane's 60 s heartbeat saves its state too (10-30: a pass collecting results ran 9+ min unsaved — staging progress and new jobs invisible)",
+        "scope": null
+      },
+      {
+        "hash": "795c56ff",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "A drain waits at most 30 s for home jobs (10-30: an ssh boss start that ignored the stop held the lane 7+ min — no state written, 3 pods starved); staged R2 objects re-staged after 36 h, before the 2-day bucket rule deletes them",
+        "scope": null
+      },
+      {
+        "hash": "1cd9b4c1",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Stage ahead in R2 (Chad 10-30) — the lane uploads queued originals to R2 continuously, ~100 audio-hours ahead, pods up or not; a pod pulls its input from a signed URL in seconds (direct upload stays the fallback). Uploads still in flight count as work, so the lane no longer closes a pod or ends while one is being assigned. Summary shows staged talks/h/GB, pulls vs direct",
+        "scope": null
+      },
+      {
+        "hash": "a9942419",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Uploads run in the background — the pass no longer waits on them (10-30: 12 at once over tower's ~18 Mbit/s real uplink made one pass 10 min, so no results came back and no pod was fed). 2 per pod, 4 in all; a .part still being sent is not requeued as a leftover",
+        "scope": null
+      },
+      {
+        "hash": "482d22f7",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Stage ahead so pods never starve (Chad 10-30) — each pod is kept at its worker's slots + 4 waiting, up to 4 uploads sent at once per pass and 3 results fetched; one-at-a-time held a 12-slot 4090 to ~4 jobs (13-15 min cycle for ~6 min of work) while tower's link sat at 15 of 1000 Mbit/s. saveState tmp names are unique so concurrent stagings don't clobber",
+        "scope": null
+      },
+      {
+        "hash": "6146ea01",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "The capacity report's maxPods now sets the pod count both ways — it could only lower the lane's launch request, so a lane started at 2 ignored the operator's 3",
+        "scope": null
+      },
+      {
+        "hash": "769c439a",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "The reaper's 'finished a talk recently' check matched done by pod id, but done records the pod by name — it spared nothing; match either",
+        "scope": null
+      },
+      {
+        "hash": "639395dc",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "The reaper no longer takes a working pod as 'GPU quiet (stuck)' — pod 350 read 0 % GPU for an hour while finishing 8 talks in 30 min (sampling misses the short GPU bursts) and was reaped; a pod that finished a talk within the quiet window is spared",
+        "scope": null
+      },
       {
         "hash": "1b9a8431",
         "date": "2026-10-30",
@@ -6940,83 +7017,6 @@
         "type": "New",
         "description": "Vectors-backup job — online SQLite backup of the three paid vectors.db stores to /tank/sifter/backups/vectors, paced in a nice-19 worker thread, copy verified (page count, size, quick/integrity check) before rotation; index lane, refuses while a writer runs, yields to drains (storage plan R1)",
         "scope": "ops"
-      },
-      {
-        "hash": "424e10c8",
-        "date": "2026-10-21",
-        "type": "Other",
-        "description": "MP44 specs (TLC, 2,000 TBW, HMB), 7910 slot map (Slot1 Gen3 x4 CPU1 free), drive install steps, keep GTX 1070 / pull K4000",
-        "scope": null
-      },
-      {
-        "hash": "c9fc194f",
-        "date": "2026-10-21",
-        "type": "Other",
-        "description": "Storage wear + RAM plan — measured baseline (NVMe 6.2 TB/day 10-13..20 → 0.09 after MEILI_WRITES=off), RAM budget, RAM disk + flush, per-device layout, UPS sizing",
-        "scope": null
-      },
-      {
-        "hash": "9ea40d83",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "SearchGrounded reads bound claims once per process, not a LIKE scan per cluster",
-        "scope": "grounding"
-      },
-      {
-        "hash": "d3378832",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Anís overview off the event loop; docs listing counts once and pages by id",
-        "scope": "api"
-      },
-      {
-        "hash": "fb7e5cf2",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Paragraph-authors refuses without ids unless all:true; saved labels read once (an existsSync per sort comparison over 57,903 books froze the reports event loop — 'silent', cancel and drain unheard, 10-21)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "f1bb121f",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Paragraph-authors checkpoints every 20 windows and yields to a drain INSIDE a book, resuming there (10-21: a 15,600-paragraph Bahá'í World volume held the reports service draining 70+ min)",
-        "scope": "authorship"
-      },
-      {
-        "hash": "8cf87ae2",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Db-ship's /tank copy takes no auto-snapshots (inherited from tank, they break incrementals); system-checks reads the newest SHIP snapshot (paged CRITICAL on a 'frequent' auto-snap)",
-        "scope": "backup"
-      },
-      {
-        "hash": "ef30afc5",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Doc-overlap report — per section, paragraphs held word for word elsewhere (Compilation of Compilations: extract what is missing, then retire)",
-        "scope": "ops"
-      },
-      {
-        "hash": "5e42366f",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Reparse flag — a parser change (Ibid expansion) reaches unchanged files; ingest-files { reparse }",
-        "scope": "ingest"
-      },
-      {
-        "hash": "dae2e020",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Ibid. expanded to the reference it stands for — compilation trailers and footnotes (Chad 10-21: 'Ibid does not work for RAG'); library files keep their wording",
-        "scope": "ingest"
-      },
-      {
-        "hash": "e3737a91",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "'(Ibid.)' trailers inherit the previous trailer's writer; a trailer ending ')<br>' before its attribute tail is still a trailer (10-21: ~110 Lights of Guidance quotations had no author)",
-        "scope": "authorship"
       }
     ]
   }

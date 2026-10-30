@@ -1,7 +1,8 @@
 <script>
   // The restoration readout on /media (Chad 10-24): talks published of those planned, held for review, and the latest 30 as box-set spines in a scrolling list (Chad 10-29);
   // beside them a small card per machine doing the work (Chad 10-29): role, GPU, RAM, speed (× real time over the last hour, bar vs the fastest).
-  // Six cards fit one row beside the list (Chad 10-30: Tower, Boss, Aorus and three RunPods).
+  // Six cards fit one row beside the list (Chad 10-30: Tower, Boss, Aorus and three RunPods). A pod card carries a CPU and a GPU dial (Chad 10-30):
+  // busy % of the pod's CPU quota and of the GPU's power limit (api/lib/media/worker-cards.js readGauges).
   // Cached SSR first view, then liveRefresh (src/lib/live-data.js) every 30 s while on screen. The block's height is reserved, so a patch never shifts the page.
   import { onMount } from 'svelte';
   import { liveRefresh } from '../../../lib/live-data.js';
@@ -22,6 +23,13 @@
   const recent = $derived(Array.isArray(d?.recent) ? d.recent.filter((x) => x?.slug) : []);
   onMount(() => liveRefresh(() => media.restored(), (next) => { d = next; }, { every: 30_000, el: root, initial }));
 </script>
+
+{#snippet dial(label, v, of)}
+  <div class="dial" title={v == null ? `${label}: measuring…` : `${label} ${v}% busy (${of})`}>
+    <svg viewBox="0 0 40 23" aria-hidden="true"><path d="M5 20 A15 15 0 0 1 35 20" class="track" /><path d="M5 20 A15 15 0 0 1 35 20" class="val" class:hot={v >= 90} pathLength="100" style={`stroke-dasharray:${v ?? 0} 100`} /></svg>
+    <span><b>{v == null ? '–' : v}</b>{v == null ? '' : '%'} {label}</span>
+  </div>
+{/snippet}
 
 <section class="restored mx-auto max-w-6xl rounded-2xl border border-radio-line bg-radio-paper px-5 py-4" bind:this={root} aria-label="Restoration progress">
   <div class="left">
@@ -53,6 +61,7 @@
           <div class="head"><i class={`lamp ${LAMP[w.status] || 'dim'}`}></i><b>{w.name}</b></div>
           <div class="role">{w.role}</div>
           {#each w.specs || [['GPU', w.gpu], ['RAM', w.ram]] as [k, v] (k)}<div class="spec"><span>{k}</span>{v}</div>{/each}
+          {#if w.gauges}<div class="dials">{@render dial('CPU', w.gauges.cpu, 'of its CPU quota')}{@render dial('GPU', w.gauges.gpu, 'of the GPU power limit')}</div>{/if}
           <div class="speed">
             {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : w.jobs ? 'first talks under way' : w.status === 'idle' ? 'no work in the last hour' : w.status}{w.jobs ? ` · ${w.jobs} at work` : ''}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
           </div>
@@ -97,6 +106,16 @@
   .card .spec { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card .spec span { display: inline-block; width: 2.1rem; font-size: 0.55rem; letter-spacing: 0.1em; opacity: 0.7; }
   .card .speed span { font-variant-numeric: tabular-nums; font-size: 0.62rem; }
+  .dials { display: flex; gap: 0.2rem; margin-top: 0.25rem; }
+  .dial { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+  .dial svg { width: 100%; max-width: 2.9rem; height: auto; overflow: visible; }
+  .dial path { fill: none; stroke-width: 4.5; stroke-linecap: round; }
+  .dial .track { stroke: var(--radio-brass-soft); }
+  .dial .val { stroke: var(--radio-amber); transition: stroke-dasharray 0.6s ease; }
+  .dial .val.hot { stroke: var(--radio-needle); }
+  .dial span { margin-top: -0.25rem; font-size: 0.55rem; letter-spacing: 0.06em; white-space: nowrap; }
+  .dial b { font-size: 0.72rem; color: var(--radio-ink); font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) { .dial .val { transition: none; } }
   .bar { height: 0.3rem; border-radius: 999px; background: var(--radio-brass-soft); overflow: hidden; margin-bottom: 0.15rem; }
   .bar i { display: block; height: 100%; background: var(--radio-amber); border-radius: 999px; transition: width 0.6s ease; }
   .lamp { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex: none; background: var(--radio-ink-soft); opacity: 0.35; }
