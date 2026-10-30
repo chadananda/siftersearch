@@ -1646,6 +1646,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   };
   const homeTasks = new Map();   // host → promise (in this process)
   const staging = new Map();     // job → podId: uploads running in the background (10-30: a pass that awaited them took 10 min)
+  const collecting = new Map();  // job → podId: result downloads running in the background (10-30: 145 s each, serial in the pass, held every pod's next feed ~9 min)
+  const bgBusy = (id) => [...collecting.values()].includes(id) || [...staging.values()].some((s) => s.pod === id);   // a pod is never closed under a running upload or result download
   // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
   const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
   const beatFile = `${deps.stateFile || C.STATE_FILE}.beat`;   // the lane's liveness, written on its own timer: a long transfer must not look like a dead lane to the reaper
@@ -1794,7 +1796,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const imageStarting=acceptedWorker&&live.some(p=>p.image===acceptedWorker.image&&p.status!=='ready');
       const imageDrainId=acceptedWorker&&!imageStarting?live.filter(p=>p.image&&p.image!==acceptedWorker.image).sort((a,b)=>a.created-b.created)[0]?.id:null;
-      const inflight = Object.keys(st.jobs).length + staging.size;
+      const inflight = Object.keys(st.jobs).length + staging.size + collecting.size;
       if (!st.queue.length && !inflight && !homeTasks.size) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue.filter(id=>!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
@@ -1819,7 +1821,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // Transfer each pod's bounded batch in parallel; the uplink, not the GPU, can be the limiting resource.
       await Promise.all(live.map(async (p) => {
         try {
-          if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id)) { await closePod(p, `pool reduced to ${maxPods}`); return; }
+          if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id) && !bgBusy(p.id)) { await closePod(p, `pool reduced to ${maxPods}`); return; }
           if (p.status === 'booting') {
             let g = await C.getPod(p.id, deps);
             p.image=g.imageName||acceptedWorker?.image||null;
@@ -1898,12 +1900,18 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             if (p.worker_seen && now() - p.worker_seen > 240_000 && !stdout.includes('READY')) { p.dead_worker = true; }
             if (!wm && p.status === 'ready' && !p.worker_seen) p.worker_seen = now();   // the worker's live controller numbers (limit, VRAM, heat, state)
             const finishedJobs=new Set(stdout.split('\n').filter(l=>/^(DONE|FAIL) /.test(l)).map(l=>l.trim().split(' ')[1]));
+            // a job whose folder is gone from the pod (a restart between the pod's rm and the next save) must not hold a slot forever
+            const onPod = new Set(stdout.split('\n').map((l) => l.trim().split(' ')[1]).filter(Boolean));
+            for (const [id, j] of Object.entries(st.jobs)) if (j.pod === p.id && j.status !== 'uploading' && !onPod.has(id) && !collecting.has(id) && ![...staging.values()].some((s) => s.job === id) && now() - (j.since || 0) > 10 * 60_000) {
+              delete st.jobs[id];
+              if (!st.done.some((d) => d.id === j.itemId) && !st.queue.includes(j.itemId)) st.queue.unshift(j.itemId);
+            }
             // keep the pod fed (one running, one waiting)
             // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
             // Chad 10-30: stage ahead so a pod never starves — its worker's slots + STAGE_AHEAD waiting, up to STAGE_BATCH sent at once (one at a time held each pod to ~4 of 12 slots)
             let uploadsThisPass = 0; const batch = [];
             const mine = [...staging.values()].filter((s) => s.pod === p.id), pre = mine.filter((s) => !s.job).length;   // background uploads not yet in st.jobs
-            while (batch.length + mine.length < C.CLOUD.stageBatch && batch.length + staging.size < (C.CLOUD.stageGlobal ?? Infinity) && Object.values(st.jobs).filter(j=>j.pod===p.id).length + pre + batch.length < stageTarget(p) && !staleImage && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.entries(st.jobs).filter(([id,j]) => j.pod === p.id&&!finishedJobs.has(id)).length + pre + batch.length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:stageTarget(p), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
+            while (batch.length + mine.length < C.CLOUD.stageBatch && batch.length + staging.size < (C.CLOUD.stageGlobal ?? Infinity) && Object.entries(st.jobs).filter(([id,j])=>j.pod===p.id&&!finishedJobs.has(id)).length + pre + batch.length < stageTarget(p) && !staleImage && !p.dead_worker && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.entries(st.jobs).filter(([id,j]) => j.pod === p.id&&!finishedJobs.has(id)).length + pre + batch.length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:stageTarget(p), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
               let eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||(!acceptedWorker?.hold_whole&&p.image===acceptedWorker?.image));
               if((p.whole_since_restore||0)>=2){const repair=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'&&(st.items?.[id]?.mode||'restore')==='restore');if(repair>=0)eligible=repair;}
               if(eligible<0)break;
@@ -1972,7 +1980,6 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 if (!st.queue.includes(itemId) && !Object.values(st.jobs).some((j) => j.itemId === itemId)) st.queue.unshift(itemId);
               }).finally(() => staging.delete(itemId));
             }
-            let resultsThisPass = 0;
             for (const line of stdout.split('\n')) {
               const [kind, job] = line.trim().split(' ');
               const x = st.jobs[job];
@@ -1980,7 +1987,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               if(kind==='STAGED'&&x.status==='uploading'){x.status='assigned';continue;}
               // a .part this process is still sending is not a leftover
               if(kind==='PARTIAL'&&x.status==='uploading'&&![...staging.values()].some((s)=>s.job===job)){delete st.jobs[job];if(!st.queue.includes(x.itemId))st.queue.unshift(x.itemId);continue;}
-              if ((kind === 'DONE' || kind === 'FAIL') && resultsThisPass++ >= C.CLOUD.resultsPerPass) break;  // large result batches must not stall every other pod's next poll
+              if (kind !== 'DONE' && kind !== 'FAIL') continue;
+              if (collecting.has(job)) continue;
+              // in the BACKGROUND, like uploads: the pass keeps feeding pods while results come down (a few at once — tower's downlink is per-stream bound: 45 Mbit/s one, ~120 three)
+              if ([...collecting.values()].filter((q) => q === p.id).length >= C.CLOUD.resultsPerPod || collecting.size >= C.CLOUD.resultsGlobal) continue;
+              collecting.set(job, p.id);
+              (async () => {
               const it = await repo.getMediaItem(x.itemId);
               if (kind === 'DONE' && it?.dir) {
                 if(x.kind==='whole'){
@@ -1990,7 +2002,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   await C.podSsh(run,p,`rm -rf /workspace/spool/${job}`,{timeoutMs:60000});
                   delete st.jobs[job];p.jobs_done=(p.jobs_done||0)+1;st.proven=true;st.boot_fails=0;
                   st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,pod:p.name,at:now(),cycle_s:Math.round((now()-x.since)/1000)});
-                  continue;
+                  return;
                 }
                 const fetchAt = now();
                 let postSteps = null;
@@ -2023,11 +2035,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 delete st.jobs[job];
                 p.jobs_done = (p.jobs_done || 0) + 1; st.boot_fails = 0; st.proven = true;   // a pod that finished a talk proves the pool
                 const imode = st.items?.[it.id]?.mode || 'restore';
-                if (st.done.some((d) => d.id === it.id && (d.mode || 'restore') === imode)) continue;   // idempotent: a second result for a talk never queues a second run
+                if (st.done.some((d) => d.id === it.id && (d.mode || 'restore') === imode)) return;   // idempotent: a second result for a talk never queues a second run
                 st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode, cycle_s: Math.round((now() - x.since) / 1000), upload_s: x.uploaded_s, pod_s: dj.seconds, post_s: dj.post_s ?? null, download_s: Math.round((now() - fetchAt) / 1000), post_steps: postSteps, at: now() });
                 // a 'post' result for a talk tower has already finished itself is stale: drop it; otherwise tower's queued run takes it in seconds
                 const mt = await readMeta(it.dir).catch(() => null);
-                if (imode === 'post' && !st.items?.[it.id]?.redo && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); continue; }
+                if (imode === 'post' && !st.items?.[it.id]?.redo && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); return; }
                 await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');   // tower takes the finished result (seconds); an identical queued run is not doubled
               } else if (kind === 'FAIL') {
                 const err = await C.podSsh(run, p, `for f in error.txt worker.log post.error.txt; do [ ! -f /workspace/spool/${job}/$f ] || tail -c 2000 /workspace/spool/${job}/$f; done; true`, { timeoutMs: 60_000 }).then((r) => r.stdout).catch(() => '');
@@ -2041,8 +2053,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   if(x.kind==='whole')await repo.updateMediaItem(x.itemId,{state:'failed',why:err.slice(-500)});
                 }
               }
+              })().catch((err) => { if (err?.code !== 'DRAIN') p.last_error = `result ${job}: ${String(err?.message || err).slice(0, 260)}`; }).finally(() => collecting.delete(job));   // a failed fetch stays in st.jobs: the next pass tries again
             }
-            if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id)) await closePod(p, `pool reduced to ${maxPods}`);
+            if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id) && !bgBusy(p.id)) await closePod(p, `pool reduced to ${maxPods}`);
           }
         } catch (err) {
           if(err.code==='DRAIN')return;
@@ -2050,7 +2063,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { const reaped = await import('../media/pod-reaper.js').then((R) => R.reapedWhy(p.id)).catch(() => null); await closePod(p, reaped ? `reaped: ${reaped}` : `unreachable: ${p.last_error}`); if (p.status !== 'ready' && !reaped) st.pod_failures++; }
         }
       }));
-      for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.dead_worker)) { await closePod(p, `worker stopped (no status for ${Math.round((now() - p.worker_seen) / 60_000)} min)`); st.pod_failures = Math.max(0, st.pod_failures); }
+      for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.dead_worker && !bgBusy(q.id))) { await closePod(p, `worker stopped (no status for ${Math.round((now() - p.worker_seen) / 60_000)} min)`); st.pod_failures = Math.max(0, st.pod_failures); }
       // the READY, baked pods join the worker pool (pool.js): prep / probe / grade / dfn / encodes may use them as hosts of the same gate
       try {
         const P = await import('../media/pool.js');
@@ -2064,7 +2077,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // a pod from an older image (no gate: it cannot be a prep / encode host) is retired once its own jobs are done
       if (requireGate) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && !q.gate)) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'retired: image without the gate');
       // an idle pod (nothing left to give it) is terminated at once
-      if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id) && ![...staging.values()].some((s) => s.pod === p.id)) await closePod(p, 'queue empty');
+      if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id) && !bgBusy(p.id)) await closePod(p, 'queue empty');
       st.spent_usd = C.spendOf(st, now()); st.updated = now();
       await save(st);
       await nap(tickMs);
@@ -2073,6 +2086,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     clearInterval(hb); clearInterval(pump); stagerStop = true;
     try { (await import('../media/pool.js')).publishPool([]); st.pool_sig = ''; } catch { /* no pool file */ }   // the lane is ending: its pods leave the pool
     // the queue is done, the budget is spent or something failed: NO pod is left running (a drain leaves them working)
+    if (!yielded) { const t0 = now(); while (collecting.size && now() - t0 < 10 * 60_000) await nap(2000); }   // finished talks still downloading are worth the wait: closing deletes them
     if (!yielded) for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, stop || 'finished');
     st.spent_usd = C.spendOf(st, now()); st.updated = now();
     if (!yielded && !st.queue.length && !Object.keys(st.jobs).length) st.finished = now();

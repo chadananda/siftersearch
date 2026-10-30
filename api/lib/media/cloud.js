@@ -62,7 +62,8 @@ export const CLOUD = {
   stageAhead: 4,        // Chad 10-30: talks staged on a pod beyond its worker's slots, so a finished slot never waits on tower
   stageBatch: 2,        // uploads running at once per pod — in the background, the pass never waits on them
   stageGlobal: 4,       // uploads running at once in all: tower's real uplink is ~18 Mbit/s (10-30: 9 at once each crawled, a pass took 10 min)
-  resultsPerPass: 3,    // finished talks fetched per pod per pass
+  resultsPerPod: 2,     // finished talks downloading at once per pod — in the background; a finished talk no longer holds a pod slot
+  resultsGlobal: 4,     // ... and in all: tower's downlink is per-stream bound (10-30: 45 Mbit/s one stream, ~120 three)
   perPod: 6,            // prefetch only: match the worker's six post slots so four long CPU tails cannot starve its GPU; live controller still admits work
   bootTimeoutMs: 15 * 60_000,     // no SSH after this → terminate and replace (the 23 GB baked image takes 5-12 min to pull on a cold host; 10-24 measured)
   warmTimeoutMs: 20 * 60_000,     // the bootstrap (pip + the verified weights) must finish in this

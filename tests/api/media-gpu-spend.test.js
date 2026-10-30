@@ -267,7 +267,7 @@ const setup = ({ talks = 2, seconds = 600, poll = null } = {}) => {
     }
     if (last.includes('.worker-ready')) return { stdout: 'READY' };
     if (last.includes("device='cuda'")) return { stdout: 'CUDA_OK RTX 4090' };
-    if (last.startsWith('cd /workspace/spool')) return { stdout: `${Object.keys(spool).filter((j) => spool[j] === 'ready').map((j) => `DONE ${j}`).join('\n')}\nUTIL 90` };
+    if (last.startsWith('cd /workspace/spool')) return { stdout: `${Object.keys(spool).filter((j) => spool[j] === 'ready').map((j) => `DONE ${j}`).join('\n')}\n${Object.keys(spool).map((j) => `STAGED ${j}`).join('\n')}\nUTIL 90` };   // like a real pod: every folder it holds
     const m = /touch \/workspace\/spool\/([^/]+)\/ready/.exec(last); if (m) spool[m[1]] = 'ready';
     const r = /rm -rf \/workspace\/spool\/(\S+)/.exec(last); if (r) delete spool[r[1]];
     return { stdout: 'ok' };
@@ -385,7 +385,7 @@ describe('the lane: GPU is rented only for work', () => {
     expect(r.done).toBe(1);
     expect(cmds).toEqual(['curl']);
   });
-  it('fetches up to resultsPerPass completed recordings per pod per pass from a backlog', async () => {
+  it('collects a backlog of results in the background, at most resultsPerPod at once per pod', async () => {
     const x = setup({ talks: 5 });
     const times = [], run = x.deps.run;
     for (const id of [1, 2, 3, 4, 5]) x.spool[`j${id}`] = 'ready';
@@ -400,7 +400,7 @@ describe('the lane: GPU is rented only for work', () => {
     expect(r.done).toBe(5);
     expect(times).toHaveLength(5);
     const perPass = Object.values(times.reduce((n, t) => ({ ...n, [t]: (n[t] || 0) + 1 }), {}));
-    expect(Math.max(...perPass)).toBe(C.CLOUD.resultsPerPass);   // a backlog of 5 needs two passes
+    expect(Math.max(...perPass)).toBeLessThanOrEqual(C.CLOUD.resultsPerPod);   // never the whole backlog at once
   });
   it('persists a paid allocation before an existing pod starts a slow audio transfer', async () => {
     const x = setup({ talks: 4, seconds: 3600 });
