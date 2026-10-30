@@ -32,6 +32,16 @@ special builds (`HOME_BUILDS`) and a separate transport (gate). Every new machin
 - **P3** tower result-puller + placement; aorus+boss switch to pull; lane stops pushing to home hosts.
 - **P4** pods switch to pull; pod rental moves to the Worker cron; retire gate transport + HOME_BUILDS.
 
+## Status 10-30 evening
+- LIVE: Worker `/_q/*` (fetch-style DO), `api/lib/media/queue-client.mjs` (one client, tower + hosts),
+  `scripts/media/worker/queue-agent.mjs`, `api/lib/media/queue-feed.js` (tower: pull → feed every 60 s from the lane loop,
+  2.5 h target / 2 h low-water at the engaged hosts' measured rate; state `qjobs`, `q_last` in cloud-remaster.json).
+- First agent: aorus `~/sifter-queue` (`--host aorus-q --slots 1`, docker), beside aorus's ssh lane slots. Claimed #1915.
+- Traps found: Node happy-eyeballs 250 ms timed out every fetch from aorus (agent forces IPv4); Cloudflare 413s
+  bodies > 100 MB at the edge, so big files ask with an empty PUT and upload to the signed R2 url.
+- Next: prove pull/adopt, then move aorus's ssh slots to the agent, then boss (no docker perm → `--run local`
+  inside its env, or add chad to docker), then pods.
+
 ## Decisions (Chad 10-30)
 - **Pod rental stays on tower.** Rule: rent pods when the queued work is estimated at > 3 days for the engaged
   home machines (estimate = queued audio hours ÷ measured per-host rates).
