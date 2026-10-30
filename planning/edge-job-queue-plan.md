@@ -32,6 +32,11 @@ special builds (`HOME_BUILDS`) and a separate transport (gate). Every new machin
 - **P3** tower result-puller + placement; aorus+boss switch to pull; lane stops pushing to home hosts.
 - **P4** pods switch to pull; pod rental moves to the Worker cron; retire gate transport + HOME_BUILDS.
 
-## Open decisions
-- Pod rental in the Worker (needs RunPod key as a Worker secret) vs. stay on tower.
-- Staging: tower uploads raw.ogg to R2 for every job at enqueue (simple, ~egress-free) vs. only when a pod claims.
+## Decisions (Chad 10-30)
+- **Pod rental stays on tower.** Rule: rent pods when the queued work is estimated at > 3 days for the engaged
+  home machines (estimate = queued audio hours ÷ measured per-host rates).
+- **R2 is a padded window, not a mirror.** Tower keeps only enough jobs staged (raw.ogg + meta.json in R2,
+  enqueued) for an estimated several hours of work across all engaged devices; when the staged estimate drops
+  below a low-water mark it stages more. Inputs are deleted from R2 when their job is done. Home machines may
+  still read their local copy; the R2 copy is what makes a job claimable by anyone.
+- The queue only ever holds staged jobs — so a claim never waits on an upload.

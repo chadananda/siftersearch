@@ -58,7 +58,7 @@ describe('whole dispatch', () => {
   });
   it('the dispatcher picks through homePick (→ homeEligibleItem) and splices exactly once', () => {
     const src = readFileSync('api/lib/ops/media-jobs.js', 'utf8');
-    expect(src).toMatch(/eligibleIndex=bossBlocked\?-1:homePick\(h,st,acceptedWorker,held\)/);
+    expect(src).toMatch(/eligibleIndex=bossBlocked\?-1:homePick\(h,st,acceptedWorker,homeHeld\)/);
     expect(src.match(/st\.queue\.splice\(eligibleIndex,1\)/g)?.length).toBe(1);
   });
 });

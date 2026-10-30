@@ -1747,6 +1747,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       }
       const held = (st.backlog || 0) > (deps.maxBacklog ?? Number(process.env.MEDIA_CLOUD_MAX_BACKLOG ?? 12));
       st.held = held;
+      // home GPUs cost nothing (10-30: aorus + boss idle behind the pods' hold): they keep working until a much larger backlog — the cap only bounds disk
+      const homeHeld = (st.backlog || 0) > (deps.maxHomeBacklog ?? Number(process.env.MEDIA_HOME_MAX_BACKLOG ?? 60));
+      st.home_held = homeHeld;
       // home hosts: re-attach a task from before a restart, start one when a host is free and eligible
       // ASR KEEPS PRIORITY (Chad 10-23): a home host starts a UniPASE copy only while no transcription waits in the queue
       // the /media card dials (Chad 10-30): each home host's last gate reading (diskOk re-reads it in the background when > 30 s old — a host
@@ -1763,7 +1766,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         if ((st.host_down?.[h.replace(/-\d+$/, '')] || 0) > now()) continue;   // a host that stopped answering is left alone for a while (10-28: boss went offline and 41 talks burned their attempts in minutes)
         // any home host: hot, or short of RAM for our job on top of its own capacity-derived reserve (MemAvailable, read live from the gate every 30 s)
         const hostBase=h.replace(/-\d+$/,''); const bossBlocked=((T.coolEnough&&!T.coolEnough(hostBase))||(T.diskOk&&!T.diskOk(hostBase,{kind:(acceptedWorker?.gate_whole??acceptedWorker?.boss_whole)&&st.queue.some(id=>st.items?.[id]?.kind==='whole'&&homeEligibleItem(h,id,st,acceptedWorker))?'whole':'unipase'})));
-        const eligibleIndex=bossBlocked?-1:homePick(h,st,acceptedWorker,held);
+        const eligibleIndex=bossBlocked?-1:homePick(h,st,acceptedWorker,homeHeld);
         const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
         if (!cur) continue;
         if(acceptedWorker&&!cur.image)cur.image=homeImage(h,acceptedWorker);
