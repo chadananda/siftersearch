@@ -386,6 +386,17 @@ describe('the lane: GPU is rented only for work', () => {
     expect(st.pods.p1.jobs_assigned || 0).toBe(0);
     expect(st.done.every((d) => d.pod !== 'p1')).toBe(true);
   });
+  it('a pod whose talks keep failing (3 in 15 min, none finished) is dropped; the replacement does them', async () => {
+    let n = 0;
+    const x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => (cmd === 'ssh' && last.startsWith('cd /workspace/spool') && n === 1
+      ? { stdout: 'STATUS {"limit":1,"running":0,"failures_15m":3,"gpu_util":0,"at":1}\nUTIL 0' } : null) });
+    const orig = x.cloud.createPod;
+    x.cloud.createPod = vi.fn(async (...a) => { n++; return orig(...a); });
+    const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, minHours: 2 });
+    expect(r).toMatchObject({ done: 2, failed: 0 });
+    const st = JSON.parse(readFileSync(x.deps.stateFile, 'utf8'));
+    expect(st.pods.p1.why).toBe('jobs keep failing: 3 in 15 min, none finished');
+  });
   it('a duplicate result for a talk already done never queues a second tower run', async () => {
     const x = setup({ talks: 2, seconds: 3600 });
     mkdirSync(join(x.root), { recursive: true });

@@ -1859,6 +1859,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               await closePod(p, 'admission stalled: staged inputs without active work for 5 min');
               return;
             }
+            // a pod whose every talk fails is broken, whatever its heartbeat says: 3 failures in 15 min and nothing finished → drop it, its talks go back to the queue
+            if ((p.worker?.failures_15m || 0) >= 3 && !st.done.some((d) => d.pod === p.name || d.pod === p.id)) { await closePod(p, 'jobs keep failing: 3 in 15 min, none finished'); st.pod_failures++; return; }
             // a worker that stopped (idled itself out, crashed, drained) leaves a pod that bills and takes jobs it will never run: replace it, its jobs go back to the queue
             if (p.worker_seen && now() - p.worker_seen > 240_000 && !stdout.includes('READY')) { p.dead_worker = true; }
             if (!wm && p.status === 'ready' && !p.worker_seen) p.worker_seen = now();   // the worker's live controller numbers (limit, VRAM, heat, state)
