@@ -147,17 +147,14 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
     if cfg.get('selftest'):      # the image selftest: no speech to align, the stages around it still run
         out['realign'] = {'placed': 1, 'total': 1}
         rj = None
-    def run_realign(cpu=False):
-        env = {**os.environ, 'CUDA_VISIBLE_DEVICES': ''} if cpu else None
+    def run_realign():
         cp = runner([py, os.path.join(tools, 'media_tool.py'), 'realign', flac, '--threads', str(cfg.get('threads', 4)), '--segments', work, '--output', rj],
-                    capture_output=True, text=True, check=True, **({'env': env} if env else {}))
+                    capture_output=True, text=True, check=True)
         out['realign_err'] = (getattr(cp, 'stderr', '') or '')[-300:]
         return json.loads(cp.stdout.strip().split('\n')[-1])
     try:
+        # no CPU retry (Chad 10-30): a GPU realign that places too few words is held below with its stderr, so the bug shows
         r = {'placed': 1, 'total': 1} if rj is None else run_realign()
-        if not r.get('total') or r['placed'] / r['total'] < 0.98:     # 10-24: 0 of 1672 placed on a pod's GPU while aorus placed all — retry on the CPU before giving up
-            out['realign_gpu'] = {'placed': r.get('placed'), 'total': r.get('total')}
-            r = run_realign(cpu=True)
     except Exception as err:     # no aligner on this machine: the guard result stands (tower aligns itself only in non-strict mode)
         out['ok'] = True; out['why'] = f'realign unavailable here: {str(err)[-160:]}'; out['work_sha'] = cfg['work_sha']
         return out

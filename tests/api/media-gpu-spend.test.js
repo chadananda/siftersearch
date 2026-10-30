@@ -778,8 +778,8 @@ describe('transfers keep the pod alive in the ledger', () => {
   });
 });
 
-describe('realign that places nothing on the GPU is retried on the CPU', () => {
-  it('0 of N on the first try, all of N with CUDA hidden: the talk is published, not held', () => {
+describe('realign that places nothing on the GPU is held, never retried on the CPU (Chad 10-30)', () => {
+  it('0 of N on the GPU: one run, no CPU retry, the talk is held with the reason', () => {
     const dir = mkdtempSync(join(tmpdir(), 'rg-'));
     writeFileSync(join(dir, 'in.mp3'), 'x'); writeFileSync(join(dir, 'out.flac'), 'y'); writeFileSync(join(dir, 'asr.json'), '{}'); writeFileSync(join(dir, 'work.json'), '{"paragraphs":[]}');
     const sha = createHash('sha256').update('{"paragraphs":[]}').digest('hex');
@@ -798,8 +798,19 @@ def runner(cmd, **kw):
         return types.SimpleNamespace(stdout=json.dumps({'placed': 100 if cpu else 0, 'total': 100}) + '\\n', stderr='cuda error' if not cpu else '')
     return types.SimpleNamespace(stdout='', stderr='')
 r = post.process(${JSON.stringify(dir)}, runner=runner, silence=lambda *a, **k: {'version': 1, 'quiet_s': 0.0, 'stretches': 0, 'loud': [], 'loud_s': 0.0, 'voiced_kept': []})
-print(json.dumps({'envs': envs, 'held': r.get('held'), 'web': bool(r.get('web')), 'gpu': r.get('realign_gpu'), 'verdict': r['qa']['verdict']}))`], { encoding: 'utf8' }));
-    expect(o).toMatchObject({ envs: [false, true], web: true, gpu: { placed: 0, total: 100 }, verdict: 'usable' }); expect(o.held).toBeFalsy();
+print(json.dumps({'envs': envs, 'held': r.get('held'), 'why': r.get('why')}))`], { encoding: 'utf8' }));
+    expect(o).toMatchObject({ envs: [false], held: true, why: 'realign placed too few words' });
+  });
+});
+
+describe('GPU stages never fall back to the CPU (Chad 10-30)', () => {
+  it('media_tool: no CPU diarize, no CPU after a GPU wait or OOM, a broken CUDA stack raises', () => {
+    const py = readFileSync(new URL('../../scripts/media/media_tool.py', import.meta.url), 'utf8');
+    expect(py).not.toMatch(/diarizing on the CPU/);
+    expect(py).not.toMatch(/make\('cpu'\)/);
+    expect(py).not.toMatch(/env\['MEDIA_DEVICE'\] = 'cpu'/);
+    expect(py).toMatch(/never on the CPU'\)/);
+    expect(py).toMatch(/GPU present but torch\.cuda is unavailable/);
   });
 });
 

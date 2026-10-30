@@ -313,7 +313,7 @@ describe('heat guard (10-23: aorus GPU 88 °C throttling, CPU Tctl 95 °C; boss 
     const { readFileSync } = await import('fs');
     const g = readFileSync(new URL('../../scripts/media/boss-asr-gate.sh', import.meta.url), 'utf8');
     expect(g).toMatch(/temperature\.gpu/); expect(g).toMatch(/Tctl/); expect(g).toMatch(/MEDIA_DIAR_NO_CPU=1/);
-    expect(readFileSync(new URL('../../scripts/media/media_tool.py', import.meta.url), 'utf8')).toMatch(/MEDIA_DIAR_NO_CPU/);
+    expect(readFileSync(new URL('../../scripts/media/media_tool.py', import.meta.url), 'utf8')).toMatch(/no CPU fallback\)/);
   });
 });
 

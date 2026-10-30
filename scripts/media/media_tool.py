@@ -1,7 +1,7 @@
 # Media pipeline worker (runs in ~/sifter/venvs/media on tower; spawned by api/lib/media/run-tool.js at nice 19).
 # Subcommands print ONE JSON object on stdout: metrics · probe · langid · dfn · transcribe. Thread cap: --threads.
 # Deps: numpy, soundfile, faster-whisper, whisperx, sherpa-onnx, deepfilternet (all user-space).
-import argparse, json, os, re, subprocess, sys, time
+import argparse, json, os, re, shutil, subprocess, sys, time
 
 import numpy as np
 
@@ -117,13 +117,21 @@ def device():
     if _device:
         return _device
     _device = ('cpu', 'int8')
-    if os.environ.get('MEDIA_DEVICE', '') == 'cpu':
+    if os.environ.get('MEDIA_DEVICE', '') == 'cpu' or os.environ.get('CUDA_VISIBLE_DEVICES') == '':
         return _device
+    # A machine WITH a GPU never quietly runs a GPU stage on the CPU (Chad 10-30: "that is just allowing a bug to become a
+    # productivity obstacle") — a broken CUDA stack fails the stage loudly. CPU only where no GPU exists or it is hidden on purpose.
+    has_gpu = bool(shutil.which('nvidia-smi') or shutil.which('rocm-smi'))
     try:
         import torch
-        if not torch.cuda.is_available():
-            return _device
-    except Exception:
+        ok = torch.cuda.is_available()
+    except Exception as err:
+        if has_gpu:
+            raise RuntimeError(f'GPU present but torch cannot load ({str(err)[:120]}) — no CPU fallback')
+        return _device
+    if not ok:
+        if has_gpu:
+            raise RuntimeError('GPU present but torch.cuda is unavailable (driver/library env) — no CPU fallback')
         return _device
     if os.environ.get('SIFTER_GPU_LEASES') == '1':
         _device = ('cuda', 'float16'); return _device
@@ -146,9 +154,8 @@ def device():
             return _device
         fcntl.flock(lock, fcntl.LOCK_UN)
         if time.time() - t0 > 1200:
-            print(f'GPU busy for 20 min ({free / 2 ** 30:.1f} GB free) — on the CPU', file=sys.stderr)
             lock.close()
-            return _device
+            raise RuntimeError(f'GPU busy for 20 min ({free / 2 ** 30:.1f} GB free) — retried later, never on the CPU')
         time.sleep(5)
 
 
@@ -274,8 +281,7 @@ def diarize(audio, threads, models_dir, num_speakers=-1, threshold=0.5, emb_name
     # the transcriptions keep the card; else the CPU (10-23: 600 s of audio in ~100 s on the GPU at 1 CPU thread)
     prov = os.environ.get('MEDIA_DIAR_PROVIDER', 'cpu')
     if prov == 'cuda':
-        # MEDIA_DIAR_NO_CPU (aorus, 10-23: its CPU at Tctl 95 °C): WAIT for GPU memory (up to 30 min), never the CPU
-        no_cpu = os.environ.get('MEDIA_DIAR_NO_CPU') == '1'
+        # WAIT for GPU memory (up to 30 min), never the CPU (Chad 10-30: no CPU fallback for GPU stages; MEDIA_DIAR_NO_CPU is now always on)
         t_wait = time.time()
         while True:
             try:
@@ -284,27 +290,16 @@ def diarize(audio, threads, models_dir, num_speakers=-1, threshold=0.5, emb_name
                 free = None
             if free is not None and free >= 1536:
                 break
-            if not no_cpu:
-                prov = 'cpu'
-                print(f'GPU has {free} MiB free — diarizing on the CPU', file=sys.stderr)
-                break
             if time.time() - t_wait > 1800:
-                raise RuntimeError(f'GPU memory never freed ({free} MiB) in 30 min — diarize retried later (no CPU fallback on this host)')
+                raise RuntimeError(f'GPU memory never freed ({free} MiB) in 30 min — diarize retried later (no CPU fallback)')
             time.sleep(20)
-    def make(p):
-        return sherpa_onnx.OfflineSpeakerDiarization(sherpa_onnx.OfflineSpeakerDiarizationConfig(
-            segmentation=sherpa_onnx.OfflineSpeakerSegmentationModelConfig(
-                pyannote=sherpa_onnx.OfflineSpeakerSegmentationPyannoteModelConfig(model=seg), num_threads=threads, provider=p),
-            embedding=sherpa_onnx.SpeakerEmbeddingExtractorConfig(model=emb, num_threads=threads, provider=p),
-            clustering=sherpa_onnx.FastClusteringConfig(num_clusters=num_speakers, threshold=threshold),
-            min_duration_on=0.3, min_duration_off=0.5))
-    try:
-        sd = make(prov)
-    except RuntimeError as e:   # 10-30 pods: the CUDA provider can't load (libcublasLt.so.12 missing) — every 'unsure' talk failed AFTER its GPU remaster
-        if prov == 'cpu':
-            raise
-        print(f'diarize: {prov} provider unavailable ({str(e)[:160]}) — diarizing on the CPU', file=sys.stderr)
-        sd = make('cpu')
+    # a CUDA provider that cannot load (10-30 pods: libcublasLt.so.12 missing) FAILS here — the bug shows, never a CPU run
+    sd = sherpa_onnx.OfflineSpeakerDiarization(sherpa_onnx.OfflineSpeakerDiarizationConfig(
+        segmentation=sherpa_onnx.OfflineSpeakerSegmentationModelConfig(
+            pyannote=sherpa_onnx.OfflineSpeakerSegmentationPyannoteModelConfig(model=seg), num_threads=threads, provider=prov),
+        embedding=sherpa_onnx.SpeakerEmbeddingExtractorConfig(model=emb, num_threads=threads, provider=prov),
+        clustering=sherpa_onnx.FastClusteringConfig(num_clusters=num_speakers, threshold=threshold),
+        min_duration_on=0.3, min_duration_off=0.5))
     res = sd.process(audio).sort_by_start_time()
     return [{'start': round(r.start, 3), 'end': round(r.end, 3), 'speaker': f'S{r.speaker + 1}'} for r in res]
 
@@ -818,19 +813,16 @@ def main():
             raise
         # the GPU is shared (transcriptions, probes, DeepFilterNet on an 8 GB card). Out of GPU memory → START AGAIN as a fresh
         # process (an in-process CPU retry kept the dead CUDA model's 2.2 GB and ran for 30+ min, 10-22): first back on the GPU
-        # (waiting for free memory under the lock), and only a second time out of memory on the CPU
+        # (waiting for free memory under the lock). Never on the CPU (Chad 10-30): after the last GPU try the stage fails and is requeued
         if 'out of memory' not in str(err).lower() or os.environ.get('MEDIA_DEVICE') == 'cpu':
             raise
-        # each retry waits for MORE free memory (a transcription's alignment + VAD peak above its load; 10-23: two OOMs sent a
-        # 76-min talk to aorus's CPU for 45+ min); the CPU only after three
+        # each retry waits for MORE free memory (a transcription's alignment + VAD peak above its load)
         tries = int(os.environ.get('MEDIA_OOM_TRIES', '0')) + 1
         need = {1: 5.5, 2: 7.2}.get(tries)
-        print(f'CUDA out of memory — {a.cmd} starts again ({f"GPU, after {need} GB is free" if need else "on the CPU"})', file=sys.stderr)
-        env = dict(os.environ, MEDIA_OOM_TRIES=str(tries))
-        if need:
-            env['MEDIA_GPU_NEED_GB'] = str(need)
-        else:
-            env['MEDIA_DEVICE'] = 'cpu'
+        if not need:
+            raise
+        print(f'CUDA out of memory — {a.cmd} starts again on the GPU, after {need} GB is free', file=sys.stderr)
+        env = dict(os.environ, MEDIA_OOM_TRIES=str(tries), MEDIA_GPU_NEED_GB=str(need))
         sys.stdout.flush(); sys.stderr.flush()
         os.execve(sys.executable, [sys.executable] + sys.argv, env)
 
