@@ -839,8 +839,19 @@ describe('boss restores, aorus keeps the whole imports (Chad 10-28)', () => {
 describe('a home host that stops answering rests; its talk goes back, no attempt used (10-28: boss offline, 41 talks lost their attempts)', () => {
   it('the error handler source carries the rule', () => {
     const src = readFileSync(join(import.meta.dirname, '../../api/lib/ops/media-jobs.js'), 'utf8');
-    expect(src).toMatch(/host_down/); expect(src).toMatch(/st\.queue\.unshift\(cur\.itemId\); st\.home_last_error = `\$\{h\} #\$\{cur\.itemId\}: host unreachable/);
+    expect(src).toMatch(/hostUnreachable\(st, h, cur, err\?\.message \|\| err, now\(\), deps\.hostRestMs\)/);
     expect(src).toMatch(/\(st\.host_down\?\.\[h\.replace\(\/-\\d\+\$\/, ''\)\] \|\| 0\) > now\(\)/);
+  });
+  it('strikes 1-2 keep the task attached with a short rest; strike 3 requeues at the front and rests 10 min; the error text is kept (10-29: boss ran 663 while called unreachable)', async () => {
+    const { hostUnreachable } = await import('../../api/lib/ops/media-jobs.js');
+    const st = { home: { 'boss-2': { itemId: 663, since: 1 } }, queue: [5] };
+    expect(hostUnreachable(st, 'boss-2', st.home['boss-2'], 'gate: Operation timed out', 1000)).toBe('kept');
+    expect(st.home['boss-2']).toMatchObject({ itemId: 663, unreachable: 1 }); expect(st.queue).toEqual([5]);
+    expect(st.host_down.boss).toBe(1000 + 120_000); expect(st.home_last_error).toMatch(/Operation timed out/);
+    hostUnreachable(st, 'boss-2', st.home['boss-2'], 'x', 2000);
+    expect(hostUnreachable(st, 'boss-2', st.home['boss-2'], 'Connection refused', 3000)).toBe('requeued');
+    expect(st.home['boss-2']).toBeUndefined(); expect(st.queue).toEqual([663, 5]); expect(st.host_down.boss).toBe(3000 + 600_000);
+    expect(st.home_last_error).toMatch(/host unreachable — resting 10 min \(Connection refused\)/);
   });
 });
 

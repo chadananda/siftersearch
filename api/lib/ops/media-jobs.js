@@ -1462,6 +1462,17 @@ export function homeEligible(host, T) {
   const load = T.asrLoad?.()[host];
   return !load || load.busy < load.slots;
 }
+/** A home task's host stopped answering. 10-29: boss was still running both UniPASE jobs while the lane called it unreachable and
+ *  requeued them (663 then ran twice). Strikes 1-2 keep the task attached: a 2 min rest, then the next pass re-attaches by job id.
+ *  Strike 3 hands the talk back to the queue front (no attempt used) and rests the host 10 min. Pure on st. → 'kept' | 'requeued' */
+export function hostUnreachable(st, h, cur, msg, t, restMs = 10 * 60_000) {
+  const n = (cur.unreachable || 0) + 1, why = String(msg).slice(-160);
+  (st.host_down ||= {})[baseHost(h)] = t + (n < 3 ? Math.min(restMs, 2 * 60_000) : restMs);
+  if (n < 3) { st.home[h] = { ...cur, unreachable: n }; st.home_last_error = `${h} #${cur.itemId}: not answering (${n}/3), re-attaching after a short rest (${why})`; return 'kept'; }
+  delete st.home[h]; st.queue.unshift(cur.itemId);
+  st.home_last_error = `${h} #${cur.itemId}: host unreachable — resting ${Math.round(restMs / 60_000)} min (${why})`;
+  return 'requeued';
+}
 /** A gate-transport host: UniPASE (gate verb) + the copy's transcript, then the CPU tail in the accepted worker image ('post'). → the done record */
 export async function gateRestoreChain(host, it, m, { T, C, fs, image, stop, deps = {} }) {
   const first = await (deps.homeRemaster || homeRemaster)(host, it, m, { T, C, fs, stop });
@@ -1747,13 +1758,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           await queue('media-remaster', { id: it.id }, 'media-cloud-remaster');
         })().then(() => { delete st.home[h]; }, async (err) => {
           if (err?.code === 'DRAIN') return;   // left running on the host; re-attached next start
-          delete st.home[h];
-          // the HOST is unreachable, not the talk: back to the front of the queue, no attempt used, the host rests 10 min
+          // the HOST is unreachable, not the talk: the task stays attached (re-attach by job id), the talk goes back only after 3 strikes
           if (/ssh exit (255|SIGKILL|SIGTERM)|rsync exit (10|12|30|35|255)|Connection timed out|Operation timed out|No route to host|Connection refused|Connection closed|Connection reset|timed out/i.test(String(err?.message || err))) {
-            (st.host_down ||= {})[h.replace(/-\d+$/, '')] = now() + (deps.hostRestMs ?? 10 * 60_000);
-            st.queue.unshift(cur.itemId); st.home_last_error = `${h} #${cur.itemId}: host unreachable — resting 10 min (${String(err?.message || err).slice(-160)})`;
+            hostUnreachable(st, h, cur, err?.message || err, now(), deps.hostRestMs);
             return;
           }
+          delete st.home[h];
           st.attempts[cur.itemId] = (st.attempts[cur.itemId] || 0) + 1;
           if (st.attempts[cur.itemId] < 2) st.queue.push(cur.itemId); else {
             st.failed.push({ id: cur.itemId, error: `${h}: ${String(err?.message || err).slice(-300)}` });
