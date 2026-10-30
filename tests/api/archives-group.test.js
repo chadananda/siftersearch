@@ -31,4 +31,14 @@ describe('groupFiles', () => {
     expect(r.find((x) => x.kind === 'book').section).toBe('covenant-breaker');
     expect(r.find((x) => x.kind === 'video').creator).toBeNull();
   });
+  it('identical files in many folders collapse to one item under the plainest path; the catalogue verdict survives', () => {
+    const r = groupFiles([f('Desktop Clear/Copy of Books/Iqan.pdf', { fp: 'k1' }), f('Books/Iqan.pdf', { fp: 'k1' }), f('Backup/Books_by_Covenant-Breakers/Iqan.pdf', { fp: 'k1' }),
+      f('A/talk.mp3', { fp: 't1', dur: 900, why: 'duplicate: identical size+duration inside drive' }), f('Z/deep/er/talk.mp3', { fp: 't1', dur: 900, why: 'new', sug: 'import' }), f('Books/Other.pdf', { fp: 'k2' })]);
+    const book = r.find((x) => x.title === 'Iqan');
+    expect(r.filter((x) => x.kind === 'book')).toHaveLength(2);
+    expect(book).toMatchObject({ primary_rel: 'Books/Iqan.pdf', section: 'covenant-breaker' });
+    expect(book.metadata.copies).toBe(3); expect(book.metadata.also).toHaveLength(2);
+    const talk = r.filter((x) => x.kind === 'talk');
+    expect(talk).toHaveLength(1); expect(talk[0].metadata).toMatchObject({ catalog_why: 'new', sug: 'import', copies: 2 });
+  });
 });

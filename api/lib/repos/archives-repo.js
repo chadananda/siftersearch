@@ -61,6 +61,12 @@ export async function upsertItems(driveId, items, { batch = 500 } = {}) {
   return n;
 }
 
+/** Undecided, unimported items a re-catalogue no longer produced (its upsert stamped everything else at or after `before`). Decisions are never deleted. */
+export async function pruneStale(driveId, before) {
+  const r = await query('DELETE FROM intake_items WHERE drive_id = ? AND updated_at < ? AND decision IS NULL AND imported_at IS NULL', [driveId, before], 'archives:items-prune');
+  return r?.changes ?? 0;
+}
+
 export async function listItems(driveId, { section, kind, decision, limit = 200, offset = 0 } = {}) {
   const w = ['drive_id = ?'], p = [driveId];
   if (section) { w.push('section = ?'); p.push(section); }

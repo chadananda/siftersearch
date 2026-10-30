@@ -26,4 +26,20 @@ describe('recommend', () => {
     expect(recommend(it1('photo-set', 'new')).destination).toBe('photo archive (not yet decided)');
     expect(recommend(it1('junk', null))).toMatchObject({ score: 0, destination: 'not imported', match: 'junk' });
   });
+  it('reads the catalogue verdict from its reason (archive-sifter writes sug import/look/skip)', () => {
+    const w = (why, sug = 'skip') => recommend(it1('talk', sug, { metadata: { sug, catalog_why: why } }));
+    expect(w('new', 'import').match).toBe('new');
+    expect(w('new (bb variant)', 'import').match).toBe('new');
+    expect(w('duplicate: library match by title/speaker/duration').match).toBe('held');
+    expect(w('duplicate: identical size+duration inside drive')).toMatchObject({ match: 'copy', score: 0, destination: 'not imported' });
+    expect(w('same bytes as X/y.mp3').match).toBe('copy');
+    expect(w('excluded: under 60 s')).toMatchObject({ match: 'junk', why: 'System or unrecognised file; excluded: under 60 s.' });
+    expect(w('version: same title, duration differs +605 s', 'look').match).toBe('version');
+    expect(w('unsure: partial title match', 'look').match).toBe('unsure');
+  });
+  it('library title hit for books; copies on the drive are named', () => {
+    const r = recommend(it1('book', null, { metadata: { lib: { match: 'held', title: 'The Kitáb-i-Íqán', id: 7 }, copies: 3 } }));
+    expect(r).toMatchObject({ match: 'held', why: 'Already in the library (The Kitáb-i-Íqán #7); book, 3 copies on the drive.' });
+    expect(recommend(it1('book', null, { metadata: { lib: { match: 'new' } } })).match).toBe('new');
+  });
 });
