@@ -53,7 +53,7 @@
           <div class="role">{w.role}</div>
           {#each w.specs || [['GPU', w.gpu], ['RAM', w.ram]] as [k, v] (k)}<div class="spec"><span>{k}</span>{v}</div>{/each}
           <div class="speed">
-            {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : 'no work in 3 h'}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
+            {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : w.jobs ? 'first talks under way' : 'no work in 3 h'}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
           </div>
         </li>
       {/each}

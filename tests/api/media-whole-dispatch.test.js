@@ -1,7 +1,7 @@
 // Whole-order dispatch (Chad 10-28): vendor-blind (boss AMD and aorus NVIDIA both take whole orders), and ONE host per order — upload is the
 // bottleneck, so the same audio never goes to two computers.
 import { describe, it, expect } from 'vitest';
-import { homeEligibleItem } from '../../api/lib/ops/media-jobs.js';
+import { homeEligibleItem, homeImage, silences, HOME_BUILDS } from '../../api/lib/ops/media-jobs.js';
 import { readFileSync } from 'fs';
 
 const wholeOnly = { queue: [1] };
@@ -37,6 +37,18 @@ describe('whole dispatch', () => {
     expect(homeEligibleItem('aorus-2', 2, st(), { ...accepted, quiet_hosts: ['boss'] })).toBe(false);
     expect(homeEligibleItem('boss', 2, st(), { ...accepted, quiet_hosts: ['boss'] })).toBe(true);
     expect(homeEligibleItem('boss', 2, st(), { boss_whole: true })).toBe(false);
+  });
+  it('a home host runs its own build of the accepted image when one is named; others and pods keep the accepted digest', () => {
+    const a = { image: 'ghcr.io/x@sha256:1', home_image: { aorus: 'sifter-media-worker:quiet-1' } };
+    expect(homeImage('aorus-3', a)).toBe('sifter-media-worker:quiet-1');
+    expect(homeImage('boss', a)).toBe('ghcr.io/x@sha256:1');
+  });
+  it('the home build of the accepted digest carries the silencer; a newly accepted digest drops it until rebuilt', () => {
+    const digest = Object.keys(HOME_BUILDS)[0];
+    expect(homeImage('aorus-1', { image: digest })).toBe(HOME_BUILDS[digest].aorus);
+    expect(silences('aorus-1', { image: digest })).toBe(true);
+    expect(silences('aorus-1', { image: 'ghcr.io/x@sha256:new' })).toBe(false);
+    expect(homeImage('aorus-1', { image: 'ghcr.io/x@sha256:new' })).toBe('ghcr.io/x@sha256:new');
   });
   it('the dispatcher picks through homeEligibleItem and splices exactly once', () => {
     const src = readFileSync('api/lib/ops/media-jobs.js', 'utf8');

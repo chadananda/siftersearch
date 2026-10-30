@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-30T02:13:35.183Z",
+  "generated": "2026-10-30T03:34:57.634Z",
   "entries": [
+    {
+      "hash": "981295aa",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Words timed past the end of the copy no longer make negative stretches",
+      "scope": null
+    },
+    {
+      "hash": "34037cc7",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "Silence the word-free stretches — UniPASE turns background-only audio into loud noise (believers-memories: 0-10 s at -10 dB)",
+      "scope": null
+    },
     {
       "hash": "a7ea9577",
       "date": "2026-10-29",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "/grounding/exhaustion serves a background-refreshed snapshot (pending right after a restart); system-checks treats pending as unknown — after deploys the cold 600-book walk took >30 s and paged CRITICAL 'nothing queued' (10-21 12:49)",
       "scope": "grounding"
-    },
-    {
-      "hash": "7e15af74",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "_add-anyway overrides an earlier 'already held' decline (Egea's 'Abdu'l-Bahá in the West was declined as held in Promulgation — it quotes it, it is not it)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "f947ac2d",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Hidden traditions — meta.yaml hidden: true ('Other': works spanning traditions, related ideas, contrasting beliefs) are searchable but never shelved or listed (shelves, library religions, public API) (Chad 10-21)",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-10-29": [
+      {
+        "hash": "981295aa",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Words timed past the end of the copy no longer make negative stretches",
+        "scope": null
+      },
+      {
+        "hash": "34037cc7",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "Silence the word-free stretches — UniPASE turns background-only audio into loud noise (believers-memories: 0-10 s at -10 dB)",
+        "scope": null
+      },
       {
         "hash": "a7ea9577",
         "date": "2026-10-29",
@@ -7001,20 +7015,6 @@
         "type": "Fixed",
         "description": "/grounding/exhaustion serves a background-refreshed snapshot (pending right after a restart); system-checks treats pending as unknown — after deploys the cold 600-book walk took >30 s and paged CRITICAL 'nothing queued' (10-21 12:49)",
         "scope": "grounding"
-      },
-      {
-        "hash": "7e15af74",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "_add-anyway overrides an earlier 'already held' decline (Egea's 'Abdu'l-Bahá in the West was declined as held in Promulgation — it quotes it, it is not it)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "f947ac2d",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Hidden traditions — meta.yaml hidden: true ('Other': works spanning traditions, related ideas, contrasting beliefs) are searchable but never shelved or listed (shelves, library religions, public API) (Chad 10-21)",
-        "scope": "library"
       }
     ]
   }

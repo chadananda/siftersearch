@@ -1541,9 +1541,17 @@ export function homeEligibleItem(h, id, st, acceptedWorker, env = process.env) {
   return !(whole && st.queue?.some((q) => q !== id && st.items?.[q]?.kind !== 'whole' && homeCanTake(h, q, st, acceptedWorker, env)));
 }
 const baseHost = (h) => String(h).replace(/-\d+$/, '');
+/** Home builds of an accepted image: FROM <digest> + the worker code pods get in the script overlay, built and tagged on each host
+ *  (scratchpad Dockerfile: COPY media/ → /opt/sifter/media + /opt/sifter/scripts/media). Keyed by the digest, so a newly accepted image drops them
+ *  until it is rebuilt. media-worker-accepted.json `home_image` / `quiet_hosts` override. */
+export const HOME_BUILDS = {
+  'ghcr.io/chadananda/sifter-media-worker@sha256:6e4d5e414a0b46058156dd3faadb227c9ca6ee7ed359f4e3d93f53eaeab21abf': { aorus: 'sifter-media-worker:quiet-20261029', boss: 'sifter-media-worker:quiet-20261029' },   // 10-29: + quiet.py
+};
+const homeBuild = (h, a) => a?.home_image?.[baseHost(h)] || HOME_BUILDS[a?.image]?.[baseHost(h)];
+export const homeImage = (h, acceptedWorker) => homeBuild(h, acceptedWorker) || acceptedWorker?.image;
 /** Does the image this home host runs carry the silencer (worker/quiet.py, Chad 10-29)? Pods get it in the script overlay; aorus/boss only from a
- *  rebuilt image, listed in media-worker-accepted.json `quiet_hosts` once it is. Until then they take no remaster work: their result would be refused. */
-export const silences = (h, acceptedWorker) => !acceptedWorker || (acceptedWorker.quiet_hosts || []).includes(baseHost(h));   // no accepted image = the legacy injected path (tests)
+ *  home build. Until then they take no remaster work: their result would be refused. No accepted image = the legacy injected path (tests). */
+export const silences = (h, acceptedWorker) => !acceptedWorker || (acceptedWorker.quiet_hosts || []).includes(baseHost(h)) || !!homeBuild(h, acceptedWorker);
 const isGateHost = (h) => hostProfile(baseHost(h)).transport === 'gate';
 function homeCanTake(h, id, st, acceptedWorker, env) {
   const it = st.items?.[id], whole = it?.kind === 'whole';
@@ -1658,7 +1666,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   try {
     for (;;) {
       if (draining()) { yielded = true; await Promise.allSettled([...homeTasks.values()]); break; }
-      for(const cur of Object.values(st.home))if(!cur.image&&acceptedWorker)cur.image=acceptedWorker.image;
+      for(const [h,cur] of Object.entries(st.home))if(!cur.image&&acceptedWorker)cur.image=homeImage(h,acceptedWorker);
       if(C.acceptedWorker){acceptedWorker=await C.acceptedWorker(deps.acceptedWorkerFile);if(acceptedWorker)homeHosts=acceptedHomeHosts(acceptedWorker);}
       for(const [h,cur] of Object.entries(st.home))if(!homeTasks.has(h)&&acceptedWorker?.reset_home_ids?.includes(cur.itemId)&&cur.image!==acceptedWorker.image){
         delete st.home[h];delete st.attempts[cur.itemId];if(!st.queue.includes(cur.itemId))st.queue.unshift(cur.itemId);
@@ -1713,7 +1721,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         const eligibleIndex=bossBlocked?-1:st.queue.findIndex(id=>homeEligibleItem(h,id,st,acceptedWorker));
         const cur = st.home[h] || (eligibleIndex>=0&&st.queue.length && !held && (acceptedWorker || (!st.asr_waiting && homeEligible(h, T))) ? { itemId: st.queue.splice(eligibleIndex,1)[0], since: now() } : null);
         if (!cur) continue;
-        if(acceptedWorker&&!cur.image)cur.image=acceptedWorker.image;
+        if(acceptedWorker&&!cur.image)cur.image=homeImage(h,acceptedWorker);
         st.home[h] = cur;
         homeTasks.set(h, (async () => {
           const it = await repo.getMediaItem(cur.itemId);
