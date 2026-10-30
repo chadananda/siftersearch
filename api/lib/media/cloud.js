@@ -259,7 +259,7 @@ W_PY=/workspace/runpod_worker.py; [ -f /workspace/scripts/media/runpod_worker.py
 nohup bash -c 'while true; do python '$W_PY' --repo /workspace/unipase --weights '$W' --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
 echo started`;
 
-export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_tool.py', 'worker/post.py', 'worker/controller.py', 'worker/cleanup.py', 'worker/selftest.py'];   // shipped to the pod beside the worker (guard, realign, encodes run there)
+export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_tool.py', 'worker/post.py', 'worker/controller.py', 'worker/cleanup.py', 'worker/selftest.py', 'worker/quiet.py'];   // shipped to the pod beside the worker (guard, realign, encodes run there)
 /** Start of a pod from the BAKED image (ghcr.io/chadananda/sifter-media-worker): code, UniPASE, whisper and aligners are already inside — seconds, no downloads. */
 export const BOOTSTRAP_BAKED = `set -e
 mkdir -p /workspace/spool && touch /workspace/spool/.tower-hb /workspace/.lane-seen   # (the entrypoint ends a pod no lane ever reached within 25 min)

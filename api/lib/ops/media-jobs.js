@@ -1535,11 +1535,15 @@ export function rankedSlots(rates, host, maxSlots) {
 export function homeEligibleItem(h, id, st, acceptedWorker, env = process.env) {
   const whole = st.items?.[id]?.kind === 'whole';
   if (acceptedWorker?.hold_whole && whole) return false;
+  if (!silences(h, acceptedWorker)) return false;
   if (!homeCanTake(h, id, st, acceptedWorker, env)) return false;
   // Published talks first (Chad 10-28): a new-talk (whole) order takes a host only when no queued remaster work can run there. Both get processed.
   return !(whole && st.queue?.some((q) => q !== id && st.items?.[q]?.kind !== 'whole' && homeCanTake(h, q, st, acceptedWorker, env)));
 }
 const baseHost = (h) => String(h).replace(/-\d+$/, '');
+/** Does the image this home host runs carry the silencer (worker/quiet.py, Chad 10-29)? Pods get it in the script overlay; aorus/boss only from a
+ *  rebuilt image, listed in media-worker-accepted.json `quiet_hosts` once it is. Until then they take no remaster work: their result would be refused. */
+export const silences = (h, acceptedWorker) => !acceptedWorker || (acceptedWorker.quiet_hosts || []).includes(baseHost(h));   // no accepted image = the legacy injected path (tests)
 const isGateHost = (h) => hostProfile(baseHost(h)).transport === 'gate';
 function homeCanTake(h, id, st, acceptedWorker, env) {
   const it = st.items?.[id], whole = it?.kind === 'whole';

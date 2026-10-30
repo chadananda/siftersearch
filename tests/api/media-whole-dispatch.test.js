@@ -6,7 +6,7 @@ import { readFileSync } from 'fs';
 
 const wholeOnly = { queue: [1] };
 const st = (extra = {}) => ({ items: { 1: { kind: 'whole' }, 2: { mode: 'restore' } }, home: {}, queue: [1, 2], ...extra });
-const accepted = { boss_whole: true };
+const accepted = { boss_whole: true, quiet_hosts: ['aorus', 'boss'] };
 
 describe('whole dispatch', () => {
   it('boss takes a whole order once its GPU path is accepted; before that it does not', () => {
@@ -32,6 +32,11 @@ describe('whole dispatch', () => {
   });
   it('hold_whole still keeps whole orders back everywhere', () => {
     expect(homeEligibleItem('boss', 1, st(), { ...accepted, hold_whole: true })).toBe(false);
+  });
+  it('a home host whose image lacks the silencer takes nothing (Chad 10-29: its result would carry the restorer\'s noise)', () => {
+    expect(homeEligibleItem('aorus-2', 2, st(), { ...accepted, quiet_hosts: ['boss'] })).toBe(false);
+    expect(homeEligibleItem('boss', 2, st(), { ...accepted, quiet_hosts: ['boss'] })).toBe(true);
+    expect(homeEligibleItem('boss', 2, st(), { boss_whole: true })).toBe(false);
   });
   it('the dispatcher picks through homeEligibleItem and splices exactly once', () => {
     const src = readFileSync('api/lib/ops/media-jobs.js', 'utf8');

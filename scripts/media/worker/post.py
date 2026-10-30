@@ -71,7 +71,7 @@ def cpu_phase(fn,*args,**kwargs):
     with lease('guard'):return fn(*args,**kwargs)
 
 
-def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe=None, cv_python=None):
+def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe=None, cv_python=None, silence=None):
     job = json.load(open(os.path.join(d, 'job.json')))
     cfg = job.get('post')
     out = {'ok': False, 'steps': {}}
@@ -167,7 +167,18 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
         out['ok'] = True; out['held'] = True; out['why'] = 'realign placed too few words'
         out['qa'] = verdict(None, None, g_first or g, bw, maxp, 'realign placed too few words on the restored copy')
         return out
-    # 4. the four web copies
+    # 4. silence where nobody speaks (quiet.py, Chad 10-29): the restorer turns background-only stretches into noise; a voiced stretch the transcript missed is kept
+    if not cfg.get('selftest'):
+        try:
+            if silence is None: import quiet; silence = quiet.apply
+            q = cpu_phase(silence, flac, json.load(open(work)), json.load(open(rj)) if rj and os.path.exists(rj) else None)
+            out['quiet'] = q
+            out['qa']['metrics'].update({'quiet_s': q['quiet_s'], 'noise_silenced_s': q['loud_s'], 'voiced_kept_s': round(sum(b - a for a, b, _ in q['voiced_kept']), 1)})
+        except Exception as err:     # never publish the unsilenced copy (it is what Chad rejected)
+            out['ok'] = True; out['held'] = True; out['why'] = f'silencing failed here: {str(err)[-160:]}'
+            out['qa'] = verdict(None, None, g_first or g, bw, maxp, out['why'])
+            return out
+    # 5. the four web copies
     t3 = time.time()
     slug = cfg['slug']
     trim = cfg.get('trim')

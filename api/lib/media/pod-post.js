@@ -34,8 +34,9 @@ export async function resign(dir) {
   } catch { /* no worker result */ }
 }
 
-/** A worker result tower can publish without touching audio: a held verdict, or guard + alignment + all four encodes. */
+/** A worker result tower can publish without touching audio: a held verdict, or guard + alignment + silencing + all four encodes.
+ *  `quiet` (Chad 10-29): a copy whose word-free stretches were not silenced carries the restorer's noise — never published. */
 export async function podComplete(dir) {
   const post = await podPost(dir);
-  return !!post && (!!post.held || !!(post.realign && post.web));
+  return !!post && (!!post.held || !!(post.realign && post.quiet && post.web));
 }

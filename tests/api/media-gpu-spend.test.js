@@ -509,7 +509,7 @@ def runner(cmd, **kw):
         if not ${realignOk ? 'True' : 'False'}: raise RuntimeError('no whisperx')
         return types.SimpleNamespace(stdout=json.dumps({'placed': 100, 'total': 100}) + '\\n')
     return types.SimpleNamespace(stdout='')
-r = post.process(${JSON.stringify(dir)}, runner=runner)
+r = post.process(${JSON.stringify(dir)}, runner=runner, silence=lambda *a, **k: {'version': 1, 'quiet_s': 0.0, 'stretches': 0, 'loud': [], 'loud_s': 0.0, 'voiced_kept': []})
 print(json.dumps({'r': {k: v for k, v in r.items() if k != 'guard'}, 'calls': calls}))`], { encoding: 'utf8' });
     return JSON.parse(out);
   };
@@ -549,7 +549,7 @@ def runner(cmd, **kw):
         return types.SimpleNamespace(stdout=json.dumps({'chain': 'F', 'seconds': 1}) + '\\n')
     if name == 'media_tool.py': return types.SimpleNamespace(stdout=json.dumps({'placed': 100, 'total': 100}) + '\\n')
     return types.SimpleNamespace(stdout='')
-r = post.process(${JSON.stringify(dir)}, runner=runner, transcribe=lambda p: {'segments': []}, cv_python=${haveCv ? 'sys.executable' : "'/nonexistent'"})
+r = post.process(${JSON.stringify(dir)}, runner=runner, transcribe=lambda p: {'segments': []}, cv_python=${haveCv ? 'sys.executable' : "'/nonexistent'"}, silence=lambda *a, **k: {'version': 1, 'quiet_s': 0.0, 'stretches': 0, 'loud': [], 'loud_s': 0.0, 'voiced_kept': []})
 print(json.dumps({'method': r.get('method'), 'qa': r['qa'], 'held': r.get('held'), 'calls': calls, 'web': bool(r.get('web'))}))`], { encoding: 'utf8' });
     return JSON.parse(out);
   };
@@ -691,7 +691,7 @@ def runner(cmd, **kw):
         envs.append(cpu)
         return types.SimpleNamespace(stdout=json.dumps({'placed': 100 if cpu else 0, 'total': 100}) + '\\n', stderr='cuda error' if not cpu else '')
     return types.SimpleNamespace(stdout='', stderr='')
-r = post.process(${JSON.stringify(dir)}, runner=runner)
+r = post.process(${JSON.stringify(dir)}, runner=runner, silence=lambda *a, **k: {'version': 1, 'quiet_s': 0.0, 'stretches': 0, 'loud': [], 'loud_s': 0.0, 'voiced_kept': []})
 print(json.dumps({'envs': envs, 'held': r.get('held'), 'web': bool(r.get('web')), 'gpu': r.get('realign_gpu'), 'verdict': r['qa']['verdict']}))`], { encoding: 'utf8' }));
     expect(o).toMatchObject({ envs: [false, true], web: true, gpu: { placed: 0, total: 100 }, verdict: 'usable' }); expect(o.held).toBeFalsy();
   });
