@@ -1,7 +1,6 @@
 // siftersearch-queue — the media job queue Worker (planning/edge-job-queue-plan.md). One Durable Object (SQLite) holds the jobs;
 // every caller sends X-Queue-Key. Jobs carry a file id, never a path; files move by id (FILES below) through signed R2 urls.
 // Deploy: npx wrangler deploy -c worker/queue/wrangler.jsonc. Secrets: QUEUE_KEY, ADMIN_KEY, R2_KEY_ID, R2_SECRET (wrangler secret put).
-import { DurableObject } from 'cloudflare:workers';
 import { AwsClient } from 'aws4fetch';
 import * as Q from './core.js';
 
@@ -18,8 +17,13 @@ async function presign(env, key, method, expires = 6 * 3600) {
 }
 const safeName = (n) => /^[\w.-][\w./-]{0,200}$/.test(n) && !n.includes('..');
 
-export class MediaQueue extends DurableObject {
-  constructor(ctx, env) { super(ctx, env); this.sql = ctx.storage.sql; ctx.blockConcurrencyWhile(async () => Q.migrate(this.sql)); }
+// fetch-style Durable Object (no cloudflare:workers import: tower's updater import-gates worker/ with its deployed copy)
+export class MediaQueue {
+  constructor(ctx, env) { this.ctx = ctx; this.env = env; this.sql = ctx.storage.sql; ctx.blockConcurrencyWhile(async () => Q.migrate(this.sql)); }
+  async fetch(req) {
+    const { op, args } = await req.json();
+    try { return json({ r: await this.call(op, args || {}) }); } catch (e) { return json({ error: String(e.message) }, 500); }
+  }
   async alarm() { Q.expire(this.sql); await this.ctx.storage.setAlarm(Date.now() + 60_000); }
   async call(op, a) {
     if (!(await this.ctx.storage.getAlarm())) await this.ctx.storage.setAlarm(Date.now() + 60_000);
@@ -57,6 +61,13 @@ export class MediaQueue extends DurableObject {
 //   PUT {base}/files/<file_id>/<name>    → tower stages an input (admin key only)
 //   GET {base}/results/<job_id>/[<name>]  → the same, for a job's outputs (tower pulls this way)
 //   PUT {base}/results/<job_id>/<name>?lease=<token>  → stored (≤ 90 MB) or 307 to a signed PUT; the lease must be live
+// one round trip to the queue object; its error message comes back as a thrown Error
+async function rpc(env, op, args) {
+  const r = await env.QUEUE.get(env.QUEUE.idFromName('media')).fetch('https://q/', { method: 'POST', body: JSON.stringify({ op, args }) });
+  const b = await r.json();
+  if (b.error) throw new Error(b.error);
+  return b.r ?? null;
+}
 async function files(req, env, parts, admin) {
   const [kind, id, ...rest] = parts, name = rest.join('/');
   if (!id || !/^[\w.-]{1,128}$/.test(id) || id.startsWith('.')) return json({ error: 'bad id' }, 400);
@@ -69,7 +80,7 @@ async function files(req, env, parts, admin) {
   if (req.method === 'PUT') {   // tower stages inputs (admin only); a machine places results under a live lease
     if (!name || !safeName(name)) return json({ error: 'bad name' }, 400);
     if (kind === 'files' && !admin) return json({ error: 'unauthorized' }, 401);
-    if (kind === 'results') await env.QUEUE.get(env.QUEUE.idFromName('media')).call('lease-ok', { id, lease: new URL(req.url).searchParams.get('lease') });
+    if (kind === 'results') await rpc(env, 'lease-ok', { id, lease: new URL(req.url).searchParams.get('lease') });
     const key = prefix + name, len = Number(req.headers.get('content-length'));
     if (len > 0 && len <= DIRECT_MAX) { const o = await env.MEDIA_BUCKET.put(key, req.body); return json({ key, bytes: o.size }, 201); }
     return new Response(null, { status: 307, headers: { location: await presign(env, key, 'PUT') } });
@@ -89,9 +100,9 @@ export default {
     if (isFile) return files(req, env, parts, admin).catch((e) => json({ error: String(e.message) }, /lease lost/.test(e.message) ? 409 : /no such job/.test(e.message) ? 404 : 500));
     const args = req.method === 'POST' ? await req.json().catch(() => ({})) : Object.fromEntries(new URL(req.url).searchParams);
     try {
-      const r = await env.QUEUE.get(env.QUEUE.idFromName('media')).call(op, args);
+      const r = await rpc(env, op, args);
       return r === null ? new Response(null, { status: 204 }) : json(r);
-    } catch (e) {   // RPC keeps only the message
+    } catch (e) {
       const m = String(e.message);
       return json({ error: m }, /lease lost/.test(m) ? 409 : /no such job|unknown op/.test(m) ? 404 : /required|without id/.test(m) ? 400 : 500);
     }
