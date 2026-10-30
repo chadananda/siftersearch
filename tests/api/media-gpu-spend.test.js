@@ -7,7 +7,7 @@ import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
 import * as C from '../../api/lib/media/cloud.js';
 import { podsWanted, ledgerTick, efficiency, ledgerSummary, reapReason, runpodTime, LEDGER } from '../../api/lib/media/pod-ledger.js';
-import { reapPass } from '../../api/lib/media/pod-reaper.js';
+import { reapPass, reapedWhy } from '../../api/lib/media/pod-reaper.js';
 import { podChecks } from '../../scripts/lib/pod-checks.mjs';
 import { mediaCloudRemasterJob, mediaComputeJob, laneKeeperPass } from '../../api/lib/ops/media-jobs.js';
 import { runItem } from '../../api/lib/media/item.js';
@@ -76,6 +76,15 @@ describe('persistent operator rental pause', () => {
       expect(await C.rentalCapacity(3, file)).toBe(2);
       expect(await C.rentalCapacity(1, file)).toBe(1);
     } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+  it('rents 32 vCPUs per GPU first, then any vCPU count; max_jobs scales with vCPU', async () => {
+    const bodies = [];
+    const fetchFn = vi.fn(async (url, init) => { const b = JSON.parse(init.body); bodies.push(b); return b.minVCPUPerGPU ? new Response('no capacity', { status: 400 }) : new Response('{"id":"p1"}', { status: 200 }); });
+    const dir = mkdtempSync(join(tmpdir(), 'rent-'));
+    expect(await C.createPod('sifter-unipase-t', 'k', { fetchFn, pauseFile: join(dir, 'none'), acceptedWorkerFile: join(dir, 'none.json') })).toEqual({ id: 'p1' });
+    expect(bodies[0].minVCPUPerGPU).toBe(32);
+    expect(bodies.at(-1).minVCPUPerGPU).toBeUndefined();
+    expect([C.maxJobsFor({ vcpuCount: 32 }), C.maxJobsFor({ vcpuCount: 18 }), C.maxJobsFor({ vcpuCount: 8 }), C.maxJobsFor({ vcpuCount: 64 }), C.maxJobsFor({ memoryInGb: 46 }), C.maxJobsFor({})]).toEqual([12, 9, 6, 12, 8, 6]);
   });
   it('the capacity file sets the spend cap (over the env) and refuses bad values', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'rental-cap-'));
@@ -150,11 +159,25 @@ describe('the reaper touches only idle / stuck / unreachable / old / orphan / la
     expect(reapReason(pod(), st({ quiet_since: now - 61 * MIN }).pods.x, st({ quiet_since: now - 61 * MIN }), now)).toMatch(/stuck/);
     expect(reapReason(pod(), st({ lastOk: now - 11 * MIN }).pods.x, st({ lastOk: now - 11 * MIN }), now)).toBeNull();   // a long upload queue is not unreachability
     expect(reapReason(pod(), st({ lastOk: now - 26 * MIN }).pods.x, st({ lastOk: now - 26 * MIN }), now)).toMatch(/unreachable/);
-    expect(reapReason(pod({ lastStartedAt: '2026-10-24 05:00:00.000 +0000 UTC' }), st().pods.x, st(), now)).toMatch(/lifetime/);
+    expect(reapReason(pod({ lastStartedAt: '2026-10-24 05:00:00.000 +0000 UTC' }), st({ idle_since: now - MIN }).pods.x, st({ idle_since: now - MIN }), now)).toMatch(/lifetime/);
     expect(reapReason(pod(), null, st(), now)).toMatch(/orphan/);
     expect(reapReason(pod({ lastStartedAt: '2026-10-24 14:58:00.000 +0000 UTC' }), null, st(), now)).toBeNull();   // just created: the lane has not saved it yet
     expect(reapReason(pod(), st().pods.x, { ...st(), updated: now - 11 * MIN }, now)).toMatch(/lane is not running/);
     expect(reapReason(pod({ lastStartedAt: '2026-10-24 14:40:00.000 +0000 UTC' }), { id: 'x', status: 'booting' }, st(), now)).toMatch(/boot deadline/);
+  });
+  it('past 8 h a productive pod is spared (10-30: #348 reaped mid-run at 18.8x); idle / unreached ones are not; 24 h is hard', () => {
+    const old = pod({ lastStartedAt: '2026-10-24 05:00:00.000 +0000 UTC' });   // 10 h
+    expect(reapReason(old, st().pods.x, st(), now)).toBeNull();
+    expect(reapReason(old, st({ lastOk: now - 6 * MIN }).pods.x, st({ lastOk: now - 6 * MIN }), now)).toMatch(/480 min lifetime/);
+    expect(reapReason(old, st({ idle_since: now - 2 * MIN }).pods.x, st({ idle_since: now - 2 * MIN }), now)).toMatch(/480 min lifetime/);
+    expect(reapReason(pod({ lastStartedAt: '2026-10-23 14:00:00.000 +0000 UTC' }), st().pods.x, st(), now)).toMatch(/1440 min hard lifetime/);
+  });
+  it("the reaper's reason is found by pod id, so the lane does not call a reaped pod 'unreachable'", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rp-')), f = join(dir, 'r.json');
+    writeFileSync(f, JSON.stringify({ history: [{ id: 'x', why: 'idle 11 min' }] }));
+    expect(await reapedWhy('x', f)).toBe('idle 11 min');
+    expect(await reapedWhy('y', f)).toBeNull();
+    expect(await reapedWhy('x', join(dir, 'none.json'))).toBeNull();
   });
   it('never touches a pod that is not named sifter-unipase-*', () => {
     expect(reapReason(pod({ name: 'searchlayerpdf-1', lastStartedAt: '2020-01-01 00:00:00.000 +0000 UTC' }), null, null, now)).toBeNull();
@@ -185,8 +208,8 @@ print(m.deadman(${args}))`], { encoding: 'utf8' }).trim();
     expect(py('1000, 0, 900, 10, 8')).toBe('None');
     expect(py('100000, 0, 100000, 10, 8')).toMatch(/maximum lifetime/);
   });
-  it('the bootstrap starts the worker with the 10-min idle, 10-min heartbeat and 8 h limits', () => {
-    expect(C.BOOTSTRAP).toMatch(/--idle-min 10 --hb-min 10 --max-hours 8/);
+  it('the bootstrap starts the worker with the 10-min idle, 10-min heartbeat and 24 h limits', () => {
+    expect(C.BOOTSTRAP).toMatch(/--idle-min 10 --hb-min 10 --max-hours 24/);
   });
 });
 

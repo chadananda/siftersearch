@@ -217,7 +217,7 @@ def main():
     p.add_argument('--weights', default='/workspace/weights')
     p.add_argument('--idle-min', type=float, default=10)
     p.add_argument('--hb-min', type=float, default=10)      # tower touches <spool>/.tower-hb every poll; none for this long = tower is gone
-    p.add_argument('--max-hours', type=float, default=8)    # hard maximum lifetime
+    p.add_argument('--max-hours', type=float, default=24)   # hard maximum lifetime (tower's reaper retires idle pods at 8 h)
     a = p.parse_args()
     os.makedirs(a.spool, exist_ok=True)
     # HOST ADMISSION (Chad 10-28): a working GPU (NVIDIA or AMD, proven by a tiny run), plenty of VRAM + RAM, usable CPU — else REFUSE to claim orders;

@@ -1805,7 +1805,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             let g = await C.getPod(p.id, deps);
             p.image=g.imageName||acceptedWorker?.image||null;
             p.cpu_count=g.vcpuCount||null;
-            p.max_jobs=Number(g.memoryInGb)>=32?8:6;
+            p.max_jobs=C.maxJobsFor?C.maxJobsFor(g):(Number(g.memoryInGb)>=32?8:6);
             if((!g.publicIp||!g.portMappings?.['22'])&&C.getPodConnection)g={...g,...await C.getPodConnection(p.id,deps)};
             if (p.costPerHr == null) p.costPerHr = g.costPerHr ?? g.adjustedCostPerHr ?? null;
             p.gpu = g.machine?.gpuDisplayName || g.gpu?.displayName || p.gpu || null;
@@ -2002,7 +2002,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         } catch (err) {
           if(err.code==='DRAIN')return;
           p.last_error = String(err.message).slice(0, 300);
-          if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { await closePod(p, `unreachable: ${p.last_error}`); if (p.status !== 'ready') st.pod_failures++; }
+          if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { const reaped = await import('../media/pod-reaper.js').then((R) => R.reapedWhy(p.id)).catch(() => null); await closePod(p, reaped ? `reaped: ${reaped}` : `unreachable: ${p.last_error}`); if (p.status !== 'ready' && !reaped) st.pod_failures++; }
         }
       }));
       for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.dead_worker)) { await closePod(p, `worker stopped (no status for ${Math.round((now() - p.worker_seen) / 60_000)} min)`); st.pod_failures = Math.max(0, st.pod_failures); }

@@ -22,7 +22,9 @@ export const LEDGER = {
   idleMs: 10 * 60_000,              // a rented pod with no work this long is terminated
   unreachableMs: 25 * 60_000,       // no successful contact with the lane this long (transfers refresh it, so a busy lane keeps it fresh)
   quietMs: 60 * 60_000,             // work assigned but the GPU quiet this long = stuck (the GPU is busy ~1 min of each ~7 per talk: transfers dominate, so this is a last resort)
-  maxLifeMs: 8 * 3600_000,          // no pod lives longer than this
+  maxLifeMs: 8 * 3600_000,          // past this a pod is reaped unless it is still productive (ready, reached, working)
+  hardLifeMs: 24 * 3600_000,        // no pod lives longer than this, productive or not
+  productiveOkMs: 5 * 60_000,       // 'still productive' = the lane reached it within this
   bootMs: 15 * 60_000,              // no SSH-reachable pod after this → terminate and replace (cold pull of the 23 GB image: 5-12 min)
   warmMs: 20 * 60_000,              // bootstrap (pip + weights) must finish in this
   laneStaleMs: 10 * 60_000,         // the lane's state not refreshed this long = the lane is not running
@@ -104,7 +106,10 @@ export function reapReason(pod, entry, st, now, cfg = LEDGER) {
   const since = runpodTime(pod.lastStartedAt || pod.createdAt);
   const age = Number.isNaN(since) ? 0 : now - since;
   const min = (ms) => Math.round(ms / 60_000);
-  if (age > cfg.maxLifeMs) return `past its ${min(cfg.maxLifeMs)} min lifetime`;
+  if (age > (cfg.hardLifeMs || cfg.maxLifeMs)) return `past its ${min(cfg.hardLifeMs || cfg.maxLifeMs)} min hard lifetime`;
+  // 10-30: pod 348 was reaped at 8 h mid-run (18.8x real time); a working pod is spared until the hard cap
+  const productive = entry && !entry.terminated && entry.status === 'ready' && entry.lastOk && now - entry.lastOk < (cfg.productiveOkMs || 5 * 60_000) && !entry.idle_since;
+  if (age > cfg.maxLifeMs && !productive) return `past its ${min(cfg.maxLifeMs)} min lifetime`;
   if (!entry) return age > cfg.idleMs ? `not tracked by the lane (orphan, ${min(age)} min old)` : null;
   if (entry.terminated) return 'the lane already terminated it';
   const laneAge = st?.updated ? now - st.updated : Infinity;

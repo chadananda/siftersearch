@@ -1,6 +1,7 @@
 <script>
   // The restoration readout on /media (Chad 10-24): talks published of those planned, held for review, and the latest 30 as box-set spines in a scrolling list (Chad 10-29);
   // beside them a small card per machine doing the work (Chad 10-29): role, GPU, RAM, speed (× real time over the last hour, bar vs the fastest).
+  // Six cards fit one row beside the list (Chad 10-30: Tower, Boss, Aorus and three RunPods).
   // Cached SSR first view, then liveRefresh (src/lib/live-data.js) every 30 s while on screen. The block's height is reserved, so a patch never shifts the page.
   import { onMount } from 'svelte';
   import { liveRefresh } from '../../../lib/live-data.js';
@@ -49,11 +50,11 @@
     <ul class="machines" aria-label="Machines at work">
       {#each workers as w (w.key)}
         <li class="card" title={`${w.name}: ${w.status}${w.jobs ? `, ${w.jobs} at work` : ''}`}>
-          <div class="head"><i class={`lamp ${LAMP[w.status] || 'dim'}`}></i><b>{w.name}</b><em>{w.jobs ? `${w.jobs} at work` : w.status}</em></div>
+          <div class="head"><i class={`lamp ${LAMP[w.status] || 'dim'}`}></i><b>{w.name}</b></div>
           <div class="role">{w.role}</div>
           {#each w.specs || [['GPU', w.gpu], ['RAM', w.ram]] as [k, v] (k)}<div class="spec"><span>{k}</span>{v}</div>{/each}
           <div class="speed">
-            {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : w.jobs ? 'first talks under way' : 'no work in the last hour'}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
+            {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : w.jobs ? 'first talks under way' : w.status === 'idle' ? 'no work in the last hour' : w.status}{w.jobs ? ` · ${w.jobs} at work` : ''}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
           </div>
         </li>
       {/each}
@@ -85,18 +86,17 @@
   .spine-play:hover, .spine-play.on { background: var(--radio-amber); color: var(--radio-walnut-deep); }
   .empty { font-size: 0.8rem; opacity: 0.6; padding: 0.3rem 0; }
   @media (max-width: 52rem) { .spines { min-height: 9rem; } }
-  .machines { flex: 0 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
+  .machines { flex: 0 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 0.4rem; list-style: none; margin: 0; padding: 0; }
   .card { display: flex; flex-direction: column; }
   .card .speed { margin-top: auto; padding-top: 0.3rem; }
   @media (max-width: 52rem) { .restored { flex-direction: column; } .machines { justify-content: flex-start; } }
-  .card { width: 9.75rem; padding: 0.45rem 0.6rem; border: 1px solid var(--radio-line); border-radius: 0.6rem; background: var(--radio-panel); font-size: 0.72rem; line-height: 1.3; color: var(--radio-ink-soft); }
+  .card { width: 7.4rem; padding: 0.4rem 0.5rem; border: 1px solid var(--radio-line); border-radius: 0.55rem; background: var(--radio-panel); font-size: 0.66rem; line-height: 1.28; color: var(--radio-ink-soft); }
   .card .head { display: flex; align-items: center; gap: 0.35rem; }
-  .card .head b { font-size: 0.82rem; color: var(--radio-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card .head em { margin-left: auto; font-style: normal; font-size: 0.65rem; opacity: 0.8; white-space: nowrap; }
-  .card .role { color: var(--radio-brass); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.15rem; }
+  .card .head b { font-size: 0.76rem; min-width: 0; color: var(--radio-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .role { color: var(--radio-brass); font-size: 0.58rem; letter-spacing: 0.02em; text-transform: uppercase; margin-bottom: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card .spec { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card .spec span { display: inline-block; width: 2.6rem; font-size: 0.6rem; letter-spacing: 0.1em; opacity: 0.7; }
-  .card .speed span { font-variant-numeric: tabular-nums; font-size: 0.68rem; }
+  .card .spec span { display: inline-block; width: 2.1rem; font-size: 0.55rem; letter-spacing: 0.1em; opacity: 0.7; }
+  .card .speed span { font-variant-numeric: tabular-nums; font-size: 0.62rem; }
   .bar { height: 0.3rem; border-radius: 999px; background: var(--radio-brass-soft); overflow: hidden; margin-bottom: 0.15rem; }
   .bar i { display: block; height: 100%; background: var(--radio-amber); border-radius: 999px; transition: width 0.6s ease; }
   .lamp { width: 0.5rem; height: 0.5rem; border-radius: 50%; flex: none; background: var(--radio-ink-soft); opacity: 0.35; }

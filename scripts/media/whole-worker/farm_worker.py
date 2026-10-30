@@ -52,7 +52,7 @@ def main():
         if os.environ.get('RUNPOD_POD_ID'):
             from runpod_worker import deadman, terminate_self
             hb = os.path.join(a.spool, '.tower-hb')
-            why = deadman(time.time(), born, os.path.getmtime(hb) if os.path.exists(hb) else born, 3, 8)
+            why = deadman(time.time(), born, os.path.getmtime(hb) if os.path.exists(hb) else born, 3, 24)   # 24 h hard cap: tower's reaper retires unproductive pods at 8 h
             pending=glob.glob(os.path.join(a.spool,'*','complete'))+glob.glob(os.path.join(a.spool,'*','done.json'))
             idle_seconds=300 if pending else 120
             if not why and not active and not ready and time.time()-last_busy > idle_seconds:

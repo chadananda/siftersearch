@@ -57,6 +57,7 @@ export const CLOUD = {
   // best $ / throughput with ≥ 16 GB (UniPASE peaks at ~4 GB; Whisper turbo ~2 GB): community first
   gpuTypes: ['NVIDIA GeForce RTX 4090', 'NVIDIA RTX A5000', 'NVIDIA GeForce RTX 3090', 'NVIDIA RTX A4500', 'NVIDIA A40', 'NVIDIA RTX A6000'],
   image: 'runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04',
+  minVcpu: 32,          // rent this many vCPUs per GPU first (10-30: #349 had 18 → 7 jobs in CPU post steps, GPU at 0 %); any vCPU count if none is free
   perPod: 6,            // prefetch only: match the worker's six post slots so four long CPU tails cannot starve its GPU; live controller still admits work
   bootTimeoutMs: 15 * 60_000,     // no SSH after this → terminate and replace (the 23 GB baked image takes 5-12 min to pull on a cold host; 10-24 measured)
   warmTimeoutMs: 20 * 60_000,     // the bootstrap (pip + the verified weights) must finish in this
@@ -102,17 +103,23 @@ export async function createPod(name, publicKey, deps = {}) {
   const tries = [];
   // deps.prefer = { cloud: 'SECURE' | 'COMMUNITY', dcs: [data-centre ids that booted fast] } learned from the ledger (st.hosts); secure first after the breaker has tripped
   const order = vol ? ['SECURE'] : deps.prefer?.cloud === 'SECURE' ? ['SECURE', 'COMMUNITY'] : ['COMMUNITY', 'SECURE'];
-  for (const types of [CLOUD.gpuTypes.slice(0, 1), CLOUD.gpuTypes]) for (const cloudType of order) tries.push([types, cloudType]);
-  for (const [types, cloudType] of tries) {
+  for (const vcpu of [CLOUD.minVcpu, 0]) for (const types of [CLOUD.gpuTypes.slice(0, 1), CLOUD.gpuTypes]) for (const cloudType of order) tries.push([types, cloudType, vcpu]);
+  for (const [types, cloudType, vcpu] of tries) {
     try {
       const pause = await rentalPauseReason(deps.pauseFile);
       if (pause) throw Object.assign(new Error(`RunPod rentals paused: ${pause}`), { rentalsPaused: true });
       return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: accepted?.image || process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
-        containerDiskInGb: 60, ...(deps.prefer?.dcs?.length ? { dataCenterIds: deps.prefer.dcs } : {}), ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true,
+        containerDiskInGb: 60, ...(deps.prefer?.dcs?.length ? { dataCenterIds: deps.prefer.dcs } : {}), ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true, ...(vcpu ? { minVCPUPerGPU: vcpu } : {}),
         env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key() } }, deps);
     } catch (err) { if (err.rentalsPaused) throw err; lastErr = err; }
   }
   throw lastErr;
+}
+/** Concurrent recordings for a rented pod: the worker runs min(max_jobs, vCPU / 2), so scale with vCPU (6..12); RAM decides when vCPU is unknown. */
+export function maxJobsFor(g) {
+  const cpu = Number(g?.vcpuCount) || 0;
+  if (cpu) return Math.max(6, Math.min(12, Math.floor(cpu / 2)));
+  return Number(g?.memoryInGb) >= 32 ? 8 : 6;
 }
 export const listPods = (deps) => rest('GET', '/pods', null, deps);
 export const getPod = (id, deps) => rest('GET', `/pods/${id}`, null, deps);
@@ -256,7 +263,7 @@ pkill -f runpod_worker.py || true
 touch /workspace/spool/.tower-hb
 mkdir -p /workspace/scripts/media && [ -f /workspace/media-scripts.tgz ] && tar xzf /workspace/media-scripts.tgz -C /workspace/scripts/media
 W_PY=/workspace/runpod_worker.py; [ -f /workspace/scripts/media/runpod_worker.py ] && W_PY=/workspace/scripts/media/runpod_worker.py
-nohup bash -c 'while true; do python '$W_PY' --repo /workspace/unipase --weights '$W' --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
+nohup bash -c 'while true; do python '$W_PY' --repo /workspace/unipase --weights '$W' --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 24 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
 echo started`;
 
 export const MEDIA_SCRIPTS = ['runpod_worker.py', 'remaster_guard.py', 'media_tool.py', 'worker/post.py', 'worker/controller.py', 'worker/cleanup.py', 'worker/selftest.py', 'worker/quiet.py'];   // shipped to the pod beside the worker (guard, realign, encodes run there)
@@ -273,7 +280,7 @@ for v in RUNPOD_POD_ID RP_TERMINATE_KEY; do val=$(tr '\\0' '\\n' < /proc/1/envir
 export HF_HUB_OFFLINE=0
 python /opt/sifter/media/worker/selftest.py > /workspace/selftest.json 2>&1 || { echo 'SELFTEST FAILED'; tail -c 900 /workspace/selftest.json; exit 3; }
 pkill -f runpod_worker.py || true
-nohup bash -c 'while true; do python /opt/sifter/media/runpod_worker.py --repo /opt/unipase --weights /opt/models/weights --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 8 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
+nohup bash -c 'while true; do python /opt/sifter/media/runpod_worker.py --repo /opt/unipase --weights /opt/models/weights --spool /workspace/spool --idle-min 10 --hb-min 10 --max-hours 24 >> /workspace/worker.log 2>&1; [ $? -eq 75 ] || break; done' > /dev/null 2>&1 < /dev/null &
 echo started`;
 /** Immutable, Aorus-accepted image: no runtime code overlays or model downloads. */
 export const BOOTSTRAP_WHOLE = `set -e

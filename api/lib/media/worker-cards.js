@@ -3,8 +3,8 @@
 // Hardware is a fixed table (home machines) or the pod's own report (RunPod). No temperatures, costs or addresses leave here.
 export const MACHINES = [
   // tower = storage (Chad 10-29): read off the box 10-29 (lscpu, lsblk: 2 SAS HDD + 2 SAS SSD + 2 NVMe + 1 USB, ~32 TB raw)
-  { key: 'tower', name: 'Tower', role: 'Storage + conductor', specs: [['CPU', '2 × Xeon E5-2698'], ['Cores', '40 · 80 threads'], ['Drives', '7'], ['Store', '32 TB']] },
-  { key: 'boss', name: 'Boss', role: 'Remaster + transcribe', specs: [['GPU', 'Radeon 8060S (Strix Halo)'], ['RAM', '128 GB unified']] },
+  { key: 'tower', name: 'Tower', role: 'Store + conduct', specs: [['CPU', '2 × Xeon E5-2698'], ['Cores', '40 · 80 threads'], ['Drives', '7'], ['Store', '32 TB']] },
+  { key: 'boss', name: 'Boss', role: 'Remaster + ASR', specs: [['GPU', 'Radeon 8060S (Strix Halo)'], ['RAM', '128 GB unified']] },
   { key: 'aorus', name: 'Aorus', role: 'Remaster + checks', specs: [['GPU', 'RTX 3070 · 8 GB'], ['RAM', '16 GB']] },
 ];
 export const SPEED_WINDOW_MS = 3600_000;   // one hour: a current snapshot (Chad 10-30)

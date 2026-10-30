@@ -31,3 +31,9 @@ export async function reapPass(deps = {}) {
   }
   return out;
 }
+
+/** Why the reaper terminated this pod, if it did (the lane would otherwise see only a lost connection and call it 'unreachable'). */
+export async function reapedWhy(podId, file = REAPER_FILE) {
+  const prev = await readFile(file, 'utf8').then(JSON.parse).catch(() => ({}));
+  return (prev.history || []).find((x) => x.id === podId)?.why || null;
+}
