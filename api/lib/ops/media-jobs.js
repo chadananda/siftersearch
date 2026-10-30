@@ -1687,17 +1687,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (now() - (st.orders_checked || 0) > 20_000) {
         st.orders_checked = now();
         const taken = await (C.peekOrders?C.peekOrders(deps.ordersFile):C.takeOrders(deps.ordersFile));
-        for (const o of taken) {
-          if (o.redo) {
-            st.done = st.done.filter((d) => d.id !== o.id);
-            st.failed = st.failed.filter(d=>d.id!==o.id);delete st.attempts[o.id];
-            st.items[o.id]={slug:o.slug,grade:o.grade,duration_s:o.duration_s,mode:o.mode,kind:o.kind,redo:true};
-          }
-          if (o.first) { st.items[o.id] = { ...(st.items[o.id] || { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind }), first: true }; if (!st.queue.includes(o.id) && !Object.values(st.jobs).some((j) => j.itemId === o.id)) st.queue.push(o.id); }
-          if ((!o.redo && st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode)) || st.queue.includes(o.id) || Object.values(st.jobs).some((j) => j.itemId === o.id)) continue;
-          st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind:o.kind, redo:!!o.redo, ...(o.first ? { first: true } : {}) };
-          st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
-        }
+        for (const o of taken) intakeOrder(st, o);
         if(taken.length&&C.ackOrders){await save(st);await C.ackOrders(taken,deps.ordersFile);}
       }
       st.queue = laneOrder(st.queue, st.items);
@@ -2059,6 +2049,21 @@ export async function laneKeeperPass(deps = {}) {
 
 /** The lane's queue order (stable within each band): FIRST talks (Chad 10-29: taken off the air, reverted for splicing — ahead of
  *  everything, whatever their mode), then whole imports, then fresh talks, then 'post' work (its upload is five times the bytes). */
+/** One work order onto the lane state (mutates st). redo clears done/failed/attempts; first = the very front — the newest 'first' order jumps every
+ *  earlier one (10-29: 259 older 'first' talks held a spot-check redo back for days). Pure apart from st. */
+export function intakeOrder(st, o) {
+  const running = Object.values(st.jobs).some((j) => j.itemId === o.id);
+  if (o.redo) {
+    st.done = st.done.filter((d) => d.id !== o.id);
+    st.failed = st.failed.filter((d) => d.id !== o.id); delete st.attempts[o.id];
+    st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind, redo: true };
+  }
+  if (o.first) { st.items[o.id] = { ...(st.items[o.id] || { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind }), first: true }; if (!running) st.queue = [o.id, ...st.queue.filter((x) => x !== o.id)]; }
+  if ((!o.redo && st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode)) || st.queue.includes(o.id) || running) return;
+  st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind, redo: !!o.redo, ...(o.first ? { first: true } : {}) };
+  st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
+}
+
 export function laneOrder(queue, items = {}) {
   const band = (id) => (items?.[id]?.first ? 0 : items?.[id]?.kind === 'whole' ? 1 : items?.[id]?.mode === 'post' ? 3 : 2);
   return queue.map((id, i) => [band(id), i, id]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map((x) => x[2]);

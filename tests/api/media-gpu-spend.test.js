@@ -857,4 +857,14 @@ describe('talks taken off the air go first (Chad 10-29)', () => {
     await mediaCloudOrderJob({ mode: 'restore', ids: [1], first: true }, { ...x.deps, ordersFile });
     expect((await C.takeOrders(ordersFile))[0]).toMatchObject({ id: 1, mode: 'restore', redo: true, first: true });
   });
+  it('the newest first order goes to the very front, ahead of earlier first talks; a done talk with redo comes back', async () => {
+    const { intakeOrder, laneOrder } = await import('../../api/lib/ops/media-jobs.js');
+    const st = { jobs: { a: { itemId: 9 } }, queue: [2, 3, 4], done: [{ id: 7, mode: 'restore' }], failed: [], attempts: { 7: 2 },
+      items: { 2: { first: true }, 3: { first: true }, 4: {}, 7: { mode: 'restore' } } };
+    intakeOrder(st, { id: 7, slug: 's', mode: 'restore', redo: true, first: true });
+    expect(laneOrder(st.queue, st.items)).toEqual([7, 2, 3, 4]);
+    expect(st.done).toEqual([]); expect(st.attempts[7]).toBeUndefined();
+    intakeOrder(st, { id: 9, mode: 'restore', first: true });   // already running: not queued twice
+    expect(st.queue).toEqual([7, 2, 3, 4]);
+  });
 });
