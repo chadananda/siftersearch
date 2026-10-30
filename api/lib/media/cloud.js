@@ -60,7 +60,8 @@ export const CLOUD = {
   image: 'runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04',
   minVcpu: 32,          // rent this many vCPUs per GPU first (10-30: #349 had 18 → 7 jobs in CPU post steps, GPU at 0 %); any vCPU count if none is free
   stageAhead: 4,        // Chad 10-30: talks staged on a pod beyond its worker's slots, so a finished slot never waits on tower
-  stageBatch: 4,        // uploads sent at once per pod per pass (tower's link was 15 of 1000 Mbit/s busy sending one at a time)
+  stageBatch: 2,        // uploads running at once per pod — in the background, the pass never waits on them
+  stageGlobal: 4,       // uploads running at once in all: tower's real uplink is ~18 Mbit/s (10-30: 9 at once each crawled, a pass took 10 min)
   resultsPerPass: 3,    // finished talks fetched per pod per pass
   perPod: 6,            // prefetch only: match the worker's six post slots so four long CPU tails cannot starve its GPU; live controller still admits work
   bootTimeoutMs: 15 * 60_000,     // no SSH after this → terminate and replace (the 23 GB baked image takes 5-12 min to pull on a cold host; 10-24 measured)

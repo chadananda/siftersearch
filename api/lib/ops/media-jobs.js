@@ -1645,6 +1645,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     return allHomeHosts.filter(h=>{const b=baseOf(h);used[b]=(used[b]||0)+1;return used[b]<=rankedSlots(st.rates,b,maxOf[b])||!!st.home?.[h];});
   };
   const homeTasks = new Map();   // host → promise (in this process)
+  const staging = new Map();     // job → podId: uploads running in the background (10-30: a pass that awaited them took 10 min)
   // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
   const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
   const beatFile = `${deps.stateFile || C.STATE_FILE}.beat`;   // the lane's liveness, written on its own timer: a long transfer must not look like a dead lane to the reaper
@@ -1885,7 +1886,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             // its own idle timer (10 min) is about to end it: no job is handed to a worker that is leaving
             // Chad 10-30: stage ahead so a pod never starves — its worker's slots + STAGE_AHEAD waiting, up to STAGE_BATCH sent at once (one at a time held each pod to ~4 of 12 slots)
             let uploadsThisPass = 0; const batch = [];
-            while (batch.length < C.CLOUD.stageBatch && Object.values(st.jobs).filter(j=>j.pod===p.id).length + batch.length < stageTarget(p) && !staleImage && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.entries(st.jobs).filter(([id,j]) => j.pod === p.id&&!finishedJobs.has(id)).length + batch.length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:stageTarget(p), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
+            const mine = [...staging.values()].filter((s) => s.pod === p.id), pre = mine.filter((s) => !s.job).length;   // background uploads not yet in st.jobs
+            while (batch.length + mine.length < C.CLOUD.stageBatch && batch.length + staging.size < (C.CLOUD.stageGlobal ?? Infinity) && Object.values(st.jobs).filter(j=>j.pod===p.id).length + pre + batch.length < stageTarget(p) && !staleImage && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.entries(st.jobs).filter(([id,j]) => j.pod === p.id&&!finishedJobs.has(id)).length + pre + batch.length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:stageTarget(p), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
               let eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||(!acceptedWorker?.hold_whole&&p.image===acceptedWorker?.image));
               if((p.whole_since_restore||0)>=2){const repair=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'&&(st.items?.[id]?.mode||'restore')==='restore');if(repair>=0)eligible=repair;}
               if(eligible<0)break;
@@ -1898,6 +1900,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               if (!whole&&decided(m,itemId)) return;
               if (!m?.original) { st.failed.push({ id: itemId, slug: it?.slug, error: 'no original' }); return; }
               const job = C.jobIdOf(it), src = join(it.dir, m.original), ext = (extname(src).slice(1) || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (staging.has(itemId)) staging.get(itemId).job = job;
               uploadsThisPass++;
               try {
               st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,status:'uploading',...(whole?{kind:'whole',input_sha:await (await import('../media/whole-result.js')).fileSha(src)}:{})};
@@ -1931,18 +1934,26 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               p.jobs_assigned = (p.jobs_assigned || 0) + 1;
               p.whole_since_restore=0;
               st.jobs[job] = { itemId, slug: it.slug, pod: p.id, since: tAssign, uploaded_s: Math.round((now() - tAssign) / 1000) };
+              if (p.terminated) throw new Error('pod closed during upload');
               } catch(error){delete st.jobs[job];if(!st.queue.includes(itemId))st.queue.unshift(itemId);await save(st);throw error;}
             };
-            const staged = await Promise.allSettled(batch.map(stageOne));
-            const stageErr = staged.find((x) => x.status === 'rejected');
-            if (stageErr) throw stageErr.reason;
+            // in the BACKGROUND: the pass polls, fetches results and feeds other pods while the uplink carries the bytes
+            for (const itemId of batch) {
+              staging.set(itemId, { pod: p.id, job: null });
+              stageOne(itemId).catch(async (err) => {
+                if (err?.code === 'DRAIN') return;
+                p.last_error = `upload: ${String(err?.message || err).slice(0, 280)}`;
+                if (!st.queue.includes(itemId) && !Object.values(st.jobs).some((j) => j.itemId === itemId)) st.queue.unshift(itemId);
+              }).finally(() => staging.delete(itemId));
+            }
             let resultsThisPass = 0;
             for (const line of stdout.split('\n')) {
               const [kind, job] = line.trim().split(' ');
               const x = st.jobs[job];
               if (!x || x.pod !== p.id) continue;
               if(kind==='STAGED'&&x.status==='uploading'){x.status='assigned';continue;}
-              if(kind==='PARTIAL'&&x.status==='uploading'){delete st.jobs[job];if(!st.queue.includes(x.itemId))st.queue.unshift(x.itemId);continue;}
+              // a .part this process is still sending is not a leftover
+              if(kind==='PARTIAL'&&x.status==='uploading'&&![...staging.values()].some((s)=>s.job===job)){delete st.jobs[job];if(!st.queue.includes(x.itemId))st.queue.unshift(x.itemId);continue;}
               if ((kind === 'DONE' || kind === 'FAIL') && resultsThisPass++ >= C.CLOUD.resultsPerPass) break;  // large result batches must not stall every other pod's next poll
               const it = await repo.getMediaItem(x.itemId);
               if (kind === 'DONE' && it?.dir) {

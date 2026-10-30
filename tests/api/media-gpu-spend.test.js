@@ -317,6 +317,21 @@ describe('the lane: GPU is rented only for work', () => {
     expect(Math.max(...perPass)).toBeGreaterThan(1);
     expect(Math.max(...perPass)).toBeLessThanOrEqual(C.CLOUD.stageBatch);
   });
+  it('a slow upload does not hold the pass: results are fetched while it is still sending (10-30: awaited uploads made a pass 10 min)', async () => {
+    const x = setup({ talks: 2 });
+    x.spool.j1 = 'ready';
+    writeFileSync(x.deps.stateFile, JSON.stringify({ started: 1, proven: true, pods: { p1: { id: 'p1', name: 'test-pod', status: 'ready', ip: '1.2.3.4', port: 2222, created: x.clock() - 1000, costPerHr: 0.34 } },
+      jobs: { j1: { itemId: 1, pod: 'p1', since: x.clock() - 1000 } }, queue: [2], attempts: {}, done: [], failed: [], items: {}, spent_closed: 0 }));
+    let release; const gate = new Promise((r) => { release = r; });
+    const run = x.deps.run;
+    x.deps.run = async (cmd, args, opts) => {
+      if (cmd === 'scp' && /\/spool\/talk-2-2\/in\./.test(args.at(-1))) await gate;      // the upload hangs until a result has come back
+      if (cmd === 'scp' && args.at(-2).endsWith('/j1/done.json')) release();
+      return run(cmd, args, opts);
+    };
+    const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, x.deps);
+    expect(r.done).toBe(2);
+  });
   it('fetches up to resultsPerPass completed recordings per pod per pass from a backlog', async () => {
     const x = setup({ talks: 5 });
     const times = [], run = x.deps.run;
