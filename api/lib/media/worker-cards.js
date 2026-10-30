@@ -34,7 +34,7 @@ export function workerCards(st = {}, now = Date.now()) {
     const jobs = Object.values(st.jobs || {}).filter((j) => j.pod === p.id).length;
     const vram = w.vram_total_gb ? ` · ${Math.round(w.vram_total_gb)} GB` : '';
     cards.push({ key: p.name, name: `RunPod ${String(p.name).replace(/^sifter-unipase-/, '#')}`, role: 'Cloud remaster',
-      gpu: p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : 'assigning…', ram: w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—',
+      gpu: p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : vram ? `NVIDIA${vram}` : 'assigning…', ram: w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—',
       status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? null });
   }
   return cards;

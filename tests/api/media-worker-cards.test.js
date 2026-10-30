@@ -31,6 +31,7 @@ describe('workerCards', () => {
   it('a booting pod has no GPU yet; nothing private is exposed', () => {
     const c = workerCards({ pods: { q: { id: 'q', name: 'sifter-unipase-9', status: 'booting', costPerHr: 0.5 } } }, now).at(-1);
     expect(c).toMatchObject({ status: 'starting', gpu: 'assigning…', ram: '—' });
+    expect(workerCards({ pods: { q: { id: 'q', name: 'x', status: 'ready', gpu: null, worker: { vram_total_gb: 23.99 } } } }, now).at(-1).gpu).toBe('NVIDIA · 24 GB');
     expect(JSON.stringify(cards)).not.toMatch(/1\.2\.3\.4|costPerHr|0\.34|temp/);
   });
 });
