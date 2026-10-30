@@ -23,17 +23,28 @@ export function heavyFiles() {
   }
   return out.sort();
 }
+// modules that only run inside the worker image (scripts/media/whole-worker/recording.mjs) and refuse on tower — each named with its proof below
+const WORKER_ONLY = ['api/lib/media/coverage.js'];
 const LEGACY = JSON.parse(readFileSync(join(ROOT, 'tests/api/tower-placement-legacy.json'), 'utf8'));
 
 describe('tower placement ratchet', () => {
   it('no NEW server-side file spawns media / OCR / transcode processes on tower', () => {
-    const fresh = heavyFiles().filter((f) => !(f in LEGACY.legacy));
+    const fresh = heavyFiles().filter((f) => !(f in LEGACY.legacy) && !WORKER_ONLY.includes(f));
     expect(fresh, `these files run heavy processes on tower (move the work to a worker, or see CLAUDE.md "Tower placement"): ${fresh.join(', ')}`).toEqual([]);
   });
   it('the legacy list only shrinks: a migrated file must leave it', () => {
     const now = new Set(heavyFiles());
     const stale = Object.keys(LEGACY.legacy).filter((f) => !now.has(f));
     expect(stale, `migrated — remove from tests/api/tower-placement-legacy.json: ${stale.join(', ')}`).toEqual([]);
+  });
+  it('a worker-only module refuses to run on tower', async () => {
+    const cov = await import('../../api/lib/media/coverage.js');
+    const was = process.env.MEDIA_TOWER_HEAVY; delete process.env.MEDIA_TOWER_HEAVY;
+    try {
+      expect(cov.WORKER_ONLY).toBe(true);
+      const tools = { pcmStream: () => { throw Error('decoded on tower'); } };
+      await expect(cov.coverageCheck({ file: 'x', segments: [], tools, io: {} })).rejects.toThrow(/only inside the worker/);
+    } finally { if (was != null) process.env.MEDIA_TOWER_HEAVY = was; }
   });
   it('every legacy entry carries a plan and a date', () => {
     for (const [f, v] of Object.entries(LEGACY.legacy)) { expect(v.plan, f).toBeTruthy(); expect(v.by, f).toMatch(/^2026-\d\d-\d\d$/); }

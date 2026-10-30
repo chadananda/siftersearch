@@ -22,6 +22,7 @@ import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, li
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
 import { revertInsertions } from './faithfulness.js';
+import { coverageCheck, coverageProblems, onWorker } from './coverage.js';
 import { repairParagraphLoops, publishProblems } from './loops.js';
 import { fixMojibake } from './text-repair.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
@@ -671,8 +672,17 @@ export async function runItem(item, opts = {}, deps = {}) {
         }
         await writeJson(out, raw);
       }
+      // COVERAGE (Chad 10-29): speech the audio holds that no word accounts for is re-transcribed on its own; what stays a hole blocks publishing
+      if (onWorker() && tools.pcmStream && tools.asr) {   // inside the worker image only: tower never decodes or transcribes
+        const { tmpdir } = await import('os');
+        const { unlink } = await import('fs/promises');
+        const cov = await coverageCheck({ file: join(dir, v.file), segments: raw.segments || [], tools, asrOpts, lang: lang === 'multi' ? '' : lang, stop,
+          io: { readJson, unlink, tmp: (n) => join(tmpdir(), `media-${process.pid}-${Date.now()}-${n}`) } }).catch((err) => { if (err.code === 'DRAIN') throw err; return { coverage: { error: String(err.message).slice(0, 200) } }; });
+        rec.coverage = cov.coverage;
+        if (cov.segments && cov.coverage.repaired) { raw.segments = cov.segments; await writeJson(out, raw); }
+      }
       void turnsFile;
-      meta.language = raw.language; meta.asr = { model: raw.model, language: raw.language, languages: raw.languages, mode: lang === 'multi' ? 'interpreted' : 'single', prompt: raw.prompt,
+      meta.language = raw.language; meta.asr = { coverage: rec.coverage || null, model: raw.model, language: raw.language, languages: raw.languages, mode: lang === 'multi' ? 'interpreted' : 'single', prompt: raw.prompt,
         aligned: raw.aligned, align_score: raw.align_score, timings: raw.timings, host: r.host || 'tower', threads: r.host ? null : th, rtf: Math.round((r.seconds / Math.max(1, raw.duration_s)) * 1000) / 1000, input: meta.enhancement.asr_input,
         speakers: new Set((raw.turns || []).map((t) => t.speaker)).size };
       rec.rtf = meta.asr.rtf;
@@ -946,7 +956,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         meta.asr_loops_repaired = (meta.asr_loops_repaired || 0) + lp0.repaired.length;
       }
       // the PUBLISH GATE (QA 10-22): a loop, a lossy decode (U+FFFD) or mojibake left in the text → not published
-      const problems = publishProblems(work.paragraphs || []);
+      const problems = [...publishProblems(work.paragraphs || []), ...coverageProblems(meta.asr?.coverage)];
       if (problems.length) { meta.publish_blocked = problems.slice(0, 20); await save(); throw new Error(`publish blocked: ${problems.length} text problem(s) — ${problems.slice(0, 3).map((x) => `p${x.p} ${x.kind} "${x.text}"`).join('; ')}`); }
       const timeHash = timingSignature(work.paragraphs);
       if (meta.audio_alignment_hash && meta.audio_alignment_hash !== timeHash) throw new Error('publish blocked: transcript timing changed after alignment; realign it against the selected audio before publishing');

@@ -290,8 +290,20 @@ export HF_HOME=/opt/models/hf TORCH_HOME=/root/.cache/torch SIFTER_WEIGHTS=/opt/
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=/opt/worker-extras:/opt/sifter/media NLTK_DATA=/opt/models/nltk_data
 for v in RUNPOD_POD_ID RP_TERMINATE_KEY; do val=$(tr '\\0' '\\n' < /proc/1/environ | grep "^$v=" | head -1 | cut -d= -f2-); [ -n "$val" ] && export $v="$val"; done
 test -f /opt/sifter/media/worker/farm_worker.py
+# 10-30: the image's worker ended its own pod after 120 s idle or 3 min without a tower heartbeat; tower's first look at a warming pod
+# comes one lane tick (~3.5 min) later, so pods 351-353 died before their first talk. The worker runs without RUNPOD_POD_ID (no self-end);
+# this keeper holds the real safety nets: tower silent 30 min, or 24 h of life. Idle pods are closed by tower's ledger (10 min).
+cat > /workspace/keeper.sh <<'KEEP'
+born=$(date +%s)
+while sleep 60; do
+  now=$(date +%s); hb=$(stat -c %Y /workspace/spool/.tower-hb 2>/dev/null || echo $born); [ "$hb" -lt "$born" ] && hb=$born
+  why=''; [ $((now-hb)) -gt 1800 ] && why='no heartbeat from tower for 30 min'; [ $((now-born)) -gt 86400 ] && why='maximum lifetime 24 h'
+  [ -n "$why" ] && cd /opt/sifter/media && python -c 'import sys; from runpod_worker import terminate_self; terminate_self(sys.argv[1])' "$why"
+done
+KEEP
+pgrep -f 'bash /workspace/keeper.sh' >/dev/null || nohup bash /workspace/keeper.sh >> /workspace/keeper.log 2>&1 < /dev/null &
 if ! pgrep -f '^python /opt/sifter/media/worker/farm_worker.py' >/dev/null; then
-  nohup python /opt/sifter/media/worker/farm_worker.py --spool /workspace/spool --max-jobs 6 >> /workspace/worker.log 2>&1 < /dev/null &
+  nohup env -u RUNPOD_POD_ID python /opt/sifter/media/worker/farm_worker.py --spool /workspace/spool --max-jobs 6 >> /workspace/worker.log 2>&1 < /dev/null &
 fi
 echo started`;
 export const WORKER_FILE = join(ROOT, 'scripts', 'media', 'runpod_worker.py');
