@@ -305,17 +305,19 @@ describe('the lane: GPU is rented only for work', () => {
   });
   it('stages several recordings per pod per pass at once (Chad 10-30: one at a time starved the pods), never more than stageBatch', async () => {
     const x = setup({ talks: 4, seconds: 3600 });
-    const times = [], run = x.deps.run;
+    let open = 0, most = 0, uploads = 0; const run = x.deps.run;
     x.deps.run = async (cmd, args, opts) => {
-      if (cmd === 'scp' && /\/spool\/.*\/in\./.test(args.at(-1))) times.push(x.clock());
+      if (cmd === 'scp' && /\/spool\/.*\/in\./.test(args.at(-1))) {   // an upload that takes a while: count how many overlap
+        uploads++; most = Math.max(most, ++open);
+        await new Promise((r) => setTimeout(r, 5)); open--;
+      }
       return run(cmd, args, opts);
     };
     const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, x.deps);
     expect(r.done).toBe(4);
-    expect(times).toHaveLength(4);
-    const perPass = Object.values(times.reduce((n, t) => ({ ...n, [t]: (n[t] || 0) + 1 }), {}));
-    expect(Math.max(...perPass)).toBeGreaterThan(1);
-    expect(Math.max(...perPass)).toBeLessThanOrEqual(C.CLOUD.stageBatch);
+    expect(uploads).toBe(4);
+    expect(most).toBeGreaterThan(1);
+    expect(most).toBeLessThanOrEqual(C.CLOUD.stageBatch);
   });
   it('a slow upload does not hold the pass: results are fetched while it is still sending (10-30: awaited uploads made a pass 10 min)', async () => {
     const x = setup({ talks: 2 });
@@ -331,6 +333,35 @@ describe('the lane: GPU is rented only for work', () => {
     };
     const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, x.deps);
     expect(r.done).toBe(2);
+  });
+  it('stage-ahead: the stager fills R2 in queue order up to its audio target, and drops talks that left the lane', async () => {
+    const { stageTick } = await import('../../api/lib/media/r2-stage.js');
+    const x = setup({ talks: 4, seconds: 3600 }), puts = [], removed = [];
+    const store = { put: async (k) => { puts.push(k); return 10; }, remove: async (k) => { removed.push(k); }, signed: async (k) => `https://r2/${k}` };
+    const st = { queue: [3, 1, 2, 4], jobs: {}, items: {}, staged: { 9: { key: 'stage/old', bytes: 5, at: 0 } } };
+    const opts = { store, getItem: async (id) => x.items[id], readMeta: async (d) => JSON.parse(readFileSync(join(d, 'meta.json'), 'utf8')), now: 1000, cfg: { aheadS: 2 * 3600, maxBytes: 1e9, maxAgeMs: 1e9, prefix: 'stage/' } };
+    expect(await stageTick(st, opts)).toBe('uploaded');
+    expect(removed).toEqual(['stage/old']);
+    expect(await stageTick(st, opts)).toBe('uploaded');
+    expect(await stageTick(st, opts)).toBe('full');   // 2 h staged
+    expect(Object.keys(st.staged)).toEqual(['1', '3']);
+    expect(puts[0]).toMatch(/^stage\/3-/);
+  });
+  it('a staged talk is pulled by the pod from R2, not pushed over tower\'s uplink', async () => {
+    const x = setup({ talks: 1, seconds: 3 * 3600 });
+    const cmds = [], run = x.deps.run;
+    x.deps.run = async (cmd, args, opts) => {
+      const last = args.at(-1);
+      if (cmd === 'ssh' && last.startsWith('curl ')) { cmds.push('curl'); x.spool[/spool\/([^/]+)\//.exec(last)[1]] = 'uploaded'; return { stdout: '' }; }
+      if (cmd === 'scp' && /\/in\./.test(last)) cmds.push('scp');
+      return run(cmd, args, opts);
+    };
+    const src = join(x.items[1].dir, 'original/a.mp3');
+    writeFileSync(x.deps.stateFile, JSON.stringify({ started: 1, proven: true, queue: [1], jobs: {}, pods: { p1: { id: 'p1', name: 'test-pod', status: 'ready', ip: '1.2.3.4', port: 2222, created: x.clock() - 1000, costPerHr: 0.34 } }, attempts: {}, done: [], failed: [], items: { 1: { duration_s: 3 * 3600 } }, spent_closed: 0, staged: { 1: { key: 'stage/1-x.mp3', ext: 'mp3', src, bytes: 1, at: x.clock() } } }));
+    x.deps.stageStore = { put: async () => 1, remove: async () => {}, signed: async (k) => `https://r2.example/${k}?sig=1` };
+    const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, x.deps);
+    expect(r.done).toBe(1);
+    expect(cmds).toEqual(['curl']);
   });
   it('fetches up to resultsPerPass completed recordings per pod per pass from a backlog', async () => {
     const x = setup({ talks: 5 });

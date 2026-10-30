@@ -1677,6 +1677,19 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     for (const q of Object.values(st.pods)) if (!q.terminated && q.ip && q.port && q.status !== 'booting') C.podSsh(run, q, 'touch /workspace/spool/.tower-hb', { timeoutMs: 30_000 }).catch(() => {});
   }, 60_000);
   pump.unref?.();
+  // STAGE AHEAD (Chad 10-30): the uplink fills R2 with the next ~100 audio-hours of originals whether or not pods are up; pods pull in seconds
+  const R2S = await import('../media/r2-stage.js');
+  const stageStore = deps.stageStore !== undefined ? deps.stageStore : (process.env.VITEST || process.env.MEDIA_STAGE === '0' ? null : await R2S.r2StageStore().catch(() => null));
+  let stagerStop = false;
+  const busyItem = (id) => staging.has(Number(id)) || staging.has(id) || Object.values(st.jobs).some((j) => String(j.itemId) === String(id));
+  const stager = stageStore && (async () => {
+    while (!stagerStop) {
+      let r;
+      try { r = await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, now: now() }); st.stage_error = null; }
+      catch (err) { st.stage_error = String(err?.message || err).slice(0, 200); r = 'error'; }
+      if (r !== 'uploaded') await new Promise((res) => setTimeout(res, r === 'error' ? 60_000 : 20_000).unref?.());
+    }
+  })();
   try {
     for (;;) {
       if (draining()) { yielded = true; await Promise.allSettled([...homeTasks.values()]); break; }
@@ -1689,7 +1702,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (C.rentalCapacity) maxPods = await C.rentalCapacity(requestedMaxPods);
       st.capacity_target = maxPods;
       const rentalPause = await C.rentalPauseReason?.();
-      if (rentalPause && !Object.keys(st.jobs).length) {
+      if (rentalPause && !Object.keys(st.jobs).length && !staging.size) {
         await Promise.allSettled([...homeTasks.values()]);
         stop = `operator pause: ${rentalPause}`;
         break;
@@ -1778,7 +1791,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const imageStarting=acceptedWorker&&live.some(p=>p.image===acceptedWorker.image&&p.status!=='ready');
       const imageDrainId=acceptedWorker&&!imageStarting?live.filter(p=>p.image&&p.image!==acceptedWorker.image).sort((a,b)=>a.created-b.created)[0]?.id:null;
-      const inflight = Object.keys(st.jobs).length;
+      const inflight = Object.keys(st.jobs).length + staging.size;
       if (!st.queue.length && !inflight && !homeTasks.size) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue.filter(id=>!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
@@ -1906,7 +1919,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               st.jobs[job]={itemId,slug:it.slug,pod:p.id,since:tAssign,status:'uploading',...(whole?{kind:'whole',input_sha:await (await import('../media/whole-result.js')).fileSha(src)}:{})};
               await save(st);
               await C.podSsh(run, p, `mkdir -p /workspace/spool/${job}`, { timeoutMs: 60_000 });
-              await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}.part`);
+              const sg = st.staged?.[itemId]; let pulled = false;
+              if (sg && stageStore && sg.src === src) {   // staged in R2: the pod pulls it at datacenter speed
+                try { await C.podSsh(run, p, `curl -fsS --retry 3 --connect-timeout 20 --max-time 1200 -o /workspace/spool/${job}/in.${ext}.part '${await stageStore.signed(sg.key)}'`, { timeoutMs: 1_260_000 }); pulled = true; st.stage_pulls = (st.stage_pulls || 0) + 1; }
+                catch (err) { p.stage_pull_error = String(err?.message || err).slice(0, 160); }
+              }
+              if (!pulled) { await C.podPut(run, p, src, `/workspace/spool/${job}/in.${ext}.part`); st.stage_direct = (st.stage_direct || 0) + 1; }
               await C.podSsh(run,p,`mv /workspace/spool/${job}/in.${ext}.part /workspace/spool/${job}/in.${ext}`,{timeoutMs:60000});
               if(whole){
                 const W=await import('../media/whole-result.js'),sha=st.jobs[job].input_sha;
@@ -2038,13 +2056,13 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // a pod from an older image (no gate: it cannot be a prep / encode host) is retired once its own jobs are done
       if (requireGate) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && !q.gate)) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'retired: image without the gate');
       // an idle pod (nothing left to give it) is terminated at once
-      if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'queue empty');
+      if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id) && ![...staging.values()].some((s) => s.pod === p.id)) await closePod(p, 'queue empty');
       st.spent_usd = C.spendOf(st, now()); st.updated = now();
       await save(st);
       await nap(tickMs);
     }
   } finally {
-    clearInterval(hb); clearInterval(pump);
+    clearInterval(hb); clearInterval(pump); stagerStop = true;
     try { (await import('../media/pool.js')).publishPool([]); st.pool_sig = ''; } catch { /* no pool file */ }   // the lane is ending: its pods leave the pool
     // the queue is done, the budget is spent or something failed: NO pod is left running (a drain leaves them working)
     if (!yielded) for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, stop || 'finished');

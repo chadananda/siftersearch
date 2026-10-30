@@ -93,6 +93,8 @@ export function ledgerSummary(st, now = Date.now(), spendOf = () => st.spent_usd
     productive_usd: r2(pods.reduce((a, p) => a + usd(p, p.busy_ms || 0), 0)),
     efficiency_30m: efficiency(st, now),
     queue: (st.queue || []).length, in_flight: Object.keys(st.jobs || {}).length,
+    staged: { talks: Object.keys(st.staged || {}).length, audio_h: r2(Object.keys(st.staged || {}).reduce((a, id) => a + (Number(st.items?.[id]?.duration_s) || 0), 0) / 3600),
+      gb: r2(Object.values(st.staged || {}).reduce((a, s) => a + (s.bytes || 0), 0) / 1e9), pulls: st.stage_pulls || 0, direct: st.stage_direct || 0, error: st.stage_error || null },
     pods: pods.map((p) => ({ id: p.id, name: p.name, gpu: p.gpu || null, cost_per_hr: p.costPerHr ?? null, live: !p.terminated, status: p.terminated ? `terminated (${p.why})` : p.status,
       rented_min: Math.round((p.rented_ms || 0) / 60_000), busy_min: Math.round((p.busy_ms || 0) / 60_000), util: p.util ?? null, worker: p.worker || null, baked: !!p.baked,
       idle_min: p.idle_since ? Math.round((now - p.idle_since) / 60_000) : 0 })),
