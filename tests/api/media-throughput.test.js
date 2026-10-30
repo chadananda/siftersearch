@@ -73,6 +73,8 @@ describe('public import progress', () => {
     expect(p.by_source.map((x) => x.source)).toEqual(['curated', 'local']);
     expect(p.eta_iso).toBe(new Date(Date.parse('2026-10-23T00:00:00Z') + (479 / 6) * 3600_000).toISOString());
     expect(shapeProgress({ rows, published_30m: 0 }, sources).eta_iso).toBeNull();
+    // the machines' rate wins when the ledger has it: remasters finished in the last hour, not publications ×2
+    expect(shapeProgress({ rows, published_30m: 1, remastered_60m: 14 }, sources)).toMatchObject({ items_per_hour: 14, rate_window_minutes: 60, published_per_hour: 2 });
   });
 });
 

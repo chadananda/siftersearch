@@ -164,7 +164,10 @@ export async function importProgress() {
     FROM media_items WHERE state != 'duplicate' GROUP BY 1`, [], 'media:import-progress');
   const since = new Date(Date.now() - 30 * 60_000).toISOString();
   const recent = (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state = 'done' AND restored = 1 AND completed_at >= ?`, [since], 'media:published-30m'))?.n || 0;
-  return { rows, published_30m: recent };
+  // the machines' rate: remaster stages finished in the last hour (10-30: "2 remastered/hr" was publications ×2 while 14 talks remastered)
+  const hourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
+  const remastered60 = (await queryOne(`SELECT COUNT(*) n FROM media_stages WHERE stage = 'remaster' AND status = 'done' AND at >= ?`, [hourAgo], 'media:remastered-60m'))?.n ?? null;
+  return { rows, published_30m: recent, remastered_60m: remastered60 };
 }
 /** The items being worked on now (downloading / processing / being enriched after publication): a handful of rows. */
 export const queuedCount = async () => (await queryOne(`SELECT COUNT(*) n FROM media_items WHERE state IN ('queued', 'scheduled')`, [], 'media:queued-count'))?.n || 0;

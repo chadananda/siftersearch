@@ -148,17 +148,17 @@ export function restoredShape(prog = {}, q = {}) {
 }
 
 /** The public progress shape. Pure (exported for tests). */
-export function shapeProgress({ rows = [], published_30m = 0 }, sources, now = Date.now()) {
+export function shapeProgress({ rows = [], published_30m = 0, remastered_60m = null }, sources, now = Date.now()) {
   const by = sources.map(([source, label]) => { const r = rows.find((x) => x.source === source) || {};
     return { source, label, total: r.total || 0, downloaded: r.downloaded || 0, enhanced: r.enhanced || 0, remastered: r.remastered || 0, transcribed: r.transcribed || 0,
       aligned: r.aligned || 0, cross_referenced: r.cross_referenced || 0, published: r.published || 0, failed: r.failed || 0, quote_links: r.quote_links || 0, concept_crs: r.concept_crs || 0 }; })
     .filter((x) => x.total > 0);
   const sum = (k) => by.reduce((a, x) => a + x[k], 0);
-  const perHour = published_30m * 2;
+  const perHour = remastered_60m ?? published_30m * 2;   // remasters finished in the last hour (the machines), else publications
   const remaining = sum('total') - sum('published') - sum('failed');
   return { total_targets: sum('total'), downloaded: sum('downloaded'), enhanced: sum('enhanced'), remastered: sum('remastered'), transcribed: sum('transcribed'),
     aligned: sum('aligned'), cross_referenced: sum('cross_referenced'), published: sum('published'), failed: sum('failed'), quote_links: sum('quote_links'), concept_crs: sum('concept_crs'),
-    by_source: by, items_per_hour: perHour, rate_window_minutes: 30, published_in_window: published_30m, eta_iso: perHour > 0 && remaining > 0 ? new Date(now + (remaining / perHour) * 3600_000).toISOString() : null, updated_at: new Date(now).toISOString() };
+    by_source: by, items_per_hour: perHour, rate_window_minutes: remastered_60m != null ? 60 : 30, published_in_window: published_30m, published_per_hour: published_30m * 2, eta_iso: perHour > 0 && remaining > 0 ? new Date(now + (remaining / perHour) * 3600_000).toISOString() : null, updated_at: new Date(now).toISOString() };
 }
 
 /** Health with the RUNNING counts taken from the ops runs (10-23: an 'update' re-run of a published talk keeps state 'done',
