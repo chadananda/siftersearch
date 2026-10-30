@@ -64,6 +64,10 @@ export const TOOLS = [
   // pipeline (holdings check by sha256 / YouTube id, enhance, transcribe, quotes, page, search) — one at a time, paced
   { type: 'function', function: { name: 'add_media', description: 'Add a recorded talk (audio/video) to the media library: a YouTube URL, or a file path on the server. The pipeline checks it is not already held, then transcribes it and publishes it at /media.',
     parameters: { type: 'object', properties: { url: { type: 'string' }, path: { type: 'string' } } } } },
+  { type: 'function', function: { name: 'media_progress', description: 'How the media library is going: per processing stage, how many talks and audio-hours are done (and in the last hour/day), what state the catalogue is in, and the remaster lane (pods, queue, spend). Call for "how is the audio going", "how many talks are remastered".',
+    parameters: { type: 'object', properties: {} } } },
+  { type: 'function', function: { name: 'media_status', description: 'One talk in the media library by id, slug, or words of its title/speaker: its state, every stage done (when, where) and what is still missing. Several matches → the list to choose from.',
+    parameters: { type: 'object', properties: { ref: { type: 'string' } }, required: ['ref'] } } },
   { type: 'function', function: { name: 'status', description: 'How is it going? The member\'s jobs in plain words: what Dewey is doing now, how far along, what is waiting for them. Call it for "status", "progress", "how is it going", "is it done".',
     parameters: { type: 'object', properties: { job_id: { type: 'integer', description: 'one job; omit for all of the member\'s active jobs' } } } } },
   { type: 'function', function: { name: 'fetch_url', description: 'Download a file from a web address (PDF, Word, EPUB, a ZIP of files, an audio/video page) on a worker machine, check every file against the library and report. Use when the member gives a link to a file or says "get this". Returns a job id at once; answer "how is it going" with status.',
@@ -126,6 +130,8 @@ export function makeTools({ by, emit, attachSource, accept }) {
       trackMedia({ url, path, run: run?.id ?? null }, { by, channel: 'chat' });
       return JSON.stringify({ queued: true, run: run?.id ?? null, note: 'the media pipeline will check holdings, then transcribe and publish it at /media' });
     },
+    async media_progress() { return JSON.stringify(await (await import('../media/media-status.js')).mediaProgress()); },
+    async media_status({ ref }) { return JSON.stringify(await (await import('../media/media-status.js')).mediaStatus(ref)); },
     async status({ job_id = null }) {
       const s = await statusFor(whoOf(by), { jobId: job_id });
       emit({ type: 'jobs', jobs: s.jobs });

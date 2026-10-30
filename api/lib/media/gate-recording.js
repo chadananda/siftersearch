@@ -56,5 +56,5 @@ export async function gateWholeRecording(it,m,{T,host,stop,nap,sha}) {
   if(!f.path||f.path.split('/').some(x=>!x||x==='.'||x==='..')||!/^[A-Za-z0-9_.\-\/]+$/.test(f.path))throw Error('Unsafe worker output path');
   if(await get('item/'+f.path,join(staging,'item',f.path))!==f.sha256)throw Error('Worker output checksum mismatch: '+f.path);
  }
- return adoptWholeResult(staging,it.dir,m,sha);
+ return adoptWholeResult(staging,it.dir,m,sha,it.id);
 }

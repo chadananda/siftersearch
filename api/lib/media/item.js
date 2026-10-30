@@ -167,7 +167,8 @@ async function defaults() {
   const repo = await import('../repos/media-repo.js');
   const youtube = await import('./youtube.js');
   const { isDraining } = await import('../drain.js');
-  return { tools, llm, repo, youtube, now: () => new Date().toISOString(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)), draining: async () => isDraining(), drainingNow: isDraining };
+  const ledger = await import('../repos/media-ledger-repo.js');
+  return { tools, llm, repo, ledger, youtube, now: () => new Date().toISOString(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)), draining: async () => isDraining(), drainingNow: isDraining };
 }
 
 /** The link stage's lookups (server-side: bio set, identity lookup index, document finder, section index, link policy). */
@@ -204,7 +205,11 @@ export async function runItem(item, opts = {}, deps = {}) {
   const spend = meta.cost;
   const done = [];
   let dir = item.dir;
-  const save = async () => { if (dir) await writeJson(join(dir, 'meta.json'), meta); };
+  const save = async () => {
+    if (!dir) return;
+    await writeJson(join(dir, 'meta.json'), meta);
+    if (item.id && d.ledger) await d.ledger.syncItemStages(item.id, meta.stages).catch(() => {});   // the stage ledger mirrors every save (planning/media-ledger-plan-20261030.md)
+  };
   const latencies = [];
   const threads = async () => {
     if (opts.threads) return opts.threads;

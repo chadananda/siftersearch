@@ -27,7 +27,7 @@ export async function validateWholeResult(root,inputSha,slug){
  if(r.meta.remaster?.status==='done'&&r.meta.qa?.remaster?.output_assessment?.passed!==true)throw Error('Remaster has no passing paired assessment');
  return r;
 }
-export async function adoptWholeResult(root,dir,oldMeta,inputSha){
+export async function adoptWholeResult(root,dir,oldMeta,inputSha,itemId=null){
  const r=await validateWholeResult(root,inputSha,oldMeta.slug);
  if(await fileSha(join(dir,oldMeta.original))!==inputSha)throw Error('Original changed while processing');
  const workerOriginal='original/in'+oldMeta.original.slice(oldMeta.original.lastIndexOf('.')).toLowerCase();
@@ -35,5 +35,6 @@ export async function adoptWholeResult(root,dir,oldMeta,inputSha){
  const meta=rewrite(r.meta);meta.original=oldMeta.original;meta.source=oldMeta.source;meta.worker_result={input_sha:inputSha,adopted_at:new Date().toISOString()};
  for(const f of r.files){if(f.path==='meta.json')continue;const to=join(dir,f.path);await mkdir(resolve(to,'..'),{recursive:true});await copyFile(join(root,'item',f.path),to+'.worker-part');await rename(to+'.worker-part',to);}
  await writeFile(join(dir,'meta.json.worker-part'),JSON.stringify(meta,null,2));await rename(join(dir,'meta.json.worker-part'),join(dir,'meta.json'));
+ if(itemId!=null)await (await import('../repos/media-ledger-repo.js')).syncItemStages(itemId,meta.stages).catch(()=>{});   // the stage ledger
  return meta;
 }

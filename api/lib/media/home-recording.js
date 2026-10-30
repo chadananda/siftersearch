@@ -86,5 +86,5 @@ export async function homeWholeRecording(it,m,{T,host,image,legacyLock=true,stop
  const staging=join(it.dir,'.whole-worker');await fs.mkdir(staging,{recursive:true});
  await T.run('rsync',['-a','--protect-args','--exclude','original',`${host}:${remote+'/item'}`,staging+'/'],{timeoutMs:600000,stop});
  await T.run('rsync',['-a','--protect-args',`${host}:${remote+'/result.json'}`,staging+'/result.json'],{timeoutMs:600000,stop});
- return adoptWholeResult(staging,it.dir,m,sha);
+ return adoptWholeResult(staging,it.dir,m,sha,it.id);
 }

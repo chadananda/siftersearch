@@ -12,5 +12,5 @@ export async function takeCloudRecording({C,run,p,job,item,meta,inputSha}){
   if(!/^[a-zA-Z0-9_.\/-]+$/.test(f.path)||f.path.split('/').some(x=>!x||x==='.'||x==='..')||f.path==='original'||f.path.startsWith('original/'))throw Error('Unsafe cloud recording path');
   const to=join(stage,'item',f.path);await mkdir(join(to,'..'),{recursive:true});await C.podGet(run,p,remote+'/item/'+f.path,to);
  }
- return adoptWholeResult(stage,item.dir,meta,inputSha);
+ return adoptWholeResult(stage,item.dir,meta,inputSha,item.id);
 }

@@ -4,6 +4,7 @@ import { mediaBiographyAudit } from './media-biography-audit.js';
 import { mediaWorkerAudit } from './media-worker-audit.js';
 import { mediaGreetingsJob } from './media-greetings.js';
 import { mediaDescriptionsJob } from './media-descriptions.js';
+import { mediaLedgerReconcileJob } from './media-ledger-reconcile.js';
 import { mediaPersonApplyJob } from './media-person-apply.js';
 import { mediaPersonReviewJob } from './media-person-review.js';
 import { mediaTagsBackfillJob, mediaHintReviewJob } from './media-hints.js';
@@ -274,6 +275,7 @@ REPORTS['media-remaster-review-pack'] = mediaRemasterReviewPackJob;   // { out? 
 REPORTS['media-remaster-decide'] = mediaRemasterDecideJob;   // { picks: [{id|slug, choice}] } — Chad's review picks   // { write, ids?, limit? } — UniPASE on RunPod pods (budget-capped)   // { write } — per-talk speaker decisions from the evidence (data: talk_identities)
 REPORTS['media-speaker-merge'] = mediaSpeakerMergeJob;   // { write } — invented second speakers back to the main speaker (voice-checked per paragraph)
 REPORTS['media-safe-listening'] = mediaSafeListeningJob;   // { write } — every published talk's listening copy → the transparent original + fullband Ogg
+REPORTS['media-ledger-reconcile'] = mediaLedgerReconcileJob;   // { afterId?, limit? } — media_stages ← every meta.json (backfill + drift check; planning/media-ledger-plan-20261030.md)
 REPORTS['media-stages'] = mediaStagesJob;   // { write, ids?, stages?, redo?, limit } — which stages each talk lacks; write queues just those (or the forced redo) through the engine
 REPORTS['media-relink'] = mediaRelinkJob;   // { write } — re-resolve person links refused by a retired rule (links + update re-run)
 REPORTS['media-tags-backfill'] = mediaTagsBackfillJob;   // { afterId?, limit<=40, pauseMs } — tag_hints for imported talks (hints only), paced pages

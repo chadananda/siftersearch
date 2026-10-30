@@ -7,8 +7,10 @@ import { reportNames } from '../lib/ops/reports.js';
 import { ApiError } from '../lib/errors.js';
 import { readDeployStatus } from '../lib/ops/deploy-status.js';
 import deweyJobsOps from './dewey-jobs-ops.js';
+import mediaOps from './media-ops.js';
 
 export default async function opsReportRoutes(fastify) {
+  await fastify.register(mediaOps);   // media progress / status / add / redo over the stage ledger (api/routes/media-ops.js)
   await fastify.register(deweyJobsOps);   // Dewey's job registry + worker contract (api/routes/dewey-jobs-ops.js)
   const known = (name) => { if (!reportNames().includes(name)) throw ApiError.notFound?.(`unknown report ${name}`) ?? Object.assign(new Error(`unknown report ${name}`), { statusCode: 404 }); };
   // Biography slugs, minted in small batches through the single writer (never one large UPDATE): call repeatedly until left = 0.

@@ -2060,6 +2060,13 @@ export const migrations = {
     for (const sql of ARCHIVES_SQL) await query(sql);
     logger.info('Migration 189 complete: donors, drives, intake_items');
   },
+
+  190: async () => {
+    // MEDIA LEDGER (planning/media-ledger-plan-20261030.md): one row per (talk, stage), mirrored from meta.json — solid stage counts. New EMPTY table.
+    const { MEDIA_LEDGER_SQL } = await import('../media/ledger.js');
+    for (const sql of MEDIA_LEDGER_SQL) await query(sql);
+    logger.info('Migration 190 complete: media_stages');
+  },
 };
 
 export const graphMigrations = {
