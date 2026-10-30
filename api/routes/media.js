@@ -140,11 +140,11 @@ export function byStage(items = [], cap = 12) {
 }
 /** A source key from a queue rank (the progress buckets). */
 export const sourceOfRank = (rank) => ([null, 'historic', 'hands', 'uhj', 'historic-speakers', 'scholars'][Math.floor((rank ?? 5e7) / 1e7)] || 'scholars');
-/** The /media restoration readout (public: counts and the latest five, nothing else). Pure (exported for tests). */
+/** The /media restoration readout (public: counts and the latest 30 restored talks, nothing else). Pure (exported for tests). */
 export function restoredShape(prog = {}, q = {}) {
   const by = q.by_verdict || {};
   return { planned: prog.total_targets ?? null, published: prog.published ?? null, restored: (by.usable || 0) + (by.cleaned || 0), usable: by.usable || 0, held: by.review || 0,
-    recent: (q.recent || []).slice(0, 5).map((x) => ({ slug: String(x.slug), title: String(x.title || x.slug), speaker: x.speaker || null })), updated_at: q.at || null };
+    recent: (q.recent || []).slice(0, 30).map((x) => ({ slug: String(x.slug), title: String(x.title || x.slug), speaker: x.speaker || null, year: x.year ?? null, d: x.hours ? Math.round(x.hours * 3600) : null })), updated_at: q.at || null };
 }
 
 /** The public progress shape. Pure (exported for tests). */

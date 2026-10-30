@@ -61,11 +61,12 @@ print(ns['jdumps']({'hum': float('-inf'), 'x': [float('nan'), 1.5]}))`], { encod
 });
 
 describe('the public /media restoration readout', () => {
-  it('counts and the latest five only: no workers, cost or tool names', async () => {
+  it('counts and the latest 30 (year, length) only: no cost or tool names', async () => {
     const { restoredShape } = await import('../../api/routes/media.js');
-    const r = restoredShape({ total_targets: 1386, published: 900 }, { by_verdict: { usable: 150, cleaned: 20, spliced: 9, review: 22, unrepairable: 2 }, recent: Array.from({ length: 8 }, (_, i) => ({ slug: `t${i}`, title: `T${i}`, speaker: 'S' })), at: 'now' });
+    const r = restoredShape({ total_targets: 1386, published: 900 }, { by_verdict: { usable: 150, cleaned: 20, spliced: 9, review: 22, unrepairable: 2 }, recent: Array.from({ length: 40 }, (_, i) => ({ slug: `t${i}`, title: `T${i}`, speaker: 'S', year: 1990, hours: 1.5 })), at: 'now' });
     expect(r).toMatchObject({ planned: 1386, published: 900, restored: 170, held: 22 });
-    expect(r.recent).toHaveLength(5);
+    expect(r.recent).toHaveLength(30);
+    expect(r.recent[0]).toEqual({ slug: 't0', title: 'T0', speaker: 'S', year: 1990, d: 5400 });
     expect(JSON.stringify(r).toLowerCase()).not.toMatch(/unipase|pod|runpod|usd|cost|spend/);
     expect(restoredShape({}, {})).toMatchObject({ planned: null, restored: 0, held: 0, recent: [] });
   });

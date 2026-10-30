@@ -2169,10 +2169,10 @@ export async function mediaRemasterQualityJob({ write = false } = {}, deps = {})
       const fresh = JSON.parse(await fs.readFile(mf, 'utf8').catch(() => 'null'));
       if (fresh && JSON.stringify(fresh.remaster) === JSON.stringify(m.remaster)) { fresh.qa = { ...(fresh.qa || {}), remaster: qa }; await fs.writeFile(mf, JSON.stringify(fresh, null, 2)); stored = true; }
     }
-    rows.push({ slug: it.slug, title: m.title || it.slug, speaker: m.speaker || null, at: m.remaster?.at || null, hours: (it.duration_s || m.duration_s || 0) / 3600, grade: qa.metrics.grade || it.grade, qa, stored, published_remaster: m.enhancement?.listening === 'unipase' });
+    rows.push({ slug: it.slug, title: m.title || it.slug, speaker: m.speaker || null, year: m.year || null, at: m.remaster?.at || null, hours: (it.duration_s || m.duration_s || 0) / 3600, grade: qa.metrics.grade || it.grade, qa, stored, published_remaster: m.enhancement?.listening === 'unipase' });
   }
   const sum = Q.summarize(rows);
-  sum.recent = rows.filter((x) => ['usable', 'partial'].includes(x.qa.verdict) && x.published_remaster && x.at).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 5).map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker }));
+  sum.recent = rows.filter((x) => ['usable', 'partial'].includes(x.qa.verdict) && x.published_remaster && x.at).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 30).map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker, year: x.year, hours: Math.round(x.hours * 100) / 100 }));
   if (write) {
     const dir = deps.dir || join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'run');
     await fs.mkdir(dir, { recursive: true });
