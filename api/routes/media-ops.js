@@ -1,5 +1,6 @@
 // The media internal API (X-Internal-Key; mounted by ops-reports.js under /api/admin): progress, per-talk status from the stage ledger,
 // talks by stage, add, redo. Logic in api/lib/media/media-status.js (shared with Dewey). Plan: planning/media-ledger-plan-20261030.md
+import { join, dirname } from 'path';
 import { requireInternal } from '../lib/auth.js';
 import { mediaProgress, mediaStatus, mediaAdd, mediaRedo } from '../lib/media/media-status.js';
 
@@ -7,6 +8,13 @@ export default async function mediaOps(fastify) {
   const guard = { preHandler: requireInternal };
   const by = (req) => String(req.headers['x-by'] || req.body?.by || 'ops').slice(0, 60);
   fastify.get('/ops/media/progress', guard, async () => mediaProgress());
+  // per-host load history (gauge-log.js): ?host=Podsprocket&hours=6&rows=1 → summary (+ raw rows)
+  fastify.get('/ops/media/gauges', guard, async (req) => {
+    const q = req.query || {}, G = await import('../lib/media/gauge-log.js'), { STATE_FILE } = await import('../lib/media/cloud.js');
+    const hours = Math.min(Number(q.hours) || 6, 24 * G.KEEP_DAYS), now = Date.now();
+    const rows = await G.readGaugeLog(join(dirname(STATE_FILE), 'gauges'), { sinceMs: now - hours * 3600_000, host: q.host || '', now });
+    return { hours, hosts: G.summarizeGauges(rows), ...(q.rows === '1' ? { rows: rows.slice(-2000) } : {}) };
+  });
   fastify.get('/ops/media/items', guard, async (req) => {
     const q = req.query || {};
     if (q.q) return { matches: await (await import('../lib/repos/media-ledger-repo.js')).findTalks(String(q.q)) };

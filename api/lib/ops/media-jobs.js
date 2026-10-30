@@ -2113,6 +2113,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (requireGate) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && !q.gate)) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'retired: image without the gate');
       // an idle pod (nothing left to give it) is terminated at once
       if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id) && !bgBusy(p.id)) await closePod(p, 'queue empty');
+      // load history per host (Chad 10-30: "logging these so that we can look back and analyze the pattern"): data/run/gauges/<day>.jsonl
+      if (!deps.stateFile) { try { const G = await import('../media/gauge-log.js'); await G.appendGauges(G.gaugeRows(st, now()), join(dirname(C.STATE_FILE), 'gauges'), now()); } catch (err) { st.gauge_log_error = String(err.message).slice(0, 160); } }
       st.spent_usd = C.spendOf(st, now()); st.updated = now();
       await save(st);
       await nap(tickMs);
