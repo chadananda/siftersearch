@@ -6,6 +6,9 @@
   import { liveRefresh } from '../../../lib/live-data.js';
   import { media } from '../../../lib/api.js';
   import { eraVar, duration } from '../../../lib/media-listing.js';
+  import { flip } from 'svelte/animate';
+  import { fly } from 'svelte/transition';
+  import { preview, playExcerpt } from '../../../lib/media-preview.svelte.js';
 
   let { initial = null } = $props();
   let d = $state(initial);
@@ -14,6 +17,7 @@
   const workers = $derived(Array.isArray(d?.workers) ? d.workers : []);
   const fastest = $derived(Math.max(1, ...workers.map((w) => w.speed || 0)));
   const LAMP = { working: 'on', conducting: 'on', starting: 'blink', idle: 'dim', resting: 'off' };
+  const playing = (slug) => preview.item?.s === slug && preview.playing;
   const recent = $derived(Array.isArray(d?.recent) ? d.recent.filter((x) => x?.slug) : []);
   onMount(() => liveRefresh(() => media.restored(), (next) => { d = next; }, { every: 30_000, el: root, initial }));
 </script>
@@ -24,9 +28,17 @@
     <div class="spines">
       <ol aria-label="Just restored">
         {#each recent as x (x.slug)}
-          <li><a href={`/media/${x.slug}`} class="spine" style={`--st:${eraVar(x.year)}`} title={`${x.title}${x.speaker ? ` · ${x.speaker}` : ''}`}>
-            <span class="truncate">{x.title}</span><span class="spine-meta">{x.year || ''}{x.year && x.d ? ' · ' : ''}{x.d ? duration(x.d) : ''}</span>
-          </a></li>
+          {@const it = { s: x.slug, t: x.title, y: x.year, sp: x.speaker }}
+          <li class="spine-row" in:fly={{ y: -24, duration: 420 }} animate:flip={{ duration: 420 }}>
+            <a href={`/media/${x.slug}`} class="spine" style={`--st:${eraVar(x.year)}`} title={`Open “${x.title}”${x.speaker ? ` · ${x.speaker}` : ''}`}>
+              <span class="truncate">{x.title}</span><span class="spine-meta">{x.year || ''}{x.year && x.d ? ' · ' : ''}{x.d ? duration(x.d) : ''}</span>
+              <svg class="spine-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+            </a><button type="button" class="spine-play" class:on={playing(x.slug)} onclick={(e) => { e.stopPropagation(); playExcerpt(it); }}
+              aria-label={playing(x.slug) ? `Pause the excerpt of ${x.title}` : `Play 20 seconds of ${x.title} here`} title={playing(x.slug) ? 'Pause' : 'Play 20 s here'}>
+              {#if playing(x.slug)}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+              {:else}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>{/if}
+            </button>
+          </li>
         {:else}
           <li class="empty">The next talks appear here as they are published</li>
         {/each}
@@ -58,11 +70,19 @@
   /* the list never sets the box height: the cards do; it scrolls inside what they leave */
   .spines { position: relative; flex: 1; min-height: 6.5rem; }
   .spines ol { position: absolute; inset: 0; margin: 0; padding: 0 0.2rem 0 0; list-style: none; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin; scrollbar-color: var(--radio-brass) transparent; }
-  .spine { display: flex; align-items: center; gap: 0.6rem; padding: 0.28rem 0.55rem 0.28rem 0.75rem; border-radius: 0.3rem; font-size: 0.8rem; color: var(--radio-on-dark); text-decoration: none;
-    background: linear-gradient(90deg, var(--st) 0 5px, color-mix(in srgb, var(--radio-walnut-deep) 82%, transparent) 5px); }
-  .spine:hover, .spine:focus-visible { background: linear-gradient(90deg, var(--st) 0 5px, var(--radio-walnut-deep) 5px); color: var(--radio-amber); }
+  /* the box-set spine rows (Jukebox.svelte), newest on top: a new talk slides in and pushes the rest down */
+  .spine-row { display: flex; gap: 3px; flex: none; }
+  .spine { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.6rem; padding: 0.42rem 0.5rem 0.42rem 0.7rem; border-radius: 0.3rem; font-size: 0.9rem; color: var(--radio-on-dark); text-decoration: none;
+    background: linear-gradient(90deg, var(--st) 0 6px, color-mix(in srgb, var(--radio-walnut-deep) 82%, transparent) 6px); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.3); transition: background 0.2s, color 0.2s; }
+  .spine:hover, .spine:focus-visible { background: linear-gradient(90deg, var(--st) 0 6px, var(--radio-walnut-deep) 6px); color: var(--radio-amber); }
   .spine .truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .spine-meta { margin-left: auto; flex: none; font: 600 0.72rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; opacity: 0.75; }
+  .spine-meta { margin-left: auto; flex: none; font: 600 0.8rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em; opacity: 0.75; }
+  .spine-go { flex: none; width: 0.95rem; height: 0.95rem; margin-left: -0.25rem; opacity: 0.45; transition: opacity 0.2s, transform 0.2s; }
+  .spine:hover .spine-go, .spine:focus-visible .spine-go { opacity: 1; transform: translateX(2px); }
+  .spine-play { flex: none; display: grid; place-items: center; width: 2.1rem; border-radius: 0.3rem; color: var(--radio-amber);
+    background: color-mix(in srgb, var(--radio-walnut-deep) 82%, transparent); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.3); transition: background 0.2s, color 0.2s; }
+  .spine-play svg { width: 0.95rem; height: 0.95rem; }
+  .spine-play:hover, .spine-play.on { background: var(--radio-amber); color: var(--radio-walnut-deep); }
   .empty { font-size: 0.8rem; opacity: 0.6; padding: 0.3rem 0; }
   @media (max-width: 52rem) { .spines { min-height: 9rem; } }
   .machines { flex: 0 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
