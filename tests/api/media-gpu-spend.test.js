@@ -70,7 +70,7 @@ describe('persistent operator rental pause', () => {
       expect(C.BOOTSTRAP_WHOLE.replace('--max-jobs 6', '--max-jobs 12')).toContain('--max-jobs 12');
     } finally { rmSync(directory, {recursive:true,force:true}); }
   });
-  it('changes rental capacity from a durable runtime file without changing the requested maximum', async () => {
+  it('the durable runtime capacity file sets the pod count, raising or lowering the launch request', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'rental-capacity-'));
     const file = join(directory, 'capacity.json');
     try {
@@ -78,7 +78,7 @@ describe('persistent operator rental pause', () => {
       expect(await C.rentalCapacity(3, file)).toBe(1);
       writeFileSync(file, JSON.stringify({ maxPods: 2 }));
       expect(await C.rentalCapacity(3, file)).toBe(2);
-      expect(await C.rentalCapacity(1, file)).toBe(1);
+      expect(await C.rentalCapacity(1, file)).toBe(2);   // the lane launched with 1 is raised by the operator
     } finally { rmSync(directory, { recursive: true, force: true }); }
   });
   it('rents 32 vCPUs per GPU first, then any vCPU count; max_jobs scales with vCPU', async () => {

@@ -28,7 +28,8 @@ export async function rentalCapacity(requested, file = RENTAL_CAPACITY_FILE) {
   let cap = Number(process.env.MEDIA_CLOUD_MAX_PODS);
   try {
     const settings = JSON.parse(await readFile(file, 'utf8'));
-    if (Number.isInteger(settings.maxPods) && settings.maxPods > 0) cap = settings.maxPods;
+    // the operator's live setting wins both ways (10-30: a lane launched with maxPods 2 could never be raised to 3 by the capacity report)
+    if (Number.isInteger(settings.maxPods) && settings.maxPods > 0) return settings.maxPods;
   } catch (error) { if (error.code !== 'ENOENT') throw error; }
   return Number.isInteger(cap) && cap > 0 ? Math.min(requested, cap) : requested;
 }
