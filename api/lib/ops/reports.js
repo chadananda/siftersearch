@@ -260,6 +260,11 @@ REPORTS['media-remaster'] = mediaRemasterJob;   // { id } — a talk's tower par
 REPORTS['media-remaster-revert'] = mediaRemasterRevertJob;   // { ids } — back to the transparent original
 REPORTS['media-cloud-remaster'] = mediaCloudRemasterJob;
 REPORTS['media-cloud-order'] = mediaCloudOrderJob;   // { mode: cleanup|post, ids?, limit? } — work for the running cloud lane
+REPORTS['media-cloud-capacity'] = async (params = {}) => {   // { maxPods?, capUsd? } — pod count + spend cap, read by the lane every tick (no env edit)
+  const C = await import('../media/cloud.js'), st = await C.loadState();
+  const settings = await C.setRentalCapacity(params || {});
+  return { settings, cap_usd: C.CLOUD.capUsd(), spent_usd: C.spendOf(st), cloud_stopped: st.cloud_stopped || null, live_pods: Object.values(st.pods || {}).filter((p) => !p.terminated).length };
+};
 REPORTS['media-light-backfill'] = mediaLightBackfillJob;   // { limit? } — light tier: the raw original beside the playing copy, encoded on boss
 REPORTS['media-preview'] = mediaPreviewJob;   // { fingerprint?, text, duration_s } — Dewey stage 0: duplicate of <slug> | new
 REPORTS['media-remaster-quality'] = mediaRemasterQualityJob;   // { write? } — verdict by grade, review + unrepairable lists

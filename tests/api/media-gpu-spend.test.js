@@ -77,6 +77,21 @@ describe('persistent operator rental pause', () => {
       expect(await C.rentalCapacity(1, file)).toBe(1);
     } finally { rmSync(directory, { recursive: true, force: true }); }
   });
+  it('the capacity file sets the spend cap (over the env) and refuses bad values', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'rental-cap-'));
+    const file = join(directory, 'capacity.json');
+    try {
+      expect(C.capFromFile(file)).toBeNull();
+      writeFileSync(file, JSON.stringify({ maxPods: 2 }));
+      expect(await C.setRentalCapacity({ capUsd: 98 }, file)).toEqual({ maxPods: 2, capUsd: 98 });
+      expect(C.capFromFile(file)).toBe(98);
+      expect(await C.setRentalCapacity({ maxPods: 1 }, file)).toEqual({ maxPods: 1, capUsd: 98 });
+      expect(await C.rentalCapacity(3, file)).toBe(1);
+      await expect(C.setRentalCapacity({ maxPods: 0 }, file)).rejects.toThrow(/maxPods/);
+      await expect(C.setRentalCapacity({ capUsd: 5000 }, file)).rejects.toThrow(/capUsd/);
+      expect(C.capFromFile(file)).toBe(98);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
   it('blocks the rental API before any request, until the pause file is removed', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'rental-pause-'));
     const pauseFile = join(directory, 'hold');

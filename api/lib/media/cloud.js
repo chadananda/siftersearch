@@ -6,6 +6,7 @@
 // is terminated when the queue is empty, on any fatal error, or by its own idle watchdog (15 min) if tower disappears.
 // State (pods, jobs in flight, spend) lives in a file, so a restart re-attaches instead of losing work. Deps injectable.
 import { readFile, writeFile, mkdir, rename } from 'fs/promises';
+import { readFileSync } from 'fs';
 import { join, dirname, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
@@ -35,9 +36,23 @@ export async function rentalPauseReason(file = RENTAL_PAUSE_FILE) {
   try { return (await readFile(file, 'utf8')).trim() || 'operator pause'; }
   catch (error) { if (error.code === 'ENOENT') return null; throw error; }
 }
+/** The spend cap: the capacity file's capUsd (set by the media-cloud-capacity job) wins over MEDIA_CLOUD_CAP_USD. */
+export function capFromFile(file = RENTAL_CAPACITY_FILE) {
+  try { const c = Number(JSON.parse(readFileSync(file, 'utf8')).capUsd); return c > 0 ? c : null; } catch { return null; }
+}
+/** media-cloud-capacity: merge { maxPods?, capUsd? } into the runtime capacity file; the lane reads it every tick. */
+export async function setRentalCapacity({ maxPods, capUsd } = {}, file = RENTAL_CAPACITY_FILE) {
+  let cur = {};
+  try { cur = JSON.parse(await readFile(file, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  if (maxPods != null) { if (!(Number.isInteger(maxPods) && maxPods > 0 && maxPods <= 6)) throw Error('maxPods must be 1-6'); cur.maxPods = maxPods; }
+  if (capUsd != null) { if (!(Number(capUsd) > 0 && Number(capUsd) <= 500)) throw Error('capUsd must be 0-500'); cur.capUsd = Number(capUsd); }
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(`${file}.tmp`, JSON.stringify(cur)); await rename(`${file}.tmp`, file);
+  return cur;
+}
 export const CLOUD = {
   maxPods: 3,
-  capUsd: () => Number(process.env.MEDIA_CLOUD_CAP_USD) || 60,
+  capUsd: () => capFromFile() ?? (Number(process.env.MEDIA_CLOUD_CAP_USD) || 60),
   keepBalance: () => Number(process.env.MEDIA_CLOUD_KEEP_BALANCE ?? 90),
   // best $ / throughput with ≥ 16 GB (UniPASE peaks at ~4 GB; Whisper turbo ~2 GB): community first
   gpuTypes: ['NVIDIA GeForce RTX 4090', 'NVIDIA RTX A5000', 'NVIDIA GeForce RTX 3090', 'NVIDIA RTX A4500', 'NVIDIA A40', 'NVIDIA RTX A6000'],
