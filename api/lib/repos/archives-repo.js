@@ -86,7 +86,7 @@ export const itemCounts = (driveId) => queryAll(`SELECT section, kind, match, de
 
 export async function decideItem(id, { decision, note = null, by = null }) {
   if (decision != null && !DECISIONS.includes(decision)) throw new Error(`bad decision: ${decision}`);
-  await query('UPDATE intake_items SET decision = ?, decision_note = ?, decided_by = ?, decided_at = ?, updated_at = ? WHERE id = ?', [decision ?? null, note, by, decision ? now() : null, now(), id], 'archives:item-decide');
+  await query('UPDATE intake_items SET decision = ?, decision_note = ?, decided_by = ?, decided_at = ?, updated_at = ? WHERE id = ?', [decision ?? null, decision ? note : null, decision ? by : null, decision ? now() : null, now(), id], 'archives:item-decide');
   return getItem(id);
 }
 export const getItem = async (id) => parseItem(await queryOne('SELECT * FROM intake_items WHERE id = ?', [id], 'archives:item-get'));
@@ -100,7 +100,7 @@ export async function decideItems(ids, { decision, note = null, by = null }) {
   for (let i = 0; i < clean.length; i += 500) {
     const chunk = clean.slice(i, i + 500);
     sts.push({ sql: `UPDATE intake_items SET decision = ?, decision_note = ?, decided_by = ?, decided_at = ?, updated_at = ? WHERE id IN (${chunk.map(() => '?').join(', ')})`,
-      args: [decision ?? null, note, by, decision ? t : null, t, ...chunk] });
+      args: [decision ?? null, decision ? note : null, decision ? by : null, decision ? t : null, t, ...chunk] });
   }
   await transaction(sts, 'archives:items-decide-bulk');
   return clean.length;

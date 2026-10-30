@@ -54,7 +54,7 @@ describe('archives repo', () => {
     await expect(repo.decideItems(ids, { decision: 'maybe' })).rejects.toThrow();
     await repo.decideItems(ids, { decision: null });
     expect(await repo.listItems('d2', { decision: 'undecided' })).toHaveLength(4);
-    expect(await repo.getItem(ids[0])).toMatchObject({ decision: null, decided_at: null });
+    expect(await repo.getItem(ids[0])).toMatchObject({ decision: null, decided_at: null, decided_by: null });
   });
   it('driveReport lists imported items', async () => {
     await repo.upsertDonor({ id: 'x', name: 'X' }); await repo.upsertDrive({ id: 'dr', donor_id: 'x' });
