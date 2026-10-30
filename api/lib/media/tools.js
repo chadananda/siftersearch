@@ -176,6 +176,8 @@ export function hostProfile(name) {
   const h = hostRegistry().find((x) => x.name === name) || {};
   return { name, transport: h.transport || 'ssh-docker', root: h.root || '/data/sifter-whole-home', docker: h.docker || 'docker', gpu_lock: h.gpu_lock || null, gate: h.gate };
 }
+/** The /media card dials for a home host (Chad 10-30): CPU busy % and GPU % (NVIDIA power ÷ limit, AMD gpu_busy) from its last gate 'df', or null. */
+export const hostGauge = (name) => { const d = diskInfo.get(name); return d?.at && (d.cpu_busy != null || d.gpu_pwr_pct != null || d.gpu_busy != null) ? { cpu: d.cpu_busy ?? null, gpu: d.gpu_pwr_pct ?? d.gpu_busy ?? null, at: d.at } : null; };
 export const hostCores = (name) => diskInfo.get(name)?.cpu_cores || null;
 /** 'nvidia' | 'amd' | 'cpu', from the telemetry the machine reports. */
 export const hostVendor = (name) => { const d = diskInfo.get(name); return d?.gpu_free_mb != null ? 'nvidia' : d?.vram_free_mb != null ? 'amd' : 'cpu'; };
@@ -255,7 +257,7 @@ async function refreshDisk(host, { exec = run } = {}) {
   const { stdout } = await exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', host, gateWrap(host, 'df')], { timeoutMs: 30_000 });
   const j = JSON.parse(stdout.trim().split('\n').pop());
   setImmediate(() => { for (const w of asrWaiters.splice(0)) w(); });   // a fresh reading may admit a waiting transcription
-  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, gpu_temp: j.gpu_temp ?? null, cpu_tctl: j.cpu_tctl ?? null, gpu_free_mb: j.gpu_free_mb ?? null, mem_total_gb: j.mem_total_gb ?? null, psi_some10: j.psi_some10 ?? null, psi_full10: j.psi_full10 ?? null, vram_total_gb: j.vram_total_gb ?? null, vram_used_gb: j.vram_used_gb ?? null, vram_free_mb: j.vram_free_mb ?? null, gtt_total_gb: j.gtt_total_gb ?? null, gtt_used_gb: j.gtt_used_gb ?? null, gpu_busy: j.gpu_busy ?? null, cpu_cores: j.cpu_cores ?? null, pending: false });
+  if (j.free_gb != null) noteDisk(host, { free_gb: j.free_gb, used_pct: j.used_pct, mem_avail_gb: j.mem_avail_gb ?? null, gpu_temp: j.gpu_temp ?? null, cpu_tctl: j.cpu_tctl ?? null, gpu_free_mb: j.gpu_free_mb ?? null, mem_total_gb: j.mem_total_gb ?? null, psi_some10: j.psi_some10 ?? null, psi_full10: j.psi_full10 ?? null, vram_total_gb: j.vram_total_gb ?? null, vram_used_gb: j.vram_used_gb ?? null, vram_free_mb: j.vram_free_mb ?? null, gtt_total_gb: j.gtt_total_gb ?? null, gtt_used_gb: j.gtt_used_gb ?? null, gpu_busy: j.gpu_busy ?? null, cpu_cores: j.cpu_cores ?? null, cpu_busy: j.cpu_busy ?? null, gpu_pwr_pct: j.gpu_pwr_pct ?? null, pending: false });
   return j;
 }
 /** HEAT: one policy for every machine, applied to whichever sensors it reports. GPU ≥ 83 °C → 1 job; CPU (measured 10-28: a 70 s full

@@ -48,15 +48,30 @@ export function readGauges(stdout, prev = {}, now = Date.now()) {
   return out;
 }
 
+/** Tower's two sockets (Chad 10-30: "Tower has two CPUs"): busy % per physical package from /proc/stat cpuN lines between two samples.
+ *  pkg: cpu index → package id. Returns { ticks, cpus: [busy % per package, in package order] } (cpus null on the first sample). Pure. */
+export function socketBusy(stat, pkg, prev = null) {
+  const ticks = {};
+  for (const m of String(stat || '').matchAll(/^cpu(\d+) (.+)$/gm)) {
+    const v = m[2].trim().split(/\s+/).map(Number), p = pkg[m[1]] ?? 0;
+    const t = ticks[p] ||= [0, 0];
+    t[0] += v.slice(0, 8).reduce((a, b) => a + b, 0); t[1] += v[3] + v[4];
+  }
+  const keys = Object.keys(ticks).sort((a, b) => a - b);
+  const cpus = prev ? keys.map((k) => { const dt = ticks[k][0] - (prev[k]?.[0] ?? 0), di = ticks[k][1] - (prev[k]?.[1] ?? 0); return dt > 0 ? pct(100 - (di * 100) / dt) : null; }) : null;
+  return { ticks, cpus };
+}
+
 export function workerCards(st = {}, now = Date.now()) {
   const sp = speeds(st.done, now, Object.fromEntries(Object.values(st.pods || {}).filter((p) => p.created).map((p) => [p.name, p.created])));
   const homeJobs = {};
   for (const h of Object.keys(st.home || {})) homeJobs[base(h)] = (homeJobs[base(h)] || 0) + 1;
   const cards = MACHINES.map((m) => {
-    if (m.key === 'tower') return { ...m, status: 'conducting', jobs: Object.keys(st.jobs || {}).length + Object.keys(st.home || {}).length, speed: null };
+    const g = st.host_gauge?.[m.key], fresh = g && now - g.at < GAUGE_FRESH_MS;   // home hosts: the gate's 'df' (tools.js hostGauge); tower: its own sockets
+    if (m.key === 'tower') return { ...m, status: 'conducting', jobs: Object.keys(st.jobs || {}).length + Object.keys(st.home || {}).length, speed: null, gauges: fresh && g.cpus ? { cpus: g.cpus } : null };
     const down = (st.host_down?.[m.key] || 0) > now;
     const jobs = homeJobs[m.key] || 0;
-    return { ...m, status: jobs ? 'working' : down ? 'resting' : 'idle', jobs, speed: sp[m.key] ?? null };
+    return { ...m, status: jobs ? 'working' : down ? 'resting' : 'idle', jobs, speed: sp[m.key] ?? null, gauges: fresh ? { cpu: g.cpu ?? null, gpu: g.gpu ?? null } : null };
   });
   for (const p of Object.values(st.pods || {})) {
     if (p.terminated) continue;

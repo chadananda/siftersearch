@@ -91,7 +91,12 @@ if [[ "$verb" == "df" ]]; then
   psi=$(awk '/^some/ {split($2,a,"="); print a[2]}' /proc/pressure/memory 2>/dev/null || true); psi=${psi:-null}
   psif=$(awk '/^full/ {split($2,a,"="); print a[2]}' /proc/pressure/memory 2>/dev/null || true); psif=${psif:-null}
   memtot=$(awk '/^MemTotal:/ {print int($2/1048576*10)/10}' /proc/meminfo 2>/dev/null || echo null)
-  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s,"gpu_temp":%s,"cpu_tctl":%s,"gpu_free_mb":%s,"mem_total_gb":%s,"psi_some10":%s,"psi_full10":%s,"vram_total_gb":%s,"vram_used_gb":%s,"vram_free_mb":%s,"gtt_total_gb":%s,"gtt_used_gb":%s,"gpu_busy":%s,"cpu_cores":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}" "$gpu" "$tctl" "$vfree" "${memtot:-null}" "$psi" "$psif" "$vt" "$vu" "$vfm" "$gtt" "$gtu" "$busy" "$(nproc 2>/dev/null || echo null)"
+  # the /media card dials (Chad 10-30): CPU busy % over 0.5 s (/proc/stat) and NVIDIA power ÷ power limit (AMD: gpu_busy above)
+  read -r ct1 ci1 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat); sleep 0.5
+  read -r ct2 ci2 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
+  cbusy=null; if (( ct2 > ct1 )); then cbusy=$(( 100 - (ci2 - ci1) * 100 / (ct2 - ct1) )); fi
+  gpwr=$( (nvidia-smi --query-gpu=power.draw,power.limit --format=csv,noheader,nounits 2>/dev/null || true) | head -1 | awk -F', *' '$2>0 {printf "%d", $1*100/$2}' || true); gpwr=${gpwr:-null}
+  printf '{"free_gb":%s,"size_gb":%s,"used_pct":%s,"jobs":%s,"mem_avail_gb":%s,"gpu_temp":%s,"cpu_tctl":%s,"gpu_free_mb":%s,"mem_total_gb":%s,"psi_some10":%s,"psi_full10":%s,"vram_total_gb":%s,"vram_used_gb":%s,"vram_free_mb":%s,"gtt_total_gb":%s,"gtt_used_gb":%s,"gpu_busy":%s,"cpu_cores":%s,"cpu_busy":%s,"gpu_pwr_pct":%s}\n' "$(( avail / 1048576 ))" "$(( size / 1048576 ))" "$pcent" "$(find jobs/ -mindepth 1 -maxdepth 1 -type d | wc -l)" "${mem:-null}" "$gpu" "$tctl" "$vfree" "${memtot:-null}" "$psi" "$psif" "$vt" "$vu" "$vfm" "$gtt" "$gtu" "$busy" "$(nproc 2>/dev/null || echo null)" "$cbusy" "$gpwr"
   exit 0
 fi
 if [[ "$verb" == "clean" ]]; then

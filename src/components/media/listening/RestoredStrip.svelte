@@ -6,7 +6,7 @@
   // (CPU = busy % of the machine's CPU quota, GPU = % of its power limit: api/lib/media/worker-cards.js readGauges) and a vent grille.
   // A working machine's CRT types a work-log tail, faster the busier it is (Chad 10-30: "frenetic activity ... typing") — decoration, not a real log.
   // Pods carry cute Pod* names (api/lib/media/worker-cards.js podName). Tower is the CONDUCTOR, not a worker, so it looks different: an enamelled steel
-  // console with an amber display, one CPU meter and a switchboard lamp per worker, lit while that worker is busy (Chad 10-30).
+  // console with an amber display and a CPU meter per Xeon (two sockets; no GPU) — Chad 10-30.
   // Cached SSR first view, then liveRefresh (src/lib/live-data.js) every 30 s while on screen. The block's height is reserved, so a patch never shifts the page.
   import { onMount } from 'svelte';
   import { liveRefresh } from '../../../lib/live-data.js';
@@ -40,7 +40,6 @@
   const hex = () => Math.floor(Math.random() * 65536).toString(16).toUpperCase().padStart(4, '0');
   const pick = (a) => a[Math.floor(Math.random() * a.length)];
   const logLine = (w) => { const r = Math.random(); return `>${pick(VERBS[kind(w)])} ${hex()}${r < 0.4 ? ` ${Math.floor(Math.random() * 100)}%` : r < 0.7 ? ' OK' : ` ${hex()}`}`; };
-  const crew = $derived(workers.filter((w) => w.key !== 'tower'));
   const busy = (w) => w.status === 'working' || w.status === 'conducting';
   const pace = (w) => { const g = w.gauges; const a = g ? Math.max(g.cpu ?? 0, g.gpu ?? 0) / 100 : w.jobs ? 0.6 : 0.3; return 0.25 + a * 2.6; };   // characters per tick
   let tty = $state({});   // key → { done: [two finished lines], typing, target, carry }
@@ -122,10 +121,8 @@
             </div>
           </div></div>
           {#if w.key === 'tower'}
-            <div class="meters">{@render meter('CPU', w.gauges?.cpu ?? null, 'of its CPU quota')}</div>
-            <ul class="board" aria-label="Workers Tower is conducting">
-              {#each crew as c (c.key)}<li title={`${c.name}: ${c.status}`}><i class={`lamp ${busy(c) ? 'on' : c.status === 'starting' ? 'blink' : ''}`}></i><span>{c.name.replace(/^Pod/, '')}</span></li>{/each}
-            </ul>
+            <div class="meters">{@render meter('CPU 1', w.gauges?.cpus?.[0] ?? null, 'of its first Xeon')}{@render meter('CPU 2', w.gauges?.cpus?.[1] ?? null, 'of its second Xeon')}</div>
+            <div class="grille" aria-hidden="true"></div>
           {:else}
             <div class="meters">{@render meter('CPU', w.gauges?.cpu ?? null, 'of its CPU quota')}{@render meter('GPU', w.gauges?.gpu ?? null, 'of the GPU power limit')}</div>
             <div class="grille" aria-hidden="true"></div>
@@ -230,7 +227,7 @@
   .grille { height: 0.4rem; margin: 0 0.5rem; border-radius: 2px; background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0 2px, transparent 2px 4px);
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.08); }
 
-  /* Tower, the conductor: enamelled steel with rivets, an amber display, a switchboard of worker lamps */
+  /* Tower, the conductor: enamelled steel with rivets, an amber display, a meter per CPU */
   .unit.tower { --radio-phosphor: var(--radio-vfd); --radio-crt: var(--radio-vfd-tube);
     --screw: radial-gradient(circle, #d9dee0 0 1.2px, #7c868b 1.3px 1.8px, rgba(0, 0, 0, 0.55) 1.9px 2.3px, transparent 2.4px);
     background:
@@ -241,14 +238,7 @@
   .unit.tower .plate { background: linear-gradient(180deg, #eef1f2, #b5bec2 60%, #868f93); }
   .unit.tower .plate b { color: #1d2124; }
   .unit.tower .screen::before { background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 2px), repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 3px); }
-  .unit.tower .meters { padding: 0 1.1rem; }
-  .board { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.15rem 0.3rem; margin: 0; padding: 0.2rem 0.25rem; list-style: none; border-radius: 2px;
-    background: #101315; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.08); }
-  .board li { display: flex; align-items: center; gap: 0.15rem; font: 700 0.5rem/1 'Big Shoulders Display', 'Shoulders Fallback', sans-serif; letter-spacing: 0.06em;
-    text-transform: uppercase; color: #c9d1d4; }
-  .lamp { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff4 0 15%, #3a4a3c 45%, #151b16); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6); }
-  .lamp.on { background: radial-gradient(circle at 35% 30%, #fff 0 12%, #ffd27a 30%, #ff9a1f 65%, #b45309); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 0 5px 1px rgba(255, 170, 60, 0.75); }
-  .lamp.blink { background: radial-gradient(circle at 35% 30%, #fff 0 12%, #ffd27a 30%, #ff9a1f 65%, #b45309); animation: blink 1.1s steps(2, jump-none) infinite; }
+  .unit.tower .grille { background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0 1px, transparent 1px 3px); }
 
-  @media (prefers-reduced-motion: reduce) { .lamp.blink, .jewel.blink, .screen, .cur { animation: none; } .meter .needle { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .jewel.blink, .screen, .cur { animation: none; } .meter .needle { transition: none; } }
 </style>

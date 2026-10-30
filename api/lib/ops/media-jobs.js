@@ -11,7 +11,10 @@ import * as WC from '../media/worker-cards.js';
 import { hostProfile, hostRegistry } from '../media/tools.js';
 import {audioVersion, markAudioPending} from '../media/talk-audio.js';
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
-import { createReadStream, createWriteStream, existsSync } from 'fs';
+import { createReadStream, createWriteStream, existsSync, readFileSync, readdirSync } from 'fs';
+let towerTicks = null, towerPkgMap = null;   // tower's per-socket /proc/stat sample between ticks (WC.socketBusy)
+const towerPkgs = () => towerPkgMap ||= Object.fromEntries(readdirSync('/sys/devices/system/cpu').filter((d) => /^cpu\d+$/.test(d))
+  .map((d) => [d.slice(3), Number(readFileSync(`/sys/devices/system/cpu/${d}/topology/physical_package_id`, 'utf8'))]));
 import { Readable } from 'stream';
 import { pipeline as streamPipeline } from 'stream/promises';
 import { createHash } from 'crypto';
@@ -1742,6 +1745,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       st.held = held;
       // home hosts: re-attach a task from before a restart, start one when a host is free and eligible
       // ASR KEEPS PRIORITY (Chad 10-23): a home host starts a UniPASE copy only while no transcription waits in the queue
+      // the /media card dials (Chad 10-30): each home host's last gate reading (diskOk re-reads it in the background when > 30 s old — a host
+      // with every slot busy is never asked for admission, so ask here), and tower's own two sockets from /proc/stat
+      st.host_gauge = { ...(st.host_gauge || {}) };
+      for (const h of new Set(hostRegistry().map((x) => x.name))) { T.diskOk?.(h); const g = T.hostGauge?.(h); if (g) st.host_gauge[h] = g; }
+      try { const sb = WC.socketBusy(readFileSync('/proc/stat', 'utf8'), towerPkgs(), towerTicks); towerTicks = sb.ticks; if (sb.cpus) st.host_gauge.tower = { cpus: sb.cpus, at: now() }; } catch { /* not Linux */ }
       if (homeHosts.length && now() - (st.asr_checked || 0) > 120_000) {
         const opsRepo = deps.ops || await import('../repos/ops-report-repo.js');
         st.asr_waiting = (await opsRepo.pendingRuns('media-asr').catch(() => [])).filter((r) => r.status === 'queued').length; st.asr_checked = now();

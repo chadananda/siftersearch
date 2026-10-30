@@ -1,6 +1,6 @@
 // /media machine cards: role, RAM, GPU, speed per machine from the lane state; nothing private leaves.
 import { describe, it, expect } from 'vitest';
-import { workerCards, speeds, readGauges, SPEED_WINDOW_MS, podName, POD_NAMES } from '../../api/lib/media/worker-cards.js';
+import { workerCards, speeds, readGauges, SPEED_WINDOW_MS, podName, POD_NAMES, socketBusy, GAUGE_FRESH_MS } from '../../api/lib/media/worker-cards.js';
 
 const now = 1_800_000_000_000;
 describe('workerCards', () => {
@@ -63,5 +63,22 @@ describe('podName', () => {
     expect(names.every((x) => /^Pod[a-z]+$/.test(x) && POD_NAMES.includes(x))).toBe(true);
     expect(podName('sifter-unipase-356')).toBe(names[0]);
     expect(podName('no-number')).toMatch(/^Pod/);
+  });
+});
+
+describe('home and tower dials (Chad 10-30: aorus looked offline while working)', () => {
+  it('home hosts carry their gate reading; stale ones are dropped', () => {
+    const st = { home: { aorus: {} }, host_gauge: { aorus: { cpu: 23, gpu: 9, at: now - 1000 }, boss: { cpu: 4, gpu: 2, at: now - GAUGE_FRESH_MS - 1 }, tower: { cpus: [40, 12], at: now } } };
+    const by = Object.fromEntries(workerCards(st, now).map((c) => [c.key, c]));
+    expect(by.aorus).toMatchObject({ status: 'working', gauges: { cpu: 23, gpu: 9 } });
+    expect(by.boss.gauges).toBeNull();
+    expect(by.tower.gauges).toEqual({ cpus: [40, 12] });
+  });
+  it('socketBusy: busy % per physical package between two samples', () => {
+    const pkg = { 0: 0, 1: 1 };
+    const a = socketBusy('cpu  9 9 9 9 9 0 0 0\ncpu0 100 0 0 900 0 0 0 0\ncpu1 0 0 0 1000 0 0 0 0\n', pkg);
+    expect(a.cpus).toBeNull();
+    const b = socketBusy('cpu0 175 0 0 925 0 0 0 0\ncpu1 10 0 0 1090 0 0 0 0\n', pkg, a.ticks);
+    expect(b.cpus).toEqual([75, 10]);
   });
 });
