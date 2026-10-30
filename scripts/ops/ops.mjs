@@ -11,7 +11,7 @@ dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.en
 const API = apiBase();
 const headers = { 'Content-Type': 'application/json', 'X-Internal-Key': process.env.DEPLOY_SECRET || '' };
 const call = async (method, path, body) => {
-  const r = await fetch(`${API}/api/admin${path}`, { method, headers, ...(body ? { body: JSON.stringify(body) } : {}) });
+  const r = await fetch(`${API}/api/admin${path}`, { method, headers: body ? headers : { 'X-Internal-Key': headers['X-Internal-Key'] }, ...(body ? { body: JSON.stringify(body) } : {}) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(`${method} ${path} → ${r.status} ${JSON.stringify(j).slice(0, 200)}`);
   return j;
@@ -36,6 +36,7 @@ else if (cmd === 'report' && name) {
     await out(run);
   }
 } else if (cmd === 'run' && name) await out(await call('GET', `/ops/reports/runs/${name}`));   // one run by id (e.g. the media-item jobs a report queued)
+else if (cmd === 'cancel' && name) await out(await call('DELETE', `/ops/reports/runs/${Number(name)}`));
 else if (cmd === 'failures') await out(await call('GET', `/ops/failures?hours=${val('--hours') || 24}`));   // failed ops jobs (what the FAILED mails report)
 else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until none are left
   let r; do { r = await call('POST', '/ops/bio-slugs/backfill', { limit: 25 }); console.error(`minted ${r.minted.length}; ${r.with_slug}/${r.total}`); } while (r.minted.length && r.left > 0);

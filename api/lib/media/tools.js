@@ -743,8 +743,10 @@ const installedGpu = new Set();   // hosts this process has sent media_tool.py t
 export async function remoteJob(sub, input, opts = {}, { host = gpuHost(), job, stop = null, pollMs = 5000, file = false, exec = run, probeOnly = false } = {}) {
   const ssh = (cmd, o = {}) => exec('ssh', ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=60', host, gateWrap(host, cmd)], { timeoutMs: 600_000, ...o });
   const state = async () => { const { stdout } = await ssh(`poll ${job}`); return JSON.parse(stdout.trim().split('\n').pop()); };
-  let st = await state().catch(() => ({ state: 'missing' }));
-  if (probeOnly) return st.state;
+  // a poll that fails is the HOST not answering, not a missing job: starting again wiped a live job's folder and redid it (10-30: boss
+  // lost two UniPASE runs this way). The error goes up as unreachable; the lane keeps the task and re-attaches later.
+  if (probeOnly) return (await state().catch(() => ({ state: 'missing' }))).state;
+  let st = await state();
   if (st.state !== 'running' && st.state !== 'done') {
     const { readFile } = await import('fs/promises');
     if (!installedGpu.has(host)) { await ssh('install-tool', { timeoutMs: 60_000, input: await readFile(TOOL) }); installedGpu.add(host); }

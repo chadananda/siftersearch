@@ -42,6 +42,12 @@ describe('remoteJob', () => {
     await remoteJob('dfn', input, { output: out }, { host: 'g3', job: 'talk-df-1', exec: h.exec, pollMs: 0, file: true });
     expect(readFileSync(out, 'utf8')).toBe('AUDIO');
   });
+  it('a failed first poll is the host not answering, never a missing job: no restart (10-30: boss redid two UniPASE runs)', async () => {
+    const h = fakeHost('running');
+    const exec = async (cmd, args, o) => { if (args.at(-1).startsWith('poll')) throw new Error('ssh exit SIGKILL: '); return h.exec(cmd, args, o); };
+    await expect(remoteJob('unipase', input, {}, { host: 'g5', job: 'um-x-1', exec, pollMs: 0 })).rejects.toThrow(/ssh exit/);
+    expect(h.calls.some((c) => c.startsWith('start'))).toBe(false);
+  });
   it('a drain leaves the remote job running', async () => {
     const h = fakeHost('running');
     const exec = async (cmd, args, o) => (args.at(-1).startsWith('poll') ? { stdout: '{"state":"running"}' } : h.exec(cmd, args, o));

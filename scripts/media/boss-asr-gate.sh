@@ -147,6 +147,8 @@ args=(${args[@]+"${args[@]}"})   # re-pack: the unset above leaves a hole, and a
 
 if [[ "$verb" == "start" ]]; then
   janitor || true
+  # never wipe a live job (10-30: a re-start after a failed poll deleted a running UniPASE's folder and redid it): re-attach instead
+  if job_alive "jobs/$id"; then cat >/dev/null; echo '{"state":"running"}'; exit 0; fi
   d="jobs/$id"; rm -rf "$d"; mkdir -p "$d"
   cat > "$d/in.$ext"
   # a detached job is a transcription, or (--verb diarize) a diarization; both survive the caller's restarts
