@@ -1549,7 +1549,6 @@ export function rankedSlots(rates, host, maxSlots) {
  *  orders as soon as its GPU path is accepted (`boss_whole`), exactly like aorus (NVIDIA). */
 export function homeEligibleItem(h, id, st, acceptedWorker, env = process.env) {
   const whole = st.items?.[id]?.kind === 'whole';
-  if (acceptedWorker?.hold_whole && whole) return false;
   if (!silences(h, acceptedWorker)) return false;
   if (!homeCanTake(h, id, st, acceptedWorker, env)) return false;
   // Published talks first (Chad 10-28): a new-talk (whole) order takes a host only when no queued remaster work can run there. Both get processed.
@@ -1697,7 +1696,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const stager = stageStore && (async () => {
     while (!stagerStop) {
       let r;
-      try { r = await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, eligible: (id) => st.items?.[id]?.kind !== 'whole' || !acceptedWorker?.hold_whole, demux, now: now() }); st.stage_error = null; }
+      try { r = await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, demux, now: now() }); st.stage_error = null; }
       catch (err) { st.stage_error = String(err?.message || err).slice(0, 200); r = 'error'; }
       if (r !== 'uploaded') await new Promise((res) => setTimeout(res, r === 'error' ? 60_000 : 20_000).unref?.());
     }
@@ -1815,7 +1814,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const inflight = Object.keys(st.jobs).length + staging.size + collecting.size;
       if (!st.queue.length && !inflight && !homeTasks.size) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
-      const waitingH = hoursOf(st.queue.filter(id=>!acceptedWorker?.hold_whole||st.items?.[id]?.kind!=='whole')) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
+      const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
       const rampCap = st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
       const wantRaw = st.cloud_stopped || rentalPause ? 0 : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
@@ -1928,7 +1927,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             let uploadsThisPass = 0; const batch = [];
             const mine = [...staging.values()].filter((s) => s.pod === p.id), pre = mine.filter((s) => !s.job).length;   // background uploads not yet in st.jobs
             while (batch.length + mine.length < C.CLOUD.stageBatch && batch.length + staging.size < (C.CLOUD.stageGlobal ?? Infinity) && Object.entries(st.jobs).filter(([id,j])=>j.pod===p.id&&!finishedJobs.has(id)).length + pre + batch.length < stageTarget(p) && !staleImage && !p.dead_worker && !surplusPods.has(p.id) && !draining() && !rentalPause && !held && !(requireGate && !p.gate) && !(p.idle_since && now() - p.idle_since > 8 * 60_000) && Object.entries(st.jobs).filter(([id,j]) => j.pod === p.id&&!finishedJobs.has(id)).length + pre + batch.length < Math.min(acceptedWorker&&p.image!==acceptedWorker.image?2:stageTarget(p), Math.max(1, Math.ceil((st.queue.length + Object.keys(st.jobs).length) / Math.max(1, live.filter((q) => q.status === 'ready').length)))) && st.queue.length) {   // a fair share: one pod never takes the whole queue while another waits
-              let eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||(!acceptedWorker?.hold_whole&&p.image===acceptedWorker?.image));
+              let eligible=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'||p.image===acceptedWorker?.image);
               if((p.whole_since_restore||0)>=2){const repair=st.queue.findIndex(id=>st.items?.[id]?.kind!=='whole'&&(st.items?.[id]?.mode||'restore')==='restore');if(repair>=0)eligible=repair;}
               if(eligible<0)break;
               batch.push(st.queue.splice(eligible,1)[0]);

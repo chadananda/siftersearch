@@ -36,9 +36,6 @@ describe('whole dispatch', () => {
     const s = st({ items: { 1: { kind: 'whole' }, 2: { mode: 'restore' } }, home: { aorus: { itemId: 2 } } });
     expect(homeEligibleItem('aorus-1', 1, s, accepted)).toBe(true);              // the only restore is already held by another host
   });
-  it('hold_whole still keeps whole orders back everywhere', () => {
-    expect(homeEligibleItem('boss', 1, st(), { ...accepted, hold_whole: true })).toBe(false);
-  });
   it('a home host whose image lacks the silencer takes nothing (Chad 10-29: its result would carry the restorer\'s noise)', () => {
     expect(homeEligibleItem('aorus-2', 2, st(), { ...accepted, quiet_hosts: ['boss'] })).toBe(false);
     expect(homeEligibleItem('boss', 2, st(), { ...accepted, quiet_hosts: ['boss'] })).toBe(true);
