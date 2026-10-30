@@ -1649,7 +1649,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
   const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
   const beatFile = `${deps.stateFile || C.STATE_FILE}.beat`;   // the lane's liveness, written on its own timer: a long transfer must not look like a dead lane to the reaper
-  const beat = () => fs.writeFile(beatFile, String(now())).catch(() => {});
+  // the state too (10-30: a pass collecting results ran 9+ min unsaved — the stager's progress and new jobs invisible)
+  const beat = () => Promise.all([fs.writeFile(beatFile, String(now())).catch(() => {}), save(st).catch(() => {})]);
   beat();
   const hb = setInterval(beat, 60_000); hb.unref?.();
   const pub = deps.publicKey || (await fs.readFile(join((await import('os')).homedir(), '.ssh', 'id_ed25519.pub'), 'utf8')).trim();
