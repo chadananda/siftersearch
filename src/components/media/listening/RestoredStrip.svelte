@@ -1,6 +1,6 @@
 <script>
   // The restoration readout on /media (Chad 10-24): talks published of those planned, held for review, and the latest 30 as box-set spines in a scrolling list (Chad 10-29);
-  // beside them a small card per machine doing the work (Chad 10-29): role, GPU, RAM, speed (× real time over 3 h, bar vs the fastest).
+  // beside them a small card per machine doing the work (Chad 10-29): role, GPU, RAM, speed (× real time over the last hour, bar vs the fastest).
   // Cached SSR first view, then liveRefresh (src/lib/live-data.js) every 30 s while on screen. The block's height is reserved, so a patch never shifts the page.
   import { onMount } from 'svelte';
   import { liveRefresh } from '../../../lib/live-data.js';
@@ -53,7 +53,7 @@
           <div class="role">{w.role}</div>
           {#each w.specs || [['GPU', w.gpu], ['RAM', w.ram]] as [k, v] (k)}<div class="spec"><span>{k}</span>{v}</div>{/each}
           <div class="speed">
-            {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : w.jobs ? 'first talks under way' : 'no work in 3 h'}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
+            {#if w.key !== 'tower'}<div class="bar"><i style={`width:${Math.round(((w.speed || 0) / fastest) * 100)}%`}></i></div><span>{w.speed ? `${w.speed}× real time` : w.jobs ? 'first talks under way' : 'no work in the last hour'}</span>{:else}<span>{w.jobs} talks in hand</span>{/if}
           </div>
         </li>
       {/each}

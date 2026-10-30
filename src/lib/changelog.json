@@ -1,6 +1,34 @@
 {
-  "generated": "2026-10-30T03:34:57.634Z",
+  "generated": "2026-10-30T13:27:47.237Z",
   "entries": [
+    {
+      "hash": "94e5398a",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "An item whose mode is 'withdraw' is never work — intake withdraws on mode too, each tick drops any already queued (193 withdraw orders taken in by the pre-withdraw lane sat in the queue as items); media-quiet-repair takes back the published talks a withdrawn redo left 'waiting' (no valid worker result) and returns them to done",
+      "scope": null
+    },
+    {
+      "hash": "2db6324f",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Withdraw orders (media-cloud-order mode 'withdraw'); a talk running on a home host counts as running — for pulling back the 218 restore redos in favour of a silence-only repair of the kept masters",
+      "scope": null
+    },
+    {
+      "hash": "c3ae4846",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "A home host that stops answering keeps its task (2 min rest, re-attach by job id); only the 3rd strike requeues — boss ran 663/667 while the lane called it unreachable and sent 663 to a pod too",
+      "scope": null
+    },
+    {
+      "hash": "f0b845ba",
+      "date": "2026-10-29",
+      "type": "Other",
+      "description": "'host unreachable' keeps the error text that tripped it (boss was benched with no reason recorded)",
+      "scope": null
+    },
     {
       "hash": "981295aa",
       "date": "2026-10-29",
@@ -3472,38 +3500,40 @@
       "type": "Other",
       "description": "Chad's 10-21 decisions — on-behalf letters are Shoghi Effendi's; page cites link by quoted text",
       "scope": "citations"
-    },
-    {
-      "hash": "5bc6d6d9",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "An SLP wait yields to the drain — job id kept on the item, resumed on the next start (10-21: a 2-hour OCR wait held the reports service draining 1 h+, parking citation linking and intake)",
-      "scope": "dewey-ocr"
-    },
-    {
-      "hash": "228562bb",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Claims layer gets a 1.5 s grace after the passages — a cold claim worker after a restart held people-ish searches ~10 s (10-21: 10.6 s for 'the role of the Hands of the Cause today', passages ready at 1.5 s)",
-      "scope": "search"
-    },
-    {
-      "hash": "bd27646a",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Roadmap served stale while it refreshes; telemetry's hourly call waits 90 s — /grounding/status timed out (20 s) on cold recomputes after restarts (gateway timeouts 10-20, 10-21)",
-      "scope": "grounding"
-    },
-    {
-      "hash": "259091c4",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "/grounding/exhaustion serves a background-refreshed snapshot (pending right after a restart); system-checks treats pending as unknown — after deploys the cold 600-book walk took >30 s and paged CRITICAL 'nothing queued' (10-21 12:49)",
-      "scope": "grounding"
     }
   ],
   "grouped": {
+    "2026-10-30": [
+      {
+        "hash": "94e5398a",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "An item whose mode is 'withdraw' is never work — intake withdraws on mode too, each tick drops any already queued (193 withdraw orders taken in by the pre-withdraw lane sat in the queue as items); media-quiet-repair takes back the published talks a withdrawn redo left 'waiting' (no valid worker result) and returns them to done",
+        "scope": null
+      },
+      {
+        "hash": "2db6324f",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Withdraw orders (media-cloud-order mode 'withdraw'); a talk running on a home host counts as running — for pulling back the 218 restore redos in favour of a silence-only repair of the kept masters",
+        "scope": null
+      }
+    ],
     "2026-10-29": [
+      {
+        "hash": "c3ae4846",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "A home host that stops answering keeps its task (2 min rest, re-attach by job id); only the 3rd strike requeues — boss ran 663/667 while the lane called it unreachable and sent 663 to a pod too",
+        "scope": null
+      },
+      {
+        "hash": "f0b845ba",
+        "date": "2026-10-29",
+        "type": "Other",
+        "description": "'host unreachable' keeps the error text that tripped it (boss was benched with no reason recorded)",
+        "scope": null
+      },
       {
         "hash": "981295aa",
         "date": "2026-10-29",
@@ -6987,34 +7017,6 @@
         "type": "Other",
         "description": "Chad's 10-21 decisions — on-behalf letters are Shoghi Effendi's; page cites link by quoted text",
         "scope": "citations"
-      },
-      {
-        "hash": "5bc6d6d9",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "An SLP wait yields to the drain — job id kept on the item, resumed on the next start (10-21: a 2-hour OCR wait held the reports service draining 1 h+, parking citation linking and intake)",
-        "scope": "dewey-ocr"
-      },
-      {
-        "hash": "228562bb",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Claims layer gets a 1.5 s grace after the passages — a cold claim worker after a restart held people-ish searches ~10 s (10-21: 10.6 s for 'the role of the Hands of the Cause today', passages ready at 1.5 s)",
-        "scope": "search"
-      },
-      {
-        "hash": "bd27646a",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Roadmap served stale while it refreshes; telemetry's hourly call waits 90 s — /grounding/status timed out (20 s) on cold recomputes after restarts (gateway timeouts 10-20, 10-21)",
-        "scope": "grounding"
-      },
-      {
-        "hash": "259091c4",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "/grounding/exhaustion serves a background-refreshed snapshot (pending right after a restart); system-checks treats pending as unknown — after deploys the cold 600-book walk took >30 s and paged CRITICAL 'nothing queued' (10-21 12:49)",
-        "scope": "grounding"
       }
     ]
   }

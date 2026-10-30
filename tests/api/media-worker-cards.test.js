@@ -11,10 +11,10 @@ describe('workerCards', () => {
     pods: { p1: { id: 'p1', name: 'sifter-unipase-342', status: 'ready', gpu: 'NVIDIA GeForce RTX 4090', costPerHr: 0.34, ip: '1.2.3.4', worker: { vram_total_gb: 23.99, ram_avail_gb: 24.3, temp_c: 31 } },
       p0: { id: 'p0', name: 'sifter-unipase-1', terminated: true } },
     done: [
-      { gpu: 'aorus-2', pod: 'aorus-2', audio_s: 5400, at: now - 1000 },
-      { gpu: 'aorus', pod: 'aorus', audio_s: 5400, at: now - 2000 },
+      { gpu: 'aorus-2', pod: 'aorus-2', audio_s: 1800, at: now - 1000 },
+      { gpu: 'aorus', pod: 'aorus', audio_s: 1800, at: now - 2000 },
       { gpu: 'aorus', pod: 'aorus', audio_s: 99999, at: now - SPEED_WINDOW_MS - 1 },   // outside the window
-      { gpu: 'NVIDIA GeForce RTX 4090', pod: 'sifter-unipase-342', audio_s: 10800 * 3, at: now - 5000 },
+      { gpu: 'NVIDIA GeForce RTX 4090', pod: 'sifter-unipase-342', audio_s: 3600 * 3, at: now - 5000 },
     ],
   };
   const cards = workerCards(st, now);
@@ -36,9 +36,9 @@ describe('workerCards', () => {
     expect(JSON.stringify(cards)).not.toMatch(/1\.2\.3\.4|costPerHr|0\.34|temp/);
   });
   it('a pod younger than the window is timed over its own age, not the whole window (10-30: 9.7x showed as 3.2x)', () => {
-    const t = 1e12, done = [{ at: t - 60_000, pod: 'sifter-unipase-349', audio_s: 3600 * 9.7 }];
-    expect(speeds(done, t, { 'sifter-unipase-349': t - 3600_000 })['sifter-unipase-349']).toBe(9.7);
-    expect(speeds(done, t)['sifter-unipase-349']).toBe(3.2);   // no start known: the 3 h window
-    expect(speeds(done, t, { 'sifter-unipase-349': t - 1000 })['sifter-unipase-349']).toBe(58.2);   // floor of 10 min, never divide by seconds
+    const t = 1e12, done = [{ at: t - 60_000, pod: 'sifter-unipase-349', audio_s: 1800 * 9.7 }];
+    expect(speeds(done, t, { 'sifter-unipase-349': t - 1800_000 })['sifter-unipase-349']).toBe(9.7);   // 30 min old
+    expect(speeds(done, t)['sifter-unipase-349']).toBe(4.9);   // no start known: the one-hour window
+    expect(speeds(done, t, { 'sifter-unipase-349': t - 1000 })['sifter-unipase-349']).toBe(29.1);   // floor of 10 min, never divide by seconds
   });
 });
