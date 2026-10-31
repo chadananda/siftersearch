@@ -4,13 +4,23 @@ import { readFileSync } from 'fs';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { wantAnother, gpuLedger, reachedGpu, descends, cgroupMemGb, cpuSample, cpuBusy } from '../../scripts/media/worker/gpu-pace.mjs';
+import { RAMP_MS, wantAnother, gpuLedger, reachedGpu, descends, cgroupMemGb, cpuSample, cpuBusy } from '../../scripts/media/worker/gpu-pace.mjs';
 
 const base = { running: 1, cap: 12, onDeck: 0, memGb: 10, minGb: 5 };
 it('one talk always on deck: claim the moment nothing is queued at the GPU or on its way there', () => {
   expect(wantAnother({ ...base, running: 0 })).toBe(true);
   expect(wantAnother(base)).toBe(true);
   expect(wantAnother({ ...base, onDeck: 1 })).toBe(false);
+});
+it('GPU idle, nothing queued at it, talks still in CPU prep: one more per RAMP_MS (10-31 pod 372)', () => {
+  const prep = { ...base, onDeck: 1, waiting: 0, gpuIdle: true, sinceClaimMs: RAMP_MS };
+  expect(wantAnother(prep)).toBe(true);
+  expect(wantAnother({ ...prep, sinceClaimMs: RAMP_MS - 1 })).toBe(false);
+  expect(wantAnother({ ...prep, gpuIdle: false })).toBe(false);
+  expect(wantAnother({ ...prep, waiting: 1 })).toBe(false);
+  expect(wantAnother({ ...prep, cpu: 0.95 })).toBe(false);
+  expect(wantAnother({ ...prep, diskGb: 5, minDiskGb: 8 })).toBe(false);
+  expect(wantAnother({ ...base, diskGb: 5, minDiskGb: 8 })).toBe(false);
 });
 it('the machine capacity (slots) and free RAM still bound it', () => {
   expect(wantAnother({ ...base, running: 12 })).toBe(false);
@@ -37,7 +47,7 @@ it('a talk has reached the GPU once a ledger key is its own: container namespace
 });
 it('the agent asks wantAnother before every claim', () => {
   const agent = readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8');
-  expect(agent).toMatch(/wantAnother\(\{[^\n]*\}\)\) \{\n\s*const job = await q\.claim/);
+  expect(agent).toMatch(/wantAnother\(\{[^}]*\}\)\) \{\n\s*const job = await q\.claim/);
   expect(agent).toMatch(/toGpu\.set\(job\.id/);
 });
 it('containers are capped at the host RAM, not 10 GB: the lease ledger sums every talk against that cap (10-31 boss)', () => {
@@ -88,5 +98,5 @@ it('a full CPU holds claims: more talks only slow the CPU stages feeding the GPU
   const S = [{ t: 0, usec: 0, cores: 4 }, { t: 30_000, usec: 60e6, cores: 4 }, { t: 60_000, usec: 216e6, cores: 4 }];
   expect(cpuBusy(S)).toBeCloseTo(0.9);
   expect(cpuBusy(S.slice(0, 1))).toBe(null);
-  expect(readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8')).toMatch(/minGb: MIN_AVAIL_GB, cpu \}\)/);
+  expect(readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8')).toMatch(/minGb: MIN_AVAIL_GB, cpu,\n\s*gpuIdle, sinceClaimMs: Date\.now\(\) - claimedAt, diskGb: diskFreeGb\(\), minDiskGb: DISK_PER_TALK \}\)/);
 });

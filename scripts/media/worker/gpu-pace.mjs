@@ -85,7 +85,13 @@ export function cpuBusy(samples, windowMs = 60_000) {
 }
 export const CPU_FULL = 0.9;
 
-/** Take another talk now? Pure. onDeck = stages queued at the GPU + talks still on their way to it (download, probe, prep); cpu = busy share (null = unknown). */
-export function wantAnother({ running, cap, onDeck, memGb, minGb, cpu = null }) {
-  return running < cap && memGb >= minGb && onDeck === 0 && !(cpu >= CPU_FULL);
+// The GPU idle with nothing queued at it while talks are still in CPU prep (10-31 pod 372: a 95-min talk's prep encode ran 5+ min, GPU 0 %):
+// one more talk per RAMP_MS, so the CPU window sees each one's load before the next — the CPU-full gate, RAM and disk end the ramp.
+export const RAMP_MS = 90_000, GPU_IDLE = 30;
+
+/** Take another talk now? Pure. onDeck = stages queued at the GPU + talks still on their way to it (download, probe, prep); waiting = the queued
+ *  part; cpu = busy share (null = unknown); gpuIdle = the GPU under GPU_IDLE % for the last minute; diskGb = free space under the queue root. */
+export function wantAnother({ running, cap, onDeck, waiting = 0, memGb, minGb, cpu = null, gpuIdle = false, sinceClaimMs = Infinity, diskGb = Infinity, minDiskGb = 0 }) {
+  if (!(running < cap && memGb >= minGb && diskGb >= minDiskGb && !(cpu >= CPU_FULL))) return false;
+  return onDeck === 0 || (waiting === 0 && gpuIdle && sinceClaimMs >= RAMP_MS);
 }
