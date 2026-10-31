@@ -133,6 +133,8 @@ Pod image (10-26) post.py had no `quiet`; tower requires realign+quiet+web since
   48/62 GB. Raised --max-pods 3, but lane stayed at 1: st.proven only set on the ssh lane. e4e1dffa: queue-feed provePool() — a pod-* delivery
   sets proven (+test), deployed. 375 warming, 376 booting (~07:50Z); spent $132.4 / $200. Watcher bq5t6b8j4 → /tmp/pods3.py (exits when both
   deliver, any pod fail, or a terminate). NEXT: confirm 375+376 deliver past 25 min; watch RAM via /tmp/podsample.log; watch budget.
+- ~08:45Z 375+376 past 55 min, each delivered + adopted; pool 3 pods (Chad's limit), 22 pod deliveries, 0 fails, $134.85 (~$2.7/h).
+  Watcher /tmp/poolwatch.py (exits on any pod fail, <2 live pods, spent > $185). Do NOT exceed 3 pods without Chad.
 
 ## Next
 1. Boss onto the LAN agent (ROCm; boss currently on home path B, st.home.boss, image quiet-20261029). Needs a ROCm gpu-20261031 build.
