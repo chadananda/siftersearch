@@ -200,10 +200,15 @@ export function podsWanted({ gpuQueuedH = 0, prepQueuedH = 0, rAorus = 0, rPrep 
   if (!(rPod > 0)) return 1;
   return Math.max(0, Math.min(maxPods, Math.ceil(need / rPod)));
 }
-export function podPlan(cap, { maxPods = 0, horizonH = 2 } = {}) {
-  const g = cap?.by_type?.gpu ?? {}, p = cap?.by_type?.['cpu-prep'] ?? {};
-  const plan = { gpu_queued_h: g.queued_audio_h ?? 0, prep_queued_h: p.queued_audio_h ?? 0, r_aorus: g.home_rate ?? 0, r_prep: p.rate ?? 0,
-    r_pod: g.pod_rate ?? null, max_pods: maxPods, horizon_h: horizonH };
+/** capacity (or [LAN, edge] capacities: tower runs both transports) → the inputs and the pod count. Queues and home rates add; R_pod is the
+ *  measured pods' mean wherever they ran. */
+export function podPlan(caps, { maxPods = 0, horizonH = 2 } = {}) {
+  const all = (Array.isArray(caps) ? caps : [caps]).filter((c) => c?.by_type);
+  const sum = (f) => all.reduce((a, c) => a + (f(c) || 0), 0);
+  const podRates = all.map((c) => c.by_type.gpu?.pod_rate).filter((r) => r > 0);
+  const plan = { gpu_queued_h: sum((c) => c.by_type.gpu?.queued_audio_h), prep_queued_h: sum((c) => c.by_type['cpu-prep']?.queued_audio_h),
+    r_aorus: sum((c) => c.by_type.gpu?.home_rate), r_prep: sum((c) => c.by_type['cpu-prep']?.rate),
+    r_pod: podRates.length ? podRates.reduce((a, r) => a + r, 0) / podRates.length : null, max_pods: maxPods, horizon_h: horizonH };
   return { ...plan, pods: podsWanted({ gpuQueuedH: plan.gpu_queued_h, prepQueuedH: plan.prep_queued_h, rAorus: plan.r_aorus, rPrep: plan.r_prep, rPod: plan.r_pod, maxPods, horizonH }) };
 }
 export function fail(sql, { id, lease, error }, now = Date.now()) {

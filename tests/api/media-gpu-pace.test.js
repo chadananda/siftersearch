@@ -47,7 +47,9 @@ it('a talk has reached the GPU once a ledger key is its own: container namespace
 });
 it('the agent asks wantAnother before every claim', () => {
   const agent = readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8');
-  expect(agent).toMatch(/wantAnother\(\{[^}]*\}\)\) \{\n\s*const job = await q\.claim/);
+  // every claim is gated: wantAnother (the GPU deck) or, for --spill types only, the spare-cores gate (deck full, CPU < 60 %)
+  expect(agent).toMatch(/const want = !stopping && wantAnother\(\{/);
+  expect(agent).toMatch(/if \(want \|\| spare\) \{\n(\s*.*\n)?\s*const job = await q\.claim/);
   expect(agent).toMatch(/toGpu\.set\(job\.id/);
 });
 it('containers are capped at the host RAM, not 10 GB: the lease ledger sums every talk against that cap (10-31 boss)', () => {

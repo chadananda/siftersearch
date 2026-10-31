@@ -1874,6 +1874,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           const deps = { repo, wr, now, full: !!acceptedWorker, decided, remaster: (id) => queue('media-remaster', { id }, 'media-cloud-remaster') };
           st.q_lan = { at: now(), ...await QF.tick(st, { ...deps, q: localQueue() }).catch((e) => ({ error: String(e.message).slice(0, 300) })) };
           st.q_last = { at: now(), ...await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }) };
+          // the typed pod count (stage-queue §4) over both queues, every pass: shown always, used for rentals once pods boot typed (MEDIA_POD_TYPED=1)
+          const QC = await import('../../../worker/queue/core.js');
+          const caps = await Promise.all([localQueue().capacity(), queueClient({ key: queueKey }).capacity()].map((p) => p.catch(() => null)));
+          st.pod_plan = { at: now(), ...QC.podPlan(caps, { maxPods }) };
         })().catch((e) => { st.q_last = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { qPass = null; });
       }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
@@ -1885,7 +1889,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
       const rampCap = st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
-      const wantRaw = st.cloud_stopped || rentalPause ? 0 : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
+      const wantRaw = st.cloud_stopped || rentalPause ? 0 : process.env.MEDIA_POD_TYPED === '1' && st.pod_plan ? st.pod_plan.pods : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
       const keepPods = new Set([...live].sort((a, b) => Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, maxPods).map(p => p.id));
       const surplusPods = new Set(maxPods > 0 ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);

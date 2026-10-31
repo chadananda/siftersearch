@@ -180,4 +180,9 @@ describe('pod count', () => {
     expect(plan.gpu_queued_h).toBe(20);
     expect(plan.pods).toBe(2);
   });
+  it('podPlan merges tower\'s two queues (LAN: Aorus + Boss; edge: pods)', () => {
+    const lan = { by_type: { gpu: { queued_audio_h: 12, home_rate: 2, pod_rate: null }, 'cpu-prep': { queued_audio_h: 0, rate: 6 } } };
+    const edge = { by_type: { gpu: { queued_audio_h: 8, home_rate: 0, pod_rate: 4 }, 'cpu-prep': { queued_audio_h: 0, rate: 0 } } };
+    expect(Q.podPlan([lan, edge, null], { maxPods: 6 })).toMatchObject({ gpu_queued_h: 20, r_aorus: 2, r_pod: 4, r_prep: 6, pods: 2 });
+  });
 });

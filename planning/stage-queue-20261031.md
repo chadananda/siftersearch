@@ -35,7 +35,7 @@ and the CPU queue > 1 h). Boss: `--types cpu-prep,cpu-finish --device none`. Pod
 ## 4. Ordering and pod count
 Priority is order, never a filter: new talk > remaster of a published talk > re-run campaign; 1 claim in 5 goes to the oldest lower band.
 Pods wanted = `clamp(ceil((G+P)/2h − R_aorus) / R_pod), 0, maxPods)`, capped so pods never outrun Boss's prep rate. Pods leave by idle-exit only.
-No rental until measured: Boss CPU audio-h/h, Aorus GPU-only audio-h/h, then hours + $ for the backlog to Chad.
+Rent only when the GPU queue is long (the pod formula above gives > 0); pods take only `gpu` jobs (`--types gpu --idle-exit-min 10`), and the first pod's measured gpu-only rate sets R_pod (until then at most one pod). Code: `podsWanted` / `podPlan` in worker/queue/core.js over both queues → `st.pod_plan`; drives rentals when `MEDIA_POD_TYPED=1`.
 
 ## 5. Result validity
 Hash the words, not the file: `wordsKey = sha256([n, lang, words.w] per paragraph)` (JS `api/lib/media/words-key.js` + Python twin, shared fixture).
