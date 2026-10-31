@@ -4,8 +4,9 @@
 import {build} from 'esbuild';
 // Every relative dynamic import left OUT of the bundle must be named here as server-only. A new one fails the build: if the worker path reaches it,
 // the image dies at the end of a 40-min job with ERR_MODULE_NOT_FOUND (10-30: ./quiet-repair.js) — bundle it or make it static instead.
+// ./quiet-repair.js is server-only since 10-31: the item.js `quiet` stage (ssh to a home host) never runs on the worker (recording.mjs `only` lists omit it; post.py does quiet).
 const SERVER_ONLY=new Set(['../drain.js','../model-roles.js','../ops/media-jobs.js','../repos/media-ledger-repo.js','../repos/media-repo.js','../repos/ops-report-repo.js',
- './assess.js','./biography-candidates.js','./edge-purge.js','./item.js','./headings.js','./identity.js','./ingest.js','./links.js','./llm.js','./preview.js','./quotes.js','./tools.js','./youtube.js']);
+ './assess.js','./biography-candidates.js','./edge-purge.js','./item.js','./headings.js','./quiet-repair.js','./identity.js','./ingest.js','./links.js','./llm.js','./preview.js','./quotes.js','./tools.js','./youtube.js']);
 const unlisted=new Set();
 const outfile=process.argv[2]||'tmp/whole-worker/api/lib/media/whole-recording.mjs';
 const result=await build({entryPoints:['scripts/media/whole-worker/recording.mjs'],outfile,bundle:true,platform:'node',format:'esm',target:'node22',metafile:true,
