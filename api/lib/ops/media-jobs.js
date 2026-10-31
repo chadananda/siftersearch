@@ -1928,7 +1928,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           phase('lan');
           LH.beatStart(st, 'q_lan', now());
           const marks = LH.chainMarks(st), lanAt = now();
-          const lan = await QF.tick(st, { ...deps, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
+          const lan = await QF.tick(st, { ...deps, demux, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
           if (!alive()) return;
           st.q_lan = { at: now(), ...lan };
           LH.recordSteps(st, marks, lanAt, now());

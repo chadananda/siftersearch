@@ -9,7 +9,8 @@
 // after it has finished; cpu-finish lands through the whole intake and stamps tool/settings/fp per stage.
 // deps.edge (the /_q client, set while pods boot typed: MEDIA_POD_TYPED=1): the gpu step overflows there (SJ.gpuRoute); tower copies the
 // original + the previous step's files into the other queue's files/<file id>/ and acks each step on the queue that holds it.
-import { join } from 'node:path';
+import { join, extname } from 'node:path';
+import { VIDEO } from './r2-stage.js';
 import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
 import { decide } from './exclusions.js';
@@ -98,8 +99,21 @@ export async function feed(st, deps) {
 }
 
 const typedFileId = (itemId, sha) => `t${itemId}-${sha.slice(0, 12)}`;
+// Chad 10-30: "pushing video around to process audio is simply absurd". A typed chain's input is the recording's AUDIO: a video's audio track,
+// stream-copied (no re-encode, so every step decodes the same samples), kept beside the talk as TYPED_INPUT.<ext> while the chain lives; the
+// chain's sha names that file. Tower keeps the video (meta.original): adoption restores original + source. No audio track → the original.
+export const TYPED_INPUT = '.typed-input';
+async function chainInput(it, m, demux) {
+  if (!demux || !VIDEO.has(extname(m.original).slice(1).toLowerCase())) return m.original;
+  const a = await demux(join(it.dir, m.original), it.dir).catch(() => null);
+  if (!a) return m.original;
+  const rel = `${TYPED_INPUT}.${a.ext}`;
+  await rename(a.file, join(it.dir, rel));
+  return rel;
+}
+const chainSrc = (it, m, ch) => join(it.dir, ch.src || m.original);
 /** Typed feed: only while hosts for all three steps are engaged; keeps ~TARGET_H of prep queued; order by band (pickNext). */
-async function feedTyped(st, cap, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople }) {
+async function feedTyped(st, cap, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null }) {
   const types = new Set(cap.hosts.flatMap((h) => h.types || []));
   const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t) && !(t === 'gpu' && edge));   // pods boot on the edge's gpu backlog
   if (lack.length) return { fed: 0, why: `no ${lack.join('/')} host engaged` };
@@ -113,12 +127,13 @@ async function feedTyped(st, cap, { q, edge = null, repo, wr, readMeta = readMet
     try {
       const it = await repo.getMediaItem(itemId), m = await readMeta(it.dir);
       if (await gated(it, m, repo, { cbPeople })) continue;
-      const input = join(it.dir, m.original), sha = await wr.fileSha(input);
+      const src = await chainInput(it, m, demux), input = join(it.dir, src), sha = await wr.fileSha(input);
       const wj = { ...wr.wholeJob(it, m, sha), threads: 4 }, fileId = typedFileId(itemId, sha), audio_s = m.duration_s || 0;
+      if (src !== m.original) wj.input = 'in' + extname(src);
       const { bytes } = await q.put('files', fileId, wj.input, input);
       const job = SJ.typedJob('cpu-prep', { itemId, fileId, wj, band: SJ.bandOf(st, itemId), audio_s, bytes });
       await q.enqueue([job]);
-      st.chains[itemId] = { sha, fileId, slug: it.slug, input: wj.input, audio_s, at: now() };
+      st.chains[itemId] = { sha, fileId, slug: it.slug, input: wj.input, audio_s, at: now(), bytes, ...(src !== m.original ? { src } : {}) };
       st.qjobs[job.id] = { itemId, slug: it.slug, sha, kind: 'typed', type: 'cpu-prep', audio_s, at: now() };
       queuedS += audio_s; fed++;
     } catch (e) { st.queue.push(itemId); return { fed, error: `#${itemId}: ${e.message}`.slice(0, 300) }; }
@@ -178,7 +193,7 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           if (where === 'edge') buf.staged_h += (ch.audio_s || 0) / 3600;
           const files = where !== src ? sentFiles(r.files) : r.files;   // staged: what the next host rebuilds itself never crosses the uplink
           if (where !== src) {   // the next step runs on the other transport: its inputs go into that queue's files/<file id>/
-            if (where === 'edge') await nq.put('files', ch.fileId, ch.input, join(it.dir, m.original));   // the LAN holds it from the feed
+            if (where === 'edge') await nq.put('files', ch.fileId, ch.input, chainSrc(it, m, ch));   // the LAN holds it from the feed
             for (const f of files) { const tmp = join(stg, 'x', 'item', f.path); await sq.get('results', j.id, 'item/' + f.path, tmp); await nq.put('files', ch.fileId, 'item/' + f.path, tmp); }
           }
           const job = SJ.typedJob(next, { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: j.id, files, staged: where !== src }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
@@ -202,6 +217,7 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           st.done.push({ id: it.id, slug: it.slug, mode: 'typed', remaster: meta.remaster?.status || null, swapped: meta.remaster?.swapped ?? null, audio_s: ch.audio_s, gpu: ch.gpu?.host, pod: ch.gpu?.host, prep: ch['cpu-prep']?.host, finish: j.host, at: now(), via: 'queue' });
           provePool(st, ch.gpu?.host);
           for (const x of [j.id, ch['cpu-prep']?.id, ch.gpu?.id]) if (x) ackJob(x);
+          if (ch.src) await rm(join(it.dir, ch.src), { force: true }).catch(() => {});
           delete st.chains[qj.itemId];
           adopted++;
         }
@@ -249,7 +265,7 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
     let withdrawn = false;
     try {
       const have = new Map(((await edge.list?.('files', ch.fileId).catch(() => null)) || []).map((o) => [o.name, o.bytes]));
-      await putOnce(have, ch.fileId, ch.input, join(it.dir, m.original));
+      await putOnce(have, ch.fileId, ch.input, chainSrc(it, m, ch));
       for (const f of files) {
         const tmp = join(stg, 'item', f.path);
         try { await q.get('results', prep.id, 'item/' + f.path, tmp); } catch (e) { if (e.status === 404) e.lost = true; throw e; }

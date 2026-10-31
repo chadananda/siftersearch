@@ -257,6 +257,26 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     const g = deliver('gpu', {}, E);
     expect(g.body.inputs.map((i) => i.path)).toEqual(['item/meta.json', 'item/waveform.json']);
   });
+  it('a video talk runs on its audio track only: prep (LAN) and the pod (edge) get the stream-copied track, never the video; tower keeps the video', async () => {
+    engage(); st.queue = [1];
+    const m1 = join(items[1].dir, 'meta.json');
+    await writeFile(join(items[1].dir, 'orig.mp4'), 'VIDEO+audio-1');
+    await writeFile(m1, JSON.stringify({ ...JSON.parse(await readFile(m1, 'utf8')), original: 'orig.mp4' }));
+    const demux = async (src, dir) => { const file = join(dir, 'tmp-track.m4a'); await writeFile(file, 'audio-1'); return { file, ext: 'm4a' }; };
+    const d = { ...deps, edge: E.q, demux };
+    await feed(st, d);
+    const ch = st.chains[1], p = deliver('cpu-prep');
+    expect(ch).toMatchObject({ src: '.typed-input.m4a', input: 'in.m4a', sha: sha('audio-1') });
+    expect(p.body.job).toMatchObject({ input: 'in.m4a', input_sha: sha('audio-1') });
+    expect(String(store.get(`files/${p.file_id}/in.m4a`))).toBe('audio-1');
+    await pull(st, d);
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 1 });
+    expect(onEdge('files/').filter((k) => /\/in\./.test(k)).map((k) => String(E.store.get(k)))).toEqual(['audio-1']);   // the pod's input: audio only
+    deliver('gpu', {}, E); await pull(st, d); deliver('cpu-finish');
+    expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });
+    await expect(readFile(join(items[1].dir, '.typed-input.m4a'))).rejects.toThrow();   // the track goes with the chain
+    expect(String(await readFile(join(items[1].dir, 'orig.mp4')))).toBe('VIDEO+audio-1');
+  });
   it('light.flac never crosses the uplink when prep\'s pull stages the gpu step inline either: not uploaded, not a gpu input', async () => {
     lanOnly(); st.queue = [1];
     const d = { ...deps, edge: E.q };
