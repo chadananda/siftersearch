@@ -15,7 +15,7 @@ export default async function opsReportRoutes(fastify) {
   await fastify.register(mediaQueueRoutes);   // tower's LAN media queue, same API as the edge /_q (api/routes/media-queue.js)
   fastify.get('/ops/media/lan-queue', { preHandler: requireInternal }, async (req) => {   // its stats + engaged hosts; ?key=1 adds the machines' key
     const Q = await import('../lib/repos/media-queue-repo.js');
-    return { url: 'http://tower-nas:7843/api/admin/ops/queue', stats: await Q.queueCall('stats'), capacity: await Q.queueCall('capacity'), ...(req.query?.key ? { machine_key: Q.machineKey() } : {}) };
+    return { url: 'http://tower-nas:7843/api/admin/ops/queue', stats: await Q.queueCall('stats'), capacity: await Q.queueCall('capacity'), ...(req.query?.key === '1' ? { machine_key: Q.machineKey() } : {}) };
   });
   await fastify.register(deweyJobsOps);   // Dewey's job registry + worker contract (api/routes/dewey-jobs-ops.js)
   const known = (name) => { if (!reportNames().includes(name)) throw ApiError.notFound?.(`unknown report ${name}`) ?? Object.assign(new Error(`unknown report ${name}`), { statusCode: 404 }); };
