@@ -27,7 +27,12 @@ Tables via a repo (`api/lib/repos/archives-repo.js`), never direct DB from scrip
   covenant-breaking date, so Chad can take the ones written before. Source: the drive's own folder (e.g. Books_by_Covenant-Breakers) + an author list.
 
 ## Open
-- ~42k photos: in scope? later pass?
+- (none)
+
+## Decided (Chad 10-31)
+- Photos are NOT in scope for now. The copied archive on /tank/archives is kept whole, so photos (and anything else) can be explored later.
+  Current focus: historical TALKS and BOOKS. Photo sets stay listed under set-aside, never recommended.
+- Chad wants to see and approve the intake process before more is built or imported (process laid out 10-31: steps 1–9 above).
 
 ## Progress (10-30)
 - A done (5ae8dfa0). Matching fixed (e365bbe8, f8d0a425): catalogue verdict from its reason; copies collapsed by fingerprint; books/scans vs
