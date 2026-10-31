@@ -1,6 +1,13 @@
 {
-  "generated": "2026-10-31T14:02:44.076Z",
+  "generated": "2026-10-31T14:35:25.720Z",
   "entries": [
+    {
+      "hash": "7000d557",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "A talk missing only finish stages goes to cpu-finish, never back to gpu; gpu re-runs only when the pure remaster input is gone (have.pure false) or remaster never ran",
+      "scope": null
+    },
     {
       "hash": "9514d5d3",
       "date": "2026-10-30",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Phase 0 hot layer — new phrase points go to phrases_hot on the RAM-disk Qdrant (qdrant-hot :6335) while phrases on /fast stays frozen; search merges main + hot (hot down = main only); phrases writes mirrored; coverage counts both; units marked upserted=2 + phrase-hot-reconcile re-sends what a crash lost (queued at every indexer start); RAM-full guard; units at phase-0 values (44G, snapshots on /crutch) (storage plan §6.6)",
       "scope": "index"
-    },
-    {
-      "hash": "f7e16181",
-      "date": "2026-10-21",
-      "type": "Other",
-      "description": "RAM-disk kit (deploy/qram units, scripts/ops/qram.mjs flush/restore + tests) and NUT kit (deploy/nut, upssched powerdown hook, ups-mail) — committed, NOT installed; plan §1.1 UPS test procedure, §6.4 install steps",
-      "scope": "prep"
     }
   ],
   "grouped": {
+    "2026-10-31": [
+      {
+        "hash": "7000d557",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "A talk missing only finish stages goes to cpu-finish, never back to gpu; gpu re-runs only when the pure remaster input is gone (have.pure false) or remaster never ran",
+        "scope": null
+      }
+    ],
     "2026-10-30": [
       {
         "hash": "9514d5d3",
@@ -7010,13 +7019,6 @@
         "type": "New",
         "description": "Phase 0 hot layer — new phrase points go to phrases_hot on the RAM-disk Qdrant (qdrant-hot :6335) while phrases on /fast stays frozen; search merges main + hot (hot down = main only); phrases writes mirrored; coverage counts both; units marked upserted=2 + phrase-hot-reconcile re-sends what a crash lost (queued at every indexer start); RAM-full guard; units at phase-0 values (44G, snapshots on /crutch) (storage plan §6.6)",
         "scope": "index"
-      },
-      {
-        "hash": "f7e16181",
-        "date": "2026-10-21",
-        "type": "Other",
-        "description": "RAM-disk kit (deploy/qram units, scripts/ops/qram.mjs flush/restore + tests) and NUT kit (deploy/nut, upssched powerdown hook, ups-mail) — committed, NOT installed; plan §1.1 UPS test procedure, §6.4 install steps",
-        "scope": "prep"
       }
     ]
   }

@@ -5,7 +5,7 @@
 import { createReadStream, existsSync, statSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { join, dirname, normalize, extname } from 'path';
-import { mediaIndexRows, momentByKey, listMoments, introClips, repairList, gradeCounts, listMedia, mediaFacets, getMediaBySlug, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
+import { mediaIndexRows, momentByKey, listMoments, introClips, repairList, gradeCounts, listMedia, mediaFacets, getMediaBySlug, onAirInGroup, mediaStates, listChannels, upsertChannel, mediaParagraphs, mediaByDocIds, speakersByKeys, getSpeaker, listSpeakers } from '../lib/repos/media-repo.js';
 import { enqueue } from '../lib/repos/ops-report-repo.js';
 import { requireInternal } from '../lib/auth.js';
 const isInternal = (req) => !!process.env.DEPLOY_SECRET && req.headers['x-internal-key'] === process.env.DEPLOY_SECRET;
@@ -350,6 +350,11 @@ export default async function mediaRoutes(fastify) {
   // one item: what the player needs (no audio bytes)
   fastify.get('/:slug', async (req, reply) => {
     const it = await getMediaBySlug(req.params.slug);
+    // a duplicate copy (media-dedupe): its URL moves to the group's on-air copy — the page 301s there
+    if (it?.state === 'duplicate' && it.dup_group != null) {
+      const to = await onAirInGroup(it.dup_group);
+      if (to && to !== it.slug) { reply.header('Cache-Control', 'public, max-age=300, s-maxage=300'); return reply.code(404).send({ error: 'NotFound', moved_to: to }); }
+    }
     // NOT PUBLISHED until properly remastered (Chad 10-29: "don't let them have a published state until properly remastered"):
     // a talk without a passed remaster (restored = 1) is not served to the public at all; internal tools still read it
     if (!it || it.state !== 'done' || !it.dir || (it.restored !== 1 && !isInternal(req))) { reply.header('Cache-Control', 'public, max-age=60, s-maxage=60'); return reply.code(404).send({ error: 'NotFound' }); }

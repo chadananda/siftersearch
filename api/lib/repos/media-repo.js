@@ -8,7 +8,7 @@ import { approvedSpeakerLabel, canonicalSpeakerKey, speakerDecisions } from '../
 const now = () => new Date().toISOString();
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
 const COLS = new Set(['stages_done', 'published_at', 'queue_rank', 'audience', 'grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
-  'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta', 'restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz', 'completed_at']);
+  'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta', 'restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz', 'completed_at', 'dup_group']);
 
 export async function createMediaItem({ source_kind, source_ref, sha256 = null, youtube_id = null, channel = null, tradition = null, collection = null, state = 'queued', why = null }) {
   const at = now();
@@ -71,6 +71,47 @@ export async function excludeItems(ids = [], why) {
     await transaction(ids.slice(i, i + 200).map((id) => ({ sql: `UPDATE media_items SET state = 'excluded', why = ?, queue_rank = NULL, updated_at = ? WHERE id = ?`, args: [String(why).slice(0, 500), now(), Number(id)] })), 'media:exclude');
   }
   return ids.length;
+}
+
+// ── duplicate talks (api/lib/media/dedupe.js) ──
+const DUP_COLS = 'id, slug, state, why, dir, doc_id, restored, dup_group, source_ref, title';
+/** Every row in a duplicate group: state 'duplicate' or a dup_group, plus the copies they name ("Dewey duplicate of <slug>", "same file as item N"). */
+export async function dedupeRows() {
+  const rows = await queryAll(`SELECT ${DUP_COLS} FROM media_items WHERE state = 'duplicate' OR dup_group IS NOT NULL`, [], 'media:dedupe-rows');
+  const have = new Set(rows.map((r) => r.id));
+  const slugs = [...new Set(rows.map((r) => /^Dewey duplicate of (\S+)/.exec(r.why || '')?.[1]).filter(Boolean))];
+  const ids = [...new Set(rows.map((r) => Number(/^same file as item (\d+)/.exec(r.why || '')?.[1])).filter(Boolean))].filter((id) => !have.has(id));
+  const groups = [...new Set(rows.map((r) => r.dup_group).filter((g) => g != null && !have.has(g)))];
+  const more = [];
+  for (let i = 0; i < slugs.length; i += 500) { const s = slugs.slice(i, i + 500); more.push(...await queryAll(`SELECT ${DUP_COLS} FROM media_items WHERE slug IN (${s.map(() => '?').join(',')})`, s, 'media:dedupe-targets')); }
+  const byId = [...ids, ...groups];
+  for (let i = 0; i < byId.length; i += 500) { const s = byId.slice(i, i + 500); more.push(...await queryAll(`SELECT ${DUP_COLS} FROM media_items WHERE id IN (${s.map(() => '?').join(',')})`, s, 'media:dedupe-targets')); }
+  for (const r of more) if (!have.has(r.id)) { have.add(r.id); rows.push(r); }
+  return rows;
+}
+/** Every copy of one talk joins group g. */
+export async function setDupGroup(ids = [], g) {
+  if (!ids.length) return 0;
+  await transaction(ids.map((id) => ({ sql: 'UPDATE media_items SET dup_group = ?, updated_at = ? WHERE id = ? AND dup_group IS NOT ?', args: [Number(g), now(), Number(id), Number(g)] })), 'media:dup-group');
+  return ids.length;
+}
+/** Terminal outcome 'duplicate': off air, out of every queue (an excluded row stays excluded). */
+export async function markDuplicateItems(ids = [], why, g) {
+  for (let i = 0; i < ids.length; i += 200) {
+    await transaction(ids.slice(i, i + 200).map((id) => ({ sql: `UPDATE media_items SET state = CASE WHEN state = 'excluded' THEN state ELSE 'duplicate' END, why = CASE WHEN state = 'excluded' THEN why ELSE ? END,
+      queue_rank = NULL, dup_group = ?, updated_at = ? WHERE id = ?`, args: [String(why).slice(0, 500), Number(g), now(), Number(id)] })), 'media:mark-duplicate');
+  }
+  return ids.length;
+}
+/** The group's best copy, held as a duplicate at intake, goes back through the pipeline. */
+export async function reviveItem(id, why, g) {
+  await transaction([{ sql: `UPDATE media_items SET state = 'queued', why = ?, dup_group = ?, updated_at = ? WHERE id = ? AND state = 'duplicate'`, args: [String(why).slice(0, 500), Number(g), now(), Number(id)] }], 'media:revive');
+  return 1;
+}
+/** The on-air copy of group g (the redirect target for its duplicates), or null. */
+export async function onAirInGroup(g) {
+  if (g == null) return null;
+  return (await queryOne(`SELECT slug FROM media_items WHERE dup_group = ? AND state = 'done' AND restored = 1 AND slug IS NOT NULL ORDER BY id LIMIT 1`, [Number(g)], 'media:dup-on-air'))?.slug || null;
 }
 
 /** Undo excludeItems for talks hidden on purpose (media-restore): an EXCLUDED row goes back to `state` (default 'done'). → how many */

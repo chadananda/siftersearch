@@ -743,12 +743,17 @@ export async function runItem(item, opts = {}, deps = {}) {
       // marks an automatic duplicate when both independent regions match, otherwise an opening match is a review hold.
       const raw = await readJson(join(dir, 'transcript.raw.json'), { segments: [] });
       const text = (raw.segments || []).map((s) => s.text || (s.words || []).map((w) => w.w || '').join(' ')).join(' ');
-      const verdict = await (await import('./preview.js')).previewVerdict({ text, duration_s: meta.duration_s, title: meta.title, excludeId: item.id }, { repo });
-      meta.dedup = { ...verdict, at: d.now() };
+      // the copy media-dedupe already chose as its group's best is never held again as a duplicate or for review
+      const verdict = meta.dedup?.verdict === 'best' ? { ...meta.dedup } : await (await import('./preview.js')).previewVerdict({ text, duration_s: meta.duration_s, title: meta.title, excludeId: item.id }, { repo });
+      // a duplicate: the BETTER copy stays (dedupe.js, Chad 10-31) — the new copy goes on if it measures better; the held one
+      // stays on air until this one is complete, then media-dedupe retires it
+      const dup = verdict.verdict === 'best' ? { action: 'best', group: verdict.group, reason: verdict.reason } : verdict.verdict === 'duplicate' ? await (await import('./dedupe.js')).intakeDedupe({ item, meta, verdict }, { repo, readMeta: (dir) => readJson(join(dir, 'meta.json')) }).catch(() => null) : null;
+      meta.dedup = verdict.verdict === 'best' ? verdict : dup?.action === 'best' ? { ...verdict, verdict: 'best', over: verdict.of, group: dup.group, reason: dup.reason, at: d.now() } : { ...verdict, at: d.now() };
       rec.dedup = meta.dedup;
       await save();
-      if (verdict.verdict === 'duplicate') {
-        const why = `Dewey duplicate of ${verdict.of} (${verdict.by}, score ${verdict.score})`;
+      if (dup?.group != null && repo.setDupGroup) await repo.setDupGroup([item.id, dup.held?.id].filter(Boolean), dup.group);
+      if (verdict.verdict === 'duplicate' && dup?.action !== 'best') {
+        const why = `Dewey duplicate of ${verdict.of} (${verdict.by}, score ${verdict.score})${dup?.reason ? `; ${dup.reason}` : ''}`;
         await repo.updateMediaItem(item.id, { state: 'duplicate', why, stage: 'preview' });
         return { duplicate: true, of: verdict.of, score: verdict.score, slug: meta.slug, done };
       }

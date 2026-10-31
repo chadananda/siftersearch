@@ -2073,6 +2073,14 @@ export const migrations = {
     try { await query('ALTER TABLE intake_items ADD COLUMN sample TEXT'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
     logger.info('Migration 191 complete: intake_items.sample');
   },
+
+  192: async () => {
+    // DUPLICATE TALKS (Chad 10-31): every copy of one talk shares dup_group (the group's lowest id); the best stays, the rest are
+    // terminal 'duplicate' and their slugs redirect to the group's on-air copy (api/lib/media/dedupe.js).
+    try { await query('ALTER TABLE media_items ADD COLUMN dup_group INTEGER'); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    await query('CREATE INDEX IF NOT EXISTS idx_media_items_dup_group ON media_items(dup_group) WHERE dup_group IS NOT NULL');
+    logger.info('Migration 192 complete: media_items.dup_group');
+  },
 };
 
 export const graphMigrations = {
