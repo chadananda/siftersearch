@@ -731,7 +731,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         const { tmpdir } = await import('os');
         const { unlink } = await import('fs/promises');
         const cov = await coverageCheck({ file: join(dir, v.file), segments: raw.segments || [], tools, asrOpts, lang: lang === 'multi' ? '' : lang, stop,
-          io: { readJson, unlink, tmp: (n) => join(tmpdir(), `media-${process.pid}-${Date.now()}-${n}`) } }).catch((err) => { if (err.code === 'DRAIN') throw err; return { coverage: { error: String(err.message).slice(0, 200) } }; });
+          io: { readJson, writeJson, unlink, tmp: (n) => join(tmpdir(), `media-${process.pid}-${Date.now()}-${n}`) } }).catch((err) => { if (err.code === 'DRAIN') throw err; return { coverage: { error: String(err.message).slice(0, 200) } }; });
         rec.coverage = cov.coverage;
         if (cov.segments && cov.coverage.repaired) { raw.segments = cov.segments; await writeJson(out, raw); }
       } else if (meta.asr?.coverage) rec.coverage = { unmeasured: true, why: 'transcribed again outside the worker image: the coverage check runs only there', before: meta.asr.coverage.uncovered_after_pct ?? null };

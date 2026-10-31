@@ -45,7 +45,7 @@ describe('coverageCheck', () => {
       ffmpeg: async () => {},
       asr: async () => {},
     },
-    io: { tmp: (n) => `/tmp/${n}`, unlink: async () => {}, readJson: async () => ({ segments: asrWords.length ? [{ s: 0, e: 20, words: asrWords }] : [] }) },
+    io: { tmp: (n) => `/tmp/${n}`, writeJson: async () => {}, unlink: async () => {}, readJson: async () => ({ segments: asrWords.length ? [{ s: 0, e: 20, words: asrWords }] : [] }) },
   });
   const base = [{ s: 0, e: 16, words: words(0, 16) }, { s: 33, e: 34, words: words(33, 34) }];
   void frames;
@@ -64,13 +64,24 @@ describe('coverageCheck', () => {
     expect(r.coverage.holes_after).toEqual([]);
   });
   it('retries EVERY hole, not the first 12 (Chad: no caps; 10-31 talk 1947: 259 holes, 12 tried, 94 % of its speech left without words)', async () => {
-    let asrCalls = 0;
-    const tools = { pcmStream: async (_f, _sr, on) => { const a = new Float32Array(16000 * 140); a.fill(0.1, 0, 16000 * 70); on(a); }, ffmpeg: async () => {}, asr: async () => { asrCalls++; } };
-    const io = { tmp: (n) => `/tmp/${n}`, unlink: async () => {}, readJson: async () => ({ segments: [] }) };
+    let asrCalls = 0, manifest = null;
+    const tools = { pcmStream: async (_f, _sr, on) => { const a = new Float32Array(16000 * 140); a.fill(0.1, 0, 16000 * 70); on(a); }, ffmpeg: async () => {}, asr: async (_s, _i, o) => { asrCalls++; expect(o.windows).toBe('/tmp/cov-windows.json'); } };
+    const io = { tmp: (n) => `/tmp/${n}`, writeJson: async (p, v) => { manifest = v; }, unlink: async () => {}, readJson: async () => ({ segments: [] }) };
     const lone = []; for (let t = 0; t < 70; t += 5) lone.push({ s: t, e: t + 0.3, words: [{ w: 'x', s: t, e: t + 0.3 }] });
     const r = await coverageCheck({ file: 'a.m4a', segments: lone, tools, io, lang: 'en' });
     expect(r.coverage.holes_before).toBeGreaterThan(12);
-    expect(asrCalls).toBe(r.coverage.holes_before);
+    expect(manifest.length).toBe(r.coverage.holes_before);   // every hole is in the batch
+    expect(r.coverage.nonspeech).toBe(r.coverage.holes_before);
+    // ONE model load for all of them (10-31 aorus: a process per hole kept a 26-min talk 2 h in transcribe)
+    expect(asrCalls).toBe(1);
+  });
+  it('a clip that failed inside the batch (no output) counts as an error, not as non-speech; a failed batch counts every clip', async () => {
+    const pcm = async (_f, _sr, on) => { const a = new Float32Array(16000 * 40); a.fill(0.1, 0, 16000 * 34); on(a); };
+    const io = { tmp: (n) => `/tmp/${n}`, writeJson: async () => {}, unlink: async () => {}, readJson: async () => null };
+    const r = await coverageCheck({ file: 'a.m4a', segments: base, tools: { pcmStream: pcm, ffmpeg: async () => {}, asr: async () => {} }, io, lang: 'en' });
+    expect([r.coverage.errors, r.coverage.nonspeech, r.coverage.holes_after.length]).toEqual([1, 0, 1]);
+    const f = await coverageCheck({ file: 'a.m4a', segments: base, tools: { pcmStream: pcm, ffmpeg: async () => {}, asr: async () => { throw new Error('cuda'); } }, io, lang: 'en' });
+    expect(f.coverage.errors).toBe(1);
   });
   it('leaves the hole on the record when the re-transcription finds nothing usable and it cannot tell (the gate blocks it once it is long)', async () => {
     const { tools, io } = mk(words(1.5, 3));

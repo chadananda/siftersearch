@@ -89,9 +89,9 @@ export async function speechOf(file, tools) {
   return speechSpans(fr.dbs());
 }
 
-/** Find the holes in `segments`, re-transcribe each on its own (1.5 s of context either side), splice what comes back and
+/** Find the holes in `segments`, re-transcribe each (1.5 s of context either side; all windows in one model load), splice what comes back and
  *  re-measure. A hole whose window yields no words is recorded as non-speech (music, noise) and not counted again.
- *  tools: { pcmStream, ffmpeg, asr }, io: { readJson, unlink, tmp } — injected. Returns { segments, coverage }. */
+ *  tools: { pcmStream, ffmpeg, asr }, io: { readJson, writeJson, unlink, tmp } — injected. Returns { segments, coverage }. */
 /** Which holes to re-transcribe: the longest first (the ones that would block publishing), at most max, returned latest first so earlier
  *  indexes stay valid while splicing. (10-31: it took the first 12 by time; 49 of 57 blocked talks had > 12 holes and the blocking one was never tried.) */
 export const holesToRetry = (holes, max) => [...holes].sort((a, b) => (b.e - b.s) - (a.e - a.s)).slice(0, max).sort((a, b) => b.s - a.s);
@@ -106,17 +106,35 @@ export async function coverageCheck({ file, segments, tools, asrOpts = {}, lang 
   let segs = segments;
   const nonspeech = [];
   let repaired = 0, errors = 0;
-  for (const h of holesToRetry(before.holes, maxWindows)) {
-    const start = Math.max(0, h.s - 1.5), wav = io.tmp(`cov-${Math.round(h.s)}.wav`), wout = `${wav}.json`;
-    try {
-      await tools.ffmpeg(['-ss', String(start), '-t', String(h.e - start + 1.5), '-i', file, '-ac', '1', '-ar', '16000', wav], { stop });
-      await tools.asr('transcribe', wav, { ...asrOpts, lang: lang === 'multi' ? '' : lang, output: wout, batch: 8 }, { stop });
-      const fresh = (await io.readJson(wout, { segments: [] })).segments || [];
+  // Every window is cut first, then ALL are transcribed in ONE media_tool call (--windows): Whisper and the align model load once.
+  // 10-31 aorus: a fresh process per hole (python + torch + Whisper + VAD + align model each time) held a 26-min talk 2 h in transcribe.
+  const wins = holesToRetry(before.holes, maxWindows).map((h) => { const wav = io.tmp(`cov-${Math.round(h.s)}.wav`); return { h, start: Math.max(0, h.s - 1.5), wav, wout: `${wav}.json` }; });
+  const manifest = io.tmp('cov-windows.json');
+  try {
+    const cut = [];
+    for (const w of wins) {
+      try { await tools.ffmpeg(['-ss', String(w.start), '-t', String(w.h.e - w.start + 1.5), '-i', file, '-ac', '1', '-ar', '16000', w.wav], { stop }); cut.push(w); }
+      catch (err) { if (err.code === 'DRAIN') throw err; errors++; }
+    }
+    let ran = !cut.length;
+    if (cut.length) {
+      try {
+        await io.writeJson(manifest, cut.map((w) => ({ input: w.wav, output: w.wout })));
+        await tools.asr('transcribe', cut[0].wav, { ...asrOpts, lang: lang === 'multi' ? '' : lang, windows: manifest, batch: 8 }, { stop });
+        ran = true;
+      } catch (err) { if (err.code === 'DRAIN') throw err; errors += cut.length; }
+    }
+    for (const w of ran ? cut : []) {   // latest first (holesToRetry's order): earlier indexes stay valid while splicing
+      const got = await io.readJson(w.wout, null).catch(() => null);
+      if (!got) { errors++; continue; }   // that clip failed inside the batch
+      const fresh = got.segments || [], h = w.h;
       let i = segs.findIndex((sg) => sg.s >= h.s); if (i < 0) i = segs.length;
-      const next = spliceWindow(segs, { i0: i, i1: i, s: h.s - TOL_S, e: h.e + TOL_S, lang: lang === 'multi' ? null : lang }, fresh, start);
+      const next = spliceWindow(segs, { i0: i, i1: i, s: h.s - TOL_S, e: h.e + TOL_S, lang: lang === 'multi' ? null : lang }, fresh, w.start);
       if (wordIntervals(next).length > wordIntervals(segs).length) { segs = next; repaired++; } else nonspeech.push(h);
-    } catch (err) { if (err.code === 'DRAIN') throw err; errors++; }
-    finally { await io.unlink(wav).catch(() => {}); await io.unlink(wout).catch(() => {}); }
+    }
+  } finally {
+    for (const w of wins) { await io.unlink(w.wav).catch(() => {}); await io.unlink(w.wout).catch(() => {}); }
+    await io.unlink(manifest).catch(() => {});
   }
   const after = measureCoverage(segs, speech, { ignore: nonspeech });
   return {

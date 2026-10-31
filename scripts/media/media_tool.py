@@ -368,9 +368,56 @@ def align_groups(whisperx, segs_by_lang, audio):
     return sorted(out, key=lambda sg: sg['start']), ok
 
 
+def transcribe_windows(a):
+    """--windows FILE: a JSON list of {input, output}. Many short clips (the coverage check's hole retries) in ONE process: Whisper and
+    each language's align model load once, not once per clip (10-31 aorus: a 26-min talk sat 2 h in transcribe, a fresh process per hole).
+    Each output has the single-file transcript's shape (language, segments with words). A clip that fails is left without an output."""
+    import torch
+    torch.set_num_threads(a.threads)
+    import whisperx
+    t0 = time.time()
+    with open(a.windows) as f:
+        wins = json.load(f)
+    dev, ct = device()
+    cpp = asr_engine() == 'whispercpp'
+    asr_opts = {'initial_prompt': a.prompt or None, 'condition_on_previous_text': False, 'beam_size': 5}
+    model = None if cpp else whisperx.load_model(a.model, dev, compute_type=ct, language=a.lang or None, asr_options=asr_opts,
+                                                 vad_method='silero', threads=a.threads)
+    aligners, done = {}, 0
+    for w in wins:
+        try:
+            audio = whisperx.load_audio(w['input'])
+            if cpp:
+                segs, lang = cpp_asr(audio, a.lang or None, a.prompt, a.threads)
+            else:
+                res = model.transcribe(audio, batch_size=a.batch, language=a.lang or None)
+                segs, lang = res['segments'], res.get('language') or a.lang
+            ok = True
+            if segs:
+                try:
+                    if lang not in aligners:
+                        aligners[lang] = whisperx.load_align_model(language_code=lang, device=dev)
+                    am, meta = aligners[lang]
+                    segs = whisperx.align(segs, am, meta, audio, dev, return_char_alignments=False)['segments']
+                except Exception as err:
+                    print(f'align failed ({lang}): {err}', file=sys.stderr)
+                    ok = False
+            out = [{'s': round(sg['start'], 3), 'e': round(sg['end'], 3), 'text': sg['text'].strip(), 'spk': None, 'lang': lang,
+                    'words': [{'w': x.get('word', ''), 's': round(x['start'], 3) if 'start' in x else None, 'e': round(x['end'], 3) if 'end' in x else None,
+                               'p': round(x.get('score', 0), 3) if 'score' in x else None} for x in sg.get('words', [])]} for sg in segs]
+            with open(w['output'], 'w') as f:
+                json.dump({'language': lang, 'model': a.model, 'aligned': ok, 'segments': out, 'duration_s': round(len(audio) / SR, 2)}, f, ensure_ascii=False)
+            done += 1
+        except Exception as err:
+            print(f'window failed ({w.get("input")}): {err}', file=sys.stderr)
+    print(jdumps({'windows': len(wins), 'done': done, 'seconds': round(time.time() - t0, 1)}))
+
+
 def cmd_transcribe(a):
     """--lang xx: one language. --lang multi: an INTERPRETED talk — diarize first, identify each speaker block's language,
     transcribe each block in its own language, align per language (Persian speaker + English interpreter)."""
+    if a.windows:
+        return transcribe_windows(a)
     import torch
     torch.set_num_threads(a.threads)
     import whisperx
@@ -825,6 +872,7 @@ def main():
         s.add_argument('--ss', type=float, default=None)   # encode: window start (s)
         s.add_argument('--t', type=float, default=None)    # encode: window length (s)
         s.add_argument('--spans', default='')   # spkmerge: the speakers' spans JSON
+        s.add_argument('--windows', default='')   # transcribe: JSON [{input, output}] — many clips, one model load
     a = p.parse_args()
     os.environ.setdefault('MEDIA_GPU_NEED_GB', str(GPU_NEED_GB.get(a.cmd, 1.0)))   # a retry after an OOM sets more
     fn = {'metrics': cmd_metrics, 'probe': cmd_probe, 'langid': cmd_langid, 'dfn': cmd_dfn, 'encode': cmd_encode, 'transcribe': cmd_transcribe, 'diarize': cmd_diarize, 'grade': cmd_grade, 'levels': cmd_levels, 'spkscreen': cmd_spkscreen, 'spkmerge': cmd_spkmerge, 'realign': cmd_realign}[a.cmd]
