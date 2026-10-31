@@ -137,9 +137,9 @@ function onDeck() {
   return { waiting: ledger.waiting.length, heading: toGpu.size };
 }
 
+const diskFreeGb = () => { try { const f = statfsSync(ROOT); return f.bavail * f.bsize / 1073741824; } catch { return Infinity; } };
 log('start', { slots: CAP, asked: SLOTS, ram_gb: Math.round(memTotalGb()), disk_gb: Math.round(diskFreeGb()), run: RUN, image: IMAGE, device: DEVICE, can: CAN, base: q.base });
 const gpuSeen = [];   // GPU utilisation over the last minute: idle + nothing queued at it → ramp one more talk into CPU prep
-const diskFreeGb = () => { try { const f = statfsSync(ROOT); return f.bavail * f.bsize / 1073741824; } catch { return Infinity; } };
 let claimedAt = 0;
 const cpuSeen = [];   // CPU samples over the last ~2 min: a full CPU holds claims (the GPU-feeding stages would only slow)
 while (!stopping || running.size) {
