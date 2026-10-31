@@ -33,6 +33,15 @@ export default async function mediaOps(fastify) {
     const r = await mediaRedo({ ids: [req.params.id], stages: [].concat(req.body?.stages || []), by: by(req) });
     return r.error ? reply.code(400).send(r) : r;
   });
+  // rentals valve: { pause: "reason" | false, maxPods?: 1-6 } → the pause file + the capacity file the lane reads every tick
+  fastify.post('/ops/media/rentals', guard, async (req, reply) => {
+    const b = req.body || {}, C = await import('../lib/media/cloud.js');
+    try {
+      if (b.pause !== undefined) await C.setRentalPause(b.pause ? `${b.pause} (${by(req)} ${new Date().toISOString()})` : null);
+      const capacity = b.maxPods != null ? await C.setRentalCapacity({ maxPods: Number(b.maxPods) }) : undefined;
+      return { paused: await C.rentalPauseReason(), ...(capacity ? { capacity } : {}) };
+    } catch (e) { return reply.code(400).send({ error: e.message }); }
+  });
   // promote an Aorus-accepted whole-recording image (the pods' immutable image; never an ssh edit of data/run on tower)
   fastify.post('/ops/media/worker-image', guard, async (req, reply) => {
     const b = req.body || {}, r = await (await import('../lib/media/cloud.js')).promoteWorker({ image: b.image, evidence: b.evidence, home_image: b.home_image, quiet_hosts: b.quiet_hosts, by: by(req) });

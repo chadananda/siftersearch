@@ -60,6 +60,7 @@ else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until
     const kv = (v) => v ? Object.fromEntries(v.split(',').map((x) => x.split('='))) : undefined;
     await out(await call('POST', '/ops/media/worker-image', { image: pos[0], evidence: val('--evidence'), home_image: kv(val('--home')), quiet_hosts: val('--quiet')?.split(',') }));
   }
-  else { console.error('usage: ops.mjs media promote-image <ghcr…@sha256> --evidence "…" [--home h=tag,…] [--quiet h,…] | progress | gauges [--host h --hours n --rows] | status <ref> | stage <stage> [--missing] | add <url|path>… | redo <id> <stage>…'); process.exit(2); }
+  else if (sub === 'rentals') await out(await call('POST', '/ops/media/rentals', { ...(flag('--resume') ? { pause: false } : val('--pause') ? { pause: val('--pause') } : {}), ...(val('--max-pods') ? { maxPods: Number(val('--max-pods')) } : {}) }));
+  else { console.error('usage: ops.mjs media rentals [--pause "why" | --resume] [--max-pods n] | promote-image <ghcr…@sha256> --evidence "…" [--home h=tag,…] [--quiet h,…] | progress | gauges [--host h --hours n --rows] | status <ref> | stage <stage> [--missing] | add <url|path>… | redo <id> <stage>…'); process.exit(2); }
 } else { console.error('usage: ops.mjs run <id> | failures [--hours N] | dewey-allow | bio-slugs | ops.mjs reports | report <name> [--days N] [--wait] [--latest]'); process.exit(2); }
 process.exit(0);

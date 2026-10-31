@@ -5,7 +5,7 @@
 // the account balance would fall below MEDIA_CLOUD_KEEP_BALANCE (90 — the balance is shared with SearchLayerPDF); every pod
 // is terminated when the queue is empty, on any fatal error, or by its own idle watchdog (15 min) if tower disappears.
 // State (pods, jobs in flight, spend) lives in a file, so a restart re-attaches instead of losing work. Deps injectable.
-import { readFile, writeFile, mkdir, rename } from 'fs/promises';
+import { readFile, writeFile, mkdir, rename, rm } from 'fs/promises';
 import { readFileSync } from 'fs';
 import { join, dirname, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
@@ -51,6 +51,13 @@ export async function rentalCapacity(requested, file = RENTAL_CAPACITY_FILE) {
 export async function rentalPauseReason(file = RENTAL_PAUSE_FILE) {
   try { return (await readFile(file, 'utf8')).trim() || 'operator pause'; }
   catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+}
+/** The operator valve: a reason pauses new rentals and staging (running pods finish what they hold, then go); null lifts it. */
+export async function setRentalPause(reason, file = RENTAL_PAUSE_FILE) {
+  if (!reason) { await rm(file, { force: true }); return null; }
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(`${file}.tmp`, String(reason).slice(0, 300)); await rename(`${file}.tmp`, file);
+  return rentalPauseReason(file);
 }
 /** The spend cap: the capacity file's capUsd (set by the media-cloud-capacity job) wins over MEDIA_CLOUD_CAP_USD. */
 export function capFromFile(file = RENTAL_CAPACITY_FILE) {
