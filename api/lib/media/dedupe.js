@@ -76,7 +76,7 @@ export function datesAgree(ma = {}, mb = {}) {
   return !ya || !yb || ya === yb;
 }
 const sameAudio = (a, b) => {
-  const sa = a.meta?.source?.sha256, sb = b.meta?.source?.sha256, fa = a.meta?.fingerprint ?? a.fingerprint, fb = b.meta?.fingerprint ?? b.fingerprint;
+  const sa = a.sha256 || a.meta?.source?.sha256, sb = b.sha256 || b.meta?.source?.sha256, fa = a.meta?.fingerprint ?? a.fingerprint, fb = b.meta?.fingerprint ?? b.fingerprint;
   return (sa && sa === sb) ? 'same file (sha256)' : (fa && fa === fb) ? 'same audio fingerprint' : null;
 };
 /** Two copies (each { meta, text: gramSet|null }) → { same, by, containment?, coverage?, dates_agree }. */
@@ -269,7 +269,7 @@ export function undoPlan(c, { others = [], prior = {}, merged = [], revive = fal
 
 /** media-dedupe ops job. Candidate groups (Dewey's labels) → the content gate → confirmed groups: best chosen, metadata merged,
  *  the rest eliminated; copies the gate dissolves: what media-dedupe did is reversed. Dry run unless { write: true }. */
-export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPairs = false, gate: gateOver = null, revive = false } = {}, deps = {}) {
+export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPairs = false, gate: gateOver = null, revive = false, controls = false } = {}, deps = {}) {
   if (write && !deps.allowWrite) return { write: false, paused: 'gate thresholds not yet set from the measured distribution; eliminations paused' };
   const gate = { ...GATE, ...(gateOver || {}) };
   const repo = deps.repo || await import('../repos/media-repo.js');
@@ -287,6 +287,7 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
   }
   const out = { write, gate, candidate_groups: groups.length, groups: 0, eliminated: 0, pending: 0, busy: 0, skipped: 0, already: 0, merged_fields: 0, runs_cancelled: 0, docs_removed: 0,
     measure: { pairs: 0, compared: 0, containment: Array(20).fill(0), coverage: Array(20).fill(0), by: {}, dates_disagree_same_content: 0 },
+    control: controls ? { pairs: 0, containment: Array(20).fill(0), max: 0, top: [] } : undefined,
     dissolved_groups: 0, split_groups: 0, dissolved_copies: 0, restored: { to: {}, docs: 0, republished: 0, meta: 0 }, ambiguous: [], sample: [], dissolved_sample: [], pair_list: listPairs ? [] : undefined, errors: [] };
   for (const members of groups) {
     try {
@@ -307,6 +308,19 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
           cache.set(k, confirmPair(a, b, gate));
         }
         pairs.push({ a: name(a), b: name(b), ...cache.get(k) });
+      }
+      // the control: this group's talk against the previous group's — different talks by construction — so the low end is measured too
+      if (controls) {
+        const c = copies.find((x) => x.dir && x.stamp);
+        if (c) {
+          const t = c.text !== undefined ? c.text : gramSet(await readText(c.dir).catch(() => ''));
+          if (out.control.last && t?.words >= gate.minWords) {
+            const o = overlap(out.control.last.text, t);
+            if (o) { out.control.pairs++; out.control.containment[HIST(o.containment)]++; if (o.containment > out.control.max) out.control.max = Math.round(o.containment * 1000) / 1000;
+              out.control.top = [...out.control.top, { a: out.control.last.name, b: name(c), containment: Math.round(o.containment * 1000) / 1000 }].sort((x, y) => y.containment - x.containment).slice(0, 8); }
+          }
+          if (t?.words >= gate.minWords) out.control.last = { name: name(c), text: t };
+        }
       }
       for (const c of copies) delete c.text;
       for (const p of pairs) {
@@ -344,6 +358,7 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
       out.errors.push({ group: members.map(name), error: String(err.message).slice(0, 300) });
     }
   }
+  if (out.control) { delete out.control.last; out.control.containment = histOut(out.control.containment); }
   out.measure.containment = histOut(out.measure.containment); out.measure.coverage = histOut(out.measure.coverage);
   return out;
 }

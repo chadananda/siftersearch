@@ -74,7 +74,7 @@ export async function excludeItems(ids = [], why) {
 }
 
 // ── duplicate talks (api/lib/media/dedupe.js) ──
-const DUP_COLS = 'id, slug, state, why, dir, doc_id, restored, dup_group, source_ref, title';
+const DUP_COLS = 'id, slug, state, why, dir, doc_id, restored, dup_group, source_ref, title, sha256';
 /** Every row in a duplicate group: state 'duplicate' or a dup_group, plus the copies they name ("Dewey duplicate of <slug>", "same file as item N"). */
 export async function dedupeRows() {
   const rows = await queryAll(`SELECT ${DUP_COLS} FROM media_items WHERE state = 'duplicate' OR dup_group IS NOT NULL`, [], 'media:dedupe-rows');

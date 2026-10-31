@@ -158,6 +158,8 @@ describe('the content gate', () => {
   it('confirmPair: same audio file confirms without text; no text → unconfirmed; too short → unconfirmed', () => {
     const sha = { source: { sha256: 'abc' } };
     expect(confirmPair({ meta: sha, text: null }, { meta: sha, text: null })).toMatchObject({ same: true, by: 'same file (sha256)' });
+    // a folderless "same file as item N" row carries the hash on the row itself
+    expect(confirmPair({ sha256: 'f1', meta: null, text: null }, { sha256: 'f1', meta: {}, text: null })).toMatchObject({ same: true, by: 'same file (sha256)' });
     expect(confirmPair({ meta: {}, text: null }, { meta: {}, text: gramSet(TALK) })).toMatchObject({ same: false, by: expect.stringMatching(/unconfirmed/) });
     expect(confirmPair({ meta: {}, text: gramSet(speech('a', 60)) }, { meta: {}, text: gramSet(TALK) }).same).toBe(false);
     expect(confirmPair({ meta: {}, text: gramSet(TALK) }, { meta: {}, text: gramSet(speech('a', 330, 70)) })).toMatchObject({ same: true, by: 'transcript overlap' });
@@ -259,6 +261,8 @@ describe('media-dedupe job', () => {
     expect(r).toMatchObject({ groups: 0, dissolved_groups: 1, eliminated: 0 });
     expect(r.measure.by['transcripts differ']).toBe(1);
     expect(r.measure.containment['0.00-0.05']).toBe(1);
+    const c = await mediaDedupeJob({ controls: true }, { ...deps, pairCache: new Map() });
+    expect(c.control.pairs).toBe(0);   // one group: nothing to compare against
     expect(calls.marked).toHaveLength(0);
   });
   it('reversal: an elimination the gate dissolves goes back to its prior state, search doc restored, page re-rendered, link cleared', async () => {
