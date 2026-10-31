@@ -132,6 +132,13 @@ export async function searchFollowUp(docId, { queue = null } = {}) {
 // the speaker identities (data/media-speaker-people.json), loaded once per process
 let speakerPeople = null;
 
+// correct/clean rebuild the words from transcript.raw.json. When raw carries the timings the audio is aligned to (the original's own, or the
+// whole worker's realigned copy), the edited words are aligned too: re-stamp. Otherwise (tower realigned only the work copy) the old stamp
+// stays and render asks for a realign. (10-31: a whole result's realign stamped the uncorrected text, so every one was blocked at render)
+export function restampAlignment(meta, raw, paragraphs) {
+  if (meta.audio_alignment_hash && (!meta.aligned_to || meta.aligned_to === 'safe' || raw?.aligned_to === meta.aligned_to)) meta.audio_alignment_hash = timingSignature(paragraphs);
+}
+
 export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'web', 'transcribe', 'preview', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 /** COMPLETE (Chad 10-29) = every stage done (remaster, transcribe, diarize, correct, headings, quotes, links, moments/assess, ingest, catalog) AND a remaster
@@ -820,6 +827,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // faithfulness: anything the pass added to what was heard is reverted to the heard words (10-22 "(Vol II)")
       const fx = revertInsertions(flattenWords(raw.segments), res.paragraphs);
       await writeJson(join(dir, 'transcript.work.json'), { paragraphs: fx.paragraphs, corrections: res.diff, refused: res.refused, reverted: fx.reverted, loops: lp.repaired });
+      restampAlignment(meta, raw, fx.paragraphs);
       rec.corrections = res.diff.length; rec.refused = res.refused.length; rec.insertions_reverted = fx.reverted.length;
       meta.faithfulness = { ...(meta.faithfulness || {}), correct: fx.reverted.length };
     }
@@ -838,6 +846,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       const fx = { ...fx0, paragraphs: lp2.paragraphs };
       if (lp2.repaired.length) meta.asr_loops_repaired = (meta.asr_loops_repaired || 0) + lp2.repaired.length;
       await writeJson(join(dir, 'transcript.work.json'), { ...work, verbatim, paragraphs: fx.paragraphs, cleanup: res.log, cleanup_stats: res.stats, mentions: res.mentions || [], cleanup_reverted: fx.reverted });
+      restampAlignment(meta, rawc, fx.paragraphs);
       rec.insertions_reverted = fx.reverted.length;
       meta.faithfulness = { ...(meta.faithfulness || {}), clean: fx.reverted.length };
       rec.applied = res.stats?.applied || 0; rec.hidden_words = res.stats?.hidden_words || 0; rec.flagged = res.stats?.flagged || 0;
