@@ -194,6 +194,11 @@ describe('gpuRoute: the gpu step runs on the LAN (Aorus) until it holds TARGET_H
     expect(gpuRoute(lan(0, false), { edge: true })).toBe('edge');   // no home GPU engaged: pods take it
     expect(gpuRoute(null, { edge: true })).toBe('edge');
   });
+  it('the pods\' R2 buffer fills first (Chad 10-31): while staged < wanted, prepped talks go to the edge ahead of the LAN\'s share', () => {
+    expect(gpuRoute(lan(0), { edge: true, staged_h: 1, want_h: 8 })).toBe('edge');
+    expect(gpuRoute(lan(0), { edge: true, staged_h: 8, want_h: 8 })).toBe('lan');
+    expect(gpuRoute(lan(0), { edge: false, staged_h: 0, want_h: 8 })).toBe('lan');
+  });
 });
 
 describe('stampTools: each ticked audio stage records tool, settings, fp, host and job', () => {

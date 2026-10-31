@@ -51,6 +51,16 @@ export default async function mediaOps(fastify) {
     const r = await mediaRedo({ ids: [req.params.id], stages: [].concat(req.body?.stages || []), by: by(req) });
     return r.error ? reply.code(400).send(r) : r;
   });
+  // the typed pod plan (Chad 10-31): R_prep / R_finish / R_pod (measured or prior), supportable, target, binding, the R2 buffer over time, refusals, $/audio-h
+  fastify.get('/ops/media/pod-plan', guard, async () => {
+    const C = await import('../lib/media/cloud.js'), st = await C.loadState();
+    const live = Object.values(st.pods || {}).filter((p) => !p.terminated);
+    const doneH = (st.done || []).reduce((a, d) => a + (st.items?.[d.id]?.duration_s || 0), 0) / 3600;
+    const spent = C.spendOf(st, Date.now());
+    return { plan: st.pod_plan || null, buffer_log: (st.buffer_log || []).slice(-30), rental_refusals: (st.rental_refusals || []).slice(-10), last_error: st.last_error || null,
+      pods: live.map((p) => ({ id: p.id, name: p.name, status: p.status, cost_per_hr: p.costPerHr, leased: st.q_last?.leased?.[`pod-${p.name}`] || 0, gpu: p.gauge?.gpu ?? null, created: p.created })),
+      spent_usd: spent, usd_per_audio_hour: doneH ? Math.round((spent / doneH) * 100) / 100 : null };
+  });
   // rentals valve: { pause: "reason" | false, maxPods?: 1-6 } → the pause file + the capacity file the lane reads every tick
   fastify.post('/ops/media/rentals', guard, async (req, reply) => {
     const b = req.body || {}, C = await import('../lib/media/cloud.js');

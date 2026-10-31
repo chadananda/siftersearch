@@ -175,14 +175,13 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     await feed(st, d); deliver('cpu-prep'); await pull(st, d);
     expect(deliver('gpu')).toBeTruthy(); expect(onEdge('files/')).toEqual([]);
   });
-  it('a pod engaged beside a LAN gpu backlog: the waiting step moves to the edge (inputs staged) and the chain finishes on the LAN', async () => {
+  it('the pods\' R2 buffer is short: a waiting LAN gpu step moves to the edge (inputs staged) and the chain finishes on the LAN', async () => {
     engage(); st.queue = [1];
     const d = { ...deps, edge: E.q };
     await feed(st, d); const p = deliver('cpu-prep'); await pull(st, d);
-    expect(Q.stats(sql, Date.now(), 'gpu').states.queued.n).toBe(1);   // home GPU under TARGET_H: the step stays home
-    expect((await qtick(st, d)).moved).toEqual({ moved: 0 });   // no pod engaged: nothing moves
-    Q.claim(E.sql, { host: 'pod-x', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });   // the pod's first (empty) claim engages it
-    expect((await qtick(st, d)).moved).toEqual({ moved: 1 });
+    expect(Q.stats(sql, Date.now(), 'gpu').states.queued.n).toBe(1);   // home GPU under TARGET_H, no buffer wanted: the step stays home
+    expect((await qtick(st, d)).moved).toEqual({ moved: 0 });   // no pod plan → no R2 buffer → nothing moves
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toEqual({ moved: 1 });   // staged before any pod is rented (Chad 10-31)
     expect(Q.stats(sql, Date.now(), 'gpu').states).toEqual({});
     const g = deliver('gpu', {}, E);
     expect(String(E.store.get(`files/${g.file_id}/in.mp3`))).toBe('audio-1');
@@ -199,9 +198,15 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     const d = { ...deps, edge: E.q };
     await feed(st, d); deliver('cpu-prep'); await pull(st, d);
     Q.claim(sql, { host: 'aorus', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });
-    Q.claim(E.sql, { host: 'pod-x', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });
-    expect((await qtick(st, d)).moved).toEqual({ moved: 0 });
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toEqual({ moved: 0 });
     expect(onEdge('files/')).toEqual([]);
+  });
+  it('a full buffer moves nothing', async () => {
+    engage(); st.queue = [1];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); deliver('cpu-prep'); await pull(st, d);
+    E.q.enqueue && await E.q.enqueue([{ id: 'other', file_id: 'fo', type: 'gpu', stages: ['gpu'], invoice: { audio_s: 6 * 3600 } }]);
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toEqual({ moved: 0 });
   });
   it('an edge gpu step the queue gave up on drops the chain on both transports and retries the talk', async () => {
     lanOnly(); st.queue = [1];

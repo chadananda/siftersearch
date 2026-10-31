@@ -1787,8 +1787,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (now() - balAt > 120_000) { balance = (await C.accountBalance(deps).catch(() => ({ balance }))).balance; balAt = now(); }
       // the money stops the PODS, not the backfill: the home hosts carry on (and the log says how far the cloud got)
       // a money stop is not for ever: when the cap is raised or the balance topped up the stop clears (10-25: a sticky "balance < $90" ended the run and nothing restarted it)
-      if (st.cloud_stopped && /^(cap|account balance|the next 10 min)/.test(st.cloud_stopped) && !C.budgetStop(st, balance, now())) { st.cloud_stopped = null; st.cloud_stopped_at = null; }
-      const why = st.cloud_stopped || C.budgetStop(st, balance, now());
+      const capOpt = { cap: process.env.MEDIA_POD_TYPED !== '1' };   // typed pods: no $ cap (Chad 10-31); spend is governed by pod efficiency
+      if (st.cloud_stopped && /^(cap|account balance|the next 10 min)/.test(st.cloud_stopped) && !C.budgetStop(st, balance, now(), capOpt)) { st.cloud_stopped = null; st.cloud_stopped_at = null; }
+      const why = st.cloud_stopped || C.budgetStop(st, balance, now(), capOpt);
       if (why && !st.cloud_stopped) {
         st.cloud_stopped = why; st.cloud_stopped_at = now(); st.cloud_done_at_stop = st.done.length;
         for (const p of Object.values(st.pods).filter((q) => !q.terminated)) await closePod(p, why);
@@ -1881,12 +1882,22 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           // its gpu step overflows to the edge /_q (pods) once Aorus holds TARGET_H, and finish comes back to the LAN (queue-feed.js, SJ.gpuRoute).
           const [QF, { queueClient }, wr, { localQueue }] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js'), import('../repos/media-queue-repo.js')]);
           const deps = { repo, wr, now, full: !!acceptedWorker, decided, remaster: (id) => queue('media-remaster', { id }, 'media-cloud-remaster') };
-          st.q_lan = { at: now(), ...await QF.tick(st, { ...deps, q: localQueue(), typed: true, edge: process.env.MEDIA_POD_TYPED === '1' ? queueClient({ key: queueKey }) : null }).catch((e) => ({ error: String(e.message).slice(0, 300) })) };
-          st.q_last = { at: now(), ...await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }) };
-          // the typed pod count (stage-queue §4) over both queues, every pass: shown always, used for rentals once pods boot typed (MEDIA_POD_TYPED=1)
           const QC = await import('../../../worker/queue/core.js');
+          const podTyped = process.env.MEDIA_POD_TYPED === '1';
+          // the pods' R2 buffer (Chad 10-31): ~BUFFER_H of pod work staged on the edge before and while pods run; the feed fills it from prepped talks first
+          const livePods = Object.values(st.pods).filter((p) => !p.terminated).length;
+          const buffer = st.pod_plan ? QC.bufferPolicy(st.pod_plan, { pods: podTyped ? livePods : 0 }) : null;
+          st.q_lan = { at: now(), ...await QF.tick(st, { ...deps, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: podTyped && buffer?.where === 'edge' ? buffer : null }).catch((e) => ({ error: String(e.message).slice(0, 300) })) };
+          st.q_last = { at: now(), ...await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }) };
+          // the typed pod plan (Chad 10-31) over both queues, every pass: supportable = floor(min(R_prep, R_finish) / R_pod), limited only by work
           const caps = await Promise.all([localQueue().capacity(), queueClient({ key: queueKey }).capacity()].map((p) => p.catch(() => null)));
-          st.pod_plan = { at: now(), ...QC.podPlan(caps, { maxPods }) };
+          const plan = QC.podPlan(caps);
+          const buf = QC.bufferPolicy(plan, { pods: podTyped ? livePods : 0 });
+          st.pod_plan = { at: now(), ...plan, buffer: buf };
+          // the claim order every multi-role host gets (core.claimOrder): buffer low → prep first; else finish → gpu → prep
+          await localQueue().policy({ buffer_low: buf.buffer_low, buffer_h: buf.buffer_h, want_h: buf.want_h }).catch(() => null);
+          (st.buffer_log ||= []).push({ at: now(), staged_h: Math.round(plan.staged_h * 100) / 100, want_h: Math.round(buf.want_h * 100) / 100, finish_q: caps[0]?.by_type?.['cpu-finish']?.queued ?? null, pods: livePods });
+          if (st.buffer_log.length > 360) st.buffer_log.splice(0, st.buffer_log.length - 360);
         })().catch((e) => { st.q_last = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { qPass = null; });
       }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
@@ -1897,18 +1908,24 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
-      const rampCap = st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
-      const wantRaw = st.cloud_stopped || rentalPause ? 0 : process.env.MEDIA_POD_TYPED === '1' && st.pod_plan ? st.pod_plan.pods : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
+      // TYPED PODS (Chad 10-31): no pod-count or money cap — target = the plan's supportable, limited by work. Ramp ONE at a time, and only with
+      // gpu work staged on R2 and every ready pod holding a gpu lease (busy); spend is governed by efficiency (idle pods leave by idle-exit).
+      const typedPods = process.env.MEDIA_POD_TYPED === '1' && !!st.pod_plan;
+      const podBusy = (p) => (st.q_last?.leased?.[`pod-${p.name}`] || 0) > 0;
+      const rampOk = !live.some((p) => p.status !== 'ready') && live.every(podBusy) && (st.pod_plan?.staged_n || 0) > 0;
+      const rampCap = typedPods ? (rampOk ? live.length + 1 : live.length) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
+      const wantRaw = st.cloud_stopped || rentalPause ? 0 : typedPods ? st.pod_plan.target : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
-      const keepPods = new Set([...live].sort((a, b) => Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, maxPods).map(p => p.id));
-      const surplusPods = new Set(maxPods > 0 ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);
+      const poolCap = typedPods ? Infinity : maxPods;
+      const keepPods = new Set([...live].sort((a, b) => Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, poolCap).map(p => p.id));
+      const surplusPods = new Set(poolCap > 0 && poolCap < Infinity ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
       if (!wantRaw && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
       const breakerOn = !!st.breaker_until && now() < st.breaker_until;
       if (live.length < want && (!held || st.queue.some((id) => !feedsBacklog(st, id))) && !breakerOn) {
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
         const pod = await C.createPod(name, pub, { ...deps, prefer: acceptedWorker?.prefer_community?{cloud:'COMMUNITY',dcs:[]}:C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
-        if (pod.error) { st.last_error = pod.error.slice(0, 300); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
+        if (pod.error) { st.last_error = pod.error.slice(0, 300); (st.rental_refusals ||= []).push({ at: now(), why: st.last_error }); if (st.rental_refusals.length > 50) st.rental_refusals.shift(); console.warn(`[media-cloud] RunPod refused a rental: ${st.last_error}`); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
         else {
           st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting',image:acceptedWorker?.image||null };
           await save(st);  // persist the paid allocation before slow audio transfers or a process restart
@@ -2228,7 +2245,7 @@ export async function laneKeeperPass(deps = {}) {
   if (pending.length) return { action: 'running', runs: pending.map((r) => r.id) };
   if (st.cloud_stopped && /^(cap|account balance|the next 10 min)/.test(st.cloud_stopped)) {
     const bal = deps.balance !== undefined ? deps.balance : (await C.accountBalance(deps).catch(() => ({ balance: null }))).balance;
-    if (C.budgetStop(st, bal, now)) return { action: 'money', why: st.cloud_stopped };
+    if (C.budgetStop(st, bal, now, { cap: process.env.MEDIA_POD_TYPED !== '1' })) return { action: 'money', why: st.cloud_stopped };
   }
   await queue('media-cloud-remaster', { write: true, maxPods: deps.maxPods ?? 3, resume: (st.resumes || 0) + 1 }, 'lane-keeper');
   return { action: 'queued' };

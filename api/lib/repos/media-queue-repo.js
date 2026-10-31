@@ -43,6 +43,7 @@ export async function queueCall(op, a = {}) {
     case 'list-done': return tx((s) => Q.listDone(s, a.limit || 50, a.type || 'media', a.state));
     case 'capacity': return tx((s) => Q.capacity(s));
     case 'withdraw': return tx((s) => Q.withdraw(s, a.ids || []));
+    case 'policy': return tx((s) => Q.setPolicy(s, a.policy || {}));   // tower's role policy (claim order of multi-role hosts)
     case 'stats': return tx((s) => Q.stats(s, Date.now(), a.type || 'media'));
     case 'ack': case 'cancel': {   // the staged inputs go too unless another job still names the same file
       const { gone, dirs } = tx((s) => {
@@ -101,7 +102,7 @@ export function localQueue() {
     get: async (kind, id, name, dest) => { const src = filePath(kind, id, name); if (!existsSync(src)) throw bad(`get ${kind}/${id}/${name} 404`, 404); await mkdir(dirname(dest), { recursive: true }); await copyFile(src, dest); return dest; },
     claim: (a) => call('claim', a), heartbeat: (a) => call('heartbeat', a), done: (a) => call('done', a), fail: (a) => call('fail', a),
     enqueue: (jobs) => call('enqueue', { jobs }), capacity: () => call('capacity'), stats: (type) => call('stats', type ? { type } : {}),
-    listDone: (limit = 50, type, state) => call('list-done', { limit, ...(type ? { type } : {}), ...(state ? { state } : {}) }), ack: (ids) => call('ack', { ids }), cancel: (ids) => call('cancel', { ids }), withdraw: (ids) => call('withdraw', { ids }),
+    listDone: (limit = 50, type, state) => call('list-done', { limit, ...(type ? { type } : {}), ...(state ? { state } : {}) }), ack: (ids) => call('ack', { ids }), cancel: (ids) => call('cancel', { ids }), withdraw: (ids) => call('withdraw', { ids }), policy: (p) => call('policy', { policy: p }),
   };
 }
 export const _closeForTests = () => { db?.close(); db = sql = dbAt = null; };

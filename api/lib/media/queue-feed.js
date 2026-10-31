@@ -105,8 +105,9 @@ async function failChain(st, id, ackJob, error, repo) {
 
 const readJson = async (f) => JSON.parse(await readFile(f, 'utf8'));
 /** Pull finished typed steps: validate; prep/gpu → enqueue the next step (ack the one before); finish → the whole intake + tool stamps. */
-async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages }) {
+async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null }) {
   let adopted = 0, errors = 0, steps = 0, lanCap;
+  const buf = { staged_h: buffer?.buffer_h || 0, want_h: buffer?.want_h || 0 };
   st.chains ||= {};
   const ackEdge = [], qOf = (where) => (where === 'edge' ? edge : q);
   const ackJob = (id) => { const list = st.qjobs[id]?.where === 'edge' ? ackEdge : ack; if (!list.includes(id)) list.push(id); delete st.qjobs[id]; };
@@ -127,7 +128,8 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           ch[type] = SJ.stepOf(j, r, now());
           const m = await readMeta(it.dir), next = SJ.chainNext(m, ch);
           if (!next || SJ.AUDIO_TYPES.indexOf(next) <= SJ.AUDIO_TYPES.indexOf(type)) throw Error(`${type} delivered without its stages (next would be ${next})`);
-          const where = next === 'gpu' ? SJ.gpuRoute(lanCap ||= await q.capacity().catch(() => null), { edge: !!edge, targetH: TARGET_H }) : 'lan', nq = qOf(where);
+          const where = next === 'gpu' ? SJ.gpuRoute(lanCap ||= await q.capacity().catch(() => null), { edge: !!edge, targetH: TARGET_H, ...buf }) : 'lan', nq = qOf(where);
+          if (where === 'edge') buf.staged_h += (ch.audio_s || 0) / 3600;
           if (where !== src) {   // the next step runs on the other transport: its inputs go into that queue's files/<file id>/
             if (where === 'edge') await nq.put('files', ch.fileId, ch.input, join(it.dir, m.original));   // the LAN holds it from the feed
             for (const f of r.files) { const tmp = join(stg, 'x', 'item', f.path); await sq.get('results', j.id, 'item/' + f.path, tmp); await nq.put('files', ch.fileId, 'item/' + f.path, tmp); }
@@ -164,16 +166,19 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
   return { adopted, steps, errors, ...(edge ? { edge_acked: ackEdge.length } : {}) };
 }
 
-/** A pod (edge gpu host) is engaged with too little queued there while gpu steps wait on the LAN (home GPUs full): move the waiting steps
- *  to the edge (withdraw is refused once a LAN host has leased one), the original + the prep files copied into the edge's files/<file id>/.
- *  A paid pod never sits idle beside a LAN gpu backlog (10-31: pod 377 booted with 3 gpu steps queued on the LAN and none on the edge). */
-async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile, now = Date.now }) {
+/** The pods' R2 buffer (deps.buffer from the pod plan: buffer_h staged on the edge, want_h = BUFFER_H of pod work) is short while gpu steps
+ *  wait on the LAN: move the waiting steps to the edge (withdraw is refused once a LAN host has leased one), the original + the prep files
+ *  copied into the edge's files/<file id>/. Gpu work is staged BEFORE a pod boots, so a paid pod never sits idle (10-31: pod 377 booted with
+ *  3 gpu steps queued on the LAN and none on the edge). */
+async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile, now = Date.now, buffer = null }) {
+  const wantH = buffer?.want_h || 0;
+  if (!(wantH > 0)) return { moved: 0 };
   const cap = await edge.capacity().catch(() => null);
-  if (!cap?.hosts?.some((h) => (h.types || []).includes('gpu'))) return { moved: 0 };
-  let edgeH = (cap.by_type?.gpu?.queued_audio_h || 0), moved = 0;
+  if (!cap) return { moved: 0 };
+  let edgeH = cap.by_type?.gpu?.queued_audio_h || 0, moved = 0;
   const waiting = Object.entries(st.qjobs || {}).filter(([, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where).sort((a, b) => a[1].at - b[1].at);
   for (const [id, qj] of waiting) {
-    if (edgeH >= LOW_H) break;
+    if (edgeH >= wantH) break;
     const ch = st.chains?.[qj.itemId], prep = ch?.['cpu-prep'];
     if (!prep) continue;
     if (!(await q.withdraw([id]))?.withdrawn) continue;   // a home GPU took it meanwhile

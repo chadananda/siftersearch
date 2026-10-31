@@ -191,13 +191,14 @@ export function spendOf(state, now = Date.now()) {
   return Math.round(usd * 100) / 100;
 }
 /** Stop for money? → reason or null */
-export function budgetStop(state, balance, now = Date.now()) {
+// cap:false (typed pods, Chad 10-31: "no artificial limits on money or pod count") — only the balance kept for SearchLayerPDF stops rentals
+export function budgetStop(state, balance, now = Date.now(), { cap = true } = {}) {
   const spent = spendOf(state, now);
-  if (spent >= CLOUD.capUsd()) return `cap $${CLOUD.capUsd()} reached ($${spent})`;
+  if (cap && spent >= CLOUD.capUsd()) return `cap $${CLOUD.capUsd()} reached ($${spent})`;
   if (balance != null && balance < CLOUD.keepBalance()) return `account balance $${Math.round(balance)} < $${CLOUD.keepBalance()} kept for SearchLayerPDF`;
   // the live pods' next 10 minutes must still fit under the cap
   const perHr = Object.values(state.pods || {}).filter((p) => !p.terminated).reduce((a, p) => a + (p.costPerHr || 0), 0);
-  if (spent + perHr / 6 > CLOUD.capUsd()) return `the next 10 min would pass the $${CLOUD.capUsd()} cap`;
+  if (cap && spent + perHr / 6 > CLOUD.capUsd()) return `the next 10 min would pass the $${CLOUD.capUsd()} cap`;
   return null;
 }
 

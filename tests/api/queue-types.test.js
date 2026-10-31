@@ -157,38 +157,86 @@ describe('per-type measured rates', () => {
   });
 });
 
-describe('pod count', () => {
-  const R = { gpuAorus: 2, prep: 6, pod: 4 };
-  it('pods = clamp(ceil(((G + P) / 2 h − R_aorus) / R_pod), 0, maxPods)', () => {
-    expect(Q.podsWanted({ gpuQueuedH: 20, prepQueuedH: 0, rAorus: R.gpuAorus, rPrep: R.prep, rPod: R.pod, maxPods: 6 })).toBe(2);   // (10 − 2) / 4
-    expect(Q.podsWanted({ gpuQueuedH: 4, prepQueuedH: 0, rAorus: R.gpuAorus, rPrep: R.prep, rPod: R.pod, maxPods: 6 })).toBe(0);    // Aorus keeps up
-    expect(Q.podsWanted({ gpuQueuedH: 200, prepQueuedH: 0, rAorus: R.gpuAorus, rPrep: R.prep, rPod: R.pod, maxPods: 3 })).toBe(3);
+describe('pod target (Chad 10-31): supportable = floor(min(R_prep, R_finish) / R_pod), limited only by work — no pod or $ cap', () => {
+  it('supportable is set by the slower CPU stage; binding names it', () => {
+    expect(Q.podTarget({ rPrep: 40, rFinish: 20, rPod: 4, workH: 1000 })).toEqual({ supportable: 5, work: 125, target: 5, binding: 'finish' });
+    expect(Q.podTarget({ rPrep: 13, rFinish: 30, rPod: 4, workH: 1000 })).toMatchObject({ supportable: 3, target: 3, binding: 'prep' });
   });
-  it('queued prep counts only as far as Boss can prepare it within the horizon (pods never outrun prep)', () => {
-    // 100 h waiting for prep, Boss preps 6 audio-h/h → 12 h usable in 2 h; G 0 → (12/2 − 2)/4 = 1
-    expect(Q.podsWanted({ gpuQueuedH: 0, prepQueuedH: 100, rAorus: 2, rPrep: 6, rPod: 4, maxPods: 6 })).toBe(1);
+  it('work limits the target: ceil(work / (R_pod · horizon)); binding = backlog', () => {
+    expect(Q.podTarget({ rPrep: 40, rFinish: 40, rPod: 4, workH: 10, horizonH: 2 })).toMatchObject({ supportable: 10, work: 2, target: 2, binding: 'backlog' });
+    expect(Q.podTarget({ rPrep: 40, rFinish: 40, rPod: 4, workH: 0 })).toMatchObject({ target: 0, binding: 'backlog' });
   });
-  it('until a pod has been measured, at most one pod (it measures R_pod)', () => {
-    expect(Q.podsWanted({ gpuQueuedH: 200, prepQueuedH: 0, rAorus: 2, rPrep: 6, rPod: null, maxPods: 6 })).toBe(1);
-    expect(Q.podsWanted({ gpuQueuedH: 2, prepQueuedH: 0, rAorus: 2, rPrep: 6, rPod: null, maxPods: 6 })).toBe(0);
+  it('no cap: thousands of hours of work and fast CPU stages ask for as many pods as they support', () => {
+    expect(Q.podTarget({ rPrep: 400, rFinish: 400, rPod: 4, workH: 10_000 }).target).toBe(100);
   });
-  it('podPlan reads the rates from capacity: R_aorus = engaged non-pod GPU hosts, R_pod = the pods\' measured gpu rate', () => {
-    Q.enqueue(sql, [tj('g1', 'gpu'), tj('g2', 'gpu')], T0);
-    const a = Q.claim(sql, { host: 'aorus', types: ['gpu'] }, T0);
-    Q.done(sql, { id: 'g1', lease: a.lease, result: {} }, T0 + 1_800_000);   // 2×
-    const p = Q.claim(sql, { host: 'pod-9', types: ['gpu'] }, T0);
-    Q.done(sql, { id: 'g2', lease: p.lease, result: {} }, T0 + 900_000);      // 4×
-    Q.claim(sql, { host: 'boss', types: ['cpu-prep'] }, T0 + 1_800_000);
-    Q.enqueue(sql, [tj('g3', 'gpu', { invoice: { audio_s: 20 * 3600 } })], T0 + 1_800_000);
-    const plan = Q.podPlan(Q.capacity(sql, T0 + 1_800_001), { maxPods: 6 });
-    expect(plan.r_aorus).toBeCloseTo(2);
-    expect(plan.r_pod).toBeCloseTo(4);
-    expect(plan.gpu_queued_h).toBe(20);
-    expect(plan.pods).toBe(2);
+  it('while any rate is still a prior, one pod (it measures)', () => {
+    expect(Q.podTarget({ rPrep: 40, rFinish: 40, rPod: 4, workH: 500, measured: false })).toMatchObject({ target: 1, binding: 'measuring' });
+    expect(Q.podTarget({ rPrep: 40, rFinish: 40, rPod: 4, workH: 0, measured: false })).toMatchObject({ target: 0 });
   });
-  it('podPlan merges tower\'s two queues (LAN: Aorus + Boss; edge: pods)', () => {
-    const lan = { by_type: { gpu: { queued_audio_h: 12, home_rate: 2, pod_rate: null }, 'cpu-prep': { queued_audio_h: 0, rate: 6 } } };
-    const edge = { by_type: { gpu: { queued_audio_h: 8, home_rate: 0, pod_rate: 4 }, 'cpu-prep': { queued_audio_h: 0, rate: 0 } } };
-    expect(Q.podPlan([lan, edge, null], { maxPods: 6 })).toMatchObject({ gpu_queued_h: 20, r_aorus: 2, r_pod: 4, r_prep: 6, pods: 2 });
+  it('podPlan: measured throughput over priors; priors are named; staged = the edge gpu queue', () => {
+    const lan = { by_type: { gpu: { queued_audio_h: 12, home_rate: 2, throughput: 2 }, 'cpu-prep': { queued_audio_h: 30, rate: 6, throughput: 20 }, 'cpu-finish': { queued_audio_h: 1, rate: 1, throughput: 12 } } };
+    const edge = { by_type: { gpu: { queued_audio_h: 8, queued: 5, home_rate: 0, pod_throughput: 4 }, 'cpu-prep': {}, 'cpu-finish': {} } };
+    const plan = Q.podPlan([lan, edge]);
+    expect(plan).toMatchObject({ gpu_queued_h: 20, staged_h: 8, staged_n: 5, r_prep: 20, r_finish: 12, r_pod: 4, priors: [], supportable: 3, binding: 'finish', pods: 3 });
+    const fresh = Q.podPlan([{ by_type: { gpu: { queued_audio_h: 50 }, 'cpu-prep': { rate: 6 }, 'cpu-finish': { rate: 1 } } }, null]);
+    expect(fresh.priors).toEqual(['prep', 'finish', 'pod']);
+    expect(fresh.r_pod).toBe(Q.PRIOR_POD);
+    expect(fresh.staged_h).toBe(0);
+    expect(fresh.target).toBe(1);
+  });
+});
+
+describe('throughput: audio finished per busy hour, per host, over the rolling window', () => {
+  it('overlapping jobs on one host count their union span; pods are averaged', () => {
+    Q.enqueue(sql, [tj('a', 'gpu'), tj('b', 'gpu'), tj('c', 'gpu')], T0);
+    const a = Q.claim(sql, { host: 'pod-1', types: ['gpu'] }, T0), b = Q.claim(sql, { host: 'pod-1', types: ['gpu'] }, T0);
+    Q.done(sql, { id: a.id, lease: a.lease, result: {} }, T0 + 1_800_000);
+    Q.done(sql, { id: b.id, lease: b.lease, result: {} }, T0 + 1_800_000);   // 2 h of audio in a 0.5 h busy span → 4/h
+    const c = Q.claim(sql, { host: 'pod-2', types: ['gpu'] }, T0);
+    Q.done(sql, { id: c.id, lease: c.lease, result: {} }, T0 + 1_800_000);   // 2/h
+    const tp = Q.throughput(sql, 'gpu', T0 + 1_800_001);
+    expect(tp.each['pod-1']).toBeCloseTo(4);
+    expect(tp.pods).toBeCloseTo(3);
+    expect(tp.total).toBeCloseTo(6);
+    expect(Q.throughput(sql, 'gpu', T0 + 1_800_000 + Q.RATE_WINDOW_MS + 1).total).toBeNull();
+  });
+});
+
+describe('claim order (Chad 10-31): the R2 buffer decides whether multi-role hosts prep first', () => {
+  it('buffer low → prep, finish, gpu; buffer full → finish, gpu, prep', () => {
+    expect(Q.claimOrder(['gpu'], ['cpu-prep', 'cpu-finish'], { buffer_low: true })).toEqual(['cpu-prep', 'cpu-finish', 'gpu']);
+    expect(Q.claimOrder(['gpu'], ['cpu-prep', 'cpu-finish'], { buffer_low: false })).toEqual(['cpu-finish', 'gpu', 'cpu-prep']);
+    expect(Q.claimOrder(['gpu', 'cpu-finish'], [], { buffer_low: true })).toEqual(['cpu-finish', 'gpu']);
+  });
+  it('CPU-only hosts (Boss prep → finish, tower finish), single-role hosts and no policy keep their own order', () => {
+    expect(Q.claimOrder(['cpu-prep', 'cpu-finish'], [], { buffer_low: false })).toBeNull();
+    expect(Q.claimOrder(['gpu'], [], { buffer_low: true })).toBeNull();
+    expect(Q.claimOrder(['cpu-finish'], [], { buffer_low: true })).toBeNull();
+    expect(Q.claimOrder(['gpu'], ['cpu-prep'], null)).toBeNull();
+  });
+  it('the policy reaches claim: Aorus (gpu + spill) takes prep first while the buffer is low, then finish before gpu', () => {
+    Q.enqueue(sql, [tj('p', 'cpu-prep'), tj('g', 'gpu'), tj('f', 'cpu-finish')], T0);
+    Q.setPolicy(sql, { buffer_low: true }, T0);
+    const aorus = { host: 'aorus', types: ['gpu'], spill: ['cpu-prep', 'cpu-finish'] };
+    expect(claim(aorus)).toBe('p');
+    Q.setPolicy(sql, { buffer_low: false }, t);
+    expect(claim(aorus)).toBe('f');
+    expect(claim(aorus)).toBe('g');
+  });
+  it('a stale policy (tower stopped setting it) falls back to the host\'s own order', () => {
+    Q.enqueue(sql, [tj('p', 'cpu-prep'), tj('g', 'gpu')], T0);
+    Q.setPolicy(sql, { buffer_low: true }, T0);
+    expect(Q.claim(sql, { host: 'aorus', types: ['gpu', 'cpu-prep'] }, T0 + Q.POLICY_STALE_MS + 1).id).toBe('g');
+  });
+});
+
+describe('bufferPolicy: ~BUFFER_H of pod work staged on R2', () => {
+  const plan = { r_pod: 4, staged_h: 3, target: 2, gpu_queued_h: 10, r_home_gpu: 2.5 };
+  it('with pods wanted or live: want = BUFFER_H × R_pod × pods, against the edge', () => {
+    expect(Q.bufferPolicy(plan, { pods: 1 })).toEqual({ where: 'edge', buffer_low: true, buffer_h: 3, want_h: 16 });
+    expect(Q.bufferPolicy({ ...plan, staged_h: 20 }, { pods: 1 }).buffer_low).toBe(false);
+  });
+  it('no pods: the home GPUs\' LAN queue', () => {
+    expect(Q.bufferPolicy({ ...plan, target: 0 }, { pods: 0 })).toEqual({ where: 'lan', buffer_low: false, buffer_h: 10, want_h: 5 });
   });
 });

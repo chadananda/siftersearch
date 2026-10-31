@@ -150,10 +150,12 @@ export function pickNext(st, can = () => true) {
   return idx.find(([id]) => bandOf(st, id) === best)[1];
 }
 
-/** Where the gpu step runs: the LAN queue (home GPU) until it holds TARGET_H of gpu work, then the edge /_q (pods, boot typed only with
- *  MEDIA_POD_TYPED=1 = { edge: true }). No home GPU engaged → the edge. podPlan sums gpu backlog over both queues, so overflow rents pods. Pure. */
-export function gpuRoute(lanCap, { edge = false, targetH = 2.5 } = {}) {
+/** Where the gpu step runs. With pods allowed typed (MEDIA_POD_TYPED=1 = { edge: true }): first the pods' R2 buffer (the edge /_q) up to
+ *  want_h audio-h (Chad 10-31: gpu work waits on R2 BEFORE a pod boots, so a pod never sits idle), then the LAN (home GPU) until it holds
+ *  TARGET_H, then the edge again. No home GPU engaged → the edge. Pure. */
+export function gpuRoute(lanCap, { edge = false, targetH = 2.5, staged_h = 0, want_h = 0 } = {}) {
   if (!edge) return 'lan';
+  if (staged_h < want_h) return 'edge';
   if (!lanCap?.hosts?.some((h) => (h.types || []).includes('gpu'))) return 'edge';
   return (lanCap.by_type?.gpu?.queued_h || 0) >= targetH ? 'edge' : 'lan';
 }
