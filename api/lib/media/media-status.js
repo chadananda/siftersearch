@@ -53,11 +53,29 @@ export async function mediaAdd({ urls = [], paths = [], by = 'ops' } = {}, d = n
   return { queued: true, run: run?.id ?? null };
 }
 
-/** Redo stages of talks → the media-stages report (write; only those stages, the rest kept). */
+/** Redo stages of talks → the media-stages report (write; only those stages, the rest kept). A GPU stage (enhance · transcribe · diarize) is
+ *  never redone on tower (10-31: 2130's transcribe redo ran the legacy tower branch and failed): the talk goes back to the typed chain as a
+ *  whole redo order (cpu-prep → gpu → cpu-finish; adoption replaces every stage, so its text stages follow) and nothing else is queued for it. */
 export async function mediaRedo({ ids = [], stages = [], by = 'ops' } = {}, d = null) {
   d ||= await deps0();
   const ok = stages.filter((s) => d.item.STAGES.includes(s)), nums = ids.map(Number).filter(Number.isFinite);
   if (!nums.length || !ok.length) return { error: `ids and stages required (stages: ${d.item.STAGES.join(', ')})` };
+  const reg = d.reg || (await import('./stages.js')).REG, gpu = ok.filter((s) => reg.BY[s]?.class === 'gpu');
+  if (gpu.length) return { ...(await mediaRedoTyped(nums, d, by)), stages: ok, gpu };
   const run = await d.ops.enqueue('media-stages', { write: true, ids: nums, redo: ok }, by);
   return { queued: true, run: run?.id ?? null, ids: nums, stages: ok };
+}
+
+/** Talks → the typed chain again (a whole redo order the lane takes in); an unpublished talk is 'scheduled' like a fresh whole order. */
+export async function mediaRedoTyped(ids, d, by = 'ops') {
+  const orders = [], scheduled = [];
+  for (const id of ids) {
+    const it = await d.repo.getMediaItem(id);
+    if (!it?.dir) continue;
+    orders.push({ id: it.id, slug: it.slug, grade: it.grade ?? null, duration_s: it.duration_s || 0, mode: 'whole', kind: 'whole', redo: true, by });
+    if (it.state !== 'done' && !it.published_at) scheduled.push(it.id);
+  }
+  if (orders.length) await d.cloud.addOrders(orders);
+  for (const id of scheduled) await d.repo.updateMediaItem(id, { state: 'scheduled', stage: 'whole', why: `redo through the typed chain (${by})` });
+  return { queued: orders.length > 0, typed: orders.map((o) => o.id), scheduled, ids };
 }

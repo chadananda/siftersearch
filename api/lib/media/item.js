@@ -290,6 +290,9 @@ export async function runItem(item, opts = {}, deps = {}) {
     await repo.updateMediaItem(item.id, { stage, state: item.state === 'done' || meta.stages.catalog?.at ? 'done' : 'running' });
     const rec = {}, u0 = spend.usd || 0, def = reg.BY[stage];
     try {
+    // a GPU stage (enhance · transcribe · diarize) is never run on tower, built-in branch or declared (10-31: a redo of 2130's transcribe
+    // ran the legacy branch on tower and failed on enhanced/light.flac, which typed chains never keep) — it waits for the typed chain
+    if (def?.class === 'gpu' && !onWorker()) throw new WorkerWait(`${stage} (gpu): re-run through the typed chain`);
     // A DECLARED STAGE (stages.js `run`): generic — the registry says where it may run (class) and what it is made from (after)
     if (def?.run) {
       if (!towerMay(stage, reg) && !onWorker()) throw new WorkerWait(`${stage} (${def.class})`);

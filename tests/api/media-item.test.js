@@ -1,7 +1,7 @@
 // The media item stage machine (api/lib/media/item.js) end to end with every process and model call faked: each stage
 // writes its files and records itself in meta.json; a second run does nothing; a drain yields between stages and the
 // next run resumes where it stopped; the original is linked, never modified.
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, statSync, mkdirSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -20,7 +20,9 @@ beforeEach(() => {
   writeFileSync(src, 'ORIGINAL-BYTES');
   process.env.MEDIA_SOURCE_ROOT = root;
   process.env.MEDIA_ARCHIVE_ROOT = join(root, 'library');
+  process.env.MEDIA_TOWER_HEAVY = '1';   // the whole stage machine runs inside the worker image (whole-worker/phases.mjs); tower never runs a gpu stage
 });
+afterEach(() => { delete process.env.MEDIA_TOWER_HEAVY; });
 
 function fakes({ drainAfter = Infinity } = {}) {
   let stagesSeen = 0;
@@ -299,17 +301,22 @@ describe('media item stage machine', () => {
     expect(tr.headings[0]).toMatchObject({ kind: 'heading', source: 'generated', form: 'statement' });
     expect(readFileSync(join(dir, 'transcript.md'), 'utf8')).toContain(`## ${tr.headings[0].text}`);
   });
-  it('a re-transcription off the worker never erases measured coverage: it records unmeasured as a measurement and the talk still publishes (10-31: 1947; Chad 10-31 night: a gap never blocks)', async () => {
+  it('tower never re-runs transcribe: a redo off the worker waits for one (WorkerWait), runs no ASR and keeps the recorded transcription (10-31: 1947, 2130)', async () => {
     const r = await runItem({ id: 5, source_kind: 'file', source_ref: src }, {}, fakes());
     const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
     const m = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
     m.asr = { ...m.asr, coverage: { speech_s: 3400, holes_before: 259, repaired: 12, holes_after: [{ s: 100, e: 400 }], uncovered_after_pct: 94 } };
     writeFileSync(join(dir, 'meta.json'), JSON.stringify(m));
-    await runItem({ id: 5, source_kind: 'file', source_ref: src, dir, slug: r.slug }, { from: 'transcribe' }, fakes());
-    const after = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
-    expect(after.asr.coverage).toMatchObject({ unmeasured: true, before: 94 });
-    expect(after.coverage_gaps?.[0]?.kind).toBe('coverage-unmeasured');
-    expect((after.publish_blocked || []).some((x) => /coverage|speech-gap/.test(x.kind))).toBe(false);
+    delete process.env.MEDIA_TOWER_HEAVY;   // tower
+    for (const opts of [{ from: 'transcribe' }, { redo: ['transcribe'] }]) {
+      const d = fakes();
+      await expect(runItem({ id: 5, source_kind: 'file', source_ref: src, dir, slug: r.slug, state: 'transcribed' }, opts, d)).rejects.toMatchObject({ code: 'WORKER_WAIT' });
+      expect(d.tools.asr).not.toHaveBeenCalled();
+      const after = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
+      expect(after.stages.transcribe?.at).toBeTruthy();
+      expect(after.asr.coverage.uncovered_after_pct).toBe(94);
+      expect(after.asr_job).toBeUndefined();
+    }
   });
 });
 

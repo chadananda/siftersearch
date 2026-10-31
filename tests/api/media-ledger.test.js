@@ -84,4 +84,16 @@ describe('media status (internal API + Dewey)', async () => {
     expect(await S.mediaRedo({ ids: ['1'], stages: ['web', 'nope'] }, d())).toMatchObject({ queued: true, ids: [1], stages: ['web'] });
     expect(queued.at(-1)).toMatchObject({ name: 'media-stages', params: { write: true, ids: [1], redo: ['web'] } });
   });
+  it('a gpu-stage redo never reaches tower: the talk goes back to the typed chain as a whole redo order (10-31: 2130)', async () => {
+    const orders = [], updates = [], n = queued.length;
+    const items = { 7: { id: 7, slug: 'b', dir: '/m/b', state: 'failed', duration_s: 900 }, 8: { id: 8, slug: 'c', dir: '/m/c', state: 'done', published_at: 'x', duration_s: 60 } };
+    const dd = { ...d(), STAGES: undefined, item: { STAGES: ['archive', 'transcribe', 'web'] },
+      repo: { getMediaItem: async (id) => items[id] || null, updateMediaItem: async (id, p) => updates.push([id, p]) },
+      cloud: { addOrders: async (o) => orders.push(...o) } };
+    const r = await S.mediaRedo({ ids: [7, 8, 99], stages: ['transcribe'], by: 'ops' }, dd);
+    expect(r).toMatchObject({ queued: true, typed: [7, 8], scheduled: [7], gpu: ['transcribe'] });
+    expect(orders).toMatchObject([{ id: 7, mode: 'whole', kind: 'whole', redo: true, duration_s: 900 }, { id: 8, mode: 'whole', kind: 'whole', redo: true }]);
+    expect(updates).toEqual([[7, expect.objectContaining({ state: 'scheduled', stage: 'whole' })]]);   // a published talk stays published
+    expect(queued.length).toBe(n);   // no media-stages run: nothing is redone on tower
+  });
 });
