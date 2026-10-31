@@ -24,7 +24,7 @@ import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, li
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
 import { revertInsertions } from './faithfulness.js';
-import { coverageCheck, coverageProblems, onWorker, silentIn } from './coverage.js';
+import { coverageCheck, coverageGaps, onWorker, silentIn } from './coverage.js';
 import { repairParagraphLoops, publishProblems } from './loops.js';
 import { fixMojibake } from './text-repair.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
@@ -1034,9 +1034,13 @@ export async function runItem(item, opts = {}, deps = {}) {
         await writeJson(join(dir, 'transcript.work.json'), { ...work, loops: [...(work.loops || []), ...lp0.repaired] });
         meta.asr_loops_repaired = (meta.asr_loops_repaired || 0) + lp0.repaired.length;
       }
-      // the PUBLISH GATE (QA 10-22): a loop, a lossy decode (U+FFFD) or mojibake left in the text → not published
+      // the PUBLISH GATE (QA 10-22): a loop, a lossy decode (U+FFFD) or mojibake left in the text → not published. A stretch without words is
+      // NOT a blocker (Chad 10-31 night: tape flips, applause, music, walk-ups are normal): the window retry already ran once; what it left is
+      // recorded on the checklist as a measurement (meta.coverage_gaps).
       const wave = meta.asr?.coverage?.holes_after?.length ? (await import('./trim.js')).peaksOf(await readJson(join(dir, 'waveform.json'), null)) : null;
-      const problems = [...publishProblems(work.paragraphs || []), ...coverageProblems(meta.asr?.coverage, undefined, { silent: silentIn(wave) })];
+      const gaps = coverageGaps(meta.asr?.coverage, undefined, { silent: silentIn(wave) });
+      if (gaps.length) meta.coverage_gaps = gaps.slice(0, 50); else delete meta.coverage_gaps;
+      const problems = publishProblems(work.paragraphs || []);
       if (problems.length) { meta.publish_blocked = problems.slice(0, 20); await save(); throw new Error(`publish blocked: ${problems.length} text problem(s) — ${problems.slice(0, 3).map((x) => `p${x.p} ${x.kind} "${x.text}"`).join('; ')}`); }
       const timeHash = timingSignature(work.paragraphs);
       if (meta.audio_alignment_hash && meta.audio_alignment_hash !== timeHash) throw new Error('publish blocked: transcript timing changed after alignment; realign it against the selected audio before publishing');

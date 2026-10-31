@@ -299,16 +299,17 @@ describe('media item stage machine', () => {
     expect(tr.headings[0]).toMatchObject({ kind: 'heading', source: 'generated', form: 'statement' });
     expect(readFileSync(join(dir, 'transcript.md'), 'utf8')).toContain(`## ${tr.headings[0].text}`);
   });
-  it('a re-transcription off the worker never erases measured coverage: it records unmeasured and publishing blocks (10-31: 1947)', async () => {
+  it('a re-transcription off the worker never erases measured coverage: it records unmeasured as a measurement and the talk still publishes (10-31: 1947; Chad 10-31 night: a gap never blocks)', async () => {
     const r = await runItem({ id: 5, source_kind: 'file', source_ref: src }, {}, fakes());
     const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
     const m = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
     m.asr = { ...m.asr, coverage: { speech_s: 3400, holes_before: 259, repaired: 12, holes_after: [{ s: 100, e: 400 }], uncovered_after_pct: 94 } };
     writeFileSync(join(dir, 'meta.json'), JSON.stringify(m));
-    await expect(runItem({ id: 5, source_kind: 'file', source_ref: src, dir, slug: r.slug }, { from: 'transcribe' }, fakes())).rejects.toThrow(/coverage-unmeasured/);
+    await runItem({ id: 5, source_kind: 'file', source_ref: src, dir, slug: r.slug }, { from: 'transcribe' }, fakes());
     const after = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
     expect(after.asr.coverage).toMatchObject({ unmeasured: true, before: 94 });
-    expect(after.publish_blocked?.[0]?.kind).toBe('coverage-unmeasured');
+    expect(after.coverage_gaps?.[0]?.kind).toBe('coverage-unmeasured');
+    expect((after.publish_blocked || []).some((x) => /coverage|speech-gap/.test(x.kind))).toBe(false);
   });
 });
 

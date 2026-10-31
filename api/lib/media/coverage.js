@@ -10,7 +10,7 @@ export const HOP = 0.05;                 // seconds per energy frame
 export const MIN_HOLE_S = 3;             // an uncovered stretch of speech this long is a hole
 export const TOL_S = 0.4;                // a word covers this much audio either side of itself
 export const MAX_FAST_WPS = 6.5;         // words per second above which a sentence was squeezed
-export const BLOCK_HOLE_S = 15;          // only a stretch this long blocks publishing: a few seconds without words is normal (Chad 10-31: applause, a pause, a sung line); a skipped passage is not (Martha Root: 24 s)
+export const GAP_NOTE_S = 15;            // a stretch this long without words is noted on the checklist (a measurement; nothing blocks publishing — Chad 10-31 night)
 
 /** Streams mono PCM into per-frame dB levels. push(Float32Array) → dbs(). */
 export function makeFramer(sr = 16000, hop = HOP) {
@@ -104,21 +104,14 @@ export async function coverageCheck({ file, segments, tools, asrOpts = {}, lang 
   const speech = await speechOf(file, tools);
   const before = measureCoverage(segments, speech);
   let segs = segments;
-  const nonspeech = [], tried = new Set();
-  let repaired = 0, errors = 0, rounds = 0;
-  // ROUNDS (10-31 talks 2558, 2130): a window that recovers SOME words leaves the rest of its hole as smaller holes (2558: one 195 s hole
-  // through a sung passage → 2 "repaired" → 7 holes left, two of them 51 s and 75 s, blocking publish). Each leftover is a new hole with its
-  // own, shorter window: the next round retries it. A hole is tried once; one that yields no words is non-speech. Ends when no untried hole
-  // is left (every round either adds words or settles holes as non-speech), so it needs no cap.
-  for (let holes = before.holes; ; holes = measureCoverage(segs, speech, { ignore: nonspeech }).holes) {
-    const fresh = holes.filter((h) => !tried.has(`${h.s}-${h.e}`));
-    if (!fresh.length || (maxWindows !== Infinity && tried.size >= maxWindows)) break;
-    fresh.forEach((h) => tried.add(`${h.s}-${h.e}`));
-    rounds++;
-    const r = await retryWindows({ file, segs, holes: holesToRetry(fresh, maxWindows), tools, asrOpts, lang, stop, io, round: rounds });
-    segs = r.segs; repaired += r.repaired; errors += r.errors; nonspeech.push(...r.nonspeech);
-    if (r.errors && !r.repaired && !r.nonspeech.length) break;   // the whole round failed: retrying the same windows would fail the same way
-  }
+  const nonspeech = [];
+  // ONE pass (Chad 10-31 night: "retry at most once per hole; don't loop"): every hole's window in one --windows call, words found are spliced
+  // in, a window with none is non-speech. What is left stays on the record as a measurement; it never blocks publishing (tape flips, applause,
+  // music and walk-ups are normal in these recordings — 2161: a 24 s tape flip).
+  const r = before.holes.length ? await retryWindows({ file, segs, holes: holesToRetry(before.holes, maxWindows), tools, asrOpts, lang, stop, io, round: 1 })
+    : { segs, repaired: 0, errors: 0, nonspeech: [] };
+  segs = r.segs; nonspeech.push(...r.nonspeech);
+  const { repaired, errors } = r, rounds = before.holes.length ? 1 : 0;
   const after = measureCoverage(segs, speech, { ignore: nonspeech });
   return {
     segments: segs,
@@ -174,12 +167,11 @@ export const silentIn = (wave) => (h) => {
   return true;
 };
 
-/** Publish-gate problems from a stored coverage record (none recorded = not yet measured = no problem; the scan fills those in).
- *  Shorter holes stay on the record (holes_after) and never block; so does a hole the listening copy is silent through (silent, above). */
-export function coverageProblems(cov, minS = BLOCK_HOLE_S, { silent = () => false } = {}) {
+/** What the transcript still lacks, from a stored coverage record: MEASUREMENTS for the checklist, never a publish blocker (Chad 10-31 night:
+ *  "a speech gap must NEVER block publish" — 2161's 24 s gap is a tape flip). Holes under minS and holes the listening copy is silent
+ *  through (silent, above) are left out; an unmeasured transcript is recorded as such. → [{ kind, text, s?, e? }] */
+export function coverageGaps(cov, minS = GAP_NOTE_S, { silent = () => false } = {}) {
   if (!cov) return [];
-  if (cov.unmeasured) return [{ p: 0, kind: 'coverage-unmeasured', text: cov.why || 'the transcript was never measured against the speech' }];
-  const out = [];
-  for (const h of (cov.holes_after || []).filter((x) => x.e - x.s >= minS && !silent(x))) out.push({ p: 0, kind: 'speech-gap', text: `${h.s}–${h.e} s of speech has no words` });
-  return out;
+  if (cov.unmeasured) return [{ kind: 'coverage-unmeasured', text: cov.why || 'the transcript was never measured against the speech' }];
+  return (cov.holes_after || []).filter((x) => x.e - x.s >= minS && !silent(x)).map((h) => ({ kind: 'speech-gap', s: h.s, e: h.e, text: `${h.s}–${h.e} s of speech has no words` }));
 }
