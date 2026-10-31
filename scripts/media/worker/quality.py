@@ -7,6 +7,16 @@ def probe_duration(path):
     return float(json.loads(p.stdout)['format']['duration'])
 
 
+GAIN_CHECKS=('quality_gain','consistent_gain')
+
+
+def verdict_of(checks, gain):
+    """Same or better publishes (rules §3, Chad 10-31): passed = no MEASURED regression. The gain checks are reported, never a hold —
+    "not proven better" is not "worse" (the old all-checks rule held 34 talks). NISQA down > 0.1 is a regression, as in tower's judge."""
+    regressions=[k for k,v in checks.items() if k not in GAIN_CHECKS and not v]+(['nisqa_down'] if gain<-.10 else [])
+    return {'regressions':regressions,'proven_gain':all(checks.get(k) for k in GAIN_CHECKS),'passed':not regressions}
+
+
 def decoded_seconds(path, threads=2):
     """Decoded length by streaming the samples (not the container header: MP3 header estimates run seconds off, Chad 10-31)."""
     proc=subprocess.Popen(['ffmpeg','-nostdin','-v','error','-threads',str(threads),'-i',path,'-ac','1','-ar','48000','-f','s16le','-'],stdout=subprocess.PIPE,stderr=subprocess.PIPE);n=0
@@ -63,7 +73,9 @@ def assess(reference, candidate, af='', threads=2):
         'no_material_clipping':out['technical']['clip_pct']<.01,
         'duration_preserved':abs(samples/48000-decoded_seconds(reference,threads))<1,
     }
-    out['passed']=all(out['checks'].values());out['seconds']=round(time.time()-started,1)
+    # SAME OR BETTER PUBLISHES (rules §3, Chad 10-31): 'passed' = no measured regression. The two gain checks are reported, never a hold:
+    # "not proven better" is not "worse" (34 talks were held by the old all-checks rule).
+    out.update(verdict_of(out['checks'],gain));out['seconds']=round(time.time()-started,1)
     return out
 
 

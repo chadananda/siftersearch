@@ -149,10 +149,14 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
             assessment = {'version': 1, 'status': 'failed', 'passed': False, 'error': str(err)[-500:]}
         out['qa']['output_assessment'] = assessment
         json.dump(assessment, open(os.path.join(d, 'output-assessment.json'), 'w'))
+        # rules §3: a missing assessment is a pipeline failure → the job fails and is re-run, never held
+        if assessment.get('status') != 'complete':
+            raise RuntimeError(f"quality assessment failed: {str(assessment.get('error'))[-300:]}")
+        # only a MEASURED regression holds; the same or better (no proven gain) publishes
         if not assessment.get('passed'):
             out['ok'] = True; out['held'] = True
             out['qa']['verdict'] = 'review'
-            out['qa']['reason'] = 'paired listening-quality assessment did not demonstrate reliable improvement'
+            out['qa']['reason'] = 'measured regression: ' + ', '.join(assessment.get('regressions') or ['quality checks'])
             out['why'] = out['qa']['reason']
             return out
     # 3. forced re-alignment of the final transcript on the chosen copy
