@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { wantAnother, gpuLedger, reachedGpu, descends, cgroupMemGb } from '../../scripts/media/worker/gpu-pace.mjs';
+import { wantAnother, gpuLedger, reachedGpu, descends, cgroupMemGb, cpuSample, cpuBusy } from '../../scripts/media/worker/gpu-pace.mjs';
 
 const base = { running: 1, cap: 12, onDeck: 0, memGb: 10, minGb: 5 };
 it('one talk always on deck: claim the moment nothing is queued at the GPU or on its way there', () => {
@@ -70,4 +70,19 @@ it('RAM comes from the cgroup when it has a limit (10-31: a pod\'s /proc/meminfo
   const agent = readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8');
   expect(agent).toMatch(/cgroupMemGb\(\)\?\.availGb/);
   expect(agent).toMatch(/cap: CAP,/);
+});
+it('a full CPU holds claims: more talks only slow the CPU stages feeding the GPU (10-31 pod 370: load 78 on 31 CPUs, GPU 0 %)', () => {
+  expect(wantAnother({ ...base, cpu: 0.95 })).toBe(false);
+  expect(wantAnother({ ...base, cpu: 0.5 })).toBe(true);
+  expect(wantAnother({ ...base, cpu: null })).toBe(true);
+  const files = (m) => (f) => { if (f in m) return m[f]; throw new Error('ENOENT'); };
+  expect(cpuSample(files({ '/sys/fs/cgroup/cpu.stat': 'usage_usec 5000\nuser_usec 1', '/sys/fs/cgroup/cpu.max': '3200000 100000\n' }), 256)).toEqual({ usec: 5000, cores: 32 });
+  expect(cpuSample(files({ '/sys/fs/cgroup/cpuacct/cpuacct.usage': '15347867605000', '/sys/fs/cgroup/cpu/cpu.cfs_quota_us': '3112500', '/sys/fs/cgroup/cpu/cpu.cfs_period_us': '100000' }), 256))
+    .toEqual({ usec: 15347867605, cores: 31.125 });
+  expect(cpuSample(files({ '/sys/fs/cgroup/cpu.stat': 'usage_usec 7', '/sys/fs/cgroup/cpu.max': 'max 100000' }), 16)).toEqual({ usec: 7, cores: 16 });
+  expect(cpuSample(files({ '/proc/stat': 'cpu  100 0 50 1000 10 0 0 0 0 0\ncpu0 1' }), 8)).toEqual({ usec: 1_500_000, cores: 8 });
+  const S = [{ t: 0, usec: 0, cores: 4 }, { t: 30_000, usec: 60e6, cores: 4 }, { t: 60_000, usec: 216e6, cores: 4 }];
+  expect(cpuBusy(S)).toBeCloseTo(0.9);
+  expect(cpuBusy(S.slice(0, 1))).toBe(null);
+  expect(readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8')).toMatch(/minGb: MIN_AVAIL_GB, cpu \}\)/);
 });

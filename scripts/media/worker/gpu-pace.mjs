@@ -1,9 +1,11 @@
 // GPU pacing for the queue agent (Chad 10-31: "always queue up the next job so we are never waiting on CPU to finish or waiting on streaming/copying
 // over the network. GPU should be kept saturated."). Rule: keep ONE talk on deck — queued at gpu_lease.py's admission or on its way there. The next
-// is claimed the moment the deck is empty, so its download + prep overlap the GPU's current work. Slots = the machine's capacity; RAM bounds it.
+// is claimed the moment the deck is empty, so its download + prep overlap the GPU's current work — unless the CPU is full (≥90 % of the cgroup's cores
+// over the last minute): then another talk only slows the CPU stages that feed the GPU. Slots = the machine's capacity; RAM (cgroup) bounds it.
 import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { cpus } from 'node:os';
 
 export const WAITER_FRESH_S = 10;       // gpu_lease.py re-stamps a waiter every second; one silent for 10 s is gone
 export const STALL_MS = 45 * 60_000;    // a talk that never reaches the GPU stops holding the deck (logged)
@@ -54,7 +56,31 @@ export function cgroupMemGb(read = (f) => readFileSync(f, 'utf8')) {
   return null;
 }
 
-/** Take another talk now? Pure. onDeck = stages queued at the GPU + talks still on their way to it (download, probe, prep). */
-export function wantAnother({ running, cap, onDeck, memGb, minGb }) {
-  return running < cap && memGb >= minGb && onDeck === 0;
+/** CPU time used so far (µs) and the cores this process may use: the cgroup (v2 cpu.stat + cpu.max, v1 cpuacct + cfs quota), else /proc/stat.
+ * A talk's CPU stages feed the GPU; once the CPU is full another talk only slows them (10-31 pod 370: load 78 on 31 CPUs, GPU 0 %). */
+export function cpuSample(read = (f) => readFileSync(f, 'utf8'), hostCores = cpus().length) {
+  const num = (f) => { try { return Number(read(f).trim().split(/\s+/)[0]); } catch { return NaN; } };
+  let usec = NaN, quota = NaN, period = NaN;
+  try { usec = Number(/^usage_usec (\d+)/m.exec(read('/sys/fs/cgroup/cpu.stat'))?.[1]); } catch {}
+  try { [quota, period] = read('/sys/fs/cgroup/cpu.max').trim().split(/\s+/).map(Number); } catch {}
+  if (!Number.isFinite(usec)) usec = num('/sys/fs/cgroup/cpuacct/cpuacct.usage') / 1000;
+  if (!Number.isFinite(quota)) { quota = num('/sys/fs/cgroup/cpu/cpu.cfs_quota_us'); period = num('/sys/fs/cgroup/cpu/cpu.cfs_period_us'); }
+  if (!Number.isFinite(usec)) {   // a host: every non-idle jiffy (USER_HZ 100 → 10 000 µs)
+    try { const f = read('/proc/stat').split('\n')[0].trim().split(/\s+/).slice(1).map(Number); usec = (f.reduce((a, b) => a + b, 0) - f[3] - (f[4] || 0)) * 10_000; } catch { return null; }
+  }
+  const cores = quota > 0 && period > 0 ? Math.min(hostCores, quota / period) : hostCores;
+  return { usec, cores };
+}
+
+/** Share of the CPU busy between the oldest sample at least windowMs old and now (samples: [{t, usec, cores}] oldest first), or null. */
+export function cpuBusy(samples, windowMs = 60_000) {
+  const last = samples.at(-1), first = [...samples].reverse().find((s) => last.t - s.t >= windowMs) || samples[0];
+  if (!last || last === first || !last.cores) return null;
+  return (last.usec - first.usec) / ((last.t - first.t) * 1000 * last.cores);
+}
+export const CPU_FULL = 0.9;
+
+/** Take another talk now? Pure. onDeck = stages queued at the GPU + talks still on their way to it (download, probe, prep); cpu = busy share (null = unknown). */
+export function wantAnother({ running, cap, onDeck, memGb, minGb, cpu = null }) {
+  return running < cap && memGb >= minGb && onDeck === 0 && !(cpu >= CPU_FULL);
 }

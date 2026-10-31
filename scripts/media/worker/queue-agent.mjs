@@ -18,7 +18,7 @@ import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join, relative, dirname, basename } from 'node:path';
 
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
-import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, cgroupMemGb, STALL_MS } from './gpu-pace.mjs';
+import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, cgroupMemGb, cpuSample, cpuBusy, STALL_MS } from './gpu-pace.mjs';
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const HOST = arg('host'), SLOTS = Number(arg('slots', 1)), ROOT = arg('root', '/data/sifter-queue'), RUN = arg('run', 'local'), IMAGE = arg('image');
 const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)), GB_PER_TALK = Number(arg('gb-per-talk', 6)), ONCE = process.argv.includes('--once'), IDLE_EXIT_MS = Number(arg('idle-exit-min', 0)) * 60_000;
@@ -138,13 +138,16 @@ function onDeck() {
 }
 
 log('start', { slots: CAP, asked: SLOTS, ram_gb: Math.round(memTotalGb()), run: RUN, image: IMAGE, device: DEVICE, can: CAN, base: q.base });
+const cpuSeen = [];   // CPU samples over the last ~2 min: a full CPU holds claims (the GPU-feeding stages would only slow)
 while (!stopping || running.size) {
-  const deck = onDeck();
-  if (!stopping && wantAnother({ running: running.size, cap: CAP, onDeck: deck.waiting + deck.heading, memGb: memAvailGb(), minGb: MIN_AVAIL_GB })) {
+  const deck = onDeck(), c = cpuSample();
+  if (c) { cpuSeen.push({ t: Date.now(), ...c }); while (cpuSeen.length > 2 && Date.now() - cpuSeen[1].t > 120_000) cpuSeen.shift(); }
+  const cpu = cpuSeen.length > 1 ? cpuBusy(cpuSeen) : null;
+  if (!stopping && wantAnother({ running: running.size, cap: CAP, onDeck: deck.waiting + deck.heading, memGb: memAvailGb(), minGb: MIN_AVAIL_GB, cpu })) {
     const job = await q.claim({ host: HOST, can: CAN, ram_gb: memAvailGb() }).catch((e) => { log('claim error', { error: e.message }); return null; });
     if (job) {
       toGpu.set(job.id, { t: Date.now() });
-      log('claimed', { job: job.id, audio_s: job.body?.invoice?.audio_s, running: running.size, gpu_waiting: deck.waiting, gpu_util: gpuUtil(DEVICE) });
+      log('claimed', { job: job.id, audio_s: job.body?.invoice?.audio_s, running: running.size, gpu_waiting: deck.waiting, gpu_util: gpuUtil(DEVICE), cpu: cpu == null ? null : Math.round(cpu * 100) });
       running.set(job.id, work(job).finally(() => { running.delete(job.id); busyAt = Date.now(); }));
       continue;
     }
