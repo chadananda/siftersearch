@@ -105,7 +105,14 @@ async function failChain(st, id, ackJob, error, repo) {
 
 const readJson = async (f) => JSON.parse(await readFile(f, 'utf8'));
 /** Pull finished typed steps: validate; prep/gpu → enqueue the next step (ack the one before); finish → the whole intake + tool stamps. */
-async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null }) {
+// stageInline:false (the lane): a prepped talk's gpu step always lands on the LAN; the mover (rebalanceGpu, beside the pass) stages it on R2.
+// Uploading inline held tower's pass 50+ min on its uplink (10-31), so nothing was pulled or adopted meanwhile.
+/** Each adopted typed step → st.step_log {type, host, audio_s, at} (last 500): the worker cards' speed per host, pod and type (worker-cards.js). */
+export function logStep(st, type, host, audio_s, at) {
+  (st.step_log ||= []).push({ type, host: host || null, audio_s: audio_s || 0, at });
+  if (st.step_log.length > 500) st.step_log.splice(0, st.step_log.length - 500);
+}
+async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true }) {
   let adopted = 0, errors = 0, steps = 0, lanCap;
   const buf = { staged_h: buffer?.buffer_h || 0, want_h: buffer?.want_h || 0 };
   st.chains ||= {};
@@ -126,9 +133,10 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           await sq.get('results', j.id, 'result.json', join(stg, 'result.json'));
           const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs: outputs.length ? outputs : null });
           ch[type] = SJ.stepOf(j, r, now());
+          logStep(st, type, j.host, ch.audio_s, now());
           const m = await readMeta(it.dir), next = SJ.chainNext(m, ch);
           if (!next || SJ.AUDIO_TYPES.indexOf(next) <= SJ.AUDIO_TYPES.indexOf(type)) throw Error(`${type} delivered without its stages (next would be ${next})`);
-          const where = next === 'gpu' ? SJ.gpuRoute(lanCap ||= await q.capacity().catch(() => null), { edge: !!edge, targetH: TARGET_H, ...buf }) : 'lan', nq = qOf(where);
+          const where = next === 'gpu' && !stageInline ? 'lan' : next === 'gpu' ? SJ.gpuRoute(lanCap ||= await q.capacity().catch(() => null), { edge: !!edge, targetH: TARGET_H, ...buf }) : 'lan', nq = qOf(where);
           if (where === 'edge') buf.staged_h += (ch.audio_s || 0) / 3600;
           if (where !== src) {   // the next step runs on the other transport: its inputs go into that queue's files/<file id>/
             if (where === 'edge') await nq.put('files', ch.fileId, ch.input, join(it.dir, m.original));   // the LAN holds it from the feed
@@ -146,6 +154,7 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs });
           const meta = await wr.adoptWholeResult(stg, it.dir, await readMeta(it.dir), ch.sha, null);
           ch[type] = SJ.stepOf(j, r, now());
+          logStep(st, type, j.host, ch.audio_s, now());
           SJ.stampTools(meta, ch);
           await writeFile(join(it.dir, 'meta.json.typed-part'), JSON.stringify(meta, null, 2)); await rename(join(it.dir, 'meta.json.typed-part'), join(it.dir, 'meta.json'));
           await (syncStages || (async (id, stages) => (await import('../repos/media-ledger-repo.js')).syncItemStages(id, stages)))(it.id, meta.stages).catch(() => {});

@@ -56,6 +56,27 @@ describe('workerCards', () => {
   });
 });
 
+describe('typed steps count on the cards (10-31: pod 377 at 99 % GPU showed "no work last hour")', () => {
+  it('gpu steps give the pod and host their speed; cpu steps show on a cpu-only host; a typed chain is not counted twice', () => {
+    const t = 10_000_000, at = t - 60_000;
+    const steps = [
+      { type: 'gpu', host: 'pod-sifter-unipase-377', audio_s: 3600, at },
+      { type: 'cpu-prep', host: 'boss', audio_s: 1800, at }, { type: 'cpu-finish', host: 'boss', audio_s: 1800, at },
+      { type: 'gpu', host: 'aorus', audio_s: 360, at }, { type: 'cpu-prep', host: 'aorus', audio_s: 7200, at },
+      { type: 'gpu', host: 'pod-sifter-unipase-377', audio_s: 3600, at: t - SPEED_WINDOW_MS - 1 },   // outside the hour
+    ];
+    const done = [{ mode: 'typed', audio_s: 3600, gpu: 'pod-sifter-unipase-377', pod: 'pod-sifter-unipase-377', at }];
+    const sp = speeds(done, t, {}, steps);
+    expect(sp['sifter-unipase-377']).toBe(1);   // 3600 s in the hour, the typed done not added
+    expect(sp.boss).toBe(1);                     // cpu only: prep + finish
+    expect(sp.aorus).toBe(0.1);                  // has gpu work: the gpu rate
+    expect(sp.byType.aorus).toEqual({ gpu: 0.1, 'cpu-prep': 2 });
+    const cards = workerCards({ step_log: steps, done, pods: { a: { id: 'a', name: 'sifter-unipase-377', status: 'ready' } }, q_last: { leased: { 'pod-sifter-unipase-377': 3 } } }, t);
+    const pod = cards.find((c) => c.key === 'sifter-unipase-377');
+    expect(pod).toMatchObject({ status: 'working', jobs: 3, speed: 1, speed_by_type: { gpu: 1 } });
+  });
+});
+
 describe('podName', () => {
   it('is a stable Pod* name, distinct for neighbouring pods', () => {
     const names = [356, 357, 358, 359].map((n) => podName(`sifter-unipase-${n}`));

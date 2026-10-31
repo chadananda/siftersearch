@@ -23,10 +23,23 @@ const r1 = (x) => Math.round(x * 10) / 10;
 
 /** audio seconds finished per host key in the window → × real time. A pod younger than the window is divided by its own age
  *  (10-30: a 55-minute-old pod at 9.7× showed 3.2× — its hour of work spread over 3 h). since: { key → ms it started } */
-export function speeds(done, now, since = {}) {
-  const out = {};
-  for (const d of done || []) if (d.at > now - SPEED_WINDOW_MS && d.at <= now && d.audio_s > 0) { const k = /^sifter-unipase-/.test(d.pod || '') ? d.pod : base(d.gpu || d.pod); out[k] = (out[k] || 0) + d.audio_s; }
-  for (const k of Object.keys(out)) out[k] = r1(out[k] / (Math.min(SPEED_WINDOW_MS, Math.max(now - (since[k] || 0), 600_000)) / 1000));
+const keyOf = (h) => { const x = String(h || '').replace(/^pod-/, ''); return /^sifter-unipase-/.test(x) ? x : base(x); };
+/** Audio-seconds per second over the last hour, per host/pod: whole jobs (st.done) + typed gpu steps (st.step_log; a typed chain's st.done entry is
+ *  not counted again). A host with no gpu/whole work shows its cpu steps. byType: the same rate per typed step type. */
+export function speeds(done, now, since = {}, steps = []) {
+  const out = {}, cpu = {}, byType = {};
+  const rate = (k, s) => r1(s / (Math.min(SPEED_WINDOW_MS, Math.max(now - (since[k] || 0), 600_000)) / 1000));
+  const live = (d) => d.at > now - SPEED_WINDOW_MS && d.at <= now && d.audio_s > 0;
+  for (const d of done || []) if (live(d) && d.mode !== 'typed') { const k = /^sifter-unipase-/.test(d.pod || '') ? d.pod : base(d.gpu || d.pod); out[k] = (out[k] || 0) + d.audio_s; }
+  for (const d of steps || []) if (live(d) && d.host) {
+    const k = keyOf(d.host);
+    (byType[k] ||= {})[d.type] = (byType[k][d.type] || 0) + d.audio_s;
+    if (d.type === 'gpu') out[k] = (out[k] || 0) + d.audio_s; else cpu[k] = (cpu[k] || 0) + d.audio_s;
+  }
+  for (const k of Object.keys(cpu)) if (!out[k]) out[k] = cpu[k];
+  for (const k of Object.keys(out)) out[k] = rate(k, out[k]);
+  for (const k of Object.keys(byType)) for (const t of Object.keys(byType[k])) byType[k][t] = rate(k, byType[k][t]);
+  Object.defineProperty(out, 'byType', { value: byType, enumerable: false });
   return out;
 }
 
@@ -63,7 +76,7 @@ export function socketBusy(stat, pkg, prev = null) {
 }
 
 export function workerCards(st = {}, now = Date.now()) {
-  const sp = speeds(st.done, now, Object.fromEntries(Object.values(st.pods || {}).filter((p) => p.created).map((p) => [p.name, p.created])));
+  const sp = speeds(st.done, now, Object.fromEntries(Object.values(st.pods || {}).filter((p) => p.created).map((p) => [p.name, p.created])), st.step_log);
   const homeJobs = {};
   for (const h of Object.keys(st.home || {})) homeJobs[base(h)] = (homeJobs[base(h)] || 0) + 1;
   const held = { ...st.q_last?.leased };   // queue agents (LAN + edge): jobs each host holds, as of tower's last queue tick
@@ -74,7 +87,7 @@ export function workerCards(st = {}, now = Date.now()) {
     if (m.key === 'tower') return { ...m, status: 'conducting', jobs: Object.keys(st.jobs || {}).length + Object.keys(st.home || {}).length, speed: null, gauges: fresh && g.cpus ? { cpus: g.cpus } : null };
     const down = (st.host_down?.[m.key] || 0) > now;
     const jobs = homeJobs[m.key] || 0;
-    return { ...m, status: jobs ? 'working' : down ? 'resting' : 'idle', jobs, speed: sp[m.key] ?? null, gauges: fresh ? { cpu: g.cpu ?? null, gpu: g.gpu ?? null } : null };
+    return { ...m, status: jobs ? 'working' : down ? 'resting' : 'idle', jobs, speed: sp[m.key] ?? null, speed_by_type: sp.byType[m.key] || null, gauges: fresh ? { cpu: g.cpu ?? null, gpu: g.gpu ?? null } : null };
   });
   for (const p of Object.values(st.pods || {})) {
     if (p.terminated) continue;
@@ -83,7 +96,7 @@ export function workerCards(st = {}, now = Date.now()) {
     const vram = w.vram_total_gb ? ` · ${Math.round(w.vram_total_gb)} GB` : '';
     cards.push({ key: p.name, name: podName(p.name), role: 'Cloud remaster',
       specs: [['GPU', p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : vram ? `NVIDIA${vram}` : 'assigning…'], ['RAM', w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—']],
-      status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? sp[`pod-${p.name}`] ?? null,
+      status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? null, speed_by_type: sp.byType[p.name] || null,
       gauges: p.gauge && now - p.gauge.at < GAUGE_FRESH_MS ? { cpu: p.gauge.cpu, gpu: p.gauge.gpu } : null });
   }
   return cards;

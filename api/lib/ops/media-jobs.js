@@ -1874,8 +1874,15 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           st.home_errors = (st.home_errors || 0) + 1; st.home_last_error = `${h} #${cur.itemId}: ${String(err?.message || err).slice(-300)}`;
         }).finally(() => homeTasks.delete(h)));
       }
+      if (now() - (st.q_checked || 0) > 60_000 && (!queueKey || qPass)) {   // a skipped pass says why (still running its phase, or no queue key)
+        st.q_pass = { ...(st.q_pass || {}), skipped: now(), skip_why: !queueKey ? 'no queue key' : `previous pass still in ${st.q_pass?.phase || '?'}` };
+      }
       if (queueKey && !qPass && now() - (st.q_checked || 0) > 60_000) {
         st.q_checked = now();
+        // the pass is observable (10-31: it sat 50 min in an upload and nothing said so): when it started, the phase it is in, how long the
+        // last one took, and its error — a stale q_lan.at is explained by q_pass, never silent
+        const passAt = now(), phase = (ph) => { st.q_pass = { ...(st.q_pass || {}), started: passAt, phase: ph, phase_at: now() }; };
+        phase('start');
         qPass = (async () => {
           // two transports, one API: the LAN queue (tower's disk, aorus/boss) first, then the edge /_q (R2, anywhere). An item is fed to one only.
           // typed (cpu-prep -> gpu -> cpu-finish) is fed on the LAN queue, for MEDIA_TYPED_FRACTION of whole talks (0 = off); with MEDIA_POD_TYPED=1
@@ -1891,8 +1898,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           // moving waiting gpu steps onto R2 is upload-bound (minutes): it runs BESIDE the pass, one at a time, so pull/feed/plan never wait on it
           if (edgeBuf && !movePass) movePass = QF.rebalanceGpu(st, { q: localQueue(), edge: queueClient({ key: queueKey }), repo, now, buffer: edgeBuf })
             .then((r) => { st.q_moved = { at: now(), ...r }; }, (e) => { st.q_moved = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { movePass = null; });
-          st.q_lan = { at: now(), ...await QF.tick(st, { ...deps, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: edgeBuf, rebalance: false }).catch((e) => ({ error: String(e.message).slice(0, 300) })) };
+          phase('lan');
+          st.q_lan = { at: now(), ...await QF.tick(st, { ...deps, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) })) };
+          phase('edge');
           st.q_last = { at: now(), ...await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }) };
+          phase('plan');
           // the typed pod plan (Chad 10-31) over both queues, every pass: supportable = floor(min(R_prep, R_finish) / R_pod), limited only by work
           const caps = await Promise.all([localQueue().capacity(), queueClient({ key: queueKey }).capacity()].map((p) => p.catch(() => null)));
           const plan = QC.podPlan(caps);
@@ -1902,7 +1912,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           await localQueue().policy({ buffer_low: buf.buffer_low, buffer_h: buf.buffer_h, want_h: buf.want_h }).catch(() => null);
           (st.buffer_log ||= []).push({ at: now(), staged_h: Math.round(plan.staged_h * 100) / 100, want_h: Math.round(buf.want_h * 100) / 100, finish_q: caps[0]?.by_type?.['cpu-finish']?.queued ?? null, pods: livePods });
           if (st.buffer_log.length > 360) st.buffer_log.splice(0, st.buffer_log.length - 360);
-        })().catch((e) => { st.q_last = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { qPass = null; });
+          st.q_pass = { started: passAt, phase: 'done', done: now(), ms: now() - passAt, error: null };
+        })().catch((e) => { const error = String(e.message).slice(0, 300); st.q_last = { at: now(), error }; st.q_pass = { ...(st.q_pass || {}), started: passAt, failed: now(), ms: now() - passAt, error }; console.warn(`[media-cloud] queue pass failed in ${st.q_pass.phase}: ${error}`); }).finally(() => { qPass = null; });
       }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const imageStarting=acceptedWorker&&live.some(p=>p.image===acceptedWorker.image&&p.status!=='ready');
