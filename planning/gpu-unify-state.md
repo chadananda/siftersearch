@@ -124,6 +124,11 @@ Pod image (10-26) post.py had no `quiet`; tower requires realign+quiet+web since
   updated + restarted 06:40Z. Image 31j = …:gpu-20261031j @sha256:9a18fdb4cccf22a7aee94bf36a9d33cbef08ca4ec7ec541efd5e958a0b3e6397 pushed,
   NOT promoted (promotion drains 372, which already runs it) — promote when 372 ends or before renting more pods.
   Sampler /tmp/podsample.py → /tmp/podsample.log on tower (cgroup mem, df, RSS, nvidia-smi, lease stages) to catch the ~40-min pod death.
+- 06:47Z 372 died like 367/368/371: lastOk exactly ~24 min after ready, then "connection refused"; RAM 11/62 GB, disk 7.5/60 — healthy.
+  ROOT CAUSE: docker/media-worker/entrypoint.sh zombie guard `sleep 1500; [ -e /workspace/.lane-seen ] || self-terminate` — BOOTSTRAP_WHOLE
+  touches .lane-seen, BOOTSTRAP_AGENT never did. Every agent pod killed itself at 25 min, mid-work. Fix 1a8d23b9 (+test), deployed.
+  31j PROMOTED ~07:05Z (no live pods then except 373 booting on 31i → drains, lane rents one 31j pod). Watcher b0pvzu6i2 → /tmp/pod31j.py.
+  NEXT: one 31j pod past 25 min AND adopted results → then rentals --max-pods 3.
 
 ## Next
 1. Boss onto the LAN agent (ROCm; boss currently on home path B, st.home.boss, image quiet-20261029). Needs a ROCm gpu-20261031 build.
