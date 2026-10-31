@@ -16,7 +16,7 @@ export function scriptLang(text) {
 }
 /** A speaker introduced in the opening ("our speaker tonight is Mr. William Sears", "please welcome Dr. Daniel Jordan"). */
 export function introducedSpeaker(text) {
-  const m = /(?:speaker (?:tonight|today|this evening) is|(?:please )?welcome|pleasure (?:to|of) (?:introduce|introducing|present)|introduce (?:to you )?|talk by|address by)\s+((?:(?:Mr|Mrs|Ms|Miss|Dr|Prof|Professor|Hand of the Cause)\.?\s+)?[A-Z][a-zA-Z'’-]+(?:\s+[A-Z](?:[a-zA-Z'’-]+|\.)){1,3})/.exec(String(text || ''));
+  const m = /(?:speaker (?:tonight|today|this evening) is|(?:please )?welcome|introduc(?:e|ing)|present(?:ing)?|talk by|address by)(?:\s+to\s+you)?(?:\s+(?:tonight|today|this evening|now))?\s+((?:(?:Mr|Mrs|Ms|Miss|Dr|Prof|Professor|Hand of the Cause)\.?\s+)?[A-Z][a-zA-Z'’-]+(?:\s+[A-Z](?:[a-zA-Z'’-]+|\.)){1,3})/.exec(String(text || ''));
   return m ? m[1].replace(/[.,]$/, '').trim() : null;
 }
 /** Title page → { title, author, year }: the first substantial lines; "by X" names the author. */
@@ -33,11 +33,13 @@ export function titlePage(text) {
 
 /** item (intake_items row) + sample (intake_sample.py's sample.json) → rec. */
 export function recommendFromSample(item, s) {
-  const base = Number(item.score) || 0, text = String(s?.text || ''), notes = [];
+  // base = the catalogue's score, kept on the rec so a re-recommendation (rules improved) starts from it, not from the last rec's
+  const base = Number(item.sample?.rec?.base ?? item.score) || 0, text = String(s?.text || ''), notes = [];
   let score = base, title = null, creator = null, year = null, lang = null;
   if (s?.kind === 'talk') {
     lang = s.language || null;
-    if (!text.trim() || (s.speech_s ?? 0) < 5) { score -= 20; notes.push('no speech heard in the first minute (music, silence or a blank tape?)'); }
+    // the transcript's words decide; speech_s is informational
+    if (text.split(/\s+/).filter(Boolean).length < 8) { score -= 20; notes.push('no speech heard in the first minute (music, silence or a blank tape?)'); }
     else {
       notes.push(`First minute${lang && lang !== 'en' ? ` (${lang})` : ''}: “${short(text)}”`);
       creator = item.creator ? null : introducedSpeaker(text);
@@ -55,7 +57,7 @@ export function recommendFromSample(item, s) {
       else if (text.length > 1500) { score -= 15; notes.push("no Bahá'í terms in the first pages — check that it belongs"); }
     }
   }
-  return { title, creator, year, lang, why: [item.why, ...notes].filter(Boolean).join(' '), destination: item.destination || null, score: clamp(score), from: s?.kind || null };
+  return { title, creator, year, lang, why: [item.why, ...notes].filter(Boolean).join(' '), destination: item.destination || null, score: clamp(score), base, from: s?.kind || null };
 }
 
 /** The "More info" answer shown on the item: what the deeper look found, under the question asked. */

@@ -38,7 +38,8 @@ def talk():
     a = json.load(open(out))
     segs = a.get('segments') or []
     text = tidy(' '.join((s.get('text') or '').strip() for s in segs))
-    speech = sum(max(0, (s.get('end') or 0) - (s.get('start') or 0)) for s in segs)
+    t = lambda s, k: float(s.get(k[0], s.get(k)) or 0)   # media_tool's segments carry s / e (older ones start / end)
+    speech = sum(max(0, t(s, 'end') - t(s, 'start')) for s in segs)
     return {'text': text[:TEXT_MAX], 'language': a.get('language'), 'speech_s': round(speech, 1), 'secs': secs, 'files': ['clip.mp3']}
 
 

@@ -107,6 +107,12 @@ export async function setRec(id, rec) {
   await setSample(id, { rec });
   if (Number.isFinite(rec?.score)) await query('UPDATE intake_items SET score = ?, updated_at = ? WHERE id = ?', [rec.score, now(), id], 'archives:item-rec');
 }
+/** Items whose sample came back (for re-recommending when the rules improve), by id. */
+export async function itemsSampled(driveId, { afterId = 0, limit = 500 } = {}) {
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND id > ? AND sample LIKE '%"sampled_at"%' ORDER BY id LIMIT ?`,
+    [driveId, Number(afterId) || 0, Math.min(Number(limit) || 500, 2000)], 'archives:items-sampled');
+  return rows.map(parseItem);
+}
 /** "More info" asked and no deeper look queued yet (step 7). */
 export async function itemsWantingInfo(driveId, { limit = 50 } = {}) {
   const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND decision = 'more_info' AND (sample IS NULL OR sample NOT LIKE '%"deep_queued"%') ORDER BY decided_at LIMIT ?`,

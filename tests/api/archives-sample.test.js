@@ -4,8 +4,8 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { mkdtemp, writeFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), itemsToSample: vi.fn(), itemsWantingInfo: vi.fn(), setSample: vi.fn(), setRec: vi.fn(), answerInfo: vi.fn(), getItem: vi.fn() }));
-import { archiveSampleJob, samplePass, stagePlan, itemPath, clipKey, titleKey, SAMPLE_SECS, DEEP_SECS } from '../../api/lib/ops/archive-sample-job.js';
+vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), itemsToSample: vi.fn(), itemsWantingInfo: vi.fn(), itemsSampled: vi.fn(), setSample: vi.fn(), setRec: vi.fn(), answerInfo: vi.fn(), getItem: vi.fn() }));
+import { archiveSampleJob, samplePass, stagePlan, rerecDrive, itemPath, clipKey, titleKey, SAMPLE_SECS, DEEP_SECS } from '../../api/lib/ops/archive-sample-job.js';
 import { recommendFromSample, titlePage, introducedSpeaker, scriptLang, infoAnswer } from '../../api/lib/archives/sample-rec.js';
 
 let root, R, q;
@@ -124,6 +124,8 @@ describe('sample-rec (step 6)', () => {
   it('speaker, script', () => {
     expect(introducedSpeaker('please welcome Dr. Daniel Jordan, who')).toBe('Dr. Daniel Jordan');
     expect(introducedSpeaker('hello everyone')).toBeNull();
+    expect(introducedSpeaker('I have a great privilege of introducing to you tonight Ms. Agnes Alexander, who is')).toBe('Ms. Agnes Alexander');
+    expect(introducedSpeaker('And so may I present to you tonight Miss Agnes Alexander from Japan.')).toBe('Miss Agnes Alexander');
     expect(scriptLang('این کتاب پیرامون تاریخ امر است و چند فصل دارد که در آن گفته می‌شود')).toBe('fa');
   });
   it('silence lowers a talk; a book with no faith terms is flagged; nothing readable is flagged', () => {
@@ -132,5 +134,16 @@ describe('sample-rec (step 6)', () => {
     expect(recommendFromSample({ score: 50 }, { kind: 'book', text: '', pages: 3, ocr: true }).why).toMatch(/nothing readable in the first 3 pages \(even by OCR\)/);
     expect(infoAnswer(null, { kind: 'talk', secs: 300, text: 'x' })).toBe('First 5 min transcript:\nx');
     expect(DEEP_SECS).toBe(300);
+  });
+  it('a transcript with words is speech whatever speech_s says; a re-recommendation starts from the catalogue score', async () => {
+    const r = recommendFromSample({ score: 100 }, { kind: 'talk', text: 'It is a privilege tonight to have with us one of the Hands of the Bahá’í Faith', speech_s: 0 });
+    expect(r).toMatchObject({ score: 100, base: 100 });
+    const recs = {};
+    const legacy = { id: 1, kind: 'talk', score: 80, sample: { text: 'introducing to you tonight Ms. Agnes Alexander, a Baha\'i of Hawaii, who will speak', rec: { score: 80, why: 'Old. no speech heard in the first minute' } } };
+    const again = { id: 2, kind: 'talk', score: 85, sample: { text: 'x', rec: { score: 85, base: 50 } } };
+    const pages = [[legacy, again], []];
+    expect(await rerecDrive('g', { sampled: async () => pages.shift(), rec: async (id, x) => { recs[id] = x; } })).toEqual({ items: 2 });
+    expect(recs[1]).toMatchObject({ base: 100, score: 100, creator: 'Ms. Agnes Alexander' });
+    expect(recs[2]).toMatchObject({ base: 50, score: 30 });
   });
 });
