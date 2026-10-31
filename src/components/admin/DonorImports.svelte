@@ -3,6 +3,9 @@
   // covenant-breaker books apart, set-aside collapsed. Server-paged (100/page) so 20k+ rows stay fast. Deps: api.admin.*Import*.
   import { untrack } from 'svelte';
   import { admin } from '../../lib/api.js';
+  import { svcFixed } from '../../lib/imagekit.js';
+  // title pages are written by archive-sample to the public `siftersearch` bucket, which the image service resizes (/img/a/…)
+  const titleImg = (key) => svcFixed(`https://pub-e57ab96621a24ba18bcce728b4c51de2.r2.dev/${key}`, 72, 96);
 
   const PAGE = 100;
   const KINDS = [['book', 'Books'], ['scan', 'Scans'], ['talk', 'Talks'], ['video', 'Videos'], ['photo-set', 'Photo sets']];
@@ -109,9 +112,12 @@
 {#snippet row(it, key)}
   {@const dec = DECIDED[it.decision]}
   {@const copies = it.metadata?.copies ?? (it.rel_paths?.length || 1)}
+  {@const s = it.sample ?? {}}
+  {@const rec = s.rec}
   <li class="py-3 border-b border-border-subtle flex gap-3 {it.decision ? 'opacity-80' : ''}">
     <input type="checkbox" class="mt-1 shrink-0" aria-label="Select {it.title}" checked={!!selected[key]?.[it.id]}
       onchange={(e) => (selected[key] = { ...(selected[key] ?? {}), [it.id]: e.currentTarget.checked })} />
+    {#if s.title_image}<img {...titleImg(s.title_image)} width="72" height="96" loading="lazy" alt="Title page" class="shrink-0 w-18 h-24 object-cover rounded border border-border-subtle" />{/if}
     <div class="min-w-0 flex-1">
       <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span class="font-medium text-primary break-words">{it.title || '(untitled)'}</span>
@@ -120,7 +126,14 @@
         <span class="text-xs px-1.5 rounded border {BADGE[it.match] ?? 'text-muted border-border'}">{it.match ?? '—'}</span>
         <span class="text-xs text-muted">{it.kind} · {fmtN(it.files)} file{it.files === 1 ? '' : 's'}{copies > 1 ? ` · ${copies} copies` : ''}{it.bytes ? ` · ${fmtBytes(it.bytes)}` : ''}{it.duration_s ? ` · ${fmtDur(it.duration_s)}` : ''}{it.score != null ? ` · score ${Math.round(it.score)}` : ''}</span>
       </div>
-      {#if it.why}<p class="text-sm text-secondary mt-0.5">{it.why}</p>{/if}
+      {#if rec?.title || rec?.creator}<p class="text-sm text-primary mt-0.5">Sample suggests: {[rec.title, rec.creator, rec.year].filter(Boolean).join(' · ')}</p>{/if}
+      {#if rec?.why || it.why}<p class="text-sm text-secondary mt-0.5">{rec?.why || it.why}</p>{/if}
+      {#if it.info_answer}<p class="text-sm mt-1 p-2 rounded bg-surface-1 border border-warning text-primary whitespace-pre-line">{it.info_answer}</p>{/if}
+      {#if s.text}
+        <details class="mt-0.5"><summary class="text-xs text-accent cursor-pointer">{s.clip ? 'First-minute transcript' : `First ${s.pages ?? ''} pages${s.ocr ? ' (OCR)' : ''}`}</summary>
+          <p class="text-xs text-secondary whitespace-pre-line mt-1 max-h-60 overflow-y-auto">{s.text}</p></details>
+      {:else if s.error}<p class="text-xs text-muted mt-0.5">Sample failed: {s.error}</p>
+      {:else if s.queued}<p class="text-xs text-muted mt-0.5">Sample queued on a worker</p>{/if}
       {#if it.sample?.clip?.key}
         {#if clips[it.id]}<audio class="mt-1 w-full max-w-md h-8" controls autoplay preload="none" src={clips[it.id]}></audio>
         {:else}<button class="text-xs text-accent hover:text-accent-hover mt-0.5" onclick={() => listen(it)}>▶ First minute</button>{/if}
