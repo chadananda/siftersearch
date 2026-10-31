@@ -26,7 +26,7 @@ function item(kind, section, rows, primary, title) {
   const fps = rows.map((r) => r.fp).filter(Boolean);
   const fp = fps.length !== rows.length ? null : fps.length === 1 ? fps[0] : createHash('sha1').update([...fps].sort().join('|')).digest('hex').slice(0, 24);
   const t = title || clean(p.title || p.name), creator = String(p.artist || '').trim() || null, year = yearOf(p.year, p.name, p.folder);
-  const cb = kind === 'junk' ? null : covenantBreaker(year, creator, t, p.rel);   // kept apart; ones written before the break may be imported
+  const cb = kind === 'junk' || kind === 'photo-set' ? null : covenantBreaker(year, creator, t, p.rel);   // kept apart; ones written before the break may be imported
   return { kind, section: cb ? 'covenant-breaker' : section, title: t, creator, year,
     lang: null, primary_rel: p.rel, rel_paths: rows.map((r) => r.rel), files: rows.length, bytes: rows.reduce((n, r) => n + (r.size || 0), 0),
     duration_s: p.dur || null, metadata: { fp, sug: p.sug || null, near: p.near || null, catalog_why: p.why || null, cls: p.cls, ext: ext(p), ...(cb ? { cb } : {}) } };
@@ -47,7 +47,7 @@ export function groupFiles(rows) {
       out.push(item('scan', sec(s[0]), s, s[0], folderName));
     } else if (images.length) {
       const s = [...images].sort((a, b) => nat(a.rel, b.rel));
-      out.push(item('photo-set', sec(s[0]), s, s[0], folderName));
+      out.push(item('photo-set', 'set-aside', s, s[0], folderName));   // photos out of scope (Chad 10-31): listed, never recommended
     }
     const media = new Map();
     for (const r of live) {

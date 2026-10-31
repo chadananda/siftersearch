@@ -16,7 +16,7 @@ describe('groupFiles', () => {
     const photos = Array.from({ length: 6 }, (_, i) => f(`Pics/IMG_00${i}.jpg`));
     const r = groupFiles([...scan, ...photos]);
     expect(r.find((x) => x.kind === 'scan')).toMatchObject({ files: 6, title: 'Star of the West', primary_rel: 'Paper/Star of the West/page_000.tif' });
-    expect(r.find((x) => x.kind === 'photo-set').files).toBe(6);
+    expect(r.find((x) => x.kind === 'photo-set')).toMatchObject({ files: 6, section: 'set-aside' });
   });
   it('wav + mp3 siblings collapse, wav primary; tag title and artist used', () => {
     const r = groupFiles([f('T/talk.mp3', { dur: 60 }), f('T/talk.wav', { dur: 61, title: 'Real Title', artist: 'A. Speaker' })]);
