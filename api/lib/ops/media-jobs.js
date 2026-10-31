@@ -2388,11 +2388,13 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
     if (!m) continue;
     const has =await fs.stat(join(it.dir,'enhanced/unipase.cloud.flac')).then(s=>s.size>1024).catch(()=>false) && await fs.stat(join(it.dir,'enhanced/unipase.asr.json')).then(s=>s.size>10).catch(()=>false);
     const held = ['review', 'kept', 'deferred', 'archived'].includes(m.remaster?.status);
-    if (mode === 'restore' && !ids) continue;   // a redo is always explicit: the ids Chad / the agent names
+    if ((mode === 'restore' || mode === 'whole') && !ids) continue;   // a redo is always explicit: the ids Chad / the agent names
     if (mode === 'post' && !has) noCopy.push(it.slug);   // the restored copy is not on tower: only a full restore redo can re-assess it
     if (mode === 'post' && (!has || (!redo && (['done', 'review', 'kept', 'deferred', 'archived'].includes(m.remaster?.status) || existsSync(join(it.dir, 'enhanced', 'pod', 'post.json')))))) continue;
     if (mode === 'cleanup' && (!held || m.remaster?.method === 'cleaned')) continue;
-    orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode, ...((mode === 'restore'||redo) ? { redo: true } : {}), ...(first ? { first: true } : {}) });
+    // whole (explicit ids): the talk goes through the worker chain again from its original — every audio stage, transcription included
+    // (10-31: talk 1947's transcript kept 221 words of 58 min; a tower-side transcribe redo cannot run the coverage repair, which is worker-only)
+    orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode, ...(mode === 'whole' ? { kind: 'whole' } : {}), ...((mode === 'restore' || mode === 'whole' || redo) ? { redo: true } : {}), ...(first ? { first: true } : {}) });
   }
   await C.addOrders(orders, deps.ordersFile);
   return { mode, ordered: orders.length, sample: orders.slice(0, 5).map((o) => o.slug), ...(noCopy.length ? { no_copy: noCopy } : {}) };

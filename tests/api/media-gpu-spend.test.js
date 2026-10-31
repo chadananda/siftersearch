@@ -1016,6 +1016,19 @@ describe('talks taken off the air go first (Chad 10-29)', () => {
     await mediaCloudOrderJob({ mode: 'restore', ids: [1], first: true }, { ...x.deps, ordersFile });
     expect((await C.takeOrders(ordersFile))[0]).toMatchObject({ id: 1, mode: 'restore', redo: true, first: true });
   });
+  it('a whole redo is explicit only and brings a done talk back as a whole (typed-eligible) item (10-31: 1947 re-transcribed in the worker)', async () => {
+    const { mediaCloudOrderJob, intakeOrder } = await import('../../api/lib/ops/media-jobs.js');
+    const x = setup({ talks: 1, seconds: 3600 });
+    const ordersFile = join(x.root, 'orders-whole.json');
+    const repo = { ...x.deps.repo, remasterCandidates: async () => [x.items[1]] };
+    expect((await mediaCloudOrderJob({ mode: 'whole' }, { ...x.deps, repo, ordersFile })).ordered).toBe(0);   // never a sweep
+    await mediaCloudOrderJob({ mode: 'whole', ids: [1] }, { ...x.deps, ordersFile });
+    const [o] = await C.takeOrders(ordersFile);
+    expect(o).toMatchObject({ id: 1, mode: 'whole', kind: 'whole', redo: true });
+    const st = { jobs: {}, queue: [], done: [{ id: 1, mode: 'typed' }], failed: [], attempts: {}, items: { 1: { kind: 'whole', redo: false } } };
+    intakeOrder(st, o);
+    expect(st.queue).toEqual([1]); expect(st.done).toEqual([]); expect(st.items[1]).toMatchObject({ kind: 'whole', redo: true });
+  });
   it('the newest first order goes to the very front, ahead of earlier first talks; a done talk with redo comes back', async () => {
     const { intakeOrder, laneOrder } = await import('../../api/lib/ops/media-jobs.js');
     const st = { jobs: { a: { itemId: 9 } }, queue: [2, 3, 4], done: [{ id: 7, mode: 'restore' }], failed: [], attempts: { 7: 2 },

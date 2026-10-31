@@ -734,7 +734,10 @@ export async function runItem(item, opts = {}, deps = {}) {
           io: { readJson, unlink, tmp: (n) => join(tmpdir(), `media-${process.pid}-${Date.now()}-${n}`) } }).catch((err) => { if (err.code === 'DRAIN') throw err; return { coverage: { error: String(err.message).slice(0, 200) } }; });
         rec.coverage = cov.coverage;
         if (cov.segments && cov.coverage.repaired) { raw.segments = cov.segments; await writeJson(out, raw); }
-      }
+      } else if (meta.asr?.coverage) rec.coverage = { unmeasured: true, why: 'transcribed again outside the worker image: the coverage check runs only there', before: meta.asr.coverage.uncovered_after_pct ?? null };
+      // ^ a re-transcription off the worker never erases the measured evidence (10-31: a tower-side transcribe redo of 1947 wrote coverage null,
+      //   the gate read "not measured = no problem" and published a 221-word transcript of a 58-min talk whose worker measurement had 259 holes).
+      //   Unmeasured blocks publishing; a whole redo through the worker (media-cloud-order mode 'whole') measures it.
       void turnsFile;
       meta.language = raw.language; meta.asr = { coverage: rec.coverage || null, model: raw.model, language: raw.language, languages: raw.languages, mode: lang === 'multi' ? 'interpreted' : 'single', prompt: raw.prompt,
         aligned: raw.aligned, align_score: raw.align_score, timings: raw.timings, host: r.host || 'tower', threads: r.host ? null : th, rtf: Math.round((r.seconds / Math.max(1, raw.duration_s)) * 1000) / 1000, input: meta.enhancement.asr_input,

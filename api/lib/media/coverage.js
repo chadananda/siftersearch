@@ -130,6 +130,7 @@ export async function coverageCheck({ file, segments, tools, asrOpts = {}, lang 
  *  Shorter holes stay on the record (holes_after) and never block. */
 export function coverageProblems(cov, minS = BLOCK_HOLE_S) {
   if (!cov) return [];
+  if (cov.unmeasured) return [{ p: 0, kind: 'coverage-unmeasured', text: cov.why || 'the transcript was never measured against the speech' }];
   const out = [];
   for (const h of (cov.holes_after || []).filter((x) => x.e - x.s >= minS)) out.push({ p: 0, kind: 'speech-gap', text: `${h.s}–${h.e} s of speech has no words` });
   return out;

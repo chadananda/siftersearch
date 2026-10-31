@@ -95,5 +95,7 @@ describe('coverageProblems', () => {
   it('reports each remaining hole', () => expect(coverageProblems({ holes_after: [{ s: 164.5, e: 188.8 }] })[0].kind).toBe('speech-gap'));
   it('a few seconds without words is normal and never blocks; a skipped passage does (Chad 10-31)', () =>
     expect(coverageProblems({ holes_after: [{ s: 137.83, e: 142.8 }, { s: 164.5, e: 188.8 }] }).map((x) => x.text)).toEqual(['164.5–188.8 s of speech has no words']));
+  it('a NEW transcript made outside the worker (coverage unmeasured) blocks publishing (10-31: 1947 published 221 words of 58 min)', () =>
+    expect(coverageProblems({ unmeasured: true, why: 'transcribed outside the worker image' })[0].kind).toBe('coverage-unmeasured'));
 });
 void measureCoverage;
