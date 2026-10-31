@@ -1971,7 +1971,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const typedPods = process.env.MEDIA_POD_TYPED === '1' && !!st.pod_plan;
       const podBusy = (p) => (st.q_last?.leased?.[`pod-${p.name}`] || 0) > 0;
       // ...and every live pod has EARNED its place: a talk whose gpu step it ran was adopted as a pure remaster (LH.podEarned)
-      const rampOk = !live.some((p) => p.status !== 'ready') && live.every(podBusy) && live.every((p) => LH.podEarned(st, p)) && (st.pod_plan?.staged_n || 0) > 0;
+      const rampOk = !live.some((p) => p.status !== 'ready') && live.every(podBusy) && live.every((p) => LH.podEarned(st, p)) && (st.pod_plan?.staged_n || 0) > 0
+        && !(st.pod_plan?.finish_backlog_h > st.pod_plan?.horizon_h);   // and the finishing hosts keep up: no more gpu output while finish work backs up past the plan horizon
       const proof = typedPods ? LH.podsProven(st) : null; if (proof) st.pods_proof = proof;
       // typed: ONE pod until pods are proven to turn into talks (LH.podsProven, Chad 10-31), then ramp one at a time while every pod is busy
       // ONE pod on trial at a time: the pool holds the pods that earned their place + one (10-31: 385 booted beside an unproven 382)

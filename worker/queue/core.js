@@ -211,7 +211,11 @@ export function capacity(sql, now = Date.now()) {
     const t = typeRate(sql, type, now, hosts);
     const q = one(sql, `SELECT COALESCE(SUM(audio_s), 0) AS s, COUNT(*) AS n FROM jobs WHERE state = 'queued' AND type = ?`, type);
     const tp = throughput(sql, type, now);
-    by_type[type] = { hosts: t.hosts, rate: t.rate, each: t.each, queued: q.n, queued_audio_h: q.s / 3600, queued_h: q.s / 3600 / (t.rate || DEFAULT_RATE), throughput: tp.total, throughput_each: tp.each || {}, done_2h: tp.jobs };
+    // the type's capacity counts ONLY the engaged hosts that list it as a role, at their measured rate (their rates-table rate until one
+    // finishes in the window). 10-31: Aorus (types [gpu], spill cpu-finish) still counted its spilled 14.4 audio-h/h, so r_finish read 97
+    // while the hosts claiming cpu-finish (boss 21.1 + tower 9.9) gave ~31: the plan supported 6 pods, the CPU side about 2.
+    const role_tp = t.hosts.some((h) => tp.each?.[h] != null) ? t.hosts.reduce((a, h) => a + (tp.each?.[h] ?? t.each[h] ?? 0), 0) : null;
+    by_type[type] = { hosts: t.hosts, rate: t.rate, each: t.each, queued: q.n, queued_audio_h: q.s / 3600, queued_h: q.s / 3600 / (t.rate || DEFAULT_RATE), throughput: role_tp, throughput_all: tp.total, throughput_each: tp.each || {}, done_2h: tp.jobs };
     if (type === 'gpu') by_type.gpu.pod_throughput = tp.pods;
   }
   const pods = rows(sql, `SELECT host, rate FROM rates WHERE type = 'gpu' AND host LIKE 'pod-%' AND rate > 0`);
@@ -259,7 +263,9 @@ export function podPlan(caps, { horizonH = 2 } = {}) {
   const rPrepM = meas('cpu-prep'), rFinishM = meas('cpu-finish'), rPodM = podMeas.length ? podMeas.reduce((a, b) => a + b, 0) / podMeas.length : null;
   const r_prep = rPrepM ?? sum((c) => c.by_type['cpu-prep']?.rate), r_finish = rFinishM ?? sum((c) => c.by_type['cpu-finish']?.rate), r_pod = rPodM ?? PRIOR_POD;
   const priors = [...(rPrepM == null ? ['prep'] : []), ...(rFinishM == null ? ['finish'] : []), ...(rPodM == null ? ['pod'] : [])];
+  const finish_queued_h = sum((c) => c.by_type['cpu-finish']?.queued_audio_h);
   const plan = { gpu_queued_h: sum((c) => c.by_type.gpu?.queued_audio_h), prep_queued_h: sum((c) => c.by_type['cpu-prep']?.queued_audio_h),
+    finish_queued_h, finish_backlog_h: r_finish > 0 ? finish_queued_h / r_finish : null,   // hours of finish work waiting at the finishing hosts' pace
     staged_h: edgeCap?.by_type?.gpu?.queued_audio_h || 0, staged_n: edgeCap?.by_type?.gpu?.queued || 0, r_home_gpu: sum((c) => c.by_type.gpu?.home_rate),
     r_prep, r_finish, r_pod, priors, horizon_h: horizonH };
   const t = podTarget({ rPrep: r_prep, rFinish: r_finish, rPod: r_pod, workH: plan.gpu_queued_h + plan.prep_queued_h, horizonH, measured: !priors.length });

@@ -186,6 +186,23 @@ describe('pod target (Chad 10-31): supportable = floor(min(R_prep, R_finish) / R
   });
 });
 
+describe('capacity counts only the hosts that list the type (10-31: a spill host inflated r_finish 97 vs ~31)', () => {
+  it('a host that finished cpu-finish but now claims [gpu] (spill) is not finish capacity; the plan reports the finish backlog', () => {
+    Q.enqueue(sql, [tj('f1', 'cpu-finish'), tj('f2', 'cpu-finish'), tj('f3', 'cpu-finish')], T0);
+    const a = Q.claim(sql, { host: 'aorus', types: ['cpu-finish'] }, T0), b = Q.claim(sql, { host: 'boss', types: ['cpu-finish'] }, T0);
+    Q.done(sql, { id: a.id, lease: a.lease, result: {} }, T0 + 1_800_000);   // aorus 2/h
+    Q.done(sql, { id: b.id, lease: b.lease, result: {} }, T0 + 3_600_000);   // boss 1/h
+    Q.claim(sql, { host: 'aorus', types: ['gpu'], spill: ['cpu-finish'] }, T0 + 3_600_001);   // aorus is GPU now (1 h of finish queued: no spill)
+    const cap = Q.capacity(sql, T0 + 3_600_002);
+    expect(cap.by_type['cpu-finish'].throughput_all).toBeCloseTo(3);
+    expect(cap.by_type['cpu-finish'].throughput).toBeCloseTo(1);
+    const plan = Q.podPlan(cap);
+    expect(plan.r_finish).toBeCloseTo(1);
+    expect(plan.finish_queued_h).toBeCloseTo(1);
+    expect(plan.finish_backlog_h).toBeCloseTo(1);
+  });
+});
+
 describe('throughput: audio finished per busy hour, per host, over the rolling window', () => {
   it('overlapping jobs on one host count their union span; pods are averaged', () => {
     Q.enqueue(sql, [tj('a', 'gpu'), tj('b', 'gpu'), tj('c', 'gpu')], T0);
