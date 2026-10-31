@@ -20,6 +20,11 @@ These are owner decisions. They are not tuning knobs. Code, tests and agents mus
   only which tools.
 - A talk is on air only with its remaster. Until the remaster is done, the talk is unfinished and stays in the pipeline, off air.
 
+## 2a. Every remaster gets the quiet pass (Chad 10-31: "we had to silence gaps between speech")
+UniPASE makes the gaps between speech worse, so every remaster is followed by the quiet pass, which silences or fades the word-free stretches
+(`api/lib/media/quiet-repair.js`, `scripts/media/worker/quiet.py`; runs on a worker). Quiet is not a splice: it attenuates the remaster's own gaps
+and never inserts original audio. A remaster without quiet is not complete. Any rebuilt or new remaster chain must keep it.
+
 ## 3. Same or better publishes; only worse is held (10-31)
 > "If they are actually worse, they should be held for review. If they are the same or better, they should be published with the remaster.
 > Very few will actually be worse. When we review, we might be reviewing the assessment."

@@ -47,7 +47,7 @@ substitute the local database and do not estimate.
 
 "There is no reason to ever splice a remaster. That is not allowed." Full decision record: `docs/architecture/media-remaster-rules.md` — read it before touching any media/remaster code.
 * A listening copy is one continuous remaster; never original audio mixed in. The word guard MEASURES only. (Splicing was built once, before 10-29; it is why the library is being reprocessed.)
-* Every talk is remastered (UniPASE + any helpful automated cleanup); the original never plays. Same-or-better publishes; only a measured regression is held.
+* Every talk is remastered (UniPASE + any helpful automated cleanup); the original never plays. UniPASE worsens the gaps between speech → every remaster gets the QUIET pass (quiet-repair.js/quiet.py); no quiet = not complete. Same-or-better publishes; only a measured regression is held.
 * Held → `/admin/media-held`, Chad decides publish or archive (archive = out of every queue, files kept). Never recycle a hold. Priority words are ORDER, never filters.
 
 ## ⛔ Tower placement — tower serves; workers process (Chad 10-24)
