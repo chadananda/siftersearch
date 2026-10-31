@@ -6,7 +6,8 @@ import { existsSync } from 'node:fs';
 import * as fsp from 'node:fs/promises';
 import { hostProfile } from './tools.js';
 
-export const QUIET_REPAIR_VERSION = 1;
+import { QUIET_REPAIR_VERSION, quietRecord } from './quiet-record.js';
+export { QUIET_REPAIR_VERSION, quietRecord };
 const q = (s) => "'" + String(s).replaceAll("'", "'\\''") + "'";
 const QUIET_PY = '/opt/sifter/media/worker/quiet.py';
 // the container script: silence, then measure both files' (rate, channels, duration) with quiet.probe so tower can check the copy is the same length
@@ -15,12 +16,6 @@ python ${QUIET_PY} /job/in.flac /job/work.json /job/realign.json /job/out.flac >
 python -c "import sys,json,os;sys.path.insert(0,'/opt/sifter/media/worker');import quiet;print(json.dumps({'in':quiet.probe('/job/in.flac'),'out':quiet.probe('/job/out.flac') if os.path.exists('/job/out.flac') else None}))" > /job/probe.json
 mv /job/report.json.tmp /job/report.json
 `;
-
-/** The meta.remaster.quiet record from a quiet.py report. Pure. */
-export function quietRecord(rep, extra = {}) {
-  return { v: QUIET_REPAIR_VERSION, quiet_s: rep.quiet_s ?? 0, stretches: rep.stretches ?? 0, noise_silenced_s: rep.loud_s ?? 0,
-    voiced_kept_s: Math.round((rep.voiced_kept || []).reduce((a, [s, e]) => a + (e - s), 0) * 10) / 10, ...extra };
-}
 
 /** Is the silenced copy safe to swap in? Same rate, channels and length (±50 ms: silencing never moves time). Pure → null | reason. */
 export function probeMismatch(p) {

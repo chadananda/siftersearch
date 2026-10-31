@@ -6,6 +6,7 @@ import {audioVersion, audioAlignment, listeningVariant, markAudioPending, timing
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { qualityOf } from './remaster-quality.js';
 const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT: tower never reprocesses audio — set once the pre-worker backlog has drained
+import { quietRecord } from './quiet-record.js';
 import { podPost, podComplete, podVerdict, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait } from './tools.js';
@@ -451,7 +452,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           }
           if ((meta.enhancement.listening || 'safe') !== listeningBefore) markAudioPending(meta);
           meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: spliced ? `the copy mixes original and remastered audio (${g.swapped} sentences from the original): never published — re-render the pure copy` : pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
-            swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), ...(pod?.quiet ? { quiet: (await import('./quiet-repair.js')).quietRecord(pod.quiet, { host: 'worker' }) } : {}), at: d.now() };   // quiet: the worker silenced the word-free stretches (post.py step 4)
+            swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), ...(pod?.quiet ? { quiet: quietRecord(pod.quiet, { host: 'worker' }) } : {}), at: d.now() };   // quiet: the worker silenced the word-free stretches (post.py step 4)
           delete meta.stages.verify;   // a new remaster result must be measured again
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
           meta.qa = { ...(meta.qa || {}), remaster: pod?.qa ? { ...pod.qa, at: new Date().toISOString() } : qualityOf(meta) };   // the worker decided the verdict; tower records it
