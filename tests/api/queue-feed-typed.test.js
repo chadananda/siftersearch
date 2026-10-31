@@ -21,6 +21,7 @@ function mkQueue() {
     listDone: async (n, type) => Q.listDone(sql, n, type), withdraw: async (ids) => Q.withdraw(sql, ids),
     ack: async (ids) => { for (const j of Q.ack(sql, ids)) for (const k of [...store.keys()]) if (k.startsWith(`results/${j.id}/`) || (!Q.fileInUse(sql, j.file_id) && k.startsWith(`files/${j.file_id}/`))) store.delete(k); },
     put: async (kind, id, name, file) => { const b = await readFile(file); store.set(`${kind}/${id}/${name}`, b); return { key: name, bytes: b.length }; },
+    list: async (kind, id) => [...store.entries()].filter(([k]) => k.startsWith(`${kind}/${id}/`)).map(([k, v]) => ({ name: k.slice(`${kind}/${id}/`.length), bytes: v.length })),
     get: async (kind, id, name, dest) => { const b = store.get(`${kind}/${id}/${name}`); if (!b) throw Error(`no ${kind}/${id}/${name}`); await mkdir(dirname(dest), { recursive: true }); await writeFile(dest, b); return dest; },
   };
   return { sql, store, q };
@@ -126,6 +127,32 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     }
     expect(items[1].state).toBe('failed'); expect(items[1].why).toMatch(/without its stages/);
   });
+  it('a transfer error leaves the step on its queue for the next pass (never acked-and-lost), recorded in st.pull_errors', async () => {
+    engage(); st.queue = [1];
+    await feed(st, deps); deliver('cpu-prep');
+    const get = q.get; let fails = 1;
+    q.get = async (...a) => { if (fails-- > 0) throw Error('fetch failed'); return get(...a); };
+    expect((await pull(st, deps)).typed).toMatchObject({ steps: 0, errors: 1 });
+    expect(st.pull_errors.at(-1).error).toMatch(/fetch failed/);
+    expect(Object.keys(st.chains)).toEqual(['1']); expect(st.queue).toEqual([]);
+    expect((await pull(st, deps)).typed).toMatchObject({ steps: 1, errors: 0 });   // the next pass adopts it
+  });
+  it('an abandoned pass (drain / self-heal) fails and acks nothing: it throws, the chain stays', async () => {
+    engage(); st.queue = [1];
+    await feed(st, deps); deliver('cpu-prep');
+    const get = q.get;
+    q.get = async () => { throw Object.assign(Error('queue pass abandoned (self-heal)'), { code: 'ABANDONED' }); };
+    await expect(pull(st, deps)).rejects.toThrow(/abandoned/);
+    expect(Object.keys(st.chains)).toEqual(['1']); expect(st.queue).toEqual([]); expect(st.failed || []).toEqual([]);
+    q.get = get;
+    expect((await pull(st, deps)).typed).toMatchObject({ steps: 1, errors: 0 });
+  });
+  it('tick reports typed leases per host (stats() alone reads media jobs only)', async () => {
+    engage(); st.queue = [1];
+    await feed(st, deps);
+    Q.claim(sql, { host: 'boss', types: ['cpu-prep'], contract: CONTRACT.contract, ram_gb: 32 });
+    expect((await qtick(st, { ...deps, rebalance: false })).leased).toEqual({ boss: 1 });
+  });
   it('a step the queue gave up on (3 attempts) drops the chain and retries the talk', async () => {
     engage(); st.queue = [1];
     await feed(st, deps);
@@ -192,6 +219,17 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });
     expect(st.done[0]).toMatchObject({ gpu: 'pod', prep: 'boss', finish: 'boss' });
     expect([...onEdge('results/'), ...onEdge('files/')]).toEqual([]);
+  });
+  it('a move cut by a restart resumes: files already on the edge at their size are not sent again; two talks move side by side', async () => {
+    engage(); st.queue = [1, 2];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); deliver('cpu-prep'); deliver('cpu-prep'); await pull(st, d);
+    const ch = st.chains[1], put = E.q.put, sent = [];
+    await put('files', ch.fileId, ch.input, join(items[1].dir, 'orig.mp3'));   // the cut move's first file made it
+    E.q.put = async (kind, id, name, file) => { sent.push(`${id}/${name}`); return put(kind, id, name, file); };
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 2, resumed_files: 1 });
+    expect(sent).not.toContain(`${ch.fileId}/${ch.input}`);
+    expect(Q.stats(E.sql, Date.now(), 'gpu').states.queued.n).toBe(2);
   });
   it('a LAN gpu step already leased by a home GPU is never moved', async () => {
     engage(); st.queue = [1];

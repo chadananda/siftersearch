@@ -10,7 +10,7 @@
 // deps.edge (the /_q client, set while pods boot typed: MEDIA_POD_TYPED=1): the gpu step overflows there (SJ.gpuRoute); tower copies the
 // original + the previous step's files into the other queue's files/<file id>/ and acks each step on the queue that holds it.
 import { join } from 'node:path';
-import { readFile, writeFile, rm, rename } from 'node:fs/promises';
+import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
 
 export const TARGET_H = 2.5, LOW_H = 2;
@@ -107,6 +107,13 @@ const readJson = async (f) => JSON.parse(await readFile(f, 'utf8'));
 /** Pull finished typed steps: validate; prep/gpu → enqueue the next step (ack the one before); finish → the whole intake + tool stamps. */
 // stageInline:false (the lane): a prepped talk's gpu step always lands on the LAN; the mover (rebalanceGpu, beside the pass) stages it on R2.
 // Uploading inline held tower's pass 50+ min on its uplink (10-31), so nothing was pulled or adopted meanwhile.
+const MOVE_PARALLEL = Number(process.env.MEDIA_MOVE_PARALLEL) || 3;
+const PERMANENT = /result refused|chain record lost|delivered without its stages/, PULL_TRIES = 5;
+/** Every typed pull error → st.pull_errors (last 50: at, job, error), so a failing step is never silent. */
+export function logPullError(st, job, error, at = Date.now()) {
+  (st.pull_errors ||= []).push({ at, job, error });
+  if (st.pull_errors.length > 50) st.pull_errors.splice(0, st.pull_errors.length - 50);
+}
 /** Each adopted typed step → st.step_log {type, host, audio_s, at} (last 500): the worker cards' speed per host, pod and type (worker-cards.js). */
 export function logStep(st, type, host, audio_s, at) {
   (st.step_log ||= []).push({ type, host: host || null, audio_s: audio_s || 0, at });
@@ -166,10 +173,19 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           delete st.chains[qj.itemId];
           adopted++;
         }
-      } catch (e) { errors++; await failChain(st, j.id, ackJob, `typed ${type} from ${j.host}: ${e.message}`, repo); }
+      } catch (e) {
+        if (stg) await rm(stg, { recursive: true, force: true }).catch(() => {});
+        if (e.code === 'ABANDONED') throw e;   // the pass was abandoned (drain / self-heal): nothing is failed or acked, the next pass resumes
+        errors++;
+        const error = `typed ${type} from ${j.host}: ${e.message}`.slice(0, 300);
+        logPullError(st, j.id, error);
+        // a refused result is final; a transfer or I/O error leaves the step done on its queue, retried next pass (never acked-and-lost), final after PULL_TRIES
+        if (PERMANENT.test(e.message) || (qj.pull_fails = (qj.pull_fails || 0) + 1) >= PULL_TRIES) await failChain(st, j.id, ackJob, error, repo);
+        continue;
+      }
       if (stg) await rm(stg, { recursive: true, force: true }).catch(() => {});
     }
-    for (const f of (await sq.stats(type)).failed || []) if (st.qjobs[f.id]) { errors++; await failChain(st, f.id, ackJob, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`, repo); }
+    for (const f of (await sq.stats(type)).failed || []) if (st.qjobs[f.id]) { errors++; logPullError(st, f.id, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`.slice(0, 300)); await failChain(st, f.id, ackJob, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`, repo); }
   }
   if (ackEdge.length) await edge.ack(ackEdge);   // the LAN list is acked by pull()
   return { adopted, steps, errors, ...(edge ? { edge_acked: ackEdge.length } : {}) };
@@ -181,35 +197,48 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
  *  3 gpu steps queued on the LAN and none on the edge). */
 // Crash-safe order: the files are copied to the edge while the LAN step is still queued (a drain mid-upload loses nothing), then the LAN
 // copy is withdrawn and the edge step enqueued at once. It is slow (tower's uplink), so the lane runs it beside its pass, not inside it.
-export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile, now = Date.now, buffer = null }) {
+export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile, now = Date.now, buffer = null, parallel = MOVE_PARALLEL }) {
   const wantH = buffer?.want_h || 0;
   if (!(wantH > 0)) return { moved: 0 };
   const cap = await edge.capacity().catch(() => null);
   if (!cap) return { moved: 0 };
-  let edgeH = cap.by_type?.gpu?.queued_audio_h || 0, moved = 0;
+  let edgeH = cap.by_type?.gpu?.queued_audio_h || 0, moved = 0, skipped = 0;
   const leased = new Set(((await q.stats('gpu').catch(() => null))?.leased || []).map((j) => j.id));   // a step a home GPU holds is never copied
-  const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where && !leased.has(id)).sort((a, b) => a[1].at - b[1].at);
-  for (const [id, qj] of waiting) {
-    if (edgeH >= wantH) break;
-    const ch = st.chains?.[qj.itemId], prep = ch?.['cpu-prep'];
-    if (!prep) continue;
+  const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where && !leased.has(id) && st.chains?.[qj.itemId]?.['cpu-prep']).sort((a, b) => a[1].at - b[1].at);
+  // a file already on the edge at its size is not sent again: a move cut by a restart resumes where it stopped (10-31: restarts every few
+  // minutes meant no talk ever finished its upload)
+  const putOnce = async (have, fileId, name, file) => { if (have.get(name) === (await stat(file)).size) { skipped++; return; } await edge.put('files', fileId, name, file); };
+  const moveOne = async (id, qj) => {
+    const ch = st.chains[qj.itemId], prep = ch['cpu-prep'];
     const it = await repo.getMediaItem(qj.itemId), m = await readMeta(it.dir), stg = join(it.dir, '.typed-move');
     let withdrawn = false;
     try {
-      await edge.put('files', ch.fileId, ch.input, join(it.dir, m.original));
-      for (const f of prep.files) { const tmp = join(stg, 'item', f.path); await q.get('results', prep.id, 'item/' + f.path, tmp); await edge.put('files', ch.fileId, 'item/' + f.path, tmp); }
-      if (!st.qjobs[id] || !(await q.withdraw([id]))?.withdrawn) continue;   // a home GPU took it (or it finished) meanwhile: it stays home
+      const have = new Map(((await edge.list?.('files', ch.fileId).catch(() => null)) || []).map((o) => [o.name, o.bytes]));
+      await putOnce(have, ch.fileId, ch.input, join(it.dir, m.original));
+      for (const f of prep.files) { const tmp = join(stg, 'item', f.path); await q.get('results', prep.id, 'item/' + f.path, tmp); await putOnce(have, ch.fileId, 'item/' + f.path, tmp); }
+      if (!st.qjobs[id] || !(await q.withdraw([id]))?.withdrawn) return;   // a home GPU took it (or it finished) meanwhile: it stays home
       withdrawn = true;
       const job = SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: true }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
       await edge.enqueue([job]);
       delete st.qjobs[id];
       st.qjobs[job.id] = { ...qj, at: now(), where: 'edge' };
-      edgeH += (ch.audio_s || 0) / 3600; moved++;
+      moved++;
     } catch (e) {   // the LAN copy was withdrawn but the edge refused it: put it back so the talk is not lost
+      if (e.code === 'ABANDONED' && !withdrawn) throw e;
       if (withdrawn) await q.enqueue([SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: false }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s })]).catch(() => {});
+      else st.q_move_error = { at: now(), id, error: String(e.message).slice(0, 300) };
     } finally { await rm(stg, { recursive: true, force: true }).catch(() => {}); }
-  }
-  return { moved };
+  };
+  // several at once (tower's uplink is the limit; parallel streams keep it full through each request's round trips), until the buffer is met
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.max(1, parallel) }, async () => {
+    while (i < waiting.length && edgeH < wantH) {
+      const [id, qj] = waiting[i++];
+      edgeH += (qj.audio_s || 0) / 3600;   // counted when started, so the lanes never overfill the buffer together
+      await moveOne(id, qj);
+    }
+  }));
+  return { moved, ...(skipped ? { resumed_files: skipped } : {}) };
 }
 
 /** A restore-kind result → <talk>/enhanced/pod through the one intake (refused by name otherwise); done.json → enhanced/unipase.done.json. */
@@ -252,7 +281,7 @@ export async function pull(st, deps) {
       st.done.push({ id: it.id, slug: it.slug, mode: 'whole', audio_s: qj.audio_s, gpu: j.host, pod: j.host, at: now(), via: 'queue' });
       provePool(st, j.host);
       adopted++;
-    } catch (e) { errors++; await retry(st, qj, `queue result from ${j.host}: ${e.message}`, repo); }
+    } catch (e) { if (e.code === 'ABANDONED') throw e; errors++; await retry(st, qj, `queue result from ${j.host}: ${e.message}`, repo); }
     ack.push(j.id); delete st.qjobs[j.id];
   }
   for (const f of (await q.stats()).failed || []) {   // the queue gave up after its 3 attempts
@@ -278,7 +307,9 @@ export async function tick(st, deps) {
   if (deps.typed && deps.edge && deps.rebalance !== false) out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
   out.fed = await feed(st, deps);
   out.leased = {}; out.beat = {};   // jobs each agent holds (machine cards) + its latest heartbeat (an agent pod is alive while it beats: media-jobs.js)
-  for (const j of (await Promise.resolve().then(() => deps.q.stats()).catch(() => null))?.leased || []) {
+  // every job type: stats() alone reads 'media' only, so typed leases (cpu-prep, gpu, cpu-finish) were missing and the cards read {} (10-31)
+  const all = await Promise.all(['media', ...SJ.AUDIO_TYPES].map((t) => Promise.resolve().then(() => deps.q.stats(t)).catch(() => null)));
+  for (const j of all.flatMap((x) => x?.leased || [])) {
     out.leased[j.host] = (out.leased[j.host] || 0) + 1;
     out.beat[j.host] = Math.max(out.beat[j.host] || 0, j.updated || 0);
   }
