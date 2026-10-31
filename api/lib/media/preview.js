@@ -3,7 +3,7 @@
 import { join } from 'path';
 import { readFile } from 'fs/promises';
 
-const words = (t) => String(t || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean);
+export const words = (t) => String(t || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean);
 /** Word-5-gram Jaccard of two transcripts' openings (robust to ASR differences in a few words, to leading silence and to a different start offset). */
 export function openingSimilarity(a, b, n = 220) {
   const grams = (ws) => { const s = new Set(); for (let i = 0; i + 5 <= ws.length; i++) s.add(ws.slice(i, i + 5).join(' ')); return s; };

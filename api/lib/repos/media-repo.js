@@ -108,6 +108,17 @@ export async function reviveItem(id, why, g) {
   await transaction([{ sql: `UPDATE media_items SET state = 'queued', why = ?, dup_group = ?, updated_at = ? WHERE id = ? AND state = 'duplicate'`, args: [String(why).slice(0, 500), Number(g), now(), Number(id)] }], 'media:revive');
   return 1;
 }
+/** A media-dedupe elimination the content gate dissolved: back to `state`, out of the group. */
+export async function undoDuplicate(id, state, why) {
+  await transaction([{ sql: `UPDATE media_items SET state = ?, why = ?, dup_group = NULL, updated_at = ? WHERE id = ? AND state = 'duplicate'`, args: [String(state), String(why).slice(0, 500), now(), Number(id)] }], 'media:undo-duplicate');
+  return 1;
+}
+/** Copies the content gate took out of a group: the wrong link goes. */
+export async function clearDupGroup(ids = []) {
+  if (!ids.length) return 0;
+  await transaction(ids.map((id) => ({ sql: 'UPDATE media_items SET dup_group = NULL, updated_at = ? WHERE id = ? AND dup_group IS NOT NULL', args: [now(), Number(id)] })), 'media:clear-dup-group');
+  return ids.length;
+}
 /** The on-air copy of group g (the redirect target for its duplicates), or null. */
 export async function onAirInGroup(g) {
   if (g == null) return null;

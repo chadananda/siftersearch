@@ -4,7 +4,11 @@
 // 'duplicate', search documents removed, runs cancelled, files kept, slugs redirected to the best.
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(async () => ({})), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
-import { copyQuality, pickBest, mergeMeta, groupsFromRows, intakeDedupe, mediaDedupeJob, NOISE } from '../../api/lib/media/dedupe.js';
+import { copyQuality, pickBest, mergeMeta, groupsFromRows, intakeDedupe, mediaDedupeJob, NOISE, gramSet, overlap, datesAgree, confirmPair, gateGroup, undoPlan } from '../../api/lib/media/dedupe.js';
+
+// a deterministic "speech": n distinct words from a seed (no 5-gram shared between seeds)
+const speech = (seed, n = 400, from = 0) => Array.from({ length: n }, (_, i) => `w${seed}x${i + from}`).join(' ');
+const TALK = speech('a'), OTHER = speech('b');
 
 const DONE = ['remaster', 'verify', 'quiet', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog', 'web'];
 const stages = (list) => Object.fromEntries(list.map((s) => [s, { at: '2026-10-30T00:00:00Z' }]));
@@ -97,20 +101,72 @@ describe('groups', () => {
 
 describe('intake (preview stage): the dedupe check for every new talk', () => {
   const held = { id: 1, slug: 'held', state: 'done', dup_group: null, dir: '/d/held' };
+  const readText = async () => TALK;
   it('a new copy that measures worse is the duplicate; both join one group', async () => {
-    const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4, { slug: 'new' }), verdict: { verdict: 'duplicate', of: 'held' } },
-      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta() });
+    const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4, { slug: 'new' }), verdict: { verdict: 'duplicate', of: 'held' }, text: TALK },
+      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta(), readText });
     expect(r).toMatchObject({ action: 'duplicate', best: 'held', group: 1 });
   });
   it('a new copy that measures better goes on through the pipeline; the held copy stays on air until it is complete', async () => {
-    const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(3.5, { slug: 'new' }), verdict: { verdict: 'duplicate', of: 'held' } },
-      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta() });
+    const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(3.5, { slug: 'new' }), verdict: { verdict: 'duplicate', of: 'held' }, text: TALK },
+      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta(), readText });
     expect(r).toMatchObject({ action: 'best', best: 'new', group: 1 });
     expect(r.reason).toMatch(/original NISQA 3\.5 vs 2\.4/);
   });
   it('a copy the group already chose as best is never marked duplicate again on a re-run', async () => {
     const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1, { dedup: { verdict: 'best', group: 1 } }), verdict: { verdict: 'duplicate', of: 'held' } }, { repo: {}, readMeta: async () => null });
     expect(r.action).toBe('best');
+  });
+  it('the label is only a candidate: a different speech is its own talk, never a duplicate', async () => {
+    const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4, { slug: 'new' }), verdict: { verdict: 'duplicate', of: 'held' }, text: OTHER },
+      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta(), readText });
+    expect(r).toMatchObject({ action: 'new', group: null });
+    expect(r.reason).toMatch(/transcripts differ/);
+  });
+  it('the same speech on different dates is two talks', async () => {
+    const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4, { slug: 'new', date: '2022-07-07' }), verdict: { verdict: 'duplicate', of: 'held' }, text: TALK },
+      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta({ date: '2011-03-01' }), readText });
+    expect(r.action).toBe('new');
+    expect(r.reason).toMatch(/dates disagree/);
+  });
+  it('no transcript on the held copy, or the held copy missing → content unconfirmed → not a duplicate', async () => {
+    const a = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4), verdict: { verdict: 'duplicate', of: 'held' }, text: TALK },
+      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta(), readText: async () => '' });
+    expect(a.action).toBe('new');
+    const b = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4), verdict: { verdict: 'duplicate', of: 'gone' }, text: TALK }, { repo: { getMediaBySlug: async () => null }, readMeta: async () => null });
+    expect(b.action).toBe('new');
+  });
+});
+
+describe('the content gate', () => {
+  it('overlap: a trimmed intro still contains the shorter copy; different talks share nothing', () => {
+    const full = gramSet(TALK), trimmed = gramSet(speech('a', 330, 70));
+    const o = overlap(trimmed, full);
+    expect(o.containment).toBe(1);
+    expect(o.coverage).toBeGreaterThan(0.8);
+    expect(overlap(full, gramSet(OTHER)).containment).toBe(0);
+    expect(overlap(gramSet(''), full)).toBeNull();
+  });
+  it('dates agree: equal, or missing on one side; a year must match a full date', () => {
+    expect(datesAgree({ date: '2020-05-01' }, { date: '2020-05-01' })).toBe(true);
+    expect(datesAgree({ date: '2022-07-07' }, { date: '2011-07-07' })).toBe(false);
+    expect(datesAgree({ date: '2020-05-01' }, { date: '2018' })).toBe(false);
+    expect(datesAgree({ date: '2020-05-01' }, {})).toBe(true);
+    expect(datesAgree({ year: 2020 }, { date: '2020-05-01' })).toBe(true);
+    expect(datesAgree({ date: '2020-05-01' }, { date: '2020-06-01' })).toBe(false);
+  });
+  it('confirmPair: same audio file confirms without text; no text → unconfirmed; too short → unconfirmed', () => {
+    const sha = { source: { sha256: 'abc' } };
+    expect(confirmPair({ meta: sha, text: null }, { meta: sha, text: null })).toMatchObject({ same: true, by: 'same file (sha256)' });
+    expect(confirmPair({ meta: {}, text: null }, { meta: {}, text: gramSet(TALK) })).toMatchObject({ same: false, by: expect.stringMatching(/unconfirmed/) });
+    expect(confirmPair({ meta: {}, text: gramSet(speech('a', 60)) }, { meta: {}, text: gramSet(TALK) }).same).toBe(false);
+    expect(confirmPair({ meta: {}, text: gramSet(TALK) }, { meta: {}, text: gramSet(speech('a', 330, 70)) })).toMatchObject({ same: true, by: 'transcript overlap' });
+  });
+  it('gateGroup: a chained group splits — the matching pair stays, the stranger is dissolved', () => {
+    const c = (id, t, meta = {}) => ({ id, slug: `s${id}`, meta, text: t ? gramSet(t) : null });
+    const r = gateGroup([c(1, TALK), c(2, speech('a', 350, 30)), c(3, OTHER)]);
+    expect(r.components.map((x) => x.map((y) => y.id))).toEqual([[1, 2]]);
+    expect(r.dissolved.map((x) => x.id)).toEqual([3]);
   });
 });
 
@@ -121,16 +177,19 @@ describe('media-dedupe job', () => {
       { id: 11, slug: 'worse', state: 'duplicate', restored: 0, dir: '/d/worse', doc_id: 101, why: 'Dewey duplicate of live (x)' },
     ];
     const metas = { '/d/live': onAirMeta({ slug: 'live', title: 'T', speaker: 'S', place: null }), '/d/worse': srcMeta(1.1, { slug: 'worse', title: 'T alt', speaker: 'S', place: 'Haifa' }) };
-    const writes = {}, calls = { marked: [], groups: [], revived: [], deleted: [], purged: [], cancelled: [], queued: [] };
+    const texts = { '/d/live': TALK, '/d/worse': speech('a', 380, 10) };
+    const writes = {}, calls = { marked: [], groups: [], revived: [], deleted: [], purged: [], cancelled: [], queued: [], undone: [], cleared: [], restoredDocs: [] };
     const deps = {
       repo: { dedupeRows: async () => rows, setDupGroup: async (ids, g) => calls.groups.push([ids, g]), markDuplicateItems: async (ids, why, g) => calls.marked.push({ ids, why, g }),
-        reviveItem: async (id, why, g) => calls.revived.push({ id, why, g }) },
+        reviveItem: async (id, why, g) => calls.revived.push({ id, why, g }), undoDuplicate: async (id, st, why) => calls.undone.push({ id, st, why }), clearDupGroup: async (ids) => calls.cleared.push(...ids) },
       readMeta: async (dir) => metas[dir], writeMeta: async (dir, m) => { writes[dir] = m; },
       ops: { pendingRuns: async () => [], cancel: async (id) => calls.cancelled.push(id) },
       docs: { softDeleteDocs: async (ids) => { calls.deleted.push(...ids); return { deleted: ids.length, refused: [] }; } },
       allowWrite: true, purge: async (s) => { calls.purged.push(s); return true; }, queue: async (n, p) => calls.queued.push([n, p]), now: () => 'T0',
+      textStamp: async (dir) => `${dir}@1`, readText: async (dir) => texts[dir], prior: { since: 'T-1', prior: {}, merged: [] }, pairCache: new Map(),
+      content: { restoreRetiredDocs: async (ids) => { calls.restoredDocs.push(...ids); return { restored: ids.length }; } },
     };
-    return { rows, metas, writes, calls, deps };
+    return { rows, metas, texts, writes, calls, deps };
   };
   it('dry run: groups, the best + why, merged fields — and no writes', async () => {
     const { deps, writes, calls } = mk();
@@ -192,5 +251,44 @@ describe('media-dedupe job', () => {
     const r = await mediaDedupeJob({ write: true }, deps);
     expect(r.busy).toBe(1);
     expect(calls.marked).toHaveLength(0);
+  });
+  it('a group the content gate dissolves is not settled, and the distribution is reported', async () => {
+    const { deps, texts, calls } = mk();
+    texts['/d/worse'] = OTHER;
+    const r = await mediaDedupeJob({ write: true }, deps);
+    expect(r).toMatchObject({ groups: 0, dissolved_groups: 1, eliminated: 0 });
+    expect(r.measure.by['transcripts differ']).toBe(1);
+    expect(r.measure.containment['0.00-0.05']).toBe(1);
+    expect(calls.marked).toHaveLength(0);
+  });
+  it('reversal: an elimination the gate dissolves goes back to its prior state, search doc restored, page re-rendered, link cleared', async () => {
+    const { deps, rows, metas, texts, calls, writes } = mk();
+    texts['/d/worse'] = OTHER;
+    rows[1].state = 'duplicate'; rows[1].why = 'duplicate of live: original NISQA'; rows[1].dup_group = 10; rows[0].dup_group = 10;
+    metas['/d/worse'].dedup = { verdict: 'duplicate', best: 'live', group: 10 };
+    metas['/d/live'].dedup_best = { group: 10, duplicates: ['worse'] }; metas['/d/live'].place = 'Haifa'; metas['/d/live'].alt_titles = ['T alt'];
+    deps.prior = { since: 'T-1', prior: { worse: 'done', live: 'done' }, merged: [{ group: 10, best: 'live', field: 'place', value: 'Haifa', from: 'worse' }] };
+    const r = await mediaDedupeJob({ write: true }, deps);
+    expect(calls.undone).toEqual([expect.objectContaining({ id: 11, st: 'done' })]);
+    expect(calls.restoredDocs).toEqual([101]);
+    expect(calls.queued).toContainEqual(['media-item', { id: 11, redo: ['update'] }]);
+    expect(calls.cleared).toContain(10);
+    expect(writes['/d/live'].place).toBeUndefined();
+    expect(writes['/d/live'].alt_titles).toBeUndefined();
+    expect(writes['/d/live'].dedup_best).toBeUndefined();
+    expect(writes['/d/worse'].dedup.verdict).toBe('dissolved');
+    expect(r.restored.to['duplicate→done']).toBe(1);
+    // a second pass finds nothing left to undo
+    Object.assign(metas, writes); rows[1].state = 'done'; rows[1].dup_group = null; rows[0].dup_group = null; rows[1].why = 'media-dedupe reversed';
+    calls.undone.length = 0;
+    const again = await mediaDedupeJob({ write: true }, deps);
+    expect(calls.undone).toHaveLength(0);
+    expect(again.dissolved_copies).toBe(0);
+  });
+  it('a copy Dewey already held as a duplicate stays held with its Dewey label unless revive is asked', async () => {
+    const plan = undoPlan({ id: 11, slug: 'w', state: 'duplicate', why: 'duplicate of live: x', meta: { dedup: { verdict: 'duplicate', of: 'live', by: 'opening-and-middle-text', score: 0.6, best: 'live' } } }, { prior: { prior: { w: 'duplicate' } } });
+    expect(plan).toMatchObject({ to: 'duplicate', doc: null });
+    expect(plan.why).toMatch(/^Dewey duplicate of live .*not confirmed/);
+    expect(undoPlan({ id: 11, slug: 'w', state: 'duplicate', why: 'duplicate of live: x', meta: {} }, { prior: { prior: { w: 'duplicate' } }, revive: true }).to).toBe('queued');
   });
 });
