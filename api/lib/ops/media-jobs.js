@@ -1440,10 +1440,9 @@ export async function mediaRemasterReviewPackJob({ out = null, clipS = 40, ids =
  *  publish with the original kept (the "Original" button); keep → the transparent original stays, marked decided. */
 export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
-  const T = deps.tools || await import('../media/tools.js');
   const queue = deps.queue || enqueue;
   const fs = await import('fs/promises');
-  const out = { published: [], kept: [], archived: [], unarchived: [], skipped: [] };
+  const out = { published: [], rebuilding: [], kept: [], archived: [], unarchived: [], skipped: [] };
   for (const pk of [].concat(picks)) {
     const x = pk.id ?? pk.slug;
     const it = /^\d+$/.test(String(x)) ? await repo.getMediaItem(Number(x)) : await repo.getMediaBySlug(String(x));
@@ -1463,20 +1462,14 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
       await queueAfterFlip(queue, it.id, m, 'media-remaster-decide');
       out.published.push(it.slug);
     } else if (pk.choice === 'publish') {
-      markAudioPending(m);
-      const cloud = join(it.dir, 'enhanced', 'unipase.cloud.flac'), full = join(it.dir, 'enhanced', 'unipase.full.flac');
-      await T.ffmpeg(['-i', cloud, '-af', 'loudnorm=I=-18:TP=-1.5:LRA=11,alimiter=limit=0.891:level=disabled', '-ac', '1', '-ar', '48000', '-c:a', 'flac', full]);
-      const vs = (m.enhancement.variants || []).filter((v) => v.name !== 'unipase');
-      vs.push({ name: 'unipase', file: 'enhanced/unipase.full.flac', shifts_time: true, full: true, chosen_by: 'human' });
-      m.enhancement.variants = vs;
-      if (m.enhancement.listening !== 'unipase') m.enhancement.listening_before = { name: m.enhancement.listening };
-      m.enhancement.listening = 'unipase';
-      m.remaster = { ...(m.remaster || {}), status: 'done', verdict: 'pass-human-full', decided_at: at, decided_by: pk.by || 'Chad' };
-      delete m.remaster.why;
-      await fs.writeFile(mf, JSON.stringify(m, null, 2));
+      // no pure remaster file on tower (a spliced or never-built copy): a WORKER rebuilds it from the pure UniPASE output and judges it —
+      // tower never encodes audio here (tower placement, Chad 10-24) and never splices (10-31)
+      const { purifySpliced, writeMeta } = await import('../media/remaster-rejudge.js');
+      await purifySpliced(it, m, { queue });
+      m.remaster.publish_asked = { at, by: pk.by || 'Chad' };
+      await writeMeta(it.dir, m);
       await reindex();
-      await queue('media-item', { id: it.id, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-decide');
-      out.published.push(it.slug);
+      out.rebuilding.push(it.slug);
     } else if (pk.choice === 'archive') {
       // ARCHIVED (Chad 10-31): out of every queue and out of re-judging; the files stay for better technology. Never on air (it would play the original).
       m.remaster = { ...(m.remaster || {}), status: 'archived', verdict: 'archived', archived_at: at, archived_by: pk.by || 'Chad', archived_why: `archived by ${pk.by || 'Chad'}: kept for later technology` };

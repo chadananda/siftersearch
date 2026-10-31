@@ -271,7 +271,7 @@ describe('backfill order and pod setup', () => {
 });
 
 describe('morning review picks', () => {
-  it('publish → the full UniPASE copy becomes the listening copy and the talk is re-encoded; keep → marked, untouched', async () => {
+  it('publish with no pure copy on tower → a WORKER rebuilds it from the pure UniPASE output (tower never encodes, never splices); keep → marked, untouched', async () => {
     const { mediaRemasterDecideJob } = await import('../../api/lib/ops/media-jobs.js');
     const mk = (id) => { const dir = mkdtempSync(join(tmpdir(), 'dc-')); mkdirSync(join(dir, 'enhanced')); writeFileSync(join(dir, 'meta.json'), JSON.stringify({ original: 'o.mp3', enhancement: { listening: 'safe', variants: [{ name: 'safe' }] }, remaster: { status: 'review' } })); return { id, slug: `t${id}`, dir }; };
     const items = { 1: mk(1), 2: mk(2) };
@@ -279,11 +279,10 @@ describe('morning review picks', () => {
     const ffmpeg = vi.fn(async () => ({}));
     const r = await mediaRemasterDecideJob({ picks: [{ id: 1, choice: 'publish' }, { slug: 't2', choice: 'keep' }] },
       { repo: { getMediaItem: async (id) => items[id], getMediaBySlug: async (s) => Object.values(items).find((x) => x.slug === s) }, tools: { ffmpeg }, queue: async (n, p) => queued.push([n, p]) });
-    expect(r).toMatchObject({ published: ['t1'], kept: ['t2'] });
-    const m1 = JSON.parse(readFileSync(join(items[1].dir, 'meta.json'), 'utf8'));
-    expect(m1.enhancement).toMatchObject({ listening: 'unipase', listening_before: { name: 'safe' } });
-    expect(m1.enhancement.variants.find((v) => v.name === 'unipase')).toMatchObject({ file: 'enhanced/unipase.full.flac', shifts_time: true });
-    expect(queued).toEqual([['media-item', { id: 1, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }]]);
+    expect(r).toMatchObject({ published: [], rebuilding: ['t1'], kept: ['t2'] });
+    expect(ffmpeg).not.toHaveBeenCalled();
+    expect(queued).toEqual([['media-cloud-order', expect.objectContaining({ ids: [1], redo: true })]]);
+    expect(JSON.parse(readFileSync(join(items[1].dir, 'meta.json'), 'utf8')).remaster).toMatchObject({ status: 'waiting', publish_asked: { by: 'Chad' } });
     expect(JSON.parse(readFileSync(join(items[2].dir, 'meta.json'), 'utf8')).remaster.status).toBe('kept');
   });
 });
