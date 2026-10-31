@@ -1824,7 +1824,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         st.q_checked = now();
         qPass = (async () => {
           const [QF, { queueClient }, wr] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js')]);
-          st.q_last = { at: now(), ...await QF.tick(st, { q: queueClient({ key: queueKey }), repo, wr, now }) };
+          st.q_last = { at: now(), ...await QF.tick(st, { q: queueClient({ key: queueKey }), repo, wr, now, full: !!acceptedWorker, decided,
+            remaster: (id) => queue('media-remaster', { id }, 'media-cloud-remaster') }) };
         })().catch((e) => { st.q_last = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { qPass = null; });
       }
       const live = Object.values(st.pods).filter((p) => !p.terminated);

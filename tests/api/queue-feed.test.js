@@ -72,3 +72,46 @@ describe('queue feed', () => {
     expect(st.qjobs[id]).toBeUndefined();
   });
 });
+
+// remaster kinds ride the same queue: fed only to a host that advertises the kind, adopted through restore-job.js's one intake
+describe('queue feed: restore kind', () => {
+  const restoreTalk = async () => {
+    const dir = join(root, '9'); await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, 'orig.mp3'), 'audio-9'); await writeFile(join(dir, 'transcript.work.json'), '{"paragraphs":[]}');
+    await writeFile(join(dir, 'meta.json'), JSON.stringify({ slug: 't9', original: 'orig.mp3', duration_s: 1800 }));
+    items[9] = { id: 9, dir, slug: 't9', state: 'done' };
+    st.queue = [9]; return dir;
+  };
+  it('a whole-only host never gets a restore job', async () => {
+    await restoreTalk(); Q.claim(sql, { host: 'aorus', can: ['whole'] });
+    expect((await feed(st, { q, repo, wr })).fed).toBe(0); expect(st.queue).toEqual([9]);
+  });
+  it('a restore-capable host gets audio + transcript + the post config; its result lands in enhanced/pod and queues the remaster', async () => {
+    const dir = await restoreTalk(); Q.claim(sql, { host: 'aorus', can: ['whole', 'restore'] });
+    expect((await feed(st, { q, repo, wr })).fed).toBe(1);
+    const j = Q.claim(sql, { host: 'aorus', can: ['restore'], ram_gb: 8 });
+    expect(j.stages).toEqual(['restore']); expect(j.id).toMatch(/^restore-9-/); expect(j.file_id).toMatch(/^r9-/);
+    expect(String(store.get(`files/${j.file_id}/in.mp3`))).toBe('audio-9');
+    const cfg = JSON.parse(store.get(`files/${j.file_id}/job.json`)).post;
+    expect(cfg).toMatchObject({ mode: 'restore', slug: 't9', assess_quality: true }); expect(store.has(`files/${j.file_id}/work.json`)).toBe(true);
+    const { CONTRACT } = await import('../../api/lib/media/pod-post.js');
+    const web = { ogg: 't9.ogg', m4a: 't9.m4a' }, out = { 'post.json': JSON.stringify({ ok: true, contract: CONTRACT.post, work_sha: cfg.work_sha, guard: {}, realign: {}, quiet: {}, web }),
+      'done.json': '{"audio_s":1800,"seconds":600}', 'post/unipase.flac': 'F', 'post/unipase.guard.json': '{}', 'post/realign.json': '{}', 'post/t9.ogg': 'o', 'post/t9.m4a': 'm' };
+    for (const [n, b] of Object.entries(out)) store.set(`results/${j.id}/${n}`, Buffer.from(b));
+    Q.done(sql, { id: j.id, lease: j.lease, result: { outputs: Object.keys(out).map((name) => ({ name })) } });
+    const queued = [];
+    expect(await pull(st, { q, repo, wr, remaster: async (id) => queued.push(id) })).toMatchObject({ adopted: 1, acked: 1 });
+    expect(await readFile(join(dir, 'enhanced', 'pod', 'web', 't9.ogg'), 'utf8')).toBe('o');
+    expect(JSON.parse(await readFile(join(dir, 'enhanced', 'unipase.done.json'), 'utf8')).seconds).toBe(600);
+    expect(queued).toEqual([9]); expect(st.done[0]).toMatchObject({ id: 9, mode: 'restore', via: 'queue' });
+  });
+  it('an old image\'s restore result is refused by name and the talk goes back to tower\'s lane, never marked failed', async () => {
+    await restoreTalk(); Q.claim(sql, { host: 'aorus', can: ['restore'] });
+    await feed(st, { q, repo, wr });
+    const j = Q.claim(sql, { host: 'aorus', can: ['restore'], ram_gb: 8 }), cfg = JSON.parse(store.get(`files/${j.file_id}/job.json`)).post;
+    store.set(`results/${j.id}/post.json`, Buffer.from(JSON.stringify({ ok: true, work_sha: cfg.work_sha, guard: {}, held: true })));
+    Q.done(sql, { id: j.id, lease: j.lease, result: { outputs: [{ name: 'post.json' }] } });
+    expect((await pull(st, { q, repo, wr })).errors).toBe(1);
+    expect(st.queue).toContain(9); expect(items[9].state).toBe('done');
+  });
+});
