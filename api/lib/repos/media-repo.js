@@ -113,6 +113,11 @@ export async function undoDuplicate(id, state, why) {
   await transaction([{ sql: `UPDATE media_items SET state = ?, why = ?, dup_group = NULL, updated_at = ? WHERE id = ? AND state = 'duplicate'`, args: [String(state), String(why).slice(0, 500), now(), Number(id)] }], 'media:undo-duplicate');
   return 1;
 }
+/** A Dewey-held copy media-dedupe revived as a group's best, the group dissolved before it started: held again. */
+export async function unreviveItem(id, why) {
+  await transaction([{ sql: `UPDATE media_items SET state = 'duplicate', why = ?, queue_rank = NULL, dup_group = NULL, updated_at = ? WHERE id = ? AND state IN ('queued', 'scheduled')`, args: [String(why).slice(0, 500), now(), Number(id)] }], 'media:unrevive');
+  return 1;
+}
 /** Copies the content gate took out of a group: the wrong link goes. */
 export async function clearDupGroup(ids = []) {
   if (!ids.length) return 0;

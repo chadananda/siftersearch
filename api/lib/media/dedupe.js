@@ -52,7 +52,10 @@ export function pickBest(copies) {
 
 // ── the content gate (10-31): Dewey's label is a candidate, never proof. Two copies are the same talk only when the content
 // says so — the same audio file, or transcripts whose word sequences overlap on their shared portion — AND their dates agree.
-export const GATE = { containment: 0.5, coverage: 0.3, minWords: 150 };   // set from the measured distribution (planning/media-dedupe-gate-20261031.md)
+// Measured 10-31 (run 57247): the 96 transcript pairs inside Dewey's groups share 0.58–1.00 of their 5-grams (89 ≥ 0.80); 557
+// control pairs of different talks (adjacent groups) share < 0.05, except 0.24 (consecutive Iqan parts that repeat a boundary)
+// and two the labels missed (0.76, 0.93). Nothing falls in 0.25–0.55: 0.5 sits in the gap. Coverage 0.3 lets a trimmed copy through.
+export const GATE = { containment: 0.5, coverage: 0.3, minWords: 150 };
 const GRAM = 5;
 /** text → Set of word 5-grams (the normalizer Dewey's preview uses). */
 export function gramSet(text) {
@@ -240,14 +243,18 @@ export function undoPlan(c, { others = [], prior = {}, merged = [], revive = fal
   if (loser) {
     // back to what it was before the run; a talk Dewey had already held as a duplicate stays held unless `revive` (content unconfirmed = not a duplicate)
     const dewey = m.dedup?.of ? `Dewey duplicate of ${m.dedup.of} (${m.dedup.by || '?'}, score ${m.dedup.score ?? '?'})` : 'Dewey duplicate (label only)';
-    if (before && before !== 'duplicate') { plan.to = before; plan.why = `media-dedupe reversed: content not confirmed the same talk (was ${before})`; plan.republish = before === 'done'; }
+    if (before && before !== 'duplicate') { plan.to = before; plan.why = `media-dedupe reversed: content not confirmed the same talk (was ${before})`; plan.republish = before === 'done' && Number(c.restored) === 1; }   // it was on air
     else if (revive) { plan.to = 'queued'; plan.why = `media-dedupe reversed: ${dewey} not confirmed by content; processed as its own talk`; }
     else { plan.to = 'duplicate'; plan.why = `${dewey}; media-dedupe gate: content not confirmed`; }
+  } else if (best && before === 'duplicate' && !revive && ['queued', 'scheduled'].includes(c.state)) {
+    // Dewey had held it; media-dedupe revived it as a group's best — the group is gone, so it is held again (not yet started)
+    plan.to = 'duplicate'; plan.unrevive = true;
+    plan.why = `${m.dedup?.of ? `Dewey duplicate of ${m.dedup.of} (${m.dedup.by || '?'}, score ${m.dedup.score ?? '?'})` : 'Dewey duplicate'}; media-dedupe gate: content not confirmed`;
   }
   // the metadata: strip what the other copies of the dissolved group contributed; drop the dedupe marks
   const gone = new Set(others.map(name)), goneIds = new Set(others.map((o) => Number(o.id))), gonePaths = new Set(others.map((o) => o.meta?.source?.path || o.source_ref).filter(Boolean));
   const next = { ...m };
-  for (const f of merged.filter((x) => x.best === n && gone.has(x.from))) if (norm(next[f.field] ?? '') === norm(f.value)) { delete next[f.field]; plan.republish ||= c.state === 'done'; }
+  for (const f of merged.filter((x) => x.best === n && gone.has(x.from))) if (norm(next[f.field] ?? '') === norm(f.value)) { delete next[f.field]; plan.republish ||= live(c); }
   const titles = new Set(others.map((o) => norm(o.meta?.title || '')).filter(Boolean));
   if (Array.isArray(next.alt_titles)) { next.alt_titles = next.alt_titles.filter((t) => !titles.has(norm(t))); if (!next.alt_titles.length) delete next.alt_titles; }
   const goneLabels = new Set(others.flatMap((o) => (o.sidecar ? [provKey(typeof o.sidecar === 'string' ? { label: o.sidecar } : o.sidecar)] : [])));
@@ -261,7 +268,7 @@ export function undoPlan(c, { others = [], prior = {}, merged = [], revive = fal
   }
   if (next.dedup && (next.dedup.verdict === 'best' || next.dedup.best)) {
     const { best: _b, group: _g, over: _o, reason: _r, ...keep } = next.dedup;
-    next.dedup = { ...keep, verdict: loser && plan.to === 'duplicate' ? 'duplicate' : 'dissolved', dissolved_at: null };
+    next.dedup = { ...keep, verdict: plan.to === 'duplicate' ? 'duplicate' : 'dissolved', dissolved_at: null };
   }
   plan.meta = next;
   return plan;
@@ -270,7 +277,6 @@ export function undoPlan(c, { others = [], prior = {}, merged = [], revive = fal
 /** media-dedupe ops job. Candidate groups (Dewey's labels) → the content gate → confirmed groups: best chosen, metadata merged,
  *  the rest eliminated; copies the gate dissolves: what media-dedupe did is reversed. Dry run unless { write: true }. */
 export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPairs = false, gate: gateOver = null, revive = false, controls = false } = {}, deps = {}) {
-  if (write && !deps.allowWrite) return { write: false, paused: 'gate thresholds not yet set from the measured distribution; eliminations paused' };
   const gate = { ...GATE, ...(gateOver || {}) };
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
@@ -335,13 +341,15 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
       for (const c of dissolved) {
         const plan = undoPlan(c, { others: copies.filter((o) => o !== c), prior, merged: prior.merged || [], revive });
         if (!plan) continue;
+        if (runs.has(Number(c.id))) { out.busy++; continue; }   // a run in hand: undone on the next pass
         out.dissolved_copies++;
         if (plan.to) out.restored.to[`${plan.from}→${plan.to}`] = (out.restored.to[`${plan.from}→${plan.to}`] || 0) + 1;
         if (out.dissolved_sample.length < sample) out.dissolved_sample.push({ copy: plan.copy, from: plan.from, to: plan.to, why: plan.why, doc: plan.doc, republish: plan.republish,
           pairs: pairs.filter((p) => p.a === plan.copy || p.b === plan.copy).map(({ a, b, by, containment, coverage, dates_agree }) => ({ with: a === plan.copy ? b : a, by, containment, coverage, dates_agree })) });
         if (!write) continue;
         const at = now();
-        if (plan.to) await repo.undoDuplicate(plan.id, plan.to, plan.why.slice(0, 500));
+        if (plan.unrevive) await repo.unreviveItem(plan.id, plan.why.slice(0, 500));
+        else if (plan.to) await repo.undoDuplicate(plan.id, plan.to, plan.why.slice(0, 500));
         else await repo.clearDupGroup([plan.id]);
         if (plan.doc && plan.to !== 'duplicate') {
           const { content } = deps.content ? { content: deps.content } : await import('../content.js');

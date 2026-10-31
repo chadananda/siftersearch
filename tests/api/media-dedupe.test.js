@@ -268,7 +268,7 @@ describe('media-dedupe job', () => {
   it('reversal: an elimination the gate dissolves goes back to its prior state, search doc restored, page re-rendered, link cleared', async () => {
     const { deps, rows, metas, texts, calls, writes } = mk();
     texts['/d/worse'] = OTHER;
-    rows[1].state = 'duplicate'; rows[1].why = 'duplicate of live: original NISQA'; rows[1].dup_group = 10; rows[0].dup_group = 10;
+    rows[1].state = 'duplicate'; rows[1].why = 'duplicate of live: original NISQA'; rows[1].dup_group = 10; rows[0].dup_group = 10; rows[1].restored = 1;   // was on air
     metas['/d/worse'].dedup = { verdict: 'duplicate', best: 'live', group: 10 };
     metas['/d/live'].dedup_best = { group: 10, duplicates: ['worse'] }; metas['/d/live'].place = 'Haifa'; metas['/d/live'].alt_titles = ['T alt'];
     deps.prior = { since: 'T-1', prior: { worse: 'done', live: 'done' }, merged: [{ group: 10, best: 'live', field: 'place', value: 'Haifa', from: 'worse' }] };
@@ -294,5 +294,17 @@ describe('media-dedupe job', () => {
     expect(plan).toMatchObject({ to: 'duplicate', doc: null });
     expect(plan.why).toMatch(/^Dewey duplicate of live .*not confirmed/);
     expect(undoPlan({ id: 11, slug: 'w', state: 'duplicate', why: 'duplicate of live: x', meta: {} }, { prior: { prior: { w: 'duplicate' } }, revive: true }).to).toBe('queued');
+    // a copy that was not on air goes back to its state without a re-render
+    expect(undoPlan({ id: 11, slug: 'w', state: 'duplicate', why: 'duplicate of live: x', restored: 0, meta: {} }, { prior: { prior: { w: 'done' } } })).toMatchObject({ to: 'done', republish: false });
+  });
+  it('a Dewey-held copy media-dedupe revived as best, group dissolved, not yet started → held again', async () => {
+    const plan = undoPlan({ id: 12, slug: 'b', state: 'scheduled', meta: { dedup: { verdict: 'best', of: 'x', by: 'opening-and-middle-text', score: 0.7, group: 3 }, dedup_best: { group: 3, duplicates: ['x'] } } },
+      { others: [{ id: 13, slug: 'x', meta: {} }], prior: { prior: { b: 'duplicate' } } });
+    expect(plan).toMatchObject({ to: 'duplicate', unrevive: true });
+    expect(plan.why).toMatch(/^Dewey duplicate of x/);
+    expect(plan.meta.dedup.verdict).toBe('duplicate');
+    expect(plan.meta.dedup_best).toBeUndefined();
+    // already running → left alone (only the metadata marks go)
+    expect(undoPlan({ id: 12, slug: 'b', state: 'running', meta: { dedup: { verdict: 'best' } } }, { prior: { prior: { b: 'duplicate' } } }).to).toBeNull();
   });
 });
