@@ -59,8 +59,11 @@ export async function speakerGate(it, m, { people = speakerPeople } = {}) {
     : { state: 'review', why: `review: ${cbp.name} talk with no recording date before/after ${cbp.cb_from} — Chad decides` };
 }
 /** Gate one talk before feeding: a gated talk gets its state on the catalogue and leaves the lane's queue (true). */
+// a recording whose probe found no audio stream (a silent film clip): nothing to grade, transcribe or remaster (10-31: 2493/2494/2497 failed prep as "ffmpeg … does not contain any stream")
+export const noAudio = (m) => { const p = m?.source?.probe; return !!p && p.codec == null && p.channels == null && p.sample_rate == null; };
 async function gated(it, m, repo, deps) {
-  const g = await speakerGate(it, m, deps.cbPeople ? { people: deps.cbPeople } : {});
+  const g = noAudio(m) ? { state: 'review', why: 'no audio stream (a silent video): nothing to transcribe or remaster — Chad decides' }
+    : await speakerGate(it, m, deps.cbPeople ? { people: deps.cbPeople } : {});
   if (!g) return false;
   await repo.updateMediaItem(it.id, { state: g.state, why: g.why.slice(0, 500) });
   return true;

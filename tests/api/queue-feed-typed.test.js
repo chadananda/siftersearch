@@ -78,6 +78,14 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     expect(items[1]).toMatchObject({ state: 'excluded', why: expect.stringMatching(/newer-generation/) });
     expect(st.queue).not.toContain(1); expect(st.chains[1]).toBeUndefined(); expect(st.chains[2]).toBeTruthy();
   });
+  it('a recording with no audio stream (silent film clip) goes to review on tower, never to a worker', async () => {
+    engage(); st.queue = [1, 2];
+    const m1 = join(items[1].dir, 'meta.json');
+    await writeFile(m1, JSON.stringify({ ...JSON.parse(await readFile(m1, 'utf8')), source: { probe: { duration_s: 5.2, has_video: true, codec: null, channels: null, sample_rate: null } } }));
+    expect((await feed(st, { ...deps, cbPeople: async () => [] })).typed.fed).toBe(1);
+    expect(items[1]).toMatchObject({ state: 'review', why: expect.stringMatching(/no audio stream/) });
+    expect(st.chains[1]).toBeUndefined();
+  });
   it('one talk end to end: each step takes the previous step\'s files, acks trail one step behind, tools stamped', async () => {
     engage(); st.queue = [1];
     expect((await feed(st, deps)).typed.fed).toBe(1);
