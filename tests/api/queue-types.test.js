@@ -240,6 +240,14 @@ describe('bufferPolicy: ~BUFFER_H of pod work staged on R2', () => {
     expect(Q.bufferPolicy({ ...plan, staged_h: 20 }, { pods: 1 }).buffer_low).toBe(false);
   });
   it('no pods: the home GPUs\' LAN queue', () => {
-    expect(Q.bufferPolicy({ ...plan, target: 0 }, { pods: 0 })).toEqual({ where: 'lan', buffer_low: false, buffer_h: 10, want_h: 5 });
+    expect(Q.bufferPolicy({ ...plan, target: 0 }, { pods: 0 })).toEqual({ where: 'lan', buffer_low: false, buffer_h: 7, want_h: 5 });   // 3 h on R2 no home GPU reads
+  });
+  it('rentals paused (rent false): the plan\'s target no longer holds the R2 buffer open, so the home GPU takes gpu work (10-31: Aorus 0 %)', () => {
+    const p = { r_pod: 15.3, staged_h: 114.7, target: 6, gpu_queued_h: 210.4, r_home_gpu: 2.34 };
+    expect(Q.bufferPolicy(p, { pods: 0 })).toMatchObject({ where: 'edge', buffer_low: true });   // the bug: want 183 h
+    const b = Q.bufferPolicy(p, { pods: 0, rent: false });
+    expect(b).toMatchObject({ where: 'lan', buffer_low: false }); expect(b.buffer_h).toBeCloseTo(95.7, 1);
+    expect(Q.claimOrder(['gpu'], ['cpu-prep', 'cpu-finish'], b)).toEqual(['cpu-finish', 'gpu', 'cpu-prep']);
+    expect(Q.bufferPolicy(p, { pods: 1, rent: false }).where).toBe('edge');   // a live pod still gets its buffer
   });
 });

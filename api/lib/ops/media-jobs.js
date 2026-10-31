@@ -1913,7 +1913,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           const podTyped = process.env.MEDIA_POD_TYPED === '1';
           // the pods' R2 buffer (Chad 10-31): ~BUFFER_H of pod work staged on the edge before and while pods run; the feed fills it from prepped talks first
           const livePods = Object.values(st.pods).filter((p) => !p.terminated).length;
-          const buffer = st.pod_plan ? QC.bufferPolicy(st.pod_plan, { pods: podTyped ? livePods : 0 }) : null;
+          // no pod can be rented (pause / stop / pods not typed): the plan's target must not hold the R2 buffer open (core.bufferPolicy)
+          const rent = podTyped && !(st.cloud_stopped || rentalPause);
+          const buffer = st.pod_plan ? QC.bufferPolicy(st.pod_plan, { pods: podTyped ? livePods : 0, rent }) : null;
           const edgeBuf = podTyped && buffer?.where === 'edge' ? buffer : null;
           // moving waiting gpu steps onto R2 is upload-bound (minutes): it runs BESIDE the pass, one at a time, so pull/feed/plan never wait on it
           if (edgeBuf && !movePass) { LH.beatStart(st, 'q_move', now()); movePass = QF.rebalanceGpu(st, { q: LQ.localQueue(), edge: QCl.queueClient({ key: queueKey }), repo, now, buffer: edgeBuf })
@@ -1939,7 +1941,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           // the typed pod plan (Chad 10-31) over both queues, every pass: supportable = floor(min(R_prep, R_finish) / R_pod), limited only by work
           const caps = await Promise.all([localQueue().capacity(), queueClient({ key: queueKey }).capacity()].map((p) => p.catch(() => null)));
           const plan = QC.podPlan(caps);
-          const buf = QC.bufferPolicy(plan, { pods: podTyped ? livePods : 0 });
+          const buf = QC.bufferPolicy(plan, { pods: podTyped ? livePods : 0, rent });
           if (!alive()) return;
           st.pod_plan = { at: now(), ...plan, buffer: buf };
           LH.beat(st, 'pod_plan', { ok: caps.some(Boolean), err: 'no queue answered capacity', n: plan.target ?? null }, now());

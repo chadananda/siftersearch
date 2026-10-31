@@ -266,13 +266,16 @@ export function podPlan(caps, { horizonH = 2 } = {}) {
   return { ...plan, ...t, pods: t.target };
 }
 /** The GPU buffer (Chad 10-31): gpu work waiting for the pods on R2 should hold ~targetH hours of pod work (R_pod × pods). Below it, multi-role
- *  hosts prep first (claimOrder). Without pods (target 0) the buffer is the LAN gpu queue against the home GPUs. Pure. */
+ *  hosts prep first (claimOrder). Without pods (none live, and none rentable: rent false under a rental pause / stop / pods not typed) the
+ *  buffer is the LAN gpu queue (edge-staged hours excluded: no home GPU reads R2) against the home GPUs. 10-31: under the pause the plan's
+ *  target (6) still counted, so want_h was 183 h on R2, buffer_low stayed true, Aorus prepped forever and its GPU sat at 0 % with 96 h of
+ *  gpu steps waiting on the LAN. Pure. */
 export const BUFFER_H = 2;
-export function bufferPolicy(plan, { pods = 0, targetH = BUFFER_H } = {}) {
-  const n = Math.max(pods, plan?.target || 0);
+export function bufferPolicy(plan, { pods = 0, targetH = BUFFER_H, rent = true } = {}) {
+  const n = Math.max(pods, rent ? plan?.target || 0 : 0);
   if (n > 0) { const want = targetH * plan.r_pod * n; return { where: 'edge', buffer_low: (plan.staged_h || 0) < want, buffer_h: plan.staged_h || 0, want_h: want }; }
-  const want = targetH * (plan?.r_home_gpu || 0);
-  return { where: 'lan', buffer_low: (plan?.gpu_queued_h || 0) < want, buffer_h: plan?.gpu_queued_h || 0, want_h: want };
+  const want = targetH * (plan?.r_home_gpu || 0), lanH = Math.max(0, (plan?.gpu_queued_h || 0) - (plan?.staged_h || 0));
+  return { where: 'lan', buffer_low: lanH < want, buffer_h: lanH, want_h: want };
 }
 export function fail(sql, { id, lease, error }, now = Date.now()) {
   const j = held(sql, id, lease, now);
