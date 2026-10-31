@@ -24,7 +24,7 @@ import { lightChain, probeStarts, chooseAsrInput, chooseListening, safeChain, li
 import { computePeaks, normalizePeaks } from './peaks.js';
 import { labelInterpreter, lossyWindows, spliceWindow, toParagraphs, paragraphText, assignSpeakers, smoothTurns, flattenWords } from './paragraphs.js';
 import { revertInsertions } from './faithfulness.js';
-import { coverageCheck, coverageProblems, onWorker } from './coverage.js';
+import { coverageCheck, coverageProblems, onWorker, silentIn } from './coverage.js';
 import { repairParagraphLoops, publishProblems } from './loops.js';
 import { fixMojibake } from './text-repair.js';
 import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
@@ -1035,7 +1035,8 @@ export async function runItem(item, opts = {}, deps = {}) {
         meta.asr_loops_repaired = (meta.asr_loops_repaired || 0) + lp0.repaired.length;
       }
       // the PUBLISH GATE (QA 10-22): a loop, a lossy decode (U+FFFD) or mojibake left in the text → not published
-      const problems = [...publishProblems(work.paragraphs || []), ...coverageProblems(meta.asr?.coverage)];
+      const wave = meta.asr?.coverage?.holes_after?.length ? (await import('./trim.js')).peaksOf(await readJson(join(dir, 'waveform.json'), null)) : null;
+      const problems = [...publishProblems(work.paragraphs || []), ...coverageProblems(meta.asr?.coverage, undefined, { silent: silentIn(wave) })];
       if (problems.length) { meta.publish_blocked = problems.slice(0, 20); await save(); throw new Error(`publish blocked: ${problems.length} text problem(s) — ${problems.slice(0, 3).map((x) => `p${x.p} ${x.kind} "${x.text}"`).join('; ')}`); }
       const timeHash = timingSignature(work.paragraphs);
       if (meta.audio_alignment_hash && meta.audio_alignment_hash !== timeHash) throw new Error('publish blocked: transcript timing changed after alignment; realign it against the selected audio before publishing');

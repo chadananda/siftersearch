@@ -126,12 +126,23 @@ export async function coverageCheck({ file, segments, tools, asrOpts = {}, lang 
   };
 }
 
+/** Is the LISTENING copy silent through a hole? wave = trim.js peaksOf(waveform.json) (the web copy, original time). Every peak zero
+ *  between the hole's edges (± TOL_S) = nothing a listener hears there, so no words are missing from what is published. The coverage
+ *  is measured on the ASR input (the original) with an energy VAD, which counts applause as speech; the remaster and the quiet pass
+ *  remove it (10-31 talk 1999: "let us welcome Mr. Sahba…" — 15.25 s of applause — "Thank you very much"; the web copy is 0 throughout). */
+export const silentIn = (wave) => (h) => {
+  const peaks = wave?.peaks || [], a = Math.ceil((h.s + TOL_S) * (wave?.pps || 0)), b = Math.floor((h.e - TOL_S) * (wave?.pps || 0));
+  if (!peaks.length || b <= a || b > peaks.length) return false;
+  for (let i = a; i < b; i++) if (peaks[i] > 0) return false;
+  return true;
+};
+
 /** Publish-gate problems from a stored coverage record (none recorded = not yet measured = no problem; the scan fills those in).
- *  Shorter holes stay on the record (holes_after) and never block. */
-export function coverageProblems(cov, minS = BLOCK_HOLE_S) {
+ *  Shorter holes stay on the record (holes_after) and never block; so does a hole the listening copy is silent through (silent, above). */
+export function coverageProblems(cov, minS = BLOCK_HOLE_S, { silent = () => false } = {}) {
   if (!cov) return [];
   if (cov.unmeasured) return [{ p: 0, kind: 'coverage-unmeasured', text: cov.why || 'the transcript was never measured against the speech' }];
   const out = [];
-  for (const h of (cov.holes_after || []).filter((x) => x.e - x.s >= minS)) out.push({ p: 0, kind: 'speech-gap', text: `${h.s}–${h.e} s of speech has no words` });
+  for (const h of (cov.holes_after || []).filter((x) => x.e - x.s >= minS && !silent(x))) out.push({ p: 0, kind: 'speech-gap', text: `${h.s}–${h.e} s of speech has no words` });
   return out;
 }

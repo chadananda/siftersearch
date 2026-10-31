@@ -99,3 +99,23 @@ describe('coverageProblems', () => {
     expect(coverageProblems({ unmeasured: true, why: 'transcribed outside the worker image' })[0].kind).toBe('coverage-unmeasured'));
 });
 void measureCoverage;
+
+describe('silentIn: a hole the listening copy is silent through does not block (10-31 talk 1999)', () => {
+  // 1999: "let us welcome Mr. Sahba … himself." 2951.9 s, then 15.25 s of applause (energy VAD = speech), "Thank you very much" 2969.7 s;
+  // the remaster + quiet pass left the web copy at 0 from 2953 to 2968 s
+  const pps = 20, peaks = new Array(3000 * pps).fill(0.3);
+  for (let i = 2953 * pps; i < 2969 * pps; i++) peaks[i] = 0;
+  const cov = { holes_after: [{ s: 2954.15, e: 2969.4 }] };
+  it('blocks without a waveform, passes when the listening copy is silent through the hole', async () => {
+    const { silentIn } = await import('../../api/lib/media/coverage.js');
+    expect(coverageProblems(cov).length).toBe(1);
+    expect(coverageProblems(cov, undefined, { silent: silentIn(null) }).length).toBe(1);
+    expect(coverageProblems(cov, undefined, { silent: silentIn({ peaks, pps }) })).toEqual([]);
+  });
+  it('still blocks when any sound is heard inside the hole', async () => {
+    const { silentIn } = await import('../../api/lib/media/coverage.js');
+    const heard = [...peaks]; heard[2960 * pps] = 0.01;
+    expect(coverageProblems(cov, undefined, { silent: silentIn({ peaks: heard, pps }) }).length).toBe(1);
+    expect(coverageProblems({ holes_after: [{ s: 2954.15, e: 3100 }] }, undefined, { silent: silentIn({ peaks, pps }) }).length).toBe(1);   // past the waveform's end
+  });
+});
