@@ -37,6 +37,23 @@ export function gpuUtil(device) {
   } catch { return null; }
 }
 
+/** The memory THIS process may use, in GB: the cgroup limit (v2 memory.max, v1 memory.limit_in_bytes) and what is in use less reclaimable file
+ * cache — or null when unlimited. A RunPod pod's /proc/meminfo shows the host's RAM (10-31: pods 367+368 took 12 talks and died ~40 min in). */
+export function cgroupMemGb(read = (f) => readFileSync(f, 'utf8')) {
+  const gb = (b) => b / 1073741824;
+  const stat = (f, key) => { try { return Number(new RegExp(`^${key} (\\d+)`, 'm').exec(read(f))?.[1] || 0); } catch { return 0; } };
+  for (const [max, cur, st, inactive] of [['/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory.current', '/sys/fs/cgroup/memory.stat', 'inactive_file'],
+    ['/sys/fs/cgroup/memory/memory.limit_in_bytes', '/sys/fs/cgroup/memory/memory.usage_in_bytes', '/sys/fs/cgroup/memory/memory.stat', 'total_inactive_file']]) {
+    let limit;
+    try { limit = Number(read(max).trim()); } catch { continue; }
+    if (!Number.isFinite(limit) || limit >= 2 ** 60) return null;   // 'max' (v2) or the v1 "no limit" sentinel
+    let used = 0;
+    try { used = Number(read(cur).trim()) - stat(st, inactive); } catch {}
+    return { limitGb: gb(limit), availGb: gb(Math.max(0, limit - used)) };
+  }
+  return null;
+}
+
 /** Take another talk now? Pure. onDeck = stages queued at the GPU + talks still on their way to it (download, probe, prep). */
 export function wantAnother({ running, cap, onDeck, memGb, minGb }) {
   return running < cap && memGb >= minGb && onDeck === 0;

@@ -18,10 +18,10 @@ import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join, relative, dirname, basename } from 'node:path';
 
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
-import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, STALL_MS } from './gpu-pace.mjs';
+import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, cgroupMemGb, STALL_MS } from './gpu-pace.mjs';
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const HOST = arg('host'), SLOTS = Number(arg('slots', 1)), ROOT = arg('root', '/data/sifter-queue'), RUN = arg('run', 'local'), IMAGE = arg('image');
-const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)), ONCE = process.argv.includes('--once'), IDLE_EXIT_MS = Number(arg('idle-exit-min', 0)) * 60_000;
+const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)), GB_PER_TALK = Number(arg('gb-per-talk', 6)), ONCE = process.argv.includes('--once'), IDLE_EXIT_MS = Number(arg('idle-exit-min', 0)) * 60_000;
 const CAN = arg('can', 'whole,restore,post,cleanup').split(',').filter(Boolean);
 // the one place a job kind maps to what runs in the image, and what it hands back (relative to the job dir)
 export const KINDS = {
@@ -42,11 +42,15 @@ if (!ACCEL[DEVICE]) { console.error(`no GPU found (device ${DEVICE}): GPU stages
 const q = queueClient({ key: process.env.MEDIA_QUEUE_KEY });
 const log = (msg, x = {}) => console.log(JSON.stringify({ at: new Date().toISOString(), host: HOST, msg, ...x }));
 const nap = (ms) => new Promise((r) => setTimeout(r, ms));
-const memTotalGb = () => { try { return Number(/MemTotal:\s+(\d+)/.exec(readFileSync('/proc/meminfo', 'utf8'))[1]) / 1048576; } catch { return 10; } };
+// RAM = the smaller of /proc/meminfo and this process's cgroup (a pod's meminfo is the host's)
+const meminfo = (k, d) => { try { return Number(new RegExp(`${k}:\\s+(\\d+)`).exec(readFileSync('/proc/meminfo', 'utf8'))[1]) / 1048576; } catch { return d; } };
+const memTotalGb = () => Math.min(meminfo('MemTotal', 10), cgroupMemGb()?.limitGb ?? Infinity);
 // Each container's memory cap is the host's (85 %), not a fixed 10 GB: gpu_lease.py sums the RAM every talk's stages reserve against the
 // container's own limit, so 10 GB let only one talk hold a stage at a time (10-31: boss's 2nd talk sat 8 min at grade, 92 GB VRAM free).
 export const containerMemGb = (totalGb) => Math.max(10, Math.floor(totalGb * 0.85));
-const memAvailGb = () => { try { return Number(/MemAvailable:\s+(\d+)/.exec(readFileSync('/proc/meminfo', 'utf8'))[1]) / 1048576; } catch { return Infinity; } };
+const memAvailGb = () => Math.min(meminfo('MemAvailable', Infinity), cgroupMemGb()?.availGb ?? Infinity);
+// slots never exceed what the RAM holds: a talk's stages peak near 6 GB (grade 5.5 GB lease + process); --gb-per-talk overrides
+const CAP = Math.max(1, Math.min(SLOTS, Math.floor(memTotalGb() / GB_PER_TALK)));
 const running = new Map();
 let stopping = false, busyAt = Date.now();
 const toGpu = new Map();   // job id → { t, ns, child } for talks that have not yet reached the GPU (the deck)
@@ -133,10 +137,10 @@ function onDeck() {
   return { waiting: ledger.waiting.length, heading: toGpu.size };
 }
 
-log('start', { slots: SLOTS, run: RUN, image: IMAGE, device: DEVICE, can: CAN, base: q.base });
+log('start', { slots: CAP, asked: SLOTS, ram_gb: Math.round(memTotalGb()), run: RUN, image: IMAGE, device: DEVICE, can: CAN, base: q.base });
 while (!stopping || running.size) {
   const deck = onDeck();
-  if (!stopping && wantAnother({ running: running.size, cap: SLOTS, onDeck: deck.waiting + deck.heading, memGb: memAvailGb(), minGb: MIN_AVAIL_GB })) {
+  if (!stopping && wantAnother({ running: running.size, cap: CAP, onDeck: deck.waiting + deck.heading, memGb: memAvailGb(), minGb: MIN_AVAIL_GB })) {
     const job = await q.claim({ host: HOST, can: CAN, ram_gb: memAvailGb() }).catch((e) => { log('claim error', { error: e.message }); return null; });
     if (job) {
       toGpu.set(job.id, { t: Date.now() });

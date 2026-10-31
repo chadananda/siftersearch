@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { wantAnother, gpuLedger, reachedGpu, descends } from '../../scripts/media/worker/gpu-pace.mjs';
+import { wantAnother, gpuLedger, reachedGpu, descends, cgroupMemGb } from '../../scripts/media/worker/gpu-pace.mjs';
 
 const base = { running: 1, cap: 12, onDeck: 0, memGb: 10, minGb: 5 };
 it('one talk always on deck: claim the moment nothing is queued at the GPU or on its way there', () => {
@@ -57,4 +57,17 @@ it('pod gauge reads cgroup v1 CPU time too (10-31: RunPod hosts without cpu.stat
   expect(jobs.match(/cpuacct\/cpuacct\.usage/g)?.length).toBe(2);
   expect(jobs.match(/cpu\/cpu\.cfs_quota_us/g)?.length).toBe(2);
   expect(jobs).not.toMatch(/printf "%d", \$1\/1000/);
+});
+it('RAM comes from the cgroup when it has a limit (10-31: a pod\'s /proc/meminfo is the host\'s; pods 367+368 took 12 talks and died)', () => {
+  const G = 1073741824, files = (m) => (f) => { if (f in m) return m[f]; throw new Error('ENOENT'); };
+  expect(cgroupMemGb(files({ '/sys/fs/cgroup/memory.max': `${64 * G}\n`, '/sys/fs/cgroup/memory.current': `${40 * G}`, '/sys/fs/cgroup/memory.stat': `anon 1\ninactive_file ${8 * G}\n` })))
+    .toEqual({ limitGb: 64, availGb: 32 });
+  expect(cgroupMemGb(files({ '/sys/fs/cgroup/memory/memory.limit_in_bytes': `${100 * G}`, '/sys/fs/cgroup/memory/memory.usage_in_bytes': `${90 * G}`, '/sys/fs/cgroup/memory/memory.stat': `cache 5\ntotal_inactive_file ${10 * G}` })))
+    .toEqual({ limitGb: 100, availGb: 20 });
+  expect(cgroupMemGb(files({ '/sys/fs/cgroup/memory.max': 'max\n' }))).toBe(null);
+  expect(cgroupMemGb(files({ '/sys/fs/cgroup/memory/memory.limit_in_bytes': '9223372036854771712' }))).toBe(null);
+  expect(cgroupMemGb(files({}))).toBe(null);
+  const agent = readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8');
+  expect(agent).toMatch(/cgroupMemGb\(\)\?\.availGb/);
+  expect(agent).toMatch(/cap: CAP,/);
 });
