@@ -10,5 +10,5 @@ cp docker/media-worker/Dockerfile.delta "$ctx/Dockerfile"
 remote=/data/media-gpu/tmp/delta-ctx; [[ "$host" == aorus ]] || remote='~/sifter-build/delta-ctx'
 ssh "$host" "mkdir -p $remote"
 rsync -a --delete "$ctx/" "$host:$remote/"
-# boss's docker needs sudo; aorus's user is in the docker group
-ssh "$host" "D=docker; docker info >/dev/null 2>&1 || D='sudo -n docker'; \$D build --build-arg BASE='$base' -t 'sifter-media-worker:$tag' $remote 2>&1 | tail -8"
+# boss's docker needs sudo; aorus's user is in the docker group. The classic builder resolves a local base (BuildKit pulls even a local digest)
+ssh "$host" "D=docker; docker info >/dev/null 2>&1 || D='sudo -n env DOCKER_BUILDKIT=0 docker'; DOCKER_BUILDKIT=0 \$D build --build-arg BASE='$base' -t 'sifter-media-worker:$tag' $remote 2>&1 | tail -8"
