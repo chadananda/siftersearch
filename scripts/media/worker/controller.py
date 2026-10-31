@@ -77,6 +77,20 @@ def read_nvidia():
         return {'vram_used_gb': 0.0, 'vram_total_gb': 0.0, 'gpu_util': 0.0, 'temp_c': 0.0}
 
 
+def cgroup_mem(cg='/sys/fs/cgroup'):
+    """(limit GB, used GB) of this container, or None. Used leaves out inactive file cache: the kernel reclaims it on demand, and counting it
+    starved admission 10-31 (a 10 GB container that had written 1.7 GB of WAVs never admitted restore_asr; aorus whole-1909, boss accept-rocm1)."""
+    for limit_file, used_file, stat_file, key in [('memory.max', 'memory.current', 'memory.stat', 'inactive_file'),
+                                                  ('memory/memory.limit_in_bytes', 'memory/memory.usage_in_bytes', 'memory/memory.stat', 'total_inactive_file')]:
+        try:
+            limit, used = int(open(f'{cg}/{limit_file}').read()), int(open(f'{cg}/{used_file}').read())
+        except (OSError, ValueError): continue
+        try: cache = next((int(l.split()[1]) for l in open(f'{cg}/{stat_file}') if l.split()[0] == key), 0)
+        except (OSError, ValueError, IndexError): cache = 0
+        return limit / 2**30, max(0, used - cache) / 2**30
+    return None
+
+
 def read_system():
     mem = {}
     try:
@@ -88,14 +102,8 @@ def read_system():
     total, available = mem.get('MemTotal', 0), mem.get('MemAvailable', 0)
     cpus = os.cpu_count() or 1
     # Container limits, not the host's hundreds of GB/cores, govern admission.
-    for limit_file, used_file in [('/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory.current'),
-                                  ('/sys/fs/cgroup/memory/memory.limit_in_bytes', '/sys/fs/cgroup/memory/memory.usage_in_bytes')]:
-        try:
-            limit = int(open(limit_file).read()) / 2**30
-            used = int(open(used_file).read()) / 2**30
-            if 0 < limit < total: total, available = limit, min(available, max(0, limit - used))
-            break
-        except (OSError, ValueError): pass
+    cg = cgroup_mem()
+    if cg and 0 < cg[0] < total: total, available = cg[0], min(available, max(0, cg[0] - cg[1]))
     try:
         quota, period = open('/sys/fs/cgroup/cpu.max').read().split()
         if quota != 'max': cpus = min(cpus, max(1, int(quota) / int(period)))

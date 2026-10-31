@@ -109,6 +109,22 @@ with tempfile.TemporaryDirectory() as d:
     expect(o).toEqual({ advanced: true, running: 1, admitting: false, stopped: true });
   });
 });
+it('container memory leaves out reclaimable file cache (v2 and v1), so written WAVs do not block admission', () => {
+  const r = JSON.parse(execFileSync('python3', ['-c', `
+import json, os, tempfile
+from scripts.media.worker.controller import cgroup_mem
+G = 2**30
+def tree(files):
+    d = tempfile.mkdtemp()
+    for p, s in files.items():
+        os.makedirs(os.path.dirname(f'{d}/{p}'), exist_ok=True); open(f'{d}/{p}', 'w').write(s)
+    return d
+v2 = tree({'memory.max': str(10*G), 'memory.current': str(9*G), 'memory.stat': f'anon {2*G}\\nfile {7*G}\\ninactive_file {6*G}\\n'})
+v1 = tree({'memory/memory.limit_in_bytes': str(10*G), 'memory/memory.usage_in_bytes': str(9*G), 'memory/memory.stat': f'cache {7*G}\\ntotal_inactive_file {6*G}\\n'})
+nostat = tree({'memory.max': str(10*G), 'memory.current': str(9*G)})
+print(json.dumps([cgroup_mem(v2), cgroup_mem(v1), cgroup_mem(nostat), cgroup_mem(tree({}))]))`], { encoding: 'utf8' }));
+  expect(r).toEqual([[10, 3], [10, 3], [10, 9], null]);
+});
 it('treats file transfer progress as useful work while excluding tiny heartbeats',()=>{
  const r=JSON.parse(execFileSync('python3',['-c',`
 import json
