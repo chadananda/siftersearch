@@ -21,9 +21,9 @@ describe('quiet on the checklist', () => {
     expect(indexFields(m).stages_missing).toBe(1);
     expect(isComplete(m)).toBe(false);
   });
-  it('the tick or the remaster.quiet record completes it', () => {
+  it('the remaster.quiet record completes it (a skipped tick alone does not)', () => {
     expect(indexFields(talk({ quiet: { v: 1 } }))).toMatchObject({ stages_missing: 0, next_stage: null });
-    expect(isComplete(talk({}, []))).toBe(true);
+    expect(isComplete(talk({ quiet: { v: 1 } }, []))).toBe(true); expect(isComplete(talk({}, []))).toBe(false);   // a tick without the record (skipped) never plays
   });
 });
 

@@ -23,7 +23,7 @@ These are owner decisions. They are not tuning knobs. Code, tests and agents mus
 ## 2a. Every remaster gets the quiet pass (Chad 10-31: "we had to silence gaps between speech")
 UniPASE makes the gaps between speech worse, so every remaster is followed by the quiet pass, which silences or fades the word-free stretches
 (`api/lib/media/quiet-repair.js`, `scripts/media/worker/quiet.py`; runs on a worker). Quiet is not a splice: it attenuates the remaster's own gaps
-and never inserts original audio. A remaster without quiet is not complete. Any rebuilt or new remaster chain must keep it.
+and never inserts original audio. A remaster without quiet is not complete. Any rebuilt or new remaster chain must keep it. Quiet is a checklist STAGE (`quiet`, between realign and web): published talks lacking it are off air and completed by the normal pipeline on a home host, never by a one-off patch job.
 
 ## 3. Same or better publishes; only worse is held (10-31)
 > "If they are actually worse, they should be held for review. If they are the same or better, they should be published with the remaster.
@@ -52,3 +52,11 @@ Every rule must leave each talk with a terminal outcome: on air, held for Chad, 
 Each talk's stages are complete or incomplete. Each ticked stage records the tool and settings that did it, so a re-run selects
 "talks whose stage X was done by tool T with old settings". It unticks that stage and the stages after it that depend on it, never earlier audio
 stages, and the talk stays on air until it is complete again. Design: `planning/stage-queue-20261031.md`.
+
+## 7. Fixes become stages: an incomplete stage is an incomplete talk (Chad 10-31)
+> "The quiet pass is a stage. If the stage is not completed then the talk is not completed and has to wait in the queue for completion. Jobs should be able to apply only incomplete stages, not re-do the whole thing (unless a stage depends on another, then it needs redone as well)."
+
+- Whenever a fix is found that every talk needs (silencing gaps was the first), it becomes a checklist stage (`STAGES` / `COMPLETE_STAGES` in `api/lib/media/item.js`) that records its tool and settings. It is never a one-off patch job on published talks.
+- A published talk missing a stage is incomplete: off air, in the queue, `next_stage` names it. The media feed takes such talks a few at a time (priority is order), and one media-item run executes only the missing stages.
+- Dependencies are explicit (`DEPENDENTS`): redoing a stage un-ticks what was made from its output (quiet -> web, trim, update; remaster -> verify, realign, quiet -> ...), nothing earlier and nothing unrelated. A talk missing only a text stage never touches audio.
+- Heavy stages run on a home host or worker, never tower (the `run()` / `WorkerWait` gate).
