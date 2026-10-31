@@ -29,11 +29,22 @@ export const pilgrimFactor = (domain) => (domain === 'administration' ? 1.3 : PI
 const ADMIN = /\b(local|national) spiritual assembl|\bassembl(y|ies)\b|\belection|\belect(ed|ing)?\b|\bvot(e|ing)\b|\bnineteen[- ]day feast|\bfeast\b|\bthe fund\b|\bcontribut(e|ions?)\b|huq[uú]q|\bmarriage\b|parental consent|\bconsent\b|\bdivorce\b|year of patience|\bburial\b|\benrol(l)?ment|\bmembership|administrative (rights|order|sanctions?)|\bsanctions?\b|\bcounsellors?\b|auxiliary board|\bcluster\b|(nine|five|four|seven|three)[- ]year plan|\bthe plan\b|ridv[aá]n message|\bpolicy\b|\bprocedure\b|\bpermitted\b|\ballowed\b|\bobligatory\b|\bis it (?:ok|okay|allowed|permissible)\b|\bcan (?:a )?bah[aá]['’]?[ií]s? \b|\blaws? (?:of|on|about)\b|\bfasting exemption|\bpolitic(s|al) (?:activity|involvement|party)|\bmilitary service|\bcrematio|\bwill and testament of a\b/i;
 export const queryDomain = (q) => (ADMIN.test(String(q || '')) ? 'administration' : 'doctrine');
 
+// TALKS (Chad 10-31: "Anís results are being polluted by talks content … even over doctrinal core"). A talk — a media
+// transcript, collection Media — is a speaker's commentary: the LOWEST tier on every domain, below published scholarship
+// (0.6), whoever speaks and whatever it is titled. A question ABOUT talks (domain 'talks') weighs them neutrally.
+export const TALK = 0.4;
+export const isTalk = (collection) => /^media$/i.test(String(collection || '').trim());
+const talkFactor = (domain) => (domain === 'talks' ? 1 : TALK);
+const TALK_Q = /\b(talks?|lectures?|speakers?|speeches|recordings?|firesides?|audio|video|podcasts?|transcripts?)\b/i;
+/** Is the question about a talk or a speaker's recording? Then talks are what is asked for — not supplementary. Pure. */
+export const aboutTalks = (q) => TALK_Q.test(String(q || ''));
+
 /** The doctrinal writers' keys (author_fold / voices_fold) — the authoritative retrieval pass filters on these. */
 export const DOCTRINAL_KEYS = ['bahaullah', 'thebab', 'abdulbaha', 'shoghieffendi'];
 
 /** FUSION-time factor (authority from the outset): known from the Qdrant payload alone — writer key + scope. */
 export function keyFactor(authorFold, scope, collection = null, domain = 'doctrine') {
+  if (isTalk(collection)) return talkFactor(domain);
   if (/pilgrim notes/i.test(collection || '')) return pilgrimFactor(domain);   // a recollection of a Central Figure / the Guardian
   const t = String(authorFold || '') === HOUSE_KEY ? houseFactor(domain) : TIER.get(String(authorFold || ''));
   const f = t ?? 1;
@@ -55,6 +66,7 @@ export function numberFactor(auth) {
 
 /** hit { author (the paragraph's writer), collection, source_site, source_url }, auth (live authority number) → factor. */
 export function doctrinalFactor(hit, auth, domain = 'doctrine') {
+  if (isTalk(hit.collection)) return talkFactor(domain);
   if (/pilgrim notes/i.test(hit.collection || '')) return pilgrimFactor(domain);   // a recollection of a Central Figure / the Guardian
   if (Number(auth) <= 1) return 0.4;                                  // other authority-1 collections
   const key = foldKey(hit.author);
@@ -68,4 +80,33 @@ export function doctrinalFactor(hit, auth, domain = 'doctrine') {
   const site = hit.source_site || '';
   if (site && site !== 'oceanlibrary.com') f *= 0.7;
   return f;
+}
+
+/**
+ * TALKS AFTER CORE (Chad 10-31): in a result window talks are supplementary — at most `max` of them, never ahead of the
+ * last doctrinal-core passage (factor ≥ `core`: the Writings and Shoghi Effendi). A talk beyond the cap gives its slot to
+ * the next non-talk of the SAME tradition from `pool` (so the tradition diversity the window already has is kept).
+ * Order, never a filter: talks still appear. entries { paragraph: { collection, religion }, _factor }. Pure.
+ */
+export function talksAfterCore(window, pool = [], { max = 2, core = 2.5 } = {}) {
+  const talk = (e) => isTalk(e?.paragraph?.collection);
+  const talks = window.filter(talk);
+  if (!talks.length) return window;
+  const kept = talks.slice(0, max);
+  const out = window.filter((e) => !talk(e));
+  const used = new Set(window);
+  for (const t of talks.slice(max)) {
+    const sub = pool.find((e) => !used.has(e) && !talk(e) && (e.paragraph?.religion || '') === (t.paragraph?.religion || ''));
+    if (sub) { used.add(sub); out.push(sub); }
+  }
+  let lastCore = -1;
+  out.forEach((e, i) => { if ((e._factor ?? 0) >= core) lastCore = i; });
+  // each kept talk keeps its place unless that place is ahead of core; inserted in order, so they stay in order
+  let after = lastCore;
+  for (const t of kept) {
+    const at = Math.min(out.length, Math.max(window.indexOf(t), after + 1));
+    out.splice(at, 0, t);
+    after = at;
+  }
+  return out;
 }

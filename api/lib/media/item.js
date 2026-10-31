@@ -30,6 +30,7 @@ import { buildVocab, CORE_TERMS, promptTerms } from './vocab.js';
 import { transcriptMarkdown, pageHtml } from './render.js';
 import { defaultPlayback, youtubeDefault, YOUTUBE_GRANT, LEVELS } from './rights.js';
 import { tileSvg } from './thumbs.js';
+import { getAuthorityConfig } from '../authority.js';
 import { classifyScreen, screenEnabled, singleTurns } from './spkscreen.js';
 import { cbPerson, cbVerdict } from './cb-date.js';
 import { decide } from './exclusions.js';
@@ -176,11 +177,22 @@ const readJson = async (p, d = null) => { try { return JSON.parse(await readFile
 let wseq = 0;
 async function writeJson(p, v) { const t = `${p}.${process.pid}.${++wseq}.tmp`; await writeFile(t, JSON.stringify(v, null, 1)); await rename(t, p); }
 
-/** The tradition a source path belongs to (first folder under the media root). */
-export function traditionOf(path) {
+/** The first folder of a source path under the media root (a tradition, or a donor drive such as collection-08). */
+export function sourceFolder(path) {
   const rel = relative(mediaRoot(), path).split('/');
-  return rel[0] && !rel[0].startsWith('..') ? rel[0] : "Baha'i";
+  return rel[0] && !rel[0].startsWith('..') ? rel[0] : null;
 }
+/** The traditions a talk can be filed under: the library's religion folders (.religion/meta.yaml) + the media dirs. */
+export function knownTraditions() {
+  let lib = [];
+  try { lib = Object.keys(getAuthorityConfig()?.religionMeta || {}); } catch { /* no library here */ }
+  return new Set([...Object.keys(TRADITION_DIR), ...lib]);
+}
+/** A tradition name, or Bahá'í when it is not one: a donor-drive folder ("collection-08") is never a tradition — 29 talks
+ *  were filed as religion "collection-08", escaped the Bahá'í slot cap and outranked the Writings in Anís (10-31). */
+export const asTradition = (name, known = knownTraditions()) => (name && known.has(name) ? name : "Baha'i");
+/** The tradition a source path belongs to (its first folder under the media root, when that is a tradition). */
+export const traditionOf = (path, known) => asTradition(sourceFolder(path), known);
 
 async function defaults() {
   const tools = await import('./tools.js');
@@ -298,7 +310,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         probe = await tools.ffprobe(src);
         // known speakers find a name written without a separator ("Khadem Forerunner 1985", QA 10-22)
         const known = d.repo?.listSpeakers ? (await d.repo.listSpeakers().catch(() => [])).map((x) => x.name).filter(Boolean) : [];
-        hints = parseMediaPath(relative(join(mediaRoot(), traditionOf(src)), src).replace(/^talks\//, ''), { known });
+        hints = parseMediaPath(relative(join(mediaRoot(), sourceFolder(src) || ''), src).replace(/^talks\//, ''), { known });
       }
       const archiveSource = !isYt ? await readJson(`${src}.source.json`) : null;
       const named = await llm.nameItem({ rel: isYt ? `${info.channel} / ${info.title}` : relative(mediaRoot(), src), tags: isYt ? { description: info.description.slice(0, 600), tags: info.tags } : probe.tags,
@@ -319,7 +331,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         finalSlug = base;
         for (let i = 2; await repo.slugTaken(finalSlug); i++) finalSlug = `${base}-${i}`;
       }
-      const tradition = item.tradition || (isYt ? "Baha'i" : traditionOf(src));
+      const tradition = asTradition(item.tradition || (isYt ? "Baha'i" : sourceFolder(src)));
       const collection = item.collection || (isYt ? (info.channel || 'YouTube') : (hints.collection || 'Talks'));
       dir = join(archiveRoot(), TRADITION_DIR[tradition] || slugify(tradition), slugify(collection) || 'talks', finalSlug);
       await mkdir(join(dir, 'original'), { recursive: true });
@@ -1034,6 +1046,8 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'ingest' || stage === 'update') {
       const res = await (d.ingest || (await import('./ingest.js')).ingestTranscript)({ dir, meta });
       meta.doc_id = res.documentId; meta.pi = res.pi || {}; rec.doc_id = res.documentId; rec.links = res.links;
+      // a talk moved off a non-tradition shelf (ingestTranscript set meta.tradition) → the catalogue row follows
+      if (meta.tradition && item.tradition && meta.tradition !== item.tradition) { await repo.updateMediaItem(item.id, { tradition: meta.tradition }); item.tradition = meta.tradition; }
       // SEARCH at once (Chad 10-22: "start ingesting for search"): the keyword (BM25) layer, the section index (subheaders)
       // and the phrase layer are filled by their own jobs — queue them for this document now (embedding follows ingest)
       if (res.documentId) { try { rec.search_followups = await (d.searchFollowUp || searchFollowUp)(res.documentId); } catch (err) { rec.search_followups = `error: ${String(err.message).slice(0, 80)}`; } }

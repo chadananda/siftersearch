@@ -198,6 +198,10 @@ const TITLE_AUTHORITY = [
 ];
 
 const DEFAULT_AUTHORITY = 5;
+/** A talk (media transcript) — below published scholarship (3): a speaker's commentary. */
+export const TALK_AUTHORITY = 2;
+/** The collection every media transcript is filed under (media/ingest.js: <tradition>/Media/<slug>.md). */
+export const isTalkCollection = (collection) => /^media$/i.test(String(collection || '').trim());
 
 /**
  * Load authority values from library's meta.yaml files
@@ -316,6 +320,11 @@ export function getAuthority(doc) {
   if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
     return libAuth.collections[religion][collection];
   }
+
+  // 2b. A TALK (a media transcript: <tradition>/Media/<slug>.md) is a speaker's commentary — the lowest tier, whatever its
+  // title or speaker (Chad 10-31: talks were polluting Anís's doctrinal answers). Never a title pattern: a talk titled
+  // "The Iqan" is not the Kitáb-i-Íqán.
+  if (isTalkCollection(collection)) return TALK_AUTHORITY;
 
   // 3. Title-pattern authority — canonical named works win over author-default authority.
   // Evaluated before author defaults so "Seven Valleys" (10) beats a "Bahá'í Sacred Writings"

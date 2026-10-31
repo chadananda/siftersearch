@@ -3,7 +3,7 @@
 // paragraphs (block attrs t0/t1 → /media/<slug>?t=…). Its quotations and cross-references are stored as
 // content_source_links on the transcript's paragraphs (method media-sourcehunt / media-cr), like the compilation links.
 import { late } from './late.js';
-import { mkdir, readFile, writeFile } from 'fs/promises';
+import { mkdir, readFile, writeFile, rm } from 'fs/promises';
 import { join, dirname } from 'path';
 import { config } from '../config.js';
 
@@ -24,13 +24,19 @@ export function linkRows({ quotes = [], teachings = [] }, paraIds, docId) {
 
 export async function ingestTranscript({ dir, meta }, deps = {}) {
   const base = deps.base || config.library.basePath;
-  const rel = join(meta.tradition || "Baha'i", 'Media', `${meta.slug}.md`);
+  // the shelf is a TRADITION (never a donor-drive folder: 29 talks were filed under religion "collection-08", 10-31)
+  const tradition = (deps.asTradition || (await import('./item.js')).asTradition)(meta.tradition);
+  const rel = join(tradition, 'Media', `${meta.slug}.md`);
+  // filed under another shelf before → the SAME document moves (the ingester updates it by id: path, religion), the old
+  // file goes — never a second copy of the talk
+  const was = meta.tradition && meta.tradition !== tradition ? join(meta.tradition, 'Media', `${meta.slug}.md`) : null;
   const md = await readFile(join(dir, 'transcript.md'), 'utf8');
   await mkdir(dirname(join(base, rel)), { recursive: true });
   await writeFile(join(base, rel), md);
-  const ingest = deps.ingest || (async (text, r) => (await late('api/services/ingester.js')).ingestDocument(text, {}, r));
-  const res = await ingest(md, rel);
+  const ingest = deps.ingest || (async (text, r, m) => (await late('api/services/ingester.js')).ingestDocument(text, m, r));
+  const res = await ingest(md, rel, was && meta.doc_id ? { id: meta.doc_id } : {});
   if (!res?.documentId) throw new Error(`ingest failed: ${res?.error || res?.status || 'no document id'}`);
+  if (was) { await rm(join(base, was), { force: true }); meta.tradition = tradition; }
   const repo = deps.repo || await import('../repos/media-repo.js');
   const rows = await repo.docParagraphMap(res.documentId);
   const paraIds = new Map(), pi = {};

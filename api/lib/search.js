@@ -1508,9 +1508,11 @@ export async function multiIndexSearch(query, options = {}) {
 
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
-  const { keyFactor, doctrinalFactor, queryDomain } = await import('./search/doctrinal-rank.js');
-  // doctrine (default) or law / administration — the House is primary only on the latter (Chad 10-23)
-  const authorityDomain = options.domain || queryDomain(query);
+  const { keyFactor, doctrinalFactor, queryDomain, aboutTalks, talksAfterCore } = await import('./search/doctrinal-rank.js');
+  // TALKS are supplementary (Chad 10-31) unless the search is FOR talks: the media shelf, one speaker, or a question about talks
+  const talksAsked = !!(options.talks || filters.collection || filters.author || aboutTalks(query));
+  // doctrine (default) or law / administration — the House is primary only on the latter (Chad 10-23); 'talks' weighs talks neutrally
+  const authorityDomain = options.domain || (talksAsked && aboutTalks(query) ? 'talks' : queryDomain(query));
   for (const [layer, result] of [['phrase', phraseResult], ['qkeyword', qkeywordResult], ['qhype', qhypeResult], ['qconcept', qconceptResult], ['canon', canonResult], ['doctrinal', doctrinalResult]]) {
     (result.hits || []).forEach((hit, rank) => {
       // authority FROM THE OUTSET: each layer's contribution is weighed by the passage's writer (Qdrant payload)
@@ -1651,6 +1653,9 @@ export async function multiIndexSearch(query, options = {}) {
       finalEntries = [...exact, ...finalEntries.filter((e) => !ids.has(e.paragraph?.id))].slice(0, limit);
     }
   }
+
+  // talks after the doctrinal core, at most 2 of a window — supplementary, never the answer's lead (Chad 10-31)
+  if (!talksAsked) finalEntries = talksAfterCore(finalEntries, sortedDeduped, { max: 2 });
 
   tallySourceStats(finalEntries);   // win-share telemetry — see SOURCE_STATS above
   const hits = finalEntries.map(e => {
