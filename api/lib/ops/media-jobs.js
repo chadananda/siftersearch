@@ -795,14 +795,14 @@ export async function backfillRestored({ repo, readMeta, limit = 40 } = {}) {
     if (!m) { await repo.setIndex(r.id, { restored: 0, stages_missing: 99 }); n++; continue; }
     await repo.setIndex(r.id, indexFields(m)); n++;
   }
-  // one pass per process over rows already flagged: a flag set under an older, looser definition (light tier) is corrected
-  if (!verifyDone && repo.restoredRows) {
-    const rows = await repo.restoredRows(verifyCursor, limit * 5);
+  // one pass per process over every published row: the flag is re-derived both ways when the rule changes (10-31: a completed talk is on air)
+  if (!verifyDone && repo.doneRows) {
+    const rows = await repo.doneRows(verifyCursor, limit * 5);
     if (!rows.length) verifyDone = true;
     for (const r of rows) {
       verifyCursor = r.id;
       const m = r.dir ? await read(r.dir).catch(() => null) : null;
-      if (m && !isComplete(m)) { await repo.setRestored(r.id, false); n++; }
+      if (m && isComplete(m) !== (r.restored === 1)) { await repo.setIndex(r.id, indexFields(m)); n++; }
     }
   }
   return n;

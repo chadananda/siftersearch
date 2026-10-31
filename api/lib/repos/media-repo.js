@@ -351,7 +351,8 @@ export async function setPlayback(level, { sourceKind = null } = {}) {
 }
 /** Published rows whose restored flag was never set (before migration 186): the backfill's work list, and its answer. */
 export const unclassifiedDone = async (limit = 50) => queryAll(`SELECT id, dir FROM media_items WHERE dir IS NOT NULL AND state != 'duplicate' AND (restored IS NULL OR stages_missing IS NULL OR (restored = 1 AND completed_at IS NULL)) ORDER BY (state = 'done') DESC, id LIMIT ?`, [Number(limit) || 50], 'media:restored-todo');
-export const restoredRows = async (afterId = 0, limit = 200) => queryAll(`SELECT id, dir FROM media_items WHERE state = 'done' AND restored = 1 AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 200], 'media:restored-verify');
+/** Every published row, in id order: the on-air flag is re-derived from meta.json in both directions (10-31: rows set 0 under the old verdict rule are re-checked). */
+export const doneRows = async (afterId = 0, limit = 200) => queryAll(`SELECT id, dir, restored FROM media_items WHERE state = 'done' AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 200], 'media:done-verify');
 const IDX = ['restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz', 'completed_at'];
 export const setIndex = async (id, f) => transaction([{ sql: `UPDATE media_items SET ${IDX.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, args: [...IDX.map((c) => f[c] ?? null), Number(id)] }], 'media:set-index');
 export const setRestored = async (id, flag) => transaction([{ sql: 'UPDATE media_items SET restored = ? WHERE id = ?', args: [flag ? 1 : 0, Number(id)] }], 'media:set-restored');

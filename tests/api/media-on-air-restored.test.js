@@ -55,6 +55,12 @@ describe('backfillRestored', () => {
     const r = (id) => db.prepare('SELECT restored r FROM media_items WHERE id = ?').get(id).r;
     expect([r(1), r(3), r(4)]).toEqual([0, 1, 1]);   // [1] light, stages missing: off; [3] light + every stage: on air
   });
+  it('a published row flagged off under the old rule is put on air once it is complete (10-31: publish completed talks)', async () => {
+    resetRestoredVerify();
+    const done = { web_original: { m4a: 'a.m4a' }, stages: ALL, enhancement: { listening: 'safe' }, remaster: { status: 'review' } };
+    await backfillRestored({ repo, readMeta: async (d) => (d === '/x/2' ? done : Promise.reject(new Error('nope'))) });
+    expect(db.prepare('SELECT restored r FROM media_items WHERE id = 2').get().r).toBe(1);
+  });
 });
 
 describe('stage + quality index', () => {
