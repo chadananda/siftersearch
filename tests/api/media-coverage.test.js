@@ -63,6 +63,15 @@ describe('coverageCheck', () => {
     expect(r.coverage.nonspeech).toBe(1);
     expect(r.coverage.holes_after).toEqual([]);
   });
+  it('retries EVERY hole, not the first 12 (Chad: no caps; 10-31 talk 1947: 259 holes, 12 tried, 94 % of its speech left without words)', async () => {
+    let asrCalls = 0;
+    const tools = { pcmStream: async (_f, _sr, on) => { const a = new Float32Array(16000 * 140); a.fill(0.1, 0, 16000 * 70); on(a); }, ffmpeg: async () => {}, asr: async () => { asrCalls++; } };
+    const io = { tmp: (n) => `/tmp/${n}`, unlink: async () => {}, readJson: async () => ({ segments: [] }) };
+    const lone = []; for (let t = 0; t < 70; t += 5) lone.push({ s: t, e: t + 0.3, words: [{ w: 'x', s: t, e: t + 0.3 }] });
+    const r = await coverageCheck({ file: 'a.m4a', segments: lone, tools, io, lang: 'en' });
+    expect(r.coverage.holes_before).toBeGreaterThan(12);
+    expect(asrCalls).toBe(r.coverage.holes_before);
+  });
   it('leaves the hole on the record when the re-transcription finds nothing usable and it cannot tell (the gate blocks it once it is long)', async () => {
     const { tools, io } = mk(words(1.5, 3));
     const r = await coverageCheck({ file: 'a.m4a', segments: base, tools, io, lang: 'en' });

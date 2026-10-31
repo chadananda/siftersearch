@@ -714,7 +714,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         const { tmpdir } = await import('os');
         const { unlink } = await import('fs/promises');
         rec.lossy_windows = lossy.length; rec.lossy_fixed = 0;
-        for (const wdw of lossy.slice(0, 12).reverse()) {   // from the end, so earlier indexes stay valid
+        for (const wdw of [...lossy].reverse()) {   // every lossy stretch (no cap), from the end so earlier indexes stay valid
           const start = Math.max(0, wdw.s - 1.5), wav = join(tmpdir(), `media-win-${process.pid}-${Date.now()}-${wdw.i0}.wav`), wout = `${wav}.json`;
           try {
             await tools.ffmpeg(['-ss', String(start), '-t', String(wdw.e - start + 1.5), '-i', join(dir, v.file), '-ac', '1', '-ar', '16000', wav], { stop });

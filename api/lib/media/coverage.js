@@ -97,7 +97,9 @@ export async function speechOf(file, tools) {
 export const holesToRetry = (holes, max) => [...holes].sort((a, b) => (b.e - b.s) - (a.e - a.s)).slice(0, max).sort((a, b) => b.s - a.s);
 export const WORKER_ONLY = true;
 export const onWorker = () => process.env.MEDIA_TOWER_HEAVY === '1';
-export async function coverageCheck({ file, segments, tools, asrOpts = {}, lang = '', stop, io, maxWindows = 12 }) {
+// EVERY hole is retried (Chad: no caps). 10-31: talk 1947's whole-file ASR left 259 holes (94 % of its speech without words); 12 were tried, the
+//  transcript kept 221 words for 58 min, the word guard compared the remaster against it (21 % "differ") and render blocked on the speech gaps.
+export async function coverageCheck({ file, segments, tools, asrOpts = {}, lang = '', stop, io, maxWindows = Infinity }) {
   if (!onWorker()) throw Error('coverageCheck runs only inside the worker image (tower placement)');
   const speech = await speechOf(file, tools);
   const before = measureCoverage(segments, speech);
