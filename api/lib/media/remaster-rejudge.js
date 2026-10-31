@@ -48,9 +48,10 @@ export async function purifySpliced(it, m, { queue, now = () => new Date().toISO
 /** Judge one held talk and apply it. → 'publish' | 'rerun' | 'hold' | 'requeued' | 'purified' | 'unchanged'. Idempotent: a hold already recorded under this rule is left alone. */
 export async function rejudgeOne(it, m, { repo, queue, now = () => new Date().toISOString(), force = false } = {}) {
   const r = m.remaster || {}, at = now(), j = remasterJudgement(m), judged = { action: j.action, reason: j.reason, problems: j.problems, rule: JUDGE_RULE, at };
+  const purify = async () => { await purifySpliced(it, m, { queue, now }); m.qa = { ...(m.qa || {}), remaster: qualityOf(m) }; await writeMeta(it.dir, m); const { indexFields } = await import('./item.js'); await repo.setIndex(it.id, indexFields(m)); return 'purified'; };
+  if (isSpliced(m) && m.enhancement) return purify();   // before the unchanged check: a hold recorded for a spliced copy never stands
   if (!force && r.status === 'review' && r.judged?.action === 'hold' && r.judged.rule === JUDGE_RULE) return 'unchanged';
   const save = async () => { m.qa = { ...(m.qa || {}), remaster: qualityOf(m) }; await writeMeta(it.dir, m); const { indexFields } = await import('./item.js'); await repo.setIndex(it.id, indexFields(m)); };
-  if (isSpliced(m) && m.enhancement) { await purifySpliced(it, m, { queue, now }); await save(); return 'purified'; }
   // back into the remaster queue in normal order: nothing here plays the original (a kept/deferred talk without a stored assessment, or an assessment to redo)
   const requeue = async (why) => { m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: { ...judged, action: 'requeue', reason: why } }; await save(); return 'requeued'; };
   if (['kept', 'deferred'].includes(r.status) && !assessmentOf(m)) return requeue('back in the remaster queue: no talk plays the original (Chad 10-31)');

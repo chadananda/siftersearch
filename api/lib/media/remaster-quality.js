@@ -6,7 +6,7 @@ export const UNREPAIRABLE_BW_KHZ = 2.5;
 export const assessmentOf = (meta = {}) => meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment || null;
 /** Measured proof the remaster stands: the worker's paired check passed, the judge published it from the stored scores (10-31), or Chad published it. */
 export const remasterProven = (meta = {}) => assessmentOf(meta)?.passed === true || meta.remaster?.judged?.action === 'publish' || meta.remaster?.verdict === 'pass-human-full';
-export const JUDGE_RULE = 'v1-2026-10-31';
+export const JUDGE_RULE = 'v2-2026-10-31'   // v2: word mismatch is assessment only (new wording); stored v1 holds are judged again;
 const R = (n, d = 2) => (Number.isFinite(Number(n)) ? Math.round(Number(n) * 10 ** d) / 10 ** d : null);
 /** THE JUDGE (Chad 10-31: "if they are actually worse, held for review; the same or better, published with the remaster"). Pure: meta.json → { action, reason, problems[], scores }.
  *  hold = actually worse (a regression check, NISQA mean down > 0.1, a decoded-length mismatch > 1 s, the words differ from the original transcript in > 15 % of sentences) · rerun = a pipeline failure, not audio
