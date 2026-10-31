@@ -164,6 +164,35 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
   return { adopted, steps, errors, ...(edge ? { edge_acked: ackEdge.length } : {}) };
 }
 
+/** A pod (edge gpu host) is engaged with too little queued there while gpu steps wait on the LAN (home GPUs full): move the waiting steps
+ *  to the edge (withdraw is refused once a LAN host has leased one), the original + the prep files copied into the edge's files/<file id>/.
+ *  A paid pod never sits idle beside a LAN gpu backlog (10-31: pod 377 booted with 3 gpu steps queued on the LAN and none on the edge). */
+async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile, now = Date.now }) {
+  const cap = await edge.capacity().catch(() => null);
+  if (!cap?.hosts?.some((h) => (h.types || []).includes('gpu'))) return { moved: 0 };
+  let edgeH = (cap.by_type?.gpu?.queued_audio_h || 0), moved = 0;
+  const waiting = Object.entries(st.qjobs || {}).filter(([, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where).sort((a, b) => a[1].at - b[1].at);
+  for (const [id, qj] of waiting) {
+    if (edgeH >= LOW_H) break;
+    const ch = st.chains?.[qj.itemId], prep = ch?.['cpu-prep'];
+    if (!prep) continue;
+    if (!(await q.withdraw([id]))?.withdrawn) continue;   // a home GPU took it meanwhile
+    const it = await repo.getMediaItem(qj.itemId), m = await readMeta(it.dir), stg = join(it.dir, '.typed-move');
+    try {
+      await edge.put('files', ch.fileId, ch.input, join(it.dir, m.original));
+      for (const f of prep.files) { const tmp = join(stg, 'item', f.path); await q.get('results', prep.id, 'item/' + f.path, tmp); await edge.put('files', ch.fileId, 'item/' + f.path, tmp); }
+      const job = SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: true }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
+      await edge.enqueue([job]);
+      delete st.qjobs[id];
+      st.qjobs[job.id] = { ...qj, at: now(), where: 'edge' };
+      edgeH += (ch.audio_s || 0) / 3600; moved++;
+    } catch (e) {   // the LAN copy is gone: put it back so the talk is not lost
+      await q.enqueue([SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: false }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s })]).catch(() => {});
+    } finally { await rm(stg, { recursive: true, force: true }).catch(() => {}); }
+  }
+  return { moved };
+}
+
 /** A restore-kind result → <talk>/enhanced/pod through the one intake (refused by name otherwise); done.json → enhanced/unipase.done.json. */
 async function adoptRestore(j, it, rj, q) {
   const enh = join(it.dir, 'enhanced'), stg = join(enh, 'pod-stage');
@@ -227,6 +256,7 @@ async function retry(st, qj, error, repo) {
 /** One background pass: pull first (frees R2 + gives back failures), then top the window up. */
 export async function tick(st, deps) {
   const out = { pulled: await pull(st, deps) };
+  if (deps.typed && deps.edge) out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
   out.fed = await feed(st, deps);
   out.leased = {}; out.beat = {};   // jobs each agent holds (machine cards) + its latest heartbeat (an agent pod is alive while it beats: media-jobs.js)
   for (const j of (await Promise.resolve().then(() => deps.q.stats()).catch(() => null))?.leased || []) {

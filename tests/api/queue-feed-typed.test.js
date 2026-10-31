@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import * as Q from '../../worker/queue/core.js';
-import { feed, pull } from '../../api/lib/media/queue-feed.js';
+import { feed, pull, tick as qtick } from '../../api/lib/media/queue-feed.js';
 import { CONTRACT, requiredFiles, fpOf } from '../../api/lib/media/stage-jobs.js';
 
 const doSql = () => { const db = new Database(':memory:'); return { exec: (q, ...b) => { const st = db.prepare(q); const r = st.reader ? st.all(...b) : (st.run(...b), []); return { toArray: () => r }; } }; };
@@ -18,7 +18,7 @@ function mkQueue() {
   const sql = doSql(), store = new Map(); Q.migrate(sql);
   const q = {
     capacity: async () => Q.capacity(sql), stats: async (type) => Q.stats(sql, Date.now(), type), enqueue: async (jobs) => Q.enqueue(sql, jobs),
-    listDone: async (n, type) => Q.listDone(sql, n, type),
+    listDone: async (n, type) => Q.listDone(sql, n, type), withdraw: async (ids) => Q.withdraw(sql, ids),
     ack: async (ids) => { for (const j of Q.ack(sql, ids)) for (const k of [...store.keys()]) if (k.startsWith(`results/${j.id}/`) || (!Q.fileInUse(sql, j.file_id) && k.startsWith(`files/${j.file_id}/`))) store.delete(k); },
     put: async (kind, id, name, file) => { const b = await readFile(file); store.set(`${kind}/${id}/${name}`, b); return { key: name, bytes: b.length }; },
     get: async (kind, id, name, dest) => { const b = store.get(`${kind}/${id}/${name}`); if (!b) throw Error(`no ${kind}/${id}/${name}`); await mkdir(dirname(dest), { recursive: true }); await writeFile(dest, b); return dest; },
@@ -174,6 +174,34 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     const d = { ...deps, edge: E.q };
     await feed(st, d); deliver('cpu-prep'); await pull(st, d);
     expect(deliver('gpu')).toBeTruthy(); expect(onEdge('files/')).toEqual([]);
+  });
+  it('a pod engaged beside a LAN gpu backlog: the waiting step moves to the edge (inputs staged) and the chain finishes on the LAN', async () => {
+    engage(); st.queue = [1];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); const p = deliver('cpu-prep'); await pull(st, d);
+    expect(Q.stats(sql, Date.now(), 'gpu').states.queued.n).toBe(1);   // home GPU under TARGET_H: the step stays home
+    expect((await qtick(st, d)).moved).toEqual({ moved: 0 });   // no pod engaged: nothing moves
+    Q.claim(E.sql, { host: 'pod-x', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });   // the pod's first (empty) claim engages it
+    expect((await qtick(st, d)).moved).toEqual({ moved: 1 });
+    expect(Q.stats(sql, Date.now(), 'gpu').states).toEqual({});
+    const g = deliver('gpu', {}, E);
+    expect(String(E.store.get(`files/${g.file_id}/in.mp3`))).toBe('audio-1');
+    for (const i of g.body.inputs) { expect(i.store).toBe('files'); expect(sha(E.store.get(`files/${i.id}/${i.path}`))).toBe(i.sha256); }
+    expect((await pull(st, d)).typed).toMatchObject({ steps: 1, errors: 0 });
+    expect(store.has(`results/${p.id}/result.json`)).toBe(false);   // prep acked on the LAN
+    deliver('cpu-finish');
+    expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });
+    expect(st.done[0]).toMatchObject({ gpu: 'pod', prep: 'boss', finish: 'boss' });
+    expect([...onEdge('results/'), ...onEdge('files/')]).toEqual([]);
+  });
+  it('a LAN gpu step already leased by a home GPU is never moved', async () => {
+    engage(); st.queue = [1];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); deliver('cpu-prep'); await pull(st, d);
+    Q.claim(sql, { host: 'aorus', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });
+    Q.claim(E.sql, { host: 'pod-x', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });
+    expect((await qtick(st, d)).moved).toEqual({ moved: 0 });
+    expect(onEdge('files/')).toEqual([]);
   });
   it('an edge gpu step the queue gave up on drops the chain on both transports and retries the talk', async () => {
     lanOnly(); st.queue = [1];
