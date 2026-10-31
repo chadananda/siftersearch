@@ -1,6 +1,6 @@
 // Transcript coverage: speech with no words is found, repaired by re-transcribing the window, and blocks publishing when it stays.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { speechSpans, findHoles, rateOutliers, measureCoverage, coverageCheck, coverageProblems, makeFramer } from '../../api/lib/media/coverage.js';
+import { holesToRetry, speechSpans, findHoles, rateOutliers, measureCoverage, coverageCheck, coverageProblems, makeFramer } from '../../api/lib/media/coverage.js';
 
 const dbsOf = (spans, total, hop = 0.05) => Array.from({ length: Math.round(total / hop) }, (_, i) => { const t = i * hop; return spans.some(([s, e]) => t >= s && t < e) ? -20 : -60; });
 const words = (from, to, step = 0.4) => { const out = []; for (let t = from; t + 0.3 <= to; t += step) out.push({ w: 'x', s: t, e: t + 0.3 }); return out; };
@@ -68,6 +68,16 @@ describe('coverageCheck', () => {
     const r = await coverageCheck({ file: 'a.m4a', segments: base, tools, io, lang: 'en' });
     expect(r.coverage.holes_after.length).toBeGreaterThan(0);
     expect(coverageProblems(r.coverage, 0).length).toBeGreaterThan(0);
+  });
+});
+
+describe('holesToRetry', () => {
+  it('tries the longest holes first, then splices from the end (10-31: the blocking 17 s hole was hole 13+ and never tried)', () => {
+    const holes = [...Array(14)].map((_, i) => ({ s: i * 100, e: i * 100 + 4 })).concat([{ s: 4125.95, e: 4143.28 }]);
+    const r = holesToRetry(holes, 12);
+    expect(r).toHaveLength(12);
+    expect(r[0]).toEqual({ s: 4125.95, e: 4143.28 });
+    expect(r.map((h) => h.s)).toEqual([...r.map((h) => h.s)].sort((a, b) => b - a));
   });
 });
 
