@@ -257,15 +257,17 @@ export function podTarget({ rPrep, rFinish, rPod, rHome = 0, workH = 0, horizonH
 /** The CPU side as ONE capacity per host (10-31: Boss lists cpu-prep AND cpu-finish and was counted in full for both, 58 + 46 audio-h/h, so
  *  the plan supported 5 pods where the CPU hosts feed about 2). prep/finish: {host: audio-h/h while doing that step}. A host with one role
  *  counts on its side; a host with both starts on prep and moves to finish, the host that gives the most finish per prep given up first,
- *  until the two sides meet (the optimum of this two-sided split). → { r_prep, r_finish, prep_share: {host: share of its time on prep} }. Pure. */
-export function cpuChain(prep = {}, finish = {}) {
+ *  until the two sides meet (the optimum of this two-sided split). prepBuffer: gpu work ALREADY prepped, as audio-h/h over the plan horizon —
+ *  it feeds the GPUs in place of prep, so shared hosts move to finish while it lasts (10-31: 175 h prepped, boss still split 56 % prep, the
+ *  plan said "binding prep, 2 pods" while the pods drained the buffer). → { r_prep, r_finish, prep_share: {host: share of its time on prep} }. Pure. */
+export function cpuChain(prep = {}, finish = {}, { prepBuffer = 0 } = {}) {
   let P = 0, F = 0; const shared = [], prep_share = {};
   for (const h of new Set([...Object.keys(prep), ...Object.keys(finish)])) {
     const p = prep[h] || 0, f = finish[h] || 0;
     if (p > 0 && f > 0) { shared.push({ h, p, f }); P += p; } else { P += p; F += f; }
   }
   for (const x of shared.sort((a, b) => b.f / b.p - a.f / a.p)) {
-    const move = F < P ? Math.min(1, (P - F) / (x.p + x.f)) : 0;
+    const move = F < P + prepBuffer ? Math.min(1, (P + prepBuffer - F) / (x.p + x.f)) : 0;
     P -= move * x.p; F += move * x.f; prep_share[x.h] = 1 - move;
   }
   return { r_prep: P, r_finish: F, prep_share };
@@ -292,16 +294,17 @@ export function podPlan(caps, { horizonH = 2 } = {}) {
   const podMeas = all.map((c) => c.by_type.gpu?.pod_throughput).filter((r) => r > 0);
   const rPrepM = meas('cpu-prep'), rFinishM = meas('cpu-finish'), rPodM = podMeas.length ? podMeas.reduce((a, b) => a + b, 0) / podMeas.length : null;
   const rrP = roleRates(all, 'cpu-prep'), rrF = roleRates(all, 'cpu-finish');
-  const chain = rrP && rrF ? cpuChain(rrP.each, rrF.each) : null;   // per-host roles known: one capacity per host, split between the steps
+  const gpu_queued_h = sum((c) => c.by_type.gpu?.queued_audio_h), prep_buffer = gpu_queued_h / horizonH;   // prepped gpu work feeds the GPUs in place of prep
+  const chain = rrP && rrF ? cpuChain(rrP.each, rrF.each, { prepBuffer: prep_buffer }) : null;   // per-host roles known: one capacity per host, split between the steps
   const r_prep = chain ? chain.r_prep : rPrepM ?? sum((c) => c.by_type['cpu-prep']?.rate), r_finish = chain ? chain.r_finish : rFinishM ?? sum((c) => c.by_type['cpu-finish']?.rate), r_pod = rPodM ?? PRIOR_POD;
   const prepMeasured = chain ? rrP.measured : rPrepM != null, finishMeasured = chain ? rrF.measured : rFinishM != null;
   const priors = [...(!prepMeasured ? ['prep'] : []), ...(!finishMeasured ? ['finish'] : []), ...(rPodM == null ? ['pod'] : [])];
   const finish_queued_h = sum((c) => c.by_type['cpu-finish']?.queued_audio_h);
-  const plan = { gpu_queued_h: sum((c) => c.by_type.gpu?.queued_audio_h), prep_queued_h: sum((c) => c.by_type['cpu-prep']?.queued_audio_h),
+  const plan = { gpu_queued_h, prep_buffer, prep_queued_h: sum((c) => c.by_type['cpu-prep']?.queued_audio_h),
     finish_queued_h, finish_backlog_h: r_finish > 0 ? finish_queued_h / r_finish : null,   // hours of finish work waiting at the finishing hosts' pace
     staged_h: edgeCap?.by_type?.gpu?.queued_audio_h || 0, staged_n: edgeCap?.by_type?.gpu?.queued || 0, r_home_gpu: sum((c) => c.by_type.gpu?.home_rate),
     r_prep, r_finish, r_pod, priors, horizon_h: horizonH, ...(chain ? { prep_share: chain.prep_share, prep_each: rrP.each, finish_each: rrF.each } : {}) };
-  const t = podTarget({ rPrep: r_prep, rFinish: r_finish, rPod: r_pod, rHome: plan.r_home_gpu, workH: plan.gpu_queued_h + plan.prep_queued_h, horizonH, measured: !priors.length });
+  const t = podTarget({ rPrep: r_prep + prep_buffer, rFinish: r_finish, rPod: r_pod, rHome: plan.r_home_gpu, workH: plan.gpu_queued_h + plan.prep_queued_h, horizonH, measured: !priors.length });
   return { ...plan, ...t, pods: t.target };
 }
 /** The GPU buffer (Chad 10-31): gpu work waiting for the pods on R2 should hold ~targetH hours of pod work (R_pod × pods). Below it, multi-role

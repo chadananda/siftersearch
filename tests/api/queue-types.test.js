@@ -220,9 +220,22 @@ describe('cpuChain: a host with both CPU roles is one capacity, split between th
     const edge = { by_type: { gpu: { queued_audio_h: 170, queued: 150, pod_throughput: 11.4 }, 'cpu-prep': { hosts: [] }, 'cpu-finish': { hosts: [] } } };
     const plan = Q.podPlan([lan, edge]);
     expect(plan.priors).toEqual([]);
-    expect(plan.r_finish).toBeCloseTo(34.5, 0);
-    expect(plan.supportable).toBe(2);   // (34.5 − 2.4) / 11.4
+    expect(plan.r_finish).toBeCloseTo(61.8, 1);   // 470 h already prepped (235 audio-h/h over the 2 h horizon): boss moves wholly to finish
+    expect(plan.supportable).toBe(5);   // (61.8 − 2.4) / 11.4
     expect(plan.finish_each).toEqual({ boss: 45.9, tower: 15.9 });   // aorus spilled finish work; it is not a finish host
+  });
+  it('prepped gpu work is prep supply: a 175 h buffer does not make prep binding (10-31 22:10Z: plan said prep, supportable 2)', () => {
+    const lan = { by_type: { gpu: { queued_audio_h: 51.8, home_rate: 2.29 }, 'cpu-prep': { hosts: ['boss'], throughput_each: { boss: 47.8 } },
+      'cpu-finish': { hosts: ['boss', 'tower'], throughput_each: { boss: 29.0, tower: 14.0 } } } };
+    const edge = { by_type: { gpu: { queued_audio_h: 123.2, queued: 120, pod_throughput: 8.78 }, 'cpu-prep': { hosts: [] }, 'cpu-finish': { hosts: [] } } };
+    const plan = Q.podPlan([lan, edge]);
+    expect(plan.prep_buffer).toBeCloseTo(87.5, 1);
+    expect(plan.prep_share.boss).toBe(0);
+    expect(plan).toMatchObject({ binding: 'finish', supportable: 4 });   // (43 − 2.29) / 8.78
+    // no buffer: the split is as before (boss shared, prep binding at the balance point)
+    const dry = Q.podPlan([{ by_type: { ...lan.by_type, gpu: { queued_audio_h: 0, home_rate: 2.29 } } }, { by_type: { ...edge.by_type, gpu: { queued_audio_h: 0, pod_throughput: 8.78 } } }]);
+    expect(dry.r_prep).toBeCloseTo(dry.r_finish, 6);
+    expect(Q.cpuChain({ boss: 47.8 }, { boss: 29, tower: 14 }, { prepBuffer: 0 }).prep_share.boss).toBeGreaterThan(0.5);
   });
 });
 
