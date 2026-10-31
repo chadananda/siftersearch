@@ -225,9 +225,31 @@ describe('podsProven: the typed pool grows past one pod only on evidence of talk
       qjobs: { f: { type: 'cpu-finish', itemId: 9 } }, chains: { 9: { gpu: { host: pod(382) } } } };
     st.qjobs.f.audio_s = 3600;
     const r = LH.podOutput(st, { now, horizonH: 2, rPod: 7.7 });
-    expect(r).toMatchObject({ ok: false, pod_h: 0.8, expect_h: 6.16, out_h: 2.61, pure_h: 1.5, wait_h: 1, talks: 2, published: 1 });   // home GPU talks never count
-    expect(LH.podOutput(st, { now, horizonH: 2, rPod: 4 }).ok).toBe(true);   // 3.61 h out+waiting ≥ 0.8 × 4
+    // pod time counts from the pod's FIRST output (now − 0.5 h), not ready_at: the fill (~50 min of download+first step) is not a rate
+    expect(r).toMatchObject({ ok: false, pod_h: 0.5, expect_h: 3.85, out_h: 2.61, pure_h: 1.5, wait_h: 1, talks: 2, published: 1 });   // home GPU talks never count
+    expect(LH.podOutput(st, { now, horizonH: 2, rPod: 4 }).ok).toBe(true);   // 3.61 h out+waiting ≥ 0.5 × 4
     expect(LH.podOutput({ pods: {} }, { now, rPod: 7.7 }).ok).toBe(false);   // no pod time, no evidence
+  });
+  it('podOutput: a pod still filling (no gpu step out yet) adds no pod-hours (10-31: 387 filled ~50 min; the ramp held on it)', () => {
+    const H = 3600e3, now = 10 * H;
+    const st = { pods: { a: { name: 'sifter-unipase-382', ready_at: now - 1 * H }, b: { name: 'sifter-unipase-387', ready_at: now - 0.9 * H } },
+      done: [{ mode: 'typed', gpu: 'pod-sifter-unipase-382', remaster: 'done', swapped: 0, audio_s: 7200, at: now - 0.5 * H }] };
+    expect(LH.podOutput(st, { now, horizonH: 2, rPod: 4 }).pod_h).toBe(0.5);
+    expect(LH.podOutput({ ...st, step_log: [{ type: 'gpu', host: 'pod-sifter-unipase-387', audio_s: 3600, at: now - 0.25 * H }] }, { now, horizonH: 2, rPod: 4 }).pod_h).toBe(0.75);
+  });
+  it('rampGrowth: one more pod only while talks/h rose since the last rental at this pool size', () => {
+    const H = 3600e3, now = 10 * H, d = (n) => Array.from({ length: n }, () => ({ mode: 'typed', remaster: 'done', swapped: 0, at: now - H }));
+    expect(LH.talksPerHour({ done: [...d(8), { mode: 'typed', remaster: 'review', at: now - H }] }, { now, horizonH: 2 })).toBe(4);
+    expect(LH.rampGrowth({ done: d(8) }, { now, pods: 2 })).toMatchObject({ ok: true, talks_h: 4, ref_talks_h: null });
+    expect(LH.rampGrowth({ done: d(8), ramp_log: [{ pods: 2, talks_h: 3 }] }, { now, pods: 2 })).toMatchObject({ ok: true, ref_talks_h: 3 });
+    expect(LH.rampGrowth({ done: d(8), ramp_log: [{ pods: 2, talks_h: 4 }] }, { now, pods: 2 }).ok).toBe(false);   // flat → hold
+  });
+  it('podRampCap: proven with no pod live → one pod, never zero (the old min(earned+1, live) stalled the pool at 0 forever)', () => {
+    expect(LH.podRampCap({ proven: true, earned: 0, live: 0, rampOk: false })).toBe(1);
+    expect(LH.podRampCap({ proven: false, earned: 5, live: 3, rampOk: true })).toBe(1);
+    expect(LH.podRampCap({ proven: true, earned: 2, live: 2, rampOk: true })).toBe(3);
+    expect(LH.podRampCap({ proven: true, earned: 2, live: 2, rampOk: false })).toBe(2);
+    expect(LH.podRampCap({ proven: true, earned: 1, live: 3, rampOk: true })).toBe(2);
   });
   it('podEarned: a pod counts only once a pure remaster from ITS gpu step is adopted (10-31: 383 rented 30 s after 382 was ready)', () => {
     const pod = { name: 'sifter-unipase-382' };

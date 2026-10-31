@@ -145,9 +145,20 @@ export function podsProven(st) {
  *  finished in 32 min). Over the last horizon_h: out_h = audio of talks adopted from pod gpu steps (pure_h: of those, published as pure
  *  remasters) + wait_h = pod gpu output waiting for its finish now, against expect_h = r_pod × pod-hours (each pod from ready_at to its end).
  *  ok when output has kept up with the rate the plan assumes; the finish backlog gate bounds wait_h separately. Pure. */
+// A pod's hours count from its FIRST output (its first gpu step adopted, or its first talk), not from ready_at: before then it is filling — every
+// lease it holds is mid-step and nothing can come out (10-31: a 4090 at 100 % GPU and 6.6 audio-h/h busy ran its first step ~50 min; counted from
+// ready_at, the 2-h window always read about half the rate, pods_output.ok stayed false and the pool sat at ONE pod with 158 h staged on R2).
+// A pod that never produced adds no hours; podEarned keeps it from growing the pool.
+const firstOut = (st, p) => {
+  const hosts = new Set(podHosts(p));
+  let t = Infinity;
+  for (const x of st.step_log || []) if (x.type === 'gpu' && hosts.has(x.host) && x.at < t) t = x.at;
+  for (const d of st.done || []) if (d.mode === 'typed' && hosts.has(d.gpu) && d.at < t) t = d.at;
+  return t;
+};
 export function podOutput(st, { now = Date.now(), horizonH = 2, rPod = 0 } = {}) {
   const w0 = now - horizonH * 3600e3, isPod = (h) => /^pod-/.test(String(h || ''));
-  const pod_h = Object.values(st.pods || {}).reduce((a, p) => { const s = Math.max(w0, p.ready_at || Infinity), e = Math.min(now, p.terminated || now); return a + (e > s ? (e - s) / 3600e3 : 0); }, 0);
+  const pod_h = Object.values(st.pods || {}).reduce((a, p) => { const s = Math.max(w0, p.ready_at || Infinity, firstOut(st, p)), e = Math.min(now, p.terminated || now); return a + (e > s ? (e - s) / 3600e3 : 0); }, 0);
   const won = (st.done || []).filter((d) => d.mode === 'typed' && d.at > w0 && isPod(d.gpu));
   const h = (xs) => xs.reduce((a, x) => a + (x.audio_s || 0), 0) / 3600;
   const out_h = h(won), pure_h = h(won.filter((d) => d.remaster === 'done' && !d.swapped));
@@ -155,6 +166,29 @@ export function podOutput(st, { now = Date.now(), horizonH = 2, rPod = 0 } = {})
   const expect_h = (rPod || 0) * pod_h, r = (x) => +x.toFixed(2);
   return { ok: expect_h > 0 && out_h + wait_h >= expect_h, horizon_h: horizonH, pod_h: r(pod_h), expect_h: r(expect_h), out_h: r(out_h), pure_h: r(pure_h), wait_h: r(wait_h),
     talks: won.length, published: won.filter((d) => d.remaster === 'done' && !d.swapped).length, published_rate_h: r(pure_h / horizonH) };
+}
+
+/** Pure remasters adopted per hour over the last horizon, every GPU (home + pods): the outcome the pool is ramped on. Pure. */
+export function talksPerHour(st, { now = Date.now(), horizonH = 2 } = {}) {
+  const w0 = now - horizonH * 3600e3;
+  return +((st.done || []).filter((d) => d.mode === 'typed' && d.at > w0 && d.remaster === 'done' && !d.swapped).length / horizonH).toFixed(2);
+}
+/** Did the last pod added raise talks published per hour (coordinator 10-31: add pods one at a time, only while talks/h rise with each)?
+ *  st.ramp_log = [{ at, pods, talks_h }] — one entry per typed rental, talks_h measured when it was rented. Compared with the entry that
+ *  brought the pool to its current size (a replacement at the same size resets it). No entry for this size = nothing to compare = ok. Pure. */
+export function rampGrowth(st, { now = Date.now(), horizonH = 2, pods = 0 } = {}) {
+  const talks_h = talksPerHour(st, { now, horizonH });
+  const ref = [...(st.ramp_log || [])].reverse().find((x) => x.pods === pods);
+  if (!ref) return { ok: true, talks_h, ref_talks_h: null, why: 'no rental at this size recorded' };
+  const ok = talks_h > ref.talks_h;
+  return { ok, talks_h, ref_talks_h: ref.talks_h, why: ok ? `talks/h rose ${ref.talks_h} → ${talks_h} since pod ${pods} came` : `talks/h ${talks_h} not above ${ref.talks_h} when pod ${pods} came: hold at ${pods}` };
+}
+/** How many pods the typed pool may hold now. Not proven: one (the canary). Proven: the earned pods + one on trial, grown past the live count
+ *  only when rampOk. Never 0 while proven: with every pod gone (10-31: 382/386 reaped) the live count is 0 and min(earned+1, live) would
+ *  rent nothing ever again. Pure. */
+export function podRampCap({ proven = false, earned = 0, live = 0, rampOk = false } = {}) {
+  if (!proven) return 1;
+  return Math.max(1, Math.min(earned + 1, rampOk ? live + 1 : live));
 }
 
 /** Has THIS pod earned its place: a pure remaster adopted from a gpu step it ran (done.gpu = 'pod-<name>')? The pool grows by one only when

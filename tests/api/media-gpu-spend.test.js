@@ -92,7 +92,7 @@ describe('persistent operator rental pause', () => {
     const bodies = [];
     const fetchFn = vi.fn(async (url, init) => { const b = JSON.parse(init.body); bodies.push(b); return b.minVCPUPerGPU ? new Response('no capacity', { status: 400 }) : new Response('{"id":"p1"}', { status: 200 }); });
     const dir = mkdtempSync(join(tmpdir(), 'rent-'));
-    expect(await C.createPod('sifter-unipase-t', 'k', { fetchFn, pauseFile: join(dir, 'none'), acceptedWorkerFile: join(dir, 'none.json') })).toEqual({ id: 'p1' });
+    expect(await C.createPod('sifter-unipase-t', 'k', { fetchFn, pauseFile: join(dir, 'none'), acceptedWorkerFile: join(dir, 'none.json') })).toEqual({ id: 'p1', cloudType: bodies.at(-1).cloudType });   // the cloud that rented is recorded
     expect(bodies[0].minVCPUPerGPU).toBe(32);
     expect(bodies.at(-1).minVCPUPerGPU).toBeUndefined();
     expect([C.maxJobsFor({ vcpuCount: 32 }), C.maxJobsFor({ vcpuCount: 18 }), C.maxJobsFor({ vcpuCount: 8 }), C.maxJobsFor({ vcpuCount: 64 }), C.maxJobsFor({ memoryInGb: 46 }), C.maxJobsFor({})]).toEqual([12, 9, 6, 12, 8, 6]);
@@ -950,6 +950,21 @@ describe('host preference learned from the ledger', () => {
     expect(C.hostStats(st)['EU-1']).toMatchObject({ n: 2, ok: 2, fails: 0, avg_boot_s: 230 });
     expect(C.rentalPrefer(st)).toEqual({ dcs: ['EU-1'], cloud: 'COMMUNITY' });
     expect(C.rentalPrefer({ ...st, breaker_trips: 1 }).cloud).toBe('SECURE');
+  });
+  it('the cloud is chosen by measured $/audio-h, waste included (10-31: a breaker trip pinned rentals to SECURE $0.89 while community $0.50 ran as fast)', () => {
+    const H = 3600e3, now = 10 * H;
+    const st = { breaker_trips: 3, pods: {
+      s1: { name: 'p387', cloud: 'SECURE', costPerHr: 0.89, created: 0, terminated: 4 * H },          // $3.56
+      s2: { name: 'p390', cloud: 'SECURE', costPerHr: 0.89, created: 0, terminated: 2 * H },          // $1.78, booted, nothing out
+      c1: { name: 'p382', cloud: 'COMMUNITY', costPerHr: 0.5, created: 0, terminated: 4 * H } },      // $2.00
+      done: [{ gpu: 'pod-p387', audio_s: 20 * 3600 }, { gpu: 'pod-p382', audio_s: 20 * 3600 }, { gpu: 'aorus', audio_s: 1e6 }] };
+    const c = C.podCost(st, (p) => p.cloud, now);
+    expect(c.SECURE).toMatchObject({ pods: 2, usd: 5.34, audio_h: 20, usd_per_audio_h: 0.267 });
+    expect(c.COMMUNITY).toMatchObject({ pods: 1, usd: 2, audio_h: 20, usd_per_audio_h: 0.1 });
+    expect(C.rentalPrefer(st, now).cloud).toBe('COMMUNITY');   // despite the breaker trips
+    st.done[1].audio_s = 3600;                                  // community 1 audio-h for $2 → $2/audio-h
+    expect(C.rentalPrefer(st, now).cloud).toBe('SECURE');
+    expect(C.cloudByCost({ breaker_trips: 1, pods: { s1: st.pods.s1 }, done: st.done }, now).cloud).toBe('COMMUNITY');   // never tried → measured
   });
 });
 it('reports restoration throughput separately from new whole-recording work over 30 minutes',async()=>{

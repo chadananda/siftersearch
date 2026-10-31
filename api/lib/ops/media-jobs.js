@@ -1976,14 +1976,16 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const podBusy = (p) => (st.q_last?.leased?.[`pod-${p.name}`] || 0) > 0;
       // ...and every live pod has EARNED its place: a talk whose gpu step it ran was adopted as a pure remaster (LH.podEarned)
       const podOut = typedPods ? LH.podOutput(st, { now: now(), horizonH: st.pod_plan.horizon_h || 2, rPod: st.pod_plan.r_pod }) : null; if (podOut) st.pods_output = podOut;
+      const growth = typedPods ? LH.rampGrowth(st, { now: now(), horizonH: st.pod_plan.horizon_h || 2, pods: live.length }) : null; if (growth) st.pods_growth = growth;
       const rampOk = !live.some((p) => p.status !== 'ready') && live.every(podBusy) && live.every((p) => LH.podEarned(st, p)) && (st.pod_plan?.staged_n || 0) > 0
         && !(st.pod_plan?.finish_backlog_h > st.pod_plan?.horizon_h)   // and the finishing hosts keep up: no more gpu output while finish work backs up past the plan horizon
-        && podOut?.ok;   // and the pods' talks came out at the rate the plan assumes (LH.podOutput): ramp on the published rate, not the plan
+        && podOut?.ok   // and the pods' talks came out at the rate the plan assumes (LH.podOutput): ramp on the published rate, not the plan
+        && growth?.ok;   // and the last pod added raised talks published per hour (LH.rampGrowth)
       const proof = typedPods ? LH.podsProven(st) : null; if (proof) st.pods_proof = proof;
       // typed: ONE pod until pods are proven to turn into talks (LH.podsProven, Chad 10-31), then ramp one at a time while every pod is busy
       // ONE pod on trial at a time: the pool holds the pods that earned their place + one (10-31: 385 booted beside an unproven 382)
       const earnedN = typedPods ? live.filter((p) => LH.podEarned(st, p)).length : 0;
-      const rampCap = typedPods ? (!proof.ok ? 1 : Math.min(earnedN + 1, rampOk ? live.length + 1 : live.length)) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
+      const rampCap = typedPods ? LH.podRampCap({ proven: proof.ok, earned: earnedN, live: live.length, rampOk }) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
       const wantRaw = st.cloud_stopped || rentalPause ? 0 : typedPods ? st.pod_plan.target : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
       st.pods_wanted = wantRaw; st.rental_pause = rentalPause || null;
@@ -1999,7 +2001,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         const pod = await C.createPod(name, pub, { ...deps, prefer: acceptedWorker?.prefer_community?{cloud:'COMMUNITY',dcs:[]}:C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
         if (pod.error) { st.last_error = pod.error.slice(0, 300); (st.rental_refusals ||= []).push({ at: now(), why: st.last_error }); if (st.rental_refusals.length > 50) st.rental_refusals.shift(); console.warn(`[media-cloud] RunPod refused a rental: ${st.last_error}`); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
         else {
-          st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting',image:acceptedWorker?.image||null };
+          st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting',image:acceptedWorker?.image||null, cloud: pod.cloudType || null };
+          if (typedPods) { (st.ramp_log ||= []).push({ at: now(), pods: live.length + 1, talks_h: LH.talksPerHour(st, { now: now(), horizonH: st.pod_plan.horizon_h || 2 }) }); if (st.ramp_log.length > 100) st.ramp_log.shift(); }
           await save(st);  // persist the paid allocation before slow audio transfers or a process restart
         }
         LH.beat(st, 'rentals', { ok: !pod.error, err: pod.error, n: want }, now());
@@ -2014,7 +2017,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             p.image=g.imageName||acceptedWorker?.image||null;
             p.cpu_count=g.vcpuCount||null;
             p.max_jobs=C.maxJobsFor?C.maxJobsFor(g):(Number(g.memoryInGb)>=32?8:6);
-            if((!g.publicIp||!g.portMappings?.['22'])&&C.getPodConnection)g={...g,...await C.getPodConnection(p.id,deps)};
+            // REST answers machine: {} — the GPU model and data centre come only from GraphQL (10-31: every pod's gpu was null, so $/audio-h could not be told by card)
+            if((!g.publicIp||!g.portMappings?.['22']||!g.machine?.gpuDisplayName)&&C.getPodConnection)g={...g,...await C.getPodConnection(p.id,deps).catch(()=>({}))};
             if (p.costPerHr == null) p.costPerHr = g.costPerHr ?? g.adjustedCostPerHr ?? null;
             p.gpu = g.machine?.gpuDisplayName || g.gpu?.displayName || p.gpu || null;
             p.dc = g.machine?.dataCenterId || g.dataCenterId || p.dc || null; p.host_key = g.machineId || g.machine?.id || p.host_key || null; p.cloud = g.cloudType || g.machine?.cloudType || p.cloud || null;

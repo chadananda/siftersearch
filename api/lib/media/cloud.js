@@ -137,9 +137,10 @@ export async function createPod(name, publicKey, deps = {}) {
     try {
       const pause = await rentalPauseReason(deps.pauseFile);
       if (pause) throw Object.assign(new Error(`RunPod rentals paused: ${pause}`), { rentalsPaused: true });
-      return await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: accepted?.image || process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
+      // the cloud we asked for is recorded on the pod (cloudByCost prices clouds by it; RunPod's answer does not say which one it was)
+      return { cloudType, ...await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: accepted?.image || process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
         containerDiskInGb: 60, ...(deps.prefer?.dcs?.length ? { dataCenterIds: deps.prefer.dcs } : {}), ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true, ...(vcpu ? { minVCPUPerGPU: vcpu } : {}),
-        env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key() } }, deps);
+        env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key() } }, deps) };
     } catch (err) { if (err.rentalsPaused) throw err; lastErr = err; }
   }
   throw lastErr;
@@ -179,9 +180,37 @@ export function hostStats(st) {
 /** Machines whose GPU failed the CUDA proof: never worth booting again. Pure. */
 export const brokenHosts = (st) => new Set(Object.values(st.pods || {}).filter((p) => p.gpu_broken && p.host_key).map((p) => p.host_key));
 /** The rental preference learned so far: data centres with >= 2 boots, none wasted, average boot < 7 min; SECURE once the breaker has tripped. */
-export function rentalPrefer(st) {
+/** Measured cost of pod output, grouped by key(pod) (cloud, card): usd = every rented minute (booting, failed and idle pods included — waste
+ *  is part of the price), audio_h = audio of the talks adopted from the group's gpu steps (st.done gpu = 'pod-<name>'). Pure. */
+export function podCost(st, key = (p) => p.cloud, now = Date.now()) {
+  const out = {};
+  for (const d of st.done || []) if (/^pod-/.test(String(d.gpu || ''))) out[d.gpu] = (out[d.gpu] || 0) + (Number(d.audio_s) || 0);
+  const g = {};
+  for (const p of Object.values(st.pods || {})) {
+    const k = key(p); if (!k || p.costPerHr == null) continue;
+    const e = (g[k] ||= { pods: 0, usd: 0, audio_h: 0 });
+    e.pods++; e.usd += p.costPerHr * Math.max(0, (p.terminated || now) - p.created) / 3600e3; e.audio_h += (out[`pod-${p.name}`] || 0) / 3600;
+  }
+  for (const e of Object.values(g)) { e.usd = +e.usd.toFixed(2); e.audio_h = +e.audio_h.toFixed(2); e.usd_per_audio_h = e.audio_h > 0 ? +(e.usd / e.audio_h).toFixed(3) : null; }
+  return g;
+}
+/** Which cloud to rent in: the one with the lower MEASURED $ per audio-hour (podCost by cloud). A cloud never tried is tried (one pod measures
+ *  it); a cloud that spent and produced nothing loses to one that produced. Without measurements: the old rule (community; secure once the
+ *  breaker has tripped). 10-31: one breaker trip had pinned every rental to SECURE at $0.89/h — 387 ran 6.6 audio-h/h ($0.13/audio-h busy)
+ *  where community 382 ran 6.7 at $0.50/h ($0.07). */
+export function cloudByCost(st, now = Date.now()) {
+  const c = podCost(st, (p) => p.cloud, now), S = c.SECURE, C = c.COMMUNITY;
+  const fallback = (st.breaker_trips || 0) >= 1 ? 'SECURE' : 'COMMUNITY';
+  if (!S && !C) return { cloud: fallback, why: 'no pod with a recorded cloud yet', cost: c };
+  if (!S || !C) return { cloud: S ? 'COMMUNITY' : 'SECURE', why: `${S ? 'COMMUNITY' : 'SECURE'} not measured yet`, cost: c };
+  const rs = S.usd_per_audio_h ?? Infinity, rc = C.usd_per_audio_h ?? Infinity;
+  if (rs === Infinity && rc === Infinity) return { cloud: fallback, why: 'neither cloud has produced yet', cost: c };
+  const cloud = rc <= rs ? 'COMMUNITY' : 'SECURE';
+  return { cloud, why: `measured $/audio-h: community ${C.usd_per_audio_h ?? '∞'} · secure ${S.usd_per_audio_h ?? '∞'}`, cost: c };
+}
+export function rentalPrefer(st, now = Date.now()) {
   const good = Object.entries(hostStats(st)).filter(([, e]) => e.ok >= 2 && e.fails === 0 && e.avg_boot_s != null && e.avg_boot_s < 420).sort((a, b) => a[1].avg_boot_s - b[1].avg_boot_s).map(([dc]) => dc);
-  return { dcs: good.slice(0, 3), cloud: (st.breaker_trips || 0) >= 1 ? 'SECURE' : 'COMMUNITY' };
+  return { dcs: good.slice(0, 3), cloud: cloudByCost(st, now).cloud };
 }
 
 /** Our spend so far: closed pods' cost + each live pod's cost per hour × its age. */
