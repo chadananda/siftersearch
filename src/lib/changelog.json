@@ -1,6 +1,20 @@
 {
-  "generated": "2026-10-30T20:28:35.500Z",
+  "generated": "2026-10-31T00:25:47.313Z",
   "entries": [
+    {
+      "hash": "9514d5d3",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Whole bootstrap exports the image's LD_LIBRARY_PATH (ssh sessions lack it → sherpa CUDA couldn't load libcublasLt.so.12, every 'unsure' talk failed at diarize after its GPU remaster); diarize falls back to CPU if the CUDA provider can't load",
+      "scope": null
+    },
+    {
+      "hash": "06e6fcbf",
+      "date": "2026-10-30",
+      "type": "Other",
+      "description": "Edge job queue — CF Worker hands out jobs, one image everywhere, results via R2 (Chad 10-30)",
+      "scope": null
+    },
     {
       "hash": "d2fb6737",
       "date": "2026-10-30",
@@ -3486,24 +3500,24 @@
       "type": "Other",
       "description": "RAM-disk kit (deploy/qram units, scripts/ops/qram.mjs flush/restore + tests) and NUT kit (deploy/nut, upssched powerdown hook, ups-mail) — committed, NOT installed; plan §1.1 UPS test procedure, §6.4 install steps",
       "scope": "prep"
-    },
-    {
-      "hash": "54553550",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Retire Meilisearch — MEILISEARCH_ENABLED=false (no client, no startup spawn, no outbox deletes), health follows Qdrant, system-checks no longer probes :7700, daily backup skips the Meili rsync, cache prewarm no longer gated on Meili, Meili-only paths return empty (storage plan R8)",
-      "scope": "search"
-    },
-    {
-      "hash": "281ce13b",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Vectors-backup job — online SQLite backup of the three paid vectors.db stores to /tank/sifter/backups/vectors, paced in a nice-19 worker thread, copy verified (page count, size, quick/integrity check) before rotation; index lane, refuses while a writer runs, yields to drains (storage plan R1)",
-      "scope": "ops"
     }
   ],
   "grouped": {
     "2026-10-30": [
+      {
+        "hash": "9514d5d3",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Whole bootstrap exports the image's LD_LIBRARY_PATH (ssh sessions lack it → sherpa CUDA couldn't load libcublasLt.so.12, every 'unsure' talk failed at diarize after its GPU remaster); diarize falls back to CPU if the CUDA provider can't load",
+        "scope": null
+      },
+      {
+        "hash": "06e6fcbf",
+        "date": "2026-10-30",
+        "type": "Other",
+        "description": "Edge job queue — CF Worker hands out jobs, one image everywhere, results via R2 (Chad 10-30)",
+        "scope": null
+      },
       {
         "hash": "d2fb6737",
         "date": "2026-10-30",
@@ -7003,20 +7017,6 @@
         "type": "Other",
         "description": "RAM-disk kit (deploy/qram units, scripts/ops/qram.mjs flush/restore + tests) and NUT kit (deploy/nut, upssched powerdown hook, ups-mail) — committed, NOT installed; plan §1.1 UPS test procedure, §6.4 install steps",
         "scope": "prep"
-      },
-      {
-        "hash": "54553550",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Retire Meilisearch — MEILISEARCH_ENABLED=false (no client, no startup spawn, no outbox deletes), health follows Qdrant, system-checks no longer probes :7700, daily backup skips the Meili rsync, cache prewarm no longer gated on Meili, Meili-only paths return empty (storage plan R8)",
-        "scope": "search"
-      },
-      {
-        "hash": "281ce13b",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Vectors-backup job — online SQLite backup of the three paid vectors.db stores to /tank/sifter/backups/vectors, paced in a nice-19 worker thread, copy verified (page count, size, quick/integrity check) before rotation; index lane, refuses while a writer runs, yields to drains (storage plan R1)",
-        "scope": "ops"
       }
     ]
   }

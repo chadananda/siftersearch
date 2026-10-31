@@ -184,12 +184,12 @@
   @keyframes blink { 50% { opacity: 0.25; box-shadow: none; } }
 
   /* the CRT: a dark rim, then a rounded, slightly barrelled tube with scanlines, glow and a glass glare */
-  .bezel { flex: 1; display: flex; padding: 3px; border-radius: 0.7rem / 0.8rem; background: linear-gradient(180deg, #1a1712, #050403);
+  .bezel { flex: 1; display: flex; padding: 2px; border-radius: 0.7rem / 0.8rem; background: linear-gradient(180deg, #1a1712, #050403);
     box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 1px 0 rgba(255, 255, 255, 0.12), 0 -1px 0 rgba(0, 0, 0, 0.5); }
-  .screen { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; padding: 0.3rem 0.4rem 0.25rem;
+  .screen { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; padding: 0.3rem 0.25rem 0.25rem;
     border-radius: 0.6rem / 0.75rem; background: radial-gradient(ellipse 120% 100% at 50% 40%, color-mix(in srgb, var(--radio-phosphor) 9%, var(--radio-crt)) 0%, var(--radio-crt) 70%, #010402 100%);
     box-shadow: inset 0 0 0.5rem rgba(0, 0, 0, 0.95), inset 0 0 1.5rem rgba(0, 0, 0, 0.55);
-    font: 400 0.84rem/0.82 'VT323', 'IBM Plex Mono', ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.02em;
+    font: 400 0.84rem/0.82 'VT323', 'IBM Plex Mono', ui-monospace, monospace; text-transform: uppercase; letter-spacing: -0.01em;
     text-shadow: 0 0 1px var(--radio-phosphor), 0 0 5px color-mix(in srgb, var(--radio-phosphor) 55%, transparent); animation: hum 7s steps(1) infinite; }
   .screen::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.32) 0 1px, transparent 1px 3px); }
   .screen::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; border-radius: inherit;
@@ -197,7 +197,7 @@
   @keyframes hum { 0%, 100% { opacity: 1; } 47% { opacity: 0.94; } 48% { opacity: 1; } 83% { opacity: 0.97; } }
   .ln { white-space: nowrap; overflow: hidden; text-overflow: clip; }
   .ln.hd { color: color-mix(in srgb, var(--radio-phosphor) 70%, var(--radio-crt)); margin-bottom: 0.1rem; }
-  .ln .k { display: inline-block; width: 2.3em; opacity: 0.6; }
+  .ln .k { display: inline-block; width: 2em; opacity: 0.6; }
   .ln.dim { opacity: 0.55; }
   .cells { display: flex; gap: 1px; margin: 0.15rem 0 0.12rem; }
   .cells i { flex: 1; height: 0.32rem; background: color-mix(in srgb, var(--radio-phosphor) 14%, transparent); }

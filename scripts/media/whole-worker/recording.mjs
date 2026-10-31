@@ -16,14 +16,15 @@ const jobDir=resolve(process.argv[2]||'.');
 const job=JSON.parse(await readFile(join(jobDir,'job.json'),'utf8'));
 if(job.v!==1 || !/^in\.[a-z0-9]{2,5}$/.test(job.input||'') || !job.meta?.slug)throw Error('Invalid whole-recording job');
 const threads=Math.max(1,Math.min(8,job.threads||2));
-// job.device: 'cuda' (default, NVIDIA), 'rocm' (AMD: whisper.cpp HIP ASR + ROCm torch; sherpa diarization has no ROCm build so it runs on the CPU), 'cpu' (legacy, never restores)
+// job.device: 'cuda' (default, NVIDIA), 'rocm' (AMD: whisper.cpp HIP ASR + ROCm torch; diarization via torch_diar), 'cpu' (legacy, never restores)
 const rocm=job.device==='rocm';
 process.env.SIFTER_GPU_LEASES='1';process.env.HF_HUB_OFFLINE='1';process.env.TRANSFORMERS_OFFLINE='1';process.env.TORCH_HOME='/root/.cache/torch';
 process.env.MEDIA_TOWER_HEAVY='1'; // this executable runs ONLY inside the worker
 process.env.NLTK_DATA='/opt/models/nltk_data';process.env.PYTHONPATH=(job.device==='cpu'||rocm?'':'/opt/worker-cuda:')+'/opt/worker-extras';process.env.PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True';
-process.env.MEDIA_DIAR_PROVIDER=job.device==='cpu'||rocm?'cpu':'cuda';process.env.MEDIA_DIAR_NO_CPU='1';
+process.env.MEDIA_DIAR_PROVIDER=job.device==='cpu'?'cpu':'torch'; // torch_diar: the whole diarization on the GPU (NVIDIA + AMD)
+process.env.MEDIA_DIAR_NO_CPU='1';
 process.env.MEDIA_PYTHON='/opt/gate/venv/bin/python';
-process.env.MEDIA_DFN_PYTHON='/opt/gate/venv-dfn/bin/python';
+process.env.MEDIA_DFN_PYTHON='/opt/gate/venv/bin/python'; // DeepFilterNet in the GPU torch venv (venv-dfn = CPU torch, held GPUs idle 10-30)
 process.env.MEDIA_REMASTER_STRICT='0';process.env.MEDIA_REMASTER_GRADES='A,B,C,D,E';
 process.env.MEDIA_SPK_PRESCREEN='1';
 const languageData=await local.run(process.env.MEDIA_PYTHON,['-c',"import sys;sys.path.insert(0,'/opt/sifter/media/worker');from language_data import prepare;print(prepare())"],{threads,timeoutMs:30000});
@@ -45,7 +46,7 @@ await writeFile(join(dir,'meta.json'),JSON.stringify(meta));
 const state=async stage=>writeFile(join(jobDir,'progress.json'),JSON.stringify({at:Date.now(),stage}));
 const tool=async(sub,input,opts={},ctl={})=>{
  await state(sub);
- const args=['/opt/sifter/media/media_tool.py',sub,input,'--threads',String(sub==='diarize'&&job.device!=='cpu'&&!rocm?1:threads),'--models','/opt/gate/models'];
+ const args=['/opt/sifter/media/media_tool.py',sub,input,'--threads',String(sub==='diarize'&&job.device!=='cpu'?1:threads),'--models','/opt/gate/models'];
  for(const [k,v] of Object.entries(opts)){if(v===true)args.push('--'+k);else if(v!==null&&v!==undefined&&v!==false&&v!=='')args.push('--'+k,String(v));}
  const python=sub==='dfn'?process.env.MEDIA_DFN_PYTHON:process.env.MEDIA_PYTHON;
  const env={...(job.device==='cpu'?{CUDA_VISIBLE_DEVICES:'',MEDIA_DEVICE:'cpu'}:{}),...(ctl.needGb?{MEDIA_STAGE_RAM_GB:String(ctl.needGb)}:{})};

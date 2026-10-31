@@ -1,5 +1,5 @@
 // The media internal API (X-Internal-Key; mounted by ops-reports.js under /api/admin): progress, per-talk status from the stage ledger,
-// talks by stage, add, redo. Logic in api/lib/media/media-status.js (shared with Dewey). Plan: planning/media-ledger-plan-20261030.md
+// talks by stage, add, redo, worker-image promotion. Logic in api/lib/media/media-status.js (shared with Dewey). Plan: planning/media-ledger-plan-20261030.md
 import { join, dirname } from 'path';
 import { requireInternal } from '../lib/auth.js';
 import { mediaProgress, mediaStatus, mediaAdd, mediaRedo } from '../lib/media/media-status.js';
@@ -31,6 +31,11 @@ export default async function mediaOps(fastify) {
   });
   fastify.post('/ops/media/items/:id/redo', guard, async (req, reply) => {
     const r = await mediaRedo({ ids: [req.params.id], stages: [].concat(req.body?.stages || []), by: by(req) });
+    return r.error ? reply.code(400).send(r) : r;
+  });
+  // promote an Aorus-accepted whole-recording image (the pods' immutable image; never an ssh edit of data/run on tower)
+  fastify.post('/ops/media/worker-image', guard, async (req, reply) => {
+    const b = req.body || {}, r = await (await import('../lib/media/cloud.js')).promoteWorker({ image: b.image, evidence: b.evidence, home_image: b.home_image, quiet_hosts: b.quiet_hosts, by: by(req) });
     return r.error ? reply.code(400).send(r) : r;
   });
 }

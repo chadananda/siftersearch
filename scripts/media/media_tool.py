@@ -240,13 +240,28 @@ def cmd_langid(a):
 def cmd_dfn(a):
     """DeepFilterNet3 (48 kHz) on the light-cleaned file; written as FLAC at 48 kHz mono."""
     # on a shared GPU wait for its memory (the lock in device()); on the CPU hide the GPU from DeepFilterNet's own pick
-    if device()[0] == 'cpu':
+    dev = device()[0]
+    if dev == 'cpu':
         os.environ['CUDA_VISIBLE_DEVICES'] = ''
     import torch
     torch.set_num_threads(a.threads)
+    try:   # deepfilternet 0.5.6 imports torchaudio.backend.common, gone from torchaudio ≥ 2.2 — it runs in the worker's GPU torch now
+        import torchaudio.backend.common  # noqa: F401
+    except Exception:
+        import types
+        m = types.ModuleType('torchaudio.backend.common')
+        class AudioMetaData:  # noqa: E306 — only a type annotation in df.io
+            pass
+        m.AudioMetaData = AudioMetaData
+        sys.modules['torchaudio.backend.common'] = m
     from df.enhance import enhance, init_df
     import soundfile as sf
     model, state, _ = init_df(log_level='ERROR')
+    # (10-30: the old venv-dfn had CPU-only torch — 6 DFN runs at ~280 % CPU each held every pod's GPU idle) — a GPU host runs it there
+    if dev == 'cuda':
+        model = model.to('cuda')
+        if not next(model.parameters()).is_cuda:
+            raise RuntimeError('DeepFilterNet did not land on the GPU — no CPU fallback')
     sr = state.sr()
     # Decode and write incrementally: a two-hour source must not retain the
     # input, all outputs and a concatenated output in RAM simultaneously.
@@ -277,9 +292,21 @@ def diarize(audio, threads, models_dir, num_speakers=-1, threshold=0.5, emb_name
     seg = os.path.join(models_dir, 'sherpa-onnx-pyannote-segmentation-3-0', 'model.onnx')
     names = [emb_name] if emb_name else [n for n in EMB_MODELS if os.path.exists(os.path.join(models_dir, n))]
     emb = os.path.join(models_dir, names[0])
+    prov = os.environ.get('MEDIA_DIAR_PROVIDER', 'cpu')
+    # MEDIA_DIAR_PROVIDER=torch (worker on any GPU, NVIDIA or AMD): the same ONNX models ported to torch, the whole stage on the GPU.
+    # sherpa's CUDA build left fbank + clustering on ONE CPU thread (10-30 aorus: a 87-min talk > 13 min at GPU 4 %; torch 44 s,
+    # frame agreement 0.99+ vs sherpa at the production threshold). titanet has no torch frontend: sherpa-cuda on NVIDIA, refused on AMD.
+    if prov == 'torch':
+        if 'titanet' not in names[0]:
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker'))
+            import torch_diar
+            res = torch_diar.diarize(audio, models_dir, names[0], num_speakers=num_speakers, threshold=threshold)
+            return [{'start': round(r['start'], 3), 'end': round(r['end'], 3), 'speaker': f"S{r['speaker'] + 1}"} for r in res]
+        if is_rocm():
+            raise RuntimeError(f'{names[0]} has no torch port and sherpa has no ROCm build — no CPU fallback')
+        prov = 'cuda'
     # MEDIA_DIAR_PROVIDER=cuda (aorus's venv-diar, a CUDA build of sherpa-onnx): on the GPU only with ≥ 1.5 GB free —
     # the transcriptions keep the card; else the CPU (10-23: 600 s of audio in ~100 s on the GPU at 1 CPU thread)
-    prov = os.environ.get('MEDIA_DIAR_PROVIDER', 'cpu')
     if prov == 'cuda':
         # WAIT for GPU memory (up to 30 min), never the CPU (Chad 10-30: no CPU fallback for GPU stages; MEDIA_DIAR_NO_CPU is now always on)
         t_wait = time.time()

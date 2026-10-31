@@ -56,6 +56,10 @@ else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until
   else if (sub === 'stage' && pos[0]) await out(await call('GET', `/ops/media/items?stage=${encodeURIComponent(pos[0])}&status=${val('--status') || 'done'}&missing=${flag('--missing') ? 1 : 0}&after=${val('--after') || 0}&limit=${val('--limit') || 50}`));
   else if (sub === 'add' && pos.length) await out(await call('POST', '/ops/media/items', { urls: pos.filter((x) => /^https?:/.test(x)), paths: pos.filter((x) => x.startsWith('/')) }));
   else if (sub === 'redo' && pos[1]) await out(await call('POST', `/ops/media/items/${pos[0]}/redo`, { stages: pos.slice(1) }));
-  else { console.error('usage: ops.mjs media progress | gauges [--host h --hours n --rows] | status <ref> | stage <stage> [--missing] | add <url|path>… | redo <id> <stage>…'); process.exit(2); }
+  else if (sub === 'promote-image' && pos[0]) {   // --home aorus=tag,boss=tag  --quiet aorus,boss
+    const kv = (v) => v ? Object.fromEntries(v.split(',').map((x) => x.split('='))) : undefined;
+    await out(await call('POST', '/ops/media/worker-image', { image: pos[0], evidence: val('--evidence'), home_image: kv(val('--home')), quiet_hosts: val('--quiet')?.split(',') }));
+  }
+  else { console.error('usage: ops.mjs media promote-image <ghcr…@sha256> --evidence "…" [--home h=tag,…] [--quiet h,…] | progress | gauges [--host h --hours n --rows] | status <ref> | stage <stage> [--missing] | add <url|path>… | redo <id> <stage>…'); process.exit(2); }
 } else { console.error('usage: ops.mjs run <id> | failures [--hours N] | dewey-allow | bio-slugs | ops.mjs reports | report <name> [--days N] [--wait] [--latest]'); process.exit(2); }
 process.exit(0);

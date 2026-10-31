@@ -24,6 +24,20 @@ export async function acceptedWorker(file = ACCEPTED_WORKER_FILE) {
     return a;
   } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
 }
+/** Promote a newly accepted worker image (ops route POST /ops/media/worker-image — never an ssh edit on tower). Keeps the other
+ *  settings, records the image it replaces; `home_image` / `quiet_hosts` replace theirs when given (a home build is keyed by digest). */
+export async function promoteWorker({ image, evidence, home_image, quiet_hosts, by = 'ops' } = {}, file = ACCEPTED_WORKER_FILE, now = new Date()) {
+  if (!/^ghcr\.io\/chadananda\/sifter-media-worker@sha256:[a-f0-9]{64}$/.test(image || '')) return { error: 'image must be ghcr.io/chadananda/sifter-media-worker@sha256:<64 hex>' };
+  if (!evidence || String(evidence).length < 20) return { error: 'evidence required: what the Aorus acceptance run proved' };
+  const cur = await acceptedWorker(file) || {};
+  const next = { ...cur, image, aorus_accepted_at: now.toISOString(), evidence: String(evidence).slice(0, 2000), promoted_by: String(by).slice(0, 60),
+    previous_image: cur.image && cur.image !== image ? cur.image : cur.previous_image || null };
+  if (home_image && typeof home_image === 'object') next.home_image = home_image; else if (cur.image !== image) delete next.home_image;
+  if (Array.isArray(quiet_hosts)) next.quiet_hosts = quiet_hosts.map(String);
+  await writeFile(file + '.tmp', JSON.stringify(next, null, 1));
+  await rename(file + '.tmp', file);
+  return { ok: true, accepted: next };
+}
 /** Runtime capacity survives deploys and can change without draining all media lanes. */
 export async function rentalCapacity(requested, file = RENTAL_CAPACITY_FILE) {
   let cap = Number(process.env.MEDIA_CLOUD_MAX_PODS);
