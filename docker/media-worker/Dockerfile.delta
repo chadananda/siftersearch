@@ -1,12 +1,15 @@
-# CODE + DEPS DELTA on the accepted whole-recording image (10-30): FROM its digest, the current worker code (prepare-image.mjs rootfs) and
-# the packages that move DeepFilterNet and diarization onto the GPU torch (deepfilternet in the GPU venv; onnx2torch for torch_diar).
-# A few MB of layers instead of a 39 GB rebuild. Built + accepted on Aorus: scripts/media/whole-worker/build-delta.sh.
+# CODE + DEPS DELTA on an accepted worker image, CUDA or ROCm alike (10-30/31: one recipe for both devices): FROM its digest, the current
+# worker code (prepare-image.mjs rootfs = /opt/sifter only) and the packages that move DeepFilterNet and diarization onto the GPU torch
+# (deepfilternet in the GPU venv; onnx2torch for torch_diar). The CUDA venv has pip, the ROCm venv is uv-built (no pip): same packages either way.
+# A few MB of layers instead of a 39 GB rebuild. Built + accepted on the target host: scripts/media/whole-worker/build-delta.sh.
 ARG BASE
 FROM ${BASE}
-RUN /opt/gate/venv/bin/python -m pip install --no-deps deepfilternet==0.5.6 deepfilterlib==0.5.6 loguru appdirs \
-      onnx onnx2torch onnxsim ml_dtypes rich markdown-it-py mdurl pygments 2>&1 | tail -2
+SHELL ["/bin/bash", "-c"]
+RUN set -e; PKGS="deepfilternet==0.5.6 deepfilterlib==0.5.6 loguru appdirs onnx onnx2torch onnxsim ml_dtypes rich markdown-it-py mdurl pygments"; \
+    if /opt/gate/venv/bin/python -m pip --version >/dev/null 2>&1; then /opt/gate/venv/bin/python -m pip install --no-deps $PKGS 2>&1 | tail -2; \
+    else uv pip install --python /opt/gate/venv/bin/python --no-deps $PKGS 2>&1 | tail -2; fi
 COPY rootfs/ /
 RUN set -o pipefail; ffmpeg -nostdin -y -v error -f lavfi -i "sine=frequency=300:duration=8" -ac 1 -ar 48000 /tmp/dsmoke.wav \
  && MEDIA_DEVICE=cpu /opt/gate/venv/bin/python /opt/sifter/media/media_tool.py dfn /tmp/dsmoke.wav --output /tmp/dsmoke.flac --threads 2 --models /opt/gate/models | tail -c 200 \
- && /opt/gate/venv/bin/python -c "import sys; sys.path.insert(0, '/opt/sifter/media/worker'); import torch_diar, onnx2torch, onnxsim; print('torch_diar deps ok')" \
- && rm -f /tmp/dsmoke.wav /tmp/dsmoke.flac && echo "sifter-media-worker delta $(date -u +%Y-%m-%d)" > /opt/sifter-image-version
+ && /opt/gate/venv/bin/python -c "import sys; sys.path.insert(0, '/opt/sifter/media/worker'); import torch_diar; torch_diar._stub_torchvision(); import onnx2torch, onnxsim; print('torch_diar deps ok')" \
+ && rm -f /tmp/dsmoke.wav /tmp/dsmoke.flac && echo "sifter-media-worker delta $(date -u +%Y-%m-%d) on $(cat /opt/sifter-image-version 2>/dev/null | head -c 80)" > /opt/sifter-image-version

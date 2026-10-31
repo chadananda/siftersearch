@@ -11,7 +11,7 @@ import dns from 'node:dns';
 import net from 'node:net';
 // Node's happy-eyeballs gives each address 250 ms — too short from home links (aorus: every fetch UND_ERR_CONNECT_TIMEOUT while curl -4 worked)
 dns.setDefaultResultOrder('ipv4first'); net.setDefaultAutoSelectFamily(false);
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join, relative, dirname, basename } from 'node:path';
 
@@ -27,7 +27,13 @@ export const KINDS = {
 };
 KINDS.post = KINDS.cleanup = KINDS.restore;
 const DEVICE = arg('device') || (existsSync('/dev/kfd') ? 'rocm' : spawnSync('nvidia-smi', ['-L'], { stdio: 'ignore' }).status === 0 ? 'cuda' : null);
-export const ACCEL = { cuda: ['--gpus', 'all'], rocm: ['--device', '/dev/kfd', '--device', '/dev/dri', '--group-add', 'video', '--security-opt', 'seccomp=unconfined'] };
+// rocm as the boss gate runs it (whole_gate.py): the device files' own gids (a name like 'video' resolves to another gid inside the image)
+// and a host MIOpen kernel cache at /cache, so each container does not recompile
+const devGids = () => [...new Set(['/dev/kfd', '/dev/dri/renderD128'].filter(existsSync).map((p) => String(statSync(p).gid)))].flatMap((g) => ['--group-add', g]);
+export const ACCEL = { cuda: () => ['--gpus', 'all'], rocm: () => ['--device', '/dev/kfd', '--device', '/dev/dri', ...devGids(), '-v', `${ROOT}/cache:/cache`] };
+// docker as this user, or through sudo -n where the user is not in the docker group (boss)
+const DOCKER = RUN === 'docker' && spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0 ? ['sudo', '-n', 'docker'] : ['docker'];
+const docker = (args, o) => spawn(DOCKER[0], [...DOCKER.slice(1), ...args], o);
 if (!HOST || (RUN === 'docker' && !IMAGE) || CAN.some((k) => !KINDS[k])) { console.error('usage: queue-agent.mjs --host <name> [--slots N] [--can whole,restore,post,cleanup] [--run docker --image <ref>|--run local]'); process.exit(2); }
 if (!ACCEL[DEVICE]) { console.error(`no GPU found (device ${DEVICE}): GPU stages never run on CPU — pass --device cuda|rocm if detection is wrong`); process.exit(2); }
 const q = queueClient({ key: process.env.MEDIA_QUEUE_KEY });
@@ -42,14 +48,14 @@ function runner(job, dir) {
   const [bin, script] = KINDS[job.stages[0]].cmd;
   if (RUN === 'local') return spawn(bin === 'python' ? 'python' : process.execPath, [script, dir], { env: { ...process.env, SIFTER_GPU_LEASES: '1' }, stdio: ['ignore', 'ignore', 'pipe'] });
   const lock = GPU_LOCK ? ['-v', `${GPU_LOCK}:/gpu.lock`, '-e', 'SIFTER_LEGACY_GPU_LOCK=/gpu.lock'] : [];
-  return spawn('docker', ['run', '--rm', '--name', `q-${job.id}`, ...ACCEL[DEVICE], '--network', 'none', '--cpus', '6', '--memory', '10g', '-v', `${dir}:/job`,
+  return docker(['run', '--rm', '--name', `q-${job.id}`, ...ACCEL[DEVICE](), '--network', 'none', '--cpus', '6', '--memory', '10g', '-v', `${dir}:/job`,
     '-v', `${ROOT}/leases:/workspace/.gpu-admission`, '-e', 'SIFTER_GPU_LEASES=1', ...lock, '--entrypoint', bin, IMAGE, script, '/job'], { stdio: ['ignore', 'ignore', 'pipe'] });
 }
 // the container writes as root: a plain rm then fails with EACCES (10-30: #1915 failed every retry on its own leftovers), so docker removes it
 async function scrub(dir) {
   try { await rm(dir, { recursive: true, force: true }); } catch (e) {
     if (RUN !== 'docker' || e.code !== 'EACCES') throw e;
-    await new Promise((r) => spawn('docker', ['run', '--rm', '--network', 'none', '-v', `${dirname(dir)}:/r`, '--entrypoint', 'rm', IMAGE, '-rf', `/r/${basename(dir)}`], { stdio: 'ignore' }).on('close', r));
+    await new Promise((r) => docker(['run', '--rm', '--network', 'none', '-v', `${dirname(dir)}:/r`, '--entrypoint', 'rm', IMAGE, '-rf', `/r/${basename(dir)}`], { stdio: 'ignore' }).on('close', r));
     await rm(dir, { recursive: true, force: true });
   }
 }
@@ -66,12 +72,12 @@ async function work(job) {
   const dir = join(ROOT, `q-${job.id}`), t0 = Date.now();
   let lost = false, child = null;
   const beat = setInterval(() => q.heartbeat({ id: job.id, lease: job.lease }).catch((e) => {
-    if (e.status === 409 || e.status === 404) { lost = true; child?.kill('SIGTERM'); if (RUN === 'docker') spawn('docker', ['rm', '-f', `q-${job.id}`]); }
+    if (e.status === 409 || e.status === 404) { lost = true; child?.kill('SIGTERM'); if (RUN === 'docker') docker(['rm', '-f', `q-${job.id}`]); }
   }), 120_000);
   try {
     const kind = KINDS[job.stages[0]];
     if (job.stages.length !== 1 || !CAN.includes(job.stages[0])) throw new Error(`stages ${job.stages} not runnable here`);
-    await scrub(dir); await mkdir(join(ROOT, 'leases'), { recursive: true });
+    await scrub(dir); await mkdir(join(ROOT, 'leases'), { recursive: true }); await mkdir(join(ROOT, 'cache', 'miopen'), { recursive: true });
     for (const f of await q.list('files', job.file_id)) await q.get('files', job.file_id, f.name, join(dir, f.name));
     child = runner(job, dir);
     let tail = '';
