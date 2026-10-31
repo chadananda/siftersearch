@@ -68,8 +68,8 @@ describe('persistent operator rental pause', () => {
       // a pod booted with an older BOOTSTRAP_WHOLE drains like a stale image (no new talks, closed when its own finish)
       expect(C.BOOT_V).toMatch(/^[0-9a-f]{12}$/);
       const lane = readFileSync(join(import.meta.dirname, '../../api/lib/ops/media-jobs.js'), 'utf8');
-      expect(lane).toMatch(/p\.boot_v = C\.BOOT_V/);
-      expect(lane).toMatch(/outdated=\(p\)=>p\.image!==acceptedWorker\.image\|\|p\.boot_v!==C\.BOOT_V/);
+      expect(lane).toMatch(/p\.boot_v = p\.agent \? C\.BOOT_V_AGENT : C\.BOOT_V/);
+      expect(lane).toMatch(/outdated=\(p\)=>p\.image!==acceptedWorker\.image\|\|p\.boot_v!==\(p\.agent\?C\.BOOT_V_AGENT:C\.BOOT_V\)/);
       // the worker never ends its own pod (it idled new pods out before their first talk); the keeper holds the safety nets
       expect(C.BOOTSTRAP_WHOLE).toMatch(/env -u RUNPOD_POD_ID python \/opt\/sifter\/media\/worker\/farm_worker\.py/);
       expect(C.BOOTSTRAP_WHOLE).toMatch(/keeper\.sh[\s\S]*1800[\s\S]*86400[\s\S]*terminate_self/);
@@ -308,6 +308,24 @@ describe('the lane: GPU is rented only for work', () => {
     expect(x.cloud.createPod).not.toHaveBeenCalled();
     expect(x.killed).toEqual(['p1']);
     expect(x.queued.map(([, params]) => params.id)).toEqual([1]);
+  });
+  it('an image with the queue agent: the pod pulls from the edge queue (no spool, no scp), drains on a pool cut, and is closed once its agent exits', async () => {
+    let alive = 2, boot, naps = 0;
+    const x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => {
+      if (cmd !== 'ssh') return null;
+      if (last.includes('echo BAKED')) return { stdout: 'BAKED\nGATE\nAGENT' };
+      if (last.includes('pgrep -f queue-agent.mjs')) return { stdout: alive-- > 0 ? 'ALIVE\n{"claimed":"q-1"}\nUTIL 88' : 'agent exit idle\nUTIL 0' };
+      return null;
+    } });
+    x.cloud.acceptedWorker = async () => ({ image: 'ghcr.io/x@sha256:' + 'a'.repeat(64) });
+    const r = await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, agentKey: 'machine-key', draining: () => naps > 12, nap: async () => { naps++; } });
+    boot = x.deps.run.mock.calls.find(([, a]) => String(a.at(-1)).includes('/workspace/bootstrap.sh'))?.[2]?.input;
+    expect(boot).toContain("MEDIA_QUEUE_KEY='machine-key'");
+    expect(boot).toContain('queue-agent.mjs');
+    expect(x.deps.run.mock.calls.filter(([c]) => c === 'scp')).toEqual([]);
+    expect(x.deps.run.mock.calls.some(([, a]) => String(a.at(-1)).startsWith('cd /workspace/spool'))).toBe(false);
+    expect(x.killed).toContain('p1');
+    expect(r).toBeTruthy();
   });
   it('stages several recordings per pod per pass at once (Chad 10-30: one at a time starved the pods), never more than stageBatch', async () => {
     const x = setup({ talks: 4, seconds: 3600 });

@@ -1694,6 +1694,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   let balance = null, balAt = 0, stop = null, yielded = false, qPass = null;
   // EDGE QUEUE (worker/queue, Chad 10-30): in the background, pull finished queue jobs and keep ~2.5 h of whole talks queued for the machines pulling
   const queueKey = deps.queueKey !== undefined ? deps.queueKey : deps.repo || process.env.MEDIA_QUEUE_FEED === '0' ? null : process.env.INTERNAL_API_KEY;   // tests inject theirs
+  // the machines' key (the same on the LAN and the edge queue) handed to an agent pod at boot; no edge feed → no agent pods
+  const agentKey = deps.agentKey !== undefined ? deps.agentKey : queueKey ? (await import('../repos/media-queue-repo.js')).machineKey() : null;
   // the dead-man heartbeat must not depend on how long a tick takes (10-24: a 10-minute upload queue starved it and a pod shut itself down)
   const pump = setInterval(() => {
     for (const q of Object.values(st.pods)) if (!q.terminated && q.ip && q.port && q.status !== 'booting') C.podSsh(run, q, 'touch /workspace/spool/.tower-hb', { timeoutMs: 30_000 }).catch(() => {});
@@ -1832,7 +1834,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const imageStarting=acceptedWorker&&live.some(p=>p.image===acceptedWorker.image&&p.status!=='ready');
-      const outdated=(p)=>p.image!==acceptedWorker.image||p.boot_v!==C.BOOT_V;   // an older image, or booted by an older BOOTSTRAP_WHOLE
+      const outdated=(p)=>p.image!==acceptedWorker.image||p.boot_v!==(p.agent?C.BOOT_V_AGENT:C.BOOT_V);   // an older image, or booted by an older BOOTSTRAP_WHOLE
       const imageDrainId=acceptedWorker&&!imageStarting?live.filter(p=>p.image&&outdated(p)).sort((a,b)=>a.created-b.created)[0]?.id:null;
       const inflight = Object.keys(st.jobs).length + staging.size + collecting.size;
       if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass) break;
@@ -1859,7 +1861,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // Transfer each pod's bounded batch in parallel; the uplink, not the GPU, can be the limiting resource.
       await Promise.all(live.map(async (p) => {
         try {
-          if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id) && !bgBusy(p.id)) { await closePod(p, `pool reduced to ${maxPods}`); return; }
+          if (surplusPods.has(p.id) && !p.agent && !Object.values(st.jobs).some(j => j.pod === p.id) && !bgBusy(p.id)) { await closePod(p, `pool reduced to ${maxPods}`); return; }
           if (p.status === 'booting') {
             let g = await C.getPod(p.id, deps);
             p.image=g.imageName||acceptedWorker?.image||null;
@@ -1875,7 +1877,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             if (g.publicIp && port) {
               p.ip = g.publicIp; p.port = port;
               await C.podSsh(run, p, 'mkdir -p /workspace/spool && echo ok', { timeoutMs: 60_000 });
-              const probeOut = (await C.podSsh(run, p, 'test -f /opt/sifter-image-version && echo BAKED; test -x /opt/gate/asr-gate.sh && echo GATE; true', { timeoutMs: 60_000 })).stdout || '';
+              const probeOut = (await C.podSsh(run, p, 'test -f /opt/sifter-image-version && echo BAKED; test -x /opt/gate/asr-gate.sh && echo GATE; test -f /opt/sifter/media/worker/queue-agent.mjs && echo AGENT; true', { timeoutMs: 60_000 })).stdout || '';
               const baked = /BAKED/.test(probeOut); p.gate = /GATE/.test(probeOut);
               if (baked) {
                 p.baked = true;   // the image carries code + weights + aligners: nothing to upload or download
@@ -1884,8 +1886,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   await run('tar', ['czf', tgz, '-C', join(dirname(C.WORKER_FILE)), ...C.MEDIA_SCRIPTS], { timeoutMs: 60_000 });
                   await C.podPut(run, p, tgz, '/workspace/media-scripts.tgz');
                 } catch { /* the image's own copy runs */ }
-                if (acceptedWorker) p.boot_v = C.BOOT_V;
-                await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: acceptedWorker ? C.BOOTSTRAP_WHOLE.replace('--max-jobs 6',`--max-jobs ${p.max_jobs}`) : C.BOOTSTRAP_BAKED, timeoutMs: 120_000 });
+                // step 6: an image that carries the queue agent pulls from the edge queue (R2 in, R2 out) — no spool, no downloads by tower
+                p.agent = !!(acceptedWorker && agentKey && /AGENT/.test(probeOut));
+                if (acceptedWorker) p.boot_v = p.agent ? C.BOOT_V_AGENT : C.BOOT_V;
+                const boot = p.agent ? C.agentEnv(agentKey, `pod-${p.name}`, p.max_jobs) + C.BOOTSTRAP_AGENT : acceptedWorker ? C.BOOTSTRAP_WHOLE.replace('--max-jobs 6',`--max-jobs ${p.max_jobs}`) : C.BOOTSTRAP_BAKED;
+                await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: boot, timeoutMs: 120_000 });
               } else {
                 await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
                 await C.podPut(run, p, C.REPO_TGZ(), '/workspace/unipase-repo.tgz');
@@ -1918,6 +1923,14 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             }
             if(acceptedWorker&&!p.image)p.image=(await C.getPod(p.id,deps)).imageName||acceptedWorker.image;
             const staleImage=acceptedWorker&&outdated(p)&&p.id===imageDrainId;
+            if (p.agent) {   // the agent pod runs itself: tower watches it, drains it when outdated, and closes it once its agent has exited
+              const drain = staleImage || surplusPods.has(p.id);   // SIGTERM = the agent finishes the jobs it holds, then exits and ends its pod
+              const { stdout } = await C.podSsh(run, p, `${drain ? "pkill -TERM -f queue-agent.mjs; " : ''}pgrep -f queue-agent.mjs >/dev/null && echo ALIVE; tail -1 /workspace/agent.log 2>/dev/null; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); u=$(awk '/^usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat 2>/dev/null); pw=$(nvidia-smi --query-gpu=power.draw,power.limit --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' '); echo GAUGE \${u:--} $(cat /sys/fs/cgroup/cpu.max 2>/dev/null || echo max 100000) $(nproc) \${pw:--}; true`, { timeoutMs: 60_000 });
+              p.lastOk = now(); p.agent_tail = stdout.split('\n').find((l) => l.startsWith('{') || l.startsWith('agent exit'))?.slice(0, 300) || null;
+              const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]); { const g = WC.readGauges(stdout, p.gauge, now()); if (g) p.gauge = { ...g, cpu: g.cpu ?? p.gauge?.cpu ?? null }; }
+              if (!/ALIVE/.test(stdout)) await closePod(p, staleImage ? 'accepted image updated; queue agent drained' : drain ? `pool reduced to ${maxPods}; queue agent drained` : 'queue agent exited (idle or drained)');
+              return;
+            }
             if(staleImage&&!Object.values(st.jobs).some(j=>j.pod===p.id)){await closePod(p,p.image!==acceptedWorker.image?'accepted image updated; finished recordings drained':'bootstrap updated; finished recordings drained');return;}
             const { stdout } = await C.podSsh(run, p, 'cd /workspace/spool 2>/dev/null && for d in */; do d=${d%/}; if [ -f "$d/done.json" ] || { [ -f "$d/result.json" ] && [ -f "$d/complete" ]; }; then echo "DONE $d"; fi; [ -f "$d/failed" ] && echo "FAIL $d"; [ -f "$d/ready" ] && echo "WAIT $d"; if [ -f "$d/ready" ] || [ -f "$d/running" ] || [ -f "$d/done.json" ] || [ -f "$d/complete" ]; then echo "STAGED $d"; else echo "PARTIAL $d"; fi; done; touch /workspace/spool/.tower-hb; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); u=$(awk \'/^usage_usec/{print $2}\' /sys/fs/cgroup/cpu.stat 2>/dev/null); pw=$(nvidia-smi --query-gpu=power.draw,power.limit --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d \' \'); echo GAUGE ${u:--} $(cat /sys/fs/cgroup/cpu.max 2>/dev/null || echo max 100000) $(nproc) ${pw:--}; echo STATUS $(cat /workspace/spool/.worker-status.json 2>/dev/null); true', { timeoutMs: 60_000 });
             p.lastOk = now();
@@ -2110,7 +2123,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // a pod from an older image (no gate: it cannot be a prep / encode host) is retired once its own jobs are done
       if (requireGate) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && !q.gate)) if (!Object.values(st.jobs).some((j) => j.pod === p.id)) await closePod(p, 'retired: image without the gate');
       // an idle pod (nothing left to give it) is terminated at once
-      if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready')) if (!Object.values(st.jobs).some((j) => j.pod === p.id) && !bgBusy(p.id)) await closePod(p, 'queue empty');
+      if (!st.queue.length) for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.status === 'ready' && !q.agent)) if (!Object.values(st.jobs).some((j) => j.pod === p.id) && !bgBusy(p.id)) await closePod(p, 'queue empty');   // an agent pod ends itself when the edge queue runs dry
       // load history per host (Chad 10-30: "logging these so that we can look back and analyze the pattern"): data/run/gauges/<day>.jsonl
       if (!deps.stateFile) { try { const G = await import('../media/gauge-log.js'); await G.appendGauges(G.gaugeRows(st, now()), join(dirname(C.STATE_FILE), 'gauges'), now()); } catch (err) { st.gauge_log_error = String(err.message).slice(0, 160); } }
       st.spent_usd = C.spendOf(st, now()); st.updated = now();

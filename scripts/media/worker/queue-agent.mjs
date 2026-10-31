@@ -5,7 +5,7 @@
 // restore|post|cleanup = single_restore.py (in.<ext> + work.json [+ out.flac/asr*.json] + job.json {post} → post.json + post/** + done.json).
 // Device detected ONCE (/dev/kfd → rocm, nvidia-smi → cuda); no GPU → refuse to start (a GPU stage never runs on CPU). Outputs → results/<job id>/.
 // Args: --host aorus --slots 4 --root /data/sifter-queue --run docker|local --image <ref> [--can whole,restore,post,cleanup] [--device cuda|rocm]
-//       [--gpu-lock /path] [--min-avail-gb 5] [--once]
+//       [--gpu-lock /path] [--min-avail-gb 5] [--once] [--idle-exit-min N]  (N min with nothing claimed or running → exit: a pod then ends itself)
 import { spawn, spawnSync } from 'node:child_process';
 import dns from 'node:dns';
 import net from 'node:net';
@@ -18,7 +18,7 @@ import { join, relative, dirname, basename } from 'node:path';
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const HOST = arg('host'), SLOTS = Number(arg('slots', 1)), ROOT = arg('root', '/data/sifter-queue'), RUN = arg('run', 'local'), IMAGE = arg('image');
-const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)), ONCE = process.argv.includes('--once');
+const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)), ONCE = process.argv.includes('--once'), IDLE_EXIT_MS = Number(arg('idle-exit-min', 0)) * 60_000;
 const CAN = arg('can', 'whole,restore,post,cleanup').split(',').filter(Boolean);
 // the one place a job kind maps to what runs in the image, and what it hands back (relative to the job dir)
 export const KINDS = {
@@ -41,7 +41,7 @@ const log = (msg, x = {}) => console.log(JSON.stringify({ at: new Date().toISOSt
 const nap = (ms) => new Promise((r) => setTimeout(r, ms));
 const memAvailGb = () => { try { return Number(/MemAvailable:\s+(\d+)/.exec(readFileSync('/proc/meminfo', 'utf8'))[1]) / 1048576; } catch { return Infinity; } };
 const running = new Map();
-let stopping = false;
+let stopping = false, busyAt = Date.now();
 for (const s of ['SIGTERM', 'SIGINT']) process.on(s, () => { stopping = true; log('stopping — finishing jobs in hand', { running: running.size }); });
 
 function runner(job, dir) {
@@ -106,8 +106,9 @@ log('start', { slots: SLOTS, run: RUN, image: IMAGE, device: DEVICE, can: CAN, b
 while (!stopping || running.size) {
   if (!stopping && running.size < SLOTS && memAvailGb() >= MIN_AVAIL_GB) {
     const job = await q.claim({ host: HOST, can: CAN, ram_gb: memAvailGb() }).catch((e) => { log('claim error', { error: e.message }); return null; });
-    if (job) { log('claimed', { job: job.id, audio_s: job.body?.invoice?.audio_s }); running.set(job.id, work(job).finally(() => running.delete(job.id))); continue; }
+    if (job) { log('claimed', { job: job.id, audio_s: job.body?.invoice?.audio_s }); running.set(job.id, work(job).finally(() => { running.delete(job.id); busyAt = Date.now(); })); continue; }
     if (ONCE && !running.size) break;
+    if (IDLE_EXIT_MS && !running.size && Date.now() - busyAt > IDLE_EXIT_MS) { log('idle — exiting', { idle_min: IDLE_EXIT_MS / 60_000 }); break; }
   }
   await nap(running.size >= SLOTS ? 10_000 : 30_000);
 }

@@ -338,8 +338,34 @@ if ! pgrep -f '^python /opt/sifter/media/worker/farm_worker.py' >/dev/null; then
   nohup env -u RUNPOD_POD_ID python /opt/sifter/media/worker/farm_worker.py --spool /workspace/spool --max-jobs 6 >> /workspace/worker.log 2>&1 < /dev/null &
 fi
 echo started`;
+/** AGENT pod (step 6, Chad 10-31): the image's queue agent pulls from the edge queue (/_q + R2) like every other machine — inputs come
+ * from R2, results go to R2, so a pod never waits on tower's downloads and a busy tower loses no work. Tower only rents, proves the GPU
+ * and closes. The pod ends ITSELF when the agent exits (idle on an empty queue, or drained), or after 24 h. Tower prepends
+ * MEDIA_QUEUE_KEY + POD_HOST + AGENT_SLOTS at run time (never baked into the image or BOOT_V). */
+export const BOOTSTRAP_AGENT = `set -e
+mkdir -p /workspace/spool /workspace/q
+export HF_HOME=/opt/models/hf TORCH_HOME=/root/.cache/torch SIFTER_WEIGHTS=/opt/models/weights
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=/opt/worker-extras:/opt/sifter/media NLTK_DATA=/opt/models/nltk_data
+for v in RUNPOD_POD_ID RP_TERMINATE_KEY LD_LIBRARY_PATH PATH; do val=$(tr '\\0' '\\n' < /proc/1/environ | grep "^$v=" | head -1 | cut -d= -f2-); [ -n "$val" ] && export $v="$val"; done
+test -f /opt/sifter/media/worker/queue-agent.mjs
+cat > /workspace/agent.sh <<'AGENT'
+cd /workspace/q
+node /opt/sifter/media/worker/queue-agent.mjs --host "$POD_HOST" --slots "$AGENT_SLOTS" --root /workspace/q --run local --device cuda --can whole --idle-exit-min 15 >> /workspace/agent.log 2>&1
+echo "agent exit $? $(date -u +%FT%TZ)" >> /workspace/agent.log
+cd /opt/sifter/media && python -c 'import sys; from runpod_worker import terminate_self; terminate_self(sys.argv[1])' 'queue agent exited (idle or drained)'
+AGENT
+cat > /workspace/keeper.sh <<'KEEP'
+born=$(date +%s)
+while sleep 60; do [ $(( $(date +%s) - born )) -gt 86400 ] && cd /opt/sifter/media && python -c 'import sys; from runpod_worker import terminate_self; terminate_self(sys.argv[1])' 'maximum lifetime 24 h'; done
+KEEP
+pgrep -f 'bash /workspace/keeper.sh' >/dev/null || nohup bash /workspace/keeper.sh >> /workspace/keeper.log 2>&1 < /dev/null &
+pgrep -f 'queue-agent.mjs' >/dev/null || nohup env SIFTER_GPU_LEASE_DIR=/workspace/q/leases bash /workspace/agent.sh > /dev/null 2>&1 < /dev/null &
+touch /workspace/spool/.worker-ready
+echo started`;
 /** Which BOOTSTRAP_WHOLE a pod was started with: a pod booted with an older one drains like a stale image (10-30: the LD_LIBRARY_PATH fix). */
 export const BOOT_V = createHash('sha256').update(BOOTSTRAP_WHOLE).digest('hex').slice(0, 12);
+export const BOOT_V_AGENT = createHash('sha256').update(BOOTSTRAP_AGENT).digest('hex').slice(0, 12);
+export const agentEnv = (key, host, slots) => `export MEDIA_QUEUE_KEY='${String(key).replace(/'/g, '')}' POD_HOST='${String(host).replace(/[^\w.-]/g, '')}' AGENT_SLOTS=${Number(slots) || 4}\n`;
 export const WORKER_FILE = join(ROOT, 'scripts', 'media', 'runpod_worker.py');
 export const REPO_TGZ = () => process.env.MEDIA_UNIPASE_REPO_TGZ || join(homedir(), 'sifter', 'remaster', 'cloud', `unipase-${UNIPASE_COMMIT.slice(0, 8)}.tgz`);
 export const jobIdOf = (item) => `${String(item.slug || item.id).replace(/[^a-z0-9-]/gi, '').slice(0, 80)}-${item.id}`;
