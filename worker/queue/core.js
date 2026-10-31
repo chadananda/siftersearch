@@ -108,11 +108,11 @@ export function claim(sql, { host, can = [], vram_mb = 0, ram_gb = 0, types = ['
 }
 /** Role policy (Chad 10-31): a host that can run more than one typed role claims, while the GPU buffer (gpu work staged for the pods) is
  *  under target, cpu-prep → cpu-finish → gpu (fill the buffer); once it is at target, cpu-finish → gpu → cpu-prep (finish what the GPUs
- *  made; a GPU job only when nothing else waits). Only a host with a GPU role is reordered (Aorus); CPU-only hosts (Boss, tower) keep
- *  their own order; no policy = the host's own order. Pure. */
+ *  made; a GPU job only when nothing else waits). So Boss (prep + finish) preps while the buffer is short and shares finish once the pods are
+ *  fed; a single-role host (tower: cpu-finish) is unaffected; no policy = the host's own order. Pure. */
 export function claimOrder(types = [], spill = [], policy = null) {
   const all = [...types, ...spill.filter((t) => !types.includes(t))], typed = all.filter((t) => TYPED.has(t));
-  if (!policy || typed.length < 2 || !typed.includes('gpu')) return null;   // CPU-only hosts keep their own order (Boss prep → finish; tower finish)
+  if (!policy || typed.length < 2) return null;
   const rank = policy.buffer_low ? ['cpu-prep', 'cpu-finish', 'gpu'] : ['cpu-finish', 'gpu', 'cpu-prep'];
   return [...rank.filter((t) => typed.includes(t)), ...all.filter((t) => !TYPED.has(t))];
 }

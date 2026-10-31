@@ -208,8 +208,11 @@ describe('claim order (Chad 10-31): the R2 buffer decides whether multi-role hos
     expect(Q.claimOrder(['gpu'], ['cpu-prep', 'cpu-finish'], { buffer_low: false })).toEqual(['cpu-finish', 'gpu', 'cpu-prep']);
     expect(Q.claimOrder(['gpu', 'cpu-finish'], [], { buffer_low: true })).toEqual(['cpu-finish', 'gpu']);
   });
-  it('CPU-only hosts (Boss prep → finish, tower finish), single-role hosts and no policy keep their own order', () => {
-    expect(Q.claimOrder(['cpu-prep', 'cpu-finish'], [], { buffer_low: false })).toBeNull();
+  it('Boss (prep + finish): prep while the buffer is short, finish first once the pods are fed (finish never starves behind an endless prep queue)', () => {
+    expect(Q.claimOrder(['cpu-prep', 'cpu-finish'], [], { buffer_low: true })).toEqual(['cpu-prep', 'cpu-finish']);
+    expect(Q.claimOrder(['cpu-prep', 'cpu-finish'], [], { buffer_low: false })).toEqual(['cpu-finish', 'cpu-prep']);
+  });
+  it('single-role hosts and no policy keep their own order', () => {
     expect(Q.claimOrder(['gpu'], [], { buffer_low: true })).toBeNull();
     expect(Q.claimOrder(['cpu-finish'], [], { buffer_low: true })).toBeNull();
     expect(Q.claimOrder(['gpu'], ['cpu-prep'], null)).toBeNull();
