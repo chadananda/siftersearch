@@ -72,6 +72,18 @@ Pod image (10-26) post.py had no `quiet`; tower requires realign+quiet+web since
   Pods get pacing with the next image build (all .mjs in scripts/media/worker ship).
 - Boss whole-2183 done 2954 s for 94 min. Agent pod 367 ready, claimed whole-2219 03:33 (watcher bg8ob364c for its first adopted result).
 
+- 46c23cdc boss "clogged on one talk": gpu_lease RAM check summed every talk's lease against ONE container's 10 GB cap
+  (3.5 restore_asr + 5.5 grade > 9). The agent now caps each container at 85% of host RAM (boss 26g, aorus 12g). Live `docker update`
+  applied to the running containers; boss 2208 grade was admitted beside 2182 restore_asr (verified via leases.json).
+
+- Shared-memory caveat (Chad): boss = 96 GB VRAM carve-out + 31 GB system, and GTT (up to 15 GB) is taken from the system side.
+  The RAM check doesn't see GTT. GTT used was 0 at 04:00Z. TODO, coordinate with the gpu_lease.py owner: subtract live
+  mem_info_gtt_used from free RAM in admission.
+
+- 03:46Z aorus whole-2185 on 31d FAILED "Incomplete restoration result; no publication" (single_restore.py: post.json not ok/held/web).
+  The reason was lost because the retry reuses the work dir. The paced agent re-claimed it at once. DON'T promote 31d yet.
+  Watcher br95f8a5s captures post.json once it exists.
+
 ## Next
 1. Boss onto the LAN agent (ROCm; boss currently on home path B, st.home.boss, image quiet-20261029). Needs a ROCm gpu-20261031 build.
 2. Retire home ssh-docker (B) + gate (C) once aorus+boss run on the agent.

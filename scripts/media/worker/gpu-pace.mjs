@@ -1,14 +1,22 @@
-// GPU pacing for the queue agent (Chad 10-31: "the CPU work can progress while the GPU is working on the next talk"). Rather than starting every
-// slot at once, so all the talks reach their CPU stages together, take the next talk only once the GPU has gone quiet. Slots become a cap.
-// Utilisation comes from the card (nvidia-smi | amdgpu sysfs); if it can't be read, the agent claims up to the cap as before.
+// GPU pacing for the queue agent (Chad 10-31: "the CPU work can progress while the GPU is working on the next talk"; pods and home hosts must keep
+// the GPU saturated). Rule: always keep ONE talk on deck for the GPU. Claim the next talk whenever no stage is queued at gpu_lease.py's admission
+// (leases.json.wait) and the last claim has had ON_DECK_MS to reach its first GPU stage. A backlog at the GPU holds new claims; slots + RAM cap it.
 import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 
-export const BUSY_PCT = 40;          // below this the GPU counts as quiet
-export const QUIET_MS = 60_000;      // ...for this long before another talk starts
-export const WARM_MS = 4 * 60_000;   // a talk just claimed is still downloading and preparing; don't count its quiet GPU yet
+export const ON_DECK_MS = 2 * 60_000;   // download + probe before a new talk asks for the GPU
+export const WAITER_FRESH_S = 10;       // gpu_lease.py re-stamps a waiter every second; one silent for 10 s is gone
 
-/** Current GPU utilisation %, or null when it can't be read. */
+/** Stages waiting at GPU admission right now (shared leases dir of this host). */
+export function gpuWaiting(leaseDir, now = Date.now()) {
+  try {
+    const w = JSON.parse(readFileSync(join(leaseDir, 'leases.json.wait'), 'utf8'));
+    return Object.values(w).filter((v) => now / 1000 - (v.at || 0) < WAITER_FRESH_S).length;
+  } catch { return 0; }
+}
+
+/** Current GPU utilisation % (logged with each claim), or null when it can't be read. */
 export function gpuUtil(device) {
   try {
     if (device === 'rocm') {
@@ -21,18 +29,9 @@ export function gpuUtil(device) {
   } catch { return null; }
 }
 
-/** Tracks how long the GPU has been quiet; sample() every few seconds. */
-export function pace() {
-  let quietSince = null;
-  return {
-    sample(util, now = Date.now()) { if (util == null || util < BUSY_PCT) quietSince ??= now; else quietSince = null; },
-    quietMs: (now = Date.now()) => (quietSince == null ? 0 : now - quietSince),
-  };
-}
-
 /** Take another talk now? Pure. */
-export function wantAnother({ running, cap, quietMs, sinceClaimMs, memGb, minGb }) {
+export function wantAnother({ running, cap, waiting, sinceClaimMs, memGb, minGb }) {
   if (running >= cap || memGb < minGb) return false;
   if (!running) return true;
-  return quietMs >= QUIET_MS && sinceClaimMs >= WARM_MS;
+  return waiting === 0 && sinceClaimMs >= ON_DECK_MS;
 }
