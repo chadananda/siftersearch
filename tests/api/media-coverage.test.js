@@ -65,7 +65,7 @@ describe('coverageCheck', () => {
   });
   it('retries EVERY hole, not the first 12 (Chad: no caps; 10-31 talk 1947: 259 holes, 12 tried, 94 % of its speech left without words)', async () => {
     let asrCalls = 0, manifest = null;
-    const tools = { pcmStream: async (_f, _sr, on) => { const a = new Float32Array(16000 * 140); a.fill(0.1, 0, 16000 * 70); on(a); }, ffmpeg: async () => {}, asr: async (_s, _i, o) => { asrCalls++; expect(o.windows).toBe('/tmp/cov-windows.json'); } };
+    const tools = { pcmStream: async (_f, _sr, on) => { const a = new Float32Array(16000 * 140); a.fill(0.1, 0, 16000 * 70); on(a); }, ffmpeg: async () => {}, asr: async (_s, _i, o) => { asrCalls++; expect(o.windows).toBe('/tmp/cov-windows-1.json'); } };
     const io = { tmp: (n) => `/tmp/${n}`, writeJson: async (p, v) => { manifest = v; }, unlink: async () => {}, readJson: async () => ({ segments: [] }) };
     const lone = []; for (let t = 0; t < 70; t += 5) lone.push({ s: t, e: t + 0.3, words: [{ w: 'x', s: t, e: t + 0.3 }] });
     const r = await coverageCheck({ file: 'a.m4a', segments: lone, tools, io, lang: 'en' });
@@ -83,10 +83,22 @@ describe('coverageCheck', () => {
     const f = await coverageCheck({ file: 'a.m4a', segments: base, tools: { pcmStream: pcm, ffmpeg: async () => {}, asr: async () => { throw new Error('cuda'); } }, io, lang: 'en' });
     expect(f.coverage.errors).toBe(1);
   });
-  it('leaves the hole on the record when the re-transcription finds nothing usable and it cannot tell (the gate blocks it once it is long)', async () => {
-    const { tools, io } = mk(words(1.5, 3));
+  it('a window that recovers SOME words: what is left is retried in its own round; nothing there = non-speech (10-31 talk 2558: 7 holes left after one pass, render blocked)', async () => {
+    const calls = [];
+    const tools = { pcmStream: mk([]).tools.pcmStream, ffmpeg: async () => {}, asr: async (_s, _i, o) => { calls.push(o.windows); } };
+    // round 1: a few words at the start of the 16–33 s hole (16–17.5 s); round 2: the leftover (≈17.9–33 s) yields nothing
+    const io = { tmp: (n) => `/tmp/${n}`, writeJson: async () => {}, unlink: async () => {}, readJson: async (p) => ({ segments: p.includes('cov-1-') ? [{ s: 1.5, e: 3, words: words(1.5, 3) }] : [] }) };
     const r = await coverageCheck({ file: 'a.m4a', segments: base, tools, io, lang: 'en' });
-    expect(r.coverage.holes_after.length).toBeGreaterThan(0);
+    expect(calls).toEqual(['/tmp/cov-windows-1.json', '/tmp/cov-windows-2.json']);
+    expect(r.coverage).toMatchObject({ rounds: 2, repaired: 1, nonspeech: 1, holes_after: [] });
+    expect(coverageProblems(r.coverage)).toEqual([]);
+  });
+  it('a leftover whose retry fails stays on the record and blocks; the same failed window is not retried forever', async () => {
+    let n = 0;
+    const tools = { pcmStream: mk([]).tools.pcmStream, ffmpeg: async () => {}, asr: async () => { if (++n > 1) throw new Error('cuda'); } };
+    const io = { tmp: (x) => `/tmp/${x}`, writeJson: async () => {}, unlink: async () => {}, readJson: async (p) => ({ segments: p.includes('cov-1-') ? [{ s: 1.5, e: 3, words: words(1.5, 3) }] : [] }) };
+    const r = await coverageCheck({ file: 'a.m4a', segments: base, tools, io, lang: 'en' });
+    expect(r.coverage.rounds).toBe(2); expect(r.coverage.errors).toBe(1);
     expect(coverageProblems(r.coverage, 0).length).toBeGreaterThan(0);
   });
 });

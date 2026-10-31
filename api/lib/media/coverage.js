@@ -104,12 +104,36 @@ export async function coverageCheck({ file, segments, tools, asrOpts = {}, lang 
   const speech = await speechOf(file, tools);
   const before = measureCoverage(segments, speech);
   let segs = segments;
+  const nonspeech = [], tried = new Set();
+  let repaired = 0, errors = 0, rounds = 0;
+  // ROUNDS (10-31 talks 2558, 2130): a window that recovers SOME words leaves the rest of its hole as smaller holes (2558: one 195 s hole
+  // through a sung passage → 2 "repaired" → 7 holes left, two of them 51 s and 75 s, blocking publish). Each leftover is a new hole with its
+  // own, shorter window: the next round retries it. A hole is tried once; one that yields no words is non-speech. Ends when no untried hole
+  // is left (every round either adds words or settles holes as non-speech), so it needs no cap.
+  for (let holes = before.holes; ; holes = measureCoverage(segs, speech, { ignore: nonspeech }).holes) {
+    const fresh = holes.filter((h) => !tried.has(`${h.s}-${h.e}`));
+    if (!fresh.length || (maxWindows !== Infinity && tried.size >= maxWindows)) break;
+    fresh.forEach((h) => tried.add(`${h.s}-${h.e}`));
+    rounds++;
+    const r = await retryWindows({ file, segs, holes: holesToRetry(fresh, maxWindows), tools, asrOpts, lang, stop, io, round: rounds });
+    segs = r.segs; repaired += r.repaired; errors += r.errors; nonspeech.push(...r.nonspeech);
+    if (r.errors && !r.repaired && !r.nonspeech.length) break;   // the whole round failed: retrying the same windows would fail the same way
+  }
+  const after = measureCoverage(segs, speech, { ignore: nonspeech });
+  return {
+    segments: segs,
+    coverage: { speech_s: before.speech_s, holes_before: before.holes.length, uncovered_before_s: before.uncovered_s, repaired, nonspeech: nonspeech.length, errors, rounds,
+      holes_after: after.holes, uncovered_after_s: after.uncovered_s, uncovered_after_pct: after.uncovered_pct, fast: after.fast.slice(0, 20) },
+  };
+}
+
+/** One round: cut every hole's window, transcribe ALL in ONE media_tool call (--windows: Whisper and the align model load once — 10-31 aorus:
+ *  a fresh process per hole held a 26-min talk 2 h in transcribe), splice latest first. → { segs, repaired, errors, nonspeech }. */
+async function retryWindows({ file, segs, holes, tools, asrOpts, lang, stop, io, round }) {
   const nonspeech = [];
   let repaired = 0, errors = 0;
-  // Every window is cut first, then ALL are transcribed in ONE media_tool call (--windows): Whisper and the align model load once.
-  // 10-31 aorus: a fresh process per hole (python + torch + Whisper + VAD + align model each time) held a 26-min talk 2 h in transcribe.
-  const wins = holesToRetry(before.holes, maxWindows).map((h) => { const wav = io.tmp(`cov-${Math.round(h.s)}.wav`); return { h, start: Math.max(0, h.s - 1.5), wav, wout: `${wav}.json` }; });
-  const manifest = io.tmp('cov-windows.json');
+  const wins = holes.map((h) => { const wav = io.tmp(`cov-${round}-${Math.round(h.s)}.wav`); return { h, start: Math.max(0, h.s - 1.5), wav, wout: `${wav}.json` }; });
+  const manifest = io.tmp(`cov-windows-${round}.json`);
   try {
     const cut = [];
     for (const w of wins) {
@@ -136,12 +160,7 @@ export async function coverageCheck({ file, segments, tools, asrOpts = {}, lang 
     for (const w of wins) { await io.unlink(w.wav).catch(() => {}); await io.unlink(w.wout).catch(() => {}); }
     await io.unlink(manifest).catch(() => {});
   }
-  const after = measureCoverage(segs, speech, { ignore: nonspeech });
-  return {
-    segments: segs,
-    coverage: { speech_s: before.speech_s, holes_before: before.holes.length, uncovered_before_s: before.uncovered_s, repaired, nonspeech: nonspeech.length, errors,
-      holes_after: after.holes, uncovered_after_s: after.uncovered_s, uncovered_after_pct: after.uncovered_pct, fast: after.fast.slice(0, 20) },
-  };
+  return { segs, repaired, errors, nonspeech };
 }
 
 /** Is the LISTENING copy silent through a hole? wave = trim.js peaksOf(waveform.json) (the web copy, original time). Every peak zero
