@@ -363,6 +363,9 @@ born=$(date +%s)
 while sleep 60; do [ $(( $(date +%s) - born )) -gt 86400 ] && cd /opt/sifter/media && python -c 'import sys; from runpod_worker import terminate_self; terminate_self(sys.argv[1])' 'maximum lifetime 24 h'; done
 KEEP
 pgrep -f 'bash /workspace/keeper.sh' >/dev/null || nohup bash /workspace/keeper.sh >> /workspace/keeper.log 2>&1 < /dev/null &
+# MPS (10-31): the agent's gpu jobs are separate processes; without MPS the 4090 time-slices them, one kernel stream at a time (pod 378:
+# 7 jobs, each a host thread at 100 % of one core launching small batch-1 decode kernels, 185 W of 450 W). MPS runs their kernels side by side.
+if command -v nvidia-cuda-mps-control >/dev/null && ! pgrep -x nvidia-cuda-mps-control >/dev/null; then nvidia-cuda-mps-control -d || echo 'mps did not start' >> /workspace/agent.log; fi
 pgrep -f 'queue-agent.mjs' >/dev/null || nohup env SIFTER_GPU_LEASE_DIR=/workspace/q/leases bash /workspace/agent.sh > /dev/null 2>&1 < /dev/null &
 touch /workspace/spool/.worker-ready
 echo started`;

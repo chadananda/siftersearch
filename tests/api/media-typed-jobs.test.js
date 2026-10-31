@@ -58,6 +58,10 @@ describe('pod bootstrap', () => {
     expect(C.BOOTSTRAP_AGENT).toMatch(/CLAIM='--types gpu --idle-exit-min 10'/);
     expect(C.BOOTSTRAP_AGENT).toMatch(/--device cuda \$CLAIM/);
     expect(C.BOOTSTRAP_AGENT).toMatch(/touch [^\n]*\/workspace\/\.lane-seen/);
+    // MPS starts before the agent, so its gpu jobs' kernels run side by side instead of time-sliced
+    const b = C.BOOTSTRAP_AGENT;
+    expect(b.indexOf('nvidia-cuda-mps-control -d')).toBeGreaterThan(-1);
+    expect(b.indexOf('nvidia-cuda-mps-control -d')).toBeLessThan(b.lastIndexOf('bash /workspace/agent.sh'));
   });
 });
 
