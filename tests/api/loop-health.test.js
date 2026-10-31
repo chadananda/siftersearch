@@ -251,6 +251,18 @@ describe('podsProven: the typed pool grows past one pod only on evidence of talk
     expect(LH.podRampCap({ proven: true, earned: 2, live: 2, rampOk: false })).toBe(2);
     expect(LH.podRampCap({ proven: true, earned: 1, live: 3, rampOk: true })).toBe(2);
   });
+  it('a pool size proven within the horizon is refilled at once: two earned pods lost together leave 389 alone no longer (10-31)', () => {
+    const H = 3600e3, now = 10 * H, ok = (n) => ({ mode: 'typed', remaster: 'done', swapped: 0, gpu: `pod-sifter-unipase-${n}` });
+    const st = { done: [ok(387), ok(388), ok(370)], pods: {
+      a: { name: 'sifter-unipase-387', ready_at: now - 2.5 * H, terminated: now - 0.6 * H },
+      b: { name: 'sifter-unipase-388', ready_at: now - 1.7 * H, terminated: now - 0.2 * H },
+      c: { name: 'sifter-unipase-389', ready_at: now - 0.5 * H },                       // not earned yet
+      d: { name: 'sifter-unipase-370', ready_at: now - 6 * H, terminated: now - 5 * H } } };   // outside the horizon
+    expect(LH.provenPoolSize(st, { now, horizonH: 2 })).toBe(2);
+    expect(LH.podRampCap({ proven: true, earned: 0, live: 1, rampOk: false, provenSize: 2 })).toBe(2);   // was 1: the replacement waited on 389
+    expect(LH.podRampCap({ proven: true, earned: 2, live: 2, rampOk: false, provenSize: 2 })).toBe(2);   // growth past it still needs rampOk
+    expect(LH.provenPoolSize({ ...st, pods: { a: st.pods.a, x: { name: 'sifter-unipase-388', ready_at: now - 0.5 * H } } }, { now, horizonH: 2 })).toBe(1);   // never together: one
+  });
   it('podEarned: a pod counts only once a pure remaster from ITS gpu step is adopted (10-31: 383 rented 30 s after 382 was ready)', () => {
     const pod = { name: 'sifter-unipase-382' };
     expect(LH.podEarned({ done: [{ mode: 'typed', remaster: 'done', swapped: 0, gpu: 'pod-sifter-unipase-378' }] }, pod)).toBe(false);

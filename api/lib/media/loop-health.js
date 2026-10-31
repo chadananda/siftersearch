@@ -186,9 +186,20 @@ export function rampGrowth(st, { now = Date.now(), horizonH = 2, pods = 0 } = {}
 /** How many pods the typed pool may hold now. Not proven: one (the canary). Proven: the earned pods + one on trial, grown past the live count
  *  only when rampOk. Never 0 while proven: with every pod gone (10-31: 382/386 reaped) the live count is 0 and min(earned+1, live) would
  *  rent nothing ever again. Pure. */
-export function podRampCap({ proven = false, earned = 0, live = 0, rampOk = false } = {}) {
+// provenSize (provenPoolSize): a pool size already proven within the horizon is refilled at once; replacing a pod tower lost (10-31: 387 and
+// 388 closed on a refused ssh while working) is not growth, and must not send the pool back to a one-pod canary.
+export function podRampCap({ proven = false, earned = 0, live = 0, rampOk = false, provenSize = 0 } = {}) {
   if (!proven) return 1;
-  return Math.max(1, Math.min(earned + 1, rampOk ? live + 1 : live));
+  return Math.max(1, provenSize, Math.min(earned + 1, rampOk ? live + 1 : live));
+}
+/** The largest number of EARNED pods (podEarned) that were live at the same time within the horizon: a size the pool has proven. Pure. */
+export function provenPoolSize(st, { now = Date.now(), horizonH = 2 } = {}) {
+  const from = now - horizonH * 3600e3;
+  const iv = Object.values(st.pods || {}).filter((p) => p.kind !== 'cpu' && podEarned(st, p) && (p.terminated || now) > from)
+    .map((p) => [Math.max(from, p.ready_at || p.created || 0), p.terminated || now]).filter(([a, b]) => b > a);
+  let best = 0;
+  for (const [a] of iv) best = Math.max(best, iv.filter(([x, y]) => x <= a && y > a).length);
+  return best;
 }
 
 /** Has THIS pod earned its place: a pure remaster adopted from a gpu step it ran (done.gpu = 'pod-<name>')? The pool grows by one only when

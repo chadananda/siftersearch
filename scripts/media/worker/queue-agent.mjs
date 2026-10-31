@@ -74,6 +74,9 @@ const VRAM_MB = Number(arg('vram-mb', 0)) || (() => {
   } catch { return 0; }
 })();
 const q = queueClient({ key: process.env.MEDIA_QUEUE_KEY });
+// on the cloud queue (R2) no FLAC/WAV is ever stored (Chad 10-31): a listed decoded file stays on the worker; the next step rebuilds it
+// (enhanced/light.flac from enh_ck.m0; stage-jobs REBUILT, the only one validateTyped lets go missing)
+const cloudSkips = (path, base = q.base) => /^https:/.test(base || '') && /\.(flac|wav)$/i.test(path);
 const log = (msg, x = {}) => console.log(JSON.stringify({ at: new Date().toISOString(), host: HOST, msg, ...x }));
 const nap = (ms) => new Promise((r) => setTimeout(r, ms));
 // RAM = the smaller of /proc/meminfo and this process's cgroup (a pod's meminfo is the host's)
@@ -144,7 +147,7 @@ async function work(job) {
     if (absent.length) throw new Error(`stage left no ${absent.join(', ')}: ${tail.slice(-500)}`);
     // a manifest kind hands back exactly what result.json lists (tower adopts only those): working copies left in the tree never travel
     const tree = join(dir, kind.tree), files = [...kind.outputs.map((f) => join(dir, f)), ...(kind.manifest
-      ? (JSON.parse(readFileSync(join(dir, 'result.json'), 'utf8')).files || []).map((f) => join(tree, f.path))
+      ? (JSON.parse(readFileSync(join(dir, 'result.json'), 'utf8')).files || []).filter((f) => !cloudSkips(f.path)).map((f) => join(tree, f.path))
       : (await walk(tree)).filter((p) => !kind.skip || !relative(tree, p).startsWith(kind.skip)))];
     const outputs = [];
     for (const p of files) outputs.push({ name: relative(dir, p), ...(await q.put('results', job.id, relative(dir, p), p, { lease: job.lease })) });

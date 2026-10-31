@@ -1986,12 +1986,13 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // typed: ONE pod until pods are proven to turn into talks (LH.podsProven, Chad 10-31), then ramp one at a time while every pod is busy
       // ONE pod on trial at a time: the pool holds the pods that earned their place + one (10-31: 385 booted beside an unproven 382)
       const earnedN = typedPods ? live.filter((p) => LH.podEarned(st, p)).length : 0;
-      const rampCap = typedPods ? LH.podRampCap({ proven: proof.ok, earned: earnedN, live: live.length, rampOk }) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
+      const provenSize = typedPods && proof.ok ? LH.provenPoolSize(st, { now: now(), horizonH: st.pod_plan.horizon_h || 2 }) : 0; if (typedPods) st.pods_proven_size = provenSize;
+      const rampCap = typedPods ? LH.podRampCap({ proven: proof.ok, earned: earnedN, live: live.length, rampOk, provenSize }) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
       const wantRaw = st.cloud_stopped || rentalPause ? 0 : typedPods ? st.pod_plan.target : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
       st.pods_wanted = wantRaw; st.rental_pause = rentalPause || null;
       // a pause / stop retires every live pod (10-31: the pause set want 0 but poolCap stayed Infinity, so 379-381 kept running and 381 booted)
-      const poolCap = st.cloud_stopped || rentalPause ? 0 : typedPods ? (proof.ok ? earnedN + 1 : 1) : maxPods;
+      const poolCap = st.cloud_stopped || rentalPause ? 0 : typedPods ? (proof.ok ? Math.max(earnedN + 1, provenSize) : 1) : maxPods;
       const keepPods = new Set([...live].sort((a, b) => Number(typedPods && LH.podEarned(st, b)) - Number(typedPods && LH.podEarned(st, a)) || Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, poolCap).map(p => p.id));
       const surplusPods = new Set(poolCap < Infinity ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
@@ -2259,8 +2260,14 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if(err.code==='DRAIN')return;
           p.last_error = String(err.message).slice(0, 300);
           // an agent pod reports through the queue, not ssh: while its heartbeats arrive it is alive (10-31: 367 closed on a refused ssh holding 12 talks)
-          const beat = p.agent && st.q_last?.beat?.[`pod-${p.name}`];
-          if (beat && now() - beat < C.CLOUD.agentDeadAfterMs) { p.lastOk = Math.max(p.lastOk || 0, beat); return; }
+          // 10-31: 387 and 388 were closed here 4 min after a refused ssh while still working, because q_last (one pass's snapshot) held no beat
+          // for them. ssh is only the watch channel: an agent pod is closed only when its queue heartbeats AND its progress (done steps) have
+          // stopped for agentDeadAfterMs — st.agent_seen keeps both across passes and restarts (queue-feed seenAgent).
+          if (p.agent && p.status === 'ready') {
+            const seen = Math.max(st.agent_seen?.[`pod-${p.name}`] || 0, st.q_last?.beat?.[`pod-${p.name}`] || 0);
+            p.lastOk = Math.max(p.lastOk || 0, seen);
+            if (now() - Math.max(p.lastOk, p.ready_at || 0) < C.CLOUD.agentDeadAfterMs) return;
+          }
           if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { const reaped = await import('../media/pod-reaper.js').then((R) => R.reapedWhy(p.id)).catch(() => null); await closePod(p, reaped ? `reaped: ${reaped}` : `unreachable: ${p.last_error}`); if (p.status !== 'ready' && !reaped) st.pod_failures++; }
         }
       }));

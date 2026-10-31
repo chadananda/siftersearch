@@ -335,6 +335,25 @@ describe('the lane: GPU is rented only for work', () => {
     expect(x.killed).toContain('p1');
     expect(r).toBeTruthy();
   });
+  it('an agent pod whose ssh is refused stays while its queue heartbeats arrive; closed only once beats and progress stop (10-31: 387, 388)', async () => {
+    const run = async (seenAgo) => {
+      const x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => {
+        if (cmd === 'ssh' && last.includes('pgrep -f queue-agent.mjs')) throw new Error('ssh exit 255: ssh: connect to host 1.2.3.4 port 2222: Connection refused');
+        return null;
+      } });
+      const image = 'ghcr.io/x@sha256:' + 'a'.repeat(64), t0 = x.clock();
+      x.cloud.acceptedWorker = async () => ({ image });
+      writeFileSync(x.deps.stateFile, JSON.stringify({ started: 1, queue: [1, 2], attempts: {}, done: [], failed: [], jobs: {}, spent_closed: 0, items: { 1: { duration_s: 3600 }, 2: { duration_s: 3600 } },
+        pods: { p1: { id: 'p1', name: 'test-pod', status: 'ready', agent: true, cuda_ok: true, image, boot_v: C.BOOT_V_AGENT, ip: '1.2.3.4', port: 2222, created: t0 - 3600_000, ready_at: t0 - 3000_000, lastOk: t0 - 12 * 60_000, costPerHr: 0.69 } },
+        q_last: { at: t0 - 30_000, leased: {}, beat: {} },   // one pass's snapshot without the pod's beat (what closed 388)
+        agent_seen: { 'pod-test-pod': t0 - seenAgo } }));
+      let naps = 0;
+      await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, agentKey: 'k', draining: () => naps > 2, nap: async () => { naps++; } });
+      return x.killed;
+    };
+    expect(await run(60_000)).not.toContain('p1');          // beating a minute ago: alive, whatever ssh says
+    expect(await run(15 * 60_000)).toContain('p1');         // no beat and no progress for 15 min: dead
+  });
   it('stages several recordings per pod per pass at once (Chad 10-30: one at a time starved the pods), never more than stageBatch', async () => {
     const x = setup({ talks: 4, seconds: 3600 });
     let open = 0, most = 0, uploads = 0; const run = x.deps.run;

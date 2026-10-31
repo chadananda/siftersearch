@@ -178,6 +178,7 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
   const ackJob = (id) => { const list = st.qjobs[id]?.where === 'edge' ? ackEdge : ack; if (!list.includes(id)) list.push(id); delete st.qjobs[id]; };
   for (const type of SJ.AUDIO_TYPES) for (const [src, sq] of [['lan', q], ...(type === 'gpu' && edge ? [['edge', edge]] : [])]) {
     for (const j of await sq.listDone(200, type)) {   // adopted steps stay 'done' until the next step finishes: skip them
+      seenAgent(st, j.host, j.updated);
       const qj = st.qjobs[j.id];
       if (!qj || qj.adopted) continue;
       const ch = st.chains[qj.itemId], outputs = (j.result?.outputs || []).map((o) => o.name);
@@ -310,7 +311,7 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
 // files the gpu job rebuilds itself, so they never cross tower's uplink: light.flac (~176 MB per audio-h of 48 kHz FLAC; the originals are
 // ~11 MB/audio-h) is one deterministic ffmpeg pass over the original from enh_ck.m0 (item.js enhance rebuilds it when the file is absent:
 // ~35 s CPU per audio-h, measured on boss 10-31), beside a gpu job of ~15 min. A LAN gpu step still reads it from the results store.
-export const REBUILT = new Set(['enhanced/light.flac']);
+export const REBUILT = SJ.REBUILT;
 export const sentFiles = (files = []) => files.filter((f) => !REBUILT.has(f.path));
 
 /** A waiting gpu step whose prep files are gone (404 from the results store: acked by an older failure path) can never run: withdraw it, drop
@@ -412,6 +413,13 @@ export function forgiveOurs(st, at = Date.now()) {
   return back;
 }
 
+/** The last sign of life of each queue agent (a lease heartbeat or a finished step), kept in the lane state across passes and restarts:
+ *  an agent pod is judged dead only on this, never on ssh (media-jobs.js). */
+export function seenAgent(st, host, at) {
+  if (!host || !(at > 0)) return;
+  st.agent_seen ||= {};
+  if (!(st.agent_seen[host] >= at)) st.agent_seen[host] = at;
+}
 /** One background pass: pull first (frees R2 + gives back failures), then top the window up. */
 export async function tick(st, deps) {
   const out = { pulled: await pull(st, deps) };
@@ -424,6 +432,7 @@ export async function tick(st, deps) {
   for (const j of all.flatMap((x) => x?.leased || [])) {
     out.leased[j.host] = (out.leased[j.host] || 0) + 1;
     out.beat[j.host] = Math.max(out.beat[j.host] || 0, j.updated || 0);
+    seenAgent(st, j.host, j.updated);
   }
   return out;
 }

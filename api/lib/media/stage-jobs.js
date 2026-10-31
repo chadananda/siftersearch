@@ -63,6 +63,10 @@ export { fpOf };   // fp = short hash of tool + settings (stages.js)
 export const CONTRACT = JSON.parse(readFileSync(new URL('../../../scripts/media/worker/job-types.json', import.meta.url), 'utf8'));
 /** The fixed outputs a type's result must list (templated / "…" entries are checked by whole-result.js at the end). */
 export const requiredFiles = (type) => (CONTRACT.types[type]?.outputs?.files || []).filter((f) => !/[{…]/.test(f));
+// files a step rebuilds itself from the previous step's checkpoint, so they never cross an uplink or sit in R2 (FLAC, Chad 10-31):
+// light.flac is one deterministic ffmpeg pass over the original from enh_ck.m0 (item.js enhance rebuilds it when absent). A cloud agent
+// lists it in result.json but does not upload it; validateTyped lets exactly these go missing.
+export const REBUILT = new Set(['enhanced/light.flac']);
 const SAFE_PATH = (p) => typeof p === 'string' && p && !p.includes('\\') && !p.startsWith('/') && !p.split('/').some((x) => !x || x === '.' || x === '..');
 const NEED = { 'cpu-prep': { ram_gb: 4 }, gpu: { vram_mb: 12000, ram_gb: 8 }, 'cpu-finish': { ram_gb: 5 } };
 
@@ -80,7 +84,7 @@ export function validateTyped(type, r, { inputSha, slug, outputs = null } = {}) 
   for (const f of files) if (!SAFE_PATH(f.path) || f.path.startsWith('original/') || !/^[0-9a-f]{64}$/.test(f.sha256 || '')) why(`unsafe or unhashed output ${f.path}`);
   const have = new Set(files.map((f) => f.path)), lost = requiredFiles(type).filter((f) => !have.has(f));
   if (lost.length) why(`missing ${lost.join(', ')}`);
-  if (outputs) { const up = new Set(outputs), gone = files.filter((f) => !up.has('item/' + f.path)).map((f) => f.path); if (gone.length) why(`listed but not uploaded: ${gone.slice(0, 5).join(', ')}`); }
+  if (outputs) { const up = new Set(outputs), gone = files.filter((f) => !up.has('item/' + f.path) && !REBUILT.has(f.path)).map((f) => f.path); if (gone.length) why(`listed but not uploaded: ${gone.slice(0, 5).join(', ')}`); }
   const rm = r.meta?.remaster || {};
   if ((rm.swapped || 0) > 0 || (rm.fallback_sent_pct || 0) > 0 || rm.verdict === 'spliced' || r.meta?.qa?.remaster?.verdict === 'spliced') why('original audio spliced into the remaster (never allowed)');
   if (type === 'cpu-finish' && !AUDIO_TERMINAL.includes(rm.status) && !hasQuiet(r.meta)) why('no quiet pass (a remaster without quiet is not complete)');
