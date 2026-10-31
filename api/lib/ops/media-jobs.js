@@ -1974,13 +1974,15 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const rampOk = !live.some((p) => p.status !== 'ready') && live.every(podBusy) && live.every((p) => LH.podEarned(st, p)) && (st.pod_plan?.staged_n || 0) > 0;
       const proof = typedPods ? LH.podsProven(st) : null; if (proof) st.pods_proof = proof;
       // typed: ONE pod until pods are proven to turn into talks (LH.podsProven, Chad 10-31), then ramp one at a time while every pod is busy
-      const rampCap = typedPods ? (!proof.ok ? 1 : rampOk ? live.length + 1 : live.length) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
+      // ONE pod on trial at a time: the pool holds the pods that earned their place + one (10-31: 385 booted beside an unproven 382)
+      const earnedN = typedPods ? live.filter((p) => LH.podEarned(st, p)).length : 0;
+      const rampCap = typedPods ? (!proof.ok ? 1 : Math.min(earnedN + 1, rampOk ? live.length + 1 : live.length)) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
       const wantRaw = st.cloud_stopped || rentalPause ? 0 : typedPods ? st.pod_plan.target : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
       st.pods_wanted = wantRaw; st.rental_pause = rentalPause || null;
       // a pause / stop retires every live pod (10-31: the pause set want 0 but poolCap stayed Infinity, so 379-381 kept running and 381 booted)
-      const poolCap = st.cloud_stopped || rentalPause ? 0 : typedPods ? (proof.ok ? Infinity : 1) : maxPods;
-      const keepPods = new Set([...live].sort((a, b) => Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, poolCap).map(p => p.id));
+      const poolCap = st.cloud_stopped || rentalPause ? 0 : typedPods ? (proof.ok ? earnedN + 1 : 1) : maxPods;
+      const keepPods = new Set([...live].sort((a, b) => Number(typedPods && LH.podEarned(st, b)) - Number(typedPods && LH.podEarned(st, a)) || Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, poolCap).map(p => p.id));
       const surplusPods = new Set(poolCap < Infinity ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
       if (!wantRaw && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
