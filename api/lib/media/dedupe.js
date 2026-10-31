@@ -37,7 +37,7 @@ export function pickBest(copies) {
   const scored = pool.filter((x) => score(x) != null).sort((a, b) => score(b) - score(a) || fuller(a, b));
   if (!scored.length) {
     const best = [...pool].sort(fuller)[0];
-    return { best: best.c, basis, reason: `no ${basis} NISQA measured; the more complete copy`, ambiguous: pool.length > 1 };
+    return { best: best.c, basis, reason: `no ${basis} NISQA measured; the more complete copy`, ambiguous: pool.length > 1, unmeasured: pool.length > 1 };
   }
   const top = score(scored[0]);
   const near = scored.filter((x) => top - score(x) < NOISE);
@@ -51,6 +51,7 @@ export function pickBest(copies) {
 // fields filled from the other copies when the best lacks them (summary/topics/description come from the best's own transcript)
 const FILL = ['speaker', 'date', 'year', 'place', 'occasion', 'event', 'series', 'part', 'language'];
 const empty = (v) => v == null || v === '' || (Array.isArray(v) && !v.length);
+const yearOf = (v) => (v == null ? null : /\b(1[89]\d\d|20\d\d)\b/.exec(String(v))?.[1] || null);
 const norm = (v) => String(v).trim().toLowerCase().replace(/\s+/g, ' ');
 
 /** Provenance entries a copy carries: its labels (donor sidecar, meta.provenance) and its source path. */
@@ -72,7 +73,11 @@ export function mergeMeta(best, others) {
       const ov = om[f];
       if (empty(ov)) continue;
       const cur = f in patch ? patch[f] : bm[f];
-      if (empty(cur)) { patch[f] = ov; merged.push({ field: f, value: ov, from: o.slug }); }
+      // a date and a year must agree: a year that contradicts the best's date (or a date its year) is a conflict, never a fill
+      const clash = empty(cur) && ((f === 'year' && yearOf(patch.date ?? bm.date) && yearOf(patch.date ?? bm.date) !== yearOf(ov))
+        || (f === 'date' && yearOf(patch.year ?? bm.year) && yearOf(patch.year ?? bm.year) !== yearOf(ov)));
+      if (clash) { if (!conflicts.some((x) => x.field === f && norm(x.other) === norm(ov))) conflicts.push({ field: f, kept: f === 'year' ? (patch.date ?? bm.date) : (patch.year ?? bm.year), other: ov, from: o.slug }); }
+      else if (empty(cur)) { patch[f] = ov; merged.push({ field: f, value: ov, from: o.slug }); }
       else if (norm(cur) !== norm(ov) && !conflicts.some((x) => x.field === f && norm(x.other) === norm(ov))) conflicts.push({ field: f, kept: cur, other: ov, from: o.slug });
     }
   }
@@ -166,6 +171,7 @@ export async function mediaDedupeJob({ write = false, sample = 25 } = {}, deps =
       }
       if (copies.some((c) => c.state === 'excluded')) { out.skipped++; continue; }   // an excluded talk stays excluded, every copy
       const pick = pickBest(copies);
+      if (pick.unmeasured && !live(pick.best)) { out.unmeasured = (out.unmeasured || 0) + 1; continue; }   // decided once the copies are graded
       const best = pick.best, others = copies.filter((c) => c !== best);
       const bestLive = live(best);
       // the on-air stand-in stays on air until the better copy is complete; everything else goes
@@ -174,7 +180,8 @@ export async function mediaDedupeJob({ write = false, sample = 25 } = {}, deps =
       const m = mergeMeta(best, others);
       const todo = losers.filter((c) => !(c.state === 'duplicate' && Number(c.dup_group) === g && (!c.meta || (c.meta.dedup?.verdict === 'duplicate' && c.meta.dedup.best === best.slug))));
       const entry = { group: g, best: name(best), basis: pick.basis, reason: pick.reason, ambiguous: pick.ambiguous, eliminate: todo.map(name),
-        keep_on_air: bestLive ? [] : others.filter(live).map(name), merged: m.merged, conflicts: m.conflicts, status: bestLive ? 'eliminate' : 'pending' };
+        keep_on_air: bestLive ? [] : others.filter(live).map(name), merged: m.merged, conflicts: m.conflicts, status: bestLive ? 'eliminate' : 'pending',
+        copies: copies.map((c) => ({ copy: name(c), state: c.state, live: live(c), nisqa: copyQuality(c.meta).original, out: copyQuality(c.meta).remaster })) };
       if (pick.ambiguous) out.ambiguous.push({ group: g, best: entry.best, reason: pick.reason, copies: copies.map(name) });
       if (!todo.length && !m.changed && bestLive) { out.already++; continue; }
       if (out.sample.length < sample) out.sample.push(entry);

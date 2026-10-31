@@ -69,6 +69,15 @@ describe('metadata merge', () => {
   });
 });
 
+describe('metadata merge: dates agree', () => {
+  it('a year that contradicts the best\'s date is a conflict, never a fill', () => {
+    const r = mergeMeta({ slug: 'b', meta: { date: '2022-07-07' } }, [{ slug: 'o', meta: { year: 2011, place: 'Canada' } }, { slug: 'p', meta: { year: 2022 } }]);
+    expect(r.patch.year).toBe(2022);
+    expect(r.conflicts).toContainEqual(expect.objectContaining({ field: 'year', other: 2011, from: 'o' }));
+    expect(r.patch.place).toBe('Canada');
+  });
+});
+
 describe('groups', () => {
   it('joins copies by dup_group, Dewey\'s "duplicate of <slug>", "same file as item N" and meta.dedup.of', () => {
     const rows = [
@@ -153,6 +162,16 @@ describe('media-dedupe job', () => {
     expect(calls.marked).toHaveLength(0);
     expect(calls.deleted).toHaveLength(0);
     expect(r.pending).toBe(1);
+  });
+  it('copies not yet graded are left until they are (no flip-flop once measured)', async () => {
+    const { deps, metas, calls } = mk();
+    delete metas['/d/live'].quality; delete metas['/d/worse'].quality;
+    deps.repo.dedupeRows = async () => [{ id: 10, slug: 'live', state: 'queued', dir: '/d/live' }, { id: 11, slug: 'worse', state: 'duplicate', dir: '/d/worse', why: 'Dewey duplicate of live (x)' }];
+    metas['/d/live'] = srcMeta(null); metas['/d/worse'] = srcMeta(null);
+    const r = await mediaDedupeJob({ write: true }, deps);
+    expect(r.unmeasured).toBe(1);
+    expect(calls.marked).toHaveLength(0);
+    expect(calls.revived).toHaveLength(0);
   });
   it('a group with a run in hand is left for the next pass', async () => {
     const { deps, calls } = mk();
