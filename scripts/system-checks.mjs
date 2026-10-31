@@ -112,7 +112,7 @@ let drainSeen = state.drainSeen || {};
     // heavy media processing running ON TOWER (Chad 10-24): counted in cores, named by process kind
     try {
       const { towerHeavy, towerHeavyVerdict } = await import('./lib/tower-heavy.mjs');
-      const v = towerHeavyVerdict(towerHeavy(execSync('ps -eo pcpu=,args= --sort=-pcpu | head -80', { encoding: 'utf8', timeout: 10000 })), { warn: Number(process.env.TOWER_HEAVY_WARN_CORES || 6), crit: Number(process.env.TOWER_HEAVY_CRIT_CORES || 20) });
+      const v = towerHeavyVerdict(towerHeavy(execSync('ps -eo pcpu=,cgroup:300=,args= --sort=-pcpu | head -80', { encoding: 'utf8', timeout: 10000 }), { cgroup: true }), { warn: Number(process.env.TOWER_HEAVY_WARN_CORES || 6), crit: Number(process.env.TOWER_HEAVY_CRIT_CORES || 20) });
       add('Heavy media work on tower', v.ok, v.level, v.detail);
     } catch { /* ps unavailable */ }
     // paid GPU pods: rented-but-idle, billing with no lane, low efficiency, spend near the cap are CRITICAL (Chad 10-24)

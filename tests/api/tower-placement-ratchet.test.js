@@ -64,4 +64,15 @@ describe('heavy processes on tower, in cores', () => {
     expect(towerHeavyVerdict(h, { warn: 6, crit: 10 }).level).toBe('critical');
     expect(towerHeavyVerdict(towerHeavy('  5.0 node api/index.js'))).toMatchObject({ ok: true });
   });
+  it('with the cgroup column, work inside sifter-bulk.slice (the cpu-finish exception, Chad 10-31) is reported, not counted', async () => {
+    const { towerHeavy, towerHeavyVerdict } = await import('../../scripts/lib/tower-heavy.mjs');
+    const ps = ['900.0 0::/sifter.slice/sifter-bulk.slice/docker-ab.scope ffmpeg -i /job/a.flac -c:a libopus /job/w.ogg',
+      '700.0 0::/sifter.slice/sifter-bulk.slice/docker-cd.scope python /opt/sifter/media/media_tool.py realign x',
+      '300.0 0::/system.slice/pm2-chad.service ffmpeg -i /a.flac /b.ogg', '  5.0 0::/system.slice/pm2-chad.service node api/index.js'].join('\n');
+    const h = towerHeavy(ps, { cgroup: true });
+    expect(h.cores).toBeCloseTo(3, 1); expect(h.kinds.ffmpeg).toMatchObject({ n: 1, cores: 3 });
+    expect(h.slice).toMatchObject({ cores: 16, n: 2 });
+    const v = towerHeavyVerdict(h);
+    expect(v).toMatchObject({ ok: true }); expect(v.detail).toMatch(/16 cores in sifter-bulk\.slice/);
+  });
 });
