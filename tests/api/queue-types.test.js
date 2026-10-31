@@ -177,7 +177,7 @@ describe('pod target (Chad 10-31): supportable = floor(min(R_prep, R_finish) / R
     const lan = { by_type: { gpu: { queued_audio_h: 12, home_rate: 2, throughput: 2 }, 'cpu-prep': { queued_audio_h: 30, rate: 6, throughput: 20 }, 'cpu-finish': { queued_audio_h: 1, rate: 1, throughput: 12 } } };
     const edge = { by_type: { gpu: { queued_audio_h: 8, queued: 5, home_rate: 0, pod_throughput: 4 }, 'cpu-prep': {}, 'cpu-finish': {} } };
     const plan = Q.podPlan([lan, edge]);
-    expect(plan).toMatchObject({ gpu_queued_h: 20, staged_h: 8, staged_n: 5, r_prep: 20, r_finish: 12, r_pod: 4, priors: [], supportable: 3, binding: 'finish', pods: 3 });
+    expect(plan).toMatchObject({ gpu_queued_h: 20, staged_h: 8, staged_n: 5, r_prep: 20, r_finish: 12, r_pod: 4, priors: [], supportable: 2, binding: 'finish', pods: 2 });   // (12 − the home GPU's 2) / 4
     const fresh = Q.podPlan([{ by_type: { gpu: { queued_audio_h: 50 }, 'cpu-prep': { rate: 6 }, 'cpu-finish': { rate: 1 } } }, null]);
     expect(fresh.priors).toEqual(['prep', 'finish', 'pod']);
     expect(fresh.r_pod).toBe(Q.PRIOR_POD);
@@ -200,6 +200,29 @@ describe('capacity counts only the hosts that list the type (10-31: a spill host
     expect(plan.r_finish).toBeCloseTo(1);
     expect(plan.finish_queued_h).toBeCloseTo(1);
     expect(plan.finish_backlog_h).toBeCloseTo(1);
+  });
+});
+
+describe('cpuChain: a host with both CPU roles is one capacity, split between them (10-31: Boss counted in full on both sides)', () => {
+  it('the 10-31 numbers: boss prep 58.2 / finish 45.9, tower finish 15.9 → ~34.5 each side, not 58 and 62', () => {
+    const c = Q.cpuChain({ boss: 58.2 }, { boss: 45.9, tower: 15.9 });
+    expect(c.r_prep).toBeCloseTo(c.r_finish, 6);
+    expect(c.r_prep).toBeCloseTo(58.2 * (61.8 / 104.1), 3);
+    expect(c.prep_share.boss).toBeCloseTo(61.8 / 104.1, 3);
+  });
+  it('dedicated hosts count on their side; a shared host stays on prep when finish already leads', () => {
+    expect(Q.cpuChain({ a: 10 }, { b: 30 })).toMatchObject({ r_prep: 10, r_finish: 30 });
+    expect(Q.cpuChain({ a: 10, s: 5 }, { b: 30, s: 5 })).toMatchObject({ r_prep: 15, r_finish: 30, prep_share: { s: 1 } });
+  });
+  it('podPlan uses it when the capacities name the role hosts, and takes the home GPU off the top', () => {
+    const lan = { by_type: { gpu: { queued_audio_h: 300, home_rate: 2.4 }, 'cpu-prep': { hosts: ['boss'], each: { boss: 34 }, throughput_each: { boss: 58.2, aorus: 53 } },
+      'cpu-finish': { hosts: ['boss', 'tower'], each: { boss: 21, tower: 10 }, throughput_each: { boss: 45.9, aorus: 34.8, tower: 15.9 } } } };
+    const edge = { by_type: { gpu: { queued_audio_h: 170, queued: 150, pod_throughput: 11.4 }, 'cpu-prep': { hosts: [] }, 'cpu-finish': { hosts: [] } } };
+    const plan = Q.podPlan([lan, edge]);
+    expect(plan.priors).toEqual([]);
+    expect(plan.r_finish).toBeCloseTo(34.5, 0);
+    expect(plan.supportable).toBe(2);   // (34.5 − 2.4) / 11.4
+    expect(plan.finish_each).toEqual({ boss: 45.9, tower: 15.9 });   // aorus spilled finish work; it is not a finish host
   });
 });
 

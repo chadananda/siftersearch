@@ -245,14 +245,44 @@ export const PRIOR_POD = 4;
 /** The pod target (Chad 10-31): as many pods as the CPU side can keep fed, limited only by the work left. supportable = floor(min(R_prep,
  *  R_finish) / R_pod); work = ceil(gpu work (staged + prepped + still to prep) / (R_pod · horizon)). While a rate is still a prior, one pod
  *  (it measures). No money or pod-count cap: spend is governed by efficiency (busy pods; idle ones leave). Pure. */
-export function podTarget({ rPrep, rFinish, rPod, workH = 0, horizonH = 2, measured = true }) {
-  const supportable = rPod > 0 ? Math.floor(Math.min(rPrep || 0, rFinish || 0) / rPod) : 0;
+export function podTarget({ rPrep, rFinish, rPod, rHome = 0, workH = 0, horizonH = 2, measured = true }) {
+  // the home GPUs' output goes through the same prep and finish hosts, so it comes off the top
+  const supportable = rPod > 0 ? Math.max(0, Math.floor((Math.min(rPrep || 0, rFinish || 0) - (rHome || 0)) / rPod)) : 0;
   const work = rPod > 0 ? Math.ceil(workH / (rPod * horizonH)) : workH > 0 ? 1 : 0;
   if (!measured) { const target = Math.min(1, work); return { supportable, work, target, binding: target < 1 ? 'backlog' : 'measuring' }; }
   const target = Math.min(supportable, work);
   const binding = work <= supportable ? 'backlog' : (rPrep || 0) <= (rFinish || 0) ? 'prep' : 'finish';
   return { supportable, work, target, binding };
 }
+/** The CPU side as ONE capacity per host (10-31: Boss lists cpu-prep AND cpu-finish and was counted in full for both, 58 + 46 audio-h/h, so
+ *  the plan supported 5 pods where the CPU hosts feed about 2). prep/finish: {host: audio-h/h while doing that step}. A host with one role
+ *  counts on its side; a host with both starts on prep and moves to finish, the host that gives the most finish per prep given up first,
+ *  until the two sides meet (the optimum of this two-sided split). → { r_prep, r_finish, prep_share: {host: share of its time on prep} }. Pure. */
+export function cpuChain(prep = {}, finish = {}) {
+  let P = 0, F = 0; const shared = [], prep_share = {};
+  for (const h of new Set([...Object.keys(prep), ...Object.keys(finish)])) {
+    const p = prep[h] || 0, f = finish[h] || 0;
+    if (p > 0 && f > 0) { shared.push({ h, p, f }); P += p; } else { P += p; F += f; }
+  }
+  for (const x of shared.sort((a, b) => b.f / b.p - a.f / a.p)) {
+    const move = F < P ? Math.min(1, (P - F) / (x.p + x.f)) : 0;
+    P -= move * x.p; F += move * x.f; prep_share[x.h] = 1 - move;
+  }
+  return { r_prep: P, r_finish: F, prep_share };
+}
+// per host: its measured rate for the type over the window, else its rates-table rate; only hosts that list the type as a role
+const roleRates = (all, type) => {
+  const out = {}; let measured = false, known = false;
+  for (const c of all) {
+    const bt = c.by_type[type]; if (!Array.isArray(bt?.hosts)) continue;
+    known = true;
+    for (const h of bt.hosts) {
+      const m = bt.throughput_each?.[h]; if (m > 0) measured = true;
+      out[h] = Math.max(out[h] || 0, m > 0 ? m : bt.each?.[h] || 0);
+    }
+  }
+  return known ? { each: out, measured } : null;
+};
 /** capacity (or [LAN, edge] capacities: tower runs both transports) → the rates, the pod target and its binding limit. */
 export function podPlan(caps, { horizonH = 2 } = {}) {
   const edgeCap = Array.isArray(caps) && caps.length > 1 ? caps[1] : null;
@@ -261,14 +291,17 @@ export function podPlan(caps, { horizonH = 2 } = {}) {
   const meas = (type) => { const v = all.map((c) => c.by_type[type]?.throughput).filter((x) => x > 0); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
   const podMeas = all.map((c) => c.by_type.gpu?.pod_throughput).filter((r) => r > 0);
   const rPrepM = meas('cpu-prep'), rFinishM = meas('cpu-finish'), rPodM = podMeas.length ? podMeas.reduce((a, b) => a + b, 0) / podMeas.length : null;
-  const r_prep = rPrepM ?? sum((c) => c.by_type['cpu-prep']?.rate), r_finish = rFinishM ?? sum((c) => c.by_type['cpu-finish']?.rate), r_pod = rPodM ?? PRIOR_POD;
-  const priors = [...(rPrepM == null ? ['prep'] : []), ...(rFinishM == null ? ['finish'] : []), ...(rPodM == null ? ['pod'] : [])];
+  const rrP = roleRates(all, 'cpu-prep'), rrF = roleRates(all, 'cpu-finish');
+  const chain = rrP && rrF ? cpuChain(rrP.each, rrF.each) : null;   // per-host roles known: one capacity per host, split between the steps
+  const r_prep = chain ? chain.r_prep : rPrepM ?? sum((c) => c.by_type['cpu-prep']?.rate), r_finish = chain ? chain.r_finish : rFinishM ?? sum((c) => c.by_type['cpu-finish']?.rate), r_pod = rPodM ?? PRIOR_POD;
+  const prepMeasured = chain ? rrP.measured : rPrepM != null, finishMeasured = chain ? rrF.measured : rFinishM != null;
+  const priors = [...(!prepMeasured ? ['prep'] : []), ...(!finishMeasured ? ['finish'] : []), ...(rPodM == null ? ['pod'] : [])];
   const finish_queued_h = sum((c) => c.by_type['cpu-finish']?.queued_audio_h);
   const plan = { gpu_queued_h: sum((c) => c.by_type.gpu?.queued_audio_h), prep_queued_h: sum((c) => c.by_type['cpu-prep']?.queued_audio_h),
     finish_queued_h, finish_backlog_h: r_finish > 0 ? finish_queued_h / r_finish : null,   // hours of finish work waiting at the finishing hosts' pace
     staged_h: edgeCap?.by_type?.gpu?.queued_audio_h || 0, staged_n: edgeCap?.by_type?.gpu?.queued || 0, r_home_gpu: sum((c) => c.by_type.gpu?.home_rate),
-    r_prep, r_finish, r_pod, priors, horizon_h: horizonH };
-  const t = podTarget({ rPrep: r_prep, rFinish: r_finish, rPod: r_pod, workH: plan.gpu_queued_h + plan.prep_queued_h, horizonH, measured: !priors.length });
+    r_prep, r_finish, r_pod, priors, horizon_h: horizonH, ...(chain ? { prep_share: chain.prep_share, prep_each: rrP.each, finish_each: rrF.each } : {}) };
+  const t = podTarget({ rPrep: r_prep, rFinish: r_finish, rPod: r_pod, rHome: plan.r_home_gpu, workH: plan.gpu_queued_h + plan.prep_queued_h, horizonH, measured: !priors.length });
   return { ...plan, ...t, pods: t.target };
 }
 /** The GPU buffer (Chad 10-31): gpu work waiting for the pods on R2 should hold ~targetH hours of pod work (R_pod × pods). Below it, multi-role
