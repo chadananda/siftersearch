@@ -1969,13 +1969,16 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const typedPods = process.env.MEDIA_POD_TYPED === '1' && !!st.pod_plan;
       const podBusy = (p) => (st.q_last?.leased?.[`pod-${p.name}`] || 0) > 0;
       const rampOk = !live.some((p) => p.status !== 'ready') && live.every(podBusy) && (st.pod_plan?.staged_n || 0) > 0;
-      const rampCap = typedPods ? (rampOk ? live.length + 1 : live.length) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
+      const proof = typedPods ? LH.podsProven(st) : null; if (proof) st.pods_proof = proof;
+      // typed: ONE pod until pods are proven to turn into talks (LH.podsProven, Chad 10-31), then ramp one at a time while every pod is busy
+      const rampCap = typedPods ? (!proof.ok ? 1 : rampOk ? live.length + 1 : live.length) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
       const wantRaw = st.cloud_stopped || rentalPause ? 0 : typedPods ? st.pod_plan.target : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
       st.pods_wanted = wantRaw; st.rental_pause = rentalPause || null;
-      const poolCap = typedPods ? Infinity : maxPods;
+      // a pause / stop retires every live pod (10-31: the pause set want 0 but poolCap stayed Infinity, so 379-381 kept running and 381 booted)
+      const poolCap = st.cloud_stopped || rentalPause ? 0 : typedPods ? (proof.ok ? Infinity : 1) : maxPods;
       const keepPods = new Set([...live].sort((a, b) => Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, poolCap).map(p => p.id));
-      const surplusPods = new Set(poolCap > 0 && poolCap < Infinity ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);
+      const surplusPods = new Set(poolCap < Infinity ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
       if (!wantRaw && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
       const breakerOn = !!st.breaker_until && now() < st.breaker_until;
@@ -1993,7 +1996,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // Transfer each pod's bounded batch in parallel; the uplink, not the GPU, can be the limiting resource.
       await Promise.all(live.map(async (p) => {
         try {
-          if (surplusPods.has(p.id) && !p.agent && !Object.values(st.jobs).some(j => j.pod === p.id) && !bgBusy(p.id)) { await closePod(p, `pool reduced to ${maxPods}`); return; }
+          if (surplusPods.has(p.id) && !p.agent && !Object.values(st.jobs).some(j => j.pod === p.id) && !bgBusy(p.id)) { await closePod(p, `pool reduced to ${poolCap}`); return; }
           if (p.status === 'booting') {
             let g = await C.getPod(p.id, deps);
             p.image=g.imageName||acceptedWorker?.image||null;
@@ -2060,7 +2063,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               const { stdout } = await C.podSsh(run, p, `${drain ? "pkill -TERM -f queue-agent.mjs; " : ''}pgrep -f queue-agent.mjs >/dev/null && echo ALIVE; tail -1 /workspace/agent.log 2>/dev/null; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); u=$(awk '/^usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat 2>/dev/null); [ -n "$u" ] || u=$(awk '{printf "%.0f", $1/1000}' /sys/fs/cgroup/cpuacct/cpuacct.usage 2>/dev/null); pw=$(nvidia-smi --query-gpu=power.draw,power.limit --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' '); echo GAUGE \${u:--} $(cat /sys/fs/cgroup/cpu.max 2>/dev/null || { q=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us 2>/dev/null); [ "\${q:--1}" -gt 0 ] && echo $q $(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us) || echo max 100000; }) $(nproc) \${pw:--}; true`, { timeoutMs: 60_000 });
               p.lastOk = now(); p.agent_tail = stdout.split('\n').find((l) => l.startsWith('{') || l.startsWith('agent exit'))?.slice(0, 300) || null;
               const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]); { const g = WC.readGauges(stdout, p.gauge, now()); if (g) p.gauge = { ...g, cpu: g.cpu ?? p.gauge?.cpu ?? null }; }
-              if (!/ALIVE/.test(stdout)) await closePod(p, staleImage ? 'accepted image updated; queue agent drained' : drain ? `pool reduced to ${maxPods}; queue agent drained` : 'queue agent exited (idle or drained)');
+              if (!/ALIVE/.test(stdout)) await closePod(p, staleImage ? 'accepted image updated; queue agent drained' : drain ? `pool reduced to ${poolCap}; queue agent drained` : 'queue agent exited (idle or drained)');
               return;
             }
             if(staleImage&&!Object.values(st.jobs).some(j=>j.pod===p.id)){await closePod(p,p.image!==acceptedWorker.image?'accepted image updated; finished recordings drained':'bootstrap updated; finished recordings drained');return;}
@@ -2233,7 +2236,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               }
               })().catch((err) => { if (err?.code !== 'DRAIN') p.last_error = `result ${job}: ${String(err?.message || err).slice(0, 260)}`; }).finally(() => collecting.delete(job));   // a failed fetch stays in st.jobs: the next pass tries again
             }
-            if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id) && !bgBusy(p.id)) await closePod(p, `pool reduced to ${maxPods}`);
+            if (surplusPods.has(p.id) && !Object.values(st.jobs).some(j => j.pod === p.id) && !bgBusy(p.id)) await closePod(p, `pool reduced to ${poolCap}`);
           }
         } catch (err) {
           if(err.code==='DRAIN')return;

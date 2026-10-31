@@ -121,6 +121,26 @@ export function workFacts(st, now, { freshMs = null, gpuHosts = CLASSES.gpu.host
   };
 }
 
+/** Since the last adopted talk (st.done): gpu steps done (step_log), finishes still waiting (qjobs), finish results refused or failed
+ *  (pull_errors on cpu-finish jobs), and gpu results that are in neither (dropped). Pure. */
+export function endFacts(st) {
+  const last_end = lastDone(st);
+  const gpu_since = (st.step_log || []).filter((x) => x.type === 'gpu' && x.at > last_end).length;
+  const finish_waiting = Object.values(st.qjobs || {}).filter((q) => q.type === 'cpu-finish' && !q.adopted).length;
+  const fails = (st.pull_errors || []).filter((x) => x.at > last_end && /^cpu-finish-/.test(x.job || ''));
+  return { last_end: last_end || null, gpu_since, finish_waiting, finish_fails: fails.length, gpu_dropped: Math.max(0, gpu_since - finish_waiting),
+    last_fail: fails.length ? String(fails[fails.length - 1].error).slice(0, 160) : null };
+}
+
+/** May the typed pod pool grow past ONE pod? Only on evidence that pods turn into talks (Chad 10-31: 5 pods rented while 0 talks came out):
+ *  a pure remaster (status done, swapped 0) adopted from a pod's gpu step, and the pipeline end not dead. → { ok, why }. Pure. */
+export function podsProven(st) {
+  const e = endFacts(st);
+  if (e.finish_fails >= 2 || (e.finish_fails >= 1 && e.gpu_dropped > 0)) return { ok: false, why: `pipeline end dead: ${e.finish_fails} finish results refused since the last adopted talk` };
+  const pure = (st.done || []).filter((d) => d.mode === 'typed' && d.remaster === 'done' && !d.swapped && /^pod-/.test(String(d.gpu || '')));
+  return pure.length ? { ok: true, why: `${pure.length} pure remasters adopted from pod gpu steps` } : { ok: false, why: 'no pure remaster adopted from a pod yet: one pod until one is' };
+}
+
 const min = (ms) => (ms == null ? '?' : `${Math.round(ms / 60_000)} min`);
 /** Conditions held across loop ticks: st.health_cond[name] = the tick run it began on; counted in ticks, so other callers never advance it. */
 function streak(st, name, on, tickRuns, update) {
@@ -186,6 +206,14 @@ export function evaluate(st, now, { update = false, k = K_MISSED, kSteps = K_STE
   checks.push({ name: 'Media rented pod idle', ok: idlePods.length === 0, level: 'critical',
     detail: idlePods.length ? `PAYING FOR IDLE: ${idlePods.join(' | ')} · ${f.gpu_queued_h} h GPU work queued, ${f.staged_n} on R2`
       : `${rented.length} ready pod${rented.length === 1 ? '' : 's'} reporting${rented.length ? `: ${rented.map((g) => `${g.name} ${g.gpu}%`).join(', ')}` : ''} · ${f.staged_n} gpu steps on R2` });
+  // (e) the END of the pipeline: talks adopted. Upstream steps (prep, gpu) set progress_at, so a dead finish hid behind them (10-31: 39 gpu
+  // steps done, every cpu-finish refused, 0 adopted, for over an hour). Evidence, not a timer: since the last adopted talk, finish results
+  // refused/failed, and gpu steps done that are neither adopted nor waiting as a finish (their work was dropped).
+  const e = endFacts(st);
+  const endDead = !ended && (e.finish_fails >= 2 || (e.finish_fails >= 1 && e.gpu_dropped > 0));
+  checks.push({ name: 'Media pipeline end (talks adopted)', ok: !endDead, level: endDead ? 'critical' : 'warn',
+    detail: `last talk adopted ${e.last_end ? `${min(now - e.last_end)} ago` : 'never'} · since then: ${e.gpu_since} gpu steps done, ${e.finish_waiting} finishes waiting, `
+      + `${e.finish_fails} finish results refused/failed${e.gpu_dropped ? `, ${e.gpu_dropped} gpu results dropped` : ''}${e.last_fail ? ` · last: ${e.last_fail}` : ''}` });
   return { at: now, sections, checks, facts: { ...f, gpus: undefined, gpu_list: f.gpus.map(({ name, gpu }) => ({ name, gpu })) }, heals: (st.loop_heals || []).slice(-5) };
 }
 

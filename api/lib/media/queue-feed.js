@@ -196,7 +196,7 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           await (syncStages || (async (id, stages) => (await import('../repos/media-ledger-repo.js')).syncItemStages(id, stages)))(it.id, meta.stages).catch(() => {});
           if (['whole_queued', 'scheduled', 'queued', 'running'].includes((await repo.getMediaItem(it.id))?.state))
             await repo.updateMediaItem(it.id, { state: 'transcribed', stage: null, stages_done: ',' + Object.keys(meta.stages || {}).join(',') + ',' });
-          st.done.push({ id: it.id, slug: it.slug, mode: 'typed', audio_s: ch.audio_s, gpu: ch.gpu?.host, pod: ch.gpu?.host, prep: ch['cpu-prep']?.host, finish: j.host, at: now(), via: 'queue' });
+          st.done.push({ id: it.id, slug: it.slug, mode: 'typed', remaster: meta.remaster?.status || null, swapped: meta.remaster?.swapped ?? null, audio_s: ch.audio_s, gpu: ch.gpu?.host, pod: ch.gpu?.host, prep: ch['cpu-prep']?.host, finish: j.host, at: now(), via: 'queue' });
           provePool(st, ch.gpu?.host);
           for (const x of [j.id, ch['cpu-prep']?.id, ch.gpu?.id]) if (x) ackJob(x);
           delete st.chains[qj.itemId];

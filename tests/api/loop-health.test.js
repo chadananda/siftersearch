@@ -185,3 +185,41 @@ describe('progress checks (work, not time)', () => {
     expect(st.health_cond?.no_progress).toBeUndefined();
   });
 });
+
+describe('the pipeline END: talks adopted, judged by evidence', () => {
+  const end = (h) => h.checks.find((c) => c.name === 'Media pipeline end (talks adopted)');
+  const T0 = 1_800_000_000_000;
+  // 10-31: prep and gpu flow (step_log, progress_at fresh), every cpu-finish refused, nothing adopted
+  const today = () => ({
+    done: [{ id: 1, mode: 'whole', at: T0 }], progress_at: T0 + 60 * M,
+    step_log: [...Array.from({ length: 6 }, (_, i) => ({ type: 'cpu-prep', host: 'boss', at: T0 + (i + 1) * M })), ...Array.from({ length: 5 }, (_, i) => ({ type: 'gpu', host: 'pod-379', at: T0 + (i + 10) * M }))],
+    qjobs: { 'cpu-finish-1951-a': { type: 'cpu-finish', itemId: 1951 }, 'cpu-prep-2650-b': { type: 'cpu-prep', itemId: 2650 } },
+    pull_errors: ['1981', '1948', '1934'].map((id, i) => ({ at: T0 + (20 + i) * M, job: `cpu-finish-${id}-2ef0bd10f06e`, error: 'typed cpu-finish from boss: cpu-finish result refused: missing enhanced/pod/post.json' })),
+  });
+  it('every finish refused while prep and gpu flow → CRITICAL, naming the refusal and the dropped gpu work', () => {
+    const c = end(LH.evaluate(today(), T0 + 61 * M));
+    expect(c).toMatchObject({ ok: false, level: 'critical' });
+    expect(c.detail).toMatch(/5 gpu steps done, 1 finishes waiting, 3 finish results refused\/failed, 4 gpu results dropped/);
+    expect(c.detail).toMatch(/missing enhanced\/pod\/post\.json/);
+  });
+  it('one finish refused with nothing dropped is a talk, not the pipeline; an adoption after the refusals clears it', () => {
+    const one = { ...today(), step_log: [{ type: 'gpu', at: T0 + 10 * M }], pull_errors: today().pull_errors.slice(0, 1), qjobs: { 'cpu-finish-1951-a': { type: 'cpu-finish' } } };
+    expect(end(LH.evaluate(one, T0 + 61 * M)).ok).toBe(true);
+    const fixed = { ...today(), done: [...today().done, { id: 1951, mode: 'typed', at: T0 + 30 * M }] };
+    expect(end(LH.evaluate(fixed, T0 + 61 * M))).toMatchObject({ ok: true });
+  });
+});
+
+describe('podsProven: the typed pool grows past one pod only on evidence of talks', () => {
+  it('no pure pod remaster adopted → one pod; a held (review) adoption is not proof; a pure one from a pod is', () => {
+    expect(LH.podsProven({ done: [] }).ok).toBe(false);
+    expect(LH.podsProven({ done: [{ mode: 'typed', remaster: 'review', swapped: 0, gpu: 'pod-379', at: 5 }] }).ok).toBe(false);
+    expect(LH.podsProven({ done: [{ mode: 'typed', remaster: 'done', swapped: 0, gpu: 'aorus', at: 5 }] }).ok).toBe(false);
+    expect(LH.podsProven({ done: [{ mode: 'typed', remaster: 'done', swapped: 0, gpu: 'pod-379', at: 5 }] }).ok).toBe(true);
+  });
+  it('a dead pipeline end revokes the proof', () => {
+    const st = { done: [{ mode: 'typed', remaster: 'done', swapped: 0, gpu: 'pod-379', at: 5 }], step_log: [{ type: 'gpu', at: 10 }], qjobs: {},
+      pull_errors: [{ at: 11, job: 'cpu-finish-9-ab12', error: 'refused' }, { at: 12, job: 'cpu-finish-8-ab12', error: 'refused' }] };
+    expect(LH.podsProven(st)).toMatchObject({ ok: false, why: expect.stringMatching(/pipeline end dead/) });
+  });
+});
