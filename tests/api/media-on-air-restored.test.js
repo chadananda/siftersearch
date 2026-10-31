@@ -75,3 +75,28 @@ describe('stage + quality index', () => {
     expect(r).toMatchObject({ restored: 0, sm: 2, ns: 'links', v: 'usable', i: 2.1, o: 3.9 });
   });
 });
+
+describe('published = on air (10-31, talk 485): published_at follows restored', () => {
+  const pub = (id) => db.prepare('SELECT restored r, published_at p FROM media_items WHERE id = ?').get(id);
+  // 485 after the typed chain: remaster held (nisqa_down), the original still the listening copy, verify/quiet skipped
+  const m485 = { web_original: { m4a: 'a.m4a' }, web_listening: 'safe', enhancement: { listening: 'safe' }, remaster: { status: 'review', verdict: 'review', swapped: 0 },
+    stages: { ...ALL, verify: { at: 1, skipped: 'not remastered' }, quiet: { at: 1, skipped: 'no published pure remaster' } } };
+  it('the catalogue write of a held typed adoption leaves it unpublished, even when the caller sends published_at', async () => {
+    const { indexFields } = await import('../../api/lib/media/item.js');
+    await repo.updateMediaItem(2, { state: 'done', stage: 'catalog', ...indexFields(m485), published_at: '2026-10-31T20:16:05Z' });
+    expect(pub(2)).toEqual({ r: 0, p: null });
+  });
+  it('a talk is stamped the first time it goes on air, keeps that date, and loses it when it comes off', async () => {
+    await repo.setIndex(2, { restored: 1 });
+    const first = pub(2).p; expect(first).toBeTruthy();
+    await repo.updateMediaItem(2, { restored: 1 }); expect(pub(2).p).toBe(first);
+    await repo.setRestored(2, false); expect(pub(2)).toEqual({ r: 0, p: null });
+    await repo.updateMediaItem(2, { title: 'x' }); expect(pub(2).p).toBe(null);   // a write without the flag leaves it alone
+  });
+  it('the verify pass takes an off-air row that still carries published_at off the published list (485 was restored 0 + published_at)', async () => {
+    resetRestoredVerify();
+    db.prepare("UPDATE media_items SET restored = 0, published_at = '2026-10-31T20:16:05Z' WHERE id = 2").run();
+    await backfillRestored({ repo, readMeta: async (d) => (d === '/x/2' ? m485 : Promise.reject(new Error('nope'))) });
+    expect(pub(2)).toEqual({ r: 0, p: null });
+  });
+});

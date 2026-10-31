@@ -806,9 +806,9 @@ export async function backfillRestored({ repo, readMeta, limit = 40 } = {}) {
     for (const r of rows) {
       verifyCursor = r.id;
       const m = r.dir ? await read(r.dir).catch(() => null) : null;
-      // re-derived when the on-air flag OR the checklist columns differ (a requirement added after publication changes next_stage while the talk stays on air)
+      // re-derived when the on-air flag OR the checklist columns differ, or an off-air talk still carries published_at (10-31, 485); (a requirement added after publication changes next_stage while the talk stays on air)
       const f = m && indexFields(m);
-      if (f && ((f.restored === 1) !== (r.restored === 1) || (f.next_stage ?? null) !== (r.next_stage ?? null) || f.stages_missing !== (r.stages_missing ?? null))) { await repo.setIndex(r.id, f); n++; }
+      if (f && ((f.restored === 1) !== (r.restored === 1) || (f.restored !== 1 && r.published_at) || (f.next_stage ?? null) !== (r.next_stage ?? null) || f.stages_missing !== (r.stages_missing ?? null))) { await repo.setIndex(r.id, f); n++; }
     }
   }
   return n;
@@ -1173,7 +1173,7 @@ export async function mediaStagesJob({ write = false, ids = null, stages = null,
     const todo = [...new Set([...miss, ...forced])];
     if (!write || !todo.length || out.queued >= limit) continue;
     if (busy.has(it.id)) { out.skipped_busy++; continue; }
-    await queue('media-item', { id: it.id, redo: STAGES.filter((s) => todo.includes(s)).concat(it.published_at && !todo.includes('update') ? ['update'] : []) }, 'media-stages'); out.queued++;
+    await queue('media-item', { id: it.id, redo: STAGES.filter((s) => todo.includes(s)).concat((it.published_at || done.includes(',catalog,')) && !todo.includes('update') ? ['update'] : []) }, 'media-stages'); out.queued++;
   }
   return out;
 }

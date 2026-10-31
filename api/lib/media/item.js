@@ -1079,7 +1079,8 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'catalog' || stage === 'update') {
-      // the catalogue takes a talk with a safe web copy; ON AIR is the stricter isComplete (the remaster is the listening copy, Chad 10-31) via media_items.restored
+      // the catalogue takes a talk with a safe web copy; ON AIR is the stricter isComplete (the remaster is the listening copy, Chad 10-31) via media_items.restored,
+      // and published_at follows restored in the repo (10-31: 485 was catalogued with its remaster held and got published_at — 'published' while off air)
       if (!item.published_at && !opts.publishUnrestored && meta.rights?.playback === 'full' && !(meta.stages?.web?.at && (meta.enhancement?.listening !== 'unipase' || ['usable', 'cleaned'].includes(qualityOf(meta).verdict)))) throw new Error('publish blocked: no playable listening copy yet (stays in the pipeline)');   // 10-31: was !isRestored — any safe copy goes on air, the remaster upgrades it later
       if (meta.rights?.playback === 'full') {
         const publishedTranscript = await readJson(join(dir, 'transcript.json'), { paragraphs: [] });
@@ -1117,7 +1118,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         ...indexFields({ ...meta, stages: { ...meta.stages, catalog: { at: 1 } } }), doc_id: meta.doc_id || null, thumb: meta.thumb?.file || null, quotes_n: qj.quotes?.length || 0, crs_n: qj.teachings?.length || 0, words_n: meta.words_n || 0,
         asr_conf: meta.enhancement?.variants?.find((v) => v.name === meta.enhancement.asr_input)?.avg_logprob ?? null, cost_usd: Math.round(spend.usd * 10000) / 10000,
         meta: { summary: meta.summary, topics: meta.topics, chapters: meta.chapters, headings_n: (meta.headings || []).length, audience_intro: meta.audience?.intro || [], rights: meta.rights, source: meta.source, thumb: meta.thumb, event: meta.event, place: meta.place, version: meta.version },
-        state: 'done', stage: 'catalog', why: null, ...(item.published_at ? {} : { published_at: d.now() }), audience: meta.audience?.score ?? null, ...(meta.quality ? { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority } : {}) });
+        state: 'done', stage: 'catalog', why: null, audience: meta.audience?.score ?? null, ...(meta.quality ? { grade: meta.quality.overall, primary_issue: meta.quality.primary_issue, chain_key: meta.quality.chain_key, priority: meta.quality.priority } : {}) });
       meta.audio_publish_pending = false;
     }
 

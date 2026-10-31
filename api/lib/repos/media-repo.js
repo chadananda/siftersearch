@@ -6,6 +6,10 @@ import { LIVE_SQL } from '../entity-live.js';
 import { approvedSpeakerLabel, canonicalSpeakerKey, speakerDecisions } from '../media/speaker-decisions.js';
 
 const now = () => new Date().toISOString();
+/** ON AIR = published (10-31, talk 485): published_at is stamped the first time a talk goes on air (restored = 1) and cleared
+ *  when it comes off (held, original playing) — a catalogued talk with a safe copy is NOT published. Every restored write carries it. */
+const AIR_SQL = 'published_at = CASE WHEN ? = 1 THEN COALESCE(published_at, ?) ELSE NULL END';
+const airArgs = (restored) => [restored ? 1 : 0, now()];
 const parse = (r) => r && { ...r, has_video: !!r.has_video, meta: r.meta ? (() => { try { return JSON.parse(r.meta); } catch { return null; } })() : null };
 const COLS = new Set(['stages_done', 'published_at', 'queue_rank', 'audience', 'grade', 'primary_issue', 'chain_key', 'priority', 'speaker_key', 'slug', 'title', 'speaker', 'tradition', 'collection', 'language', 'year', 'date', 'duration_s', 'has_video', 'source_kind', 'source_ref',
   'sha256', 'youtube_id', 'channel', 'playback', 'stage', 'state', 'why', 'dir', 'doc_id', 'thumb', 'quotes_n', 'crs_n', 'words_n', 'asr_conf', 'cost_usd', 'meta', 'restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz', 'completed_at', 'dup_group']);
@@ -46,10 +50,12 @@ export async function updateMediaItem(id, fields = {}) {
   if (set.meta !== undefined && typeof set.meta !== 'string') set.meta = JSON.stringify(set.meta);
   if (set.has_video !== undefined) set.has_video = set.has_video ? 1 : 0;
   set.updated_at = now();
+  const air = set.restored !== undefined;   // published_at FOLLOWS restored (AIR_SQL): an explicit published_at never overrides it
+  if (air) delete set.published_at;
   const keys = Object.keys(set);
   // an EXCLUDED talk stays excluded (10-23: a lane finishing its run would otherwise set it back to prepped / done)
   const col = (k) => (k === 'state' ? `state = CASE WHEN state = 'excluded' THEN 'excluded' ELSE ? END` : `${k} = ?`);
-  await transaction([{ sql: `UPDATE media_items SET ${keys.map(col).join(', ')} WHERE id = ?`, args: [...keys.map((k) => set[k]), Number(id)] }], 'media:update');
+  await transaction([{ sql: `UPDATE media_items SET ${[...keys.map(col), ...(air ? [AIR_SQL] : [])].join(', ')} WHERE id = ?`, args: [...keys.map((k) => set[k]), ...(air ? airArgs(set.restored) : []), Number(id)] }], 'media:update');
   return getMediaItem(id);
 }
 
@@ -411,12 +417,12 @@ export async function setPlayback(level, { sourceKind = null } = {}) {
 /** Published rows whose restored flag was never set (before migration 186): the backfill's work list, and its answer. */
 export const unclassifiedDone = async (limit = 50) => queryAll(`SELECT id, dir FROM media_items WHERE dir IS NOT NULL AND state != 'duplicate' AND (restored IS NULL OR stages_missing IS NULL OR (restored = 1 AND completed_at IS NULL)) ORDER BY (state = 'done') DESC, id LIMIT ?`, [Number(limit) || 50], 'media:restored-todo');
 /** Every published row, in id order: the on-air flag is re-derived from meta.json in both directions (10-31: rows set 0 under the old verdict rule are re-checked). */
-export const doneRows = async (afterId = 0, limit = 200) => queryAll(`SELECT id, dir, restored, next_stage, stages_missing FROM media_items WHERE state = 'done' AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 200], 'media:done-verify');
+export const doneRows = async (afterId = 0, limit = 200) => queryAll(`SELECT id, dir, restored, next_stage, stages_missing, published_at FROM media_items WHERE state = 'done' AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 200], 'media:done-verify');
 /** Published talks whose next checklist stage is `stage` (a requirement added after publication), in id order — the pipeline's work list for that stage. */
 export const nextByStage = async (stage, limit = 6) => queryAll(`SELECT id, slug, dir FROM media_items WHERE state = 'done' AND dir IS NOT NULL AND next_stage = ? ORDER BY id LIMIT ?`, [String(stage), Number(limit) || 6], 'media:next-by-stage');
 const IDX = ['restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz', 'completed_at'];
-export const setIndex = async (id, f) => transaction([{ sql: `UPDATE media_items SET ${IDX.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, args: [...IDX.map((c) => f[c] ?? null), Number(id)] }], 'media:set-index');
-export const setRestored = async (id, flag) => transaction([{ sql: 'UPDATE media_items SET restored = ? WHERE id = ?', args: [flag ? 1 : 0, Number(id)] }], 'media:set-restored');
+export const setIndex = async (id, f) => transaction([{ sql: `UPDATE media_items SET ${IDX.map((c) => `${c} = ?`).join(', ')}, ${AIR_SQL} WHERE id = ?`, args: [...IDX.map((c) => f[c] ?? null), ...airArgs(f.restored), Number(id)] }], 'media:set-index');
+export const setRestored = async (id, flag) => transaction([{ sql: `UPDATE media_items SET restored = ?, ${AIR_SQL} WHERE id = ?`, args: [flag ? 1 : 0, ...airArgs(flag), Number(id)] }], 'media:set-restored');
 /** The re-judge work list (Chad 10-31): published talks whose remaster is held (review) or still playing the original (kept/deferred → 'unrepairable'), in id order after a cursor. */
 export const heldCandidates = async (afterId = 0, limit = 20) => queryAll(`SELECT id, slug, dir FROM media_items WHERE state = 'done' AND dir IS NOT NULL AND verdict IN ('review', 'unrepairable', 'spliced') AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 20], 'media:held-candidates');
 /** The held page's rows: held for Chad (review/unrepairable) or archived, with their listing fields. */
