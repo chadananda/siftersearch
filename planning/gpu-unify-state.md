@@ -1,5 +1,5 @@
 # GPU unify State
-last_tick: 2026-10-31T06:45Z
+last_tick: 2026-10-31T07:50Z
 status: IN_PROGRESS
 project_dir: /Users/chad/Dropbox/Public/JS/Projects/siftersearch.com
 node: N=/Users/chad/.local/share/fnm/node-versions/v25.9.0/installation/bin/node (bare `node` fails under the hook)
@@ -129,6 +129,10 @@ Pod image (10-26) post.py had no `quiet`; tower requires realign+quiet+web since
   touches .lane-seen, BOOTSTRAP_AGENT never did. Every agent pod killed itself at 25 min, mid-work. Fix 1a8d23b9 (+test), deployed.
   31j PROMOTED ~07:05Z (no live pods then except 373 booting on 31i → drains, lane rents one 31j pod). Watcher b0pvzu6i2 → /tmp/pod31j.py.
   NEXT: one 31j pod past 25 min AND adopted results → then rentals --max-pods 3.
+- ~07:30Z pod 374 (31j) PROVEN: past 25 min, 10 talks delivered via queue + adopted, 0 fails, GPU 100 % with 5 GPU stages at once, RAM peak
+  48/62 GB. Raised --max-pods 3, but lane stayed at 1: st.proven only set on the ssh lane. e4e1dffa: queue-feed provePool() — a pod-* delivery
+  sets proven (+test), deployed. 375 warming, 376 booting (~07:50Z); spent $132.4 / $200. Watcher bq5t6b8j4 → /tmp/pods3.py (exits when both
+  deliver, any pod fail, or a terminate). NEXT: confirm 375+376 deliver past 25 min; watch RAM via /tmp/podsample.log; watch budget.
 
 ## Next
 1. Boss onto the LAN agent (ROCm; boss currently on home path B, st.home.boss, image quiet-20261029). Needs a ROCm gpu-20261031 build.
