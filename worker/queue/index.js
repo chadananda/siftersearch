@@ -36,7 +36,7 @@ export class MediaQueue {
       case 'done': return Q.done(s, a);
       case 'fail': return Q.fail(s, a);
       case 'list-done': {
-        const jobs = Q.listDone(s, a.limit || 50);
+        const jobs = Q.listDone(s, a.limit || 50, a.type, a.state);
         return Promise.all(jobs.map(async (j) => ({ ...j, result: { ...j.result, outputs: await Promise.all((j.result?.outputs || []).map(async (o) => ({ ...o, url: await presign(env, o.key, 'GET') }))) } })));
       }
       case 'ack': case 'cancel': {   // the staged inputs go too unless another job still names the same file (a reprocess queued behind it)
@@ -49,7 +49,7 @@ export class MediaQueue {
       }
       case 'capacity': return Q.capacity(s);
       case 'withdraw': return Q.withdraw(s, a.ids || []);
-      case 'stats': return Q.stats(s);
+      case 'stats': return Q.stats(s, Date.now(), a.type);   // typed steps are pulled and counted per type
       default: throw Object.assign(new Error(`unknown op ${op}`), { status: 404 });
     }
   }
