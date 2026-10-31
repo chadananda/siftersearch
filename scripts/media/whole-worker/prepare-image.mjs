@@ -8,7 +8,8 @@ execFileSync(process.execPath,['scripts/media/whole-worker/build.mjs',bundle],{s
 for(const dest of ['opt/sifter/media','opt/sifter/scripts/media']){
  await mkdir(join(root,dest,'worker'),{recursive:true});
  for(const f of ['runpod_worker.py','remaster_guard.py','media_tool.py'])await copyFile(join('scripts/media',f),join(root,dest,f));
- for(const f of await readdir('scripts/media/worker'))if(/\.(py|json)$/.test(f))await copyFile(join('scripts/media/worker',f),join(root,dest,'worker',f));
+ for(const f of await readdir('scripts/media/worker'))if(/\.(py|json|mjs)$/.test(f))await copyFile(join('scripts/media/worker',f),join(root,dest,'worker',f));
+ await copyFile('api/lib/media/queue-client.mjs',join(root,dest,'worker','queue-client.mjs'));   // the queue agent ships beside its client (one agent on pods and home hosts)
 }
 await copyFile('scripts/media/whole-worker/farm_worker.py',join(root,'opt/sifter/media/worker/farm_worker.py'));
 await mkdir(join(root,'opt/sifter/data'),{recursive:true});
