@@ -1970,7 +1970,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // gpu work staged on R2 and every ready pod holding a gpu lease (busy); spend is governed by efficiency (idle pods leave by idle-exit).
       const typedPods = process.env.MEDIA_POD_TYPED === '1' && !!st.pod_plan;
       const podBusy = (p) => (st.q_last?.leased?.[`pod-${p.name}`] || 0) > 0;
-      const rampOk = !live.some((p) => p.status !== 'ready') && live.every(podBusy) && (st.pod_plan?.staged_n || 0) > 0;
+      // ...and every live pod has EARNED its place: a talk whose gpu step it ran was adopted as a pure remaster (LH.podEarned)
+      const rampOk = !live.some((p) => p.status !== 'ready') && live.every(podBusy) && live.every((p) => LH.podEarned(st, p)) && (st.pod_plan?.staged_n || 0) > 0;
       const proof = typedPods ? LH.podsProven(st) : null; if (proof) st.pods_proof = proof;
       // typed: ONE pod until pods are proven to turn into talks (LH.podsProven, Chad 10-31), then ramp one at a time while every pod is busy
       const rampCap = typedPods ? (!proof.ok ? 1 : rampOk ? live.length + 1 : live.length) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows

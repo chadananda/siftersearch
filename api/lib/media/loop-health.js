@@ -141,6 +141,13 @@ export function podsProven(st) {
   return pure.length ? { ok: true, why: `${pure.length} pure remasters adopted from pod gpu steps` } : { ok: false, why: 'no pure remaster adopted from a pod yet: one pod until one is' };
 }
 
+/** Has THIS pod earned its place: a pure remaster adopted from a gpu step it ran (done.gpu = 'pod-<name>')? The pool grows by one only when
+ *  every live pod has (coordinator 10-31: add pods one at a time, each measured on published outcome; 383 was rented 30 s after 382 was ready). Pure. */
+export function podEarned(st, pod) {
+  const host = `pod-${pod.name}`;
+  return (st.done || []).some((d) => d.mode === 'typed' && d.remaster === 'done' && !d.swapped && d.gpu === host);
+}
+
 const min = (ms) => (ms == null ? '?' : `${Math.round(ms / 60_000)} min`);
 /** Conditions held across loop ticks: st.health_cond[name] = the tick run it began on; counted in ticks, so other callers never advance it. */
 function streak(st, name, on, tickRuns, update) {

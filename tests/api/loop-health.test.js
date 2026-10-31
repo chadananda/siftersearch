@@ -217,6 +217,13 @@ describe('podsProven: the typed pool grows past one pod only on evidence of talk
     expect(LH.podsProven({ done: [{ mode: 'typed', remaster: 'done', swapped: 0, gpu: 'aorus', at: 5 }] }).ok).toBe(false);
     expect(LH.podsProven({ done: [{ mode: 'typed', remaster: 'done', swapped: 0, gpu: 'pod-379', at: 5 }] }).ok).toBe(true);
   });
+  it('podEarned: a pod counts only once a pure remaster from ITS gpu step is adopted (10-31: 383 rented 30 s after 382 was ready)', () => {
+    const pod = { name: 'sifter-unipase-382' };
+    expect(LH.podEarned({ done: [{ mode: 'typed', remaster: 'done', swapped: 0, gpu: 'pod-sifter-unipase-378' }] }, pod)).toBe(false);
+    expect(LH.podEarned({ done: [{ mode: 'typed', remaster: 'review', swapped: 0, gpu: 'pod-sifter-unipase-382' }] }, pod)).toBe(false);
+    expect(LH.podEarned({ done: [{ mode: 'typed', remaster: 'done', swapped: 2, gpu: 'pod-sifter-unipase-382' }] }, pod)).toBe(false);
+    expect(LH.podEarned({ done: [{ mode: 'typed', remaster: 'done', swapped: 0, gpu: 'pod-sifter-unipase-382' }] }, pod)).toBe(true);
+  });
   it('a dead pipeline end revokes the proof', () => {
     const st = { done: [{ mode: 'typed', remaster: 'done', swapped: 0, gpu: 'pod-379', at: 5 }], step_log: [{ type: 'gpu', at: 10 }], qjobs: {},
       pull_errors: [{ at: 11, job: 'cpu-finish-9-ab12', error: 'refused' }, { at: 12, job: 'cpu-finish-8-ab12', error: 'refused' }] };
