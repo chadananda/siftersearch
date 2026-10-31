@@ -17,8 +17,6 @@ const outfile=whole.replace(/whole-recording\.mjs$/,out+'.mjs');
 // job died at load ("Dynamic require of \"process\" is not supported") — give the bundle a real one
 const result=await build({entryPoints:[`scripts/media/whole-worker/${src}.mjs`],outfile,bundle:true,platform:'node',format:'esm',target:'node22',metafile:true,
  banner:{js:"import {createRequire as __sifterRequire} from 'node:module';const require=__sifterRequire(import.meta.url);"},
- // CJS deps (yaml via item.js → authority.js → config.js, 10-31) call require('process'): an ESM bundle needs a real require or every job dies at load
- banner:{js:"import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);"},
  plugins:[{name:'worker-boundary',setup(b){b.onResolve({filter:/.*/},args=>{
   if(args.kind==='dynamic-import' && !/^(node:)?(fs(\/promises)?|os|path)$/.test(args.path) && !/^\.\/(trim|spkmerge)\.js$/.test(args.path)){if(/^\.\.?\//.test(args.path)&&!SERVER_ONLY.has(args.path))unlisted.add(`${args.path} (from ${args.importer.replace(process.cwd()+'/','')})`);return {path:args.path,external:true};}
  });}}]});
