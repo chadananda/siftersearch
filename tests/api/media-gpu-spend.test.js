@@ -554,6 +554,11 @@ describe('the lane: GPU is rented only for work', () => {
     let t = 5e11; ledgerTick(st, [p], { a: 0 }, t); t += 11 * MIN; ledgerTick(st, [p], { a: 0 }, t);
     expect(t - p.idle_since).toBeGreaterThan(LEDGER.idleMs);
   });
+  it('a queue-agent pod holding leases is not idle while its GPU is quiet (10-31 pod 370: 9 talks in CPU prep, reaped)', () => {
+    const st = { jobs: {}, pods: {}, q_last: { leased: { 'pod-sifter-unipase-370': 9 } } }, p = { id: 'a', name: 'sifter-unipase-370', status: 'ready', costPerHr: 1 };
+    let t = 5e11; ledgerTick(st, [p], { a: 0 }, t); t += 11 * MIN; ledgerTick(st, [p], { a: 0 }, t);
+    expect(p.idle_since).toBeUndefined();
+  });
 });
 
 // ── tower takes the worker's guard / alignment / encodes and does none of it itself ──

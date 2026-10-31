@@ -58,7 +58,8 @@ export function ledgerTick(st, live, util, now) {
   if (!b || b.t !== minute) { b = { t: minute, rented_ms: 0, busy_ms: 0, usd: 0, usd_busy: 0 }; st.buckets.push(b); }
   for (const p of live) {
     const u = util?.[p.id];
-    const assigned = Object.values(st.jobs || {}).some((j) => j.pod === p.id);
+    // a queue-agent pod's work is its leases (host 'pod-<name>'), not st.jobs (10-31: pod 370 was reaped "idle" holding 9 talks in CPU prep)
+    const assigned = Object.values(st.jobs || {}).some((j) => j.pod === p.id) || (st.q_last?.leased?.[`pod-${p.name}`] || 0) > 0;
     const busy = u != null ? u >= LEDGER.busyUtil : false;
     p.rented_ms = (p.rented_ms || 0) + dt;
     if (busy) p.busy_ms = (p.busy_ms || 0) + dt;
