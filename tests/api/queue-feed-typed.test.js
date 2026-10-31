@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import * as Q from '../../worker/queue/core.js';
-import { feed, pull, tick as qtick } from '../../api/lib/media/queue-feed.js';
+import { feed, pull, tick as qtick, forgiveOurs } from '../../api/lib/media/queue-feed.js';
 import { CONTRACT, requiredFiles, fpOf } from '../../api/lib/media/stage-jobs.js';
 
 const doSql = () => { const db = new Database(':memory:'); return { exec: (q, ...b) => { const st = db.prepare(q); const r = st.reader ? st.all(...b) : (st.run(...b), []); return { toArray: () => r }; } }; };
@@ -69,6 +69,14 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     engage();
     expect((await feed(st, { ...deps, fraction: 0 })).typed.fed).toBe(0);
     expect(st.queue).toEqual([1, 2]);
+  });
+  it('an excluded speaker is gated on tower before any worker sees it (10-31: the worker gate failed prep as "grade did not finish", re-fed forever)', async () => {
+    engage(); st.queue = [1, 2];
+    const m1 = join(items[1].dir, 'meta.json');
+    await writeFile(m1, JSON.stringify({ ...JSON.parse(await readFile(m1, 'utf8')), speaker: 'Stephen Hall' }));
+    expect((await feed(st, { ...deps, cbPeople: async () => [] })).typed.fed).toBe(1);
+    expect(items[1]).toMatchObject({ state: 'excluded', why: expect.stringMatching(/newer-generation/) });
+    expect(st.queue).not.toContain(1); expect(st.chains[1]).toBeUndefined(); expect(st.chains[2]).toBeTruthy();
   });
   it('one talk end to end: each step takes the previous step\'s files, acks trail one step behind, tools stamped', async () => {
     engage(); st.queue = [1];
@@ -296,5 +304,17 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect(st.queue).toEqual([1]); expect(st.chains).toEqual({}); expect(st.qjobs).toEqual({});
     expect([...store.keys()].filter((k) => k.startsWith('results/'))).toEqual([]);
     expect([...onEdge('results/'), ...onEdge('files/')]).toEqual([]);
+  });
+});
+
+describe('forgiveOurs: a refusal caused by tower\'s own contract bug does not count against the talk', () => {
+  it('the post.json refusals (10-31) give the attempt back and put the talk at the front, once', () => {
+    const st = { queue: [5, 1981, 7, 1948], attempts: { 1981: 1, 1948: 1, 2640: 1 }, chains: {}, failed: [{ id: 1948, error: 'x' }],
+      pull_errors: [{ at: 1, job: 'cpu-finish-1981-2ef0bd10f06e', error: 'typed cpu-finish from aorus: cpu-finish result refused: missing enhanced/pod/post.json' },
+        { at: 2, job: 'cpu-finish-1948-cd27217d67ac', error: 'typed cpu-finish from boss: cpu-finish result refused: missing enhanced/pod/post.json' },
+        { at: 3, job: 'cpu-prep-2640-03168224837a', error: 'queue cpu-prep: boss: exit 1: grade did not finish' }] };
+    expect(forgiveOurs(st)).toEqual([1981, 1948]);
+    expect(st.queue).toEqual([1981, 1948, 5, 7]); expect(st.attempts).toEqual({ 1981: 0, 1948: 0, 2640: 1 }); expect(st.failed).toEqual([]);
+    expect(forgiveOurs(st)).toEqual([]); expect(st.queue).toEqual([1981, 1948, 5, 7]);   // once
   });
 });

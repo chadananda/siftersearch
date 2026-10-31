@@ -95,6 +95,7 @@ export async function prep(ctx){
  await writeFile(join(dir,'meta.json'),JSON.stringify(meta));
  const result=await runItem(itemOf(ctx,meta),{only:['grade','enhance'],threads:ctx.threads},ctx.deps(meta));
  const after=await readMeta(dir);
+ if(result.excluded||result.held)throw Error(`cpu-prep: ${result.excluded?'excluded':'held'}: ${result.reason}`);   // tower gates this before feeding (queue-feed speakerGate); named if it ever gets here
  if(!after?.stages?.grade?.at)throw Error('cpu-prep: grade did not finish');
  // a CPU host yields at DFN with enh_ck {m0, light, m1}; a GPU host (the `whole` job) finishes enhance (item.js then drops enh_ck)
  if(!after.stages.enhance?.at && !(result.yielded && after.enh_ck?.m1 && existsSync(join(dir,'enhanced/light.flac'))))throw Error('cpu-prep: enhance did not reach its DFN checkpoint');

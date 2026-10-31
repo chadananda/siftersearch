@@ -12,6 +12,8 @@
 import { join } from 'node:path';
 import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
+import { decide } from './exclusions.js';
+import { cbPerson, cbVerdict } from './cb-date.js';
 
 export const TARGET_H = 2.5, LOW_H = 2;
 export const jobIdFor = (itemId, sha, kind = 'whole') => `${kind}-${itemId}-${sha.slice(0, 12)}`;
@@ -41,6 +43,29 @@ async function stage(kind, it, m, { q, wr, rj, full }) {
 // a rented pod that delivered a talk proves the pool, as on the ssh lane (10-31: pod 374 delivered 3 via the queue and the lane stayed at 1 canary)
 const provePool = (st, host) => { if (String(host).startsWith('pod-')) { st.proven = true; st.boot_fails = 0; } };
 
+let peopleMemo = null;
+const speakerPeople = () => (peopleMemo ||= import('../ops/media-jobs.js').then((x) => x.loadSpeakerPeople()).catch(() => []));
+/** The speaker gates item.js runs before any stage (exclusions; Covenant-breaker by date), applied BEFORE a talk goes to a worker. A worker's
+ *  catalogue is job-local, so the gate there only ended the job early ("cpu-prep: grade did not finish") and tower fed the talk again
+ *  (10-31: 2614/2619 Stephen Hall, 2640/2641 Douglas Martin, newer-generation). → null | { state: 'excluded'|'review', why }. */
+export async function speakerGate(it, m, { people = speakerPeople } = {}) {
+  const ex = decide({ speakers: [m?.speaker, it?.speaker], title: m?.title || '', sourceTitle: m?.source?.title || '' })?.excluded;
+  if (ex) return { state: 'excluded', why: ex.reason };
+  const cbp = cbPerson(m?.speaker || it?.speaker, await people());
+  if (!cbp) return null;
+  const v = cbVerdict(cbp.cb_from, m?.date || m?.year || it?.year || null);
+  if (v === 'include') return null;
+  return v === 'exclude' ? { state: 'excluded', why: `covenant-breaker: recorded on or after ${cbp.cb_from} (${cbp.name})` }
+    : { state: 'review', why: `review: ${cbp.name} talk with no recording date before/after ${cbp.cb_from} — Chad decides` };
+}
+/** Gate one talk before feeding: a gated talk gets its state on the catalogue and leaves the lane's queue (true). */
+async function gated(it, m, repo, deps) {
+  const g = await speakerGate(it, m, deps.cbPeople ? { people: deps.cbPeople } : {});
+  if (!g) return false;
+  await repo.updateMediaItem(it.id, { state: g.state, why: g.why.slice(0, 500) });
+  return true;
+}
+
 export async function feed(st, deps) {
   const { q, repo, wr, rj, full = true, decided = () => false, readMeta = readMetaFile, now = Date.now, max = 20 } = deps;
   const cap = await q.capacity();
@@ -58,6 +83,7 @@ export async function feed(st, deps) {
     const [itemId] = st.queue.splice(i, 1), kind = kindOf(st, itemId);
     try {
       const it = await repo.getMediaItem(itemId), m = await readMeta(it.dir);
+      if (await gated(it, m, repo, deps)) continue;
       if (kind !== 'whole' && decided(m, itemId)) continue;
       const { sha, fileId, bytes } = await stage(kind, it, m, { q, wr, rj: rj || await restoreJob(), full }), id = jobIdFor(itemId, sha, kind);
       await q.enqueue([{ id, file_id: fileId, item_id: itemId, type: 'media', stages: [kind], invoice: { audio_s: m.duration_s || 0, bytes }, need: { ram_gb: 5 } }]);
@@ -70,7 +96,7 @@ export async function feed(st, deps) {
 
 const typedFileId = (itemId, sha) => `t${itemId}-${sha.slice(0, 12)}`;
 /** Typed feed: only while hosts for all three steps are engaged; keeps ~TARGET_H of prep queued; order by band (pickNext). */
-async function feedTyped(st, cap, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction }) {
+async function feedTyped(st, cap, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople }) {
   const types = new Set(cap.hosts.flatMap((h) => h.types || []));
   const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t) && !(t === 'gpu' && edge));   // pods boot on the edge's gpu backlog
   if (lack.length) return { fed: 0, why: `no ${lack.join('/')} host engaged` };
@@ -82,7 +108,9 @@ async function feedTyped(st, cap, { q, edge = null, repo, wr, readMeta = readMet
     if (i < 0) break;
     const [itemId] = st.queue.splice(i, 1);
     try {
-      const it = await repo.getMediaItem(itemId), m = await readMeta(it.dir), input = join(it.dir, m.original), sha = await wr.fileSha(input);
+      const it = await repo.getMediaItem(itemId), m = await readMeta(it.dir);
+      if (await gated(it, m, repo, { cbPeople })) continue;
+      const input = join(it.dir, m.original), sha = await wr.fileSha(input);
       const wj = { ...wr.wholeJob(it, m, sha), threads: 4 }, fileId = typedFileId(itemId, sha), audio_s = m.duration_s || 0;
       const { bytes } = await q.put('files', fileId, wj.input, input);
       const job = SJ.typedJob('cpu-prep', { itemId, fileId, wj, band: SJ.bandOf(st, itemId), audio_s, bytes });
@@ -331,9 +359,30 @@ async function retry(st, qj, error, repo) {
   if (['whole', 'typed'].includes(qj.kind || 'whole')) await repo.updateMediaItem(qj.itemId, { state: 'failed', why: error.slice(0, 500) });   // a failed remaster leaves the talk as it was
 }
 
+// refusals that were tower's own contract bugs, not the talk's: forgiven once (the attempt given back, the talk to the FRONT of the queue)
+// 10-31: cpu-finish required enhanced/pod/post.json, which item.js deletes once a remaster is published, so every GOOD finish was refused
+export const OUR_REFUSALS = [/cpu-finish result refused: missing enhanced\/pod\/post\.json/];
+export function forgiveOurs(st, at = Date.now()) {
+  st.forgiven ||= {};
+  const back = [];
+  for (const e of st.pull_errors || []) {
+    if (!OUR_REFUSALS.some((r) => r.test(e.error))) continue;
+    const item = Number(/^[a-z-]+-(\d+)-[0-9a-f]+$/.exec(e.job)?.[1]);
+    if (!item || st.forgiven[item] || st.chains?.[item]) continue;
+    st.forgiven[item] = at;
+    if (st.attempts?.[item]) st.attempts[item]--;
+    st.failed = (st.failed || []).filter((f) => f.id !== item);
+    const i = (st.queue ||= []).indexOf(item); if (i >= 0) st.queue.splice(i, 1);
+    back.push(item);
+  }
+  st.queue.unshift(...back);
+  return back;
+}
+
 /** One background pass: pull first (frees R2 + gives back failures), then top the window up. */
 export async function tick(st, deps) {
   const out = { pulled: await pull(st, deps) };
+  const forgiven = forgiveOurs(st); if (forgiven.length) out.forgiven = forgiven;
   if (deps.typed && deps.edge && deps.rebalance !== false) out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
   out.fed = await feed(st, deps);
   out.leased = {}; out.beat = {};   // jobs each agent holds (machine cards) + its latest heartbeat (an agent pod is alive while it beats: media-jobs.js)
