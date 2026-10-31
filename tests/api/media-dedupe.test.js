@@ -123,17 +123,30 @@ describe('intake (preview stage): the dedupe check for every new talk', () => {
     expect(r).toMatchObject({ action: 'new', group: null });
     expect(r.reason).toMatch(/transcripts differ/);
   });
-  it('the same speech on different dates is two talks', async () => {
+  it('the same speech on different dates is ONE talk: dates are metadata, never a gate (Chad 10-31)', async () => {
     const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4, { slug: 'new', date: '2022-07-07' }), verdict: { verdict: 'duplicate', of: 'held' }, text: TALK },
-      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta({ date: '2011-03-01' }), readText });
+      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta({ date: '2011-03-01' }), readText, candidates: [] });
+    expect(r.action).toBe('duplicate');
+    expect(r.check.dates_agree).toBe(false);
+  });
+  it('the content index finds the same speech Dewey never labelled (any length, title or date)', async () => {
+    const other = { id: 7, slug: 'elsewhere', state: 'done', dir: '/d/elsewhere' };
+    const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4, { slug: 'new', title: 'Another title', date: '1999' }), verdict: { verdict: 'new' }, text: speech('a', 330, 70) },
+      { repo: { getMediaItem: async (id) => (id === 7 ? other : { id, state: 'duplicate' }) }, readMeta: async () => onAirMeta(), readText, candidates: [9, 7] });
+    expect(r).toMatchObject({ action: 'duplicate', of: 'elsewhere', best: 'elsewhere', group: 7 });
+    expect(r.check.from).toBe('content index');
+  });
+  it('a content-index candidate that is a different speech leaves the talk new', async () => {
+    const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4), verdict: { verdict: 'new' }, text: OTHER },
+      { repo: { getMediaItem: async () => ({ id: 7, slug: 'x', state: 'done', dir: '/d/x' }) }, readMeta: async () => onAirMeta(), readText, candidates: [7] });
     expect(r.action).toBe('new');
-    expect(r.reason).toMatch(/dates disagree/);
+    expect(r.tried[0]).toMatchObject({ with: 'x', by: 'transcripts differ' });
   });
   it('no transcript on the held copy, or the held copy missing → content unconfirmed → not a duplicate', async () => {
     const a = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4), verdict: { verdict: 'duplicate', of: 'held' }, text: TALK },
-      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta(), readText: async () => '' });
+      { repo: { getMediaBySlug: async () => held }, readMeta: async () => onAirMeta(), readText: async () => '', candidates: [] });
     expect(a.action).toBe('new');
-    const b = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4), verdict: { verdict: 'duplicate', of: 'gone' }, text: TALK }, { repo: { getMediaBySlug: async () => null }, readMeta: async () => null });
+    const b = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1.4), verdict: { verdict: 'duplicate', of: 'gone' }, text: TALK }, { repo: { getMediaBySlug: async () => null }, readMeta: async () => null, candidates: [] });
     expect(b.action).toBe('new');
   });
 });
@@ -163,6 +176,11 @@ describe('the content gate', () => {
     expect(confirmPair({ meta: {}, text: null }, { meta: {}, text: gramSet(TALK) })).toMatchObject({ same: false, by: expect.stringMatching(/unconfirmed/) });
     expect(confirmPair({ meta: {}, text: gramSet(speech('a', 60)) }, { meta: {}, text: gramSet(TALK) }).same).toBe(false);
     expect(confirmPair({ meta: {}, text: gramSet(TALK) }, { meta: {}, text: gramSet(speech('a', 330, 70)) })).toMatchObject({ same: true, by: 'transcript overlap' });
+  });
+  it('confirmPair: the same speech with dates that disagree is the same talk (dates reported, never a gate)', () => {
+    const r = confirmPair({ meta: { date: '2022-07-07' }, text: gramSet(TALK) }, { meta: { date: '2011-01-01' }, text: gramSet(TALK) });
+    expect(r).toMatchObject({ same: true, by: 'transcript overlap', dates_agree: false });
+    expect(confirmPair({ sha256: 'f', meta: { year: 1990 } }, { sha256: 'f', meta: { year: 1992 } })).toMatchObject({ same: true, dates_agree: false });
   });
   it('gateGroup: a chained group splits — the matching pair stays, the stranger is dissolved', () => {
     const c = (id, t, meta = {}) => ({ id, slug: `s${id}`, meta, text: t ? gramSet(t) : null });
@@ -306,5 +324,72 @@ describe('media-dedupe job', () => {
     expect(plan.meta.dedup_best).toBeUndefined();
     // already running → left alone (only the metadata marks go)
     expect(undoPlan({ id: 12, slug: 'b', state: 'running', meta: { dedup: { verdict: 'best' } } }, { prior: { prior: { b: 'duplicate' } } }).to).toBeNull();
+  });
+});
+
+describe('dates are metadata (Chad 10-31): every date kept with its source on the survivor', () => {
+  it('mergeMeta keeps each copy\'s date and year with where it came from', () => {
+    const r = mergeMeta({ slug: 'b', meta: { date: '2011-03-01' } }, [{ slug: 'o', meta: { date: '2022-07-07' } }, { slug: 'p', meta: { year: 1990 } }]);
+    expect(r.patch.dates).toEqual([{ field: 'date', value: '2011-03-01', from: 'b' }, { field: 'date', value: '2022-07-07', from: 'o' }, { field: 'year', value: 1990, from: 'p' }]);
+    // nothing new on a second pass
+    expect(mergeMeta({ slug: 'b', meta: { date: '2011-03-01', dates: r.patch.dates } }, [{ slug: 'o', meta: { date: '2022-07-07' } }, { slug: 'p', meta: { year: 1990 } }]).patch.dates).toBeUndefined();
+  });
+});
+
+describe('the library-wide content index', async () => {
+  const ci = await import('../../api/lib/media/content-index.js');
+  const long = (seed, n = 3000, from = 0) => speech(seed, n, from);
+  it('candidate pairs: the same speech (trimmed, retitled) is found; different talks are not', () => {
+    const sk = new Map([[1, ci.sketch(long('a'))], [2, ci.sketch(long('a', 2600, 300))], [3, ci.sketch(long('b'))], [4, ci.sketch(long('c'))]]);
+    const pairs = ci.candidatePairs(sk);
+    expect(pairs.map((p) => [p.a, p.b])).toEqual([[1, 2]]);
+    expect(ci.candidatesFor(ci.sketch(long('c', 2000, 500)), sk, ci.postingsOf(sk), { excludeId: 9 }).map((c) => c.id)).toEqual([4]);
+  });
+  it('a gram in more than RARE talks is a common phrase, not evidence', () => {
+    const shared = speech('q', 400);
+    const sk = new Map(Array.from({ length: ci.RARE + 1 }, (_, i) => [i + 1, ci.sketch(`${shared} ${long(`t${i}`, 600)}`)]));
+    expect(ci.candidatePairs(sk)).toEqual([]);
+  });
+  it('persists and reloads the sketches', async () => {
+    const { mkdtemp } = await import('fs/promises'); const { tmpdir } = await import('os'); const { join } = await import('path');
+    const file = join(await mkdtemp(join(tmpdir(), 'ci-')), 's.json');
+    await ci.saveSketches(new Map([[5, { stamp: 'x@1', hs: ci.sketch(long('a')) }]]), file);
+    const { items } = await ci.loadSketches(file);
+    expect(items.get(5).stamp).toBe('x@1');
+    expect([...items.get(5).hs]).toEqual([...ci.sketch(long('a'))]);
+    expect((await ci.contentCandidates(long('a', 2000, 100), { file })).map((c) => c.id)).toEqual([5]);
+    expect(await ci.contentCandidates(long('z'), { file })).toEqual([]);
+  });
+});
+
+describe('media-dedupe job: the library-wide scan', () => {
+  it('pairs Dewey never labelled are found by content, gated, and merged; a stranger is left alone', async () => {
+    const { mkdtemp } = await import('fs/promises'); const { tmpdir } = await import('os'); const { join } = await import('path');
+    const sketchFile = join(await mkdtemp(join(tmpdir(), 'ci-')), 's.json');
+    const long = (seed, n = 3000, from = 0) => speech(seed, n, from);
+    const rows = [
+      { id: 20, slug: 'amatul-baha-bwc-1987', state: 'done', restored: 1, dir: '/d/a', doc_id: 200 },
+      { id: 21, slug: 'amatul-baha-bwc-staff-1989', state: 'done', restored: 1, dir: '/d/b', doc_id: 201 },
+      { id: 22, slug: 'unrelated', state: 'done', restored: 1, dir: '/d/c', doc_id: 202 },
+    ];
+    const texts = { '/d/a': long('a'), '/d/b': long('a', 2700, 200), '/d/c': long('c') };
+    const metas = { '/d/a': onAirMeta({ slug: 'amatul-baha-bwc-1987', date: '1987' }), '/d/b': onAirMeta({ slug: 'amatul-baha-bwc-staff-1989', date: '1989', quality: { overall: 'C', raw: { nisqa: { mos: 2.0 } } }, remaster: { status: 'done', output_assessment: { restored: { nisqa: [3.0] } } } }), '/d/c': onAirMeta({ slug: 'unrelated' }) };
+    const calls = { marked: [], deleted: [] }, writes = {};
+    const deps = {
+      repo: { dedupeRows: async () => [], contentScanRows: async () => rows, setDupGroup: async () => {}, markDuplicateItems: async (ids, why, g) => calls.marked.push({ ids, why, g }) },
+      readMeta: async (dir) => metas[dir], writeMeta: async (dir, m) => { writes[dir] = m; }, readSidecar: async () => null,
+      ops: { pendingRuns: async () => [], cancel: async () => {} }, docs: { softDeleteDocs: async (ids) => { calls.deleted.push(...ids); return { deleted: ids.length }; } },
+      purge: async () => true, queue: async () => {}, now: () => 'T0', textStamp: async (dir) => `${dir}@1`, readText: async (dir) => texts[dir],
+      prior: { prior: {}, merged: [] }, pairCache: new Map(), sketchFile,
+    };
+    const r = await mediaDedupeJob({ write: true }, deps);
+    expect(r.scan).toMatchObject({ talks: 3, sketched: 3, reread: 3, candidate_pairs: 1, beyond_dewey: 1, confirmed_beyond_dewey: 1 });
+    expect(r.groups).toBe(1);
+    expect(calls.marked).toEqual([expect.objectContaining({ ids: [21], g: 20 })]);
+    expect(calls.deleted).toEqual([201]);
+    expect(writes['/d/a'].dates).toEqual([{ field: 'date', value: '1987', from: 'amatul-baha-bwc-1987' }, { field: 'date', value: '1989', from: 'amatul-baha-bwc-staff-1989' }]);
+    // the second pass re-reads nothing
+    const r2 = await mediaDedupeJob({}, deps);
+    expect(r2.scan.reread).toBe(0);
   });
 });

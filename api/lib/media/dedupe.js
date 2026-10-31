@@ -2,8 +2,10 @@
 // one talk. The best = MEASURED quality (remaster NISQA when every copy has one, else the original's) then completeness — never
 // length or bitrate. Its metadata gains what the others knew (gaps filled, conflicts recorded, every provenance kept); the rest
 // get terminal outcome 'duplicate' (off air, out of search, out of every queue, files kept, slug → 301 to the best).
-// Groups are CONFIRMED by content (the gate: same audio, or the whole transcripts the same speech + dates agree), never by a label;
-// a copy the gate dissolves has what media-dedupe did reversed. intakeDedupe = the preview stage's check; mediaDedupeJob = every group.
+// Groups are CONFIRMED by content (the gate: same audio, or the whole transcripts the same speech), never by a label, a length, a
+// title or a date (Chad 10-31: "length, title, encoding or dates are all prone to be different or wrong" — they are metadata to merge).
+// Candidates = Dewey's labels + the library-wide content index (content-index.js). A copy the gate dissolves has what media-dedupe
+// did reversed. intakeDedupe = the preview stage's check; mediaDedupeJob = the 15-minute run over the whole library.
 import { join } from 'path';
 import { isComplete, indexFields, COMPLETE_STAGES } from './item.js';
 import { words } from './preview.js';
@@ -51,7 +53,7 @@ export function pickBest(copies) {
 }
 
 // ── the content gate (10-31): Dewey's label is a candidate, never proof. Two copies are the same talk only when the content
-// says so — the same audio file, or transcripts whose word sequences overlap on their shared portion — AND their dates agree.
+// says so — the same audio file, or transcripts whose word sequences overlap on their shared portion. Dates are reported, never gate.
 // Measured 10-31 (run 57247): the 96 transcript pairs inside Dewey's groups share 0.58–1.00 of their 5-grams (89 ≥ 0.80); 557
 // control pairs of different talks (adjacent groups) share < 0.05, except 0.24 (consecutive Iqan parts that repeat a boundary)
 // and two the labels missed (0.76, 0.93). Nothing falls in 0.25–0.55: 0.5 sits in the gap. Coverage 0.3 lets a trimmed copy through.
@@ -71,7 +73,7 @@ export function overlap(a, b) {
   return { containment: hit / small.size, coverage: hit / large.size };
 }
 const fullDate = (v) => /\b(1[89]\d\d|20\d\d)-(\d\d)-(\d\d)\b/.exec(String(v ?? ''))?.[0] || null;
-/** Dates agree, or one side has none: two full dates must be equal, otherwise the years must be. */
+/** Dates agree, or one side has none (reported only — dates are often wrong; Chad 10-31). */
 export function datesAgree(ma = {}, mb = {}) {
   const da = fullDate(ma?.date), db = fullDate(mb?.date);
   if (da && db) return da === db;
@@ -82,17 +84,17 @@ const sameAudio = (a, b) => {
   const sa = a.sha256 || a.meta?.source?.sha256, sb = b.sha256 || b.meta?.source?.sha256, fa = a.meta?.fingerprint ?? a.fingerprint, fb = b.meta?.fingerprint ?? b.fingerprint;
   return (sa && sa === sb) ? 'same file (sha256)' : (fa && fa === fb) ? 'same audio fingerprint' : null;
 };
-/** Two copies (each { meta, text: gramSet|null }) → { same, by, containment?, coverage?, dates_agree }. */
+/** Two copies (each { meta, text: gramSet|null }) → { same, by, containment?, coverage?, dates_agree }. dates_agree is information. */
 export function confirmPair(a, b, gate = GATE) {
   const dates = datesAgree(a.meta, b.meta);
   const audio = sameAudio(a, b);
   const ok = (x) => x.text && x.text.words >= gate.minWords;
   const ov = ok(a) && ok(b) ? overlap(a.text, b.text) : null;
   const r = { dates_agree: dates, ...(ov ? { containment: Math.round(ov.containment * 1000) / 1000, coverage: Math.round(ov.coverage * 1000) / 1000 } : {}) };
-  if (audio) return { ...r, same: dates, by: audio };
+  if (audio) return { ...r, same: true, by: audio };
   if (!ov) return { ...r, same: false, by: 'content unconfirmed (no transcript to compare)' };
   const content = ov.containment >= gate.containment && ov.coverage >= gate.coverage;
-  return { ...r, same: content && dates, by: content ? 'transcript overlap' : 'transcripts differ' };
+  return { ...r, same: content, by: content ? 'transcript overlap' : 'transcripts differ' };
 }
 /** Pair results → components (confirmed groups, ≥2 copies) + dissolved copies. Edges are confirmed pairs only. */
 export function componentsOf(copies, pairs) {
@@ -144,6 +146,15 @@ export function mergeMeta(best, others) {
       else if (norm(cur) !== norm(ov) && !conflicts.some((x) => x.field === f && norm(x.other) === norm(ov))) conflicts.push({ field: f, kept: cur, other: ov, from: o.slug });
     }
   }
+  // every date any copy carries, with its source, stays on the survivor (dates are often wrong; none is thrown away)
+  const dates = [...(bm.dates || [])], dkey = (d) => `${d.field}:${norm(d.value)}:${d.from}`, dseen = new Set(dates.map(dkey));
+  for (const c of [best, ...others]) for (const f of ['date', 'year']) {
+    const v = c.meta?.[f];
+    if (empty(v)) continue;
+    const d = { field: f, value: v, from: c.slug || `#${c.id}` };
+    if (!dseen.has(dkey(d))) { dseen.add(dkey(d)); dates.push(d); }
+  }
+  if (dates.length !== (bm.dates || []).length && others.some((o) => !empty(o.meta?.date) || !empty(o.meta?.year))) patch.dates = dates;
   const titles = [...(bm.alt_titles || [])];
   for (const o of others) {
     const t = o.meta?.title;
@@ -187,20 +198,37 @@ export function groupsFromRows(rows) {
   return [...out.values()].filter((g) => g.length > 1);
 }
 
-/** The preview stage's dedupe check: { item, meta, verdict } (verdict 'duplicate' of a held slug) → { action:'duplicate'|'best', best, group, reason }. */
-export async function intakeDedupe({ item, meta, verdict, text = null }, { repo, readMeta, readText = defaultReadText, gate = GATE }) {
+/** The preview stage's dedupe check. Candidates: Dewey's preview verdict (verdict.of) and the library-wide content index (the
+ *  same speech anywhere, whatever its length, title or date). Each is confirmed by the gate → { action:'duplicate'|'best'|'new', best,
+ *  group, reason, held, check }. 'new' = no candidate is the same talk. */
+export async function intakeDedupe({ item, meta, verdict, text = null }, { repo, readMeta, readText = defaultReadText, gate = GATE, candidates = null, maxCandidates = 5 }) {
   if (meta?.dedup?.verdict === 'best') return { action: 'best', best: meta.slug || null, group: meta.dedup.group ?? null, reason: meta.dedup.reason || 'chosen best earlier' };
-  const held = verdict?.of ? await repo.getMediaBySlug(verdict.of) : null;
-  if (!held) return { action: 'new', best: null, group: null, reason: `held copy ${verdict?.of || '?'} not found: content not confirmed` };
-  const heldMeta = held.dir ? await readMeta(held.dir).catch(() => null) : null;
-  // the content gate: the whole transcripts must be the same speech (and the dates agree), not just the preview windows
-  const heldText = held.dir ? await readText(held.dir).catch(() => '') : '';
-  const check = confirmPair({ meta, text: text ? gramSet(text) : null }, { ...held, meta: heldMeta || {}, text: heldText ? gramSet(heldText) : null }, gate);
-  if (!check.same) return { action: 'new', best: null, group: null, reason: `not the same talk as ${held.slug || `#${held.id}`}: ${check.by}${check.dates_agree ? '' : ', dates disagree'}`, check };
+  const mine = { meta, text: text ? gramSet(text) : null };
+  const tried = [], seen = new Set([Number(item.id)]);
+  const consider = async (held, from) => {
+    if (!held || seen.has(Number(held.id))) return null;
+    seen.add(Number(held.id));
+    const heldMeta = held.dir ? await readMeta(held.dir).catch(() => null) : null;
+    const heldText = held.dir ? await readText(held.dir).catch(() => '') : '';
+    const check = confirmPair(mine, { ...held, meta: heldMeta || {}, text: heldText ? gramSet(heldText) : null }, gate);
+    tried.push({ with: held.slug || `#${held.id}`, from, by: check.by, containment: check.containment, coverage: check.coverage });
+    return check.same ? { held, heldMeta, check: { ...check, from } } : null;
+  };
+  let hit = verdict?.of && ['duplicate', 'review'].includes(verdict.verdict) ? await consider(await repo.getMediaBySlug(verdict.of), 'dewey preview') : null;
+  if (!hit && text) {
+    const ids = candidates || (await (await import('./content-index.js')).contentCandidates(text, { excludeId: item.id })).map((c) => c.id);
+    for (const id of ids.slice(0, maxCandidates)) {
+      const held = await repo.getMediaItem(id);
+      if (!held || ['duplicate', 'excluded'].includes(held.state)) continue;   // a group's eliminated copy: its best is a candidate too
+      if ((hit = await consider(held, 'content index'))) break;
+    }
+  }
+  if (!hit) return { action: 'new', best: null, group: null, reason: tried.length ? `not the same talk as ${tried.map((t) => `${t.with} (${t.by})`).join(', ')}` : 'no content candidate', tried };
+  const { held, heldMeta, check } = hit;
   const group = Number(held.dup_group ?? held.id);
   const pick = pickBest([{ ...held, meta: heldMeta || held.meta || null }, { id: item.id, slug: meta?.slug || null, meta, state: 'queued', restored: 0 }]);
   const newWins = Number(pick.best.id) === Number(item.id);
-  return { action: newWins ? 'best' : 'duplicate', best: newWins ? (meta?.slug || null) : held.slug, group, reason: pick.reason, ambiguous: pick.ambiguous, held, check };
+  return { action: newWins ? 'best' : 'duplicate', best: newWins ? (meta?.slug || null) : held.slug, of: held.slug, group, reason: pick.reason, ambiguous: pick.ambiguous, held, check, tried };
 }
 
 const defaultReadMeta = async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8'));
@@ -286,16 +314,27 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
   const cache = deps.pairCache || PAIR_CACHE;
   const now = deps.now || (() => new Date().toISOString());
   const rows = await repo.dedupeRows();
-  const groups = groupsFromRows(rows);
+  // candidates: every pair inside a Dewey-labelled group + every pair the library-wide content index finds (content-index.js)
+  const byId = new Map(rows.map((r) => [Number(r.id), r]));
+  const edges = new Map(), addEdge = (a, b, src) => { const k = a < b ? `${a}|${b}` : `${b}|${a}`; if (!edges.has(k)) edges.set(k, src); };
+  for (const g of groupsFromRows(rows)) for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) addEdge(Number(g[i].id), Number(g[j].id), 'dewey');
+  const scan = repo.contentScanRows && !deps.noScan ? await contentScan(repo, { textStamp, readText, file: deps.sketchFile }) : null;
+  if (scan) {
+    for (const r of scan.rows) if (!byId.has(Number(r.id))) byId.set(Number(r.id), r);
+    for (const p of scan.pairs) addEdge(p.a, p.b, 'content index');
+  }
+  const groups = candidateGroups(edges, byId);
   const runs = new Map();   // item id → [run id]
   for (const n of RUN_NAMES) {
     for (const r of await ops.pendingRuns(n)) for (const id of [r.params?.id, ...[].concat(r.params?.ids || [])].map(Number).filter(Boolean)) runs.set(id, [...(runs.get(id) || []), r.id]);
   }
-  const out = { write, gate, candidate_groups: groups.length, groups: 0, eliminated: 0, pending: 0, busy: 0, skipped: 0, already: 0, merged_fields: 0, runs_cancelled: 0, docs_removed: 0,
+  const out = { write, gate, candidate_groups: groups.length,
+    scan: scan ? { talks: scan.talks, sketched: scan.sketched, reread: scan.reread, candidate_pairs: scan.pairs.length, beyond_dewey: [...edges.values()].filter((v) => v === 'content index').length, confirmed_beyond_dewey: 0, confirmed_sample: [] } : null,
+    near: [], groups: 0, eliminated: 0, pending: 0, busy: 0, skipped: 0, already: 0, merged_fields: 0, runs_cancelled: 0, docs_removed: 0,
     measure: { pairs: 0, compared: 0, containment: Array(20).fill(0), coverage: Array(20).fill(0), by: {}, dates_disagree_same_content: 0 },
     control: controls ? { pairs: 0, containment: Array(20).fill(0), max: 0, top: [] } : undefined,
     dissolved_groups: 0, split_groups: 0, dissolved_copies: 0, restored: { to: {}, docs: 0, republished: 0, meta: 0 }, ambiguous: [], sample: [], dissolved_sample: [], pair_list: listPairs ? [] : undefined, errors: [] };
-  for (const members of groups) {
+  for (const { members, edges: gEdges } of groups) {
     try {
       const copies = [];
       for (const r of members) {
@@ -307,13 +346,14 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
       const gkey = JSON.stringify(gate), pairs = [];
       const key = (a, b) => `${a.id}@${a.stamp}|${b.id}@${b.stamp}|${gkey}`;
       let loaded = false;
-      for (let i = 0; i < copies.length; i++) for (let j = i + 1; j < copies.length; j++) {
-        const a = copies[i], b = copies[j], k = key(a, b);
+      const cById = new Map(copies.map((c) => [Number(c.id), c]));
+      for (const [ia, ib, source] of gEdges) {
+        const a = cById.get(ia), b = cById.get(ib), k = key(a, b);
         if (!cache.has(k)) {
           if (!loaded) { for (const c of copies) { const t = c.dir && c.stamp ? await readText(c.dir).catch(() => '') : ''; c.text = t ? gramSet(t) : null; } loaded = true; }
           cache.set(k, confirmPair(a, b, gate));
         }
-        pairs.push({ a: name(a), b: name(b), ...cache.get(k) });
+        pairs.push({ a: name(a), b: name(b), source, ...cache.get(k) });
       }
       // the control: this group's talk against the previous group's — different talks by construction — so the low end is measured too
       if (controls) {
@@ -332,11 +372,16 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
       for (const p of pairs) {
         out.measure.pairs++; out.measure.by[p.by] = (out.measure.by[p.by] || 0) + 1;
         if (p.containment != null) { out.measure.compared++; out.measure.containment[HIST(p.containment)]++; out.measure.coverage[HIST(p.coverage)]++; }
-        if (!p.dates_agree && (p.by === 'transcript overlap' || p.by.startsWith('same'))) out.measure.dates_disagree_same_content++;
+        if (!p.dates_agree && p.same) out.measure.dates_disagree_same_content++;
+        if (p.source === 'content index' && p.same && out.scan) { out.scan.confirmed_beyond_dewey++; if (out.scan.confirmed_sample.length < sample) out.scan.confirmed_sample.push({ a: p.a, b: p.b, by: p.by, containment: p.containment, coverage: p.coverage, dates_agree: p.dates_agree }); }
+        // ambiguous: within 0.15 of a threshold either way
+        if (p.containment != null && (Math.abs(p.containment - gate.containment) < 0.15 || (p.containment >= gate.containment && p.coverage - gate.coverage < 0.15)) && out.near.length < 100)
+          out.near.push({ a: p.a, b: p.b, source: p.source, same: p.same, containment: p.containment, coverage: p.coverage, dates_agree: p.dates_agree });
         if (listPairs) out.pair_list.push({ ...p, states: [copies.find((c) => name(c) === p.a)?.state, copies.find((c) => name(c) === p.b)?.state] });
       }
       const { components, dissolved } = componentsOf(copies, pairs);
-      if (!components.length) out.dissolved_groups++; else if (dissolved.length) out.split_groups++;
+      if (!gEdges.some((e) => e[2] === 'dewey')) { if (!components.length) { if (out.scan) out.scan.unconfirmed_groups = (out.scan.unconfirmed_groups || 0) + 1; } }   // a content-index candidate the gate did not confirm: nothing to undo
+      else if (!components.length) out.dissolved_groups++; else if (dissolved.length) out.split_groups++;
       // 2. dissolved copies: reverse what media-dedupe did (state, search document, metadata, group link)
       for (const c of dissolved) {
         const plan = undoPlan(c, { others: copies.filter((o) => o !== c), prior, merged: prior.merged || [], revive });
@@ -369,6 +414,42 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
   if (out.control) { delete out.control.last; out.control.containment = histOut(out.control.containment); }
   out.measure.containment = histOut(out.measure.containment); out.measure.coverage = histOut(out.measure.coverage);
   return out;
+}
+
+/** The content scan: every talk's sketch brought up to date (only changed transcripts re-read), saved, then the candidate pairs. */
+async function contentScan(repo, { textStamp, readText, file }) {
+  const ci = await import('./content-index.js');
+  file ||= ci.SKETCH_FILE;
+  const rows = await repo.contentScanRows();
+  const { items } = await ci.loadSketches(file);
+  let reread = 0, changed = false;
+  const present = new Set();
+  for (const r of rows) {
+    const id = Number(r.id); present.add(id);
+    const stamp = await textStamp(r.dir).catch(() => null);
+    if (!stamp) { if (items.delete(id)) changed = true; continue; }
+    if (items.get(id)?.stamp === stamp) continue;
+    items.set(id, { stamp, hs: ci.sketch(await readText(r.dir).catch(() => '')) }); reread++; changed = true;
+  }
+  for (const id of [...items.keys()]) if (!present.has(id)) { items.delete(id); changed = true; }
+  if (changed) await ci.saveSketches(items, file);
+  const sketches = new Map([...items].filter(([, v]) => v.hs.length).map(([id, v]) => [id, v.hs]));
+  return { rows, talks: rows.length, sketched: sketches.size, reread, pairs: ci.candidatePairs(sketches) };
+}
+/** candidate edges ("a|b" → source) → [{ members: rows, edges: [[a, b, source]] }] (connected components). */
+function candidateGroups(edges, byId) {
+  const parent = new Map(), find = (x) => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
+  const list = [];
+  for (const [k, src] of edges) {
+    const [a, b] = k.split('|').map(Number);
+    if (!byId.has(a) || !byId.has(b)) continue;
+    for (const x of [a, b]) if (!parent.has(x)) parent.set(x, x);
+    const ra = find(a), rb = find(b); if (ra !== rb) parent.set(Math.max(ra, rb), Math.min(ra, rb));
+    list.push([a, b, src]);
+  }
+  const out = new Map();
+  for (const e of list) { const r = find(e[0]); if (!out.has(r)) out.set(r, { ids: new Set(), edges: [] }); const g = out.get(r); g.ids.add(e[0]); g.ids.add(e[1]); g.edges.push(e); }
+  return [...out.values()].map((g) => ({ members: [...g.ids].sort((x, y) => x - y).map((id) => byId.get(id)), edges: g.edges }));
 }
 
 async function settleGroup(copies, { pairs, runs, out, write, sample, repo, ops, writeMeta, now, deps }) {

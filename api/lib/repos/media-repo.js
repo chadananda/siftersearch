@@ -89,6 +89,8 @@ export async function dedupeRows() {
   for (const r of more) if (!have.has(r.id)) { have.add(r.id); rows.push(r); }
   return rows;
 }
+/** Every talk with a folder (the library-wide content scan; excluded talks stay out). */
+export const contentScanRows = async () => queryAll(`SELECT ${DUP_COLS} FROM media_items WHERE dir IS NOT NULL AND state != 'excluded'`, [], 'media:content-scan-rows');
 /** Every copy of one talk joins group g. */
 export async function setDupGroup(ids = [], g) {
   if (!ids.length) return 0;

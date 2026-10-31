@@ -750,27 +750,33 @@ export async function runItem(item, opts = {}, deps = {}) {
       // the copy media-dedupe already chose as its group's best is never held again as a duplicate or for review
       const verdict = meta.dedup?.verdict === 'best' ? { ...meta.dedup } : await (await import('./preview.js')).previewVerdict({ text, duration_s: meta.duration_s, title: meta.title, excludeId: item.id }, { repo });
       // a duplicate: the BETTER copy stays (dedupe.js, Chad 10-31) — the new copy goes on if it measures better; the held one
-      // stays on air until this one is complete, then media-dedupe retires it
-      // the label is only a candidate: intakeDedupe confirms the whole transcripts are the same speech; unconfirmed = its own talk
-      const dup = verdict.verdict === 'best' ? { action: 'best', group: verdict.group, reason: verdict.reason } : verdict.verdict === 'duplicate' ? await (await import('./dedupe.js')).intakeDedupe({ item, meta, verdict, text }, { repo, readMeta: (dir) => readJson(join(dir, 'meta.json')) }).catch((e) => ({ action: 'error', reason: String(e.message).slice(0, 200) })) : null;
-      if (dup?.action === 'error') {
-        // the check could not run: hold for review rather than call it a duplicate
+      // stays on air until this one is complete, then media-dedupe retires it. Candidates are Dewey's verdict AND the library-wide
+      // content index (the same speech under any length, title or date); intakeDedupe confirms by the whole transcripts.
+      const dup = verdict.verdict === 'best' ? { action: 'best', group: verdict.group, reason: verdict.reason }
+        : await (await import('./dedupe.js')).intakeDedupe({ item, meta, verdict, text }, { repo, readMeta: (dir) => readJson(join(dir, 'meta.json')) }).catch((e) => ({ action: 'error', reason: String(e.message).slice(0, 200) }));
+      if (dup?.action === 'error' && verdict.verdict === 'duplicate') {
+        // the check could not run on a labelled duplicate: hold for review rather than call it one (unlabelled: the 15-minute run checks it)
         meta.dedup = { ...verdict, verdict: 'review', at: d.now(), gate_error: dup.reason };
         rec.dedup = meta.dedup; await save();
         await repo.updateMediaItem(item.id, { state: 'review', why: `possible duplicate of ${verdict.of}; content check failed: ${dup.reason}`.slice(0, 500), stage: 'preview' });
         return { review: true, of: verdict.of, score: verdict.score, slug: meta.slug, done };
       }
-      meta.dedup = verdict.verdict === 'best' ? verdict : dup?.action === 'best' ? { ...verdict, verdict: 'best', over: verdict.of, group: dup.group, reason: dup.reason, at: d.now() }
-        : dup?.action === 'new' ? { ...verdict, verdict: 'unique', candidate: verdict.of, reason: dup.reason, check: dup.check, at: d.now() } : { ...verdict, at: d.now() };
+      const check = dup?.check ? { by: dup.check.by, from: dup.check.from, containment: dup.check.containment, coverage: dup.check.coverage } : undefined;
+      meta.dedup = verdict.verdict === 'best' ? verdict
+        : dup?.action === 'best' ? { ...verdict, verdict: 'best', over: dup.of, group: dup.group, reason: dup.reason, check, at: d.now() }
+        : dup?.action === 'duplicate' ? { ...verdict, verdict: 'duplicate', of: dup.of, by: check.by, score: check.containment ?? 1, check, at: d.now() }
+        : verdict.verdict === 'duplicate' ? { ...verdict, verdict: 'unique', candidate: verdict.of, reason: dup?.reason, tried: dup?.tried, at: d.now() }
+        : { ...verdict, ...(dup?.tried?.length ? { tried: dup.tried } : {}), at: d.now() };
       rec.dedup = meta.dedup;
       await save();
       if (dup?.group != null && repo.setDupGroup) await repo.setDupGroup([item.id, dup.held?.id].filter(Boolean), dup.group);
-      if (verdict.verdict === 'duplicate' && dup?.action === 'duplicate') {
-        const why = `Dewey duplicate of ${verdict.of} (${verdict.by}, score ${verdict.score})${dup?.reason ? `; ${dup.reason}` : ''}`;
-        await repo.updateMediaItem(item.id, { state: 'duplicate', why, stage: 'preview' });
-        return { duplicate: true, of: verdict.of, score: verdict.score, slug: meta.slug, done };
+      if (dup?.action === 'duplicate') {
+        const why = `Dewey duplicate of ${dup.of} (${check.by}${check.containment != null ? ` ${check.containment}` : ''}, ${check.from}); ${dup.reason}`;
+        await repo.updateMediaItem(item.id, { state: 'duplicate', why: why.slice(0, 500), stage: 'preview' });
+        return { duplicate: true, of: dup.of, score: check.containment ?? 1, slug: meta.slug, done };
       }
-      if (verdict.verdict === 'review') {
+      // the new copy measuring better goes on (media-dedupe retires the held one once this is complete); an unconfirmed opening match is reviewed
+      if (verdict.verdict === 'review' && dup?.action !== 'best') {
         const why = `Dewey transcript overlap with ${verdict.of} (score ${verdict.score}); review before publication`;
         await repo.updateMediaItem(item.id, { state: 'review', why, stage: 'preview' });
         return { review: true, of: verdict.of, score: verdict.score, slug: meta.slug, done };
