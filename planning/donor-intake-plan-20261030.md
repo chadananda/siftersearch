@@ -63,6 +63,11 @@ Tables via a repo (`api/lib/repos/archives-repo.js`), never direct DB from scrip
     `node scripts/ops/ops.mjs report archive-copy --params '{"drive":"<id>","donor":"<donor-id>","donorName":"<Name>","label":"<label on the drive>","source":"/mnt/<drive>"}'`
     then `node scripts/ops/ops.mjs report archive-adopt --params '{"drive":"<id>","donor":"<donor-id>","donorName":"<Name>","label":"<label>"}'`
 - Step 9 (1f00dbae): printable drive + donor reports; no images on them (nothing to route through the image helper).
+- dfc3da4b: Word .doc/.wpd samples read as text runs (were fill bytes + "bjbj" → junk titles scoring 100); `rerec` sends a garbled
+  stored sample back to sampling (run 56870: 440 re-recommended, 10 resampled). 854e4d56: photo sets → set-aside (listed, never
+  recommended); re-adopt 56883 moves the 1,245 photo sets out of main. Title images verified through /img (svcFixed, webp 1x/2x).
+- 14:54 count (main + covenant-breaker, new/version/unsure): talks 113 done · 27 queued · 1,334 + 239 videos pending; books 446 done ·
+  24 queued · 18,166 + 747 scans pending. First hour: ~450 books, ~115 talks. Ceiling = window 24/stage per 1-min pass (~1,440/h).
 - GOLDEN AGE sampling running (archive-sample requeues itself every 20 min). Talks on aorus share the GPU with remastering (GPU lease
   admission), so they run in the gaps; books on CPU (aorus 2 + boss 4).
 
