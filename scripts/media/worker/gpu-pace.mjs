@@ -91,7 +91,17 @@ export const RAMP_MS = 90_000, GPU_IDLE = 30;
 
 /** Take another talk now? Pure. onDeck = stages queued at the GPU + talks still on their way to it (download, probe, prep); waiting = the queued
  *  part; cpu = busy share (null = unknown); gpuIdle = the GPU under GPU_IDLE % for the last minute; diskGb = free space under the queue root. */
-export function wantAnother({ running, cap, onDeck, waiting = 0, memGb, minGb, cpu = null, gpuIdle = false, sinceClaimMs = Infinity, diskGb = Infinity, minDiskGb = 0 }) {
+export function wantAnother({ running, cap, onDeck, depth = 1, waiting = 0, memGb, minGb, cpu = null, gpuIdle = false, sinceClaimMs = Infinity, diskGb = Infinity, minDiskGb = 0 }) {
   if (!(running < cap && memGb >= minGb && diskGb >= minDiskGb && !(cpu >= CPU_FULL))) return false;
-  return onDeck === 0 || (waiting === 0 && gpuIdle && sinceClaimMs >= RAMP_MS);
+  return onDeck < depth || (waiting === 0 && gpuIdle && sinceClaimMs >= RAMP_MS);
+}
+
+/** The deck's depth, learned: a ramp claim (the GPU starved with the deck full) KEEPS the deck one deeper, because a talk takes longer to
+ *  reach the GPU than the GPU takes per talk (10-31 pods 387/388: the pod re-encodes the light chain, ~6 min CPU, before DFN; a deck of one
+ *  left the GPU at 0 % for 8 min with 5 of 12 slots used, 3 h gauge mean 61-63 %). Two talks queued at GPU admission = the deck runs
+ *  ahead: one shallower per RAMP_MS, never under 1. Pure. */
+export function nextDepth(depth, { onDeck, waiting = 0, rampClaim = false, sinceChangeMs = Infinity }) {
+  if (rampClaim) return Math.max(depth, onDeck + 1);
+  if (waiting >= 2 && depth > 1 && sinceChangeMs >= RAMP_MS) return depth - 1;
+  return depth;
 }

@@ -22,7 +22,7 @@ import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { join, relative, dirname, basename } from 'node:path';
 
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
-import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, cgroupMemGb, cpuSample, cpuBusy, STALL_MS, GPU_IDLE } from './gpu-pace.mjs';
+import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, cgroupMemGb, cpuSample, cpuBusy, nextDepth, STALL_MS, GPU_IDLE } from './gpu-pace.mjs';
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const HOST = arg('host'), SLOTS = Number(arg('slots', 1)), ROOT = arg('root', '/data/sifter-queue'), RUN = arg('run', 'local'), IMAGE = arg('image');
 const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)), GB_PER_TALK = Number(arg('gb-per-talk', 6)), DISK_PER_TALK = Number(arg('disk-gb-per-talk', 8)), ONCE = process.argv.includes('--once'), IDLE_EXIT_MS = Number(arg('idle-exit-min', 0)) * 60_000;
@@ -184,7 +184,7 @@ const claimArgs = (spillOnly = false) => ({ host: HOST, ram_gb: memAvailGb(), vr
   ...(!TYPES.length || MIXED ? { can: CAN } : {}) });
 let spillAt = 0;
 const gpuSeen = [];   // GPU utilisation over the last minute: idle + nothing queued at it → ramp one more talk into CPU prep
-let claimedAt = 0;
+let claimedAt = 0, depth = 1, depthAt = 0;   // depth: talks kept on the GPU deck, learned from starvation (gpu-pace nextDepth)
 const cpuSeen = [];   // CPU samples over the last ~2 min: a full CPU holds claims (the GPU-feeding stages would only slow)
 while (!stopping || running.size) {
   const deck = onDeck(), c = cpuSample();
@@ -192,7 +192,9 @@ while (!stopping || running.size) {
   const cpu = cpuSeen.length > 1 ? cpuBusy(cpuSeen) : null, util = running.size && DEVICE !== 'none' ? gpuUtil(DEVICE) : null;
   if (util != null) { gpuSeen.push({ t: Date.now(), util }); while (gpuSeen.length && Date.now() - gpuSeen[0].t > 60_000) gpuSeen.shift(); }
   const gpuIdle = gpuSeen.length >= 6 && Date.now() - gpuSeen[0].t >= 50_000 && gpuSeen.every((g) => g.util < GPU_IDLE);
-  const want = !stopping && wantAnother({ running: running.size, cap: CAP, onDeck: deck.waiting + deck.heading, waiting: deck.waiting, memGb: memAvailGb(), minGb: MIN_AVAIL_GB, cpu,
+  const onDeckN = deck.waiting + deck.heading, shallower = nextDepth(depth, { onDeck: onDeckN, waiting: deck.waiting, sinceChangeMs: Date.now() - depthAt });
+  if (shallower !== depth) { depth = shallower; depthAt = Date.now(); log('deck depth', { depth, gpu_waiting: deck.waiting }); }
+  const want = !stopping && wantAnother({ running: running.size, cap: CAP, onDeck: onDeckN, depth, waiting: deck.waiting, memGb: memAvailGb(), minGb: MIN_AVAIL_GB, cpu,
     gpuIdle, sinceClaimMs: Date.now() - claimedAt, diskGb: diskFreeGb(), minDiskGb: DISK_PER_TALK })
     // CPU-only work: one claim a minute while busy, so the CPU sample sees each job's load before the next
     && (NEEDS_GPU || !running.size || Date.now() - claimedAt >= 60_000);
@@ -205,7 +207,9 @@ while (!stopping || running.size) {
     if (job) {
       if (kindOf(job)?.needs !== 'cpu') toGpu.set(job.id, { t: Date.now() });   // only GPU-bound work sits on the GPU deck
       claimedAt = Date.now();
-      log('claimed', { job: job.id, type: job.type, spill: !!spare, audio_s: job.body?.invoice?.audio_s, running: running.size, gpu_waiting: deck.waiting, gpu_util: util, gpu_idle: gpuIdle, disk_gb: Math.round(diskFreeGb()), cpu: cpu == null ? null : Math.round(cpu * 100) });
+      const deeper = NEEDS_GPU && kindOf(job)?.needs !== 'cpu' ? nextDepth(depth, { onDeck: onDeckN, rampClaim: onDeckN >= depth }) : depth;
+      if (deeper !== depth) { depth = deeper; depthAt = Date.now(); log('deck depth', { depth, gpu_idle: gpuIdle }); }
+      log('claimed', { job: job.id, type: job.type, spill: !!spare, audio_s: job.body?.invoice?.audio_s, running: running.size, deck: onDeckN, depth, gpu_waiting: deck.waiting, gpu_util: util, gpu_idle: gpuIdle, disk_gb: Math.round(diskFreeGb()), cpu: cpu == null ? null : Math.round(cpu * 100) });
       running.set(job.id, work(job).finally(() => { running.delete(job.id); busyAt = Date.now(); }));
       continue;
     }

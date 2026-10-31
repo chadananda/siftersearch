@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { RAMP_MS, wantAnother, gpuLedger, reachedGpu, descends, cgroupMemGb, cpuSample, cpuBusy } from '../../scripts/media/worker/gpu-pace.mjs';
+import { RAMP_MS, wantAnother, nextDepth, gpuLedger, reachedGpu, descends, cgroupMemGb, cpuSample, cpuBusy } from '../../scripts/media/worker/gpu-pace.mjs';
 
 const base = { running: 1, cap: 12, onDeck: 0, memGb: 10, minGb: 5 };
 it('one talk always on deck: claim the moment nothing is queued at the GPU or on its way there', () => {
@@ -21,6 +21,21 @@ it('GPU idle, nothing queued at it, talks still in CPU prep: one more per RAMP_M
   expect(wantAnother({ ...prep, cpu: 0.95 })).toBe(false);
   expect(wantAnother({ ...prep, diskGb: 5, minDiskGb: 8 })).toBe(false);
   expect(wantAnother({ ...base, diskGb: 5, minDiskGb: 8 })).toBe(false);
+});
+it('the deck depth is learned: a starved GPU keeps the deck one deeper; two talks queued at admission make it shallower (10-31 pods 387/388)', () => {
+  // pod 387 21:23-21:31Z: GPU 0 % with 5 of 12 slots in use, one talk on deck re-encoding its light chain (~6 min CPU) before DFN
+  expect(wantAnother({ ...base, onDeck: 1, depth: 2 })).toBe(true);
+  expect(wantAnother({ ...base, onDeck: 2, depth: 2 })).toBe(false);
+  expect(nextDepth(1, { onDeck: 1, rampClaim: true })).toBe(2);
+  expect(nextDepth(3, { onDeck: 1, rampClaim: true })).toBe(3);
+  expect(nextDepth(3, { onDeck: 3, waiting: 2, sinceChangeMs: RAMP_MS })).toBe(2);
+  expect(nextDepth(3, { onDeck: 3, waiting: 2, sinceChangeMs: RAMP_MS - 1 })).toBe(3);
+  expect(nextDepth(1, { onDeck: 2, waiting: 2 })).toBe(1);
+  expect(nextDepth(2, { onDeck: 2, waiting: 1 })).toBe(2);
+  // the agent feeds the learned depth to every claim decision
+  const agent = readFileSync(new URL('../../scripts/media/worker/queue-agent.mjs', import.meta.url), 'utf8');
+  expect(agent).toMatch(/wantAnother\(\{[^}]*\bdepth\b/);
+  expect(agent).toMatch(/rampClaim: onDeckN >= depth/);
 });
 it('the machine capacity (slots) and free RAM still bound it', () => {
   expect(wantAnother({ ...base, running: 12 })).toBe(false);
