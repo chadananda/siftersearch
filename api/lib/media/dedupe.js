@@ -183,7 +183,9 @@ export async function mediaDedupeJob({ write = false, sample = 25 } = {}, deps =
         keep_on_air: bestLive ? [] : others.filter(live).map(name), merged: m.merged, conflicts: m.conflicts, status: bestLive ? 'eliminate' : 'pending',
         copies: copies.map((c) => ({ copy: name(c), state: c.state, live: live(c), nisqa: copyQuality(c.meta).original, out: copyQuality(c.meta).remaster })) };
       if (pick.ambiguous) out.ambiguous.push({ group: g, best: entry.best, reason: pick.reason, copies: copies.map(name) });
-      if (!todo.length && !m.changed && bestLive) { out.already++; continue; }
+      // nothing new: never rewrite the meta.json of a talk the pipeline may be working on
+      const marked = Number(best.meta?.dedup_best?.group) === g && (bestLive || best.meta?.dedup?.verdict === 'best');
+      if (!todo.length && !m.changed && (marked || !best.meta) && best.state !== 'duplicate' && Number(best.dup_group) === g) { out.already++; continue; }
       if (out.sample.length < sample) out.sample.push(entry);
       out.merged_fields += m.merged.length;
       if (!bestLive) out.pending++;

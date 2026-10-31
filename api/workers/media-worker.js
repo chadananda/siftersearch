@@ -120,5 +120,11 @@ async function backfillStatusLoop() {
     await nap(300_000);
   }
 }
+// duplicate talks (Chad 10-31): every 15 min the media-dedupe report (reports service, one at a time) retires copies whose
+// better twin has come on air and folds their metadata in — the pass that completes what the preview stage's intake check starts
+async function dedupeLoop() {
+  const { enqueue } = await import('../lib/repos/ops-report-repo.js');
+  while (!isDraining()) { try { await enqueue('media-dedupe', { write: true }, 'media-dedupe-loop'); } catch (err) { logger.warn({ err: err.message }, 'media-dedupe enqueue failed'); } await nap(15 * 60_000); }
+}
 async function speakerSketchLoop() { while (!isDraining()) { try { await mediaSpeakerSketchSweepJob(); } catch (err) { logger.warn({ err: err.message }, 'speaker sketch sweep failed'); } await nap(10 * 60_000); } }
-await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [speakerSketchLoop, mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop, qualityLoop, lightBackfillLoop, laneKeeperLoop, hostMemoryLoop] });
+await runService({ name: process.env.name || 'siftersearch-media', registry: MEDIA_REGISTRY, lanes: MEDIA_LANES, laneWorkers: MEDIA_LANE_WORKERS, loops: [speakerSketchLoop, mediaDropLoop, mediaFeedLoop, podReaperLoop, backfillStatusLoop, qualityLoop, lightBackfillLoop, laneKeeperLoop, hostMemoryLoop, dedupeLoop] });

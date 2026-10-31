@@ -173,6 +173,19 @@ describe('media-dedupe job', () => {
     expect(calls.marked).toHaveLength(0);
     expect(calls.revived).toHaveLength(0);
   });
+  it('a second pass changes nothing and rewrites no meta.json', async () => {
+    const { deps, rows, metas, writes, calls } = mk();
+    await mediaDedupeJob({ write: true }, deps);
+    Object.assign(metas, writes);
+    for (const r of rows) { r.dup_group = 10; if (r.id === 11) r.state = 'duplicate'; r.doc_id = r.id === 11 ? null : r.doc_id; }
+    for (const k of Object.keys(writes)) delete writes[k];
+    calls.marked.length = 0; calls.queued.length = 0;
+    const r = await mediaDedupeJob({ write: true }, deps);
+    expect(r).toMatchObject({ eliminated: 0, already: 1 });
+    expect(Object.keys(writes)).toHaveLength(0);
+    expect(calls.marked).toHaveLength(0);
+    expect(calls.queued).toHaveLength(0);
+  });
   it('a group with a run in hand is left for the next pass', async () => {
     const { deps, calls } = mk();
     deps.ops.pendingRuns = async (n) => (n === 'media-item' ? [{ id: 7, params: { id: 10 } }] : []);

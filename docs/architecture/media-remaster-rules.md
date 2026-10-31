@@ -48,6 +48,14 @@ and never inserts original audio. A remaster without quiet is not complete. Any 
 
 Every rule must leave each talk with a terminal outcome: on air, held for Chad, archived, duplicate or excluded. Measure talks on air, not deliveries.
 
+**Duplicate (Chad 10-31: "duplicate talks should merge metadata and eliminate all but the best").** All copies of one talk share
+`media_items.dup_group`. The best copy is the one with the best measured NISQA: the remaster's when every copy has one, otherwise the
+original's. Length and bitrate never decide. When scores are within 0.2 of each other, the more complete copy wins and the group is
+listed as ambiguous. The best copy gains the other copies' metadata: gaps are filled, conflicts are recorded in `meta.dedup_best`, and
+every title and provenance is kept. The other copies get the terminal outcome `duplicate`: off air, out of search and the queues, files
+kept, and their slug 301s to the copy on air. A better copy still in the pipeline goes through it while the copy on air stays on air.
+The check runs at intake (the preview stage, `intakeDedupe`) and every 15 minutes (`media-dedupe` report). Code: `api/lib/media/dedupe.js`.
+
 ## 6. Stages are an ordered checklist that records its tools (10-31)
 Each talk's stages are complete or incomplete. Each ticked stage records the tool and settings that did it, so a re-run selects
 "talks whose stage X was done by tool T with old settings". It unticks that stage and the stages after it that depend on it, never earlier audio
