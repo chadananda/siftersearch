@@ -19,6 +19,7 @@ function mkQueue() {
   const q = {
     capacity: async () => Q.capacity(sql), stats: async (type) => Q.stats(sql, Date.now(), type), enqueue: async (jobs) => Q.enqueue(sql, jobs),
     listDone: async (n, type) => Q.listDone(sql, n, type), withdraw: async (ids) => Q.withdraw(sql, ids),
+    cancel: async (ids) => { for (const j of Q.cancel(sql, ids)) for (const k of [...store.keys()]) if (k.startsWith(`results/${j.id}/`) || (!Q.fileInUse(sql, j.file_id) && k.startsWith(`files/${j.file_id}/`))) store.delete(k); },
     ack: async (ids) => { for (const j of Q.ack(sql, ids)) for (const k of [...store.keys()]) if (k.startsWith(`results/${j.id}/`) || (!Q.fileInUse(sql, j.file_id) && k.startsWith(`files/${j.file_id}/`))) store.delete(k); },
     put: async (kind, id, name, file) => { const b = await readFile(file); store.set(`${kind}/${id}/${name}`, b); return { key: name, bytes: b.length }; },
     list: async (kind, id) => [...store.entries()].filter(([k]) => k.startsWith(`${kind}/${id}/`)).map(([k, v]) => ({ name: k.slice(`${kind}/${id}/`.length), bytes: v.length })),
@@ -85,6 +86,19 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     expect((await feed(st, { ...deps, cbPeople: async () => [] })).typed.fed).toBe(1);
     expect(items[1]).toMatchObject({ state: 'review', why: expect.stringMatching(/no audio stream/) });
     expect(st.chains[1]).toBeUndefined();
+  });
+  it('a talk fed again after its chain was dropped gets a fresh prep job, not its old done one under the same id (1947 10-31: "chain record lost")', async () => {
+    engage(); st.queue = [1];
+    await feed(st, deps);
+    const old = deliver('cpu-prep');
+    delete st.chains[1]; delete st.qjobs[old.id]; st.queue = [1];   // the chain was dropped (an older lost-restart) while the step ran on
+    expect((await feed(st, deps)).typed.fed).toBe(1);
+    expect(Q.stats(sql, Date.now(), 'cpu-prep').states).toMatchObject({ queued: { n: 1 } });
+    expect(store.has(`results/${old.id}/result.json`)).toBe(false);
+    expect(String(store.get(`files/${old.file_id}/in.mp3`))).toBe('audio-1');   // the staged input is put after the cancel
+    const again = deliver('cpu-prep');
+    expect(again.id).toBe(old.id);
+    expect((await pull(st, deps)).typed).toMatchObject({ steps: 1, errors: 0 });
   });
   it('one talk end to end: each step takes the previous step\'s files, acks trail one step behind, tools stamped', async () => {
     engage(); st.queue = [1];

@@ -130,8 +130,13 @@ async function feedTyped(st, cap, { q, edge = null, repo, wr, readMeta = readMet
       const src = await chainInput(it, m, demux), input = join(it.dir, src), sha = await wr.fileSha(input);
       const wj = { ...wr.wholeJob(it, m, sha), threads: 4 }, fileId = typedFileId(itemId, sha), audio_s = m.duration_s || 0;
       if (src !== m.original) wj.input = 'in' + extname(src);
+      const job = SJ.typedJob('cpu-prep', { itemId, fileId, wj, band: SJ.bandOf(st, itemId), audio_s });
+      // job ids are deterministic (talk + input sha): a talk fed again after its chain was dropped would meet its OLD step under the same
+      // id — enqueue leaves a done/leased job alone, so the stale result came back with no chain ("chain record lost", 1947 10-31).
+      // Cancel it first (before the put: a cancel also clears the staged files no other job names).
+      if (q.cancel) await q.cancel([job.id]).catch(() => null);
       const { bytes } = await q.put('files', fileId, wj.input, input);
-      const job = SJ.typedJob('cpu-prep', { itemId, fileId, wj, band: SJ.bandOf(st, itemId), audio_s, bytes });
+      job.invoice.bytes = bytes;
       await q.enqueue([job]);
       st.chains[itemId] = { sha, fileId, slug: it.slug, input: wj.input, audio_s, at: now(), bytes, ...(src !== m.original ? { src } : {}) };
       st.qjobs[job.id] = { itemId, slug: it.slug, sha, kind: 'typed', type: 'cpu-prep', audio_s, at: now() };
