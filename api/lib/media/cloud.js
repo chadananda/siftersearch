@@ -351,8 +351,8 @@ for v in RUNPOD_POD_ID RP_TERMINATE_KEY LD_LIBRARY_PATH PATH; do val=$(tr '\\0' 
 test -f /opt/sifter/media/worker/queue-agent.mjs
 cat > /workspace/agent.sh <<'AGENT'
 cd /workspace/q
-# typed jobs (job-types.json): an image with the gpu entrypoint claims gpu jobs first, whole jobs while none is queued (the switch-over); an older image stays whole-only
-if [ -f /opt/sifter/api/lib/media/gpu.mjs ]; then CLAIM='--types gpu --can whole --idle-exit-min 10'; else CLAIM='--can whole --idle-exit-min 15'; fi
+# typed jobs (job-types.json): an image with the gpu entrypoint claims ONLY typed gpu jobs (Chad 10-31: pods are paid GPU time, never whole/CPU work); an older image stays whole-only
+if [ -f /opt/sifter/api/lib/media/gpu.mjs ]; then CLAIM='--types gpu --idle-exit-min 10'; else CLAIM='--can whole --idle-exit-min 15'; fi
 node /opt/sifter/media/worker/queue-agent.mjs --host "$POD_HOST" --slots "$AGENT_SLOTS" --root /workspace/q --run local --device cuda $CLAIM >> /workspace/agent.log 2>&1
 echo "agent exit $? $(date -u +%FT%TZ)" >> /workspace/agent.log
 cd /opt/sifter/media && python -c 'import sys; from runpod_worker import terminate_self; terminate_self(sys.argv[1])' 'queue agent exited (idle or drained)'

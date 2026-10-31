@@ -55,7 +55,7 @@ describe('pod bootstrap', () => {
   it('an image with the gpu entrypoint claims typed gpu jobs first (whole while none is queued), keeps the lane-seen touch', async () => {
     const C = await import('../../api/lib/media/cloud.js');
     expect(C.BOOTSTRAP_AGENT).toContain('[ -f /opt/sifter/api/lib/media/gpu.mjs ]');
-    expect(C.BOOTSTRAP_AGENT).toMatch(/CLAIM='--types gpu --can whole --idle-exit-min 10'/);
+    expect(C.BOOTSTRAP_AGENT).toMatch(/CLAIM='--types gpu --idle-exit-min 10'/);
     expect(C.BOOTSTRAP_AGENT).toMatch(/--device cuda \$CLAIM/);
     expect(C.BOOTSTRAP_AGENT).toMatch(/touch [^\n]*\/workspace\/\.lane-seen/);
   });
