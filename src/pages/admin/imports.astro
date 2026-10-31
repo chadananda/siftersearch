@@ -5,6 +5,6 @@ import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
 import DonorImports from '../../components/admin/DonorImports.svelte';
 ---
 
-<AdminLayout title="Donor imports">
+<AdminLayout title="Donor imports" wide>
   <DonorImports client:only="svelte"><IslandSkeleton slot="fallback" /></DonorImports>
 </AdminLayout>

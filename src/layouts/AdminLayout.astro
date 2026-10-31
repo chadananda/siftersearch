@@ -5,9 +5,10 @@ import NavBar from '../components/common/NavBar.svelte';
 interface Props {
   title: string;
   description?: string;
+  wide?: boolean;     // full-width desk pages (desktop-only tools): no centered measure, tighter padding
 }
 
-const { title, description = 'Admin Dashboard' } = Astro.props;
+const { title, description = 'Admin Dashboard', wide = false } = Astro.props;
 const currentPath = Astro.url.pathname;
 
 // Helper to check if a nav item is active
@@ -156,7 +157,7 @@ function isActive(href: string): boolean {
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class:list={["main-content", { wide }]}>
       <div class="content-inner">
         <slot />
       </div>
@@ -276,6 +277,9 @@ function isActive(href: string): boolean {
     max-width: 1200px;
     margin-inline: auto;
   }
+
+  .main-content.wide { padding: 0.75rem 1rem 1rem; }
+  .main-content.wide .content-inner { max-width: none; }
 
   @media (max-width: 768px) {
     .sidebar {
