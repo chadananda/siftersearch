@@ -15,7 +15,7 @@ function isActive(href: string): boolean {
   if (href === '/admin') {
     return currentPath === '/admin' || currentPath === '/admin/';
   }
-  return currentPath.startsWith(href);
+  return currentPath === href || currentPath.startsWith(href + '/');   // /admin/media must not light up on /admin/media-held
 }
 ---
 
@@ -99,24 +99,27 @@ function isActive(href: string): boolean {
           </svg>
           Missing Books
         </a>
-        <a href="/admin/imports" class:list={["nav-item", { active: isActive('/admin/imports') }]}>
-          <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-          </svg>
-          Donor Imports
-        </a>
+        <div class="nav-divider"></div>
+        <div class="nav-label">Media</div>
         <a href="/admin/media" class:list={["nav-item", { active: isActive('/admin/media') }]}>
           <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
           </svg>
-          Media Quality
+          Talks
         </a>
         <a href="/admin/media-held" class:list={["nav-item", { active: isActive('/admin/media-held') }]}>
           <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M5 9v6h4l5 5V4L9 9H5z" />
           </svg>
-          Held Remasters
+          Held talks
         </a>
+        <a href="/admin/imports" class:list={["nav-item", { active: isActive('/admin/imports') }]}>
+          <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+          Collections import
+        </a>
+        <div class="nav-divider"></div>
         <a href="/admin/changelog" class:list={["nav-item", { active: isActive('/admin/changelog') }]}>
           <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -236,6 +239,15 @@ function isActive(href: string): boolean {
   .nav-item.active {
     background: var(--accent-primary);
     color: white;
+  }
+
+  .nav-label {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
   }
 
   .nav-divider {
