@@ -74,7 +74,7 @@ def cpu_phase(fn,*args,**kwargs):
 def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe=None, cv_python=None, silence=None):
     job = json.load(open(os.path.join(d, 'job.json')))
     cfg = job.get('post')
-    out = {'ok': False, 'steps': {}}
+    out = {'ok': False, 'steps': {}, 'contract': json.load(open(os.path.join(HERE, 'result-contract.json')))['post']}
     t0 = time.time()
     if not cfg:
         return out

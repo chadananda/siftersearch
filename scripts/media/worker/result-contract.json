@@ -1,0 +1,5 @@
+{
+  "_": "The worker result contract (post.json). post.py stamps `contract`; tower (api/lib/media/pod-post.js) accepts a complete result only at this version. Bump `post` whenever a field is added to `requires` (10-30: tower began requiring `quiet` on 10-29 while pods ran a 10-26 image, so every pod result was silently rejected for a day).",
+  "post": 2,
+  "requires": ["realign", "quiet", "web"]
+}

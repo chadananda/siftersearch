@@ -3,7 +3,7 @@
 // missing or stale is simply computed on tower as before. Each piece is consumed once.
 import { readFile, writeFile, rename, copyFile, rm, mkdir } from 'fs/promises';
 import { createHash } from 'crypto';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 
 export const sha256File = async (f) => createHash('sha256').update(await readFile(f)).digest('hex');
@@ -37,6 +37,19 @@ export async function resign(dir) {
 /** A worker result tower can publish without touching audio: a held verdict, or guard + alignment + silencing + all four encodes.
  *  `quiet` (Chad 10-29): a copy whose word-free stretches were not silenced carries the restorer's noise — never published. */
 export async function podComplete(dir) {
+  return (await podVerdict(dir)).ok;
+}
+/** The contract both sides read (scripts/media/worker/result-contract.json): a result from an older image is refused BY NAME, never silently. */
+export const CONTRACT = JSON.parse(readFileSync(new URL('../../../scripts/media/worker/result-contract.json', import.meta.url), 'utf8'));
+/** → { ok, why }: why the worker result in <talk>/enhanced/pod cannot be published (stale transcript, old image, missing pieces). */
+export async function podVerdict(dir) {
+  let raw = null;
+  try { raw = JSON.parse(await readFile(join(podDir(dir), 'post.json'), 'utf8')); } catch { return { ok: false, why: 'no worker result' }; }
+  if (!raw?.ok || !raw.guard || !raw.work_sha) return { ok: false, why: `worker result not usable: ${raw?.why || 'no guard'}` };
+  if ((raw.contract || 1) < CONTRACT.post) return { ok: false, stale_image: true, why: `worker image too old (result contract v${raw.contract || 1} < v${CONTRACT.post}): re-image the worker` };
   const post = await podPost(dir);
-  return !!post && (!!post.held || !!(post.realign && post.quiet && post.web));
+  if (!post) return { ok: false, why: 'transcript changed since the worker aligned to it' };
+  if (post.held) return { ok: true, why: null };
+  const missing = CONTRACT.requires.filter((k) => !post[k]);
+  return missing.length ? { ok: false, why: `worker result missing ${missing.join(', ')}${post.why ? ` (${post.why})` : ''}` } : { ok: true, why: null };
 }

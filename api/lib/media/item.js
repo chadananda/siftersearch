@@ -6,7 +6,7 @@ import {audioVersion, audioAlignment, listeningVariant, markAudioPending, timing
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { qualityOf } from './remaster-quality.js';
 const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT: tower never reprocesses audio — set once the pre-worker backlog has drained
-import { podPost, podComplete, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
+import { podPost, podComplete, podVerdict, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait } from './tools.js';
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
@@ -415,10 +415,10 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (opts.remaster && meta.enhancement && (!['kept', 'deferred'].includes(meta.remaster?.status) || (await podPost(dir, { needFlac: false }))?.method === 'cleaned')) {   // Chad's keep / deferral stands: a late cloud result changes nothing
         const work = await readJson(join(dir, 'transcript.work.json'), { paragraphs: [] });
         const el = remasterEligible(meta, work.paragraphs || []);
-        const cloud = join(dir, 'enhanced', 'unipase.cloud.flac'), casr = join(dir, 'enhanced', 'unipase.asr.json');
+        let pv; const cloud = join(dir, 'enhanced', 'unipase.cloud.flac'), casr = join(dir, 'enhanced', 'unipase.asr.json');
         if (!el.ok) meta.remaster = { ...(meta.remaster || {}), status: 'skipped', why: el.why, at: d.now() };
         else if ((!existsSync(cloud) || !existsSync(casr)) && (await podPost(dir, { needFlac: false }))?.method !== 'cleaned') meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: 'no UniPASE copy yet', at: d.now() };
-        else if (towerStrict() && !(await podComplete(dir))) meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: 'no valid worker result (transcript changed or missing): back to a worker', at: d.now() };   // tower never reprocesses audio
+        else if (towerStrict() && !(pv = await podVerdict(dir)).ok) meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: `no valid worker result (${pv.why}): back to a worker`, ...(pv.stale_image ? { stale_image: true } : {}), at: d.now() };   // tower never reprocesses audio
         else {
           const orig = meta.enhancement.variants.find((v) => v.name === 'original') || {};
           const out = join(dir, 'enhanced', 'unipase.flac'), report = join(dir, 'enhanced', 'unipase.guard.json');
