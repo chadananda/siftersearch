@@ -379,6 +379,15 @@ describe('isComplete: every stage run + the remaster IS the listening copy (Chad
     expect(isComplete({ ...ok, remaster: { status: 'done', verdict: 'pass-judged', swapped: 0, judged: { action: 'publish' }, quiet: { v: 1 } } })).toBe(true);   // the judge published it from the stored scores
     expect(isComplete({ ...ok, remaster: { status: 'done', verdict: 'pass-human-full', swapped: 5, quiet: { v: 1 } } })).toBe(true);   // Chad published the full (pure) copy
   });
+  it('a typed adoption whose remaster is not registered done+pure never goes on air (10-31: talk 485, finish on boss, held for nisqa_down)', () => {
+    // 485's meta after the typed chain: remaster held, listening + web the original, verify/quiet skipped. published_at alone is not on air.
+    const m485 = { ...base, web_original: { ogg: 'o', m4a: 'm' }, web_listening: 'safe', enhancement: { listening: 'safe' },
+      remaster: { status: 'review', verdict: 'review', method: 'restored', why: 'measured regression: nisqa_down', swapped: 0 },
+      stages: { ...stages, verify: { at: 'x', skipped: 'not remastered' }, quiet: { at: 'x', skipped: 'no published pure remaster' } } };
+    expect(isComplete(m485)).toBe(false);
+    expect(isComplete({ ...m485, remaster: undefined })).toBe(false);                                                         // no remaster record at all
+    expect(isComplete({ ...m485, remaster: { status: 'done', verdict: 'pass-auto', swapped: 0, quiet: { v: 1 } } })).toBe(false);   // done on paper, the original still plays
+  });
   it('a missing stage or a missing web copy keeps it off air', () => {
     expect(isComplete({ ...base, stages: { ...stages, links: {} } })).toBe(false);
     expect(isComplete({ ...base, stages: { ...stages, web: {} } })).toBe(false);

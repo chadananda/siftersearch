@@ -36,6 +36,14 @@ describe('media-scan', () => {
     const again = await mediaScanJob({ roots: ['/m'], urls: ['https://www.youtube.com/watch?v=dQw4w9WgXcQ'], batch: 1 }, { list: async () => files, sha, queue: vi.fn() });
     expect(again.added).toHaveLength(0);
   });
+  it('a scan yields to a drain between files (10-31: scan #60829 held the media service draining 21 min); the re-run picks up the rest', async () => {
+    const files = [{ path: '/m/a.mp3' }, { path: '/m/b.mp3' }];
+    let n = 0;
+    const r = await mediaScanJob({ roots: ['/m'], batch: 1 }, { list: async () => files, sha: async (p) => p, queue: vi.fn(), draining: () => n++ >= 1 });
+    expect(r).toMatchObject({ yielded: true, added: [expect.any(Number)] });
+    const again = await mediaScanJob({ roots: ['/m'], batch: 1 }, { list: async () => files, sha: async (p) => p, queue: vi.fn(), draining: () => false });
+    expect(again.added).toHaveLength(1); expect(again.skipped).toBe(1);
+  });
   it('reslug removes an unpublished item\'s folder and archives it again; a published one keeps its slug', async () => {
     process.env.MEDIA_ARCHIVE_ROOT = '/tank/media/library';
     store.items.push({ id: 7, state: 'running', slug: 'bad-name', dir: '/tank/media/library/bahai/x/bad-name' }, { id: 8, state: 'done', slug: 'kept', dir: '/tank/media/library/bahai/x/kept' });

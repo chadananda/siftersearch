@@ -141,6 +141,22 @@ export function podsProven(st) {
   return pure.length ? { ok: true, why: `${pure.length} pure remasters adopted from pod gpu steps` } : { ok: false, why: 'no pure remaster adopted from a pod yet: one pod until one is' };
 }
 
+/** The pods' OUTPUT against their rate (coordinator 10-31: ramp only on the published rate; r_pod read 7.7 and the plan 7 pods while 3 talks
+ *  finished in 32 min). Over the last horizon_h: out_h = audio of talks adopted from pod gpu steps (pure_h: of those, published as pure
+ *  remasters) + wait_h = pod gpu output waiting for its finish now, against expect_h = r_pod × pod-hours (each pod from ready_at to its end).
+ *  ok when output has kept up with the rate the plan assumes; the finish backlog gate bounds wait_h separately. Pure. */
+export function podOutput(st, { now = Date.now(), horizonH = 2, rPod = 0 } = {}) {
+  const w0 = now - horizonH * 3600e3, isPod = (h) => /^pod-/.test(String(h || ''));
+  const pod_h = Object.values(st.pods || {}).reduce((a, p) => { const s = Math.max(w0, p.ready_at || Infinity), e = Math.min(now, p.terminated || now); return a + (e > s ? (e - s) / 3600e3 : 0); }, 0);
+  const won = (st.done || []).filter((d) => d.mode === 'typed' && d.at > w0 && isPod(d.gpu));
+  const h = (xs) => xs.reduce((a, x) => a + (x.audio_s || 0), 0) / 3600;
+  const out_h = h(won), pure_h = h(won.filter((d) => d.remaster === 'done' && !d.swapped));
+  const wait_h = h(Object.values(st.qjobs || {}).filter((q) => q.type === 'cpu-finish' && !q.adopted && isPod(st.chains?.[q.itemId]?.gpu?.host)));
+  const expect_h = (rPod || 0) * pod_h, r = (x) => +x.toFixed(2);
+  return { ok: expect_h > 0 && out_h + wait_h >= expect_h, horizon_h: horizonH, pod_h: r(pod_h), expect_h: r(expect_h), out_h: r(out_h), pure_h: r(pure_h), wait_h: r(wait_h),
+    talks: won.length, published: won.filter((d) => d.remaster === 'done' && !d.swapped).length, published_rate_h: r(pure_h / horizonH) };
+}
+
 /** Has THIS pod earned its place: a pure remaster adopted from a gpu step it ran (done.gpu = 'pod-<name>')? The pool grows by one only when
  *  every live pod has (coordinator 10-31: add pods one at a time, each measured on published outcome; 383 was rented 30 s after 382 was ready). Pure. */
 export function podEarned(st, pod) {

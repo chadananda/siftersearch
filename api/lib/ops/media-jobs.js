@@ -63,6 +63,7 @@ export async function mediaFindJob({ like, rank = null, speaker = null, title = 
 
 export async function mediaScanJob({ roots = null, paths = [], urls = [], batch = 1, round = 1, queueOnly = false } = {}, deps = {}) {
   const { list = mediaFiles, sha = sha256Of, queue = enqueue, by = 'media-scan' } = deps;
+  const draining = deps.draining || (await import('../drain.js')).isDraining;
   const out = { round, added: [], held: [], queued: [], skipped: 0 };
   if (!queueOnly) {
     for (const url of urls) {
@@ -74,6 +75,9 @@ export async function mediaScanJob({ roots = null, paths = [], urls = [], batch 
     }
     const files = [...paths.map((p) => ({ path: p })), ...(await Promise.all((roots || [deweyMediaDir()]).map((r) => list(r)))).flat()];
     for (const f of files) {
+      // a whole-library scan is long: it yields to a drain and re-runs on the new code (known files are skipped), so it never holds the
+      // media service — and the remaster lane in it — in 'draining' (10-31: scan #60829 held it 21 min)
+      if (draining()) return { ...out, yielded: true };
       if (await findMediaBySource(f.path)) { out.skipped++; continue; }
       const h = await sha(f.path);
       const twin = await findMediaBySha(h);
@@ -1971,8 +1975,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const typedPods = process.env.MEDIA_POD_TYPED === '1' && !!st.pod_plan;
       const podBusy = (p) => (st.q_last?.leased?.[`pod-${p.name}`] || 0) > 0;
       // ...and every live pod has EARNED its place: a talk whose gpu step it ran was adopted as a pure remaster (LH.podEarned)
+      const podOut = typedPods ? LH.podOutput(st, { now: now(), horizonH: st.pod_plan.horizon_h || 2, rPod: st.pod_plan.r_pod }) : null; if (podOut) st.pods_output = podOut;
       const rampOk = !live.some((p) => p.status !== 'ready') && live.every(podBusy) && live.every((p) => LH.podEarned(st, p)) && (st.pod_plan?.staged_n || 0) > 0
-        && !(st.pod_plan?.finish_backlog_h > st.pod_plan?.horizon_h);   // and the finishing hosts keep up: no more gpu output while finish work backs up past the plan horizon
+        && !(st.pod_plan?.finish_backlog_h > st.pod_plan?.horizon_h)   // and the finishing hosts keep up: no more gpu output while finish work backs up past the plan horizon
+        && podOut?.ok;   // and the pods' talks came out at the rate the plan assumes (LH.podOutput): ramp on the published rate, not the plan
       const proof = typedPods ? LH.podsProven(st) : null; if (proof) st.pods_proof = proof;
       // typed: ONE pod until pods are proven to turn into talks (LH.podsProven, Chad 10-31), then ramp one at a time while every pod is busy
       // ONE pod on trial at a time: the pool holds the pods that earned their place + one (10-31: 385 booted beside an unproven 382)

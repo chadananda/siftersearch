@@ -2081,6 +2081,13 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_items_dup_group ON media_items(dup_group) WHERE dup_group IS NOT NULL');
     logger.info('Migration 192 complete: media_items.dup_group');
   },
+
+  193: async () => {
+    // findMediaBySource / the newest-by-source read scanned media_items: ~155 ms per lookup (10-31 log, media:by-source), once per file a
+    // media-scan walks, so a donor folder's scan held the media service's drain 20+ min (and the remaster lane with it)
+    await query('CREATE INDEX IF NOT EXISTS idx_media_source_ref ON media_items(source_ref)');
+    logger.info('Migration 193 complete: idx_media_source_ref');
+  },
 };
 
 export const graphMigrations = {
