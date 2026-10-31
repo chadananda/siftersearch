@@ -6,8 +6,8 @@
 // Device detected ONCE (/dev/kfd → rocm, nvidia-smi → cuda); no GPU → refuse to start (a GPU stage never runs on CPU). Outputs → results/<job id>/.
 // Args: --host aorus --slots 4 --root /data/sifter-queue --run docker|local --image <ref> [--can whole,restore,post,cleanup] [--device cuda|rocm]
 //       [--gpu-lock /path] [--min-avail-gb 5] [--once] [--idle-exit-min N]  (N min with nothing claimed or running → exit: a pod then ends itself)
-// Slots are a cap: one talk is kept on deck for the GPU (gpu-pace.mjs) — the next is claimed when nothing waits at GPU admission, so the GPU
-// never idles while the others run their CPU stages, and a GPU backlog holds new claims.
+// Slots = the machine's capacity. One talk is kept on deck for the GPU (gpu-pace.mjs): the next is claimed the moment no stage is queued at GPU
+// admission and no talk is still downloading/prepping toward it, so the GPU never waits on CPU stages or the network, and a GPU backlog holds claims.
 import { spawn, spawnSync } from 'node:child_process';
 import dns from 'node:dns';
 import net from 'node:net';
@@ -18,7 +18,7 @@ import { mkdir, readdir, rm } from 'node:fs/promises';
 import { join, relative, dirname, basename } from 'node:path';
 
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
-import { gpuUtil, gpuWaiting, wantAnother } from './gpu-pace.mjs';
+import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, STALL_MS } from './gpu-pace.mjs';
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const HOST = arg('host'), SLOTS = Number(arg('slots', 1)), ROOT = arg('root', '/data/sifter-queue'), RUN = arg('run', 'local'), IMAGE = arg('image');
 const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)), ONCE = process.argv.includes('--once'), IDLE_EXIT_MS = Number(arg('idle-exit-min', 0)) * 60_000;
@@ -48,7 +48,8 @@ const memTotalGb = () => { try { return Number(/MemTotal:\s+(\d+)/.exec(readFile
 export const containerMemGb = (totalGb) => Math.max(10, Math.floor(totalGb * 0.85));
 const memAvailGb = () => { try { return Number(/MemAvailable:\s+(\d+)/.exec(readFileSync('/proc/meminfo', 'utf8'))[1]) / 1048576; } catch { return Infinity; } };
 const running = new Map();
-let stopping = false, busyAt = Date.now(), claimedAt = 0;
+let stopping = false, busyAt = Date.now();
+const toGpu = new Map();   // job id → { t, ns, child } for talks that have not yet reached the GPU (the deck)
 // the host's shared GPU admission ledger: containers mount ROOT/leases; local runs (pods) use SIFTER_GPU_LEASE_DIR
 const LEASE_DIR = RUN === 'local' && process.env.SIFTER_GPU_LEASE_DIR || join(ROOT, 'leases');
 for (const s of ['SIGTERM', 'SIGINT']) process.on(s, () => { stopping = true; log('stopping — finishing jobs in hand', { running: running.size }); });
@@ -89,6 +90,7 @@ async function work(job) {
     await scrub(dir); await mkdir(join(ROOT, 'leases'), { recursive: true }); await mkdir(join(ROOT, 'cache', 'miopen'), { recursive: true });
     for (const f of await q.list('files', job.file_id)) await q.get('files', job.file_id, f.name, join(dir, f.name));
     child = runner(job, dir);
+    if (toGpu.has(job.id)) toGpu.get(job.id).child = child;
     let tail = '';
     child.stderr.on('data', (b) => { tail = (tail + b).slice(-2000); });
     const code = await new Promise((r) => child.on('close', r));
@@ -109,26 +111,43 @@ async function work(job) {
     log('failed', { job: job.id, error: String(e.message).slice(-500) });
     if (!lost) await q.fail({ id: job.id, lease: job.lease, error: `${HOST}: ${String(e.message).slice(-900)}` }).catch(() => {});
   } finally {
-    clearInterval(beat);
+    clearInterval(beat); toGpu.delete(job.id);
     await scrub(dir).catch((e) => log('cleanup failed', { job: job.id, error: e.message }));
   }
 }
 
+// does a ledger key belong to this talk? docker: the container's pid namespace (asked once it runs); local: a pid under the talk's process
+function owner(id, d) {
+  if (RUN === 'docker') {
+    d.ns ||= spawnSync(DOCKER[0], [...DOCKER.slice(1), 'exec', `q-${id}`, 'readlink', '/proc/1/ns/pid'], { encoding: 'utf8', timeout: 5000 }).stdout?.trim() || null;
+    return (k) => !!d.ns && k.startsWith(`${d.ns}:`);
+  }
+  return (k) => !!d.child?.pid && descends(k.split(':').pop(), d.child.pid);
+}
+function onDeck() {
+  const ledger = gpuLedger(LEASE_DIR);
+  for (const [id, d] of toGpu) {
+    if (reachedGpu(ledger, owner(id, d))) toGpu.delete(id);
+    else if (Date.now() - d.t > STALL_MS) { toGpu.delete(id); log('never reached the GPU — off the deck', { job: id, min: Math.round((Date.now() - d.t) / 60_000) }); }
+  }
+  return { waiting: ledger.waiting.length, heading: toGpu.size };
+}
+
 log('start', { slots: SLOTS, run: RUN, image: IMAGE, device: DEVICE, can: CAN, base: q.base });
 while (!stopping || running.size) {
-  const waiting = gpuWaiting(LEASE_DIR);
-  if (!stopping && wantAnother({ running: running.size, cap: SLOTS, waiting, sinceClaimMs: Date.now() - claimedAt, memGb: memAvailGb(), minGb: MIN_AVAIL_GB })) {
+  const deck = onDeck();
+  if (!stopping && wantAnother({ running: running.size, cap: SLOTS, onDeck: deck.waiting + deck.heading, memGb: memAvailGb(), minGb: MIN_AVAIL_GB })) {
     const job = await q.claim({ host: HOST, can: CAN, ram_gb: memAvailGb() }).catch((e) => { log('claim error', { error: e.message }); return null; });
     if (job) {
-      claimedAt = Date.now();
-      log('claimed', { job: job.id, audio_s: job.body?.invoice?.audio_s, running: running.size, gpu_waiting: waiting, gpu_util: gpuUtil(DEVICE) });
+      toGpu.set(job.id, { t: Date.now() });
+      log('claimed', { job: job.id, audio_s: job.body?.invoice?.audio_s, running: running.size, gpu_waiting: deck.waiting, gpu_util: gpuUtil(DEVICE) });
       running.set(job.id, work(job).finally(() => { running.delete(job.id); busyAt = Date.now(); }));
       continue;
     }
     if (ONCE && !running.size) break;
     if (IDLE_EXIT_MS && !running.size && Date.now() - busyAt > IDLE_EXIT_MS) { log('idle — exiting', { idle_min: IDLE_EXIT_MS / 60_000 }); break; }
   }
-  await nap(running.size ? 10_000 : 30_000);   // while working, look at the GPU queue every 10 s
+  await nap(running.size ? 5_000 : 30_000);   // while working, look at the GPU deck every 5 s
 }
 await Promise.allSettled(running.values());
 log('exit');

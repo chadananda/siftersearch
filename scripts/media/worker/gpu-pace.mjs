@@ -1,19 +1,27 @@
-// GPU pacing for the queue agent (Chad 10-31: "the CPU work can progress while the GPU is working on the next talk"; pods and home hosts must keep
-// the GPU saturated). Rule: always keep ONE talk on deck for the GPU. Claim the next talk whenever no stage is queued at gpu_lease.py's admission
-// (leases.json.wait) and the last claim has had ON_DECK_MS to reach its first GPU stage. A backlog at the GPU holds new claims; slots + RAM cap it.
+// GPU pacing for the queue agent (Chad 10-31: "always queue up the next job so we are never waiting on CPU to finish or waiting on streaming/copying
+// over the network. GPU should be kept saturated."). Rule: keep ONE talk on deck — queued at gpu_lease.py's admission or on its way there. The next
+// is claimed the moment the deck is empty, so its download + prep overlap the GPU's current work. Slots = the machine's capacity; RAM bounds it.
 import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const ON_DECK_MS = 2 * 60_000;   // download + probe before a new talk asks for the GPU
 export const WAITER_FRESH_S = 10;       // gpu_lease.py re-stamps a waiter every second; one silent for 10 s is gone
+export const STALL_MS = 45 * 60_000;    // a talk that never reaches the GPU stops holding the deck (logged)
 
-/** Stages waiting at GPU admission right now (shared leases dir of this host). */
-export function gpuWaiting(leaseDir, now = Date.now()) {
-  try {
-    const w = JSON.parse(readFileSync(join(leaseDir, 'leases.json.wait'), 'utf8'));
-    return Object.values(w).filter((v) => now / 1000 - (v.at || 0) < WAITER_FRESH_S).length;
-  } catch { return 0; }
+/** The GPU admission ledger right now: keys ('<pid ns>:<pid>') holding a lease, and those queued for one (fresh only). */
+export function gpuLedger(leaseDir, now = Date.now()) {
+  const read = (f) => { try { return JSON.parse(readFileSync(join(leaseDir, f), 'utf8')); } catch { return {}; } };
+  const waiting = Object.entries(read('leases.json.wait')).filter(([, v]) => now / 1000 - (v.at || 0) < WAITER_FRESH_S).map(([k]) => k);
+  return { waiting, holding: Object.keys(read('leases.json')) };
+}
+
+/** Has this talk reached the GPU? owns(key) says whether a ledger key belongs to the talk (its container's pid namespace, or a pid under its process). */
+export const reachedGpu = ({ waiting, holding }, owns) => [...waiting, ...holding].some(owns);
+
+/** Is pid a descendant of root (same pid namespace — local runs on a pod)? */
+export function descends(pid, root, ppid = (p) => Number(readFileSync(`/proc/${p}/stat`, 'utf8').replace(/^.*\) /s, '').split(' ')[1])) {
+  try { for (let p = Number(pid), n = 0; p > 1 && n < 64; p = ppid(p), n++) if (p === root) return true; } catch {}
+  return false;
 }
 
 /** Current GPU utilisation % (logged with each claim), or null when it can't be read. */
@@ -29,9 +37,7 @@ export function gpuUtil(device) {
   } catch { return null; }
 }
 
-/** Take another talk now? Pure. */
-export function wantAnother({ running, cap, waiting, sinceClaimMs, memGb, minGb }) {
-  if (running >= cap || memGb < minGb) return false;
-  if (!running) return true;
-  return waiting === 0 && sinceClaimMs >= ON_DECK_MS;
+/** Take another talk now? Pure. onDeck = stages queued at the GPU + talks still on their way to it (download, probe, prep). */
+export function wantAnother({ running, cap, onDeck, memGb, minGb }) {
+  return running < cap && memGb >= minGb && onDeck === 0;
 }
