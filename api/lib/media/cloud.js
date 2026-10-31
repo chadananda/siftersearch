@@ -90,6 +90,8 @@ export const CLOUD = {
   bootTimeoutMs: 15 * 60_000,     // no SSH after this → terminate and replace (the 23 GB baked image takes 5-12 min to pull on a cold host; 10-24 measured)
   warmTimeoutMs: 20 * 60_000,     // the bootstrap (pip + the verified weights) must finish in this
   deadAfterMs: 4 * 60_000,
+  agentDeadAfterMs: 10 * 60_000,   // an agent pod heartbeats each job every 2 min; ssh is only the watch channel
+  agentSlots: 4,                   // cap on an agent pod's talks (10-31: 12 at once on one GPU, all in CPU tails together); the agent keeps one on deck
   maxPodFailures: 3,
 };
 

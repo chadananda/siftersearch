@@ -1889,7 +1889,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 // step 6: an image that carries the queue agent pulls from the edge queue (R2 in, R2 out) — no spool, no downloads by tower
                 p.agent = !!(acceptedWorker && agentKey && /AGENT/.test(probeOut));
                 if (acceptedWorker) p.boot_v = p.agent ? C.BOOT_V_AGENT : C.BOOT_V;
-                const boot = p.agent ? C.agentEnv(agentKey, `pod-${p.name}`, p.max_jobs) + C.BOOTSTRAP_AGENT : acceptedWorker ? C.BOOTSTRAP_WHOLE.replace('--max-jobs 6',`--max-jobs ${p.max_jobs}`) : C.BOOTSTRAP_BAKED;
+                const boot = p.agent ? C.agentEnv(agentKey, `pod-${p.name}`, Math.min(p.max_jobs, C.CLOUD.agentSlots)) + C.BOOTSTRAP_AGENT : acceptedWorker ? C.BOOTSTRAP_WHOLE.replace('--max-jobs 6',`--max-jobs ${p.max_jobs}`) : C.BOOTSTRAP_BAKED;
                 await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: boot, timeoutMs: 120_000 });
               } else {
                 await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
@@ -2106,6 +2106,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         } catch (err) {
           if(err.code==='DRAIN')return;
           p.last_error = String(err.message).slice(0, 300);
+          // an agent pod reports through the queue, not ssh: while its heartbeats arrive it is alive (10-31: 367 closed on a refused ssh holding 12 talks)
+          const beat = p.agent && st.q_last?.beat?.[`pod-${p.name}`];
+          if (beat && now() - beat < C.CLOUD.agentDeadAfterMs) { p.lastOk = Math.max(p.lastOk || 0, beat); return; }
           if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { const reaped = await import('../media/pod-reaper.js').then((R) => R.reapedWhy(p.id)).catch(() => null); await closePod(p, reaped ? `reaped: ${reaped}` : `unreachable: ${p.last_error}`); if (p.status !== 'ready' && !reaped) st.pod_failures++; }
         }
       }));
