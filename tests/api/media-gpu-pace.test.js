@@ -52,3 +52,9 @@ it('agent pods: tower keeps a pod alive while its queue heartbeats arrive; slots
   const { CLOUD } = await import('../../api/lib/media/cloud.js');
   expect(CLOUD.agentDeadAfterMs).toBeGreaterThan(CLOUD.deadAfterMs);
 });
+it('pod gauge reads cgroup v1 CPU time too (10-31: RunPod hosts without cpu.stat showed 0 % CPU), without 32-bit awk overflow', () => {
+  const jobs = readFileSync('api/lib/ops/media-jobs.js', 'utf8');
+  expect(jobs.match(/cpuacct\/cpuacct\.usage/g)?.length).toBe(2);
+  expect(jobs.match(/cpu\/cpu\.cfs_quota_us/g)?.length).toBe(2);
+  expect(jobs).not.toMatch(/printf "%d", \$1\/1000/);
+});
