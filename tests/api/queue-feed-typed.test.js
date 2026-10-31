@@ -22,7 +22,7 @@ function mkQueue() {
     ack: async (ids) => { for (const j of Q.ack(sql, ids)) for (const k of [...store.keys()]) if (k.startsWith(`results/${j.id}/`) || (!Q.fileInUse(sql, j.file_id) && k.startsWith(`files/${j.file_id}/`))) store.delete(k); },
     put: async (kind, id, name, file) => { const b = await readFile(file); store.set(`${kind}/${id}/${name}`, b); return { key: name, bytes: b.length }; },
     list: async (kind, id) => [...store.entries()].filter(([k]) => k.startsWith(`${kind}/${id}/`)).map(([k, v]) => ({ name: k.slice(`${kind}/${id}/`.length), bytes: v.length })),
-    get: async (kind, id, name, dest) => { const b = store.get(`${kind}/${id}/${name}`); if (!b) throw Error(`no ${kind}/${id}/${name}`); await mkdir(dirname(dest), { recursive: true }); await writeFile(dest, b); return dest; },
+    get: async (kind, id, name, dest) => { const b = store.get(`${kind}/${id}/${name}`); if (!b) throw Object.assign(Error(`get ${kind}/${id}/${name} 404`), { status: 404 }); await mkdir(dirname(dest), { recursive: true }); await writeFile(dest, b); return dest; },
   };
   return { sql, store, q };
 }
@@ -207,8 +207,8 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     const d = { ...deps, edge: E.q };
     await feed(st, d); const p = deliver('cpu-prep'); await pull(st, d);
     expect(Q.stats(sql, Date.now(), 'gpu').states.queued.n).toBe(1);   // home GPU under TARGET_H, no buffer wanted: the step stays home
-    expect((await qtick(st, d)).moved).toEqual({ moved: 0 });   // no pod plan → no R2 buffer → nothing moves
-    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toEqual({ moved: 1 });   // staged before any pod is rented (Chad 10-31)
+    expect((await qtick(st, d)).moved).toMatchObject({ moved: 0 });   // no pod plan → no R2 buffer → nothing moves
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 1 });   // staged before any pod is rented (Chad 10-31)
     expect(Q.stats(sql, Date.now(), 'gpu').states).toEqual({});
     const g = deliver('gpu', {}, E);
     expect(String(E.store.get(`files/${g.file_id}/in.mp3`))).toBe('audio-1');
@@ -231,12 +231,34 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect(sent).not.toContain(`${ch.fileId}/${ch.input}`);
     expect(Q.stats(E.sql, Date.now(), 'gpu').states.queued.n).toBe(2);
   });
+  it('light.flac never crosses the uplink: the pod rebuilds it from the original; the move reports bytes and MB per audio-h', async () => {
+    engage(); st.queue = [1];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); deliver('cpu-prep'); await pull(st, d);
+    const r = (await qtick(st, { ...d, buffer: { want_h: 5 } })).moved;
+    expect(r).toMatchObject({ moved: 1, bytes: expect.any(Number), mb_per_audio_h: expect.any(Number) });
+    expect(onEdge('files/').some((k) => k.endsWith('enhanced/light.flac'))).toBe(false);
+    const g = deliver('gpu', {}, E);
+    expect(g.body.inputs.map((i) => i.path)).toEqual(['item/meta.json', 'item/waveform.json']);
+  });
+  it('a waiting gpu step whose prep files are gone restarts its talk from prep once, without counting an attempt; a repeat goes through retry', async () => {
+    engage(); st.queue = [1];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); const p = deliver('cpu-prep'); await pull(st, d);
+    store.delete(`results/${p.id}/item/meta.json`);   // acked by an older failure path
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 0, restarted_lost: 1 });
+    expect(Q.stats(sql, Date.now(), 'gpu').states).toEqual({});   // the orphan step is gone, not retried every pass
+    expect(st.attempts?.[1]).toBeUndefined();
+    expect(st.lost_restarts[0]).toMatchObject({ item: 1, error: expect.stringMatching(/404/) });
+    expect(Q.stats(sql, Date.now(), 'cpu-prep').states.queued.n).toBe(1);   // the same pass fed it again from prep
+    expect(st.chains[1]['cpu-prep']).toBeUndefined();
+  });
   it('a LAN gpu step already leased by a home GPU is never moved', async () => {
     engage(); st.queue = [1];
     const d = { ...deps, edge: E.q };
     await feed(st, d); deliver('cpu-prep'); await pull(st, d);
     Q.claim(sql, { host: 'aorus', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });
-    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toEqual({ moved: 0 });
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 0 });
     expect(onEdge('files/')).toEqual([]);
   });
   it('crash-safe: the files go up while the LAN step is still queued; a home GPU that takes it during the upload keeps it', async () => {
@@ -245,7 +267,7 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     await feed(st, d); deliver('cpu-prep'); await pull(st, d);
     const put = E.q.put;
     E.q.put = async (...a) => { const r = await put(...a); Q.claim(sql, { host: 'aorus', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 }); return r; };
-    try { expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toEqual({ moved: 0 }); } finally { E.q.put = put; }
+    try { expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 0 }); } finally { E.q.put = put; }
     expect(Q.stats(sql, Date.now(), 'gpu').states.leased.n).toBe(1);   // still the LAN's, leased by aorus — never lost, never doubled
     expect(Q.stats(E.sql, Date.now(), 'gpu').states).toEqual({});
   });
@@ -254,7 +276,7 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     const d = { ...deps, edge: E.q };
     await feed(st, d); deliver('cpu-prep'); await pull(st, d);
     E.q.enqueue && await E.q.enqueue([{ id: 'other', file_id: 'fo', type: 'gpu', stages: ['gpu'], invoice: { audio_s: 6 * 3600 } }]);
-    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toEqual({ moved: 0 });
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 0 });
   });
   it('an edge gpu step the queue gave up on drops the chain on both transports and retries the talk', async () => {
     lanOnly(); st.queue = [1];

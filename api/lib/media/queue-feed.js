@@ -202,30 +202,36 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
   if (!(wantH > 0)) return { moved: 0 };
   const cap = await edge.capacity().catch(() => null);
   if (!cap) return { moved: 0 };
-  let edgeH = cap.by_type?.gpu?.queued_audio_h || 0, moved = 0, skipped = 0;
+  let edgeH = cap.by_type?.gpu?.queued_audio_h || 0, moved = 0, skipped = 0, bytes = 0, lost = 0, audioS = 0;
+  const t0 = now();
   const leased = new Set(((await q.stats('gpu').catch(() => null))?.leased || []).map((j) => j.id));   // a step a home GPU holds is never copied
   const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where && !leased.has(id) && st.chains?.[qj.itemId]?.['cpu-prep']).sort((a, b) => a[1].at - b[1].at);
   // a file already on the edge at its size is not sent again: a move cut by a restart resumes where it stopped (10-31: restarts every few
   // minutes meant no talk ever finished its upload)
-  const putOnce = async (have, fileId, name, file) => { if (have.get(name) === (await stat(file)).size) { skipped++; return; } await edge.put('files', fileId, name, file); };
+  const putOnce = async (have, fileId, name, file) => { const size = (await stat(file)).size; if (have.get(name) === size) { skipped++; return; } await edge.put('files', fileId, name, file); bytes += size; };
   const moveOne = async (id, qj) => {
-    const ch = st.chains[qj.itemId], prep = ch['cpu-prep'];
+    const ch = st.chains[qj.itemId], prep = ch['cpu-prep'], files = sentFiles(prep.files);
     const it = await repo.getMediaItem(qj.itemId), m = await readMeta(it.dir), stg = join(it.dir, '.typed-move');
     let withdrawn = false;
     try {
       const have = new Map(((await edge.list?.('files', ch.fileId).catch(() => null)) || []).map((o) => [o.name, o.bytes]));
       await putOnce(have, ch.fileId, ch.input, join(it.dir, m.original));
-      for (const f of prep.files) { const tmp = join(stg, 'item', f.path); await q.get('results', prep.id, 'item/' + f.path, tmp); await putOnce(have, ch.fileId, 'item/' + f.path, tmp); }
+      for (const f of files) {
+        const tmp = join(stg, 'item', f.path);
+        try { await q.get('results', prep.id, 'item/' + f.path, tmp); } catch (e) { if (e.status === 404) e.lost = true; throw e; }
+        await putOnce(have, ch.fileId, 'item/' + f.path, tmp);
+      }
       if (!st.qjobs[id] || !(await q.withdraw([id]))?.withdrawn) return;   // a home GPU took it (or it finished) meanwhile: it stays home
       withdrawn = true;
-      const job = SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: true }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
+      const job = SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files, staged: true }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
       await edge.enqueue([job]);
       delete st.qjobs[id];
       st.qjobs[job.id] = { ...qj, at: now(), where: 'edge' };
-      moved++;
+      moved++; audioS += ch.audio_s || 0;
     } catch (e) {   // the LAN copy was withdrawn but the edge refused it: put it back so the talk is not lost
       if (e.code === 'ABANDONED' && !withdrawn) throw e;
-      if (withdrawn) await q.enqueue([SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: false }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s })]).catch(() => {});
+      if (e.lost && !withdrawn) { await restartLost(st, id, qj, { q, repo, now }, e.message); lost++; }
+      else if (withdrawn) await q.enqueue([SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: false }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s })]).catch(() => {});
       else st.q_move_error = { at: now(), id, error: String(e.message).slice(0, 300) };
     } finally { await rm(stg, { recursive: true, force: true }).catch(() => {}); }
   };
@@ -238,7 +244,30 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
       await moveOne(id, qj);
     }
   }));
-  return { moved, ...(skipped ? { resumed_files: skipped } : {}) };
+  const ms = now() - t0;
+  return { moved, bytes, ms, ...(audioS ? { mb_per_audio_h: Math.round(bytes / 1e6 / (audioS / 3600)) } : {}), ...(ms > 0 && audioS ? { audio_h_per_h: +((audioS / 3600) / (ms / 3600e3)).toFixed(1) } : {}),
+    ...(skipped ? { resumed_files: skipped } : {}), ...(lost ? { restarted_lost: lost } : {}) };
+}
+
+// files the gpu job rebuilds itself, so they never cross tower's uplink: light.flac (~176 MB per audio-h of 48 kHz FLAC; the originals are
+// ~11 MB/audio-h) is one deterministic ffmpeg pass over the original from enh_ck.m0 (item.js enhance rebuilds it when the file is absent:
+// ~35 s CPU per audio-h, measured on boss 10-31), beside a gpu job of ~15 min. A LAN gpu step still reads it from the results store.
+export const REBUILT = new Set(['enhanced/light.flac']);
+export const sentFiles = (files = []) => files.filter((f) => !REBUILT.has(f.path));
+
+/** A waiting gpu step whose prep files are gone (404 from the results store: acked by an older failure path) can never run: withdraw it, drop
+ *  the chain and queue the talk again from prep, once without counting it against the talk (the loss was ours); a repeat goes through retry(). */
+async function restartLost(st, id, qj, { q, repo, now }, error) {
+  const ch = st.chains?.[qj.itemId] || {};
+  await q.withdraw([id]).catch(() => null);
+  const acks = SJ.AUDIO_TYPES.map((t) => ch[t]?.id).filter((x) => x && x !== id);
+  if (acks.length) await q.ack(acks).catch(() => null);
+  delete st.qjobs[id]; delete st.chains?.[qj.itemId];
+  (st.lost_restarts ||= []).push({ at: now(), item: qj.itemId, job: id, error: String(error).slice(0, 200) });
+  if (st.lost_restarts.length > 50) st.lost_restarts.splice(0, st.lost_restarts.length - 50);
+  st.lost ||= {};
+  if (!st.lost[qj.itemId]) { st.lost[qj.itemId] = 1; if (!st.queue.includes(qj.itemId)) st.queue.unshift(qj.itemId); }
+  else await retry(st, qj, `prep files lost again: ${error}`, repo);
 }
 
 /** A restore-kind result → <talk>/enhanced/pod through the one intake (refused by name otherwise); done.json → enhanced/unipase.done.json. */
