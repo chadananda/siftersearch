@@ -62,6 +62,17 @@ describe('queue feed', () => {
     expect(st.qjobs[j.id]).toBeUndefined();
     expect(st.done[0]).toMatchObject({ id: 1, via: 'queue', gpu: 'aorus' });
   });
+  it('a talk delivered by a rented pod proves the pool (the canary gate opens); a home host does not', async () => {
+    Q.claim(sql, { host: 'pod-sifter-unipase-9', can: ['whole'] });
+    await feed(st, { q, repo, wr });
+    st.boot_fails = 2;
+    const j = Q.claim(sql, { host: 'pod-sifter-unipase-9', can: ['whole'], ram_gb: 8 });
+    store.set(`results/${j.id}/result.json`, Buffer.from('{"ok":true}'));
+    Q.done(sql, { id: j.id, lease: j.lease, result: { outputs: [{ name: 'result.json' }] } });
+    expect(st.proven).toBeFalsy();
+    await pull(st, { q, repo, wr });
+    expect(st).toMatchObject({ proven: true, boot_fails: 0 });
+  });
   it('a job the queue gave up on goes back to tower\'s lane once, then fails the talk', async () => {
     Q.claim(sql, { host: 'aorus', can: ['whole'] });
     await feed(st, { q, repo, wr });

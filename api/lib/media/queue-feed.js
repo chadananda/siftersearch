@@ -32,6 +32,9 @@ async function stage(kind, it, m, { q, wr, rj, full }) {
   return { sha, fileId, bytes };
 }
 
+// a rented pod that delivered a talk proves the pool, as on the ssh lane (10-31: pod 374 delivered 3 via the queue and the lane stayed at 1 canary)
+const provePool = (st, host) => { if (String(host).startsWith('pod-')) { st.proven = true; st.boot_fails = 0; } };
+
 export async function feed(st, { q, repo, wr, rj, full = true, decided = () => false, readMeta = readMetaFile, now = Date.now, max = 20 }) {
   const cap = await q.capacity();
   if (!cap.hosts.length) return { fed: 0, why: 'no queue host engaged' };
@@ -80,6 +83,7 @@ export async function pull(st, { q, repo, wr, rj, remaster = async () => {}, rea
         const it = await repo.getMediaItem(qj.itemId), dj = await adoptRestore(j, it, rj || await restoreJob(), q);
         if (!st.done.some((d) => d.id === it.id)) {   // a duplicate result never double-publishes
           st.done.push({ id: it.id, slug: it.slug, mode: qj.kind, audio_s: dj.audio_s ?? qj.audio_s, seconds: dj.seconds, gpu: j.host, pod: j.host, at: now(), via: 'queue' });
+          provePool(st, j.host);
           await remaster(it.id);
         }
         adopted++; ack.push(j.id); delete st.qjobs[j.id]; continue;
@@ -91,6 +95,7 @@ export async function pull(st, { q, repo, wr, rj, remaster = async () => {}, rea
       if (['whole_queued', 'scheduled', 'queued', 'running'].includes((await repo.getMediaItem(it.id))?.state))
         await repo.updateMediaItem(it.id, { state: 'transcribed', stage: null, stages_done: ',' + Object.keys(completed.stages || {}).join(',') + ',' });
       st.done.push({ id: it.id, slug: it.slug, mode: 'whole', audio_s: qj.audio_s, gpu: j.host, pod: j.host, at: now(), via: 'queue' });
+      provePool(st, j.host);
       adopted++;
     } catch (e) { errors++; await retry(st, qj, `queue result from ${j.host}: ${e.message}`, repo); }
     ack.push(j.id); delete st.qjobs[j.id];
