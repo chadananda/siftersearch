@@ -110,6 +110,15 @@ describe('published = on air (10-31, talk 485): published_at follows restored', 
     await repo.updateMediaItem(1, { state: 'review', restored: 1 }); expect(pub(1).p).toBe(null);   // leaving done clears it, even with restored in the same write
     await repo.updateMediaItem(1, { state: 'done' }); await repo.setIndex(1, { restored: 1 }); expect(pub(1).p).toBeTruthy();   // back on air: stamped again
   });
+  it('the verify pass re-derives the verdict: a held remaster indexed "light" moves to "review" and so onto the held page (10-31, 1728)', async () => {
+    resetRestoredVerify();
+    db.prepare("UPDATE media_items SET restored = 0, verdict = 'light', next_stage = NULL, stages_missing = 0 WHERE id = 2").run();
+    const m1728 = { remaster_tier: 'light', web_original: { m4a: 'a.m4a' }, enhancement: { listening: 'safe' }, quality: { overall: 'B' }, stages: ALL,
+      remaster: { status: 'review', verdict: 'review', judged: { action: 'hold', problems: ['bad_excerpt'] } } };
+    await backfillRestored({ repo, readMeta: async (d) => (d === '/x/2' ? m1728 : Promise.reject(new Error('nope'))) });
+    expect(db.prepare('SELECT verdict v FROM media_items WHERE id = 2').get().v).toBe('review');
+    expect((await repo.heldRows()).map((r) => r.id)).toContain(2);
+  });
   it('the verify pass runs the repair once per pass', async () => {
     resetRestoredVerify();
     db.prepare("UPDATE media_items SET state = 'review', published_at = '2026-10-30' WHERE id = 3").run();

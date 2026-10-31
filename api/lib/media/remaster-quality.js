@@ -51,7 +51,10 @@ export function qualityOf(meta = {}) {
   };
   const tierOf = (v) => ({ usable: 'heavy', cleaned: 'cleaned', light: 'light' }[v] || null);
   const out = (verdict, reason) => ({ verdict, tier: tierOf(verdict), reason, metrics, ...(meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment ? { output_assessment: meta.remaster?.output_assessment || meta.qa.remaster.output_assessment } : {}), at: new Date().toISOString() });
-  if (meta.remaster_tier === 'light' && meta.enhancement?.listening !== 'unipase') {
+  // 'light' = no remaster has been judged yet. A remaster that ran and was HELD (or kept, archived) is that, whatever the source grade:
+  // 10-31 talk 1728 (grade B, judged hold) was indexed 'light' and so was missing from /admin/media-held, where Chad decides it.
+  const judged = ['review', 'kept', 'deferred', 'archived'].includes(r?.status);
+  if (meta.remaster_tier === 'light' && meta.enhancement?.listening !== 'unipase' && !judged) {
     if (['D','E'].includes(meta.quality?.overall)) return out(r?.status === 'review' ? 'review' : 'pending', 'poor-quality source has only basic cleanup; full restoration has not passed the publication checks');
     return out('light', 'deterministic light restoration (high-pass, hum notch, loudness); the raw original is kept beside it');
   }

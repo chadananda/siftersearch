@@ -807,9 +807,9 @@ export async function backfillRestored({ repo, readMeta, limit = 40 } = {}) {
     for (const r of rows) {
       verifyCursor = r.id;
       const m = r.dir ? await read(r.dir).catch(() => null) : null;
-      // re-derived when the on-air flag OR the checklist columns differ, or an off-air talk still carries published_at (10-31, 485); (a requirement added after publication changes next_stage while the talk stays on air)
+      // re-derived when the on-air flag OR the checklist columns differ, or an off-air talk still carries published_at (10-31, 485), or the verdict changed (a held remaster must reach the held page, 1728); (a requirement added after publication changes next_stage while the talk stays on air)
       const f = m && indexFields(m);
-      if (f && ((f.restored === 1) !== (r.restored === 1) || (f.restored !== 1 && r.published_at) || (f.next_stage ?? null) !== (r.next_stage ?? null) || f.stages_missing !== (r.stages_missing ?? null))) { await repo.setIndex(r.id, f); n++; }
+      if (f && ((f.restored === 1) !== (r.restored === 1) || (f.restored !== 1 && r.published_at) || (f.next_stage ?? null) !== (r.next_stage ?? null) || f.stages_missing !== (r.stages_missing ?? null) || (r.verdict !== undefined && (f.verdict ?? null) !== (r.verdict ?? null)))) { await repo.setIndex(r.id, f); n++; }
     }
   }
   return n;

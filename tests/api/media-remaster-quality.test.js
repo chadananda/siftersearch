@@ -90,6 +90,13 @@ describe('restoration tiers (every talk has a restored copy; light, cleaned or h
     expect(qualityOf(m({ status: 'done', verdict: 'pass-cleaned', method: 'cleaned', fallback_sent_pct: 0 }))).toMatchObject({ verdict: 'cleaned', tier: 'cleaned' });
     expect(summarize([{ slug: 'a', hours: 1, grade: 'A', qa: q }]).by_tier).toEqual({ light: 1 });
   });
+  it('a remaster the judge HELD is "review", not "light", whatever the source grade (10-31 talk 1728: grade B, held bad_excerpt, indexed light → missing from /admin/media-held)', () => {
+    const held = { remaster_tier: 'light', web_original: { m4a: 'a' }, enhancement: { listening: 'safe', variants: [] }, quality: { overall: 'B' },
+      remaster: { status: 'review', verdict: 'review', why: 'Held: at least one stretch of the talk sounds clearly worse than the original.', judged: { action: 'hold', problems: ['bad_excerpt'] } } };
+    expect(qualityOf(held).verdict).toBe('review');
+    expect(qualityOf({ ...held, remaster: { status: 'kept' } }).verdict).toBe('unrepairable');
+    expect(qualityOf({ ...held, remaster: { status: 'archived' } }).verdict).toBe('archived');
+  });
 });
 
 describe('poor-source restoration requirement (Sabri regression)',()=>{
