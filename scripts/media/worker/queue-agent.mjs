@@ -41,6 +41,10 @@ if (!ACCEL[DEVICE]) { console.error(`no GPU found (device ${DEVICE}): GPU stages
 const q = queueClient({ key: process.env.MEDIA_QUEUE_KEY });
 const log = (msg, x = {}) => console.log(JSON.stringify({ at: new Date().toISOString(), host: HOST, msg, ...x }));
 const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+const memTotalGb = () => { try { return Number(/MemTotal:\s+(\d+)/.exec(readFileSync('/proc/meminfo', 'utf8'))[1]) / 1048576; } catch { return 10; } };
+// Each container's memory cap is the host's (85 %), not a fixed 10 GB: gpu_lease.py sums the RAM every talk's stages reserve against the
+// container's own limit, so 10 GB let only one talk hold a stage at a time (10-31: boss's 2nd talk sat 8 min at grade, 92 GB VRAM free).
+export const containerMemGb = (totalGb) => Math.max(10, Math.floor(totalGb * 0.85));
 const memAvailGb = () => { try { return Number(/MemAvailable:\s+(\d+)/.exec(readFileSync('/proc/meminfo', 'utf8'))[1]) / 1048576; } catch { return Infinity; } };
 const running = new Map();
 let stopping = false, busyAt = Date.now(), claimedAt = 0;
@@ -51,7 +55,7 @@ function runner(job, dir) {
   const [bin, script] = KINDS[job.stages[0]].cmd;
   if (RUN === 'local') return spawn(bin === 'python' ? 'python' : process.execPath, [script, dir], { env: { ...process.env, SIFTER_GPU_LEASES: '1' }, stdio: ['ignore', 'ignore', 'pipe'] });
   const lock = GPU_LOCK ? ['-v', `${GPU_LOCK}:/gpu.lock`, '-e', 'SIFTER_LEGACY_GPU_LOCK=/gpu.lock'] : [];
-  return docker(['run', '--rm', '--name', `q-${job.id}`, ...ACCEL[DEVICE](), '--network', 'none', '--cpus', '6', '--memory', '10g', '-v', `${dir}:/job`,
+  return docker(['run', '--rm', '--name', `q-${job.id}`, ...ACCEL[DEVICE](), '--network', 'none', '--cpus', '6', '--memory', `${containerMemGb(memTotalGb())}g`, '-v', `${dir}:/job`,
     '-v', `${ROOT}/leases:/workspace/.gpu-admission`, '-e', 'SIFTER_GPU_LEASES=1', ...lock, '--entrypoint', bin, IMAGE, script, '/job'], { stdio: ['ignore', 'ignore', 'pipe'] });
 }
 // the container writes as root: a plain rm then fails with EACCES (10-30: #1915 failed every retry on its own leftovers), so docker removes it

@@ -45,6 +45,33 @@ Pod image (10-26) post.py had no `quiet`; tower requires realign+quiet+web since
 - Lane: old pods ujua (1 job) + 0d3v (7 jobs) drain one at a time, then the lane rents ONE agent pod. 13 jobs wait on the edge.
   Watcher: scratchpad agentpod.sh. VERIFY: claims, R2 results adopted (q_last.pulled.adopted), idle self-termination → then max-pods 3.
 
+## 10-31 03:30Z — publish blockers on whole results + leaner results
+- 1c3093bf coverage gate: only a speech gap ≥15 s blocks publishing (Chad: a 5 s gap "is totally normal").
+- 5016130f correct/clean re-stamp audio_alignment_hash (restampAlignment, item.js) when raw carries the aligned timings. The whole worker
+  realigns BEFORE tower's correct/clean, so every whole result was blocked at render "timing changed after alignment" (2176 first).
+  2176 redo clean+render queued after deploy.
+- a4de1c24 result size: worker drops light/dfn probe copies + blanks unipase.cloud.flac; agent uploads exactly result.json's files
+  (~1.45 → ~0.55 GB per 94-min talk). Images: ghcr gpu-20261031d (CUDA, built on aorus from 31c) — aorus running it since 03:20Z
+  (job whole-2185); promote after its result is adopted. rocm-gpu-20261031d built on boss (local only; boss run-lan.sh points at it,
+  takes effect on next agent restart).
+- 061a27ed build-delta.sh uses the classic builder (BuildKit can't resolve a base that exists only locally).
+- Aorus GPU admission on images < 31b: page cache counted → stuck waiters. Unstick: `docker run --rm --privileged --entrypoint sh <img>
+  -c "sync; echo 1 > /proc/sys/vm/drop_caches"`.
+- Boss: one HSA_STATUS_ERROR_EXCEPTION on whole-2182 (re-claimed). If it repeats → --slots 1.
+- Cloud: ujua closed; 0d3v holds 1 job (2156) → then the lane rents ONE agent pod (31c promoted).
+- 36 older failed items (pod-era ssh refusals, ffmpeg filter errors 187/234 at web, LLM timeouts) — separate backlog, not yet triaged.
+- ecc82d90 /media machine cards: queue tick records leased-per-host (st.q_lan.leased / st.q_last.leased); cards count them, so
+  LAN-agent hosts + agent pods (host pod-<name>) show working instead of offline/"no work last hour".
+- 03:30Z: boss holds 2182 (retry after HSA exception) + 2183; aorus 2-slot agent on 2189/2201, old agent draining 2185 (watcher bl0rfmt4b);
+  agent pod n5ou2n53jg8ox9 (sifter-unipase-367) booting, 4 min old.
+- 71e23dd5 GPU pacing (Chad: "the CPU work can progress while the GPU is working on the next talk"): agent claims the next talk only
+  after the GPU is <40% busy for 60 s and the last claim is ≥4 min old (scripts/media/worker/gpu-pace.mjs); --slots is now a cap.
+  Rolled out 03:40Z: bin/gpu-pace.mjs + new agent on aorus + boss (old agent kept as bin/queue-agent.mjs.pre-pace); old agents
+  SIGTERM-draining; ~/sifter-queue/swap-pace.sh <pids> (tail --pid) starts run-lan.sh when they exit. aorus cap 3, boss cap 2.
+  Watch: boss gpu_busy_percent reads 100 — if it never drops below 40, boss stays at 1 talk → raise BUSY_PCT or use leases.
+  Pods get pacing with the next image build (all .mjs in scripts/media/worker ship).
+- Boss whole-2183 done 2954 s for 94 min. Agent pod 367 ready, claimed whole-2219 03:33 (watcher bg8ob364c for its first adopted result).
+
 ## Next
 1. Boss onto the LAN agent (ROCm; boss currently on home path B, st.home.boss, image quiet-20261029). Needs a ROCm gpu-20261031 build.
 2. Retire home ssh-docker (B) + gate (C) once aorus+boss run on the agent.

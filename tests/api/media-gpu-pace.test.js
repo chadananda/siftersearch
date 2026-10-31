@@ -27,3 +27,10 @@ it('the agent asks wantAnother before every claim', () => {
   const agent = readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8');
   expect(agent).toMatch(/wantAnother\(\{[^\n]*\}\)\) \{\n\s*const job = await q\.claim/);
 });
+it('containers are capped at the host RAM, not 10 GB: the lease ledger sums every talk against that cap (10-31 boss)', () => {
+  const agent = readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8');
+  expect(agent).not.toMatch(/'--memory', '10g'/);
+  expect(agent).toMatch(/'--memory', `\$\{containerMemGb\(memTotalGb\(\)\)\}g`/);
+  const f = new Function(`return ${/containerMemGb = (\(totalGb\) => [^;]+);/.exec(agent)[1]}`)();
+  expect([f(15), f(31), f(8)]).toEqual([12, 26, 10]);
+});
