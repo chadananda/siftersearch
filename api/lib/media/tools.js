@@ -290,8 +290,8 @@ export const coolEnough = (host) => { const d = diskInfo.get(host); if (!d) retu
 /** A GRADE's RAM: it decodes the whole recording at its native rate (several float32 copies) besides DNSMOS/NISQA —
  *  10-23 19:15 the OOM killer took one on aorus at 7.7 GB. → GB */
 export const gradeNeedGb = (durationS = 3600, sampleRate = 48000) => Math.round((1.5 + (durationS || 3600) * (sampleRate || 48000) * 4 * 4 / 1e9) * 10) / 10;
-/** The REMASTER word guard on tower (scripts/media/remaster_guard.py; CPU, numpy): the UniPASE copy with every sentence
- *  whose words it lost replaced by the original. opts: { original, unipase, work, asr, ref, af, output, report } → its JSON */
+/** The REMASTER word guard (scripts/media/remaster_guard.py; CPU, numpy; runs on workers, the run() gate refuses it on tower): it MEASURES which sentences' words
+ *  differ from the original transcript and writes the pure UniPASE copy aligned + leveled. It never mixes original audio in (Chad 10-31). opts: { original, unipase, work, asr, ref, af, output, report } → its JSON */
 export const GUARD = join(ROOT, 'scripts', 'media', 'remaster_guard.py');
 export async function remasterGuard(opts, { stop = null, python = PY() } = {}) {
   const args = [GUARD];

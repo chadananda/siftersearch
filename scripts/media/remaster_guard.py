@@ -1,10 +1,9 @@
 # Transcript-comparison diagnostics for a continuous remaster. Disagreements are
-# review notes; original audio is never spliced into the listening copy.
+# review notes; original audio is never spliced into the listening copy (Chad 10-31: no splice code exists; this only MEASURES).
 import argparse, json, math, re, subprocess, sys, unicodedata
 import numpy as np
 
 SR = 48000
-XF = 0.150   # crossfade seconds
 
 
 def decode(path, af=None, duration=None):
@@ -140,29 +139,6 @@ def decide(sentences, asr_words, lag_s=0.0, pad=0.3, ref_words=None, min_wps=1.0
     return res
 
 
-def splice(wet, dry, windows):
-    """wet with dry for each window [(s, e)] (seconds), equal-power crossfades of XF at both ends; windows merged first."""
-    out = wet.copy()
-    n = len(out)
-    merged = []
-    for s, e in sorted(windows):
-        if merged and s - merged[-1][1] < 2 * XF:
-            merged[-1][1] = max(merged[-1][1], e)
-        else:
-            merged.append([s, e])
-    f = int(XF * SR)
-    up = np.sin(np.linspace(0, np.pi / 2, f, dtype=np.float32))   # dry rises, wet falls (equal power)
-    for s, e in merged:
-        a, b = max(0, int((s - XF) * SR)), min(n, int((e + XF) * SR))
-        if b - a < 2 * f:
-            continue
-        seg_w, seg_d = out[a:b], dry[a:b] if b <= len(dry) else np.pad(dry[a:], (0, b - len(dry)))
-        g = np.ones(b - a, dtype=np.float32)
-        g[:f] = up; g[-f:] = up[::-1]
-        out[a:b] = seg_d * g + seg_w * np.sqrt(np.clip(1 - g ** 2, 0, 1))
-    return out, merged
-
-
 def main():
     p = argparse.ArgumentParser()
     for k in ('original', 'unipase', 'work', 'asr', 'output', 'report'):
@@ -181,7 +157,6 @@ def main():
     sents = sentences_of(work)
     ref_words = [w for sg in json.load(open(a.ref)).get('segments', []) for w in (sg.get('words') or [])] if a.ref else None
     dec = decide(sents, asr_words, lag_s=0.0, ref_words=ref_words)   # the copy's ASR ran on the unshifted copy: its times are already ≈ the original's ± lag
-    merged = []
     import soundfile as sf
     duration = sf.info(a.unipase).duration
     chain = []
@@ -189,12 +164,10 @@ def main():
     elif lag < 0: chain += [f'adelay={-lag/SR*1000}:all=1']
     chain += [f'atrim=duration={duration}', 'loudnorm=I=-18:TP=-1.5:LRA=11', 'alimiter=limit=0.891:level=disabled']
     subprocess.run(['ffmpeg','-nostdin','-v','error','-y','-i',a.unipase,'-af',','.join(chain),'-ac','1','-ar',str(SR),'-c:a','flac','-sample_fmt','s32',a.output],check=True)
-    total = sum(d['e'] - d['s'] for d in dec) or 1
-    swapped_s = sum(e - s for s, e in merged)
     ung = [d for d in dec if d.get('unguardable')]
-    rep = {'sentences': len(dec), 'mode': 'audit', 'swapped': 0, 'flagged_sentences': sum(d['swap'] for d in dec), 'swapped_s': round(swapped_s, 1), 'swapped_pct': round(100 * swapped_s / total, 1),
+    rep = {'sentences': len(dec), 'mode': 'audit', 'swapped': 0, 'flagged_sentences': sum(d['swap'] for d in dec), 'swapped_s': 0.0, 'swapped_pct': 0.0,
            'fallback_sent_pct': 0.0, 'flagged_sent_pct': round(100 * sum(d['swap'] for d in dec) / max(1, len(dec)), 1), 'unguardable': len(ung), 'unguardable_s': round(sum(d['e'] - d['s'] for d in ung), 1),
-           'lag_ms': round(1000 * lag / SR, 1), 'windows': len(merged), 'detail': [d for d in dec if d['swap']][:400]}
+           'lag_ms': round(1000 * lag / SR, 1), 'windows': 0, 'detail': [d for d in dec if d['swap']][:400]}
     json.dump(rep, open(a.report, 'w'))
     print(json.dumps({k: v for k, v in rep.items() if k != 'detail'}))
 

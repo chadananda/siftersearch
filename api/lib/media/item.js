@@ -423,8 +423,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'remaster') {
       // UNIPASE listening copy (Chad 10-23 approved by ear; planning/remaster-rnd-20261023.md): only on a remaster run
       // (media-remaster / the cloud backfill) — a normal run records the stage and moves on. The copy itself comes from the
-      // cloud worker (enhanced/unipase.cloud.flac + its transcript); here the WORD GUARD splices the original back in for
-      // every sentence the copy lost, and the verdict decides whether it becomes the listening copy (§13: never worse).
+      // cloud worker (enhanced/unipase.cloud.flac + its transcript); the word guard only MEASURES (never splices, Chad 10-31), and the verdict decides whether it becomes the listening copy (§13: never worse).
       // a keep / deferral stands against the generative copy; the deterministic cleanup (method 'cleaned') is a different thing and is allowed through
       if (opts.remaster && meta.enhancement && (!['kept', 'deferred', 'archived'].includes(meta.remaster?.status) || (await podPost(dir, { needFlac: false }))?.method === 'cleaned')) {   // Chad's keep / deferral stands: a late cloud result changes nothing
         const work = await readJson(join(dir, 'transcript.work.json'), { paragraphs: [] });
@@ -447,16 +446,17 @@ export async function runItem(item, opts = {}, deps = {}) {
           const maxPct = Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15;
           // NEVER A SPLICE (Chad 10-29: "We cannot mix remastered and non-remastered audio together"): a copy with any sentence from the original is not published
           const spliced = (g.swapped || 0) > 0 || (g.fallback_sent_pct || 0) > 0;
-          const pass = !spliced && !pod?.held && pod?.qa?.output_assessment?.passed !== false && (g.fallback_sent_pct ?? g.swapped_pct) <= maxPct;
+          const wordsPct = g.flagged_sent_pct ?? g.fallback_sent_pct ?? g.swapped_pct;   // ASSESSMENT ONLY: how many sentences' words differ from the original transcript; a hold reason, never a splice
+          const pass = !spliced && !pod?.held && pod?.qa?.output_assessment?.passed !== false && !(wordsPct > maxPct);
           const vs = meta.enhancement.variants.filter((v) => v.name !== 'unipase');
-          vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: pod?.method === 'cleaned' ? 'deterministic cleanup (MossFormer2-SE 60 %, mud cut, dereverb, de-ess) + word guard at −18 LUFS' : 'UniPASE (long-form, 48 kHz) + word guard (original for lost sentences) at −18 LUFS', guard: g });
+          vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: pod?.method === 'cleaned' ? 'deterministic cleanup (MossFormer2-SE 60 %, mud cut, dereverb, de-ess) at −18 LUFS (the word guard only measures)' : 'UniPASE (long-form, 48 kHz), pure, at −18 LUFS (the word guard only measures)', guard: g });
           meta.enhancement.variants = vs;
           const listeningBefore = meta.enhancement.listening || 'safe';
           if (pass) {
             if (meta.enhancement.listening !== 'unipase') meta.enhancement.listening_before = { name: meta.enhancement.listening, why: meta.enhancement.listening_why || null };
             meta.enhancement.listening = 'unipase';
             meta.remaster_tier = pod?.method === 'cleaned' ? 'cleaned' : 'heavy';
-            meta.enhancement.listening_why = `UniPASE remaster (Chad 10-23): ${g.swapped} of ${g.sentences} sentences (${g.swapped_pct} %) kept from the original by the word guard`;
+            meta.enhancement.listening_why = 'UniPASE remaster, pure output (no original audio in it; the word guard only measures)';
           } else if (meta.enhancement.listening === 'unipase') {
             // held on a re-score: a remaster published under an older rule goes back to the copy before it
             meta.enhancement.listening = meta.enhancement.listening_before?.name || 'safe';
@@ -464,8 +464,8 @@ export async function runItem(item, opts = {}, deps = {}) {
             delete meta.remaster_tier;
           }
           if ((meta.enhancement.listening || 'safe') !== listeningBefore) markAudioPending(meta);
-          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: spliced ? `the copy mixes original and remastered audio (${g.swapped} sentences from the original): never published — re-render the pure copy` : pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `${g.fallback_sent_pct ?? g.swapped_pct} % of sentences fell back (> ${maxPct} %): still playing the original audio — a human listens` }),
-            swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), ...(pod?.quiet ? { quiet: quietRecord(pod.quiet, { host: 'worker' }) } : {}), at: d.now() };   // quiet: the worker silenced the word-free stretches (post.py step 4)
+          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: spliced ? `the copy mixes original and remastered audio (${g.swapped} sentences from the original): never published — re-render the pure copy` : pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `the remaster's words differ from the original transcript in ${wordsPct} % of sentences (> ${maxPct} %): listen to check the remaster or the check` }),
+            swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, flagged_sent_pct: g.flagged_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), ...(pod?.quiet ? { quiet: quietRecord(pod.quiet, { host: 'worker' }) } : {}), at: d.now() };   // quiet: the worker silenced the word-free stretches (post.py step 4)
           delete meta.stages.verify;   // a new remaster result must be measured again
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
           meta.qa = { ...(meta.qa || {}), remaster: pod?.qa ? { ...pod.qa, at: new Date().toISOString() } : qualityOf(meta) };   // the worker decided the verdict; tower records it

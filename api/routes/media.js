@@ -601,7 +601,9 @@ export default async function mediaRoutes(fastify) {
     if (!['original', 'remaster'].includes(which) || !Number.isFinite(a) || !Number.isFinite(b) || b <= a || b - a > 60) return reply.code(400).send({ error: 'BadRequest' });
     if (!verifyClip({ slug: `${slug}:${which}`, start: a, end: b, exp: req.query.exp, sig: req.query.sig })) return reply.code(403).send({ error: 'Forbidden' });
     const it = await getMediaBySlug(slug), meta = it?.dir ? await readJson(join(it.dir, 'meta.json'), null) : null;
-    const rel = which === 'original' ? meta?.original : (meta?.enhancement?.variants || []).find((v) => v.name === 'unipase')?.file;
+    // the PURE remaster against the original (Chad 10-31): never a copy with original sentences in it — a spliced or missing master falls to the raw UniPASE output
+    const pureRel = (Number(meta?.remaster?.swapped) > 0 ? null : (meta?.enhancement?.variants || []).find((v) => v.name === 'unipase')?.file) || 'enhanced/unipase.cloud.flac';
+    const rel = which === 'original' ? meta?.original : pureRel;
     if (!rel || !existsSync(join(it.dir, rel))) return reply.code(404).send({ error: 'NotFound' });
     const out = join(it.dir, 'held', `${which}-${Math.round(a)}-${Math.round(b)}.m4a`);
     if (!existsSync(out)) {

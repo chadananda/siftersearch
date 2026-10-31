@@ -1,7 +1,7 @@
 // Re-judge held remasters from their STORED scores (Chad 10-31) + the held page's list. No audio work. Writes meta.json: media worker only. Deps: remaster-quality (the judge), media-repo
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { readFile, writeFile, rename, stat, mkdir } from 'fs/promises';
+import { readFile, writeFile, rename, stat, mkdir, rm } from 'fs/promises';
 import { remasterJudgement, qualityOf, assessmentOf, JUDGE_RULE } from './remaster-quality.js';
 import { markAudioPending } from './talk-audio.js';
 
@@ -23,11 +23,34 @@ export function flipToRemaster(m, { verdict, judged, at }) {
   return m;
 }
 
-/** Judge one held talk and apply it. → 'publish' | 'rerun' | 'hold' | 'requeued' | 'unchanged'. Idempotent: a hold already recorded under this rule is left alone. */
+/** A copy written under the retired word guard (Chad 10-31: "There is no reason to ever splice a remaster"): original sentences swapped into the remaster. */
+export const isSpliced = (m) => Number(m?.remaster?.swapped) > 0;
+
+/** Purify a spliced talk: the spliced enhanced/unipase.flac (+ its guard json, its stale assessment, the cached A/B clips) is deleted, the swap fields cleared (the old
+ *  fallback % is kept as the word-mismatch ASSESSMENT), and a worker rebuilds the PURE copy from unipase.cloud.flac (post: aligned + leveled + quality-checked; no audio work on tower).
+ *  No UniPASE output on tower → a full restore order instead. Judged afterwards by the same rule as every talk. */
+export async function purifySpliced(it, m, { queue, now = () => new Date().toISOString() }) {
+  const enh = join(it.dir, 'enhanced'), r = m.remaster || {}, at = now();
+  for (const f of ['unipase.flac', 'unipase.guard.json', 'restored.guard.json']) await rm(join(enh, f), { force: true });
+  await rm(join(it.dir, 'held'), { recursive: true, force: true });
+  const hasCloud = (await exists(join(enh, 'unipase.cloud.flac'))) && (await exists(join(enh, 'unipase.asr.json')));
+  const why = hasCloud ? 'the spliced copy was deleted: a worker rebuilds the pure UniPASE copy and checks its quality (Chad 10-31: never splice)' : 'the spliced copy was deleted and no UniPASE output is on tower: remastering again';
+  m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: undefined, output_assessment: undefined, swapped: 0, swapped_pct: 0, fallback_sent_pct: 0, flagged_sent_pct: r.flagged_sent_pct ?? r.fallback_sent_pct ?? null,
+    spliced_before: { swapped: r.swapped, sentences: r.sentences, fallback_sent_pct: r.fallback_sent_pct ?? null, purified_at: at }, at };
+  if (m.qa?.remaster) m.qa.remaster = { ...m.qa.remaster, output_assessment: undefined };
+  m.enhancement.variants = (m.enhancement.variants || []).filter((v) => v.name !== 'unipase');
+  if (m.enhancement.listening === 'unipase') { m.enhancement.listening = m.enhancement.listening_before?.name || 'safe'; m.enhancement.listening_why = 'the spliced remaster was deleted; the pure remaster is being rebuilt'; markAudioPending(m); }
+  delete m.remaster_tier; delete m.stages?.verify;
+  await queue('media-cloud-order', { mode: hasCloud ? 'post' : 'restore', ids: [it.id], redo: true }, 'media-remaster-rejudge');
+  return hasCloud;
+}
+
+/** Judge one held talk and apply it. → 'publish' | 'rerun' | 'hold' | 'requeued' | 'purified' | 'unchanged'. Idempotent: a hold already recorded under this rule is left alone. */
 export async function rejudgeOne(it, m, { repo, queue, now = () => new Date().toISOString(), force = false } = {}) {
   const r = m.remaster || {}, at = now(), j = remasterJudgement(m), judged = { action: j.action, reason: j.reason, problems: j.problems, rule: JUDGE_RULE, at };
   if (!force && r.status === 'review' && r.judged?.action === 'hold' && r.judged.rule === JUDGE_RULE) return 'unchanged';
   const save = async () => { m.qa = { ...(m.qa || {}), remaster: qualityOf(m) }; await writeMeta(it.dir, m); const { indexFields } = await import('./item.js'); await repo.setIndex(it.id, indexFields(m)); };
+  if (isSpliced(m) && m.enhancement) { await purifySpliced(it, m, { queue, now }); await save(); return 'purified'; }
   // back into the remaster queue in normal order: nothing here plays the original (a kept/deferred talk without a stored assessment, or an assessment to redo)
   const requeue = async (why) => { m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: { ...judged, action: 'requeue', reason: why } }; await save(); return 'requeued'; };
   if (['kept', 'deferred'].includes(r.status) && !assessmentOf(m)) return requeue('back in the remaster queue: no talk plays the original (Chad 10-31)');
@@ -53,13 +76,13 @@ export async function rejudgePass({ repo, queue, readMeta, limit = 3, ids = null
   if (!ids && nowMs() < pass.nextScan) return { idle: true };
   if (!ids && pending && (await pending()) > 30) return { paused: 'media-item queue is busy' };
   const rows = ids ? (await Promise.all([].concat(ids).map((x) => (/^\d+$/.test(String(x)) ? repo.getMediaItem(Number(x)) : repo.getMediaBySlug(String(x)))))).filter((x) => x?.dir) : await repo.heldCandidates(pass.cursor, 60);
-  const out = { judged: 0, publish: 0, hold: 0, rerun: 0, requeued: 0, unchanged: 0, errors: [] };
+  const out = { judged: 0, publish: 0, hold: 0, rerun: 0, requeued: 0, purified: 0, unchanged: 0, errors: [] };
   for (const it of rows) {
     if (!ids) pass.cursor = it.id;
     if (out.judged >= limit) { if (!ids) pass.cursor = it.id - 1; break; }
     const m = await read(it.dir).catch(() => null);
     if (!m?.remaster) continue;
-    if (!['review', 'kept', 'deferred'].includes(m.remaster.status)) continue;
+    if (!['review', 'kept', 'deferred'].includes(m.remaster.status) && !(m.remaster.status === 'done' && isSpliced(m))) continue;
     try {
       const o = await rejudgeOne(it, m, { repo, queue, force });
       out[o]++; if (o !== 'unchanged') out.judged++;
@@ -68,7 +91,7 @@ export async function rejudgePass({ repo, queue, readMeta, limit = 3, ids = null
   if (!ids && !rows.length) { pass.cursor = 0; pass.nextScan = nowMs() + 30 * 60_000; }
   if (out.judged) {
     const c = await readJson(countsFile, {});
-    for (const k of ['publish', 'hold', 'rerun', 'requeued']) c[k] = (c[k] || 0) + out[k];
+    for (const k of ['publish', 'hold', 'rerun', 'requeued', 'purified']) c[k] = (c[k] || 0) + out[k];
     c.at = new Date().toISOString(); c.rule = JUDGE_RULE;
     await mkdir(dirname(countsFile), { recursive: true }).catch(() => {});
     await writeFile(countsFile, JSON.stringify(c, null, 1)).catch(() => {});
@@ -76,13 +99,13 @@ export async function rejudgePass({ repo, queue, readMeta, limit = 3, ids = null
   return out;
 }
 
-const PROBLEM_TEXT = { overall_regression: 'overall quality dropped', speech_regression: 'the speech sounds worse', bad_excerpt: 'a stretch sounds clearly worse', clipping: 'distortion', nisqa_down: 'speech score fell', duration: 'length differs', word_fallback: 'words changed', spliced: 'mixes in the original', realign_failed: 'word timing failed' };
+const PROBLEM_TEXT = { overall_regression: 'overall quality dropped', speech_regression: 'the speech sounds worse', bad_excerpt: 'a stretch sounds clearly worse', clipping: 'distortion', nisqa_down: 'speech score fell', duration: 'length differs', word_fallback: 'words differ from the original transcript', spliced: 'old spliced copy being rebuilt', realign_failed: 'word timing failed' };
 /** Excerpts to listen to: the quality samples (worst first) and the sentences the remaster changed. → [{ start_s, len_s, note }] */
 export function excerptsOf(m, guard = null) {
   const a = assessmentOf(m), out = [];
   const rows = (a?.samples || []).map((s) => ({ start_s: s.start_s, len_s: 20, d: (s.restored?.nisqa?.[0] ?? 0) - (s.reference?.nisqa?.[0] ?? 0) })).sort((x, y) => x.d - y.d);
   for (const s of rows.slice(0, 3)) out.push({ start_s: Math.round(s.start_s), len_s: s.len_s, note: `speech score ${s.d >= 0 ? '+' : ''}${Math.round(s.d * 100) / 100} in this stretch` });
-  for (const g of (guard?.detail || []).filter((x) => x.swap).slice(0, 2)) out.push({ start_s: Math.max(0, Math.round(g.s - 3)), len_s: 15, note: 'the remaster changed the words here' });
+  for (const g of (guard?.detail || []).filter((x) => x.swap).slice(0, 2)) out.push({ start_s: Math.max(0, Math.round(g.s - 3)), len_s: 15, note: 'the remaster\'s words differ from the original transcript here' });
   return out;
 }
 

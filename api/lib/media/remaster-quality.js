@@ -9,7 +9,7 @@ export const remasterProven = (meta = {}) => assessmentOf(meta)?.passed === true
 export const JUDGE_RULE = 'v1-2026-10-31';
 const R = (n, d = 2) => (Number.isFinite(Number(n)) ? Math.round(Number(n) * 10 ** d) / 10 ** d : null);
 /** THE JUDGE (Chad 10-31: "if they are actually worse, held for review; the same or better, published with the remaster"). Pure: meta.json → { action, reason, problems[], scores }.
- *  hold = actually worse (a regression check, NISQA mean down > 0.1, a decoded-length mismatch > 1 s, words changed > 15 %, original sentences mixed in) · rerun = a pipeline failure, not audio
+ *  hold = actually worse (a regression check, NISQA mean down > 0.1, a decoded-length mismatch > 1 s, the words differ from the original transcript in > 15 % of sentences) · rerun = a pipeline failure, not audio
  *  (realign placed 0 words, no assessment) · publish = the same or better (a missing quality GAIN alone is "same"). The length is the DECODED one (meta.duration_s), never an MP3 header estimate. */
 export function remasterJudgement(meta = {}) {
   const r = meta.remaster || {}, a = assessmentOf(meta), c = a?.checks || null, problems = [], words = [];
@@ -25,9 +25,10 @@ export function remasterJudgement(meta = {}) {
   if (delta != null && delta < -0.1) flag('nisqa_down', `speech quality score fell from ${R(nb)} to ${R(na)}`);
   const dur = Number(meta.duration_s), rd = Number(a?.technical?.duration_s);
   if (Number.isFinite(dur) && dur > 0 && Number.isFinite(rd) && rd > 0 && Math.abs(rd - dur) > 1) flag('duration', `the remaster is ${R(Math.abs(rd - dur), 1)} s ${rd > dur ? 'longer' : 'shorter'} than the talk`);
-  const fb = r.fallback_sent_pct ?? r.swapped_pct;
-  if (Number(fb) > 15) flag('word_fallback', `the remaster changed the words: ${R(fb, 1)} % of sentences had to be replaced by the original`);
-  else if (Number(r.swapped) > 0) flag('spliced', `the copy mixes in ${r.swapped} sentences of the original`);
+  // the word comparison (UniPASE re-ASR vs the original transcript) is ASSESSMENT ONLY (Chad 10-31): it can hold a talk for a listen, it never splices. Needs the assessment first (no assessment = rerun, below).
+  const fb = r.flagged_sent_pct ?? r.fallback_sent_pct ?? r.swapped_pct;
+  if (c && Number(fb) > 15) flag('word_fallback', `the remaster's words differ from the original transcript in ${R(fb, 1)} % of sentences: listen to check the remaster or the check`);
+  else if (Number(r.swapped) > 0) flag('spliced', `the stored copy still mixes in ${r.swapped} sentences of the original (retired word guard): it is rebuilt from the pure UniPASE output`);
   if (problems.length) return { action: 'hold', reason: `Held: ${words.join('; ')}.`, problems, scores, rule: JUDGE_RULE };
   if (/realign placed 0 of \d+ words/.test(r.why || '')) return Number(r.rerun_n || 0) >= 1
     ? { action: 'hold', reason: 'Held: the word timings could not be placed on the remaster twice.', problems: ['realign_failed'], scores, rule: JUDGE_RULE }
@@ -39,7 +40,7 @@ export function remasterJudgement(meta = {}) {
 export function qualityOf(meta = {}) {
   const r = meta.remaster || null, raw = meta.quality?.raw || {};
   const g = (meta.enhancement?.variants || []).find((v) => v.name === 'unipase')?.guard || {};
-  const fb = num(r?.fallback_sent_pct ?? r?.swapped_pct);
+  const fb = num(r?.flagged_sent_pct ?? r?.fallback_sent_pct ?? r?.swapped_pct);
   const bw = num(raw.bandwidth_khz);
   const metrics = {
     grade: meta.quality?.overall ?? null, source_bandwidth_khz: bw, source_rolloff_hz: num(raw.rolloff_hz), source_snr_db: num(raw.snr_db),
@@ -60,10 +61,10 @@ export function qualityOf(meta = {}) {
   if (s === 'archived') return out('archived', r.archived_why || 'archived by Chad: kept for better technology, out of every queue');
   if (s === 'waiting' || s == null) return out('unknown', r.why || 'not processed yet');
   const lowBw = bw != null && bw <= UNREPAIRABLE_BW_KHZ;
-  if (s === 'kept' || s === 'deferred') return out('unrepairable', `still playing the original audio${lowBw ? ` (source bandwidth ${bw} kHz)` : ''}${fb != null ? `, ${fb} % of sentences fell back` : ''}${r.verdict === 'keep-human' ? ' — decided by Chad' : ''}`);
+  if (s === 'kept' || s === 'deferred') return out('unrepairable', `still playing the original audio${lowBw ? ` (source bandwidth ${bw} kHz)` : ''}${fb != null ? `, ${fb} % of sentences differ from the original transcript` : ''}${r.verdict === 'keep-human' ? ' — decided by Chad' : ''}`);
   if (s === 'review') {
-    if (lowBw && fb != null && fb > 15) return out('unrepairable', `source bandwidth ${bw} kHz and ${fb} % of sentences fell back: real word damage`);
-    return out('review', r.why || `${fb} % of sentences fell back (> 15 %)`);
+    if (lowBw && fb != null && fb > 15) return out('unrepairable', `source bandwidth ${bw} kHz and ${fb} % of sentences differ from the original transcript: real word damage`);
+    return out('review', r.why || `the words differ from the original transcript in ${fb} % of sentences (> 15 %)`);
   }
   if (s === 'done') {
     if (meta.enhancement?.listening !== 'unipase') return out('unknown', 'marked done but the listening copy is not the remaster');
@@ -72,7 +73,7 @@ export function qualityOf(meta = {}) {
     if (!assessed && ck !== 'changed') return ['unchanged', 'suspect'].includes(ck) ? out('unchanged', r.check.why || 'the remaster is not measurably different from the original') : out('unverified', 'no measured proof that the remaster differs from, or improves on, the original');
     if (r.verdict === 'pass-human-full') return out('usable', 'published in full by Chad (no sentence splicing)');   // the full copy is pure by construction
     // NEVER A SPLICE (Chad 10-29): any sentence from the original inside the listening copy = not publishable (the old word guard spliced)
-    if ((r.swapped || 0) > 0 || (fb || 0) > 0) return out('spliced', `mixes original and remastered audio (${r.swapped ?? '?'} sentences, ${fb ?? '?'} % from the original): revert, then re-render the pure copy`);
+    if ((r.swapped || 0) > 0 || (r.fallback_sent_pct || 0) > 0) return out('spliced', `mixes original and remastered audio (${r.swapped ?? '?'} sentences, ${r.fallback_sent_pct ?? '?'} % from the original): rebuilt from the pure UniPASE output`);
     if (r.method === 'cleaned') return out('cleaned', 'deterministic cleanup published (the generative copy was held by the word guard)');
     return out('usable', 'pure remaster (no sentence from the original)');
   }
