@@ -29,4 +29,10 @@ describe('unpublished talks', () => {
   it('its files 404 to the public', async () => {
     expect((await app.inject({ url: '/api/media/pend/file/web/pend.ogg?v=1' })).statusCode).toBe(404);
   });
+  it('no clip of it either: clip-url, clip and the moment card 404 to the public (10-31: talk 485 leaked 180 s of the original through /clip)', async () => {
+    expect((await app.inject({ url: '/api/media/pend/clip-url?t=60-90' })).statusCode).toBe(404);
+    expect((await app.inject({ url: '/api/media/pend/clip?t=60-90&exp=9999999999&sig=x' })).statusCode).toBe(404);
+    expect((await app.inject({ url: '/api/media/pend/card/60000-90000' })).statusCode).toBe(404);
+    expect((await app.inject({ url: '/api/media/pub/clip-url?t=60-90' })).statusCode).not.toBe(404);
+  });
 });

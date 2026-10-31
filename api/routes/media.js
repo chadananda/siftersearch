@@ -461,7 +461,7 @@ export default async function mediaRoutes(fastify) {
   fastify.get('/:slug/card/:range', async (req, reply) => {
     const r = parseClipRange(req.params.range);
     const it = r && await getMediaBySlug(req.params.slug);
-    if (!r || !it || it.state !== 'done' || !it.dir) return reply.code(404).send({ error: 'NotFound' });
+    if (!r || !it || it.state !== 'done' || !it.dir || (it.restored !== 1 && !isInternal(req))) return reply.code(404).send({ error: 'NotFound' });
     const ck = `${it.slug}:${r.startMs}-${r.endMs}:${it.updated_at}`;
     let buf = momentCards.get(ck);
     if (!buf) {
@@ -483,7 +483,9 @@ export default async function mediaRoutes(fastify) {
 
   fastify.get('/:slug/clip-url', async (req, reply) => {
     const it = await getMediaBySlug(req.params.slug);
-    if (!it || it.state !== 'done') return reply.code(404).send({ error: 'NotFound' });
+    // unpublished (no passed remaster, restored ≠ 1): no clips either. 10-31: talk 485 (remaster held for a measured regression, web copy = the
+    // original) was 404 on its page and files, but /clip-url + /clip still handed anyone 180 s of the original audio
+    if (!it || it.state !== 'done' || (it.restored !== 1 && !isInternal(req))) return reply.code(404).send({ error: 'NotFound' });
     if (it.playback === 'search') return reply.code(403).send({ error: 'Forbidden', why: 'text only' });
     if (!clipBudget(req.ip)) return reply.code(429).send({ error: 'TooManyClips' });
     const r = parseRange(req.query?.t);
@@ -499,7 +501,7 @@ export default async function mediaRoutes(fastify) {
     const it = await getMediaBySlug(req.params.slug);
     const q = req.query || {};
     const r = parseRange(q.t);
-    if (!it || it.state !== 'done' || !r || r.end == null) return reply.code(404).send({ error: 'NotFound' });
+    if (!it || it.state !== 'done' || !r || r.end == null || (it.restored !== 1 && !isInternal(req))) return reply.code(404).send({ error: 'NotFound' });
     if (!verifyClip({ slug: it.slug, start: r.start, end: r.end, exp: q.exp, sig: q.sig })) return reply.code(403).send({ error: 'Forbidden', why: 'expired or unsigned clip' });
     if (r.end - r.start > CLIP_CAP + 0.5) return reply.code(400).send({ error: 'clip too long' });
     const m4a = q.fmt === 'm4a';
