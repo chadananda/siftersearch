@@ -150,6 +150,8 @@ const name = (c) => c.slug || `#${c.id}`;
 
 /** media-dedupe ops job: every duplicate group → best chosen, metadata merged, the rest eliminated. Dry run unless { write: true }. */
 export async function mediaDedupeJob({ write = false, sample = 25 } = {}, deps = {}) {
+  // PAUSED 10-31 (coordinator): Dewey's group labels pair different talks — no eliminations until the content gate is in
+  if (write && !deps.allowWrite) return { write: false, paused: 'content gate not yet in; eliminations paused' };
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const readMeta = deps.readMeta || defaultReadMeta, writeMeta = deps.writeMeta || defaultWriteMeta, readSidecar = deps.readSidecar || defaultSidecar;

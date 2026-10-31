@@ -128,7 +128,7 @@ describe('media-dedupe job', () => {
       readMeta: async (dir) => metas[dir], writeMeta: async (dir, m) => { writes[dir] = m; },
       ops: { pendingRuns: async () => [], cancel: async (id) => calls.cancelled.push(id) },
       docs: { softDeleteDocs: async (ids) => { calls.deleted.push(...ids); return { deleted: ids.length, refused: [] }; } },
-      purge: async (s) => { calls.purged.push(s); return true; }, queue: async (n, p) => calls.queued.push([n, p]), now: () => 'T0',
+      allowWrite: true, purge: async (s) => { calls.purged.push(s); return true; }, queue: async (n, p) => calls.queued.push([n, p]), now: () => 'T0',
     };
     return { rows, metas, writes, calls, deps };
   };
