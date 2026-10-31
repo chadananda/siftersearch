@@ -243,6 +243,11 @@ describe('podsProven: the typed pool grows past one pod only on evidence of talk
     expect(LH.rampGrowth({ done: d(8) }, { now, pods: 2 })).toMatchObject({ ok: true, talks_h: 4, ref_talks_h: null });
     expect(LH.rampGrowth({ done: d(8), ramp_log: [{ pods: 2, talks_h: 3 }] }, { now, pods: 2 })).toMatchObject({ ok: true, ref_talks_h: 3 });
     expect(LH.rampGrowth({ done: d(8), ramp_log: [{ pods: 2, talks_h: 4 }] }, { now, pods: 2 }).ok).toBe(false);   // flat → hold
+    // a replacement at the same size is no baseline: the ref is the rental that first reached this size (10-31: 6.5, then replacements at 18, 22)
+    const log = [{ pods: 1, talks_h: 1 }, { pods: 2, talks_h: 2 }, { pods: 2, talks_h: 5 }, { pods: 2, talks_h: 6 }];
+    expect(LH.rampGrowth({ done: d(8), ramp_log: log }, { now, pods: 2 })).toMatchObject({ ok: true, ref_talks_h: 2 });
+    // the pool shrank to 1 and regrew: the newest growth to 2 is the baseline
+    expect(LH.rampGrowth({ done: d(8), ramp_log: [...log, { pods: 1, talks_h: 3 }, { pods: 2, talks_h: 4 }] }, { now, pods: 2 })).toMatchObject({ ok: false, ref_talks_h: 4 });
   });
   it('podRampCap: proven with no pod live → one pod, never zero (the old min(earned+1, live) stalled the pool at 0 forever)', () => {
     expect(LH.podRampCap({ proven: true, earned: 0, live: 0, rampOk: false })).toBe(1);

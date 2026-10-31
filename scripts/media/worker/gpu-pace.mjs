@@ -98,10 +98,10 @@ export function wantAnother({ running, cap, onDeck, depth = 1, waiting = 0, memG
 
 /** The deck's depth, learned: a ramp claim (the GPU starved with the deck full) KEEPS the deck one deeper, because a talk takes longer to
  *  reach the GPU than the GPU takes per talk (10-31 pods 387/388: the pod re-encodes the light chain, ~6 min CPU, before DFN; a deck of one
- *  left the GPU at 0 % for 8 min with 5 of 12 slots used, 3 h gauge mean 61-63 %). Two talks queued at GPU admission = the deck runs
- *  ahead: one shallower per RAMP_MS, never under 1. Pure. */
-export function nextDepth(depth, { onDeck, waiting = 0, rampClaim = false, sinceChangeMs = Infinity }) {
+ *  left the GPU at 0 % for 8 min with 5 of 12 slots used, 3 h gauge mean 61-63 %). The depth never shrinks: talks queued at GPU admission
+ *  already count toward the deck (onDeck), so a deep deck claims nothing while they wait. Shrinking on a queue (the old rule) took pod 389's
+ *  deck from 4 to 1 in 3 min; once the GPU caught up, each new talk took ~5 min of light-chain CPU to reach it and the GPU idled. Pure. */
+export function nextDepth(depth, { onDeck, rampClaim = false }) {
   if (rampClaim) return Math.max(depth, onDeck + 1);
-  if (waiting >= 2 && depth > 1 && sinceChangeMs >= RAMP_MS) return depth - 1;
   return depth;
 }

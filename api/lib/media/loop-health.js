@@ -175,10 +175,13 @@ export function talksPerHour(st, { now = Date.now(), horizonH = 2 } = {}) {
 }
 /** Did the last pod added raise talks published per hour (coordinator 10-31: add pods one at a time, only while talks/h rise with each)?
  *  st.ramp_log = [{ at, pods, talks_h }] — one entry per typed rental, talks_h measured when it was rented. Compared with the entry that
- *  brought the pool to its current size (a replacement at the same size resets it). No entry for this size = nothing to compare = ok. Pure. */
+ *  FIRST brought the pool to its current size since it was last smaller. A replacement at the same size is not a baseline: its talks_h already
+ *  holds the lost pod's output (10-31: 390 replaced 387/388 at 22 talks/h, pool held at 2 although it rose 6.5 → 20 since pod 2 first came).
+ *  No entry for this size = nothing to compare = ok. Pure. */
 export function rampGrowth(st, { now = Date.now(), horizonH = 2, pods = 0 } = {}) {
   const talks_h = talksPerHour(st, { now, horizonH });
-  const ref = [...(st.ramp_log || [])].reverse().find((x) => x.pods === pods);
+  const log = st.ramp_log || [], smaller = log.findLastIndex((x) => x.pods < pods);
+  const ref = log.slice(smaller + 1).find((x) => x.pods === pods);
   if (!ref) return { ok: true, talks_h, ref_talks_h: null, why: 'no rental at this size recorded' };
   const ok = talks_h > ref.talks_h;
   return { ok, talks_h, ref_talks_h: ref.talks_h, why: ok ? `talks/h rose ${ref.talks_h} → ${talks_h} since pod ${pods} came` : `talks/h ${talks_h} not above ${ref.talks_h} when pod ${pods} came: hold at ${pods}` };

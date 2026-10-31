@@ -28,8 +28,9 @@ it('the deck depth is learned: a starved GPU keeps the deck one deeper; two talk
   expect(wantAnother({ ...base, onDeck: 2, depth: 2 })).toBe(false);
   expect(nextDepth(1, { onDeck: 1, rampClaim: true })).toBe(2);
   expect(nextDepth(3, { onDeck: 1, rampClaim: true })).toBe(3);
-  expect(nextDepth(3, { onDeck: 3, waiting: 2, sinceChangeMs: RAMP_MS })).toBe(2);
-  expect(nextDepth(3, { onDeck: 3, waiting: 2, sinceChangeMs: RAMP_MS - 1 })).toBe(3);
+  // never shallower on a queue at admission (pod 389 10-31: 4 → 1 in 3 min, then the GPU starved behind ~5 min of light-chain CPU)
+  expect(nextDepth(3, { onDeck: 3, waiting: 2, sinceChangeMs: RAMP_MS })).toBe(3);
+  expect(wantAnother({ running: 5, cap: 12, onDeck: 3, depth: 3, waiting: 2, memGb: 50, minGb: 4 })).toBe(false);   // a deep deck with talks waiting claims nothing
   expect(nextDepth(1, { onDeck: 2, waiting: 2 })).toBe(1);
   expect(nextDepth(2, { onDeck: 2, waiting: 1 })).toBe(2);
   // the agent feeds the learned depth to every claim decision
