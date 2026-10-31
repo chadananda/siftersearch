@@ -1,7 +1,7 @@
 // One input recording, one job directory, all audio stages local to this image.
 // No production credentials, databases, remote hosts or per-stage SSH dispatch.
-import {readFile,writeFile,mkdir,copyFile,readdir,cp,link} from 'node:fs/promises';
-import {createReadStream} from 'node:fs';
+import {readFile,writeFile,mkdir,copyFile,readdir,cp,link,rm} from 'node:fs/promises';
+import {createReadStream,existsSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {join,extname,resolve} from 'node:path';
 import {runItem,finishQuality} from '../../../api/lib/media/item.js';
@@ -115,6 +115,10 @@ if(job.restore!==false && !result.meta.stages.remaster?.at){
 if(!result.meta.stages.web?.at)result=await runItem(item,{only:['web','trim'],threads},deps);
 await writeFile(join(dir,'meta.json'),JSON.stringify(result.meta));
 await state('complete');
+// working copies stay here (10-31: ~0.9 GB of a 1.45 GB result for a 94-min talk): the probe variants chose the method and the raw AI copy was guarded
+// into enhanced/unipase.flac; tower keeps the empty raw-copy placeholder like every other lane
+for(const f of ['enhanced/light.flac','enhanced/dfn.flac'])await rm(join(dir,f),{force:true});
+if(existsSync(join(dir,'enhanced/unipase.cloud.flac')))await writeFile(join(dir,'enhanced/unipase.cloud.flac'),'');
 const files=[];
 const collect=async rel=>{for(const ent of await readdir(join(dir,rel),{withFileTypes:true})){
  const path=join(rel,ent.name);if(path==='original')continue;

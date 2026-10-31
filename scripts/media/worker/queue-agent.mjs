@@ -22,7 +22,7 @@ const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)),
 const CAN = arg('can', 'whole,restore,post,cleanup').split(',').filter(Boolean);
 // the one place a job kind maps to what runs in the image, and what it hands back (relative to the job dir)
 export const KINDS = {
-  whole: { cmd: ['/usr/local/bin/node', '/opt/sifter/api/lib/media/whole-recording.mjs'], outputs: ['result.json'], tree: 'item', skip: 'original/' },
+  whole: { cmd: ['/usr/local/bin/node', '/opt/sifter/api/lib/media/whole-recording.mjs'], outputs: ['result.json'], tree: 'item', skip: 'original/', manifest: true },
   restore: { cmd: ['python', '/opt/sifter/media/worker/single_restore.py'], outputs: ['post.json', 'done.json'], tree: 'post' },
 };
 KINDS.post = KINDS.cleanup = KINDS.restore;
@@ -86,9 +86,12 @@ async function work(job) {
     if (lost) throw new Error('lease lost');
     if (code) throw new Error(`exit ${code}: ${tail.slice(-700)}`);
     // only what the stage produced (never the original — tower holds it); a declared output that is absent fails the job here, not at tower
-    const tree = join(dir, kind.tree), files = [...kind.outputs.map((f) => join(dir, f)), ...(await walk(tree)).filter((p) => !kind.skip || !relative(tree, p).startsWith(kind.skip))];
     const absent = kind.outputs.filter((f) => !existsSync(join(dir, f)));
     if (absent.length) throw new Error(`stage left no ${absent.join(', ')}: ${tail.slice(-500)}`);
+    // a manifest kind hands back exactly what result.json lists (tower adopts only those): working copies left in the tree never travel
+    const tree = join(dir, kind.tree), files = [...kind.outputs.map((f) => join(dir, f)), ...(kind.manifest
+      ? (JSON.parse(readFileSync(join(dir, 'result.json'), 'utf8')).files || []).map((f) => join(tree, f.path))
+      : (await walk(tree)).filter((p) => !kind.skip || !relative(tree, p).startsWith(kind.skip)))];
     const outputs = [];
     for (const p of files) outputs.push({ name: relative(dir, p), ...(await q.put('results', job.id, relative(dir, p), p, { lease: job.lease })) });
     await q.done({ id: job.id, lease: job.lease, result: { stages: { [job.stages[0]]: { ok: true, seconds: Math.round((Date.now() - t0) / 1000) } }, outputs } });
