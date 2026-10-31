@@ -64,8 +64,11 @@ def load_models(repo, weights, asr_device='cuda'):
     return model, inference_file, new_asr(os.path.join(weights, 'whisper'), asr_device)
 
 
-def new_asr(model_dir, device='cuda'):
-    """The copy's ASR engine. AMD (ROCm torch): whisper.cpp on the GPU (CTranslate2 has no ROCm build); NVIDIA: faster-whisper CUDA. No CPU engine on a GPU worker."""
+def new_asr(model_dir, device='cuda', workers=1):
+    """The copy's ASR engine. AMD (ROCm torch): whisper.cpp on the GPU (CTranslate2 has no ROCm build); NVIDIA: faster-whisper CUDA. No CPU engine on a GPU worker.
+    workers=2 (faster-whisper only): two CTranslate2 replicas so the remaster and the original transcribe AT ONCE. Beam-5 decoding is
+    kernel-launch bound on one host core (aorus 10-31: python 100 % of a core, GPU 40 %); measured in the t4 image, 2 × 10 min:
+    23.8 s sequential → 19.1 s concurrent, identical words, +1.0 GB VRAM (restore_asr lease 3.0 → 4.0)."""
     import torch
     if getattr(torch.version, 'hip', None) and os.environ.get('MEDIA_ASR_ENGINE', 'auto') != 'fasterwhisper':
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'worker'))
@@ -74,7 +77,9 @@ def new_asr(model_dir, device='cuda'):
             raise RuntimeError('AMD host without whisper.cpp / its model / /dev/kfd: refusing (no CPU ASR)')
         return cpp_asr.CppWhisper(threads=4)
     from faster_whisper import WhisperModel
-    return WhisperModel(model_dir, device=device, compute_type='int8' if device == 'cpu' else 'float16', cpu_threads=2)
+    m = WhisperModel(model_dir, device=device, compute_type='int8' if device == 'cpu' else 'float16', cpu_threads=2, num_workers=workers)
+    m.sifter_workers = workers
+    return m
 
 
 def _segments(segs, info, offset=0.0, lang=None):
@@ -135,14 +140,21 @@ def run_job(d, up, inference_file, asr, release_restore=None):
         else:up.cpu()
         reclaim_idle_cuda(torch)
         if release_restore:release_restore()
-        asr = new_asr('/opt/models/weights/whisper', 'cuda')
+        asr = new_asr('/opt/models/weights/whisper', 'cuda', workers=2)
         ASR_MODEL['asr'] = asr
     # BOTH copies through the SAME model and settings (no VAD: it dropped 20 s of speech on a UniPASE copy, 10-23 pilot),
     # so the word guard compares like with like — the production transcript came from another model with a prompt
-    for src_wav, name in ((wav_out, 'asr.json'), (wav_in, 'asr_orig.json')):
+    def asr_copy(pair):
+        src_wav, name = pair
         tr = transcribe(asr, src_wav, meta.get('prompt'), meta.get('runs'))
         json.dump(tr, open(os.path.join(d, name + '.tmp'), 'w'), ensure_ascii=False)
         os.replace(os.path.join(d, name + '.tmp'), os.path.join(d, name))
+    pairs = ((wav_out, 'asr.json'), (wav_in, 'asr_orig.json'))
+    if getattr(asr, 'sifter_workers', 1) > 1:   # the two copies at once (new_asr workers=2); errors still raise from map
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(2) as ex: list(ex.map(asr_copy, pairs))
+    else:
+        for pair in pairs: asr_copy(pair)
     import soundfile as sf
     info = sf.info(wav_in)
     for f in (wav_in, wav_out):
