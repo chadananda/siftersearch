@@ -133,6 +133,48 @@ describe('progress checks (work, not time)', () => {
     expect(find(h, 'Media pods wanted, none rented')).toMatchObject({ ok: true });
     expect(find(h, 'Media pods wanted, none rented').detail).toMatch(/rentals held/);
   });
+  it('(b) a home host whose profile excludes gpu (Boss, CPU+LLM) is not a GPU: its 0 % never counts as idle or busy', () => {
+    const now = 100 * M, st = base(now);
+    const h = LH.evaluate(st, now);
+    expect(h.facts.gpu_list.map((g) => g.name)).toEqual(['aorus']);
+  });
+  describe('(d) a rented pod idle while GPU work waits — CRITICAL, with the pod, its $/h and the cause', () => {
+    const withPod = (now, { gpu = 2, staged = 0 } = {}) => {
+      const st = base(now); st.host_gauge.aorus.gpu = 90;
+      st.pods = { p1: { id: 'p1', name: 'sifter-unipase-377', status: 'ready', costPerHr: 0.89, gauge: { gpu, at: now } } };
+      st.pod_plan.staged_n = staged; st.q_last = { leased: {}, beat: {} };
+      return st;
+    };
+    const idle = (st, now) => { let h; for (let i = 1; i <= 3; i++) { st.pods.p1.gauge.at = now + i * 15_000; h = tick(st, now + i * 15_000); } return find(h, 'Media rented pod idle'); };
+    it('nothing staged', () => {
+      const now = 100 * M, st = withPod(now);
+      const c = idle(st, now);
+      expect(c).toMatchObject({ ok: false, level: 'critical' });
+      expect(c.detail).toMatch(/sifter-unipase-377 \$0\.89\/h at 2% GPU for 3 ticks · nothing staged/);
+      expect(find(LH.evaluate(st, now + 45_000), 'Media GPUs idle with work queued').ok).toBe(true);   // aorus is busy: (b) alone missed this
+    });
+    it('agent not claiming: work staged, the pod holds none', () => {
+      const now = 100 * M, st = withPod(now, { staged: 4 });
+      st.q_last.beat['pod-sifter-unipase-377'] = now - 12 * M;
+      expect(idle(st, now).detail).toMatch(/agent not claiming — 4 staged on R2, it holds none \(agent beat 1[23] min ago\)/);
+    });
+    it('claiming but stuck: the pod holds a lease and its GPU stays idle', () => {
+      const now = 100 * M, st = withPod(now, { staged: 4 });
+      st.q_last.leased['pod-sifter-unipase-377'] = 1;
+      expect(idle(st, now).detail).toMatch(/claiming but stuck — holds 1 lease/);
+    });
+    it('busy pod, too few ticks, or no GPU work queued: ok; a gone pod drops its streak', () => {
+      const now = 100 * M;
+      expect(idle(withPod(now, { gpu: 70 }), now).ok).toBe(true);
+      const st = withPod(now); st.pods.p1.gauge.at = now + 15_000;
+      expect(find(tick(st, now + 15_000), 'Media rented pod idle').ok).toBe(true);
+      const none = withPod(now); none.pod_plan.gpu_queued_h = 0;
+      expect(idle(none, now).ok).toBe(true);
+      const gone = withPod(now); idle(gone, now); gone.pods.p1.terminated = now + 50_000;
+      tick(gone, now + 60_000);
+      expect(Object.keys(gone.health_cond).some((k) => k.startsWith('pod_idle:'))).toBe(false);
+    });
+  });
   it('a stale work section is CRITICAL with its evidence; other callers never advance a streak', () => {
     const now = 100 * M, st = base(now);
     cadence(st, 'q_lan', { every: M, end: now - 50 * M });

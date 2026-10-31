@@ -7,6 +7,7 @@ export const K_MISSED = 4;     // own passes missed before a section is stale / 
 export const K_STEPS = 3;      // median step durations without a pulled step (while work is in flight) before progress is "stopped"
 export const STREAK = 3;       // loop ticks a progress condition must hold before it counts
 export const MIN_SAMPLES = 3;  // measured intervals before a cadence is trusted
+import { CLASSES } from './stages.js';   // which home hosts take gpu work (worker profiles)
 const KEEP = 20;
 
 export const median = (xs) => {
@@ -92,12 +93,18 @@ const sumVals = (o) => Object.values(o || {}).reduce((a, x) => a + (Number(x) ||
 const lastDone = (st) => (st.done || []).reduce((a, d) => Math.max(a, d.at || 0), 0);
 
 /** The evidence the progress checks read, from the state file. Pure. */
-export function workFacts(st, now, { freshMs = null } = {}) {
+/** A pod's agent works under its own host name: `pod-<name>` (step_log, queue leases); older records use the name or the RunPod id. */
+const podHosts = (p) => [`pod-${p.name}`, p.name, p.id].filter(Boolean);
+const podLeases = (st, p) => podHosts(p).reduce((a, h) => a + (Number(st.q_last?.leased?.[h]) || 0) + (Number(st.q_lan?.leased?.[h]) || 0), 0);
+const podBeat = (st, p) => Math.max(0, ...podHosts(p).map((h) => Math.max(st.q_last?.beat?.[h] || 0, st.q_lan?.beat?.[h] || 0)));
+
+export function workFacts(st, now, { freshMs = null, gpuHosts = CLASSES.gpu.hosts } = {}) {
   const fresh = freshMs ?? 4 * (median(st.loop_beats?.tick?.gaps) || 60_000);
   const leases = sumVals(st.q_lan?.leased) + sumVals(st.q_last?.leased);
   const gpus = [];
-  for (const [h, g] of Object.entries(st.host_gauge || {})) if (g && g.gpu != null && now - (g.at || 0) < fresh) gpus.push({ name: h, gpu: g.gpu });
-  for (const p of Object.values(st.pods || {})) if (!p.terminated && p.status === 'ready' && p.gauge?.gpu != null && now - (p.gauge.at || 0) < fresh) gpus.push({ name: p.name, gpu: p.gauge.gpu });
+  // a home host counts only if its profile takes gpu work (Boss is CPU+LLM by policy: its 0 % GPU is expected, not idle)
+  for (const [h, g] of Object.entries(st.host_gauge || {})) if (gpuHosts.includes(h) && g && g.gpu != null && now - (g.at || 0) < fresh) gpus.push({ name: h, gpu: g.gpu });
+  for (const p of Object.values(st.pods || {})) if (!p.terminated && p.status === 'ready' && p.gauge?.gpu != null && now - (p.gauge.at || 0) < fresh) gpus.push({ name: p.name, gpu: p.gauge.gpu, pod: p });
   const busyGpus = gpus.filter((g) => g.gpu >= 5);
   const plan = st.pod_plan || {};
   const livePods = Object.values(st.pods || {}).filter((p) => !p.terminated).length;
@@ -158,7 +165,28 @@ export function evaluate(st, now, { update = false, k = K_MISSED, kSteps = K_STE
   checks.push({ name: 'Media pods wanted, none rented', ok: !(noPods && sc.ticks >= streakN && sc.refusals_since === 0), level: 'warn',
     detail: blocked ? `rentals held: ${st.cloud_stopped || st.rental_pause || `breaker until ${new Date(st.breaker_until).toISOString().slice(11, 16)}Z`}`
       : `wanted ${f.pods_wanted}, live ${f.live_pods}, ${f.staged_n} gpu steps on R2${noPods ? ` — none rented for ${sc.ticks} ticks${sc.refusals_since ? ` (${sc.refusals_since} refusals recorded: ${st.last_error || ''})` : ', no refusal recorded'}` : ''}` });
-  return { at: now, sections, checks, facts: { ...f, gpus: undefined, gpu_list: f.gpus }, heals: (st.loop_heals || []).slice(-5) };
+  // (d) a rented pod (ready, billing) sitting idle while GPU work waits — the most expensive failure: we pay for an idle card.
+  // One streak per pod (a new idle pod starts its own count); the cause is read from the queue: nothing staged / not claiming / stuck.
+  const idlePods = [];
+  const seen = new Set();
+  for (const g of f.gpus) {
+    if (!g.pod) continue;
+    const p = g.pod, key = `pod_idle:${p.id || p.name}`; seen.add(key);
+    const on = !ended && f.gpu_queued && g.gpu < 5;
+    const s = streak(st, key, on, tickRuns, update);
+    if (!(on && s.ticks >= streakN)) continue;
+    const held = podLeases(st, p), beatAt = podBeat(st, p);
+    const cause = held > 0 ? `claiming but stuck — holds ${held} lease${held > 1 ? 's' : ''}, agent beat ${beatAt ? `${min(now - beatAt)} ago` : 'never'}`
+      : f.staged_n === 0 ? 'nothing staged — 0 gpu steps on R2 for it to claim (the mover is not feeding the edge)'
+      : `agent not claiming — ${f.staged_n} staged on R2, it holds none (agent beat ${beatAt ? `${min(now - beatAt)} ago` : 'never'})`;
+    idlePods.push(`${p.name} $${p.costPerHr ?? '?'}/h at ${g.gpu}% GPU for ${s.ticks} ticks · ${cause}`);
+  }
+  if (update) for (const k of Object.keys(st.health_cond || {})) if (k.startsWith('pod_idle:') && !seen.has(k)) delete st.health_cond[k];
+  const rented = f.gpus.filter((g) => g.pod);
+  checks.push({ name: 'Media rented pod idle', ok: idlePods.length === 0, level: 'critical',
+    detail: idlePods.length ? `PAYING FOR IDLE: ${idlePods.join(' | ')} · ${f.gpu_queued_h} h GPU work queued, ${f.staged_n} on R2`
+      : `${rented.length} ready pod${rented.length === 1 ? '' : 's'} reporting${rented.length ? `: ${rented.map((g) => `${g.name} ${g.gpu}%`).join(', ')}` : ''} · ${f.staged_n} gpu steps on R2` });
+  return { at: now, sections, checks, facts: { ...f, gpus: undefined, gpu_list: f.gpus.map(({ name, gpu }) => ({ name, gpu })) }, heals: (st.loop_heals || []).slice(-5) };
 }
 
 /** A queue client / repo whose calls throw once its pass was abandoned (a hung pass that wakes later can neither enqueue, ack nor adopt). */
