@@ -176,7 +176,7 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     const g = deliver('gpu', {}, E);
     expect(g.file_id).toBe(p.file_id);
     expect(String(E.store.get(`files/${g.file_id}/in.mp3`))).toBe('audio-1');   // the original, staged on the edge
-    expect(g.body.inputs.map((i) => [i.store, i.id, i.path])).toEqual(requiredFiles('cpu-prep').map((f) => ['files', p.file_id, 'item/' + f]));
+    expect(g.body.inputs.map((i) => [i.store, i.id, i.path])).toEqual(requiredFiles('cpu-prep').filter((f) => f !== 'enhanced/light.flac').map((f) => ['files', p.file_id, 'item/' + f]));
     for (const i of g.body.inputs) expect(sha(E.store.get(`files/${i.id}/${i.path}`))).toBe(i.sha256);   // what the pod checks
     expect(store.has(`results/${p.id}/result.json`)).toBe(true);   // prep stays until gpu has run
 
@@ -237,6 +237,15 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     await feed(st, d); deliver('cpu-prep'); await pull(st, d);
     const r = (await qtick(st, { ...d, buffer: { want_h: 5 } })).moved;
     expect(r).toMatchObject({ moved: 1, bytes: expect.any(Number), mb_per_audio_h: expect.any(Number) });
+    expect(onEdge('files/').some((k) => k.endsWith('enhanced/light.flac'))).toBe(false);
+    const g = deliver('gpu', {}, E);
+    expect(g.body.inputs.map((i) => i.path)).toEqual(['item/meta.json', 'item/waveform.json']);
+  });
+  it('light.flac never crosses the uplink when prep\'s pull stages the gpu step inline either: not uploaded, not a gpu input', async () => {
+    lanOnly(); st.queue = [1];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); deliver('cpu-prep');
+    expect((await pull(st, d)).typed).toMatchObject({ steps: 1, errors: 0 });
     expect(onEdge('files/').some((k) => k.endsWith('enhanced/light.flac'))).toBe(false);
     const g = deliver('gpu', {}, E);
     expect(g.body.inputs.map((i) => i.path)).toEqual(['item/meta.json', 'item/waveform.json']);

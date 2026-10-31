@@ -145,11 +145,12 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           if (!next || SJ.AUDIO_TYPES.indexOf(next) <= SJ.AUDIO_TYPES.indexOf(type)) throw Error(`${type} delivered without its stages (next would be ${next})`);
           const where = next === 'gpu' && !stageInline ? 'lan' : next === 'gpu' ? SJ.gpuRoute(lanCap ||= await q.capacity().catch(() => null), { edge: !!edge, targetH: TARGET_H, ...buf }) : 'lan', nq = qOf(where);
           if (where === 'edge') buf.staged_h += (ch.audio_s || 0) / 3600;
+          const files = where !== src ? sentFiles(r.files) : r.files;   // staged: what the next host rebuilds itself never crosses the uplink
           if (where !== src) {   // the next step runs on the other transport: its inputs go into that queue's files/<file id>/
             if (where === 'edge') await nq.put('files', ch.fileId, ch.input, join(it.dir, m.original));   // the LAN holds it from the feed
-            for (const f of r.files) { const tmp = join(stg, 'x', 'item', f.path); await sq.get('results', j.id, 'item/' + f.path, tmp); await nq.put('files', ch.fileId, 'item/' + f.path, tmp); }
+            for (const f of files) { const tmp = join(stg, 'x', 'item', f.path); await sq.get('results', j.id, 'item/' + f.path, tmp); await nq.put('files', ch.fileId, 'item/' + f.path, tmp); }
           }
-          const job = SJ.typedJob(next, { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: j.id, files: r.files, staged: where !== src }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
+          const job = SJ.typedJob(next, { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: j.id, files, staged: where !== src }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
           await nq.enqueue([job]);
           qj.adopted = true;
           st.qjobs[job.id] = { itemId: qj.itemId, slug: qj.slug, sha: ch.sha, kind: 'typed', type: next, audio_s: ch.audio_s, at: now(), ...(where === 'edge' ? { where } : {}) };

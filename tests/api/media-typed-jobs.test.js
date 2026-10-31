@@ -112,4 +112,33 @@ res = sr.finish(d, run=lambda cmd, **kw: (_ for _ in ()).throw(AssertionError('r
 print(json.dumps({'held': res['held'], 'verdict': res['qa']['verdict'], 'done': os.path.exists(os.path.join(d, 'done.json')), 'web': res.get('web')}))`));
     expect(r).toEqual({ held: true, verdict: 'review', done: true, web: null });
   });
+  it('transit: the gpu host sends the guarded copy as Opus and no FLAC; finish decodes it back, recreates the placeholder, records the codec', () => {
+    const r = JSON.parse(py(`
+import hashlib
+open(os.path.join(d, 'in.mp3'), 'w').close(); open(os.path.join(d, 'out.flac'), 'w').close()
+subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=300:duration=2', '-ac', '1', '-ar', '48000', os.path.join(d, 'post/unipase.flac')], check=True)
+open(os.path.join(d, 'work.json'), 'w').write('{"paragraphs": []}')
+sha = hashlib.sha256(open(os.path.join(d, 'work.json'), 'rb').read()).hexdigest()
+json.dump({'kind': 'restore', 'post': {'mode': 'restore', 'work_sha': sha, 'max_fallback_pct': 15}}, open(os.path.join(d, 'job.json'), 'w'))
+json.dump({'audio_s': 2}, open(os.path.join(d, 'restore-result.json'), 'w'))
+json.dump({'fallback_sent_pct': 40, 'sentences': 10}, open(os.path.join(d, sr.GUARD_OUT), 'w'))
+sr.send(d, sr.paths(d)[2])
+sent = sorted(os.path.relpath(os.path.join(a, f), d) for a, _, fs in os.walk(d) for f in fs)
+res = sr.finish(d, run=lambda cmd, **kw: (_ for _ in ()).throw(AssertionError('ran ' + str(cmd))))
+flac = os.path.join(d, 'post/unipase.flac')
+codec = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'stream=codec_name,sample_rate', '-of', 'csv=p=0', flac], capture_output=True, text=True).stdout.strip()
+print(json.dumps({'sent': sent, 'codec': codec, 'out': os.path.getsize(os.path.join(d, 'out.flac')), 'ogg_left': os.path.exists(os.path.join(d, sr.TRANSIT_OGG)), 'transit': res['transit']}))`));
+    expect(r.sent.filter((f) => f.endsWith('.flac'))).toEqual([]);   // nothing decoded leaves the gpu host
+    expect(r.sent).toContain('post/unipase.ogg');
+    expect(r.codec).toBe('flac,48000');
+    expect(r.out).toBe(0);
+    expect(r.ogg_left).toBe(false);   // the master is the FLAC from here; the transit copy is not adopted
+    expect(r.transit).toEqual({ tool: 'ffmpeg libopus', settings: { codec: 'libopus', b: '96k', ar: 48000, ac: 1, application: 'audio' } });
+  });
+  it('transit: a result from before (FLAC sent) is read as is; a whole job on one host keeps its FLAC (only typed gpu jobs send Opus)', () => {
+    expect(py(`
+open(os.path.join(d, 'post/unipase.flac'), 'w').write('x')
+print(json.dumps([sr.receive(d), open(os.path.join(d, 'post/unipase.flac')).read(), os.path.exists(os.path.join(d, 'out.flac'))]))`)).toBe('[null, "x", true]');
+    expect(phases).toMatch(/mode==='gpu'&&ctx\.type==='gpu'\?\{SIFTER_TRANSIT:'1'\}/);
+  });
 });

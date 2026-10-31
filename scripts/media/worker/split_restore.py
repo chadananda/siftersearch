@@ -2,8 +2,12 @@
   gpu <dir>:    UniPASE + the re-ASR of BOTH copies (runpod_worker.run_job), the word guard's MEASUREMENT (post.guard: remaster_guard.py, measures only,
                 never splices) and the forced realign on the guarded copy — audio and models loaded once, on the GPU host.
   finish <dir>: post.py on a CPU host with those two measurements replayed (identical commands, recorded outputs): verdict, assessment, quiet, encodes.
-Files: <dir>/{in.*, work.json, job.json{post}} → gpu adds out.flac (emptied: the guard consumed it), asr.json, asr_orig.json, restore-result.json,
-post/{unipase.flac, restored.guard.json, guard.out.json, realign.json, realign.out.json} → finish adds post.json, done.json, post/** (web copies)."""
+Files: <dir>/{in.*, work.json, job.json{post}} → gpu adds asr.json, asr_orig.json, restore-result.json,
+post/{unipase.ogg, transit.json, restored.guard.json, guard.out.json, realign.json, realign.out.json} → finish adds post.json, done.json, post/** (web copies).
+Transit (Chad 10-31: no decoded audio ever stored in the cloud): the gpu host sends the guarded copy as Opus (TRANSIT) instead of FLAC (~310 MB per
+audio-h → ~40) and no empty out.flac; finish decodes it back to post/unipase.flac and recreates the placeholder. 96k measured 10-31 on boss
+(nakhjavani-10-talks-by, 58 min, lossless vs 64/96/128/160k): verdict, guard, realign, quiet spans, trim and assessment checks identical at every
+rate; DNSMOS/NISQA within 0.035 of lossless at 96k (64k: NISQA -0.10)."""
 import contextlib, gc, glob, json, os, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -12,6 +16,33 @@ sys.path.insert(0, os.path.dirname(HERE))
 import post as postmod
 
 GUARD_OUT, REALIGN_OUT = 'post/guard.out.json', 'post/realign.out.json'
+TRANSIT_OGG, TRANSIT_JSON = 'post/unipase.ogg', 'post/transit.json'
+TRANSIT = {'codec': 'libopus', 'b': '96k', 'ar': 48000, 'ac': 1, 'application': 'audio'}
+
+
+def ff(args): subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y'] + args, check=True)
+
+
+def send(d, f):
+    """gpu host: the guarded copy leaves as Opus; the FLAC and the empty raw-copy placeholder stay here."""
+    ff(['-i', f['flac'], '-ac', str(TRANSIT['ac']), '-ar', str(TRANSIT['ar']), '-c:a', TRANSIT['codec'], '-b:a', TRANSIT['b'], '-application', TRANSIT['application'],
+        os.path.join(d, TRANSIT_OGG)])
+    json.dump({'tool': 'ffmpeg ' + TRANSIT['codec'], 'settings': TRANSIT}, open(os.path.join(d, TRANSIT_JSON), 'w'))
+    for p in (f['flac'], f['out']):
+        if os.path.exists(p): os.remove(p)
+
+
+def receive(d):
+    """finish host: decode the transit copy back to post/unipase.flac (the guard's --output that Replay checks); recreate the placeholder.
+    A result from before the transit (FLAC sent) passes through unchanged. Returns the transit record, or None."""
+    f = {'flac': os.path.join(d, 'post', 'unipase.flac'), 'out': os.path.join(d, 'out.flac')}
+    ogg = os.path.join(d, TRANSIT_OGG)
+    if os.path.exists(ogg) and not os.path.exists(f['flac']):
+        ff(['-i', ogg, '-ac', '1', '-ar', str(TRANSIT['ar']), '-c:a', 'flac', f['flac']])
+    if os.path.exists(ogg): os.remove(ogg)      # adoptPost copies post/** onward: the FLAC is the master from here
+    if not os.path.exists(f['out']): open(f['out'], 'w').close()
+    tj = os.path.join(d, TRANSIT_JSON)
+    return json.load(open(tj)) if os.path.exists(tj) else None
 
 
 def stage(d, name):
@@ -66,7 +97,9 @@ def gpu(d):
         except Exception as err:     # recorded: post.py on the finishing host gets the same failure (its "realign unavailable" path), not a crash here
             rec = {'error': (str(err) + ' ' + (getattr(err, 'stderr', '') or ''))[-500:]}
         json.dump(rec, open(os.path.join(d, REALIGN_OUT), 'w'))
-    open(f['out'], 'w').close()      # the raw copy was guarded into post/unipase.flac; its bytes do not travel (whole jobs empty it too)
+    if os.environ.get('SIFTER_TRANSIT') == '1':      # a typed gpu job: the guarded copy crosses hosts (phases.mjs split)
+        stage(d, 'transit'); send(d, f)              # the raw copy was guarded into post/unipase.flac; neither FLAC travels
+    else: open(f['out'], 'w').close()               # a whole job on one host: the raw copy's bytes are dropped, the guarded FLAC stays
     stage(d, 'complete')
 
 
@@ -100,8 +133,10 @@ def finish(d, run=subprocess.run, silence=None):
     """runpod_worker.finalize + single_restore.post_only, with the replaying runner."""
     stage(d, 'guard')
     done = json.load(open(os.path.join(d, 'restore-result.json')))
+    transit = receive(d)
     try:
         res = postmod.process(d, runner=Replay(d, run), silence=silence)
+        if transit: res['transit'] = transit
         json.dump(res, open(os.path.join(d, 'post.json'), 'w'))
         done['post_s'] = res.get('seconds')
     except Exception:

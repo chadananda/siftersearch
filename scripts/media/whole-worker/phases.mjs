@@ -64,7 +64,7 @@ export async function open(jobDir,type){
   acquireAsrHost:undefined,pickAsrHost:()=> 'container',asrPickReason:()=> 'container local',asrHost:()=>null,pickDiarHost:()=>null,
   diarize:(input,output,ctl)=>tool('diarize',input,{output},ctl),
   encodeRemote:(recipe,input,output,opts={})=>tool('encode',input,{recipe,output,...(opts.af?{af:opts.af}:{}),...(opts.window?{ss:opts.window.ss,t:opts.window.t}:{})})};
- const ctx={job,jobDir,dir,threads,device,state,tools};
+ const ctx={job,jobDir,dir,type,threads,device,state,tools};
  ctx.deps=meta=>({detachedWorker:true,tools,llm:{},repo:{getMediaItem:async()=>ctx.item,updateMediaItem:async()=>{}},cbPeople:async()=>job.people||[],loadVocab:async()=>buildVocab([CORE_TERMS,job.vocab||[]]),now:()=>new Date().toISOString(),draining:async()=>false,drainingNow:()=>false});
  return ctx;
 }
@@ -152,7 +152,9 @@ async function linkOriginal(ctx,meta,restore){
 async function split(ctx,mode,restore,timeoutMs){
  await ctx.state(mode==='gpu'?'unipase':'guard');
  const timer=setInterval(()=>readFile(join(restore,'progress.json'),'utf8').then(JSON.parse).then(p=>ctx.state(p.stage)).catch(()=>{}),2000);
- try{await local.run('python',[SPLIT,mode,restore],{threads:ctx.threads,timeoutMs});}finally{clearInterval(timer);}
+ // a typed gpu job's guarded copy crosses hosts: split_restore.py sends it as Opus (never a FLAC in the cloud); a whole job keeps it here, lossless
+ const env=mode==='gpu'&&ctx.type==='gpu'?{SIFTER_TRANSIT:'1'}:{};
+ try{await local.run('python',[SPLIT,mode,restore],{threads:ctx.threads,timeoutMs,env});}finally{clearInterval(timer);}
 }
 
 /** cpu-finish: post.py (verdict, assessment, quiet, encodes) with the gpu job's measurements replayed, then item.js records it; whole-format result.json. */
@@ -186,6 +188,8 @@ async function adoptPost(ctx,item,deps,restore){
  for(const [a,b] of [['out.flac','unipase.cloud.flac'],['asr.json','unipase.asr.json'],['asr_orig.json','unipase.asr_orig.json'],['done.json','unipase.done.json']])await copyFile(join(restore,a),join(dir,'enhanced',b));
  const result=await runItem(item,{only:['remaster','verify','realign','web','trim'],redo:['remaster','verify','realign','web','trim'],remaster:true,threads:ctx.threads},deps);
  if(result.yielded)throw Error(`${ctx.device==='cpu'?'cpu-finish':'whole'}: stage ${result.resume?.stage} needs a GPU step the gpu job did not record (no CPU fallback)`);
+ // how the guarded copy crossed hosts (split_restore.py TRANSIT), beside the stage's tool record: not in `settings`, whose fp would stale every published talk
+ if(post.transit&&result.meta.stages.remaster)result.meta.stages.remaster.transit=post.transit;
  if(result.meta.aligned_to==='unipase'){
   const aligned=JSON.parse(await readFile(join(dir,'transcript.work.json'),'utf8')).paragraphs;
   const originalWords=flattenWords(raw.segments);let index=0;

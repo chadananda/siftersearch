@@ -9,6 +9,10 @@ RUN set -e; PKGS="deepfilternet==0.5.6 deepfilterlib==0.5.6 loguru appdirs onnx 
     if /opt/gate/venv/bin/python -m pip --version >/dev/null 2>&1; then /opt/gate/venv/bin/python -m pip install --no-deps $PKGS 2>&1 | tail -2; \
     else uv pip install --python /opt/gate/venv/bin/python --no-deps $PKGS 2>&1 | tail -2; fi
 COPY rootfs/ /
+# the quality models (quality.py: DNSMOS + NISQA via torchmetrics) download on first use, and jobs run with --network none: fetched here, at build
+# (10-31: cpu-finish on rocm-gpu-20261031-t2 failed "quality assessment failed … Failed to resolve raw.githubusercontent.com")
+RUN /opt/gate/venv/bin/python -c "import torch; from torchmetrics.functional.audio import deep_noise_suppression_mean_opinion_score as d, non_intrusive_speech_quality_assessment as n; t = torch.randn(32000) * .01; d(t, 16000, False); n(t, 16000); print('quality models cached')" 2>&1 | tail -1 \
+ && ls /root/.torchmetrics/DNSMOS/DNSMOS/model_v8.onnx /root/.torchmetrics/NISQA >/dev/null
 RUN set -o pipefail; ffmpeg -nostdin -y -v error -f lavfi -i "sine=frequency=300:duration=8" -ac 1 -ar 48000 /tmp/dsmoke.wav \
  && MEDIA_DEVICE=cpu /opt/gate/venv/bin/python /opt/sifter/media/media_tool.py dfn /tmp/dsmoke.wav --output /tmp/dsmoke.flac --threads 2 --models /opt/gate/models | tail -c 200 \
  && /opt/gate/venv/bin/python -c "import sys; sys.path.insert(0, '/opt/sifter/media/worker'); import torch_diar; torch_diar._stub_torchvision(); import onnx2torch, onnxsim; print('torch_diar deps ok')" \
