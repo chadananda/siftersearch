@@ -12,6 +12,8 @@ TOOLS = os.path.dirname(HERE)          # scripts/media
 UNREPAIRABLE_BW_KHZ = 2.5
 CV_PYTHON = os.environ.get('SIFTER_CV_PYTHON', '/opt/cv/bin/python')
 CV_DIR = os.environ.get('SIFTER_CV_DIR', '/opt/models/clearvoice')
+# downmix BEFORE the chain (media_tool.py MONO): a stereo source otherwise runs loudnorm (at 192 kHz) twice and lands 3 dB under target; a mono source is bit-identical
+MONO = 'aformat=channel_layouts=mono'
 
 
 def sha256(path):
@@ -201,16 +203,20 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
     if trim and trim.get('end_s') is not None: window += ['-t', str(trim['end_s'] - trim.get('start_s', 0))]
     ff = lambda inp, a, args, dst: sh(['ffmpeg', '-nostdin', '-v', 'error', '-y'] + window + ['-i', inp] + (['-af', a] if a else []) + args + [dst], runner)
     web = {'ogg': f'{slug}.ogg', 'm4a': f'{slug}.m4a', 'orig_ogg': f'{slug}.original.ogg', 'orig_m4a': f'{slug}.original.m4a'}
+    encodes = [lambda: ff(flac, None, cfg['ogg'], os.path.join(post, web['ogg'])),
+               lambda: ff(flac, None, cfg['m4a'], os.path.join(post, web['m4a']))]
+    # Decode and normalize the original once, then split to both unchanged
+    # output recipes. Loudnorm was the same expensive pass in two processes.
+    if not (cfg.get('reuse_original_web') and all(os.path.getsize(os.path.join(post, web[k])) > 0 for k in ['orig_ogg', 'orig_m4a'])):
+        graph = '[0:a]' + ((MONO + ',' + af + ',') if af else '') + 'asplit=2[ogg][aac]'
+        encodes.append(lambda: sh(['ffmpeg', '-nostdin', '-v', 'error', '-y'] + window + ['-i', src,
+            '-filter_complex', graph, '-map', '[ogg]'] + cfg['orig_ogg'] + [os.path.join(post, web['orig_ogg']),
+            '-map', '[aac]'] + cfg['orig_m4a'] + [os.path.join(post, web['orig_m4a'])], runner))
     try:
-        ff(flac, None, cfg['ogg'], os.path.join(post, web['ogg']))
-        ff(flac, None, cfg['m4a'], os.path.join(post, web['m4a']))
-        # Decode and normalize the original once, then split to both unchanged
-        # output recipes. Loudnorm was the same expensive pass in two processes.
-        if not (cfg.get('reuse_original_web') and all(os.path.getsize(os.path.join(post, web[k])) > 0 for k in ['orig_ogg', 'orig_m4a'])):
-            graph = '[0:a]' + ((af + ',') if af else '') + 'asplit=2[ogg][aac]'
-            sh(['ffmpeg', '-nostdin', '-v', 'error', '-y'] + window + ['-i', src,
-                '-filter_complex', graph, '-map', '[ogg]'] + cfg['orig_ogg'] + [os.path.join(post, web['orig_ogg']),
-                '-map', '[aac]'] + cfg['orig_m4a'] + [os.path.join(post, web['orig_m4a'])], runner)
+        # each encode is one single-threaded ffmpeg: side by side, the stage takes the longest one's time, not the sum (boss 10-31: 110 s → ~50 s)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(len(encodes)) as pool:
+            for f in [pool.submit(e) for e in encodes]: f.result()
     except Exception as err:
         out['ok'] = True; out['why'] = f'encode failed here: {str(err)[-160:]}'
         return out

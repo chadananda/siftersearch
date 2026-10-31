@@ -795,6 +795,7 @@ def cmd_grade(a):
     print(jdumps(out))
 
 
+MONO = 'aformat=channel_layouts=mono'
 ENCODE_FILTERS = {'highpass', 'lowpass', 'bandreject', 'adeclick', 'afftdn', 'loudnorm', 'dynaudnorm', 'acompressor', 'volume', 'equalizer', 'afade'}
 RECIPES = {
     'light': lambda af: ['-vn', '-ac', '1', '-af', f'{af},aresample=48000,asetnsamples=n=4096:p=0', '-ar', '48000', '-c:a', 'flac', '-f', 'flac'],   # loudnorm works at 192 kHz in big frames: back to 48 kHz in FLAC-sized frames (ffmpeg 9 refuses 95,984-sample blocks)
@@ -817,6 +818,11 @@ def cmd_encode(a):
     for part in af.split(','):
         if part.split('=')[0] not in ENCODE_FILTERS | {'anull'}:
             raise SystemExit(f'filter not allowed: {part}')
+    # downmix BEFORE the chain, not after it (-ac 1 at the output): on a stereo source every filter ran twice — loudnorm at 192 kHz
+    # per channel — and loudnorm measured both channels, so the mono copy landed 3.0 dB under its target (boss 10-31: light chain
+    # 222 → 79 CPU-s on a 72-min stereo talk, same signal, corr 0.9999). A mono source is bit-identical (md5 checked).
+    if af != 'anull':
+        af = f'{MONO},{af}'
     t0 = time.time()
     # the TRIM window (leading / trailing silence off the web copies): -ss / -t before the input, exactly as tower's trim stage cut them
     win = (['-ss', f'{a.ss:.2f}'] if a.ss is not None else []) + (['-t', f'{a.t:.2f}'] if a.t is not None else [])
