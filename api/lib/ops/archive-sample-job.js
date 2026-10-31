@@ -102,10 +102,14 @@ export async function samplePass({ drive, window = 24, deps }) {
       await stage(q, d, it, true); await save(it.id, { deep_queued: new Date().toISOString() }); out.deep++;
     } catch (e) { note(e.message); await save(it.id, { deep_queued: new Date().toISOString(), deep_error: e.message }); await answer(it.id, `The deeper look could not start: ${e.message}`); }
   }
-  const queued = (await q.stats('intake'))?.states?.queued?.n || 0;
-  for (const it of window > queued ? await toSample(drive, { limit: window - queued }) : []) {
-    try { await stage(q, d, it, false); await save(it.id, { queued: new Date().toISOString() }); out.staged++; }
-    catch (e) { note(e.message); await save(it.id, { queued: new Date().toISOString(), error: e.message }); }
+  // a window per stage: talks wait on a GPU, books run on CPUs — a full talk window must not leave the book slots idle (order holds within each)
+  const byStage = (await q.stats('intake'))?.queued_by_stage || {};
+  for (const [st, kinds] of [['intake-talk', ['talk', 'video']], ['intake-book', ['book', 'scan']]]) {
+    const queued = byStage[st] || 0;
+    for (const it of window > queued ? await toSample(drive, { kinds, limit: window - queued }) : []) {
+      try { await stage(q, d, it, false); await save(it.id, { queued: new Date().toISOString() }); out.staged++; }
+      catch (e) { note(e.message); await save(it.id, { queued: new Date().toISOString(), error: e.message }); }
+    }
   }
   return out;
 }

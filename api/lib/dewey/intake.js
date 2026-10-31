@@ -110,9 +110,9 @@ export async function writeLibraryFile({ religion, collection, title, itemId, ma
 }
 
 /** Frontmatter + text. Metadata comes from research and identification; what nothing states is left out, not guessed. */
-export function toMarkdown({ title, author, language, research = {}, sourceUrl, sha256, itemId }, text) {
+export function toMarkdown({ title, author, language, research = {}, sourceUrl, sha256, itemId, provenance = null }, text) {
   const line = (k, v) => (v == null || v === '' ? '' : `${k}: "${String(v).replace(/"/g, "'")}"\n`);
   return `---\n${line('title', title)}${line('author', author)}language: ${language || 'en'}\n${line('publisher', research.publisher)}${line('year', research.year)}`
-    + `${line('isbn', research.isbn13 || research.isbn10)}${line('source_url', sourceUrl)}${line('original_sha256', sha256)}dewey_item: ${itemId}\n---\n\n`
+    + `${line('isbn', research.isbn13 || research.isbn10)}${line('source_url', sourceUrl)}${line('provenance', provenance)}${line('original_sha256', sha256)}dewey_item: ${itemId}\n---\n\n`
     + String(text).replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim() + '\n';
 }

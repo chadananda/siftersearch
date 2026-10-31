@@ -49,7 +49,7 @@ describe('samplePass', () => {
     const byId = Object.fromEntries([...items, ...wanting].map((i) => [i.id, i]));
     return { saved, recs, answers, put, imgPut, deps: {
       q, store: { put }, imgStore: { put: imgPut }, drive: { id: 'g', root },
-      toSample: async (_d, { limit }) => items.filter((i) => !saved[i.id]?.queued).slice(0, limit),
+      toSample: async (_d, { kinds, limit }) => items.filter((i) => !saved[i.id]?.queued && (!kinds || kinds.includes(i.kind))).slice(0, limit),
       wanting: async () => wanting.filter((i) => !saved[i.id]?.deep_queued),
       item: async (id) => byId[id],
       save: async (id, s) => { saved[id] = { ...saved[id], ...s }; },
@@ -103,6 +103,13 @@ describe('samplePass', () => {
     expect(await samplePass({ drive: 'g', window: 5, deps })).toMatchObject({ failed: 1, staged: 0 });
     expect(saved[11].error).toMatch(/bad header/);
   });
+  it('a window per stage: talks waiting on a GPU leave room for books on the CPUs', async () => {
+    const talks = [21, 22, 23].map((id) => ({ id, kind: 'talk', primary_rel: 'talks/a.mp3', duration_s: 60, score: 90 }));
+    const { deps } = rig([...talks, { id: 24, kind: 'book', primary_rel: 'book.pdf', score: 5 }]);
+    expect(await samplePass({ drive: 'g', window: 2, deps })).toMatchObject({ staged: 3 });   // 2 talks + the book
+    expect((await q.stats('intake')).queued_by_stage).toMatchObject({ 'intake-talk': 2, 'intake-book': 1 });
+    await q.cancel(['intake-21', 'intake-22', 'intake-24']);
+  });
 });
 
 describe('archiveSampleJob', () => {
@@ -110,7 +117,7 @@ describe('archiveSampleJob', () => {
     await expect(archiveSampleJob({})).rejects.toThrow(/drive/);
     const requeue = vi.fn(async () => {});
     const out = await archiveSampleJob({ drive: 'g', minutes: 0, round: 3 }, { getDrive: async () => ({ id: 'g', root }), q, store: { put: async () => 1 }, imgStore: null,
-      draining: () => false, toSample: async () => [{ id: 50, kind: 'book', primary_rel: 'book.pdf', score: 1 }], wanting: async () => [], save: async () => {}, requeue });
+      draining: () => false, toSample: async (_d, { kinds }) => (!kinds || kinds.includes('book') ? [{ id: 50, kind: 'book', primary_rel: 'book.pdf', score: 1 }] : []), wanting: async () => [], save: async () => {}, requeue });
     expect(out).toMatchObject({ passes: 1, staged: 1, remaining: 1 });
     expect(requeue).toHaveBeenCalledWith({ drive: 'g', window: 24, minutes: 0, round: 4 });
   });

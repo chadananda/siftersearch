@@ -240,7 +240,11 @@ export function stats(sql, now = Date.now(), type = 'media') {
   const by = rows(sql, `SELECT state, COUNT(*) AS n, COALESCE(SUM(audio_s), 0) AS audio_s FROM jobs WHERE type = ? GROUP BY state`, type);
   const leased = rows(sql, `SELECT id, item_id, stages, host, audio_s, lease_until, updated FROM jobs WHERE state = 'leased' AND type = ? ORDER BY host`, type);
   const failed = rows(sql, `SELECT id, item_id, stages, attempts, error FROM jobs WHERE state = 'failed' AND type = ? ORDER BY updated DESC LIMIT 20`, type);
-  return { states: Object.fromEntries(by.map((r) => [r.state, { n: r.n, audio_h: Math.round(r.audio_s / 36) / 100 }])), leased, failed, capacity: capacity(sql, now) };
+  // queued jobs per first stage: a feeder keeps each kind of machine's window full on its own (GPU talks waiting must not idle CPU books)
+  const byStage = rows(sql, `SELECT stages, COUNT(*) AS n FROM jobs WHERE state = 'queued' AND type = ? GROUP BY stages`, type);
+  const queuedByStage = {};
+  for (const r of byStage) { const s = (() => { try { return JSON.parse(r.stages)[0]; } catch { return null; } })() || '?'; queuedByStage[s] = (queuedByStage[s] || 0) + r.n; }
+  return { states: Object.fromEntries(by.map((r) => [r.state, { n: r.n, audio_h: Math.round(r.audio_s / 36) / 100 }])), queued_by_stage: queuedByStage, leased, failed, capacity: capacity(sql, now) };
 }
 /** Does any remaining job still need this file's staged inputs? */
 export const fileInUse = (sql, fileId) => !!one(sql, `SELECT 1 AS x FROM jobs WHERE file_id = ? LIMIT 1`, String(fileId));

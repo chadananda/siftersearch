@@ -71,6 +71,20 @@ describe('archives repo', () => {
     expect(await repo.listItems('d2', { decision: 'undecided' })).toHaveLength(4);
     expect(await repo.getItem(ids[0])).toMatchObject({ decision: null, decided_at: null, decided_by: null });
   });
+  it('import: approved and not yet imported, best first; the library link replaces the ref, the first import time stays', async () => {
+    await repo.upsertItems('i1', [item('a.pdf', { score: 10 }), item('b.mp3', { kind: 'talk', score: 90 }), item('c.pdf')]);
+    const [b, a] = await repo.listItems('i1');
+    await repo.decideItems([a.id, b.id], { decision: 'approve' });
+    expect((await repo.itemsToImport('i1')).map((x) => x.id)).toEqual([b.id, a.id]);
+    await repo.markImported(b.id, 'media:/m/b.mp3');
+    await repo.markImported(a.id, 'dewey:abc');
+    expect(await repo.itemsToImport('i1')).toEqual([]);
+    expect((await repo.itemsImportedUnlinked('i1')).map((x) => x.imported_ref).sort()).toEqual(['dewey:abc', 'media:/m/b.mp3']);
+    const at = (await repo.getItem(b.id)).imported_at;
+    await repo.markImported(b.id, '/media/b-talk');
+    expect(await repo.getItem(b.id)).toMatchObject({ imported_ref: '/media/b-talk', imported_at: at });
+    expect((await repo.itemsImportedUnlinked('i1')).map((x) => x.id)).toEqual([a.id]);
+  });
   it('driveReport lists imported items', async () => {
     await repo.upsertDonor({ id: 'x', name: 'X' }); await repo.upsertDrive({ id: 'dr', donor_id: 'x' });
     await repo.upsertItems('dr', [item('a.pdf')]);

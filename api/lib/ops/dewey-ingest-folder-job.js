@@ -5,7 +5,7 @@
 // the library just before (a copy already held — or added earlier in this same batch — is not added twice), and queues
 // its intake in the same lane, then queues the next round behind them. Progress is on the Dewey items (Loading column).
 // A file is handled once: its sha256 is on its item. params { batch?, round? }.
-import { readdir, stat } from 'fs/promises';
+import { readdir, stat, readFile } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { createHash } from 'crypto';
 import { join, extname } from 'path';
@@ -85,8 +85,10 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
     let a = known?.identified?.appraisal?.recommendation ? known.identified.appraisal : null;
     if (!a) a = await appraise(doc.identified, doc.excerpt, doc.result.verdict).catch(() => null);
     const name = f.path.split('/').pop();
+    // provenance beside the file (a donor import writes { label: 'Donated by …', donor, drive, … }) → the document's frontmatter
+    const provenance = await readFile(`${f.path}.source.json`, 'utf8').then(JSON.parse).catch(() => null);
     const item = known || await createItem({ title: a?.title || `Untitled (${name})`, author: a?.author || null, kind: a?.kind || doc.identified.kind || null,
-      identified: { ...doc.identified, file_name: name, shelf: a?.shelf || null, appraisal: a || null }, by, state: 'offered', why: 'placed in the ingest folder' });
+      identified: { ...doc.identified, file_name: name, shelf: a?.shelf || null, appraisal: a || null, ...(provenance ? { provenance } : {}) }, by, state: 'offered', why: 'placed in the ingest folder' });
     // a SCAN with nothing readable yet (handwriting, an empty text layer) goes forward to full OCR; it is appraised from the
     // OCR text before anything is imported (dewey-ocr-job). Anything else without an appraisal waits for a person.
     const scanFirst = !a?.title && (doc.identified.needs_ocr || doc.identified.kind === 'scan' || /\.pdf$/i.test(f.path));
@@ -128,7 +130,7 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
       continue;
     }
     await updateItem(item.id, { state: 'source', sha256: hash, original_path: f.path, title: a.title, author: a.author || item.author || null,
-      identified: { ...item.identified, appraisal: a, shelf: a.shelf || item.identified?.shelf || null } }, `ingest folder (round ${round}, easiest first): ${doc.result.verdict}${approved && doc.result.verdict === 'held' ? ' (a fuller copy — added by a person\'s decision, _add-anyway)' : ''} → adding`);
+      identified: { ...item.identified, appraisal: a, shelf: a.shelf || item.identified?.shelf || null, ...(provenance ? { provenance } : {}) } }, `ingest folder (round ${round}, easiest first): ${doc.result.verdict}${approved && doc.result.verdict === 'held' ? ' (a fuller copy — added by a person\'s decision, _add-anyway)' : ''} → adding`);
     await queue('dewey-intake', { id: item.id }, by);
     out.queued.push(f.path);
   }

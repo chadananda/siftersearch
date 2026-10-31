@@ -44,5 +44,27 @@ Tables via a repo (`api/lib/repos/archives-repo.js`), never direct DB from scrip
   main 24,764, set-aside 118,595. Matches: new 15,982 · held 2,769 · unsure 6,294 · better version 65.
 - Next: B = worker samples (first-minute transcript + 60 s clip for talks, title-page OCR for scans) on workers, never tower.
 
+## Progress (10-31)
+- Steps 5–7 built (30502acf, 3a1ffec3, 4062ecce): `archive-sample` ops job stages each candidate to the LAN queue (type `intake`,
+  stage intake-talk | intake-book); `scripts/media/worker/intake-agent.mjs` + `intake_sample.py` on HOME hosts (aorus: talks 1 GPU + books 2;
+  boss: books 4, `--can intake-book`) write first-minute transcript + 60 s clip / title-page image + OCR; tower pulls → R2 (clips stage bucket,
+  title pages `siftersearch` bucket via /img) + `sample` + re-recommendation (`api/lib/archives/sample-rec.js`, no LLM, $0). "More info" →
+  deep look (5 min / 12 pages) → item returns undecided with the answer. /admin/imports shows sample, title image (svcFixed), answer.
+  A window PER STAGE (queue stats `queued_by_stage`): GPU talks waiting must not idle the CPU book slots.
+- Step 8 built: `archive-import` (lane archive) — approved talks → hard link under DEWEY_MEDIA_DIR/donors/<drive>/ → media-scan; approved
+  books (a document file; page-image folders skipped until a PDF exists) → <ingest>/_add-anyway/donors/<drive>/ → dewey-ingest-folder
+  (appraisal + QUALITY GATE still apply). Every file gets `<file>.source.json` ("Donated by <donor>", drive, original path, approval);
+  Dewey keeps it as `identified.provenance` and writes `provenance:` into the markdown front matter; media items keep it as `source.archive`.
+  Later runs fill each item's public link (/media/<slug>, /document/<id>) for the report. Archive never written (hard link / copy).
+    `node scripts/ops/ops.mjs report archive-import --params '{"drive":"golden-age"}'`
+- Step 1 built: `archive-copy` (own lane `copy`) — refuses a read-write mount; registers donor + drive (copying, received_at); rsync
+  (ionice idle, nice 19, resumable, yields to a drain); verifies file count + bytes; custody → cataloged. archive-sifter catalogues the
+  copy within 10 min, then archive-adopt. NEW DRIVE (on tower: `sudo mount -o ro /dev/sdX1 /mnt/<drive>` first):
+    `node scripts/ops/ops.mjs report archive-copy --params '{"drive":"<id>","donor":"<donor-id>","donorName":"<Name>","label":"<label on the drive>","source":"/mnt/<drive>"}'`
+    then `node scripts/ops/ops.mjs report archive-adopt --params '{"drive":"<id>","donor":"<donor-id>","donorName":"<Name>","label":"<label>"}'`
+- Step 9 (1f00dbae): printable drive + donor reports; no images on them (nothing to route through the image helper).
+- GOLDEN AGE sampling running (archive-sample requeues itself every 20 min). Talks on aorus share the GPU with remastering (GPU lease
+  admission), so they run in the gaps; books on CPU (aorus 2 + boss 4).
+
 ## Order
 A: repo + tables + donors/drives + adopt golden-age catalog; grouping + match (pure, tested). B: recommendation + worker samples. C: admin page + decisions. D: import + report. E: backfill old collections.

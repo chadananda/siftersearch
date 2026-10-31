@@ -123,6 +123,23 @@ export async function itemsWantingInfo(driveId, { limit = 50 } = {}) {
 export async function answerInfo(id, answer) {
   await query('UPDATE intake_items SET info_answer = ?, decision = NULL, decision_note = NULL, decided_by = NULL, decided_at = NULL, updated_at = ? WHERE id = ?', [answer, now(), id], 'archives:item-answer');
 }
+/** Approved and not yet imported (step 8), best score first. */
+export async function itemsToImport(driveId, { limit = 100 } = {}) {
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND decision = 'approve' AND imported_at IS NULL ORDER BY score DESC, id LIMIT ?`,
+    [driveId, Math.min(Number(limit) || 100, 1000)], 'archives:items-to-import');
+  return rows.map(parseItem);
+}
+/** Where an imported item went: 'media:<path>' / 'dewey:<sha256>' until the library holds it, then its public path. imported_at is set once. */
+export async function markImported(id, ref) {
+  const t = now();
+  await query('UPDATE intake_items SET imported_ref = ?, imported_at = COALESCE(imported_at, ?), updated_at = ? WHERE id = ?', [ref, t, t, id], 'archives:item-imported');
+}
+/** Imported items with no public link yet (the media pipeline or Dewey has not finished them). */
+export async function itemsImportedUnlinked(driveId, { limit = 500 } = {}) {
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND imported_at IS NOT NULL AND (imported_ref LIKE 'media:%' OR imported_ref LIKE 'dewey:%') ORDER BY id LIMIT ?`,
+    [driveId, Math.min(Number(limit) || 500, 2000)], 'archives:items-unlinked');
+  return rows.map(parseItem);
+}
 
 /** One decision for many items in one transaction (bulk approve/deny of a page). Returns the distinct ids sent. */
 export async function decideItems(ids, { decision, note = null, by = null }) {

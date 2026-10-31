@@ -155,7 +155,7 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
     await updateItem(item.id, { state: 'needs-human', identified: { ...(item.identified || {}), quality: { why: prep.why, repairs: prep.repairs } } }, `quality below the library's bar after repair: ${prep.why.join('; ')}`);
     return { id: item.id, state: 'needs-human', why: 'quality', reasons: prep.why };
   }
-  const markdown = toMarkdown({ title, author, language, research: r, sourceUrl: item.source_url, sha256: item.sha256, itemId: item.id }, text);
+  const markdown = toMarkdown({ title, author, language, research: r, sourceUrl: item.source_url, sha256: item.sha256, itemId: item.id, provenance: item.identified?.provenance?.label }, text);
   const rel = await write({ religion: shelf.religion, collection: shelf.collection, title, itemId: item.id, markdown });
   await audit({ actor: 'dewey-intake', action: 'file.write', target: rel, reason: `wanted item ${item.id} — ${shelf.why || 'shelved'}` });
   await waitForQuietWriter();
