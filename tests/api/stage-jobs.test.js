@@ -24,10 +24,16 @@ describe('nextJobs: which typed job a talk needs next, from its ticked stages', 
     expect(nextJobs({ stages: st, have: { prep: true } })).toEqual(['gpu']);
     expect(nextJobs({ stages: st, have: { prep: true, gpu: true } })).toEqual(['cpu-finish']);
   });
-  it('only quiet missing (published before the quiet stage) → cpu-finish from the pure copy tower holds; else the gpu rebuilds it', () => {
-    expect(nextJobs({ stages: without('quiet'), have: { gpu: true } })).toEqual(['cpu-finish']);
-    expect(nextJobs({ stages: without('quiet'), have: { prep: true } })).toEqual(['gpu']);
-    expect(nextJobs({ stages: without('quiet') })).toEqual(['cpu-prep']);
+  it('only finish stages missing (e.g. published before the quiet stage) → cpu-finish from the STORED pure remaster, never the gpu again (§7)', () => {
+    for (const miss of [['quiet'], ['web'], ['quiet', 'web', 'trim', 'update'], ['verify']]) {
+      expect(nextJobs({ stages: without(...miss) })).toEqual(['cpu-finish']);
+      expect(nextJobs({ stages: without(...miss), have: { gpu: true } })).toEqual(['cpu-finish']);
+    }
+  });
+  it('the gpu re-runs only when the remaster itself is missing or its pure output is truly gone', () => {
+    expect(nextJobs({ stages: without('quiet'), have: { pure: false } })).toEqual(['cpu-prep']);
+    expect(nextJobs({ stages: without('quiet'), have: { pure: false, prep: true } })).toEqual(['gpu']);
+    expect(nextJobs({ stages: without('remaster') })).toEqual(['cpu-prep']);
   });
   it('dependents are honoured: a stale stage unticks everything made from it, never earlier stages', () => {
     const d = effectiveDone({ ...ALL, realign: { at: 1, stale: true } });

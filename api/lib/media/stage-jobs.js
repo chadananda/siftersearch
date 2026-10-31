@@ -31,7 +31,8 @@ export function effectiveDone(stages = {}) {
   return new Set(STAGES.filter(ok));
 }
 
-/** checklist = { stages, have: { prep, gpu } (a delivery tower holds for the CURRENT input), remaster_status } → the job types to run now. Pure.
+/** checklist = { stages, have: { prep, gpu, pure } (prep/gpu = a step result held for the CURRENT input; pure = false when a ticked remaster's
+ *  pure UniPASE copy is gone), remaster_status } → the job types to run now. Pure.
  *  Re-derives any lost job: the answer depends only on the record. A text-only gap never yields an audio job. */
 export function nextJobs({ stages = {}, have = {}, remaster_status = null } = {}) {
   const done = effectiveDone(stages), miss = (l) => l.filter((s) => !done.has(s));
@@ -39,7 +40,9 @@ export function nextJobs({ stages = {}, have = {}, remaster_status = null } = {}
   const out = [];
   if (miss(AUDIO_STAGES).length && !AUDIO_TERMINAL.includes(remaster_status)) {
     const needFinish = miss(TYPE_STAGES['cpu-finish']).length > 0;
-    const needGpu = miss(['enhance', 'transcribe', 'diarize']).length > 0 || (needFinish && !have.gpu);
+    // §7: only missing stages + their dependents. A ticked remaster's PURE output is kept (tower / R2), so a talk missing only finish
+    // stages (quiet, web, …) goes straight to cpu-finish; the gpu re-runs only when the remaster itself is missing or its output is gone.
+    const needGpu = miss(['enhance', 'transcribe', 'diarize']).length > 0 || (needFinish && !have.gpu && (!done.has('remaster') || have.pure === false));
     const needPrep = miss(['grade']).length > 0 || (needGpu && !have.prep);
     out.push(needPrep ? 'cpu-prep' : needGpu ? 'gpu' : 'cpu-finish');
   }
