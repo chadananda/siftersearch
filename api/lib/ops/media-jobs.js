@@ -801,6 +801,7 @@ export async function backfillRestored({ repo, readMeta, limit = 40 } = {}) {
   }
   // one pass per process over every published row: the flag is re-derived both ways when the rule changes (10-31: a completed talk is on air)
   if (!verifyDone && repo.doneRows) {
+    if (!verifyCursor && repo.clearOffAirPublished) n += (await repo.clearOffAirPublished()).cleared;   // once per pass: talks off the air carry no published_at
     const rows = await repo.doneRows(verifyCursor, limit * 5);
     if (!rows.length) verifyDone = true;
     for (const r of rows) {

@@ -55,8 +55,18 @@ export async function updateMediaItem(id, fields = {}) {
   const keys = Object.keys(set);
   // an EXCLUDED talk stays excluded (10-23: a lane finishing its run would otherwise set it back to prepped / done)
   const col = (k) => (k === 'state' ? `state = CASE WHEN state = 'excluded' THEN 'excluded' ELSE ? END` : `${k} = ?`);
-  await transaction([{ sql: `UPDATE media_items SET ${[...keys.map(col), ...(air ? [AIR_SQL] : [])].join(', ')} WHERE id = ?`, args: [...keys.map((k) => set[k]), ...(air ? airArgs(set.restored) : []), Number(id)] }], 'media:update');
+  // a talk that leaves 'done' is off the air (on air = state done AND restored = 1), so it carries no published_at (10-31: 151 such rows
+  // still counted as published); it is stamped again when it comes back on air (setIndex / the doneRows pass)
+  const offAir = set.state !== undefined && set.state !== 'done';
+  await transaction([{ sql: `UPDATE media_items SET ${[...keys.map(col), ...(air && !offAir ? [AIR_SQL] : []), ...(offAir ? ['published_at = NULL'] : [])].join(', ')} WHERE id = ?`, args: [...keys.map((k) => set[k]), ...(air && !offAir ? airArgs(set.restored) : []), Number(id)] }], 'media:update');
   return getMediaItem(id);
+}
+
+/** Repair: clear published_at on every row outside 'done' (off the air). → { cleared, ids } */
+export async function clearOffAirPublished() {
+  const ids = (await queryAll(`SELECT id FROM media_items WHERE published_at IS NOT NULL AND state != 'done'`, [], 'media:off-air-published')).map((r) => r.id);
+  if (ids.length) await transaction([{ sql: `UPDATE media_items SET published_at = NULL WHERE published_at IS NOT NULL AND state != 'done' AND id IN (${ids.map(() => '?').join(',')})`, args: ids }], 'media:clear-off-air-published');
+  return { cleared: ids.length, ids };
 }
 
 /** Archived file talks (folder + source), id order, a page after `afterId` — for the tag-hint backfill and review. */

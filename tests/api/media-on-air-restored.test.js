@@ -99,4 +99,21 @@ describe('published = on air (10-31, talk 485): published_at follows restored', 
     await backfillRestored({ repo, readMeta: async (d) => (d === '/x/2' ? m485 : Promise.reject(new Error('nope'))) });
     expect(pub(2)).toEqual({ r: 0, p: null });
   });
+  it('a talk outside done is off the air: no published_at, by the repair (151 rows on 10-31) and on every state write', async () => {
+    const at = '2026-10-30T10:00:00Z';
+    db.prepare("UPDATE media_items SET published_at = ? WHERE id IN (1, 2, 3)").run(at);
+    db.prepare("UPDATE media_items SET state = 'duplicate' WHERE id = 2").run();
+    db.prepare("UPDATE media_items SET state = 'scheduled' WHERE id = 3").run();
+    expect(await repo.clearOffAirPublished()).toEqual({ cleared: 2, ids: [2, 3] });
+    expect([pub(1).p, pub(2).p, pub(3).p]).toEqual([at, null, null]);   // the done talk keeps its date
+    expect((await repo.clearOffAirPublished()).cleared).toBe(0);
+    await repo.updateMediaItem(1, { state: 'review', restored: 1 }); expect(pub(1).p).toBe(null);   // leaving done clears it, even with restored in the same write
+    await repo.updateMediaItem(1, { state: 'done' }); await repo.setIndex(1, { restored: 1 }); expect(pub(1).p).toBeTruthy();   // back on air: stamped again
+  });
+  it('the verify pass runs the repair once per pass', async () => {
+    resetRestoredVerify();
+    db.prepare("UPDATE media_items SET state = 'review', published_at = '2026-10-30' WHERE id = 3").run();
+    await backfillRestored({ repo, readMeta: async () => Promise.reject(new Error('nope')) });
+    expect(pub(3).p).toBe(null);
+  });
 });
