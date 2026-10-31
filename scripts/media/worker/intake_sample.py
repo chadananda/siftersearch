@@ -75,6 +75,20 @@ def zipped(path, pattern):
         return '\n\n'.join(parts)
 
 
+WORD_PARTS = re.compile(r'^(Default Paragraph Font|Table Normal|No List|Normal( Table)?|Root Entry|WordDocument|(Document)?SummaryInformation|CompObj|1Table|0Table|'
+                        r'Microsoft (Office )?Word.*|Word\.Document\.\d+|MSWordDoc|Times New Roman|Courier New|Arial|Symbol|Wingdings|Heading \d|Title|Page Number|Header|Footer)$', re.I)
+
+
+def binary_text(src):
+    # Word 97–2003 keeps its text as UTF-16LE or as 8-bit runs; both are read, and runs without words (fill bytes, style
+    # tables, the "bjbj" marker) are dropped
+    raw = open(src, 'rb').read(4_000_000)
+    runs = [m.decode('utf-16-le') for m in re.findall(rb'(?:[\x20-\x7e\xa0-\xfe]\x00|[\r\n\t]\x00){8,}', raw)]
+    runs += re.findall(r'[\x20-\x7e\xa0-\xfe\r\n\t]{8,}', raw.decode('latin-1'))
+    keep = [r for r in runs if len(re.findall(r'[A-Za-zÀ-þ]{3,}', r)) >= 2 and not re.search(r'bjbj|[\x7f-\x9f]', r) and not WORD_PARTS.match(r.strip())]
+    return tidy('\n'.join(keep))
+
+
 def book():
     pages = int(JOB.get('pages') or 3)
     res = {'pages': pages, 'files': []}
@@ -109,9 +123,8 @@ def book():
         res['text'] = tidy(re.sub(r'\\[a-z]+-?\d* ?|[{}]', '', raw))
     elif ext in ('.txt', '.md', '.markdown'):
         res['text'] = tidy(open(src, encoding='utf-8', errors='replace').read())
-    else:   # .doc/.wpd/… : the readable runs of text in the binary
-        raw = open(src, 'rb').read(4_000_000).decode('latin-1')
-        res['text'] = tidy('\n'.join(re.findall(r'[\x20-\x7e\xa0-\xff]{6,}', raw)))
+    else:   # .doc/.wpd/.wps/…: the readable runs of the binary (headless LibreOffice hung on a worker: not used)
+        res['text'] = binary_text(src)
     res['text'] = (res.get('text') or '')[:TEXT_MAX]
     return res
 

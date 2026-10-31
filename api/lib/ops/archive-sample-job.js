@@ -8,7 +8,7 @@ import { join, normalize, extname } from 'path';
 import { createReadStream } from 'fs';
 import { stat, mkdtemp, readFile, rm } from 'fs/promises';
 import { tmpdir } from 'os';
-import { getDrive, itemsToSample, itemsWantingInfo, itemsSampled, setSample, setRec, answerInfo, getItem } from '../repos/archives-repo.js';
+import { getDrive, itemsToSample, itemsWantingInfo, itemsSampled, resetSample, setSample, setRec, answerInfo, getItem } from '../repos/archives-repo.js';
 import { recommendFromSample, infoAnswer } from '../archives/sample-rec.js';
 
 export const SAMPLE_SECS = 60, DEEP_SECS = 300, PAGES = 3, DEEP_PAGES = 15;
@@ -114,22 +114,27 @@ export async function samplePass({ drive, window = 24, deps }) {
   return out;
 }
 
-/** Re-recommend every sampled item from its stored sample (the rules improved; no worker, no LLM). → { items }.
+// a sample read as binary noise (a .doc read raw before 10-31: fill bytes, the "bjbj" marker) is no sample
+export const garbled = (t) => /(.)\1{40,}|bjbj/.test(String(t || ''));
+
+/** Re-recommend every sampled item from its stored sample (the rules improved; no worker, no LLM). → { items, resampled }.
+ *  A garbled sample is forgotten instead: the item returns to the sampling queue at its catalogue score.
  *  A rec written before 10-31 carried no base: its catalogue score is the rec's score plus the one penalty those recs could give. */
 export async function rerecDrive(drive, deps = {}) {
-  const list = deps.sampled || itemsSampled, rec = deps.rec || setRec;
-  let afterId = 0, items = 0;
+  const list = deps.sampled || itemsSampled, rec = deps.rec || setRec, reset = deps.reset || resetSample;
+  let afterId = 0, items = 0, resampled = 0;
   for (;;) {
     const page = await list(drive, { afterId, limit: 500 });
     if (!page.length) break;
     for (const it of page) {
       const old = it.sample.rec, base = old?.base ?? (old ? old.score + (/no speech heard/.test(old.why || '') ? 20 : 0) : it.score);
+      if (garbled(it.sample.text)) { await reset(it.id, base); resampled++; continue; }
       await rec(it.id, recommendFromSample({ ...it, sample: { ...it.sample, rec: { base } } }, { kind: TALK.has(it.kind) ? 'talk' : 'book', ...it.sample }));
       items++;
     }
     afterId = page.at(-1).id;
   }
-  return { items };
+  return { items, resampled };
 }
 
 export async function archiveSampleJob({ drive, window = 24, minutes = 20, round = 1, rerec = false } = {}, deps = {}) {

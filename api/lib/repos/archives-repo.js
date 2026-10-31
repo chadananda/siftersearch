@@ -107,6 +107,10 @@ export async function setRec(id, rec) {
   await setSample(id, { rec });
   if (Number.isFinite(rec?.score)) await query('UPDATE intake_items SET score = ?, updated_at = ? WHERE id = ?', [rec.score, now(), id], 'archives:item-rec');
 }
+/** Forget a bad sample (the sampler improved): the item goes back to the sampling queue at its catalogue score. */
+export async function resetSample(id, score) {
+  await query('UPDATE intake_items SET sample = NULL, score = COALESCE(?, score), updated_at = ? WHERE id = ?', [Number.isFinite(score) ? score : null, now(), id], 'archives:item-sample-reset');
+}
 /** Items whose sample came back (for re-recommending when the rules improve), by id. */
 export async function itemsSampled(driveId, { afterId = 0, limit = 500 } = {}) {
   const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND id > ? AND sample LIKE '%"sampled_at"%' ORDER BY id LIMIT ?`,

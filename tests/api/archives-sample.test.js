@@ -4,8 +4,8 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { mkdtemp, writeFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), itemsToSample: vi.fn(), itemsWantingInfo: vi.fn(), itemsSampled: vi.fn(), setSample: vi.fn(), setRec: vi.fn(), answerInfo: vi.fn(), getItem: vi.fn() }));
-import { archiveSampleJob, samplePass, stagePlan, rerecDrive, itemPath, clipKey, titleKey, SAMPLE_SECS, DEEP_SECS } from '../../api/lib/ops/archive-sample-job.js';
+vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), itemsToSample: vi.fn(), itemsWantingInfo: vi.fn(), itemsSampled: vi.fn(), resetSample: vi.fn(), setSample: vi.fn(), setRec: vi.fn(), answerInfo: vi.fn(), getItem: vi.fn() }));
+import { archiveSampleJob, samplePass, stagePlan, rerecDrive, garbled, itemPath, clipKey, titleKey, SAMPLE_SECS, DEEP_SECS } from '../../api/lib/ops/archive-sample-job.js';
 import { recommendFromSample, titlePage, introducedSpeaker, scriptLang, infoAnswer } from '../../api/lib/archives/sample-rec.js';
 
 let root, R, q;
@@ -149,8 +149,19 @@ describe('sample-rec (step 6)', () => {
     const legacy = { id: 1, kind: 'talk', score: 80, sample: { text: 'introducing to you tonight Ms. Agnes Alexander, a Baha\'i of Hawaii, who will speak', rec: { score: 80, why: 'Old. no speech heard in the first minute' } } };
     const again = { id: 2, kind: 'talk', score: 85, sample: { text: 'x', rec: { score: 85, base: 50 } } };
     const pages = [[legacy, again], []];
-    expect(await rerecDrive('g', { sampled: async () => pages.shift(), rec: async (id, x) => { recs[id] = x; } })).toEqual({ items: 2 });
+    expect(await rerecDrive('g', { sampled: async () => pages.shift(), rec: async (id, x) => { recs[id] = x; } })).toEqual({ items: 2, resampled: 0 });
     expect(recs[1]).toMatchObject({ base: 100, score: 100, creator: 'Ms. Agnes Alexander' });
     expect(recs[2]).toMatchObject({ base: 50, score: 30 });
+  });
+  it('a garbled sample (a .doc read raw) goes back to sampling at its catalogue score instead of being re-recommended', async () => {
+    expect(garbled('bjbjqPqP ' + 'ÿ'.repeat(60))).toBe(true);
+    expect(garbled('Dear friends, the Hands of the Cause wrote ...')).toBe(false);
+    const recs = {}, resets = [];
+    const bad = { id: 7, kind: 'book', score: 60, sample: { text: 'ÿ'.repeat(80) + ' bjbj', rec: { score: 100, base: 60 } } };
+    const pages = [[bad], []];
+    expect(await rerecDrive('g', { sampled: async () => pages.shift(), rec: async (id, x) => { recs[id] = x; }, reset: async (id, s) => resets.push([id, s]) }))
+      .toEqual({ items: 0, resampled: 1 });
+    expect(resets).toEqual([[7, 60]]);
+    expect(recs[7]).toBeUndefined();
   });
 });
