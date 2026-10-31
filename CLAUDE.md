@@ -43,6 +43,13 @@ substitute the local database and do not estimate.
   attributed in `db_write_stats` (minute × caller × name; live view `GET 127.0.0.1:7849/stats`).
 * Enforced by `tests/api/db-access-ratchet.test.js` + `tests/api/scripts-api-clients-ratchet.test.js`; legacy lists only shrink. Plan: planning/architecture-data-access-20261009.md.
 
+## ⛔ Media remaster — NEVER splice; never play the original (Chad 10-29, 10-31)
+
+"There is no reason to ever splice a remaster. That is not allowed." Full decision record: `docs/architecture/media-remaster-rules.md` — read it before touching any media/remaster code.
+* A listening copy is one continuous remaster; never original audio mixed in. The word guard MEASURES only. (Splicing was built once, before 10-29; it is why the library is being reprocessed.)
+* Every talk is remastered (UniPASE + any helpful automated cleanup); the original never plays. Same-or-better publishes; only a measured regression is held.
+* Held → `/admin/media-held`, Chad decides publish or archive (archive = out of every queue, files kept). Never recycle a hold. Priority words are ORDER, never filters.
+
 ## ⛔ Tower placement — tower serves; workers process (Chad 10-24)
 
 "We want the search and the site to be responsive all the time. And this is for only one user. What happens when we have 300?"
