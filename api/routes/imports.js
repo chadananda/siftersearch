@@ -74,6 +74,14 @@ export default async function importsRoutes(fastify) {
     return { updated: await archives.decideItems(ids, { ...d, by: who(req) }), decision: d.decision };
   });
 
+  // The operator's catalogue title/author for items (the book's real title, so the holdings check can run before OCR is paid for). Body { items: [{ id, title, author? }] }, ≤ 2000.
+  fastify.post('/imports/drives/:id/catalogue', admin, async (req) => {
+    if (!(await archives.getDrive(req.params.id))) throw ApiError.notFound('no such drive');
+    const items = req.body?.items;
+    if (!Array.isArray(items) || !items.length || items.length > 2000) throw ApiError.badRequest('items: 1–2000 of { id, title, author? }');
+    return archives.setCatalogue(req.params.id, items);
+  });
+
   fastify.get('/imports/drives/:id/report', admin, async (req) => {
     const r = await archives.driveReport(req.params.id);
     if (!r) throw ApiError.notFound('no such drive');

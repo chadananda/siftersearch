@@ -5,6 +5,9 @@
 // the library just before (a copy already held — or added earlier in this same batch — is not added twice), and queues
 // its intake in the same lane, then queues the next round behind them. Progress is on the Dewey items (Loading column).
 // A file is handled once: its sha256 is on its item. params { batch?, round? }.
+// Two folders carry a person's yes: `_add-anyway/` (also OVERRIDES the held check — a fuller copy) and `_approved/` (a donor import Chad approved: the yes
+// only; the held check, the twin check and an earlier held decline all still apply). A scan whose catalogue title (or file name) the library plausibly
+// holds waits as needs-human instead of going to paid full OCR (plausibleHolding).
 import { readdir, stat, readFile } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { createHash } from 'crypto';
@@ -13,7 +16,7 @@ import { findBySha, createItem, updateItem, listItems } from '../repos/dewey-rep
 import { compareWords, compareTexts } from '../dewey/compare.js';
 import { toMarkdownText } from '../dewey/convert.js';
 import { enqueue } from '../repos/ops-report-repo.js';
-import { identifyAndCheck } from '../dewey/holdings.js';
+import { identifyAndCheck, checkHoldings, plausibleHolding } from '../dewey/holdings.js';
 import { appraiseDocument } from '../dewey/appraise.js';
 import { logActivity } from '../repos/activity-repo.js';
 
@@ -44,7 +47,7 @@ export async function easiestFirst(dir) {
 const sha256Of = (path) => new Promise((res, rej) => { const h = createHash('sha256'); createReadStream(path).on('data', (d) => h.update(d)).on('end', () => res(h.digest('hex'))).on('error', rej); });
 
 export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = [] } = {}, deps = {}) {
-  const { list = easiestFirst, sha = sha256Of, check = identifyAndCheck, queue = enqueue, appraise = appraiseDocument, by = 'dewey-ingest-folder',
+  const { titleCheck = (id) => checkHoldings(id), list = easiestFirst, sha = sha256Of, check = identifyAndCheck, queue = enqueue, appraise = appraiseDocument, by = 'dewey-ingest-folder',
     recent = async () => (await listItems({ limit: 1000 })).filter((i) => ['source', 'processing', 'ingested'].includes(i.state) && String(i.original_path || '').includes('/Dewey Ingest/')),
     // the twin's FULL text (a spot-check sample of each of two scans of one book covers different pages — the World's
     // Congress of Religions went in twice, 10-18); this job runs in the reports worker, where a full read is fine
@@ -71,7 +74,7 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
     const doc = await check({ path: f.path });
     // ADD ANYWAY (Chad 10-20: "add them all"): a file under an `_add-anyway/` folder is a person's decision to add it even
     // though the check calls it held — the library's copy is an excerpt (pilgrim notes held at 30–77%) and this file is fuller.
-    const approved = /(^|\/)_add-anyway\//.test(f.path);
+    const approved = /(^|\/)_add-anyway\//.test(f.path), donorYes = /(^|\/)_approved\//.test(f.path);
     if (doc.result.verdict === 'held' && !approved) {
       const top = doc.result.candidates?.[0];
       const item = known || await createItem({ title: doc.identified.title || f.path.split('/').pop(), identified: { ...doc.identified, file_name: f.path.split('/').pop() }, by, state: 'declined', why: HELD_WHY });
@@ -93,6 +96,16 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
     // OCR text before anything is imported (dewey-ocr-job). Anything else without an appraisal waits for a person.
     const scanFirst = !a?.title && (doc.identified.needs_ocr || doc.identified.kind === 'scan' || /\.pdf$/i.test(f.path));
     if (scanFirst) {
+      // BEFORE the paid OCR: does the library plausibly hold it by its catalogue title/author (a donor import's sidecar) or file name? (a person's _add-anyway is a decision)
+      const cat = provenance?.catalog?.title ? provenance.catalog : { title: provenance?.title || null, author: provenance?.creator || null };
+      const asked = { title: cat.title || null, author: cat.author || null, file_name: name };
+      const near = approved ? null : plausibleHolding(asked, await titleCheck(cat.title ? asked : { file_name: name }).catch(() => null));
+      if (near) {
+        await updateItem(item.id, { state: 'needs-human', sha256: hash, original_path: f.path, ...(cat.title ? { title: cat.title, author: cat.author || null } : {}) },
+          `ingest folder: a scan the library probably holds — #${near.id} ${near.title} (matched “${cat.title || name}”); not sent to OCR — review it, add by hand (_add-anyway) if it is a different edition`);
+        out.needs_person.push(f.path);
+        continue;
+      }
       await updateItem(item.id, { state: 'source', sha256: hash, original_path: f.path }, `ingest folder (round ${round}): a scan with nothing readable yet — to full OCR, appraised from its text before import`);
       await queue('dewey-intake', { id: item.id }, by);
       out.queued.push(f.path);
@@ -122,7 +135,7 @@ export async function deweyIngestFolderJob({ batch = 5, round = 1, reconsider = 
       out.needs_person.push(f.path);
       continue;
     }
-    if (!approved && known?.state !== 'declined') {   // (a file Chad once declined and has now placed here is a yes)
+    if (!approved && !donorYes && known?.state !== 'declined') {   // (a file Chad once declined and has now placed here is a yes)
       // Chad 10-28: no book is imported without his yes; _add-anyway/ is that yes
       await updateItem(item.id, { state: 'offered', sha256: hash, original_path: f.path, title: a.title, author: a.author || item.author || null, identified: { ...item.identified, appraisal: a, shelf: a.shelf || item.identified?.shelf || null } },
         `ingest folder (round ${round}): ${doc.result.verdict} — waiting for approval before it is added (move it to _add-anyway/ or say yes)`);

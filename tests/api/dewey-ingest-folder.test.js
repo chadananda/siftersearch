@@ -111,3 +111,68 @@ describe('add anyway overrides an earlier held decline', () => {
     expect(r.queued).toEqual(['/in/_add-anyway/egea.txt']);
   });
 });
+
+describe('donor-approved books (_approved/): a yes, but the held check still applies', () => {
+  beforeEach(() => { items.length = 0; });
+  const scanDeps = (queued, extra = {}) => ({ ...deps(queued), appraise: async () => null, titleCheck: async () => ({ verdict: 'not-found-by-title', candidates: [] }), ...extra });
+  it('a held donor book is declined, not imported; a not-held one goes straight in (the path is the yes)', async () => {
+    const queued = [];
+    const d = { ...deps(queued), list: async () => [{ path: '/in/_approved/donors/g/held-copy.txt', ext: 'txt', size: 1e3 }, { path: '/in/_approved/donors/g/fresh.txt', ext: 'txt', size: 2e3 }] };
+    const r = await deweyIngestFolderJob({ batch: 5 }, d);
+    expect(r.held).toEqual(['/in/_approved/donors/g/held-copy.txt']);
+    expect(r.queued).toEqual(['/in/_approved/donors/g/fresh.txt']);
+    expect(items.find((i) => i.original_path.endsWith('held-copy.txt')).state).toBe('declined');
+  });
+  it('an earlier held decline is NOT overridden by _approved/ (only _add-anyway/ does that)', async () => {
+    items.push({ id: 1, sha256: 'sha:/in/_approved/donors/g/egea.txt', state: 'declined', log: [{ why: 'ingest folder: already in the library — #1 X; not added' }] });
+    const queued = [];
+    const r = await deweyIngestFolderJob({ batch: 5 }, { ...deps(queued), list: async () => [{ path: '/in/_approved/donors/g/egea.txt', ext: 'txt', size: 1e3 }] });
+    expect(r.skipped).toBe(1); expect(r.queued).toEqual([]);
+  });
+  it('a scan whose catalogue title the library holds waits for a person — no OCR', async () => {
+    const queued = [];
+    const path = '/in/_approved/donors/g/scan0042.pdf';
+    const prov = `${path}.source.json`;
+    const { mkdtempSync, writeFileSync, mkdirSync } = await import('fs');
+    const { tmpdir } = await import('os');
+    const dir = mkdtempSync(`${tmpdir()}/appr-`); mkdirSync(`${dir}/_approved`);
+    const p = `${dir}/_approved/scan0042.pdf`;
+    writeFileSync(`${p}.source.json`, JSON.stringify({ catalog: { title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh' } }));
+    const asked = [];
+    const d = scanDeps(queued, { list: async () => [{ path: p, ext: 'pdf', size: 9e6 }], check: async () => ({ identified: { title: null, needs_ocr: true }, excerpt: '', result: { verdict: 'undetermined', candidates: [] } }),
+      titleCheck: async (id) => { asked.push(id); return { verdict: 'held', candidates: [{ id: 77, title: 'Gleanings from the Writings of Baha’u’llah', author: 'Bahá’u’lláh', paragraph_count: 400, evidence: [{ kind: 'title', weight: 3 }] }] }; } });
+    const r = await deweyIngestFolderJob({ batch: 5 }, d);
+    expect(r.needs_person).toEqual([p]); expect(r.queued).toEqual([]);
+    expect(queued.map(([n]) => n)).not.toContain('dewey-intake');
+    expect(asked[0]).toMatchObject({ title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh' });
+    expect(items[0]).toMatchObject({ state: 'needs-human', title: 'Gleanings from the Writings of Bahá’u’lláh' });
+    expect(items[0].log.at(-1).why).toMatch(/#77 Gleanings.*not sent to OCR/);
+    expect(prov).toBeTruthy();
+  });
+  it('a scan with no library match goes to OCR as before', async () => {
+    const queued = [];
+    const d = scanDeps(queued, { list: async () => [{ path: '/in/_approved/donors/g/zzz.pdf', ext: 'pdf', size: 9e6 }], check: async () => ({ identified: { title: null, needs_ocr: true }, excerpt: '', result: { verdict: 'undetermined', candidates: [] } }) });
+    const r = await deweyIngestFolderJob({ batch: 5 }, d);
+    expect(r.queued).toEqual(['/in/_approved/donors/g/zzz.pdf']);
+    expect(queued.map(([n]) => n)).toContain('dewey-intake');
+  });
+  it('a scan a person put under _add-anyway/ is not title-checked (their decision), and goes to OCR', async () => {
+    const queued = [];
+    const d = scanDeps(queued, { list: async () => [{ path: '/in/_add-anyway/scan.pdf', ext: 'pdf', size: 9e6 }], check: async () => ({ identified: { title: null, needs_ocr: true }, excerpt: '', result: { verdict: 'undetermined', candidates: [] } }),
+      titleCheck: async () => { throw new Error('must not be asked'); } });
+    expect((await deweyIngestFolderJob({ batch: 5 }, d)).queued).toEqual(['/in/_add-anyway/scan.pdf']);
+  });
+});
+
+describe('plausibleHolding', () => {
+  it('exact main title, or strong title evidence + author surname; nothing weaker', async () => {
+    const { plausibleHolding } = await import('../../api/lib/dewey/holdings.js');
+    const c = (o) => ({ candidates: [{ id: 5, title: 'The Dawn-Breakers: Nabíl’s Narrative', author: 'Nabíl-i-A‘ẓam', paragraph_count: 900, evidence: [{ kind: 'title', weight: 1 }], ...o }] });
+    expect(plausibleHolding({ title: 'The Dawn-Breakers' }, c())?.id).toBe(5);
+    expect(plausibleHolding({ title: 'Dawnbreakers history', author: 'Nabil' }, c({ evidence: [{ kind: 'title', weight: 3 }] }))?.id).toBe(5);
+    expect(plausibleHolding({ title: 'Dawnbreakers history', author: 'Shoghi Effendi' }, c({ evidence: [{ kind: 'title', weight: 3 }] }))).toBeNull();
+    expect(plausibleHolding({ title: 'The Dawn-Breakers' }, c({ paragraph_count: 3 }))).toBeNull();
+    expect(plausibleHolding({ file_name: 'scan0042.pdf' }, c())).toBeNull();
+    expect(plausibleHolding({ title: 'Law' }, { candidates: [{ id: 1, title: 'Law', paragraph_count: 100 }] })).toBeNull();
+  });
+});

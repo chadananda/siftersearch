@@ -1,7 +1,7 @@
 // archive-import ops job (planning/donor-intake-plan-20261030.md step 8): a drive's APPROVED items into the library, each labelled "Donated by
 // <donor>" (a `.source.json` beside the file). Talks → hard link under DEWEY_MEDIA_DIR/donors/<drive>/<rel>, then media-scan (sha dedup; the
-// media feed processes them on workers). Books → hard link under <ingest>/_add-anyway/donors/<drive>/<rel>, then dewey-ingest-folder: _add-anyway
-// is Chad's yes, the appraisal and Dewey's QUALITY GATE still apply. The archive is never written (a hard link shares the bytes; copy only across
+// media feed processes them on workers). Books → hard link under <ingest>/_approved/donors/<drive>/<rel>, then dewey-ingest-folder: _approved
+// is Chad's yes ONLY — the held check, the twin check, the appraisal and Dewey's QUALITY GATE still apply (never _add-anyway, which bypasses the held check). The archive is never written (a hard link shares the bytes; copy only across
 // filesystems). Idempotent: imported_at marks an item, an existing link is reused. Each run also fills the public link of earlier imports once the
 // library holds them (talk → /media/<slug>, book → /document/<id>). Lane 'archive'.
 import { join, dirname, extname } from 'path';
@@ -27,7 +27,7 @@ export function importPlan(drive, it, { mediaDir = deweyMediaDir(), bookDir = in
   if (TALK.has(it.kind)) return { kind: 'talk', src, dest: join(mediaDir, 'donors', drive.id, rel) };
   if (['book', 'scan'].includes(it.kind)) {
     if (!DOC.has(extname(rel).slice(1).toLowerCase())) return { skip: 'no single document file (a folder of page images): Dewey takes a PDF or text — make one first' };
-    return { kind: 'book', src, dest: join(bookDir, '_add-anyway', 'donors', drive.id, rel) };
+    return { kind: 'book', src, dest: join(bookDir, '_approved', 'donors', drive.id, rel) };
   }
   return { skip: `${it.kind || 'this kind'} is not imported (talks and books only)` };
 }
@@ -36,7 +36,8 @@ export function importPlan(drive, it, { mediaDir = deweyMediaDir(), bookDir = in
 export const provenance = (drive, donor, it, plan, at) => ({
   provider: 'donor', label: `Donated by ${donor?.name || drive.donor_id}`, donor: drive.donor_id, donor_name: donor?.name || null,
   drive: drive.id, drive_label: drive.label || null, archive: drive.root, original_path: plan.src, rel_path: it.primary_rel, kind: plan.kind,
-  title: it.sample?.rec?.title || it.title || null, creator: it.sample?.rec?.creator || it.creator || null, year: it.sample?.rec?.year || it.year || null,
+  title: it.metadata?.catalog?.title || it.sample?.rec?.title || it.title || null, creator: it.metadata?.catalog?.author || it.sample?.rec?.creator || it.creator || null,
+  catalog: it.metadata?.catalog || null, year: it.sample?.rec?.year || it.year || null,
   duration: it.duration_s || null, bytes: it.bytes || null, approval: `approved by ${it.decided_by || 'Chad'} on /admin/imports`, approved_at: it.decided_at || null,
   imported_at: at, recommendation: it.sample?.rec?.why || it.why || null,
 });

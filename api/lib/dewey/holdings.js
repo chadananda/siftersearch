@@ -28,7 +28,18 @@ export function titleVariants(t) {
   return [...new Set([raw, main, alt, bare].filter((x) => x && x.length >= 3))];
 }
 
-export const textLines = (id) => (id.printed_lines || []).filter((l) => String(l).trim().split(/\s+/).length >= 6).slice(0, 6);
+/** A catalogue { title, author, file_name } vs a title-only/name-only checkHoldings result → the library document it PLAUSIBLY is, or null. Conservative
+ *  (this keeps a book out of paid OCR, for a person to review): the candidate's main title equals one of the catalogue title's (≥ 4 letters, a real text),
+ *  or a strong title evidence AND the author's surname. Pure. */
+export function plausibleHolding({ title, author, file_name } = {}, result) {
+  const t = title || String(file_name || '').replace(/\.[^.]+$/, '').replace(/_+/g, ' ');
+  const want = new Set(titleVariants(t).map(mainTitle).filter((m) => m.length >= 4));
+  const surname = fold(author).split(' ').filter((w) => w.length > 2).pop();
+  return (result?.candidates || []).find((c) => (c.paragraph_count ?? 20) >= 20 && (want.has(mainTitle(c.title))
+    || (surname && fold(c.author).split(' ').includes(surname) && (c.evidence || []).some((e) => e.kind === 'title' && e.weight >= 3)))) || null;
+}
+
+export const textLines =(id) => (id.printed_lines || []).filter((l) => String(l).trim().split(/\s+/).length >= 6).slice(0, 6);
 
 /** Does this paragraph really contain the line? ≥ 80% of the line's words present (OCR noise allowed). BM25 always returns a
  *  top hit for any line, so a hit alone proves nothing — it called the Sohrab Diary "held" as an unrelated paper (10-17). */

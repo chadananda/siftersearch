@@ -18,6 +18,21 @@ beforeEach(() => { const m = memDb(); for (const s of ARCHIVES_SQL) m.db.exec(s)
 
 const item = (rel, o = {}) => ({ kind: 'book', section: 'main', title: 'T', primary_rel: rel, rel_paths: [rel], files: 1, bytes: 10, match: 'new', score: 50, why: 'w', destination: 'd', metadata: { a: 1 }, ...o });
 
+describe('archives repo: catalogue', () => {
+  it('setCatalogue stores title/author per item of the drive, reports unknown ids, survives a re-catalogue, and itemsToImport pages', async () => {
+    await repo.upsertItems('d1', [item('a.pdf'), item('b.pdf')]);
+    await repo.upsertItems('d2', [item('c.pdf')]);
+    const [a, b] = await repo.listItems('d1'), [c] = await repo.listItems('d2');
+    expect(await repo.setCatalogue('d1', [{ id: a.id, title: ' Real Title ', author: 'Au' }, { id: c.id, title: 'Other drive' }, { id: 999, title: 'x' }, { id: b.id, title: '' }]))
+      .toEqual({ updated: 1, missing: [c.id, 999] });
+    await repo.upsertItems('d1', [item('a.pdf', { metadata: { a: 2 } })]);
+    const got = (await repo.listItems('d1')).find((x) => x.id === a.id);
+    expect(got.metadata).toEqual({ a: 2, catalog: { title: 'Real Title', author: 'Au' } });
+    expect((await repo.listItems('d2'))[0].metadata).toEqual({ a: 1 });
+    await repo.decideItems([a.id, b.id], { decision: 'approve' });
+    expect((await repo.itemsToImport('d1', { limit: 1, offset: 1 }))).toHaveLength(1);
+  });
+});
 describe('archives repo', () => {
   it('donor/drive upsert, id check, custody', async () => {
     await repo.upsertDonor({ id: 'duane', name: 'Duane Troxel' });

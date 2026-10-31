@@ -18,6 +18,7 @@ vi.mock('../../api/lib/repos/archives-repo.js', () => ({
   listItems: async (drive, f) => { calls.push(['list', drive, f]); return Array.from({ length: Math.min(f.limit, 3) }, (_, i) => ({ id: i + 1 })); },
   decideItem: async (id, d) => { calls.push(['decide', id, d]); return { id, ...d }; },
   decideItems: async (ids, d) => { calls.push(['bulk', ids, d]); return ids.length; },
+  setCatalogue: async (drive, items) => { calls.push(['catalogue', drive, items]); return { updated: items.length, missing: [] }; },
   driveReport: async (id) => (id === 'golden-age' ? { drive: { id }, imported: [], counts: rows } : null),
   donorReport: async (id) => (id === 'duane' ? { donor: { id }, drives: [{ drive: { id: 'golden-age' }, imported: [], selected: [], counts: rows, buckets: { items: 17 } }], buckets: { items: 17 }, files: 9 } : null),
 }));
@@ -58,6 +59,14 @@ describe('imports routes', () => {
     const r = (await get('/drives/golden-age/report')).json();
     expect(r.summary.kind).toMatchObject({ book: 5, talk: 2, junk: 10 });
     expect((await get('/drives/x/report')).statusCode).toBe(404);
+  });
+  it('catalogue: title/author per item reach the repo; admin only; validated', async () => {
+    const items = [{ id: 1, title: 'Gleanings', author: "Bahá'u'lláh" }];
+    expect((await post('/drives/golden-age/catalogue', { items })).json()).toEqual({ updated: 1, missing: [] });
+    expect(calls.at(-1)).toEqual(['catalogue', 'golden-age', items]);
+    expect((await post('/drives/golden-age/catalogue', { items: [] })).statusCode).toBe(400);
+    expect((await post('/drives/nope/catalogue', { items })).statusCode).toBe(404);
+    expect((await app.inject({ method: 'POST', url: '/api/admin/imports/drives/golden-age/catalogue', headers: { 'x-internal-key': 'no' }, payload: { items } })).statusCode).toBe(401);
   });
   it('donor report: every drive with its folded summary; 404 for an unknown donor; admin only', async () => {
     const r = (await app.inject({ method: 'GET', url: '/api/admin/imports/donors/duane/report', headers: { 'x-internal-key': 'ik' } })).json();

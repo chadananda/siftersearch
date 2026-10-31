@@ -26,18 +26,18 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('importPlan', () => {
   const dirs = { mediaDir: '/m', bookDir: '/b' };
-  it('talks → media donors folder; documents → Dewey _add-anyway; the rest is skipped', () => {
+  it('talks → media donors folder; documents → Dewey _approved (never _add-anyway, which bypasses the held check); the rest is skipped', () => {
     const d = { id: 'g', root: '/tank/archives/g' };
     expect(importPlan(d, { kind: 'talk', primary_rel: 'talks/a.mp3' }, dirs)).toEqual({ kind: 'talk', src: '/tank/archives/g/talks/a.mp3', dest: '/m/donors/g/talks/a.mp3' });
-    expect(importPlan(d, { kind: 'scan', primary_rel: 'x/Book.PDF' }, dirs)).toMatchObject({ kind: 'book', dest: '/b/_add-anyway/donors/g/x/Book.PDF' });
+    expect(importPlan(d, { kind: 'scan', primary_rel: 'x/Book.PDF' }, dirs)).toMatchObject({ kind: 'book', dest: '/b/_approved/donors/g/x/Book.PDF' });
     expect(importPlan(d, { kind: 'scan', primary_rel: 'scan/p1.jpg' }, dirs).skip).toMatch(/page images/);
     expect(importPlan(d, { kind: 'photo', primary_rel: 'a.jpg' }, dirs).skip).toMatch(/talks and books only/);
     expect(importPlan(d, { kind: 'talk', primary_rel: '../../etc/passwd' }, dirs).skip).toMatch(/outside/);
   });
   it('provenance names the donor, drive, path and approval', () => {
-    const p = provenance(drive(), { name: 'Jane Smith' }, { primary_rel: 'talks/a.mp3', title: 'a', decided_by: 'chad', decided_at: 't0', sample: { rec: { title: 'A Talk', year: 1957 } } },
+    const p = provenance(drive(), { name: 'Jane Smith' }, { primary_rel: 'talks/a.mp3', title: 'a', decided_by: 'chad', decided_at: 't0', sample: { rec: { title: 'A Talk', year: 1957 } }, metadata: { catalog: { title: 'Real Talk', author: 'Ali' } } },
       { kind: 'talk', src: '/s' }, 't1');
-    expect(p).toMatchObject({ provider: 'donor', label: 'Donated by Jane Smith', donor: 'smith', drive: 'golden-age', original_path: '/s', title: 'A Talk', year: 1957, approved_at: 't0', imported_at: 't1' });
+    expect(p).toMatchObject({ provider: 'donor', label: 'Donated by Jane Smith', donor: 'smith', drive: 'golden-age', original_path: '/s', title: 'Real Talk', creator: 'Ali', catalog: { title: 'Real Talk', author: 'Ali' }, year: 1957, approved_at: 't0', imported_at: 't1' });
   });
   it('the Dewey markdown carries the provenance line', () => {
     expect(toMarkdown({ title: 'T', itemId: 3, provenance: 'Donated by Jane Smith' }, 'body')).toMatch(/provenance: "Donated by Jane Smith"\n/);
@@ -55,7 +55,7 @@ describe('archiveImportJob', () => {
       media: { findMediaBySource: async () => ({ slug: 'x-talk', state: 'done' }) },
       dewey: { findBySha: async (s) => (s === 'abc' ? { doc_id: 42, state: 'ingested' } : { state: 'gate' }) } };
     const r = await archiveImportJob({ drive: 'golden-age' }, deps);
-    const talk = join(out, 'm/donors/golden-age/talks/a.mp3'), book = join(out, 'b/_add-anyway/donors/golden-age/book.pdf');
+    const talk = join(out, 'm/donors/golden-age/talks/a.mp3'), book = join(out, 'b/_approved/donors/golden-age/book.pdf');
     expect(r.talks).toEqual([{ id: 1, dest: talk, how: 'linked' }]);
     expect(r.books[0]).toMatchObject({ id: 2, dest: book });
     expect(r.skipped).toEqual([{ id: 3, why: expect.stringMatching(/talks and books/) }]);

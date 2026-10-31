@@ -52,7 +52,9 @@ export async function upsertItems(driveId, items, { batch = 500 } = {}) {
         match, match_ref, score, why, destination, metadata, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(drive_id, primary_rel) DO UPDATE SET kind = excluded.kind, section = excluded.section, title = excluded.title, creator = excluded.creator, year = excluded.year,
         lang = excluded.lang, rel_paths = excluded.rel_paths, files = excluded.files, bytes = excluded.bytes, duration_s = excluded.duration_s, match = excluded.match,
-        match_ref = excluded.match_ref, score = COALESCE(json_extract(intake_items.sample, '$.rec.score'), excluded.score), why = excluded.why, destination = excluded.destination, metadata = excluded.metadata, updated_at = excluded.updated_at`,
+        match_ref = excluded.match_ref, score = COALESCE(json_extract(intake_items.sample, '$.rec.score'), excluded.score), why = excluded.why, destination = excluded.destination, updated_at = excluded.updated_at,
+        metadata = CASE WHEN json_extract(intake_items.metadata, '$.catalog') IS NULL THEN excluded.metadata   -- the operator's title/author (setCatalogue) survives a re-catalogue
+          ELSE json_set(COALESCE(excluded.metadata, '{}'), '$.catalog', json(json_extract(intake_items.metadata, '$.catalog'))) END`,
     args: [driveId, x.kind ?? null, x.section ?? null, x.title ?? null, x.creator ?? null, x.year ?? null, x.lang ?? null, x.primary_rel, json(x.rel_paths), x.files ?? null, x.bytes ?? null,
       x.duration_s ?? null, x.match ?? null, x.match_ref ?? null, x.score ?? null, x.why ?? null, x.destination ?? null, json(x.metadata), t, t] }));
     await transaction(sts, 'archives:items-upsert');
@@ -128,9 +130,9 @@ export async function answerInfo(id, answer) {
   await query('UPDATE intake_items SET info_answer = ?, decision = NULL, decision_note = NULL, decided_by = NULL, decided_at = NULL, updated_at = ? WHERE id = ?', [answer, now(), id], 'archives:item-answer');
 }
 /** Approved and not yet imported (step 8), best score first. */
-export async function itemsToImport(driveId, { limit = 100 } = {}) {
-  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND decision = 'approve' AND imported_at IS NULL ORDER BY score DESC, id LIMIT ?`,
-    [driveId, Math.min(Number(limit) || 100, 1000)], 'archives:items-to-import');
+export async function itemsToImport(driveId, { limit = 100, offset = 0 } = {}) {
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND decision = 'approve' AND imported_at IS NULL ORDER BY score DESC, id LIMIT ? OFFSET ?`,
+    [driveId, Math.min(Number(limit) || 100, 1000), Math.max(Number(offset) || 0, 0)], 'archives:items-to-import');
   return rows.map(parseItem);
 }
 /** Where an imported item went: 'media:<path>' / 'dewey:<sha256>' until the library holds it, then its public path. imported_at is set once. */
@@ -143,6 +145,18 @@ export async function itemsImportedUnlinked(driveId, { limit = 500 } = {}) {
   const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND imported_at IS NOT NULL AND (imported_ref LIKE 'media:%' OR imported_ref LIKE 'dewey:%') ORDER BY id LIMIT ?`,
     [driveId, Math.min(Number(limit) || 500, 2000)], 'archives:items-unlinked');
   return rows.map(parseItem);
+}
+
+/** The operator's catalogue title/author for items of a drive (metadata.catalog; a re-catalogue keeps it). rows [{ id, title, author }] → { updated, missing: [ids not in this drive] }. */
+export async function setCatalogue(driveId, rows) {
+  const clean = (rows || []).map((r) => ({ id: Number(r?.id), title: String(r?.title ?? '').trim().slice(0, 300), author: String(r?.author ?? '').trim().slice(0, 300) })).filter((r) => Number.isInteger(r.id) && r.id > 0 && r.title);
+  const have = new Set();
+  for (let i = 0; i < clean.length; i += 500) for (const r of await queryAll(`SELECT id FROM intake_items WHERE drive_id = ? AND id IN (${clean.slice(i, i + 500).map(() => '?').join(', ')})`, [driveId, ...clean.slice(i, i + 500).map((r) => r.id)], 'archives:catalogue-ids')) have.add(r.id);
+  const t = now(), ok = clean.filter((r) => have.has(r.id));
+  for (let i = 0; i < ok.length; i += 500)
+    await transaction(ok.slice(i, i + 500).map((r) => ({ sql: `UPDATE intake_items SET metadata = json_set(COALESCE(metadata, '{}'), '$.catalog', json(?)), updated_at = ? WHERE id = ? AND drive_id = ?`,
+      args: [JSON.stringify({ title: r.title, author: r.author || null }), t, r.id, driveId] })), 'archives:catalogue-set');
+  return { updated: ok.length, missing: clean.filter((r) => !have.has(r.id)).map((r) => r.id) };
 }
 
 /** One decision for many items in one transaction (bulk approve/deny of a page). Returns the distinct ids sent. */
