@@ -125,6 +125,15 @@ describe('validateTyped: each step against job-types.json (B), never splice, qui
     expect(requiredFiles('gpu')).toEqual(expect.arrayContaining(['meta.json', 'transcript.raw.json']));
     for (const t of AUDIO_TYPES) for (const f of requiredFiles(t)) expect(f).not.toMatch(/[{…]/);
   });
+  it('cpu-finish never requires enhanced/pod/*: item.js consumes that directory and deletes it (10-31: every finish was refused)', async () => {
+    const { readFileSync } = await import('fs');
+    const item = readFileSync(new URL('../../api/lib/media/item.js', import.meta.url), 'utf8');
+    expect(item).toMatch(/await podForget\(dir\)/);   // the finish tree that reaches tower has no enhanced/pod
+    expect(requiredFiles('cpu-finish').filter((f) => f.startsWith('enhanced/pod/'))).toEqual([]);
+    const tree = requiredFiles('cpu-finish').filter((f) => !f.startsWith('enhanced/pod/'));   // exactly what a finished tree holds
+    const r = result('cpu-finish', { files: tree.map((path) => ({ path, sha256: H('a') })), meta: { remaster: { status: 'review' } } });
+    expect(() => validateTyped('cpu-finish', r, { inputSha: 'abc', slug: 't', outputs: r.files.map((f) => 'item/' + f.path) })).not.toThrow();
+  });
   it('a good prep / gpu result passes; uploads must cover every listed file', () => {
     for (const t of ['cpu-prep', 'gpu']) {
       const r = result(t);

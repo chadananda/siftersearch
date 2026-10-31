@@ -70,7 +70,8 @@
         "result": "result.json",
         "tree": "item",
         "files": ["meta.json", "transcript.raw.json", "transcript.work.json", "diarization.json", "waveform.json",
-          "web/{slug}.ogg", "web/{slug}.m4a", "enhanced/unipase.flac", "enhanced/unipase.guard.json", "enhanced/pod/post.json", "…every file result.json lists"],
+          "web/{slug}.ogg", "web/{slug}.m4a", "enhanced/unipase.flac", "enhanced/unipase.guard.json", "…every file result.json lists"],
+        "_files": "never enhanced/pod/*: item.js consumes the worker's post.json there and deletes the directory once the web encodes are taken (podForget); tower adopts from meta.json (10-31: requiring post.json refused every finish).",
         "_": "a complete whole-recording result: tower adopts it with adoptWholeResult (whole-result.js) exactly as a `whole` job's"
       }
     }
