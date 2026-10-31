@@ -28,10 +28,15 @@ const HOST = arg('host'), SLOTS = Number(arg('slots', 1)), ROOT = arg('root', '/
 const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)), GB_PER_TALK = Number(arg('gb-per-talk', 6)), DISK_PER_TALK = Number(arg('disk-gb-per-talk', 8)), ONCE = process.argv.includes('--once'), IDLE_EXIT_MS = Number(arg('idle-exit-min', 0)) * 60_000;
 const CAN = arg('can', 'whole,restore,post,cleanup').split(',').filter(Boolean);
 const list = (k) => (arg(k, '') || '').split(',').filter(Boolean);
-const TYPES = list('types'), SPILL = list('spill'), CPUS = String(arg('cpus', 6));
-// --types with an explicit --can = the switch-over: typed jobs first, legacy whole jobs ('media') when none is queued
-const MIXED = TYPES.length > 0 && process.argv.includes('--can');
+const SPILL = list('spill'), CPUS = String(arg('cpus', 6)), PROFILE = arg('profile');
 const CONTRACT = (() => { for (const u of ['./job-types.json', '../../../scripts/media/worker/job-types.json']) try { return JSON.parse(readFileSync(new URL(u, import.meta.url), 'utf8')); } catch {} return null; })();
+// --profile gpu | cpu+llm | llm (contract `profiles`, = PROFILES in api/lib/media/stages.js): the claim types are the contract's types whose
+// `needs` (class) the profile takes, in contract order. --types is the explicit alias and wins when given.
+export const profileTypes = (p, contract = CONTRACT) => (contract?.profiles?.[p] ? Object.keys(contract.types || {}).filter((t) => contract.profiles[p].includes(contract.types[t].needs)) : null);
+const TYPES = list('types').length ? list('types') : PROFILE ? profileTypes(PROFILE) || [] : [];
+if (PROFILE && !list('types').length && !TYPES.length) { console.error(`--profile ${PROFILE}: ${CONTRACT?.profiles?.[PROFILE] ? 'no queued job type takes it (llm jobs run in tower\'s feed pool)' : `unknown (${Object.keys(CONTRACT?.profiles || {}).filter((k) => k !== '_').join(' | ')})`}`); process.exit(2); }
+// --types/--profile with an explicit --can = the switch-over: typed jobs first, legacy whole jobs ('media') when none is queued
+const MIXED = TYPES.length > 0 && process.argv.includes('--can');
 // the one place a job kind maps to what runs in the image, and what it hands back (relative to the job dir)
 export const KINDS = {
   whole: { cmd: ['/usr/local/bin/node', '/opt/sifter/api/lib/media/whole-recording.mjs'], outputs: ['result.json'], tree: 'item', skip: 'original/', manifest: true },
@@ -54,7 +59,7 @@ export const ACCEL = { none: () => [], cuda: () => ['--gpus', 'all'], rocm: () =
 const DOCKER = RUN === 'docker' && spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0 ? ['sudo', '-n', 'docker'] : ['docker'];
 const docker = (args, o) => spawn(DOCKER[0], [...DOCKER.slice(1), ...args], o);
 if (!HOST || (RUN === 'docker' && !IMAGE) || CAN.some((k) => !KINDS[k]) || [...TYPES, ...SPILL].some((t) => !typedKind(t))) {
-  console.error(`usage: queue-agent.mjs --host <name> [--slots N] [--can whole,restore,post,cleanup | --types ${Object.keys(CONTRACT?.types || {}).join(',')} [--spill …]] [--run docker --image <ref>|--run local] [--device cuda|rocm|none]`); process.exit(2);
+  console.error(`usage: queue-agent.mjs --host <name> [--slots N] [--can whole,restore,post,cleanup | --profile gpu|cpu+llm|llm | --types ${Object.keys(CONTRACT?.types || {}).join(',')} [--spill …]] [--run docker --image <ref>|--run local] [--device cuda|rocm|none]`); process.exit(2);
 }
 if (!ACCEL[DEVICE] || (DEVICE === 'none' && NEEDS_GPU)) { console.error(`no GPU (device ${DEVICE}): GPU stages never run on CPU — pass --device cuda|rocm, or --device none with --types that need only CPU`); process.exit(2); }
 // VRAM for the claim (typed gpu jobs declare need.vram_mb): nvidia total, or amdgpu VRAM/GTT (unified memory on Strix Halo); --vram-mb overrides

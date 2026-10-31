@@ -163,7 +163,7 @@ export async function mediaArchiveImportJob({ identifier, pauseMs = 2000, limit 
   return out;
 }
 
-export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null, feed = null, merge_speakers = false, remaster = false } = {}, deps = {}) {
+export async function mediaItemJob({ id, ids = null, from = null, only = null, redo = null, threads = null, lang = null, model = null, reslug = false, force = false, stage = null, priority = null, feed = null, merge_speakers = false, remaster = false, stage_feed = null } = {}, deps = {}) {
   // ids: [..] or 'done' (every published item) → one media-item run each, same options (a back-fill: { ids: 'done', redo: [...] })
   if (id == null && ids) {
     const R = deps.repo || await import('../repos/media-repo.js');
@@ -200,7 +200,7 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
   }
   const { runItem } = deps.runItem ? deps : await import('../media/item.js');
   try {
-    const r = await runItem(item, { from, only, redo, threads, lang, model, mergeSpeakers: !!merge_speakers, remaster: !!remaster });
+    const r = await runItem(item, { from, only, redo, threads, lang, model, mergeSpeakers: !!merge_speakers, remaster: !!remaster, feedStage: stage_feed || null });
     if (r.yielded) return r;
     await logActivity('media', `▶ media ${r.slug}: ${r.done.join(' → ') || 'nothing to do'}`).catch(() => {});
     return { id, slug: r.slug, done: r.done, cost_usd: r.meta?.cost?.usd ?? null, stages: r.meta?.stages };
@@ -816,8 +816,9 @@ export async function mediaLlmJob({ id, ...rest } = {}, deps = {}) {
 
 /** The FEED for both lanes (30 s): keep the compute queue `computeDepth` deep (by rank; YouTube items once downloaded) and the
  *  LLM queue `llmDepth` deep (transcribed items by rank); one download run queued; transient failures back after 30 min. */
-/** Stages a PUBLISHED talk can be waiting at, completed by the feed (each is a stage in item.js, run on a worker/home host). */
-export const FEED_STAGES = ['quiet'];
+/** Stages the feed completes on EVERY published talk lacking them: the registry's `feed` stages (opt-in; today quiet). Other stages run only for a campaign's marked talks. */
+export { FEED_STAGES } from '../media/stages.js';
+import { FEED_STAGES, REG as STAGE_REG, feedDepth, rerunSet, markStale, towerMay } from '../media/stages.js';
 export async function mediaLanesFeedPass(deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
@@ -874,11 +875,17 @@ export async function mediaLanesFeedPass(deps = {}) {
   // quiet is silenced on a home host (quietStep), never tower.
   if (repo.nextByStage) {
     const pend = await ops.pendingRuns('media-item'), busy = new Set([...pend.map((r) => Number(r.params?.id)), ...(await ops.pendingRuns('media-quiet-repair')).flatMap((r) => [].concat(r.params?.ids || []).map(Number))].filter(Boolean));
-    for (const stage of FEED_STAGES) {
-      const depth = deps.stageDepth ?? (Number(process.env.MEDIA_STAGE_DEPTH) || 2), inflight = pend.filter((r) => r.params?.stage_feed === stage).length;
+    // each stage paced by its CLASS (stages.js CLASSES: cpu = MEDIA_STAGE_DEPTH 2 · llm = MEDIA_LLM_CONCURRENCY 12); a talk queued for one stage is busy for the next
+    // + CAMPAIGN stages (ops `media rerun`): a stage the feed does not complete by itself is worked only on the talks a campaign marked stale
+    const ledger = deps.ledger ?? (deps.repo ? null : await import('../repos/media-ledger-repo.js'));
+    const fed = deps.feedStages || FEED_STAGES;
+    const camp = ledger?.campaignStages ? (await ledger.campaignStages()).filter((s) => STAGE_REG.BY[s] && !fed.includes(s) && towerMay(s)) : [];
+    for (const stage of [...fed, ...camp]) {
+      const depth = deps.stageDepth ?? feedDepth(stage), inflight = pend.filter((r) => r.params?.stage_feed === stage).length;
       if (inflight >= depth) continue;
-      for (const it of (await repo.nextByStage(stage, depth + busy.size)).filter((x) => !busy.has(x.id)).slice(0, depth - inflight)) {
-        await queue('media-item', { id: it.id, remaster: true, stage_feed: stage }, 'media-feed'); (out.stages ||= []).push([stage, it.id]);
+      const list = fed.includes(stage) ? await repo.nextByStage(stage, depth + busy.size) : await ledger.staleByStage(stage, depth + busy.size);
+      for (const it of list.filter((x) => !busy.has(x.id)).slice(0, depth - inflight)) {
+        await queue('media-item', { id: it.id, remaster: true, stage_feed: stage }, 'media-feed'); (out.stages ||= []).push([stage, it.id]); busy.add(it.id);
       }
     }
   }
@@ -2465,5 +2472,48 @@ export async function mediaTrimAuditJob({ write = false, ids = null } = {}, deps
   }
   out.lead_min = Math.round(out.lead_min * 10) / 10; out.tail_min = Math.round(out.tail_min * 10) / 10;
   out.longest = rows.sort((a, b) => b.lead_s - a.lead_s).slice(0, 15);
+  return out;
+}
+
+
+/** RE-RUN ONE STAGE ACROSS THE LIBRARY (Chad 10-31: "add new tasks along the way and reprocess just that task"). report `media-rerun`, ops: `media rerun <stage>`.
+ *  where: 'fp!=current' (default: its recorded tool+settings differ from the registry's, or none recorded) · 'tool=X' · 'all'. mode: dry (count, audio
+ *  hours, est $ = p75 recorded $/audio-hour of that stage × hours) · canary (limit 20) · full. A run MARKS the stage + its dependents stale (stages.js
+ *  markStale: never an earlier stage; the talk stays on air on its current files) and re-indexes next_stage; the feed then paces the work by class.
+ *  Only a feed stage or an llm-class stage — any other audio stage re-runs through the typed chain. Deps injected for tests. */
+export async function mediaRerunJob({ stage, where = 'fp!=current', mode = 'dry', limit = null } = {}, deps = {}) {
+  const reg = deps.reg || STAGE_REG, def = reg.BY[stage];
+  if (!def) throw new Error(`unknown stage ${stage} (stages: ${reg.STAGES.join(', ')})`);
+  // the feed works a campaign on tower: llm stages (service-bound), and quiet (its own home-host step); other gpu/cpu stages re-run through the typed chain
+  if (!def.feed && !towerMay(stage, reg)) throw new Error(`${stage} is a ${def.class} stage the feed does not run: re-run it through the typed chain`);
+  const w = String(where || 'fp!=current'), m = /^tool=(.+)$/.exec(w);
+  const filter = m ? { tool: m[1] } : /^fp!=current$/.test(w) ? { fp_not: def.fp } : /^fp=(.+)$/.exec(w) ? { fp: /^fp=(.+)$/.exec(w)[1] } : {};
+  const ledger = deps.ledger || await import('../repos/media-ledger-repo.js');
+  const ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const repo = deps.repo || await import('../repos/media-repo.js');
+  const readMeta = deps.readMeta || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8')));
+  const writeMeta = deps.writeMeta || (async (dir, meta) => { const p = join(dir, 'meta.json'), t = `${p}.rerun.${process.pid}.tmp`; await writeFile(t, JSON.stringify(meta, null, 1)); await rename(t, p); });
+  const cands = await ledger.rerunCandidates({ stage, where: filter });
+  const hours = cands.reduce((a, c) => a + (Number(c.duration_s) || 0), 0) / 3600;
+  const perH = (await ledger.stageUsd(stage)).filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
+  const q75 = perH.length ? (() => { const i = 0.75 * (perH.length - 1), lo = Math.floor(i); return perH[lo] + (perH[Math.min(lo + 1, perH.length - 1)] - perH[lo]) * (i - lo); })() : null;
+  const out = { stage, class: def.class, tool: def.tool, settings: def.settings, fp: def.fp, where: w, mode, redoes: rerunSet(stage, { published: true }, reg), talks: cands.length,
+    audio_h: Math.round(hours * 100) / 100, usd_per_audio_h_p75: q75, est_usd: q75 == null ? null : Math.round(q75 * hours * 10000) / 10000, cost_basis: perH.length ? `${perH.length} recorded runs` : 'no recorded cost yet' };
+  if (mode === 'dry') return out;
+  const n = mode === 'canary' ? Number(limit) || 20 : Number(limit) || cands.length;
+  const pend = await ops.pendingRuns('media-item'), busy = new Set(pend.map((r) => Number(r.params?.id)).filter(Boolean));
+  const campaign = `${stage}@${def.fp}`;
+  out.marked = []; out.skipped_busy = [];
+  for (const c of cands) {
+    if (out.marked.length >= n) break;
+    if (busy.has(Number(c.id))) { out.skipped_busy.push(c.id); continue; }
+    const meta = await readMeta(c.dir);
+    if (!markStale(meta, stage, { published: !!(c.published_at || meta.stages?.catalog?.at), campaign }, reg).length) continue;
+    await writeMeta(c.dir, meta);
+    await ledger.syncItemStages(c.id, meta.stages);
+    const { indexFields } = await import('../media/item.js');
+    await repo.setIndex(c.id, indexFields(meta, reg));
+    out.marked.push(c.id);
+  }
   return out;
 }

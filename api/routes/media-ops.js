@@ -36,6 +36,17 @@ export default async function mediaOps(fastify) {
     const r = await mediaAdd({ urls: [].concat(req.body?.urls || req.body?.url || []), paths: [].concat(req.body?.paths || req.body?.path || []), by: by(req) });
     return r.error ? reply.code(400).send(r) : r;
   });
+  // THE STAGE REGISTRY (api/lib/media/stages.js): every stage with class, bundle, after, tool + settings + fp, required, blocksAir, feed
+  fastify.get('/ops/media/stages', guard, async () => ({ stages: (await import('../lib/media/stages.js')).describeRegistry() }));
+  // RE-RUN ONE STAGE across the library: { stage, where: 'fp!=current' | 'tool=X' | 'fp=…' | 'all', mode: 'dry' | 'canary' | 'full', limit } — dry + canary answer inline, full is a report run
+  fastify.post('/ops/media/rerun', guard, async (req, reply) => {
+    const b = req.body || {}, mode = ['dry', 'canary', 'full'].includes(b.mode) ? b.mode : 'dry';
+    const p = { stage: String(b.stage || ''), where: b.where || 'fp!=current', mode, ...(b.limit ? { limit: Number(b.limit) } : {}) };
+    try {
+      if (mode === 'full') return { queued: await (await import('../lib/repos/ops-report-repo.js')).enqueue('media-rerun', p, by(req)), ...p };
+      return await (await import('../lib/ops/media-jobs.js')).mediaRerunJob(p);
+    } catch (e) { return reply.code(400).send({ error: e.message }); }
+  });
   fastify.post('/ops/media/items/:id/redo', guard, async (req, reply) => {
     const r = await mediaRedo({ ids: [req.params.id], stages: [].concat(req.body?.stages || []), by: by(req) });
     return r.error ? reply.code(400).send(r) : r;

@@ -9,7 +9,8 @@ const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT
 import { quietRecord, hasQuiet, QUIET_REPAIR_VERSION } from './quiet-record.js';
 import { podPost, podComplete, podVerdict, take as podTake, forget as podForget, podDir } from './pod-post.js';
 import { late } from './late.js';
-import { slotWait } from './tools.js';
+import { slotWait, WorkerWait } from './tools.js';
+import { REG, STAGES, COMPLETE_STAGES, DEPENDENTS, withDependents as regWithDependents, missingStages, recordFor, withRecords, towerMay } from './stages.js';
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
 import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
@@ -140,31 +141,27 @@ export function restampAlignment(meta, raw, paragraphs) {
   if (meta.audio_alignment_hash && (!meta.aligned_to || meta.aligned_to === 'safe' || raw?.aligned_to === meta.aligned_to)) meta.audio_alignment_hash = timingSignature(paragraphs);
 }
 
-export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'quiet', 'web', 'transcribe', 'preview', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
-  'headings', 'quotes', 'links', 'assess', 'update'];
-/** COMPLETE (Chad 10-29) = every stage done (remaster, transcribe, diarize, correct, headings, quotes, links, moments/assess, ingest, catalog) AND a remaster
- *  that passed assessment (usable/cleaned — never a splice of original + remaster, Chad 10-29) WITH MEASURED PROOF it differs from the original (the verify stage, or a passed paired-quality assessment). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
-export const COMPLETE_STAGES = ['remaster', 'verify', 'quiet', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
+// THE CHECKLIST lives in ONE place: the stage registry (stages.js — order, dependencies, class, tool + settings, required, blocksAir). Re-exported here.
+export { STAGES, COMPLETE_STAGES, DEPENDENTS };
 /** A PLAYABLE LISTENING COPY (Chad 10-31: "I do not want any audio to play the original"): the web encode exists AND it was made from the remaster, and the remaster's verdict is usable/cleaned;
  *  never the original, never a splice of original and remastered sentences (10-29), never without its quiet pass (10-31: meta.remaster.quiet). A talk whose listening copy is not the remaster is not playable until the remaster has run. */
 export const hasPlayableCopy = (meta = {}) => !!meta.stages?.web?.at && hasQuiet(meta) && meta.enhancement?.listening === 'unipase' && (meta.web_listening ?? 'unipase') === 'unipase' && ['usable', 'cleaned'].includes(qualityOf(meta).verdict);
-/** ON AIR (Chad 10-31) = every COMPLETE_STAGES stage has run AND the remaster is DONE (published by the judge or by Chad) AND the talk plays that remaster. review/kept/deferred/skipped/waiting/archived
- *  are not on air: they are in the queue, on the held page, or archived. The remaster upgrades nothing: it IS the listening copy. */
+/** ON AIR (Chad 10-31) = every stage that BLOCKS AIR (registry: required + blocksAir) has run AND the remaster is DONE (published by the judge or by Chad) AND the talk plays that remaster. review/kept/deferred/skipped/waiting/archived
+ *  are not on air: they are in the queue, on the held page, or archived. The remaster upgrades nothing: it IS the listening copy. A stage marked stale for a re-run keeps the talk on air on its current files. */
 export const REMASTER_DECIDED = ['done'];
-/** DEPENDENCY EDGES between stages (Chad 10-31: "an incomplete stage is an incomplete talk; jobs run only incomplete stages and their dependents"). When a stage is (re)done, what was made from its
- *  output is stale: its dependents are un-ticked (transitively) and run again, nothing earlier and nothing unrelated (a text stage never reaches audio: it has no edges). */
-export const DEPENDENTS = { remaster: ['verify', 'realign', 'quiet'], realign: ['quiet'], quiet: ['web', 'trim', 'update'] };
-/** The stages plus everything downstream of them. Pure. */
-export const withDependents = (stages = []) => { const out = new Set(); const add = (s) => { if (out.has(s)) return; out.add(s); (DEPENDENTS[s] || []).forEach(add); }; stages.forEach(add); return [...out]; };
-/** A stage is done when ticked in meta.stages; the quiet stage also counts from the record the worker's result (post.py) or an earlier silencing wrote (meta.remaster.quiet = tool/settings/version). */
+/** The stages plus everything made from them (registry `after` edges, transitively), in run order: a redo un-ticks exactly these. Pure. */
+export const withDependents = (stages = [], reg = REG) => regWithDependents(stages, reg);
+/** A stage has run when ticked in meta.stages; the quiet stage also counts from the record the worker's result (post.py) or an earlier silencing wrote (meta.remaster.quiet = tool/settings/version). */
 const stageOk = (m, s) => !!m.stages?.[s]?.at || (s === 'quiet' && m.remaster?.quiet?.v >= QUIET_REPAIR_VERSION);
-export const isComplete = (meta = {}) => REMASTER_DECIDED.includes(meta.remaster?.status) && hasPlayableCopy(meta) && COMPLETE_STAGES.every((s) => stageOk(meta, s));
-/** The indexed columns for one talk (migration 187): what is missing, the next stage, the remaster verdict, NISQA in/out, bandwidth in/out, and the complete flag. */
-export function indexFields(meta = {}) {
-  const missing = COMPLETE_STAGES.filter((s) => !stageOk(meta, s)), q = qualityOf(meta);
+/** Done for the checklist: run, and not marked stale by a re-run campaign. */
+const stageDone = (m, s) => stageOk(m, s) && !m.stages?.[s]?.stale;
+export const isComplete = (meta = {}, reg = REG) => REMASTER_DECIDED.includes(meta.remaster?.status) && hasPlayableCopy(meta) && reg.AIR_STAGES.every((s) => stageOk(meta, s));
+/** The indexed columns for one talk (migration 187): what is missing (required and not done, or stale for a re-run), the next stage, the remaster verdict, NISQA in/out, bandwidth in/out, and the on-air flag. */
+export function indexFields(meta = {}, reg = REG) {
+  const missing = missingStages(meta, stageDone, reg), q = qualityOf(meta);
   const a = meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment || {}, n = (v) => (Number.isFinite(Number(v)) && v != null ? Math.round(Number(v) * 100) / 100 : null);
-  const done = isComplete(meta), at = done ? COMPLETE_STAGES.map((s) => meta.stages?.[s]?.at).filter((v) => v != null).map(String).sort().pop() || null : null;
-  return { restored: done ? 1 : 0, completed_at: at, stages_missing: missing.length, next_stage: STAGES.find((s) => missing.includes(s)) || null, verdict: q.verdict,
+  const done = isComplete(meta, reg), at = done ? reg.AIR_STAGES.map((s) => meta.stages?.[s]?.at).filter((v) => v != null).map(String).sort().pop() || null : null;
+  return { restored: done ? 1 : 0, completed_at: at, stages_missing: missing.length, next_stage: missing[0] || null, verdict: q.verdict,
     in_quality: n(a.reference?.nisqa?.[0]), out_quality: n(a.restored?.nisqa?.[0]), in_bw_khz: n(q.metrics.source_bandwidth_khz), out_bw_khz: n(q.metrics.output_bandwidth_khz) };
 }
 export const archiveRoot = () => process.env.MEDIA_ARCHIVE_ROOT || '/tank/media/library';
@@ -232,9 +229,11 @@ export async function runItem(item, opts = {}, deps = {}) {
   meta.audio_version = audioVersion(meta);
   if (item.published_at && meta.web_listening == null) meta.web_listening = listeningVariant(meta); // legacy published copy, before any source change
   meta.stages ||= {}; meta.cost ||= { usd: 0, calls: 0, in: 0, out: 0 };
-  if (opts.from) for (const s of STAGES.slice(STAGES.indexOf(opts.from))) delete meta.stages[s];
+  const reg = d.reg || REG;
+  withRecords(meta, reg);   // stages ticked before tool records existed get one from what meta knows (stages.js infer)
+  if (opts.from) for (const s of reg.STAGES.slice(reg.STAGES.indexOf(opts.from))) delete meta.stages[s];
   // redo: only these stages again (a back-fill of a new stage: [new, 'update'] — update re-renders, re-ingests, re-catalogues), the rest kept
-  for (const s of withDependents(opts.redo || [])) if (STAGES.includes(s)) delete meta.stages[s];
+  for (const s of withDependents(opts.redo || [], reg)) if (reg.STAGES.includes(s)) delete meta.stages[s];
   const spend = meta.cost;
   const done = [];
   let dir = item.dir;
@@ -265,8 +264,8 @@ export async function runItem(item, opts = {}, deps = {}) {
     await save();
   }
 
-  for (const stage of STAGES) {
-    if (meta.stages[stage]?.at) continue;
+  for (const stage of reg.STAGES) {
+    if (meta.stages[stage]?.at && !meta.stages[stage].stale) continue;   // stale = a re-run campaign (stages.js markStale) asked for it again
     if (opts.only && !opts.only.includes(stage)) continue;
     if (await d.draining()) return { yielded: true, resume: { id: item.id, stage }, slug: meta.slug, done };   // stage: a resumed run never redoes its from/reslug
     // an EXCLUDED speaker (data/media-exclusions.json, Chad 10-23) — or a row media-exclude took out — goes no further
@@ -289,8 +288,13 @@ export async function runItem(item, opts = {}, deps = {}) {
     const t0 = Date.now();
     // a published talk stays published while later stages (or a re-run) work on it
     await repo.updateMediaItem(item.id, { stage, state: item.state === 'done' || meta.stages.catalog?.at ? 'done' : 'running' });
-    const rec = {};
+    const rec = {}, u0 = spend.usd || 0, def = reg.BY[stage];
     try {
+    // A DECLARED STAGE (stages.js `run`): generic — the registry says where it may run (class) and what it is made from (after)
+    if (def?.run) {
+      if (!towerMay(stage, reg) && !onWorker()) throw new WorkerWait(`${stage} (${def.class})`);
+      Object.assign(rec, (await def.run({ item, meta, dir, d, rec, stop, spend })) || {});
+    }
 
     // a SUPERSEDED talk (media-supersede): the new original is linked in and probed; slug, title, speaker, tags and the folder stay
     if (stage === 'archive' && meta.supersede_pending && item.source_kind !== 'youtube') {
@@ -485,7 +489,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           if ((meta.enhancement.listening || 'safe') !== listeningBefore) markAudioPending(meta);
           meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: spliced ? `the copy mixes original and remastered audio (${g.swapped} sentences from the original): never published — re-render the pure copy` : pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `the remaster's words differ from the original transcript in ${wordsPct} % of sentences (> ${maxPct} %): listen to check the remaster or the check` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, flagged_sent_pct: g.flagged_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), ...(pod?.quiet ? { quiet: quietRecord(pod.quiet, { host: 'worker' }) } : {}), at: d.now() };   // quiet: the worker silenced the word-free stretches (post.py step 4)
-          for (const s of withDependents(['remaster']).slice(1)) delete meta.stages[s];   // a new remaster result: what was made from the old one runs again (verify, realign, quiet, web, trim, update)
+          for (const s of withDependents(['remaster'], reg).slice(1)) delete meta.stages[s];   // a new remaster result: what was made from the old one runs again (verify, realign, quiet, web, trim, update)
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
           meta.qa = { ...(meta.qa || {}), remaster: pod?.qa ? { ...pod.qa, at: new Date().toISOString() } : qualityOf(meta) };   // the worker decided the verdict; tower records it
         }
@@ -580,12 +584,12 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'quiet') {
       const r = meta.remaster || {};
       if (r.status !== 'done' || meta.enhancement?.listening !== 'unipase' || Number(r.swapped) > 0 || Number(r.fallback_sent_pct) > 0) rec.skipped = 'no published pure remaster';   // held / spliced: re-made first, the new result brings its own quiet
-      else if (r.quiet?.v >= QUIET_REPAIR_VERSION) Object.assign(rec, { tool: 'quiet.py', v: r.quiet.v, from: 'worker result' });
+      else if (r.quiet?.v >= QUIET_REPAIR_VERSION) Object.assign(rec, { tool: r.quiet.tool || 'quiet.py', settings: { v: r.quiet.v }, v: r.quiet.v, from: 'worker result' });
       else {
         const q = await (d.quietStep || (await import('./quiet-repair.js')).quietStep)(item, meta, { T: tools, stop });
         meta.remaster = { ...meta.remaster, quiet: q.quiet };
-        Object.assign(rec, { tool: 'quiet.py', v: q.quiet.v, host: q.quiet.host, changed: q.changed });
-        if (q.changed) for (const s of withDependents(['quiet']).slice(1)) delete meta.stages[s];
+        Object.assign(rec, { tool: q.quiet.tool || 'quiet.py', settings: { v: q.quiet.v }, v: q.quiet.v, host: q.quiet.host, changed: q.changed });
+        if (q.changed) for (const s of withDependents(['quiet'], reg).slice(1)) delete meta.stages[s];
       }
     }
 
@@ -1104,7 +1108,11 @@ export async function runItem(item, opts = {}, deps = {}) {
       await save();
       return { yielded: true, resume: { id: item.id, stage }, slug: meta.slug, done };
     }
-    meta.stages[stage] = { at: d.now(), ms: Date.now() - t0, ...rec };
+    // the tick records WHAT did it (tool + settings → fp: a changed tool makes it stale, stages.js) and what it cost
+    const usd = Math.round(((spend.usd || 0) - u0) * 1e6) / 1e6;
+    meta.stages[stage] = { at: d.now(), ms: Date.now() - t0, ...rec, ...(rec.skipped ? {} : recordFor(stage, rec, reg)), ...(usd > 0 ? { usd } : {}) };
+    // a feed run that completed a stage on a published talk re-renders it (update), so the page shows the new work
+    if (opts.feedStage && stage !== 'update' && meta.stages.update?.at && !meta.stages.update.stale) meta.stages.update = { ...meta.stages.update, stale: { at: d.now(), by: stage } };
     done.push(stage);
     await save();
     await repo.updateMediaItem(item.id, { stages_done: stagesDone(meta.stages), ...indexFields(meta) }).catch(() => {});

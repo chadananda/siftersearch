@@ -53,6 +53,26 @@ describe('queue agent typed flags', () => {
     expect(r.code).toBe(0);
     expect(r.claims[0]).toMatchObject({ types: ['cpu-finish', 'cpu-prep', 'media'], can: ['whole'] });
   }, 20_000);
+  it('--profile cpu+llm (Boss) claims the cpu types in contract order and needs no GPU', async () => {
+    const r = await runAgent(['--profile', 'cpu+llm', '--device', 'none']);
+    expect(r.code).toBe(0);
+    expect(r.claims[0]).toMatchObject({ types: ['cpu-prep', 'cpu-finish'] });
+  }, 20_000);
+  it('--profile gpu (pods) claims gpu; spill stays explicit (Aorus)', async () => {
+    const r = await runAgent(['--profile', 'gpu', '--spill', 'cpu-prep,cpu-finish', '--device', 'cuda', '--vram-mb', '24000']);
+    expect(r.code).toBe(0);
+    expect(r.claims[0]).toMatchObject({ types: ['gpu'], spill: ['cpu-prep', 'cpu-finish'] });
+  }, 20_000);
+  it('--types is the alias and wins over --profile', async () => {
+    const r = await runAgent(['--profile', 'gpu', '--types', 'cpu-finish', '--device', 'none']);
+    expect(r.code).toBe(0);
+    expect(r.claims[0]).toMatchObject({ types: ['cpu-finish'] });
+  }, 20_000);
+  it('an unknown profile, or one no queued type takes, is refused', async () => {
+    expect((await runAgent(['--profile', 'everything', '--device', 'cuda'])).code).toBe(2);
+    const r = await runAgent(['--profile', 'llm', '--device', 'none']);
+    expect(r.code).toBe(2); expect(r.out).toMatch(/feed pool/);
+  }, 20_000);
   it('switch-over still needs a GPU (the whole kind does)', async () => {
     const r = await runAgent(['--types', 'cpu-prep', '--can', 'whole', '--device', 'none']);
     expect(r.code).toBe(2);

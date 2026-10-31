@@ -74,7 +74,7 @@ describe('runItem runs only what is incomplete', () => {
 describe('the feed completes it on a home host', () => {
   const base = () => ({ nextToProcess: async () => [], nextTranscribed: async () => [], updateMediaItem: vi.fn(), nextToDownload: async () => [], youtubeHeldSince: async () => ({ n: 0 }) });
   it('queues paced media-item runs for talks whose next_stage is quiet, skipping busy, respecting in-flight', async () => {
-    const queue = vi.fn(), by = vi.fn(async () => [{ id: 1 }, { id: 2 }, { id: 3 }]);
+    const queue = vi.fn(), by = vi.fn(async (s) => (s === 'quiet' ? [{ id: 1 }, { id: 2 }, { id: 3 }] : []));   // the other feed stages (registry) have none here
     const out = await mediaLanesFeedPass({ repo: { ...base(), nextByStage: by }, ops: { pendingRuns: async () => [{ params: { id: 1 } }] }, queue, computeDepth: 0, stageDepth: 2 });
     expect(by.mock.calls[0][0]).toBe('quiet');
     expect(queue.mock.calls.filter((c) => c[0] === 'media-item').map((c) => c[1])).toEqual([{ id: 2, remaster: true, stage_feed: 'quiet' }, { id: 3, remaster: true, stage_feed: 'quiet' }]);

@@ -1,6 +1,12 @@
 {
   "_": "Typed media jobs: the shared contract between the worker entrypoints (scripts/media/whole-worker/{cpu-prep,gpu,cpu-finish}.mjs), the queue (worker/queue/core.js, claims by `type` and `needs`) and tower (api/lib/media: nextJobs, adoption). Plan: planning/stage-queue-20261031.md. One talk = cpu-prep -> gpu -> cpu-finish (then text + publish on tower). Every job dir has the SAME layout: job.json, in.<ext> (the original, from R2 files/<file_id>/), item/** (the previous job's outputs, from results/<prev job id>/item/<path>); the entrypoint writes item/** and result.json. result.json = {v:1, type, contract, ok, input_sha, slug, stages, files:[{path, sha256}] (relative to item/), meta}; the agent uploads result.json + every listed item/<path> to results/<job id>/ (pods: R2; home hosts: tower's LAN file endpoint). Tower builds the next job's inputs from the previous result.json: one {name:'item/'+path, store:'results', id:<prev job id>, path:'item/'+path, sha256} per listed file, plus the original. cpu-finish's result.json is a complete whole-recording result (api/lib/media/whole-result.js validateWholeResult accepts it unchanged). Bump `contract` when a type's inputs/outputs change; workers refuse a job whose job.json `contract` differs.",
   "contract": 1,
+  "profiles": {
+    "_": "Worker profile -> the resource classes it takes (Chad 10-31). A worker declares --profile; its claim types = the types below whose `needs` is one of those classes, in this file's order (a job's class = its stages' class, api/lib/media/stages.js). Must equal PROFILES in stages.js (tests/api/media-stages-registry.test.js).",
+    "gpu": ["gpu"],
+    "cpu+llm": ["cpu", "llm"],
+    "llm": ["llm"]
+  },
   "job_json": {
     "v": 1,
     "type": "cpu-prep | gpu | cpu-finish",

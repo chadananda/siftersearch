@@ -4,46 +4,43 @@
 // (MEDIA_TYPED_FRACTION) so the whole path keeps working. Tower never runs the audio work. Contract override: scripts/media/worker/job-types.json.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { DEPENDENTS, STAGES } from './item.js';
+import { REG, fpOf, JOB_TYPES as REG_JOB_TYPES } from './stages.js';
 import { hasQuiet } from './quiet-record.js';
 
 export const AUDIO_TYPES = ['cpu-prep', 'gpu', 'cpu-finish'];
-export const JOB_TYPES = ['intake', ...AUDIO_TYPES, 'text', 'publish'];
-/** The checklist stages each job type delivers (§2). The tower run (runItem) ticks them when it takes the result; text/publish run on tower. */
-export const TYPE_STAGES = {
-  intake: ['archive'], 'cpu-prep': ['grade'], gpu: ['enhance', 'transcribe', 'diarize'], 'cpu-finish': ['remaster', 'verify', 'realign', 'quiet', 'web', 'trim'],
-  text: ['preview', 'correct', 'clean', 'describe', 'headings', 'quotes', 'links', 'assess'], publish: ['thumb', 'render', 'ingest', 'catalog', 'update'],
-};
-const AUDIO_STAGES = AUDIO_TYPES.flatMap((t) => TYPE_STAGES[t]);
+export const JOB_TYPES = REG_JOB_TYPES;
+/** The checklist stages each job type delivers (§2) — derived from the stage registry (stages.js: each stage's job / class). The tower run (runItem) ticks them when it takes the result; text/publish run on tower. */
+export const TYPE_STAGES = REG.TYPE_STAGES;
+const audioStages = (reg) => AUDIO_TYPES.flatMap((t) => reg.TYPE_STAGES[t]);
 /** remaster statuses that stop audio work until Chad decides (held → /admin/media-held) or for good (archived) */
 export const AUDIO_TERMINAL = ['review', 'archived', 'kept', 'deferred'];
 
-const PARENTS = Object.entries(DEPENDENTS).reduce((a, [p, ds]) => { for (const d of ds) (a[d] ||= []).push(p); return a; }, {});
-/** The stages that really count as done: ticked, not marked stale, and everything they were made from done too (DEPENDENTS edges). Pure. */
-export function effectiveDone(stages = {}) {
+/** The stages that really count as done: ticked, not marked stale, and everything they were made from done too (registry `after` edges). Pure. */
+export function effectiveDone(stages = {}, reg = REG) {
   const memo = new Map();
   const ok = (s) => {
     if (memo.has(s)) return memo.get(s);
     memo.set(s, false);
-    const v = !!stages[s]?.at && !stages[s]?.stale && (PARENTS[s] || []).every(ok);
+    const v = !!stages[s]?.at && !stages[s]?.stale && (reg.BY[s]?.after || []).every(ok);
     memo.set(s, v); return v;
   };
-  return new Set(STAGES.filter(ok));
+  return new Set(reg.STAGES.filter(ok));
 }
 
 /** checklist = { stages, have: { prep, gpu, pure } (prep/gpu = a step result held for the CURRENT input; pure = false when a ticked remaster's
  *  pure UniPASE copy is gone), remaster_status } → the job types to run now. Pure.
  *  Re-derives any lost job: the answer depends only on the record. A text-only gap never yields an audio job. */
-export function nextJobs({ stages = {}, have = {}, remaster_status = null } = {}) {
-  const done = effectiveDone(stages), miss = (l) => l.filter((s) => !done.has(s));
+export function nextJobs({ stages = {}, have = {}, remaster_status = null } = {}, reg = REG) {
+  const TYPE_STAGES = reg.TYPE_STAGES, AUDIO_STAGES = audioStages(reg);
+  const done = effectiveDone(stages, reg), miss = (l) => l.filter((s) => !done.has(s));
   if (!done.has('archive')) return ['intake'];
   const out = [];
   if (miss(AUDIO_STAGES).length && !AUDIO_TERMINAL.includes(remaster_status)) {
     const needFinish = miss(TYPE_STAGES['cpu-finish']).length > 0;
     // §7: only missing stages + their dependents. A ticked remaster's PURE output is kept (tower / R2), so a talk missing only finish
     // stages (quiet, web, …) goes straight to cpu-finish; the gpu re-runs only when the remaster itself is missing or its output is gone.
-    const needGpu = miss(['enhance', 'transcribe', 'diarize']).length > 0 || (needFinish && !have.gpu && (!done.has('remaster') || have.pure === false));
-    const needPrep = miss(['grade']).length > 0 || (needGpu && !have.prep);
+    const needGpu = miss(TYPE_STAGES.gpu).length > 0 || (needFinish && !have.gpu && (!done.has('remaster') || have.pure === false));
+    const needPrep = miss(TYPE_STAGES['cpu-prep']).length > 0 || (needGpu && !have.prep);
     out.push(needPrep ? 'cpu-prep' : needGpu ? 'gpu' : 'cpu-finish');
   }
   const heard = done.has('transcribe') && done.has('diarize');
@@ -62,9 +59,7 @@ export function checklistOf(meta = {}, have = {}) {
 export const haveOf = (chain = {}) => ({ prep: !!chain['cpu-prep']?.adopted, gpu: !!chain.gpu?.adopted });
 
 // ---- the contract (scripts/media/worker/job-types.json, B) ----
-const stable = (v) => (v && typeof v === 'object' ? (Array.isArray(v) ? `[${v.map(stable).join(',')}]` : `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stable(v[k])}`).join(',')}}`) : JSON.stringify(v ?? null));
-/** fp = short hash of tool + settings (key order does not matter). Pure. */
-export const fpOf = (tool, settings = {}) => createHash('sha256').update(`${tool}|${stable(settings)}`).digest('hex').slice(0, 12);
+export { fpOf };   // fp = short hash of tool + settings (stages.js)
 export const CONTRACT = JSON.parse(readFileSync(new URL('../../../scripts/media/worker/job-types.json', import.meta.url), 'utf8'));
 /** The fixed outputs a type's result must list (templated / "…" entries are checked by whole-result.js at the end). */
 export const requiredFiles = (type) => (CONTRACT.types[type]?.outputs?.files || []).filter((f) => !/[{…]/.test(f));
@@ -110,8 +105,8 @@ export function stampTools(meta, chain = {}) {
     if (!step) continue;
     for (const s of TYPE_STAGES[type]) {
       if (!meta.stages?.[s]?.at) continue;
-      const src = step.tools?.[s] || meta.stages[s] || {}, tool = src.tool || (s === 'quiet' ? meta.remaster?.quiet?.tool || 'quiet.py' : s === 'remaster' ? 'unipase' : `${type}:${s}`);
-      const settings = src.settings || (s === 'quiet' && meta.remaster?.quiet ? { v: meta.remaster.quiet.v } : {});
+      const src = step.tools?.[s] || meta.stages[s] || {}, tool = src.tool || (s === 'quiet' ? meta.remaster?.quiet?.tool || 'quiet.py' : REG.BY[s]?.tool || `${type}:${s}`);
+      const settings = src.settings || (s === 'quiet' && meta.remaster?.quiet ? { v: meta.remaster.quiet.v } : REG.BY[s]?.settings || {});
       meta.stages[s] = { ...meta.stages[s], tool, settings, fp: fpOf(tool, settings), host: step.host || null, job: step.id };
     }
   }

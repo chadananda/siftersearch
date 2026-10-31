@@ -7,7 +7,7 @@ export const MEDIA_LEDGER_SQL = [
   `CREATE INDEX IF NOT EXISTS idx_media_stages_stage ON media_stages(stage, status, at)`,
 ];
 
-const DETAIL_KEYS = ['verdict', 'mode', 'model', 'version', 'kind', 'error', 'skipped', 'why', 'engine'];   // host/pod/worker → the host column
+const DETAIL_KEYS = ['verdict', 'mode', 'model', 'version', 'kind', 'error', 'skipped', 'why', 'engine', 'tool', 'fp', 'usd'];   // tool/fp/usd: the stage registry's record (stages.js)   // host/pod/worker → the host column
 const iso = (v) => (typeof v === 'number' && Number.isFinite(v) ? new Date(v).toISOString() : typeof v === 'string' ? v : null);
 const scalar = (v) => (typeof v === 'string' ? v.slice(0, 120) : typeof v === 'number' && Number.isFinite(v) ? String(v) : null);   // meta holds objects in odd places (worker: {…})
 
@@ -19,6 +19,7 @@ export function stageRows(stages = {}) {
     const status = s.at ? 'done' : s.error || s.failed ? 'failed' : s.started ? 'running' : null;
     if (!status) continue;
     const detail = Object.fromEntries(DETAIL_KEYS.filter((k) => s[k] != null && typeof s[k] !== 'object' && !(typeof s[k] === 'number' && !Number.isFinite(s[k]))).map((k) => [k, typeof s[k] === 'string' ? s[k].slice(0, 200) : s[k]]));
+    if (s.stale) detail.stale = true;   // marked for a re-run campaign: still done (the talk stays on air), re-done next
     out.push({ stage, status, at: iso(s.at || s.started || null), ms: Number.isFinite(Number(s.ms)) ? Math.round(Number(s.ms)) : null,
       host: scalar(s.host) ?? scalar(s.pod) ?? scalar(s.worker), detail: Object.keys(detail).length ? JSON.stringify(detail) : null });
   }

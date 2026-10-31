@@ -60,3 +60,4 @@ stages, and the talk stays on air until it is complete again. Design: `planning/
 - A published talk missing a stage is incomplete: off air, in the queue, `next_stage` names it. The media feed takes such talks a few at a time (priority is order), and one media-item run executes only the missing stages.
 - Dependencies are explicit (`DEPENDENTS`): redoing a stage un-ticks what was made from its output (quiet -> web, trim, update; remaster -> verify, realign, quiet -> ...), nothing earlier and nothing unrelated. A talk missing only a text stage never touches audio.
 - Heavy stages run on a home host or worker, never tower (the `run()` / `WorkerWait` gate).
+- The checklist is the stage registry (`STAGE_DEFS` in `api/lib/media/stages.js`). That file covers how to add a stage, resource classes, worker profiles, and re-running one stage across the library (`ops.mjs media rerun`). The doc is `docs/architecture/media-stages.md`.
