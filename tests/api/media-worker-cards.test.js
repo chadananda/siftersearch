@@ -74,6 +74,14 @@ describe('home and tower dials (Chad 10-30: aorus looked offline while working)'
     expect(by.boss.gauges).toBeNull();
     expect(by.tower.gauges).toEqual({ cpus: [40, 12] });
   });
+  it('queue agents count the jobs they hold (Chad 10-31: boss "offline" with its GPU pegged)', () => {
+    const st = { q_lan: { leased: { boss: 2, aorus: 1 } }, q_last: { leased: { 'pod-sifter-unipase-9': 3 } },
+      pods: { p9: { id: 'p9', name: 'sifter-unipase-9', status: 'ready', agent: true } } };
+    const by = Object.fromEntries(workerCards(st, now).map((c) => [c.key, c]));
+    expect(by.boss).toMatchObject({ status: 'working', jobs: 2 });
+    expect(by.aorus).toMatchObject({ status: 'working', jobs: 1 });
+    expect(by['sifter-unipase-9']).toMatchObject({ status: 'working', jobs: 3 });
+  });
   it('socketBusy: busy % per physical package between two samples', () => {
     const pkg = { 0: 0, 1: 1 };
     const a = socketBusy('cpu  9 9 9 9 9 0 0 0\ncpu0 100 0 0 900 0 0 0 0\ncpu1 0 0 0 1000 0 0 0 0\n', pkg);

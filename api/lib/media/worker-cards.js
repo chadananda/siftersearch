@@ -66,6 +66,9 @@ export function workerCards(st = {}, now = Date.now()) {
   const sp = speeds(st.done, now, Object.fromEntries(Object.values(st.pods || {}).filter((p) => p.created).map((p) => [p.name, p.created])));
   const homeJobs = {};
   for (const h of Object.keys(st.home || {})) homeJobs[base(h)] = (homeJobs[base(h)] || 0) + 1;
+  const held = { ...st.q_last?.leased };   // queue agents (LAN + edge): jobs each host holds, as of tower's last queue tick
+  for (const [h, n] of Object.entries(st.q_lan?.leased || {})) held[h] = (held[h] || 0) + n;
+  for (const [h, n] of Object.entries(held)) homeJobs[base(h)] = (homeJobs[base(h)] || 0) + n;
   const cards = MACHINES.map((m) => {
     const g = st.host_gauge?.[m.key], fresh = g && now - g.at < GAUGE_FRESH_MS;   // home hosts: the gate's 'df' (tools.js hostGauge); tower: its own sockets
     if (m.key === 'tower') return { ...m, status: 'conducting', jobs: Object.keys(st.jobs || {}).length + Object.keys(st.home || {}).length, speed: null, gauges: fresh && g.cpus ? { cpus: g.cpus } : null };
@@ -76,11 +79,11 @@ export function workerCards(st = {}, now = Date.now()) {
   for (const p of Object.values(st.pods || {})) {
     if (p.terminated) continue;
     const w = p.worker || {};
-    const jobs = Object.values(st.jobs || {}).filter((j) => j.pod === p.id).length;
+    const jobs = Object.values(st.jobs || {}).filter((j) => j.pod === p.id).length + (held[`pod-${p.name}`] || 0);   // agent pods claim as pod-<name>
     const vram = w.vram_total_gb ? ` · ${Math.round(w.vram_total_gb)} GB` : '';
     cards.push({ key: p.name, name: podName(p.name), role: 'Cloud remaster',
       specs: [['GPU', p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : vram ? `NVIDIA${vram}` : 'assigning…'], ['RAM', w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—']],
-      status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? null,
+      status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? sp[`pod-${p.name}`] ?? null,
       gauges: p.gauge && now - p.gauge.at < GAUGE_FRESH_MS ? { cpu: p.gauge.cpu, gpu: p.gauge.gpu } : null });
   }
   return cards;

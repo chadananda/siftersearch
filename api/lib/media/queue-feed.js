@@ -116,5 +116,7 @@ async function retry(st, qj, error, repo) {
 export async function tick(st, deps) {
   const out = { pulled: await pull(st, deps) };
   out.fed = await feed(st, deps);
+  out.leased = {};   // jobs each agent holds right now, for the /media machine cards (worker-cards.js)
+  for (const j of (await Promise.resolve().then(() => deps.q.stats()).catch(() => null))?.leased || []) out.leased[j.host] = (out.leased[j.host] || 0) + 1;
   return out;
 }
