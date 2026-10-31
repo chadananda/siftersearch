@@ -278,6 +278,24 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect(Q.stats(sql, Date.now(), 'cpu-prep').states.queued.n).toBe(1);   // the same pass fed it again from prep
     expect(st.chains[1]['cpu-prep']).toBeUndefined();
   });
+  it('a step a home GPU runs and the pass adopts DURING the move keeps its chain: the 404 on acked prep files restarts nothing (10-31: 2488/2489 "chain record lost")', async () => {
+    engage(); st.queue = [1];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); const p = deliver('cpu-prep'); await pull(st, d);
+    const get = q.get; let raced = false;
+    q.get = async (kind, id, name, dest) => {
+      if (!raced && kind === 'results' && id === p.id) { raced = true; q.get = get; deliver('gpu'); expect((await pull(st, d)).typed).toMatchObject({ steps: 1, errors: 0 }); }
+      return get(kind, id, name, dest);
+    };
+    try { expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 0 }); } finally { q.get = get; }
+    expect(raced).toBe(true);
+    expect(st.lost_restarts).toBeUndefined();
+    expect(st.chains[1]?.gpu).toBeTruthy();
+    expect(st.queue).not.toContain(1);
+    deliver('cpu-finish');
+    expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });
+    expect(st.pull_errors || []).toEqual([]);
+  });
   it('a LAN gpu step already leased by a home GPU is never moved', async () => {
     engage(); st.queue = [1];
     const d = { ...deps, edge: E.q };

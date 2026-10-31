@@ -243,6 +243,8 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
   const putOnce = async (have, fileId, name, file) => { const size = (await stat(file)).size; if (have.get(name) === size) { skipped++; return; } await edge.put('files', fileId, name, file); bytes += size; };
   const moveOne = async (id, qj) => {
     const ch = st.chains[qj.itemId], prep = ch['cpu-prep'], files = sentFiles(prep.files);
+    // the pass runs beside the move on the same state: a home GPU may take, finish and have this step adopted meanwhile (its prep then acked)
+    const waitingStill = () => st.qjobs[id] === qj && !qj.adopted && st.chains?.[qj.itemId] === ch;
     const it = await repo.getMediaItem(qj.itemId), m = await readMeta(it.dir), stg = join(it.dir, '.typed-move');
     let withdrawn = false;
     try {
@@ -262,7 +264,7 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
       moved++; audioS += ch.audio_s || 0;
     } catch (e) {   // the LAN copy was withdrawn but the edge refused it: put it back so the talk is not lost
       if (e.code === 'ABANDONED' && !withdrawn) throw e;
-      if (e.lost && !withdrawn) { await restartLost(st, id, qj, { q, repo, now }, e.message); lost++; }
+      if (e.lost && !withdrawn) { if (waitingStill() && await restartLost(st, id, qj, { q, repo, now }, e.message)) lost++; }
       else if (withdrawn) await q.enqueue([SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: false }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s })]).catch(() => {});
       else st.q_move_error = { at: now(), id, error: String(e.message).slice(0, 300) };
     } finally { await rm(stg, { recursive: true, force: true }).catch(() => {}); }
@@ -289,9 +291,12 @@ export const sentFiles = (files = []) => files.filter((f) => !REBUILT.has(f.path
 
 /** A waiting gpu step whose prep files are gone (404 from the results store: acked by an older failure path) can never run: withdraw it, drop
  *  the chain and queue the talk again from prep, once without counting it against the talk (the loss was ours); a repeat goes through retry(). */
+// Only a step still QUEUED is lost: withdraw first, and a step a host leased or finished keeps its chain (10-31: the mover's snapshot said
+// "waiting" for gpu-2488/2489 while aorus ran them and the pass adopted them, acking prep; the 404 then dropped live chains, so their
+// finish steps failed "chain record lost" and the talks ran again from prep).
 async function restartLost(st, id, qj, { q, repo, now }, error) {
   const ch = st.chains?.[qj.itemId] || {};
-  await q.withdraw([id]).catch(() => null);
+  if (!((await q.withdraw([id]).catch(() => null))?.withdrawn)) return false;
   const acks = SJ.AUDIO_TYPES.map((t) => ch[t]?.id).filter((x) => x && x !== id);
   if (acks.length) await q.ack(acks).catch(() => null);
   delete st.qjobs[id]; delete st.chains?.[qj.itemId];
@@ -300,6 +305,7 @@ async function restartLost(st, id, qj, { q, repo, now }, error) {
   st.lost ||= {};
   if (!st.lost[qj.itemId]) { st.lost[qj.itemId] = 1; if (!st.queue.includes(qj.itemId)) st.queue.unshift(qj.itemId); }
   else await retry(st, qj, `prep files lost again: ${error}`, repo);
+  return true;
 }
 
 /** A restore-kind result → <talk>/enhanced/pod through the one intake (refused by name otherwise); done.json → enhanced/unipase.done.json. */
