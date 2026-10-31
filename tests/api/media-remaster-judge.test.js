@@ -77,8 +77,8 @@ describe('re-judge pass, publish, archive', () => {
   it('publish without a quiet pass: flipped, but the quiet repair runs FIRST (then the web redo); not on air until quiet is recorded', async () => {
     const it = await mk(11, talk(assessment({}, { duration_preserved: false })));
     expect(await rejudgeOne(it, await meta(it), { repo, queue })).toBe('publish');
-    expect(queue).toHaveBeenCalledWith('media-quiet-repair', { ids: [11], redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-rejudge');
-    expect(queue).not.toHaveBeenCalledWith('media-item', expect.anything(), expect.anything());
+    expect(queue).toHaveBeenCalledWith('media-item', { id: 11, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-rejudge');
+    expect(queue).not.toHaveBeenCalledWith('media-quiet-repair', expect.anything(), expect.anything());
     const m = await meta(it), full = Object.fromEntries([...COMPLETE_STAGES, 'web'].map((k) => [k, { at: 1 }]));
     expect(isComplete({ ...m, stages: full, web_listening: 'unipase' })).toBe(false);
     expect(isComplete({ ...m, stages: full, web_listening: 'unipase', remaster: { ...m.remaster, quiet: { v: 1 } } })).toBe(true);
@@ -89,8 +89,8 @@ describe('re-judge pass, publish, archive', () => {
     const old = await mk(14, talk(assessment(), { status: 'done', verdict: 'pass-auto' }));
     repo.heldRows.mockResolvedValue([withQ, noQ, old]);
     const r = await quietAudit({ repo, queue, fix: true });
-    expect(r).toMatchObject({ published: 3, with_quiet: 1, missing: 2, judged_published: 2, judged_missing: ['t13'], other_missing: ['t14'], queued: 2 });
-    expect(queue).toHaveBeenCalledWith('media-quiet-repair', { ids: [13, 14], limit: 2 }, 'media-remaster-rejudge');
+    expect(r).toMatchObject({ published: 3, with_quiet: 1, missing: 2, judged_published: 2, judged_missing: ['t13'], other_missing: ['t14'], queued: 0 });
+    expect(queue).not.toHaveBeenCalledWith('media-quiet-repair', expect.anything(), expect.anything());
   });
   it('publish: the remaster becomes the listening copy, status done, web/update redone; the talk is not on air until the web copy is encoded from it', async () => {
     const it = await mk(1, talk(assessment({}, { duration_preserved: false }), { quiet: { v: 1 } }));
@@ -101,7 +101,7 @@ describe('re-judge pass, publish, archive', () => {
     expect(qualityOf(m).verdict).toBe('usable');
     const full = Object.fromEntries([...COMPLETE_STAGES, 'web'].map((k) => [k, { at: 1 }]));
     expect(isComplete({ ...m, stages: full })).toBe(false);                                   // web copy still the original
-    expect(isComplete({ ...m, stages: full, web_listening: 'unipase' })).toBe(true);          // re-encoded from the remaster: on air
+    expect(isComplete({ ...m, remaster: { ...m.remaster, quiet: { v: 1 } }, stages: full, web_listening: 'unipase' })).toBe(true);          // re-encoded from the remaster: on air
   });
   it('hold: stays held (status review) with the reason, and a second pass leaves it alone', async () => {
     const it = await mk(2, talk(assessment({}, { no_bad_excerpt: false })));

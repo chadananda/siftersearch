@@ -786,7 +786,7 @@ function failedRun(r) { return r?.failed ? { ...r, outcome: 'item-failed' } : r;
 let verifyCursor = 0, verifyDone = false;
 export const resetRestoredVerify = () => { verifyCursor = 0; verifyDone = false; };
 export async function backfillRestored({ repo, readMeta, limit = 40 } = {}) {
-  const { isComplete, indexFields } = await import('../media/item.js');
+  const { indexFields } = await import('../media/item.js');
   const fs = await import('fs/promises');
   const read = readMeta || (async (dir) => JSON.parse(await fs.readFile(join(dir, 'meta.json'), 'utf8')));
   let n = 0;
@@ -802,7 +802,9 @@ export async function backfillRestored({ repo, readMeta, limit = 40 } = {}) {
     for (const r of rows) {
       verifyCursor = r.id;
       const m = r.dir ? await read(r.dir).catch(() => null) : null;
-      if (m && isComplete(m) !== (r.restored === 1)) { await repo.setIndex(r.id, indexFields(m)); n++; }
+      // re-derived when the on-air flag OR the checklist columns differ (a requirement added after publication changes next_stage while the talk stays on air)
+      const f = m && indexFields(m);
+      if (f && ((f.restored === 1) !== (r.restored === 1) || (f.next_stage ?? null) !== (r.next_stage ?? null) || f.stages_missing !== (r.stages_missing ?? null))) { await repo.setIndex(r.id, f); n++; }
     }
   }
   return n;
@@ -814,6 +816,8 @@ export async function mediaLlmJob({ id, ...rest } = {}, deps = {}) {
 
 /** The FEED for both lanes (30 s): keep the compute queue `computeDepth` deep (by rank; YouTube items once downloaded) and the
  *  LLM queue `llmDepth` deep (transcribed items by rank); one download run queued; transient failures back after 30 min. */
+/** Stages a PUBLISHED talk can be waiting at, completed by the feed (each is a stage in item.js, run on a worker/home host). */
+export const FEED_STAGES = ['quiet'];
 export async function mediaLanesFeedPass(deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
@@ -864,6 +868,19 @@ export async function mediaLanesFeedPass(deps = {}) {
     await repo.updateMediaItem(it.id, { state: 'llm_queued' });
     await queue('media-llm', { id: it.id, priority: true }, 'media-feed');
     out.llm.push(it.id);
+  }
+  // INCOMPLETE STAGES OF PUBLISHED TALKS (Chad 10-31: "an incomplete stage is an incomplete talk"; a fix found later is a new stage, e.g. quiet): talks whose next_stage is one of FEED_STAGES wait
+  // off air for it. Each gets ONE media-item run that executes just its missing stages and their dependents (item.js DEPENDENTS), a few at a time, no priority flag: new talks always go first.
+  // quiet is silenced on a home host (quietStep), never tower.
+  if (repo.nextByStage) {
+    const pend = await ops.pendingRuns('media-item'), busy = new Set([...pend.map((r) => Number(r.params?.id)), ...(await ops.pendingRuns('media-quiet-repair')).flatMap((r) => [].concat(r.params?.ids || []).map(Number))].filter(Boolean));
+    for (const stage of FEED_STAGES) {
+      const depth = deps.stageDepth ?? (Number(process.env.MEDIA_STAGE_DEPTH) || 2), inflight = pend.filter((r) => r.params?.stage_feed === stage).length;
+      if (inflight >= depth) continue;
+      for (const it of (await repo.nextByStage(stage, depth + busy.size)).filter((x) => !busy.has(x.id)).slice(0, depth - inflight)) {
+        await queue('media-item', { id: it.id, remaster: true, stage_feed: stage }, 'media-feed'); (out.stages ||= []).push([stage, it.id]);
+      }
+    }
   }
   // DOWNLOADS: up to MEDIA_FETCH_RUNS (2) runs at once, each with its OWN ids (claimed here as 'scheduled' / stage
   // 'download', so two runs never take the same video); none while a bot check is cooling down
@@ -2289,7 +2306,8 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
   return { mode, ordered: orders.length, sample: orders.slice(0, 5).map((o) => o.slug), ...(noCopy.length ? { no_copy: noCopy } : {}) };
 }
 
-/** media-quiet-repair { ids, limit?, host?, image?, parallel? }: silence-only repair of PUBLISHED remasters (Chad 10-30): the kept master is silenced where
+/** RETIRING (the quiet STAGE in item.js replaced it, Chad 10-31): kept only so the already-queued runs finish; delete once none are pending.
+ *  media-quiet-repair { ids, limit?, host?, image?, parallel? }: silence-only repair of PUBLISHED remasters (Chad 10-30): the kept master is silenced where
  *  nobody speaks on a home host (media/quiet-repair.js), then a media-item redo re-encodes the web copies on the worker pool and bumps audio_version.
  *  Idempotent (meta.remaster.quiet marks a done talk); a talk with media-item/remaster work in flight waits for the next run. → { repaired, unchanged, skipped, failed } */
 export async function mediaQuietRepairJob({ ids = null, limit = 300, host = 'aorus', image = null, parallel = 2, redo = null } = {}, deps = {}) {

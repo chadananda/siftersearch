@@ -24,11 +24,10 @@ export function flipToRemaster(m, { verdict, judged, at }) {
   return m;
 }
 
-/** After a talk is flipped to its remaster: the web copies are redone FROM a master that has its quiet pass. No quiet record yet → the quiet repair runs first (a home worker silences the word-free stretches; it never inserts
- *  original audio) and then queues this same redo; never a media-item run racing it. */
-export const queueAfterFlip = (queue, id, m, by) => (hasQuiet(m) ? queue('media-item', { id, remaster: true, redo: REDO }, by) : queue('media-quiet-repair', { ids: [id], redo: REDO }, by));
+/** After a talk is flipped to its remaster: ONE media-item run executes its incomplete stages in order (quiet first when missing, on a home host; then the web redo). No separate patch job (Chad 10-31: incomplete stage = incomplete talk). */
+export const queueAfterFlip = (queue, id, m, by) => queue('media-item', { id, remaster: true, redo: REDO }, by);
 
-/** Quiet audit of the published remasters (Chad 10-31: every remaster gets the quiet pass): counts those with / without the quiet record, lists the judge- and Chad-published ones missing it; fix → the quiet repair is queued for them. */
+/** Quiet audit of the published remasters (Chad 10-31: every remaster gets the quiet pass): counts those with / without the quiet record, lists the judge- and Chad-published ones missing it (the feed completes them as the quiet stage). */
 export async function quietAudit({ repo, queue, readMeta, fix = false } = {}) {
   const read = readMeta || ((dir) => readJson(join(dir, 'meta.json')));
   const out = { published: 0, with_quiet: 0, missing: 0, judged_published: 0, judged_missing: [], other_missing: [], queued: 0 };
@@ -41,7 +40,7 @@ export async function quietAudit({ repo, queue, readMeta, fix = false } = {}) {
     out.missing++; (judged ? out.judged_missing : out.other_missing).push({ id: it.id, slug: it.slug });
   }
   const ids = [...out.judged_missing, ...out.other_missing].map((x) => x.id);
-  if (fix && ids.length) { await queue('media-quiet-repair', { ids, limit: ids.length }, 'media-remaster-rejudge'); out.queued = ids.length; }
+  // fix: nothing to queue: a talk without quiet has next_stage 'quiet' and the media feed completes it on a home host, paced
   out.judged_missing = out.judged_missing.map((x) => x.slug); out.other_missing = out.other_missing.map((x) => x.slug);
   return out;
 }
@@ -58,12 +57,12 @@ export async function purifySpliced(it, m, { queue, now = () => new Date().toISO
   await rm(join(it.dir, 'held'), { recursive: true, force: true });
   const hasCloud = (await exists(join(enh, 'unipase.cloud.flac'))) && (await exists(join(enh, 'unipase.asr.json')));
   const why = hasCloud ? 'the spliced copy was deleted: a worker rebuilds the pure UniPASE copy and checks its quality (Chad 10-31: never splice)' : 'the spliced copy was deleted and no UniPASE output is on tower: remastering again';
-  m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: undefined, output_assessment: undefined, swapped: 0, swapped_pct: 0, fallback_sent_pct: 0, flagged_sent_pct: r.flagged_sent_pct ?? r.fallback_sent_pct ?? null,
+  m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: undefined, output_assessment: undefined, quiet: undefined, swapped: 0, swapped_pct: 0, fallback_sent_pct: 0, flagged_sent_pct: r.flagged_sent_pct ?? r.fallback_sent_pct ?? null,
     spliced_before: { swapped: r.swapped, sentences: r.sentences, fallback_sent_pct: r.fallback_sent_pct ?? null, purified_at: at }, at };
   if (m.qa?.remaster) m.qa.remaster = { ...m.qa.remaster, output_assessment: undefined };
   m.enhancement.variants = (m.enhancement.variants || []).filter((v) => v.name !== 'unipase');
   if (m.enhancement.listening === 'unipase') { m.enhancement.listening = m.enhancement.listening_before?.name || 'safe'; m.enhancement.listening_why = 'the spliced remaster was deleted; the pure remaster is being rebuilt'; markAudioPending(m); }
-  delete m.remaster_tier; delete m.stages?.verify;
+  delete m.remaster_tier; for (const s of ["verify", "quiet"]) delete m.stages?.[s];
   await queue('media-cloud-order', { mode: hasCloud ? 'post' : 'restore', ids: [it.id], redo: true }, 'media-remaster-rejudge');
   return hasCloud;
 }

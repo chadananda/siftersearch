@@ -73,3 +73,13 @@ export async function quietMaster(it, { T, host, image, stop = () => false, nap 
   await cleanup();
   return { changed: true, report, record: quietRecord(report) };
 }
+
+/** The quiet STAGE for one talk (called by runItem): quietMaster on a home host (default aorus; gate hosts and tower are refused), → { changed, quiet } where quiet is the meta.remaster.quiet record
+ *  (tool/settings/version + host + when + the backup of the unsilenced master). Throws code DRAIN when the service drains. */
+export async function quietStep(it, meta, { T, stop, host = process.env.MEDIA_QUIET_HOST || 'aorus', image = null } = {}) {
+  const { HOME_BUILDS } = await import('../ops/media-jobs.js');
+  const img = image || Object.values(HOME_BUILDS).at(-1)?.[String(host).replace(/-\d+$/, '')];
+  if (!img) throw Error(`quiet: no image for ${host}`);
+  const r = await quietMaster(it, { T, host, image: img, stop });
+  return { changed: r.changed, quiet: { ...r.record, host, at: new Date().toISOString(), ...(r.changed ? { backup: 'enhanced/unipase.prequiet.flac' } : {}) } };
+}

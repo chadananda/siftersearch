@@ -6,7 +6,7 @@ import {audioVersion, audioAlignment, listeningVariant, markAudioPending, timing
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { qualityOf, remasterProven } from './remaster-quality.js';
 const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT: tower never reprocesses audio — set once the pre-worker backlog has drained
-import { quietRecord, hasQuiet } from './quiet-record.js';
+import { quietRecord, hasQuiet, QUIET_REPAIR_VERSION } from './quiet-record.js';
 import { podPost, podComplete, podVerdict, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait } from './tools.js';
@@ -139,21 +139,28 @@ export function restampAlignment(meta, raw, paragraphs) {
   if (meta.audio_alignment_hash && (!meta.aligned_to || meta.aligned_to === 'safe' || raw?.aligned_to === meta.aligned_to)) meta.audio_alignment_hash = timingSignature(paragraphs);
 }
 
-export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'web', 'transcribe', 'preview', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
+export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'realign', 'quiet', 'web', 'transcribe', 'preview', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog',
   'headings', 'quotes', 'links', 'assess', 'update'];
 /** COMPLETE (Chad 10-29) = every stage done (remaster, transcribe, diarize, correct, headings, quotes, links, moments/assess, ingest, catalog) AND a remaster
  *  that passed assessment (usable/cleaned — never a splice of original + remaster, Chad 10-29) WITH MEASURED PROOF it differs from the original (the verify stage, or a passed paired-quality assessment). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
-export const COMPLETE_STAGES = ['remaster', 'verify', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
+export const COMPLETE_STAGES = ['remaster', 'verify', 'quiet', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
 /** A PLAYABLE LISTENING COPY (Chad 10-31: "I do not want any audio to play the original"): the web encode exists AND it was made from the remaster, and the remaster's verdict is usable/cleaned;
  *  never the original, never a splice of original and remastered sentences (10-29), never without its quiet pass (10-31: meta.remaster.quiet). A talk whose listening copy is not the remaster is not playable until the remaster has run. */
 export const hasPlayableCopy = (meta = {}) => !!meta.stages?.web?.at && hasQuiet(meta) && meta.enhancement?.listening === 'unipase' && (meta.web_listening ?? 'unipase') === 'unipase' && ['usable', 'cleaned'].includes(qualityOf(meta).verdict);
 /** ON AIR (Chad 10-31) = every COMPLETE_STAGES stage has run AND the remaster is DONE (published by the judge or by Chad) AND the talk plays that remaster. review/kept/deferred/skipped/waiting/archived
  *  are not on air: they are in the queue, on the held page, or archived. The remaster upgrades nothing: it IS the listening copy. */
 export const REMASTER_DECIDED = ['done'];
-export const isComplete = (meta = {}) => REMASTER_DECIDED.includes(meta.remaster?.status) && hasPlayableCopy(meta) && COMPLETE_STAGES.every((s) => meta.stages?.[s]?.at);
+/** DEPENDENCY EDGES between stages (Chad 10-31: "an incomplete stage is an incomplete talk; jobs run only incomplete stages and their dependents"). When a stage is (re)done, what was made from its
+ *  output is stale: its dependents are un-ticked (transitively) and run again, nothing earlier and nothing unrelated (a text stage never reaches audio: it has no edges). */
+export const DEPENDENTS = { remaster: ['verify', 'realign', 'quiet'], realign: ['quiet'], quiet: ['web', 'trim', 'update'] };
+/** The stages plus everything downstream of them. Pure. */
+export const withDependents = (stages = []) => { const out = new Set(); const add = (s) => { if (out.has(s)) return; out.add(s); (DEPENDENTS[s] || []).forEach(add); }; stages.forEach(add); return [...out]; };
+/** A stage is done when ticked in meta.stages; the quiet stage also counts from the record the worker's result (post.py) or an earlier silencing wrote (meta.remaster.quiet = tool/settings/version). */
+const stageOk = (m, s) => !!m.stages?.[s]?.at || (s === 'quiet' && m.remaster?.quiet?.v >= QUIET_REPAIR_VERSION);
+export const isComplete = (meta = {}) => REMASTER_DECIDED.includes(meta.remaster?.status) && hasPlayableCopy(meta) && COMPLETE_STAGES.every((s) => stageOk(meta, s));
 /** The indexed columns for one talk (migration 187): what is missing, the next stage, the remaster verdict, NISQA in/out, bandwidth in/out, and the complete flag. */
 export function indexFields(meta = {}) {
-  const missing = COMPLETE_STAGES.filter((s) => !meta.stages?.[s]?.at), q = qualityOf(meta);
+  const missing = COMPLETE_STAGES.filter((s) => !stageOk(meta, s)), q = qualityOf(meta);
   const a = meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment || {}, n = (v) => (Number.isFinite(Number(v)) && v != null ? Math.round(Number(v) * 100) / 100 : null);
   const done = isComplete(meta), at = done ? COMPLETE_STAGES.map((s) => meta.stages?.[s]?.at).filter((v) => v != null).map(String).sort().pop() || null : null;
   return { restored: done ? 1 : 0, completed_at: at, stages_missing: missing.length, next_stage: STAGES.find((s) => missing.includes(s)) || null, verdict: q.verdict,
@@ -215,7 +222,7 @@ export async function runItem(item, opts = {}, deps = {}) {
   meta.stages ||= {}; meta.cost ||= { usd: 0, calls: 0, in: 0, out: 0 };
   if (opts.from) for (const s of STAGES.slice(STAGES.indexOf(opts.from))) delete meta.stages[s];
   // redo: only these stages again (a back-fill of a new stage: [new, 'update'] — update re-renders, re-ingests, re-catalogues), the rest kept
-  for (const s of opts.redo || []) if (STAGES.includes(s)) delete meta.stages[s];
+  for (const s of withDependents(opts.redo || [])) if (STAGES.includes(s)) delete meta.stages[s];
   const spend = meta.cost;
   const done = [];
   let dir = item.dir;
@@ -466,7 +473,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           if ((meta.enhancement.listening || 'safe') !== listeningBefore) markAudioPending(meta);
           meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: spliced ? `the copy mixes original and remastered audio (${g.swapped} sentences from the original): never published — re-render the pure copy` : pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `the remaster's words differ from the original transcript in ${wordsPct} % of sentences (> ${maxPct} %): listen to check the remaster or the check` }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, flagged_sent_pct: g.flagged_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), ...(pod?.quiet ? { quiet: quietRecord(pod.quiet, { host: 'worker' }) } : {}), at: d.now() };   // quiet: the worker silenced the word-free stretches (post.py step 4)
-          delete meta.stages.verify;   // a new remaster result must be measured again
+          for (const s of withDependents(['remaster']).slice(1)) delete meta.stages[s];   // a new remaster result: what was made from the old one runs again (verify, realign, quiet, web, trim, update)
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
           meta.qa = { ...(meta.qa || {}), remaster: pod?.qa ? { ...pod.qa, at: new Date().toISOString() } : qualityOf(meta) };   // the worker decided the verdict; tower records it
         }
@@ -555,6 +562,20 @@ export async function runItem(item, opts = {}, deps = {}) {
         for (const m of meta.moments || []) { const p = byN.get(m.para); if (p?.words?.[m.i0]?.s != null && p.words[m.i1 - 1]?.e != null) { m.t0_ms = Math.round(p.words[m.i0].s * 1000); m.t1_ms = Math.round(p.words[m.i1 - 1].e * 1000); } }
         await writeJson(join(dir, 'transcript.work.json'), work);
         if (podSigned) await podResign(dir);
+      }
+    }
+
+    // QUIET (a checklist stage, Chad 10-31): fade the word-free stretches of the kept master. The worker's result (post.py) already did it → ticked from its record; an older published
+    // remaster is silenced on a HOME host (never tower: quietStep only moves files and starts a container there), then everything made from the master (web, trim, update) runs again.
+    if (stage === 'quiet') {
+      const r = meta.remaster || {};
+      if (r.status !== 'done' || meta.enhancement?.listening !== 'unipase' || Number(r.swapped) > 0 || Number(r.fallback_sent_pct) > 0) rec.skipped = 'no published pure remaster';   // held / spliced: re-made first, the new result brings its own quiet
+      else if (r.quiet?.v >= QUIET_REPAIR_VERSION) Object.assign(rec, { tool: 'quiet.py', v: r.quiet.v, from: 'worker result' });
+      else {
+        const q = await (d.quietStep || (await import('./quiet-repair.js')).quietStep)(item, meta, { T: tools, stop });
+        meta.remaster = { ...meta.remaster, quiet: q.quiet };
+        Object.assign(rec, { tool: 'quiet.py', v: q.quiet.v, host: q.quiet.host, changed: q.changed });
+        if (q.changed) for (const s of withDependents(['quiet']).slice(1)) delete meta.stages[s];
       }
     }
 
