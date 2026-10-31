@@ -201,6 +201,16 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toEqual({ moved: 0 });
     expect(onEdge('files/')).toEqual([]);
   });
+  it('crash-safe: the files go up while the LAN step is still queued; a home GPU that takes it during the upload keeps it', async () => {
+    engage(); st.queue = [1];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); deliver('cpu-prep'); await pull(st, d);
+    const put = E.q.put;
+    E.q.put = async (...a) => { const r = await put(...a); Q.claim(sql, { host: 'aorus', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 }); return r; };
+    try { expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toEqual({ moved: 0 }); } finally { E.q.put = put; }
+    expect(Q.stats(sql, Date.now(), 'gpu').states.leased.n).toBe(1);   // still the LAN's, leased by aorus — never lost, never doubled
+    expect(Q.stats(E.sql, Date.now(), 'gpu').states).toEqual({});
+  });
   it('a full buffer moves nothing', async () => {
     engage(); st.queue = [1];
     const d = { ...deps, edge: E.q };

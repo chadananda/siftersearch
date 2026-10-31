@@ -170,29 +170,34 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
  *  wait on the LAN: move the waiting steps to the edge (withdraw is refused once a LAN host has leased one), the original + the prep files
  *  copied into the edge's files/<file id>/. Gpu work is staged BEFORE a pod boots, so a paid pod never sits idle (10-31: pod 377 booted with
  *  3 gpu steps queued on the LAN and none on the edge). */
-async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile, now = Date.now, buffer = null }) {
+// Crash-safe order: the files are copied to the edge while the LAN step is still queued (a drain mid-upload loses nothing), then the LAN
+// copy is withdrawn and the edge step enqueued at once. It is slow (tower's uplink), so the lane runs it beside its pass, not inside it.
+export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile, now = Date.now, buffer = null }) {
   const wantH = buffer?.want_h || 0;
   if (!(wantH > 0)) return { moved: 0 };
   const cap = await edge.capacity().catch(() => null);
   if (!cap) return { moved: 0 };
   let edgeH = cap.by_type?.gpu?.queued_audio_h || 0, moved = 0;
-  const waiting = Object.entries(st.qjobs || {}).filter(([, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where).sort((a, b) => a[1].at - b[1].at);
+  const leased = new Set(((await q.stats('gpu').catch(() => null))?.leased || []).map((j) => j.id));   // a step a home GPU holds is never copied
+  const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where && !leased.has(id)).sort((a, b) => a[1].at - b[1].at);
   for (const [id, qj] of waiting) {
     if (edgeH >= wantH) break;
     const ch = st.chains?.[qj.itemId], prep = ch?.['cpu-prep'];
     if (!prep) continue;
-    if (!(await q.withdraw([id]))?.withdrawn) continue;   // a home GPU took it meanwhile
     const it = await repo.getMediaItem(qj.itemId), m = await readMeta(it.dir), stg = join(it.dir, '.typed-move');
+    let withdrawn = false;
     try {
       await edge.put('files', ch.fileId, ch.input, join(it.dir, m.original));
       for (const f of prep.files) { const tmp = join(stg, 'item', f.path); await q.get('results', prep.id, 'item/' + f.path, tmp); await edge.put('files', ch.fileId, 'item/' + f.path, tmp); }
+      if (!st.qjobs[id] || !(await q.withdraw([id]))?.withdrawn) continue;   // a home GPU took it (or it finished) meanwhile: it stays home
+      withdrawn = true;
       const job = SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: true }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
       await edge.enqueue([job]);
       delete st.qjobs[id];
       st.qjobs[job.id] = { ...qj, at: now(), where: 'edge' };
       edgeH += (ch.audio_s || 0) / 3600; moved++;
-    } catch (e) {   // the LAN copy is gone: put it back so the talk is not lost
-      await q.enqueue([SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: false }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s })]).catch(() => {});
+    } catch (e) {   // the LAN copy was withdrawn but the edge refused it: put it back so the talk is not lost
+      if (withdrawn) await q.enqueue([SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: false }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s })]).catch(() => {});
     } finally { await rm(stg, { recursive: true, force: true }).catch(() => {}); }
   }
   return { moved };
@@ -261,7 +266,7 @@ async function retry(st, qj, error, repo) {
 /** One background pass: pull first (frees R2 + gives back failures), then top the window up. */
 export async function tick(st, deps) {
   const out = { pulled: await pull(st, deps) };
-  if (deps.typed && deps.edge) out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
+  if (deps.typed && deps.edge && deps.rebalance !== false) out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
   out.fed = await feed(st, deps);
   out.leased = {}; out.beat = {};   // jobs each agent holds (machine cards) + its latest heartbeat (an agent pod is alive while it beats: media-jobs.js)
   for (const j of (await Promise.resolve().then(() => deps.q.stats()).catch(() => null))?.leased || []) {
