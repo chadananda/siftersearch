@@ -177,7 +177,7 @@ describe('pod target (Chad 10-31): supportable = floor(min(R_prep, R_finish) / R
     const lan = { by_type: { gpu: { queued_audio_h: 12, home_rate: 2, throughput: 2 }, 'cpu-prep': { queued_audio_h: 30, rate: 6, throughput: 20 }, 'cpu-finish': { queued_audio_h: 1, rate: 1, throughput: 12 } } };
     const edge = { by_type: { gpu: { queued_audio_h: 8, queued: 5, home_rate: 0, pod_throughput: 4 }, 'cpu-prep': {}, 'cpu-finish': {} } };
     const plan = Q.podPlan([lan, edge]);
-    expect(plan).toMatchObject({ gpu_queued_h: 20, staged_h: 8, staged_n: 5, r_prep: 20, r_finish: 12, r_pod: 4, priors: [], supportable: 2, binding: 'finish', pods: 2 });   // (12 − the home GPU's 2) / 4
+    expect(plan).toMatchObject({ mode: 'scale', gpu_queued_h: 20, staged_h: 8, staged_n: 5, r_prep: 20, r_finish: 12, r_pod: 4, priors: [], supportable: 3, binding: 'finish', pods: 3 });   // 12 / 4: in scale mode the home GPU takes no gpu work
     const fresh = Q.podPlan([{ by_type: { gpu: { queued_audio_h: 50 }, 'cpu-prep': { rate: 6 }, 'cpu-finish': { rate: 1 } } }, null]);
     expect(fresh.priors).toEqual(['prep', 'finish', 'pod']);
     expect(fresh.r_pod).toBe(Q.PRIOR_POD);
@@ -304,6 +304,53 @@ describe('claim order (Chad 10-31): the R2 buffer decides whether multi-role hos
   });
 });
 
+describe('home mode (Chad 10-31 23:50Z): SMALL = the home hosts clear the queue in the horizon, no pods, Aorus takes gpu; SCALE = pods, home hosts CPU only', () => {
+  const lan = (gpuH, prepH) => ({ by_type: { gpu: { queued_audio_h: gpuH, home_rate: 2.24 }, 'cpu-prep': { queued_audio_h: prepH, hosts: ['boss', 'aorus'], throughput_each: { boss: 50.9, aorus: 19.6 } },
+    'cpu-finish': { hosts: ['boss', 'tower', 'aorus'], throughput_each: { boss: 35.1, tower: 13.8, aorus: 15.7 } } } });
+  const edge = (h) => ({ by_type: { gpu: { queued_audio_h: h, queued: Math.ceil(h), pod_throughput: 13.57 }, 'cpu-prep': { hosts: [] }, 'cpu-finish': { hosts: [] } } });
+  it('homeMode: the slower of the home GPU and finishing rates against the work, over the horizon', () => {
+    expect(Q.homeMode({ workH: 4, rHomeGpu: 2.24, rFinish: 60, horizonH: 2 })).toBe('small');
+    expect(Q.homeMode({ workH: 4.6, rHomeGpu: 2.24, rFinish: 60, horizonH: 2 })).toBe('scale');
+    expect(Q.homeMode({ workH: 4, rHomeGpu: 30, rFinish: 1, horizonH: 2 })).toBe('scale');
+    expect(Q.homeMode({ workH: 0 })).toBe('small');
+  });
+  it('small queue → 0 pods, the LAN keeps the gpu work and Aorus claims gpu', () => {
+    const plan = Q.podPlan([lan(2, 1), edge(0)]);
+    expect(plan).toMatchObject({ mode: 'small', target: 0, pods: 0, binding: 'home' });
+    const buf = Q.bufferPolicy(plan, { pods: 0 });
+    expect(buf.where).toBe('lan'); expect(buf.home_gpu).toBeUndefined();
+    Q.enqueue(sql, [tj('g', 'gpu'), tj('p', 'cpu-prep')], T0);
+    Q.setPolicy(sql, buf, T0);
+    const aorus = { host: 'aorus', types: ['gpu', 'cpu-prep', 'cpu-finish'] };
+    expect([Q.claim(sql, aorus, T0).id, Q.claim(sql, aorus, T0).id]).toEqual(['p', 'g']);   // the LAN buffer is short: prep first, then the gpu step
+  });
+  it('large queue (10-31 23:40Z: 179 h gpu + 99 h prep) → pods > 0, nothing kept on the LAN, Aorus claims CPU work only while a pod is live', () => {
+    const plan = Q.podPlan([lan(55, 99), edge(124)]);
+    expect(plan.mode).toBe('scale'); expect(plan.pods).toBeGreaterThan(0);
+    expect(plan.supportable).toBe(Math.floor(Math.min(plan.r_prep + plan.prep_buffer, plan.r_finish) / 13.57));   // no home GPU off the top
+    const buf = Q.bufferPolicy(plan, { pods: 2 });
+    expect(buf).toMatchObject({ where: 'edge', lan_keep_h: 0, home_gpu: false });
+    Q.enqueue(sql, [tj('g', 'gpu'), tj('p', 'cpu-prep')], T0);
+    Q.setPolicy(sql, buf, T0);
+    const aorus = { host: 'aorus', types: ['gpu', 'cpu-prep', 'cpu-finish'] };
+    expect(Q.claim(sql, aorus, T0).id).toBe('p');
+    expect(Q.claim(sql, aorus, T0)).toBeNull();   // the gpu step waits for the pods (the mover sends it to R2)
+    expect(Q.claim(sql, { host: 'pod-sifter-unipase-9', types: ['gpu'] }, T0).id).toBe('g');   // a pod is not a home host
+  });
+  it('switching never strands gpu work: pods wanted but none live yet → the home GPU still takes gpu', () => {
+    const plan = Q.podPlan([lan(55, 99), edge(124)]);
+    const buf = Q.bufferPolicy(plan, { pods: 0 });
+    expect(buf.home_gpu).toBe(true);
+    Q.enqueue(sql, [tj('g', 'gpu')], T0);
+    Q.setPolicy(sql, buf, T0);
+    expect(Q.claim(sql, { host: 'aorus', types: ['gpu', 'cpu-prep', 'cpu-finish'] }, T0).id).toBe('g');
+  });
+  it('claimOrder: scale drops gpu for a home host even when one typed role is left', () => {
+    expect(Q.claimOrder(['gpu'], ['cpu-prep'], { buffer_low: false, home_gpu: false }, 'aorus')).toEqual(['cpu-prep']);
+    expect(Q.claimOrder(['gpu'], [], { home_gpu: false }, 'pod-x')).toBeNull();
+  });
+});
+
 describe('bufferPolicy: ~BUFFER_H of pod work staged on R2', () => {
   const plan = { r_pod: 4, staged_h: 3, target: 2, gpu_queued_h: 10, r_home_gpu: 2.5 };
   it('with pods wanted or live: want = BUFFER_H × R_pod × pods, against the edge', () => {
@@ -311,7 +358,7 @@ describe('bufferPolicy: ~BUFFER_H of pod work staged on R2', () => {
     expect(Q.bufferPolicy({ ...plan, staged_h: 20 }, { pods: 1 }).buffer_low).toBe(false);
   });
   it('with pods the LAN keeps only BUFFER_H of the home GPUs\' pace (lan_keep_h); the mover sends the rest to the pods', () => {
-    expect(Q.bufferPolicy(plan, { pods: 1 }).lan_keep_h).toBeCloseTo(5);
+    expect(Q.bufferPolicy(plan, { pods: 1 }).lan_keep_h).toBe(0);   // scale (Chad 10-31 23:50Z): every gpu step to the pods
     expect(Q.bufferPolicy({ ...plan, target: 0 }, { pods: 0 }).lan_keep_h).toBeUndefined();
   });
   it('no pods: the home GPUs\' LAN queue', () => {

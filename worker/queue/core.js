@@ -94,7 +94,7 @@ export function claim(sql, { host, can = [], vram_mb = 0, ram_gb = 0, types = ['
     host, JSON.stringify(can), vram_mb, ram_gb, JSON.stringify(types), JSON.stringify(spill), now);
   expire(sql, now);
   const fits = fitter({ host, can, contract, now, others: (type) => engaged(sql, now).some((h) => h.host !== host && h.types.includes(type)) });
-  const ruled = claimOrder(types, spill, policyOf(sql, now));   // the role policy (tower sets it from the pods' R2 buffer) orders a multi-role host
+  const ruled = claimOrder(types, spill, policyOf(sql, now), host);   // the role policy (tower sets it from the pods' R2 buffer) orders a multi-role host
   const order = ruled ? (spill_only ? ruled.filter((t) => spill.includes(t)) : ruled) : [...(spill_only ? [] : types), ...spill.filter((t) => !types.includes(t) || spill_only)];
   let j = null;
   for (const type of order) {
@@ -111,9 +111,11 @@ export function claim(sql, { host, can = [], vram_mb = 0, ram_gb = 0, types = ['
  *  under target, cpu-prep → cpu-finish → gpu (fill the buffer); once it is at target, cpu-finish → gpu → cpu-prep (finish what the GPUs
  *  made; a GPU job only when nothing else waits). So Boss (prep + finish) preps while the buffer is short and shares finish once the pods are
  *  fed; a single-role host (tower: cpu-finish) is unaffected; no policy = the host's own order. Pure. */
-export function claimOrder(types = [], spill = [], policy = null) {
-  const all = [...types, ...spill.filter((t) => !types.includes(t))], typed = all.filter((t) => TYPED.has(t));
-  if (!policy || typed.length < 2) return null;
+// SCALE mode (policy.home_gpu false, Chad 10-31 23:50Z): the pods take every gpu step and a home host (not a pod) claims CPU/LLM work only
+export function claimOrder(types = [], spill = [], policy = null, host = '') {
+  const noGpu = policy?.home_gpu === false && !!host && !isPod(host);
+  const all = [...types, ...spill.filter((t) => !types.includes(t))].filter((t) => !(noGpu && t === 'gpu')), typed = all.filter((t) => TYPED.has(t));
+  if (!policy || typed.length < 2) return noGpu ? all : null;
   const rank = policy.buffer_low ? ['cpu-prep', 'cpu-finish', 'gpu'] : ['cpu-finish', 'gpu', 'cpu-prep'];
   return [...rank.filter((t) => typed.includes(t)), ...all.filter((t) => !TYPED.has(t))];
 }
@@ -291,6 +293,12 @@ const roleRates = (all, type) => {
   }
   return known ? { each: out, measured } : null;
 };
+/** SMALL or SCALE (Chad 10-31 23:50Z), from measurements, no threshold: SMALL when the home hosts alone clear the queued gpu work (prepped +
+ *  still to prep) within the plan horizon — at the slower of their GPU and finishing rates — so no pods and Aorus takes gpu; otherwise SCALE:
+ *  pods take every gpu step and the home hosts (Boss, Aorus, tower) do CPU/LLM work only. Pure. */
+export function homeMode({ workH = 0, rHomeGpu = 0, rFinish = 0, horizonH = 2 } = {}) {
+  return workH <= Math.min(rHomeGpu || 0, rFinish || 0) * horizonH ? 'small' : 'scale';
+}
 /** capacity (or [LAN, edge] capacities: tower runs both transports) → the rates, the pod target and its binding limit. */
 export function podPlan(caps, { horizonH = 2 } = {}) {
   const edgeCap = Array.isArray(caps) && caps.length > 1 ? caps[1] : null;
@@ -310,8 +318,11 @@ export function podPlan(caps, { horizonH = 2 } = {}) {
     finish_queued_h, finish_backlog_h: r_finish > 0 ? finish_queued_h / r_finish : null,   // hours of finish work waiting at the finishing hosts' pace
     staged_h: edgeCap?.by_type?.gpu?.queued_audio_h || 0, staged_n: edgeCap?.by_type?.gpu?.queued || 0, r_home_gpu: sum((c) => c.by_type.gpu?.home_rate),
     r_prep, r_finish, r_pod, priors, horizon_h: horizonH, ...(chain ? { prep_share: chain.prep_share, prep_each: rrP.each, finish_each: rrF.each } : {}) };
-  const t = podTarget({ rPrep: r_prep + prep_buffer, rFinish: r_finish, rPod: r_pod, rHome: plan.r_home_gpu, workH: plan.gpu_queued_h + plan.prep_queued_h, horizonH, measured: !priors.length });
-  return { ...plan, ...t, pods: t.target };
+  const workH = plan.gpu_queued_h + plan.prep_queued_h, mode = homeMode({ workH, rHomeGpu: plan.r_home_gpu, rFinish: r_finish, horizonH });
+  // scale: the home GPUs take no gpu work, so nothing comes off the top for them; small: no pods (the home hosts clear it in the horizon)
+  const t = podTarget({ rPrep: r_prep + prep_buffer, rFinish: r_finish, rPod: r_pod, rHome: 0, workH, horizonH, measured: !priors.length });
+  if (mode === 'small') return { ...plan, mode, ...t, target: 0, binding: 'home', pods: 0 };
+  return { ...plan, mode, ...t, pods: t.target };
 }
 /** The GPU buffer (Chad 10-31): gpu work waiting for the pods on R2 should hold ~targetH hours of pod work (R_pod × pods). Below it, multi-role
  *  hosts prep first (claimOrder). Without pods (none live, and none rentable: rent false under a rental pause / stop / pods not typed) the
@@ -323,7 +334,9 @@ export function bufferPolicy(plan, { pods = 0, targetH = BUFFER_H, rent = true }
   const n = Math.max(pods, rent ? plan?.target || 0 : 0);
   // lan_keep_h: with pods the home GPUs run gpu work only when they would otherwise idle (their hosts are CPU-first), so the LAN keeps just
   // BUFFER_H of THEIR pace and the mover sends the rest to the pods (10-31 23:04Z: 79 steps / 77 audio-h waited on the LAN for Aorus's ~2/h)
-  if (n > 0) { const want = targetH * plan.r_pod * n; return { where: 'edge', buffer_low: (plan.staged_h || 0) < want, buffer_h: plan.staged_h || 0, want_h: want, lan_keep_h: targetH * (plan.r_home_gpu || 0) }; }
+  // SCALE (pods wanted or live, Chad 10-31 23:50Z): the LAN keeps NO gpu work (lan_keep_h 0: the mover sends every step to the pods); the home
+  // GPUs stop claiming gpu (home_gpu false) only while a pod is live to take it, so the gpu lane always has a consumer
+  if (n > 0) { const want = targetH * plan.r_pod * n; return { where: 'edge', buffer_low: (plan.staged_h || 0) < want, buffer_h: plan.staged_h || 0, want_h: want, lan_keep_h: 0, home_gpu: !(pods > 0) }; }
   const want = targetH * (plan?.r_home_gpu || 0), lanH = Math.max(0, (plan?.gpu_queued_h || 0) - (plan?.staged_h || 0));
   return { where: 'lan', buffer_low: lanH < want, buffer_h: lanH, want_h: want };
 }

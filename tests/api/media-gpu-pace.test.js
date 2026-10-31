@@ -76,7 +76,7 @@ it('containers are capped at the host RAM, not 10 GB: the lease ledger sums ever
 });
 it('agent pods: tower keeps a pod alive while its queue heartbeats arrive; slots = the pod capacity (10-31 pod 367)', async () => {
   const jobs = readFileSync('api/lib/ops/media-jobs.js', 'utf8');
-  expect(jobs).toMatch(/p\.agent && st\.q_last\?\.beat\?\.\[`pod-\$\{p\.name\}`\]/);
+  expect(jobs).toMatch(/st\.agent_seen\?\.\[`pod-\$\{p\.name\}`\]/);   // durable liveness (10-31 387/388): the behaviour is tested in media-gpu-spend
   expect(jobs).toMatch(/agentEnv\(agentKey, `pod-\$\{p\.name\}`, p\.max_jobs\)/);
   const feed = readFileSync('api/lib/media/queue-feed.js', 'utf8');
   expect(feed).toMatch(/out\.beat\[j\.host\] = Math\.max\(out\.beat\[j\.host\] \|\| 0, j\.updated \|\| 0\)/);
