@@ -33,6 +33,7 @@ export function migrate(sql) {
   sql.exec(`CREATE TABLE IF NOT EXISTS hosts (host TEXT PRIMARY KEY, can TEXT, vram_mb INTEGER, ram_gb REAL, rate REAL, jobs INTEGER DEFAULT 0, last_seen INTEGER)`);
   const hcols = new Set(rows(sql, `PRAGMA table_info(hosts)`).map((c) => c.name));
   if (!hcols.has('types')) sql.exec(`ALTER TABLE hosts ADD COLUMN types TEXT`);
+  if (!hcols.has('spill')) sql.exec(`ALTER TABLE hosts ADD COLUMN spill TEXT`);
   sql.exec(`CREATE TABLE IF NOT EXISTS rates (host TEXT NOT NULL, type TEXT NOT NULL, rate REAL, jobs INTEGER DEFAULT 0, updated INTEGER, PRIMARY KEY (host, type))`);
   sql.exec(`CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)`);
   // every finished job (host, type, audio, claimed → done): rolling THROUGHPUT per type and per pod (audio-h per wall-h), not one job's speed
@@ -88,9 +89,9 @@ function release(sql, j, attempts, error, now) {
 export function claim(sql, { host, can = [], vram_mb = 0, ram_gb = 0, types = ['media'], spill = [], spill_only = false, contract = null }, now = Date.now(), token = crypto.randomUUID()) {
   if (!host) throw new Error('host required');
   // only a MEDIA claimer is a host in the capacity sense: an intake sampler (type 'intake') must not inflate the media feed's pace
-  if (types.some((t) => MEDIA_HOST_TYPES.has(t))) sql.exec(`INSERT INTO hosts (host, can, vram_mb, ram_gb, types, last_seen) VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(host) DO UPDATE SET can = excluded.can, vram_mb = excluded.vram_mb, ram_gb = excluded.ram_gb, types = excluded.types, last_seen = excluded.last_seen`,
-    host, JSON.stringify(can), vram_mb, ram_gb, JSON.stringify(types), now);
+  if (types.some((t) => MEDIA_HOST_TYPES.has(t))) sql.exec(`INSERT INTO hosts (host, can, vram_mb, ram_gb, types, spill, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(host) DO UPDATE SET can = excluded.can, vram_mb = excluded.vram_mb, ram_gb = excluded.ram_gb, types = excluded.types, spill = excluded.spill, last_seen = excluded.last_seen`,
+    host, JSON.stringify(can), vram_mb, ram_gb, JSON.stringify(types), JSON.stringify(spill), now);
   expire(sql, now);
   const fits = fitter({ host, can, contract, now, others: (type) => engaged(sql, now).some((h) => h.host !== host && h.types.includes(type)) });
   const ruled = claimOrder(types, spill, policyOf(sql, now));   // the role policy (tower sets it from the pods' R2 buffer) orders a multi-role host
@@ -152,8 +153,8 @@ export function typeBacklogH(sql, type, now = Date.now()) {
   return s / 3600 / (typeRate(sql, type, now).rate || DEFAULT_RATE);
 }
 function engaged(sql, now) {
-  return rows(sql, `SELECT host, can, vram_mb, rate, jobs, types, last_seen FROM hosts WHERE last_seen > ? ORDER BY host`, now - HOST_FRESH_MS)
-    .map((h) => ({ ...h, can: JSON.parse(h.can || '[]'), types: hostTypes(h) }));
+  return rows(sql, `SELECT host, can, vram_mb, rate, jobs, types, spill, last_seen FROM hosts WHERE last_seen > ? ORDER BY host`, now - HOST_FRESH_MS)
+    .map((h) => ({ ...h, can: JSON.parse(h.can || '[]'), types: hostTypes(h), spill: JSON.parse(h.spill || '[]') }));
 }
 const ratesOf = (sql, host) => Object.fromEntries(rows(sql, `SELECT type, rate FROM rates WHERE host = ?`, host).map((r) => [r.type, r.rate]));
 function typeRate(sql, type, now, hosts = engaged(sql, now)) {
@@ -215,7 +216,11 @@ export function capacity(sql, now = Date.now()) {
     // finishes in the window). 10-31: Aorus (types [gpu], spill cpu-finish) still counted its spilled 14.4 audio-h/h, so r_finish read 97
     // while the hosts claiming cpu-finish (boss 21.1 + tower 9.9) gave ~31: the plan supported 6 pods, the CPU side about 2.
     const role_tp = t.hosts.some((h) => tp.each?.[h] != null) ? t.hosts.reduce((a, h) => a + (tp.each?.[h] ?? t.each[h] ?? 0), 0) : null;
-    by_type[type] = { hosts: t.hosts, rate: t.rate, each: t.each, queued: q.n, queued_audio_h: q.s / 3600, queued_h: q.s / 3600 / (t.rate || DEFAULT_RATE), throughput: role_tp, throughput_all: tp.total, throughput_each: tp.each || {}, done_2h: tp.jobs };
+    // spill_each: engaged hosts that take the type as SPILL (Aorus: gpu + spill cpu-prep,cpu-finish), at their measured rate. Under the role
+    // policy a spill host's CPU is real supply (Aorus CPU-first once the pods cover the GPU work, coordinator 10-31): the pod plan's cpuChain
+    // counts it as a shared host, split between prep and finish — never in full on both sides (the 10-31 r_finish 97 bug)
+    const spill_each = Object.fromEntries(hosts.filter((h) => !h.types.includes(type) && h.spill?.includes(type)).map((h) => [h.host, tp.each?.[h.host] ?? h.rates?.[type] ?? 0]));
+    by_type[type] = { hosts: t.hosts, rate: t.rate, each: t.each, spill_each, queued: q.n, queued_audio_h: q.s / 3600, queued_h: q.s / 3600 / (t.rate || DEFAULT_RATE), throughput: role_tp, throughput_all: tp.total, throughput_each: tp.each || {}, done_2h: tp.jobs };
     if (type === 'gpu') by_type.gpu.pod_throughput = tp.pods;
   }
   const pods = rows(sql, `SELECT host, rate FROM rates WHERE type = 'gpu' AND host LIKE 'pod-%' AND rate > 0`);
@@ -282,6 +287,7 @@ const roleRates = (all, type) => {
       const m = bt.throughput_each?.[h]; if (m > 0) measured = true;
       out[h] = Math.max(out[h] || 0, m > 0 ? m : bt.each?.[h] || 0);
     }
+    for (const [h, r] of Object.entries(bt.spill_each || {})) if (r > 0) { out[h] = Math.max(out[h] || 0, r); if (bt.throughput_each?.[h] > 0) measured = true; }
   }
   return known ? { each: out, measured } : null;
 };
@@ -315,7 +321,9 @@ export function podPlan(caps, { horizonH = 2 } = {}) {
 export const BUFFER_H = 2;
 export function bufferPolicy(plan, { pods = 0, targetH = BUFFER_H, rent = true } = {}) {
   const n = Math.max(pods, rent ? plan?.target || 0 : 0);
-  if (n > 0) { const want = targetH * plan.r_pod * n; return { where: 'edge', buffer_low: (plan.staged_h || 0) < want, buffer_h: plan.staged_h || 0, want_h: want }; }
+  // lan_keep_h: with pods the home GPUs run gpu work only when they would otherwise idle (their hosts are CPU-first), so the LAN keeps just
+  // BUFFER_H of THEIR pace and the mover sends the rest to the pods (10-31 23:04Z: 79 steps / 77 audio-h waited on the LAN for Aorus's ~2/h)
+  if (n > 0) { const want = targetH * plan.r_pod * n; return { where: 'edge', buffer_low: (plan.staged_h || 0) < want, buffer_h: plan.staged_h || 0, want_h: want, lan_keep_h: targetH * (plan.r_home_gpu || 0) }; }
   const want = targetH * (plan?.r_home_gpu || 0), lanH = Math.max(0, (plan?.gpu_queued_h || 0) - (plan?.staged_h || 0));
   return { where: 'lan', buffer_low: lanH < want, buffer_h: lanH, want_h: want };
 }

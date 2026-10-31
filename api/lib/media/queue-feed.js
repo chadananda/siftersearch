@@ -261,6 +261,9 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
   const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where && !leased.has(id) && st.chains?.[qj.itemId]?.['cpu-prep']).sort((a, b) => a[1].at - b[1].at);
   // a file already on the edge at its size is not sent again: a move cut by a restart resumes where it stopped (10-31: restarts every few
   // minutes meant no talk ever finished its upload)
+  // with pods the home GPU is CPU-first (core.bufferPolicy lan_keep_h): the LAN keeps only its own BUFFER_H, the rest goes to the pods
+  const keepH = Number.isFinite(buffer?.lan_keep_h) ? buffer.lan_keep_h : null;
+  let lanH = waiting.reduce((a, [, qj]) => a + (qj.audio_s || 0), 0) / 3600;
   const putOnce = async (have, fileId, name, file) => { const size = (await stat(file)).size; if (have.get(name) === size) { skipped++; return; } await edge.put('files', fileId, name, file); bytes += size; };
   const moveOne = async (id, qj) => {
     const ch = st.chains[qj.itemId], prep = ch['cpu-prep'], files = sentFiles(prep.files);
@@ -293,9 +296,9 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
   // several at once (tower's uplink is the limit; parallel streams keep it full through each request's round trips), until the buffer is met
   let i = 0;
   await Promise.all(Array.from({ length: Math.max(1, parallel) }, async () => {
-    while (i < waiting.length && edgeH < wantH) {
+    while (i < waiting.length && (edgeH < wantH || (keepH != null && lanH > keepH))) {
       const [id, qj] = waiting[i++];
-      edgeH += (qj.audio_s || 0) / 3600;   // counted when started, so the lanes never overfill the buffer together
+      edgeH += (qj.audio_s || 0) / 3600; lanH -= (qj.audio_s || 0) / 3600;   // counted when started, so the lanes never overfill the buffer together
       await moveOne(id, qj);
     }
   }));

@@ -261,6 +261,15 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect(sent).not.toContain(`${ch.fileId}/${ch.input}`);
     expect(Q.stats(E.sql, Date.now(), 'gpu').states.queued.n).toBe(2);
   });
+  it('with pods the LAN keeps only lan_keep_h for the home GPU: the rest moves even once the R2 buffer is met (10-31 23:04Z: 77 audio-h waited on Aorus)', async () => {
+    engage(); st.queue = [1, 2];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); deliver('cpu-prep'); deliver('cpu-prep'); await pull(st, d);
+    expect((await qtick(st, { ...d, buffer: { want_h: 1e-9, lan_keep_h: 1e6 } })).moved).toMatchObject({ moved: 1 });   // buffer met after one; LAN under its keep
+    expect((await qtick(st, { ...d, buffer: { want_h: 1e-9, lan_keep_h: 0 } })).moved).toMatchObject({ moved: 1 });    // the home GPU keeps none: the other moves too
+    expect(Q.stats(sql, Date.now(), 'gpu').states).toEqual({});
+    expect(Q.stats(E.sql, Date.now(), 'gpu').states.queued.n).toBe(2);
+  });
   it('light.flac never crosses the uplink: the pod rebuilds it from the original; the move reports bytes and MB per audio-h', async () => {
     engage(); st.queue = [1];
     const d = { ...deps, edge: E.q };

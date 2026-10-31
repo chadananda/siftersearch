@@ -186,8 +186,8 @@ describe('pod target (Chad 10-31): supportable = floor(min(R_prep, R_finish) / R
   });
 });
 
-describe('capacity counts only the hosts that list the type (10-31: a spill host inflated r_finish 97 vs ~31)', () => {
-  it('a host that finished cpu-finish but now claims [gpu] (spill) is not finish capacity; the plan reports the finish backlog', () => {
+describe('capacity: role hosts, and spill hosts as SHARED CPU supply (10-31: a spill host counted in full inflated r_finish 97 vs ~31)', () => {
+  it('a host that finished cpu-finish and now claims [gpu] spill [cpu-finish] counts its measured finish (Aorus CPU-first, coordinator 23:10Z)', () => {
     Q.enqueue(sql, [tj('f1', 'cpu-finish'), tj('f2', 'cpu-finish'), tj('f3', 'cpu-finish')], T0);
     const a = Q.claim(sql, { host: 'aorus', types: ['cpu-finish'] }, T0), b = Q.claim(sql, { host: 'boss', types: ['cpu-finish'] }, T0);
     Q.done(sql, { id: a.id, lease: a.lease, result: {} }, T0 + 1_800_000);   // aorus 2/h
@@ -196,10 +196,18 @@ describe('capacity counts only the hosts that list the type (10-31: a spill host
     const cap = Q.capacity(sql, T0 + 3_600_002);
     expect(cap.by_type['cpu-finish'].throughput_all).toBeCloseTo(3);
     expect(cap.by_type['cpu-finish'].throughput).toBeCloseTo(1);
+    expect(cap.by_type['cpu-finish'].spill_each).toEqual({ aorus: expect.closeTo(2) });
     const plan = Q.podPlan(cap);
-    expect(plan.r_finish).toBeCloseTo(1);
+    expect(plan.r_finish).toBeCloseTo(3);
     expect(plan.finish_queued_h).toBeCloseTo(1);
-    expect(plan.finish_backlog_h).toBeCloseTo(1);
+    expect(plan.finish_backlog_h).toBeCloseTo(1 / 3);
+  });
+  it('a host listing neither role nor spill is not CPU supply', () => {
+    Q.enqueue(sql, [tj('f1', 'cpu-finish')], T0);
+    const a = Q.claim(sql, { host: 'pod-1', types: ['cpu-finish'] }, T0);
+    Q.done(sql, { id: a.id, lease: a.lease, result: {} }, T0 + 1_800_000);
+    Q.claim(sql, { host: 'pod-1', types: ['gpu'] }, T0 + 1_800_001);
+    expect(Q.capacity(sql, T0 + 1_800_002).by_type['cpu-finish'].spill_each).toEqual({});
   });
 });
 
@@ -222,7 +230,17 @@ describe('cpuChain: a host with both CPU roles is one capacity, split between th
     expect(plan.priors).toEqual([]);
     expect(plan.r_finish).toBeCloseTo(61.8, 1);   // 470 h already prepped (235 audio-h/h over the 2 h horizon): boss moves wholly to finish
     expect(plan.supportable).toBe(5);   // (61.8 − 2.4) / 11.4
-    expect(plan.finish_each).toEqual({ boss: 45.9, tower: 15.9 });   // aorus spilled finish work; it is not a finish host
+    expect(plan.finish_each).toEqual({ boss: 45.9, tower: 15.9 });   // aorus not engaged as a spill host here: throughput alone is not a role
+  });
+  it('Aorus\'s spill CPU joins the chain as a shared host (coordinator 10-31 23:10Z: boss prep 51.6 / finish 40, tower 14.8, aorus 28 / 15)', () => {
+    const lan = { by_type: { gpu: { queued_audio_h: 80, home_rate: 2.5 }, 'cpu-prep': { hosts: ['boss'], throughput_each: { boss: 51.6, aorus: 28 }, spill_each: { aorus: 28 } },
+      'cpu-finish': { hosts: ['boss', 'tower'], throughput_each: { boss: 40, tower: 14.8, aorus: 15 }, spill_each: { aorus: 15 } } } };
+    const edge = { by_type: { gpu: { queued_audio_h: 100, queued: 100, pod_throughput: 12.7 }, 'cpu-prep': { hosts: [] }, 'cpu-finish': { hosts: [] } } };
+    const without = Q.podPlan([{ by_type: { ...lan.by_type, 'cpu-prep': { ...lan.by_type['cpu-prep'], spill_each: {} }, 'cpu-finish': { ...lan.by_type['cpu-finish'], spill_each: {} } } }, edge]);
+    const plan = Q.podPlan([lan, edge]);
+    expect(plan.prep_each.aorus).toBe(28); expect(plan.finish_each.aorus).toBe(15);
+    expect(plan.r_finish).toBeCloseTo(without.r_finish + 15, 6);   // 90 h prepped: both shared hosts wholly on finish
+    expect(plan.supportable).toBeGreaterThan(without.supportable);
   });
   it('prepped gpu work is prep supply: a 175 h buffer does not make prep binding (10-31 22:10Z: plan said prep, supportable 2)', () => {
     const lan = { by_type: { gpu: { queued_audio_h: 51.8, home_rate: 2.29 }, 'cpu-prep': { hosts: ['boss'], throughput_each: { boss: 47.8 } },
@@ -289,8 +307,12 @@ describe('claim order (Chad 10-31): the R2 buffer decides whether multi-role hos
 describe('bufferPolicy: ~BUFFER_H of pod work staged on R2', () => {
   const plan = { r_pod: 4, staged_h: 3, target: 2, gpu_queued_h: 10, r_home_gpu: 2.5 };
   it('with pods wanted or live: want = BUFFER_H × R_pod × pods, against the edge', () => {
-    expect(Q.bufferPolicy(plan, { pods: 1 })).toEqual({ where: 'edge', buffer_low: true, buffer_h: 3, want_h: 16 });
+    expect(Q.bufferPolicy(plan, { pods: 1 })).toMatchObject({ where: 'edge', buffer_low: true, buffer_h: 3, want_h: 16 });
     expect(Q.bufferPolicy({ ...plan, staged_h: 20 }, { pods: 1 }).buffer_low).toBe(false);
+  });
+  it('with pods the LAN keeps only BUFFER_H of the home GPUs\' pace (lan_keep_h); the mover sends the rest to the pods', () => {
+    expect(Q.bufferPolicy(plan, { pods: 1 }).lan_keep_h).toBeCloseTo(5);
+    expect(Q.bufferPolicy({ ...plan, target: 0 }, { pods: 0 }).lan_keep_h).toBeUndefined();
   });
   it('no pods: the home GPUs\' LAN queue', () => {
     expect(Q.bufferPolicy({ ...plan, target: 0 }, { pods: 0 })).toEqual({ where: 'lan', buffer_low: false, buffer_h: 7, want_h: 5 });   // 3 h on R2 no home GPU reads
