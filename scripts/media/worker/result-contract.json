@@ -1,5 +1,5 @@
 {
-  "_": "The worker result contract (post.json). post.py stamps `contract`; tower (api/lib/media/pod-post.js) accepts a complete result only at this version. Bump `post` whenever a field is added to `requires` (10-30: tower began requiring `quiet` on 10-29 while pods ran a 10-26 image, so every pod result was silently rejected for a day).",
-  "post": 2,
+  "_": "The worker result contract (post.json). post.py stamps `contract`; tower (api/lib/media/pod-post.js) accepts a complete result only at this version. Bump `post` whenever a field is added to `requires` (10-30: tower began requiring `quiet` on 10-29 while pods ran a 10-26 image, so every pod result was silently rejected for a day). v3 (10-31): results carry `words_key` (validity = the transcript's words, not its file bytes) and come from the image without splice and with the decoded-duration check; v2 results are refused by name.",
+  "post": 3,
   "requires": ["realign", "quiet", "web"]
 }

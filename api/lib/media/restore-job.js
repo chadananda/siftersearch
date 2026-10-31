@@ -4,7 +4,8 @@ import { join, extname } from 'node:path';
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { safeChain, OGG_ARGS, OGG_ARGS_REMASTER, M4A_BITRATE_REMASTER } from './enhance.js';
-import { sha256File, podVerdict } from './pod-post.js';
+import { sha256File, podVerdict, resultMatches } from './pod-post.js';
+import { wordsKeyFile } from './words-key.js';
 
 const SAFE = /^[a-z0-9_.-]+$/i;
 
@@ -14,7 +15,8 @@ export async function restoreCfg(it, m, { mode = 'restore', full = true } = {}) 
   const raw = m.quality?.raw || {}, hum = Math.max(raw.hum50_db ?? 0, raw.hum60_db ?? 0) >= 10 ? ((raw.hum50_db ?? 0) >= (raw.hum60_db ?? 0) ? 50 : 60) : null;
   return { mode, cleanup: !full, ...(full ? { assess_quality: true, trim: m.trim } : {}), bw_khz: raw.bandwidth_khz ?? null, hum_hz: hum,
     audio_s: m.duration_s || it.duration_s, af: safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15,
-    slug: m.slug || it.slug, work_sha: await sha256File(join(it.dir, 'transcript.work.json')),
+    slug: m.slug || it.slug, words_key: await wordsKeyFile(join(it.dir, 'transcript.work.json')),
+    work_sha: await sha256File(join(it.dir, 'transcript.work.json')),   // only so an older image answers 'image too old' by name, not 'work.json changed'
     ogg: ['-ac', '1', '-ar', '48000', ...OGG_ARGS_REMASTER], m4a: ['-ac', '1', '-ar', '48000', '-c:a', 'aac', '-b:a', M4A_BITRATE_REMASTER, '-movflags', '+faststart'],
     orig_ogg: ['-ac', '1', '-ar', '48000', ...OGG_ARGS], orig_m4a: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart'] };
 }
@@ -40,7 +42,7 @@ export const resultFiles = (post) => [
  *  only when podVerdict accepts it — otherwise it throws the named reason and the stage is discarded. */
 export async function adoptRestoreResult(dir, stage) {
   const post = JSON.parse(await fs.readFile(join(stage, 'post.json'), 'utf8'));
-  if (!post.ok || post.work_sha !== await sha256File(join(dir, 'transcript.work.json'))) { await fs.rm(stage, { recursive: true, force: true }); throw Error('stale or incomplete worker result (transcript changed or worker failed)'); }
+  if (!post.ok || !await resultMatches(post, dir)) { await fs.rm(stage, { recursive: true, force: true }); throw Error(`stale or incomplete worker result (${post.ok ? 'transcript words changed' : `worker failed: ${post.why || 'no reason'}`})`); }
   await fs.mkdir(join(stage, 'web'), { recursive: true });
   for (const [f, to] of resultFiles(post)) if (to !== f && existsSync(join(stage, f)) && !existsSync(join(stage, to))) await fs.rename(join(stage, f), join(stage, to));
   const lost = (post.guard && !post.held ? resultFiles(post) : []).filter(([, to]) => !existsSync(join(stage, to))).map(([f]) => f);

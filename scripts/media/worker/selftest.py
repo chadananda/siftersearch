@@ -111,7 +111,8 @@ def e2e():
         work = {'paragraphs': [{'n': 1, 't0': 1.0, 't1': 18.7, 'lang': 'en', 'words': [{'w': w['w'], 's': w['s'], 'e': w['e']} for w in words], 'sentences': [[0, 10], [10, 20]]}]}
         json.dump(work, open(os.path.join(d, 'work.json'), 'w'))
         sha = hashlib.sha256(open(os.path.join(d, 'work.json'), 'rb').read()).hexdigest()
-        json.dump({'post': {'af': 'highpass=f=70', 'max_fallback_pct': 15, 'slug': 'selftest', 'work_sha': sha, 'selftest': True, 'bw_khz': 8,
+        sys.path.insert(0, HERE); from words_key import words_key
+        json.dump({'post': {'af': 'highpass=f=70', 'max_fallback_pct': 15, 'slug': 'selftest', 'work_sha': sha, 'words_key': words_key(work), 'selftest': True, 'bw_khz': 8,
                             'ogg': ['-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '96k', '-application', 'audio'], 'm4a': ['-ac', '1', '-ar', '48000', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart'],
                             'orig_ogg': ['-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '56k', '-application', 'audio'], 'orig_m4a': ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart']}},
                   open(os.path.join(d, 'job.json'), 'w'))

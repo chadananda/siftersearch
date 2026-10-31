@@ -5,16 +5,24 @@ import { readFile, writeFile, rename, copyFile, rm, mkdir } from 'fs/promises';
 import { createHash } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
+import { wordsKeyFile } from './words-key.js';
 
 export const sha256File = async (f) => createHash('sha256').update(await readFile(f)).digest('hex');
 export const podDir = (dir) => join(dir, 'enhanced', 'pod');
+/** Is a worker result (post.json) for this talk's CURRENT words? Contract v3 carries `words_key` (timings never invalidate it, stage-queue §5);
+ *  an older result only has the whole-file `work_sha` (and is refused by name as an old image in podVerdict anyway). */
+export async function resultMatches(post, dir) {
+  const work = join(dir, 'transcript.work.json');
+  if (post?.words_key) return post.words_key === await wordsKeyFile(work);
+  return !!post?.work_sha && post.work_sha === await sha256File(work);
+}
 
 /** → the worker's post.json when it is usable for this talk's CURRENT transcript, else null. */
 export async function podPost(dir, { needFlac = true } = {}) {
   try {
     const post = JSON.parse(await readFile(join(podDir(dir), 'post.json'), 'utf8'));
-    if (!post?.ok || !post.guard || !post.work_sha) return null;
-    if (post.work_sha !== await sha256File(join(dir, 'transcript.work.json'))) return null;   // the transcript changed since the pod aligned to it
+    if (!post?.ok || !post.guard || !(post.words_key || post.work_sha)) return null;
+    if (!await resultMatches(post, dir)) return null;   // the transcript's words changed since the worker aligned to them
     if (needFlac && !existsSync(join(podDir(dir), 'unipase.flac'))) return null;
     return post;
   } catch { return null; }
@@ -25,14 +33,6 @@ export async function take(dir, name, to) {
   await rename(join(podDir(dir), name), to).catch(async () => { await copyFile(join(podDir(dir), name), to); await rm(join(podDir(dir), name), { force: true }); });
 }
 export const forget = (dir) => rm(podDir(dir), { recursive: true, force: true });
-/** After tower's own alignment rewrote transcript.work.json from a VALID worker result, the result (its encodes) is valid for the new file. */
-export async function resign(dir) {
-  try {
-    const f = join(podDir(dir), 'post.json'), post = JSON.parse(await readFile(f, 'utf8'));
-    post.work_sha = await sha256File(join(dir, 'transcript.work.json'));
-    await writeFile(f, JSON.stringify(post));
-  } catch { /* no worker result */ }
-}
 
 /** A worker result tower can publish without touching audio: a held verdict, or guard + alignment + silencing + all four encodes.
  *  `quiet` (Chad 10-29): a copy whose word-free stretches were not silenced carries the restorer's noise — never published. */
@@ -45,10 +45,10 @@ export const CONTRACT = JSON.parse(readFileSync(new URL('../../../scripts/media/
 export async function podVerdict(dir) {
   let raw = null;
   try { raw = JSON.parse(await readFile(join(podDir(dir), 'post.json'), 'utf8')); } catch { return { ok: false, why: 'no worker result' }; }
-  if (!raw?.ok || !raw.guard || !raw.work_sha) return { ok: false, why: `worker result not usable: ${raw?.why || 'no guard'}` };
+  if (!raw?.ok || !raw.guard || !(raw.words_key || raw.work_sha)) return { ok: false, why: `worker result not usable: ${raw?.why || 'no guard'}` };
   if ((raw.contract || 1) < CONTRACT.post) return { ok: false, stale_image: true, why: `worker image too old (result contract v${raw.contract || 1} < v${CONTRACT.post}): re-image the worker` };
   const post = await podPost(dir);
-  if (!post) return { ok: false, why: 'transcript changed since the worker aligned to it' };
+  if (!post) return { ok: false, why: 'transcript words changed since the worker aligned to them' };
   if (post.held) return { ok: true, why: null };
   const missing = CONTRACT.requires.filter((k) => !post[k]);
   return missing.length ? { ok: false, why: `worker result missing ${missing.join(', ')}${post.why ? ` (${post.why})` : ''}` } : { ok: true, why: null };

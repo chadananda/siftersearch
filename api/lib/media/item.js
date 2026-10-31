@@ -7,7 +7,7 @@ import {audioVersion, audioAlignment, listeningVariant, markAudioPending, timing
 import { qualityOf, remasterProven } from './remaster-quality.js';
 const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT: tower never reprocesses audio — set once the pre-worker backlog has drained
 import { quietRecord, hasQuiet, QUIET_REPAIR_VERSION } from './quiet-record.js';
-import { podPost, podComplete, podVerdict, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
+import { podPost, podComplete, podVerdict, take as podTake, forget as podForget, podDir } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait } from './tools.js';
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
@@ -518,7 +518,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // (no transcription); the original times stay on every word as s0 / e0 (the "Original" button). A copy the aligner
       // cannot place (> 2 % of words) goes back to the transparent copy. Back on the original → the s0 / e0 times return.
       const work = await readJson(join(dir, 'transcript.work.json'), null);
-      let podSigned = false;   // the worker's result was valid for the transcript before this alignment: re-sign it for the aligned one
+      const before = JSON.stringify(work?.paragraphs);   // written back only when the timings moved; a worker result stays valid either way (wordsKey)
       if (work?.paragraphs?.length && meta.enhancement) {
         const target = meta.enhancement.listening;
         const workerAlignment = target === 'unipase' ? await podPost(dir, { needFlac: false }) : null;
@@ -529,7 +529,6 @@ export async function runItem(item, opts = {}, deps = {}) {
           const pod = workerAlignment;
           const podAligned = pod?.realign && existsSync(join(podDir(dir), 'realign.json'));
           if (podAligned) await podTake(dir, 'realign.json', out);
-          podSigned = !!pod;
           const r = podAligned ? pod.realign : await heavySlot(() => tools.tool('realign', join(dir, v.file), { segments: join(dir, 'transcript.work.json'), output: out }, { threads: 4, stop, timeoutMs: 3 * 3600_000 }));
           const times = (await readJson(out, { times: {} })).times || {};
           const unplaced = r.total ? 1 - r.placed / r.total : 1;
@@ -572,8 +571,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         // moments follow their words (i1 exclusive)
         const byN = new Map(work.paragraphs.map((p) => [p.n, p]));
         for (const m of meta.moments || []) { const p = byN.get(m.para); if (p?.words?.[m.i0]?.s != null && p.words[m.i1 - 1]?.e != null) { m.t0_ms = Math.round(p.words[m.i0].s * 1000); m.t1_ms = Math.round(p.words[m.i1 - 1].e * 1000); } }
-        await writeJson(join(dir, 'transcript.work.json'), work);
-        if (podSigned) await podResign(dir);
+        if (JSON.stringify(work.paragraphs) !== before) await writeJson(join(dir, 'transcript.work.json'), work);
       }
     }
 

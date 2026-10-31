@@ -3,7 +3,7 @@ import {join,extname} from 'node:path';
 import {mkdir,readFile,rm,writeFile} from 'node:fs/promises';
 import {createWriteStream} from 'node:fs';
 import {finished} from 'node:stream/promises';
-import {sha256File} from './pod-post.js';
+import {resultMatches} from './pod-post.js';
 import {restoreInputs,resultFiles,adoptRestoreResult} from './restore-job.js';
 import {hostVendor,hostCores} from './tools.js';
 export async function gatePostRecording(it,m,{T,host,job,cfg,stop,nap}){
@@ -20,7 +20,7 @@ export async function gatePostRecording(it,m,{T,host,job,cfg,stop,nap}){
  const stage=join(it.dir,'enhanced/pod-stage');await mkdir(join(stage,'web'),{recursive:true});
  const get=async(name,to)=>{const output=createWriteStream(to);try{await call(`whole-fetch ${job} ${name}`,{onStdout:b=>output.write(b)});output.end();await finished(output);}catch(e){output.destroy();throw e;}};
  await get('post.json',join(stage,'post.json'));const post=JSON.parse(await readFile(join(stage,'post.json'),'utf8'));
- if(!post.ok||post.work_sha!==await sha256File(join(it.dir,'transcript.work.json')))throw Error('Stale Host transcript result');
+ if(!post.ok||!await resultMatches(post,it.dir))throw Error('Stale Host transcript result');
  for(const [f,to] of resultFiles(post))await get('post/'+f,join(stage,to));
  await adoptRestoreResult(it.dir,stage);
  await get('done.json',join(it.dir,'enhanced/unipase.done.json'));

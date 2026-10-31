@@ -1,7 +1,7 @@
 // Complete worker result on a home host; Tower transfers and validates only.
 import {join,extname} from 'node:path';
 import * as fs from 'node:fs/promises';
-import {sha256File} from './pod-post.js';
+import {wordsKeyFile} from './words-key.js';
 import {restoreCfg,restoreInputs,adoptRestoreResult} from './restore-job.js';
 import {hostProfile,hostVendor} from './tools.js';
 // A 15 GB host (aorus) cannot hold 4 x 10 GB container caps: a container starts only while the HOST has this much MemAvailable (VRAM is admitted by the in-container GPU leases)
@@ -14,7 +14,7 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
  const run=(cmd,opts={})=>T.run('ssh',[host,cmd],{timeoutMs:120000,stop,...opts});
  const put=(file,to)=>T.run('rsync',['-a','--partial','--protect-args',file,`${host}:${to}`],{timeoutMs:600000,stop});
  const get=(from,to)=>T.run('rsync',['-a','--partial','--protect-args',`${host}:${from}`,to],{timeoutMs:600000,stop});
- const work=join(it.dir,'transcript.work.json'), workSha=await sha256File(work);
+ const work=join(it.dir,'transcript.work.json'), workSha=await wordsKeyFile(work);
  const job=`recording-${it.id}-${workSha.slice(0,8)}-${image.slice(-8)}`,remote=`${root}/${job}`;
  const cfg=await restoreCfg(it,m,{mode});
  if(prof.transport==='gate')return (await import('./gate-recording.js')).gatePostRecording(it,m,{T,host,job,cfg,stop,nap});

@@ -12,6 +12,7 @@ import { podChecks } from '../../scripts/lib/pod-checks.mjs';
 import { mediaCloudRemasterJob, mediaComputeJob, laneKeeperPass } from '../../api/lib/ops/media-jobs.js';
 import { runItem } from '../../api/lib/media/item.js';
 import { sha256File } from '../../api/lib/media/pod-post.js';
+import { wordsKey } from '../../api/lib/media/words-key.js';
 import { createHash } from 'crypto';
 
 const MIN = 60_000;
@@ -571,13 +572,13 @@ describe('the pod does the heavy half of a remaster; tower validates and places'
     const words = [{ w: 'Today,', s: 1.0, e: 1.5 }, { w: 'the', s: 1.5, e: 1.7 }, { w: 'world', s: 1.7, e: 2.0 }];
     const workJson = JSON.stringify({ paragraphs: [{ n: 1, t0: 1.0, t1: 2.0, words, sentences: [[0, 3]] }] });
     writeFileSync(join(dir, 'transcript.work.json'), workJson);
-    const sha = createHash('sha256').update(stale ? 'other' : workJson).digest('hex');
+    const sha = wordsKey(stale ? { paragraphs: [] } : JSON.parse(workJson));   // the worker result is for these words (contract v3)
     const pod = join(dir, 'enhanced', 'pod');
     writeFileSync(join(pod, 'unipase.flac'), 'FLAC'); writeFileSync(join(pod, 'unipase.guard.json'), '{}');
     writeFileSync(join(pod, 'realign.json'), JSON.stringify({ times: { 1: [[1.03, 1.52], [1.53, 1.72], null] } }));
     const web = { ogg: 'x.ogg', m4a: 'x.m4a', orig_ogg: 'x.original.ogg', orig_m4a: 'x.original.m4a' };
     for (const f of Object.values(web)) writeFileSync(join(pod, 'web', f), f);
-    writeFileSync(join(pod, 'post.json'), JSON.stringify({ ok: true, work_sha: sha, guard: { sentences: 20, swapped: 0, swapped_pct: 0, fallback_sent_pct: 0, lag_ms: 20 }, realign: { placed: 2, total: 2 }, web }));
+    writeFileSync(join(pod, 'post.json'), JSON.stringify({ ok: true, words_key: sha, guard: { sentences: 20, swapped: 0, swapped_pct: 0, fallback_sent_pct: 0, lag_ms: 20 }, realign: { placed: 2, total: 2 }, web }));
     const meta = { slug: 'x', original: 'original/a.mp3', duration_s: 3, quality: { overall: 'D' }, moments: [{ para: 1, i0: 0, i1: 3, t0_ms: 1000, t1_ms: 2000 }],
       enhancement: { listening: 'safe', variants: [{ name: 'original', file: 'original/a.mp3' }, { name: 'safe', file: 'original/a.mp3', af: 'loudnorm' }] },
       stages: Object.fromEntries(['archive', 'grade', 'enhance', 'transcribe', 'diarize', 'trim', 'correct', 'clean', 'describe', 'thumb', 'render', 'ingest', 'catalog', 'headings', 'quotes', 'links', 'assess', 'update'].map((k) => [k, { at: 'x' }])) };

@@ -158,18 +158,18 @@ describe('tower stages: guard verdict, realign keeps the original times, revert'
     const deps = { tools, llm: {}, repo: { updateMediaItem: async () => ({}), getMediaItem: async () => ({ state: 'done' }) }, draining: async () => false, loadVocab: async () => ({}), now: () => 't' };
     return { dir, deps, tools, item: { id: 5, dir, state: 'done', source_kind: 'file' } };
   };
-  it('applies a replacement worker alignment even when the variant name stays unipase, and preserves the worker signature', async () => {
-    const t = talk(0), { createHash } = await import('node:crypto');
+  it('applies a replacement worker alignment even when the variant name stays unipase, and the worker result stays valid (wordsKey)', async () => {
+    const t = talk(0);
     const mf = join(t.dir, 'meta.json'), wf = join(t.dir, 'transcript.work.json');
     const m = JSON.parse(readFileSync(mf, 'utf8')); m.enhancement.listening = 'unipase'; m.aligned_to = 'unipase'; m.remaster = {status:'done'};
     m.enhancement.variants.push({name:'unipase',file:'enhanced/unipase.flac',shifts_time:true}); writeFileSync(mf,JSON.stringify(m));
     const pd=join(t.dir,'enhanced/pod'); mkdirSync(pd);
-    const hash=()=>createHash('sha256').update(readFileSync(wf)).digest('hex');
-    writeFileSync(join(pd,'post.json'),JSON.stringify({ok:true,guard:{},work_sha:hash(),realign:{placed:3,total:3}}));
+    const key=async()=>(await import('../../api/lib/media/words-key.js')).wordsKeyFile(wf), k0=await key();
+    writeFileSync(join(pd,'post.json'),JSON.stringify({ok:true,guard:{},words_key:k0,realign:{placed:3,total:3}}));
     writeFileSync(join(pd,'realign.json'),JSON.stringify({placed:3,total:3,times:{'1':[[1.1,1.6],[1.6,1.8],[1.8,2.1]]}}));
     await runItem(t.item,{redo:['realign'],only:['realign']},t.deps);
     expect(JSON.parse(readFileSync(wf,'utf8')).paragraphs[0].words[0].s).toBe(1.1);
-    expect(JSON.parse(readFileSync(join(pd,'post.json'),'utf8')).work_sha).toBe(hash());
+    expect(await key()).toBe(k0);   // re-timed words keep the key: the worker result stays valid without re-signing
     expect(t.tools.tool).not.toHaveBeenCalled();
   });
   it('a continuous copy (no sentence from the original) → the UniPASE copy is the listening copy; words re-aligned with s0/e0 kept; moments follow', async () => {

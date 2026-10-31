@@ -11,6 +11,7 @@ import {safeChain,OGG_ARGS,OGG_ARGS_REMASTER,M4A_BITRATE_REMASTER} from '../../.
 import {buildVocab,CORE_TERMS} from '../../../api/lib/media/vocab.js';
 import {computePeaks,normalizePeaks} from '../../../api/lib/media/peaks.js';
 import {trimPlan,peaksOf} from '../../../api/lib/media/trim.js';
+import {wordsKey} from '../../../api/lib/media/words-key.js';
 
 const jobDir=resolve(process.argv[2]||'.');
 const job=JSON.parse(await readFile(join(jobDir,'job.json'),'utf8'));
@@ -88,7 +89,7 @@ if(job.restore!==false && !result.meta.stages.remaster?.at){
   const work=JSON.stringify({paragraphs});await writeFile(join(dir,'transcript.work.json'),work);await writeFile(join(restore,'work.json'),work);
   const metrics=result.meta.enhancement.variants.find(v=>v.name==='original')||{};
   const cfg={mode:'restore',cleanup:false,assess_quality:true,trim,slug:meta.slug,audio_s:meta.duration_s,af:safeChain(metrics),bw_khz:result.meta.quality.raw?.bandwidth_khz??null,
-   max_fallback_pct:15,work_sha:createHash('sha256').update(work).digest('hex'),
+   max_fallback_pct:15,work_sha:createHash('sha256').update(work).digest('hex'),words_key:wordsKey({paragraphs}),
    ogg:['-ac','1','-ar','48000',...OGG_ARGS_REMASTER],m4a:['-ac','1','-ar','48000','-c:a','aac','-b:a',M4A_BITRATE_REMASTER,'-movflags','+faststart'],
    orig_ogg:['-ac','1','-ar','48000',...OGG_ARGS],orig_m4a:['-ac','1','-ar','44100','-c:a','aac','-b:a','64k','-movflags','+faststart']};
   const runs=raw.language==='multi'?(raw.segments||[]).filter(x=>x.lang).map(x=>({s:x.s,e:x.e,lang:x.lang})):undefined;

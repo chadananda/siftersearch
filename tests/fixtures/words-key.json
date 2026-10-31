@@ -1,0 +1,255 @@
+{
+ "_": "Shared by api/lib/media/words-key.js and scripts/media/worker/words_key.py (tests/api/media-words-key.test.js).",
+ "cases": [
+  {
+   "name": "base",
+   "work": {
+    "paragraphs": [
+     {
+      "n": 1,
+      "lang": "en",
+      "t0": 1,
+      "t1": 2.5,
+      "spk": "A",
+      "words": [
+       {
+        "w": "Bahá’u’lláh",
+        "s": 1,
+        "e": 1.5
+       },
+       {
+        "w": "said:",
+        "s": 1.5,
+        "e": 2
+       },
+       {
+        "w": "\"O",
+        "s": 2,
+        "e": 2.5
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "lang": "fa",
+      "words": [
+       {
+        "w": "ای",
+        "s": 3,
+        "e": 3.2
+       },
+       {
+        "w": "بنده‌ی",
+        "s": 3.2,
+        "e": 3.9
+       },
+       {
+        "w": "tab\there\nline \\ é 🌟",
+        "s": 4,
+        "e": 5
+       }
+      ]
+     }
+    ]
+   },
+   "key": "7fdd5e8b02e47e8d370ac5698bab43eea1e26051fac7385e22e637a2c5c37df0"
+  },
+  {
+   "name": "retimed (same words)",
+   "work": {
+    "paragraphs": [
+     {
+      "n": 1,
+      "lang": "en",
+      "t0": 1.031,
+      "t1": 2.5,
+      "spk": "B",
+      "words": [
+       {
+        "w": "Bahá’u’lláh",
+        "s": 1.031,
+        "e": 1.54,
+        "s0": 1,
+        "e0": 1.5
+       },
+       {
+        "w": "said:",
+        "s": 1.531,
+        "e": 2.04,
+        "s0": 1.5,
+        "e0": 2
+       },
+       {
+        "w": "\"O",
+        "s": 2.031,
+        "e": 2.54,
+        "s0": 2,
+        "e0": 2.5
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "lang": "fa",
+      "words": [
+       {
+        "w": "ای",
+        "s": 3.031,
+        "e": 3.24,
+        "s0": 3,
+        "e0": 3.2
+       },
+       {
+        "w": "بنده‌ی",
+        "s": 3.2310000000000003,
+        "e": 3.94,
+        "s0": 3.2,
+        "e0": 3.9
+       },
+       {
+        "w": "tab\there\nline \\ é 🌟",
+        "s": 4.031,
+        "e": 5.04,
+        "s0": 4,
+        "e0": 5
+       }
+      ]
+     }
+    ]
+   },
+   "key": "7fdd5e8b02e47e8d370ac5698bab43eea1e26051fac7385e22e637a2c5c37df0"
+  },
+  {
+   "name": "one word edited",
+   "work": {
+    "paragraphs": [
+     {
+      "n": 1,
+      "lang": "en",
+      "t0": 1,
+      "t1": 2.5,
+      "spk": "A",
+      "words": [
+       {
+        "w": "Bahá’u’lláh",
+        "s": 1,
+        "e": 1.5
+       },
+       {
+        "w": "says:",
+        "s": 1.5,
+        "e": 2
+       },
+       {
+        "w": "\"O",
+        "s": 2,
+        "e": 2.5
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "lang": "fa",
+      "words": [
+       {
+        "w": "ای",
+        "s": 3,
+        "e": 3.2
+       },
+       {
+        "w": "بنده‌ی",
+        "s": 3.2,
+        "e": 3.9
+       },
+       {
+        "w": "tab\there\nline \\ é 🌟",
+        "s": 4,
+        "e": 5
+       }
+      ]
+     }
+    ]
+   },
+   "key": "b457b1df1c6e73f07b2e7ed6049d378261a03c4d28e9a45eab6e59b58fd43284"
+  },
+  {
+   "name": "language changed",
+   "work": {
+    "paragraphs": [
+     {
+      "n": 1,
+      "lang": "en",
+      "t0": 1,
+      "t1": 2.5,
+      "spk": "A",
+      "words": [
+       {
+        "w": "Bahá’u’lláh",
+        "s": 1,
+        "e": 1.5
+       },
+       {
+        "w": "said:",
+        "s": 1.5,
+        "e": 2
+       },
+       {
+        "w": "\"O",
+        "s": 2,
+        "e": 2.5
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "lang": "ar",
+      "words": [
+       {
+        "w": "ای",
+        "s": 3,
+        "e": 3.2
+       },
+       {
+        "w": "بنده‌ی",
+        "s": 3.2,
+        "e": 3.9
+       },
+       {
+        "w": "tab\there\nline \\ é 🌟",
+        "s": 4,
+        "e": 5
+       }
+      ]
+     }
+    ]
+   },
+   "key": "2a7b8202e148973d1712f0c3c5d75d23484372350536cae4aac07c34f80e78c5"
+  },
+  {
+   "name": "missing n/lang/w",
+   "work": {
+    "paragraphs": [
+     {
+      "words": [
+       {
+        "w": "x"
+       },
+       {}
+      ]
+     },
+     {
+      "n": 3
+     }
+    ]
+   },
+   "key": "09c5a907fbc848691416d4ae27380359a00fb179ac539438b34187b8c92974a8"
+  },
+  {
+   "name": "no paragraphs",
+   "work": {
+    "words": []
+   },
+   "key": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  }
+ ]
+}

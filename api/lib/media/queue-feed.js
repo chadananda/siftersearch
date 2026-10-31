@@ -24,7 +24,7 @@ async function stage(kind, it, m, { q, wr, rj, full }) {
     await q.put('files', fileId, 'job.json', jf); await rm(jf, { force: true });
     return { sha, fileId, bytes };
   }
-  const cfg = await rj.restoreCfg(it, m, { mode: kind, full }), sha = cfg.work_sha, fileId = fileIdFor(it.id, sha, kind);
+  const cfg = await rj.restoreCfg(it, m, { mode: kind, full }), sha = cfg.words_key, fileId = fileIdFor(it.id, sha, kind);
   let bytes = 0;
   for (const [file, name] of rj.restoreInputs(it, m, kind)) bytes += (await q.put('files', fileId, name, file)).bytes || 0;
   const jf = join(it.dir, '.queue-job.json');

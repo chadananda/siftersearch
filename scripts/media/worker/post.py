@@ -2,7 +2,7 @@
 # Everything that decides the outcome runs here: transcript diagnostics (which never splice listening audio), the
 # deterministic cleanup for talks the guard holds, the forced re-alignment, the four web encodes, and the quality VERDICT. Tower
 # validates the manifest (post.json), records the verdict, places the files and publishes.
-#   job.json['post'] = { af, max_fallback_pct, slug, work_sha, ogg, m4a, orig_ogg, orig_m4a, bw_khz, hum_hz, cleanup: bool, mode }
+#   job.json['post'] = { af, max_fallback_pct, slug, words_key (work_sha on older tower configs), ogg, m4a, orig_ogg, orig_m4a, bw_khz, hum_hz, cleanup: bool, mode }
 #   mode 'restore' (default) / 'post': out.flac is the generative copy and asr.json its transcript ('post' = finishing a result tower holds).
 #   mode 'cleanup': no generative copy at all.
 import glob, hashlib, json, os, subprocess, sys, time
@@ -20,6 +20,20 @@ def sha256(path):
         for b in iter(lambda: f.read(1 << 20), b''):
             h.update(b)
     return h.hexdigest()
+
+
+def words_match(work, cfg):
+    """The job is for these WORDS (wordsKey, stage-queue §5): timing re-stamps on tower never invalidate it. Legacy configs: whole-file sha."""
+    if cfg.get('words_key'):
+        if HERE not in sys.path: sys.path.insert(0, HERE)
+        from words_key import words_key_file
+        return words_key_file(work) == cfg['words_key']
+    return sha256(work) == cfg.get('work_sha')
+
+
+def stamp(out, cfg):
+    for k in ('words_key', 'work_sha'):
+        if cfg.get(k): out[k] = cfg[k]
 
 
 def sh(cmd, runner=subprocess.run):
@@ -81,13 +95,13 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
     cv_python = cv_python or CV_PYTHON
     work = os.path.join(d, 'work.json')
     src = sorted(glob.glob(os.path.join(d, 'in.*')))[0]
-    if not os.path.exists(work) or sha256(work) != cfg.get('work_sha'):
+    if not os.path.exists(work) or not words_match(work, cfg):
         out['why'] = 'work.json missing or changed'
         return out
     post = os.path.join(d, 'post'); os.makedirs(post, exist_ok=True)
     flac, gjson = os.path.join(post, 'unipase.flac'), os.path.join(post, 'unipase.guard.json')
     ref, af, maxp, bw = os.path.join(d, 'asr_orig.json'), cfg.get('af'), cfg.get('max_fallback_pct', 15), cfg.get('bw_khz')
-    out['work_sha'] = cfg['work_sha']
+    stamp(out, cfg)
     g_first, g, method, why = None, None, None, None
     # 1. the generative copy through the word guard
     if cfg.get('mode', 'restore') in ('restore', 'post') and os.path.exists(os.path.join(d, 'out.flac')):
@@ -156,7 +170,7 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
         # no CPU retry (Chad 10-30): a GPU realign that places too few words is held below with its stderr, so the bug shows
         r = {'placed': 1, 'total': 1} if rj is None else run_realign()
     except Exception as err:     # no aligner on this machine: the guard result stands (tower aligns itself only in non-strict mode)
-        out['ok'] = True; out['why'] = f'realign unavailable here: {str(err)[-160:]}'; out['work_sha'] = cfg['work_sha']
+        out['ok'] = True; out['why'] = f'realign unavailable here: {str(err)[-160:]}'; stamp(out, cfg)
         return out
     out['realign'] = {'placed': r.get('placed'), 'total': r.get('total')}; out['steps']['realign'] = round(time.time() - t2, 1)
     out['qa']['metrics']['realign_unplaced_pct'] = round((1 - r['placed'] / r['total']) * 100, 2) if r.get('total') else None
