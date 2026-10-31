@@ -22,6 +22,10 @@ it('gpuLedger: fresh waiters + lease holders; no files = empty', () => {
   writeFileSync(join(d, 'leases.json.wait'), JSON.stringify({ 'pid:[1]:5': { since: 1, at: now / 1000 - 2 }, 'pid:[2]:6': { since: 1, at: now / 1000 - 30 } }));
   writeFileSync(join(d, 'leases.json'), JSON.stringify({ 'pid:[3]:7': { at: now / 1000 } }));
   expect(gpuLedger(d, now)).toEqual({ waiting: ['pid:[1]:5'], holding: ['pid:[3]:7'] });
+  // grade/guard lease for RAM admission and run on the CPU: not "at the GPU" (10-31 pod 371)
+  writeFileSync(join(d, 'leases.json'), JSON.stringify({ 'pid:[3]:7': { at: now / 1000, stage: 'grade' }, 'pid:[3]:8': { at: now / 1000, stage: 'dfn' } }));
+  writeFileSync(join(d, 'leases.json.wait'), JSON.stringify({ 'pid:[1]:5': { at: now / 1000, stage: 'guard' } }));
+  expect(gpuLedger(d, now)).toEqual({ waiting: [], holding: ['pid:[3]:8'] });
 });
 it('a talk has reached the GPU once a ledger key is its own: container namespace, or a pid under its process', () => {
   const ledger = { waiting: ['pid:[11]:296'], holding: ['pid:[4026]:900'] };

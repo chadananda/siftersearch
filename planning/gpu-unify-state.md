@@ -1,5 +1,5 @@
 # GPU unify State
-last_tick: 2026-10-31T02:55Z
+last_tick: 2026-10-31T05:25Z
 status: IN_PROGRESS
 project_dir: /Users/chad/Dropbox/Public/JS/Projects/siftersearch.com
 node: N=/Users/chad/.local/share/fnm/node-versions/v25.9.0/installation/bin/node (bare `node` fails under the hook)
@@ -83,6 +83,36 @@ Pod image (10-26) post.py had no `quiet`; tower requires realign+quiet+web since
 - 03:46Z aorus whole-2185 on 31d FAILED "Incomplete restoration result; no publication" (single_restore.py: post.json not ok/held/web).
   The reason was lost because the retry reuses the work dir. The paced agent re-claimed it at once. DON'T promote 31d yet.
   Watcher br95f8a5s captures post.json once it exists.
+
+- 01ad03e6 pacing v2 "one talk on deck": claim when nothing waits at GPU admission (leases.json.wait) and last claim ≥2 min old.
+  Live 04:05Z: aorus new agent 3/3 (2201/2210/2212) + old draining 2189, GPU 84%; boss 2211/2215 + old draining 2208, GPU 100%.
+- Pod 367 CLOSED by tower: ssh refused >4 min while it held 12 edge talks (slots = max_jobs), 0 results. 41a83547: agent pods are
+  kept alive while queue heartbeats are fresh (q_last.beat, 10 min) and run at most CLOUD.agentSlots = 4. Deployed.
+  Its 12 jobs requeue when their edge leases expire. Pod images ≤31c have no pacing; next image build carries gpu-pace.mjs.
+
+## 10-31 04:15–05:00Z — exact deck, pod deaths = RAM
+- 6295148f exact one-on-deck (no timers): claim when no fresh GPU-admission waiter AND no claimed talk still heading to the GPU (ledger key
+  ownership: container pid ns / descendant pid). Slots = capacity (pod max_jobs). f8f2dfad pod gauge cgroup v1 CPU. 2b6cee07 failure reasons
+  survive (post.error.txt, 2500-char stderr tail, queue clip head+tail). whole-2185 on 31d DONE 3111 s, adopted (publish held: 29 s speech gap).
+- Pod 368 (31c, 12 slots) closed 04:47 "ssh refused" — gauges froze 04:34, so the POD died, as 367 did ~40 min in. q_last.beat was empty
+  because its leases had expired: heartbeat liveness didn't help a dead pod. CAUSE (likely): agent read /proc/meminfo = the HOST's RAM on RunPod,
+  so its RAM guard never fired with 12 × 94-min talks → container OOM.
+- f42461e3 agent RAM from cgroup (v2 memory.max / v1 limit_in_bytes, minus inactive file) + slots ≤ RAM/6 GB (--gb-per-talk; aorus run-lan 5).
+- Image 31g = ghcr …:gpu-20261031g @sha256:4623eefea98f9718c381e5d4d8137b43981f92dfeaac47aec48c4339ee5607e8 PROMOTED 04:55Z (31f superseded).
+  Rentals resumed max-pods 1 (spent $128.82). Watcher: /tmp/pod31g.py on tower (done / fails / pod closed).
+- Home agents swapped 04:57Z to f42461e3 code (aorus pid 2950204 3 slots, boss 476767 2 slots); old ones draining.
+  NOTE: never `pgrep -f queue-agent.mjs` inside an ssh command — it matches the ssh shell itself; `ps -C node` matches nothing
+  (node's comm is "MainThread"). Use `ps -eo pid,args | awk '$2 ~ /node$/ && /queue-agent/{print $1}'`.
+- 1f98218a agent holds claims while the CPU is full (cgroup cpu.stat/cpuacct + quota, ≥90 % over 60 s). Why: grade takes its GPU lease, then
+  decodes on the CPU, so "reached the GPU" freed the deck in seconds. Pod 370 (31g) took its 9 slots in 40 s: load 78 on 31 CPUs, GPU 0 %,
+  cgroup 58 GB (meminfo 251), RAM peak 16 GB. Image 31h = …:gpu-20261031h @sha256:75e640e7f0fb640ee906454d38f8dc962c78e7eb5770993f62ffef207590a217
+  PROMOTED 05:05Z → 370 drains (finishes its 9), then the lane rents ONE 31h pod. Home agents on 1f98218a since 05:07Z (aorus 2961558, boss 500813).
+- Aorus GPU sampled over 8 s = 50–100 % (single samples mislead), 4 stages queued at admission → saturated as designed.
+- VERIFY on the 31g pod: start log slots/ram_gb sane, claims paced, results adopted, no OOM → then max-pods 3.
+- 05:20Z pod 370 REAPED by tower "idle 10 min": ledgerTick's `assigned` looked only at st.jobs, so an agent pod holding 9 leases with the GPU
+  quiet (all 9 in ffmpeg prep, ~1.2 cores each, 8+ min) counted as idle. 9 talks lost → requeue on lease expiry. Fix 8f1863d6: leases
+  (q_last.leased['pod-<name>']) count as assigned (+test). Breaker opened (367, 368, 370 = 3 never worked); auto-canary ~05:50Z on 31h.
+  Watcher: /tmp/pod31h.py on tower.
 
 ## Next
 1. Boss onto the LAN agent (ROCm; boss currently on home path B, st.home.boss, image quiet-20261029). Needs a ROCm gpu-20261031 build.

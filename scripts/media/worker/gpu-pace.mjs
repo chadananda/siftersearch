@@ -10,11 +10,16 @@ import { cpus } from 'node:os';
 export const WAITER_FRESH_S = 10;       // gpu_lease.py re-stamps a waiter every second; one silent for 10 s is gone
 export const STALL_MS = 45 * 60_000;    // a talk that never reaches the GPU stops holding the deck (logged)
 
-/** The GPU admission ledger right now: keys ('<pid ns>:<pid>') holding a lease, and those queued for one (fresh only). */
+// Stages that lease only for RAM admission and run on the CPU: a talk in one has not reached the GPU (10-31 pod 371: grade leases first,
+// then decodes for minutes with the GPU at 1 MiB — 5 talks claimed in 50 s because each "reached the GPU" at once).
+export const CPU_STAGES = new Set(['grade', 'guard']);
+
+/** The GPU admission ledger right now: keys ('<pid ns>:<pid>') holding a lease, and those queued for one (fresh only); CPU-only stages left out. */
 export function gpuLedger(leaseDir, now = Date.now()) {
   const read = (f) => { try { return JSON.parse(readFileSync(join(leaseDir, f), 'utf8')); } catch { return {}; } };
-  const waiting = Object.entries(read('leases.json.wait')).filter(([, v]) => now / 1000 - (v.at || 0) < WAITER_FRESH_S).map(([k]) => k);
-  return { waiting, holding: Object.keys(read('leases.json')) };
+  const gpu = ([, v]) => !CPU_STAGES.has(v?.stage);
+  const waiting = Object.entries(read('leases.json.wait')).filter(([, v]) => now / 1000 - (v.at || 0) < WAITER_FRESH_S).filter(gpu).map(([k]) => k);
+  return { waiting, holding: Object.entries(read('leases.json')).filter(gpu).map(([k]) => k) };
 }
 
 /** Has this talk reached the GPU? owns(key) says whether a ledger key belongs to the talk (its container's pid namespace, or a pid under its process). */
