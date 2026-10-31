@@ -1771,7 +1771,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (C.rentalCapacity) maxPods = await C.rentalCapacity(requestedMaxPods);
       st.capacity_target = maxPods;
       const rentalPause = await C.rentalPauseReason?.();
-      if (rentalPause && !Object.keys(st.jobs).length && !staging.size) {
+      // a rental pause stops the PODS only (wantRaw → 0): home hosts and LAN agents keep taking work (10-31: the run ended on pause and Aorus/Boss sat idle)
+      if (rentalPause && !Object.keys(st.jobs).length && !staging.size && !homeHosts.length && !queueKey) {
         await Promise.allSettled([...homeTasks.values()]);
         stop = `operator pause: ${rentalPause}`;
         break;
@@ -2202,7 +2203,9 @@ export async function mediaPreviewJob(params = {}, deps = {}) { return (deps.pre
 export async function laneKeeperPass(deps = {}) {
   const C = deps.cloud || await import('../media/cloud.js');
   const rentalPause = await C.rentalPauseReason?.();
-  if (rentalPause) return { action: 'paused', why: rentalPause };
+  // paused = no pods; the run still feeds home hosts / LAN agents (it rents nothing while paused), so it is queued when one is wired
+  const homeFeed = deps.homeFeed !== undefined ? deps.homeFeed : process.env.MEDIA_QUEUE_FEED !== '0' && !!process.env.INTERNAL_API_KEY;
+  if (rentalPause && !homeFeed) return { action: 'paused', why: rentalPause };
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const queue = deps.queue || enqueue;
   const st = deps.state !== undefined ? deps.state : await C.loadState(deps.stateFile);

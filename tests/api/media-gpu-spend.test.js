@@ -127,9 +127,16 @@ describe('persistent operator rental pause', () => {
   });
   it('prevents the lane keeper from restarting paid work after a reboot', async () => {
     const queue = vi.fn();
-    const result = await laneKeeperPass({ cloud: { rentalPauseReason: async () => 'Awaiting Aorus image validation' }, queue });
+    const result = await laneKeeperPass({ cloud: { rentalPauseReason: async () => 'Awaiting Aorus image validation' }, queue, homeFeed: false });
     expect(result).toEqual({ action: 'paused', why: 'Awaiting Aorus image validation' });
     expect(queue).not.toHaveBeenCalled();
+  });
+  it('while paused, still queues the run when home hosts / LAN agents are fed (pods stay at 0 inside the run)', async () => {
+    const queue = vi.fn();
+    const result = await laneKeeperPass({ cloud: { rentalPauseReason: async () => 'paused' }, queue, homeFeed: true,
+      state: { started: 1, queue: ['a'], jobs: {} }, ops: { pendingRuns: async () => [] } });
+    expect(result).toEqual({ action: 'queued' });
+    expect(queue).toHaveBeenCalledWith('media-cloud-remaster', expect.objectContaining({ write: true }), 'lane-keeper');
   });
 });
 describe('rent rule: work first, rent second', () => {
