@@ -356,6 +356,10 @@ export const doneRows = async (afterId = 0, limit = 200) => queryAll(`SELECT id,
 const IDX = ['restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz', 'completed_at'];
 export const setIndex = async (id, f) => transaction([{ sql: `UPDATE media_items SET ${IDX.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, args: [...IDX.map((c) => f[c] ?? null), Number(id)] }], 'media:set-index');
 export const setRestored = async (id, flag) => transaction([{ sql: 'UPDATE media_items SET restored = ? WHERE id = ?', args: [flag ? 1 : 0, Number(id)] }], 'media:set-restored');
+/** The re-judge work list (Chad 10-31): published talks whose remaster is held (review) or still playing the original (kept/deferred → 'unrepairable'), in id order after a cursor. */
+export const heldCandidates = async (afterId = 0, limit = 20) => queryAll(`SELECT id, slug, dir FROM media_items WHERE state = 'done' AND dir IS NOT NULL AND verdict IN ('review', 'unrepairable') AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 20], 'media:held-candidates');
+/** The held page's rows: held for Chad (review/unrepairable) or archived, with their listing fields. */
+export const heldRows = async (verdicts = ['review', 'unrepairable', 'archived']) => queryAll(`SELECT id, slug, title, speaker, duration_s, dir, verdict FROM media_items WHERE state = 'done' AND dir IS NOT NULL AND verdict IN (${verdicts.map(() => '?').join(',')}) ORDER BY id`, verdicts, 'media:held-rows');
 export const doneItemIds = async () => (await queryAll(`SELECT id FROM media_items WHERE state = 'done' ORDER BY id`, [], 'media:done-ids')).map((r) => r.id);
 
 /** The repair list: graded published items worth fixing, grouped by their recommended fix chain, most urgent first. */

@@ -1,0 +1,10 @@
+---
+// Held remasters (Chad 10-31): the talks whose remaster is worse than the original; A/B listen, then publish or archive.
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import MediaHeld from '../../components/admin/MediaHeld.svelte';
+---
+
+<AdminLayout title="Held remasters">
+  <MediaHeld client:only="svelte"><IslandSkeleton slot="fallback" /></MediaHeld>
+</AdminLayout>

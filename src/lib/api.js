@@ -971,6 +971,9 @@ export const admin = {
   async getMediaProgress() { return request('/api/media/progress'); },
   async getMediaRepairs(min = 'C') { return request(`/api/media/admin/repairs?min=${encodeURIComponent(min)}`); },
   async getMediaQuality(slug) { return request(`/api/media/admin/quality/${encodeURIComponent(slug)}`); },
+  // Held remasters (/admin/media-held, Chad 10-31): worse than the original, waiting for publish / archive
+  async getMediaHeld() { return request('/api/media/admin/held'); },
+  async decideMediaHeld(picks) { return request('/api/media/admin/held/decide', { method: 'POST', body: JSON.stringify({ picks }) }); },
   async getMediaGraded(query = '') { return request(`/api/media?facets=0&limit=200&sort=priority${query ? `&${query}` : ''}`); },
 
   // Donor-drive review (/admin/imports): donors → drives with counts, paged items, decisions, the per-drive report

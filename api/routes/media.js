@@ -583,6 +583,37 @@ export default async function mediaRoutes(fastify) {
     if (!meta?.quality) return reply.code(404).send({ error: 'not graded yet' });
     return { slug: it.slug, title: meta.title, speaker: meta.speaker, quality: meta.quality };
   });
+  // THE HELD PAGE (Chad 10-31): remasters judged worse than the original wait here for a decision (publish / archive); archived ones are listed apart.
+  // Audio is a short A/B clip per flagged excerpt (signed URL: an <audio> tag cannot send the admin header), cut once and cached beside the talk.
+  fastify.get('/admin/held', { preHandler: requireInternal }, async () => {
+    const { heldList } = await import('../lib/media/remaster-rejudge.js'), repo = await import('../lib/repos/media-repo.js');
+    const counts = await readJson((await import('../lib/media/remaster-rejudge.js')).COUNTS_FILE);
+    return { ...(await heldList({ repo, sign: (slug, which, start, end) => clipQuery({ slug: `${slug}:${which}`, start, end, ttl: 6 * 3600 }) })), rejudge: counts };
+  });
+  // Chad's decisions: { picks: [{ slug, choice: 'publish' | 'archive' | 'unarchive' }] } → the media worker's decide job (publish = the remaster goes on air, verdict pass-human-full)
+  fastify.post('/admin/held/decide', { preHandler: requireInternal }, async (req, reply) => {
+    const picks = [].concat(req.body?.picks || []).filter((p) => p?.slug && ['publish', 'archive', 'unarchive'].includes(p.choice)).map((p) => ({ slug: String(p.slug), choice: p.choice, by: req.user?.email || 'Chad' }));
+    if (!picks.length) return reply.code(400).send({ error: 'picks: [{ slug, choice: publish | archive | unarchive }] required' });
+    return { queued: await enqueue('media-remaster-decide', { picks }, req.user?.email || 'internal'), picks: picks.length };
+  });
+  fastify.get('/admin/held/:slug/clip/:which', async (req, reply) => {
+    const { which, slug } = req.params, [a, b] = String(req.query?.t || '').split('-').map(Number);
+    if (!['original', 'remaster'].includes(which) || !Number.isFinite(a) || !Number.isFinite(b) || b <= a || b - a > 60) return reply.code(400).send({ error: 'BadRequest' });
+    if (!verifyClip({ slug: `${slug}:${which}`, start: a, end: b, exp: req.query.exp, sig: req.query.sig })) return reply.code(403).send({ error: 'Forbidden' });
+    const it = await getMediaBySlug(slug), meta = it?.dir ? await readJson(join(it.dir, 'meta.json'), null) : null;
+    const rel = which === 'original' ? meta?.original : (meta?.enhancement?.variants || []).find((v) => v.name === 'unipase')?.file;
+    if (!rel || !existsSync(join(it.dir, rel))) return reply.code(404).send({ error: 'NotFound' });
+    const out = join(it.dir, 'held', `${which}-${Math.round(a)}-${Math.round(b)}.m4a`);
+    if (!existsSync(out)) {
+      const { mkdir } = await import('fs/promises');
+      await mkdir(dirname(out), { recursive: true });
+      // the same loudness for both sides so the ear compares the audio, not the volume
+      await run('ffmpeg', ['-nostdin', '-v', 'error', '-ss', String(a), '-t', String(b - a), '-i', join(it.dir, rel), '-vn', '-af', 'loudnorm=I=-18:TP=-1.5:LRA=11', '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', `${out}.tmp.m4a`], { timeoutMs: 60_000 });
+      await rename(`${out}.tmp.m4a`, out);
+    }
+    reply.header('Content-Type', 'audio/mp4').header('Cache-Control', 'private, max-age=3600').header('Content-Length', statSync(out).size);
+    return reply.send(createReadStream(out));
+  });
   fastify.get('/admin/status', { preHandler: requireInternal }, async () => ({ states: await mediaStates(), channels: await listChannels() }));
   fastify.post('/admin/channels', { preHandler: requireInternal }, async (req, reply) => {
     const b = req.body || {};

@@ -4,7 +4,7 @@ import {audioVersion, audioAlignment, listeningVariant, markAudioPending, timing
 // describe → headings → quotes → links → assess → thumb → render → ingest → catalog. Each stage writes its files into the item folder and records
 // itself in meta.json (stages[name] = { at, ms, … }); a finished stage is skipped on the next run, so the job resumes after
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
-import { qualityOf } from './remaster-quality.js';
+import { qualityOf, remasterProven } from './remaster-quality.js';
 const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT: tower never reprocesses audio — set once the pre-worker backlog has drained
 import { quietRecord } from './quiet-record.js';
 import { podPost, podComplete, podVerdict, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
@@ -144,12 +144,12 @@ export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'rea
 /** COMPLETE (Chad 10-29) = every stage done (remaster, transcribe, diarize, correct, headings, quotes, links, moments/assess, ingest, catalog) AND a remaster
  *  that passed assessment (usable/cleaned — never a splice of original + remaster, Chad 10-29) WITH MEASURED PROOF it differs from the original (the verify stage, or a passed paired-quality assessment). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
 export const COMPLETE_STAGES = ['remaster', 'verify', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
-/** A PLAYABLE LISTENING COPY (Chad 10-31): the web encode exists and what it plays is safe — the remaster only when its verdict is usable/cleaned, otherwise the light/original copy;
- *  never a splice of original and remastered sentences (10-29), so a remaster copy with any other verdict is NOT playable until re-rendered. */
-export const hasPlayableCopy = (meta = {}) => !!meta.stages?.web?.at && (meta.enhancement?.listening !== 'unipase' || ['usable', 'cleaned'].includes(qualityOf(meta).verdict));
-/** ON AIR BY DEFAULT (Chad 10-31): every COMPLETE_STAGES stage has run (a decided remaster outcome — done/review/kept/deferred/skipped/waiting — all count as the stage having run; the
- *  remaster only upgrades audio) AND the talk has a playable listening copy. The old rule (verdict usable/cleaned) kept ~2800 transcribed talks off air. */
-export const REMASTER_DECIDED = ['done', 'review', 'kept', 'deferred', 'skipped'];   // the remaster ran and chose the audio; 'waiting'/none = not yet run, so not complete
+/** A PLAYABLE LISTENING COPY (Chad 10-31: "I do not want any audio to play the original"): the web encode exists AND it was made from the remaster, and the remaster's verdict is usable/cleaned;
+ *  never the original, never a splice of original and remastered sentences (10-29). A talk whose listening copy is not the remaster is not playable until the remaster has run. */
+export const hasPlayableCopy = (meta = {}) => !!meta.stages?.web?.at && meta.enhancement?.listening === 'unipase' && (meta.web_listening ?? 'unipase') === 'unipase' && ['usable', 'cleaned'].includes(qualityOf(meta).verdict);
+/** ON AIR (Chad 10-31) = every COMPLETE_STAGES stage has run AND the remaster is DONE (published by the judge or by Chad) AND the talk plays that remaster. review/kept/deferred/skipped/waiting/archived
+ *  are not on air: they are in the queue, on the held page, or archived. The remaster upgrades nothing: it IS the listening copy. */
+export const REMASTER_DECIDED = ['done'];
 export const isComplete = (meta = {}) => REMASTER_DECIDED.includes(meta.remaster?.status) && hasPlayableCopy(meta) && COMPLETE_STAGES.every((s) => meta.stages?.[s]?.at);
 /** The indexed columns for one talk (migration 187): what is missing, the next stage, the remaster verdict, NISQA in/out, bandwidth in/out, and the complete flag. */
 export function indexFields(meta = {}) {
@@ -426,7 +426,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       // cloud worker (enhanced/unipase.cloud.flac + its transcript); here the WORD GUARD splices the original back in for
       // every sentence the copy lost, and the verdict decides whether it becomes the listening copy (§13: never worse).
       // a keep / deferral stands against the generative copy; the deterministic cleanup (method 'cleaned') is a different thing and is allowed through
-      if (opts.remaster && meta.enhancement && (!['kept', 'deferred'].includes(meta.remaster?.status) || (await podPost(dir, { needFlac: false }))?.method === 'cleaned')) {   // Chad's keep / deferral stands: a late cloud result changes nothing
+      if (opts.remaster && meta.enhancement && (!['kept', 'deferred', 'archived'].includes(meta.remaster?.status) || (await podPost(dir, { needFlac: false }))?.method === 'cleaned')) {   // Chad's keep / deferral stands: a late cloud result changes nothing
         const work = await readJson(join(dir, 'transcript.work.json'), { paragraphs: [] });
         const el = remasterEligible(meta, work.paragraphs || []);
         let pv; const cloud = join(dir, 'enhanced', 'unipase.cloud.flac'), casr = join(dir, 'enhanced', 'unipase.asr.json');
@@ -476,7 +476,7 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (stage === 'verify') {
       // MEASURED PROOF the remaster is a different, better signal (Chad 10-29: a copy that is "different, just not better" must never count as remastered):
       // ffmpeg levels of the same 60 s window of the original and the remaster (bandwidth above 4 / 8 kHz, noise floor). No measurable change = held for review, the original plays.
-      const assessed = (meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment)?.passed === true;   // the worker's paired NISQA/DNSMOS check already measured a gain
+      const assessed = remasterProven(meta);   // the worker's paired NISQA/DNSMOS check already measured a gain
       if (meta.enhancement?.listening !== 'unipase' || !['heavy', 'cleaned'].includes(meta.remaster_tier || remasterTier(meta))) rec.skipped = 'not remastered';
       else if (assessed) rec.assessed = true;
       else {
@@ -1019,8 +1019,8 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'catalog' || stage === 'update') {
-      // on air = a playable safe listening copy (Chad 10-31; 10-29 required a restored copy): a talk without one stays in the pipeline, unpublished
-      if (!item.published_at && !opts.publishUnrestored && meta.rights?.playback === 'full' && !hasPlayableCopy(meta)) throw new Error('publish blocked: no playable listening copy yet (stays in the pipeline)');   // 10-31: was !isRestored — any safe copy goes on air, the remaster upgrades it later
+      // the catalogue takes a talk with a safe web copy; ON AIR is the stricter isComplete (the remaster is the listening copy, Chad 10-31) via media_items.restored
+      if (!item.published_at && !opts.publishUnrestored && meta.rights?.playback === 'full' && !(meta.stages?.web?.at && (meta.enhancement?.listening !== 'unipase' || ['usable', 'cleaned'].includes(qualityOf(meta).verdict)))) throw new Error('publish blocked: no playable listening copy yet (stays in the pipeline)');   // 10-31: was !isRestored — any safe copy goes on air, the remaster upgrades it later
       if (meta.rights?.playback === 'full') {
         const publishedTranscript = await readJson(join(dir, 'transcript.json'), { paragraphs: [] });
         const timeHash = timingSignature(publishedTranscript.paragraphs);

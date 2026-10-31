@@ -15,6 +15,13 @@ export default async function mediaOps(fastify) {
     const rows = await G.readGaugeLog(join(dirname(STATE_FILE), 'gauges'), { sinceMs: now - hours * 3600_000, host: q.host || '', now });
     return { hours, hosts: G.summarizeGauges(rows), ...(q.rows === '1' ? { rows: rows.slice(-2000) } : {}) };
   });
+  // held remasters (Chad 10-31): the counts, the reasons and the rejudge tallies (no signed audio: the page has those)
+  fastify.get('/ops/media/held', guard, async () => {
+    const R = await import('../lib/media/remaster-rejudge.js'), h = await R.heldList({ repo: await import('../lib/repos/media-repo.js'), sign: () => '' });
+    const rows = (a) => a.map((x) => ({ slug: x.slug, title: x.title, speaker: x.speaker, reason: x.reason, problems: x.problems, nisqa: x.scores?.nisqa }));
+    return { counts: h.counts, rejudge: JSON.parse(await (await import('fs/promises')).readFile(R.COUNTS_FILE, 'utf8').catch(() => 'null')), held: rows(h.held), archived: rows(h.archived) };
+  });
+  fastify.post('/ops/media/rejudge', guard, async (req) => ({ queued: await (await import('../lib/repos/ops-report-repo.js')).enqueue('media-remaster-rejudge', { ids: [].concat(req.body?.ids || []), force: !!req.body?.force }, by(req)) }));
   fastify.get('/ops/media/items', guard, async (req) => {
     const q = req.query || {};
     if (q.q) return { matches: await (await import('../lib/repos/media-ledger-repo.js')).findTalks(String(q.q)) };

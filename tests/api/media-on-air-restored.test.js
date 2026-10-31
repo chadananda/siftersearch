@@ -48,18 +48,21 @@ describe('backfillRestored', () => {
     await backfillRestored({ repo, readMeta: async (d) => ({ '/x/2': { ...good(), stages: { ...ALL, quotes: undefined } } })[d] || Promise.reject(new Error('x')) });
     expect(db.prepare('SELECT restored r FROM media_items WHERE id = 2').get().r).toBe(0);
   });
-  it('on air by default (Chad 10-31): a fully transcribed talk on the light copy is on air; the bulk light tier is still not restoration; rows already flagged under the looser rule are corrected', async () => {
+  it('never the original (Chad 10-31): a fully transcribed talk still on the original/light copy is OFF air; a done remaster is on; rows flagged on under the looser rule come off', async () => {
     resetRestoredVerify();
     const metas = { '/x/1': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'light' }, '/x/3': { web_original: { m4a: 'a.m4a' }, remaster_tier: 'light', stages: ALL, enhancement: { listening: 'safe' }, remaster: { status: 'review' } }, '/x/4': good('cleaned'), '/x/2': { ...good(), stages: { ...ALL, quotes: undefined } } };
     await backfillRestored({ repo, readMeta: async (d) => metas[d] || Promise.reject(new Error('nope')) });
     const r = (id) => db.prepare('SELECT restored r FROM media_items WHERE id = ?').get(id).r;
-    expect([r(1), r(3), r(4)]).toEqual([0, 1, 1]);   // [1] light, stages missing: off; [3] light + every stage: on air
+    expect([r(1), r(3), r(4)]).toEqual([0, 0, 1]);   // [1] light, stages missing: off; [3] every stage but playing the original: off; [4] remaster done: on air
   });
-  it('a published row flagged off under the old rule is put on air once it is complete (10-31: publish completed talks)', async () => {
+  it('a talk playing the original comes off air (it was on under the looser rule); once its remaster is published it goes back on (10-31)', async () => {
     resetRestoredVerify();
-    const done = { web_original: { m4a: 'a.m4a' }, stages: ALL, enhancement: { listening: 'safe' }, remaster: { status: 'review' } };
-    await backfillRestored({ repo, readMeta: async (d) => (d === '/x/2' ? done : Promise.reject(new Error('nope'))) });
-    expect(db.prepare('SELECT restored r FROM media_items WHERE id = 2').get().r).toBe(1);
+    const held = { web_original: { m4a: 'a.m4a' }, stages: ALL, enhancement: { listening: 'safe' }, remaster: { status: 'review' } };
+    await backfillRestored({ repo, readMeta: async (d) => (d === '/x/1' ? held : Promise.reject(new Error('nope'))) });
+    expect(db.prepare('SELECT restored r FROM media_items WHERE id = 1').get().r).toBe(0);
+    resetRestoredVerify();
+    await backfillRestored({ repo, readMeta: async (d) => (d === '/x/1' ? { ...good(), web_listening: 'unipase' } : Promise.reject(new Error('nope'))) });
+    expect(db.prepare('SELECT restored r FROM media_items WHERE id = 1').get().r).toBe(1);
   });
 });
 

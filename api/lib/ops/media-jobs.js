@@ -1426,7 +1426,7 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
   const T = deps.tools || await import('../media/tools.js');
   const queue = deps.queue || enqueue;
   const fs = await import('fs/promises');
-  const out = { published: [], kept: [], skipped: [] };
+  const out = { published: [], kept: [], archived: [], unarchived: [], skipped: [] };
   for (const pk of [].concat(picks)) {
     const x = pk.id ?? pk.slug;
     const it = /^\d+$/.test(String(x)) ? await repo.getMediaItem(Number(x)) : await repo.getMediaBySlug(String(x));
@@ -1434,7 +1434,18 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
     const mf = join(it.dir, 'meta.json');
     const m = JSON.parse(await fs.readFile(mf, 'utf8'));
     const at = new Date().toISOString();
-    if (pk.choice === 'publish') {
+    const { indexFields } = await import('../media/item.js'), reindex = () => repo.setIndex?.(it.id, indexFields(m));
+    const pure = Number(m.remaster?.swapped) === 0 && (m.enhancement?.variants || []).find((v) => v.name === 'unipase')?.file;
+    if (pk.choice === 'publish' && pure && await fs.stat(join(it.dir, pure)).then((x) => x.size > 1024, () => false)) {
+      // a held remaster with no original sentence in it (Chad 10-31): the copy tower already holds becomes the listening copy; no audio work here
+      const { flipToRemaster } = await import('../media/remaster-rejudge.js');
+      flipToRemaster(m, { verdict: 'pass-human-full', at });
+      m.remaster.decided_by = pk.by || 'Chad';
+      await fs.writeFile(mf, JSON.stringify(m, null, 2));
+      await reindex();
+      await queue('media-item', { id: it.id, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-decide');
+      out.published.push(it.slug);
+    } else if (pk.choice === 'publish') {
       markAudioPending(m);
       const cloud = join(it.dir, 'enhanced', 'unipase.cloud.flac'), full = join(it.dir, 'enhanced', 'unipase.full.flac');
       await T.ffmpeg(['-i', cloud, '-af', 'loudnorm=I=-18:TP=-1.5:LRA=11,alimiter=limit=0.891:level=disabled', '-ac', '1', '-ar', '48000', '-c:a', 'flac', full]);
@@ -1443,10 +1454,24 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
       m.enhancement.variants = vs;
       if (m.enhancement.listening !== 'unipase') m.enhancement.listening_before = { name: m.enhancement.listening };
       m.enhancement.listening = 'unipase';
-      m.remaster = { ...(m.remaster || {}), status: 'done', verdict: 'pass-human-full', decided_at: at };
+      m.remaster = { ...(m.remaster || {}), status: 'done', verdict: 'pass-human-full', decided_at: at, decided_by: pk.by || 'Chad' };
+      delete m.remaster.why;
       await fs.writeFile(mf, JSON.stringify(m, null, 2));
+      await reindex();
       await queue('media-item', { id: it.id, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-decide');
       out.published.push(it.slug);
+    } else if (pk.choice === 'archive') {
+      // ARCHIVED (Chad 10-31): out of every queue and out of re-judging; the files stay for better technology. Never on air (it would play the original).
+      m.remaster = { ...(m.remaster || {}), status: 'archived', verdict: 'archived', archived_at: at, archived_by: pk.by || 'Chad', archived_why: `archived by ${pk.by || 'Chad'}: kept for later technology` };
+      await fs.writeFile(mf, JSON.stringify(m, null, 2));
+      await reindex();
+      out.archived.push(it.slug);
+    } else if (pk.choice === 'unarchive') {
+      m.remaster = { ...(m.remaster || {}), status: 'review', verdict: 'review', why: 'taken out of the archive to be tried again', judged: undefined };
+      delete m.remaster.archived_at; delete m.remaster.archived_why;
+      await fs.writeFile(mf, JSON.stringify(m, null, 2));
+      await reindex();
+      out.unarchived.push(it.slug);
     } else if (pk.choice === 'keep') {
       m.remaster = { ...(m.remaster || {}), status: 'kept', verdict: 'keep-human', decided_at: at };
       await fs.writeFile(mf, JSON.stringify(m, null, 2));
@@ -1454,6 +1479,13 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
     } else out.skipped.push(it.slug);
   }
   return out;
+}
+
+/** media-remaster-rejudge { ids?, limit?, force? }: the re-judge pass (Chad 10-31) over held remasters from their stored scores; the 30 s feed runs it paced (3 a tick). → counts this tick */
+export async function mediaRemasterRejudgeJob({ ids, limit, force } = {}, deps = {}) {
+  const repo = deps.repo || await import('../repos/media-repo.js'), ops = deps.ops || await import('../repos/ops-report-repo.js');
+  const { rejudgePass } = await import('../media/remaster-rejudge.js');
+  return rejudgePass({ repo, queue: deps.queue || ops.enqueue, readMeta: deps.readMeta, ids: ids?.length ? ids : null, limit: Number(limit) || (ids?.length ? 50 : 3), force: !!force, countsFile: deps.countsFile, pending: async () => (await ops.pendingRuns('media-item')).length });
 }
 
 /** HOME HOSTS as extra remaster workers (Chad 10-23 overnight): aorus when its card has UniPASE's ~4.3 GB free beside the
@@ -1626,7 +1658,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (!it?.dir || busy.has(it.id) || it.state === 'duplicate') continue;   // a duplicate is never remastered, even by explicit id (10-30: item 830)
       const m = await readMeta(it.dir).catch(() => null);
       if (!m) continue;
-      const held = ['review', 'kept', 'deferred'].includes(m.remaster?.status);
+      const held = ['review', 'kept', 'deferred', 'archived'].includes(m.remaster?.status);
       if (cleanupMode ? (!held && !force) || m.remaster?.method === 'cleaned' : (!force && (held || m.remaster?.status === 'done'))) continue;   // force (explicit ids): redo
       const raw = m.quality?.raw || {};
       want.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, bw: raw.bandwidth_khz ?? null, snr: raw.snr_db ?? null, duration_s: it.duration_s || m.duration_s || 0 });
@@ -1666,7 +1698,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const collecting = new Map();  // job → podId: result downloads running in the background (10-30: 145 s each, serial in the pass, held every pod's next feed ~9 min)
   const bgBusy = (id) => [...collecting.values()].includes(id) || [...staging.values()].some((s) => s.pod === id);   // a pod is never closed under a running upload or result download
   // a talk decided since it was queued (kept / deferred by Chad, or already done) costs no GPU time: dropped when its turn comes
-  const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred'].includes(m?.remaster?.status);
+  const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred', 'archived'].includes(m?.remaster?.status);
   const beatFile = `${deps.stateFile || C.STATE_FILE}.beat`;   // the lane's liveness, written on its own timer: a long transfer must not look like a dead lane to the reaper
   // the state too (10-30: a pass collecting results ran 9+ min unsaved — the stager's progress and new jobs invisible)
   const beat = () => Promise.all([fs.writeFile(beatFile, String(now())).catch(() => {}), save(st).catch(() => {})]);
@@ -2223,7 +2255,7 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
     for (const it of await repo.remasterCandidates(want)) {
       if (!it?.dir) continue;
       const m = await readMeta(it.dir).catch(() => null);
-      if (!m?.original || ['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status) || m.remaster_tier === 'heavy') continue;
+      if (!m?.original || ['done', 'review', 'kept', 'deferred', 'archived'].includes(m.remaster?.status) || m.remaster_tier === 'heavy') continue;
       const raw = m.quality?.raw || {};
       cands.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, bw: raw.bandwidth_khz ?? null, snr: raw.snr_db ?? null, duration_s: it.duration_s || m.duration_s || 0 });
     }
@@ -2245,10 +2277,10 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
     const m = await readMeta(it.dir).catch(() => null);
     if (!m) continue;
     const has =await fs.stat(join(it.dir,'enhanced/unipase.cloud.flac')).then(s=>s.size>1024).catch(()=>false) && await fs.stat(join(it.dir,'enhanced/unipase.asr.json')).then(s=>s.size>10).catch(()=>false);
-    const held = ['review', 'kept', 'deferred'].includes(m.remaster?.status);
+    const held = ['review', 'kept', 'deferred', 'archived'].includes(m.remaster?.status);
     if (mode === 'restore' && !ids) continue;   // a redo is always explicit: the ids Chad / the agent names
     if (mode === 'post' && !has) noCopy.push(it.slug);   // the restored copy is not on tower: only a full restore redo can re-assess it
-    if (mode === 'post' && (!has || (!redo && (['done', 'review', 'kept', 'deferred'].includes(m.remaster?.status) || existsSync(join(it.dir, 'enhanced', 'pod', 'post.json')))))) continue;
+    if (mode === 'post' && (!has || (!redo && (['done', 'review', 'kept', 'deferred', 'archived'].includes(m.remaster?.status) || existsSync(join(it.dir, 'enhanced', 'pod', 'post.json')))))) continue;
     if (mode === 'cleanup' && (!held || m.remaster?.method === 'cleaned')) continue;
     orders.push({ id: it.id, slug: it.slug, grade: m.quality?.overall || it.grade || null, duration_s: it.duration_s || m.duration_s || 0, mode, ...((mode === 'restore'||redo) ? { redo: true } : {}), ...(first ? { first: true } : {}) });
   }

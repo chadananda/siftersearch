@@ -1,0 +1,106 @@
+// Re-judge held remasters from their STORED scores (Chad 10-31) + the held page's list. No audio work. Writes meta.json: media worker only. Deps: remaster-quality (the judge), media-repo
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { readFile, writeFile, rename, stat, mkdir } from 'fs/promises';
+import { remasterJudgement, qualityOf, assessmentOf, JUDGE_RULE } from './remaster-quality.js';
+import { markAudioPending } from './talk-audio.js';
+
+export const COUNTS_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'run', 'remaster-rejudge.json');
+const REDO = ['realign', 'web', 'trim', 'update'];
+const readJson = async (p, d = null) => { try { return JSON.parse(await readFile(p, 'utf8')); } catch { return d; } };
+const exists = (p) => stat(p).then((s) => s.size > 1024, () => false);
+export const writeMeta = async (dir, m) => { const f = join(dir, 'meta.json'), t = `${f}.${process.pid}.rj.tmp`; await writeFile(t, JSON.stringify(m, null, 2)); await rename(t, f); };
+
+/** The talk plays its UniPASE remaster from now on (judge publish, or Chad's publish of a pure copy): listening copy flipped, audio marked pending, status done. Pure on m. */
+export function flipToRemaster(m, { verdict, judged, at }) {
+  markAudioPending(m);
+  if (m.enhancement.listening !== 'unipase') m.enhancement.listening_before = { name: m.enhancement.listening, why: m.enhancement.listening_why || null };
+  m.enhancement.listening = 'unipase';
+  m.enhancement.listening_why = `UniPASE remaster, ${verdict === 'pass-human-full' ? 'published by Chad' : 'judged same or better than the original'} (Chad 10-31)`;
+  m.remaster_tier = m.remaster?.method === 'cleaned' ? 'cleaned' : 'heavy';
+  m.remaster = { ...(m.remaster || {}), status: 'done', verdict, ...(judged ? { judged } : {}), decided_at: at };
+  delete m.remaster.why;
+  return m;
+}
+
+/** Judge one held talk and apply it. → 'publish' | 'rerun' | 'hold' | 'requeued' | 'unchanged'. Idempotent: a hold already recorded under this rule is left alone. */
+export async function rejudgeOne(it, m, { repo, queue, now = () => new Date().toISOString(), force = false } = {}) {
+  const r = m.remaster || {}, at = now(), j = remasterJudgement(m), judged = { action: j.action, reason: j.reason, problems: j.problems, rule: JUDGE_RULE, at };
+  if (!force && r.status === 'review' && r.judged?.action === 'hold' && r.judged.rule === JUDGE_RULE) return 'unchanged';
+  const save = async () => { m.qa = { ...(m.qa || {}), remaster: qualityOf(m) }; await writeMeta(it.dir, m); const { indexFields } = await import('./item.js'); await repo.setIndex(it.id, indexFields(m)); };
+  // back into the remaster queue in normal order: nothing here plays the original (a kept/deferred talk without a stored assessment, or an assessment to redo)
+  const requeue = async (why) => { m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: { ...judged, action: 'requeue', reason: why } }; await save(); return 'requeued'; };
+  if (['kept', 'deferred'].includes(r.status) && !assessmentOf(m)) return requeue('back in the remaster queue: no talk plays the original (Chad 10-31)');
+  if (j.action === 'hold') {
+    m.remaster = { ...r, status: 'review', verdict: 'review', why: j.reason, judged };
+    await save(); return 'hold';
+  }
+  if (j.action === 'rerun' && j.stages[0] === 'remaster') return requeue(j.reason);
+  const v = (m.enhancement?.variants || []).find((x) => x.name === 'unipase');
+  if (!m.enhancement || !v?.file || !(await exists(join(it.dir, v.file)))) return requeue('the remaster file is not on tower: remastering again');
+  flipToRemaster(m, { verdict: 'pass-judged', judged: { ...judged, action: 'publish' }, at });
+  if (j.action === 'rerun') m.remaster.rerun_n = Number(r.rerun_n || 0) + 1;
+  await save();
+  await queue('media-item', { id: it.id, remaster: true, redo: REDO }, 'media-remaster-rejudge');
+  return j.action === 'rerun' ? 'rerun' : 'publish';
+}
+
+const pass = { cursor: 0, nextScan: 0 };
+export const resetRejudge = () => { pass.cursor = 0; pass.nextScan = 0; };
+/** One paced tick (30 s feed): up to `limit` held talks judged; cursor through the held list, rescanned every 30 min for new holds. Counts persist in COUNTS_FILE. */
+export async function rejudgePass({ repo, queue, readMeta, limit = 3, ids = null, force = false, countsFile = COUNTS_FILE, pending = null, nowMs = Date.now } = {}) {
+  const read = readMeta || ((dir) => readJson(join(dir, 'meta.json')));
+  if (!ids && nowMs() < pass.nextScan) return { idle: true };
+  if (!ids && pending && (await pending()) > 30) return { paused: 'media-item queue is busy' };
+  const rows = ids ? (await Promise.all([].concat(ids).map((x) => (/^\d+$/.test(String(x)) ? repo.getMediaItem(Number(x)) : repo.getMediaBySlug(String(x)))))).filter((x) => x?.dir) : await repo.heldCandidates(pass.cursor, 60);
+  const out = { judged: 0, publish: 0, hold: 0, rerun: 0, requeued: 0, unchanged: 0, errors: [] };
+  for (const it of rows) {
+    if (!ids) pass.cursor = it.id;
+    if (out.judged >= limit) { if (!ids) pass.cursor = it.id - 1; break; }
+    const m = await read(it.dir).catch(() => null);
+    if (!m?.remaster) continue;
+    if (!['review', 'kept', 'deferred'].includes(m.remaster.status)) continue;
+    try {
+      const o = await rejudgeOne(it, m, { repo, queue, force });
+      out[o]++; if (o !== 'unchanged') out.judged++;
+    } catch (err) { out.errors.push(`${it.slug}: ${String(err.message).slice(0, 120)}`); }
+  }
+  if (!ids && !rows.length) { pass.cursor = 0; pass.nextScan = nowMs() + 30 * 60_000; }
+  if (out.judged) {
+    const c = await readJson(countsFile, {});
+    for (const k of ['publish', 'hold', 'rerun', 'requeued']) c[k] = (c[k] || 0) + out[k];
+    c.at = new Date().toISOString(); c.rule = JUDGE_RULE;
+    await mkdir(dirname(countsFile), { recursive: true }).catch(() => {});
+    await writeFile(countsFile, JSON.stringify(c, null, 1)).catch(() => {});
+  }
+  return out;
+}
+
+const PROBLEM_TEXT = { overall_regression: 'overall quality dropped', speech_regression: 'the speech sounds worse', bad_excerpt: 'a stretch sounds clearly worse', clipping: 'distortion', nisqa_down: 'speech score fell', duration: 'length differs', word_fallback: 'words changed', spliced: 'mixes in the original', realign_failed: 'word timing failed' };
+/** Excerpts to listen to: the quality samples (worst first) and the sentences the remaster changed. → [{ start_s, len_s, note }] */
+export function excerptsOf(m, guard = null) {
+  const a = assessmentOf(m), out = [];
+  const rows = (a?.samples || []).map((s) => ({ start_s: s.start_s, len_s: 20, d: (s.restored?.nisqa?.[0] ?? 0) - (s.reference?.nisqa?.[0] ?? 0) })).sort((x, y) => x.d - y.d);
+  for (const s of rows.slice(0, 3)) out.push({ start_s: Math.round(s.start_s), len_s: s.len_s, note: `speech score ${s.d >= 0 ? '+' : ''}${Math.round(s.d * 100) / 100} in this stretch` });
+  for (const g of (guard?.detail || []).filter((x) => x.swap).slice(0, 2)) out.push({ start_s: Math.max(0, Math.round(g.s - 3)), len_s: 15, note: 'the remaster changed the words here' });
+  return out;
+}
+
+/** The held page's data: talks held for Chad (judged hold) and the archived, with reasons, scores and signed A/B clip URLs. `sign(slug, which, start, end)` → query string. */
+export async function heldList({ repo, readMeta, sign }) {
+  const read = readMeta || ((dir) => readJson(join(dir, 'meta.json')));
+  const held = [], archived = [], count = { unjudged: 0, by_problem: {} };
+  for (const it of await repo.heldRows()) {
+    const m = await read(it.dir).catch(() => null);
+    const r = m?.remaster;
+    if (!r) continue;
+    if (r.status === 'review' && !r.judged) { count.unjudged++; continue; }
+    if (!['review', 'archived'].includes(r.status)) continue;
+    const j = remasterJudgement(m), guard = r.fallback_sent_pct > 0 ? await readJson(join(it.dir, 'enhanced', 'unipase.guard.json'), null) : null;
+    const ex = excerptsOf(m, guard).map((e) => ({ ...e, original_url: `/api/media/admin/held/${it.slug}/clip/original?${sign(it.slug, 'original', e.start_s, e.start_s + e.len_s)}`, remaster_url: `/api/media/admin/held/${it.slug}/clip/remaster?${sign(it.slug, 'remaster', e.start_s, e.start_s + e.len_s)}` }));
+    const row = { id: it.id, slug: it.slug, title: m.title || it.title || it.slug, speaker: m.speaker || it.speaker || null, duration_s: it.duration_s || m.duration_s || null, grade: m.quality?.overall || null,
+      status: r.status === 'archived' ? 'archived' : 'held', reason: r.status === 'archived' ? (r.archived_why || 'archived') : (r.judged?.reason || r.why || j.reason), problems: r.judged?.problems || j.problems, scores: j.scores, excerpts: ex, page: `/media/${it.slug}` };
+    if (row.status === 'archived') archived.push(row); else { held.push(row); for (const p of row.problems) count.by_problem[p] = (count.by_problem[p] || 0) + 1; }
+  }
+  return { counts: { held: held.length, archived: archived.length, ...count }, problem_text: PROBLEM_TEXT, held, archived };
+}

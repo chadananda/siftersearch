@@ -7,6 +7,18 @@ def probe_duration(path):
     return float(json.loads(p.stdout)['format']['duration'])
 
 
+def decoded_seconds(path, threads=2):
+    """Decoded length by streaming the samples (not the container header: MP3 header estimates run seconds off, Chad 10-31)."""
+    proc=subprocess.Popen(['ffmpeg','-nostdin','-v','error','-threads',str(threads),'-i',path,'-ac','1','-ar','48000','-f','s16le','-'],stdout=subprocess.PIPE,stderr=subprocess.PIPE);n=0
+    while True:
+        block=proc.stdout.read(1<<20)
+        if not block:break
+        n+=len(block)//2
+    err=proc.stderr.read();code=proc.wait()
+    if code:raise RuntimeError('reference decode failed: '+err.decode(errors='replace')[-300:])
+    return n/48000
+
+
 def assess(reference, candidate, af='', threads=2):
     import numpy as np
     import torch
@@ -49,7 +61,7 @@ def assess(reference, candidate, af='', threads=2):
         'consistent_gain':sum(r['restored']['nisqa'][0]>r['reference']['nisqa'][0] for r in rows)>=2,
         'no_bad_excerpt':all(r['restored']['nisqa'][0]>=r['reference']['nisqa'][0]-.3 for r in rows),
         'no_material_clipping':out['technical']['clip_pct']<.01,
-        'duration_preserved':abs(samples/48000-probe_duration(reference))<1,
+        'duration_preserved':abs(samples/48000-decoded_seconds(reference,threads))<1,
     }
     out['passed']=all(out['checks'].values());out['seconds']=round(time.time()-started,1)
     return out
