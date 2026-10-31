@@ -42,8 +42,11 @@ Feeds (`queue-feed.js`) put work on either transport; transport choice is config
 ## Order (each step shippable, local first)
 1. ✅ result contract handshake (6126fe22); ✅ bundle guard (dfc6a53b); ✅ duplicates never remastered (0a182de2).
 2. Delta image gpu-20261031 → Aorus acceptance → ghcr → promote → ONE pod → verify → 3 pods. (Chad's order)
-3. `adoptRestoreResult` — collapse the 3 restore intakes; pod lane uses it (adds work_sha check it lacks).
-4. Agent: device detection + `restore`/`post` kinds (farm_worker's dispatch rule) → queue agent can do every kind on CUDA or ROCm.
+3. ✅ (15fc7849) `adoptRestoreResult` — collapse the 3 restore intakes; pod lane uses it (adds work_sha check it lacks).
+4. ✅ (d2b68f7c) Agent: device detection + `restore`/`post` kinds (farm_worker's dispatch rule) → queue agent can do every kind on CUDA or ROCm.
 5. Local transport (tower LAN endpoints over the pure queue core) → Aorus/boss on the agent; retire B, C.
+   ✅ transport built: `api/lib/repos/media-queue-repo.js` (core.js over /tank/media/.queue/queue.db, files on disk, `localQueue()` = tower's
+   in-process client) + `api/routes/media-queue.js` (http://tower-nas:7843/api/admin/ops/queue, same paths/keys as /_q). Tower ticks LAN then edge.
+   Agent switch = env only: `MEDIA_QUEUE_URL=<that> MEDIA_QUEUE_KEY=$(ops.mjs media queue --key)`. ⏳ move aorus/boss onto it, then retire B, C.
 6. Pods on the agent (remote transport) → retire A's ssh spool.
 7. Single Dockerfile (ARG BASE) → boss ROCm image from the same recipe.

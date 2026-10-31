@@ -1823,9 +1823,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       if (queueKey && !qPass && now() - (st.q_checked || 0) > 60_000) {
         st.q_checked = now();
         qPass = (async () => {
-          const [QF, { queueClient }, wr] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js')]);
-          st.q_last = { at: now(), ...await QF.tick(st, { q: queueClient({ key: queueKey }), repo, wr, now, full: !!acceptedWorker, decided,
-            remaster: (id) => queue('media-remaster', { id }, 'media-cloud-remaster') }) };
+          // two transports, one API: the LAN queue (tower's disk, aorus/boss) first, then the edge /_q (R2, anywhere). An item is fed to one only.
+          const [QF, { queueClient }, wr, { localQueue }] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js'), import('../repos/media-queue-repo.js')]);
+          const deps = { repo, wr, now, full: !!acceptedWorker, decided, remaster: (id) => queue('media-remaster', { id }, 'media-cloud-remaster') };
+          st.q_lan = { at: now(), ...await QF.tick(st, { ...deps, q: localQueue() }).catch((e) => ({ error: String(e.message).slice(0, 300) })) };
+          st.q_last = { at: now(), ...await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }) };
         })().catch((e) => { st.q_last = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { qPass = null; });
       }
       const live = Object.values(st.pods).filter((p) => !p.terminated);

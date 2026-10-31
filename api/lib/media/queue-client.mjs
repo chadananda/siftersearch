@@ -36,8 +36,12 @@ export function queueClient({ base = process.env.MEDIA_QUEUE_URL || DEFAULT_BASE
     const send = (url, headers) => f(url, { method: 'PUT', headers: { ...headers, 'content-length': String(bytes) }, body: Readable.toWeb(createReadStream(file)), duplex: 'half', redirect: 'manual', signal: AbortSignal.timeout(30 * 60_000) });
     const url = `${base}/${kind}/${enc(id)}/${enc(name)}${lease ? `?lease=${encodeURIComponent(lease)}` : ''}`;
     // > 90 MB: Cloudflare's edge 413s bodies over 100 MB before the Worker runs, so ask with an EMPTY put (the Worker answers 307 to a signed url)
-    let r = bytes > DIRECT_MAX ? await f(url, { method: 'PUT', headers: { ...hdr, 'content-length': '0' }, body: '', redirect: 'manual', signal: AbortSignal.timeout(timeoutMs) }) : await send(url, hdr);
-    if (r.status === 307) r = await send(r.headers.get('location'), {});   // straight to R2 on the signed url
+    // (x-queue-size marks it a probe: tower's LAN queue answers 307 to the same url, the edge ignores it)
+    let r = bytes > DIRECT_MAX ? await f(url, { method: 'PUT', headers: { ...hdr, 'content-length': '0', 'x-queue-size': String(bytes) }, body: '', redirect: 'manual', signal: AbortSignal.timeout(timeoutMs) }) : await send(url, hdr);
+    if (r.status === 307) {   // straight to R2 on the signed url; our key only ever goes back to our own origin
+      const loc = new URL(r.headers.get('location'), url);
+      r = await send(loc.href, loc.origin === new URL(url).origin ? hdr : {});
+    }
     if (!r.ok) throw await fail(`put ${kind}/${id}/${name}`, r);
     return { key: `${kind === 'files' ? 'stage' : 'results'}/${id}/${name}`, bytes };
   }

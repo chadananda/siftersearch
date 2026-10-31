@@ -79,7 +79,7 @@ async function files(req, env, parts, admin) {
   }
   if (req.method === 'PUT') {   // tower stages inputs (admin only); a machine places results under a live lease
     if (!name || !safeName(name)) return json({ error: 'bad name' }, 400);
-    if (kind === 'files' && !admin) return json({ error: 'unauthorized' }, 401);
+    if (kind === 'files' && !admin) return json({ error: 'forbidden: staging needs the admin key' }, 403);   // not 401: Node's fetch hides a 401 on a streamed body as "fetch failed"
     if (kind === 'results') await rpc(env, 'lease-ok', { id, lease: new URL(req.url).searchParams.get('lease') });
     const key = prefix + name, len = Number(req.headers.get('content-length'));
     if (len > 0 && len <= DIRECT_MAX) { const o = await env.MEDIA_BUCKET.put(key, req.body); return json({ key, bytes: o.size }, 201); }
