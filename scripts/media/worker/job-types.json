@@ -1,0 +1,72 @@
+{
+  "_": "Typed media jobs: the shared contract between the worker entrypoints (scripts/media/whole-worker/{cpu-prep,gpu,cpu-finish}.mjs), the queue (worker/queue/core.js, claims by `type` and `needs`) and tower (api/lib/media: nextJobs, adoption). Plan: planning/stage-queue-20261031.md. One talk = cpu-prep -> gpu -> cpu-finish (then text + publish on tower). Every job dir has the SAME layout: job.json, in.<ext> (the original, from R2 files/<file_id>/), item/** (the previous job's outputs, from results/<prev job id>/item/<path>); the entrypoint writes item/** and result.json. result.json = {v:1, type, contract, ok, input_sha, slug, stages, files:[{path, sha256}] (relative to item/), meta}; the agent uploads result.json + every listed item/<path> to results/<job id>/ (pods: R2; home hosts: tower's LAN file endpoint). Tower builds the next job's inputs from the previous result.json: one {name:'item/'+path, store:'results', id:<prev job id>, path:'item/'+path, sha256} per listed file, plus the original. cpu-finish's result.json is a complete whole-recording result (api/lib/media/whole-result.js validateWholeResult accepts it unchanged). Bump `contract` when a type's inputs/outputs change; workers refuse a job whose job.json `contract` differs.",
+  "contract": 1,
+  "job_json": {
+    "v": 1,
+    "type": "cpu-prep | gpu | cpu-finish",
+    "contract": 1,
+    "id": "media item id",
+    "input": "in.<ext> (the original's name inside the job dir)",
+    "input_sha": "sha256 of the original (tower's copy)",
+    "threads": "int, default 2",
+    "device": "cuda | rocm | cpu (gpu type only; the agent sets it from the host)",
+    "meta": "cpu-prep only: tower's fresh meta (whole-result.js wholeJob().meta); later types read item/meta.json",
+    "people": "optional speaker list",
+    "vocab": "optional ASR vocabulary",
+    "restore": "default true; false = no UniPASE (not used in production: every talk is remastered)"
+  },
+  "types": {
+    "cpu-prep": {
+      "needs": "cpu",
+      "cmd": ["/usr/local/bin/node", "/opt/sifter/api/lib/media/cpu-prep.mjs"],
+      "stages": ["archive", "grade", "enhance:metrics", "enhance:light", "waveform"],
+      "inputs": [
+        { "name": "job.json", "store": "job", "key": "the job body (written by the agent)" },
+        { "name": "in.<ext>", "store": "files", "key": "files/{file_id}/in.{ext}" }
+      ],
+      "outputs": {
+        "result": "result.json",
+        "tree": "item",
+        "files": ["meta.json", "enhanced/light.flac", "waveform.json"],
+        "_": "meta.json carries probe, quality (grade) and enh_ck {m0, light, m1}: the gpu job resumes enhance from that checkpoint (DFN + probes)"
+      }
+    },
+    "gpu": {
+      "needs": "gpu",
+      "cmd": ["/usr/local/bin/node", "/opt/sifter/api/lib/media/gpu.mjs"],
+      "stages": ["enhance:dfn", "enhance:probes", "transcribe", "diarize", "unipase", "restore_asr", "realign"],
+      "_stages": "Audio loaded once on this host: DFN (decision D1), the ASR probes, transcription, diarization, UniPASE, the re-ASR of BOTH copies with one model (the word guard's measurement input), and the forced realignment of the transcript on the pure UniPASE copy. No verdict, no encode, no quiet here.",
+      "inputs": [
+        { "name": "job.json", "store": "job", "key": "the job body" },
+        { "name": "in.<ext>", "store": "files", "key": "files/{file_id}/in.{ext}" },
+        { "name": "item/{path}", "store": "results", "key": "results/{cpu-prep job id}/item/{path}", "from": "cpu-prep result.json files" }
+      ],
+      "outputs": {
+        "result": "result.json",
+        "tree": "item",
+        "files": ["meta.json", "transcript.raw.json", "transcript.work.json", "diarization.json", "waveform.json",
+          "enhanced/unipase.cloud.flac", "enhanced/unipase.asr.json", "enhanced/unipase.asr_orig.json", "enhanced/unipase.done.json",
+          "restore/job.json", "restore/realign.json"],
+        "_": "restore/job.json = the post config ({kind:'restore', post:{…, words_key}}) cpu-finish runs post.py with; restore/realign.json = media_tool realign of transcript.work.json on unipase.cloud.flac (post.py's realign step, already done)"
+      }
+    },
+    "cpu-finish": {
+      "needs": "cpu",
+      "cmd": ["/usr/local/bin/node", "/opt/sifter/api/lib/media/cpu-finish.mjs"],
+      "stages": ["guard", "assess", "remaster", "verify", "realign", "quiet", "web", "trim", "waveform"],
+      "_stages": "The word guard's VERDICT (remaster_guard.py measures only; never splices), the paired quality assessment, the quiet pass (required), one encode per web copy with the trim window, the waveform, then item.js remaster/verify/realign/web/trim record it in meta.",
+      "inputs": [
+        { "name": "job.json", "store": "job", "key": "the job body" },
+        { "name": "in.<ext>", "store": "files", "key": "files/{file_id}/in.{ext}" },
+        { "name": "item/{path}", "store": "results", "key": "results/{gpu job id}/item/{path}", "from": "gpu result.json files" }
+      ],
+      "outputs": {
+        "result": "result.json",
+        "tree": "item",
+        "files": ["meta.json", "transcript.raw.json", "transcript.work.json", "diarization.json", "waveform.json",
+          "web/{slug}.ogg", "web/{slug}.m4a", "enhanced/unipase.flac", "enhanced/unipase.guard.json", "enhanced/pod/post.json", "…every file result.json lists"],
+        "_": "a complete whole-recording result: tower adopts it with adoptWholeResult (whole-result.js) exactly as a `whole` job's"
+      }
+    }
+  }
+}
