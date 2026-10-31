@@ -3,7 +3,7 @@
 import { it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 
-const rec = readFileSync('scripts/media/whole-worker/recording.mjs', 'utf8');
+const rec = readFileSync('scripts/media/whole-worker/phases.mjs', 'utf8');
 const agent = readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8');
 
 it('the worker drops the probe variants and blanks the raw AI copy before writing its manifest', () => {

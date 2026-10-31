@@ -44,10 +44,10 @@
       "outputs": {
         "result": "result.json",
         "tree": "item",
-        "files": ["meta.json", "transcript.raw.json", "transcript.work.json", "diarization.json", "waveform.json",
-          "enhanced/unipase.cloud.flac", "enhanced/unipase.asr.json", "enhanced/unipase.asr_orig.json", "enhanced/unipase.done.json",
-          "restore/job.json", "restore/realign.json"],
-        "_": "restore/job.json = the post config ({kind:'restore', post:{…, words_key}}) cpu-finish runs post.py with; restore/realign.json = media_tool realign of transcript.work.json on unipase.cloud.flac (post.py's realign step, already done)"
+        "files": ["meta.json", "transcript.raw.json", "diarization.json", "waveform.json"],
+        "restore_files": ["transcript.work.json", "restore/job.json", "restore/work.json", "restore/out.flac", "restore/asr.json", "restore/asr_orig.json", "restore/restore-result.json",
+          "restore/post/unipase.flac", "restore/post/restored.guard.json", "restore/post/guard.out.json", "restore/post/realign.json", "restore/post/realign.out.json"],
+        "_": "files = always; restore_files = whenever the talk has words to restore (every talk in production; not on restore:false or a wordless recording; realign.* absent on the image selftest). Uploaded: everything under item/ except original/ and the probe variants (enhanced/light.flac, enhanced/dfn.flac). restore/ = scripts/media/worker/split_restore.py gpu: job.json = the post config ({kind:'restore', post:{…, words_key}}); out.flac is EMPTY (guarded into post/unipase.flac, lag-shifted + loudnorm); post/guard.out.json + post/realign.out.json = the recorded outputs of remaster_guard.py and media_tool realign, which cpu-finish's post.py replays (same commands) instead of rerunning"
       }
     },
     "cpu-finish": {

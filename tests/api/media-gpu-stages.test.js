@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 
 const tool = readFileSync('scripts/media/media_tool.py', 'utf8');
-const rec = readFileSync('scripts/media/whole-worker/recording.mjs', 'utf8');
+const rec = readFileSync('scripts/media/whole-worker/phases.mjs', 'utf8');
 
 describe('GPU stages', () => {
   it('whole-recording jobs diarize with the torch port and run DFN in the GPU venv', () => {
