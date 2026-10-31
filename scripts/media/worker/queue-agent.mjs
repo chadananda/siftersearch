@@ -29,6 +29,9 @@ const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)),
 const CAN = arg('can', 'whole,restore,post,cleanup').split(',').filter(Boolean);
 const list = (k) => (arg(k, '') || '').split(',').filter(Boolean);
 const SPILL = list('spill'), CPUS = String(arg('cpus', 6)), PROFILE = arg('profile');
+// --cgroup-parent <system slice>: dockerd starts containers outside the agent's own cgroup, so a host that caps its bulk work (tower: Chad 10-31,
+// cpu-finish only, in sifter-bulk.slice) names the slice and every job container lands in it
+export const CGROUP = arg('cgroup-parent');
 const CONTRACT = (() => { for (const u of ['./job-types.json', '../../../scripts/media/worker/job-types.json']) try { return JSON.parse(readFileSync(new URL(u, import.meta.url), 'utf8')); } catch {} return null; })();
 // --profile gpu | cpu+llm | llm (contract `profiles`, = PROFILES in api/lib/media/stages.js): the claim types are the contract's types whose
 // `needs` (class) the profile takes, in contract order. --types is the explicit alias and wins when given.
@@ -93,7 +96,7 @@ function runner(job, dir) {
   const [bin, script] = kindOf(job).cmd;
   if (RUN === 'local') return spawn(bin === 'python' || bin.endsWith('/python') ? 'python' : process.execPath, [script, dir], { env: { ...process.env, SIFTER_GPU_LEASES: '1' }, stdio: ['ignore', 'ignore', 'pipe'] });
   const lock = GPU_LOCK ? ['-v', `${GPU_LOCK}:/gpu.lock`, '-e', 'SIFTER_LEGACY_GPU_LOCK=/gpu.lock'] : [];
-  return docker(['run', '--rm', '--name', `q-${job.id}`, ...ACCEL[DEVICE](), '--network', 'none', '--cpus', CPUS, '--memory', `${containerMemGb(memTotalGb())}g`, '-v', `${dir}:/job`,
+  return docker(['run', '--rm', '--name', `q-${job.id}`, ...(CGROUP ? ['--cgroup-parent', CGROUP] : []), ...ACCEL[DEVICE](), '--network', 'none', '--cpus', CPUS, '--memory', `${containerMemGb(memTotalGb())}g`, '-v', `${dir}:/job`,
     '-v', `${ROOT}/leases:/workspace/.gpu-admission`, '-e', 'SIFTER_GPU_LEASES=1', ...lock, '--entrypoint', bin, IMAGE, script, '/job'], { stdio: ['ignore', 'ignore', 'pipe'] });
 }
 // the container writes as root: a plain rm then fails with EACCES (10-30: #1915 failed every retry on its own leftovers), so docker removes it

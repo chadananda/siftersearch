@@ -718,6 +718,25 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // Tower's cpu-finish agent — the ONE documented exception to tower placement (Chad 10-31): typed cpu-finish jobs only (quiet pass,
+      // guard verdict, web encodes) from the LAN queue; the agent in the user bulk slice, every job container in the system sifter-bulk.slice
+      // (docs/ops/sifter-bulk.system.slice). No GPU work, no prep, no whole jobs here.
+      name: 'siftersearch-finish',
+      script: 'scripts/media/worker/tower-finish.mjs',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      restart_delay: 30000,
+      kill_timeout: 3600000,   // SIGTERM drains: the jobs in hand finish
+      watch: false,
+      env: { NODE_ENV: 'production' },
+      error_file: './logs/finish-error.log',
+      out_file: './logs/finish-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // Dewey's plain downloads run ON TOWER (Chad 10-28: audio/files are always gathered to /tank by Tower, never by another machine), in the
       // capped bulk slice, 1 req/s per host, SSRF guard + robots + resume. Archive unpacking/scanning stays on worker boxes (DEWEY_OPS=fetch only).
       name: 'siftersearch-dewey-fetch',

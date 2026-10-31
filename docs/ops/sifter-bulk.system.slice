@@ -1,0 +1,13 @@
+# SYSTEM twin of the user sifter-bulk.slice (install: /etc/systemd/system/sifter-bulk.slice; cgroup /sifter.slice/sifter-bulk.slice).
+# Docker job containers cannot join a user slice; tower's cpu-finish agent (scripts/media/worker/tower-finish.mjs, Chad 10-31) starts them with
+# --cgroup-parent sifter-bulk.slice, so they sit under these caps, at a low weight beside search.
+[Unit]
+Description=Tower bulk media containers (cpu-finish, Chad 10-31): capped so they can never starve search and the site
+[Slice]
+CPUAccounting=yes
+MemoryAccounting=yes
+CPUQuota=1600%
+CPUWeight=10
+MemoryHigh=14G
+MemoryMax=20G
+TasksMax=4096
