@@ -1,9 +1,9 @@
 // Complete worker result on a home host; Tower transfers and validates only.
 import {join,extname} from 'node:path';
 import * as fs from 'node:fs/promises';
-import {sha256File,podComplete} from './pod-post.js';
+import {sha256File} from './pod-post.js';
+import {restoreCfg,restoreInputs,adoptRestoreResult} from './restore-job.js';
 import {hostProfile,hostVendor} from './tools.js';
-import {safeChain,OGG_ARGS,OGG_ARGS_REMASTER,M4A_BITRATE_REMASTER} from './enhance.js';
 // A 15 GB host (aorus) cannot hold 4 x 10 GB container caps: a container starts only while the HOST has this much MemAvailable (VRAM is admitted by the in-container GPU leases)
 export const WHOLE_HOST_MIN_AVAIL_GB=5;
 const q=s=>"'"+String(s).replaceAll("'", "'\\''")+"'";
@@ -16,19 +16,12 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
  const get=(from,to)=>T.run('rsync',['-a','--partial','--protect-args',`${host}:${from}`,to],{timeoutMs:600000,stop});
  const work=join(it.dir,'transcript.work.json'), workSha=await sha256File(work);
  const job=`recording-${it.id}-${workSha.slice(0,8)}-${image.slice(-8)}`,remote=`${root}/${job}`;
- const original=(m.enhancement?.variants||[]).find(v=>v.name==='original')||{};
- const cfg={mode,cleanup:false,assess_quality:true,trim:m.trim,slug:m.slug,audio_s:m.duration_s,work_sha:workSha,af:safeChain(original),bw_khz:m.quality?.raw?.bandwidth_khz,
-  ogg:['-ac','1','-ar','48000',...OGG_ARGS_REMASTER],m4a:['-ac','1','-ar','48000','-c:a','aac','-b:a',M4A_BITRATE_REMASTER,'-movflags','+faststart'],
-  orig_ogg:['-ac','1','-ar','48000',...OGG_ARGS],orig_m4a:['-ac','1','-ar','44100','-c:a','aac','-b:a','64k','-movflags','+faststart']};
+ const cfg=await restoreCfg(it,m,{mode});
  if(prof.transport==='gate')return (await import('./gate-recording.js')).gatePostRecording(it,m,{T,host,job,cfg,stop,nap});
  await run(`mkdir -p ${q(remote)} ${q(root+'/leases')}; ${docker} image inspect ${q(image)} >/dev/null`);
  const state=JSON.parse((await run(`${docker} inspect ${q(job)} --format '{{json .State}}' 2>/dev/null || echo null`)).stdout.trim());
  if(!state){
-  await put(join(it.dir,m.original),remote+'/in'+extname(m.original));await put(work,remote+'/work.json');
-  if(mode==='post')for(const [a,b] of [['unipase.cloud.flac','out.flac'],['unipase.asr.json','asr.json'],['unipase.asr_orig.json','asr_orig.json']]){
-    const file=join(it.dir,'enhanced',a);if(b==='asr_orig.json'&&!await fs.stat(file).catch(()=>null))continue;
-    await put(file,remote+'/'+b);
-  }
+  for(const [file,name] of restoreInputs(it,m,mode))await put(file,remote+'/'+name);
   await run(`cat > ${q(remote+'/job.json')}`,{input:JSON.stringify({post:cfg})});
   const accelerator=hostVendor(host)==='nvidia'?'--gpus all'+(prof.gpu_lock?` -v ${prof.gpu_lock}:/gpu.lock -e SIFTER_LEGACY_GPU_LOCK=/gpu.lock`:''):'-e MEDIA_DEVICE=cpu -e CUDA_VISIBLE_DEVICES=';
   await run(`${docker} run -d --name ${q(job)} ${accelerator} --network none --cpus 4 --memory 10g -v ${q(remote+':/job')} -v ${q(root+'/leases:/workspace/.gpu-admission')} -e SIFTER_GPU_LEASES=1 --entrypoint python ${q(image)} /opt/sifter/media/worker/single_restore.py /job`);
@@ -41,12 +34,7 @@ export async function homeRecording(host,it,m,{T,image,mode='restore',stop=()=>f
  }
  const enh=join(it.dir,'enhanced'),stage=join(enh,'pod-stage');await fs.mkdir(stage,{recursive:true});
  await get(remote+'/post/',stage+'/');await get(remote+'/post.json',join(stage,'post.json'));
- const post=JSON.parse(await fs.readFile(join(stage,'post.json'),'utf8'));
- if(!post.ok||post.work_sha!==await sha256File(work))throw Error('Stale or incomplete home result');
- await fs.mkdir(join(stage,'web'),{recursive:true});
- for(const f of Object.values(post.web||{})){if(!/^[a-z0-9_.-]+$/i.test(f))throw Error('Invalid worker output path');await fs.rename(join(stage,f),join(stage,'web',f));}
- const pd=join(enh,'pod');await fs.rm(pd,{recursive:true,force:true});await fs.rename(stage,pd);
- if(!await podComplete(it.dir))throw Error('Home result is missing required output');
+ await adoptRestoreResult(it.dir,stage);
  await get(remote+'/done.json',join(enh,'unipase.done.json'));
  // Keep the raw AI copy on the home host for cheap future reassessment.
  await fs.writeFile(join(enh,'unipase.cloud.flac'),'');await fs.writeFile(join(enh,'unipase.asr.json'),'{}');

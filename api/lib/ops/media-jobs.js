@@ -1989,15 +1989,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               // the rest of the remaster runs on the pod too (word guard, realign, 4 web encodes — scripts/media/worker/post.py); tower validates and publishes
               let post;
               if (work?.paragraphs?.length && m.enhancement && deps.podPost !== false) {
-                const E = await import('../media/enhance.js'), PP = await import('../media/pod-post.js');
-                const orig = (m.enhancement.variants || []).find((v) => v.name === 'original') || {};
-                const raw = m.quality?.raw || {}, hum = Math.max(raw.hum50_db ?? 0, raw.hum60_db ?? 0) >= 10 ? ((raw.hum50_db ?? 0) >= (raw.hum60_db ?? 0) ? 50 : 60) : null;
-                post = { mode: st.items?.[itemId]?.mode || 'restore', cleanup: !acceptedWorker, ...(acceptedWorker ? {assess_quality:true,trim:m.trim} : {}), bw_khz: raw.bandwidth_khz ?? null, hum_hz: hum, audio_s: m.duration_s || it.duration_s, af: E.safeChain(orig), max_fallback_pct: Number(process.env.MEDIA_REMASTER_MAX_FALLBACK_PCT) || 15, slug: m.slug || it.slug, work_sha: await PP.sha256File(join(it.dir, 'transcript.work.json')),
-                  ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS_REMASTER], m4a: ['-ac', '1', '-ar', '48000', '-c:a', 'aac', '-b:a', E.M4A_BITRATE_REMASTER, '-movflags', '+faststart'],
-                  orig_ogg: ['-ac', '1', '-ar', '48000', ...E.OGG_ARGS], orig_m4a: ['-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart'] };
-                if (post.mode === 'post') for (const [f, to] of [['unipase.cloud.flac', 'out.flac'], ['unipase.asr.json', 'asr.json'], ['unipase.asr_orig.json', 'asr_orig.json']]) { const lf = join(it.dir, 'enhanced', f); if (existsSync(lf)) await C.podPut(run, p, lf, `/workspace/spool/${job}/${to}`); }   // a result tower holds: the pod finishes it
-                await C.podPut(run, p, join(it.dir, 'transcript.work.json'), `/workspace/spool/${job}/work.json`);
-                if (post.mode === 'cleanup') await C.podPut(run, p, join(it.dir, 'transcript.raw.json'), `/workspace/spool/${job}/asr_orig.json`);   // the original's own transcript: the guard's reference
+                const RJ = await import('../media/restore-job.js');
+                post = await RJ.restoreCfg(it, m, { mode: st.items?.[itemId]?.mode || 'restore', full: !!acceptedWorker });
+                for (const [lf, name] of RJ.restoreInputs(it, m, post.mode, { original: false })) if (existsSync(lf)) await C.podPut(run, p, lf, `/workspace/spool/${job}/${name}`);   // the original went up already (R2/scp)
               }
               await C.podSsh(run, p, `cat > /workspace/spool/${job}/job.json && touch /workspace/spool/${job}/ready`, { timeoutMs: 60_000, input: JSON.stringify({ runs: languageRuns(work?.paragraphs || [], m.duration_s || it.duration_s), ...(post ? { post } : {}) }) });
               p.jobs_assigned = (p.jobs_assigned || 0) + 1;
@@ -2051,18 +2045,19 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                   catch (err) { if (optional) { await fs.rm(join(enh, lf), { force: true }); continue; } throw err; }   // an older worker: no like-for-like reference
                   await fs.rename(join(enh, `${lf}.part`), join(enh, lf));
                 }
-                // the worker's guard / realign / encodes (best effort: anything missing is computed on tower)
+                // the worker's guard / realign / encodes → tower's ONE intake (restore-job.js): accepted into enhanced/pod, or refused BY NAME
+                let postRefused = null;
+                const stage = join(enh, 'pod-stage');
                 try {
-                  const pd = join(enh, 'pod'); await fs.rm(pd, { recursive: true, force: true }); await fs.mkdir(join(pd, 'web'), { recursive: true });
-                  await C.podGet(run, p, `/workspace/spool/${job}/post.json`, join(pd, 'post.json'));
-                  const pj = JSON.parse(await fs.readFile(join(pd, 'post.json'), 'utf8'));
+                  const RJ = await import('../media/restore-job.js');
+                  await fs.rm(stage, { recursive: true, force: true }); await fs.mkdir(join(stage, 'web'), { recursive: true });
+                  await C.podGet(run, p, `/workspace/spool/${job}/post.json`, join(stage, 'post.json'));
+                  const pj = JSON.parse(await fs.readFile(join(stage, 'post.json'), 'utf8'));
                   postSteps = pj.steps || null;
-                  if (pj.guard) {
-                    for (const f of ['unipase.flac', 'unipase.guard.json', ...(pj.realign ? ['realign.json'] : [])]) await C.podGet(run, p, `/workspace/spool/${job}/post/${f}`, join(pd, f));
-                    for (const f of Object.values(pj.web || {})) await C.podGet(run, p, `/workspace/spool/${job}/post/${f}`, join(pd, 'web', f));
-                    if (pj.waveform_file) await C.podGet(run, p, `/workspace/spool/${job}/post/${pj.waveform_file}`, join(pd, pj.waveform_file));
-                  }
-                } catch { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); }
+                  if (!pj.guard) throw Error(`worker post failed: ${pj.why || 'no guard'}`);
+                  for (const [f, to] of RJ.resultFiles(pj)) await C.podGet(run, p, `/workspace/spool/${job}/post/${f}`, join(stage, to));
+                  await RJ.adoptRestoreResult(it.dir, stage);
+                } catch (err) { postRefused = String(err.message || err).slice(0, 300); await fs.rm(stage, { recursive: true, force: true }).catch(() => {}); }
                 const dj = JSON.parse(await fs.readFile(join(enh, 'unipase.done.json'), 'utf8'));
                 dj.pod = p.name; dj.cost_per_hr = p.costPerHr;
                 await fs.writeFile(join(enh, 'unipase.done.json'), JSON.stringify(dj));
@@ -2071,7 +2066,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 p.jobs_done = (p.jobs_done || 0) + 1; st.boot_fails = 0; st.proven = true;   // a pod that finished a talk proves the pool
                 const imode = st.items?.[it.id]?.mode || 'restore';
                 if (st.done.some((d) => d.id === it.id && (d.mode || 'restore') === imode)) return;   // idempotent: a second result for a talk never queues a second run
-                st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode, cycle_s: Math.round((now() - x.since) / 1000), upload_s: x.uploaded_s, pod_s: dj.seconds, post_s: dj.post_s ?? null, download_s: Math.round((now() - fetchAt) / 1000), post_steps: postSteps, at: now() });
+                st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: dj.gpu, pod: p.name, mode: imode, cycle_s: Math.round((now() - x.since) / 1000), upload_s: x.uploaded_s, pod_s: dj.seconds, post_s: dj.post_s ?? null, download_s: Math.round((now() - fetchAt) / 1000), post_steps: postSteps, ...(postRefused ? { post_refused: postRefused } : {}), at: now() });
                 // a 'post' result for a talk tower has already finished itself is stale: drop it; otherwise tower's queued run takes it in seconds
                 const mt = await readMeta(it.dir).catch(() => null);
                 if (imode === 'post' && !st.items?.[it.id]?.redo && ['done', 'review'].includes(mt?.remaster?.status)) { await fs.rm(join(enh, 'pod'), { recursive: true, force: true }).catch(() => {}); return; }
