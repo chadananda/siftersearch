@@ -1551,19 +1551,19 @@ export function homeEligibleItem(h, id, st, acceptedWorker, env = process.env, h
   const whole = st.items?.[id]?.kind === 'whole';
   if (!silences(h, acceptedWorker)) return false;
   if (!homeCanTake(h, id, st, acceptedWorker, env)) return false;
-  // Published talks first (Chad 10-28): a new-talk (whole) order takes a host only when no queued remaster work can run there. Both get processed.
-  // …unless the lane is held: then the waiting remaster cannot run anyway, and must not keep the host idle
-  return !(whole && st.queue?.some((q) => q !== id && st.items?.[q]?.kind !== 'whole' && (!held || !feedsBacklog(st, q)) && homeCanTake(h, q, st, acceptedWorker, env)));
+  // New talks first (Chad 10-31): a whole order brings a talk on air, a remaster only upgrades audio of a talk already up — so a remaster/restore/post/cleanup
+  // order takes a host only when no whole order this host could take is waiting. (10-28's "published talks first" starved 1330 new talks behind 1280 upgrades.)
+  return whole || !st.queue?.some((q) => q !== id && st.items?.[q]?.kind === 'whole' && homeCanTake(h, q, st, acceptedWorker, env));
 }
 // A whole talk finishes on the worker (tower only marks it transcribed) and a post order drains tower's backlog — neither feeds the
 // media-remaster backlog, so the hold never stops them (10-30: 1483 whole talks waited while every pod idled out behind a 38-run backlog).
 export const feedsBacklog = (st, id) => st.items?.[id]?.kind !== 'whole' && st.items?.[id]?.mode !== 'post';
-/** The queue index a pod takes next: whole talks only on the accepted image; while held, nothing that feeds the backlog; after two
- *  whole talks in a row a restore cuts in (published talks first) unless held. */
+/** The queue index a pod takes next: whole talks only on the accepted image; while held, nothing that feeds the backlog; whole
+ *  talks go first (Chad 10-31), a remaster order only when no whole order can take this pod (no cut-in after N whole talks). */
 export function podPick(st, p, acceptedWorker, held) {
   const ok = (id) => (st.items?.[id]?.kind !== 'whole' || p.image === acceptedWorker?.image) && (!held || !feedsBacklog(st, id));
-  if (!held && (p.whole_since_restore || 0) >= 2) { const r = st.queue.findIndex((id) => st.items?.[id]?.kind !== 'whole' && (st.items?.[id]?.mode || 'restore') === 'restore'); if (r >= 0) return r; }
-  return st.queue.findIndex(ok);
+  const w = st.queue.findIndex((id) => st.items?.[id]?.kind === 'whole' && ok(id));
+  return w >= 0 ? w : st.queue.findIndex(ok);
 }
 /** Queue index a free home host takes next, -1 for none. A held lane (backpressure) still hands out whole and 'post' orders. */
 export const homePick = (h, st, acceptedWorker, held, env = process.env) =>

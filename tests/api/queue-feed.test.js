@@ -38,6 +38,11 @@ describe('queue feed', () => {
     expect((await feed(st, { q, repo, wr })).fed).toBe(0);
     expect(st.queue).toEqual([1, 2, 3, 9]);
   });
+  it('new talks first (Chad 10-31): a whole talk is fed before a remaster queued ahead of it', async () => {
+    Q.claim(sql, { host: 'aorus', can: ['whole', 'restore'] });
+    st.queue = [9, 2]; await feed(st, { q, repo, wr, max: 1 });
+    expect(st.queue).toEqual([9]); expect(Object.values(st.qjobs)[0].kind).toBe('whole');
+  });
   it('keeps ~2.5 h queued at the engaged hosts\' pace, staging inputs by file id; restores stay in tower\'s lane', async () => {
     Q.claim(sql, { host: 'aorus', can: ['whole'] });   // engaged, unmeasured → 1× real time → 2.5 h = 3 one-hour talks
     const r = await feed(st, { q, repo, wr });

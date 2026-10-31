@@ -44,7 +44,8 @@ export async function feed(st, { q, repo, wr, rj, full = true, decided = () => f
   if (queuedS >= LOW_H * 3600 * cap.rate) return { fed: 0, queued_h: cap.queued_h };
   let fed = 0;
   while (queuedS < TARGET_H * 3600 * cap.rate && fed < max) {
-    const i = st.queue.findIndex((id) => can.has(kindOf(st, id)));
+    // new talks first (Chad 10-31): a whole talk brings a talk on air; a remaster only upgrades one already up
+    const i = [(id) => kindOf(st, id) === 'whole' && can.has('whole'), (id) => can.has(kindOf(st, id))].map((f) => st.queue.findIndex(f)).find((x) => x >= 0) ?? -1;
     if (i < 0) break;
     const [itemId] = st.queue.splice(i, 1), kind = kindOf(st, itemId);
     try {

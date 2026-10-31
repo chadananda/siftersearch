@@ -15,40 +15,43 @@ describe('whole dispatch', () => {
   });
   it('aorus takes whole orders and restores alike — no host is reserved for new talks', () => {
     expect(homeEligibleItem('aorus-1', 1, st(wholeOnly), accepted)).toBe(true);
-    expect(homeEligibleItem('aorus-1', 2, st(), accepted)).toBe(true);
+    expect(homeEligibleItem('aorus-1', 2, st({ queue: [2] }), accepted)).toBe(true);
   });
   it('a held lane (tower backlog) still hands a home host post orders — they drain that backlog — and nothing else', () => {
     const s = { items: { 1: { kind: 'whole' }, 2: { mode: 'restore' }, 3: { mode: 'post' } }, home: {}, queue: [1, 2, 3] };
-    expect(homePick('aorus-1', s, accepted, true)).toBe(2);    // index of the post order
-    expect(homePick('aorus-1', s, accepted, false)).toBe(1);   // not held: the restore first, as before
+    expect(homePick('aorus-1', s, accepted, true)).toBe(0);    // held: whole talks and post orders still go, whole first (10-31)
+    expect(homePick('aorus-1', s, accepted, false)).toBe(0);   // not held: the whole talk first (10-31)
+    expect(homePick('aorus-1', { ...s, queue: [2, 3] }, accepted, true)).toBe(1);   // no whole waiting: the post order
     expect(homePick('aorus-1', { ...s, queue: [2] }, accepted, true)).toBe(-1);
   });
   it('a held lane still hands out whole talks — they finish on the worker and never feed tower\'s backlog — to home hosts and pods', () => {
     const s = { items: { 1: { kind: 'whole' }, 2: { mode: 'restore' } }, home: {}, queue: [2, 1] };
     expect(homePick('aorus-1', s, accepted, true)).toBe(1);    // the waiting restore cannot run, so it does not keep the host idle
-    expect(homePick('aorus-1', s, accepted, false)).toBe(0);   // not held: published talks first
+    expect(homePick('aorus-1', s, accepted, false)).toBe(1);   // not held: new talks first (Chad 10-31)
     const pod = { image: 'img' }, aw = { image: 'img' };
     expect(podPick(s, pod, aw, true)).toBe(1);
-    expect(podPick(s, pod, aw, false)).toBe(0);
+    expect(podPick(s, pod, aw, false)).toBe(1);                // whole first even though the restore is ahead in the queue
     expect(podPick(s, { image: 'old' }, aw, true)).toBe(-1);   // whole talks only on the accepted image
-    expect(podPick(s, { ...pod, whole_since_restore: 2 }, aw, false)).toBe(0);
+    expect(podPick(s, { ...pod, whole_since_restore: 9 }, aw, false)).toBe(1);   // no restore cut-in while a whole talk waits
+    expect(podPick(s, { image: 'old' }, aw, false)).toBe(0);   // a pod off the accepted image can't take whole, so it takes the restore
   });
   it('an order another host holds is never eligible: the same audio is not sent to two hosts', () => {
     const s = st({ home: { 'aorus-1': { itemId: 1 } } });
     expect(homeEligibleItem('boss', 1, s, accepted)).toBe(false);
     expect(homeEligibleItem('aorus-2', 1, s, accepted)).toBe(false);
-    expect(homeEligibleItem('boss', 2, s, accepted)).toBe(true);   // other orders are unaffected
+    expect(homeEligibleItem('boss', 2, { ...s, queue: [2] }, accepted)).toBe(true);   // other orders are unaffected
   });
-  it('published talks first: a whole order waits while a remaster the host can take is queued, then runs', () => {
-    expect(homeEligibleItem('aorus-1', 1, st(), accepted)).toBe(false);          // restore 2 is waiting
-    expect(homeEligibleItem('aorus-1', 2, st(), accepted)).toBe(true);
-    expect(homeEligibleItem('aorus-1', 1, st({ queue: [1] }), accepted)).toBe(true);   // none waiting: new talks run
-    const s = st({ items: { 1: { kind: 'whole' }, 2: { mode: 'restore' } }, home: { aorus: { itemId: 2 } } });
-    expect(homeEligibleItem('aorus-1', 1, s, accepted)).toBe(true);              // the only restore is already held by another host
+  it('new talks first (Chad 10-31): a remaster waits while a whole order the host can take is queued, then runs', () => {
+    expect(homeEligibleItem('aorus-1', 1, st(), accepted)).toBe(true);           // whole 1 is waiting
+    expect(homeEligibleItem('aorus-1', 2, st(), accepted)).toBe(false);          // restore 2 yields
+    expect(homeEligibleItem('aorus-1', 2, st({ queue: [2] }), accepted)).toBe(true);   // no whole waiting: remasters run
+    const s = st({ home: { aorus: { itemId: 1 } } });
+    expect(homeEligibleItem('aorus-2', 2, s, accepted)).toBe(true);              // the only whole is already held by another host
+    expect(homeEligibleItem('boss', 2, st(), { ...accepted, boss_whole: false })).toBe(true);   // boss can't take whole yet: it must not idle
   });
   it('a home host whose image lacks the silencer takes nothing (Chad 10-29: its result would carry the restorer\'s noise)', () => {
     expect(homeEligibleItem('aorus-2', 2, st(), { ...accepted, quiet_hosts: ['boss'] })).toBe(false);
-    expect(homeEligibleItem('boss', 2, st(), { ...accepted, quiet_hosts: ['boss'] })).toBe(true);
+    expect(homeEligibleItem('boss', 2, st({ queue: [2] }), { ...accepted, quiet_hosts: ['boss'] })).toBe(true);
     expect(homeEligibleItem('boss', 2, st(), { boss_whole: true })).toBe(false);
   });
   it('a home host runs its own build of the accepted image when one is named; others and pods keep the accepted digest', () => {
