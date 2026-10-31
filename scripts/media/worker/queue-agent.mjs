@@ -29,6 +29,8 @@ const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)),
 const CAN = arg('can', 'whole,restore,post,cleanup').split(',').filter(Boolean);
 const list = (k) => (arg(k, '') || '').split(',').filter(Boolean);
 const TYPES = list('types'), SPILL = list('spill'), CPUS = String(arg('cpus', 6));
+// --types with an explicit --can = the switch-over: typed jobs first, legacy whole jobs ('media') when none is queued
+const MIXED = TYPES.length > 0 && process.argv.includes('--can');
 const CONTRACT = (() => { for (const u of ['./job-types.json', '../../../scripts/media/worker/job-types.json']) try { return JSON.parse(readFileSync(new URL(u, import.meta.url), 'utf8')); } catch {} return null; })();
 // the one place a job kind maps to what runs in the image, and what it hands back (relative to the job dir)
 export const KINDS = {
@@ -42,7 +44,7 @@ export const typedKind = (type, contract = CONTRACT) => {
   return t && { cmd: t.cmd, outputs: [t.outputs.result], tree: t.outputs.tree, manifest: true, needs: t.needs, typed: true };
 };
 const kindOf = (job) => (job.type && job.type !== 'media' ? typedKind(job.type) : KINDS[job.stages[0]]);
-const NEEDS_GPU = [...TYPES, ...SPILL].some((t) => typedKind(t)?.needs === 'gpu') || !TYPES.length;   // legacy kinds all need the GPU
+const NEEDS_GPU = [...TYPES, ...SPILL].some((t) => typedKind(t)?.needs === 'gpu') || !TYPES.length || MIXED;   // legacy kinds all need the GPU
 const DEVICE = arg('device') || (existsSync('/dev/kfd') ? 'rocm' : spawnSync('nvidia-smi', ['-L'], { stdio: 'ignore' }).status === 0 ? 'cuda' : null);
 // rocm as the boss gate runs it (whole_gate.py): the device files' own gids (a name like 'video' resolves to another gid inside the image)
 // and a host MIOpen kernel cache at /cache, so each container does not recompile
@@ -168,9 +170,10 @@ function onDeck() {
 
 const diskFreeGb = () => { try { const f = statfsSync(ROOT); return f.bavail * f.bsize / 1073741824; } catch { return Infinity; } };
 log('start', { slots: CAP, asked: SLOTS, ram_gb: Math.round(memTotalGb()), disk_gb: Math.round(diskFreeGb()), run: RUN, image: IMAGE, device: DEVICE, vram_mb: VRAM_MB,
-  ...(TYPES.length ? { types: TYPES, spill: SPILL, contract: CONTRACT?.contract } : { can: CAN }), base: q.base });
+  ...(TYPES.length ? { types: TYPES, spill: SPILL, contract: CONTRACT?.contract } : {}), ...(!TYPES.length || MIXED ? { can: CAN } : {}), base: q.base });
 const claimArgs = (spillOnly = false) => ({ host: HOST, ram_gb: memAvailGb(), vram_mb: VRAM_MB,
-  ...(TYPES.length ? { types: TYPES, spill: SPILL, spill_only: spillOnly, contract: CONTRACT?.contract } : { can: CAN }) });
+  ...(TYPES.length ? { types: MIXED ? [...TYPES, 'media'] : TYPES, spill: SPILL, spill_only: spillOnly, contract: CONTRACT?.contract } : {}),
+  ...(!TYPES.length || MIXED ? { can: CAN } : {}) });
 let spillAt = 0;
 const gpuSeen = [];   // GPU utilisation over the last minute: idle + nothing queued at it → ramp one more talk into CPU prep
 let claimedAt = 0;

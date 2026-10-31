@@ -27,6 +27,12 @@ describe('typed claims', () => {
     expect(claim({ host: 'aorus', can: ['whole'] })).toBe('w');
     expect(claim({ host: 'aorus', can: ['whole'] })).toBeNull();                                // a typed job never reaches a legacy agent
   });
+  it('switch-over host: typed first, then legacy whole jobs it can run', () => {
+    Q.enqueue(sql, [{ id: 'w', file_id: 'f-w', stages: ['whole'], invoice: { audio_s: 60 } }], T0 - 100);
+    Q.enqueue(sql, [tj('g', 'gpu')], T0);
+    const a = { host: 'aorus', types: ['gpu', 'media'], can: ['whole'] };
+    expect([claim(a), claim(a), claim(a)]).toEqual(['g', 'w', null]);
+  });
   it('a typed job is matched by its type, not by the agent listing every stage', () => {
     Q.enqueue(sql, [{ ...tj('g', 'gpu'), stages: ['grade', 'enhance', 'transcribe', 'diarize', 'remaster', 'realign'] }], T0);
     expect(claim({ host: 'aorus', types: ['gpu'], can: ['whole'] })).toBe('g');

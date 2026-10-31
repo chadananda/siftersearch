@@ -48,4 +48,13 @@ describe('queue agent typed flags', () => {
     expect(r.claims[0]).toMatchObject({ can: ['whole'] });
     expect(r.claims[0].types).toBeUndefined();
   }, 20_000);
+  it('switch-over: --types with --can claims the typed jobs first, then legacy whole jobs', async () => {
+    const r = await runAgent(['--types', 'cpu-finish,cpu-prep', '--can', 'whole', '--device', 'rocm']);
+    expect(r.code).toBe(0);
+    expect(r.claims[0]).toMatchObject({ types: ['cpu-finish', 'cpu-prep', 'media'], can: ['whole'] });
+  }, 20_000);
+  it('switch-over still needs a GPU (the whole kind does)', async () => {
+    const r = await runAgent(['--types', 'cpu-prep', '--can', 'whole', '--device', 'none']);
+    expect(r.code).toBe(2);
+  }, 20_000);
 });
