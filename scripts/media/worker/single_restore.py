@@ -8,6 +8,13 @@ import gc, glob, json, os, sys, time, contextlib
 sys.path.insert(0, '/opt/sifter/media')
 import runpod_worker as worker
 
+def why_incomplete(d, post):
+    """The reason travels in the error: the job dir is scrubbed after a failure (10-31: whole-2185 failed twice, reason lost)."""
+    err = os.path.join(d, 'post.error.txt')
+    if os.path.exists(err): return open(err).read()[-1200:]
+    if not post: return 'post step wrote no post.json'
+    return json.dumps({k: post.get(k) for k in ('ok', 'held', 'web', 'reason', 'error', 'verdict', 'guard') if k in post})[-1200:]
+
 def post_only(d):
     from worker.gpu_lease import lease
     done = json.load(open(os.path.join(d, 'restore-result.json')))
@@ -17,7 +24,7 @@ def post_only(d):
     post_file = os.path.join(d, 'post.json')
     post = json.load(open(post_file)) if os.path.exists(post_file) else None
     if not post or not post.get('ok') or not (post.get('held') or post.get('web')):
-        raise RuntimeError('Incomplete restoration result; no publication')
+        raise RuntimeError('Incomplete restoration result; no publication: ' + why_incomplete(d, post))
     with open(os.path.join(d, 'progress.json'), 'w') as f:
         json.dump({'stage':'complete','at':time.time()},f)
 
@@ -67,7 +74,7 @@ def main(d):
     post_file = os.path.join(d, 'post.json')
     post = json.load(open(post_file)) if os.path.exists(post_file) else None
     if not post or not post.get('ok') or not (post.get('held') or post.get('web')):
-        raise RuntimeError('Incomplete restoration result; no publication')
+        raise RuntimeError('Incomplete restoration result; no publication: ' + why_incomplete(d, post))
     stage('complete')
 
 if __name__ == '__main__':

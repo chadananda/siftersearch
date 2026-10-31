@@ -49,9 +49,11 @@ export function expire(sql, now = Date.now()) {
   for (const g of gone) release(sql, g.id, g.attempts + 1, 'lease expired', now);
   return gone.length;
 }
+// which host/exit (head) + the actual reason (tail): a Python traceback ends a long stderr tail (10-31: whole-2185's reason was cut off twice)
+export const clip = (e, n = 2400) => { const s = String(e); return s.length > n ? `${s.slice(0, 300)} … ${s.slice(-(n - 300))}` : s; };
 function release(sql, id, attempts, error, now) {
   sql.exec(`UPDATE jobs SET state = ?, attempts = ?, error = ?, host = NULL, lease = NULL, lease_until = NULL, updated = ? WHERE id = ?`,
-    attempts >= MAX_ATTEMPTS ? 'failed' : 'queued', attempts, String(error).slice(0, 1000), now, id);
+    attempts >= MAX_ATTEMPTS ? 'failed' : 'queued', attempts, clip(error), now, id);
 }
 
 /** A machine asks for work: { host, can: [stages its image runs], vram_mb, ram_gb, types? } → the highest-priority, oldest job whose every

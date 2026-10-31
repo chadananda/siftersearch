@@ -92,10 +92,10 @@ async function work(job) {
     child = runner(job, dir);
     if (toGpu.has(job.id)) toGpu.get(job.id).child = child;
     let tail = '';
-    child.stderr.on('data', (b) => { tail = (tail + b).slice(-2000); });
+    child.stderr.on('data', (b) => { tail = (tail + b).slice(-4000); });
     const code = await new Promise((r) => child.on('close', r));
     if (lost) throw new Error('lease lost');
-    if (code) throw new Error(`exit ${code}: ${tail.slice(-700)}`);
+    if (code) throw new Error(`exit ${code}: ${tail.slice(-2500)}`);
     // only what the stage produced (never the original — tower holds it); a declared output that is absent fails the job here, not at tower
     const absent = kind.outputs.filter((f) => !existsSync(join(dir, f)));
     if (absent.length) throw new Error(`stage left no ${absent.join(', ')}: ${tail.slice(-500)}`);
@@ -108,8 +108,8 @@ async function work(job) {
     await q.done({ id: job.id, lease: job.lease, result: { stages: { [job.stages[0]]: { ok: true, seconds: Math.round((Date.now() - t0) / 1000) } }, outputs } });
     log('done', { job: job.id, s: Math.round((Date.now() - t0) / 1000), outputs: outputs.length });
   } catch (e) {
-    log('failed', { job: job.id, error: String(e.message).slice(-500) });
-    if (!lost) await q.fail({ id: job.id, lease: job.lease, error: `${HOST}: ${String(e.message).slice(-900)}` }).catch(() => {});
+    log('failed', { job: job.id, error: String(e.message).slice(-2500) });
+    if (!lost) await q.fail({ id: job.id, lease: job.lease, error: `${HOST}: ${String(e.message).slice(-2500)}` }).catch(() => {});
   } finally {
     clearInterval(beat); toGpu.delete(job.id);
     await scrub(dir).catch((e) => log('cleanup failed', { job: job.id, error: e.message }));

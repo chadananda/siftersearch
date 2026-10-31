@@ -99,3 +99,13 @@ describe('edge queue', () => {
     expect(() => Q.heartbeat(sql, { id: 'a', lease: j.lease }, T0 + 1)).toThrow(/no such job/);
   });
 });
+
+it('a failure keeps its head (host, exit) and its tail (the reason)', async () => {
+  const { clip } = await import('../../worker/queue/core.js');
+  const e = 'aorus: exit 1: ' + 'x'.repeat(5000) + 'RuntimeError: post failed';
+  const c = clip(e);
+  expect(c.startsWith('aorus: exit 1:')).toBe(true);
+  expect(c.endsWith('RuntimeError: post failed')).toBe(true);
+  expect(c.length).toBeLessThan(2500);
+  expect(clip('short')).toBe('short');
+});
