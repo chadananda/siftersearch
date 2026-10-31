@@ -10,6 +10,7 @@ export const HOP = 0.05;                 // seconds per energy frame
 export const MIN_HOLE_S = 3;             // an uncovered stretch of speech this long is a hole
 export const TOL_S = 0.4;                // a word covers this much audio either side of itself
 export const MAX_FAST_WPS = 6.5;         // words per second above which a sentence was squeezed
+export const BLOCK_HOLE_S = 15;          // only a stretch this long blocks publishing: a few seconds without words is normal (Chad 10-31: applause, a pause, a sung line); a skipped passage is not (Martha Root: 24 s)
 
 /** Streams mono PCM into per-frame dB levels. push(Float32Array) → dbs(). */
 export function makeFramer(sr = 16000, hop = HOP) {
@@ -120,10 +121,11 @@ export async function coverageCheck({ file, segments, tools, asrOpts = {}, lang 
   };
 }
 
-/** Publish-gate problems from a stored coverage record (none recorded = not yet measured = no problem; the scan fills those in). */
-export function coverageProblems(cov) {
+/** Publish-gate problems from a stored coverage record (none recorded = not yet measured = no problem; the scan fills those in).
+ *  Shorter holes stay on the record (holes_after) and never block. */
+export function coverageProblems(cov, minS = BLOCK_HOLE_S) {
   if (!cov) return [];
   const out = [];
-  for (const h of cov.holes_after || []) out.push({ p: 0, kind: 'speech-gap', text: `${h.s}–${h.e} s of speech has no words` });
+  for (const h of (cov.holes_after || []).filter((x) => x.e - x.s >= minS)) out.push({ p: 0, kind: 'speech-gap', text: `${h.s}–${h.e} s of speech has no words` });
   return out;
 }

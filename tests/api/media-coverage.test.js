@@ -63,15 +63,18 @@ describe('coverageCheck', () => {
     expect(r.coverage.nonspeech).toBe(1);
     expect(r.coverage.holes_after).toEqual([]);
   });
-  it('leaves the hole (and blocks publishing) when the re-transcription finds nothing usable and it cannot tell', async () => {
+  it('leaves the hole on the record when the re-transcription finds nothing usable and it cannot tell (the gate blocks it once it is long)', async () => {
     const { tools, io } = mk(words(1.5, 3));
     const r = await coverageCheck({ file: 'a.m4a', segments: base, tools, io, lang: 'en' });
-    expect(coverageProblems(r.coverage).length).toBeGreaterThan(0);
+    expect(r.coverage.holes_after.length).toBeGreaterThan(0);
+    expect(coverageProblems(r.coverage, 0).length).toBeGreaterThan(0);
   });
 });
 
 describe('coverageProblems', () => {
   it('is empty when nothing was measured or nothing remains', () => { expect(coverageProblems(null)).toEqual([]); expect(coverageProblems({ holes_after: [] })).toEqual([]); });
   it('reports each remaining hole', () => expect(coverageProblems({ holes_after: [{ s: 164.5, e: 188.8 }] })[0].kind).toBe('speech-gap'));
+  it('a few seconds without words is normal and never blocks; a skipped passage does (Chad 10-31)', () =>
+    expect(coverageProblems({ holes_after: [{ s: 137.83, e: 142.8 }, { s: 164.5, e: 188.8 }] }).map((x) => x.text)).toEqual(['164.5–188.8 s of speech has no words']));
 });
 void measureCoverage;
