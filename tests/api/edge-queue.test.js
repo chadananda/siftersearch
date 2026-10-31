@@ -109,3 +109,26 @@ it('a failure keeps its head (host, exit) and its tail (the reason)', async () =
   expect(c.length).toBeLessThan(2500);
   expect(clip('short')).toBe('short');
 });
+
+// donor-intake samplers share tower's LAN queue (type 'intake'): they must not leak into the media feeder's pull, failures, leases or pace
+describe('job types stay apart', () => {
+  it('listDone / stats / capacity see only their own type; an intake claimer is not a media host', () => {
+    Q.enqueue(sql, [job('m', ['transcribe']), job('i', ['intake-talk'], { type: 'intake', invoice: { audio_s: 0 } })], T0);
+    const i = Q.claim(sql, { host: 'aorus-intake', can: ['intake-talk', 'transcribe'], types: ['intake'] }, T0);
+    expect(i.id).toBe('i');
+    expect(Q.capacity(sql, T0).hosts).toEqual([]);   // only media claimers count toward the media pace
+    expect(Q.stats(sql, T0).leased).toEqual([]);
+    expect(Q.stats(sql, T0, 'intake').leased.map((j) => j.id)).toEqual(['i']);
+    const m = Q.claim(sql, { host: 'aorus', can: ['transcribe'] }, T0);
+    Q.done(sql, { id: 'm', lease: m.lease, result: {} }, T0 + 1);
+    Q.done(sql, { id: 'i', lease: i.lease, result: {} }, T0 + 2);
+    expect(Q.listDone(sql).map((j) => j.id)).toEqual(['m']);
+    expect(Q.listDone(sql, 50, 'intake').map((j) => j.id)).toEqual(['i']);
+  });
+  it('a feeder lists its own failed jobs; the media failures list does not show them', () => {
+    Q.enqueue(sql, [job('i', ['intake-book'], { type: 'intake' })], T0);
+    for (let n = 0; n < Q.MAX_ATTEMPTS; n++) { const c = Q.claim(sql, { host: 'h', can: ['intake-book'], types: ['intake'] }, T0 + n); Q.fail(sql, { id: 'i', lease: c.lease, error: 'boom' }, T0 + n); }
+    expect(Q.listDone(sql, 50, 'intake', 'failed').map((j) => j.id)).toEqual(['i']);
+    expect(Q.stats(sql, T0 + 9).failed).toEqual([]);
+  });
+});

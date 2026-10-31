@@ -40,10 +40,10 @@ export async function queueCall(op, a = {}) {
     case 'heartbeat': case 'lease-ok': return tx((s) => Q.heartbeat(s, a));
     case 'done': return tx((s) => Q.done(s, a));
     case 'fail': return tx((s) => Q.fail(s, a));
-    case 'list-done': return tx((s) => Q.listDone(s, a.limit || 50));
+    case 'list-done': return tx((s) => Q.listDone(s, a.limit || 50, a.type || 'media', a.state));
     case 'capacity': return tx((s) => Q.capacity(s));
     case 'withdraw': return tx((s) => Q.withdraw(s, a.ids || []));
-    case 'stats': return tx((s) => Q.stats(s));
+    case 'stats': return tx((s) => Q.stats(s, Date.now(), a.type || 'media'));
     case 'ack': case 'cancel': {   // the staged inputs go too unless another job still names the same file
       const { gone, dirs } = tx((s) => {
         const gone = op === 'ack' ? Q.ack(s, a.ids || []) : Q.cancel(s, a.ids || []);
@@ -100,8 +100,8 @@ export function localQueue() {
     put: (kind, id, name, file, opts) => fileWrite(kind, id, name, file, opts),
     get: async (kind, id, name, dest) => { const src = filePath(kind, id, name); if (!existsSync(src)) throw bad(`get ${kind}/${id}/${name} 404`, 404); await mkdir(dirname(dest), { recursive: true }); await copyFile(src, dest); return dest; },
     claim: (a) => call('claim', a), heartbeat: (a) => call('heartbeat', a), done: (a) => call('done', a), fail: (a) => call('fail', a),
-    enqueue: (jobs) => call('enqueue', { jobs }), capacity: () => call('capacity'), stats: () => call('stats'),
-    listDone: (limit = 50) => call('list-done', { limit }), ack: (ids) => call('ack', { ids }), cancel: (ids) => call('cancel', { ids }), withdraw: (ids) => call('withdraw', { ids }),
+    enqueue: (jobs) => call('enqueue', { jobs }), capacity: () => call('capacity'), stats: (type) => call('stats', type ? { type } : {}),
+    listDone: (limit = 50, type, state) => call('list-done', { limit, ...(type ? { type } : {}), ...(state ? { state } : {}) }), ack: (ids) => call('ack', { ids }), cancel: (ids) => call('cancel', { ids }), withdraw: (ids) => call('withdraw', { ids }),
   };
 }
 export const _closeForTests = () => { db?.close(); db = sql = dbAt = null; };

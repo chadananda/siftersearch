@@ -353,7 +353,7 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
 // the INDEXING jobs belong to siftersearch-indexer (index-reports.js): in this registry for queueing, never in these lanes
 Object.assign(REPORTS, INDEX_REPORTS);
 REPORTS['archive-adopt'] = archiveAdoptJob;   // params: { drive, donor, donorName, label, source, catalog }
-REPORTS['archive-sample'] = archiveSampleJob;   // params: { drive, limit } — first-minute clips of candidate talks → R2 (stream copy only)
+REPORTS['archive-sample'] = archiveSampleJob;   // params: { drive, window } — stages candidates to home workers (type 'intake'), pulls clip/text/title → R2 + item; requeues itself
 export const LANES = { archive: ['archive-adopt', 'archive-sample'], extract: ['episode-extract', 'structure-infer'],
   heavy: ['index-sizes', 'hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-received', 'dewey-discard', 'dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing

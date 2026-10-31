@@ -60,7 +60,8 @@ function release(sql, id, attempts, error, now) {
  *  stage it can run and whose needs fit what it has free, with a lease token; or null. */
 export function claim(sql, { host, can = [], vram_mb = 0, ram_gb = 0, types = ['media'] }, now = Date.now(), token = crypto.randomUUID()) {
   if (!host) throw new Error('host required');
-  sql.exec(`INSERT INTO hosts (host, can, vram_mb, ram_gb, last_seen) VALUES (?, ?, ?, ?, ?)
+  // only a MEDIA claimer is a host in the capacity sense: an intake sampler (type 'intake') must not inflate the media feed's pace
+  if (types.includes('media')) sql.exec(`INSERT INTO hosts (host, can, vram_mb, ram_gb, last_seen) VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(host) DO UPDATE SET can = excluded.can, vram_mb = excluded.vram_mb, ram_gb = excluded.ram_gb, last_seen = excluded.last_seen`,
     host, JSON.stringify(can), vram_mb, ram_gb, now);
   expire(sql, now);
@@ -105,7 +106,7 @@ export function capacity(sql, now = Date.now()) {
   const hosts = rows(sql, `SELECT host, can, vram_mb, rate, jobs, last_seen FROM hosts WHERE last_seen > ? ORDER BY host`, now - HOST_FRESH_MS)
     .map((h) => ({ ...h, can: JSON.parse(h.can || '[]') }));
   const rate = hosts.reduce((a, h) => a + (h.rate || DEFAULT_RATE), 0);
-  const queuedS = one(sql, `SELECT COALESCE(SUM(audio_s), 0) AS s FROM jobs WHERE state = 'queued'`).s;
+  const queuedS = one(sql, `SELECT COALESCE(SUM(audio_s), 0) AS s FROM jobs WHERE state = 'queued' AND type = 'media'`).s;
   return { hosts, rate, queued_audio_h: queuedS / 3600, queued_h: rate ? queuedS / rate / 3600 : null };
 }
 export function fail(sql, { id, lease, error }, now = Date.now()) {
@@ -113,8 +114,9 @@ export function fail(sql, { id, lease, error }, now = Date.now()) {
   release(sql, j.id, j.attempts + 1, error || 'failed', now);
   return { ok: true };
 }
-/** Tower: finished jobs to pull, oldest first. */
-export const listDone = (sql, limit = 50) => rows(sql, `SELECT * FROM jobs WHERE state = 'done' ORDER BY updated LIMIT ?`, limit).map(out);
+/** Tower: finished jobs of one TYPE to pull, oldest first ('failed' = the ones the queue gave up on). Each feeder pulls only its own type. */
+export const listDone = (sql, limit = 50, type = 'media', state = 'done') =>
+  rows(sql, `SELECT * FROM jobs WHERE state = ? AND type = ? ORDER BY updated LIMIT ?`, state === 'failed' ? 'failed' : 'done', type, limit).map(out);
 /** Tower took the results (or gave up on a failed job): the row goes. → the removed jobs, so their R2 objects can be deleted. */
 export function ack(sql, ids) {
   const gone = [];
@@ -131,11 +133,11 @@ export function withdraw(sql, ids) {
   return { withdrawn: n };
 }
 /** Window size for tower's staging decision + the dashboard. */
-export function stats(sql, now = Date.now()) {
+export function stats(sql, now = Date.now(), type = 'media') {
   expire(sql, now);
-  const by = rows(sql, `SELECT state, COUNT(*) AS n, COALESCE(SUM(audio_s), 0) AS audio_s FROM jobs GROUP BY state`);
-  const leased = rows(sql, `SELECT id, item_id, stages, host, audio_s, lease_until, updated FROM jobs WHERE state = 'leased' ORDER BY host`);
-  const failed = rows(sql, `SELECT id, item_id, stages, attempts, error FROM jobs WHERE state = 'failed' ORDER BY updated DESC LIMIT 20`);
+  const by = rows(sql, `SELECT state, COUNT(*) AS n, COALESCE(SUM(audio_s), 0) AS audio_s FROM jobs WHERE type = ? GROUP BY state`, type);
+  const leased = rows(sql, `SELECT id, item_id, stages, host, audio_s, lease_until, updated FROM jobs WHERE state = 'leased' AND type = ? ORDER BY host`, type);
+  const failed = rows(sql, `SELECT id, item_id, stages, attempts, error FROM jobs WHERE state = 'failed' AND type = ? ORDER BY updated DESC LIMIT 20`, type);
   return { states: Object.fromEntries(by.map((r) => [r.state, { n: r.n, audio_h: Math.round(r.audio_s / 36) / 100 }])), leased, failed, capacity: capacity(sql, now) };
 }
 /** Does any remaining job still need this file's staged inputs? */

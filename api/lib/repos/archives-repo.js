@@ -52,7 +52,7 @@ export async function upsertItems(driveId, items, { batch = 500 } = {}) {
         match, match_ref, score, why, destination, metadata, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(drive_id, primary_rel) DO UPDATE SET kind = excluded.kind, section = excluded.section, title = excluded.title, creator = excluded.creator, year = excluded.year,
         lang = excluded.lang, rel_paths = excluded.rel_paths, files = excluded.files, bytes = excluded.bytes, duration_s = excluded.duration_s, match = excluded.match,
-        match_ref = excluded.match_ref, score = excluded.score, why = excluded.why, destination = excluded.destination, metadata = excluded.metadata, updated_at = excluded.updated_at`,
+        match_ref = excluded.match_ref, score = COALESCE(json_extract(intake_items.sample, '$.rec.score'), excluded.score), why = excluded.why, destination = excluded.destination, metadata = excluded.metadata, updated_at = excluded.updated_at`,
     args: [driveId, x.kind ?? null, x.section ?? null, x.title ?? null, x.creator ?? null, x.year ?? null, x.lang ?? null, x.primary_rel, json(x.rel_paths), x.files ?? null, x.bytes ?? null,
       x.duration_s ?? null, x.match ?? null, x.match_ref ?? null, x.score ?? null, x.why ?? null, x.destination ?? null, json(x.metadata), t, t] }));
     await transaction(sts, 'archives:items-upsert');
@@ -91,8 +91,8 @@ export async function decideItem(id, { decision, note = null, by = null }) {
 }
 export const getItem = async (id) => parseItem(await queryOne('SELECT * FROM intake_items WHERE id = ?', [id], 'archives:item-get'));
 
-/** Talks worth a listen with no sample yet: main section, not held/copy/junk, undecided, best score first. */
-export async function itemsToSample(driveId, { kinds = ['talk', 'video'], limit = 100 } = {}) {
+/** Items worth a look with no sample yet: main section, not held/copy/junk, undecided, best score first. */
+export async function itemsToSample(driveId, { kinds = ['talk', 'video', 'book', 'scan'], limit = 100 } = {}) {
   const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND sample IS NULL AND decision IS NULL AND section IN ('main', 'covenant-breaker')
     AND match IN ('new', 'version', 'unsure') AND kind IN (${kinds.map(() => '?').join(', ')}) ORDER BY score DESC, id LIMIT ?`, [driveId, ...kinds, Math.min(Number(limit) || 100, 1000)], 'archives:items-to-sample');
   return rows.map(parseItem);
@@ -101,6 +101,21 @@ export async function itemsToSample(driveId, { kinds = ['talk', 'video'], limit 
 export async function setSample(id, patch) {
   const cur = (await getItem(id))?.sample || {};
   await query('UPDATE intake_items SET sample = ? WHERE id = ?', [JSON.stringify({ ...cur, ...patch }), id], 'archives:item-sample');
+}
+/** The sample's recommendation (step 6): kept in sample.rec (a re-catalogue never touches sample); its score becomes the item's order. */
+export async function setRec(id, rec) {
+  await setSample(id, { rec });
+  if (Number.isFinite(rec?.score)) await query('UPDATE intake_items SET score = ?, updated_at = ? WHERE id = ?', [rec.score, now(), id], 'archives:item-rec');
+}
+/** "More info" asked and no deeper look queued yet (step 7). */
+export async function itemsWantingInfo(driveId, { limit = 50 } = {}) {
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND decision = 'more_info' AND (sample IS NULL OR sample NOT LIKE '%"deep_queued"%') ORDER BY decided_at LIMIT ?`,
+    [driveId, Math.min(Number(limit) || 50, 500)], 'archives:items-wanting-info');
+  return rows.map(parseItem);
+}
+/** The deeper look came back: the answer is shown and the item returns to the undecided view (its question kept in the answer). */
+export async function answerInfo(id, answer) {
+  await query('UPDATE intake_items SET info_answer = ?, decision = NULL, decision_note = NULL, decided_by = NULL, decided_at = NULL, updated_at = ? WHERE id = ?', [answer, now(), id], 'archives:item-answer');
 }
 
 /** One decision for many items in one transaction (bulk approve/deny of a page). Returns the distinct ids sent. */

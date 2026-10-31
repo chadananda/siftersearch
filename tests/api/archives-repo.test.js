@@ -39,6 +39,21 @@ describe('archives repo', () => {
     expect(await repo.listItems('d1')).toHaveLength(2);
     expect(await repo.itemCounts('d1')).toEqual(expect.arrayContaining([expect.objectContaining({ decision: 'approve', n: 1 })]));
   });
+  it('a sample\'s recommendation keeps its score through a re-catalogue; "More info" is staged once and its answer returns the item', async () => {
+    await repo.upsertItems('s1', [item('a.pdf'), item('b.mp3', { kind: 'talk' })]);
+    const [a, b] = [await repo.listItems('s1', { q: 'a.pdf' }), await repo.listItems('s1', { q: 'b.mp3' })].map((r) => r[0]);
+    await repo.setRec(a.id, { title: 'Real', score: 72 });
+    await repo.upsertItems('s1', [item('a.pdf', { score: 50 })]);
+    expect(await repo.getItem(a.id)).toMatchObject({ score: 72 });
+    expect((await repo.getItem(a.id)).sample.rec.title).toBe('Real');
+    expect((await repo.itemsToSample('s1', { limit: 5 })).map((x) => x.id)).toEqual([b.id]);   // a is sampled
+    await repo.decideItem(b.id, { decision: 'more_info', note: 'who speaks?' });
+    expect((await repo.itemsWantingInfo('s1')).map((x) => x.id)).toEqual([b.id]);
+    await repo.setSample(b.id, { deep_queued: '2026-10-31' });
+    expect(await repo.itemsWantingInfo('s1')).toEqual([]);
+    await repo.answerInfo(b.id, 'Asked: who speaks?\n…');
+    expect(await repo.getItem(b.id)).toMatchObject({ decision: null, info_answer: 'Asked: who speaks?\n…' });
+  });
   it('listItems filters by match (list) and text; decideItems sets one decision on many', async () => {
     await repo.upsertItems('d2', [item('a/One_100%.pdf', { match: 'new', title: 'Gleanings 100%', score: 9 }), item('b.pdf', { match: 'held', creator: 'Shoghi Effendi', score: 8 }),
       item('c.pdf', { match: 'unsure', score: 7 }), item('d.pdf', { match: 'junk', score: 1 })]);

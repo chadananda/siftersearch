@@ -53,7 +53,7 @@ export function queueClient({ base = process.env.MEDIA_QUEUE_URL || DEFAULT_BASE
   return {
     base, call, get, put, list,
     claim: (a) => call('claim', a), heartbeat: (a) => call('heartbeat', a), done: (a) => call('done', a), fail: (a) => call('fail', a),
-    enqueue: (jobs) => call('enqueue', { jobs }), capacity: () => call('capacity'), stats: () => call('stats'),
-    listDone: (limit = 50) => call('list-done', { limit }), ack: (ids) => call('ack', { ids }), cancel: (ids) => call('cancel', { ids }), withdraw: (ids) => call('withdraw', { ids }),
+    enqueue: (jobs) => call('enqueue', { jobs }), capacity: () => call('capacity'), stats: (type) => call('stats', type ? { type } : {}),
+    listDone: (limit = 50, type, state) => call('list-done', { limit, ...(type ? { type } : {}), ...(state ? { state } : {}) }), ack: (ids) => call('ack', { ids }), cancel: (ids) => call('cancel', { ids }), withdraw: (ids) => call('withdraw', { ids }),
   };
 }
