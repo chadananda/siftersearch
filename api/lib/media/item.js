@@ -144,7 +144,13 @@ export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'rea
 /** COMPLETE (Chad 10-29) = every stage done (remaster, transcribe, diarize, correct, headings, quotes, links, moments/assess, ingest, catalog) AND a remaster
  *  that passed assessment (usable/cleaned — never a splice of original + remaster, Chad 10-29) WITH MEASURED PROOF it differs from the original (the verify stage, or a passed paired-quality assessment). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
 export const COMPLETE_STAGES = ['remaster', 'verify', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
-export const isComplete = (meta = {}) => isRestored(meta) && ['usable', 'cleaned'].includes(qualityOf(meta).verdict) && COMPLETE_STAGES.every((s) => meta.stages?.[s]?.at);
+/** A PLAYABLE LISTENING COPY (Chad 10-31): the web encode exists and what it plays is safe — the remaster only when its verdict is usable/cleaned, otherwise the light/original copy;
+ *  never a splice of original and remastered sentences (10-29), so a remaster copy with any other verdict is NOT playable until re-rendered. */
+export const hasPlayableCopy = (meta = {}) => !!meta.stages?.web?.at && (meta.enhancement?.listening !== 'unipase' || ['usable', 'cleaned'].includes(qualityOf(meta).verdict));
+/** ON AIR BY DEFAULT (Chad 10-31): every COMPLETE_STAGES stage has run (a decided remaster outcome — done/review/kept/deferred/skipped/waiting — all count as the stage having run; the
+ *  remaster only upgrades audio) AND the talk has a playable listening copy. The old rule (verdict usable/cleaned) kept ~2800 transcribed talks off air. */
+export const REMASTER_DECIDED = ['done', 'review', 'kept', 'deferred', 'skipped'];   // the remaster ran and chose the audio; 'waiting'/none = not yet run, so not complete
+export const isComplete = (meta = {}) => REMASTER_DECIDED.includes(meta.remaster?.status) && hasPlayableCopy(meta) && COMPLETE_STAGES.every((s) => meta.stages?.[s]?.at);
 /** The indexed columns for one talk (migration 187): what is missing, the next stage, the remaster verdict, NISQA in/out, bandwidth in/out, and the complete flag. */
 export function indexFields(meta = {}) {
   const missing = COMPLETE_STAGES.filter((s) => !meta.stages?.[s]?.at), q = qualityOf(meta);
@@ -1013,8 +1019,8 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'catalog' || stage === 'update') {
-      // only RESTORED audio goes on air (Chad 10-29): a talk with no restored copy (any tier) stays in the pipeline, unpublished
-      if (!item.published_at && !opts.publishUnrestored && meta.rights?.playback === 'full' && !isRestored(meta)) throw new Error('publish blocked: no restored audio copy yet (stays in the pipeline)');
+      // on air = a playable safe listening copy (Chad 10-31; 10-29 required a restored copy): a talk without one stays in the pipeline, unpublished
+      if (!item.published_at && !opts.publishUnrestored && meta.rights?.playback === 'full' && !hasPlayableCopy(meta)) throw new Error('publish blocked: no playable listening copy yet (stays in the pipeline)');   // 10-31: was !isRestored — any safe copy goes on air, the remaster upgrades it later
       if (meta.rights?.playback === 'full') {
         const publishedTranscript = await readJson(join(dir, 'transcript.json'), { paragraphs: [] });
         const timeHash = timingSignature(publishedTranscript.paragraphs);

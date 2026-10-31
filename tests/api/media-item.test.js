@@ -6,7 +6,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, statSync, mkdirSy
 import { tmpdir } from 'os';
 import { join } from 'path';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
-import { runItem as runItemGated, STAGES } from '../../api/lib/media/item.js';
+import { runItem as runItemGated, STAGES, COMPLETE_STAGES, isComplete } from '../../api/lib/media/item.js';
 // the fixtures publish talks with no restored copy, so they opt out of the restored-only gate (the gate has its own test below)
 const runItem = (item, opts = {}, deps) => runItemGated(item, { publishUnrestored: true, ...opts }, deps);
 import { applyEdits, buildVocab } from '../../api/lib/media/vocab.js';
@@ -338,12 +338,32 @@ describe('re-runs of published talks never take the light slots new talks need (
   });
 });
 
-describe('only restored audio is published (Chad 10-29)', () => {
-  it('a first publish with no restored copy is blocked and stays in the pipeline', async () => {
-    await expect(runItemGated({ id: 90, source_kind: 'file', source_ref: src }, {}, fakes())).rejects.toThrow(/no restored audio copy/);
+describe('on air by default (Chad 10-31; was: only restored audio, 10-29)', () => {
+  it('a first publish with a playable safe copy (no remaster) is no longer blocked', async () => {
+    const r = await runItemGated({ id: 90, source_kind: 'file', source_ref: src }, {}, fakes());
+    expect(r.done).toEqual(STAGES);
   });
   it('publishUnrestored forces it, and an already published talk keeps updating', async () => {
     const r = await runItemGated({ id: 91, source_kind: 'file', source_ref: src }, { publishUnrestored: true }, fakes());
     expect(r.done).toEqual(STAGES);
+  });
+});
+
+describe('isComplete: every stage run + a playable, never-spliced listening copy (Chad 10-31)', () => {
+  const stages = Object.fromEntries(COMPLETE_STAGES.concat('web').map((k) => [k, { at: 'x' }]));
+  const base = { stages, enhancement: { listening: 'safe' } };
+  it('once the remaster has decided, the chosen copy is on air whatever the outcome; a remaster not yet run is not complete', () => {
+    for (const status of ['review', 'kept', 'deferred', 'skipped']) expect(isComplete({ ...base, remaster: { status } })).toBe(true);
+    for (const status of ['waiting', undefined]) expect(isComplete({ ...base, remaster: status && { status } })).toBe(false);
+  });
+  it('a remaster copy counts only when its verdict is usable/cleaned; a splice or unverified copy never plays', () => {
+    const ok = { ...base, web_original: { ogg: 'o', m4a: 'm' }, remaster_tier: 'heavy', enhancement: { listening: 'unipase' }, remaster: { status: 'done', verdict: 'pass-auto', swapped: 0, output_assessment: { passed: true } } };
+    expect(isComplete(ok)).toBe(true);
+    expect(isComplete({ ...ok, remaster: { ...ok.remaster, swapped: 3 } })).toBe(false);          // spliced
+    expect(isComplete({ ...ok, remaster: { status: 'review' } })).toBe(false);                    // unipase listening but held
+  });
+  it('a missing stage or a missing web copy keeps it off air', () => {
+    expect(isComplete({ ...base, stages: { ...stages, links: {} } })).toBe(false);
+    expect(isComplete({ ...base, stages: { ...stages, web: {} } })).toBe(false);
   });
 });
