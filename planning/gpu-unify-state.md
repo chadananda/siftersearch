@@ -1,5 +1,5 @@
 # GPU unify State
-last_tick: 2026-10-31T05:25Z
+last_tick: 2026-10-31T06:45Z
 status: IN_PROGRESS
 project_dir: /Users/chad/Dropbox/Public/JS/Projects/siftersearch.com
 node: N=/Users/chad/.local/share/fnm/node-versions/v25.9.0/installation/bin/node (bare `node` fails under the hook)
@@ -113,6 +113,17 @@ Pod image (10-26) post.py had no `quiet`; tower requires realign+quiet+web since
   quiet (all 9 in ffmpeg prep, ~1.2 cores each, 8+ min) counted as idle. 9 talks lost → requeue on lease expiry. Fix 8f1863d6: leases
   (q_last.leased['pod-<name>']) count as assigned (+test). Breaker opened (367, 368, 370 = 3 never worked); auto-canary ~05:50Z on 31h.
   Watcher: /tmp/pod31h.py on tower.
+- 05:41Z canary pod 371 (31h) claimed 5 talks in 50 s, GPU 1 MiB: every talk held a `grade` lease (grade leases for RAM admission, then
+  runs entirely on CPU — its torch tensors never leave the CPU). 9d2bca90: gpuLedger ignores CPU_STAGES (grade, guard), so such a talk is
+  still on deck. Image 31i = …:gpu-20261031i @sha256:5cc61fdebca50c189c6a89a8d47946dc602189947e9f91d826199d8d5157b336 PROMOTED ~06:00Z
+  (built from tmp/wt-delta at 9d2bca90 — clean of the other session's gpu_lease.py). 371 drains its 9; home agents restarted on it
+  (aorus 2997625, boss 562461). Watcher b4qiunqoh → /tmp/pod31g.py (matches 31h+31i).
+- 06:20Z pod 372 (31i) sat at GPU 0 % for 5+ min with 1 talk in prep encode. cfea6675 + edfac70f (TDZ fix): RAMP — GPU < 30 % for a minute
+  and nothing queued at it → one more talk per 90 s (CPU-full, RAM, disk 8 GB/talk end it). Hot-swapped onto 372 (new agent 3377, old 647
+  draining whole-2235; env in /workspace/agent.env, log /workspace/agent.log): 5 claims in 8 min, as designed. Home agents on aorus+boss
+  updated + restarted 06:40Z. Image 31j = …:gpu-20261031j @sha256:9a18fdb4cccf22a7aee94bf36a9d33cbef08ca4ec7ec541efd5e958a0b3e6397 pushed,
+  NOT promoted (promotion drains 372, which already runs it) — promote when 372 ends or before renting more pods.
+  Sampler /tmp/podsample.py → /tmp/podsample.log on tower (cgroup mem, df, RSS, nvidia-smi, lease stages) to catch the ~40-min pod death.
 
 ## Next
 1. Boss onto the LAN agent (ROCm; boss currently on home path B, st.home.boss, image quiet-20261029). Needs a ROCm gpu-20261031 build.
