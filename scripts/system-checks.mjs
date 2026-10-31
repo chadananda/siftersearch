@@ -219,6 +219,20 @@ if (db) {
   } catch (e) { add('AI spend 24h', true, 'warn', `query failed: ${e.message}`); }
 }
 
+// ── 4a. Media lane liveness + progress (Chad 10-31: the queue pass stopped ~50 min, nothing noticed) — api/lib/media/loop-health.js:
+// each loop section judged by its own measured cadence, plus work-progress checks; CRITICAL only when talks stop being completed
+{
+  const r = await http('http://127.0.0.1:7839/api/admin/ops/media/health', { headers: H, timeout: 15000 });
+  let h = null; try { h = r.status === 200 ? JSON.parse(r.body) : null; } catch { /* not JSON */ }
+  if (!h?.checks) add('Media loop health', true, 'info', `unavailable (${why(r)})`);
+  else {
+    for (const c of h.checks) add(c.name, c.ok, c.level, c.detail);
+    const okSections = Object.entries(h.sections || {}).filter(([, s]) => s.state === 'ok').length;
+    if (!h.checks.some((c) => c.name.startsWith('Media loop:'))) add('Media loop sections', true, 'info', `${okSections} beating on cadence · ${Object.entries(h.sections || {}).filter(([, s]) => s.state !== 'ok').map(([n, s]) => `${n} ${s.state}`).join(', ') || 'all ok'}`);
+    if (h.heals?.length) add('Media loop self-heals', true, 'info', h.heals.map((x) => `${new Date(x.at).toISOString().slice(11, 16)}Z ${x.section}: ${x.why}`).join(' · '));
+  }
+}
+
 let newGpuIdleAt = state.gpuIdleAt || 0;
 // ── 4b. Media pipeline (10-22: every compute run failed for hours and nothing said so) ──────────────────────
 // through the API (/api/media/progress/live → health), never the DB. WARN: failures in the last hour above the limit, or a lane

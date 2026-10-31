@@ -1,0 +1,145 @@
+// The media lane's liveness + progress checks (api/lib/media/loop-health.js): judged by each section's own cadence and by work, injected clocks.
+import { describe, it, expect } from 'vitest';
+import * as LH from '../../api/lib/media/loop-health.js';
+
+const M = 60_000;
+// a section run every `every` ms, `dur` long, `n` times, ending at `end`
+function cadence(st, name, { every, dur = 1000, n = 6, end }) {
+  for (let i = n - 1; i >= 0; i--) { const t = end - i * every; LH.beatStart(st, name, t - dur); LH.beat(st, name, { n: 1 }, t); }
+}
+
+describe('sections: judged by their own cadence', () => {
+  it('learning until enough intervals are measured, then ok, then stale after K missed passes', () => {
+    const st = {};
+    cadence(st, 'q_lan', { every: M, n: 2, end: 0 });
+    expect(LH.sectionState(st.loop_beats.q_lan, 10 * M).state).toBe('learning');
+    cadence(st, 'q_lan', { every: M, n: 5, end: 10 * M });
+    expect(LH.sectionState(st.loop_beats.q_lan, 10 * M + 3 * M).state).toBe('ok');
+    const s = LH.sectionState(st.loop_beats.q_lan, 10 * M + 5 * M);
+    expect(s).toMatchObject({ state: 'stale', missed: 5, cadence_ms: M });
+  });
+  it('a slow section is not stale at a time that would be stale for a fast one', () => {
+    const st = {};
+    cadence(st, 'fast', { every: M, end: 0 }); cadence(st, 'slow', { every: 30 * M, end: 0 });
+    expect(LH.sectionState(st.loop_beats.fast, 10 * M).state).toBe('stale');
+    expect(LH.sectionState(st.loop_beats.slow, 10 * M).state).toBe('ok');
+  });
+  it('hung: running far past its own norm (the 10-31 stall: a pass sat 50 min in one phase)', () => {
+    const st = {};
+    cadence(st, 'q_pass', { every: 75_000, dur: 20_000, n: 6, end: 0 });
+    LH.beatStart(st, 'q_pass', M);
+    expect(LH.sectionState(st.loop_beats.q_pass, 3 * M).state).toBe('ok');   // a long pass, not yet K× its norm
+    expect(LH.sectionState(st.loop_beats.q_pass, 50 * M)).toMatchObject({ state: 'hung' });
+  });
+  it('failing after K errors in a row; one ok clears it; a finished lane is ended, not stale', () => {
+    const st = {};
+    cadence(st, 'pod_plan', { every: M, end: 0 });
+    for (let i = 1; i <= 4; i++) LH.beat(st, 'pod_plan', { ok: false, err: 'no capacity' }, i * M);
+    expect(LH.sectionState(st.loop_beats.pod_plan, 4 * M)).toMatchObject({ state: 'failing', fails: 4, err: 'no capacity' });
+    LH.beat(st, 'pod_plan', {}, 5 * M);
+    expect(LH.sectionState(st.loop_beats.pod_plan, 5 * M).state).toBe('ok');
+    expect(LH.sectionState(st.loop_beats.pod_plan, 99 * M, { ended: 6 * M }).state).toBe('ended');
+  });
+});
+
+describe('self-heal backs off by its own failures', () => {
+  it('heals at twice the hung bar, then doubles per heal without a good pass; a good pass resets', () => {
+    const st = {};
+    cadence(st, 'q_pass', { every: M, dur: 10_000, end: 0 });
+    LH.beatStart(st, 'q_pass', 0);
+    expect(LH.shouldHeal(st.loop_beats.q_pass, 7 * M)).toBe(false);
+    expect(LH.shouldHeal(st.loop_beats.q_pass, 9 * M)).toBe(true);   // 2 × 4 × 1 min
+    LH.noteHeal(st, 'q_pass', 9 * M, 'hung in lan');
+    expect(st.loop_heals).toHaveLength(1);
+    LH.beatStart(st, 'q_pass', 9 * M);
+    expect(LH.shouldHeal(st.loop_beats.q_pass, 9 * M + 9 * M)).toBe(false);   // now 16 min
+    expect(LH.shouldHeal(st.loop_beats.q_pass, 9 * M + 17 * M)).toBe(true);
+    LH.beat(st, 'q_pass', {}, 30 * M);
+    expect(st.loop_beats.q_pass.heals_in_row).toBe(0);
+  });
+  it('never heals without a measured norm', () => {
+    const st = {}; LH.beatStart(st, 'q_pass', 0);
+    expect(LH.shouldHeal(st.loop_beats.q_pass, 1e9)).toBe(false);
+  });
+  it('guarded: an abandoned pass can make no further queue call, and a call in flight resolves to an error', async () => {
+    let alive = true;
+    const q = { enqueue: async (x) => x, sync: () => 7 };
+    const g = LH.guarded(q, () => alive);
+    expect(await g.enqueue(1)).toBe(1);
+    expect(g.sync()).toBe(7);
+    const p = g.enqueue(2); alive = false;
+    await expect(p).rejects.toMatchObject({ code: 'ABANDONED' });
+    expect(() => g.enqueue(3)).toThrow(/abandoned/);
+  });
+});
+
+describe('step durations measured from the chains', () => {
+  it('a step adopted in this pass is measured from the chain\'s previous mark; a typed talk finished through the queue too', () => {
+    const st = { chains: { 5: { at: 0, 'cpu-prep': { adopted: 10 * M } }, 6: { at: 0, 'cpu-prep': { adopted: 5 * M }, gpu: { adopted: 20 * M } } }, done: [] };
+    const marks = LH.chainMarks(st);
+    expect(marks).toEqual({ 5: 10 * M, 6: 20 * M });
+    st.chains[5].gpu = { adopted: 40 * M };
+    delete st.chains[6]; st.done.push({ id: 6, at: 41 * M, via: 'queue', mode: 'typed' });
+    expect(LH.recordSteps(st, marks, 39 * M, 41 * M)).toBe(2);
+    expect(st.step_durs.sort()).toEqual([21 * M, 30 * M].sort());
+    expect(st.progress_at).toBe(41 * M);
+  });
+});
+
+describe('progress checks (work, not time)', () => {
+  const base = (now) => {
+    const st = { step_durs: [10 * M, 12 * M, 14 * M], done: [{ id: 1, at: now - 60 * M }], q_lan: { leased: { aorus: 2 } }, home: {}, jobs: {}, pods: {},
+      host_gauge: { aorus: { gpu: 0, at: now }, boss: { gpu: 0, at: now }, tower: { cpus: [1, 1], at: now } }, pod_plan: { gpu_queued_h: 5, staged_h: 0, staged_n: 0, target: 0 } };
+    cadence(st, 'tick', { every: 15_000, end: now });
+    return st;
+  };
+  const tick = (st, t) => { LH.beat(st, 'tick', {}, t); return LH.evaluate(st, t, { update: true }); };
+  const find = (h, name) => h.checks.find((c) => c.name === name);
+  it('(a) work in flight but no step adopted for K× the median step: CRITICAL after STREAK ticks; a fresh step clears it', () => {
+    const now = 100 * M, st = base(now);
+    let h;
+    for (let i = 1; i <= 3; i++) h = tick(st, now + i * 15_000);
+    expect(find(h, 'Media progress')).toMatchObject({ ok: false, level: 'critical' });
+    expect(find(h, 'Media progress').detail).toMatch(/STOPPED.*2 leases/);
+    st.progress_at = now + 46_000;
+    expect(find(tick(st, now + 60_000), 'Media progress').ok).toBe(true);
+  });
+  it('(a) nothing in flight is not a stall; no measured steps is learning', () => {
+    const now = 100 * M, st = base(now); st.q_lan.leased = {};
+    st.pod_plan.gpu_queued_h = 0;
+    for (let i = 1; i <= 3; i++) tick(st, now + i * 15_000);
+    expect(find(LH.evaluate(st, now + 45_000), 'Media progress').ok).toBe(true);
+    st.step_durs = [];
+    expect(find(LH.evaluate(st, now + 45_000), 'Media progress').detail).toMatch(/learning/);
+  });
+  it('(b) GPU work queued while every reporting GPU is idle; one busy GPU clears it; stale gauges are not "idle"', () => {
+    const now = 100 * M, st = base(now);
+    let h; for (let i = 1; i <= 3; i++) h = tick(st, now + i * 15_000);
+    expect(find(h, 'Media GPUs idle with work queued')).toMatchObject({ ok: false, level: 'critical' });
+    st.host_gauge.aorus.gpu = 80;
+    expect(find(tick(st, now + 60_000), 'Media GPUs idle with work queued').ok).toBe(true);
+    const old = base(now); for (const g of Object.values(old.host_gauge)) g.at = now - 60 * M;
+    for (let i = 1; i <= 3; i++) h = tick(old, now + i * 15_000);
+    expect(find(h, 'Media GPUs idle with work queued').ok).toBe(true);
+  });
+  it('(c) pods wanted with staged work and none rented: WARN — unless a refusal was recorded or rentals are held', () => {
+    const now = 100 * M, st = base(now); st.pods_wanted = 2; st.pod_plan.staged_n = 3;
+    let h; for (let i = 1; i <= 3; i++) h = tick(st, now + i * 15_000);
+    expect(find(h, 'Media pods wanted, none rented')).toMatchObject({ ok: false, level: 'warn' });
+    st.rental_refusals = [{ at: now, why: 'no capacity' }];
+    expect(find(tick(st, now + 60_000), 'Media pods wanted, none rented').ok).toBe(true);
+    const held = base(now); held.pods_wanted = 2; held.rental_pause = 'Chad: hold';
+    for (let i = 1; i <= 3; i++) h = tick(held, now + i * 15_000);
+    expect(find(h, 'Media pods wanted, none rented')).toMatchObject({ ok: true });
+    expect(find(h, 'Media pods wanted, none rented').detail).toMatch(/rentals held/);
+  });
+  it('a stale work section is CRITICAL with its evidence; other callers never advance a streak', () => {
+    const now = 100 * M, st = base(now);
+    cadence(st, 'q_lan', { every: M, end: now - 50 * M });
+    const h = LH.evaluate(st, now);
+    expect(find(h, 'Media loop: q_lan')).toMatchObject({ ok: false, level: 'critical' });
+    expect(find(h, 'Media loop: q_lan').detail).toMatch(/last ran 50 min ago, normally every 1 min/);
+    for (let i = 0; i < 5; i++) LH.evaluate(st, now + i);
+    expect(st.health_cond?.no_progress).toBeUndefined();
+  });
+});

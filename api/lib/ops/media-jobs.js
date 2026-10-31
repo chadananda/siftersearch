@@ -1659,6 +1659,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const fs = await import('fs/promises');
   const readMeta = deps.readMeta || (async (dir) => JSON.parse(await fs.readFile(join(dir, 'meta.json'), 'utf8')));
   const save = (st) => C.saveState(st, deps.stateFile);
+  const LH = await import('../media/loop-health.js');   // per-section beats + progress checks (Chad 10-31: stalls must never go unnoticed)
   // a pod's staging target: its worker's slots (its own report, else the accepted image's, else perPod) + stageAhead waiting; an older image gets 2
   const stageTarget = (p) => acceptedWorker && p.image !== acceptedWorker.image ? 2 : (p.max_jobs || acceptedWorker?.max_inflight_per_pod || C.CLOUD.perPod) + (C.CLOUD.stageAhead ?? 0);
   const st = await C.loadState(deps.stateFile);
@@ -1699,6 +1700,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   // a run that ended on "N pods failed to start" starts clean (only the money stops a run for good: cap / balance)
   if (/pods failed to start/.test(st.cloud_stopped || '')) { st.cloud_stopped = null; st.pod_failures = 0; }
   st.pod_failures = st.pod_failures || 0; st.home = st.home || {}; st.home_done = st.home_done || 0;
+  for (const b of Object.values(st.loop_beats || {})) delete b.running_since;   // a new run: nothing of the last process is still running
   // the legacy home-host path (the gate's 'unipase' verb) has no worker result for tower to take: off in cleanup runs and in STRICT mode (workers only)
   const acceptedHomeHosts=a=>hostRegistry().flatMap(({name})=>isGateHost(name)
     ?((a.gate_cpu??a.boss_cpu)?[name,name+'-2']:[])
@@ -1719,7 +1721,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const decided = (m,id) => !force && !st.items?.[id]?.redo && ['done', 'kept', 'deferred', 'archived'].includes(m?.remaster?.status);
   const beatFile = `${deps.stateFile || C.STATE_FILE}.beat`;   // the lane's liveness, written on its own timer: a long transfer must not look like a dead lane to the reaper
   // the state too (10-30: a pass collecting results ran 9+ min unsaved — the stager's progress and new jobs invisible)
-  const beat = () => Promise.all([fs.writeFile(beatFile, String(now())).catch(() => {}), save(st).catch(() => {})]);
+  // the health verdict is refreshed here too: a loop hung mid-tick still shows its sections going stale / hung in the state file
+  const beat = () => { try { st.health = LH.evaluate(st, now()); } catch { /* never blocks the beat */ } return Promise.all([fs.writeFile(beatFile, String(now())).catch(() => {}), save(st).catch(() => {})]); };
   beat();
   const hb = setInterval(beat, 60_000); hb.unref?.();
   const pub = deps.publicKey || (await fs.readFile(join((await import('os')).homedir(), '.ssh', 'id_ed25519.pub'), 'utf8')).trim();
@@ -1741,7 +1744,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     return true;
   };
   const requireGate = process.env.MEDIA_POOL_REQUIRE_GATE === '1';   // pods must carry /opt/gate (the new image): older ones finish their jobs and are replaced
-  let balance = null, balAt = 0, stop = null, yielded = false, qPass = null, movePass = null;
+  let balance = null, balAt = 0, stop = null, yielded = false, qPass = null, movePass = null, passGen = 0;
   // EDGE QUEUE (worker/queue, Chad 10-30): in the background, pull finished queue jobs and keep ~2.5 h of whole talks queued for the machines pulling
   const queueKey = deps.queueKey !== undefined ? deps.queueKey : deps.repo || process.env.MEDIA_QUEUE_FEED === '0' ? null : process.env.INTERNAL_API_KEY;   // tests inject theirs
   // the machines' key (the same on the LAN and the edge queue) handed to an agent pod at boot; no edge feed → no agent pods
@@ -1760,8 +1763,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const stager = stageStore && (async () => {
     while (!stagerStop) {
       let r;
+      LH.beatStart(st, 'stager', now());
       try { r = await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, demux, now: now() }); st.stage_error = null; }
       catch (err) { st.stage_error = String(err?.message || err).slice(0, 200); r = 'error'; }
+      LH.beat(st, 'stager', { ok: r !== 'error', err: st.stage_error, n: r === 'uploaded' ? 1 : 0 }, now());
       if (r !== 'uploaded') await new Promise((res) => setTimeout(res, r === 'error' ? 60_000 : 20_000).unref?.());
     }
   })();
@@ -1769,6 +1774,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     for (;;) {
       // 10-30: an `ssh boss start` that ignored the stop held a drain 7+ min — no state written, pods starved; home jobs re-attach on the next start
       if (draining()) { yielded = true; await Promise.race([Promise.allSettled([...homeTasks.values()]), new Promise((res) => setTimeout(res, deps.drainWaitMs ?? 30_000).unref?.())]); break; }
+      LH.beatStart(st, 'tick', now());
       for(const [h,cur] of Object.entries(st.home))if(!cur.image&&acceptedWorker)cur.image=homeImage(h,acceptedWorker);
       if(C.acceptedWorker){acceptedWorker=await C.acceptedWorker(deps.acceptedWorkerFile);if(acceptedWorker)homeHosts=acceptedHomeHosts(acceptedWorker);}
       for(const [h,cur] of Object.entries(st.home))if(!homeTasks.has(h)&&acceptedWorker?.reset_home_ids?.includes(cur.itemId)&&cur.image!==acceptedWorker.image){
@@ -1874,6 +1880,16 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           st.home_errors = (st.home_errors || 0) + 1; st.home_last_error = `${h} #${cur.itemId}: ${String(err?.message || err).slice(-300)}`;
         }).finally(() => homeTasks.delete(h)));
       }
+      LH.beat(st, 'home', { n: homeTasks.size }, now());
+      // SELF-HEAL (Chad 10-31): a queue pass stuck far past its own measured norm is abandoned — its queue clients refuse every further call
+      // (LH.guarded), so it can neither enqueue, ack nor adopt when it wakes — and a fresh pass starts; the bar doubles per heal without a good pass
+      if (qPass && LH.shouldHeal(st.loop_beats?.q_pass, now())) {
+        const ph = st.q_pass?.phase || '?', why = `queue pass hung in '${ph}' for ${Math.round((now() - st.loop_beats.q_pass.running_since) / 60_000)} min: abandoned, a fresh pass starts`;
+        for (const s of ['q_pass', { lan: 'q_lan', edge: 'q_edge', plan: 'pod_plan' }[ph]].filter(Boolean)) if (st.loop_beats?.[s]?.running_since) LH.beat(st, s, { ok: false, err: why }, now());
+        LH.noteHeal(st, 'q_pass', now(), why);
+        console.warn(`[media-cloud] SELF-HEAL ${why}`);
+        passGen++; qPass = null; st.q_checked = 0;
+      }
       if (now() - (st.q_checked || 0) > 60_000 && (!queueKey || qPass)) {   // a skipped pass says why (still running its phase, or no queue key)
         st.q_pass = { ...(st.q_pass || {}), skipped: now(), skip_why: !queueKey ? 'no queue key' : `previous pass still in ${st.q_pass?.phase || '?'}` };
       }
@@ -1881,14 +1897,18 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         st.q_checked = now();
         // the pass is observable (10-31: it sat 50 min in an upload and nothing said so): when it started, the phase it is in, how long the
         // last one took, and its error — a stale q_lan.at is explained by q_pass, never silent
-        const passAt = now(), phase = (ph) => { st.q_pass = { ...(st.q_pass || {}), started: passAt, phase: ph, phase_at: now() }; };
+        const passAt = now(), myGen = ++passGen, alive = () => myGen === passGen;
+        const phase = (ph) => { if (alive()) st.q_pass = { ...(st.q_pass || {}), started: passAt, phase: ph, phase_at: now() }; };
         phase('start');
+        LH.beatStart(st, 'q_pass', passAt);
         qPass = (async () => {
           // two transports, one API: the LAN queue (tower's disk, aorus/boss) first, then the edge /_q (R2, anywhere). An item is fed to one only.
           // typed (cpu-prep -> gpu -> cpu-finish) is fed on the LAN queue, for MEDIA_TYPED_FRACTION of whole talks (0 = off); with MEDIA_POD_TYPED=1
           // its gpu step overflows to the edge /_q (pods) once Aorus holds TARGET_H, and finish comes back to the LAN (queue-feed.js, SJ.gpuRoute).
-          const [QF, { queueClient }, wr, { localQueue }] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js'), import('../repos/media-queue-repo.js')]);
-          const deps = { repo, wr, now, full: !!acceptedWorker, decided, remaster: (id) => queue('media-remaster', { id }, 'media-cloud-remaster') };
+          const [QF, QCl, wrMod, LQ] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js'), import('../repos/media-queue-repo.js')]);
+          // every side-effecting dependency is guarded by this pass's generation (self-heal above)
+          const queueClient = (o) => LH.guarded(QCl.queueClient(o), alive), localQueue = () => LH.guarded(LQ.localQueue(), alive), wr = LH.guarded(wrMod, alive);
+          const deps = { repo: LH.guarded(repo, alive), wr, now, full: !!acceptedWorker, decided, remaster: (id) => { if (!alive()) throw Error('queue pass abandoned'); return queue('media-remaster', { id }, 'media-cloud-remaster'); } };
           const QC = await import('../../../worker/queue/core.js');
           const podTyped = process.env.MEDIA_POD_TYPED === '1';
           // the pods' R2 buffer (Chad 10-31): ~BUFFER_H of pod work staged on the edge before and while pods run; the feed fills it from prepped talks first
@@ -1896,24 +1916,45 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           const buffer = st.pod_plan ? QC.bufferPolicy(st.pod_plan, { pods: podTyped ? livePods : 0 }) : null;
           const edgeBuf = podTyped && buffer?.where === 'edge' ? buffer : null;
           // moving waiting gpu steps onto R2 is upload-bound (minutes): it runs BESIDE the pass, one at a time, so pull/feed/plan never wait on it
-          if (edgeBuf && !movePass) movePass = QF.rebalanceGpu(st, { q: localQueue(), edge: queueClient({ key: queueKey }), repo, now, buffer: edgeBuf })
-            .then((r) => { st.q_moved = { at: now(), ...r }; }, (e) => { st.q_moved = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { movePass = null; });
+          if (edgeBuf && !movePass) { LH.beatStart(st, 'q_move', now()); movePass = QF.rebalanceGpu(st, { q: LQ.localQueue(), edge: QCl.queueClient({ key: queueKey }), repo, now, buffer: edgeBuf })
+            .then((r) => { st.q_moved = { at: now(), ...r }; LH.beat(st, 'q_move', { n: r?.moved ?? 0 }, now()); }, (e) => { st.q_moved = { at: now(), error: String(e.message).slice(0, 300) }; LH.beat(st, 'q_move', { ok: false, err: e.message }, now()); }).finally(() => { movePass = null; }); }
           phase('lan');
-          st.q_lan = { at: now(), ...await QF.tick(st, { ...deps, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) })) };
+          LH.beatStart(st, 'q_lan', now());
+          const marks = LH.chainMarks(st), lanAt = now();
+          const lan = await QF.tick(st, { ...deps, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
+          if (!alive()) return;
+          st.q_lan = { at: now(), ...lan };
+          LH.recordSteps(st, marks, lanAt, now());
+          const pulledN = (lan.pulled?.adopted || 0) + (lan.pulled?.typed?.steps || 0) + (lan.pulled?.typed?.adopted || 0);
+          LH.beat(st, 'q_lan', { ok: !lan.error, err: lan.error, n: pulledN }, now());
+          if (!lan.error) { LH.beat(st, 'pull', { ok: !(lan.pulled?.errors || lan.pulled?.typed?.errors), err: `${(lan.pulled?.errors || 0) + (lan.pulled?.typed?.errors || 0)} adoption errors`, n: pulledN }, now()); LH.beat(st, 'feed', { n: (lan.fed?.fed || 0) + (lan.fed?.typed?.fed || 0) }, now()); }
           phase('edge');
-          st.q_last = { at: now(), ...await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }) };
+          LH.beatStart(st, 'q_edge', now());
+          const edgeR = await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }).catch((e) => { LH.beat(st, 'q_edge', { ok: false, err: e.message }, now()); throw e; });
+          if (!alive()) return;
+          st.q_last = { at: now(), ...edgeR };
+          LH.beat(st, 'q_edge', { n: (edgeR.pulled?.adopted || 0) }, now());
           phase('plan');
+          LH.beatStart(st, 'pod_plan', now());
           // the typed pod plan (Chad 10-31) over both queues, every pass: supportable = floor(min(R_prep, R_finish) / R_pod), limited only by work
           const caps = await Promise.all([localQueue().capacity(), queueClient({ key: queueKey }).capacity()].map((p) => p.catch(() => null)));
           const plan = QC.podPlan(caps);
           const buf = QC.bufferPolicy(plan, { pods: podTyped ? livePods : 0 });
+          if (!alive()) return;
           st.pod_plan = { at: now(), ...plan, buffer: buf };
+          LH.beat(st, 'pod_plan', { ok: caps.some(Boolean), err: 'no queue answered capacity', n: plan.target ?? null }, now());
           // the claim order every multi-role host gets (core.claimOrder): buffer low → prep first; else finish → gpu → prep
           await localQueue().policy({ buffer_low: buf.buffer_low, buffer_h: buf.buffer_h, want_h: buf.want_h }).catch(() => null);
           (st.buffer_log ||= []).push({ at: now(), staged_h: Math.round(plan.staged_h * 100) / 100, want_h: Math.round(buf.want_h * 100) / 100, finish_q: caps[0]?.by_type?.['cpu-finish']?.queued ?? null, pods: livePods });
           if (st.buffer_log.length > 360) st.buffer_log.splice(0, st.buffer_log.length - 360);
           st.q_pass = { started: passAt, phase: 'done', done: now(), ms: now() - passAt, error: null };
-        })().catch((e) => { const error = String(e.message).slice(0, 300); st.q_last = { at: now(), error }; st.q_pass = { ...(st.q_pass || {}), started: passAt, failed: now(), ms: now() - passAt, error }; console.warn(`[media-cloud] queue pass failed in ${st.q_pass.phase}: ${error}`); }).finally(() => { qPass = null; });
+          LH.beat(st, 'q_pass', { n: pulledN }, now());
+        })().catch((e) => {
+          if (!alive()) return;   // an abandoned pass that woke: its error is the abandonment, already logged
+          const error = String(e.message).slice(0, 300); st.q_last = { at: now(), error }; st.q_pass = { ...(st.q_pass || {}), started: passAt, failed: now(), ms: now() - passAt, error };
+          for (const s of ['q_pass', { lan: 'q_lan', edge: 'q_edge', plan: 'pod_plan' }[st.q_pass.phase]].filter(Boolean)) if (st.loop_beats?.[s]?.running_since) LH.beat(st, s, { ok: false, err: error }, now());
+          console.warn(`[media-cloud] queue pass failed in ${st.q_pass.phase}: ${error}`);
+        }).finally(() => { if (alive()) qPass = null; });
       }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const imageStarting=acceptedWorker&&live.some(p=>p.image===acceptedWorker.image&&p.status!=='ready');
@@ -1931,6 +1972,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const rampCap = typedPods ? (rampOk ? live.length + 1 : live.length) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
       const wantRaw = st.cloud_stopped || rentalPause ? 0 : typedPods ? st.pod_plan.target : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
       const want = Math.min(wantRaw, rampCap);
+      st.pods_wanted = wantRaw; st.rental_pause = rentalPause || null;
       const poolCap = typedPods ? Infinity : maxPods;
       const keepPods = new Set([...live].sort((a, b) => Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, poolCap).map(p => p.id));
       const surplusPods = new Set(poolCap > 0 && poolCap < Infinity ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);
@@ -1945,7 +1987,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting',image:acceptedWorker?.image||null };
           await save(st);  // persist the paid allocation before slow audio transfers or a process restart
         }
-      }
+        LH.beat(st, 'rentals', { ok: !pod.error, err: pod.error, n: want }, now());
+      } else LH.beat(st, 'rentals', { n: want }, now());
       const utilBy = {};
       // Transfer each pod's bounded batch in parallel; the uplink, not the GPU, can be the limiting resource.
       await Promise.all(live.map(async (p) => {
@@ -2201,6 +2244,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (now() - (p.lastOk || p.created) > (p.status === 'ready' ? C.CLOUD.deadAfterMs : C.CLOUD.bootTimeoutMs)) { const reaped = await import('../media/pod-reaper.js').then((R) => R.reapedWhy(p.id)).catch(() => null); await closePod(p, reaped ? `reaped: ${reaped}` : `unreachable: ${p.last_error}`); if (p.status !== 'ready' && !reaped) st.pod_failures++; }
         }
       }));
+      LH.beat(st, 'pods', { n: live.length }, now());
       for (const p of Object.values(st.pods).filter((q) => !q.terminated && q.dead_worker && !bgBusy(q.id))) { await closePod(p, `worker stopped (no status for ${Math.round((now() - p.worker_seen) / 60_000)} min)`); st.pod_failures = Math.max(0, st.pod_failures); }
       // the READY, baked pods join the worker pool (pool.js): prep / probe / grade / dfn / encodes may use them as hosts of the same gate
       try {
@@ -2219,6 +2263,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // load history per host (Chad 10-30: "logging these so that we can look back and analyze the pattern"): data/run/gauges/<day>.jsonl
       if (!deps.stateFile) { try { const G = await import('../media/gauge-log.js'); await G.appendGauges(G.gaugeRows(st, now()), join(dirname(C.STATE_FILE), 'gauges'), now()); } catch (err) { st.gauge_log_error = String(err.message).slice(0, 160); } }
       st.spent_usd = C.spendOf(st, now()); st.updated = now();
+      LH.beat(st, 'tick', { n: inflight }, now());
+      try { st.health = LH.evaluate(st, now(), { update: true }); } catch (err) { st.health = { error: String(err.message).slice(0, 200) }; }
       await save(st);
       await nap(tickMs);
     }

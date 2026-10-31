@@ -61,6 +61,12 @@ export default async function mediaOps(fastify) {
       pods: live.map((p) => ({ id: p.id, name: p.name, status: p.status, cost_per_hr: p.costPerHr, leased: st.q_last?.leased?.[`pod-${p.name}`] || 0, gpu: p.gauge?.gpu ?? null, created: p.created })),
       spent_usd: spent, usd_per_audio_hour: doneH ? Math.round((spent / doneH) * 100) / 100 : null };
   });
+  // the lane's health (Chad 10-31): each loop section's beat judged by its own cadence + the progress checks, computed NOW from the state
+  // file (a dead loop shows its sections going stale); system-checks raises the failing ones
+  fastify.get('/ops/media/health', guard, async () => {
+    const C = await import('../lib/media/cloud.js'), LH = await import('../lib/media/loop-health.js'), st = await C.loadState();
+    return { ...LH.evaluate(st, Date.now()), updated: st.updated || null, loop_updated_at: st.health?.at || null };
+  });
   // rentals valve: { pause: "reason" | false, maxPods?: 1-6 } → the pause file + the capacity file the lane reads every tick
   fastify.post('/ops/media/rentals', guard, async (req, reply) => {
     const b = req.body || {}, C = await import('../lib/media/cloud.js');
