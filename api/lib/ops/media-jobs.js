@@ -1623,7 +1623,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     const busy = new Set([...Object.values(st.jobs || {}).map((j) => j.itemId), ...(force ? [] : (st.done || []).map((d) => d.id)), ...(st.queue || [])]);
     let want = [];
     for (const it of list) {
-      if (!it?.dir || busy.has(it.id)) continue;
+      if (!it?.dir || busy.has(it.id) || it.state === 'duplicate') continue;   // a duplicate is never remastered, even by explicit id (10-30: item 830)
       const m = await readMeta(it.dir).catch(() => null);
       if (!m) continue;
       const held = ['review', 'kept', 'deferred'].includes(m.remaster?.status);
@@ -2227,6 +2227,7 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
     if (orders.length >= limit) break;
     if (!it?.dir) continue;
     if (mode === 'withdraw' && ids) { orders.push({ id: it.id, slug: it.slug, mode, withdraw: true }); continue; }
+    if (it.state === 'duplicate') continue;   // a duplicate is never remastered, even by explicit id (10-30: item 830)
     const m = await readMeta(it.dir).catch(() => null);
     if (!m) continue;
     const has =await fs.stat(join(it.dir,'enhanced/unipase.cloud.flac')).then(s=>s.size>1024).catch(()=>false) && await fs.stat(join(it.dir,'enhanced/unipase.asr.json')).then(s=>s.size>10).catch(()=>false);

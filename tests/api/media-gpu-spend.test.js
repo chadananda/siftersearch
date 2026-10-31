@@ -1007,6 +1007,14 @@ describe('talks taken off the air go first (Chad 10-29)', () => {
     const r = await mediaCloudOrderJob({ mode: 'withdraw', ids: [7] }, { cloud: { addOrders: async (o) => added.push(...o) }, repo: { getMediaItem: async (id) => ({ id, slug: 's', dir: '/x' }) }, ops: {}, readMeta: async () => { throw new Error('not read'); } });
     expect(r.ordered).toBe(1); expect(added).toEqual([{ id: 7, slug: 's', mode: 'withdraw', withdraw: true }]);
   });
+  it('a duplicate is never ordered for a remaster, even by explicit id — but can still be withdrawn (10-30: item 830)', async () => {
+    const { mediaCloudOrderJob } = await import('../../api/lib/ops/media-jobs.js');
+    const added = [], repo = { getMediaItem: async (id) => ({ id, slug: `s${id}`, dir: '/x', state: id === 830 ? 'duplicate' : 'done' }) };
+    const r = await mediaCloudOrderJob({ mode: 'restore', ids: [830] }, { cloud: { addOrders: async (o) => added.push(...o) }, repo, ops: {}, readMeta: async () => ({ original: 'o.mp3' }) });
+    expect(r.ordered).toBe(0);
+    await mediaCloudOrderJob({ mode: 'withdraw', ids: [830] }, { cloud: { addOrders: async (o) => added.push(...o) }, repo, ops: {}, readMeta: async () => ({}) });
+    expect(added).toEqual([{ id: 830, slug: 's830', mode: 'withdraw', withdraw: true }]);
+  });
   it('an item whose mode is withdraw is never work: intake withdraws it, the lane drops any already queued (10-30)', async () => {
     const { intakeOrder, dropWithdrawn } = await import('../../api/lib/ops/media-jobs.js');
     const st = { jobs: {}, home: {}, queue: [7, 2, 8], done: [], failed: [], attempts: {}, items: { 7: { mode: 'restore', redo: true }, 2: { mode: 'withdraw' }, 8: { mode: 'post' } } };
