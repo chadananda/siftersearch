@@ -56,8 +56,13 @@ export function pickBest(copies) {
 // says so — the same audio file, or transcripts whose word sequences overlap on their shared portion. Dates are reported, never gate.
 // Measured 10-31 (run 57247): the 96 transcript pairs inside Dewey's groups share 0.58–1.00 of their 5-grams (89 ≥ 0.80); 557
 // control pairs of different talks (adjacent groups) share < 0.05, except 0.24 (consecutive Iqan parts that repeat a boundary)
-// and two the labels missed (0.76, 0.93). Nothing falls in 0.25–0.55: 0.5 sits in the gap. Coverage 0.3 lets a trimmed copy through.
-export const GATE = { containment: 0.5, coverage: 0.3, minWords: 150 };
+// and two the labels missed (0.76, 0.93). Nothing falls in 0.25–0.55: 0.5 sits in the gap.
+// Coverage (shared / the longer one) measured 10-31 (run 57878, 1,148 transcript pairs, containment ≥ 0.5, 0.05 bins from 0.50):
+// 34 · 29 · 39 · 29 · 22 · 29 · 23 · 11 · 10 · 7 · 18 · 21 · 32 · 59 · 83 · 29. The valley is 0.60–0.70; below it one recording holds
+// a PART of the other (a compilation, or a series cut differently: group 628 chained parts I and II through their compilation).
+// A part is not "largely the same content" → 0.65; containment ≥ 0.5 below it is reported as "contains", never merged.
+export const GATE = { containment: 0.5, coverage: 0.65, minWords: 150 };
+export const CONTAINS = 'one contains the other (a part of a longer recording)';
 const GRAM = 5;
 /** text → Set of word 5-grams (the normalizer Dewey's preview uses). */
 export function gramSet(text) {
@@ -94,17 +99,27 @@ export function confirmPair(a, b, gate = GATE) {
   if (audio) return { ...r, same: true, by: audio };
   if (!ov) return { ...r, same: false, by: 'content unconfirmed (no transcript to compare)' };
   const content = ov.containment >= gate.containment && ov.coverage >= gate.coverage;
+  if (!content && ov.containment >= gate.containment) return { ...r, same: false, by: CONTAINS, contains: true };
   return { ...r, same: content, by: content ? 'transcript overlap' : 'transcripts differ' };
 }
-/** Pair results → components (confirmed groups, ≥2 copies) + dissolved copies. Edges are confirmed pairs only. */
+/** Pair results → components (confirmed groups, ≥2 copies) + dissolved copies + refused (confirmed pairs not joined).
+ *  Strongest confirmed pairs join first; two clusters never join when any measured pair between them says the transcripts differ
+ *  (or one only contains the other) — no chaining A≈B≈C into a group where A and C are different talks. */
 export function componentsOf(copies, pairs) {
-  const idx = new Map(copies.map((c, i) => [name(c), i])), parent = copies.map((_, i) => i);
-  const find = (x) => { while (parent[x] !== x) x = parent[x]; return x; };
-  for (const p of pairs) if (p.same) parent[find(idx.get(p.b))] = find(idx.get(p.a));
-  const comp = new Map();
-  copies.forEach((c, i) => { const k = find(i); comp.set(k, [...(comp.get(k) || []), c]); });
-  const components = [...comp.values()].filter((g) => g.length > 1), inComp = new Set(components.flat());
-  return { components, dissolved: copies.filter((c) => !inComp.has(c)) };
+  const idx = new Map(copies.map((c, i) => [name(c), i])), at = copies.map((_, i) => i), cl = copies.map((_, i) => [i]);
+  const k = (i, j) => (i < j ? `${i}|${j}` : `${j}|${i}`);
+  const differ = new Set(pairs.filter((p) => !p.same && p.containment != null).map((p) => k(idx.get(p.a), idx.get(p.b))));
+  const strength = (p) => (p.containment == null ? 3 : p.containment + p.coverage);
+  const refused = [];
+  for (const p of pairs.filter((x) => x.same).sort((x, y) => strength(y) - strength(x))) {
+    const a = at[idx.get(p.a)], b = at[idx.get(p.b)];
+    if (a === b) continue;
+    if (cl[a].some((i) => cl[b].some((j) => differ.has(k(i, j))))) { refused.push(p); continue; }
+    for (const j of cl[b]) { cl[a].push(j); at[j] = a; }
+    cl[b] = [];
+  }
+  const components = cl.filter((g) => g.length > 1).map((g) => g.sort((x, y) => x - y).map((i) => copies[i])), inComp = new Set(components.flat());
+  return { components, dissolved: copies.filter((c) => !inComp.has(c)), refused };
 }
 /** A candidate group (copies with { meta, text }) → { components, dissolved, pairs }. */
 export function gateGroup(copies, gate = GATE) {
@@ -263,11 +278,15 @@ const histOut = (h) => Object.fromEntries(h.map((n, i) => [`${(i / 20).toFixed(2
 
 /** What media-dedupe did to this copy that a dissolved group must undo → the patch, or null when untouched. */
 export function undoPlan(c, { others = [], prior = {}, merged = [], revive = false } = {}) {
-  const n = name(c), m = c.meta || {}, before = prior.prior?.[n];
+  const n = name(c), m = c.meta || {};
+  // the state before media-dedupe eliminated it: the 10-31 snapshot, else the one recorded at elimination, else (eliminated before
+  // 'was' was recorded) inferred: Dewey's label held it as a duplicate; anything else media-dedupe took out of the pipeline → queued
+  const before = prior.prior?.[n] ?? m.dedup?.was ?? (m.dedup?.verdict === 'duplicate' && m.dedup?.best ? (m.dedup.of ? 'duplicate' : 'queued') : undefined);
   const loser = c.state === 'duplicate' && /^duplicate of /.test(c.why || '');
   const best = !!m.dedup_best || m.dedup?.verdict === 'best';
   if (!loser && !best && c.dup_group == null) return null;
-  const plan = { copy: n, id: Number(c.id), from: c.state, to: null, why: null, meta: null, doc: loser && c.doc_id ? Number(c.doc_id) : null, republish: false };
+  const plan = { copy: n, id: Number(c.id), from: c.state, to: null, why: null, meta: null, doc: loser && c.doc_id ? Number(c.doc_id) : null, republish: false,
+    since: prior.prior?.[n] != null ? prior.since : (m.dedup?.at || prior.since) };   // only the docs this elimination removed
   if (loser) {
     // back to what it was before the run; a talk Dewey had already held as a duplicate stays held unless `revive` (content unconfirmed = not a duplicate)
     const dewey = m.dedup?.of ? `Dewey duplicate of ${m.dedup.of} (${m.dedup.by || '?'}, score ${m.dedup.score ?? '?'})` : 'Dewey duplicate (label only)';
@@ -333,7 +352,7 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
     near: [], groups: 0, eliminated: 0, pending: 0, busy: 0, skipped: 0, already: 0, merged_fields: 0, runs_cancelled: 0, docs_removed: 0,
     measure: { pairs: 0, compared: 0, containment: Array(20).fill(0), coverage: Array(20).fill(0), by: {}, dates_disagree_same_content: 0 },
     control: controls ? { pairs: 0, containment: Array(20).fill(0), max: 0, top: [] } : undefined,
-    dissolved_groups: 0, split_groups: 0, dissolved_copies: 0, restored: { to: {}, docs: 0, republished: 0, meta: 0 }, ambiguous: [], sample: [], dissolved_sample: [], pair_list: listPairs ? [] : undefined, errors: [] };
+    dissolved_groups: 0, split_groups: 0, dissolved_copies: 0, restored: { to: {}, docs: 0, republished: 0, meta: 0 }, ambiguous: [], contains: { pairs: 0, list: [] }, refused: [], sample: [], dissolved_sample: [], pair_list: listPairs ? [] : undefined, errors: [] };
   for (const { members, edges: gEdges } of groups) {
     try {
       const copies = [];
@@ -377,11 +396,13 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
         // ambiguous: within 0.15 of a threshold either way
         if (p.containment != null && (Math.abs(p.containment - gate.containment) < 0.15 || (p.containment >= gate.containment && p.coverage - gate.coverage < 0.15)) && out.near.length < 100)
           out.near.push({ a: p.a, b: p.b, source: p.source, same: p.same, containment: p.containment, coverage: p.coverage, dates_agree: p.dates_agree });
+        if (p.contains) { out.contains.pairs++; if (out.contains.list.length < 200) out.contains.list.push({ a: p.a, b: p.b, source: p.source, containment: p.containment, coverage: p.coverage }); }   // part ⊂ whole: for Chad, never merged
         if (listPairs) out.pair_list.push({ ...p, states: [copies.find((c) => name(c) === p.a)?.state, copies.find((c) => name(c) === p.b)?.state] });
       }
-      const { components, dissolved } = componentsOf(copies, pairs);
+      const { components, dissolved, refused } = componentsOf(copies, pairs);
+      for (const p of refused) if (out.refused.length < 100) out.refused.push({ a: p.a, b: p.b, by: p.by, containment: p.containment, coverage: p.coverage, why: 'confirmed, but a copy on one side differs from a copy on the other' });
       if (!gEdges.some((e) => e[2] === 'dewey')) { if (!components.length) { if (out.scan) out.scan.unconfirmed_groups = (out.scan.unconfirmed_groups || 0) + 1; } }   // a content-index candidate the gate did not confirm: nothing to undo
-      else if (!components.length) out.dissolved_groups++; else if (dissolved.length) out.split_groups++;
+      else if (!components.length) out.dissolved_groups++; else if (dissolved.length || components.length > 1) out.split_groups++;
       // 2. dissolved copies: reverse what media-dedupe did (state, search document, metadata, group link)
       for (const c of dissolved) {
         const plan = undoPlan(c, { others: copies.filter((o) => o !== c), prior, merged: prior.merged || [], revive });
@@ -398,7 +419,7 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
         else await repo.clearDupGroup([plan.id]);
         if (plan.doc && plan.to !== 'duplicate') {
           const { content } = deps.content ? { content: deps.content } : await import('../content.js');
-          out.restored.docs += (await content.restoreRetiredDocs([plan.doc], { since: prior.since || at, reason: `media-dedupe reversed: ${plan.copy}` })).restored || 0;
+          out.restored.docs += (await content.restoreRetiredDocs([plan.doc], { since: plan.since || at, reason: `media-dedupe reversed: ${plan.copy}` })).restored || 0;
         }
         if (c.dir && c.meta && JSON.stringify(plan.meta) !== JSON.stringify(c.meta)) { await writeMeta(c.dir, { ...plan.meta, ...(plan.meta.dedup ? { dedup: { ...plan.meta.dedup, dissolved_at: at } } : {}) }); out.restored.meta++; }
         if (plan.republish) { const queue = deps.queue || (await import('../repos/ops-report-repo.js')).enqueue; await queue('media-item', { id: plan.id, redo: ['update'] }, 'media-dedupe-reversed'); out.restored.republished++; }
@@ -406,7 +427,8 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
         if (c.slug) await purge(c.slug).catch(() => false);
       }
       // 3. each confirmed group: the best, the merge, the eliminations
-      for (const comp of components) { out.groups++; await settleGroup(comp, { pairs, runs, out, write, sample, repo, ops, writeMeta, now, deps }); }
+      const taken = new Set();
+      for (const comp of components) { out.groups++; await settleGroup(comp, { pairs, runs, out, write, sample, repo, ops, writeMeta, now, deps, taken }); }
     } catch (err) {
       out.errors.push({ group: members.map(name), error: String(err.message).slice(0, 300) });
     }
@@ -452,8 +474,11 @@ function candidateGroups(edges, byId) {
   return [...out.values()].map((g) => ({ members: [...g.ids].sort((x, y) => x - y).map((id) => byId.get(id)), edges: g.edges }));
 }
 
-async function settleGroup(copies, { pairs, runs, out, write, sample, repo, ops, writeMeta, now, deps }) {
-  const g = Math.min(...copies.map((r) => Number(r.dup_group ?? r.id)), ...copies.map((r) => Number(r.id)));
+async function settleGroup(copies, { pairs, runs, out, write, sample, repo, ops, writeMeta, now, deps, taken = new Set() }) {
+  // the group id: the old one, unless a sibling component of the same split candidate group already holds it
+  let g = Math.min(...copies.map((r) => Number(r.dup_group ?? r.id)), ...copies.map((r) => Number(r.id)));
+  if (taken.has(g)) g = Math.min(...copies.map((r) => Number(r.id)));
+  taken.add(g);
   const pick = pickBest(copies);
   if (pick.unmeasured && !live(pick.best)) { out.unmeasured = (out.unmeasured || 0) + 1; return; }   // decided once the copies are graded
   const best = pick.best, others = copies.filter((c) => c !== best);
@@ -501,7 +526,8 @@ async function settleGroup(copies, { pairs, runs, out, write, sample, repo, ops,
     for (const c of todo) {
       if (!c.dir || !c.meta) continue;
       const ev = evidence.filter((p) => p.a === name(c) || p.b === name(c));
-      await writeMeta(c.dir, { ...c.meta, dedup: { ...(c.meta.dedup || {}), verdict: 'duplicate', best: best.slug, group: g, reason: pick.reason, evidence: ev, at } });
+      const was = c.state === 'duplicate' ? (c.meta.dedup?.was || 'duplicate') : c.state;   // what an undo goes back to
+      await writeMeta(c.dir, { ...c.meta, dedup: { ...(c.meta.dedup || {}), verdict: 'duplicate', best: best.slug, group: g, reason: pick.reason, evidence: ev, was, at } });
     }
     out.eliminated += todo.length;
   }

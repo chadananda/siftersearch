@@ -188,6 +188,39 @@ describe('the content gate', () => {
     expect(r.components.map((x) => x.map((y) => y.id))).toEqual([[1, 2]]);
     expect(r.dissolved.map((x) => x.id)).toEqual([3]);
   });
+  it('confirmPair: a part of a longer recording is "contains", not the same talk (group 628)', () => {
+    const I = speech('p', 300), II = speech('q', 300), BOTH = `${I} ${II}`;
+    const r = confirmPair({ meta: {}, text: gramSet(I) }, { meta: {}, text: gramSet(BOTH) });
+    expect(r).toMatchObject({ same: false, contains: true });
+    expect(r.containment).toBeGreaterThan(0.9);
+    expect(r.coverage).toBeLessThan(0.65);
+  });
+  it('gateGroup: parts I and II never chain through their compilation; the two copies of part I stay a group', () => {
+    const I = speech('p', 300), II = speech('q', 300);
+    const c = (id, t) => ({ id, slug: `s${id}`, meta: {}, text: gramSet(t) });
+    const r = gateGroup([c(1, I), c(2, II), c(3, `${I} ${II}`), c(4, speech('p', 290, 5))]);
+    expect(r.components.map((x) => x.map((y) => y.id))).toEqual([[1, 4]]);
+    expect(r.dissolved.map((x) => x.id).sort()).toEqual([2, 3]);
+  });
+  it('componentsOf (via gateGroup): a confirmed pair is refused when a copy on one side differs from one on the other', () => {
+    // A≈B and B≈C by audio, but A and C transcripts differ → the strongest pair joins, the other is refused
+    const c = (id, t, sha) => ({ id, slug: `s${id}`, sha256: sha, meta: {}, text: gramSet(t) });
+    const r = gateGroup([c(1, TALK, 'x'), c(2, TALK, 'x'), c(3, OTHER, null)]);
+    expect(r.components.length).toBe(1);
+    const r2 = gateGroup([{ ...c(1, TALK), sha256: 'h1' }, { ...c(2, OTHER), sha256: 'h1', fingerprint: 'f' }, { ...c(3, OTHER), meta: { fingerprint: 'f' } }]);
+    // 1~2 (sha) and 2~3 (fingerprint + text), but 1 vs 3 differ → only one of the two joins
+    expect(r2.components.length).toBe(1);
+    expect(r2.components[0].length).toBe(2);
+    expect(r2.refused.length).toBe(1);
+  });
+  it('undoPlan: an elimination with no snapshot goes back to the state recorded at elimination; else Dewey-held stays held, others re-queue', () => {
+    const base = { id: 5, slug: 'x', state: 'duplicate', why: 'duplicate of y: z', doc_id: 9 };
+    const prior = { since: 'S', prior: {}, merged: [] };
+    expect(undoPlan({ ...base, meta: { dedup: { verdict: 'duplicate', best: 'y', was: 'done', at: 'T1' } } }, { prior })).toMatchObject({ to: 'done', since: 'T1' });
+    expect(undoPlan({ ...base, meta: { dedup: { verdict: 'duplicate', best: 'y', of: 'y', at: 'T1' } } }, { prior })).toMatchObject({ to: 'duplicate' });
+    expect(undoPlan({ ...base, meta: { dedup: { verdict: 'duplicate', best: 'y', at: 'T1' } } }, { prior })).toMatchObject({ to: 'queued' });
+    expect(undoPlan({ ...base, meta: { dedup: { verdict: 'duplicate', best: 'y', at: 'T1' } } }, { prior: { ...prior, prior: { x: 'done' } } })).toMatchObject({ to: 'done', since: 'S' });
+  });
 });
 
 describe('media-dedupe job', () => {
