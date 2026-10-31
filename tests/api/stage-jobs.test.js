@@ -1,7 +1,7 @@
 // Typed media jobs, tower side (planning/stage-queue-20261031.md §2-4): nextJobs from the checklist, per-type adoption, feed order, split fraction.
 import { describe, it, expect } from 'vitest';
 import { STAGES, DEPENDENTS } from '../../api/lib/media/item.js';
-import { nextJobs, effectiveDone, AUDIO_TYPES, JOB_TYPES, typedShare, typedEligible, pickNext, bandOf, fpOf, validateTyped, typedJob, stampTools, requiredFiles, haveOf, CONTRACT, chainNext, stepOf } from '../../api/lib/media/stage-jobs.js';
+import { nextJobs, effectiveDone, AUDIO_TYPES, JOB_TYPES, typedShare, typedEligible, pickNext, bandOf, fpOf, validateTyped, typedJob, stampTools, requiredFiles, haveOf, CONTRACT, chainNext, stepOf, gpuRoute } from '../../api/lib/media/stage-jobs.js';
 
 const tick = (list, extra = {}) => Object.fromEntries(list.map((s) => [s, { at: 1, ...extra }]));
 const ALL = tick(STAGES);
@@ -176,6 +176,23 @@ describe('typedJob: the next step\'s queue job', () => {
     expect(j.job.meta).toBeUndefined();
     expect(j.need.vram_mb).toBeGreaterThan(0);
     expect(typedJob('gpu', { itemId: 7, fileId: 'f', wj, prev: { ...prev, id: 'other' } }).id).not.toBe(j.id);
+  });
+  it('a step on the other transport takes the previous files from its own files store (tower copied them under the file id)', () => {
+    const prev = { id: 'cpu-prep-7-x', files: [{ path: 'meta.json', sha256: H('a') }], staged: true };
+    const j = typedJob('gpu', { itemId: 7, fileId: 'f-abc', wj, prev });
+    expect(j.inputs).toEqual([{ name: 'item/meta.json', store: 'files', id: 'f-abc', path: 'item/meta.json', sha256: H('a') }]);
+    expect(j.id).toBe(typedJob('gpu', { itemId: 7, fileId: 'f-abc', wj, prev: { ...prev, staged: false } }).id);   // same step, same id
+  });
+});
+
+describe('gpuRoute: the gpu step runs on the LAN (Aorus) until it holds TARGET_H, then overflows to the edge (pods)', () => {
+  const lan = (queued_h, gpuHost = true) => ({ hosts: gpuHost ? [{ host: 'aorus', types: ['gpu'] }] : [], by_type: { gpu: { queued_h } } });
+  it('the edge only when pods may boot typed', () => {
+    expect(gpuRoute(lan(9), { edge: false })).toBe('lan');
+    expect(gpuRoute(lan(0), { edge: true })).toBe('lan');
+    expect(gpuRoute(lan(2.5), { edge: true })).toBe('edge');
+    expect(gpuRoute(lan(0, false), { edge: true })).toBe('edge');   // no home GPU engaged: pods take it
+    expect(gpuRoute(null, { edge: true })).toBe('edge');
   });
 });
 

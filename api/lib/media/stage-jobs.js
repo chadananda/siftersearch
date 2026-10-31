@@ -97,7 +97,8 @@ export function validateTyped(type, r, { inputSha, slug, outputs = null } = {}) 
 export function typedJob(type, { itemId, fileId, wj, prev = null, band = 0, audio_s = 0, bytes = 0 }) {
   const key = fpOf(type, { sha: wj.input_sha, prev: prev?.id || null });
   const job = { v: 1, type, contract: CONTRACT.contract, id: itemId, input: wj.input, input_sha: wj.input_sha, threads: wj.threads || 2, ...(type === 'cpu-prep' ? { meta: wj.meta } : {}) };
-  const inputs = (prev?.files || []).map((f) => ({ name: 'item/' + f.path, store: 'results', id: prev.id, path: 'item/' + f.path, sha256: f.sha256 }));
+  // prev.staged: the step runs on the other transport, so tower copied the previous files into this queue's files/<file id>/item/**
+  const inputs = (prev?.files || []).map((f) => ({ name: 'item/' + f.path, store: prev.staged ? 'files' : 'results', id: prev.staged ? fileId : prev.id, path: 'item/' + f.path, sha256: f.sha256 }));
   return { id: `${type}-${itemId}-${key}`, file_id: fileId, item_id: itemId, type, stages: [type], contract: CONTRACT.contract, band, priority: 0,
     invoice: { audio_s, bytes }, need: NEED[type], job, inputs };
 }
@@ -152,4 +153,12 @@ export function pickNext(st, can = () => true) {
   st.picks = (st.picks || 0) + 1;
   if (st.picks % 5 === 0) { const lower = idx.find(([id]) => bandOf(st, id) > best); if (lower) return lower[1]; }
   return idx.find(([id]) => bandOf(st, id) === best)[1];
+}
+
+/** Where the gpu step runs: the LAN queue (home GPU) until it holds TARGET_H of gpu work, then the edge /_q (pods, boot typed only with
+ *  MEDIA_POD_TYPED=1 = { edge: true }). No home GPU engaged → the edge. podPlan sums gpu backlog over both queues, so overflow rents pods. Pure. */
+export function gpuRoute(lanCap, { edge = false, targetH = 2.5 } = {}) {
+  if (!edge) return 'lan';
+  if (!lanCap?.hosts?.some((h) => (h.types || []).includes('gpu'))) return 'edge';
+  return (lanCap.by_type?.gpu?.queued_h || 0) >= targetH ? 'edge' : 'lan';
 }

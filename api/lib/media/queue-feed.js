@@ -7,6 +7,8 @@
 // TYPED (stage-queue §2, deps.typed = the LAN queue): a share (MEDIA_TYPED_FRACTION) of whole talks runs as cpu-prep -> gpu -> cpu-finish;
 // each step is validated (stage-jobs.js) and the next job takes its outputs from the results store, so a step is acked only once the step
 // after it has finished; cpu-finish lands through the whole intake and stamps tool/settings/fp per stage.
+// deps.edge (the /_q client, set while pods boot typed: MEDIA_POD_TYPED=1): the gpu step overflows there (SJ.gpuRoute); tower copies the
+// original + the previous step's files into the other queue's files/<file id>/ and acks each step on the queue that holds it.
 import { join } from 'node:path';
 import { readFile, writeFile, rm, rename } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
@@ -68,9 +70,9 @@ export async function feed(st, deps) {
 
 const typedFileId = (itemId, sha) => `t${itemId}-${sha.slice(0, 12)}`;
 /** Typed feed: only while hosts for all three steps are engaged; keeps ~TARGET_H of prep queued; order by band (pickNext). */
-async function feedTyped(st, cap, { q, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction }) {
+async function feedTyped(st, cap, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction }) {
   const types = new Set(cap.hosts.flatMap((h) => h.types || []));
-  const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t));
+  const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t) && !(t === 'gpu' && edge));   // pods boot on the edge's gpu backlog
   if (lack.length) return { fed: 0, why: `no ${lack.join('/')} host engaged` };
   st.chains ||= {};
   const t = cap.by_type?.['cpu-prep'] || {}, rate = t.rate || (t.queued_h ? t.queued_audio_h / t.queued_h : 1);
@@ -94,20 +96,22 @@ async function feedTyped(st, cap, { q, repo, wr, readMeta = readMetaFile, now = 
 }
 
 /** Drop a talk's chain: every step's job is acked (its results go), then the talk retries like a whole job. */
-async function failChain(st, id, ack, error, repo) {
+async function failChain(st, id, ackJob, error, repo) {
   const qj = st.qjobs[id], ch = st.chains?.[qj.itemId] || {};
-  for (const x of [id, ...SJ.AUDIO_TYPES.map((t) => ch[t]?.id)]) if (x && !ack.includes(x)) { ack.push(x); delete st.qjobs[x]; }
+  for (const x of [id, ...SJ.AUDIO_TYPES.map((t) => ch[t]?.id)]) if (x) ackJob(x);
   delete st.chains?.[qj.itemId];
   await retry(st, qj, error, repo);
 }
 
 const readJson = async (f) => JSON.parse(await readFile(f, 'utf8'));
 /** Pull finished typed steps: validate; prep/gpu → enqueue the next step (ack the one before); finish → the whole intake + tool stamps. */
-async function pullTyped(st, ack, { q, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages }) {
-  let adopted = 0, errors = 0, steps = 0;
+async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages }) {
+  let adopted = 0, errors = 0, steps = 0, lanCap;
   st.chains ||= {};
-  for (const type of SJ.AUDIO_TYPES) {
-    for (const j of await q.listDone(200, type)) {   // adopted steps stay 'done' until the next step finishes: skip them
+  const ackEdge = [], qOf = (where) => (where === 'edge' ? edge : q);
+  const ackJob = (id) => { const list = st.qjobs[id]?.where === 'edge' ? ackEdge : ack; if (!list.includes(id)) list.push(id); delete st.qjobs[id]; };
+  for (const type of SJ.AUDIO_TYPES) for (const [src, sq] of [['lan', q], ...(type === 'gpu' && edge ? [['edge', edge]] : [])]) {
+    for (const j of await sq.listDone(200, type)) {   // adopted steps stay 'done' until the next step finishes: skip them
       const qj = st.qjobs[j.id];
       if (!qj || qj.adopted) continue;
       const ch = st.chains[qj.itemId], outputs = (j.result?.outputs || []).map((o) => o.name);
@@ -118,20 +122,25 @@ async function pullTyped(st, ack, { q, repo, wr, readMeta = readMetaFile, now = 
         stg = join(it.dir, `.typed-${type}`);
         await rm(stg, { recursive: true, force: true });
         if (type !== 'cpu-finish') {
-          await q.get('results', j.id, 'result.json', join(stg, 'result.json'));
+          await sq.get('results', j.id, 'result.json', join(stg, 'result.json'));
           const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs: outputs.length ? outputs : null });
           ch[type] = SJ.stepOf(j, r, now());
-          const next = SJ.chainNext(await readMeta(it.dir), ch);
+          const m = await readMeta(it.dir), next = SJ.chainNext(m, ch);
           if (!next || SJ.AUDIO_TYPES.indexOf(next) <= SJ.AUDIO_TYPES.indexOf(type)) throw Error(`${type} delivered without its stages (next would be ${next})`);
-          const job = SJ.typedJob(next, { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: j.id, files: r.files }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
-          await q.enqueue([job]);
+          const where = next === 'gpu' ? SJ.gpuRoute(lanCap ||= await q.capacity().catch(() => null), { edge: !!edge, targetH: TARGET_H }) : 'lan', nq = qOf(where);
+          if (where !== src) {   // the next step runs on the other transport: its inputs go into that queue's files/<file id>/
+            if (where === 'edge') await nq.put('files', ch.fileId, ch.input, join(it.dir, m.original));   // the LAN holds it from the feed
+            for (const f of r.files) { const tmp = join(stg, 'x', 'item', f.path); await sq.get('results', j.id, 'item/' + f.path, tmp); await nq.put('files', ch.fileId, 'item/' + f.path, tmp); }
+          }
+          const job = SJ.typedJob(next, { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: j.id, files: r.files, staged: where !== src }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
+          await nq.enqueue([job]);
           qj.adopted = true;
-          st.qjobs[job.id] = { itemId: qj.itemId, slug: qj.slug, sha: ch.sha, kind: 'typed', type: next, audio_s: ch.audio_s, at: now() };
+          st.qjobs[job.id] = { itemId: qj.itemId, slug: qj.slug, sha: ch.sha, kind: 'typed', type: next, audio_s: ch.audio_s, at: now(), ...(where === 'edge' ? { where } : {}) };
           const before = SJ.AUDIO_TYPES[SJ.AUDIO_TYPES.indexOf(type) - 1];   // this step has consumed the one before: its results can go
-          if (before && ch[before] && !ack.includes(ch[before].id)) { ack.push(ch[before].id); delete st.qjobs[ch[before].id]; }
+          if (before && ch[before]) ackJob(ch[before].id);
           steps++;
         } else {
-          for (const o of outputs) await q.get('results', j.id, o, join(stg, o));
+          for (const o of outputs) await sq.get('results', j.id, o, join(stg, o));
           const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs });
           const meta = await wr.adoptWholeResult(stg, it.dir, await readMeta(it.dir), ch.sha, null);
           ch[type] = SJ.stepOf(j, r, now());
@@ -142,16 +151,17 @@ async function pullTyped(st, ack, { q, repo, wr, readMeta = readMetaFile, now = 
             await repo.updateMediaItem(it.id, { state: 'transcribed', stage: null, stages_done: ',' + Object.keys(meta.stages || {}).join(',') + ',' });
           st.done.push({ id: it.id, slug: it.slug, mode: 'typed', audio_s: ch.audio_s, gpu: ch.gpu?.host, pod: ch.gpu?.host, prep: ch['cpu-prep']?.host, finish: j.host, at: now(), via: 'queue' });
           provePool(st, ch.gpu?.host);
-          for (const x of [j.id, ch['cpu-prep']?.id, ch.gpu?.id]) if (x && !ack.includes(x)) { ack.push(x); delete st.qjobs[x]; }
+          for (const x of [j.id, ch['cpu-prep']?.id, ch.gpu?.id]) if (x) ackJob(x);
           delete st.chains[qj.itemId];
           adopted++;
         }
-      } catch (e) { errors++; await failChain(st, j.id, ack, `typed ${type} from ${j.host}: ${e.message}`, repo); }
+      } catch (e) { errors++; await failChain(st, j.id, ackJob, `typed ${type} from ${j.host}: ${e.message}`, repo); }
       if (stg) await rm(stg, { recursive: true, force: true }).catch(() => {});
     }
-    for (const f of (await q.stats(type)).failed || []) if (st.qjobs[f.id]) { errors++; await failChain(st, f.id, ack, `queue ${type}: ${f.error}`, repo); }
+    for (const f of (await sq.stats(type)).failed || []) if (st.qjobs[f.id]) { errors++; await failChain(st, f.id, ackJob, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`, repo); }
   }
-  return { adopted, steps, errors };
+  if (ackEdge.length) await edge.ack(ackEdge);   // the LAN list is acked by pull()
+  return { adopted, steps, errors, ...(edge ? { edge_acked: ackEdge.length } : {}) };
 }
 
 /** A restore-kind result → <talk>/enhanced/pod through the one intake (refused by name otherwise); done.json → enhanced/unipase.done.json. */

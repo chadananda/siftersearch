@@ -1870,10 +1870,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         st.q_checked = now();
         qPass = (async () => {
           // two transports, one API: the LAN queue (tower's disk, aorus/boss) first, then the edge /_q (R2, anywhere). An item is fed to one only.
-          // typed (cpu-prep -> gpu -> cpu-finish) runs on the LAN queue only, for MEDIA_TYPED_FRACTION of whole talks (0 = off).
+          // typed (cpu-prep -> gpu -> cpu-finish) is fed on the LAN queue, for MEDIA_TYPED_FRACTION of whole talks (0 = off); with MEDIA_POD_TYPED=1
+          // its gpu step overflows to the edge /_q (pods) once Aorus holds TARGET_H, and finish comes back to the LAN (queue-feed.js, SJ.gpuRoute).
           const [QF, { queueClient }, wr, { localQueue }] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js'), import('../repos/media-queue-repo.js')]);
           const deps = { repo, wr, now, full: !!acceptedWorker, decided, remaster: (id) => queue('media-remaster', { id }, 'media-cloud-remaster') };
-          st.q_lan = { at: now(), ...await QF.tick(st, { ...deps, q: localQueue(), typed: true }).catch((e) => ({ error: String(e.message).slice(0, 300) })) };
+          st.q_lan = { at: now(), ...await QF.tick(st, { ...deps, q: localQueue(), typed: true, edge: process.env.MEDIA_POD_TYPED === '1' ? queueClient({ key: queueKey }) : null }).catch((e) => ({ error: String(e.message).slice(0, 300) })) };
           st.q_last = { at: now(), ...await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }) };
           // the typed pod count (stage-queue §4) over both queues, every pass: shown always, used for rentals once pods boot typed (MEDIA_POD_TYPED=1)
           const QC = await import('../../../worker/queue/core.js');
