@@ -66,6 +66,11 @@ it('agent pods: tower keeps a pod alive while its queue heartbeats arrive; slots
   const { CLOUD } = await import('../../api/lib/media/cloud.js');
   expect(CLOUD.agentDeadAfterMs).toBeGreaterThan(CLOUD.deadAfterMs);
 });
+it('every pod bootstrap marks the lane seen: the entrypoint ends a pod without /workspace/.lane-seen at 25 min (10-31: pods 367, 368, 371, 372)', async () => {
+  expect(readFileSync('docker/media-worker/entrypoint.sh', 'utf8')).toMatch(/sleep 1500; \[ -e \/workspace\/\.lane-seen \]/);
+  const C = await import('../../api/lib/media/cloud.js');
+  for (const b of [C.BOOTSTRAP_AGENT, C.BOOTSTRAP_WHOLE]) expect(b).toMatch(/touch [^\n]*\/workspace\/\.lane-seen/);
+});
 it('pod gauge reads cgroup v1 CPU time too (10-31: RunPod hosts without cpu.stat showed 0 % CPU), without 32-bit awk overflow', () => {
   const jobs = readFileSync('api/lib/ops/media-jobs.js', 'utf8');
   expect(jobs.match(/cpuacct\/cpuacct\.usage/g)?.length).toBe(2);

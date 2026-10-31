@@ -344,7 +344,7 @@ echo started`;
  * and closes. The pod ends ITSELF when the agent exits (idle on an empty queue, or drained), or after 24 h. Tower prepends
  * MEDIA_QUEUE_KEY + POD_HOST + AGENT_SLOTS at run time (never baked into the image or BOOT_V). */
 export const BOOTSTRAP_AGENT = `set -e
-mkdir -p /workspace/spool /workspace/q
+mkdir -p /workspace/spool /workspace/q && touch /workspace/.lane-seen   # (10-31: without it the entrypoint's 25-min zombie guard ended pods 367, 368, 371, 372 mid-work)
 export HF_HOME=/opt/models/hf TORCH_HOME=/root/.cache/torch SIFTER_WEIGHTS=/opt/models/weights
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=/opt/worker-extras:/opt/sifter/media NLTK_DATA=/opt/models/nltk_data
 for v in RUNPOD_POD_ID RP_TERMINATE_KEY LD_LIBRARY_PATH PATH; do val=$(tr '\\0' '\\n' < /proc/1/environ | grep "^$v=" | head -1 | cut -d= -f2-); [ -n "$val" ] && export $v="$val"; done
