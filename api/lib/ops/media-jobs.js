@@ -1438,12 +1438,12 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
     const pure = Number(m.remaster?.swapped) === 0 && (m.enhancement?.variants || []).find((v) => v.name === 'unipase')?.file;
     if (pk.choice === 'publish' && pure && await fs.stat(join(it.dir, pure)).then((x) => x.size > 1024, () => false)) {
       // a held remaster with no original sentence in it (Chad 10-31): the copy tower already holds becomes the listening copy; no audio work here
-      const { flipToRemaster } = await import('../media/remaster-rejudge.js');
+      const { flipToRemaster, queueAfterFlip } = await import('../media/remaster-rejudge.js');
       flipToRemaster(m, { verdict: 'pass-human-full', at });
       m.remaster.decided_by = pk.by || 'Chad';
       await fs.writeFile(mf, JSON.stringify(m, null, 2));
       await reindex();
-      await queue('media-item', { id: it.id, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-decide');
+      await queueAfterFlip(queue, it.id, m, 'media-remaster-decide');
       out.published.push(it.slug);
     } else if (pk.choice === 'publish') {
       markAudioPending(m);
@@ -1482,9 +1482,10 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
 }
 
 /** media-remaster-rejudge { ids?, limit?, force? }: the re-judge pass (Chad 10-31) over held remasters from their stored scores; the 30 s feed runs it paced (3 a tick). → counts this tick */
-export async function mediaRemasterRejudgeJob({ ids, limit, force } = {}, deps = {}) {
+export async function mediaRemasterRejudgeJob({ ids, limit, force, audit_quiet, fix } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js'), ops = deps.ops || await import('../repos/ops-report-repo.js');
-  const { rejudgePass } = await import('../media/remaster-rejudge.js');
+  const { rejudgePass, quietAudit } = await import('../media/remaster-rejudge.js');
+  if (audit_quiet) return quietAudit({ repo, queue: deps.queue || ops.enqueue, readMeta: deps.readMeta, fix: !!fix });
   return rejudgePass({ repo, queue: deps.queue || ops.enqueue, readMeta: deps.readMeta, ids: ids?.length ? ids : null, limit: Number(limit) || (ids?.length ? 50 : 3), force: !!force, countsFile: deps.countsFile, pending: async () => (await ops.pendingRuns('media-item')).length });
 }
 
@@ -2291,7 +2292,7 @@ export async function mediaCloudOrderJob({ mode = 'post', ids = null, limit = 60
 /** media-quiet-repair { ids, limit?, host?, image?, parallel? }: silence-only repair of PUBLISHED remasters (Chad 10-30): the kept master is silenced where
  *  nobody speaks on a home host (media/quiet-repair.js), then a media-item redo re-encodes the web copies on the worker pool and bumps audio_version.
  *  Idempotent (meta.remaster.quiet marks a done talk); a talk with media-item/remaster work in flight waits for the next run. → { repaired, unchanged, skipped, failed } */
-export async function mediaQuietRepairJob({ ids = null, limit = 300, host = 'aorus', image = null, parallel = 2 } = {}, deps = {}) {
+export async function mediaQuietRepairJob({ ids = null, limit = 300, host = 'aorus', image = null, parallel = 2, redo = null } = {}, deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const T = deps.tools || await import('../media/tools.js');
@@ -2322,7 +2323,7 @@ export async function mediaQuietRepairJob({ ids = null, limit = 300, host = 'aor
       if (waiting && fresh.remaster.status === 'waiting') { fresh.remaster.status = 'done'; delete fresh.remaster.why; }   // back to done: no lane or backfill re-picks it
       await writeMeta(it.dir, fresh);
       if (!r.changed) return out.unchanged.push(it.slug);
-      await queue('media-item', { id: it.id, remaster: true, redo: ['web', 'trim', 'update'] }, 'media-quiet-repair');
+      await queue('media-item', { id: it.id, remaster: true, redo: redo?.length ? redo : ['web', 'trim', 'update'] }, 'media-quiet-repair');
       out.repaired.push(it.slug); out.silenced_s += r.record.quiet_s; out.noise_silenced_s += r.record.noise_silenced_s;
     } catch (err) { if (err.code === 'DRAIN') { todo.unshift(it); return; } out.failed.push(`${it.slug}: ${String(err.message).slice(0, 200)}`); }
   };

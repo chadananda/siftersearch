@@ -6,7 +6,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { remasterJudgement, qualityOf } from '../../api/lib/media/remaster-quality.js';
 import { isComplete, COMPLETE_STAGES } from '../../api/lib/media/item.js';
-import { rejudgeOne, rejudgePass, resetRejudge, heldList, excerptsOf } from '../../api/lib/media/remaster-rejudge.js';
+import { quietAudit, rejudgeOne, rejudgePass, resetRejudge, heldList, excerptsOf } from '../../api/lib/media/remaster-rejudge.js';
 import { mediaRemasterDecideJob } from '../../api/lib/ops/media-jobs.js';
 
 const CHECKS = { finite_scores: true, quality_gain: true, overall_no_regression: true, speech_no_material_regression: true, consistent_gain: true, no_bad_excerpt: true, no_material_clipping: true, duration_preserved: true };
@@ -74,8 +74,26 @@ describe('re-judge pass, publish, archive', () => {
   });
   afterEach(() => rm(dir, { recursive: true, force: true }));
 
+  it('publish without a quiet pass: flipped, but the quiet repair runs FIRST (then the web redo); not on air until quiet is recorded', async () => {
+    const it = await mk(11, talk(assessment({}, { duration_preserved: false })));
+    expect(await rejudgeOne(it, await meta(it), { repo, queue })).toBe('publish');
+    expect(queue).toHaveBeenCalledWith('media-quiet-repair', { ids: [11], redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-rejudge');
+    expect(queue).not.toHaveBeenCalledWith('media-item', expect.anything(), expect.anything());
+    const m = await meta(it), full = Object.fromEntries([...COMPLETE_STAGES, 'web'].map((k) => [k, { at: 1 }]));
+    expect(isComplete({ ...m, stages: full, web_listening: 'unipase' })).toBe(false);
+    expect(isComplete({ ...m, stages: full, web_listening: 'unipase', remaster: { ...m.remaster, quiet: { v: 1 } } })).toBe(true);
+  });
+  it('quiet audit: counts published remasters with / without the quiet record and queues the repair for the missing ones on fix', async () => {
+    const withQ = await mk(12, talk(assessment(), { status: 'done', verdict: 'pass-judged', judged: { action: 'publish' }, quiet: { v: 1 } }));
+    const noQ = await mk(13, talk(assessment(), { status: 'done', verdict: 'pass-judged', judged: { action: 'publish' } }));
+    const old = await mk(14, talk(assessment(), { status: 'done', verdict: 'pass-auto' }));
+    repo.heldRows.mockResolvedValue([withQ, noQ, old]);
+    const r = await quietAudit({ repo, queue, fix: true });
+    expect(r).toMatchObject({ published: 3, with_quiet: 1, missing: 2, judged_published: 2, judged_missing: ['t13'], other_missing: ['t14'], queued: 2 });
+    expect(queue).toHaveBeenCalledWith('media-quiet-repair', { ids: [13, 14], limit: 2 }, 'media-remaster-rejudge');
+  });
   it('publish: the remaster becomes the listening copy, status done, web/update redone; the talk is not on air until the web copy is encoded from it', async () => {
-    const it = await mk(1, talk(assessment({}, { duration_preserved: false })));
+    const it = await mk(1, talk(assessment({}, { duration_preserved: false }), { quiet: { v: 1 } }));
     expect(await rejudgeOne(it, await meta(it), { repo, queue })).toBe('publish');
     const m = await meta(it);
     expect(m.remaster).toMatchObject({ status: 'done', verdict: 'pass-judged' }); expect(m.enhancement.listening).toBe('unipase'); expect(m.audio_publish_pending).toBe(true);
@@ -122,7 +140,7 @@ describe('re-judge pass, publish, archive', () => {
     expect(JSON.parse(await readFile(countsFile, 'utf8'))).toMatchObject({ publish: 3, hold: 1 });
   });
   it('Chad publishes a held pure remaster: on air after the redo, verdict pass-human-full; Archive: status archived, out of every queue, files kept', async () => {
-    const a = await mk(6, talk(assessment({}, { no_bad_excerpt: false }), { judged: { action: 'hold' } }));
+    const a = await mk(6, talk(assessment({}, { no_bad_excerpt: false }), { judged: { action: 'hold' }, quiet: { v: 1 } }));
     const b = await mk(7, talk(assessment({}, { no_bad_excerpt: false })));
     repo.getMediaBySlug.mockImplementation(async (s) => ({ t6: a, t7: b })[s]);
     const out = await mediaRemasterDecideJob({ picks: [{ slug: 't6', choice: 'publish', by: 'chad@x' }, { slug: 't7', choice: 'archive' }] }, { repo, queue, tools: {} });

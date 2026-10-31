@@ -33,7 +33,7 @@ describe('only restored talks are on the air', () => {
 });
 
 const ALL = Object.fromEntries(['remaster', 'verify', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog', 'web'].map((k) => [k, { at: 1 }]));
-const good = (tier = 'heavy') => ({ web_original: { m4a: 'a.m4a' }, remaster_tier: tier, remaster: { status: 'done', method: tier === 'cleaned' ? 'cleaned' : 'pod', check: { verdict: 'changed' } }, enhancement: { listening: 'unipase' }, stages: ALL });
+const good = (tier = 'heavy') => ({ web_original: { m4a: 'a.m4a' }, remaster_tier: tier, remaster: { status: 'done', method: tier === 'cleaned' ? 'cleaned' : 'pod', check: { verdict: 'changed' }, quiet: { v: 1 } }, enhancement: { listening: 'unipase' }, stages: ALL });
 describe('backfillRestored', () => {
   it('flags unclassified published rows from meta.json (restored tier → 1, none → 0, unreadable → 0)', async () => {
     const metas = { '/x/3': good() };

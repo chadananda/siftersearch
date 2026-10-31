@@ -357,14 +357,16 @@ describe('isComplete: every stage run + the remaster IS the listening copy (Chad
     expect(isComplete({ ...base, remaster: { status: 'done', verdict: 'pass-auto', output_assessment: { passed: true } } })).toBe(false);   // done but the listening copy is still the original
   });
   it('a remaster copy counts only when its verdict is usable/cleaned and the web copy was encoded from it; a splice never plays', () => {
-    const ok = { ...base, web_original: { ogg: 'o', m4a: 'm' }, remaster_tier: 'heavy', enhancement: { listening: 'unipase' }, remaster: { status: 'done', verdict: 'pass-auto', swapped: 0, output_assessment: { passed: true } } };
+    const ok = { ...base, web_original: { ogg: 'o', m4a: 'm' }, remaster_tier: 'heavy', enhancement: { listening: 'unipase' }, remaster: { status: 'done', verdict: 'pass-auto', swapped: 0, output_assessment: { passed: true }, quiet: { v: 1 } } };
     expect(isComplete(ok)).toBe(true);
+    expect(isComplete({ ...ok, remaster: { ...ok.remaster, quiet: undefined } })).toBe(false);   // Chad 10-31: no quiet pass (UniPASE worsens the gaps) = not complete, not on air
+    expect(isComplete({ ...ok, remaster: { ...ok.remaster, quiet: { v: 0 } } })).toBe(false);
     expect(isComplete({ ...ok, web_listening: 'safe' })).toBe(false);                             // flipped to the remaster, the web copy not yet re-encoded
     expect(isComplete({ ...ok, web_listening: 'unipase' })).toBe(true);
     expect(isComplete({ ...ok, remaster: { ...ok.remaster, swapped: 3 } })).toBe(false);          // spliced
     expect(isComplete({ ...ok, remaster: { status: 'review' } })).toBe(false);                    // unipase listening but held
-    expect(isComplete({ ...ok, remaster: { status: 'done', verdict: 'pass-judged', swapped: 0, judged: { action: 'publish' } } })).toBe(true);   // the judge published it from the stored scores
-    expect(isComplete({ ...ok, remaster: { status: 'done', verdict: 'pass-human-full', swapped: 5 } })).toBe(true);   // Chad published the full (pure) copy
+    expect(isComplete({ ...ok, remaster: { status: 'done', verdict: 'pass-judged', swapped: 0, judged: { action: 'publish' }, quiet: { v: 1 } } })).toBe(true);   // the judge published it from the stored scores
+    expect(isComplete({ ...ok, remaster: { status: 'done', verdict: 'pass-human-full', swapped: 5, quiet: { v: 1 } } })).toBe(true);   // Chad published the full (pure) copy
   });
   it('a missing stage or a missing web copy keeps it off air', () => {
     expect(isComplete({ ...base, stages: { ...stages, links: {} } })).toBe(false);

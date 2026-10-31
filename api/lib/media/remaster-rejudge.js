@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { readFile, writeFile, rename, stat, mkdir, rm } from 'fs/promises';
 import { remasterJudgement, qualityOf, assessmentOf, JUDGE_RULE } from './remaster-quality.js';
 import { markAudioPending } from './talk-audio.js';
+import { hasQuiet } from './quiet-record.js';
 
 export const COUNTS_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'data', 'run', 'remaster-rejudge.json');
 const REDO = ['realign', 'web', 'trim', 'update'];
@@ -21,6 +22,28 @@ export function flipToRemaster(m, { verdict, judged, at }) {
   m.remaster = { ...(m.remaster || {}), status: 'done', verdict, ...(judged ? { judged } : {}), decided_at: at };
   delete m.remaster.why;
   return m;
+}
+
+/** After a talk is flipped to its remaster: the web copies are redone FROM a master that has its quiet pass. No quiet record yet → the quiet repair runs first (a home worker silences the word-free stretches; it never inserts
+ *  original audio) and then queues this same redo; never a media-item run racing it. */
+export const queueAfterFlip = (queue, id, m, by) => (hasQuiet(m) ? queue('media-item', { id, remaster: true, redo: REDO }, by) : queue('media-quiet-repair', { ids: [id], redo: REDO }, by));
+
+/** Quiet audit of the published remasters (Chad 10-31: every remaster gets the quiet pass): counts those with / without the quiet record, lists the judge- and Chad-published ones missing it; fix → the quiet repair is queued for them. */
+export async function quietAudit({ repo, queue, readMeta, fix = false } = {}) {
+  const read = readMeta || ((dir) => readJson(join(dir, 'meta.json')));
+  const out = { published: 0, with_quiet: 0, missing: 0, judged_published: 0, judged_missing: [], other_missing: [], queued: 0 };
+  for (const it of await repo.heldRows(['usable', 'cleaned'])) {
+    const m = await read(it.dir).catch(() => null);
+    if (!m?.remaster || m.remaster.status !== 'done') continue;
+    const judged = m.remaster.judged?.action === 'publish' || ['pass-judged', 'pass-human-full'].includes(m.remaster.verdict);
+    out.published++; if (judged) out.judged_published++;
+    if (hasQuiet(m)) { out.with_quiet++; continue; }
+    out.missing++; (judged ? out.judged_missing : out.other_missing).push({ id: it.id, slug: it.slug });
+  }
+  const ids = [...out.judged_missing, ...out.other_missing].map((x) => x.id);
+  if (fix && ids.length) { await queue('media-quiet-repair', { ids, limit: ids.length }, 'media-remaster-rejudge'); out.queued = ids.length; }
+  out.judged_missing = out.judged_missing.map((x) => x.slug); out.other_missing = out.other_missing.map((x) => x.slug);
+  return out;
 }
 
 /** A copy written under the retired word guard (Chad 10-31: "There is no reason to ever splice a remaster"): original sentences swapped into the remaster. */
@@ -65,7 +88,7 @@ export async function rejudgeOne(it, m, { repo, queue, now = () => new Date().to
   flipToRemaster(m, { verdict: 'pass-judged', judged: { ...judged, action: 'publish' }, at });
   if (j.action === 'rerun') m.remaster.rerun_n = Number(r.rerun_n || 0) + 1;
   await save();
-  await queue('media-item', { id: it.id, remaster: true, redo: REDO }, 'media-remaster-rejudge');
+  await queueAfterFlip(queue, it.id, m, 'media-remaster-rejudge');
   return j.action === 'rerun' ? 'rerun' : 'publish';
 }
 

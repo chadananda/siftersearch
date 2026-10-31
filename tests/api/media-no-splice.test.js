@@ -32,6 +32,16 @@ describe('no splice code path exists', () => {
   });
 });
 
+describe('the quiet pass is not a splice and stays', () => {
+  it('quiet.py + quiet-repair exist and the worker contract still requires quiet before tower adopts a result', () => {
+    expect(existsSync(join(ROOT, 'scripts', 'media', 'worker', 'quiet.py'))).toBe(true); expect(existsSync(join(ROOT, 'api', 'lib', 'media', 'quiet-repair.js'))).toBe(true);
+    expect(JSON.parse(readFileSync(join(ROOT, 'scripts', 'media', 'worker', 'result-contract.json'), 'utf8')).post.requires ?? JSON.parse(readFileSync(join(ROOT, 'scripts', 'media', 'worker', 'result-contract.json'), 'utf8')).requires).toContain('quiet');
+  });
+  it('quiet.py never reads the original recording (it attenuates the remaster\'s own gaps)', () => {
+    expect(readFileSync(join(ROOT, 'scripts', 'media', 'worker', 'quiet.py'), 'utf8')).not.toMatch(/in\.(wav|mp3|m4a)|\boriginal\b.*(read|load|open)/i);
+  });
+});
+
 describe('word comparison is assessment only', () => {
   const CHECKS = { finite_scores: true, quality_gain: true, overall_no_regression: true, speech_no_material_regression: true, consistent_gain: true, no_bad_excerpt: true, no_material_clipping: true, duration_preserved: true };
   const a = { passed: true, checks: CHECKS, reference: { nisqa: [2] }, restored: { nisqa: [3] }, technical: { duration_s: 100 } };

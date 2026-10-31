@@ -6,7 +6,7 @@ import {audioVersion, audioAlignment, listeningVariant, markAudioPending, timing
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { qualityOf, remasterProven } from './remaster-quality.js';
 const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT: tower never reprocesses audio — set once the pre-worker backlog has drained
-import { quietRecord } from './quiet-record.js';
+import { quietRecord, hasQuiet } from './quiet-record.js';
 import { podPost, podComplete, podVerdict, resign as podResign, take as podTake, forget as podForget, podDir } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait } from './tools.js';
@@ -145,8 +145,8 @@ export const STAGES = ['archive', 'grade', 'enhance', 'remaster', 'verify', 'rea
  *  that passed assessment (usable/cleaned — never a splice of original + remaster, Chad 10-29) WITH MEASURED PROOF it differs from the original (the verify stage, or a passed paired-quality assessment). Only complete talks are on the air; the rest are in the pipeline, or archived. media_items.restored holds this flag. */
 export const COMPLETE_STAGES = ['remaster', 'verify', 'transcribe', 'diarize', 'correct', 'headings', 'quotes', 'links', 'assess', 'ingest', 'catalog'];
 /** A PLAYABLE LISTENING COPY (Chad 10-31: "I do not want any audio to play the original"): the web encode exists AND it was made from the remaster, and the remaster's verdict is usable/cleaned;
- *  never the original, never a splice of original and remastered sentences (10-29). A talk whose listening copy is not the remaster is not playable until the remaster has run. */
-export const hasPlayableCopy = (meta = {}) => !!meta.stages?.web?.at && meta.enhancement?.listening === 'unipase' && (meta.web_listening ?? 'unipase') === 'unipase' && ['usable', 'cleaned'].includes(qualityOf(meta).verdict);
+ *  never the original, never a splice of original and remastered sentences (10-29), never without its quiet pass (10-31: meta.remaster.quiet). A talk whose listening copy is not the remaster is not playable until the remaster has run. */
+export const hasPlayableCopy = (meta = {}) => !!meta.stages?.web?.at && hasQuiet(meta) && meta.enhancement?.listening === 'unipase' && (meta.web_listening ?? 'unipase') === 'unipase' && ['usable', 'cleaned'].includes(qualityOf(meta).verdict);
 /** ON AIR (Chad 10-31) = every COMPLETE_STAGES stage has run AND the remaster is DONE (published by the judge or by Chad) AND the talk plays that remaster. review/kept/deferred/skipped/waiting/archived
  *  are not on air: they are in the queue, on the held page, or archived. The remaster upgrades nothing: it IS the listening copy. */
 export const REMASTER_DECIDED = ['done'];
