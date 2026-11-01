@@ -4,6 +4,11 @@
 // a deep conversation-level judgement by Opus 5.5 → per-turn defects with the STAGE that caused them (fixture candidates).
 //   node tests/quality/anis-conversations.mjs [--themes id,id] [--seeds 3,17] (combinable) [--plan-seed s (fixes the move plan across tags)] [--personas skeptic,..] [--n 2] [--turns 5] [--concurrency 2]
 //        [--tag name] [--dry] [--no-perplexity] [--rejudge reports/anis-conversations-….json] [--publish [--status draft]]
+//        [--replay reports/anis-conversations-….json [--only id,id] [--fresh-perplexity]]
+// --replay: the SAME conversations again — each recorded reader turn is sent verbatim (no reader LLM) to Anís in a fresh thread,
+// then re-judged, so before/after runs compare like with like (r6: a re-simulated reader made 3.85→3.25 mostly noise). A replayed
+// turn was written against the OLD reply, so it may no longer fit; the judge is told and still scores it. Perplexity's recorded
+// answers are reused (cost 0, marked reused) unless --fresh-perplexity; the source comparison is re-run against the new replies.
 // API base: API_BASE (default http://tower-nas:7839). Needs ANTHROPIC_API_KEY, DEPLOY_SECRET (thread trace), INTERNAL_API_KEY (--publish only).
 // Per turn (default on, --no-perplexity off): Perplexity sonar on the same thread, in parallel with Anís, then a separate Opus source-comparison
 // judge (perplexity-compare.mjs; PERPLEXITY_API_KEY, TEST_API_KEY for the library check). The conversation judge's prompt and scores are unchanged.
@@ -29,7 +34,7 @@ const pct = (a, p) => (a.length ? [...a].sort((x, y) => x - y)[Math.min(a.length
 const SIM_MODEL = process.env.CONV_SIM_MODEL || 'claude-sonnet-5-5', JUDGE_MODEL = process.env.CONV_JUDGE_MODEL || 'claude-opus-5-5';
 const TURNS = Number(arg('turns') || 5), N = Number(arg('n') || 2), CONC = Number(arg('concurrency') || 2);
 const DATE = new Date().toISOString().slice(0, 10), TAG = arg('tag');
-const WITH_PX = !has('no-perplexity');
+const WITH_PX = !has('no-perplexity'), REPLAY = arg('replay'), FRESH_PX = has('fresh-perplexity');
 
 // ---- themes (what the reader came with) and personas (how they talk)
 const THEMES = [
@@ -81,6 +86,12 @@ if (list('seeds')) {
 if (!want && !list('seeds')) convs = [...THEMES].sort(() => Math.random() - 0.5).slice(0, N);
 if (list('personas')) convs = convs.map((c, i) => ({ ...c, persona: list('personas')[i % list('personas').length] }));
 convs = convs.map((c) => ({ ...c, moves: movePlan(TURNS, rng(`${c.id}|${arg('plan-seed') || `${DATE}|${TAG || ''}`}`)) }));
+// --replay: the recorded conversations replace the selection (--only narrows them by id)
+if (REPLAY) convs = replayConvs(JSON.parse(readFileSync(REPLAY, 'utf8')).results, list('only'));
+function replayConvs(results, only) {
+  return (results || []).filter((r) => r.turns?.length && (!only || only.includes(r.id))).map((r) => ({ id: r.id, theme: r.theme, persona: r.persona,
+    moves: r.turns.map((t) => t.move), replay: r.turns.map((t) => ({ move: t.move, user: t.user, refers_to: t.refers_to || '', perplexity: t.perplexity || null, old_reply: t.reply || '' })) }));
+}
 
 // ---- cost accounting (simulator + judge from usage; Anís from its own thread meta)
 const spend = { sim: 0, judge: 0, anis: 0, px: 0, compare: 0 };
@@ -101,8 +112,25 @@ async function readerTurn(c, transcript, move) {
   const res = await claude().messages.create({ model: SIM_MODEL, max_tokens: 600, system: SIM(c), messages: [{ role: 'user', content: `${shown ? `THE CONVERSATION SO FAR:\n${shown}\n\n` : ''}${ask}` }] });
   spend.sim += usd(SIM_MODEL, res.usage);
   const raw = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
-  try { const j = JSON.parse(raw.match(/\{[\s\S]*\}/)[0]); if (j.message) return { message: String(j.message).trim().slice(0, 3900), refers_to: j.refers_to || '' }; } catch { /* fall through */ }
+  // the reader sometimes writes two objects ("…} Correction, JSON only: {…}") — a greedy match spanned both, failed to parse,
+  // and leaked the raw JSON into the user turn (r6 return-iqan T2). Take the LAST complete object that carries a message.
+  const j = jsonObjects(raw).reverse().find((o) => o?.message);
+  if (j) return { message: String(j.message).trim().slice(0, 3900), refers_to: j.refers_to || '' };
   return { message: raw.trim().replace(/^"|"$/g, '').slice(0, 3900), refers_to: '' };
+}
+
+/** Every balanced top-level {…} in text that parses as JSON (string-aware brace scan). */
+function jsonObjects(text) {
+  const out = []; let depth = 0, start = -1, inStr = false, esc = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') inStr = false; continue; }
+    if (ch === '"') { if (depth > 0) inStr = true; continue; }
+    if (ch === '{') { if (depth++ === 0) start = i; } else if (ch === '}' && depth > 0 && --depth === 0) {
+      try { out.push(JSON.parse(text.slice(start, i + 1))); } catch { /* not JSON */ }
+    }
+  }
+  return out;
 }
 
 // ---- one Anís turn over the live chat stream (the site's "discuss" path)
@@ -155,14 +183,17 @@ async function converse(c) {
   const uid = 'user_' + [...crypto.getRandomValues(new Uint8Array(8))].map((b) => b.toString(16).padStart(2, '0')).join('');
   const messages = [], turns = [], pxCalls = []; let cid = null;
   for (let t = 0; t < c.moves.length; t++) {
-    const move = c.moves[t], u = await readerTurn(c, messages, move);
+    const rec = c.replay?.[t];
+    const move = c.moves[t], u = rec ? { message: rec.user, refers_to: rec.refers_to } : await readerTurn(c, messages, move);
     messages.push({ role: 'user', content: u.message });
     // Perplexity gets the same thread (reader + Anís's earlier replies); started now, awaited after the conversation so turn latency is unchanged
-    if (WITH_PX) pxCalls[t] = perplexityTurn(messages.map((m) => ({ ...m })));
+    // (a replay reuses the recorded answer: the reader's words are the same, and reuse keeps the comparison's other side fixed)
+    if (WITH_PX) pxCalls[t] = rec?.perplexity?.text && !FRESH_PX ? Promise.resolve({ ...rec.perplexity, cost: 0, reused: REPLAY, recorded_cost: rec.perplexity.cost ?? null })
+      : perplexityTurn(messages.map((m) => ({ ...m })));
     const a = await anisTurn(messages, uid, cid);
     cid ||= a.conversation_id;
     console.log(`  [${c.id}] T${t + 1} ${move} ${a.error ? `ERROR ${a.error}` : `${(a.ms / 1000).toFixed(1)}s ${a.text.length}ch`} — ${u.message.slice(0, 90)}`);
-    turns.push({ turn: t + 1, move, refers_to: u.refers_to, user: u.message, reply: a.text, ms: a.ms, first_chunk_ms: a.first_chunk_ms, error: a.error,
+    turns.push({ turn: t + 1, move, refers_to: u.refers_to, user: u.message, ...(rec ? { replayed: true } : {}), reply: a.text, ms: a.ms, first_chunk_ms: a.first_chunk_ms, error: a.error,
       sources: a.sources.slice(0, 12).map((s) => ({ title: s.title, author: s.author, religion: s.religion, url: s.url, document_id: s.document_id, paragraph_index: s.paragraph_index, text: String(s.text || '').slice(0, 280) })),
       citations: (a.citations || []).slice(0, 12).map((x) => ({ title: x.title || x.source_title || null, author: x.author || x.source_author || null, url: x.url || x.citation_url || null })),
       status: a.status, engine: a.complete?.engine ?? null, format: a.complete?.format ?? null });
@@ -176,7 +207,7 @@ async function converse(c) {
     const rp = rounds.find((r) => String(r.question?.text || '').trim() === t.user.trim()) || rounds[t.turn - 1];
     t.route = rp ? routeOf(rp) : null; if (t.route?.usd) spend.anis += t.route.usd;
   });
-  return { id: c.id, theme: c.theme, persona: c.persona, uid, conversation_id: cid, messages, turns };
+  return { id: c.id, theme: c.theme, persona: c.persona, uid, conversation_id: cid, messages, turns, ...(c.replay ? { replayed_from: REPLAY } : {}) };
 }
 
 // ---- the judge
@@ -196,6 +227,8 @@ Score the CONVERSATION (1–5 each, 5 = excellent, be strict; 3 = acceptable wit
 Then per turn list DEFECTS, each with the STAGE that caused it — the first stage in the pipeline where it went wrong:
   gate (triage refused/canned/misrouted the turn), strategy (wrong plan shape for what was asked, e.g. topic for a quote request), follow_up_context (the turn was planned/searched without the earlier-turn referent), retrieval (the right texts were not among the sources surfaced), selection (right texts were in the sources but the reply used worse ones or ignored them), answer (writing: misquote, misattribution, authority error, repetition, missing link, tone, bluff), latency.
 Use the sources list and route to decide retrieval vs selection vs answer — say what evidence decided it. Each defect: what went wrong, the evidence (quote the reply or route), and what a correct reply would contain (concrete enough to become a test fixture). Do not invent defects; a good turn has none. Call the verdict tool exactly once.`;
+// a replayed conversation: the reader's turns are a recording, written against EARLIER replies than the ones shown
+const REPLAY_NOTE = 'NOTE: this is a REPLAY. The reader\'s messages are recorded verbatim from an earlier run and were written in response to Anís\'s EARLIER replies, not necessarily the ones shown here. A follow-up may therefore refer to something Anís did not say this time ("that second passage", a quoted phrase). Do not count that mismatch as a defect by itself: judge how Anís handles the turn as it stands (resolving it from this conversation where he can, saying plainly what he did not say, or answering the evident request), and score everything else exactly as usual.';
 const DIMS = ['grounding', 'citation_links', 'follow_up_resolution', 'coherence', 'depth', 'honesty_absence', 'authority_ordering', 'tone', 'latency'];
 const STAGES = ['gate', 'strategy', 'follow_up_context', 'retrieval', 'selection', 'answer', 'latency'];
 const VERDICT = { name: 'verdict', description: 'the conversation verdict', input_schema: { type: 'object', required: ['scores', 'overall', 'headline', 'turns'], properties: {
@@ -217,7 +250,7 @@ async function judgeConversation(conv) {
     `ROUTE: ${JSON.stringify(t.route || 'unavailable')}`,
   ].join('\n')).join('\n\n');
   const res = await claude().messages.create({ model: JUDGE_MODEL, max_tokens: 16000, thinking: { type: 'adaptive' }, system: JUDGE, tools: [VERDICT], tool_choice: { type: 'auto' },
-    messages: [{ role: 'user', content: `THEME: ${conv.theme}\nREADER PERSONA: ${conv.persona} — ${PERSONAS[conv.persona] || ''}\n\n${body}\n\nJudge the whole conversation and call the verdict tool.` }] });
+    messages: [{ role: 'user', content: `THEME: ${conv.theme}\nREADER PERSONA: ${conv.persona} — ${PERSONAS[conv.persona] || ''}\n\n${conv.replayed_from ? `${REPLAY_NOTE}\n\n` : ''}${body}\n\nJudge the whole conversation and call the verdict tool.` }] });
   spend.judge += usd(JUDGE_MODEL, res.usage);
   const v = res.content.find((b) => b.type === 'tool_use')?.input;
   if (!v) throw new Error('judge returned no verdict');
@@ -245,7 +278,7 @@ function summarize(results) {
   const bySev = Object.fromEntries(['critical', 'major', 'minor'].map((s) => [s, defects.filter((d) => d.severity === s).length]));
   const anisUsd = results.flatMap((r) => r.turns.map((t) => t.route?.usd || 0)).reduce((a, b) => a + b, 0);
   const px = pxRollup(results), pxUsd = px.usd.perplexity + px.usd.compare_judge;
-  return { date: DATE, tag: TAG || null, api: API, sim_model: SIM_MODEL, judge_model: JUDGE_MODEL, conversations: results.length, judged: ok.length,
+  return { date: DATE, tag: TAG || null, ...(REPLAY ? { replay_of: REPLAY.replace(/^.*\/reports\//, 'reports/') } : {}), api: API, sim_model: SIM_MODEL, judge_model: JUDGE_MODEL, conversations: results.length, judged: ok.length,
     turns: results.reduce((a, r) => a + r.turns.length, 0), errors: results.reduce((a, r) => a + r.turns.filter((t) => t.error).length, 0),
     overall: mean(ok.map((r) => r.verdict.overall)), scores: Object.fromEntries(DIMS.map((d) => [d, mean(ok.map((r) => r.verdict.scores?.[d]?.score).filter((x) => x != null))])),
     defects: defects.length, by_stage: byStage, by_severity: bySev,
@@ -282,9 +315,10 @@ function markdown(summary, results) {
 const pool = async (items, n, fn) => { const out = []; let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k], k); } })); return out; };
 const EST = { sim_per_turn: 0.005, anis_per_turn: 0.002, judge: 0.15, px_per_turn: 0.0055, compare_per_turn: 0.075 };   // px + compare: 11-01 px-smoke, 10 turns ($0.0055 / $0.074 per turn)   // 11-01 smoke, 2 × 5 turns: $0.18/conversation (judge $0.146); refine from the history file
 if (has('dry')) {
-  console.log(`DRY RUN — no API calls. ${convs.length} conversations × ${TURNS} turns against ${API}; reader ${SIM_MODEL}, judge ${JUDGE_MODEL}; Perplexity comparison ${WITH_PX ? 'ON (sonar + Opus source judge per turn)' : 'off'}`);
-  for (const c of convs) console.log(`  ${c.id} [${c.persona}] ${c.moves.join(' → ')}\n    ${c.theme}`);
-  const est = convs.length * (TURNS * (EST.sim_per_turn + EST.anis_per_turn + (WITH_PX ? EST.px_per_turn + EST.compare_per_turn : 0)) + EST.judge);
+  console.log(`DRY RUN — no API calls. ${convs.length} conversations × ${TURNS} turns against ${API}; reader ${REPLAY ? `REPLAY of ${REPLAY}` : SIM_MODEL}, judge ${JUDGE_MODEL}; Perplexity comparison ${WITH_PX ? `ON (${REPLAY && !FRESH_PX ? 'recorded sonar answers reused' : 'sonar'} + Opus source judge per turn)` : 'off'}`);
+  for (const c of convs) console.log(`  ${c.id} [${c.persona}] ${c.moves.join(' → ')}\n    ${c.theme}${c.replay ? c.replay.map((r, i) => `\n    T${i + 1}: ${r.user.replace(/\s+/g, ' ').slice(0, 110)}`).join('') : ''}`);
+  const nt = convs.reduce((a, c) => a + (c.replay?.length || TURNS), 0), pxReused = REPLAY && !FRESH_PX ? convs.reduce((a, c) => a + (c.replay || []).filter((r) => r.perplexity?.text).length, 0) : 0;
+  const est = nt * ((REPLAY ? 0 : EST.sim_per_turn) + EST.anis_per_turn + (WITH_PX ? EST.px_per_turn + EST.compare_per_turn : 0)) - pxReused * (WITH_PX ? EST.px_per_turn : 0) + convs.length * EST.judge;
   console.log(`estimated cost ≈ $${est.toFixed(2)} (≈ $${(est / Math.max(1, convs.length)).toFixed(2)}/conversation)`);
   process.exit(0);
 }
