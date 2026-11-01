@@ -30,7 +30,7 @@ const SHAPES = {
   fact: 'a factual question about people, places, dates, events or documents: who, when, where, how many, what happened; also a question about this library itself (which religions or works it holds)',
   topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea — including what one author wrote on a theme ("Shoghi Effendi on the Administrative Order", "what the Báb wrote about Him Whom God shall make manifest")',
   define: 'asks what a term, name or concept means',
-  lookup: 'names a specific work or person and wants that item itself (not a theme within their writings)',
+  lookup: 'names a specific work or person and wants that item itself — to read, find or identify it ("where can I read the Bhagavad Gita", "Dawnbreakers", "Dhammapada text"); not what an author wrote on a theme',
   enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something (not a list of what the library holds)',
   converse: 'conversation, not a lookup: a greeting, thanks, small talk, or a question about the assistant itself (its name, what it can do). A title, a name or a phrase of the library\'s content ("hidden words work", "<phrase> source") is NEVER conversation',
 };

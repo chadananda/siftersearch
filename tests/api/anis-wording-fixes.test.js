@@ -78,6 +78,12 @@ describe('named object', () => {
     expect(objectPhrases("can u find the text 'Most Holy Book'").map((o) => o.phrase)).toContain('Most Holy Book');
     expect(objectPhrases('some answerd questions where')[0].phrase).toBe('some answerd questions');
   });
+  it('a central figure tacked onto a work is an attribution, not part of the title', () => {
+    expect(objectPhrases('Hidden Words Shoghi Effendi')).toContainEqual({ phrase: 'Hidden Words', workOnly: true });
+    expect(objectPhrases('paris talks bahaullah')).toContainEqual({ phrase: 'paris talks', workOnly: true });
+    // small words do not count toward the six-word name limit
+    expect(objectPhrases('where is the text of the Hidden Words by Shoghi Effendi')).toContainEqual({ phrase: 'Hidden Words', workOnly: true });
+  });
   it('a long sentence is no name', () => expect(objectPhrases('the earth is but one country and mankind its citizens forever and ever')).toEqual([]));
   it('matches spelling variants word for word', () => {
     expect(nameMatches('mulla hosein', 'Mullá Ḥusayn')).toBe(true);

@@ -17,12 +17,15 @@ collection collections help need want looking cn whos let lets give list texts w
 auther not sure whenever have has moment pull full txt online available anywher great complete summary version copy keep keeps seeing grateful
 using approach out figure identity biography bio person guy refers refer term think exact exactly possible explain understand understanding
 knowing wanting searching good fine sumthing start abt shows account story homework student background meaning relevant thing things asap
-ones they them r n rember right real realy really teacher used first given origin taken word advance being who's what's where's`.split(/\s+/));
+ones they them r n rember right real realy really teacher used first given origin taken word advance being who's what's where's
+toward towards place english`.split(/\s+/));
 // Generic nouns that frame a title ("the text 'The Most Holy Book'") but can also BE part of one ("Most Holy Book"): trimmed only at the edges, as a second try.
 const GENERIC = new Set('book work works text document title phrase writing'.split(' '));
 // small words and the honorifics the lookup's keys ignore too (translit-key HON): "Mullá Ḥusayn" is matched on "Ḥusayn"
 const SMALL = new Set(`the of in by and a an i al el ul l mirza mulla molla siyyid sayyid seyyed haji hajji hajj aqa aqay agha shaykh sheikh shaikh
 ustad ustadh khan ibn bin abu abi umm son daughter`.split(/\s+/));
+// a central figure's name at the end of a residue (an attribution being asked about, not part of a title)
+const FIGURE_TAIL = /\s+(?:by\s+|of\s+|as\s+)?(?:shoghi\s+eff?endi|the\s+guardian|bah[aá][’'ʼ]?u[’'ʼ]?ll[aá]h[’'ʼ]?s?|bahaullah|[’'ʼ]?abdu[’'ʼ]?l[- ]bah[aá]|abdul[- ]baha|the\s+b[aá]b)\s*$/i;
 const tokens = (s) => fold(s).replace(/\([^)]*\)/g, ' ').split(/:/)[0].replace(/[^a-z\s-]/g, ' ').split(/[\s-]+/).filter((t) => t && !SMALL.has(t));
 
 /** The candidate object phrases of a turn, most literal first: the residue after the request frame, its generic edges
@@ -31,15 +34,22 @@ export function objectPhrases(text) {
   const t = String(text || '').replace(/\b(and )?by whom\b/gi, ' ').replace(/["“”«»?!.,;:()]/g, ' ');
   const words = t.split(/\s+/).map((w) => w.replace(/^['‘’`]+|['‘’`]+$/g, '')).filter(Boolean);
   const kept = words.filter((w) => !WRAP.has(fold(w)) && !/^\d+$/.test(w));
-  if (!kept.length || kept.length > 6) return [];
+  // a name is at most six significant words ("of", "by" do not count: "text of the Hidden Words by Shoghi Effendi")
+  if (!kept.length || kept.filter((w) => !SMALL.has(fold(w))).length > 6) return [];
   const out = [{ phrase: kept.join(' ') }];
   let a = 0, b = kept.length;
-  while (a < b && GENERIC.has(fold(kept[a]))) a++;
-  while (b > a && GENERIC.has(fold(kept[b - 1]))) b--;
+  // a generic noun at an edge goes with the connectives beside it ("text of Hidden Words" → "Hidden Words")
+  //   (a trailing "by" stays: "God Passes By")
+  const edge = (w, lead) => GENERIC.has(fold(w)) || (lead ? /^(of|by|in)$/i : /^(of|in)$/i).test(w);
+  while (a < b && edge(kept[a], true)) a++;
+  while (b > a && edge(kept[b - 1], false)) b--;
   // lead trimmed, tail trimmed, both: "text Most Holy Book" → "Most Holy Book" (the tail is part of the title)
   for (const [x, y] of [[a, kept.length], [0, b], [a, b]]) if (y > x && (x > 0 || y < kept.length)) out.push({ phrase: kept.slice(x, y).join(' ') });
   const split = kept.slice(a, b).join(' ').split(/\s+(?:by|of)\s+/i);
   if (split.length > 1 && split[0].split(/\s+/).length >= 2) out.push({ phrase: split[0], workOnly: true });
+  // a work with the (often wrong) author tacked on: "Hidden Words Shoghi Effendi", "paris talks bahaullah" → the work
+  const bare = kept.slice(a, b).join(' ').replace(FIGURE_TAIL, '').trim();
+  if (bare && bare !== kept.slice(a, b).join(' ') && bare.split(/\s+/).length >= 2) out.push({ phrase: bare, workOnly: true });
   return out.filter((o, i) => o.phrase.length >= 3 && out.findIndex((x) => x.phrase === o.phrase) === i);
 }
 
