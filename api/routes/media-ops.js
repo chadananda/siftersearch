@@ -2,7 +2,7 @@
 // talks by stage, add, redo, worker-image promotion. Logic in api/lib/media/media-status.js (shared with Dewey). Plan: planning/media-ledger-plan-20261030.md
 import { join, dirname } from 'path';
 import { requireInternal } from '../lib/auth.js';
-import { mediaProgress, mediaStatus, mediaAdd, mediaRedo } from '../lib/media/media-status.js';
+import { mediaProgress, mediaStatus, mediaAdd, mediaRedo, mediaOrphans } from '../lib/media/media-status.js';
 
 export default async function mediaOps(fastify) {
   const guard = { preHandler: requireInternal };
@@ -28,6 +28,8 @@ export default async function mediaOps(fastify) {
     if (!q.stage) return { error: 'stage (with status or missing=1) or q required' };
     return { items: await (await import('../lib/repos/media-ledger-repo.js')).itemsByStage({ stage: String(q.stage), status: String(q.status || 'done'), missing: q.missing === '1' || q.missing === 'true', afterId: q.after, limit: q.limit }) };
   });
+  // orphans (11-01): done, off air, stages missing, not held/archived — by next stage; the feed pass sends the llm-class ones back
+  fastify.get('/ops/media/orphans', guard, async () => mediaOrphans(await import('../lib/repos/media-repo.js')));
   fastify.get('/ops/media/items/:ref', guard, async (req, reply) => {
     const r = await mediaStatus(req.params.ref);
     return r.item || r.matches?.length ? r : reply.code(404).send({ error: 'no such talk', ...r });

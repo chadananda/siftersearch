@@ -176,6 +176,36 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     expect([...store.keys()].filter((k) => k.startsWith('results/'))).toEqual([]);
     expect(st.qjobs).toEqual({}); expect(st.chains).toEqual({});
   });
+  // 11-01 (2664/2665/2702): a finish adopted over a talk already 'done' replaced its meta (stages after trim gone) but the state
+  // guard skipped 'done', so the row stayed done/catalog off air and nothing ever ran the rest
+  const toFinish = async () => { engage(); st.queue = [1]; await feed(st, deps); deliver('cpu-prep'); await pull(st, deps); deliver('gpu'); await pull(st, deps); };
+  it('a finish adopted over a talk already done sends it back to transcribed (its later stages were replaced); a held verdict stays done', async () => {
+    await toFinish();
+    Object.assign(items[1], { state: 'done', stage: 'catalog', verdict: null });
+    deliver('cpu-finish');
+    expect((await pull(st, deps)).typed).toMatchObject({ adopted: 1, errors: 0 });
+    expect(items[1]).toMatchObject({ state: 'transcribed', stage: null });
+    expect(items[1].stages_done).toMatch(/,quiet,/);
+  });
+  it('a held verdict (review/unrepairable/archived) is Chad\'s: the adoption leaves the row done', async () => {
+    await toFinish();
+    Object.assign(items[1], { state: 'done', stage: 'catalog', verdict: 'review' });
+    deliver('cpu-finish');
+    await pull(st, deps);
+    expect(items[1]).toMatchObject({ state: 'done', verdict: 'review' });
+  });
+  it('a finish step already adopted (its job id on the meta) is not adopted again: the published meta is kept, the row stays done, the chain closes', async () => {
+    await toFinish();
+    const f = deliver('cpu-finish');
+    const m1 = join(items[1].dir, 'meta.json');
+    const published = { slug: 't1', original: 'orig.mp3', stages: { ...tick(['archive', 'trim', 'correct', 'catalog', 'assess']), quiet: { at: 1, job: f.id } } };
+    await writeFile(m1, JSON.stringify(published));
+    Object.assign(items[1], { state: 'done', stage: 'catalog', verdict: null });
+    expect((await pull(st, deps)).typed).toMatchObject({ adopted: 1, errors: 0 });
+    expect(JSON.parse(await readFile(m1, 'utf8')).stages).toEqual(published.stages);
+    expect(items[1].state).toBe('done');
+    expect(st.chains).toEqual({}); expect(st.qjobs).toEqual({});
+  });
   it('cpu-finish: the pass (deferFinish) leaves it, adoptFinish adopts it and times each part; the step stays done until adopted', async () => {
     engage(); st.queue = [1];
     await feed(st, deps); deliver('cpu-prep'); await pull(st, deps); deliver('gpu'); await pull(st, deps);

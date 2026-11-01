@@ -28,6 +28,17 @@ export async function validateWholeResult(root,inputSha,slug){
  return r;
 }
 // a hardlink when both paths share a filesystem (no bytes move: the 400 MB unipase.flac), a copy across filesystems
+// The row write after a worker result is adopted. The adoption replaced meta.json with the worker's stages, so a row that was
+// already 'done' (a redo, or a re-delivered step) must go back to 'transcribed' too, or it stays done with its later stages gone
+// and nothing ever runs them (2664/2665/2702, 11-01). A held verdict stays where it is: Chad decides those. alreadyAdopted = the
+// same step was adopted before; then only a row still waiting on it moves.
+export const ADOPT_FROM=['whole_queued','scheduled','queued','running'];
+export const HELD_VERDICTS=['review','unrepairable','archived'];
+export function adoptedState(row,stages,{alreadyAdopted=false}={}){
+ const s=row?.state;
+ const ok=ADOPT_FROM.includes(s)||(!alreadyAdopted&&s==='done'&&!HELD_VERDICTS.includes(row?.verdict));
+ return ok?{state:'transcribed',stage:null,stages_done:','+Object.keys(stages||{}).join(',')+','}:null;
+}
 export async function linkOrCopy(from,to){await rm(to,{force:true});try{await link(from,to);}catch(e){if(!['EXDEV','EPERM','ENOTSUP'].includes(e.code))throw e;await copyFile(from,to);}}
 export async function adoptWholeResult(root,dir,oldMeta,inputSha,itemId=null,T=(k,f)=>f(),shaOf=fileSha){
  const r=await T('validate',()=>validateWholeResult(root,inputSha,oldMeta.slug));

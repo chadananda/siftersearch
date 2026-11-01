@@ -871,6 +871,17 @@ export async function mediaLanesFeedPass(deps = {}) {
   }
   const llm = await ops.pendingRuns('media-llm');
   out.llm_pending = llm.length;
+  // ORPHANS (11-01: 2664/2665/2702): done, off air, a tower-class (llm) stage missing and no hold on it. No work list below picks a
+  // done row whose next stage is not a feed stage, so it goes back to 'transcribed' and the LLM lane runs the rest. Held/archived
+  // verdicts are never listed (Chad decides those); feed stages (quiet) stay with the stage feed; a talk with a run in hand waits.
+  if (repo.offAirIncomplete) {
+    const fed = deps.feedStages || FEED_STAGES;
+    const busy = new Set([...llm, ...await ops.pendingRuns('media-item')].map((r) => Number(r.params?.id)).filter(Boolean));
+    for (const it of (await repo.offAirIncomplete(llmDepth + busy.size)).filter((x) => !busy.has(x.id) && !fed.includes(x.next_stage) && towerMay(x.next_stage)).slice(0, llmDepth)) {
+      await repo.updateMediaItem(it.id, { state: 'transcribed', stage: null, why: `off air with ${it.next_stage} onward missing: back to the pipeline` });
+      (out.orphans ||= []).push(it.id);
+    }
+  }
   for (const it of await repo.nextTranscribed(Math.max(0, llmDepth - llm.length))) {
     await repo.updateMediaItem(it.id, { state: 'llm_queued' });
     await queue('media-llm', { id: it.id, priority: true }, 'media-feed');
@@ -1895,7 +1906,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (!m?.original) throw new Error('no original');
           if (st.items?.[it.id]?.kind==='whole'){
             const completed=await (await import('../media/home-recording.js')).homeWholeRecording(it,m,{T,host:baseHost(h),image:isGateHost(h)?((acceptedWorker.gate_image??acceptedWorker.boss_image)||acceptedWorker.image):(cur.image||acceptedWorker.image),legacyLock:acceptedWorker.aorus_legacy_lock!==false,stop:draining});
-            if(['whole_queued','scheduled','queued','running'].includes((await repo.getMediaItem(it.id))?.state))await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
+            {const w=(await import('../media/whole-result.js')).adoptedState(await repo.getMediaItem(it.id),completed.stages);if(w)await repo.updateMediaItem(it.id,w);}
             st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,gpu:h,pod:h,at:now()});updateRate(st.rates||={},h,m.duration_s,(now()-cur.since)/1000);st.home_done++;return;
           }
           if (decided(m,it.id)) return;
@@ -2275,7 +2286,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 if(x.kind==='whole'){
                   const m=await readMeta(it.dir);
                   const completed=await (await import('../media/cloud-recording.js')).takeCloudRecording({C,run,p,job,item:it,meta:m,inputSha:x.input_sha});
-                  if(['whole_queued','scheduled','queued','running'].includes(it.state))await repo.updateMediaItem(it.id,{state:'transcribed',stage:null,stages_done:','+Object.keys(completed.stages).join(',')+','});
+                  {const w=(await import('../media/whole-result.js')).adoptedState(await repo.getMediaItem(it.id),completed.stages);if(w)await repo.updateMediaItem(it.id,w);}
                   await C.podSsh(run,p,`rm -rf /workspace/spool/${job}`,{timeoutMs:60000});
                   delete st.jobs[job];p.jobs_done=(p.jobs_done||0)+1;st.proven=true;st.boot_fails=0;
                   st.done.push({id:it.id,slug:it.slug,mode:'whole',audio_s:m.duration_s,pod:p.name,at:now(),cycle_s:Math.round((now()-x.since)/1000)});

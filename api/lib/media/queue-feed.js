@@ -16,6 +16,7 @@ import { join, extname } from 'node:path';
 import { VIDEO } from './r2-stage.js';
 import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
+import { adoptedState } from './whole-result.js';
 import { untransitArgs, TRANSIT, isDecoded } from '../../../scripts/media/worker/transit.mjs';
 import { decide } from './exclusions.js';
 import { cbPerson, cbVerdict } from './cb-date.js';
@@ -305,15 +306,22 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
           const k = (w) => `${type}:${src}:${w}`;
           await tm(k('get'), async () => { for (const o of outputs) await sq.get('results', j.id, o, join(stg, o)); });   // a hardlink on the LAN store's filesystem
           const r = await tm(k('result'), async () => SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs }));
-          const meta = await wr.adoptWholeResult(stg, it.dir, await readMeta(it.dir), ch.sha, null, (w, f) => tm(k('adopt_' + w), f), (f) => shaOf(st, wr, f));
-          await tm(k('untransit'), () => untransit(it.dir, r, meta, { run, now }));
+          // this very step was adopted before (its job id is stamped on the meta) and the talk may have gone on through publish since:
+          // adopting it again would overwrite meta.json and wipe every later stage, leaving a done talk off air (2665, 11-01)
+          const cur = await readMeta(it.dir), again = Object.values(cur?.stages || {}).some((v) => v?.job === j.id);
+          let meta = cur;
+          if (!again) {
+            meta = await wr.adoptWholeResult(stg, it.dir, cur, ch.sha, null, (w, f) => tm(k('adopt_' + w), f), (f) => shaOf(st, wr, f));
+            await tm(k('untransit'), () => untransit(it.dir, r, meta, { run, now }));
+          }
           ch[type] = SJ.stepOf(j, r, now());
           logStep(st, type, j.host, ch.audio_s, now());
-          SJ.stampTools(meta, ch);
-          await tm(k('meta'), async () => { await writeFile(join(it.dir, 'meta.json.typed-part'), JSON.stringify(meta, null, 2)); await rename(join(it.dir, 'meta.json.typed-part'), join(it.dir, 'meta.json')); });
+          if (!again) {
+            SJ.stampTools(meta, ch);
+            await tm(k('meta'), async () => { await writeFile(join(it.dir, 'meta.json.typed-part'), JSON.stringify(meta, null, 2)); await rename(join(it.dir, 'meta.json.typed-part'), join(it.dir, 'meta.json')); });
+          }
           await tm(k('sync'), () => (syncStages || (async (id, stages) => (await import('../repos/media-ledger-repo.js')).syncItemStages(id, stages)))(it.id, meta.stages).catch(() => {}));
-          await tm(k('repo'), async () => { if (['whole_queued', 'scheduled', 'queued', 'running'].includes((await repo.getMediaItem(it.id))?.state))
-            await repo.updateMediaItem(it.id, { state: 'transcribed', stage: null, stages_done: ',' + Object.keys(meta.stages || {}).join(',') + ',' }); });
+          await tm(k('repo'), async () => { const w = adoptedState(await repo.getMediaItem(it.id), meta.stages, { alreadyAdopted: again }); if (w) await repo.updateMediaItem(it.id, w); });
           st.done.push({ id: it.id, slug: it.slug, mode: 'typed', remaster: meta.remaster?.status || null, swapped: meta.remaster?.swapped ?? null, audio_s: ch.audio_s, gpu: ch.gpu?.host, pod: ch.gpu?.host, prep: ch['cpu-prep']?.host, finish: j.host, at: now(), via: 'queue' });
           provePool(st, ch.gpu?.host);
           for (const x of [j.id, ch['cpu-prep']?.id, ch.gpu?.id]) if (x) ackJob(x);
@@ -528,8 +536,7 @@ export async function pull(st, deps) {
       await rm(staging, { recursive: true, force: true });
       for (const o of j.result?.outputs || []) await q.get('results', j.id, o.name, join(staging, o.name));
       const completed = await wr.adoptWholeResult(staging, it.dir, m, qj.sha, it.id);
-      if (['whole_queued', 'scheduled', 'queued', 'running'].includes((await repo.getMediaItem(it.id))?.state))
-        await repo.updateMediaItem(it.id, { state: 'transcribed', stage: null, stages_done: ',' + Object.keys(completed.stages || {}).join(',') + ',' });
+      { const w = adoptedState(await repo.getMediaItem(it.id), completed.stages); if (w) await repo.updateMediaItem(it.id, w); }
       st.done.push({ id: it.id, slug: it.slug, mode: 'whole', audio_s: qj.audio_s, gpu: j.host, pod: j.host, at: now(), via: 'queue' });
       provePool(st, j.host);
       adopted++;

@@ -24,6 +24,13 @@ export async function mediaProgress(d = null) {
   return { stages, last_hour: hour, last_day: day, states, lane, complete_stages: d.item.COMPLETE_STAGES };
 }
 
+/** Orphans (11-01): done, off air, stages missing, not held/archived — counted by next stage, with the first ids. The feed pass sends the
+ *  tower-class (llm) ones back to 'transcribed'; a feed stage (quiet) is the stage feed's; anything else is listed for a look. */
+export async function mediaOrphans(repo) {
+  const [by, first] = await Promise.all([repo.offAirIncompleteCounts(), repo.offAirIncomplete(50)]);
+  return { total: by.reduce((a, r) => a + Number(r.n || 0), 0), by_next_stage: Object.fromEntries(by.map((r) => [r.next_stage, Number(r.n)])), first: first.map((r) => ({ id: r.id, slug: r.slug, next_stage: r.next_stage, verdict: r.verdict })) };
+}
+
 /** One talk by id or slug (or matches by title/speaker): its catalogue row, every stage, and what is still missing. */
 export async function mediaStatus(ref, d = null) {
   d ||= await deps0();

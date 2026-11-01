@@ -436,6 +436,12 @@ export const unclassifiedDone = async (limit = 50) => queryAll(`SELECT id, dir F
 export const doneRows = async (afterId = 0, limit = 200) => queryAll(`SELECT id, dir, restored, next_stage, stages_missing, published_at, verdict FROM media_items WHERE state = 'done' AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 200], 'media:done-verify');
 /** Published talks whose next checklist stage is `stage` (a requirement added after publication), in id order — the pipeline's work list for that stage. */
 export const nextByStage = async (stage, limit = 6) => queryAll(`SELECT id, slug, dir FROM media_items WHERE state = 'done' AND dir IS NOT NULL AND next_stage = ? ORDER BY id LIMIT ?`, [String(stage), Number(limit) || 6], 'media:next-by-stage');
+/** Done but off air with checklist stages missing and nobody holding it (11-01: a worker result adopted over a published talk
+ *  wiped its later stages; the row stayed 'done' and no work list revisited it). Held/archived verdicts are Chad's, never listed. */
+const ORPHAN_WHERE = `state = 'done' AND dir IS NOT NULL AND COALESCE(restored, 0) = 0 AND COALESCE(stages_missing, 0) > 0 AND next_stage IS NOT NULL
+  AND COALESCE(verdict, '') NOT IN ('review', 'unrepairable', 'archived')`;
+export const offAirIncomplete = async (limit = 20) => queryAll(`SELECT id, slug, dir, next_stage, verdict FROM media_items WHERE ${ORPHAN_WHERE} ORDER BY id LIMIT ?`, [Number(limit) || 20], 'media:off-air-incomplete');
+export const offAirIncompleteCounts = async () => queryAll(`SELECT next_stage, COUNT(*) AS n FROM media_items WHERE ${ORPHAN_WHERE} GROUP BY next_stage ORDER BY n DESC`, [], 'media:off-air-incomplete-counts');
 const IDX = ['restored', 'stages_missing', 'next_stage', 'verdict', 'in_quality', 'out_quality', 'in_bw_khz', 'out_bw_khz', 'completed_at'];
 export const setIndex = async (id, f) => transaction([{ sql: `UPDATE media_items SET ${IDX.map((c) => `${c} = ?`).join(', ')}, ${AIR_SQL} WHERE id = ?`, args: [...IDX.map((c) => f[c] ?? null), ...airArgs(f.restored), Number(id)] }], 'media:set-index');
 export const setRestored = async (id, flag) => transaction([{ sql: `UPDATE media_items SET restored = ?, ${AIR_SQL} WHERE id = ?`, args: [flag ? 1 : 0, ...airArgs(flag), Number(id)] }], 'media:set-restored');
