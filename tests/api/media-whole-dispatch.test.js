@@ -1,7 +1,7 @@
 // Whole-order dispatch (Chad 10-28): vendor-blind (boss AMD and aorus NVIDIA both take whole orders), and ONE host per order — upload is the
 // bottleneck, so the same audio never goes to two computers.
 import { describe, it, expect } from 'vitest';
-import { homeEligibleItem, homePick, podPick, homeImage, silences, HOME_BUILDS } from '../../api/lib/ops/media-jobs.js';
+import { homeEligibleItem, homePick, podPick, homeImage, silences, HOME_BUILDS, homeScaleMode, homeGpuOrder, homeRemaster } from '../../api/lib/ops/media-jobs.js';
 import { readFileSync } from 'fs';
 
 const wholeOnly = { queue: [1] };
@@ -16,6 +16,25 @@ describe('whole dispatch', () => {
   it('boss takes no whole order while the typed pipeline runs (MEDIA_POD_TYPED): its gate image is not the accepted one', () => {
     expect(homeEligibleItem('boss', 1, st(wholeOnly), accepted, { MEDIA_POD_TYPED: '1' })).toBe(false);
     expect(homeEligibleItem('aorus-1', 1, st(wholeOnly), accepted, { MEDIA_POD_TYPED: '1' })).toBe(true);
+  });
+  it('scale mode (pods engaged): home hosts take NO gpu or whole order — restore and whole stay for the pods; post/cleanup (CPU) still go home (11-01: boss pegged on UniPASE for #2459)', () => {
+    const s = (plan) => ({ items: { 1: { kind: 'whole' }, 2: { mode: 'restore' }, 3: { mode: 'post' }, 4: { mode: 'cleanup' }, 5: {} }, home: {}, queue: [1, 2, 3, 4, 5], pod_plan: plan });
+    const typed = { MEDIA_POD_TYPED: '1' };
+    for (const host of ['boss', 'aorus-1']) {
+      for (const plan of [{ mode: 'scale' }, { mode: 'x', buffer: { home_gpu: false } }]) {
+        expect(homeEligibleItem(host, 1, s(plan), accepted, typed)).toBe(false);
+        expect(homeEligibleItem(host, 2, s(plan), accepted, typed)).toBe(false);
+        expect(homeEligibleItem(host, 5, s(plan), accepted, typed)).toBe(false);   // no mode = restore
+        expect(homeEligibleItem(host, 3, s(plan), accepted, typed)).toBe(true);
+        expect(homeEligibleItem(host, 4, s(plan), accepted, typed)).toBe(host !== 'boss');   // cleanup never went to the gate host
+      }
+    }
+    const noWhole = (plan) => ({ ...s(plan), queue: [2, 3] });   // a restore yields to a waiting whole order (new talks first), so none here
+    expect(homeEligibleItem('aorus-1', 2, noWhole({ mode: 'small' }), accepted, typed)).toBe(true);   // small mode unchanged: aorus does it all
+    expect(homeEligibleItem('aorus-1', 1, s({ mode: 'small' }), accepted, typed)).toBe(true);
+    expect(homeEligibleItem('aorus-1', 2, noWhole({ mode: 'scale' }), accepted, {})).toBe(true);     // no typed pipeline: no pods to leave it for
+    expect(homeScaleMode({ pod_plan: { mode: 'scale' } }, typed)).toBe(true);
+    expect(homeGpuOrder({ items: { 7: { mode: 'post', kind: 'whole' } } }, 7)).toBe(true);
   });
   it('aorus takes whole orders and restores alike — no host is reserved for new talks', () => {
     expect(homeEligibleItem('aorus-1', 1, st(wholeOnly), accepted)).toBe(true);
@@ -92,5 +111,31 @@ describe('capability-ranked slots', () => {
     expect(rankedSlots({ boss: { rate: 3 }, aorus: { rate: 1.5 } }, 'aorus', 4)).toBe(2);
     expect(rankedSlots({ boss: { rate: 3 } }, 'aorus', 4)).toBe(4);
     expect(updateRate({}, 'boss', 100, 5)).toEqual({});   // too short to measure
+  });
+});
+
+describe('homeRemaster re-attach (11-01 #2459: UniPASE ran twice on Boss)', () => {
+  it('a copy + transcript this task already landed are reused: no second UniPASE; anything older than the task, or no `since`, runs again', async () => {
+    const { mkdtemp, mkdir, writeFile } = await import('node:fs/promises');
+    const fsp = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const dir = await mkdtemp(join(tmpdir(), 'homerem-')), enh = join(dir, 'enhanced');
+    await mkdir(enh, { recursive: true });
+    const since = Date.now() - 60_000;
+    await writeFile(join(enh, 'unipase.cloud.flac'), Buffer.alloc(4096));
+    await writeFile(join(enh, 'unipase.asr.json'), Buffer.alloc(2048, 32));
+    await writeFile(join(enh, 'unipase.done.json'), JSON.stringify({ unipase_s: 3600, gpu: 'boss' }));
+    const calls = [];
+    const T = { remoteJob: async (...a) => { calls.push('unipase'); await writeFile(a[2].output, Buffer.alloc(4096)); }, asrJob: async (c, o) => { calls.push('asr'); await writeFile(o.output, '{}'); } };
+    const C = { jobIdOf: (it) => `t${it.id}` };
+    const it_ = { id: 2459, dir }, m = { original: 'orig.mp3' };
+    expect(await homeRemaster('boss', it_, m, { T, C, fs: fsp, since })).toMatchObject({ reused: true, unipase_s: 3600 });
+    expect(calls).toEqual([]);
+    await homeRemaster('boss', it_, m, { T, C, fs: fsp, since: Date.now() + 60_000 });   // landed before this task: a fresh run
+    expect(calls).toEqual(['unipase', 'asr']);
+    calls.length = 0;
+    await homeRemaster('boss', it_, m, { T, C, fs: fsp });   // no since (a new task): always runs
+    expect(calls).toEqual(['unipase', 'asr']);
   });
 });

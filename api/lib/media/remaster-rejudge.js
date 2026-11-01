@@ -98,7 +98,13 @@ export async function rejudgeOne(it, m, { repo, queue, now = () => new Date().to
   const save = async () => { m.qa = { ...(m.qa || {}), remaster: qualityOf(m) }; await writeMeta(it.dir, m); const { indexFields } = await import('./item.js'); await repo.setIndex(it.id, indexFields(m)); };
   // back into the remaster queue in normal order: nothing here plays the original (a kept/deferred talk without a stored assessment, or an assessment to redo)
   // 'waiting' alone is read by nothing: the worker order is what puts it back in the queue (10-31: 6 talks sat 'waiting' with nothing ordered)
-  const requeue = async (why) => { m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: { ...judged, action: 'requeue', reason: why } }; await save(); await orderWorkerRemaster(queue, it.id, it.dir, 'media-remaster-rejudge'); return 'requeued'; };
+  // NEVER RECYCLE A HOLD (Chad 10-29/10-31): a talk held for review stays held — Chad decides publish or archive on /admin/media-held. The judge's
+  // verdict and reason are recorded on the hold; nothing is ordered (a requeue would rerun UniPASE on it, as #2459 ran twice on 11-01)
+  // the hold keeps the WORKER's reason (save() rewrites qa.remaster from the judge): 11-01 #2459/#2514 were held for "realign placed too few words"
+  const heldFor = m.qa?.remaster?.reason || r.why || null;
+  const keepHeld = async (why) => { m.remaster = { ...r, status: 'review', verdict: 'review', why, held_for: r.held_for || heldFor, judged: { ...judged, action: 'hold', reason: why } }; await save(); return 'hold'; };
+  const requeue = async (why) => r.status === 'review' ? keepHeld(`Held for Chad${heldFor ? ` (${heldFor})` : ''}: ${why}`) : requeueNow(why);
+  const requeueNow = async (why) => { m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: { ...judged, action: 'requeue', reason: why } }; await save(); await orderWorkerRemaster(queue, it.id, it.dir, 'media-remaster-rejudge'); return 'requeued'; };
   if (['kept', 'deferred'].includes(r.status) && !assessmentOf(m)) return requeue('back in the remaster queue: no talk plays the original (Chad 10-31)');
   if (j.action === 'hold') {
     m.remaster = { ...r, status: 'review', verdict: 'review', why: j.reason, judged };

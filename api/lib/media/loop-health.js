@@ -3,12 +3,21 @@
 // fixed minute count. Progress checks watch the work itself: steps adopted, GPUs busy, pods rented. Read by media-jobs.js (writes
 // st.health every tick), /ops/media/health, ops.mjs media health and system-checks.
 
+/** SCALE mode (Chad 10-31 23:50Z, 11-01 "instead of having Boss do CPU work, it is pegged with unneeded GPU work"): pods typed and the plan says
+ *  scale (or its buffer turned the home GPUs off). The home hosts then take no GPU and no whole work on the legacy lane — only 'post' (a CPU
+ *  tail) — so their slots go to the typed cpu-prep/cpu-finish queue. Small mode is unchanged. 11-01 03:06Z: Boss ran a second UniPASE of #2459
+ *  (restore order) through gateRestoreChain while the plan read mode 'scale', home_gpu false. Pure. */
+export const homeScaleMode = (st, env = process.env) => env.MEDIA_POD_TYPED === '1' && (st.pod_plan?.mode === 'scale' || st.pod_plan?.buffer?.home_gpu === false);
+/** The legacy order would use a home GPU (or run the whole talk), not a CPU-only tail ('post': the UniPASE copy is on tower; 'cleanup': deterministic). */
+export const homeGpuOrder = (st, id) => st.items?.[id]?.kind === 'whole' || !['post', 'cleanup'].includes(st.items?.[id]?.mode || 'restore');
+
 export const K_MISSED = 4;     // own passes missed before a section is stale / hung
 export const K_STEPS = 3;      // median step durations without a pulled step (while work is in flight) before progress is "stopped"
 export const STREAK = 3;       // loop ticks a progress condition must hold before it counts
 export const MIN_SAMPLES = 3;  // measured intervals before a cadence is trusted
 import { CLASSES } from './stages.js';   // which home hosts take gpu work (worker profiles)
 const KEEP = 20;
+const CPU_TYPES = ['cpu-prep', 'cpu-finish'];
 
 export const median = (xs) => {
   const v = (xs || []).filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
@@ -223,7 +232,7 @@ function streak(st, name, on, tickRuns, update) {
 }
 
 /** The whole verdict: sections + progress checks → { sections, checks: [{ name, ok, level, detail }] }. update=true only from the loop tick. */
-export function evaluate(st, now, { update = false, k = K_MISSED, kSteps = K_STEPS, streakN = STREAK } = {}) {
+export function evaluate(st, now, { update = false, k = K_MISSED, kSteps = K_STEPS, streakN = STREAK, env = process.env } = {}) {
   const ended = st.finished || null;
   const sections = Object.fromEntries(Object.entries(st.loop_beats || {}).map(([name, b]) => [name, sectionState(b, now, { k, ended })]));
   const checks = [];
@@ -286,6 +295,22 @@ export function evaluate(st, now, { update = false, k = K_MISSED, kSteps = K_STE
   checks.push({ name: 'Media pipeline end (talks adopted)', ok: !endDead, level: endDead ? 'critical' : 'warn',
     detail: `last talk adopted ${e.last_end ? `${min(now - e.last_end)} ago` : 'never'} · since then: ${e.gpu_since} gpu steps done, ${e.finish_waiting} finishes waiting, `
       + `${e.finish_fails} finish results refused/failed${e.gpu_dropped ? `, ${e.gpu_dropped} gpu results dropped` : ''}${e.last_fail ? ` · last: ${e.last_fail}` : ''}` });
+  // (f) SCALE mode: a home host holding a legacy GPU/whole order (Chad 11-01: "instead of having Boss do CPU work, it is pegged with unneeded
+  // GPU work"). The gate (media-jobs homeCanTake) refuses new ones; this names any that slipped through or predate it — host, item, order.
+  const scale = homeScaleMode(st, env);
+  const gpuHome = scale ? Object.entries(st.home || {}).filter(([, c]) => c?.itemId != null && homeGpuOrder(st, c.itemId))
+    .map(([host, c]) => `${host} #${c.itemId} ${st.items?.[c.itemId]?.kind === 'whole' ? 'whole' : st.items?.[c.itemId]?.mode || 'restore'}`) : [];
+  checks.push({ name: 'Media home host on GPU work in scale mode', ok: gpuHome.length === 0, level: 'critical',
+    detail: !scale ? 'small mode — home GPUs may take GPU work' : gpuHome.length ? `${gpuHome.join(' | ')} — scale mode: home hosts take cpu-prep/cpu-finish only` : 'scale mode — no home host on GPU/whole work' });
+  // (g) home CPU slots idle while typed CPU work waits on the LAN queue (from the feed's capacity snapshot, st.lan_cap; stale → no verdict).
+  const lc = st.lan_cap, fresh = lc?.at && now - lc.at < 15 * 60_000;
+  const cpuQ = fresh ? CPU_TYPES.map((t) => ({ t, n: lc.queued?.[t]?.n || 0, h: lc.queued?.[t]?.audio_h || 0 })).filter((q) => q.n > 0) : [];
+  const idleHosts = cpuQ.length ? (lc.hosts || []).filter((h) => !/^pod/i.test(h.host) && cpuQ.some((q) => (h.types || []).includes(q.t))
+    && cpuQ.every((q) => !(h.leased?.[q.t] > 0))).map((h) => h.host) : [];
+  const sg = streak(st, 'home_cpu_idle', idleHosts.length > 0 && !ended, tickRuns, update);
+  checks.push({ name: 'Media home CPU idle with CPU work queued', ok: !(idleHosts.length && sg.ticks >= streakN), level: 'warn',
+    detail: !fresh ? 'no fresh LAN capacity snapshot' : `${cpuQ.map((q) => `${q.t} ${q.n} queued (${q.h} audio-h)`).join(', ') || 'no CPU work queued'}`
+      + `${idleHosts.length ? ` · idle home CPU: ${idleHosts.join(', ')} for ${sg.ticks} ticks` : ''}` });
   return { at: now, sections, checks, facts: { ...f, gpus: undefined, gpu_list: f.gpus.map(({ name, gpu }) => ({ name, gpu })) }, heals: (st.loop_heals || []).slice(-5) };
 }
 

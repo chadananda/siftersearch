@@ -140,10 +140,25 @@ describe('re-judge pass, publish, archive', () => {
     expect((await meta(it)).remaster.status).toBe('waiting');
     expect(indexed.at(-1)[1].restored).toBe(0);
   });
-  it('a publish whose remaster file is not on tower is requeued, not flipped', async () => {
-    const it = await mk(5, talk(), { flac: false });
+  it('a publish whose remaster file is not on tower is requeued, not flipped (kept talk); a HELD one stays held for Chad', async () => {
+    const it = await mk(5, talk(undefined, { status: 'kept' }), { flac: false });
     expect(await rejudgeOne(it, await meta(it), { repo, queue })).toBe('requeued');
     expect((await meta(it)).enhancement.listening).toBe('safe');
+    const h = await mk(6, talk(), { flac: false });
+    expect(await rejudgeOne(h, await meta(h), { repo, queue })).toBe('hold');
+    expect((await meta(h)).remaster).toMatchObject({ status: 'review', judged: { action: 'hold' } });
+    expect(queue).not.toHaveBeenCalledWith('media-cloud-order', expect.objectContaining({ ids: [6] }), expect.anything());
+  });
+  it('never recycles a hold (11-01 #2459): a review hold with no stored assessment stays held, nothing ordered, and the next pass leaves it alone', async () => {
+    const m0 = talk(null, { status: 'review' }); delete m0.remaster.output_assessment;
+    m0.qa = { ...(m0.qa || {}), remaster: { verdict: 'review', reason: 'realign placed too few words on the restored copy' } };   // the worker's own reason
+    const it = await mk(24, m0);
+    expect(await rejudgeOne(it, await meta(it), { repo, queue })).toBe('hold');
+    const m = await meta(it);
+    expect(m.remaster).toMatchObject({ status: 'review', verdict: 'review', held_for: 'realign placed too few words on the restored copy', judged: { action: 'hold', problems: ['no_assessment'] } });
+    expect(m.remaster.why).toMatch(/^Held for Chad \(realign placed too few words/);
+    expect(queue).not.toHaveBeenCalled();
+    expect(await rejudgeOne(it, m, { repo, queue })).toBe('unchanged');
   });
   it('the paced pass judges a few per tick, counts them, and rescans later', async () => {
     const items = [await mk(1, talk()), await mk(2, talk(assessment({}, { no_bad_excerpt: false }))), await mk(3, talk()), await mk(4, talk())];

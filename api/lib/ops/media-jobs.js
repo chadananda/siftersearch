@@ -6,6 +6,7 @@
 //   media-item  { id, from?, only?, threads?, lang?, model?, reslug? } — one item through the stage machine (api/lib/media/item.js);
 //               yields to a drain between stages and resumes where it stopped.
 //   media-vocab { minMentions? } — the controlled vocabulary's names from the entity graph → data/media-vocab.json.
+import { homeScaleMode, homeGpuOrder } from '../media/loop-health.js';
 import { late } from '../media/late.js';
 import * as WC from '../media/worker-cards.js';
 import { hostProfile, hostRegistry } from '../media/tools.js';
@@ -1533,16 +1534,24 @@ export function hostUnreachable(st, h, cur, msg, t, restMs = 10 * 60_000) {
   return 'requeued';
 }
 /** A gate-transport host: UniPASE (gate verb) + the copy's transcript, then the CPU tail in the accepted worker image ('post'). → the done record */
-export async function gateRestoreChain(host, it, m, { T, C, fs, image, stop, deps = {} }) {
-  const first = await (deps.homeRemaster || homeRemaster)(host, it, m, { T, C, fs, stop });
+export async function gateRestoreChain(host, it, m, { T, C, fs, image, stop, since = null, deps = {} }) {
+  const first = await (deps.homeRemaster || homeRemaster)(host, it, m, { T, C, fs, stop, since });
   const tail = await (deps.homeRecording || (await import('../media/home-recording.js')).homeRecording)(host, it, m, { T, image, mode: 'post', stop });
   return { ...first, ...tail, unipase_s: first.unipase_s, asr_s: first.asr_s, post_s: tail?.post_s ?? null, seconds: (first.seconds || 0) + (tail?.seconds || 0), gpu: host };
 }
-export async function homeRemaster(host, it, m, { T, C, fs, stop }) {
+/** `since` (the task's start, ms): a copy + transcript this task already landed are reused on a re-attach. 11-01 03:06Z: #2459's UniPASE had
+ *  landed (remoteJob cleans the remote job after fetching), the post tail failed on an ssh SIGKILL, the re-attach found the job gone and ran
+ *  UniPASE again on Boss for an hour. */
+export async function homeRemaster(host, it, m, { T, C, fs, stop, since = null }) {
   const enh = join(it.dir, 'enhanced');
   await fs.mkdir(enh, { recursive: true });
   const job = `um-${C.jobIdOf(it)}`.slice(0, 100);
   const copy = join(enh, 'unipase.cloud.flac');
+  const landed = async (f) => since != null && !!(await fs.stat?.(f).then((s) => s.size > 1024 && s.mtimeMs >= since, () => false));
+  if ((await landed(copy)) && (await landed(join(enh, 'unipase.asr.json')))) {
+    const prev = await fs.readFile(join(enh, 'unipase.done.json'), 'utf8').then(JSON.parse, () => null);
+    if (prev) return { ...prev, reused: true };
+  }
   const t0 = Date.now();
   const unreserve = T.reserveGpu ? T.reserveGpu(host, 'unipase') : () => {};
   try { await T.remoteJob('unipase', join(it.dir, m.original), { output: `${copy}.part` }, { host, job, stop, file: true, pollMs: 10_000 }); }
@@ -1636,9 +1645,12 @@ export const homeImage = (h, acceptedWorker) => homeBuild(h, acceptedWorker) || 
  *  home build. Until then they take no remaster work: their result would be refused. No accepted image = the legacy injected path (tests). */
 export const silences = (h, acceptedWorker) => !acceptedWorker || (acceptedWorker.quiet_hosts || []).includes(baseHost(h)) || !!homeBuild(h, acceptedWorker);
 const isGateHost = (h) => hostProfile(baseHost(h)).transport === 'gate';
+// homeScaleMode / homeGpuOrder live in loop-health.js (its sentinel uses them too); imported above, re-exported for callers
+export { homeScaleMode, homeGpuOrder };
 function homeCanTake(h, id, st, acceptedWorker, env) {
   const it = st.items?.[id], whole = it?.kind === 'whole';
   if (Object.values(st.home || {}).some((c) => c?.itemId === id)) return false;
+  if (homeScaleMode(st, env || process.env) && homeGpuOrder(st, id)) return false;
   return !isGateHost(h) || !acceptedWorker || it?.mode === 'post'
     // Boss is CPU/LLM only while the typed pipeline runs (Chad 10-31): its gate runs its OWN older image, not the accepted one — 11-01 whole talks 4047/4059/4060/4062
     // came back verdict 'review' (the paired assessment crashed there: quality.py exit 1), never published. Whole talks go through the typed chain.
@@ -1875,9 +1887,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             ? (isGateHost(h) && wantMode === 'restore'
               // BOSS RESTORES (Chad 10-28): UniPASE on its ROCm iGPU through the gate's 'unipase' verb + the copy's ASR, then the worker container's CPU tail
               // (word guard, realign, encodes, verdict) on the same box; tower only takes the complete result
-              ? await gateRestoreChain(baseHost(h), it, m, { T, C, fs, image: cur.image || acceptedWorker.image, stop: draining })
+              ? await gateRestoreChain(baseHost(h), it, m, { T, C, fs, image: cur.image || acceptedWorker.image, stop: draining, since: cur.since })
               : await (await import('../media/home-recording.js')).homeRecording(baseHost(h),it,m,{T,image:cur.image||acceptedWorker.image,mode:wantMode,stop:draining}))
-            : await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining });
+            : await (deps.homeRemaster || homeRemaster)(h, it, m, { T, C, fs, stop: draining, since: cur.since });
           if (st.done.some((d) => d.id === it.id)) return;   // a duplicate result never double-publishes
           st.done.push({ id: it.id, slug: it.slug, audio_s: dj.audio_s, seconds: dj.seconds, gpu: h, pod: h,at:now(),mode:st.items?.[it.id]?.mode||'restore' });
           updateRate(st.rates||={},h,dj.audio_s||m.duration_s,(now()-cur.since)/1000);st.home_done++;

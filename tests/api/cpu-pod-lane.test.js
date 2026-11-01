@@ -8,7 +8,7 @@ import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import * as Q from '../../worker/queue/core.js';
 import { feed, pull, rebalancePrep, TARGET_H } from '../../api/lib/media/queue-feed.js';
-import { CONTRACT, requiredFiles, cpuRoute } from '../../api/lib/media/stage-jobs.js';
+import { CONTRACT, requiredFiles, cpuRoute, lanBacklogH, lanDrain } from '../../api/lib/media/stage-jobs.js';
 import { REBUILT, isDecoded, transitName } from '../../scripts/media/worker/transit.mjs';
 import { createCpuPod, BOOTSTRAP_CPU_AGENT, cpuPodSlots, CPU_POD_PREFIX } from '../../api/lib/media/cloud.js';
 
@@ -95,6 +95,15 @@ describe('CPU overflow: home CPU hosts first, the CPU pod on the edge takes the 
     expect(Q.stats(E.sql, Date.now(), 'cpu-prep').states.queued.n).toBe(2);
     for (const id of [3, 4]) expect(String(E.store.get(`files/${st.chains[id].fileId}/in.mp3`))).toBe(`audio-${id}`);
     expect((await rebalancePrep(st, deps)).moved).toBe(0);   // balanced: nothing more moves
+  });
+  it('home keeps only what it measurably DRAINS: a slow home (0.5 audio-h/h finished in the window) sends the rest of the prep to the CPU pod', async () => {
+    await mkItems({ 1: 'mp3', 2: 'mp3', 3: 'mp3', 4: 'mp3' });
+    claimLan('boss', ['cpu-prep', 'cpu-finish']); claimLan('aorus', ['gpu']); cpuPod();
+    await feed(st, deps);
+    L.sql.exec(`INSERT INTO done_log (host, type, audio_s, claimed, at) VALUES ('boss', 'cpu-prep', 3600, ?, ?)`, Date.now() - 600_000, Date.now() - 60_000);
+    expect(Q.capacity(L.sql).by_type['cpu-prep'].drain).toBeCloseTo(0.5);   // 1 audio-h in the 2 h window
+    const r = await rebalancePrep(st, deps);
+    expect(r.moved).toBe(3);   // keep 2.5 h × 0.5 = 1.25 audio-h home (one talk), not 2.5 h at boss's 1x single-job speed (two)
   });
   it('no CPU pod engaged on the edge: nothing moves', async () => {
     await mkItems({ 1: 'mp3', 2: 'mp3', 3: 'mp3' });
@@ -199,6 +208,18 @@ describe('cpuRoute: home first, the edge only with a CPU pod and a full home que
     expect(cpuRoute('cpu-finish', cap('cpu-finish', ['boss'], TARGET_H), cap('cpu-finish', ['cpupod-a']))).toBe('edge');
     expect(cpuRoute('cpu-finish', cap('cpu-finish', []), cap('cpu-finish', ['cpupod-a']))).toBe('edge');
     expect(cpuRoute('cpu-finish', null, null)).toBe('lan');
+  });
+  it('reads the backlog at the MEASURED drain, not the hosts\' single-job speeds (11-01: 120 audio-h queued, queued_h 2.34, drain 24 → the CPU pod got 0 jobs)', () => {
+    const lan = (extra) => ({ by_type: { 'cpu-finish': { hosts: ['aorus', 'boss'], queued_h: 2.34, queued_audio_h: 119.9, rate: 51.3, ...extra } } });
+    const pod = cap('cpu-finish', ['cpupod-a']);
+    expect(cpuRoute('cpu-finish', lan({}), pod)).toBe('lan');                 // older queue, no drain field: as before
+    expect(cpuRoute('cpu-finish', lan({ drain: 24 }), pod)).toBe('edge');     // 5 h at what home actually drains
+    expect(cpuRoute('cpu-finish', lan({ drain: 0 }), pod)).toBe('lan');       // cold start (nothing finished yet): the hosts' speeds
+    expect(cpuRoute('cpu-finish', lan({ drain: 24, queued_audio_h: 30 }), pod)).toBe('lan');   // 1.25 h: home keeps it
+    expect(cpuRoute('cpu-finish', lan({ drain: 24 }), cap('cpu-finish', []))).toBe('lan');      // no CPU pod: nowhere else to go
+    expect(lanBacklogH({ drain: 24, queued_audio_h: 120 })).toBe(5);
+    expect(lanDrain({ drain: 24, rate: 51 })).toBe(24);
+    expect(lanDrain({ drain: 0, rate: 51 })).toBe(51);
   });
 });
 

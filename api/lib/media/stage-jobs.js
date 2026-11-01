@@ -161,13 +161,21 @@ export function pickNext(st, can = () => true) {
  *  want_h audio-h (Chad 10-31: gpu work waits on R2 BEFORE a pod boots, so a pod never sits idle), then the LAN (home GPU) until it holds
  *  TARGET_H, then the edge again. No home GPU engaged → the edge. Pure. */
 /** Where a CPU step (cpu-prep/cpu-finish) runs after a step that finished on the edge: home first. The edge only while an edge host lists the
- *  type (a CPU pod) and the LAN already holds targetH of it at the home hosts' measured rate (or no home host lists it). */
+ *  type (a CPU pod) and the LAN already holds targetH of it at what the home hosts actually DRAIN (lanBacklogH; or no home host lists it). */
 export function cpuRoute(type, lanCap, edgeCap, { targetH = 2.5 } = {}) {
   if (!edgeCap?.by_type?.[type]?.hosts?.length) return 'lan';
   const t = lanCap?.by_type?.[type];
   if (!t?.hosts?.length) return 'edge';
-  return (t.queued_h || 0) >= targetH ? 'edge' : 'lan';
+  return lanBacklogH(t) >= targetH ? 'edge' : 'lan';
 }
+/** Hours the LAN queue of a type holds at its MEASURED drain (audio-h finished per wall-hour, core.capacity). 11-01: queued_h (the hosts'
+ *  single-job speeds summed, 51 audio-h/h) said 2.3 h of cpu-finish while the hosts drained ~24 audio-h/h, a 5 h backlog, and the CPU pod
+ *  (32 vCPU) took 0 jobs in 30 min. Nothing finished in the window yet (cold start) or an older queue with no drain field → queued_h. Pure. */
+export function lanBacklogH(t = {}) {
+  return t.drain > 0 ? (t.queued_audio_h || 0) / t.drain : t.queued_h || 0;
+}
+/** Audio-h/h the LAN works a type through: the measured drain once something finished in the window, else its hosts' rates. */
+export const lanDrain = (t = {}) => (t.drain > 0 ? t.drain : t.rate || 0);
 export function gpuRoute(lanCap, { edge = false, targetH = 2.5, staged_h = 0, want_h = 0 } = {}) {
   if (!edge) return 'lan';
   if (staged_h < want_h) return 'edge';

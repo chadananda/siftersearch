@@ -288,3 +288,35 @@ describe('podsProven: the typed pool grows past one pod only on evidence of talk
     expect(LH.podsProven(st)).toMatchObject({ ok: false, why: expect.stringMatching(/pipeline end dead/) });
   });
 });
+
+describe('scale-mode home sentinel (Chad 11-01: Boss pegged with GPU work instead of CPU)', () => {
+  const env = { MEDIA_POD_TYPED: '1' };
+  const pick = (h, name) => h.checks.find((c) => c.name === name);
+  const GPU = 'Media home host on GPU work in scale mode', IDLE = 'Media home CPU idle with CPU work queued';
+  it('names the host, item and order of a home GPU/whole job in scale mode; small mode is quiet', () => {
+    const st = { pod_plan: { mode: 'scale', buffer: { home_gpu: false } }, home: { boss: { itemId: 2459, since: 1 }, aorus: { itemId: 7, since: 1 } },
+      items: { 2459: { mode: 'restore' }, 7: { mode: 'post' } } };
+    const c = pick(LH.evaluate(st, 10, { env }), GPU);
+    expect(c).toMatchObject({ ok: false, level: 'critical' });
+    expect(c.detail).toMatch(/boss #2459 restore/);
+    expect(c.detail).not.toMatch(/aorus/);
+    st.items[2459] = { kind: 'whole' };
+    expect(pick(LH.evaluate(st, 10, { env }), GPU).detail).toMatch(/boss #2459 whole/);
+    expect(pick(LH.evaluate({ ...st, pod_plan: { mode: 'small', buffer: { home_gpu: true } } }, 10, { env }), GPU).ok).toBe(true);
+    expect(pick(LH.evaluate(st, 10, { env: {} }), GPU).ok).toBe(true);   // pods not typed: no scale mode
+  });
+  it('flags home CPU hosts leasing no CPU work while cpu-prep/cpu-finish wait (after the streak), never pods', () => {
+    const now = 1_000_000;
+    const st = { loop_beats: { tick: { runs: 1 } }, lan_cap: { at: now, queued: { 'cpu-finish': { n: 40, audio_h: 119.9 }, 'cpu-prep': { n: 0, audio_h: 0 } },
+      hosts: [{ host: 'boss', types: ['cpu-prep', 'cpu-finish'], leased: { gpu: 1 } }, { host: 'aorus', types: ['cpu-prep', 'cpu-finish', 'gpu'], leased: { 'cpu-finish': 2 } },
+        { host: 'pod-sifter-cpu-x', types: ['cpu-finish'], leased: {} }] } };
+    let c;
+    for (let i = 1; i <= 3; i++) { st.loop_beats.tick.runs = i; c = pick(LH.evaluate(st, now, { update: true, env }), IDLE); }
+    expect(c).toMatchObject({ ok: false, level: 'warn' });
+    expect(c.detail).toMatch(/cpu-finish 40 queued \(119.9 audio-h\).*idle home CPU: boss for 3 ticks/);
+    expect(c.detail).not.toMatch(/aorus|pod-sifter/);
+    st.lan_cap.hosts[0].leased = { 'cpu-finish': 1 };
+    expect(pick(LH.evaluate(st, now, { update: true, env }), IDLE).ok).toBe(true);
+    expect(pick(LH.evaluate({ lan_cap: { ...st.lan_cap, at: now - 3_600_000 } }, now, { env }), IDLE)).toMatchObject({ ok: true, detail: expect.stringMatching(/no fresh/) });
+  });
+});

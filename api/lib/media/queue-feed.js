@@ -111,11 +111,15 @@ export async function feedDup(it, m, repo, st = {}) {
   return null;
 }
 
+/** The LAN queue at a glance for loop-health: each engaged host's types + what it holds, and the CPU queues. Small (state file). */
+export const lanSnapshot = (cap, at) => ({ at, hosts: (cap?.hosts || []).map((h) => ({ host: h.host, types: h.types || [], leased: h.leased || {} })),
+  queued: Object.fromEntries(['cpu-prep', 'cpu-finish', 'gpu'].map((t) => [t, { n: cap?.by_type?.[t]?.queued || 0, audio_h: Math.round((cap?.by_type?.[t]?.queued_audio_h || 0) * 10) / 10 }])) });
 // a sub-timer keyed <prefix>:<part> into the pass trace (queue-feed callers without a trace pay nothing)
 const tmOf = (trace, prefix) => async (part, f) => { const t0 = Date.now(); try { return await f(); } finally { trace?.sub(`${prefix}:${part}`, Date.now() - t0); } };
 export async function feed(st, deps) {
   const { q, repo, wr, rj, full = true, decided = () => false, readMeta = readMetaFile, now = Date.now, max = 20 } = deps;
   const cap = await q.capacity();
+  st.lan_cap = lanSnapshot(cap, now());   // the health sentinel reads it (home CPU idle while CPU work waits)
   if (!cap.hosts.length) return { fed: 0, why: 'no queue host engaged' };
   const can = new Set(cap.hosts.flatMap((h) => h.can || []));
   st.qjobs ||= {};
@@ -157,7 +161,7 @@ async function chainInput(it, m, demux) {
 const chainSrc = (it, m, ch) => join(it.dir, ch.src || m.original);
 /** Typed feed: only while hosts for all three steps are engaged; keeps ~TARGET_H of prep queued; order by band (pickNext). */
 /** The edge's engaged cpu-prep supply (a CPU pod): { rate, queued_audio_h } at its measured rate, or null when no edge host lists cpu-prep. */
-const edgePrep = (cap) => { const t = cap?.by_type?.['cpu-prep']; return t?.hosts?.length ? { rate: t.rate || 0, queued_audio_h: t.queued_audio_h || 0 } : null; };
+const edgePrep = (cap) => { const t = cap?.by_type?.['cpu-prep']; return t?.hosts?.length ? { rate: t.rate || 0, drain: t.drain || 0, queued_audio_h: t.queued_audio_h || 0 } : null; };
 async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null, buffer = null, trace = null }) {
   const ft = tmOf(trace, 'feed');
   const types = new Set(cap.hosts.flatMap((h) => h.types || []));
@@ -430,7 +434,9 @@ export async function rebalancePrep(st, { q, edge, repo, wr, readMeta = readMeta
   const ep = edgePrep(await edge.capacity().catch(() => null));
   if (!ep) return { moved: 0, why: 'no edge cpu-prep host' };
   const lp = (await q.capacity().catch(() => null))?.by_type?.['cpu-prep'] || {};
-  const keepH = TARGET_H * (lp.hosts?.length ? lp.rate || 0 : 0), wantH = TARGET_H * ep.rate;   // audio-hours each side works through in TARGET_H
+  // audio-hours each side works through in TARGET_H: the LAN at what it measurably DRAINS (11-01: the hosts' single-job speeds kept 78 h home
+  // while they drained ~24 audio-h/h, so the CPU pod got nothing); the edge at its rate or its drain, whichever is more
+  const keepH = TARGET_H * (lp.hosts?.length ? SJ.lanDrain(lp) : 0), wantH = TARGET_H * Math.max(ep.rate, ep.drain || 0);
   let lanH = lp.queued_audio_h || 0, edgeH = ep.queued_audio_h, moved = 0, skipped = 0, kept_lan = 0, bytes = 0;
   const leased = new Set(((await q.stats('cpu-prep').catch(() => null))?.leased || []).map((j) => j.id));
   const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'cpu-prep' && !qj.where && !leased.has(id) && st.chains?.[qj.itemId])

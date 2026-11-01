@@ -218,7 +218,10 @@ const DEFAULT_RATE = 1;   // an engaged host not yet measured counts as real tim
 // by_type: per typed job type, its queue and the engaged hosts' summed measured rate; gpu also carries the PODS' measured rate
 // (all pods ever measured: pods leave by idle-exit, the rate they showed stays the best estimate of R_pod).
 export function capacity(sql, now = Date.now()) {
-  const hosts = engaged(sql, now).map((h) => ({ ...h, rates: ratesOf(sql, h.host) }));
+  // leased: what each host holds now, by type (the health sentinel flags a home CPU host holding nothing while CPU work waits, 11-01)
+  const held = {};
+  for (const r of rows(sql, `SELECT host, type, COUNT(*) AS n FROM jobs WHERE state = 'leased' GROUP BY host, type`)) (held[r.host] ||= {})[r.type || 'media'] = r.n;
+  const hosts = engaged(sql, now).map((h) => ({ ...h, rates: ratesOf(sql, h.host), leased: held[h.host] || {} }));
   const media = typeRate(sql, 'media', now, hosts);
   const queuedS = one(sql, `SELECT COALESCE(SUM(audio_s), 0) AS s FROM jobs WHERE state = 'queued' AND type = 'media'`).s;
   const by_type = {};
@@ -234,7 +237,10 @@ export function capacity(sql, now = Date.now()) {
     // policy a spill host's CPU is real supply (Aorus CPU-first once the pods cover the GPU work, coordinator 10-31): the pod plan's cpuChain
     // counts it as a shared host, split between prep and finish — never in full on both sides (the 10-31 r_finish 97 bug)
     const spill_each = Object.fromEntries(hosts.filter((h) => !h.types.includes(type) && h.spill?.includes(type)).map((h) => [h.host, tp.each?.[h.host] ?? h.rates?.[type] ?? 0]));
-    by_type[type] = { hosts: t.hosts, rate: t.rate, each: t.each, spill_each, queued: q.n, queued_audio_h: q.s / 3600, queued_h: q.s / 3600 / (t.rate || DEFAULT_RATE), throughput: role_tp, throughput_all: tp.total, throughput_each: tp.each || {}, done_2h: tp.jobs };
+    // drain: audio-h this queue actually FINISHED per wall-hour over the window (every host, shared time and idle slots included). 11-01: cpu-finish
+    // read queued_h 2.3 (120 audio-h / the hosts' single-job speeds, 51) while it drained ~24 audio-h/h — a 5 h backlog — so no step went to the CPU pod
+    const drain = drainOf(sql, type, now);
+    by_type[type] = { hosts: t.hosts, rate: t.rate, each: t.each, spill_each, queued: q.n, queued_audio_h: q.s / 3600, queued_h: q.s / 3600 / (t.rate || DEFAULT_RATE), drain, backlog_h: drain > 0 ? q.s / 3600 / drain : q.s > 0 ? null : 0, throughput: role_tp, throughput_all: tp.total, throughput_each: tp.each || {}, done_2h: tp.jobs };
     if (type === 'gpu') by_type.gpu.pod_throughput = tp.pods;
   }
   const pods = rows(sql, `SELECT host, rate FROM rates WHERE type = 'gpu' AND host LIKE 'pod-%' AND rate > 0`);
@@ -258,6 +264,11 @@ export function throughput(sql, type, now = Date.now(), windowMs = RATE_WINDOW_M
   };
   const each = Object.entries(by).map(([h, js]) => [h, rate(js)]), pods = each.filter(([h]) => isPod(h)).map(([, v]) => v);
   return { total: each.reduce((a, [, v]) => a + v, 0), pods: pods.length ? pods.reduce((a, b) => a + b, 0) / pods.length : null, jobs: r.length, each: Object.fromEntries(each) };
+}
+/** Audio-hours of a type finished per wall-hour over the window, all hosts. 0 = nothing finished. */
+export function drainOf(sql, type, now = Date.now(), windowMs = RATE_WINDOW_MS) {
+  const s = one(sql, `SELECT COALESCE(SUM(audio_s), 0) AS s FROM done_log WHERE type = ? AND at > ?`, type, now - windowMs).s;
+  return s / 3600 / (windowMs / 3600_000);
 }
 /** Conservative priors until a rate is measured (said so in the plan's `priors`): a pod ≈ 4 audio-h/h; a CPU role = its hosts' single-job speed. */
 export const PRIOR_POD = 4;

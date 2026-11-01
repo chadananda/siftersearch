@@ -712,6 +712,27 @@ print(json.dumps({'r': {k: v for k, v in r.items() if k != 'guard'}, 'calls': ca
     const o = run(30);
     expect(o.calls).toEqual(['remaster_guard.py']); expect(o.r.held).toBe(true);
   });
+  it('a realign hold AFTER the quality assessment keeps the assessment (11-01 #2459/#2514: qa was replaced, the judge saw none and reran UniPASE)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pa-'));
+    writeFileSync(join(dir, 'in.mp3'), 'x'); writeFileSync(join(dir, 'out.flac'), 'y'); writeFileSync(join(dir, 'asr.json'), '{}');
+    writeFileSync(join(dir, 'work.json'), '{"paragraphs":[]}');
+    const sha = createHash('sha256').update('{"paragraphs":[]}').digest('hex');
+    writeFileSync(join(dir, 'job.json'), JSON.stringify({ post: { af: 'loudnorm', max_fallback_pct: 15, slug: 's', work_sha: sha, assess_quality: true, ogg: [], m4a: [], orig_ogg: [], orig_m4a: [] } }));
+    const out = execFileSync('python3', ['-c', `
+import sys, json, types
+sys.path.insert(0, 'scripts/media/worker')
+import post
+post.subprocess.check_output = lambda *a, **k: json.dumps({'version': 1, 'status': 'complete', 'passed': True, 'regressions': []})
+def runner(cmd, **kw):
+    if 'remaster_guard.py' in cmd[1]: return types.SimpleNamespace(stdout=json.dumps({'sentences': 10, 'fallback_sent_pct': 0, 'swapped_pct': 0}) + '\\n')
+    if 'media_tool.py' in cmd[1]: return types.SimpleNamespace(stdout=json.dumps({'placed': 7179, 'total': 7348}) + '\\n', stderr='')
+    return types.SimpleNamespace(stdout='')
+r = post.process(${JSON.stringify(dir)}, runner=runner)
+print(json.dumps({'held': r.get('held'), 'why': r.get('why'), 'qa': r['qa']}))`], { encoding: 'utf8' });
+    const o = JSON.parse(out);
+    expect(o).toMatchObject({ held: true, why: 'realign placed too few words', qa: { verdict: 'review', output_assessment: { status: 'complete', passed: true } } });
+    expect(o.qa.metrics.realign_unplaced_pct).toBeCloseTo(2.3, 1);
+  });
   it('no aligner on this machine: the guard result stands and tower aligns itself', () => {
     const o = run(4, false);
     expect(o.r.why).toMatch(/realign unavailable/); expect(o.r.web).toBeUndefined(); expect(o.calls).toEqual(['remaster_guard.py', 'media_tool.py']);

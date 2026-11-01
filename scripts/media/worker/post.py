@@ -77,6 +77,14 @@ def verdict(method, g, g_first, bw, max_pct, why=None):
     return {'verdict': v, 'reason': r, 'metrics': metrics}
 
 
+def keep_assessment(before, after):
+    """A hold AFTER the quality assessment (realign, silencing) keeps the assessment and the measured metrics. 11-01 #2459/#2514: the realign
+    hold replaced qa wholesale, tower stored no assessment, and the judge reran UniPASE on the talk (the same realign hold every time)."""
+    if (before or {}).get('output_assessment') is not None: after['output_assessment'] = before['output_assessment']
+    after['metrics'] = {**((before or {}).get('metrics') or {}), **{k: v for k, v in after['metrics'].items() if v is not None}}
+    return after
+
+
 def guard(py, tools, src, copy, work, asr, ref, af, out_flac, out_json, runner):
     cmd = [py, os.path.join(tools, 'remaster_guard.py'), '--original', src, '--unipase', copy, '--work', work, '--asr', asr, '--af', af or '',
            '--output', out_flac, '--report', out_json] + (['--ref', ref] if os.path.exists(ref) else [])
@@ -182,7 +190,7 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
     out['qa']['metrics']['realign_unplaced_pct'] = round((1 - r['placed'] / r['total']) * 100, 2) if r.get('total') else None
     if not r.get('total') or 1 - r['placed'] / r['total'] > 0.02:
         out['ok'] = True; out['held'] = True; out['why'] = 'realign placed too few words'
-        out['qa'] = verdict(None, None, g_first or g, bw, maxp, 'realign placed too few words on the restored copy')
+        out['qa'] = keep_assessment(out['qa'], verdict(None, None, g_first or g, bw, maxp, 'realign placed too few words on the restored copy'))
         return out
     # 4. silence where nobody speaks (quiet.py, Chad 10-29): the restorer turns background-only stretches into noise; a voiced stretch the transcript missed is kept
     if not cfg.get('selftest'):
@@ -193,7 +201,7 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
             out['qa']['metrics'].update({'quiet_s': q['quiet_s'], 'noise_silenced_s': q['loud_s'], 'voiced_kept_s': round(sum(b - a for a, b, _ in q['voiced_kept']), 1)})
         except Exception as err:     # never publish the unsilenced copy (it is what Chad rejected)
             out['ok'] = True; out['held'] = True; out['why'] = f'silencing failed here: {str(err)[-160:]}'
-            out['qa'] = verdict(None, None, g_first or g, bw, maxp, out['why'])
+            out['qa'] = keep_assessment(out['qa'], verdict(None, None, g_first or g, bw, maxp, out['why']))
             return out
     # 5. the four web copies
     t3 = time.time()
