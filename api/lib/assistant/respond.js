@@ -253,6 +253,20 @@ async function quotedOriginal(d, question) {
   return null;
 }
 
+// A tradition's scripture by title or author (the hunt's origin), for "is this where the founder said it?". Pure.
+const SCRIPTURE = {
+  Christian: /\b(bible|gospels?|new testament|epistles?|psalms?|proverbs)\b/i,
+  Judaism: /\b(bible|torah|tanakh|genesis|exodus|leviticus|numbers|deuteronomy|psalms?|proverbs|isaiah|prophets)\b/i,
+  Islam: /\b(qur'?an|koran|hadith|ḥadíth|bukhari|bukhárí|sahih|nawawi|nawawí)\b/i,
+  Buddhist: /\b(dhammapada|sutta|sutra|nikaya)\b/i,
+  Hindu: /\b(gita|upanishad|veda|mahabharata|ramayan)/i,
+  Tao: /\b(tao te ching|lao[- ]?tzu|laozi|chuang|zhuangzi)\b/i,
+  Confucian: /\b(analects|confucius|mencius|doctrine of the mean|great learning)\b/i,
+  Zoroastrian: /\b(avesta|gathas?|zoroaster|zarathustra)\b/i,
+  Sikh: /\b(granth|guru)\b/i,
+};
+export const scriptureOf = (religion, o) => !SCRIPTURE[religion] || SCRIPTURE[religion].test(`${o?.title || ''} ${o?.author || ''}`);
+
 /** SourceHunt as Anís's tool for "where is this from?": the published source and the original tablet become the
  *  passages the reply is written from (so the sentence gate still holds). The model never sees a URL — it writes tags
  *  ({book}, {tablet}, …) that become exact links; it once copied a 400-char text-fragment URL into a repeating loop. */
@@ -295,7 +309,12 @@ async function huntSource(d, question) {
   const author = r.quoteAuthor || o.author || null;
   const shown = (o.highlight?.length ? o.highlight.map(([a, b]) => o.text.slice(a, b)).join(' … ') : '').split(/\s+/).filter(Boolean).slice(0, 40).join(' ').replace(/[\s.,;:]+$/, '');
   const scripture = o.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(o.religion);
+  // a saying the seeker credits to a founder ("Jesus said …") whose only holding passage is outside that tradition's
+  // scripture is a misattribution the hunt has just shown: say so first (11-01 wording battery: "God helps those who help
+  // themselves" came back as "These are the words of St. Teresa", reading as a confirmation)
+  const notScripture = religion && !scriptureOf(religion, o);
   const reply = [
+    notScripture ? `This does not appear in the ${religion} scripture in the library; the passage that holds these words is by ${author || 'a later writer'}.` : '',
     `${author ? `These are the words of ${author}, from {book}.` : 'This is from {book}.'}`,
     // the wording itself, and who quotes whom: scripture is the origin, a Bahá'í text quoting it comes after (11-01 wording battery)
     shown ? `The passage reads: «${shown}».` : '',

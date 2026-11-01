@@ -228,6 +228,21 @@ describe('source hunt: a tradition the seeker names', () => {
     expect(r.plan?.shape).not.toBe('source');
   });
 });
+describe('source hunt: a saying credited to a founder, found only outside scripture', () => {
+  const run = (origin, content) => anisRespond({ messages: [{ role: 'user', content }], direction: { kind: 'source_lookup' },
+    deps: { search: async () => ({ passages: [], _plan: { shape: 'quote' } }), craft: async () => 'ok', companion: async () => ({}),
+      plan: async () => ({ shape: 'quote' }), phrases: async () => null, upgradeLinks: async (x) => x,
+      sourceHunt: async () => ({ origin: { religion: 'Christian', text: 'God helps those who help themselves', ...origin }, citedBy: [] }) } });
+  it('says it is not in the scripture before naming the writer who holds it', async () => {
+    const r = await run({ title: 'The Life of St. Teresa of Jesus', author: 'St. Teresa of Avila' }, 'Could you please help me find where Jesus said God helps those who help themselves?');
+    expect(r.reply).toMatch(/does not appear in the Christian scripture/);
+    expect(r.reply).toMatch(/St\. Teresa of Avila/);
+  });
+  it('a Gospel origin is confirmed as it stands', async () => {
+    const r = await run({ title: 'The Bible (KJV), The Gospel of Luke', author: 'Luke' }, 'where did Jesus say do unto others as ye would that men should do to you');
+    expect(r.reply).not.toMatch(/does not appear/);
+  });
+});
 import { speakerTradition } from '../../api/lib/search-plan.js';
 describe('speakerTradition: the tradition a named founder or scripture belongs to', () => {
   it('maps founders and scriptures, leaves Bahá\'í and unnamed questions alone', () => {
