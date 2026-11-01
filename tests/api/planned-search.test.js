@@ -352,3 +352,19 @@ describe('plannedSearch — quotation hunt (11-01 incident)', () => {
     expect(r.hits[0].id).toBe(7);
   });
 });
+
+describe('prewarmSearch', () => {
+  it('Qdrant-only: embeds the question SUBJECT with the Gemini vector, never the legacy embedding', async () => {
+    const { prewarmSearch } = await import('../../api/lib/planned-search.js');
+    const seen = [], legacy = [];
+    await prewarmSearch('Where does Baha’u’llah say the earth is but one country?', { qdrant: { only: true, phrase: true }, vocab: new Set(), vector: async (q) => seen.push(q), legacy: async (q) => legacy.push(q) });
+    expect(seen).toHaveLength(1); expect(seen[0]).toMatch(/earth is but one country/); expect(seen[0]).not.toMatch(/^where/i);
+    expect(legacy).toHaveLength(0);
+  });
+  it('without Qdrant layers: the legacy embedding, as before', async () => {
+    const { prewarmSearch } = await import('../../api/lib/planned-search.js');
+    const seen = [], legacy = [];
+    await prewarmSearch('justice', { qdrant: { only: false, phrase: false }, vocab: new Set(), vector: async (q) => seen.push(q), legacy: async (q) => legacy.push(q) });
+    expect(seen).toHaveLength(0); expect(legacy).toEqual(['justice']);
+  });
+});

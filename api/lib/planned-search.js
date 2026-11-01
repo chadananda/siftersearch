@@ -119,6 +119,18 @@ export function leadWithTarget(lists, mark, limit) {
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 /**
+ * Start the query's embedding before the plan (and triage) finish, so the layers find it ready. Under Qdrant-only ranking
+ * (SEARCH_QDRANT=only, production) the layers embed with Gemini (geminiQueryVector, memoized) and the subject is what they
+ * search — a quotation's phrase differs, costing one cheap spare call; the legacy embedding (hybrid Meili layers, retired)
+ * is never used there, so starting it was a second embedding call per search (measured 11-01: 'search' + 'search-query').
+ */
+export async function prewarmSearch(text, { qdrant = qdrantDefault(), vocab, vector, legacy } = {}) {
+  const query = correctQuery(text, vocab ?? vocabulary()).query;
+  if (qdrant.only || qdrant.phrase) return (vector ?? (await import('./search/qdrant-layers.js')).geminiQueryVector)(questionSubject(query));
+  return (legacy ?? (await import('./query-embedding.js')).queryEmbedding)(query);
+}
+
+/**
  * @param {string} query            what to search for
  * @param {object} o
  * @param {Array}  [o.messages]     the conversation — scope is inferred from it, not just the query
@@ -147,7 +159,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const spelled = correctQuery(query, vocab ?? vocabulary());
   query = spelled.query;
   // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
-  if (!engine) import('./query-embedding.js').then((m) => m.queryEmbedding(query)).catch(() => {});
+  if (!engine) prewarmSearch(original, { qdrant }).catch(() => {});
   // Resolved BESIDE the plan, inside the same budget; a slow or failed resolve means no target, never a slower search.
   const target = targeter ?? (engine ? null : async (q) => (await import('./search-target.js')).resolveTarget(q));
   const targetP = target ? target(query).catch(() => null) : Promise.resolve(null);

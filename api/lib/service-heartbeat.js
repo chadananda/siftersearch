@@ -5,6 +5,7 @@
 // Chad see every service at a glance. File-based: no writer, no DB. Deps: node:fs, drain.js.
 import { mkdirSync, writeFileSync, renameSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { isDraining, drainSince, drainReason } from './drain.js';
 import { powerState } from './power-mode.js';
 
@@ -27,10 +28,13 @@ export function headCommit(root = process.cwd()) {
 export function startHeartbeat({ name = process.env.name || 'unknown', every = 15_000, state = () => ({}), dir = DIR() } = {}) {
   const base = { name, pid: process.pid, commit: headCommit(), started_at: new Date().toISOString() };
   try { mkdirSync(dir, { recursive: true }); } catch { /* read-only: no heartbeat */ }
+  // event-loop lag over the last beat window (ms): a blocked loop is why a cheap endpoint takes 10 s to answer 401
+  const loop = monitorEventLoopDelay({ resolution: 20 }); loop.enable();
   const beat = () => {
     try {
+      const lag = loop.count ? { p50: Math.round(loop.percentile(50) / 1e6), p99: Math.round(loop.percentile(99) / 1e6), max: Math.round(loop.max / 1e6) } : null; loop.reset();
       const power = powerState();
-      const rec = { ...base, beat_at: new Date().toISOString(), state: isDraining() ? 'draining' : 'running',
+      const rec = { ...base, beat_at: new Date().toISOString(), state: isDraining() ? 'draining' : 'running', ...(lag ? { loop_lag_ms: lag } : {}),
         ...(power ? { power: power.mode, ...(isDraining() ? { drain_reason: drainReason() } : {}) } : {}),
         ...(isDraining() && drainSince() ? { draining_since: new Date(drainSince()).toISOString() } : {}), ...state() };
       const f = join(dir, `${name}.json`);
@@ -40,7 +44,7 @@ export function startHeartbeat({ name = process.env.name || 'unknown', every = 1
   beat();
   const t = setInterval(beat, every);
   t.unref?.();
-  return () => clearInterval(t);
+  return () => { clearInterval(t); loop.disable(); };
 }
 
 /** Every service's last beat, with health: running | draining | silent (no beat for a minute) — and whether it runs HEAD. */

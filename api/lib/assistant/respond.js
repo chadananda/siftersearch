@@ -327,6 +327,7 @@ async function defaultDeps() {
   return {
     // Planned once here; executeSearch's plannedSearch then hits the plan cache (same conversation state).
     plan: (messages) => planSearch(messages),
+    prewarm: async (messages) => (await import('../planned-search.js')).prewarmSearch(searchQueryFor(messages)),
     search: executeSearch,
     // Lean Anis prompt by default; ANIS_PROMPT=jafar uses the 12k-token Jafar crafter (comparison / rollback).
     craft: process.env.ANIS_PROMPT === 'jafar' ? craftAnswerStream : anisCraft,
@@ -387,6 +388,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const t0 = Date.now();
 
   // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
+  // the query's embedding starts now, beside the plan, so the search layers find it ready (planned-search prewarmSearch)
+  Promise.resolve(d.prewarm?.(messages)).catch(() => {});
   const plan = d.plan ? await timed('plan', () => d.plan(messages)).catch(() => null) : null;
   // a pasted original or a translate / find-the-original request is never small talk (10-23 Liliane's Persian prayer)
   let conversational = plan?.shape === 'converse' && !textRequest([...messages].reverse().find((m) => m.role === 'user')?.content).request;

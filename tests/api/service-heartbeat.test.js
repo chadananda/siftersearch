@@ -15,4 +15,15 @@ describe('service heartbeat', () => {
     const [late] = readServices({ dir, now: Date.now() + 120_000 });
     expect(late.health).toBe('silent');
   });
+
+  it('reports event-loop lag: a blocked loop shows in the next beat', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'svc-'));
+    const stop = startHeartbeat({ name: 'siftersearch-lag', dir, every: 400 });
+    await new Promise((r) => setTimeout(r, 30));
+    for (const end = Date.now() + 120; Date.now() < end;);   // block the loop 120 ms
+    await new Promise((r) => setTimeout(r, 450));
+    stop();
+    const [s] = readServices({ dir });
+    expect(s.loop_lag_ms.max).toBeGreaterThanOrEqual(80);
+  });
 });
