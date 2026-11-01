@@ -66,8 +66,8 @@ export function rerunCandidates({ stage, where = {} }) {
 /** Stages a re-run campaign has marked and the feed has not yet re-done (ledger detail.stale): the feed's campaign stages. */
 export const campaignStages = async () => (await queryAll(`SELECT DISTINCT stage FROM media_stages WHERE json_extract(detail, '$.stale') = 1`, [], 'media-ledger:campaign-stages')).map((r) => r.stage);
 /** Published talks a campaign marked stale for `stage`, in id order: the feed's work list for a campaign stage (exactly the marked talks, nothing else). */
-export const staleByStage = async (stage, limit = 6) => queryAll(`SELECT m.id, m.slug, m.dir FROM media_stages s JOIN media_items m ON m.id = s.item_id
-  WHERE s.stage = ? AND json_extract(s.detail, '$.stale') = 1 AND m.state = 'done' AND m.dir IS NOT NULL ORDER BY m.id LIMIT ?`, [String(stage), Number(limit) || 6], 'media-ledger:stale-by-stage');
+export const staleByStage = async (stage, limit = 6, afterId = 0) => queryAll(`SELECT m.id, m.slug, m.dir FROM media_stages s JOIN media_items m ON m.id = s.item_id
+  WHERE s.stage = ? AND json_extract(s.detail, '$.stale') = 1 AND m.state = 'done' AND m.dir IS NOT NULL AND m.id > ? ORDER BY m.id LIMIT ?`, [String(stage), Number(afterId) || 0, Number(limit) || 6], 'media-ledger:stale-by-stage');
 
 /** Recorded $ per audio-hour of a stage's last 500 runs (the tick's `usd`): the rerun dry run's p75 estimate. */
 export const stageUsd = async (stage) => (await queryAll(`SELECT json_extract(s.detail, '$.usd') * 3600.0 / m.duration_s v FROM media_stages s JOIN media_items m ON m.id = s.item_id

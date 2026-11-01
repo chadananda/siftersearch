@@ -825,6 +825,8 @@ export async function mediaLlmJob({ id, ...rest } = {}, deps = {}) {
 /** Stages the feed completes on EVERY published talk lacking them: the registry's `feed` stages (opt-in; today quiet). Other stages run only for a campaign's marked talks. */
 export { FEED_STAGES } from '../media/stages.js';
 import { FEED_STAGES, REG as STAGE_REG, feedDepth, rerunSet, markStale, towerMay } from '../media/stages.js';
+/** stage → the last talk id the stage feed queued (in-process; a restart starts the rotation from the lowest id again). */
+const STAGE_CURSOR = {};
 export async function mediaLanesFeedPass(deps = {}) {
   const repo = deps.repo || await import('../repos/media-repo.js');
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
@@ -897,12 +899,20 @@ export async function mediaLanesFeedPass(deps = {}) {
     const ledger = deps.ledger ?? (deps.repo ? null : await import('../repos/media-ledger-repo.js'));
     const fed = deps.feedStages || FEED_STAGES;
     const camp = ledger?.campaignStages ? (await ledger.campaignStages()).filter((s) => STAGE_REG.BY[s] && !fed.includes(s) && towerMay(s)) : [];
+    // ROTATING CURSOR per stage (11-01: 560 + 1380 failed every pass "no realign.json: needs a full redo", stayed next_stage quiet, and as the two
+    // lowest ids filled the depth-2 lane forever — 235 quiet talks never got a turn). The list starts after the last talk fed and wraps to the
+    // start, so every talk gets its turn in id order and one that keeps failing costs one slot per cycle, never the lane. Order, not filter.
+    const cursor = deps.stageCursor || STAGE_CURSOR;
     for (const stage of [...fed, ...camp]) {
       const depth = deps.stageDepth ?? feedDepth(stage), inflight = pend.filter((r) => r.params?.stage_feed === stage).length;
       if (inflight >= depth) continue;
-      const list = fed.includes(stage) ? await repo.nextByStage(stage, depth + busy.size) : await ledger.staleByStage(stage, depth + busy.size);
-      for (const it of list.filter((x) => !busy.has(x.id)).slice(0, depth - inflight)) {
+      const fetch = (after) => (fed.includes(stage) ? repo.nextByStage(stage, depth + busy.size, after) : ledger.staleByStage(stage, depth + busy.size, after));
+      const after = cursor[stage] || 0;
+      let list = (await fetch(after)).filter((x) => !busy.has(x.id));
+      if (after && list.length < depth - inflight) { const seen = new Set(list.map((x) => x.id)); list = list.concat((await fetch(0)).filter((x) => !busy.has(x.id) && !seen.has(x.id) && x.id <= after)); }
+      for (const it of list.slice(0, depth - inflight)) {
         await queue('media-item', { id: it.id, remaster: true, stage_feed: stage }, 'media-feed'); (out.stages ||= []).push([stage, it.id]); busy.add(it.id);
+        cursor[stage] = it.id;
       }
     }
   }
