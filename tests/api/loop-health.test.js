@@ -337,3 +337,15 @@ describe('scale-mode home sentinel (Chad 11-01: Boss pegged with GPU work instea
     expect(pick(LH.evaluate({ loop_beats: { tick: { runs: 1 } }, lan_cap: lv }, now, { update: true, env, streakN: 1 }), DEEP)).toMatchObject({ ok: false, detail: expect.stringMatching(/cpu-prep backlog no drain.*cpu-prep skipped by boss/) });
   });
 });
+
+describe('operatorCap: the rentals valve bounds the typed pool (11-01: cap 1, 3 pods ran)', () => {
+  it('caps the target and the pool at maxPods', () => {
+    expect(LH.operatorCap(3, 1)).toBe(1);
+    expect(LH.operatorCap(2, 4)).toBe(2);
+  });
+  it('a missing or non-positive cap leaves the number alone', () => {
+    expect(LH.operatorCap(3, undefined)).toBe(3);
+    expect(LH.operatorCap(3, NaN)).toBe(3);
+    expect(LH.operatorCap(3, 0)).toBe(3);
+  });
+});

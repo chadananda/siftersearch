@@ -2067,10 +2067,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const provenSize = typedPods && proof.ok ? LH.provenPoolSize(st, { now: now(), horizonH: st.pod_plan.horizon_h || 2 }) : 0; if (typedPods) st.pods_proven_size = provenSize;
       const rampCap = typedPods ? LH.podRampCap({ proven: proof.ok, earned: earnedN, live: live.length, rampOk, provenSize }) : st.proven ? maxPods : 1;   // CANARY FIRST: one pod must finish a real talk before the pool grows
       const wantRaw = st.cloud_stopped || rentalPause ? 0 : typedPods ? st.pod_plan.target : minHours > 0 ? L.podsWanted({ queueHours: waitingH, maxPods, minHours }) : Math.min(maxPods, Math.ceil((st.queue.length + inflight) / C.CLOUD.perPod));
-      const want = Math.min(wantRaw, rampCap);
+      const want = typedPods ? LH.operatorCap(Math.min(wantRaw, rampCap), maxPods) : Math.min(wantRaw, rampCap);
       st.pods_wanted = wantRaw; st.rental_pause = rentalPause || null;
       // a pause / stop retires every live pod (10-31: the pause set want 0 but poolCap stayed Infinity, so 379-381 kept running and 381 booted)
-      const poolCap = st.cloud_stopped || rentalPause ? 0 : typedPods ? (proof.ok ? Math.max(earnedN + 1, provenSize) : 1) : maxPods;
+      const poolCap = st.cloud_stopped || rentalPause ? 0 : typedPods ? LH.operatorCap(proof.ok ? Math.max(earnedN + 1, provenSize) : 1, maxPods) : maxPods;
       const keepPods = new Set([...live].sort((a, b) => Number(typedPods && LH.podEarned(st, b)) - Number(typedPods && LH.podEarned(st, a)) || Number(b.status === 'ready') - Number(a.status === 'ready') || a.created - b.created).slice(0, poolCap).map(p => p.id));
       const surplusPods = new Set(poolCap < Infinity ? live.filter(p => !keepPods.has(p.id)).map(p => p.id) : []);
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)

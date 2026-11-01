@@ -205,6 +205,9 @@ export function podRampCap({ proven = false, earned = 0, live = 0, rampOk = fals
   if (!proven) return 1;
   return Math.max(1, provenSize, Math.min(earned + 1, rampOk ? live + 1 : live));
 }
+/** The operator's maxPods (rentals valve, read every tick) bounds the typed pool too: 11-01 the cap said 1 while 3 pods ran, the plan and ramp
+ *  never saw it. A non-positive or missing cap leaves n alone. Pure. */
+export const operatorCap = (n, maxPods) => (Number.isFinite(maxPods) && maxPods > 0 ? Math.min(n, maxPods) : n);
 /** The largest number of EARNED pods (podEarned) that were live at the same time within the horizon: a size the pool has proven. Pure. */
 export function provenPoolSize(st, { now = Date.now(), horizonH = 2 } = {}) {
   const from = now - horizonH * 3600e3;
