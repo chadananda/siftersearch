@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), getDonor: vi.fn(), itemsToImport: vi.fn(), itemsForDedup: vi.fn(async () => []), markImported: vi.fn(), itemsImportedUnlinked: vi.fn(),
   setCustody: vi.fn(), upsertDonor: vi.fn(), upsertDrive: vi.fn() }));
-vi.mock('../../api/lib/repos/dedup-repo.js', () => ({ registryRows: vi.fn(async () => []), upsertFingerprint: vi.fn() }));
+vi.mock('../../api/lib/repos/collection-repo.js', () => ({ allFingerprints: vi.fn(() => []), applyClusters: vi.fn(), syncItems: vi.fn(), upsertFile: vi.fn(), saveBody: vi.fn(), searchCollections: vi.fn(() => []) }));
 vi.mock('../../api/lib/ops/media-jobs.js', () => ({ deweyMediaDir: () => '/x/media' }));
 vi.mock('../../api/lib/ops/dewey-ingest-folder-job.js', () => ({ ingestDir: () => '/x/ingest' }));
 import * as repo from '../../api/lib/repos/archives-repo.js';

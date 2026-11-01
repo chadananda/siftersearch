@@ -89,8 +89,17 @@ def minhash(words):
     return ''.join(f'{v:016x}' for v in sig)
 
 
-def fingerprint(path):
-    body = fold(strip_body(body_text(path)))
+def to_markdown(raw):
+    # the converted Markdown kept in the collection's md/ folder: paragraphs (wrapped lines joined), page breaks as rules — the comparison text AND the import staging copy
+    paras = [' '.join(l.strip() for l in p.split('\n')) for p in re.split(r'\n\s*\n', raw.replace('\f', '\n\n---\n\n'))]
+    return '\n\n'.join(p for p in paras if p.strip()) + '\n'
+
+
+CONVERTER = 'fingerprint.py 1 (poppler pdftotext / zip+xml / html strip)'
+
+
+def fingerprint(path, raw=None):
+    body = fold(strip_body(raw if raw is not None else body_text(path)))
     words = body.split()
     return {'sha256': sha256_file(path), 'norm_sha': hashlib.sha256(body.encode()).hexdigest() if len(words) >= 200 else None,
             'minhash': minhash(words) if len(words) >= 200 else None, 'words': len(words)}

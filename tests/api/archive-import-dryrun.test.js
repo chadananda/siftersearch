@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/repos/archives-repo.js', () => ({ itemsToImport: vi.fn(), getDrive: vi.fn(), itemsForDedup: vi.fn(async () => []) }));
 vi.mock('../../api/lib/docs-repo.js', () => ({ docsByIsbn: vi.fn(async () => []), findDocuments: vi.fn(), listDocs: vi.fn(), getParagraphs: vi.fn() }));
-vi.mock('../../api/lib/repos/dedup-repo.js', () => ({ registryRows: vi.fn(async () => []), upsertFingerprint: vi.fn() }));
+vi.mock('../../api/lib/repos/collection-repo.js', () => ({ allFingerprints: vi.fn(() => []), applyClusters: vi.fn(), syncItems: vi.fn(), upsertFile: vi.fn(), saveBody: vi.fn(), searchCollections: vi.fn(() => []) }));
 vi.mock('../../api/lib/ops/media-jobs.js', () => ({ deweyMediaDir: () => '/x/media' }));
 vi.mock('../../api/lib/ops/dewey-ingest-folder-job.js', () => ({ ingestDir: () => '/x/ingest' }));
 const { archiveImportDryrunJob } = await import('../../api/lib/ops/archive-import-dryrun-job.js');

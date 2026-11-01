@@ -2095,6 +2095,12 @@ export const migrations = {
     for (const sql of DEDUP_SQL) await query(sql);
     logger.info('Migration 194 complete: dedup_registry');
   },
+
+  195: async () => {
+    // the registry moved out of sifter.db: one collection.db per donor collection (<ARCHIVES_DIR>/<drive>.data/, repos/collection-repo.js). The table only ever held 194's empty shell.
+    await query('DROP TABLE IF EXISTS dedup_registry');
+    logger.info('Migration 195 complete: dedup_registry dropped');
+  },
 };
 
 export const graphMigrations = {

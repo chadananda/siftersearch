@@ -157,13 +157,17 @@ def page_covered(src, p):
     return False
 
 
-def fp_of(src, cls):
-    # dedup fingerprint (fingerprint.py: sha256, normalised-body hash, MinHash). A scan has no text layer to fingerprint — only its sha256.
+def fp_of(src, cls, text=''):
+    # dedup fingerprint (fingerprint.py: sha256, normalised-body hash, MinHash) + the converted Markdown (body.md) of a text-bearing file, or the scan's OCR sample (sample.txt).
+    # A scan has no text layer to fingerprint — only its sha256.
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import fingerprint
     if cls == 'scan':
-        return {'sha256': fingerprint.sha256_file(src), 'norm_sha': None, 'minhash': None, 'words': 0}
-    return fingerprint.fingerprint(src)
+        open(os.path.join(D, 'sample.txt'), 'w', encoding='utf-8').write(text)
+        return {'sha256': fingerprint.sha256_file(src), 'norm_sha': None, 'minhash': None, 'words': 0}, ['sample.txt']
+    raw = fingerprint.body_text(src)
+    open(os.path.join(D, 'body.md'), 'w', encoding='utf-8').write(fingerprint.to_markdown(raw))
+    return fingerprint.fingerprint(src, raw), ['body.md']
 
 
 def probe_doc():
@@ -172,8 +176,9 @@ def probe_doc():
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import fingerprint
     body = fingerprint.body_text(src)
-    return {'probe': True, 'fp': fingerprint.fingerprint(src), 'class': 'text_doc', 'pages': None, 'sampled': [1], 'text': '[page 1]\n' + tidy(body)[:TEXT_MAX], 'meta_text': '',
-            'words_pp': None, 'img_frac': 0, 'hidden_font': False, 'ocr': False, 'files': []}
+    open(os.path.join(D, 'body.md'), 'w', encoding='utf-8').write(fingerprint.to_markdown(body))
+    return {'probe': True, 'fp': fingerprint.fingerprint(src, body), 'converter': fingerprint.CONVERTER, 'class': 'text_doc', 'pages': None, 'sampled': [1], 'text': '[page 1]\n' + tidy(body)[:TEXT_MAX], 'meta_text': '',
+            'words_pp': None, 'img_frac': 0, 'hidden_font': False, 'ocr': False, 'files': ['body.md']}
 
 
 def probe():
@@ -200,8 +205,9 @@ def probe():
         texts = layer
     text = '\n\n'.join(f'[page {p}]\n{texts[p][:3000]}' for p in pgs)
     meta = re.sub(r'<[^>]+>', ' ', info)
-    return {'probe': True, 'fp': fp_of(src, cls), 'class': cls, 'pages': n, 'sampled': pgs, 'text': text[:TEXT_MAX], 'meta_text': tidy(meta)[:4000], 'words_pp': round(words_pp, 1),
-            'img_frac': round(img_frac, 2), 'hidden_font': bool(re.search(r'GlyphLess|Invisible|HiddenHorzOCR|Tesseract', fonts, re.I)), 'ocr': cls == 'scan', 'files': []}
+    fp, outs = fp_of(src, cls, text)
+    return {'probe': True, 'fp': fp, 'converter': 'fingerprint.py 1 (poppler pdftotext / tesseract)', 'class': cls, 'pages': n, 'sampled': pgs, 'text': text[:TEXT_MAX], 'meta_text': tidy(meta)[:4000], 'words_pp': round(words_pp, 1),
+            'img_frac': round(img_frac, 2), 'hidden_font': bool(re.search(r'GlyphLess|Invisible|HiddenHorzOCR|Tesseract', fonts, re.I)), 'ocr': cls == 'scan', 'files': outs}
 
 
 try:

@@ -7,6 +7,7 @@ import { upsertDonor, upsertDrive, getDrive, upsertItems, pruneStale } from '../
 import { titleIndex, matchTitle, mainKey } from '../dewey/title-index.js';
 import { groupFiles } from '../archives/group.js';
 import { recommend } from '../archives/match.js';
+import { syncItems } from '../repos/collection-repo.js';
 
 // a file name as a title: no date prefix, no OCR / copy marks
 export const fileTitle = (t) => String(t || '').replace(/^\s*\d{4}(?:[-. ]\d{1,2}){0,2}\s*[-,.]?\s*/, '').replace(/[_ ]ocr'?d\b|\s*-\s*copy(?:\s*\(\d+\))?$|\s*\(\d+\)$/gi, '').trim();
@@ -39,6 +40,7 @@ export async function archiveAdoptJob({ drive, donor, donorName, label, source, 
     return { ...x, ...r, section: ['junk', 'copy'].includes(r.match) ? 'set-aside' : x.section, match_ref: m?.id ? `doc:${m.id}` : it.metadata?.near || null };
   });
   await upsertItems(drive, items, { batch: 500 });
+  try { syncItems(drive, { donor_id: donor, label, source, files: rows.length, bytes: rows.reduce((n, r) => n + (r.size || 0), 0) }, items); } catch { /* collection folder not writable here */ }
   const pruned = await pruneStale(drive, started);
   const counts = {};
   for (const it of items) { const k = (o, f) => (o[f] = (o[f] || 0) + 1); k((counts.section ||= {}), it.section); k((counts.kind ||= {}), it.kind); k((counts.match ||= {}), it.match); }

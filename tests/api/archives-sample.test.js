@@ -53,7 +53,7 @@ describe('samplePass', () => {
       wanting: async () => wanting.filter((i) => !saved[i.id]?.deep_queued),
       toProbe: async (_d, { limit }) => probes.filter((i) => !saved[`p${i.id}`]).slice(0, limit),
       probeSave: async (id, p) => { saved[`p${id}`] = { ...saved[`p${id}`], ...p }; },
-      fpSave: async (r) => { saved[`fp${r.item_id}`] = r; },
+      fpSave: async (_d, r) => { saved[`fp${r.item_id}`] = r; }, bodySave: async () => {},
       item: async (id) => byId[id],
       save: async (id, s) => { saved[id] = { ...saved[id], ...s }; },
       rec: async (id, r) => { recs[id] = r; },

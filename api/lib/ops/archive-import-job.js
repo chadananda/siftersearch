@@ -18,7 +18,7 @@ import { deweyMediaDir } from './media-jobs.js';
 import { ingestDir } from './dewey-ingest-folder-job.js';
 import { preOcrCheck, slpBound, chapterFile } from '../archives/pre-ocr.js';
 import { clusterDuplicates, itemRow, registryRow } from '../archives/dedup.js';
-import { registryRows } from '../repos/dedup-repo.js';
+import { allFingerprints, applyClusters } from '../repos/collection-repo.js';
 import { checkHoldings } from '../dewey/holdings.js';
 import { docsByIsbn } from '../docs-repo.js';
 
@@ -63,15 +63,18 @@ async function place(src, dest) {
 }
 
 /**
- * The cross-collection dedup of a drive (archives/dedup.js): the registry of every drive's fingerprints plus this drive's items not fingerprinted yet, clustered, and files the library
+ * The cross-collection dedup of a drive (archives/dedup.js): every collection.db's fingerprints (repos/collection-repo.js) plus this drive's items not fingerprinted yet, clustered, and files the library
  * already holds (Dewey sha256) marked. → { dups: Map(key → {of, step, score…}), clusters, by_step }. Never reads a file: fingerprints come from the worker probe.
  */
-export async function driveDedup(driveId, { registry = registryRows, view = itemsForDedup, bySha = null, rows = null } = {}) {
+export async function driveDedup(driveId, { registry = allFingerprints, view = itemsForDedup, bySha = null, rows = null, record = applyClusters } = {}) {
   const reg = rows ? [] : (await registry()).map(registryRow), have = new Set(reg.map((r) => r.key));
   const all = rows || [...reg, ...(await view(driveId)).map((v) => itemRow(driveId, v)).filter((r) => !have.has(r.key))];
   const find = bySha || (await import('../repos/dewey-repo.js')).findBySha, libShas = new Set();
   for (const r of all) if (r.sha && r.drive === driveId) { const d = await find(r.sha).catch(() => null); if (d?.doc_id && d.state === 'ingested') libShas.add(r.sha); }
-  return clusterDuplicates(all, { libShas });
+  const res = clusterDuplicates(all, { libShas });
+  // the result is kept on each collection's own rows (cluster, best copy, step, score) — best effort, a missing data folder never stops a run
+  if (!rows) for (const d of new Set(all.map((r) => r.drive))) try { await record(d, res.dups, res.clusters); } catch { /* collection not created yet */ }
+  return res;
 }
 
 /** Earlier imports the library now holds → their public path. */

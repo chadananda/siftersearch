@@ -10,7 +10,7 @@ import { createReadStream } from 'fs';
 import { stat, mkdtemp, readFile, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { getDrive, itemsToSample, itemsWantingInfo, itemsSampled, resetSample, setSample, setRec, answerInfo, getItem, itemsToProbe, setProbe } from '../repos/archives-repo.js';
-import { upsertFingerprint } from '../repos/dedup-repo.js';
+import { upsertFile, saveBody } from '../repos/collection-repo.js';
 import { mainKey } from '../dewey/title-index.js';
 import { recommendFromSample, infoAnswer } from '../archives/sample-rec.js';
 
@@ -65,7 +65,7 @@ async function stage(q, drive, it, deep, probe = false) {
 
 /** One pass: pull finished and failed jobs, then stage "More info" looks and new samples up to the window. → counts */
 export async function samplePass({ drive, window = 24, deps }) {
-  const { q, store, imgStore, probeSave = setProbe, fpSave = upsertFingerprint, toProbe = itemsToProbe, save = setSample, rec = setRec, answer = answerInfo, item = getItem, toSample = itemsToSample, wanting = itemsWantingInfo } = deps;
+  const { q, store, imgStore, probeSave = setProbe, fpSave = upsertFile, bodySave = saveBody, toProbe = itemsToProbe, save = setSample, rec = setRec, answer = answerInfo, item = getItem, toSample = itemsToSample, wanting = itemsWantingInfo } = deps;
   const out = { pulled: 0, failed: 0, staged: 0, deep: 0, probed: 0, probes_staged: 0, errors: {} };
   const note = (why) => { why = String(why).slice(0, 160); out.errors[why] = (out.errors[why] || 0) + 1; };
   for (const j of await q.listDone(50, 'intake')) {
@@ -79,9 +79,15 @@ export async function samplePass({ drive, window = 24, deps }) {
         const fp = s.fp || {}, it0 = await item(j.item_id);
         await probeSave(j.item_id, { class: s.class, pages: s.pages, sampled: s.sampled, text: s.text, meta_text: s.meta_text, words_pp: s.words_pp, img_frac: s.img_frac, hidden_font: !!s.hidden_font, ocr: !!s.ocr, fp: { sha256: fp.sha256 || null, norm_sha: fp.norm_sha || null, words: fp.words || 0 }, at });
         // the dedup registry (all drives): the whole fingerprint incl. the MinHash, keyed drive+path
-        if (it0 && fp.sha256) await fpSave({ drive_id: it0.drive_id, path: it0.primary_rel, item_id: it0.id, sha256: fp.sha256, norm_sha: fp.norm_sha || null, minhash: fp.minhash || null,
-          title_norm: mainKey(it0.metadata?.catalog?.title || it0.sample?.rec?.title || it0.title || it0.primary_rel.split('/').pop().replace(/\.[^.]+$/, '')), title: it0.metadata?.catalog?.title || it0.title || null,
-          words: fp.words || null, pages: s.pages || null, bytes: it0.bytes || null, cls: s.class, fmt: it0.primary_rel.split('.').pop().toLowerCase() }).catch(() => {});
+        // the collection db (one per drive, <ARCHIVES_DIR>/<drive>.data/): this file's row + its converted Markdown (md/) or a scan's pre-OCR sample (sample/), written here by the archive job
+        if (it0 && fp.sha256) {
+          const title = it0.metadata?.catalog?.title || it0.sample?.rec?.title || it0.title || null;
+          await fpSave(it0.drive_id, { path: it0.primary_rel, item_id: it0.id, sha256: fp.sha256, norm_sha: fp.norm_sha || null, minhash: fp.minhash || null, title, author: it0.metadata?.catalog?.author || it0.creator || null,
+            title_norm: mainKey(title || it0.primary_rel.split('/').pop().replace(/\.[^.]+$/, '')), words: fp.words || null, pages: s.pages || null, size: it0.bytes || null, cls: s.class, fmt: it0.primary_rel.split('.').pop().toLowerCase(),
+            text_layer: +(s.class !== 'scan'), scan: +(s.class === 'scan') }).catch((e) => note(`collection: ${e.message}`));
+          const md = names.includes('body.md') ? await readFile(await local('body.md'), 'utf8') : null, sample = names.includes('sample.txt') ? await readFile(await local('sample.txt'), 'utf8') : null;
+          if (md != null || sample != null) await bodySave(it0.drive_id, it0.primary_rel, { md, sample, converter: s.converter || null, title }).catch((e) => note(`collection body: ${e.message}`));
+        }
         out.probed++; out.pulled++; continue;
       }
       const it = await item(j.item_id);
