@@ -332,9 +332,11 @@ while (!stopping || running.size) {
     gpuIdle, sinceClaimMs: Date.now() - claimedAt, diskGb: diskFreeGb(), minDiskGb: DISK_PER_TALK })
     // CPU-only work: one claim a minute while busy, so the CPU sample sees each job's load before the next
     && (NEEDS_GPU || !running.size || Date.now() - claimedAt >= 60_000);
-  // CPU types: admitted by the projection alone (each young job counted at its profile less the share busy already holds), no claim timer —
-  // 11-01: one claim a minute held boss at 1–2 cpu-finish jobs (each ~1–4 min) with 36 queued and 14 allowed
-  const fit = ADAPT && !stopping && diskFreeGb() >= DISK_PER_TALK ? fitCpu(cpu, c) : [];
+  // CPU types: admitted by the projection (each young job counted at its profile less the share busy already holds), no claim timer —
+  // 11-01: one claim a minute held boss at 1–2 cpu-finish jobs (each ~1–4 min) with 36 queued and 14 allowed. The next claim waits for the
+  // job in fetch to have its inputs (a progress gate, not a timer): 11-01 06:02 aorus took 7 at once and all 7 fetches timed out on the link
+  const fetching = [...jobs.values()].some((j) => j.phase === 'fetch');
+  const fit = ADAPT && !stopping && !fetching && diskFreeGb() >= DISK_PER_TALK ? fitCpu(cpu, c) : [];
   const cpuReady = fit.length > 0;
   // the GPU deck is full but cores are spare: offer them to the spill types (the queue gives one only while that backlog is over 1 h)
   const spare = !want && !stopping && SPILL.length && running.size < CAP && memAvailGb() >= MIN_AVAIL_GB + GB_PER_TALK && diskFreeGb() >= DISK_PER_TALK
