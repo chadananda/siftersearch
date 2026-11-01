@@ -1910,6 +1910,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           // two transports, one API: the LAN queue (tower's disk, aorus/boss) first, then the edge /_q (R2, anywhere). An item is fed to one only.
           // typed (cpu-prep -> gpu -> cpu-finish) is fed on the LAN queue, for MEDIA_TYPED_FRACTION of whole talks (0 = off); with MEDIA_POD_TYPED=1
           // its gpu step overflows to the edge /_q (pods) once Aorus holds TARGET_H, and finish comes back to the LAN (queue-feed.js, SJ.gpuRoute).
+          // The edge is always pulled (every step type): a CPU pod there takes prep/finish overflow; gpuEdge gates gpu routing to pods only.
           const [QF, QCl, wrMod, LQ] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js'), import('../repos/media-queue-repo.js')]);
           // every side-effecting dependency is guarded by this pass's generation (self-heal above)
           const queueClient = (o) => LH.guarded(QCl.queueClient(o), alive), localQueue = () => LH.guarded(LQ.localQueue(), alive), wr = LH.guarded(wrMod, alive);
@@ -1923,12 +1924,19 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           const buffer = st.pod_plan ? QC.bufferPolicy(st.pod_plan, { pods: podTyped ? livePods : 0, rent }) : null;
           const edgeBuf = podTyped && buffer?.where === 'edge' ? buffer : null;
           // moving waiting gpu steps onto R2 is upload-bound (minutes): it runs BESIDE the pass, one at a time, so pull/feed/plan never wait on it
-          if (edgeBuf && !movePass) { LH.beatStart(st, 'q_move', now()); movePass = QF.rebalanceGpu(st, { q: LQ.localQueue(), edge: QCl.queueClient({ key: queueKey }), repo, now, buffer: edgeBuf })
-            .then((r) => { st.q_moved = { at: now(), ...r }; LH.beat(st, 'q_move', { n: r?.moved ?? 0 }, now()); }, (e) => { st.q_moved = { at: now(), error: String(e.message).slice(0, 300) }; LH.beat(st, 'q_move', { ok: false, err: e.message }, now()); }).finally(() => { movePass = null; }); }
+          // then the CPU overflow: prep steps beyond the home hosts' TARGET_H go to a CPU pod on the edge (QF.rebalancePrep: a no-op unless an
+          // edge host lists cpu-prep, i.e. a CPU pod rented by hand: ops.mjs media cpu-pod)
+          if (!movePass) { LH.beatStart(st, 'q_move', now()); const mq = { q: LQ.localQueue(), edge: QCl.queueClient({ key: queueKey }), repo, wr: wrMod, now };
+            movePass = (async () => {
+              if (edgeBuf) await QF.rebalanceGpu(st, { ...mq, buffer: edgeBuf })
+                .then((r) => { st.q_moved = { at: now(), ...r }; LH.beat(st, 'q_move', { n: r?.moved ?? 0 }, now()); }, (e) => { st.q_moved = { at: now(), error: String(e.message).slice(0, 300) }; LH.beat(st, 'q_move', { ok: false, err: e.message }, now()); });
+              else LH.beat(st, 'q_move', { n: 0 }, now());
+              await QF.rebalancePrep(st, mq).then((r) => { st.q_moved_prep = { at: now(), ...r }; }, (e) => { st.q_moved_prep = { at: now(), error: String(e.message).slice(0, 300) }; });
+            })().finally(() => { movePass = null; }); }
           phase('lan');
           LH.beatStart(st, 'q_lan', now());
           const marks = LH.chainMarks(st), lanAt = now();
-          const lan = await QF.tick(st, { ...deps, demux, run, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
+          const lan = await QF.tick(st, { ...deps, demux, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
           if (!alive()) return;
           st.q_lan = { at: now(), ...lan };
           LH.recordSteps(st, marks, lanAt, now());

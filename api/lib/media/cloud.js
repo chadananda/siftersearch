@@ -402,6 +402,41 @@ echo started`;
 export const BOOT_V = createHash('sha256').update(BOOTSTRAP_WHOLE).digest('hex').slice(0, 12);
 export const BOOT_V_AGENT = createHash('sha256').update(BOOTSTRAP_AGENT).digest('hex').slice(0, 12);
 export const agentEnv = (key, host, slots) => `export MEDIA_QUEUE_KEY='${String(key).replace(/'/g, '')}' POD_HOST='${String(host).replace(/[^\w.-]/g, '')}' AGENT_SLOTS=${Number(slots) || 4}\n`;
+/** CPU POD (Chad 10-31): a RunPod CPU instance runs the typed chain's cpu-prep + cpu-finish OVERFLOW from the edge queue (queue-feed
+ *  rebalancePrep / SJ.cpuRoute: home CPU hosts first). Rented by hand only (ops.mjs media cpu-pod), never by the lane: no ssh, no ledger, no
+ *  CUDA probe. The container's own start runs this script (createCpuPod: dockerEntrypoint), then the image's entrypoint (sshd + zombie guards).
+ *  It touches /workspace/.lane-seen at once (the entrypoint ends a pod without it at 25 min), runs the agent with no GPU, and the pod ends
+ *  itself when the agent exits (idle 10 min on an empty queue, or drained). The host name is cpupod-<pod id>: not 'pod-', so no GPU-pod
+ *  accounting (pod_rate, provePool, the lane's agent judgement) ever counts it. */
+export const CPU_POD_PREFIX = 'sifter-cpu-';
+export const BOOTSTRAP_CPU_AGENT = `mkdir -p /workspace/q && touch /workspace/.lane-seen
+export PYTHONPATH=/opt/worker-extras:/opt/sifter/media NLTK_DATA=/opt/models/nltk_data HF_HOME=/opt/models/hf HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+POD_HOST="cpupod-\${RUNPOD_POD_ID:-$(hostname)}"
+end() { echo "$(date -u +%FT%TZ) $1" >> /workspace/agent.log; /usr/local/bin/self-terminate.sh "$1"; }
+[ -f /opt/sifter/media/worker/queue-agent.mjs ] && [ -f /opt/sifter/api/lib/media/cpu-prep.mjs ] && [ -f /opt/sifter/api/lib/media/cpu-finish.mjs ] || { end 'image has no typed cpu entrypoints'; exit 1; }
+[ -n "$MEDIA_QUEUE_KEY" ] || { end 'no MEDIA_QUEUE_KEY'; exit 1; }
+cd /workspace/q
+node /opt/sifter/media/worker/queue-agent.mjs --host "$POD_HOST" --slots "\${AGENT_SLOTS:-4}" --root /workspace/q --run local --device none --types cpu-prep,cpu-finish --idle-exit-min 10 >> /workspace/agent.log 2>&1
+end "queue agent exited $? (idle or drained)"`;
+export const BOOT_V_CPU = createHash('sha256').update(BOOTSTRAP_CPU_AGENT).digest('hex').slice(0, 12);
+/** Agent slots for a CPU pod: one per 4 vCPU (a typed CPU job runs threads: 4); the agent's own CPU/RAM gates decide below that. */
+export const cpuPodSlots = (vcpu) => Math.max(1, Math.floor((Number(vcpu) || 0) / 4));
+/** Rent ONE CPU pod (manual: POST /api/admin/ops/media/cpu-pod). → { id, name, host, costPerHr (RunPod's answer, never assumed), boot_v }. */
+export async function createCpuPod({ publicKey, queueKey, vcpu = 32, flavor = 'cpu5c', name = null, ...deps } = {}) {
+  const pause = await rentalPauseReason(deps.pauseFile);
+  if (pause) throw new Error(`RunPod rentals paused: ${pause}`);
+  if (!queueKey) throw new Error('createCpuPod: no queue key');
+  const accepted = await acceptedWorker(deps.acceptedWorkerFile);
+  const slots = cpuPodSlots(vcpu), boot = Buffer.from(BOOTSTRAP_CPU_AGENT).toString('base64');
+  const body = { name: name || `${CPU_POD_PREFIX}${Date.now().toString(36)}`, computeType: 'CPU', cpuFlavorIds: [flavor], vcpuCount: Number(vcpu),
+    imageName: accepted?.image || process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
+    containerDiskInGb: 60, volumeInGb: 0, ports: ['22/tcp'], supportPublicIp: true,
+    // the bootstrap starts beside the image's own entrypoint, which keeps sshd and its zombie guards (exec)
+    dockerEntrypoint: ['bash', '-c', 'mkdir -p /workspace && echo "$SIFTER_BOOT_B64" | base64 -d > /workspace/cpu-agent.sh && (setsid bash /workspace/cpu-agent.sh > /workspace/boot.log 2>&1 < /dev/null &); exec /usr/local/bin/entrypoint.sh'],
+    env: { PUBLIC_KEY: publicKey || '', RP_TERMINATE_KEY: key(), MEDIA_QUEUE_KEY: String(queueKey), AGENT_SLOTS: String(slots), SIFTER_BOOT_B64: boot } };
+  const pod = await rest('POST', '/pods', body, deps);
+  return { id: pod.id, name: body.name, host: pod.id ? `cpupod-${pod.id}` : null, flavor, vcpu: Number(vcpu), slots, costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, boot_v: BOOT_V_CPU, image: body.imageName };
+}
 export const WORKER_FILE = join(ROOT, 'scripts', 'media', 'runpod_worker.py');
 export const REPO_TGZ = () => process.env.MEDIA_UNIPASE_REPO_TGZ || join(homedir(), 'sifter', 'remaster', 'cloud', `unipase-${UNIPASE_COMMIT.slice(0, 8)}.tgz`);
 export const jobIdOf = (item) => `${String(item.slug || item.id).replace(/[^a-z0-9-]/gi, '').slice(0, 80)}-${item.id}`;

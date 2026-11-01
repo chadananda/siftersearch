@@ -9,11 +9,14 @@
 // after it has finished; cpu-finish lands through the whole intake and stamps tool/settings/fp per stage.
 // deps.edge (the /_q client, set while pods boot typed: MEDIA_POD_TYPED=1): the gpu step overflows there (SJ.gpuRoute); tower copies the
 // original + the previous step's files into the other queue's files/<file id>/ and acks each step on the queue that holds it.
+// CPU pod (Chad 10-31): an edge host that lists cpu-prep/cpu-finish (a rented CPU pod, cloud.createCpuPod) takes the OVERFLOW of the home CPU
+// hosts: the feed adds its measured rate, rebalancePrep moves the excess prep steps to the edge, and a step that finished on the edge is pulled
+// and acked there whatever its type. A talk whose input is FLAC/WAV never leaves the LAN (no decoded audio in the cloud).
 import { join, extname } from 'node:path';
 import { VIDEO } from './r2-stage.js';
 import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
-import { untransitArgs, TRANSIT } from '../../../scripts/media/worker/transit.mjs';
+import { untransitArgs, TRANSIT, isDecoded } from '../../../scripts/media/worker/transit.mjs';
 import { decide } from './exclusions.js';
 import { cbPerson, cbVerdict } from './cb-date.js';
 
@@ -114,14 +117,18 @@ async function chainInput(it, m, demux) {
 }
 const chainSrc = (it, m, ch) => join(it.dir, ch.src || m.original);
 /** Typed feed: only while hosts for all three steps are engaged; keeps ~TARGET_H of prep queued; order by band (pickNext). */
-async function feedTyped(st, cap, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null }) {
+/** The edge's engaged cpu-prep supply (a CPU pod): { rate, queued_audio_h } at its measured rate, or null when no edge host lists cpu-prep. */
+const edgePrep = (cap) => { const t = cap?.by_type?.['cpu-prep']; return t?.hosts?.length ? { rate: t.rate || 0, queued_audio_h: t.queued_audio_h || 0 } : null; };
+async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null }) {
   const types = new Set(cap.hosts.flatMap((h) => h.types || []));
-  const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t) && !(t === 'gpu' && edge));   // pods boot on the edge's gpu backlog
+  const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t) && !(t === 'gpu' && edge && gpuEdge !== false));   // pods boot on the edge's gpu backlog
   if (lack.length) return { fed: 0, why: `no ${lack.join('/')} host engaged` };
   st.chains ||= {};
   const t = cap.by_type?.['cpu-prep'] || {}, rate = t.rate || (t.queued_h ? t.queued_audio_h / t.queued_h : 1);
-  let queuedS = (t.queued_audio_h || 0) * 3600, fed = 0;
-  while (queuedS < TARGET_H * 3600 * rate && fed < max) {
+  // an edge CPU host (the CPU pod) adds its measured prep rate; its queue counts as fed (rebalancePrep moves the overflow there)
+  const ep = edge ? edgePrep(await edge.capacity?.().catch(() => null)) : null, eRate = ep?.rate || 0;
+  let queuedS = (t.queued_audio_h || 0) * 3600 + (ep ? ep.queued_audio_h * 3600 : 0), fed = 0;
+  while (queuedS < TARGET_H * 3600 * (rate + eRate) && fed < max) {
     const i = SJ.pickNext(st, (id) => SJ.typedEligible(st, id) && SJ.typedShare(id, fraction) && !st.chains[id]);
     if (i < 0) break;
     const [itemId] = st.queue.splice(i, 1);
@@ -186,13 +193,14 @@ export async function untransit(dir, r, meta, { run = null, now = Date.now } = {
   meta.master_transit = ts.map((f) => ({ path: f.transit_of, via: f.path, settings: f.transit || TRANSIT, at: new Date(now()).toISOString() }));
   return meta;
 }
-async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true, run = null }) {
-  let adopted = 0, errors = 0, steps = 0, lanCap;
+async function pullTyped(st, ack, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true, run = null }) {
+  let adopted = 0, errors = 0, steps = 0, lanCap, edgeCap;
   const buf = { staged_h: buffer?.buffer_h || 0, want_h: buffer?.want_h || 0 };
   st.chains ||= {};
   const ackEdge = [], qOf = (where) => (where === 'edge' ? edge : q);
   const ackJob = (id) => { const list = st.qjobs[id]?.where === 'edge' ? ackEdge : ack; if (!list.includes(id)) list.push(id); delete st.qjobs[id]; };
-  for (const type of SJ.AUDIO_TYPES) for (const [src, sq] of [['lan', q], ...(type === 'gpu' && edge ? [['edge', edge]] : [])]) {
+  // every step type is pulled from both transports: gpu from the pods, cpu-prep/cpu-finish from a CPU pod (an edge step is acked on the edge)
+  for (const type of SJ.AUDIO_TYPES) for (const [src, sq] of [['lan', q], ...(edge ? [['edge', edge]] : [])]) {
     for (const j of await sq.listDone(200, type)) {   // adopted steps stay 'done' until the next step finishes: skip them
       seenAgent(st, j.host, j.updated);
       const qj = st.qjobs[j.id];
@@ -211,11 +219,14 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           logStep(st, type, j.host, ch.audio_s, now());
           const m = await readMeta(it.dir), next = SJ.chainNext(m, ch);
           if (!next || SJ.AUDIO_TYPES.indexOf(next) <= SJ.AUDIO_TYPES.indexOf(type)) throw Error(`${type} delivered without its stages (next would be ${next})`);
-          const where = next === 'gpu' && !stageInline ? 'lan' : next === 'gpu' ? SJ.gpuRoute(lanCap ||= await q.capacity().catch(() => null), { edge: !!edge, targetH: TARGET_H, ...buf }) : 'lan', nq = qOf(where);
-          if (where === 'edge') buf.staged_h += (ch.audio_s || 0) / 3600;
-          const files = where !== src ? sentFiles(r.files) : r.files;   // staged: what the next host rebuilds itself never crosses the uplink
+          const where = lanOnly(ch) ? 'lan' : next === 'gpu' ? (src === 'lan' && !stageInline ? 'lan' : SJ.gpuRoute(lanCap ||= await q.capacity().catch(() => null), { edge: !!edge && gpuEdge !== false, targetH: TARGET_H, ...buf }))
+            : src === 'edge' ? SJ.cpuRoute(next, lanCap ||= await q.capacity().catch(() => null), edgeCap ||= await edge.capacity?.().catch(() => null), { targetH: TARGET_H }) : 'lan', nq = qOf(where);
+          if (where === 'edge' && next === 'gpu') buf.staged_h += (ch.audio_s || 0) / 3600;
+          // staged, or anything a cloud host made: what the next host rebuilds itself never crosses the uplink, and a cloud host never uploaded
+          // it (queue-agent cloudSkips), so an edge step's next inputs never name it (it would 404 in the results store)
+          const files = where !== src || src === 'edge' ? sentFiles(r.files) : r.files;
           if (where !== src) {   // the next step runs on the other transport: its inputs go into that queue's files/<file id>/
-            if (where === 'edge') await nq.put('files', ch.fileId, ch.input, chainSrc(it, m, ch));   // the LAN holds it from the feed
+            await nq.put('files', ch.fileId, ch.input, chainSrc(it, m, ch));   // the original, from tower's copy (the transport it came from may have dropped it)
             for (const f of files) { const tmp = join(stg, 'x', 'item', f.path); await sq.get('results', j.id, 'item/' + f.path, tmp); await nq.put('files', ch.fileId, 'item/' + f.path, tmp); }
           }
           const job = SJ.typedJob(next, { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: j.id, files, staged: where !== src }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
@@ -276,7 +287,7 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
   let edgeH = cap.by_type?.gpu?.queued_audio_h || 0, moved = 0, skipped = 0, bytes = 0, lost = 0, audioS = 0;
   const t0 = now();
   const leased = new Set(((await q.stats('gpu').catch(() => null))?.leased || []).map((j) => j.id));   // a step a home GPU holds is never copied
-  const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where && !leased.has(id) && st.chains?.[qj.itemId]?.['cpu-prep']).sort((a, b) => a[1].at - b[1].at);
+  const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'gpu' && !qj.where && !leased.has(id) && st.chains?.[qj.itemId]?.['cpu-prep'] && !lanOnly(st.chains[qj.itemId])).sort((a, b) => a[1].at - b[1].at);
   // a file already on the edge at its size is not sent again: a move cut by a restart resumes where it stopped (10-31: restarts every few
   // minutes meant no talk ever finished its upload)
   // with pods the home GPU is CPU-first (core.bufferPolicy lan_keep_h): the LAN keeps only its own BUFFER_H, the rest goes to the pods
@@ -330,6 +341,52 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
 // ~35 s CPU per audio-h, measured on boss 10-31), beside a gpu job of ~15 min. A LAN gpu step still reads it from the results store.
 export const REBUILT = SJ.REBUILT;
 export const sentFiles = (files = []) => files.filter((f) => !REBUILT.has(f.path));
+/** A chain whose input is decoded audio (FLAC/WAV) stays on the LAN: the edge client refuses the name, and no decoded audio goes to the cloud. */
+export const lanOnly = (ch) => isDecoded(ch?.input);
+
+/** CPU overflow (Chad 10-31): home CPU hosts first, a CPU pod on the edge takes the excess. While an edge host lists cpu-prep, prep steps waiting
+ *  on the LAN beyond TARGET_H at the home hosts' measured rate move to the edge, up to TARGET_H at the edge's measured rate. The original is
+ *  copied first (a file already there at its size is not sent again), then the LAN step is withdrawn and the same step enqueued on the edge;
+ *  a withdrawn step the edge refuses goes back to the LAN. Newest first: home hosts keep the steps they reach soonest. FLAC/WAV inputs stay. */
+export async function rebalancePrep(st, { q, edge, repo, wr, readMeta = readMetaFile, now = Date.now, parallel = MOVE_PARALLEL }) {
+  const ep = edgePrep(await edge.capacity().catch(() => null));
+  if (!ep) return { moved: 0, why: 'no edge cpu-prep host' };
+  const lp = (await q.capacity().catch(() => null))?.by_type?.['cpu-prep'] || {};
+  const keepH = TARGET_H * (lp.hosts?.length ? lp.rate || 0 : 0), wantH = TARGET_H * ep.rate;   // audio-hours each side works through in TARGET_H
+  let lanH = lp.queued_audio_h || 0, edgeH = ep.queued_audio_h, moved = 0, skipped = 0, kept_lan = 0, bytes = 0;
+  const leased = new Set(((await q.stats('cpu-prep').catch(() => null))?.leased || []).map((j) => j.id));
+  const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'cpu-prep' && !qj.where && !leased.has(id) && st.chains?.[qj.itemId])
+    .filter(([, qj]) => !lanOnly(st.chains[qj.itemId]) || (kept_lan++, false)).sort((a, b) => b[1].at - a[1].at);
+  const moveOne = async (id, qj) => {
+    const ch = st.chains[qj.itemId];
+    let withdrawn = false, job = null;
+    try {
+      const it = await repo.getMediaItem(qj.itemId), m = await readMeta(it.dir), src = chainSrc(it, m, ch), size = (await stat(src)).size;
+      const have = new Map(((await edge.list?.('files', ch.fileId).catch(() => null)) || []).map((o) => [o.name, o.bytes]));
+      if (have.get(ch.input) === size) skipped++; else { await edge.put('files', ch.fileId, ch.input, src); bytes += size; }
+      job = SJ.typedJob('cpu-prep', { itemId: qj.itemId, fileId: ch.fileId, wj: { ...wr.wholeJob(it, m, ch.sha), input: ch.input, threads: 4 }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s, bytes: size });
+      if (!st.qjobs[id] || !(await q.withdraw([id]))?.withdrawn) return;   // a home host took it meanwhile: it stays home
+      withdrawn = true;
+      await edge.enqueue([job]);
+      delete st.qjobs[id];
+      st.qjobs[job.id] = { ...qj, at: now(), where: 'edge' };
+      moved++;
+    } catch (e) {
+      if (withdrawn && job) await q.enqueue([job]).catch(() => {});   // the edge refused a withdrawn step: back to the LAN, the talk is not lost
+      else if (e.code === 'ABANDONED') throw e;
+      st.q_move_prep_error = { at: now(), id, error: String(e.message).slice(0, 300) };
+    }
+  };
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.max(1, parallel) }, async () => {
+    while (i < waiting.length && lanH > keepH && edgeH < wantH) {
+      const [id, qj] = waiting[i++];
+      lanH -= (qj.audio_s || 0) / 3600; edgeH += (qj.audio_s || 0) / 3600;
+      await moveOne(id, qj);
+    }
+  }));
+  return { moved, bytes, ...(skipped ? { resumed_files: skipped } : {}), ...(kept_lan ? { kept_lan } : {}) };
+}
 
 /** A waiting gpu step whose prep files are gone (404 from the results store: acked by an older failure path) can never run: withdraw it, drop
  *  the chain and queue the talk again from prep, once without counting it against the talk (the loss was ours); a repeat goes through retry(). */
@@ -441,7 +498,10 @@ export function seenAgent(st, host, at) {
 export async function tick(st, deps) {
   const out = { pulled: await pull(st, deps) };
   const forgiven = forgiveOurs(st); if (forgiven.length) out.forgiven = forgiven;
-  if (deps.typed && deps.edge && deps.rebalance !== false) out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
+  if (deps.typed && deps.edge && deps.rebalance !== false) {
+    out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
+    out.moved_prep = await rebalancePrep(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
+  }
   out.fed = await feed(st, deps);
   out.leased = {}; out.beat = {};   // jobs each agent holds (machine cards) + its latest heartbeat (an agent pod is alive while it beats: media-jobs.js)
   // every job type: stats() alone reads 'media' only, so typed leases (cpu-prep, gpu, cpu-finish) were missing and the cards read {} (10-31)

@@ -76,6 +76,17 @@ export default async function mediaOps(fastify) {
       return { paused: await C.rentalPauseReason(), ...(capacity ? { capacity } : {}) };
     } catch (e) { return reply.code(400).send({ error: e.message }); }
   });
+  // rent ONE CPU pod by hand (Chad 10-31: never automatic): it runs cpu-prep + cpu-finish overflow from the edge queue and ends itself when
+  // idle. { vcpu?: 32, flavor?: 'cpu5c' } → the pod id, its host name and RunPod's own $/h. Honors the rentals pause.
+  fastify.post('/ops/media/cpu-pod', guard, async (req, reply) => {
+    const b = req.body || {}, C = await import('../lib/media/cloud.js');
+    try {
+      const publicKey = (await import('fs/promises')).readFile(join((await import('os')).homedir(), '.ssh', 'id_ed25519.pub'), 'utf8').then((s) => s.trim()).catch(() => '');
+      const pod = await C.createCpuPod({ publicKey: await publicKey, queueKey: (await import('../lib/repos/media-queue-repo.js')).machineKey(), vcpu: Number(b.vcpu) || 32, flavor: String(b.flavor || 'cpu5c').replace(/[^\w-]/g, '') });
+      req.log.info({ pod, by: by(req) }, 'cpu pod rented');
+      return pod;
+    } catch (e) { return reply.code(400).send({ error: e.message }); }
+  });
   // promote an Aorus-accepted whole-recording image (the pods' immutable image; never an ssh edit of data/run on tower)
   fastify.post('/ops/media/worker-image', guard, async (req, reply) => {
     const b = req.body || {}, r = await (await import('../lib/media/cloud.js')).promoteWorker({ image: b.image, evidence: b.evidence, home_image: b.home_image, quiet_hosts: b.quiet_hosts, by: by(req) });

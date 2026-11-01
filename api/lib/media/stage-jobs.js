@@ -160,6 +160,14 @@ export function pickNext(st, can = () => true) {
 /** Where the gpu step runs. With pods allowed typed (MEDIA_POD_TYPED=1 = { edge: true }): first the pods' R2 buffer (the edge /_q) up to
  *  want_h audio-h (Chad 10-31: gpu work waits on R2 BEFORE a pod boots, so a pod never sits idle), then the LAN (home GPU) until it holds
  *  TARGET_H, then the edge again. No home GPU engaged → the edge. Pure. */
+/** Where a CPU step (cpu-prep/cpu-finish) runs after a step that finished on the edge: home first. The edge only while an edge host lists the
+ *  type (a CPU pod) and the LAN already holds targetH of it at the home hosts' measured rate (or no home host lists it). */
+export function cpuRoute(type, lanCap, edgeCap, { targetH = 2.5 } = {}) {
+  if (!edgeCap?.by_type?.[type]?.hosts?.length) return 'lan';
+  const t = lanCap?.by_type?.[type];
+  if (!t?.hosts?.length) return 'edge';
+  return (t.queued_h || 0) >= targetH ? 'edge' : 'lan';
+}
 export function gpuRoute(lanCap, { edge = false, targetH = 2.5, staged_h = 0, want_h = 0 } = {}) {
   if (!edge) return 'lan';
   if (staged_h < want_h) return 'edge';
