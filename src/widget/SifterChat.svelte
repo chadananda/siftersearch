@@ -315,6 +315,19 @@
   });
 
   function onKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
+  // The panel is its own world: keys and wheel/touch never reach the host page (whose shortcuts, e.g. Space = play/pause,
+  // can't see inside the shadow root and would act on keys typed here). Escape closes the panel here, since it no longer bubbles.
+  function isolateKey(e) { if (e.key === 'Escape') open = false; e.stopPropagation(); }
+  const isolate = (e) => e.stopPropagation();
+  function contain(node) {   // Svelte attaches wheel/touchmove passively; preventDefault needs a non-passive listener
+    node.addEventListener('wheel', containWheel, { passive: false });
+    node.addEventListener('touchmove', isolate, { passive: true });
+    return { destroy() { node.removeEventListener('wheel', containWheel); node.removeEventListener('touchmove', isolate); } };
+  }
+  function containWheel(e) {   // a wheel over the header/composer (nothing to scroll there) must not scroll the page behind
+    e.stopPropagation();
+    if (!e.composedPath().some((n) => n.classList?.contains('body'))) e.preventDefault();
+  }
   let openedOnce = false;
   function togglePanel() {
     open = !open;
@@ -345,7 +358,7 @@
 {#if cfg && !denied}
   <div class="root {cfg.position === 'bottom-left' ? 'left' : 'right'}" style="--accent:{cfg.accent}">
     {#if open}
-      <section class="panel" aria-label="{cfg.name} chat">
+      <section class="panel" aria-label="{cfg.name} chat" onkeydown={isolateKey} onkeyup={isolate} onkeypress={isolate} use:contain>
         <header>
           <span class="roundel" aria-hidden="true"><svg viewBox="0 0 512 512"><path fill="currentColor" d={OCEAN_D}/></svg></span>
           <span class="titles">
@@ -544,6 +557,7 @@
     background: linear-gradient(178deg, #fdfcf8, #f7f3ec);
     color: #24211c; border-radius: 16px; overflow: hidden;
     display: flex; flex-direction: column;
+    overscroll-behavior: contain;
     box-shadow: 0 18px 60px rgba(15, 25, 40, .30), 0 4px 16px rgba(15, 25, 40, .18);
     animation: rise .42s cubic-bezier(.22,1,.36,1);
   }
@@ -587,6 +601,7 @@
   }
   .body {
     flex: 1; overflow-y: auto; padding: 18px 18px 10px;
+    overscroll-behavior: contain;   /* reaching the end of the conversation never scrolls the page behind */
     display: flex; flex-direction: column; gap: 14px;
     scrollbar-width: thin; scrollbar-color: rgba(120,110,90,.35) transparent;
   }
