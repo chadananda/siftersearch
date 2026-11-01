@@ -17,7 +17,12 @@ export function workDocs(name, docs, { resolved = false } = {}) {
   const need = resolved ? TIER.ALL_WORDS : nWords(name) >= 2 ? TIER.PREFIX : TIER.EXACT;
   const best = Math.max(0, ...tiered.map((x) => x.tier));
   if (best < need) return [];
-  return tiered.filter((x) => x.tier === best).slice(0, DOCS_PER_WORK).map((x) => x.d);
+  // same title, several documents: the work itself (written by a central figure) before a talk or study titled after it
+  // (r8 probe: "The Kitáb-i-Íqán" scope held a talk — "We look at them and consider…" — not Bahá'u'lláh's text), then canonical
+  const rank = (d) => (keywordAuthor(` ${d.author || ''} `) ? 0 : 2) + (d.source_site == null || d.source_site === 'oceanlibrary.com' ? 0 : 1);
+  const top = tiered.filter((x) => x.tier === best).map((x, i) => ({ d: x.d, r: rank(x.d), i })).sort((a, b) => a.r - b.r || a.i - b.i);
+  const own = top.filter((x) => x.r < 2);
+  return (own.length ? own : top).slice(0, DOCS_PER_WORK).map((x) => x.d);
 }
 
 const HONORIFIC = /^(?:saint|st|sir|dr|imam|rabbi|lord|lady|mr|mrs|ms)$/;
@@ -46,7 +51,7 @@ export async function namedScopes(plan, { find } = {}) {
   const mentions = plan?.mentions || [], spans = plan?.spans || [];
   if (!mentions.length && !spans.length) return [];
   const lookup = find || (async (q, o) => (await import('../docs-repo.js')).findDocuments(q, o));
-  const fields = ['id', 'title', 'author', 'religion'];
+  const fields = ['id', 'title', 'author', 'religion', 'source_site'];
   // a span the entity index already resolved is no title: by its matched text, its name, or either without articles
   // ("John the Baptist" span vs "John Baptist" matched — r8 probe)
   const bare = (s) => fold(s).replace(/\b(?:the|of|a|an)\b/g, ' ').replace(/ +/g, ' ').trim();

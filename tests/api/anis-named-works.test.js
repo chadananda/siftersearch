@@ -78,6 +78,13 @@ describe('named scopes', () => {
     expect(workDocs('Guidance', docs)).toEqual([]);
     expect(workDocs('Íqán', [{ id: 20810, title: 'The Kitáb-i-Íqán' }], { resolved: true }).map((d) => d.id)).toEqual([20810]);
   });
+  it('workDocs: the work itself (by a central figure) before a talk titled after it', () => {
+    const rows = [{ id: 31, title: 'The Kitáb-i-Íqán', author: 'Some Speaker', source_site: null },
+      { id: 32, title: 'The Kitáb-i-Íqán', author: 'Some Speaker', source_site: 'bahai-library.com' },
+      { id: 20810, title: 'The Kitáb-i-Íqán', author: "Bahá'u'lláh", source_site: 'oceanlibrary.com' }];
+    expect(workDocs('The Kitáb-i-Íqán', rows, { resolved: true }).map((d) => d.id)).toEqual([20810]);
+    expect(workDocs('The Kitáb-i-Íqán', rows.slice(0, 2), { resolved: true }).map((d) => d.id)).toEqual([31, 32]);
+  });
   it('authorDocs: the author IS the name (honorific, "of …", co-authors); no namesakes, no tag pages', () => {
     const rows = [{ id: 1, author: 'Saint Augustine' }, { id: 2, author: 'Augustine Smith' }, { id: 3, author: 'Augustinian Friars' },
       { id: 4, author: 'Augustine of Hippo' }, { id: 5, author: 'Plotinus; Augustine' }, { id: 6, author: 'Augustine', title: 'Tag: Augustine' }];
