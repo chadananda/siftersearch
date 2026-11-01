@@ -429,8 +429,9 @@ export async function setPlayback(level, { sourceKind = null } = {}) {
   await transaction([{ sql: `UPDATE media_items SET playback = ?, updated_at = ? WHERE playback != ?${sourceKind ? ' AND source_kind = ?' : ''}`, args: sourceKind ? [level, now(), level, sourceKind] : [level, now(), level] }], 'media:set-playback');
   return r?.n || 0;
 }
-/** Published rows whose restored flag was never set (before migration 186): the backfill's work list, and its answer. */
-export const unclassifiedDone = async (limit = 50) => queryAll(`SELECT id, dir FROM media_items WHERE dir IS NOT NULL AND state != 'duplicate' AND (restored IS NULL OR stages_missing IS NULL OR (restored = 1 AND completed_at IS NULL)) ORDER BY (state = 'done') DESC, id LIMIT ?`, [Number(limit) || 50], 'media:restored-todo');
+/** Published rows whose restored flag was never set (before migration 186): the backfill's work list, and its answer.
+ *  Also an on-air row with no published_at (11-01: 2647/2659 complete, restored 1, published_at NULL — the off-air repair ran while the finish write left state mid-chain). */
+export const unclassifiedDone = async (limit = 50) => queryAll(`SELECT id, dir FROM media_items WHERE dir IS NOT NULL AND state != 'duplicate' AND (restored IS NULL OR stages_missing IS NULL OR (restored = 1 AND completed_at IS NULL) OR (restored = 1 AND state = 'done' AND published_at IS NULL)) ORDER BY (state = 'done') DESC, id LIMIT ?`, [Number(limit) || 50], 'media:restored-todo');
 /** Every published row, in id order: the on-air flag is re-derived from meta.json in both directions (10-31: rows set 0 under the old verdict rule are re-checked). */
 export const doneRows = async (afterId = 0, limit = 200) => queryAll(`SELECT id, dir, restored, next_stage, stages_missing, published_at, verdict FROM media_items WHERE state = 'done' AND id > ? ORDER BY id LIMIT ?`, [Number(afterId) || 0, Number(limit) || 200], 'media:done-verify');
 /** Published talks whose next checklist stage is `stage` (a requirement added after publication), in id order — the pipeline's work list for that stage. */

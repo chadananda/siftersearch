@@ -93,6 +93,14 @@ describe('published = on air (10-31, talk 485): published_at follows restored', 
     await repo.setRestored(2, false); expect(pub(2)).toEqual({ r: 0, p: null });
     await repo.updateMediaItem(2, { title: 'x' }); expect(pub(2).p).toBe(null);   // a write without the flag leaves it alone
   });
+  it('an on-air row that lost published_at is stamped again on the next backfill tick (11-01: 2647/2659 complete, restored 1, published_at NULL)', async () => {
+    resetRestoredVerify();
+    await backfillRestored({ repo, readMeta: async (d) => (d === '/x/3' ? good() : Promise.reject(new Error('nope'))) });
+    db.prepare('UPDATE media_items SET published_at = NULL WHERE id = 3').run();
+    expect(pub(3)).toEqual({ r: 1, p: null });
+    await backfillRestored({ repo, readMeta: async (d) => (d === '/x/3' ? good() : Promise.reject(new Error('nope'))) });   // verify pass already done: only the per-tick list can catch it
+    expect(pub(3).r).toBe(1); expect(pub(3).p).toBeTruthy();
+  });
   it('the verify pass takes an off-air row that still carries published_at off the published list (485 was restored 0 + published_at)', async () => {
     resetRestoredVerify();
     db.prepare("UPDATE media_items SET restored = 0, published_at = '2026-10-31T20:16:05Z' WHERE id = 2").run();
