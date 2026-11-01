@@ -9,6 +9,7 @@ import { pipeline } from 'node:stream/promises';
 
 export const DEFAULT_BASE = 'https://siftersearch.com/_q';
 export const DIRECT_MAX = 90e6;   // matches worker/queue/index.js
+export const DECODED = /\.(flac|wav)$/i;   // = scripts/media/worker/transit.mjs (this file ships alone: no import)
 const enc = (p) => p.split('/').map(encodeURIComponent).join('/');
 
 export function queueClient({ base = process.env.MEDIA_QUEUE_URL || DEFAULT_BASE, key, fetch: f = globalThis.fetch, timeoutMs = 120_000 } = {}) {
@@ -32,6 +33,8 @@ export function queueClient({ base = process.env.MEDIA_QUEUE_URL || DEFAULT_BASE
     return dest;
   }
   async function put(kind, id, name, file, { lease } = {}) {
+    // no decoded audio is ever stored in the cloud (Chad 10-31): the edge refuses it too (worker/queue core.decodedAudio); a LAN base may take it
+    if (/^https:/.test(base) && DECODED.test(name)) throw Object.assign(new Error(`put ${kind}/${id}/${name}: FLAC/WAV never goes to the cloud`), { status: 415 });
     const bytes = (await stat(file)).size;
     const send = (url, headers) => f(url, { method: 'PUT', headers: { ...headers, 'content-length': String(bytes) }, body: Readable.toWeb(createReadStream(file)), duplex: 'half', redirect: 'manual', signal: AbortSignal.timeout(30 * 60_000) });
     const url = `${base}/${kind}/${enc(id)}/${enc(name)}${lease ? `?lease=${encodeURIComponent(lease)}` : ''}`;

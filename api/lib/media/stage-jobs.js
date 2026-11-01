@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { REG, fpOf, JOB_TYPES as REG_JOB_TYPES } from './stages.js';
 import { hasQuiet } from './quiet-record.js';
+import { REBUILT, isDecoded } from '../../../scripts/media/worker/transit.mjs';
 
 export const AUDIO_TYPES = ['cpu-prep', 'gpu', 'cpu-finish'];
 export const JOB_TYPES = REG_JOB_TYPES;
@@ -66,7 +67,8 @@ export const requiredFiles = (type) => (CONTRACT.types[type]?.outputs?.files || 
 // files a step rebuilds itself from the previous step's checkpoint, so they never cross an uplink or sit in R2 (FLAC, Chad 10-31):
 // light.flac is one deterministic ffmpeg pass over the original from enh_ck.m0 (item.js enhance rebuilds it when absent). A cloud agent
 // lists it in result.json but does not upload it; validateTyped lets exactly these go missing.
-export const REBUILT = new Set(['enhanced/light.flac']);
+// A cloud host sends any other listed FLAC/WAV as an Opus transit ({ path: <x>.transit.ogg, transit_of: <x> }); tower decodes it back on adoption.
+export { REBUILT };
 const SAFE_PATH = (p) => typeof p === 'string' && p && !p.includes('\\') && !p.startsWith('/') && !p.split('/').some((x) => !x || x === '.' || x === '..');
 const NEED = { 'cpu-prep': { ram_gb: 4 }, gpu: { vram_mb: 12000, ram_gb: 8 }, 'cpu-finish': { ram_gb: 5 } };
 
@@ -81,8 +83,9 @@ export function validateTyped(type, r, { inputSha, slug, outputs = null } = {}) 
   if (inputSha && r.input_sha !== inputSha) why('made from a different original');
   if (slug && r.slug !== slug) why(`slug ${r.slug} ≠ ${slug}`);
   const files = r.files || [];
-  for (const f of files) if (!SAFE_PATH(f.path) || f.path.startsWith('original/') || !/^[0-9a-f]{64}$/.test(f.sha256 || '')) why(`unsafe or unhashed output ${f.path}`);
-  const have = new Set(files.map((f) => f.path)), lost = requiredFiles(type).filter((f) => !have.has(f));
+  for (const f of files) if (!SAFE_PATH(f.path) || f.path.startsWith('original/') || !/^[0-9a-f]{64}$/.test(f.sha256 || '') || (f.transit_of != null && (!SAFE_PATH(f.transit_of) || !isDecoded(f.transit_of)))) why(`unsafe or unhashed output ${f.path}`);
+  if (type !== 'cpu-finish' && files.some((f) => f.transit_of)) why('a transit is decoded only when cpu-finish is adopted (the next step would not find its file)');
+  const have = new Set(files.flatMap((f) => (f.transit_of ? [f.path, f.transit_of] : [f.path]))), lost = requiredFiles(type).filter((f) => !have.has(f));
   if (lost.length) why(`missing ${lost.join(', ')}`);
   if (outputs) { const up = new Set(outputs), gone = files.filter((f) => !up.has('item/' + f.path) && !REBUILT.has(f.path)).map((f) => f.path); if (gone.length) why(`listed but not uploaded: ${gone.slice(0, 5).join(', ')}`); }
   const rm = r.meta?.remaster || {};

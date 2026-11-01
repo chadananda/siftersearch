@@ -17,7 +17,8 @@ import dns from 'node:dns';
 import net from 'node:net';
 // Node's happy-eyeballs gives each address 250 ms — too short from home links (aorus: every fetch UND_ERR_CONNECT_TIMEOUT while curl -4 worked)
 dns.setDefaultResultOrder('ipv4first'); net.setDefaultAutoSelectFamily(false);
-import { readFileSync, existsSync, statSync, statfsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, statfsSync, readdirSync, createReadStream } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { join, relative, dirname, basename } from 'node:path';
 
@@ -77,6 +78,7 @@ const q = queueClient({ key: process.env.MEDIA_QUEUE_KEY });
 // on the cloud queue (R2) no FLAC/WAV is ever stored (Chad 10-31): a listed decoded file stays on the worker; the next step rebuilds it
 // (enhanced/light.flac from enh_ck.m0; stage-jobs REBUILT, the only one validateTyped lets go missing)
 const cloudSkips = (path, base = q.base) => /^https:/.test(base || '') && /\.(flac|wav)$/i.test(path);
+const T = await import('./transit.mjs').catch(() => null);   // cloudManifest: listed FLAC/WAV → Opus transit
 const log = (msg, x = {}) => console.log(JSON.stringify({ at: new Date().toISOString(), host: HOST, msg, ...x }));
 const nap = (ms) => new Promise((r) => setTimeout(r, ms));
 // RAM = the smaller of /proc/meminfo and this process's cgroup (a pod's meminfo is the host's)
@@ -110,6 +112,32 @@ async function scrub(dir) {
     await rm(dir, { recursive: true, force: true });
   }
 }
+// ffmpeg where the job ran (the image on a docker host, the pod's own on a local run); paths relative to the job dir
+function ffmpegIn(dir, args) {
+  const p = RUN === 'docker'
+    ? docker(['run', '--rm', '--network', 'none', '-v', `${dir}:/job`, '--entrypoint', 'ffmpeg', IMAGE, ...args.map((a) => a.startsWith('item/') ? `/job/${a}` : a)], { stdio: ['ignore', 'ignore', 'pipe'] })
+    : spawn('ffmpeg', args.map((a) => a.startsWith('item/') ? join(dir, a) : a), { stdio: ['ignore', 'ignore', 'pipe'] });
+  let err = '';
+  p.stderr.on('data', (b) => { err = (err + b).slice(-1000); });
+  return new Promise((ok, no) => p.on('close', (c) => (c ? no(new Error(`transit ffmpeg exit ${c}: ${err}`)) : ok())));
+}
+// the paths (under item/) a manifest result hands back. Cloud base: no FLAC/WAV ever (Chad 10-31) — a REBUILT file stays here, any other
+// decoded file goes as an Opus transit listed { path: <x>.transit.ogg, sha256, transit_of: <x> }; result.json is rewritten to match.
+async function cloudManifest(dir, tree) {
+  const rf = join(dir, 'result.json'), r = JSON.parse(readFileSync(rf, 'utf8')), files = r.files || [];
+  const cloud = cloudSkips('x.flac');
+  if (!cloud) return files.map((f) => f.path);
+  if (!T) throw new Error('transit.mjs missing beside queue-agent.mjs: refusing to send a decoded file to the cloud');
+  const { send, transit } = T.cloudPlan(files, { cloud });
+  for (const t of transit) {
+    await ffmpegIn(dir, T.transitArgs(`item/${t.of}`, `item/${t.path}`));
+    const i = files.findIndex((f) => f.path === t.of);
+    files[i] = { path: t.path, sha256: await sha256(join(tree, t.path)), transit_of: t.of, transit: T.TRANSIT };
+  }
+  if (transit.length) await writeFile(rf, JSON.stringify({ ...r, files }));
+  return send;
+}
+async function sha256(file) { const h = createHash('sha256'); for await (const b of createReadStream(file)) h.update(b); return h.digest('hex'); }
 async function walk(dir) {
   const out = [];
   for (const e of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
@@ -147,8 +175,8 @@ async function work(job) {
     if (absent.length) throw new Error(`stage left no ${absent.join(', ')}: ${tail.slice(-500)}`);
     // a manifest kind hands back exactly what result.json lists (tower adopts only those): working copies left in the tree never travel
     const tree = join(dir, kind.tree), files = [...kind.outputs.map((f) => join(dir, f)), ...(kind.manifest
-      ? (JSON.parse(readFileSync(join(dir, 'result.json'), 'utf8')).files || []).filter((f) => !cloudSkips(f.path)).map((f) => join(tree, f.path))
-      : (await walk(tree)).filter((p) => !kind.skip || !relative(tree, p).startsWith(kind.skip)))];
+      ? (await cloudManifest(dir, tree)).map((p) => join(tree, p))
+      : (await walk(tree)).filter((p) => (!kind.skip || !relative(tree, p).startsWith(kind.skip)) && !cloudSkips(p)))];
     const outputs = [];
     for (const p of files) outputs.push({ name: relative(dir, p), ...(await q.put('results', job.id, relative(dir, p), p, { lease: job.lease })) });
     await q.done({ id: job.id, lease: job.lease, result: { type: job.type, host: HOST, stages: { [kind.typed ? job.type : job.stages[0]]: { ok: true, seconds: Math.round((Date.now() - t0) / 1000) } }, outputs } });

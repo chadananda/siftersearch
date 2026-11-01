@@ -13,5 +13,6 @@ it('the worker drops the probe variants and blanks the raw AI copy before writin
 });
 it('the queue agent uploads exactly the files result.json lists for a whole job', () => {
   expect(agent).toMatch(/whole: \{[^\n]*manifest: true/);
-  expect(agent).toMatch(/kind\.manifest\s*\n?\s*\? \(JSON\.parse\(readFileSync\(join\(dir, 'result\.json'\)/);
+  expect(agent).toMatch(/kind\.manifest\s*\n?\s*\? \(await cloudManifest\(dir, tree\)\)/);
+  expect(agent).toMatch(/async function cloudManifest[^]*?JSON\.parse\(readFileSync\(rf, 'utf8'\)\)[^]*?r\.files/);   // the listed files, nothing else
 });

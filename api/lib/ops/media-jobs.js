@@ -1471,7 +1471,7 @@ export async function mediaRemasterDecideJob({ picks = [] } = {}, deps = {}) {
       m.remaster.decided_by = pk.by || 'Chad';
       await fs.writeFile(mf, JSON.stringify(m, null, 2));
       await reindex();
-      await queueAfterFlip(queue, it.id, m, 'media-remaster-decide');
+      await queueAfterFlip(queue, it.id, m, 'media-remaster-decide', { dir: it.dir });   // no dir = a tower realign that WorkerWaits forever
       out.published.push(it.slug);
     } else if (pk.choice === 'publish') {
       // no pure remaster file on tower (a spliced or never-built copy): a WORKER rebuilds it from the pure UniPASE output and judges it —
@@ -1928,7 +1928,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           phase('lan');
           LH.beatStart(st, 'q_lan', now());
           const marks = LH.chainMarks(st), lanAt = now();
-          const lan = await QF.tick(st, { ...deps, demux, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
+          const lan = await QF.tick(st, { ...deps, demux, run, q: localQueue(), typed: true, edge: podTyped ? queueClient({ key: queueKey }) : null, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
           if (!alive()) return;
           st.q_lan = { at: now(), ...lan };
           LH.recordSteps(st, marks, lanAt, now());

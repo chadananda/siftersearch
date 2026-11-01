@@ -13,6 +13,7 @@ import { join, extname } from 'node:path';
 import { VIDEO } from './r2-stage.js';
 import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
+import { untransitArgs, TRANSIT } from '../../../scripts/media/worker/transit.mjs';
 import { decide } from './exclusions.js';
 import { cbPerson, cbVerdict } from './cb-date.js';
 
@@ -170,7 +171,22 @@ export function logStep(st, type, host, audio_s, at) {
   (st.step_log ||= []).push({ type, host: host || null, audio_s: audio_s || 0, at });
   if (st.step_log.length > 500) st.step_log.splice(0, st.step_log.length - 500);
 }
-async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true }) {
+/** A cloud host sent each listed FLAC/WAV as an Opus transit (scripts/media/worker/transit.mjs: no decoded audio in R2, Chad 10-31). After
+ *  adoption, decode each back to its listed name beside the talk (tower: ffmpeg -c:a flac = one 'encode' slot) and record it in meta: that
+ *  master went through Opus 96k (its input already had, from the gpu step), so meta says so. Lossless masters exist only for LAN chains. */
+export async function untransit(dir, r, meta, { run = null, now = Date.now } = {}) {
+  const ts = (r?.files || []).filter((f) => f.transit_of);
+  if (!ts.length) return meta;
+  run ||= (await import('./tools.js')).run;
+  for (const f of ts) {
+    const to = join(dir, f.transit_of), part = `${to}.part.flac`;
+    await run('ffmpeg', untransitArgs(join(dir, f.path), part), { timeoutMs: 600_000 });
+    await rename(part, to); await rm(join(dir, f.path), { force: true });
+  }
+  meta.master_transit = ts.map((f) => ({ path: f.transit_of, via: f.path, settings: f.transit || TRANSIT, at: new Date(now()).toISOString() }));
+  return meta;
+}
+async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true, run = null }) {
   let adopted = 0, errors = 0, steps = 0, lanCap;
   const buf = { staged_h: buffer?.buffer_h || 0, want_h: buffer?.want_h || 0 };
   st.chains ||= {};
@@ -213,6 +229,7 @@ async function pullTyped(st, ack, { q, edge = null, repo, wr, readMeta = readMet
           for (const o of outputs) await sq.get('results', j.id, o, join(stg, o));
           const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs });
           const meta = await wr.adoptWholeResult(stg, it.dir, await readMeta(it.dir), ch.sha, null);
+          await untransit(it.dir, r, meta, { run, now });
           ch[type] = SJ.stepOf(j, r, now());
           logStep(st, type, j.host, ch.audio_s, now());
           SJ.stampTools(meta, ch);
