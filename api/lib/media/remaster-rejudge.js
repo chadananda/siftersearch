@@ -24,8 +24,30 @@ export function flipToRemaster(m, { verdict, judged, at }) {
   return m;
 }
 
-/** After a talk is flipped to its remaster: ONE media-item run executes its incomplete stages in order (quiet first when missing, on a home host; then the web redo). No separate patch job (Chad 10-31: incomplete stage = incomplete talk). */
-export const queueAfterFlip = (queue, id, m, by) => queue('media-item', { id, remaster: true, redo: REDO }, by);
+/** Can tower finish this flipped copy itself? Only when the transcript is already aligned to it, or a complete worker result (guard + realign + quiet +
+ *  encodes, current words, not held) waits in enhanced/pod: tower never realigns (python realign is a worker stage — it WorkerWaits on tower and a done
+ *  talk is never requeued, so 23 flipped talks sat off air on their safe encode, 10-31). */
+export async function towerCanFinish(dir, m) {
+  if (m.aligned_to === 'unipase') return true;
+  const { podVerdict, podPost } = await import('./pod-post.js');
+  if (!(await podVerdict(dir)).ok) return false;
+  const post = await podPost(dir);
+  return !!post && !post.held;
+}
+/** A worker makes (or finishes) the remaster: 'post' when the raw UniPASE copy + its transcript are on tower, else a full 'restore'. Same order as purifySpliced. */
+export async function orderWorkerRemaster(queue, id, dir, by) {
+  const enh = join(dir, 'enhanced');
+  const mode = (await exists(join(enh, 'unipase.cloud.flac'))) && (await exists(join(enh, 'unipase.asr.json'))) ? 'post' : 'restore';
+  await queue('media-cloud-order', { mode, ids: [id], redo: true }, by);
+  return mode;
+}
+
+/** After a talk is flipped to its remaster: ONE media-item run executes its incomplete stages in order (quiet first when missing, on a home host; then the web redo). No separate patch job (Chad 10-31: incomplete stage = incomplete talk).
+ *  Given the talk's `dir`, a copy tower cannot finish (towerCanFinish) goes to a worker instead. */
+export async function queueAfterFlip(queue, id, m, by, { dir = null } = {}) {
+  if (dir && !(await towerCanFinish(dir, m))) return orderWorkerRemaster(queue, id, dir, by);
+  return queue('media-item', { id, remaster: true, redo: hasQuiet(m) ? REDO : ['quiet', ...REDO] }, by);
+}
 
 /** Quiet audit of the published remasters (Chad 10-31: every remaster gets the quiet pass): counts those with / without the quiet record, lists the judge- and Chad-published ones missing it (the feed completes them as the quiet stage). */
 export async function quietAudit({ repo, queue, readMeta, fix = false } = {}) {
@@ -75,7 +97,8 @@ export async function rejudgeOne(it, m, { repo, queue, now = () => new Date().to
   if (!force && r.status === 'review' && r.judged?.action === 'hold' && r.judged.rule === JUDGE_RULE) return 'unchanged';
   const save = async () => { m.qa = { ...(m.qa || {}), remaster: qualityOf(m) }; await writeMeta(it.dir, m); const { indexFields } = await import('./item.js'); await repo.setIndex(it.id, indexFields(m)); };
   // back into the remaster queue in normal order: nothing here plays the original (a kept/deferred talk without a stored assessment, or an assessment to redo)
-  const requeue = async (why) => { m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: { ...judged, action: 'requeue', reason: why } }; await save(); return 'requeued'; };
+  // 'waiting' alone is read by nothing: the worker order is what puts it back in the queue (10-31: 6 talks sat 'waiting' with nothing ordered)
+  const requeue = async (why) => { m.remaster = { ...r, status: 'waiting', verdict: undefined, why, judged: { ...judged, action: 'requeue', reason: why } }; await save(); await orderWorkerRemaster(queue, it.id, it.dir, 'media-remaster-rejudge'); return 'requeued'; };
   if (['kept', 'deferred'].includes(r.status) && !assessmentOf(m)) return requeue('back in the remaster queue: no talk plays the original (Chad 10-31)');
   if (j.action === 'hold') {
     m.remaster = { ...r, status: 'review', verdict: 'review', why: j.reason, judged };
@@ -87,7 +110,7 @@ export async function rejudgeOne(it, m, { repo, queue, now = () => new Date().to
   flipToRemaster(m, { verdict: 'pass-judged', judged: { ...judged, action: 'publish' }, at });
   if (j.action === 'rerun') m.remaster.rerun_n = Number(r.rerun_n || 0) + 1;
   await save();
-  await queueAfterFlip(queue, it.id, m, 'media-remaster-rejudge');
+  await queueAfterFlip(queue, it.id, m, 'media-remaster-rejudge', { dir: it.dir });
   return j.action === 'rerun' ? 'rerun' : 'publish';
 }
 

@@ -75,9 +75,9 @@ describe('re-judge pass, publish, archive', () => {
   afterEach(() => rm(dir, { recursive: true, force: true }));
 
   it('publish without a quiet pass: flipped, but the quiet repair runs FIRST (then the web redo); not on air until quiet is recorded', async () => {
-    const it = await mk(11, talk(assessment({}, { duration_preserved: false })));
+    const it = await mk(11, talk(assessment({}, { duration_preserved: false }), {}, { aligned_to: 'unipase' }));
     expect(await rejudgeOne(it, await meta(it), { repo, queue })).toBe('publish');
-    expect(queue).toHaveBeenCalledWith('media-item', { id: 11, remaster: true, redo: ['realign', 'web', 'trim', 'update'] }, 'media-remaster-rejudge');
+    expect(queue).toHaveBeenCalledWith('media-item', { id: 11, remaster: true, redo: ['quiet', 'realign', 'web', 'trim', 'update'] }, 'media-remaster-rejudge');
     expect(queue).not.toHaveBeenCalledWith('media-quiet-repair', expect.anything(), expect.anything());
     const m = await meta(it), full = Object.fromEntries([...COMPLETE_STAGES, 'web'].map((k) => [k, { at: 1 }]));
     expect(isComplete({ ...m, stages: full, web_listening: 'unipase' })).toBe(false);
@@ -93,7 +93,7 @@ describe('re-judge pass, publish, archive', () => {
     expect(queue).not.toHaveBeenCalledWith('media-quiet-repair', expect.anything(), expect.anything());
   });
   it('publish: the remaster becomes the listening copy, status done, web/update redone; the talk is not on air until the web copy is encoded from it', async () => {
-    const it = await mk(1, talk(assessment({}, { duration_preserved: false }), { quiet: { v: 1 } }));
+    const it = await mk(1, talk(assessment({}, { duration_preserved: false }), { quiet: { v: 1 } }, { aligned_to: 'unipase' }));
     expect(await rejudgeOne(it, await meta(it), { repo, queue })).toBe('publish');
     const m = await meta(it);
     expect(m.remaster).toMatchObject({ status: 'done', verdict: 'pass-judged' }); expect(m.enhancement.listening).toBe('unipase'); expect(m.audio_publish_pending).toBe(true);
@@ -102,6 +102,22 @@ describe('re-judge pass, publish, archive', () => {
     const full = Object.fromEntries([...COMPLETE_STAGES, 'web'].map((k) => [k, { at: 1 }]));
     expect(isComplete({ ...m, stages: full })).toBe(false);                                   // web copy still the original
     expect(isComplete({ ...m, remaster: { ...m.remaster, quiet: { v: 1 } }, stages: full, web_listening: 'unipase' })).toBe(true);          // re-encoded from the remaster: on air
+  });
+  it('publish with no worker finish for the copy on tower (not aligned to it, no worker result): a WORKER rebuilds it — never a tower media-item whose realign waits forever (10-31: 23 talks off air on the safe encode)', async () => {
+    const it = await mk(21, talk(assessment({}, { duration_preserved: false })));
+    expect(await rejudgeOne(it, await meta(it), { repo, queue })).toBe('publish');
+    expect(queue).toHaveBeenCalledWith('media-cloud-order', { mode: 'restore', ids: [21], redo: true }, 'media-remaster-rejudge');
+    expect(queue).not.toHaveBeenCalledWith('media-item', expect.anything(), expect.anything());
+    const it2 = await mk(22, talk(assessment({}, { duration_preserved: false })));   // the raw UniPASE copy + its transcript are on tower: only the finish runs on the worker
+    await writeFile(join(it2.dir, 'enhanced', 'unipase.cloud.flac'), Buffer.alloc(4096)); await writeFile(join(it2.dir, 'enhanced', 'unipase.asr.json'), JSON.stringify({ segments: Array(100).fill({ text: 'words of the talk' }) }));
+    await rejudgeOne(it2, await meta(it2), { repo, queue });
+    expect(queue).toHaveBeenCalledWith('media-cloud-order', { mode: 'post', ids: [22], redo: true }, 'media-remaster-rejudge');
+  });
+  it('a requeue really goes back to a worker: "waiting" with nothing ordered stayed waiting forever (10-31: 6 talks)', async () => {
+    const m0 = talk(null, { status: 'kept', verdict: 'keep-human' }); delete m0.remaster.output_assessment;
+    const it = await mk(23, m0);
+    expect(await rejudgeOne(it, await meta(it), { repo, queue })).toBe('requeued');
+    expect(queue).toHaveBeenCalledWith('media-cloud-order', { mode: 'restore', ids: [23], redo: true }, 'media-remaster-rejudge');
   });
   it('hold: stays held (status review) with the reason, and a second pass leaves it alone', async () => {
     const it = await mk(2, talk(assessment({}, { no_bad_excerpt: false })));
