@@ -35,17 +35,24 @@ export function openCollection(drive, { readonly = false } = {}) {
   for (const c of LATER) if (!have.has(c)) db.exec(`ALTER TABLE files ADD COLUMN ${c} TEXT`);
   return db;
 }
-const using = (drive, fn, opts) => { const db = openCollection(drive, opts); if (!db) return null; try { return fn(db); } finally { db.close(); } };
+// writers keep ONE open connection per collection (this service is its only writer): opening per call re-ran the schema and closing checkpointed the WAL every row
+const writers = new Map();
+const writerFor = (drive) => { const f = join(dataDir(drive), 'collection.db'); let db = writers.get(f); if (!db?.open || !existsSync(f)) { try { db?.close(); } catch { /* gone */ } db = openCollection(drive); writers.set(f, db); } return db; };
+const using = (drive, fn, opts) => {
+  if (!opts?.readonly) return fn(writerFor(drive));
+  const db = openCollection(drive, opts); if (!db) return null; try { return fn(db); } finally { db.close(); }
+};
+export const closeCollections = () => { for (const db of writers.values()) try { db.close(); } catch { /* closed */ } writers.clear(); };
 
 /** Insert/refresh one file's row by path (only the fields given change) → its id. */
-export function upsertFile(drive, r) {
-  return using(drive, (db) => {
-    const now = new Date().toISOString(), given = COLS.filter((c) => r[c] !== undefined);
+export function upsertFile(drive, r) { return using(drive, (db) => upsertRow(db, r)); }
+// on an open db: a batch shares one open + one transaction (opening per row checkpoints the WAL on every close — 2 h for golden-age)
+function upsertRow(db, r) {
+  const now = new Date().toISOString(), given = COLS.filter((c) => r[c] !== undefined);
     const has = db.prepare('SELECT id FROM files WHERE path = ?').get(r.path);
     if (!has) return db.prepare(`INSERT INTO files (path, updated_at${given.map((c) => `, ${c}`).join('')}) VALUES (?, ?${given.map(() => ', ?').join('')})`).run(r.path, now, ...given.map((c) => enc(r[c]))).lastInsertRowid;
     if (given.length) db.prepare(`UPDATE files SET updated_at = ?${given.map((c) => `, ${c} = ?`).join('')} WHERE id = ?`).run(now, ...given.map((c) => enc(r[c])), has.id);
-    return has.id;
-  });
+  return has.id;
 }
 
 /** Write the converted Markdown (frontmatter: source path, sha256, format, converter, date) to md/<id>.md and index it; or a scan's pre-OCR sample to sample/<id>.txt. */
@@ -71,17 +78,19 @@ export function syncItems(drive, d, items) {
   return using(drive, (db) => {
     db.prepare('INSERT INTO collection (drive, donor, label, source, copied_at, files, bytes, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(drive) DO UPDATE SET donor = excluded.donor, label = excluded.label, source = excluded.source, files = excluded.files, bytes = excluded.bytes, updated_at = excluded.updated_at')
       .run(drive, d?.donor_id ?? null, d?.label ?? null, d?.source ?? null, d?.copied_at ?? null, d?.files ?? null, d?.bytes ?? null, new Date().toISOString());
+    db.transaction(() => { for (const it of items) upsertRow(db, itemRow(it)); })();
     return items.length;
-  }) && items.reduce((n, it) => {
-    const cat = it.metadata?.catalog || {}, pr = it.metadata?.probe || {}, fp = pr.fp || {}, rec = it.sample?.rec || {};
-    upsertFile(drive, { path: it.primary_rel, item_id: it.id, size: it.bytes ?? null, fmt: it.primary_rel.split('.').pop().toLowerCase(), pages: pr.pages ?? null, words: fp.words ?? null,
+  });
+}
+
+function itemRow(it) {
+  const cat = it.metadata?.catalog || {}, pr = it.metadata?.probe || {}, fp = pr.fp || {}, rec = it.sample?.rec || {};
+    return { path: it.primary_rel, item_id: it.id, size: it.bytes ?? null, fmt: it.primary_rel.split('.').pop().toLowerCase(), pages: pr.pages ?? null, words: fp.words ?? null,
       text_layer: pr.class ? +(pr.class !== 'scan') : null, scan: pr.class ? +(pr.class === 'scan') : null, cls: pr.class ?? null, sha256: fp.sha256 ?? pr.sha256 ?? null, norm_sha: fp.norm_sha ?? null,
       title: cat.title || rec.title || it.title || null, author: cat.author || rec.creator || it.creator || null, year: String(cat.year || rec.year || it.year || '') || null, language: it.lang || null,
       meta: { catalog: cat || null, rec: rec.title || rec.creator ? { title: rec.title, creator: rec.creator } : null, pdf: pr.meta_text ? String(pr.meta_text).slice(0, 2000) : null },
       decision: it.decision ?? null, decided_by: it.decided_by ?? null, decided_at: it.decided_at ?? null,
-      ...(it.imported_at ? { imported_at: it.imported_at } : {}), ...(/^\/document\/(\d+)$/.test(it.imported_ref || '') ? { imported_doc_id: +it.imported_ref.split('/')[2] } : {}) });
-    return n + 1;
-  }, 0);
+      ...(it.imported_at ? { imported_at: it.imported_at } : {}), ...(/^\/document\/(\d+)$/.test(it.imported_ref || '') ? { imported_doc_id: +it.imported_ref.split('/')[2] } : {}) };
 }
 
 /** Every fingerprint in EVERY collection (read-only), in the shape archives/dedup.js registryRow takes. */
