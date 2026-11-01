@@ -1,0 +1,1794 @@
+{
+ "summary": {
+  "date": "2026-11-01T16:13:28.068Z",
+  "variants": 7,
+  "pass": 1,
+  "pass_rate": 0.143,
+  "strategy_ok": 7,
+  "strategy_scored": 7,
+  "mode": "current",
+  "answer_ok": 2,
+  "nofound": 3,
+  "offtopic": 1,
+  "errors": 0,
+  "slow_gt5s": 6,
+  "p50_ms": 10261,
+  "p95_ms": 19064,
+  "usd_total": 0.0255,
+  "usd_per_reply": 0.00364,
+  "first_failing_stage": {
+   "answer": 4,
+   "ok": 1,
+   "selection": 1,
+   "phrases": 1
+  },
+  "phrases_via": {
+   "haiku": 2,
+   "quoted": 1
+  },
+  "phrases_ok": 2,
+  "phrases_scored": 3,
+  "phrase_exact_ok": 0,
+  "phrase_exact_scored": 1,
+  "phrase_names_ok": 0,
+  "phrase_names_scored": 1
+ },
+ "matrix": {
+  "find_work": {
+   "polite": "0/1",
+   "embedded": "1/1",
+   "followup": "·",
+   "ALL": "1/2"
+  },
+  "exact_phrase": {
+   "polite": "·",
+   "embedded": "·",
+   "followup": "0/2",
+   "ALL": "0/2"
+  },
+  "compare": {
+   "polite": "·",
+   "embedded": "·",
+   "followup": "0/2",
+   "ALL": "0/2"
+  },
+  "source_resolution": {
+   "polite": "·",
+   "embedded": "·",
+   "followup": "0/1",
+   "ALL": "0/1"
+  }
+ },
+ "results": [
+  {
+   "id": "px-iqan-return-elijah#02",
+   "fixture": "px-iqan-return-elijah",
+   "type": "find_work",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Could you point me to the passage in the Kitáb-i-Íqán where Bahá'u'lláh explains that John the Baptist was the return of Elijah?"
+    }
+   ],
+   "ms": 7911,
+   "expected_strategy": [
+    "topic",
+    "quote",
+    "fact",
+    "lookup",
+    "source",
+    "position"
+   ],
+   "shape": "quote",
+   "strategyOk": true,
+   "phrases": [
+    "John the Baptist was the return of Elijah",
+    "Kitáb-i-Íqán",
+    "Bahá'u'lláh",
+    "John the Baptist",
+    "Elijah"
+   ],
+   "phrasesOk": true,
+   "phraseWrapper": false,
+   "phraseVia": "haiku",
+   "phraseExact": null,
+   "phraseNames": false,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "phrases": 1240,
+    "retrieval": 2182
+   },
+   "cite_ok": true,
+   "link_ok": false,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "answer",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 31
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 145
+    },
+    {
+     "name": "plan",
+     "at": 146,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 146,
+     "ms": 1240,
+     "via": "haiku"
+    },
+    {
+     "name": "search",
+     "at": 1386,
+     "ms": 942
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2329,
+     "ms": 1
+    },
+    {
+     "name": "companion",
+     "at": 2330,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 2330,
+     "ms": 216
+    },
+    {
+     "name": "craft",
+     "at": 2546,
+     "ms": 2093
+    },
+    {
+     "name": "output-check",
+     "at": 4642,
+     "ms": 284
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 145
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1385
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2207
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2545
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4639
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4925
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 4,
+    "search_ms": 820,
+    "total_ms": 824,
+    "claims_ms": 11,
+    "engine": [
+     {
+      "filters": [],
+      "qkeyword": 57,
+      "phrase": 115,
+      "canon": 127,
+      "merge": 33,
+      "total": 160
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "qkeyword": 86,
+      "phrase": 111,
+      "canon": 168,
+      "merge": 32,
+      "total": 200
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "qkeyword": 75,
+      "phrase": 110,
+      "canon": 166,
+      "doctrinal_hype": 208,
+      "doctrinal": 348,
+      "merge": 54,
+      "total": 402
+     }
+    ],
+    "passages_ms": 403,
+    "resolve_ms": 413
+   },
+   "usd": 0.00305,
+   "latency_ms": 4926,
+   "wall_ms": 7911,
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nI looked into the *Kitáb-i-Íqán* for the passage explaining that John the Baptist was the return of Elijah, but I couldn't find a discussion of that specific topic in the passages available to me from the *Íqán*.\n\nWhen we look more broadly at the"
+  },
+  {
+   "id": "px-iqan-return-elijah#01",
+   "fixture": "px-iqan-return-elijah",
+   "type": "find_work",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hello Anís. I'm working on the Kitáb-i-Íqán's treatment of the \"return\" (raj'a) of the Prophets, and I'd like to know exactly where Bahá'u'lláh addresses it, and in what terms he explains Elijah's return in John the Baptist. Could you point me to the specific passage and tell me which translation you're quoting from?"
+    }
+   ],
+   "ms": 15606,
+   "expected_strategy": [
+    "topic",
+    "quote",
+    "fact",
+    "lookup",
+    "source",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 8194
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 41
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 193
+    },
+    {
+     "name": "plan",
+     "at": 312,
+     "ms": 264
+    },
+    {
+     "name": "phrases",
+     "at": 576,
+     "ms": 5
+    },
+    {
+     "name": "search",
+     "at": 581,
+     "ms": 7925
+    },
+    {
+     "name": "upgrade-links",
+     "at": 8507,
+     "ms": 15
+    },
+    {
+     "name": "format",
+     "at": 8524,
+     "ms": 497
+    },
+    {
+     "name": "companion",
+     "at": 8526,
+     "ms": 8
+    },
+    {
+     "name": "craft",
+     "at": 9021,
+     "ms": 5223
+    },
+    {
+     "name": "output-check",
+     "at": 14248,
+     "ms": 666
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 190
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 573
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 5117
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 7207
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 9019
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 14244
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 14913
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 149,
+    "search_ms": 7642,
+    "total_ms": 7791,
+    "claims_ms": 4022,
+    "engine": [
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 4018,
+      "phrase": 4478,
+      "canon": 4554,
+      "merge": 136,
+      "total": 4690
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 4019,
+      "phrase": 6515,
+      "merge": 44,
+      "total": 6559
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 4019,
+      "phrase": 6511,
+      "qkeyword_retry": 6568,
+      "merge": 12,
+      "total": 6580
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 4019,
+      "phrase": 6584,
+      "merge": 20,
+      "total": 6604
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 4019,
+      "phrase": 6708,
+      "canon": 6732,
+      "doctrinal_hype": 6799,
+      "doctrinal": 6823,
+      "merge": 65,
+      "total": 6888
+     }
+    ],
+    "passages_ms": 6891,
+    "named": [
+     {
+      "kind": "work",
+      "name": "Kitáb-i-Íqán",
+      "docs": 2,
+      "hits": 5
+     },
+     {
+      "kind": "author",
+      "name": "Elijah",
+      "docs": 2,
+      "hits": 5
+     },
+     {
+      "kind": "work",
+      "name": "John the Baptist",
+      "docs": 2,
+      "hits": 4
+     }
+    ],
+    "evidence_ms": 0,
+    "resolve_ms": 740
+   },
+   "usd": 0.00339,
+   "latency_ms": 14917,
+   "wall_ms": 15606,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello, my friend,\n\nIt is a genuine joy to look into the *Kitáb-i-Íqán* with you. When we explore how the scriptures treat the \"return\" (*raj'a*) of the Prophets, we enter one of the most luminous discussions in Bahá'u'lláh’s writings, where He reinterprets the"
+  },
+  {
+   "id": "px-iqan-quote-elijah-followup#01",
+   "fixture": "px-iqan-quote-elijah-followup",
+   "type": "exact_phrase",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hello Anís. I'm working on the Kitáb-i-Íqán's treatment of the \"return\" (raj'a) of the Prophets, and I'd like to know exactly where Bahá'u'lláh addresses it, and in what terms he explains Elijah's return in John the Baptist. Could you point me to the specific passage and tell me which translation you're quoting from?"
+    },
+    {
+     "role": "assistant",
+     "content": "I can't find that specific passage on the *Kitáb-i-Íqán* or Elijah's return in the sources I have here. The library's records for this search do not include the text of the *Íqán* itself, though they do touch on related themes elsewhere.\n\nFor instance, addressing the general subject of return, we find this statement:\n\n> [\"in every subsequent Revelation, the return of the former Revelation is a fact, the truth of which is firmly established. Inasmuch as the return of the Prophets of God, as attested by verses and traditions, hath been conclusively demonstrated, the return of their chosen ones also is therefore definitely proven. This return is too manifest in itself to require any evidence or proof.\" KI 154](https://oceanlibrary.com/divine-philosophy_abdul-baha)\n> — *Divine Philosophy* by Steven Phelps (quoting Bahá’u’lláh)\n\nThis passage — categorized here as exposition quoting scripture — highlights Bahá’u’lláh's teaching that the return of past Revelations and their central figures is an established reality in each new dispensation.\n\nTo give you the exact location and translation details for the *Íqán*'s discussion of Elijah and John the Baptist, you would want to look directly at Shoghi Effendi's English translation of the *Kitáb-i-Íqán* (published by the Bahá'í Publishing Trust), where Bahá'u'lláh treats the Gospel questions surrounding John's identity at length in the early sections of the book."
+    },
+    {
+     "role": "user",
+     "content": "That passage you quoted is tagged \"KI 154\" and attributed to Phelps's *Divine Philosophy*, so is that pagination from Shoghi Effendi's translation or from some other edition? I also notice it speaks of the return of \"chosen ones,\" which sounds like it comes from the later part of the book, not the Gospel material you place \"in the early sections.\""
+    },
+    {
+     "role": "assistant",
+     "content": "This does not appear in the Christian scripture in the library; the passage that holds these words is by St. Augustine, tr. Marcus Dods. These are the words of St. Augustine, tr. Marcus Dods, from [*The City of God Volume II*](https://www.gutenberg.org/ebooks/45305#:~:text=Some%20Christians%2C%20who%20have,of%20their%20own%20mouths). The passage reads: «Some Christians, who have a liking for Plato on account of his magnificent style and the truths which he now and then uttered, say that he even held an opinion similar to our own regarding the resurrection of the dead». I could not confirm the original tablet for this passage."
+    },
+    {
+     "role": "user",
+     "content": "That Augustine passage on Plato and the resurrection doesn't answer what I asked about \"KI 154\" and Phelps, so let me set it aside. Can you quote the exact sentence in the Íqán where Bahá'u'lláh says John the Baptist was Elijah, with the Arabic or Persian wording of \"return\" (raj'a) as it appears there and the paragraph number in Shoghi Effendi's translation?"
+    }
+   ],
+   "ms": 21623,
+   "expected_strategy": [
+    "topic",
+    "quote",
+    "fact",
+    "lookup",
+    "source",
+    "position"
+   ],
+   "shape": "quote",
+   "strategyOk": true,
+   "phrases": [
+    "Bahá'u'lláh says John the Baptist was Elijah",
+    "Íqán",
+    "Bahá'u'lláh",
+    "John the Baptist",
+    "Elijah"
+   ],
+   "phrasesOk": true,
+   "phraseWrapper": false,
+   "phraseVia": "haiku",
+   "phraseExact": false,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "phrases": 2182,
+    "retrieval": 15369
+   },
+   "cite_ok": true,
+   "link_ok": false,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "answer",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 735
+    },
+    {
+     "name": "plan",
+     "at": 735,
+     "ms": 521
+    },
+    {
+     "name": "phrases",
+     "at": 1256,
+     "ms": 2183,
+     "via": "haiku"
+    },
+    {
+     "name": "original",
+     "at": 1258,
+     "ms": 5556
+    },
+    {
+     "name": "source-hunt",
+     "at": 1269,
+     "ms": 15365
+    },
+    {
+     "name": "search",
+     "at": 6815,
+     "ms": 9289
+    },
+    {
+     "name": "upgrade-links",
+     "at": 16636,
+     "ms": 363
+    },
+    {
+     "name": "format",
+     "at": 16999,
+     "ms": 107
+    },
+    {
+     "name": "companion",
+     "at": 17001,
+     "ms": 10
+    },
+    {
+     "name": "craft",
+     "at": 17106,
+     "ms": 1862
+    },
+    {
+     "name": "output-check",
+     "at": 18972,
+     "ms": 91
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1253
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1311
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1690
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1799
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1816
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1929
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 3431
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 7145
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 7394
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 7620
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 7804
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 9515
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:sourcehunt-span",
+     "at": 14434
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 15391
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 15621
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 16105
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 16418
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 16517
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 16629
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 17105
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 18968
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 19062
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 121,
+    "search_ms": 9074,
+    "total_ms": 9195,
+    "claims_ms": 5,
+    "engine": [
+     {
+      "filters": [
+       "documentId"
+      ],
+      "qkeyword": 16,
+      "phrase": 739,
+      "merge": 11,
+      "total": 750
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "qkeyword": 15,
+      "phrase": 753,
+      "merge": 60,
+      "total": 813
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "qkeyword": 16,
+      "phrase": 815,
+      "merge": 44,
+      "total": 859
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "qkeyword": 36,
+      "phrase": 2656,
+      "merge": 44,
+      "total": 2700
+     },
+     {
+      "filters": [],
+      "qkeyword": 25,
+      "phrase": 2654,
+      "merge": 4442,
+      "total": 7096
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "qkeyword": 34,
+      "phrase": 2700,
+      "merge": 4416,
+      "total": 7116
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "qkeyword": 25,
+      "phrase": 2703,
+      "doctrinal": 7230,
+      "doctrinal_hype": 8121,
+      "merge": 74,
+      "total": 8195
+     }
+    ],
+    "passages_ms": 8195,
+    "named": [
+     {
+      "kind": "work",
+      "name": "Kitáb-i-Íqán",
+      "docs": 2,
+      "hits": 2
+     },
+     {
+      "kind": "author",
+      "name": "Plato",
+      "docs": 1,
+      "hits": 1
+     },
+     {
+      "kind": "author",
+      "name": "Elijah",
+      "docs": 2,
+      "hits": 2
+     },
+     {
+      "kind": "author",
+      "name": "Augustine",
+      "docs": 8,
+      "hits": 6
+     }
+    ],
+    "resolve_ms": 873
+   },
+   "usd": 0.00447,
+   "latency_ms": 19064,
+   "wall_ms": 21623,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello, friend.\n\nI cannot quote the exact sentence from the *Kitáb-i-Íqán* where Bahá'u'lláh discusses John the Baptist as Elijah, nor can I give its paragraph number, because the library's available records do not contain the text of the *Kitáb-i-Íqán* itself."
+  },
+  {
+   "id": "px-iqan-vs-reincarnation-compare#01",
+   "fixture": "px-iqan-vs-reincarnation-compare",
+   "type": "compare",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hello Anís. I'm working on the Kitáb-i-Íqán's treatment of the \"return\" (raj'a) of the Prophets, and I'd like to know exactly where Bahá'u'lláh addresses it, and in what terms he explains Elijah's return in John the Baptist. Could you point me to the specific passage and tell me which translation you're quoting from?"
+    },
+    {
+     "role": "assistant",
+     "content": "I can't find that specific passage on the *Kitáb-i-Íqán* or Elijah's return in the sources I have here. The library's records for this search do not include the text of the *Íqán* itself, though they do touch on related themes elsewhere.\n\nFor instance, addressing the general subject of return, we find this statement:\n\n> [\"in every subsequent Revelation, the return of the former Revelation is a fact, the truth of which is firmly established. Inasmuch as the return of the Prophets of God, as attested by verses and traditions, hath been conclusively demonstrated, the return of their chosen ones also is therefore definitely proven. This return is too manifest in itself to require any evidence or proof.\" KI 154](https://oceanlibrary.com/divine-philosophy_abdul-baha)\n> — *Divine Philosophy* by Steven Phelps (quoting Bahá’u’lláh)\n\nThis passage — categorized here as exposition quoting scripture — highlights Bahá’u’lláh's teaching that the return of past Revelations and their central figures is an established reality in each new dispensation.\n\nTo give you the exact location and translation details for the *Íqán*'s discussion of Elijah and John the Baptist, you would want to look directly at Shoghi Effendi's English translation of the *Kitáb-i-Íqán* (published by the Bahá'í Publishing Trust), where Bahá'u'lláh treats the Gospel questions surrounding John's identity at length in the early sections of the book."
+    },
+    {
+     "role": "user",
+     "content": "That passage you quoted is tagged \"KI 154\" and attributed to Phelps's *Divine Philosophy*, so is that pagination from Shoghi Effendi's translation or from some other edition? I also notice it speaks of the return of \"chosen ones,\" which sounds like it comes from the later part of the book, not the Gospel material you place \"in the early sections.\""
+    },
+    {
+     "role": "assistant",
+     "content": "This does not appear in the Christian scripture in the library; the passage that holds these words is by St. Augustine, tr. Marcus Dods. These are the words of St. Augustine, tr. Marcus Dods, from [*The City of God Volume II*](https://www.gutenberg.org/ebooks/45305#:~:text=Some%20Christians%2C%20who%20have,of%20their%20own%20mouths). The passage reads: «Some Christians, who have a liking for Plato on account of his magnificent style and the truths which he now and then uttered, say that he even held an opinion similar to our own regarding the resurrection of the dead». I could not confirm the original tablet for this passage."
+    },
+    {
+     "role": "user",
+     "content": "That Augustine passage on Plato and the resurrection doesn't answer what I asked about \"KI 154\" and Phelps, so let me set it aside. Can you quote the exact sentence in the Íqán where Bahá'u'lláh says John the Baptist was Elijah, with the Arabic or Persian wording of \"return\" (raj'a) as it appears there and the paragraph number in Shoghi Effendi's translation?"
+    },
+    {
+     "role": "assistant",
+     "content": "These are the words of Bahá’u’lláh, from [*John the Baptist and Bahá’í Prophetic Categories: An Atypical Paradigm*](https://bahai-library.com/mclean_john_baptist#:~:text=I%20swear%20by%20God,Jesus%20.%20.%20). The passage reads: «‘I swear by God that the Primal Point [the Bab] and this most luminous, most wondrous Manifestation [Baha’u’llah] are exactly like (ayn be ayn) the appearance of John, son of Zachariah, and the Spirit of God [Ruhu’llah— Jesus». I could not confirm the original tablet for this passage."
+    },
+    {
+     "role": "user",
+     "content": "In that last quotation you give the phrase \"exactly like (ayn be ayn)\" — can you explain what 'ayn' means in that construction, and whether Bahá'u'lláh uses it elsewhere to describe the relation between Prophets, since it seems to be a different claim from a simple 'return' (raj'a)?"
+    },
+    {
+     "role": "assistant",
+     "content": "The term you are looking at is the Arabic word *‘ayn* (عین), which literally means an eye, a fountain or spring, or the essence and very self of a thing. As the passages use it—and as Bahá’u’lláh explains the deeper meaning of “return” (*raj‘a*)—it points not to physical reincarnation, but to the identity of divine station and attributes.\n\nIn *The Kitáb-i-Íqán*, Bahá’u’lláh describes how the companions and followers of a new Manifestation are considered the \"return\" of those from a former Dispensation, existing \"in name, in reality, in deeds, in words, and in rank\" ([*The Kitáb-i-Íqán*](https://oceanlibrary.com/kitab-i-iqan_bahaullah/?paraId=para_181&selectionString=kitab-i-iqan-prod-version_en_7t.0~kitab-i-iqan-prod-version_en_7t.646)). Similarly, when speaking of the unity of the Prophets themselves, Bahá’u’lláh writes:\n\n> It is clear and evident to thee that all the Prophets are the Temples of the Cause of God, Who have appeared clothed in divers attire. If thou wilt observe with discriminating eyes, thou wilt behold Them all abiding in the same tabernacle, soaring in the same heaven, seated upon the same throne, uttering the same speech, and proclaiming the same Faith. — *Gleanings from the Writings of Bahá’u’lláh*\n\nIn authorized interpretation, Shoghi Effendi explains that such an identification means a Manifestation or holy soul identifies \"His Spirit with these Holy Souls gone before; that does not, of course, make Him in any way their reincarnation\" ([*Lights of Guidance*](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=In%20the%20prayer%20mentioned,%7Bid%3D%22para6324%22%20ilmid%3D%22bl44a%22%20type%3D%22par%22%20language%3D%22en%22%7D) — quoted in a work by Helen Hornby)."
+    },
+    {
+     "role": "user",
+     "content": "You say the Íqán describes followers as the \"return\" of earlier ones \"in name, in reality, in deeds, in words, and in rank\"; how does that compare with the Shoghi Effendi statement from *Lights of Guidance* that a Manifestation is \"in no way their reincarnation,\" and with the Augustine/Plato material on resurrection you cited earlier?"
+    }
+   ],
+   "ms": 13033,
+   "expected_strategy": [
+    "topic",
+    "compare",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 7047
+   },
+   "cite_ok": false,
+   "link_ok": false,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 72
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 1536
+    },
+    {
+     "name": "plan",
+     "at": 1536,
+     "ms": 310
+    },
+    {
+     "name": "phrases",
+     "at": 1846,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1846,
+     "ms": 6737
+    },
+    {
+     "name": "upgrade-links",
+     "at": 8583,
+     "ms": 31
+    },
+    {
+     "name": "format",
+     "at": 8614,
+     "ms": 119
+    },
+    {
+     "name": "companion",
+     "at": 8615,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 8733,
+     "ms": 2864
+    },
+    {
+     "name": "output-check",
+     "at": 11601,
+     "ms": 101
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 103
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1842
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 6262
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:search-plan:shadow",
+     "at": 7256
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 8732
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 11597
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 11701
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 168,
+    "search_ms": 6402,
+    "total_ms": 6570,
+    "claims_ms": 4178,
+    "engine": [
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 4178,
+      "qconcept": 4297,
+      "qhype": 4298,
+      "phrase": 4300,
+      "merge": 39,
+      "total": 4339
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 4178,
+      "qhype": 4298,
+      "phrase": 4298,
+      "qconcept": 4340,
+      "qkeyword_retry": 4354,
+      "merge": 24,
+      "total": 4378
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 4178,
+      "qconcept": 4341,
+      "phrase": 4354,
+      "qhype": 5327,
+      "merge": 31,
+      "total": 5358
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 4178,
+      "qconcept": 4346,
+      "qhype": 4354,
+      "phrase": 5365,
+      "merge": 39,
+      "total": 5404
+     },
+     {
+      "filters": [],
+      "concept": 4177,
+      "qconcept": 5359,
+      "qhype": 5360,
+      "phrase": 5431,
+      "canon": 5502,
+      "merge": 66,
+      "total": 5568
+     }
+    ],
+    "passages_ms": 5569,
+    "named": [
+     {
+      "kind": "work",
+      "name": "Kitáb-i-Íqán",
+      "docs": 2,
+      "hits": 4
+     },
+     {
+      "kind": "author",
+      "name": "Plato",
+      "docs": 1,
+      "hits": 3
+     },
+     {
+      "kind": "work",
+      "name": "Lights of Guidance",
+      "docs": 1,
+      "hits": 3
+     },
+     {
+      "kind": "author",
+      "name": "Augustine",
+      "docs": 8,
+      "hits": 7
+     }
+    ],
+    "resolve_ms": 833
+   },
+   "usd": 0.00402,
+   "latency_ms": 11703,
+   "wall_ms": 13033,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear seeker,\n\nThank you for following this thread through such distinct landscapes of thought. It is a pleasure to look at how these texts speak about the continuity of the soul and the meaning of return.\n\nThis stands in a fascinating conversation with the Chr"
+  },
+  {
+   "id": "px-hidden-words-number-edition#01",
+   "fixture": "px-hidden-words-number-edition",
+   "type": "source_resolution",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hello Anís. I'm trying to pin down the exact source of the saying \"The best beloved of all things in My sight is Justice\" — which work is it from, who is the speaker, and is there an original-language text (Arabic or Persian) behind the standard English rendering?"
+    },
+    {
+     "role": "assistant",
+     "content": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved of all things in My sight is Justice». The original is in Arabic, in [*Kalimat-i-Maknunih (Hidden Words - Arabic)*](https://oceanoflights.org/bahaullah-pub01-02-ar/#(%D8%A3%D9%8E%D8%AD%D9%8E%D8%A8%D9%8F%D9%91)(%D8%A7%D9%84%D8%A5%D9%86%D9%92%D8%B5%D8%A7%D9%81%D9%8F)), where it reads «أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ». Its entry in the Phelps Inventory is [Phelps Inventory BH00386](https://portlandiator.github.io/PI_browser/?id=BH00386). It is also quoted in [*Fountain of Wisdom : Tablets of Bahá’u’lláh*](https://oceanlibrary.com/fountain-of-wisdom_bahaullah/?paraId=para_106&selectionString=tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.14~tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.57), [*Bahá’u’lláh and the New Era*](https://oceanlibrary.com/bahaullah-and-the-new-era_john-esslemont/?paraId=para_777&selectionString=baha_u_llah_and_the_new_era_bahai_ocean_en-blln.13~baha_u_llah_and_the_new_era_bahai_ocean_en-blln.56) and [*Preliminary Analysis of the Bahá’í Concept of Mental Health*](https://bahai-library.com/herzog_bahai_mental_health#:~:text=The%20best%20beloved%20of,My%20sight%20is%20Justice)."
+    },
+    {
+     "role": "user",
+     "content": "In what you just quoted, the Arabic reads «الإنْصاف» (al-inṣāf), yet the English gives \"Justice\" — is that the rendering Shoghi Effendi chose, and does the passage carry a verse number in the Arabic Hidden Words?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, this passage does carry a numbering in the Arabic text. In [*The Hidden Words*](https://ctai.info/models/the-hidden-words/3/), it is explicitly numbered as the second of the Arabic passages.\n\n**How Shoghi Effendi rendered الإنْصاف in 13 passages:** fairness (3) · equity (2) · justice (2) · fair-minded (2) · equitably / equitable (2) · just and fair-minded (1) · ustice (1)\n\n| Original | Shoghi Effendi’s English | Source |\n|---|---|---|\n| … العدل و هيکلی بطراز **الانصاف** انّک انت مالک المواهب … | … temple with the ornament **of equity**. Thou, verily, art … | [Epistle to the Son of the Wolf 15](https://ctai.info/models/epistle-to-the-son-of-the-wolf/15/) |\n| … ان يجعلک فاتح باب **الانصاف** و يظهر بک امره … | … will open the door **of justice**, and reveal through … | [Epistle to the Son of the Wolf 152](https://ctai.info/models/epistle-to-the-son-of-the-wolf/152/) |\n| … لعمري من شرب رحيق **الإنصاف** من أيادي الألطاف إنّه … | … the choice wine of **fairness** from the hands of … | [Gleanings CLV.4](https://ctai.info/models/gleanings/694/) |\n| … يؤيّدک علی العدل و **الانصاف** و يعرّفک ما کان … | … to be just and **fair-minded**, and to acquaint … | [Epistle to the Son of the Wolf 12](https://ctai.info/models/epistle-to-the-son-of-the-wolf/12/) |\n| … السَّمآءِ بِأَنْ تُؤَيِّدَهُمْ عَلَى **الإِنْصَافِ** فِي أَمْرِكَ، لَعَلَّ يَجِدُونَ … | … aid them to act **equitably** in Thy Cause, that … | [Prayers and Meditations CVIII.6](https://ctai.info/models/prayers-and-meditations/466/) |\n| … ﴾ أَحَبُّ الأَشْيَاءِ عِنْدِي **الإنْصافُ.** لَا تَرْغَبْ عَنْهُ إِنْ … | … in My sight is **Justice**; turn not away … | [The Hidden Words 5](https://ctai.info/models/the-hidden-words/3/) |\n| … العالمین خذوا العدل و **الإنصاف** و دعوا ما أمرکم … | … ye to justice and **fairness**, and turn away … | [Gleanings CLXIV.1](https://ctai.info/models/gleanings/719/) |\n| … بذلک مظاهر العدل و **الانصاف** و لکنّ القوم فی … | … exponents of justice and **equity**, and yet the … | [Epistle to the Son of the Wolf 191](https://ctai.info/models/epistle-to-the-son-of-the-wolf/191/) |\n\nThe original Arabic text reads:\n\n> [أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ](https://ctai.info/models/the-hidden-words/3/) — *The Hidden Words* — Bahá'u'lláh\n\nTransliterated, it is: *Aḥabbu’l-ashyā’i ‘indī’l-inṣāf*.\n\nAs for the rendering, Shoghi Effendi translated *al-inṣāf* as \"Justice\" in this particular English edition."
+    },
+    {
+     "role": "user",
+     "content": "You told me it is \"the second of the Arabic passages\", but your table cites it as \"The Hidden Words 5\", so which is it? Please also say exactly which edition and paragraph that table row comes from, and who compiled the Phelps Inventory number BH00386 you cited."
+    }
+   ],
+   "ms": 7609,
+   "expected_strategy": [
+    "quote",
+    "fact",
+    "lookup",
+    "topic",
+    "source",
+    "position"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3963
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "answer",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 39
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 265
+    },
+    {
+     "name": "plan",
+     "at": 265,
+     "ms": 162
+    },
+    {
+     "name": "phrases",
+     "at": 427,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 428,
+     "ms": 3800
+    },
+    {
+     "name": "upgrade-links",
+     "at": 4228,
+     "ms": 209
+    },
+    {
+     "name": "format",
+     "at": 4437,
+     "ms": 138
+    },
+    {
+     "name": "companion",
+     "at": 4438,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 4575,
+     "ms": 1893
+    },
+    {
+     "name": "output-check",
+     "at": 6472,
+     "ms": 145
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 198
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 426
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2622
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4031
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4574
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6468
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6616
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 82,
+    "search_ms": 3527,
+    "total_ms": 3609,
+    "claims_ms": 1847,
+    "engine": [
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 1847,
+      "qkeyword": 1864,
+      "qconcept": 2149,
+      "qhype": 2298,
+      "phrase": 2889,
+      "merge": 52,
+      "total": 2941
+     },
+     {
+      "filters": [],
+      "concept": 1847,
+      "qkeyword": 1894,
+      "phrase": 2946,
+      "canon": 2985,
+      "merge": 84,
+      "total": 3069
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1847,
+      "qkeyword": 1887,
+      "qconcept": 2858,
+      "qhype": 2874,
+      "phrase": 2944,
+      "canon": 3072,
+      "doctrinal": 3146,
+      "doctrinal_hype": 3149,
+      "merge": 105,
+      "total": 3254
+     }
+    ],
+    "passages_ms": 3254,
+    "named": [
+     {
+      "kind": "work",
+      "name": "Hidden Words",
+      "docs": 2,
+      "hits": 5
+     }
+    ],
+    "resolve_ms": 269
+   },
+   "usd": 0.00311,
+   "latency_ms": 6617,
+   "wall_ms": 7609,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello again!\n\nYou caught a flat contradiction in what I wrote, and I am grateful for the careful reading. You are entirely right: I called it the second of the Arabic passages, yet pointed to a reference listing it as number 5. That was my mistake.\n\nTo answer "
+  },
+  {
+   "id": "seed21-augustine-plotinus-compare#01",
+   "fixture": "seed21-augustine-plotinus-compare",
+   "type": "compare",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Do the Bahá'í writings handle evil as the mere privation of good (Augustinian), as an active force, or as a necessary shadow that makes good visible?"
+    },
+    {
+     "role": "assistant",
+     "content": "The Bahá’í writings speak of evil primarily as a privation or lack—akin to darkness being the absence of light—while acknowledging its experiential reality and connection to the lower human nature.\n\nHere is how the texts and authorized interpretations address this:\n\n*   [\"It is thus evident that all evil is mere non-existence. Good has a positive existence; evil is merely its absence.\"](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_924&selectionString=some-answered-questions-prod-version_en_sl.0~some-answered-questions-prod-version_en_sl.95) — *Some Answered Questions* by ‘Abdu’l-Bahá\n*   [\"Evil is imperfection. Sin is the state of man in the world of the baser nature...\"](https://oceanlibrary.com/paris-talks_abdul-baha/?paraId=para_1042&selectionString=abdu-l-baha-paris-talks_en_vp.0~abdu-l-baha-paris-talks_en_vp.644) — *Paris Talks* by ‘Abdu’l-Bahá\n*   [\"Then it is evident that in creation and nature evil does not exist at all; but when the natural qualities of man are used in an unlawful way, they are blameworthy.\"](https://oceanlibrary.com/bahai-world-faith-abdul-baha-section_2/?paraId=para_301&selectionString=baha_i_world_faith_en-blbo.0~baha_i_world_faith_en-blbo.991) — *Bahá’í World Faith* by ‘Abdu’l-Bahá\n*   [\"We know absence of light is darkness, but no one would assert darkness was not a fact. It exists even though it is only the absence of something else. So evil exists too...\"](https://oceanlibrary.com/unfolding-destiny_shoghi-effendi/?paraId=para_3925&selectionString=unfolding_destiny_bahai_ocean_en-bl3kl.0~unfolding_destiny_bahai_ocean_en-bl3kl.316) — *Unfolding Destiny* by Shoghi Effendi\n\nThese passages share the perspective that while evil lacks an independent, positive essence of its own—manifesting instead as a deficiency, darkness, or misdirected human capacity—it remains a palpable reality in human experience that must be actively recognized and supplanted by good."
+    },
+    {
+     "role": "user",
+     "content": "Regarding the first one you quoted: is that actually from Some Answered Questions, and which chapter and whose translation? I'd also like to know whether 'mere non-existence' renders a particular Persian or Arabic term, because that wording sounds distinctly Augustinian."
+    },
+    {
+     "role": "assistant",
+     "content": "The passage is indeed from *Some Answered Questions* by ‘Abdu’l-Bahá, found in Chapter 73, \"Pre-Existence and Origination\" (or Chapter 72 in some editions). The translation is by Laura Clifford Barney, who recorded and translated the tablet.\n\nRegarding your challenge about the Augustinian phrasing: the translation \"mere non-existence\" renders the Persian phrase *‘adam-i maḥ* (عدم محض), meaning \"pure non-existence\" or \"absolute non-existence.\"\n\nThe passages only provide the question heading for Chapter 73 in English and one Persian fragment on origination: *Qadím va ḥādiith chand qism ast?* (قديم و حادث چند قسم است ؟) from *Reincarnation (original, Persian)* by ‘Abdu'l-Bahá ([Reincarnation (original, Persian)](https://siftersearch.com/library/bahai/core-tablets/abdul-baha_reincarnation_fa#p2))."
+    },
+    {
+     "role": "user",
+     "content": "You said evil is \"much as cold is the absence of heat or darkness the absence of light.\" How does that compare with Augustine's formulation in the Enchiridion (ch. 11) or Plotinus's treatment of evil in Ennead I.8, and do the Bahá'í texts themselves ever acknowledge that lineage?"
+    }
+   ],
+   "ms": 10051,
+   "expected_strategy": [
+    "compare",
+    "topic",
+    "fact",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 6085
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "answer",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 29
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 109
+    },
+    {
+     "name": "plan",
+     "at": 110,
+     "ms": 214
+    },
+    {
+     "name": "phrases",
+     "at": 324,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 325,
+     "ms": 5870
+    },
+    {
+     "name": "upgrade-links",
+     "at": 6196,
+     "ms": 7
+    },
+    {
+     "name": "format",
+     "at": 6203,
+     "ms": 148
+    },
+    {
+     "name": "companion",
+     "at": 6204,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 6351,
+     "ms": 3070
+    },
+    {
+     "name": "output-check",
+     "at": 9438,
+     "ms": 105
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 108
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 227
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 3526
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 6350
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 9421
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 9542
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 100,
+    "search_ms": 5648,
+    "total_ms": 5749,
+    "claims_ms": 2688,
+    "engine": [
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 2688,
+      "qhype": 3169,
+      "qconcept": 3169,
+      "phrase": 3169,
+      "merge": 28,
+      "total": 3197
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 2688,
+      "qhype": 3165,
+      "qconcept": 3165,
+      "phrase": 3166,
+      "qkeyword_retry": 3212,
+      "merge": 11,
+      "total": 3223
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "concept": 2688,
+      "qconcept": 3166,
+      "qhype": 3166,
+      "phrase": 3990,
+      "merge": 59,
+      "total": 4049
+     },
+     {
+      "filters": [],
+      "concept": 2688,
+      "qconcept": 3923,
+      "qhype": 3963,
+      "phrase": 4057,
+      "canon": 4204,
+      "merge": 76,
+      "total": 4280
+     }
+    ],
+    "passages_ms": 4280,
+    "named": [
+     {
+      "kind": "author",
+      "name": "Plotinus",
+      "docs": 2,
+      "hits": 5
+     },
+     {
+      "kind": "author",
+      "name": "Augustine",
+      "docs": 8,
+      "hits": 7
+     },
+     {
+      "kind": "work",
+      "name": "Bahá'í",
+      "docs": 2,
+      "hits": 4
+     }
+    ],
+    "resolve_ms": 1367
+   },
+   "usd": 0.0035,
+   "latency_ms": 9544,
+   "wall_ms": 10051,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear seeker,\n\nThank you for pressing further into this question of light, shadow, and privation. It is a striking parallel you draw with Augustine and Plotinus, and it leads straight into the heart of how different traditions map the boundaries of reality.\n\nTo"
+  },
+  {
+   "id": "r6-004-long-two-asks#01",
+   "fixture": "r6-004-long-two-asks",
+   "type": "exact_phrase",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "How does the Bahá'í concept of the soul differ from the Hindu and Buddhist concepts of reincarnation? I want a sharp answer — not 'all religions teach about the soul' but the actual ontological differences."
+    },
+    {
+     "role": "assistant",
+     "content": "The Bahá'í teachings state that individual human souls do not return to this physical world in new bodies, preserving instead a single earthly life and an enduring, distinct individuality after death. The sources here do not provide sufficient comparative material to detail the specific Hindu and Buddhist ontological frameworks beyond noting that the Hindu concepts of reincarnation and metempsychosis are considered erroneous.\n\nThe core distinction is that while the soul progresses and develops, its essence and reality do not cycle back into earthly bodies."
+    },
+    {
+     "role": "user",
+     "content": "That passage says the Bahá'ís accept a \"return of the attributes and qualities\" but not of \"the essence or the reality of things\" — but what does that distinction actually mean ontologically, and isn't it close to the Buddhist view that no essence transmigrates, only a causal stream of qualities?"
+    },
+    {
+     "role": "assistant",
+     "content": "The sources here do not settle whether the Bahá'í distinction between returning qualities and an unreturning essence mirrors the Buddhist teaching of a causal stream without an enduring soul, as the texts I can search do not discuss Buddhist ontology in detail.\n\nHere is how the texts describe this return:\n\n- [\"The Bahá'í view of 'reincarnation' is essentially different from the Hindu conception. The Bahá'ís believe in the return of the attributes and qualities, but maintain that the essence or the reality of things cannot be made to return.\"](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=The%20Bah%C3%A1'%C3%AD%20view%20of,%7Bid%3D%22para6868%22%20ilmid%3D%22bl4jb%22%20type%3D%22par%22%20language%3D%22en%22%7D) — *Lights of Guidance* quoting Universal House of Justice\n- [“'Return' does not refer to 'specific, individual souls and identities'.”](https://bahai-library.com/2845/?paraId=h21) — *Reincarnation, Rebirth and the Progress of the Soul*\n- [“The essence of a thing is known through its qualities; otherwise, it is unknown and hidden.”](https://bahai-library.com/4481/?paraId=h116) — *The God of Baha'u'llah*\n- [“It is the return of the qualities.”](https://siftersearch.com/library/bahai/pilgrim-notes/doris-mckay_memories-of-bahais#p1116) — *Memories of Bahá’ís* as recalled by Doris McKay\n- [“...by this is only intended the return of the qualities, character, perfection, truth and Lights... and not (the return) of certain persons and spirits.”](https://siftersearch.com/library/bahai/pilgrim-notes/abdul-baha_tablets-on-reincarnation-and-imperfection-in-creation#p12) — *Tablets on Reincarnation and Imperfection in Creation* by ‘Abdu'l-Bahá\n\nThese passages share the perspective that spiritual influence, character, and divine lights recur across different ages and individuals, while distinct personal identities and individual essences remain permanently separate."
+    },
+    {
+     "role": "user",
+     "content": "You say the distinction is that individual identity and \"the essence or the reality of things\" \"remain distinct and do not return\" — but the Shoghi Effendi passage never mentions the soul or individual identity there; it says \"Every being keeps its own individuality\" about things generally, in a passage about reincarnation. Isn't equating \"essence\" with the individual soul your interpretation rather than what the text says, and is the lamp-and-flower analogy (cited via a pilgrim's recollection) really authoritative enough to carry that weight?"
+    },
+    {
+     "role": "assistant",
+     "content": "Let us look strictly at what the sources actually state, separating them by their kind.\n\n**What scripture says**\nThe central texts speak of the reality of things and their individuality rather than defining the soul's essence through analogies.\n\n**What authorized interpretation says**\nIn explaining the \"return\" mentioned in scriptures, the interpretation clarifies that \"The Bahá'í view of 'reincarnation' is essentially different from the Hindu conception. The Bahá'ís believe in the return of the attributes and qualities, but maintain that the essence or the reality of things cannot be made to return.\" — *Lights of Guidance* quoting Universal House of Justice.\n\n**What history and scholarship add**\nHistorical and scholarly studies note how these concepts intersect with wider mystical frameworks, such as Sufi discussions of annihilation (*faná'*) and subsistence (*baqá'*), where [“After the seeker has reached the ultimate point, either his individuality is annihilated in God ( fanā   ) or he descends and returns to the world without being separated from God (baqā   ).”](https://siftersearch.com/library/islam/history-and-biography/oliver-scharbrodt_islam-and-the-bahai-faith#p72) — *Islam and the Baha'i Faith* by Oliver Scharbrodt.\n\nDoes keeping \"individuality\" and \"essence\" distinct in the text alter how you read the parallel with the Buddhist causal stream?"
+    },
+    {
+     "role": "user",
+     "content": "You cite Shoghi Effendi's line that the soul keeps \"developing and unfolding and returning towards its Creator\" while rejecting return to new bodies. How does that compare with the Hindu view of the ātman returning to Brahman, which also ends in union with the source? Does the Bahá'í text actually give a reason why individuality survives that return, when Advaita says it dissolves?"
+    },
+    {
+     "role": "assistant",
+     "content": "You are right to point to that parallel, for both traditions speak of an upward movement toward a divine source. In the Hindu texts, the goal is often described through the realization of identity with the ultimate reality, where Ramanuja’s commentary on the Vedanta-Sutras discusses the whole world as springing from Brahman and returning to it as the Self of the world ([The Vedanta-Sutras with Ramanuja Commentary (SBE Vol. 48)](https://oceanlibrary.com/hymns-of-atharva-veda)).\n\nThe Bahá'í writings describe a continuous journey where the soul, after its separation from the body, [\"will continue to progress until it attaineth the presence of God, in a state and condition which neither the revolution of ages and centuries, nor the changes and chances of this world, can alter.\"](https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah/?paraId=para_474&selectionString=gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_fx.0~gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_fx.1978) — *Gleanings from the Writings of Bahá’u’lláh*.\n\nDoes the Bahá'í text explain why individuality survives this approach to the Creator? The texts point to the origin of the soul itself: rather than being a temporary spark that merges back and loses distinction, \"the rational soul is endowed from the beginning with individuality; it does not acquire it through the intermediary of the body.\" ([Some Answered Questions](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_834&selectionString=some-answered-questions-prod-version_en_q4.0~some-answered-questions-prod-version_en_q4.602)) — *Some Answered Questions*. Because that individuality is inherent and primary rather than bodily, its approach to God is described as an unending progression in nearness rather than an absorption that erases the distinct self.\n\nWhere Advaita sees the drop returning to the ocean to become the ocean entirely, the Bahá'í texts see a mirror growing ever clearer while remaining a mirror. How do you see those two images comparing when you look at the texts side by side?"
+    },
+    {
+     "role": "user",
+     "content": "You quote Bahá'u'lláh that the soul \"will continue to progress until it attaineth the presence of God,\" but that's one sentence, and you cited Gleanings twice without a link. Give me the exact passage in full, with the link, and say whether it actually states that individuality survives or only that the soul progresses. Then do the same for the Rāmānuja citation, since \"distinguishing the individual soul from the highest Brahman\" is your paraphrase and I want his actual words."
+    }
+   ],
+   "ms": 11828,
+   "expected_strategy": [
+    "quote",
+    "fact",
+    "topic",
+    "lookup",
+    "source",
+    "position"
+   ],
+   "shape": "quote",
+   "strategyOk": true,
+   "phrases": [
+    "distinguishing the individual soul from the highest Brahman"
+   ],
+   "phrasesOk": false,
+   "phraseWrapper": false,
+   "phraseVia": "quoted",
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": "1/7",
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 5881
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": false,
+   "stage": "phrases",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 37
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 131
+    },
+    {
+     "name": "plan",
+     "at": 132,
+     "ms": 255
+    },
+    {
+     "name": "phrases",
+     "at": 387,
+     "ms": 2,
+     "via": "quote-marks"
+    },
+    {
+     "name": "search",
+     "at": 390,
+     "ms": 5623
+    },
+    {
+     "name": "upgrade-links",
+     "at": 6014,
+     "ms": 634
+    },
+    {
+     "name": "format",
+     "at": 6648,
+     "ms": 145
+    },
+    {
+     "name": "companion",
+     "at": 6649,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 6793,
+     "ms": 3263
+    },
+    {
+     "name": "output-check",
+     "at": 10063,
+     "ms": 198
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 130
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 386
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 3703
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 3704
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 5638
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 6792
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 10056
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 10166
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 151,
+    "search_ms": 5111,
+    "total_ms": 5262,
+    "engine": [
+     {
+      "filters": [
+       "documentId"
+      ],
+      "qkeyword": 13,
+      "phrase": 3199,
+      "merge": 97,
+      "total": 3296
+     },
+     {
+      "filters": [
+       "documentId"
+      ],
+      "qkeyword": 13,
+      "phrase": 4186,
+      "merge": 144,
+      "total": 4330
+     },
+     {
+      "filters": [],
+      "qkeyword": 23,
+      "phrase": 4521,
+      "canon": 4565,
+      "merge": 61,
+      "total": 4626
+     },
+     {
+      "filters": [],
+      "qkeyword": 21,
+      "phrase": 4519,
+      "canon": 4627,
+      "merge": 38,
+      "total": 4665
+     }
+    ],
+    "passages_ms": 4665,
+    "named": [
+     {
+      "kind": "author",
+      "name": "Ramanuja",
+      "docs": 1,
+      "hits": 1
+     },
+     {
+      "kind": "work",
+      "name": "Gleanings",
+      "docs": 2,
+      "hits": 2
+     }
+    ],
+    "resolve_ms": 437
+   },
+   "usd": 0.00397,
+   "latency_ms": 10261,
+   "wall_ms": 11828,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for pressing this point, and you are entirely right about the missing link and the need to see the fuller context of both texts rather than a fragment.\n\nLet us look first at the passage from Bahá'u'lláh's writings regarding the soul's j"
+  }
+ ]
+}
