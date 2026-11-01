@@ -170,7 +170,7 @@ describe('a trailer credits only the quotation before it (Bahá\'í World VIII 9
     writeFileSync(join(outDir, '967543.json'), JSON.stringify({ id: 967543, labels: rws.map((r, i) => ({ id: r.id, speaker: i === 1 ? 'George Townshend' : null })) }));
     const written = [];
     await paragraphAuthorsJob({ ids: [967543], write: true, outDir }, {
-      ask: async () => { throw new Error('no model call'); }, chatCompletion: async () => { throw new Error('no model call'); },
+      ask: async () => ({ answers: {} }), chatCompletion: async () => '',   // labels saved under stale evidence are re-asked
       doc: async () => BW, rowsOf: async () => rws.map((r) => ({ ...r })), writeAuthors: async (u) => { written.push(...u); return u.length; },
     });
     const byId = new Map(written.map((u) => [u.id, u]));
@@ -192,11 +192,40 @@ describe('a book of fragments still loses its stale trailer authors', () => {
     writeFileSync(join(outDir, '8.json'), JSON.stringify({ id: 8, labels: rws.map((r) => ({ id: r.id, speaker: null })) }));
     const written = [];
     const r = await paragraphAuthorsJob({ ids: [8], write: true, outDir }, {
-      ask: async () => { throw new Error('no model call'); }, chatCompletion: async () => { throw new Error('no model call'); },
+      ask: async () => ({ answers: {} }), chatCompletion: async () => '',   // labels saved under stale evidence are re-asked
       doc: async () => BW, rowsOf: async () => rws.map((x) => ({ ...x })), writeAuthors: async (u) => { written.push(...u); return u.length; },
     });
     expect(r.fragmented).toBe(1);
     expect(written.length).toBe(MAX_TRAILER_RUN + 2);
     expect(written.every((u) => u.authors.length === 0)).toBe(true);
+  });
+});
+
+// 11-01 BW VIII repair: the saved labels had been computed with the stale trailer credit as a FIXED anchor, so resuming them
+// wrote Bahá'u'lláh back with basis 'window'. Labels made under stale evidence are stale too; `fresh` re-asks a book anyway.
+describe('labels made under stale evidence are not resumed', () => {
+  const setup = (stale) => {
+    const outDir = mkdtempSync(join(tmpdir(), 'pa-'));
+    const B = { id: 9, title: 'Annual', author: 'Some Assembly', religion: "Baha'i", collection: 'Compilations', paragraph_count: 20 };
+    const a = JSON.stringify([{ name: 'Bahá’u’lláh', role: 'author', basis: stale ? 'trailer' : 'window' }]);
+    const rws = Array.from({ length: 20 }, (_, i) => ({ id: 700 + i, pidx: i, text: `Essay paragraph ${i} about the life of the community.`, blocktype: 'paragraph', authors: a, authors_model: null }));
+    writeFileSync(join(outDir, '9.json'), JSON.stringify({ id: 9, labels: rws.map((r) => ({ id: r.id, speaker: 'Bahá’u’lláh', conf: 0.95 })) }));
+    let asks = 0;
+    const deps = { ask: async () => { asks++; return { answers: {} }; }, chatCompletion: async () => '', doc: async () => B, rowsOf: async () => rws.map((r) => ({ ...r })), writeAuthors: async (u) => u.length };
+    return { outDir, deps, asks: () => asks };
+  };
+  it('a book with stale trailer rows is classified again', async () => {
+    const s = setup(true);
+    const r = await paragraphAuthorsJob({ ids: [9], write: false, outDir: s.outDir }, s.deps);
+    expect(r.resumed).toBe(0);
+    expect(s.asks()).toBeGreaterThan(0);
+  });
+  it('fresh: true ignores saved labels; without it a clean book resumes with no model call', async () => {
+    const a = setup(false);
+    expect((await paragraphAuthorsJob({ ids: [9], write: false, outDir: a.outDir }, a.deps)).resumed).toBe(1);
+    expect(a.asks()).toBe(0);
+    const b = setup(false);
+    expect((await paragraphAuthorsJob({ ids: [9], write: false, outDir: b.outDir, fresh: true }, b.deps)).resumed).toBe(0);
+    expect(b.asks()).toBeGreaterThan(0);
   });
 });

@@ -6,7 +6,7 @@
 // <outDir>/<id>.json and never asked again. Secondary books (scholars, compilations — authority < 8 or several authors) get
 // the secondary rules; a book of line fragments is listed, not written. With write, content.authors goes through the
 // writer, every previous value first appended to <outDir>/rollback.jsonl. Port of scripts/authorship/window-run.mjs,
-// which opened the database directly. params { religion = "Baha'i", ids?, write = false, limit?, concurrency = 4, outDir, maxLlm = 20000 (Haiku-call cap) }.
+// which opened the database directly. params { religion = "Baha'i", ids?, write = false, limit?, concurrency = 4, outDir, maxLlm = 20000 (Haiku-call cap), fresh (ignore saved labels) }.
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { getDoc, listDocs } from '../docs-repo.js';
@@ -21,7 +21,7 @@ const multiAuthor = (d) => isCompilation(d) || /^(Compilation\b|Various\b)/i.tes
 export const isSecondaryBook = (d) => getAuthority(d) < 8 || multiAuthor(d);
 
 export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all = false, write = false, limit = 0, concurrency = 4,
-  outDir = '/tank/sifter/authorship/wrun-all', maxLlm = 20000 } = {}, deps = {}) {
+  outDir = '/tank/sifter/authorship/wrun-all', maxLlm = 20000, fresh = false } = {}, deps = {}) {
   // a whole tradition is never a DEFAULT (10-21: a run queued with params null set out to classify all 57,903 Bahá'í books —
   // beyond the approved scope); it takes ids, or an explicit all: true
   if (!ids?.length && !all) return { refused: 'no ids — pass ids, or all: true for every book of the tradition' };
@@ -80,7 +80,9 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all
     stats.trailer_assigned = (stats.trailer_assigned || 0) + evidence.length;
     const file = join(outDir, `${d.id}.json`);
     let lab;
-    if (existsSync(file)) { lab = JSON.parse(readFileSync(file, 'utf-8')); stats.resumed++; }
+    // saved labels made while a stale trailer credit was a FIXED anchor are stale too (11-01: BW VIII's resumed labels wrote
+    // Bahá'u'lláh back over 6,567 paragraphs with basis 'window'); `fresh` re-asks a book whatever was saved
+    if (existsSync(file) && !fresh && !stale.size) { lab = JSON.parse(readFileSync(file, 'utf-8')); stats.resumed++; }
     else {
       // a CHECKPOINT every 20 windows (<id>.partial.json): a drain stops the book there and the next run resumes it — a
       // 15,600-paragraph volume no longer holds the service in 'draining' until it ends (10-21)
