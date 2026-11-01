@@ -1,0 +1,8354 @@
+{
+ "summary": {
+  "date": "2026-11-01T15:21:50.142Z",
+  "variants": 52,
+  "pass": 38,
+  "pass_rate": 0.731,
+  "strategy_ok": 50,
+  "strategy_scored": 52,
+  "mode": "current",
+  "answer_ok": 39,
+  "nofound": 6,
+  "offtopic": 6,
+  "errors": 0,
+  "slow_gt5s": 24,
+  "p50_ms": 4555,
+  "p95_ms": 9831,
+  "usd_total": 0.1147,
+  "usd_per_reply": 0.0022,
+  "first_failing_stage": {
+   "ok": 38,
+   "retrieval": 5,
+   "selection": 4,
+   "strategy": 2,
+   "answer": 3
+  },
+  "phrases_via": {
+   "haiku": 5
+  },
+  "phrases_ok": 4,
+  "phrases_scored": 5,
+  "phrase_exact_ok": 2,
+  "phrase_exact_scored": 2,
+  "phrase_names_ok": 0,
+  "phrase_names_scored": 1
+ },
+ "matrix": {
+  "exact_phrase": {
+   "bare": "1/1",
+   "polite": "2/2",
+   "find": "2/2",
+   "source_of": "1/1",
+   "misquoted": "2/2",
+   "typo": "2/2",
+   "fragment": "1/1",
+   "embedded": "1/1",
+   "followup": "1/2",
+   "non_native": "1/1",
+   "terse": "2/2",
+   "ALL": "16/17"
+  },
+  "source_resolution": {
+   "bare": "1/1",
+   "polite": "2/2",
+   "find": "2/2",
+   "source_of": "1/1",
+   "misquoted": "2/2",
+   "typo": "2/2",
+   "fragment": "1/1",
+   "embedded": "1/1",
+   "followup": "1/2",
+   "non_native": "1/1",
+   "terse": "2/2",
+   "ALL": "16/17"
+  },
+  "author_theme": {
+   "bare": "0/1",
+   "polite": "0/2",
+   "find": "0/1",
+   "source_of": "0/1",
+   "misquoted": "0/1",
+   "typo": "0/1",
+   "fragment": "0/1",
+   "embedded": "1/1",
+   "followup": "1/1",
+   "non_native": "1/1",
+   "terse": "1/2",
+   "ALL": "4/13"
+  },
+  "find_work": {
+   "bare": "·",
+   "polite": "1/1",
+   "find": "·",
+   "source_of": "·",
+   "misquoted": "·",
+   "typo": "·",
+   "fragment": "·",
+   "embedded": "1/1",
+   "followup": "·",
+   "non_native": "·",
+   "terse": "·",
+   "ALL": "2/2"
+  },
+  "compare": {
+   "bare": "·",
+   "polite": "·",
+   "find": "·",
+   "source_of": "·",
+   "misquoted": "·",
+   "typo": "·",
+   "fragment": "·",
+   "embedded": "·",
+   "followup": "0/1",
+   "non_native": "·",
+   "terse": "·",
+   "ALL": "0/1"
+  },
+  "define_term": {
+   "bare": "·",
+   "polite": "·",
+   "find": "0/1",
+   "source_of": "·",
+   "misquoted": "·",
+   "typo": "·",
+   "fragment": "·",
+   "embedded": "·",
+   "followup": "0/1",
+   "non_native": "·",
+   "terse": "·",
+   "ALL": "0/2"
+  }
+ },
+ "results": [
+  {
+   "id": "inc-necessary-element#01",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "but it will always be present as a necessary element"
+    }
+   ],
+   "ms": 7575,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "quote",
+   "strategyOk": true,
+   "phrases": [
+    "but it will always be present as a necessary element"
+   ],
+   "phrasesOk": true,
+   "phraseWrapper": false,
+   "phraseVia": "haiku",
+   "phraseExact": true,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "phrases": 984,
+    "retrieval": 1314
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 32
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 165
+    },
+    {
+     "name": "plan",
+     "at": 165,
+     "ms": 1
+    },
+    {
+     "name": "phrases",
+     "at": 166,
+     "ms": 984,
+     "via": "haiku"
+    },
+    {
+     "name": "search",
+     "at": 1150,
+     "ms": 329
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1479,
+     "ms": 1602
+    },
+    {
+     "name": "format",
+     "at": 3081,
+     "ms": 752
+    },
+    {
+     "name": "companion",
+     "at": 3082,
+     "ms": 8
+    },
+    {
+     "name": "craft",
+     "at": 3833,
+     "ms": 2235
+    },
+    {
+     "name": "output-check",
+     "at": 6070,
+     "ms": 122
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 164
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1150
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3197
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6068
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6191
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 4,
+    "search_ms": 0,
+    "total_ms": 4
+   },
+   "usd": 0.00278,
+   "latency_ms": 6192,
+   "wall_ms": 7575,
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is good to ponder those words, and you have seized upon a profound truth about human existence. There is a deep-seated intuition in what you say—that certain elements of our toil and our striving are not mere temporary inconveniences to be eng"
+  },
+  {
+   "id": "inc-necessary-element#02",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Could you please help me track down where the sentence \"but it will always be present as a necessary element\" comes from?"
+    }
+   ],
+   "ms": 10715,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {},
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": null,
+   "llm": null,
+   "search_detail": null,
+   "usd": 0.00119,
+   "latency_ms": 3060,
+   "wall_ms": 10715,
+   "models": [
+    "jev-latest"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#03",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "where can I read the passage that says but it will always be present as a necessary element"
+    }
+   ],
+   "ms": 5041,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2556
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 38
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 160
+    },
+    {
+     "name": "plan",
+     "at": 161,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 161,
+     "ms": 1799,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 161,
+     "ms": 2553
+    },
+    {
+     "name": "output-check",
+     "at": 2717,
+     "ms": 93
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 159
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1103
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1661
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1868
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1960
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2056
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2197
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2390
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2531
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2712
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2809
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00127,
+   "latency_ms": 2810,
+   "wall_ms": 5041,
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#04",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "source_of",
+   "messages": [
+    {
+     "role": "user",
+     "content": "who wrote the line \"but it will always be present as a necessary element\" and which book is it in?"
+    }
+   ],
+   "ms": 5410,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2320
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 31
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 128
+    },
+    {
+     "name": "plan",
+     "at": 129,
+     "ms": 157
+    },
+    {
+     "name": "phrases",
+     "at": 286,
+     "ms": 1,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 286,
+     "ms": 2160
+    },
+    {
+     "name": "output-check",
+     "at": 2449,
+     "ms": 110
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 127
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 285
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 867
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1058
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1492
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1710
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1778
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1932
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2143
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2291
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2440
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2558
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00126,
+   "latency_ms": 2559,
+   "wall_ms": 5410,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#05",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "misquoted",
+   "messages": [
+    {
+     "role": "user",
+     "content": "but it will always be there as a necessary element, which passage is that?"
+    }
+   ],
+   "ms": 5548,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 3493
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 110
+    },
+    {
+     "name": "plan",
+     "at": 110,
+     "ms": 154
+    },
+    {
+     "name": "phrases",
+     "at": 264,
+     "ms": 1294,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 264,
+     "ms": 3335
+    },
+    {
+     "name": "output-check",
+     "at": 3603,
+     "ms": 206
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 109
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 263
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 734
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 741
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1557
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1684
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2133
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2320
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2485
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2587
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2714
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2881
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3005
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3594
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3809
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00139,
+   "latency_ms": 3809,
+   "wall_ms": 5548,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#07",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "but it wil always be present as a neccessary elemnt where is this from"
+    }
+   ],
+   "ms": 5082,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 4167
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 29
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 147
+    },
+    {
+     "name": "plan",
+     "at": 147,
+     "ms": 733
+    },
+    {
+     "name": "phrases",
+     "at": 880,
+     "ms": 1680,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 880,
+     "ms": 3431
+    },
+    {
+     "name": "output-check",
+     "at": 4314,
+     "ms": 122
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 146
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 312
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 895
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1517
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 2560
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2765
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 3159
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3363
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3600
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3723
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3855
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3974
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4150
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4309
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4435
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00157,
+   "latency_ms": 4436,
+   "wall_ms": 5082,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#06",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "fragment",
+   "messages": [
+    {
+     "role": "user",
+     "content": "can you find the quote including \"always be present as a necessary element\""
+    }
+   ],
+   "ms": 8525,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 5437
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 31
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 122
+    },
+    {
+     "name": "plan",
+     "at": 122,
+     "ms": 169
+    },
+    {
+     "name": "phrases",
+     "at": 291,
+     "ms": 0,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 291,
+     "ms": 5264
+    },
+    {
+     "name": "output-check",
+     "at": 5559,
+     "ms": 95
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 121
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 291
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 858
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 877
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2185
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 3265
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3756
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3871
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4576
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4761
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4899
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 5169
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 5397
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 5552
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5654
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00202,
+   "latency_ms": 5655,
+   "wall_ms": 8525,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#08",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Last night at our study circle someone read a line aloud that stuck with me. It was something like \"but it will always be present as a necessary element.\" I'd love to read the whole context myself, so could you tell me which writing that line comes from?"
+    }
+   ],
+   "ms": 5040,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 3092
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 1,
+     "ms": 33
+    },
+    {
+     "name": "triage",
+     "at": 1,
+     "ms": 110
+    },
+    {
+     "name": "plan",
+     "at": 113,
+     "ms": 232
+    },
+    {
+     "name": "phrases",
+     "at": 345,
+     "ms": 1045,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 346,
+     "ms": 2856
+    },
+    {
+     "name": "output-check",
+     "at": 3205,
+     "ms": 93
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 109
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 344
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:anis-triage:shadow",
+     "at": 618
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 622
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 631
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1390
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1680
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2356
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2538
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2649
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2776
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2893
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2998
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3200
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3297
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00139,
+   "latency_ms": 3298,
+   "wall_ms": 5040,
+   "models": [
+    "jev-latest",
+    "clef-flash",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#09",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hi, I'm new to this library. How do I search for passages by keyword?"
+    },
+    {
+     "role": "assistant",
+     "content": "You can type distinctive words or short phrases into the search box, and use quotation marks to match an exact sequence of words. Filters for author or collection can narrow results further."
+    },
+    {
+     "role": "user",
+     "content": "ok, and can you find the exact source of this: but it will always be present as a necessary element"
+    }
+   ],
+   "ms": 5087,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2189
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 31
+    },
+    {
+     "name": "triage",
+     "at": 1,
+     "ms": 110
+    },
+    {
+     "name": "plan",
+     "at": 111,
+     "ms": 247
+    },
+    {
+     "name": "phrases",
+     "at": 358,
+     "ms": 1013,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 358,
+     "ms": 1939
+    },
+    {
+     "name": "output-check",
+     "at": 2300,
+     "ms": 114
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 110
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 357
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 944
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1134
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1371
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1501
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1667
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1778
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1905
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2047
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2163
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2296
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2413
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00136,
+   "latency_ms": 2414,
+   "wall_ms": 5087,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#10",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "non_native",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Please, I am looking for the source of this sentence: but it will always be present as a necessary element. In which writing it is written?"
+    }
+   ],
+   "ms": 2529,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 1940
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 34
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 102
+    },
+    {
+     "name": "plan",
+     "at": 103,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 103,
+     "ms": 0,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 103,
+     "ms": 1937
+    },
+    {
+     "name": "output-check",
+     "at": 2043,
+     "ms": 139
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 101
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 931
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1350
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1542
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1639
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1759
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1909
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2037
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2181
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.0007,
+   "latency_ms": 2182,
+   "wall_ms": 2529,
+   "models": [
+    "jev-latest"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#11",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "always be present as a necessary element source"
+    }
+   ],
+   "ms": 5114,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "quote",
+   "strategyOk": true,
+   "phrases": [
+    "always be present as a necessary element source"
+   ],
+   "phrasesOk": true,
+   "phraseWrapper": false,
+   "phraseVia": "haiku",
+   "phraseExact": true,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "phrases": 1620,
+    "retrieval": 1787
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 29
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 123
+    },
+    {
+     "name": "plan",
+     "at": 124,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 124,
+     "ms": 1620,
+     "via": "haiku"
+    },
+    {
+     "name": "search",
+     "at": 1744,
+     "ms": 167
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1911,
+     "ms": 174
+    },
+    {
+     "name": "format",
+     "at": 2086,
+     "ms": 119
+    },
+    {
+     "name": "companion",
+     "at": 2087,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 2205,
+     "ms": 2203
+    },
+    {
+     "name": "output-check",
+     "at": 4410,
+     "ms": 118
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 122
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1744
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2205
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4408
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4528
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 0,
+    "total_ms": 3
+   },
+   "usd": 0.00271,
+   "latency_ms": 4529,
+   "wall_ms": 5114,
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for bringing this thought forward. When we look at how effort, struggle, and presence weave through our lives and traditions, there is a deep sense of things always being there, sustaining us.\n\nTo answer your question about effort and p"
+  },
+  {
+   "id": "inc-necessary-element#12",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I wonder if you could tell me the exact location of \"but it will always be present as a necessary element\"?"
+    }
+   ],
+   "ms": 5922,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 3934
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 31
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 111
+    },
+    {
+     "name": "plan",
+     "at": 111,
+     "ms": 1
+    },
+    {
+     "name": "phrases",
+     "at": 112,
+     "ms": 0,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 112,
+     "ms": 3930
+    },
+    {
+     "name": "output-check",
+     "at": 4045,
+     "ms": 209
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 110
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1100
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1532
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1716
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1841
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3561
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3756
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3896
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4040
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4252
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00119,
+   "latency_ms": 4254,
+   "wall_ms": 5922,
+   "models": [
+    "jev-latest"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#13",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where does it say \"but it will always be present as a necessary element\"? I want to read the full paragraph around it."
+    }
+   ],
+   "ms": 5341,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2046
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 146
+    },
+    {
+     "name": "plan",
+     "at": 146,
+     "ms": 1
+    },
+    {
+     "name": "phrases",
+     "at": 147,
+     "ms": 0,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 147,
+     "ms": 2042
+    },
+    {
+     "name": "output-check",
+     "at": 2192,
+     "ms": 603
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 145
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 909
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1333
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1509
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1617
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1730
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1880
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2006
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2188
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2795
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00119,
+   "latency_ms": 2795,
+   "wall_ms": 5341,
+   "models": [
+    "jev-latest"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#14",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "but it will always be present as a necessary element whats the source"
+    }
+   ],
+   "ms": 6412,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2226
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 109
+    },
+    {
+     "name": "plan",
+     "at": 109,
+     "ms": 1
+    },
+    {
+     "name": "phrases",
+     "at": 110,
+     "ms": 1229,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 110,
+     "ms": 2222
+    },
+    {
+     "name": "output-check",
+     "at": 2335,
+     "ms": 1517
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 108
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1049
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1339
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1533
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1746
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1848
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1996
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2173
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2331
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2422
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00126,
+   "latency_ms": 3852,
+   "wall_ms": 6412,
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#15",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "misquoted",
+   "messages": [
+    {
+     "role": "user",
+     "content": "but it will always be present as an essential element, who said that"
+    }
+   ],
+   "ms": 5045,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2851
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 36
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 415
+    },
+    {
+     "name": "plan",
+     "at": 415,
+     "ms": 157
+    },
+    {
+     "name": "phrases",
+     "at": 572,
+     "ms": 1066,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 572,
+     "ms": 2692
+    },
+    {
+     "name": "output-check",
+     "at": 3266,
+     "ms": 114
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 184
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 572
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 831
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 940
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1638
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1803
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2228
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2422
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2592
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2717
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2872
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2997
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3128
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3262
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3380
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00135,
+   "latency_ms": 3381,
+   "wall_ms": 5045,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "inc-necessary-element#16",
+   "fixture": "inc-necessary-element",
+   "type": "exact_phrase",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "\"will always be present as a necessary element\" quote"
+    }
+   ],
+   "ms": 5051,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2223
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 128
+    },
+    {
+     "name": "plan",
+     "at": 129,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 129,
+     "ms": 0,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 129,
+     "ms": 2219
+    },
+    {
+     "name": "output-check",
+     "at": 2351,
+     "ms": 105
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 126
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 894
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1348
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1562
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1736
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 1877
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2017
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2210
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2346
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2455
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00118,
+   "latency_ms": 2456,
+   "wall_ms": 5051,
+   "models": [
+    "jev-latest"
+   ],
+   "reply_head": "These are the words of Shoghi Effendi, from [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6067&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b"
+  },
+  {
+   "id": "sr-best-beloved#01",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "the best beloved of all things in My sight is Justice"
+    }
+   ],
+   "ms": 5399,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 4091
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 29
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 140
+    },
+    {
+     "name": "plan",
+     "at": 140,
+     "ms": 1
+    },
+    {
+     "name": "phrases",
+     "at": 141,
+     "ms": 1115,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 141,
+     "ms": 4083
+    },
+    {
+     "name": "output-check",
+     "at": 4231,
+     "ms": 128
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 139
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1256
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2026
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2976
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 3191
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3437
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4223
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4358
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00052,
+   "latency_ms": 4361,
+   "wall_ms": 5399,
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#02",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Could you please help me find where the sentence \"the best beloved of all things in My sight is Justice\" comes from?"
+    }
+   ],
+   "ms": 5254,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 3453
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 33
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 137
+    },
+    {
+     "name": "plan",
+     "at": 137,
+     "ms": 326
+    },
+    {
+     "name": "phrases",
+     "at": 463,
+     "ms": 0,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 463,
+     "ms": 3119
+    },
+    {
+     "name": "output-check",
+     "at": 3590,
+     "ms": 96
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 136
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 463
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1272
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1450
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2263
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2471
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2867
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3581
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3686
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00052,
+   "latency_ms": 3686,
+   "wall_ms": 5254,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#03",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "where does it say the best beloved of all things in My sight is Justice"
+    }
+   ],
+   "ms": 5108,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2483
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 263
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 267
+    },
+    {
+     "name": "plan",
+     "at": 268,
+     "ms": 185
+    },
+    {
+     "name": "phrases",
+     "at": 453,
+     "ms": 1508,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 453,
+     "ms": 2288
+    },
+    {
+     "name": "output-check",
+     "at": 2751,
+     "ms": 97
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 267
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 452
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1265
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1960
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2050
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2230
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2621
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2740
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2848
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00059,
+   "latency_ms": 2849,
+   "wall_ms": 5108,
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#04",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "source_of",
+   "messages": [
+    {
+     "role": "user",
+     "content": "who wrote \"the best beloved of all things in My sight is Justice\"? where is that line from"
+    }
+   ],
+   "ms": 5053,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2464
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 38
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 117
+    },
+    {
+     "name": "plan",
+     "at": 118,
+     "ms": 132
+    },
+    {
+     "name": "phrases",
+     "at": 250,
+     "ms": 0,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 250,
+     "ms": 2319
+    },
+    {
+     "name": "output-check",
+     "at": 2581,
+     "ms": 121
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 116
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 248
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 922
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1055
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1819
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2025
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2295
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2568
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2701
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00052,
+   "latency_ms": 2702,
+   "wall_ms": 5053,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#05",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "misquoted",
+   "messages": [
+    {
+     "role": "user",
+     "content": "the dearest of all things in my sight is justice, where is that from"
+    }
+   ],
+   "ms": 7825,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 3896
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 124
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 126
+    },
+    {
+     "name": "plan",
+     "at": 126,
+     "ms": 123
+    },
+    {
+     "name": "phrases",
+     "at": 249,
+     "ms": 1456,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 249,
+     "ms": 3766
+    },
+    {
+     "name": "output-check",
+     "at": 4022,
+     "ms": 125
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 125
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 248
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 430
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 656
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1705
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1834
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2816
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3120
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4014
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4147
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00056,
+   "latency_ms": 4148,
+   "wall_ms": 7825,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#06",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "fragment",
+   "messages": [
+    {
+     "role": "user",
+     "content": "can you find the quote that includes \"...of all things in My sight is Justice\" and tell me where it appears"
+    }
+   ],
+   "ms": 10670,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 7601
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 29
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 352
+    },
+    {
+     "name": "plan",
+     "at": 352,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 352,
+     "ms": 0,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 352,
+     "ms": 7586
+    },
+    {
+     "name": "output-check",
+     "at": 7953,
+     "ms": 515
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 351
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1465
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2687
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2979
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 5664
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 8071
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00042,
+   "latency_ms": 8469,
+   "wall_ms": 10670,
+   "models": [
+    "jev-latest"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#08",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Our study group met last night and someone brought up a line about justice being the best beloved of all things in My sight. Nobody could recall the exact place it's written. Could you find where it is?"
+    }
+   ],
+   "ms": 4283,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2536
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 138
+    },
+    {
+     "name": "plan",
+     "at": 139,
+     "ms": 151
+    },
+    {
+     "name": "phrases",
+     "at": 290,
+     "ms": 1182,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 290,
+     "ms": 2371
+    },
+    {
+     "name": "output-check",
+     "at": 2675,
+     "ms": 124
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 137
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 289
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 553
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 602
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1472
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1627
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2068
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2486
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2659
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 2798
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00061,
+   "latency_ms": 2799,
+   "wall_ms": 4283,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#07",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "wher can i find the qoute the best belovd of all things in my sight is justce"
+    }
+   ],
+   "ms": 14721,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 6720
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 43
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 175
+    },
+    {
+     "name": "plan",
+     "at": 176,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 176,
+     "ms": 2873,
+     "via": "fallback",
+     "reason": "timeout"
+    },
+    {
+     "name": "source-hunt",
+     "at": 176,
+     "ms": 6703
+    },
+    {
+     "name": "output-check",
+     "at": 6896,
+     "ms": 2935
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 174
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1216
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 3053
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 3260
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3668
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3960
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7030
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00048,
+   "latency_ms": 9831,
+   "wall_ms": 14721,
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#09",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I'm getting ready for a study circle this weekend and want to prepare a few passages."
+    },
+    {
+     "role": "assistant",
+     "content": "That sounds like a lovely plan. What themes or texts are you planning to cover, and would you like help organizing them?"
+    },
+    {
+     "role": "user",
+     "content": "I'd like to use the line \"the best beloved of all things in My sight is Justice\". Can you tell me exactly where it's found?"
+    }
+   ],
+   "ms": 10933,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 4335
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 13
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 4761
+    },
+    {
+     "name": "plan",
+     "at": 4762,
+     "ms": 985
+    },
+    {
+     "name": "phrases",
+     "at": 5748,
+     "ms": 0,
+     "via": "quote-marks"
+    },
+    {
+     "name": "source-hunt",
+     "at": 5748,
+     "ms": 3337
+    },
+    {
+     "name": "output-check",
+     "at": 9097,
+     "ms": 113
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 117
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 4927
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 5872
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 6837
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 7850
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 8130
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 8679
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 9084
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 9208
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00052,
+   "latency_ms": 9210,
+   "wall_ms": 10933,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#10",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "non_native",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Please, I am looking for the sentence where is written the best beloved of all things in My sight is Justice. Which book and which place?"
+    }
+   ],
+   "ms": 10865,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "quote",
+   "strategyOk": true,
+   "phrases": [
+    "the best beloved of all things in My sight is Justice"
+   ],
+   "phrasesOk": true,
+   "phraseWrapper": false,
+   "phraseVia": "haiku",
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "phrases": 1856,
+    "retrieval": 2827
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "find_passage",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 34
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 919
+    },
+    {
+     "name": "plan",
+     "at": 919,
+     "ms": 138
+    },
+    {
+     "name": "phrases",
+     "at": 1057,
+     "ms": 1856,
+     "via": "haiku"
+    },
+    {
+     "name": "search",
+     "at": 2913,
+     "ms": 833
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3747,
+     "ms": 73
+    },
+    {
+     "name": "companion",
+     "at": 3821,
+     "ms": 5
+    },
+    {
+     "name": "format",
+     "at": 3821,
+     "ms": 97
+    },
+    {
+     "name": "craft",
+     "at": 3918,
+     "ms": 3693
+    },
+    {
+     "name": "output-check",
+     "at": 7618,
+     "ms": 113
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1057
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2908
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 2913
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3544
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3917
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7611
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7731
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 12,
+    "search_ms": 620,
+    "total_ms": 632,
+    "claims_ms": 5,
+    "engine": [
+     {
+      "filters": [],
+      "qkeyword": 39,
+      "phrase": 60,
+      "canon": 139,
+      "merge": 51,
+      "total": 190
+     },
+     {
+      "filters": [],
+      "qkeyword": 44,
+      "phrase": 63,
+      "canon": 192,
+      "merge": 13,
+      "total": 205
+     }
+    ],
+    "passages_ms": 206,
+    "resolve_ms": 414
+   },
+   "usd": 0.00378,
+   "latency_ms": 7732,
+   "wall_ms": 10865,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is a great joy to help you find this passage. The sentence you are looking for opens the second of the Arabic *Hidden Words*.\n\nIt comes from the work known as *The Hidden Words* (*Kalimát-i-Maknúnih*), a collection of short spiritual counsels "
+  },
+  {
+   "id": "sr-best-beloved#11",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "best beloved things sight justice quote source"
+    }
+   ],
+   "ms": 5243,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2821
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 1,
+     "ms": 33
+    },
+    {
+     "name": "triage",
+     "at": 1,
+     "ms": 124
+    },
+    {
+     "name": "plan",
+     "at": 125,
+     "ms": 115
+    },
+    {
+     "name": "phrases",
+     "at": 240,
+     "ms": 1274,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 240,
+     "ms": 2697
+    },
+    {
+     "name": "output-check",
+     "at": 2946,
+     "ms": 159
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 125
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 240
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 499
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1514
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1679
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2425
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2841
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2936
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3105
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00058,
+   "latency_ms": 3105,
+   "wall_ms": 5243,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#12",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I wonder if you could tell me the location of the passage: the best beloved of all things in My sight is Justice."
+    }
+   ],
+   "ms": 5081,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 4309
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 32
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 111
+    },
+    {
+     "name": "plan",
+     "at": 111,
+     "ms": 121
+    },
+    {
+     "name": "phrases",
+     "at": 232,
+     "ms": 1103,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 232,
+     "ms": 4020
+    },
+    {
+     "name": "output-check",
+     "at": 4420,
+     "ms": 100
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 110
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 230
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 533
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1335
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2046
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2739
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3244
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3670
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3788
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3905
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4021
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4128
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4250
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4520
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.001,
+   "latency_ms": 4521,
+   "wall_ms": 5081,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*shoghi-effendi-trans-005-the-hidden-words-of-bahaullah_en*](https://oceanoflights.org/shoghi-effendi-trans-005-the-hidden-words-of-bahaullah-en/#(The%20best)(Justice)). The passage reads: «The best beloved of all thin"
+  },
+  {
+   "id": "sr-best-beloved#13",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "where can I read the line about justice being the best beloved of all things in my sight"
+    }
+   ],
+   "ms": 5075,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 3045
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 110
+    },
+    {
+     "name": "plan",
+     "at": 111,
+     "ms": 750
+    },
+    {
+     "name": "phrases",
+     "at": 861,
+     "ms": 1229,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 861,
+     "ms": 2281
+    },
+    {
+     "name": "output-check",
+     "at": 3156,
+     "ms": 97
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 108
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 858
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 861
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1834
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 2090
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2175
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2534
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2840
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3141
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3252
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00059,
+   "latency_ms": 3253,
+   "wall_ms": 5075,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#15",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "whats the source of the best beloved of all things in my sight is justice pls"
+    }
+   ],
+   "ms": 5051,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 4308
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 31
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 119
+    },
+    {
+     "name": "plan",
+     "at": 127,
+     "ms": 138
+    },
+    {
+     "name": "phrases",
+     "at": 265,
+     "ms": 2488,
+     "via": "fallback",
+     "reason": "timeout"
+    },
+    {
+     "name": "source-hunt",
+     "at": 265,
+     "ms": 4161
+    },
+    {
+     "name": "output-check",
+     "at": 4435,
+     "ms": 120
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 114
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 264
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1127
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1128
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:anis-triage:shadow",
+     "at": 2751
+    },
+    {
+     "model": "clef",
+     "caller": "system1:anis-triage:shadow",
+     "at": 2752
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2766
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 3427
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 3525
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 3809
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4169
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4425
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4554
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00092,
+   "latency_ms": 4555,
+   "wall_ms": 5051,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "clef",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#14",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "misquoted",
+   "messages": [
+    {
+     "role": "user",
+     "content": "justice is the most beloved of all things in my sight, which writing says this"
+    }
+   ],
+   "ms": 5783,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 4679
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 115
+    },
+    {
+     "name": "plan",
+     "at": 115,
+     "ms": 118
+    },
+    {
+     "name": "phrases",
+     "at": 233,
+     "ms": 1363,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 233,
+     "ms": 4554
+    },
+    {
+     "name": "output-check",
+     "at": 4794,
+     "ms": 90
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 114
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 232
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 510
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 548
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1596
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2379
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 4055
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4477
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4786
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4883
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00056,
+   "latency_ms": 4884,
+   "wall_ms": 5783,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "sr-best-beloved#16",
+   "fixture": "sr-best-beloved",
+   "type": "source_resolution",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "justice best beloved all things my sight"
+    }
+   ],
+   "ms": 5160,
+   "expected_strategy": [
+    "quote",
+    "source"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 4155
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 33
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 129
+    },
+    {
+     "name": "plan",
+     "at": 130,
+     "ms": 179
+    },
+    {
+     "name": "phrases",
+     "at": 309,
+     "ms": 1247,
+     "via": "haiku"
+    },
+    {
+     "name": "source-hunt",
+     "at": 309,
+     "ms": 3963
+    },
+    {
+     "name": "output-check",
+     "at": 4285,
+     "ms": 99
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 128
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 307
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 521
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1555
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2792
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 3518
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3961
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 4271
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4384
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00056,
+   "latency_ms": 4385,
+   "wall_ms": 5160,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#01",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Shoghi Effendi quotes on all Manifestations of God being regarded as one soul and the same person"
+    }
+   ],
+   "ms": 7664,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": false,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3434
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "retrieval",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 121
+    },
+    {
+     "name": "plan",
+     "at": 122,
+     "ms": 183
+    },
+    {
+     "name": "phrases",
+     "at": 305,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 306,
+     "ms": 3250
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3556,
+     "ms": 117
+    },
+    {
+     "name": "format",
+     "at": 3673,
+     "ms": 239
+    },
+    {
+     "name": "companion",
+     "at": 3674,
+     "ms": 18
+    },
+    {
+     "name": "craft",
+     "at": 3912,
+     "ms": 3010
+    },
+    {
+     "name": "output-check",
+     "at": 6931,
+     "ms": 195
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 119
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 304
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1286
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:anis-triage:shadow",
+     "at": 1289
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2345
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3488
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3912
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6922
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7126
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 10,
+    "search_ms": 3174,
+    "total_ms": 3185,
+    "claims_ms": 965,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 964,
+      "qkeyword": 973,
+      "phrase": 2032,
+      "canon": 2063,
+      "merge": 45,
+      "total": 2108
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 963,
+      "qkeyword": 972,
+      "qhype": 1099,
+      "qconcept": 1183,
+      "phrase": 2030,
+      "canon": 2053,
+      "doctrinal_hype": 2124,
+      "doctrinal": 2130,
+      "merge": 59,
+      "total": 2189
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 964,
+      "qkeyword": 972,
+      "phrase": 2049,
+      "qhype": 2109,
+      "qconcept": 2759,
+      "canon": 2767,
+      "merge": 8,
+      "total": 2775
+     }
+    ],
+    "passages_ms": 2776,
+    "resolve_ms": 394
+   },
+   "usd": 0.00472,
+   "latency_ms": 7127,
+   "wall_ms": 7664,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question concerning the oneness of the Manifestations of God. While the specific words you mentioned about regarding all Manifestations as \"one soul and the same person\" ([The Kitáb-i-Íqán](https://oceanlibrary.com/kitab-i-iqan"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#02",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Could you please help me find quotes or works by Shoghi Effendi that elaborate on the idea that all the Manifestations of God are one soul and the same person?"
+    }
+   ],
+   "ms": 7770,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 1,
+    "retrieval": 2404
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 33
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 107
+    },
+    {
+     "name": "plan",
+     "at": 107,
+     "ms": 137
+    },
+    {
+     "name": "phrases",
+     "at": 244,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 244,
+     "ms": 2267
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2511,
+     "ms": 92
+    },
+    {
+     "name": "format",
+     "at": 2603,
+     "ms": 104
+    },
+    {
+     "name": "companion",
+     "at": 2604,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 2708,
+     "ms": 3007
+    },
+    {
+     "name": "output-check",
+     "at": 5718,
+     "ms": 834
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 106
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 242
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1445
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1793
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2395
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2707
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5715
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6552
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 13,
+    "search_ms": 2140,
+    "total_ms": 2153,
+    "claims_ms": 1178,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1178,
+      "qkeyword": 1191,
+      "qconcept": 1229,
+      "qhype": 1237,
+      "phrase": 1260,
+      "canon": 1316,
+      "doctrinal_hype": 1337,
+      "doctrinal": 1392,
+      "merge": 138,
+      "total": 1530
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 1177,
+      "qkeyword": 1190,
+      "phrase": 1552,
+      "qhype": 1552,
+      "qconcept": 1792,
+      "canon": 1801,
+      "merge": 18,
+      "total": 1819
+     }
+    ],
+    "passages_ms": 1820,
+    "resolve_ms": 316
+   },
+   "usd": 0.00474,
+   "latency_ms": 6553,
+   "wall_ms": 7770,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nI couldn't find any specific passages in the texts I can search where Shoghi Effendi elaborates on this exact phrase, but the idea itself has a striking foundation in the Writings of Bahá'u'lláh.\n\nWhen Bahá'u'láh speaks of the Prophets and Messengers, "
+  },
+  {
+   "id": "th-se-manifestations-one-soul#03",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where can I read Shoghi Effendi's writings explaining that all Manifestations of God are regarded as one soul and the same person?"
+    }
+   ],
+   "ms": 7549,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": false,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1996
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "retrieval",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 112
+    },
+    {
+     "name": "plan",
+     "at": 112,
+     "ms": 176
+    },
+    {
+     "name": "phrases",
+     "at": 288,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 288,
+     "ms": 1820
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2108,
+     "ms": 86
+    },
+    {
+     "name": "companion",
+     "at": 2194,
+     "ms": 3
+    },
+    {
+     "name": "format",
+     "at": 2194,
+     "ms": 92
+    },
+    {
+     "name": "craft",
+     "at": 2286,
+     "ms": 4607
+    },
+    {
+     "name": "output-check",
+     "at": 6896,
+     "ms": 103
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 109
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 286
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1015
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1372
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2005
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2285
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6893
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6998
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 9,
+    "search_ms": 1709,
+    "total_ms": 1719,
+    "claims_ms": 709,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 709,
+      "qkeyword": 718,
+      "qconcept": 758,
+      "qhype": 760,
+      "phrase": 770,
+      "canon": 826,
+      "doctrinal_hype": 843,
+      "doctrinal": 899,
+      "merge": 110,
+      "total": 1009
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 709,
+      "qkeyword": 718,
+      "qhype": 1106,
+      "phrase": 1106,
+      "qconcept": 1357,
+      "canon": 1365,
+      "merge": 19,
+      "total": 1384
+     }
+    ],
+    "passages_ms": 1384,
+    "resolve_ms": 322
+   },
+   "usd": 0.00464,
+   "latency_ms": 7000,
+   "wall_ms": 7549,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nI can't find anything specifically in Shoghi Effendi's writings within the library's record explaining that all Manifestations are one soul and the same person, but Bahá'u'lláh Himself addresses this directly in *The Kitáb-i-Íqán* and *Gleanings from t"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#05",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I've been preparing a talk for our local unit on the unity of the Messengers, and my friend keeps insisting the Guardian wrote something about all the Manifestations being one soul and the same person. I'd love to get the exact wording right. Can you find quotes or works from Shoghi Effendi that elaborate on that?"
+    }
+   ],
+   "ms": 10125,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3344
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 152
+    },
+    {
+     "name": "plan",
+     "at": 153,
+     "ms": 398
+    },
+    {
+     "name": "phrases",
+     "at": 551,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 551,
+     "ms": 2946
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3497,
+     "ms": 11
+    },
+    {
+     "name": "format",
+     "at": 3508,
+     "ms": 352
+    },
+    {
+     "name": "companion",
+     "at": 3509,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 3860,
+     "ms": 4348
+    },
+    {
+     "name": "output-check",
+     "at": 8211,
+     "ms": 126
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 150
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 549
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2225
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2659
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3427
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3855
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 8208
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 8324
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 14,
+    "search_ms": 2870,
+    "total_ms": 2884,
+    "claims_ms": 1653,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1653,
+      "qkeyword": 1663,
+      "qconcept": 1696,
+      "qhype": 1706,
+      "phrase": 1722,
+      "canon": 1778,
+      "doctrinal_hype": 1802,
+      "doctrinal": 1855,
+      "merge": 132,
+      "total": 1987
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 1652,
+      "qkeyword": 1662,
+      "phrase": 2130,
+      "qhype": 2130,
+      "qconcept": 2344,
+      "canon": 2352,
+      "merge": 22,
+      "total": 2374
+     }
+    ],
+    "passages_ms": 2375,
+    "resolve_ms": 489
+   },
+   "usd": 0.00433,
+   "latency_ms": 8337,
+   "wall_ms": 10125,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nPreparing a local talk is such a wonderful endeavor, and it is a joy to help look into this with you.\n\nWhen your friend mentions the idea that the Manifestations are \"one soul and the same person,\" ([The Kitáb-i-Íqán](https://oceanlibrary.com/kitab-i-i"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#04",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "wat quotes or works from shoghi effendi elaborate on the bahai theme that all manifestations of god r regarded as one soul and the same persn"
+    }
+   ],
+   "ms": 7556,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": false,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2710
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "retrieval",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "range_of_voices",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 111
+    },
+    {
+     "name": "plan",
+     "at": 111,
+     "ms": 128
+    },
+    {
+     "name": "phrases",
+     "at": 239,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 240,
+     "ms": 2581
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2822,
+     "ms": 105
+    },
+    {
+     "name": "format",
+     "at": 2927,
+     "ms": 1680
+    },
+    {
+     "name": "companion",
+     "at": 2928,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 4607,
+     "ms": 2114
+    },
+    {
+     "name": "output-check",
+     "at": 6725,
+     "ms": 489
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 109
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 238
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1602
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2012
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2688
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6721
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7210
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 8,
+    "search_ms": 2450,
+    "total_ms": 2458,
+    "claims_ms": 1343,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 1343,
+      "phrase": 1507,
+      "canon": 1525,
+      "merge": 54,
+      "total": 1579
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1343,
+      "qkeyword": 1360,
+      "qhype": 1426,
+      "qconcept": 1459,
+      "phrase": 1495,
+      "canon": 1582,
+      "doctrinal_hype": 1601,
+      "doctrinal": 1654,
+      "merge": 105,
+      "total": 1759
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 1343,
+      "qkeyword": 1360,
+      "phrase": 1779,
+      "qhype": 1780,
+      "qconcept": 1999,
+      "canon": 2007,
+      "merge": 20,
+      "total": 2027
+     }
+    ],
+    "passages_ms": 2027,
+    "resolve_ms": 414
+   },
+   "usd": 0.00365,
+   "latency_ms": 7214,
+   "wall_ms": 7556,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nThe passages provided from the library do not contain works or statements written by Shoghi Effendi elaborating on this theme; the texts available here are from Bahá’u’lláh, the Báb, and ‘Abdu’l-Bahá. However, your question reaches for something deeply"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#06",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I'm reading through some of the Guardian's letters for a study group this month."
+    },
+    {
+     "role": "assistant",
+     "content": "That sounds like a rewarding project. Are you focusing on a particular period of his writings, or on a specific theme?"
+    },
+    {
+     "role": "user",
+     "content": "Mostly themes. Can you find quotes or works from Shoghi Effendi that elaborate on the theme that all manifestations of God are regarded as one soul and the same person?"
+    }
+   ],
+   "ms": 8004,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3267
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 31
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 386
+    },
+    {
+     "name": "plan",
+     "at": 386,
+     "ms": 200
+    },
+    {
+     "name": "phrases",
+     "at": 586,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 586,
+     "ms": 3067
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3653,
+     "ms": 75
+    },
+    {
+     "name": "format",
+     "at": 3728,
+     "ms": 149
+    },
+    {
+     "name": "companion",
+     "at": 3729,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 3877,
+     "ms": 2531
+    },
+    {
+     "name": "output-check",
+     "at": 6411,
+     "ms": 97
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 377
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 575
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1527
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2952
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3543
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3868
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6408
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6507
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 8,
+    "search_ms": 2966,
+    "total_ms": 2975,
+    "claims_ms": 923,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 923,
+      "qconcept": 963,
+      "qhype": 966,
+      "qkeyword": 967,
+      "phrase": 976,
+      "canon": 1031,
+      "doctrinal_hype": 1059,
+      "doctrinal": 1104,
+      "merge": 109,
+      "total": 1213
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 923,
+      "qkeyword": 939,
+      "phrase": 2373,
+      "qhype": 2374,
+      "qconcept": 2641,
+      "canon": 2647,
+      "merge": 8,
+      "total": 2655
+     }
+    ],
+    "passages_ms": 2655,
+    "resolve_ms": 309
+   },
+   "usd": 0.00411,
+   "latency_ms": 6508,
+   "wall_ms": 8004,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nIt is lovely to hear from you again as you continue your study group this month. While the records available here do not contain specific letters written by Shoghi Effendi dedicated to this exact theme, the foundational statement he translated from *Th"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#07",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "non_native",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Please, I am looking for what Shoghi Effendi has written which explain more about the belief that all the manifestations of God is considered as one soul and same person. Which quotes or works can you find for me?"
+    }
+   ],
+   "ms": 8295,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2541
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 31
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 150
+    },
+    {
+     "name": "plan",
+     "at": 150,
+     "ms": 149
+    },
+    {
+     "name": "phrases",
+     "at": 299,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 299,
+     "ms": 2392
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2692,
+     "ms": 69
+    },
+    {
+     "name": "format",
+     "at": 2761,
+     "ms": 105
+    },
+    {
+     "name": "companion",
+     "at": 2762,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 2866,
+     "ms": 2443
+    },
+    {
+     "name": "output-check",
+     "at": 5312,
+     "ms": 101
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 141
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 288
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1429
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1939
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2569
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2866
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5309
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5412
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 6,
+    "search_ms": 2275,
+    "total_ms": 2281,
+    "claims_ms": 1119,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1118,
+      "qkeyword": 1126,
+      "qconcept": 1166,
+      "qhype": 1175,
+      "phrase": 1191,
+      "canon": 1205,
+      "doctrinal_hype": 1229,
+      "doctrinal": 1276,
+      "merge": 127,
+      "total": 1403
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 1118,
+      "qkeyword": 1126,
+      "phrase": 1662,
+      "qhype": 1662,
+      "qconcept": 1910,
+      "canon": 1916,
+      "merge": 10,
+      "total": 1926
+     }
+    ],
+    "passages_ms": 1927,
+    "resolve_ms": 346
+   },
+   "usd": 0.00385,
+   "latency_ms": 5414,
+   "wall_ms": 8295,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question. While the specific phrase you mentioned—that the Manifestations of God are considered one soul and the same person—is articulated most directly in the writings of Bahá’u’lláh Himself (such as in *The Kitáb-i-Íqán* and"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#09",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "source_of",
+   "messages": [
+    {
+     "role": "user",
+     "content": "What is the source of the Guardian's statement that all Manifestations of God are one soul and the same person, and what other works of Shoghi Effendi expand on this?"
+    }
+   ],
+   "ms": 5308,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "source",
+   "strategyOk": false,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 3559
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": false,
+   "stage": "strategy",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 37
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 172
+    },
+    {
+     "name": "plan",
+     "at": 172,
+     "ms": 176
+    },
+    {
+     "name": "phrases",
+     "at": 348,
+     "ms": 1
+    },
+    {
+     "name": "source-hunt",
+     "at": 349,
+     "ms": 3371
+    },
+    {
+     "name": "output-check",
+     "at": 3732,
+     "ms": 108
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 171
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 347
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 522
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 1826
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2123
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 2497
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2906
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 2999
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3125
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3285
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3453
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3573
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 3718
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3839
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00143,
+   "latency_ms": 3840,
+   "wall_ms": 5308,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*The World Order of Bahá’u’lláh*](https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi/?paraId=para_291&selectionString=shoghi_effendi_world_order_of_baha_u_llah_ocean_en_ak.932~shoghi_effendi_world_order_o"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#08",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "shoghi effendi manifestations one soul same person quotes"
+    }
+   ],
+   "ms": 10254,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3372
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 32
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 114
+    },
+    {
+     "name": "plan",
+     "at": 115,
+     "ms": 168
+    },
+    {
+     "name": "phrases",
+     "at": 283,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 284,
+     "ms": 3203
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3487,
+     "ms": 77
+    },
+    {
+     "name": "companion",
+     "at": 3565,
+     "ms": 4
+    },
+    {
+     "name": "format",
+     "at": 3565,
+     "ms": 283
+    },
+    {
+     "name": "craft",
+     "at": 3848,
+     "ms": 3731
+    },
+    {
+     "name": "output-check",
+     "at": 7585,
+     "ms": 123
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 113
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 281
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1127
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3409
+    },
+    {
+     "model": "clef",
+     "caller": "system1:search-plan:shadow",
+     "at": 3572
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3847
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7579
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7707
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 4,
+    "search_ms": 3125,
+    "total_ms": 3129,
+    "claims_ms": 395,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 395,
+      "qkeyword": 421,
+      "phrase": 1400,
+      "canon": 1597,
+      "merge": 113,
+      "total": 1710
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 395,
+      "qkeyword": 421,
+      "qconcept": 1034,
+      "qhype": 1300,
+      "phrase": 1405,
+      "canon": 1712,
+      "doctrinal_hype": 2420,
+      "doctrinal": 2421,
+      "merge": 67,
+      "total": 2488
+     }
+    ],
+    "passages_ms": 2489,
+    "resolve_ms": 634
+   },
+   "usd": 0.00503,
+   "latency_ms": 7708,
+   "wall_ms": 10254,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is a quiet joy to look into this with you. The words you are searching for—that the Manifestations of God are regarded as \"one soul and the same person\" ([The Kitáb-i-Íqán](https://oceanlibrary.com/kitab-i-iqan_bahaullah/?paraId=para_173&selec"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#10",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "misquoted",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I recall Shoghi Effendi saying the Manifestations are all 'one soul and the same person' — can you find more quotes or works where he elaborates on this?"
+    }
+   ],
+   "ms": 7763,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": false,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2415
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "retrieval",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 33
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 118
+    },
+    {
+     "name": "plan",
+     "at": 118,
+     "ms": 192
+    },
+    {
+     "name": "phrases",
+     "at": 310,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 311,
+     "ms": 2221
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2533,
+     "ms": 84
+    },
+    {
+     "name": "format",
+     "at": 2618,
+     "ms": 100
+    },
+    {
+     "name": "companion",
+     "at": 2619,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 2718,
+     "ms": 2952
+    },
+    {
+     "name": "output-check",
+     "at": 5675,
+     "ms": 307
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 117
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 309
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1174
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1533
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2120
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2718
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5670
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5982
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 10,
+    "search_ms": 2095,
+    "total_ms": 2105,
+    "claims_ms": 848,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 847,
+      "qkeyword": 854,
+      "qconcept": 902,
+      "qhype": 926,
+      "phrase": 932,
+      "canon": 988,
+      "doctrinal_hype": 1015,
+      "doctrinal": 1067,
+      "merge": 136,
+      "total": 1203
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 847,
+      "qkeyword": 854,
+      "qhype": 1225,
+      "phrase": 1225,
+      "qconcept": 1436,
+      "canon": 1445,
+      "merge": 17,
+      "total": 1462
+     }
+    ],
+    "passages_ms": 1463,
+    "resolve_ms": 628
+   },
+   "usd": 0.00453,
+   "latency_ms": 5982,
+   "wall_ms": 7763,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is a joy to follow that thought with you. The phrasing you recall—that the Manifestations of God are \"one soul and the same person\" ([The Kitáb-i-Íqán](https://oceanlibrary.com/kitab-i-iqan_bahaullah/?paraId=para_173&selectionString=kitab-i-iq"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#11",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "fragment",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Shoghi Effendi on the oneness of all Manifestations of God: one soul and the same person. Quotes or works?"
+    }
+   ],
+   "ms": 5099,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": false,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1876
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "retrieval",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 134
+    },
+    {
+     "name": "plan",
+     "at": 135,
+     "ms": 197
+    },
+    {
+     "name": "phrases",
+     "at": 332,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 333,
+     "ms": 1678
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2011,
+     "ms": 96
+    },
+    {
+     "name": "format",
+     "at": 2107,
+     "ms": 116
+    },
+    {
+     "name": "companion",
+     "at": 2108,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 2223,
+     "ms": 2049
+    },
+    {
+     "name": "output-check",
+     "at": 4275,
+     "ms": 118
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 132
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 331
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1015
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1353
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1921
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2222
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4272
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4392
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 5,
+    "search_ms": 1587,
+    "total_ms": 1592,
+    "claims_ms": 669,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 669,
+      "qkeyword": 679,
+      "qconcept": 714,
+      "qhype": 727,
+      "phrase": 736,
+      "canon": 793,
+      "doctrinal_hype": 814,
+      "doctrinal": 868,
+      "merge": 142,
+      "total": 1010
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 669,
+      "qkeyword": 679,
+      "phrase": 1028,
+      "qhype": 1028,
+      "qconcept": 1233,
+      "canon": 1242,
+      "merge": 18,
+      "total": 1260
+     }
+    ],
+    "passages_ms": 1260,
+    "resolve_ms": 323
+   },
+   "usd": 0.00325,
+   "latency_ms": 4394,
+   "wall_ms": 5099,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello, friend,\n\nThank you for your question about how Shoghi Effendi and the sacred texts present the oneness of the Manifestations of God.\n\nTo turn directly to the writings themselves, the specific phrasing you are looking for—that the Messengers \"are regarde"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#13",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "guardian writings all manifestations one soul same person elaborate"
+    }
+   ],
+   "ms": 9426,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3358
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 141
+    },
+    {
+     "name": "plan",
+     "at": 142,
+     "ms": 124
+    },
+    {
+     "name": "phrases",
+     "at": 266,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 266,
+     "ms": 3234
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3500,
+     "ms": 182
+    },
+    {
+     "name": "format",
+     "at": 3682,
+     "ms": 128
+    },
+    {
+     "name": "companion",
+     "at": 3683,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 3810,
+     "ms": 3061
+    },
+    {
+     "name": "output-check",
+     "at": 6877,
+     "ms": 100
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 140
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 266
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 733
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3404
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3809
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6871
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6976
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 4,
+    "search_ms": 3141,
+    "total_ms": 3145,
+    "claims_ms": 459,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 459,
+      "qkeyword": 473,
+      "phrase": 1218,
+      "canon": 1436,
+      "merge": 669,
+      "total": 2105
+     },
+     {
+      "filters": [],
+      "concept": 459,
+      "qkeyword": 473,
+      "qconcept": 1115,
+      "qhype": 1141,
+      "phrase": 2115,
+      "canon": 2130,
+      "merge": 619,
+      "total": 2749
+     }
+    ],
+    "passages_ms": 2749,
+    "resolve_ms": 387
+   },
+   "usd": 0.00408,
+   "latency_ms": 6978,
+   "wall_ms": 9426,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nTo your question about whether the Manifestations are the same person, Bahá'u'lláh explains in *Gleanings from the Writings of Bahá'u'lláh*:\n\n> [\"Inasmuch as these Birds of the celestial Throne are all sent down from the heaven of the Will of God"
+  },
+  {
+   "id": "th-se-manifestations-one-soul#12",
+   "fixture": "th-se-manifestations-one-soul",
+   "type": "author_theme",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I wonder if you could point me to passages by Shoghi Effendi that expand on the teaching that all the Manifestations of God are regarded as one soul and the same person."
+    }
+   ],
+   "ms": 10175,
+   "expected_strategy": [
+    "topic",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3230
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "range_of_voices",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 34
+    },
+    {
+     "name": "triage",
+     "at": 1,
+     "ms": 117
+    },
+    {
+     "name": "plan",
+     "at": 119,
+     "ms": 168
+    },
+    {
+     "name": "phrases",
+     "at": 287,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 288,
+     "ms": 3061
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3350,
+     "ms": 82
+    },
+    {
+     "name": "format",
+     "at": 3433,
+     "ms": 679
+    },
+    {
+     "name": "companion",
+     "at": 3434,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 4112,
+     "ms": 3428
+    },
+    {
+     "name": "output-check",
+     "at": 7545,
+     "ms": 236
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 116
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 286
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1740
+    },
+    {
+     "model": "clef",
+     "caller": "system1:anis-triage:shadow",
+     "at": 1743
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2466
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3232
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7540
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7780
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 16,
+    "search_ms": 2937,
+    "total_ms": 2953,
+    "claims_ms": 1420,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 1420,
+      "qkeyword": 1494,
+      "phrase": 2169,
+      "canon": 2208,
+      "merge": 111,
+      "total": 2319
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1420,
+      "qkeyword": 1495,
+      "qconcept": 1495,
+      "qhype": 1507,
+      "phrase": 1562,
+      "canon": 2164,
+      "doctrinal_hype": 2185,
+      "doctrinal": 2325,
+      "merge": 86,
+      "total": 2411
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 1420,
+      "qkeyword": 1442,
+      "phrase": 2323,
+      "qhype": 2323,
+      "qconcept": 2415,
+      "canon": 2421,
+      "merge": 10,
+      "total": 2431
+     }
+    ],
+    "passages_ms": 2431,
+    "resolve_ms": 497
+   },
+   "usd": 0.00472,
+   "latency_ms": 7781,
+   "wall_ms": 10175,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nI can't find passages directly by Shoghi Effendi that expand on this specific teaching in the texts currently available to me; the clear statements on the Manifestations being regarded as \"one soul and the same person\" come from the pen of Bahá'u'lláh "
+  },
+  {
+   "id": "px-iqan-return-elijah#01",
+   "fixture": "px-iqan-return-elijah",
+   "type": "find_work",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hello Anís. I'm working on the Kitáb-i-Íqán's treatment of the \"return\" (raj'a) of the Prophets, and I'd like to know exactly where Bahá'u'lláh addresses it, and in what terms he explains Elijah's return in John the Baptist. Could you point me to the specific passage and tell me which translation you're quoting from?"
+    }
+   ],
+   "ms": 10684,
+   "expected_strategy": [
+    "topic",
+    "quote",
+    "fact",
+    "lookup",
+    "source",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3576
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 64
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 701
+    },
+    {
+     "name": "plan",
+     "at": 701,
+     "ms": 533
+    },
+    {
+     "name": "phrases",
+     "at": 1234,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1235,
+     "ms": 3042
+    },
+    {
+     "name": "upgrade-links",
+     "at": 4277,
+     "ms": 293
+    },
+    {
+     "name": "format",
+     "at": 4570,
+     "ms": 100
+    },
+    {
+     "name": "companion",
+     "at": 4571,
+     "ms": 54
+    },
+    {
+     "name": "craft",
+     "at": 4670,
+     "ms": 1879
+    },
+    {
+     "name": "output-check",
+     "at": 6551,
+     "ms": 487
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1233
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2959
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 3273
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4155
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4669
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6549
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7017
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 79,
+    "search_ms": 2870,
+    "total_ms": 2949,
+    "claims_ms": 1640,
+    "engine": [
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "concept": 1639,
+      "qkeyword": 1760,
+      "phrase": 2157,
+      "canon": 2246,
+      "merge": 93,
+      "total": 2339
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1640,
+      "qkeyword": 1761,
+      "phrase": 2218,
+      "canon": 2347,
+      "doctrinal": 2408,
+      "doctrinal_hype": 2438,
+      "merge": 75,
+      "total": 2513
+     }
+    ],
+    "passages_ms": 2513,
+    "evidence_ms": 0,
+    "resolve_ms": 352
+   },
+   "usd": 0.00273,
+   "latency_ms": 7038,
+   "wall_ms": 10684,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello! It is wonderful to hear from you as you dive into the *Kitáb-i-Íqán*.\n\nBahá'u'lláh addresses the \"return\" (*raj'a*) of the Prophets primarily in the second part of the *Kitáb-i-Íqán*, where He interprets biblical prophecies concerning the return of figu"
+  },
+  {
+   "id": "px-iqan-return-elijah#02",
+   "fixture": "px-iqan-return-elijah",
+   "type": "find_work",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Could you point me to the passage in the Kitáb-i-Íqán where Bahá'u'lláh explains that John the Baptist was the return of Elijah?"
+    }
+   ],
+   "ms": 10045,
+   "expected_strategy": [
+    "topic",
+    "quote",
+    "fact",
+    "lookup",
+    "source",
+    "position"
+   ],
+   "shape": "quote",
+   "strategyOk": true,
+   "phrases": [
+    "the return of Elijah",
+    "John the Baptist was the return of Elijah",
+    "Kitáb-i-Íqán",
+    "Bahá'u'lláh",
+    "John the Baptist",
+    "Elijah"
+   ],
+   "phrasesOk": true,
+   "phraseWrapper": false,
+   "phraseVia": "haiku",
+   "phraseExact": null,
+   "phraseNames": false,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "phrases": 1617,
+    "retrieval": 6499
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 1,
+     "ms": 33
+    },
+    {
+     "name": "triage",
+     "at": 1,
+     "ms": 278
+    },
+    {
+     "name": "plan",
+     "at": 279,
+     "ms": 1744
+    },
+    {
+     "name": "phrases",
+     "at": 2023,
+     "ms": 1617,
+     "via": "haiku"
+    },
+    {
+     "name": "search",
+     "at": 3640,
+     "ms": 3138
+    },
+    {
+     "name": "upgrade-links",
+     "at": 6779,
+     "ms": 290
+    },
+    {
+     "name": "format",
+     "at": 7069,
+     "ms": 101
+    },
+    {
+     "name": "companion",
+     "at": 7070,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 7170,
+     "ms": 2155
+    },
+    {
+     "name": "output-check",
+     "at": 9327,
+     "ms": 379
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 277
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 2022
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2377
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 3640
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 3906
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 3957
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 6698
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 7170
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 9325
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 9418
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 6,
+    "search_ms": 3025,
+    "total_ms": 3060,
+    "claims_ms": 5,
+    "engine": [
+     {
+      "filters": [],
+      "qkeyword": 30,
+      "merge": 2749,
+      "total": 2779
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "qkeyword": 30,
+      "merge": 2765,
+      "total": 2795
+     },
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "qkeyword": 36,
+      "merge": 2781,
+      "total": 2817
+     },
+     {
+      "filters": [],
+      "qkeyword": 30,
+      "merge": 2802,
+      "total": 2832
+     }
+    ],
+    "passages_ms": 2817,
+    "resolve_ms": 192
+   },
+   "usd": 0.00288,
+   "latency_ms": 9706,
+   "wall_ms": 10045,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question. You are looking for the place in the *Kitáb-i-Íqán* where Bahá'u'lláh discusses John the Baptist as the return of Elijah.\n\nWhen we look into the text of the *Kitáb-i-Íqán*, we find that the discussion opens precisely "
+  },
+  {
+   "id": "px-iqan-quote-elijah-followup#01",
+   "fixture": "px-iqan-quote-elijah-followup",
+   "type": "exact_phrase",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hello Anís. I'm working on the Kitáb-i-Íqán's treatment of the \"return\" (raj'a) of the Prophets, and I'd like to know exactly where Bahá'u'lláh addresses it, and in what terms he explains Elijah's return in John the Baptist. Could you point me to the specific passage and tell me which translation you're quoting from?"
+    },
+    {
+     "role": "assistant",
+     "content": "I can't find that specific passage on the *Kitáb-i-Íqán* or Elijah's return in the sources I have here. The library's records for this search do not include the text of the *Íqán* itself, though they do touch on related themes elsewhere.\n\nFor instance, addressing the general subject of return, we find this statement:\n\n> [\"in every subsequent Revelation, the return of the former Revelation is a fact, the truth of which is firmly established. Inasmuch as the return of the Prophets of God, as attested by verses and traditions, hath been conclusively demonstrated, the return of their chosen ones also is therefore definitely proven. This return is too manifest in itself to require any evidence or proof.\" KI 154](https://oceanlibrary.com/divine-philosophy_abdul-baha)\n> — *Divine Philosophy* by Steven Phelps (quoting Bahá’u’lláh)\n\nThis passage — categorized here as exposition quoting scripture — highlights Bahá’u’lláh's teaching that the return of past Revelations and their central figures is an established reality in each new dispensation.\n\nTo give you the exact location and translation details for the *Íqán*'s discussion of Elijah and John the Baptist, you would want to look directly at Shoghi Effendi's English translation of the *Kitáb-i-Íqán* (published by the Bahá'í Publishing Trust), where Bahá'u'lláh treats the Gospel questions surrounding John's identity at length in the early sections of the book."
+    },
+    {
+     "role": "user",
+     "content": "That passage you quoted is tagged \"KI 154\" and attributed to Phelps's *Divine Philosophy*, so is that pagination from Shoghi Effendi's translation or from some other edition? I also notice it speaks of the return of \"chosen ones,\" which sounds like it comes from the later part of the book, not the Gospel material you place \"in the early sections.\""
+    },
+    {
+     "role": "assistant",
+     "content": "This does not appear in the Christian scripture in the library; the passage that holds these words is by St. Augustine, tr. Marcus Dods. These are the words of St. Augustine, tr. Marcus Dods, from [*The City of God Volume II*](https://www.gutenberg.org/ebooks/45305#:~:text=Some%20Christians%2C%20who%20have,of%20their%20own%20mouths). The passage reads: «Some Christians, who have a liking for Plato on account of his magnificent style and the truths which he now and then uttered, say that he even held an opinion similar to our own regarding the resurrection of the dead». I could not confirm the original tablet for this passage."
+    },
+    {
+     "role": "user",
+     "content": "That Augustine passage on Plato and the resurrection doesn't answer what I asked about \"KI 154\" and Phelps, so let me set it aside. Can you quote the exact sentence in the Íqán where Bahá'u'lláh says John the Baptist was Elijah, with the Arabic or Persian wording of \"return\" (raj'a) as it appears there and the paragraph number in Shoghi Effendi's translation?"
+    }
+   ],
+   "ms": 10506,
+   "expected_strategy": [
+    "topic",
+    "quote",
+    "fact",
+    "lookup",
+    "source",
+    "position"
+   ],
+   "shape": "source",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 10025
+   },
+   "cite_ok": false,
+   "link_ok": false,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "source",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 68
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 128
+    },
+    {
+     "name": "plan",
+     "at": 129,
+     "ms": 802
+    },
+    {
+     "name": "phrases",
+     "at": 931,
+     "ms": 1562,
+     "via": "haiku"
+    },
+    {
+     "name": "original",
+     "at": 932,
+     "ms": 7859
+    },
+    {
+     "name": "source-hunt",
+     "at": 933,
+     "ms": 9221
+    },
+    {
+     "name": "output-check",
+     "at": 10154,
+     "ms": 103
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 128
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 324
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 960
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2305
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2306
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2307
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2308
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 2492
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 8797
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-holds",
+     "at": 9222
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 9397
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 9512
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 9629
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 9773
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 9886
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 10007
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:sourcehunt-span",
+     "at": 10151
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 10256
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00151,
+   "latency_ms": 10257,
+   "wall_ms": 10506,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "reply_head": "These are the words of Bahá’u’lláh, from [*John the Baptist and Bahá’í Prophetic Categories: An Atypical Paradigm*](https://bahai-library.com/mclean_john_baptist#:~:text=I%20swear%20by%20God,Jesus%20.%20.%20). The passage reads: «‘I swear by God that the Prima"
+  },
+  {
+   "id": "px-iqan-vs-reincarnation-compare#01",
+   "fixture": "px-iqan-vs-reincarnation-compare",
+   "type": "compare",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hello Anís. I'm working on the Kitáb-i-Íqán's treatment of the \"return\" (raj'a) of the Prophets, and I'd like to know exactly where Bahá'u'lláh addresses it, and in what terms he explains Elijah's return in John the Baptist. Could you point me to the specific passage and tell me which translation you're quoting from?"
+    },
+    {
+     "role": "assistant",
+     "content": "I can't find that specific passage on the *Kitáb-i-Íqán* or Elijah's return in the sources I have here. The library's records for this search do not include the text of the *Íqán* itself, though they do touch on related themes elsewhere.\n\nFor instance, addressing the general subject of return, we find this statement:\n\n> [\"in every subsequent Revelation, the return of the former Revelation is a fact, the truth of which is firmly established. Inasmuch as the return of the Prophets of God, as attested by verses and traditions, hath been conclusively demonstrated, the return of their chosen ones also is therefore definitely proven. This return is too manifest in itself to require any evidence or proof.\" KI 154](https://oceanlibrary.com/divine-philosophy_abdul-baha)\n> — *Divine Philosophy* by Steven Phelps (quoting Bahá’u’lláh)\n\nThis passage — categorized here as exposition quoting scripture — highlights Bahá’u’lláh's teaching that the return of past Revelations and their central figures is an established reality in each new dispensation.\n\nTo give you the exact location and translation details for the *Íqán*'s discussion of Elijah and John the Baptist, you would want to look directly at Shoghi Effendi's English translation of the *Kitáb-i-Íqán* (published by the Bahá'í Publishing Trust), where Bahá'u'lláh treats the Gospel questions surrounding John's identity at length in the early sections of the book."
+    },
+    {
+     "role": "user",
+     "content": "That passage you quoted is tagged \"KI 154\" and attributed to Phelps's *Divine Philosophy*, so is that pagination from Shoghi Effendi's translation or from some other edition? I also notice it speaks of the return of \"chosen ones,\" which sounds like it comes from the later part of the book, not the Gospel material you place \"in the early sections.\""
+    },
+    {
+     "role": "assistant",
+     "content": "This does not appear in the Christian scripture in the library; the passage that holds these words is by St. Augustine, tr. Marcus Dods. These are the words of St. Augustine, tr. Marcus Dods, from [*The City of God Volume II*](https://www.gutenberg.org/ebooks/45305#:~:text=Some%20Christians%2C%20who%20have,of%20their%20own%20mouths). The passage reads: «Some Christians, who have a liking for Plato on account of his magnificent style and the truths which he now and then uttered, say that he even held an opinion similar to our own regarding the resurrection of the dead». I could not confirm the original tablet for this passage."
+    },
+    {
+     "role": "user",
+     "content": "That Augustine passage on Plato and the resurrection doesn't answer what I asked about \"KI 154\" and Phelps, so let me set it aside. Can you quote the exact sentence in the Íqán where Bahá'u'lláh says John the Baptist was Elijah, with the Arabic or Persian wording of \"return\" (raj'a) as it appears there and the paragraph number in Shoghi Effendi's translation?"
+    },
+    {
+     "role": "assistant",
+     "content": "These are the words of Bahá’u’lláh, from [*John the Baptist and Bahá’í Prophetic Categories: An Atypical Paradigm*](https://bahai-library.com/mclean_john_baptist#:~:text=I%20swear%20by%20God,Jesus%20.%20.%20). The passage reads: «‘I swear by God that the Primal Point [the Bab] and this most luminous, most wondrous Manifestation [Baha’u’llah] are exactly like (ayn be ayn) the appearance of John, son of Zachariah, and the Spirit of God [Ruhu’llah— Jesus». I could not confirm the original tablet for this passage."
+    },
+    {
+     "role": "user",
+     "content": "In that last quotation you give the phrase \"exactly like (ayn be ayn)\" — can you explain what 'ayn' means in that construction, and whether Bahá'u'lláh uses it elsewhere to describe the relation between Prophets, since it seems to be a different claim from a simple 'return' (raj'a)?"
+    },
+    {
+     "role": "assistant",
+     "content": "The term you are looking at is the Arabic word *‘ayn* (عین), which literally means an eye, a fountain or spring, or the essence and very self of a thing. As the passages use it—and as Bahá’u’lláh explains the deeper meaning of “return” (*raj‘a*)—it points not to physical reincarnation, but to the identity of divine station and attributes.\n\nIn *The Kitáb-i-Íqán*, Bahá’u’lláh describes how the companions and followers of a new Manifestation are considered the \"return\" of those from a former Dispensation, existing \"in name, in reality, in deeds, in words, and in rank\" ([*The Kitáb-i-Íqán*](https://oceanlibrary.com/kitab-i-iqan_bahaullah/?paraId=para_181&selectionString=kitab-i-iqan-prod-version_en_7t.0~kitab-i-iqan-prod-version_en_7t.646)). Similarly, when speaking of the unity of the Prophets themselves, Bahá’u’lláh writes:\n\n> It is clear and evident to thee that all the Prophets are the Temples of the Cause of God, Who have appeared clothed in divers attire. If thou wilt observe with discriminating eyes, thou wilt behold Them all abiding in the same tabernacle, soaring in the same heaven, seated upon the same throne, uttering the same speech, and proclaiming the same Faith. — *Gleanings from the Writings of Bahá’u’lláh*\n\nIn authorized interpretation, Shoghi Effendi explains that such an identification means a Manifestation or holy soul identifies \"His Spirit with these Holy Souls gone before; that does not, of course, make Him in any way their reincarnation\" ([*Lights of Guidance*](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=In%20the%20prayer%20mentioned,%7Bid%3D%22para6324%22%20ilmid%3D%22bl44a%22%20type%3D%22par%22%20language%3D%22en%22%7D) — quoted in a work by Helen Hornby)."
+    },
+    {
+     "role": "user",
+     "content": "You say the Íqán describes followers as the \"return\" of earlier ones \"in name, in reality, in deeds, in words, and in rank\"; how does that compare with the Shoghi Effendi statement from *Lights of Guidance* that a Manifestation is \"in no way their reincarnation,\" and with the Augustine/Plato material on resurrection you cited earlier?"
+    }
+   ],
+   "ms": 13055,
+   "expected_strategy": [
+    "topic",
+    "compare",
+    "position"
+   ],
+   "shape": "topic",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 8157
+   },
+   "cite_ok": true,
+   "link_ok": false,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "answer",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 677
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 704
+    },
+    {
+     "name": "plan",
+     "at": 704,
+     "ms": 276
+    },
+    {
+     "name": "phrases",
+     "at": 980,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 980,
+     "ms": 7881
+    },
+    {
+     "name": "upgrade-links",
+     "at": 8862,
+     "ms": 6
+    },
+    {
+     "name": "format",
+     "at": 8868,
+     "ms": 220
+    },
+    {
+     "name": "companion",
+     "at": 8869,
+     "ms": 34
+    },
+    {
+     "name": "craft",
+     "at": 9088,
+     "ms": 2487
+    },
+    {
+     "name": "output-check",
+     "at": 11578,
+     "ms": 1178
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 847
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1995
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 9087
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 11575
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 11691
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 28,
+    "search_ms": 7724,
+    "total_ms": 7753,
+    "claims_ms": 978,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 978,
+      "qkeyword": 990,
+      "merge": 5194,
+      "total": 6184
+     }
+    ],
+    "passages_ms": 6184,
+    "resolve_ms": 1540
+   },
+   "usd": 0.00308,
+   "latency_ms": 12757,
+   "wall_ms": 13055,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello, friend,\n\nThank you for bringing these strands together. It is a striking journey to trace how different traditions conceive of the soul's continuation, identity, and return, and looking closely at the texts reveals how distinct their underlying framewor"
+  },
+  {
+   "id": "px-insaf-justice-rendering#01",
+   "fixture": "px-insaf-justice-rendering",
+   "type": "define_term",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hello Anís. I'm trying to pin down the exact source of the saying \"The best beloved of all things in My sight is Justice\" — which work is it from, who is the speaker, and is there an original-language text (Arabic or Persian) behind the standard English rendering?"
+    },
+    {
+     "role": "assistant",
+     "content": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved of all things in My sight is Justice». The original is in Arabic, in [*Kalimat-i-Maknunih (Hidden Words - Arabic)*](https://oceanoflights.org/bahaullah-pub01-02-ar/#(%D8%A3%D9%8E%D8%AD%D9%8E%D8%A8%D9%8F%D9%91)(%D8%A7%D9%84%D8%A5%D9%86%D9%92%D8%B5%D8%A7%D9%81%D9%8F)), where it reads «أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ». Its entry in the Phelps Inventory is [Phelps Inventory BH00386](https://portlandiator.github.io/PI_browser/?id=BH00386). It is also quoted in [*Fountain of Wisdom : Tablets of Bahá’u’lláh*](https://oceanlibrary.com/fountain-of-wisdom_bahaullah/?paraId=para_106&selectionString=tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.14~tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.57), [*Bahá’u’lláh and the New Era*](https://oceanlibrary.com/bahaullah-and-the-new-era_john-esslemont/?paraId=para_777&selectionString=baha_u_llah_and_the_new_era_bahai_ocean_en-blln.13~baha_u_llah_and_the_new_era_bahai_ocean_en-blln.56) and [*Preliminary Analysis of the Bahá’í Concept of Mental Health*](https://bahai-library.com/herzog_bahai_mental_health#:~:text=The%20best%20beloved%20of,My%20sight%20is%20Justice)."
+    },
+    {
+     "role": "user",
+     "content": "In what you just quoted, the Arabic reads «الإنْصاف» (al-inṣāf), yet the English gives \"Justice\" — is that the rendering Shoghi Effendi chose, and does the passage carry a verse number in the Arabic Hidden Words?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, this passage does carry a numbering in the Arabic text. In [*The Hidden Words*](https://ctai.info/models/the-hidden-words/3/), it is explicitly numbered as the second of the Arabic passages.\n\n**How Shoghi Effendi rendered الإنْصاف in 13 passages:** fairness (3) · equity (2) · justice (2) · fair-minded (2) · equitably / equitable (2) · just and fair-minded (1) · ustice (1)\n\n| Original | Shoghi Effendi’s English | Source |\n|---|---|---|\n| … العدل و هيکلی بطراز **الانصاف** انّک انت مالک المواهب … | … temple with the ornament **of equity**. Thou, verily, art … | [Epistle to the Son of the Wolf 15](https://ctai.info/models/epistle-to-the-son-of-the-wolf/15/) |\n| … ان يجعلک فاتح باب **الانصاف** و يظهر بک امره … | … will open the door **of justice**, and reveal through … | [Epistle to the Son of the Wolf 152](https://ctai.info/models/epistle-to-the-son-of-the-wolf/152/) |\n| … لعمري من شرب رحيق **الإنصاف** من أيادي الألطاف إنّه … | … the choice wine of **fairness** from the hands of … | [Gleanings CLV.4](https://ctai.info/models/gleanings/694/) |\n| … يؤيّدک علی العدل و **الانصاف** و يعرّفک ما کان … | … to be just and **fair-minded**, and to acquaint … | [Epistle to the Son of the Wolf 12](https://ctai.info/models/epistle-to-the-son-of-the-wolf/12/) |\n| … السَّمآءِ بِأَنْ تُؤَيِّدَهُمْ عَلَى **الإِنْصَافِ** فِي أَمْرِكَ، لَعَلَّ يَجِدُونَ … | … aid them to act **equitably** in Thy Cause, that … | [Prayers and Meditations CVIII.6](https://ctai.info/models/prayers-and-meditations/466/) |\n| … ﴾ أَحَبُّ الأَشْيَاءِ عِنْدِي **الإنْصافُ.** لَا تَرْغَبْ عَنْهُ إِنْ … | … in My sight is **Justice**; turn not away … | [The Hidden Words 5](https://ctai.info/models/the-hidden-words/3/) |\n| … العالمین خذوا العدل و **الإنصاف** و دعوا ما أمرکم … | … ye to justice and **fairness**, and turn away … | [Gleanings CLXIV.1](https://ctai.info/models/gleanings/719/) |\n| … بذلک مظاهر العدل و **الانصاف** و لکنّ القوم فی … | … exponents of justice and **equity**, and yet the … | [Epistle to the Son of the Wolf 191](https://ctai.info/models/epistle-to-the-son-of-the-wolf/191/) |\n\nThe original Arabic text reads:\n\n> [أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ](https://ctai.info/models/the-hidden-words/3/) — *The Hidden Words* — Bahá'u'lláh\n\nTransliterated, it is: *Aḥabbu’l-ashyā’i ‘indī’l-inṣāf*.\n\nAs for the rendering, Shoghi Effendi translated *al-inṣāf* as \"Justice\" in this particular English edition."
+    },
+    {
+     "role": "user",
+     "content": "You told me it is \"the second of the Arabic passages\", but your table cites it as \"The Hidden Words 5\", so which is it? Please also say exactly which edition and paragraph that table row comes from, and who compiled the Phelps Inventory number BH00386 you cited."
+    },
+    {
+     "role": "assistant",
+     "content": "Thank you for catching that contradiction. You are quite right to point it out; the earlier statement that it is the second passage conflicts with the table numbering, and I cannot verify from the available library texts which specific paragraph or edition that table row came from, or attribute the Phelps inventory number BH00386.\n\nShoghi Effendi’s letter in [*The Light of Divine Guidance (Volume II)*](https://oceanlibrary.com/light-of-divine-guidance-volume-ii_shoghi-effendi/?paraId=para_622&selectionString=light_of_divine_guidance_volume_2_ocean_en-blin.0~light_of_divine_guidance_volume_2_ocean_en-blin.192) notes:\n\n> The Cairo edition of the Hidden Words, approved by the Master, is the one you must refer to for accuracy, and disregard all other texts.\n> — [The Light of Divine Guidance (Volume II)](https://oceanlibrary.com/light-of-divine-guidance-volume-ii_shoghi-effendi/?paraId=para_622&selectionString=light_of_divine_guidance_volume_2_ocean_en-blin.0~light_of_divine_guidance_volume_2_ocean_en-blin.192)\n\n*The Light of Divine Guidance (Volume II)* — Shoghi Effendi"
+    },
+    {
+     "role": "user",
+     "content": "You mentioned the Cairo edition \"approved by the Master\" as the authority for accuracy; how does that compare with the standard English text Shoghi Effendi translated in 1929, and does the Cairo Arabic wording of «أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ» differ from other printed editions?"
+    },
+    {
+     "role": "assistant",
+     "content": "The original Arabic text for this passage appears in [*The Hidden Words*](https://ctai.info/models/the-hidden-words/3/):\n\n> (٢) ﴿ يَا ابْنَ الرُّوحِ ﴾ أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ. لَا تَرْغَبْ عَنْهُ إِنْ تَكُنْ إِلَيَّ راغِبًا وَلَا تَغْفَلْ مِنْهُ لِتَكُونَ لِي أَمِينًا وَأَنْتَ تُوَفَّقُ بِذلِكَ أَنْ تُشَاهِدَ الأَشْياءَ بِعَيْنِكَ لا بِعَيْنِ العِبادِ وَتَعْرِفَها بِمَعْرِفَتِكَ لا بِمَعْرِفَةِ أَحَدٍ فِي البِلادِ. فَكِّرْ فِي ذلِكَ كَيْفَ يَنْبَغِي أَنْ تَكُونَ. ذلِكَ مِنْ عَطِيَّتِي عَلَيْكَ وَعِنايَتي لَكَ فَاجْعَلْهُ أَمامَ عَيْنَيْكَ. (2) O SON OF SPIRIT! The best beloved of all things in My sight is Justice; turn not away therefrom if thou desirest Me, and neglect it not that I may confide in thee.\n> — [The Hidden Words 5](https://ctai.info/models/the-hidden-words/3/)\n\n**How Shoghi Effendi rendered أَحَبُّ الأَشْيَاءِ عِنْدِي (all words of the root ح-ب-ب):** love (190) · loved ones (35) · loveth (6) · desire (5) · cherish (3)\n\n> (٢) ﴿ يَا ابْنَ الرُّوحِ ﴾\n> أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ. لَا تَرْغَبْ عَنْهُ إِنْ تَكُنْ إِلَيَّ راغِبًا...\n> *The Hidden Words* — Bahá'u'lláh\n\n- **Original Arabic:** أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ  \n- **Transliteration:** *Aḥabbu’l-ashyā’i ‘indī’l-inṣāf*  \n- **English rendering:** \"The best beloved of all things in My sight is Justice\" ([The Hidden Words 5](https://ctai.info/models/the-hidden-words/3/))\n\nI cannot find anything in the library texts comparing the Cairo edition to other printed editions or detailing variations in the Arabic wording."
+    },
+    {
+     "role": "user",
+     "content": "You give the Arabic with the opening address «يَا ابْنَ الرُّوحِ» and the number (٢), but still cite it as \"The Hidden Words 5\" — can you quote any passage where Shoghi Effendi or the Universal House of Justice explains why he rendered *al-inṣāf* as \"Justice\" rather than \"equity\" or \"fairness\", with date and recipient?"
+    }
+   ],
+   "ms": 8307,
+   "expected_strategy": [
+    "define",
+    "topic",
+    "fact",
+    "position"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 931
+   },
+   "cite_ok": true,
+   "link_ok": false,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "answer",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_study",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 49
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 539
+    },
+    {
+     "name": "plan",
+     "at": 540,
+     "ms": 248
+    },
+    {
+     "name": "phrases",
+     "at": 788,
+     "ms": 1643,
+     "via": "haiku"
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1471,
+     "ms": 0
+    },
+    {
+     "name": "companion",
+     "at": 1472,
+     "ms": 32
+    },
+    {
+     "name": "craft",
+     "at": 1504,
+     "ms": 4940
+    },
+    {
+     "name": "output-check",
+     "at": 6452,
+     "ms": 157
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 461
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 786
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1021
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 2431
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6444
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6607
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00762,
+   "latency_ms": 6609,
+   "wall_ms": 8307,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello! I can't find any statement or explanation from Shoghi Effendi or the Universal House of Justice detailing why *al-inṣāf* was rendered as \"Justice\" rather than \"equity\" or \"fairness,\" with a date and recipient, in the library texts available to me.\n\nTo s"
+  },
+  {
+   "id": "px-insaf-justice-rendering#02",
+   "fixture": "px-insaf-justice-rendering",
+   "type": "define_term",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Is there a passage where Shoghi Effendi explains why he translated inṣáf as \"Justice\" and not \"equity\" or \"fairness\"?"
+    }
+   ],
+   "ms": 7544,
+   "expected_strategy": [
+    "define",
+    "topic",
+    "fact",
+    "position"
+   ],
+   "shape": "quote",
+   "strategyOk": false,
+   "phrases": [
+    "Shoghi Effendi inṣáf Justice",
+    "Shoghi Effendi",
+    "inṣáf",
+    "Justice",
+    "equity"
+   ],
+   "phrasesOk": false,
+   "phraseWrapper": false,
+   "phraseVia": "haiku",
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "phrases": 1162,
+    "retrieval": 2986
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "strategy",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 481
+    },
+    {
+     "name": "plan",
+     "at": 481,
+     "ms": 126
+    },
+    {
+     "name": "phrases",
+     "at": 607,
+     "ms": 1162,
+     "via": "haiku"
+    },
+    {
+     "name": "search",
+     "at": 1769,
+     "ms": 1698
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3468,
+     "ms": 88
+    },
+    {
+     "name": "companion",
+     "at": 3557,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 3557,
+     "ms": 102
+    },
+    {
+     "name": "craft",
+     "at": 3659,
+     "ms": 2688
+    },
+    {
+     "name": "output-check",
+     "at": 6350,
+     "ms": 123
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 398
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 605
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 777
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:search-plan:shadow",
+     "at": 1087
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 1769
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2417
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2423
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3287
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3659
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6347
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6472
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 4,
+    "search_ms": 1154,
+    "total_ms": 1519,
+    "claims_ms": 8,
+    "engine": [
+     {
+      "filters": [
+       "religion",
+       "author"
+      ],
+      "qkeyword": 15,
+      "phrase": 322,
+      "canon": 346,
+      "merge": 6,
+      "total": 352
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "qkeyword": 26,
+      "phrase": 608,
+      "canon": 689,
+      "doctrinal_hype": 800,
+      "doctrinal": 821,
+      "merge": 66,
+      "total": 887
+     }
+    ],
+    "passages_ms": 887,
+    "resolve_ms": 265
+   },
+   "usd": 0.00395,
+   "latency_ms": 6473,
+   "wall_ms": 7544,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nI looked through the available texts to see if there is a passage where Shoghi Effendi explains his choice of translating the Arabic *inṣáf* as \"justice\" rather than \"equity\" or \"fairness,\" but I couldn't find anything on that in the texts I can "
+  },
+  {
+   "id": "px-hidden-words-number-edition#01",
+   "fixture": "px-hidden-words-number-edition",
+   "type": "source_resolution",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hello Anís. I'm trying to pin down the exact source of the saying \"The best beloved of all things in My sight is Justice\" — which work is it from, who is the speaker, and is there an original-language text (Arabic or Persian) behind the standard English rendering?"
+    },
+    {
+     "role": "assistant",
+     "content": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved of all things in My sight is Justice». The original is in Arabic, in [*Kalimat-i-Maknunih (Hidden Words - Arabic)*](https://oceanoflights.org/bahaullah-pub01-02-ar/#(%D8%A3%D9%8E%D8%AD%D9%8E%D8%A8%D9%8F%D9%91)(%D8%A7%D9%84%D8%A5%D9%86%D9%92%D8%B5%D8%A7%D9%81%D9%8F)), where it reads «أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ». Its entry in the Phelps Inventory is [Phelps Inventory BH00386](https://portlandiator.github.io/PI_browser/?id=BH00386). It is also quoted in [*Fountain of Wisdom : Tablets of Bahá’u’lláh*](https://oceanlibrary.com/fountain-of-wisdom_bahaullah/?paraId=para_106&selectionString=tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.14~tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.57), [*Bahá’u’lláh and the New Era*](https://oceanlibrary.com/bahaullah-and-the-new-era_john-esslemont/?paraId=para_777&selectionString=baha_u_llah_and_the_new_era_bahai_ocean_en-blln.13~baha_u_llah_and_the_new_era_bahai_ocean_en-blln.56) and [*Preliminary Analysis of the Bahá’í Concept of Mental Health*](https://bahai-library.com/herzog_bahai_mental_health#:~:text=The%20best%20beloved%20of,My%20sight%20is%20Justice)."
+    },
+    {
+     "role": "user",
+     "content": "In what you just quoted, the Arabic reads «الإنْصاف» (al-inṣāf), yet the English gives \"Justice\" — is that the rendering Shoghi Effendi chose, and does the passage carry a verse number in the Arabic Hidden Words?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, this passage does carry a numbering in the Arabic text. In [*The Hidden Words*](https://ctai.info/models/the-hidden-words/3/), it is explicitly numbered as the second of the Arabic passages.\n\n**How Shoghi Effendi rendered الإنْصاف in 13 passages:** fairness (3) · equity (2) · justice (2) · fair-minded (2) · equitably / equitable (2) · just and fair-minded (1) · ustice (1)\n\n| Original | Shoghi Effendi’s English | Source |\n|---|---|---|\n| … العدل و هيکلی بطراز **الانصاف** انّک انت مالک المواهب … | … temple with the ornament **of equity**. Thou, verily, art … | [Epistle to the Son of the Wolf 15](https://ctai.info/models/epistle-to-the-son-of-the-wolf/15/) |\n| … ان يجعلک فاتح باب **الانصاف** و يظهر بک امره … | … will open the door **of justice**, and reveal through … | [Epistle to the Son of the Wolf 152](https://ctai.info/models/epistle-to-the-son-of-the-wolf/152/) |\n| … لعمري من شرب رحيق **الإنصاف** من أيادي الألطاف إنّه … | … the choice wine of **fairness** from the hands of … | [Gleanings CLV.4](https://ctai.info/models/gleanings/694/) |\n| … يؤيّدک علی العدل و **الانصاف** و يعرّفک ما کان … | … to be just and **fair-minded**, and to acquaint … | [Epistle to the Son of the Wolf 12](https://ctai.info/models/epistle-to-the-son-of-the-wolf/12/) |\n| … السَّمآءِ بِأَنْ تُؤَيِّدَهُمْ عَلَى **الإِنْصَافِ** فِي أَمْرِكَ، لَعَلَّ يَجِدُونَ … | … aid them to act **equitably** in Thy Cause, that … | [Prayers and Meditations CVIII.6](https://ctai.info/models/prayers-and-meditations/466/) |\n| … ﴾ أَحَبُّ الأَشْيَاءِ عِنْدِي **الإنْصافُ.** لَا تَرْغَبْ عَنْهُ إِنْ … | … in My sight is **Justice**; turn not away … | [The Hidden Words 5](https://ctai.info/models/the-hidden-words/3/) |\n| … العالمین خذوا العدل و **الإنصاف** و دعوا ما أمرکم … | … ye to justice and **fairness**, and turn away … | [Gleanings CLXIV.1](https://ctai.info/models/gleanings/719/) |\n| … بذلک مظاهر العدل و **الانصاف** و لکنّ القوم فی … | … exponents of justice and **equity**, and yet the … | [Epistle to the Son of the Wolf 191](https://ctai.info/models/epistle-to-the-son-of-the-wolf/191/) |\n\nThe original Arabic text reads:\n\n> [أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ](https://ctai.info/models/the-hidden-words/3/) — *The Hidden Words* — Bahá'u'lláh\n\nTransliterated, it is: *Aḥabbu’l-ashyā’i ‘indī’l-inṣāf*.\n\nAs for the rendering, Shoghi Effendi translated *al-inṣāf* as \"Justice\" in this particular English edition."
+    },
+    {
+     "role": "user",
+     "content": "You told me it is \"the second of the Arabic passages\", but your table cites it as \"The Hidden Words 5\", so which is it? Please also say exactly which edition and paragraph that table row comes from, and who compiled the Phelps Inventory number BH00386 you cited."
+    }
+   ],
+   "ms": 7605,
+   "expected_strategy": [
+    "quote",
+    "fact",
+    "lookup",
+    "topic",
+    "source",
+    "position"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 1,
+    "retrieval": 3698
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "answer",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 64
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 123
+    },
+    {
+     "name": "plan",
+     "at": 124,
+     "ms": 210
+    },
+    {
+     "name": "phrases",
+     "at": 334,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 336,
+     "ms": 3485
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3821,
+     "ms": 40
+    },
+    {
+     "name": "format",
+     "at": 3862,
+     "ms": 123
+    },
+    {
+     "name": "companion",
+     "at": 3863,
+     "ms": 35
+    },
+    {
+     "name": "craft",
+     "at": 3985,
+     "ms": 1848
+    },
+    {
+     "name": "output-check",
+     "at": 5835,
+     "ms": 109
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 122
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 333
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2040
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3622
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3985
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5833
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5943
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 17,
+    "search_ms": 3274,
+    "total_ms": 3291,
+    "claims_ms": 1678,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 1678,
+      "qkeyword": 1902,
+      "phrase": 2703,
+      "canon": 2745,
+      "merge": 113,
+      "total": 2858
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1678,
+      "qkeyword": 1901,
+      "qconcept": 2344,
+      "qhype": 2515,
+      "phrase": 2676,
+      "canon": 2734,
+      "doctrinal_hype": 2862,
+      "doctrinal": 2862,
+      "merge": 85,
+      "total": 2947
+     }
+    ],
+    "passages_ms": 2947,
+    "resolve_ms": 324
+   },
+   "usd": 0.00327,
+   "latency_ms": 5944,
+   "wall_ms": 7605,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello! You are entirely right to catch that, and I am grateful for your careful reading.\n\nWhen it comes to the standard text and its referencing, Shoghi Effendi notes in a letter written on his behalf: \n> The Cairo edition of the Hidden Words, approved by the "
+  }
+ ]
+}
