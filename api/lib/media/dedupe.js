@@ -26,6 +26,9 @@ export function copyQuality(meta) {
 }
 
 const live = (c) => c.state === 'done' && Number(c.restored) === 1;
+// a copy the pipeline is working on now (started: it has a meta.json; not landed: done / held / terminal)
+const IN_FLIGHT = new Set(['queued', 'scheduled', 'running', 'transcribed', 'llm_queued', 'ready']);
+export const inFlight = (c, runs = new Map()) => !!c.meta && !['duplicate', 'excluded'].includes(c.state) && (IN_FLIGHT.has(c.state) || runs.has(Number(c.id)));
 // completeness order: on air, fewer stages missing, better grade, the older row
 const fuller = (a, b) => (b.q.on_air - a.q.on_air) || (a.q.missing - b.q.missing)
   || ((a.q.grade ? GRADES.indexOf(a.q.grade) : 9) - (b.q.grade ? GRADES.indexOf(b.q.grade) : 9)) || (a.id - b.id);
@@ -482,6 +485,10 @@ async function settleGroup(copies, { pairs, runs, out, write, sample, repo, ops,
   const pick = pickBest(copies);
   if (pick.unmeasured && !live(pick.best)) { out.unmeasured = (out.unmeasured || 0) + 1; return; }   // decided once the copies are graded
   const best = pick.best, others = copies.filter((c) => c !== best);
+  // a TIE (within noise) is settled by completeness, and a copy still in the pipeline is incomplete only because it has not finished yet:
+  // with no copy on air, the tie waits for it to land (11-01: 2509 had its pure remaster + quiet done and was minutes from air when it
+  // was retired, mid-pipeline, for 1437 — off air, its remaster back to a worker, 368th in the quiet backlog)
+  if (pick.ambiguous && !live(best) && others.some((c) => inFlight(c, runs))) { out.in_flight = (out.in_flight || 0) + 1; return; }
   const bestLive = live(best);
   // the on-air stand-in stays on air until the better copy is complete; everything else goes
   const losers = others.filter((c) => bestLive || !live(c));

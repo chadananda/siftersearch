@@ -275,6 +275,21 @@ describe('media-dedupe job', () => {
     expect(calls.deleted).toHaveLength(0);
     expect(r.pending).toBe(1);
   });
+  it('a tie with no copy on air waits while a copy is still in the pipeline (11-01: 2509 retired mid-pipeline for an off-air 1437)', async () => {
+    const { deps, rows, metas, calls } = mk();
+    rows[0].restored = 0; rows[0].dup_group = 10;   // the old copy: done but off air (a new checklist stage missing)
+    metas['/d/live'].stages = stages(DONE.filter((s) => s !== 'quiet'));
+    rows[1].state = 'running'; delete rows[1].why; rows[1].dup_group = 10;   // the new copy: audio finished, text stages to come
+    metas['/d/worse'] = srcMeta(2.3, { slug: 'worse', stages: stages(['archive', 'grade', 'transcribe', 'remaster', 'verify', 'quiet']) });
+    const r = await mediaDedupeJob({ write: true }, deps);
+    expect(r.in_flight).toBe(1);
+    expect(calls.marked).toHaveLength(0);
+    // once it lands (state done), the tie is settled as before
+    rows[1].state = 'done';
+    const r2 = await mediaDedupeJob({ write: true }, deps);
+    expect(r2.in_flight).toBeUndefined();
+    expect(calls.marked).toHaveLength(1);
+  });
   it('copies not yet graded are left until they are (no flip-flop once measured)', async () => {
     const { deps, metas, calls } = mk();
     delete metas['/d/live'].quality; delete metas['/d/worse'].quality;
