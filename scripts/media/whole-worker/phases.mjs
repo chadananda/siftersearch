@@ -112,6 +112,16 @@ async function waveform(ctx,meta){
  return wave;
 }
 
+/** diarization.json is a required gpu output. An interpreted (multi-language) talk gets its speaker turns inside the transcription and a resumed run skips the diarize stage, so the file may be absent while transcript.raw.json holds the turns: write it from them. No file and no turns = fail loudly (the step is retried), never an incomplete result. */
+export async function ensureDiarization(dir){
+ const file=join(dir,'diarization.json');
+ if(existsSync(file))return 'present';
+ const raw=JSON.parse(await readFile(join(dir,'transcript.raw.json'),'utf8').catch(()=>'{}'));
+ if(!(raw.turns||[]).length)throw Error('gpu: no diarization.json and no speaker turns in transcript.raw.json (diarize did not run)');
+ await writeFile(file,JSON.stringify({turns:raw.turns,derived_from:'transcript.raw.json'}));
+ return 'derived';
+}
+
 /** gpu: enhance (DFN + probes), transcribe, diarize, quality; then UniPASE + re-ASR + guard measurement + realign (split_restore.py gpu). */
 export async function gpu(ctx){
  const {job,jobDir,dir}=ctx;
@@ -121,6 +131,7 @@ export async function gpu(ctx){
  const item=itemOf(ctx,meta0),deps=ctx.deps(meta0);
  let result=await runItem(item,{only:['grade','enhance','transcribe','diarize'],threads:ctx.threads},deps);
  if(result.yielded||result.excluded||result.held)throw Error('Recording did not finish audio processing');
+ await ensureDiarization(dir);
  await finishQuality(result.meta,dir,deps,item);
  await writeFile(join(dir,'meta.json'),JSON.stringify(result.meta));
  const meta=result.meta;

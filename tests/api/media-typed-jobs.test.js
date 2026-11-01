@@ -142,3 +142,20 @@ print(json.dumps([sr.receive(d), open(os.path.join(d, 'post/unipase.flac')).read
     expect(phases).toMatch(/mode==='gpu'&&ctx\.type==='gpu'\?\{SIFTER_TRANSIT:'1'\}/);
   });
 });
+
+describe('ensureDiarization (gpu never ends without diarization.json)', () => {
+  it('derives the file from transcript turns, keeps an existing one, fails loudly with neither', async () => {
+    const { ensureDiarization } = await import('../../scripts/media/whole-worker/phases.mjs');
+    const { mkdtempSync, writeFileSync, existsSync, readFileSync } = await import('node:fs');
+    const { join } = await import('node:path'), { tmpdir } = await import('node:os');
+    const d = mkdtempSync(join(tmpdir(), 'diar-'));
+    writeFileSync(join(d, 'transcript.raw.json'), JSON.stringify({ turns: [{ speaker: 'A', start: 0, end: 5 }] }));
+    expect(await ensureDiarization(d)).toBe('derived');
+    expect(JSON.parse(readFileSync(join(d, 'diarization.json'), 'utf8')).turns).toHaveLength(1);
+    expect(await ensureDiarization(d)).toBe('present');
+    const e = mkdtempSync(join(tmpdir(), 'diar-'));
+    writeFileSync(join(e, 'transcript.raw.json'), JSON.stringify({ segments: [] }));
+    await expect(ensureDiarization(e)).rejects.toThrow(/no diarization.json/);
+    expect(existsSync(join(e, 'diarization.json'))).toBe(false);
+  });
+});
