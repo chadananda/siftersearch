@@ -6,7 +6,7 @@
 // library holds them (talk → /media/<slug>, book → /document/<id>). Lane 'archive'.
 // PDFs need their worker probe (archive-sample) first: a scan or image PDF (page images under a hidden OCR layer) is PRE-OCR checked against the library — held → skipped,
 // probably held → needs_person (neither is paid for by SLP) — and an image PDF's sidecar says image_pdf so Dewey sends it to SLP like a scan (our layer is better).
-// Within-drive duplicates (same hash, or same title + similar size) import only their best copy; the rest are listed (drive_duplicates).
+// Duplicates ACROSS drives (archives/dedup.js cascade: hash · normalised body · title+length · MinHash fingerprint) import only their best copy; the rest are listed (duplicates).
 // A CHAPTER FILE of a multi-file book is skipped and listed (chapter_sets): Dewey's ingest takes one file = one document, with no ordered-parts import.
 import { join, dirname, extname } from 'path';
 import { createReadStream } from 'fs';
@@ -16,7 +16,9 @@ import { getDrive, getDonor, itemsToImport, itemsForDedup, markImported, itemsIm
 import { itemPath } from './archive-sample-job.js';
 import { deweyMediaDir } from './media-jobs.js';
 import { ingestDir } from './dewey-ingest-folder-job.js';
-import { preOcrCheck, slpBound, chapterFile, driveDuplicates } from '../archives/pre-ocr.js';
+import { preOcrCheck, slpBound, chapterFile } from '../archives/pre-ocr.js';
+import { clusterDuplicates, itemRow, registryRow } from '../archives/dedup.js';
+import { registryRows } from '../repos/dedup-repo.js';
 import { checkHoldings } from '../dewey/holdings.js';
 import { docsByIsbn } from '../docs-repo.js';
 
@@ -60,6 +62,18 @@ async function place(src, dest) {
   return 'copied';
 }
 
+/**
+ * The cross-collection dedup of a drive (archives/dedup.js): the registry of every drive's fingerprints plus this drive's items not fingerprinted yet, clustered, and files the library
+ * already holds (Dewey sha256) marked. → { dups: Map(key → {of, step, score…}), clusters, by_step }. Never reads a file: fingerprints come from the worker probe.
+ */
+export async function driveDedup(driveId, { registry = registryRows, view = itemsForDedup, bySha = null, rows = null } = {}) {
+  const reg = rows ? [] : (await registry()).map(registryRow), have = new Set(reg.map((r) => r.key));
+  const all = rows || [...reg, ...(await view(driveId)).map((v) => itemRow(driveId, v)).filter((r) => !have.has(r.key))];
+  const find = bySha || (await import('../repos/dewey-repo.js')).findBySha, libShas = new Set();
+  for (const r of all) if (r.sha && r.drive === driveId) { const d = await find(r.sha).catch(() => null); if (d?.doc_id && d.state === 'ingested') libShas.add(r.sha); }
+  return clusterDuplicates(all, { libShas });
+}
+
 /** Earlier imports the library now holds → their public path. */
 async function fillLinks(driveId, { media, dewey }) {
   let linked = 0;
@@ -79,8 +93,8 @@ export async function archiveImportJob({ drive: driveId, limit = 200 } = {}, dep
   const drive = await getDrive(driveId);
   if (!drive) throw new Error(`no drive ${driveId}`);
   const donor = await getDonor(drive.donor_id);
-  const out = { drive: drive.id, talks: [], books: [], skipped: [], held: [], needs_person: [], drive_duplicates: [], chapter_sets: {}, failed: [], linked: 0 };
-  const dups = driveDuplicates(await itemsForDedup(drive.id));   // within-drive copies: only the best of each is imported
+  const out = { drive: drive.id, talks: [], books: [], skipped: [], held: [], needs_person: [], duplicates: [], chapter_sets: {}, failed: [], linked: 0 };
+  const { dups } = deps.dedup || await driveDedup(drive.id);   // ONE copy per work across all drives: only the best of each is imported
   // a skipped item stays "approved, not imported", so each page starts after the ones passed over
   let off = 0, done = 0;
   for (;;) {
@@ -90,7 +104,8 @@ export async function archiveImportJob({ drive: driveId, limit = 200 } = {}, dep
       if (done >= limit) break;
       const plan = importPlan(drive, it, dirs);
       if (plan.chapter) { (out.chapter_sets[plan.chapter] ||= []).push({ id: it.id, rel: it.primary_rel }); continue; }
-      if (dups.has(it.id)) { out.drive_duplicates.push({ id: it.id, rel: it.primary_rel, ...dups.get(it.id) }); continue; }
+      const dup = dups.get(`${drive.id}:${it.primary_rel}`);
+      if (dup && !plan.chapter) { out.duplicates.push({ id: it.id, rel: it.primary_rel, ...dup }); continue; }
       if (plan.skip) { out.skipped.push({ id: it.id, why: plan.skip }); continue; }
       try {
         if (plan.kind === 'book' && /\.pdf$/i.test(plan.src)) {

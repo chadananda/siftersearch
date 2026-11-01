@@ -1,7 +1,7 @@
 // Pre-OCR dedup helpers (archives/pre-ocr.js): ISBN, metadata title, the verdict order, SLP rate, chapter files; intake routes an image PDF to SLP.
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/docs-repo.js', () => ({ findDocuments: vi.fn(), listDocs: vi.fn(), getParagraphs: vi.fn() }));
-const { isbnsIn, frontText, metaTitle, preOcrCheck, slpRate, chapterFile, verdictOf, evidenceOf, driveDuplicates, normTitle, SUBSTANTIAL } = await import('../../api/lib/archives/pre-ocr.js');
+const { isbnsIn, frontText, metaTitle, preOcrCheck, slpRate, chapterFile, verdictOf, evidenceOf, SUBSTANTIAL } = await import('../../api/lib/archives/pre-ocr.js');
 
 describe('isbnsIn / frontText / metaTitle', () => {
   it('finds labelled, checksum-valid ISBNs (10 → also its 13); a wrong checksum or unlabelled number is ignored', () => {
@@ -93,27 +93,5 @@ describe('held by default when the library holds a substantial share', () => {
     expect(held).toMatchObject({ verdict: 'held', by: 'text', evidence: [expect.objectContaining({ id: 5, relation: 'partial', theirs_in_ours: 0.7, length_ratio: 0.5 })] });
     const quotes = await preOcrCheck({ probe: { text, sampled: [1], pages: 9 }, cat: { title: 'Zzz' }, name: 'a.pdf' }, { check: mk([cand(6, 'quotes', 0.2, 0.1)], 'possible'), byIsbn: async () => [] });
     expect(quotes).toMatchObject({ verdict: 'clear', evidence: [expect.objectContaining({ id: 6, relation: 'quotes' })] });
-  });
-});
-
-describe('driveDuplicates', () => {
-  const v = (id, o = {}) => ({ id, rel: `d/f${id}.pdf`, title: 'The Hidden Words', bytes: 1000000, cls: 'born_digital', pages: 100, sha: null, ...o });
-  it('same hash = one item whatever the titles; same normalised title + similar size = one item; the best copy is kept (text layer over scan, then larger)', () => {
-    const d = driveDuplicates([
-      v(1, { title: 'Alpha Beta Gamma', sha: 'x' }), v(2, { title: 'Totally Different Name', sha: 'x', cls: 'scan' }),
-      v(3), v(4, { title: 'the hidden words (1)', cls: 'scan' }), v(5, { title: '12 The Hidden Words', pages: 103 }), v(6, { title: 'The Hidden Words', pages: 40 }),
-      v(7, { title: 'Short' }), v(8, { title: 'Short' }),
-    ]);
-    expect(d.get(2)).toMatchObject({ of: 1, why: expect.stringMatching(/hash/) });
-    expect(d.get(4)).toMatchObject({ of: 5 });   // the scan loses to the text-layer copy with more pages
-    expect(d.get(3)).toMatchObject({ of: 5 });
-    expect(d.has(5)).toBe(false);
-    expect(d.has(6)).toBe(false);                 // 40 pages vs 100: a partial / different book, not a copy
-    expect(d.has(7) || d.has(8)).toBe(false);     // titles under 6 characters are never matched
-  });
-  it('without page counts the bytes decide', () => {
-    const d = driveDuplicates([{ id: 1, title: 'Some Long Title', bytes: 1000, pages: null }, { id: 2, title: 'Some Long Title', bytes: 900, pages: null }, { id: 3, title: 'Some Long Title', bytes: 100, pages: null }]);
-    expect([...d.keys()]).toEqual([2]);
-    expect(normTitle('27 Some Long-Title (1).pdf')).toBe('some long title');
   });
 });

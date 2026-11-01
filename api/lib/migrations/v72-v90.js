@@ -2088,6 +2088,13 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_media_source_ref ON media_items(source_ref)');
     logger.info('Migration 193 complete: idx_media_source_ref');
   },
+
+  194: async () => {
+    // DEDUP REGISTRY (Chad 11-01): fingerprints of every probed donor file (sha256, normalised-body hash, MinHash, title, length), keyed drive+path. New EMPTY table.
+    const { DEDUP_SQL } = await import('../archives/schema.js');
+    for (const sql of DEDUP_SQL) await query(sql);
+    logger.info('Migration 194 complete: dedup_registry');
+  },
 };
 
 export const graphMigrations = {

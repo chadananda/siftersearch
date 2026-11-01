@@ -46,13 +46,14 @@ describe('itemPath / stagePlan', () => {
 describe('samplePass', () => {
   const rig = (items, wanting = [], probes = []) => {
     const saved = {}, recs = {}, answers = {}, put = vi.fn(async () => 99), imgPut = vi.fn(async () => 5);
-    const byId = Object.fromEntries([...items, ...wanting].map((i) => [i.id, i]));
+    const byId = Object.fromEntries([...items, ...wanting, ...probes].map((i) => [i.id, i]));
     return { saved, recs, answers, put, imgPut, deps: {
       q, store: { put }, imgStore: { put: imgPut }, drive: { id: 'g', root },
       toSample: async (_d, { kinds, limit }) => items.filter((i) => !saved[i.id]?.queued && (!kinds || kinds.includes(i.kind))).slice(0, limit),
       wanting: async () => wanting.filter((i) => !saved[i.id]?.deep_queued),
       toProbe: async (_d, { limit }) => probes.filter((i) => !saved[`p${i.id}`]).slice(0, limit),
       probeSave: async (id, p) => { saved[`p${id}`] = { ...saved[`p${id}`], ...p }; },
+      fpSave: async (r) => { saved[`fp${r.item_id}`] = r; },
       item: async (id) => byId[id],
       save: async (id, s) => { saved[id] = { ...saved[id], ...s }; },
       rec: async (id, r) => { recs[id] = r; },
@@ -110,12 +111,14 @@ describe('samplePass', () => {
     const { saved, deps } = rig([], [], [pdf]);
     expect(await samplePass({ drive: 'g', window: 5, deps })).toMatchObject({ probes_staged: 1 });
     expect(saved.p31.queued).toBeTruthy();
-    const j = await work(() => ({ 'sample.json': JSON.stringify({ kind: 'book', probe: true, class: 'image_pdf', pages: 210, sampled: [1, 2, 3, 4, 40], text: '[page 1]\nTitle', meta_text: 'Title: X', words_pp: 300, img_frac: 1, hidden_font: true, ocr: false }) }));
+    const j = await work(() => ({ 'sample.json': JSON.stringify({ kind: 'book', probe: true, class: 'image_pdf', pages: 210, sampled: [1, 2, 3, 4, 40], text: '[page 1]\nTitle', meta_text: 'Title: X', words_pp: 300, img_frac: 1, hidden_font: true, ocr: false, fp: { sha256: 'abc', norm_sha: 'nn', minhash: 'mm', words: 5000 } }) }));
     expect(j).toMatchObject({ id: 'intake-probe-31', priority: 1540, stages: ['intake-book'] });
     expect(j.body).toMatchObject({ probe: true });
     expect(await samplePass({ drive: 'g', window: 5, deps })).toMatchObject({ probed: 1, pulled: 1 });
     expect(saved.p31).toMatchObject({ class: 'image_pdf', pages: 210, hidden_font: true });
     expect(saved[31]).toBeUndefined();   // no sample, no recommendation
+    expect(saved.p31.fp).toEqual({ sha256: 'abc', norm_sha: 'nn', words: 5000 });   // the MinHash is NOT kept on the item ...
+    expect(saved.fp31).toMatchObject({ path: 'book.pdf', sha256: 'abc', minhash: 'mm', words: 5000, pages: 210, cls: 'image_pdf', fmt: 'pdf' });   // ... it goes to the dedup registry
   });
   it('a failed probe is recorded as an error marker (no blind retry)', async () => {
     const { saved, deps } = rig([], [], [{ id: 32, kind: 'book', primary_rel: 'book.pdf', score: 1 }]);

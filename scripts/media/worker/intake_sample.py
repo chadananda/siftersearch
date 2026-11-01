@@ -3,9 +3,9 @@
 # talk: ffmpeg first SECS → clip.mp3 (listening) + 16 kHz wav → media_tool.py transcribe (inside the worker image: GPU, admission leases).
 # book: PDF page 1 → title.jpg; text = pdftotext of the first PAGES, else tesseract OCR of those pages rendered; EPUB/DOCX/ODT/HTML/TXT read
 # directly; a folder of page images → the first page as the title image + OCR. Writes sample.json {kind, text, …, files:[outputs]}. Stdlib only.
-# probe (job.probe, an approved PDF): the PRE-OCR DEDUP sample — class (born_digital | image_pdf | scan), PDF metadata, the title/copyright pages + ~5 pages spread
-# through the book (text layer, or tesseract for a scan). Needs only poppler (pdfinfo/pdftotext/pdfimages/pdffonts/pdftoppm) + tesseract, as book does.
-import glob, hashlib, html, json, os, re, shutil, subprocess, sys, zipfile
+# probe (job.probe, an approved PDF or document): the PRE-OCR DEDUP sample — class (born_digital | image_pdf | scan), PDF metadata, the title/copyright pages + ~5 pages spread
+# through the book (text layer, or tesseract for a scan). + fp = the dedup fingerprint (fingerprint.py). Needs only poppler (pdfinfo/pdftotext/pdfimages/pdffonts/pdftoppm) + tesseract, as book does.
+import glob, html, json, os, re, shutil, subprocess, sys, zipfile
 
 D = sys.argv[1]
 JOB = json.load(open(os.path.join(D, 'job.json')))
@@ -157,8 +157,29 @@ def page_covered(src, p):
     return False
 
 
+def fp_of(src, cls):
+    # dedup fingerprint (fingerprint.py: sha256, normalised-body hash, MinHash). A scan has no text layer to fingerprint — only its sha256.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import fingerprint
+    if cls == 'scan':
+        return {'sha256': fingerprint.sha256_file(src), 'norm_sha': None, 'minhash': None, 'words': 0}
+    return fingerprint.fingerprint(src)
+
+
+def probe_doc():
+    # a non-PDF document (docx/epub/html/txt/rtf/odt): the sample is the start of its text; the fingerprint is of the whole
+    src = IN[0]
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import fingerprint
+    body = fingerprint.body_text(src)
+    return {'probe': True, 'fp': fingerprint.fingerprint(src), 'class': 'text_doc', 'pages': None, 'sampled': [1], 'text': '[page 1]\n' + tidy(body)[:TEXT_MAX], 'meta_text': '',
+            'words_pp': None, 'img_frac': 0, 'hidden_font': False, 'ocr': False, 'files': []}
+
+
 def probe():
     src = IN[0]
+    if not src.lower().endswith('.pdf'):
+        return probe_doc()
     info = sh(['pdfinfo', '-meta', src]).stdout
     m = re.search(r'^Pages:\s+(\d+)', info, re.M)
     n = int(m.group(1)) if m else 1
@@ -179,11 +200,7 @@ def probe():
         texts = layer
     text = '\n\n'.join(f'[page {p}]\n{texts[p][:3000]}' for p in pgs)
     meta = re.sub(r'<[^>]+>', ' ', info)
-    h = hashlib.sha256()
-    with open(src, 'rb') as fh:
-        for blk in iter(lambda: fh.read(1 << 20), b''):
-            h.update(blk)
-    return {'probe': True, 'sha256': h.hexdigest(), 'class': cls, 'pages': n, 'sampled': pgs, 'text': text[:TEXT_MAX], 'meta_text': tidy(meta)[:4000], 'words_pp': round(words_pp, 1),
+    return {'probe': True, 'fp': fp_of(src, cls), 'class': cls, 'pages': n, 'sampled': pgs, 'text': text[:TEXT_MAX], 'meta_text': tidy(meta)[:4000], 'words_pp': round(words_pp, 1),
             'img_frac': round(img_frac, 2), 'hidden_font': bool(re.search(r'GlyphLess|Invisible|HiddenHorzOCR|Tesseract', fonts, re.I)), 'ocr': cls == 'scan', 'files': []}
 
 

@@ -11,3 +11,13 @@ export const ARCHIVES_SQL = [
   `CREATE INDEX IF NOT EXISTS idx_intake_drive_sec ON intake_items(drive_id, section, kind, score DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_intake_drive_dec ON intake_items(drive_id, decision)`,
 ];
+
+// Dedup registry (migration 194): one fingerprint row per donor file, keyed drive+path, written by the archive-sample job from a worker probe. A new drive is
+// deduped against every row here without recomputing. minhash = 64 × 16 hex chars (fingerprint.py).
+export const DEDUP_SQL = [
+  `CREATE TABLE IF NOT EXISTS dedup_registry (drive_id TEXT NOT NULL, path TEXT NOT NULL, item_id INTEGER, sha256 TEXT, norm_sha TEXT, minhash TEXT, title_norm TEXT, title TEXT,
+    words INTEGER, pages INTEGER, bytes INTEGER, cls TEXT, fmt TEXT, created_at TEXT, PRIMARY KEY (drive_id, path))`,
+  `CREATE INDEX IF NOT EXISTS idx_dedup_sha ON dedup_registry(sha256)`,
+  `CREATE INDEX IF NOT EXISTS idx_dedup_norm ON dedup_registry(norm_sha)`,
+  `CREATE INDEX IF NOT EXISTS idx_dedup_title ON dedup_registry(title_norm)`,
+];

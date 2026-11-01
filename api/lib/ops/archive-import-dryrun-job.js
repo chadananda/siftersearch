@@ -3,19 +3,20 @@
 // checked by its catalogue title/author (metadata.catalog, set via POST /imports/drives/:id/catalogue) or file name. params { drive, limit?, offset?, list? }.
 // PDFs are classed by the worker probe (metadata.probe, set by archive-sample): born_digital (text read directly, as above) · image_pdf (page images under a hidden OCR layer) ·
 // scan. Image PDFs and scans get the PRE-OCR dedup (archives/pre-ocr.js: ISBN, title+author, sampled-page text through checkHoldings) and survivors are the SLP-bound set
-// (bucket needs_ocr, row.class) — `slp` totals its pages and estimated $ (measured per-page rate from earlier SLP jobs when there are any). A PDF with no probe yet lands in
+// (bucket needs_ocr, row.class) — `slp` totals its pages and estimated $ (measured per-page rate from earlier SLP jobs when there are any). ONE copy per work across ALL drives first (archives/dedup.js cascade over the dedup registry: hash · normalised body · title+length · MinHash fingerprint): the best copy is checked, the rest go to `duplicates` with the step + score, `dedup.clusters` lists members. A PDF with no probe yet lands in
 // `unprobed` (run archive-sample first). Chapter files of a multi-file book are listed in `chapter_sets`, not checked. Runs in slices and checks the drain between items: on a drain it yields { resume: {...params, offset, limit, partial} } (tallies + capped lists so far);
 // the ops service saves that into the requeued run's params, so the next run continues at `offset` with the tallies in `partial`.
-import { itemsToImport, getDrive, itemsForDedup } from '../repos/archives-repo.js';
-import { importPlan } from './archive-import-job.js';
+import { itemsToImport, getDrive } from '../repos/archives-repo.js';
+import { importPlan, driveDedup } from './archive-import-job.js';
+import { itemRow } from '../archives/dedup.js';
 import { toMarkdownText } from '../dewey/convert.js';
 import { sampleLines, titleFromLines, withText } from '../dewey/identify.js';
 import { checkHoldings, plausibleHolding } from '../dewey/holdings.js';
-import { preOcrCheck, slpBound, slpRate, verdictOf, driveDuplicates, dupView } from '../archives/pre-ocr.js';
+import { preOcrCheck, slpBound, slpRate, verdictOf } from '../archives/pre-ocr.js';
 import { docsByIsbn } from '../docs-repo.js';
 import { slpMaxPages } from '../dewey/searchlayer.js';
 
-const KEYS = ['held', 'probably_held', 'needs_ocr', 'straight_in', 'drive_duplicates', 'unprobed', 'chapter_files', 'skipped', 'failed'];
+const KEYS = ['held', 'probably_held', 'needs_ocr', 'straight_in', 'duplicates', 'unprobed', 'chapter_files', 'skipped', 'failed'];
 const CLASSES = ['born_digital', 'image_pdf', 'scan'];
 
 export async function archiveImportDryrunJob(params = {}, deps = {}) {
@@ -31,8 +32,8 @@ export async function archiveImportDryrunJob(params = {}, deps = {}) {
   const classes = Object.fromEntries(CLASSES.map((k) => [k, partial?.classes?.[k] || 0]));
   const slp = { items: partial?.slp?.items || 0, pages: partial?.slp?.pages || 0, over_page_limit: partial?.slp?.over_page_limit || 0, by_class: { image_pdf: { items: 0, pages: 0 }, scan: { items: 0, pages: 0 }, ...(partial?.slp?.by_class || {}) } };
   const sets = { ...(partial?.chapter_sets || {}) };
-  // within-drive duplicates, over the whole approved set (not just this window): the best copy of each is checked, the rest are listed
-  const dups = driveDuplicates(deps.items ? deps.items.map(dupView) : await itemsForDedup(drive.id));
+  // ONE copy per work across ALL drives (archives/dedup.js, over the registry — not just this window): the best copy of each is checked, the rest are listed with the step + score
+  const dedup = deps.dedup || await driveDedup(drive.id, deps.items ? { rows: deps.items.map((i) => itemRow(drive.id, i)), bySha: deps.bySha || (async () => null) } : {}), dups = dedup.dups;
   const rate = deps.rate || slpRate(await Promise.resolve(deps.deweyItems ? deps.deweyItems() : import('../repos/dewey-repo.js').then((m) => m.listItems({ limit: 1000 }))).catch(() => []));
   let uncat = partial?.uncat || 0, checked = partial?.checked || 0, at = offset;
   const put = (k, row) => { counts[k]++; if (k === 'needs_ocr' && !row.catalogued) uncat++; if (buckets[k].length < list) buckets[k].push(row); };
@@ -45,8 +46,8 @@ export async function archiveImportDryrunJob(params = {}, deps = {}) {
   const one = async (it) => {
     const plan = importPlan(drive, it, {});
     const row = { id: it.id, rel: it.primary_rel, title: it.metadata?.catalog?.title || it.sample?.rec?.title || it.title || null, catalogued: !!it.metadata?.catalog?.title };
-    const dup = dups.get(it.id);
-    if (!plan.chapter && !plan.skip && dup) return put('drive_duplicates', { ...row, of: dup.of, of_rel: dup.of_rel, why: dup.why });
+    const dup = dups.get(`${drive.id}:${it.primary_rel}`);
+    if (!plan.chapter && !plan.skip && dup) return put('duplicates', { ...row, ...dup });
     if (plan.chapter) { (sets[plan.chapter] ||= []).length < 50 && sets[plan.chapter].push(it.id); return put('chapter_files', { ...row, set: plan.chapter }); }
     if (plan.skip || plan.kind !== 'book') return put('skipped', { ...row, why: plan.skip || 'not a book' });
     const name = it.primary_rel.split('/').pop();
@@ -98,5 +99,6 @@ export async function archiveImportDryrunJob(params = {}, deps = {}) {
   const est_usd = +(slp.pages * rate.cents_per_page / 100).toFixed(2);
   return { drive: drive.id, checked, counts, classes, slp: { ...slp, ...rate, est_usd, page_limit: slpMaxPages() },
     chapter_sets: { sets: Object.keys(sets).length, files: counts.chapter_files, examples: Object.entries(sets).slice(0, 20).map(([set, ids]) => ({ set, ids })) },
+    dedup: { by_step: dedup.by_step, clusters_total: dedup.clusters.length, clusters: dedup.clusters.slice(0, list) },
     uncatalogued_scans: uncat, ...buckets, note: `lists cut to ${list} per bucket; params.list raises it. needs_ocr = the SLP-bound set (image PDFs + scans that survived the pre-OCR check)` };
 }

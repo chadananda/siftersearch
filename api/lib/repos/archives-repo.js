@@ -135,10 +135,11 @@ export async function itemsToImport(driveId, { limit = 100, offset = 0 } = {}) {
     [driveId, Math.min(Number(limit) || 100, 1000), Math.max(Number(offset) || 0, 0)], 'archives:items-to-import');
   return rows.map(parseItem);
 }
-/** Approved PDFs with no pre-OCR probe yet (neither result nor queued/error marker): the worker samples them for the dedup check (archive-sample, type 'intake' probe). Best score first. */
+const PROBE_EXT = ['pdf', 'epub', 'docx', 'odt', 'rtf', 'txt', 'md', 'html', 'htm', 'xhtml'];   // what fingerprint.py reads
+/** Approved PDFs and text documents with no probe yet (neither result nor queued/error marker): the worker samples them for the dedup check (archive-sample, type 'intake' probe). Best score first. */
 export async function itemsToProbe(driveId, { limit = 50 } = {}) {
-  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND decision = 'approve' AND imported_at IS NULL AND kind IN ('book', 'scan') AND lower(primary_rel) LIKE '%.pdf'
-    AND json_extract(metadata, '$.probe') IS NULL ORDER BY score DESC, id LIMIT ?`, [driveId, Math.min(Number(limit) || 50, 500)], 'archives:items-to-probe');
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND decision = 'approve' AND imported_at IS NULL AND kind IN ('book', 'scan')
+    AND (${PROBE_EXT.map(() => 'lower(primary_rel) LIKE ?').join(' OR ')}) AND json_extract(metadata, '$.probe') IS NULL ORDER BY score DESC, id LIMIT ?`, [driveId, ...PROBE_EXT.map((e) => `%.${e}`), Math.min(Number(limit) || 50, 500)], 'archives:items-to-probe');
   return rows.map(parseItem);
 }
 /** Store an item's probe (metadata.probe: the worker's class/pages/text/metadata, or a {queued}/{error} marker); a re-catalogue keeps only catalog, so a probe is re-asked after one. */
@@ -219,7 +220,7 @@ export async function donorReport(donorId) {
   return { donor, drives, buckets, files: drives.reduce((n, r) => n + (r.drive.files || 0), 0) };
 }
 
-/** The light view of every approved, not-yet-imported item of a drive for the within-drive duplicate check (no probe text): id, path, title, bytes, class, pages, sha256. */
+/** The light view of every approved, not-yet-imported item of a drive for the cross-drive duplicate check (no probe text; the fingerprints themselves are in dedup_registry): id, path, title, bytes, class, pages, sha256. */
 export const itemsForDedup = (driveId) => queryAll(`SELECT id, primary_rel AS rel, bytes, COALESCE(json_extract(metadata, '$.catalog.title'), json_extract(sample, '$.rec.title'), title) AS title,
   json_extract(metadata, '$.probe.class') AS cls, json_extract(metadata, '$.probe.pages') AS pages, json_extract(metadata, '$.probe.sha256') AS sha
   FROM intake_items WHERE drive_id = ? AND decision = 'approve' AND imported_at IS NULL AND kind IN ('book', 'scan')`, [driveId], 'archives:items-for-dedup');

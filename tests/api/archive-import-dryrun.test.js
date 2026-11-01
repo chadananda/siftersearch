@@ -2,6 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/repos/archives-repo.js', () => ({ itemsToImport: vi.fn(), getDrive: vi.fn(), itemsForDedup: vi.fn(async () => []) }));
 vi.mock('../../api/lib/docs-repo.js', () => ({ docsByIsbn: vi.fn(async () => []), findDocuments: vi.fn(), listDocs: vi.fn(), getParagraphs: vi.fn() }));
+vi.mock('../../api/lib/repos/dedup-repo.js', () => ({ registryRows: vi.fn(async () => []), upsertFingerprint: vi.fn() }));
 vi.mock('../../api/lib/ops/media-jobs.js', () => ({ deweyMediaDir: () => '/x/media' }));
 vi.mock('../../api/lib/ops/dewey-ingest-folder-job.js', () => ({ ingestDir: () => '/x/ingest' }));
 const { archiveImportDryrunJob } = await import('../../api/lib/ops/archive-import-dryrun-job.js');
@@ -27,7 +28,7 @@ describe('archive-import-dryrun', () => {
     const check = async (id) => (id._text ? { verdict: id.file_name === 'a.txt' || id.title === 'Held Gem' ? 'held' : 'not-held', candidates: [{ id: 9, title: 'Lib copy' }] }
       : { verdict: 'undetermined', candidates: id.title === 'Kitab-i-Iqan' ? [{ id: 11, title: 'The Kitáb-i-Íqán', paragraph_count: 300 }] : [] });
     const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, read, check, byIsbn: async () => [], rate: { cents_per_page: 0.4, source: 'test' }, draining: () => false });
-    expect(r.counts).toEqual({ held: 2, probably_held: 1, needs_ocr: 2, straight_in: 2, drive_duplicates: 0, unprobed: 1, chapter_files: 1, skipped: 1, failed: 0 });
+    expect(r.counts).toEqual({ held: 2, probably_held: 1, needs_ocr: 2, straight_in: 2, duplicates: 0, unprobed: 1, chapter_files: 1, skipped: 1, failed: 0 });
     expect(r.classes).toEqual({ born_digital: 3, image_pdf: 2, scan: 2 });
     expect(r.held.map((x) => x.id)).toEqual([1, 6]);
     expect(r.held[0]).toMatchObject({ id: 1, by: 'text', candidate: '#9 Lib copy' });
@@ -55,8 +56,8 @@ describe('archive-import-dryrun duplicates and evidence', () => {
     const check = async (id) => (id.title === 'Breakwell Pilgrim Notes' ? { verdict: 'partly-held', candidates: [{ id: 208557, title: 'Utterances', relation: rel }] } : { verdict: 'not-held', candidates: [] });
     const read = async () => ({ markdown: text, scan: false });
     const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, read, check, byIsbn: async () => [], rate: { cents_per_page: 1, source: 't' }, draining: () => false });
-    expect(r.counts).toMatchObject({ drive_duplicates: 2, held: 1, straight_in: 1, needs_ocr: 1 });
-    expect(r.drive_duplicates.map((x) => [x.id, x.of])).toEqual([[1, 2], [3, 4]]);
+    expect(r.counts).toMatchObject({ duplicates: 2, held: 1, straight_in: 1, needs_ocr: 1 });
+    expect(r.duplicates.map((x) => [x.id, x.of_id, x.step])).toEqual([[1, 2, 'title+length'], [3, 4, 'title+length']]);
     expect(r.held[0]).toMatchObject({ id: 5, evidence: [{ id: 208557, relation: 'partial', ours_in_theirs: 0.3, theirs_in_ours: 0.8, length_ratio: 0.4 }] });
     expect(r.slp).toMatchObject({ items: 1, pages: 298 });
   });

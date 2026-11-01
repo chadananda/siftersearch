@@ -105,35 +105,3 @@ export function chapterFile(rel) {
   if (!/(?:^|[\s._()-])(?:chap(?:ter)?|ch|part|pt|section|sec)\.?[\s._-]*\d+/i.test(file)) return null;
   return { set: `${parts.join('/')}/${file.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim().toLowerCase()}` };
 }
-
-/**
- * Duplicates WITHIN a drive, across every bucket (Chad 11-01): the same content hash, or the same normalised title with a similar size (pages when both
- * are known, else bytes) = one item. views = [{ id, rel, title, bytes, cls, pages, sha }]. Keeps the best copy — a text layer over a scan, then the
- * larger/more complete — and returns Map(id → { of: keptId, why }) for the others. Pure.
- */
-export const normTitle = (t) => String(t || '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/\.[a-z0-9]{2,4}$/, '').replace(/\(\d+\)|[-_ ]copy( of)?\b|^copy of\b/g, ' ')
-  .replace(/^\s*\d{1,3}[\s._-]+(?=\D)/, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
-export const dupView = (it) => ({ id: it.id, rel: it.primary_rel, bytes: it.bytes || 0, cls: it.metadata?.probe?.class || null, pages: it.metadata?.probe?.pages || null, sha: it.metadata?.probe?.sha256 || null,
-  title: it.metadata?.catalog?.title || it.sample?.rec?.title || it.title || String(it.primary_rel || '').split('/').pop() });
-const quality = (v) => (v.cls === 'scan' ? 1 : v.cls === 'image_pdf' ? 2 : 3);
-const similar = (a, b) => (a.pages && b.pages ? Math.abs(a.pages - b.pages) / Math.max(a.pages, b.pages) <= 0.1 : a.bytes && b.bytes ? Math.min(a.bytes, b.bytes) / Math.max(a.bytes, b.bytes) >= 0.8 : false);
-export function driveDuplicates(views) {
-  const parent = new Map(views.map((v) => [v.id, v.id])), why = new Map();
-  const find = (x) => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
-  const join = (a, b, w) => { const ra = find(a), rb = find(b); if (ra !== rb) { parent.set(rb, ra); why.set(rb, w); why.set(ra, why.get(ra) || w); } };
-  const bySha = new Map(), byTitle = new Map();
-  for (const v of views) {
-    if (v.sha) { if (bySha.has(v.sha)) join(bySha.get(v.sha), v.id, 'same content (identical file hash)'); else bySha.set(v.sha, v.id); }
-    const k = normTitle(v.title || String(v.rel || '').split('/').pop()); if (k.length >= 6) (byTitle.get(k) || byTitle.set(k, []).get(k)).push(v);
-  }
-  for (const g of byTitle.values()) for (let i = 1; i < g.length; i++) for (let j = 0; j < i; j++) if (similar(g[i], g[j])) { join(g[j].id, g[i].id, 'same title and similar size'); break; }
-  const clusters = new Map();
-  for (const v of views) (clusters.get(find(v.id)) || clusters.set(find(v.id), []).get(find(v.id))).push(v);
-  const out = new Map();
-  for (const c of clusters.values()) {
-    if (c.length < 2) continue;
-    const keep = [...c].sort((a, b) => quality(b) - quality(a) || (b.pages || 0) - (a.pages || 0) || (b.bytes || 0) - (a.bytes || 0) || a.id - b.id)[0];
-    for (const v of c) if (v !== keep) out.set(v.id, { of: keep.id, of_rel: keep.rel, why: why.get(v.id) || why.get(find(v.id)) || 'same title and similar size' });
-  }
-  return out;
-}
