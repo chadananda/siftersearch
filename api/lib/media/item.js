@@ -10,7 +10,7 @@ import { quietRecord, hasQuiet, QUIET_REPAIR_VERSION } from './quiet-record.js';
 import { podPost, podComplete, podVerdict, take as podTake, forget as podForget, podDir } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait, WorkerWait } from './tools.js';
-import { REG, STAGES, COMPLETE_STAGES, DEPENDENTS, withDependents as regWithDependents, missingStages, recordFor, withRecords, towerMay } from './stages.js';
+import { REG, STAGES, COMPLETE_STAGES, DEPENDENTS, withDependents as regWithDependents, missingStages, recordFor, withRecords, towerMay, markStale } from './stages.js';
 import { mkdir, readFile, writeFile, rename, link, copyFile, chmod, stat, readdir } from 'fs/promises';
 import { createReadStream, existsSync } from 'fs';
 import { createHash } from 'crypto';
@@ -248,6 +248,21 @@ export async function runItem(item, opts = {}, deps = {}) {
     if (!dir) return;
     await writeJson(join(dir, 'meta.json'), meta);
     if (item.id && d.ledger) await d.ledger.syncItemStages(item.id, meta.stages).catch(() => {});   // the stage ledger mirrors every save (planning/media-ledger-plan-20261030.md)
+  };
+  // ALIGNMENT DRIFT at the publish gates (11-01: 2680 failed for good, 2530/2692 every update): the transcript's timings are not the ones
+  // realign stamped (a correct/clean pass over a raw without the aligned timings, or a worker's transcript.work.json put back after the text
+  // passes). Never a dead-end 'failed': realign + what is made from its times (registry `after` edges) are marked stale and the run waits —
+  // realign is heavy, so a worker re-aligns (tools gate → WorkerWait on tower). Only the published transcript behind → render again.
+  const alignmentDrift = async (why) => {
+    const published = !!(item.published_at || item.state === 'done' || meta.stages.catalog?.at);
+    const work = await readJson(join(dir, 'transcript.work.json'), { paragraphs: [] });
+    const target = timingSignature(work.paragraphs) !== meta.audio_alignment_hash ? 'realign' : 'render';
+    const marked = markStale(meta, target, { published, at: d.now(), campaign: 'alignment-drift' }, reg);
+    if (!marked.includes(target)) throw new Error(`publish blocked: ${why}; realign it against the selected audio before publishing`);
+    await save();
+    const err = new Error(`publish blocked: ${why} — ${target} marked stale (${marked.join(', ')}); ${target === 'realign' ? 'waiting for a worker to re-align' : 're-rendering'}`);
+    err.code = 'WORKER_WAIT';   // media-jobs: back in the queue, retried — not a failure
+    throw err;
   };
   const latencies = [];
   const threads = async () => {
@@ -537,7 +552,9 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (work?.paragraphs?.length && meta.enhancement) {
         const target = meta.enhancement.listening;
         const workerAlignment = target === 'unipase' ? await podPost(dir, { needFlac: false }) : null;
-        if (isRemastered(meta) && (meta.aligned_to !== target || workerAlignment?.realign)) {
+        // drift: the text's timings are not the ones last stamped (alignmentDrift marked this stage stale) → a real re-alignment, never a re-stamp
+        const drifted = !!meta.audio_alignment_hash && meta.audio_alignment_hash !== timingSignature(work.paragraphs);
+        if (isRemastered(meta) && (meta.aligned_to !== target || workerAlignment?.realign || drifted)) {
           const v = meta.enhancement.variants.find((x) => x.name === target);
           const out = join(dir, 'enhanced', 'realign.json');
           // the worker's alignment of THIS transcript on the guarded copy, when it ran (post.py): no alignment CPU on tower
@@ -1056,7 +1073,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       const problems = publishProblems(work.paragraphs || []);
       if (problems.length) { meta.publish_blocked = problems.slice(0, 20); await save(); throw new Error(`publish blocked: ${problems.length} text problem(s) — ${problems.slice(0, 3).map((x) => `p${x.p} ${x.kind} "${x.text}"`).join('; ')}`); }
       const timeHash = timingSignature(work.paragraphs);
-      if (meta.audio_alignment_hash && meta.audio_alignment_hash !== timeHash) throw new Error('publish blocked: transcript timing changed after alignment; realign it against the selected audio before publishing');
+      if (meta.audio_alignment_hash && meta.audio_alignment_hash !== timeHash) await alignmentDrift('transcript timing changed after alignment');
       if (meta.rights?.playback === 'full') {
         const sync = audioAlignment(meta, { allowPending: true });
         if (!sync.ready) throw new Error(`publish blocked: selected audio (${sync.listening}) does not match transcript alignment (${sync.aligned_to}) or audio revision ${sync.audio_version}`);
@@ -1103,7 +1120,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (meta.rights?.playback === 'full') {
         const publishedTranscript = await readJson(join(dir, 'transcript.json'), { paragraphs: [] });
         const timeHash = timingSignature(publishedTranscript.paragraphs);
-        if (meta.audio_alignment_hash && meta.audio_alignment_hash !== timeHash) throw new Error('publish blocked: published transcript timing no longer matches the audio alignment');
+        if (meta.audio_alignment_hash && meta.audio_alignment_hash !== timeHash) await alignmentDrift('published transcript timing no longer matches the audio alignment');
         const sync = audioAlignment(meta, { allowPending: true });
         if (!sync.ready) throw new Error(`publish blocked: audio ${sync.audio_version} is not aligned to the selected transcript`);
         meta.audio_alignment_version = sync.audio_version;
