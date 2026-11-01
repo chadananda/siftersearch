@@ -1751,7 +1751,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     return true;
   };
   const requireGate = process.env.MEDIA_POOL_REQUIRE_GATE === '1';   // pods must carry /opt/gate (the new image): older ones finish their jobs and are replaced
-  let balance = null, balAt = 0, stop = null, yielded = false, qPass = null, movePass = null, finishPass = null, edgeGpuPass = null, passGen = 0;
+  let balance = null, balAt = 0, stop = null, yielded = false, qPass = null, movePass = null, finishPass = null, feedPass = null, edgeGpuPass = null, passGen = 0;
   // EDGE QUEUE (worker/queue, Chad 10-30): in the background, pull finished queue jobs and keep ~2.5 h of whole talks queued for the machines pulling
   const queueKey = deps.queueKey !== undefined ? deps.queueKey : deps.repo || process.env.MEDIA_QUEUE_FEED === '0' ? null : process.env.INTERNAL_API_KEY;   // tests inject theirs
   // the machines' key (the same on the LAN and the edge queue) handed to an agent pod at boot; no edge feed → no agent pods
@@ -1948,16 +1948,23 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           phase('lan');
           LH.beatStart(st, 'q_lan', now());
           const marks = LH.chainMarks(st), lanAt = now();
-          const lan = await QF.tick(st, { ...deps, demux, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped, deferFinish: true }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
+          const lanDeps = { ...deps, demux, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped, deferFinish: true };
+          // the feed (tower hashes + stores each fed original: 630 s of a 659 s pass, 11-01) runs BESIDE the pass, lan then edge, one at a time; the pass only pulls and plans
+          if (!feedPass) feedPass = (async () => {
+            const one = async (key, d) => QF.feedBeside(st, d).then((r) => { st[key] = { at: now(), ...r }; }, (e) => { st[key] = { at: now(), error: String(e.message).slice(0, 300) }; });
+            await one('q_feed_lan', lanDeps); await one('q_feed_edge', { ...deps, q: queueClient({ key: queueKey }) });
+            const f = st.q_feed_lan; LH.beat(st, 'feed', { n: (f?.fed || 0) + (f?.typed?.fed || 0) }, now());
+          })().finally(() => { feedPass = null; });
+          const lan = await QF.tick(st, { ...lanDeps, deferFeed: true }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
           if (!alive()) return;
           st.q_lan = { at: now(), ...lan };
           LH.recordSteps(st, marks, lanAt, now());
           const pulledN = (lan.pulled?.adopted || 0) + (lan.pulled?.typed?.steps || 0) + (lan.pulled?.typed?.adopted || 0);
           LH.beat(st, 'q_lan', { ok: !lan.error, err: lan.error, n: pulledN }, now());
-          if (!lan.error) { LH.beat(st, 'pull', { ok: !(lan.pulled?.errors || lan.pulled?.typed?.errors), err: `${(lan.pulled?.errors || 0) + (lan.pulled?.typed?.errors || 0)} adoption errors`, n: pulledN }, now()); LH.beat(st, 'feed', { n: (lan.fed?.fed || 0) + (lan.fed?.typed?.fed || 0) }, now()); }
+          if (!lan.error) { LH.beat(st, 'pull', { ok: !(lan.pulled?.errors || lan.pulled?.typed?.errors), err: `${(lan.pulled?.errors || 0) + (lan.pulled?.typed?.errors || 0)} adoption errors`, n: pulledN }, now()); }
           phase('edge');
           LH.beatStart(st, 'q_edge', now());
-          const edgeR = await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }).catch((e) => { LH.beat(st, 'q_edge', { ok: false, err: e.message }, now()); throw e; });
+          const edgeR = await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }), deferFeed: true }).catch((e) => { LH.beat(st, 'q_edge', { ok: false, err: e.message }, now()); throw e; });
           if (!alive()) return;
           st.q_last = { at: now(), ...edgeR, sub: st.q_pass?.sub };
           LH.beat(st, 'q_edge', { n: (edgeR.pulled?.adopted || 0) }, now());
@@ -1988,7 +1995,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const outdated=(p)=>p.image!==acceptedWorker.image||p.boot_v!==(p.agent?C.BOOT_V_AGENT:C.BOOT_V);   // an older image, or booted by an older BOOTSTRAP_WHOLE
       const imageDrainId=acceptedWorker&&!imageStarting?live.filter(p=>p.image&&outdated(p)).sort((a,b)=>a.created-b.created)[0]?.id:null;
       const inflight = Object.keys(st.jobs).length + staging.size + collecting.size;
-      if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass && !movePass && !edgeGpuPass && !finishPass) break;
+      if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass && !movePass && !edgeGpuPass && !finishPass && !feedPass) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
       // TYPED PODS (Chad 10-31): no pod-count or money cap — target = the plan's supportable, limited by work. Ramp ONE at a time, and only with

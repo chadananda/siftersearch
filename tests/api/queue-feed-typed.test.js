@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import * as Q from '../../worker/queue/core.js';
-import { feed, pull, tick as qtick, forgiveOurs, adoptEdgeGpu, adoptFinish } from '../../api/lib/media/queue-feed.js';
+import { feed, pull, tick as qtick, forgiveOurs, adoptEdgeGpu, adoptFinish, feedBeside, shaOf } from '../../api/lib/media/queue-feed.js';
 import { CONTRACT, requiredFiles, fpOf } from '../../api/lib/media/stage-jobs.js';
 
 const doSql = () => { const db = new Database(':memory:'); return { exec: (q, ...b) => { const st = db.prepare(q); const r = st.reader ? st.all(...b) : (st.run(...b), []); return { toArray: () => r }; } }; };
@@ -477,5 +477,24 @@ describe('linkOrCopy / queue get: same filesystem = a hardlink, no bytes moved',
     await linkOrCopy(join(d, 'a'), join(d, 'b'));
     expect(await readFile(join(d, 'b'), 'utf8')).toBe('AAAA');
     expect((await stat(join(d, 'a'))).ino).toBe((await stat(join(d, 'b'))).ino);
+  });
+});
+
+describe('feed beside the pass: timed parts, one hash per unchanged original, hardlinked put', () => {
+  it('feedBeside feeds a talk, times select/gate/dup/demux/hash/cancel/put/enqueue, and the put is a hardlink', async () => {
+    engage(); st.queue = [1];
+    const r = await feedBeside(st, deps);
+    expect(r.typed.fed).toBe(1);
+    for (const k of ['select', 'gate', 'dup', 'demux', 'hash', 'cancel', 'put', 'enqueue']) expect(r.sub[`feed:${k}`].n).toBe(1);
+    expect(st.sha_cache[join(items[1].dir, 'orig.mp3')].sha).toBe(st.chains[1].sha);
+    expect(typeof r.ms).toBe('number');
+  });
+  it('shaOf reads an unchanged file once (path+size+mtime) and again when it changes', async () => {
+    const d = await mkdtemp(join(tmpdir(), 'sha-')), f = join(d, 'o.wav'); await writeFile(f, 'AAAA');
+    let reads = 0; const wr = { fileSha: async (p) => { reads++; return createHash('sha256').update(await readFile(p)).digest('hex'); } }, st = {};
+    const a = await shaOf(st, wr, f), b = await shaOf(st, wr, f);
+    expect(a).toBe(b); expect(reads).toBe(1);
+    await writeFile(f, 'BBBBB');
+    expect(await shaOf(st, wr, f)).not.toBe(a); expect(reads).toBe(2);
   });
 });

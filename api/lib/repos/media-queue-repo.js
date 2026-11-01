@@ -78,12 +78,12 @@ export async function fileList(kind, id) {
   return out;
 }
 /** A machine places a result (its lease must be live) or tower stages an input: written to a temp name, renamed when complete. */
-export async function fileWrite(kind, id, name, source, { lease } = {}) {
+export async function fileWrite(kind, id, name, source, { lease, link: linked = false } = {}) {
   if (kind === 'results') await queueCall('lease-ok', { id, lease });
   const dest = filePath(kind, id, name), part = `${dest}.part-${process.pid}-${Date.now()}`;
   await mkdir(dirname(dest), { recursive: true });
   try {
-    if (typeof source === 'string') await copyFile(source, part); else await pipeline(source, createWriteStream(part));
+    if (typeof source === 'string') { if (linked) await link(source, part).catch(async (e) => { if (!['EXDEV', 'EPERM', 'ENOTSUP'].includes(e.code)) throw e; await copyFile(source, part); }); else await copyFile(source, part); } else await pipeline(source, createWriteStream(part));   // link:true = an immutable source on the same filesystem (a talk's original): no bytes move
     await rename(part, dest);
   } catch (e) { await rm(part, { force: true }); throw e; }
   return { key: `${AREA[kind]}/${id}/${name}`, bytes: (await stat(dest)).size };

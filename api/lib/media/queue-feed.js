@@ -28,12 +28,21 @@ export const kindOf = (st, id) => (st.items?.[id]?.kind === 'whole' ? 'whole' : 
 const restoreJob = () => import('./restore-job.js');
 
 /** Stage one talk's inputs by file id → the queue job (no enqueue). */
-async function stage(kind, it, m, { q, wr, rj, full }) {
+/** sha256 of a big original, read once while the file is unchanged: cached in st.sha_cache by path + size + mtime (the feed hashes it, the adoption checks it
+ *  still matches). The /tank read is the cost (11-01: feed 630 s of a 659 s pass); a changed size or mtime is read again. */
+export async function shaOf(st, wr, file, tm = (k, f) => f()) {
+  const s = await stat(file), key = `${s.size}:${s.mtimeMs}`, c = st?.sha_cache?.[file];
+  if (c?.key === key) return c.sha;
+  const sha = await tm('hash', () => wr.fileSha(file));
+  if (st) (st.sha_cache ||= {})[file] = { key, sha };
+  return sha;
+}
+async function stage(kind, it, m, { q, wr, rj, full, st = null, tm = (k, f) => f() }) {
   if (kind === 'whole') {
-    const input = join(it.dir, m.original), sha = await wr.fileSha(input), fileId = fileIdFor(it.id, sha);
+    const input = join(it.dir, m.original), sha = await shaOf(st, wr, input, tm), fileId = fileIdFor(it.id, sha);
     const job = { ...wr.wholeJob(it, m, sha), threads: 4 }, jf = join(it.dir, '.queue-job.json');
     await writeFile(jf, JSON.stringify(job));
-    const { bytes } = await q.put('files', fileId, job.input, input);
+    const { bytes } = await tm('put', () => q.put('files', fileId, job.input, input, { link: true }));
     await q.put('files', fileId, 'job.json', jf); await rm(jf, { force: true });
     return { sha, fileId, bytes };
   }
@@ -102,6 +111,8 @@ export async function feedDup(it, m, repo, st = {}) {
   return null;
 }
 
+// a sub-timer keyed <prefix>:<part> into the pass trace (queue-feed callers without a trace pay nothing)
+const tmOf = (trace, prefix) => async (part, f) => { const t0 = Date.now(); try { return await f(); } finally { trace?.sub(`${prefix}:${part}`, Date.now() - t0); } };
 export async function feed(st, deps) {
   const { q, repo, wr, rj, full = true, decided = () => false, readMeta = readMetaFile, now = Date.now, max = 20 } = deps;
   const cap = await q.capacity();
@@ -121,7 +132,7 @@ export async function feed(st, deps) {
       const it = await repo.getMediaItem(itemId), m = await readMeta(it.dir);
       if (await gated(it, m, repo, deps)) continue;
       if (kind !== 'whole' && decided(m, itemId)) continue;
-      const { sha, fileId, bytes } = await stage(kind, it, m, { q, wr, rj: rj || await restoreJob(), full }), id = jobIdFor(itemId, sha, kind);
+      const { sha, fileId, bytes } = await stage(kind, it, m, { q, wr, rj: rj || await restoreJob(), full, st, tm: tmOf(deps.trace, `${kind}:stage`) }), id = jobIdFor(itemId, sha, kind);
       await q.enqueue([{ id, file_id: fileId, item_id: itemId, type: 'media', stages: [kind], invoice: { audio_s: m.duration_s || 0, bytes }, need: { ram_gb: 5 } }]);
       st.qjobs[id] = { itemId, slug: it.slug, sha, kind, audio_s: m.duration_s || 0, at: now() };
       queuedS += m.duration_s || 0; fed++;
@@ -147,7 +158,8 @@ const chainSrc = (it, m, ch) => join(it.dir, ch.src || m.original);
 /** Typed feed: only while hosts for all three steps are engaged; keeps ~TARGET_H of prep queued; order by band (pickNext). */
 /** The edge's engaged cpu-prep supply (a CPU pod): { rate, queued_audio_h } at its measured rate, or null when no edge host lists cpu-prep. */
 const edgePrep = (cap) => { const t = cap?.by_type?.['cpu-prep']; return t?.hosts?.length ? { rate: t.rate || 0, queued_audio_h: t.queued_audio_h || 0 } : null; };
-async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null, buffer = null }) {
+async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null, buffer = null, trace = null }) {
+  const ft = tmOf(trace, 'feed');
   const types = new Set(cap.hosts.flatMap((h) => h.types || []));
   const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t) && !(t === 'gpu' && edge && gpuEdge !== false));   // pods boot on the edge's gpu backlog
   if (lack.length) return { fed: 0, why: `no ${lack.join('/')} host engaged` };
@@ -168,24 +180,24 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
     if (i < 0) break;
     const [itemId] = st.queue.splice(i, 1);
     try {
-      const it = await repo.getMediaItem(itemId), m = await readMeta(it.dir);
-      if (await gated(it, m, repo, { cbPeople })) continue;
-      const dup = last ? null : await feedDup(it, m, repo, st);
+      const [it, m] = await ft('select', async () => { const i = await repo.getMediaItem(itemId); return [i, await readMeta(i.dir)]; });
+      if (await ft('gate', () => gated(it, m, repo, { cbPeople }))) continue;
+      const dup = last ? null : await ft('dup', () => feedDup(it, m, repo, st));
       if (dup?.skip) continue;
       if (dup?.later) { st.feedLater[itemId] = dup.later; st.queue.push(itemId); continue; }
       if (dup?.state) { await repo.updateMediaItem(it.id, { state: dup.state, why: dup.why.slice(0, 500) }); held++; continue; }
       delete st.feedLater[itemId];
-      const src = await chainInput(it, m, demux), input = join(it.dir, src), sha = await wr.fileSha(input);
+      const src = await ft('demux', () => chainInput(it, m, demux)), input = join(it.dir, src), sha = await shaOf(st, wr, input, ft);
       const wj = { ...wr.wholeJob(it, m, sha), threads: 4 }, fileId = typedFileId(itemId, sha), audio_s = m.duration_s || 0;
       if (src !== m.original) wj.input = 'in' + extname(src);
       const job = SJ.typedJob('cpu-prep', { itemId, fileId, wj, band: SJ.bandOf(st, itemId), audio_s });
       // job ids are deterministic (talk + input sha): a talk fed again after its chain was dropped would meet its OLD step under the same
       // id — enqueue leaves a done/leased job alone, so the stale result came back with no chain ("chain record lost", 1947 10-31).
       // Cancel it first (before the put: a cancel also clears the staged files no other job names).
-      if (q.cancel) await q.cancel([job.id]).catch(() => null);
-      const { bytes } = await q.put('files', fileId, wj.input, input);
+      if (q.cancel) await ft('cancel', () => q.cancel([job.id]).catch(() => null));
+      const { bytes } = await ft('put', () => q.put('files', fileId, wj.input, input, { link: true }));   // a hardlink on tower's own store: the original's bytes are not copied
       job.invoice.bytes = bytes;
-      await q.enqueue([job]);
+      await ft('enqueue', () => q.enqueue([job]));
       st.chains[itemId] = { sha, fileId, slug: it.slug, input: wj.input, audio_s, at: now(), bytes, ...(src !== m.original ? { src } : {}) };
       st.qjobs[job.id] = { itemId, slug: it.slug, sha, kind: 'typed', type: 'cpu-prep', audio_s, at: now() };
       queuedS += audio_s; fed++;
@@ -287,7 +299,7 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
           const k = (w) => `${type}:${src}:${w}`;
           await tm(k('get'), async () => { for (const o of outputs) await sq.get('results', j.id, o, join(stg, o)); });   // a hardlink on the LAN store's filesystem
           const r = await tm(k('result'), async () => SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs }));
-          const meta = await wr.adoptWholeResult(stg, it.dir, await readMeta(it.dir), ch.sha, null, (w, f) => tm(k('adopt_' + w), f));
+          const meta = await wr.adoptWholeResult(stg, it.dir, await readMeta(it.dir), ch.sha, null, (w, f) => tm(k('adopt_' + w), f), (f) => shaOf(st, wr, f));
           await tm(k('untransit'), () => untransit(it.dir, r, meta, { run, now }));
           ch[type] = SJ.stepOf(j, r, now());
           logStep(st, type, j.host, ch.audio_s, now());
@@ -301,6 +313,7 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
           for (const x of [j.id, ch['cpu-prep']?.id, ch.gpu?.id]) if (x) ackJob(x);
           if (ch.src) await rm(join(it.dir, ch.src), { force: true }).catch(() => {});
           delete st.chains[qj.itemId];
+          for (const f of [ch.src, meta.original]) if (f && st.sha_cache) delete st.sha_cache[join(it.dir, f)];   // the chain is done: its cached hashes go
           adopted++;
         }
       } catch (e) {
@@ -569,7 +582,7 @@ export async function tick(st, deps) {
     out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
     out.moved_prep = await rebalancePrep(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
   }
-  out.fed = await timed('feed', () => feed(st, deps));
+  out.fed = deps.deferFeed ? { deferred: true } : await timed('feed', () => feed(st, deps));
   out.leased = {}; out.beat = {};   // jobs each agent holds (machine cards) + its latest heartbeat (an agent pod is alive while it beats: media-jobs.js)
   // every job type: stats() alone reads 'media' only, so typed leases (cpu-prep, gpu, cpu-finish) were missing and the cards read {} (10-31)
   const all = await timed('stats', () => Promise.all(['media', ...SJ.AUDIO_TYPES].map((t) => Promise.resolve().then(() => deps.q.stats(t)).catch(() => null))));
@@ -584,6 +597,14 @@ export async function tick(st, deps) {
 /** The edge→LAN gpu handoff, beside the pass (like the mover): each finished gpu step on the edge is validated and its files copied R2 → LAN
  *  (the cpu-finish step's inputs), several at once. Crash-safe as in the pass: the edge step stays done until its cpu-finish is enqueued. */
 export const adoptEdgeGpu = (st, deps) => adoptBeside(st, deps, { type: 'gpu', src: 'edge' });
+/** feed() beside the pass (own state keys: the queue, chains, qjobs of NEW talks): tower's hash + queue put of each original no longer holds the pass
+ *  (and the pod plan) back. Returns the feed result + ms + the per-part sub timings. */
+export async function feedBeside(st, deps) {
+  const sub = {}, t0 = (deps.now || Date.now)();
+  const trace = { step: () => {}, sub: (k, ms) => { const x = (sub[k] ||= { n: 0, ms: 0 }); x.n++; x.ms += ms; } };
+  const r = await feed(st, { ...deps, trace });
+  return { ...r, ms: (deps.now || Date.now)() - t0, sub };
+}
 /** The cpu-finish adoption, beside the pass the same way: validate + place the talk's files + meta + ledger (measured 10-31: 512 s of a 529 s pass). */
 export const adoptFinish = (st, deps) => adoptBeside(st, deps, { type: 'cpu-finish' }, 2);
 async function adoptBeside(st, deps, only, par = MOVE_PARALLEL) {

@@ -29,9 +29,9 @@ export async function validateWholeResult(root,inputSha,slug){
 }
 // a hardlink when both paths share a filesystem (no bytes move: the 400 MB unipase.flac), a copy across filesystems
 export async function linkOrCopy(from,to){await rm(to,{force:true});try{await link(from,to);}catch(e){if(!['EXDEV','EPERM','ENOTSUP'].includes(e.code))throw e;await copyFile(from,to);}}
-export async function adoptWholeResult(root,dir,oldMeta,inputSha,itemId=null,T=(k,f)=>f()){
+export async function adoptWholeResult(root,dir,oldMeta,inputSha,itemId=null,T=(k,f)=>f(),shaOf=fileSha){
  const r=await T('validate',()=>validateWholeResult(root,inputSha,oldMeta.slug));
- if(await T('hash_original',()=>fileSha(join(dir,oldMeta.original)))!==inputSha)throw Error('Original changed while processing');
+ if(await T('hash_original',()=>shaOf(join(dir,oldMeta.original)))!==inputSha)throw Error('Original changed while processing');
  const workerOriginal='original/in'+oldMeta.original.slice(oldMeta.original.lastIndexOf('.')).toLowerCase();
  const rewrite=v=>typeof v==='string'?(v===workerOriginal?oldMeta.original:v.replaceAll('/job/item/'+workerOriginal,join(dir,oldMeta.original)).replaceAll('/job/item/',dir+'/')):Array.isArray(v)?v.map(rewrite):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,rewrite(x)])):v;
  const meta=rewrite(r.meta);meta.original=oldMeta.original;meta.source=oldMeta.source;meta.worker_result={input_sha:inputSha,adopted_at:new Date().toISOString()};
