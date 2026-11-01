@@ -85,6 +85,16 @@ describe('named scopes', () => {
     expect(workDocs('The Kitáb-i-Íqán', rows, { resolved: true }).map((d) => d.id)).toEqual([20810]);
     expect(workDocs('The Kitáb-i-Íqán', rows.slice(0, 2), { resolved: true }).map((d) => d.id)).toEqual([31, 32]);
   });
+  it('workDocs: recorded talks titled exactly after the work never out-tier the work itself (production rows, r8)', () => {
+    const rows = [{ id: 2209921, title: 'Kitáb-i-Íqán', author: 'Unknown', collection: 'Media' },
+      { id: 983946, title: 'Kitáb-i-Íqán', author: 'Hasan Sabri', collection: 'Media' },
+      { id: 984459, title: 'The Kitáb-i-Íqán', author: 'Hooper Dunbar', collection: 'Media' },
+      { id: 14489, title: 'Kitáb-i-Íqán', author: 'Christopher Buck', collection: 'Papers' },
+      { id: 20810, title: 'The Kitáb-i-Íqán', author: 'Bahá’u’lláh', collection: 'Bahá’u’lláh' }];
+    expect(workDocs('Kitáb-i-Íqán', rows, { resolved: true }).map((d) => d.id)).toEqual([20810]);
+    // no central-figure text: a written text before any recording
+    expect(workDocs('Kitáb-i-Íqán', rows.slice(0, 4), { resolved: true }).map((d) => d.id)).toEqual([14489]);
+  });
   it('authorDocs: the author IS the name (honorific, "of …", co-authors); no namesakes, no tag pages', () => {
     const rows = [{ id: 1, author: 'Saint Augustine' }, { id: 2, author: 'Augustine Smith' }, { id: 3, author: 'Augustinian Friars' },
       { id: 4, author: 'Augustine of Hippo' }, { id: 5, author: 'Plotinus; Augustine' }, { id: 6, author: 'Augustine', title: 'Tag: Augustine' }];
