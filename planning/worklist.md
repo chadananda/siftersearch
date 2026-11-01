@@ -17,10 +17,24 @@ Pipeline (Chad 10-31): Jev picks strategy (no LLM) → Haiku extracts phrases (s
 Jev re-ranks/selects → Jev-chosen output format. Trigger: quote-fragment miss, thread conv_42253327 (topic not quote, off-topic, 14 s).
 - [~] Fix: Jev timeout→silent 'topic', quote backstop, phrase extraction, per-stage route log, off-topic pivot, dead search_trace, 10–15 s pre-auth latency
 - [~] Wording battery: tests/quality/anis-wording-fixtures.json + score-anis-wording.mjs (83 types × 10–15 styles, per-stage scoring)
-- [ ] Iterate until the wording battery passes; every real miss becomes a fixture
-- [ ] THEN conversations (Chad 10-31): simulated multi-turn conversations on a theme → deep quality analysis → iterate.
-      Existing: scripts/gen-dialogs.mjs (seeds → simulated user → published_conversations = the "discuss" pages; still
-      calls "Jafar" + GPT-4o, last touched 05-15), tests/chat/{scenarios,rubric,run-scenarios,iterate}.js. Bring onto today's Anís.
+- [~] Iterate until the wording battery passes; every real miss becomes a fixture (11-01: 923/1207; spot 322 → 87%)
+- [~] Conversations: tests/quality/anis-conversations.mjs (--replay <report> same reader turns, --judges N, Perplexity
+      compare per turn by default). Rounds 6–8 deployed (phrase v2 48e39cdc; routing fc5fa59a/dfdcfedf; named works on
+      every route 4acde2cf/7e930bb8/c7e59846/ca96a33f). r6 replay 2.85→3.02/10 (2 judges, spread 0.3). 59/100 defects
+      now at the ANSWER stage.
+- [~] STATE 11-01 (laptop shut down): round 9 (answer stage) was running in a worktree agent and was cut off by shutdown —
+      check `git log origin/main` for its commits; if absent, redo: classify the 59 answer-stage defects in
+      tests/quality/reports/*r8-* (false "not found" with passages present; capitulates on pushback; facts not in passages,
+      e.g. al-Inṣāf called 5th Arabic Hidden Word — it is 2nd); fix causes in respond.js/turn.js/formats.js/prompts; verify
+      search endpoint ignores doc filter ("Elias" in doc 20810) and fix; check Íqán Elijah passage ~¶161–179 retrieval;
+      measure --replay r6+px --judges 2 + wording spot-check.
+- [ ] CITATION ORDER (Chad 11-01): when the same passage exists in several sources, cite the best one. "Uncompiled
+      Published Letters" is a compilation of LAST RESORT; prefer a published source (e.g. Lights of Guidance) — example:
+      "Man will always have to toil in order to earn his living" currently cited to Uncompiled Published Letters. Build a
+      ranked source-preference order (original published work > authoritative published compilation > last-resort
+      compilations) in Jev selection; fixture it.
+- [ ] Open: SAQ 20911 / Hidden Words edition / Íqán Elijah misses; Haiku `exact` typos + descriptions; lay_paraphrase
+      scorer check unfair; Anís process stalls (timers 12 s late → 27% phrase timeouts); 8 infra test files failing (not Anís).
 
 ## ▶ (Chad 10-17) — RETRIEVAL ADDITIONS, in order
 Index order of operations for every ingest (Chad 10-16/17): paragraph store → BM25 → structure (sub-documents + TOC) →
