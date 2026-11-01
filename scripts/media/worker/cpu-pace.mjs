@@ -14,6 +14,14 @@ const GB = 1073741824;
 export function cgroupOf(pid, read = (f) => readFileSync(f, 'utf8')) {
   try { const m = /^0::(\/.*)$/m.exec(read(`/proc/${pid}/cgroup`)); return m ? `/sys/fs/cgroup${m[1] === '/' ? '' : m[1]}` : null; } catch { return null; }
 }
+/** A systemd slice's cgroup v2 directory: 'sifter-bulk.slice' → /sys/fs/cgroup/sifter.slice/sifter-bulk.slice (each dash is a parent; 11-01: the
+ *  flat path did not exist, so tower's slots were judged against the whole box: allowed 55 of a 16-core slice). Anything else: as given. */
+export function slicePath(name) {
+  const n = String(name || '').replace(/^\/+|\/+$/g, '');
+  if (!/^[^/]+\.slice$/.test(n)) return `/sys/fs/cgroup/${n}`;
+  const parts = n.slice(0, -'.slice'.length).split('-');
+  return `/sys/fs/cgroup/${parts.map((_, i) => `${parts.slice(0, i + 1).join('-')}.slice`).join('/')}`;
+}
 /** One reading of a cgroup v2 directory: { memGb, peakGb (null if the kernel has no memory.peak), usec } or null when unreadable. */
 export function readCgroup(dir, read = (f) => readFileSync(f, 'utf8')) {
   if (!dir) return null;

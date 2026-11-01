@@ -6,7 +6,7 @@ import { createServer } from 'node:http';
 import { mkdtempSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { cgroupOf, readCgroup, track, summary, record, profileOf, memPressure, admitCpu, cpuAllowed, PROFILE_RUNS, stallOf, windowCores } from '../../scripts/media/worker/cpu-pace.mjs';
+import { cgroupOf, slicePath, readCgroup, track, summary, record, profileOf, memPressure, admitCpu, cpuAllowed, PROFILE_RUNS, stallOf, windowCores } from '../../scripts/media/worker/cpu-pace.mjs';
 import { gpuStats, jobProgress, snapshot, compact, serveHealth, ringPush, lastWords, LAST_WORDS, HEALTH_SCHEMA, holdAgentLock } from '../../scripts/media/worker/health.mjs';
 
 const G = 1073741824;
@@ -68,6 +68,12 @@ describe('cpu-pace: admission', () => {
     expect(admitCpu({ ...base, type: 'cpu-finish', pressure: 2 }).why).toMatch(/pressure/);
     expect(admitCpu({ ...base, type: 'cpu-finish', busy: null, running: [{ type: 'cpu-finish', cores: 1 }] }).why).toMatch(/unknown/);
     expect(admitCpu({ ...base, type: 'cpu-finish', busy: null }).ok).toBe(true);   // nothing in hand: start
+  });
+  it('a systemd slice name resolves to its nested cgroup (11-01: the flat path missed it → host totals, allowed 55)', () => {
+    expect(slicePath('sifter-bulk.slice')).toBe('/sys/fs/cgroup/sifter.slice/sifter-bulk.slice');
+    expect(slicePath('bulk.slice')).toBe('/sys/fs/cgroup/bulk.slice');
+    expect(slicePath('a-b-c.slice')).toBe('/sys/fs/cgroup/a.slice/a-b.slice/a-b-c.slice');
+    expect(slicePath('/docker/x')).toBe('/sys/fs/cgroup/docker/x');
   });
   it('tower: the slice (16 cores, 20 GB) is the ceiling', () => {
     const allowed = cpuAllowed(['cpu-finish'], { ...base, allowed: 16, availGb: 20, busy: 0 });

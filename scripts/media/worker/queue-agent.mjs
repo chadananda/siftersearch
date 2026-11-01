@@ -24,7 +24,7 @@ import { join, relative, dirname, basename } from 'node:path';
 
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
 import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, cgroupMemGb, cpuSample, cpuBusy, nextDepth, STALL_MS, GPU_IDLE } from './gpu-pace.mjs';
-import { cgroupOf, readCgroup, track, summary, loadProfiles, saveProfiles, record, profileOf, memPressure, admitCpu, cpuAllowed, stallOf, windowCores } from './cpu-pace.mjs';
+import { cgroupOf, slicePath, readCgroup, track, summary, loadProfiles, saveProfiles, record, profileOf, memPressure, admitCpu, cpuAllowed, stallOf, windowCores } from './cpu-pace.mjs';
 import { gpuStats, jobProgress, snapshot, compact, serveHealth, ringPush, ringSave, ringLoad, lastWords, holdAgentLock } from './health.mjs';
 import { cpus } from 'node:os';
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
@@ -89,7 +89,7 @@ const nap = (ms) => new Promise((r) => { const t = setTimeout(r, ms); wake = () 
 // RAM = the smaller of /proc/meminfo and this process's cgroup (a pod's meminfo is the host's)
 const meminfo = (k, d) => { try { return Number(new RegExp(`${k}:\\s+(\\d+)`).exec(readFileSync('/proc/meminfo', 'utf8'))[1]) / 1048576; } catch { return d; } };
 // --cgroup-parent: the slice the job containers share is the scope measured (tower: sifter-bulk.slice, 16 cores, 20 GB), not the whole box
-const SCOPE = CGROUP ? (f) => readFileSync(f.replace(/^\/sys\/fs\/cgroup\//, `/sys/fs/cgroup/${CGROUP}/`), 'utf8') : () => { throw new Error('no scope'); };
+const SCOPE = CGROUP ? (f) => readFileSync(f.replace(/^\/sys\/fs\/cgroup\//, `${slicePath(CGROUP)}/`), 'utf8') : () => { throw new Error('no scope'); };
 const memTotalGb = () => Math.min(meminfo('MemTotal', 10), cgroupMemGb()?.limitGb ?? Infinity, cgroupMemGb(SCOPE)?.limitGb ?? Infinity);
 // Each container's memory cap is the host's (85 %), not a fixed 10 GB: gpu_lease.py sums the RAM every talk's stages reserve against the
 // container's own limit, so 10 GB let only one talk hold a stage at a time (10-31: boss's 2nd talk sat 8 min at grade, 92 GB VRAM free).
