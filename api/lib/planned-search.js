@@ -3,14 +3,16 @@
 // SEARCH TARGET (search-target.js): a query that NAMES a person or place is searched under every name the texts use
 // for it ("iderne" → Adrianople / Edirne / Adirnih); passages naming the target lead and carry `targetHighlight`.
 // Deps: search-plan, search-scope; search.js + answer-cache.js + search-target.js loaded lazily so this stays unit-testable.
-import { planSearch, layersFor } from './search-plan.js';
+import { planSearch, layersFor, leanTradition } from './search-plan.js';
 import { relaxScope } from './search-scope.js';
 import { foldVerbatim, isVerbatimQuery } from './search/verbatim.js';
 import { hintPlan, applyHints } from './search/hints.js';
+import { withNamed } from './search/named-scope.js';
 import { correctQuery, vocabulary } from './search/spell.js';
 
 const TTL_MS = 10 * 60 * 1000;
 const TARGET_MS = 1200;
+const NAMED_SCOPE_MS = 400;   // the title/author lookup of named works (docs_fts, ms) — late means no named scopes, never a slower search
 const CLAIMS_GRACE_MS = Number(process.env.CLAIMS_GRACE_MS || 1500);
 const KEYWORD_ONLY = { keywordLayer: true, phraseLayer: false, semantic: false, hype: false, diversify: false };
 const MAX = 500;
@@ -147,7 +149,7 @@ export const qdrantDefault = (v = process.env.SEARCH_QDRANT || '') => ({ phrase:
 export const qdrantOption = (v) => v === true ? { phrase: true, keyword: true, hype: false, only: false } : v === 'only' ? { phrase: true, keyword: true, hype: true, only: true }
   : v && typeof v === 'object' ? { phrase: !!v.phrase, keyword: !!v.keyword, hype: !!v.hype, only: !!v.only } : v === false ? { phrase: false, keyword: false, hype: false, only: false } : qdrantDefault();
 
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab, citer, hints } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab, citer, hints, namedScope } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // A reader's misspellings are corrected against the library's own vocabulary BEFORE anything searches (search/spell.js):
@@ -164,10 +166,17 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // Resolved BESIDE the plan, inside the same budget; a slow or failed resolve means no target, never a slower search.
   const target = targeter ?? (engine ? null : async (q) => (await import('./search-target.js')).resolveTarget(q));
   const targetP = target ? target(query).catch(() => null) : Promise.resolve(null);
-  const plan = await planner(messages?.length ? messages : query, { given });
+  let plan = await planner(messages?.length ? messages : query, { given });
+  // NAMED WORKS (search/named-scope.js): every work or writer the question names → its library documents, searched for
+  // their own passages on EVERY route (px-smoke return-iqan: an Íqán question answered from Divine Philosophy; the City of
+  // God and Lights of Guidance never searched). A named work outside the inferred tradition makes that tradition a lean.
+  const scopeFn = namedScope ?? (engine ? null : async (p) => (await import('./search/named-scope.js')).namedScopes(p));
+  const scopes = scopeFn && (plan.mentions?.length || plan.spans?.length)
+    ? await Promise.race([scopeFn(plan).catch(() => []), new Promise((ok) => { const t = setTimeout(() => ok([]), NAMED_SCOPE_MS); t.unref?.(); })]) : [];
+  if (plan.filters?.religion && scopes.some((x) => x.kind === 'work' && x.religion && x.religion !== plan.filters.religion)) plan = leanTradition(plan, 'named-work');
   // Site default (an embedding site's home tradition): fills in only when the question named none and is not a
   // comparison. It is a scope like any other, so the relax ladder still widens it when the site's texts are thin.
-  if (defaults?.religion && !plan.filters.religion && !plan.comparative) {
+  if (defaults?.religion && !plan.filters.religion && !plan.comparative && !plan.lean) {
     plan.filters = { ...plan.filters, religion: defaults.religion };
     plan.source = { ...plan.source, religion: 'site-default' };
   }
@@ -179,7 +188,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const planMs = Date.now() - t0;
 
   const { SEARCH_VERSION = '' } = engine ? {} : await import('./answer-cache.js').catch(() => ({}));
-  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null, qdrant, weights || null, hints || null]);
+  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null, qdrant, weights || null, hints || null, scopes.map((x) => x.docIds), plan.lean?.religion || null]);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) {
     return { ...hit.value, cached: true, timings: { plan_ms: planMs, search_ms: 0, total_ms: Date.now() - t0 } };
@@ -218,6 +227,9 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // HINTS (Anís's phrase step, search/hints.js): the seeker's exact wordings hunted verbatim, a lookup's names (+ spellings)
   // by keyword — beside the plan; author / work / tradition only reorder
   const hinted = hintPlan(hints, plan, { verbatimQ: quotation ? verbatimQ : null, question: messages?.length ? messages.at(-1)?.content : query });
+  if (plan.lean && !hinted.tradition) hinted.tradition = plan.lean.religion;   // the lifted tradition still orders, never filters
+  // each named work's / writer's own passages on the subject (the plan's layers inside those documents only)
+  const namedHitsP = Promise.all(scopes.map((x) => search({ documentId: x.docIds }, subjectQ).catch(() => [])));
   const hintHits = Promise.all([
     Promise.all(hinted.exact.map((p) => search({}, p, KEYWORD_ONLY).catch(() => []))).then((l) => l.flat()),
     Promise.all(hinted.names.map((n) => search(plan.filters, n, KEYWORD_ONLY).catch(() => []))).then((l) => l.flat()),
@@ -248,9 +260,14 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     hits = leadWithTarget([hits, ...per], (h) => markTarget(h.text, tgt), limit);
     stages.target_ms = Date.now() - t1;
   }
-  if (hints) {
+  if (hints || plan.lean) {
     const [exactHits, nameHits] = await hintHits;
     hits = applyHints(hits, hinted, { exactHits, nameHits, limit });
+  }
+  if (scopes.length) {
+    const perScope = await namedHitsP;
+    hits = withNamed(hits, perScope, limit);
+    stages.named = scopes.map((x, i) => ({ kind: x.kind, name: x.name, docs: x.docIds.length, hits: perScope[i]?.length || 0 }));
   }
 
   // Correct sources BEFORE anything formats them: quoted words served from their original work, every checked

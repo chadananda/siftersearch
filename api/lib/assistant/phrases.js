@@ -65,7 +65,11 @@ const salvage = (s) => {
 
 /** Parse + validate Haiku's JSON against the conversation (a reply cut off at the token limit keeps its complete fields).
  *  → structured object or null (not JSON). Pure. */
-export function parsePhrases(raw, { question, previous = '', reply = '' } = {}) {
+// The seeker's REQUEST for a passage is no wording of it: "the exact sentence in the Íqán where Bahá'u'lláh says John the
+// Baptist was Elijah" was hunted verbatim (px-smoke return-iqan T3) and found nothing. Grounded in the question, so it passed.
+export const REQUEST_FRAME = /^(?:(?:the|a|an|that|this)\s+)?(?:(?:exact|precise|specific|actual|full|original|whole)\s+(?:sentences?|passages?|lines?|quotes?|quotations?|verses?|wording|paragraphs?|text|words?)\b|(?:sentence|passage|line|quote|quotation|verse|wording|paragraph)s?\s+(?:in|where|that|which|from|about|of|on)\b)/i;
+
+export function parsePhrases(raw,{ question, previous = '', reply = '' } = {}) {
   const text = String(raw ?? ''), start = text.indexOf('{');
   if (start < 0) return null;
   const m = text.match(/\{[\s\S]*\}/);
@@ -76,7 +80,7 @@ export function parsePhrases(raw, { question, previous = '', reply = '' } = {}) 
   const seeker = `${question} ${previous}`;
   const findReply = FIND_REPLY.test(question);
   // an exact wording is the SEEKER's: words only the assistant said are not a quotation, unless the seeker asks for that passage
-  const exact = strs(o.exact, 40, 3).filter((p) => nWords(p) >= 2 && (groundedIn(p, seeker) || (findReply && groundedIn(p, reply))));
+  const exact = strs(o.exact, 40, 3).filter((p) => nWords(p) >= 2 && !REQUEST_FRAME.test(p) && (groundedIn(p, seeker) || (findReply && groundedIn(p, reply))));
   const names = strs(o.names, 8, 4);
   // spellings are transliterations of a name, never another name: each must look like one of the names
   const spellings = strs(o.spellings, 8, 6).filter((s) => !names.some((n) => fold(n) === fold(s)) && names.some((n) => similar(fold(n), fold(s)) >= 0.6));

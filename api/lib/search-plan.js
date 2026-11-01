@@ -6,7 +6,7 @@ import { modelFor } from './model-roles.js';
 import { TRADITIONS, MIN_CONFIDENCE, ENDPOINT } from './scope-extract.js';
 import { detectQuotation, isMeaningQuestion, stripMarkup } from './quote-detect.js';
 import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
-import { resolveNamed } from './named-object.js';
+import { resolveNamed, resolveNamedAll, objectPhrases, nameSpans } from './named-object.js';
 
 // A wrong author hides far more than a wrong tradition, so it needs more certainty to act on.
 const AUTHOR_MIN_CONFIDENCE = 0.8;
@@ -344,16 +344,55 @@ export function libraryQuestion(text) {
 // Memoised by text: plannedSearch re-plans the same turn. Off under tests unless a resolver is injected.
 const NAME_TTL_MS = 30 * 60 * 1000, NAME_WAIT_MS = 1200;
 const nameCache = new Map();
-function namedFor(text, resolve) {
-  const k = String(text || '').trim();
+function namedFor(text, resolve, tag = 'one') {
+  const k = `${tag}\u0000${String(text || '').trim()}`;
   const hit = nameCache.get(k);
   if (hit && Date.now() - hit.at < NAME_TTL_MS) return hit.p;
-  const p = Promise.race([Promise.resolve(resolve(k)).catch(() => null), new Promise((r) => setTimeout(() => r(null), NAME_WAIT_MS).unref?.())]);
+  const p = Promise.race([Promise.resolve(resolve(String(text || '').trim())).catch(() => null), new Promise((r) => setTimeout(() => r(null), NAME_WAIT_MS).unref?.())]);
   if (nameCache.size >= 1000) nameCache.delete(nameCache.keys().next().value);
   nameCache.set(k, { at: Date.now(), p });
   return p;
 }
-const defaultResolver = () => (process.env.VITEST || process.env.NODE_ENV === 'test' ? null : resolveNamed);
+const inTests = () => !!(process.env.VITEST || process.env.NODE_ENV === 'test');
+const defaultResolver = () => (inTests() ? null : resolveNamed);
+const defaultMentions = () => (inTests() ? null : resolveNamedAll);
+
+/** Every tradition a text names — by keyword ("Buddhist", "the Qur'an") or by founder/scripture ("Augustine" is not one). Pure. */
+export function traditionsNamed(text) {
+  const q = String(text || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’ʼ`]/g, "'").toLowerCase();
+  const found = new Set();
+  for (const [kw, t] of Object.entries(TRADITION_KEYWORDS)) {
+    const i = q.indexOf(kw);
+    if (i >= 0 && !/[a-z]/.test(q[i - 1] || ' ') && !/[a-z]/.test(q[i + kw.length] || ' ')) found.add(t);
+  }
+  for (const [re, t] of FOUNDER_TRADITION) if (re.test(q)) found.add(t);
+  return found;
+}
+
+/** An INFERRED tradition (Jev, the keyword backstop — never the caller's) becomes a preference: the filter is lifted and
+ *  planned-search orders that tradition first instead (plan.lean). A question about the Íqán that names Elijah and John
+ *  the Baptist must not be searched in the Christian texts alone (px-smoke return-iqan). Pure; → a new plan. */
+export function leanTradition(plan, why) {
+  const r = plan?.filters?.religion;
+  if (!r || plan.source?.religion === 'caller' || plan.source?.religion === 'site-default') return plan;
+  const filters = { ...plan.filters };
+  delete filters.religion;
+  return { ...plan, filters, lean: { religion: r, why, was: plan.source?.religion || null }, source: { ...plan.source, religion: `lean:${why}` } };
+}
+
+/** The persons and works a LONG turn names (resolveNamedAll), and its name spans for planned-search's title lookup
+ *  (search/named-scope.js). Several works or traditions named → the inferred tradition only leans. Pure. */
+export function applyMentions(plan, text, mentions) {
+  if (!plan || !text || objectPhrases(text).length) return plan;
+  const spans = nameSpans(text);
+  const list = (mentions || []).map(({ type, id, name, matched }) => ({ type, id, name, matched }));
+  if (!list.length && !spans.length) return plan;
+  let out = { ...plan, ...(list.length ? { mentions: list } : {}), ...(spans.length ? { spans } : {}) };
+  const works = list.filter((m) => m.type === 'work').length;
+  if (works >= 2) out = leanTradition(out, 'works');
+  else if (traditionsNamed(text).size >= 2) out = leanTradition(out, 'traditions');
+  return out;
+}
 
 /** The rules over the planned turn's OBJECT (after Jev and the quote rule): quote-rule > library > name > Jev. Pure. */
 export function applyObjectRules(plan, text, named) {
@@ -384,12 +423,16 @@ export function applyObjectRules(plan, text, named) {
  * "and what about compassion?" carries no tradition of its own). The name lookup runs beside Jev (≤1.2 s, memoised).
  */
 export async function planSearch(input, opts = {}) {
-  const { resolveName = defaultResolver() } = opts;
+  const { resolveName = defaultResolver(), resolveMentions = defaultMentions() } = opts;
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
   const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content;
   const namedP = resolveName && lastUser ? namedFor(lastUser, resolveName) : null;
+  // a LONG turn has no single object: every person and work it names is found instead (beside Jev, same wait)
+  const long = lastUser && !objectPhrases(lastUser).length;
+  const mentionsP = resolveMentions && long ? namedFor(lastUser, resolveMentions, 'all') : null;
   const plan = await planCore(input, opts);
-  return applyObjectRules(plan, lastUser, namedP ? await namedP : null);
+  const out = applyObjectRules(plan, lastUser, namedP ? await namedP : null);
+  return applyMentions(out, lastUser, mentionsP ? await mentionsP : null);
 }
 
 // Jev reports a choice's confidence either directly or as its share of the distribution.

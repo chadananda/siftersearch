@@ -4,7 +4,9 @@
 // a deep conversation-level judgement by Opus 5.5 → per-turn defects with the STAGE that caused them (fixture candidates).
 //   node tests/quality/anis-conversations.mjs [--themes id,id] [--seeds 3,17] (combinable) [--plan-seed s (fixes the move plan across tags)] [--personas skeptic,..] [--n 2] [--turns 5] [--concurrency 2]
 //        [--tag name] [--dry] [--no-perplexity] [--rejudge reports/anis-conversations-….json] [--publish [--status draft]]
-//        [--replay reports/anis-conversations-….json [--only id,id] [--fresh-perplexity]]
+//        [--replay reports/anis-conversations-….json [--only id,id] [--fresh-perplexity]] [--judges N]
+// --judges N (default 1): judge each conversation N times (in parallel); scores are the per-conversation mean, the report adds each
+// conversation's spread (max−min overall) so a before/after difference can be told from judge noise. Defects/fixtures come from judge 1.
 // --replay: the SAME conversations again — each recorded reader turn is sent verbatim (no reader LLM) to Anís in a fresh thread,
 // then re-judged, so before/after runs compare like with like (r6: a re-simulated reader made 3.85→3.25 mostly noise). A replayed
 // turn was written against the OLD reply, so it may no longer fit; the judge is told and still scores it. Perplexity's recorded
@@ -34,7 +36,7 @@ const pct = (a, p) => (a.length ? [...a].sort((x, y) => x - y)[Math.min(a.length
 const SIM_MODEL = process.env.CONV_SIM_MODEL || 'claude-sonnet-5-5', JUDGE_MODEL = process.env.CONV_JUDGE_MODEL || 'claude-opus-5-5';
 const TURNS = Number(arg('turns') || 5), N = Number(arg('n') || 2), CONC = Number(arg('concurrency') || 2);
 const DATE = new Date().toISOString().slice(0, 10), TAG = arg('tag');
-const WITH_PX = !has('no-perplexity'), REPLAY = arg('replay'), FRESH_PX = has('fresh-perplexity');
+const WITH_PX = !has('no-perplexity'), REPLAY = arg('replay'), FRESH_PX = has('fresh-perplexity'), JUDGES = Math.max(1, Number(arg('judges') || 1));
 
 // ---- themes (what the reader came with) and personas (how they talk)
 const THEMES = [
@@ -260,6 +262,15 @@ async function judgeConversation(conv) {
   return v;
 }
 
+/** N verdicts of one conversation → per-judge overall/defects, their mean and spread (max−min); per-dimension means. */
+function judgeSpread(vs) {
+  const mean = (a) => +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(2);
+  const overall = vs.map((v) => v.overall), defects = vs.map((v) => (v.turns || []).reduce((a, t) => a + (t.defects?.length || 0), 0));
+  return { n: vs.length, overall, overall_mean: mean(overall), overall_spread: +(Math.max(...overall) - Math.min(...overall)).toFixed(2), defects, defects_mean: mean(defects),
+    scores: Object.fromEntries(DIMS.map((d) => { const xs = vs.map((v) => v.scores?.[d]?.score).filter((x) => x != null); return [d, xs.length ? mean(xs) : null]; })),
+    headlines: vs.map((v) => v.headline) };
+}
+
 // ---- fixtures: each defect with the conversation up to (and including) its turn, in the wording battery's messages shape
 function fixturesOf(conv) {
   const out = [];
@@ -283,7 +294,10 @@ function summarize(results) {
   const px = pxRollup(results), pxUsd = px.usd.perplexity + px.usd.compare_judge;
   return { date: DATE, tag: TAG || null, ...(REPLAY ? { replay_of: REPLAY.replace(/^.*\/reports\//, 'reports/') } : {}), api: API, sim_model: SIM_MODEL, judge_model: JUDGE_MODEL, conversations: results.length, judged: ok.length,
     turns: results.reduce((a, r) => a + r.turns.length, 0), errors: results.reduce((a, r) => a + r.turns.filter((t) => t.error).length, 0),
-    overall: mean(ok.map((r) => r.verdict.overall)), scores: Object.fromEntries(DIMS.map((d) => [d, mean(ok.map((r) => r.verdict.scores?.[d]?.score).filter((x) => x != null))])),
+    overall: mean(ok.map((r) => r.judges?.overall_mean ?? r.verdict.overall)), scores: Object.fromEntries(DIMS.map((d) => [d, mean(ok.map((r) => r.judges?.scores?.[d] ?? r.verdict.scores?.[d]?.score).filter((x) => x != null))])),
+    ...(JUDGES > 1 ? { judges: { n: JUDGES, per_judge_overall: Array.from({ length: JUDGES }, (_, k) => mean(ok.map((r) => r.judges?.overall?.[k]).filter((x) => x != null))),
+      conversation_spread_mean: mean(ok.map((r) => r.judges?.overall_spread ?? 0)), conversation_spread_max: Math.max(0, ...ok.map((r) => r.judges?.overall_spread ?? 0)),
+      defects_per_judge: Array.from({ length: JUDGES }, (_, k) => ok.reduce((a, r) => a + (r.judges?.defects?.[k] ?? 0), 0)) } } : {}),
     defects: defects.length, by_stage: byStage, by_severity: bySev,
     latency_ms: { p50: pct(lat, 0.5), p90: pct(lat, 0.9), max: lat.length ? Math.max(...lat) : null, over_15s: lat.filter((x) => x > 15000).length },
     perplexity: px.turns_with_px || px.compared ? { compared: px.compared, winners: px.winners, missed_in_library: px.missed_in_library, collection_gaps: px.collection_gaps,
@@ -296,12 +310,13 @@ function markdown(summary, results) {
   const L = [`# Anís conversations ${summary.date}${summary.tag ? ` (${summary.tag})` : ''}`, '',
     `${summary.conversations} conversations, ${summary.turns} turns, ${summary.errors} errors. Overall ${summary.overall ?? '-'}/10. Cost $${summary.usd.total} ($${summary.usd.per_conversation}/conversation: Anís $${summary.usd.anis}, reader $${summary.usd.sim}, judge $${summary.usd.judge}${summary.perplexity ? `, Perplexity $${summary.usd.perplexity}, source-compare judge $${summary.usd.compare_judge}` : ''}).`,
     `Latency p50 ${(summary.latency_ms.p50 / 1000).toFixed(1)} s, p90 ${(summary.latency_ms.p90 / 1000).toFixed(1)} s, max ${(summary.latency_ms.max / 1000).toFixed(1)} s, ${summary.latency_ms.over_15s} turns over 15 s.`, '',
+    ...(summary.judges ? [`Judged ${summary.judges.n}× per conversation: overall per judge ${summary.judges.per_judge_overall.join(' / ')}; per-conversation spread mean ${summary.judges.conversation_spread_mean}, max ${summary.judges.conversation_spread_max}; defects per judge ${summary.judges.defects_per_judge.join(' / ')} (defects below are judge 1's).`, ''] : []),
     '| dimension | mean (1–5) |', '|---|---|', ...DIMS.map((d) => `| ${d} | ${summary.scores[d] ?? '-'} |`), '',
     `Defects: ${summary.defects} — by stage ${Object.entries(summary.by_stage).filter(([, n]) => n).map(([s, n]) => `${s} ${n}`).join(', ') || 'none'}; by severity ${Object.entries(summary.by_severity).map(([s, n]) => `${s} ${n}`).join(', ')}.`, ''];
   for (const r of results) {
     L.push(`## ${r.id} — ${r.persona} (${r.conversation_id || 'no thread'})`, '', `Theme: ${r.theme}`, '');
     if (!r.verdict) { L.push(`Not judged: ${r.judge_error || 'no verdict'}`, ''); continue; }
-    L.push(`**${r.verdict.overall}/10** — ${r.verdict.headline}`, '');
+    L.push(`**${r.judges ? `${r.judges.overall_mean}/10 (judges ${r.judges.overall.join(' / ')}, spread ${r.judges.overall_spread}; defects ${r.judges.defects.join(' / ')})` : `${r.verdict.overall}/10`}** — ${r.verdict.headline}`, '');
     for (const t of r.turns) {
       const td = r.verdict.turns.find((x) => x.turn === t.turn);
       L.push(`- T${t.turn} *${t.move}* (${(t.ms / 1000).toFixed(1)} s, ${t.route?.strategy || '?'}, history ${t.route?.history_turns ?? '?'}): ${t.user.replace(/\s+/g, ' ').slice(0, 160)}`);
@@ -316,7 +331,7 @@ function markdown(summary, results) {
 
 // ---- main
 const pool = async (items, n, fn) => { const out = []; let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k], k); } })); return out; };
-const EST = { sim_per_turn: 0.005, anis_per_turn: 0.002, judge: 0.15, px_per_turn: 0.0055, compare_per_turn: 0.075 };   // px + compare: 11-01 px-smoke, 10 turns ($0.0055 / $0.074 per turn)   // 11-01 smoke, 2 × 5 turns: $0.18/conversation (judge $0.146); refine from the history file
+const EST = { sim_per_turn: 0.005, anis_per_turn: 0.002, judge: 0.15 * JUDGES, px_per_turn: 0.0055, compare_per_turn: 0.075 };   // px + compare: 11-01 px-smoke, 10 turns ($0.0055 / $0.074 per turn)   // 11-01 smoke, 2 × 5 turns: $0.18/conversation (judge $0.146); refine from the history file
 if (has('dry')) {
   console.log(`DRY RUN — no API calls. ${convs.length} conversations × ${TURNS} turns against ${API}; reader ${REPLAY ? `REPLAY of ${REPLAY}` : SIM_MODEL}, judge ${JUDGE_MODEL}; Perplexity comparison ${WITH_PX ? `ON (${REPLAY && !FRESH_PX ? 'recorded sonar answers reused' : 'sonar'} + Opus source judge per turn)` : 'off'}`);
   for (const c of convs) console.log(`  ${c.id} [${c.persona}] ${c.moves.join(' → ')}\n    ${c.theme}${c.replay ? c.replay.map((r, i) => `\n    T${i + 1}: ${r.user.replace(/\s+/g, ' ').slice(0, 110)}`).join('') : ''}`);
@@ -342,8 +357,12 @@ await pool(results, CONC, async (r) => {
       r.px = { winners: p.winners, missed_in_library: p.missed_in_library.length, collection_gaps: p.collection_gaps.length, unknown: p.unknown.length, px_errors: p.px_errors.length, usd: p.usd };
       console.log(`  compared ${r.id}: ${JSON.stringify(p.winners)} · missed-in-library ${p.missed_in_library.length} · gaps ${p.collection_gaps.length} · unknown ${p.unknown.length}`);
     }).catch((e) => console.log(`  compare failed ${r.id}: ${e.message}`)) : null;
-  try { r.verdict = await judgeConversation(r); delete r.judge_error; console.log(`  judged ${r.id}: ${r.verdict.overall}/10 — ${r.verdict.headline}`); }
-  catch (e) { r.judge_error = e.message; console.log(`  judge failed ${r.id}: ${e.message}`); }
+  const vs = (await Promise.all(Array.from({ length: JUDGES }, () => judgeConversation(r).catch((e) => { r.judge_error = e.message; return null; })))).filter(Boolean);
+  if (vs.length) {
+    r.verdict = vs[0]; delete r.judge_error;
+    if (JUDGES > 1) r.judges = judgeSpread(vs);
+    console.log(`  judged ${r.id}: ${vs.map((v) => v.overall).join(' / ')}/10 — ${r.verdict.headline}`);
+  } else console.log(`  judge failed ${r.id}: ${r.judge_error}`);
   await cmp;
   r.fixtures = [...fixturesOf(r), ...pxFixtures(r)];
 });

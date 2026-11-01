@@ -75,7 +75,8 @@ export function searchQueryFor(messages) {
   const said = (messages || []).slice(0, -1).filter((m) => m.role === 'assistant').map((m) => String(m.content || ''));
   const current = users.at(-1) || '';
   // wording to find stands alone: its own "it"/"this" is part of the quotation, not a reference to the last question
-  if (detectQuotation(current, { said })) return clipQuery(current, QUERY_MAX);
+  // (over the limit it is distilled, never cut: r6-after 004 T5 lost its second ask, Rāmānuja's words, at character 400)
+  if (detectQuotation(current, { said })) return current.length <= QUERY_MAX ? current : distilQuery(current);
   const previous = users.at(-2);
   if (!previous) return distilQuery(current);
   const words = current.split(/\s+/).filter(Boolean).length;
@@ -99,9 +100,19 @@ const ASKS_SENTENCE = /\?\s*$|^(?:then |and |also |now |please |so )*(?:give|sho
 export function distilQuery(text) {
   const t = String(text || '').replace(GREETING, '').trim() || String(text || '').trim();
   if (t.length <= QUERY_MAX) return t;
-  const sents = t.match(/[^.!?\n]+(?:[.!?]+|$)/g)?.map((x) => x.trim()).filter(Boolean) || [t];
-  const asking = sents.filter((x) => ASKS_SENTENCE.test(x));
-  return clipQuery([...asking, ...sents.filter((x) => !asking.includes(x))].join(' '), QUERY_MAX);
+  const sents = t.match(/[^.!?\n]+(?:[.!?]+["”’']?|$)/g)?.map((x) => x.trim()).filter(Boolean) || [t];
+  let asking = sents.filter((x) => ASKS_SENTENCE.test(x));
+  if (!asking.length) asking = [sents.at(-1)];   // no sentence asks: the ask is usually the last one
+  // the asking sentences that fit, then (from everything else) the quoted wording and the names (works, people, terms),
+  // so every ask and every named object reaches the search; a cut is the last resort
+  const fit = [];
+  let len = 0;
+  for (const x of asking) if (len + x.length + 1 <= QUERY_MAX) { fit.push(x); len += x.length + 1; }
+  const kept = fit.join(' ');
+  const left = sents.filter((x) => !fit.includes(x)).join(' ');
+  const quotes = [...left.matchAll(/["“«]([^"”»]{8,160})["”»]/g)].map((m) => m[1].trim()).filter((q) => !kept.includes(q));
+  const names = namesOf(left, 12).filter((n) => !kept.includes(n) && !quotes.some((q) => q.includes(n)));
+  return clipQuery([kept, ...quotes, ...names].filter(Boolean).join(' ').replace(/\s+/g, ' '), QUERY_MAX);
 }
 
 const QUERY_MAX = 400;
@@ -110,7 +121,8 @@ const ASK_WORDS = { translator: 'who translated or recorded it', location: 'the 
   authenticity: 'whether the wording is the author\'s own or a paraphrase, commentary or a secretary\'s letter', full: 'the full passage',
   usage: 'where else the word or idea appears', several: 'each separate question' };
 const ASKS_HOW = (asks) => `The seeker asks several things: ${asks.map((a) => ASK_WORDS[a] || a).join('; ')}. Answer each one in turn from the passages; for any the passages do not settle, say so in one plain sentence — never drop it.`;
-const PUSHBACK_HOW = 'The seeker challenges your previous reply. Check that claim against the passages: where they do not support it, say so plainly and correct it; where they do, quote the words that show it.';
+export const NO_ORIGINAL_HOW = 'The seeker also asks for the original Arabic/Persian wording. None of the passages gives the original text: say so in one sentence, and still quote and cite the English passage that answers. Never say the passage itself was not found when it is among the passages.';
+const PUSHBACK_HOW ='The seeker challenges your previous reply. Check that claim against the passages: where they do not support it, say so plainly and correct it; where they do, quote the words that show it.';
 const clipQuery = (s, n) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, ''));
 // Capitalised words that open sentences or address the assistant — never the subject a follow-up refers to.
 const NOT_A_NAME = /^(I|I['’]\p{L}+|Ok|Okay|Also|And|But|So|Then|Now|Yes|No|Thanks|Thank|Please|Hello|Hi|Dear|Does|Do|Did|Is|Are|Was|Were|Can|Could|Would|Should|Will|What|Which|Who|Whom|Whose|When|Where|Why|How|The|A|An|In|On|Of|For|If|It|This|That|These|Those|There|He|She|They|You|Your|We|My|Anís|Anis)$/iu;
@@ -670,7 +682,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const formatP = quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW + (messages.length > 1 ? QUOTE_MISS_THREAD : '') })
     : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: RESEARCH_HOW(researched.brief) })
     : sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
-    : original || wantsOriginal ? Promise.resolve({ id: 'original', by: 'original', how: original?.how || ORIGINAL_HOW })   // the lookup's own instructions (e.g. a misattribution to correct)
+    // ORIGINAL_HOW only with an original in hand: without one the model said the passage was "not found" while the English
+    // passage that answers sat in the evidence (px-smoke return-iqan T3); then the ordinary format + NO_ORIGINAL_HOW
+    : original || retrieved.some((q) => q.via === 'original') ? Promise.resolve({ id: 'original', by: 'original', how: original?.how || ORIGINAL_HOW })   // the lookup's own instructions (e.g. a misattribution to correct)
     : position?.passages?.length ? Promise.resolve({ id: 'position', by: 'position', how: POSITION_HOW })
     : language ? Promise.resolve({ id: 'language', by: 'language', how: LANGUAGE_HOW })
     : study ? Promise.resolve({ id: 'term_study', by: 'ctai', how: termFormatHow(study, channel) })
@@ -688,7 +702,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   } catch { comp = null; }   // relationship enriches the answer; it never blocks one
   const format = await formatP;
   // a follow-up with several asks answers EACH, and a challenge is checked against the passages, never smoothed over (r6-after)
-  const extraHow = [asks.length ? ASKS_HOW(asks) : '', plan?.pushback && !quoteMiss ? PUSHBACK_HOW : ''].filter(Boolean).join('\n');
+  const noOriginal = wantsOriginal && !researched && !sourced && !original && !quoteMiss && !retrieved.some((q) => q.via === 'original');
+  const extraHow = [asks.length ? ASKS_HOW(asks) : '', plan?.pushback && !quoteMiss ? PUSHBACK_HOW : '', noOriginal ? NO_ORIGINAL_HOW : ''].filter(Boolean).join('\n');
   if (extraHow && format) format.how = `${format.how ? `${format.how}\n` : ''}${extraHow}`;
 
   onEvent({ type: 'stage', stage: 'craft' });

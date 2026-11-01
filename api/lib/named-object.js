@@ -80,6 +80,20 @@ export function nameMatches(phrase, candName, { ordered = false } = {}) {
   return q.every((x) => c.some((y) => share(x, y))) && c.every((y) => q.some((x) => share(x, y)));
 }
 
+// One phrase's candidates → the person/work it names, false when it names a concept/place outright, else null.
+function pick(p, workOnly, cands) {
+  // the phrase names a concept or place outright ("nirvana", "Shiraz") → it is not a person/work request
+  //   — unless a person/work bears exactly that name too ("Vahid" the man and the 19-year cycle: the man is the object)
+  const exact = (c) => fold(c.name).trim() === fold(p).trim();
+  if ((cands || []).some((c) => !['person', 'work'].includes(c.type) && exact(c)) && !(cands || []).some((c) => ['person', 'work'].includes(c.type) && exact(c))) return false;
+  // a "<work> by <person>" split names a WORK; the person is only the attribution being asked about
+  //   a person before a work of the same name ("Qurratu'l-'Ayn" the woman, not a book titled after her)
+  //   the canonical name or any matched alias surface (entityLookup returns them): "Bábu'l-Báb" is Mullá Ḥusayn's title
+  const fits = (c, type) => c.type === type && [c.name, ...(c.surfaces || [])].some((n) => nameMatches(p, n, { ordered: type === 'person' }));
+  const hit = (!workOnly && (cands || []).find((c) => fits(c, 'person'))) || (cands || []).find((c) => fits(c, 'work'));
+  return hit ? { type: hit.type, id: hit.id, name: hit.name, matched: p } : null;
+}
+
 /** → { type: 'person'|'work', id, name, matched } for the first object phrase that names one entity, else null. Never throws. */
 export async function resolveNamed(text, { lookup } = {}) {
   const phrases = objectPhrases(text);
@@ -88,17 +102,74 @@ export async function resolveNamed(text, { lookup } = {}) {
     const find = lookup || (await import('./entity-api.js')).entityLookup;
     const results = await Promise.all(phrases.map((o) => find(o.phrase, { limit: 20 }).then((cands) => ({ ...o, cands })).catch(() => ({ ...o, cands: [] }))));
     for (const { phrase: p, workOnly, cands } of results) {
-      // the phrase names a concept or place outright ("nirvana", "Shiraz") → it is not a person/work request
-      //   — unless a person/work bears exactly that name too ("Vahid" the man and the 19-year cycle: the man is the object)
-      const exact = (c) => fold(c.name).trim() === fold(p).trim();
-      if ((cands || []).some((c) => !['person', 'work'].includes(c.type) && exact(c)) && !(cands || []).some((c) => ['person', 'work'].includes(c.type) && exact(c))) return null;
-      // a "<work> by <person>" split names a WORK; the person is only the attribution being asked about
-      //   a person before a work of the same name ("Qurratu'l-'Ayn" the woman, not a book titled after her)
-      //   the canonical name or any matched alias surface (entityLookup returns them): "Bábu'l-Báb" is Mullá Ḥusayn's title
-      const fits = (c, type) => c.type === type && [c.name, ...(c.surfaces || [])].some((n) => nameMatches(p, n, { ordered: type === 'person' }));
-      const hit = (!workOnly && (cands || []).find((c) => fits(c, 'person'))) || (cands || []).find((c) => fits(c, 'work'));
-      if (hit) return { type: hit.type, id: hit.id, name: hit.name, matched: p };
+      const hit = pick(p, workOnly, cands);
+      if (hit === false) return null;
+      if (hit) return hit;
     }
   } catch { /* no lookup → no rule */ }
   return null;
+}
+
+// Words that open a sentence or a clause, capitalised only by position — never the start of a name.
+const OPENER = new Set(`a an the and but or so then now also yes no ok okay thanks thank please hello hi hey dear does do did is are
+was were can could would should will what which who whom whose when where why how in on of for if it its this that these those there he she
+they you your we my our his her their let lets regarding as at by from with about given since because though although while after before
+once both each every some many most my say said tell give show find quote compare cite explain list send point you'd you're that's it's
+isn't doesn't don't`.split(/\s+/));
+// …and the ones that are never a name wherever they stand
+const NEVER = new Set('i im ive id ill anis'.split(' '));
+// connectives that may sit INSIDE a title or a name ("City of God", "John the Baptist", "Kitáb-i-Íqán", "Lights of Guidance")
+const INNER = /^(of|the|de|du|la|le|al|el|ul|i|y|von|van|der|and|on|to)$/i;
+const CAP = /^[‘’'ʻ`"“*_(]*[\p{Lu}]/u;
+
+/** The spans of a LONG text that may name a work or a person: text set apart in quotation marks or *italics* (≤ 8 words),
+ *  and runs of capitalised words joined by title connectives ("City of God", "John the Baptist", "Lights of Guidance"),
+ *  a sentence opener dropped. Most specific first, ≤ max. Pure. */
+export function nameSpans(text, max = 12) {
+  const t = String(text || '');
+  const out = [];
+  const add = (s) => {
+    const x = String(s || '').replace(/^[\s‘’'"“”*_(]+|[\s‘’'"“”*_),.;:!?]+$/g, '').replace(/['’]s$/, '').trim();
+    if (x.length >= 3 && x.split(/\s+/).length <= 8 && !out.some((o) => fold(o) === fold(x))) out.push(x);
+  };
+  for (const m of t.matchAll(/[“"«]([^”"»\n]{3,80})[”"»]|\*([^*\n]{3,80})\*|_([^_\n]{3,80})_/g)) add(m[1] || m[2] || m[3]);
+  // a "/" ("Augustine/Plato") parts two names like a comma
+  for (const sent of t.replace(/\//g, ', ').split(/(?<=[.!?:;\n]["”’']?)\s+|\s+[—–]\s+|,\s+/)) {
+    const words = sent.split(/\s+/).filter(Boolean);
+    let run = [];
+    const flush = () => { while (run.length && INNER.test(run.at(-1))) run.pop(); if (run.length) add(run.join(' ')); run = []; };
+    words.forEach((w, i) => {
+      const bare = w.replace(/^[‘’'ʻ`"“*_(]+|[’'"”*_),.;:!?]+$/g, '');
+      const f = fold(bare);
+      if (CAP.test(w) && !NEVER.has(f) && !(i === 0 && OPENER.has(f))) {
+        run.push(bare);
+        if (/[,.;:!?)"”]$/.test(w)) flush();
+      } else if (run.length && INNER.test(bare)) run.push(bare);
+      else flush();
+    });
+    flush();
+  }
+  return out.slice(0, max);
+}
+
+/** Every person and work a long text names (the whole text scanned, not just a ≤ 6-word object): each span of nameSpans
+ *  resolved like a short object, strict whole-name match. → [{ type, id, name, matched }] (distinct, ≤ max). Never throws. */
+export async function resolveNamedAll(text, { lookup, max = 6 } = {}) {
+  const spans = nameSpans(text);
+  if (!spans.length) return [];
+  try {
+    const find = lookup || (await import('./entity-api.js')).entityLookup;
+    const per = await Promise.all(spans.map(async (s) => {
+      const phrases = objectPhrases(s);
+      const results = await Promise.all(phrases.map((o) => find(o.phrase, { limit: 20 }).then((cands) => ({ ...o, cands })).catch(() => ({ ...o, cands: [] }))));
+      for (const { phrase: p, workOnly, cands } of results) {
+        const hit = pick(p, workOnly, cands);
+        if (hit === false) return null;
+        if (hit) return hit;
+      }
+      return null;
+    }));
+    const seen = new Set();
+    return per.filter((h) => h && !seen.has(h.id) && seen.add(h.id)).slice(0, max);
+  } catch { return []; }
 }
