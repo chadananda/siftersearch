@@ -1270,6 +1270,13 @@ const foldAuthor = (s) => String(s || '')
   .replace(/[^a-zA-Z0-9]+/g, '')
   .toLowerCase();
 
+/** Passages per document in a multi-index result: 1, so one book cannot crowd out the rest — except when the search is
+ *  scoped to an author or to named documents, where the caller wants that work's passages (r9, 11-01: a search for "Elias"
+ *  in the Íqán returned ONE paragraph, and every named-work scope in planned search got one passage of the Íqán, not two). */
+export function perDocCapFor(filters = {}, limit = 10) {
+  return filters?.author || (filters?.documentId != null && [].concat(filters.documentId).length) ? limit : 1;
+}
+
 export async function multiIndexSearch(query, options = {}) {
   const limit = options.limit || 10;
   const overFetch = Math.max(limit * 3, 30);
@@ -1615,7 +1622,7 @@ export async function multiIndexSearch(query, options = {}) {
   // Exception: when author filter is set we're intentionally searching within one
   // author's works — allow up to `limit` passages so callers get the most relevant
   // passages, not just the first-ranked one from each document.
-  const perDocCap = filters.author ? limit : 1;
+  const perDocCap = perDocCapFor(filters, limit);
   const docDedup = new Map();
   const sortedDeduped = allSorted.filter(e => {
     const docId = e.paragraph?.doc_id ?? '__nodoc__';

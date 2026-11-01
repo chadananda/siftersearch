@@ -185,6 +185,20 @@ async function apiKeyAuth(request, reply) {
   }
 }
 
+/** The public search filters a caller may pass, as the engine reads them. documentId scopes the search to ONE work (or a
+ *  list): it was missing from the schema, and Fastify drops undeclared body properties without a word, so a search for
+ *  "Elias" in the Íqán returned other books (r9, 11-01). A scoped search is answered by that work alone: no plan (the plan's
+ *  relax ladder and verbatim hunt widen past it), no tradition supplement, and past-preview rows dropped. Pure. */
+export function apiSearchFilters(filters = {}) {
+  const out = {};
+  for (const k of ['religion', 'author', 'collection', 'yearFrom', 'yearTo']) if (filters[k]) out[k] = filters[k];
+  const ids = [].concat(filters.documentId ?? []).map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  if (ids.length) out.documentId = ids.length === 1 ? ids[0] : ids;
+  return { searchFilters: out, scoped: ids.length > 0 };
+}
+export const DOCUMENT_ID_SCHEMA = { anyOf: [{ type: 'integer' }, { type: 'string', pattern: '^[0-9]+$' }, { type: 'array', items: { type: 'integer' }, maxItems: 50 }],
+  description: 'Search only this document (or these documents) by id.' };
+
 export default async function publicApiRoutes(fastify) {
   // Health check — public, no auth required
   fastify.get('/health', async () => ({
@@ -374,24 +388,21 @@ export default async function publicApiRoutes(fastify) {
               religion: { type: 'string' },
               collection: { type: 'string' },
               yearFrom: { type: 'integer' },
-              yearTo: { type: 'integer' }
+              yearTo: { type: 'integer' },
+              documentId: DOCUMENT_ID_SCHEMA
             }
           }
         }
       }
     }
   }, async (request) => {
-    const { query, limit = 10, filters = {}, plan: usePlan = true, analyze = true, includeLinks = false } = request.body;
+    const { query, limit = 10, filters = {}, analyze = true, includeLinks = false } = request.body;
     const startTime = Date.now();
 
     // Pass filters as structured object — hybridSearch reads filters.religion, .author, etc.
     // (Not a raw filter string; hybridSearch builds the Meilisearch filter string internally.)
-    const searchFilters = {};
-    if (filters.religion) searchFilters.religion = filters.religion;
-    if (filters.author) searchFilters.author = filters.author;
-    if (filters.collection) searchFilters.collection = filters.collection;
-    if (filters.yearFrom) searchFilters.yearFrom = filters.yearFrom;
-    if (filters.yearTo) searchFilters.yearTo = filters.yearTo;
+    const { searchFilters, scoped } = apiSearchFilters(filters);
+    const usePlan = request.body.plan !== false && !scoped;
 
     // Detect tradition indicator early — used for both supplementary search and result sorting.
     // Expanded to include book-name indicators (bhagavad, gita, leviticus, tao, etc.) not
@@ -433,7 +444,7 @@ export default async function publicApiRoutes(fastify) {
     // Always fetch at least 3 tradition hits so the LLM has enough candidates even
     // when limit=1. One passage (e.g. "before the Ten Commandments") may score < 40
     // and get filtered — a pool of 3 ensures at least one survives.
-    const traditionSearchPromise = (detectedTradition && !searchFilters.religion)
+    const traditionSearchPromise = (detectedTradition && !searchFilters.religion && !scoped)
       ? hybridSearch(query, {
           limit: Math.max(3, Math.min(limit, 5)),
           filters: { ...searchFilters, religion: detectedTradition }
@@ -515,7 +526,7 @@ export default async function publicApiRoutes(fastify) {
     }
 
     // a copyrighted (encumbered) book: excerpts past its first 40 paragraphs (Chad 10-23)
-    searchResults.hits = await guardRows(searchResults.hits);
+    searchResults.hits = await guardRows(searchResults.hits, { dropPastPreview: scoped });
     // Prepare passages for analysis — include all fields needed for URL building and authority scoring.
     // Meilisearch stores "doc_id" (not "document_id") so we map both names for compat.
     const passages = searchResults.hits.map(hit => ({
@@ -679,7 +690,8 @@ export default async function publicApiRoutes(fastify) {
             properties: {
               author: { type: 'string' },
               religion: { type: 'string' },
-              collection: { type: 'string' }
+              collection: { type: 'string' },
+              documentId: DOCUMENT_ID_SCHEMA
             }
           }
         }
@@ -689,7 +701,9 @@ export default async function publicApiRoutes(fastify) {
     const { query, limit = 10, filters = {}, includeLinks = false } = request.body;
     const startTime = Date.now();
 
-    const searchResults = await keywordSearch(query, { limit, filters });
+    const { searchFilters, scoped } = apiSearchFilters(filters);
+    const searchResults = await keywordSearch(query, { limit, filters: searchFilters });
+    if (scoped && searchResults.hits?.length) searchResults.hits = await guardRows(searchResults.hits, { dropPastPreview: true });
     // the docs' stored slugs (a hit's author is the paragraph's writer — never build a page path from it)
     const slugOf = await (await import('../lib/docs-repo.js')).getLinkMeta(searchResults.hits.map((h) => h.doc_id)).catch(() => new Map());
     const withSlug = (hit) => ({ ...hit, slug: slugOf.get(Number(hit.doc_id))?.slug ?? hit.slug ?? null });
