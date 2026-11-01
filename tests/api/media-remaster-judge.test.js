@@ -163,7 +163,8 @@ describe('re-judge pass, publish, archive', () => {
     expect(out).toMatchObject({ published: ['t6'], archived: ['t7'] });
     const ma = await meta(a), mb = await meta(b);
     expect(ma.remaster).toMatchObject({ status: 'done', verdict: 'pass-human-full', decided_by: 'chad@x' }); expect(ma.enhancement.listening).toBe('unipase');
-    expect(queue).toHaveBeenCalledWith('media-item', expect.objectContaining({ id: 6, redo: ['realign', 'web', 'trim', 'update'] }), 'media-remaster-decide');
+    // the fixture's transcript is not aligned to the remaster and no worker result is on disk: a tower realign would WorkerWait forever, so a worker remakes it
+    expect(queue).toHaveBeenCalledWith('media-cloud-order', { mode: 'restore', ids: [6], redo: true }, 'media-remaster-decide');
     expect(mb.remaster.status).toBe('archived'); expect(mb.enhancement.listening).toBe('safe');
     expect(qualityOf(mb).verdict).toBe('archived');
     expect(isComplete({ ...mb, stages: Object.fromEntries([...COMPLETE_STAGES, 'web'].map((k) => [k, { at: 1 }])) })).toBe(false);
