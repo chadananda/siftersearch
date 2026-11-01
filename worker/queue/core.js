@@ -14,6 +14,7 @@ export const LEASE_MS = 10 * 60_000;
 export const decodedAudio = (name) => /\.(flac|wav)$/i.test(String(name || ''));
 export const MAX_ATTEMPTS = 3;
 export const TYPED = new Set(['cpu-prep', 'gpu', 'cpu-finish']);
+export const CPU_TYPED = ['cpu-prep', 'cpu-finish'];   // the CPU roles, in tie order (prep feeds the GPUs)
 const MEDIA_HOST_TYPES = new Set(['media', ...TYPED]);   // claimers of these are capacity hosts (an intake sampler is not)
 export const BANDS = { new: 0, remaster: 1, rerun: 2 };
 export const LOWER_BAND_EVERY = 5;   // every 5th claim of a type goes to the oldest job of a lower band: no band starves
@@ -106,7 +107,11 @@ export function claim(sql, { host, can = [], vram_mb = 0, ram_gb = 0, types = ['
     host, JSON.stringify(can), vram_mb, ram_gb, JSON.stringify(types), JSON.stringify(spill), now);
   expire(sql, now);
   const fits = fitter({ host, can, contract, now, others: (type) => engaged(sql, now).some((h) => h.host !== host && h.types.includes(type)) });
-  const ruled = claimOrder(types, spill, policyOf(sql, now), host);   // the role policy (tower sets it from the pods' R2 buffer) orders a multi-role host
+  const policy = policyOf(sql, now);
+  // the CPU roles' measured backlog (queued audio-h ÷ drain) ranks prep vs finish while the buffer is low (only asked when it can matter)
+  const cpuRoles = [...types, ...spill].filter((t) => CPU_TYPED.includes(t));
+  const backlog = policy?.buffer_low && new Set(cpuRoles).size > 1 ? Object.fromEntries(CPU_TYPED.map((t) => [t, backlogOf(sql, t, now)])) : null;
+  const ruled = claimOrder(types, spill, policy, host, backlog);   // the role policy (tower sets it from the pods' R2 buffer) orders a multi-role host
   const order = ruled ? (spill_only ? ruled.filter((t) => spill.includes(t)) : ruled) : [...(spill_only ? [] : types), ...spill.filter((t) => !types.includes(t) || spill_only)];
   let j = null;
   for (const type of order) {
@@ -124,11 +129,15 @@ export function claim(sql, { host, can = [], vram_mb = 0, ram_gb = 0, types = ['
  *  made; a GPU job only when nothing else waits). So Boss (prep + finish) preps while the buffer is short and shares finish once the pods are
  *  fed; a single-role host (tower: cpu-finish) is unaffected; no policy = the host's own order. Pure. */
 // SCALE mode (policy.home_gpu false, Chad 10-31 23:50Z): the pods take every gpu step and a home host (not a pod) claims CPU/LLM work only
-export function claimOrder(types = [], spill = [], policy = null, host = '') {
+// backlog { 'cpu-prep': h, 'cpu-finish': h } (backlogOf): while the buffer is low the CPU roles go DEEPEST measured backlog first, prep on a
+// tie. 11-01: the feed trickled prep in as fast as boss + aorus drained it (backlog 0.01 h, never empty), so prep-first meant they never
+// reached cpu-finish — 129 queued, a 12 h backlog, tower alone finishing 11 audio-h/h. Prep still leads whenever it is the binding queue.
+export function claimOrder(types = [], spill = [], policy = null, host = '', backlog = null) {
   const noGpu = policy?.home_gpu === false && !!host && !isPod(host);
   const all = [...types, ...spill.filter((t) => !types.includes(t))].filter((t) => !(noGpu && t === 'gpu')), typed = all.filter((t) => TYPED.has(t));
   if (!policy || typed.length < 2) return noGpu ? all : null;
-  const rank = policy.buffer_low ? ['cpu-prep', 'cpu-finish', 'gpu'] : ['cpu-finish', 'gpu', 'cpu-prep'];
+  const depth = (t) => backlog?.[t] ?? 0, cpuFirst = backlog ? [...CPU_TYPED].sort((a, b) => depth(b) - depth(a)) : CPU_TYPED;   // stable: prep on a tie
+  const rank = policy.buffer_low ? [...cpuFirst, 'gpu'] : ['cpu-finish', 'gpu', 'cpu-prep'];
   return [...rank.filter((t) => typed.includes(t)), ...all.filter((t) => !TYPED.has(t))];
 }
 export const POLICY_STALE_MS = 10 * 60_000;   // tower re-sets it every pass; an old one (tower gone) no longer steers
@@ -266,6 +275,13 @@ export function throughput(sql, type, now = Date.now(), windowMs = RATE_WINDOW_M
   return { total: each.reduce((a, [, v]) => a + v, 0), pods: pods.length ? pods.reduce((a, b) => a + b, 0) / pods.length : null, jobs: r.length, each: Object.fromEntries(each) };
 }
 /** Audio-hours of a type finished per wall-hour over the window, all hosts. 0 = nothing finished. */
+/** A CPU role's backlog in hours = queued audio-h ÷ its measured drain (capacity's backlog_h); work queued with no drain yet = Infinity, none = 0. */
+export function backlogOf(sql, type, now = Date.now()) {
+  const s = one(sql, `SELECT COALESCE(SUM(audio_s), 0) AS s FROM jobs WHERE state = 'queued' AND type = ?`, type).s;
+  if (!(s > 0)) return 0;
+  const d = drainOf(sql, type, now);
+  return d > 0 ? s / 3600 / d : Infinity;
+}
 export function drainOf(sql, type, now = Date.now(), windowMs = RATE_WINDOW_MS) {
   const s = one(sql, `SELECT COALESCE(SUM(audio_s), 0) AS s FROM done_log WHERE type = ? AND at > ?`, type, now - windowMs).s;
   return s / 3600 / (windowMs / 3600_000);

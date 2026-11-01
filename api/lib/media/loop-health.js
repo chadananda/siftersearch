@@ -311,6 +311,19 @@ export function evaluate(st, now, { update = false, k = K_MISSED, kSteps = K_STE
   checks.push({ name: 'Media home CPU idle with CPU work queued', ok: !(idleHosts.length && sg.ticks >= streakN), level: 'warn',
     detail: !fresh ? 'no fresh LAN capacity snapshot' : `${cpuQ.map((q) => `${q.t} ${q.n} queued (${q.h} audio-h)`).join(', ') || 'no CPU work queued'}`
       + `${idleHosts.length ? ` · idle home CPU: ${idleHosts.join(', ')} for ${sg.ticks} ticks` : ''}` });
+  // (h) a CPU queue deeper than its peers (measured backlog_h, null = queued with no drain) while a home host that lists it spends its CPU slots
+  // on a SHALLOWER CPU queue and leases none of the deep one (11-01: 129 cpu-finish, 12 h backlog, boss + aorus all on a 0.01 h prep trickle).
+  // Holding a shallower job is the evidence the host had a slot the deep queue could have used; a host holding nothing is (g)'s case.
+  const depth = (q) => (q.n > 0 ? q.b ?? Infinity : 0);
+  const cpuB = fresh ? CPU_TYPES.map((t) => ({ t, n: lc.queued?.[t]?.n || 0, h: lc.queued?.[t]?.audio_h || 0, b: lc.queued?.[t]?.backlog_h ?? null })) : [];
+  const deep = cpuB.filter((q) => q.n > 0 && cpuB.every((o) => o.t === q.t || depth(q) > depth(o)));
+  const starved = deep.flatMap((q) => (lc.hosts || []).filter((h) => !/^pod/i.test(h.host) && (h.types || []).includes(q.t) && !(h.leased?.[q.t] > 0)
+    && cpuB.some((o) => o.t !== q.t && depth(o) < depth(q) && h.leased?.[o.t] > 0)).map((h) => `${h.host} (holds ${cpuB.filter((o) => h.leased?.[o.t] > 0).map((o) => `${h.leased[o.t]} ${o.t}`).join(', ')})`));
+  const sd = streak(st, 'cpu_queue_starved', starved.length > 0 && !ended, tickRuns, update);
+  const bh = (q) => (q.n > 0 && q.b == null ? 'no drain' : `${q.b ?? 0} h`);
+  checks.push({ name: 'Media deep CPU queue skipped by a capable host', ok: !(starved.length && sd.ticks >= streakN), level: 'warn',
+    detail: !fresh ? 'no fresh LAN capacity snapshot' : `${cpuB.map((q) => `${q.t} backlog ${bh(q)} (${q.n} queued, ${q.h} audio-h)`).join(', ')}`
+      + `${starved.length ? ` · ${deep.map((q) => q.t).join('/')} skipped by ${starved.join(', ')} for ${sd.ticks} ticks` : ''}` });
   return { at: now, sections, checks, facts: { ...f, gpus: undefined, gpu_list: f.gpus.map(({ name, gpu }) => ({ name, gpu })) }, heals: (st.loop_heals || []).slice(-5) };
 }
 

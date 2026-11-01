@@ -297,6 +297,28 @@ describe('claim order (Chad 10-31): the R2 buffer decides whether multi-role hos
     expect(claim(aorus)).toBe('f');
     expect(claim(aorus)).toBe('g');
   });
+  it('buffer low: the CPU roles go deepest measured backlog first (prep on a tie); gpu stays last; buffer full is unchanged', () => {
+    const p = { buffer_low: true };
+    expect(Q.claimOrder(['cpu-prep', 'cpu-finish'], [], p, 'boss', { 'cpu-prep': 0.01, 'cpu-finish': 12.2 })).toEqual(['cpu-finish', 'cpu-prep']);
+    expect(Q.claimOrder(['cpu-prep', 'cpu-finish'], [], p, 'boss', { 'cpu-prep': 3, 'cpu-finish': 1 })).toEqual(['cpu-prep', 'cpu-finish']);
+    expect(Q.claimOrder(['cpu-prep', 'cpu-finish'], [], p, 'boss', { 'cpu-prep': 2, 'cpu-finish': 2 })).toEqual(['cpu-prep', 'cpu-finish']);
+    expect(Q.claimOrder(['cpu-prep', 'cpu-finish'], [], p, 'boss', { 'cpu-prep': Infinity, 'cpu-finish': 50 })).toEqual(['cpu-prep', 'cpu-finish']);   // queued, no drain yet
+    expect(Q.claimOrder(['gpu'], ['cpu-prep', 'cpu-finish'], p, 'aorus', { 'cpu-prep': 0, 'cpu-finish': 5 })).toEqual(['cpu-finish', 'cpu-prep', 'gpu']);
+    expect(Q.claimOrder(['cpu-prep', 'cpu-finish', 'gpu'], [], { ...p, home_gpu: false }, 'aorus', { 'cpu-prep': 0.01, 'cpu-finish': 12 })).toEqual(['cpu-finish', 'cpu-prep']);
+    expect(Q.claimOrder(['cpu-prep', 'cpu-finish'], [], { buffer_low: false }, 'boss', { 'cpu-prep': 9, 'cpu-finish': 0 })).toEqual(['cpu-finish', 'cpu-prep']);
+  });
+  it('11-01 regression: prep trickling in (always one queued, drained fast) never starves a deep finish queue at claim', () => {
+    const done = (id, type, audioS, at) => { Q.enqueue(sql, [{ ...tj(id, type), invoice: { audio_s: audioS } }], at - 1000); const j = Q.claim(sql, { host: 'tower', types: [type] }, at - 900); Q.done(sql, { id: j.id, lease: j.lease, result: {} }, at); };
+    done('p0', 'cpu-prep', 36000, T0 - 600_000);    // prep drains fast: 10 audio-h in the window
+    done('f0', 'cpu-finish', 3600, T0 - 600_000);   // finish drains slowly: 1 audio-h
+    Q.enqueue(sql, [tj('p1', 'cpu-prep'), ...[1, 2, 3, 4].map((i) => tj(`f${i}`, 'cpu-finish'))], T0);
+    Q.setPolicy(sql, { buffer_low: true, home_gpu: false }, T0);
+    expect(Q.backlogOf(sql, 'cpu-prep', T0)).toBeCloseTo(1 / 5);     // 1 h queued ÷ 5 audio-h/h
+    expect(Q.backlogOf(sql, 'cpu-finish', T0)).toBeCloseTo(4 / 0.5); // 4 h queued ÷ 0.5 audio-h/h
+    const boss = { host: 'boss', types: ['cpu-prep', 'cpu-finish'] }, aorus = { host: 'aorus', types: ['cpu-prep', 'cpu-finish', 'gpu'] };
+    expect([Q.claim(sql, boss, T0).type, Q.claim(sql, aorus, T0).type]).toEqual(['cpu-finish', 'cpu-finish']);
+    expect(Q.backlogOf(sql, 'gpu', T0)).toBe(0);
+  });
   it('a stale policy (tower stopped setting it) falls back to the host\'s own order', () => {
     Q.enqueue(sql, [tj('p', 'cpu-prep'), tj('g', 'gpu')], T0);
     Q.setPolicy(sql, { buffer_low: true }, T0);

@@ -319,4 +319,21 @@ describe('scale-mode home sentinel (Chad 11-01: Boss pegged with GPU work instea
     expect(pick(LH.evaluate(st, now, { update: true, env }), IDLE).ok).toBe(true);
     expect(pick(LH.evaluate({ lan_cap: { ...st.lan_cap, at: now - 3_600_000 } }, now, { env }), IDLE)).toMatchObject({ ok: true, detail: expect.stringMatching(/no fresh/) });
   });
+  it('flags a deep CPU queue a home host skips while it spends its slots on a shallower one (11-01: finish 12 h, prep 0.01 h), never pods', () => {
+    const DEEP = 'Media deep CPU queue skipped by a capable host', now = 1_000_000;
+    const st = { loop_beats: { tick: { runs: 1 } }, lan_cap: { at: now, queued: { 'cpu-finish': { n: 129, audio_h: 135.4, backlog_h: 12.15 }, 'cpu-prep': { n: 1, audio_h: 1.2, backlog_h: 0.01 } },
+      hosts: [{ host: 'boss', types: ['cpu-prep', 'cpu-finish'], leased: { 'cpu-prep': 4 } }, { host: 'aorus', types: ['cpu-prep', 'cpu-finish', 'gpu'], leased: { 'cpu-prep': 4 } },
+        { host: 'tower', types: ['cpu-finish'], leased: { 'cpu-finish': 2 } }, { host: 'pod-cpu-x', types: ['cpu-prep', 'cpu-finish'], leased: { 'cpu-prep': 1 } }] } };
+    let c;
+    for (let i = 1; i <= 3; i++) { st.loop_beats.tick.runs = i; c = pick(LH.evaluate(st, now, { update: true, env }), DEEP); }
+    expect(c).toMatchObject({ ok: false, level: 'warn' });
+    expect(c.detail).toMatch(/cpu-finish backlog 12.15 h \(129 queued.*cpu-finish skipped by boss \(holds 4 cpu-prep\), aorus \(holds 4 cpu-prep\) for 3 ticks/);
+    expect(c.detail).not.toMatch(/tower|pod-cpu/);
+    st.lan_cap.hosts[0].leased = { 'cpu-prep': 2, 'cpu-finish': 1 }; st.lan_cap.hosts[1].leased = { 'cpu-finish': 3 };
+    expect(pick(LH.evaluate(st, now, { update: true, env }), DEEP).ok).toBe(true);
+    // peers level (or the deep one is prep): no verdict against hosts on finish; a queue with no drain yet counts as deepest
+    const lv = { ...st.lan_cap, queued: { 'cpu-finish': { n: 3, audio_h: 3, backlog_h: 0.5 }, 'cpu-prep': { n: 4, audio_h: 4, backlog_h: null } },
+      hosts: [{ host: 'boss', types: ['cpu-prep', 'cpu-finish'], leased: { 'cpu-finish': 2 } }] };
+    expect(pick(LH.evaluate({ loop_beats: { tick: { runs: 1 } }, lan_cap: lv }, now, { update: true, env, streakN: 1 }), DEEP)).toMatchObject({ ok: false, detail: expect.stringMatching(/cpu-prep backlog no drain.*cpu-prep skipped by boss/) });
+  });
 });

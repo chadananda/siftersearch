@@ -113,7 +113,9 @@ export async function feedDup(it, m, repo, st = {}) {
 
 /** The LAN queue at a glance for loop-health: each engaged host's types + what it holds, and the CPU queues. Small (state file). */
 export const lanSnapshot = (cap, at) => ({ at, hosts: (cap?.hosts || []).map((h) => ({ host: h.host, types: h.types || [], leased: h.leased || {} })),
-  queued: Object.fromEntries(['cpu-prep', 'cpu-finish', 'gpu'].map((t) => [t, { n: cap?.by_type?.[t]?.queued || 0, audio_h: Math.round((cap?.by_type?.[t]?.queued_audio_h || 0) * 10) / 10 }])) });
+  // backlog_h: queued audio-h ÷ measured drain (null = queued with no drain yet)
+  queued: Object.fromEntries(['cpu-prep', 'cpu-finish', 'gpu'].map((t) => { const b = cap?.by_type?.[t]; return [t, { n: b?.queued || 0, audio_h: Math.round((b?.queued_audio_h || 0) * 10) / 10,
+    backlog_h: b?.backlog_h == null ? null : Math.round(b.backlog_h * 100) / 100 }]; })) });
 // a sub-timer keyed <prefix>:<part> into the pass trace (queue-feed callers without a trace pay nothing)
 const tmOf = (trace, prefix) => async (part, f) => { const t0 = Date.now(); try { return await f(); } finally { trace?.sub(`${prefix}:${part}`, Date.now() - t0); } };
 export async function feed(st, deps) {
