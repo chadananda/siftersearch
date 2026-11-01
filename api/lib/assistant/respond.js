@@ -11,13 +11,13 @@ import { questionSubject } from '../planned-search.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
-import { dropUnverified, createSentenceGate } from './quotes.js';
+import { dropUnverified, createSentenceGate, completeIntroducedQuotes } from './quotes.js';
 import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
 import { chooseFormat } from './formats.js';
 import { channelFor } from './channels.js';
-import { detectQuotation } from '../quote-detect.js';
+import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { unmachine, dropQuibbles } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
@@ -71,14 +71,33 @@ const ANAPHOR = /\b(he|him|his|she|her|hers|they|them|their|it|its|this|that|the
  * The model still answers the actual turn — only retrieval is widened.
  */
 export function searchQueryFor(messages) {
-  const users = (messages || []).filter((m) => m.role === 'user').map((m) => String(m.content || '').trim());
+  const users = (messages || []).filter((m) => m.role === 'user').map((m) => stripMarkup(m.content));
+  const said = (messages || []).slice(0, -1).filter((m) => m.role === 'assistant').map((m) => String(m.content || ''));
   const current = users.at(-1) || '';
   // wording to find stands alone: its own "it"/"this" is part of the quotation, not a reference to the last question
-  if (detectQuotation(current)) return current;
+  if (detectQuotation(current, { said })) return clipQuery(current, QUERY_MAX);
   const previous = users.at(-2);
-  if (!previous) return current;
+  if (!previous) return clipQuery(current, QUERY_MAX);
   const short = current.split(/\s+/).filter(Boolean).length <= 5;
-  return (ANAPHOR.test(current) || short) ? `${previous} ${current}` : current;
+  // the follow-up carries the REFERENCE it leans on (the previous question if short, else its names), never raw history
+  return (ANAPHOR.test(current) || short) ? clipQuery(`${referenceOf(previous)} ${current}`.trim(), QUERY_MAX) : clipQuery(current, QUERY_MAX);
+}
+
+const QUERY_MAX = 400;
+const clipQuery = (s, n) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, ''));
+// Capitalised words that open sentences or address the assistant — never the subject a follow-up refers to.
+const NOT_A_NAME = /^(I|I'm|I've|Ok|Okay|Also|And|But|So|Then|Now|Yes|No|Thanks|Thank|Please|Hello|Hi|Dear|Does|Do|Did|Is|Are|Was|Were|Can|Could|Would|Should|Will|What|Which|Who|Whom|Whose|When|Where|Why|How|The|A|An|In|On|Of|For|If|It|This|That|These|Those|There|He|She|They|You|Your|We|My|Anís|Anis)$/i;
+/** The previous question when it is short; otherwise the names and terms it carried (≤ 8), so the query stays a query. */
+export function referenceOf(previous) {
+  const p = stripMarkup(previous);
+  if (p.split(/\s+/).length <= 14) return p;
+  const names = [];
+  for (const w of p.match(/[\p{Lu}][\p{L}'’‘ʻ-]+/gu) || []) {
+    const t = w.replace(/['’]s$/, '');
+    if (!NOT_A_NAME.test(t) && !names.includes(t)) names.push(t);
+    if (names.length >= 8) break;
+  }
+  return names.join(' ');
 }
 
 /** The passages a reply was written from, compact, for the exchange log (the strategy auditor reads them). */
@@ -271,6 +290,11 @@ const SCRIPTURE = {
   Zoroastrian: /\b(avesta|gathas?|zoroaster|zarathustra)\b/i,
   Sikh: /\b(granth|guru)\b/i,
 };
+// Whose words another tradition's scripture is: never the Bahá'í writer who quotes it (r5: Sura II's "no compulsion in
+// religion" came back as "the words of The Báb" — the hunt's quote-author vote counted His writings that quote the verse).
+const BAHAI_FIGURE = /bah[aá]['’ʼ‘]?u['’ʼ‘]?ll[aá]h|\bb[aá]b\b|abdu['’ʼ‘]?l|shoghi|universal house/i;
+export const scriptureVoice = (o) => (o?.religion === 'Islam' && /\b(s[uú]ra|qur['’]?[aá]n|koran)\b/i.test(o?.title || '') ? 'the Qur’án'
+  : o?.author && !BAHAI_FIGURE.test(o.author) ? o.author : null);
 export const scriptureOf = (religion, o) => !SCRIPTURE[religion] || SCRIPTURE[religion].test(`${o?.title || ''} ${o?.author || ''}`);
 
 /** SourceHunt as Anís's tool for "where is this from?": the published source and the original tablet become the
@@ -289,7 +313,9 @@ async function huntSource(d, question) {
   const o = r.origin, t = r.tablet?.certain ? r.tablet : null;
   const tTitle = t ? (t.meta?.title || t.title) : null, lang = t && /[پچژگ]/.test(t.text || '') ? 'Persian' : 'Arabic';
   const ool = t?.meta?.links?.oceanoflights || null, phelps = t?.meta?.links?.inventory || null, pin = t?.meta?.pin || null;
-  const others = (r.citedBy || []).slice(0, 3);
+  // only a citation shown to HOLD the wording (its range link marks it) is named as quoting it — a link-graph edge alone once
+  // produced "It is also quoted in The Kitáb-i-Aqdas" for a Hidden Word (r5, 11-01)
+  const others = (r.citedBy || []).filter((c) => c.rangeUrl).slice(0, 3);
   const tags = { book: { title: o.title, url: o.rangeUrl || o.url } };
   if (t) tags.tablet = { title: tTitle, url: t.meta?.links?.oceanoflightsRange || ool || t.rangeUrl || t.url };
   if (t && phelps) tags.inventory = { title: `Phelps Inventory${pin ? ` ${pin}` : ''}`, url: phelps, plain: true };
@@ -299,11 +325,14 @@ async function huntSource(d, question) {
   if (t) retrieved.push({ text: clip(t.text, t.highlight), source_title: `${tTitle} (original, ${lang})`, source_author: o.author || '',
     citation_url: tags.tablet.url, doc_id: t.documentId, paragraph_index: null, religion: "Baha'i",
     collection: null, source_lang: lang === 'Persian' ? 'fa' : 'ar', via: 'sourcehunt' });
+  // another tradition's scripture speaks in its own voice; a Bahá'í origin is credited to the quote's writer (paragraph authorship)
+  const scripture = o.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(o.religion);
+  const author = scripture ? scriptureVoice(o) : (r.quoteAuthor || o.author || null);
   // the original's own words for this quotation (the highlighted clauses), so the reply quotes the right ones
   const origWords = t ? (t.highlight || []).map(([a, b]) => t.text.slice(a, b)).join(' … ').split(/\s+/).slice(0, 14).join(' ').replace(/[\s.،؛:!?*]+$/u, '') : '';
   const how = [
     'Never write a URL, a markdown link or a title in brackets. Write each source as its tag exactly — {book}, {tablet}, {inventory}, {cited1}… — the tag is replaced by the linked title, so do not also write the title.',
-    `At most four sentences. Say the quotation comes from {book} and whose words they are (${r.quoteAuthor || o.author || 'the author'}).`,
+    `At most four sentences. Say the quotation comes from {book} and whose words they are (${author || 'the author'}).`,
     t ? `Say the original is ${lang}, in {tablet}${origWords ? `, where it reads «${origWords}» — quote exactly those words` : ''}.${tags.inventory ? ' Mention {inventory}.' : ''}`
       : 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.',
     others.length ? `In one sentence, say it is also quoted in ${others.map((c, i) => `{cited${i + 1}}`).join(', ')}.` : '',
@@ -312,16 +341,14 @@ async function huntSource(d, question) {
   const extraUrls = Object.values(tags).map((x) => x.url).filter(Boolean);
   // The reply itself, from the hunt alone — no model: every fact (writer, book, tablet, the original's words, Inventory
   // entry, other publications) is the hunt's, so nothing can be invented, leaked from instructions, or rambled (10-06 demo prep).
-  const author = r.quoteAuthor || o.author || null;
   const shown = (o.highlight?.length ? o.highlight.map(([a, b]) => o.text.slice(a, b)).join(' … ') : '').split(/\s+/).filter(Boolean).slice(0, 40).join(' ').replace(/[\s.,;:]+$/, '');
-  const scripture = o.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(o.religion);
   // a saying the seeker credits to a founder ("Jesus said …") whose only holding passage is outside that tradition's
   // scripture is a misattribution the hunt has just shown: say so first (11-01 wording battery: "God helps those who help
   // themselves" came back as "These are the words of St. Teresa", reading as a confirmation)
   const notScripture = religion && !scriptureOf(religion, o);
   const reply = [
     notScripture ? `This does not appear in the ${religion} scripture in the library; the passage that holds these words is by ${author || 'a later writer'}.` : '',
-    `${author ? `These are the words of ${author}, from {book}.` : 'This is from {book}.'}`,
+    author === 'the Qur’án' ? 'These words are from the Qur’án, {book}.' : `${author ? `These are the words of ${author}, from {book}.` : 'This is from {book}.'}`,
     // the wording itself, and who quotes whom: scripture is the origin, a Bahá'í text quoting it comes after (11-01 wording battery)
     shown ? `The passage reads: «${shown}».` : '',
     scripture && others.length ? 'This is scripture itself; the Bahá’í texts below quote it rather than originate it.' : '',
@@ -347,9 +374,12 @@ export function fillTags(text, tags) {
 }
 
 // Prior turns only (the current question is sent separately), trimmed — context, not a transcript to re-answer.
-function conversationSummary(messages, persona) {
-  const prior = (messages || []).slice(0, -1).slice(-6);
-  return prior.map((m) => `${m.role === 'user' ? 'Seeker' : persona}: ${String(m.content || '').slice(0, 400)}`).join('\n');
+export function conversationSummary(messages, persona) {
+  const prior = (messages || []).slice(0, -1).slice(-6).map((m) => ({ ...m, content: stripMarkup(m.content) }));
+  // the reply the seeker is answering is kept nearly whole (its claims and links are what a follow-up refers to — r5: the
+  // "also quoted in the Aqdas" line at the end of T1 was cut at 400 chars, and T5 asked about it); older turns stay short
+  const lastAt = prior.map((m) => m.role).lastIndexOf('assistant');
+  return prior.map((m, i) => `${m.role === 'user' ? 'Seeker' : persona}: ${m.content.slice(0, i === lastAt ? 1500 : 400)}`).join('\n');
 }
 
 async function defaultDeps() {
@@ -390,6 +420,8 @@ async function defaultDeps() {
 }
 
 const QUOTE_MISS_HOW = 'The person asked to find a quotation and no passage in the library contains those words. Say so plainly in one or two sentences, quoting their wording back. Do NOT offer related passages, people, events or other topics, and do not guess a source. Suggest checking the exact wording or giving the author, work or a few more words.';
+// In a thread, a miss may be wording the conversation already sourced (r5): point back to that source instead of absence.
+const QUOTE_MISS_THREAD = ' If the conversation above already quoted these words from a linked source, say they come from that source (with its link) rather than calling them absent; if they were your own paraphrase, say so plainly.';
 
 /** ANIS_RESEARCH="email" | "chat,email" | "all": the channels the researcher answers on. Off by default. */
 export function researchEnabled(channel, env = process.env.ANIS_RESEARCH) {
@@ -417,7 +449,8 @@ const keepRetrievedLinks = (text, quotes) => {
 export async function anisRespond({ messages, profile = {}, participant = {}, llm, onEvent = () => {}, direction = {}, deps }) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
   const persona = profile.persona_name || 'Anís';
-  const question = lastUser(messages);
+  // a pasted <br> run is never part of the question (r5); line breaks stay (a pasted passage's attribution line is read by line)
+  const question = lastUser(messages).replace(/<[^>]{0,200}>/g, ' ').replace(/[ \t]+(?=\n)/g, '').replace(/\n{3,}/g, '\n\n').trim();
   const t0 = Date.now();
 
   // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
@@ -511,7 +544,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   const searchMs = Date.now() - t0;
   const retrieved = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
-    text: p.text || '', source_title: p.title || '', source_author: p.author || '', citation_url: p.source_url || null,
+    text: p.text || '', source_title: p.title || '', source_author: p.author || '', book_author: p.book_author || null, citation_url: p.source_url || null,
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned', standing: p.standing || null, theme: p.theme || null,
     ...(p.translation ? { translation: p.translation } : {}),   // an existing translation the reply quotes whole (researcher.js)
@@ -560,7 +593,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const evidenceProfile = dataProfile(findings, { plan: res?._plan || null, question });
   const channel = direction.channel || channelFor('widget-chat');
   const choose = d.chooseFormat || chooseFormat;
-  const formatP = quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW })
+  const formatP = quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW + (messages.length > 1 ? QUOTE_MISS_THREAD : '') })
     : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: RESEARCH_HOW(researched.brief) })
     : sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
     : original || wantsOriginal ? Promise.resolve({ id: 'original', by: 'original', how: original?.how || ORIGINAL_HOW })   // the lookup's own instructions (e.g. a misattribution to correct)
@@ -606,7 +639,10 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
   // (the widget reconciles its streamed text to this; email sends only this).
   const guarded = dropUnverified(cleanLinks(raw), retrieved);
-  const reply = ensureLinks(study ? placeRenderings(guarded.text, study, channel) : guarded.text, conversational ? [] : retrieved);   // the counts come from code
+  // …and a lead-in whose quotation went missing ("…writes in God Passes By:" then nothing, r5) gets the verified passage it
+  // names, or is rewritten — a reply never ends an introduction without its quotation.
+  const introduced = completeIntroducedQuotes(study ? placeRenderings(guarded.text, study, channel) : guarded.text, conversational ? [] : retrieved);
+  const reply = ensureLinks(introduced.text, conversational ? [] : retrieved);   // the counts come from code
   if (comp?.log && comp.plan) comp.log(comp.plan);
 
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and
@@ -617,7 +653,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const studyEvidence = study ? [{ title: `CTAI concordance: ${study.term}${study.root ? ` (root ${study.root})` : ''}`, author: 'CTAI', url: study.researchUrl || null,
     religion: "Bahá'í", text: `Shoghi Effendi's renderings of ${study.term}, counted over ${study.counted || study.total} aligned passages (${study.total} in all): `
       + study.renderings.map((r) => `${r.en} ${r.count}`).join(', ') }] : [];
-  return { reply, quotes_removed: guarded.removed, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
+  return { reply, quotes_removed: guarded.removed, quotes_completed: introduced.completed || introduced.rewritten ? { placed: introduced.completed, rewritten: introduced.rewritten } : null, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
     search_query: searchQueryFor(messages), select, format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }

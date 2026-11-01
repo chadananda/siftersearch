@@ -4,7 +4,7 @@
 // Rules: fail open; a comparative is never narrowed; caller-given filters win. Deps: scope-extract.js (TRADITIONS).
 import { modelFor } from './model-roles.js';
 import { TRADITIONS, MIN_CONFIDENCE, ENDPOINT } from './scope-extract.js';
-import { detectQuotation } from './quote-detect.js';
+import { detectQuotation, isMeaningQuestion, stripMarkup } from './quote-detect.js';
 import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 import { resolveNamed } from './named-object.js';
 
@@ -180,12 +180,16 @@ export function layersFor(plan) {
 // Jev's classification + the quote rule and converse guard (planSearch below adds the object rules).
 async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = Number(process.env.SEARCH_PLAN_TIMEOUT_MS) || 2500, fetchImpl = jevFetch('search-plan'), cache = true } = {}) {
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
-  const state = messages.slice(-6).map((m) => `${m.role}: ${String(m.content || '').slice(0, 600)}`).join('\n');
+  const state = messages.slice(-6).map((m) => `${m.role}: ${stripMarkup(m.content).slice(0, 600)}`).join('\n');
   const t0 = Date.now();
   const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content;
   // QUOTATION RULE (deterministic, never waits on Jev): wording to find is shape 'quote' whatever the backstop default or
   // Jev said — a 700 ms timeout once left the empty default (topic) and a quote hunt answered with unrelated people (11-01).
-  const quote = detectQuotation(lastUser);
+  // …but never words the assistant itself said earlier in the thread, quoted back to it (r5, 11-01)
+  const said = messages.slice(0, -1).filter((m) => m.role === 'assistant').map((m) => String(m.content || ''));
+  const quote = detectQuotation(lastUser, { said });
+  // MEANING RULE: an etymology / meaning / comparison question is define (or topic, for a comparison), never a quote hunt
+  const meaning = !quote && isMeaningQuestion(stripMarkup(lastUser));
   const ruled = (plan, provenance, reason, extra = {}) => {
     const out = { ...plan, source: { ...plan.source }, provenance, reason: reason ?? null, ...extra };
     // CONVERSE GUARD (deterministic): two or more content words that are no greeting, thanks or question about the assistant are
@@ -193,6 +197,11 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
     if (!quote && plan.shape === 'converse' && !SMALL_TALK.test(String(lastUser || '')) && (String(lastUser || '').match(/\p{L}{3,}/gu) || []).length >= 2) {
       out.overridden = { shape: 'converse', about: plan.about, by: 'converse-guard' };
       Object.assign(out, { shape: 'lookup' }); out.source = { ...out.source, shape: 'converse-guard' };
+    }
+    if (meaning && plan.shape === 'quote') {
+      out.overridden = { shape: 'quote', about: plan.about, by: 'meaning-rule' };
+      out.shape = /differ|compar|contrast|similar/i.test(String(lastUser)) ? 'topic' : 'define';
+      out.source = { ...out.source, shape: 'meaning-rule' };
     }
     if (quote) {
       if (plan.shape !== 'quote') out.overridden = { shape: plan.shape, about: plan.about, by: 'quote-rule' };

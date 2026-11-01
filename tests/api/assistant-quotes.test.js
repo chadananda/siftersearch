@@ -70,3 +70,33 @@ describe('createSentenceGate', () => {
     expect(seen.join('')).toContain('Next.');
   });
 });
+
+// r5 (11-01 conversation harness, Táhirih T1/T2): "Here is what Shoghi Effendi writes in *God Passes By* about that moment:"
+// was followed by nothing — the quote the model wrote was unverified and dropped, the lead-in stayed. A reply never ends
+// an introduction without its quotation: the verified passage is placed, or the lead-in is rewritten.
+describe('completeIntroducedQuotes', async () => {
+  const { completeIntroducedQuotes } = await import('../../api/lib/assistant/quotes.js');
+  const GPB = { source_title: 'God Passes By', source_author: 'Shoghi Effendi', citation_url: 'https://oceanlibrary.com/x?paraId=para_88',
+    text: 'Quddús, who was sitting nearby, was so surprised that he raised his hand to cover his face. Táhirih rose from her seat and, unveiled, addressed the assembled companions. Some fled in terror.' };
+  const OTHER = { source_title: 'The Dawn-Breakers', source_author: 'Nabíl-i-Aʻẓam', citation_url: 'https://x/db', text: 'At Badásht a great company gathered.' };
+  it('places the named passage, verbatim and linked, under a lead-in left empty', () => {
+    const r = completeIntroducedQuotes('Here is what Shoghi Effendi writes in *God Passes By* about that moment:\n\nDoes this passage help?', [OTHER, GPB]);
+    expect(r.completed).toBe(1);
+    expect(r.text).toMatch(/about that moment:\n\n> .*Táhirih rose from her seat/);
+    expect(r.text).toContain('(https://oceanlibrary.com/x?paraId=para_88)');
+    expect(r.text.endsWith('Does this passage help?')).toBe(true);
+  });
+  it('a reply ending on ":" gets the quotation of the passage by the author it names', () => {
+    const r = completeIntroducedQuotes('Shoghi Effendi describes how she appeared before the gathering:', [GPB]);
+    expect(r.text).toMatch(/gathering:\n\n> Quddús/);
+  });
+  it('no passage matches → a bare "here is" frame is dropped, any other lead-in ends with a full stop', () => {
+    expect(completeIntroducedQuotes('She removed her veil.\n\nHere is what Shoghi Effendi writes about it:', [OTHER]).text).toBe('She removed her veil.');
+    expect(completeIntroducedQuotes('She removed her veil. Shoghi Effendi recounts that a new era had begun:', []).text)
+      .toBe('She removed her veil. Shoghi Effendi recounts that a new era had begun.');
+  });
+  it('leaves a lead-in that is followed by its quotation, list or table alone', () => {
+    for (const t of ['He writes:\n\n> “Quddús, who was sitting nearby”', 'Three points:\n\n- one\n- two', 'In his words:\n\n“So powerful is the light of unity.”'])
+      expect(completeIntroducedQuotes(t, [GPB]).text).toBe(t);
+  });
+});

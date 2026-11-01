@@ -109,6 +109,24 @@ describe('anisRespond', () => {
     expect(searchQueryFor(m)).toBe('Who was Mullá Ḥusayn? Where was he killed?');
   });
 
+  // r5 (11-01 harness): T4 "Ok, I understand you cannot find it…" was searched with ALL of T3, including ~890 chars of
+  // <br> the reader pasted. A follow-up carries the reference it leans on, never raw history or markup.
+  it('a follow-up after a long question carries its names, not its text or markup', () => {
+    const t3 = 'Anís, again I don\'t see any passage. Also you said she appeared "without a veil", but does Shoghi Effendi really write this, or is it your interpretation about Tahirih at Badasht?' + '\n\n\n<br>'.repeat(60);
+    const t4 = 'Ok, I understand you cannot find it. What does "dispensation" mean here?';
+    const q = searchQueryFor([{ role: 'user', content: t3 }, { role: 'assistant', content: '…' }, { role: 'user', content: t4 }]);
+    expect(q).not.toMatch(/<br>/);
+    expect(q).toContain('Shoghi Effendi');
+    expect(q).toContain('Tahirih');
+    expect(q).not.toContain('again I don');
+    expect(q.length).toBeLessThanOrEqual(400);
+  });
+  it('a quotation of the assistant\'s own words is not searched alone as a hunt', () => {
+    const m = [{ role: 'user', content: 'Who was Tahirih?' }, { role: 'assistant', content: 'She removed her veil to signal that a new era had begun.' },
+      { role: 'user', content: 'Is "to signal that a new era had begun" his words?' }];
+    expect(searchQueryFor(m)).toBe('Who was Tahirih? Is "to signal that a new era had begun" his words?');
+  });
+
   it('leaves a self-contained question alone', () => {
     const m = [{ role: 'user', content: 'Who was Mullá Ḥusayn?' }, { role: 'assistant', content: '…' }, { role: 'user', content: 'What does the Quran say about patience and endurance in hardship?' }];
     expect(searchQueryFor(m)).toBe('What does the Quran say about patience and endurance in hardship?');
@@ -174,7 +192,7 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
       url: 'https://oceanlibrary.com/gleanings?paraId=para_1', rangeUrl: 'https://oceanlibrary.com/gleanings?paraId=para_1#:~:text=The%20earth' },
     tablet: { certain: true, title: 'Lawh-i-Maqsud', documentId: 700, text: 'ليس الفخر لمن يحبّ الوطن بل لمن يحبّ العالم', highlight: [[0, 24]], url: 'https://siftersearch.com/library/x#p0',
       meta: { title: 'Tablet of Maqṣúd', links: { oceanoflights: 'https://oceanoflights.org/bahaullah-x/', inventory: 'https://phelps/BH1' } } },
-    citedBy: [{ title: 'The Promised Day is Come', url: 'https://x/pdc' }],
+    citedBy: [{ title: 'The Promised Day is Come', url: 'https://x/pdc-book', rangeUrl: 'https://x/pdc' }],
   };
   const ask = [{ role: 'user', content: 'Where is this from? "The earth is but one country, and mankind its citizens."' }];
 
@@ -199,6 +217,13 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
       + 'The original is in Arabic, in [*Tablet of Maqṣúd*](https://oceanoflights.org/bahaullah-x/), where it reads «ليس الفخر لمن يحبّ الوطن». '
       + 'Its entry in the Phelps Inventory is [Phelps Inventory](https://phelps/BH1). It is also quoted in [*The Promised Day is Come*](https://x/pdc).');
     expect(r.plan.shape).toBe('source');
+  });
+  // r5 (11-01 harness, justice T1): "It is also quoted in The Kitáb-i-Aqdas" — a link-graph citation with no passage holding
+  // the wording (no range link). Only a citation shown to HOLD the words is named as quoting it.
+  it('a citation without a passage that holds the wording is not claimed as quoting it', async () => {
+    const d = deps({ sourceHunt: async () => ({ ...HUNT, citedBy: [{ title: 'The Kitáb-i-Aqdas', url: 'https://x/aqdas' }] }) });
+    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    expect(r.reply).not.toMatch(/also quoted|Aqdas/);
   });
   it('a quotation with no confirmed original says so, in one sentence', async () => {
     const d = deps({ sourceHunt: async () => ({ ...HUNT, tablet: { certain: false, candidates: [] }, citedBy: [] }) });

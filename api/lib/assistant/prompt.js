@@ -5,6 +5,7 @@
 // soul; research and scoring calls stay neutral. Pure apart from reading soul.md once. Deps: node:fs, soul.md.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { quotedIn } from './findings.js';
 
 let SOUL = null;
 export function soul() {
@@ -21,6 +22,8 @@ export const HOUSE_STYLE = `HOUSE STYLE — how every answer is made
 - When something is not there, say it as a person would, in one line — "I couldn't find anything on that in the texts I can search" — and still give what you do know and a way on; never "the provided texts" or "the passages do not…".
 - Ground every claim in the numbered PASSAGES. A name, date, place or teaching is asserted only if a passage states it. If the passages do not answer the question, say so plainly and kindly, say what they do touch on, and suggest how to ask differently. Never fill gaps about people, events, dates or teachings from general knowledge — not even things you are sure of (language is the exception above).
 - Let the texts speak: weave in their exact words. Quote verbatim, at least 5 words, as a linked fragment followed by the work in italics: ["exact words from the passage"](URL) — *Work Title*. Use a blockquote (> ) only for one key passage worth reading whole.
+- WHO WROTE IT and WHERE IT APPEARS come only from the passage header: credit words to the author shown there, and when the header says they are quoted in another author's work, say "quoted in <work> by <author>" — never present that work as the quoted author's own or as an authoritative text. Never say one work quotes, contains or is cited in another unless a passage shows the words in both, and never repeat such a claim from earlier in the conversation unless a passage shows it.
+- Before writing "writes:", "says:" or "here is …:", be sure the quotation that follows is verbatim from a passage; if it is not, describe the passage in your own words instead of introducing a quotation.
 - Check WHO and WHAT each passage is about. A passage about a different person, place or event is not evidence about the one asked, even if the words match. If no passage is about the person or event asked, say that plainly instead of borrowing one.
 - NO REFLEX TRUISMS (Chad 10-23: "a poorly thought out truism repeated out of context by many Bahá'ís to the point of exaggeration"): never repeat a popular Bahá'í saying or stock disclaimer by reflex — "pilgrim notes have no authority", blanket claims about what "Bahá'ís believe" that are not in the texts, a single quotation read far beyond its context. Reason from the texts and their context; when a common saying is relevant, state precisely what the sources support, with its proper scope, and say where the folk version goes further than they do. Measured, source-anchored phrasing — no boilerplate caveats.
 - Keep kinds of authority distinct by how you USE the passages (scripture and authorised interpretation carry the answer; a pilgrim's note follows it as "as recalled by <pilgrim>"; a memoir or study illustrates and is named by its author) — never by describing them: no sentences classifying the sources, no remarks that one work is "distinct from" another kind (10-19: a word question ended in a paragraph sorting Gleanings, God Passes By, pilgrim notes and McGlinn by authority).
@@ -66,7 +69,7 @@ export function anisDirection({ channelFrame = null, stance = null, conversation
 /** Compact user payload: direction, the conversation, then numbered passages with their only allowed URL. */
 export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {
   const lines = passages.map((p, i) => {
-    const who = [p.source_author, p.religion].filter(Boolean).join(', ');
+    const who = [quotedIn(p) ? `${p.source_author} as quoted in a work by ${p.book_author} (name ${p.book_author} as the work's author)` : p.source_author, p.religion].filter(Boolean).join(', ');
     return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}\nURL: ${p.citation_url || '(none)'}\n${String(p.text || '').slice(0, p.translation ? 4000 : 700)}`;
   });
   // Each piece of evidence goes with its verbatim PROOF — the model reads what the source actually says.

@@ -121,6 +121,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       // how the strategy was chosen (jev | jev:cached | backstop + why) and what the search was fed, for the thread view
       plan: { shape: r.plan?.shape ?? null, provenance: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, overridden: r.plan?.overridden ?? null,
         quote: r.plan?.quote?.phrase ?? null, ms: r.plan?.plan_ms ?? null, history_turns: Math.max(0, messages.length - 1), search_query: r.search_query ?? null,
+        // the quote gate's work on the final text: sentences dropped for unverified quotes, introduced quotations placed/rewritten
+        quotes_removed: r.quotes_removed ?? 0, quotes_completed: r.quotes_completed ?? null,
         // the five stages, each with its choice, who made it and the time: strategy (Jev) → phrases → retrieval → selection → format
         stages: { strategy: { choice: r.plan?.shape ?? null, by: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, ms: r.plan?.plan_ms ?? null },
           phrases: r.plan?.quote ? { choice: r.plan.quote.phrase, by: r.plan.quote.via } : r.plan?.phrases ? { choice: r.plan.phrases.phrase, by: r.plan.phrases.via } : null,

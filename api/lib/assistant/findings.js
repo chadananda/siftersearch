@@ -13,13 +13,30 @@ export const AUTHORITY_SHORT = {
   I1_TRADITION_PRIMARY: 'scripture of its tradition', I2_TRADITION_SCHOLARSHIP: 'commentary', G_GENERAL: 'reference',
 };
 
+const foldName = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+/** The passage is quoted IN a book by someone else: its paragraph author is not the book's catalogue author. */
+export const quotedIn = (q) => {
+  const a = foldName(q?.source_author), b = foldName(q?.book_author);
+  return !!(a && b && a !== b && !b.includes(a));
+};
+// A paragraph quoted in a SECONDARY book (an article, a history, scholarship) is classed by that book — its words are the book's
+// report of them, and a paragraph attribution there can be wrong (r5: a Bahá'í World article's paragraph read as "an
+// authorized text" by Bahá'u'lláh). In a Writings / interpretation / guidance volume the paragraph's own class stands.
+const PRIMARY = new Set(['B1_REVEALED', 'B2_AUTH_INTERPRETATION', 'B3_UHJ_GUIDANCE', 'I1_TRADITION_PRIMARY']);
+export function passageAuthority(q) {
+  const own = classifyAuthority({ author: q.source_author, title: q.source_title, collection: q.collection, religion: q.religion });
+  if (!quotedIn(q)) return { class: own, name: AUTHORITY_SHORT[own] || 'reference' };
+  const book = classifyAuthority({ author: q.book_author, title: q.source_title, collection: q.collection, religion: q.religion });
+  if (PRIMARY.has(book)) return { class: own, name: AUTHORITY_SHORT[own] || 'reference' };
+  return { class: book, name: `${AUTHORITY_SHORT[book] || 'reference'} quoting ${q.source_author}` };
+}
+
 const yearOf = (w) => { const m = String(w ?? '').match(/\b(1[0-9]{3}|[2-9][0-9]{2})\b/); return m ? Number(m[1]) : null; };
 
 /** Passages + people record → typed findings. */
 export function toFindings({ retrieved = [], peopleAnswer = null, entities = null } = {}) {
   const out = retrieved.map((q, i) => {
-    const cls = classifyAuthority({ author: q.source_author, title: q.source_title, collection: q.collection, religion: q.religion });
-    return { id: `p${i + 1}`, kind: 'text_shows', status: 'verified', authority: { class: cls, name: AUTHORITY_SHORT[cls] || 'reference' },
+    return { id: `p${i + 1}`, kind: 'text_shows', status: 'verified', authority: passageAuthority(q),
       religion: q.religion || null, author: q.source_author || null, lang: q.source_lang || null,
       citations: [{ title: q.source_title, url: q.citation_url, doc_id: q.doc_id, paragraph_index: q.paragraph_index }] };
   });

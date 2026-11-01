@@ -256,3 +256,19 @@ describe('speakerTradition: the tradition a named founder or scripture belongs t
     expect(speakerTradition('where is this from: the earth is but one country')).toBeUndefined();
   });
 });
+// r5 (xp-no-compulsion): Sura II was the origin, but the reply said "These are the words of The Báb" — the hunt's quote-author
+// vote counted the Báb's writings that quote the verse. Another tradition's scripture is credited to that scripture.
+describe('source hunt: another tradition\'s scripture keeps its own voice', () => {
+  const run = (hunt) => anisRespond({ messages: [{ role: 'user', content: 'Let there be no compulsion in religion' }], direction: { kind: 'source_lookup' },
+    deps: { search: async () => ({ passages: [], _plan: { shape: 'quote' } }), craft: async () => 'ok', companion: async () => ({}),
+      plan: async () => ({ shape: 'quote' }), phrases: async () => null, upgradeLinks: async (x) => x, sourceHunt: async () => hunt } });
+  it('a Qur’án verse is the Qur’án, not the Bahá’í writer who quotes it', async () => {
+    const r = await run({ quoteAuthor: 'The Báb', origin: { religion: 'Islam', title: 'Sura II. The Cow', author: 'Muhammad', text: 'Let there be no compulsion in religion.' }, citedBy: [] });
+    expect(r.reply).toMatch(/^These words are from the Qur’án/);
+    expect(r.reply).not.toMatch(/Báb/);
+  });
+  it('a Bahá’í origin is still credited to the quote\'s writer', async () => {
+    const r = await run({ quoteAuthor: 'Bahá’u’lláh', origin: { religion: "Baha'i", title: 'Gleanings', author: 'Shoghi Effendi', text: 'The earth is but one country.' }, citedBy: [] });
+    expect(r.reply).toMatch(/words of Bahá’u’lláh/);
+  });
+});

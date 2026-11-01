@@ -204,3 +204,27 @@ describe('planSearch — quotation rule and provenance', () => {
     expect(p.provenance).toBe('jev');
   });
 });
+
+// r5 (11-01 conversation harness): follow-ups quoting the assistant's own words, or asking what words mean, were forced
+// into quote hunts by the quote rule (Táhirih T3 → honest_absence; justice T4 root question → find_passage).
+describe('quote rule — follow-ups (r5)', () => {
+  const jev = (shape) => async () => ({ ok: true, json: async () => ({ answers: ans({ shape }) }) });
+  const opts = (shape) => ({ apiKey: 'k', fetchImpl: jev(shape), cache: false, resolveName: null });
+  it('a span the assistant said earlier is not a quote hunt', async () => {
+    const m = [
+      { role: 'user', content: 'who was Tahirih?' },
+      { role: 'assistant', content: 'At Badasht she appeared without a veil to signal that a new era had begun.' },
+      { role: 'user', content: 'you said she appeared "without a veil to signal that a new era had begun", does Shoghi Effendi really write this?' },
+    ];
+    const p = await planSearch(m, opts('fact'));
+    expect(p.shape).toBe('fact');
+    expect(p.quote).toBeUndefined();
+  });
+  it('an etymology question Jev called quote becomes define; a comparison becomes topic', async () => {
+    const p = await planSearch('You said al-insāf comes from the root n-ṣ-f. Does that sense shape the "turn not away from it" in the Hidden Word?', opts('quote'));
+    expect(p.shape).toBe('define');
+    expect(p.overridden?.by).toBe('meaning-rule');
+    const c = await planSearch('How is "the knowledge of God which comes to the heart of man" different from what Hooper Dunbar says?', opts('quote'));
+    expect(c.shape).toBe('topic');
+  });
+});

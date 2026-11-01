@@ -570,7 +570,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     if (docIds.length > 0) {
       const placeholders = docIds.map(() => '?').join(',');
       const docRows = await queryAll(
-        `SELECT id, slug, filename, religion, collection, language, source_site, source_url, title, metadata FROM docs WHERE id IN (${placeholders})`,
+        `SELECT id, slug, filename, religion, collection, language, source_site, source_url, title, author, metadata FROM docs WHERE id IN (${placeholders})`,
         docIds
       );
       docMeta = new Map(docRows.map(r => [r.id, r]));
@@ -681,6 +681,9 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           text: (hit.text || '').substring(0, 500),
           title: hit.title || 'Unknown',
           author: hit.author || '',
+          // the BOOK's catalogue author: a paragraph whose author differs is quoted IN that book (r5: a Hidden Word quoted in a
+          // Bahá'í World article read as an authorized text) — Anís names both, never one for the other
+          book_author: meta?.author || null,
           religion: hit.religion || '',
           collection: hit.collection || '',
           language: hit.language || meta?.language || null,

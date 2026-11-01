@@ -63,3 +63,60 @@ export function createSentenceGate(passages, emit) {
     flush() { release(buf); buf = ''; },
   };
 }
+
+// ── An introduced quotation is never left missing (r5, 11-01) ────────────────────────────────────────────────────────
+// The gate drops a sentence quoting unverified words; when that sentence was the quotation a lead-in announced, the reply
+// read "…writes in God Passes By:" and then nothing. Code places the verified passage the lead-in names, or rewrites it.
+const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+const FOLLOWED = /^\s*(>|[-*•+]\s|\d+[.)]\s|\||["“«]|\*["“])/;
+const QUOTE_INTRO = /\b(writes?|wrote|written|says?|said|states?|stated|describes?|described|recounts?|recounted|records?|recorded|reads?|passage|words|quote|quotation|puts it|as follows|here is|here's)\b/i;
+const BARE_FRAME = /^(?:here(?: is|'s|’s)|this is|below is|the following is|in (?:his|her|its|their) (?:own )?words)\b[^.!?]{0,160}:\s*$/i;
+const sentencesOf = (p) => p.split(/(?<=[.!?])\s+(?=[A-Z“"[*>(])/);
+
+function namedPassage(lead, passages) {
+  const f = ` ${fold(lead)} `;
+  const usable = (passages || []).filter((q) => String(q.text || '').trim().split(/\s+/).length >= 8);
+  return usable.find((q) => q.citation_url && lead.includes(q.citation_url))
+    || usable.find((q) => q.source_title && f.includes(` ${fold(q.source_title.replace(/\s*\(.*\)\s*$/, ''))} `))
+    || usable.find((q) => q.source_author && fold(q.source_author).length > 3 && f.includes(` ${fold(q.source_author)} `)) || null;
+}
+
+/** Whole sentences of the passage (≤ ~110 words), verbatim; an unfinished last sentence ends in an ellipsis. */
+export function passageExcerpt(text, maxWords = 110) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  const out = [];
+  let n = 0;
+  for (const s of sentencesOf(t)) {
+    const w = s.split(' ').length;
+    if (out.length && n + w > maxWords) break;
+    out.push(s); n += w;
+  }
+  let x = out.join(' ');
+  if (n > maxWords) x = `${x.split(' ').slice(0, maxWords).join(' ')} …`;
+  else if (!/[.!?”"’)]$/.test(x)) x = `${x} …`;
+  return x;
+}
+
+export function completeIntroducedQuotes(text, passages) {
+  const paras = String(text || '').split(/\n{2,}/);
+  const out = [];
+  let completed = 0, rewritten = 0;
+  for (let i = 0; i < paras.length; i++) {
+    const p = paras[i], next = paras[i + 1];
+    const last = i === paras.length - 1;
+    const missing = /:\s*$/.test(p) && !(next && FOLLOWED.test(next)) && (last || QUOTE_INTRO.test(sentencesOf(p).at(-1)));
+    if (!missing) { out.push(p); continue; }
+    const q = namedPassage(p, passages);
+    if (q) {
+      const link = q.citation_url && !p.includes(q.citation_url) ? ` ([${q.source_title || 'source'}](${q.citation_url}))` : '';
+      out.push(p.trimEnd(), `> ${passageExcerpt(q.text)}${link}`);
+      completed++;
+      continue;
+    }
+    const sents = sentencesOf(p.trimEnd());
+    if (BARE_FRAME.test(sents.at(-1))) sents.pop(); else sents[sents.length - 1] = sents.at(-1).replace(/\s*:\s*$/, '.');
+    rewritten++;
+    if (sents.length) out.push(sents.join(' '));
+  }
+  return { text: out.join('\n\n').trim(), completed, rewritten };
+}

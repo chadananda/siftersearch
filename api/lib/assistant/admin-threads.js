@@ -121,7 +121,7 @@ export async function threadDetail({ thread, messages, audits = auditsFor, peopl
       const p = safeJson(r.path_json) || {};
       e.reply = { id: r.id, text: r.content, status: r.status, at: r.answered_at || r.created_at, channel: r.channel,
         route: { gate: p.gate || null, strategy: p.recipe || p.plan?.shape || null, format: p.format?.id || null, retrieved: p.retrieved ?? p.passages ?? null,
-          ...(p.plan?.provenance ? { plan: p.plan } : {}),
+          ...(p.plan ? { plan: p.plan } : {}),   // every route, not only Jev-planned ones (r5: source/term/language turns showed no history_turns)
           ...(p.timeline?.length ? { timeline: p.timeline, llm: p.llm || [], search_detail: p.search_detail || null } : {}) },   // how the strategy was chosen: jev | jev:cached | backstop + reason
         audit: auditView(byId.get(Number(r.id))),
         // type · models · usd · latency (turn-meta.js; turns before 10-22 carry no meter → type and latency only)
