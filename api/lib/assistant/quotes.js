@@ -6,16 +6,38 @@ import { quoteSpans, containsQuote } from '../quote-text.js';
 
 export { quoteSpans };
 
-/** Spans whose words appear in no passage (containsQuote: ellipsis-joined pieces of ≥3 words each must match). */
+/** Spans whose words appear in no ONE passage (containsQuote: ellipsis-joined pieces of ≥3 words each must match).
+ *  One quotation, one passage: the pieces of a quotation must all come from the same passage — r9 found quotations stitched
+ *  from two passages (often by different authors) and presented as one, which a check against all passages joined let pass. */
 export function unverifiedQuotes(text, passages) {
-  const hay = (passages || []).map((p) => p.text || '').join(' | ');
+  const hays = (passages || []).map((p) => p.text || '').filter(Boolean);
   return quoteSpans(text).filter((q) => {
     const pieces = String(q).split(/\.\.\.|\u2026/).filter((p) => p.trim().split(/\s+/).length >= 3);
-    return pieces.length > 0 && !containsQuote(hay, q);
+    return pieces.length > 0 && !hays.some((h) => containsQuote(h, q));
   });
 }
 
-const NOTHING_LEFT = 'I couldn’t find a passage in the library that says this directly. Could you tell me a little more about what you’re looking for?';
+/** A reply cut by the token cap ends at its last whole sentence, never mid-word or mid-link (r9: "…[Some Answered Qu").
+ *  An unclosed quotation or link at the end goes with the cut sentence. Pure. */
+export function trimCutReply(text) {
+  let t = String(text || '').trimEnd();
+  const lastEnd = (s) => {
+    const m = [...s.matchAll(/[.!?…][”"’)*]*(?=\s|$)|\)(?=\s|$)/g)].at(-1);
+    return m ? m.index + m[0].length : -1;
+  };
+  const balanced = (s) => (s.match(/“/g) || []).length <= (s.match(/”/g) || []).length && ((s.match(/"/g) || []).length % 2 === 0)
+    && (s.match(/\[/g) || []).length === (s.match(/\]/g) || []).length && (s.match(/\(/g) || []).length === (s.match(/\)/g) || []).length;
+  for (let guard = 0; guard < 50 && t; guard++) {
+    const end = lastEnd(t);
+    if (end < 0) return '';
+    const cut = t.slice(0, end).trimEnd();
+    if (balanced(cut)) return cut;
+    t = t.slice(0, end - 1);
+  }
+  return t;
+}
+
+const NOTHING_LEFT = 'I didn’t find a passage that says this directly in this search. Could you tell me a little more about what you’re looking for?';   // r9: never a claim about the whole library
 
 /** Drop every sentence that carries an unverified quote. Returns the cleaned text and how many sentences went. */
 export function dropUnverified(text, passages) {
@@ -69,8 +91,8 @@ export function createSentenceGate(passages, emit) {
 // read "…writes in God Passes By:" and then nothing. Code places the verified passage the lead-in names, or rewrites it.
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 const FOLLOWED = /^\s*(>|[-*•+]\s|\d+[.)]\s|\||["“«]|\*["“])/;
-const QUOTE_INTRO = /\b(writes?|wrote|written|says?|said|states?|stated|describes?|described|recounts?|recounted|records?|recorded|reads?|passage|words|quote|quotation|puts it|as follows|here is|here's)\b/i;
-const BARE_FRAME = /^(?:here(?: is|'s|’s)|this is|below is|the following is|in (?:his|her|its|their) (?:own )?words)\b[^.!?]{0,160}:\s*$/i;
+const QUOTE_INTRO = /\b(writes?|wrote|written|says?|said|states?|stated|describes?|described|recounts?|recounted|records?|recorded|reads?|passages?|words|quotes?|quotations?|statements?|lines|verses?|puts it|as follows|following|here is|here's|here are)\b/i;
+const BARE_FRAME = /^(?:here(?: is| are|'s|’s)|this is|these are|below is|below are|the following (?:is|are)|in (?:his|her|its|their) (?:own )?words)\b[^.!?]{0,160}:\s*$/i;
 const sentencesOf = (p) => p.split(/(?<=[.!?])\s+(?=[A-Z“"[*>(])/);
 
 function namedPassage(lead, passages) {

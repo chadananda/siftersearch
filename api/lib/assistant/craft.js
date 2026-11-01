@@ -6,6 +6,7 @@ import { anisSystem, anisUserPayload, anisDirection } from './prompt.js';
 import { logAIUsage } from '../ai-services.js';
 import { noteProviderError } from '../spend-alerts.js';
 import { getModel } from '../model-registry.js';
+import { trimCutReply } from './quotes.js';
 
 const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1', gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/', anthropic: 'https://api.anthropic.com/v1/' };
 const KEY_ENV = { openai: 'OPENAI_API_KEY', groq: 'GROQ_API_KEY', deepseek: 'DEEPSEEK_API_KEY', gemini: 'GEMINI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' };
@@ -29,7 +30,7 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
   // a RESEARCH reply (Sonnet 5.5, which thinks first) hit 2,700 tokens at 2,218 characters (10-19 battery): it gets room
   const research = direction.format?.id === 'research';
   const long = direction.format?.id === 'position' || /email/.test(String(direction.channel?.id || direction.channel?.name || ''));
-  const maxTok = research ? 8000 : (effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 700) + (long ? 2000 : 0);
+  const maxTok = research ? 8000 : (effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 1100) + (long ? 2000 : 0);
   const params = {
     model: llm.model,
     messages: [
@@ -60,7 +61,11 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
     if (chunk.usage) usage = chunk.usage;
   }
   // a reply CUT by the token cap is never silent (10-19: two letters ended mid-sentence)
-  if (finish === 'length') console.warn(JSON.stringify({ anis_craft: 'reply hit the token cap', max_tokens: maxTok, chars: full.length, format: direction.format?.id || null }));
+  // …and it ends at its last whole sentence (r9: replies cut mid-link at the 700-token chat cap; the cap is now 1,100)
+  if (finish === 'length') {
+    console.warn(JSON.stringify({ anis_craft: 'reply hit the token cap', max_tokens: maxTok, chars: full.length, format: direction.format?.id || null }));
+    full = trimCutReply(full) || full;
+  }
   // Spend: every Anís reply. Providers that don't report usage on a stream get an estimate (~4 chars/token).
   const promptChars = params.messages.reduce((n, m) => n + String(m.content || '').length, 0);
   const promptTokens = usage?.prompt_tokens ?? Math.ceil(promptChars / 4), completionTokens = usage?.completion_tokens ?? Math.ceil(full.length / 4);

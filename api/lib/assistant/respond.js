@@ -122,7 +122,7 @@ const ASK_WORDS = { translator: 'who translated or recorded it', location: 'the 
   usage: 'where else the word or idea appears', several: 'each separate question' };
 const ASKS_HOW = (asks) => `The seeker asks several things: ${asks.map((a) => ASK_WORDS[a] || a).join('; ')}. Answer each one in turn from the passages; for any the passages do not settle, say so in one plain sentence — never drop it.`;
 export const NO_ORIGINAL_HOW = 'The seeker also asks for the original Arabic/Persian wording. None of the passages gives the original text: say so in one sentence, and still quote and cite the English passage that answers. Never say the passage itself was not found when it is among the passages.';
-const PUSHBACK_HOW ='The seeker challenges your previous reply. Check that claim against the passages: where they do not support it, say so plainly and correct it; where they do, quote the words that show it.';
+export const PUSHBACK_HOW = 'The seeker challenges something about an earlier reply. First check CONVERSATION SO FAR: if you never said, quoted or linked what they describe, say so plainly in one sentence and answer the question underneath it — do not apologise or concede. If you did say it, re-read the passages: where a passage supports it, hold to it and quote the words that show it; where a passage contradicts it or none supports it, say so plainly and give the corrected statement with its passage.';
 const clipQuery = (s, n) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, ''));
 // Capitalised words that open sentences or address the assistant — never the subject a follow-up refers to.
 const NOT_A_NAME = /^(I|I['’]\p{L}+|Ok|Okay|Also|And|But|So|Then|Now|Yes|No|Thanks|Thank|Please|Hello|Hi|Dear|Does|Do|Did|Is|Are|Was|Were|Can|Could|Would|Should|Will|What|Which|Who|Whom|Whose|When|Where|Why|How|The|A|An|In|On|Of|For|If|It|This|That|These|Those|There|He|She|They|You|Your|We|My|Anís|Anis)$/iu;
@@ -435,11 +435,14 @@ export function fillTags(text, tags) {
 
 // Prior turns only (the current question is sent separately), trimmed — context, not a transcript to re-answer.
 export function conversationSummary(messages, persona) {
-  const prior = (messages || []).slice(0, -1).slice(-6).map((m) => ({ ...m, content: stripMarkup(m.content) }));
+  // a link's URL is noise here; that it WAS linked is what a follow-up checks ("you didn't link Gleanings")
+  const prior = (messages || []).slice(0, -1).slice(-8).map((m) => ({ ...m, content: stripMarkup(m.content).replace(/\[([^\]]{1,300})\]\((?:https?:)?[^)\s]{1,600}\)/g, '$1 [linked]') }));
   // the reply the seeker is answering is kept nearly whole (its claims and links are what a follow-up refers to — r5: the
-  // "also quoted in the Aqdas" line at the end of T1 was cut at 400 chars, and T5 asked about it); older turns stay short
+  // "also quoted in the Aqdas" line at the end of T1 was cut at 400 chars, and T5 asked about it); earlier replies keep
+  // enough to CHECK a claim about them (r9: at 400 chars Anís could not see what he had said, so he conceded errors he never
+  // made — 11 capitulation defects in the r8 replay)
   const lastAt = prior.map((m) => m.role).lastIndexOf('assistant');
-  return prior.map((m, i) => `${m.role === 'user' ? 'Seeker' : persona}: ${m.content.slice(0, i === lastAt ? 1500 : 400)}`).join('\n');
+  return prior.map((m, i) => `${m.role === 'user' ? 'Seeker' : persona}: ${m.content.slice(0, i === lastAt ? 1800 : m.role === 'assistant' ? 1000 : 500)}`).join('\n');
 }
 
 async function defaultDeps() {

@@ -48,6 +48,12 @@ describe('threadDetail', () => {
     expect(t.rounds[0].reply.route).toEqual({ gate: 'research', strategy: 'passages', format: 'essay', retrieved: 7 });
     expect(t.rounds[0].reply.audit).toMatchObject({ state: 'done', better_strategy_warranted: true, best_strategy: 'term-study', answered: 'no', cause: 'routing' });
   });
+  it('shows the passages the reply was written from (answer-stage tracing, r9)', async () => {
+    const ev = [{ title: 'Gleanings', author: "Bahá'u'lláh", url: 'u', religion: "Bahá'í", text: 'Know thou of a truth…' }];
+    const t = await threadDetail({ thread: async () => ({ id: 's1', channel: 'site-chat', participant_id: 'x' }), audits, people,
+      messages: async () => [{ id: 12, round_index: 0, role: 'assistant', content: 'r', status: 'answered', path_json: JSON.stringify({ gate: 'research', evidence: ev }) }] }, 's1');
+    expect(t.rounds[0].reply.route.evidence).toEqual(ev);
+  });
 });
 
 describe('strategyGaps (the work queue)', async () => {

@@ -29,6 +29,6 @@ describe('quoted-in attribution', () => {
   });
   it('the prompt names the book\'s author for a quoted paragraph', () => {
     const out = anisUserPayload({ question: 'q', passages: [BW] });
-    expect(out).toContain('Bahá’u’lláh as quoted in a work by National Spiritual Assembly');
+    expect(out).toContain('Bahá’u’lláh, as quoted in this work by National Spiritual Assembly');
   });
 });

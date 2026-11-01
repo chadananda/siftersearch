@@ -39,7 +39,7 @@ describe('dropUnverified', () => {
 
   it('says so honestly when nothing grounded survives', () => {
     const out = dropUnverified('He said "the essence of justice is the love of all mankind".', passages);
-    expect(out.text).toMatch(/couldn.t find|could not find/i);
+    expect(out.text).toMatch(/didn.t find a passage .* in this search/i);
     expect(out.removed).toBe(1);
   });
 

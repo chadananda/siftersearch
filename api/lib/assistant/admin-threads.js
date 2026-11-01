@@ -122,7 +122,8 @@ export async function threadDetail({ thread, messages, audits = auditsFor, peopl
       e.reply = { id: r.id, text: r.content, status: r.status, at: r.answered_at || r.created_at, channel: r.channel,
         route: { gate: p.gate || null, strategy: p.recipe || p.plan?.shape || null, format: p.format?.id || null, retrieved: p.retrieved ?? p.passages ?? null,
           ...(p.plan ? { plan: p.plan } : {}),   // every route, not only Jev-planned ones (r5: source/term/language turns showed no history_turns)
-          ...(p.timeline?.length ? { timeline: p.timeline, llm: p.llm || [], search_detail: p.search_detail || null } : {}) },   // how the strategy was chosen: jev | jev:cached | backstop + reason
+          ...(p.timeline?.length ? { timeline: p.timeline, llm: p.llm || [], search_detail: p.search_detail || null } : {}),   // how the strategy was chosen: jev | jev:cached | backstop + reason
+          ...(p.evidence?.length ? { evidence: p.evidence } : {}) },   // the passages the writer had (title, author, url, text ≤1200): answer-stage defects are traced against them (r9)
         audit: auditView(byId.get(Number(r.id))),
         // type · models · usd · latency (turn-meta.js; turns before 10-22 carry no meter → type and latency only)
         meta: p.meta || { type: turnType({ status: r.status, gate: p.gate, kind: p.kind, recipe: p.recipe, format: p.format?.id ?? p.format }), models: [], usd: null,
