@@ -12,7 +12,17 @@
 Kept current by Claude (Chad 10-11: "keep a checklist of tasks … so we do not forget anything and I can see the order of
 operations coming"). `[x]` done · `[~]` running · `[ ]` queued. Top = now; bottom = later.
 
-## ▶ NOW (Chad 10-17) — RETRIEVAL ADDITIONS, in order
+## ▶ NOW (Chad 10-31) — ANÍS NAILS EVERY WORDING, THEN EVERY CONVERSATION
+Pipeline (Chad 10-31): Jev picks strategy (no LLM) → Haiku extracts phrases (specific searches only) → retrieve →
+Jev re-ranks/selects → Jev-chosen output format. Trigger: quote-fragment miss, thread conv_42253327 (topic not quote, off-topic, 14 s).
+- [~] Fix: Jev timeout→silent 'topic', quote backstop, phrase extraction, per-stage route log, off-topic pivot, dead search_trace, 10–15 s pre-auth latency
+- [~] Wording battery: tests/quality/anis-wording-fixtures.json + score-anis-wording.mjs (83 types × 10–15 styles, per-stage scoring)
+- [ ] Iterate until the wording battery passes; every real miss becomes a fixture
+- [ ] THEN conversations (Chad 10-31): simulated multi-turn conversations on a theme → deep quality analysis → iterate.
+      Existing: scripts/gen-dialogs.mjs (seeds → simulated user → published_conversations = the "discuss" pages; still
+      calls "Jafar" + GPT-4o, last touched 05-15), tests/chat/{scenarios,rubric,run-scenarios,iterate}.js. Bring onto today's Anís.
+
+## ▶ (Chad 10-17) — RETRIEVAL ADDITIONS, in order
 Index order of operations for every ingest (Chad 10-16/17): paragraph store → BM25 → structure (sub-documents + TOC) →
 vectors → phrases → disambiguation → HyPE → entities/concepts → links → translation. BM25 + structure follow ingestion
 automatically (reports-worker keywordLoop, every 10 min).
