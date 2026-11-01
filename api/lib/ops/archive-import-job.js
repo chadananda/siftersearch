@@ -7,6 +7,8 @@
 // PDFs need their worker probe (archive-sample) first: a scan or image PDF (page images under a hidden OCR layer) is PRE-OCR checked against the library — held → skipped,
 // probably held → needs_person (neither is paid for by SLP) — and an image PDF's sidecar says image_pdf so Dewey sends it to SLP like a scan (our layer is better).
 // Duplicates ACROSS drives (archives/dedup.js cascade: hash · normalised body · title+length · MinHash fingerprint) import only their best copy; the rest are listed (duplicates).
+// A book whose collection holds its converted Markdown (collection-repo mdFor: md/<id>.md, made by the worker probe or by SLP) is handed to Dewey AS that Markdown (`<name>.md`, never converted again);
+// every row records what became of it (verdict import | skip | leave, by whom, when, why) and, once the library holds it, the document id.
 // A CHAPTER FILE of a multi-file book is skipped and listed (chapter_sets): Dewey's ingest takes one file = one document, with no ordered-parts import.
 import { join, dirname, extname } from 'path';
 import { createReadStream } from 'fs';
@@ -18,7 +20,7 @@ import { deweyMediaDir } from './media-jobs.js';
 import { ingestDir } from './dewey-ingest-folder-job.js';
 import { preOcrCheck, slpBound, chapterFile } from '../archives/pre-ocr.js';
 import { clusterDuplicates, itemRow, registryRow } from '../archives/dedup.js';
-import { allFingerprints, applyClusters } from '../repos/collection-repo.js';
+import { allFingerprints, applyClusters, mdFor, upsertFile } from '../repos/collection-repo.js';
 import { checkHoldings } from '../dewey/holdings.js';
 import { docsByIsbn } from '../docs-repo.js';
 
@@ -78,25 +80,27 @@ export async function driveDedup(driveId, { registry = allFingerprints, view = i
 }
 
 /** Earlier imports the library now holds → their public path. */
-async function fillLinks(driveId, { media, dewey }) {
+async function fillLinks(driveId, { media, dewey, record }) {
   let linked = 0;
   for (const it of await itemsImportedUnlinked(driveId)) {
     const [kind, ref] = [it.imported_ref.slice(0, it.imported_ref.indexOf(':')), it.imported_ref.slice(it.imported_ref.indexOf(':') + 1)];
     let path = null;
     if (kind === 'media') { const m = await media.findMediaBySource(ref); if (m?.slug && m.state === 'done') path = `/media/${m.slug}`; }
     else { const d = await dewey.findBySha(ref); if (d?.doc_id && d.state === 'ingested') path = `/document/${d.doc_id}`; }
-    if (path) { await markImported(it.id, path); linked++; }
+    if (path) { await markImported(it.id, path); linked++; if (kind !== 'media') await record(driveId, it.primary_rel, { imported_doc_id: +path.split('/')[2] }); }
   }
   return linked;
 }
 
 export async function archiveImportJob({ drive: driveId, limit = 200 } = {}, deps = {}) {
   const { queue = (await import('../repos/ops-report-repo.js')).enqueue, sha = sha256Of, now = () => new Date().toISOString(), check = checkHoldings, byIsbn = docsByIsbn,
+    mdOf = mdFor, mkrow = async (d, rel, f) => { try { upsertFile(d, { path: rel, ...f }); } catch { /* no collection yet: the backfill creates the row */ } },
     media = deps.media || await import('../repos/media-repo.js'), dewey = deps.dewey || await import('../repos/dewey-repo.js'), dirs = {} } = deps;
   const drive = await getDrive(driveId);
   if (!drive) throw new Error(`no drive ${driveId}`);
   const donor = await getDonor(drive.donor_id);
   const out = { drive: drive.id, talks: [], books: [], skipped: [], held: [], needs_person: [], duplicates: [], chapter_sets: {}, failed: [], linked: 0 };
+  const verdict = (it, v, why, extra = {}) => ['talk', 'video'].includes(it.kind) ? null : mkrow(drive.id, it.primary_rel, { verdict: v, verdict_by: `archive-import (approved by ${it.decided_by || 'Chad'})`, verdict_at: now(), verdict_why: why ? String(why).slice(0, 300) : null, ...extra });
   const { dups } = deps.dedup || await driveDedup(drive.id);   // ONE copy per work across all drives: only the best of each is imported
   // a skipped item stays "approved, not imported", so each page starts after the ones passed over
   let off = 0, done = 0;
@@ -106,25 +110,30 @@ export async function archiveImportJob({ drive: driveId, limit = 200 } = {}, dep
     for (const it of batch) {
       if (done >= limit) break;
       const plan = importPlan(drive, it, dirs);
-      if (plan.chapter) { (out.chapter_sets[plan.chapter] ||= []).push({ id: it.id, rel: it.primary_rel }); continue; }
+      if (plan.chapter) { (out.chapter_sets[plan.chapter] ||= []).push({ id: it.id, rel: it.primary_rel }); await verdict(it, 'leave', `chapter file of set ${plan.chapter}`); continue; }
       const dup = dups.get(`${drive.id}:${it.primary_rel}`);
-      if (dup && !plan.chapter) { out.duplicates.push({ id: it.id, rel: it.primary_rel, ...dup }); continue; }
-      if (plan.skip) { out.skipped.push({ id: it.id, why: plan.skip }); continue; }
+      if (dup && !plan.chapter) { out.duplicates.push({ id: it.id, rel: it.primary_rel, ...dup }); await verdict(it, 'skip', `duplicate of ${dup.of || dup.of_rel} (${dup.step} ${dup.score})`); continue; }
+      if (plan.skip) { out.skipped.push({ id: it.id, why: plan.skip }); await verdict(it, 'leave', plan.skip); continue; }
       try {
-        if (plan.kind === 'book' && /\.pdf$/i.test(plan.src)) {
+        const md = plan.kind === 'book' ? await mdOf(drive.id, it.primary_rel) : null;   // already converted: Dewey takes the Markdown, the PDF is not read again (nor sent to SLP)
+        if (!md && plan.kind === 'book' && /\.pdf$/i.test(plan.src)) {
           const probe = it.metadata?.probe;
           if (!probe?.class) { out.skipped.push({ id: it.id, why: probe?.error ? `the worker probe failed: ${probe.error}` : 'not probed yet — run archive-sample (a worker reads its class and sample pages) before importing a PDF' }); continue; }
           if (slpBound(probe.class)) {   // BEFORE any SLP spend
             const cat = it.metadata?.catalog || { title: it.sample?.rec?.title || it.title || null, author: it.sample?.rec?.creator || it.creator || null };
             const r = await preOcrCheck({ probe, cat, name: plan.src.split('/').pop() }, { check, byIsbn });
-            if (r.verdict !== 'clear') { out[r.verdict === 'held' ? 'held' : 'needs_person'].push({ id: it.id, class: probe.class, by: r.by, candidate: r.candidate, evidence: r.evidence }); continue; }
+            if (r.verdict !== 'clear') { out[r.verdict === 'held' ? 'held' : 'needs_person'].push({ id: it.id, class: probe.class, by: r.by, candidate: r.candidate, evidence: r.evidence });
+              await verdict(it, r.verdict === 'held' ? 'skip' : 'leave', `${r.verdict} by ${r.by}: ${r.candidate || ''}`, { holdings: { verdict: r.verdict, by: r.by, candidate: r.candidate || null, candidates: r.evidence || [] } }); continue; }
           }
         }
-        const at = now(), how = await place(plan.src, plan.dest);
-        await writeFile(`${plan.dest}.source.json`, JSON.stringify(provenance(drive, donor, it, plan, at), null, 1));
+        const at = now(), dest = md ? plan.dest.replace(/\.[^./]+$/, '') + '.md' : plan.dest;
+        let how;
+        if (md) { how = (await exists(dest)) ? 'existed' : 'copied'; if (how === 'copied') { await mkdir(dirname(dest), { recursive: true }); await copyFile(md.file, dest); } } else how = await place(plan.src, dest);
+        await writeFile(`${dest}.source.json`, JSON.stringify({ ...provenance(drive, donor, it, plan, at), ...(md ? { image_pdf: false, from_markdown: md.md_path, converted_from: it.primary_rel } : {}) }, null, 1));
         // a book is found again by its bytes (Dewey keys items by sha256); a talk by its path (media items keep source_ref)
-        await markImported(it.id, plan.kind === 'talk' ? `media:${plan.dest}` : `dewey:${await sha(plan.dest)}`);
-        (plan.kind === 'talk' ? out.talks : out.books).push({ id: it.id, dest: plan.dest, how }); moved++; done++;
+        await markImported(it.id, plan.kind === 'talk' ? `media:${dest}` : `dewey:${await sha(dest)}`);
+        await verdict(it, 'import', md ? 'from the converted Markdown' : 'the file', { imported_at: at });
+        (plan.kind === 'talk' ? out.talks : out.books).push({ id: it.id, dest, how, ...(md ? { from_markdown: md.md_path } : {}) }); moved++; done++;
       } catch (e) { out.failed.push({ id: it.id, error: String(e.message).slice(0, 200) }); }
     }
     off += batch.length - moved;
@@ -133,6 +142,6 @@ export async function archiveImportJob({ drive: driveId, limit = 200 } = {}, dep
   if (out.talks.length) await queue('media-scan', { roots: [], paths: out.talks.map((t) => t.dest) }, 'archive-import');
   if (out.books.length) await queue('dewey-ingest-folder', { batch: 5 }, 'archive-import');
   if (out.talks.length + out.books.length && !['imported', 'returned'].includes(drive.status)) await setCustody(drive.id, { status: 'importing' });
-  out.linked = await fillLinks(drive.id, { media, dewey });
+  out.linked = await fillLinks(drive.id, { media, dewey, record: mkrow });
   return out;
 }

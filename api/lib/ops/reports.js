@@ -1,5 +1,6 @@
 import { archiveAdoptJob } from './archive-adopt-job.js';
 import { archiveSampleJob } from './archive-sample-job.js';
+import { archiveReprobeJob } from './archive-reprobe-job.js';
 import { archiveImportJob } from './archive-import-job.js';
 import { archiveImportDryrunJob } from './archive-import-dryrun-job.js';
 import { archiveCollectionBackfillJob, archiveSearchJob } from './archive-collection-job.js';
@@ -362,12 +363,13 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
 Object.assign(REPORTS, INDEX_REPORTS);
 REPORTS['archive-adopt'] = archiveAdoptJob;   // params: { drive, donor, donorName, label, source, catalog }
 REPORTS['archive-sample'] = archiveSampleJob;   // params: { drive, window } — stages candidates to home workers (type 'intake'), pulls clip/text/title → R2 + item; requeues itself
+REPORTS['archive-reprobe'] = archiveReprobeJob;   // params: { drive, window?, minutes?, redo? } — the current probe (fingerprint + body.md) over every catalogued book/document on home workers; books first; skips fingerprinted; requeues itself
 REPORTS['archive-import'] = archiveImportJob;   // params: { drive, limit? } — approved talks → media-scan, books → Dewey intake (_add-anyway, gate applies), each with "Donated by" provenance
 REPORTS['archive-import-dryrun'] = archiveImportDryrunJob;   // params: { drive, limit?, list? } — what the import would do (held / probably held / needs OCR / straight in); links and OCRs nothing
 REPORTS['archive-collection-backfill'] = archiveCollectionBackfillJob;   // params: { drive } — mirror a drive's catalogue items + probes into <ARCHIVES_DIR>/<drive>.data/collection.db
 REPORTS['archive-search'] = archiveSearchJob;   // params: { q | title | sha | cluster, drive?, limit? } — search ACROSS all collection.db files (FTS5 body, title, hash, cluster); read-only
 REPORTS['archive-copy'] = archiveCopyJob;   // params: { drive, donor, donorName, label, source } — read-only mount → rsync into /tank/archives/<drive>, verified
-export const LANES = { archive: ['archive-adopt', 'archive-sample', 'archive-import', 'archive-import-dryrun', 'archive-collection-backfill', 'archive-search'], copy: ['archive-copy'],   // hours of rsync must not hold up sampling extract: ['episode-extract', 'structure-infer'],
+export const LANES = { archive: ['archive-adopt', 'archive-sample', 'archive-reprobe', 'archive-import', 'archive-import-dryrun', 'archive-collection-backfill', 'archive-search'], copy: ['archive-copy'],   // hours of rsync must not hold up sampling extract: ['episode-extract', 'structure-infer'],
   heavy: ['index-sizes', 'hollow', 'deletions', 'phrase-coverage', 'hype-coverage', 'source-link-coverage', 'vocab-build', 'block-attrs', 'reingest-impact', 'ol-refresh', 'keyword-fill-sites', 'toc-candidates'],
   intake: ['dewey-received', 'dewey-discard', 'dewey-intake', 'dewey-ingest-folder', 'dewey-archive', 'dewey-reimport', 'dewey-offer-paths'],   // a book Chad is waiting on does not queue behind hours of indexing
   ocr: ['dewey-ocr'],   // SearchLayerPDF: hours of waiting on GPUs must not hold up text intake

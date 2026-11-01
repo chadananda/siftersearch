@@ -4,6 +4,7 @@
 import Database from 'better-sqlite3';
 import { mkdirSync, writeFileSync, readdirSync, existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { homedir } from 'os';
 
 export const archivesDir = () => process.env.ARCHIVES_DIR || '/tank/archives';
 export const dataDir = (drive) => join(archivesDir(), `${String(drive).replace(/[^\w.-]/g, '_')}.data`);
@@ -17,7 +18,10 @@ const SCHEMA = [
   `CREATE VIRTUAL TABLE IF NOT EXISTS body USING fts5(title, text, tokenize='unicode61 remove_diacritics 2')`,   // rowid = files.id
 ];
 const COLS = ['item_id', 'size', 'mtime', 'sha256', 'fmt', 'mime', 'pages', 'words', 'text_layer', 'scan', 'cls', 'title', 'title_norm', 'author', 'year', 'language', 'isbn', 'meta', 'norm_sha', 'minhash',
-  'md_path', 'sample_path', 'slp_path', 'converter', 'converted_at', 'cluster_id', 'best', 'dup_step', 'dup_score', 'dup_of', 'holdings', 'decision', 'decided_by', 'decided_at', 'imported_doc_id'];
+  'md_path', 'sample_path', 'slp_path', 'converter', 'converted_at', 'cluster_id', 'best', 'dup_step', 'dup_score', 'dup_of', 'holdings', 'decision', 'decided_by', 'decided_at', 'imported_doc_id',
+  'verdict', 'verdict_by', 'verdict_at', 'verdict_why', 'imported_at'];
+// columns added after the first release: ensured on every open (decision* = Chad's approval; verdict* = what the import did with it: import | skip | leave)
+const LATER = ['verdict', 'verdict_by', 'verdict_at', 'verdict_why', 'imported_at'];
 const enc = (v) => (v != null && typeof v === 'object' ? JSON.stringify(v) : typeof v === 'boolean' ? +v : v);
 
 /** Open a collection's db (created with its folders unless readonly). The caller closes it. */
@@ -27,6 +31,8 @@ export function openCollection(drive, { readonly = false } = {}) {
   mkdirSync(join(dir, 'md'), { recursive: true }); mkdirSync(join(dir, 'sample'), { recursive: true }); mkdirSync(join(dir, 'slp'), { recursive: true });
   const db = new Database(file); db.pragma('journal_mode = WAL'); db.pragma('busy_timeout = 5000');
   for (const s of SCHEMA) db.exec(s);
+  const have = new Set(db.prepare('PRAGMA table_info(files)').all().map((c) => c.name));
+  for (const c of LATER) if (!have.has(c)) db.exec(`ALTER TABLE files ADD COLUMN ${c} TEXT`);
   return db;
 }
 const using = (drive, fn, opts) => { const db = openCollection(drive, opts); if (!db) return null; try { return fn(db); } finally { db.close(); } };
@@ -72,7 +78,8 @@ export function syncItems(drive, d, items) {
       text_layer: pr.class ? +(pr.class !== 'scan') : null, scan: pr.class ? +(pr.class === 'scan') : null, cls: pr.class ?? null, sha256: fp.sha256 ?? pr.sha256 ?? null, norm_sha: fp.norm_sha ?? null,
       title: cat.title || rec.title || it.title || null, author: cat.author || rec.creator || it.creator || null, year: String(cat.year || rec.year || it.year || '') || null, language: it.lang || null,
       meta: { catalog: cat || null, rec: rec.title || rec.creator ? { title: rec.title, creator: rec.creator } : null, pdf: pr.meta_text ? String(pr.meta_text).slice(0, 2000) : null },
-      decision: it.decision ?? null, decided_by: it.decided_by ?? null, decided_at: it.decided_at ?? null });
+      decision: it.decision ?? null, decided_by: it.decided_by ?? null, decided_at: it.decided_at ?? null,
+      ...(it.imported_at ? { imported_at: it.imported_at } : {}), ...(/^\/document\/(\d+)$/.test(it.imported_ref || '') ? { imported_doc_id: +it.imported_ref.split('/')[2] } : {}) });
     return n + 1;
   }, 0);
 }
@@ -107,8 +114,59 @@ export function applyClusters(drive, dups, clusters) {
   });
 }
 
-/** Keep the holdings evidence (relation, overlaps, top 3 candidates) of one file. */
-export const setHoldings = (drive, path, holdings) => using(drive, (db) => db.prepare('UPDATE files SET holdings = ? WHERE path = ?').run(JSON.stringify(holdings), path).changes);
+/** Keep the holdings evidence (relation, overlaps, top 3 candidates) of one file (its row is created if the backfill has not yet). */
+export const setHoldings = (drive, path, holdings) => upsertFile(drive, { path, holdings });
+
+/** Paths whose fingerprint is complete (a MinHash; a scan has only its sha256 + pre-OCR sample) — what the re-probe skips. Read-only. */
+export function fingerprintedPaths(drive) {
+  const db = openCollection(drive, { readonly: true }), out = new Set();
+  if (!db) return out;
+  try { for (const r of db.prepare("SELECT path FROM files WHERE minhash IS NOT NULL OR (cls = 'scan' AND sha256 IS NOT NULL AND sample_path IS NOT NULL)").iterate()) out.add(r.path); } finally { db.close(); }
+  return out;
+}
+
+/** The converted Markdown of a file, if its collection holds one → { id, md_path, file } (file = absolute path of md/<id>.md). Read-only. */
+export function mdFor(drive, path) {
+  const db = openCollection(drive, { readonly: true });
+  if (!db) return null;
+  try { const r = db.prepare('SELECT id, md_path FROM files WHERE path = ? AND md_path IS NOT NULL').get(path); return r && existsSync(join(dataDir(drive), r.md_path)) ? { ...r, file: join(dataDir(drive), r.md_path) } : null; } finally { db.close(); }
+}
+
+/** SearchLayerPDF's output for a file: slp/<id>/slp.md (+ receipt.json), and its Markdown becomes the file's md/<id>.md (the import staging copy). → row id */
+export function recordSlp(drive, path, { markdown, receipt = null, title = null }) {
+  const id = saveBody(drive, path, { md: markdown, converter: 'SearchLayerPDF', title }), dir = join(dataDir(drive), 'slp', String(id));
+  mkdirSync(dir, { recursive: true }); writeFileSync(join(dir, 'slp.md'), markdown);
+  if (receipt) writeFileSync(join(dir, 'receipt.json'), JSON.stringify(receipt, null, 1));
+  upsertFile(drive, { path, slp_path: `slp/${id}/slp.md` });
+  return id;
+}
+
+/** The archive-sifter's own per-archive catalogue (<ARCHIVE_SIFTER_DATA|~/archive-sifter>/<drive>.db, read-only) → its book/document rows, or [] when there is none. */
+export function sifterRows(drive) {
+  const file = join(process.env.ARCHIVE_SIFTER_DATA || join(homedir(), 'archive-sifter'), `${String(drive).replace(/[^\w.-]/g, '_')}.db`);
+  if (!existsSync(file)) return [];
+  const db = new Database(file, { readonly: true, fileMustExist: true });
+  try { return db.prepare("SELECT rel, cls, size, mtime, fp, title, artist, year, sug, why, near, dec, dec_by, dec_at, imported, import_note FROM files WHERE cls IN ('pdf', 'docx', 'doc', 'epub', 'txt')").all(); } finally { db.close(); }
+}
+
+/** Fold the sifter's rows into the collection: existing rows gain size/mtime/title/author/year where empty and meta.sifter (fp, suggestion, decision); missing document rows are added. → { updated, added } */
+export function mergeSifter(drive, rows) {
+  return using(drive, (db) => {
+    const get = db.prepare('SELECT id, size, title, author, year, meta FROM files WHERE path = ?'), now = new Date().toISOString(), out = { updated: 0, added: 0 };
+    const put = db.transaction((chunk) => {
+      for (const r of chunk) {
+        const known = get.get(r.rel), sifter = { fp: r.fp, sug: r.sug, why: r.why, near: r.near, dec: r.dec, dec_by: r.dec_by, dec_at: r.dec_at, imported: r.imported, import_note: r.import_note };
+        let meta = {}; try { meta = JSON.parse(known?.meta || '{}') || {}; } catch { /* keep {} */ }
+        const f = { meta: JSON.stringify({ ...meta, sifter }), ...(known?.size == null && r.size != null ? { size: r.size } : {}), ...(!known && r.mtime ? { mtime: new Date(r.mtime * (r.mtime < 1e11 ? 1000 : 1)).toISOString() } : {}),
+          ...(!known?.title && r.title ? { title: r.title } : {}), ...(!known?.author && r.artist ? { author: r.artist } : {}), ...(!known?.year && r.year ? { year: String(r.year) } : {}) }, keys = Object.keys(f);
+        if (known) { db.prepare(`UPDATE files SET updated_at = ?${keys.map((k) => `, ${k} = ?`).join('')} WHERE id = ?`).run(now, ...keys.map((k) => f[k]), known.id); out.updated++; }
+        else { db.prepare(`INSERT INTO files (path, updated_at, fmt${keys.map((k) => `, ${k}`).join('')}) VALUES (?, ?, ?${keys.map(() => ', ?').join('')})`).run(r.rel, now, r.rel.split('.').pop().toLowerCase(), ...keys.map((k) => f[k])); out.added++; }
+      }
+    });
+    for (let i = 0; i < rows.length; i += 1000) put(rows.slice(i, i + 1000));
+    return out;
+  });
+}
 
 /** Search ACROSS collections (read-only): by text (FTS5), title, sha256 or cluster. → rows with drive, path, title, cluster, best, snippet. */
 export function searchCollections({ q = null, title = null, sha = null, cluster = null, drive = null, limit = 50 } = {}) {

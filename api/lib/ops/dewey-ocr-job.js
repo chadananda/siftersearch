@@ -19,6 +19,7 @@ import { researchWork } from '../dewey/research.js';
 import { originalsDir } from '../dewey/intake.js';
 import { logActivity } from '../repos/activity-repo.js';
 import { isDraining } from '../drain.js';
+import { recordSlp } from '../repos/collection-repo.js';
 
 /** A title that only describes what could not be read ("title not legible", "untitled", "not stated in the excerpts"). Pure. */
 export const placeholderTitle = (t) => /\b(?:not (?:legible|stated|given|shown|visible|readable|included)|illegible|untitled|unknown title|title page (?:not|missing))\b/i.test(String(t || ''));
@@ -152,6 +153,9 @@ async function ocrOnce({ id, refresh = false } = {}, deps = {}) {
     await updateItem(item.id, { state: 'needs-human', identified: { ...item.identified, slp_rejected: slp } }, `SearchLayerPDF text did not pass the check (${check.why.join('; ')}) — job ${out.job_id}, kept at ${slp.path}`);
     return { id, state: 'needs-human', check };
   }
+  // a DONOR file's SLP output is kept in its collection (slp/<id>/, and its Markdown as md/<id>.md — the staging copy a re-import reads); best effort
+  const prov = item.identified?.provenance;
+  if (prov?.drive && prov?.rel_path) try { await (deps.donorSlp || recordSlp)(prov.drive, prov.rel_path, { markdown: out.markdown || out.text, receipt: slp.receipt || null, title: item.title }); } catch { /* no collection for this drive */ }
   // a scan that could not be appraised before OCR is appraised NOW, from SLP's text — title, author, shelf, scope
   let ap = a;
   // no title, OR a placeholder the pre-OCR appraisal made from a few unreadable pages ("Doctoral dissertation on … (full

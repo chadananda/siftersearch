@@ -142,6 +142,17 @@ export async function itemsToProbe(driveId, { limit = 50 } = {}) {
     AND (${PROBE_EXT.map(() => 'lower(primary_rel) LIKE ?').join(' OR ')}) AND json_extract(metadata, '$.probe') IS NULL ORDER BY score DESC, id LIMIT ?`, [driveId, ...PROBE_EXT.map((e) => `%.${e}`), Math.min(Number(limit) || 50, 500)], 'archives:items-to-probe');
   return rows.map(parseItem);
 }
+/** RE-PROBE selection (archive-reprobe): every book/document of a drive (not set aside) the re-probe has not touched yet — `kind` 'book' before 'scan' is the caller's order, best score first.
+ *  metadata.reprobe is the marker ({queued} | {error} | {skipped}); `redo` also returns the ones that errored. */
+export async function itemsToReprobe(driveId, { kind = 'book', limit = 50, redo = false } = {}) {
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND section != 'set-aside' AND kind = ? AND (${PROBE_EXT.map(() => 'lower(primary_rel) LIKE ?').join(' OR ')})
+    AND (json_extract(metadata, '$.reprobe') IS NULL${redo ? " OR json_extract(metadata, '$.reprobe.error') IS NOT NULL" : ''}) ORDER BY score DESC, id LIMIT ?`,
+  [driveId, kind, ...PROBE_EXT.map((e) => `%.${e}`), Math.min(Number(limit) || 50, 500)], 'archives:items-to-reprobe');
+  return rows.map(parseItem);
+}
+/** The re-probe's marker on an item; the item's earlier probe is left as it is. */
+export const setReprobe = (id, marker) => query(`UPDATE intake_items SET metadata = json_set(COALESCE(metadata, '{}'), '$.reprobe', json(?)), updated_at = ? WHERE id = ?`, [JSON.stringify(marker), now(), id], 'archives:item-reprobe');
+
 /** Store an item's probe (metadata.probe: the worker's class/pages/text/metadata, or a {queued}/{error} marker); a re-catalogue keeps only catalog, so a probe is re-asked after one. */
 export const setProbe = (id, probe) => query(`UPDATE intake_items SET metadata = json_set(COALESCE(metadata, '{}'), '$.probe', json(?)), updated_at = ? WHERE id = ?`, [JSON.stringify(probe), now(), id], 'archives:item-probe');
 

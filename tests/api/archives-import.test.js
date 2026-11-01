@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), getDonor: vi.fn(), itemsToImport: vi.fn(), itemsForDedup: vi.fn(async () => []), markImported: vi.fn(), itemsImportedUnlinked: vi.fn(),
   setCustody: vi.fn(), upsertDonor: vi.fn(), upsertDrive: vi.fn() }));
-vi.mock('../../api/lib/repos/collection-repo.js', () => ({ allFingerprints: vi.fn(() => []), applyClusters: vi.fn(), syncItems: vi.fn(), upsertFile: vi.fn(), saveBody: vi.fn(), searchCollections: vi.fn(() => []) }));
+vi.mock('../../api/lib/repos/collection-repo.js', () => ({ allFingerprints: vi.fn(() => []), applyClusters: vi.fn(), syncItems: vi.fn(), upsertFile: vi.fn(), saveBody: vi.fn(), searchCollections: vi.fn(() => []), mdFor: vi.fn(() => null) }));
 vi.mock('../../api/lib/ops/media-jobs.js', () => ({ deweyMediaDir: () => '/x/media' }));
 vi.mock('../../api/lib/ops/dewey-ingest-folder-job.js', () => ({ ingestDir: () => '/x/ingest' }));
 import * as repo from '../../api/lib/repos/archives-repo.js';
@@ -95,6 +95,30 @@ describe('archiveImportJob', () => {
     expect(r.needs_person).toEqual([expect.objectContaining({ id: 13, class: 'scan', candidate: '#6 Near Book (other)' })]);
     expect(r.books).toEqual([expect.objectContaining({ id: 14 })]);
     expect(JSON.parse(await readFile(`${r.books[0].dest}.source.json`, 'utf8'))).toMatchObject({ image_pdf: true, pdf_class: 'image_pdf', pdf_pages: 90 });
+  });
+  it('a book with converted Markdown in its collection is handed to Dewey AS that Markdown (no PDF read, no pre-OCR check); every row records its verdict; a document link fills imported_doc_id', async () => {
+    const root3 = await mkdtemp(join(tmpdir(), 'drive3-'));
+    for (const f of ['conv.pdf', 'dup.pdf']) await writeFile(join(root3, f), f);
+    await writeFile(join(root3, 'conv.md.src'), '# Converted\n\ntext');
+    repo.getDrive.mockResolvedValue({ ...drive(), root: root3 }); repo.getDonor.mockResolvedValue({ name: 'Jane Smith' });
+    repo.itemsImportedUnlinked.mockResolvedValue([{ id: 8, primary_rel: 'old.pdf', imported_ref: 'dewey:abc' }]);
+    repo.itemsToImport.mockResolvedValue([{ id: 20, kind: 'scan', primary_rel: 'conv.pdf', decided_by: 'chad', metadata: { probe: { class: 'scan', pages: 90, text: '[page 1]\nx', sampled: [1] } } },
+      { id: 21, kind: 'scan', primary_rel: 'dup.pdf', metadata: { probe: { class: 'born_digital', pages: 9 } } }, { id: 22, kind: 'talk', primary_rel: 't.mp3' }]);
+    const rows = [], check = vi.fn();
+    const r = await archiveImportJob({ drive: 'golden-age' }, { queue: vi.fn(), check, byIsbn: async () => [], sha: async () => 'sha-md', now: () => 'T', dirs: { mediaDir: join(out, 'm3'), bookDir: join(out, 'b3') }, media: {},
+      dewey: { findBySha: async () => ({ doc_id: 77, state: 'ingested' }) }, mdOf: (_d, rel) => (rel === 'conv.pdf' ? { md_path: 'md/5.md', file: join(root3, 'conv.md.src') } : null),
+      mkrow: async (d, rel, f) => { rows.push([d, rel, f]); },
+      dedup: { dups: new Map([['golden-age:dup.pdf', { of: 'golden-age:conv.pdf', step: 'fingerprint', score: 0.71 }]]) } });
+    const dest = join(out, 'b3/_approved/donors/golden-age/conv.md');
+    expect(r.books).toEqual([{ id: 20, dest, how: 'copied', from_markdown: 'md/5.md' }]);
+    expect(await readFile(dest, 'utf8')).toBe('# Converted\n\ntext');
+    expect(JSON.parse(await readFile(`${dest}.source.json`, 'utf8'))).toMatchObject({ image_pdf: false, from_markdown: 'md/5.md', converted_from: 'conv.pdf', rel_path: 'conv.pdf' });
+    expect(check).not.toHaveBeenCalled();
+    expect(repo.markImported).toHaveBeenCalledWith(20, 'dewey:sha-md');
+    expect(rows).toContainEqual(['golden-age', 'conv.pdf', expect.objectContaining({ verdict: 'import', verdict_by: 'archive-import (approved by chad)', verdict_at: 'T', imported_at: 'T' })]);
+    expect(rows).toContainEqual(['golden-age', 'dup.pdf', expect.objectContaining({ verdict: 'skip', verdict_why: expect.stringContaining('fingerprint 0.71') })]);
+    expect(rows).toContainEqual(['golden-age', 'old.pdf', { imported_doc_id: 77 }]);
+    expect(rows.some((x) => x[1] === 't.mp3')).toBe(false);
   });
   it('nothing approved → nothing queued', async () => {
     repo.getDrive.mockResolvedValue(drive()); repo.itemsToImport.mockResolvedValue([]); repo.itemsImportedUnlinked.mockResolvedValue([]);

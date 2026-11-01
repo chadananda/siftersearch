@@ -80,10 +80,12 @@ export function clusterDuplicates(rows, { libShas = new Set() } = {}) {
       if (m === keep) continue;
       const mine = edges.filter((e) => e.a === m.key || e.b === m.key), direct = mine.filter((e) => e.a === keep.key || e.b === keep.key);
       const e = (direct.length ? direct : mine).sort((x, y) => rank(x.step) - rank(y.step) || y.score - x.score)[0];
-      list.push({ key: m.key, id: m.id, drive: m.drive, rel: m.rel, step: e.step, score: e.score });
+      list.push({ key: m.key, id: m.id, drive: m.drive, rel: m.rel, title: m.title || null, cls: m.cls || null, step: e.step, score: e.score });
       if (!dups.has(m.key)) { dups.set(m.key, { of: keep.key, of_id: keep.id, of_drive: keep.drive, of_rel: keep.rel, step: e.step, score: e.score }); by_step[e.step]++; }
     }
-    out.push({ keep: { key: keep.key, id: keep.id, drive: keep.drive, rel: keep.rel, cls: keep.cls, size: measure(keep) }, members: list });
+    // the cluster's own step + score = its weakest link (the member joined by the lowest-ranked step, at the lowest score): what a person should doubt first
+    const weak = [...list].sort((x, y) => rank(y.step) - rank(x.step) || x.score - y.score)[0];
+    out.push({ keep: { key: keep.key, id: keep.id, drive: keep.drive, rel: keep.rel, title: keep.title || null, cls: keep.cls, size: measure(keep) }, step: weak.step, score: weak.score, members: list });
   }
   return { dups, clusters: out, by_step };
 }

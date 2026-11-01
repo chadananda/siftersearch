@@ -132,6 +132,15 @@ describe('dewey-ocr job', () => {
     expect(items[0].identified.slp).toMatchObject({ job_id: 'j1', pages: 1 });
     expect(d.queue).toHaveBeenCalledWith('dewey-intake', { id: 7 }, 'dewey-ocr');
   });
+  it('a donor file\'s passing SLP result is kept in its collection (slp/ + md/); a collection failure never stops the import', async () => {
+    items[0].identified = { provenance: { drive: 'g', rel_path: 'k/b.pdf' } };
+    const donorSlp = vi.fn(async () => {});
+    const r = await deweyOcrJob({ id: 7 }, base({ donorSlp }));
+    expect(r.state).toBe('source');
+    expect(donorSlp).toHaveBeenCalledWith('g', 'k/b.pdf', expect.objectContaining({ markdown: ROSENBERG, title: 'Rosenberg notes' }));
+    items[0].state = 'needs-ocr'; items[0].identified = { provenance: { drive: 'g', rel_path: 'k/b.pdf' } };
+    expect((await deweyOcrJob({ id: 7 }, base({ donorSlp: async () => { throw new Error('no collection'); } }))).state).toBe('source');
+  });
   it('a failing check waits for a person — never imported', async () => {
     const d = base({ sample: async () => ({ text: 'An entirely different document about gardens and terraces on Mount Carmel built over many decades by thousands of workers from many lands with stone from Italy. '.repeat(3) }) });
     const r = await deweyOcrJob({ id: 7 }, d);

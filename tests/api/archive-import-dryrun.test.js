@@ -2,10 +2,10 @@
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/repos/archives-repo.js', () => ({ itemsToImport: vi.fn(), getDrive: vi.fn(), itemsForDedup: vi.fn(async () => []) }));
 vi.mock('../../api/lib/docs-repo.js', () => ({ docsByIsbn: vi.fn(async () => []), findDocuments: vi.fn(), listDocs: vi.fn(), getParagraphs: vi.fn() }));
-vi.mock('../../api/lib/repos/collection-repo.js', () => ({ allFingerprints: vi.fn(() => []), applyClusters: vi.fn(), syncItems: vi.fn(), upsertFile: vi.fn(), saveBody: vi.fn(), searchCollections: vi.fn(() => []) }));
+vi.mock('../../api/lib/repos/collection-repo.js', () => ({ allFingerprints: vi.fn(() => []), applyClusters: vi.fn(), syncItems: vi.fn(), upsertFile: vi.fn(), saveBody: vi.fn(), searchCollections: vi.fn(() => []), setHoldings: vi.fn() }));
 vi.mock('../../api/lib/ops/media-jobs.js', () => ({ deweyMediaDir: () => '/x/media' }));
 vi.mock('../../api/lib/ops/dewey-ingest-folder-job.js', () => ({ ingestDir: () => '/x/ingest' }));
-const { archiveImportDryrunJob } = await import('../../api/lib/ops/archive-import-dryrun-job.js');
+const { archiveImportDryrunJob, holdingsOf } = await import('../../api/lib/ops/archive-import-dryrun-job.js');
 
 const drive = { id: 'g', root: '/tank/archives/g' };
 const text = Array.from({ length: 80 }, (_, i) => `The Holy Book chapter${i} verse${i * 7} word${i * 3}`).join('\n');
@@ -75,5 +75,24 @@ describe('archive-import-dryrun drain', () => {
     expect(r.checked).toBe(6);
     expect(r.counts).toEqual(whole.counts);
     expect(r.skipped).toHaveLength(2);
+  });
+});
+
+describe('archive-import-dryrun evidence for the batch page', () => {
+  it('every verdict row carries relation + overlaps + length ratio + top 3 candidates with titles, is saved on the collection row, and clusters list members with title, step and score', async () => {
+    const saved = [];
+    const rel = { relation: 'overlap', ours_in_theirs: 0.1, theirs_in_ours: 0.2, length_ratio: 0.5 };
+    const items = [it1(1, 'a.txt', { title: 'Partial Book' }), it1(2, 'b.txt', { title: 'Clean Book' }), it1(3, 'c/Twin Book.txt', { title: 'The Twin Book', bytes: 5000 }), it1(4, 'd/Twin Book 2.txt', { title: 'The Twin Book', bytes: 5100 })];
+    const check = async (id) => (id.title === 'Partial Book' ? { verdict: 'partly-held', candidates: [1, 2, 3, 4].map((n) => ({ id: n, title: `Cand ${n}`, relation: rel })) } : { verdict: 'not-held', candidates: [] });
+    const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, read: async () => ({ markdown: text, scan: false }), check, byIsbn: async () => [], rate: { cents_per_page: 1, source: 't' }, draining: () => false, saveHoldings: async (...a) => { saved.push(a); } });
+    expect(r.probably_held[0].holdings).toMatchObject({ verdict: 'probably_held', relation: 'overlap', ours_in_theirs: 0.1, theirs_in_ours: 0.2, length_ratio: 0.5 });
+    expect(r.probably_held[0].holdings.candidates.map((c) => c.title)).toEqual(['Cand 1', 'Cand 2', 'Cand 3']);
+    expect(r.straight_in[0].holdings).toMatchObject({ verdict: 'straight_in', relation: null, candidates: [] });
+    expect(r.duplicates[0].holdings.dup).toMatchObject({ step: 'title+length' });
+    expect(saved.map((a) => a[1])).toEqual(expect.arrayContaining(['a.txt', 'b.txt']));
+    expect(saved).toHaveLength(4);
+    expect(saved.find((a) => a[1] === 'a.txt')[0]).toBe('g');
+    expect(r.dedup.clusters[0]).toMatchObject({ step: 'title+length', keep: { title: 'The Twin Book' }, members: [{ title: 'The Twin Book', step: 'title+length', score: expect.any(Number) }], score: expect.any(Number) });
+    expect(holdingsOf('held', {}).candidates).toEqual([]);
   });
 });
