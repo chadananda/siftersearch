@@ -61,33 +61,77 @@ it('a whole result realigned before correct still passes the render gate after t
  expect(timingSignature(after.paragraphs)).not.toBe(timingSignature(work.paragraphs));
  expect(meta.audio_alignment_hash).toBe(timingSignature(after.paragraphs));
 });
-// 11-01 (2680 failed for good; 2530/2692 every update): the transcript's timings drifted from the realign stamp after the text passes
-// (a worker's transcript.work.json put back over correct/clean). The gate used to throw to 'failed' with nothing ever re-aligning it.
-it('alignment drift at the publish gate marks realign stale and waits for a worker, never a dead-end failure',async()=>{
- const dir=await mkdtemp(join(tmpdir(),'drift-'));
+// 11-01 (2680 failed for good; 2530/2692 every update; then 2680 sat 'scheduled' 1.5 h on a WORKER_WAIT loop that no worker ever answered): the transcript's
+// timings drifted from the realign stamp after the text passes. The gate marks realign + its dependents stale and the SAME run re-does them —
+// realign on a home host when tower's gate refuses it — then publishes. Never WORKER_WAIT, never a dead end, never a re-stamp of the drift.
+const driftSetup=async(name,{withRealign=false}={})=>{
+ const dir=await mkdtemp(join(tmpdir(),name));
  const words='A garden has many different flowers.'.split(' ').map((w,i)=>({w,s:i,e:i+1}));
  const stamped=timingSignature([{n:1,words:words.map((w)=>({...w,s:w.s+0.05}))}]);
  await writeFile(join(dir,'transcript.work.json'),JSON.stringify({paragraphs:[{n:1,t0:0,t1:6,spk:'S1',words,sentences:[[0,6]]}]}));
  const at={at:'old'};
  await writeFile(join(dir,'meta.json'),JSON.stringify({slug:'drift',title:'Drift',version:3,audio_version:2,aligned_to:'unipase',audio_alignment_hash:stamped,rights:{playback:'full'},
+  ...(withRealign?{remaster:{status:'done'},enhancement:{listening:'unipase',variants:[{name:'unipase',file:'enhanced/unipase.flac',shifts_time:true}]}}:{}),
   stages:{remaster:at,realign:at,quiet:at,web:at,trim:at,correct:at,clean:at,render:at,ingest:at,catalog:at,update:at}}));
- const deps={detachedWorker:true,tools:{},llm:{},repo:{updateMediaItem:vi.fn(async()=>{})},quotes:{breakoutsOf:()=>[]},ingest:async()=>({documentId:1}),loadVocab:async()=>[],now:()=>'2026-11-01T00:00:00Z',draining:async()=>false};
- await expect(runItem({id:1,dir,state:'done',published_at:'old'},{only:['update'],redo:['update']},deps)).rejects.toMatchObject({code:'WORKER_WAIT'});
+ return {dir,words,stamped};
+};
+const towerGate=()=>vi.fn(async(sub)=>{const e=new Error(`${sub}: waiting for a worker`);e.code='WORKER_WAIT';throw e;});   // tower's tools gate
+// realign on the home host: writes realign.json (the remaster's times, 20 ms later) where runItem asked
+const homeRealign=()=>vi.fn(async(it,{out})=>{const {mkdir}=await import('node:fs/promises');await mkdir(join(it.dir,'enhanced'),{recursive:true});
+ await writeFile(out,JSON.stringify({times:{1:[0,1,2,3,4,5].map((i)=>[i+0.02,i+1.02])}}));return {placed:6,total:6,host:'aorus'};});
+it('alignment drift at the publish gate marks realign + dependents stale and re-runs them in the same run, never a WORKER_WAIT',async()=>{
+ const {dir,stamped}=await driftSetup('drift-');
+ const {buildRegistry,STAGE_DEFS}=await import('../../api/lib/media/stages.js');
+ // a two-stage registry (realign → update) keeps the test to the drift path; the real `after` edges are covered by markStale's own tests
+ const reg=buildRegistry(STAGE_DEFS.filter((x)=>['remaster','realign','update'].includes(x.name)).map((x)=>x.name==='update'?{...x,after:['realign']}:x));
+ const deps={detachedWorker:true,reg,tools:{},llm:{},repo:{updateMediaItem:vi.fn(async()=>{})},quotes:{breakoutsOf:()=>[]},ingest:async()=>({documentId:1}),loadVocab:async()=>[],now:()=>'2026-11-01T00:00:00Z',draining:async()=>false};
+ // no remaster here (no enhancement): realign re-runs but cannot re-align → the second drift in the same run is a plain publish block, not a loop
+ await expect(runItem({id:1,dir,state:'done',published_at:'old'},{only:['update'],redo:['update']},deps)).rejects.toThrow(/publish blocked: .*again after realign re-ran/);
  const meta=JSON.parse(await readFile(join(dir,'meta.json')));
- for(const s of ['realign','quiet','web','trim'])expect(meta.stages[s].stale,s).toBeTruthy();
- for(const s of ['remaster','correct','clean'])expect(meta.stages[s].stale,s).toBeUndefined();   // never an earlier stage, never the text passes (update: this run's redo cleared it, so it runs again anyway)
+ expect(meta.stages.realign.stale).toBeUndefined();   // realign DID re-run in this run (past only:['update'])
+ expect(meta.stages.realign.at).toBe('2026-11-01T00:00:00Z');
  expect(meta.audio_alignment_hash).toBe(stamped);   // the gate never re-stamps a drifted transcript as aligned
 });
-it('a stale realign over drifted timings re-aligns for real (heavy → a worker), never re-stamps the drift as aligned',async()=>{
+it('a drifted published talk re-aligns on a home host when tower refuses realign, then publishes in the same run',async()=>{
+ const {dir,stamped}=await driftSetup('drift-home-',{withRealign:true});
+ const {buildRegistry,STAGE_DEFS}=await import('../../api/lib/media/stages.js');
+ const reg=buildRegistry(STAGE_DEFS.filter((x)=>['remaster','realign','update'].includes(x.name)).map((x)=>x.name==='update'?{...x,after:['realign']}:x));
+ const tool=towerGate(),realignStep=homeRealign();
+ const deps={detachedWorker:true,reg,realignStep,tools:{tool},llm:{},repo:{updateMediaItem:vi.fn(async()=>{})},quotes:{breakoutsOf:()=>[]},ingest:async()=>({documentId:1}),loadVocab:async()=>[],now:()=>'2026-11-01T00:00:00Z',draining:async()=>false};
+ const r=await runItem({id:1,dir,state:'done',published_at:'old'},{only:['update'],redo:['update']},deps);
+ expect(r.done).toEqual(['realign','update']);
+ expect(tool).toHaveBeenCalledWith('realign',expect.anything(),expect.anything(),expect.anything());
+ expect(realignStep).toHaveBeenCalledWith(expect.objectContaining({dir}),expect.objectContaining({audio:join(dir,'enhanced/unipase.flac'),out:join(dir,'enhanced','realign.json')}));
+ const meta=JSON.parse(await readFile(join(dir,'meta.json'))),work=JSON.parse(await readFile(join(dir,'transcript.work.json')));
+ expect(meta.stages.realign).toMatchObject({host:'aorus'});expect(meta.stages.realign.stale).toBeUndefined();
+ expect(work.paragraphs[0].words[0]).toMatchObject({s:0.02,s0:0});   // the remaster's times, the original kept
+ expect(meta.audio_alignment_hash).toBe(timingSignature(work.paragraphs));expect(meta.audio_alignment_hash).not.toBe(stamped);
+});
+it('a stale realign over drifted timings: tower refuses the tool → the home host re-aligns, never a WORKER_WAIT, never a re-stamp of the drift',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'drift-realign-'));
  const words=['A','garden','grows.'].map((w,i)=>({w,s:i,e:i+1}));
  const stamped=timingSignature([{n:1,words:words.map((w)=>({...w,e:w.e+0.2}))}]);
  await writeFile(join(dir,'transcript.work.json'),JSON.stringify({paragraphs:[{n:1,t0:0,t1:3,spk:'S1',words}]}));
  await writeFile(join(dir,'meta.json'),JSON.stringify({slug:'d',title:'D',aligned_to:'unipase',audio_alignment_hash:stamped,
   enhancement:{listening:'unipase',variants:[{name:'unipase',file:'enhanced/unipase.flac',shifts_time:true}]},stages:{realign:{at:'old',stale:{at:'x',campaign:'alignment-drift'}}}}));
- const tool=vi.fn(async(sub)=>{const e=new Error(`${sub}: waiting for a worker`);e.code='WORKER_WAIT';throw e;});   // tower's tools gate
- const deps={detachedWorker:true,tools:{tool},llm:{},repo:{updateMediaItem:vi.fn(async()=>{})},loadVocab:async()=>[],now:()=>'2026-11-01T00:00:00Z',draining:async()=>false};
- await expect(runItem({id:1,dir,state:'failed'},{only:['realign'],redo:['realign']},deps)).rejects.toMatchObject({code:'WORKER_WAIT'});
+ const tool=towerGate();
+ const realignStep=vi.fn(async(it,{out})=>{const {mkdir}=await import('node:fs/promises');await mkdir(join(it.dir,'enhanced'),{recursive:true});await writeFile(out,JSON.stringify({times:{1:[[0.1,1],[1.1,2],[2.1,3]]}}));return {placed:3,total:3,host:'aorus'};});
+ const deps={detachedWorker:true,realignStep,tools:{tool},llm:{},repo:{updateMediaItem:vi.fn(async()=>{})},loadVocab:async()=>[],now:()=>'2026-11-01T00:00:00Z',draining:async()=>false};
+ await runItem({id:1,dir,state:'failed'},{only:['realign'],redo:['realign']},deps);
  expect(tool).toHaveBeenCalledWith('realign',expect.anything(),expect.anything(),expect.anything());
- expect(JSON.parse(await readFile(join(dir,'meta.json'))).audio_alignment_hash).toBe(stamped);
+ expect(realignStep).toHaveBeenCalledTimes(1);
+ const meta=JSON.parse(await readFile(join(dir,'meta.json'))),work=JSON.parse(await readFile(join(dir,'transcript.work.json')));
+ expect(work.paragraphs[0].words.map((w)=>w.s)).toEqual([0.1,1.1,2.1]);
+ expect(meta.audio_alignment_hash).toBe(timingSignature(work.paragraphs));
+ expect(meta.stages.realign).toMatchObject({host:'aorus'});
+});
+it('a realign failure that is not the tower gate is not hidden behind the home host',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'drift-fail-'));
+ const words=['A','b.'].map((w,i)=>({w,s:i,e:i+1}));
+ await writeFile(join(dir,'transcript.work.json'),JSON.stringify({paragraphs:[{n:1,t0:0,t1:2,spk:'S1',words}]}));
+ await writeFile(join(dir,'meta.json'),JSON.stringify({slug:'f',title:'F',aligned_to:'safe',enhancement:{listening:'unipase',variants:[{name:'unipase',file:'enhanced/unipase.flac',shifts_time:true}]},stages:{}}));
+ const tool=vi.fn(async()=>{throw new Error('aligner crashed');}),realignStep=vi.fn();
+ const deps={detachedWorker:true,realignStep,tools:{tool},llm:{},repo:{updateMediaItem:vi.fn(async()=>{})},loadVocab:async()=>[],now:()=>'x',draining:async()=>false};
+ await expect(runItem({id:1,dir,state:'running'},{only:['realign']},deps)).rejects.toThrow(/aligner crashed/);
+ expect(realignStep).not.toHaveBeenCalled();
 });
