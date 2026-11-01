@@ -120,6 +120,22 @@ describe('samplePass', () => {
     expect(saved.p31.fp).toEqual({ sha256: 'abc', norm_sha: 'nn', words: 5000 });   // the MinHash is NOT kept on the item ...
     expect(saved.fp31).toMatchObject({ path: 'book.pdf', sha256: 'abc', minhash: 'mm', words: 5000, pages: 210, cls: 'image_pdf', fmt: 'pdf' });   // ... it goes to the dedup registry
   });
+  it('the collection repo is synchronous: a plain return or a throw from fpSave/bodySave is handled (golden-age reprobe hit ".catch is not a function" 456 times)', async () => {
+    const pdf = { id: 32, kind: 'book', primary_rel: 'book.pdf', score: 40, decision: 'approve', drive_id: 'g' };
+    const { saved, deps } = rig([], [], [pdf]);
+    const rows = [];
+    deps.item = async () => pdf;
+    deps.fpSave = (_d, r) => { rows.push(r); return 1; };
+    deps.bodySave = () => { throw new Error('disk full'); };
+    await samplePass({ drive: 'g', window: 5, deps });
+    await work(() => ({ 'sample.json': JSON.stringify({ kind: 'book', probe: true, class: 'text_pdf', pages: 9, fp: { sha256: 's2', minhash: 'm2', words: 900 } }), 'body.md': '# B2' }));
+    const r = await samplePass({ drive: 'g', window: 5, deps });
+    expect(r).toMatchObject({ probed: 1 });
+    expect(r.errors).toEqual({ 'collection body: disk full': 1 });   // noted, not a TypeError, and the fingerprint row still saved
+    expect(rows[0]).toMatchObject({ path: 'book.pdf', sha256: 's2', minhash: 'm2' });
+    expect(saved.p32).toMatchObject({ class: 'text_pdf' });
+  });
+
   it('a failed probe is recorded as an error marker (no blind retry)', async () => {
     const { saved, deps } = rig([], [], [{ id: 32, kind: 'book', primary_rel: 'book.pdf', score: 1 }]);
     await samplePass({ drive: 'g', window: 5, deps });
