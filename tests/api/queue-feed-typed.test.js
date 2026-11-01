@@ -79,6 +79,43 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     expect(items[1]).toMatchObject({ state: 'excluded', why: expect.stringMatching(/newer-generation/) });
     expect(st.queue).not.toContain(1); expect(st.chains[1]).toBeUndefined(); expect(st.chains[2]).toBeTruthy();
   });
+  it('pre-feed duplicate gate (11-01, 2187/2576 dropped only after their GPU step): same file → duplicate, same length in the same folder → review, same length elsewhere → fed last, a recorded verdict → not fed', async () => {
+    engage();
+    const twins = { 1: [], 2: [] };
+    const gr = { ...repo, feedTwinRows: async ({ id }) => twins[id] };
+    // 1 is the same FILE as a published talk; 2 has the same length as a transcribed talk in its own folder
+    items[1].sha256 = 'abc'; items[2].source_ref = '/x/roshan-danesh/baha-i-law/download--0053.mp4';
+    twins[1] = [{ id: 9, slug: 'held-one', state: 'done', sha256: 'abc', source_ref: '/y/a.mp3' }];
+    twins[2] = [{ id: 8, slug: 'bahai-law', state: 'done', sha256: 'zzz', source_ref: '/x/roshan-danesh/baha-i-law/download-mp4--0054.m4a' }];
+    st.queue = [1, 2];
+    expect((await feed(st, { ...gr, ...deps, repo: gr, cbPeople: async () => [] })).typed).toMatchObject({ fed: 0, held: 2 });
+    expect(items[1]).toMatchObject({ state: 'duplicate', why: expect.stringMatching(/held-one: same file \(sha256\)/) });
+    expect(items[2]).toMatchObject({ state: 'review', why: expect.stringMatching(/possible duplicate of bahai-law: same length/) });
+    expect(st.chains[1]).toBeUndefined(); expect(st.chains[2]).toBeUndefined(); expect(st.queue).toEqual([]);
+  });
+  it('a same-length copy in another folder is fed LAST, never dropped; a queued twin (not yet processed) does not hold anything back', async () => {
+    engage();
+    items[1].state = 'scheduled'; items[2].state = 'scheduled'; items[1].source_ref = '/a/one.mp3';
+    const twins = { 1: [{ id: 7, slug: 'elsewhere', state: 'done', sha256: 'q', source_ref: '/b/other.mp3' }], 2: [{ id: 6, slug: 'not-yet', state: 'queued', sha256: 'r', source_ref: '/c/x.mp3' }] };
+    const gr = { ...repo, feedTwinRows: async ({ id }) => twins[id] };
+    st.queue = [1, 2];
+    const r = await feed(st, { ...deps, repo: gr, cbPeople: async () => [], max: 1 });
+    expect(r.typed.fed).toBe(1); expect(st.chains[2]).toBeTruthy(); expect(st.chains[1]).toBeUndefined();
+    expect(st.feedLater[1]).toBe('elsewhere'); expect(st.queue).toEqual([1]);
+    await feed(st, { ...deps, repo: gr, cbPeople: async () => [] });   // nothing else left: the copy runs now
+    expect(st.chains[1]).toBeTruthy(); expect(st.feedLater[1]).toBeUndefined();
+  });
+  it('a talk whose duplicate verdict is already recorded, or that left the queue as a duplicate, is not fed again; a whole redo of a published talk is not gated', async () => {
+    engage();
+    const m1 = join(items[1].dir, 'meta.json');
+    await writeFile(m1, JSON.stringify({ ...JSON.parse(await readFile(m1, 'utf8')), dedup: { verdict: 'duplicate', of: 'bahai-law', check: { by: 'transcript overlap' } } }));
+    items[2].state = 'done';
+    const gr = { ...repo, feedTwinRows: async () => [{ id: 9, slug: 'twin', state: 'done', sha256: null, source_ref: null }] };
+    st.queue = [1, 2];
+    expect((await feed(st, { ...deps, repo: gr, cbPeople: async () => [] })).typed.fed).toBe(1);
+    expect(items[1]).toMatchObject({ state: 'duplicate', why: expect.stringMatching(/not fed again/) });
+    expect(st.chains[2]).toBeTruthy(); expect(items[2].state).toBe('done');
+  });
   it('a recording with no audio stream (silent film clip) goes to review on tower, never to a worker', async () => {
     engage(); st.queue = [1, 2];
     const m1 = join(items[1].dir, 'meta.json');

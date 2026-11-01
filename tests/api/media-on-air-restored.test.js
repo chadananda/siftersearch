@@ -14,7 +14,7 @@ import { backfillRestored, resetRestoredVerify } from '../../api/lib/ops/media-j
 const row = (id, restored, extra = {}) => ({ id, slug: 's' + id, state: 'done', restored, dir: '/x/' + id, source_kind: 'youtube', speaker: 'A', duration_s: 60, ...extra });
 beforeEach(() => {
   db = new Database(':memory:');
-  db.exec(`CREATE TABLE media_items(id INTEGER PRIMARY KEY, slug TEXT, title TEXT, speaker TEXT, speaker_key TEXT, tradition TEXT, collection TEXT, language TEXT, year INTEGER, date TEXT, duration_s REAL, has_video INTEGER DEFAULT 0, source_kind TEXT, source_ref TEXT, youtube_id TEXT, channel TEXT, playback TEXT, thumb TEXT, quotes_n INTEGER, crs_n INTEGER, words_n INTEGER, doc_id INTEGER, grade TEXT, primary_issue TEXT, chain_key TEXT, priority REAL, audience INTEGER, queue_rank INTEGER, stage TEXT, state TEXT, why TEXT, dir TEXT, stages_done TEXT, restored INTEGER, stages_missing INTEGER, next_stage TEXT, verdict TEXT, in_quality REAL, out_quality REAL, in_bw_khz REAL, out_bw_khz REAL, completed_at TEXT, published_at TEXT, updated_at TEXT)`);
+  db.exec(`CREATE TABLE media_items(id INTEGER PRIMARY KEY, slug TEXT, title TEXT, speaker TEXT, speaker_key TEXT, tradition TEXT, collection TEXT, language TEXT, year INTEGER, date TEXT, duration_s REAL, has_video INTEGER DEFAULT 0, source_kind TEXT, source_ref TEXT, youtube_id TEXT, channel TEXT, playback TEXT, thumb TEXT, quotes_n INTEGER, crs_n INTEGER, words_n INTEGER, doc_id INTEGER, grade TEXT, primary_issue TEXT, chain_key TEXT, priority REAL, audience INTEGER, queue_rank INTEGER, stage TEXT, state TEXT, why TEXT, dir TEXT, stages_done TEXT, restored INTEGER, stages_missing INTEGER, next_stage TEXT, verdict TEXT, in_quality REAL, out_quality REAL, in_bw_khz REAL, out_bw_khz REAL, completed_at TEXT, published_at TEXT, dup_group INTEGER, updated_at TEXT)`);
   for (const r of [row(1, 1), row(2, 0), row(3, null), row(4, 1)]) {
     const k = Object.keys(r); db.prepare(`INSERT INTO media_items(${k.join(',')},updated_at) VALUES(${k.map(() => '?').join(',')},'2026-10-29')`).run(...Object.values(r));
   }
@@ -109,6 +109,16 @@ describe('published = on air (10-31, talk 485): published_at follows restored', 
     expect((await repo.clearOffAirPublished()).cleared).toBe(0);
     await repo.updateMediaItem(1, { state: 'review', restored: 1 }); expect(pub(1).p).toBe(null);   // leaving done clears it, even with restored in the same write
     await repo.updateMediaItem(1, { state: 'done' }); await repo.setIndex(1, { restored: 1 }); expect(pub(1).p).toBeTruthy();   // back on air: stamped again
+  });
+  it('a published talk a duplicate group eliminates, excludes or un-revives loses published_at in the same write (11-01: 2187 duplicate with published_at)', async () => {
+    const at = '2026-10-31T23:57:17Z';
+    db.prepare("UPDATE media_items SET published_at = ? WHERE id IN (1, 2, 4)").run(at);
+    await repo.markDuplicateItems([1], 'duplicate of s9: remaster NISQA 3.35 vs 2.25', 7);
+    await repo.excludeItems([2], 'excluded');
+    expect([pub(1).p, pub(2).p, pub(4).p]).toEqual([null, null, at]);
+    db.prepare("UPDATE media_items SET state = 'queued', published_at = ? WHERE id = 4").run(at);
+    await repo.unreviveItem(4, 'held again'); expect(pub(4).p).toBe(null);
+    expect((await repo.clearOffAirPublished()).cleared).toBe(0);
   });
   it('the verify pass re-derives the verdict: a held remaster indexed "light" moves to "review" and so onto the held page (10-31, 1728)', async () => {
     resetRestoredVerify();

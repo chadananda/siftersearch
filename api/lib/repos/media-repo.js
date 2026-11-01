@@ -24,6 +24,11 @@ export async function createMediaItem({ source_kind, source_ref, sha256 = null, 
 export const getMediaItem = async (id) => parse(await queryOne('SELECT * FROM media_items WHERE id = ?', [Number(id)], 'media:get'));
 export const getMediaBySlug = async (slug) => parse(await queryOne('SELECT * FROM media_items WHERE slug = ?', [String(slug)], 'media:by-slug'));
 export const findMediaBySha = async (sha) => parse(await queryOne('SELECT * FROM media_items WHERE sha256 = ? ORDER BY id LIMIT 1', [String(sha)], 'media:by-sha'));
+/** Copies of one recording known BEFORE any transcript (the pre-feed duplicate gate, 11-01): the same file (sha256) or the same length
+ *  to ±tol s. Duplicates and excluded talks are not candidates. ≤ 10 rows. */
+export const feedTwinRows = async ({ id, sha256 = null, duration_s = null, tol = 0.05 }) => (await queryAll(`SELECT id, slug, state, stage, dir, source_ref, sha256, duration_s, dup_group
+  FROM media_items WHERE id != ? AND state NOT IN ('duplicate', 'excluded') AND ((? IS NOT NULL AND sha256 = ?) OR (? IS NOT NULL AND duration_s BETWEEN ? AND ?)) ORDER BY id LIMIT 10`,
+  [Number(id), sha256, sha256, duration_s, Number(duration_s) - tol, Number(duration_s) + tol], 'media:feed-twins')).map(parse);
 export const findMediaByYoutube = async (id) => parse(await queryOne('SELECT * FROM media_items WHERE youtube_id = ? ORDER BY id LIMIT 1', [String(id)], 'media:by-youtube'));
 export const findMediaBySource = async (ref) => parse(await queryOne('SELECT * FROM media_items WHERE source_ref = ? ORDER BY id LIMIT 1', [String(ref)], 'media:by-source'));
 export const slugTaken = async (slug) => !!(await queryOne('SELECT 1 x FROM media_items WHERE slug = ?', [String(slug)], 'media:slug-taken'));
@@ -84,7 +89,7 @@ export const exclusionCandidates = async () => queryAll(`SELECT id, slug, title,
 /** Take talks out of the library for good: state 'excluded' (no lane picks it, no listing shows it), the reason kept. */
 export async function excludeItems(ids = [], why) {
   for (let i = 0; i < ids.length; i += 200) {
-    await transaction(ids.slice(i, i + 200).map((id) => ({ sql: `UPDATE media_items SET state = 'excluded', why = ?, queue_rank = NULL, updated_at = ? WHERE id = ?`, args: [String(why).slice(0, 500), now(), Number(id)] })), 'media:exclude');
+    await transaction(ids.slice(i, i + 200).map((id) => ({ sql: `UPDATE media_items SET state = 'excluded', why = ?, queue_rank = NULL, published_at = NULL, updated_at = ? WHERE id = ?`, args: [String(why).slice(0, 500), now(), Number(id)] })), 'media:exclude');
   }
   return ids.length;
 }
@@ -113,11 +118,11 @@ export async function setDupGroup(ids = [], g) {
   await transaction(ids.map((id) => ({ sql: 'UPDATE media_items SET dup_group = ?, updated_at = ? WHERE id = ? AND dup_group IS NOT ?', args: [Number(g), now(), Number(id), Number(g)] })), 'media:dup-group');
   return ids.length;
 }
-/** Terminal outcome 'duplicate': off air, out of every queue (an excluded row stays excluded). */
+/** Terminal outcome 'duplicate': off air (published_at cleared in the same write — 11-01, 2187/2188 kept it after a group re-pick), out of every queue (an excluded row stays excluded). */
 export async function markDuplicateItems(ids = [], why, g) {
   for (let i = 0; i < ids.length; i += 200) {
     await transaction(ids.slice(i, i + 200).map((id) => ({ sql: `UPDATE media_items SET state = CASE WHEN state = 'excluded' THEN state ELSE 'duplicate' END, why = CASE WHEN state = 'excluded' THEN why ELSE ? END,
-      queue_rank = NULL, dup_group = ?, updated_at = ? WHERE id = ?`, args: [String(why).slice(0, 500), Number(g), now(), Number(id)] })), 'media:mark-duplicate');
+      queue_rank = NULL, published_at = NULL, dup_group = ?, updated_at = ? WHERE id = ?`, args: [String(why).slice(0, 500), Number(g), now(), Number(id)] })), 'media:mark-duplicate');
   }
   return ids.length;
 }
@@ -133,7 +138,7 @@ export async function undoDuplicate(id, state, why) {
 }
 /** A Dewey-held copy media-dedupe revived as a group's best, the group dissolved before it started: held again. */
 export async function unreviveItem(id, why) {
-  await transaction([{ sql: `UPDATE media_items SET state = 'duplicate', why = ?, queue_rank = NULL, dup_group = NULL, updated_at = ? WHERE id = ? AND state IN ('queued', 'scheduled')`, args: [String(why).slice(0, 500), now(), Number(id)] }], 'media:unrevive');
+  await transaction([{ sql: `UPDATE media_items SET state = 'duplicate', why = ?, queue_rank = NULL, published_at = NULL, dup_group = NULL, updated_at = ? WHERE id = ? AND state IN ('queued', 'scheduled')`, args: [String(why).slice(0, 500), now(), Number(id)] }], 'media:unrevive');
   return 1;
 }
 /** Copies the content gate took out of a group: the wrong link goes. */

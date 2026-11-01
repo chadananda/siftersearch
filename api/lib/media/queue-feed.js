@@ -74,6 +74,34 @@ async function gated(it, m, repo, deps) {
   return true;
 }
 
+// PRE-FEED DUPLICATE GATE (coordinator tick 9/12, 11-01: 2187 and 2576 ran their GPU step and were then dropped as duplicates).
+// The content check (dedupe.js) needs a transcript, so before any GPU only what is already known can decide:
+//  · a confirmed verdict already on the talk (meta.dedup duplicate with a check, or a terminal state) → it is not fed;
+//  · the SAME FILE (sha256) as a talk already through preview, published or in a chain → duplicate (byte-identical: nothing to choose);
+//  · the same length to ±0.05 s as such a talk in the SAME source folder (2576: download--0053.mp4 = the m4a of bahai-law, 2782.368 s both)
+//    → held for review (unconfirmed: Chad decides), never dropped;
+//  · the same length elsewhere → fed LAST (priority is order: it still runs, after everything else).
+const ADVANCED = new Set(['done', 'review', 'held', 'transcribed', 'asr_queued', 'diar_queued', 'llm_queued']);   // or in a chain (st.chains)
+const NEW = new Set(['queued', 'scheduled', 'whole_queued', 'running', 'failed']);   // only a talk not yet through the pipeline is gated (a 'whole' redo of a published talk is not)
+const folderOf = (ref) => String(ref || '').split('/').slice(-2, -1)[0] || null;
+export async function feedDup(it, m, repo, st = {}) {
+  if (['duplicate', 'excluded'].includes(it.state)) return { skip: true };
+  if (!NEW.has(it.state)) return null;
+  if (m?.dedup?.verdict === 'duplicate' && m.dedup.check && !m.dedup.dissolved_at) return { state: 'duplicate', why: `duplicate of ${m.dedup.best || m.dedup.of} (recorded ${m.dedup.check.by}; not fed again)` };
+  if (!repo.feedTwinRows) return null;
+  const sha = it.sha256 || m?.source?.sha256 || null, dur = m?.duration_s ?? it.duration_s ?? null;
+  if (!sha && dur == null) return null;
+  const twins = await repo.feedTwinRows({ id: it.id, sha256: sha, duration_s: dur });
+  const ahead = (t) => ADVANCED.has(t.state) || !!st.chains?.[t.id];
+  const same = twins.find((t) => sha && t.sha256 === sha && ahead(t));
+  if (same) return { state: 'duplicate', why: `duplicate of ${same.slug || `#${same.id}`}: same file (sha256), found before feed`, of: same };
+  const len = twins.filter((t) => t.sha256 !== sha && ahead(t));
+  const near = len.find((t) => folderOf(t.source_ref) && folderOf(t.source_ref) === folderOf(it.source_ref));
+  if (near) return { state: 'review', why: `possible duplicate of ${near.slug || `#${near.id}`}: same length (${dur} s) in the same source folder, found before feed — not transcribed; Chad decides`, of: near };
+  if (len.length) return { later: len[0].slug || `#${len[0].id}` };
+  return null;
+}
+
 export async function feed(st, deps) {
   const { q, repo, wr, rj, full = true, decided = () => false, readMeta = readMetaFile, now = Date.now, max = 20 } = deps;
   const cap = await q.capacity();
@@ -127,14 +155,22 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
   const t = cap.by_type?.['cpu-prep'] || {}, rate = t.rate || (t.queued_h ? t.queued_audio_h / t.queued_h : 1);
   // an edge CPU host (the CPU pod) adds its measured prep rate; its queue counts as fed (rebalancePrep moves the overflow there)
   const ep = edge ? edgePrep(await edge.capacity?.().catch(() => null)) : null, eRate = ep?.rate || 0;
-  let queuedS = (t.queued_audio_h || 0) * 3600 + (ep ? ep.queued_audio_h * 3600 : 0), fed = 0;
+  let queuedS = (t.queued_audio_h || 0) * 3600 + (ep ? ep.queued_audio_h * 3600 : 0), fed = 0, held = 0;
+  st.feedLater ||= {};   // talk id → the same-length copy it waits behind (fed last, never dropped)
+  const ok = (id) => SJ.typedEligible(st, id) && SJ.typedShare(id, fraction) && !st.chains[id];
   while (queuedS < TARGET_H * 3600 * (rate + eRate) && fed < max) {
-    const i = SJ.pickNext(st, (id) => SJ.typedEligible(st, id) && SJ.typedShare(id, fraction) && !st.chains[id]);
+    let i = SJ.pickNext(st, (id) => ok(id) && !st.feedLater[id]), last = false;
+    if (i < 0) { i = SJ.pickNext(st, ok); last = true; }   // nothing else left: the same-length copies run now
     if (i < 0) break;
     const [itemId] = st.queue.splice(i, 1);
     try {
       const it = await repo.getMediaItem(itemId), m = await readMeta(it.dir);
       if (await gated(it, m, repo, { cbPeople })) continue;
+      const dup = last ? null : await feedDup(it, m, repo, st);
+      if (dup?.skip) continue;
+      if (dup?.later) { st.feedLater[itemId] = dup.later; st.queue.push(itemId); continue; }
+      if (dup?.state) { await repo.updateMediaItem(it.id, { state: dup.state, why: dup.why.slice(0, 500) }); held++; continue; }
+      delete st.feedLater[itemId];
       const src = await chainInput(it, m, demux), input = join(it.dir, src), sha = await wr.fileSha(input);
       const wj = { ...wr.wholeJob(it, m, sha), threads: 4 }, fileId = typedFileId(itemId, sha), audio_s = m.duration_s || 0;
       if (src !== m.original) wj.input = 'in' + extname(src);
@@ -149,9 +185,9 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
       st.chains[itemId] = { sha, fileId, slug: it.slug, input: wj.input, audio_s, at: now(), bytes, ...(src !== m.original ? { src } : {}) };
       st.qjobs[job.id] = { itemId, slug: it.slug, sha, kind: 'typed', type: 'cpu-prep', audio_s, at: now() };
       queuedS += audio_s; fed++;
-    } catch (e) { st.queue.push(itemId); return { fed, error: `#${itemId}: ${e.message}`.slice(0, 300) }; }
+    } catch (e) { st.queue.push(itemId); return { fed, held, error: `#${itemId}: ${e.message}`.slice(0, 300) }; }
   }
-  return { fed };
+  return { fed, ...(held ? { held } : {}) };
 }
 
 /** Drop a talk's chain: every step's job is acked (its results go), then the talk retries like a whole job. */

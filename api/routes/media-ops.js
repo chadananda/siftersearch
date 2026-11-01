@@ -78,6 +78,12 @@ export default async function mediaOps(fastify) {
   });
   // rent ONE CPU pod by hand (Chad 10-31: never automatic): it runs cpu-prep + cpu-finish overflow from the edge queue and ends itself when
   // idle. { vcpu?: 32, flavor?: 'cpu5c' } → the pod id, its host name and RunPod's own $/h. Honors the rentals pause.
+  // repair: every talk off the air (state ≠ done) loses published_at → { cleared, ids } (11-01: 2187/2188 duplicates still dated as published)
+  fastify.post('/ops/media/off-air-published', guard, async (req) => {
+    const r = await (await import('../lib/repos/media-repo.js')).clearOffAirPublished();
+    req.log.info({ cleared: r.cleared, by: by(req) }, 'off-air published_at cleared');
+    return r;
+  });
   fastify.post('/ops/media/cpu-pod', guard, async (req, reply) => {
     const b = req.body || {}, C = await import('../lib/media/cloud.js');
     try {
