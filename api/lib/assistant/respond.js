@@ -315,7 +315,9 @@ async function huntSource(d, question) {
   const ool = t?.meta?.links?.oceanoflights || null, phelps = t?.meta?.links?.inventory || null, pin = t?.meta?.pin || null;
   // only a citation shown to HOLD the wording (its range link marks it) is named as quoting it — a link-graph edge alone once
   // produced "It is also quoted in The Kitáb-i-Aqdas" for a Hidden Word (r5, 11-01)
-  const others = (r.citedBy || []).filter((c) => c.rangeUrl).slice(0, 3);
+  // r5 rerun: the Aqdas still came back with a rangeUrl that was only the book's front page — the link must point INTO the book
+  const atParagraph = (u) => /[?&](?:paraId|selectionString)=|#p\d+|#:~:text=/.test(String(u || ''));
+  const others = (r.citedBy || []).filter((c) => atParagraph(c.rangeUrl)).slice(0, 3);
   const tags = { book: { title: o.title, url: o.rangeUrl || o.url } };
   if (t) tags.tablet = { title: tTitle, url: t.meta?.links?.oceanoflightsRange || ool || t.rangeUrl || t.url };
   if (t && phelps) tags.inventory = { title: `Phelps Inventory${pin ? ` ${pin}` : ''}`, url: phelps, plain: true };

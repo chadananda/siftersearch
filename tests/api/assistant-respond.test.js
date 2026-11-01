@@ -192,7 +192,7 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
       url: 'https://oceanlibrary.com/gleanings?paraId=para_1', rangeUrl: 'https://oceanlibrary.com/gleanings?paraId=para_1#:~:text=The%20earth' },
     tablet: { certain: true, title: 'Lawh-i-Maqsud', documentId: 700, text: 'ليس الفخر لمن يحبّ الوطن بل لمن يحبّ العالم', highlight: [[0, 24]], url: 'https://siftersearch.com/library/x#p0',
       meta: { title: 'Tablet of Maqṣúd', links: { oceanoflights: 'https://oceanoflights.org/bahaullah-x/', inventory: 'https://phelps/BH1' } } },
-    citedBy: [{ title: 'The Promised Day is Come', url: 'https://x/pdc-book', rangeUrl: 'https://x/pdc' }],
+    citedBy: [{ title: 'The Promised Day is Come', url: 'https://x/pdc-book', rangeUrl: 'https://x/pdc?paraId=para_9' }],
   };
   const ask = [{ role: 'user', content: 'Where is this from? "The earth is but one country, and mankind its citizens."' }];
 
@@ -215,13 +215,14 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     expect(r.reply).toBe('These are the words of Bahá’u’lláh, from [*Gleanings*](https://oceanlibrary.com/gleanings?paraId=para_1#:~:text=The%20earth). '
       + 'The passage reads: «The earth is but one country, and mankind its citizens». '
       + 'The original is in Arabic, in [*Tablet of Maqṣúd*](https://oceanoflights.org/bahaullah-x/), where it reads «ليس الفخر لمن يحبّ الوطن». '
-      + 'Its entry in the Phelps Inventory is [Phelps Inventory](https://phelps/BH1). It is also quoted in [*The Promised Day is Come*](https://x/pdc).');
+      + 'Its entry in the Phelps Inventory is [Phelps Inventory](https://phelps/BH1). It is also quoted in [*The Promised Day is Come*](https://x/pdc?paraId=para_9).');
     expect(r.plan.shape).toBe('source');
   });
   // r5 (11-01 harness, justice T1): "It is also quoted in The Kitáb-i-Aqdas" — a link-graph citation with no passage holding
   // the wording (no range link). Only a citation shown to HOLD the words is named as quoting it.
   it('a citation without a passage that holds the wording is not claimed as quoting it', async () => {
-    const d = deps({ sourceHunt: async () => ({ ...HUNT, citedBy: [{ title: 'The Kitáb-i-Aqdas', url: 'https://x/aqdas' }] }) });
+    const d = deps({ sourceHunt: async () => ({ ...HUNT, citedBy: [{ title: 'The Kitáb-i-Aqdas', url: 'https://x/aqdas' },
+      { title: 'The Kitáb-i-Aqdas', url: 'https://oceanlibrary.com/kitab-i-aqdas_bahaullah', rangeUrl: 'https://oceanlibrary.com/kitab-i-aqdas_bahaullah' }] }) });
     const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
     expect(r.reply).not.toMatch(/also quoted|Aqdas/);
   });
