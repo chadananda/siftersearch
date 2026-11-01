@@ -109,6 +109,13 @@ async function run({ f, v }) {
   const phr = fold(phrases.join(' '));
   const phrasesOk = phrases.length ? key.length === 0 || key.filter((w) => phr.includes(w)).length / key.length >= 0.6 : null;
   const phraseWrapper = phrases.length ? phrases.some((p) => WRAPPER.test(p)) : null;
+  // v2 structure (assistant/phrases.js): which path named the phrase; the seeker's exact wording carries the passage's words
+  // (exact_phrase); the names (+ spellings) carry the person/work sought (find_person / find_work) — reported, not gating
+  const phraseVia = st.phrases?.by ?? null;
+  const cover = (words, text) => words.length ? words.filter((w) => text.includes(w)).length / words.length >= 0.6 : null;
+  const phraseExact = st.phrases?.exact?.length && f.type === 'exact_phrase' ? cover(key, fold(st.phrases.exact.join(' '))) : null;
+  const nameKeys = [f.canonical, ...(f.cite.any || []), ...(f.cite.all || [])].map(fold).filter(Boolean);
+  const phraseNames = st.phrases?.names?.length && /^find_(person|work)$/.test(f.type) ? nameKeys.some((k) => fold([...st.phrases.names, ...(st.phrases.spellings || [])].join(' | ')).includes(k)) : null;
   const stageMs = Object.fromEntries(Object.entries(st).filter(([, x]) => x?.ms != null).map(([k, x]) => [k, x.ms]));
   const cite = matchCite(f.cite, ft, true, text);
   const allowNF = !!f.cite.allow_not_found;
@@ -121,7 +128,7 @@ async function run({ f, v }) {
   const ok = strategyOk !== false && phrasesOk !== false && answerOk;
   const stage = ok ? 'ok' : strategyOk === false ? 'strategy' : phrasesOk === false ? 'phrases' : cite.ok ? 'answer' : retrieved === false ? 'retrieval' : retrieved === true ? 'selection' : 'retrieval-or-selection';
   const usd = a.meta?.usd ?? null, ms = a.meta?.latency_ms ?? a.ms;
-  return { ...out, expected_strategy: expected, shape, strategyOk, phrases, phrasesOk, phraseWrapper, retrieved, selection: st.selection?.choice ?? null, stage_ms: stageMs, cite_ok: cite.ok, link_ok: cite.link, nofound, offtopic, answerOk,
+  return { ...out, expected_strategy: expected, shape, strategyOk, phrases, phrasesOk, phraseWrapper, phraseVia, phraseExact, phraseNames, retrieved, selection: st.selection?.choice ?? null, stage_ms: stageMs, cite_ok: cite.ok, link_ok: cite.link, nofound, offtopic, answerOk,
     pass: ok, stage, slow: ms > 5000, route: obs, timeline: route.timeline ?? null, llm: route.llm ?? null, search_detail: route.search_detail ?? null, usd, latency_ms: ms, wall_ms: a.ms, models: a.meta?.models, reply_head: text.slice(0, 260) };
 }
 
@@ -158,7 +165,11 @@ const usd = results.map((r) => r.usd).filter((x) => x != null);
 const stages = {}; for (const r of results) stages[r.stage] = (stages[r.stage] || 0) + 1;
 const summary = { date: new Date().toISOString(), variants: results.length, pass: results.filter((r) => r.pass).length, pass_rate: +(results.filter((r) => r.pass).length / Math.max(1, results.length)).toFixed(3),
   strategy_ok: results.filter((r) => r.strategyOk).length, strategy_scored: results.filter((r) => r.strategyOk != null).length, mode: MODE, answer_ok: results.filter((r) => r.answerOk).length, nofound: results.filter((r) => r.nofound).length, offtopic: results.filter((r) => r.offtopic).length,
-  errors: results.filter((r) => r.error).length, slow_gt5s: results.filter((r) => r.slow).length, p50_ms: pct(lat, 0.5), p95_ms: pct(lat, 0.95), usd_total: +usd.reduce((a, b) => a + b, 0).toFixed(4), usd_per_reply: usd.length ? +(usd.reduce((a, b) => a + b, 0) / usd.length).toFixed(5) : null, first_failing_stage: stages };
+  errors: results.filter((r) => r.error).length, slow_gt5s: results.filter((r) => r.slow).length, p50_ms: pct(lat, 0.5), p95_ms: pct(lat, 0.95), usd_total: +usd.reduce((a, b) => a + b, 0).toFixed(4), usd_per_reply: usd.length ? +(usd.reduce((a, b) => a + b, 0) / usd.length).toFixed(5) : null, first_failing_stage: stages,
+  phrases_via: results.reduce((a, r) => (r.phraseVia ? { ...a, [r.phraseVia]: (a[r.phraseVia] || 0) + 1 } : a), {}),
+  phrases_ok: results.filter((r) => r.phrasesOk).length, phrases_scored: results.filter((r) => r.phrasesOk != null).length,
+  phrase_exact_ok: results.filter((r) => r.phraseExact).length, phrase_exact_scored: results.filter((r) => r.phraseExact != null).length,
+  phrase_names_ok: results.filter((r) => r.phraseNames).length, phrase_names_scored: results.filter((r) => r.phraseNames != null).length };
 console.log('\nSUMMARY', JSON.stringify(summary));
 console.log('\nPASS MATRIX (type x style)'); console.table(matrix);
 if (!has('no-write')) {

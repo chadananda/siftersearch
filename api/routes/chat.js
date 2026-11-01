@@ -521,7 +521,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     let peopleAnswerOut = null;
     if (plan && !phrase) {
       const { plannedSearch } = await import('../lib/planned-search.js');
-      const r = await plannedSearch(query, { messages: plan.messages, given: filters, defaults: plan.defaults, limit: safeLimit, scope_config, entityIds });
+      const r = await plannedSearch(query, { messages: plan.messages, given: filters, defaults: plan.defaults, limit: safeLimit, scope_config, entityIds, hints: plan.hints });
       merged = r.hits || [];
       entitiesOut = r.entities || null;
       peopleAnswerOut = r.peopleAnswer || null;

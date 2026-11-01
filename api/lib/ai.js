@@ -102,7 +102,7 @@ export async function chatCompletion(messages, options = {}) {
       case 'openai':
         return chatOpenAI(messages, { model, temperature, maxTokens, stream });
       case 'anthropic':
-        return chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache: options.usePromptCache });
+        return chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache: options.usePromptCache, thinking: options.thinking });
       case 'ollama':
         return chatOllama(messages, { model, temperature, maxTokens, stream });
       case 'deepseek':
@@ -283,7 +283,7 @@ export function anthropicBatchTransport({ stage = 'hype', client = null } = {}) 
   };
 }
 
-async function chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache = false }) {
+async function chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache = false, thinking }) {
   const anthropic = getAnthropic();
   if (batchEligible({ provider: 'anthropic', stage: currentAIContext().stage, stream })) {
     return enqueueBatch(anthropicParams(messages, { model, temperature, maxTokens, usePromptCache }));
@@ -307,6 +307,9 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream, 
     max_tokens: maxTokens,
     // the 5.5 family rejects `temperature` ("deprecated for this model") — the registry says which (10-13)
     ...(getModel(model)?.noTemperature || temperature == null ? {} : { temperature }),
+    // thinking: false → disabled outright: Haiku 5.5 thinks by default and a tiny max_tokens came back EMPTY (11-01:
+    // the phrase and term extractors returned "" on every call — the whole budget went to a thinking block)
+    ...(thinking === false ? { thinking: { type: 'disabled' } } : {}),
     ...(systemParam !== undefined && { system: systemParam }),
     messages: otherMsgs.map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',

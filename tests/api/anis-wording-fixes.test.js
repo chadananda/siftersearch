@@ -1,7 +1,6 @@
 // Fixes from the 11-01 wording battery (857/1207): reading-guide false start, bare names, source-hunt gating, scripture-first origins, link guarantee.
 import { describe, it, expect } from 'vitest';
 import { planSearch } from '../../api/lib/search-plan.js';
-import { extractPhrase } from '../../api/lib/assistant/phrases.js';
 import { ensureLinks } from '../../api/lib/assistant/respond.js';
 import { readingIntent } from '../../api/lib/assistant/reading.js';
 
@@ -32,26 +31,6 @@ describe('converse guard', () => {
   });
   it('a greeting stays conversation', async () => {
     expect((await planSearch('hello there, how are you', { apiKey: 'k', fetchImpl: jev('converse'), cache: false })).shape).toBe('converse');
-  });
-});
-
-describe('extractPhrase', () => {
-  it('uses the quote-mark phrase without any model call', async () => {
-    const r = await extractPhrase('x', { shape: 'quote', quote: { phrase: 'the earth is but one country', via: 'quote-marks' } }, { complete: async () => { throw new Error('no call'); } });
-    expect(r).toEqual({ phrase: 'the earth is but one country', via: 'quote-marks' });
-  });
-  it('asks Haiku for a lookup and strips quotes and a trailing period', async () => {
-    const r = await extractPhrase("Could you tell me who Mulla Hosein was in the Bab's story?", { shape: 'lookup' }, { complete: async () => ({ content: '"Mulla Husayn".' }) });
-    expect(r).toEqual({ phrase: 'Mulla Husayn', via: 'haiku' });
-  });
-  it('skips topics, follow-ups, short questions and NONE; never throws', async () => {
-    const c = async () => ({ content: 'NONE' });
-    expect(await extractPhrase('what about patience in suffering and loss', { shape: 'topic' }, { complete: c })).toBeNull();
-    expect(await extractPhrase('where did he say that about the ocean', { shape: 'fact' }, { complete: c })).toBeNull();
-    expect(await extractPhrase('when was the Bab martyred in which year', { shape: 'fact' }, { complete: c })).toBeNull();
-    expect(await extractPhrase('Who was Quddus', { shape: 'fact' }, { complete: c })).toBeNull();
-    expect(await extractPhrase('Who was this person Ghoddus really', { shape: 'fact' }, { complete: c })).toBeNull();
-    expect(await extractPhrase('Who was the person Ghoddus really', { shape: 'fact' }, { complete: async () => { throw new Error('x'); } })).toBeNull();
   });
 });
 
@@ -187,7 +166,7 @@ describe('respond: library facts and named objects', () => {
     expect(d.calls.hunt).toBe(0);
     expect(d.calls.phrases).toBe(0);
     expect(d.calls.search[0].query).toBe('Most Holy Book');
-    expect(r.plan.phrases).toMatchObject({ phrase: 'most holy book', via: 'name-rule' });
+    expect(r.plan.phrases).toMatchObject({ phrase: 'Most Holy Book', via: 'named-object', names: ['most holy book', 'Most Holy Book'] });
   });
   it('a named person is searched in the seeker\'s spelling (the graph\'s label can be a poor one: "Quarratul-Ayn")', async () => {
     const named = { type: 'person', id: 7, name: 'Quarratul-Ayn', matched: "Qurratu'l-'Ayn" };

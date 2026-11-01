@@ -12,6 +12,7 @@ import { channelFor } from './channels.js';
 import { turnMeta } from './turn-meta.js';
 import { withAIContext, currentAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
+import { phraseStage } from './phrases.js';
 
 const OUTPUT_BREAK = 0.8;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -125,7 +126,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
         quotes_removed: r.quotes_removed ?? 0, quotes_completed: r.quotes_completed ?? null,
         // the five stages, each with its choice, who made it and the time: strategy (Jev) → phrases → retrieval → selection → format
         stages: { strategy: { choice: r.plan?.shape ?? null, by: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, ms: r.plan?.plan_ms ?? null },
-          phrases: r.plan?.quote ? { choice: r.plan.quote.phrase, by: r.plan.quote.via } : r.plan?.phrases ? { choice: r.plan.phrases.phrase, by: r.plan.phrases.via } : null,
+          phrases: r.plan?.quote ? { choice: r.plan.quote.phrase, by: r.plan.quote.via } : r.plan?.phrases ? phraseStage(r.plan.phrases) : null,
           retrieval: { choice: r.retrieved?.length ?? 0, by: 'planned-search', ms: r.timings?.search_ms ?? null },
           selection: r.select ? { choice: `${r.select.kept}/${r.select.of}`, by: r.select.by } : null,
           format: r.format ? { choice: r.format.id, by: r.format.by } : null } },

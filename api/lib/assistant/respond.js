@@ -4,7 +4,7 @@
 // email uses the returned text. Model: ONE global, switchable setting ANIS_LLM="provider:model[:reasoning_effort]".
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
 
-import { extractPhrase } from './phrases.js';
+import { extractPhrases, fixedPhrases, hintsOf } from './phrases.js';
 import { religionsReply } from './library-facts.js';
 import { speakerTradition } from '../search-plan.js';
 import { questionSubject } from '../planned-search.js';
@@ -499,10 +499,13 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     }
   }
   onEvent({ type: 'stage', stage: 'search' });
-  // a named work (search-plan name rule) is searched by its library title, a person in the seeker's spelling (graph labels vary); the seeker's words are its phrase — no Haiku call
-  // specific searches name their search phrase (deterministic from quote marks, else one Haiku call); Jev has already routed
-  const phrased = plan?.named && plan.shape === 'lookup' ? { phrase: plan.named.matched, via: 'name-rule', name: plan.named.name }
-    : !conversational && plan ? await timed('phrases', () => (d.phrases || (deps ? async () => null : extractPhrase))(question, plan)).catch(() => null) : null;
+  // WHAT to search (assistant/phrases.js; Jev has already routed): quote marks / the named object (a work by its library title,
+  // a person in the seeker's spelling) decide it with no call; else one Haiku call for a quote/lookup → {exact, names, spellings,
+  // author, work, tradition}, a follow-up given the previous turn + reply. STARTED NOW, beside the researcher / source hunt /
+  // original lookup; only the search waits for it. Timeout / bad JSON → via 'fallback' and the v1 query (searchQueryFor).
+  const phrasesP = !conversational && plan ? timed('phrases', async () => fixedPhrases(plan) || (d.phrases || (deps ? async () => null : extractPhrases))(question, plan, { messages }),
+    (p) => (p ? { via: p.via, ...(p.reason ? { reason: p.reason } : {}) } : null)).catch(() => null) : Promise.resolve(null);
+  let phrased = null, searchQ = null;
   // THE RESEARCHER (researcher.js; Chad 10-19: "we have made it too determinative"): a model plans the research with the
   // library's tools instead of regexes choosing one lookup. On for a channel listed in ANIS_RESEARCH ("email", "all") or
   // when the caller asks (direction.research); any failure falls back to the routed pipeline below.
@@ -565,10 +568,14 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : conversational ? { passages: [], _plan: plan }
     : language ? { passages: [], _plan: { shape: 'language' } }
     : position?.passages?.length ? { passages: position.passages, _plan: { shape: 'position', themes: position.themes } }
-    : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await timed('search', () => d.search({
-    query: phrased?.via === 'name-rule' ? (plan.named.type === 'person' ? phrased.phrase : phrased.name) : phrased?.via === 'haiku' ? phrased.phrase : searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
-    plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
-  }));
+    : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await phrasesP.then((p) => {
+      phrased = p;
+      // the phrase replaces the v1 query (a follow-up's prefixed previous question with it); quote marks keep it — planned-search hunts the quote itself
+      searchQ = (p?.via === 'named-object' || p?.via === 'haiku') && p.phrase ? p.phrase : searchQueryFor(messages);
+      const hints = hintsOf(p);
+      return timed('search', () => d.search({ query: searchQ, mode: 'passages', limit: 8, scope_config: profile.scope_config,
+        plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
+    });
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   const searchMs = Date.now() - t0;
   const retrieved = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
@@ -687,6 +694,6 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     religion: "Bahá'í", text: `Shoghi Effendi's renderings of ${study.term}, counted over ${study.counted || study.total} aligned passages (${study.total} in all): `
       + study.renderings.map((r) => `${r.en} ${r.count}`).join(', ') }] : [];
   return { reply, quotes_removed: guarded.removed, quotes_completed: introduced.completed || introduced.rewritten ? { placed: introduced.completed, rewritten: introduced.rewritten } : null, quotes_linked: quoteLinked.linked || 0, quotes_recredited: speakers.fixed || 0, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
-    search_query: searchQueryFor(messages), select, format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
+    search_query: searchQ ?? searchQueryFor(messages), select, format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }

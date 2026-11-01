@@ -6,6 +6,7 @@
 import { planSearch, layersFor } from './search-plan.js';
 import { relaxScope } from './search-scope.js';
 import { foldVerbatim, isVerbatimQuery } from './search/verbatim.js';
+import { hintPlan, applyHints } from './search/hints.js';
 import { correctQuery, vocabulary } from './search/spell.js';
 
 const TTL_MS = 10 * 60 * 1000;
@@ -146,7 +147,7 @@ export const qdrantDefault = (v = process.env.SEARCH_QDRANT || '') => ({ phrase:
 export const qdrantOption = (v) => v === true ? { phrase: true, keyword: true, hype: false, only: false } : v === 'only' ? { phrase: true, keyword: true, hype: true, only: true }
   : v && typeof v === 'object' ? { phrase: !!v.phrase, keyword: !!v.keyword, hype: !!v.hype, only: !!v.only } : v === false ? { phrase: false, keyword: false, hype: false, only: false } : qdrantDefault();
 
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab, citer } = {}) {
+export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab, citer, hints } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // A reader's misspellings are corrected against the library's own vocabulary BEFORE anything searches (search/spell.js):
@@ -178,7 +179,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const planMs = Date.now() - t0;
 
   const { SEARCH_VERSION = '' } = engine ? {} : await import('./answer-cache.js').catch(() => ({}));
-  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null, qdrant, weights || null]);
+  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null, qdrant, weights || null, hints || null]);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) {
     return { ...hit.value, cached: true, timings: { plan_ms: planMs, search_ms: 0, total_ms: Date.now() - t0 } };
@@ -214,6 +215,13 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // matches (known-item test 10-16: production found a passage's own words first 73% vs the engine's 86%).
   const quotation = quotePhrase ? isVerbatimQuery(quotePhrase, 4) : isVerbatimQuery(query, 6) && !/\?\s*$/.test(query);
   const verbatimQ = quotePhrase || query;
+  // HINTS (Anís's phrase step, search/hints.js): the seeker's exact wordings hunted verbatim, a lookup's names (+ spellings)
+  // by keyword — beside the plan; author / work / tradition only reorder
+  const hinted = hintPlan(hints, plan, { verbatimQ: quotation ? verbatimQ : null, question: messages?.length ? messages.at(-1)?.content : query });
+  const hintHits = Promise.all([
+    Promise.all(hinted.exact.map((p) => search({}, p, KEYWORD_ONLY).catch(() => []))).then((l) => l.flat()),
+    Promise.all(hinted.names.map((n) => search(plan.filters, n, KEYWORD_ONLY).catch(() => []))).then((l) => l.flat()),
+  ]);
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
   const [r, authorHits, verbatimHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
@@ -239,6 +247,10 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     const per = await Promise.all([...names.map((n) => search(r.scope || plan.filters, n, KEYWORD_ONLY).catch(() => [])), mentioned]);
     hits = leadWithTarget([hits, ...per], (h) => markTarget(h.text, tgt), limit);
     stages.target_ms = Date.now() - t1;
+  }
+  if (hints) {
+    const [exactHits, nameHits] = await hintHits;
+    hits = applyHints(hits, hinted, { exactHits, nameHits, limit });
   }
 
   // Correct sources BEFORE anything formats them: quoted words served from their original work, every checked
