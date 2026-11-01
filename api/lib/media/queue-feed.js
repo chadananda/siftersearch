@@ -147,12 +147,16 @@ const chainSrc = (it, m, ch) => join(it.dir, ch.src || m.original);
 /** Typed feed: only while hosts for all three steps are engaged; keeps ~TARGET_H of prep queued; order by band (pickNext). */
 /** The edge's engaged cpu-prep supply (a CPU pod): { rate, queued_audio_h } at its measured rate, or null when no edge host lists cpu-prep. */
 const edgePrep = (cap) => { const t = cap?.by_type?.['cpu-prep']; return t?.hosts?.length ? { rate: t.rate || 0, queued_audio_h: t.queued_audio_h || 0 } : null; };
-async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null }) {
+async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null, buffer = null }) {
   const types = new Set(cap.hosts.flatMap((h) => h.types || []));
   const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t) && !(t === 'gpu' && edge && gpuEdge !== false));   // pods boot on the edge's gpu backlog
   if (lack.length) return { fed: 0, why: `no ${lack.join('/')} host engaged` };
   st.chains ||= {};
   const t = cap.by_type?.['cpu-prep'] || {}, rate = t.rate || (t.queued_h ? t.queued_audio_h / t.queued_h : 1);
+  // the pods' gpu buffer is full (measured: staged ≥ want_h, core.bufferPolicy) and prep still has work queued: feeding more only piles prep
+  // output behind the GPU — and each fed talk costs tower a hash + copy inside the pass that also pulls results and plans rentals
+  // (11-01: 160 h of prep queued, 167 h of gpu staged vs want 112 h; the pass sat 8+ min feeding at ~2.5 min a talk, the pod plan went stale)
+  if (buffer && buffer.buffer_low === false && (t.queued_audio_h || 0) > 0) return { fed: 0, why: `gpu buffer full (${Math.round(buffer.buffer_h ?? 0)} h staged, want ${Math.round(buffer.want_h ?? 0)} h); ${Math.round(t.queued_audio_h)} h of prep queued` };
   // an edge CPU host (the CPU pod) adds its measured prep rate; its queue counts as fed (rebalancePrep moves the overflow there)
   const ep = edge ? edgePrep(await edge.capacity?.().catch(() => null)) : null, eRate = ep?.rate || 0;
   let queuedS = (t.queued_audio_h || 0) * 3600 + (ep ? ep.queued_audio_h * 3600 : 0), fed = 0, held = 0;

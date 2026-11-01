@@ -93,6 +93,13 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     expect(items[2]).toMatchObject({ state: 'review', why: expect.stringMatching(/possible duplicate of bahai-law: same length/) });
     expect(st.chains[1]).toBeUndefined(); expect(st.chains[2]).toBeUndefined(); expect(st.queue).toEqual([]);
   });
+  it('no prep is fed while the pods\' gpu buffer is full and prep still has work queued (11-01: the pass fed for 8+ min, the pod plan went stale)', async () => {
+    engage(); st.queue = [1];
+    expect((await feed(st, { ...deps, buffer: { buffer_low: false, buffer_h: 167, want_h: 112 } })).typed.fed).toBe(1);   // prep queue empty: fed (the buffer drains through prep)
+    st.queue = [2];
+    expect((await feed(st, { ...deps, buffer: { buffer_low: false, buffer_h: 167, want_h: 112 } })).typed).toMatchObject({ fed: 0, why: expect.stringMatching(/gpu buffer full \(167 h staged, want 112 h\)/) });
+    expect((await feed(st, { ...deps, buffer: { buffer_low: true, buffer_h: 50, want_h: 112 } })).typed.fed).toBe(1);   // low again: fed
+  });
   it('a same-length copy in another folder is fed LAST, never dropped; a queued twin (not yet processed) does not hold anything back', async () => {
     engage();
     items[1].state = 'scheduled'; items[2].state = 'scheduled'; items[1].source_ref = '/a/one.mp3';
