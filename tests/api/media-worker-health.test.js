@@ -6,7 +6,7 @@ import { createServer } from 'node:http';
 import { mkdtempSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { cgroupOf, slicePath, readCgroup, track, summary, record, profileOf, memPressure, admitCpu, cpuAllowed, PROFILE_RUNS, stallOf, windowCores } from '../../scripts/media/worker/cpu-pace.mjs';
+import { cgroupOf, slicePath, readCgroup, track, summary, record, profileOf, memPressure, admitCpu, cpuAllowed, busyWindow, PROFILE_RUNS, stallOf, windowCores } from '../../scripts/media/worker/cpu-pace.mjs';
 import { gpuStats, jobProgress, snapshot, compact, serveHealth, ringPush, lastWords, LAST_WORDS, HEALTH_SCHEMA, holdAgentLock } from '../../scripts/media/worker/health.mjs';
 
 const G = 1073741824;
@@ -74,6 +74,16 @@ describe('cpu-pace: admission', () => {
     expect(slicePath('bulk.slice')).toBe('/sys/fs/cgroup/bulk.slice');
     expect(slicePath('a-b-c.slice')).toBe('/sys/fs/cgroup/a.slice/a-b.slice/a-b-c.slice');
     expect(slicePath('/docker/x')).toBe('/sys/fs/cgroup/docker/x');
+  });
+  it('no claim timer: a young job counts at its profile less the share of busy\'s window it has run (11-01: one claim a minute held boss at 1–2)', () => {
+    const w = busyWindow([{ t: 0 }, { t: 30_000 }, { t: 60_000 }]);
+    expect(w.seen(54_000)).toBeCloseTo(0.1); expect(w.seen(-5_000)).toBe(1); expect(w.seen(null)).toBe(0);
+    expect(busyWindow([{ t: 5 }])).toBe(null);
+    // 16 allowed, target 13.6: busy 0.75 × 16 = 12; one cpu-finish (1.5 cores) 6 s old → seen 0.1 → 1.35 still to come; + 1.5 new = 14.85 > 13.6
+    const young = [{ type: 'cpu-finish', memGb: 1, cores: 1.5, seen: 0.1 }];
+    expect(admitCpu({ ...base, allowed: 16, busy: 0.75, type: 'cpu-finish', running: young }).why).toMatch(/cpu 14\.\d/);
+    // the same job a full window old is all inside busy: 12 + 0 + 1.5 = 13.5 ≤ 13.6
+    expect(admitCpu({ ...base, allowed: 16, busy: 0.75, type: 'cpu-finish', running: [{ ...young[0], seen: 1 }] }).ok).toBe(true);
   });
   it('tower: the slice (16 cores, 20 GB) is the ceiling', () => {
     const allowed = cpuAllowed(['cpu-finish'], { ...base, allowed: 16, availGb: 20, busy: 0 });

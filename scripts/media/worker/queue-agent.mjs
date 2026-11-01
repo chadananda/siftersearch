@@ -24,7 +24,7 @@ import { join, relative, dirname, basename } from 'node:path';
 
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
 import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, cgroupMemGb, cpuSample, cpuBusy, nextDepth, STALL_MS, GPU_IDLE } from './gpu-pace.mjs';
-import { cgroupOf, slicePath, readCgroup, track, summary, loadProfiles, saveProfiles, record, profileOf, memPressure, admitCpu, cpuAllowed, stallOf, windowCores } from './cpu-pace.mjs';
+import { cgroupOf, slicePath, readCgroup, track, summary, loadProfiles, saveProfiles, record, profileOf, memPressure, admitCpu, cpuAllowed, stallOf, windowCores, busyWindow } from './cpu-pace.mjs';
 import { gpuStats, jobProgress, snapshot, compact, serveHealth, ringPush, ringSave, ringLoad, lastWords, holdAgentLock } from './health.mjs';
 import { cpus } from 'node:os';
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
@@ -258,10 +258,11 @@ log('start', { slots: CAP, asked: SLOTS, ram_gb: Math.round(memTotalGb()), disk_
 const claimArgs = (spillOnly = false, types = TYPES) => ({ host: HOST, ram_gb: memAvailGb(), vram_mb: VRAM_MB,
   ...(TYPES.length ? { types: MIXED ? [...types, 'media'] : types, spill: SPILL, spill_only: spillOnly, contract: CONTRACT?.contract } : {}),
   ...(!TYPES.length || MIXED ? { can: CAN } : {}) });
-let spillAt = 0, cpuClaimAt = 0, fitWhy = null;
+let spillAt = 0, fitWhy = null;
 // the CPU jobs in hand as the admission sees them: a job still fetching counts at its full profile (it has not started to load the CPU yet)
-const cpuInputs = (cpu, c) => ({ prof, running: [...jobs.values()].filter((j) => j.needs === 'cpu').map((j) => ({ type: j.type, memGb: j.m?.memGb ?? 0, cores: j.m?.cores ?? null })),
-  busy: cpu, allowed: c?.cores ?? cpus().length, availGb: memAvailGb(), marginGb: MIN_AVAIL_GB, slots: SLOTS, pressure: pressure() });
+// and a running one counts in busy only for the share of busy's window it has run (seen), so a claim need not wait for the window to catch up
+const cpuInputs = (cpu, c) => { const bw = busyWindow(cpuSeen); return { prof, running: [...jobs.values()].filter((j) => j.needs === 'cpu').map((j) => ({ type: j.type, memGb: j.m?.memGb ?? 0, cores: j.m?.cores ?? null, seen: bw ? bw.seen(j.m?.t0) : 0 })),
+  busy: cpu, allowed: c?.cores ?? cpus().length, availGb: memAvailGb(), marginGb: MIN_AVAIL_GB, slots: SLOTS, pressure: pressure() }; };
 /** The CPU types one more job of which fits now; each change of the reasons for holding is logged. */
 function fitCpu(cpu, c) {
   const a = cpuInputs(cpu, c), out = [], why = {};
@@ -331,7 +332,9 @@ while (!stopping || running.size) {
     gpuIdle, sinceClaimMs: Date.now() - claimedAt, diskGb: diskFreeGb(), minDiskGb: DISK_PER_TALK })
     // CPU-only work: one claim a minute while busy, so the CPU sample sees each job's load before the next
     && (NEEDS_GPU || !running.size || Date.now() - claimedAt >= 60_000);
-  const fit = ADAPT && !stopping && diskFreeGb() >= DISK_PER_TALK && (!running.size || Date.now() - cpuClaimAt >= 60_000) ? fitCpu(cpu, c) : [];
+  // CPU types: admitted by the projection alone (each young job counted at its profile less the share busy already holds), no claim timer —
+  // 11-01: one claim a minute held boss at 1–2 cpu-finish jobs (each ~1–4 min) with 36 queued and 14 allowed
+  const fit = ADAPT && !stopping && diskFreeGb() >= DISK_PER_TALK ? fitCpu(cpu, c) : [];
   const cpuReady = fit.length > 0;
   // the GPU deck is full but cores are spare: offer them to the spill types (the queue gives one only while that backlog is over 1 h)
   const spare = !want && !stopping && SPILL.length && running.size < CAP && memAvailGb() >= MIN_AVAIL_GB + GB_PER_TALK && diskFreeGb() >= DISK_PER_TALK
@@ -341,7 +344,6 @@ while (!stopping || running.size) {
     const types = !ADAPT || spare ? TYPES : TYPES.filter((t) => (want && typedKind(t)?.needs !== 'cpu') || fit.includes(t));
     const job = await q.claim(claimArgs(!!spare, types)).catch((e) => { log('claim error', { error: e.message }); lastError = { at: Date.now(), msg: `claim: ${e.message}`.slice(0, 500) }; return null; });
     if (job) {
-      if (kindOf(job)?.needs === 'cpu') cpuClaimAt = Date.now();
       if (kindOf(job)?.needs !== 'cpu') toGpu.set(job.id, { t: Date.now() });   // only GPU-bound work sits on the GPU deck
       claimedAt = Date.now();
       const deeper = NEEDS_GPU && kindOf(job)?.needs !== 'cpu' ? nextDepth(depth, { onDeck: onDeckN, rampClaim: onDeckN >= depth }) : depth;

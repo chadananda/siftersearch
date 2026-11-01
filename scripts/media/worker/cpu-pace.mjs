@@ -70,7 +70,7 @@ export function memPressure(read = (f) => readFileSync(f, 'utf8'), file = '/proc
 
 /**
  * Admit one more CPU job of `type`? Pure.
- *  prof(type) → profile; running: [{ type, memGb, cores }] the CPU jobs in hand (cores null until measured);
+ *  prof(type) → profile; running: [{ type, memGb, cores, seen? }] the CPU jobs in hand (cores null until measured; seen: busyWindow's share);
  *  busy = measured busy share of the allowed cores (null = unknown); allowed = the cores this host may use; availGb = RAM free now;
  *  marginGb = the --min-avail-gb margin while any type in play is unmeasured (then the largest measured peak in play); slots = the --slots starting value; pressure = memPressure().
  * Projection: a running job not yet at its type's mean will still rise to it, and one not yet at its peak RAM will still take the rest.
@@ -81,7 +81,8 @@ export function admitCpu({ type, prof, running = [], busy, allowed, availGb, mar
   const unmeasured = running.some((j) => !prof(j.type).measured) || !p.measured;
   if (unmeasured && running.length >= slots) return { ok: false, why: `unmeasured: --slots ${slots}` };
   if (busy == null && running.length) return { ok: false, why: 'cpu unknown' };
-  const rise = running.reduce((a, j) => a + Math.max(0, prof(j.type).cores - (j.cores ?? 0)), 0);
+  // j.seen = the share of busy's window the job has been running (1 when absent): a young job is only that share inside busy, the rest still to come
+  const rise = running.reduce((a, j) => a + Math.max(0, prof(j.type).cores - (j.cores ?? 0) * Math.min(1, Math.max(0, j.seen ?? 1))), 0);
   const cpu = (busy ?? 0) * allowed + rise + p.cores;
   if (running.length && cpu > target * allowed) return { ok: false, why: `cpu ${cpu.toFixed(1)}/${allowed} cores`, cpu };
   const ram = availGb - running.reduce((a, j) => a + Math.max(0, prof(j.type).peakGb - (j.memGb ?? 0)), 0);
@@ -90,6 +91,13 @@ export function admitCpu({ type, prof, running = [], busy, allowed, availGb, mar
   const margin = unmeasured ? marginGb : Math.max(p.peakGb, ...running.map((j) => prof(j.type).peakGb));
   if (ram < p.peakGb + margin) return { ok: false, why: `ram ${ram.toFixed(1)} GB < ${p.peakGb.toFixed(1)} + ${+margin.toFixed(2)}${unmeasured ? '' : ' (measured)'}`, cpu, ram };
   return { ok: true, cpu, ram };
+}
+
+/** The window busy (cpuBusy) covers, and how much of it a job started at t0 has been running → seen (0..1). samples: [{t}] oldest first. Pure. */
+export function busyWindow(samples, windowMs = 60_000) {
+  const last = samples.at(-1); if (!last) return null;
+  const first = [...samples].reverse().find((x) => last.t - x.t >= windowMs) || samples[0];
+  return last.t > first.t ? { from: first.t, to: last.t, seen: (t0) => (t0 == null ? 0 : Math.min(1, Math.max(0, (last.t - Math.max(first.t, t0)) / (last.t - first.t)))) } : null;
 }
 
 /** How many more jobs of each type would fit now (for /health "allowed"): admitCpu applied repeatedly on a copy. Pure. */
