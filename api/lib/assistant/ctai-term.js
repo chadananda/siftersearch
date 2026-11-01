@@ -38,7 +38,9 @@ export function termQuestion(text = '') {
   if (AR.test(t) && TERM_CUE.test(t)) {
     const full = (t.match(AR_RUN) || [''])[0].trim();
     const run = full.split(/\s+/).slice(0, 3).join(' ');
-    if (run && nearCue(t, full)) return { term: run, script: 'arabic' };
+    // a single Arabic word is the term with the cue anywhere (px replay justice T2: «الإنْصاف» … "is that the rendering
+    // Shoghi Effendi chose" — the cue 60 chars away); a multi-word run (an address, a phrase) needs the cue beside it
+    if (run && (!/\s/.test(full) || nearCue(t, full))) return { term: run, script: 'arabic' };
   }
   for (const re of LATIN_TERMS) {
     const m = t.match(re);

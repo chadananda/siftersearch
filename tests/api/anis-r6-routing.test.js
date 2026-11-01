@@ -54,6 +54,8 @@ describe('term study picks the term the question names (px-smoke justice-quote T
     const t = 'You give the Arabic with the opening address «يَا ابْنَ الرُّوحِ» and the number (٢), but still cite it as "The Hidden Words 5" — can you quote any passage where Shoghi Effendi or the Universal House of Justice explains why he rendered *al-inṣāf* as "Justice" rather than "equity" or "fairness", with date and recipient?';
     expect(termQuestion(t)).toEqual({ term: 'inṣāf', script: 'latin' });
     expect(termQuestion('What does the word عرفان mean?')?.script).toBe('arabic');
+    // px replay justice T2: one Arabic word, the cue farther than 40 chars away, is still the term
+    expect(termQuestion('In what you just quoted, the Arabic reads «الإنْصاف» (al-inṣāf), yet the English gives "Justice" — is that the rendering Shoghi Effendi chose?')?.term).toBe('الإنْصاف');
   });
 });
 
