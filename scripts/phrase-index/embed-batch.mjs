@@ -3,6 +3,7 @@
 // overrides, we use 80 %). Job state persists in a services-heartbeat JSON (data/run/services/embed-batch-*.json) keyed by a hash of
 // the requests, so a restart that re-asks for the same texts resumes the SAME job instead of paying twice. Falls back to the
 // caller's sync embedder when batch is off/unavailable, a job is bigger than the cap, or capacity does not free up in fallbackWaitMs.
+// note(o) gets one line per fallback (with its reason), submit, resume, poll-state change and capacity wait: it never waits silently.
 import { mkdirSync, writeFileSync, renameSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -16,7 +17,7 @@ const API = 'https://generativelanguage.googleapis.com/v1beta';
 const FAILED = /FAILED|CANCELLED|EXPIRED/;
 
 export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens = 400000, pollMs = 20000, fallbackWaitMs = 1800000, disableMs = 3600000, maxWaitMs = 46 * 3600000,
-  fetchFn = null, onRetry = null, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), name = `embed-batch-${model}` } = {}) {
+  fetchFn = null, onRetry = null, note = null, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), name = `embed-batch-${model}` } = {}) {
   let local = { jobs: {}, disabledUntil: 0, submitted: 0, collected: 0, retries: 0, fellBack: 0, pid: process.pid };
   // Built here, not as a parameter default: a default can't see `local` (body scope) → ReferenceError on the first retry (job #71445)
   fetchFn ??= (u, i) => resilientFetch(u, i, { onRetry: (x) => { local.retries++; onRetry?.(x); } });
@@ -44,16 +45,19 @@ export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens
     const op = JSON.parse(text); return op.name || op.metadata?.name;
   }
   async function poll(jobName, t0 = now()) {
+    let seen = '';
+    // the age check comes AFTER a poll: a job resumed from a crashed run may already be done (paid) — collect it, don't cancel it
+    const tooOld = () => { if (now() - t0 > maxWaitMs) throw Object.assign(new Error(`batch wait limit (${Math.round(maxWaitMs / 6e4)} min)`), { terminal: true, cancel: jobName }); };
     for (;;) {
-      if (now() - t0 > maxWaitMs) throw Object.assign(new Error('batch wait limit'), { terminal: true, cancel: jobName });
-      let r; try { r = await fetchFn(`${API}/${jobName}`, { headers: hdr }); } catch (e) { if (!isTransientError(e)) throw e; await sleep(pollMs); continue; }
+      let r; try { r = await fetchFn(`${API}/${jobName}`, { headers: hdr }); } catch (e) { if (!isTransientError(e)) throw e; tooOld(); await sleep(pollMs); continue; }
       if (!r.ok && r.status !== 429 && r.status < 500) throw Object.assign(new Error(`batch poll ${r.status}`), { status: r.status });
       if (r.ok) {
         const op = await r.json(); const st = String(op.metadata?.state || op.state || '');
+        if (st !== seen) { seen = st; note?.({ phase: 'batch-poll', job: jobName, state: st || '?', waited_min: +((now() - t0) / 6e4).toFixed(1) }); }
         if (op.error || FAILED.test(st)) throw Object.assign(new Error(`batch ${st || 'error'} ${JSON.stringify(op.error || '').slice(0, 160)}`), { terminal: true });
         if (op.done === true || /SUCCEEDED/.test(st)) return op;
       }
-      await sleep(pollMs);
+      tooOld(); await sleep(pollMs);
     }
   }
   async function results(op, n) {
@@ -74,22 +78,28 @@ export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens
 
   /** requests: EmbedContentRequest[]; tokens: estimated total; sync(requests) → vectors. Returns vectors with .mode = 'batch' | 'sync'. */
   async function embed(requests, { tokens, sync }) {
-    const viaSync = async (reqs) => { local.fellBack++; save(); const v = await sync(reqs); v.mode = 'sync'; return v; };
+    const viaSync = async (reqs, reason) => {
+      local.fellBack++; save(); note?.({ phase: 'batch-fallback', reason, requests: reqs.length, tokens });
+      const v = await sync(reqs); v.mode = 'sync'; return v;
+    };
     load();
-    if (now() < local.disabledUntil || tokens > capTokens) return viaSync(requests);
+    if (now() < local.disabledUntil) return viaSync(requests, `batch disabled until ${new Date(local.disabledUntil).toISOString()}`);
+    if (tokens > capTokens) return viaSync(requests, `job ${tokens} tokens > cap ${capTokens}`);
     const k = keyOf(requests); const t0 = now();
     let job = local.jobs[k];
+    if (job) note?.({ phase: 'batch-resume', job: job.name, age_min: +((now() - job.at) / 6e4).toFixed(1) });
     if (!job) {
+      if (enqueued() + tokens > capTokens) note?.({ phase: 'waiting', on: 'batch capacity', enqueued_tokens: enqueued(), tokens, cap_tokens: capTokens });
       while (enqueued() + tokens > capTokens) {   // wait for capacity, but never stall progress
-        if (now() - t0 > fallbackWaitMs) return viaSync(requests);
+        if (now() - t0 > fallbackWaitMs) return viaSync(requests, `no batch capacity after ${Math.round(fallbackWaitMs / 6e4)} min`);
         await sleep(pollMs); load();
       }
       local.jobs[k] = job = { name: null, tokens, at: now() }; save();   // reserve before the network call
-      try { job.name = await submit(requests, k); local.submitted++; save(); }
+      try { job.name = await submit(requests, k); local.submitted++; save(); note?.({ phase: 'batch-submitted', job: job.name, requests: requests.length, tokens }); }
       catch (e) {
         delete local.jobs[k];
         if ([400, 403, 404, 501].includes(e.status)) local.disabledUntil = now() + disableMs;   // not available for this key/model
-        save(); return viaSync(requests);
+        save(); return viaSync(requests, `submit failed: ${e.message.slice(0, 200)}`);
       }
     }
     try {
@@ -100,7 +110,7 @@ export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens
       vecs.mode = missing.length ? 'mixed' : 'batch'; return vecs;
     } catch (e) {
       if (e.cancel) await fetchFn(`${API}/${e.cancel}:cancel`, { method: 'POST', headers: hdr }).catch(() => {});   // too slow for this caller: stop paying, go sync
-      if (e.terminal || e.status) { delete local.jobs[k]; save(); return viaSync(requests); }
+      if (e.terminal || e.status) { delete local.jobs[k]; save(); return viaSync(requests, `batch job ${job.name}: ${e.message.slice(0, 200)}`); }
       throw e;   // transient (network, kill): keep the job in state so a retry/restart resumes it
     }
   }

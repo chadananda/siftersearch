@@ -22,8 +22,8 @@
 //        --collection concepts --budget-key concepts-build --embed --qdrant --max-usd 5
 //        (concept claims: each proof-checked claim statement is a unit, point id = paragraph × 1000 + k; only docs with claims)
 import Database from 'better-sqlite3';
-import { limiterFromEnv, stateFileFor, retryAfterMs } from './embed-limiter.mjs';
-import { resilientFetch } from '../../api/lib/resilient-fetch.js';
+import { limiterFromEnv, stateFileFor } from './embed-limiter.mjs';
+import { createSyncEmbedder, watchWait } from './embed-sync.mjs';
 import { createBatchEmbedder, batchStateFileFor } from './embed-batch.mjs';
 import dotenv from 'dotenv';
 import { mkdirSync, statfsSync } from 'fs';
@@ -59,6 +59,9 @@ const QD = arg('qdrant-url', process.env.QDRANT_URL || 'http://127.0.0.1:6333'),
 const HOT = arg('hot-url', ''), HOT_COLL = arg('hot-collection', 'phrases_hot'), HOT_PATH = arg('hot-path', '/srv/qram'), HOT_MIN_FREE = +arg('hot-min-free-gb', 6) * 1e9;
 const UP = HOT ? { url: HOT, coll: HOT_COLL, mark: 2 } : { url: QD, coll: COLL, mark: 1 };
 const log = (o) => console.log(JSON.stringify({ at: new Date().toISOString(), ...o }));
+// Progress + waits go to stderr (the ops job keeps its tail): a run never sits silent — every wait names what it waits on (job #77869).
+const note = (o) => process.stderr.write(`${JSON.stringify({ at: new Date().toISOString(), ...o })}\n`);
+const waiting = (on, p) => watchWait(on, p, { note });
 
 mkdirSync(dirname(STORE), { recursive: true });
 const store = new Database(STORE);
@@ -95,7 +98,7 @@ const limiter = limiterFromEnv(process.env, { max: Math.max(CONC, 32), start: Ma
 const EMBED_MODE = arg('embed-mode', process.env.EMBED_MODE || 'batch');
 const batcher = EMBED_MODE === 'batch' ? createBatchEmbedder({ model: MODEL, apiKey: process.env.GEMINI_API_KEY, stateFile: batchStateFileFor(MODEL, process.env.GEMINI_API_KEY),
   maxWaitMs: DOCS.length ? 20 * 60000 : 46 * 3600000,   // a single talk is published when it is searchable: don't wait 24 h for it
-  capTokens: Math.floor(+(process.env.EMBED_BATCH_CAP || 500000) * 0.8), onRetry: () => limiter.penalize() }) : null;
+  capTokens: Math.floor(+(process.env.EMBED_BATCH_CAP || 500000) * 0.8), onRetry: () => limiter.penalize(), note }) : null;
 const JOB_REQS = +arg('job-requests', 500);
 const buildReqs = (texts) => texts.map((t) => ({ model: `models/${MODEL}`, content: { parts: [{ text: `title: none | text: ${t}` }] }, outputDimensionality: DIMS }));
 async function embedBatch(texts) {
@@ -103,26 +106,9 @@ async function embedBatch(texts) {
   if (!batcher) { const v = await embedSync(requests); v.mode = 'sync'; return v; }
   return batcher.embed(requests, { tokens: texts.reduce((n, t) => n + estTokens(t), 0), sync: embedSync });
 }
-async function embedSync(requests) {
-  const body = { requests };
-  for (let attempt = 0; ; attempt++) {
-    await limiter.acquire(requests.reduce((n, r) => n + estTokens(r.content.parts[0].text), 0));
-    let status = 0, retryAfter = null; const t0 = Date.now();
-    try {
-      const r = await resilientFetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents?key=${process.env.GEMINI_API_KEY}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(120000) }, { tries: 3, onRetry: () => limiter.penalize() });
-      status = r.status;
-      if (r.ok) { limiter.release({ status, ms: Date.now() - t0 }); status = -1; return (await r.json()).embeddings.map((e) => e.values); }
-      const errText = await r.clone().text(); retryAfter = retryAfterMs(r.headers, errText);
-      noteProviderError('Gemini', { status: r.status, message: errText });   // out of credit → immediate email (not per-minute 429s)
-      if (isExhaustion({ status: r.status, message: errText })) throw Object.assign(new Error(`gemini out of credit: ${errText.slice(0, 200)}`), { fatal: true });
-      if (attempt >= 20 || ![429, 500, 502, 503, 504].includes(r.status)) throw new Error(`gemini ${r.status} ${(await r.text()).slice(0, 200)}`);
-    } catch (e) { if (status !== -1) limiter.release({ status: status || 599, retryAfter }); status = -1; if (e.fatal || attempt >= 20) throw e; }   // no credit: stop now, don't wait out a 429 that won't clear
-    // per-minute quota (429) clears in minutes — wait it out (up to 5 min per try) instead of failing the run
-    if (status !== -1) limiter.release({ status: status || 599, retryAfter });
-    await new Promise((res) => setTimeout(res, retryAfter ?? Math.min(300000, 3000 * 2 ** attempt)));
-  }
-}
+// Sync path: <= BATCH requests per call (the API rejects > 100), retries only 429/5xx/network; any other status fails the run loudly.
+const embedSync = createSyncEmbedder({ model: MODEL, apiKey: process.env.GEMINI_API_KEY, limiter, estTokens, maxPerCall: BATCH, note,
+  onProviderError: (e) => noteProviderError('Gemini', e), isExhaustion });   // out of credit → immediate email (not per-minute 429s)
 
 function source() {
   const src = new Database(DB, { readonly: true, fileMustExist: true });
@@ -237,7 +223,7 @@ async function embedPending(pending) {
       const tokens = chunk.reduce((s, [, t]) => s + estTokens(t), 0), usd = tokens / 1e6 * PRICE;
       if (MAX_USD && spentRow().usd + usd > MAX_USD) { stopped = `budget ${BUDGET} would pass $${MAX_USD}`; break; }
       if (MONTHLY && monthSpent() + usd > MONTHLY) { stopped = `monthly cap: ${thisMonth()} would pass $${MONTHLY}`; break; }
-      const vs = await embedBatch(chunk.map(([, t]) => t));
+      const vs = await waiting(`embed ${chunk.length} texts (~${tokens} tokens)`, embedBatch(chunk.map(([, t]) => t)));
       const usd2 = vs.mode === 'batch' ? usd * 0.5 : usd;   // batch = half price
       store.transaction(() => {
         chunk.forEach(([k], i) => putVec.run(k, MODEL, DIMS, packF16(vs[i]), Date.now()));
@@ -358,15 +344,17 @@ async function scanOnly() {
 }
 
 async function build() {
-  if (has('qdrant')) await ensureCollection();
+  note({ phase: 'start', docs: DOCS.length ? DOCS : undefined, scope: DOCS.length ? undefined : SCOPE, field: FIELD, embed_mode: EMBED_MODE, target: `${UP.url}/${UP.coll}` });
+  if (has('qdrant')) await waiting(`qdrant collection ${UP.coll}`, ensureCollection());
   const { src, rows } = source(); const t0 = Date.now();
   let paras = 0, units = 0, embedded = 0, sent = 0, batch = [];
   const flush = async () => {
     let t1 = Date.now();
     const r = unitize(batch); units += r.units; batch = []; T.unitize_ms += Date.now() - t1; t1 = Date.now();
+    note({ phase: 'unitized', paragraphs: paras, units: r.units, to_embed: r.pending.size });
     if (has('embed')) embedded += await embedPending(r.pending);
     T.embed_ms += Date.now() - t1;
-    if (has('qdrant')) sent += await upsert();
+    if (has('qdrant')) { note({ phase: 'upserting', embedded }); sent += await waiting(`qdrant upsert to ${UP.coll}`, upsert()); }
     log({ phase: 'chunk', paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
       paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)), timing: timing() });
   };

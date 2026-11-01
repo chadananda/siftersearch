@@ -69,6 +69,20 @@ describe('batch embedder', () => {
     const v = await b2.embed(reqs(2), { tokens: 10, sync: syncFn });
     expect(v.mode).toBe('batch'); expect(srv.submits).toBe(1);
   });
+  it('a resumed job older than maxWaitMs is polled first: already done → collected, not cancelled (job #77869)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'emb-')); const f = batchStateFileFor('m', 'k', dir);
+    const srv = fakeServer({ pollsToDone: 1 }); let polls = 0, t = 1e12; const cancels = [], notes = [];
+    const fetchFn = async (u, i) => {
+      if (u.endsWith(':cancel')) { cancels.push(u); return { ok: true, status: 200, headers: new Headers(), text: async () => '{}' }; }
+      if (!u.includes(':async') && ++polls === 1) throw new Error('process killed'); return srv.fetchFn(u, i);
+    };
+    const o = { fetchFn, stateFile: f, now: () => t, sleep: async (ms) => { t += ms; }, maxWaitMs: 20 * 60000 };
+    await expect(createBatchEmbedder(base(srv, o)).embed(reqs(2), { tokens: 10, sync: syncFn })).rejects.toThrow('killed');
+    t += 53 * 60000;   // the re-run starts 53 min later; Google finished the job meanwhile
+    const v = await createBatchEmbedder(base(srv, { ...o, note: (n) => notes.push(n) })).embed(reqs(2), { tokens: 10, sync: syncFn });
+    expect(v.mode).toBe('batch'); expect(cancels).toEqual([]); expect(srv.submits).toBe(1);
+    expect(notes.map((n) => n.phase)).toEqual(['batch-resume', 'batch-poll']);
+  });
 
   it('default fetch: a transient retry counts on the embedder (job #71445: `local is not defined`)', async () => {
     const srv = fakeServer(); let first = true, retries = 0;

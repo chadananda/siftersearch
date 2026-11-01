@@ -44,7 +44,7 @@ export function phraseIndexJob(params = {}, prebuilt = null) {
       }
       tail = (tail + buf).slice(-2000);
     };
-    child.stdout.on('data', take); child.stderr.on('data', take);
+    child.stdout.on('data', take); child.stderr.on('data', (buf) => { tail = (tail + buf).slice(-2000); });   // stderr = progress/wait notes: tail only, never `last`
     child.on('exit', (code) => (code === 0 ? resolve({ code, last }) : reject(new Error(`indexer exit ${code}: ${(tail.match(/^.*Error: .*$/m)?.[0] || '').slice(0, 400)} … ${tail.slice(-300)}`))));
   });
 }
