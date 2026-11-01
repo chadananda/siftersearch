@@ -4,6 +4,7 @@
 // email uses the returned text. Model: ONE global, switchable setting ANIS_LLM="provider:model[:reasoning_effort]".
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
 
+import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
 import { dropUnverified, createSentenceGate } from './quotes.js';
@@ -362,7 +363,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const t0 = Date.now();
 
   // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
-  const plan = d.plan ? await d.plan(messages).catch(() => null) : null;
+  const plan = d.plan ? await timed('plan', () => d.plan(messages)).catch(() => null) : null;
   // a pasted original or a translate / find-the-original request is never small talk (10-23 Liliane's Persian prayer)
   let conversational = plan?.shape === 'converse' && !textRequest([...messages].reverse().find((m) => m.role === 'user')?.content).request;
 
@@ -380,9 +381,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const wantsOriginal = looksLikeOriginalQuestion(question);
   const quoted = quotationIn(question);
   const sourced = !researched && (direction.kind === 'source_lookup' || looksLikeSourceQuestion(question)
-    || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8)) ? await huntSource(d, question) : null;
+    || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8)) ? await timed('source-hunt', () => huntSource(d, question)) : null;
   // "What are those words in Persian?" about a numbered passage → the canonical paragraph WITH its aligned original
-  const original = !researched && !sourced && wantsOriginal ? await originalWording(d, question, messages).catch(() => null) : null;
+  const original = !researched && !sourced && wantsOriginal ? await timed('original', () => originalWording(d, question, messages)).catch(() => null) : null;
   if (sourced) {
     // "Where is this from?" is answered by the hunt directly (template, no model call, no companion plan).
     // OceanLibrary range links (lib/ocean-links.js): the reply's links and each citation highlight their passage
@@ -424,10 +425,10 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : conversational ? { passages: [], _plan: plan }
     : language ? { passages: [], _plan: { shape: 'language' } }
     : position?.passages?.length ? { passages: position.passages, _plan: { shape: 'position', themes: position.themes } }
-    : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await d.search({
+    : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await timed('search', () => d.search({
     query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
-  });
+  }));
   const searchMs = Date.now() - t0;
   const retrieved = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
     text: p.text || '', source_title: p.title || '', source_author: p.author || '', citation_url: p.source_url || null,
@@ -462,7 +463,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   retrieved.splice(0, retrieved.length, ...await guardRows(retrieved, { alwaysClip: true, encumbered: d.encumberedAmong }).catch(() => retrieved));
   // OceanLibrary range links BEFORE the answer is written: the model copies citation_url verbatim, so the streamed answer
   // carries links that highlight the passage (the whole paragraph; lib/ocean-links.js). Never blocks the answer on failure.
-  if (d.upgradeLinks) await Promise.all(retrieved.map(async (q) => { if (q.citation_url) q.citation_url = await d.upgradeLinks(q.citation_url).catch(() => q.citation_url); }));
+  if (d.upgradeLinks) await timed('upgrade-links', () => Promise.all(retrieved.map(async (q) => { if (q.citation_url) q.citation_url = await d.upgradeLinks(q.citation_url).catch(() => q.citation_url); })));
   const citations = retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url,
     religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index, text: q.text.slice(0, 300) }));
   // Something useful before the first token (backlog 0023): the sources are known in ~0.2s.
@@ -486,16 +487,16 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : position?.passages?.length ? Promise.resolve({ id: 'position', by: 'position', how: POSITION_HOW })
     : language ? Promise.resolve({ id: 'language', by: 'language', how: LANGUAGE_HOW })
     : study ? Promise.resolve({ id: 'term_study', by: 'ctai', how: termFormatHow(study, channel) })
-    : conversational ? Promise.resolve(null) : choose({ question, profile: evidenceProfile, channel }).catch(() => null);
+    : conversational ? Promise.resolve(null) : timed('format', () => choose({ question, profile: evidenceProfile, channel })).catch(() => null);
 
   let comp = null;
   try {
     const evidenceDocs = retrieved.map((q) => ({ doc_id: q.doc_id, title: q.source_title, author: q.source_author, religion: q.religion, collection: q.collection }));
-    comp = await d.companion({
+    comp = await timed('companion', () => d.companion({
       participantId: participant.id || null, authed: !!participant.authed, message: question,
       classifier: { comparative: !!res?._plan?.comparative }, evidenceDocs, evidenceCount: evidenceDocs.length,
       traditionsCovered: new Set(evidenceDocs.map((x) => x.religion).filter(Boolean)).size,
-    });
+    }));
     if (comp?.offer) onEvent({ type: 'companion_offer', offer: 'connect' });
   } catch { comp = null; }   // relationship enriches the answer; it never blocks one
   const format = await formatP;
@@ -515,12 +516,12 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
     onEvent({ type: 'text', content: cleanLinks(t).replace(/\[\[(?:RENDERINGS|PASSAGES)\]\]\n?/g, '') });   // code fills these in the final text
   });
-  const raw = await d.craft({
+  const raw = await timed('craft', () => d.craft({
     user_question: question, retrieved_quotes: sourced ? retrieved.map(({ citation_url: _u, ...q }) => q) : retrieved, conversation_summary: conversationSummary(messages, persona),
     persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
     comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, target: res?._plan?.target || null, direction: { ...direction, format }, llm: llm || (researched ? modelFor('anis-writer') : parseLlm(process.env.ANIS_LLM)),
     onChunk: (t) => gate.push(t),
-  });
+  }));
   gate.flush();
   // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
   // (the widget reconciles its streamed text to this; email sends only this).

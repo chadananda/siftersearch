@@ -122,7 +122,7 @@ async function run({ f, v }) {
   const stage = ok ? 'ok' : strategyOk === false ? 'strategy' : phrasesOk === false ? 'phrases' : cite.ok ? 'answer' : retrieved === false ? 'retrieval' : retrieved === true ? 'selection' : 'retrieval-or-selection';
   const usd = a.meta?.usd ?? null, ms = a.meta?.latency_ms ?? a.ms;
   return { ...out, expected_strategy: expected, shape, strategyOk, phrases, phrasesOk, phraseWrapper, retrieved, selection: st.selection?.choice ?? null, stage_ms: stageMs, cite_ok: cite.ok, link_ok: cite.link, nofound, offtopic, answerOk,
-    pass: ok, stage, slow: ms > 5000, route: obs, usd, latency_ms: ms, wall_ms: a.ms, models: a.meta?.models, reply_head: text.slice(0, 260) };
+    pass: ok, stage, slow: ms > 5000, route: obs, timeline: route.timeline ?? null, llm: route.llm ?? null, search_detail: route.search_detail ?? null, usd, latency_ms: ms, wall_ms: a.ms, models: a.meta?.models, reply_head: text.slice(0, 260) };
 }
 
 // ---- run

@@ -11,6 +11,7 @@ import { lintReply } from './lint.js';
 import { channelFor } from './channels.js';
 import { turnMeta } from './turn-meta.js';
 import { withAIContext, currentAIContext } from '../ai-context.js';
+import { timed, timelineOf } from './timeline.js';
 
 const OUTPUT_BREAK = 0.8;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -37,14 +38,14 @@ export const hasSubstance = (text) => (String(text || '').match(/\p{L}{3,}/gu) |
 // Every turn runs under a per-turn METER (ai-context): each model call's model and cost land in the turn's path.meta
 // (type · models · usd · latency) — what the daily conversation digest shows (Chad 10-22). An outer meter is reused.
 export async function anisTurn(args) {
-  const outer = currentAIContext().meter;
-  if (Array.isArray(outer)) return turnBody(args, outer);
+  const outer = currentAIContext().meter, timeline = currentAIContext().timeline || [];
+  if (Array.isArray(outer)) return withAIContext({ timeline }, () => turnBody(args, outer, timeline));
   const meter = [];
-  return withAIContext({ meter }, () => turnBody(args, meter));
+  return withAIContext({ meter, timeline }, () => turnBody(args, meter, timeline));
 }
 
 async function turnBody({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},
-  conversationId = null, clientKey = null, onEvent = () => {}, research = undefined, llm = undefined, deps }, meter = []) {
+  conversationId = null, clientKey = null, onEvent = () => {}, research = undefined, llm = undefined, deps }, meter = [], timeline = []) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
   const channel = channelFor(channelName, { trusted });
   const text = lastUser(messages);
@@ -71,7 +72,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   }
 
   // Write it down before trying — in parallel with triage, so logging adds no latency.
-  const [ex, tri] = await Promise.all([d.open(logArgs).catch(() => null), d.triage(messages).catch(() => null)]);
+  const [ex, tri] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages)).catch(() => null)]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
   // "unclear" / "cut off" may only short-circuit a message with no substance. A real topic ("race unity") or a pasted
@@ -86,6 +87,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const finish = async (reply, status, extra = {}) => {
     const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop, ...extra };
     path.meta = turnMeta({ status, path, meter, ms: Date.now() - t0 });
+    // where the time went (route.timeline in the thread view): stage spans since turn start + each model call's completion
+    path.timeline = timelineOf(timeline, t0); path.llm = meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null }));
     if (ex) await d.close({ ...ex, reply, status, path, channel: channel.id }).catch(() => {});
     // the Observatory terminal: that a turn happened, how it was routed — never its text or who asked
     import('../repos/activity-repo.js').then(({ logActivity }) => logActivity('anis', `${channel.id} · ${status}${route.kind ? ` · ${route.kind}` : ''}${extra.recipe ? ` · ${extra.recipe}` : ''}${extra.retrieved != null ? ` · ${extra.retrieved} paragraphs` : ''} · ${((Date.now() - t0) / 1000).toFixed(1)} s`)).catch(() => {});
@@ -108,7 +111,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     let reply = r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).
-    const broken = await d.outputCheck(reply, { persona: name }).catch(() => null);
+    const broken = await timed('output-check', () => d.outputCheck(reply, { persona: name })).catch(() => null);
     const replaced = broken != null && broken >= OUTPUT_BREAK;
     if (replaced) { d.strikes.strike(who); reply = cannedReply('refuse', { name, seed }); }
     const lint = lintReply(reply);
@@ -124,7 +127,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
           format: r.format ? { choice: r.format.id, by: r.format.by } : null } },
       retrieved: r.retrieved?.length ?? 0,
       format: r.format ?? null, profile: r.profile ?? null,
-      output_check: broken, replaced, lint, timings: r.timings });
+      output_check: broken, replaced, lint, timings: r.timings, search_detail: r.plan?.timings ?? null });
     return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path };
   } catch (err) {
     if (ex) await d.fail({ ...ex, error: err?.message }).catch(() => {});

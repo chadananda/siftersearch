@@ -286,7 +286,7 @@ export function logAIUsage({
       + cacheWriteTokens * pricing.input * 1.25) * inMult + completionTokens * pricing.output * outMult) / 1000;
   } catch { cost = 0; }
   const meter = currentAIContext().meter;
-  if (Array.isArray(meter)) meter.push({ provider, model, usd: cost, tokens: (promptTokens || totalTokens) + completionTokens, success });
+  if (Array.isArray(meter)) meter.push({ provider, model, caller, at: Date.now(), usd: cost, tokens: (promptTokens || totalTokens) + completionTokens, success });
   // Telemetry write: use dedicated connection with 200ms busy_timeout so WAL
   // contention from the sync worker never freezes the event loop.
   setImmediate(() => {
