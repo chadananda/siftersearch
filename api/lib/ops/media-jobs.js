@@ -1810,7 +1810,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     while (!stagerStop) {
       let r;
       LH.beatStart(st, 'stager', now());
-      try { r = await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, demux, now: now() }); st.stage_error = null; }
+      // a rental pause idles the stager: no pod pulls from stage/, and 11-01 its ECONNRESET retries kept re-sending originals up the saturated uplink
+      try { r = (await C.rentalPauseReason?.().catch(() => null)) ? 'paused' : await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, demux, now: now() }); st.stage_error = null; }
       catch (err) { st.stage_error = String(err?.message || err).slice(0, 200); r = 'error'; }
       LH.beat(st, 'stager', { ok: r !== 'error', err: st.stage_error, n: r === 'uploaded' ? 1 : 0 }, now());
       if (r !== 'uploaded') await new Promise((res) => setTimeout(res, r === 'error' ? 60_000 : 20_000).unref?.());

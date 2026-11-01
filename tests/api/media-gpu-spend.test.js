@@ -469,6 +469,14 @@ describe('the lane: GPU is rented only for work', () => {
     expect(r.done).toBe(1);
     expect(cmds).toEqual(['curl']);
   });
+  it('a rental pause idles the R2 stager: nothing goes up the uplink for pods that are not coming', async () => {
+    const x = setup({ talks: 2, seconds: 3600 });
+    x.deps.cloud.rentalPauseReason = async () => 'uplink saturated';
+    const put = vi.fn(async () => 1);
+    x.deps.stageStore = { put, remove: async () => {}, signed: async (k) => `https://r2.example/${k}?sig=1` };
+    await mediaCloudRemasterJob({ write: true, maxPods: 1 }, x.deps);
+    expect(put).not.toHaveBeenCalled();
+  });
   it('collects a backlog of results in the background, at most resultsPerPod at once per pod', async () => {
     const x = setup({ talks: 5 });
     const times = [], run = x.deps.run;
