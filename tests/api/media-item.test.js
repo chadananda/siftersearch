@@ -6,7 +6,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, statSync, mkdirSy
 import { tmpdir } from 'os';
 import { join } from 'path';
 vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
-import { runItem as runItemGated, STAGES, COMPLETE_STAGES, isComplete } from '../../api/lib/media/item.js';
+import { runItem as runItemGated, STAGES, COMPLETE_STAGES, isComplete, verifySkip } from '../../api/lib/media/item.js';
 // the fixtures publish talks with no restored copy, so they opt out of the restored-only gate (the gate has its own test below)
 const runItem = (item, opts = {}, deps) => runItemGated(item, { publishUnrestored: true, ...opts }, deps);
 import { applyEdits, buildVocab } from '../../api/lib/media/vocab.js';
@@ -395,6 +395,12 @@ describe('isComplete: every stage run + the remaster IS the listening copy (Chad
     expect(isComplete(m485)).toBe(false);
     expect(isComplete({ ...m485, remaster: undefined })).toBe(false);                                                         // no remaster record at all
     expect(isComplete({ ...m485, remaster: { status: 'done', verdict: 'pass-auto', swapped: 0, quiet: { v: 1 } } })).toBe(false);   // done on paper, the original still plays
+  });
+  it('verify names a held remaster "remaster held", never "not remastered" (11-01: 2529)', () => {
+    expect(verifySkip({ enhancement: { listening: 'safe' }, remaster: { status: 'review' } })).toBe('remaster held');
+    expect(verifySkip({ enhancement: { listening: 'safe' }, remaster: { status: 'waiting' } })).toBe('not remastered');
+    expect(verifySkip({ enhancement: { listening: 'safe' } })).toBe('not remastered');
+    expect(verifySkip({ enhancement: { listening: 'unipase' }, remaster_tier: 'heavy', remaster: { status: 'done' } })).toBeNull();
   });
   it('a missing stage or a missing web copy keeps it off air', () => {
     expect(isComplete({ ...base, stages: { ...stages, links: {} } })).toBe(false);

@@ -113,6 +113,17 @@ describe('intake (preview stage): the dedupe check for every new talk', () => {
     expect(r).toMatchObject({ action: 'best', best: 'new', group: 1 });
     expect(r.reason).toMatch(/original NISQA 3\.5 vs 2\.4/);
   });
+  it('a tie lost only on completeness to a held copy not on air: the new copy goes on (tie), settled once it lands (11-01: 2509)', async () => {
+    const offAirHeld = { ...held, restored: 0 };
+    const meta = srcMeta(2.3, { slug: 'new' });
+    const r = await intakeDedupe({ item: { id: 2 }, meta, verdict: { verdict: 'duplicate', of: 'held' }, text: TALK },
+      { repo: { getMediaBySlug: async () => offAirHeld }, readMeta: async () => srcMeta(2.4, { stages: stages(DONE) }), readText });
+    expect(r).toMatchObject({ action: 'tie', of: 'held', group: 1, ambiguous: true });
+    // the same tie against a copy on air: the new one is the duplicate
+    const r2 = await intakeDedupe({ item: { id: 2 }, meta, verdict: { verdict: 'duplicate', of: 'held' }, text: TALK },
+      { repo: { getMediaBySlug: async () => ({ ...held, restored: 1 }) }, readMeta: async () => srcMeta(2.4, { stages: stages(DONE) }), readText });
+    expect(r2.action).toBe('duplicate');
+  });
   it('a copy the group already chose as best is never marked duplicate again on a re-run', async () => {
     const r = await intakeDedupe({ item: { id: 2 }, meta: srcMeta(1, { dedup: { verdict: 'best', group: 1 } }), verdict: { verdict: 'duplicate', of: 'held' } }, { repo: {}, readMeta: async () => null });
     expect(r.action).toBe('best');
@@ -289,6 +300,39 @@ describe('media-dedupe job', () => {
     const r2 = await mediaDedupeJob({ write: true }, deps);
     expect(r2.in_flight).toBeUndefined();
     expect(calls.marked).toHaveLength(1);
+  });
+  // 11-01 repair of past instances, through the job itself: a tie retired the copy whose remaster passed for one still off air
+  const remastered = (extra = {}) => srcMeta(1.7, { remaster: { status: 'done' }, enhancement: { listening: 'unipase' },
+    stages: stages(['archive', 'grade', 'transcribe', 'remaster', 'verify', 'quiet']), ...extra });
+  const offAir = (rows, metas) => {   // 1437: done, off air, remaster back on a worker, only quiet "missing"
+    rows[0].restored = 0; rows[0].dup_group = 10;
+    metas['/d/live'] = srcMeta(1.85, { slug: 'live', remaster: { status: 'waiting' }, enhancement: { listening: 'unipase' }, stages: stages(DONE.filter((s) => s !== 'quiet')) });
+  };
+  it('in a tie with no copy on air, a passed remaster outranks a stage count: the retired copy is revived as best, the off-air one retired', async () => {
+    const { deps, rows, metas, calls, writes } = mk();
+    offAir(rows, metas);
+    rows[1].why = 'duplicate of live: original NISQA 1.85 vs 1.7 (within noise 0.2; the more complete copy)'; rows[1].dup_group = 10;
+    metas['/d/worse'] = remastered({ slug: 'worse', dedup: { verdict: 'duplicate', best: 'live', group: 10 } });
+    const r = await mediaDedupeJob({ write: true }, deps);
+    expect(r.ambiguous[0]).toMatchObject({ best: 'worse' });
+    expect(calls.revived).toEqual([expect.objectContaining({ id: 11, g: 10 })]);
+    expect(writes['/d/worse'].dedup).toMatchObject({ verdict: 'best', over: ['live'] });
+    expect(calls.marked).toEqual([expect.objectContaining({ ids: [10], g: 10 })]);
+  });
+  it('a copy on air still wins the tie over a remastered copy', () => {
+    const p = pickBest([{ id: 10, slug: 'live', state: 'done', restored: 1, meta: srcMeta(1.85) }, { id: 11, slug: 'r', state: 'duplicate', meta: remastered() }]);
+    expect(p.best.slug).toBe('live');
+  });
+  it('with no copy on air, a copy whose remaster is held for Chad is never retired from under the held page', async () => {
+    const { deps, rows, metas, calls } = mk();
+    offAir(rows, metas);
+    metas['/d/live'].remaster.status = 'review';   // held: a measured regression awaiting Chad
+    rows[1].dup_group = 10;
+    metas['/d/worse'] = remastered({ slug: 'worse' });
+    const r = await mediaDedupeJob({ write: true }, deps);
+    expect(calls.revived).toEqual([expect.objectContaining({ id: 11 })]);
+    expect(calls.marked).toHaveLength(0);
+    expect(r.held_kept_list).toEqual([{ copy: 'live', best: 'worse' }]);
   });
   it('copies not yet graded are left until they are (no flip-flop once measured)', async () => {
     const { deps, metas, calls } = mk();

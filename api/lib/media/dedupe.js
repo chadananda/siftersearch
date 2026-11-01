@@ -18,19 +18,22 @@ const GRADES = 'ABCDE';
 
 /** One copy's measured quality: remaster output NISQA, original NISQA, grade letter, on air, stages missing. */
 export function copyQuality(meta) {
-  if (!meta) return { remaster: null, original: null, grade: null, on_air: false, missing: COMPLETE_STAGES.length };
+  if (!meta) return { remaster: null, original: null, grade: null, on_air: false, remastered: false, missing: COMPLETE_STAGES.length };
   const a = meta.remaster?.output_assessment || meta.qa?.remaster?.output_assessment || {};
   const remaster = meta.remaster?.status === 'done' || meta.remaster?.status == null ? num(a.restored?.nisqa?.[0]) : null;
   const original = num(meta.quality?.raw?.nisqa?.mos) ?? num(a.reference?.nisqa?.[0]);
-  return { remaster, original, grade: meta.quality?.overall || null, on_air: isComplete(meta), missing: indexFields(meta).stages_missing };
+  // remastered: its pure remaster passed and is the listening copy — the worker-bound part of a talk, which a stage count weighs like any cheap text stage
+  return { remaster, original, grade: meta.quality?.overall || null, on_air: isComplete(meta), remastered: meta.remaster?.status === 'done' && meta.enhancement?.listening === 'unipase',
+    missing: indexFields(meta).stages_missing };
 }
 
 const live = (c) => c.state === 'done' && Number(c.restored) === 1;
 // a copy the pipeline is working on now (started: it has a meta.json; not landed: done / held / terminal)
 const IN_FLIGHT = new Set(['queued', 'scheduled', 'running', 'transcribed', 'llm_queued', 'ready']);
 export const inFlight = (c, runs = new Map()) => !!c.meta && !['duplicate', 'excluded'].includes(c.state) && (IN_FLIGHT.has(c.state) || runs.has(Number(c.id)));
-// completeness order: on air, fewer stages missing, better grade, the older row
-const fuller = (a, b) => (b.q.on_air - a.q.on_air) || (a.q.missing - b.q.missing)
+// completeness order: on air, its remaster passed, fewer stages missing, better grade, the older row (11-01: a stage count alone kept
+// 1437 — remaster back on a worker, 1 stage "missing" — over 2509, remaster passed + quiet done, 7 cheap text stages to go)
+const fuller = (a, b) => (b.q.on_air - a.q.on_air) || (b.q.remastered - a.q.remastered) || (a.q.missing - b.q.missing)
   || ((a.q.grade ? GRADES.indexOf(a.q.grade) : 9) - (b.q.grade ? GRADES.indexOf(b.q.grade) : 9)) || (a.id - b.id);
 
 /** copies [{id, slug, meta, state?, restored?}] → { best, basis, reason, ambiguous }. A copy with no meta (never processed) never wins over one that has. */
@@ -246,6 +249,9 @@ export async function intakeDedupe({ item, meta, verdict, text = null }, { repo,
   const group = Number(held.dup_group ?? held.id);
   const pick = pickBest([{ ...held, meta: heldMeta || held.meta || null }, { id: item.id, slug: meta?.slug || null, meta, state: 'queued', restored: 0 }]);
   const newWins = Number(pick.best.id) === Number(item.id);
+  // a TIE lost only on completeness to a copy that is not on air: this copy is incomplete because it is still being processed —
+  // it goes on, and media-dedupe settles the group once it lands (11-01: 2509 was held here for an off-air 1437)
+  if (!newWins && pick.ambiguous && !live(held)) return { action: 'tie', best: null, of: held.slug, group, reason: `${pick.reason}; no copy on air: settled when this one lands`, ambiguous: true, held, check, tried };
   return { action: newWins ? 'best' : 'duplicate', best: newWins ? (meta?.slug || null) : held.slug, of: held.slug, group, reason: pick.reason, ambiguous: pick.ambiguous, held, check, tried };
 }
 
@@ -486,12 +492,16 @@ async function settleGroup(copies, { pairs, runs, out, write, sample, repo, ops,
   if (pick.unmeasured && !live(pick.best)) { out.unmeasured = (out.unmeasured || 0) + 1; return; }   // decided once the copies are graded
   const best = pick.best, others = copies.filter((c) => c !== best);
   // a TIE (within noise) is settled by completeness, and a copy still in the pipeline is incomplete only because it has not finished yet:
-  // with no copy on air, the tie waits for it to land (11-01: 2509 had its pure remaster + quiet done and was minutes from air when it
-  // was retired, mid-pipeline, for 1437 — off air, its remaster back to a worker, 368th in the quiet backlog)
-  if (pick.ambiguous && !live(best) && others.some((c) => inFlight(c, runs))) { out.in_flight = (out.in_flight || 0) + 1; return; }
+  // with no copy on air, it is never retired: the group settles it once it lands (11-01: 2509 had its pure remaster + quiet done and was
+  // retired for 1437 — off air, its remaster back to a worker, 368th in the quiet backlog)
+  const waiting = pick.ambiguous && !live(best) ? others.filter((c) => inFlight(c, runs)) : [];
+  if (waiting.length) out.in_flight = (out.in_flight || 0) + waiting.length;
+  // with no copy on air, a copy whose remaster is held for Chad (verdict review) is his decision — never retired from under the held page
+  const held = live(best) ? [] : others.filter((c) => c.state !== 'duplicate' && c.meta?.remaster?.status === 'review');
+  if (held.length) { out.held_kept = (out.held_kept || 0) + held.length; if ((out.held_kept_list ||= []).length < 50) out.held_kept_list.push(...held.map((c) => ({ copy: name(c), best: name(best) }))); }
   const bestLive = live(best);
   // the on-air stand-in stays on air until the better copy is complete; everything else goes
-  const losers = others.filter((c) => bestLive || !live(c));
+  const losers = others.filter((c) => (bestLive || !live(c)) && !waiting.includes(c) && !held.includes(c));
   if ([best, ...copies.filter(live)].some((c) => runs.has(Number(c.id)))) { out.busy++; return; }
   const m = mergeMeta(best, others);
   const todo = losers.filter((c) => !(c.state === 'duplicate' && Number(c.dup_group) === g && (!c.meta || (c.meta.dedup?.verdict === 'duplicate' && c.meta.dedup.best === best.slug))));

@@ -220,6 +220,13 @@ export async function loadVocab(file = process.env.MEDIA_VOCAB_FILE || join(proc
  * Run (or resume) one item. item: the media_items row. opts: { from (stage to redo from), only ([stages]), threads }.
  * → { slug, done: [stages run], meta } or { yielded: true } when the service drains between stages.
  */
+/** Why verify has nothing to measure, or null. A remaster made and then held (verdict review: a measured regression, Chad decides)
+ *  is "remaster held", never "not remastered" (11-01: 2529 read as if no remaster existed). */
+export function verifySkip(meta) {
+  if (meta.enhancement?.listening === 'unipase' && ['heavy', 'cleaned'].includes(meta.remaster_tier || remasterTier(meta))) return null;
+  return meta.remaster?.status === 'review' ? 'remaster held' : 'not remastered';
+}
+
 export async function runItem(item, opts = {}, deps = {}) {
   // A container worker receives explicit local tools and a job-local catalogue
   // adapter. It must never import the production DB or acquire server clients.
@@ -503,7 +510,8 @@ export async function runItem(item, opts = {}, deps = {}) {
       // MEASURED PROOF the remaster is a different, better signal (Chad 10-29: a copy that is "different, just not better" must never count as remastered):
       // ffmpeg levels of the same 60 s window of the original and the remaster (bandwidth above 4 / 8 kHz, noise floor). No measurable change = held for review, the original plays.
       const assessed = remasterProven(meta);   // the worker's paired NISQA/DNSMOS check already measured a gain
-      if (meta.enhancement?.listening !== 'unipase' || !['heavy', 'cleaned'].includes(meta.remaster_tier || remasterTier(meta))) rec.skipped = 'not remastered';
+      const skip = verifySkip(meta);
+      if (skip) rec.skipped = skip;
       else if (assessed) rec.assessed = true;
       else {
         const copy = join(dir, 'enhanced', 'unipase.flac'), orig = meta.original ? join(dir, meta.original) : null;
@@ -768,7 +776,9 @@ export async function runItem(item, opts = {}, deps = {}) {
         return { review: true, of: verdict.of, score: verdict.score, slug: meta.slug, done };
       }
       const check = dup?.check ? { by: dup.check.by, from: dup.check.from, containment: dup.check.containment, coverage: dup.check.coverage } : undefined;
+      // 'tie': the same talk, the same quality, no copy on air — this copy goes on; media-dedupe settles the group once it lands
       meta.dedup = verdict.verdict === 'best' ? verdict
+        : dup?.action === 'tie' ? { ...verdict, verdict: 'tie', with: dup.of, group: dup.group, reason: dup.reason, check, at: d.now() }
         : dup?.action === 'best' ? { ...verdict, verdict: 'best', over: dup.of, group: dup.group, reason: dup.reason, check, at: d.now() }
         : dup?.action === 'duplicate' ? { ...verdict, verdict: 'duplicate', of: dup.of, by: check.by, score: check.containment ?? 1, check, at: d.now() }
         : verdict.verdict === 'duplicate' ? { ...verdict, verdict: 'unique', candidate: verdict.of, reason: dup?.reason, tried: dup?.tried, at: d.now() }
@@ -782,7 +792,7 @@ export async function runItem(item, opts = {}, deps = {}) {
         return { duplicate: true, of: dup.of, score: check.containment ?? 1, slug: meta.slug, done };
       }
       // the new copy measuring better goes on (media-dedupe retires the held one once this is complete); an unconfirmed opening match is reviewed
-      if (verdict.verdict === 'review' && dup?.action !== 'best') {
+      if (verdict.verdict === 'review' && dup?.action !== 'best' && dup?.action !== 'tie') {
         const why = `Dewey transcript overlap with ${verdict.of} (score ${verdict.score}); review before publication`;
         await repo.updateMediaItem(item.id, { state: 'review', why, stage: 'preview' });
         return { review: true, of: verdict.of, score: verdict.score, slug: meta.slug, done };
