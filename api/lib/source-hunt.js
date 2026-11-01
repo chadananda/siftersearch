@@ -182,7 +182,9 @@ export const guardianTranslation = (c) => (GUARDIAN_WORKS.test(String(c.title ||
 export function rankOrigins(cands, quoteAuthor = null) {
   const canon = (n) => firstPerson(n || '') || n;
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
-  const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
+  // scripture itself (another tradition's text holding the words) is the origin of a Bahá'í book that quotes it (11-01 wording battery)
+  const scripture = (c) => (c.holds ?? ((c.overlap || 0) >= VERBATIM)) && c.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(c.religion) && (c.overlap || 0) >= VERBATIM ? 1 : 0;
+  const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, scripture(c), quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
     // the paragraph holding the WORDING beats one the decision passed on meaning only — a neighbour (Liliane 10-05: Gleanings
     // 60.3 beat the verbatim 60.2) or another Core book that paraphrases (the Tablets book over Gleanings for 'Tear asunder').
     // A different translation is verbatim nowhere, so cross-translation ranking is unchanged.
@@ -295,7 +297,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const byMeaning = await meaningRanges(d, q, origin.id, origin.text, 'en');
   const exactAll = byMeaning.highlightBy === 'decision' ? [] : quoteRanges(origin.text, q.text);
   const hl = byMeaning.highlightBy === 'decision' ? byMeaning : exactAll.length ? { highlight: exactAll, highlightBy: 'wording' } : byMeaning;
-  const originOut = { id: origin.id, documentId: origin.doc_id, title: origin.pubTitle || origin.title, author: origin.writer, bookAuthor: origin.book_author,
+  const originOut = { religion: origin.religion || null, id: origin.id, documentId: origin.doc_id, title: origin.pubTitle || origin.title, author: origin.writer, bookAuthor: origin.book_author,
     translated_by: translatedBy(origin),
     text: origin.text, highlight: hl.highlight, highlightBy: hl.highlightBy,
     url: origin.url, rangeUrl: textFragment(origin.url, origin.text, hl.highlight, 4, origin.doc_id), site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };

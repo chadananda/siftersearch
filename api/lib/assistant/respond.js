@@ -4,6 +4,7 @@
 // email uses the returned text. Model: ONE global, switchable setting ANIS_LLM="provider:model[:reasoning_effort]".
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
 
+import { extractPhrase } from './phrases.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
@@ -110,6 +111,24 @@ const clip = (text = '', ranges = [], before = 240, after = 320) => {
   const a = Math.max(0, ranges[0][0] - before), b = Math.min(text.length, ranges[ranges.length - 1][1] + after);
   return `${a > 0 ? '… ' : ''}${text.slice(a, b).trim()}${b < text.length ? ' …' : ''}`;
 };
+
+/** Every citation is a link (11-01 wording battery: 23 replies named the right source with no link). A reply that names a retrieved
+ *  source's title, or quotes 6+ words of a retrieved passage, but links none of them: link the title where it stands, else append the source. */
+export function ensureLinks(reply, retrieved) {
+  const text = String(reply || ''), pool = (retrieved || []).filter((q) => q.citation_url && q.source_title);
+  if (!text.trim() || !pool.length || pool.some((q) => text.includes(q.citation_url))) return text;
+  const f = (x) => String(x || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  for (const q of pool) {
+    const i = text.indexOf(q.source_title);
+    if (i >= 0 && text[i - 1] !== '[' && text[i - 1] !== '*') return `${text.slice(0, i)}[${q.source_title}](${q.citation_url})${text.slice(i + q.source_title.length)}`;
+  }
+  const ft = f(text);
+  for (const q of pool) {
+    const w = f(q.text).split(' ');
+    for (let i = 0; i + 6 <= w.length; i += 3) if (ft.includes(w.slice(i, i + 6).join(' '))) return `${text}\n\nSource: [${q.source_title}](${q.citation_url})`;
+  }
+  return text;
+}
 
 /** A question about where a quotation comes from, recognised without the triage model (it can time out): a quotation of
  *  8+ words together with source wording ("where is this from", "who wrote", "the source of", "which tablet"). */
@@ -266,8 +285,13 @@ async function huntSource(d, question) {
   // The reply itself, from the hunt alone — no model: every fact (writer, book, tablet, the original's words, Inventory
   // entry, other publications) is the hunt's, so nothing can be invented, leaked from instructions, or rambled (10-06 demo prep).
   const author = r.quoteAuthor || o.author || null;
+  const shown = (o.highlight?.length ? o.highlight.map(([a, b]) => o.text.slice(a, b)).join(' … ') : '').split(/\s+/).filter(Boolean).slice(0, 40).join(' ').replace(/[\s.,;:]+$/, '');
+  const scripture = o.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(o.religion);
   const reply = [
     `${author ? `These are the words of ${author}, from {book}.` : 'This is from {book}.'}`,
+    // the wording itself, and who quotes whom: scripture is the origin, a Bahá'í text quoting it comes after (11-01 wording battery)
+    shown ? `The passage reads: «${shown}».` : '',
+    scripture && others.length ? 'This is scripture itself; the Bahá’í texts below quote it rather than originate it.' : '',
     t ? `The original is in ${lang}, in {tablet}${origWords ? `, where it reads «${origWords}»` : ''}.${tags.inventory ? ' Its entry in the Phelps Inventory is {inventory}.' : ''}`
       : 'I could not confirm the original tablet for this passage.',
     others.length ? `It is also quoted in ${others.map((c, i) => `{cited${i + 1}}`).join(others.length > 2 ? ', ' : ' and ').replace(/, (\{cited\d\})$/, ' and $1')}.` : '',
@@ -368,6 +392,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   let conversational = plan?.shape === 'converse' && !textRequest([...messages].reverse().find((m) => m.role === 'user')?.content).request;
 
   onEvent({ type: 'stage', stage: 'search' });
+  // specific searches name their search phrase (deterministic from quote marks, else one Haiku call); Jev has already routed
+  const phrased = !conversational && plan ? await timed('phrases', () => (d.phrases || (deps ? async () => null : extractPhrase))(question, plan)).catch(() => null) : null;
   // THE RESEARCHER (researcher.js; Chad 10-19: "we have made it too determinative"): a model plans the research with the
   // library's tools instead of regexes choosing one lookup. On for a channel listed in ANIS_RESEARCH ("email", "all") or
   // when the caller asks (direction.research); any failure falls back to the routed pipeline below.
@@ -380,7 +406,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // "Where is this from?" → SourceHunt (published source + original tablet); nothing found → the ordinary search
   const wantsOriginal = looksLikeOriginalQuestion(question);
   const quoted = quotationIn(question);
-  const sourced = !researched && (direction.kind === 'source_lookup' || looksLikeSourceQuestion(question)
+  // a title or a name ("Hidden Words source") is not a quotation: hunt only when 4+ words of wording are present
+  const sourced = !researched && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4) || looksLikeSourceQuestion(question)
     || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8)) ? await timed('source-hunt', () => huntSource(d, question)) : null;
   // "What are those words in Persian?" about a numbered passage → the canonical paragraph WITH its aligned original
   const original = !researched && !sourced && wantsOriginal ? await timed('original', () => originalWording(d, question, messages)).catch(() => null) : null;
@@ -426,9 +453,10 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : language ? { passages: [], _plan: { shape: 'language' } }
     : position?.passages?.length ? { passages: position.passages, _plan: { shape: 'position', themes: position.themes } }
     : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await timed('search', () => d.search({
-    query: searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
+    query: phrased?.via === 'haiku' ? phrased.phrase : searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
   }));
+  if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   const searchMs = Date.now() - t0;
   const retrieved = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
     text: p.text || '', source_title: p.title || '', source_author: p.author || '', citation_url: p.source_url || null,
@@ -526,7 +554,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
   // (the widget reconciles its streamed text to this; email sends only this).
   const guarded = dropUnverified(cleanLinks(raw), retrieved);
-  const reply = study ? placeRenderings(guarded.text, study, channel) : guarded.text;   // the counts come from code
+  const reply = ensureLinks(study ? placeRenderings(guarded.text, study, channel) : guarded.text, conversational ? [] : retrieved);   // the counts come from code
   if (comp?.log && comp.plan) comp.log(comp.plan);
 
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and

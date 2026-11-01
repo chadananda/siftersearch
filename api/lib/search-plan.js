@@ -23,6 +23,7 @@ const AUTHORS = {
   none: { aliases: null, about: 'no single author’s words are asked for — including when a person is only the SUBJECT of the question ("When was the Báb martyred?" is ABOUT the Báb, not BY him)' },
 };
 
+export const SMALL_TALK = /\b(hi|hello|hey|greetings|salaam|thanks?|thank you|bye|goodbye|good (morning|afternoon|evening)|how are you|who are you|what are you|your name|what can you|can you help|are you (a|an|ai|real|human|there)|you)\b/i;
 const SHAPES = {
   quote: 'the user gives the wording of a passage — verbatim, a fragment, or half-remembered — and wants to find it or its source: "find the quote including …", "where does it say …", "who said …", "source of …"',
   fact: 'a factual question about people, places, dates, events or documents: who, when, where, how many, what happened',
@@ -30,7 +31,7 @@ const SHAPES = {
   define: 'asks what a term, name or concept means',
   lookup: 'names a specific work or person and wants that item itself',
   enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something',
-  converse: 'conversation, not a lookup: a greeting, thanks, small talk, or a question about the assistant itself (its name, what it can do)',
+  converse: 'conversation, not a lookup: a greeting, thanks, small talk, or a question about the assistant itself (its name, what it can do). A title, a name or a phrase of the library\'s content ("hidden words work", "<phrase> source") is NEVER conversation',
 };
 
 // Deterministic BACKSTOP only (used when Jev is unreachable): a tradition or scripture the query NAMES.
@@ -168,6 +169,12 @@ export async function planSearch(input, { given = {}, apiKey = process.env.TYPES
   const quote = detectQuotation(lastUser);
   const ruled = (plan, provenance, reason, extra = {}) => {
     const out = { ...plan, source: { ...plan.source }, provenance, reason: reason ?? null, ...extra };
+    // CONVERSE GUARD (deterministic): two or more content words that are no greeting, thanks or question about the assistant are
+    // a request for library content, never small talk (11-01 wording battery: "hidden words work" answered as a greeting)
+    if (!quote && plan.shape === 'converse' && !SMALL_TALK.test(String(lastUser || '')) && (String(lastUser || '').match(/\p{L}{3,}/gu) || []).length >= 2) {
+      out.overridden = { shape: 'converse', about: plan.about, by: 'converse-guard' };
+      Object.assign(out, { shape: 'lookup' }); out.source = { ...out.source, shape: 'converse-guard' };
+    }
     if (quote) {
       if (plan.shape !== 'quote') out.overridden = { shape: plan.shape, about: plan.about, by: 'quote-rule' };
       Object.assign(out, { shape: 'quote', about: 'texts', quote });

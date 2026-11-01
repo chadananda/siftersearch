@@ -33,7 +33,9 @@ async function defaultDeps() {
  * @param {string} [a.clientKey]    strike key (participant id, else IP)
  */
 /** A message worth researching: two real words, or a passage of 40+ characters. Pure. */
-export const hasSubstance = (text) => (String(text || '').match(/\p{L}{3,}/gu) || []).length >= 2 || String(text || '').trim().length >= 40;
+export const hasSubstance = (text) => (String(text || '').match(/\p{L}{3,}/gu) || []).length >= 2 || String(text || '').trim().length >= 40
+  // one bare name or title ("Ghoddus", "Vahid", "Nabil", "Dawnbreakers") is a lookup, not an unclear message (11-01 wording battery)
+  || /^[\p{L}][\p{L}'’ʼ‘-]{3,}[?.!]?$/u.test(String(text || '').trim());
 
 // Every turn runs under a per-turn METER (ai-context): each model call's model and cost land in the turn's path.meta
 // (type · models · usd · latency) — what the daily conversation digest shows (Chad 10-22). An outer meter is reused.
@@ -121,7 +123,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
         quote: r.plan?.quote?.phrase ?? null, ms: r.plan?.plan_ms ?? null, history_turns: Math.max(0, messages.length - 1), search_query: r.search_query ?? null,
         // the five stages, each with its choice, who made it and the time: strategy (Jev) → phrases → retrieval → selection → format
         stages: { strategy: { choice: r.plan?.shape ?? null, by: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, ms: r.plan?.plan_ms ?? null },
-          phrases: r.plan?.quote ? { choice: r.plan.quote.phrase, by: r.plan.quote.via } : null,
+          phrases: r.plan?.quote ? { choice: r.plan.quote.phrase, by: r.plan.quote.via } : r.plan?.phrases ? { choice: r.plan.phrases.phrase, by: r.plan.phrases.via } : null,
           retrieval: { choice: r.retrieved?.length ?? 0, by: 'planned-search', ms: r.timings?.search_ms ?? null },
           selection: r.select ? { choice: `${r.select.kept}/${r.select.of}`, by: r.select.by } : null,
           format: r.format ? { choice: r.format.id, by: r.format.by } : null } },

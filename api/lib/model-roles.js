@@ -17,6 +17,8 @@ export const MODEL_ROLES = {
     why: 'one fast call over raw search; ANIS_LLM env switches it (kept for compatibility)' },
   'assistant-term': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['fast', 'tiny-output'],
     why: 'extract the word a CTAI question is about (20 tokens)' },
+  'assistant-phrases': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-01', needs: ['fast', 'tiny-output'],
+    why: 'name the search phrase (wording, person, work, term) of a specific question that has no quote marks; Jev still routes' },
   'deep-research-rerank': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['ranking', 'json'],
     why: 'legacy choice — not measured against the 5.5 family' },
   'deep-research-hero-prompt': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['short-writing'],

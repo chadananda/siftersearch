@@ -13100,8 +13100,10 @@
    "canonical": "Jesus said God helps those who help themselves",
    "truth": "not in the Bible (Algernon Sidney / Franklin); scripture must not appear to confirm it",
    "expected_strategy": [
-    "lookup"
-   ],
+      "quote",
+      "source",
+      "lookup"
+    ],
    "cite": {
     "any": [
      "sidney|franklin|not in the bible|not (a )?(biblical|scriptur)|not (found|from|said)|does not appear|isn t in|proverb|not (a )?(saying|quotation|quote) of (jesus|christ)"

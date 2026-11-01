@@ -190,6 +190,7 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     expect(d.calls.craft).toHaveLength(0);
     expect(d.calls.hunt).toBe('The earth is but one country, and mankind its citizens.');
     expect(r.reply).toBe('These are the words of Bahá’u’lláh, from [*Gleanings*](https://oceanlibrary.com/gleanings?paraId=para_1#:~:text=The%20earth). '
+      + 'The passage reads: «The earth is but one country, and mankind its citizens». '
       + 'The original is in Arabic, in [*Tablet of Maqṣúd*](https://oceanoflights.org/bahaullah-x/), where it reads «ليس الفخر لمن يحبّ الوطن». '
       + 'Its entry in the Phelps Inventory is [Phelps Inventory](https://phelps/BH1). It is also quoted in [*The Promised Day is Come*](https://x/pdc).');
     expect(r.plan.shape).toBe('source');

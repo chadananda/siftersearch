@@ -50,6 +50,10 @@ describe('rankOrigins', () => {
       { ...w, id: 2, title: 'Gleanings from the Writings of Bahá’u’lláh', collection: null, year: 1935 }], 'Bahá’u’lláh');
     expect(r[0].id).toBe(2);
   });
+  it('scripture itself holding the words beats a Bahá’í book quoting it', () => {
+    const r = rankOrigins([{ id: 1, religion: "Baha'i", ownWork: true, holds: true, overlap: 1, authority: 10 }, { id: 2, religion: 'Christian', holds: true, overlap: 1 }]);
+    expect(r[0].id).toBe(2);
+  });
   it("the writer's own book beats a compilation quoting it, even with a higher overlap", () => {
     const top = rankOrigins([
       { id: 2, ownWork: false, authority: 10, overlap: 1 },

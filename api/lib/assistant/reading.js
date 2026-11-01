@@ -139,6 +139,13 @@ export function bookFrom(text) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   const m = t.match(START);
   if (!m) return null;
+  // "<verb> X with me" is a request only as a command ("read X with me", "can you read X with me"), never inside a story
+  // ("someone read it aloud and it stayed with me") — the word before the verb and the shape of X decide (11-01 wording battery)
+  if (m[1]) {
+    const before = t.slice(0, m.index).trimEnd();
+    if (before && !/(?:[.!?,:;]|\b(?:please|can you|could you|would you|will you|to|and|then|let'?s|us)|\bme to)$/i.test(before)) return null;
+    if (/^(?:it|this|that|them|these|those|aloud|out|a|an|one|my|his|her)\b/i.test(m[1]) || m[1].split(/\s+/).length > 8) return null;
+  }
   const raw = (m[1] || m[2] || '').split(/[.!?;\n]| starting | start(?:ing)? (?:at|from|with)\b| from the | beginning /i)[0];
   const book = raw.split(/,\s*(?:and\s+)?(?:let'?s|starting|start|begin|beginning|from)\b/i)[0]
     .replace(/^(?:the book|book)\s+/i, '').replace(/^["“'‘]|["”'’]$/g, '').replace(/^(?:the\s+)(?=\S)/i, '').replace(/[\s,;:]+$/, '').trim();
