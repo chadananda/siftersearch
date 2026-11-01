@@ -22,7 +22,8 @@
   const n = (v) => (v == null ? '–' : Number(v).toLocaleString('en-US'));
   const workers = $derived(Array.isArray(d?.workers) ? d.workers : []);
   const fastest = $derived(Math.max(1, ...workers.map((w) => w.speed || 0)));
-  const LAMP = { working: 'on', conducting: 'on', starting: 'blink', idle: 'dim', resting: 'off' };
+  const LAMP = { working: 'on', conducting: 'on', starting: 'blink', idle: 'dim', resting: 'off', unreachable: 'off' };
+  const ago = (s) => (s == null ? '' : s < 90 ? `${s} s` : s < 5400 ? `${Math.round(s / 60)} min` : `${Math.round(s / 3600)} h`);
   const playing = (slug) => preview.item?.s === slug && preview.playing;
   const recent = $derived(Array.isArray(d?.recent) ? d.recent.filter((x) => x?.slug) : []);
   onMount(() => liveRefresh(() => media.restored(), (next) => { d = next; }, { every: 30_000, el: root, initial }));
@@ -115,6 +116,8 @@
               <div class="ln">{w.speed ? `${w.speed}× real time` : w.jobs ? 'first talks under way' : w.status === 'idle' ? 'no work last hour' : w.status}</div>
             {/if}
             {#if w.jobs}<div class="ln">{w.key === 'tower' ? `${w.jobs} talks in hand` : `${w.jobs} at work`}</div>{/if}
+            {#if w.health && !w.health.ok}<div class="ln">no answer for {ago(w.health.down_s)} · last seen {ago(w.health.age_s)} ago</div>{/if}
+            {#if w.health?.polls?.length}<div class="cells polls" title="its last health polls (lit = answered)" aria-hidden="true">{#each w.health.polls as p, i (i)}<i class:lit={p[1] === 1}></i>{/each}</div>{/if}
             <div class="tty" aria-hidden="true">
               {#each tty[w.key]?.done || [] as l, i (i)}<div class="ln dim">{l}</div>{/each}
               <div class="ln">{busy(w) ? (tty[w.key]?.typing || '>') : ']'}<span class="cur"></span></div>
@@ -201,6 +204,7 @@
   .ln.dim { opacity: 0.55; }
   .cells { display: flex; gap: 1px; margin: 0.15rem 0 0.12rem; }
   .cells i { flex: 1; height: 0.32rem; background: color-mix(in srgb, var(--radio-phosphor) 14%, transparent); }
+  .cells.polls i { height: 0.18rem; }
   .cells i.lit { background: var(--radio-phosphor); box-shadow: 0 0 4px color-mix(in srgb, var(--radio-phosphor) 70%, transparent); }
   .tty { margin-top: auto; padding-top: 0.15rem; height: 2.6em; display: flex; flex-direction: column; justify-content: flex-end; }
   .cur { display: inline-block; width: 0.5em; height: 0.72em; margin-left: 1px; vertical-align: -0.04em; background: var(--radio-phosphor); box-shadow: 0 0 4px var(--radio-phosphor); animation: cur 1s steps(1) infinite; }

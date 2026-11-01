@@ -1784,6 +1784,22 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     for (const q of Object.values(st.pods)) if (!q.terminated && q.ip && q.port && q.status !== 'booting') C.podSsh(run, q, 'touch /workspace/spool/.tower-hb', { timeoutMs: 30_000 }).catch(() => {});
   }, 60_000);
   pump.unref?.();
+  // MACHINE HEALTH (Chad 10-31): every machine's GET /health once a minute (tower-finish, home hosts, agent pods) → st.machine_health (the /media
+  // cards, ops.mjs media health) + one row per machine per poll in data/run/health/ (ops.mjs media health-history); a pod that stops answering → reconcile with RunPod now
+  const HP = await import('../media/health-poll.js');
+  const healthHist = deps.stateFile ? null : HP.History(join(dirname(C.STATE_FILE), 'health'));
+  let healthBusy = false;
+  const healthLoop = (deps.healthPoll ?? (!deps.repo && !process.env.VITEST)) ? setInterval(async () => {
+    if (healthBusy) return; healthBusy = true;
+    try {
+      const [LQm, QCm] = await Promise.all([import('../repos/media-queue-repo.js'), import('../media/queue-client.mjs')]);
+      const ts = HP.targets({ hosts: hostRegistry(), pods: st.pods, towerKey: process.env.MEDIA_QUEUE_KEY || process.env.INTERNAL_API_KEY, machineKey: agentKey || LQm.machineKey() });
+      const { newlyDown } = await HP.tick(st, { targets: ts, history: healthHist, queues: queueKey ? { lan: LQm.localQueue(), edge: QCm.queueClient({ key: queueKey }) } : {} });
+      if (newlyDown.length) st.runpod_checked = 0;
+      st.health_poll_error = null;
+    } catch (err) { st.health_poll_error = String(err.message).slice(0, 200); } finally { healthBusy = false; }
+  }, HP.POLL_MS) : null;
+  healthLoop?.unref?.();
   // STAGE AHEAD (Chad 10-30): the uplink fills R2 with the next ~100 audio-hours of originals whether or not pods are up; pods pull in seconds
   const R2S = await import('../media/r2-stage.js');
   const demux = deps.demux !== undefined ? deps.demux : R2S.audioDemuxer(run);   // a video's audio track only, stream-copied (Chad 10-30)
@@ -1853,10 +1869,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       st.home_held = homeHeld;
       // home hosts: re-attach a task from before a restart, start one when a host is free and eligible
       // ASR KEEPS PRIORITY (Chad 10-23): a home host starts a UniPASE copy only while no transcription waits in the queue
-      // the /media card dials (Chad 10-30): each home host's last gate reading (diskOk re-reads it in the background when > 30 s old — a host
-      // with every slot busy is never asked for admission, so ask here), and tower's own two sockets from /proc/stat
+      // diskOk re-reads each home host's disk in the background when > 30 s old (a host with every slot busy is never asked for admission, so ask
+      // here); the /media dials come from each machine's own GET /health (health-poll.js, st.machine_health) — tower's two sockets from /proc/stat
       st.host_gauge = { ...(st.host_gauge || {}) };
-      for (const h of new Set(hostRegistry().map((x) => x.name))) { T.diskOk?.(h); const g = T.hostGauge?.(h); if (g) st.host_gauge[h] = g; }
+      for (const h of new Set(hostRegistry().map((x) => x.name))) { T.diskOk?.(h); delete st.host_gauge[h]; }
       try { const sb = WC.socketBusy(readFileSync('/proc/stat', 'utf8'), towerPkgs(), towerTicks); towerTicks = sb.ticks; if (sb.cpus) st.host_gauge.tower = { cpus: sb.cpus, at: now() }; } catch { /* not Linux */ }
       if (homeHosts.length && now() - (st.asr_checked || 0) > 120_000) {
         const opsRepo = deps.ops || await import('../repos/ops-report-repo.js');
@@ -2065,7 +2081,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         const pod = await C.createPod(name, pub, { ...deps, prefer: acceptedWorker?.prefer_community?{cloud:'COMMUNITY',dcs:[]}:C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
         if (pod.error) { st.last_error = pod.error.slice(0, 300); (st.rental_refusals ||= []).push({ at: now(), why: st.last_error }); if (st.rental_refusals.length > 50) st.rental_refusals.shift(); console.warn(`[media-cloud] RunPod refused a rental: ${st.last_error}`); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
         else {
-          st.pods[pod.id] = { id: pod.id, name, created: now(), costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting',image:acceptedWorker?.image||null, cloud: pod.cloudType || null };
+          st.pods[pod.id] = { id: pod.id, name, created: now(), health_port: pod.health_port || null, costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting',image:acceptedWorker?.image||null, cloud: pod.cloudType || null };
           if (typedPods) { (st.ramp_log ||= []).push({ at: now(), pods: live.length + 1, talks_h: LH.talksPerHour(st, { now: now(), horizonH: st.pod_plan.horizon_h || 2 }) }); if (st.ramp_log.length > 100) st.ramp_log.shift(); }
           await save(st);  // persist the paid allocation before slow audio transfers or a process restart
         }
@@ -2104,7 +2120,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
                 // step 6: an image that carries the queue agent pulls from the edge queue (R2 in, R2 out) — no spool, no downloads by tower
                 p.agent = !!(acceptedWorker && agentKey && /AGENT/.test(probeOut));
                 if (acceptedWorker) p.boot_v = p.agent ? C.BOOT_V_AGENT : C.BOOT_V;
-                const boot = p.agent ? C.agentEnv(agentKey, `pod-${p.name}`, p.max_jobs) + C.BOOTSTRAP_AGENT : acceptedWorker ? C.BOOTSTRAP_WHOLE.replace('--max-jobs 6',`--max-jobs ${p.max_jobs}`) : C.BOOTSTRAP_BAKED;
+                const boot = p.agent ? C.agentEnv(agentKey, `pod-${p.name}`, p.max_jobs, p.image) + C.BOOTSTRAP_AGENT : acceptedWorker ? C.BOOTSTRAP_WHOLE.replace('--max-jobs 6',`--max-jobs ${p.max_jobs}`) : C.BOOTSTRAP_BAKED;
                 await C.podSsh(run, p, 'cat > /workspace/bootstrap.sh && rm -f /workspace/boot.rc && (setsid nohup bash -c "bash /workspace/bootstrap.sh > /workspace/boot.log 2>&1; echo \\$? > /workspace/boot.rc" >/dev/null 2>&1 < /dev/null &) && echo spawned', { input: boot, timeoutMs: 120_000 });
               } else {
                 await C.podPut(run, p, C.WORKER_FILE, '/workspace/runpod_worker.py');
@@ -2140,9 +2156,9 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             const staleImage=acceptedWorker&&outdated(p)&&p.id===imageDrainId;
             if (p.agent) {   // the agent pod runs itself: tower watches it, drains it when outdated, and closes it once its agent has exited
               const drain = staleImage || surplusPods.has(p.id);   // SIGTERM = the agent finishes the jobs it holds, then exits and ends its pod
-              const { stdout } = await C.podSsh(run, p, `${drain ? "pkill -TERM -f queue-agent.mjs; " : ''}pgrep -f queue-agent.mjs >/dev/null && echo ALIVE; tail -1 /workspace/agent.log 2>/dev/null; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); u=$(awk '/^usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat 2>/dev/null); [ -n "$u" ] || u=$(awk '{printf "%.0f", $1/1000}' /sys/fs/cgroup/cpuacct/cpuacct.usage 2>/dev/null); pw=$(nvidia-smi --query-gpu=power.draw,power.limit --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' '); echo GAUGE \${u:--} $(cat /sys/fs/cgroup/cpu.max 2>/dev/null || { q=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us 2>/dev/null); [ "\${q:--1}" -gt 0 ] && echo $q $(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us) || echo max 100000; }) $(nproc) \${pw:--}; true`, { timeoutMs: 60_000 });
+              const { stdout } = await C.podSsh(run, p, `${drain ? "pkill -TERM -f queue-agent.mjs; " : ''}pgrep -f queue-agent.mjs >/dev/null && echo ALIVE; tail -1 /workspace/agent.log 2>/dev/null; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); true`, { timeoutMs: 60_000 });
               p.lastOk = now(); p.agent_tail = stdout.split('\n').find((l) => l.startsWith('{') || l.startsWith('agent exit'))?.slice(0, 300) || null;
-              const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]); { const g = WC.readGauges(stdout, p.gauge, now()); if (g) p.gauge = { ...g, cpu: g.cpu ?? p.gauge?.cpu ?? null }; }
+              const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]);   // dials: the pod's own GET /health (health-poll.js)
               if (!/ALIVE/.test(stdout)) await closePod(p, staleImage ? 'accepted image updated; queue agent drained' : drain ? `pool reduced to ${poolCap}; queue agent drained` : `queue agent exited (idle, drained or crashed): ${p.agent_tail || 'no agent.log line'}`);
               return;
             }
@@ -2358,7 +2374,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       await nap(tickMs);
     }
   } finally {
-    clearInterval(hb); clearInterval(pump); stagerStop = true;
+    clearInterval(hb); clearInterval(pump); if (healthLoop) clearInterval(healthLoop); stagerStop = true;
     try { (await import('../media/pool.js')).publishPool([]); st.pool_sig = ''; } catch { /* no pool file */ }   // the lane is ending: its pods leave the pool
     // the queue is done, the budget is spent or something failed: NO pod is left running (a drain leaves them working)
     if (!yielded) { const t0 = now(); while (collecting.size && now() - t0 < 10 * 60_000) await nap(2000); }   // finished talks still downloading are worth the wait: closing deletes them

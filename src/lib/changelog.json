@@ -1,6 +1,55 @@
 {
-  "generated": "2026-10-31T15:24:17.862Z",
+  "generated": "2026-11-01T04:03:44.425Z",
   "entries": [
+    {
+      "hash": "867b3108",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "A flipped remaster tower cannot finish goes to a worker; a requeue orders the worker remaster",
+      "scope": null
+    },
+    {
+      "hash": "94a5cc20",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "A talk outside 'done' carries no published_at. The repo clears it on every state write that leaves done, and the verify pass repairs the past rows once per pass.",
+      "scope": null
+    },
+    {
+      "hash": "e7642395",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "Published = on air. published_at follows restored in the repo; the catalogue no longer stamps it.",
+      "scope": null
+    },
+    {
+      "hash": "cca2c0b3",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "Pods ramp on talks out, not the plan; a media-scan yields to a drain; media_items.source_ref indexed. (1) LH.podOutput: over the plan horizon, audio adopted from pod gpu steps + pod output waiting for finish must reach r_pod x pod-hours before the pool grows (10-31: r_pod 7.7, plan 7, 382 gave 2 talks in ~50 min, 386 rented); st.pods_output shows out_h, pure_h, published_rate_h. (2) media-scan #60829 held siftersearch-media 'draining' 21 min, so the remaster lane stopped and the reaper closed pods 382/386; the scan now yields between files (known files are skipped on the re-run). (3) migration 193 idx_media_source_ref: findMediaBySource scanned the table, ~155 ms per file. Test: 485's meta shape (held, original listening, verify/quiet skipped) is not complete",
+      "scope": null
+    },
+    {
+      "hash": "59dbadac",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "An unpublished talk (restored ≠ 1) gives no clips: /clip-url, /clip and the moment card 404 to the public, like its page and files. 10-31: talk 485 (remaster held for a measured regression, nisqa_down; its web copy is the original, listening 'safe') was 404 on its page and files, but /clip-url handed out a signed URL and /clip served 30 s of the original audio (HTTP 200, 260 kB) to anyone with the slug",
+      "scope": null
+    },
+    {
+      "hash": "8f69c938",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "The edge Worker modules tower also imports (worker/queue/core.js, worker/dewey-upload.js) are runtime code. 10-31: e14c272f changed only worker/queue/core.js (the queue core behind the LAN queue and the pod plan) and was pulled \"touching no runtime code — no reload\", so siftersearch-media kept the old plan. A test walks api/ and scripts/ for imports of worker/ and fails on any not listed",
+      "scope": null
+    },
+    {
+      "hash": "90da35e7",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "A re-transcription off the worker never erases measured coverage, and a talk can be sent through the worker chain again (media-cloud-order mode 'whole', explicit ids only). 10-31: the tower-side transcribe redo of 1947 wrote asr.coverage null, the publish gate read \"not measured = no problem\" and published a 221-word transcript of a 58-min talk whose worker measurement had 259 holes. Now such a redo records coverage {unmeasured} and publishing blocks until a whole redo measures it in the worker. Tests cover both",
+      "scope": null
+    },
     {
       "hash": "7000d557",
       "date": "2026-10-31",
@@ -3451,59 +3500,59 @@
       "type": "New",
       "description": "/media listing + /media/<slug> player (click a word to play, paragraph play buttons, FAB, follow-scroll, playing-word highlight token, ?t= ranges, Media Session, quotes + cross-reference breakouts); YouTube items default to full playback with a per-channel permission record (Chad 10-21), download off; Dewey add_media tool; linked originals never chmodded (a hard link shares the source's inode); the model's naming wins over folder guesses; reslug for unpublished items; Python tools forced to CPU",
       "scope": "media"
-    },
-    {
-      "hash": "a7f43fb2",
-      "date": "2026-10-21",
-      "type": "Docs",
-      "description": "YouTube target list of talks by Hands of the Cause, UHJ members and the curated Sacred Traditions sheet",
-      "scope": "media"
-    },
-    {
-      "hash": "f063e75e",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Media library pipeline — per-item archive (original linked read-only, light/DeepFilterNet enhancement chosen by ASR probe), WhisperX on boss via a forced-command key (RTF 0.06 vs 0.36 on tower) with diarization (sherpa-onnx) and an interpreted-talk mode, vocabulary-guarded name corrections (Haiku role, diff logged, never rewording), quotations → SourceHunt + citation gates, attributed teachings → verified cross-references, transcript.md (para ids + t0/t1) ingested as collection Media with content_source_links, standalone page.html player, Opus/AAC + waveform; media_items/media_channels (migration 163), /api/media (listing, transcript search, Range files, signed ≤180 s clips), ops jobs media-scan/media-item/media-vocab (lane media), Worker R2 cache for versioned media files",
-      "scope": "media"
-    },
-    {
-      "hash": "bede88e1",
-      "date": "2026-10-21",
-      "type": "Other",
-      "description": "Media library plan — per-item archive, enhancement by measurement, WhisperX + vocabulary corrections, quote linking via SourceHunt, /media pages, Worker R2 cache, rights; spend allowance for the pilot (≤ $20/day to 11-05, approved by Chad 10-21)",
-      "scope": "media"
-    },
-    {
-      "hash": "34a781d6",
-      "date": "2026-10-21",
-      "type": "Docs",
-      "description": "Meilisearch retired (CLAUDE.md, scripts/CLAUDE.md); plan §6.6 phase 0 — temp_path must stay on the RAM disk, usable hot capacity ≈ 22 GB, crash-test results",
-      "scope": null
-    },
-    {
-      "hash": "597c50a5",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Qdrant-hot temp_path stays on the RAM disk — CLI snapshot recovery renames temp → storage and cannot cross filesystems (every restore panicked in the tower crash test); indexer keeps RAM-disk free ≥ hot data so snapshot temp files fit",
-      "scope": "qram"
-    },
-    {
-      "hash": "2aa5bff6",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "A snapshot rewrites every segment.json, so counting it made each flush mark the next one dirty (measured on tower) — dirty detection ignores segment.json",
-      "scope": "qram"
-    },
-    {
-      "hash": "24c73f0b",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Phase 0 hot layer — new phrase points go to phrases_hot on the RAM-disk Qdrant (qdrant-hot :6335) while phrases on /fast stays frozen; search merges main + hot (hot down = main only); phrases writes mirrored; coverage counts both; units marked upserted=2 + phrase-hot-reconcile re-sends what a crash lost (queued at every indexer start); RAM-full guard; units at phase-0 values (44G, snapshots on /crutch) (storage plan §6.6)",
-      "scope": "index"
     }
   ],
   "grouped": {
     "2026-10-31": [
+      {
+        "hash": "867b3108",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "A flipped remaster tower cannot finish goes to a worker; a requeue orders the worker remaster",
+        "scope": null
+      },
+      {
+        "hash": "94a5cc20",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "A talk outside 'done' carries no published_at. The repo clears it on every state write that leaves done, and the verify pass repairs the past rows once per pass.",
+        "scope": null
+      },
+      {
+        "hash": "e7642395",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "Published = on air. published_at follows restored in the repo; the catalogue no longer stamps it.",
+        "scope": null
+      },
+      {
+        "hash": "cca2c0b3",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "Pods ramp on talks out, not the plan; a media-scan yields to a drain; media_items.source_ref indexed. (1) LH.podOutput: over the plan horizon, audio adopted from pod gpu steps + pod output waiting for finish must reach r_pod x pod-hours before the pool grows (10-31: r_pod 7.7, plan 7, 382 gave 2 talks in ~50 min, 386 rented); st.pods_output shows out_h, pure_h, published_rate_h. (2) media-scan #60829 held siftersearch-media 'draining' 21 min, so the remaster lane stopped and the reaper closed pods 382/386; the scan now yields between files (known files are skipped on the re-run). (3) migration 193 idx_media_source_ref: findMediaBySource scanned the table, ~155 ms per file. Test: 485's meta shape (held, original listening, verify/quiet skipped) is not complete",
+        "scope": null
+      },
+      {
+        "hash": "59dbadac",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "An unpublished talk (restored ≠ 1) gives no clips: /clip-url, /clip and the moment card 404 to the public, like its page and files. 10-31: talk 485 (remaster held for a measured regression, nisqa_down; its web copy is the original, listening 'safe') was 404 on its page and files, but /clip-url handed out a signed URL and /clip served 30 s of the original audio (HTTP 200, 260 kB) to anyone with the slug",
+        "scope": null
+      },
+      {
+        "hash": "8f69c938",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "The edge Worker modules tower also imports (worker/queue/core.js, worker/dewey-upload.js) are runtime code. 10-31: e14c272f changed only worker/queue/core.js (the queue core behind the LAN queue and the pod plan) and was pulled \"touching no runtime code — no reload\", so siftersearch-media kept the old plan. A test walks api/ and scripts/ for imports of worker/ and fails on any not listed",
+        "scope": null
+      },
+      {
+        "hash": "90da35e7",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "A re-transcription off the worker never erases measured coverage, and a talk can be sent through the worker chain again (media-cloud-order mode 'whole', explicit ids only). 10-31: the tower-side transcribe redo of 1947 wrote asr.coverage null, the publish gate read \"not measured = no problem\" and published a 221-word transcript of a 58-min talk whose worker measurement had 259 holes. Now such a redo records coverage {unmeasured} and publishing blocks until a whole redo measures it in the worker. Tests cover both",
+        "scope": null
+      },
       {
         "hash": "7000d557",
         "date": "2026-10-31",
@@ -6970,55 +7019,6 @@
         "type": "New",
         "description": "/media listing + /media/<slug> player (click a word to play, paragraph play buttons, FAB, follow-scroll, playing-word highlight token, ?t= ranges, Media Session, quotes + cross-reference breakouts); YouTube items default to full playback with a per-channel permission record (Chad 10-21), download off; Dewey add_media tool; linked originals never chmodded (a hard link shares the source's inode); the model's naming wins over folder guesses; reslug for unpublished items; Python tools forced to CPU",
         "scope": "media"
-      },
-      {
-        "hash": "a7f43fb2",
-        "date": "2026-10-21",
-        "type": "Docs",
-        "description": "YouTube target list of talks by Hands of the Cause, UHJ members and the curated Sacred Traditions sheet",
-        "scope": "media"
-      },
-      {
-        "hash": "f063e75e",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Media library pipeline — per-item archive (original linked read-only, light/DeepFilterNet enhancement chosen by ASR probe), WhisperX on boss via a forced-command key (RTF 0.06 vs 0.36 on tower) with diarization (sherpa-onnx) and an interpreted-talk mode, vocabulary-guarded name corrections (Haiku role, diff logged, never rewording), quotations → SourceHunt + citation gates, attributed teachings → verified cross-references, transcript.md (para ids + t0/t1) ingested as collection Media with content_source_links, standalone page.html player, Opus/AAC + waveform; media_items/media_channels (migration 163), /api/media (listing, transcript search, Range files, signed ≤180 s clips), ops jobs media-scan/media-item/media-vocab (lane media), Worker R2 cache for versioned media files",
-        "scope": "media"
-      },
-      {
-        "hash": "bede88e1",
-        "date": "2026-10-21",
-        "type": "Other",
-        "description": "Media library plan — per-item archive, enhancement by measurement, WhisperX + vocabulary corrections, quote linking via SourceHunt, /media pages, Worker R2 cache, rights; spend allowance for the pilot (≤ $20/day to 11-05, approved by Chad 10-21)",
-        "scope": "media"
-      },
-      {
-        "hash": "34a781d6",
-        "date": "2026-10-21",
-        "type": "Docs",
-        "description": "Meilisearch retired (CLAUDE.md, scripts/CLAUDE.md); plan §6.6 phase 0 — temp_path must stay on the RAM disk, usable hot capacity ≈ 22 GB, crash-test results",
-        "scope": null
-      },
-      {
-        "hash": "597c50a5",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Qdrant-hot temp_path stays on the RAM disk — CLI snapshot recovery renames temp → storage and cannot cross filesystems (every restore panicked in the tower crash test); indexer keeps RAM-disk free ≥ hot data so snapshot temp files fit",
-        "scope": "qram"
-      },
-      {
-        "hash": "2aa5bff6",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "A snapshot rewrites every segment.json, so counting it made each flush mark the next one dirty (measured on tower) — dirty detection ignores segment.json",
-        "scope": "qram"
-      },
-      {
-        "hash": "24c73f0b",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Phase 0 hot layer — new phrase points go to phrases_hot on the RAM-disk Qdrant (qdrant-hot :6335) while phrases on /fast stays frozen; search merges main + hot (hot down = main only); phrases writes mirrored; coverage counts both; units marked upserted=2 + phrase-hot-reconcile re-sends what a crash lost (queued at every indexer start); RAM-full guard; units at phase-0 values (44G, snapshots on /crutch) (storage plan §6.6)",
-        "scope": "index"
       }
     ]
   }

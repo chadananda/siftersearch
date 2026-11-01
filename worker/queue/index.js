@@ -3,9 +3,10 @@
 // Deploy: npx wrangler deploy -c worker/queue/wrangler.jsonc. Secrets: QUEUE_KEY, ADMIN_KEY, R2_KEY_ID, R2_SECRET (wrangler secret put).
 import { AwsClient } from 'aws4fetch';
 import * as Q from './core.js';
+import * as LW from './last-words.js';
 
 const RESULTS = 'results/', STAGE = 'stage/';
-const WORK_OPS = new Set(['claim', 'heartbeat', 'done', 'fail']);
+const WORK_OPS = new Set(['claim', 'heartbeat', 'done', 'fail', 'last-words']);   // last-words: an exiting agent's trail (last-words.js)
 const DIRECT_MAX = 90e6;   // PUT bodies up to this stream straight into R2; bigger ones (or unknown length) get a 307 to a signed url
 const json = (b, status = 200) => new Response(JSON.stringify(b), { status, headers: { 'content-type': 'application/json' } });
 
@@ -19,7 +20,7 @@ const safeName = (n) => /^[\w.-][\w./-]{0,200}$/.test(n) && !n.includes('..');
 
 // fetch-style Durable Object (no cloudflare:workers import: tower's updater import-gates worker/ with its deployed copy)
 export class MediaQueue {
-  constructor(ctx, env) { this.ctx = ctx; this.env = env; this.sql = ctx.storage.sql; ctx.blockConcurrencyWhile(async () => Q.migrate(this.sql)); }
+  constructor(ctx, env) { this.ctx = ctx; this.env = env; this.sql = ctx.storage.sql; ctx.blockConcurrencyWhile(async () => { Q.migrate(this.sql); LW.migrate(this.sql); }); }
   async fetch(req) {
     const { op, args } = await req.json();
     try { return json({ r: await this.call(op, args || {}) }); } catch (e) { return json({ error: String(e.message) }, 500); }
@@ -51,6 +52,8 @@ export class MediaQueue {
       case 'withdraw': return Q.withdraw(s, a.ids || []);
       case 'release-host': return Q.releaseHost(s, a);   // tower: a pod RunPod no longer lists → its leases requeue now (admin only)
       case 'stats': return Q.stats(s, Date.now(), a.type);   // typed steps are pulled and counted per type
+      case 'last-words': return LW.put(s, a);
+      case 'last-words-list': return LW.list(s, a);   // admin: tower's health poller
       default: throw Object.assign(new Error(`unknown op ${op}`), { status: 404 });
     }
   }

@@ -232,10 +232,11 @@ describe('createCpuPod: ONE RunPod CPU instance, rented by hand', () => {
     expect(calls).toHaveLength(1);
     expect(calls[0].url).toBe('https://rest.runpod.io/v1/pods');
     const body = JSON.parse(calls[0].init.body);
-    expect(body).toMatchObject({ computeType: 'CPU', cpuFlavorIds: ['cpu5c'], vcpuCount: 32, ports: ['22/tcp'] });
+    expect(body).toMatchObject({ computeType: 'CPU', cpuFlavorIds: ['cpu5c'], vcpuCount: 32, ports: ['22/tcp', '8788/http'] });   // 8788: the agent's GET /health via RunPod's proxy (health-poll.js)
     expect(body.name.startsWith(CPU_POD_PREFIX)).toBe(true);
     expect(body.gpuTypeIds).toBeUndefined();
-    expect(body.env).toMatchObject({ MEDIA_QUEUE_KEY: 'qk', AGENT_SLOTS: String(cpuPodSlots(32)), PUBLIC_KEY: 'ssh-ed25519 AAA tower' });
+    expect(body.env).toMatchObject({ MEDIA_QUEUE_KEY: 'qk', AGENT_SLOTS: String(cpuPodSlots(32)), PUBLIC_KEY: 'ssh-ed25519 AAA tower', SIFTER_IMAGE: body.imageName });
+    expect(pod.health_port).toBe(8788);
     const boot = Buffer.from(body.env.SIFTER_BOOT_B64, 'base64').toString();
     expect(boot).toBe(BOOTSTRAP_CPU_AGENT);
     expect(boot.split('\n')[0]).toMatch(/touch \/workspace\/\.lane-seen/);   // first thing: the entrypoint's 25-min guard

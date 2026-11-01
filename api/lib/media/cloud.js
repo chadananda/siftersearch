@@ -14,6 +14,7 @@ import { createHash } from 'crypto';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 export const STATE_FILE = join(ROOT, 'data', 'run', 'cloud-remaster.json');
+export const HEALTH_PORT = 8788;   // the queue agent's GET /health (scripts/media/worker/health.mjs; = health-poll.js HEALTH_PORT)
 export const RENTAL_PAUSE_FILE = join(ROOT, 'data', 'run', 'cloud-rentals.pause');
 export const RENTAL_CAPACITY_FILE = join(ROOT, 'data', 'run', 'cloud-capacity.json');
 export const ACCEPTED_WORKER_FILE = join(ROOT, 'data', 'run', 'media-worker-accepted.json');
@@ -138,9 +139,11 @@ export async function createPod(name, publicKey, deps = {}) {
       const pause = await rentalPauseReason(deps.pauseFile);
       if (pause) throw Object.assign(new Error(`RunPod rentals paused: ${pause}`), { rentalsPaused: true });
       // the cloud we asked for is recorded on the pod (cloudByCost prices clouds by it; RunPod's answer does not say which one it was)
-      return { cloudType, ...await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName: accepted?.image || process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
-        containerDiskInGb: 60, ...(deps.prefer?.dcs?.length ? { dataCenterIds: deps.prefer.dcs } : {}), ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp'], supportPublicIp: true, ...(vcpu ? { minVCPUPerGPU: vcpu } : {}),
-        env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key() } }, deps) };
+      const imageName = accepted?.image || process.env.MEDIA_CLOUD_IMAGE || CLOUD.image;
+      // 8788/http: the agent's GET /health through RunPod's proxy (health-poll.js); SIFTER_IMAGE lets the agent report the image it runs
+      return { cloudType, health_port: HEALTH_PORT, ...await rest('POST', '/pods', { name, cloudType, computeType: 'GPU', gpuTypeIds: types, gpuCount: 1, imageName, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
+        containerDiskInGb: 60, ...(deps.prefer?.dcs?.length ? { dataCenterIds: deps.prefer.dcs } : {}), ...(vol ? { networkVolumeId: vol, volumeMountPath: '/workspace' } : { volumeInGb: 0 }), ports: ['22/tcp', `${HEALTH_PORT}/http`], supportPublicIp: true, ...(vcpu ? { minVCPUPerGPU: vcpu } : {}),
+        env: { PUBLIC_KEY: publicKey, RP_TERMINATE_KEY: key(), SIFTER_IMAGE: imageName } }, deps) };
     } catch (err) { if (err.rentalsPaused) throw err; lastErr = err; }
   }
   throw lastErr;
@@ -418,7 +421,7 @@ echo started`;
 /** Which BOOTSTRAP_WHOLE a pod was started with: a pod booted with an older one drains like a stale image (10-30: the LD_LIBRARY_PATH fix). */
 export const BOOT_V = createHash('sha256').update(BOOTSTRAP_WHOLE).digest('hex').slice(0, 12);
 export const BOOT_V_AGENT = createHash('sha256').update(BOOTSTRAP_AGENT).digest('hex').slice(0, 12);
-export const agentEnv = (key, host, slots) => `export MEDIA_QUEUE_KEY='${String(key).replace(/'/g, '')}' POD_HOST='${String(host).replace(/[^\w.-]/g, '')}' AGENT_SLOTS=${Number(slots) || 4}\n`;
+export const agentEnv = (key, host, slots, image) => `export MEDIA_QUEUE_KEY='${String(key).replace(/'/g, '')}' POD_HOST='${String(host).replace(/[^\w.-]/g, '')}' AGENT_SLOTS=${Number(slots) || 4}${image ? ` SIFTER_IMAGE='${String(image).replace(/[^\w.:@\/-]/g, '')}'` : ''}\n`;   // SIFTER_IMAGE: the image the agent reports on /health
 /** CPU POD (Chad 10-31): a RunPod CPU instance runs the typed chain's cpu-prep + cpu-finish OVERFLOW from the edge queue (queue-feed
  *  rebalancePrep / SJ.cpuRoute: home CPU hosts first). Rented by hand only (ops.mjs media cpu-pod), never by the lane: no ssh, no ledger, no
  *  CUDA probe. The container's own start runs this script (createCpuPod: dockerEntrypoint), then the image's entrypoint (sshd + zombie guards).
@@ -447,12 +450,13 @@ export async function createCpuPod({ publicKey, queueKey, vcpu = 32, flavor = 'c
   const slots = cpuPodSlots(vcpu), boot = Buffer.from(BOOTSTRAP_CPU_AGENT).toString('base64');
   const body = { name: name || `${CPU_POD_PREFIX}${Date.now().toString(36)}`, computeType: 'CPU', cpuFlavorIds: [flavor], vcpuCount: Number(vcpu),
     imageName: accepted?.image || process.env.MEDIA_CLOUD_IMAGE || CLOUD.image, ...(process.env.MEDIA_CLOUD_IMAGE && process.env.MEDIA_CLOUD_REGISTRY_AUTH ? { containerRegistryAuthId: process.env.MEDIA_CLOUD_REGISTRY_AUTH } : {}),
-    containerDiskInGb: 60, volumeInGb: 0, ports: ['22/tcp'], supportPublicIp: true,
+    containerDiskInGb: 60, volumeInGb: 0, ports: ['22/tcp', `${HEALTH_PORT}/http`], supportPublicIp: true,
     // the bootstrap starts beside the image's own entrypoint, which keeps sshd and its zombie guards (exec)
     dockerEntrypoint: ['bash', '-c', 'mkdir -p /workspace && echo "$SIFTER_BOOT_B64" | base64 -d > /workspace/cpu-agent.sh && (setsid bash /workspace/cpu-agent.sh > /workspace/boot.log 2>&1 < /dev/null &); exec /usr/local/bin/entrypoint.sh'],
     env: { PUBLIC_KEY: publicKey || '', RP_TERMINATE_KEY: key(), MEDIA_QUEUE_KEY: String(queueKey), AGENT_SLOTS: String(slots), SIFTER_BOOT_B64: boot } };
+  body.env.SIFTER_IMAGE = body.imageName;
   const pod = await rest('POST', '/pods', body, deps);
-  return { id: pod.id, name: body.name, host: pod.id ? `cpupod-${pod.id}` : null, flavor, vcpu: Number(vcpu), slots, costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, boot_v: BOOT_V_CPU, image: body.imageName };
+  return { id: pod.id, name: body.name, host: pod.id ? `cpupod-${pod.id}` : null, flavor, vcpu: Number(vcpu), slots, costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, boot_v: BOOT_V_CPU, image: body.imageName, health_port: HEALTH_PORT };
 }
 export const WORKER_FILE = join(ROOT, 'scripts', 'media', 'runpod_worker.py');
 export const REPO_TGZ = () => process.env.MEDIA_UNIPASE_REPO_TGZ || join(homedir(), 'sifter', 'remaster', 'cloud', `unipase-${UNIPASE_COMMIT.slice(0, 8)}.tgz`);

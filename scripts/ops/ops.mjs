@@ -2,7 +2,7 @@
 // Ops CLI — an HTTP client of the internal API, never the database (Chad 10-11). Reports run server-side.
 //   node scripts/ops/ops.mjs reports                         list reports + recent runs
 //   node scripts/ops/ops.mjs report <name> [--days 14 | --ids 1,2,3 | --params '{json}'] [--wait] [--latest]
-//   node scripts/ops/ops.mjs media held | rejudge [id…] | progress | gauges [--host h] [--hours n] [--rows] | status <id|slug|words> | stage <stage> [--missing] [--status done] [--after N] | add <url|path>… | redo <id> <stage>…
+//   node scripts/ops/ops.mjs media held | rejudge [id…] | progress | gauges [--host h] [--hours n] [--rows] | health-history <machine> [--from --to] | status <id|slug|words> | stage <stage> [--missing] [--status done] [--after N] | add <url|path>… | redo <id> <stage>…
 // Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key).
 import { apiBase } from '../lib/api-base.mjs';
 import dotenv from 'dotenv';
@@ -51,6 +51,7 @@ else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until
   const [, sub, ...rest] = process.argv.slice(2);
   const pos = rest.filter((x, i) => !x.startsWith('--') && !(i > 0 && rest[i - 1].startsWith('--')));
   if (sub === 'progress') await out(await call('GET', '/ops/media/progress'));
+  else if (sub === 'health-history') await out(await call('GET', `/ops/media/health-history?machine=${encodeURIComponent(pos[0] || '')}&from=${encodeURIComponent(val('--from') || '')}&to=${encodeURIComponent(val('--to') || '')}&limit=${val('--limit') || ''}`));
   else if (sub === 'gauges') await out(await call('GET', `/ops/media/gauges?hours=${val('--hours') || 6}&host=${encodeURIComponent(val('--host') || '')}&rows=${flag('--rows') ? 1 : 0}`));
   else if (sub === 'status' && pos[0]) await out(await call('GET', `/ops/media/items/${encodeURIComponent(pos.join(' '))}`));
   else if (sub === 'stage' && pos[0]) await out(await call('GET', `/ops/media/items?stage=${encodeURIComponent(pos[0])}&status=${val('--status') || 'done'}&missing=${flag('--missing') ? 1 : 0}&after=${val('--after') || 0}&limit=${val('--limit') || 50}`));
@@ -70,6 +71,6 @@ else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until
   else if (sub === 'rentals') await out(await call('POST', '/ops/media/rentals', { ...(flag('--resume') ? { pause: false } : val('--pause') ? { pause: val('--pause') } : {}), ...(val('--max-pods') ? { maxPods: Number(val('--max-pods')) } : {}) }));
   else if (sub === 'off-air-published') await out(await call('POST', '/ops/media/off-air-published', {}));   // clear published_at on every talk off the air → { cleared, ids }
   else if (sub === 'cpu-pod') await out(await call('POST', '/ops/media/cpu-pod', { vcpu: Number(val('--vcpu')) || 32, flavor: val('--flavor') || 'cpu5c' }));   // rent ONE CPU pod by hand (prep/finish overflow; ends itself when idle)
-  else { console.error('usage: ops.mjs media [health] | pods | off-air-published | cpu-pod [--vcpu 32] [--flavor cpu5c] | stages | rerun <stage> [--where fp!=current|tool=X|fp=…|all] [--dry-run|--canary|--full] [--limit n] | held | rejudge [id…] [--force] | queue [--key] | rentals [--pause "why" | --resume] [--max-pods n] | promote-image <ghcr…@sha256> --evidence "…" [--home h=tag,…] [--quiet h,…] | progress | gauges [--host h --hours n --rows] | status <ref> | stage <stage> [--missing] | add <url|path>… | redo <id> <stage>…'); process.exit(2); }
+  else { console.error('usage: ops.mjs media [health] | pods | off-air-published | cpu-pod [--vcpu 32] [--flavor cpu5c] | stages | rerun <stage> [--where fp!=current|tool=X|fp=…|all] [--dry-run|--canary|--full] [--limit n] | held | rejudge [id…] [--force] | queue [--key] | rentals [--pause "why" | --resume] [--max-pods n] | promote-image <ghcr…@sha256> --evidence "…" [--home h=tag,…] [--quiet h,…] | progress | gauges [--host h --hours n --rows] | health-history <machine> [--from ISO --to ISO --limit n] | status <ref> | stage <stage> [--missing] | add <url|path>… | redo <id> <stage>…'); process.exit(2); }
 } else { console.error('usage: ops.mjs run <id> | failures [--hours N] | dewey-allow | bio-slugs | ops.mjs reports | report <name> [--days N] [--wait] [--latest]'); process.exit(2); }
 process.exit(0);

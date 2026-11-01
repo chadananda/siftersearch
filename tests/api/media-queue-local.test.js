@@ -59,6 +59,19 @@ describe('LAN media queue', () => {
     expect(await m.put('results', j.id, 'big.bin', src, { lease: j.lease })).toMatchObject({ bytes: 91e6 });
     expect(await m.list('results', j.id)).toEqual([{ name: 'big.bin', bytes: 91e6 }]);
   });
+  it('last words: a machine may send its trail (small JSON only), only the admin key reads it back; the table keeps the newest KEEP', async () => {
+    const m = queueClient({ base, key: 'machine-k' }), admin = queueClient({ base, key: 'admin-k' });
+    expect(await m.call('last-words', { host: 'pod-x y', reason: 'SIGTERM', snapshots: [], log: ['bye'] })).toEqual({ ok: true });
+    await expect(m.call('last-words', { host: 'pod-x', log: ['z'.repeat(41_000)] })).rejects.toBeTruthy();   // over MAX_BYTES
+    await expect(m.call('last-words-list', {})).rejects.toMatchObject({ status: 401 });
+    const got = await admin.call('last-words-list', { host: 'pod-xy' });
+    expect(got).toHaveLength(1); expect(got[0].words).toMatchObject({ host: 'pod-xy', reason: 'SIGTERM', log: ['bye'] });
+    const LW = await import('../../worker/queue/last-words.js');
+    for (let i = 0; i < LW.KEEP + 3; i++) await R.queueCall('last-words', { host: 'h' });
+    const all = await R.queueCall('last-words-list', { limit: 500 });
+    expect(all.length).toBe(LW.KEEP); expect(all.every((x) => x.host === 'h')).toBe(true);   // pod-xy's row trimmed as the oldest
+    expect((await R.queueCall('last-words-list', { since: Date.now() + 1000 }))).toEqual([]);
+  });
   it('refuses path tricks in ids and names', async () => {
     const r = await fetch(`${base}/files/..%2Fetc/passwd`, { headers: { 'x-queue-key': 'admin-k' } });
     expect(r.status).toBe(400);

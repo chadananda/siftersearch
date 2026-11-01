@@ -24,6 +24,9 @@ import { join, relative, dirname, basename } from 'node:path';
 
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
 import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, cgroupMemGb, cpuSample, cpuBusy, nextDepth, STALL_MS, GPU_IDLE } from './gpu-pace.mjs';
+import { cgroupOf, readCgroup, track, summary, loadProfiles, saveProfiles, record, profileOf, memPressure, admitCpu, cpuAllowed } from './cpu-pace.mjs';
+import { gpuStats, jobProgress, snapshot, compact, serveHealth, ringPush, ringSave, ringLoad, lastWords } from './health.mjs';
+import { cpus } from 'node:os';
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const HOST = arg('host'), SLOTS = Number(arg('slots', 1)), ROOT = arg('root', '/data/sifter-queue'), RUN = arg('run', 'local'), IMAGE = arg('image');
 const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)), GB_PER_TALK = Number(arg('gb-per-talk', 6)), DISK_PER_TALK = Number(arg('disk-gb-per-talk', 8)), ONCE = process.argv.includes('--once'), IDLE_EXIT_MS = Number(arg('idle-exit-min', 0)) * 60_000;
@@ -79,23 +82,36 @@ const q = queueClient({ key: process.env.MEDIA_QUEUE_KEY });
 // (enhanced/light.flac from enh_ck.m0; stage-jobs REBUILT, the only one validateTyped lets go missing)
 const cloudSkips = (path, base = q.base) => /^https:/.test(base || '') && /\.(flac|wav)$/i.test(path);
 const T = await import('./transit.mjs').catch(() => null);   // cloudManifest: listed FLAC/WAV → Opus transit
-const log = (msg, x = {}) => console.log(JSON.stringify({ at: new Date().toISOString(), host: HOST, msg, ...x }));
-const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+const logTail = [];   // the last log lines, for the last words
+const log = (msg, x = {}) => { const l = JSON.stringify({ at: new Date().toISOString(), host: HOST, msg, ...x }); console.log(l); logTail.push(l); if (logTail.length > 100) logTail.shift(); };
+let wake = null;   // a stop signal ends the current nap: the drain starts at once
+const nap = (ms) => new Promise((r) => { const t = setTimeout(r, ms); wake = () => { clearTimeout(t); r(); }; });
 // RAM = the smaller of /proc/meminfo and this process's cgroup (a pod's meminfo is the host's)
 const meminfo = (k, d) => { try { return Number(new RegExp(`${k}:\\s+(\\d+)`).exec(readFileSync('/proc/meminfo', 'utf8'))[1]) / 1048576; } catch { return d; } };
-const memTotalGb = () => Math.min(meminfo('MemTotal', 10), cgroupMemGb()?.limitGb ?? Infinity);
+// --cgroup-parent: the slice the job containers share is the scope measured (tower: sifter-bulk.slice, 16 cores, 20 GB), not the whole box
+const SCOPE = CGROUP ? (f) => readFileSync(f.replace(/^\/sys\/fs\/cgroup\//, `/sys/fs/cgroup/${CGROUP}/`), 'utf8') : () => { throw new Error('no scope'); };
+const memTotalGb = () => Math.min(meminfo('MemTotal', 10), cgroupMemGb()?.limitGb ?? Infinity, cgroupMemGb(SCOPE)?.limitGb ?? Infinity);
 // Each container's memory cap is the host's (85 %), not a fixed 10 GB: gpu_lease.py sums the RAM every talk's stages reserve against the
 // container's own limit, so 10 GB let only one talk hold a stage at a time (10-31: boss's 2nd talk sat 8 min at grade, 92 GB VRAM free).
 export const containerMemGb = (totalGb) => Math.max(10, Math.floor(totalGb * 0.85));
-const memAvailGb = () => Math.min(meminfo('MemAvailable', Infinity), cgroupMemGb()?.availGb ?? Infinity);
+const memAvailGb = () => Math.min(meminfo('MemAvailable', Infinity), cgroupMemGb()?.availGb ?? Infinity, cgroupMemGb(SCOPE)?.availGb ?? Infinity);
 // slots never exceed what the RAM holds: a talk's stages peak near 6 GB (grade 5.5 GB lease + process); --gb-per-talk overrides
 const CAP = Math.max(1, Math.min(SLOTS, Math.floor(memTotalGb() / GB_PER_TALK)));
 const running = new Map();
+// what each job in hand is doing (for /health and the CPU admission): { type, item, needs, started_at, phase fetch|run|put, dir, cg, m }
+const jobs = new Map();
+// CPU job types are admitted by measurement (cpu-pace.mjs) where each job runs in its own container cgroup (docker); local runs keep --slots
+const CPU_TYPES = TYPES.filter((t) => typedKind(t)?.needs === 'cpu');
+const ADAPT = RUN === 'docker' && CPU_TYPES.length > 0;
+const PROFILE_FILE = join(ROOT, 'cpu-profile.json');
+let profiles = loadProfiles(PROFILE_FILE), lastError = null;
+const prof = (t) => profileOf(profiles, t, { peakGb: GB_PER_TALK, cores: Number(CPUS) });
+const pressure = () => memPressure(CGROUP ? SCOPE : undefined, CGROUP ? '/sys/fs/cgroup/memory.pressure' : undefined);
 let stopping = false, busyAt = Date.now();
 const toGpu = new Map();   // job id → { t, ns, child } for talks that have not yet reached the GPU (the deck)
 // the host's shared GPU admission ledger: containers mount ROOT/leases; local runs (pods) use SIFTER_GPU_LEASE_DIR
 const LEASE_DIR = RUN === 'local' && process.env.SIFTER_GPU_LEASE_DIR || join(ROOT, 'leases');
-for (const s of ['SIGTERM', 'SIGINT']) process.on(s, () => { stopping = true; log('stopping — finishing jobs in hand', { running: running.size }); });
+for (const s of ['SIGTERM', 'SIGINT']) process.on(s, () => { stopping = true; log('stopping — finishing jobs in hand', { running: running.size }); wake?.(); });
 
 function runner(job, dir) {
   const [bin, script] = kindOf(job).cmd;
@@ -153,6 +169,10 @@ async function work(job) {
   const beat = setInterval(() => q.heartbeat({ id: job.id, lease: job.lease }).catch((e) => {
     if (e.status === 409 || e.status === 404) { lost = true; child?.kill('SIGTERM'); if (RUN === 'docker') docker(['rm', '-f', `q-${job.id}`]); }
   }), 120_000);
+  const info = { type: job.type && job.type !== 'media' ? job.type : job.stages?.[0], item: job.body?.job?.id ?? job.item_id ?? null, needs: kindOf(job)?.needs || 'gpu',
+    started_at: t0, phase: 'fetch', dir, cg: null, m: null, audio_s: job.body?.invoice?.audio_s ?? null };
+  jobs.set(job.id, info);
+  const at = {};   // phase timings: where a job's time goes (fetch = inputs in, run = the container, put = outputs out)
   try {
     const kind = kindOf(job);
     if (kind?.typed ? ![...TYPES, ...SPILL].includes(job.type) : job.stages.length !== 1 || !CAN.includes(job.stages[0])) throw new Error(`${job.type} ${job.stages} not runnable here`);
@@ -163,13 +183,18 @@ async function work(job) {
       await writeFile(join(dir, 'job.json'), JSON.stringify({ ...job.body.job, ...(kind.needs === 'gpu' ? { device: DEVICE } : {}) }));
       for (const i of job.body.inputs || []) await q.get(i.store, i.id, i.path, join(dir, i.name));
     }
+    at.run = Date.now(); info.phase = 'run';
     child = runner(job, dir);
     if (toGpu.has(job.id)) toGpu.get(job.id).child = child;
     let tail = '';
     child.stderr.on('data', (b) => { tail = (tail + b).slice(-4000); });
     const code = await new Promise((r) => child.on('close', r));
+    at.put = Date.now(); info.phase = 'put';
+    sampleJob(job.id, info);   // the last reading before docker removes the container (--rm)
+    const meas = summary(info.m);
     if (lost) throw new Error('lease lost');
     if (code) throw new Error(`exit ${code}: ${tail.slice(-2500)}`);
+    if (meas) { profiles = record(profiles, info.type, meas); saveProfiles(PROFILE_FILE, profiles); }
     // only what the stage produced (never the original — tower holds it); a declared output that is absent fails the job here, not at tower
     const absent = kind.outputs.filter((f) => !existsSync(join(dir, f)));
     if (absent.length) throw new Error(`stage left no ${absent.join(', ')}: ${tail.slice(-500)}`);
@@ -179,17 +204,29 @@ async function work(job) {
       : (await walk(tree)).filter((p) => (!kind.skip || !relative(tree, p).startsWith(kind.skip)) && !cloudSkips(p)))];
     const outputs = [];
     for (const p of files) outputs.push({ name: relative(dir, p), ...(await q.put('results', job.id, relative(dir, p), p, { lease: job.lease })) });
-    await q.done({ id: job.id, lease: job.lease, result: { type: job.type, host: HOST, stages: { [kind.typed ? job.type : job.stages[0]]: { ok: true, seconds: Math.round((Date.now() - t0) / 1000) } }, outputs } });
-    log('done', { job: job.id, s: Math.round((Date.now() - t0) / 1000), outputs: outputs.length });
+    const s = (a, b) => Math.round((b - a) / 1000);
+    const timing = { fetch_s: s(t0, at.run), run_s: s(at.run, at.put), put_s: s(at.put, Date.now()), ...(meas ? { peak_gb: +meas.peakGb.toFixed(2), cores: +meas.cores.toFixed(2) } : {}) };
+    await q.done({ id: job.id, lease: job.lease, result: { type: job.type, host: HOST, stages: { [kind.typed ? job.type : job.stages[0]]: { ok: true, seconds: Math.round((Date.now() - t0) / 1000), ...timing } }, outputs } });
+    log('done', { job: job.id, type: info.type, s: Math.round((Date.now() - t0) / 1000), ...timing, audio_s: info.audio_s, outputs: outputs.length });
   } catch (e) {
     log('failed', { job: job.id, error: String(e.message).slice(-2500) });
+    lastError = { at: Date.now(), job: job.id, msg: String(e.message).slice(-500) };
     if (!lost) await q.fail({ id: job.id, lease: job.lease, error: `${HOST}: ${String(e.message).slice(-2500)}` }).catch(() => {});
   } finally {
-    clearInterval(beat); toGpu.delete(job.id);
+    clearInterval(beat); toGpu.delete(job.id); jobs.delete(job.id);
     await scrub(dir).catch((e) => log('cleanup failed', { job: job.id, error: e.message }));
   }
 }
 
+// a running docker job's own cgroup, read every loop pass: its RAM peak and cores (cpu-pace.mjs). The container's pid comes from docker once it runs.
+function sampleJob(id, info) {
+  if (RUN !== 'docker' || info.phase !== 'run' && info.phase !== 'put') return;
+  if (!info.cg && info.phase === 'run') {
+    const pid = Number(spawnSync(DOCKER[0], [...DOCKER.slice(1), 'inspect', '-f', '{{.State.Pid}}', `q-${id}`], { encoding: 'utf8', timeout: 5000 }).stdout?.trim());
+    info.cg = pid > 0 ? cgroupOf(pid) : null;
+  }
+  info.m = track(info.m, readCgroup(info.cg), Date.now());
+}
 // does a ledger key belong to this talk? docker: the container's pid namespace (asked once it runs); local: a pid under the talk's process
 function owner(id, d) {
   if (RUN === 'docker') {
@@ -210,44 +247,104 @@ function onDeck() {
 const diskFreeGb = () => { try { const f = statfsSync(ROOT); return f.bavail * f.bsize / 1073741824; } catch { return Infinity; } };
 log('start', { slots: CAP, asked: SLOTS, ram_gb: Math.round(memTotalGb()), disk_gb: Math.round(diskFreeGb()), run: RUN, image: IMAGE, device: DEVICE, vram_mb: VRAM_MB,
   ...(TYPES.length ? { types: TYPES, spill: SPILL, contract: CONTRACT?.contract } : {}), ...(!TYPES.length || MIXED ? { can: CAN } : {}), base: q.base });
-const claimArgs = (spillOnly = false) => ({ host: HOST, ram_gb: memAvailGb(), vram_mb: VRAM_MB,
-  ...(TYPES.length ? { types: MIXED ? [...TYPES, 'media'] : TYPES, spill: SPILL, spill_only: spillOnly, contract: CONTRACT?.contract } : {}),
+// types: the subset this claim may take (adaptive CPU admission + the GPU deck), in --types order
+const claimArgs = (spillOnly = false, types = TYPES) => ({ host: HOST, ram_gb: memAvailGb(), vram_mb: VRAM_MB,
+  ...(TYPES.length ? { types: MIXED ? [...types, 'media'] : types, spill: SPILL, spill_only: spillOnly, contract: CONTRACT?.contract } : {}),
   ...(!TYPES.length || MIXED ? { can: CAN } : {}) });
-let spillAt = 0;
+let spillAt = 0, cpuClaimAt = 0, fitWhy = null;
+// the CPU jobs in hand as the admission sees them: a job still fetching counts at its full profile (it has not started to load the CPU yet)
+const cpuInputs = (cpu, c) => ({ prof, running: [...jobs.values()].filter((j) => j.needs === 'cpu').map((j) => ({ type: j.type, memGb: j.m?.memGb ?? 0, cores: j.m?.cores ?? null })),
+  busy: cpu, allowed: c?.cores ?? cpus().length, availGb: memAvailGb(), marginGb: MIN_AVAIL_GB, slots: SLOTS, pressure: pressure() });
+/** The CPU types one more job of which fits now; each change of the reasons for holding is logged. */
+function fitCpu(cpu, c) {
+  const a = cpuInputs(cpu, c), out = [], why = {};
+  for (const t of CPU_TYPES) { const r = admitCpu({ ...a, type: t }); if (r.ok) out.push(t); else why[t] = r.why; }
+  const w = JSON.stringify(why);
+  if (w !== fitWhy) { fitWhy = w; if (Object.keys(why).length) log('cpu hold', { ...why, running: a.running.length }); }
+  return out;
+}
+// GET /health (health.mjs) + the snapshot ring + the last words. --health-port N (default env MEDIA_HEALTH_PORT or 8788; 0 = off; never with --once)
+function startHealth() {
+  const port = ONCE ? 0 : Number(arg('health-port', process.env.MEDIA_HEALTH_PORT || 8788)), startedAt = Date.now(), ringFile = join(ROOT, 'health-ring.jsonl');
+  const version = createHash('sha256').update(['queue-agent.mjs', 'gpu-pace.mjs', 'cpu-pace.mjs', 'health.mjs'].map((f) => { try { return readFileSync(new URL(`./${f}`, import.meta.url)); } catch { return ''; } }).join('|')).digest('hex').slice(0, 12);
+  // the image this machine runs: pods are told by tower (SIFTER_IMAGE, the accepted ref@digest); a docker host asks docker once
+  const image = process.env.SIFTER_IMAGE || (RUN === 'docker' && IMAGE ? (spawnSync(DOCKER[0], [...DOCKER.slice(1), 'image', 'inspect', '-f', '{{if .RepoDigests}}{{index .RepoDigests 0}}{{else}}{{.Id}}{{end}}', IMAGE], { encoding: 'utf8', timeout: 10_000 }).stdout?.trim() || IMAGE) : null);
+  const role = /^pod-/.test(HOST) ? 'pod' : /^cpupod-/.test(HOST) ? 'cpupod' : HOST === 'tower' ? 'tower' : 'home';
+  let ring = ringLoad(ringFile), ringAt = 0;
+  const get = () => {
+    const now = Date.now(), c = cpuSeen.at(-1), cpu = cpuSeen.length > 1 ? cpuBusy(cpuSeen) : null, ji = [...jobs.entries()];
+    const allowed = ADAPT ? cpuAllowed(CPU_TYPES, cpuInputs(cpu, c)) : {};
+    const types = TYPES.length ? [...new Set([...TYPES, ...SPILL])] : CAN;
+    const slots = Object.fromEntries(types.map((t) => [t, { used: ji.filter(([, j]) => j.type === t).length, allowed: allowed[t] ?? CAP }]));
+    let df = null; try { const f = statfsSync(ROOT); df = { free: f.bavail * f.bsize / 1073741824, total: f.blocks * f.bsize / 1073741824 }; } catch {}
+    return snapshot({ now, host: HOST, role, image, version, pid: process.pid, startedAt, stopping, queue: q.base,
+      cpu, cores: c?.cores ?? cpus().length, cpuScope: CGROUP ? `slice ${CGROUP}` : 'host', ramTotalGb: memTotalGb(), ramAvailGb: memAvailGb(), pressure: pressure(),
+      gpu: DEVICE === 'none' ? null : gpuStats(DEVICE), diskFreeGb: df?.free, diskTotalGb: df?.total, diskPath: ROOT, slots,
+      jobs: ji.map(([id, j]) => ({ id, item: j.item, type: j.type, phase: j.phase, ...(j.phase === 'run' ? jobProgress(j.dir, j.type, CONTRACT) : { stage: null, pct: null }),
+        started_at: j.started_at, audio_s: j.audio_s, rss_gb: j.m ? +j.m.memGb.toFixed(2) : null, peak_gb: j.m ? +j.m.peakGb.toFixed(2) : null, cores: j.m?.cores == null ? null : +j.m.cores.toFixed(2) })),
+      profiles: Object.fromEntries(types.filter((t) => typedKind(t)).map((t) => { const p = prof(t); return [t, { peak_gb: +p.peakGb.toFixed(2), cores: +p.cores.toFixed(2), runs: p.n, measured: p.measured }]; })),
+      lastError });
+  };
+  const srv = port > 0 && process.env.MEDIA_QUEUE_KEY ? serveHealth({ port, key: process.env.MEDIA_QUEUE_KEY, get, onError: (e) => log('health port error', { port, error: e.message }) }) : null;
+  srv?.unref();
+  if (srv) log('health', { port });
+  return {
+    get,
+    tick() { if (Date.now() - ringAt < 60_000) return; ringAt = Date.now(); try { ring = ringPush(ring, compact(get())); ringSave(ringFile, ring); } catch (e) { log('health ring error', { error: e.message }); } },
+    // the last words (Chad 10-31: "log the health polls so we can reconstruct what went wrong"): pushed to the queue as the agent exits
+    async last(reason) {
+      try { ring = ringPush(ring, compact(get())); ringSave(ringFile, ring); } catch {}
+      const words = lastWords({ host: HOST, reason, now: Date.now(), ring, lines: logTail });
+      await Promise.race([q.call('last-words', words), nap(10_000)]).catch((e) => console.log(JSON.stringify({ msg: 'last words not sent', error: e.message })));
+      srv?.close();
+    },
+  };
+}
 const gpuSeen = [];   // GPU utilisation over the last minute: idle + nothing queued at it → ramp one more talk into CPU prep
 let claimedAt = 0, depth = 1, depthAt = 0;   // depth: talks kept on the GPU deck, learned from starvation (gpu-pace nextDepth)
 const cpuSeen = [];   // CPU samples over the last ~2 min: a full CPU holds claims (the GPU-feeding stages would only slow)
+const health = startHealth();
+process.on('uncaughtException', async (e) => { log('crash', { error: String(e.stack || e).slice(0, 2000) }); await health.last(`crash: ${e.message}`); process.exit(1); });
 while (!stopping || running.size) {
-  const deck = onDeck(), c = cpuSample();
+  for (const [id, info] of jobs) sampleJob(id, info);
+  const deck = onDeck(), c = CGROUP ? cpuSample(SCOPE) : cpuSample();
   if (c) { cpuSeen.push({ t: Date.now(), ...c }); while (cpuSeen.length > 2 && Date.now() - cpuSeen[1].t > 120_000) cpuSeen.shift(); }
   const cpu = cpuSeen.length > 1 ? cpuBusy(cpuSeen) : null, util = running.size && DEVICE !== 'none' ? gpuUtil(DEVICE) : null;
   if (util != null) { gpuSeen.push({ t: Date.now(), util }); while (gpuSeen.length && Date.now() - gpuSeen[0].t > 60_000) gpuSeen.shift(); }
   const gpuIdle = gpuSeen.length >= 6 && Date.now() - gpuSeen[0].t >= 50_000 && gpuSeen.every((g) => g.util < GPU_IDLE);
   const onDeckN = deck.waiting + deck.heading, shallower = nextDepth(depth, { onDeck: onDeckN, waiting: deck.waiting, sinceChangeMs: Date.now() - depthAt });
   if (shallower !== depth) { depth = shallower; depthAt = Date.now(); log('deck depth', { depth, gpu_waiting: deck.waiting }); }
-  const want = !stopping && wantAnother({ running: running.size, cap: CAP, onDeck: onDeckN, depth, waiting: deck.waiting, memGb: memAvailGb(), minGb: MIN_AVAIL_GB, cpu,
+  // ADAPT: CPU types are admitted by measurement (fitCpu), the GPU deck counts GPU jobs only; otherwise every job counts against --slots
+  const gpuRunning = ADAPT ? [...jobs.values()].filter((j) => j.needs !== 'cpu').length : running.size;
+  const want = !stopping && (!ADAPT || NEEDS_GPU) && wantAnother({ running: gpuRunning, cap: CAP, onDeck: onDeckN, depth, waiting: deck.waiting, memGb: memAvailGb(), minGb: MIN_AVAIL_GB, cpu,
     gpuIdle, sinceClaimMs: Date.now() - claimedAt, diskGb: diskFreeGb(), minDiskGb: DISK_PER_TALK })
     // CPU-only work: one claim a minute while busy, so the CPU sample sees each job's load before the next
     && (NEEDS_GPU || !running.size || Date.now() - claimedAt >= 60_000);
+  const fit = ADAPT && !stopping && diskFreeGb() >= DISK_PER_TALK && (!running.size || Date.now() - cpuClaimAt >= 60_000) ? fitCpu(cpu, c) : [];
+  const cpuReady = fit.length > 0;
   // the GPU deck is full but cores are spare: offer them to the spill types (the queue gives one only while that backlog is over 1 h)
   const spare = !want && !stopping && SPILL.length && running.size < CAP && memAvailGb() >= MIN_AVAIL_GB + GB_PER_TALK && diskFreeGb() >= DISK_PER_TALK
     && cpu != null && cpu < 0.6 && Date.now() - spillAt >= 60_000;
-  if (want || spare) {
+  if (want || spare || cpuReady) {
     if (spare) spillAt = Date.now();
-    const job = await q.claim(claimArgs(!!spare)).catch((e) => { log('claim error', { error: e.message }); return null; });
+    const types = !ADAPT || spare ? TYPES : TYPES.filter((t) => (want && typedKind(t)?.needs !== 'cpu') || fit.includes(t));
+    const job = await q.claim(claimArgs(!!spare, types)).catch((e) => { log('claim error', { error: e.message }); lastError = { at: Date.now(), msg: `claim: ${e.message}`.slice(0, 500) }; return null; });
     if (job) {
+      if (kindOf(job)?.needs === 'cpu') cpuClaimAt = Date.now();
       if (kindOf(job)?.needs !== 'cpu') toGpu.set(job.id, { t: Date.now() });   // only GPU-bound work sits on the GPU deck
       claimedAt = Date.now();
       const deeper = NEEDS_GPU && kindOf(job)?.needs !== 'cpu' ? nextDepth(depth, { onDeck: onDeckN, rampClaim: onDeckN >= depth }) : depth;
       if (deeper !== depth) { depth = deeper; depthAt = Date.now(); log('deck depth', { depth, gpu_idle: gpuIdle }); }
-      log('claimed', { job: job.id, type: job.type, spill: !!spare, audio_s: job.body?.invoice?.audio_s, running: running.size, deck: onDeckN, depth, gpu_waiting: deck.waiting, gpu_util: util, gpu_idle: gpuIdle, disk_gb: Math.round(diskFreeGb()), cpu: cpu == null ? null : Math.round(cpu * 100) });
+      log('claimed', { job: job.id, type: job.type, spill: !!spare, ...(ADAPT ? { fit } : {}), audio_s: job.body?.invoice?.audio_s, running: running.size, deck: onDeckN, depth, gpu_waiting: deck.waiting, gpu_util: util, gpu_idle: gpuIdle, disk_gb: Math.round(diskFreeGb()), cpu: cpu == null ? null : Math.round(cpu * 100) });
       running.set(job.id, work(job).finally(() => { running.delete(job.id); busyAt = Date.now(); }));
       continue;
     }
     if (ONCE && !running.size) break;
     if (IDLE_EXIT_MS && !running.size && Date.now() - busyAt > IDLE_EXIT_MS) { log('idle — exiting', { idle_min: IDLE_EXIT_MS / 60_000 }); break; }
   }
+  health.tick();
   await nap(running.size ? 5_000 : 30_000);   // while working, look at the GPU deck every 5 s
 }
 await Promise.allSettled(running.values());
 log('exit');
+await health.last(stopping ? 'stopped (signal)' : IDLE_EXIT_MS && Date.now() - busyAt > IDLE_EXIT_MS ? 'idle exit' : ONCE ? 'once' : 'loop ended');

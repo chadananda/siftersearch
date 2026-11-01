@@ -8,10 +8,11 @@ import { join, dirname } from 'node:path';
 import { createHmac } from 'node:crypto';
 import { pipeline } from 'node:stream/promises';
 import * as Q from '../../../worker/queue/core.js';
+import * as LW from '../../../worker/queue/last-words.js';
 
 export const queueDir = () => process.env.MEDIA_QUEUE_DIR || join(process.env.MEDIA_SOURCE_ROOT || '/tank/media', '.queue');
 const AREA = { files: 'stage', results: 'results' };
-export const WORK_OPS = new Set(['claim', 'heartbeat', 'done', 'fail']);
+export const WORK_OPS = new Set(['claim', 'heartbeat', 'done', 'fail', 'last-words']);   // = worker/queue/index.js
 // machines' key: MEDIA_QUEUE_KEY, else derived from the admin key (one-way, so a machine never holds the admin key). `ops.mjs media queue-key` prints it.
 export const machineKey = () => process.env.MEDIA_QUEUE_KEY || (process.env.INTERNAL_API_KEY ? createHmac('sha256', process.env.INTERNAL_API_KEY).update('media-queue-machine').digest('hex').slice(0, 40) : null);
 const safeId = (id) => /^[\w.-]{1,128}$/.test(id) && !id.startsWith('.');
@@ -26,7 +27,7 @@ function open() {
   db.pragma('journal_mode = WAL'); db.pragma('busy_timeout = 5000');
   // the Durable Object's ctx.storage.sql shape, so core.js runs unchanged
   sql = { exec: (q, ...b) => { const st = db.prepare(q); const r = st.reader ? st.all(...b) : (st.run(...b), []); return { toArray: () => r }; } };
-  Q.migrate(sql);
+  Q.migrate(sql); LW.migrate(sql);
   return sql;
 }
 const tx = (fn) => { const s = open(); return db.transaction(() => fn(s)).immediate(); };
@@ -45,6 +46,8 @@ export async function queueCall(op, a = {}) {
     case 'withdraw': return tx((s) => Q.withdraw(s, a.ids || []));
     case 'policy': return tx((s) => Q.setPolicy(s, a.policy || {}));   // tower's role policy (claim order of multi-role hosts)
     case 'stats': return tx((s) => Q.stats(s, Date.now(), a.type || 'media'));
+    case 'last-words': return tx((s) => LW.put(s, a));
+    case 'last-words-list': return tx((s) => LW.list(s, a));
     case 'ack': case 'cancel': {   // the staged inputs go too unless another job still names the same file
       const { gone, dirs } = tx((s) => {
         const gone = op === 'ack' ? Q.ack(s, a.ids || []) : Q.cancel(s, a.ids || []);

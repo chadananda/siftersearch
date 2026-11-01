@@ -63,9 +63,11 @@ it('a talk has reached the GPU once a ledger key is its own: container namespace
 });
 it('the agent asks wantAnother before every claim', () => {
   const agent = readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8');
-  // every claim is gated: wantAnother (the GPU deck) or, for --spill types only, the spare-cores gate (deck full, CPU < 60 %)
-  expect(agent).toMatch(/const want = !stopping && wantAnother\(\{/);
-  expect(agent).toMatch(/if \(want \|\| spare\) \{\n(\s*.*\n)?\s*const job = await q\.claim/);
+  // every claim is gated: wantAnother (the GPU deck), the spare-cores gate (--spill types: deck full, CPU < 60 %) or, for CPU types in
+  // docker containers, the measured admission (cpu-pace.mjs fitCpu) — and a claim then names only the types its gate admitted
+  expect(agent).toMatch(/const want = !stopping && \(!ADAPT \|\| NEEDS_GPU\) && wantAnother\(\{/);
+  expect(agent).toMatch(/if \(want \|\| spare \|\| cpuReady\) \{\n(\s*.*\n){0,2}\s*const job = await q\.claim\(claimArgs\(!!spare, types\)\)/);
+  expect(agent).toMatch(/const cpuReady = fit\.length > 0;/);
   expect(agent).toMatch(/toGpu\.set\(job\.id/);
 });
 it('containers are capped at the host RAM, not 10 GB: the lease ledger sums every talk against that cap (10-31 boss)', () => {
@@ -78,7 +80,7 @@ it('containers are capped at the host RAM, not 10 GB: the lease ledger sums ever
 it('agent pods: tower keeps a pod alive while its queue heartbeats arrive; slots = the pod capacity (10-31 pod 367)', async () => {
   const jobs = readFileSync('api/lib/ops/media-jobs.js', 'utf8');
   expect(jobs).toMatch(/st\.agent_seen\?\.\[`pod-\$\{p\.name\}`\]/);   // durable liveness (10-31 387/388): the behaviour is tested in media-gpu-spend
-  expect(jobs).toMatch(/agentEnv\(agentKey, `pod-\$\{p\.name\}`, p\.max_jobs\)/);
+  expect(jobs).toMatch(/agentEnv\(agentKey, `pod-\$\{p\.name\}`, p\.max_jobs, p\.image\)/);
   const feed = readFileSync('api/lib/media/queue-feed.js', 'utf8');
   expect(feed).toMatch(/out\.beat\[j\.host\] = Math\.max\(out\.beat\[j\.host\] \|\| 0, j\.updated \|\| 0\)/);
   const { CLOUD } = await import('../../api/lib/media/cloud.js');
@@ -91,8 +93,9 @@ it('every pod bootstrap marks the lane seen: the entrypoint ends a pod without /
 });
 it('pod gauge reads cgroup v1 CPU time too (10-31: RunPod hosts without cpu.stat showed 0 % CPU), without 32-bit awk overflow', () => {
   const jobs = readFileSync('api/lib/ops/media-jobs.js', 'utf8');
-  expect(jobs.match(/cpuacct\/cpuacct\.usage/g)?.length).toBe(2);
-  expect(jobs.match(/cpu\/cpu\.cfs_quota_us/g)?.length).toBe(2);
+  // only the legacy whole-recording pod is still read over ssh; an agent pod reports itself on GET /health (health-poll.js)
+  expect(jobs.match(/cpuacct\/cpuacct\.usage/g)?.length).toBe(1);
+  expect(jobs.match(/cpu\/cpu\.cfs_quota_us/g)?.length).toBe(1);
   expect(jobs).not.toMatch(/printf "%d", \$1\/1000/);
 });
 it('RAM comes from the cgroup when it has a limit (10-31: a pod\'s /proc/meminfo is the host\'s; pods 367+368 took 12 talks and died)', () => {

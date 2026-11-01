@@ -1,6 +1,7 @@
 // The machines doing the media work, as /media shows them (Chad 10-29: a small card per machine: role, RAM, GPU, speed).
 // Pure: the lane state (cloud.js STATE_FILE) → cards. Speed = audio processed per wall-clock hour over the last hour (× real time).
-// Hardware is a fixed table (home machines) or the pod's own report (RunPod). No temperatures, costs or addresses leave here.
+// Hardware is a fixed table (home machines) or the pod's own report (RunPod). Dials + health: each machine's GET /health (st.machine_health,
+// health-poll.js). No temperatures, costs or addresses leave here.
 export const MACHINES = [
   // tower = storage (Chad 10-29): read off the box 10-29 (lscpu, lsblk: 2 SAS HDD + 2 SAS SSD + 2 NVMe + 1 USB, ~32 TB raw)
   { key: 'tower', name: 'Tower', role: 'Store + conduct', specs: [['CPU', '2 × Xeon E5-2698'], ['Cores', '40 · 80 threads'], ['Drives', '7'], ['Store', '32 TB']] },
@@ -75,6 +76,24 @@ export function socketBusy(stat, pkg, prev = null) {
   return { ticks, cpus };
 }
 
+/** A machine's latest GET /health poll (st.machine_health, health-poll.js) → what its card shows: the dials (CPU % of its allowed cores; GPU = power
+ *  draw ÷ limit when the card reports power, else busy %), and health = reachable or not (with since when), the poll's age, the image and agent
+ *  version, RAM / VRAM / disk, slots per type, jobs with stage + % and the last CARD_POLLS polls [at, ok, ms, cpu]. Pure. */
+export function healthView(h, now = Date.now()) {
+  if (!h) return null;
+  const d = h.data || {}, g = d.gpu;
+  const gpu = g ? (g.power_w > 0 && g.power_limit_w > 0 ? pct((g.power_w / g.power_limit_w) * 100) : pct(g.util)) : null;
+  const fresh = h.ok && now - h.at < GAUGE_FRESH_MS;
+  return {
+    gauges: fresh ? { cpu: pct(d.cpu?.pct), gpu } : null,
+    health: { ok: !!h.ok, age_s: Math.round((now - (h.ok_at || h.at)) / 1000), down_s: h.ok ? null : Math.round((now - (h.down_since || h.at)) / 1000), error: h.ok ? null : h.error || null,
+      latency_ms: h.latency_ms ?? null, image: /sha256:([0-9a-f]{12})/.exec(String(d.image || ''))?.[1] || null, version: d.agent?.version || null, uptime_s: d.agent?.uptime_s ?? null,
+      ram: d.ram ? [d.ram.used_gb, d.ram.total_gb] : null, vram: g?.vram_total_mb ? [Math.round(g.vram_used_mb / 102.4) / 10, Math.round(g.vram_total_mb / 102.4) / 10] : null,
+      disk_free_gb: d.disk?.free_gb ?? null, slots: d.slots || null, jobs: (d.jobs || []).map((j) => ({ type: j.type, stage: j.stage || j.phase || null, pct: j.pct ?? null })),
+      polls: h.polls || [] },   // the agent's last_error stays in ops (ops.mjs media health): /media is public
+  };
+}
+
 export function workerCards(st = {}, now = Date.now()) {
   const sp = speeds(st.done, now, Object.fromEntries(Object.values(st.pods || {}).filter((p) => p.created).map((p) => [p.name, p.created])), st.step_log);
   const homeJobs = {};
@@ -83,21 +102,24 @@ export function workerCards(st = {}, now = Date.now()) {
   for (const [h, n] of Object.entries(st.q_lan?.leased || {})) held[h] = (held[h] || 0) + n;
   for (const [h, n] of Object.entries(held)) homeJobs[base(h)] = (homeJobs[base(h)] || 0) + n;
   const cards = MACHINES.map((m) => {
-    const g = st.host_gauge?.[m.key], fresh = g && now - g.at < GAUGE_FRESH_MS;   // home hosts: the gate's 'df' (tools.js hostGauge); tower: its own sockets
-    if (m.key === 'tower') return { ...m, status: 'conducting', jobs: Object.keys(st.jobs || {}).length + Object.keys(st.home || {}).length, speed: null, gauges: fresh && g.cpus ? { cpus: g.cpus } : null };
+    const hv = healthView(st.machine_health?.[m.key], now);   // the machine's own GET /health (tower: tower-finish's slice)
+    const g = st.host_gauge?.[m.key], fresh = g && now - g.at < GAUGE_FRESH_MS;   // tower: its own two sockets
+    if (m.key === 'tower') return { ...m, status: 'conducting', jobs: Object.keys(st.jobs || {}).length + Object.keys(st.home || {}).length, speed: null, gauges: fresh && g.cpus ? { cpus: g.cpus } : null, health: hv?.health || null };
     const down = (st.host_down?.[m.key] || 0) > now;
     const jobs = homeJobs[m.key] || 0;
-    return { ...m, status: jobs ? 'working' : down ? 'resting' : 'idle', jobs, speed: sp[m.key] ?? null, speed_by_type: sp.byType[m.key] || null, gauges: fresh ? { cpu: g.cpu ?? null, gpu: g.gpu ?? null } : null };
+    const status = hv && !hv.health.ok ? 'unreachable' : jobs ? 'working' : down ? 'resting' : 'idle';
+    return { ...m, status, jobs, speed: sp[m.key] ?? null, speed_by_type: sp.byType[m.key] || null, gauges: hv?.gauges || null, health: hv?.health || null };
   });
   for (const p of Object.values(st.pods || {})) {
     if (p.terminated) continue;
-    const w = p.worker || {};
+    const w = p.worker || {}, hv = healthView(st.machine_health?.[p.name], now);
     const jobs = Object.values(st.jobs || {}).filter((j) => j.pod === p.id).length + (held[`pod-${p.name}`] || 0);   // agent pods claim as pod-<name>
     const vram = w.vram_total_gb ? ` · ${Math.round(w.vram_total_gb)} GB` : '';
     cards.push({ key: p.name, name: podName(p.name), role: 'Cloud remaster',
       specs: [['GPU', p.gpu ? `${String(p.gpu).replace(/^NVIDIA (GeForce )?/, '')}${vram}` : vram ? `NVIDIA${vram}` : 'assigning…'], ['RAM', w.ram_avail_gb ? `${Math.round(w.ram_avail_gb)} GB free` : '—']],
-      status: p.status === 'ready' ? (jobs ? 'working' : 'idle') : 'starting', jobs, speed: sp[p.name] ?? null, speed_by_type: sp.byType[p.name] || null,
-      gauges: p.gauge && now - p.gauge.at < GAUGE_FRESH_MS ? { cpu: p.gauge.cpu, gpu: p.gauge.gpu } : null });
+      status: p.status !== 'ready' ? 'starting' : hv && !hv.health.ok ? 'unreachable' : jobs ? 'working' : 'idle', jobs, speed: sp[p.name] ?? null, speed_by_type: sp.byType[p.name] || null,
+      // the agent pod's own GET /health; a legacy whole-recording pod (no agent) still has the ssh GAUGE reading
+      gauges: hv ? hv.gauges : p.gauge && now - p.gauge.at < GAUGE_FRESH_MS ? { cpu: p.gauge.cpu, gpu: p.gauge.gpu } : null, health: hv?.health || null });
   }
   return cards;
 }

@@ -65,7 +65,21 @@ export default async function mediaOps(fastify) {
   // file (a dead loop shows its sections going stale); system-checks raises the failing ones
   fastify.get('/ops/media/health', guard, async () => {
     const C = await import('../lib/media/cloud.js'), LH = await import('../lib/media/loop-health.js'), st = await C.loadState();
-    return { ...LH.evaluate(st, Date.now()), updated: st.updated || null, loop_updated_at: st.health?.at || null };
+    const now = Date.now(), machines = Object.fromEntries(Object.entries(st.machine_health || {}).map(([k, h]) => [k, { ok: h.ok, polled_s_ago: Math.round((now - h.at) / 1000),
+      ...(h.ok ? {} : { unreachable_for_s: Math.round((now - (h.down_since || h.at)) / 1000), last_ok_s_ago: h.ok_at ? Math.round((now - h.ok_at) / 1000) : null, error: h.error }),
+      latency_ms: h.latency_ms, ...(h.pod ? { pod: h.pod } : {}), health: h.data || null }]));
+    // machines: each one's latest GET /health as tower polled it (health-poll.js) — the only source for machine load
+    return { ...LH.evaluate(st, now), updated: st.updated || null, loop_updated_at: st.health?.at || null, machines, machine_poll_at: st.machine_health_at || null,
+      ...(st.health_poll_error ? { machine_poll_error: st.health_poll_error } : {}), ...(st.last_words_error ? { last_words_error: st.last_words_error } : {}) };
+  });
+  // a machine's health history (health-poll.js, data/run/health/): ?machine=boss&from=<ISO|ms>&to=… → its polls (and last words), oldest first
+  fastify.get('/ops/media/health-history', guard, async (req) => {
+    const q = req.query || {}, HP = await import('../lib/media/health-poll.js'), { STATE_FILE } = await import('../lib/media/cloud.js');
+    const t = (x, d) => (x == null || x === '' ? d : /^\d+$/.test(String(x)) ? Number(x) : Date.parse(x));
+    const to = t(q.to, Date.now()), from = t(q.from, to - 3600_000);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) return { error: 'from/to: ISO time or ms' };
+    const rows = await HP.readHistory(join(dirname(STATE_FILE), 'health'), { machine: String(q.machine || ''), from, to, limit: Math.min(Number(q.limit) || 2000, 20000) });
+    return { machine: q.machine || null, from: new Date(from).toISOString(), to: new Date(to).toISOString(), n: rows.length, rows };
   });
   // rentals valve: { pause: "reason" | false, maxPods?: 1-6 } → the pause file + the capacity file the lane reads every tick
   fastify.post('/ops/media/rentals', guard, async (req, reply) => {

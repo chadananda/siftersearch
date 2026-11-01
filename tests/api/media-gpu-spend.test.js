@@ -92,7 +92,7 @@ describe('persistent operator rental pause', () => {
     const bodies = [];
     const fetchFn = vi.fn(async (url, init) => { const b = JSON.parse(init.body); bodies.push(b); return b.minVCPUPerGPU ? new Response('no capacity', { status: 400 }) : new Response('{"id":"p1"}', { status: 200 }); });
     const dir = mkdtempSync(join(tmpdir(), 'rent-'));
-    expect(await C.createPod('sifter-unipase-t', 'k', { fetchFn, pauseFile: join(dir, 'none'), acceptedWorkerFile: join(dir, 'none.json') })).toEqual({ id: 'p1', cloudType: bodies.at(-1).cloudType });   // the cloud that rented is recorded
+    expect(await C.createPod('sifter-unipase-t', 'k', { fetchFn, pauseFile: join(dir, 'none'), acceptedWorkerFile: join(dir, 'none.json') })).toEqual({ id: 'p1', cloudType: bodies.at(-1).cloudType, health_port: 8788 });   // the cloud that rented is recorded
     expect(bodies[0].minVCPUPerGPU).toBe(32);
     expect(bodies.at(-1).minVCPUPerGPU).toBeUndefined();
     expect([C.maxJobsFor({ vcpuCount: 32 }), C.maxJobsFor({ vcpuCount: 18 }), C.maxJobsFor({ vcpuCount: 8 }), C.maxJobsFor({ vcpuCount: 64 }), C.maxJobsFor({ memoryInGb: 46 }), C.maxJobsFor({})]).toEqual([12, 9, 6, 12, 8, 6]);

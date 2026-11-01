@@ -88,8 +88,10 @@ describe('podName', () => {
 });
 
 describe('home and tower dials (Chad 10-30: aorus looked offline while working)', () => {
-  it('home hosts carry their gate reading; stale ones are dropped', () => {
-    const st = { home: { aorus: {} }, host_gauge: { aorus: { cpu: 23, gpu: 9, at: now - 1000 }, boss: { cpu: 4, gpu: 2, at: now - GAUGE_FRESH_MS - 1 }, tower: { cpus: [40, 12], at: now } } };
+  it('home hosts carry their own GET /health reading (health-poll.js; the gate df gauge is gone); stale ones are dropped', () => {
+    const snap = (cpu, util, at) => ({ at, ok: true, ok_at: at, data: { cpu: { pct: cpu }, gpu: { util } }, polls: [] });
+    const st = { home: { aorus: {} }, machine_health: { aorus: snap(23, 9, now - 1000), boss: snap(4, 2, now - GAUGE_FRESH_MS - 1) },
+      host_gauge: { aorus: { cpu: 99, gpu: 99, at: now }, tower: { cpus: [40, 12], at: now } } };
     const by = Object.fromEntries(workerCards(st, now).map((c) => [c.key, c]));
     expect(by.aorus).toMatchObject({ status: 'working', gauges: { cpu: 23, gpu: 9 } });
     expect(by.boss.gauges).toBeNull();
