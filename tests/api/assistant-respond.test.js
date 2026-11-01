@@ -202,7 +202,9 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
   });
   it('drops a "where does it say …?" frame and what follows the question (the frame is not in the passage)', () => {
     expect(quotationIn('where does it say let there be no compulsion in religion? i want to read the full passage')).toBe('let there be no compulsion in religion');
-    expect(quotationIn('where does it say no?')).toBe('where does it say no?');   // too short to be a quotation → unchanged
+    expect(quotationIn('where does it say no?')).toBe('where does it say no?');
+    // r5-x: a quoted span of four words was skipped (≥6 rule) and the whole request was hunted — the Arabic Bayán won over Sura II
+    expect(quotationIn('can you find the full quote that includes "no compulsion in religion" for me')).toBe('no compulsion in religion');   // too short to be a quotation → unchanged
     expect(quotationIn('Jesus said God helps those who help themselves')).toBe('Jesus said God helps those who help themselves');
   });
 

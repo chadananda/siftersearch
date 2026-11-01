@@ -106,11 +106,11 @@ export const evidenceOf = (retrieved) => (retrieved || []).slice(0, 10).map((q) 
 
 const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
 
-/** The quotation in a source question: the longest quoted span (≥ 6 words), else the message without a leading request
+/** The quotation in a source question: the longest quoted span (≥ 4 words), else the message without a leading request
  *  ("Where is this from:") — what a library's copy appends (reference line, link) is stripped by SourceHunt itself. */
 export function quotationIn(text) {
   const t = String(text || '').trim();
-  const quoted = [...t.matchAll(/[“"«]([^”"»]{20,})[”"»]/g)].map((m) => m[1].trim()).filter((q) => q.split(/\s+/).length >= 6);
+  const quoted = [...t.matchAll(/[“"«]([^”"»]{20,})[”"»]/g)].map((m) => m[1].trim()).filter((q) => q.split(/\s+/).length >= 4);   // r5-x: "no compulsion in religion" (4 words) was skipped → the whole request was hunted
   if (quoted.length) return quoted.sort((a, b) => b.length - a.length)[0];
   const m = /^[^\n:]{0,80}?(?:from|source|origin|written|said|quote|find)[^\n:]{0,60}[:?\n]\s*([\s\S]{20,})$/i.exec(t);
   if (m) return m[1].trim();
