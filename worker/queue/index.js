@@ -49,6 +49,7 @@ export class MediaQueue {
       }
       case 'capacity': return Q.capacity(s);
       case 'withdraw': return Q.withdraw(s, a.ids || []);
+      case 'release-host': return Q.releaseHost(s, a);   // tower: a pod RunPod no longer lists → its leases requeue now (admin only)
       case 'stats': return Q.stats(s, Date.now(), a.type);   // typed steps are pulled and counted per type
       default: throw Object.assign(new Error(`unknown op ${op}`), { status: 404 });
     }

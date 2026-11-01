@@ -74,6 +74,16 @@ export function expire(sql, now = Date.now()) {
   for (const g of gone) release(sql, g, g.attempts + 1, 'lease expired', now);
   return gone.length;
 }
+/** A host that is gone for good (tower saw its pod vanish from RunPod, 10-31: 389): its leases go back to the queue NOW, not at lease
+ *  expiry, with attempts unchanged (the job did not fail; its machine did) and the host avoided; the host stops counting as engaged
+ *  (capacity, spill, the pod plan) instead of lingering for HOST_FRESH_MS. → { released: [ids] } */
+export function releaseHost(sql, { host, error = 'host gone' } = {}, now = Date.now()) {
+  if (!host) throw new Error('host required');
+  const held = rows(sql, `SELECT id, attempts, host, avoid FROM jobs WHERE state = 'leased' AND host = ?`, String(host));
+  for (const j of held) release(sql, j, j.attempts, error, now);
+  sql.exec(`UPDATE hosts SET last_seen = 0 WHERE host = ?`, String(host));
+  return { released: held.map((j) => j.id) };
+}
 // which host/exit (head) + the actual reason (tail): a Python traceback ends a long stderr tail (10-31: whole-2185's reason was cut off twice)
 export const clip = (e, n = 2400) => { const s = String(e); return s.length > n ? `${s.slice(0, 300)} … ${s.slice(-(n - 300))}` : s; };
 // the failing host is AVOIDED for AVOID_MS (stage-queue §6): another host gets the retry first, but the job is never stranded on it

@@ -354,6 +354,39 @@ describe('the lane: GPU is rented only for work', () => {
     expect(await run(60_000)).not.toContain('p1');          // beating a minute ago: alive, whatever ssh says
     expect(await run(15 * 60_000)).toContain('p1');         // no beat and no progress for 15 min: dead
   });
+  it('a pod RunPod no longer lists is closed at once: why recorded, no DELETE, its edge leases released, not counted as waste (10-31: 389)', async () => {
+    const run = async ({ listPods, created = 3600_000 }) => {
+      const x = setup({ talks: 2, seconds: 3600, poll: (cmd, last) => (cmd === 'ssh' && last.includes('pgrep -f queue-agent.mjs') ? { stdout: 'ALIVE\n{"claimed":"q-1"}\nUTIL 99' } : null) });
+      const image = 'ghcr.io/x@sha256:' + 'a'.repeat(64), t0 = x.clock();
+      x.cloud.acceptedWorker = async () => ({ image });
+      writeFileSync(x.deps.stateFile, JSON.stringify({ started: 1, queue: [1, 2], attempts: {}, done: [], failed: [], jobs: {}, spent_closed: 0, items: { 1: { duration_s: 3600 }, 2: { duration_s: 3600 } },
+        pods: { old: { id: 'old', name: 'test-pod', status: 'ready', agent: true, cuda_ok: true, image, boot_v: C.BOOT_V_AGENT, ip: '1.2.3.4', port: 2222, created: t0 - created, ready_at: t0 - created + 60_000, lastOk: t0 - 60_000, costPerHr: 0.69 } },
+        agent_seen: { 'pod-test-pod': t0 - 60_000 } }));
+      const released = [];
+      let naps = 0;
+      await mediaCloudRemasterJob({ write: true, maxPods: 1 }, { ...x.deps, agentKey: 'k', queueKey: 'admin', listPods,
+        edgeQueue: { releaseHost: async (host, error) => { released.push([host, error]); return { released: ['q-1'] }; } },
+        draining: () => naps > 0, nap: async () => { naps++; } });
+      const p1 = JSON.parse(readFileSync(x.deps.stateFile, "utf8")).pods.old;
+      return { p1, released, killed: x.killed, st: JSON.parse(readFileSync(x.deps.stateFile, 'utf8')) };
+    };
+    const gone = await run({ listPods: async () => [{ id: 'other', desiredStatus: 'RUNNING' }] });
+    expect(gone.p1.terminated).toBeTruthy(); expect(gone.p1.gone).toBe(true);
+    expect(gone.p1.why).toMatch(/^gone from RunPod \(not ended by the lane/);
+    expect(gone.killed).not.toContain('old');                          // nothing to DELETE
+    expect(gone.released).toEqual([['pod-test-pod', expect.stringMatching(/gone from RunPod/)]]);
+    expect(gone.p1.leases_released).toBe(1);
+    expect(gone.st.vanished_log.map((v) => v.pod)).toEqual(['test-pod']);
+    expect(gone.st.waste_log || []).toEqual([]); expect(gone.st.boot_fails || 0).toBe(0);   // it worked (queue heartbeats): not waste
+    const terminated = await run({ listPods: async () => [{ id: 'old', desiredStatus: 'TERMINATED' }] });
+    expect(terminated.p1.gone).toBe(true);
+    const listed = await run({ listPods: async () => [{ id: 'old', desiredStatus: 'RUNNING' }] });
+    expect(listed.p1.gone).toBeUndefined(); expect(listed.p1.why || '').not.toMatch(/gone/);
+    const failed = await run({ listPods: async () => { throw new Error('runpod GET /pods → 502'); } });
+    expect(failed.p1.gone).toBeUndefined(); expect(failed.st.runpod_list_error).toMatch(/502/);
+    const fresh = await run({ listPods: async () => [], created: 30_000 });   // rented 30 s ago: the list may lag the create
+    expect(fresh.p1.gone).toBeUndefined();
+  });
   it('stages several recordings per pod per pass at once (Chad 10-30: one at a time starved the pods), never more than stageBatch', async () => {
     const x = setup({ talks: 4, seconds: 3600 });
     let open = 0, most = 0, uploads = 0; const run = x.deps.run;

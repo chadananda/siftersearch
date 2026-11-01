@@ -164,6 +164,23 @@ export async function getPodConnection(id,{fetchFn=fetch}={}){
 }
 export const terminatePod = (id, deps) => rest('DELETE', `/pods/${id}`, null, deps).catch((err) => (/404/.test(err.message) ? {} : Promise.reject(err)));
 
+/** Did this pod ever take work? A spool pod counts jobs_assigned; an AGENT pod pulls from the edge queue (tower never assigns it), so its
+ *  proof is a queue heartbeat (agent_seen: it held a lease), a gpu step tower adopted from it (step_log), or a talk it ran (done.gpu).
+ *  10-31: 387, 388, 389 (389 ran 4 h at ~100 % GPU) were each logged as waste and counted toward the boot-failure breaker. Pure. */
+export function podWorked(st, p) {
+  if (p.jobs_assigned > 0) return true;
+  if (!p.agent) return false;
+  const host = `pod-${p.name}`;
+  return (st.agent_seen?.[host] || 0) > 0 || (st.step_log || []).some((x) => x.host === host) || (st.done || []).some((d) => d.gpu === host);
+}
+/** Live pods (not terminated) that RunPod's own list no longer holds: ended outside the lane (self-terminated, or removed by RunPod).
+ *  A pod rented in the last graceMs is skipped (the list can lag a create). listed = RunPod's GET /pods answer; anything not an array
+ *  (a failed or odd answer) reconciles nothing. 10-31: 389 vanished at ~03:08 and stayed 'ready' (counted, shown idle) until 03:17. Pure. */
+export function vanishedPods(st, listed, now = Date.now(), graceMs = 120_000) {
+  if (!Array.isArray(listed)) return [];
+  const ids = new Set(listed.filter((x) => x?.id && x.desiredStatus !== 'TERMINATED').map((x) => x.id));   // TERMINATED = gone too
+  return Object.values(st.pods || {}).filter((p) => !p.terminated && p.id && !ids.has(p.id) && now - (p.created || 0) > graceMs);
+}
 /** Per data-centre boot statistics (the ledger's host table): { dc: { n, boot_s, fails } }. Pure. */
 export function hostStats(st) {
   const out = {};
@@ -172,7 +189,7 @@ export function hostStats(st) {
     const e = (out[dc] ||= { n: 0, boot_s: 0, ok: 0, fails: 0 });
     e.n++;
     if (p.ready_at) { e.ok++; e.boot_s += (p.ready_at - p.created) / 1000; }
-    if ((!(p.jobs_assigned > 0) || p.gpu_broken) && p.terminated) e.fails++;
+    if ((!podWorked(st, p) || p.gpu_broken) && p.terminated) e.fails++;
   }
   for (const e of Object.values(out)) { e.avg_boot_s = e.ok ? Math.round(e.boot_s / e.ok) : null; delete e.boot_s; }
   return out;

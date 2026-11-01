@@ -92,6 +92,19 @@ describe('edge queue', () => {
     expect(c.queued_audio_h).toBe(1); expect(c.queued_h).toBeCloseTo(0.25);
     expect(Q.capacity(sql, T0 + 1_200_000 + Q.HOST_FRESH_MS + 1).hosts).toEqual([]);   // idle hosts drop out
   });
+  it('releaseHost: a vanished pod\'s leases requeue at once (attempts kept, host avoided) and it stops counting as engaged (10-31: 389)', () => {
+    Q.enqueue(sql, [job('a', ['enhance']), job('b', ['enhance'])], T0);
+    const a = Q.claim(sql, { host: 'pod-x', can: ['enhance'] }, T0);
+    Q.claim(sql, { host: 'boss', can: ['enhance'] }, T0);
+    expect(Q.capacity(sql, T0 + 1).hosts.map((h) => h.host)).toEqual(['boss', 'pod-x']);
+    expect(Q.releaseHost(sql, { host: 'pod-x', error: 'pod gone from RunPod' }, T0 + 60_000)).toEqual({ released: [a.id] });
+    expect(Q.capacity(sql, T0 + 60_001).hosts.map((h) => h.host)).toEqual(['boss']);
+    expect(() => Q.heartbeat(sql, { id: a.id, lease: a.lease }, T0 + 60_002)).toThrow(/lease lost/);   // the old holder lost it
+    const again = Q.claim(sql, { host: 'aorus', can: ['enhance'] }, T0 + 60_003);
+    expect(again.id).toBe(a.id); expect(again.attempts).toBe(0);   // no failure charged to the job (expire would have made it 1)
+    expect(Q.releaseHost(sql, { host: 'nobody' }, T0)).toEqual({ released: [] });
+    expect(() => Q.releaseHost(sql, {}, T0)).toThrow(/host required/);
+  });
   it('cancel removes a job in any state; its holder then loses it', () => {
     Q.enqueue(sql, [job('a', ['transcribe'])], T0);
     const j = Q.claim(sql, { host: 'h', can: ['transcribe'] }, T0);

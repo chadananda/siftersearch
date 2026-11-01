@@ -1733,12 +1733,21 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   beat();
   const hb = setInterval(beat, 60_000); hb.unref?.();
   const pub = deps.publicKey || (await fs.readFile(join((await import('os')).homedir(), '.ssh', 'id_ed25519.pub'), 'utf8')).trim();
-  const closePod = async (p, why) => {
-    try { await C.terminatePod(p.id, deps); } catch (err) { p.terminate_error = String(err.message).slice(0, 200); return false; }
-    p.terminated = now(); p.why = why;
+  // gone = RunPod no longer lists the pod (it ended outside the lane): nothing to DELETE, the close is bookkeeping (10-31: 389)
+  const closePod = async (p, why, { gone = false } = {}) => {
+    if (!gone) try { await C.terminatePod(p.id, deps); } catch (err) { p.terminate_error = String(err.message).slice(0, 200); return false; }
+    p.terminated = now(); p.why = why; if (gone) p.gone = true;
+    console.warn(`[media-cloud] closed ${p.name} (${p.id}) after ${Math.round((p.terminated - (p.created || p.terminated)) / 60_000)} min: ${why}`);   // every close is in the pm2 log
+    if (gone) { (st.vanished_log ||= []).push({ at: now(), pod: p.name, id: p.id, why: String(why).slice(0, 160), last_ok: p.lastOk || null }); st.vanished_log = st.vanished_log.slice(-30); }
+    // an agent pod's edge leases go back to the queue NOW and its host stops counting as engaged (not at lease expiry / HOST_FRESH_MS)
+    if (p.agent && queueKey) {
+      const edge = deps.edgeQueue || (await import('../media/queue-client.mjs')).queueClient({ key: queueKey });
+      await edge.releaseHost(`pod-${p.name}`, `pod ${p.name} closed: ${String(why).slice(0, 160)}`).then((r) => { p.leases_released = r?.released?.length ?? 0; },
+        (e) => { p.release_error = String(e.message).slice(0, 200); console.warn(`[media-cloud] releasing ${p.name}'s edge leases failed (they requeue at lease expiry): ${p.release_error}`); });
+    }
     // a pod that never took a job is WASTED rent (10-25: 56 of 75 pods booted, idled or died without working: $20 of the first $52). Three in a row
     // open the circuit breaker: no new rentals for 30 min, then ONE canary must prove itself before the pool grows again.
-    if (!(p.jobs_assigned > 0) && /unreachable|boot|warm|bootstrap|worker stopped|idle|no SSH|selftest|canary/i.test(String(why)) && !/^(cap|account balance|the next 10 min)/.test(String(why))) {
+    if (!(C.podWorked ? C.podWorked(st, p) : p.jobs_assigned > 0) && /unreachable|gone|boot|warm|bootstrap|worker stopped|idle|no SSH|selftest|canary/i.test(String(why)) && !/^(cap|account balance|the next 10 min)/.test(String(why))) {
       const wasted = (p.costPerHr || 0) * Math.max(0, p.terminated - p.created) / 3600_000;
       st.wasted_usd = Math.round(((st.wasted_usd || 0) + wasted) * 100) / 100;
       st.boot_fails = (st.boot_fails || 0) + 1;
@@ -1756,6 +1765,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const queueKey = deps.queueKey !== undefined ? deps.queueKey : deps.repo || process.env.MEDIA_QUEUE_FEED === '0' ? null : process.env.INTERNAL_API_KEY;   // tests inject theirs
   // the machines' key (the same on the LAN and the edge queue) handed to an agent pod at boot; no edge feed → no agent pods
   const agentKey = deps.agentKey !== undefined ? deps.agentKey : queueKey ? (await import('../repos/media-queue-repo.js')).machineKey() : null;
+  // RunPod's own pod list, for reconciling (tests inject theirs; a test run with a repo never calls the real API)
+  const listRunPod = deps.listPods !== undefined ? deps.listPods : deps.repo ? null : () => C.listPods(deps);
   // the dead-man heartbeat must not depend on how long a tick takes (10-24: a 10-minute upload queue starved it and a pod shut itself down)
   const pump = setInterval(() => {
     for (const q of Object.values(st.pods)) if (!q.terminated && q.ip && q.port && q.status !== 'booting') C.podSsh(run, q, 'touch /workspace/spool/.tower-hb', { timeoutMs: 30_000 }).catch(() => {});
@@ -1992,6 +2003,16 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           console.warn(`[media-cloud] queue pass failed in ${st.q_pass.phase}: ${error}`);
         }).finally(() => { if (alive()) qPass = null; });
       }
+      // RECONCILE with RunPod (10-31: 389 vanished at ~03:08 yet stayed 'ready' — counted in the pool, shown idle on /media — until the
+      // 10-min unreachable path closed it at 03:17): a pod RunPod no longer lists is closed now, with why, its leases released
+      if (listRunPod && now() - (st.runpod_checked || 0) > (deps.reconcileMs ?? 60_000)) {
+        st.runpod_checked = now();
+        const listed = await listRunPod().then((x) => { st.runpod_list_error = null; return x; }, (e) => { st.runpod_list_error = String(e.message).slice(0, 200); return null; });
+        for (const p of (C.vanishedPods ? C.vanishedPods(st, listed, now()) : [])) {
+          const reaped = await import('../media/pod-reaper.js').then((R) => R.reapedWhy(p.id)).catch(() => null);
+          await closePod(p, reaped ? `gone from RunPod: reaped: ${reaped}` : `gone from RunPod (not ended by the lane: the pod ended itself or RunPod removed it; last seen ${p.lastOk ? new Date(p.lastOk).toISOString() : '?'})`, { gone: true });
+        }
+      }
       const live = Object.values(st.pods).filter((p) => !p.terminated);
       const imageStarting=acceptedWorker&&live.some(p=>p.image===acceptedWorker.image&&p.status!=='ready');
       const outdated=(p)=>p.image!==acceptedWorker.image||p.boot_v!==(p.agent?C.BOOT_V_AGENT:C.BOOT_V);   // an older image, or booted by an older BOOTSTRAP_WHOLE
@@ -2110,7 +2131,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               const { stdout } = await C.podSsh(run, p, `${drain ? "pkill -TERM -f queue-agent.mjs; " : ''}pgrep -f queue-agent.mjs >/dev/null && echo ALIVE; tail -1 /workspace/agent.log 2>/dev/null; echo UTIL $(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1); u=$(awk '/^usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat 2>/dev/null); [ -n "$u" ] || u=$(awk '{printf "%.0f", $1/1000}' /sys/fs/cgroup/cpuacct/cpuacct.usage 2>/dev/null); pw=$(nvidia-smi --query-gpu=power.draw,power.limit --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' '); echo GAUGE \${u:--} $(cat /sys/fs/cgroup/cpu.max 2>/dev/null || { q=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us 2>/dev/null); [ "\${q:--1}" -gt 0 ] && echo $q $(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us) || echo max 100000; }) $(nproc) \${pw:--}; true`, { timeoutMs: 60_000 });
               p.lastOk = now(); p.agent_tail = stdout.split('\n').find((l) => l.startsWith('{') || l.startsWith('agent exit'))?.slice(0, 300) || null;
               const um = /UTIL (\d+)/.exec(stdout); if (um) utilBy[p.id] = Number(um[1]); { const g = WC.readGauges(stdout, p.gauge, now()); if (g) p.gauge = { ...g, cpu: g.cpu ?? p.gauge?.cpu ?? null }; }
-              if (!/ALIVE/.test(stdout)) await closePod(p, staleImage ? 'accepted image updated; queue agent drained' : drain ? `pool reduced to ${poolCap}; queue agent drained` : 'queue agent exited (idle or drained)');
+              if (!/ALIVE/.test(stdout)) await closePod(p, staleImage ? 'accepted image updated; queue agent drained' : drain ? `pool reduced to ${poolCap}; queue agent drained` : `queue agent exited (idle, drained or crashed): ${p.agent_tail || 'no agent.log line'}`);
               return;
             }
             if(staleImage&&!Object.values(st.jobs).some(j=>j.pod===p.id)){await closePod(p,p.image!==acceptedWorker.image?'accepted image updated; finished recordings drained':'bootstrap updated; finished recordings drained');return;}
