@@ -1951,8 +1951,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           const lanDeps = { ...deps, demux, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped, deferFinish: true };
           // the feed (tower hashes + stores each fed original: 630 s of a 659 s pass, 11-01) runs BESIDE the pass, lan then edge, one at a time; the pass only pulls and plans
           if (!feedPass) feedPass = (async () => {
-            const one = async (key, d) => QF.feedBeside(st, { ...d, repo }).then((r) => { st[key] = { at: now(), ...r }; }, (e) => { st[key] = { at: now(), error: String(e.message).slice(0, 300) }; });
-            await one('q_feed_lan', lanDeps); await one('q_feed_edge', { ...deps, q: queueClient({ key: queueKey }) });
+            // everything this outlives the pass with is the RAW dependency (the pass's guarded ones throw ABANDONED once the next pass begins)
+            const raw = { repo, wr: wrMod, remaster: (id) => queue('media-remaster', { id }, 'media-cloud-remaster') };
+            const one = async (key, d) => QF.feedBeside(st, { ...d, ...raw }).then((r) => { st[key] = { at: now(), ...r }; }, (e) => { st[key] = { at: now(), error: String(e.message).slice(0, 300) }; });
+            await one('q_feed_lan', { ...lanDeps, q: LQ.localQueue(), edge: QCl.queueClient({ key: queueKey }) }); await one('q_feed_edge', { ...deps, q: QCl.queueClient({ key: queueKey }) });
             const f = st.q_feed_lan; LH.beat(st, 'feed', { n: (f?.fed || 0) + (f?.typed?.fed || 0) }, now());
           })().finally(() => { feedPass = null; });
           const lan = await QF.tick(st, { ...lanDeps, deferFeed: true }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
