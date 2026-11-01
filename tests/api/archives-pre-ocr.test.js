@@ -1,7 +1,7 @@
 // Pre-OCR dedup helpers (archives/pre-ocr.js): ISBN, metadata title, the verdict order, SLP rate, chapter files; intake routes an image PDF to SLP.
 import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/docs-repo.js', () => ({ findDocuments: vi.fn(), listDocs: vi.fn(), getParagraphs: vi.fn() }));
-const { isbnsIn, frontText, metaTitle, preOcrCheck, slpRate, chapterFile, verdictOf, evidenceOf, SUBSTANTIAL } = await import('../../api/lib/archives/pre-ocr.js');
+const { isbnsIn, frontText, metaTitle, preOcrCheck, slpSpent, chapterFile, verdictOf, evidenceOf, SUBSTANTIAL } = await import('../../api/lib/archives/pre-ocr.js');
 
 describe('isbnsIn / frontText / metaTitle', () => {
   it('finds labelled, checksum-valid ISBNs (10 → also its 13); a wrong checksum or unlabelled number is ignored', () => {
@@ -41,12 +41,11 @@ describe('preOcrCheck', () => {
   });
 });
 
-describe('slpRate / chapterFile', () => {
-  it('measured from earlier SLP jobs when there are enough; else env; else the planning figure', () => {
-    const jobs = [1, 2, 3].map(() => ({ identified: { slp: { cost_cents: 2, pages: 10 } } }));
-    expect(slpRate(jobs, {})).toMatchObject({ cents_per_page: 0.2, source: expect.stringMatching(/measured: 3 earlier/) });
-    expect(slpRate([], { DEWEY_SLP_CENTS_PER_PAGE: '0.3' })).toMatchObject({ cents_per_page: 0.3 });
-    expect(slpRate([], {})).toMatchObject({ cents_per_page: 0.5, source: expect.stringMatching(/planning doc/) });
+describe('slpSpent / chapterFile', () => {
+  it('sums what SLP actually billed; no jobs → no rate, never a guessed one', () => {
+    const jobs = [1, 2, 3].map(() => ({ identified: { slp: { cost_cents: 2, pages: 10 } } })).concat([{ identified: {} }]);
+    expect(slpSpent(jobs)).toEqual({ jobs: 3, pages: 30, spent_usd: 0.06, cents_per_page_so_far: 0.2 });
+    expect(slpSpent([])).toEqual({ jobs: 0, pages: 0, spent_usd: 0, cents_per_page_so_far: null });
   });
   it('chapter files of one book share a set; ordinary books do not', () => {
     const a = chapterFile('BNO/01_PDF format OCR/William Henry Randall/27 William Henry Randall chap 26.pdf'), b = chapterFile('BNO/01_PDF format OCR/William Henry Randall/28 William Henry Randall chap 27.pdf');

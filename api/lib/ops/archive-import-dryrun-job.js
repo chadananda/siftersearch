@@ -12,7 +12,7 @@ import { itemRow } from '../archives/dedup.js';
 import { toMarkdownText } from '../dewey/convert.js';
 import { sampleLines, titleFromLines, withText } from '../dewey/identify.js';
 import { checkHoldings, plausibleHolding } from '../dewey/holdings.js';
-import { preOcrCheck, slpBound, slpRate, verdictOf } from '../archives/pre-ocr.js';
+import { preOcrCheck, slpBound, slpSpent, verdictOf } from '../archives/pre-ocr.js';
 import { docsByIsbn } from '../docs-repo.js';
 import { slpMaxPages } from '../dewey/searchlayer.js';
 import { setHoldings } from '../repos/collection-repo.js';
@@ -40,7 +40,7 @@ export async function archiveImportDryrunJob(params = {}, deps = {}) {
   const sets = { ...(partial?.chapter_sets || {}) };
   // ONE copy per work across ALL drives (archives/dedup.js, over the registry — not just this window): the best copy of each is checked, the rest are listed with the step + score
   const dedup = deps.dedup || await driveDedup(drive.id, deps.items ? { rows: deps.items.map((i) => itemRow(drive.id, i)), bySha: deps.bySha || (async () => null) } : {}), dups = dedup.dups;
-  const rate = deps.rate || slpRate(await Promise.resolve(deps.deweyItems ? deps.deweyItems() : import('../repos/dewey-repo.js').then((m) => m.listItems({ limit: 1000 }))).catch(() => []));
+  const spent = deps.spent || slpSpent(await Promise.resolve(deps.deweyItems ? deps.deweyItems() : import('../repos/dewey-repo.js').then((m) => m.listItems({ limit: 1000 }))).catch(() => []));
   let uncat = partial?.uncat || 0, checked = partial?.checked || 0, at = offset;
   const saves = [];   // the evidence of each verdict is kept on the item's collection row (best effort: a missing data folder never stops a run)
   const put = (k, row) => {
@@ -106,8 +106,7 @@ export async function archiveImportDryrunJob(params = {}, deps = {}) {
       at++; checked++;
     }
   }
-  const est_usd = +(slp.pages * rate.cents_per_page / 100).toFixed(2);
-  return { drive: drive.id, checked, counts, classes, slp: { ...slp, ...rate, est_usd, page_limit: slpMaxPages() },
+  return { drive: drive.id, checked, counts, classes, slp: { ...slp, files: slp.items, est_usd: 'not estimable (SLP bills cost-plus on the processing; Chad will add an estimate)', spent_so_far: spent, page_limit: slpMaxPages() },
     chapter_sets: { sets: Object.keys(sets).length, files: counts.chapter_files, examples: Object.entries(sets).slice(0, 20).map(([set, ids]) => ({ set, ids })) },
     dedup: { by_step: dedup.by_step, clusters_total: dedup.clusters.length, clusters: dedup.clusters.slice(0, list) },
     uncatalogued_scans: uncat, ...buckets, note: `lists cut to ${list} per bucket; params.list raises it. needs_ocr = the SLP-bound set (image PDFs + scans that survived the pre-OCR check)` };

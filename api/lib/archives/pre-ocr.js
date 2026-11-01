@@ -90,13 +90,11 @@ export async function preOcrCheck({ probe, cat = {}, name = '' }, { check = chec
 /** A PDF's class for routing: scans and image PDFs (a hidden OCR layer over page images) go to SLP; born-digital PDFs and every non-PDF read directly. */
 export const slpBound = (cls) => cls === 'image_pdf' || cls === 'scan';
 
-/** SLP's cents a page: measured from earlier OCR'd items (identified.slp.cost_cents / pages), else DEWEY_SLP_CENTS_PER_PAGE, else the planning doc's top figure. */
-export function slpRate(items = [], env = process.env) {
-  let cents = 0, pages = 0, n = 0;
-  for (const i of items) { const s = i?.identified?.slp; if (Number(s?.cost_cents) > 0 && Number(s?.pages) > 0) { cents += Number(s.cost_cents); pages += Number(s.pages); n++; } }
-  if (n >= 3) return { cents_per_page: +(cents / pages).toFixed(4), source: `measured: ${n} earlier SLP jobs, ${pages} pages, $${(cents / 100).toFixed(2)}` };
-  if (Number(env.DEWEY_SLP_CENTS_PER_PAGE) > 0) return { cents_per_page: Number(env.DEWEY_SLP_CENTS_PER_PAGE), source: 'DEWEY_SLP_CENTS_PER_PAGE' };
-  return { cents_per_page: 0.5, source: 'planning doc estimate ($0.50-1.50 per 300 pages, top figure) — no measured jobs on file' };
+/** What SLP has ACTUALLY billed so far: sum of identified.slp.cost_cents / pages over OCR'd items. SLP bills cost-plus on the processing, so there is no per-page price to estimate with — only what was spent. */
+export function slpSpent(items = []) {
+  let cents = 0, pages = 0, jobs = 0;
+  for (const i of items) { const s = i?.identified?.slp; if (!s || !(Number(s.cost_cents) >= 0) || s.cost_cents == null) continue; cents += Number(s.cost_cents); pages += Number(s.pages) || 0; jobs++; }
+  return { jobs, pages, spent_usd: +(cents / 100).toFixed(2), cents_per_page_so_far: pages ? +(cents / pages).toFixed(4) : null };
 }
 
 /** A file that is one chapter of a book ("27 William Henry Randall chap 26.pdf", "Part 3.pdf") → { set } (its folder + the name with numbers removed), else null. Pure. */

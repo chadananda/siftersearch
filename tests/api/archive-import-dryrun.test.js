@@ -27,21 +27,21 @@ describe('archive-import-dryrun', () => {
     const read = async (path) => (path.endsWith('g.pdf') ? { markdown: text, scan: false } : path.endsWith('.pdf') ? { markdown: '', scan: true } : { markdown: text, scan: false });
     const check = async (id) => (id._text ? { verdict: id.file_name === 'a.txt' || id.title === 'Held Gem' ? 'held' : 'not-held', candidates: [{ id: 9, title: 'Lib copy' }] }
       : { verdict: 'undetermined', candidates: id.title === 'Kitab-i-Iqan' ? [{ id: 11, title: 'The Kitáb-i-Íqán', paragraph_count: 300 }] : [] });
-    const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, read, check, byIsbn: async () => [], rate: { cents_per_page: 0.4, source: 'test' }, draining: () => false });
+    const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, read, check, byIsbn: async () => [], spent: { jobs: 0, pages: 0, spent_usd: 0, cents_per_page_so_far: null }, draining: () => false });
     expect(r.counts).toEqual({ held: 2, probably_held: 1, needs_ocr: 2, straight_in: 2, duplicates: 0, unprobed: 1, chapter_files: 1, skipped: 1, failed: 0 });
     expect(r.classes).toEqual({ born_digital: 3, image_pdf: 2, scan: 2 });
     expect(r.held.map((x) => x.id)).toEqual([1, 6]);
     expect(r.held[0]).toMatchObject({ id: 1, by: 'text', candidate: '#9 Lib copy' });
     expect(r.probably_held[0]).toMatchObject({ id: 3, by: 'title', class: 'scan', candidate: '#11 The Kitáb-i-Íqán' });
     expect(r.needs_ocr).toEqual([expect.objectContaining({ id: 4, class: 'scan', pages: 200, catalogued: true }), expect.objectContaining({ id: 5, class: 'image_pdf', pages: 300 })]);
-    expect(r.slp).toMatchObject({ items: 2, pages: 500, over_page_limit: 0, cents_per_page: 0.4, est_usd: 2, by_class: { image_pdf: { items: 1, pages: 300 }, scan: { items: 1, pages: 200 } } });
+    expect(r.slp).toMatchObject({ items: 2, pages: 500, over_page_limit: 0, files: 2, est_usd: expect.stringMatching(/not estimable/), by_class: { image_pdf: { items: 1, pages: 300 }, scan: { items: 1, pages: 200 } } });
     expect(r.unprobed[0]).toMatchObject({ id: 8 });
     expect(r.chapter_sets).toMatchObject({ sets: 1, files: 1 });
   });
   it('pages over the SLP limit are counted for a person', async () => {
     const items = [it1(1, 'a.pdf', { metadata: pr('scan', { pages: 900 }) })];
-    const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, check: async () => ({ verdict: 'not-held', candidates: [] }), byIsbn: async () => [], rate: { cents_per_page: 1, source: 't' }, draining: () => false });
-    expect(r.slp).toMatchObject({ pages: 900, over_page_limit: 1, est_usd: 9 });
+    const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, check: async () => ({ verdict: 'not-held', candidates: [] }), byIsbn: async () => [], spent: { jobs: 0, pages: 0, spent_usd: 0, cents_per_page_so_far: null }, draining: () => false });
+    expect(r.slp).toMatchObject({ pages: 900, over_page_limit: 1, est_usd: expect.stringMatching(/not estimable/) });
   });
 });
 
@@ -55,7 +55,7 @@ describe('archive-import-dryrun duplicates and evidence', () => {
     const rel = { relation: 'partial', ours_in_theirs: 0.3, theirs_in_ours: 0.8, length_ratio: 0.4, in_order: 0.9 };
     const check = async (id) => (id.title === 'Breakwell Pilgrim Notes' ? { verdict: 'partly-held', candidates: [{ id: 208557, title: 'Utterances', relation: rel }] } : { verdict: 'not-held', candidates: [] });
     const read = async () => ({ markdown: text, scan: false });
-    const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, read, check, byIsbn: async () => [], rate: { cents_per_page: 1, source: 't' }, draining: () => false });
+    const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, read, check, byIsbn: async () => [], spent: { jobs: 0, pages: 0, spent_usd: 0, cents_per_page_so_far: null }, draining: () => false });
     expect(r.counts).toMatchObject({ duplicates: 2, held: 1, straight_in: 1, needs_ocr: 1 });
     expect(r.duplicates.map((x) => [x.id, x.of_id, x.step])).toEqual([[1, 2, 'title+length'], [3, 4, 'title+length']]);
     expect(r.held[0]).toMatchObject({ id: 5, evidence: [{ id: 208557, relation: 'partial', ours_in_theirs: 0.3, theirs_in_ours: 0.8, length_ratio: 0.4 }] });
@@ -66,12 +66,12 @@ describe('archive-import-dryrun duplicates and evidence', () => {
 describe('archive-import-dryrun drain', () => {
   it('yields on a drain with offset + tallies, and the resume run finishes with the same totals as one uninterrupted run', async () => {
     const items = Array.from({ length: 6 }, (_, i) => ({ id: i + 1, kind: 'talk', primary_rel: `t${i}.mp3` }));
-    const whole = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, rate: { cents_per_page: 0.5, source: 't' }, draining: () => false });
+    const whole = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, spent: { jobs: 0, pages: 0, spent_usd: 0, cents_per_page_so_far: null }, draining: () => false });
     let n = 0;
-    const y = await archiveImportDryrunJob({ drive: 'g', list: 2 }, { drive, items, rate: { cents_per_page: 0.5, source: 't' }, draining: () => n++ >= 3 });
+    const y = await archiveImportDryrunJob({ drive: 'g', list: 2 }, { drive, items, spent: { jobs: 0, pages: 0, spent_usd: 0, cents_per_page_so_far: null }, draining: () => n++ >= 3 });
     expect(y).toMatchObject({ yielded: true, resume: { drive: 'g', list: 2, offset: 3, limit: 1997, partial: { counts: { skipped: 3 }, checked: 3, classes: expect.any(Object), slp: expect.any(Object) } } });
     expect(y.resume.partial.lists.skipped).toHaveLength(2);
-    const r = await archiveImportDryrunJob(y.resume, { drive, items: items.slice(3), rate: { cents_per_page: 0.5, source: 't' }, draining: () => false });
+    const r = await archiveImportDryrunJob(y.resume, { drive, items: items.slice(3), spent: { jobs: 0, pages: 0, spent_usd: 0, cents_per_page_so_far: null }, draining: () => false });
     expect(r.checked).toBe(6);
     expect(r.counts).toEqual(whole.counts);
     expect(r.skipped).toHaveLength(2);
@@ -84,7 +84,7 @@ describe('archive-import-dryrun evidence for the batch page', () => {
     const rel = { relation: 'overlap', ours_in_theirs: 0.1, theirs_in_ours: 0.2, length_ratio: 0.5 };
     const items = [it1(1, 'a.txt', { title: 'Partial Book' }), it1(2, 'b.txt', { title: 'Clean Book' }), it1(3, 'c/Twin Book.txt', { title: 'The Twin Book', bytes: 5000 }), it1(4, 'd/Twin Book 2.txt', { title: 'The Twin Book', bytes: 5100 })];
     const check = async (id) => (id.title === 'Partial Book' ? { verdict: 'partly-held', candidates: [1, 2, 3, 4].map((n) => ({ id: n, title: `Cand ${n}`, relation: rel })) } : { verdict: 'not-held', candidates: [] });
-    const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, read: async () => ({ markdown: text, scan: false }), check, byIsbn: async () => [], rate: { cents_per_page: 1, source: 't' }, draining: () => false, saveHoldings: async (...a) => { saved.push(a); } });
+    const r = await archiveImportDryrunJob({ drive: 'g' }, { drive, items, read: async () => ({ markdown: text, scan: false }), check, byIsbn: async () => [], spent: { jobs: 0, pages: 0, spent_usd: 0, cents_per_page_so_far: null }, draining: () => false, saveHoldings: async (...a) => { saved.push(a); } });
     expect(r.probably_held[0].holdings).toMatchObject({ verdict: 'probably_held', relation: 'overlap', ours_in_theirs: 0.1, theirs_in_ours: 0.2, length_ratio: 0.5 });
     expect(r.probably_held[0].holdings.candidates.map((c) => c.title)).toEqual(['Cand 1', 'Cand 2', 'Cand 3']);
     expect(r.straight_in[0].holdings).toMatchObject({ verdict: 'straight_in', relation: null, candidates: [] });

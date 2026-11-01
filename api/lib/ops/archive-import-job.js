@@ -18,7 +18,7 @@ import { getDrive, getDonor, itemsToImport, itemsForDedup, markImported, itemsIm
 import { itemPath } from './archive-sample-job.js';
 import { deweyMediaDir } from './media-jobs.js';
 import { ingestDir } from './dewey-ingest-folder-job.js';
-import { preOcrCheck, slpBound, chapterFile } from '../archives/pre-ocr.js';
+import { preOcrCheck, slpBound, slpSpent, chapterFile } from '../archives/pre-ocr.js';
 import { clusterDuplicates, itemRow, registryRow } from '../archives/dedup.js';
 import { allFingerprints, applyClusters, mdFor, upsertFile } from '../repos/collection-repo.js';
 import { checkHoldings } from '../dewey/holdings.js';
@@ -143,5 +143,6 @@ export async function archiveImportJob({ drive: driveId, limit = 200 } = {}, dep
   if (out.books.length) await queue('dewey-ingest-folder', { batch: 5 }, 'archive-import');
   if (out.talks.length + out.books.length && !['imported', 'returned'].includes(drive.status)) await setCustody(drive.id, { status: 'importing' });
   out.linked = await fillLinks(drive.id, { media, dewey, record: mkrow });
+  out.slp_spent = deps.spent || slpSpent(await Promise.resolve(dewey.listItems?.({ limit: 1000 })).catch(() => []) || []);
   return out;
 }
