@@ -1,8 +1,8 @@
 // archive-copy ops job (planning/donor-intake-plan-20261030.md step 1): register a donor + drive and copy the drive whole into /tank/archives/<drive>.
-// The source must be mounted READ-ONLY (or already be a folder on /tank). rsync at idle I/O priority; resumable (rsync skips what is there, a drain
-// stops it and the job resumes). Verified by file count + bytes. Then archive-sifter catalogues the copy and archive-adopt reads it. Lane 'copy'.
+// The source must be mounted READ-ONLY (or already be a folder on /tank). rsync at idle I/O priority, detached (a drain never stops it; the
+// requeued job adopts it). Verified by file count + bytes. Then archive-sifter catalogues the copy and archive-adopt reads it. Lane 'copy'.
 import { spawn } from 'child_process';
-import { readFile, readdir, lstat } from 'fs/promises';
+import { readFile, readdir, lstat, mkdir, writeFile, rm } from 'fs/promises';
 import { join } from 'path';
 import { upsertDonor, upsertDrive, getDrive, setCustody } from '../repos/archives-repo.js';
 
@@ -42,17 +42,43 @@ export async function tally(dir) {
   return { files, bytes };
 }
 
-// rsync at idle I/O + lowest CPU priority; a drain stops it (it resumes where it left off)
-function rsync(src, dest, draining) {
-  return new Promise((res, rej) => {
-    const p = spawn('ionice', ['-c3', 'nice', '-n19', 'rsync', '-a', '--partial', '--no-inc-recursive', `${src.replace(/\/+$/, '')}/`, `${dest}/`], { stdio: ['ignore', 'ignore', 'pipe'] });
-    let err = '', stopped = false;
-    p.stderr.on('data', (d) => { err = (err + d).slice(-2000); });
-    const tick = setInterval(() => { if (draining()) { stopped = true; p.kill('SIGTERM'); } }, 10_000);
-    p.on('error', (e) => { clearInterval(tick); rej(e); });
-    p.on('close', (code) => { clearInterval(tick); if (stopped) res('stopped'); else if (code === 0) res('done'); else rej(new Error(`rsync exit ${code}: ${err.trim().slice(-400)}`)); });
-  });
+// rsync runs DETACHED (own session, outlives the service; 10-31: a drain used to kill it and a 2.8 TB NTFS drive's file list alone takes 30+ min).
+// <dest>.copy/ (beside the copy, not inside it) holds pid, log and status (the wrapper writes the exit code there). A drain leaves rsync running;
+// the requeued job adopts the live rsync, or reads the status it left, and starts a new one only when none is alive.
+const SCRIPT = 'ionice -c3 nice -n19 rsync -a --partial "$1/" "$2/" >"$3/log" 2>&1; echo $? >"$3/status.tmp" && mv "$3/status.tmp" "$3/status"';
+const startRsync = (src, dest, ctl) => { const p = spawn('sh', ['-c', SCRIPT, 'sh', src.replace(/\/+$/, ''), dest, ctl], { detached: true, stdio: 'ignore' }); p.unref(); return p.pid; };
+// the recorded pid is ours only while /proc/<pid>/cmdline still names rsync and this ctl dir (pids get reused)
+const isOurs = async (pid, ctl) => { if (!pid) return false; const c = (await readFile(`/proc/${pid}/cmdline`, 'utf8').catch(() => '')).split('\0').join(' '); return c.includes('rsync') && c.includes(ctl); };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** 'done' (rsync exit 0), 'stopped' (service draining; rsync keeps running), or throws on a failed rsync. */
+export async function runRsync(src, dest, draining, io = {}) {
+  const { start = startRsync, alive = isOurs, wait = sleep, pollMs = 5000 } = io;
+  const ctl = `${dest}.copy`;
+  await mkdir(ctl, { recursive: true });
+  const text = (f) => readFile(join(ctl, f), 'utf8').catch(() => null);
+  const pidOf = async () => Number((await text('pid'))?.trim()) || 0;
+  // none alive and none finished while we were away: start a new one
+  if (!(await alive(await pidOf(), ctl)) && await text('status') === null) {
+    await rm(join(ctl, 'status.tmp'), { force: true });
+    await writeFile(join(ctl, 'pid'), String(await start(src, dest, ctl)));
+  }
+  // adopt (or watch the one just started) until its status file appears; a drain only stops WATCHING
+  for (;;) {
+    const st = await text('status');
+    if (st !== null) {
+      const code = Number(st.trim()), tail = ((await text('log')) || '').trim().slice(-400);
+      await Promise.all([rm(join(ctl, 'status'), { force: true }), rm(join(ctl, 'pid'), { force: true })]);
+      if (code === 0) return 'done';
+      throw new Error(`rsync exit ${code}: ${tail}`);
+    }
+    // it vanished without a status (killed): forget it so the retry starts a new one
+    if (!(await alive(await pidOf(), ctl))) { await rm(join(ctl, 'pid'), { force: true }); throw new Error(`rsync died without an exit status: ${((await text('log')) || '').trim().slice(-400)}`); }
+    if (draining()) return 'stopped';
+    await wait(pollMs);
+  }
 }
+const rsync = (src, dest, draining) => runRsync(src, dest, draining);
 
 export async function archiveCopyJob(params = {}, deps = {}) {
   const { drive, donor, donorName, label, source } = params;

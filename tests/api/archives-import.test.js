@@ -10,7 +10,7 @@ vi.mock('../../api/lib/ops/media-jobs.js', () => ({ deweyMediaDir: () => '/x/med
 vi.mock('../../api/lib/ops/dewey-ingest-folder-job.js', () => ({ ingestDir: () => '/x/ingest' }));
 import * as repo from '../../api/lib/repos/archives-repo.js';
 import { importPlan, provenance, archiveImportJob } from '../../api/lib/ops/archive-import-job.js';
-import { mountOf, sourceRefusal, tally, archiveCopyJob } from '../../api/lib/ops/archive-copy-job.js';
+import { mountOf, sourceRefusal, tally, archiveCopyJob, runRsync } from '../../api/lib/ops/archive-copy-job.js';
 import { toMarkdown } from '../../api/lib/dewey/intake.js';
 
 let root, out;
@@ -114,5 +114,48 @@ describe('archive-copy', () => {
     vi.clearAllMocks();
     await expect(archiveCopyJob({ ...P, source: '/mnt/rw' }, { mounts: async () => MOUNTS, draining: () => false })).rejects.toThrow(/read-write/);
     expect(repo.upsertDrive).not.toHaveBeenCalled();
+  });
+});
+
+// detached rsync: adopt a live one across a drain, start only when none is alive, read the exit status it left
+describe('runRsync (detached)', () => {
+  const setup = async () => { const d = join(await mkdtemp(join(tmpdir(), 'cp-')), 'drv'); await mkdir(`${d}.copy`, { recursive: true }); return { d, ctl: `${d}.copy` }; };
+  it('starts a new rsync when none is alive, and returns done on exit 0', async () => {
+    const { d, ctl } = await setup();
+    const start = vi.fn(async () => { await writeFile(join(ctl, 'status'), '0\n'); return 4242; });
+    expect(await runRsync('/src', d, () => false, { start, alive: async () => false, wait: async () => {} })).toBe('done');
+    expect(start).toHaveBeenCalledWith('/src', d, ctl);
+    await expect(stat(join(ctl, 'status'))).rejects.toThrow();
+  });
+  it('adopts a live rsync (no new start); a drain yields without killing it; the next run sees it finish', async () => {
+    const { d, ctl } = await setup();
+    await writeFile(join(ctl, 'pid'), '777');
+    const start = vi.fn();
+    const alive = async (pid) => pid === 777;
+    expect(await runRsync('/src', d, () => true, { start, alive, wait: async () => {} })).toBe('stopped');
+    expect(start).not.toHaveBeenCalled();
+    expect(await readFile(join(ctl, 'pid'), 'utf8')).toBe('777');
+    let polls = 0;
+    expect(await runRsync('/src', d, () => false, { start, alive, wait: async () => { if (++polls === 2) await writeFile(join(ctl, 'status'), '0'); } })).toBe('done');
+    expect(start).not.toHaveBeenCalled();
+  });
+  it('reads the status left while the service was down (no restart); nonzero exit throws with the log tail', async () => {
+    const { d, ctl } = await setup();
+    await writeFile(join(ctl, 'pid'), '5'); await writeFile(join(ctl, 'status'), '23'); await writeFile(join(ctl, 'log'), 'rsync: some files vanished\n');
+    const start = vi.fn();
+    await expect(runRsync('/src', d, () => false, { start, alive: async () => false })).rejects.toThrow(/rsync exit 23: rsync: some files vanished/);
+    expect(start).not.toHaveBeenCalled();
+    await expect(stat(join(ctl, 'pid'))).rejects.toThrow();
+  });
+  it('a stale pid (not alive, no status) is replaced by a new rsync; one that dies mid-watch throws and is forgotten', async () => {
+    const { d, ctl } = await setup();
+    await writeFile(join(ctl, 'pid'), '9');
+    const start = vi.fn(async () => { await writeFile(join(ctl, 'status'), '0'); return 10; });
+    expect(await runRsync('/src', d, () => false, { start, alive: async () => false, wait: async () => {} })).toBe('done');
+    expect(start).toHaveBeenCalledTimes(1);
+    await writeFile(join(ctl, 'pid'), '11');
+    let up = true;
+    await expect(runRsync('/src', d, () => false, { start, alive: async () => { const u = up; up = false; return u; }, wait: async () => {} })).rejects.toThrow(/died without an exit status/);
+    await expect(stat(join(ctl, 'pid'))).rejects.toThrow();
   });
 });
