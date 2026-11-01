@@ -1,0 +1,53 @@
+[
+ {
+  "date": "2026-11-01",
+  "tag": "smoke",
+  "api": "http://tower-nas:7839",
+  "sim_model": "claude-sonnet-5-5",
+  "judge_model": "claude-opus-5-5",
+  "conversations": 2,
+  "judged": 2,
+  "turns": 10,
+  "errors": 0,
+  "overall": 2.5,
+  "scores": {
+   "grounding": 1,
+   "citation_links": 2,
+   "follow_up_resolution": 2,
+   "coherence": 1,
+   "depth": 1,
+   "honesty_absence": 1,
+   "authority_ordering": 2,
+   "tone": 3,
+   "latency": 3
+  },
+  "defects": 22,
+  "by_stage": {
+   "gate": 0,
+   "strategy": 3,
+   "follow_up_context": 4,
+   "retrieval": 1,
+   "selection": 2,
+   "answer": 10,
+   "latency": 2
+  },
+  "by_severity": {
+   "critical": 4,
+   "major": 13,
+   "minor": 5
+  },
+  "latency_ms": {
+   "p50": 13613,
+   "p90": 18585,
+   "max": 18585,
+   "over_15s": 2
+  },
+  "usd": {
+   "anis": 0.0195,
+   "sim": 0.0467,
+   "judge": 0.2927,
+   "total": 0.359,
+   "per_conversation": 0.1795
+  }
+ }
+]

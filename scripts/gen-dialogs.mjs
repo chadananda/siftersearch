@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SUPERSEDED (11-01) by tests/quality/anis-conversations.mjs — Claude reader, one thread per conversation (x-user-id +
+// conversationId), final text from `chunk` events, Opus judge, and --publish saves WITH conversation_id. Kept for its
+// hero-image prompt; stale here: calls the assistant "Jafar" (it is Anís), reads `text` draft events, sends no thread id.
 // Batch dialog generator — runs seed questions through Jafar with a simulated
 // user agent (GPT-4o), then saves each finished conversation to the
 // published_conversations table via POST /api/v1/admin/conversations/save.
