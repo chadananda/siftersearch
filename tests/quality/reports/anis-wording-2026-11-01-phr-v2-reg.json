@@ -1,0 +1,9632 @@
+{
+ "summary": {
+  "date": "2026-11-01T14:24:05.957Z",
+  "variants": 60,
+  "pass": 52,
+  "pass_rate": 0.867,
+  "strategy_ok": 58,
+  "strategy_scored": 60,
+  "mode": "current",
+  "answer_ok": 54,
+  "nofound": 1,
+  "offtopic": 5,
+  "errors": 0,
+  "slow_gt5s": 47,
+  "p50_ms": 7665,
+  "p95_ms": 13445,
+  "usd_total": 0.207,
+  "usd_per_reply": 0.00345,
+  "first_failing_stage": {
+   "ok": 52,
+   "selection": 5,
+   "retrieval": 1,
+   "strategy": 2
+  },
+  "phrases_via": {
+   "fallback": 1,
+   "haiku": 1
+  },
+  "phrases_ok": 1,
+  "phrases_scored": 1,
+  "phrase_exact_ok": 0,
+  "phrase_exact_scored": 0,
+  "phrase_names_ok": 0,
+  "phrase_names_scored": 0
+ },
+ "matrix": {
+  "history_fact": {
+   "non_native": "2/2",
+   "polite": "1/4",
+   "bare": "4/5",
+   "followup": "3/3",
+   "find": "4/6",
+   "terse": "5/5",
+   "embedded": "4/5",
+   "typo": "3/3",
+   "fragment": "·",
+   "ALL": "26/33"
+  },
+  "define_term": {
+   "non_native": "1/1",
+   "polite": "2/2",
+   "bare": "3/3",
+   "followup": "4/4",
+   "find": "7/8",
+   "terse": "2/2",
+   "embedded": "3/3",
+   "typo": "3/3",
+   "fragment": "1/1",
+   "ALL": "26/27"
+  }
+ },
+ "results": [
+  {
+   "id": "hx-bahaullah-passing#12",
+   "fixture": "hx-bahaullah-passing",
+   "type": "history_fact",
+   "style": "non_native",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Please, I am not English native speaker. Can you tell me in what place Bahá'u'lláh is passing away? I am reading for my class and need to know."
+    }
+   ],
+   "ms": 14017,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 8180
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "direct_answer",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 48
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 977
+    },
+    {
+     "name": "plan",
+     "at": 977,
+     "ms": 844
+    },
+    {
+     "name": "phrases",
+     "at": 1821,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1821,
+     "ms": 7336
+    },
+    {
+     "name": "upgrade-links",
+     "at": 9157,
+     "ms": 8
+    },
+    {
+     "name": "format",
+     "at": 9165,
+     "ms": 232
+    },
+    {
+     "name": "companion",
+     "at": 9166,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 9397,
+     "ms": 1843
+    },
+    {
+     "name": "output-check",
+     "at": 11244,
+     "ms": 170
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1821
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 4580
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 9396
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 11240
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 11414
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 22,
+    "search_ms": 7289,
+    "total_ms": 7312,
+    "claims_ms": 1121,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1121,
+      "qkeyword": 1976,
+      "merge": 4180,
+      "total": 6156
+     },
+     {
+      "filters": [],
+      "concept": 1121,
+      "qkeyword": 1969,
+      "merge": 4229,
+      "total": 6198
+     }
+    ],
+    "passages_ms": 6199,
+    "evidence_ms": 15,
+    "resolve_ms": 1074
+   },
+   "usd": 0.0093,
+   "latency_ms": 11414,
+   "wall_ms": 14017,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello! It is a pleasure to help you with your studies, and please do not worry about your English at all.\n\nBahá'u'lláh passed away in the Mansion of Bahjí, located just outside the city of ‘Akká (in present-day Israel).\n\nHere are the words from Shoghi Effendi'"
+  },
+  {
+   "id": "df-mashriq#10",
+   "fixture": "df-mashriq",
+   "type": "define_term",
+   "style": "non_native",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Please, my English is not so good. What means the Mashriqu'l-Adhkár?"
+    }
+   ],
+   "ms": 14268,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 8029
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 27
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 1051
+    },
+    {
+     "name": "plan",
+     "at": 1051,
+     "ms": 2387
+    },
+    {
+     "name": "phrases",
+     "at": 3438,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 3438,
+     "ms": 5642
+    },
+    {
+     "name": "upgrade-links",
+     "at": 9080,
+     "ms": 4
+    },
+    {
+     "name": "companion",
+     "at": 9085,
+     "ms": 10
+    },
+    {
+     "name": "format",
+     "at": 9085,
+     "ms": 289
+    },
+    {
+     "name": "craft",
+     "at": 9374,
+     "ms": 2755
+    },
+    {
+     "name": "output-check",
+     "at": 12133,
+     "ms": 120
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 3437
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 4562
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 8920
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 9373
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 12129
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 12252
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 5480,
+    "total_ms": 5483,
+    "claims_ms": 286,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 286,
+      "qkeyword": 357,
+      "merge": 4436,
+      "total": 4793
+     }
+    ],
+    "passages_ms": 4793,
+    "resolve_ms": 687
+   },
+   "usd": 0.00382,
+   "latency_ms": 12253,
+   "wall_ms": 14268,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello! Please do not worry at all about your English; it is a pleasure to help you explore this.\n\nIn authorized interpretation, ‘Abdu’l-Bahá describes the Mashriqu’l-Adhkár as [\"the lodestone of divine confirmations\"](https://oceanlibrary.com/institution-of-th"
+  },
+  {
+   "id": "hx-abdul-baha-america#09",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I wonder if you could help me figure out when 'Abdu'l-Bahá went over to America."
+    }
+   ],
+   "ms": 14020,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 8418
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "direct_answer",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 34
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 968
+    },
+    {
+     "name": "plan",
+     "at": 968,
+     "ms": 159
+    },
+    {
+     "name": "phrases",
+     "at": 1127,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 1128,
+     "ms": 8258
+    },
+    {
+     "name": "upgrade-links",
+     "at": 9387,
+     "ms": 3
+    },
+    {
+     "name": "format",
+     "at": 9390,
+     "ms": 118
+    },
+    {
+     "name": "companion",
+     "at": 9391,
+     "ms": 1
+    },
+    {
+     "name": "craft",
+     "at": 9508,
+     "ms": 2149
+    },
+    {
+     "name": "output-check",
+     "at": 11659,
+     "ms": 112
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1126
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 4589
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 9507
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 11657
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 11771
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 5,
+    "search_ms": 8227,
+    "total_ms": 8232,
+    "claims_ms": 683,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 682,
+      "qconcept": 5894,
+      "qkeyword_retry": 7367,
+      "merge": 53,
+      "total": 7420
+     }
+    ],
+    "passages_ms": 7422,
+    "resolve_ms": 805
+   },
+   "usd": 0.00286,
+   "latency_ms": 11772,
+   "wall_ms": 14020,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question about when 'Abdu’l-Bahá traveled to America.\n\nWhile the specific year of His journey is not mentioned in the passages available to me, the texts do note that He traveled through Europe and America despite being in the "
+  },
+  {
+   "id": "hx-bahaullah-passing#01",
+   "fixture": "hx-bahaullah-passing",
+   "type": "history_fact",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "where did Bahá'u'lláh pass away"
+    }
+   ],
+   "ms": 14021,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 8259
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 41
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 977
+    },
+    {
+     "name": "plan",
+     "at": 977,
+     "ms": 1983
+    },
+    {
+     "name": "phrases",
+     "at": 2960,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 2960,
+     "ms": 6276
+    },
+    {
+     "name": "upgrade-links",
+     "at": 9236,
+     "ms": 106
+    },
+    {
+     "name": "format",
+     "at": 9342,
+     "ms": 104
+    },
+    {
+     "name": "companion",
+     "at": 9343,
+     "ms": 1
+    },
+    {
+     "name": "craft",
+     "at": 9446,
+     "ms": 1764
+    },
+    {
+     "name": "output-check",
+     "at": 11212,
+     "ms": 197
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 2959
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 4575
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 9199
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 9446
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 11210
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 11408
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 6153,
+    "total_ms": 6240,
+    "claims_ms": 202,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 202,
+      "qkeyword": 754,
+      "merge": 4403,
+      "total": 5157
+     }
+    ],
+    "passages_ms": 5157,
+    "resolve_ms": 995
+   },
+   "usd": 0.00273,
+   "latency_ms": 11409,
+   "wall_ms": 14021,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question. To answer directly from the materials available in our records, the texts I can search do not name the specific place where Bahá’u’lláh passed away, though a pilgrim record mentions entering \"the room where Bahá’u’llá"
+  },
+  {
+   "id": "hx-abdul-baha-america#06",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who was 'Abdu'l-Bahá?"
+    },
+    {
+     "role": "assistant",
+     "content": "'Abdu'l-Bahá was the eldest son of Bahá'u'lláh, the Founder of the Bahá'í Faith. After Bahá'u'lláh's passing in 1892, he led the Bahá'í community and was appointed as the Center of the Covenant, and he is widely known for his teachings on unity, justice, and peace."
+    },
+    {
+     "role": "user",
+     "content": "ok and when did he travel to America?"
+    }
+   ],
+   "ms": 5246,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1679
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 34
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 120
+    },
+    {
+     "name": "plan",
+     "at": 120,
+     "ms": 152
+    },
+    {
+     "name": "phrases",
+     "at": 272,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 273,
+     "ms": 1526
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1799,
+     "ms": 57
+    },
+    {
+     "name": "format",
+     "at": 1856,
+     "ms": 238
+    },
+    {
+     "name": "companion",
+     "at": 1857,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 2094,
+     "ms": 1559
+    },
+    {
+     "name": "output-check",
+     "at": 3657,
+     "ms": 100
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 118
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 271
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 649
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1670
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2094
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 3653
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3757
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 5,
+    "search_ms": 1393,
+    "total_ms": 1398,
+    "claims_ms": 367,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 367,
+      "qkeyword": 461,
+      "qconcept": 718,
+      "qhype": 718,
+      "phrase": 720,
+      "canon": 820,
+      "doctrinal_hype": 878,
+      "doctrinal": 927,
+      "merge": 143,
+      "total": 1070
+     }
+    ],
+    "passages_ms": 1071,
+    "resolve_ms": 322
+   },
+   "usd": 0.00273,
+   "latency_ms": 3757,
+   "wall_ms": 5246,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\n‘Abdu’l-Bahá traveled to the United States following His release from imprisonment in 1908, after which Shoghi Effendi notes He embarked upon an “eight-month tour of the United States of America” as part of His “historic journeys to the West” ([God Pas"
+  },
+  {
+   "id": "hx-abdul-baha-america#10",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where does it say when 'Abdu'l-Bahá traveled to America?"
+    }
+   ],
+   "ms": 19697,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {},
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": null
+   },
+   "timeline": null,
+   "llm": null,
+   "search_detail": null,
+   "usd": 0.00259,
+   "latency_ms": 11422,
+   "wall_ms": 19697,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question. While the texts I can search note that ‘Abdu’l-Bahá traveled in America—mentioning His journeys coast to coast, His visits to places like San Francisco and Minneapolis, and meetings with people such as Phoebe Hearst—t"
+  },
+  {
+   "id": "hx-abdul-baha-america#08",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "abdu'l-baha america travel date"
+    }
+   ],
+   "ms": 9344,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1283
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 397
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 401
+    },
+    {
+     "name": "plan",
+     "at": 401,
+     "ms": 119
+    },
+    {
+     "name": "phrases",
+     "at": 520,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 520,
+     "ms": 1164
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1685,
+     "ms": 155
+    },
+    {
+     "name": "companion",
+     "at": 1841,
+     "ms": 1
+    },
+    {
+     "name": "format",
+     "at": 1841,
+     "ms": 148
+    },
+    {
+     "name": "craft",
+     "at": 1989,
+     "ms": 3102
+    },
+    {
+     "name": "output-check",
+     "at": 5095,
+     "ms": 126
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 400
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 518
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 764
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1611
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 1988
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5091
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5220
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 1029,
+    "total_ms": 1093,
+    "claims_ms": 157,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 157,
+      "qkeyword": 188,
+      "qconcept": 273,
+      "qhype": 273,
+      "phrase": 350,
+      "canon": 519,
+      "doctrinal_hype": 565,
+      "doctrinal": 572,
+      "merge": 113,
+      "total": 685
+     }
+    ],
+    "passages_ms": 685,
+    "resolve_ms": 344
+   },
+   "usd": 0.00373,
+   "latency_ms": 5221,
+   "wall_ms": 9344,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question about ‘Abdu’l-Bahá’s travels to America. While the passages provided here mention that He undertook historic journeys to the West—referencing in particular an eight-month tour of the United States and Canada in 1912 ( "
+  },
+  {
+   "id": "hx-abdul-baha-america#05",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I'm putting together a talk for my study group next Sunday and I got stuck on one detail. My notes mention a long journey that 'Abdu'l-Bahá made, but I can't remember the year. When did 'Abdu'l-Bahá travel to America?"
+    }
+   ],
+   "ms": 23606,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {},
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "direct_answer",
+    "provenance": null
+   },
+   "timeline": null,
+   "llm": null,
+   "search_detail": null,
+   "usd": 0.00286,
+   "latency_ms": 11888,
+   "wall_ms": 23606,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nThe texts I can search mention that ‘Abdu’l-Bahá journeyed throughout the cities of America (as noted in [Tablets of the Divine Plan](https://oceanlibrary.com/tablets-of-the-divine-plan_abdul-baha/?paraId=para_120&selectionString=tablets_of_the_divine_"
+  },
+  {
+   "id": "df-dharma#03",
+   "fixture": "df-dharma",
+   "type": "define_term",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where does it say what dharma means? I want to read the explanation myself."
+    }
+   ],
+   "ms": 13475,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 6565
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 301
+    },
+    {
+     "name": "plan",
+     "at": 301,
+     "ms": 122
+    },
+    {
+     "name": "phrases",
+     "at": 423,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 423,
+     "ms": 6443
+    },
+    {
+     "name": "upgrade-links",
+     "at": 6867,
+     "ms": 1090
+    },
+    {
+     "name": "format",
+     "at": 7957,
+     "ms": 737
+    },
+    {
+     "name": "companion",
+     "at": 7959,
+     "ms": 27
+    },
+    {
+     "name": "craft",
+     "at": 8694,
+     "ms": 2512
+    },
+    {
+     "name": "output-check",
+     "at": 11208,
+     "ms": 134
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 299
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 421
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1007
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2159
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 6363
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 8449
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 11206
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 11341
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 5,
+    "search_ms": 5936,
+    "total_ms": 5941,
+    "claims_ms": 570,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 570,
+      "qkeyword": 582,
+      "qconcept": 2302,
+      "qhype": 2958,
+      "merge": 278,
+      "total": 3236
+     },
+     {
+      "filters": [],
+      "concept": 570,
+      "qkeyword": 582,
+      "phrase": 3736,
+      "canon": 4264,
+      "merge": 843,
+      "total": 5107
+     }
+    ],
+    "passages_ms": 5107,
+    "resolve_ms": 828
+   },
+   "usd": 0.00278,
+   "latency_ms": 11343,
+   "wall_ms": 13475,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nIt is wonderful that you want to go straight to the sources to read how *dharma* is explained. When we look across the traditions, the texts point us directly to teachers, actions, and the very structure of the world.\n\nIn Buddhist scripture, when someo"
+  },
+  {
+   "id": "df-nirvana#01",
+   "fixture": "df-nirvana",
+   "type": "define_term",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "what is nirvana"
+    }
+   ],
+   "ms": 10860,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 6253
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 68
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 151
+    },
+    {
+     "name": "plan",
+     "at": 153,
+     "ms": 183
+    },
+    {
+     "name": "phrases",
+     "at": 336,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 1716,
+     "ms": 4690
+    },
+    {
+     "name": "upgrade-links",
+     "at": 6406,
+     "ms": 37
+    },
+    {
+     "name": "companion",
+     "at": 6443,
+     "ms": 3
+    },
+    {
+     "name": "format",
+     "at": 6443,
+     "ms": 463
+    },
+    {
+     "name": "craft",
+     "at": 6906,
+     "ms": 3364
+    },
+    {
+     "name": "output-check",
+     "at": 10274,
+     "ms": 118
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 149
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 335
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 559
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:anis-triage:shadow",
+     "at": 1544
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-term",
+     "at": 1716
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 6309
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 6906
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 10270
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 10391
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 4455,
+    "total_ms": 4594,
+    "claims_ms": 200,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 199,
+      "qkeyword": 1699,
+      "qconcept": 1775,
+      "qhype": 1775,
+      "phrase": 1781,
+      "merge": 2167,
+      "total": 3948
+     }
+    ],
+    "passages_ms": 3949,
+    "resolve_ms": 506
+   },
+   "usd": 0.00451,
+   "latency_ms": 10392,
+   "wall_ms": 10860,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for asking about such a vast and luminous term. To approach what nirvana is, it helps to notice how differently the sources describe it, ranging across traditions where the word or its concepts appear.\n\nIn Buddhist scripture, the Buddha"
+  },
+  {
+   "id": "df-mashriq#03",
+   "fixture": "df-mashriq",
+   "type": "define_term",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I wonder if you could explain what the Mashriqu'l-Adhkár actually is."
+    }
+   ],
+   "ms": 10432,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 6030
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 1,
+     "ms": 41
+    },
+    {
+     "name": "triage",
+     "at": 1,
+     "ms": 438
+    },
+    {
+     "name": "plan",
+     "at": 439,
+     "ms": 184
+    },
+    {
+     "name": "phrases",
+     "at": 623,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 623,
+     "ms": 5846
+    },
+    {
+     "name": "upgrade-links",
+     "at": 6469,
+     "ms": 4
+    },
+    {
+     "name": "companion",
+     "at": 6473,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 6473,
+     "ms": 132
+    },
+    {
+     "name": "craft",
+     "at": 6605,
+     "ms": 2945
+    },
+    {
+     "name": "output-check",
+     "at": 9555,
+     "ms": 147
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 438
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 622
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1110
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 6391
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 6604
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 9550
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 9701
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 5768,
+    "total_ms": 5771,
+    "claims_ms": 479,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 479,
+      "qkeyword": 489,
+      "phrase": 2578,
+      "merge": 2094,
+      "total": 4672
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 479,
+      "qkeyword": 489,
+      "qconcept": 1005,
+      "qhype": 1005,
+      "phrase": 2508,
+      "canon": 2608,
+      "doctrinal_hype": 4756,
+      "doctrinal": 5023,
+      "merge": 68,
+      "total": 5091
+     }
+    ],
+    "passages_ms": 5091,
+    "resolve_ms": 675
+   },
+   "usd": 0.00423,
+   "latency_ms": 9702,
+   "wall_ms": 10432,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nIt is a pleasure to explore this with you. The term *Mashriqu’l-Adhkár* translates literally as \"the Dawning-place of the Praise of God.\" ([The Institution of the Mashriqu’l-Adhkár](https://oceanlibrary.com/institution-of-the-mashriqul-adhkar_bahaullah"
+  },
+  {
+   "id": "df-mashriq#08",
+   "fixture": "df-mashriq",
+   "type": "define_term",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "My study group met last night and someone kept saying \"Mashriqu'l-Adhkár\" like everyone already knows it. I felt lost and didn't want to ask in front of them. Could you tell me what the Mashriqu'l-Adhkár is?"
+    }
+   ],
+   "ms": 13936,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 7023
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 38
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 100
+    },
+    {
+     "name": "plan",
+     "at": 100,
+     "ms": 129
+    },
+    {
+     "name": "phrases",
+     "at": 229,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 229,
+     "ms": 6894
+    },
+    {
+     "name": "upgrade-links",
+     "at": 7124,
+     "ms": 165
+    },
+    {
+     "name": "format",
+     "at": 7289,
+     "ms": 631
+    },
+    {
+     "name": "companion",
+     "at": 7290,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 7920,
+     "ms": 3273
+    },
+    {
+     "name": "output-check",
+     "at": 11195,
+     "ms": 114
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 100
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 228
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1157
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 11193
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 11308
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 76,
+    "search_ms": 6685,
+    "total_ms": 6761,
+    "claims_ms": 843,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 843,
+      "qkeyword": 854,
+      "qhype": 1501,
+      "qconcept": 1668,
+      "phrase": 2852,
+      "canon": 2969,
+      "doctrinal_hype": 3372,
+      "doctrinal": 4247,
+      "merge": 610,
+      "total": 4857
+     }
+    ],
+    "passages_ms": 4857,
+    "resolve_ms": 1827
+   },
+   "usd": 0.00314,
+   "latency_ms": 11309,
+   "wall_ms": 13936,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nIt is completely normal to feel a little adrift when a group uses terms as if everyone grew up with them, and there is certainly no need to feel awkward about wanting a clearer view of what's being talked about.\n\nThe term you heard is *Maṣhriqu’l-Adhká"
+  },
+  {
+   "id": "df-mashriq#12",
+   "fixture": "df-mashriq",
+   "type": "define_term",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Mashriqu'l-Adhkár definition"
+    }
+   ],
+   "ms": 5034,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 1,
+    "retrieval": 1065
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 144
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 146
+    },
+    {
+     "name": "plan",
+     "at": 147,
+     "ms": 134
+    },
+    {
+     "name": "phrases",
+     "at": 281,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 281,
+     "ms": 930
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1212,
+     "ms": 237
+    },
+    {
+     "name": "format",
+     "at": 1449,
+     "ms": 128
+    },
+    {
+     "name": "companion",
+     "at": 1451,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 1577,
+     "ms": 2986
+    },
+    {
+     "name": "output-check",
+     "at": 4566,
+     "ms": 143
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 145
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 279
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 471
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1055
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 1576
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4563
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4709
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 767,
+    "total_ms": 776,
+    "claims_ms": 176,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 176,
+      "qkeyword": 183,
+      "qhype": 223,
+      "qconcept": 283,
+      "phrase": 326,
+      "canon": 385,
+      "doctrinal_hype": 441,
+      "doctrinal": 487,
+      "merge": 102,
+      "total": 589
+     }
+    ],
+    "passages_ms": 590,
+    "resolve_ms": 177
+   },
+   "usd": 0.00362,
+   "latency_ms": 4710,
+   "wall_ms": 5034,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello! It is wonderful to explore this term with you.\n\nThe term is **Mashriqu’l-Adhkár** (written in Arabic as مشرق الأذكار). As ‘Abdu’l-Bahá notes, it translates literally to \"Temple of Worship\" or \"the Dawning-place of Praises\" (*Tablets of ‘Abdu’l-Bahá ‘Abb"
+  },
+  {
+   "id": "hx-abdul-baha-america#11",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "whn did abdul baha go to amrica"
+    }
+   ],
+   "ms": 9165,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1779
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 335
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 632
+    },
+    {
+     "name": "plan",
+     "at": 632,
+     "ms": 1
+    },
+    {
+     "name": "phrases",
+     "at": 633,
+     "ms": 5
+    },
+    {
+     "name": "search",
+     "at": 638,
+     "ms": 1773
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2413,
+     "ms": 6
+    },
+    {
+     "name": "companion",
+     "at": 2419,
+     "ms": 3
+    },
+    {
+     "name": "format",
+     "at": 2419,
+     "ms": 110
+    },
+    {
+     "name": "craft",
+     "at": 2529,
+     "ms": 2355
+    },
+    {
+     "name": "output-check",
+     "at": 4887,
+     "ms": 102
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 632
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1365
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2298
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2528
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4884
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4988
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 1,
+    "search_ms": 1664,
+    "total_ms": 1665,
+    "claims_ms": 359,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 359,
+      "qkeyword": 451,
+      "qconcept": 782,
+      "qhype": 807,
+      "phrase": 1065,
+      "canon": 1126,
+      "doctrinal_hype": 1160,
+      "doctrinal": 1212,
+      "merge": 90,
+      "total": 1302
+     },
+     {
+      "filters": [],
+      "concept": 359,
+      "qkeyword": 456,
+      "phrase": 1305,
+      "canon": 1342,
+      "merge": 33,
+      "total": 1375
+     }
+    ],
+    "passages_ms": 1376,
+    "resolve_ms": 284
+   },
+   "usd": 0.00322,
+   "latency_ms": 4989,
+   "wall_ms": 9165,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nTo answer your question about when ‘Abdu’l-Bahá traveled to America, the sources in our record point to the years following His liberation in 1908. Writing as authorized interpretation, Shoghi Effendi describes [*God Passes By*](https://oceanlibrary.co"
+  },
+  {
+   "id": "df-nirvana#12",
+   "fixture": "df-nirvana",
+   "type": "define_term",
+   "style": "fragment",
+   "messages": [
+    {
+     "role": "user",
+     "content": "nirvana, what is it exactly, in a sentence or two"
+    }
+   ],
+   "ms": 5317,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 181,
+    "retrieval": 423
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 32
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 117
+    },
+    {
+     "name": "plan",
+     "at": 118,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 118,
+     "ms": 30
+    },
+    {
+     "name": "search",
+     "at": 148,
+     "ms": 393
+    },
+    {
+     "name": "upgrade-links",
+     "at": 541,
+     "ms": 241
+    },
+    {
+     "name": "format",
+     "at": 782,
+     "ms": 172
+    },
+    {
+     "name": "companion",
+     "at": 783,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 954,
+     "ms": 2612
+    },
+    {
+     "name": "output-check",
+     "at": 3567,
+     "ms": 114
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 116
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 954
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1439
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 3565
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3681
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 0,
+    "total_ms": 2
+   },
+   "usd": 0.00231,
+   "latency_ms": 3682,
+   "wall_ms": 5317,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is wonderful to hear from you. You asked about the exact meaning of nirvana in a sentence or two. When we look to the Buddhist texts available here, we find that defining it simply is something even ancient thinkers found complex, as different"
+  },
+  {
+   "id": "df-dharma#05",
+   "fixture": "df-dharma",
+   "type": "define_term",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "My book club met last night and someone kept saying 'dharma' like everyone already knew it. I was too embarrassed to ask, and I've been stewing on it all morning. Could you explain what dharma means?"
+    }
+   ],
+   "ms": 10909,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 205
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 28
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 131
+    },
+    {
+     "name": "plan",
+     "at": 131,
+     "ms": 1
+    },
+    {
+     "name": "phrases",
+     "at": 132,
+     "ms": 31
+    },
+    {
+     "name": "search",
+     "at": 163,
+     "ms": 173
+    },
+    {
+     "name": "upgrade-links",
+     "at": 336,
+     "ms": 1
+    },
+    {
+     "name": "companion",
+     "at": 338,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 338,
+     "ms": 154
+    },
+    {
+     "name": "craft",
+     "at": 492,
+     "ms": 2890
+    },
+    {
+     "name": "output-check",
+     "at": 3385,
+     "ms": 233
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 131
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 490
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 3382
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3578
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 28,
+    "search_ms": 0,
+    "total_ms": 28
+   },
+   "usd": 0.00255,
+   "latency_ms": 3618,
+   "wall_ms": 10909,
+   "models": [
+    "jev-latest",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is completely natural to feel that small pang of embarrassment when a group uses a word like everyone has known it for years—we have all sat there nodding along while secretly hoping the next sentence would clear it up!\n\nWhen we look to the wo"
+  },
+  {
+   "id": "df-dharma#12",
+   "fixture": "df-dharma",
+   "type": "define_term",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "hey whats the meaning of dharma, cant find it anywhere on google either"
+    }
+   ],
+   "ms": 17293,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4447
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 22
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 797
+    },
+    {
+     "name": "plan",
+     "at": 797,
+     "ms": 168
+    },
+    {
+     "name": "phrases",
+     "at": 965,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 965,
+     "ms": 4279
+    },
+    {
+     "name": "upgrade-links",
+     "at": 5245,
+     "ms": 4
+    },
+    {
+     "name": "format",
+     "at": 5249,
+     "ms": 147
+    },
+    {
+     "name": "companion",
+     "at": 5250,
+     "ms": 1
+    },
+    {
+     "name": "craft",
+     "at": 5396,
+     "ms": 6505
+    },
+    {
+     "name": "output-check",
+     "at": 11903,
+     "ms": 1542
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 964
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1865
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 5066
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 5396
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 11901
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 4100,
+    "total_ms": 4103,
+    "claims_ms": 471,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 471,
+      "qkeyword": 481,
+      "qconcept": 2366,
+      "qhype": 2582,
+      "phrase": 2583,
+      "canon": 3460,
+      "merge": 337,
+      "total": 3797
+     },
+     {
+      "filters": [],
+      "concept": 471,
+      "qkeyword": 481,
+      "phrase": 2586,
+      "canon": 3800,
+      "merge": 15,
+      "total": 3815
+     }
+    ],
+    "passages_ms": 3815,
+    "resolve_ms": 284
+   },
+   "usd": 0.00448,
+   "latency_ms": 13445,
+   "wall_ms": 17293,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nIt is wonderful that you are looking into this. It can certainly be tricky when a term resists a single English equivalent, especially when general search engines do not give a clear, immediate handle on it.\n\nTo separate the layers briefly before looki"
+  },
+  {
+   "id": "df-dharma#06",
+   "fixture": "df-dharma",
+   "type": "define_term",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I'm trying to get through some older religious texts for a seminar. Any tips for reading them?"
+    },
+    {
+     "role": "assistant",
+     "content": "A few tips: read with a notebook, note unfamiliar terms as you go, check footnotes and glossaries, and compare translations when you can. Would you like help with a specific text?"
+    },
+    {
+     "role": "user",
+     "content": "Thanks. Let's start simple: what does dharma mean?"
+    }
+   ],
+   "ms": 17292,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4722
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 25
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 902
+    },
+    {
+     "name": "plan",
+     "at": 902,
+     "ms": 881
+    },
+    {
+     "name": "phrases",
+     "at": 1783,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 3318,
+     "ms": 2306
+    },
+    {
+     "name": "upgrade-links",
+     "at": 5624,
+     "ms": 2
+    },
+    {
+     "name": "companion",
+     "at": 5626,
+     "ms": 1
+    },
+    {
+     "name": "format",
+     "at": 5626,
+     "ms": 6207
+    },
+    {
+     "name": "craft",
+     "at": 11833,
+     "ms": 3165
+    },
+    {
+     "name": "output-check",
+     "at": 15001,
+     "ms": 107
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1767
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1823
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-term",
+     "at": 3317
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 5523
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 14998
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 15108
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 2218,
+    "total_ms": 2220,
+    "claims_ms": 201,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 200,
+      "qkeyword": 1080,
+      "qconcept": 1429,
+      "qhype": 1468,
+      "phrase": 1473,
+      "canon": 1617,
+      "merge": 62,
+      "total": 1679
+     }
+    ],
+    "passages_ms": 1680,
+    "resolve_ms": 538
+   },
+   "usd": 0.00319,
+   "latency_ms": 15108,
+   "wall_ms": 17292,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello, friend,\n\nIt is a pleasure to help you prepare for your seminar. Tackling older texts is no small task, and starting with a foundational term like *dharma* is a wonderful way to begin.\n\nLooking across the sources available to me, the word appears in seve"
+  },
+  {
+   "id": "hx-ridvan-year#05",
+   "fixture": "hx-ridvan-year",
+   "type": "history_fact",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Our study circle met again last Tuesday and we ended up talking about the Garden of Ridván. Someone said Bahá'u'lláh declared His mission there, but nobody could remember the exact date. When did He make that declaration in the Garden of Ridván?"
+    }
+   ],
+   "ms": 14576,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 1601,
+    "retrieval": 10921
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 49
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 202
+    },
+    {
+     "name": "plan",
+     "at": 204,
+     "ms": 6311
+    },
+    {
+     "name": "phrases",
+     "at": 6515,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 6515,
+     "ms": 4610
+    },
+    {
+     "name": "upgrade-links",
+     "at": 11125,
+     "ms": 38
+    },
+    {
+     "name": "format",
+     "at": 11163,
+     "ms": 105
+    },
+    {
+     "name": "companion",
+     "at": 11164,
+     "ms": 4
+    },
+    {
+     "name": "craft",
+     "at": 11268,
+     "ms": 1917
+    },
+    {
+     "name": "output-check",
+     "at": 13188,
+     "ms": 112
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 201
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 6540
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 8131
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:anis-triage:shadow",
+     "at": 8782
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 10906
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 11268
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 13185
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 13300
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 1643,
+    "search_ms": 2749,
+    "total_ms": 4392,
+    "claims_ms": 622,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 622,
+      "qkeyword": 1268,
+      "phrase": 1269,
+      "canon": 1486,
+      "doctrinal": 1994,
+      "doctrinal_hype": 2126,
+      "merge": 249,
+      "total": 2375
+     }
+    ],
+    "passages_ms": 2375,
+    "evidence_ms": 0,
+    "resolve_ms": 373
+   },
+   "usd": 0.0033,
+   "latency_ms": 13301,
+   "wall_ms": 14576,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nIt is always wonderful to spend time in study circles, where conversations often wander into the rich history of the Faith. Regarding your question about the exact date, the sources point to the arrival of Bahá’u’lláh in the Najíbíyyih Garden, which to"
+  },
+  {
+   "id": "hx-bab-martyrdom-year#09",
+   "fixture": "hx-bab-martyrdom-year",
+   "type": "history_fact",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Find the date of the martyrdom of the Báb for me."
+    }
+   ],
+   "ms": 8010,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3375
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 33
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 1511
+    },
+    {
+     "name": "plan",
+     "at": 1511,
+     "ms": 715
+    },
+    {
+     "name": "phrases",
+     "at": 2226,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 2226,
+     "ms": 2660
+    },
+    {
+     "name": "upgrade-links",
+     "at": 4886,
+     "ms": 5
+    },
+    {
+     "name": "format",
+     "at": 4891,
+     "ms": 101
+    },
+    {
+     "name": "companion",
+     "at": 4892,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 4992,
+     "ms": 1811
+    },
+    {
+     "name": "output-check",
+     "at": 6806,
+     "ms": 156
+    }
+   ],
+   "llm": [
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2223
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 2226
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4753
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4991
+    },
+    {
+     "model": "clef",
+     "caller": "system1:anis-format:shadow",
+     "at": 5304
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6803
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6961
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 4,
+    "search_ms": 2526,
+    "total_ms": 2530,
+    "claims_ms": 615,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 615,
+      "qkeyword": 683,
+      "phrase": 1884,
+      "canon": 1934,
+      "merge": 64,
+      "total": 1998
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 615,
+      "qkeyword": 686,
+      "qconcept": 871,
+      "qhype": 1744,
+      "phrase": 1887,
+      "canon": 1921,
+      "doctrinal_hype": 2000,
+      "doctrinal": 2009,
+      "merge": 78,
+      "total": 2087
+     }
+    ],
+    "passages_ms": 2088,
+    "resolve_ms": 435
+   },
+   "usd": 0.00294,
+   "latency_ms": 6962,
+   "wall_ms": 8010,
+   "models": [
+    "gemini-embedding-2",
+    "jev-latest",
+    "clef",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nHello! To answer your question directly: the martyrdom of the Báb took place on July 9, 1850 (corresponding to the 28th of S̱ha‘bán 1266 A.H.)\n\nShoghi Effendi records the exact date in *God Passes By*, noting that it occurred \"on the ninth of Jul"
+  },
+  {
+   "id": "hx-abdul-baha-america#02",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Could you please tell me when 'Abdu'l-Bahá traveled to America?"
+    }
+   ],
+   "ms": 14620,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 9613
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "yes_no_with_proof",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 46
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 234
+    },
+    {
+     "name": "plan",
+     "at": 234,
+     "ms": 255
+    },
+    {
+     "name": "phrases",
+     "at": 489,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 489,
+     "ms": 9358
+    },
+    {
+     "name": "upgrade-links",
+     "at": 9848,
+     "ms": 6
+    },
+    {
+     "name": "companion",
+     "at": 9854,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 9854,
+     "ms": 710
+    },
+    {
+     "name": "craft",
+     "at": 10564,
+     "ms": 2488
+    },
+    {
+     "name": "output-check",
+     "at": 13053,
+     "ms": 189
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 234
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 478
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 884
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 13052
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 13241
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 9240,
+    "total_ms": 9243,
+    "claims_ms": 380,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 380,
+      "qkeyword": 394,
+      "qconcept": 852,
+      "qhype": 855,
+      "phrase": 1031,
+      "canon": 1296,
+      "doctrinal": 1387,
+      "doctrinal_hype": 1406,
+      "merge": 78,
+      "total": 1484
+     }
+    ],
+    "passages_ms": 1484,
+    "resolve_ms": 7756
+   },
+   "usd": 0.00257,
+   "latency_ms": 13242,
+   "wall_ms": 14620,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\n‘Abdu’l-Bahá undertook an extensive tour of America following His liberation in 1908, specifically completing an eight-month tour of the United States as part of His historic journeys to the West ([God Passes By](https://oceanlibrary.com/god-passes-by_"
+  },
+  {
+   "id": "hx-bahaullah-passing#03",
+   "fixture": "hx-bahaullah-passing",
+   "type": "history_fact",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I wonder if you could tell me the place where Bahá'u'lláh died, if you know it."
+    }
+   ],
+   "ms": 14992,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": false,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 9418
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": true,
+   "offtopic": false,
+   "answerOk": false,
+   "pass": false,
+   "stage": "retrieval",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "direct_answer",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 37
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 111
+    },
+    {
+     "name": "plan",
+     "at": 111,
+     "ms": 243
+    },
+    {
+     "name": "phrases",
+     "at": 354,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 354,
+     "ms": 9175
+    },
+    {
+     "name": "upgrade-links",
+     "at": 9530,
+     "ms": 9
+    },
+    {
+     "name": "format",
+     "at": 9539,
+     "ms": 1439
+    },
+    {
+     "name": "companion",
+     "at": 9540,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 10978,
+     "ms": 1502
+    },
+    {
+     "name": "output-check",
+     "at": 12483,
+     "ms": 117
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 111
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 353
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1258
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3360
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 10009
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 12480
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 12600
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 16,
+    "search_ms": 9097,
+    "total_ms": 9113,
+    "claims_ms": 673,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 673,
+      "qkeyword": 922,
+      "phrase": 2151,
+      "canon": 2231,
+      "merge": 63,
+      "total": 2294
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 673,
+      "qkeyword": 892,
+      "phrase": 2149,
+      "canon": 2228,
+      "doctrinal": 2406,
+      "doctrinal_hype": 2598,
+      "merge": 35,
+      "total": 2633
+     }
+    ],
+    "passages_ms": 2633,
+    "evidence_ms": 40,
+    "resolve_ms": 6423
+   },
+   "usd": 0.00845,
+   "latency_ms": 12600,
+   "wall_ms": 14992,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nI couldn't find anything on that in the texts I can search.\n\nThe sources I can reach do not record the place where Bahá’u’lláh passed away, though they tell us much about the places of His imprisonment, exile, and travels across Persia and the Ot"
+  },
+  {
+   "id": "df-zakat#02",
+   "fixture": "df-zakat",
+   "type": "define_term",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "zakat, what is it"
+    }
+   ],
+   "ms": 8006,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4750
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 25
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 194
+    },
+    {
+     "name": "plan",
+     "at": 194,
+     "ms": 423
+    },
+    {
+     "name": "phrases",
+     "at": 617,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 618,
+     "ms": 4326
+    },
+    {
+     "name": "upgrade-links",
+     "at": 4945,
+     "ms": 93
+    },
+    {
+     "name": "companion",
+     "at": 5039,
+     "ms": 3
+    },
+    {
+     "name": "format",
+     "at": 5039,
+     "ms": 453
+    },
+    {
+     "name": "craft",
+     "at": 5493,
+     "ms": 2129
+    },
+    {
+     "name": "output-check",
+     "at": 7623,
+     "ms": 118
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 193
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 617
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 768
+    },
+    {
+     "model": "clef",
+     "caller": "system1:anis-triage:shadow",
+     "at": 798
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3893
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 5492
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7622
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7741
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 1,
+    "search_ms": 3270,
+    "total_ms": 3277,
+    "claims_ms": 141,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 141,
+      "qkeyword": 146,
+      "qconcept": 162,
+      "qhype": 1816,
+      "merge": 1024,
+      "total": 2840
+     }
+    ],
+    "passages_ms": 2840,
+    "resolve_ms": 430
+   },
+   "usd": 0.0028,
+   "latency_ms": 7742,
+   "wall_ms": 8006,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nThe term *zakát* (زكاة) appears in the texts I can search as a compulsory payment or alms closely tied in the text to belief and prayer, though the sources here do not settle all its technical definitions or rates. In the Quran, it is frequently mentio"
+  },
+  {
+   "id": "df-huququllah#11",
+   "fixture": "df-huququllah",
+   "type": "define_term",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "hey whats huqukullah mean"
+    }
+   ],
+   "ms": 13068,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 5032
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 32
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 131
+    },
+    {
+     "name": "plan",
+     "at": 132,
+     "ms": 172
+    },
+    {
+     "name": "phrases",
+     "at": 304,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 304,
+     "ms": 4860
+    },
+    {
+     "name": "upgrade-links",
+     "at": 5165,
+     "ms": 204
+    },
+    {
+     "name": "format",
+     "at": 5369,
+     "ms": 340
+    },
+    {
+     "name": "companion",
+     "at": 5371,
+     "ms": 14
+    },
+    {
+     "name": "craft",
+     "at": 5709,
+     "ms": 2507
+    },
+    {
+     "name": "output-check",
+     "at": 8217,
+     "ms": 417
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 130
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 303
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 776
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 5708
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 8216
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 8634
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 4672,
+    "total_ms": 4746,
+    "claims_ms": 239,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 238,
+      "qkeyword": 397,
+      "qconcept": 415,
+      "qhype": 2087,
+      "merge": 1045,
+      "total": 3132
+     }
+    ],
+    "passages_ms": 3133,
+    "resolve_ms": 1539
+   },
+   "usd": 0.00231,
+   "latency_ms": 8634,
+   "wall_ms": 13068,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for asking. The term you are looking about is *Ḥuqúqulláh* (حقوق الله), an Arabic expression meaning literally \"the Right of God\" or \"the dues of God.\"\n\nWhen we look to the sources available to me for this particular question, the texts"
+  },
+  {
+   "id": "df-nirvana#11",
+   "fixture": "df-nirvana",
+   "type": "define_term",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where does it say what nirvana actually is? I want to read the source."
+    }
+   ],
+   "ms": 14941,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "quote",
+   "strategyOk": false,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": "fallback",
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "phrases": 2249,
+    "retrieval": 5970
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": false,
+   "stage": "strategy",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 214
+    },
+    {
+     "name": "triage",
+     "at": 1,
+     "ms": 241
+    },
+    {
+     "name": "plan",
+     "at": 242,
+     "ms": 1
+    },
+    {
+     "name": "phrases",
+     "at": 243,
+     "ms": 2249,
+     "via": "fallback",
+     "reason": "timeout"
+    },
+    {
+     "name": "search",
+     "at": 2492,
+     "ms": 3720
+    },
+    {
+     "name": "upgrade-links",
+     "at": 6213,
+     "ms": 275
+    },
+    {
+     "name": "format",
+     "at": 6488,
+     "ms": 601
+    },
+    {
+     "name": "companion",
+     "at": 6490,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 7089,
+     "ms": 5055
+    },
+    {
+     "name": "output-check",
+     "at": 12146,
+     "ms": 334
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 242
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1881
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2881
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 3577
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 7088
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 12144
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 12479
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 3467,
+    "total_ms": 3470,
+    "claims_ms": 1,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "qkeyword": 390,
+      "phrase": 1841,
+      "canon": 1898,
+      "merge": 67,
+      "total": 1965
+     },
+     {
+      "filters": [],
+      "qkeyword": 390,
+      "phrase": 2183,
+      "canon": 2232,
+      "merge": 40,
+      "total": 2272
+     }
+    ],
+    "passages_ms": 2272,
+    "resolve_ms": 1195
+   },
+   "usd": 0.00294,
+   "latency_ms": 12480,
+   "wall_ms": 14941,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is a pleasure to help you look for where the sources speak about what nirvana actually is. When we turn to Buddhist texts, we find that different works describe it in distinct ways—sometimes through what it is free from, and sometimes as a pro"
+  },
+  {
+   "id": "hx-abdul-baha-america#03",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where can I read about the date 'Abdu'l-Bahá traveled to America?"
+    }
+   ],
+   "ms": 14015,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2952
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "yes_no_with_proof",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 70
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 394
+    },
+    {
+     "name": "plan",
+     "at": 395,
+     "ms": 246
+    },
+    {
+     "name": "phrases",
+     "at": 642,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 642,
+     "ms": 2705
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3348,
+     "ms": 157
+    },
+    {
+     "name": "format",
+     "at": 3505,
+     "ms": 1647
+    },
+    {
+     "name": "companion",
+     "at": 3506,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 5152,
+     "ms": 5044
+    },
+    {
+     "name": "output-check",
+     "at": 10203,
+     "ms": 102
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 394
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 641
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 978
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3210
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 10196
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 10304
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 2566,
+    "total_ms": 2569,
+    "claims_ms": 245,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 245,
+      "qkeyword": 843,
+      "qconcept": 1167,
+      "qhype": 1329,
+      "phrase": 1815,
+      "canon": 1918,
+      "doctrinal": 1952,
+      "doctrinal_hype": 1985,
+      "merge": 121,
+      "total": 2106
+     }
+    ],
+    "passages_ms": 2106,
+    "resolve_ms": 460
+   },
+   "usd": 0.00249,
+   "latency_ms": 10305,
+   "wall_ms": 14015,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nYou can read about the details of ‘Abdu’l-Bahá’s journey in Shoghi Effendi’s account where he mentions that [\"‘Abdu’l-Bahá’s historic journeys to the West, and in particular His eight-month tour of the United States of America, may be said to hav"
+  },
+  {
+   "id": "df-mashriq#05",
+   "fixture": "df-mashriq",
+   "type": "define_term",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Find me a passage that explains what the Mashriqu'l-Adhkár is."
+    }
+   ],
+   "ms": 15567,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3753
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 49
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 110
+    },
+    {
+     "name": "plan",
+     "at": 111,
+     "ms": 130
+    },
+    {
+     "name": "phrases",
+     "at": 241,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 241,
+     "ms": 3623
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3864,
+     "ms": 445
+    },
+    {
+     "name": "companion",
+     "at": 4310,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 4310,
+     "ms": 189
+    },
+    {
+     "name": "craft",
+     "at": 4499,
+     "ms": 8540
+    },
+    {
+     "name": "output-check",
+     "at": 13043,
+     "ms": 189
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 109
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 240
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 918
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3807
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4499
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 13039
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 13231
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 3565,
+    "total_ms": 3568,
+    "claims_ms": 587,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 586,
+      "qkeyword": 887,
+      "phrase": 2663,
+      "canon": 2689,
+      "merge": 54,
+      "total": 2743
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 586,
+      "qkeyword": 887,
+      "qconcept": 2659,
+      "qhype": 2659,
+      "phrase": 2661,
+      "canon": 2684,
+      "doctrinal_hype": 2778,
+      "doctrinal": 2778,
+      "merge": 75,
+      "total": 2853
+     }
+    ],
+    "passages_ms": 2854,
+    "resolve_ms": 710
+   },
+   "usd": 0.00318,
+   "latency_ms": 13232,
+   "wall_ms": 15567,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is a pleasure to help look into this with you. The term *Mashriqu’l-Adhkár* holds a very specific place in the writings, pointing both to the act of remembrance at dawn and to the physical structures erected for that purpose.\n\nTo see how this "
+  },
+  {
+   "id": "hx-bab-martyrdom-place#01",
+   "fixture": "hx-bab-martyrdom-place",
+   "type": "history_fact",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "where was the Báb executed"
+    }
+   ],
+   "ms": 15573,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4255
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 41
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 157
+    },
+    {
+     "name": "plan",
+     "at": 157,
+     "ms": 761
+    },
+    {
+     "name": "phrases",
+     "at": 918,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 918,
+     "ms": 3494
+    },
+    {
+     "name": "upgrade-links",
+     "at": 4412,
+     "ms": 72
+    },
+    {
+     "name": "companion",
+     "at": 4484,
+     "ms": 3
+    },
+    {
+     "name": "format",
+     "at": 4484,
+     "ms": 198
+    },
+    {
+     "name": "craft",
+     "at": 4682,
+     "ms": 8365
+    },
+    {
+     "name": "output-check",
+     "at": 13049,
+     "ms": 313
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 157
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 910
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 917
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4307
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4681
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 13047
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 13361
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 1,
+    "search_ms": 3362,
+    "total_ms": 3390,
+    "claims_ms": 176,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 176,
+      "qkeyword": 250,
+      "qconcept": 1949,
+      "qhype": 1950,
+      "phrase": 1955,
+      "canon": 2062,
+      "doctrinal": 2157,
+      "doctrinal_hype": 2157,
+      "merge": 97,
+      "total": 2254
+     }
+    ],
+    "passages_ms": 2254,
+    "resolve_ms": 1108
+   },
+   "usd": 0.00397,
+   "latency_ms": 13362,
+   "wall_ms": 15573,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nThe Báb was executed in the city of Tabríz, specifically in a public square or barrack square (*maydán-i-sarbáz-k̲hána*).\n\nTo look at how the sources describe this, we can turn first to the authorized interpretation of ‘Abdu’l-Bahá, who writes that the"
+  },
+  {
+   "id": "hx-bahaullah-passing#05",
+   "fixture": "hx-bahaullah-passing",
+   "type": "history_fact",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "can you find me where i can read about the place Bahá'u'lláh died"
+    }
+   ],
+   "ms": 10169,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4003
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 32
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 408
+    },
+    {
+     "name": "plan",
+     "at": 409,
+     "ms": 516
+    },
+    {
+     "name": "phrases",
+     "at": 925,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 925,
+     "ms": 3487
+    },
+    {
+     "name": "upgrade-links",
+     "at": 4413,
+     "ms": 32
+    },
+    {
+     "name": "format",
+     "at": 4445,
+     "ms": 168
+    },
+    {
+     "name": "companion",
+     "at": 4446,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 4613,
+     "ms": 3061
+    },
+    {
+     "name": "output-check",
+     "at": 7676,
+     "ms": 274
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 408
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 925
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2524
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4261
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4611
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:anis-format:shadow",
+     "at": 4892
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7674
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7949
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 11,
+    "search_ms": 3327,
+    "total_ms": 3338,
+    "claims_ms": 532,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 532,
+      "qkeyword": 1680,
+      "phrase": 2649,
+      "canon": 2755,
+      "merge": 51,
+      "total": 2806
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 532,
+      "qkeyword": 1680,
+      "qconcept": 2436,
+      "qhype": 2599,
+      "phrase": 2651,
+      "canon": 2752,
+      "doctrinal_hype": 2891,
+      "doctrinal": 2891,
+      "merge": 55,
+      "total": 2946
+     }
+    ],
+    "passages_ms": 2946,
+    "resolve_ms": 379
+   },
+   "usd": 0.00363,
+   "latency_ms": 7950,
+   "wall_ms": 10169,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for asking. You can read about the place where Bahá’u’lláh passed away in several accounts written by Shoghi Effendi and ‘Abdu’l-Bahá, which describe both His imprisonment and the mansion where He was laid to rest.\n\nShoghi Effendi notes"
+  },
+  {
+   "id": "hx-bab-martyrdom-place#10",
+   "fixture": "hx-bab-martyrdom-place",
+   "type": "history_fact",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "place of execution of the Báb"
+    }
+   ],
+   "ms": 10486,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3704
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 45
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 144
+    },
+    {
+     "name": "plan",
+     "at": 145,
+     "ms": 170
+    },
+    {
+     "name": "phrases",
+     "at": 315,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 315,
+     "ms": 3534
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3849,
+     "ms": 87
+    },
+    {
+     "name": "format",
+     "at": 3936,
+     "ms": 129
+    },
+    {
+     "name": "companion",
+     "at": 3937,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 4065,
+     "ms": 3228
+    },
+    {
+     "name": "output-check",
+     "at": 7296,
+     "ms": 104
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 144
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 315
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 761
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3623
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4065
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7293
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7400
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 1,
+    "search_ms": 3307,
+    "total_ms": 3314,
+    "claims_ms": 348,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 348,
+      "qkeyword": 513,
+      "phrase": 2756,
+      "canon": 2798,
+      "merge": 95,
+      "total": 2893
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 348,
+      "qkeyword": 512,
+      "qconcept": 2269,
+      "qhype": 2453,
+      "phrase": 2752,
+      "canon": 2896,
+      "doctrinal_hype": 2924,
+      "doctrinal": 2932,
+      "merge": 106,
+      "total": 3038
+     }
+    ],
+    "passages_ms": 3038,
+    "resolve_ms": 265
+   },
+   "usd": 0.00299,
+   "latency_ms": 7400,
+   "wall_ms": 10486,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question about where the Báb met His end.\n\nThe sources record that after His confinement in the mountain fortresses of Áḏhirbáyján, He was brought to the city of Tabríz. In *Divine Philosophy*, ‘Abdu’l-Bahá notes that He was \""
+  },
+  {
+   "id": "df-nirvana#06",
+   "fixture": "df-nirvana",
+   "type": "define_term",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hi, I'm putting together a reading list for my world religions class this semester."
+    },
+    {
+     "role": "assistant",
+     "content": "Happy to help with that. What topics or readings do you have on the list so far?"
+    },
+    {
+     "role": "user",
+     "content": "ok thanks. so what is nirvana"
+    }
+   ],
+   "ms": 7900,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4142
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 105
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 112
+    },
+    {
+     "name": "plan",
+     "at": 112,
+     "ms": 249
+    },
+    {
+     "name": "phrases",
+     "at": 361,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 361,
+     "ms": 3893
+    },
+    {
+     "name": "upgrade-links",
+     "at": 4254,
+     "ms": 149
+    },
+    {
+     "name": "companion",
+     "at": 4404,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 4404,
+     "ms": 269
+    },
+    {
+     "name": "craft",
+     "at": 4673,
+     "ms": 2237
+    },
+    {
+     "name": "output-check",
+     "at": 6911,
+     "ms": 122
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 111
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 360
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2023
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4168
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4673
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6910
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7032
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 3794,
+    "total_ms": 3807,
+    "claims_ms": 382,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 382,
+      "qkeyword": 1642,
+      "qconcept": 2088,
+      "qhype": 2492,
+      "phrase": 3178,
+      "canon": 3321,
+      "merge": 126,
+      "total": 3447
+     },
+     {
+      "filters": [],
+      "concept": 382,
+      "qkeyword": 1642,
+      "phrase": 3173,
+      "canon": 3451,
+      "merge": 14,
+      "total": 3465
+     }
+    ],
+    "passages_ms": 3465,
+    "resolve_ms": 329
+   },
+   "usd": 0.00308,
+   "latency_ms": 7033,
+   "wall_ms": 7900,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nIt is a pleasure to help you shape a reading list for your world religions class. When turning to what a word like *nirvana* means, the sources show us that different traditions speak of it in their own distinctive ways, and even within the category of"
+  },
+  {
+   "id": "df-zakat#09",
+   "fixture": "df-zakat",
+   "type": "define_term",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "My coworker mentioned zakat at lunch today and I nodded along like I knew what it was. Honestly I didn't. So what is zakat?"
+    }
+   ],
+   "ms": 7895,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 8980
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 798
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 2851
+    },
+    {
+     "name": "plan",
+     "at": 2851,
+     "ms": 1938
+    },
+    {
+     "name": "phrases",
+     "at": 4789,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 4790,
+     "ms": 7041
+    },
+    {
+     "name": "upgrade-links",
+     "at": 11831,
+     "ms": 203
+    },
+    {
+     "name": "companion",
+     "at": 12034,
+     "ms": 4
+    },
+    {
+     "name": "format",
+     "at": 12034,
+     "ms": 487
+    },
+    {
+     "name": "craft",
+     "at": 12521,
+     "ms": 3154
+    },
+    {
+     "name": "output-check",
+     "at": 15678,
+     "ms": 93
+    }
+   ],
+   "llm": [
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 3595
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 4789
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 12521
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 15675
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 15770
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 14,
+    "search_ms": 6026,
+    "total_ms": 6040,
+    "claims_ms": 362,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 362,
+      "qkeyword": 1045,
+      "qconcept": 1096,
+      "merge": 3748,
+      "total": 4844
+     }
+    ],
+    "passages_ms": 4845,
+    "resolve_ms": 1181
+   },
+   "usd": 0.00332,
+   "latency_ms": 15771,
+   "wall_ms": 7895,
+   "models": [
+    "gemini-embedding-2",
+    "jev-latest",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello, friend,\n\nIt is completely normal to nod along when a new term comes up over lunch! *Zákát* (Arabic: زكاة) is an Islamic term that refers to an obligatory alms-giving or charity, calculated as a specific portion of wealth that a person possesses, which i"
+  },
+  {
+   "id": "hx-bab-martyrdom-year#01",
+   "fixture": "hx-bab-martyrdom-year",
+   "type": "history_fact",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "when was the Bab martyred"
+    }
+   ],
+   "ms": 7889,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3145
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 26
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 1326
+    },
+    {
+     "name": "plan",
+     "at": 1327,
+     "ms": 602
+    },
+    {
+     "name": "phrases",
+     "at": 1929,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1929,
+     "ms": 2543
+    },
+    {
+     "name": "upgrade-links",
+     "at": 4472,
+     "ms": 2
+    },
+    {
+     "name": "companion",
+     "at": 4474,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 4474,
+     "ms": 154
+    },
+    {
+     "name": "craft",
+     "at": 4628,
+     "ms": 2752
+    },
+    {
+     "name": "output-check",
+     "at": 7381,
+     "ms": 124
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1928
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2375
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4342
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4627
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7380
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7504
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 1,
+    "search_ms": 2399,
+    "total_ms": 2415,
+    "claims_ms": 142,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 142,
+      "qkeyword": 151,
+      "qhype": 864,
+      "qconcept": 914,
+      "phrase": 1801,
+      "canon": 1873,
+      "doctrinal_hype": 1921,
+      "doctrinal": 1921,
+      "merge": 73,
+      "total": 1994
+     }
+    ],
+    "passages_ms": 1994,
+    "resolve_ms": 404
+   },
+   "usd": 0.0031,
+   "latency_ms": 7505,
+   "wall_ms": 7889,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello there,\n\nThank you for your question. The Báb was martyred on July 9, 1850, in the city of Tabriz.\n\nTo look at how this event is recorded in the literature, we can turn to the various layers of text associated with the tradition. In terms of scriptural an"
+  },
+  {
+   "id": "df-zakat#06",
+   "fixture": "df-zakat",
+   "type": "define_term",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "find me a passage that says what zakat is"
+    }
+   ],
+   "ms": 10429,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4992
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 37
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 257
+    },
+    {
+     "name": "plan",
+     "at": 258,
+     "ms": 1110
+    },
+    {
+     "name": "phrases",
+     "at": 1368,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1368,
+     "ms": 3882
+    },
+    {
+     "name": "upgrade-links",
+     "at": 5250,
+     "ms": 27
+    },
+    {
+     "name": "format",
+     "at": 5277,
+     "ms": 111
+    },
+    {
+     "name": "companion",
+     "at": 5278,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 5388,
+     "ms": 3574
+    },
+    {
+     "name": "output-check",
+     "at": 8963,
+     "ms": 145
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 256
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1367
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2382
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4761
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 5387
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 8962
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 9107
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 3550,
+    "total_ms": 3552,
+    "claims_ms": 370,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 370,
+      "qkeyword": 731,
+      "qconcept": 1053,
+      "qhype": 1666,
+      "phrase": 2227,
+      "canon": 2390,
+      "merge": 59,
+      "total": 2449
+     },
+     {
+      "filters": [],
+      "concept": 370,
+      "qkeyword": 731,
+      "phrase": 2592,
+      "canon": 2953,
+      "merge": 25,
+      "total": 2978
+     }
+    ],
+    "passages_ms": 2978,
+    "resolve_ms": 569
+   },
+   "usd": 0.00359,
+   "latency_ms": 9108,
+   "wall_ms": 10429,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nThe texts I can search here do not provide a detailed, itemized definition of what *zakat* consists of in practice, so I cannot give you a complete technical breakdown from these texts alone. However, the sources do point to its core purpose and origin"
+  },
+  {
+   "id": "hx-mulla-husayn-death#13",
+   "fixture": "hx-mulla-husayn-death",
+   "type": "history_fact",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Mullá Ḥusayn killed where"
+    }
+   ],
+   "ms": 10425,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4686
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 50
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 655
+    },
+    {
+     "name": "plan",
+     "at": 656,
+     "ms": 1069
+    },
+    {
+     "name": "phrases",
+     "at": 1725,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1725,
+     "ms": 3617
+    },
+    {
+     "name": "upgrade-links",
+     "at": 5343,
+     "ms": 5
+    },
+    {
+     "name": "format",
+     "at": 5348,
+     "ms": 113
+    },
+    {
+     "name": "companion",
+     "at": 5349,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 5461,
+     "ms": 3482
+    },
+    {
+     "name": "output-check",
+     "at": 8945,
+     "ms": 165
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 655
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1724
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2381
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 5275
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 5461
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 8943
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 9110
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 3520,
+    "total_ms": 3551,
+    "claims_ms": 157,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 157,
+      "qkeyword": 329,
+      "qconcept": 1337,
+      "qhype": 1807,
+      "phrase": 2192,
+      "canon": 2241,
+      "doctrinal_hype": 2717,
+      "doctrinal": 2717,
+      "merge": 90,
+      "total": 2807
+     }
+    ],
+    "passages_ms": 2807,
+    "resolve_ms": 713
+   },
+   "usd": 0.00358,
+   "latency_ms": 9110,
+   "wall_ms": 10425,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nMullá Ḥusayn lost his life at the Fort of Shaykh Ṭabarsí in Mázindarán, struck down by a bullet from ‘Abbás-Qulí Ḵhán-i-Láríjání.\n\nWhile the passages provided touch upon several figures and events in Mázindarán and elsewhere—such as disturbances in Bá"
+  },
+  {
+   "id": "hx-abdul-baha-america#12",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "'abdu'l-baha america trip year"
+    }
+   ],
+   "ms": 5276,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1175
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 130
+    },
+    {
+     "name": "plan",
+     "at": 130,
+     "ms": 233
+    },
+    {
+     "name": "phrases",
+     "at": 363,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 363,
+     "ms": 942
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1305,
+     "ms": 139
+    },
+    {
+     "name": "format",
+     "at": 1444,
+     "ms": 138
+    },
+    {
+     "name": "companion",
+     "at": 1445,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 1582,
+     "ms": 2044
+    },
+    {
+     "name": "output-check",
+     "at": 3627,
+     "ms": 132
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 129
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 362
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 607
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1208
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 1581
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 3625
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3759
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 774,
+    "total_ms": 847,
+    "claims_ms": 142,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 142,
+      "qkeyword": 148,
+      "qhype": 223,
+      "qconcept": 224,
+      "phrase": 269,
+      "canon": 329,
+      "doctrinal_hype": 357,
+      "doctrinal": 407,
+      "merge": 116,
+      "total": 523
+     }
+    ],
+    "passages_ms": 523,
+    "resolve_ms": 251
+   },
+   "usd": 0.00279,
+   "latency_ms": 3759,
+   "wall_ms": 5276,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nIt is good to hear from you. To answer your question directly about when ‘Abdu’l-Bahá traveled to America, the records and historical accounts point to the year 1912.\n\nShoghi Effendi notes in his historical overview that ['Abdu’l-Bahá’s historic journe"
+  },
+  {
+   "id": "hx-bab-martyrdom-place#04",
+   "fixture": "hx-bab-martyrdom-place",
+   "type": "history_fact",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "wher was the bab executed at, cant rember the city"
+    }
+   ],
+   "ms": 7614,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2298
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 22
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 130
+    },
+    {
+     "name": "plan",
+     "at": 131,
+     "ms": 279
+    },
+    {
+     "name": "phrases",
+     "at": 410,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 410,
+     "ms": 2019
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2429,
+     "ms": 4
+    },
+    {
+     "name": "companion",
+     "at": 2434,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 2434,
+     "ms": 119
+    },
+    {
+     "name": "craft",
+     "at": 2553,
+     "ms": 1965
+    },
+    {
+     "name": "output-check",
+     "at": 4521,
+     "ms": 302
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 128
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 409
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 828
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2259
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2552
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4518
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4805
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 1854,
+    "total_ms": 1856,
+    "claims_ms": 406,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 406,
+      "qkeyword": 713,
+      "qconcept": 771,
+      "qhype": 817,
+      "phrase": 1023,
+      "canon": 1099,
+      "doctrinal_hype": 1149,
+      "doctrinal": 1224,
+      "merge": 140,
+      "total": 1364
+     },
+     {
+      "filters": [],
+      "concept": 406,
+      "qkeyword": 716,
+      "phrase": 1370,
+      "canon": 1443,
+      "merge": 50,
+      "total": 1493
+     }
+    ],
+    "passages_ms": 1493,
+    "resolve_ms": 356
+   },
+   "usd": 0.00233,
+   "latency_ms": 4823,
+   "wall_ms": 7614,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nIt is a pleasure to hear from you. The city you are thinking of is Tabríz.\n\nAs recorded in the authorized interpretations, the Báb was \"finally executed in a public square of Tabríz\" ( ([Divine Philosophy](https://oceanlibrary.com/divine-philosophy_abd"
+  },
+  {
+   "id": "hx-ridvan-year#10",
+   "fixture": "hx-ridvan-year",
+   "type": "history_fact",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "where does it say when bahá'u'lláh declared his mission in the garden of ridván"
+    }
+   ],
+   "ms": 10104,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "quote",
+   "strategyOk": false,
+   "phrases": [
+    "when bahá'u'lláh declared his mission in the garden of ridván",
+    "bahá'u'lláh",
+    "garden of ridván"
+   ],
+   "phrasesOk": true,
+   "phraseWrapper": false,
+   "phraseVia": "haiku",
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "phrases": 1678,
+    "retrieval": 5122
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": false,
+   "stage": "strategy",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 31
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 232
+    },
+    {
+     "name": "plan",
+     "at": 233,
+     "ms": 597
+    },
+    {
+     "name": "phrases",
+     "at": 830,
+     "ms": 1678,
+     "via": "haiku"
+    },
+    {
+     "name": "search",
+     "at": 2508,
+     "ms": 2847
+    },
+    {
+     "name": "upgrade-links",
+     "at": 5356,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 5358,
+     "ms": 169
+    },
+    {
+     "name": "companion",
+     "at": 5359,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 5527,
+     "ms": 3329
+    },
+    {
+     "name": "output-check",
+     "at": 8863,
+     "ms": 339
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 232
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 830
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1367
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-phrases",
+     "at": 2508
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 5236
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 5526
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 8856
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 9201
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 9,
+    "search_ms": 2721,
+    "total_ms": 2730,
+    "claims_ms": 3,
+    "engine": [
+     {
+      "filters": [],
+      "qkeyword": 1042,
+      "phrase": 1620,
+      "canon": 1879,
+      "merge": 37,
+      "total": 1916
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "qkeyword": 65,
+      "phrase": 1619,
+      "canon": 1918,
+      "doctrinal": 2019,
+      "doctrinal_hype": 2087,
+      "merge": 199,
+      "total": 2286
+     }
+    ],
+    "passages_ms": 2287,
+    "resolve_ms": 433
+   },
+   "usd": 0.00505,
+   "latency_ms": 9202,
+   "wall_ms": 10104,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nIt is a pleasure to look into this with you.\n\nThe sources point to the Garden of Riḍván—originally known as the Najíbíyyih Garden outside of Baghdád—as the place where Bahá’u’lláh arrived thirty-one days after Naw-Rúz in April 1863, an event described "
+  },
+  {
+   "id": "hx-bab-martyrdom-place#09",
+   "fixture": "hx-bab-martyrdom-place",
+   "type": "history_fact",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I wonder if you could help me with something. Where exactly was the Báb put to death?"
+    }
+   ],
+   "ms": 7578,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3271
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 43
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 106
+    },
+    {
+     "name": "plan",
+     "at": 107,
+     "ms": 437
+    },
+    {
+     "name": "phrases",
+     "at": 544,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 544,
+     "ms": 2833
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3377,
+     "ms": 33
+    },
+    {
+     "name": "format",
+     "at": 3410,
+     "ms": 264
+    },
+    {
+     "name": "companion",
+     "at": 3411,
+     "ms": 1
+    },
+    {
+     "name": "craft",
+     "at": 3674,
+     "ms": 2157
+    },
+    {
+     "name": "output-check",
+     "at": 5832,
+     "ms": 120
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 105
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 543
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1110
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3308
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3674
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5831
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5951
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 10,
+    "search_ms": 2754,
+    "total_ms": 2765,
+    "claims_ms": 463,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 463,
+      "qkeyword": 1042,
+      "qconcept": 1746,
+      "qhype": 1750,
+      "phrase": 2273,
+      "canon": 2289,
+      "doctrinal_hype": 2326,
+      "doctrinal": 2360,
+      "merge": 70,
+      "total": 2430
+     }
+    ],
+    "passages_ms": 2430,
+    "resolve_ms": 324
+   },
+   "usd": 0.00302,
+   "latency_ms": 5953,
+   "wall_ms": 7578,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question. The texts point directly to the place of the Báb's execution. In *Divine Philosophy*, ‘Abdu’l-Bahá records that He was [\"finally executed in a public square of Tabríz.\"](https://oceanlibrary.com/divine-philosophy_abdu"
+  },
+  {
+   "id": "hx-abdul-baha-america#13",
+   "fixture": "hx-abdul-baha-america",
+   "type": "history_fact",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "'Abdu'l-Bahá traveled to America when"
+    }
+   ],
+   "ms": 7577,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2994
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 29
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 288
+    },
+    {
+     "name": "plan",
+     "at": 289,
+     "ms": 814
+    },
+    {
+     "name": "phrases",
+     "at": 1103,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1104,
+     "ms": 2179
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3283,
+     "ms": 4
+    },
+    {
+     "name": "companion",
+     "at": 3288,
+     "ms": 1
+    },
+    {
+     "name": "format",
+     "at": 3288,
+     "ms": 369
+    },
+    {
+     "name": "craft",
+     "at": 3657,
+     "ms": 2999
+    },
+    {
+     "name": "output-check",
+     "at": 6658,
+     "ms": 101
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 287
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1103
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1585
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3228
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3656
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6656
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6758
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 2024,
+    "total_ms": 2127,
+    "claims_ms": 371,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 371,
+      "qkeyword": 638,
+      "qhype": 756,
+      "qconcept": 779,
+      "phrase": 1086,
+      "canon": 1196,
+      "doctrinal_hype": 1315,
+      "doctrinal": 1316,
+      "merge": 151,
+      "total": 1467
+     },
+     {
+      "filters": [],
+      "concept": 371,
+      "qkeyword": 638,
+      "phrase": 1605,
+      "canon": 1627,
+      "merge": 29,
+      "total": 1656
+     }
+    ],
+    "passages_ms": 1656,
+    "resolve_ms": 366
+   },
+   "usd": 0.00357,
+   "latency_ms": 6759,
+   "wall_ms": 7577,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello, friend.\n\nWhen you ask about the timing of ‘Abdu’l-Bahá’s travels to America, the historical records and authorized interpretations point to the year 1912. Shoghi Effendi describes these movements as \"‘Abdu’l-Bahá’s historic journeys to the West, and in "
+  },
+  {
+   "id": "df-huququllah#10",
+   "fixture": "df-huququllah",
+   "type": "define_term",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Can you point me to where it explains what Huqúqu'lláh means?"
+    }
+   ],
+   "ms": 7735,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2452
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 753
+    },
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 754
+    },
+    {
+     "name": "plan",
+     "at": 754,
+     "ms": 580
+    },
+    {
+     "name": "phrases",
+     "at": 1334,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1334,
+     "ms": 1872
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3206,
+     "ms": 191
+    },
+    {
+     "name": "companion",
+     "at": 3397,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 3397,
+     "ms": 113
+    },
+    {
+     "name": "craft",
+     "at": 3510,
+     "ms": 2186
+    },
+    {
+     "name": "output-check",
+     "at": 5699,
+     "ms": 102
+    }
+   ],
+   "llm": [
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1328
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1333
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3143
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3509
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5696
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5800
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 7,
+    "search_ms": 1803,
+    "total_ms": 1810,
+    "claims_ms": 243,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 243,
+      "qkeyword": 249,
+      "qconcept": 1077,
+      "qhype": 1088,
+      "phrase": 1221,
+      "canon": 1269,
+      "doctrinal_hype": 1382,
+      "doctrinal": 1383,
+      "merge": 78,
+      "total": 1461
+     }
+    ],
+    "passages_ms": 1461,
+    "resolve_ms": 342
+   },
+   "usd": 0.00299,
+   "latency_ms": 5801,
+   "wall_ms": 7735,
+   "models": [
+    "gemini-embedding-2",
+    "jev-latest",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nThe term is **Ḥuqúqu'lláh**, written in Arabic as حقوق‌الله, which translates literally to \"the Right of God\" ([Memories of Nine Years in Akka](https://bahai-library.com/afroukhteh_nine_years_akka&chapter=all)). As explained in the glossary of [*The Ki"
+  },
+  {
+   "id": "hx-ridvan-year#06",
+   "fixture": "hx-ridvan-year",
+   "type": "history_fact",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I'm just starting to read Baha'i literature. Is there a good order to tackle the main books in?"
+    },
+    {
+     "role": "assistant",
+     "content": "Many newcomers start with a short introductory overview, then move to the Kitáb-i-Aqdas or the major letters once they have some context. Let me know if you'd like suggestions for a specific reading path."
+    },
+    {
+     "role": "user",
+     "content": "ok thanks. when did Bahá'u'lláh declare His mission in the Garden of Ridván?"
+    }
+   ],
+   "ms": 15151,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {},
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "direct_answer",
+    "provenance": null
+   },
+   "timeline": null,
+   "llm": null,
+   "search_detail": null,
+   "usd": 0.00293,
+   "latency_ms": 5227,
+   "wall_ms": 15151,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nBahá'u'lláh declared His mission in April 1863, during His stay in the Najíbíyyih Garden outside Bag̱hdád, which is known as the Garden of Riḍván ([4](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=fn_107)). The event took place \"thirty-one d"
+  },
+  {
+   "id": "hx-bahaullah-passing#13",
+   "fixture": "hx-bahaullah-passing",
+   "type": "history_fact",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Bahá'u'lláh death place"
+    }
+   ],
+   "ms": 8022,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1970
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 43
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 288
+    },
+    {
+     "name": "plan",
+     "at": 289,
+     "ms": 235
+    },
+    {
+     "name": "phrases",
+     "at": 524,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 524,
+     "ms": 1735
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2260,
+     "ms": 1
+    },
+    {
+     "name": "format",
+     "at": 2261,
+     "ms": 128
+    },
+    {
+     "name": "companion",
+     "at": 2262,
+     "ms": 9
+    },
+    {
+     "name": "craft",
+     "at": 2390,
+     "ms": 2842
+    },
+    {
+     "name": "output-check",
+     "at": 5235,
+     "ms": 161
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 288
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 524
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 997
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1212
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2049
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2387
+    },
+    {
+     "model": "clef",
+     "caller": "system1:anis-format:shadow",
+     "at": 4359
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5232
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5395
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 1499,
+    "total_ms": 1528,
+    "claims_ms": 177,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 176,
+      "qkeyword": 190,
+      "qconcept": 512,
+      "qhype": 566,
+      "phrase": 601,
+      "canon": 665,
+      "doctrinal_hype": 713,
+      "doctrinal": 758,
+      "merge": 272,
+      "total": 1030
+     }
+    ],
+    "passages_ms": 1030,
+    "resolve_ms": 328
+   },
+   "usd": 0.00353,
+   "latency_ms": 5396,
+   "wall_ms": 8022,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question. Bahá’u’lláh passed away in 1892 in the penal colony of ‘Akká, as noted in the writings of Shoghi Effendi [Uncompiled Published Letters](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para"
+  },
+  {
+   "id": "hx-bahaullah-passing#06",
+   "fixture": "hx-bahaullah-passing",
+   "type": "history_fact",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "where did bahaullah passs away, im trying to remeber for my hw"
+    }
+   ],
+   "ms": 6701,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2773
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "direct_answer",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 32
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 98
+    },
+    {
+     "name": "plan",
+     "at": 98,
+     "ms": 117
+    },
+    {
+     "name": "phrases",
+     "at": 215,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 216,
+     "ms": 2655
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2871,
+     "ms": 4
+    },
+    {
+     "name": "format",
+     "at": 2875,
+     "ms": 334
+    },
+    {
+     "name": "companion",
+     "at": 2876,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 3209,
+     "ms": 1504
+    },
+    {
+     "name": "output-check",
+     "at": 4716,
+     "ms": 123
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 97
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 215
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 837
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2706
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3208
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4713
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4838
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 2491,
+    "total_ms": 2493,
+    "claims_ms": 614,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 613,
+      "qkeyword": 659,
+      "phrase": 1185,
+      "canon": 1230,
+      "merge": 46,
+      "total": 1276
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 613,
+      "qkeyword": 625,
+      "qconcept": 1181,
+      "qhype": 1181,
+      "phrase": 1182,
+      "canon": 1204,
+      "doctrinal_hype": 1302,
+      "doctrinal": 1400,
+      "merge": 62,
+      "total": 1462
+     }
+    ],
+    "passages_ms": 1463,
+    "resolve_ms": 1025
+   },
+   "usd": 0.00266,
+   "latency_ms": 4839,
+   "wall_ms": 6701,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nBahá'u'lláh passed away in 1892 in the neighborhood of 'Akká, at the mansion of Bahjí just outside the fortress city.\n\nThe sources that settle this point describe His final days near the prison city. Shoghi Effendi records that after banishment to 'Akk"
+  },
+  {
+   "id": "df-dharma#11",
+   "fixture": "df-dharma",
+   "type": "define_term",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "can you point me to where dharma is defined or explained"
+    }
+   ],
+   "ms": 8055,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3816
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 34
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 97
+    },
+    {
+     "name": "plan",
+     "at": 98,
+     "ms": 279
+    },
+    {
+     "name": "phrases",
+     "at": 377,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 378,
+     "ms": 3536
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3914,
+     "ms": 519
+    },
+    {
+     "name": "format",
+     "at": 4433,
+     "ms": 149
+    },
+    {
+     "name": "companion",
+     "at": 4434,
+     "ms": 9
+    },
+    {
+     "name": "craft",
+     "at": 4582,
+     "ms": 2966
+    },
+    {
+     "name": "output-check",
+     "at": 7549,
+     "ms": 115
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 97
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 377
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1881
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3670
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 4582
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7548
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7664
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 9,
+    "search_ms": 3286,
+    "total_ms": 3295,
+    "claims_ms": 515,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 514,
+      "qkeyword": 1499,
+      "phrase": 2338,
+      "canon": 2613,
+      "merge": 201,
+      "total": 2814
+     },
+     {
+      "filters": [],
+      "concept": 514,
+      "qkeyword": 1499,
+      "qconcept": 2334,
+      "qhype": 2335,
+      "phrase": 2335,
+      "canon": 2816,
+      "merge": 64,
+      "total": 2880
+     }
+    ],
+    "passages_ms": 2881,
+    "resolve_ms": 404
+   },
+   "usd": 0.00327,
+   "latency_ms": 7665,
+   "wall_ms": 8055,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question. It is a profound one, because few concepts run as deep through the traditions of South Asia as *dharma*.\n\nWhen we look to the texts for how dharma is defined and explained, we find it described in several complementar"
+  },
+  {
+   "id": "hx-mulla-husayn-death#10",
+   "fixture": "hx-mulla-husayn-death",
+   "type": "history_fact",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I'm trying to get a better sense of 19th-century history for a book I'm writing. Where should I start?"
+    },
+    {
+     "role": "assistant",
+     "content": "A good approach is to begin with a general overview of the period, then move on to primary sources and reputable secondary histories. Do you have a particular region or event in mind?"
+    },
+    {
+     "role": "user",
+     "content": "Not yet, I'll look into that later. Quick one though: where was Mullá Ḥusayn killed?"
+    }
+   ],
+   "ms": 8040,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4671
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "direct_answer",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 17
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 175
+    },
+    {
+     "name": "plan",
+     "at": 175,
+     "ms": 1370
+    },
+    {
+     "name": "phrases",
+     "at": 1545,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1545,
+     "ms": 3301
+    },
+    {
+     "name": "upgrade-links",
+     "at": 4847,
+     "ms": 91
+    },
+    {
+     "name": "companion",
+     "at": 4939,
+     "ms": 3
+    },
+    {
+     "name": "format",
+     "at": 4939,
+     "ms": 191
+    },
+    {
+     "name": "craft",
+     "at": 5130,
+     "ms": 1455
+    },
+    {
+     "name": "output-check",
+     "at": 6586,
+     "ms": 117
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 174
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1544
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2695
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4741
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 5130
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6585
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6702
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 7,
+    "search_ms": 3189,
+    "total_ms": 3196,
+    "claims_ms": 299,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 299,
+      "qkeyword": 317,
+      "qconcept": 1431,
+      "qhype": 1708,
+      "phrase": 1718,
+      "canon": 1751,
+      "doctrinal_hype": 1829,
+      "doctrinal": 1829,
+      "merge": 91,
+      "total": 1920
+     }
+    ],
+    "passages_ms": 1920,
+    "resolve_ms": 1268
+   },
+   "usd": 0.00221,
+   "latency_ms": 6703,
+   "wall_ms": 8040,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Mullá Ḥusayn was killed at the fort of Shaykh Ṭabarsí in Mázindarán, struck down by a bullet from ‘Abbás-Qulí Ḵhán-i-Láríjání.\n\nThe text that settles it is from the authorized interpretation of Shoghi Effendi in *God Passes By*: [\"whose bullet was responsible"
+  },
+  {
+   "id": "hx-bab-martyrdom-year#10",
+   "fixture": "hx-bab-martyrdom-year",
+   "type": "history_fact",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "My grandmother gave me a little book about the Faith before she passed, and I've been trying to make sense of the chapter on the Báb. It mentions his death but not clearly enough for me. When was the Báb martyred?"
+    }
+   ],
+   "ms": 10723,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 4912
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 26
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 145
+    },
+    {
+     "name": "plan",
+     "at": 146,
+     "ms": 749
+    },
+    {
+     "name": "phrases",
+     "at": 895,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 895,
+     "ms": 4163
+    },
+    {
+     "name": "upgrade-links",
+     "at": 5058,
+     "ms": 4
+    },
+    {
+     "name": "companion",
+     "at": 5062,
+     "ms": 9
+    },
+    {
+     "name": "format",
+     "at": 5062,
+     "ms": 431
+    },
+    {
+     "name": "craft",
+     "at": 5493,
+     "ms": 2297
+    },
+    {
+     "name": "output-check",
+     "at": 7792,
+     "ms": 98
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 145
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 894
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 2706
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 4952
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 5492
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7790
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7889
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 16,
+    "search_ms": 4042,
+    "total_ms": 4058,
+    "claims_ms": 643,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 643,
+      "qkeyword": 968,
+      "qconcept": 1869,
+      "qhype": 2070,
+      "phrase": 2362,
+      "canon": 2395,
+      "doctrinal_hype": 2480,
+      "doctrinal": 2645,
+      "merge": 86,
+      "total": 2731
+     }
+    ],
+    "passages_ms": 2731,
+    "resolve_ms": 1311
+   },
+   "usd": 0.00278,
+   "latency_ms": 7890,
+   "wall_ms": 10723,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is a tender thing to hold a book left to you by a grandmother, especially one you are turning to now to make sense of her memory and the path she walked. There is something right in your noticing that the chapter you read touches on the end of"
+  },
+  {
+   "id": "hx-bab-martyrdom-place#11",
+   "fixture": "hx-bab-martyrdom-place",
+   "type": "history_fact",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "My grandmother gave me her old Bahá'í history books when I visited last month, and I've been reading them on the train. One chapter mentions the Báb's martyrdom but the page I'm on skips the location. Can you tell me where the Báb was executed?"
+    }
+   ],
+   "ms": 5200,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1820
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 35
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 110
+    },
+    {
+     "name": "plan",
+     "at": 111,
+     "ms": 128
+    },
+    {
+     "name": "phrases",
+     "at": 239,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 240,
+     "ms": 1691
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1932,
+     "ms": 4
+    },
+    {
+     "name": "companion",
+     "at": 1936,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 1936,
+     "ms": 130
+    },
+    {
+     "name": "craft",
+     "at": 2066,
+     "ms": 2303
+    },
+    {
+     "name": "output-check",
+     "at": 4373,
+     "ms": 186
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 110
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 239
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1016
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1855
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2066
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4369
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4558
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 58,
+    "search_ms": 1558,
+    "total_ms": 1616,
+    "claims_ms": 713,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 713,
+      "qkeyword": 721,
+      "phrase": 922,
+      "canon": 980,
+      "doctrinal_hype": 1013,
+      "doctrinal": 1056,
+      "merge": 108,
+      "total": 1164
+     }
+    ],
+    "passages_ms": 1165,
+    "evidence_ms": 0,
+    "resolve_ms": 393
+   },
+   "usd": 0.00348,
+   "latency_ms": 4559,
+   "wall_ms": 5200,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is a wonderful thing to travel with history in your hands, especially when it comes from the shelves of your grandmother. Reading on a train has a way of making the past feel close, as though the miles passing outside are matched by the distan"
+  },
+  {
+   "id": "hx-bab-martyrdom-year#03",
+   "fixture": "hx-bab-martyrdom-year",
+   "type": "history_fact",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where can I read the date when the Báb was martyred?"
+    }
+   ],
+   "ms": 5063,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2319
+   },
+   "cite_ok": false,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": true,
+   "answerOk": false,
+   "pass": false,
+   "stage": "selection",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 28
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 107
+    },
+    {
+     "name": "plan",
+     "at": 107,
+     "ms": 1
+    },
+    {
+     "name": "phrases",
+     "at": 108,
+     "ms": 4
+    },
+    {
+     "name": "search",
+     "at": 112,
+     "ms": 2314
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2426,
+     "ms": 29
+    },
+    {
+     "name": "format",
+     "at": 2455,
+     "ms": 128
+    },
+    {
+     "name": "companion",
+     "at": 2456,
+     "ms": 1
+    },
+    {
+     "name": "craft",
+     "at": 2583,
+     "ms": 1775
+    },
+    {
+     "name": "output-check",
+     "at": 4359,
+     "ms": 117
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 106
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1461
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2384
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2583
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4358
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4475
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 2269,
+    "total_ms": 2272,
+    "claims_ms": 291,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 291,
+      "qkeyword": 303,
+      "qconcept": 1397,
+      "qhype": 1503,
+      "phrase": 1559,
+      "canon": 1618,
+      "doctrinal_hype": 1643,
+      "doctrinal": 1799,
+      "merge": 66,
+      "total": 1865
+     }
+    ],
+    "passages_ms": 1865,
+    "resolve_ms": 403
+   },
+   "usd": 0.00269,
+   "latency_ms": 4477,
+   "wall_ms": 5063,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear seeker,\n\nYou can read the date of the Báb's martyrdom in the letters of Shoghi Effendi. In a message concerning the anniversaries observed in the community, he writes that [\"The anniversary of the Martyrdom of the Báb on July 9 at about noon.\"](https://oc"
+  },
+  {
+   "id": "df-dharma#10",
+   "fixture": "df-dharma",
+   "type": "define_term",
+   "style": "bare",
+   "messages": [
+    {
+     "role": "user",
+     "content": "meaning of dharma"
+    }
+   ],
+   "ms": 9786,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1572
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 1,
+     "ms": 44
+    },
+    {
+     "name": "triage",
+     "at": 1,
+     "ms": 118
+    },
+    {
+     "name": "plan",
+     "at": 120,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 120,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 121,
+     "ms": 1571
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1692,
+     "ms": 441
+    },
+    {
+     "name": "companion",
+     "at": 2133,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 2133,
+     "ms": 138
+    },
+    {
+     "name": "craft",
+     "at": 2271,
+     "ms": 3275
+    },
+    {
+     "name": "output-check",
+     "at": 5549,
+     "ms": 377
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 119
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 500
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1449
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2271
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:source-resolve:shadow",
+     "at": 3110
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5546
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5926
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 0,
+    "search_ms": 1315,
+    "total_ms": 1330,
+    "claims_ms": 127,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 127,
+      "qkeyword": 291,
+      "qconcept": 669,
+      "qhype": 836,
+      "phrase": 907,
+      "canon": 1108,
+      "merge": 67,
+      "total": 1175
+     }
+    ],
+    "passages_ms": 1175,
+    "resolve_ms": 139
+   },
+   "usd": 0.00272,
+   "latency_ms": 5926,
+   "wall_ms": 9786,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is wonderful to think about a word as vast as *dharma*. The sources here do not settle all of its meanings, but they give us a glimpse of how rich the concept is across different traditions.\n\nIn Hindu scripture, the *Mahabharata* describes how"
+  },
+  {
+   "id": "df-zakat#07",
+   "fixture": "df-zakat",
+   "type": "define_term",
+   "style": "typo",
+   "messages": [
+    {
+     "role": "user",
+     "content": "waht is zakat pls"
+    }
+   ],
+   "ms": 8835,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1732
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 1,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 1,
+     "ms": 294
+    },
+    {
+     "name": "plan",
+     "at": 295,
+     "ms": 908
+    },
+    {
+     "name": "phrases",
+     "at": 1203,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1203,
+     "ms": 824
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2027,
+     "ms": 4
+    },
+    {
+     "name": "companion",
+     "at": 2031,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 2031,
+     "ms": 132
+    },
+    {
+     "name": "craft",
+     "at": 2163,
+     "ms": 2829
+    },
+    {
+     "name": "output-check",
+     "at": 4994,
+     "ms": 97
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 294
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1200
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1202
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1892
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 2162
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4992
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5090
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 1,
+    "search_ms": 681,
+    "total_ms": 690,
+    "claims_ms": 116,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 116,
+      "qkeyword": 124,
+      "qconcept": 141,
+      "qhype": 253,
+      "phrase": 339,
+      "canon": 408,
+      "merge": 51,
+      "total": 459
+     }
+    ],
+    "passages_ms": 459,
+    "resolve_ms": 222
+   },
+   "usd": 0.00367,
+   "latency_ms": 5091,
+   "wall_ms": 8835,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nThe term is *zakāt* (زكاة). In the sources retrieved here, it is described as \"a form of levy which Muslims of means pay annually in cash or kind\" ([Salat -The Muslim Prayer Book](https://oceanlibrary.com/salat-the-muslim-prayer-book/?paraId=para_24&se"
+  },
+  {
+   "id": "df-huququllah#09",
+   "fixture": "df-huququllah",
+   "type": "define_term",
+   "style": "polite",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I wonder if you could explain the meaning of the term Huqúqu'lláh?"
+    }
+   ],
+   "ms": 8843,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 1728
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "term_study",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 24
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 126
+    },
+    {
+     "name": "plan",
+     "at": 126,
+     "ms": 172
+    },
+    {
+     "name": "phrases",
+     "at": 298,
+     "ms": 0
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1854,
+     "ms": 0
+    },
+    {
+     "name": "companion",
+     "at": 1855,
+     "ms": 2
+    },
+    {
+     "name": "craft",
+     "at": 1858,
+     "ms": 2730
+    },
+    {
+     "name": "output-check",
+     "at": 4593,
+     "ms": 104
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 125
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 297
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1192
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-term",
+     "at": 1323
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4588
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4697
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.00176,
+   "latency_ms": 4697,
+   "wall_ms": 8843,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nHuqúqu'lláh (حقوق الله) comes from the root *ḥ-q-q* (ح ق ق), which carries the core meanings of truth, right, reality, and what is due or fitting.\n\n```chart\n{\"title\":\"How Shoghi Effendi rendered حقوق الله (all words of the root ح-ق-ق)\",\"bars\":[{\""
+  },
+  {
+   "id": "hx-bab-martyrdom-year#12",
+   "fixture": "hx-bab-martyrdom-year",
+   "type": "history_fact",
+   "style": "non_native",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I am student and I want to know, the Bab was martyred in which year and which day? Thank you."
+    }
+   ],
+   "ms": 8747,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 5996
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 21
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 102
+    },
+    {
+     "name": "plan",
+     "at": 102,
+     "ms": 118
+    },
+    {
+     "name": "phrases",
+     "at": 220,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 220,
+     "ms": 5878
+    },
+    {
+     "name": "upgrade-links",
+     "at": 6098,
+     "ms": 10
+    },
+    {
+     "name": "companion",
+     "at": 6109,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 6109,
+     "ms": 100
+    },
+    {
+     "name": "craft",
+     "at": 6209,
+     "ms": 2066
+    },
+    {
+     "name": "output-check",
+     "at": 8280,
+     "ms": 89
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 100
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 219
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1500
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 6041
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 6209
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 8275
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 8368
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 25,
+    "search_ms": 5825,
+    "total_ms": 5851,
+    "claims_ms": 1247,
+    "engine": [
+     {
+      "filters": [],
+      "concept": 1247,
+      "qkeyword": 1633,
+      "phrase": 2532,
+      "canon": 2625,
+      "merge": 56,
+      "total": 2681
+     },
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 1247,
+      "qkeyword": 1633,
+      "phrase": 2439,
+      "canon": 2525,
+      "doctrinal_hype": 2683,
+      "doctrinal": 2731,
+      "merge": 33,
+      "total": 2764
+     }
+    ],
+    "passages_ms": 2764,
+    "evidence_ms": 14,
+    "resolve_ms": 3046
+   },
+   "usd": 0.00938,
+   "latency_ms": 8369,
+   "wall_ms": 8747,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nThank you for your question. Regarding the exact year and day of the martyrdom of the Báb, I must share that the passages currently retrieved here do not mention the date or year of His martyrdom. I can only share what is explicitly recorded in t"
+  },
+  {
+   "id": "df-zakat#10",
+   "fixture": "df-zakat",
+   "type": "define_term",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "What's a good beginner book on the world religions?"
+    },
+    {
+     "role": "assistant",
+     "content": "A popular starting point is a comparative overview of world religions, which typically covers each tradition's core beliefs, practices, and key texts side by side. If you tell me which traditions interest you most, I can suggest more specific reading."
+    },
+    {
+     "role": "user",
+     "content": "ok thanks. and what is zakat exactly?"
+    }
+   ],
+   "ms": 10578,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1439
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 375
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 378
+    },
+    {
+     "name": "plan",
+     "at": 378,
+     "ms": 144
+    },
+    {
+     "name": "phrases",
+     "at": 522,
+     "ms": 1
+    },
+    {
+     "name": "search",
+     "at": 523,
+     "ms": 1294
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1817,
+     "ms": 28
+    },
+    {
+     "name": "companion",
+     "at": 1846,
+     "ms": 3
+    },
+    {
+     "name": "format",
+     "at": 1846,
+     "ms": 2766
+    },
+    {
+     "name": "craft",
+     "at": 4612,
+     "ms": 2786
+    },
+    {
+     "name": "output-check",
+     "at": 7400,
+     "ms": 163
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 377
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 521
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 800
+    },
+    {
+     "model": "clef-flash",
+     "caller": "system1:search-plan:shadow",
+     "at": 893
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1621
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 7398
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 7563
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 3,
+    "search_ms": 1096,
+    "total_ms": 1099,
+    "claims_ms": 270,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 270,
+      "qkeyword": 277,
+      "qconcept": 292,
+      "qhype": 527,
+      "phrase": 647,
+      "canon": 675,
+      "merge": 59,
+      "total": 734
+     }
+    ],
+    "passages_ms": 734,
+    "resolve_ms": 361
+   },
+   "usd": 0.00364,
+   "latency_ms": 7563,
+   "wall_ms": 10578,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello!\n\nZakat is an Arabic term—*zakāt* (زكاة)—meaning purification or growth, used in Islamic tradition to refer to the prescribed alms or levy that Muslims of means pay annually in cash or kind ([Salat -The Muslim Prayer Book](https://oceanlibrary.com/salat-"
+  },
+  {
+   "id": "df-nirvana#03",
+   "fixture": "df-nirvana",
+   "type": "define_term",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "where can I read a clear explanation of what nirvana is"
+    }
+   ],
+   "ms": 11267,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 5751
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 30
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 152
+    },
+    {
+     "name": "plan",
+     "at": 152,
+     "ms": 1365
+    },
+    {
+     "name": "phrases",
+     "at": 1517,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1517,
+     "ms": 4386
+    },
+    {
+     "name": "upgrade-links",
+     "at": 5903,
+     "ms": 144
+    },
+    {
+     "name": "format",
+     "at": 6047,
+     "ms": 136
+    },
+    {
+     "name": "companion",
+     "at": 6048,
+     "ms": 3
+    },
+    {
+     "name": "craft",
+     "at": 6183,
+     "ms": 3349
+    },
+    {
+     "name": "output-check",
+     "at": 9535,
+     "ms": 138
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 152
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1510
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1517
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3363
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 6183
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 9532
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 9673
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 2,
+    "search_ms": 4117,
+    "total_ms": 4119,
+    "claims_ms": 366,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 366,
+      "qkeyword": 377,
+      "qconcept": 401,
+      "qhype": 797,
+      "phrase": 856,
+      "canon": 909,
+      "merge": 125,
+      "total": 1034
+     },
+     {
+      "filters": [],
+      "concept": 366,
+      "qkeyword": 377,
+      "phrase": 1272,
+      "canon": 1437,
+      "merge": 27,
+      "total": 1464
+     }
+    ],
+    "passages_ms": 1464,
+    "resolve_ms": 2651
+   },
+   "usd": 0.00379,
+   "latency_ms": 9674,
+   "wall_ms": 11267,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is a wonderful question to bring, and one that leads straight to the heart of the texts. When you look for a clear explanation of what Nirvana is, the Buddhist scriptures do not offer a dry definition or a philosophical formula; instead, they "
+  },
+  {
+   "id": "hx-bahaullah-passing#08",
+   "fixture": "hx-bahaullah-passing",
+   "type": "history_fact",
+   "style": "embedded",
+   "messages": [
+    {
+     "role": "user",
+     "content": "My study group met again last night and we got into a long argument about the Kitab-i-Aqdas versus the Kitab-i-Iqan. Someone mentioned the last days of Bahá'u'lláh and nobody could agree on where he passed away. Could you tell me where Bahá'u'lláh passed away?"
+    }
+   ],
+   "ms": 7611,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 3077
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 44
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 170
+    },
+    {
+     "name": "plan",
+     "at": 170,
+     "ms": 192
+    },
+    {
+     "name": "phrases",
+     "at": 362,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 362,
+     "ms": 2885
+    },
+    {
+     "name": "upgrade-links",
+     "at": 3247,
+     "ms": 6
+    },
+    {
+     "name": "companion",
+     "at": 3253,
+     "ms": 1
+    },
+    {
+     "name": "format",
+     "at": 3253,
+     "ms": 121
+    },
+    {
+     "name": "craft",
+     "at": 3374,
+     "ms": 2070
+    },
+    {
+     "name": "output-check",
+     "at": 5446,
+     "ms": 88
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 169
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 361
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1860
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 3158
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3373
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5444
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5533
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 56,
+    "search_ms": 2741,
+    "total_ms": 2798,
+    "claims_ms": 758,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 758,
+      "qkeyword": 1182,
+      "phrase": 1826,
+      "canon": 1858,
+      "doctrinal_hype": 1995,
+      "doctrinal": 1996,
+      "merge": 68,
+      "total": 2064
+     }
+    ],
+    "passages_ms": 2064,
+    "evidence_ms": 0,
+    "resolve_ms": 676
+   },
+   "usd": 0.00327,
+   "latency_ms": 5534,
+   "wall_ms": 7611,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt sounds like a lively study group you have, moving back and forth between the *Kitáb-i-Aqdas* and the *Kitáb-i-Íqán* while trying to untangle history. It is very easy for details to blur when a life spans so many cities, from Tihrán to Baghdad,"
+  },
+  {
+   "id": "hx-bab-martyrdom-year#07",
+   "fixture": "hx-bab-martyrdom-year",
+   "type": "history_fact",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Bab martyrdom date"
+    }
+   ],
+   "ms": 7615,
+   "expected_strategy": [
+    "fact"
+   ],
+   "shape": "fact",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2666
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 25
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 217
+    },
+    {
+     "name": "plan",
+     "at": 218,
+     "ms": 1212
+    },
+    {
+     "name": "phrases",
+     "at": 1430,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1430,
+     "ms": 1453
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2883,
+     "ms": 4
+    },
+    {
+     "name": "companion",
+     "at": 2888,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 2888,
+     "ms": 458
+    },
+    {
+     "name": "craft",
+     "at": 3346,
+     "ms": 2395
+    },
+    {
+     "name": "output-check",
+     "at": 5742,
+     "ms": 109
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 217
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1429
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1834
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2756
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3345
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 5741
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 5850
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 4,
+    "search_ms": 1308,
+    "total_ms": 1327,
+    "claims_ms": 120,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 120,
+      "qkeyword": 146,
+      "qconcept": 461,
+      "qhype": 570,
+      "phrase": 716,
+      "canon": 781,
+      "doctrinal_hype": 815,
+      "doctrinal": 866,
+      "merge": 71,
+      "total": 937
+     }
+    ],
+    "passages_ms": 937,
+    "resolve_ms": 371
+   },
+   "usd": 0.00322,
+   "latency_ms": 5851,
+   "wall_ms": 7615,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear seeker,\n\nThank you for your question regarding the date of the martyrdom of the Báb.\n\nTo answer directly from the records available in the texts, the Báb was executed on the ninth of July 1850, corresponding to the 28th of Sha‘bán 1266 A.H., during the th"
+  },
+  {
+   "id": "df-mashriq#04",
+   "fixture": "df-mashriq",
+   "type": "define_term",
+   "style": "find",
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where can I read a definition of the Mashriqu'l-Adhkár in the writings?"
+    }
+   ],
+   "ms": 7623,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 2796
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": true,
+   "route": {
+    "gate": "research",
+    "format": "letter",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 20
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 164
+    },
+    {
+     "name": "plan",
+     "at": 164,
+     "ms": 989
+    },
+    {
+     "name": "phrases",
+     "at": 1153,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 1153,
+     "ms": 1807
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2961,
+     "ms": 166
+    },
+    {
+     "name": "companion",
+     "at": 3128,
+     "ms": 3
+    },
+    {
+     "name": "format",
+     "at": 3128,
+     "ms": 219
+    },
+    {
+     "name": "craft",
+     "at": 3347,
+     "ms": 2792
+    },
+    {
+     "name": "output-check",
+     "at": 6142,
+     "ms": 108
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 163
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 1152
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 1884
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 2897
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 3347
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 6139
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 6249
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 9,
+    "search_ms": 1736,
+    "total_ms": 1745,
+    "claims_ms": 255,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 255,
+      "qkeyword": 414,
+      "qhype": 899,
+      "qconcept": 912,
+      "phrase": 1081,
+      "canon": 1141,
+      "doctrinal_hype": 1227,
+      "doctrinal": 1301,
+      "merge": 72,
+      "total": 1373
+     }
+    ],
+    "passages_ms": 1373,
+    "resolve_ms": 363
+   },
+   "usd": 0.00394,
+   "latency_ms": 6250,
+   "wall_ms": 7623,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nIt is a pleasure to help you look for how the writings define this unique institution.\n\nIf you turn to the foundational text itself, the *Kitáb-i-Aqdas* by Bahá’u’lláh, you will find a direct and beautiful definition given in response to what hap"
+  },
+  {
+   "id": "df-zakat#12",
+   "fixture": "df-zakat",
+   "type": "define_term",
+   "style": "terse",
+   "messages": [
+    {
+     "role": "user",
+     "content": "zakat meaning"
+    }
+   ],
+   "ms": 5121,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "strategy": 0,
+    "retrieval": 1212
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "term_with_original",
+    "provenance": "jev:cached"
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 66
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 228
+    },
+    {
+     "name": "plan",
+     "at": 228,
+     "ms": 344
+    },
+    {
+     "name": "phrases",
+     "at": 572,
+     "ms": 0
+    },
+    {
+     "name": "search",
+     "at": 572,
+     "ms": 868
+    },
+    {
+     "name": "upgrade-links",
+     "at": 1441,
+     "ms": 11
+    },
+    {
+     "name": "companion",
+     "at": 1452,
+     "ms": 2
+    },
+    {
+     "name": "format",
+     "at": 1452,
+     "ms": 108
+    },
+    {
+     "name": "craft",
+     "at": 1560,
+     "ms": 2806
+    },
+    {
+     "name": "output-check",
+     "at": 4369,
+     "ms": 95
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 227
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:search-plan",
+     "at": 571
+    },
+    {
+     "model": "gemini-embedding-2",
+     "caller": "search-query",
+     "at": 767
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:source-resolve",
+     "at": 1302
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-format",
+     "at": 1560
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 4366
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 4463
+    }
+   ],
+   "search_detail": {
+    "plan_ms": 1,
+    "search_ms": 722,
+    "total_ms": 732,
+    "claims_ms": 97,
+    "engine": [
+     {
+      "filters": [
+       "religion"
+      ],
+      "concept": 97,
+      "qkeyword": 107,
+      "qconcept": 215,
+      "qhype": 282,
+      "phrase": 371,
+      "canon": 439,
+      "merge": 54,
+      "total": 493
+     }
+    ],
+    "passages_ms": 493,
+    "resolve_ms": 229
+   },
+   "usd": 0.00376,
+   "latency_ms": 4464,
+   "wall_ms": 5121,
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Hello,\n\nThe word you are asking about is **zakāt** (زكاة), which appears across Islamic sources carrying both a financial and a spiritual meaning.\n\nTo look at how the sources present it: in general usage and instructional texts, it is described as \"a form of l"
+  },
+  {
+   "id": "df-huququllah#06",
+   "fixture": "df-huququllah",
+   "type": "define_term",
+   "style": "followup",
+   "messages": [
+    {
+     "role": "user",
+     "content": "I'm trying to learn more about the Baha'i Faith. Where should a beginner start?"
+    },
+    {
+     "role": "assistant",
+     "content": "A good starting point is a short introduction to the Faith's core principles, such as the oneness of humanity, the oneness of God, and the oneness of religion. After that, reading selections from the writings of Bahá'u'lláh can help you see how those principles apply to daily life. Would you like some beginner-friendly reading suggestions?"
+    },
+    {
+     "role": "user",
+     "content": "yes please, but first, what does Huqúqu'lláh mean?"
+    }
+   ],
+   "ms": 5032,
+   "expected_strategy": [
+    "define"
+   ],
+   "shape": "define",
+   "strategyOk": true,
+   "phrases": [],
+   "phrasesOk": null,
+   "phraseWrapper": null,
+   "phraseVia": null,
+   "phraseExact": null,
+   "phraseNames": null,
+   "retrieved": true,
+   "selection": null,
+   "stage_ms": {
+    "retrieval": 2355
+   },
+   "cite_ok": true,
+   "link_ok": true,
+   "nofound": false,
+   "offtopic": false,
+   "answerOk": true,
+   "pass": true,
+   "stage": "ok",
+   "slow": false,
+   "route": {
+    "gate": "research",
+    "format": "term_study",
+    "provenance": null
+   },
+   "timeline": [
+    {
+     "name": "open-log",
+     "at": 0,
+     "ms": 41
+    },
+    {
+     "name": "triage",
+     "at": 0,
+     "ms": 151
+    },
+    {
+     "name": "plan",
+     "at": 152,
+     "ms": 0
+    },
+    {
+     "name": "phrases",
+     "at": 152,
+     "ms": 14
+    },
+    {
+     "name": "upgrade-links",
+     "at": 2507,
+     "ms": 0
+    },
+    {
+     "name": "companion",
+     "at": 2507,
+     "ms": 4
+    },
+    {
+     "name": "craft",
+     "at": 2511,
+     "ms": 1081
+    },
+    {
+     "name": "output-check",
+     "at": 3594,
+     "ms": 119
+    }
+   ],
+   "llm": [
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-triage",
+     "at": 150
+    },
+    {
+     "model": "claude-haiku-5-5",
+     "caller": "anis-term",
+     "at": 838
+    },
+    {
+     "model": "gemini-3.5-flash-lite",
+     "caller": "anis-craft",
+     "at": 3592
+    },
+    {
+     "model": "jev-latest",
+     "caller": "system1:anis-persona-check",
+     "at": 3712
+    }
+   ],
+   "search_detail": null,
+   "usd": 0.0017,
+   "latency_ms": 3713,
+   "wall_ms": 5032,
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "reply_head": "Dear friend,\n\nHuqúqu'lláh (حقوق الله) is written with the Arabic root *ḥ-q-q* (ح ق ق), which carries the core meaning of truth, right, reality, and what is due or fitting.\n\n```chart\n{\"title\":\"How Shoghi Effendi rendered حقوق الله (all words of the root ح-ق-ق)\""
+  }
+ ]
+}
