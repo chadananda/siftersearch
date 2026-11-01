@@ -16,8 +16,10 @@ const API = 'https://generativelanguage.googleapis.com/v1beta';
 const FAILED = /FAILED|CANCELLED|EXPIRED/;
 
 export function createBatchEmbedder({ model, apiKey, stateFile = null, capTokens = 400000, pollMs = 20000, fallbackWaitMs = 1800000, disableMs = 3600000, maxWaitMs = 46 * 3600000,
-  fetchFn = (u, i) => resilientFetch(u, i, { onRetry: (x) => { local.retries++; onRetry?.(x); } }), onRetry = null, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), name = `embed-batch-${model}` } = {}) {
+  fetchFn = null, onRetry = null, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), name = `embed-batch-${model}` } = {}) {
   let local = { jobs: {}, disabledUntil: 0, submitted: 0, collected: 0, retries: 0, fellBack: 0, pid: process.pid };
+  // Built here, not as a parameter default: a default can't see `local` (body scope) → ReferenceError on the first retry (job #71445)
+  fetchFn ??= (u, i) => resilientFetch(u, i, { onRetry: (x) => { local.retries++; onRetry?.(x); } });
   const read = () => { try { return JSON.parse(readFileSync(stateFile, 'utf8')); } catch { return null; } };
   const load = () => {   // jobs older than 48 h have expired at Google
     const c = stateFile ? read() : null; if (c?.jobs) local.jobs = Object.fromEntries(Object.entries(c.jobs).filter(([, j]) => now() - j.at < 48 * 3600000));  if (c?.disabledUntil) local.disabledUntil = c.disabledUntil; };

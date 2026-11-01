@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -68,5 +68,15 @@ describe('batch embedder', () => {
     const b2 = createBatchEmbedder(base(srv, { stateFile: f }));
     const v = await b2.embed(reqs(2), { tokens: 10, sync: syncFn });
     expect(v.mode).toBe('batch'); expect(srv.submits).toBe(1);
+  });
+
+  it('default fetch: a transient retry counts on the embedder (job #71445: `local is not defined`)', async () => {
+    const srv = fakeServer(); let first = true, retries = 0;
+    vi.stubGlobal('fetch', async (u, i) => (first ? ((first = false), { ok: false, status: 503, headers: new Headers(), text: async () => '' }) : srv.fetchFn(u, i)));
+    try {
+      const { fetchFn, ...o } = base(srv); const b = createBatchEmbedder({ ...o, onRetry: () => retries++ });
+      expect((await b.embed(reqs(2), { tokens: 10, sync: syncFn })).mode).toBe('batch');
+      expect(retries).toBe(1);
+    } finally { vi.unstubAllGlobals(); }
   });
 });
