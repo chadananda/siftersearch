@@ -447,11 +447,12 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // A QUOTATION HUNT keeps only passages that hold the wording (or nearly all its words). Nothing near → say so plainly:
   // no neighbours, no people, no other topic to pivot to (11-01: "find the quote …" was answered with the Letters of the Living).
   const huntPhrase = !researched && !sourced && !original && !study ? res?._plan?.quote?.phrase : null;
-  let quoteMiss = false;
+  let quoteMiss = false, select = null;
   if (huntPhrase) {
     const want = foldVerbatim(huntPhrase), ws = [...new Set(want.split(' '))];
     const near = (t) => { const f = foldVerbatim(t); return f.includes(want) || ws.filter((w) => ` ${f} `.includes(` ${w} `)).length >= Math.ceil(ws.length * 0.7); };
     const keep = retrieved.filter((q) => near(q.text));
+    select = { of: retrieved.length, kept: keep.length, by: 'phrase-match' };
     quoteMiss = !keep.length;
     retrieved.splice(0, retrieved.length, ...keep);
     if (quoteMiss && res) { res.entities = null; res.peopleAnswer = null; }
@@ -536,6 +537,6 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     religion: "Bahá'í", text: `Shoghi Effendi's renderings of ${study.term}, counted over ${study.counted || study.total} aligned passages (${study.total} in all): `
       + study.renderings.map((r) => `${r.en} ${r.count}`).join(', ') }] : [];
   return { reply, quotes_removed: guarded.removed, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
-    search_query: searchQueryFor(messages), format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
+    search_query: searchQueryFor(messages), select, format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }

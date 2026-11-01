@@ -115,7 +115,13 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const path = await finish(reply, 'answered', { engine: 'anis', evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
       // how the strategy was chosen (jev | jev-cached | backstop + why) and what the search was fed, for the thread view
       plan: { shape: r.plan?.shape ?? null, provenance: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, overridden: r.plan?.overridden ?? null,
-        quote: r.plan?.quote?.phrase ?? null, ms: r.plan?.plan_ms ?? null, history_turns: Math.max(0, messages.length - 1), search_query: r.search_query ?? null },
+        quote: r.plan?.quote?.phrase ?? null, ms: r.plan?.plan_ms ?? null, history_turns: Math.max(0, messages.length - 1), search_query: r.search_query ?? null,
+        // the five stages, each with its choice, who made it and the time: strategy (Jev) → phrases → retrieval → selection → format
+        stages: { strategy: { choice: r.plan?.shape ?? null, by: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, ms: r.plan?.plan_ms ?? null },
+          phrases: r.plan?.quote ? { choice: r.plan.quote.phrase, by: r.plan.quote.via } : null,
+          retrieval: { choice: r.retrieved?.length ?? 0, by: 'planned-search', ms: r.timings?.search_ms ?? null },
+          selection: r.select ? { choice: `${r.select.kept}/${r.select.of}`, by: r.select.by } : null,
+          format: r.format ? { choice: r.format.id, by: r.format.by } : null } },
       retrieved: r.retrieved?.length ?? 0,
       format: r.format ?? null, profile: r.profile ?? null,
       output_check: broken, replaced, lint, timings: r.timings });

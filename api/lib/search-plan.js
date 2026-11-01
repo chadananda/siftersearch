@@ -24,7 +24,7 @@ const AUTHORS = {
 };
 
 const SHAPES = {
-  quote: 'the user gives the wording of a passage — verbatim or half-remembered — and wants to find it or its source',
+  quote: 'the user gives the wording of a passage — verbatim, a fragment, or half-remembered — and wants to find it or its source: "find the quote including …", "where does it say …", "who said …", "source of …"',
   fact: 'a factual question about people, places, dates, events or documents: who, when, where, how many, what happened',
   topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea',
   define: 'asks what a term, name or concept means',
@@ -158,7 +158,7 @@ export function layersFor(plan) {
  * The one network call. `input` is a query string or a message array (the conversation is the state:
  * "and what about compassion?" carries no tradition of its own).
  */
-export async function planSearch(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = 700, fetchImpl = jevFetch('search-plan'), cache = true } = {}) {
+export async function planSearch(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = Number(process.env.SEARCH_PLAN_TIMEOUT_MS) || 2500, fetchImpl = jevFetch('search-plan'), cache = true } = {}) {
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
   const state = messages.slice(-6).map((m) => `${m.role}: ${String(m.content || '').slice(0, 600)}`).join('\n');
   const t0 = Date.now();
