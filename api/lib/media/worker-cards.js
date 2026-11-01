@@ -89,7 +89,7 @@ export function healthView(h, now = Date.now()) {
     health: { ok: !!h.ok, age_s: Math.round((now - (h.ok_at || h.at)) / 1000), down_s: h.ok ? null : Math.round((now - (h.down_since || h.at)) / 1000), error: h.ok ? null : h.error || null,
       latency_ms: h.latency_ms ?? null, image: /sha256:([0-9a-f]{12})/.exec(String(d.image || ''))?.[1] || null, version: d.agent?.version || null, uptime_s: d.agent?.uptime_s ?? null,
       ram: d.ram ? [d.ram.used_gb, d.ram.total_gb] : null, vram: g?.vram_total_mb ? [Math.round(g.vram_used_mb / 102.4) / 10, Math.round(g.vram_total_mb / 102.4) / 10] : null,
-      disk_free_gb: d.disk?.free_gb ?? null, slots: d.slots || null, jobs: (d.jobs || []).map((j) => ({ type: j.type, stage: j.stage || j.phase || null, pct: j.pct ?? null })),
+      disk_free_gb: d.disk?.free_gb ?? null, slots: d.slots || null, jobs: (d.jobs || []).map((j) => ({ type: j.type, stage: j.stage || j.phase || null, pct: j.pct ?? null, ...(j.stalled_s != null ? { stalled_s: j.stalled_s } : {}) })),
       polls: h.polls || [] },   // the agent's last_error stays in ops (ops.mjs media health): /media is public
   };
 }

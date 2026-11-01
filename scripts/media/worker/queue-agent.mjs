@@ -24,8 +24,8 @@ import { join, relative, dirname, basename } from 'node:path';
 
 const { queueClient } = await import('./queue-client.mjs').catch(() => import('../../../api/lib/media/queue-client.mjs'));
 import { gpuUtil, gpuLedger, reachedGpu, descends, wantAnother, cgroupMemGb, cpuSample, cpuBusy, nextDepth, STALL_MS, GPU_IDLE } from './gpu-pace.mjs';
-import { cgroupOf, readCgroup, track, summary, loadProfiles, saveProfiles, record, profileOf, memPressure, admitCpu, cpuAllowed } from './cpu-pace.mjs';
-import { gpuStats, jobProgress, snapshot, compact, serveHealth, ringPush, ringSave, ringLoad, lastWords } from './health.mjs';
+import { cgroupOf, readCgroup, track, summary, loadProfiles, saveProfiles, record, profileOf, memPressure, admitCpu, cpuAllowed, stallOf, windowCores } from './cpu-pace.mjs';
+import { gpuStats, jobProgress, snapshot, compact, serveHealth, ringPush, ringSave, ringLoad, lastWords, holdAgentLock } from './health.mjs';
 import { cpus } from 'node:os';
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const HOST = arg('host'), SLOTS = Number(arg('slots', 1)), ROOT = arg('root', '/data/sifter-queue'), RUN = arg('run', 'local'), IMAGE = arg('image');
@@ -225,7 +225,14 @@ function sampleJob(id, info) {
     const pid = Number(spawnSync(DOCKER[0], [...DOCKER.slice(1), 'inspect', '-f', '{{.State.Pid}}', `q-${id}`], { encoding: 'utf8', timeout: 5000 }).stdout?.trim());
     info.cg = pid > 0 ? cgroupOf(pid) : null;
   }
-  info.m = track(info.m, readCgroup(info.cg), Date.now());
+  const now = Date.now();
+  info.m = track(info.m, readCgroup(info.cg), now);
+  if (info.phase !== 'run') { info.stall = null; return; }
+  // a stalled job: ~0 CPU over a full window and no progress (stallOf) — reported on /health and logged once, never killed here
+  const pr = jobProgress(info.dir, info.type, CONTRACT), was = info.stall?.since;
+  info.stall = stallOf(info.stall, { cores: windowCores(info.m, now), progress: `${pr.stage}|${pr.stage_at}` }, now);
+  if (info.stall.since && !was) { lastError = { at: now, msg: `job ${id} stalled: ~0 CPU, no progress at ${pr.stage || 'start'}` }; log('job stalled', { id, type: info.type, stage: pr.stage, stage_at: pr.stage_at }); }
+  if (!info.stall.since && was) log('job moving again', { id, stalled_s: Math.round((now - was) / 1000) });
 }
 // does a ledger key belong to this talk? docker: the container's pid namespace (asked once it runs); local: a pid under the talk's process
 function owner(id, d) {
@@ -281,7 +288,7 @@ function startHealth() {
       cpu, cores: c?.cores ?? cpus().length, cpuScope: CGROUP ? `slice ${CGROUP}` : 'host', ramTotalGb: memTotalGb(), ramAvailGb: memAvailGb(), pressure: pressure(),
       gpu: DEVICE === 'none' ? null : gpuStats(DEVICE), diskFreeGb: df?.free, diskTotalGb: df?.total, diskPath: ROOT, slots,
       jobs: ji.map(([id, j]) => ({ id, item: j.item, type: j.type, phase: j.phase, ...(j.phase === 'run' ? jobProgress(j.dir, j.type, CONTRACT) : { stage: null, pct: null }),
-        started_at: j.started_at, audio_s: j.audio_s, rss_gb: j.m ? +j.m.memGb.toFixed(2) : null, peak_gb: j.m ? +j.m.peakGb.toFixed(2) : null, cores: j.m?.cores == null ? null : +j.m.cores.toFixed(2) })),
+        started_at: j.started_at, audio_s: j.audio_s, stalled_s: j.stall?.since ? Math.round((now - j.stall.since) / 1000) : null, rss_gb: j.m ? +j.m.memGb.toFixed(2) : null, peak_gb: j.m ? +j.m.peakGb.toFixed(2) : null, cores: j.m?.cores == null ? null : +j.m.cores.toFixed(2) })),
       profiles: Object.fromEntries(types.filter((t) => typedKind(t)).map((t) => { const p = prof(t); return [t, { peak_gb: +p.peakGb.toFixed(2), cores: +p.cores.toFixed(2), runs: p.n, measured: p.measured }]; })),
       lastError });
   };
@@ -303,6 +310,10 @@ function startHealth() {
 const gpuSeen = [];   // GPU utilisation over the last minute: idle + nothing queued at it → ramp one more talk into CPU prep
 let claimedAt = 0, depth = 1, depthAt = 0;   // depth: talks kept on the GPU deck, learned from starvation (gpu-pace nextDepth)
 const cpuSeen = [];   // CPU samples over the last ~2 min: a full CPU holds claims (the GPU-feeding stages would only slow)
+// one agent per root: a second start refuses (a swap drains the old agent first, so the lock is free by then)
+const lock = ONCE ? null : (await mkdir(ROOT, { recursive: true }).catch(() => {}), holdAgentLock(join(ROOT, 'queue-agent.pid')));
+if (lock && !lock.ok) { console.error(`another queue agent (pid ${lock.pid}) already runs on ${ROOT}: refusing to start a second`); process.exit(3); }
+process.on('exit', () => lock?.release());
 const health = startHealth();
 process.on('uncaughtException', async (e) => { log('crash', { error: String(e.stack || e).slice(0, 2000) }); await health.last(`crash: ${e.message}`); process.exit(1); });
 while (!stopping || running.size) {

@@ -1,5 +1,17 @@
 """Paired listening-quality assessment; ASR disagreement never edits audio."""
-import json, math, os, subprocess, time
+import json, math, os, subprocess, tempfile, time
+
+
+def stream(cmd):
+    """ffmpeg with stdout piped and stderr to a temp file: a stderr PIPE nobody drains fills at 64 KB on a damaged input and both sides hang
+    forever (tower job 2530, 10-31: ffmpeg blocked writing stderr, python blocked reading stdout, 1 s of CPU in 1 h 40 m). → (proc, errfile)"""
+    err=tempfile.TemporaryFile()
+    return subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=err),err
+
+
+def finish(proc, err):
+    code=proc.wait();err.seek(0);text=err.read()[-4000:].decode(errors='replace');err.close()
+    return code,text
 
 
 def probe_duration(path):
@@ -19,13 +31,13 @@ def verdict_of(checks, gain):
 
 def decoded_seconds(path, threads=2):
     """Decoded length by streaming the samples (not the container header: MP3 header estimates run seconds off, Chad 10-31)."""
-    proc=subprocess.Popen(['ffmpeg','-nostdin','-v','error','-threads',str(threads),'-i',path,'-ac','1','-ar','48000','-f','s16le','-'],stdout=subprocess.PIPE,stderr=subprocess.PIPE);n=0
+    proc,errf=stream(['ffmpeg','-nostdin','-v','error','-threads',str(threads),'-i',path,'-ac','1','-ar','48000','-f','s16le','-']);n=0
     while True:
         block=proc.stdout.read(1<<20)
         if not block:break
         n+=len(block)//2
-    err=proc.stderr.read();code=proc.wait()
-    if code:raise RuntimeError('reference decode failed: '+err.decode(errors='replace')[-300:])
+    code,err=finish(proc,errf)
+    if code:raise RuntimeError('reference decode failed: '+err[-300:])
     return n/48000
 
 
@@ -52,15 +64,15 @@ def assess(reference, candidate, af='', threads=2):
         out[key]={m:np.mean([r[key][m] for r in rows],axis=0).tolist() for m in ['dnsmos','nisqa']}
     # A streaming pass bounds RAM and catches duration damage and widespread clipping.
     cmd=['ffmpeg','-nostdin','-v','error','-threads',str(threads),'-i',candidate,'-ac','1','-ar','48000','-f','f32le','-']
-    proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE); samples=clipped=0
+    proc,errf=stream(cmd); samples=clipped=0
     while True:
         block=proc.stdout.read(65536)
         if not block:break
         x=np.frombuffer(block,dtype='<f4')
         if not np.isfinite(x).all():raise ValueError('non-finite restored samples')
         samples+=len(x);clipped+=int(np.count_nonzero(np.abs(x)>=.999))
-    stderr=proc.stderr.read();code=proc.wait()
-    if code:raise RuntimeError('quality decode failed: '+stderr.decode(errors='replace')[-300:])
+    code,stderr=finish(proc,errf)
+    if code:raise RuntimeError('quality decode failed: '+stderr[-300:])
     out['technical']={'duration_s':samples/48000,'clip_pct':100*clipped/max(1,samples)}
     before,after=out['reference'],out['restored'];gain=after['nisqa'][0]-before['nisqa'][0]
     out['checks']={

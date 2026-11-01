@@ -68,8 +68,10 @@ export default async function mediaOps(fastify) {
     const now = Date.now(), machines = Object.fromEntries(Object.entries(st.machine_health || {}).map(([k, h]) => [k, { ok: h.ok, polled_s_ago: Math.round((now - h.at) / 1000),
       ...(h.ok ? {} : { unreachable_for_s: Math.round((now - (h.down_since || h.at)) / 1000), last_ok_s_ago: h.ok_at ? Math.round((now - h.ok_at) / 1000) : null, error: h.error }),
       latency_ms: h.latency_ms, ...(h.pod ? { pod: h.pod } : {}), health: h.data || null }]));
-    // machines: each one's latest GET /health as tower polled it (health-poll.js) — the only source for machine load
-    return { ...LH.evaluate(st, now), updated: st.updated || null, loop_updated_at: st.health?.at || null, machines, machine_poll_at: st.machine_health_at || null,
+    // machines: each one's latest GET /health as tower polled it (health-poll.js) — the only source for machine load. stalled_jobs: jobs whose
+    // container shows ~0 CPU and no progress (the agent's stallOf), so a hung job (10-31: 2530, 1 h 40 m) is seen in minutes
+    const stalled_jobs = Object.entries(st.machine_health || {}).flatMap(([m, h]) => (h.ok ? h.data?.jobs || [] : []).filter((j) => j.stalled_s != null).map((j) => ({ machine: m, id: j.id, type: j.type, stage: j.stage, stalled_s: j.stalled_s })));
+    return { ...LH.evaluate(st, now), updated: st.updated || null, loop_updated_at: st.health?.at || null, stalled_jobs, machines, machine_poll_at: st.machine_health_at || null,
       ...(st.health_poll_error ? { machine_poll_error: st.health_poll_error } : {}), ...(st.last_words_error ? { last_words_error: st.last_words_error } : {}) };
   });
   // a machine's health history (health-poll.js, data/run/health/): ?machine=boss&from=<ISO|ms>&to=… → its polls (and last words), oldest first

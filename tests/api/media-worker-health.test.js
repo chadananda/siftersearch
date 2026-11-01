@@ -3,11 +3,11 @@
 import { describe, it, expect } from 'vitest';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { cgroupOf, readCgroup, track, summary, record, profileOf, memPressure, admitCpu, cpuAllowed, PROFILE_RUNS } from '../../scripts/media/worker/cpu-pace.mjs';
-import { gpuStats, jobProgress, snapshot, compact, serveHealth, ringPush, lastWords, LAST_WORDS, HEALTH_SCHEMA } from '../../scripts/media/worker/health.mjs';
+import { cgroupOf, readCgroup, track, summary, record, profileOf, memPressure, admitCpu, cpuAllowed, PROFILE_RUNS, stallOf, windowCores } from '../../scripts/media/worker/cpu-pace.mjs';
+import { gpuStats, jobProgress, snapshot, compact, serveHealth, ringPush, lastWords, LAST_WORDS, HEALTH_SCHEMA, holdAgentLock } from '../../scripts/media/worker/health.mjs';
 
 const G = 1073741824;
 const files = (m) => (f) => { if (f in m) return m[f]; throw new Error(`ENOENT ${f}`); };
@@ -59,7 +59,7 @@ describe('cpu-pace: admission', () => {
   it('a job not yet at its profile still counts what it will use', () => {
     const fetching = Array.from({ length: 6 }, () => ({ type: 'cpu-prep', memGb: 0, cores: null }));   // 6 × 4 cores still to come
     expect(admitCpu({ ...base, type: 'cpu-prep', running: fetching, busy: 0.05 }).ok).toBe(false);
-    expect(admitCpu({ ...base, type: 'cpu-finish', running: [{ type: 'cpu-prep', memGb: 0, cores: null }], availGb: 9 })).toMatchObject({ ok: false, why: expect.stringMatching(/^ram/) });
+    expect(admitCpu({ ...base, type: 'cpu-finish', running: [{ type: 'cpu-prep', memGb: 0, cores: null }], availGb: 7 })).toMatchObject({ ok: false, why: expect.stringMatching(/^ram/) });
   });
   it('unmeasured types keep --slots; memory pressure or an unknown CPU holds', () => {
     const p2 = (t) => profileOf({}, t, dflt);
@@ -71,8 +71,8 @@ describe('cpu-pace: admission', () => {
   });
   it('tower: the slice (16 cores, 20 GB) is the ceiling', () => {
     const allowed = cpuAllowed(['cpu-finish'], { ...base, allowed: 16, availGb: 20, busy: 0 });
-    // RAM: 20 - 5 margin = 15 / 2 GB peak → 7; CPU: 0.85 × 16 = 13.6 / 1.5 → 9: RAM binds
-    expect(allowed['cpu-finish']).toBe(7);
+    // measured → margin = one 2 GB peak: RAM (20 - 2) / 2 → 9; CPU 0.85 × 16 = 13.6 / 1.5 → 9: both bind at 9 (the fixed 5 GB margin gave 7)
+    expect(allowed['cpu-finish']).toBe(9);
   });
 });
 
@@ -161,4 +161,49 @@ describe('the agent serves /health and leaves last words', () => {
     expect(words[0].snapshots.at(-1)).toMatchObject({ host: 'tq', jobs: [] });
     expect(words[0].log.some((l) => /"msg":"start"/.test(l))).toBe(true);
   }, 30_000);
+});
+
+describe('one agent per root (10-31: two agents co-ran on aorus)', () => {
+  it('the second start is refused while the first lives; a dead holder\'s pid file is stale and replaced; release removes only our own', () => {
+    const f = join(mkdtempSync(join(tmpdir(), 'lk-')), 'queue-agent.pid');
+    const a = holdAgentLock(f, { pid: 100, alive: (p) => p === 100 });
+    expect(a.ok).toBe(true);
+    expect(holdAgentLock(f, { pid: 200, alive: (p) => p === 100 })).toEqual({ ok: false, pid: 100 });
+    const c = holdAgentLock(f, { pid: 300, alive: () => false });   // 100 died without releasing
+    expect(c.ok).toBe(true);
+    a.release(); expect(existsSync(f)).toBe(true);   // not 100's any more
+    c.release(); expect(existsSync(f)).toBe(false);
+  });
+});
+
+describe('a stalled job: ~0 CPU over a full window and no progress (10-31: tower 2530, a pipe deadlock, 1 h 40 m unseen)', () => {
+  it('idle + same progress → stalled since the first idle reading; any CPU or any progress clears it; no full window = no verdict', () => {
+    let s = stallOf(null, { cores: 0.01, progress: 'quality|1' }, 1000);
+    expect(s.since).toBe(1000);
+    s = stallOf(s, { cores: 0.0, progress: 'quality|1' }, 61_000); expect(s.since).toBe(1000);
+    expect(stallOf(s, { cores: 0.5, progress: 'quality|1' }, 62_000).since).toBeNull();     // CPU again
+    expect(stallOf(s, { cores: 0.0, progress: 'encode|2' }, 62_000).since).toBeNull();      // progress moved
+    expect(stallOf(s, { cores: null, progress: 'quality|1' }, 62_000).since).toBeNull();    // not a full window yet
+    expect(windowCores({ cores: 0, win: [{ t: 0 }] }, 29_000)).toBeNull();
+    expect(windowCores({ cores: 0, win: [{ t: 0 }] }, 30_000)).toBe(0);
+  });
+  it('compact carries a stalled job\'s seconds as the 5th field', () => {
+    const c = compact(snapshot({ now: 1, host: 'h', startedAt: 0, jobs: [{ id: 'j', type: 'cpu-finish', stage: 'quality', pct: 50, stalled_s: 600 }, { id: 'k', type: 'cpu-prep', stage: 'dfn', pct: 10, stalled_s: null }] }));
+    expect(c.jobs).toEqual([['j', 'cpu-finish', 'quality', 50, 600], ['k', 'cpu-prep', 'dfn', 10]]);
+  });
+});
+
+describe('RAM margin: measured once every type in play is (10-31: aorus held at 2 jobs by "3.5 + 5" while a finish job peaked 1.7 GB)', () => {
+  const profs = { 'cpu-finish': { peakGb: 1.7, cores: 1, measured: true, n: 1 }, 'cpu-prep': { peakGb: 3.5, cores: 2, measured: false, n: 0 } };
+  const prof = (t) => profs[t];
+  const base = { prof, busy: 0.3, allowed: 6, availGb: 6.5, marginGb: 5, slots: 4 };
+  it('measured: margin = the largest measured peak in play, so 6.5 GB free admits a 1.7 GB finish beside two running finishes', () => {
+    const r = admitCpu({ ...base, type: 'cpu-finish', running: [{ type: 'cpu-finish', memGb: 1.7, cores: 1 }, { type: 'cpu-finish', memGb: 1.7, cores: 1 }] });
+    expect(r.ok).toBe(true);
+    const tight = admitCpu({ ...base, availGb: 3.0, type: 'cpu-finish', running: [] });
+    expect(tight).toMatchObject({ ok: false, why: 'ram 3.0 GB < 1.7 + 1.7 (measured)' });
+  });
+  it('any unmeasured type in play keeps the --min-avail-gb margin', () => {
+    expect(admitCpu({ ...base, type: 'cpu-finish', running: [{ type: 'cpu-prep', memGb: 1, cores: 1 }] })).toMatchObject({ ok: false, why: expect.stringMatching(/\+ 5$/) });
+  });
 });

@@ -6,7 +6,8 @@
 import { readFileSync, writeFileSync, renameSync } from 'node:fs';
 
 export const CPU_TARGET = 0.85;   // Chad 10-31: "while measured CPU is under ~85 % of its allowed cores"
-export const PROFILE_RUNS = 5;    // a type's profile = its last 5 measured runs: peak = the max of them, cores = their mean
+export const PROFILE_RUNS = 5;
+export const IDLE_CORES = 0.02;   // "~0 % CPU": under 2 % of one core over the measurement window (≥ 30 s of cgroup CPU time)    // a type's profile = its last 5 measured runs: peak = the max of them, cores = their mean
 const GB = 1073741824;
 
 /** A process's cgroup v2 directory (from /proc/<pid>/cgroup "0::/path"), or null (v1 / gone). */
@@ -63,7 +64,7 @@ export function memPressure(read = (f) => readFileSync(f, 'utf8'), file = '/proc
  * Admit one more CPU job of `type`? Pure.
  *  prof(type) → profile; running: [{ type, memGb, cores }] the CPU jobs in hand (cores null until measured);
  *  busy = measured busy share of the allowed cores (null = unknown); allowed = the cores this host may use; availGb = RAM free now;
- *  marginGb = the --min-avail-gb floor; slots = the --slots starting value; pressure = memPressure().
+ *  marginGb = the --min-avail-gb margin while any type in play is unmeasured (then the largest measured peak in play); slots = the --slots starting value; pressure = memPressure().
  * Projection: a running job not yet at its type's mean will still rise to it, and one not yet at its peak RAM will still take the rest.
  */
 export function admitCpu({ type, prof, running = [], busy, allowed, availGb, marginGb, slots, pressure = null, target = CPU_TARGET }) {
@@ -76,7 +77,10 @@ export function admitCpu({ type, prof, running = [], busy, allowed, availGb, mar
   const cpu = (busy ?? 0) * allowed + rise + p.cores;
   if (running.length && cpu > target * allowed) return { ok: false, why: `cpu ${cpu.toFixed(1)}/${allowed} cores`, cpu };
   const ram = availGb - running.reduce((a, j) => a + Math.max(0, prof(j.type).peakGb - (j.memGb ?? 0)), 0);
-  if (ram < p.peakGb + marginGb) return { ok: false, why: `ram ${ram.toFixed(1)} GB < ${p.peakGb.toFixed(1)} + ${marginGb}`, cpu, ram };
+  // the margin: --min-avail-gb until every type involved is measured; then one measured job's worth (the largest measured peak in play) —
+  // the projection already holds each running job's rise to its peak, and memory pressure (PSI) holds every claim as the backstop
+  const margin = unmeasured ? marginGb : Math.max(p.peakGb, ...running.map((j) => prof(j.type).peakGb));
+  if (ram < p.peakGb + margin) return { ok: false, why: `ram ${ram.toFixed(1)} GB < ${p.peakGb.toFixed(1)} + ${+margin.toFixed(2)}${unmeasured ? '' : ' (measured)'}`, cpu, ram };
   return { ok: true, cpu, ram };
 }
 
@@ -92,3 +96,13 @@ export function cpuAllowed(types, a) {
   }
   return out;
 }
+
+/** A stalled job (10-31: tower job 2530 sat 1 h 40 m in a pipe deadlock at 0 % CPU): its container used ~no CPU over a full measurement window
+ *  AND its progress (stage + stage time) did not move. Evidence, not a time limit: any CPU or any progress clears it. prev = the last result.
+ *  → { since (ms) | null, progress }. Pure. */
+export function stallOf(prev, { cores, progress }, now) {
+  if (cores == null || cores >= IDLE_CORES || (prev && prev.progress !== progress)) return { since: null, progress };
+  return { since: prev?.since ?? now, progress };
+}
+/** The cores a job used over its last full ≥30 s window (track's win), else null (not yet a full window of evidence). Pure. */
+export const windowCores = (m, now) => (m?.win?.length && now - m.win[0].t >= 30_000 ? m.cores : null);

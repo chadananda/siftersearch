@@ -4,7 +4,7 @@
 // (ROOT/health-ring.jsonl) and the agent's last words (pushed to the queue as it exits — the trail pod 389's vanish lacked).
 import { createServer } from 'node:http';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, readdirSync, existsSync, writeFileSync, renameSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, writeFileSync, renameSync, openSync, closeSync, writeSync, unlinkSync } from 'node:fs';
 import { timingSafeEqual } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -64,7 +64,7 @@ export function snapshot(x) {
   };
 }
 
-/** A snapshot in one small record (the ring here, the coordinator's history: ~300 B): numbers only, jobs as [id, type, stage, pct]. Pure. */
+/** A snapshot in one small record (the ring here, the coordinator's history: ~300 B): numbers only, jobs as [id, type, stage, pct, stalled_s?]. Pure. */
 export function compact(s) {
   if (!s) return null;
   const img = String(s.image || ''), d = /sha256:([0-9a-f]{12})/.exec(img)?.[1];
@@ -73,7 +73,7 @@ export function compact(s) {
     gpu: s.gpu ? [s.gpu.util ?? null, s.gpu.vram_used_mb ?? null, s.gpu.vram_total_mb ?? null, s.gpu.power_w ?? null] : null,
     disk: s.disk?.free_gb ?? null,
     slots: Object.fromEntries(Object.entries(s.slots || {}).map(([t, v]) => [t, [v.used, v.allowed]])),
-    jobs: (s.jobs || []).map((j) => [j.id, j.type, j.stage || j.phase || null, j.pct ?? null]),
+    jobs: (s.jobs || []).map((j) => [j.id, j.type, j.stage || j.phase || null, j.pct ?? null, ...(j.stalled_s != null ? [j.stalled_s] : [])]),   // 5th: stalled for s
     img: d || (img ? img.slice(-24) : null), ver: s.agent?.version ?? null, err: s.last_error ? String(s.last_error.msg || '').slice(0, 160) : null,
   };
 }
@@ -102,4 +102,25 @@ export function lastWords({ host, reason, now, ring, lines }) {
   const w = { host, at: now, reason: String(reason || '').slice(0, 500), snapshots: ring.slice(-LAST_WORDS.snapshots), log: lines.slice(-LAST_WORDS.lines).map((l) => String(l).slice(0, 600)) };
   while (JSON.stringify(w).length > LAST_WORDS.maxBytes && (w.snapshots.length || w.log.length)) { if (w.snapshots.length) w.snapshots.shift(); else w.log.shift(); }
   return w;
+}
+
+/** One agent per root (10-31: two agents co-ran on aorus — doubled containers on 6 cpus). The pid file is taken atomically (O_EXCL); a pid file
+ *  whose process is gone, or is not a queue agent, is stale and replaced. → { ok: true, release } | { ok: false, pid } (another agent holds it). */
+export function holdAgentLock(file, { pid = process.pid, alive = agentAlive } = {}) {
+  for (let i = 0; i < 2; i++) {
+    try { const fd = openSync(file, 'wx'); writeSync(fd, String(pid)); closeSync(fd); return { ok: true, release: () => { try { if (readFileSync(file, 'utf8').trim() === String(pid)) unlinkSync(file); } catch {} } }; }
+    catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      const other = Number(String(readFileSafe(file)).trim());
+      if (other && other !== pid && alive(other)) return { ok: false, pid: other };
+      try { unlinkSync(file); } catch {}
+    }
+  }
+  return { ok: false, pid: null };
+}
+const readFileSafe = (f) => { try { return readFileSync(f, 'utf8'); } catch { return ''; } };
+export function agentAlive(pid) {
+  try { process.kill(pid, 0); } catch (e) { if (e.code !== 'EPERM') return false; }
+  const cmd = readFileSafe(`/proc/${pid}/cmdline`);
+  return cmd ? /queue-agent|tower-finish/.test(cmd) : true;   // no /proc (macOS): a live pid counts
 }
