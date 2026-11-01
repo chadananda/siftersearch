@@ -261,7 +261,7 @@ const claimArgs = (spillOnly = false, types = TYPES) => ({ host: HOST, ram_gb: m
 let spillAt = 0, fitWhy = null;
 // the CPU jobs in hand as the admission sees them: a job still fetching counts at its full profile (it has not started to load the CPU yet)
 // and a running one counts in busy only for the share of busy's window it has run (seen), so a claim need not wait for the window to catch up
-const cpuInputs = (cpu, c) => { const bw = busyWindow(cpuSeen); return { prof, running: [...jobs.values()].filter((j) => j.needs === 'cpu').map((j) => ({ type: j.type, memGb: j.m?.memGb ?? 0, cores: j.m?.cores ?? null, seen: bw ? bw.seen(j.m?.t0) : 0 })),
+const cpuInputs = (cpu, c) => { const bw = busyWindow(cpuSeen); return { prof, running: [...jobs.values()].filter((j) => j.needs === 'cpu').map((j) => ({ type: j.type, memGb: j.m?.memGb ?? 0, cores: j.m?.cores ?? null, seen: bw ? bw.seen(j.m?.t0) : 0, done: j.phase === 'put' })),
   busy: cpu, allowed: c?.cores ?? cpus().length, availGb: memAvailGb(), marginGb: MIN_AVAIL_GB, slots: SLOTS, pressure: pressure() }; };
 /** The CPU types one more job of which fits now; each change of the reasons for holding is logged. */
 function fitCpu(cpu, c) {

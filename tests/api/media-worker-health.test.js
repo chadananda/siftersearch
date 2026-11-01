@@ -85,6 +85,11 @@ describe('cpu-pace: admission', () => {
     // the same job a full window old is all inside busy: 12 + 0 + 1.5 = 13.5 ≤ 13.6
     expect(admitCpu({ ...base, allowed: 16, busy: 0.75, type: 'cpu-finish', running: [{ ...young[0], seen: 1 }] }).ok).toBe(true);
   });
+  it('a job whose container exited (uploading) adds no CPU or RAM to come (11-01: boss held at "29/32 cores" with CPU at 1 %, jobs in put)', () => {
+    const up = Array.from({ length: 10 }, () => ({ type: 'cpu-finish', memGb: 0, cores: null, seen: 0, done: true }));
+    expect(admitCpu({ ...base, allowed: 16, busy: 0.05, availGb: 4, type: 'cpu-finish', running: up }).ok).toBe(true);
+    expect(admitCpu({ ...base, allowed: 16, busy: 0.05, availGb: 4, type: 'cpu-finish', running: up.map((j) => ({ ...j, done: false })) }).ok).toBe(false);
+  });
   it('tower: the slice (16 cores, 20 GB) is the ceiling', () => {
     const allowed = cpuAllowed(['cpu-finish'], { ...base, allowed: 16, availGb: 20, busy: 0 });
     // measured → margin = one 2 GB peak: RAM (20 - 2) / 2 → 9; CPU 0.85 × 16 = 13.6 / 1.5 → 9: both bind at 9 (the fixed 5 GB margin gave 7)

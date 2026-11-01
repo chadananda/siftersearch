@@ -70,7 +70,7 @@ export function memPressure(read = (f) => readFileSync(f, 'utf8'), file = '/proc
 
 /**
  * Admit one more CPU job of `type`? Pure.
- *  prof(type) → profile; running: [{ type, memGb, cores, seen? }] the CPU jobs in hand (cores null until measured; seen: busyWindow's share);
+ *  prof(type) → profile; running: [{ type, memGb, cores, seen?, done? }] the CPU jobs in hand (cores null until measured; seen: busyWindow's share; done: container exited);
  *  busy = measured busy share of the allowed cores (null = unknown); allowed = the cores this host may use; availGb = RAM free now;
  *  marginGb = the --min-avail-gb margin while any type in play is unmeasured (then the largest measured peak in play); slots = the --slots starting value; pressure = memPressure().
  * Projection: a running job not yet at its type's mean will still rise to it, and one not yet at its peak RAM will still take the rest.
@@ -82,13 +82,15 @@ export function admitCpu({ type, prof, running = [], busy, allowed, availGb, mar
   if (unmeasured && running.length >= slots) return { ok: false, why: `unmeasured: --slots ${slots}` };
   if (busy == null && running.length) return { ok: false, why: 'cpu unknown' };
   // j.seen = the share of busy's window the job has been running (1 when absent): a young job is only that share inside busy, the rest still to come
-  const rise = running.reduce((a, j) => a + Math.max(0, prof(j.type).cores - (j.cores ?? 0) * Math.min(1, Math.max(0, j.seen ?? 1))), 0);
+  // j.done = its container has exited (outputs uploading): no more CPU or RAM to come, it counts only toward --slots while unmeasured
+  const live = running.filter((j) => !j.done);
+  const rise = live.reduce((a, j) => a + Math.max(0, prof(j.type).cores - (j.cores ?? 0) * Math.min(1, Math.max(0, j.seen ?? 1))), 0);
   const cpu = (busy ?? 0) * allowed + rise + p.cores;
-  if (running.length && cpu > target * allowed) return { ok: false, why: `cpu ${cpu.toFixed(1)}/${allowed} cores`, cpu };
-  const ram = availGb - running.reduce((a, j) => a + Math.max(0, prof(j.type).peakGb - (j.memGb ?? 0)), 0);
+  if (live.length && cpu > target * allowed) return { ok: false, why: `cpu ${cpu.toFixed(1)}/${allowed} cores`, cpu };
+  const ram = availGb - live.reduce((a, j) => a + Math.max(0, prof(j.type).peakGb - (j.memGb ?? 0)), 0);
   // the margin: --min-avail-gb until every type involved is measured; then one measured job's worth (the largest measured peak in play) —
   // the projection already holds each running job's rise to its peak, and memory pressure (PSI) holds every claim as the backstop
-  const margin = unmeasured ? marginGb : Math.max(p.peakGb, ...running.map((j) => prof(j.type).peakGb));
+  const margin = unmeasured ? marginGb : Math.max(p.peakGb, ...live.map((j) => prof(j.type).peakGb));
   if (ram < p.peakGb + margin) return { ok: false, why: `ram ${ram.toFixed(1)} GB < ${p.peakGb.toFixed(1)} + ${+margin.toFixed(2)}${unmeasured ? '' : ' (measured)'}`, cpu, ram };
   return { ok: true, cpu, ram };
 }
