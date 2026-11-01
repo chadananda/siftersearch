@@ -3,8 +3,10 @@
 // /api/chat/stream as ONE thread (stable x-user-id + conversationId), then the thread trace (route/strategy/sources/latency per round) and
 // a deep conversation-level judgement by Opus 5.5 → per-turn defects with the STAGE that caused them (fixture candidates).
 //   node tests/quality/anis-conversations.mjs [--themes id,id] [--seeds 3,17] (combinable) [--plan-seed s (fixes the move plan across tags)] [--personas skeptic,..] [--n 2] [--turns 5] [--concurrency 2]
-//        [--tag name] [--dry] [--rejudge reports/anis-conversations-….json] [--publish [--status draft]]
+//        [--tag name] [--dry] [--no-perplexity] [--rejudge reports/anis-conversations-….json] [--publish [--status draft]]
 // API base: API_BASE (default http://tower-nas:7839). Needs ANTHROPIC_API_KEY, DEPLOY_SECRET (thread trace), INTERNAL_API_KEY (--publish only).
+// Per turn (default on, --no-perplexity off): Perplexity sonar on the same thread, in parallel with Anís, then a separate Opus source-comparison
+// judge (perplexity-compare.mjs; PERPLEXITY_API_KEY, TEST_API_KEY for the library check). The conversation judge's prompt and scores are unchanged.
 // Supersedes scripts/gen-dialogs.mjs (GPT-4o reader, no thread id). --publish is the ONLY path that writes anything (published_conversations).
 import dns from 'node:dns'; dns.setDefaultResultOrder('ipv4first');
 import net from 'node:net'; net.setDefaultAutoSelectFamilyAttemptTimeout(5000);   // Mac → api.anthropic.com connects in ~0.5 s; node's 250 ms happy-eyeballs default fails it ('Connection error.')
@@ -14,6 +16,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { calculateCost } from '../../api/lib/model-registry.js';
+import { perplexityTurn, compareConversation, pxFixtures, pxRollup, pxMarkdown } from './perplexity-compare.mjs';
 const DIR = dirname(fileURLToPath(import.meta.url)), ROOT = join(DIR, '..', '..');
 for (const f of ['.env-secrets', '.env-public']) dotenv.config({ path: join(ROOT, f), quiet: true });
 const API = process.env.API_BASE || 'http://tower-nas:7839';
@@ -26,6 +29,7 @@ const pct = (a, p) => (a.length ? [...a].sort((x, y) => x - y)[Math.min(a.length
 const SIM_MODEL = process.env.CONV_SIM_MODEL || 'claude-sonnet-5-5', JUDGE_MODEL = process.env.CONV_JUDGE_MODEL || 'claude-opus-5-5';
 const TURNS = Number(arg('turns') || 5), N = Number(arg('n') || 2), CONC = Number(arg('concurrency') || 2);
 const DATE = new Date().toISOString().slice(0, 10), TAG = arg('tag');
+const WITH_PX = !has('no-perplexity');
 
 // ---- themes (what the reader came with) and personas (how they talk)
 const THEMES = [
@@ -79,7 +83,7 @@ if (list('personas')) convs = convs.map((c, i) => ({ ...c, persona: list('person
 convs = convs.map((c) => ({ ...c, moves: movePlan(TURNS, rng(`${c.id}|${arg('plan-seed') || `${DATE}|${TAG || ''}`}`)) }));
 
 // ---- cost accounting (simulator + judge from usage; Anís from its own thread meta)
-const spend = { sim: 0, judge: 0, anis: 0 };
+const spend = { sim: 0, judge: 0, anis: 0, px: 0, compare: 0 };
 const usd = (model, u) => calculateCost(model, (u?.input_tokens || 0) + (u?.cache_read_input_tokens || 0) + (u?.cache_creation_input_tokens || 0), u?.output_tokens || 0);
 let client; const claude = () => (client ||= new Anthropic());
 const plainLinks = (s) => String(s || '').replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '$1');
@@ -149,19 +153,23 @@ const routeOf = (rp) => {
 // ---- run one conversation
 async function converse(c) {
   const uid = 'user_' + [...crypto.getRandomValues(new Uint8Array(8))].map((b) => b.toString(16).padStart(2, '0')).join('');
-  const messages = [], turns = []; let cid = null;
+  const messages = [], turns = [], pxCalls = []; let cid = null;
   for (let t = 0; t < c.moves.length; t++) {
     const move = c.moves[t], u = await readerTurn(c, messages, move);
     messages.push({ role: 'user', content: u.message });
+    // Perplexity gets the same thread (reader + Anís's earlier replies); started now, awaited after the conversation so turn latency is unchanged
+    if (WITH_PX) pxCalls[t] = perplexityTurn(messages.map((m) => ({ ...m })));
     const a = await anisTurn(messages, uid, cid);
     cid ||= a.conversation_id;
     console.log(`  [${c.id}] T${t + 1} ${move} ${a.error ? `ERROR ${a.error}` : `${(a.ms / 1000).toFixed(1)}s ${a.text.length}ch`} — ${u.message.slice(0, 90)}`);
     turns.push({ turn: t + 1, move, refers_to: u.refers_to, user: u.message, reply: a.text, ms: a.ms, first_chunk_ms: a.first_chunk_ms, error: a.error,
       sources: a.sources.slice(0, 12).map((s) => ({ title: s.title, author: s.author, religion: s.religion, url: s.url, document_id: s.document_id, paragraph_index: s.paragraph_index, text: String(s.text || '').slice(0, 280) })),
+      citations: (a.citations || []).slice(0, 12).map((x) => ({ title: x.title || x.source_title || null, author: x.author || x.source_author || null, url: x.url || x.citation_url || null })),
       status: a.status, engine: a.complete?.engine ?? null, format: a.complete?.format ?? null });
     if (a.error || !a.text) break;
     messages.push({ role: 'assistant', content: a.text });
   }
+  if (WITH_PX) for (const t of turns) { const px = await pxCalls[t.turn - 1]; if (px) { t.perplexity = px; spend.px += px.cost || 0; } }
   const trace = cid ? await threadTrace(cid, turns.length) : null;
   const rounds = (trace?.rounds || []).filter((r) => r.reply);
   turns.forEach((t) => {   // match a round by its question text (one thread per conversation, so in order)
@@ -236,17 +244,21 @@ function summarize(results) {
   const byStage = Object.fromEntries(STAGES.map((s) => [s, defects.filter((d) => d.stage === s).length]));
   const bySev = Object.fromEntries(['critical', 'major', 'minor'].map((s) => [s, defects.filter((d) => d.severity === s).length]));
   const anisUsd = results.flatMap((r) => r.turns.map((t) => t.route?.usd || 0)).reduce((a, b) => a + b, 0);
+  const px = pxRollup(results), pxUsd = px.usd.perplexity + px.usd.compare_judge;
   return { date: DATE, tag: TAG || null, api: API, sim_model: SIM_MODEL, judge_model: JUDGE_MODEL, conversations: results.length, judged: ok.length,
     turns: results.reduce((a, r) => a + r.turns.length, 0), errors: results.reduce((a, r) => a + r.turns.filter((t) => t.error).length, 0),
     overall: mean(ok.map((r) => r.verdict.overall)), scores: Object.fromEntries(DIMS.map((d) => [d, mean(ok.map((r) => r.verdict.scores?.[d]?.score).filter((x) => x != null))])),
     defects: defects.length, by_stage: byStage, by_severity: bySev,
     latency_ms: { p50: pct(lat, 0.5), p90: pct(lat, 0.9), max: lat.length ? Math.max(...lat) : null, over_15s: lat.filter((x) => x > 15000).length },
-    usd: { anis: +anisUsd.toFixed(4), sim: +spend.sim.toFixed(4), judge: +spend.judge.toFixed(4), total: +(anisUsd + spend.sim + spend.judge).toFixed(4),
-      per_conversation: results.length ? +((anisUsd + spend.sim + spend.judge) / results.length).toFixed(4) : null } };
+    perplexity: px.turns_with_px || px.compared ? { compared: px.compared, winners: px.winners, missed_in_library: px.missed_in_library, collection_gaps: px.collection_gaps,
+      unknown: px.unknown.length, px_errors: px.px_errors.length, failures: px.px_errors_http + px.compare_failed, px_ms_p50: px.px_ms_p50 } : null,
+    usd: { anis: +anisUsd.toFixed(4), sim: +spend.sim.toFixed(4), judge: +spend.judge.toFixed(4), perplexity: px.usd.perplexity, compare_judge: px.usd.compare_judge,
+      per_turn_perplexity: px.usd.per_turn_perplexity, per_turn_compare: px.usd.per_turn_compare, total: +(anisUsd + spend.sim + spend.judge + pxUsd).toFixed(4),
+      per_conversation: results.length ? +((anisUsd + spend.sim + spend.judge + pxUsd) / results.length).toFixed(4) : null } };
 }
 function markdown(summary, results) {
   const L = [`# Anís conversations ${summary.date}${summary.tag ? ` (${summary.tag})` : ''}`, '',
-    `${summary.conversations} conversations, ${summary.turns} turns, ${summary.errors} errors. Overall ${summary.overall ?? '-'}/10. Cost $${summary.usd.total} ($${summary.usd.per_conversation}/conversation: Anís $${summary.usd.anis}, reader $${summary.usd.sim}, judge $${summary.usd.judge}).`,
+    `${summary.conversations} conversations, ${summary.turns} turns, ${summary.errors} errors. Overall ${summary.overall ?? '-'}/10. Cost $${summary.usd.total} ($${summary.usd.per_conversation}/conversation: Anís $${summary.usd.anis}, reader $${summary.usd.sim}, judge $${summary.usd.judge}${summary.perplexity ? `, Perplexity $${summary.usd.perplexity}, source-compare judge $${summary.usd.compare_judge}` : ''}).`,
     `Latency p50 ${(summary.latency_ms.p50 / 1000).toFixed(1)} s, p90 ${(summary.latency_ms.p90 / 1000).toFixed(1)} s, max ${(summary.latency_ms.max / 1000).toFixed(1)} s, ${summary.latency_ms.over_15s} turns over 15 s.`, '',
     '| dimension | mean (1–5) |', '|---|---|', ...DIMS.map((d) => `| ${d} | ${summary.scores[d] ?? '-'} |`), '',
     `Defects: ${summary.defects} — by stage ${Object.entries(summary.by_stage).filter(([, n]) => n).map(([s, n]) => `${s} ${n}`).join(', ') || 'none'}; by severity ${Object.entries(summary.by_severity).map(([s, n]) => `${s} ${n}`).join(', ')}.`, ''];
@@ -262,16 +274,17 @@ function markdown(summary, results) {
     if (r.verdict.top_fixes?.length) L.push('', 'Top fixes:', ...r.verdict.top_fixes.map((f) => `- ${f}`));
     L.push('');
   }
+  const px = pxMarkdown(results); if (px) L.push(px);
   return L.join('\n');
 }
 
 // ---- main
 const pool = async (items, n, fn) => { const out = []; let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k], k); } })); return out; };
-const EST = { sim_per_turn: 0.005, anis_per_turn: 0.002, judge: 0.15 };   // 11-01 smoke, 2 × 5 turns: $0.18/conversation (judge $0.146); refine from the history file
+const EST = { sim_per_turn: 0.005, anis_per_turn: 0.002, judge: 0.15, px_per_turn: 0.0055, compare_per_turn: 0.075 };   // px + compare: 11-01 px-smoke, 10 turns ($0.0055 / $0.074 per turn)   // 11-01 smoke, 2 × 5 turns: $0.18/conversation (judge $0.146); refine from the history file
 if (has('dry')) {
-  console.log(`DRY RUN — no API calls. ${convs.length} conversations × ${TURNS} turns against ${API}; reader ${SIM_MODEL}, judge ${JUDGE_MODEL}`);
+  console.log(`DRY RUN — no API calls. ${convs.length} conversations × ${TURNS} turns against ${API}; reader ${SIM_MODEL}, judge ${JUDGE_MODEL}; Perplexity comparison ${WITH_PX ? 'ON (sonar + Opus source judge per turn)' : 'off'}`);
   for (const c of convs) console.log(`  ${c.id} [${c.persona}] ${c.moves.join(' → ')}\n    ${c.theme}`);
-  const est = convs.length * (TURNS * (EST.sim_per_turn + EST.anis_per_turn) + EST.judge);
+  const est = convs.length * (TURNS * (EST.sim_per_turn + EST.anis_per_turn + (WITH_PX ? EST.px_per_turn + EST.compare_per_turn : 0)) + EST.judge);
   console.log(`estimated cost ≈ $${est.toFixed(2)} (≈ $${(est / Math.max(1, convs.length)).toFixed(2)}/conversation)`);
   process.exit(0);
 }
@@ -285,9 +298,17 @@ if (arg('rejudge')) {
 }
 await pool(results, CONC, async (r) => {
   if (!r.turns.length) return;
+  // the source comparison runs alongside the (unchanged) conversation judge
+  const cmp = WITH_PX && r.turns.some((t) => t.perplexity?.text)
+    ? compareConversation(r, { claude, model: JUDGE_MODEL, usd, api: API, authority: AUTHORITY, onCost: (c) => { spend.compare += c; } }).then(() => {
+      const p = pxRollup([r]);
+      r.px = { winners: p.winners, missed_in_library: p.missed_in_library.length, collection_gaps: p.collection_gaps.length, unknown: p.unknown.length, px_errors: p.px_errors.length, usd: p.usd };
+      console.log(`  compared ${r.id}: ${JSON.stringify(p.winners)} · missed-in-library ${p.missed_in_library.length} · gaps ${p.collection_gaps.length} · unknown ${p.unknown.length}`);
+    }).catch((e) => console.log(`  compare failed ${r.id}: ${e.message}`)) : null;
   try { r.verdict = await judgeConversation(r); delete r.judge_error; console.log(`  judged ${r.id}: ${r.verdict.overall}/10 — ${r.verdict.headline}`); }
   catch (e) { r.judge_error = e.message; console.log(`  judge failed ${r.id}: ${e.message}`); }
-  r.fixtures = fixturesOf(r);
+  await cmp;
+  r.fixtures = [...fixturesOf(r), ...pxFixtures(r)];
 });
 if (has('publish')) {   // explicit only: published_conversations via the admin save endpoint, linked to its thread
   for (const r of results.filter((x) => x.verdict && x.messages.length >= 2)) {
