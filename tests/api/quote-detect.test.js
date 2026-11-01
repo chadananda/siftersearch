@@ -55,3 +55,17 @@ describe('detectQuotation', () => {
     expect(stripMarkup('is it <b>yours</b>?\n\n\n<br>\n\n<br>  ok')).toBe('is it yours? ok');
   });
 });
+
+// r6-base: two quote-rule misfires that ended in "the library has nothing" (class D).
+describe('detectQuotation, r6', () => {
+  it('a span quoted back with words left out is still a reference to the reply', () => {
+    const said = ['…attained the station which, as ordained by God, overshadoweth the entire creation" — *Gleanings*.'];
+    expect(detectQuotation('In the second one you quoted, the "station which overshadoweth the entire creation", is detachment there a means to that station or the station itself?', { said })).toBe(null);
+  });
+  it('a quoted EXAMPLE ("like …", "such as …") is the idea, not wording to find', () => {
+    expect(detectQuotation('I am looking for the Golden Rule in many religions, like "do to others what you want for yourself". Where Bahá\'u\'lláh say this in the Writings?')).toBe(null);
+  });
+  it('a real quotation still counts', () => {
+    expect(detectQuotation('Where is "the earth is but one country" from?')?.phrase).toBe('the earth is but one country');
+  });
+});

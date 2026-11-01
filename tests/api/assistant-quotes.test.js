@@ -1,7 +1,7 @@
 // A companion that presents invented words as scripture has failed at the one thing it must never do.
 // Live 2026-09-24: gpt-4o-mini quoted three lines "Bahá'u'lláh states" that appear in no retrieved passage.
 import { describe, it, expect } from 'vitest';
-import { unverifiedQuotes, dropUnverified } from '../../api/lib/assistant/quotes.js';
+import { unverifiedQuotes, dropUnverified, linkQuotes } from '../../api/lib/assistant/quotes.js';
 
 const passages = [
   { text: 'O Son of Spirit! The best beloved of all things in My sight is Justice; turn not away therefrom if thou desirest Me.' },
@@ -98,5 +98,38 @@ describe('completeIntroducedQuotes', async () => {
   it('leaves a lead-in that is followed by its quotation, list or table alone', () => {
     for (const t of ['He writes:\n\n> “Quddús, who was sitting nearby”', 'Three points:\n\n- one\n- two', 'In his words:\n\n“So powerful is the light of unity.”'])
       expect(completeIntroducedQuotes(t, [GPB]).text).toBe(t);
+  });
+});
+
+// r6-base class A (16 of 108 defects): a verbatim quotation of a retrieved passage with no link of its own.
+describe('linkQuotes', () => {
+  const P = [
+    { text: 'Disencumber yourselves of all attachment to this world and the vanities thereof. Beware that ye approach them not.', source_title: 'Gleanings', citation_url: 'https://oceanlibrary.com/g#p1' },
+    { text: 'The soul is not a material thing; it is a heavenly gem which progresses through the worlds of God.', source_title: 'Some Answered Questions', citation_url: 'https://oceanlibrary.com/saq#p9' },
+  ];
+  it('links an unlinked inline quotation to the passage that holds it', () => {
+    const r = linkQuotes('Bahá’u’lláh urges us: “Disencumber yourselves of all attachment to this world,” and so on.', P);
+    expect(r.text).toBe('Bahá’u’lláh urges us: “Disencumber yourselves of all attachment to this world,” ([Gleanings](https://oceanlibrary.com/g#p1)) and so on.');
+    expect(r.linked).toBe(1);
+  });
+  it('leaves a quotation whose sentence already links its passage', () => {
+    const t = 'In [Gleanings](https://oceanlibrary.com/g#p1) He writes: “Disencumber yourselves of all attachment to this world.”';
+    expect(linkQuotes(t, P).text).toBe(t);
+  });
+  it('links an unlinked blockquote on its own attribution line', () => {
+    const r = linkQuotes('He explains:\n\n> The soul is not a material thing; it is a heavenly gem.\n\nSo it is not physical.', P);
+    expect(r.text).toContain('> The soul is not a material thing; it is a heavenly gem.\n> — [Some Answered Questions](https://oceanlibrary.com/saq#p9)');
+  });
+  it('never links words found in no passage, or short phrases', () => {
+    const t = 'He called it “a heavenly gem” and “the light of the world of being itself.”';
+    expect(linkQuotes(t, P).text).toBe(t);
+  });
+});
+
+describe('linkQuotes, one link per passage per paragraph', () => {
+  it('two quotations of one passage in a paragraph get one link', () => {
+    const P = [{ text: 'Disencumber yourselves of all attachment to this world and the vanities thereof. Beware that ye approach them not.', source_title: 'Gleanings', citation_url: 'u1' }];
+    const r = linkQuotes('“Disencumber yourselves of all attachment to this world.” Then: “and the vanities thereof. Beware that ye approach them not.”', P);
+    expect(r.linked).toBe(1);
   });
 });

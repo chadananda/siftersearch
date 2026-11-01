@@ -127,6 +127,16 @@ describe('anisRespond', () => {
     expect(searchQueryFor(m)).toBe('Who was Tahirih? Is "to signal that a new era had begun" his words?');
   });
 
+  // r6 (11-01, 11 of 108 defects): a long follow-up that names its own subjects was searched behind the previous
+  // question's names ("Muhammad Hira Moses Síyáh-Chál You said …") and its real referent (the Maid of Heaven) was missed.
+  it('a long follow-up that names its own subjects is searched alone; contractions are never names', () => {
+    const t3 = 'You said the greatest light comes "where human hopelessness and agony are deepest." Is this like Muhammad in the cave of Hira, or Moses at the burning bush — or is the Síyáh-Chál different from them?';
+    const t4 = 'You said Bahá\'u\'lláh was in the pit with "fellow prisoners" — is there a text where he says the exact words the Maid of Heaven spoke to him in the Síyáh-Chál? And what date, which day, did this happen?';
+    expect(searchQueryFor([{ role: 'user', content: t3 }, { role: 'assistant', content: '…' }, { role: 'user', content: t4 }])).toBe(t4);
+    const prev = 'That passage you just quoted is helpful for the oneness idea, but where does the Íqán tie it directly to Elijah and John the Baptist? I\'d like the group to read that part right after it.';
+    expect(searchQueryFor([{ role: 'user', content: prev }, { role: 'assistant', content: '…' }, { role: 'user', content: 'Why does that matter so much here, and what does it really mean for us?' }])).not.toMatch(/I'd/);
+  });
+
   it('leaves a self-contained question alone', () => {
     const m = [{ role: 'user', content: 'Who was Mullá Ḥusayn?' }, { role: 'assistant', content: '…' }, { role: 'user', content: 'What does the Quran say about patience and endurance in hardship?' }];
     expect(searchQueryFor(m)).toBe('What does the Quran say about patience and endurance in hardship?');

@@ -49,5 +49,107 @@
    "total": 0.359,
    "per_conversation": 0.1795
   }
+ },
+ {
+  "date": "2026-11-01",
+  "tag": "r5",
+  "api": "http://tower-nas:7839",
+  "sim_model": "claude-sonnet-5-5",
+  "judge_model": "claude-opus-5-5",
+  "conversations": 2,
+  "judged": 2,
+  "turns": 10,
+  "errors": 0,
+  "overall": 4.5,
+  "scores": {
+   "grounding": 3.5,
+   "citation_links": 3,
+   "follow_up_resolution": 3.5,
+   "coherence": 3,
+   "depth": 2,
+   "honesty_absence": 2,
+   "authority_ordering": 3.5,
+   "tone": 3,
+   "latency": 4
+  },
+  "defects": 20,
+  "by_stage": {
+   "gate": 0,
+   "strategy": 1,
+   "follow_up_context": 1,
+   "retrieval": 2,
+   "selection": 3,
+   "answer": 12,
+   "latency": 1
+  },
+  "by_severity": {
+   "critical": 0,
+   "major": 9,
+   "minor": 11
+  },
+  "latency_ms": {
+   "p50": 5692,
+   "p90": 19854,
+   "max": 19854,
+   "over_15s": 1
+  },
+  "usd": {
+   "anis": 0.0243,
+   "sim": 0.0367,
+   "judge": 0.3323,
+   "total": 0.3934,
+   "per_conversation": 0.1967
+  }
+ },
+ {
+  "date": "2026-11-01",
+  "tag": "r6-base",
+  "api": "http://tower-nas:7839",
+  "sim_model": "claude-sonnet-5-5",
+  "judge_model": "claude-opus-5-5",
+  "conversations": 10,
+  "judged": 10,
+  "turns": 50,
+  "errors": 0,
+  "overall": 3.85,
+  "scores": {
+   "grounding": 2.33,
+   "citation_links": 2.78,
+   "follow_up_resolution": 2.78,
+   "coherence": 2.33,
+   "depth": 2.11,
+   "honesty_absence": 2.33,
+   "authority_ordering": 3.11,
+   "tone": 3.11,
+   "latency": 4.11
+  },
+  "defects": 108,
+  "by_stage": {
+   "gate": 0,
+   "strategy": 5,
+   "follow_up_context": 10,
+   "retrieval": 15,
+   "selection": 11,
+   "answer": 64,
+   "latency": 3
+  },
+  "by_severity": {
+   "critical": 11,
+   "major": 53,
+   "minor": 44
+  },
+  "latency_ms": {
+   "p50": 5417,
+   "p90": 9732,
+   "max": 42647,
+   "over_15s": 2
+  },
+  "usd": {
+   "anis": 0.1534,
+   "sim": 0.2325,
+   "judge": 1.6606,
+   "total": 2.0465,
+   "per_conversation": 0.2047
+  }
  }
 ]

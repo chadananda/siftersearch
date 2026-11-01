@@ -124,6 +124,9 @@ export const trailerText = (s) => String(s || '').replace(/⁅\/?s\d+⁆/g, '').
  * classifier never overrides; on-behalf letters are Shoghi Effendi's, per the 10-08 rule). rows: [{ id, text, blocktype }]
  * in order → Map(id → { name, on_behalf, kind, trailer_id }). Pure.
  */
+// a trailer names the source of the QUOTATION just before it; a longer run since the last trailer/heading is prose that cites
+// a source (Bahá'í World VIII, 11-01: one "(From The Gleanings, page 136.)" credited 6,567 essay paragraphs to Bahá'u'lláh)
+export const MAX_TRAILER_RUN = 12;
 export function trailerAuthors(rows) {
   const out = new Map();
   let pending = [], last = null;
@@ -134,7 +137,7 @@ export function trailerAuthors(rows) {
       // "(Ibid.)" is the same source as the trailer before it (10-21: ~110 Lights of Guidance quotations had no author)
       const p = parseTrailer(t).ibid ? (last ? { ...last, ibid: false } : { ibid: true }) : parseTrailer(t);
       if (p.name) last = p;
-      if (p.name && !p.ibid) for (const x of pending) out.set(x.id, { name: p.name, on_behalf: p.on_behalf, kind: p.kind, trailer_id: r.id });
+      if (p.name && !p.ibid && pending.length <= MAX_TRAILER_RUN) for (const x of pending) out.set(x.id, { name: p.name, on_behalf: p.on_behalf, kind: p.kind, trailer_id: r.id });
       pending = [];
       continue;
     }

@@ -57,6 +57,7 @@ import { sourceLinksBuildJob } from './source-links-build-job.js';
 export { INDEX_LANES, INDEX_JOB_NAMES };
 import { retireDuplicatesJob } from './library-jobs.js';
 import { sectionAuthorJob } from './section-author.js';
+import { staleTrailerReport } from './stale-trailer-report.js';
 import { slowQueriesByHour } from '../repos/query-health-repo.js';
 import { translatorCoverage } from '../repos/translator-repo.js';
 import { auditsSince } from '../repos/audit-store-repo.js';
@@ -243,6 +244,7 @@ REPORTS['book-author-photos'] = bookAuthorPhotosReport;   // the applied author 
 REPORTS['book-author-photo-set'] = bookAuthorPhotoSetJob;   // params { fixes:[{id,url|null,evidence}], write } — only our own CDN URLs; null removes
 REPORTS['rights-open-publisher'] = rightsOpenPublisherJob;   // params { write, except } — Publishing Trusts / ABS / Wilmette are institutional: open (Chad 10-23)
 REPORTS['exclude-ruhi'] = excludeRuhiJob;   // params { write } — Ruhi books soft-deleted from the library, files kept (Chad 10-23)
+REPORTS['stale-trailer-authors'] = staleTrailerReport;   // params { ids?, religion, top } — read-only: trailer-credited paragraphs today's bounded rule no longer gives (11-01)
 REPORTS['paragraph-authors'] = paragraphAuthorsJob;   // params { religion, ids?, write, limit?, concurrency, outDir } — every paragraph its author (Chad 10-19)
 REPORTS['media-find'] = mediaFindJob;   // params { like, rank?, speaker?, title? } — items by source path; optional rank/speaker/title write
 REPORTS['media-scan'] = mediaScanJob;   // params { roots?, paths?, urls?, batch?, round? } — new recordings → items; queues media-item one at a time (planning/media-library-plan.md)

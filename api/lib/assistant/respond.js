@@ -11,7 +11,7 @@ import { questionSubject } from '../planned-search.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
-import { dropUnverified, createSentenceGate, completeIntroducedQuotes } from './quotes.js';
+import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, fixQuoteSpeakers } from './quotes.js';
 import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
@@ -78,26 +78,34 @@ export function searchQueryFor(messages) {
   if (detectQuotation(current, { said })) return clipQuery(current, QUERY_MAX);
   const previous = users.at(-2);
   if (!previous) return clipQuery(current, QUERY_MAX);
-  const short = current.split(/\s+/).filter(Boolean).length <= 5;
+  const words = current.split(/\s+/).filter(Boolean).length;
+  // a long follow-up that names its own subjects (works, people, terms) stands alone: its "that passage" points into the
+  // last REPLY, and the previous question's names only steer retrieval off it (r6, 11-01: 11 of 108 defects —
+  // "Muhammad Hira Moses Síyáh-Chál You said … the Maid of Heaven …" missed the Haykal passage)
+  if (words > 14 && namesOf(current).length >= 2) return clipQuery(current, QUERY_MAX);
   // the follow-up carries the REFERENCE it leans on (the previous question if short, else its names), never raw history
-  return (ANAPHOR.test(current) || short) ? clipQuery(`${referenceOf(previous)} ${current}`.trim(), QUERY_MAX) : clipQuery(current, QUERY_MAX);
+  return (ANAPHOR.test(current) || words <= 5) ? clipQuery(`${referenceOf(previous)} ${current}`.trim(), QUERY_MAX) : clipQuery(current, QUERY_MAX);
 }
 
 const QUERY_MAX = 400;
 const clipQuery = (s, n) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, ''));
 // Capitalised words that open sentences or address the assistant — never the subject a follow-up refers to.
-const NOT_A_NAME = /^(I|I'm|I've|Ok|Okay|Also|And|But|So|Then|Now|Yes|No|Thanks|Thank|Please|Hello|Hi|Dear|Does|Do|Did|Is|Are|Was|Were|Can|Could|Would|Should|Will|What|Which|Who|Whom|Whose|When|Where|Why|How|The|A|An|In|On|Of|For|If|It|This|That|These|Those|There|He|She|They|You|Your|We|My|Anís|Anis)$/i;
+const NOT_A_NAME = /^(I|I['’]\p{L}+|Ok|Okay|Also|And|But|So|Then|Now|Yes|No|Thanks|Thank|Please|Hello|Hi|Dear|Does|Do|Did|Is|Are|Was|Were|Can|Could|Would|Should|Will|What|Which|Who|Whom|Whose|When|Where|Why|How|The|A|An|In|On|Of|For|If|It|This|That|These|Those|There|He|She|They|You|Your|We|My|Anís|Anis)$/iu;
+/** Capitalised names and terms a text carries (≤ max), sentence openers and contractions ("I'd") left out. */
+export function namesOf(text, max = 8) {
+  const names = [];
+  for (const w of stripMarkup(text).match(/[\p{Lu}][\p{L}'’‘ʻ-]+/gu) || []) {
+    const t = w.replace(/['’]s$/, '');
+    if (!NOT_A_NAME.test(t) && !names.includes(t)) names.push(t);
+    if (names.length >= max) break;
+  }
+  return names;
+}
 /** The previous question when it is short; otherwise the names and terms it carried (≤ 8), so the query stays a query. */
 export function referenceOf(previous) {
   const p = stripMarkup(previous);
   if (p.split(/\s+/).length <= 14) return p;
-  const names = [];
-  for (const w of p.match(/[\p{Lu}][\p{L}'’‘ʻ-]+/gu) || []) {
-    const t = w.replace(/['’]s$/, '');
-    if (!NOT_A_NAME.test(t) && !names.includes(t)) names.push(t);
-    if (names.length >= 8) break;
-  }
-  return names.join(' ');
+  return namesOf(p).join(' ');
 }
 
 /** The passages a reply was written from, compact, for the exchange log (the strategy auditor reads them). */
@@ -509,10 +517,13 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const quoted = quotationIn(question);
   // a title or a name ("Hidden Words source") is not a quotation: hunt only when 4+ words of wording are present
   // a named person or work ("Hidden Words source", "who wrote the Paris Talks") is the item itself, never a quotation to hunt
+  // the original lookup runs ALONGSIDE the source hunt, not after it (r6-base: source-hunt 3.5 s then original 6.6–8 s, serial,
+  // made the two slowest non-cold turns, 11.7 s and 14.4 s); its result is used only when the hunt finds nothing
+  const originalP = !researched && wantsOriginal ? timed('original', () => originalWording(d, question, messages)).catch(() => null) : null;
   const sourced = !researched && !plan?.named && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4) || looksLikeSourceQuestion(question)
     || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8)) ? await timed('source-hunt', () => huntSource(d, question)) : null;
   // "What are those words in Persian?" about a numbered passage → the canonical paragraph WITH its aligned original
-  const original = !researched && !sourced && wantsOriginal ? await timed('original', () => originalWording(d, question, messages)).catch(() => null) : null;
+  const original = !sourced && originalP ? await originalP : null;
   if (sourced) {
     // "Where is this from?" is answered by the hunt directly (template, no model call, no companion plan).
     // OceanLibrary range links (lib/ocean-links.js): the reply's links and each citation highlight their passage
@@ -659,7 +670,12 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // …and a lead-in whose quotation went missing ("…writes in God Passes By:" then nothing, r5) gets the verified passage it
   // names, or is rewritten — a reply never ends an introduction without its quotation.
   const introduced = completeIntroducedQuotes(study ? placeRenderings(guarded.text, study, channel) : guarded.text, conversational ? [] : retrieved);
-  const reply = ensureLinks(introduced.text, conversational ? [] : retrieved);   // the counts come from code
+  // …and every quotation a passage holds carries that passage's link (r6-base class A: 16 of 108 defects).
+  // The speaker named for a quotation is the writer of the passage that holds it (r6-base class B: on-behalf letters credited
+  // to Shoghi Effendi or to Bahá'u'lláh, the Guardian's words framed as Bahá'u'lláh's).
+  const speakers = fixQuoteSpeakers(introduced.text, conversational ? [] : retrieved);
+  const quoteLinked = linkQuotes(speakers.text, conversational ? [] : retrieved);
+  const reply = ensureLinks(quoteLinked.text, conversational ? [] : retrieved);   // the counts come from code
   if (comp?.log && comp.plan) comp.log(comp.plan);
 
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and
@@ -670,7 +686,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const studyEvidence = study ? [{ title: `CTAI concordance: ${study.term}${study.root ? ` (root ${study.root})` : ''}`, author: 'CTAI', url: study.researchUrl || null,
     religion: "Bahá'í", text: `Shoghi Effendi's renderings of ${study.term}, counted over ${study.counted || study.total} aligned passages (${study.total} in all): `
       + study.renderings.map((r) => `${r.en} ${r.count}`).join(', ') }] : [];
-  return { reply, quotes_removed: guarded.removed, quotes_completed: introduced.completed || introduced.rewritten ? { placed: introduced.completed, rewritten: introduced.rewritten } : null, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
+  return { reply, quotes_removed: guarded.removed, quotes_completed: introduced.completed || introduced.rewritten ? { placed: introduced.completed, rewritten: introduced.rewritten } : null, quotes_linked: quoteLinked.linked || 0, quotes_recredited: speakers.fixed || 0, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
     search_query: searchQueryFor(messages), select, format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }

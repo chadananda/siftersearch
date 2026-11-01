@@ -120,3 +120,116 @@ export function completeIntroducedQuotes(text, passages) {
   }
   return { text: out.join('\n\n').trim(), completed, rewritten };
 }
+
+/**
+ * Every quotation carries its own link (r6-base: 16 of 108 defects were a verbatim quotation of a retrieved passage with no
+ * link). A quoted span of ≥5 words, or a blockquote, that a passage holds verbatim and whose sentence (or blockquote) does not
+ * already link that passage gets the passage's citation link: inline right after the closing quote mark, a blockquote on its
+ * own "— [title](url)" line. Words found in no passage are left alone (dropUnverified owns those). Pure.
+ */
+export function linkQuotes(text, passages) {
+  const pool = (passages || []).filter((p) => p.citation_url && p.text);
+  const src = String(text || '');
+  if (!pool.length || !src) return { text: src, linked: 0 };
+  let linked = 0;
+  const holder = (words, near) => {
+    const hits = pool.filter((p) => containsQuote(p.text, words));
+    return hits.length && !hits.some((p) => near.includes(p.citation_url)) ? hits[0] : null;
+  };
+  const link = (p) => `[${p.source_title || 'source'}](${p.citation_url})`;
+  // blockquotes: consecutive "> " lines; the line after the block may carry the attribution
+  const lines = src.split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^\s*>/.test(lines[i])) { out.push(lines[i]); continue; }
+    let j = i;
+    while (j < lines.length && /^\s*>/.test(lines[j])) j++;
+    const block = lines.slice(i, j);
+    const body = block.map((l) => l.replace(/^\s*>\s?/, '')).join(' ').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_]/g, '');
+    const p = body.split(/\s+/).length >= 5 ? holder(body.replace(/^["“]|["”]$/g, ''), `${block.join('\n')}\n${lines[j] || ''}`) : null;
+    out.push(...block);
+    if (p) { out.push(`> — ${link(p)}`); linked++; }
+    i = j - 1;
+  }
+  // inline quotations, outside blockquotes; the window is the quotation's sentence (back to the last sentence end, on to the next)
+  const res = out.map((line) => { const done = new Set(); return /^\s*>/.test(line) ? line : line.replace(/["“]([^"”\n]+)["”]/g, (m, words, off, all) => {
+    if (words.trim().split(/\s+/).length < 5) return m;
+    const before = all.slice(0, off), after = all.slice(off + m.length);
+    const start = Math.max(before.search(/[.!?]\s[^.!?]*$/), 0);
+    const end = after.search(/[.!?](\s|$)/);
+    const p = holder(words, before.slice(start) + (end < 0 ? after : after.slice(0, end + 1)));
+    if (!p || done.has(p.citation_url)) return m;   // one link per passage per paragraph
+    done.add(p.citation_url);
+    linked++;
+    return `${m} (${link(p)})`;
+  }); });
+  return { text: res.join('\n'), linked };
+}
+
+// ── WHO SAID IT ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+// r6-base class B (14 of 108 defects): a quotation credited to a figure other than the writer of the passage that holds it
+// (an on-behalf letter credited to Shoghi Effendi, or to Bahá'u'lláh; the Guardian's words framed as Bahá'u'lláh's).
+const AP = '[’\'`ʼ‘]?';
+const FIGURES = [
+  ['bahaullah', new RegExp(`Bah[áa]${AP}u${AP}ll[áa]h`, 'u')],
+  ['abdulbaha', new RegExp(`${AP}Abdu${AP}l[- ]Bah[áa]`, 'u')],
+  ['bab', /\b[Tt]he B[áa]b\b/u],
+  ['shoghieffendi', /Shoghi Effendi|\b[Tt]he Guardian\b/u],
+  ['uhj', /\b[Tt]he Universal House of Justice\b/u],
+];
+const figureOf = (name) => FIGURES.find(([, re]) => re.test(String(name || '')))?.[0] || null;
+// A Guardian letter that speaks of him in the third person was written by his secretary on his behalf.
+const ON_BEHALF = /\b(?:the (?:beloved )?Guardian|Shoghi Effendi)\b|\b(?:asked|instructed|wishes|directed) (?:me|us) to\b|\bon (?:his|the Guardian['’]s) behalf\b/i;
+
+/** The credit a passage's words carry: its writer, or "a letter written on behalf of Shoghi Effendi". Pure. */
+export function creditOf(p) {
+  const who = p?.source_author || '';
+  return figureOf(who) === 'shoghieffendi' && ON_BEHALF.test(p?.text || '') ? 'a letter written on behalf of Shoghi Effendi' : who;
+}
+
+const SPEECH = '(?:states?|stated|writes?|wrote|says?|said|explains?|explained|notes?|noted|affirms?|affirmed|declares?|declared|teaches|taught|urges?|urged|warns?|warned|counsels?|counselled|reminds?|reminded|adds?|added|observes?|observed|stresses|stressed|emphasi[sz]es|emphasi[sz]ed|describes?|described|calls?|called|puts? it|assures?|assured|asserts?|asserted|reveals?|revealed|proclaims?|proclaimed)';
+
+/**
+ * A quotation whose sentence names a Central Figure / the Guardian / the House as its speaker, held by a passage whose writer
+ * is a different one of them (or an on-behalf letter), is re-credited to the passage's writer. Words the passage itself
+ * quotes or reports (it names the speaker) are left alone, and so is a passage by anyone else (a scholar may lay out a quoted
+ * Writing without quotation marks). Pure.
+ */
+export function fixQuoteSpeakers(text, passages) {
+  const pool = (passages || []).filter((p) => p.text && figureOf(p.source_author));
+  const src = String(text || '');
+  if (!pool.length) return { text: src, fixed: 0 };
+  const names = FIGURES.map(([, re]) => re.source).join('|');
+  const speakerRe = new RegExp(`(${names})(?![’']s)(?:,[^,]{0,40},)?\\s+(?:\\w+ly\\s+|also\\s+|himself\\s+)?${SPEECH}\\b|(${names})(?![’']s)\\s*[:,]\\s*$`, 'gu');
+  let fixed = 0;
+  const lines = src.split('\n').map((line) => {
+    const edits = [];
+    for (const m of line.matchAll(/["“]([^"”\n]+)["”]/g)) {
+      const words = m[1];
+      if (words.trim().split(/\s+/).length < 5) continue;
+      const before = line.slice(0, m.index);
+      const start = Math.max(before.search(/[.!?]\s[^.!?]*$/) + 1, 0);
+      const sentence = before.slice(start);
+      const hit = [...sentence.matchAll(speakerRe)].at(-1);
+      if (!hit) continue;
+      const named = hit[1] || hit[2], said = figureOf(named);
+      const holders = pool.filter((p) => containsQuote(p.text, words));
+      if (!holders.length || holders.some((p) => figureOf(p.source_author) === said && creditOf(p) === p.source_author)) continue;
+      const p = holders.find((h) => {
+        const inner = [...h.text.matchAll(/["“]([^"”]+)["”]/g)].map((x) => x[1]).join(' | ');
+        if (inner && containsQuote(inner, words)) return false;                      // the passage quotes these words
+        if (figureOf(h.source_author) !== said && FIGURES.find(([k]) => k === said)[1].test(h.text)) return false;   // …or reports them
+        return true;
+      });
+      if (!p) continue;
+      const at = start + hit.index + hit[0].indexOf(named);
+      const credit = creditOf(p);
+      const sentStart = line.slice(start, at).replace(/^[\s>*_-]+/, '') === '';   // a credit opening its sentence is capitalised
+      edits.push([at, named.length, sentStart ? credit[0].toUpperCase() + credit.slice(1) : credit]);
+    }
+    let out = line;
+    for (const [at, len, s] of edits.sort((a, b) => b[0] - a[0])) { out = out.slice(0, at) + s + out.slice(at + len); fixed++; }
+    return out;
+  });
+  return { text: lines.join('\n'), fixed };
+}

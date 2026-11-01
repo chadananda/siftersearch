@@ -146,3 +146,57 @@ describe('a whole tradition is never the default (10-21: params null set out on 
     expect(listed).toBe(false);
   });
 });
+
+describe('a trailer credits only the quotation before it (Bahá\'í World VIII 967543, 11-01: "(From The Gleanings, page 136.)" at ¶11055 credited ¶4488–11054 — 6,567 paragraphs of essays — to Bahá\'u\'lláh)', () => {
+  const para = (id, text) => ({ id, text, blocktype: 'paragraph' });
+  it('a run longer than a quotation is prose that cites a source: nobody is credited', async () => {
+    const { trailerAuthors, MAX_TRAILER_RUN } = await import('../../api/lib/authorship/trailers.js');
+    const long = Array.from({ length: MAX_TRAILER_RUN + 1 }, (_, i) => para(i + 1, `Essay paragraph ${i + 1} by George Townshend about happiness.`));
+    const m = trailerAuthors([...long, para(999, '(From The Gleanings, page 136.)')]);
+    expect(m.size).toBe(0);
+  });
+  it('a multi-paragraph quotation within the bound is still the trailer\'s writer', async () => {
+    const { trailerAuthors } = await import('../../api/lib/authorship/trailers.js');
+    const m = trailerAuthors([para(1, '“First paragraph of the letter …”'), para(2, '“Second paragraph …”'), para(3, '(From a letter written on behalf of Shoghi Effendi, 8 February 1949)')]);
+    expect([...m.keys()]).toEqual([1, 2]);
+  });
+  it('the job drops a trailer author the current rules no longer give (stale evidence) and writes the row, with rollback', async () => {
+    const { MAX_TRAILER_RUN } = await import('../../api/lib/authorship/trailers.js');
+    const outDir = mkdtempSync(join(tmpdir(), 'pa-'));
+    const BW = { id: 967543, title: "The Baha'i World VIII", author: "National Spiritual Assembly", religion: "Baha'i", collection: 'Compilations', paragraph_count: 30 };
+    const stale = JSON.stringify([{ name: 'Bahá’u’lláh', role: 'author', basis: 'trailer', kind: 'work' }]);
+    const rws = Array.from({ length: MAX_TRAILER_RUN + 2 }, (_, i) => ({ id: 500 + i, text: `Essay paragraph ${i}.`, blocktype: 'paragraph', authors: stale, authors_model: 'trailers-2026-10-19' }));
+    rws.push({ id: 900, text: '(From The Gleanings, page 136.)', blocktype: 'paragraph', authors: '[]', authors_model: null });
+    writeFileSync(join(outDir, '967543.json'), JSON.stringify({ id: 967543, labels: rws.map((r, i) => ({ id: r.id, speaker: i === 1 ? 'George Townshend' : null })) }));
+    const written = [];
+    await paragraphAuthorsJob({ ids: [967543], write: true, outDir }, {
+      ask: async () => { throw new Error('no model call'); }, chatCompletion: async () => { throw new Error('no model call'); },
+      doc: async () => BW, rowsOf: async () => rws.map((r) => ({ ...r })), writeAuthors: async (u) => { written.push(...u); return u.length; },
+    });
+    const byId = new Map(written.map((u) => [u.id, u]));
+    expect(rws.filter((r) => r.id < 900).every((r) => byId.has(r.id))).toBe(true);   // every stale row rewritten
+    expect(written.some((u) => u.authors.some((e) => e.basis === 'trailer'))).toBe(false);
+    expect(written.every((u) => !u.authors.some((e) => e.name === 'Bahá’u’lláh' && e.role === 'author'))).toBe(true);
+    expect(readFileSync(join(outDir, 'rollback.jsonl'), 'utf8')).toMatch(/trailer/);
+  });
+});
+
+describe('a book of fragments still loses its stale trailer authors', () => {
+  it('fragmented secondary book: stale trailer rows are written back to the book default', async () => {
+    const { MAX_TRAILER_RUN } = await import('../../api/lib/authorship/trailers.js');
+    const outDir = mkdtempSync(join(tmpdir(), 'pa-'));
+    const BW = { id: 8, title: "The Baha'i World VIII", author: 'Compilation', religion: "Baha'i", collection: 'Compilations', paragraph_count: 30 };
+    const stale = JSON.stringify([{ name: 'Bahá’u’lláh', role: 'author', basis: 'trailer' }]);
+    const rws = Array.from({ length: MAX_TRAILER_RUN + 2 }, (_, i) => ({ id: 600 + i, text: `a fragment of a broken line number ${i} that goes on and`, blocktype: 'paragraph', authors: stale, authors_model: null }));
+    rws.push({ id: 990, text: '(From The Gleanings, page 136.)', blocktype: 'paragraph', authors: '[]', authors_model: null });
+    writeFileSync(join(outDir, '8.json'), JSON.stringify({ id: 8, labels: rws.map((r) => ({ id: r.id, speaker: null })) }));
+    const written = [];
+    const r = await paragraphAuthorsJob({ ids: [8], write: true, outDir }, {
+      ask: async () => { throw new Error('no model call'); }, chatCompletion: async () => { throw new Error('no model call'); },
+      doc: async () => BW, rowsOf: async () => rws.map((x) => ({ ...x })), writeAuthors: async (u) => { written.push(...u); return u.length; },
+    });
+    expect(r.fragmented).toBe(1);
+    expect(written.length).toBe(MAX_TRAILER_RUN + 2);
+    expect(written.every((u) => u.authors.length === 0)).toBe(true);
+  });
+});

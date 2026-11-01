@@ -57,7 +57,19 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all
     // the classifier runs so it is a fixed anchor there and is never overridden (10-19: Lights of Guidance's quotations
     // were labelled 'the compiler, quoting Shoghi Effendi')
     const evidence = [];
-    for (const [id, t] of trailerAuthors(rows)) {
+    const trailers = trailerAuthors(rows);
+    // STALE evidence: a trailer author today's trailer rules no longer give (an earlier, unbounded run) is dropped so the
+    // classifier decides the row again; the row is written even when nothing else changes (11-01: Bahá'í World VIII)
+    const stale = new Map();
+    for (const r of rows) {
+      if (trailers.has(r.id)) continue;
+      const cur = (() => { try { return JSON.parse(r.authors || '[]') || []; } catch { return []; } })();
+      if (!cur.some((e) => e.role === 'author' && e.basis === 'trailer')) continue;
+      stale.set(r.id, { authors: r.authors, authors_model: r.authors_model });
+      r.authors = JSON.stringify(cur.filter((e) => !(e.role === 'author' && e.basis === 'trailer')));
+    }
+    stats.stale_trailer = (stats.stale_trailer || 0) + stale.size;
+    for (const [id, t] of trailers) {
       const r = rows.find((x) => x.id === id);
       const cur = (() => { try { return JSON.parse(r.authors || '[]') || []; } catch { return []; } })();
       if (cur.some((e) => e.role === 'author' && e.basis && !['book', 'system1', 'window', 'continuation'].includes(e.basis))) continue;   // evidence already
@@ -85,7 +97,14 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all
       lab = { id: d.id, title: d.title, author: d.author, secondary, roster, brief, labels: rows.map((r, i) => ({ id: r.id, ...labels[i] })) };
       writeFileSync(file, JSON.stringify(lab));
     }
-    if (secondary && fragmentShare(rows) > 0.25) { stats.fragmented++; appendFileSync(join(outDir, 'fragmented.txt'), `${d.id}\t${d.title}\n`); return; }
+    if (secondary && fragmentShare(rows) > 0.25) {
+      stats.fragmented++; appendFileSync(join(outDir, 'fragmented.txt'), `${d.id}\t${d.title}\n`);
+      // a book of fragments is listed, not classified — but its stale trailer authors still come off (back to the book default)
+      const drop = rows.filter((r) => stale.has(r.id)).map((r) => ({ id: r.id, authors: JSON.parse(r.authors), prev: stale.get(r.id) }));
+      stats.writes += drop.length;
+      if (write && drop.length) { appendFileSync(join(outDir, 'rollback.jsonl'), drop.map((u) => JSON.stringify({ id: u.id, ...u.prev })).join('\n') + '\n'); await writeAuthors(drop); }
+      return;
+    }
     // the deterministic rules run again on saved labels, so a book classified under an earlier version gets today's rules
     const raw = new Map(lab.labels.map((l) => [l.id, l]));
     const byId = new Map();
@@ -103,10 +122,10 @@ export async function paragraphAuthorsJob({ religion = "Baha'i", ids = null, all
         updates.push({ ...ev, authors: n?.authors || ev.authors });
         continue;
       }
-      if (!n) continue;
+      if (!n) { if (stale.has(r.id)) updates.push({ id: r.id, authors: JSON.parse(r.authors), prev: stale.get(r.id) }); continue; }
       if (n.changed) stats.author_changed++;
       if (n.authors.some((e) => e.role === 'quoted' && e.basis === 'window')) stats.quoted_added++;
-      updates.push({ id: r.id, authors: n.authors, ...(n.changed ? { model: MODEL } : {}), prev: { authors: r.authors, authors_model: r.authors_model } });
+      updates.push({ id: r.id, authors: n.authors, ...(n.changed ? { model: MODEL } : {}), prev: stale.get(r.id) || { authors: r.authors, authors_model: r.authors_model } });
     }
     stats.writes += updates.length;
     if (write && updates.length) {

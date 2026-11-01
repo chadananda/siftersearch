@@ -6,6 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { quotedIn } from './findings.js';
+import { creditOf } from './quotes.js';
 
 let SOUL = null;
 export function soul() {
@@ -69,7 +70,7 @@ export function anisDirection({ channelFrame = null, stance = null, conversation
 /** Compact user payload: direction, the conversation, then numbered passages with their only allowed URL. */
 export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {
   const lines = passages.map((p, i) => {
-    const who = [quotedIn(p) ? `${p.source_author} as quoted in a work by ${p.book_author} (name ${p.book_author} as the work's author)` : p.source_author, p.religion].filter(Boolean).join(', ');
+    const who = [quotedIn(p) ? `${creditOf(p)} as quoted in a work by ${p.book_author} (name ${p.book_author} as the work's author)` : creditOf(p), p.religion].filter(Boolean).join(', ');
     return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}\nURL: ${p.citation_url || '(none)'}\n${String(p.text || '').slice(0, p.translation ? 4000 : 700)}`;
   });
   // Each piece of evidence goes with its verbatim PROOF — the model reads what the source actually says.

@@ -20,6 +20,17 @@ export const stripMarkup = (s) => String(s || '').replace(/<\/?(?:b|i|em|strong|
 const fold = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 const clean = (s) => s.replace(/^[\s"“„«'‘]+|[\s"”»'’.?!,;:]+$/g, '').replace(/\s+/g, ' ');
 
+// a quoted EXAMPLE of an idea ("the Golden Rule … like "do to others what you want for yourself"", r6) is not wording to find
+// ("passages like "…"" still asks for that wording)
+const EXAMPLE = /\b(?:like|such as|something like|e\.g\.|for example|for instance)\s*[:,]?\s*$/i;
+const isExample = (before) => EXAMPLE.test(before) && !/\b(?:quote|quotation|passage|phrase|saying|line|sentence|word|verse|excerpt)s?\s+(?:like|such as)\s*$/i.test(before);
+// a span quoted back from a reply, words left out or not ("the station which overshadoweth…" for "the station which, as
+// ordained by God, overshadoweth…", r6): its words in order, at most 6 words apart
+const echoes = (hay, span) => {
+  const w = fold(span).split(' ').map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return new RegExp(` ${w.join('(?: \\S+){0,6} ')} `).test(hay);
+};
+
 /**
  * `said`: the assistant's earlier replies in this thread — a span the user quotes BACK from them is a reference to the
  * conversation ("you said …"), not wording to find (r5, 11-01).
@@ -28,7 +39,8 @@ export function detectQuotation(text, { said = [] } = {}) {
   const t = stripMarkup(text);
   if (!t || isMeaningQuestion(t)) return null;
   const echoed = said.length ? ` ${said.map(fold).join(' | ')} ` : '';
-  const spans = [...t.matchAll(QUOTED)].map((m) => clean(m[1])).filter((s) => words(s) >= MIN_WORDS && !(echoed && echoed.includes(` ${fold(s)} `)));
+  const spans = [...t.matchAll(QUOTED)].filter((m) => !isExample(t.slice(0, m.index))).map((m) => clean(m[1]))
+    .filter((s) => words(s) >= MIN_WORDS && !(echoed && echoes(echoed, s)));
   if (spans.length) return { phrase: spans.sort((a, b) => words(b) - words(a))[0], via: 'quoted' };
   if (ASK.test(t) && THING.test(t) && !THEME.test(t)) {
     const rest = t.match(LEAD)?.[1];

@@ -2,7 +2,7 @@
 // Anís in real conversation: a themed multi-turn chat (a simulated reader, Sonnet 5.5, whose follow-ups lean on earlier turns) through
 // /api/chat/stream as ONE thread (stable x-user-id + conversationId), then the thread trace (route/strategy/sources/latency per round) and
 // a deep conversation-level judgement by Opus 5.5 → per-turn defects with the STAGE that caused them (fixture candidates).
-//   node tests/quality/anis-conversations.mjs [--themes id,id | --seeds 3,17] [--personas skeptic,..] [--n 2] [--turns 5] [--concurrency 2]
+//   node tests/quality/anis-conversations.mjs [--themes id,id] [--seeds 3,17] (combinable) [--plan-seed s (fixes the move plan across tags)] [--personas skeptic,..] [--n 2] [--turns 5] [--concurrency 2]
 //        [--tag name] [--dry] [--rejudge reports/anis-conversations-….json] [--publish [--status draft]]
 // API base: API_BASE (default http://tower-nas:7839). Needs ANTHROPIC_API_KEY, DEPLOY_SECRET (thread trace), INTERNAL_API_KEY (--publish only).
 // Supersedes scripts/gen-dialogs.mjs (GPT-4o reader, no thread id). --publish is the ONLY path that writes anything (published_conversations).
@@ -66,16 +66,17 @@ function movePlan(turns, rnd) {
 function rng(seed) { let s = [...String(seed)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7); return () => ((s = (s * 1103515245 + 12345) >>> 0) / 2 ** 32); }
 
 // ---- select conversations
-let convs;
+// --themes and --seeds combine (themes first); neither = N random themes
+let convs = [];
+const want = list('themes');
+if (want) convs = THEMES.filter((t) => want.includes(t.id));
 if (list('seeds')) {
   const seeds = JSON.parse(readFileSync(join(ROOT, 'scripts', 'seed-questions.json'), 'utf8'));
-  convs = list('seeds').map((i) => seeds[Number(i)]).filter(Boolean).map((s, k) => ({ id: s.slug || `seed-${k}`, theme: s.title, opening: s.question, persona: Object.keys(PERSONAS)[k % 5] }));
-} else {
-  const want = list('themes');
-  convs = want ? THEMES.filter((t) => want.includes(t.id)) : [...THEMES].sort(() => Math.random() - 0.5).slice(0, N);
+  convs = convs.concat(list('seeds').filter((i) => seeds[Number(i)]).map((i, k) => [seeds[Number(i)], i, k]).map(([s, i, k]) => ({ id: s.slug || `seed-${i}`, theme: s.title, opening: s.question, persona: Object.keys(PERSONAS)[k % 5] })));
 }
+if (!want && !list('seeds')) convs = [...THEMES].sort(() => Math.random() - 0.5).slice(0, N);
 if (list('personas')) convs = convs.map((c, i) => ({ ...c, persona: list('personas')[i % list('personas').length] }));
-convs = convs.map((c) => ({ ...c, moves: movePlan(TURNS, rng(`${c.id}|${DATE}|${TAG || ''}`)) }));
+convs = convs.map((c) => ({ ...c, moves: movePlan(TURNS, rng(`${c.id}|${arg('plan-seed') || `${DATE}|${TAG || ''}`}`)) }));
 
 // ---- cost accounting (simulator + judge from usage; Anís from its own thread meta)
 const spend = { sim: 0, judge: 0, anis: 0 };
