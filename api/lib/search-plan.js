@@ -6,6 +6,7 @@ import { modelFor } from './model-roles.js';
 import { TRADITIONS, MIN_CONFIDENCE, ENDPOINT } from './scope-extract.js';
 import { detectQuotation } from './quote-detect.js';
 import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
+import { resolveNamed } from './named-object.js';
 
 // A wrong author hides far more than a wrong tradition, so it needs more certainty to act on.
 const AUTHOR_MIN_CONFIDENCE = 0.8;
@@ -25,12 +26,12 @@ const AUTHORS = {
 
 export const SMALL_TALK = /\b(hi|hello|hey|greetings|salaam|thanks?|thank you|bye|goodbye|good (morning|afternoon|evening)|how are you|who are you|what are you|your name|what can you|can you help|are you (a|an|ai|real|human|there)|you)\b/i;
 const SHAPES = {
-  quote: 'the user gives the wording of a passage — verbatim, a fragment, or half-remembered — and wants to find it or its source: "find the quote including …", "where does it say …", "who said …", "source of …"',
-  fact: 'a factual question about people, places, dates, events or documents: who, when, where, how many, what happened',
-  topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea',
+  quote: 'the user gives the wording of a passage — verbatim, a fragment, or half-remembered — and wants to find it or its source: "find the quote including …", "where does it say …", "who said …", "source of …"; also when the user paraphrases ONE particular saying or image of an author and wants that passage ("what did ‘Abdu’l-Bahá say about fighting thoughts of war with thoughts of peace")',
+  fact: 'a factual question about people, places, dates, events or documents: who, when, where, how many, what happened; also a question about this library itself (which religions or works it holds)',
+  topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea — including what one author wrote on a theme ("Shoghi Effendi on the Administrative Order", "what the Báb wrote about Him Whom God shall make manifest")',
   define: 'asks what a term, name or concept means',
-  lookup: 'names a specific work or person and wants that item itself',
-  enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something',
+  lookup: 'names a specific work or person and wants that item itself (not a theme within their writings)',
+  enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something (not a list of what the library holds)',
   converse: 'conversation, not a lookup: a greeting, thanks, small talk, or a question about the assistant itself (its name, what it can do). A title, a name or a phrase of the library\'s content ("hidden words work", "<phrase> source") is NEVER conversation',
 };
 
@@ -44,7 +45,7 @@ export const TRADITION_KEYWORDS = {
   'hadith': 'Islam', 'sunnah': 'Islam',
   'jewish': 'Judaism', 'judaism': 'Judaism', 'torah': 'Judaism', 'hebrew': 'Judaism',
   'leviticus': 'Judaism', 'exodus': 'Judaism', 'deuteronomy': 'Judaism',
-  'psalms': 'Judaism', 'proverbs': 'Judaism',
+  'psalms': 'Judaism', 'psalm': 'Judaism', 'proverbs': 'Judaism', 'sura': 'Islam', 'surah': 'Islam', 'dhammapada': 'Buddhist',
   'hindu': 'Hindu', 'hinduism': 'Hindu', 'vedic': 'Hindu',
   'bhagavad': 'Hindu', 'gita': 'Hindu', 'upanishad': 'Hindu',
   'sikh': 'Sikh', 'sikhism': 'Sikh', 'granth': 'Sikh',
@@ -155,11 +156,8 @@ export function layersFor(plan) {
   };
 }
 
-/**
- * The one network call. `input` is a query string or a message array (the conversation is the state:
- * "and what about compassion?" carries no tradition of its own).
- */
-export async function planSearch(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = Number(process.env.SEARCH_PLAN_TIMEOUT_MS) || 2500, fetchImpl = jevFetch('search-plan'), cache = true } = {}) {
+// Jev's classification + the quote rule and converse guard (planSearch below adds the object rules).
+async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = Number(process.env.SEARCH_PLAN_TIMEOUT_MS) || 2500, fetchImpl = jevFetch('search-plan'), cache = true } = {}) {
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
   const state = messages.slice(-6).map((m) => `${m.role}: ${String(m.content || '').slice(0, 600)}`).join('\n');
   const t0 = Date.now();
@@ -240,6 +238,70 @@ export async function planSearch(input, { given = {}, apiKey = process.env.TYPES
   } catch (err) {
     return backstop(/timeout|abort/i.test(`${err.name} ${err.message}`) ? 'timeout' : err.message, { error: err.message });
   }
+}
+
+// LIBRARY-META RULE (deterministic): "which religions are in the library?" asks about the library itself — answered from
+// the catalogue's own counts (respond.js), never an enumerate search over passages (11-01 battery: lm-religions 0/13).
+const RELIGIONS_WORD = /\brel\w{0,3}g\w{0,2}ns\b|\btraditions\b|\bfaiths\b/i;
+const LIBRARY_WORD = /\bli\w{0,2}r\w{0,2}y\b|\bcollection\b/i;
+const ASKS_WHICH = /\b(which|wich|what|whats|what's|list of|how many)\s+(?:\w+\s+)?(rel\w{0,3}g\w{0,2}ns|traditions|faiths)\b/i;
+export function libraryQuestion(text) {
+  const t = String(text || '');
+  if (!RELIGIONS_WORD.test(t) || !LIBRARY_WORD.test(t) || /\b(say|says|teach|teaches|believe|believes)\b/i.test(t)) return null;
+  return ASKS_WHICH.test(t) || t.trim().split(/\s+/).length <= 5 ? 'religions' : null;
+}
+
+// NAME RULE: a turn whose object is a person or a work ("find where Ghoddus is discussed", "Most Holy Book source") is a
+// lookup whatever its frame says — resolved by the entity lookup with a strict whole-name match (named-object.js).
+// Memoised by text: plannedSearch re-plans the same turn. Off under tests unless a resolver is injected.
+const NAME_TTL_MS = 30 * 60 * 1000, NAME_WAIT_MS = 1200;
+const nameCache = new Map();
+function namedFor(text, resolve) {
+  const k = String(text || '').trim();
+  const hit = nameCache.get(k);
+  if (hit && Date.now() - hit.at < NAME_TTL_MS) return hit.p;
+  const p = Promise.race([Promise.resolve(resolve(k)).catch(() => null), new Promise((r) => setTimeout(() => r(null), NAME_WAIT_MS).unref?.())]);
+  if (nameCache.size >= 1000) nameCache.delete(nameCache.keys().next().value);
+  nameCache.set(k, { at: Date.now(), p });
+  return p;
+}
+const defaultResolver = () => (process.env.VITEST || process.env.NODE_ENV === 'test' ? null : resolveNamed);
+
+/** The rules over the planned turn's OBJECT (after Jev and the quote rule): quote-rule > library > name > Jev. Pure. */
+export function applyObjectRules(plan, text, named) {
+  if (!plan || plan.source?.shape === 'quote-rule') return plan;
+  const out = { ...plan, source: { ...plan.source } };
+  const lib = libraryQuestion(text);
+  if (lib) {
+    if (plan.shape !== 'fact') out.overridden = { shape: plan.shape, about: plan.about, by: 'library-rule' };
+    Object.assign(out, { shape: 'fact', about: 'texts', library: lib });
+    out.source.shape = 'library-rule';
+    return out;
+  }
+  if (!named) return out;
+  // a person keeps a fact / definition question about him ("who was Vahid?"); anything else about a named person or work
+  // (quotes, where-is, a list, a theme word) is the item itself
+  const keep = named.type === 'person' ? ['fact', 'define', 'lookup'] : ['lookup'];
+  out.named = named;
+  if (!keep.includes(plan.shape)) {
+    out.overridden = { shape: plan.shape, about: plan.about, by: 'name-rule' };
+    out.shape = 'lookup';
+    out.source.shape = 'name-rule';
+  }
+  return out;
+}
+
+/**
+ * The one network call. `input` is a query string or a message array (the conversation is the state:
+ * "and what about compassion?" carries no tradition of its own). The name lookup runs beside Jev (≤1.2 s, memoised).
+ */
+export async function planSearch(input, opts = {}) {
+  const { resolveName = defaultResolver() } = opts;
+  const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
+  const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content;
+  const namedP = resolveName && lastUser ? namedFor(lastUser, resolveName) : null;
+  const plan = await planCore(input, opts);
+  return applyObjectRules(plan, lastUser, namedP ? await namedP : null);
 }
 
 // Jev reports a choice's confidence either directly or as its share of the distribution.

@@ -64,3 +64,125 @@ describe('ensureLinks', () => {
     expect(ensureLinks('Hello, friend.', q)).toBe('Hello, friend.');
   });
 });
+
+// r3 (11-01): a named person/work is a lookup whatever the frame; "which religions are in the library" is a catalogue fact.
+import { objectPhrases, nameMatches, resolveNamed } from '../../api/lib/named-object.js';
+import { applyObjectRules, libraryQuestion } from '../../api/lib/search-plan.js';
+import { religionsReply } from '../../api/lib/assistant/library-facts.js';
+import { anisRespond } from '../../api/lib/assistant/respond.js';
+
+describe('named object', () => {
+  it('strips the request frame and keeps the name', () => {
+    expect(objectPhrases('where can I find the passages that mention Ghoddus?')[0].phrase).toBe('Ghoddus');
+    expect(objectPhrases('hiden words by shoghi efendi').map((o) => o)).toContainEqual({ phrase: 'hiden words', workOnly: true });
+    expect(objectPhrases("can u find the text 'Most Holy Book'").map((o) => o.phrase)).toContain('Most Holy Book');
+    expect(objectPhrases('some answerd questions where')[0].phrase).toBe('some answerd questions');
+  });
+  it('a long sentence is no name', () => expect(objectPhrases('the earth is but one country and mankind its citizens forever and ever')).toEqual([]));
+  it('matches spelling variants word for word', () => {
+    expect(nameMatches('mulla hosein', 'Mullá Ḥusayn')).toBe(true);
+    expect(nameMatches('bok of certitude', 'Book of Certitude')).toBe(true);
+    expect(nameMatches('Paris Talks', 'Talks In Paris')).toBe(true);
+  });
+  it('rejects loose skeleton matches', () => {
+    expect(nameMatches('nirvana', 'Nurayn-i-Nayyirayn')).toBe(false);
+    expect(nameMatches('nirvana', 'Núrániyya')).toBe(false);
+    expect(nameMatches('peace', 'Pope Pius IX')).toBe(false);
+  });
+  it('resolveNamed: first matching person/work; a concept of exactly that name wins; never throws', async () => {
+    const db = {
+      ghoddus: [{ id: 1, name: 'Quddús', type: 'person' }],
+      nirvana: [{ id: 2, name: 'Nirvana', type: 'concept' }, { id: 3, name: 'Núrániyya', type: 'work' }],
+      vahid: [{ id: 4, name: 'Vaḥíd', type: 'person' }, { id: 5, name: 'Vahid', type: 'concept' }],
+    };
+    const lookup = async (q) => db[q.toLowerCase()] || [];
+    expect(await resolveNamed('where is Ghoddus discussed', { lookup })).toEqual({ type: 'person', id: 1, name: 'Quddús', matched: 'Ghoddus' });
+    expect(await resolveNamed('what is nirvana', { lookup })).toBeNull();
+    expect((await resolveNamed('Vahid', { lookup }))?.id).toBe(4);
+    expect(await resolveNamed('Vahid', { lookup: async () => { throw new Error('down'); } })).toBeNull();
+  });
+});
+
+describe('object rules', () => {
+  const p = (shape) => ({ shape, about: 'texts', source: { shape: 'jev' } });
+  const person = { type: 'person', id: 1, name: 'Quddús', matched: 'Ghoddus' };
+  const work = { type: 'work', id: 9, name: 'Most Holy Book', matched: 'Most Holy Book' };
+  it('a named person asked for quotes or a list is a lookup; a fact or definition about him stays', () => {
+    expect(applyObjectRules(p('quote'), 'quotes by Ghoddus', person)).toMatchObject({ shape: 'lookup', named: person, overridden: { shape: 'quote', by: 'name-rule' } });
+    expect(applyObjectRules(p('enumerate'), 'Ghoddus mentions', person).shape).toBe('lookup');
+    expect(applyObjectRules(p('fact'), 'who was Ghoddus', person).shape).toBe('fact');
+  });
+  it('a named work is always the item itself', () => {
+    expect(applyObjectRules(p('fact'), 'what is the Most Holy Book', work).shape).toBe('lookup');
+    expect(applyObjectRules(p('source'), 'Most Holy Book source', work).shape).toBe('lookup');
+  });
+  it('the quote rule outranks the name rule', () => {
+    const q = { ...p('quote'), source: { shape: 'quote-rule' } };
+    expect(applyObjectRules(q, '"Ghoddus"', person)).toBe(q);
+  });
+  it.each(['which religions are in the library', 'wich relgions r in teh libary', 'hey whats the list of religons in the libray',
+    'library religions list', 'I wonder if you could let me know which religions the library covers. Thank you!'])('%s → library fact', (t) => {
+    expect(libraryQuestion(t)).toBe('religions');
+    expect(applyObjectRules(p('enumerate'), t, null)).toMatchObject({ shape: 'fact', library: 'religions' });
+  });
+  it.each(['what do the religions in the library say about suffering', 'I was at the library reading about the religions of India and the Buddha and his teaching on suffering'])('%s is not', (t) => expect(libraryQuestion(t)).toBeNull());
+  it('planSearch applies the name rule with an injected resolver (Jev said quote)', async () => {
+    const jev = async () => ({ ok: true, json: async () => ({ answers: { shape: { choice: 'quote', confidence: 0.9 } } }) });
+    const r = await planSearch('find quotes by Ghoddus', { apiKey: 'k', fetchImpl: jev, cache: false, resolveName: async () => person });
+    expect(r).toMatchObject({ shape: 'lookup', named: person });
+  });
+});
+
+describe('respond: library facts and named objects', () => {
+  const base = (over = {}) => {
+    const calls = { search: [], hunt: 0, phrases: 0 };
+    return { calls, search: async (a) => { calls.search.push(a); return { passages: [], _plan: { shape: 'lookup' } }; },
+      craft: async () => 'ok', companion: async () => ({}), sourceHunt: async () => { calls.hunt++; return null; },
+      phrases: async () => { calls.phrases++; return null; }, ...over };
+  };
+  it('religionsReply lists traditions by size, drops filing slugs, invents nothing', () => {
+    const r = religionsReply({ religionCounts: { "Baha'i": 67581, Buddhist: 859, 'collection-08': 12, Tao: 96 } });
+    expect(r).toContain('3 religious traditions');
+    expect(r.indexOf('Bahá’í')).toBeLessThan(r.indexOf('Buddhism'));
+    expect(r).not.toContain('collection-08');
+    expect(religionsReply({ religionCounts: {} })).toBeNull();
+  });
+  it('a library question is answered from the stats with no search', async () => {
+    const d = base({ plan: async () => ({ shape: 'fact', library: 'religions' }), libraryStats: async () => ({ religionCounts: { Islam: 489, Hindu: 126 } }) });
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'which religions are in the library' }], deps: d });
+    expect(d.calls.search).toHaveLength(0);
+    expect(r.reply).toContain('Islam');
+    expect(r.plan).toMatchObject({ shape: 'fact', library: 'religions' });
+  });
+  it('a named work is searched by its library name, never source-hunted, no phrase model call', async () => {
+    const named = { type: 'work', id: 9, name: 'Most Holy Book', matched: 'most holy book' };
+    const d = base({ plan: async () => ({ shape: 'lookup', named }) });
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'most holy book source' }], deps: d, direction: { kind: 'source_lookup' } });
+    expect(d.calls.hunt).toBe(0);
+    expect(d.calls.phrases).toBe(0);
+    expect(d.calls.search[0].query).toBe('Most Holy Book');
+    expect(r.plan.phrases).toMatchObject({ phrase: 'most holy book', via: 'name-rule' });
+  });
+});
+
+import { rankOrigins } from '../../api/lib/source-hunt.js';
+describe('source hunt: a tradition the seeker names', () => {
+  const bahai = { id: 1, religion: "Baha'i", holds: true, overlap: 0.9, writer: '‘Abdu’l-Bahá', ownWork: true, authority: 3 };
+  const dhamma = { id: 2, religion: 'Buddhist', holds: true, overlap: 0.4 };
+  const psalm = { id: 3, religion: 'Christian', holds: true, overlap: 0.5 };
+  it('ranks a holding passage of that tradition first, even when paraphrased', () => {
+    expect(rankOrigins([bahai, dhamma], null, 'Buddhist')[0].id).toBe(2);
+    expect(rankOrigins([bahai, psalm], null, 'Judaism')[0].id).toBe(3);   // the Psalms sit under either shelf
+    expect(rankOrigins([bahai, dhamma])[0].id).toBe(1);                   // no hint → unchanged
+  });
+  it('respond: "the Buddha said …" with only a Bahá\'í origin falls through to the search', async () => {
+    const calls = { search: 0, opts: null };
+    const d = { search: async () => { calls.search++; return { passages: [], _plan: { shape: 'quote' } }; }, craft: async () => 'ok', companion: async () => ({}),
+      plan: async () => ({ shape: 'quote' }), phrases: async () => null,
+      sourceHunt: async (q, _d, opts) => { calls.opts = opts; return { origin: { religion: "Baha'i", title: 'Abdu’l-Bahá in London', text: 'x' }, citedBy: [] }; } };
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'where does the Buddha say that hatred is never ended by more hatred' }], deps: d, direction: { kind: 'source_lookup' } });
+    expect(calls.opts).toEqual({ religion: 'Buddhist' });
+    expect(calls.search).toBe(1);
+    expect(r.plan?.shape).not.toBe('source');
+  });
+});

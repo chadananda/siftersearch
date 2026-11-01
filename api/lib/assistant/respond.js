@@ -5,6 +5,8 @@
 // Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
 
 import { extractPhrase } from './phrases.js';
+import { religionsReply } from './library-facts.js';
+import { keywordTradition } from '../search-plan.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
@@ -256,8 +258,14 @@ async function quotedOriginal(d, question) {
  *  ({book}, {tablet}, …) that become exact links; it once copied a 400-char text-fragment URL into a repeating loop. */
 async function huntSource(d, question) {
   const hunt = d.sourceHunt || (await import('../source-hunt.js')).sourceHunt;
-  const r = await hunt(quotationIn(question)).catch(() => null);
+  // a tradition the seeker NAMED ("the Buddha said …", "which sura …") is searched too, and an origin outside it is not
+  // the answer (a Bahá'í book quoting the Dhammapada is not where the Buddha said it) → the ordinary search answers
+  const named = keywordTradition(question);
+  const religion = named && named !== "Baha'i" ? named : null;
+  const r = await hunt(quotationIn(question), undefined, religion ? { religion } : undefined).catch(() => null);
   if (!r?.origin) return null;
+  const family = (x) => (['Judaism', 'Christian'].includes(x) ? 'Bible' : x);
+  if (religion && family(r.origin.religion) !== family(religion)) return null;
   const o = r.origin, t = r.tablet?.certain ? r.tablet : null;
   const tTitle = t ? (t.meta?.title || t.title) : null, lang = t && /[پچژگ]/.test(t.text || '') ? 'Persian' : 'Arabic';
   const ool = t?.meta?.links?.oceanoflights || null, phelps = t?.meta?.links?.inventory || null, pin = t?.meta?.pin || null;
@@ -394,9 +402,24 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // a pasted original or a translate / find-the-original request is never small talk (10-23 Liliane's Persian prayer)
   let conversational = plan?.shape === 'converse' && !textRequest([...messages].reverse().find((m) => m.role === 'user')?.content).request;
 
+  // "Which religions are in the library?" (search-plan library rule) → the catalogue's own counts, no search, no model
+  if (plan?.library === 'religions' && !conversational) {
+    const stats = d.libraryStats ? await d.libraryStats() : await import('../library/library-stats.js').then((m) => m.readLibraryStats()).catch(() => null);
+    const reply = religionsReply(stats);
+    if (reply) {
+      onEvent({ type: 'sources', sources: [], plan: { shape: 'fact', library: 'religions' }, ms: Date.now() - t0 });
+      onEvent({ type: 'stage', stage: 'craft' });
+      onEvent({ type: 'text', content: reply });
+      return { reply, quotes_removed: 0, citations: [], retrieved: [], evidence: [], plan: { ...plan, shape: 'fact', library: 'religions' },
+        format: { id: 'library', by: 'library-stats' }, profile: null,
+        timings: { search_ms: Date.now() - t0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
+    }
+  }
   onEvent({ type: 'stage', stage: 'search' });
+  // a named person/work (search-plan name rule) is searched by its library name; the seeker's words are its phrase — no Haiku call
   // specific searches name their search phrase (deterministic from quote marks, else one Haiku call); Jev has already routed
-  const phrased = !conversational && plan ? await timed('phrases', () => (d.phrases || (deps ? async () => null : extractPhrase))(question, plan)).catch(() => null) : null;
+  const phrased = plan?.named && plan.shape === 'lookup' ? { phrase: plan.named.matched, via: 'name-rule', name: plan.named.name }
+    : !conversational && plan ? await timed('phrases', () => (d.phrases || (deps ? async () => null : extractPhrase))(question, plan)).catch(() => null) : null;
   // THE RESEARCHER (researcher.js; Chad 10-19: "we have made it too determinative"): a model plans the research with the
   // library's tools instead of regexes choosing one lookup. On for a channel listed in ANIS_RESEARCH ("email", "all") or
   // when the caller asks (direction.research); any failure falls back to the routed pipeline below.
@@ -410,7 +433,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const wantsOriginal = looksLikeOriginalQuestion(question);
   const quoted = quotationIn(question);
   // a title or a name ("Hidden Words source") is not a quotation: hunt only when 4+ words of wording are present
-  const sourced = !researched && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4) || looksLikeSourceQuestion(question)
+  // a named person or work ("Hidden Words source", "who wrote the Paris Talks") is the item itself, never a quotation to hunt
+  const sourced = !researched && !plan?.named && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4) || looksLikeSourceQuestion(question)
     || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8)) ? await timed('source-hunt', () => huntSource(d, question)) : null;
   // "What are those words in Persian?" about a numbered passage → the canonical paragraph WITH its aligned original
   const original = !researched && !sourced && wantsOriginal ? await timed('original', () => originalWording(d, question, messages)).catch(() => null) : null;
@@ -456,7 +480,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : language ? { passages: [], _plan: { shape: 'language' } }
     : position?.passages?.length ? { passages: position.passages, _plan: { shape: 'position', themes: position.themes } }
     : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await timed('search', () => d.search({
-    query: phrased?.via === 'haiku' ? phrased.phrase : searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
+    query: phrased?.via === 'name-rule' ? phrased.name : phrased?.via === 'haiku' ? phrased.phrase : searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
   }));
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };

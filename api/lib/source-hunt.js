@@ -179,12 +179,15 @@ const GUARDIAN_WORKS = /^(gleanings from the writings of bah|the kit[aá]b-i-[i�
 // a passage he had translated — true, but the source to cite is his own publication); 0 = another translation.
 export const guardianTranslation = (c) => (GUARDIAN_WORKS.test(String(c.title || '').trim()) ? 2 : translatedBy(c) === 'Shoghi Effendi' ? 1 : 0);
 
-export function rankOrigins(cands, quoteAuthor = null) {
+// the Hebrew Bible is shelved under both Judaism and Christianity: a Psalm named by the seeker may sit in either
+const sameTradition = (a, b) => !!a && !!b && (a === b || (['Judaism', 'Christian'].includes(a) && ['Judaism', 'Christian'].includes(b)));
+export function rankOrigins(cands, quoteAuthor = null, religion = null) {
   const canon = (n) => firstPerson(n || '') || n;
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
   // scripture itself (another tradition's text holding the words) is the origin of a Bahá'í book that quotes it (11-01 wording battery)
   const scripture = (c) => (c.holds ?? ((c.overlap || 0) >= VERBATIM)) && c.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(c.religion) && (c.overlap || 0) >= VERBATIM ? 1 : 0;
-  const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, scripture(c), quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
+  // a tradition the seeker NAMED ("the Buddha said …", "which sura …") outranks a Bahá'í book that quotes it (11-01 battery)
+  const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, religion && sameTradition(c.religion, religion) ? 1 : 0, scripture(c), quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
     // the paragraph holding the WORDING beats one the decision passed on meaning only — a neighbour (Liliane 10-05: Gleanings
     // 60.3 beat the verbatim 60.2) or another Core book that paraphrases (the Tablets book over Gleanings for 'Tear asunder').
     // A different translation is verbatim nowhere, so cross-translation ranking is unchanged.
@@ -198,7 +201,7 @@ export function rankOrigins(cands, quoteAuthor = null) {
 // opts.emit(stage, data): each stage's REAL result as soon as it exists — the page's live console replays these (never
 // invented progress). Stages: query · candidates · verbatim · links · writer · targeted · origin · cited · tablet.
 const docBrief = (r) => ({ id: r.doc_id, title: r.title, site: r.source_site || 'library', religion: r.religion || null });
-export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null } = {}) {
+export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null, religion = null } = {}) {
   const NEED = ['phrases', 'keyword', 'links', 'passages', 'meta', 'rows'];
   let d = NEED.every((k) => deps[k]) ? deps : { ...(await defaultDeps()), ...deps };
   // exclude: { documentIds, titles } — publications that may not be the answer (checking a compilation's own selections: the
@@ -218,13 +221,18 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   // 1. candidates BY MEANING: phrase vectors (cross-lingual, cross-translation) and BM25, over the whole library + sites —
   // and the same restricted to the doctrinal writers, so a line quoted by dozens of books cannot crowd out its own source
   const DOC = { author: [...DOCTRINAL], religion: "Baha'i" };
-  const [ph, kw, phD, kwD] = await Promise.all([
+  // … and, when the seeker named another tradition, inside that tradition's texts (its scripture is crowded out by the
+  // Bahá'í books that quote it)
+  const none = Promise.resolve({ hits: [] });
+  const [ph, kw, phD, kwD, phR, kwR] = await Promise.all([
     d.phrases(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
     d.keyword(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
     d.phrases(q.match, { limit: 20, filters: DOC, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
     d.keyword(q.match, { limit: 10, filters: DOC, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
+    religion ? d.phrases(q.match, { limit: 20, filters: { religion }, timeoutMs: QD_MS }).catch(() => ({ hits: [] })) : none,
+    religion ? d.keyword(q.match, { limit: 10, filters: { religion }, timeoutMs: QD_MS }).catch(() => ({ hits: [] })) : none,
   ]);
-  const order = [...phD.hits, ...ph.hits, ...kwD.hits, ...kw.hits];
+  const order = [...phR.hits, ...kwR.hits, ...phD.hits, ...ph.hits, ...kwD.hits, ...kw.hits];
   const ids = [...new Set(order.map((h) => h.paragraph_id))];
   const span = new Map(order.filter((h) => h.span).map((h) => [h.paragraph_id, h.span]));
   const rows = await d.rows(ids);
@@ -284,10 +292,10 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
 
   // how many paragraphs the link graph records as quoting each leading candidate — the original is quoted, the compilation
   // that reprints it rarely is (the tiebreak when publication years are missing)
-  const lead = rankOrigins(pool, quoteAuthor).slice(0, 8);
+  const lead = rankOrigins(pool, quoteAuthor, religion).slice(0, 8);
   const qc = await d.links(lead.map((c) => c.id), { quotedBy: true }).catch(() => new Map());
   for (const c of lead) c.quotedCount = qc.get(c.id)?.quotedBy?.count || 0;
-  const ranked = rankOrigins(pool, quoteAuthor), origin = ranked[0];
+  const ranked = rankOrigins(pool, quoteAuthor, religion), origin = ranked[0];
   // the quote's words in order where the source holds this wording; otherwise (another translation, a paraphrase) the
   // passage's phrases nearest the quote BY MEANING — the same phrase-vector spans that mark the original
   // the citation graph for the origin starts NOW, beside the source highlight (they do not depend on each other)
