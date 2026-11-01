@@ -7,6 +7,7 @@
 import { extractPhrase } from './phrases.js';
 import { religionsReply } from './library-facts.js';
 import { speakerTradition } from '../search-plan.js';
+import { questionSubject } from '../planned-search.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
@@ -93,7 +94,12 @@ export function quotationIn(text) {
   const quoted = [...t.matchAll(/[“"«]([^”"»]{20,})[”"»]/g)].map((m) => m[1].trim()).filter((q) => q.split(/\s+/).length >= 6);
   if (quoted.length) return quoted.sort((a, b) => b.length - a.length)[0];
   const m = /^[^\n:]{0,80}?(?:from|source|origin|written|said|quote|find)[^\n:]{0,60}[:?\n]\s*([\s\S]{20,})$/i.exec(t);
-  return (m ? m[1] : t).trim();
+  if (m) return m[1].trim();
+  // "where does it say <words>? i want to read the full passage" → the words (planned-search questionSubject's frame; the
+  // rest after the question is talk) — the whole question as the quotation diluted a Qur'án verse below verbatim (11-01)
+  const first = t.split('?')[0];
+  const subject = questionSubject(`${first}?`);
+  return subject !== `${first}?` && subject.split(/\s+/).length >= 4 ? subject : t;
 }
 
 /** A link the model wrote to a page we gave it, copied imperfectly (a long text-fragment URL with one character changed), is

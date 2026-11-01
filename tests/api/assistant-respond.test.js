@@ -182,6 +182,11 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     expect(quotationIn(ask[0].content)).toBe('The earth is but one country, and mankind its citizens.');
     expect(quotationIn('Where does this come from:\nSay: O people! Let not this fleeting life deceive you.')).toBe('Say: O people! Let not this fleeting life deceive you.');
   });
+  it('drops a "where does it say …?" frame and what follows the question (the frame is not in the passage)', () => {
+    expect(quotationIn('where does it say let there be no compulsion in religion? i want to read the full passage')).toBe('let there be no compulsion in religion');
+    expect(quotationIn('where does it say no?')).toBe('where does it say no?');   // too short to be a quotation → unchanged
+    expect(quotationIn('Jesus said God helps those who help themselves')).toBe('Jesus said God helps those who help themselves');
+  });
 
   it('hunts instead of searching and answers from the hunt alone — no model call, exact links, the original\'s words', async () => {
     const d = deps({ sourceHunt: async (q) => { d.calls.hunt = q; return HUNT; } });
