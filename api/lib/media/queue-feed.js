@@ -207,6 +207,7 @@ const readJson = async (f) => JSON.parse(await readFile(f, 'utf8'));
 // stageInline:false (the lane): a prepped talk's gpu step always lands on the LAN; the mover (rebalanceGpu, beside the pass) stages it on R2.
 // Uploading inline held tower's pass 50+ min on its uplink (10-31), so nothing was pulled or adopted meanwhile.
 const MOVE_PARALLEL = Number(process.env.MEDIA_MOVE_PARALLEL) || 3;
+const HELD = new Set();   // typed jobs a handoff is working on right now (the pass and adoptEdgeGpu never take the same one)
 const PERMANENT = /result refused|chain record lost|delivered without its stages/, PULL_TRIES = 5;
 /** Every typed pull error → st.pull_errors (last 50: at, job, error), so a failing step is never silent. */
 export function logPullError(st, job, error, at = Date.now()) {
@@ -233,21 +234,24 @@ export async function untransit(dir, r, meta, { run = null, now = Date.now } = {
   meta.master_transit = ts.map((f) => ({ path: f.transit_of, via: f.path, settings: f.transit || TRANSIT, at: new Date(now()).toISOString() }));
   return meta;
 }
-async function pullTyped(st, ack, { trace = null, q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true, run = null }) {
+async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: defer = false, parallel = 1, q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true, run = null }) {
   let adopted = 0, errors = 0, steps = 0, lanCap, edgeCap;
   const buf = { staged_h: buffer?.buffer_h || 0, want_h: buffer?.want_h || 0 };
   st.chains ||= {};
   const ackEdge = [], qOf = (where) => (where === 'edge' ? edge : q);
   const ackJob = (id) => { const list = st.qjobs[id]?.where === 'edge' ? ackEdge : ack; if (!list.includes(id)) list.push(id); delete st.qjobs[id]; };
   // every step type is pulled from both transports: gpu from the pods, cpu-prep/cpu-finish from a CPU pod (an edge step is acked on the edge)
-  for (const type of SJ.AUDIO_TYPES) for (const [src, sq] of [['lan', q], ...(edge ? [['edge', edge]] : [])]) {
-    const t0 = now(); let seen = 0;
-    trace?.step({ type, src, job: 'listDone' });
-    for (const j of await sq.listDone(200, type)) {   // adopted steps stay 'done' until the next step finishes: skip them
-      seenAgent(st, j.host, j.updated);
+  const tm = async (key, f) => { const t0 = now(); try { return await f(); } finally { trace?.sub(key, now() - t0); } };
+  // one finished step; a job already being handed off (the pass and the edge mover overlap) is left to whoever holds it
+  const one = async (j, type, src, sq) => {
+    if (HELD.has(j.id)) return;
+    HELD.add(j.id);
+    try { await adopt(j, type, src, sq); } finally { HELD.delete(j.id); }
+  };
+  const adopt = async (j, type, src, sq) => {
       const qj = st.qjobs[j.id];
-      if (!qj || qj.adopted) continue;
-      seen++; trace?.step({ type, src, job: j.id });
+      if (!qj || qj.adopted) return;
+      trace?.step({ type, src, job: j.id });
       const ch = st.chains[qj.itemId], outputs = (j.result?.outputs || []).map((o) => o.name);
       let stg = null;
       try {
@@ -256,7 +260,7 @@ async function pullTyped(st, ack, { trace = null, q, edge = null, gpuEdge = true
         stg = join(it.dir, `.typed-${type}`);
         await rm(stg, { recursive: true, force: true });
         if (type !== 'cpu-finish') {
-          await sq.get('results', j.id, 'result.json', join(stg, 'result.json'));
+          await tm(`${type}:${src}:get`, () => sq.get('results', j.id, 'result.json', join(stg, 'result.json')));
           const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs: outputs.length ? outputs : null });
           ch[type] = SJ.stepOf(j, r, now());
           logStep(st, type, j.host, ch.audio_s, now());
@@ -269,11 +273,11 @@ async function pullTyped(st, ack, { trace = null, q, edge = null, gpuEdge = true
           // it (queue-agent cloudSkips), so an edge step's next inputs never name it (it would 404 in the results store)
           const files = where !== src || src === 'edge' ? sentFiles(r.files) : r.files;
           if (where !== src) {   // the next step runs on the other transport: its inputs go into that queue's files/<file id>/
-            await nq.put('files', ch.fileId, ch.input, chainSrc(it, m, ch));   // the original, from tower's copy (the transport it came from may have dropped it)
-            for (const f of files) { const tmp = join(stg, 'x', 'item', f.path); await sq.get('results', j.id, 'item/' + f.path, tmp); await nq.put('files', ch.fileId, 'item/' + f.path, tmp); }
+            await tm(`${type}:${src}:put`, () => nq.put('files', ch.fileId, ch.input, chainSrc(it, m, ch)));   // the original, from tower's copy (the transport it came from may have dropped it)
+            for (const f of files) { const tmp = join(stg, 'x', 'item', f.path); await tm(`${type}:${src}:get`, () => sq.get('results', j.id, 'item/' + f.path, tmp)); await tm(`${type}:${src}:put`, () => nq.put('files', ch.fileId, 'item/' + f.path, tmp)); }
           }
           const job = SJ.typedJob(next, { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: j.id, files, staged: where !== src }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
-          await nq.enqueue([job]);
+          await tm(`${type}:${src}:enqueue`, () => nq.enqueue([job]));
           qj.adopted = true;
           st.qjobs[job.id] = { itemId: qj.itemId, slug: qj.slug, sha: ch.sha, kind: 'typed', type: next, audio_s: ch.audio_s, at: now(), ...(where === 'edge' ? { where } : {}) };
           const before = SJ.AUDIO_TYPES[SJ.AUDIO_TYPES.indexOf(type) - 1];   // this step has consumed the one before: its results can go
@@ -306,10 +310,24 @@ async function pullTyped(st, ack, { trace = null, q, edge = null, gpuEdge = true
         logPullError(st, j.id, error);
         // a refused result is final; a transfer or I/O error leaves the step done on its queue, retried next pass (never acked-and-lost), final after PULL_TRIES
         if (PERMANENT.test(e.message) || (qj.pull_fails = (qj.pull_fails || 0) + 1) >= PULL_TRIES) await failChain(st, j.id, ackJob, error, repo);
-        continue;
+        return;
       }
       if (stg) await rm(stg, { recursive: true, force: true }).catch(() => {});
+  };
+  for (const type of SJ.AUDIO_TYPES) for (const [src, sq] of [['lan', q], ...(edge ? [['edge', edge]] : [])]) {
+    if (only && (only.type !== type || only.src !== src)) continue;
+    const t0 = now();
+    trace?.step({ type, src, job: 'listDone' });
+    const todo = [];
+    for (const j of await sq.listDone(200, type)) {   // adopted steps stay 'done' until the next step finishes: skip them
+      seenAgent(st, j.host, j.updated);
+      const qj = st.qjobs[j.id];
+      if (!qj || qj.adopted) continue;
+      if (defer && type === 'gpu' && src === 'edge') continue;   // the edge→LAN gpu handoff is slow (R2 downloads + LAN uploads): adoptEdgeGpu runs it beside the pass
+      todo.push(j);
     }
+    let next = 0;
+    await Promise.all(Array.from({ length: Math.max(1, Math.min(parallel, todo.length)) }, async () => { while (next < todo.length) { const j = todo[next++]; await one(j, type, src, sq); } }));
     trace?.step({ type, src, job: 'stats' });
     for (const f of (await sq.stats(type)).failed || []) if (st.qjobs[f.id]) { errors++; logPullError(st, f.id, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`.slice(0, 300)); await failChain(st, f.id, ackJob, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`, repo); }
     trace?.sub(`${type}:${src}`, now() - t0);
@@ -559,4 +577,16 @@ export async function tick(st, deps) {
     seenAgent(st, j.host, j.updated);
   }
   return out;
+}
+
+/** The edge→LAN gpu handoff, beside the pass (like the mover): each finished gpu step on the edge is validated and its files copied R2 → LAN
+ *  (the cpu-finish step's inputs), several at once. Crash-safe as in the pass: the edge step stays done until its cpu-finish is enqueued. */
+export async function adoptEdgeGpu(st, deps) {
+  const ack = [], sub = {}, t0 = (deps.now || Date.now)();
+  const trace = { step: () => {}, sub: (k, ms) => { const x = (sub[k] ||= { n: 0, ms: 0 }); x.n++; x.ms += ms; } };
+  if (!deps.edge) return { steps: 0 };
+  st.qjobs ||= {};
+  const r = await pullTyped(st, ack, { ...deps, trace, only: { type: 'gpu', src: 'edge' }, parallel: deps.parallel || MOVE_PARALLEL });
+  if (ack.length) await deps.q.ack(ack);   // LAN-side acks (the edge ones went inside)
+  return { ...r, ms: (deps.now || Date.now)() - t0, sub };
 }

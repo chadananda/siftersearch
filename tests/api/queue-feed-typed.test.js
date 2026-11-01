@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import * as Q from '../../worker/queue/core.js';
-import { feed, pull, tick as qtick, forgiveOurs } from '../../api/lib/media/queue-feed.js';
+import { feed, pull, tick as qtick, forgiveOurs, adoptEdgeGpu } from '../../api/lib/media/queue-feed.js';
 import { CONTRACT, requiredFiles, fpOf } from '../../api/lib/media/stage-jobs.js';
 
 const doSql = () => { const db = new Database(':memory:'); return { exec: (q, ...b) => { const st = db.prepare(q); const r = st.reader ? st.all(...b) : (st.run(...b), []); return { toArray: () => r }; } }; };
@@ -278,6 +278,20 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect([...onEdge('results/'), ...onEdge('files/')]).toEqual([]);   // edge acked: R2 emptied
     expect(Q.stats(E.sql, Date.now(), 'gpu').states).toEqual({});
     expect(st.qjobs).toEqual({}); expect(st.chains).toEqual({});
+  });
+  it('the edge gpu handoff runs beside the pass: the pass (deferEdgeGpu) leaves it, adoptEdgeGpu does it and times get/put', async () => {
+    lanOnly(); st.queue = [1];
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); const p = deliver('cpu-prep'); await pull(st, d);
+    const g = deliver('gpu', {}, E);
+    expect((await pull(st, { ...d, deferEdgeGpu: true })).typed).toMatchObject({ steps: 0, errors: 0 });   // the pass leaves it
+    expect(E.store.has(`results/${g.id}/result.json`)).toBe(true); expect(Q.stats(sql, Date.now(), 'cpu-finish').states).toEqual({});
+    const [a, b] = await Promise.all([adoptEdgeGpu(st, d), adoptEdgeGpu(st, d)]);   // overlapping movers never take the same job twice
+    expect(a.steps + b.steps).toBe(1); expect([a, b].every((r) => r.errors === 0)).toBe(true);
+    const sub = a.steps ? a.sub : b.sub;
+    for (const k of ['gpu:edge:get', 'gpu:edge:put', 'gpu:edge:enqueue']) expect(sub[k].n).toBeGreaterThan(0);
+    expect(deliver('cpu-finish').body.inputs.every((i) => i.id === p.file_id)).toBe(true);
+    expect(E.store.has(`results/${g.id}/result.json`)).toBe(true);   // the edge step stays until finish has run
   });
   it('Aorus engaged and under TARGET_H keeps the gpu step home even with pods allowed', async () => {
     engage(); st.queue = [1];

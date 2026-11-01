@@ -1640,7 +1640,9 @@ function homeCanTake(h, id, st, acceptedWorker, env) {
   const it = st.items?.[id], whole = it?.kind === 'whole';
   if (Object.values(st.home || {}).some((c) => c?.itemId === id)) return false;
   return !isGateHost(h) || !acceptedWorker || it?.mode === 'post'
-    || (whole && (acceptedWorker.gate_whole ?? acceptedWorker.boss_whole) === true)
+    // Boss is CPU/LLM only while the typed pipeline runs (Chad 10-31): its gate runs its OWN older image, not the accepted one — 11-01 whole talks 4047/4059/4060/4062
+    // came back verdict 'review' (the paired assessment crashed there: quality.py exit 1), never published. Whole talks go through the typed chain.
+    || (whole && (acceptedWorker.gate_whole ?? acceptedWorker.boss_whole) === true && env.MEDIA_POD_TYPED !== '1')
     || (!whole && (it?.mode || 'restore') === 'restore' && (env.MEDIA_GATE_RESTORE ?? env.MEDIA_BOSS_RESTORE) !== '0');
 }
 
@@ -1749,7 +1751,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     return true;
   };
   const requireGate = process.env.MEDIA_POOL_REQUIRE_GATE === '1';   // pods must carry /opt/gate (the new image): older ones finish their jobs and are replaced
-  let balance = null, balAt = 0, stop = null, yielded = false, qPass = null, movePass = null, passGen = 0;
+  let balance = null, balAt = 0, stop = null, yielded = false, qPass = null, movePass = null, edgeGpuPass = null, passGen = 0;
   // EDGE QUEUE (worker/queue, Chad 10-30): in the background, pull finished queue jobs and keep ~2.5 h of whole talks queued for the machines pulling
   const queueKey = deps.queueKey !== undefined ? deps.queueKey : deps.repo || process.env.MEDIA_QUEUE_FEED === '0' ? null : process.env.INTERNAL_API_KEY;   // tests inject theirs
   // the machines' key (the same on the LAN and the edge queue) handed to an agent pod at boot; no edge feed → no agent pods
@@ -1936,10 +1938,14 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
               else LH.beat(st, 'q_move', { n: 0 }, now());
               await QF.rebalancePrep(st, mq).then((r) => { st.q_moved_prep = { at: now(), ...r }; }, (e) => { st.q_moved_prep = { at: now(), error: String(e.message).slice(0, 300) }; });
             })().finally(() => { movePass = null; }); }
+          // the edge→LAN gpu handoff (R2 downloads + LAN uploads, ~80 s a talk measured 11-01) runs BESIDE the pass, several at once: the pass only
+          // does bookkeeping, so edge feed and the pod plan never wait on it. The edge step stays done until its cpu-finish is enqueued (crash-safe).
+          if (!edgeGpuPass && podTyped) { const gq = { q: LQ.localQueue(), edge: QCl.queueClient({ key: queueKey }), repo, wr: wrMod, now, run, gpuEdge: podTyped, buffer: edgeBuf, stageInline: false };
+            edgeGpuPass = QF.adoptEdgeGpu(st, gq).then((r) => { st.q_gpu_edge = { at: now(), ...r }; }, (e) => { st.q_gpu_edge = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { edgeGpuPass = null; }); }
           phase('lan');
           LH.beatStart(st, 'q_lan', now());
           const marks = LH.chainMarks(st), lanAt = now();
-          const lan = await QF.tick(st, { ...deps, demux, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
+          const lan = await QF.tick(st, { ...deps, demux, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
           if (!alive()) return;
           st.q_lan = { at: now(), ...lan };
           LH.recordSteps(st, marks, lanAt, now());
@@ -1979,7 +1985,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const outdated=(p)=>p.image!==acceptedWorker.image||p.boot_v!==(p.agent?C.BOOT_V_AGENT:C.BOOT_V);   // an older image, or booted by an older BOOTSTRAP_WHOLE
       const imageDrainId=acceptedWorker&&!imageStarting?live.filter(p=>p.image&&outdated(p)).sort((a,b)=>a.created-b.created)[0]?.id:null;
       const inflight = Object.keys(st.jobs).length + staging.size + collecting.size;
-      if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass && !movePass) break;
+      if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass && !movePass && !edgeGpuPass) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
       // TYPED PODS (Chad 10-31): no pod-count or money cap — target = the plan's supportable, limited by work. Ramp ONE at a time, and only with

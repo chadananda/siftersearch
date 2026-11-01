@@ -13,6 +13,10 @@ describe('whole dispatch', () => {
     expect(homeEligibleItem('boss', 1, st(wholeOnly), accepted)).toBe(true);
     expect(homeEligibleItem('boss', 1, st(wholeOnly), { ...accepted, boss_whole: false })).toBe(false);
   });
+  it('boss takes no whole order while the typed pipeline runs (MEDIA_POD_TYPED): its gate image is not the accepted one', () => {
+    expect(homeEligibleItem('boss', 1, st(wholeOnly), accepted, { MEDIA_POD_TYPED: '1' })).toBe(false);
+    expect(homeEligibleItem('aorus-1', 1, st(wholeOnly), accepted, { MEDIA_POD_TYPED: '1' })).toBe(true);
+  });
   it('aorus takes whole orders and restores alike — no host is reserved for new talks', () => {
     expect(homeEligibleItem('aorus-1', 1, st(wholeOnly), accepted)).toBe(true);
     expect(homeEligibleItem('aorus-1', 2, st({ queue: [2] }), accepted)).toBe(true);
