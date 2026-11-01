@@ -3,7 +3,7 @@
 // A work = a document whose TITLE the name answers (title-rank tiers); an author = documents whose author is that name.
 // Deps: docs-repo findDocuments (docs_fts, SQLite) — injected in tests. Never throws.
 import { titleTier, TIER } from '../title-rank.js';
-import { keywordAuthor } from '../search-plan.js';
+import { keywordAuthor, traditionsNamed } from '../search-plan.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’ʼʻ`']/g, '').replace(/[^a-z0-9]+/gi, ' ').toLowerCase().trim();
 const nWords = (s) => fold(s).split(' ').filter((w) => w.length > 2).length;
@@ -20,11 +20,22 @@ export function workDocs(name, docs, { resolved = false } = {}) {
   return tiered.filter((x) => x.tier === best).slice(0, DOCS_PER_WORK).map((x) => x.d);
 }
 
-/** Rows of findDocuments for a person's name → the documents they WROTE (author field holds the name). Pure. */
+const HONORIFIC = /^(?:saint|st|sir|dr|imam|rabbi|lord|lady|mr|mrs|ms)$/;
+const isName = (n, f) => f === n || f.startsWith(`${n} of `);
+/** One author in a document's author field IS the name: equal, one honorific + the name ("Saint Augustine"), or "<name> of …"
+ *  ("Augustine of Hippo"). "Elijah Muhammad" is not Elijah. */
+const authorIs = (n, author) => String(author || '').split(/\s*(?:[;&/]|,|\band\b)\s*/i).some((a) => {
+  const f = fold(a);
+  if (!f) return false;
+  if (isName(n, f)) return true;
+  const [first, ...rest] = f.split(' ');
+  return HONORIFIC.test(first) && isName(n, rest.join(' '));
+});
+/** Rows of findDocuments for a person's name → the documents they WROTE (an author of each IS that name; tag pages are no writings). Pure. */
 export function authorDocs(name, docs) {
   const n = fold(name);
   if (n.length < 4) return [];
-  return (docs || []).filter((d) => ` ${fold(d.author)} `.includes(` ${n} `)).slice(0, DOCS_PER_AUTHOR);
+  return (docs || []).filter((d) => !/^\s*tag\s*:/i.test(d.title || '') && authorIs(n, d.author)).slice(0, DOCS_PER_AUTHOR);
 }
 
 /**
@@ -36,12 +47,17 @@ export async function namedScopes(plan, { find } = {}) {
   if (!mentions.length && !spans.length) return [];
   const lookup = find || (async (q, o) => (await import('../docs-repo.js')).findDocuments(q, o));
   const fields = ['id', 'title', 'author', 'religion'];
-  const resolvedNames = new Set(mentions.map((m) => fold(m.matched)));
+  // a span the entity index already resolved is no title: by its matched text, its name, or either without articles
+  // ("John the Baptist" span vs "John Baptist" matched — r8 probe)
+  const bare = (s) => fold(s).replace(/\b(?:the|of|a|an)\b/g, ' ').replace(/ +/g, ' ').trim();
+  const resolvedNames = new Set(mentions.flatMap((m) => [m.matched, m.name]).filter(Boolean).map(bare));
   const asks = [
     ...mentions.filter((m) => m.type === 'work').map((m) => ({ name: m.name, kind: 'work', resolved: true })),
     ...mentions.filter((m) => m.type === 'person' && !keywordAuthor(m.name)).map((m) => ({ name: m.name, kind: 'author' })),
     // a central figure's name is no title ("Shoghi Effendi" would begin a biography's) and no author scope
-    ...spans.filter((s) => !resolvedNames.has(fold(s)) && !keywordAuthor(s)).map((s) => ({ name: s, kind: 'span' })),
+    // nor is a tradition's name ("Bahá'í" matched a book titled "Bahá'í" — seed-21 T3)
+    ...spans.filter((s) => !resolvedNames.has(bare(s)) && !keywordAuthor(s) && !(nWords(s) <= 2 && traditionsNamed(s).size))
+      .map((s) => ({ name: s, kind: 'span' })),
   ].slice(0, 10);
   const out = [], seen = new Set();
   const found = await Promise.all(asks.map(async (a) => ({ a, docs: (await lookup(a.name, { limit: DOCS_PER_AUTHOR, fields }).catch(() => null))?.docs || [] })));

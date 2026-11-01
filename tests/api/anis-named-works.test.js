@@ -55,6 +55,13 @@ describe('tradition lean', () => {
     expect(one.filters.religion).toBe("Baha'i");
     expect(one.spans).toContain('Elijah');
   });
+  it('applyMentions: a short turn keeps its spans and its one named work, the filter untouched', () => {
+    const plan = { filters: { religion: "Baha'i" }, source: { religion: 'jev' }, named: { type: 'work', id: 20810, name: 'The Kitáb-i-Íqán', matched: 'Kitáb-i-Íqán' } };
+    const out = applyMentions(plan, 'Return of Elijah in the Kitáb-i-Íqán', null);
+    expect(out.mentions).toEqual([{ type: 'work', id: 20810, name: 'The Kitáb-i-Íqán', matched: 'Kitáb-i-Íqán' }]);
+    expect(out.spans).toContain('Kitáb-i-Íqán');
+    expect(out.filters.religion).toBe("Baha'i");
+  });
   it('applyMentions: several traditions named → lean', () => {
     const plan = { filters: { religion: "Baha'i" }, source: { religion: 'jev' } };
     expect(applyMentions(plan, 'Compare what the Bahá\'í writings, the Upanishads of the Hindu tradition and Buddhist sutras teach about rebirth after death, please.', []).lean?.why).toBe('traditions');
@@ -71,19 +78,29 @@ describe('named scopes', () => {
     expect(workDocs('Guidance', docs)).toEqual([]);
     expect(workDocs('Íqán', [{ id: 20810, title: 'The Kitáb-i-Íqán' }], { resolved: true }).map((d) => d.id)).toEqual([20810]);
   });
-  it('authorDocs: whole-word author match', () => {
-    const rows = [{ id: 1, author: 'Saint Augustine' }, { id: 2, author: 'Augustine Smith' }, { id: 3, author: 'Augustinian Friars' }];
-    expect(authorDocs('Augustine', rows).map((d) => d.id)).toEqual([1, 2]);
+  it('authorDocs: the author IS the name (honorific, "of …", co-authors); no namesakes, no tag pages', () => {
+    const rows = [{ id: 1, author: 'Saint Augustine' }, { id: 2, author: 'Augustine Smith' }, { id: 3, author: 'Augustinian Friars' },
+      { id: 4, author: 'Augustine of Hippo' }, { id: 5, author: 'Plotinus; Augustine' }, { id: 6, author: 'Augustine', title: 'Tag: Augustine' }];
+    expect(authorDocs('Augustine', rows).map((d) => d.id)).toEqual([1, 4, 5]);
+    expect(authorDocs('Elijah', [{ id: 7, author: 'Elijah Muhammad' }, { id: 8, author: 'X', title: 'Tag: Elijah (Prophet)' }])).toEqual([]);
   });
   it('namedScopes: works, then a bare span as a title or else a writer; central figures left to the plan', async () => {
     const find = async (q) => ({ docs: {
       'The Kitáb-i-Íqán': [{ id: 20810, title: 'The Kitáb-i-Íqán', author: "Bahá'u'lláh", religion: "Baha'i" }],
       Enchiridion: [{ id: 501, title: 'The Enchiridion', author: 'Augustine', religion: 'Christian' }],
       Plotinus: [{ id: 601, title: 'The Six Enneads', author: 'Plotinus', religion: 'Philosophy' }],
+      "Bahá'í": [{ id: 700, title: "Bahá'í", author: 'X', religion: "Baha'i" }],
     }[q] || [] });
-    const plan = { mentions: [{ type: 'work', id: 20810, name: 'The Kitáb-i-Íqán', matched: 'Íqán' }], spans: ['Íqán', 'Enchiridion', 'Plotinus', "Bahá'u'lláh"] };
+    const plan = { mentions: [{ type: 'work', id: 20810, name: 'The Kitáb-i-Íqán', matched: 'Íqán' }], spans: ['Íqán', 'Enchiridion', 'Plotinus', "Bahá'u'lláh", "Bahá'í"] };
     const s = await namedScopes(plan, { find });
     expect(s.map((x) => [x.kind, x.docIds[0]])).toEqual([['work', 20810], ['work', 501], ['author', 601]]);
+  });
+  it('namedScopes: a span the entity index resolved is not looked up again, articles aside ("John the Baptist" = "John Baptist")', async () => {
+    const asked = [];
+    const find = async (q) => { asked.push(q); return { docs: [] }; };
+    await namedScopes({ mentions: [{ type: 'person', id: 1, name: 'John the Baptist', matched: 'John Baptist' }], spans: ['John the Baptist', 'Elias'] }, { find });
+    expect(asked.filter((q) => q !== 'John the Baptist')).toEqual(['Elias']);
+    expect(asked.filter((q) => q === 'John the Baptist').length).toBe(1);   // once, as the person's author scope
   });
   it('withNamed: each scope leads with its best passage, nothing else lost but the tail', () => {
     const hits = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];

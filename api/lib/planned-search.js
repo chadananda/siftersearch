@@ -12,7 +12,7 @@ import { correctQuery, vocabulary } from './search/spell.js';
 
 const TTL_MS = 10 * 60 * 1000;
 const TARGET_MS = 1200;
-const NAMED_SCOPE_MS = 400;   // the title/author lookup of named works (docs_fts, ms) — late means no named scopes, never a slower search
+const NAMED_SCOPE_MS = 800;   // the title/author lookup of named works (docs_fts) — late means no named scopes (stages.named_timeout), never a hang
 const CLAIMS_GRACE_MS = Number(process.env.CLAIMS_GRACE_MS || 1500);
 const KEYWORD_ONLY = { keywordLayer: true, phraseLayer: false, semantic: false, hype: false, diversify: false };
 const MAX = 500;
@@ -171,8 +171,13 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // their own passages on EVERY route (px-smoke return-iqan: an Íqán question answered from Divine Philosophy; the City of
   // God and Lights of Guidance never searched). A named work outside the inferred tradition makes that tradition a lean.
   const scopeFn = namedScope ?? (engine ? null : async (p) => (await import('./search/named-scope.js')).namedScopes(p));
-  const scopes = scopeFn && (plan.mentions?.length || plan.spans?.length)
-    ? await Promise.race([scopeFn(plan).catch(() => []), new Promise((ok) => { const t = setTimeout(() => ok([]), NAMED_SCOPE_MS); t.unref?.(); })]) : [];
+  const tn = Date.now();
+  const LATE = Symbol("late");
+  let scopes = scopeFn && (plan.mentions?.length || plan.spans?.length)
+    ? await Promise.race([scopeFn(plan).catch(() => []), new Promise((ok) => { const t = setTimeout(() => ok(LATE), NAMED_SCOPE_MS); t.unref?.(); })]) : [];
+  const namedLate = scopes === LATE;
+  if (namedLate) scopes = [];
+  const namedMs = Date.now() - tn;
   if (plan.filters?.religion && scopes.some((x) => x.kind === 'work' && x.religion && x.religion !== plan.filters.religion)) plan = leanTradition(plan, 'named-work');
   // Site default (an embedding site's home tradition): fills in only when the question named none and is not a
   // comparison. It is a scope like any other, so the relax ladder still widens it when the site's texts are thin.
@@ -197,6 +202,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const run = engine || (await import('./search.js')).multiIndexSearch;
   const t1 = Date.now();
   const stages = {};   // per-stage ms, so the 1s budget can be held stage by stage
+  if (plan.mentions?.length || plan.spans?.length) Object.assign(stages, { named_ms: namedMs, ...(namedLate ? { named_timeout: true } : {}) });
   // A quotation hunt searches the WORDS (the request frame — "can you find the quote including" — is not in the passage).
   const quotePhrase = plan.quote?.phrase || null;
   const subjectQ = quotePhrase || questionSubject(query);

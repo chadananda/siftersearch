@@ -383,8 +383,15 @@ export function leanTradition(plan, why) {
 /** The persons and works a LONG turn names (resolveNamedAll), and its name spans for planned-search's title lookup
  *  (search/named-scope.js). Several works or traditions named → the inferred tradition only leans. Pure. */
 export function applyMentions(plan, text, mentions) {
-  if (!plan || !text || objectPhrases(text).length) return plan;
+  if (!plan || !text) return plan;
   const spans = nameSpans(text);
+  // a SHORT turn: its one named object (applyObjectRules) is the mention; its spans still reach the title lookup
+  // (wording px-iqan-return-elijah#02: "the passage in the Kitáb-i-Íqán where…" searched the whole library, not the Íqán)
+  if (objectPhrases(text).length) {
+    const n = plan.named;
+    const list = n?.type === 'work' ? [{ type: n.type, id: n.id, name: n.name, matched: n.matched }] : [];
+    return list.length || spans.length ? { ...plan, ...(list.length ? { mentions: list } : {}), ...(spans.length ? { spans } : {}) } : plan;
+  }
   const list = (mentions || []).map(({ type, id, name, matched }) => ({ type, id, name, matched }));
   if (!list.length && !spans.length) return plan;
   let out = { ...plan, ...(list.length ? { mentions: list } : {}), ...(spans.length ? { spans } : {}) };
