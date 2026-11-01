@@ -301,6 +301,30 @@ describe('holds-the-quote by DECISION (cross-translation)', () => {
       ? { answers: Object.fromEntries(Object.keys(q).map((k) => [k, { noul: 0.02 }])) } : null) }));
     expect(r.origin.title).toBe('Gleanings');
   });
+  it('a linked source joins the origin pool only if it holds the quote too (r4: a wrong match dragged in its own source)', async () => {
+    const VAR = 'All the earth forms a single homeland, and humankind are its people.';
+    const PARENTS = { id: 5, doc_id: 50, text: 'Beware lest ye commit that which would sadden the hearts of your fathers and mothers.', authors: null,
+      book_author: "Bahá'u'lláh", title: 'Additional Tablets', source_site: 'oceanlibrary.com', fm_translated_by: 'Shoghi Effendi' };
+    const r = await sourceHunt(VAR, deps({
+      rows: async (ids) => ids.map((i) => (i === 5 ? PARENTS : ROWS[i])).filter(Boolean).map((x) => ({ ...x, url: `u/${x.id}` })),
+      // the unrelated paragraph 4 (wrongly passed) quotes the parents passage
+      links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: id === 4 ? [{ id: 5, link: { coverage: 0.95 } }] : [], original: null,
+        quotedBy: quotedBy ? { count: 0, passages: [] } : undefined }])),
+      decide: async (task, state, q) => {
+        if (task !== 'sourcehunt-holds') return null;
+        const ids = [...state.matchAll(/\[p(\d+)\] ([^\n]*)/g)].map((m) => [m[1], m[2]]);
+        return { answers: Object.fromEntries(ids.map(([n, t]) => [`p${n}`, { noul: (/one country/.test(t) && !/As Bahá/.test(t)) || /gardens/.test(t) ? 0.9 : 0.1 }])) };
+      },
+    }));
+    expect(r.origin.title).toBe('Gleanings');
+  });
+  it('quoteWindow: the stretch of a long paragraph holding the (misspelled) quote', async () => {
+    const { quoteWindow } = await import('../../api/lib/source-hunt.js');
+    const long = `${'Of fathers and mothers and their station. '.repeat(40)}It is not for him to pride himself who loveth his own country, but rather for him who loveth the whole world. The earth is but one country, and mankind its citizens.`;
+    const w = quoteWindow(long, 'the earth is but one contry and mankind its citizns');
+    expect(long.slice(w.start, w.end)).toMatch(/earth is but one country, and mankind its citizens/);
+    expect(quoteWindow('nothing here at all', 'earth country citizens')).toBeNull();
+  });
   it('no decision available → the wording fallback still works', async () => {
     const r = await sourceHunt(QUOTE, deps({ decide: async () => null }));
     expect(r.origin.title).toBe('Gleanings');

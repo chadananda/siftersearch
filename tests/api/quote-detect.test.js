@@ -29,4 +29,9 @@ describe('detectQuotation', () => {
     expect(detectQuotation('find the quote')).toBe(null);
     expect(detectQuotation('')).toBe(null);
   });
+  it('asking for MORE of an author\'s words that elaborate on an idea is a theme, not a wording hunt (r4)', () => {
+    expect(detectQuotation("I recall Shoghi Effendi saying the Manifestations are all 'one soul and the same person' — can you find more quotes or works where he elaborates on this?")).toBe(null);
+    // a real quotation in double quotes still is one
+    expect(detectQuotation('find more passages like "the earth is but one country and mankind its citizens"')?.via).toBe('quoted');
+  });
 });

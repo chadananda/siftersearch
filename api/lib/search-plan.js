@@ -26,9 +26,9 @@ const AUTHORS = {
 
 export const SMALL_TALK = /\b(hi|hello|hey|greetings|salaam|thanks?|thank you|bye|goodbye|good (morning|afternoon|evening)|how are you|who are you|what are you|your name|what can you|can you help|are you (a|an|ai|real|human|there)|you)\b/i;
 const SHAPES = {
-  quote: 'the user gives the wording of a passage — verbatim, a fragment, or half-remembered — and wants to find it or its source: "find the quote including …", "where does it say …", "who said …", "source of …"; also when the user paraphrases ONE particular saying or image of an author and wants that passage ("what did ‘Abdu’l-Bahá say about fighting thoughts of war with thoughts of peace")',
+  quote: 'the user gives the wording of a passage — verbatim, a fragment, or half-remembered — and wants to find it or its source: "find the quote including …", "where does it say …", "who said …", "source of …"; also when the user paraphrases ONE particular saying or image of an author and wants that passage ("what did ‘Abdu’l-Bahá say about fighting thoughts of war with thoughts of peace"); NOT a request for an author\'s quotes, passages or works that explain, elaborate on or expand an idea — that is topic, even when the idea is worded as a well-known phrase',
   fact: 'a factual question about people, places, dates, events or documents: who, when, where, how many, what happened, who a person is or where a name comes from; also a question about this library itself (which religions or works it holds)',
-  topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea — including what one author wrote on a theme ("Shoghi Effendi on the Administrative Order", "what the Báb wrote about Him Whom God shall make manifest"); never who a person is or what a word means',
+  topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea — including what one author wrote on a theme ("Shoghi Effendi on the Administrative Order", "what the Báb wrote about Him Whom God shall make manifest") and requests for an author\'s quotes, passages or works that elaborate on an idea ("Shoghi Effendi quotes on all the Prophets being one", "where the Guardian explains progressive revelation"); never who a person is or what a word means',
   define: 'asks what a term, name or concept means ("what does dharma mean", "meaning of nirvana")',
   lookup: 'names a specific work or person and wants that item itself — to read, find or identify it ("where can I read the Bhagavad Gita", "Dawnbreakers", "Dhammapada text"); not what an author wrote on a theme',
   enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something (not a list of what the library holds)',
@@ -65,6 +65,27 @@ export function keywordTradition(text) {
     const after = idx + kw.length >= q.length ? ' ' : q[idx + kw.length];
     return !/[a-z]/.test(before) && !/[a-z]/.test(after);
   })?.[1];
+}
+
+// A tradition's founder or scripture named as the SPEAKER of a quotation ("Jesus said …", "check the gospels"): used only to
+// judge where a quotation should come from (respond huntSource) — not a search filter, since Bahá'í texts speak OF them too.
+const FOUNDER_TRADITION = [
+  [/\b(jesus|christ|gospels?|new testament|apostle paul|saint paul|st\.? paul)\b/i, 'Christian'],
+  [/\b(prophet muhammad|muhammad said|the prophet said|quran|qur'an|koran|hadith)\b/i, 'Islam'],
+  [/\b(moses said|torah|old testament|hebrew bible)\b/i, 'Judaism'],
+  [/\b(krishna|bhagavad|gita|upanishads?|vedas?)\b/i, 'Hindu'],
+  [/\b(buddha|dhammapada|sutta|sutra)\b/i, 'Buddhist'],
+  [/\b(zoroaster|zarathustra|avesta|gathas)\b/i, 'Zoroastrian'],
+  [/\b(lao[- ]?tzu|lao[- ]?tse|laozi|tao te ching)\b/i, 'Tao'],
+  [/\b(confucius|analects)\b/i, 'Confucian'],
+  [/\b(guru nanak|granth)\b/i, 'Sikh'],
+];
+/** The tradition whose founder or scripture a question names, else the tradition it names outright; undefined for neither
+ *  (and for the Bahá'í Faith: its own texts are the ordinary source hunt). Pure. */
+export function speakerTradition(text) {
+  const t = String(text || '');
+  const named = FOUNDER_TRADITION.find(([re]) => re.test(t))?.[1] || keywordTradition(t);
+  return named && named !== "Baha'i" ? named : undefined;
 }
 
 // Backstop author names, matched as whole words on FOLDED text (no diacritics/apostrophes, hyphens as spaces).

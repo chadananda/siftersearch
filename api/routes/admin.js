@@ -2971,6 +2971,37 @@ Collection: ${paragraph.collection || 'Unknown'}
   // whose skeleton vanished, e.g. "~yahya"); records indexed before the rule lack them, so their own names miss.
   fastify.post('/server/lookup-backfill', { preHandler: requireInternal }, async (request) => {
     const write = !!request.body?.write;
+    // mode:'aliases' — add the keys of every researched ALIAS a live record's index lacks (r4, 11-01: "Bábu'l-Báb",
+    //   "Mírzá Ḥusayn-‘Alíy-i-Núrí" sat in entity_research.aliases but not in the index, so lookup never reached their
+    //   bearer). Per (record, alias surface) — a surface already keyed is left alone. { ids?:[…] } scopes it; dry by default.
+    if (request.body?.mode === 'aliases') {
+      const { LIVE_SQL } = await import('../lib/entity-live.js');
+      const { lookupKeyRows } = await import('../lib/rag-adapter/store.js');
+      const { transaction } = await import('../lib/db.js');
+      const ids = (request.body?.ids || []).map(Number).filter(Boolean);
+      const ents = await queryAll(`SELECT ge.id, ge.canonical_name cn, ge.entity_type et, ge.importance imp, er.aliases
+          FROM graph_entities ge JOIN entity_research er ON er.canonical_name = ge.canonical_name AND er.entity_type = ge.entity_type
+         WHERE ${LIVE_SQL('ge.')} AND er.aliases IS NOT NULL AND er.aliases NOT IN ('', '[]')${ids.length ? ` AND ge.id IN (${ids.map(() => '?').join(',')})` : ''}`, ids);
+      const stmts = [], sample = [];
+      let surfaces = 0;
+      for (let i = 0; i < ents.length; i += 400) {
+        const chunk = ents.slice(i, i + 400);
+        const have = new Set((await queryAll(`SELECT DISTINCT entity_id id, surface FROM entity_lookup_keys WHERE entity_id IN (${chunk.map(() => '?').join(',')})`,
+          chunk.map((e) => e.id))).map((r) => `${r.id}\u0000${r.surface}`));
+        for (const e of chunk) {
+          let aliases = []; try { const a = JSON.parse(e.aliases || '[]'); if (Array.isArray(a)) aliases = a.filter(Boolean).map(String); } catch { /* none */ }
+          for (const a of new Set(aliases)) {
+            if (a === e.cn || have.has(`${e.id}\u0000${a}`)) continue;
+            const rows = lookupKeyRows(e.id, a, e.et, e.imp, 0);
+            if (!rows.length) continue;
+            surfaces++; stmts.push(...rows);
+            if (sample.length < 15) sample.push(`${e.cn} ← ${a}`);
+          }
+        }
+      }
+      if (write) for (let i = 0; i < stmts.length; i += 500) await transaction(stmts.slice(i, i + 500));
+      return { write, mode: 'aliases', records: ents.length, surfaces, keys: stmts.length, sample };
+    }
     if (request.body?.mode === 'missing') {
       const { LIVE_SQL } = await import('../lib/entity-live.js');
       const { skeletonKeys } = await import('../lib/translit-key.js');
@@ -3132,12 +3163,10 @@ Collection: ${paragraph.collection || 'Unknown'}
     if (!aliases.includes(name)) aliases.push(name);
     if (row) await query(`UPDATE entity_research SET aliases = ? WHERE canonical_name = ? AND entity_type = ?`, [JSON.stringify(aliases), ge.cn, ge.et]);
     else await query(`INSERT INTO entity_research (canonical_name, entity_type, aliases) VALUES (?, ?, ?)`, [ge.cn, ge.et, JSON.stringify(aliases)]);
-    const { skeletonKeys } = await import('../lib/translit-key.js');
-    const norm = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    for (const k of skeletonKeys(name)) {
-      await query(`INSERT INTO entity_lookup_keys (skeleton_key, entity_id, surface, surface_norm, is_canonical, entity_type, importance) VALUES (?, ?, ?, ?, 0, ?, ?)`,
-        [k, ge.id, name, norm, ge.et, ge.importance ?? null]);
-    }
+    // the rebuild's own keys and folding (store.js lookupKeyRows): Arabic-script keys too, surface_norm as lookup compares it
+    const { lookupKeyRows } = await import('../lib/rag-adapter/store.js');
+    const keyed = await queryOne(`SELECT 1 x FROM entity_lookup_keys WHERE entity_id = ? AND surface = ? LIMIT 1`, [ge.id, name]);
+    if (!keyed) for (const st of lookupKeyRows(ge.id, name, ge.et, ge.importance, 0)) await query(st.sql, st.args);
     await query(`INSERT INTO entity_decisions (kind, target_kind, target_ids, payload, evidence, rationale, actor, actor_tier, status) VALUES ('set','entity',?,?,?,?,?,?, 'applied')`,
       [JSON.stringify([ge.id]), JSON.stringify({ alias: name }), JSON.stringify({ source }), `alias "${name}" for ${ge.cn}`, 'internal-api', 3]);
     return { id: ge.id, name: ge.cn, aliases };

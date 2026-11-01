@@ -94,7 +94,8 @@ export async function resolveNamed(text, { lookup } = {}) {
       if ((cands || []).some((c) => !['person', 'work'].includes(c.type) && exact(c)) && !(cands || []).some((c) => ['person', 'work'].includes(c.type) && exact(c))) return null;
       // a "<work> by <person>" split names a WORK; the person is only the attribution being asked about
       //   a person before a work of the same name ("Qurratu'l-'Ayn" the woman, not a book titled after her)
-      const fits = (c, type) => c.type === type && nameMatches(p, c.name, { ordered: type === 'person' });
+      //   the canonical name or any matched alias surface (entityLookup returns them): "Bábu'l-Báb" is Mullá Ḥusayn's title
+      const fits = (c, type) => c.type === type && [c.name, ...(c.surfaces || [])].some((n) => nameMatches(p, n, { ordered: type === 'person' }));
       const hit = (!workOnly && (cands || []).find((c) => fits(c, 'person'))) || (cands || []).find((c) => fits(c, 'work'));
       if (hit) return { type: hit.type, id: hit.id, name: hit.name, matched: p };
     }

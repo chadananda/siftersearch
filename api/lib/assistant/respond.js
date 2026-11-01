@@ -6,7 +6,7 @@
 
 import { extractPhrase } from './phrases.js';
 import { religionsReply } from './library-facts.js';
-import { keywordTradition } from '../search-plan.js';
+import { speakerTradition } from '../search-plan.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
@@ -260,8 +260,8 @@ async function huntSource(d, question) {
   const hunt = d.sourceHunt || (await import('../source-hunt.js')).sourceHunt;
   // a tradition the seeker NAMED ("the Buddha said …", "which sura …") is searched too, and an origin outside it is not
   // the answer (a Bahá'í book quoting the Dhammapada is not where the Buddha said it) → the ordinary search answers
-  const named = keywordTradition(question);
-  const religion = named && named !== "Baha'i" ? named : null;
+  // ("Jesus said …", "which gospel" — the founder or scripture named as the speaker counts: search-plan speakerTradition)
+  const religion = speakerTradition(question) || null;
   const r = await hunt(quotationIn(question), undefined, religion ? { religion } : undefined).catch(() => null);
   if (!r?.origin) return null;
   const family = (x) => (['Judaism', 'Christian'].includes(x) ? 'Bible' : x);

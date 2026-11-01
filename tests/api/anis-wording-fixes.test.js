@@ -93,6 +93,17 @@ describe('named object', () => {
     const lookup = async () => [{ type: 'work', id: 1, name: 'Qurratu’l-‘Ayn: Shā‘ir-i Millī' }, { type: 'person', id: 2, name: 'Qurratu’l-‘Ayn' }];
     expect(await resolveNamed("qurratu'l-'ayn who was she", { lookup })).toMatchObject({ type: 'person', id: 2 });
   });
+  it('a name the graph knows only as an ALIAS resolves to its bearer (r4: Bábu\'l-Báb is Mullá Ḥusayn)', async () => {
+    const lookup = async () => [
+      { type: 'person', id: 64, name: 'Mullá Ḥusayn', surfaces: ["Bábu'l-Báb"] },
+      { type: 'person', id: 51, name: 'The Báb', surfaces: [] },
+    ];
+    expect(await resolveNamed("who was the Babul-Bab", { lookup })).toMatchObject({ type: 'person', id: 64, name: 'Mullá Ḥusayn' });
+    const given = async () => [{ type: 'person', id: 62, name: 'Bahá’u’lláh', surfaces: ['Mírzá Ḥusayn-‘Alí of Núr'] }];
+    expect(await resolveNamed('Mirza Husayn-Ali of Nur', { lookup: given })).toMatchObject({ id: 62 });
+    // an alias does not loosen the match: one word per name word, in order for a person
+    expect(await resolveNamed('Ali-Husayn', { lookup: given })).toBeNull();
+  });
   it('a long sentence is no name', () => expect(objectPhrases('the earth is but one country and mankind its citizens forever and ever')).toEqual([]));
   it('matches spelling variants word for word', () => {
     expect(nameMatches('mulla hosein', 'Mullá Ḥusayn')).toBe(true);
@@ -205,5 +216,28 @@ describe('source hunt: a tradition the seeker names', () => {
     expect(calls.opts).toEqual({ religion: 'Buddhist' });
     expect(calls.search).toBe(1);
     expect(r.plan?.shape).not.toBe('source');
+  });
+  it('respond: a founder named as the speaker ("Jesus said …") is that tradition — a Bahá\'í biography is not where He said it', async () => {
+    const calls = { search: 0, opts: null };
+    const d = { search: async () => { calls.search++; return { passages: [], _plan: { shape: 'quote' } }; }, craft: async () => 'ok', companion: async () => ({}),
+      plan: async () => ({ shape: 'quote' }), phrases: async () => null,
+      sourceHunt: async (q, _d, opts) => { calls.opts = opts; return { origin: { religion: "Baha'i", title: "Love's Odyssey", text: 'x' }, citedBy: [] }; } };
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'Could you please help me find where Jesus said God helps those who help themselves?' }], deps: d, direction: { kind: 'source_lookup' } });
+    expect(calls.opts).toEqual({ religion: 'Christian' });
+    expect(calls.search).toBe(1);
+    expect(r.plan?.shape).not.toBe('source');
+  });
+});
+import { speakerTradition } from '../../api/lib/search-plan.js';
+describe('speakerTradition: the tradition a named founder or scripture belongs to', () => {
+  it('maps founders and scriptures, leaves Bahá\'í and unnamed questions alone', () => {
+    expect(speakerTradition('jesus said god helps those who help themselves')).toBe('Christian');
+    expect(speakerTradition('check the gospels for the verse')).toBe('Christian');
+    expect(speakerTradition('where did the Prophet Muhammad say seek knowledge')).toBe('Islam');
+    expect(speakerTradition('Krishna tells Arjuna to act')).toBe('Hindu');
+    expect(speakerTradition('Lao Tzu said the journey of a thousand miles')).toBe('Tao');
+    expect(speakerTradition('where is the Buddha quoted')).toBe('Buddhist');
+    expect(speakerTradition('Bahá’u’lláh says the earth is but one country')).toBeUndefined();
+    expect(speakerTradition('where is this from: the earth is but one country')).toBeUndefined();
   });
 });

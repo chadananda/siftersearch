@@ -22,18 +22,24 @@ async function resolveDocs(docIds) {
 }
 
 // entity_lookup(name) — fast transliteration-invariant candidate recall (RECALL only; bind by evidence).
+// A record whose own name OR a researched alias is exactly the query ranks first ("Bábu'l-Báb" → Mullá Ḥusayn, not the
+// Báb, whose canonical "Báb" shares a key); `surfaces` = the matched names/aliases, so a caller can match on an alias.
+const lookupNorm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
 export async function entityLookup(q, { type = null, limit = 20 } = {}) {
   const keys = [...skeletonKeys(q || '')];
   if (!q || !keys.length) return [];
+  const exact = [...new Set([lookupNorm(q), String(q).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()])];
   const rows = await queryAll(
     `SELECT lk.entity_id id, ge.canonical_name name, ge.entity_type type, ge.importance importance,
-            COUNT(DISTINCT lk.skeleton_key) shared, MAX(lk.is_canonical) canon
+            COUNT(DISTINCT lk.skeleton_key) shared, MAX(lk.is_canonical) canon,
+            MAX(lk.surface_norm IN (${exact.map(() => '?').join(',')})) exact, json_group_array(DISTINCT lk.surface) surfaces
        FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id=lk.entity_id
       WHERE lk.skeleton_key IN (${keys.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
         AND ${LIVE_SQL('ge.')}
-      GROUP BY lk.entity_id ORDER BY canon DESC, shared DESC, (ge.importance IS NULL), ge.importance DESC LIMIT ?`,
-    [...keys, ...(type ? [type] : []), Math.min(50, +limit || 20)]);
-  return rows.map((r) => ({ id: r.id, name: r.name, type: r.type, importance: r.importance, shared_keys: r.shared, canonical_match: !!r.canon }));
+      GROUP BY lk.entity_id ORDER BY exact DESC, canon DESC, shared DESC, (ge.importance IS NULL), ge.importance DESC LIMIT ?`,
+    [...exact, ...keys, ...(type ? [type] : []), Math.min(50, +limit || 20)]);
+  return rows.map((r) => ({ id: r.id, name: r.name, type: r.type, importance: r.importance, shared_keys: r.shared, canonical_match: !!r.canon,
+    exact_match: !!r.exact, surfaces: parse(r.surfaces).filter((x) => x && x !== r.name).sort((a, b) => exact.includes(lookupNorm(b)) - exact.includes(lookupNorm(a))).slice(0, 12) }));
 }
 
 // entity_dossier(id) — a person's cited claims + occurrences (+ legacy enrichment where present).

@@ -258,7 +258,15 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   for (const m of matches) for (const s of links.get(m.id)?.sources || []) if ((s.link?.coverage ?? 0) >= 0.8) linkedFrom.set(s.id, (linkedFrom.get(s.id) || 0) + 1);
   const extra = [...linkedFrom.keys()].filter((id) => !matches.some((m) => m.id === id));
   say('links', { sources: linkedFrom.size, added: extra.length });
-  const pool = [...matches, ...(await d.rows(extra)).map((r) => ({ ...r, overlap: overlap(q.match, r.text), holds: true }))]
+  // a linked source joins only if it HOLDS the quote too: the link graph only says a match quotes it, and a match the
+  // decision passed wrongly drags in its own source (r4, 11-01: a compilation's passage on parents → Additional Tablets'
+  // "Beware lest ye … sadden the hearts of your fathers and mothers" became the origin of "the earth is but one contry…").
+  // The wording decides; the rest go to the same decision; no decision available → the link graph's word, as before.
+  const extraRows = await d.rows(extra);
+  const unsure = extraRows.filter((r) => !holds(q.match, r.text, overlap(q.match, r.text)));
+  const decidedX = unsure.length ? await decideHolds(d, q, unsure.slice(0, HOLDS_MAX), span) : null;
+  const linkedHolds = (r) => !unsure.includes(r) || !decidedX || decidedX.has(r.id);
+  const pool = [...matches, ...extraRows.filter(linkedHolds).map((r) => ({ ...r, overlap: overlap(q.match, r.text), holds: true }))]
     .filter((c) => c.doc_role !== 'metadata')
     .map((c) => {
       const writer = paragraphAuthor({ authors: c.authors, author: c.book_author });
@@ -390,6 +398,27 @@ async function originalRanges(d, q, id, shown) {
 const MAX_CLAUSES = 40;
 const HOLDS_MAX = 24;
 
+/** Where in a long paragraph the quote most likely sits, when no phrase vector marked it (a keyword hit, a linked source):
+ *  the stretch with most of the quote's words, a misspelling tolerated by a shared 4-letter start ("contry" ~ "country",
+ *  "citizns" ~ "citizens"). Without it the decision saw only the first 900 characters and judged the wrong part (r4,
+ *  11-01: "earth is but one contry…" — Gleanings CXVII's sentence sits at its end). → { start, end } | null. Pure. */
+export function quoteWindow(text, quote) {
+  const t = String(text || ''), qs = [...new Set(matchWords(quote).filter((w) => !STOP.has(w) && w.length > 2))];
+  if (!t || !qs.length) return null;
+  const like = (w) => qs.some((x) => x === w || (x.length >= 4 && w.length >= 4 && x.slice(0, 4) === w.slice(0, 4)));
+  const words = [...t.matchAll(/[\p{L}\p{N}’'-]+/gu)].map((m) => ({ at: m.index, end: m.index + m[0].length, hit: like(matchWords(m[0])[0] || '') }));
+  const n = Math.max(qs.length + 4, Math.round(qs.length * 1.8));
+  let best = -1, bi = 0, run = 0;
+  for (let i = 0; i < words.length; i++) {
+    run += words[i].hit ? 1 : 0;
+    if (i >= n) run -= words[i - n].hit ? 1 : 0;
+    if (run > best) { best = run; bi = Math.max(0, i - n + 1); }
+  }
+  if (best <= 0) return null;
+  const last = words[Math.min(words.length - 1, bi + n - 1)];
+  return { start: words[bi].at, end: last.end };
+}
+
 /** Which candidate paragraphs CONTAIN the quoted statement — one System-1 call, one yes/no (noul) per candidate, each shown
  *  as an excerpt around its best-matching phrase. The same sentence in any translation = yes; the same point in other words, or the
  *  same topic = no (Chad 10-05: "we are not looking for similar points").
@@ -397,7 +426,7 @@ const HOLDS_MAX = 24;
 async function decideHolds(d, q, rows, span = new Map()) {
   if (!d.decide || !rows.length) return null;
   const excerpt = (r) => {
-    const t = r.text || '', s = span.get(r.id);
+    const t = r.text || '', s = span.get(r.id) || quoteWindow(t, q.text);
     if (t.length <= 900) return t;
     const a = Math.max(0, (s?.start ?? 0) - 350), b = Math.min(t.length, (s?.end ?? 550) + 350);
     return `${a > 0 ? '… ' : ''}${t.slice(a, b)}${b < t.length ? ' …' : ''}`;
