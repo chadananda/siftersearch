@@ -145,8 +145,8 @@ const routeOf = (rp) => {
   const r = rp?.reply?.route || {}, p = r.plan || {}, st = p.stages || {};
   return { status: rp?.reply?.status ?? null, gate: r.gate ?? null, strategy: r.strategy ?? p.shape ?? null, provenance: p.provenance ?? null, format: r.format ?? null,
     retrieved: r.retrieved ?? null, history_turns: p.history_turns ?? null, search_query: p.search_query ?? null, quote: p.quote ?? null, overridden: p.overridden ?? null,
-    phrases: st.phrases?.choice ?? null, selection: st.selection?.choice ?? null,
-    timeline: (r.timeline || []).map((x) => `${x.name}:${x.ms}`).join(' '), models: rp?.reply?.meta?.models ?? (r.llm || []).map((x) => x.model),
+    phrases: st.phrases?.choice ?? null, phrases_by: st.phrases?.by ?? null, selection: st.selection?.choice ?? null,
+    timeline: (r.timeline || []).map((x) => `${x.name}:${x.ms}${x.via ? `(${x.via})` : ''}`).join(' '), models: rp?.reply?.meta?.models ?? (r.llm || []).map((x) => x.model),
     usd: rp?.reply?.meta?.usd ?? null, latency_ms: rp?.reply?.meta?.latency_ms ?? null };
 };
 
