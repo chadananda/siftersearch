@@ -84,6 +84,15 @@ describe('named object', () => {
     // small words do not count toward the six-word name limit
     expect(objectPhrases('where is the text of the Hidden Words by Shoghi Effendi')).toContainEqual({ phrase: 'Hidden Words', workOnly: true });
   });
+  it('a person\'s name words keep their order; a title\'s need not', () => {
+    expect(nameMatches('Siyyid Ali-Muhammad of Shiraz', 'Mírzá Muḥammad-‘Alí Khán-i-Shírází', { ordered: true })).toBe(false);
+    expect(nameMatches('Siyyid Ali-Muhammad', 'Siyyid ‘Alí-Muḥammad', { ordered: true })).toBe(true);
+    expect(nameMatches('paris talks', 'Talks In Paris')).toBe(true);
+  });
+  it('prefers the person when a person and a work both fit', async () => {
+    const lookup = async () => [{ type: 'work', id: 1, name: 'Qurratu’l-‘Ayn: Shā‘ir-i Millī' }, { type: 'person', id: 2, name: 'Qurratu’l-‘Ayn' }];
+    expect(await resolveNamed("qurratu'l-'ayn who was she", { lookup })).toMatchObject({ type: 'person', id: 2 });
+  });
   it('a long sentence is no name', () => expect(objectPhrases('the earth is but one country and mankind its citizens forever and ever')).toEqual([]));
   it('matches spelling variants word for word', () => {
     expect(nameMatches('mulla hosein', 'Mullá Ḥusayn')).toBe(true);
@@ -168,6 +177,12 @@ describe('respond: library facts and named objects', () => {
     expect(d.calls.phrases).toBe(0);
     expect(d.calls.search[0].query).toBe('Most Holy Book');
     expect(r.plan.phrases).toMatchObject({ phrase: 'most holy book', via: 'name-rule' });
+  });
+  it('a named person is searched in the seeker\'s spelling (the graph\'s label can be a poor one: "Quarratul-Ayn")', async () => {
+    const named = { type: 'person', id: 7, name: 'Quarratul-Ayn', matched: "Qurratu'l-'Ayn" };
+    const d = base({ plan: async () => ({ shape: 'lookup', named }) });
+    await anisRespond({ messages: [{ role: 'user', content: "Qurratu'l-'Ayn" }], deps: d });
+    expect(d.calls.search[0].query).toBe("Qurratu'l-'Ayn");
   });
 });
 

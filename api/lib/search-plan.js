@@ -27,9 +27,9 @@ const AUTHORS = {
 export const SMALL_TALK = /\b(hi|hello|hey|greetings|salaam|thanks?|thank you|bye|goodbye|good (morning|afternoon|evening)|how are you|who are you|what are you|your name|what can you|can you help|are you (a|an|ai|real|human|there)|you)\b/i;
 const SHAPES = {
   quote: 'the user gives the wording of a passage — verbatim, a fragment, or half-remembered — and wants to find it or its source: "find the quote including …", "where does it say …", "who said …", "source of …"; also when the user paraphrases ONE particular saying or image of an author and wants that passage ("what did ‘Abdu’l-Bahá say about fighting thoughts of war with thoughts of peace")',
-  fact: 'a factual question about people, places, dates, events or documents: who, when, where, how many, what happened; also a question about this library itself (which religions or works it holds)',
-  topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea — including what one author wrote on a theme ("Shoghi Effendi on the Administrative Order", "what the Báb wrote about Him Whom God shall make manifest")',
-  define: 'asks what a term, name or concept means',
+  fact: 'a factual question about people, places, dates, events or documents: who, when, where, how many, what happened, who a person is or where a name comes from; also a question about this library itself (which religions or works it holds)',
+  topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea — including what one author wrote on a theme ("Shoghi Effendi on the Administrative Order", "what the Báb wrote about Him Whom God shall make manifest"); never who a person is or what a word means',
+  define: 'asks what a term, name or concept means ("what does dharma mean", "meaning of nirvana")',
   lookup: 'names a specific work or person and wants that item itself — to read, find or identify it ("where can I read the Bhagavad Gita", "Dawnbreakers", "Dhammapada text"); not what an author wrote on a theme',
   enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something (not a list of what the library holds)',
   converse: 'conversation, not a lookup: a greeting, thanks, small talk, or a question about the assistant itself (its name, what it can do). A title, a name or a phrase of the library\'s content ("hidden words work", "<phrase> source") is NEVER conversation',

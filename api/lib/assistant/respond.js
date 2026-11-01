@@ -416,7 +416,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     }
   }
   onEvent({ type: 'stage', stage: 'search' });
-  // a named person/work (search-plan name rule) is searched by its library name; the seeker's words are its phrase — no Haiku call
+  // a named work (search-plan name rule) is searched by its library title, a person in the seeker's spelling (graph labels vary); the seeker's words are its phrase — no Haiku call
   // specific searches name their search phrase (deterministic from quote marks, else one Haiku call); Jev has already routed
   const phrased = plan?.named && plan.shape === 'lookup' ? { phrase: plan.named.matched, via: 'name-rule', name: plan.named.name }
     : !conversational && plan ? await timed('phrases', () => (d.phrases || (deps ? async () => null : extractPhrase))(question, plan)).catch(() => null) : null;
@@ -480,7 +480,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : language ? { passages: [], _plan: { shape: 'language' } }
     : position?.passages?.length ? { passages: position.passages, _plan: { shape: 'position', themes: position.themes } }
     : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await timed('search', () => d.search({
-    query: phrased?.via === 'name-rule' ? phrased.name : phrased?.via === 'haiku' ? phrased.phrase : searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
+    query: phrased?.via === 'name-rule' ? (plan.named.type === 'person' ? phrased.phrase : phrased.name) : phrased?.via === 'haiku' ? phrased.phrase : searchQueryFor(messages), mode: 'passages', limit: 8, scope_config: profile.scope_config,
     plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {} },
   }));
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };

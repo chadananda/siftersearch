@@ -67,7 +67,7 @@ const similar = (a, b) => {
 /** Every word of the phrase and every significant word of the candidate's name share a spelling key (the lookup's own
  *  transliteration buckets): "mulla hosein" ≡ Mullá Ḥusayn, "bok of certitude" ≡ Book of Certitude — but "peace" is
  *  not Pope Pius IX and "thoughts of war" is not the Minister of War. Parentheticals and subtitles are not the name. */
-export function nameMatches(phrase, candName) {
+export function nameMatches(phrase, candName, { ordered = false } = {}) {
   const q = tokens(phrase), c = tokens(candName);
   if (!q.length || !c.length) return false;
   const k = (t) => skeletonKeys(t);
@@ -75,6 +75,8 @@ export function nameMatches(phrase, candName) {
   const share = (x, y) => { if (similar(x, y) < 0.5) return false; const Y = k(y); for (const key of k(x)) if (Y.has(key)) return true; return false; };
   // one word per name word: "nirvana" alone is not "Núrayn-i-Nayyirayn" though its skeleton fits both halves
   if (q.length !== c.length) return false;
+  // a person's name keeps its order ("‘Alí-Muḥammad" is not "Muḥammad-‘Alí"); a title may be turned ("paris talks")
+  if (ordered) return q.every((x, i) => share(x, c[i]));
   return q.every((x) => c.some((y) => share(x, y))) && c.every((y) => q.some((x) => share(x, y)));
 }
 
@@ -91,7 +93,9 @@ export async function resolveNamed(text, { lookup } = {}) {
       const exact = (c) => fold(c.name).trim() === fold(p).trim();
       if ((cands || []).some((c) => !['person', 'work'].includes(c.type) && exact(c)) && !(cands || []).some((c) => ['person', 'work'].includes(c.type) && exact(c))) return null;
       // a "<work> by <person>" split names a WORK; the person is only the attribution being asked about
-      const hit = (cands || []).find((c) => (workOnly ? c.type === 'work' : ['person', 'work'].includes(c.type)) && nameMatches(p, c.name));
+      //   a person before a work of the same name ("Qurratu'l-'Ayn" the woman, not a book titled after her)
+      const fits = (c, type) => c.type === type && nameMatches(p, c.name, { ordered: type === 'person' });
+      const hit = (!workOnly && (cands || []).find((c) => fits(c, 'person'))) || (cands || []).find((c) => fits(c, 'work'));
       if (hit) return { type: hit.type, id: hit.id, name: hit.name, matched: p };
     }
   } catch { /* no lookup → no rule */ }
