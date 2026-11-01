@@ -4,6 +4,7 @@
 // Rules: fail open; a comparative is never narrowed; caller-given filters win. Deps: scope-extract.js (TRADITIONS).
 import { modelFor } from './model-roles.js';
 import { TRADITIONS, MIN_CONFIDENCE, ENDPOINT } from './scope-extract.js';
+import { detectQuotation } from './quote-detect.js';
 import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 
 // A wrong author hides far more than a wrong tradition, so it needs more certainty to act on.
@@ -161,10 +162,22 @@ export async function planSearch(input, { given = {}, apiKey = process.env.TYPES
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
   const state = messages.slice(-6).map((m) => `${m.role}: ${String(m.content || '').slice(0, 600)}`).join('\n');
   const t0 = Date.now();
+  const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content;
+  // QUOTATION RULE (deterministic, never waits on Jev): wording to find is shape 'quote' whatever the backstop default or
+  // Jev said — a 700 ms timeout once left the empty default (topic) and a quote hunt answered with unrelated people (11-01).
+  const quote = detectQuotation(lastUser);
+  const ruled = (plan, provenance, reason, extra = {}) => {
+    const out = { ...plan, source: { ...plan.source }, provenance, reason: reason ?? null, ...extra };
+    if (quote) {
+      if (plan.shape !== 'quote') out.overridden = { shape: plan.shape, about: plan.about, by: 'quote-rule' };
+      Object.assign(out, { shape: 'quote', about: 'texts', quote });
+      out.source.shape = 'quote-rule';
+    }
+    return out;
+  };
   // Jev unreachable/slow → still honour a tradition the user NAMED, rather than searching everything.
-  const backstop = (extra) => {
+  const backstop = (reason, extra) => {
     const plan = buildPlan(null, { given });
-    const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content;
     const t = !plan.filters.religion && keywordTradition(lastUser);
     if (t) { plan.filters.religion = t; plan.source.religion = 'keyword-backstop'; }
     const a = keywordAuthor(lastUser);
@@ -173,12 +186,13 @@ export async function planSearch(input, { given = {}, apiKey = process.env.TYPES
       plan.source.prefer = 'keyword-backstop';
       if (!plan.filters.religion) { plan.filters.religion = "Baha'i"; plan.source.religion = 'keyword-backstop'; }
     }
-    return { ...plan, ms: Date.now() - t0, ...extra };
+    return ruled({ ...plan, ms: Date.now() - t0 }, 'backstop', reason, extra);
   };
-  if (!apiKey || !state.trim()) return backstop({ skipped: true });
+  if (!apiKey) return backstop('no-key', { skipped: true });
+  if (!state.trim()) return backstop('empty-state', { skipped: true });
   const key = `${state}\u0000${JSON.stringify(given || {})}`;
   const hit = cache && planCache.get(key);
-  if (hit && Date.now() - hit.at < PLAN_TTL_MS) return { ...hit.plan, ms: Date.now() - t0, cached: true };
+  if (hit && Date.now() - hit.at < PLAN_TTL_MS) return ruled({ ...hit.plan, ms: Date.now() - t0, cached: true }, 'jev-cached');
   try {
     const res = await fetchImpl(ENDPOINT, {
       method: 'POST',
@@ -208,16 +222,16 @@ export async function planSearch(input, { given = {}, apiKey = process.env.TYPES
       signal: AbortSignal.timeout(timeoutMs),
     });
     const ms = Date.now() - t0;
-    if (!res.ok) return backstop({ error: `jev HTTP ${res.status}` });
+    if (!res.ok) return backstop(`jev HTTP ${res.status}`, { error: `jev HTTP ${res.status}` });
     const j = await res.json();
     const plan = buildPlan(normalizeAnswers(j.answers), { given });
     if (cache) {
       if (planCache.size >= 1000) planCache.delete(planCache.keys().next().value);
-      planCache.set(key, { at: Date.now(), plan });   // only SUCCESSFUL plans are cached
+      planCache.set(key, { at: Date.now(), plan });   // only SUCCESSFUL plans are cached (the raw Jev plan: the rule is re-applied per read)
     }
-    return { ...plan, ms };
+    return ruled({ ...plan, ms }, 'jev');
   } catch (err) {
-    return backstop({ error: err.message });
+    return backstop(/timeout|abort/i.test(`${err.name} ${err.message}`) ? 'timeout' : err.message, { error: err.message });
   }
 }
 

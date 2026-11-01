@@ -12,6 +12,8 @@ import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, place
 import { toFindings, dataProfile, describeProfile } from './findings.js';
 import { chooseFormat } from './formats.js';
 import { channelFor } from './channels.js';
+import { detectQuotation } from '../quote-detect.js';
+import { foldVerbatim } from '../search/verbatim.js';
 import { unmachine, dropQuibbles } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
 import { research as runResearch, libraryTools, RESEARCH_HOW } from './researcher.js';
@@ -66,6 +68,8 @@ const ANAPHOR = /\b(he|him|his|she|her|hers|they|them|their|it|its|this|that|the
 export function searchQueryFor(messages) {
   const users = (messages || []).filter((m) => m.role === 'user').map((m) => String(m.content || '').trim());
   const current = users.at(-1) || '';
+  // wording to find stands alone: its own "it"/"this" is part of the quotation, not a reference to the last question
+  if (detectQuotation(current)) return current;
   const previous = users.at(-2);
   if (!previous) return current;
   const short = current.split(/\s+/).filter(Boolean).length <= 5;
@@ -326,6 +330,8 @@ async function defaultDeps() {
   };
 }
 
+const QUOTE_MISS_HOW = 'The person asked to find a quotation and no passage in the library contains those words. Say so plainly in one or two sentences, quoting their wording back. Do NOT offer related passages, people, events or other topics, and do not guess a source. Suggest checking the exact wording or giving the author, work or a few more words.';
+
 /** ANIS_RESEARCH="email" | "chat,email" | "all": the channels the researcher answers on. Off by default. */
 export function researchEnabled(channel, env = process.env.ANIS_RESEARCH) {
   const on = String(env || '').toLowerCase().split(',').map((x) => x.trim()).filter(Boolean);
@@ -438,6 +444,18 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       if (o) retrieved.splice(retrieved.length, 0, { ...retrieved[i], text: o.original, source_title: `${retrieved[i].source_title} (original)`, source_lang: o.lang, via: 'original' });
     });
   }
+  // A QUOTATION HUNT keeps only passages that hold the wording (or nearly all its words). Nothing near → say so plainly:
+  // no neighbours, no people, no other topic to pivot to (11-01: "find the quote …" was answered with the Letters of the Living).
+  const huntPhrase = !researched && !sourced && !original && !study ? res?._plan?.quote?.phrase : null;
+  let quoteMiss = false;
+  if (huntPhrase) {
+    const want = foldVerbatim(huntPhrase), ws = [...new Set(want.split(' '))];
+    const near = (t) => { const f = foldVerbatim(t); return f.includes(want) || ws.filter((w) => ` ${f} `.includes(` ${w} `)).length >= Math.ceil(ws.length * 0.7); };
+    const keep = retrieved.filter((q) => near(q.text));
+    quoteMiss = !keep.length;
+    retrieved.splice(0, retrieved.length, ...keep);
+    if (quoteMiss && res) { res.entities = null; res.peopleAnswer = null; }
+  }
   // A copyrighted (encumbered) book is evidence only as an EXCERPT of ≤ 80 words (Chad 10-23). The quote gate verifies every
   // quoted span against these texts, so no reply can quote more of it than the excerpt — the citation link carries the rest.
   retrieved.splice(0, retrieved.length, ...await guardRows(retrieved, { alwaysClip: true, encumbered: d.encumberedAmong }).catch(() => retrieved));
@@ -460,7 +478,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const evidenceProfile = dataProfile(findings, { plan: res?._plan || null, question });
   const channel = direction.channel || channelFor('widget-chat');
   const choose = d.chooseFormat || chooseFormat;
-  const formatP = researched ? Promise.resolve({ id: 'research', by: 'researcher', how: RESEARCH_HOW(researched.brief) })
+  const formatP = quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW })
+    : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: RESEARCH_HOW(researched.brief) })
     : sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
     : original || wantsOriginal ? Promise.resolve({ id: 'original', by: 'original', how: original?.how || ORIGINAL_HOW })   // the lookup's own instructions (e.g. a misattribution to correct)
     : position?.passages?.length ? Promise.resolve({ id: 'position', by: 'position', how: POSITION_HOW })
@@ -517,6 +536,6 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     religion: "Bahá'í", text: `Shoghi Effendi's renderings of ${study.term}, counted over ${study.counted || study.total} aligned passages (${study.total} in all): `
       + study.renderings.map((r) => `${r.en} ${r.count}`).join(', ') }] : [];
   return { reply, quotes_removed: guarded.removed, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
-    format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
+    search_query: searchQueryFor(messages), format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
 }

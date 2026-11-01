@@ -161,3 +161,46 @@ describe('planSearch — the one network call', () => {
     expect(p.filters).toEqual({});
   });
 });
+
+describe('planSearch — quotation rule and provenance', () => {
+  const Q = 'can you find the quote including  "but it will always be present as a necessary element"';
+  it('Jev timeout → backstop plan is shape quote, with provenance and reason', async () => {
+    const fetchImpl = async () => { const e = new Error('The operation was aborted due to timeout'); e.name = 'TimeoutError'; throw e; };
+    const p = await planSearch(Q, { apiKey: 'k', fetchImpl, cache: false });
+    expect(p.shape).toBe('quote');
+    expect(p.about).toBe('texts');
+    expect(p.source.shape).toBe('quote-rule');
+    expect(p.provenance).toBe('backstop');
+    expect(p.reason).toBe('timeout');
+    expect(p.quote.phrase).toBe('but it will always be present as a necessary element');
+    expect(layersFor(p).keyword).toBe(true);
+  });
+  it('overrides a Jev "topic" answer when the rule fires', async () => {
+    const fetchImpl = async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'topic', about: 'people' }) }) });
+    const p = await planSearch(Q, { apiKey: 'k', fetchImpl, cache: false });
+    expect(p.shape).toBe('quote');
+    expect(p.about).toBe('texts');
+    expect(p.provenance).toBe('jev');
+    expect(p.overridden).toEqual({ shape: 'topic', about: 'people', by: 'quote-rule' });
+  });
+  it('a cached plan reports jev-cached and the rule still applies', async () => {
+    const fetchImpl = async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'topic' }) }) });
+    const q = Q + ' cache probe';
+    await planSearch(q, { apiKey: 'k', fetchImpl });
+    const p = await planSearch(q, { apiKey: 'k', fetchImpl });
+    expect(p.provenance).toBe('jev-cached');
+    expect(p.shape).toBe('quote');
+  });
+  it('no key → backstop with reason no-key; HTTP failure carries the status', async () => {
+    expect((await planSearch('what is zakat', { apiKey: '' })).reason).toBe('no-key');
+    const p = await planSearch('what is zakat', { apiKey: 'k', cache: false, fetchImpl: async () => ({ ok: false, status: 503 }) });
+    expect(p.provenance).toBe('backstop');
+    expect(p.reason).toBe('jev HTTP 503');
+  });
+  it('a non-quote question is untouched', async () => {
+    const p = await planSearch('what is zakat', { apiKey: 'k', cache: false, fetchImpl: async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'define' }) }) }) });
+    expect(p.shape).toBe('define');
+    expect(p.quote).toBeUndefined();
+    expect(p.provenance).toBe('jev');
+  });
+});

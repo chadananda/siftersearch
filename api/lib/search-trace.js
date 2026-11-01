@@ -85,6 +85,13 @@ export async function recordTrace(row) {
   return row.trace_id;
 }
 
+/** The live search path's one call: shape a trace from a finished multiIndexSearch and record it (fire-and-forget; `record` injectable). */
+export function traceSearch({ options = {}, query, filters, layers, timings, hits }, record = recordTrace) {
+  const requested = ['keywordLayer', 'phraseLayer', 'qdrantKeyword', 'qdrantHype', 'hype', 'conceptLayer'].filter((k) => options[k]);
+  return record(buildTrace({ endpoint: options.traceEndpoint || 'multi-index', query, searchVersion: process.env.SEARCH_VERSION || null, filters,
+    filtersSource: options.filtersSource, layers: { ...layers, requested }, timings, hits }));
+}
+
 const pct = (arr, p) => (arr.length ? arr[Math.min(arr.length - 1, Math.floor(arr.length * p))] : 0);
 
 /** The aggregate a dev agent reads to see whether search is getting better. */

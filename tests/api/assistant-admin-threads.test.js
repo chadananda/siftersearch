@@ -120,4 +120,11 @@ describe('digestConversations (Chad 10-19: Anís daily digest like Jafar\'s)', (
     expect(r.people[0].rounds).toHaveLength(1);
     expect(r.people[0].rounds[0]).toMatchObject({ question: 'What is the original word for chamber?', reply: 'I cannot find it.', audit: { answered: 'no' } });
   });
+
+  it('shows how the strategy was chosen (provenance + reason) on the route', async () => {
+    const path = { gate: 'research', recipe: 'quote', retrieved: 3, plan: { shape: 'quote', provenance: 'backstop', reason: 'timeout', overridden: { shape: 'topic', by: 'quote-rule' }, history_turns: 2 } };
+    const t = await threadDetail({ thread: async () => ({ id: 's1', channel: 'widget-chat', participant_id: 'x' }), audits, people,
+      messages: async () => [{ id: 12, round_index: 0, role: 'assistant', content: 'x', status: 'answered', path_json: JSON.stringify(path) }] }, 's1');
+    expect(t.rounds[0].reply.route.plan).toMatchObject({ provenance: 'backstop', reason: 'timeout', history_turns: 2 });
+  });
 });

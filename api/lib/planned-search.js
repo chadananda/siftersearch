@@ -162,7 +162,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // Who-met-whom is answered by the encounter index with cited paragraphs; passages only support it, and BM25 on
   // the names finds them — so it pays for no query embedding.
   const probe = encounterProbe ?? (engine || people ? null : (await import('./encounters.js')).isEncounterQuestion);
-  if (probe?.(query)) layers = { ...layers, semantic: false, hype: false, encounter: true };
+  if (!plan.quote && probe?.(query)) layers = { ...layers, semantic: false, hype: false, encounter: true };
   const planMs = Date.now() - t0;
 
   const { SEARCH_VERSION = '' } = engine ? {} : await import('./answer-cache.js').catch(() => ({}));
@@ -175,10 +175,12 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const run = engine || (await import('./search.js')).multiIndexSearch;
   const t1 = Date.now();
   const stages = {};   // per-stage ms, so the 1s budget can be held stage by stage
-  const subjectQ = questionSubject(query);
+  // A quotation hunt searches the WORDS (the request frame — "can you find the quote including" — is not in the passage).
+  const quotePhrase = plan.quote?.phrase || null;
+  const subjectQ = quotePhrase || questionSubject(query);
   const search = async (filters, q = subjectQ, only = null) => {
     const res = await run(q, {
-      limit, filters, scope_config,
+      limit, filters, scope_config, traceEndpoint: `planned:${plan.shape}`,
       ...(entityIds?.length ? { entityIds } : {}),
       keywordLayer: layers.keyword, conceptLayer: layers.concept, hype: layers.hype, semantic: layers.semantic, diversify: layers.diversify, includeMatchedHype: true,
       phraseLayer: qdrant.phrase, qdrantKeyword: qdrant.keyword, qdrantHype: qdrant.hype, ...(qdrant.only ? { meili: false } : {}), ...(weights ? { weights } : {}),
@@ -193,17 +195,18 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const encounterFn = encounters ?? (engine || people ? null : async (q) => (await import('./encounters.js')).encounterPeople(q));
   const searchPeople = people ?? (engine ? null : async (q) => (await import('./people-search.js')).peopleSearch(q));
   const peopleFn = async (q) => (encounterFn ? await encounterFn(q) : null) ?? (layers.claims && searchPeople ? searchPeople(q) : { people: [] });
-  const claimsP = (layers.claims && searchPeople) || encounterFn ? peopleFn(query).catch((err) => ({ people: [], error: err.message }))
+  const claimsP = !quotePhrase && ((layers.claims && searchPeople) || encounterFn) ? peopleFn(query).catch((err) => ({ people: [], error: err.message }))
     .finally(() => { stages.claims_ms = Date.now() - t1; }) : null;
   // A QUOTATION (6+ words, not a question) is also searched verbatim — keyword only, unscoped, the whole text — beside the
   // planned search: the plan's subject-stripping, scope and author preference were built for questions and lost exact
   // matches (known-item test 10-16: production found a passage's own words first 73% vs the engine's 86%).
-  const quotation = isVerbatimQuery(query, 6) && !/\?\s*$/.test(query);
+  const quotation = quotePhrase ? isVerbatimQuery(quotePhrase, 4) : isVerbatimQuery(query, 6) && !/\?\s*$/.test(query);
+  const verbatimQ = quotePhrase || query;
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
   const [r, authorHits, verbatimHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
     plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(subjectQ, plan.prefer)).catch(() => []) : Promise.resolve([]),
-    quotation ? search({}, query, KEYWORD_ONLY).catch(() => []) : Promise.resolve([]),
+    quotation ? search({}, verbatimQ, KEYWORD_ONLY).catch(() => []) : Promise.resolve([]),
   ]);
   stages.passages_ms = Date.now() - t1;
   const quotedIds = plan.prefer
@@ -293,7 +296,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
 
   // Passages containing the quotation verbatim lead (not over a people answer, whose cited paragraphs ARE the answer).
   if (quotation && !pr?.pattern) {
-    const q = foldVerbatim(query);
+    const q = foldVerbatim(verbatimQ);
     const exact = [], seen = new Set();
     for (const h of [...hits, ...verbatimHits]) if (!seen.has(h.id) && foldVerbatim(h.text).includes(q)) { seen.add(h.id); exact.push(h); }
     if (exact.length) hits = [...exact, ...hits.filter((h) => !seen.has(h.id))].slice(0, Math.max(limit, exact.length));

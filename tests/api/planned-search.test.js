@@ -1,7 +1,7 @@
 // plannedSearch: plan (one Jev call) → cache → narrow-then-relax over the multi-index engine with the plan's layers.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { plannedSearch, clearPlannedCache, leadWithTarget } from '../../api/lib/planned-search.js';
-import { buildPlan } from '../../api/lib/search-plan.js';
+import { buildPlan, planSearch } from '../../api/lib/search-plan.js';
 
 const planOf = (o) => async (_input, { given } = {}) => ({ ...buildPlan({
   tradition: { choice: o.tradition ?? 'none', confidence: 0.95 }, comparative: { noul: 0 },
@@ -330,5 +330,25 @@ describe('plannedSearch — misspellings (spell.js)', () => {
     const r = await plannedSearch('prayr alloows chnge', { planner: planOf({}), engine: e.fn, vocab });
     expect(seen[0]).toBe('prayer allows change');
     expect(r.corrected).toMatchObject({ from: 'prayr alloows chnge', to: 'prayer allows change' });
+  });
+});
+
+describe('plannedSearch — quotation hunt (11-01 incident)', () => {
+  beforeEach(() => clearPlannedCache());
+  const Q = 'can you find the quote including  "but it will always be present as a necessary element"';
+  const PHRASE = 'but it will always be present as a necessary element';
+  const down = (input, { given } = {}) => planSearch(input, { given, apiKey: 'k', cache: false, fetchImpl: async () => { throw new Error('timeout'); } });
+  it('searches the quoted phrase (not the request frame), keyword layer on, and never asks the people index', async () => {
+    const queries = [];
+    let peopleCalled = 0;
+    const fn = async (q, opts) => { queries.push([q, opts.keywordLayer]); return { hits: [{ id: 7, text: `…${PHRASE}.` }] }; };
+    const r = await plannedSearch(Q, { planner: down, engine: fn, people: async () => { peopleCalled++; return { people: [] }; }, encounters: async () => { peopleCalled++; return null; } });
+    expect(r.plan.shape).toBe('quote');
+    expect(r.plan.provenance).toBe('backstop');
+    expect(queries.every(([q]) => q === PHRASE)).toBe(true);
+    expect(queries.some(([, kw]) => kw === true)).toBe(true);
+    expect(peopleCalled).toBe(0);
+    expect(r.entities).toBeNull();
+    expect(r.hits[0].id).toBe(7);
   });
 });

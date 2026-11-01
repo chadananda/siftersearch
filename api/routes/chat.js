@@ -526,7 +526,8 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
       entitiesOut = r.entities || null;
       peopleAnswerOut = r.peopleAnswer || null;
       planInfo = { shape: r.plan.shape, about: r.plan.about, filters: r.plan.filters, prefer: r.plan.prefer?.author || null, comparative: r.plan.comparative,
-        widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error || null, resolution: r.resolution, target: r.target || null };
+        widened: r.widened, relaxed: r.relaxed, cached: r.cached, timings: r.timings, error: r.plan.error || null, resolution: r.resolution, target: r.target || null,
+        provenance: r.plan.provenance || null, reason: r.plan.reason || null, overridden: r.plan.overridden || null, quote: r.plan.quote || null, plan_ms: r.plan.ms ?? null };
     } else if (phrase) {
       // PHRASE mode (quote-source lookups): pure BM25 straight to the paragraphs
       // index — Meili honors "quoted phrases" in q. The multi-index merge below

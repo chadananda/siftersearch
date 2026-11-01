@@ -102,3 +102,15 @@ describe('summarizeTraces — the aggregate a dev agent reads', () => {
     expect(s.cache_hit_rate).toBeCloseTo(1 / 3, 2);
   });
 });
+
+describe('traceSearch — the live (multiIndexSearch) path records a trace', () => {
+  it('shapes one row from a finished search and hands it to the recorder', async () => {
+    const { traceSearch } = await import('../../api/lib/search-trace.js');
+    const rows = [];
+    traceSearch({ options: { keywordLayer: true, hype: true, traceEndpoint: 'anis' }, query: 'the earth is but one country', filters: { religion: "Baha'i" },
+      layers: { main: 3, qkeyword: 5 }, timings: { total: 412, merge: 9 }, hits: [{ doc_id: 7, title: 'Gleanings', _layerRanks: { main: 2, hype: 0 } }] }, (r) => rows.push(r));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ endpoint: 'anis', query: 'the earth is but one country', total_ms: 412, result_count: 1, top1_doc_id: 7, top1_layer: 'hype', filters_source: 'caller' });
+    expect(JSON.parse(rows[0].layers_json)).toMatchObject({ main: 3, qkeyword: 5, requested: ['keywordLayer', 'hype'] });
+  });
+});

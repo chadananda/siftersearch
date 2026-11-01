@@ -112,7 +112,11 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const replaced = broken != null && broken >= OUTPUT_BREAK;
     if (replaced) { d.strikes.strike(who); reply = cannedReply('refuse', { name, seed }); }
     const lint = lintReply(reply);
-    const path = await finish(reply, 'answered', { engine: 'anis', evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null, retrieved: r.retrieved?.length ?? 0,
+    const path = await finish(reply, 'answered', { engine: 'anis', evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
+      // how the strategy was chosen (jev | jev-cached | backstop + why) and what the search was fed, for the thread view
+      plan: { shape: r.plan?.shape ?? null, provenance: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, overridden: r.plan?.overridden ?? null,
+        quote: r.plan?.quote?.phrase ?? null, ms: r.plan?.plan_ms ?? null, history_turns: Math.max(0, messages.length - 1), search_query: r.search_query ?? null },
+      retrieved: r.retrieved?.length ?? 0,
       format: r.format ?? null, profile: r.profile ?? null,
       output_check: broken, replaced, lint, timings: r.timings });
     return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path };

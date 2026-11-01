@@ -245,3 +245,27 @@ describe('how Anís describes itself', async () => {
     for (const seed of ['a', 'b', 'c', 'd']) expect(cannedReply('about_anis', { name: 'Jafar', seed })).not.toContain('anis@oceanlibrary.com');
   });
 });
+
+describe('quotation hunts (11-01 incident)', () => {
+  const PHRASE = 'but it will always be present as a necessary element';
+  const ask = { role: 'user', content: `can you find the quote including "${PHRASE}"` };
+  const prior = [{ role: 'user', content: 'Which Letters of the Living met Bahá’u’lláh?' }, { role: 'assistant', content: 'Several did.' }];
+  it('searchQueryFor: a quotation is searched alone — the "it" inside it does not drag the previous question in', () => {
+    expect(searchQueryFor([...prior, ask])).toBe(ask.content);
+  });
+  it('a hunt whose passages hold the phrase keeps them and does not pivot', async () => {
+    const hit = { text: `Nothing is lost, ${PHRASE}.`, title: 'Some Answered Questions', author: '‘Abdu’l-Bahá', religion: "Baha'i", document_id: 1, paragraph_index: 2, source_url: 'https://x/s#2' };
+    const d = deps({ search: async () => ({ passages: [hit, passages[0]], _plan: { shape: 'quote', quote: { phrase: PHRASE }, provenance: 'backstop' } }) });
+    const r = await anisRespond({ messages: [ask], deps: d });
+    expect(d.calls.craft[0].retrieved_quotes.map((q) => q.doc_id)).toEqual([1]);
+    expect(r.format.id).not.toBe('honest_absence');
+  });
+  it('a hunt that finds no passage near the phrase says so plainly: no passages handed on, honest-absence format', async () => {
+    const d = deps({ search: async () => ({ passages, _plan: { shape: 'quote', quote: { phrase: PHRASE }, provenance: 'jev' } }) });
+    const r = await anisRespond({ messages: [ask], deps: d });
+    expect(d.calls.craft[0].retrieved_quotes).toEqual([]);
+    expect(d.calls.craft[0].direction.format.id).toBe('honest_absence');
+    expect(d.calls.craft[0].direction.format.how).toMatch(/do not/i);
+    expect(r.format.id).toBe('honest_absence');
+  });
+});

@@ -1681,22 +1681,29 @@ export async function multiIndexSearch(query, options = {}) {
     returned: hits.length
   }, 'multi-index search complete');
 
+  const timings = { ...(_stamp), main_embed: mainResult?._ms?.embed, main_engine: mainResult?._ms?.engine, main_cross: mainResult?._ms?.cross || undefined, merge: Date.now() - _t0 - Math.max(0, ..._stampValues(_stamp)), total: Date.now() - _t0 };
+  const layerCounts = {
+    main: (mainResult.hits || []).length,
+    hype: (hypeResult.hits || []).length,
+    entity_mentions: (entityResult.hits || []).length,
+    phrase: (phraseResult.hits || []).length,
+    qkeyword: (qkeywordResult.hits || []).length,
+    qhype: (qhypeResult.hits || []).length,
+    concept: (conceptResult.hits || []).length,
+    qconcept: (qconceptResult.hits || []).length,
+  };
+  // One durable trace row per search (search-trace.js), fire-and-forget: tracing never delays or breaks a search.
+  // Restored 11-01 — the live (Qdrant) path stopped calling it and /api/admin/search-trace read 0 rows.
+  if (!options.noTrace && process.env.NODE_ENV !== 'test') {
+    import('./search-trace.js').then(({ traceSearch }) => traceSearch({ options, query, filters, layers: layerCounts, timings, hits })).catch(() => {});
+  }
+
   return {
     hits,
     estimatedTotalHits: aggregate.size,
-    _layers: {
-      main: (mainResult.hits || []).length,
-      hype: (hypeResult.hits || []).length,
-      entity_mentions: (entityResult.hits || []).length,
-      phrase: (phraseResult.hits || []).length,
-      qkeyword: (qkeywordResult.hits || []).length,
-      qhype: (qhypeResult.hits || []).length,
-      concept: (conceptResult.hits || []).length,
-      qconcept: (qconceptResult.hits || []).length,
-    },
-    // Emitted for the trace. Retrieval layers run in parallel, so these are completion offsets from the
-    // start of the fan-out, not additive costs; `merge` is the RRF + diversity work after them.
-    _timings: { ...(_stamp), main_embed: mainResult?._ms?.embed, main_engine: mainResult?._ms?.engine, main_cross: mainResult?._ms?.cross || undefined, merge: Date.now() - _t0 - Math.max(0, ..._stampValues(_stamp)), total: Date.now() - _t0 },
+    // Layer counts + completion offsets (parallel fan-out, not additive); `merge` is the RRF + diversity work after.
+    _layers: layerCounts,
+    _timings: timings,
   };
 }
 
