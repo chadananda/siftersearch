@@ -1,7 +1,7 @@
 // Search planning: ONE fast Jev classification decides scope and which layers run, so LLM calls are
 // reserved for summarising — never for routing. Rules pinned here are the ones measured or learned the hard way.
 import { describe, it, expect } from 'vitest';
-import { buildPlan, layersFor, planSearch } from '../../api/lib/search-plan.js';
+import { buildPlan, layersFor, planSearch, isPushback, followUpAsks } from '../../api/lib/search-plan.js';
 
 const ans = (o) => ({
   tradition: { choice: o.tradition ?? 'none', confidence: o.tc ?? 0.95 },
@@ -226,5 +226,59 @@ describe('quote rule — follow-ups (r5)', () => {
     expect(p.overridden?.by).toBe('meaning-rule');
     const c = await planSearch('How is "the knowledge of God which comes to the heart of man" different from what Hooper Dunbar says?', opts('quote'));
     expect(c.shape).toBe('topic');
+  });
+});
+
+// r6-after (11-01 conversation replay): the real turns Jev routed wrong — pushback hunted as quotes, a comparison as a
+// definition, and multi-ask follow-ups sent to the one-paragraph source hunt that drops every ask but the origin.
+describe('pushback, comparison and follow-up asks (r6-after)', () => {
+  const jev = (shape) => async () => ({ ok: true, json: async () => ({ answers: ans({ shape }) }) });
+  const opts = (shape) => ({ apiKey: 'k', fetchImpl: jev(shape), cache: false, resolveName: null });
+  const SEED93_T3 = 'You said "these" refers directly to "justice and right," but is that actually what the Tablet to the Hague says, or are you reading it in? And the line about justice being "the very air your daily choices breathe" sounds like your own interpretation rather than anything \'Abdu\'l-Bahá wrote.';
+  const DETACH_T5 = 'You say this passage shows "the systematic release of specific supports... whose cessation brings an end to becoming," but the text itself only poses a rhetorical question about whether becoming would be discerned without clinging. Where does it say anything about "systematic release," or is that your gloss, and does the sutra even use the word non-attachment?';
+  const DETACH_T4 = 'This passage shows non-attachment approached not as a static label, but through the systematic release of specific supports—sensuality, views, and doctrines of the self—whose cessation brings an end to becoming.';
+  it('seed-93 T3: a challenge with no wording of its own is a topic turn about the passage, not a quote hunt', async () => {
+    const m = [{ role: 'user', content: 'What does the Tablet to the Hague say about justice?' },
+      { role: 'assistant', content: 'Here "these" refers to justice and right; justice becomes the very air your daily choices breathe.' },
+      { role: 'user', content: SEED93_T3 }];
+    const p = await planSearch(m, opts('quote'));
+    expect(p.shape).toBe('topic');
+    expect(p.pushback).toBe(true);
+    expect(p.overridden?.by).toBe('pushback-rule');
+  });
+  it('detachment T5: Anís\'s own words quoted back with an ellipsis are not hunted', async () => {
+    const m = [{ role: 'user', content: 'Where does the Buddha define non-attachment?' }, { role: 'assistant', content: DETACH_T4 }, { role: 'user', content: DETACH_T5 }];
+    const p = await planSearch(m, opts('quote'));
+    expect(p.quote).toBeUndefined();
+    expect(p.shape).toBe('topic');
+    expect(p.pushback).toBe(true);
+  });
+  it('a first message is never pushback; ordinary questions are not challenges', async () => {
+    expect((await planSearch('Are you sure the Báb was executed in Tabríz?', opts('fact'))).pushback).toBeUndefined();
+    expect(isPushback('What does Bahá\'u\'lláh say about justice?')).toBe(false);
+    expect(isPushback('Is that phrase actually in the text, or is it a paraphrase from a commentary?')).toBe(true);
+    expect(isPushback("that's not right — no, I meant the Persian Hidden Words")).toBe(true);
+  });
+  it('004 T2: "isn\'t it close to the Buddhist view" is a comparison (topic, unscoped), not a definition', async () => {
+    const t = 'That passage says the Bahá\'ís accept a "return of the attributes and qualities" but not of "the essence or the reality of things" — but what does that distinction actually mean ontologically, and isn\'t it close to the Buddhist view that no essence transmigrates, only a causal stream of qualities?';
+    const m = [{ role: 'user', content: 'Do Bahá\'ís believe in reincarnation?' },
+      { role: 'assistant', content: 'The Bahá\'ís accept a return of the attributes and qualities, but not of the essence or the reality of things.' }, { role: 'user', content: t }];
+    const p = await planSearch(m, opts('define'));
+    expect(p.shape).toBe('topic');
+    expect(p.comparative).toBe(true);
+    expect(p.overridden?.by).toBe('comparison-rule');
+    expect((await planSearch('What does ʿirfán mean?', opts('define'))).shape).toBe('define');
+  });
+  it('the multi-ask follow-ups that the source hunt answered with one paragraph', () => {
+    expect(followUpAsks('Regarding the first one you quoted: is that actually from Some Answered Questions, and which chapter and whose translation? I\'d also like to know whether \'mere non-existence\' renders a particular Persian or Arabic term')).toEqual(expect.arrayContaining(['translator', 'location']));
+    expect(followUpAsks('can you give the exact author, recipient and date for what you just quoted, and say whether it\'s \'Abdu\'l-Bahá\'s own words or a secretary writing on Shoghi Effendi\'s behalf?')).toEqual(expect.arrayContaining(['recipient', 'authenticity']));
+    expect(followUpAsks('Who actually recorded or translated that talk, and in which volume, issue, and page does it appear?')).toEqual(expect.arrayContaining(['translator', 'location']));
+    expect(followUpAsks('Can you give me the exact Váḥid and Gate in the Persian Bayán where the Báb says Him Whom God will make manifest may change or abrogate its laws?')).toContain('location');
+    expect(followUpAsks('Can you give me the full passage with the link, where He says this in His own words, and also what He says happened right after the Maiden spoke?')).toEqual(expect.arrayContaining(['full', 'next']));
+    expect(followUpAsks('What is the original word in Arabic or Persian for this, and where else in the Writings Bahá\'u\'lláh use it?')).toEqual(expect.arrayContaining(['original', 'usage']));
+    expect(followUpAsks('Is that phrase actually in the text, or is it a paraphrase from a commentary, and if so whose?')).toContain('authenticity');
+    // a plain origin question asks nothing more
+    expect(followUpAsks('Where is this from: "The best beloved of all things in My sight is Justice"?')).toEqual([]);
+    expect(followUpAsks('Who wrote "O Son of Spirit! My first counsel is this: Possess a pure, kindly and radiant heart"?')).toEqual([]);
   });
 });

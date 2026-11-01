@@ -254,6 +254,9 @@ async function judgeConversation(conv) {
   spend.judge += usd(JUDGE_MODEL, res.usage);
   const v = res.content.find((b) => b.type === 'tool_use')?.input;
   if (!v) throw new Error('judge returned no verdict');
+  // the judge sometimes sends turns as a JSON string (r6-before replay crashed summarize on it)
+  if (typeof v.turns === 'string') { try { v.turns = JSON.parse(v.turns); } catch { v.turns = []; } }
+  if (!Array.isArray(v.turns)) v.turns = [];
   return v;
 }
 

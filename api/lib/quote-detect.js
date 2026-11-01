@@ -26,9 +26,12 @@ const EXAMPLE = /\b(?:like|such as|something like|e\.g\.|for example|for instanc
 const isExample = (before) => EXAMPLE.test(before) && !/\b(?:quote|quotation|passage|phrase|saying|line|sentence|word|verse|excerpt)s?\s+(?:like|such as)\s*$/i.test(before);
 // a span quoted back from a reply, words left out or not ("the station which overshadoweth…" for "the station which, as
 // ordained by God, overshadoweth…", r6): its words in order, at most 6 words apart
+// …and an ellipsis marks words the reader left out on purpose, any number of them (r6-after detachment T5: "supports... whose
+// cessation" skipped 7 words of the reply, over the 6-word gap, so Anís hunted its own summary as a source and said "not found")
 const echoes = (hay, span) => {
-  const w = fold(span).split(' ').map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  return new RegExp(` ${w.join('(?: \\S+){0,6} ')} `).test(hay);
+  const part = (s) => fold(s).split(' ').filter(Boolean).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('(?: \\S+){0,6} ');
+  const parts = String(span).split(/\.{3,}|…/).map(part).filter(Boolean);
+  return parts.length > 0 && new RegExp(` ${parts.join('(?: \\S+){0,40} ')} `).test(hay);
 };
 
 /**

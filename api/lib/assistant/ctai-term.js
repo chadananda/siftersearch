@@ -12,7 +12,12 @@ const AR = /[؀-ۿ]/;
 // eslint-disable-next-line no-misleading-character-class -- Arabic vowel marks are matched on purpose
 const AR_RUN = /[؀-ۿ][؀-ۿً-ْٰ\s]{1,40}/;
 const TERM_CUE = /\b(mean(?:s|ing)?|word|term|concept|render(?:ed|ing|s)?|translat\w*|defin\w*|root|significance|sense)\b/i;
-const T = "([A-Za-zʿʾ'’áíúÁÍÚḥḤṣṢṭṬẓẒḍḌ-]{3,30})";
+const T = "([A-Za-zʿʾ'’áíúÁÍÚāīūĀĪŪḥḤṣṢṭṬẓẒḍḌ-]{3,30})";
+// "why did he render al-inṣāf as 'Justice'" names its term right before "as" (px-smoke justice-quote T5: the Arabic address
+// quoted earlier in the message, «يَا ابْنَ الرُّوحِ», was studied instead — CTAI analysed "ibn")
+const RENDER_AS = new RegExp(`\\b(?:render(?:ed|s|ing)?|translat(?:ed|es|ing)?)\\s+[*_"“'‘]*${T}[*_"”'’]*\\s+as\\b`, 'i');
+// an Arabic run is the term asked about only when the question's cue word stands near it ("the word عرفان", "عرفان means")
+const nearCue = (t, run) => { const i = t.indexOf(run); return i >= 0 && TERM_CUE.test(t.slice(Math.max(0, i - 40), i + run.length + 40)); };
 // A Latin spelling counts only when the question is plainly about a WORD — "the word/term X", "what does X mean",
 // or a transliteration with diacritics — never "what does Bahá’u’lláh say…" or "the meaning of sacrifice".
 const LATIN_TERMS = [
@@ -28,9 +33,12 @@ const NOT_TERMS = new Set(['the', 'this', 'that', 'word', 'term', 'it', 'god', '
 /** A question about a word → { term, script } or null. English words ("justice") are the ordinary search's job. */
 export function termQuestion(text = '') {
   const t = String(text);
+  const ras = t.match(RENDER_AS);
+  if (ras && !NOT_TERMS.has(ras[1].toLowerCase()) && /[ʿʾáíúāīūḥṣṭẓḍ]/i.test(ras[1])) return { term: ras[1].replace(/^al-/i, '').replace(/[’'.,?]+$/, ''), script: 'latin' };
   if (AR.test(t) && TERM_CUE.test(t)) {
-    const run = (t.match(AR_RUN) || [''])[0].trim().split(/\s+/).slice(0, 3).join(' ');
-    if (run) return { term: run, script: 'arabic' };
+    const full = (t.match(AR_RUN) || [''])[0].trim();
+    const run = full.split(/\s+/).slice(0, 3).join(' ');
+    if (run && nearCue(t, full)) return { term: run, script: 'arabic' };
   }
   for (const re of LATIN_TERMS) {
     const m = t.match(re);

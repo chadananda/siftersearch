@@ -6513,9 +6513,9 @@
    },
    "truth": "Paris Talks are by 'Abdu'l-Bahá",
    "expected_strategy": [
-      "lookup",
-      "fact"
-    ],
+    "lookup",
+    "fact"
+   ],
    "cite": {
     "link": false,
     "all": [
@@ -13101,10 +13101,10 @@
    "canonical": "Jesus said God helps those who help themselves",
    "truth": "not in the Bible (Algernon Sidney / Franklin); scripture must not appear to confirm it",
    "expected_strategy": [
-      "quote",
-      "source",
-      "lookup"
-    ],
+    "quote",
+    "source",
+    "lookup"
+   ],
    "cite": {
     "any": [
      "sidney|franklin|not in the bible|not (a )?(biblical|scriptur)|not (found|from|said)|does not appear|isn t in|proverb|not (a )?(saying|quotation|quote) of (jesus|christ)"
@@ -14772,6 +14772,301 @@
     }
    ],
    "dropped": []
+  },
+  {
+   "id": "px-iqan-return-elijah",
+   "type": "find_work",
+   "persona": "research",
+   "source_endpoint": "search",
+   "canonical": "Where does Bahá'u'lláh explain the return of Elijah in John the Baptist in the Kitáb-i-Íqán?",
+   "truth": "Kitáb-i-Íqán (doc 20810), the return passages ('Inasmuch as the return of the Prophets of God… hath been conclusively demonstrated'); 'Abdu'l-Bahá's explicit treatment is Some Answered Questions ch. 33 'Return' (doc 20911). Miss cause: the named work is not resolved in a long question (objectPhrases gives up past 6 significant words), and Bible names pull a Christian filter.",
+   "incident": "px-smoke 11-01 (anis-conversations-2026-11-01-px-smoke): Perplexity cited it, the library holds it, Anís did not (return-iqan T1, misses #1-2)",
+   "expected_strategy": [
+    "topic",
+    "quote",
+    "fact",
+    "lookup"
+   ],
+   "cite": {
+    "link": true,
+    "any": [
+     "iqan|kitab i iqan|certitude",
+     "some answered questions"
+    ]
+   },
+   "dropped": [],
+   "variants": [
+    {
+     "id": "px-iqan-return-elijah#01",
+     "style": "embedded",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Hello Anís. I'm working on the Kitáb-i-Íqán's treatment of the \"return\" (raj'a) of the Prophets, and I'd like to know exactly where Bahá'u'lláh addresses it, and in what terms he explains Elijah's return in John the Baptist. Could you point me to the specific passage and tell me which translation you're quoting from?"
+      }
+     ]
+    },
+    {
+     "id": "px-iqan-return-elijah#02",
+     "style": "polite",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Could you point me to the passage in the Kitáb-i-Íqán where Bahá'u'lláh explains that John the Baptist was the return of Elijah?"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "px-iqan-quote-elijah-followup",
+   "type": "exact_phrase",
+   "persona": "research",
+   "source_endpoint": "search",
+   "canonical": "Quote the exact sentence in the Íqán where Bahá'u'lláh says John the Baptist was Elijah",
+   "truth": "Kitáb-i-Íqán (doc 20810). Miss cause (px-smoke T2/T3): triage said source_lookup and the source hunt ran on the reader's own sentence; fixed 11-01 (hunt only a separate quotation or a single-message ask).",
+   "incident": "px-smoke 11-01 (anis-conversations-2026-11-01-px-smoke): Perplexity cited it, the library holds it, Anís did not (return-iqan T3, misses #4-5)",
+   "expected_strategy": [
+    "topic",
+    "quote",
+    "fact",
+    "lookup"
+   ],
+   "cite": {
+    "link": true,
+    "any": [
+     "iqan|kitab i iqan|certitude"
+    ]
+   },
+   "dropped": [],
+   "variants": [
+    {
+     "id": "px-iqan-quote-elijah-followup#01",
+     "style": "followup",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Hello Anís. I'm working on the Kitáb-i-Íqán's treatment of the \"return\" (raj'a) of the Prophets, and I'd like to know exactly where Bahá'u'lláh addresses it, and in what terms he explains Elijah's return in John the Baptist. Could you point me to the specific passage and tell me which translation you're quoting from?"
+      },
+      {
+       "role": "assistant",
+       "content": "I can't find that specific passage on the *Kitáb-i-Íqán* or Elijah's return in the sources I have here. The library's records for this search do not include the text of the *Íqán* itself, though they do touch on related themes elsewhere.\n\nFor instance, addressing the general subject of return, we find this statement:\n\n> [\"in every subsequent Revelation, the return of the former Revelation is a fact, the truth of which is firmly established. Inasmuch as the return of the Prophets of God, as attested by verses and traditions, hath been conclusively demonstrated, the return of their chosen ones also is therefore definitely proven. This return is too manifest in itself to require any evidence or proof.\" KI 154](https://oceanlibrary.com/divine-philosophy_abdul-baha)\n> — *Divine Philosophy* by Steven Phelps (quoting Bahá’u’lláh)\n\nThis passage — categorized here as exposition quoting scripture — highlights Bahá’u’lláh's teaching that the return of past Revelations and their central figures is an established reality in each new dispensation.\n\nTo give you the exact location and translation details for the *Íqán*'s discussion of Elijah and John the Baptist, you would want to look directly at Shoghi Effendi's English translation of the *Kitáb-i-Íqán* (published by the Bahá'í Publishing Trust), where Bahá'u'lláh treats the Gospel questions surrounding John's identity at length in the early sections of the book."
+      },
+      {
+       "role": "user",
+       "content": "That passage you quoted is tagged \"KI 154\" and attributed to Phelps's *Divine Philosophy*, so is that pagination from Shoghi Effendi's translation or from some other edition? I also notice it speaks of the return of \"chosen ones,\" which sounds like it comes from the later part of the book, not the Gospel material you place \"in the early sections.\""
+      },
+      {
+       "role": "assistant",
+       "content": "This does not appear in the Christian scripture in the library; the passage that holds these words is by St. Augustine, tr. Marcus Dods. These are the words of St. Augustine, tr. Marcus Dods, from [*The City of God Volume II*](https://www.gutenberg.org/ebooks/45305#:~:text=Some%20Christians%2C%20who%20have,of%20their%20own%20mouths). The passage reads: «Some Christians, who have a liking for Plato on account of his magnificent style and the truths which he now and then uttered, say that he even held an opinion similar to our own regarding the resurrection of the dead». I could not confirm the original tablet for this passage."
+      },
+      {
+       "role": "user",
+       "content": "That Augustine passage on Plato and the resurrection doesn't answer what I asked about \"KI 154\" and Phelps, so let me set it aside. Can you quote the exact sentence in the Íqán where Bahá'u'lláh says John the Baptist was Elijah, with the Arabic or Persian wording of \"return\" (raj'a) as it appears there and the paragraph number in Shoghi Effendi's translation?"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "px-iqan-vs-reincarnation-compare",
+   "type": "compare",
+   "persona": "research",
+   "source_endpoint": "search",
+   "canonical": "How does the Íqán's 'return' in name, reality, deeds compare with Shoghi Effendi's 'in no way their reincarnation' and Augustine on Plato and resurrection?",
+   "truth": "Kitáb-i-Íqán (20810); Lights of Guidance 'does not, of course, make Him in any way their reincarnation' (20804, mis-attributed to Bahá'u'lláh in the catalogue); Augustine, City of God XXII.28 (19699). Miss cause: several works in one ask, filter inferred from one of them; unresolved 11-01.",
+   "incident": "px-smoke 11-01 (anis-conversations-2026-11-01-px-smoke): Perplexity cited it, the library holds it, Anís did not (return-iqan T5, misses #6-8)",
+   "expected_strategy": [
+    "topic",
+    "compare"
+   ],
+   "cite": {
+    "link": true,
+    "min": {
+     "n": 2,
+     "of": [
+      "iqan|kitab i iqan|certitude",
+      "lights of guidance",
+      "city of god|augustine"
+     ]
+    }
+   },
+   "dropped": [],
+   "variants": [
+    {
+     "id": "px-iqan-vs-reincarnation-compare#01",
+     "style": "followup",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Hello Anís. I'm working on the Kitáb-i-Íqán's treatment of the \"return\" (raj'a) of the Prophets, and I'd like to know exactly where Bahá'u'lláh addresses it, and in what terms he explains Elijah's return in John the Baptist. Could you point me to the specific passage and tell me which translation you're quoting from?"
+      },
+      {
+       "role": "assistant",
+       "content": "I can't find that specific passage on the *Kitáb-i-Íqán* or Elijah's return in the sources I have here. The library's records for this search do not include the text of the *Íqán* itself, though they do touch on related themes elsewhere.\n\nFor instance, addressing the general subject of return, we find this statement:\n\n> [\"in every subsequent Revelation, the return of the former Revelation is a fact, the truth of which is firmly established. Inasmuch as the return of the Prophets of God, as attested by verses and traditions, hath been conclusively demonstrated, the return of their chosen ones also is therefore definitely proven. This return is too manifest in itself to require any evidence or proof.\" KI 154](https://oceanlibrary.com/divine-philosophy_abdul-baha)\n> — *Divine Philosophy* by Steven Phelps (quoting Bahá’u’lláh)\n\nThis passage — categorized here as exposition quoting scripture — highlights Bahá’u’lláh's teaching that the return of past Revelations and their central figures is an established reality in each new dispensation.\n\nTo give you the exact location and translation details for the *Íqán*'s discussion of Elijah and John the Baptist, you would want to look directly at Shoghi Effendi's English translation of the *Kitáb-i-Íqán* (published by the Bahá'í Publishing Trust), where Bahá'u'lláh treats the Gospel questions surrounding John's identity at length in the early sections of the book."
+      },
+      {
+       "role": "user",
+       "content": "That passage you quoted is tagged \"KI 154\" and attributed to Phelps's *Divine Philosophy*, so is that pagination from Shoghi Effendi's translation or from some other edition? I also notice it speaks of the return of \"chosen ones,\" which sounds like it comes from the later part of the book, not the Gospel material you place \"in the early sections.\""
+      },
+      {
+       "role": "assistant",
+       "content": "This does not appear in the Christian scripture in the library; the passage that holds these words is by St. Augustine, tr. Marcus Dods. These are the words of St. Augustine, tr. Marcus Dods, from [*The City of God Volume II*](https://www.gutenberg.org/ebooks/45305#:~:text=Some%20Christians%2C%20who%20have,of%20their%20own%20mouths). The passage reads: «Some Christians, who have a liking for Plato on account of his magnificent style and the truths which he now and then uttered, say that he even held an opinion similar to our own regarding the resurrection of the dead». I could not confirm the original tablet for this passage."
+      },
+      {
+       "role": "user",
+       "content": "That Augustine passage on Plato and the resurrection doesn't answer what I asked about \"KI 154\" and Phelps, so let me set it aside. Can you quote the exact sentence in the Íqán where Bahá'u'lláh says John the Baptist was Elijah, with the Arabic or Persian wording of \"return\" (raj'a) as it appears there and the paragraph number in Shoghi Effendi's translation?"
+      },
+      {
+       "role": "assistant",
+       "content": "These are the words of Bahá’u’lláh, from [*John the Baptist and Bahá’í Prophetic Categories: An Atypical Paradigm*](https://bahai-library.com/mclean_john_baptist#:~:text=I%20swear%20by%20God,Jesus%20.%20.%20). The passage reads: «‘I swear by God that the Primal Point [the Bab] and this most luminous, most wondrous Manifestation [Baha’u’llah] are exactly like (ayn be ayn) the appearance of John, son of Zachariah, and the Spirit of God [Ruhu’llah— Jesus». I could not confirm the original tablet for this passage."
+      },
+      {
+       "role": "user",
+       "content": "In that last quotation you give the phrase \"exactly like (ayn be ayn)\" — can you explain what 'ayn' means in that construction, and whether Bahá'u'lláh uses it elsewhere to describe the relation between Prophets, since it seems to be a different claim from a simple 'return' (raj'a)?"
+      },
+      {
+       "role": "assistant",
+       "content": "The term you are looking at is the Arabic word *‘ayn* (عین), which literally means an eye, a fountain or spring, or the essence and very self of a thing. As the passages use it—and as Bahá’u’lláh explains the deeper meaning of “return” (*raj‘a*)—it points not to physical reincarnation, but to the identity of divine station and attributes.\n\nIn *The Kitáb-i-Íqán*, Bahá’u’lláh describes how the companions and followers of a new Manifestation are considered the \"return\" of those from a former Dispensation, existing \"in name, in reality, in deeds, in words, and in rank\" ([*The Kitáb-i-Íqán*](https://oceanlibrary.com/kitab-i-iqan_bahaullah/?paraId=para_181&selectionString=kitab-i-iqan-prod-version_en_7t.0~kitab-i-iqan-prod-version_en_7t.646)). Similarly, when speaking of the unity of the Prophets themselves, Bahá’u’lláh writes:\n\n> It is clear and evident to thee that all the Prophets are the Temples of the Cause of God, Who have appeared clothed in divers attire. If thou wilt observe with discriminating eyes, thou wilt behold Them all abiding in the same tabernacle, soaring in the same heaven, seated upon the same throne, uttering the same speech, and proclaiming the same Faith. — *Gleanings from the Writings of Bahá’u’lláh*\n\nIn authorized interpretation, Shoghi Effendi explains that such an identification means a Manifestation or holy soul identifies \"His Spirit with these Holy Souls gone before; that does not, of course, make Him in any way their reincarnation\" ([*Lights of Guidance*](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=In%20the%20prayer%20mentioned,%7Bid%3D%22para6324%22%20ilmid%3D%22bl44a%22%20type%3D%22par%22%20language%3D%22en%22%7D) — quoted in a work by Helen Hornby)."
+      },
+      {
+       "role": "user",
+       "content": "You say the Íqán describes followers as the \"return\" of earlier ones \"in name, in reality, in deeds, in words, and in rank\"; how does that compare with the Shoghi Effendi statement from *Lights of Guidance* that a Manifestation is \"in no way their reincarnation,\" and with the Augustine/Plato material on resurrection you cited earlier?"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "px-insaf-justice-rendering",
+   "type": "define_term",
+   "persona": "research",
+   "source_endpoint": "search",
+   "canonical": "Why did Shoghi Effendi render al-inṣáf as Justice rather than equity or fairness?",
+   "truth": "Shoghi Effendi, The Advent of Divine Justice (doc 20890) is his main treatment of justice and equity; Maneck's 'Justice, Fairness and the Meekness of God' reports his remark that inṣáf means fairness (secondary). Miss cause: the term study picked the Arabic address quoted earlier instead of inṣáf; term choice fixed 11-01 (ctai-term RENDER_AS + term cue).",
+   "incident": "px-smoke 11-01 (anis-conversations-2026-11-01-px-smoke): Perplexity cited it, the library holds it, Anís did not (justice-quote T5, miss #14)",
+   "expected_strategy": [
+    "define",
+    "topic",
+    "fact"
+   ],
+   "cite": {
+    "link": true,
+    "any": [
+     "advent of divine justice",
+     "insaf",
+     "fairness|equity"
+    ]
+   },
+   "dropped": [],
+   "variants": [
+    {
+     "id": "px-insaf-justice-rendering#01",
+     "style": "followup",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Hello Anís. I'm trying to pin down the exact source of the saying \"The best beloved of all things in My sight is Justice\" — which work is it from, who is the speaker, and is there an original-language text (Arabic or Persian) behind the standard English rendering?"
+      },
+      {
+       "role": "assistant",
+       "content": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved of all things in My sight is Justice». The original is in Arabic, in [*Kalimat-i-Maknunih (Hidden Words - Arabic)*](https://oceanoflights.org/bahaullah-pub01-02-ar/#(%D8%A3%D9%8E%D8%AD%D9%8E%D8%A8%D9%8F%D9%91)(%D8%A7%D9%84%D8%A5%D9%86%D9%92%D8%B5%D8%A7%D9%81%D9%8F)), where it reads «أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ». Its entry in the Phelps Inventory is [Phelps Inventory BH00386](https://portlandiator.github.io/PI_browser/?id=BH00386). It is also quoted in [*Fountain of Wisdom : Tablets of Bahá’u’lláh*](https://oceanlibrary.com/fountain-of-wisdom_bahaullah/?paraId=para_106&selectionString=tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.14~tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.57), [*Bahá’u’lláh and the New Era*](https://oceanlibrary.com/bahaullah-and-the-new-era_john-esslemont/?paraId=para_777&selectionString=baha_u_llah_and_the_new_era_bahai_ocean_en-blln.13~baha_u_llah_and_the_new_era_bahai_ocean_en-blln.56) and [*Preliminary Analysis of the Bahá’í Concept of Mental Health*](https://bahai-library.com/herzog_bahai_mental_health#:~:text=The%20best%20beloved%20of,My%20sight%20is%20Justice)."
+      },
+      {
+       "role": "user",
+       "content": "In what you just quoted, the Arabic reads «الإنْصاف» (al-inṣāf), yet the English gives \"Justice\" — is that the rendering Shoghi Effendi chose, and does the passage carry a verse number in the Arabic Hidden Words?"
+      },
+      {
+       "role": "assistant",
+       "content": "Yes, this passage does carry a numbering in the Arabic text. In [*The Hidden Words*](https://ctai.info/models/the-hidden-words/3/), it is explicitly numbered as the second of the Arabic passages.\n\n**How Shoghi Effendi rendered الإنْصاف in 13 passages:** fairness (3) · equity (2) · justice (2) · fair-minded (2) · equitably / equitable (2) · just and fair-minded (1) · ustice (1)\n\n| Original | Shoghi Effendi’s English | Source |\n|---|---|---|\n| … العدل و هيکلی بطراز **الانصاف** انّک انت مالک المواهب … | … temple with the ornament **of equity**. Thou, verily, art … | [Epistle to the Son of the Wolf 15](https://ctai.info/models/epistle-to-the-son-of-the-wolf/15/) |\n| … ان يجعلک فاتح باب **الانصاف** و يظهر بک امره … | … will open the door **of justice**, and reveal through … | [Epistle to the Son of the Wolf 152](https://ctai.info/models/epistle-to-the-son-of-the-wolf/152/) |\n| … لعمري من شرب رحيق **الإنصاف** من أيادي الألطاف إنّه … | … the choice wine of **fairness** from the hands of … | [Gleanings CLV.4](https://ctai.info/models/gleanings/694/) |\n| … يؤيّدک علی العدل و **الانصاف** و يعرّفک ما کان … | … to be just and **fair-minded**, and to acquaint … | [Epistle to the Son of the Wolf 12](https://ctai.info/models/epistle-to-the-son-of-the-wolf/12/) |\n| … السَّمآءِ بِأَنْ تُؤَيِّدَهُمْ عَلَى **الإِنْصَافِ** فِي أَمْرِكَ، لَعَلَّ يَجِدُونَ … | … aid them to act **equitably** in Thy Cause, that … | [Prayers and Meditations CVIII.6](https://ctai.info/models/prayers-and-meditations/466/) |\n| … ﴾ أَحَبُّ الأَشْيَاءِ عِنْدِي **الإنْصافُ.** لَا تَرْغَبْ عَنْهُ إِنْ … | … in My sight is **Justice**; turn not away … | [The Hidden Words 5](https://ctai.info/models/the-hidden-words/3/) |\n| … العالمین خذوا العدل و **الإنصاف** و دعوا ما أمرکم … | … ye to justice and **fairness**, and turn away … | [Gleanings CLXIV.1](https://ctai.info/models/gleanings/719/) |\n| … بذلک مظاهر العدل و **الانصاف** و لکنّ القوم فی … | … exponents of justice and **equity**, and yet the … | [Epistle to the Son of the Wolf 191](https://ctai.info/models/epistle-to-the-son-of-the-wolf/191/) |\n\nThe original Arabic text reads:\n\n> [أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ](https://ctai.info/models/the-hidden-words/3/) — *The Hidden Words* — Bahá'u'lláh\n\nTransliterated, it is: *Aḥabbu’l-ashyā’i ‘indī’l-inṣāf*.\n\nAs for the rendering, Shoghi Effendi translated *al-inṣāf* as \"Justice\" in this particular English edition."
+      },
+      {
+       "role": "user",
+       "content": "You told me it is \"the second of the Arabic passages\", but your table cites it as \"The Hidden Words 5\", so which is it? Please also say exactly which edition and paragraph that table row comes from, and who compiled the Phelps Inventory number BH00386 you cited."
+      },
+      {
+       "role": "assistant",
+       "content": "Thank you for catching that contradiction. You are quite right to point it out; the earlier statement that it is the second passage conflicts with the table numbering, and I cannot verify from the available library texts which specific paragraph or edition that table row came from, or attribute the Phelps inventory number BH00386.\n\nShoghi Effendi’s letter in [*The Light of Divine Guidance (Volume II)*](https://oceanlibrary.com/light-of-divine-guidance-volume-ii_shoghi-effendi/?paraId=para_622&selectionString=light_of_divine_guidance_volume_2_ocean_en-blin.0~light_of_divine_guidance_volume_2_ocean_en-blin.192) notes:\n\n> The Cairo edition of the Hidden Words, approved by the Master, is the one you must refer to for accuracy, and disregard all other texts.\n> — [The Light of Divine Guidance (Volume II)](https://oceanlibrary.com/light-of-divine-guidance-volume-ii_shoghi-effendi/?paraId=para_622&selectionString=light_of_divine_guidance_volume_2_ocean_en-blin.0~light_of_divine_guidance_volume_2_ocean_en-blin.192)\n\n*The Light of Divine Guidance (Volume II)* — Shoghi Effendi"
+      },
+      {
+       "role": "user",
+       "content": "You mentioned the Cairo edition \"approved by the Master\" as the authority for accuracy; how does that compare with the standard English text Shoghi Effendi translated in 1929, and does the Cairo Arabic wording of «أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ» differ from other printed editions?"
+      },
+      {
+       "role": "assistant",
+       "content": "The original Arabic text for this passage appears in [*The Hidden Words*](https://ctai.info/models/the-hidden-words/3/):\n\n> (٢) ﴿ يَا ابْنَ الرُّوحِ ﴾ أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ. لَا تَرْغَبْ عَنْهُ إِنْ تَكُنْ إِلَيَّ راغِبًا وَلَا تَغْفَلْ مِنْهُ لِتَكُونَ لِي أَمِينًا وَأَنْتَ تُوَفَّقُ بِذلِكَ أَنْ تُشَاهِدَ الأَشْياءَ بِعَيْنِكَ لا بِعَيْنِ العِبادِ وَتَعْرِفَها بِمَعْرِفَتِكَ لا بِمَعْرِفَةِ أَحَدٍ فِي البِلادِ. فَكِّرْ فِي ذلِكَ كَيْفَ يَنْبَغِي أَنْ تَكُونَ. ذلِكَ مِنْ عَطِيَّتِي عَلَيْكَ وَعِنايَتي لَكَ فَاجْعَلْهُ أَمامَ عَيْنَيْكَ. (2) O SON OF SPIRIT! The best beloved of all things in My sight is Justice; turn not away therefrom if thou desirest Me, and neglect it not that I may confide in thee.\n> — [The Hidden Words 5](https://ctai.info/models/the-hidden-words/3/)\n\n**How Shoghi Effendi rendered أَحَبُّ الأَشْيَاءِ عِنْدِي (all words of the root ح-ب-ب):** love (190) · loved ones (35) · loveth (6) · desire (5) · cherish (3)\n\n> (٢) ﴿ يَا ابْنَ الرُّوحِ ﴾\n> أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ. لَا تَرْغَبْ عَنْهُ إِنْ تَكُنْ إِلَيَّ راغِبًا...\n> *The Hidden Words* — Bahá'u'lláh\n\n- **Original Arabic:** أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ  \n- **Transliteration:** *Aḥabbu’l-ashyā’i ‘indī’l-inṣāf*  \n- **English rendering:** \"The best beloved of all things in My sight is Justice\" ([The Hidden Words 5](https://ctai.info/models/the-hidden-words/3/))\n\nI cannot find anything in the library texts comparing the Cairo edition to other printed editions or detailing variations in the Arabic wording."
+      },
+      {
+       "role": "user",
+       "content": "You give the Arabic with the opening address «يَا ابْنَ الرُّوحِ» and the number (٢), but still cite it as \"The Hidden Words 5\" — can you quote any passage where Shoghi Effendi or the Universal House of Justice explains why he rendered *al-inṣāf* as \"Justice\" rather than \"equity\" or \"fairness\", with date and recipient?"
+      }
+     ]
+    },
+    {
+     "id": "px-insaf-justice-rendering#02",
+     "style": "find",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Is there a passage where Shoghi Effendi explains why he translated inṣáf as \"Justice\" and not \"equity\" or \"fairness\"?"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "px-hidden-words-number-edition",
+   "type": "source_resolution",
+   "persona": "research",
+   "source_endpoint": "search",
+   "canonical": "Is 'The best beloved of all things in My sight is Justice' Arabic Hidden Word 2 or 5, and in which edition?",
+   "truth": "The Hidden Words, Arabic no. 2 ('O Son of Spirit! The best beloved of all things in My sight is Justice'). Miss cause (justice T3): several asks in one follow-up; the fact shape does not hunt; unresolved 11-01.",
+   "incident": "px-smoke 11-01 (anis-conversations-2026-11-01-px-smoke): Perplexity cited it, the library holds it, Anís did not (justice-quote T3, miss #12)",
+   "expected_strategy": [
+    "quote",
+    "fact",
+    "lookup",
+    "topic"
+   ],
+   "cite": {
+    "link": true,
+    "all": [
+     "hidden words"
+    ],
+    "any": [
+     "arabic",
+     "\\b2\\b|second|no 2"
+    ]
+   },
+   "dropped": [],
+   "variants": [
+    {
+     "id": "px-hidden-words-number-edition#01",
+     "style": "followup",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Hello Anís. I'm trying to pin down the exact source of the saying \"The best beloved of all things in My sight is Justice\" — which work is it from, who is the speaker, and is there an original-language text (Arabic or Persian) behind the standard English rendering?"
+      },
+      {
+       "role": "assistant",
+       "content": "These are the words of Bahá’u’lláh, from [*The Hidden Words of Bahá’u’lláh*](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_14&selectionString=the-hidden-words-prod_en_35.13~the-hidden-words-prod_en_35.57). The passage reads: «The best beloved of all things in My sight is Justice». The original is in Arabic, in [*Kalimat-i-Maknunih (Hidden Words - Arabic)*](https://oceanoflights.org/bahaullah-pub01-02-ar/#(%D8%A3%D9%8E%D8%AD%D9%8E%D8%A8%D9%8F%D9%91)(%D8%A7%D9%84%D8%A5%D9%86%D9%92%D8%B5%D8%A7%D9%81%D9%8F)), where it reads «أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ». Its entry in the Phelps Inventory is [Phelps Inventory BH00386](https://portlandiator.github.io/PI_browser/?id=BH00386). It is also quoted in [*Fountain of Wisdom : Tablets of Bahá’u’lláh*](https://oceanlibrary.com/fountain-of-wisdom_bahaullah/?paraId=para_106&selectionString=tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.14~tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-bl5u.57), [*Bahá’u’lláh and the New Era*](https://oceanlibrary.com/bahaullah-and-the-new-era_john-esslemont/?paraId=para_777&selectionString=baha_u_llah_and_the_new_era_bahai_ocean_en-blln.13~baha_u_llah_and_the_new_era_bahai_ocean_en-blln.56) and [*Preliminary Analysis of the Bahá’í Concept of Mental Health*](https://bahai-library.com/herzog_bahai_mental_health#:~:text=The%20best%20beloved%20of,My%20sight%20is%20Justice)."
+      },
+      {
+       "role": "user",
+       "content": "In what you just quoted, the Arabic reads «الإنْصاف» (al-inṣāf), yet the English gives \"Justice\" — is that the rendering Shoghi Effendi chose, and does the passage carry a verse number in the Arabic Hidden Words?"
+      },
+      {
+       "role": "assistant",
+       "content": "Yes, this passage does carry a numbering in the Arabic text. In [*The Hidden Words*](https://ctai.info/models/the-hidden-words/3/), it is explicitly numbered as the second of the Arabic passages.\n\n**How Shoghi Effendi rendered الإنْصاف in 13 passages:** fairness (3) · equity (2) · justice (2) · fair-minded (2) · equitably / equitable (2) · just and fair-minded (1) · ustice (1)\n\n| Original | Shoghi Effendi’s English | Source |\n|---|---|---|\n| … العدل و هيکلی بطراز **الانصاف** انّک انت مالک المواهب … | … temple with the ornament **of equity**. Thou, verily, art … | [Epistle to the Son of the Wolf 15](https://ctai.info/models/epistle-to-the-son-of-the-wolf/15/) |\n| … ان يجعلک فاتح باب **الانصاف** و يظهر بک امره … | … will open the door **of justice**, and reveal through … | [Epistle to the Son of the Wolf 152](https://ctai.info/models/epistle-to-the-son-of-the-wolf/152/) |\n| … لعمري من شرب رحيق **الإنصاف** من أيادي الألطاف إنّه … | … the choice wine of **fairness** from the hands of … | [Gleanings CLV.4](https://ctai.info/models/gleanings/694/) |\n| … يؤيّدک علی العدل و **الانصاف** و يعرّفک ما کان … | … to be just and **fair-minded**, and to acquaint … | [Epistle to the Son of the Wolf 12](https://ctai.info/models/epistle-to-the-son-of-the-wolf/12/) |\n| … السَّمآءِ بِأَنْ تُؤَيِّدَهُمْ عَلَى **الإِنْصَافِ** فِي أَمْرِكَ، لَعَلَّ يَجِدُونَ … | … aid them to act **equitably** in Thy Cause, that … | [Prayers and Meditations CVIII.6](https://ctai.info/models/prayers-and-meditations/466/) |\n| … ﴾ أَحَبُّ الأَشْيَاءِ عِنْدِي **الإنْصافُ.** لَا تَرْغَبْ عَنْهُ إِنْ … | … in My sight is **Justice**; turn not away … | [The Hidden Words 5](https://ctai.info/models/the-hidden-words/3/) |\n| … العالمین خذوا العدل و **الإنصاف** و دعوا ما أمرکم … | … ye to justice and **fairness**, and turn away … | [Gleanings CLXIV.1](https://ctai.info/models/gleanings/719/) |\n| … بذلک مظاهر العدل و **الانصاف** و لکنّ القوم فی … | … exponents of justice and **equity**, and yet the … | [Epistle to the Son of the Wolf 191](https://ctai.info/models/epistle-to-the-son-of-the-wolf/191/) |\n\nThe original Arabic text reads:\n\n> [أَحَبُّ الأَشْيَاءِ عِنْدِي الإنْصافُ](https://ctai.info/models/the-hidden-words/3/) — *The Hidden Words* — Bahá'u'lláh\n\nTransliterated, it is: *Aḥabbu’l-ashyā’i ‘indī’l-inṣāf*.\n\nAs for the rendering, Shoghi Effendi translated *al-inṣāf* as \"Justice\" in this particular English edition."
+      },
+      {
+       "role": "user",
+       "content": "You told me it is \"the second of the Arabic passages\", but your table cites it as \"The Hidden Words 5\", so which is it? Please also say exactly which edition and paragraph that table row comes from, and who compiled the Phelps Inventory number BH00386 you cited."
+      }
+     ]
+    }
+   ]
   }
  ]
 }

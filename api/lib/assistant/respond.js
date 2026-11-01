@@ -6,7 +6,7 @@
 
 import { extractPhrases, fixedPhrases, hintsOf } from './phrases.js';
 import { religionsReply } from './library-facts.js';
-import { speakerTradition } from '../search-plan.js';
+import { speakerTradition, followUpAsks } from '../search-plan.js';
 import { questionSubject } from '../planned-search.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
@@ -77,17 +77,40 @@ export function searchQueryFor(messages) {
   // wording to find stands alone: its own "it"/"this" is part of the quotation, not a reference to the last question
   if (detectQuotation(current, { said })) return clipQuery(current, QUERY_MAX);
   const previous = users.at(-2);
-  if (!previous) return clipQuery(current, QUERY_MAX);
+  if (!previous) return distilQuery(current);
   const words = current.split(/\s+/).filter(Boolean).length;
   // a long follow-up that names its own subjects (works, people, terms) stands alone: its "that passage" points into the
   // last REPLY, and the previous question's names only steer retrieval off it (r6, 11-01: 11 of 108 defects —
   // "Muhammad Hira Moses Síyáh-Chál You said … the Maid of Heaven …" missed the Haykal passage)
-  if (words > 14 && namesOf(current).length >= 2) return clipQuery(current, QUERY_MAX);
+  if (words > 14 && namesOf(current).length >= 2) return distilQuery(current);
   // the follow-up carries the REFERENCE it leans on (the previous question if short, else its names), never raw history
-  return (ANAPHOR.test(current) || words <= 5) ? clipQuery(`${referenceOf(previous)} ${current}`.trim(), QUERY_MAX) : clipQuery(current, QUERY_MAX);
+  return (ANAPHOR.test(current) || words <= 5) ? clipQuery(`${referenceOf(previous)} ${current}`.trim(), QUERY_MAX) : distilQuery(current);
+}
+
+// A greeting or address opening the message ("Hello Anís.", "Dear Anís,") is no search term: r6-after soul T1 searched
+// "Hello Anís. My grandmother passed away…" whole and surfaced a farm story and a séance, then told a grieving reader the
+// texts "do not touch on the afterlife".
+const GREETING = /^(?:(?:hello|hi|hey|dear|greetings|good (?:morning|afternoon|evening)|all[aá]h[- ]?u[- ]?abh[aá])\b[^.!?\n]{0,30}?[.!,\n]\s*)+/i;
+// a sentence that asks: a question, or a request ("Give me…", "Then do the same for…")
+const ASKS_SENTENCE = /\?\s*$|^(?:then |and |also |now |please |so )*(?:give|show|tell|find|quote|list|explain|cite|send|do|say|compare|point)\b/i;
+/** The search string for a standalone message: the greeting dropped and, when it is longer than the query limit, the
+ *  asking sentences kept first — the ask usually comes last, past the cut (r6-after 004 T5: the Rāmānuja request was
+ *  cut off at 400 characters and the reply said his words were not in the library). Pure. */
+export function distilQuery(text) {
+  const t = String(text || '').replace(GREETING, '').trim() || String(text || '').trim();
+  if (t.length <= QUERY_MAX) return t;
+  const sents = t.match(/[^.!?\n]+(?:[.!?]+|$)/g)?.map((x) => x.trim()).filter(Boolean) || [t];
+  const asking = sents.filter((x) => ASKS_SENTENCE.test(x));
+  return clipQuery([...asking, ...sents.filter((x) => !asking.includes(x))].join(' '), QUERY_MAX);
 }
 
 const QUERY_MAX = 400;
+const ASK_WORDS = { translator: 'who translated or recorded it', location: 'the exact location (chapter, volume, page, paragraph, Váḥid/Gate)',
+  recipient: 'the recipient and date', next: 'what comes next in the text', original: 'the original Arabic/Persian word',
+  authenticity: 'whether the wording is the author\'s own or a paraphrase, commentary or a secretary\'s letter', full: 'the full passage',
+  usage: 'where else the word or idea appears', several: 'each separate question' };
+const ASKS_HOW = (asks) => `The seeker asks several things: ${asks.map((a) => ASK_WORDS[a] || a).join('; ')}. Answer each one in turn from the passages; for any the passages do not settle, say so in one plain sentence — never drop it.`;
+const PUSHBACK_HOW = 'The seeker challenges your previous reply. Check that claim against the passages: where they do not support it, say so plainly and correct it; where they do, quote the words that show it.';
 const clipQuery = (s, n) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, ''));
 // Capitalised words that open sentences or address the assistant — never the subject a follow-up refers to.
 const NOT_A_NAME = /^(I|I['’]\p{L}+|Ok|Okay|Also|And|But|So|Then|Now|Yes|No|Thanks|Thank|Please|Hello|Hi|Dear|Does|Do|Did|Is|Are|Was|Were|Can|Could|Would|Should|Will|What|Which|Who|Whom|Whose|When|Where|Why|How|The|A|An|In|On|Of|For|If|It|This|That|These|Those|There|He|She|They|You|Your|We|My|Anís|Anis)$/iu;
@@ -523,8 +546,17 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // the original lookup runs ALONGSIDE the source hunt, not after it (r6-base: source-hunt 3.5 s then original 6.6–8 s, serial,
   // made the two slowest non-cold turns, 11.7 s and 14.4 s); its result is used only when the hunt finds nothing
   const originalP = !researched && wantsOriginal ? timed('original', () => originalWording(d, question, messages)).catch(() => null) : null;
-  const sourced = !researched && !plan?.named && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4) || looksLikeSourceQuestion(question)
-    || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8)) ? await timed('source-hunt', () => huntSource(d, question)) : null;
+  // a quotation hunt needs a quotation: in a thread, the triage kind alone ("source_lookup") with no wording set apart from the
+  // question once hunted the reader's own sentence (px-smoke return-iqan T2/T3: City of God for an Íqán question)
+  const separate = quoted !== trimTalk(question.trim()) && quoted !== question.trim();
+  const huntable = !researched && !plan?.named && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4 && (separate || messages.length <= 1))
+    || looksLikeSourceQuestion(question) || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8));
+  // FOLLOW-UP ASKS (search-plan followUpAsks): "where is it from — and who translated it, which volume, what happened next?"
+  // The hunt's template answers only the origin and dropped every other ask (r6-after: 7 strategy defects). With other asks
+  // the hunt runs as EVIDENCE beside the ordinary search and the reply answers all of them.
+  const asks = huntable ? followUpAsks(question) : [];
+  const huntP = huntable ? timed('source-hunt', () => huntSource(d, question)).catch(() => null) : null;
+  const sourced = huntP && !asks.length ? await huntP : null;
   // "What are those words in Persian?" about a numbered passage → the canonical paragraph WITH its aligned original
   const original = !sourced && originalP ? await originalP : null;
   if (sourced) {
@@ -593,6 +625,13 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       if (o) retrieved.splice(retrieved.length, 0, { ...retrieved[i], text: o.original, source_title: `${retrieved[i].source_title} (original)`, source_lang: o.lang, via: 'original' });
     });
   }
+  // the hunt's origin (and the original tablet) lead the evidence for a multi-ask turn; its extra links are allowed too
+  const huntExtra = huntP && asks.length && !sourced && !researched && !original && !study ? await huntP : null;
+  if (huntExtra?.retrieved?.length) {
+    const seen = new Set(huntExtra.retrieved.map((q) => q.citation_url).filter(Boolean));
+    retrieved.splice(0, retrieved.length, ...huntExtra.retrieved.map((q) => ({ ...q })), ...retrieved.filter((q) => !q.citation_url || !seen.has(q.citation_url)));
+    if (res) res._plan = { ...(res._plan || {}), sourceHunt: huntExtra.hunt, asks };
+  } else if (asks.length && res?._plan) res._plan = { ...res._plan, asks };
   // A QUOTATION HUNT keeps only passages that hold the wording (or nearly all its words). Nothing near → say so plainly:
   // no neighbours, no people, no other topic to pivot to (11-01: "find the quote …" was answered with the Letters of the Living).
   const huntPhrase = !researched && !sourced && !original && !study ? res?._plan?.quote?.phrase : null;
@@ -648,6 +687,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     if (comp?.offer) onEvent({ type: 'companion_offer', offer: 'connect' });
   } catch { comp = null; }   // relationship enriches the answer; it never blocks one
   const format = await formatP;
+  // a follow-up with several asks answers EACH, and a challenge is checked against the passages, never smoothed over (r6-after)
+  const extraHow = [asks.length ? ASKS_HOW(asks) : '', plan?.pushback && !quoteMiss ? PUSHBACK_HOW : ''].filter(Boolean).join('\n');
+  if (extraHow && format) format.how = `${format.how ? `${format.how}\n` : ''}${extraHow}`;
 
   onEvent({ type: 'stage', stage: 'craft' });
   // Stream a sentence at a time, releasing only sentences whose quotes are in the passages — an invented quote is
@@ -657,7 +699,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // (the stream once showed a link the model had moved onto another domain; only the final text caught it).
   const paEvidence = pa ? [...(pa.contested || []).flatMap((p) => [...p.evidence, ...p.against]), ...(pa.notMet || []).flatMap((p) => p.evidence)] : [];
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url })),
-    ...(sourced?.extraUrls || []).map((u) => ({ citation_url: u })), ...(study?.researchUrl ? [{ citation_url: study.researchUrl }] : [])];
+    ...(sourced?.extraUrls || huntExtra?.extraUrls || []).map((u) => ({ citation_url: u })), ...(study?.researchUrl ? [{ citation_url: study.researchUrl }] : [])];
   const exactUrls = sourced ? [...retrieved.map((q) => q.citation_url), ...sourced.extraUrls].filter(Boolean) : null;
   const cleanLinks = (t) => dropQuibbles(unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(fillTags(t, sourced.tags), exactUrls) : t, retrieved), allowed)), { question, format: format?.id });
   const gate = createSentenceGate(retrieved, (t) => {

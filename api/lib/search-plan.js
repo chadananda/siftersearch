@@ -105,6 +105,49 @@ export function keywordAuthor(text) {
   return Object.entries(AUTHOR_NAMES).find(([, names]) => names.some((n) => f.includes(` ${n} `)))?.[0];
 }
 
+// PUSHBACK RULE (deterministic): a reader challenging the last reply — "is that actually what the Tablet says, or are you reading
+// it in?", "are you sure?", "that's not right", "no, I meant …", "or is that your gloss?" — is about the passage under discussion,
+// never a wording hunt (r6-after: seed-93 T3 and detachment T5 went to quote and retrieved nothing to hold or concede with).
+const PUSHBACK = new RegExp([
+  String.raw`\bare you (?:sure|certain)\b`, String.raw`\b(?:that|this|it)(?:'s| is| was)? (?:not (?:right|correct|true|what)|wrong|incorrect|a paraphrase)\b`,
+  String.raw`\bno,? i (?:meant|mean|asked|was asking)\b`, String.raw`\bnot what i (?:asked|meant)\b`,
+  String.raw`\b(?:is|was) (?:that|this|it)(?: \w+)? (?:actually|really|truly|even)\b`,
+  String.raw`\b(?:does|did|do) (?:it|that|this|the (?:text|tablet|passage|sutra|verse|book|letter)|he|she|they) (?:actually|really|even) (?:say|says|use|mention|state|contain)\b`,
+  String.raw`\bor (?:is|was|are) (?:that|this|it|those|these) (?:your|just|merely|only|a|an)\b`,
+  String.raw`\byour (?:own )?(?:gloss|interpretation|reading|synthesis|paraphrase|words|inference|addition)\b`,
+  String.raw`\breading (?:it|that|this|them) in(?:to)?\b`, String.raw`\bwhere does it (?:actually )?say\b`,
+  String.raw`\b(?:i (?:don't|do not|can't|cannot) (?:see|find)|nowhere (?:does|do)) (?:that|this|it|the text|the passage)\b`,
+].join('|'), 'i');
+/** The turn challenges the previous reply's claim or reading. Pure. */
+export const isPushback = (text) => PUSHBACK.test(stripMarkup(text));
+
+// FOLLOW-UP ASKS: what a turn wants BEYOND "where is this from". A quotation plus "who recorded it, which volume and page, and
+// what happened next" is not a bare source hunt — the hunt's one-paragraph template drops every other ask (r6-after: 7 strategy
+// defects, equality-sexes T2, seed-21 T2/T4, seed-39 T3/T5, seed-66 T5, golden-rule T5). Pure; [] = a plain source question.
+const ASKS = {
+  translator: /\b(?:translat(?:ed|ion|ions|or|ors)|recorded|record(?:er|ing) of|interpret(?:ed|er)\b|whose (?:translation|notes|words))/i,
+  location: /\b(?:chapter|volume|vol\.|issue|page|pages|v[aá]h?[ií]d|gate|section|paragraph|verse) /i,
+  recipient: /\b(?:recipient|addressed to|to whom|written to|dated?\b|what year|when (?:was|did|is|were))/i,
+  next: /\b(?:what happened|happened (?:next|after|then)|right after|afterwards|what (?:came|comes) (?:next|after)|the rest of|continu(?:e|es|ation))\b/i,
+  original: /\b(?:original (?:word|term|language|text)|(?:arabic|persian|farsi) (?:word|term|original)|(?:persian|arabic) or (?:persian|arabic) (?:word|term)|what (?:is|was) the (?:arabic|persian|original))\b/i,
+  authenticity: /\b(?:paraphrase|commentary|secretary|on (?:his|her|the guardian's|shoghi effendi'?s?) behalf|authentic|actually (?:in|from) the text)\b/i,
+  full: /\b(?:(?:full|whole|complete|entire) (?:passage|text|quote|quotation|tablet|letter)|exact words)\b/i,
+  usage: /\b(?:where else|elsewhere|other (?:places|passages|texts) where)\b/i,
+};
+export function followUpAsks(text) {
+  const t = stripMarkup(text).normalize('NFD').replace(/[̀-ͯ]/g, '');   // "Váḥid" → "Vahid"
+  const out = Object.entries(ASKS).filter(([, re]) => re.test(t)).map(([k]) => k);
+  if (isPushback(t) && !out.includes('authenticity')) out.push('authenticity');
+  // two or more separate questions ("…? … and whether …?") are several asks however worded
+  if ((t.match(/\?/g) || []).length >= 2 && !out.length) out.push('several');
+  return out;
+}
+
+// COMPARISON RULE: "isn't that close to the Buddhist view?" compares with another tradition — topic, comparative (r6-after
+// 004-soul-reincarnation T2 went to define and produced a nafs/ṣifát tangent instead of the Buddhist material)
+const COMPARES = /\b(?:close to|similar to|akin to|same as|parallel(?:s| to)?|compar\w*|contrast\w*|differ\w* from|versus|vs\.?)\b/i;
+const comparesTradition = (text) => COMPARES.test(text) && !!speakerTradition(text);
+
 const PLAN_TTL_MS = 30 * 60 * 1000;
 const planCache = new Map();
 
@@ -190,6 +233,7 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
   const quote = detectQuotation(lastUser, { said });
   // MEANING RULE: an etymology / meaning / comparison question is define (or topic, for a comparison), never a quote hunt
   const meaning = !quote && isMeaningQuestion(stripMarkup(lastUser));
+  const pushback = said.length > 0 && isPushback(lastUser);
   const ruled = (plan, provenance, reason, extra = {}) => {
     const out = { ...plan, source: { ...plan.source }, provenance, reason: reason ?? null, ...extra };
     // CONVERSE GUARD (deterministic): two or more content words that are no greeting, thanks or question about the assistant are
@@ -207,6 +251,20 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
       if (plan.shape !== 'quote') out.overridden = { shape: plan.shape, about: plan.about, by: 'quote-rule' };
       Object.assign(out, { shape: 'quote', about: 'texts', quote });
       out.source.shape = 'quote-rule';
+    }
+    // PUSHBACK RULE: a challenge to the last reply with no wording of its own to find is about the passage under discussion
+    if (pushback) {
+      out.pushback = true;
+      if (!quote && out.shape === 'quote') {
+        out.overridden = { shape: out.shape, about: out.about, by: 'pushback-rule' };
+        Object.assign(out, { shape: 'topic', about: 'texts' }); out.source = { ...out.source, shape: 'pushback-rule' };
+      }
+    }
+    // COMPARISON RULE: "how is that different from / close to the Buddhist view" is a comparison, not a definition
+    if (!quote && out.shape === 'define' && comparesTradition(stripMarkup(lastUser))) {
+      out.overridden = { shape: 'define', about: out.about, by: 'comparison-rule' };
+      Object.assign(out, { shape: 'topic', comparative: true }); out.source = { ...out.source, shape: 'comparison-rule' };
+      if (out.source.religion !== 'caller') { out.filters = { ...out.filters }; delete out.filters.religion; }
     }
     return out;
   };
