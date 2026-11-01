@@ -265,6 +265,14 @@ export async function findDocuments(text, { scope = 'live', religion, collection
   return { docs: ranked, total: total?.n ?? 0, scope, limit, offset };
 }
 
+/** Live documents carrying one of these ISBNs (hyphens and spaces in the stored value ignored) → [{ id, title, author, paragraph_count }]. */
+export async function docsByIsbn(isbns) {
+  const list = [...new Set((isbns || []).map((x) => String(x).replace(/[^\dX]/gi, '').toUpperCase()).filter(Boolean))].slice(0, 12);
+  if (!list.length) return [];
+  return queryAll(`SELECT d.id, d.title, d.author, d.paragraph_count FROM docs d WHERE d.isbn IS NOT NULL AND REPLACE(REPLACE(UPPER(d.isbn), '-', ''), ' ', '') IN (${list.map(() => '?').join(', ')})
+    AND d.deleted_at IS NULL AND d.duplicate_of IS NULL LIMIT 10`, list, 'docs-repo:by-isbn');
+}
+
 /**
  * Follow `duplicate_of` to the document that actually holds the work.
  *

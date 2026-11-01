@@ -98,6 +98,20 @@ describe('intake', () => {
     await repo.updateItem(b.id, { state: 'source', original_path: '/x/b.txt' });
     expect((await deweyIntakeJob({ id: b.id }, deps({ shelf: null }))).state).toBe('needs-human');
   });
+  it('an IMAGE PDF (donor sidecar says image_pdf) goes to SLP even though its hidden layer reads fine; a born-digital PDF is not sent for that reason', async () => {
+    const words = 'the quick brown fox jumps over the lazy dog while the old river keeps running toward the distant sea '.repeat(6).trim();
+    const body = `BT /F1 12 Tf 50 700 Td (${words}) Tj ET`;
+    const pdf = Buffer.from(`%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n`
+      + `4 0 obj<</Length ${body.length}>>stream\n${body}\nendstream endobj\n5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF`);
+    const queue = vi.fn();
+    const mk = async (identified) => { const x = await repo.createItem({ title: 'Layered', identified }); await repo.updateItem(x.id, { state: 'source', original_path: `/x/l${x.id}.pdf` }); return x; };
+    const img = await mk({ provenance: { image_pdf: true } });
+    expect(await deweyIntakeJob({ id: img.id }, { ...deps(), read: async () => pdf, queue, slpEnabled: () => true })).toMatchObject({ state: 'needs-ocr', why: expect.stringMatching(/image PDF/) });
+    expect(queue).toHaveBeenCalledWith('dewey-ocr', { id: img.id }, 'dewey-intake');
+    const born = await mk({ provenance: { image_pdf: false } });
+    const r = await deweyIntakeJob({ id: born.id }, { ...deps(), read: async () => pdf, queue, slpEnabled: () => true });
+    expect(String(r.why)).not.toMatch(/image PDF/);   // (a one-line PDF may still stop for other reasons — only the image-PDF route is under test)
+  });
   it('a BOOK whose file is only a few pages waits for a person (the Apocalypse Unsealed preface, 10-18); a pilgrim note does not', async () => {
     const book = await repo.createItem({ title: 'The Apocalypse Unsealed', identified: { appraisal: { kind: 'book' } } });
     await repo.updateItem(book.id, { state: 'source', original_path: '/x/apocalypse.txt' });

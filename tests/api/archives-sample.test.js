@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { mkdtemp, writeFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), itemsToSample: vi.fn(), itemsWantingInfo: vi.fn(), itemsSampled: vi.fn(), resetSample: vi.fn(), setSample: vi.fn(), setRec: vi.fn(), answerInfo: vi.fn(), getItem: vi.fn() }));
+vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), itemsToSample: vi.fn(), itemsWantingInfo: vi.fn(), itemsSampled: vi.fn(), resetSample: vi.fn(), setSample: vi.fn(), setRec: vi.fn(), answerInfo: vi.fn(), getItem: vi.fn(), itemsToProbe: vi.fn(async () => []), setProbe: vi.fn(async () => {}) }));
 import { archiveSampleJob, samplePass, stagePlan, rerecDrive, garbled, itemPath, clipKey, titleKey, SAMPLE_SECS, DEEP_SECS } from '../../api/lib/ops/archive-sample-job.js';
 import { recommendFromSample, titlePage, introducedSpeaker, scriptLang, infoAnswer } from '../../api/lib/archives/sample-rec.js';
 
@@ -44,13 +44,15 @@ describe('itemPath / stagePlan', () => {
 });
 
 describe('samplePass', () => {
-  const rig = (items, wanting = []) => {
+  const rig = (items, wanting = [], probes = []) => {
     const saved = {}, recs = {}, answers = {}, put = vi.fn(async () => 99), imgPut = vi.fn(async () => 5);
     const byId = Object.fromEntries([...items, ...wanting].map((i) => [i.id, i]));
     return { saved, recs, answers, put, imgPut, deps: {
       q, store: { put }, imgStore: { put: imgPut }, drive: { id: 'g', root },
       toSample: async (_d, { kinds, limit }) => items.filter((i) => !saved[i.id]?.queued && (!kinds || kinds.includes(i.kind))).slice(0, limit),
       wanting: async () => wanting.filter((i) => !saved[i.id]?.deep_queued),
+      toProbe: async (_d, { limit }) => probes.filter((i) => !saved[`p${i.id}`]).slice(0, limit),
+      probeSave: async (id, p) => { saved[`p${id}`] = { ...saved[`p${id}`], ...p }; },
       item: async (id) => byId[id],
       save: async (id, s) => { saved[id] = { ...saved[id], ...s }; },
       rec: async (id, r) => { recs[id] = r; },
@@ -102,6 +104,25 @@ describe('samplePass', () => {
     for (let n = 0; n < 3; n++) { const c = await q.claim({ host: 'h', can: ['intake-talk'], types: ['intake'] }); await q.fail({ id: c.id, lease: c.lease, error: 'h: exit 1: ffmpeg clip: bad header' }); }
     expect(await samplePass({ drive: 'g', window: 5, deps })).toMatchObject({ failed: 1, staged: 0 });
     expect(saved[11].error).toMatch(/bad header/);
+  });
+  it('PROBE: an approved pdf is staged as an intake probe job; the worker class, text and metadata land whole in metadata.probe, not in the sample', async () => {
+    const pdf = { id: 31, kind: 'book', primary_rel: 'book.pdf', score: 40, decision: 'approve' };
+    const { saved, deps } = rig([], [], [pdf]);
+    expect(await samplePass({ drive: 'g', window: 5, deps })).toMatchObject({ probes_staged: 1 });
+    expect(saved.p31.queued).toBeTruthy();
+    const j = await work(() => ({ 'sample.json': JSON.stringify({ kind: 'book', probe: true, class: 'image_pdf', pages: 210, sampled: [1, 2, 3, 4, 40], text: '[page 1]\nTitle', meta_text: 'Title: X', words_pp: 300, img_frac: 1, hidden_font: true, ocr: false }) }));
+    expect(j).toMatchObject({ id: 'intake-probe-31', priority: 1540, stages: ['intake-book'] });
+    expect(j.body).toMatchObject({ probe: true });
+    expect(await samplePass({ drive: 'g', window: 5, deps })).toMatchObject({ probed: 1, pulled: 1 });
+    expect(saved.p31).toMatchObject({ class: 'image_pdf', pages: 210, hidden_font: true });
+    expect(saved[31]).toBeUndefined();   // no sample, no recommendation
+  });
+  it('a failed probe is recorded as an error marker (no blind retry)', async () => {
+    const { saved, deps } = rig([], [], [{ id: 32, kind: 'book', primary_rel: 'book.pdf', score: 1 }]);
+    await samplePass({ drive: 'g', window: 5, deps });
+    for (let n = 0; n < 3; n++) { const c = await q.claim({ host: 'h', can: ['intake-book'], types: ['intake'] }); await q.fail({ id: c.id, lease: c.lease, error: 'h: exit 1: pdfinfo: damaged' }); }
+    expect(await samplePass({ drive: 'g', window: 5, deps })).toMatchObject({ failed: 1 });
+    expect(saved.p32.error).toMatch(/damaged/);
   });
   it('a window per stage: talks waiting on a GPU leave room for books on the CPUs', async () => {
     const talks = [21, 22, 23].map((id) => ({ id, kind: 'talk', primary_rel: 'talks/a.mp3', duration_s: 60, score: 90 }));

@@ -3,12 +3,14 @@
 # talk: ffmpeg first SECS → clip.mp3 (listening) + 16 kHz wav → media_tool.py transcribe (inside the worker image: GPU, admission leases).
 # book: PDF page 1 → title.jpg; text = pdftotext of the first PAGES, else tesseract OCR of those pages rendered; EPUB/DOCX/ODT/HTML/TXT read
 # directly; a folder of page images → the first page as the title image + OCR. Writes sample.json {kind, text, …, files:[outputs]}. Stdlib only.
-import glob, html, json, os, re, shutil, subprocess, sys, zipfile
+# probe (job.probe, an approved PDF): the PRE-OCR DEDUP sample — class (born_digital | image_pdf | scan), PDF metadata, the title/copyright pages + ~5 pages spread
+# through the book (text layer, or tesseract for a scan). Needs only poppler (pdfinfo/pdftotext/pdfimages/pdffonts/pdftoppm) + tesseract, as book does.
+import glob, hashlib, html, json, os, re, shutil, subprocess, sys, zipfile
 
 D = sys.argv[1]
 JOB = json.load(open(os.path.join(D, 'job.json')))
 IN = sorted(glob.glob(os.path.join(D, 'in', '*')))
-TEXT_MAX = 30000 if JOB.get('deep') else 6000
+TEXT_MAX = 30000 if (JOB.get('deep') or JOB.get('probe')) else 6000
 
 
 def sh(args, **kw):
@@ -129,9 +131,65 @@ def book():
     return res
 
 
+def pick_pages(n):
+    # the title/copyright pages (1-4) + up to 5 spread through the rest
+    head = list(range(1, min(n, 4) + 1))
+    pool = n - 4
+    if pool <= 0:
+        return head
+    k = min(5, pool)
+    return sorted(set(head + [min(n, 5 + int((i + 0.5) * pool / k)) for i in range(k)]))
+
+
+def page_covered(src, p):
+    # does an image fill most of page p? (a scanned page, with or without a hidden OCR layer over it)
+    size = re.search(r'size:\s*([\d.]+)\s*x\s*([\d.]+)', sh(['pdfinfo', '-f', str(p), '-l', str(p), src]).stdout)
+    if not size:
+        return False
+    area = float(size.group(1)) / 72 * float(size.group(2)) / 72
+    for ln in sh(['pdfimages', '-list', '-f', str(p), '-l', str(p), src]).stdout.splitlines()[2:]:
+        c = ln.split()
+        try:
+            if c[2] == 'image' and float(c[12]) > 0 and float(c[13]) > 0 and int(c[3]) / float(c[12]) * int(c[4]) / float(c[13]) >= 0.6 * area:
+                return True
+        except (IndexError, ValueError):
+            continue
+    return False
+
+
+def probe():
+    src = IN[0]
+    info = sh(['pdfinfo', '-meta', src]).stdout
+    m = re.search(r'^Pages:\s+(\d+)', info, re.M)
+    n = int(m.group(1)) if m else 1
+    pgs = pick_pages(n)
+    layer = {p: sh(['pdftotext', '-f', str(p), '-l', str(p), '-enc', 'UTF-8', src, '-']).stdout.strip() for p in pgs}
+    words_pp = sum(len(t.split()) for t in layer.values()) / len(pgs)
+    img_frac = sum(1 for p in pgs if page_covered(src, p)) / len(pgs)
+    fonts = sh(['pdffonts', '-f', '1', '-l', '4', src]).stdout
+    has_layer = words_pp >= 25
+    cls = ('image_pdf' if has_layer else 'scan') if img_frac >= 0.6 else ('born_digital' if has_layer else 'scan')
+    if cls == 'scan':
+        texts = {}
+        for p in pgs:
+            sh(['pdftoppm', '-r', '200', '-gray', '-png', '-f', str(p), '-l', str(p), '-singlefile', src, os.path.join(D, f'pr{p}')])
+            f = os.path.join(D, f'pr{p}.png')
+            texts[p] = ocr([f]) if os.path.exists(f) else ''
+    else:
+        texts = layer
+    text = '\n\n'.join(f'[page {p}]\n{texts[p][:3000]}' for p in pgs)
+    meta = re.sub(r'<[^>]+>', ' ', info)
+    h = hashlib.sha256()
+    with open(src, 'rb') as fh:
+        for blk in iter(lambda: fh.read(1 << 20), b''):
+            h.update(blk)
+    return {'probe': True, 'sha256': h.hexdigest(), 'class': cls, 'pages': n, 'sampled': pgs, 'text': text[:TEXT_MAX], 'meta_text': tidy(meta)[:4000], 'words_pp': round(words_pp, 1),
+            'img_frac': round(img_frac, 2), 'hidden_font': bool(re.search(r'GlyphLess|Invisible|HiddenHorzOCR|Tesseract', fonts, re.I)), 'ocr': cls == 'scan', 'files': []}
+
+
 try:
     kind = JOB.get('kind')
-    r = talk() if kind == 'talk' else book()
+    r = probe() if JOB.get('probe') else talk() if kind == 'talk' else book()
     r.update({'kind': kind, 'deep': bool(JOB.get('deep')), 'item_id': JOB.get('item_id')})
 except SystemExit as e:
     print(str(e), file=sys.stderr)

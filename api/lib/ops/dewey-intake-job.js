@@ -69,9 +69,11 @@ export async function deweyIntakeJob({ id } = {}, deps = {}) {
   // a scan or a GARBLED text layer (old OCR) is not the book's text: it waits for full OCR — SearchLayerPDF, queued here
   // when configured (its output is checked before it comes back to this job)
   // ANY PDF that fails the gate goes to OCR — a handwritten letter's junk text layer (77 words, letter ratio 0.43) is a scan too
-  const needsOcr = !slp && ext === 'pdf' && (gate.ok ? garbledLayer(text) : true);
+  // an IMAGE PDF (page images under a hidden OCR layer — a donor import's probe says so in the sidecar, Chad 11-01) also goes to SLP: ours is better; the old layer served only the held check
+  const imagePdf = ext === 'pdf' && !!item.identified?.provenance?.image_pdf;
+  const needsOcr = !slp && ext === 'pdf' && (imagePdf || (gate.ok ? garbledLayer(text) : true));
   if (needsOcr) {
-    const why = gate.ok ? 'its text layer is a garbled old OCR' : `a scan: no text layer (${gate.why})`;
+    const why = imagePdf ? 'an image PDF: its hidden OCR layer is not used (SearchLayerPDF reads it better)' : gate.ok ? 'its text layer is a garbled old OCR' : `a scan: no text layer (${gate.why})`;
     const slpOn = (deps.slpEnabled || slpEnabled)();
     await updateItem(item.id, { state: 'needs-ocr' }, `${why} — ${slpOn ? 'sent for full OCR (SearchLayerPDF)' : 'waits for full OCR'}`);
     if (slpOn) await (deps.queue || enqueue)('dewey-ocr', { id: item.id }, 'dewey-intake');

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { mkdtemp, writeFile, mkdir, readFile, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), getDonor: vi.fn(), itemsToImport: vi.fn(), markImported: vi.fn(), itemsImportedUnlinked: vi.fn(),
+vi.mock('../../api/lib/repos/archives-repo.js', () => ({ getDrive: vi.fn(), getDonor: vi.fn(), itemsToImport: vi.fn(), itemsForDedup: vi.fn(async () => []), markImported: vi.fn(), itemsImportedUnlinked: vi.fn(),
   setCustody: vi.fn(), upsertDonor: vi.fn(), upsertDrive: vi.fn() }));
 vi.mock('../../api/lib/ops/media-jobs.js', () => ({ deweyMediaDir: () => '/x/media' }));
 vi.mock('../../api/lib/ops/dewey-ingest-folder-job.js', () => ({ ingestDir: () => '/x/ingest' }));
@@ -48,7 +48,7 @@ describe('archiveImportJob', () => {
   it('links each approved file with its sidecar, marks it, queues media-scan + Dewey; reruns reuse the link; fills public links later', async () => {
     repo.getDrive.mockResolvedValue(drive());
     repo.getDonor.mockResolvedValue({ name: 'Jane Smith' });
-    repo.itemsToImport.mockResolvedValue([{ id: 1, kind: 'talk', primary_rel: 'talks/a.mp3' }, { id: 2, kind: 'book', primary_rel: 'book.pdf' }, { id: 3, kind: 'photo', primary_rel: 'p.jpg' }]);
+    repo.itemsToImport.mockResolvedValue([{ id: 1, kind: 'talk', primary_rel: 'talks/a.mp3' }, { id: 2, kind: 'book', primary_rel: 'book.pdf', metadata: { probe: { class: 'born_digital', pages: 5 } } }, { id: 3, kind: 'photo', primary_rel: 'p.jpg' }]);
     repo.itemsImportedUnlinked.mockResolvedValue([{ id: 7, imported_ref: 'media:/m/x.mp3' }, { id: 8, imported_ref: 'dewey:abc' }, { id: 9, imported_ref: 'dewey:notyet' }]);
     const queue = vi.fn();
     const deps = { queue, sha: async () => 'sha-1', now: () => 'T', dirs: { mediaDir: join(out, 'm'), bookDir: join(out, 'b') },
@@ -70,6 +70,30 @@ describe('archiveImportJob', () => {
     expect(repo.markImported).toHaveBeenCalledWith(8, '/document/42');
     expect(r.linked).toBe(2);
     expect((await archiveImportJob({ drive: 'golden-age' }, deps)).talks[0].how).toBe('existed');
+  });
+  it('PDFs: unprobed wait; chapter files are listed not imported; a scan the library holds is skipped (held) or sent to a person (probably) BEFORE SLP; an image PDF is imported with image_pdf in its sidecar', async () => {
+    const root2 = await mkdtemp(join(tmpdir(), 'drive2-'));
+    for (const f of ['book.pdf', 'scan1.pdf', 'scan2.pdf', 'img.pdf']) await writeFile(join(root2, f), f);
+    await mkdir(join(root2, 'bk')); await writeFile(join(root2, 'bk/27 William Henry Randall chap 26.pdf'), 'c');
+    repo.getDrive.mockResolvedValue({ ...drive(), root: root2 }); repo.getDonor.mockResolvedValue({ name: 'Jane Smith' }); repo.itemsImportedUnlinked.mockResolvedValue([]);
+    const probe = (cls) => ({ probe: { class: cls, pages: 90, text: `[page 1]\n${'word '.repeat(5)}`, meta_text: '', sampled: [1] } });
+    repo.itemsToImport.mockResolvedValue([
+      { id: 10, kind: 'scan', primary_rel: 'book.pdf' },
+      { id: 11, kind: 'scan', primary_rel: 'bk/27 William Henry Randall chap 26.pdf', metadata: probe('scan') },
+      { id: 12, kind: 'scan', primary_rel: 'scan1.pdf', metadata: { probe: { ...probe('scan').probe, text: `[page 1]\n${'sampled sentence '.repeat(40)}` }, catalog: { title: 'Held Book' } } },
+      { id: 13, kind: 'scan', primary_rel: 'scan2.pdf', metadata: { ...probe('scan'), catalog: { title: 'Near Book' } } },
+      { id: 14, kind: 'scan', primary_rel: 'img.pdf', metadata: { ...probe('image_pdf'), catalog: { title: 'Fresh Book' } } },
+    ]);
+    const check = async (id) => (id.title === 'Held Book' ? { verdict: 'held', candidates: [{ id: 5, title: 'Held Book', paragraph_count: 300 }] }
+      : id.title === 'Near Book' ? { verdict: 'possible', candidates: [{ id: 6, title: 'Near Book (other)', paragraph_count: 300 }] } : { verdict: 'not-held', candidates: [] });
+    const queue = vi.fn();
+    const r = await archiveImportJob({ drive: 'golden-age' }, { queue, check, byIsbn: async () => [], sha: async () => 'sha-2', now: () => 'T', dirs: { mediaDir: join(out, 'm2'), bookDir: join(out, 'b2') }, media: {}, dewey: {} });
+    expect(r.skipped).toEqual([{ id: 10, why: expect.stringMatching(/not probed yet/) }]);
+    expect(Object.keys(r.chapter_sets)).toEqual(['bk/# william henry randall chap #']);
+    expect(r.held).toEqual([expect.objectContaining({ id: 12, by: 'text', class: 'scan', candidate: '#5 Held Book' })]);
+    expect(r.needs_person).toEqual([expect.objectContaining({ id: 13, class: 'scan', candidate: '#6 Near Book (other)' })]);
+    expect(r.books).toEqual([expect.objectContaining({ id: 14 })]);
+    expect(JSON.parse(await readFile(`${r.books[0].dest}.source.json`, 'utf8'))).toMatchObject({ image_pdf: true, pdf_class: 'image_pdf', pdf_pages: 90 });
   });
   it('nothing approved → nothing queued', async () => {
     repo.getDrive.mockResolvedValue(drive()); repo.itemsToImport.mockResolvedValue([]); repo.itemsImportedUnlinked.mockResolvedValue([]);

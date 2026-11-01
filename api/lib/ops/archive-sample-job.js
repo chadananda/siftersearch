@@ -3,12 +3,13 @@
 // results — clip → R2 (private, signed for listening), title page → R2 `siftersearch` (served through /img), text + recommendation → the item.
 // Workers (scripts/media/worker/intake-agent.mjs) transcribe and OCR. Priority = score (order, never a filter); "More info" → a deeper look
 // (5 min of transcript / 15 pages) whose answer returns the item to the undecided view. Idempotent and resumable: an item is staged once
-// (sample.queued), a job id is the item id. One run = passes for up to ~20 min, then it requeues itself while work remains. Lane 'archive'.
+// (sample.queued), a job id is the item id. PROBE (Chad 11-01): an APPROVED pdf is also staged as an 'intake' job with probe:true — the worker classes it (born_digital | image_pdf |
+// scan) and reads its title/copyright pages + ~5 spread pages (text layer, or tesseract); the result lands in metadata.probe for the pre-OCR dedup (archives/pre-ocr.js). One run = passes for up to ~20 min, then it requeues itself while work remains. Lane 'archive'.
 import { join, normalize, extname } from 'path';
 import { createReadStream } from 'fs';
 import { stat, mkdtemp, readFile, rm } from 'fs/promises';
 import { tmpdir } from 'os';
-import { getDrive, itemsToSample, itemsWantingInfo, itemsSampled, resetSample, setSample, setRec, answerInfo, getItem } from '../repos/archives-repo.js';
+import { getDrive, itemsToSample, itemsWantingInfo, itemsSampled, resetSample, setSample, setRec, answerInfo, getItem, itemsToProbe, setProbe } from '../repos/archives-repo.js';
 import { recommendFromSample, infoAnswer } from '../archives/sample-rec.js';
 
 export const SAMPLE_SECS = 60, DEEP_SECS = 300, PAGES = 3, DEEP_PAGES = 15;
@@ -50,20 +51,20 @@ export async function stagePlan(root, it, { deep = false, size = async (p) => (a
 }
 
 const jobId = (id, deep) => `intake-${id}${deep ? '-deep' : ''}`;
-async function stage(q, drive, it, deep) {
+async function stage(q, drive, it, deep, probe = false) {
   const plan = await stagePlan(drive.root, it, { deep });
-  const id = jobId(it.id, deep);
+  const id = probe ? `intake-probe-${it.id}` : jobId(it.id, deep);
   let bytes = 0;
   for (const f of plan.files) bytes += (await q.put('files', id, f.name, createReadStream(f.src, f.end != null ? { end: f.end } : {}))).bytes;
   await q.enqueue([{ id, file_id: id, item_id: it.id, type: 'intake', stages: [plan.kind === 'talk' ? 'intake-talk' : 'intake-book'], invoice: { audio_s: 0, bytes },
-    priority: Math.round(Number(it.score) || 0) + (deep ? 1000 : 0), drive: drive.id, kind: plan.kind, deep, secs: plan.secs, pages: plan.pages, lang: it.lang || null }]);
+    priority: Math.round(Number(it.score) || 0) + (deep ? 1000 : 0) + (probe ? 1500 : 0), drive: drive.id, kind: plan.kind, deep, ...(probe ? { probe: true } : {}), secs: plan.secs, pages: plan.pages, lang: it.lang || null }]);
   return bytes;
 }
 
 /** One pass: pull finished and failed jobs, then stage "More info" looks and new samples up to the window. → counts */
 export async function samplePass({ drive, window = 24, deps }) {
-  const { q, store, imgStore, save = setSample, rec = setRec, answer = answerInfo, item = getItem, toSample = itemsToSample, wanting = itemsWantingInfo } = deps;
-  const out = { pulled: 0, failed: 0, staged: 0, deep: 0, errors: {} };
+  const { q, store, imgStore, probeSave = setProbe, toProbe = itemsToProbe, save = setSample, rec = setRec, answer = answerInfo, item = getItem, toSample = itemsToSample, wanting = itemsWantingInfo } = deps;
+  const out = { pulled: 0, failed: 0, staged: 0, deep: 0, probed: 0, probes_staged: 0, errors: {} };
   const note = (why) => { why = String(why).slice(0, 160); out.errors[why] = (out.errors[why] || 0) + 1; };
   for (const j of await q.listDone(50, 'intake')) {
     const b = j.body || {}, tmp = await mkdtemp(join(tmpdir(), 'intake-'));
@@ -71,7 +72,12 @@ export async function samplePass({ drive, window = 24, deps }) {
       const names = (j.result?.outputs || []).map((o) => o.name);
       const local = async (n) => q.get('results', j.id, n, join(tmp, n));
       const s = JSON.parse(await readFile(await local('sample.json'), 'utf8'));
-      const at = new Date().toISOString(), it = await item(j.item_id);
+      const at = new Date().toISOString();
+      if (b.probe) {   // the pre-OCR probe: class, pages, sampled text, PDF metadata — kept whole on the item, never a sample
+        await probeSave(j.item_id, { class: s.class, pages: s.pages, sampled: s.sampled, text: s.text, meta_text: s.meta_text, words_pp: s.words_pp, img_frac: s.img_frac, hidden_font: !!s.hidden_font, ocr: !!s.ocr, at });
+        out.probed++; out.pulled++; continue;
+      }
+      const it = await item(j.item_id);
       const patch = {};
       if (names.includes('clip.mp3')) { const key = clipKey(b.drive, j.item_id, 'mp3', b.deep); patch.clip = { key, ext: 'mp3', secs: s.secs, bytes: await store.put(key, await local('clip.mp3')), at }; }
       if (names.includes('title.jpg') && imgStore) { const key = titleKey(b.drive, j.item_id); await imgStore.put(key, await local('title.jpg')); patch.title_image = key; }
@@ -90,6 +96,7 @@ export async function samplePass({ drive, window = 24, deps }) {
   }
   for (const j of await q.listDone(50, 'intake', 'failed')) {   // the queue gave up after its attempts: recorded, never retried blindly
     const b = j.body || {};
+    if (b.probe) { await probeSave(j.item_id, { error: String(j.error || 'failed').slice(-300), at: new Date().toISOString() }).catch(() => {}); out.failed++; await q.ack([j.id]); continue; }
     await save(j.item_id, { [b.deep ? 'deep_error' : 'error']: String(j.error || 'failed').slice(-300) }).catch(() => {});
     if (b.deep) await answer(j.item_id, `The deeper look failed: ${String(j.error || '').slice(-200)}`).catch(() => {});
     note(String(j.error || 'failed').split(':').slice(1).join(':').trim().slice(0, 80) || 'failed'); out.failed++;
@@ -110,6 +117,12 @@ export async function samplePass({ drive, window = 24, deps }) {
       try { await stage(q, d, it, false); await save(it.id, { queued: new Date().toISOString() }); out.staged++; }
       catch (e) { note(e.message); await save(it.id, { queued: new Date().toISOString(), error: e.message }); }
     }
+  }
+  // approved PDFs get their pre-OCR probe, ahead of the samples (priority) but inside the same book window
+  const room = window - (byStage['intake-book'] || 0) - out.staged;
+  for (const it of room > 0 ? await toProbe(drive, { limit: room }) : []) {
+    try { await stage(q, d, it, false, true); await probeSave(it.id, { queued: new Date().toISOString() }); out.probes_staged++; }
+    catch (e) { note(e.message); await probeSave(it.id, { error: e.message, at: new Date().toISOString() }); }
   }
   return out;
 }
@@ -150,19 +163,19 @@ export async function archiveSampleJob({ drive, window = 24, minutes = 20, round
   const imgStore = deps.imgStore !== undefined ? deps.imgStore : await r2StageStore({ ...process.env, MEDIA_STAGE_BUCKET: 'siftersearch' });
   const draining = deps.draining || (await import('../drain.js')).isDraining;
   const nap = deps.nap || ((ms) => new Promise((r) => setTimeout(r, ms)));
-  const total = { drive, round, passes: 0, pulled: 0, failed: 0, staged: 0, deep: 0, errors: {} };
+  const total = { drive, round, passes: 0, pulled: 0, failed: 0, staged: 0, deep: 0, probed: 0, probes_staged: 0, errors: {} };
   const until = Date.now() + minutes * 60_000;
   for (;;) {
     const p = await samplePass({ drive, window, deps: { ...deps, q, store, imgStore, drive: d } });
     total.passes++;
-    for (const k of ['pulled', 'failed', 'staged', 'deep']) total[k] += p[k];
+    for (const k of ['pulled', 'failed', 'staged', 'deep', 'probed', 'probes_staged']) total[k] += p[k];
     for (const [k, v] of Object.entries(p.errors)) total.errors[k] = (total.errors[k] || 0) + v;
     if (draining() || Date.now() >= until) break;
     await nap(60_000);
   }
   const st = await q.stats('intake'), inFlight = (st?.states?.queued?.n || 0) + (st?.states?.leased?.n || 0) + (st?.states?.done?.n || 0);
   total.in_flight = inFlight;
-  total.remaining = (await (deps.toSample || itemsToSample)(drive, { limit: 1 })).length;
+  total.remaining = (await (deps.toSample || itemsToSample)(drive, { limit: 1 })).length + (await (deps.toProbe || itemsToProbe)(drive, { limit: 1 })).length;
   if ((inFlight || total.remaining) && !deps.noRequeue) await (deps.requeue || (async (p) => (await import('../repos/ops-report-repo.js')).enqueue('archive-sample', p, 'archive-sample')))({ drive, window, minutes, round: round + 1 });
   return total;
 }
