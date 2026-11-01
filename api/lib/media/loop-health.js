@@ -55,11 +55,12 @@ export function sectionState(b, now, { k = K_MISSED, minSamples = MIN_SAMPLES, e
 }
 
 /** May the loop abandon a hung section and start it again? Twice the hung bar, doubled per heal that did not bring a good pass. */
-export function shouldHeal(b, now, { k = K_MISSED, minSamples = MIN_SAMPLES } = {}) {
+// progressAt: the pass's last sign of work (a step taken): a pass that keeps stepping is never abandoned, only one silent for the bar.
+export function shouldHeal(b, now, { k = K_MISSED, minSamples = MIN_SAMPLES, progressAt = 0 } = {}) {
   if (b?.running_since == null) return false;
   const norm = Math.max(median(b.durs) ?? 0, median(b.gaps) ?? 0);
   if ((b.gaps?.length || 0) < minSamples || !(norm > 0)) return false;
-  return now - b.running_since > 2 * k * norm * 2 ** (b.heals_in_row || 0);
+  return now - Math.max(b.running_since, progressAt || 0) > 2 * k * norm * 2 ** (b.heals_in_row || 0);
 }
 export function noteHeal(st, name, now, why) {
   const b = st.loop_beats?.[name];

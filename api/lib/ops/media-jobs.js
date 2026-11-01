@@ -1888,8 +1888,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       LH.beat(st, 'home', { n: homeTasks.size }, now());
       // SELF-HEAL (Chad 10-31): a queue pass stuck far past its own measured norm is abandoned — its queue clients refuse every further call
       // (LH.guarded), so it can neither enqueue, ack nor adopt when it wakes — and a fresh pass starts; the bar doubles per heal without a good pass
-      if (qPass && LH.shouldHeal(st.loop_beats?.q_pass, now())) {
-        const ph = st.q_pass?.phase || '?', why = `queue pass hung in '${ph}' for ${Math.round((now() - st.loop_beats.q_pass.running_since) / 60_000)} min: abandoned, a fresh pass starts`;
+      if (qPass && LH.shouldHeal(st.loop_beats?.q_pass, now(), { progressAt: Math.max(st.q_pass?.phase_at || 0, st.q_pass?.step?.at || 0) })) {
+        const ph = st.q_pass?.phase || '?', why = `queue pass hung in '${ph}' (no step for ${Math.round((now() - Math.max(st.loop_beats.q_pass.running_since, st.q_pass?.phase_at || 0, st.q_pass?.step?.at || 0)) / 60_000)} min, pass ${Math.round((now() - st.loop_beats.q_pass.running_since) / 60_000)} min): abandoned, a fresh pass starts`;
         for (const s of ['q_pass', { lan: 'q_lan', edge: 'q_edge', plan: 'pod_plan' }[ph]].filter(Boolean)) if (st.loop_beats?.[s]?.running_since) LH.beat(st, s, { ok: false, err: why }, now());
         LH.noteHeal(st, 'q_pass', now(), why);
         console.warn(`[media-cloud] SELF-HEAL ${why}`);
@@ -1903,7 +1903,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
         // the pass is observable (10-31: it sat 50 min in an upload and nothing said so): when it started, the phase it is in, how long the
         // last one took, and its error — a stale q_lan.at is explained by q_pass, never silent
         const passAt = now(), myGen = ++passGen, alive = () => myGen === passGen;
-        const phase = (ph) => { if (alive()) st.q_pass = { ...(st.q_pass || {}), started: passAt, phase: ph, phase_at: now() }; };
+        const phase = (ph) => { if (alive()) st.q_pass = { ...(ph === 'start' ? {} : st.q_pass || {}), started: passAt, phase: ph, phase_at: now() }; };
+        // progress into the pass record (persisted with the lane state): the step in hand, and ms per pull type/source, feed, stats
+        const trace = { step: (o) => { if (alive()) st.q_pass = { ...st.q_pass, step: { ...o, at: now() } }; },
+          sub: (key, ms) => { if (!alive()) return; const sub = (st.q_pass.sub ||= {}), x = (sub[key] ||= { n: 0, ms: 0 }); x.n++; x.ms += ms; } };
         phase('start');
         LH.beatStart(st, 'q_pass', passAt);
         qPass = (async () => {
@@ -1914,7 +1917,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           const [QF, QCl, wrMod, LQ] = await Promise.all([import('../media/queue-feed.js'), import('../media/queue-client.mjs'), import('../media/whole-result.js'), import('../repos/media-queue-repo.js')]);
           // every side-effecting dependency is guarded by this pass's generation (self-heal above)
           const queueClient = (o) => LH.guarded(QCl.queueClient(o), alive), localQueue = () => LH.guarded(LQ.localQueue(), alive), wr = LH.guarded(wrMod, alive);
-          const deps = { repo: LH.guarded(repo, alive), wr, now, full: !!acceptedWorker, decided, remaster: (id) => { if (!alive()) throw Error('queue pass abandoned'); return queue('media-remaster', { id }, 'media-cloud-remaster'); } };
+          const deps = { trace, repo: LH.guarded(repo, alive), wr, now, full: !!acceptedWorker, decided, remaster: (id) => { if (!alive()) throw Error('queue pass abandoned'); return queue('media-remaster', { id }, 'media-cloud-remaster'); } };
           const QC = await import('../../../worker/queue/core.js');
           const podTyped = process.env.MEDIA_POD_TYPED === '1';
           // the pods' R2 buffer (Chad 10-31): ~BUFFER_H of pod work staged on the edge before and while pods run; the feed fills it from prepped talks first
@@ -1947,7 +1950,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           LH.beatStart(st, 'q_edge', now());
           const edgeR = await QF.tick(st, { ...deps, q: queueClient({ key: queueKey }) }).catch((e) => { LH.beat(st, 'q_edge', { ok: false, err: e.message }, now()); throw e; });
           if (!alive()) return;
-          st.q_last = { at: now(), ...edgeR };
+          st.q_last = { at: now(), ...edgeR, sub: st.q_pass?.sub };
           LH.beat(st, 'q_edge', { n: (edgeR.pulled?.adopted || 0) }, now());
           phase('plan');
           LH.beatStart(st, 'pod_plan', now());
@@ -1962,7 +1965,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           await localQueue().policy({ buffer_low: buf.buffer_low, buffer_h: buf.buffer_h, want_h: buf.want_h, ...(buf.home_gpu === false ? { home_gpu: false } : {}), mode: plan.mode }).catch(() => null);
           (st.buffer_log ||= []).push({ at: now(), staged_h: Math.round(plan.staged_h * 100) / 100, want_h: Math.round(buf.want_h * 100) / 100, finish_q: caps[0]?.by_type?.['cpu-finish']?.queued ?? null, pods: livePods });
           if (st.buffer_log.length > 360) st.buffer_log.splice(0, st.buffer_log.length - 360);
-          st.q_pass = { started: passAt, phase: 'done', done: now(), ms: now() - passAt, error: null };
+          st.q_pass = { started: passAt, phase: 'done', done: now(), ms: now() - passAt, error: null, sub: st.q_pass?.sub };
           LH.beat(st, 'q_pass', { n: pulledN }, now());
         })().catch((e) => {
           if (!alive()) return;   // an abandoned pass that woke: its error is the abandonment, already logged

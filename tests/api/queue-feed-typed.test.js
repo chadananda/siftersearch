@@ -227,6 +227,15 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     Q.claim(sql, { host: 'boss', types: ['cpu-prep'], contract: CONTRACT.contract, ram_gb: 32 });
     expect((await qtick(st, { ...deps, rebalance: false })).leased).toEqual({ boss: 1 });
   });
+  it('tick records the step in hand and ms per type:src, pull, feed, stats (trace)', async () => {
+    engage(); st.queue = [1];
+    await feed(st, deps); deliver('cpu-prep');
+    const steps = [], subs = {};
+    const trace = { step: (o) => steps.push(o), sub: (k, ms) => { (subs[k] ||= []).push(ms); } };
+    await qtick(st, { ...deps, rebalance: false, trace });
+    expect(steps.some((o) => o.type === 'cpu-prep' && o.src === 'lan' && /^cpu-prep-/.test(o.job))).toBe(true);
+    for (const k of ['cpu-prep:lan', 'gpu:lan', 'cpu-finish:lan', 'pull', 'feed', 'stats']) expect(subs[k]).toHaveLength(1);
+  });
   it('a step the queue gave up on (3 attempts) drops the chain and retries the talk', async () => {
     engage(); st.queue = [1];
     await feed(st, deps);

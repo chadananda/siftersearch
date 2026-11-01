@@ -57,6 +57,13 @@ describe('self-heal backs off by its own failures', () => {
     LH.beat(st, 'q_pass', {}, 30 * M);
     expect(st.loop_beats.q_pass.heals_in_row).toBe(0);
   });
+  it('heals by progress, not age: a long pass that keeps stepping is never abandoned', () => {
+    const st = {};
+    cadence(st, 'q_pass', { every: M, dur: 10_000, end: 0 });
+    LH.beatStart(st, 'q_pass', 0);
+    expect(LH.shouldHeal(st.loop_beats.q_pass, 60 * M, { progressAt: 59 * M })).toBe(false);   // 60 min old, stepped a minute ago
+    expect(LH.shouldHeal(st.loop_beats.q_pass, 60 * M, { progressAt: 50 * M })).toBe(true);    // silent for 10 min (bar is 8)
+  });
   it('never heals without a measured norm', () => {
     const st = {}; LH.beatStart(st, 'q_pass', 0);
     expect(LH.shouldHeal(st.loop_beats.q_pass, 1e9)).toBe(false);

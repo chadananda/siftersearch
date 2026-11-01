@@ -233,7 +233,7 @@ export async function untransit(dir, r, meta, { run = null, now = Date.now } = {
   meta.master_transit = ts.map((f) => ({ path: f.transit_of, via: f.path, settings: f.transit || TRANSIT, at: new Date(now()).toISOString() }));
   return meta;
 }
-async function pullTyped(st, ack, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true, run = null }) {
+async function pullTyped(st, ack, { trace = null, q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true, run = null }) {
   let adopted = 0, errors = 0, steps = 0, lanCap, edgeCap;
   const buf = { staged_h: buffer?.buffer_h || 0, want_h: buffer?.want_h || 0 };
   st.chains ||= {};
@@ -241,10 +241,13 @@ async function pullTyped(st, ack, { q, edge = null, gpuEdge = true, repo, wr, re
   const ackJob = (id) => { const list = st.qjobs[id]?.where === 'edge' ? ackEdge : ack; if (!list.includes(id)) list.push(id); delete st.qjobs[id]; };
   // every step type is pulled from both transports: gpu from the pods, cpu-prep/cpu-finish from a CPU pod (an edge step is acked on the edge)
   for (const type of SJ.AUDIO_TYPES) for (const [src, sq] of [['lan', q], ...(edge ? [['edge', edge]] : [])]) {
+    const t0 = now(); let seen = 0;
+    trace?.step({ type, src, job: 'listDone' });
     for (const j of await sq.listDone(200, type)) {   // adopted steps stay 'done' until the next step finishes: skip them
       seenAgent(st, j.host, j.updated);
       const qj = st.qjobs[j.id];
       if (!qj || qj.adopted) continue;
+      seen++; trace?.step({ type, src, job: j.id });
       const ch = st.chains[qj.itemId], outputs = (j.result?.outputs || []).map((o) => o.name);
       let stg = null;
       try {
@@ -307,7 +310,9 @@ async function pullTyped(st, ack, { q, edge = null, gpuEdge = true, repo, wr, re
       }
       if (stg) await rm(stg, { recursive: true, force: true }).catch(() => {});
     }
+    trace?.step({ type, src, job: 'stats' });
     for (const f of (await sq.stats(type)).failed || []) if (st.qjobs[f.id]) { errors++; logPullError(st, f.id, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`.slice(0, 300)); await failChain(st, f.id, ackJob, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`, repo); }
+    trace?.sub(`${type}:${src}`, now() - t0);
   }
   if (ackEdge.length) await edge.ack(ackEdge);   // the LAN list is acked by pull()
   return { adopted, steps, errors, ...(edge ? { edge_acked: ackEdge.length } : {}) };
@@ -536,16 +541,18 @@ export function seenAgent(st, host, at) {
 }
 /** One background pass: pull first (frees R2 + gives back failures), then top the window up. */
 export async function tick(st, deps) {
-  const out = { pulled: await pull(st, deps) };
+  const { trace = null, now = Date.now } = deps;
+  const timed = async (key, f) => { const t0 = now(); trace?.step({ job: key }); try { return await f(); } finally { trace?.sub(key, now() - t0); } };
+  const out = { pulled: await timed('pull', () => pull(st, deps)) };
   const forgiven = forgiveOurs(st); if (forgiven.length) out.forgiven = forgiven;
   if (deps.typed && deps.edge && deps.rebalance !== false) {
     out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
     out.moved_prep = await rebalancePrep(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
   }
-  out.fed = await feed(st, deps);
+  out.fed = await timed('feed', () => feed(st, deps));
   out.leased = {}; out.beat = {};   // jobs each agent holds (machine cards) + its latest heartbeat (an agent pod is alive while it beats: media-jobs.js)
   // every job type: stats() alone reads 'media' only, so typed leases (cpu-prep, gpu, cpu-finish) were missing and the cards read {} (10-31)
-  const all = await Promise.all(['media', ...SJ.AUDIO_TYPES].map((t) => Promise.resolve().then(() => deps.q.stats(t)).catch(() => null)));
+  const all = await timed('stats', () => Promise.all(['media', ...SJ.AUDIO_TYPES].map((t) => Promise.resolve().then(() => deps.q.stats(t)).catch(() => null))));
   for (const j of all.flatMap((x) => x?.leased || [])) {
     out.leased[j.host] = (out.leased[j.host] || 0) + 1;
     out.beat[j.host] = Math.max(out.beat[j.host] || 0, j.updated || 0);
