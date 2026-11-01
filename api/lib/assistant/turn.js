@@ -118,7 +118,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (replaced) { d.strikes.strike(who); reply = cannedReply('refuse', { name, seed }); }
     const lint = lintReply(reply);
     const path = await finish(reply, 'answered', { engine: 'anis', evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
-      // how the strategy was chosen (jev | jev-cached | backstop + why) and what the search was fed, for the thread view
+      // how the strategy was chosen (jev | jev:cached | backstop + why) and what the search was fed, for the thread view
       plan: { shape: r.plan?.shape ?? null, provenance: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, overridden: r.plan?.overridden ?? null,
         quote: r.plan?.quote?.phrase ?? null, ms: r.plan?.plan_ms ?? null, history_turns: Math.max(0, messages.length - 1), search_query: r.search_query ?? null,
         // the five stages, each with its choice, who made it and the time: strategy (Jev) → phrases → retrieval → selection → format

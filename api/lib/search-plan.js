@@ -197,7 +197,7 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
   if (!state.trim()) return backstop('empty-state', { skipped: true });
   const key = `${state}\u0000${JSON.stringify(given || {})}`;
   const hit = cache && planCache.get(key);
-  if (hit && Date.now() - hit.at < PLAN_TTL_MS) return ruled({ ...hit.plan, ms: Date.now() - t0, cached: true }, 'jev-cached');
+  if (hit && Date.now() - hit.at < PLAN_TTL_MS) return ruled({ ...hit.plan, ms: Date.now() - t0, cached: true }, 'jev:cached');
   try {
     const res = await fetchImpl(ENDPOINT, {
       method: 'POST',

@@ -183,12 +183,12 @@ describe('planSearch — quotation rule and provenance', () => {
     expect(p.provenance).toBe('jev');
     expect(p.overridden).toEqual({ shape: 'topic', about: 'people', by: 'quote-rule' });
   });
-  it('a cached plan reports jev-cached and the rule still applies', async () => {
+  it('a cached plan reports jev:cached and the rule still applies', async () => {
     const fetchImpl = async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'topic' }) }) });
     const q = Q + ' cache probe';
     await planSearch(q, { apiKey: 'k', fetchImpl });
     const p = await planSearch(q, { apiKey: 'k', fetchImpl });
-    expect(p.provenance).toBe('jev-cached');
+    expect(p.provenance).toBe('jev:cached');
     expect(p.shape).toBe('quote');
   });
   it('no key → backstop with reason no-key; HTTP failure carries the status', async () => {
