@@ -22,12 +22,13 @@ Jev re-ranks/selects → Jev-chosen output format. Trigger: quote-fragment miss,
       compare per turn by default). Rounds 6–8 deployed (phrase v2 48e39cdc; routing fc5fa59a/dfdcfedf; named works on
       every route 4acde2cf/7e930bb8/c7e59846/ca96a33f). r6 replay 2.85→3.02/10 (2 judges, spread 0.3). 59/100 defects
       now at the ANSWER stage.
-- [~] STATE 11-01 (laptop shut down): round 9 (answer stage) was running in a worktree agent and was cut off by shutdown —
-      check `git log origin/main` for its commits; if absent, redo: classify the 59 answer-stage defects in
-      tests/quality/reports/*r8-* (false "not found" with passages present; capitulates on pushback; facts not in passages,
-      e.g. al-Inṣāf called 5th Arabic Hidden Word — it is 2nd); fix causes in respond.js/turn.js/formats.js/prompts; verify
-      search endpoint ignores doc filter ("Elias" in doc 20810) and fix; check Íqán Elijah passage ~¶161–179 retrieval;
-      measure --replay r6+px --judges 2 + wording spot-check.
+- [x] Round 9 (answer stage) DONE 11-01: d5ac4fdf (absence/number/prior-reply checks, pushback holds, longer passages+history,
+      quote must match ONE passage, no ids/slugs as authors, 1,100-token cap) + 40458158 (search doc filter was dropped; scoped
+      search returned 1 ¶ → now up to limit). r6 replay 2.95→3.35 (2 judges), answer defects 58→56. Elias/John passage is in
+      SAQ 20911 ¶359, not the Íqán. Reports *-r9-*.
+- [ ] NEXT answer-stage: paragraph-level speaker attribution (commentator/editor words credited to Bahá'u'lláh/'Abdu'l-Bahá,
+      ~10); paragraph links missing/book-level (~10); false absence (~4); replay harness re-sends pushback against claims this
+      run never made (make the reader re-generate pushback turns, or judge them as N/A).
 - [ ] CITATION ORDER (Chad 11-01): when the same passage exists in several sources, cite the best one. "Uncompiled
       Published Letters" is a compilation of LAST RESORT; prefer a published source (e.g. Lights of Guidance) — example:
       "Man will always have to toil in order to earn his living" currently cited to Uncompiled Published Letters. Build a
