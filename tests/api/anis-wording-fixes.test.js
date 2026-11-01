@@ -48,6 +48,7 @@ describe('extractPhrase', () => {
     const c = async () => ({ content: 'NONE' });
     expect(await extractPhrase('what about patience in suffering and loss', { shape: 'topic' }, { complete: c })).toBeNull();
     expect(await extractPhrase('where did he say that about the ocean', { shape: 'fact' }, { complete: c })).toBeNull();
+    expect(await extractPhrase('when was the Bab martyred in which year', { shape: 'fact' }, { complete: c })).toBeNull();
     expect(await extractPhrase('Who was Quddus', { shape: 'fact' }, { complete: c })).toBeNull();
     expect(await extractPhrase('Who was this person Ghoddus really', { shape: 'fact' }, { complete: c })).toBeNull();
     expect(await extractPhrase('Who was the person Ghoddus really', { shape: 'fact' }, { complete: async () => { throw new Error('x'); } })).toBeNull();

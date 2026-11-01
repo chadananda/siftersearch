@@ -6513,8 +6513,9 @@
    },
    "truth": "Paris Talks are by 'Abdu'l-Bahá",
    "expected_strategy": [
-    "lookup"
-   ],
+      "lookup",
+      "fact"
+    ],
    "cite": {
     "link": false,
     "all": [
