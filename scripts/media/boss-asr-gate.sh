@@ -21,6 +21,7 @@
 # The same script serves every compute host (boss: CPU; aorus: CUDA): it runs from its own directory, with that host's venv
 # (venv/, venv-dfn/ for DeepFilterNet) and models (models/). Every model is local; nothing here reaches the internet.
 #   install-tool                                            replace media_tool.py with stdin (kept in sync from the repo)
+#   install-whole-image <cpu|rocm> <ref>                    record the image whole orders run on (digest, or a local rocm-* tag); pulls a missing digest
 #   install-unipase                                         replace unipase_job.py with stdin
 #   start <ext> <job> --verb unipase                        a UniPASE listening copy (unipase.conf: UNIPASE_PY/_REPO/_HF; offline)
 #   short · install-renderer                                an audiogram short (tar in, MP4 out) · replace render_short.py
@@ -34,7 +35,7 @@ watch_parent() { local sshd=$PPID; while kill -0 "$1" 2>/dev/null; do kill -0 "$
 if [[ "$verb" == "install-tool" ]]; then cat > media_tool.py.new && mv media_tool.py.new media_tool.py && echo '{"installed":true}'; exit 0; fi
 if [[ "$verb" == "install-renderer" ]]; then cat > render_short.py.new && mv render_short.py.new render_short.py && echo '{"installed":true}'; exit 0; fi
 if [[ "$verb" == "install-unipase" ]]; then cat > unipase_job.py.new && mv unipase_job.py.new unipase_job.py && echo '{"installed":true}'; exit 0; fi
-if [[ "$verb" =~ ^whole-(put|start|poll|fetch)$ ]]; then exec python3 whole_gate.py "${A[@]}"; fi
+if [[ "$verb" =~ ^whole-(put|start|poll|fetch)$|^install-whole-image$ ]]; then exec python3 whole_gate.py "${A[@]}"; fi
 # an audiogram SHORT: a tar (spec.json, audio.m4a, captions.ass, portrait.jpg?, qr.png) in, the MP4 out; fixed recipes only;
 # killed when the caller's ssh session goes (same watcher as the ASR verbs)
 if [[ "$verb" == "short" ]]; then

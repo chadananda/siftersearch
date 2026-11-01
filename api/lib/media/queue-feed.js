@@ -234,7 +234,7 @@ export async function untransit(dir, r, meta, { run = null, now = Date.now } = {
   meta.master_transit = ts.map((f) => ({ path: f.transit_of, via: f.path, settings: f.transit || TRANSIT, at: new Date(now()).toISOString() }));
   return meta;
 }
-async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: defer = false, parallel = 1, q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true, run = null }) {
+async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: defer = false, deferFinish = false, parallel = 1, q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, syncStages, buffer = null, stageInline = true, run = null }) {
   let adopted = 0, errors = 0, steps = 0, lanCap, edgeCap;
   const buf = { staged_h: buffer?.buffer_h || 0, want_h: buffer?.want_h || 0 };
   st.chains ||= {};
@@ -284,17 +284,18 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
           if (before && ch[before]) ackJob(ch[before].id);
           steps++;
         } else {
-          for (const o of outputs) await sq.get('results', j.id, o, join(stg, o));
-          const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs });
-          const meta = await wr.adoptWholeResult(stg, it.dir, await readMeta(it.dir), ch.sha, null);
-          await untransit(it.dir, r, meta, { run, now });
+          const k = (w) => `${type}:${src}:${w}`;
+          await tm(k('get'), async () => { for (const o of outputs) await sq.get('results', j.id, o, join(stg, o)); });   // a hardlink on the LAN store's filesystem
+          const r = await tm(k('result'), async () => SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs }));
+          const meta = await wr.adoptWholeResult(stg, it.dir, await readMeta(it.dir), ch.sha, null, (w, f) => tm(k('adopt_' + w), f));
+          await tm(k('untransit'), () => untransit(it.dir, r, meta, { run, now }));
           ch[type] = SJ.stepOf(j, r, now());
           logStep(st, type, j.host, ch.audio_s, now());
           SJ.stampTools(meta, ch);
-          await writeFile(join(it.dir, 'meta.json.typed-part'), JSON.stringify(meta, null, 2)); await rename(join(it.dir, 'meta.json.typed-part'), join(it.dir, 'meta.json'));
-          await (syncStages || (async (id, stages) => (await import('../repos/media-ledger-repo.js')).syncItemStages(id, stages)))(it.id, meta.stages).catch(() => {});
-          if (['whole_queued', 'scheduled', 'queued', 'running'].includes((await repo.getMediaItem(it.id))?.state))
-            await repo.updateMediaItem(it.id, { state: 'transcribed', stage: null, stages_done: ',' + Object.keys(meta.stages || {}).join(',') + ',' });
+          await tm(k('meta'), async () => { await writeFile(join(it.dir, 'meta.json.typed-part'), JSON.stringify(meta, null, 2)); await rename(join(it.dir, 'meta.json.typed-part'), join(it.dir, 'meta.json')); });
+          await tm(k('sync'), () => (syncStages || (async (id, stages) => (await import('../repos/media-ledger-repo.js')).syncItemStages(id, stages)))(it.id, meta.stages).catch(() => {}));
+          await tm(k('repo'), async () => { if (['whole_queued', 'scheduled', 'queued', 'running'].includes((await repo.getMediaItem(it.id))?.state))
+            await repo.updateMediaItem(it.id, { state: 'transcribed', stage: null, stages_done: ',' + Object.keys(meta.stages || {}).join(',') + ',' }); });
           st.done.push({ id: it.id, slug: it.slug, mode: 'typed', remaster: meta.remaster?.status || null, swapped: meta.remaster?.swapped ?? null, audio_s: ch.audio_s, gpu: ch.gpu?.host, pod: ch.gpu?.host, prep: ch['cpu-prep']?.host, finish: j.host, at: now(), via: 'queue' });
           provePool(st, ch.gpu?.host);
           for (const x of [j.id, ch['cpu-prep']?.id, ch.gpu?.id]) if (x) ackJob(x);
@@ -315,7 +316,7 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
       if (stg) await rm(stg, { recursive: true, force: true }).catch(() => {});
   };
   for (const type of SJ.AUDIO_TYPES) for (const [src, sq] of [['lan', q], ...(edge ? [['edge', edge]] : [])]) {
-    if (only && (only.type !== type || only.src !== src)) continue;
+    if (only && (only.type !== type || (only.src && only.src !== src))) continue;
     const t0 = now();
     trace?.step({ type, src, job: 'listDone' });
     const todo = [];
@@ -323,6 +324,7 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
       seenAgent(st, j.host, j.updated);
       const qj = st.qjobs[j.id];
       if (!qj || qj.adopted) continue;
+      if (deferFinish && type === 'cpu-finish') continue;   // the finish adoption (hash + place the talk's files) runs beside the pass: adoptFinish
       if (defer && type === 'gpu' && src === 'edge') continue;   // the edge→LAN gpu handoff is slow (R2 downloads + LAN uploads): adoptEdgeGpu runs it beside the pass
       todo.push(j);
     }
@@ -581,12 +583,15 @@ export async function tick(st, deps) {
 
 /** The edge→LAN gpu handoff, beside the pass (like the mover): each finished gpu step on the edge is validated and its files copied R2 → LAN
  *  (the cpu-finish step's inputs), several at once. Crash-safe as in the pass: the edge step stays done until its cpu-finish is enqueued. */
-export async function adoptEdgeGpu(st, deps) {
+export const adoptEdgeGpu = (st, deps) => adoptBeside(st, deps, { type: 'gpu', src: 'edge' });
+/** The cpu-finish adoption, beside the pass the same way: validate + place the talk's files + meta + ledger (measured 10-31: 512 s of a 529 s pass). */
+export const adoptFinish = (st, deps) => adoptBeside(st, deps, { type: 'cpu-finish' }, 2);
+async function adoptBeside(st, deps, only, par = MOVE_PARALLEL) {
   const ack = [], sub = {}, t0 = (deps.now || Date.now)();
   const trace = { step: () => {}, sub: (k, ms) => { const x = (sub[k] ||= { n: 0, ms: 0 }); x.n++; x.ms += ms; } };
-  if (!deps.edge) return { steps: 0 };
+  if (!deps.edge && only.src === 'edge') return { steps: 0 };
   st.qjobs ||= {};
-  const r = await pullTyped(st, ack, { ...deps, trace, only: { type: 'gpu', src: 'edge' }, parallel: deps.parallel || MOVE_PARALLEL });
+  const r = await pullTyped(st, ack, { ...deps, trace, only, parallel: deps.parallel || par });
   if (ack.length) await deps.q.ack(ack);   // LAN-side acks (the edge ones went inside)
   return { ...r, ms: (deps.now || Date.now)() - t0, sub };
 }

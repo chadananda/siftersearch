@@ -1751,7 +1751,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
     return true;
   };
   const requireGate = process.env.MEDIA_POOL_REQUIRE_GATE === '1';   // pods must carry /opt/gate (the new image): older ones finish their jobs and are replaced
-  let balance = null, balAt = 0, stop = null, yielded = false, qPass = null, movePass = null, edgeGpuPass = null, passGen = 0;
+  let balance = null, balAt = 0, stop = null, yielded = false, qPass = null, movePass = null, finishPass = null, edgeGpuPass = null, passGen = 0;
   // EDGE QUEUE (worker/queue, Chad 10-30): in the background, pull finished queue jobs and keep ~2.5 h of whole talks queued for the machines pulling
   const queueKey = deps.queueKey !== undefined ? deps.queueKey : deps.repo || process.env.MEDIA_QUEUE_FEED === '0' ? null : process.env.INTERNAL_API_KEY;   // tests inject theirs
   // the machines' key (the same on the LAN and the edge queue) handed to an agent pod at boot; no edge feed → no agent pods
@@ -1942,10 +1942,13 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           // does bookkeeping, so edge feed and the pod plan never wait on it. The edge step stays done until its cpu-finish is enqueued (crash-safe).
           if (!edgeGpuPass && podTyped) { const gq = { q: LQ.localQueue(), edge: QCl.queueClient({ key: queueKey }), repo, wr: wrMod, now, run, gpuEdge: podTyped, buffer: edgeBuf, stageInline: false };
             edgeGpuPass = QF.adoptEdgeGpu(st, gq).then((r) => { st.q_gpu_edge = { at: now(), ...r }; }, (e) => { st.q_gpu_edge = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { edgeGpuPass = null; }); }
+          // cpu-finish adoption (sha256 of every output, the files placed, meta, ledger: 512 s in one pass, 10-31) also runs beside the pass; the step stays done until adopted
+          if (!finishPass) { const fq = { q: LQ.localQueue(), edge: QCl.queueClient({ key: queueKey }), repo, wr: wrMod, now, run, gpuEdge: podTyped, typed: true, stageInline: false };
+            finishPass = QF.adoptFinish(st, fq).then((r) => { st.q_finish = { at: now(), ...r }; }, (e) => { st.q_finish = { at: now(), error: String(e.message).slice(0, 300) }; }).finally(() => { finishPass = null; }); }
           phase('lan');
           LH.beatStart(st, 'q_lan', now());
           const marks = LH.chainMarks(st), lanAt = now();
-          const lan = await QF.tick(st, { ...deps, demux, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
+          const lan = await QF.tick(st, { ...deps, demux, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped, deferFinish: true }).catch((e) => ({ error: String(e.message).slice(0, 300) }));
           if (!alive()) return;
           st.q_lan = { at: now(), ...lan };
           LH.recordSteps(st, marks, lanAt, now());
@@ -1985,7 +1988,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const outdated=(p)=>p.image!==acceptedWorker.image||p.boot_v!==(p.agent?C.BOOT_V_AGENT:C.BOOT_V);   // an older image, or booted by an older BOOTSTRAP_WHOLE
       const imageDrainId=acceptedWorker&&!imageStarting?live.filter(p=>p.image&&outdated(p)).sort((a,b)=>a.created-b.created)[0]?.id:null;
       const inflight = Object.keys(st.jobs).length + staging.size + collecting.size;
-      if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass && !movePass && !edgeGpuPass) break;
+      if (!st.queue.length && !inflight && !homeTasks.size && !Object.keys(st.qjobs || {}).length && !qPass && !movePass && !edgeGpuPass && !finishPass) break;
       const hoursOf = (ids) => ids.reduce((a, id) => a + (st.items?.[id]?.duration_s || 0), 0) / 3600;
       const waitingH = hoursOf(st.queue) + hoursOf(Object.values(st.jobs).map((j) => j.itemId));
       // TYPED PODS (Chad 10-31): no pod-count or money cap — target = the plan's supportable, limited by work. Ramp ONE at a time, and only with

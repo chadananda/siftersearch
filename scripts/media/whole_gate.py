@@ -51,7 +51,22 @@ def start_whole(job,d):
         docker('run','-d','--name',job,'--label','io.sifter.cpu-post=1','--device','/dev/kfd','--device','/dev/dri',*grp,'--network','none','--cpus','8','--memory',f'{WHOLE_MEM_GB}g','--memory-swap',f'{WHOLE_MEM_GB}g','--oom-score-adj','900','--pids-limit','512','-v',str(d)+':/job','-v',str(ROOT/'leases')+':/workspace/.gpu-admission','-v',str(ROOT/'cache')+':/cache','-e','SIFTER_GPU_LEASES=1','--entrypoint','/usr/local/bin/node',image,'/opt/sifter/api/lib/media/whole-recording.mjs','/job')
     print('{"started":true}')
 
+def install_image(kind,ref):
+    """install-whole-image <cpu|rocm> <ref>: record the image whole orders run on (whole-image.txt / whole-image-rocm.txt). The ref must match IMAGE_RE
+    (a ghcr digest or a local sifter-media-worker:rocm-* tag) and exist on this host (a digest is pulled if missing); nothing else is ever written."""
+    if kind not in ('cpu','rocm'):raise ValueError('kind must be cpu or rocm')
+    if not IMAGE_RE.fullmatch(ref or ''):raise ValueError('Image not allowed')
+    if kind=='cpu' and '@sha256:' not in ref:raise ValueError('cpu image must be a digest')
+    if docker('image','inspect',ref,check=False).returncode!=0:
+        if '@sha256:' not in ref:raise ValueError('Image not on this host: build it first')
+        docker('pull',ref)
+    f=Path(__file__).parent/('whole-image-rocm.txt' if kind=='rocm' else 'whole-image.txt')
+    old=f.read_text().strip() if f.exists() else None
+    f.with_name(f.name+'.new').write_text(ref+'\n');os.replace(f.with_name(f.name+'.new'),f)
+    print(json.dumps({'installed':True,'kind':kind,'image':ref,'was':old}))
+
 def main(args):
+    if args and args[0]=='install-whole-image':install_image(*args[1:3]);return
     verb,job=args[:2];d=job_dir(job);ROOT.mkdir(exist_ok=True)
     if verb=='whole-put':
         name=args[2]

@@ -1,6 +1,6 @@
 // Validate a complete recording before adopting any derived files.
 import {join,resolve,sep} from 'node:path';
-import {readFile,writeFile,rename,mkdir,copyFile,lstat} from 'node:fs/promises';
+import {readFile,writeFile,rename,mkdir,copyFile,link,rm,lstat} from 'node:fs/promises';
 import {createReadStream} from 'node:fs';
 import {createHash} from 'node:crypto';
 export async function fileSha(file){const h=createHash('sha256');for await(const b of createReadStream(file))h.update(b);return h.digest('hex');}
@@ -27,13 +27,15 @@ export async function validateWholeResult(root,inputSha,slug){
  if(r.meta.remaster?.status==='done'&&r.meta.qa?.remaster?.output_assessment?.passed!==true)throw Error('Remaster has no passing paired assessment');
  return r;
 }
-export async function adoptWholeResult(root,dir,oldMeta,inputSha,itemId=null){
- const r=await validateWholeResult(root,inputSha,oldMeta.slug);
- if(await fileSha(join(dir,oldMeta.original))!==inputSha)throw Error('Original changed while processing');
+// a hardlink when both paths share a filesystem (no bytes move: the 400 MB unipase.flac), a copy across filesystems
+export async function linkOrCopy(from,to){await rm(to,{force:true});try{await link(from,to);}catch(e){if(!['EXDEV','EPERM','ENOTSUP'].includes(e.code))throw e;await copyFile(from,to);}}
+export async function adoptWholeResult(root,dir,oldMeta,inputSha,itemId=null,T=(k,f)=>f()){
+ const r=await T('validate',()=>validateWholeResult(root,inputSha,oldMeta.slug));
+ if(await T('hash_original',()=>fileSha(join(dir,oldMeta.original)))!==inputSha)throw Error('Original changed while processing');
  const workerOriginal='original/in'+oldMeta.original.slice(oldMeta.original.lastIndexOf('.')).toLowerCase();
  const rewrite=v=>typeof v==='string'?(v===workerOriginal?oldMeta.original:v.replaceAll('/job/item/'+workerOriginal,join(dir,oldMeta.original)).replaceAll('/job/item/',dir+'/')):Array.isArray(v)?v.map(rewrite):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,rewrite(x)])):v;
  const meta=rewrite(r.meta);meta.original=oldMeta.original;meta.source=oldMeta.source;meta.worker_result={input_sha:inputSha,adopted_at:new Date().toISOString()};
- for(const f of r.files){if(f.path==='meta.json')continue;const to=join(dir,f.path);await mkdir(resolve(to,'..'),{recursive:true});await copyFile(join(root,'item',f.path),to+'.worker-part');await rename(to+'.worker-part',to);}
+ await T('place',async()=>{for(const f of r.files){if(f.path==='meta.json')continue;const to=join(dir,f.path);await mkdir(resolve(to,'..'),{recursive:true});await linkOrCopy(join(root,'item',f.path),to+'.worker-part');await rename(to+'.worker-part',to);}});
  await writeFile(join(dir,'meta.json.worker-part'),JSON.stringify(meta,null,2));await rename(join(dir,'meta.json.worker-part'),join(dir,'meta.json'));
  if(itemId!=null)await (await import('../repos/media-ledger-repo.js')).syncItemStages(itemId,meta.stages).catch(()=>{});   // the stage ledger
  return meta;

@@ -3,7 +3,7 @@
 // Lives beside the media root on /tank (never /fast: NVMe wear). Every op is one IMMEDIATE transaction (several ops-service processes may share it).
 import Database from 'better-sqlite3';
 import { mkdirSync, existsSync, createReadStream, createWriteStream } from 'node:fs';
-import { readdir, stat, rm, rename, copyFile, mkdir } from 'node:fs/promises';
+import { readdir, stat, rm, rename, copyFile, link, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { createHmac } from 'node:crypto';
 import { pipeline } from 'node:stream/promises';
@@ -99,7 +99,7 @@ export function localQueue() {
   return {
     base: 'local', call, list: fileList,
     put: (kind, id, name, file, opts) => fileWrite(kind, id, name, file, opts),
-    get: async (kind, id, name, dest) => { const src = filePath(kind, id, name); if (!existsSync(src)) throw bad(`get ${kind}/${id}/${name} 404`, 404); await mkdir(dirname(dest), { recursive: true }); await copyFile(src, dest); return dest; },
+    get: async (kind, id, name, dest) => { const src = filePath(kind, id, name); if (!existsSync(src)) throw bad(`get ${kind}/${id}/${name} 404`, 404); await mkdir(dirname(dest), { recursive: true }); await rm(dest, { force: true }); await link(src, dest).catch(async (e) => { if (!['EXDEV', 'EPERM', 'ENOTSUP'].includes(e.code)) throw e; await copyFile(src, dest); }); return dest; },   // same filesystem: a hardlink, no bytes move
     claim: (a) => call('claim', a), heartbeat: (a) => call('heartbeat', a), done: (a) => call('done', a), fail: (a) => call('fail', a),
     enqueue: (jobs) => call('enqueue', { jobs }), capacity: () => call('capacity'), stats: (type) => call('stats', type ? { type } : {}),
     listDone: (limit = 50, type, state) => call('list-done', { limit, ...(type ? { type } : {}), ...(state ? { state } : {}) }), ack: (ids) => call('ack', { ids }), cancel: (ids) => call('cancel', { ids }), withdraw: (ids) => call('withdraw', { ids }), policy: (p) => call('policy', { policy: p }),

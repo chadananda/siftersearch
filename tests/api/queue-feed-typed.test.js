@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import * as Q from '../../worker/queue/core.js';
-import { feed, pull, tick as qtick, forgiveOurs, adoptEdgeGpu } from '../../api/lib/media/queue-feed.js';
+import { feed, pull, tick as qtick, forgiveOurs, adoptEdgeGpu, adoptFinish } from '../../api/lib/media/queue-feed.js';
 import { CONTRACT, requiredFiles, fpOf } from '../../api/lib/media/stage-jobs.js';
 
 const doSql = () => { const db = new Database(':memory:'); return { exec: (q, ...b) => { const st = db.prepare(q); const r = st.reader ? st.all(...b) : (st.run(...b), []); return { toArray: () => r }; } }; };
@@ -175,6 +175,19 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     expect(st.done[0]).toMatchObject({ id: 1, mode: 'typed', prep: 'boss', gpu: 'aorus', finish: 'boss' });
     expect([...store.keys()].filter((k) => k.startsWith('results/'))).toEqual([]);
     expect(st.qjobs).toEqual({}); expect(st.chains).toEqual({});
+  });
+  it('cpu-finish: the pass (deferFinish) leaves it, adoptFinish adopts it and times each part; the step stays done until adopted', async () => {
+    engage(); st.queue = [1];
+    await feed(st, deps); deliver('cpu-prep'); await pull(st, deps); deliver('gpu'); await pull(st, deps);
+    const f = deliver('cpu-finish');
+    const r0 = await pull(st, { ...deps, deferFinish: true });
+    expect(r0.typed.adopted).toBe(0); expect(items[1].state).toBe('whole_queued'); expect(st.chains[1]).toBeTruthy();
+    expect(store.has(`results/${f.id}/result.json`)).toBe(true);
+    const r = await adoptFinish(st, deps);
+    expect(r).toMatchObject({ adopted: 1, errors: 0 });
+    expect(items[1].state).toBe('transcribed'); expect(st.chains).toEqual({});
+    for (const k of ['get', 'result', 'untransit', 'meta', 'sync', 'repo']) expect(r.sub[`cpu-finish:lan:${k}`].n).toBe(1);
+    expect(r.sub['cpu-finish:lan'].n).toBe(1);
   });
   it('never splice: a finish result carrying original audio is refused, the whole chain acked, the talk retried', async () => {
     engage(); st.queue = [1];
@@ -452,5 +465,17 @@ describe('forgiveOurs: a refusal caused by tower\'s own contract bug does not co
     expect(forgiveOurs(st)).toEqual([1981, 1948]);
     expect(st.queue).toEqual([1981, 1948, 5, 7]); expect(st.attempts).toEqual({ 1981: 0, 1948: 0, 2640: 1 }); expect(st.failed).toEqual([]);
     expect(forgiveOurs(st)).toEqual([]); expect(st.queue).toEqual([1981, 1948, 5, 7]);   // once
+  });
+});
+
+describe('linkOrCopy / queue get: same filesystem = a hardlink, no bytes moved', () => {
+  it('links, replaces an existing target, and the data is shared', async () => {
+    const { linkOrCopy } = await import('../../api/lib/media/whole-result.js');
+    const { stat } = await import('node:fs/promises');
+    const d = await mkdtemp(join(tmpdir(), 'lnk-'));
+    await writeFile(join(d, 'a'), 'AAAA'); await writeFile(join(d, 'b'), 'old');
+    await linkOrCopy(join(d, 'a'), join(d, 'b'));
+    expect(await readFile(join(d, 'b'), 'utf8')).toBe('AAAA');
+    expect((await stat(join(d, 'a'))).ino).toBe((await stat(join(d, 'b'))).ino);
   });
 });

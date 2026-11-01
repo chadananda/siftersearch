@@ -30,7 +30,7 @@ export async function gatePostRecording(it,m,{T,host,job,cfg,stop,nap}){
 
 /** A WHOLE order on a gate host (e.g. AMD ROCm): every stage of one recording on this one host (grade, enhance, ASR on whisper.cpp HIP, diarize, UniPASE,
  *  guard, encodes), through the restricted gate. The original is uploaded once; results are fetched file by file and verified by sha256 on tower. */
-export async function gateWholeRecording(it,m,{T,host,stop,nap,sha}) {
+export async function gateWholeRecording(it,m,{T,host,image=null,stop,nap,sha}) {
  const {wholeJob,adoptWholeResult}=await import('./whole-result.js');
  const {createHash}=await import('node:crypto');
  const job=`recording-w${it.id}-${sha.slice(0,8)}`;
@@ -38,6 +38,9 @@ export async function gateWholeRecording(it,m,{T,host,stop,nap,sha}) {
  const poll=async()=>JSON.parse((await call(`whole-poll ${job}`)).stdout);
  let s=await poll();
  if(!s){
+  // the host runs the image tower accepted for it, not whatever was last placed by hand (Boss ran an older one under /opt/gate, 11-01): a failed install stops the order
+  const rocm=hostVendor(host)==='amd',ref=image&&(rocm?(/^sifter-media-worker:rocm-[a-z0-9-]{1,40}$/.test(image)?image:null):(/@sha256:[a-f0-9]{64}$/.test(image)?image:null));
+  if(ref)await call(`install-whole-image ${rocm?'rocm':'cpu'} ${ref}`);
   await call(`whole-put ${job} in${extname(m.original).toLowerCase()}`,{inputFile:join(it.dir,m.original)});
   await call(`whole-put ${job} job.json`,{input:JSON.stringify({...wholeJob(it,m,sha),device:hostVendor(host)==='amd'?'rocm':hostVendor(host)==='nvidia'?'cuda':'cpu',threads:Math.max(2,Math.min(8,Math.floor((hostCores(host)||8)*0.75)))})});
   while(!s){if(stop()){const e=Error('Host whole job staged for reattachment');e.code='DRAIN';throw e;}await call(`whole-start ${job}`);s=await poll();if(!s)await nap(15000);}
