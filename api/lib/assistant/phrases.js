@@ -19,8 +19,8 @@ const trim = (s, n) => { const t = stripMarkup(s).replace(/\[([^\]]+)\]\([^)]*\)
 
 export const PROMPT = ({ question, previous, reply }) => `A seeker is searching a library of religious texts (Bahá'í Writings and 11 other traditions). Say WHAT to search for. Reply with ONE JSON object only:
 {"exact":[],"names":[],"author":null,"work":null,"tradition":null,"spellings":[]}
-- exact: wording of a passage the SEEKER gives (quoted, a fragment or half-remembered), copied in the seeker's OWN words with the request frame dropped ("find the quote", "where does it say", "who said", "please"). Never add or change words. Never words that only the assistant said — unless the seeker asks to find that passage of the assistant's reply ("that passage", "the verse you quoted"); then copy its key wording from the reply.
-- names: each person, work (title) or term the seeker names — or refers to ("it", "he", "that book" → the concrete name from the conversation) — in the seeker's spelling (the conversation's when only referred to).
+- exact (at most 3): wording of a passage the SEEKER gives (quoted, a fragment or half-remembered), copied in the seeker's OWN words with the request frame dropped ("find the quote", "where does it say", "who said", "please"). Never add or change words. Never words that only the assistant said — unless the seeker asks to find that passage of the assistant's reply ("that passage", "the verse you quoted"); then copy its key wording from the reply.
+- names (at most 5): each person, work (title) or term the seeker names — or refers to ("it", "he", "that book" → the concrete name from the conversation) — in the seeker's spelling (the conversation's when only referred to).
 - author: whose words the seeker says the passage is, if stated or referred to; work: the book it is said to be in, if stated or referred to; tradition: the religion, only if the seeker names it. Otherwise null.
 - spellings: other spellings/transliterations of those names as a library would write them (e.g. "Mulla Hosein" → "Mullá Ḥusayn", "Mulla Husayn"), at most 4. Transliteration variants ONLY — never synonyms, translations, titles or other names.
 Empty lists when nothing applies. No explanation.
@@ -48,12 +48,30 @@ const str = (x, maxWords = 8) => (typeof x === 'string' && x.trim() && !/^(null|
 const firstOf = (xs, key) => { const seen = new Set(); return xs.filter((x) => { const k = key(x); return k && !seen.has(k) && seen.add(k); }); };   // distinct, the first spelling kept
 const strs = (xs, maxWords, max) => firstOf((Array.isArray(xs) ? xs : []).map((x) => str(x, maxWords)).filter(Boolean), fold).slice(0, max);
 
-/** Parse + validate Haiku's JSON against the conversation. → structured object or null (not JSON). Pure. */
+// JSON cut off at the token limit (a long follow-up, 11-01) → cut back to the last complete field and close what is open
+const salvage = (s) => {
+  const stack = []; let inStr = false, esc = false, cut = null;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true;
+    else if (c === '{' || c === '[') stack.push(c === '{' ? '}' : ']');
+    else if (c === '}' || c === ']') stack.pop();
+    else if (c === ',') cut = { at: i, closers: [...stack].reverse().join('') };
+  }
+  if (!cut) return null;
+  try { return JSON.parse(s.slice(0, cut.at) + cut.closers); } catch { return null; }
+};
+
+/** Parse + validate Haiku's JSON against the conversation (a reply cut off at the token limit keeps its complete fields).
+ *  → structured object or null (not JSON). Pure. */
 export function parsePhrases(raw, { question, previous = '', reply = '' } = {}) {
-  const m = String(raw ?? '').match(/\{[\s\S]*\}/);
-  if (!m) return null;
-  let o;
-  try { o = JSON.parse(m[0]); } catch { return null; }
+  const text = String(raw ?? ''), start = text.indexOf('{');
+  if (start < 0) return null;
+  const m = text.match(/\{[\s\S]*\}/);
+  let o = null;
+  try { o = m ? JSON.parse(m[0]) : null; } catch { o = null; }
+  if (!o) o = salvage(text.slice(start));
   if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
   const seeker = `${question} ${previous}`;
   const findReply = FIND_REPLY.test(question);
@@ -95,14 +113,14 @@ export async function extractPhrases(question, plan, { messages = [], complete, 
   const fallback = (reason) => ({ phrase: null, via: 'fallback', reason, exact: [], names: [], spellings: [], ms: Date.now() - t0 });
   let timer;
   try {
-    const call = complete || (async (msgs) => (await import('../ai.js')).chatCompletion(msgs, { ...modelFor('assistant-phrases'), temperature: 0, maxTokens: 160, thinking: false, caller: 'anis-phrases' }));
+    const call = complete || (async (msgs) => (await import('../ai.js')).chatCompletion(msgs, { ...modelFor('assistant-phrases'), temperature: 0, maxTokens: 320, thinking: false, caller: 'anis-phrases' }));
     const out = await Promise.race([call([{ role: 'user', content: PROMPT({ question: q, previous, reply }) }]),
       new Promise((_, no) => { timer = setTimeout(() => no(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), timeoutMs); timer.unref?.(); })]);
     const p = parsePhrases(out?.content ?? out, { question: q, previous, reply });
     if (!p) return fallback('bad-json');
-    // the one search string: the wording for a quote hunt, the name for a lookup
-    const order = plan.shape === 'lookup' ? [...p.names, ...p.exact] : [...p.exact, ...p.names];
-    return { phrase: order[0] || null, via: 'haiku', ...p, ...(back ? { history: true } : {}), ms: Date.now() - t0 };
+    // the one search string: the wording for a quote hunt, the name for a lookup; a quote with no wording → its names together
+    const phrase = plan.shape === 'lookup' ? p.names[0] || p.exact[0] : p.exact[0] || p.names.slice(0, 3).join(' ');
+    return { phrase: phrase || null, via: 'haiku', ...p, ...(back ? { history: true } : {}), ms: Date.now() - t0 };
   } catch (e) {
     return fallback(e?.code === 'TIMEOUT' ? 'timeout' : 'error');
   } finally { clearTimeout(timer); }

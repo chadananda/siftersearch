@@ -31,6 +31,17 @@ describe('extractPhrases: structured parse', () => {
     const p = parsePhrases('{"exact":["love is the light that never fades"],"names":[]}', { question: 'where does it say the earth is one country' });
     expect(p.exact).toEqual([]);
   });
+  it('JSON cut off at the token limit keeps every complete field (r-iqan t3: bad-json → v1 query)', () => {
+    const raw = '{"exact":["Refer to it","Bahá\'u\'lláh has set forth a lengthy explanation in the Kitáb-i-Íqán"],"names":["\'Abdu\'l-Bahá","Kitáb-i-Íqán"],"author":"\'Abdu\'l-Bahá","work":"Kitáb-i-Íqán","t';
+    const p = parsePhrases(raw, { question: 'You quote \'Abdu\'l-Bahá as saying "Bahá\'u\'lláh has set forth a lengthy explanation in the Kitáb-i-Íqán", where in the Íqán?' });
+    expect(p).toMatchObject({ exact: ["Bahá'u'lláh has set forth a lengthy explanation in the Kitáb-i-Íqán"], names: ["Abdu'l-Bahá", 'Kitáb-i-Íqán'], work: 'Kitáb-i-Íqán', tradition: null });
+    expect(parsePhrases('{"exact":["the earth is one coun', { question: 'the earth is one country' })).toBeNull();   // nothing complete → fallback
+  });
+  it('a quote with no wording searches its names together, not only the first (seed-66 t2 searched "Bahá\'u\'lláh" alone)', async () => {
+    const r = await extractPhrases('I\'d like to read what He actually said about the Síyáh-Chál', { shape: 'quote' },
+      { complete: json({ exact: [], names: ["Bahá'u'lláh", 'Síyáh-Chál'], spellings: [] }) });
+    expect(r.phrase).toBe("Bahá'u'lláh Síyáh-Chál");
+  });
   it('JSON wrapped in prose or a code fence is still read', () => {
     expect(parsePhrases('Here:\n```json\n{"exact":["the earth is one country"],"names":[]}\n```', { question: 'the earth is one country quote' }).exact).toEqual(['the earth is one country']);
   });
