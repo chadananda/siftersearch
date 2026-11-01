@@ -113,12 +113,27 @@ export function quotationIn(text) {
   const quoted = [...t.matchAll(/[“"«]([^”"»]{20,})[”"»]/g)].map((m) => m[1].trim()).filter((q) => q.split(/\s+/).length >= 4);   // r5-x: "no compulsion in religion" (4 words) was skipped → the whole request was hunted
   if (quoted.length) return quoted.sort((a, b) => b.length - a.length)[0];
   const m = /^[^\n:]{0,80}?(?:from|source|origin|written|said|quote|find)[^\n:]{0,60}[:?\n]\s*([\s\S]{20,})$/i.exec(t);
-  if (m) return m[1].trim();
+  if (m) return trimTalk(m[1].trim());
+  // "where can I read the verse that starts with <words>" → the words
+  const framed = /\b(?:that|which|it)\s+(?:starts?|begins?|says|reads|goes)(?:\s+(?:with|like))?\s+["“]?(.{15,})$/i.exec(t.split('?')[0]);
+  if (framed && trimTalk(framed[1]).split(/\s+/).length >= 4) return trimTalk(framed[1]);
   // "where does it say <words>? i want to read the full passage" → the words (planned-search questionSubject's frame; the
   // rest after the question is talk) — the whole question as the quotation diluted a Qur'án verse below verbatim (11-01)
   const first = t.split('?')[0];
   const subject = questionSubject(`${first}?`);
-  return subject !== `${first}?` && subject.split(/\s+/).length >= 4 ? subject : t;
+  return subject !== `${first}?` && subject.split(/\s+/).length >= 4 ? subject : trimTalk(t);
+}
+
+// The request that follows a pasted quotation is talk, not the quotation ("…in religion. Which book and which verse number?
+// Thank you." diluted Sura II below verbatim and the Arabic Bayán won — r5-x, 11-01): cut at the first question sentence or
+// request clause after at least four words of quotation.
+const TALK = new RegExp(String.raw`(?:[.!;,?]\s+(?=(?:wh?at|which|where|who|can|could|please|pls|thank|thanks|thx|i)\b)|\s+(?=(?:(?:wh?at|which) (?:book|writing|chapter|verse|source)|where (?:is|does) (?:this|that|it) (?:from|come)|can (?:you|u)|could you|pls|please|thank|thanks|thx|i (?:can['’]?t|cant))\b))`, 'i');
+function trimTalk(s) {
+  let q = String(s || '').trim();
+  if (q.includes('\n')) return q;   // a pasted passage with its reference line / P.S. is SourceHunt's to strip
+  const cut = q.search(TALK);
+  if (cut > 0 && q.slice(0, cut).split(/\s+/).length >= 4) q = q.slice(0, cut);
+  return q.replace(/["”\s]+$/, '').replace(/[,;:]$/, '').trim();
 }
 
 /** A link the model wrote to a page we gave it, copied imperfectly (a long text-fragment URL with one character changed), is

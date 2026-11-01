@@ -204,7 +204,12 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     expect(quotationIn('where does it say let there be no compulsion in religion? i want to read the full passage')).toBe('let there be no compulsion in religion');
     expect(quotationIn('where does it say no?')).toBe('where does it say no?');
     // r5-x: a quoted span of four words was skipped (≥6 rule) and the whole request was hunted — the Arabic Bayán won over Sura II
-    expect(quotationIn('can you find the full quote that includes "no compulsion in religion" for me')).toBe('no compulsion in religion');   // too short to be a quotation → unchanged
+    expect(quotationIn('can you find the full quote that includes "no compulsion in religion" for me')).toBe('no compulsion in religion');
+    expect(quotationIn('Please, I am looking for the place in holy book where is written: Let there be no compulsion in religion. Which book and which verse number? Thank you.'))
+      .toBe('Let there be no compulsion in religion');
+    expect(quotationIn('where can I read the verse that starts with let there be no compulsion in religion')).toBe('let there be no compulsion in religion');
+    expect(quotationIn('Let your vision become world-embracing rather than confined to your own self. Which writing says this?'))
+      .toBe('Let your vision become world-embracing rather than confined to your own self');   // too short to be a quotation → unchanged
     expect(quotationIn('Jesus said God helps those who help themselves')).toBe('Jesus said God helps those who help themselves');
   });
 
