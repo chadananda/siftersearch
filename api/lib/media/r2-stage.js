@@ -93,6 +93,12 @@ export async function stageTick(st, { store, getItem, readMeta, busy = () => fal
       const key = `${cfg.prefix}${id}-${createHash('sha1').update(src).digest('hex').slice(0, 12)}.${ext}`;
       const size = await store.put(key, file);
       st.staged[id] = { key, ext, src, bytes: size, at: now, ...(tmp ? { audio_only: true } : {}) };
+    } catch (err) {
+      // R2 refuses one PUT over its object limit; that talk can never stage, so it goes to its pod direct from tower and the
+      // stager moves on (11-02: a 15 GB .mpg 'whole' at the head of the line failed every tick and nothing behind it staged)
+      if (!/maximum allowed object size/i.test(String(err?.message))) throw err;
+      (st.stage_skip ||= {})[id] = `over the R2 single-upload limit (${((await stat(file).catch(() => null))?.size / 1e9 || 0).toFixed(1)} GB) — sent direct`;
+      continue;
     } finally { if (tmp) await rm(tmp, { force: true }).catch(() => {}); }
     return 'uploaded';
   }

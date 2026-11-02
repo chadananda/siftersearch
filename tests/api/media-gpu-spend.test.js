@@ -431,6 +431,21 @@ describe('the lane: GPU is rented only for work', () => {
     expect(Object.keys(st.staged)).toEqual(['1', '3']);
     expect(puts[0]).toMatch(/^stage\/3-/);
   });
+  it('stage-ahead: a talk R2 refuses as too large is skipped (sent direct), the next one stages; other upload errors still throw', async () => {
+    const { stageTick } = await import('../../api/lib/media/r2-stage.js');
+    const x = setup({ talks: 2, seconds: 600 }), puts = [];
+    let fail = 'Your proposed upload exceeds the maximum allowed object size.';
+    const store = { put: async (k) => { if (k.startsWith('stage/1-') && fail) throw new Error(fail); puts.push(k); return 10; }, remove: async () => {}, signed: async (k) => k };
+    const st = { queue: [1, 2], jobs: {}, items: {}, staged: {} };
+    const opts = { store, getItem: async (id) => x.items[id], readMeta: async (d) => JSON.parse(readFileSync(join(d, 'meta.json'), 'utf8')), now: 1000, cfg: { aheadS: 1e9, maxBytes: 1e12, maxAgeMs: 1e9, prefix: 'stage/' } };
+    expect(await stageTick(st, opts)).toBe('uploaded');
+    expect(Object.keys(st.staged)).toEqual(['2']);
+    expect(st.stage_skip[1]).toMatch(/single-upload limit.*sent direct/);
+    const st2 = { queue: [1, 2], jobs: {}, items: {}, staged: {} };
+    fail = 'read ECONNRESET';
+    await expect(stageTick(st2, opts)).rejects.toThrow(/ECONNRESET/);
+    expect(st2.stage_skip).toBeUndefined();
+  });
   it('stage-ahead skips what pods may not take, and a video sends only its audio track (Chad 10-30: "pushing video around to process audio is simply absurd")', async () => {
     const { stageTick, audioDemuxer } = await import('../../api/lib/media/r2-stage.js');
     const x = setup({ talks: 3, seconds: 3600 }), puts = [], demuxed = [];
