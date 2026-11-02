@@ -26,3 +26,20 @@ print(json.dumps({'clip': [s['clip_pct'], round(float(np.mean(np.abs(x) >= 0.999
     expect(o.kept).toBeGreaterThan(50); expect(o.kept).toBeLessThanOrEqual(100); expect(o.kept_en).toBeLessThan(1e-6);
   });
 });
+
+// Grade's loudness is pyloudnorm's integrated loudness filtered in chunks (11-02: pyloudnorm's float64 copies OOM-killed a 4.9 h talk in 6 GB).
+describe.skipIf(!(ready && has('python3', ['-c', 'import pyloudnorm, scipy'])))('media_tool integrated_lufs', () => {
+  it('equals pyloudnorm for any chunk size, silence included', () => {
+    const py = `
+import sys, json, numpy as np; sys.path.insert(0, 'scripts/media'); import media_tool as M, pyloudnorm as pyln
+rng = np.random.default_rng(1); sr = 16000; t = np.arange(sr * 61) / sr
+x = (0.2 * np.sin(2 * np.pi * 180 * t) * (1 + np.sin(2 * np.pi * .3 * t)) + .01 * rng.standard_normal(len(t))).astype(np.float32); x[(t % 7) > 5] *= 1e-4
+q = (1e-6 * rng.standard_normal(sr * 5)).astype(np.float32)
+ref = pyln.Meter(sr).integrated_loudness(x.astype(np.float64))
+print(json.dumps({'d': max(abs(M.integrated_lufs(x, sr, chunk_s=c) - ref) for c in (600, 1.37, .05)), 'quiet': [str(M.integrated_lufs(q, sr)), str(pyln.Meter(sr).integrated_loudness(q.astype(np.float64)))]}))`;
+    const r = spawnSync('python3', ['-c', py], { encoding: 'utf8' });
+    expect(r.status, r.stderr).toBe(0);
+    const o = JSON.parse(r.stdout.trim().split('\n').at(-1));
+    expect(o.d).toBeLessThan(1e-9); expect(o.quiet[0]).toBe(o.quiet[1]);
+  });
+});

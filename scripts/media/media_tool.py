@@ -736,10 +736,47 @@ def native_stats(path, sr, block_frames=4096):
             'frames_en': np.concatenate(kept_en) if kept_en else np.zeros(0)}
 
 
+def integrated_lufs(x, sr, chunk_s=600):
+    """pyloudnorm's BS.1770-4 integrated loudness (its K-weighting coefficients, block bounds and gates), filtered in
+    chunks with carried filter state. pyloudnorm copies the whole talk to float64 once per filter stage: ~7 GB on a
+    4.9 h talk at 16 kHz, which OOM-killed grade in a 6 GB container (11-02)."""
+    import pyloudnorm as pyln
+    from scipy.signal import lfilter
+    meter = pyln.Meter(sr)
+    T_g, step, n = meter.block_size, 1.0 - meter.overlap, len(x)
+    if n < T_g * sr:
+        raise ValueError('audio shorter than one gating block')
+    nb = int(np.round(((n / sr - T_g) / (T_g * step)))) + 1
+    j = np.arange(nb)
+    lo = (T_g * (j * step) * sr).astype(np.int64)
+    hi = np.minimum((T_g * (j * step + 1) * sr).astype(np.int64), n)
+    bounds = np.unique(np.concatenate([lo, hi]))
+    cum = np.zeros(len(bounds))   # sum of squares of the weighted signal before each bound
+    filt = [(f.b, f.a, f.passband_gain) for f in meter._filters.values()]
+    zi = [np.zeros(max(len(b), len(a)) - 1) for b, a, _ in filt]
+    run, step_n = 0.0, int(sr * chunk_s)
+    for s in range(0, n, step_n):
+        y = x[s:s + step_n].astype(np.float64)
+        for k, (b, a, g) in enumerate(filt):
+            y, zi[k] = lfilter(b, a, y, zi=zi[k])   # the state belongs to the unscaled filter; the gain scales its output
+            y *= g
+        cs = np.cumsum(y * y)
+        sel = (bounds > s) & (bounds <= s + len(y))
+        cum[sel] = run + cs[bounds[sel] - s - 1]
+        run += cs[-1]
+    at = {int(p): c for p, c in zip(bounds, cum)}
+    z = np.array([at[int(h)] - at[int(l)] for l, h in zip(lo, hi)]) / (T_g * sr)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        l = -0.691 + 10.0 * np.log10(z)
+        g1 = z[l >= -70.0]
+        gamma_r = -0.691 + 10.0 * np.log10(np.mean(g1)) - 10.0 if len(g1) else np.nan
+        g2 = z[(l > gamma_r) & (l > -70.0)]
+        return float(-0.691 + 10.0 * np.log10(np.nan_to_num(np.mean(g2)) if len(g2) else 0.0))
+
+
 def cmd_grade(a):
     """Signal measurements for the quality grade (the JS side grades them: api/lib/media/grade.js). Native-rate decode
     for clipping and bandwidth; 16 kHz for the rest; DNSMOS + NISQA (torchmetrics) on up to three 20 s speech excerpts."""
-    import pyloudnorm as pyln
     t0 = time.time()
     probe = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=sample_rate', '-of', 'json', a.input],
                                       capture_output=True, text=True).stdout or '{}')
@@ -773,9 +810,8 @@ def cmd_grade(a):
     out['dropouts'] = drop
     out['dropouts_per_hour'] = round(drop / max(1e-6, len(x) / SR / 3600), 1)
     # loudness (EBU R128 integrated) and a loudness range from short-term blocks
-    meter = pyln.Meter(SR)
     try:
-        out['lufs'] = round(float(meter.integrated_loudness(x.astype(np.float64))), 1)
+        out['lufs'] = round(integrated_lufs(x, SR), 1)
     except Exception:
         out['lufs'] = None
     blocks = [x[k:k + SR * 3] for k in range(0, len(x) - SR * 3, SR * 3)]
