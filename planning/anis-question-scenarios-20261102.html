@@ -359,6 +359,29 @@ q{font-style:italic;quotes:"“" "”"}
   </table></div>
   <p style="margin-top:10px">This fits the 11-01 rule: quality first, speed earned. A route is switched on only after it scores as well as the full agent on its scenario's tests. Every routed answer is logged and judged; a wrong route becomes a Jev training example; a route that slips is switched off until fixed.</p>
 
+  <h3>Jev at every decision point, not just the first</h3>
+  <p>Routing the question is the first branch, not the only one. A research plan is a small map of steps with <b>decision points</b> between them, and at each one Jev reads what has been found so far and picks the next step, in about a tenth of a second. An open agent makes the same choices by writing a model turn each time, 2–5 s apiece. A plan with five decisions then costs about half a second of thinking instead of 10–25 s, and only the final answer is written by Sonnet.</p>
+  <div class="wrap"><table>
+    <tr><th>Decision point</th><th>Jev chooses between</th></tr>
+    <tr><td>After the first search</td><td>enough evidence · search again with other words · search another shelf · go to originals</td></tr>
+    <tr><td>Quotation not found exactly</td><td>closest wording is the same text · paraphrase of a known passage · misattributed · not in the library</td></tr>
+    <tr><td>A hit in a secondary book</td><td>the words are the book's own · quoted from an earlier source, trace it</td></tr>
+    <tr><td>A named person or work</td><td>which bearer of the name · which edition or translation</td></tr>
+    <tr><td>Does this passage answer?</td><td>answers it · only mentions the topic · contradicts another hit</td></tr>
+    <tr><td>Comparison, each side</td><td>this tradition is covered · thin, search wider · the library lacks it, say so</td></tr>
+    <tr><td>Before writing</td><td>answer now · ask the one question that matters · offer it as an assignment</td></tr>
+  </table></div>
+  <p style="margin-top:10px">Each decision point is its own Jev task, with its own log, its own labelled examples and its own accuracy figure, which is the way Jev's log is already kept for training Laya. Where two branches are cheap, both run at once and the decision picks a result instead of waiting.</p>
+
+  <h3>Assessing every run, and growing the strategies</h3>
+  <ol>
+    <li><b>Every run leaves a trace:</b> each decision with Jev's probabilities, each search and its results, time and cost per step, the answer, and the judge's verdict.</li>
+    <li><b>A lost answer is traced to the decision that lost it.</b> The run is replayed from that point with the other branch; if the replay wins, the right choice becomes a labelled example for that decision point. Decision points that are often wrong get sharper definitions and examples, or are handed to the agent until fixed.</li>
+    <li><b>When no existing branch would have won, a strategy is missing.</b> The full agent, run on the same question, shows what it did differently (a shelf searched, a move made). That move becomes a new option at a decision point, or a new step, and is switched on only after it passes the gate on fresh questions.</li>
+    <li><b>The agent is how new strategies are found; the map is where they are kept.</b> Over time more questions finish on the map, fast, and fewer need the agent.</li>
+  </ol>
+  <p class="note">Measured per week: accuracy of each decision point, share of runs finished on the map, judged win rate per class, time per decision and per answer, cost per answer.</p>
+
   <h3>Making Jev's classification accurate</h3>
   <ol>
     <li><b>Small questions, not one big one.</b> Jev answers a short chain, each a choice with a probability: new question or follow-up (and which move) → group (A–G) → scenario → parameters (traditions, language, named work or person, occasion). Each step has a written definition and examples, and a choice Jev is unsure of shows up as low probability rather than a confident wrong guess.</li>
