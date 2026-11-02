@@ -1,5 +1,10 @@
 # Worklist — order of operations
 
+## 11-02 search engine cutover DONE (planning/qdrant-status-20261028.md)
+- qdrant-main :6343 serves; gate PASS (81% vs 77%, xl hit@10 0.35 vs 0.19, p95 11 s vs 25 s). qdrant-next stopped, data kept → delete ≥11-09.
+- OPEN: entity-aware 2/9 — Dawn-Breakers outranked by newer topical works (ranking, not engine).
+- Hub next: calibrate topic terms (run.mjs --sample 150), HyPE coverage check, chad.jsonl intake, admin page, retire old scorers.
+
 ## STATUS 10-12 12:55 — running on tower (watched: background stall-check every 20 min)
 - reingest-carry: 1,155 / 1,806 books (run 46 of 35–53), ~115 books/h → done ≈ 19:00
 - ingest-files: batch 15 (the Arabic fiqh tail: Radd al-Muhtar 171,927 ¶, Jawahir 126k ¶ — hours each), 16–24 queued after

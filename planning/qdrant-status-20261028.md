@@ -24,3 +24,11 @@
 - Priority slices applied 11-02 (Chad: search first, indexing second, all other work lower): reports, reports-carry, audit,
   deep-research → sifter-bulk.slice; indexer, library-watcher, embedding → sifter-index.slice; sifter.slice CPUWeight 20;
   qdrant-next CPUWeight 400, MemoryLow 56G. ZFS IO ignores cgroup IO weights, so this cannot fix the read volume above.
+
+## 11-02 cutover DONE — qdrant-main (:6343, /faster XFS) serves search
+Gate (after = qdrant-main; tmp/engine-gate): search 418/516 (81%) vs 398 (77%) 10-08, MRR 0.540 vs 0.546, p95 11.1 s vs 25.0 s,
+errors 2 vs 40; types 66/83 (80%); cross-lingual A/B same 300 cases at the same time: hit@10 0.347 vs qdrant-next 0.185, p50 0.9 s vs 7.1 s.
+Entity-aware 2/9 (was 8/9): both engines hold the same 16,041 Dawn-Breakers points — ranking, not engine (newer topical works
+e.g. "Mullá Ḥusayn" 16737, GPB, Tablet of Visitation outrank DB). Fixture/ranking item, open.
+qdrant-next stopped+disabled 11-02, data /fast/qdrant-next (426 GB) kept until ≥11-09 then delete. qdrant-main MemoryLow=56G set.
+Rollback (until 11-09): .env-secrets QDRANT_URL=http://127.0.0.1:6333, `systemctl --user enable --now qdrant-next`, pm2 reload.
