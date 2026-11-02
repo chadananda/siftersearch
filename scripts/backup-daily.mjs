@@ -83,7 +83,8 @@ try {
   const staged = result?.components?.find((c) => c.component === 'sqlite_content')?.verified;
   if (staged) {
     Object.assign(verify.secs, staged.secs);
-    if (!staged.identical) throw new Error('the /tank copy differs from the checked NVMe stage copy');
+    if (staged.identical === false) throw new Error('the /tank copy differs from the checked NVMe stage copy');
+    if (staged.identical !== true) throw Object.assign(new Error(`the /tank copy was not compared with the checked NVMe stage copy (${staged.compareError || 'no result'})`), { unverified: true });
     verify.quickCheck = staged.quickCheck;
     verify.staged = true;
   } else {
@@ -98,8 +99,9 @@ try {
   }
   verify.ok = true;
 } catch (e) {
-  verify.timedOut = e.code === 'ETIMEDOUT';
-  problems.push(verify.timedOut
+  verify.timedOut = e.code === 'ETIMEDOUT' || !!e.unverified;
+  problems.push(e.unverified ? `snapshot UNVERIFIED — ${e.message}; the copy may be fine: rerun node scripts/backup-daily.mjs`
+    : verify.timedOut
     ? `snapshot UNVERIFIED — a verify step timed out (${JSON.stringify(verify.secs)}s); the copy may be fine: run PRAGMA quick_check on it by hand`
     : `VERIFY failed: ${e.message}`);
 }

@@ -177,6 +177,16 @@ export function stageFor(dir, needBytes, freeBytes = null) {
   } catch { return null; }
 }
 
+/** cmp's verdict, told apart: exit 0 identical, exit 1 the bytes differ, anything else (exit 2, a signal, a missing file) = not compared. */
+export function cmpVerdict(err) {
+  if (!err) return { identical: true, compareError: null };
+  if (err.status === 1) return { identical: false, compareError: null };
+  return { identical: null, compareError: String(err.signal ? `cmp killed by ${err.signal}` : err.stderr?.toString().trim() || err.message).slice(0, 200) };
+}
+export function compareFiles(a, b, run = execFileSync) {
+  try { run('cmp', ['-s', a, b], { stdio: 'pipe' }); return cmpVerdict(null); } catch (e) { return cmpVerdict(e); }
+}
+
 function stageAndVerify({ snapDir, dbFile, stage, backupPath }) {
   const staged = join(stage, `stage-${dbFile}`);
   const t = Date.now(), secs = {};
@@ -189,10 +199,11 @@ function stageAndVerify({ snapDir, dbFile, stage, backupPath }) {
     step('fold_wal', () => execFileSync('sqlite3', [staged, 'PRAGMA journal_mode=DELETE;'], { stdio: 'pipe', timeout: 1800_000 }));
     const quickCheck = step('quick_check', () => execFileSync('sqlite3', [staged, 'PRAGMA quick_check(5);'], { stdio: 'pipe', timeout: 3600_000 }).toString().trim());
     step('copy_tank', () => execFileSync('cp', [staged, backupPath], { stdio: 'pipe', timeout: 3600_000 }));
-    let identical = false;
-    step('compare', () => { try { execFileSync('cmp', ['-s', staged, backupPath], { stdio: 'pipe', timeout: 3600_000 }); identical = true; } catch { identical = false; } });
-    logger.info({ quickCheck, identical, secs, mins: Math.round((Date.now() - t) / 6000) / 10 }, 'backup staged + verified on NVMe');
-    return { quickCheck, identical, secs };
+    // No time cap: an idle-I/O read of ~66 GB that ends when the bytes are read. 11-02 the old 1-h cap killed cmp mid-read under load
+    // (copy_tank 712 s, compare 3602 s) and "not finished" was reported as "the copy differs".
+    const { identical, compareError } = step('compare', () => compareFiles(staged, backupPath));
+    logger.info({ quickCheck, identical, compareError, secs, mins: Math.round((Date.now() - t) / 6000) / 10 }, 'backup staged + verified on NVMe');
+    return { quickCheck, identical, compareError, secs };
   } finally {
     for (const f of [staged, `${staged}-wal`, `${staged}-shm`]) { try { unlinkSync(f); } catch { /* not there */ } }
   }
