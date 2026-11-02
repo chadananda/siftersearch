@@ -488,8 +488,9 @@ export async function runItem(item, opts = {}, deps = {}) {
         const el = remasterEligible(meta, work.paragraphs || []);
         let pv; const cloud = join(dir, 'enhanced', 'unipase.cloud.flac'), casr = join(dir, 'enhanced', 'unipase.asr.json');
         if (!el.ok) meta.remaster = { ...(meta.remaster || {}), status: 'skipped', why: el.why, at: d.now() };
-        else if ((!existsSync(cloud) || !existsSync(casr)) && (await podPost(dir, { needFlac: false }))?.method !== 'cleaned') meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: 'no UniPASE copy yet', at: d.now() };
-        else if (towerStrict() && !(pv = await podVerdict(dir)).ok) meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: `no valid worker result (${pv.why}): back to a worker`, ...(pv.stale_image ? { stale_image: true } : {}), at: d.now() };   // tower never reprocesses audio
+        // waiting: the tick is a SKIP (no tool fp), never a remaster record — 11-02: 877 + 2633 were stamped with the v2 fp while waiting, so the redo skipped them
+        else if ((!existsSync(cloud) || !existsSync(casr)) && (await podPost(dir, { needFlac: false }))?.method !== 'cleaned') { meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: 'no UniPASE copy yet', at: d.now() }; rec.skipped = 'waiting: no UniPASE copy yet'; }
+        else if (towerStrict() && !(pv = await podVerdict(dir)).ok) { meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: `no valid worker result (${pv.why}): back to a worker`, ...(pv.stale_image ? { stale_image: true } : {}), at: d.now() }; rec.skipped = `waiting: no valid worker result (${pv.why})`; }   // tower never reprocesses audio
         else {
           const orig = meta.enhancement.variants.find((v) => v.name === 'original') || {};
           const out = join(dir, 'enhanced', 'unipase.opus'), report = join(dir, 'enhanced', 'unipase.guard.json');   // the kept UniPASE stage (Opus 96k, never overwritten; Chad 11-01)

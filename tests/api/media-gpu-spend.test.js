@@ -806,6 +806,8 @@ describe('strict mode: with no complete worker result tower waits, it never touc
       await runItem(t.item, { redo: ['remaster'], only: ['remaster'], remaster: true }, t.deps);
       const meta = JSON.parse(readFileSync(join(t.dir, 'meta.json'), 'utf8'));
       expect(meta.remaster.status).toBe('waiting'); expect(meta.enhancement.listening).toBe('safe');
+      // the tick is a skip with no tool fp: a waiting talk never looks remastered to the ledger or `rerun fp!=current` (11-02: 877 + 2633 stamped v2 while waiting)
+      expect(meta.stages.remaster.skipped).toMatch(/^waiting: no valid worker result/); expect(meta.stages.remaster.fp).toBeUndefined(); expect(meta.stages.remaster.settings).toBeUndefined();
       expect(t.tools.remasterGuard).not.toHaveBeenCalled(); expect(t.tools.tool).not.toHaveBeenCalled(); expect(t.tools.ffmpeg).not.toHaveBeenCalled();
     } finally { if (prev === undefined) delete process.env.MEDIA_REMASTER_STRICT; else process.env.MEDIA_REMASTER_STRICT = prev; }
   });
