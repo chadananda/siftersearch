@@ -1823,6 +1823,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   healthLoop?.unref?.();
   // STAGE AHEAD (Chad 10-30): the uplink fills R2 with the next ~100 audio-hours of originals whether or not pods are up; pods pull in seconds
   const R2S = await import('../media/r2-stage.js');
+  const opus = deps.opus !== undefined ? deps.opus : R2S.opusEncoder(run);   // pods get Opus 96k, not the original (Chad 11-01)
   const demux = deps.demux !== undefined ? deps.demux : R2S.audioDemuxer(run);   // a video's audio track only, stream-copied (Chad 10-30)
   const stageStore = deps.stageStore !== undefined ? deps.stageStore : (process.env.VITEST || process.env.MEDIA_STAGE === '0' ? null : await R2S.r2StageStore().catch(() => null));
   let stagerStop = false;
@@ -1832,7 +1833,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       let r;
       LH.beatStart(st, 'stager', now());
       // a rental pause idles the stager: no pod pulls from stage/, and 11-01 its ECONNRESET retries kept re-sending originals up the saturated uplink
-      try { r = (await C.rentalPauseReason?.().catch(() => null)) ? 'paused' : await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, demux, now: now() }); st.stage_error = null; }
+      try { r = (await C.rentalPauseReason?.().catch(() => null)) ? 'paused' : await R2S.stageTick(st, { store: stageStore, getItem: (id) => repo.getMediaItem(id), readMeta, busy: busyItem, demux, opus, now: now() }); st.stage_error = null; }
       catch (err) { st.stage_error = String(err?.message || err).slice(0, 200); r = 'error'; }
       LH.beat(st, 'stager', { ok: r !== 'error', err: st.stage_error, n: r === 'uploaded' ? 1 : 0 }, now());
       if (r !== 'uploaded') await new Promise((res) => setTimeout(res, r === 'error' ? 60_000 : 20_000).unref?.());
@@ -2009,7 +2010,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           phase('lan');
           LH.beatStart(st, 'q_lan', now());
           const marks = LH.chainMarks(st), lanAt = now();
-          const lanDeps = { ...deps, demux, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped, deferFinish: true };
+          const lanDeps = { ...deps, demux, opus, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped, deferFinish: true };
           // the feed (tower hashes + stores each fed original: 630 s of a 659 s pass, 11-01) runs BESIDE the pass, lan then edge, one at a time; the pass only pulls and plans
           if (!feedPass) feedPass = (async () => {
             // everything this outlives the pass with is the RAW dependency (the pass's guarded ones throw ABANDONED once the next pass begins)
@@ -2692,7 +2693,8 @@ export async function mediaRerunJob({ stage, where = 'fp!=current', mode = 'dry'
   const reg = deps.reg || STAGE_REG, def = reg.BY[stage];
   if (!def) throw new Error(`unknown stage ${stage} (stages: ${reg.STAGES.join(', ')})`);
   // the feed works a campaign on tower: llm stages (service-bound), and quiet (its own home-host step); other gpu/cpu stages re-run through the typed chain
-  if (!def.feed && !towerMay(stage, reg)) throw new Error(`${stage} is a ${def.class} stage the feed does not run: re-run it through the typed chain`);
+  const typedRedo = stage === 'remaster';   // a stale remaster IS the work order: nextJobs sends it through gpu → cpu-finish (quiet v2, Chad 11-01); the mark keeps the published copy on air
+  if (!def.feed && !towerMay(stage, reg) && !typedRedo) throw new Error(`${stage} is a ${def.class} stage the feed does not run: re-run it through the typed chain`);
   const w = String(where || 'fp!=current'), m = /^tool=(.+)$/.exec(w);
   const filter = m ? { tool: m[1] } : /^fp!=current$/.test(w) ? { fp_not: def.fp } : /^fp=(.+)$/.exec(w) ? { fp: /^fp=(.+)$/.exec(w)[1] } : {};
   const ledger = deps.ledger || await import('../repos/media-ledger-repo.js');
@@ -2700,7 +2702,12 @@ export async function mediaRerunJob({ stage, where = 'fp!=current', mode = 'dry'
   const repo = deps.repo || await import('../repos/media-repo.js');
   const readMeta = deps.readMeta || (async (dir) => JSON.parse(await (await import('fs/promises')).readFile(join(dir, 'meta.json'), 'utf8')));
   const writeMeta = deps.writeMeta || (async (dir, meta) => { const p = join(dir, 'meta.json'), t = `${p}.rerun.${process.pid}.tmp`; await writeFile(t, JSON.stringify(meta, null, 1)); await rename(t, p); });
-  const cands = await ledger.rerunCandidates({ stage, where: filter });
+  let cands = await ledger.rerunCandidates({ stage, where: filter });
+  if (typedRedo) {   // published first, most loud cuts first, then the rest of the remastered (order, not filter)
+    const { redoOrder } = await import('../media/quiet-record.js');
+    const rows = await Promise.all(cands.map(async (c) => ({ ...c, published: !!c.published_at, meta: await readMeta(c.dir).catch(() => ({})) })));
+    cands = redoOrder(rows);
+  }
   const hours = cands.reduce((a, c) => a + (Number(c.duration_s) || 0), 0) / 3600;
   const perH = (await ledger.stageUsd(stage)).filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
   const q75 = perH.length ? (() => { const i = 0.75 * (perH.length - 1), lo = Math.floor(i); return perH[lo] + (perH[Math.min(lo + 1, perH.length - 1)] - perH[lo]) * (i - lo); })() : null;
@@ -2722,5 +2729,6 @@ export async function mediaRerunJob({ stage, where = 'fp!=current', mode = 'dry'
     await repo.setIndex(c.id, indexFields(meta, reg));
     out.marked.push(c.id);
   }
+  if (typedRedo) out.order = out.marked.slice(0, 50);   // first 50 in work order; the queue is fed in this order (ids = the marked talks, in order)
   return out;
 }

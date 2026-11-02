@@ -56,11 +56,11 @@ export const STAGE_DEFS = [
   { name: 'archive', class: 'llm', job: 'intake', tool: 'archive', settings: {}, required: false },
   { name: 'grade', class: 'cpu', job: 'cpu-prep', tool: 'grade', settings: {}, required: false },
   { name: 'enhance', class: 'gpu', job: 'gpu', tool: 'enhance', settings: {}, required: false },
-  { name: 'remaster', class: 'cpu', job: 'cpu-finish', tool: 'unipase', settings: {}, blocksAir: true,
+  { name: 'remaster', class: 'cpu', job: 'cpu-finish', tool: 'unipase', settings: { keep: 'opus96', v: 2 }, blocksAir: true,   // v2 (Chad 11-01): the output is KEPT as enhanced/unipase.opus (Opus 96k, never overwritten) with the GPU job's quiet.json; older talks (settings {}) are stale = redone
     infer: (m) => (m.enhancement?.listening === 'unipase' || (m.enhancement?.variants || []).some((v) => v?.name === 'unipase') ? { tool: 'unipase', settings: {} } : null) },
   { name: 'verify', class: 'cpu', job: 'cpu-finish', after: ['remaster'], tool: 'remaster-audit', settings: {}, blocksAir: true },
   { name: 'realign', class: 'cpu', job: 'cpu-finish', after: ['remaster'], tool: 'media_tool:realign', settings: {}, required: false },
-  { name: 'quiet', class: 'cpu', job: 'cpu-finish', after: ['remaster', 'realign'], tool: 'quiet.py', settings: { v: QUIET_REPAIR_VERSION }, blocksAir: true, feed: true,
+  { name: 'quiet', class: 'cpu', job: 'cpu-finish', after: ['remaster', 'realign'], tool: 'quiet.py', settings: { v: QUIET_REPAIR_VERSION }, blocksAir: true,   // not a feed stage any more: quiet v2 is decided in the gpu job (whisper), so it is redone WITH the remaster
     infer: (m) => (m.remaster?.quiet?.v != null ? { tool: m.remaster.quiet.tool || 'quiet.py', settings: { v: m.remaster.quiet.v } } : null) },
   { name: 'web', class: 'cpu', job: 'cpu-finish', after: ['quiet'], tool: 'ffmpeg:web', settings: {}, required: false },
   { name: 'transcribe', class: 'gpu', job: 'gpu', tool: 'asr', settings: {}, blocksAir: true },

@@ -23,7 +23,7 @@ export async function podPost(dir, { needFlac = true } = {}) {
     const post = JSON.parse(await readFile(join(podDir(dir), 'post.json'), 'utf8'));
     if (!post?.ok || !post.guard || !(post.words_key || post.work_sha)) return null;
     if (!await resultMatches(post, dir)) return null;   // the transcript's words changed since the worker aligned to them
-    if (needFlac && !existsSync(join(podDir(dir), 'unipase.flac'))) return null;
+    if (needFlac && !existsSync(join(podDir(dir), 'unipase.opus'))) return null;   // the kept UniPASE stage (Opus), not a decoded copy
     return post;
   } catch { return null; }
 }

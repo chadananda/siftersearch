@@ -13,7 +13,7 @@
 // hosts: the feed adds its measured rate, rebalancePrep moves the excess prep steps to the edge, and a step that finished on the edge is pulled
 // and acked there whatever its type. A talk whose input is FLAC/WAV never leaves the LAN (no decoded audio in the cloud).
 import { join, extname } from 'node:path';
-import { VIDEO } from './r2-stage.js';
+import { VIDEO, needsOpus } from './r2-stage.js';
 import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
 import { adoptedState } from './whole-result.js';
@@ -153,7 +153,12 @@ const typedFileId = (itemId, sha) => `t${itemId}-${sha.slice(0, 12)}`;
 // stream-copied (no re-encode, so every step decodes the same samples), kept beside the talk as TYPED_INPUT.<ext> while the chain lives; the
 // chain's sha names that file. Tower keeps the video (meta.original): adoption restores original + source. No audio track → the original.
 export const TYPED_INPUT = '.typed-input';
-async function chainInput(it, m, demux) {
+async function chainInput(it, m, demux, opus = null) {
+  // Chad 11-01: pods get Opus 96k, not a 317 MB WAV (r2-stage.js needsOpus: only a source above 96 kbps); every step of the chain then decodes the same Opus
+  if (opus && needsOpus((await stat(join(it.dir, m.original)).catch(() => null))?.size, m.duration_s)) {
+    const a = await opus(join(it.dir, m.original), it.dir).catch(() => null);
+    if (a) { const rel = `${TYPED_INPUT}.${a.ext}`; await rename(a.file, join(it.dir, rel)); return rel; }
+  }
   if (!demux || !VIDEO.has(extname(m.original).slice(1).toLowerCase())) return m.original;
   const a = await demux(join(it.dir, m.original), it.dir).catch(() => null);
   if (!a) return m.original;
@@ -165,7 +170,7 @@ const chainSrc = (it, m, ch) => join(it.dir, ch.src || m.original);
 /** Typed feed: only while hosts for all three steps are engaged; keeps ~TARGET_H of prep queued; order by band (pickNext). */
 /** The edge's engaged cpu-prep supply (a CPU pod): { rate, queued_audio_h } at its measured rate, or null when no edge host lists cpu-prep. */
 const edgePrep = (cap) => { const t = cap?.by_type?.['cpu-prep']; return t?.hosts?.length ? { rate: t.rate || 0, drain: t.drain || 0, queued_audio_h: t.queued_audio_h || 0 } : null; };
-async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null, buffer = null, trace = null }) {
+async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null, opus = null, buffer = null, trace = null }) {
   const ft = tmOf(trace, 'feed');
   const types = new Set(cap.hosts.flatMap((h) => h.types || []));
   const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t) && !(t === 'gpu' && edge && gpuEdge !== false));   // pods boot on the edge's gpu backlog
@@ -194,7 +199,7 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
       if (dup?.later) { st.feedLater[itemId] = dup.later; st.queue.push(itemId); continue; }
       if (dup?.state) { await repo.updateMediaItem(it.id, { state: dup.state, why: dup.why.slice(0, 500) }); held++; continue; }
       delete st.feedLater[itemId];
-      const src = await ft('demux', () => chainInput(it, m, demux)), input = join(it.dir, src), sha = await shaOf(st, wr, input, ft);
+      const src = await ft('demux', () => chainInput(it, m, demux, opus)), input = join(it.dir, src), sha = await shaOf(st, wr, input, ft);
       const wj = { ...wr.wholeJob(it, m, sha), threads: 4 }, fileId = typedFileId(itemId, sha), audio_s = m.duration_s || 0;
       if (src !== m.original) wj.input = 'in' + extname(src);
       const job = SJ.typedJob('cpu-prep', { itemId, fileId, wj, band: SJ.bandOf(st, itemId), audio_s });

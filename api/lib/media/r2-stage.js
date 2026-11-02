@@ -47,10 +47,22 @@ export function audioDemuxer(run, tmpDir = tmpdir(), { seconds = null } = {}) { 
   };
 }
 
+// Pods get Opus 96k mono 48 kHz (Chad 11-01; = split_restore.py TRANSIT, measured on 5 talks: within noise of the original) — a 317 MB WAV tape saturated the uplink. Only a source above 96 kbps is encoded (a smaller one is already as small; no second generation).
+export const OPUS_IN = ['-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '96k', '-application', 'audio'];
+export const needsOpus = (bytes, durS) => Number(durS) > 0 && Number(bytes) / Number(durS) > 12_000;
+/** src → { file, ext: 'opus' } beside `dir`. `run` = tower's process gate (tools.js run: a libopus ffmpeg is an 'encode', ONE at a time; any other path would WorkerWait). */
+export function opusEncoder(run, tmpDir = tmpdir()) {
+  return async (src, dir = tmpDir) => {
+    const file = join(dir, `sifter-opus-${process.pid}-${createHash('sha1').update(src).digest('hex').slice(0, 12)}.opus`);
+    await run('ffmpeg', ['-nostdin', '-y', '-v', 'error', '-i', src, '-map', '0:a:0', '-vn', ...OPUS_IN, file], { timeoutMs: 3_600_000 });
+    return { file, ext: 'opus' };
+  };
+}
+
 /** One stager step (mutates st.staged): drop objects whose talk left the lane, then upload the next queued original until aheadS of
  *  audio (or maxBytes) is staged. One upload per call — the caller loops; one at a time is what the uplink can carry anyway.
  *  busy(itemId) = assigned or being assigned right now; eligible(itemId) = a pod may take it (the assigner's own rule). → 'uploaded' | 'full' | 'idle' */
-export async function stageTick(st, { store, getItem, readMeta, busy = () => false, eligible = () => true, demux = null, now = Date.now(), cfg = STAGE }) {
+export async function stageTick(st, { store, getItem, readMeta, busy = () => false, eligible = () => true, demux = null, opus = null, now = Date.now(), cfg = STAGE }) {
   st.staged ||= {};
   for (const [id, s] of Object.entries(st.staged)) {
     const live = (st.queue.some((q) => String(q) === id) && eligible(id)) || busy(id);
@@ -70,7 +82,11 @@ export async function stageTick(st, { store, getItem, readMeta, busy = () => fal
     const src = `${it.dir}/${m.original}`;
     let ext = (m.original.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, ''), file = src, tmp = null;
     // Chad 10-30: "pushing video around to process audio is simply absurd" — a video sends only its audio track, bit for bit (stream copy, no re-encode)
-    if (VIDEO.has(ext) && st.items?.[id]?.kind !== 'whole' && demux) {
+    const bytes0 = opus && st.items?.[id]?.kind !== 'whole' ? (await stat(src).catch(() => null))?.size : 0;
+    if (opus && needsOpus(bytes0, st.items?.[id]?.duration_s || m.duration_s)) {
+      const a = await opus(src).catch(() => null);
+      if (a) { ({ file, ext } = a); tmp = a.file; }
+    } else if (VIDEO.has(ext) && st.items?.[id]?.kind !== 'whole' && demux) {
       const a = await demux(src).catch(() => null);
       if (a) { ({ file, ext } = a); tmp = a.file; }
     }

@@ -6,8 +6,8 @@ import {audioVersion, audioAlignment, listeningVariant, markAudioPending, timing
 // a crash or a drain. Originals are hard-linked read-only and never modified. Deps injected for tests (see `defaults`).
 import { qualityOf, remasterProven } from './remaster-quality.js';
 const towerStrict = () => process.env.MEDIA_REMASTER_STRICT === '1';   // STRICT: tower never reprocesses audio — set once the pre-worker backlog has drained
-import { quietRecord, hasQuiet, QUIET_REPAIR_VERSION } from './quiet-record.js';
-import { podPost, podComplete, podVerdict, take as podTake, forget as podForget, podDir } from './pod-post.js';
+import { quietRecord, hasQuiet, QUIET_REPAIR_VERSION, QUIET_AIR_VERSION } from './quiet-record.js';
+import { podPost, podComplete, podVerdict, take as podTake, forget as podForget, podDir, sha256File } from './pod-post.js';
 import { late } from './late.js';
 import { slotWait, WorkerWait } from './tools.js';
 import { REG, STAGES, COMPLETE_STAGES, DEPENDENTS, withDependents as regWithDependents, missingStages, recordFor, withRecords, towerMay, markStale } from './stages.js';
@@ -152,7 +152,7 @@ export const REMASTER_DECIDED = ['done'];
 /** The stages plus everything made from them (registry `after` edges, transitively), in run order: a redo un-ticks exactly these. Pure. */
 export const withDependents = (stages = [], reg = REG) => regWithDependents(stages, reg);
 /** A stage has run when ticked in meta.stages; the quiet stage also counts from the record the worker's result (post.py) or an earlier silencing wrote (meta.remaster.quiet = tool/settings/version). */
-const stageOk = (m, s) => !!m.stages?.[s]?.at || (s === 'quiet' && m.remaster?.quiet?.v >= QUIET_REPAIR_VERSION);
+const stageOk = (m, s) => !!m.stages?.[s]?.at || (s === 'quiet' && m.remaster?.quiet?.v >= QUIET_AIR_VERSION);
 /** Done for the checklist: run, and not marked stale by a re-run campaign. */
 const stageDone = (m, s) => stageOk(m, s) && !m.stages?.[s]?.stale;
 export const isComplete = (meta = {}, reg = REG) => REMASTER_DECIDED.includes(meta.remaster?.status) && hasPlayableCopy(meta) && reg.AIR_STAGES.every((s) => stageOk(meta, s));
@@ -489,10 +489,10 @@ export async function runItem(item, opts = {}, deps = {}) {
         else if (towerStrict() && !(pv = await podVerdict(dir)).ok) meta.remaster = { ...(meta.remaster || {}), status: 'waiting', why: `no valid worker result (${pv.why}): back to a worker`, ...(pv.stale_image ? { stale_image: true } : {}), at: d.now() };   // tower never reprocesses audio
         else {
           const orig = meta.enhancement.variants.find((v) => v.name === 'original') || {};
-          const out = join(dir, 'enhanced', 'unipase.flac'), report = join(dir, 'enhanced', 'unipase.guard.json');
+          const out = join(dir, 'enhanced', 'unipase.opus'), report = join(dir, 'enhanced', 'unipase.guard.json');   // the kept UniPASE stage (Opus 96k, never overwritten; Chad 11-01)
           // the worker already ran the word guard (scripts/media/worker/post.py) when its transcript hash still matches: take it, no CPU here
           const pod = await podPost(dir);
-          if (pod) { await podTake(dir, 'unipase.flac', out); await podTake(dir, 'unipase.guard.json', report).catch(() => {}); }
+          if (pod) { await podTake(dir, 'unipase.opus', out); await podTake(dir, 'quiet.json', join(dir, 'enhanced', 'quiet.json')).catch(() => {}); await podTake(dir, 'unipase.guard.json', report).catch(() => {}); }
           const g = pod ? pod.guard : await heavySlot(() => tools.remasterGuard({ original: join(dir, meta.original), unipase: cloud, work: join(dir, 'transcript.work.json'), asr: casr,
             // the reference: the ORIGINAL through the same model + settings as the copy (pods), else the production transcript
             ref: existsSync(join(dir, 'enhanced', 'unipase.asr_orig.json')) ? join(dir, 'enhanced', 'unipase.asr_orig.json') : join(dir, 'transcript.raw.json'), af: safeChain(orig), output: out, report }, { stop }));
@@ -504,7 +504,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           const wordsPct = g.flagged_sent_pct ?? g.fallback_sent_pct ?? g.swapped_pct;   // ASSESSMENT ONLY: how many sentences' words differ from the original transcript; a hold reason, never a splice
           const pass = !spliced && !pod?.held && pod?.qa?.output_assessment?.passed !== false && !(wordsPct > maxPct);
           const vs = meta.enhancement.variants.filter((v) => v.name !== 'unipase');
-          vs.push({ name: 'unipase', file: 'enhanced/unipase.flac', shifts_time: true, chain: pod?.method === 'cleaned' ? 'deterministic cleanup (MossFormer2-SE 60 %, mud cut, dereverb, de-ess) at −18 LUFS (the word guard only measures)' : 'UniPASE (long-form, 48 kHz), pure, at −18 LUFS (the word guard only measures)', guard: g });
+          vs.push({ name: 'unipase', file: 'enhanced/unipase.opus', shifts_time: true, chain: pod?.method === 'cleaned' ? 'deterministic cleanup (MossFormer2-SE 60 %, mud cut, dereverb, de-ess) at −18 LUFS (the word guard only measures)' : 'UniPASE (long-form, 48 kHz), pure, at −18 LUFS (the word guard only measures)', guard: g });
           meta.enhancement.variants = vs;
           const listeningBefore = meta.enhancement.listening || 'safe';
           if (pass) {
@@ -520,7 +520,7 @@ export async function runItem(item, opts = {}, deps = {}) {
           }
           if ((meta.enhancement.listening || 'safe') !== listeningBefore) markAudioPending(meta);
           meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: spliced ? `the copy mixes original and remastered audio (${g.swapped} sentences from the original): never published — re-render the pure copy` : pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `the remaster's words differ from the original transcript in ${wordsPct} % of sentences (> ${maxPct} %): listen to check the remaster or the check` }),
-            swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, flagged_sent_pct: g.flagged_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), ...(pod?.quiet ? { quiet: quietRecord(pod.quiet, { host: 'worker' }) } : {}), at: d.now() };   // quiet: the worker silenced the word-free stretches (post.py step 4)
+            swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, flagged_sent_pct: g.flagged_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), ...(pod?.quiet ? { quiet: quietRecord(pod.quiet, { host: 'worker' }) } : {}), ...(pod && existsSync(out) ? { stage_audio: { file: 'enhanced/unipase.opus', codec: 'opus', ...(pod.transit?.settings ? { b: pod.transit.settings.b, ar: pod.transit.settings.ar } : {}), sha256: await sha256File(out) } } : {}), at: d.now() };   // quiet: the worker silenced the word-free stretches (post.py step 4)
           for (const s of withDependents(['remaster'], reg).slice(1)) delete meta.stages[s];   // a new remaster result: what was made from the old one runs again (verify, realign, quiet, web, trim, update)
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
           meta.qa = { ...(meta.qa || {}), remaster: pod?.qa ? { ...pod.qa, at: new Date().toISOString() } : qualityOf(meta) };   // the worker decided the verdict; tower records it
@@ -536,7 +536,7 @@ export async function runItem(item, opts = {}, deps = {}) {
       if (skip) rec.skipped = skip;
       else if (assessed) rec.assessed = true;
       else {
-        const copy = join(dir, 'enhanced', 'unipase.flac'), orig = meta.original ? join(dir, meta.original) : null;
+        const copy = join(dir, 'enhanced', 'unipase.opus'), orig = meta.original ? join(dir, meta.original) : null;
         const c = await (d.verifyRemaster || verifyRemaster)({ run: tools.run, original: orig, remaster: copy, durationS: meta.duration_s, tier: meta.remaster_tier || remasterTier(meta) });
         meta.remaster = { ...(meta.remaster || {}), check: { ...c, at: d.now() } };
         rec.verdict = c.verdict; if (c.delta) rec.delta = c.delta; if (c.verdict !== 'changed') rec.why = c.why;
@@ -618,18 +618,13 @@ export async function runItem(item, opts = {}, deps = {}) {
       }
     }
 
-    // QUIET (a checklist stage, Chad 10-31): fade the word-free stretches of the kept master. The worker's result (post.py) already did it → ticked from its record; an older published
-    // remaster is silenced on a HOME host (never tower: quietStep only moves files and starts a container there), then everything made from the master (web, trim, update) runs again.
+    // QUIET v2 (Chad 11-01): the spans are decided on the GPU job (whisper + Silero VAD + transcripts, proven by quiet.py) and arrive with the remaster result (enhanced/quiet.json + meta.remaster.quiet);
+    // the quiet stage only ticks from that record. No v2 record = the remaster is redone (stale) — tower and cpu-finish never decide silence, never fall back (WorkerWait).
     if (stage === 'quiet') {
       const r = meta.remaster || {};
       if (r.status !== 'done' || meta.enhancement?.listening !== 'unipase' || Number(r.swapped) > 0 || Number(r.fallback_sent_pct) > 0) rec.skipped = 'no published pure remaster';   // held / spliced: re-made first, the new result brings its own quiet
-      else if (r.quiet?.v >= QUIET_REPAIR_VERSION) Object.assign(rec, { tool: r.quiet.tool || 'quiet.py', settings: { v: r.quiet.v }, v: r.quiet.v, from: 'worker result' });
-      else {
-        const q = await (d.quietStep || (await import('./quiet-repair.js')).quietStep)(item, meta, { T: tools, stop });
-        meta.remaster = { ...meta.remaster, quiet: q.quiet };
-        Object.assign(rec, { tool: q.quiet.tool || 'quiet.py', settings: { v: q.quiet.v }, v: q.quiet.v, host: q.quiet.host, changed: q.changed });
-        if (q.changed) for (const s of withDependents(['quiet'], reg).slice(1)) delete meta.stages[s];
-      }
+      else if (r.quiet?.v >= QUIET_REPAIR_VERSION && existsSync(join(dir, 'enhanced', 'quiet.json'))) Object.assign(rec, { tool: 'quiet.py', settings: { v: r.quiet.v }, v: r.quiet.v, silenced_s: r.quiet.quiet_s, loud_stretches: r.quiet.loud_stretches, vad_kept_s: r.quiet.vad_kept_s, asr_kept_s: r.quiet.asr_kept_s, from: 'worker result' });
+      else throw new WorkerWait('quiet (decided in the gpu job: the remaster is redone for quiet v2)');
     }
 
     if (stage === 'web') {
@@ -666,6 +661,8 @@ export async function runItem(item, opts = {}, deps = {}) {
         meta.web_original = { ogg: `web/${meta.slug}.original.ogg`, m4a: `web/${meta.slug}.original.m4a` };
       } else if (meta.remaster_tier !== 'light') delete meta.web_original;   // the light tier keeps its raw-original encodes across re-runs
       if (!podWeb) {
+        // the remaster's copies carry quiet.json (applied by the worker that encodes them); an encode of the bare unipase.opus here would play the unsilenced noise (Chad 11-01)
+        if (remastered && meta.enhancement?.listening === 'unipase') throw new WorkerWait('web (the remaster\'s web copies come from the worker with quiet applied)');
         await save();
         await Promise.all([webEnc('ogg', remastered ? 'oggR' : 'ogg', src, ogg, af, oggLocal), webEnc('m4a', remastered ? 'm4aR' : 'm4a', src, m4a, af, m4aLocal)]);
       }

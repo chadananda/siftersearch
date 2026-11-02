@@ -34,7 +34,7 @@ export function restoreInputs(it, m, mode, { original = true } = {}) {
 
 /** The worker files to fetch for a result: post/<f> → where it lands in the stage dir. */
 export const resultFiles = (post) => [
-  ...['unipase.flac', 'unipase.guard.json', ...(post.realign ? ['realign.json'] : []), ...(post.waveform_file ? [post.waveform_file] : [])].map((f) => [f, f]),
+  ...['unipase.opus', 'quiet.json', 'unipase.guard.json', ...(post.realign ? ['realign.json'] : []), ...(post.waveform_file ? [post.waveform_file] : [])].map((f) => [f, f]),
   ...Object.values(post.web || {}).map((f) => [f, join('web', f)]),
 ].map(([f, to]) => { if (!SAFE.test(f)) throw Error(`unsafe worker output path: ${f}`); return [f, to]; });
 
