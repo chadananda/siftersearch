@@ -77,3 +77,12 @@ describe('archiveReprobeJob', () => {
     expect(saved).toEqual([]); expect(marked).toEqual([[9, 'pdftotext: boom']]);
   });
 });
+
+describe('the archive jobs yield to search (Chad 11-02: "We do need Tower\'s search to be top priority")', () => {
+  it('siftersearch-reports, which runs them, starts inside the capped bulk slice', async () => {
+    const { readFileSync } = await import('fs');
+    const eco = readFileSync('ecosystem.config.cjs', 'utf8'), i = eco.indexOf("name: 'siftersearch-reports'");
+    expect(i).toBeGreaterThan(-1);
+    expect(eco.slice(i, i + 400)).toMatch(/interpreter: path\.join\(PROJECT_ROOT, 'scripts\/ops\/in-slice\.sh'\)/);
+  });
+});
