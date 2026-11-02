@@ -67,19 +67,20 @@ export async function mediaRedo({ ids = [], stages = [], by = 'ops' } = {}, d = 
   d ||= await deps0();
   const ok = stages.filter((s) => d.item.STAGES.includes(s)), nums = ids.map(Number).filter(Number.isFinite);
   if (!nums.length || !ok.length) return { error: `ids and stages required (stages: ${d.item.STAGES.join(', ')})` };
-  const reg = d.reg || (await import('./stages.js')).REG, gpu = ok.filter((s) => reg.BY[s]?.class === 'gpu');
+  // remaster too: its UniPASE + quiet v2 are made on the GPU job, the cpu-finish class only records the adoption (11-02: a tower redo re-ticked 2534 with no GPU work)
+  const reg = d.reg || (await import('./stages.js')).REG, gpu = ok.filter((s) => reg.BY[s]?.class === 'gpu' || s === 'remaster');
   if (gpu.length) return { ...(await mediaRedoTyped(nums, d, by)), stages: ok, gpu };
   const run = await d.ops.enqueue('media-stages', { write: true, ids: nums, redo: ok }, by);
   return { queued: true, run: run?.id ?? null, ids: nums, stages: ok };
 }
 
 /** Talks → the typed chain again (a whole redo order the lane takes in); an unpublished talk is 'scheduled' like a fresh whole order. */
-export async function mediaRedoTyped(ids, d, by = 'ops') {
+export async function mediaRedoTyped(ids, d, by = 'ops', { rerun = false } = {}) {   // rerun = a campaign (ops media rerun): band 2, behind new talks, in the given order
   const orders = [], scheduled = [];
   for (const id of ids) {
     const it = await d.repo.getMediaItem(id);
     if (!it?.dir) continue;
-    orders.push({ id: it.id, slug: it.slug, grade: it.grade ?? null, duration_s: it.duration_s || 0, mode: 'whole', kind: 'whole', redo: true, by });
+    orders.push({ id: it.id, slug: it.slug, grade: it.grade ?? null, duration_s: it.duration_s || 0, mode: 'whole', kind: 'whole', redo: true, by, ...(rerun ? { rerun: true } : {}) });
     if (it.state !== 'done' && !it.published_at) scheduled.push(it.id);
   }
   if (orders.length) await d.cloud.addOrders(orders);

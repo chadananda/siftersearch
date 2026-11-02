@@ -2451,11 +2451,11 @@ export function intakeOrder(st, o) {
   if (o.redo) {
     st.done = st.done.filter((d) => d.id !== o.id);
     st.failed = st.failed.filter((d) => d.id !== o.id); delete st.attempts[o.id];
-    st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind, redo: true };
+    st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind, redo: true, ...(o.rerun ? { rerun: true } : {}) };
   }
   if (o.first) { st.items[o.id] = { ...(st.items[o.id] || { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind }), first: true }; if (!running) st.queue = [o.id, ...st.queue.filter((x) => x !== o.id)]; }
   if ((!o.redo && st.done.some((d) => d.id === o.id && (d.mode || 'restore') === o.mode)) || st.queue.includes(o.id) || running) return;
-  st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind, redo: !!o.redo, ...(o.first ? { first: true } : {}) };
+  st.items[o.id] = { slug: o.slug, grade: o.grade, duration_s: o.duration_s, mode: o.mode, kind: o.kind, redo: !!o.redo, ...(o.rerun ? { rerun: true } : {}), ...(o.first ? { first: true } : {}) };
   st.queue.push(o.id);   // fresh talks first: a 'post' run ships the ~300 MB restored copy BACK up tower's ~1.4 MB/s uplink (vs ~60 MB for an original) — it fills the gaps
 }
 
@@ -2729,6 +2729,12 @@ export async function mediaRerunJob({ stage, where = 'fp!=current', mode = 'dry'
     await repo.setIndex(c.id, indexFields(meta, reg));
     out.marked.push(c.id);
   }
-  if (typedRedo) out.order = out.marked.slice(0, 50);   // first 50 in work order; the queue is fed in this order (ids = the marked talks, in order)
+  if (typedRedo) {
+    // the marked talks become typed-chain work orders, in redo order (11-02: a mark alone reached no GPU — tower re-ticked it). Published talks stay on air.
+    const MS = deps.mediaStatus || await import('../media/media-status.js');
+    const d = deps.redoDeps || { repo, cloud: await import('../media/cloud.js') };
+    out.typed = (await MS.mediaRedoTyped(out.marked, d, `rerun ${campaign}`, { rerun: true })).typed;
+    out.order = out.marked.slice(0, 50);   // first 50 in work order
+  }
   return out;
 }

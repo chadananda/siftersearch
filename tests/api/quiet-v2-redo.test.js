@@ -60,8 +60,18 @@ describe('mediaRerunJob on the remaster', () => {
     const metas = { '/d/1': q(500, 900), '/d/2': q(5, 50), '/d/3': q(80, 10), '/d/4': q(80, 20) };
     const cands = [1, 2, 3, 4].map((id) => ({ id, dir: `/d/${id}`, duration_s: 3600, state: 'done', published_at: id === 1 ? null : 'p' }));
     const d = { ledger: { rerunCandidates: async () => cands, stageUsd: async () => [], syncItemStages: vi.fn() }, ops: { pendingRuns: async () => [] }, repo: { setIndex: vi.fn() }, readMeta: async (dir) => metas[dir], writeMeta: vi.fn() };
-    const r = await mediaRerunJob({ stage: 'remaster', mode: 'apply' }, d);
+    const redo = vi.fn(async (ids) => ({ typed: ids }));
+    const r = await mediaRerunJob({ stage: 'remaster', mode: 'apply' }, { ...d, mediaStatus: { mediaRedoTyped: redo }, redoDeps: {} });
     expect(r.order).toEqual([4, 3, 2, 1]);
     expect(d.writeMeta.mock.calls[0][1].stages.remaster.stale).toBeTruthy();
+    // 11-02: the mark alone reached no GPU (tower re-ticked it) — the marked talks become typed-chain work orders, in redo order, as a rerun (band 2)
+    expect(redo).toHaveBeenCalledWith([4, 3, 2, 1], {}, expect.stringMatching(/^rerun remaster@/), { rerun: true });
+    expect(r.typed).toEqual([4, 3, 2, 1]);
+  });
+  it('a dry run marks nothing and queues nothing', async () => {
+    const redo = vi.fn();
+    const d = { ledger: { rerunCandidates: async () => [{ id: 1, dir: '/d/1', duration_s: 60 }], stageUsd: async () => [] }, ops: {}, repo: {}, readMeta: async () => ({}), mediaStatus: { mediaRedoTyped: redo } };
+    expect((await mediaRerunJob({ stage: 'remaster' }, d)).talks).toBe(1);
+    expect(redo).not.toHaveBeenCalled();
   });
 });

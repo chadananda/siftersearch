@@ -476,6 +476,9 @@ export async function runItem(item, opts = {}, deps = {}) {
     }
 
     if (stage === 'remaster') {
+      // a STALE remaster (ops media rerun) is a GPU work order for the typed chain: tower never ticks it (11-02: the campaign feed re-ticked 877 + 2534
+      // in < 1 s with the new fp and no GPU work, which made the redo vanish). Only a worker run adopting a new result ticks it.
+      if (meta.stages.remaster?.stale && !onWorker()) throw new WorkerWait('remaster (stale): redone through the typed chain');
       // UNIPASE listening copy (Chad 10-23 approved by ear; planning/remaster-rnd-20261023.md): only on a remaster run
       // (media-remaster / the cloud backfill) — a normal run records the stage and moves on. The copy itself comes from the
       // cloud worker (enhanced/unipase.cloud.flac + its transcript); the word guard only MEASURES (never splices, Chad 10-31), and the verdict decides whether it becomes the listening copy (§13: never worse).

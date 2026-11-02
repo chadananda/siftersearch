@@ -96,4 +96,12 @@ describe('media status (internal API + Dewey)', async () => {
     expect(updates).toEqual([[7, expect.objectContaining({ state: 'scheduled', stage: 'whole' })]]);   // a published talk stays published
     expect(queued.length).toBe(n);   // no media-stages run: nothing is redone on tower
   });
+  it('a remaster redo goes to the typed chain too, never a tower run (11-02: 2534 re-ticked with no GPU work)', async () => {
+    const orders = [], n = queued.length;
+    const dd = { ...d(), item: { STAGES: ['archive', 'remaster', 'web'] }, repo: { getMediaItem: async () => ({ id: 8, slug: 'c', dir: '/m/c', state: 'done', published_at: 'x', duration_s: 60 }), updateMediaItem: vi.fn() },
+      cloud: { addOrders: async (o) => orders.push(...o) } };
+    expect(await S.mediaRedo({ ids: [8], stages: ['remaster'] }, dd)).toMatchObject({ typed: [8], scheduled: [], gpu: ['remaster'] });
+    expect(orders).toMatchObject([{ id: 8, kind: 'whole', redo: true }]);
+    expect(queued.length).toBe(n);
+  });
 });

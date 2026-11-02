@@ -144,7 +144,7 @@ export function typedShare(itemId, fraction = Number(process.env.MEDIA_TYPED_FRA
 export const typedEligible = (st, id) => st.items?.[id]?.kind === 'whole';
 
 /** 0 new talk · 1 remaster of a published talk · 2 re-run campaign (st.items[id].rerun). */
-export const bandOf = (st, id) => (st.items?.[id]?.kind === 'whole' ? 0 : st.items?.[id]?.rerun ? 2 : 1);
+export const bandOf = (st, id) => (st.items?.[id]?.rerun ? 2 : st.items?.[id]?.kind === 'whole' ? 0 : 1);   // rerun first: a campaign's whole redo (11-02) waits behind new talks
 /** Queue priority from the band (higher claims first). */
 export const priorityOf = (st, id) => 2 - bandOf(st, id);
 /** → the index in st.queue to feed next, or -1. Best band first; every 5th pick the OLDEST talk of a lower band (priority is order, never a filter). */

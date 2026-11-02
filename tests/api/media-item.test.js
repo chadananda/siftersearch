@@ -318,6 +318,17 @@ describe('media item stage machine', () => {
       expect(after.asr_job).toBeUndefined();
     }
   });
+  it('tower never ticks a STALE remaster: it waits for the typed chain and the mark survives (11-02: 877 + 2534 re-ticked in < 1 s, new fp, no GPU work)', async () => {
+    const r = await runItem({ id: 6, source_kind: 'file', source_ref: src }, {}, fakes());
+    const dir = join(root, 'library', 'bahai', 'grossman-various', r.slug);
+    const m = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
+    m.stages.remaster = { at: 'x', tool: 'unipase', fp: 'old', stale: { at: 'y', by: 'remaster@new' } };
+    writeFileSync(join(dir, 'meta.json'), JSON.stringify(m));
+    delete process.env.MEDIA_TOWER_HEAVY;   // tower
+    await expect(runItem({ id: 6, source_kind: 'file', source_ref: src, dir, slug: r.slug, state: 'done' }, { remaster: true }, fakes())).rejects.toMatchObject({ code: 'WORKER_WAIT' });
+    const after = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
+    expect(after.stages.remaster).toMatchObject({ fp: 'old', stale: expect.anything() });
+  });
 });
 
 describe('prep survives a drain (10-23: 88 restarts a night)', () => {

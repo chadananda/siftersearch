@@ -77,6 +77,7 @@ describe('feed order: priority is ORDER, never a filter', () => {
   const items = { 1: { kind: 'whole' }, 2: { mode: 'restore', published: true }, 3: { mode: 'restore', rerun: true }, 4: { kind: 'whole' }, 5: { mode: 'restore', published: true } };
   it('bands: new talk 0 < remaster of published 1 < re-run 2', () => {
     expect([1, 2, 3].map((id) => bandOf({ items }, id))).toEqual([0, 1, 2]);
+    expect(bandOf({ items: { 9: { kind: 'whole', redo: true, rerun: true } } }, 9)).toBe(2);   // a campaign's whole redo (11-02) waits behind new talks
   });
   it('best band first, but 1 claim in 5 goes to the oldest lower band, and every talk is eventually taken', () => {
     const its = { ...items, 6: { kind: 'whole' }, 8: { kind: 'whole' }, 9: { kind: 'whole' } };
