@@ -264,7 +264,7 @@ if (WRITE_REPORT) {
   writeFileSync(join(__dirname, MULTI ? 'type-results-latest-multi.json' : 'type-results-latest.json'), JSON.stringify(report, null, 2));
 }
 
-if (JSON_ONLY) { console.log(JSON.stringify(report, null, 2)); process.exit(0); }
+if (JSON_ONLY) { process.stdout.write(JSON.stringify(report, null, 2) + '\n', () => process.exit(0)); await new Promise(() => {}); }
 console.log(`\nSearch-type battery (${report.endpoint}, top-${TOP_K}) — ${report.passed}/${report.measured} (${report.pass_rate}%)${report.valid ? '' : `  ⚠ INVALID: ${report.errored} errored`}`);
 console.log(`latency p50 ${report.latency_p50_ms}ms  p95 ${report.latency_p95_ms}ms`);
 console.log(report.plan_fallbacks.length ? `⚠ DEGRADED: ${report.plan_fallbacks.length} planned searches fell back — ${report.plan_fallbacks.slice(0, 3).join('; ')}\n` : '');

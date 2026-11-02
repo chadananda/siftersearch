@@ -639,4 +639,5 @@ Return ONLY the JSON object, no prose, no markdown fences.`;
   if (!JSON_ONLY) console.log(`Analysis history appended to tests/quality/analysis-history.json`);
 }
 
-process.exit(passed === results.length ? 0 : 1);
+// exit only after stdout drains: a piped --json report (search-gate) was cut at 64 KB by an immediate exit
+process.stdout.write('', () => process.exit(passed === results.length ? 0 : 1));
