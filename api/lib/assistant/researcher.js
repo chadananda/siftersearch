@@ -23,6 +23,8 @@ const TOOLS = [
     parameters: { type: 'object', properties: { ref: { type: 'string' } }, required: ['ref'] } },
   { name: 'source_of', description: 'Where a quotation comes from: its published source, the original tablet, other works quoting it.',
     parameters: { type: 'object', properties: { quotation: { type: 'string' } }, required: ['quotation'] } },
+  { name: 'find_work', description: "A WORK in the library by its title (any spelling: \"Dawnbreakers\", \"Book of Certitude\", \"Iqan\"): the library's copy with its link. When the reader asks for a book — to read it, find it, get a copy, a link — give THIS link; never send them to another site or catalog.",
+    parameters: { type: 'object', properties: { title: { type: 'string' } }, required: ['title'] } },
   { name: 'web_search', description: 'The open web — ONLY for what a library of texts cannot hold (recent events, modern scholarship, general background). Results are labelled WEB and never treated as scripture or authoritative.',
     parameters: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
 ].map((t) => ({ type: 'function', function: t }));
@@ -88,6 +90,12 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
       const enc = await (impl.encumberedAmong || (await import('../repos/rights-repo.js')).encumberedAmong)([p.document_id]).catch(() => new Set());
       if (enc.has(Number(p.document_id))) return 'this book is under copyright: quote only the excerpt you already have (with its link); its neighbouring paragraphs are not available';
       return show((await impl.around(p, Math.min(5, before), Math.min(5, after))).map((x) => add(x)));
+    },
+    find_work: async ({ title }) => {
+      const w = await (impl.work || (async (t) => (await import('./work-request.js')).findTitled([t])))(title).catch(() => null);
+      if (!w) return `no work titled "${title}" in the library`;
+      const { readerUrl } = await import('../source-links.js');
+      return [w.doc, ...w.others].map((x) => `${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${readerUrl(x)}`).join('\n\n');
     },
     find_original: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
     find_translation: async ({ original }) => {
