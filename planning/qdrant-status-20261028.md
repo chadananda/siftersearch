@@ -11,3 +11,16 @@
    - add `QDRANT_URL=http://127.0.0.1:6343` to `.env-public` on tower, `pm2 reload` the api/anis/ops/indexer services; set `systemctl --user set-property qdrant-main MemoryMin=48G` and `qdrant-next MemoryMin=0`.
    - **Rollback:** remove the `QDRANT_URL` line and reload; qdrant-next keeps its data. Drop the old data (388 GB on the EVO) no earlier than 7 days after the cutover: `systemctl --user disable --now qdrant-next; rm -rf /fast/qdrant-next/storage/collections/*`.
 6. Indexer still runs in `sifter-bulk.slice` (pm2 kept the old env): `pm2 startOrReload ecosystem.config.cjs --only siftersearch-indexer --update-env` moves it to `sifter-index.slice`.
+
+## 2026-11-02: why phrase search is slow (measured), cutover still pending
+
+- **One phrase query (limit 120, rescore os2, no filter) makes qdrant-next read 1.6 GB** from /fast (`/proc/<pid>/io` read_bytes,
+  40 queries single-threaded, ~1.1 s each, twice: 1,604 / 1,593 MB per query). The vectors it needs are 240 × 12 KB = 2.9 MB.
+- Cause: `phrases` on qdrant-next has **111 segments**, and every segment oversamples and rescores its own 240 candidates
+  (111 × 240 = 26,640 full vectors), each read as a 128 K ZFS record (`fast`, recordsize 128K). The search-io threads blocked
+  on that IO also queue hype queries behind them: hype x30 p50 1.4 s with its vectors in RAM.
+- `phrases_f16` on qdrant-main (/faster XFS, alias `phrases`): **25 segments**, float16 (6 KB per vector), 4 K pages → about
+  25 × 240 × 6 KB ≈ 36 MB per query [est], ~40× less read. 10-28 measurement: vector p50 181 ms vs 500–668 ms.
+- Priority slices applied 11-02 (Chad: search first, indexing second, all other work lower): reports, reports-carry, audit,
+  deep-research → sifter-bulk.slice; indexer, library-watcher, embedding → sifter-index.slice; sifter.slice CPUWeight 20;
+  qdrant-next CPUWeight 400, MemoryLow 56G. ZFS IO ignores cgroup IO weights, so this cannot fix the read volume above.
