@@ -8,7 +8,7 @@
 import { logger } from '../logger.js';
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
-const TOOLS = [
+export const TOOLS = [
   { name: 'search_library', description: 'Search the library (primary texts in English and in their original Arabic/Persian, authorised interpretation, history, scholarship). Phrase the query in the words the texts themselves would use; name an author or work in the query to narrow it.',
     parameters: { type: 'object', properties: { query: { type: 'string' }, tradition: { type: 'string', description: "e.g. Baha'i, Islam, Christianity — omit for all" } }, required: ['query'] } },
   { name: 'read_around', description: 'Read the paragraphs before and after a passage you found (its ref, e.g. P3) — for context, or to see how a thought continues.',
@@ -63,14 +63,12 @@ export function parseBrief(text) {
   return { brief, keep };
 }
 
-/**
- * → { passages, brief, steps, ms } or null. passages carry the search shape respond.js expects (text, title, author,
- * source_url, document_id, paragraph_index, religion, collection, language, id, ref).
- */
-export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10 }) {
-  const t0 = Date.now();
+/** The library tools behind refs: P# passages, W# web answers, B# works. Shared by research() and the agent (agent.js). */
+export function toolRunner(impl) {
   const found = new Map();   // ref → passage
+  const works = new Map();   // ref → a library work { title, author, url } (find_work)
   let pn = 0, wn = 0;
+  const addWork = (w) => { const dup = [...works.values()].find((x) => x.id === w.id); if (dup) return dup.ref; const ref = `B${works.size + 1}`; works.set(ref, { ...w, ref }); return ref; };
   const add = (p, web = false) => {
     if (!p?.text) return null;
     const dup = [...found.values()].find((x) => (p.id && x.id === p.id) || (x.text === p.text && x.title === p.title));
@@ -95,7 +93,7 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
       const w = await (impl.work || (async (t) => (await import('./work-request.js')).findTitled([t])))(title).catch(() => null);
       if (!w) return `no work titled "${title}" in the library`;
       const { readerUrl } = await import('../source-links.js');
-      return [w.doc, ...w.others].map((x) => `${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${readerUrl(x)}`).join('\n\n');
+      return [w.doc, ...w.others].map((x) => `[${addWork({ ...x, url: readerUrl(x) })}] ${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${readerUrl(x)}`).join('\n\n');
     },
     find_original: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
     find_translation: async ({ original }) => {
@@ -122,6 +120,16 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
       return `[${ref}] (WEB — not the library)\n${clipText(r.text, 1500)}${r.citations?.length ? `\nSources: ${r.citations.slice(0, 5).map((c) => c.url || c).join(' · ')}` : ''}`;
     },
   };
+  return { found, works, add, addWork, show, run };
+}
+
+/**
+ * → { passages, brief, steps, ms } or null. passages carry the search shape respond.js expects (text, title, author,
+ * source_url, document_id, paragraph_index, religion, collection, language, id, ref).
+ */
+export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10 }) {
+  const t0 = Date.now();
+  const { found, run } = toolRunner(impl);
   const convo = messages.slice(-7).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: clipText(m.content, 3000) }));
   const msgs = [{ role: 'system', content: RESEARCH_SYSTEM }, ...convo];
   const steps = [];

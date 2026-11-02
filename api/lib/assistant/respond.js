@@ -489,6 +489,29 @@ const QUOTE_MISS_HOW = 'The person asked to find a quotation and no passage in t
 const QUOTE_MISS_THREAD = ' If the conversation above already quoted these words from a linked source, say they come from that source (with its link) rather than calling them absent; if they were your own paraphrase, say so plainly.';
 
 /** ANIS_RESEARCH="email" | "chat,email" | "all": the channels the researcher answers on. Off by default. */
+/** The agent answers this turn: the caller's engine choice, else the channel is listed in ANIS_AGENT. Pure. */
+export function agentOn(direction = {}, env = process.env.ANIS_AGENT) {
+  if (direction.engine) return direction.engine === 'agent';
+  return researchEnabled(direction.channel, env);
+}
+
+async function agentRespond({ messages, onEvent, d, t0 }) {
+  const { agentAnswer, agentTools } = await import('./agent.js');
+  onEvent({ type: 'stage', stage: 'search' });
+  const A = await agentAnswer({ messages, onEvent,
+    create: d.agentCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-agent', params)),
+    tools: d.agentTools || agentTools({ search: d.search }) });
+  if (!A.reply) return null;
+  onEvent({ type: 'sources', sources: A.citations, plan: { shape: 'agent' }, ms: Date.now() - t0 });
+  onEvent({ type: 'stage', stage: 'craft' });
+  onEvent({ type: 'text', content: A.reply });
+  return { reply: A.reply, quotes_removed: A.quotes_removed, quotes_recredited: A.quotes_recredited, quotes_linked: A.quotes_linked,
+    citations: A.citations, retrieved: A.retrieved, evidence: evidenceOf(A.retrieved),
+    plan: { shape: 'agent', steps: A.steps, usage: A.usage }, search_query: A.steps.find((s) => s.tool === 'search_library')?.args?.query ?? null,
+    select: null, format: { id: 'agent', by: 'agent' }, profile: null,
+    timings: { search_ms: A.timings.first_tool_ms ?? 0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
+}
+
 export function researchEnabled(channel, env = process.env.ANIS_RESEARCH) {
   const on = String(env || '').toLowerCase().split(',').map((x) => x.trim()).filter(Boolean);
   const id = String(channel?.id || channel?.name || channel || '').toLowerCase();
@@ -518,6 +541,13 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const question = lastUser(messages).replace(/<[^>]{0,200}>/g, ' ').replace(/[ \t]+(?=\n)/g, '').replace(/\n{3,}/g, '\n\n').trim();
   const t0 = Date.now();
 
+  // THE AGENT (agent.js; Chad 11-01: "start with using haiku + tools to answer everything"): one loop with the library tools
+  // answers the whole turn — on a channel listed in ANIS_AGENT ("site-chat", "email", "all") or when the caller asks
+  // (direction.engine: 'agent' | 'pipeline'). A failure falls through to the routed pipeline below.
+  if (agentOn(direction) && !(deps && !d.agentCreate)) {
+    const A = await agentRespond({ messages, onEvent, d, t0 }).catch((err) => { console.warn('anis agent failed', err?.message); return null; });
+    if (A) return A;
+  }
   // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
   // the query's embedding starts now, beside the plan, so the search layers find it ready (planned-search prewarmSearch)
   Promise.resolve(d.prewarm?.(messages)).catch(() => {});

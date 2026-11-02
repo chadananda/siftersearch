@@ -1,0 +1,1648 @@
+{
+ "compiled": "2026-11-02",
+ "model": "claude-haiku-4-5-20251001",
+ "works": [
+  {
+   "title": "The Kitáb-i-Aqdas",
+   "notes": [
+    {
+     "quote": "occupies a position unequalled by any work in the entire range of Bahá'í literature, except the Kitáb-i-Aqdas, Bahá'u'lláh's Most Holy Book.",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_307&selectionString=god_passes_by_ocean_en_ba.0~god_passes_by_ocean_en_ba.1086",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "in the Kitáb-i-Aqdas there are new teachings which cannot be found in any of the past Books or Epistles of the Prophets.",
+     "speaker": "'Abdu'l-Bahá",
+     "angle": "significance",
+     "source_title": "The Promulgation of Universal Peace",
+     "source_author": "‘Abdu’l-Bahá",
+     "url": "https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha/?paraId=para_2073&selectionString=promulgation_of_universal_peace_ocean_en_1o9.0~promulgation_of_universal_peace_ocean_en_1o9.567",
+     "source_url": "https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha",
+     "tier": 1
+    },
+    {
+     "quote": "While in prison We have revealed a Book which We have entitled \"The Most Holy Book.\" We have enacted laws therein and adorned it with the commandments of thy Lord, Who exerciseth authority over all that are in the heavens and on the earth.",
+     "speaker": "Bahá'u'lláh",
+     "angle": "purpose",
+     "source_title": "Fountain of Wisdom : Tablets of Bahá’u’lláh",
+     "source_author": "Bahá’u’lláh",
+     "url": "https://oceanlibrary.com/fountain-of-wisdom_bahaullah/?paraId=para_720&selectionString=tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-blnv.0~tablets_of_baha_u_llah_revealed_after_the_kitab_i_73dc612de775bf9a04f878e400a2ce69-blnv.492",
+     "source_url": "https://oceanlibrary.com/fountain-of-wisdom_bahaullah",
+     "tier": 1
+    },
+    {
+     "quote": "The laws and ordinances that constitute the major theme of this Book, Bahá'u'lláh, moreover, has specifically characterized as \"the breath of life unto all created things,\" as \"the mightiest stronghold,\" as the \"fruits\" of His \"Tree\"",
+     "speaker": "Bahá'u'lláh",
+     "angle": "station",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_505&selectionString=god_passes_by_ocean_en_gs.0~god_passes_by_ocean_en_gs.1579",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 2
+    }
+   ]
+  },
+  {
+   "title": "The Kitáb-i-Íqán",
+   "notes": [
+    {
+     "quote": "This theme hath been set forth in the Book of Certitude, which is indeed the cynosure of all books, and which streamed from the Pen of Glory in the early years of this Most Great Revelation.",
+     "speaker": "Bahá'u'lláh",
+     "angle": "station",
+     "source_title": "Tabernacle of Unity",
+     "source_author": "Bahá’u’lláh",
+     "url": "https://oceanlibrary.com/tabernacle-of-unity_bahaullah/?paraId=para_86&selectionString=tabernacle_of_unity_bahai_en-bl74.0~tabernacle_of_unity_bahai_en-bl74.551",
+     "source_url": "https://oceanlibrary.com/tabernacle-of-unity_bahaullah",
+     "tier": 1
+    },
+    {
+     "quote": "Nowhere but in the Kitáb-i-Íqán, Bahá'u'lláh's masterly exposition of the one unifying truth underlying all the Revelations of the past, can we obtain a clearer apprehension of the potency of those forces inherent in that Preliminary Manifestation",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The World Order of Bahá’u’lláh",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi/?paraId=para_178&selectionString=shoghi_effendi_world_order_of_baha_u_llah_ocean_en_7i.0~shoghi_effendi_world_order_of_baha_u_llah_ocean_en_7i.842",
+     "source_url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "The Íqán is the most important book written on the spiritual significance of the Cause. I do not believe any person can consider himself well versed in the teachings unless he has studied it thoroughly.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The Light of Divine Guidance (Volume I)",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi/?paraId=para_241&selectionString=light_of_divine_guidance_volume_1_ocean_en-bl8t.0~light_of_divine_guidance_volume_1_ocean_en-bl8t.323",
+     "source_url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "The Íqán and Dr. Esslemont's book will be sufficient to make any seeker a true believer in the divine nature of the Faith.",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "Dear Co-worker (Messages to the Benelux countries)",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/messages-to-the-benelux-countries_shoghi-effendi/?paraId=para_98&selectionString=messages_to_latin_america_baha_i_ocean_en-bl66.0~messages_to_latin_america_baha_i_ocean_en-bl66.770",
+     "source_url": "https://oceanlibrary.com/messages-to-the-benelux-countries_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "May it help the friends to approach a step further, and obtain a clearer idea of the fundamental teachings set forth by Bahá'u'lláh.",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_1992&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl1mn.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl1mn.408",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "The Hidden Words",
+   "notes": [
+    {
+     "quote": "that marvelous collection of gem-like utterances, the \"Hidden Words\" with which Bahá'u'lláh was inspired, as He paced, wrapped in His meditations, the banks of the Tigris. Revealed in the year 1274 A.H., partly in Persian, partly in Arabic",
+     "speaker": "Shoghi Effendi",
+     "angle": "history",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_309&selectionString=god_passes_by_ocean_en-bl186.0~god_passes_by_ocean_en-bl186.1204",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "The significance of this dynamic spiritual leaven cast into the life of the world for the reorientation of the minds of men, the edification of their souls and the rectification of their conduct",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_309&selectionString=god_passes_by_ocean_en-bl186.0~god_passes_by_ocean_en-bl186.1204",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "He has written a book entitled Hidden Words. The preface announces that it contains the essences of the words of the prophets of the past clothed in the garment of brevity for the teaching and spiritual guidance of the people of the world.",
+     "speaker": "'Abdu'l-Bahá",
+     "angle": "purpose",
+     "source_title": "Bahá’í World Faith (‘Abdu’l-Bahá section)",
+     "source_author": "‘Abdu’l-Bahá",
+     "url": "https://oceanlibrary.com/bahai-world-faith-abdul-baha-section_2/?paraId=para_107&selectionString=baha_i_world_faith_en-bl6a.0~baha_i_world_faith_en-bl6a.694",
+     "source_url": "https://oceanlibrary.com/bahai-world-faith-abdul-baha-section_2",
+     "tier": 1
+    },
+    {
+     "quote": "The Hidden Words is a treasury of divine mysteries. When thou ponderest its contents, the doors of the mysteries will open.",
+     "speaker": "'Abdu'l-Bahá",
+     "angle": "impression",
+     "source_title": "Deepening",
+     "source_author": "‘Abdu’l-Bahá",
+     "url": "https://oceanlibrary.com/compilation-deepening_bahai/?paraId=para_134&selectionString=deepening_compilation_ocean_en-bl6g.0~deepening_compilation_ocean_en-bl6g.103",
+     "source_url": "https://oceanlibrary.com/compilation-deepening_bahai",
+     "tier": 1
+    },
+    {
+     "quote": "The Hidden Words have no sequence. They are jewel-like thoughts cast out of the mind of the Manifestation of God to admonish and counsel men.",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "Lights of Guidance",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=The%20Hidden%20Words%20have,%7Bid%3D%22para6178%22%20ilmid%3D%22bl40a%22%20type%3D%22par%22%20language%3D%22en%22%7D",
+     "source_url": "https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=The%20Hidden%20Words%20have,%7Bid%3D%22para6178%22%20ilmid%3D%22bl40a%22%20type%3D%22par%22%20language%3D%22en%22%7D",
+     "tier": 2
+    },
+    {
+     "quote": "These words are called \"hidden\" due to the fact that men have had neither the knowledge nor a true sense of appreciation of them before they were revealed by Bahá'u'lláh.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_5872&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl60q.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl60q.514",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "The Seven Valleys",
+   "notes": [
+    {
+     "quote": "a treatise that may well be regarded as His greatest mystical composition, designated as the \"Seven Valleys,\" which He wrote in answer to the questions of S̱hayḵh Muḥyi'd-Dín, the Qáḍí of Ḵhániqayn, in which He describes the seven stages which the soul of the seeker must needs traverse",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_310&selectionString=god_passes_by_ocean_en_bd.0~god_passes_by_ocean_en_bd.497",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "This is the meaning of the words in the Seven Valleys. It is a guide for human conduct. As long as a man does not find his own faults, he can never become perfect.",
+     "speaker": "'Abdu'l-Bahá",
+     "angle": "purpose",
+     "source_title": "The Promulgation of Universal Peace",
+     "source_author": "‘Abdu’l-Bahá",
+     "url": "https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha/?paraId=para_1194&selectionString=promulgation_of_universal_peace_ocean_en_zx.0~promulgation_of_universal_peace_ocean_en_zx.543",
+     "source_url": "https://oceanlibrary.com/promulgation-of-universal-peace_abdul-baha",
+     "tier": 1
+    },
+    {
+     "quote": "Like the twelfth-century poem by 'Aṭṭár, Manṭiqu'ṭ-Ṭayr (The Conference of the Birds), the Seven Valleys describes a journey through seven stations in quest of the Divine. However, the quest in the Seven Valleys is also one undertaken in a context defined by the imminent dawning of the new Revelation",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "The Call of the Divine Beloved",
+     "source_author": "Bahá’u’lláh",
+     "url": "https://oceanlibrary.com/call-of-the-divine-beloved_bahaullah/?paraId=para_12&selectionString=the-call-of-the-divine-beloved_en_32.0~the-call-of-the-divine-beloved_en_32.294",
+     "source_url": "https://oceanlibrary.com/call-of-the-divine-beloved_bahaullah",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "The Four Valleys",
+   "notes": [
+    {
+     "quote": "The \"Four Valleys,\" an epistle addressed to the learned S̱hayḵh 'Abdu'r-Raḥmán-i-Karkútí; the \"Tablet of the Holy Mariner,\" in which Bahá'u'lláh prophesies the severe afflictions that are to befall Him; the \"Lawḥ-i-Ḥúríyyih\" (Tablet of the Maiden), in which events of a far remoter future are foreshadowed; the \"Súriy-i-Ṣabr\" (Súrih of Patience), revealed on the first day of Riḍván which extols Vaḥíd and his fellow-sufferers in Nayríz; the commentary on the Letters prefixed to the Súrihs of the Qur'án; His interpretation of the letter Váv, mentioned in the writings of S̱hayḵh Aḥmad-i-Aḥsá'í, and of other abstruse passages in the works of Siyyid Káẓim-i-Ras̱htí; the \"Lawḥ-i-Madínatu't-Tawḥíd\" (Tablet of the City of Unity); the \"Ṣaḥífiy-i-S̱haṭṭíyyih\"; the \"Muṣíbát-i-Ḥurúfát-i-'Álíyát\"; the \"Tafsír-i-Hú\"; the \"Javáhiru'l-Asrár\" and a host of other writings, in the form of epistles, odes, homilies, specific Tablets, commentaries and prayers, contributed, each in its own way, to swell the \"rivers of everlasting life\" which poured forth from the \"Abode of Peace\" and lent a mighty impetus to the expansion of the Báb's Faith in both Persia and 'Iráq, quickening the souls and transforming the character of its adherents.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_311&selectionString=god_passes_by_ocean_en_be.0~god_passes_by_ocean_en_be.1043",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "The second, in reply to whose query the \"Four Valleys\" was later revealed, commanded the unwavering allegiance of at least a hundred thousand devout followers, while the third was held in such veneration by his supporters that they regarded him as co-equal with Ḵhálid himself, the founder of the Order.",
+     "speaker": "Shoghi Effendi",
+     "angle": "history",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_265&selectionString=god_passes_by_ocean_en_a4.0~god_passes_by_ocean_en_a4.676",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "Rather than describing a progression through stages, it elaborates four different paths of approach to the Divine.",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "The Call of the Divine Beloved",
+     "source_author": "the editor or reporter",
+     "url": "https://oceanlibrary.com/call-of-the-divine-beloved_bahaullah/?paraId=para_13&selectionString=the-call-of-the-divine-beloved_en_33.0~the-call-of-the-divine-beloved_en_33.370",
+     "source_url": "https://oceanlibrary.com/call-of-the-divine-beloved_bahaullah",
+     "tier": 3
+    },
+    {
+     "quote": "The Four Valleys describes different approaches to truth and different types of truth seekers. Through the systematic development of an extended spatial metaphor, those approaches to truth are placed in a hierarchical order in terms of proximity and remoteness, or externality and internality.",
+     "speaker": "Nader Saiedi",
+     "angle": "purpose",
+     "source_title": "Logos and Civilization: Spirit, History, and Order in the Writings of Bahá'u'lláh",
+     "source_author": "Nader Saiedi",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_logos-and-civilization-spirit-history-and-order-in-the-writings-of-bahaullah#p286",
+     "source_url": "https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_logos-and-civilization-spirit-history-and-order-in-the-writings-of-bahaullah",
+     "tier": 3
+    },
+    {
+     "quote": "The _Four Valleys_ is a sister essay to the former. It is revealed in the same mystical language and is full of charm and food for thought. It streamed from the Pen of Bahá'u'lláh some time after the _Seven Valleys_ had been revealed, and is addressed to Shaykh 'Abdu'r-Rahmán-i-Karkútí, a learned Súfí of that period.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "The Writings of Bahá’u’lláh",
+     "source_author": "’Abdu’l-Ḥamíd Ishraq-Khavari, Habib Taherzadeh",
+     "url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "source_url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Gleanings from the Writings of Bahá'u'lláh",
+   "notes": [
+    {
+     "quote": "The book of \"Gleanings\" gives the friends a splendid opportunity to acquire this necessary knowledge and understanding. It gives them, in addition, that inspiration and spiritual fervour which the reading of the Holy Words can alone impart.",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "Guidelines for Teaching",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/guidelines-for-teaching_bahaullah/?paraId=para_162&selectionString=guidelines_for_teaching_bahai_compilation_ocean_en-bl79.0~guidelines_for_teaching_bahai_compilation_ocean_en-bl79.311",
+     "source_url": "https://oceanlibrary.com/guidelines-for-teaching_bahaullah",
+     "tier": 1
+    },
+    {
+     "quote": "consisting of a selection of the most characteristic and hitherto unpublished passages from the outstanding works of the Author of the Bahá'í Revelation.",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "The Priceless Pearl",
+     "source_author": "Rúḥíyyih Rabbání",
+     "url": "https://oceanlibrary.com/priceless-pearl_ruhiyyih-khanum/?paraId=para_703&selectionString=the_priceless_pearl_baha_i_ocean_en-bll8.0~the_priceless_pearl_baha_i_ocean_en-bll8.1403",
+     "source_url": "https://oceanlibrary.com/priceless-pearl_ruhiyyih-khanum",
+     "tier": 2
+    },
+    {
+     "quote": "even doubters would find a powerful strength in it, if they would read it alone, and would give their souls time to expand.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "The Priceless Pearl",
+     "source_author": "Rúḥíyyih Rabbání",
+     "url": "https://oceanlibrary.com/priceless-pearl_ruhiyyih-khanum/?paraId=para_703&selectionString=the_priceless_pearl_baha_i_ocean_en-bll8.0~the_priceless_pearl_baha_i_ocean_en-bll8.1403",
+     "source_url": "https://oceanlibrary.com/priceless-pearl_ruhiyyih-khanum",
+     "tier": 3
+    },
+    {
+     "quote": "I am so pleased and encouraged to learn that Your Majesty has derived much benefit from the reading of the 'Gleanings', and I feel that my efforts in translating these extracts have been fully rewarded.",
+     "speaker": "Shoghi Effendi",
+     "angle": "impression",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6177&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl69r.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl69r.168",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "Epistle to the Son of the Wolf",
+   "notes": [
+    {
+     "quote": "With this book (Epistle to the Son of the Wolf) revealed about one year prior to His ascension, the prodigious achievement as author of a hundred volumes, repositories of the priceless pearls of His Revelation, may be said to have practically terminated",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "The Writings of Bahá’u’lláh",
+     "source_author": "Shoghi Effendi",
+     "url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "source_url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "tier": 1
+    },
+    {
+     "quote": "this unique and epoch-making Document, designated by Bahá'u'lláh as His \"Most Great Tablet,\" and alluded to by Him as the \"Crimson Book\" in His \"Epistle to the Son of the Wolf\"",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The Covenant",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/covenant_bahaullah/?paraId=para_84&selectionString=the_covenant_compilation_ocean_en-bl8a.0~the_covenant_compilation_ocean_en-bl8a.511",
+     "source_url": "https://oceanlibrary.com/covenant_bahaullah",
+     "tier": 1
+    },
+    {
+     "quote": "the intrepid Najaf-'Alíy-i-Zanjání, a survivor of the struggle of Zanján, and immortalized in the \"Epistle to the Son of the Wolf\"",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_402&selectionString=god_passes_by_ocean_en_dx.0~god_passes_by_ocean_en_dx.1400",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    }
+   ]
+  },
+  {
+   "title": "Prayers and Meditations",
+   "notes": [
+    {
+     "quote": "the remarks in parentheses which accompany the prayers in the book \"Prayers and Meditations\"",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "Unfolding Destiny",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/unfolding-destiny_shoghi-effendi/?paraId=para_2577&selectionString=unfolding_destiny_bahai_ocean_en-bl2ct.0~unfolding_destiny_bahai_ocean_en-bl2ct.308",
+     "source_url": "https://oceanlibrary.com/unfolding-destiny_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "He wishes you to preferably select from the book \"Prayers and Meditations\", recently published in America, suitable prayers for a small edition.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Letters from the Guardian to Australia and New Zealand",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/letters-from-the-guardian-to-australia-and-new-zealand_shoghi-effendi/?paraId=para_219&selectionString=letters_to_australia_and_new_zealand_baha_i_ocean_8921a9228813de646299e8bf47d2d4ba-blbl.0~letters_to_australia_and_new_zealand_baha_i_ocean_8921a9228813de646299e8bf47d2d4ba-blbl.370",
+     "source_url": "https://oceanlibrary.com/letters-from-the-guardian-to-australia-and-new-zealand_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "Prayers and Meditations should be read not only for devotional purposes, but for study as a text book. It explains the station of the Prophet and that He is a reflection.",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "Pilgrimage in November",
+     "source_author": "Bahíyyih Ford",
+     "url": "https://siftersearch.com/library/bahai/pilgrim-notes/bahiyyih-ford_pilgrimage-in-november#p73",
+     "source_url": "https://siftersearch.com/library/bahai/pilgrim-notes/bahiyyih-ford_pilgrimage-in-november",
+     "tier": 3
+    },
+    {
+     "quote": "Bahá'u'lláh's Writings, as given to us through Shoghi Effendi's precise choice of words, are poetic. Prayers and Meditations beckons some previously unaroused faculty within us to answer the eloquent call of the Words.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "Memories of Bahá’ís",
+     "source_author": "Doris McKay",
+     "url": "https://siftersearch.com/library/bahai/pilgrim-notes/doris-mckay_memories-of-bahais#p1858",
+     "source_url": "https://siftersearch.com/library/bahai/pilgrim-notes/doris-mckay_memories-of-bahais",
+     "tier": 3
+    },
+    {
+     "quote": "The Guardian explained, in Prayers and Meditations, Bahá'u'lláh was often referring to the Báb.",
+     "speaker": null,
+     "angle": "station",
+     "source_title": "Pilgrimage in January",
+     "source_author": "O.Z. Whitehead",
+     "url": "https://siftersearch.com/library/bahai/pilgrim-notes/o-z-whitehead_pilgrimage-in-january#p20",
+     "source_url": "https://siftersearch.com/library/bahai/pilgrim-notes/o-z-whitehead_pilgrimage-in-january",
+     "tier": 3
+    },
+    {
+     "quote": "the perusal of such a precious volume will help to deepen, more than any other publication, the spirit of devotion and faith in the friends, and thus charge them with all the spiritual power they require",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6987&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl6xy.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl6xy.378",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "Tablets of Bahá'u'lláh Revealed after the Kitáb-i-Aqdas",
+   "notes": [
+    {
+     "quote": "In the Tablets of Bahá'u'lláh where the institutions of the International and Local Houses of Justice are specifically designated and formally established",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The World Order of Bahá’u’lláh",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi/?paraId=para_355&selectionString=shoghi_effendi_world_order_of_baha_u_llah_ocean_en_cc.0~shoghi_effendi_world_order_of_baha_u_llah_ocean_en_cc.1077",
+     "source_url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "In these works, Bahá'u'lláh may comment on these, elucidate others, or explain their relationship and relevance to His vision of the reformation of society He has introduced in His blueprint for a world commonwealth.",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "Online Course on the Baha'i Faith",
+     "source_author": "hatcher",
+     "url": "https://bahai-library.com/hatcher_online_course",
+     "source_url": "https://bahai-library.com/hatcher_online_course",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "The Summons of the Lord of Hosts",
+   "notes": [
+    {
+     "quote": "In His Súratu'l-Haykal (the Súrih of the Temple) He thus describes those breathless moments when the Maiden, symbolizing the \"Most Great Spirit\" proclaimed His mission to the entire creation:",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_217&selectionString=god_passes_by_ocean_en_8s.0~god_passes_by_ocean_en_8s.1050",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    }
+   ]
+  },
+  {
+   "title": "Gems of Divine Mysteries",
+   "notes": [
+    {
+     "quote": "Javáhiru'l-Asrár is a monumental work. It is one of the choicest fruits that the Revelation of Bahá'u'lláh has yielded.",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "The Writings of Bahá’u’lláh",
+     "source_author": "’Abdu’l-Ḥamíd Ishraq-Khavari, Habib Taherzadeh",
+     "url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "source_url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "tier": 3
+    },
+    {
+     "quote": "this illuminating book, which is written in eloquent Arabic, may be regarded as a sister to the Íqán, since most of the subjects treated in that celebrated work are also briefly mentioned in this epistle.",
+     "speaker": null,
+     "angle": "station",
+     "source_title": "The Writings of Bahá’u’lláh",
+     "source_author": "’Abdu’l-Ḥamíd Ishraq-Khavari, Habib Taherzadeh",
+     "url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "source_url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "tier": 3
+    },
+    {
+     "quote": "It was written by Bahá'u'lláh in Baghdád sometime before the revelation of the Íqán, in answer to a number of questions put to Him by Hájí Siyyid Muhammad-i-Isfáháíi.",
+     "speaker": null,
+     "angle": "history",
+     "source_title": "The Writings of Bahá’u’lláh",
+     "source_author": "’Abdu’l-Ḥamíd Ishraq-Khavari, Habib Taherzadeh",
+     "url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "source_url": "https://bahai-library.com/khavari_writings_bahaullah",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "The Tabernacle of Unity",
+   "notes": [
+    {
+     "quote": "\"The Tabernacle of Unity,\" Bahá'u'lláh proclaims in His message to all mankind, \"has been raised; regard ye not one another as strangers.\"",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The World Order of Bahá’u’lláh",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi/?paraId=para_109&selectionString=shoghi_effendi_world_order_of_baha_u_llah_ocean_en_5n.0~shoghi_effendi_world_order_of_baha_u_llah_ocean_en_5n.295",
+     "source_url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi",
+     "tier": 1
+    }
+   ]
+  },
+  {
+   "title": "Kitáb-i-Ahd",
+   "notes": [
+    {
+     "quote": "That instrument Bahá'u'lláh had expressly provided through the institution of the Covenant, an institution which He had firmly established prior to His ascension. This same Covenant He had anticipated in His Kitáb-i-Aqdas, had alluded to it as He bade His last farewell to the members of His family, who had been summoned to His bed-side, in the days immediately preceding His ascension, and had incorporated it in a special document which He designated as \"the Book of My Covenant,\"",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_562&selectionString=god_passes_by_ocean_en_id.0~god_passes_by_ocean_en_id.742",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "Then Bahá'u'lláh, with His own Pen, and tracing in His own hand glorious words across the snow-white pages, made a Covenant with all created things, visible and invisible, and called it \"The Book of My Covenant\"",
+     "speaker": "'Abdu'l-Bahá",
+     "angle": "significance",
+     "source_title": "Light of the World",
+     "source_author": "‘Abdu’l-Bahá",
+     "url": "https://oceanlibrary.com/light-of-the-world_abdul-baha/?paraId=para_457&selectionString=light_of_the_world_baha_i_ocean_en-blfs.0~light_of_the_world_baha_i_ocean_en-blfs.679",
+     "source_url": "https://oceanlibrary.com/light-of-the-world_abdul-baha",
+     "tier": 1
+    },
+    {
+     "quote": "The \"Kitáb-i-'Ahd\" is, as you know, Bahá'u'lláh's \"Book of Covenant\". It is entirely written in His own handwriting. And in the light of the objections raised by some of the believers concerning the Will and Testament of 'Abdu'l-Bahá, it is highly significant to note that this Book of Covenant of Bahá'u'lláh bears neither signature, nor seal, nor any date.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The Light of Divine Guidance (Volume I)",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi/?paraId=para_452&selectionString=light_of_divine_guidance_volume_1_ocean_en-ble4.0~light_of_divine_guidance_volume_1_ocean_en-ble4.669",
+     "source_url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "It was shown to the believers, and was read in their presence nine days after Bahá'u'lláh's ascension. The manuscript was in the possession of 'Abdu'l-Bahá all through His ministry, and after His passing it was found enclosed in His own will.",
+     "speaker": "Shoghi Effendi",
+     "angle": "history",
+     "source_title": "The Light of Divine Guidance (Volume I)",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi/?paraId=para_452&selectionString=light_of_divine_guidance_volume_1_ocean_en-ble4.0~light_of_divine_guidance_volume_1_ocean_en-ble4.669",
+     "source_url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi",
+     "tier": 2
+    }
+   ]
+  },
+  {
+   "title": "Tablet of Ahmad",
+   "notes": [
+    {
+     "quote": "the Tablet of Ahmad, the Healing Prayer and the Fire Tablet each have a special potency, and you will doubtless wish to avail yourself of them, if you are not already doing so.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Childhood Abuse, Ritual",
+     "source_author": "Shoghi Effendi",
+     "url": "https://bahai-library.com/uhj_ritual_childhood_abuse",
+     "source_url": "https://bahai-library.com/uhj_ritual_childhood_abuse",
+     "tier": 1
+    },
+    {
+     "quote": "The Tablet of Aḥmad was revealed by Bahá'u'lláh to be read when one feels himself in exceptionally difficult circumstances. There is nothing obligatory about its use, and every person has to decide for himself whether he desires to learn it by heart or not.",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "Lights of Guidance: A Bahá’í Reference File",
+     "source_author": "Shoghi Effendi",
+     "url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file#p5758",
+     "source_url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file",
+     "tier": 2
+    },
+    {
+     "quote": "With reference to your question as to whom the Tablet of Aḥmad was revealed; it was addressed to an Arab believer in Baghdád who lived during the days of Bahá'u'lláh.",
+     "speaker": "Shoghi Effendi",
+     "angle": "history",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6562&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl6l7.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl6l7.140",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "Fire Tablet",
+   "notes": [
+    {
+     "quote": "we are assured by the Guardian that the Tablet of Ahmad, the Healing Prayer and the Fire Tablet each have a special potency",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Childhood Abuse, Ritual",
+     "source_author": "Shoghi Effendi",
+     "url": "https://bahai-library.com/uhj_ritual_childhood_abuse",
+     "source_url": "https://bahai-library.com/uhj_ritual_childhood_abuse",
+     "tier": 1
+    },
+    {
+     "quote": "Should all the servants read and ponder this, there shall be kindled in their veins a fire that shall set aflame the worlds.",
+     "speaker": "Bahá'u'lláh",
+     "angle": "purpose",
+     "source_title": "The Revelation of Bahá’u’lláh vol. 3",
+     "source_author": "Adib Taherzadeh",
+     "url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
+     "source_url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
+     "tier": 2
+    },
+    {
+     "quote": "The Lawh-i-Qad Ihtaraqa'l-Mukhlisun is one of Bahá'u'lláh's most celebrated Tablets; it is possessed of great powers, and the believers often recite it at times of difficulties and suffering.",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "The Revelation of Bahá’u’lláh vol. 3",
+     "source_author": "Adib Taherzadeh",
+     "url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
+     "source_url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
+     "tier": 3
+    },
+    {
+     "quote": "The Fire Tablet is in Arabic rhyming verse; it moves the heart when chanted in the original language.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "The Revelation of Bahá’u’lláh vol. 3",
+     "source_author": "Adib Taherzadeh",
+     "url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
+     "source_url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Long Healing Prayer",
+   "notes": [
+    {
+     "quote": "Healing prayer, Long Prayer for healing, rhyming and with repeated refrain, invoking various names of God for the curing of disease and the alleviation of distress.",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "Partial Inventory subject: Power of prayer, sorted by inventory #, ascending",
+     "source_author": "inventory-subjects-power",
+     "url": "https://bahai-library.com/inventory/subjects/power_of_prayer/",
+     "source_url": "https://bahai-library.com/inventory/subjects/power_of_prayer/",
+     "tier": 3
+    },
+    {
+     "quote": "Healing prayer by Bahá'u'lláh written in the Edirne period.",
+     "speaker": null,
+     "angle": "history",
+     "source_title": "Tag: Healing prayer, Long",
+     "source_author": "tags-Healing",
+     "url": "https://bahai-library.com/tags/Healing_prayer,_Long",
+     "source_url": "https://bahai-library.com/tags/Healing_prayer,_Long",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Tablet of Carmel",
+   "notes": [
+    {
+     "quote": "the Lawḥ-i-Karmil (Tablet of Carmel) in which the Author significantly makes mention of \"the City of God that hath descended from heaven,\" and prophesies that \"erelong will God sail His Ark\" upon that mountain",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_516&selectionString=god_passes_by_ocean_en_h3.0~god_passes_by_ocean_en_h3.1139",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "In this great Tablet [of Carmel] which unveils divine mysteries and heralds the establishment of two mighty, majestic and momentous undertakings — one of which is spiritual and the other administrative, both at the World Centre of the Faith",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The Universal House of Justice",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/universal-house-of-justice_bahaullah/?paraId=para_190&selectionString=universal_house_of_justice_compilation_ocean_en-bl6r.0~universal_house_of_justice_compilation_ocean_en-bl6r.761",
+     "source_url": "https://oceanlibrary.com/universal-house-of-justice_bahaullah",
+     "tier": 1
+    },
+    {
+     "quote": "He, the \"Lord of the Vineyard,\" revealed the Tablet of Carmel, remarkable for its allusions and prophecies.",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_446&selectionString=god_passes_by_ocean_en_f5.0~god_passes_by_ocean_en_f5.630",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "The reader should take the time to study this Tablet with diligence and passion, because it is very revealing and affords much assurance to the heart and tranquillity to the mind.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "Shoghi Effendi - Recollections",
+     "source_author": "Ugo Giachery",
+     "url": "https://bahai-library.com/giachery_shoghi_effendi_recollections&chapter=17",
+     "source_url": "https://bahai-library.com/giachery_shoghi_effendi_recollections&chapter=17",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Tablet of Wisdom",
+   "notes": [
+    {
+     "quote": "the Lawḥ-i-Ḥikmat (Tablet of Wisdom), in which He sets forth the fundamentals of true philosophy",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_516&selectionString=god_passes_by_ocean_en_h3.0~god_passes_by_ocean_en_h3.1139",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "the Tablet of Wisdom is in conflict with the historical accounts. It behoveth one to reflect a while on the great diversity of opinion among the historians",
+     "speaker": "'Abdu'l-Bahá",
+     "angle": "significance",
+     "source_title": "Additional Tablets, Extracts and Talks",
+     "source_author": "‘Abdu’l-Bahá",
+     "url": "https://oceanlibrary.com/additional-tablets-extracts-and-talks_abdul-baha/?paraId=para_123&selectionString=abdu_l_baha_additional_tablets_extracts_and_talks_430a4c77afa01f6eb5e4f2c4028e655d_6c.0~abdu_l_baha_additional_tablets_extracts_and_talks_430a4c77afa01f6eb5e4f2c4028e655d_6c.310",
+     "source_url": "https://oceanlibrary.com/additional-tablets-extracts-and-talks_abdul-baha",
+     "tier": 1
+    }
+   ]
+  },
+  {
+   "title": "Tablet of the Holy Mariner",
+   "notes": [
+    {
+     "quote": "had just revealed the \"Tablet of the Holy Mariner,\" whose gloomy prognostications had aroused the grave apprehensions of His Companions",
+     "speaker": "Shoghi Effendi",
+     "angle": "impression",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_323&selectionString=god_passes_by_ocean_en_bq.0~god_passes_by_ocean_en_bq.360",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "Study the Tablet of the Holy Mariner that ye may know the truth, and consider that the Blessed Beauty hath fully foretold future events.",
+     "speaker": "'Abdu'l-Bahá",
+     "angle": "purpose",
+     "source_title": "Bahá’í Prayers",
+     "source_author": "‘Abdu’l-Bahá",
+     "url": "https://oceanlibrary.com/bahai-prayers/?paraId=para_832&selectionString=baha_i_prayers_bahai_ocean_en-bl1bt.0~baha_i_prayers_bahai_ocean_en-bl1bt.146",
+     "source_url": "https://oceanlibrary.com/bahai-prayers",
+     "tier": 1
+    },
+    {
+     "quote": "In most of these Tablets He predicted the appearance of the \"Calf\" and of the \"Birds of the Night,\" allusions to those who, as anticipated in the Tablet of the Holy Mariner, and foreshadowed in the dream quoted above, were to raise the standard of rebellion",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_326&selectionString=god_passes_by_ocean_en_bt.0~god_passes_by_ocean_en_bt.1170",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "it is one of the most significant Tablets revealed by Bahá'u'lláh during the last days of His stay in Bag_hdád, and His arrival in Adrianople. Its main significance lies in the fact that in it Bahá'u'lláh clearly foreshadows the grave happenings, which eventually led to the defection of Ṣubḥ-i-Azal",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Lights of Guidance: A Bahá’í Reference File",
+     "source_author": "Shoghi Effendi",
+     "url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file#p5763",
+     "source_url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file",
+     "tier": 2
+    }
+   ]
+  },
+  {
+   "title": "Súriy-i-Mulúk",
+   "notes": [
+    {
+     "quote": "The Súriy-i-Mulúk, the most momentous Tablet revealed by Bahá'u'lláh (Súrih of Kings) in which He, for the first time, directs His words collectively to the entire company of the monarchs of East and West",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_384&selectionString=god_passes_by_ocean_en_df.0~god_passes_by_ocean_en_df.1803",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "In His message to the kings of the earth, Bahá'u'lláh, in the Súriy-i-Mulúk, discloses the character of His Mission; exhorts them to embrace His Message; affirms the validity of the Báb's Revelation",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_385&selectionString=god_passes_by_ocean_en_dg.0~god_passes_by_ocean_en_dg.528",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "Wert thou to obtain and peruse the Súriy-i-Ra'ís and the Súriy-i-Mulúk, thou wouldst find thyself able to dispense with thy questions and wouldst arise to serve the Cause of God",
+     "speaker": "Bahá'u'lláh",
+     "angle": "purpose",
+     "source_title": "Tabernacle of Unity",
+     "source_author": "Bahá’u’lláh",
+     "url": "https://oceanlibrary.com/tabernacle-of-unity_bahaullah/?paraId=para_121&selectionString=tabernacle_of_unity_bahai_en-bl8x.0~tabernacle_of_unity_bahai_en-bl8x.490",
+     "source_url": "https://oceanlibrary.com/tabernacle-of-unity_bahaullah",
+     "tier": 1
+    },
+    {
+     "quote": "The Súriy-i-Mulúk (Súrih of the Kings) had been revealed in a language of authority and power; through it the clarion call of a mighty King had been sounded and His claims fully asserted.",
+     "speaker": "Taherzadeh",
+     "angle": "station",
+     "source_title": "Three Momentous Years of the Heroic Age",
+     "source_author": "taherzadeh",
+     "url": "https://bahai-library.com/taherzadeh_three_momentous_years&tagsall=yes",
+     "source_url": "https://bahai-library.com/taherzadeh_three_momentous_years&tagsall=yes",
+     "tier": 3
+    },
+    {
+     "quote": "In the Suriy-i-Muluk Bahá'u'lláh unequivocally and forcefully proclaims His station.",
+     "speaker": null,
+     "angle": "station",
+     "source_title": "Messages 1963 to 1986",
+     "source_author": "Universal House of Justice",
+     "url": "https://siftersearch.com/library/bahai/administrative/universal-house-of_messages-1963-to-1986#p6505",
+     "source_url": "https://siftersearch.com/library/bahai/administrative/universal-house-of_messages-1963-to-1986",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Lawh-i-Sultán",
+   "notes": [
+    {
+     "quote": "the Lawḥ-i-Sulṭán, despatched to him from 'Akká and constituting Bahá'u'lláh's lengthiest Epistle to any single sovereign",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "The Promised Day is Come",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/promised-day-is-come_shoghi-effendi/?paraId=para_111&selectionString=the_promised_day_is_come_bahai_ocean_en-bl5r.0~the_promised_day_is_come_bahai_ocean_en-bl5r.1535",
+     "source_url": "https://oceanlibrary.com/promised-day-is-come_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "the Lawḥ-i-Sulṭán, the Tablet addressed, under similar circumstances, from the prison-fortress of 'Akká by Bahá'u'lláh to Náṣiri'd-Dín S̱háh, and constituting His lengthiest epistle to any single sovereign",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_73&selectionString=god_passes_by_ocean_en_4s.0~god_passes_by_ocean_en_4s.799",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    }
+   ]
+  },
+  {
+   "title": "Words of Paradise",
+   "notes": []
+  },
+  {
+   "title": "Lawh-i-Dunyá",
+   "notes": [
+    {
+     "quote": "This powerful image occurs only once in the authorized translations of Bahá'u'lláh's writings, namely in the _Lawh-i-Dunya_ (Tablet of the World)",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "Episodes in the History of the Covenant",
+     "source_author": "Shoghi Effendi",
+     "url": "https://bahai-library.com/shoghieffendi_tarikhiyyih_ahd_mithaq",
+     "source_url": "https://bahai-library.com/shoghieffendi_tarikhiyyih_ahd_mithaq",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Selections from the Writings of the Báb",
+   "notes": []
+  },
+  {
+   "title": "The Persian Bayán",
+   "notes": [
+    {
+     "quote": "the Persian Bayán, the chief and best-preserved repository of His laws",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "The World Order of Bahá’u’lláh",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi/?paraId=para_180&selectionString=shoghi_effendi_world_order_of_baha_u_llah_ocean_en_7k.0~shoghi_effendi_world_order_of_baha_u_llah_ocean_en_7k.1040",
+     "source_url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "The final judgement of the Bayán will take place with the appearance of Him Whom God shall manifest. Today, in effect, the Bayán is in the station of seed.",
+     "speaker": "The Báb",
+     "angle": "station",
+     "source_title": "A Prophet in Modern Times",
+     "source_author": "Shoghi Effendi",
+     "url": "https://bahai-library.com/terry_nicolas_prophet_modern",
+     "source_url": "https://bahai-library.com/terry_nicolas_prophet_modern",
+     "tier": 2
+    }
+   ]
+  },
+  {
+   "title": "Qayyúmu'l-Asmá'",
+   "notes": [
+    {
+     "quote": "This work, comprising above nine thousand three hundred verses, and divided into one hundred and eleven chapters, each chapter a commentary on one verse of the above-mentioned súrih, opens with the Báb's clarion-call and dire warnings addressed to the \"concourse of kings and of the sons of kings.\"",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_67&selectionString=god_passes_by_ocean_en_4m.0~god_passes_by_ocean_en_4m.1733",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "The perusal of but a page of the Qayyúmu'l-Asmá', brought by that messenger to Ḥujjat, sufficed to effect such a transformation within him that he declared, before the assembled 'ulamás of his native city, that should the Author of that work pronounce day to be night and the sun to be a shadow he would unhesitatingly uphold his verdict.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_42&selectionString=god_passes_by_ocean_en_3x.0~god_passes_by_ocean_en_3x.897",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 3
+    },
+    {
+     "quote": "Sleep had departed from me that night. I was enthralled by the music of that voice which rose and fell as He chanted; now swelling forth as He revealed verses of the Qayyúmu'l-Asmá', again acquiring ethereal, subtle harmonies as He uttered the prayers He was revealing.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_27&selectionString=god_passes_by_ocean_en_3i.0~god_passes_by_ocean_en_3i.1318",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 3
+    },
+    {
+     "quote": "Another Book of the Báb, entitled Qayyumu'l-Asma, is composed of 111 chapters, over 9300 verses in length and revealed immediately following the prophetic declaration by the Báb in the Persian city of Shíráz, was regarded by his followers as his Qur'án until the dissemination of the Persian Bayán.",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "A Thematic Analysis and Summary of the Persian Bayán",
+     "source_author": "The Báb",
+     "url": "http://bahai-library.com/terry_analysis_summary_bayan",
+     "source_url": "http://bahai-library.com/terry_analysis_summary_bayan",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "The Seven Proofs",
+   "notes": [
+    {
+     "quote": "The Dalá'il-i-Sab'ih (Seven Proofs), the most important of the polemical works of the Báb, was revealed during that same period. Remarkably lucid, admirable in its precision, original in conception, unanswerable in its argument, this work, apart from the many and divers proofs of His mission which it adduces, is noteworthy for the blame it assigns to the \"seven powerful sovereigns ruling the world\" in His day",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_74&selectionString=god_passes_by_ocean_en_4t.0~god_passes_by_ocean_en_4t.573",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "Except for the Bayan, the Seven Proofs and Commentary on the Surih of Joseph, we cannot be sure of the authenticity of most of His other works as the text has been corrupted by the unfaithful.",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "Dawn of a New Day",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/dawn-of-a-new-day_shoghi-effendi/?paraId=para_645&selectionString=dawn_of_a_new_day_ocean_en-blkr.0~dawn_of_a_new_day_ocean_en-blkr.210",
+     "source_url": "https://oceanlibrary.com/dawn-of-a-new-day_shoghi-effendi",
+     "tier": 2
+    }
+   ]
+  },
+  {
+   "title": "Some Answered Questions",
+   "notes": [
+    {
+     "quote": "It was at this juncture that that celebrated compilation of His table talks, published under the title \"Some Answered Questions,\" was made, talks given during the brief time He was able to spare, in the course of which certain fundamental aspects of His Father's Faith were elucidated",
+     "speaker": "Shoghi Effendi",
+     "angle": "history",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_638&selectionString=god_passes_by_ocean_en_kh.0~god_passes_by_ocean_en_kh.1307",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "Books such as the \"Íqán,\" \"Some Answered Questions\", the \"Tablets of Bahá'u'lláh\", Nabíl's Narrative and Dr. Esslemont's book should be read and read over again by every soul who desires to serve the Movement",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Deepening",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/compilation-deepening_bahai/?paraId=para_391&selectionString=deepening_compilation_ocean_en-blct.0~deepening_compilation_ocean_en-blct.218",
+     "source_url": "https://oceanlibrary.com/compilation-deepening_bahai",
+     "tier": 1
+    },
+    {
+     "quote": "Besides this there is \"Some Answered Questions\" of the Master and \"The Dawn-Breakers\" of Nabil. Every Bahá'í should master these books and be able to explain their contents to others. Besides their importance, they are interesting and most absorbing.",
+     "speaker": "Shoghi Effendi",
+     "angle": "impression",
+     "source_title": "Deepening",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/compilation-deepening_bahai/?paraId=para_362&selectionString=deepening_compilation_ocean_en-blj5.0~deepening_compilation_ocean_en-blj5.212",
+     "source_url": "https://oceanlibrary.com/compilation-deepening_bahai",
+     "tier": 1
+    },
+    {
+     "quote": "He thinks that \"Some Answered Questions\" is more important in the teaching work than \"Paris Talks\", and recommends to get \"Some Answered Questions\" out first.",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "The Light of Divine Guidance (Volume I)",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi/?paraId=para_1250&selectionString=light_of_divine_guidance_volume_1_ocean_en-blyf.0~light_of_divine_guidance_volume_1_ocean_en-blyf.134",
+     "source_url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "Those talks of the Master that were reviewed by Him corrected or in some other form considered authentic by Himself, such as the 'Some Answered Questions', these could be considered as Tablets and therefore be given the necessary binding power.",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "Lights of Guidance: A Bahá’í Reference File",
+     "source_author": "Shoghi Effendi",
+     "url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file#p5151",
+     "source_url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file",
+     "tier": 2
+    },
+    {
+     "quote": "There is nothing more explicit, emphatic and convincing that the Guardian can add to the authoritative and clear explanation Of 'Abdu'l-Bahá as recorded in 'Some Answered Questions'.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6236&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl6bm.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl6bm.157",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "The Secret of Divine Civilization",
+   "notes": [
+    {
+     "quote": "'Abdu'l-Bahá's outstanding contribution to the future reorganization of the world",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Call to the Nations",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/call-to-the-nations_shoghi-effendi/?paraId=para_56&selectionString=call_to_the_nations_bahai_ocean_en-bl6g.0~call_to_the_nations_bahai_ocean_en-bl6g.124",
+     "source_url": "https://oceanlibrary.com/call-to-the-nations_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "It is desirable that some pages be written concerning the means and causes of the reconstruction of the world and its desolation",
+     "speaker": "Bahá'u'lláh",
+     "angle": "purpose",
+     "source_title": "Baha’i Chronology: An Aide-Memoire for the History of the Baha’i Faith",
+     "source_author": "Shoghi Effendi",
+     "url": "https://siftersearch.com/library/bahai/reference/bahai-chronology-an-aide-memoire-for-the-history-of-the-bahai-faith#p443",
+     "source_url": "https://siftersearch.com/library/bahai/reference/bahai-chronology-an-aide-memoire-for-the-history-of-the-bahai-faith",
+     "tier": 2
+    },
+    {
+     "quote": "The brief treatise was addressed to the rulers of Persia. In it He paid tribute to the Shah's efforts to advance the welfare of his people.",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "Baha’i Chronology: An Aide-Memoire for the History of the Baha’i Faith",
+     "source_author": "Shoghi Effendi",
+     "url": "https://siftersearch.com/library/bahai/reference/bahai-chronology-an-aide-memoire-for-the-history-of-the-bahai-faith#p443",
+     "source_url": "https://siftersearch.com/library/bahai/reference/bahai-chronology-an-aide-memoire-for-the-history-of-the-bahai-faith",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Paris Talks",
+   "notes": [
+    {
+     "quote": "'Abdu'l-Bahá has in His \"Paris Talks\" emphasized its importance by stating that it should be used as an essential means for effecting a complete physical cure.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Health and Healing",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/health-and-healing_bahaullah/?paraId=para_184&selectionString=health_and_healing_bahai_compilation_ocean_en-bl7w.0~health_and_healing_bahai_compilation_ocean_en-bl7w.454",
+     "source_url": "https://oceanlibrary.com/health-and-healing_bahaullah",
+     "tier": 1
+    },
+    {
+     "quote": "there are other books more urgently needed by the German friends such as \"Some Answered Questions\" and the \"Paris Talks\" of the Master.",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "The Light of Divine Guidance (Volume I)",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi/?paraId=para_1214&selectionString=light_of_divine_guidance_volume_1_ocean_en-blxh.0~light_of_divine_guidance_volume_1_ocean_en-blxh.228",
+     "source_url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "I believe that the translation of the 'Paris Talks' is an excellent idea. Our Beloved, who watches over your devoted labours from on high, is highly pleased with your perseverance",
+     "speaker": "Shoghi Effendi",
+     "angle": "impression",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_3379&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl36a.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl36a.420",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    },
+    {
+     "quote": "The translation into Bulgarian of Paris Talks is an excellent suggestion & will, I feel, be greatly appreciated.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_3382&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl36c.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl36c.399",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "The Promulgation of Universal Peace",
+   "notes": [
+    {
+     "quote": "It is permissible to use selections from the \"Promulgation of Universal Peace\" in compilations.",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "Unfolding Destiny",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/unfolding-destiny_shoghi-effendi/?paraId=para_2977&selectionString=unfolding_destiny_bahai_ocean_en-bl2ps.0~unfolding_destiny_bahai_ocean_en-bl2ps.82",
+     "source_url": "https://oceanlibrary.com/unfolding-destiny_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "Regarding the passages in the \"Promulgation of Universal Peace\", the word \"income\" should be changed to \"need\" until such time as the text of the Master's address in the original is found and verified.",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_8321&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl80k.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl80k.308",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "Selections from the Writings of 'Abdu'l-Bahá",
+   "notes": [
+    {
+     "quote": "Selections from the Writings of 'Abdu'l-Bahá presents over 200 selections from 'Abdu'l-Bahá's writings, many of them letters addressed to individual believers Bahá'í groups, and Assemblies. In these passages, 'Abdu'l-Bahá discusses topics such as the soul and immortality, education, the Manifestations of God, unity, teaching, tests and trials, health and healing, Christian subjects, spiritual qualities, the Covenant, and many others.",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "The Path Toward Spirituality: Sacred Duties and Practices of the Bahá'í Life",
+     "source_author": "Shahin Vafai",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/shahin-vafai_the-path-toward-spirituality-sacred-duties-and-practices-of-the-bahai-life#p729",
+     "source_url": "https://siftersearch.com/library/bahai/bahai-books/shahin-vafai_the-path-toward-spirituality-sacred-duties-and-practices-of-the-bahai-life",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Tablets of the Divine Plan",
+   "notes": [
+    {
+     "quote": "In the Tablets of the Divine Plan, revealed at a later stage, and in circumstances almost as critical as those which had accompanied the inception of the Faith in the West, and which may be designated as the Charter of the Plan with which He was to entrust them",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "This Decisive Hour",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/this-decisive-hour_shoghi-effendi/?paraId=para_902&selectionString=this_decisive_hour_messages_to_america_1932_1946_b297e9a0235499a7665114820e0eb2017-blrp.0~this_decisive_hour_messages_to_america_1932_1946_b297e9a0235499a7665114820e0eb2017-blrp.1238",
+     "source_url": "https://oceanlibrary.com/this-decisive-hour_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "Tablets of the Divine Plan, a plan \"divine in origin,\" the \"grand design for the spiritual conquest of the planet,\"",
+     "speaker": "Universal House of Justice",
+     "angle": "significance",
+     "source_title": "Turning Point: Selected Messages of the Universal House of Justice and Supplementary Material 1996–2006",
+     "source_author": "Universal House of Justice",
+     "url": "https://bahai-library.com/uhj_turning_point_1996-2006",
+     "source_url": "https://bahai-library.com/uhj_turning_point_1996-2006",
+     "tier": 1
+    },
+    {
+     "quote": "The Tablets of the Divine Plan, revealed by 'Abdu'l-Bahá in 1916–17, and addressed severally to the Bahá'ís of the United States and Canada, constitute the authority for the successive Plans inaugurated by the Guardian for the spread of the Faith",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Messages to Canada",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/messages-to-canada_shoghi-effendi?paraId=fn_91",
+     "source_url": "https://oceanlibrary.com/messages-to-canada_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "the incalculable potentialities with which this world-enveloping, steadily consolidating enterprise has been endowed by the Author of the Tablets of the Divine Plan at the very hour of its inception",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Messages to the Bahá’í World",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/messages-to-the-bahai-world_shoghi-effendi/?paraId=para_501&selectionString=messages_to_the_bahai_world_new_edition_ocean_en-blfl.0~messages_to_the_bahai_world_new_edition_ocean_en-blfl.522",
+     "source_url": "https://oceanlibrary.com/messages-to-the-bahai-world_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "the Tablets of the Divine Plan, which were revealed by 'Abdu'l-Bahá during the First World War, are the Charter for the teaching of the Faith. All the teaching plans launched by the beloved Guardian",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "Lights of Guidance: A Bahá’í Reference File",
+     "source_author": "‘Abdu’l-Bahá",
+     "url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file#p5823",
+     "source_url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Will and Testament of 'Abdu'l-Bahá",
+   "notes": [
+    {
+     "quote": "The creative energies released by the Law of Bahá'u'lláh, permeating and evolving within the mind of 'Abdu'l-Bahá, have, by their very impact and close interaction, given birth to an Instrument which may be viewed as the Charter of the New World Order",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The World Order of Bahá’u’lláh",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi/?paraId=para_348&selectionString=shoghi_effendi_world_order_of_baha_u_llah_ocean_en_c5.0~shoghi_effendi_world_order_of_baha_u_llah_ocean_en_c5.1034",
+     "source_url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "The Charter which called into being, outlined the features and set in motion the processes of, this Administrative Order is none other than the Will and Testament of 'Abdu'l-Bahá, His greatest legacy to posterity, the brightest emanation of His mind",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The Significance of the Formative Age of Our Faith",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/significance-of-the-formative-age_bahaullah/?paraId=para_31&selectionString=significance_of_the_formative_age_ocean_en-bl3n.0~significance_of_the_formative_age_ocean_en-bl3n.684",
+     "source_url": "https://oceanlibrary.com/significance-of-the-formative-age_bahaullah",
+     "tier": 1
+    },
+    {
+     "quote": "His Will and Testament should thus be regarded as the perpetual, the indissoluble link which the mind of Him Who is the Mystery of God has conceived in order to insure the continuity of the three ages",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "The World Order of Bahá’u’lláh",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi/?paraId=para_347&selectionString=shoghi_effendi_world_order_of_baha_u_llah_ocean_en_c4.0~shoghi_effendi_world_order_of_baha_u_llah_ocean_en_c4.620",
+     "source_url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "the Will and Testament of 'Abdu'l-Bahá, which, together with the Kitáb-i-Aqdas, constitutes the chief depository wherein are enshrined those priceless elements of that Divine Civilization",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "The World Order of Bahá’u’lláh",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi/?paraId=para_12&selectionString=shoghi_effendi_world_order_of_baha_u_llah_ocean_en-blhf.0~shoghi_effendi_world_order_of_baha_u_llah_ocean_en-blhf.1552",
+     "source_url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "there is no doubt that the silliest of all charges ever made is that the \"Will and Testament\" of the Master is a forgery! It is all in His own hand, sealed in more than one place with His own seal",
+     "speaker": "Shoghi Effendi",
+     "angle": "impression",
+     "source_title": "The Light of Divine Guidance (Volume I)",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi/?paraId=para_1022&selectionString=light_of_divine_guidance_volume_1_ocean_en-blsp.0~light_of_divine_guidance_volume_1_ocean_en-blsp.2509",
+     "source_url": "https://oceanlibrary.com/light-of-divine-guidance-volume-i_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "the believers need to be deepened in their knowledge and appreciation of the Covenants of both Bahá'u'lláh and 'Abdu'l-Bahá. This is the stronghold of the faith of every Bahá'í",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Lights of Guidance: A Bahá’í Reference File",
+     "source_author": "Shoghi Effendi",
+     "url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file#p2140",
+     "source_url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file",
+     "tier": 2
+    }
+   ]
+  },
+  {
+   "title": "Memorials of the Faithful",
+   "notes": [
+    {
+     "quote": "The outward form of Memorials of the Faithful is a collection of brief biographical sketches. Its title in the original, Tadhkiratu'l-Vafá, places it in a Persian literary tradition some nine centuries old.",
+     "speaker": null,
+     "angle": "station",
+     "source_title": "The Writings of 'Abdu'l-Baha",
+     "source_author": "banani",
+     "url": "https://bahai-library.com/banani_writings_abdul-baha",
+     "source_url": "https://bahai-library.com/banani_writings_abdul-baha",
+     "tier": 3
+    },
+    {
+     "quote": "It is the quality of soul, the attributes of spirit, the quintessential humanity, and the reflection of the divine in man that is the focus here.",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "The Writings of 'Abdu'l-Baha",
+     "source_author": "banani",
+     "url": "https://bahai-library.com/banani_writings_abdul-baha",
+     "source_url": "https://bahai-library.com/banani_writings_abdul-baha",
+     "tier": 3
+    },
+    {
+     "quote": "The Persian title of Memorials of the Faithful is Tadhkiratu'l-Vafa, and 'Abdu'l-Bahá includes approximately the same number of biographical vignettes as did 'Attar (77 as opposed to 72).",
+     "speaker": null,
+     "angle": "history",
+     "source_title": "When the Saints Come Marching In: The Art of Baha'i Biography",
+     "source_author": "morrison",
+     "url": "https://bahai-library.com/morrison_art_bahai_biography",
+     "source_url": "https://bahai-library.com/morrison_art_bahai_biography",
+     "tier": 3
+    },
+    {
+     "quote": "the Bahá'í writings use the form of earlier Persian and Arabic literary models, building upon the edifice of the Islamic cultural tradition.",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "When the Saints Come Marching In: The Art of Baha'i Biography",
+     "source_author": "morrison",
+     "url": "https://bahai-library.com/morrison_art_bahai_biography",
+     "source_url": "https://bahai-library.com/morrison_art_bahai_biography",
+     "tier": 3
+    },
+    {
+     "quote": "A study of the virtues identified for the faithful individuals mentioned in Memorials of the Faithful and how they exemplified character, manners and conduct.",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "Browse journal or series: Lights of Irfán",
+     "source_author": "series-Irfan",
+     "url": "https://bahai-library.com/series/Irfan",
+     "source_url": "https://bahai-library.com/series/Irfan",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "A Traveller's Narrative",
+   "notes": [
+    {
+     "quote": "All He did was, according to the testimony of 'Abdu'l-Bahá in \"A Traveller's Narrative,\" to nominate, on the advice of Bahá'u'lláh and of another disciple, Mírzá Yaḥyá, who would act solely as a figurehead pending the manifestation of the Promised One",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "God Passes By",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_79&selectionString=god_passes_by_ocean_en_4y.0~god_passes_by_ocean_en_4y.528",
+     "source_url": "https://oceanlibrary.com/god-passes-by_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "The ablest and most valuable presentation of the early history of the Faith and of its tenets.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "Partial Inventory subject: Power of the Manifestation of God, sorted by inventory #, ascending",
+     "source_author": "inventory-subjects-0E46A9D425ED4F89AB54563B472E6EF6",
+     "url": "https://bahai-library.com/inventory/subjects/0E46A9D425ED4F89AB54563B472E6EF6",
+     "source_url": "https://bahai-library.com/inventory/subjects/0E46A9D425ED4F89AB54563B472E6EF6",
+     "tier": 3
+    },
+    {
+     "quote": "The \"Traveller's Narrative,\" a work of Abbas Effendi, is a bad romance, composed solely for the purpose of proving that the Bab is simply a percursor and announcer of Baha Ullah.",
+     "speaker": "A. L. M. Nicolas",
+     "angle": "impression",
+     "source_title": "Baha'ism and Its Claims: A Study of the Religion Promulgated by Baha Ullah and Abdul Baha",
+     "source_author": "wilson",
+     "url": "https://bahai-library.com/wilson_bahaism_claims&chapter=8",
+     "source_url": "https://bahai-library.com/wilson_bahaism_claims&chapter=8",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Tablet to The Hague",
+   "notes": [
+    {
+     "quote": "A reply to letters from the Central Organization wherein the universal concept of peace found in the Writings of Bahá'u'lláh is outlined.",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "A Reader's Guide: The Development of Bahá’í Literature in English",
+     "source_author": "Eunice Braun",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/eunice-braun_a-readers-guide-the-development-of-bahai-literature-in-english#p295",
+     "source_url": "https://siftersearch.com/library/bahai/bahai-books/eunice-braun_a-readers-guide-the-development-of-bahai-literature-in-english",
+     "tier": 3
+    },
+    {
+     "quote": "'Abdu'l-Bahá, while praising the organization, was also candid in stating that peace would require a profound transformation in human consciousness and a commitment to the spiritual truths enunciated by Bahá'u'lláh.",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "Remembering 'Abdu'l-Baha's Call for Unity, a Century after World War I",
+     "source_author": "5565",
+     "url": "https://bahai-library.com/5565",
+     "source_url": "https://bahai-library.com/5565",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Tablet to Auguste Forel",
+   "notes": []
+  },
+  {
+   "title": "God Passes By",
+   "notes": [
+    {
+     "quote": "_God Passes By_ reviews the key features of the birth and rise of the Faith, the establishment of its administrative institutions, and recounts the series of crises which moved the Faith forward so mysteriously and with such speed from victory to victory.",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "Our Beloved Guardian: An Introduction to the Life and Work of Shoghi Effendi",
+     "source_author": "Lowell Johnson",
+     "url": "https://bahai-library.com/johnson_beloved_guardian",
+     "source_url": "https://bahai-library.com/johnson_beloved_guardian",
+     "tier": 3
+    },
+    {
+     "quote": "It reveals the broad picture of dramatic events which unrolled one hundred years of religious history so mysterious that no mind can fathom it.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "Our Beloved Guardian: An Introduction to the Life and Work of Shoghi Effendi",
+     "source_author": "Lowell Johnson",
+     "url": "https://bahai-library.com/johnson_beloved_guardian",
+     "source_url": "https://bahai-library.com/johnson_beloved_guardian",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "The World Order of Bahá'u'lláh",
+   "notes": [
+    {
+     "quote": "that promised World Order, the shell ordained to enshrine that priceless jewel, the world civilization, of which the Faith itself is the sole begetter.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The Advent of Divine Justice",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/advent-of-divine-justice_shoghi-effendi/?paraId=para_28&selectionString=advent_of_divine_justice_v2_ocean_baha_i_en_3g.0~advent_of_divine_justice_v2_ocean_baha_i_en_3g.799",
+     "source_url": "https://oceanlibrary.com/advent-of-divine-justice_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "out of the turmoil which agitates the face of present day society there may not emerge, sooner than we expect, the World Order of Bahá'u'lláh, the bare outline of which is being but faintly discerned",
+     "speaker": "Shoghi Effendi",
+     "angle": "impression",
+     "source_title": "Ṭáhirih, The Pure, Írán''s Greatest Woman",
+     "source_author": "Shoghi Effendi",
+     "url": "https://bahai-library.com/martharoot_tahirih_pure_1938",
+     "source_url": "https://bahai-library.com/martharoot_tahirih_pure_1938",
+     "tier": 1
+    },
+    {
+     "quote": "the embryonic World Order of Bahá'u'lláh can mature and develop. It is this building process, slow and unobtrusive, to which the life of the world-wide Bahá'í Community is wholly consecrated",
+     "speaker": "Shoghi Effendi",
+     "angle": "station",
+     "source_title": "The Revelation of Bahá’u’lláh vol. 2",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
+     "source_url": "https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos",
+     "tier": 1
+    }
+   ]
+  },
+  {
+   "title": "The Advent of Divine Justice",
+   "notes": []
+  },
+  {
+   "title": "The Promised Day Is Come",
+   "notes": []
+  },
+  {
+   "title": "The Dispensation of Bahá'u'lláh",
+   "notes": [
+    {
+     "quote": "As to _\"The Dispensation of Bahá'u'lláh\"_ it also constitutes an invaluable supplement to these aforementioned Tablets....",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Deepening",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/compilation-deepening_bahai/?paraId=para_444&selectionString=deepening_compilation_ocean_en-blji.0~deepening_compilation_ocean_en-blji.105",
+     "source_url": "https://oceanlibrary.com/compilation-deepening_bahai",
+     "tier": 1
+    },
+    {
+     "quote": "a Dispensation the potentialities of which we are but beginning to perceive and the full range of which we can never determine.",
+     "speaker": "Shoghi Effendi",
+     "angle": "impression",
+     "source_title": "The World Order of Bahá’u’lláh",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi/?paraId=para_262&selectionString=shoghi_effendi_world_order_of_baha_u_llah_ocean_en_9r.0~shoghi_effendi_world_order_of_baha_u_llah_ocean_en_9r.646",
+     "source_url": "https://oceanlibrary.com/world-order-of-bahaullah_shoghi-effendi",
+     "tier": 1
+    },
+    {
+     "quote": "In accordance with the explicit text of the Kitab-i-Aqdas, Baha'u'llah hath made the Center of the Covenant the Interpreter of His Word — a Covenant so firm and mighty that from the beginning of time until the present day no religious Dispensation hath produced its like.",
+     "speaker": "'Abdu'l-Bahá",
+     "angle": "station",
+     "source_title": "The Bahá'í World, Volume VII (93 and 94 of the Bahá'í Era, April 1936–1938 A.D.)",
+     "source_author": "National Spiritual Assembly of the Bahá'ís of the United States and Canada (prepared under its supervision, with the approval of Shoghi Effendi)",
+     "url": "https://siftersearch.com/library/bahai/compilations/national-spiritual_the-bahai-world-volume-vii-93-and-94-of-the-bahai-era-april-1936-1938-a-d#p3183",
+     "source_url": "https://siftersearch.com/library/bahai/compilations/national-spiritual_the-bahai-world-volume-vii-93-and-94-of-the-bahai-era-april-1936-1938-a-d",
+     "tier": 2
+    }
+   ]
+  },
+  {
+   "title": "The Unfoldment of World Civilization",
+   "notes": [
+    {
+     "quote": "your view on this subject is quite correct and in full accord with the pronouncements of the Guardian as embodied in the 'Unfoldment of World Civilization'.",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "Lights of Guidance: A Bahá’í Reference File",
+     "source_author": "Shoghi Effendi",
+     "url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file#p5069",
+     "source_url": "https://siftersearch.com/library/bahai/compilations/helen-hornby_lights-of-guidance-a-bahai-reference-file",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "The Goal of a New World Order",
+   "notes": [
+    {
+     "quote": "He would suggest that you should translate his general letter addressed to the friends a few years ago, entitled \"The Goal of a New World Order\", as this, he feels, is a very suitable material for publication",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "The Light of Divine Guidance (Volume II)",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/light-of-divine-guidance-volume-ii_shoghi-effendi/?paraId=para_306&selectionString=light_of_divine_guidance_volume_2_ocean_en-blal.0~light_of_divine_guidance_volume_2_ocean_en-blal.352",
+     "source_url": "https://oceanlibrary.com/light-of-divine-guidance-volume-ii_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "The Goal of a New World Order is a letter of the Guardian to the Bahá'ís of the world dated 28 November 1931, commemorating the first decade since the passing of 'Abdu'l-Bahá.",
+     "speaker": null,
+     "angle": "history",
+     "source_title": "Dear Co-worker (Messages to the Benelux countries)",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/messages-to-the-benelux-countries_shoghi-effendi?paraId=fn_36",
+     "source_url": "https://oceanlibrary.com/messages-to-the-benelux-countries_shoghi-effendi",
+     "tier": 3
+    },
+    {
+     "quote": "As regards the International Executive referred to by the Guardian in his \"Goal of a New World Order\", it should be noted that this statement refers by no means to the Bahá'í Commonwealth of the future, but simply to that world government which will herald the advent",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "Peace",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/peace_bahaullah/?paraId=para_268&selectionString=peace_compilation_bahai_ocean_en-blah.0~peace_compilation_bahai_ocean_en-blah.559",
+     "source_url": "https://oceanlibrary.com/peace_bahaullah",
+     "tier": 3
+    },
+    {
+     "quote": "The general world condition is obviously growing more tense every day and clearly points to the inevitability of that world-wide conflagration foretold by the Master and explained by the Guardian in his \"Goal of a New World Order\".",
+     "speaker": null,
+     "angle": "purpose",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6924&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl6w4.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl6w4.445",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "Bahá'í Administration",
+   "notes": [
+    {
+     "quote": "This book is very important to anyone interested in Bahá'í administration.",
+     "speaker": "Lowell Johnson",
+     "angle": "station",
+     "source_title": "Our Beloved Guardian",
+     "source_author": "Lowell Johnson",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/lowell-johnson_our-beloved-guardian#p355",
+     "source_url": "https://siftersearch.com/library/bahai/bahai-books/lowell-johnson_our-beloved-guardian",
+     "tier": 3
+    },
+    {
+     "quote": "In Persia the Bahá'í Faith was born, in America the beginnings of Bahá'í civilization. The beginnings of the Bahá'í civilization is the Bahá'í Administration.",
+     "speaker": "Mary Maxwell",
+     "angle": "significance",
+     "source_title": "Administration and World Order",
+     "source_author": "Mary Maxwell",
+     "url": "https://siftersearch.com/library/bahai/pilgrim-notes/mary-maxwell_administration-and-world-order#p60",
+     "source_url": "https://siftersearch.com/library/bahai/pilgrim-notes/mary-maxwell_administration-and-world-order",
+     "tier": 3
+    },
+    {
+     "quote": "'Abdu'l-Bahá teaches that we must never \"belittle the thought of another\" (Bahá'í Administration, p. 22)",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "Memories of 'Abdu'l-Bahá, from The Diary of Juliet Thompson",
+     "source_author": "Marzieh Gail",
+     "url": "https://siftersearch.com/library/bahai/pilgrim-notes/marzieh-gail_memories-of-abdul-baha-from-the-diary-of-juliet-thompson#p15",
+     "source_url": "https://siftersearch.com/library/bahai/pilgrim-notes/marzieh-gail_memories-of-abdul-baha-from-the-diary-of-juliet-thompson",
+     "tier": 3
+    }
+   ]
+  },
+  {
+   "title": "Citadel of Faith",
+   "notes": []
+  },
+  {
+   "title": "The Dawn-Breakers",
+   "notes": [
+    {
+     "quote": "Books such as the _\"Íqán\",_ _\"Some Answered Questions\",_ the _\"Tablets of Bahá'u'lláh\",_ Nabíl's Narrative and Dr. Esslemont's book should be read and read over again by every soul who desires to serve the Movement",
+     "speaker": "Shoghi Effendi",
+     "angle": "purpose",
+     "source_title": "Deepening",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/compilation-deepening_bahai/?paraId=para_391&selectionString=deepening_compilation_ocean_en-blct.0~deepening_compilation_ocean_en-blct.218",
+     "source_url": "https://oceanlibrary.com/compilation-deepening_bahai",
+     "tier": 1
+    },
+    {
+     "quote": "Nabíl's Narrative will operate in the same manner, and remain forever a stimulus to the Bahá'ís.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Shoghi Effendi: The Range and Power of His Pen",
+     "source_author": "Shoghi Effendi",
+     "url": "https://siftersearch.com/library/bahai/bahai-books/ali-nakhjavani_shoghi-effendi-the-range-and-power-of-his-pen#p471",
+     "source_url": "https://siftersearch.com/library/bahai/bahai-books/ali-nakhjavani_shoghi-effendi-the-range-and-power-of-his-pen",
+     "tier": 1
+    },
+    {
+     "quote": "I would also urge the friends in India and Burma to order as many copies of the \"Dawn-Breakers\" as they possibly can as I regard its circulation of vital importance to the Cause.",
+     "speaker": "Shoghi Effendi",
+     "angle": "significance",
+     "source_title": "Dawn of a New Day",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/dawn-of-a-new-day_shoghi-effendi/?paraId=para_246&selectionString=dawn_of_a_new_day_ocean_en-bl9k.0~dawn_of_a_new_day_ocean_en-bl9k.739",
+     "source_url": "https://oceanlibrary.com/dawn-of-a-new-day_shoghi-effendi",
+     "tier": 2
+    },
+    {
+     "quote": "the book entitled \"The Dawn Breakers,\" being Nabíl's narrative of the early days of the Bahá'í revelation, recently translated by the Guardian. It is hoped that the Indian friends will order a few copies of this highly valuable book",
+     "speaker": null,
+     "angle": "significance",
+     "source_title": "Messages to the Indian Subcontinent",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_880&selectionString=messages_to_the_indian_subcontinent_en-blne.0~messages_to_the_indian_subcontinent_en-blne.338",
+     "source_url": "https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi",
+     "tier": 3
+    },
+    {
+     "quote": "many of the distinguished men to whom Shoghi Effendi sent a copy of \"The Dawn-Breakers\" as a present, wrote him in answer that it is one of the most beautiful books they have seen for a long time.",
+     "speaker": null,
+     "angle": "impression",
+     "source_title": "Uncompiled Published Letters",
+     "source_author": "Shoghi Effendi",
+     "url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_3170&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl2y8.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl2y8.243",
+     "source_url": "https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi",
+     "tier": 4
+    }
+   ]
+  },
+  {
+   "title": "The Promise of World Peace",
+   "notes": []
+  },
+  {
+   "title": "One Common Faith",
+   "notes": []
+  }
+ ]
+}

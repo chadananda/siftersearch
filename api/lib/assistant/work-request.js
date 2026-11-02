@@ -114,7 +114,9 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
     .sort((a, b) => workRank(b, asked) - workRank(a, asked) || (b.paragraph_count || 0) - (a.paragraph_count || 0));
   if (!sorted.length) return null;
   const seen = new Set([sorted[0].title]);
-  const others = sorted.slice(1).filter((d) => !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
+  // other copies worth offering: not a foreword / introduction stub split off a book (11-01 live: GPB's "also holds" listed two)
+  const stub = (d) => /\b(?:foreword|introduction|preface|afterword|glossary|notes|index|bibliography)\b/i.test(d.title) || (d.paragraph_count ?? 99) < 20;
+  const others = sorted.slice(1).filter((d) => !stub(d) && !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
   return { doc: sorted[0], others };
 }
 

@@ -68,7 +68,7 @@ export default async function anisRoutes(fastify) {
     const { result, meter, ms } = await meterTurn(() => draftBody(b));
     return { ...result, meta: turnMeta({ status: result.status, path: { ...(result.path || {}), format: result.format, recipe: result.recipe }, meter, ms }) };
   }
-  async function draftBody({ messages, email = '', research = undefined, writer = null, attachments = null, reading = null }) {
+  async function draftBody({ messages, email = '', research = undefined, engine = undefined, writer = null, attachments = null, reading = null }) {
     // what the reader attached (photos of a page) is read and becomes part of their message (10-23 Liliane's prayer photo)
     if (attachments?.length) messages = await (await import('../lib/assistant/attachments.js')).withAttachments(messages, attachments, { log: logger });
     const { parseLlm } = await import('../lib/assistant/respond.js');
@@ -83,7 +83,7 @@ export default async function anisRoutes(fastify) {
     if (rd?.research) {
       const last = messages.map((m) => m.role).lastIndexOf('user');
       const withPage = messages.map((m, i) => (i === last ? { ...m, content: `${m.content}\n\n[Context: we are reading ${rd.book || 'a book'} together; the page I just sent them:]\n${rd.context || ''}` } : m));
-      const r = await anisTurn({ messages: withPage, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, llm });
+      const r = await anisTurn({ messages: withPage, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, engine, llm });
       let reply = r.reply;
       if (rd.thenNext) {
         const nx = await readingTurn({ messages: [{ role: 'user', content: 'next' }], participantId: who(email), inThread: true }).catch(() => null);
@@ -92,10 +92,10 @@ export default async function anisRoutes(fastify) {
       return { reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
         recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind, reading: rd.thenNext ? 'answer+next' : 'answer' }, conversationId: r.conversationId ?? null };
     }
-    const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, llm });
+    const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, engine, llm });
     return { reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
       recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind }, conversationId: r.conversationId ?? null,
-      research: r.plan?.shape === 'research' ? { steps: r.plan.steps, ms: r.plan.ms } : null };
+      research: ['research', 'agent'].includes(r.plan?.shape) ? { steps: r.plan.steps, ms: r.plan.ms ?? r.timings?.total_ms, usage: r.plan.usage ?? null } : null };
   }
   let jobs = null;
   const draftJobs = async () => (jobs ||= (await import('../lib/jobs/async-jobs.js')).jobStore());

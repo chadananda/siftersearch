@@ -83,6 +83,8 @@ export const MODEL_ROLES = {
     why: 'names the speaker of a paragraph the window classifier escalates (was deepseek-v4-flash; DeepSeek retired 10-13); max_tokens >= 4000 (Haiku thinks first)' },
   'anis-researcher': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-19', needs: ['tool-use', 'planning', 'multilingual'],
     why: 'plans the research loop over the library tools (Chad 10-19: "Even Haiku 5.5 might be sufficient for planning research")' },
+  'anis-agent': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-11-01', needs: ['tool-use', 'grounded-writing', 'multilingual'],
+    why: 'one loop that researches AND writes (agent.js). Quality first, speed earned later (Chad 11-01: "start with quality answers that are slow and then have a mechanism to improve speed"); Haiku 5.5 wrote 3.1 vs Sonnet 7.45 on 10-19' },
   'anis-writer': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-19', needs: ['grounded-writing', 'multilingual'],
     why: 'battery 10-19 (10 real questions, Opus blind judge): Sonnet 5.5 writer mean 7.45, beat Perplexity 10/10; Haiku 5.5 writer 3.1 (blank/cut-off replies); old pipeline 5.0' },
   'anis-read-attachment': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-23', needs: ['vision', 'multilingual', 'persian-arabic-script'],
