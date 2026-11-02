@@ -305,6 +305,7 @@ module.exports = {
     {
       name: 'siftersearch-library-watcher',
       script: 'scripts/index-library.js',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),   // TIER 1 indexing slice (Chad 11-02: search first, indexing second)
       args: '--watch',
       cwd: PROJECT_ROOT,
       instances: 1,
@@ -321,6 +322,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
+        SIFTER_SLICE: 'sifter-index.slice', SIFTER_OOM_ADJ: '0',
         // NODE_OPTIONS is always read by Node.js regardless of PM2 invocation method.
         NODE_OPTIONS: '--max-old-space-size=8192',
         // Reduce SQLite cache: 512MB cache + 1GB mmap caused RSS >3G in <5min.
@@ -389,6 +391,7 @@ module.exports = {
     {
       name: 'siftersearch-deep-research',
       script: 'api/workers/deep-research-worker.js',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),   // TIER 2 (Chad 11-02: search first, indexing second, all other work lower)
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
@@ -531,6 +534,7 @@ module.exports = {
       // SIFTER_WRITER_URL routes its content writes through the single writer.
       name: 'siftersearch-embedding',
       script: 'scripts/run-embedding-worker.mjs',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),   // TIER 1 indexing slice (Chad 11-02: search first, indexing second)
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
@@ -541,6 +545,7 @@ module.exports = {
         NODE_ENV: 'production',
         SQLITE_BUSY_TIMEOUT_MS: '30000',
         SIFTER_WRITER_URL: 'http://127.0.0.1:7849',
+        SIFTER_SLICE: 'sifter-index.slice', SIFTER_OOM_ADJ: '0',
       },
       exp_backoff_restart_delay: 10000,
       max_restarts: 999999,
@@ -625,6 +630,7 @@ module.exports = {
       // (AUDIT_DAILY_USD). Own SQLite (/tank/sifter/audit/audits.db); reads sifter.db read-only.
       name: 'siftersearch-audit',
       script: 'scripts/audit/audit-exchanges.mjs',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),   // TIER 2 (Chad 11-02: search first, indexing second, all other work lower)
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
@@ -656,6 +662,7 @@ module.exports = {
       // scans, one at a time at nice 19; queued + read over the internal API (/api/admin/ops/reports). Chad 10-11.
       name: 'siftersearch-reports',
       script: 'api/workers/reports-worker.js',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),   // TIER 2 (Chad 11-02: search first, indexing second, all other work lower)
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
@@ -688,6 +695,7 @@ module.exports = {
       // A second ops process for the carry jobs only (OPS_ONLY) — runs them beside the main worker's long batches.
       name: 'siftersearch-reports-carry',
       script: 'api/workers/reports-worker.js',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),   // TIER 2 (Chad 11-02: search first, indexing second, all other work lower)
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
