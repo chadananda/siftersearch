@@ -374,17 +374,19 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
     if (only && (only.type !== type || (only.src && only.src !== src))) continue;
     const t0 = now();
     trace?.step({ type, src, job: 'listDone' });
-    const todo = [];
-    for (const j of await sq.listDone(200, type)) {   // adopted steps stay 'done' until the next step finishes: skip them
+    const todo = [], read = [];
+    for (const j of await sq.listDone(200, type)) {
       seenAgent(st, j.host, j.updated);
       const qj = st.qjobs[j.id];
-      if (!qj || qj.adopted) continue;
+      if (!qj || qj.adopted) { read.push(j.id); continue; }   // already adopted (or not tower's): collected below, so it leaves the list
       if (deferFinish && type === 'cpu-finish') continue;   // the finish adoption (hash + place the talk's files) runs beside the pass: adoptFinish
       if (defer && type === 'gpu' && src === 'edge') continue;   // the edge→LAN gpu handoff is slow (R2 downloads + LAN uploads): adoptEdgeGpu runs it beside the pass
       todo.push(j);
     }
     let next = 0;
     await Promise.all(Array.from({ length: Math.max(1, Math.min(parallel, todo.length)) }, async () => { while (next < todo.length) { const j = todo[next++]; await one(j, type, src, sq); } }));
+    for (const j of todo) if (st.qjobs[j.id]?.adopted) read.push(j.id);
+    if (read.length) await sq.collect?.(read).catch(() => {});   // a queue without 'collect' (older edge) keeps listing them: harmless, as before
     trace?.step({ type, src, job: 'stats' });
     for (const f of (await sq.stats(type)).failed || []) if (st.qjobs[f.id]) { errors++; logPullError(st, f.id, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`.slice(0, 300)); await failChain(st, f.id, ackJob, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`, repo); }
     trace?.sub(`${type}:${src}`, now() - t0);

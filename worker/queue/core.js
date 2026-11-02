@@ -387,11 +387,18 @@ export function fail(sql, { id, lease, error }, now = Date.now()) {
 /** Tower: finished jobs of one TYPE to pull, oldest first ('failed' = the ones the queue gave up on). Each feeder pulls only its own type. */
 export const listDone = (sql, limit = 50, type = 'media', state = 'done') =>
   rows(sql, `SELECT * FROM jobs WHERE state = ? AND type = ? ORDER BY updated LIMIT ?`, state === 'failed' ? 'failed' : 'done', type, limit).map(out);
+/** Tower has read these results: done → collected. They leave the done list (it lists each result once) but keep their files, which the
+ *  chain's next step still reads, until ack. (11-02: collected rows stayed 'done', filled every page, and 1,007 newer preps were never read.) */
+export function collect(sql, ids) {
+  let n = 0;
+  for (const id of ids) n += rows(sql, `UPDATE jobs SET state = 'collected' WHERE id = ? AND state = 'done' RETURNING id`, String(id)).length;
+  return { collected: n };
+}
 /** Tower took the results (or gave up on a failed job): the row goes. → the removed jobs, so their R2 objects can be deleted. */
 export function ack(sql, ids) {
   const gone = [];
   for (const id of ids) {
-    const j = one(sql, `SELECT * FROM jobs WHERE id = ? AND state IN ('done', 'failed')`, String(id));
+    const j = one(sql, `SELECT * FROM jobs WHERE id = ? AND state IN ('done', 'collected', 'failed')`, String(id));
     if (j) { sql.exec(`DELETE FROM jobs WHERE id = ?`, j.id); gone.push(out(j)); }
   }
   return gone;

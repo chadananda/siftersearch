@@ -59,6 +59,20 @@ describe('edge queue', () => {
     expect(Q.fileInUse(sql, 'f-a')).toBe(false);
     expect(Q.listDone(sql)).toEqual([]);
   });
+  it('collected results leave the done list but keep their row until ack, so newer results are always listed (11-02 starvation)', () => {
+    const ids = Array.from({ length: 5 }, (_, i) => `j${i}`);
+    for (const [i, id] of ids.entries()) {
+      Q.enqueue(sql, [job(id, ['transcribe'])], T0 + i);
+      const j = Q.claim(sql, { host: 'h', can: ['transcribe'] }, T0 + i);
+      Q.done(sql, { id, lease: j.lease, result: {} }, T0 + 10 + i);
+    }
+    expect(Q.collect(sql, ['j0', 'j1', 'j2', 'nope'])).toEqual({ collected: 3 });
+    expect(Q.listDone(sql, 2).map((j) => j.id)).toEqual(['j3', 'j4']);   // a page of 2 reaches the uncollected ones
+    expect(Q.fileInUse(sql, 'f-j0')).toBe(true);   // the next step still reads its files
+    expect(Q.stats(sql, T0 + 20).states.collected.n).toBe(3);
+    expect(Q.ack(sql, ['j0']).map((j) => j.id)).toEqual(['j0']);
+    expect(Q.fileInUse(sql, 'f-j0')).toBe(false);
+  });
   it('re-enqueueing a queued job updates it; a leased one is left alone; fail requeues', () => {
     Q.enqueue(sql, [job('a', ['transcribe'])], T0);
     Q.enqueue(sql, [job('a', ['transcribe', 'diarize'])], T0 + 1);

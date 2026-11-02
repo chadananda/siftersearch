@@ -44,6 +44,7 @@ export async function queueCall(op, a = {}) {
     case 'list-done': return tx((s) => Q.listDone(s, a.limit || 50, a.type || 'media', a.state));
     case 'capacity': return tx((s) => Q.capacity(s));
     case 'withdraw': return tx((s) => Q.withdraw(s, a.ids || []));
+    case 'collect': return tx((s) => Q.collect(s, a.ids || []));
     case 'policy': return tx((s) => Q.setPolicy(s, a.policy || {}));   // tower's role policy (claim order of multi-role hosts)
     case 'stats': return tx((s) => Q.stats(s, Date.now(), a.type || 'media'));
     case 'last-words': return tx((s) => LW.put(s, a));
@@ -105,7 +106,7 @@ export function localQueue() {
     get: async (kind, id, name, dest) => { const src = filePath(kind, id, name); if (!existsSync(src)) throw bad(`get ${kind}/${id}/${name} 404`, 404); await mkdir(dirname(dest), { recursive: true }); await rm(dest, { force: true }); await link(src, dest).catch(async (e) => { if (!['EXDEV', 'EPERM', 'ENOTSUP'].includes(e.code)) throw e; await copyFile(src, dest); }); return dest; },   // same filesystem: a hardlink, no bytes move
     claim: (a) => call('claim', a), heartbeat: (a) => call('heartbeat', a), done: (a) => call('done', a), fail: (a) => call('fail', a),
     enqueue: (jobs) => call('enqueue', { jobs }), capacity: () => call('capacity'), stats: (type) => call('stats', type ? { type } : {}),
-    listDone: (limit = 50, type, state) => call('list-done', { limit, ...(type ? { type } : {}), ...(state ? { state } : {}) }), ack: (ids) => call('ack', { ids }), cancel: (ids) => call('cancel', { ids }), withdraw: (ids) => call('withdraw', { ids }), policy: (p) => call('policy', { policy: p }),
+    listDone: (limit = 50, type, state) => call('list-done', { limit, ...(type ? { type } : {}), ...(state ? { state } : {}) }), ack: (ids) => call('ack', { ids }), collect: (ids) => call('collect', { ids }), cancel: (ids) => call('cancel', { ids }), withdraw: (ids) => call('withdraw', { ids }), policy: (p) => call('policy', { policy: p }),
   };
 }
 export const _closeForTests = () => { db?.close(); db = sql = dbAt = null; };
