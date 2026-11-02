@@ -500,7 +500,7 @@ async function agentRespond({ messages, onEvent, d, t0 }) {
   onEvent({ type: 'stage', stage: 'search' });
   const A = await agentAnswer({ messages, onEvent,
     create: d.agentCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-agent', params)),
-    tools: d.agentTools || agentTools({ search: d.search }) });
+    tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }) });   // search_library = the fast direct path; d.search only serves trace_source
   if (!A.reply) return null;
   onEvent({ type: 'sources', sources: A.citations, plan: { shape: 'agent' }, ms: Date.now() - t0 });
   onEvent({ type: 'stage', stage: 'craft' });

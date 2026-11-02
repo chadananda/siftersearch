@@ -180,13 +180,13 @@ export function translationLabel(by, authority) {
 export const letterVariants = (s) => [...new Set([String(s), String(s).replace(/ي/g, 'ی').replace(/ك/g, 'ک'), String(s).replace(/ی/g, 'ي').replace(/ک/g, 'ك')])];
 
 /** The live tools over the library (lazy imports; the API process). */
-export function libraryTools({ search }) {
+export function libraryTools({ search, fastSearch }) {
   const shape = (p) => ({ id: p.id, text: p.text || '', title: p.title || p.document?.title || '', author: p.author || p.document?.author || '',
     source_url: p.source_url || p.readerUrl || p.url || null, document_id: p.document_id ?? p.documentId ?? p.doc_id, paragraph_index: p.paragraph_index ?? p.paragraphIndex,
     religion: p.religion || p.document?.religion || null, collection: p.collection || p.document?.collection || null, language: p.language || p.source_lang || 'en',
     translation: p.translation || (/\(provisional translation\)/i.test(p.title || p.document?.title || '') ? translationLabel('Stephen Phelps', 'provisional-phelps') : null) });
   return {
-    search: async (query, tradition) => ((await search({ query, mode: 'passages', limit: 8,
+    search: async (query, tradition) => fastSearch ? (await fastSearch(query, tradition)).map(shape) : ((await search({ query, mode: 'passages', limit: 8,
       plan: { messages: [{ role: 'user', content: query }], defaults: tradition ? { religion: tradition } : {} } }))?.passages || [])
       .filter((p) => String(p.text || '').length <= 8000).map(shape),
     around: async (p, before, after) => {

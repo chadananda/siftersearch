@@ -7,6 +7,7 @@ import { TOOLS, toolRunner, libraryTools } from './researcher.js';
 import { dropUnverified, fixQuoteSpeakers, linkQuotes } from './quotes.js';
 import { dropPreamble } from './work-request.js';
 import { CANON } from './work-canon.js';
+import { agentSearch } from './agent-search.js';
 
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`ʻʼ]/g, "'").toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim();
@@ -127,4 +128,4 @@ export async function agentAnswer({ messages, create, tools: impl, onEvent = () 
 }
 
 /** The live tools for the agent (the API process): the researcher's library tools. */
-export const agentTools = ({ search }) => libraryTools({ search });
+export const agentTools = ({ search, fastSearch } = {}) => libraryTools({ search, fastSearch: fastSearch || agentSearch() });

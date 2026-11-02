@@ -116,6 +116,13 @@ const MAX_AGE = 6 * 3600e3;
 /** The index: memory → disk (≤ 6 h old) → rebuilt from the docs repo (keyset pages of 1,000) and saved. */
 export async function titleIndex({ list = null, file = FILE() } = {}) {
   if (memo && Date.now() - memo.at < MAX_AGE) return memo.index;
+  // stale-while-revalidate: an expired index still answers at once; ONE background refresh (single-flight) replaces it, so no request
+  // pays for the 6-hourly rebuild (disk parse + trigram build, or 158 keyset pages) — and parallel cold calls share one build
+  if (memo) { inflight ??= loadIndex({ list, file }).catch(() => {}).finally(() => { inflight = null; }); return memo.index; }
+  return (inflight ??= loadIndex({ list, file }).finally(() => { inflight = null; }));
+}
+let inflight = null;
+async function loadIndex({ list, file }) {
   try {
     const st = await stat(file);
     if (Date.now() - st.mtimeMs < MAX_AGE) { const rows = JSON.parse(await readFile(file, 'utf8')); memo = { at: st.mtimeMs, index: buildIndex(rows) }; return memo.index; }
