@@ -45,7 +45,10 @@ export async function runService({ name, registry, lanes = {}, laneWorkers = {},
   try { os.setPriority(19); } catch { /* not permitted — runs at normal priority */ }
   drainOnSignals((sig) => logger.info({ sig, service: name }, 'draining — finishing the jobs in hand, claiming nothing new'));
   const inHand = new Map();
-  startHeartbeat({ name, state: () => ({ inflight: inHand.size, doing: [...inHand.values()] }) });
+  // loops still running once a drain starts are named in the heartbeat (11-02: every job of siftersearch-media yielded at
+  // 15:06Z, yet the service — and the remaster loop with it — stayed down until 15:50 behind a loop nobody could name)
+  const loopsLeft = new Set();
+  startHeartbeat({ name, state: () => ({ inflight: inHand.size, doing: [...inHand.values(), ...(isDraining() ? [...loopsLeft].map((n) => `loop:${n}`) : [])] }) });
   // POWER (UPS on battery, power-mode.js): a service that STARTS while power is held parks here — claims nothing, requeues
   // nothing — until mains is back; one already running drains exactly as on SIGHUP (jobs in hand yield at their safe point
   // and save where they stopped), exits 0, and its pm2 restart parks here. Resume needs no orchestration.
@@ -108,7 +111,7 @@ export async function runService({ name, registry, lanes = {}, laneWorkers = {},
     ? [lane(`only:${only.join('+')}`, only, [])]
     : [...(main ? [lane('main', [], [...laneNames, ...foreign])] : []),
       ...Object.entries(lanes).flatMap(([n, names]) => Array.from({ length: Math.max(1, laneWorkers[n] || 1) }, (_, k) => lane(k ? `${n}#${k + 1}` : n, names, [])))];
-  await Promise.all([...workers, ...loops.map((loop) => loop().catch((err) => logger.error({ err: err.message, service: name }, 'ops: loop crashed')))]);
+  await Promise.all([...workers, ...loops.map((loop, i) => { const n = loop.name || `loop${i}`; loopsLeft.add(n); return loop().catch((err) => logger.error({ err: err.message, service: name }, 'ops: loop crashed')).finally(() => loopsLeft.delete(n)); })]);
   logger.info({ service: name }, 'ops service drained — exiting for the new code');
   process.exit(0);
 }
