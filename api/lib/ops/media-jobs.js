@@ -2619,7 +2619,10 @@ export async function mediaRemasterQualityJob({ write = false } = {}, deps = {})
   const rows = [];
   const ops = deps.ops || await import('../repos/ops-report-repo.js');
   const busy = new Set((await Promise.all(['media-item', 'media-remaster', 'media-llm', 'media-compute', 'media-asr', 'media-diar'].map((n) => ops.pendingRuns(n).catch(() => [])))).flat().map((r) => Number(r.params?.id)).filter(Boolean));
+  // reads every candidate's meta.json: a drain stops it, writing nothing (11-02: this loop held siftersearch-media — and the remaster lane — in 'draining')
+  const draining = deps.draining || (await import('../drain.js')).isDraining;
   for (const it of await repo.remasterCandidates(['B', 'C', 'D', 'E'])) {
+    if (draining()) return { yielded: true, read: rows.length };
     const mf = it.dir ? join(it.dir, 'meta.json') : null;
     const m = mf ? JSON.parse(await fs.readFile(mf, 'utf8').catch(() => 'null')) : null;
     if (!m) continue;
