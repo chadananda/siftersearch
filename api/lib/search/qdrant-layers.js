@@ -111,9 +111,12 @@ export async function resolveQdrantFilters(filters = {}) {
 // Vector search parameters per collection — ONE place, so latency/accuracy tuning is a change here (measured with
 // scripts/search/qdrant-profile.mjs), never a copy of the query code. rescore re-reads full 3072-d vectors (on disk) for
 // oversampling × limit candidates — the dominant cost; hnsw_ef null = Qdrant's default.
+// 11-01 (tower, read-only bench, 10 random vectors, Bahá'í primary filter, limit 120): oversampling 2 vs 4 → top-30
+// paragraphs agree 29–30/30 on phrases and hype; no rescore → ~22/30. Half the disk reads, and Qdrant is read-bound under
+// the agent's parallel searches (6 at once → 1.4 s each, 30 → 4.8 s). concept: not measured, stays 4.
 export const SEARCH_PARAMS = Object.freeze({
-  phrase: Object.freeze({ rescore: true, oversampling: 4, hnsw_ef: null }),
-  hype: Object.freeze({ rescore: true, oversampling: 4, hnsw_ef: null }),
+  phrase: Object.freeze({ rescore: true, oversampling: 2, hnsw_ef: null }),
+  hype: Object.freeze({ rescore: true, oversampling: 2, hnsw_ef: null }),
   concept: Object.freeze({ rescore: true, oversampling: 4, hnsw_ef: null }),
 });
 const searchParams = (p) => ({ quantization: { rescore: p.rescore, oversampling: p.oversampling }, ...(p.hnsw_ef ? { hnsw_ef: p.hnsw_ef } : {}) });

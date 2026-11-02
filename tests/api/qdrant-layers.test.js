@@ -148,6 +148,25 @@ describe('metadata documents are not passages', async () => {
     expect(toQdrantFilter({ documentId: 8746 })).toEqual({ must: [{ key: 'doc_id', match: { value: 8746 } }] });
     _setExcluded([]);
   });
+  it('bahai-library tag index pages are excluded, a book that mentions tags is not (11-01)', async () => {
+    const { isTagIndex } = await import('../../api/lib/search/excluded-docs.js');
+    const bl = (title) => ({ title, source_site: 'bahai-library.com' });
+    expect(isTagIndex(bl('Tag: Ahmad of Yazd'))).toBe(true);
+    expect(isTagIndex(bl('All Tags'))).toBe(true);
+    expect(isTagIndex(bl('All tags: Institute process'))).toBe(true);
+    expect(isTagIndex(bl("Lights of Guidance: A Baha'i Reference File"))).toBe(false);
+    expect(isTagIndex(bl('The Price Tag: a story'))).toBe(false);
+    expect(isTagIndex({ title: 'Tag: x', source_site: 'oceanlibrary.com' })).toBe(false);
+  });
+});
+
+describe('SEARCH_PARAMS', async () => {
+  const { SEARCH_PARAMS } = await import('../../api/lib/search/qdrant-layers.js');
+  it('phrase and hype rescore at oversampling 2 (measured 29–30/30 top-30 agreement with 4, 11-01); never without rescore', () => {
+    expect(SEARCH_PARAMS.phrase).toMatchObject({ rescore: true, oversampling: 2 });
+    expect(SEARCH_PARAMS.hype).toMatchObject({ rescore: true, oversampling: 2 });
+    expect(SEARCH_PARAMS.concept.rescore).toBe(true);
+  });
 });
 
 describe('qdrantHealth', () => {
