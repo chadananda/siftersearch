@@ -263,8 +263,8 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
   const buf = { staged_h: buffer?.buffer_h || 0, want_h: buffer?.want_h || 0 };
   st.chains ||= {};
   const ackEdge = [], qOf = (where) => (where === 'edge' ? edge : q);
-  // an edge ack is owed in st (saved) from the moment its qjob goes, so a lost ack call is retried, never forgotten (flushEdgeAcks)
-  const ackJob = (id) => { if (st.qjobs[id]?.where === 'edge') { ackEdge.push(id); owe(st, [id]); } else if (!ack.includes(id)) ack.push(id); delete st.qjobs[id]; };
+  // an edge ack is owed in st (saved) from the moment its qjob goes, so a lost ack call is retried, never forgotten (flushAcks)
+  const ackJob = (id) => { if (st.qjobs[id]?.where === 'edge') { ackEdge.push(id); owe(st, [id]); } else { if (!ack.includes(id)) ack.push(id); owe(st, [id], 'lan'); } delete st.qjobs[id]; };
   // every step type is pulled from both transports: gpu from the pods, cpu-prep/cpu-finish from a CPU pod (an edge step is acked on the edge)
   const tm = async (key, f) => { const t0 = now(); try { return await f(); } finally { trace?.sub(key, now() - t0); } };
   // one finished step; a job already being handed off (the pass and the edge mover overlap) is left to whoever holds it
@@ -367,20 +367,22 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
     for (const f of (await sq.stats(type)).failed || []) if (st.qjobs[f.id]) { errors++; logPullError(st, f.id, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`.slice(0, 300)); await failChain(st, f.id, ackJob, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`, repo); }
     trace?.sub(`${type}:${src}`, now() - t0);
   }
-  if (edge) await flushEdgeAcks(st, edge);   // the LAN list is acked by pull()
+  if (edge) await flushAcks(st, edge, 'edge');   // the LAN list is acked by the caller (flushAcks 'lan')
   return { adopted, steps, errors, ...(edge ? { edge_acked: ackEdge.length } : {}) };
 }
-const owe = (st, ids) => { st.edge_ack_owed = [...new Set([...(st.edge_ack_owed || []), ...ids])]; };
+const owe = (st, ids, where = 'edge') => { const k = `${where}_ack_owed`; st[k] = [...new Set([...(st[k] || []), ...ids])]; };
 const ACK_BATCH = 10;   // the edge deletes every R2 key of each acked job in one call (≤1000 keys): 197 jobs at once was refused (11-02)
-/** Send the owed edge acks; each batch leaves st only once the edge confirmed it. 11-02: acks lost to network blips left 199 adopted gpu steps
- *  'done' with their qjobs gone, which filled the 200-row list-done page, so no new pod result was adopted for 20 h. */
-export async function flushEdgeAcks(st, edge) {
-  while (st.edge_ack_owed?.length) {
-    const b = st.edge_ack_owed.slice(0, ACK_BATCH);
-    try { await edge.ack(b); } catch (e) { st.edge_ack_error = { at: Date.now(), owed: st.edge_ack_owed.length, error: String(e.message).slice(0, 200) }; return false; }
-    st.edge_ack_owed = st.edge_ack_owed.filter((id) => !b.includes(id));
+/** Send the owed acks of one transport (st.edge_ack_owed / st.lan_ack_owed); each batch leaves st only once the queue confirmed it. 11-02: acks
+ *  lost to network blips left 199 adopted gpu steps 'done' on the edge (158 cpu-finish on the LAN) with their qjobs gone; the edge ones filled
+ *  the 200-row list-done page, so no new pod result was adopted for 20 h. */
+export async function flushAcks(st, client, where = 'edge') {
+  const k = `${where}_ack_owed`, ek = `${where}_ack_error`;
+  while (st[k]?.length) {
+    const b = st[k].slice(0, ACK_BATCH);
+    try { await client.ack(b); } catch (e) { st[ek] = { at: Date.now(), owed: st[k].length, error: String(e.message).slice(0, 200) }; return false; }
+    st[k] = st[k].filter((id) => !b.includes(id));
   }
-  delete st.edge_ack_error;
+  delete st[ek];
   return true;
 }
 
@@ -567,7 +569,7 @@ export async function pull(st, deps) {
     if (!qj) continue;
     await retry(st, qj, `queue: ${f.error}`, repo); ack.push(f.id); delete st.qjobs[f.id];
   }
-  if (ack.length) await q.ack(ack);
+  owe(st, ack, 'lan'); await flushAcks(st, q, 'lan');
   return { adopted, errors, acked: ack.length, ...(typed ? { typed } : {}) };
 }
 // a talk whose queue job failed goes back to tower's lane once (ssh hosts/pods), then is recorded failed
@@ -647,6 +649,6 @@ async function adoptBeside(st, deps, only, par = MOVE_PARALLEL) {
   if (!deps.edge && only.src === 'edge') return { steps: 0 };
   st.qjobs ||= {};
   const r = await pullTyped(st, ack, { ...deps, trace, only, parallel: deps.parallel || par });
-  if (ack.length) await deps.q.ack(ack);   // LAN-side acks (the edge ones went inside)
+  owe(st, ack, 'lan'); await flushAcks(st, deps.q, 'lan');   // LAN-side acks (the edge ones went inside)
   return { ...r, ms: (deps.now || Date.now)() - t0, sub };
 }

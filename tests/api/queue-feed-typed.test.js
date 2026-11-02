@@ -337,6 +337,21 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect(st.edge_ack_owed).toEqual([]); expect(st.edge_ack_error).toBeUndefined();
     expect(Q.stats(E.sql, Date.now(), 'gpu').states).toEqual({});
   });
+  it('a lost LAN ack is owed in st and sent by the next pass: done steps never pile up on the LAN with their qjob gone', async () => {
+    lanOnly(); st.queue = [1];
+    let down = true; const ack = deps.q.ack;
+    const d = { ...deps, edge: E.q, q: { ...deps.q, ack: async (ids) => { if (down) throw Error('fetch failed'); return ack(ids); } } };
+    await feed(st, d); deliver('cpu-prep'); await pull(st, d);
+    deliver('gpu', {}, E); await pull(st, d);
+    const f = deliver('cpu-finish');
+    expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });   // the talk lands even though the LAN ack failed
+    expect(st.qjobs[f.id]).toBeUndefined();
+    expect(st.lan_ack_owed).toContain(f.id); expect(st.lan_ack_error.error).toMatch(/fetch failed/);
+    expect(store.has(`results/${f.id}/result.json`)).toBe(true);   // still on the LAN
+    down = false; await pull(st, d);
+    expect(st.lan_ack_owed).toEqual([]); expect(st.lan_ack_error).toBeUndefined();
+    expect([...store.keys()].filter((k) => k.startsWith('results/'))).toEqual([]);
+  });
   it('the edge gpu handoff runs beside the pass: the pass (deferEdgeGpu) leaves it, adoptEdgeGpu does it and times get/put', async () => {
     lanOnly(); st.queue = [1];
     const d = { ...deps, edge: E.q };
