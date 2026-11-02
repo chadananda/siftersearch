@@ -1,6 +1,7 @@
 // "Give me the book" → the library's copy, linked (work-request.js; Chad 11-01: Anís never gave the book asked for).
 import { describe, it, expect } from 'vitest';
-import { workRequest, titleCandidates, findWork, workReply } from '../../api/lib/assistant/work-request.js';
+import { workRequest, titleCandidates, findWork, workReply, aboutWork, linkTitles, dropPreamble } from '../../api/lib/assistant/work-request.js';
+import { shortQuestion, anisDirection } from '../../api/lib/assistant/prompt.js';
 import { buildIndex, matchTitle } from '../../api/lib/dewey/title-index.js';
 
 const ROWS = [
@@ -49,5 +50,57 @@ describe('what the book SAYS is a search, not a book request', () => {
   it('no title found → null (falls through to search)', async () => {
     expect(workRequest('where can I read something on patience')).toBe(true);
     expect(await find('where can I read something on patience')).toBeNull();
+  });
+});
+
+describe('the book reply: link first, what the texts say ABOUT it, then the offer (Chad 11-01: "very thin")', () => {
+  const work = { doc: ROWS[1], others: [] };
+  const rows = [
+    { text: 'The Dawn-Breakers of Nabíl is a narrative every believer should master.', doc_id: 99, citation_url: 'https://x/about#1' },
+    { text: 'And finally is this, His moving invocation to God.', doc_id: 2, citation_url: 'https://x/dawn#900' },   // the book itself
+    { text: 'Patience is a virtue.', doc_id: 98, citation_url: 'https://x/other#1' },                                   // not about it
+  ];
+  it('aboutWork keeps only other works that name it', () => {
+    expect(aboutWork(work, rows).map((r) => r.doc_id)).toEqual([99]);
+  });
+  it('anisRespond: the link leads, the crafted middle quotes the passage about it, the offer closes', async () => {
+    const { anisRespond } = await import('../../api/lib/assistant/respond.js');
+    const crafted = [];
+    const passages = rows.map((r, i) => ({ text: r.text, title: 'T', author: 'A', document_id: r.doc_id, paragraph_index: i, source_url: r.citation_url }));
+    const out = await anisRespond({ messages: [{ role: 'user', content: 'where can I read Dawnbreakers?' }], deps: {
+      plan: async () => ({ shape: 'lookup' }), findWork: async () => work,
+      search: async () => ({ passages, _plan: { shape: 'topic' } }),
+      craft: async (a) => { crafted.push(a); return 'Shoghi Effendi held that it is a narrative ["every believer should master"](https://x/about#1).'; },
+      companion: async () => ({ append: '', plan: null, offer: false }),
+    } });
+    expect(crafted[0].retrieved_quotes.map((q) => q.doc_id)).toEqual([99]);
+    expect(crafted[0].direction.format.id).toBe('work');
+    expect(out.reply.split('\n\n')[0]).toContain('/library/');
+    expect(out.reply).toContain('every believer should master');
+    expect(out.reply.trim().endsWith('with me”.')).toBe(true);
+  });
+});
+
+describe('every italicised book is a link to the library, and the reply never announces itself (Chad 11-01, "Seven Valleys")', () => {
+  const SV = { id: 6, title: 'The Seven Valleys', author: "Bahá'u'lláh", religion: "Bahá'í", collection: 'Core Tablets', slug: 'seven-valleys', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 120 };
+  const find = async (t) => (/seven valleys/i.test(t) ? { doc: SV, others: [] } : null);
+  it('links the first mention, leaves unknown italics and existing links alone', async () => {
+    const text = 'It is a quiet joy to turn to *The Seven Valleys*. It draws on *Manṭiqu’ṭ-Ṭayr*. Again *The Seven Valleys*. See [*Gleanings*](https://x/g).';
+    const { text: out, linked } = await linkTitles(text, { find });
+    expect(linked).toBe(1);
+    expect(out).toContain('[*The Seven Valleys*](https://siftersearch.com/library/');
+    expect(out.match(/seven-valleys/g)).toHaveLength(1);
+    expect(out).toContain(' *Manṭiqu’ṭ-Ṭayr*.');
+    expect(out).toContain('[*Gleanings*](https://x/g)');
+  });
+  it('drops "To answer your question directly about what this work is:"', () => {
+    expect(dropPreamble('Dear friend,\n\nTo answer your question directly about what this work is: The Seven Valleys is a treatise.'))
+      .toBe('Dear friend,\n\nThe Seven Valleys is a treatise.');
+    expect(dropPreamble('The Seven Valleys is a treatise.')).toBe('The Seven Valleys is a treatise.');
+  });
+  it('a short question gets the short-answer direction', () => {
+    expect(shortQuestion('Seven Valleys')).toBe(true);
+    expect(anisDirection({ question: 'Seven Valleys' })).toMatch(/2–4 sentences/);
+    expect(anisDirection({ question: 'What does Bahá’u’lláh write about the stages of the soul’s journey toward God?' })).not.toMatch(/2–4 sentences/);
   });
 });

@@ -20,7 +20,7 @@ function client(provider) {
 export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, target = null, onUsage = null, direction = {}, llm, onChunk, signal }) {
   // System = soul + house style (constant → cached prefix); everything about THIS reply goes in the user message.
   const dir = anisDirection({ channelFrame: direction.channel?.frame ?? null, stance: direction.stance ?? null, guarded: !!direction.guarded,
-    conversational, mission, companionAppend: companion_append, formatHow: direction.format?.how ?? null });
+    conversational, mission, companionAppend: companion_append, formatHow: direction.format?.how ?? null, question: user_question });
   // Per-model request shape from the registry: Haiku 5.5 and the GPT-5 family reject temperature; GPT-5 counts
   // max_completion_tokens and should not reason for a chat reply (reasoning_effort minimal).
   const reg = getModel(llm.model) || {};

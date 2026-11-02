@@ -6,7 +6,7 @@
 
 import { extractPhrases, fixedPhrases, hintsOf } from './phrases.js';
 import { religionsReply } from './library-facts.js';
-import { findWork, workReply } from './work-request.js';
+import { findWork, workReply, workLead, workOffer, workAboutQuery, aboutWork, WORK_HOW, linkTitles, dropPreamble } from './work-request.js';
 import { readerUrl } from '../source-links.js';
 import { speakerTradition, followUpAsks } from '../search-plan.js';
 import { questionSubject } from '../planned-search.js';
@@ -540,20 +540,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   }
   // "Where can I read the Book of Certitude?" / "the full text of Dawnbreakers" → the library's own copy, linked (work-request.js;
   // Chad 11-01: these went to passage search and the reply quoted works that MENTION the book, with no link to it)
-  if (!conversational) {
-    const work = await timed('work', () => (d.findWork || (deps ? async () => null : findWork))(question, { named: plan?.named })).catch(() => null);
-    if (work) {
-      const reply = workReply(work);
-      const citations = [work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: readerUrl(x), religion: x.religion,
-        document_id: x.id, paragraph_index: null, text: '' }));
-      onEvent({ type: 'sources', sources: citations, plan: { shape: 'work' }, ms: Date.now() - t0 });
-      onEvent({ type: 'stage', stage: 'craft' });
-      onEvent({ type: 'text', content: reply });
-      return { reply, quotes_removed: 0, citations, retrieved: [], evidence: [], plan: { ...plan, shape: 'work', work: work.doc.id },
-        format: { id: 'work', by: 'title-index' }, profile: null,
-        timings: { search_ms: Date.now() - t0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
-    }
-  }
+  // Then the passages ABOUT the book (its importance and role) fill the middle (Chad 11-01: "very thin … juicy bits"); none → link + offer.
+  const work = conversational ? null
+    : await timed('work', () => (d.findWork || (deps ? async () => null : findWork))(question, { named: plan?.named })).catch(() => null);
   onEvent({ type: 'stage', stage: 'search' });
   // WHAT to search (assistant/phrases.js; Jev has already routed): quote marks / the named object (a work by its library title,
   // a person in the seeker's spelling) decide it with no call; else one Haiku call for a quote/lookup → {exact, names, spellings,
@@ -566,7 +555,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // library's tools instead of regexes choosing one lookup. On for a channel listed in ANIS_RESEARCH ("email", "all") or
   // when the caller asks (direction.research); any failure falls back to the routed pipeline below.
   // injected deps without a researcher (a test harness) keep it off; tests opt in with deps.research
-  const researchOn = !conversational && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
+  const researchOn = !conversational && !work && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
   const R = researchOn ? await (d.research || runResearch)({ messages,
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;
@@ -578,11 +567,11 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // a named person or work ("Hidden Words source", "who wrote the Paris Talks") is the item itself, never a quotation to hunt
   // the original lookup runs ALONGSIDE the source hunt, not after it (r6-base: source-hunt 3.5 s then original 6.6–8 s, serial,
   // made the two slowest non-cold turns, 11.7 s and 14.4 s); its result is used only when the hunt finds nothing
-  const originalP = !researched && wantsOriginal ? timed('original', () => originalWording(d, question, messages)).catch(() => null) : null;
+  const originalP = !researched && !work && wantsOriginal ? timed('original', () => originalWording(d, question, messages)).catch(() => null) : null;
   // a quotation hunt needs a quotation: in a thread, the triage kind alone ("source_lookup") with no wording set apart from the
   // question once hunted the reader's own sentence (px-smoke return-iqan T2/T3: City of God for an Íqán question)
   const separate = quoted !== trimTalk(question.trim()) && quoted !== question.trim();
-  const huntable = !researched && !plan?.named && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4 && (separate || messages.length <= 1))
+  const huntable = !researched && !work && !plan?.named && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4 && (separate || messages.length <= 1))
     || looksLikeSourceQuestion(question) || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8));
   // FOLLOW-UP ASKS (search-plan followUpAsks): "where is it from — and who translated it, which volume, what happened next?"
   // The hunt's template answers only the origin and dropped every other ask (r6-after: 7 strategy defects). With other asks
@@ -629,6 +618,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // discussion — a search would only bring unrelated quotations to pad it with (10-19, Lal's 'fí baytihi')
   const language = !researched && !sourced && !original && !study && !position && !conversational && (d.looksLikeLanguage || looksLikeLanguageQuestion)(question);
   const res = researched ? { passages: researched.passages || [], _plan: { shape: 'research', steps: researched.steps, ms: researched.ms } }
+    : work ? { ...await timed('search', () => d.search({ query: (searchQ = workAboutQuery(work)), mode: 'passages', limit: 16, scope_config: profile.scope_config,
+      plan: { messages: [{ role: 'user', content: workAboutQuery(work) }] } })), _plan: { shape: 'work', work: work.doc.id } }
     : sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
     : conversational ? { passages: [], _plan: plan }
     : language ? { passages: [], _plan: { shape: 'language' } }
@@ -649,6 +640,18 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     collection: p.collection || null, source_lang: p.language || null, via: 'planned', standing: p.standing || null, theme: p.theme || null,
     ...(p.translation ? { translation: p.translation } : {}),   // an existing translation the reply quotes whole (researcher.js)
   }));
+  if (work) {
+    retrieved.splice(0, retrieved.length, ...aboutWork(work, retrieved).slice(0, 8));
+    if (!retrieved.length) {   // nothing speaks of the book: the link and the offer
+      const reply = workReply(work);
+      const citations = [work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: readerUrl(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' }));
+      onEvent({ type: 'sources', sources: citations, plan: res._plan, ms: Date.now() - t0 });
+      onEvent({ type: 'stage', stage: 'craft' });
+      onEvent({ type: 'text', content: reply });
+      return { reply, quotes_removed: 0, citations, retrieved: [], evidence: [], plan: { ...plan, shape: 'work', work: work.doc.id }, search_query: searchQ,
+        format: { id: 'work', by: 'title-index' }, profile: null, timings: { search_ms: Date.now() - t0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
+    }
+  }
   // An original-language question answered by the ordinary search: each hit that has an aligned original carries it too
   if (wantsOriginal && !researched && !sourced && !original && !study && res?.passages?.length) {
     const { originalsByIds } = await import('../paragraphs-repo.js');
@@ -686,6 +689,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   if (d.upgradeLinks) await timed('upgrade-links', () => Promise.all(retrieved.map(async (q) => { if (q.citation_url) q.citation_url = await d.upgradeLinks(q.citation_url).catch(() => q.citation_url); })));
   const citations = retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url,
     religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index, text: q.text.slice(0, 300) }));
+  if (work) citations.unshift(...[work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: readerUrl(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' })));
   // Something useful before the first token (backlog 0023): the sources are known in ~0.2s.
   if (!conversational) {
     onEvent({ type: 'sources', sources: citations, plan: res?._plan || null, ms: searchMs });
@@ -700,7 +704,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const evidenceProfile = dataProfile(findings, { plan: res?._plan || null, question });
   const channel = direction.channel || channelFor('widget-chat');
   const choose = d.chooseFormat || chooseFormat;
-  const formatP = quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW + (messages.length > 1 ? QUOTE_MISS_THREAD : '') })
+  const formatP = work ? Promise.resolve({ id: 'work', by: 'title-index', how: WORK_HOW(work) })
+    : quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW + (messages.length > 1 ? QUOTE_MISS_THREAD : '') })
     : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: RESEARCH_HOW(researched.brief) })
     : sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
     // ORIGINAL_HOW only with an original in hand: without one the model said the passage was "not found" while the English
@@ -760,7 +765,12 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // to Shoghi Effendi or to Bahá'u'lláh, the Guardian's words framed as Bahá'u'lláh's).
   const speakers = fixQuoteSpeakers(introduced.text, conversational ? [] : retrieved);
   const quoteLinked = linkQuotes(speakers.text, conversational ? [] : retrieved);
-  const reply = ensureLinks(quoteLinked.text, conversational ? [] : retrieved);   // the counts come from code
+  const linked = ensureLinks(quoteLinked.text, conversational ? [] : retrieved);   // the counts come from code
+  // a book asked for: its link first and the offer to read it last, by code (work-request.js)
+  const bare = dropPreamble(linked);
+  // every book named in italics links to the library's copy (Chad 11-01)
+  const titled = conversational ? { text: bare } : await (d.linkTitles || (deps ? async (t) => ({ text: t }) : linkTitles))(bare).catch(() => ({ text: bare }));
+  const reply = work ? [workLead(work), titled.text.trim(), workOffer(work)].filter(Boolean).join('\n\n') : titled.text;
   if (comp?.log && comp.plan) comp.log(comp.plan);
 
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and
