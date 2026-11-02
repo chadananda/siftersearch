@@ -14,3 +14,9 @@ Check:
 - `node scripts/ops/ops.mjs report spend --hours 2 --wait` (caller hype-batch)
 
 Expected finish: minutes to a few hours, depending on queue concurrency (5 slots).
+
+## 11-02 status (verified: GET /api/admin/docs/:id/enrichment hypeByVersion + `hype-batch.mjs submit --core` → 0 paragraphs)
+All 14 core books are on hype-v15-seeker: 6,376 of 6,722 paragraphs carry v15 questions, none on older prompts. The
+other 346 are not pending: <60-char lines (MIN_LEN, headers/fragments) or stamped empty (nothing survived validation).
+Largest gaps: Dawn-Breakers 148, Messages to the Bahá'í World 78, Tablets of the Divine Plan 41, SAQ 34. The 252
+"retrying" ids in hype-batch state are not in core books (submit --core plans nothing).
