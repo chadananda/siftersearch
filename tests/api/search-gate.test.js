@@ -24,7 +24,7 @@ describe('search-gate', () => {
     expect(d.regress.length).toBe(10); expect(d.fixed.length).toBe(4);
     expect(verdict(d, { noise: 2 }).pass).toBe(false);
     const flake = new Map(d.regress.slice(0, 8).map((f) => [f.key, true]));
-    const v = verdict(d, { noise: 2, recheck: flake });
+    const v = verdict(d, { noise: 2, recheck: flake, maxCatDrop: 100 });
     expect(v.flakeRegress).toBe(8); expect(v.pass).toBe(true);
   });
   it('fails on category collapse and latency blow-up', () => {
