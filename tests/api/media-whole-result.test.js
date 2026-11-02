@@ -17,6 +17,13 @@ it('adopts a verified whole result while retaining the archived original and rew
  expect(m.original).toBe('original/archive.mp3');expect(m.enhancement.variants.map(v=>v.file)).toEqual(['original/archive.mp3',dir+'/enhanced/light.flac']);
  expect(await readFile(join(dir,'original/archive.mp3'),'utf8')).toBe('untouched original');
 });
+it('adopts a chain run on its chain input (a video\'s audio track): inputSha names that file, the original is mapped back (11-02)',async()=>{
+ const {root,dir,sha}=await fixture();const old={slug:'test',original:'original/talk.mp4',source:{kind:'file'}};
+ await writeFile(join(dir,'original/talk.mp4'),'the video');
+ await expect(adoptWholeResult(root,dir,old,sha)).rejects.toThrow('Original changed');   // the original's own sha is checked by default
+ const m=await adoptWholeResult(root,dir,old,sha,null,undefined,undefined,null);
+ expect(m.original).toBe('original/talk.mp4');expect(m.enhancement.variants[0].file).toBe('original/talk.mp4');
+});
 it('rejects damaged, stale, unsafe and unassessed results before adoption',async()=>{
  for(const mutate of [r=>r.input_sha='stale',r=>r.files[0].sha256='bad',r=>r.files[0].path='../escape',r=>r.meta.remaster.status='done']){
   const {root,sha,r}=await fixture();mutate(r);await writeFile(join(root,'result.json'),JSON.stringify(r));await expect(validateWholeResult(root,sha,'test')).rejects.toThrow();

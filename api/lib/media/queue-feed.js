@@ -317,7 +317,7 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
           const cur = await readMeta(it.dir), again = Object.values(cur?.stages || {}).some((v) => v?.job === j.id);
           let meta = cur;
           if (!again) {
-            meta = await wr.adoptWholeResult(stg, it.dir, cur, ch.sha, null, (w, f) => tm(k('adopt_' + w), f), (f) => shaOf(st, wr, f));
+            meta = await wr.adoptWholeResult(stg, it.dir, cur, ch.sha, null, (w, f) => tm(k('adopt_' + w), f), (f) => shaOf(st, wr, f), ch.src ? null : ch.sha);   // ch.src: the chain ran on its chain input, ch.sha is that file's
             await tm(k('untransit'), () => untransit(it.dir, r, meta, { run, now }));
           }
           ch[type] = SJ.stepOf(j, r, now());

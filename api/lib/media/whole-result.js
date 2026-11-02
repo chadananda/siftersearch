@@ -40,10 +40,13 @@ export function adoptedState(row,stages,{alreadyAdopted=false}={}){
  return ok?{state:'transcribed',stage:null,stages_done:','+Object.keys(stages||{}).join(',')+','}:null;
 }
 export async function linkOrCopy(from,to){await rm(to,{force:true});try{await link(from,to);}catch(e){if(!['EXDEV','EPERM','ENOTSUP'].includes(e.code))throw e;await copyFile(from,to);}}
-export async function adoptWholeResult(root,dir,oldMeta,inputSha,itemId=null,T=(k,f)=>f(),shaOf=fileSha){
+// originalSha: the sha of oldMeta.original. A typed chain made on a chain input (a video's audio track / Opus, queue-feed TYPED_INPUT) runs with
+// inputSha = that file's sha, not the original's: null = the original's sha is not known, the check is skipped (11-02: it refused every such chain).
+export async function adoptWholeResult(root,dir,oldMeta,inputSha,itemId=null,T=(k,f)=>f(),shaOf=fileSha,originalSha=inputSha){
  const r=await T('validate',()=>validateWholeResult(root,inputSha,oldMeta.slug));
- if(await T('hash_original',()=>shaOf(join(dir,oldMeta.original)))!==inputSha)throw Error('Original changed while processing');
- const workerOriginal='original/in'+oldMeta.original.slice(oldMeta.original.lastIndexOf('.')).toLowerCase();
+ if(originalSha!=null&&await T('hash_original',()=>shaOf(join(dir,oldMeta.original)))!==originalSha)throw Error('Original changed while processing');
+ // the worker's name for its input (original/in.<ext>: the chain input's ext, not always the original's) maps back to tower's original
+ const workerOriginal=typeof r.meta?.original==='string'&&r.meta.original.startsWith('original/')?r.meta.original:'original/in'+oldMeta.original.slice(oldMeta.original.lastIndexOf('.')).toLowerCase();
  const rewrite=v=>typeof v==='string'?(v===workerOriginal?oldMeta.original:v.replaceAll('/job/item/'+workerOriginal,join(dir,oldMeta.original)).replaceAll('/job/item/',dir+'/')):Array.isArray(v)?v.map(rewrite):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,rewrite(x)])):v;
  const meta=rewrite(r.meta);meta.original=oldMeta.original;meta.source=oldMeta.source;meta.worker_result={input_sha:inputSha,adopted_at:new Date().toISOString()};
  await T('place',async()=>{for(const f of r.files){if(f.path==='meta.json')continue;const to=join(dir,f.path);await mkdir(resolve(to,'..'),{recursive:true});await linkOrCopy(join(root,'item',f.path),to+'.worker-part');await rename(to+'.worker-part',to);}});
