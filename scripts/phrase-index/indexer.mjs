@@ -260,7 +260,9 @@ async function ensureCollection({ url = UP.url, coll = UP.coll } = {}) {
   const exists = await qd('GET', `/collections/${coll}/exists`, undefined, url).then((r) => r.result.exists);
   if (!exists) {
     // the hot copy stores float16 (lossless: vectors.db holds f16) — half the RAM; same metric, quantization and indexes
-    const literal = { size: DIMS, distance: 'Cosine', on_disk: true, ...(url === HOT ? { datatype: 'float16' } : {}) };
+    // hype keeps its full vectors in RAM (11-02, Chad: ~28 GB; the rescore read was the slow part of every search). phrases
+    // (35M points, ~430 GB) cannot fit — on disk.
+    const literal = { size: DIMS, distance: 'Cosine', on_disk: coll !== 'hype', ...(url === HOT ? { datatype: 'float16' } : {}) };
     await qd('PUT', `/collections/${coll}`, { vectors: { literal }, quantization_config: { binary: { always_ram: true } } }, url);
     log({ phase: 'collection-created', collection: coll, url });
   }
