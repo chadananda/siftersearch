@@ -127,19 +127,21 @@ export async function samplePass({ drive, window = 24, kinds: kinds_ = null, dep
     } catch (e) { note(e.message); await save(it.id, { deep_queued: new Date().toISOString(), deep_error: e.message }); await answer(it.id, `The deeper look could not start: ${e.message}`); }
   }
   // a window per stage: talks wait on a GPU, books run on CPUs — a full talk window must not leave the book slots idle (order holds within each)
-  const byStage = (await q.stats('intake'))?.queued_by_stage || {};
+  const qs = await q.stats('intake'), byStage = qs?.queued_by_stage || {};
+  // finished results not yet pulled count against every window: staging faster than this pass pulls only grows the backlog (11-02: 9,458 results waited while each pass staged 120 and pulled 50)
+  const unpulled = qs?.states?.done?.n || 0;
   // params.kinds limits what is sampled (e.g. ['book','scan']: talks need a GPU the media processor is using)
   for (const [st, all] of [['intake-talk', ['talk', 'video']], ['intake-book', ['book', 'scan']]]) {
     const kinds = kinds_ ? all.filter((k) => kinds_.includes(k)) : all;
     if (!kinds.length) continue;
-    const queued = byStage[st] || 0;
+    const queued = (byStage[st] || 0) + unpulled;
     for (const it of window > queued ? await toSample(drive, { kinds, limit: window - queued }) : []) {
       try { await stage(q, d, it, false); await save(it.id, { queued: new Date().toISOString() }); out.staged++; }
       catch (e) { note(e.message); await save(it.id, { queued: new Date().toISOString(), error: e.message }); }
     }
   }
   // approved PDFs get their pre-OCR probe, ahead of the samples (priority) but inside the same book window
-  const room = window - (byStage['intake-book'] || 0) - out.staged;
+  const room = window - (byStage['intake-book'] || 0) - unpulled - out.staged;
   for (const it of room > 0 ? await toProbe(drive, { limit: room }) : []) {
     try { await stage(q, d, it, false, true); await probeSave(it.id, { queued: new Date().toISOString() }); out.probes_staged++; }
     catch (e) { note(e.message); await probeSave(it.id, { error: e.message, at: new Date().toISOString() }); }

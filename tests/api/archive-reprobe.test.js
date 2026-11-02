@@ -53,6 +53,14 @@ describe('archiveReprobeJob', () => {
     const claimed = await q.claim({ host: 'w', types: ['intake'], stages: ['intake-book'], slots: 2 }).catch(() => null);
     expect(claimed).toBeDefined();
   });
+  it('finished results still waiting to be pulled count against the window, so staging stops while the backlog drains', async () => {
+    const { samplePass } = await import('../../api/lib/ops/archive-sample-job.js');
+    const asked = [];
+    const fakeQ = { listDone: async () => [], stats: async () => ({ states: { done: { n: 100 } }, queued_by_stage: {} }), ack: async () => {}, put: async () => ({ bytes: 1 }), enqueue: async () => {} };
+    const r = await samplePass({ drive: 'g', window: 120, deps: { q: fakeQ, store: {}, drive: { id: 'g', root }, probeSave: async () => {}, toProbe: async (_d, o) => { asked.push(o.limit); return []; }, toSample: async () => [], wanting: async () => [] } });
+    expect(r.probes_staged).toBe(0);
+    expect(asked).toEqual([20]);   // 120 - 100 waiting
+  });
   it('a full page of finished jobs reports more, so the job pulls again without the minute nap', async () => {
     const { samplePass, PULL_PAGE } = await import('../../api/lib/ops/archive-sample-job.js');
     const page = (n) => ({ listDone: async (_n, _t, state) => (state ? [] : Array.from({ length: n }, (_, i) => ({ id: `intake-probe-${i}`, item_id: i, body: { probe: true } }))), get: async () => { throw new Error('gone'); }, stats: async () => ({}), ack: async () => {}, fail: async () => {}, put: async () => ({ bytes: 1 }), enqueue: async () => {} });
