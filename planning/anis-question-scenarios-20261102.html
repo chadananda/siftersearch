@@ -35,13 +35,20 @@ q{font-style:italic;quotes:"“" "”"}
 .scen .k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px}
 .scen div{font-size:.9rem}
 .scen .full{grid-column:1/-1}
+.tree{margin:2px 0 4px;padding-left:22px}
+.tree li{margin-bottom:3px}
+.tree li.jev{list-style:none;margin-left:-14px;color:var(--accent)}
+.new{font:600 .62rem "JetBrains Mono",monospace;background:var(--warn-soft);color:var(--warn);padding:1px 5px;border-radius:2px;letter-spacing:.05em;text-transform:uppercase}
+.stage{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stage>div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.88rem}
+.stage b{display:block;font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--accent);margin-bottom:4px}
 .roles{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .role{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:.9rem}
 .role p{margin:0}
 .role .k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .mock{font-size:.88rem;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
 .mock b{font-family:"JetBrains Mono",monospace;font-size:.75rem;color:var(--accent)}
-@media (max-width:640px){.scen,.roles{grid-template-columns:1fr}}
+@media (max-width:640px){.scen,.roles,.stage{grid-template-columns:1fr}}
 </style>
 <main>
 <header>
@@ -53,7 +60,7 @@ q{font-style:italic;quotes:"“" "”"}
 <div class="verdict">
   <p><b>The picture in brief.</b> People arrive with three very different needs. Most of what they type into a search box is short (median five words) and wants one thing back: a fact, a book, a quotation, or what a tradition teaches. The longer questions on our published pages and in Immerse's examples are real study: comparing, tracing, explaining a passage. And a growing share are <b>assignments</b> rather than questions: <q>put together a devotional program</q>, <q>compile quotes on sacrifice</q>, <q>show me a timeline</q>.</p>
   <p>One Anís should serve all three. He gives short answers to short questions, teaches when someone wants to understand, and does real work when someone hands him a task. The role he takes (teaching assistant, study buddy, fireside teacher or research companion) follows from what the person is doing. The reader never picks a mode.</p>
-  <p><b>At the centre: a system that improves itself, in quality and in speed.</b> Every kind of request gets a research strategy: a decision tree whose branches Jev chooses in a tenth of a second. Every run of every strategy is logged in full, so any answer can be taken apart afterwards, decision by decision. From those records we improve Jev's decisions, add better options, replace weaker strategies, and discover kinds of request we had not seen. The 27 scenarios below are the starting set, not the final one.</p>
+  <p><b>At the centre: a system that improves itself, in quality and in speed.</b> Every kind of request gets a research strategy: a decision tree whose branches Jev chooses in a tenth of a second. Every run of every strategy is logged in full, so any answer can be taken apart afterwards, decision by decision. From those records we improve Jev's decisions, add better options, replace weaker strategies, and discover kinds of request we had not seen. The 32 request types below, each with its starting strategy, come from classifying all 12,808 test messages we hold; they are the starting set, not the final one.</p>
 </div>
 
 <section>
@@ -111,151 +118,221 @@ q{font-style:italic;quotes:"“" "”"}
 <section class="group">
   <div>
     <h2>The scenarios</h2>
-    <p>Seven groups, 27 scenarios. For each: real wordings, how much evidence there is, and the answer it deserves. The answer shape is the contract we build and test against.</p>
+    <p>Every test message we hold was classified by type: <b>12,808</b> in all (the survey and SEO wordings, seed and seeker questions, the wording battery with its threads, Immerse's 61, and the 412 turns of the conversation runs, each read with the thread before it). Haiku 5.5 did the labelling for $0.78; the file is <code>planning/anis-question-types-20261102.json</code>. Each message got a <b>lead type</b>, whose strategy drives the answer, and any <b>other types</b> whose strategies must also run. <b>3,343 (26%) need more than one</b>; see <a href="#combined">combined strategies</a> below.</p>
+    <p>For each type: real wordings, how often it occurs, the research strategy, and the answer it deserves. In each strategy, <span style="color:var(--accent)">◆</span> marks a decision Jev makes between options, and <span class="new">new</span> marks a tool we have not built. The answer shape is the contract we build and test against. These labels are Haiku's first pass, not checked gold; their confusions are listed under <a href="#jev-accuracy">making Jev accurate</a>.</p>
   </div>
 
   <span class="gtag">A · QUICK LOOKUPS · short question, short answer</span>
   <div class="scen"><h3>A1 · A fact</h3>
     <div><span class="k">Sounds like</span><q>when did sikhism arise</q> · <q>who wrote 108 upanishads</q> · <q>how old is avesta</q></div>
-    <div><span class="k">Evidence</span>≈ 9% of search wordings; scholarly families.</div>
+    <div><span class="k">How often</span><b>943</b> as the lead type (7.4%) · 108 more as a part of another<br><span class="note">Most often with: A1 + E2 (40) · A1 + A2 (32) · A1 + B4 (22)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Jev pulls out the subject: a person, work, place or event</li><li>Fact lookup: catalogue (<code>about_work</code>), biography (<code>people</code>), entity graph</li><li class="jev">◆ found in the record · not there → search the library for a sentence stating it</li><li class="jev">◆ one answer · sources disagree → give both with sources · nothing → E2</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>One to three sentences with the fact first, the source linked, and one line of context if it changes the meaning. No preamble and no essay. Under 3 seconds.</div></div>
   <div class="scen"><h3>A2 · Find a book or text</h3>
     <div><span class="k">Sounds like</span><q>Kitáb-i-Íqán pdf</q> · <q>read the Tablet of Ahmad online</q> · <q>God Passes By</q> (a bare title)</div>
-    <div><span class="k">Evidence</span>Largest single family (320); 403 wordings mention a book or PDF.</div>
+    <div><span class="k">How often</span><b>615</b> as the lead type (4.8%) · 99 more as a part of another<br><span class="note">Most often with: A1 + A2 (32) · A3 + A2 (18) · B1 + A2 (18)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Title index (<code>find_work</code>, fuzzy, all languages)</li><li class="jev">◆ one match → link · several → list, best first · none → nearest titles, then search by author or topic</li><li>Laid out from a template</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>The library's own copy, linked, with the title in italics as the link. One line on what it is. Nothing else unless asked. (Your rule from 11-01: the book, not a talk about it.)</div></div>
   <div class="scen"><h3>A3 · Find a passage by topic</h3>
     <div><span class="k">Sounds like</span><q>new testament verse about forgiveness</q> · <q>Where does Bahá'u'lláh say justice is the best beloved?</q></div>
-    <div><span class="k">Evidence</span>quote_find_passage family (68), "quote" in 423 wordings.</div>
+    <div><span class="k">How often</span><b>2,033</b> as the lead type (15.9%) · 692 more as a part of another<br><span class="note">Most often with: B1 + A3 (290) · A3 + B1 (76) · A3 + A6 (64)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>In parallel: library search on the topic (authoritative shelves first) · HyPE questions</li><li class="jev">◆ passage answers it · only mentions the topic · nothing → reword, or search another shelf</li><li><code>read_around</code> each kept hit; wording checked against the text</li><li class="jev">◆ one strong passage · several (2–4, by authority)</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>The passage itself, quoted exactly, linked to its paragraph. Then two or three more if the topic has several. The most authoritative source comes first.</div></div>
   <div class="scen"><h3>A4 · Who said this? Is this quote real?</h3>
     <div><span class="k">Sounds like</span><q>who said "the earth is but one country"</q> · fake Buddha and Rumi quotes</div>
-    <div><span class="k">Evidence</span>Two families (39 wordings); a frequent skeptic move.</div>
+    <div><span class="k">How often</span><b>1,404</b> as the lead type (11.0%) · 160 more as a part of another<br><span class="note">Most often with: A4 + B2 (32) · A4 + A5 (31) · A4 + E2 (30)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Exact-phrase search (phrase index)</li><li class="jev">◆ exact · close wording · paraphrase of a known passage · nothing</li><li>On a hit: <code>source_of</code>, then <code>trace_source</code> when the hit sits in a secondary book</li><li class="jev">◆ the book's own words · quoted from earlier, trace it · misattributed → find the real origin (web, labelled)</li><li>Laid out from a template: verdict, passage, author, work, paragraph</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A verdict first: found, found with different wording, or not found. Then the real passage with its link. If it is misattributed, say where the saying actually comes from when we can trace it.</div></div>
   <div class="scen"><h3>A5 · Look up a reference</h3>
     <div><span class="k">Sounds like</span><q>John 3:16</q> · <q>surah 2 ayah 255</q> · <q>Hidden Words Arabic 5</q></div>
-    <div><span class="k">Evidence</span>quote_verse_reference (10).</div>
+    <div><span class="k">How often</span><b>116</b> as the lead type (0.9%) · 179 more as a part of another<br><span class="note">Most often with: A4 + A5 (31) · G3 + A5 (21) · A3 + A5 (19)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Parse the reference: Bible, Qur'an, Gita, numbered Bahá'í texts <span class="new">new</span> (one parser; <code>tablets</code> covers part of the Bahá'í side)</li><li>Fetch the paragraph</li><li class="jev">◆ which translation or edition</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>The text, linked, with its translation named. Nothing more.</div></div>
   <div class="scen"><h3>A6 · What does this word mean?</h3>
     <div><span class="k">Sounds like</span><q>what does Tao Te Ching mean</q> · <q>sikh word for thank you</q> · <q>What does the name 'Abdu'l-Bahá mean?</q> (Immerse)</div>
-    <div><span class="k">Evidence</span>orig_word_meaning (54); ≈ 6.5% of wordings.</div>
+    <div><span class="k">How often</span><b>919</b> as the lead type (7.2%) · 316 more as a part of another<br><span class="note">Most often with: B1 + A6 (100) · A6 + B1 (90) · A3 + A6 (64)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li><code>word_study</code> and glossary</li><li class="jev">◆ a term of the Writings · a general religious term · a name</li><li><code>find_original</code> for script and transliteration; one passage that uses it</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>The meaning in one line, the original script and transliteration, and one passage where it is used. Offer a fuller word study if the term is central to the Writings.</div></div>
+
+  <div class="scen"><h3>A7 · Show me the original (or a translation) of this passage <span class="new">new type</span></h3>
+    <div><span class="k">Sounds like</span><q>Show me the Persian original of 'praiseworthy deeds and upright character…'</q> · <q>the Arabic of this verse</q> · <q>is there an English translation of this tablet?</q></div>
+    <div><span class="k">How often</span><b>221</b> messages, found when the classification put 194 of them under A4. A quotation lookup finds the passage; these need the next step too, so they get their own type.</div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>A4 to find the passage (exact phrase, then close wording)</li><li><code>find_original</code> or <code>find_translation</code> on the paragraph (cross-lingual alignment)</li><li class="jev">◆ aligned paragraph exists · only the whole work is paired → closest paragraph by alignment score, labelled · no original in the library → say so</li><li>Laid out from a template: the two texts side by side, both linked, the translator named</li></ol></div>
+    <div class="full"><span class="k">Ideal answer</span>The passage and its original (or translation) side by side, both linked, the translator named. Never a fresh translation.</div></div>
 
   <span class="gtag">B · UNDERSTANDING · the reader wants to learn</span>
   <div class="scen"><h3>B1 · What does tradition X teach about Y?</h3>
     <div><span class="k">Sounds like</span><q>what do christians believe happens after death</q> · <q>Do Bahá'ís believe in hell?</q></div>
-    <div><span class="k">Evidence</span>The largest shape (12%); 60 tradition families, 4,957 wordings.</div>
+    <div><span class="k">How often</span><b>2,139</b> as the lead type (16.7%) · 479 more as a part of another<br><span class="note">Most often with: B1 + A3 (290) · B1 + A6 (100) · A6 + B1 (90)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Jev fills in tradition, topic and any named author</li><li>In parallel: scripture · authoritative interpretation · HyPE questions</li><li class="jev">◆ enough · reword · search the originals · search a wider shelf</li><li><code>read_around</code> each hit</li><li class="jev">◆ for each passage: answers · only mentions · contradicts another hit</li><li>Sonnet writes, citation code checks every quote</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A direct answer in the first sentence, then 2–4 passages from that tradition's own scripture, quoted and linked, 150–300 words. Authority order: scripture first, then authoritative interpretation, then scholarship labelled as such.</div></div>
   <div class="scen"><h3>B2 · Explain this passage (while reading)</h3>
     <div><span class="k">Sounds like</span><q>what does "return" mean in this paragraph?</q> · <q>who is the "Pen of Glory" here?</q> · <q>summarise this chapter</q></div>
-    <div><span class="k">Evidence</span>None yet: we have no reading-mode logs. Immerse built side-by-side reading and cross-referencing for exactly this.</div>
+    <div><span class="k">How often</span><b>193</b> as the lead type (1.5%) · 112 more as a part of another<br><span class="note">Most often with: A4 + B2 (32) · G1 + B2 (19) · A3 + B2 (12)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Anchor: the paragraph the reader is on</li><li class="jev">◆ what to explain: a term · a person or event (→ B5, B4) · the argument · a summary</li><li><code>read_around</code>; the same term elsewhere by the same author; <code>find_original</code> for the key word</li><li>Sonnet, short, then offers more</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>Anchored to the paragraph the reader is on. Explain with the author's own words elsewhere (where else this is said, what the original term is). Short, and offer to go deeper. Never replace the text with a paraphrase.</div></div>
   <div class="scen"><h3>B3 · Why or how</h3>
     <div><span class="k">Sounds like</span><q>Why does God allow suffering?</q> · <q>How is Sikh monotheism different from Islamic tawhid?</q></div>
-    <div><span class="k">Evidence</span>≈ 5.4%; universal families such as suffering and evil (26).</div>
+    <div><span class="k">How often</span><b>417</b> as the lead type (3.3%) · 162 more as a part of another<br><span class="note">Most often with: B3 + D3 (39) · B3 + B1 (33) · A3 + B3 (22)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>As B1, but searching for the reason given (purpose, because, wisdom of) and for interpreters</li><li class="jev">◆ one authoritative explanation · interpreters differ → show each · no reason given in the texts → say so</li><li>Sonnet builds the reasoning one cited step at a time</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A clear line of reasoning built from cited passages, one step per passage. Name where interpreters differ. End with the one passage most worth reading in full.</div></div>
   <div class="scen"><h3>B4 · Tell me the story</h3>
     <div><span class="k">Sounds like</span><q>What is the story of the Báb's childhood in Shiraz?</q> · <q>Recount the life of Quddús before…</q> (both Immerse)</div>
-    <div><span class="k">Evidence</span>History families (11, ≈ 230 wordings); 3 of Immerse's 14.</div>
+    <div><span class="k">How often</span><b>182</b> as the lead type (1.4%) · 99 more as a part of another<br><span class="note">Most often with: A1 + B4 (22) · B4 + B5 (21) · B5 + B4 (19)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Resolve the person or event (entity graph)</li><li>Historical shelf in date order: Nabíl, <i>God Passes By</i>, Balyuzi; <code>read_around</code></li><li class="jev">◆ accounts agree · accounts differ → note where (C4)</li><li>Sonnet narrates, dated, each event cited</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A narrative in order, each event cited to its historical source (Nabíl, Shoghi Effendi, Balyuzi), with dates. Note where accounts disagree.</div></div>
   <div class="scen"><h3>B5 · Who was this person?</h3>
     <div><span class="k">Sounds like</span><q>Who was Ṭáhirih?</q> · <q>who is Kali?</q></div>
-    <div><span class="k">Evidence</span>meta_find_person (168).</div>
+    <div><span class="k">How often</span><b>257</b> as the lead type (2.0%) · 97 more as a part of another<br><span class="note">Most often with: B5 + A3 (47) · A3 + B5 (47) · B4 + B5 (21)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Biography record (<code>people</code>)</li><li class="jev">◆ which bearer of the name (a bare name means the most prominent one) · not in the record → search by name</li><li>Passages about them from the Writings</li><li>Short write-up; link the biography page</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>Who they were in two sentences, key dates, and the passages in the Writings about them. Link the biography page.</div></div>
 
   <span class="gtag">C · COMPARISON · the interfaith core</span>
   <div class="scen"><h3>C1 · Two traditions on one topic</h3>
     <div><span class="k">Sounds like</span><q>suffering in buddhism vs christianity</q> · <q>How does the Bahá'í soul differ from Hindu and Buddhist reincarnation?</q></div>
-    <div><span class="k">Evidence</span>27 cross families, 999 wordings.</div>
+    <div><span class="k">How often</span><b>270</b> as the lead type (2.1%) · 38 more as a part of another<br><span class="note">Most often with: C1 + B1 (17) · C1 + A3 (15) · C1 + D3 (13)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>B1 once per tradition, all in parallel</li><li class="jev">◆ each side: covered · thin → search wider · missing → say so</li><li>Sonnet writes one section per side in its own terms, then what is shared and what differs</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>One section per tradition, each in its own scripture's words and linked, then what is shared and what differs. Each side is treated with equal fairness and in its own terms. If our shelf for one side is thin, say so.</div></div>
   <div class="scen"><h3>C2 · X vs Y head to head</h3>
     <div><span class="k">Sounds like</span><q>confucianism vs taoism</q> · <q>difference between varna and jati</q></div>
-    <div><span class="k">Evidence</span>compare_tradition_pairs, the largest cross family (272).</div>
+    <div><span class="k">How often</span><b>518</b> as the lead type (4.0%) · 51 more as a part of another<br><span class="note">Most often with: C2 + E3 (13) · C2 + A6 (13) · C2 + B1 (11)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li class="jev">◆ what is compared: two traditions (→ C1) · two concepts in one tradition · two works or people · two practices</li><li>Retrieval for each side in parallel</li><li>Table of 4–6 points, a source on every row, then Sonnet's paragraph</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A short table of 4–6 points with a source on each row, then a paragraph. Offer to go deeper on one point.</div></div>
   <div class="scen"><h3>C3 · What do all religions say about X?</h3>
     <div><span class="k">Sounds like</span><q>Do all religions have an afterlife?</q> · <q>the Golden Rule in many religions</q></div>
-    <div><span class="k">Evidence</span>cross_what_do_religions_say (69); unity families (17).</div>
+    <div><span class="k">How often</span><b>259</b> as the lead type (2.0%) · 61 more as a part of another<br><span class="note">Most often with: D3 + C3 (19) · C3 + A3 (17) · A3 + C3 (13)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Fan out across all twelve traditions in parallel, best passage for each</li><li class="jev">◆ each tradition: a real passage · none → leave it out</li><li>Sonnet writes the survey and the pattern</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A survey: one quoted line per tradition (only the ones with a real passage), then the pattern. This is where the library's breadth is the product.</div></div>
   <div class="scen"><h3>C4 · Two accounts or translations of one thing</h3>
     <div><span class="k">Sounds like</span><q>Compare Shoghi Effendi's account of Badasht with Nabíl's</q> (Immerse) · <q>which Tao Te Ching translation is best</q></div>
-    <div><span class="k">Evidence</span>orig_translation_compare (16); intra-tradition branches (7).</div>
+    <div><span class="k">How often</span><b>23</b> as the lead type (0.2%) · 14 more as a part of another<br><span class="note">Most often with: G5 + C4 (4) · C4 + A1 (2) · C4 + A4 (2)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Find both works or translations (<code>about_work</code>, <code>find_translation</code>)</li><li>Align the matching passages (cross-lingual alignment)</li><li class="jev">◆ differences of meaning · of wording only</li><li>Side by side from a template; Sonnet notes which is authoritative</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>The two texts side by side on the points that differ, with links. Say which is authoritative and why, without retranslating.</div></div>
 
   <span class="gtag">D · PERSONAL AND PRACTICAL · the reader brings their life</span>
   <div class="scen"><h3>D1 · Grief, fear, doubt</h3>
     <div><span class="k">Sounds like</span><q>My grandmother passed away… will I recognise her?</q> · <q>How do I overcome doubt in my faith?</q></div>
-    <div><span class="k">Evidence</span>Rare in search (0.8%); central in our personas and seed pages.</div>
+    <div><span class="k">How often</span><b>65</b> as the lead type (0.5%) · 48 more as a part of another<br><span class="note">Most often with: D1 + B1 (15) · B1 + D1 (11) · D1 + B3 (11)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li class="jev">◆ wants comfort · wants meaning (→ B3) · a sign of crisis → point to real help first</li><li>Search the Writings and prayers for this specific loss or fear</li><li>Sonnet: short and warm, one or two passages in full, a prayer offered</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>Short and warm. One or two passages that speak to it, quoted in full. No lecture and no list. A gentle question back, or a prayer offered. Never preach.</div></div>
   <div class="scen"><h3>D2 · A prayer for an occasion</h3>
     <div><span class="k">Sounds like</span><q>prayer for healing</q> · <q>a prayer for someone who just died</q></div>
-    <div><span class="k">Evidence</span>occasion_prayers (20).</div>
+    <div><span class="k">How often</span><b>62</b> as the lead type (0.5%) · 8 more as a part of another<br><span class="note">Most often with: A3 + D2 (5) · D2 + D3 (4) · A4 + D2 (3)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Prayers by occasion <span class="new">new</span>: a prayer shelf indexed by occasion and need</li><li class="jev">◆ one clear occasion · several fit · none → closest prayers by theme</li><li>Laid out from a template: the prayer in full, two alternatives by title</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>The prayer itself in full, linked, with its source. One or two alternatives listed by title.</div></div>
   <div class="scen"><h3>D3 · Rules and practice</h3>
     <div><span class="k">Sounds like</span><q>is it haram to eat bugs</q> · <q>Can Bahá'ís drink alcohol?</q> · <q>bahai funeral traditions</q></div>
-    <div><span class="k">Evidence</span>7 practical families; ≈ 7% of wordings.</div>
+    <div><span class="k">How often</span><b>838</b> as the lead type (6.5%) · 213 more as a part of another<br><span class="note">Most often with: D3 + A3 (61) · B1 + D3 (50) · A3 + D3 (39)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>B1 restricted to law: Aqdas, Questions and Answers, compilations, letters</li><li class="jev">◆ clear law · custom, not law · a personal ruling → the right institution</li><li>Sonnet: yes, no or it depends in the first line, then the text</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>Yes, no or it depends, in the first line, then the text that says so. Separate law from custom. For personal rulings, point to the right institution rather than ruling.</div></div>
   <div class="scen"><h3>D4 · Community life and service</h3>
     <div><span class="k">Sounds like</span><q>How should Bahá'ís vote?</q> · <q>how can a community choose a neighbourhood for intense activity, per recent guidance</q> · <q>Can administrative roles have term limits?</q></div>
-    <div><span class="k">Evidence</span>≈ 12 of Immerse's 61, the largest group after doctrine. Missing from our survey and personas.</div>
+    <div><span class="k">How often</span><b>17</b> as the lead type (0.1%) · 5 more as a part of another<br><span class="note">Most often with: B3 + D4 (2) · D3 + D4 (2) · D4 + B3 (2)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Guidance by date <span class="new">new</span>: House of Justice messages indexed by date and topic, with what supersedes what</li><li class="jev">◆ current guidance found · superseded → give the current one · none → the Writings behind the practice</li><li>Sonnet: what to do, one passage per point</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>The current guidance first (the latest House of Justice message that applies, dated), then the Writings behind it. Say when guidance has been superseded. Practical and organised: what to do, with the passage for each point.</div></div>
   <div class="scen"><h3>D5 · Is it a cult? Should I join? How do I convert?</h3>
     <div><span class="k">Sounds like</span><q>is baha'i faith a cult</q> · <q>Why I Left the Baha'i Faith</q></div>
-    <div><span class="k">Evidence</span>bahai_beliefs is the highest-frequency tradition family; conversion in holidays_calendar_conversion (12).</div>
+    <div><span class="k">How often</span><b>63</b> as the lead type (0.5%) · 4 more as a part of another<br><span class="note">Most often with: D5 + D1 (5) · D5 + E3 (4) · D5 + C2 (3)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Fixed set of checked facts (no clergy, how one enrols, how the community is organised) plus B1 on the specific worry</li><li class="jev">◆ hostile · curious · ready to join → enrolment link</li><li>Sonnet: fair, calm, no pressure</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>Fair and calm. State the facts with sources, acknowledge the question honestly, and never pressure. The fireside teacher's moment.</div></div>
 
   <span class="gtag">E · CHALLENGE · the reader tests Anís</span>
   <div class="scen"><h3>E1 · Pushback and apparent contradiction</h3>
     <div><span class="k">Sounds like</span><q>Does the text really say that, or is that your interpretation?</q> · <q>How is equality reconciled with men-only House of Justice?</q></div>
-    <div><span class="k">Evidence</span>pushback move; 28 critical wordings; several seed pages.</div>
+    <div><span class="k">How often</span><b>59</b> as the lead type (0.5%) · 39 more as a part of another<br><span class="note">Most often with: E1 + B3 (17) · E1 + B1 (13) · B3 + E1 (12)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Recover the claim and the earlier answer from the thread</li><li>In parallel: the exact words of the passage · authoritative interpretation of it</li><li class="jev">◆ our answer overreached → concede · the text supports it → show it · a real tension → say so and cite the explanations</li><li>Sonnet</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>Concede what is interpretation. Show the exact words. Give the authoritative explanation where one exists and say plainly where none does. Never defend with vagueness.</div></div>
   <div class="scen"><h3>E2 · Something that isn't there</h3>
     <div><span class="k">Sounds like</span>A quote that doesn't exist, a ruling never made, a date not recorded.</div>
-    <div><span class="k">Evidence</span>absent move; your top concern after invented quotations.</div>
+    <div><span class="k">How often</span><b>219</b> as the lead type (1.7%) · 119 more as a part of another<br><span class="note">Most often with: A1 + E2 (40) · E2 + A3 (33) · A4 + E2 (30)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Run the strategy of the type asked for; this one takes over when that comes back empty</li><li class="jev">◆ a near match → offer it, labelled · not in the library · a web-only matter → web search, labelled</li><li>Template: <q>I can't find that in the library</q>, then the nearest real passage</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span><q>I can't find that in the library.</q> Then the closest real passage, labelled as such. Use the web only for things a library couldn't hold, and label it.</div></div>
   <div class="scen"><h3>E3 · Controversy</h3>
     <div><span class="k">Sounds like</span><q>what does christianity say about homosexuality</q> · abortion, euthanasia</div>
-    <div><span class="k">Evidence</span>sexuality_abortion_euthanasia (22, high frequency).</div>
+    <div><span class="k">How often</span><b>173</b> as the lead type (1.4%) · 213 more as a part of another<br><span class="note">Most often with: E3 + B1 (84) · B1 + E3 (63) · A3 + E3 (38)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>B1 with strict authority order; search both the law and the guidance on how to treat people</li><li class="jev">◆ the texts are clear · interpretation differs → show each, attributed</li><li>Sonnet, no editorial in either direction</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>The texts, quoted accurately and in context, with the authoritative guidance. No editorialising in either direction.</div></div>
 
   <span class="gtag">F · ASSIGNMENTS · the reader hands Anís a job</span>
   <div class="scen"><h3>F1 · Compile quotations on a theme</h3>
     <div><span class="k">Sounds like</span><q>Find quotes on the mystery of sacrifice and suffering</q> (Immerse) · <q>gather everything on detachment</q></div>
-    <div><span class="k">Evidence</span>Immerse's most-developed feature; user compilations shared in their feed.</div>
+    <div><span class="k">How often</span><b>84</b> as the lead type (0.7%) · 5 more as a part of another<br><span class="note">Most often with: F1 + A4 (14) · F1 + E3 (4) · F3 + F1 (3)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Plan shown to the reader (sub-themes, shelves)</li><li>Many searches in parallel, one per sub-theme</li><li class="jev">◆ each sub-theme: enough · thin → search wider · drop it</li><li>Remove duplicates, group, order by authority</li><li>Document; email when long. Sonnet plans and groups</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A grouped compilation: sections, each passage exact and linked, ordered by authority. Delivered as a document the reader can keep, print or email. Takes minutes; progress shown.</div></div>
   <div class="scen"><h3>F2 · Devotional program</h3>
     <div><span class="k">Sounds like</span><q>Put together a devotional program for the Twin Holy Birthdays</q> · <q>…for the next Feast</q> (3 of Immerse's 14)</div>
-    <div><span class="k">Evidence</span>Immerse leads with it in three newsletters.</div>
+    <div><span class="k">How often</span><b>4</b> as the lead type (0.0%) · 3 more as a part of another<br><span class="note">Most often with: F2 + A3 (2) · A5 + A4 + F2 (1) · F2 + D3 (1)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Calendar <span class="new">new</span>: which Feast or Holy Day, its theme</li><li>Prayers (D2) and readings (A3) on the theme in parallel</li><li class="jev">◆ length and audience: children · mixed · devotional gathering</li><li>Program template; Sonnet chooses and orders</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A ready-to-read program: opening prayer, 4–6 readings in order with who reads them, closing prayer, each linked. Knows the calendar (which Feast is next).</div></div>
   <div class="scen"><h3>F3 · Study session preparation</h3>
     <div><span class="k">Sounds like</span><q>I'm preparing a study session on the Íqán's treatment of "return"</q></div>
-    <div><span class="k">Evidence</span>study_leader persona; seed pages.</div>
+    <div><span class="k">How often</span><b>22</b> as the lead type (0.2%) · 18 more as a part of another<br><span class="note">Most often with: F3 + A3 (13) · A3 + F3 (6) · A1 + F3 (5)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>F1 on the topic, then <code>read_around</code> for the passages to read aloud</li><li class="jev">◆ audience: study circle · class · talk</li><li>Sonnet adds how the passages connect and 3–5 discussion questions; handout</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>The passages to read aloud, where they are, how they connect, and 3–5 discussion questions. A handout, not a chat reply.</div></div>
   <div class="scen"><h3>F4 · Timeline, chart or map</h3>
     <div><span class="k">Sounds like</span><q>Show me a timeline of the ministries of the Central Figures</q> (Immerse)</div>
-    <div><span class="k">Evidence</span>Immerse launched visuals in July.</div>
+    <div><span class="k">How often</span><b>30</b> as the lead type (0.2%) · 3 more as a part of another<br><span class="note">Most often with: F4 + B4 (4) · A2 + F4 (3) · F4 + B3 (3)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Dated events <span class="new">new</span>: from the entity graph and biography records, each with its source passage</li><li class="jev">◆ timeline · table · map</li><li>Template fills the visual; Haiku writes the captions</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A dated timeline where every event links to its source passage. Built from our dated facts; biography pages are the start.</div></div>
   <div class="scen"><h3>F5 · Research brief</h3>
     <div><span class="k">Sounds like</span><q>Trace how 'Abdu'l-Bahá uses "Most Great Justice" across his talks</q> · <q>How did Isfahání clerics respond to the Báb?</q> (Immerse)</div>
-    <div><span class="k">Evidence</span>scholar persona; Immerse "Ultra" mode.</div>
+    <div><span class="k">How often</span><b>9</b> as the lead type (0.1%) · 5 more as a part of another<br><span class="note">Most often with: F5 + C1 (3) · C1 + F5 (3) · F5 + C3 (2)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Deep-research job (<code>deep-research</code>): plan shown</li><li>Searches in parallel, <code>trace_source</code> on every key claim</li><li class="jev">◆ after each round: enough · another round · stop and report the gap</li><li>Report written by Opus, emailed</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A short report: the question, what was searched, findings with every claim cited, what remains uncertain. Sent by email when it takes more than a minute.</div></div>
   <div class="scen"><h3>F6 · Teach me over time</h3>
     <div><span class="k">Sounds like</span><q>a daily reading on justice</q> · <q>help me read the Íqán this month</q> · <q>quiz me on chapter 2</q></div>
-    <div><span class="k">Evidence</span>Immerse added daily readings on any topic (Sep); our reading-guide backlog.</div>
+    <div><span class="k">How often</span><b>14</b> as the lead type (0.1%) · 1 more as a part of another<br><span class="note">Most often with: F6 + A2 (2) · F6 + C2 (2) · C2 + F6 (1)</span></div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Reader memory <span class="new">new</span>: what they read and where they stopped</li><li>A reading plan built from the work's structure</li><li class="jev">◆ each session: next portion · review · question to check understanding</li><li>Scheduled sends; Sonnet</li></ol></div>
     <div class="full"><span class="k">Ideal answer</span>A plan the reader agrees to, then Anís keeps it: remembers where they are, sends the next portion, checks understanding gently.</div></div>
+
+  <span class="gtag">H · OPENERS AND THE LIBRARY ITSELF</span>
+  <div class="scen"><h3>H1 · About Anís or the library</h3>
+    <div><span class="k">Sounds like</span><q>which religions are in the library</q> · <q>what are you?</q> · <q>free online sacred texts</q></div>
+    <div><span class="k">How often</span><b>30</b> as the lead type (0.2%)</div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Live library counts from the corpus status report</li><li class="jev">◆ about the library · about Anís · a greeting</li><li>Template answer with the numbers and two things to try</li></ol></div>
+    <div class="full"><span class="k">Ideal answer</span>Short, with real numbers, and an invitation to ask.</div></div>
+  <div class="scen"><h3>H2 · A bare word or a pasted fragment</h3>
+    <div><span class="k">Sounds like</span><q>Mashriqu'l-Adhkár</q> · <q>confucius history</q> · <q>river of life-giving waters and may yield</q></div>
+    <div><span class="k">How often</span><b>455</b> as the lead type (3.6%). <b>302 of them are pasted passages</b> of five words or more without quotation marks; they are really A4, and Jev must treat them so.</div>
+    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Phrase index first, quotation marks or not</li><li class="jev">◆ the text matches a passage → A4 · a title → A2 · a name → B5 · a term → A6 · a topic → A3 with a short answer</li><li>Short answer, then two directions offered</li></ol></div>
+    <div class="full"><span class="k">Ideal answer</span>The most likely reading answered briefly, and two directions offered. A question back only when no reasonable answer is possible.</div></div>
 
   <span class="gtag">G · CONVERSATION MOVES · these happen inside every group above</span>
   <div class="wrap"><table>
-    <tr><th>Move</th><th>Sounds like</th><th>What Anís must do</th></tr>
-    <tr><td>Refer back</td><td><q>the second one</q> · <q>that passage</q></td><td>Resolve it to the exact item from his last reply.</td></tr>
-    <tr><td>Source?</td><td><q>who wrote that, and where is it?</q></td><td>Author, work, paragraph, link.</td></tr>
-    <tr><td>Exact words</td><td><q>what are the actual words?</q></td><td>Quote verbatim, linked. Never paraphrase again.</td></tr>
-    <tr><td>Deepen</td><td><q>what does "detachment" really mean there?</q></td><td>Word study, other uses, original term.</td></tr>
-    <tr><td>Compare</td><td><q>how does that compare with the Gita?</q></td><td>Switch to C1 with the earlier topic carried over.</td></tr>
-    <tr><td>Push back</td><td><q>isn't that just your reading?</q></td><td>E1.</td></tr>
-    <tr><td>Reshape</td><td><q>shorter</q> · <q>in Persian</q> · <q>simpler, for my kids</q> · <q>email me this</q></td><td>Same content, new form. Don't search again.</td></tr>
-    <tr><td>Change topic</td><td>a new, unrelated question</td><td>Notice it and drop the old context.</td></tr>
-    <tr><td>Vague opener</td><td><q>tell me about God</q> · a bare title</td><td>Give a good short answer and offer two directions. Ask a question only when no reasonable answer is possible.</td></tr>
+    <tr><th>Move</th><th>Lead · also</th><th>Sounds like</th><th>What Anís must do</th></tr>
+    <tr><td>Refer back</td><td class="n">66 · 4</td><td><q>the second one</q> · <q>that passage</q></td><td>Resolve it to the exact item from his last reply.</td></tr>
+    <tr><td>Source?</td><td class="n">65 · 40</td><td><q>who wrote that, and where is it?</q></td><td>Author, work, paragraph, link.</td></tr>
+    <tr><td>Exact words</td><td class="n">67 · 13</td><td><q>what are the actual words?</q></td><td>Quote verbatim, linked. Never paraphrase again.</td></tr>
+    <tr><td>Deepen</td><td class="n">17 · 1</td><td><q>what does "detachment" really mean there?</q></td><td>Word study, other uses, original term.</td></tr>
+    <tr><td>Compare</td><td class="n">57 · 11</td><td><q>how does that compare with the Gita?</q></td><td>Switch to C1 with the earlier topic carried over.</td></tr>
+    <tr><td>Push back</td><td class="n">96 · 21</td><td><q>isn't that just your reading?</q></td><td>E1.</td></tr>
+    <tr><td>Reshape</td><td class="n">0</td><td><q>shorter</q> · <q>in Persian</q> · <q>simpler, for my kids</q> · <q>email me this</q></td><td>Same content, new form. Don't search again.</td></tr>
+    <tr><td>Change topic</td><td class="n">–</td><td>a new, unrelated question</td><td>Notice it and drop the old context.</td></tr>
+    <tr><td>Vague opener</td><td class="n">H2</td><td><q>tell me about God</q> · a bare title</td><td>Give a good short answer and offer two directions. Ask a question only when no reasonable answer is possible.</td></tr>
   </table></div>
   <p class="note" style="margin-top:10px">The same words can be either kind of message. <q>What about Islam?</q> after an answer on fasting is a comparison follow-up; as a first message it is a new question. <q>The second one</q> means nothing without the last reply. So every message is read together with its thread before it is classified.</p>
+  <p class="note">In the conversation runs, 336 of the 393 turns that follow an earlier turn are follow-up moves, and <b>389 of the 412 turns need more than one strategy</b>: the move, plus the strategy of what it asks for (a pushback that questions a citation runs E1 and A4; <q>which Hidden Word is that?</q> runs refer-back and A5). No test message asks for a reshape (<q>shorter</q>, <q>in Persian</q>, <q>email me this</q>), so the conversation runs must add them.</p>
+</section>
+
+<section id="combined">
+  <h2>Questions that need more than one strategy</h2>
+  <p>One message in four (3,343 of 12,808) needs more than one strategy, and so do 34 of Immerse's 61. Only 96 need three or more. The common sets repeat, so each becomes a <b>combined strategy</b>: the strategies run in parallel where they don't depend on each other, share what they find, and one writing step produces one answer.</p>
+  <div class="wrap"><table>
+    <tr><th>Set</th><th class="n">Count</th><th>Real example</th><th>How they combine</th></tr>
+    <tr><td>B1 teaching + A3 passages</td><td class="n">366</td><td><q>whats the bahai teaching on life after death, sources plz</q></td><td>One search serves both: B1's passages are quoted in full rather than paraphrased.</td></tr>
+    <tr><td>B1 teaching + A6 word</td><td class="n">190</td><td><q>What does Islamic teaching say about Ikhlas?</q></td><td>The word study (original term, meaning) runs beside the teaching search; the answer opens with the meaning.</td></tr>
+    <tr><td>B1 teaching + E3 controversy</td><td class="n">147</td><td><q>What does Buddhism say about homosexuality?</q> · <q>can christians believe in evolution</q></td><td>B1 with E3's rules: strict authority order, both the law and the guidance on treating people, no editorial.</td></tr>
+    <tr><td>D3 rules + A3 passages</td><td class="n">100</td><td><q>What do Jewish scriptures teach about kosher dietary practices?</q> · <q>bahai funeral rites</q></td><td>Yes or no first, then the passage that says so in full.</td></tr>
+    <tr><td>A3 passages + A6 word</td><td class="n">95</td><td><q>Where does it say what dharma means? I want to read the explanation myself.</q></td><td>Search the term in its original and translated forms; one line of meaning above the passages.</td></tr>
+    <tr><td>A3 passages + B5 person</td><td class="n">94</td><td><q>Who is Ghoddus, and where in the texts is he mentioned?</q></td><td>Resolve the person first (which bearer of the name), then search passages about them.</td></tr>
+    <tr><td>B1 teaching + D3 rules</td><td class="n">81</td><td><q>do christians believe in cremation</q></td><td>Separate the teaching (why) from the rule (what), each cited.</td></tr>
+    <tr><td>A1 fact + E2 not there</td><td class="n">56</td><td><q>Who wrote the Hidden Words? I have it down as Shoghi Effendi's work.</q></td><td>The false premise is checked first; the answer corrects it, then gives the real fact.</td></tr>
+    <tr><td>A4 quotation + A5 reference / B2 explain</td><td class="n">41 · 41</td><td><q>where does it say be generous in prosperity… I want to read the full context</q></td><td>Find the source (template), then <code>read_around</code> and, for B2, a short explanation below it.</td></tr>
+    <tr><td>C1 traditions + A3 passages</td><td class="n">12</td><td><q>Find where the scriptures of Islam and Judaism each talk about fasting, and how each one views it</q></td><td>The per-tradition searches double as the passage finder; each section quotes its own scripture.</td></tr>
+    <tr><td>Follow-up move + the type it asks for</td><td class="n">389 of 412 turns</td><td><q>That passage you quoted is from 'Abdu'l-Bahá, not Bahá'u'lláh…</q></td><td>The move resolves what is meant from the thread; the type's strategy then runs, starting from the passages already found.</td></tr>
+  </table></div>
+  <p style="margin-top:10px"><b>The rule for combining.</b> Jev names the lead type and the others in one classification. The lead decides the shape of the answer; the others add steps to the plan, not separate answers. Steps that don't depend on each other run in parallel; a premise check (E2) or a name resolution (B5) runs first because the rest depends on it. The writing model gets everything found and writes once, so nothing is said twice. Each common set is logged and judged as its own strategy, so a combination that keeps losing gets its own tree.</p>
+  <p class="note">Every example is a real test message from that set. Each count is one exact set of types (lead and others, in any order).</p>
 </section>
 
 <section>
@@ -360,6 +437,16 @@ q{font-style:italic;quotes:"“" "”"}
   </table></div>
   <p style="margin-top:10px">This fits the 11-01 rule: quality first, speed earned. A route is switched on only after it scores as well as the full agent on its scenario's tests. Every routed answer is logged and judged; a wrong route becomes a Jev training example; a route that slips is switched off until fixed.</p>
 
+  <h3>One reply in three parts</h3>
+  <p>The reader should never wait in silence, and never read the same thing twice. Every research answer arrives in up to three parts, all from one writing step, so the details never repeat the summary.</p>
+  <div class="stage">
+    <div><b>1 · AT ONCE (under 1 s)</b>What Anís understood and is doing, in the reader's words: <q>Looking for what Bahá'u'lláh and the Buddha say about the soul after death…</q> Then progress as it happens: <q>found 6 passages, reading the two strongest</q>. Written by template from Jev's classification, not by a model. Lookups (book, quotation, reference) skip this: they are answered in under a second.</div>
+    <div><b>2 · THE ANSWER (short)</b>The direct answer: two to five sentences and the one or two passages that carry it, quoted and linked. For most questions this is the whole reply.</div>
+    <div><b>3 · THE DETAILS (when warranted)</b>Only what part 2 left out: the further passages, each side of a comparison, the points of interpretation, the history. Then the next step offered. Left out when part 2 is complete, and always for short questions.</div>
+  </div>
+  <p style="margin-top:10px"><b>How it runs.</b> Part 1 goes out the moment Jev has classified the message. The research runs once. The writing model receives everything found and produces parts 2 and 3 as one piece of writing in two sections, so it decides what belongs where and never says the same thing twice. Part 2 is streamed first and the reader can start reading while part 3 is still being written. Whether part 3 is needed is decided at the <q>before writing</q> decision point (below), from the type and from how much was found; the decision and the reader's reaction (did they ask for more, or for less) are logged like every other.</p>
+  <p class="note">Measured per type: time to part 1, time to part 2, how often part 3 is written, and judge findings of repetition between parts 2 and 3 (target 0).</p>
+
   <h3>Jev at every decision point, not just the first</h3>
   <p>Routing the question is the first branch, not the only one. A research plan is a small map of steps with <b>decision points</b> between them, and at each one Jev reads what has been found so far and picks the next step, in about a tenth of a second. An open agent makes the same choices by writing a model turn each time, 2–5 s apiece. A plan with five decisions then costs about half a second of thinking instead of 10–25 s, and only the final answer is written by Sonnet.</p>
   <div class="wrap"><table>
@@ -370,7 +457,7 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>A named person or work</td><td>which bearer of the name · which edition or translation</td></tr>
     <tr><td>Does this passage answer?</td><td>answers it · only mentions the topic · contradicts another hit</td></tr>
     <tr><td>Comparison, each side</td><td>this tradition is covered · thin, search wider · the library lacks it, say so</td></tr>
-    <tr><td>Before writing</td><td>answer now · ask the one question that matters · offer it as an assignment</td></tr>
+    <tr><td>Before writing</td><td>answer now · ask the one question that matters · offer it as an assignment; and whether the reply needs part 3 (details)</td></tr>
   </table></div>
   <p style="margin-top:10px">Each decision point is its own Jev task, with its own log, its own labelled examples and its own accuracy figure, which is the way Jev's log is already kept for training Laya. Where two branches are cheap, both run at once and the decision picks a result instead of waiting.</p>
 
@@ -395,7 +482,15 @@ q{font-style:italic;quotes:"“" "”"}
   </ol>
   <p class="note">Reported weekly, never answers to grade: per type and per tree version, win rate against Perplexity, accuracy of each decision point, share of runs finished without the agent, time and cost per answer, and new types or options added.</p>
 
-  <h3>Making Jev's classification accurate</h3>
+  <h3 id="jev-accuracy">Making Jev's classification accurate</h3>
+  <p><b>What the first classification shows.</b> Haiku's first pass over the 12,808 messages already shows where the definitions are weak. These go first into the definitions and contrasting examples:</p>
+  <ul>
+    <li><b>A pasted passage without quotation marks</b> (302 messages) was called a vague opener (H2). It is a quotation lookup. The deterministic check must run the phrase index on any fragment of five words or more, marked or not.</li>
+    <li><b>"Show me the original of …"</b> (221) was called a quotation lookup (A4). It is a new type, A7, with its own strategy.</li>
+    <li><b>23 messages with no thread were called follow-ups</b>, mostly <q>this passage beginning with …</q>. A message that carries its own text is never a follow-up.</li>
+    <li><b>"… in Hindi", "… in Telugu"</b> (330): the language is a parameter of the request (reply in that language, prefer the library's translations), not a type of its own.</li>
+    <li><b>Candidate new types</b> (too few to build yet; tracked): recommend a translation or edition (≈ 10, now under C4), quiz me (2, under F6), outside the library's scope (≈ 6, to E2).</li>
+  </ul>
   <ol>
     <li><b>Small questions, not one big one.</b> Jev answers a short chain, each a choice with a probability: new question or follow-up (and which move) → group (A–G) → scenario → parameters (traditions, language, named work or person, occasion). Each step has a written definition and examples, and a choice Jev is unsure of shows up as low probability rather than a confident wrong guess.</li>
     <li><b>A labelled set to measure against.</b> The real questions and the generated conversations are labelled by Opus with the thread in view, I check a sample per class, and the labels are stored as gold answers in Jev's log (it already keeps them for training Laya). Part is kept aside as a held-out test.</li>
