@@ -192,13 +192,16 @@ def process(d, runner=subprocess.run, py=sys.executable, tools=TOOLS, transcribe
         out['ok'] = True; out['held'] = True; out['why'] = 'realign placed too few words'
         out['qa'] = keep_assessment(out['qa'], verdict(None, None, g_first or g, bw, maxp, 'realign placed too few words on the restored copy'))
         return out
-    # 4. silence where nobody speaks (quiet.py, Chad 10-29): the restorer turns background-only stretches into noise; a voiced stretch the transcript missed is kept
-    if not cfg.get('selftest'):
+    # 4. quiet v2 (Chad 11-01): apply the spans the GPU host decided and proved (post/quiet.json, quiet.py) to this working copy; no quiet.json = nothing is silenced and no quiet is recorded (never guess)
+    qj = os.path.join(post, 'quiet.json')
+    if not cfg.get('selftest') and os.path.exists(qj):
         try:
-            if silence is None: import quiet; silence = quiet.apply
-            q = cpu_phase(silence, flac, json.load(open(work)), json.load(open(rj)) if rj and os.path.exists(rj) else None)
-            out['quiet'] = q
-            out['qa']['metrics'].update({'quiet_s': q['quiet_s'], 'noise_silenced_s': q['loud_s'], 'voiced_kept_s': round(sum(b - a for a, b, _ in q['voiced_kept']), 1)})
+            if silence is None: import quiet; silence = lambda src_, q_: quiet.apply(src_, q_, src_ + '.quiet.flac')
+            q = json.load(open(qj))
+            cpu_phase(silence, flac, q)
+            if os.path.exists(flac + '.quiet.flac'): os.replace(flac + '.quiet.flac', flac)
+            out['quiet'] = {k: q.get(k) for k in ('version', 'fade', 'spans', 'silenced_s', 'loud_stretches', 'loud_silenced_s', 'vad_kept', 'vad_kept_s', 'asr_kept', 'asr_kept_s', 'proof', 'rule')}
+            out['qa']['metrics'].update({'quiet_s': q['silenced_s'], 'noise_silenced_s': q['loud_silenced_s'], 'loud_stretches': q['loud_stretches'], 'vad_kept_s': q['vad_kept_s'], 'asr_kept_s': q['asr_kept_s']})
         except Exception as err:     # never publish the unsilenced copy (it is what Chad rejected)
             out['ok'] = True; out['held'] = True; out['why'] = f'silencing failed here: {str(err)[-160:]}'
             out['qa'] = keep_assessment(out['qa'], verdict(None, None, g_first or g, bw, maxp, out['why']))

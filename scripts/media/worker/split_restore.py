@@ -15,20 +15,20 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
 import post as postmod
 
-GUARD_OUT, REALIGN_OUT = 'post/guard.out.json', 'post/realign.out.json'
-TRANSIT_OGG, TRANSIT_JSON = 'post/unipase.ogg', 'post/transit.json'
+GUARD_OUT, REALIGN_OUT, QUIET_JSON = 'post/guard.out.json', 'post/realign.out.json', 'post/quiet.json'
+TRANSIT_OGG, TRANSIT_JSON = 'post/unipase.opus', 'post/transit.json'
 TRANSIT = {'codec': 'libopus', 'b': '96k', 'ar': 48000, 'ac': 1, 'application': 'audio'}
 
 
 def ff(args): subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y'] + args, check=True)
 
 
-def send(d, f):
-    """gpu host: the guarded copy leaves as Opus; the FLAC and the empty raw-copy placeholder stay here."""
+def send(d, f, drop=True):
+    """The guarded copy is stored as Opus (the UniPASE stage); with drop the FLAC and the raw copy are removed here."""
     ff(['-i', f['flac'], '-ac', str(TRANSIT['ac']), '-ar', str(TRANSIT['ar']), '-c:a', TRANSIT['codec'], '-b:a', TRANSIT['b'], '-application', TRANSIT['application'],
         os.path.join(d, TRANSIT_OGG)])
     json.dump({'tool': 'ffmpeg ' + TRANSIT['codec'], 'settings': TRANSIT}, open(os.path.join(d, TRANSIT_JSON), 'w'))
-    for p in (f['flac'], f['out']):
+    for p in ((f['flac'], f['out']) if drop else ()):
         if os.path.exists(p): os.remove(p)
 
 
@@ -39,7 +39,7 @@ def receive(d):
     ogg = os.path.join(d, TRANSIT_OGG)
     if os.path.exists(ogg) and not os.path.exists(f['flac']):
         ff(['-i', ogg, '-ac', '1', '-ar', str(TRANSIT['ar']), '-c:a', 'flac', f['flac']])
-    if os.path.exists(ogg): os.remove(ogg)      # adoptPost copies post/** onward: the FLAC is the master from here
+    # the Opus stays: it is the kept UniPASE stage (enhanced/unipase.opus, never overwritten); the decoded FLAC is this host's working copy only (finish() removes it)
     if not os.path.exists(f['out']): open(f['out'], 'w').close()
     tj = os.path.join(d, TRANSIT_JSON)
     return json.load(open(tj)) if os.path.exists(tj) else None
@@ -62,6 +62,30 @@ def paths(d):
 def realign_cmd(py, flac, threads, work, out):
     """post.py run_realign's command, exactly (the replay matches on it)."""
     return [py, os.path.join(postmod.TOOLS, 'media_tool.py'), 'realign', flac, '--threads', str(threads), '--segments', work, '--output', out]
+
+
+def decide_quiet(d, cfg, src, f, torch, worker):
+    """Quiet v2's decision (post/quiet.json), on the GPU host where whisper loads: the transcripts + Silero VAD on the original and the remaster + a whisper listen to the ORIGINAL
+    around every candidate span (a word heard = kept, asr_kept). No CPU fallback: any failure fails the job. The spans are proven (quiet.prove) before they are written."""
+    import quiet
+    from faster_whisper import decode_audio
+    from worker.gpu_lease import lease
+    j = lambda p: json.load(open(p)) if os.path.exists(p) else None
+    words = quiet.words_of(j(f['work']) or {}, j(f['realign']), j(f['asr']), j(f['ref']))
+    dur = quiet.probe(f['flac'])[2]
+    vo, vr = quiet.vad_segments(src), quiet.vad_segments(f['flac'])
+    orig = decode_audio(src, sampling_rate=16000)
+    with lease('restore_asr'):
+        asr = worker.new_asr('/opt/models/weights/whisper', 'cuda')
+        def heard(a, b):
+            segs, _ = asr.transcribe(orig[int(a * 16000):int(b * 16000)], word_timestamps=True, vad_filter=False, beam_size=5, condition_on_previous_text=False)
+            return any((s.words or s.text.strip()) for s in segs)
+        q = quiet.decide(dur, words, vo, vr, heard, lambda a, b: quiet.rms_db(f['flac'], a, b))
+        del asr; gc.collect(); torch.cuda.empty_cache()
+    bad = quiet.prove(q, words, vo, vr)
+    if bad: raise RuntimeError('quiet: a silenced span holds speech: ' + json.dumps(bad[:3]))
+    q['proof'] = {'checked_spans': len(q['spans']), 'violations': 0, 'words': len(words), 'vad_orig': len(vo), 'vad_rem': len(vr)}
+    json.dump(q, open(os.path.join(d, QUIET_JSON), 'w'))
 
 
 def gpu(d):
@@ -97,9 +121,11 @@ def gpu(d):
         except Exception as err:     # recorded: post.py on the finishing host gets the same failure (its "realign unavailable" path), not a crash here
             rec = {'error': (str(err) + ' ' + (getattr(err, 'stderr', '') or ''))[-500:]}
         json.dump(rec, open(os.path.join(d, REALIGN_OUT), 'w'))
-    if os.environ.get('SIFTER_TRANSIT') == '1':      # a typed gpu job: the guarded copy crosses hosts (phases.mjs split)
-        stage(d, 'transit'); send(d, f)              # the raw copy was guarded into post/unipase.flac; neither FLAC travels
-    else: open(f['out'], 'w').close()               # a whole job on one host: the raw copy's bytes are dropped, the guarded FLAC stays
+    if not cfg.get('selftest'):
+        stage(d, 'quiet'); decide_quiet(d, cfg, src, f, torch, worker)
+    # the guarded copy is ALWAYS kept as the UniPASE stage (Opus, never overwritten); a typed gpu job also drops the FLAC + raw copy (nothing decoded crosses hosts, phases.mjs split)
+    stage(d, 'transit'); send(d, f, drop=os.environ.get('SIFTER_TRANSIT') == '1')
+    if os.environ.get('SIFTER_TRANSIT') != '1': open(f['out'], 'w').close()      # a whole job on one host: the raw copy's bytes are dropped, the working FLAC stays until finish() removes it
     stage(d, 'complete')
 
 
@@ -148,6 +174,8 @@ def finish(d, run=subprocess.run, silence=None):
         err = os.path.join(d, 'post.error.txt')
         why = open(err).read()[-1200:] if os.path.exists(err) else json.dumps({k: (res or {}).get(k) for k in ('ok', 'held', 'web', 'why')})
         raise RuntimeError('Incomplete restoration result; no publication: ' + why)
+    for p in (os.path.join(d, 'post', 'unipase.flac'), os.path.join(d, 'post', 'unipase.flac.quiet.flac')):
+        if os.path.exists(p): os.remove(p)      # working copies: nothing decoded travels or is stored
     stage(d, 'complete')
     return res
 

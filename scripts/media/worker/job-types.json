@@ -52,7 +52,7 @@
         "tree": "item",
         "files": ["meta.json", "transcript.raw.json", "diarization.json", "waveform.json"],
         "restore_files": ["transcript.work.json", "restore/job.json", "restore/work.json", "restore/asr.json", "restore/asr_orig.json", "restore/restore-result.json",
-          "restore/post/unipase.ogg", "restore/post/transit.json", "restore/post/restored.guard.json", "restore/post/guard.out.json", "restore/post/realign.json", "restore/post/realign.out.json"],
+          "restore/post/unipase.opus", "restore/post/quiet.json", "restore/post/transit.json", "restore/post/restored.guard.json", "restore/post/guard.out.json", "restore/post/realign.json", "restore/post/realign.out.json"],
         "_": "files = always; restore_files = whenever the talk has words to restore (every talk in production; not on restore:false or a wordless recording; realign.* absent on the image selftest). Uploaded: everything under item/ except original/ and the probe variants (enhanced/light.flac, enhanced/dfn.flac). restore/ = scripts/media/worker/split_restore.py gpu: job.json = the post config ({kind:'restore', post:{…, words_key}}); the guarded copy (lag-shifted + loudnorm) travels as post/unipase.ogg, Opus 96k mono 48 kHz (post/transit.json = tool + settings): no FLAC or other decoded audio is ever stored in the cloud (Chad 10-31), and no empty out.flac — cpu-finish decodes post/unipase.flac back and recreates the placeholder (split_restore.py receive; a result with post/unipase.flac, from before, is read as is); post/guard.out.json + post/realign.out.json = the recorded outputs of remaster_guard.py and media_tool realign, which cpu-finish's post.py replays (same commands) instead of rerunning"
       }
     },
@@ -70,7 +70,7 @@
         "result": "result.json",
         "tree": "item",
         "files": ["meta.json", "transcript.raw.json", "transcript.work.json", "diarization.json", "waveform.json",
-          "web/{slug}.ogg", "web/{slug}.m4a", "enhanced/unipase.flac", "enhanced/unipase.guard.json", "…every file result.json lists"],
+          "web/{slug}.ogg", "web/{slug}.m4a", "enhanced/unipase.opus", "enhanced/quiet.json", "enhanced/unipase.guard.json", "…every file result.json lists"],
         "_files": "never enhanced/pod/*: item.js consumes the worker's post.json there and deletes the directory once the web encodes are taken (podForget); tower adopts from meta.json (10-31: requiring post.json refused every finish).",
         "_": "a complete whole-recording result: tower adopts it with adoptWholeResult (whole-result.js) exactly as a `whole` job's"
       }

@@ -137,6 +137,7 @@ def main():
     check('ffmpeg', lambda: sh(['ffmpeg', '-hide_banner', '-encoders']).count('libopus') and 'libopus ok' or (_ for _ in ()).throw(RuntimeError('ffmpeg has no libopus')))
     check('env HF_HOME / aligners / whisper cache', env_ok)
     check('weights', weights)
+    check('silero vad (quiet v2, offline)', lambda: sh([sys.executable, '-c', "import numpy as np; from faster_whisper.vad import get_speech_timestamps, VadOptions; get_speech_timestamps(np.zeros(16000, dtype='float32'), VadOptions()); print('vad ok')"]))
     check('imports (system python)', lambda: imports(sys.executable, ['torch', 'whisperx', 'faster_whisper', 'soundfile', 'scipy', 'numpy', 'einops', 'omegaconf']))
     if os.path.exists(f'{GATE}/venv/bin/python'):
         check('imports (gate venv)', lambda: imports(f'{GATE}/venv/bin/python', ['torchmetrics', 'librosa', 'onnxruntime', 'soundfile', 'faster_whisper']))

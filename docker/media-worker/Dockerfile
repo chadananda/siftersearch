@@ -19,6 +19,7 @@ COPY requirements.lock /tmp/requirements.lock
 RUN set -eo pipefail; python --version; python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio|triton)==' | tee /tmp/base-pins.txt; \
     python -m pip install -r /tmp/requirements.lock 2>&1 | tail -25; \
     python -c "import torch, whisperx, faster_whisper, soundfile, einops, omegaconf; print('deps ok, torch', torch.__version__)"; \
+    python -c "import numpy as np; from faster_whisper.vad import get_speech_timestamps, VadOptions; get_speech_timestamps(np.zeros(16000, dtype='float32'), VadOptions()); print('silero vad (bundled onnx) ok')"; \
     python -m pip freeze | grep -iE '^(torch|torchvision|torchaudio|triton)==' | diff /tmp/base-pins.txt - && echo 'torch family unchanged (no second torch)'
 
 # UniPASE code (pinned commit) + checksummed weights
