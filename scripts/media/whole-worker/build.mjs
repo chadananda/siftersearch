@@ -6,7 +6,7 @@ import {build} from 'esbuild';
 // the image dies at the end of a 40-min job with ERR_MODULE_NOT_FOUND (10-30: ./quiet-repair.js) — bundle it or make it static instead.
 // ./quiet-repair.js is server-only since 10-31: the item.js `quiet` stage (ssh to a home host) never runs on the worker (phases.mjs `only` lists omit it; post.py does quiet).
 const SERVER_ONLY=new Set(['../drain.js','../model-roles.js','../ops/media-jobs.js','../repos/media-ledger-repo.js','../repos/media-repo.js','../repos/ops-report-repo.js',
- './assess.js','./biography-candidates.js','./dedupe.js','./edge-purge.js','./item.js','./headings.js','./quiet-repair.js','./identity.js','./ingest.js','./links.js','./llm.js','./preview.js','./quotes.js','./tools.js','./youtube.js']);
+ './assess.js','./biography-candidates.js','./dedupe.js','./edge-purge.js','./item.js','./headings.js','./quiet-repair.js','./identity.js','./ingest.js','./links.js','./llm.js','./preview.js','./quotes.js','./realign-remote.js','./tools.js','./youtube.js']);
 const unlisted=new Set();
 // argv[2] = the whole job's bundle; the typed jobs' bundles go beside it (job-types.json `cmd`: /opt/sifter/api/lib/media/{cpu-prep,gpu,cpu-finish}.mjs)
 const whole=process.argv[2]||'tmp/whole-worker/api/lib/media/whole-recording.mjs';
