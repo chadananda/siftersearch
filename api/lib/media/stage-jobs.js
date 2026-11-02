@@ -98,7 +98,8 @@ export function validateTyped(type, r, { inputSha, slug, outputs = null } = {}) 
  *  (results/<prev id>/item/<path>, sha256-checked by the worker). All steps share the original's staged file id. Pure. */
 export function typedJob(type, { itemId, fileId, wj, prev = null, band = 0, audio_s = 0, bytes = 0 }) {
   const key = fpOf(type, { sha: wj.input_sha, prev: prev?.id || null });
-  const job = { v: 1, type, contract: CONTRACT.contract, id: itemId, input: wj.input, input_sha: wj.input_sha, threads: wj.threads || 2, ...(type === 'cpu-prep' ? { meta: wj.meta } : {}) };
+  const job = { v: 1, type, contract: CONTRACT.contract, id: itemId, input: wj.input, input_sha: wj.input_sha, threads: wj.threads || 2, ...(type === 'cpu-prep' ? { meta: wj.meta } : {}),
+    ...(type === 'cpu-prep' && wj.chain_input ? { chain_input: wj.chain_input } : {}) };   // { how: 'opus'|'demux' }: prep makes the chain's audio input (chain-input.mjs)
   // prev.staged: the step runs on the other transport, so tower copied the previous files into this queue's files/<file id>/item/**
   const inputs = (prev?.files || []).map((f) => ({ name: 'item/' + f.path, store: prev.staged ? 'files' : 'results', id: prev.staged ? fileId : prev.id, path: 'item/' + f.path, sha256: f.sha256 }));
   return { id: `${type}-${itemId}-${key}`, file_id: fileId, item_id: itemId, type, stages: [type], contract: CONTRACT.contract, band, priority: 0,

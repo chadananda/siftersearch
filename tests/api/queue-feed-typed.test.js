@@ -7,7 +7,7 @@ import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import * as Q from '../../worker/queue/core.js';
 import { feed, pull, tick as qtick, forgiveOurs, adoptEdgeGpu, adoptFinish, feedBeside, shaOf } from '../../api/lib/media/queue-feed.js';
-import { CONTRACT, requiredFiles, fpOf } from '../../api/lib/media/stage-jobs.js';
+import { CONTRACT, requiredFiles, fpOf, typedJob } from '../../api/lib/media/stage-jobs.js';
 
 const doSql = () => { const db = new Database(':memory:'); return { exec: (q, ...b) => { const st = db.prepare(q); const r = st.reader ? st.all(...b) : (st.run(...b), []); return { toArray: () => r }; } }; };
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -39,22 +39,28 @@ beforeEach(async () => {
   repo = { getMediaItem: async (id) => items[id], updateMediaItem: async (id, p) => Object.assign(items[id], p) };
   wr = {
     fileSha: async (f) => sha(await readFile(f)),
-    wholeJob: (it, m, s) => ({ v: 1, id: it.id, input: 'in.mp3', input_sha: s, threads: 2, meta: { slug: m.slug } }),
-    adoptWholeResult: async (stg, dir, old, s) => { const r = JSON.parse(await readFile(join(stg, 'result.json'), 'utf8')); if (r.input_sha !== s) throw Error('identity'); return structuredClone(r.meta); },
+    wholeJob: (it, m, s) => ({ v: 1, id: it.id, input: 'in.' + m.original.split('.').pop(), input_sha: s, threads: 2, meta: { slug: m.slug } }),
+    // as whole-result.js: the result names the chain's input sha; the original on tower is checked against originalSha (null = skipped)
+    adoptWholeResult: async (stg, dir, old, s, _id, _T, _sh, orig = s) => {
+      const r = JSON.parse(await readFile(join(stg, 'result.json'), 'utf8')); if (r.input_sha !== s) throw Error('identity');
+      if (orig != null && sha(await readFile(join(dir, old.original))) !== orig) throw Error('Original changed while processing');
+      return structuredClone(r.meta);
+    },
   };
   st = { queue: [1, 2], items: { 1: { kind: 'whole' }, 2: { kind: 'whole' } }, done: [] };
   deps = { q, repo, wr, typed: true, fraction: 1, syncStages: async (id, s) => synced.push([id, s]) };
 });
 const engage = () => { for (const [host, types] of [['boss', ['cpu-finish', 'cpu-prep']], ['aorus', ['gpu']]]) Q.claim(sql, { host, types, contract: CONTRACT.contract }); };
 // a worker runs the step: result.json + every listed item/<path> under results/<job id>/
-function deliver(type, over = {}, where = null) {
+// over.extra: more files the step lists and uploads ({ path, body }), e.g. prep's chain/in.opus
+function deliver(type, { extra = [], ...over } = {}, where = null) {
   const { sql: qs, store: fs } = where || { sql, store };
   const host = where ? 'pod' : type === 'gpu' ? 'aorus' : 'boss';
   const j = Q.claim(qs, { host, types: type === 'gpu' ? ['gpu'] : ['cpu-finish', 'cpu-prep'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });
   if (!j) return null;
   const stages = { 'cpu-prep': tick(['archive', 'grade']), gpu: tick(['archive', 'grade', 'enhance', 'transcribe', 'diarize']),
     'cpu-finish': { ...tick(['archive', 'grade', 'enhance', 'transcribe', 'diarize', 'remaster', 'verify', 'realign', 'quiet', 'web', 'trim']), transcribe: { at: 1 } } }[type];
-  const files = requiredFiles(type).map((path) => { const b = Buffer.from(`${type}:${path}`); fs.set(`results/${j.id}/item/${path}`, b); return { path, sha256: sha(b) }; });
+  const files = [...requiredFiles(type).map((path) => ({ path, body: `${type}:${path}` })), ...extra].map(({ path, body }) => { const b = Buffer.from(body); fs.set(`results/${j.id}/item/${path}`, b); return { path, sha256: sha(b) }; });
   const r = { v: 1, type, contract: CONTRACT.contract, ok: true, input_sha: j.body.job.input_sha, slug: `t${j.item_id}`, files,
     stages: type === 'gpu' ? { transcribe: { tool: 'whisper-large-v3', settings: { beam: 5 } } } : {},
     meta: { slug: `t${j.item_id}`, stages, remaster: type === 'cpu-finish' ? { status: 'done', swapped: 0, quiet: { v: 2 } } : {} }, ...over };
@@ -420,25 +426,129 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     const g = deliver('gpu', {}, E);
     expect(g.body.inputs.map((i) => i.path)).toEqual(['item/meta.json', 'item/waveform.json']);
   });
-  it('a video talk runs on its audio track only: prep (LAN) and the pod (edge) get the stream-copied track, never the video; tower keeps the video', async () => {
+  // 11-02: tower feeds the ORIGINAL and only plans the chain input; cpu-prep makes it (Opus 96k / a video's track) and the chain switches to it
+  const setOriginal = async (id, name, body, duration_s = 3600) => {
+    const m1 = join(items[id].dir, 'meta.json');
+    await writeFile(join(items[id].dir, name), body);
+    await writeFile(m1, JSON.stringify({ ...JSON.parse(await readFile(m1, 'utf8')), original: name, duration_s }));
+  };
+  const WAV = 'W'.repeat(13_000), OPUS = 'opus-of-the-wav';   // 13 kB per second of audio: above 96 kbps → Opus
+  const chainOut = (from_sha, name, body, how) => ({ extra: [{ path: `chain/${name}`, body }],
+    chain_input: { name, path: `chain/${name}`, sha256: sha(body), from_sha, how, args: how === 'opus' ? ['-c:a', 'libopus'] : ['-c:a', 'copy'] } });
+  it('a big WAV: tower feeds the original (no encode on tower) with the plan; prep makes the Opus; gpu (pod) and finish run on that Opus under its own file id', async () => {
+    lanOnly(); st.queue = [1];
+    await setOriginal(1, 'orig.wav', WAV, 1);
+    const d = { ...deps, edge: E.q };
+    expect((await feed(st, d)).typed.fed).toBe(1);
+    const ch = st.chains[1];
+    expect(ch).toMatchObject({ sha: sha(WAV), orig_sha: sha(WAV), input: 'in.wav', plan: { how: 'opus' } });
+    expect(ch.src).toBeUndefined();
+    const p = deliver('cpu-prep', chainOut(sha(WAV), 'in.opus', OPUS, 'opus'));   // the worker's result: its outputs + chain/in.opus
+    expect(p.body.job).toMatchObject({ input: 'in.wav', input_sha: sha(WAV), chain_input: { how: 'opus' } });
+    expect(String(store.get(`files/${p.file_id}/in.wav`))).toBe(WAV);
+
+    expect((await pull(st, d)).typed).toMatchObject({ steps: 1, errors: 0 });
+    expect(st.chains[1]).toMatchObject({ sha: sha(OPUS), orig_sha: sha(WAV), input: 'in.opus', src: '.typed-input.opus', chain_input: { how: 'opus', sha256: sha(OPUS), from_sha: sha(WAV) } });
+    expect(String(await readFile(join(items[1].dir, '.typed-input.opus')))).toBe(OPUS);   // tower keeps the chain input while the chain lives
+    const g = deliver('gpu', {}, E);
+    expect(g.file_id).not.toBe(p.file_id);
+    expect(g.body.job).toMatchObject({ input: 'in.opus', input_sha: sha(OPUS) });
+    expect(String(E.store.get(`files/${g.file_id}/in.opus`))).toBe(OPUS);   // the pod gets the Opus, never the WAV
+    expect(onEdge('files/').some((k) => k.endsWith('.wav'))).toBe(false);
+    expect(g.body.inputs.some((i) => i.path.startsWith('item/chain/'))).toBe(false);   // the chain input is in.opus, not an item/ input
+
+    expect((await pull(st, d)).typed).toMatchObject({ steps: 1, errors: 0 });
+    expect([...store.keys()].filter((k) => k.startsWith(`files/${p.file_id}/`))).toEqual([]);   // prep acked: the original's queue copy goes
+    const f = deliver('cpu-finish');
+    expect(f.body.job).toMatchObject({ input: 'in.opus', input_sha: sha(OPUS) });
+    expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });   // the original is checked against orig_sha, the result against the Opus
+    const meta = JSON.parse(await readFile(join(items[1].dir, 'meta.json'), 'utf8'));
+    expect(meta.chain_input).toMatchObject({ how: 'opus', sha256: sha(OPUS), from_sha: sha(WAV) });
+    await expect(readFile(join(items[1].dir, '.typed-input.opus'))).rejects.toThrow();   // the chain input goes with the chain
+    expect(String(await readFile(join(items[1].dir, 'orig.wav')))).toBe(WAV);
+    expect(st.chains).toEqual({});
+  });
+  it('a video talk runs on its audio track only: prep (LAN) makes the stream-copied track; gpu and the pod get the track, never the video; tower keeps the video', async () => {
     engage(); st.queue = [1];
-    const m1 = join(items[1].dir, 'meta.json');
-    await writeFile(join(items[1].dir, 'orig.mp4'), 'VIDEO+audio-1');
-    await writeFile(m1, JSON.stringify({ ...JSON.parse(await readFile(m1, 'utf8')), original: 'orig.mp4' }));
-    const demux = async (src, dir) => { const file = join(dir, 'tmp-track.m4a'); await writeFile(file, 'audio-1'); return { file, ext: 'm4a' }; };
-    const d = { ...deps, edge: E.q, demux };
+    await setOriginal(1, 'orig.mp4', 'VIDEO+audio-1');
+    const d = { ...deps, edge: E.q };
     await feed(st, d);
-    const ch = st.chains[1], p = deliver('cpu-prep');
-    expect(ch).toMatchObject({ src: '.typed-input.m4a', input: 'in.m4a', sha: sha('audio-1') });
-    expect(p.body.job).toMatchObject({ input: 'in.m4a', input_sha: sha('audio-1') });
-    expect(String(store.get(`files/${p.file_id}/in.m4a`))).toBe('audio-1');
+    expect(st.chains[1]).toMatchObject({ input: 'in.mp4', plan: { how: 'demux' } });
+    const p = deliver('cpu-prep', chainOut(sha('VIDEO+audio-1'), 'in.m4a', 'audio-1', 'demux'));
+    expect(p.body.job).toMatchObject({ input: 'in.mp4', chain_input: { how: 'demux' } });
     await pull(st, d);
+    expect(st.chains[1]).toMatchObject({ input: 'in.m4a', sha: sha('audio-1'), src: '.typed-input.m4a' });
+    expect(Q.stats(sql, Date.now(), 'gpu').states.queued.n).toBe(1);   // home GPU: same transport, the track under the new file id
+    expect(String(store.get(`files/${st.chains[1].fileId}/in.m4a`))).toBe('audio-1');
     expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 1 });
     expect(onEdge('files/').filter((k) => /\/in\./.test(k)).map((k) => String(E.store.get(k)))).toEqual(['audio-1']);   // the pod's input: audio only
     deliver('gpu', {}, E); await pull(st, d); deliver('cpu-finish');
     expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });
-    await expect(readFile(join(items[1].dir, '.typed-input.m4a'))).rejects.toThrow();   // the track goes with the chain
+    await expect(readFile(join(items[1].dir, '.typed-input.m4a'))).rejects.toThrow();
     expect(String(await readFile(join(items[1].dir, 'orig.mp4')))).toBe('VIDEO+audio-1');
+  });
+  it('a worker image without chain-input support: the chain runs on the original (a WAV stays on the LAN), counted in st.chain_input_missing', async () => {
+    lanOnly(); st.queue = [1];
+    await setOriginal(1, 'orig.wav', WAV, 1);
+    Q.claim(sql, { host: 'aorus', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });   // a home GPU engaged
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); const p = deliver('cpu-prep');   // an old image: no chain_input in its result
+    expect((await pull(st, d)).typed).toMatchObject({ steps: 1, errors: 0 });
+    expect(st.chain_input_missing).toBe(1);
+    expect(st.chains[1]).toMatchObject({ input: 'in.wav', sha: sha(WAV), chain_input: { missing: true } });
+    const g = deliver('gpu');
+    expect(g.file_id).toBe(p.file_id); expect(onEdge('files/')).toEqual([]);   // decoded audio never leaves the LAN
+    await pull(st, d); deliver('cpu-finish');
+    expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });
+  });
+  it('a chain input that does not match what prep listed (or was made from another original) is refused, the chain dropped', async () => {
+    engage(); st.queue = [1];
+    await setOriginal(1, 'orig.wav', WAV, 1);
+    await feed(st, deps);
+    deliver('cpu-prep', chainOut(sha('another'), 'in.opus', OPUS, 'opus'));
+    expect((await pull(st, deps)).typed).toMatchObject({ steps: 0, errors: 1 });
+    expect(st.pull_errors.at(-1).error).toMatch(/chain input not as listed/);
+    expect(st.chains[1]).toBeUndefined();
+  });
+  it('a switched chain that is dropped (step given up / prep files lost) removes its chain input; the talk restarts from the ORIGINAL', async () => {
+    engage(); st.queue = [1];
+    await setOriginal(1, 'orig.wav', WAV, 1);
+    const d = { ...deps, edge: E.q };
+    await feed(st, d); deliver('cpu-prep', chainOut(sha(WAV), 'in.opus', OPUS, 'opus')); await pull(st, d);
+    expect(st.chains[1]).toMatchObject({ src: '.typed-input.opus', orig_sha: sha(WAV) });
+    const prepId = Object.entries(st.qjobs).find(([, j]) => j.type === 'cpu-prep')[0];
+    store.delete(`results/${prepId}/item/meta.json`);   // prep's files lost: restartLost
+    expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ restarted_lost: 1 });
+    await expect(readFile(join(items[1].dir, '.typed-input.opus'))).rejects.toThrow();
+    expect(String(await readFile(join(items[1].dir, 'orig.wav')))).toBe(WAV);
+    expect(st.chains[1]).toMatchObject({ sha: sha(WAV), orig_sha: sha(WAV), input: 'in.wav' });
+    const p = deliver('cpu-prep', chainOut(sha(WAV), 'in.opus', OPUS, 'opus'));   // the re-fed prep: the original and the plan again, never the dropped Opus
+    expect(p.body.job).toMatchObject({ input: 'in.wav', input_sha: sha(WAV), chain_input: { how: 'opus' } });
+    await pull(st, d);
+    expect(String(await readFile(join(items[1].dir, '.typed-input.opus')))).toBe(OPUS);
+
+    // failChain: the same cleanup when a step is given up on
+    for (let n = 0; n < 3; n++) { const j = Q.claim(sql, { host: 'aorus', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 }); Q.fail(sql, { id: j.id, lease: j.lease, error: 'decode failed' }); }
+    expect((await pull(st, d)).typed.errors).toBe(1);
+    expect(st.chains[1]).toBeUndefined();
+    await expect(readFile(join(items[1].dir, '.typed-input.opus'))).rejects.toThrow();
+    expect(String(await readFile(join(items[1].dir, 'orig.wav')))).toBe(WAV);
+  });
+  it('a chain fed before 11-02 (its Opus made on tower, ch.src, no orig_sha) runs to adoption unchanged: the original is not checked against the Opus sha', async () => {
+    engage(); st.queue = [];
+    await setOriginal(1, 'orig.wav', WAV, 1);
+    await writeFile(join(items[1].dir, '.typed-input.opus'), OPUS);
+    const fileId = `t1-${sha(OPUS).slice(0, 12)}`, job = typedJob('cpu-prep', { itemId: 1, fileId, wj: { ...wr.wholeJob(items[1], { slug: 't1', original: 'x.opus' }, sha(OPUS)), threads: 4 }, audio_s: 1 });
+    await q.put('files', fileId, 'in.opus', join(items[1].dir, '.typed-input.opus')); await q.enqueue([job]);
+    st.chains = { 1: { sha: sha(OPUS), fileId, slug: 't1', input: 'in.opus', audio_s: 1, at: 1, bytes: OPUS.length, src: '.typed-input.opus' } };
+    st.qjobs = { [job.id]: { itemId: 1, slug: 't1', sha: sha(OPUS), kind: 'typed', type: 'cpu-prep', audio_s: 1, at: 1 } };
+    const p = deliver('cpu-prep');
+    expect(p.body.job.chain_input).toBeUndefined();
+    await pull(st, deps); const g = deliver('gpu');
+    expect(g.file_id).toBe(fileId); expect(g.body.job.input).toBe('in.opus');
+    await pull(st, deps); deliver('cpu-finish');
+    expect((await pull(st, deps)).typed).toMatchObject({ adopted: 1, errors: 0 });   // before 11-02's fix: "Original changed while processing"
+    await expect(readFile(join(items[1].dir, '.typed-input.opus'))).rejects.toThrow();
   });
   it('light.flac never crosses the uplink when prep\'s pull stages the gpu step inline either: not uploaded, not a gpu input', async () => {
     lanOnly(); st.queue = [1];
@@ -541,11 +651,12 @@ describe('linkOrCopy / queue get: same filesystem = a hardlink, no bytes moved',
 });
 
 describe('feed beside the pass: timed parts, one hash per unchanged original, hardlinked put', () => {
-  it('feedBeside feeds a talk, times select/gate/dup/demux/hash/cancel/put/enqueue, and the put is a hardlink', async () => {
+  it('feedBeside feeds a talk, times select/gate/dup/hash/cancel/put/enqueue, and the put is a hardlink (no encode or demux on tower: 11-02)', async () => {
     engage(); st.queue = [1];
     const r = await feedBeside(st, deps);
     expect(r.typed.fed).toBe(1);
-    for (const k of ['select', 'gate', 'dup', 'demux', 'hash', 'cancel', 'put', 'enqueue']) expect(r.sub[`feed:${k}`].n).toBe(1);
+    expect(r.sub['feed:demux']).toBeUndefined();
+    for (const k of ['select', 'gate', 'dup', 'hash', 'cancel', 'put', 'enqueue']) expect(r.sub[`feed:${k}`].n).toBe(1);
     expect(st.sha_cache[join(items[1].dir, 'orig.mp3')].sha).toBe(st.chains[1].sha);
     expect(typeof r.ms).toBe('number');
   });

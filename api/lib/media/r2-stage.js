@@ -6,6 +6,8 @@ import { createReadStream } from 'fs';
 import { rm, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
+// one source for the args + rules: the worker's cpu-prep makes the typed chain's input with the same module
+import { VIDEO, OPUS_IN, needsOpus, opusArgs, codecArgs, demuxArgs, demuxExt } from '../../../scripts/media/worker/chain-input.mjs';
 
 export const STAGE = {
   aheadS: Number(process.env.MEDIA_STAGE_AHEAD_H ?? 100) * 3600,   // audio staged ahead of the pods (≈ 4 h of 3-5 pods)
@@ -31,30 +33,27 @@ export async function r2StageStore(env = process.env) {
   };
 }
 
-export const VIDEO = new Set(['mp4', 'm4v', 'mov', 'mkv', 'webm', 'avi', 'flv', 'wmv', 'mpg', 'mpeg', 'ts', '3gp']);
-const AUDIO_EXT = { aac: 'm4a', alac: 'm4a', mp3: 'mp3', opus: 'ogg', vorbis: 'ogg', flac: 'flac' };   // codec → a container that holds it as-is
+export { VIDEO, OPUS_IN, needsOpus };
 
 /** The audio track of a video, stream-copied (no re-encode) to a temp file → { file, ext }, or null (no audio / a codec with no safe
  *  container: the original is sent). `run` is tower's process gate (tools.js run: ffmpeg -c:a copy is 'light'). */
 export function audioDemuxer(run, tmpDir = tmpdir(), { seconds = null } = {}) {   // seconds: only the first N s (a listening sample)
   return async (src, dir = tmpDir) => {   // dir: where the track lands (the typed feed keeps it beside the talk, same filesystem)
-    const { stdout } = await run('ffprobe', ['-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=codec_name', '-of', 'csv=p=0', src], { timeoutMs: 60_000 });
-    const ext = AUDIO_EXT[String(stdout).trim().split('\n')[0]];
+    const { stdout } = await run('ffprobe', codecArgs(src), { timeoutMs: 60_000 });
+    const ext = demuxExt(stdout);
     if (!ext) return null;
     const file = join(dir, `sifter-stage-${process.pid}-${createHash('sha1').update(src).digest('hex').slice(0, 12)}${seconds ? `-${seconds}s` : ''}.${ext}`);
-    await run('ffmpeg', ['-nostdin', '-y', '-v', 'error', '-i', src, '-map', '0:a:0', '-vn', ...(seconds ? ['-t', String(seconds)] : []), '-c:a', 'copy', ...(ext === 'm4a' ? ['-movflags', '+faststart'] : []), file], { timeoutMs: 600_000 });
+    await run('ffmpeg', demuxArgs(src, file, ext, seconds), { timeoutMs: 600_000 });
     return { file, ext };
   };
 }
 
-// Pods get Opus 96k mono 48 kHz (Chad 11-01; = split_restore.py TRANSIT, measured on 5 talks: within noise of the original) — a 317 MB WAV tape saturated the uplink. Only a source above 96 kbps is encoded (a smaller one is already as small; no second generation).
-export const OPUS_IN = ['-ac', '1', '-ar', '48000', '-c:a', 'libopus', '-b:a', '96k', '-application', 'audio'];
-export const needsOpus = (bytes, durS) => Number(durS) > 0 && Number(bytes) / Number(durS) > 12_000;
+// Pods get Opus 96k mono 48 kHz (Chad 11-01; OPUS_IN/needsOpus in chain-input.mjs) — a 317 MB WAV tape saturated the uplink. Only a source above 96 kbps is encoded (a smaller one is already as small; no second generation).
 /** src → { file, ext: 'opus' } beside `dir`. `run` = tower's process gate (tools.js run: a libopus ffmpeg is an 'encode', ONE at a time; any other path would WorkerWait). */
 export function opusEncoder(run, tmpDir = tmpdir()) {
   return async (src, dir = tmpDir) => {
     const file = join(dir, `sifter-opus-${process.pid}-${createHash('sha1').update(src).digest('hex').slice(0, 12)}.opus`);
-    await run('ffmpeg', ['-nostdin', '-y', '-v', 'error', '-i', src, '-map', '0:a:0', '-vn', ...OPUS_IN, file], { timeoutMs: 3_600_000 });
+    await run('ffmpeg', opusArgs(src, file), { timeoutMs: 3_600_000 });
     return { file, ext: 'opus' };
   };
 }

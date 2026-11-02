@@ -2010,7 +2010,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           phase('lan');
           LH.beatStart(st, 'q_lan', now());
           const marks = LH.chainMarks(st), lanAt = now();
-          const lanDeps = { ...deps, demux, opus, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped, deferFinish: true };
+          const lanDeps = { ...deps, run, q: localQueue(), typed: true, edge: queueClient({ key: queueKey }), gpuEdge: podTyped, buffer: edgeBuf, rebalance: false, stageInline: false, deferEdgeGpu: podTyped, deferFinish: true };
           // the feed (tower hashes + stores each fed original: 630 s of a 659 s pass, 11-01) runs BESIDE the pass, lan then edge, one at a time; the pass only pulls and plans
           if (!feedPass) feedPass = (async () => {
             // everything this outlives the pass with is the RAW dependency (the pass's guarded ones throw ABANDONED once the next pass begins)

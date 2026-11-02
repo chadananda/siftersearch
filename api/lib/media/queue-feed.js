@@ -12,8 +12,8 @@
 // CPU pod (Chad 10-31): an edge host that lists cpu-prep/cpu-finish (a rented CPU pod, cloud.createCpuPod) takes the OVERFLOW of the home CPU
 // hosts: the feed adds its measured rate, rebalancePrep moves the excess prep steps to the edge, and a step that finished on the edge is pulled
 // and acked there whatever its type. A talk whose input is FLAC/WAV never leaves the LAN (no decoded audio in the cloud).
-import { join, extname } from 'node:path';
-import { VIDEO, needsOpus } from './r2-stage.js';
+import { join } from 'node:path';
+import { chainPlan, NAME_RE, CHAIN_DIR } from '../../../scripts/media/worker/chain-input.mjs';
 import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
 import { adoptedState } from './whole-result.js';
@@ -149,28 +149,33 @@ export async function feed(st, deps) {
 }
 
 const typedFileId = (itemId, sha) => `t${itemId}-${sha.slice(0, 12)}`;
-// Chad 10-30: "pushing video around to process audio is simply absurd". A typed chain's input is the recording's AUDIO: a video's audio track,
-// stream-copied (no re-encode, so every step decodes the same samples), kept beside the talk as TYPED_INPUT.<ext> while the chain lives; the
-// chain's sha names that file. Tower keeps the video (meta.original): adoption restores original + source. No audio track → the original.
+// Chad 10-30: "pushing video around to process audio is simply absurd"; 11-01: pods get Opus 96k, not a 317 MB WAV. A typed chain's input is
+// the recording's AUDIO: Opus 96k for a source above 96 kbps, else a video's stream-copied track, else the original (chain-input.mjs chainPlan).
+// 11-02: tower only PLANS it (ch.plan → the prep job's chain_input); cpu-prep makes it on a home CPU host and runs on it (the encode on tower
+// took ~40 s a talk: 801 s of a 962 s feed round for 20 talks, ~75 talks/h). When prep is adopted the chain SWITCHES to it (takeChainInput):
+// ch.sha/input/fileId name the chain input from then on, ch.orig_sha keeps the original's, and tower keeps a copy beside the talk as
+// TYPED_INPUT.<ext> (ch.src) while the chain lives, so gpu and cpu-finish decode exactly the samples prep analysed. Tower keeps the original
+// (meta.original): adoption restores original + source. Chains fed before 11-02 made ch.src on tower at feed (no ch.plan): they run unchanged.
 export const TYPED_INPUT = '.typed-input';
-async function chainInput(it, m, demux, opus = null) {
-  // Chad 11-01: pods get Opus 96k, not a 317 MB WAV (r2-stage.js needsOpus: only a source above 96 kbps); every step of the chain then decodes the same Opus
-  if (opus && needsOpus((await stat(join(it.dir, m.original)).catch(() => null))?.size, m.duration_s)) {
-    const a = await opus(join(it.dir, m.original), it.dir).catch(() => null);
-    if (a) { const rel = `${TYPED_INPUT}.${a.ext}`; await rename(a.file, join(it.dir, rel)); return rel; }
-  }
-  if (!demux || !VIDEO.has(extname(m.original).slice(1).toLowerCase())) return m.original;
-  const a = await demux(join(it.dir, m.original), it.dir).catch(() => null);
-  if (!a) return m.original;
-  const rel = `${TYPED_INPUT}.${a.ext}`;
-  await rename(a.file, join(it.dir, rel));
-  return rel;
-}
 const chainSrc = (it, m, ch) => join(it.dir, ch.src || m.original);
+// the chain input travels as the next step's in.<ext> (files/<file id>), never as an item/ input of a later step
+const notChain = (files = []) => files.filter((f) => !String(f.path).startsWith(CHAIN_DIR + '/'));
+/** A prep result that made the chain input (result.chain_input): checked against the listed file, copied beside the talk, and the chain switched
+ *  to it. Idempotent (a re-adopted prep switches to the same values). A result that does not match is refused (final). */
+async function takeChainInput(it, ch, r, j, sq, wr) {
+  const ci = r.chain_input, f = (r.files || []).find((x) => x.path === ci.path), from = ch.orig_sha || ch.sha;
+  if (!NAME_RE.test(ci.name || '') || ci.path !== `${CHAIN_DIR}/${ci.name}` || !f || f.sha256 !== ci.sha256 || ci.from_sha !== from || !['opus', 'demux'].includes(ci.how))
+    throw Error('cpu-prep result refused: chain input not as listed');
+  const rel = `${TYPED_INPUT}.${ci.name.slice(3)}`, to = join(it.dir, rel);
+  await sq.get('results', j.id, 'item/' + ci.path, to);
+  if (await wr.fileSha(to) !== ci.sha256) { await rm(to, { force: true }); throw Error('cpu-prep chain input checksum mismatch after transfer'); }
+  Object.assign(ch, { orig_sha: from, sha: ci.sha256, input: ci.name, fileId: typedFileId(it.id, ci.sha256), src: rel,
+    chain_input: { how: ci.how, args: ci.args || null, sha256: ci.sha256, from_sha: from, made_by: j.host || null } });
+}
 /** Typed feed: only while hosts for all three steps are engaged; keeps ~TARGET_H of prep queued; order by band (pickNext). */
 /** The edge's engaged cpu-prep supply (a CPU pod): { rate, queued_audio_h } at its measured rate, or null when no edge host lists cpu-prep. */
 const edgePrep = (cap) => { const t = cap?.by_type?.['cpu-prep']; return t?.hosts?.length ? { rate: t.rate || 0, drain: t.drain || 0, queued_audio_h: t.queued_audio_h || 0 } : null; };
-async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, demux = null, opus = null, buffer = null, trace = null }) {
+async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, readMeta = readMetaFile, now = Date.now, max = 20, fraction, cbPeople, buffer = null, trace = null }) {
   const ft = tmOf(trace, 'feed');
   const types = new Set(cap.hosts.flatMap((h) => h.types || []));
   const lack = SJ.AUDIO_TYPES.filter((t) => !types.has(t) && !(t === 'gpu' && edge && gpuEdge !== false));   // pods boot on the edge's gpu backlog
@@ -199,9 +204,10 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
       if (dup?.later) { st.feedLater[itemId] = dup.later; st.queue.push(itemId); continue; }
       if (dup?.state) { await repo.updateMediaItem(it.id, { state: dup.state, why: dup.why.slice(0, 500) }); held++; continue; }
       delete st.feedLater[itemId];
-      const src = await ft('demux', () => chainInput(it, m, demux, opus)), input = join(it.dir, src), sha = await shaOf(st, wr, input, ft);
-      const wj = { ...wr.wholeJob(it, m, sha), threads: 4 }, fileId = typedFileId(itemId, sha), audio_s = m.duration_s || 0;
-      if (src !== m.original) wj.input = 'in' + extname(src);
+      // tower feeds the ORIGINAL (a hardlink, no ffmpeg); the plan tells cpu-prep which chain input to make of it
+      const input = join(it.dir, m.original), sha = await shaOf(st, wr, input, ft), audio_s = m.duration_s || 0;
+      const plan = chainPlan(m.original, (await stat(input).catch(() => null))?.size, audio_s);
+      const wj = { ...wr.wholeJob(it, m, sha), threads: 4, ...(plan ? { chain_input: plan } : {}) }, fileId = typedFileId(itemId, sha);
       const job = SJ.typedJob('cpu-prep', { itemId, fileId, wj, band: SJ.bandOf(st, itemId), audio_s });
       // job ids are deterministic (talk + input sha): a talk fed again after its chain was dropped would meet its OLD step under the same
       // id — enqueue leaves a done/leased job alone, so the stale result came back with no chain ("chain record lost", 1947 10-31).
@@ -210,7 +216,7 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
       const { bytes } = await ft('put', () => q.put('files', fileId, wj.input, input, { link: true }));   // a hardlink on tower's own store: the original's bytes are not copied
       job.invoice.bytes = bytes;
       await ft('enqueue', () => q.enqueue([job]));
-      st.chains[itemId] = { sha, fileId, slug: it.slug, input: wj.input, audio_s, at: now(), bytes, ...(src !== m.original ? { src } : {}) };
+      st.chains[itemId] = { sha, orig_sha: sha, fileId, slug: it.slug, input: wj.input, audio_s, at: now(), bytes, ...(plan ? { plan } : {}) };
       st.qjobs[job.id] = { itemId, slug: it.slug, sha, kind: 'typed', type: 'cpu-prep', audio_s, at: now() };
       queuedS += audio_s; fed++;
     } catch (e) { st.queue.push(itemId); return { fed, held, error: `#${itemId}: ${e.message}`.slice(0, 300) }; }
@@ -218,10 +224,18 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
   return { fed, ...(held ? { held } : {}) };
 }
 
+/** A dropped chain's chain-input copy beside the talk (.typed-input.<ext>) goes with it; the re-feed starts from the original. */
+async function dropChainSrc(ch, itemId, repo) {
+  if (!ch?.src || !String(ch.src).startsWith(TYPED_INPUT)) return;
+  const it = await repo?.getMediaItem?.(itemId).catch(() => null);
+  if (it?.dir) await rm(join(it.dir, ch.src), { force: true }).catch(() => {});
+}
+
 /** Drop a talk's chain: every step's job is acked (its results go), then the talk retries like a whole job. */
 async function failChain(st, id, ackJob, error, repo) {
   const qj = st.qjobs[id], ch = st.chains?.[qj.itemId] || {};
   for (const x of [id, ...SJ.AUDIO_TYPES.map((t) => ch[t]?.id)]) if (x) ackJob(x);
+  await dropChainSrc(ch, qj.itemId, repo);
   delete st.chains?.[qj.itemId];
   await retry(st, qj, error, repo);
 }
@@ -286,7 +300,11 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
         await rm(stg, { recursive: true, force: true });
         if (type !== 'cpu-finish') {
           await tm(`${type}:${src}:get`, () => sq.get('results', j.id, 'result.json', join(stg, 'result.json')));
-          const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: ch.sha, slug: qj.slug, outputs: outputs.length ? outputs : null });
+          // a prep result is made from the original (ch.orig_sha once the chain has switched to its chain input; ch.sha before, and for old chains)
+          const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: type === 'cpu-prep' ? ch.orig_sha || ch.sha : ch.sha, slug: qj.slug, outputs: outputs.length ? outputs : null });
+          if (type === 'cpu-prep' && r.chain_input) await tm(`${type}:${src}:chain_input`, () => takeChainInput(it, ch, r, j, sq, wr));
+          else if (type === 'cpu-prep' && ch.plan && !ch.chain_input) { st.chain_input_missing = (st.chain_input_missing || 0) + 1; ch.chain_input = { missing: true, plan: ch.plan.how }; }   // a worker image without chain-input support: the chain runs on the original (correct; a WAV stays on the LAN)
+          r.files = notChain(r.files);   // the chain input is the next step's in.<ext>, not one of its item/ inputs
           ch[type] = SJ.stepOf(j, r, now());
           logStep(st, type, j.host, ch.audio_s, now());
           const m = await readMeta(it.dir), next = SJ.chainNext(m, ch);
@@ -297,8 +315,11 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
           // staged, or anything a cloud host made: what the next host rebuilds itself never crosses the uplink, and a cloud host never uploaded
           // it (queue-agent cloudSkips), so an edge step's next inputs never name it (it would 404 in the results store)
           const files = where !== src || src === 'edge' ? sentFiles(r.files) : r.files;
+          // the chain input made by this prep has a new file id: it goes into the next queue's files/<file id>/ even on the same transport
+          const switched = type === 'cpu-prep' && !!r.chain_input;
+          if (switched && where === src) await tm(`${type}:${src}:put`, () => nq.put('files', ch.fileId, ch.input, chainSrc(it, m, ch), { link: true }));
           if (where !== src) {   // the next step runs on the other transport: its inputs go into that queue's files/<file id>/
-            await tm(`${type}:${src}:put`, () => nq.put('files', ch.fileId, ch.input, chainSrc(it, m, ch)));   // the original, from tower's copy (the transport it came from may have dropped it)
+            await tm(`${type}:${src}:put`, () => nq.put('files', ch.fileId, ch.input, chainSrc(it, m, ch)));   // the chain input, from tower's copy (the transport it came from may have dropped it)
             for (const f of files) { const tmp = join(stg, 'x', 'item', f.path); await tm(`${type}:${src}:get`, () => sq.get('results', j.id, 'item/' + f.path, tmp)); await tm(`${type}:${src}:put`, () => nq.put('files', ch.fileId, 'item/' + f.path, tmp)); }
           }
           const job = SJ.typedJob(next, { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: j.id, files, staged: where !== src }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s });
@@ -317,7 +338,8 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
           const cur = await readMeta(it.dir), again = Object.values(cur?.stages || {}).some((v) => v?.job === j.id);
           let meta = cur;
           if (!again) {
-            meta = await wr.adoptWholeResult(stg, it.dir, cur, ch.sha, null, (w, f) => tm(k('adopt_' + w), f), (f) => shaOf(st, wr, f), ch.src ? null : ch.sha);   // ch.src: the chain ran on its chain input, ch.sha is that file's
+            meta = await wr.adoptWholeResult(stg, it.dir, cur, ch.sha, null, (w, f) => tm(k('adopt_' + w), f), (f) => shaOf(st, wr, f), ch.orig_sha ?? (ch.src ? null : ch.sha));
+            if (ch.chain_input) meta.chain_input = ch.chain_input;   // what every step decoded: the chain input cpu-prep made (how, args, sha) or its absence
             await tm(k('untransit'), () => untransit(it.dir, r, meta, { run, now }));
           }
           ch[type] = SJ.stepOf(j, r, now());
@@ -456,6 +478,9 @@ export const REBUILT = SJ.REBUILT;
 export const sentFiles = (files = []) => files.filter((f) => !REBUILT.has(f.path));
 /** A chain whose input is decoded audio (FLAC/WAV) stays on the LAN: the edge client refuses the name, and no decoded audio goes to the cloud. */
 export const lanOnly = (ch) => isDecoded(ch?.input);
+/** A prep step that makes a chain input (ch.plan) stays home too: moving it would send the whole original up tower's uplink, the very bytes
+ *  the Opus chain input exists to keep off it (and a video's demuxed track may be FLAC, which a cloud host cannot hand on). */
+const prepLanOnly = (ch) => lanOnly(ch) || (!!ch?.plan && !ch.src);
 
 /** CPU overflow (Chad 10-31): home CPU hosts first, a CPU pod on the edge takes the excess. While an edge host lists cpu-prep, prep steps waiting
  *  on the LAN beyond TARGET_H at the home hosts' measured rate move to the edge, up to TARGET_H at the edge's measured rate. The original is
@@ -471,7 +496,7 @@ export async function rebalancePrep(st, { q, edge, repo, wr, readMeta = readMeta
   let lanH = lp.queued_audio_h || 0, edgeH = ep.queued_audio_h, moved = 0, skipped = 0, kept_lan = 0, bytes = 0;
   const leased = new Set(((await q.stats('cpu-prep').catch(() => null))?.leased || []).map((j) => j.id));
   const waiting = Object.entries(st.qjobs || {}).filter(([id, qj]) => qj.kind === 'typed' && qj.type === 'cpu-prep' && !qj.where && !leased.has(id) && st.chains?.[qj.itemId])
-    .filter(([, qj]) => !lanOnly(st.chains[qj.itemId]) || (kept_lan++, false)).sort((a, b) => b[1].at - a[1].at);
+    .filter(([, qj]) => !prepLanOnly(st.chains[qj.itemId]) || (kept_lan++, false)).sort((a, b) => b[1].at - a[1].at);
   const moveOne = async (id, qj) => {
     const ch = st.chains[qj.itemId];
     let withdrawn = false, job = null;
@@ -479,7 +504,7 @@ export async function rebalancePrep(st, { q, edge, repo, wr, readMeta = readMeta
       const it = await repo.getMediaItem(qj.itemId), m = await readMeta(it.dir), src = chainSrc(it, m, ch), size = (await stat(src)).size;
       const have = new Map(((await edge.list?.('files', ch.fileId).catch(() => null)) || []).map((o) => [o.name, o.bytes]));
       if (have.get(ch.input) === size) skipped++; else { await edge.put('files', ch.fileId, ch.input, src); bytes += size; }
-      job = SJ.typedJob('cpu-prep', { itemId: qj.itemId, fileId: ch.fileId, wj: { ...wr.wholeJob(it, m, ch.sha), input: ch.input, threads: 4 }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s, bytes: size });
+      job = SJ.typedJob('cpu-prep', { itemId: qj.itemId, fileId: ch.fileId, wj: { ...wr.wholeJob(it, m, ch.sha), input: ch.input, threads: 4, ...(ch.plan && !ch.src ? { chain_input: ch.plan } : {}) }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s, bytes: size });
       if (!st.qjobs[id] || !(await q.withdraw([id]))?.withdrawn) return;   // a home host took it meanwhile: it stays home
       withdrawn = true;
       await edge.enqueue([job]);
@@ -513,6 +538,7 @@ async function restartLost(st, id, qj, { q, repo, now }, error) {
   if (!((await q.withdraw([id]).catch(() => null))?.withdrawn)) return false;
   const acks = SJ.AUDIO_TYPES.map((t) => ch[t]?.id).filter((x) => x && x !== id);
   if (acks.length) await q.ack(acks).catch(() => null);
+  await dropChainSrc(ch, qj.itemId, repo);   // a switched chain restarts from the original, never from its chain input
   delete st.qjobs[id]; delete st.chains?.[qj.itemId];
   (st.lost_restarts ||= []).push({ at: now(), item: qj.itemId, job: id, error: String(error).slice(0, 200) });
   if (st.lost_restarts.length > 50) st.lost_restarts.splice(0, st.lost_restarts.length - 50);

@@ -40,8 +40,8 @@ export function adoptedState(row,stages,{alreadyAdopted=false}={}){
  return ok?{state:'transcribed',stage:null,stages_done:','+Object.keys(stages||{}).join(',')+','}:null;
 }
 export async function linkOrCopy(from,to){await rm(to,{force:true});try{await link(from,to);}catch(e){if(!['EXDEV','EPERM','ENOTSUP'].includes(e.code))throw e;await copyFile(from,to);}}
-// originalSha: the sha of oldMeta.original. A typed chain made on a chain input (a video's audio track / Opus, queue-feed TYPED_INPUT) runs with
-// inputSha = that file's sha, not the original's: null = the original's sha is not known, the check is skipped (11-02: it refused every such chain).
+// originalSha: the sha tower fed of oldMeta.original. A typed chain runs on its chain input (Opus / audio track), so inputSha names that file and
+// originalSha the original; null = unknown (a chain fed before 11-02 made its input on tower and kept no original sha): the check is skipped.
 export async function adoptWholeResult(root,dir,oldMeta,inputSha,itemId=null,T=(k,f)=>f(),shaOf=fileSha,originalSha=inputSha){
  const r=await T('validate',()=>validateWholeResult(root,inputSha,oldMeta.slug));
  if(originalSha!=null&&await T('hash_original',()=>shaOf(join(dir,oldMeta.original)))!==originalSha)throw Error('Original changed while processing');

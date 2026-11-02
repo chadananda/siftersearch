@@ -2,7 +2,7 @@
 // prep (CPU): original, probe, grade, enhance up to DFN, waveform. gpu: DFN + probes, transcribe, diarize, UniPASE + re-ASR, guard measurement, realign
 // (split_restore.py gpu). finish (CPU): verdict, assessment, quiet, encodes (split_restore.py finish), item.js remaster..trim, whole-format result.json.
 // Every phase: jobDir/{job.json, in.<ext>, item/**} → item/** + result.json. No credentials, DB or remote hosts. Never splices (post.py measures only).
-import {readFile,writeFile,mkdir,copyFile,readdir,cp,link,rm} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,copyFile,readdir,cp,link,rm,rename} from 'node:fs/promises';
 import {createReadStream,existsSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {join,extname,resolve} from 'node:path';
@@ -14,6 +14,7 @@ import {buildVocab,CORE_TERMS} from '../../../api/lib/media/vocab.js';
 import {computePeaks,normalizePeaks} from '../../../api/lib/media/peaks.js';
 import {trimPlan,peaksOf} from '../../../api/lib/media/trim.js';
 import {wordsKey} from '../../../api/lib/media/words-key.js';
+import {opusArgs,codecArgs,demuxArgs,demuxExt,OPUS_IN,CHAIN_DIR} from '../worker/chain-input.mjs';
 
 export const CONTRACT=1;   // scripts/media/worker/job-types.json `contract`
 export const GPU_SUBS=new Set(['dfn','probe','transcribe','diarize','realign']);   // media_tool subcommands a CPU phase never runs (they yield to the gpu job)
@@ -83,10 +84,38 @@ async function original(ctx,meta){
 const readMeta=dir=>readFile(join(dir,'meta.json'),'utf8').then(JSON.parse).catch(()=>null);
 const itemOf=(ctx,meta)=>(ctx.item={id:ctx.job.id||1,slug:meta.slug,dir:ctx.dir,state:'running',speaker:meta.speaker,source_kind:'file'});
 
-/** cpu-prep: original + probe + grade + enhance up to DFN (metrics, light chain) + waveform. */
+/** The typed chain's audio input, made HERE from tower's plan (job.chain_input), not on tower (11-02: ~40 s of tower per talk capped the feed at
+ *  ~75 talks/h): Opus 96k (chain-input.mjs OPUS_IN, the args tower used) or a video's stream-copied track, at item/chain/in.<ext> (listed in
+ *  result.json, so it is uploaded; tower makes it the gpu step's in.<ext>). → {name, path, sha256, from_sha, how, args} | null (no plan; a video
+ *  with no copyable track keeps the original). The original is checked against job.input_sha first. */
+export async function chainInput(ctx){
+ const {job,jobDir,dir}=ctx,plan=job.chain_input;
+ if(!plan)return null;
+ const src=resolve(jobDir,job.input),fromSha=await sha(src);
+ if(job.input_sha && fromSha!==job.input_sha)throw Error('Original input hash mismatch');
+ let ext;
+ if(plan.how==='opus')ext='opus';
+ else if(plan.how==='demux'){ext=demuxExt((await local.run('ffprobe',codecArgs(src),{timeoutMs:60000})).stdout);if(!ext)return null;}
+ else throw Error(`cpu-prep: unknown chain input "${plan.how}"`);
+ const name='in.'+ext,path=`${CHAIN_DIR}/${name}`,out=join(dir,path);
+ if(!existsSync(out)){   // a resumed prep keeps the file it made (its sha is on the checkpoint)
+  await mkdir(join(dir,CHAIN_DIR),{recursive:true});
+  const part=join(dir,CHAIN_DIR,'part.'+name);
+  await ctx.state('chain-input');
+  await local.run('ffmpeg',ext==='opus'?opusArgs(src,part):demuxArgs(src,part,ext),{threads:ctx.threads,timeoutMs:3600000});
+  await rename(part,out);
+ }
+ return {name,path,sha256:await sha(out),from_sha:fromSha,how:plan.how,args:plan.how==='opus'?OPUS_IN:['-c:a','copy']};
+}
+
+/** cpu-prep: [chain input] + original + probe + grade + enhance up to DFN (metrics, light chain) + waveform — all on the chain input when there is one. */
 export async function prep(ctx){
  const {job,dir}=ctx;
  const previous=await readMeta(dir);
+ const ci=await chainInput(ctx);
+ // from here the step runs on the chain input (original/in.<its ext>, worker_source_sha = its sha) exactly as gpu/cpu-finish will; result.json
+ // still names the original's sha (input_sha, what tower fed) and reports the chain input beside it
+ if(ci){ctx.chainInput=ci;ctx.fromSha=ci.from_sha;ctx.job={...job,input:`item/${ci.path}`,input_sha:ci.sha256};}
  const rel=await original(ctx,previous);
  const probe=previous?.source?.probe||await local.ffprobe(join(dir,rel));
  const meta=previous||{...job.meta,original:rel,duration_s:probe.duration_s,source:{...job.meta.source,probe},stages:{archive:{at:new Date().toISOString()}}};
@@ -238,7 +267,7 @@ export async function manifest(ctx,result,{type='cpu-finish',skip=[]}={}){
   if(ent.isDirectory())await collect(path);else if(ent.isFile())files.push({path,sha256:await sha(join(dir,path))});
  }};
  await collect('');
- const out={v:1,type,contract:CONTRACT,ok:true,input_sha:ctx.inputSha,slug:meta.slug,stages:Object.keys(meta.stages),files,meta};
+ const out={v:1,type,contract:CONTRACT,ok:true,input_sha:ctx.fromSha||ctx.inputSha,slug:meta.slug,stages:Object.keys(meta.stages),files,meta,...(ctx.chainInput?{chain_input:ctx.chainInput}:{})};
  await writeFile(join(jobDir,'result.json'),JSON.stringify(out));
  return out;
 }
