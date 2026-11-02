@@ -369,13 +369,20 @@ export async function enrichmentCoverage(docId) {
       WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype,'paragraph') IN ('paragraph','quote')
         AND context IS NOT NULL AND context != ''
       GROUP BY version ORDER BY n DESC`, [id], 'docs-repo:enrichment-by-version');
+  // HyPE by prompt version (hyp_model): "hyped" alone cannot tell a current-version book from one still on an old prompt
+  const hypeByVersion = await queryAll(
+    `SELECT COALESCE(hyp_model,'(none)') version, COUNT(*) n
+       FROM content
+      WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(blocktype,'paragraph') IN ('paragraph','quote')
+        AND LENGTH(COALESCE(hyp_questions,'')) > 2
+      GROUP BY version ORDER BY n DESC`, [id], 'docs-repo:enrichment-hype-by-version');
   return {
     // Path first: an id says nothing about which copy of a work this is; the path says both.
     path: doc?.file_path ?? null, title: doc?.title ?? null,
     docId: id, ...(id !== Number(docId) ? { resolvedFrom: Number(docId) } : {}),
     total: row?.total ?? 0, noted: row?.noted ?? 0, hyped: row?.hyped ?? 0, aligned: row?.aligned ?? 0,
     notedPct: row?.total ? Math.round((100 * (row.noted ?? 0)) / row.total) : 0,
-    byVersion,
+    byVersion, hypeByVersion,
   };
 }
 
