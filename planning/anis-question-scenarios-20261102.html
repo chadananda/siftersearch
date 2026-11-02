@@ -356,6 +356,17 @@ q{font-style:italic;quotes:"“" "”"}
   </table></div>
   <p style="margin-top:10px">This fits the 11-01 rule: quality first, speed earned. A route is switched on only after it scores as well as the full agent on its scenario's tests. Every routed answer is logged and judged; a wrong route becomes a Jev training example; a route that slips is switched off until fixed.</p>
 
+  <h3>Making Jev's classification accurate</h3>
+  <ol>
+    <li><b>Small questions, not one big one.</b> Jev answers a short chain, each a choice with a probability: new question or follow-up (and which move) → group (A–G) → scenario → parameters (traditions, language, named work or person, occasion). Each step has a written definition and examples, and a choice Jev is unsure of shows up as low probability rather than a confident wrong guess.</li>
+    <li><b>A labelled set to measure against.</b> The real questions and the generated conversations are labelled by Opus with the thread in view, I check a sample per class, and the labels are stored as gold answers in Jev's log (it already keeps them for training Laya). Part is kept aside as a held-out test.</li>
+    <li><b>Find the confusions.</b> Accuracy is reported per scenario, with the pairs Jev mixes up (B1 teaching vs B3 why/how, A3 find a passage vs F1 compile, a compare follow-up vs a new comparison). Each confused pair gets a sharper definition and contrasting examples, then is remeasured.</li>
+    <li><b>A confidence threshold per route.</b> Set from the held-out results so that, above it, the route is right at least 90% of the time. Below it, the question goes to the full agent. Where a mistake costs little (a lookup that finds nothing and falls through), the threshold can be lower.</li>
+    <li><b>Routes check themselves.</b> A route that finds its premise false (no such title, no passage for one of the traditions named) hands the question to the agent instead of answering badly.</li>
+    <li><b>Production keeps teaching it.</b> Every routed turn is judged; a wrong route becomes a gold example; Jev's log trains Laya, which takes over the task only once it matches Jev on the held-out set.</li>
+  </ol>
+  <p class="note">Measure of success: new-vs-follow-up ≥ 95% and route choice ≥ 90% on held-out questions, and the share of questions routed (not sent to the agent) rising week by week while the judged scores hold.</p>
+
   <h3>The loop</h3>
   <ol>
     <li><b>Classes from evidence.</b> Every real question we hold (Immerse, SEO, survey, seed, seeker, later Anís's own logs) is labelled with its scenario. That gives each class its frequency, its typical wordings and its variations (named tradition or not, short or long, follow-up or opener). Jev does the labelling; I check a sample per class.</li>
