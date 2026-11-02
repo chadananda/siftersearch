@@ -244,6 +244,17 @@ describe('podsProven: the typed pool grows past one pod only on evidence of talk
     expect(LH.podOutput(st, { now, horizonH: 2, rPod: 4 }).pod_h).toBe(0.5);
     expect(LH.podOutput({ ...st, step_log: [{ type: 'gpu', host: 'pod-sifter-unipase-387', audio_s: 3600, at: now - 0.25 * H }] }, { now, horizonH: 2, rPod: 4 }).pod_h).toBe(0.75);
   });
+  it('rampGrowth: a reference from before the pool last emptied is void (11-02: v1 44 talks/h held the v2 pool at 1)', () => {
+    const now = 100 * 3600e3, d = (n) => Array.from({ length: n }, () => ({ mode: 'typed', at: now - 60e3, remaster: 'done' }));
+    const pods = { a: { created: 10 * 3600e3, terminated: 20 * 3600e3 }, b: { created: 90 * 3600e3 } };
+    const log = [{ at: 10 * 3600e3, pods: 1, talks_h: 44 }, { at: 90 * 3600e3, pods: 1, talks_h: 1 }];
+    expect(LH.poolRunStart({ pods }, now)).toBe(90 * 3600e3);
+    expect(LH.rampGrowth({ done: d(27), pods, ramp_log: log }, { now, pods: 1 })).toMatchObject({ ok: true, talks_h: 13.5, ref_talks_h: 1 });
+    // no gap: the pod ran through, the first rental at this size stays the reference
+    const through = { a: { created: 10 * 3600e3, terminated: 95 * 3600e3 }, b: { created: 90 * 3600e3 } };
+    expect(LH.rampGrowth({ done: d(27), pods: through, ramp_log: log }, { now, pods: 1 })).toMatchObject({ ok: false, ref_talks_h: 44 });
+    expect(LH.poolRunStart({ pods: { a: { created: 1, terminated: 2 } } }, now)).toBe(null);
+  });
   it('rampGrowth: one more pod only while talks/h rose since the last rental at this pool size', () => {
     const H = 3600e3, now = 10 * H, d = (n) => Array.from({ length: n }, () => ({ mode: 'typed', remaster: 'done', swapped: 0, at: now - H }));
     expect(LH.talksPerHour({ done: [...d(8), { mode: 'typed', remaster: 'review', at: now - H }] }, { now, horizonH: 2 })).toBe(4);
