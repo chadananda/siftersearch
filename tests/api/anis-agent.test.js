@@ -49,6 +49,7 @@ describe('renderRefs', () => {
     expect(renderRefs('A point [[P1, P1, P7]].', { found, works })).toBe('A point ([God Passes By](https://oceanlibrary.com/gpb#p1)).');
     expect(renderRefs('News [W1].', { found, works })).toBe('News ([web: Web: news](https://news.example/x)).');
     expect(renderRefs('Lost [[P8]] and [[B4]].', { found, works })).toBe('Lost and.');
+    expect(renderRefs('It is first ([[P1]]).', { found, works })).toBe('It is first ([God Passes By](https://oceanlibrary.com/gpb#p1)).');
   });
 });
 
@@ -64,5 +65,14 @@ describe('canonWork and the switch', () => {
     expect(agentOn({ engine: 'pipeline', channel: 'site-chat' }, 'all')).toBe(false);
     expect(agentOn({ channel: 'site-chat' }, 'site-chat')).toBe(true);
     expect(agentOn({ channel: 'email' }, 'site-chat')).toBe(false);
+  });
+});
+
+describe('fixQuoteSpeakers leaves a book author alone', async () => {
+  const { fixQuoteSpeakers } = await import('../../api/lib/assistant/quotes.js');
+  it('"Bahá’u’lláh wrote it …, and in it He describes "…"" is not re-credited to the passage holder', () => {
+    const gpb = { text: 'which He wrote in answer to the questions of the Qáḍí, in which He describes the seven stages which the soul of the seeker must needs traverse', source_author: 'Shoghi Effendi' };
+    const t = "Bahá'u'lláh wrote it in answer to questions from Shaykh Muḥyi'd-Dín, the Qáḍí of Khániqayn, and in it He describes \"the seven stages which the soul of the seeker must needs traverse\".";
+    expect(fixQuoteSpeakers(t, [gpb]).text).toBe(t);
   });
 });

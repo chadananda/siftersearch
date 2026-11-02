@@ -234,6 +234,8 @@ export function fixQuoteSpeakers(text, passages) {
       const sentence = before.slice(start);
       const hit = [...sentence.matchAll(speakerRe)].at(-1);
       if (!hit) continue;
+      // the credit must introduce THIS quotation — "Bahá'u'lláh wrote it in answer to …, and in it He describes \"…\"" names the book's author, not the quote's
+      if (sentence.length - hit.index - hit[0].length > 40) continue;
       const named = hit[1] || hit[2], said = figureOf(named);
       const holders = pool.filter((p) => containsQuote(p.text, words));
       if (!holders.length || holders.some((p) => figureOf(p.source_author) === said && creditOf(p) === p.source_author)) continue;
