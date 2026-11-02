@@ -53,6 +53,7 @@ q{font-style:italic;quotes:"“" "”"}
 <div class="verdict">
   <p><b>The picture in brief.</b> People arrive with three very different needs. Most of what they type into a search box is short (median five words) and wants one thing back: a fact, a book, a quotation, or what a tradition teaches. The longer questions on our published pages and in Immerse's examples are real study: comparing, tracing, explaining a passage. And a growing share are <b>assignments</b> rather than questions: <q>put together a devotional program</q>, <q>compile quotes on sacrifice</q>, <q>show me a timeline</q>.</p>
   <p>One Anís should serve all three. He gives short answers to short questions, teaches when someone wants to understand, and does real work when someone hands him a task. The role he takes (teaching assistant, study buddy, fireside teacher or research companion) follows from what the person is doing. The reader never picks a mode.</p>
+  <p><b>At the centre: a system that improves itself, in quality and in speed.</b> Every kind of request gets a research strategy: a decision tree whose branches Jev chooses in a tenth of a second. Every run of every strategy is logged in full, so any answer can be taken apart afterwards, decision by decision. From those records we improve Jev's decisions, add better options, replace weaker strategies, and discover kinds of request we had not seen. The 27 scenarios below are the starting set, not the final one.</p>
 </div>
 
 <section>
@@ -373,14 +374,26 @@ q{font-style:italic;quotes:"“" "”"}
   </table></div>
   <p style="margin-top:10px">Each decision point is its own Jev task, with its own log, its own labelled examples and its own accuracy figure, which is the way Jev's log is already kept for training Laya. Where two branches are cheap, both run at once and the decision picks a result instead of waiting.</p>
 
-  <h3>Assessing every run, and growing the strategies</h3>
+  <h3>Self-improvement: the core of the plan</h3>
+  <p>Each strategy is a <b>versioned decision tree</b>. Every run is recorded completely enough to replay it, and nothing about the system is fixed: request types, trees, the options at each decision, the information Jev decides with, and the thresholds all change as the records show what works.</p>
+  <div class="wrap"><table>
+    <tr><th>Recorded on every run</th><th>What it lets us do</th></tr>
+    <tr><td>The request type and the strategy tree, with their versions</td><td>Compare versions; replace a tree with a better one</td></tr>
+    <tr><td>At each decision: what Jev was shown, the options offered, its probability for each, the branch taken</td><td>Find the decision that went wrong; see whether Jev lacked information or lacked a good option</td></tr>
+    <tr><td>Each search: the query, the shelf, the passages returned (by id, with scores)</td><td>Tell a search miss from a wrong decision; rerun the same search after index changes</td></tr>
+    <tr><td>Time and cost of every step</td><td>Find the slow and expensive steps and branch around them</td></tr>
+    <tr><td>The answer, the passages it cites, the judge's verdict and the reason for any loss</td><td>Tie the outcome to the path that produced it</td></tr>
+  </table></div>
+  <p style="margin-top:10px">Each record is one run (one turn), kept with its thread, and stored through the API like every other piece of data.</p>
   <ol>
-    <li><b>Every run leaves a trace:</b> each decision with Jev's probabilities, each search and its results, time and cost per step, the answer, and the judge's verdict.</li>
-    <li><b>A lost answer is traced to the decision that lost it.</b> The run is replayed from that point with the other branch; if the replay wins, the right choice becomes a labelled example for that decision point. Decision points that are often wrong get sharper definitions and examples, or are handed to the agent until fixed.</li>
-    <li><b>When no existing branch would have won, a strategy is missing.</b> The full agent, run on the same question, shows what it did differently (a shelf searched, a move made). That move becomes a new option at a decision point, or a new step, and is switched on only after it passes the gate on fresh questions.</li>
-    <li><b>The agent is how new strategies are found; the map is where they are kept.</b> Over time more questions finish on the map, fast, and fewer need the agent.</li>
+    <li><b>Forensics on every run.</b> A loss is traced to its cause: the request type, a decision, a search, the writing, or a missing strategy. A loss pinned to a decision is replayed from that point with each other branch; whichever wins becomes a labelled example for that decision.</li>
+    <li><b>Better decision support.</b> When Jev's choice was wrong because it could not see what mattered (the shelf a hit came from, whether a passage was an original, how many traditions were covered so far), that information is added to what the decision point shows. When it was wrong between two similar options, their definitions are sharpened and contrasting examples added.</li>
+    <li><b>Better options.</b> When no existing branch would have won, the full agent on the same question shows the missing move. It becomes a new option or step, switched on only after it passes the gate on fresh questions.</li>
+    <li><b>Strategies compete.</b> A new tree version runs beside the current one on fresh questions of the same type; the better one on quality, then speed, takes over. A tree that keeps losing is replaced.</li>
+    <li><b>New request types are discovered.</b> Questions Jev cannot place with confidence, and questions that keep falling through to the agent, are grouped by similarity each week. A group that recurs and needs its own approach becomes a new type with its own tree, built from how the agent handled it.</li>
+    <li><b>Speed is earned the same way.</b> Once a tree wins on quality, its slow steps are attacked: decisions moved from the agent to Jev, searches run in parallel, writing moved to a cheaper model only when the judge shows no loss.</li>
   </ol>
-  <p class="note">Measured per week: accuracy of each decision point, share of runs finished on the map, judged win rate per class, time per decision and per answer, cost per answer.</p>
+  <p class="note">Reported weekly, never answers to grade: per type and per tree version, win rate against Perplexity, accuracy of each decision point, share of runs finished without the agent, time and cost per answer, and new types or options added.</p>
 
   <h3>Making Jev's classification accurate</h3>
   <ol>
