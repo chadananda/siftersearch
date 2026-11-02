@@ -329,7 +329,8 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>Answer matches its scenario's shape</td><td class="n">not measured</td><td class="n">≥ 85%</td><td class="n">≥ 95%</td></tr>
     <tr><td>New question vs follow-up told apart correctly (checked sample)</td><td class="n">not measured</td><td class="n">≥ 95%</td><td class="n">≥ 98%</td></tr>
     <tr><td>Jev picks the right route (checked sample)</td><td class="n">not built</td><td class="n">≥ 90%</td><td class="n">≥ 95%</td></tr>
-    <tr><td>Time, lookups (group A)</td><td class="n">–</td><td class="n">≤ 3 s</td><td class="n">≤ 2 s</td></tr>
+    <tr><td>Time, book names and quotations</td><td class="n">–</td><td class="n">≤ 1 s</td><td class="n">≤ 0.5 s</td></tr>
+    <tr><td>Time, other lookups (group A)</td><td class="n">–</td><td class="n">≤ 3 s</td><td class="n">≤ 2 s</td></tr>
     <tr><td>Time, understanding and comparison (B, C, D, E)</td><td class="n">5.4 s typical</td><td class="n">≤ 12 s, progress within 2 s</td><td class="n">≤ 8 s</td></tr>
     <tr><td>Assignments (F)</td><td class="n">–</td><td class="n">delivered, progress shown</td><td class="n">≤ 3 min</td></tr>
   </table></div>
@@ -340,12 +341,14 @@ q{font-style:italic;quotes:"“" "”"}
   <h2>The process</h2>
   <h3>Jev routes, recipes answer</h3>
   <p><b>First, new question or follow-up.</b> Jev reads the message together with the thread so far and decides: a new question (classify it from scratch, drop the old context), or a follow-up, and which move (refer back, source, exact words, deepen, compare, push back, reshape). A follow-up is first rewritten as a self-contained request, with its references filled in from the thread (<q>the second one</q> becomes the exact passage; <q>what about Islam?</q> becomes <q>what does Islam teach about fasting</q>, as a comparison with the previous answer). Then it is routed like any question, carrying what the thread already found, so a reshape or a source request never searches again.</p>
+  <p><b>Lookups never reach a writing model.</b> Someone who types a book's name, or words in quotation marks, wants the book or the source of those words, not an essay. These go straight to search: Jev at most confirms the kind of request (about a tenth of a second), then title matching or exact-phrase search runs, and the result is laid out from a template (the book's link and catalogue line; the passage, its author, work and paragraph, linked). A model is allowed only at the very end, and only to format, never to decide or add. When the lookup finds nothing, Anís says so plainly and offers the nearest matches; only if the reader then asks more does the question go to a research route.</p>
   <p>Jev classifies each message in about a tenth of a second: which scenario (A1 to F6), which role, which traditions, which language, which works or people are named. Each scenario has a <b>route</b>: a recipe that already knows which tools to call, in which order, against which shelves, and what shape the answer takes. That replaces the slow part of an open agent, deciding what to do, which today takes several model turns to reach the same plan.</p>
   <div class="wrap"><table>
     <tr><th>Route</th><th>What the recipe does</th><th>Model work</th></tr>
-    <tr><td>A2 find a book</td><td>find_work on the title → link</td><td>None, or one line</td></tr>
+    <tr><td>A2 a book's name</td><td>title match on the catalogue → link and catalogue line</td><td>None (template)</td></tr>
     <tr><td>A5 reference</td><td>parse the reference → fetch the passage</td><td>None</td></tr>
-    <tr><td>A3, A4 passage or quotation</td><td>phrase search + semantic search → verify wording → trace to the earliest authoritative source</td><td>Short write-up</td></tr>
+    <tr><td>A4 words in quotation marks</td><td>exact-phrase search → closest wording if no exact match → earliest authoritative source</td><td>None (template); formatting only</td></tr>
+    <tr><td>A3 a passage by topic</td><td>semantic search → read around the hit → verify wording</td><td>Short write-up</td></tr>
     <tr><td>D2 prayer</td><td>prayer shelf by occasion</td><td>None</td></tr>
     <tr><td>B1 teaching on a topic</td><td>search the tradition's scripture, then authoritative interpretation; read around each hit</td><td>Sonnet writes, cites every claim</td></tr>
     <tr><td>C1–C3 comparison</td><td>the same search once per tradition named, in parallel; check each side has a real passage</td><td>Sonnet writes one section per side</td></tr>
