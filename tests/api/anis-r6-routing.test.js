@@ -70,3 +70,33 @@ describe('search string without greeting, asks kept past the cut (r6-after soul 
     expect(distilQuery('What is justice?')).toBe('What is justice?');
   });
 });
+
+// Chad 11-02: "religion science two wings bird quote" answered with Paris Talks + the Persian line + "Phelps Inventory ABU0493"
+describe('source template: inexact asks do not go to the tablet', () => {
+  const tablet = { certain: true, text: 'علم و دین دو بال پرواز', title: 'Khitabat-i-Abdu\'l-Baha', url: 'https://oceanoflights.org/x', meta: { pin: 'ABU0493', links: { inventory: 'https://bahai-library.com/phelps' } } };
+  const origin = { religion: "Baha'i", title: 'Paris Talks', author: "'Abdu'l-Bahá", text: 'Religion and science are the two wings upon which man’s intelligence can soar into the heights.', url: 'https://oceanlibrary.com/pt/?paraId=p1' };
+  const mk = (calls) => ({ ...deps(calls, origin), sourceHunt: async () => ({ origin, tablet, citedBy: [] }),
+    search: async (a) => { calls.search++; calls.q = a.query; return { passages: [{ text: 'Science and religion are twin wings.', title: 'The Promulgation of Universal Peace', source_url: 'https://oceanlibrary.com/pup/?paraId=p5', document_id: 8 },
+      { text: 'dup', title: 'Paris Talks', source_url: 'https://oceanlibrary.com/pt/?paraId=p1', document_id: 1 }], _plan: { shape: 'fact' } }; } });
+  const ask = (content, calls) => anisRespond({ messages: [{ role: 'user', content }], deps: mk(calls), direction: { kind: 'source_lookup' } });
+  it('keywords: main source + a similar passage, no Persian, no Phelps', async () => {
+    const calls = { search: 0, hunt: 0 };
+    const r = await ask('religion science two wings bird quote', calls);
+    expect(r.format?.id).toBe('source');
+    expect(r.reply).toContain('Paris Talks');
+    expect(r.reply).toContain('Promulgation of Universal Peace');
+    expect(r.reply).not.toMatch(/Persian|Phelps|original|ABU0493/i);
+  });
+  it('an exact quotation keeps the original, no extra search', async () => {
+    const calls = { search: 0, hunt: 0 };
+    const r = await ask('Where is this from: "Religion and science are the two wings upon which man’s intelligence can soar"?', calls);
+    expect(r.reply).toMatch(/original is in Persian/);
+    expect(calls.search).toBe(0);
+  });
+  it('"what is the Persian original of …" keeps the original in the evidence', async () => {
+    const calls = { search: 0, hunt: 0 };
+    const r = await ask('Where is this from, in the Persian original: "Religion and science are the two wings upon which man’s intelligence can soar"?', calls);
+    // an ask for the original is a multi-ask: the hunt is evidence, and it carries the Persian original
+    expect(calls.quotes.some((q) => /original, Persian/.test(q.source_title))).toBe(true);
+  });
+});

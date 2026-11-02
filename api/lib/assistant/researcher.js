@@ -112,7 +112,10 @@ export function toolRunner(impl) {
       if (!p) return 'unknown ref';
       return show((await impl.trace(p)).map((x) => add(x)));
     },
-    source_of: async ({ quotation }) => show((await impl.sourceOf(quotation)).map((x) => add(x))),
+    source_of: async ({ quotation }) => {
+      const r = show((await impl.sourceOf(quotation)).map((x) => add(x)));
+      return r === '(nothing)' ? 'no published source found for that wording — search_library with its most distinctive phrase; if that finds nothing either, say plainly that the library holds no source for it' : r;
+    },
     web_search: async ({ query }) => {
       const r = await impl.web(query);
       if (!r?.text) return 'no web answer';
@@ -179,8 +182,14 @@ export function translationLabel(by, authority) {
 /** Persian and Arabic spell ی/ي and ک/ك differently; a reader's typing may not match the library's. Pure. */
 export const letterVariants = (s) => [...new Set([String(s), String(s).replace(/ي/g, 'ی').replace(/ك/g, 'ک'), String(s).replace(/ی/g, 'ي').replace(/ک/g, 'ك')])];
 
+/** An EXACT quotation: a quoted run of 6+ words, or a bare 9+ word sentence that is not framed as a keyword/paraphrase ask. Pure (Chad 11-02: "religion science two wings bird quote" is inexact). */
+export const isExactQuote = (text) => { const t = String(text || '').trim(), q = [...t.matchAll(/[“"«]([^”"»]+)[”"»]/g)].some((m) => m[1].trim().split(/\s+/).length >= 6);
+  return q || (t.split(/\s+/).length >= 9 && !/\b(quote|saying|something like|kind of|about|paraphrase|gist)\b/i.test(t)); };
+/** The reader asked for the original / tablet / Persian / Arabic / Inventory — otherwise the original is not volunteered (Chad 11-02: going to source can disconcert). Pure. */
+export const asksForOriginal = (text) => /\b(in (the )?(original|persian|farsi|arabic)\b|(persian|arabic|farsi|original)[- ](word|words|phrase|text|wording|version|language|tablet)|what (is|are|was) the (persian|arabic|original)|original[- ]language|source tablet|which tablet|phelps|inventory)/i.test(String(text || ''));
+
 /** The live tools over the library (lazy imports; the API process). */
-export function libraryTools({ search, fastSearch }) {
+export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
   const shape = (p) => ({ id: p.id, text: p.text || '', title: p.title || p.document?.title || '', author: p.author || p.document?.author || '',
     source_url: p.source_url || p.readerUrl || p.url || null, document_id: p.document_id ?? p.documentId ?? p.doc_id, paragraph_index: p.paragraph_index ?? p.paragraphIndex,
     religion: p.religion || p.document?.religion || null, collection: p.collection || p.document?.collection || null, language: p.language || p.source_lang || 'en',
@@ -262,13 +271,15 @@ export function libraryTools({ search, fastSearch }) {
       }
       return out;
     },
+    // the sourcehunt engine behind /api/v1/source-hunt (Chad 11-02: Anís answers "where is this quote from"): the origin, the certain original (else the top possible one), and up to 3 works quoting it
     sourceOf: async (quotation) => {
-      const { sourceHunt } = await import('../source-hunt.js');
-      const r = await sourceHunt(quotation).catch(() => null);
+      const r = await (hunt || (await import('../source-hunt.js')).sourceHunt)(quotation).catch(() => null);
       if (!r?.origin) return [];
-      const o = r.origin, t = r.tablet?.certain ? r.tablet : null;
-      return [shape({ text: o.text, title: o.title, author: r.quoteAuthor || o.author, source_url: o.rangeUrl || o.url, document_id: o.documentId }),
-        ...(t ? [shape({ text: t.text, title: `${t.meta?.title || t.title} (original)`, author: r.quoteAuthor || o.author, source_url: t.meta?.links?.oceanoflightsRange || t.rangeUrl || t.url, document_id: t.documentId, language: /[پچژگ]/.test(t.text || '') ? 'fa' : 'ar' })] : [])];
+      const o = r.origin, t = r.tablet?.certain ? r.tablet : null, c0 = !t ? r.tablet?.candidates?.[0] : null, who = r.quoteAuthor || o.author;
+      const orig = (x, label) => shape({ text: x.text, title: `${x.meta?.title || x.title}${label}`, author: who, source_url: x.meta?.links?.oceanoflightsRange || x.rangeUrl || x.url, document_id: x.documentId, language: /[پچژگ]/.test(x.text || '') ? 'fa' : 'ar' });
+      return [shape({ text: o.text, title: o.title, author: who, source_url: o.rangeUrl || o.url, document_id: o.documentId }),
+        ...(t ? [orig(t, isExactQuote(quotation) ? ' (original)' : ' (original — give only if the reader asked for it)')] : c0?.text ? [orig(c0, isExactQuote(quotation) ? ' (possible original)' : ' (possible original — give only if the reader asked for it)')] : []),
+        ...(r.citedBy || []).slice(0, 3).map((c) => shape({ text: c.text || c.excerpt || `${c.title} quotes it${c.paragraphs ? ` (${c.paragraphs} paragraphs)` : ''}.`, title: c.title, author: c.author, source_url: c.rangeUrl || c.url, document_id: c.documentId }))];
     },
     web: async (query) => (await import('../perplexity.js')).perplexityFallback(query, { caller: 'anis-researcher', maxTokens: 700 }),
   };

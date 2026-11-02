@@ -23,7 +23,7 @@ import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { unmachine, dropQuibbles } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
-import { research as runResearch, libraryTools, RESEARCH_HOW } from './researcher.js';
+import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asksForOriginal } from './researcher.js';
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 
 // Default measured 2026-09-25 (scripts/wip/anis-model-race.mjs, lean prompt, 4 questions): Gemini 3.5 Flash-Lite
@@ -370,7 +370,12 @@ async function huntSource(d, question) {
   if (!r?.origin) return null;
   const family = (x) => (['Judaism', 'Christian'].includes(x) ? 'Bible' : x);
   if (religion && family(r.origin.religion) !== family(religion)) return null;
-  const o = r.origin, t = r.tablet?.certain ? r.tablet : null;
+  // Chad 11-02: going to the original tablet can disconcert a reader who did not ask — an INEXACT ask (keywords, a paraphrase) gets the main
+  // source plus 1–2 similar passages, no original-language text or Phelps Inventory; an exact quotation or an ask for the original gets them
+  const inexact = !asksForOriginal(question) && !isExactQuote(question);
+  const o = r.origin, t = r.tablet?.certain && !inexact ? r.tablet : null;
+  const sims = inexact && d.search ? [...new Map((((await d.search({ query: quotationIn(question), mode: 'passages', limit: 8, plan: { messages: [{ role: 'user', content: quotationIn(question) }], defaults: {} } }).catch(() => null))?.passages) || [])
+    .filter((p) => p.document_id !== o.documentId && p.title !== o.title && String(p.text || '').length <= 8000).map((p) => [p.title, p])).values()].slice(0, 2) : [];
   const tTitle = t ? (t.meta?.title || t.title) : null, lang = t && /[پچژگ]/.test(t.text || '') ? 'Persian' : 'Arabic';
   const ool = t?.meta?.links?.oceanoflights || null, phelps = t?.meta?.links?.inventory || null, pin = t?.meta?.pin || null;
   // only a citation shown to HOLD the wording (its range link marks it) is named as quoting it — a link-graph edge alone once
@@ -379,6 +384,7 @@ async function huntSource(d, question) {
   const atParagraph = (u) => /[?&](?:paraId|selectionString)=|#p\d+|#:~:text=/.test(String(u || ''));
   const others = (r.citedBy || []).filter((c) => atParagraph(c.rangeUrl)).slice(0, 3);
   const tags = { book: { title: o.title, url: o.rangeUrl || o.url } };
+  sims.forEach((p, i) => { tags[`sim${i + 1}`] = { title: p.title, url: p.source_url || p.readerUrl || p.url }; });
   if (t) tags.tablet = { title: tTitle, url: t.meta?.links?.oceanoflightsRange || ool || t.rangeUrl || t.url };
   if (t && phelps) tags.inventory = { title: `Phelps Inventory${pin ? ` ${pin}` : ''}`, url: phelps, plain: true };
   others.forEach((c, i) => { tags[`cited${i + 1}`] = { title: c.title, url: c.rangeUrl || c.url }; });
@@ -396,10 +402,13 @@ async function huntSource(d, question) {
     'Never write a URL, a markdown link or a title in brackets. Write each source as its tag exactly — {book}, {tablet}, {inventory}, {cited1}… — the tag is replaced by the linked title, so do not also write the title.',
     `At most four sentences. Say the quotation comes from {book} and whose words they are (${author || 'the author'}).`,
     t ? `Say the original is ${lang}, in {tablet}${origWords ? `, where it reads «${origWords}» — quote exactly those words` : ''}.${tags.inventory ? ' Mention {inventory}.' : ''}`
-      : 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.',
+      : inexact ? '' : 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.',
+    sims.length ? `In one sentence, say similar passages are in ${sims.map((c, i) => `{sim${i + 1}}`).join(' and ')}.` : '',
     others.length ? `In one sentence, say it is also quoted in ${others.map((c, i) => `{cited${i + 1}}`).join(', ')}.` : '',
     'Do not describe what kind of text it is or its authority (no "authorized interpretation", "scripture" or similar). Do not interpret the passage unless the seeker asks.',
   ].filter(Boolean).join(' ');
+  retrieved.push(...sims.map((p) => ({ text: clip(p.text), source_title: p.title, source_author: p.author || '', citation_url: p.source_url || p.readerUrl || p.url, doc_id: p.document_id, paragraph_index: p.paragraph_index ?? null,
+    religion: p.religion || "Baha'i", collection: null, source_lang: 'en', via: 'sourcehunt' })));
   const extraUrls = Object.values(tags).map((x) => x.url).filter(Boolean);
   // The reply itself, from the hunt alone — no model: every fact (writer, book, tablet, the original's words, Inventory
   // entry, other publications) is the hunt's, so nothing can be invented, leaked from instructions, or rambled (10-06 demo prep).
@@ -415,7 +424,8 @@ async function huntSource(d, question) {
     shown ? `The passage reads: «${shown}».` : '',
     scripture && others.length ? 'This is scripture itself; the Bahá’í texts below quote it rather than originate it.' : '',
     t ? `The original is in ${lang}, in {tablet}${origWords ? `, where it reads «${origWords}»` : ''}.${tags.inventory ? ' Its entry in the Phelps Inventory is {inventory}.' : ''}`
-      : 'I could not confirm the original tablet for this passage.',
+      : inexact ? '' : 'I could not confirm the original tablet for this passage.',
+    sims.length ? `Similar passages are in ${sims.map((c, i) => `{sim${i + 1}}`).join(' and ')}.` : '',
     others.length ? `It is also quoted in ${others.map((c, i) => `{cited${i + 1}}`).join(others.length > 2 ? ', ' : ' and ').replace(/, (\{cited\d\})$/, ' and $1')}.` : '',
   ].filter(Boolean).join(' ');
   return { retrieved, tags, how, reply, extraUrls, hunt: { quoteAuthor: r.quoteAuthor, origin: o.title, tablet: tTitle, ms: r.ms } };
@@ -425,7 +435,7 @@ async function huntSource(d, question) {
  *  wrapped in brackets or asterisks is still found; an unknown tag is dropped. */
 const TAG_ALIAS = { 1: 'book', 2: 'tablet' };   // the model sometimes numbers the passages instead
 export function fillTags(text, tags) {
-  return String(text || '').replace(/\*{0,2}\[?\{(book|tablet|inventory|cited\d|\d)\}\]?\*{0,2}(\s*\(([^()]{2,160})\))?/g, (m, k, paren, inner) => {
+  return String(text || '').replace(/\*{0,2}\[?\{(book|tablet|inventory|cited\d|sim\d|\d)\}\]?\*{0,2}(\s*\(([^()]{2,160})\))?/g, (m, k, paren, inner) => {
     const x = tags?.[TAG_ALIAS[k] || k];
     if (!x) return '';
     const link = x.url ? `[${x.plain ? x.title : `*${x.title}*`}](${x.url})` : (x.plain ? x.title : `*${x.title}*`);

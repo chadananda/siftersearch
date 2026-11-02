@@ -76,3 +76,54 @@ describe('fixQuoteSpeakers leaves a book author alone', async () => {
     expect(fixQuoteSpeakers(t, [gpb]).text).toBe(t);
   });
 });
+
+// Chad 11-02: Anís reaches the sourcehunt engine for "where is this quote from"; an inexact ask gets the main source + similar, not the tablet
+describe('source questions', async () => {
+  const { libraryTools, toolRunner, isExactQuote, asksForOriginal } = await import('../../api/lib/assistant/researcher.js');
+  const Q = 'The earth is but one country, and mankind its citizens';
+  const hunt = (over = {}) => async () => ({ quoteAuthor: "Bahá'u'lláh", origin: { text: `${Q}.`, title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", url: 'https://oceanlibrary.com/gleanings', rangeUrl: 'https://oceanlibrary.com/gleanings?paraId=p117', documentId: 3 },
+    tablet: { certain: false, candidates: [] }, citedBy: [], ...over });
+  const scriptedSource = (text) => { let n = 0; return async () => (n++ === 0 ? { choices: [{ message: { content: '', tool_calls: [
+    { id: 'a', function: { name: 'source_of', arguments: JSON.stringify({ quotation: Q }) } },
+    { id: 'b', function: { name: 'search_library', arguments: JSON.stringify({ query: 'earth is but one country mankind its citizens' }) } }] } }] } : { choices: [{ message: { content: text } }] }); };
+  const T = { ...tools, search: async () => [], sourceOf: async () => [
+    { id: 1, text: `${Q}.`, title: 'Gleanings from the Writings of Bahá’u’lláh', author: "Bahá'u'lláh", source_url: 'https://oceanlibrary.com/gleanings?paraId=p117', document_id: 3 },
+    { id: 2, text: 'Maqsúd original', title: 'Lawḥ-i-Maqṣúd (original)', author: "Bahá'u'lláh", source_url: 'https://oceanoflights.org/maqsud#p4', document_id: 4, language: 'ar' },
+    { id: 3, text: 'Citing work', title: 'The Promise of World Peace', author: 'Universal House of Justice', source_url: 'https://oceanlibrary.com/promise#p2', document_id: 5 }] };
+  it('"Where is this quote from" calls source_of and the reply links the origin', async () => {
+    const r = await agentAnswer({ messages: [{ role: 'user', content: `Where is this quote from: "${Q}"` }], tools: T,
+      create: scriptedSource(`Bahá’u’lláh wrote "${Q}" in [[P1]]; the original is in [[P2]], and it is quoted in [[P3]].`) });
+    expect(r.steps.map((s) => s.tool)).toContain('source_of');
+    expect(r.reply).toContain('(https://oceanlibrary.com/gleanings?paraId=p117)');
+    expect(r.reply).toContain('https://oceanoflights.org/maqsud#p4');
+  });
+  it('sourceOf: origin, an uncertain candidate as "(possible original)", citedBy capped at 3', async () => {
+    const cit = (i) => ({ title: `Work ${i}`, author: 'A', url: `https://oceanlibrary.com/w${i}`, rangeUrl: `https://oceanlibrary.com/w${i}#p1`, paragraphs: i, documentId: 10 + i });
+    const { sourceOf } = libraryTools({ search: async () => ({}), sourceHunt: hunt({ tablet: { certain: false, candidates: [{ text: 'لوح مقصود', title: 'Lawh-i-Maqsud', url: 'https://oceanoflights.org/lm' }] }, citedBy: [1, 2, 3, 4, 5].map(cit) }) });
+    const out = await sourceOf(Q);
+    expect(out.map((p) => p.title)).toEqual(['Gleanings from the Writings of Bahá’u’lláh', 'Lawh-i-Maqsud (possible original)', 'Work 1', 'Work 2', 'Work 3']);
+    expect(out[0].source_url).toContain('paraId=p117');
+    expect(out[2].source_url).toBe('https://oceanlibrary.com/w1#p1');
+    expect(out[2].text).toMatch(/quotes it/);
+  });
+  it('an inexact ask labels the original optional; an exact quotation does not', async () => {
+    const h = hunt({ tablet: { certain: true, text: 'لوح', title: 'Lawh-i-Maqsud', url: 'https://oceanoflights.org/lm', documentId: 4 } });
+    const { sourceOf } = libraryTools({ search: async () => ({}), sourceHunt: h });
+    expect((await sourceOf('religion science two wings bird'))[1].title).toMatch(/give only if the reader asked/);
+    expect((await sourceOf(Q))[1].title).toBe('Lawh-i-Maqsud (original)');
+  });
+  it('exact vs inexact and the ask for the original are told apart', () => {
+    expect(isExactQuote(`Is "${Q}" from Bahá'u'lláh?`)).toBe(true);
+    expect(isExactQuote('religion science two wings bird quote')).toBe(false);
+    expect(asksForOriginal('what is the Persian original of the two wings quote')).toBe(true);
+    expect(asksForOriginal('religion science two wings bird quote')).toBe(false);
+  });
+  it('no result: the runner returns guidance, and a source the tools never gave is dropped', async () => {
+    const { run } = toolRunner({ ...T, sourceOf: async () => [] });
+    expect(await run.source_of({ quotation: 'God helps those who help themselves' })).toMatch(/^no published source found for that wording — search_library/);
+    const r = await agentAnswer({ messages: [{ role: 'user', content: 'Where is this from: "God helps those who help themselves"' }], tools: { ...T, sourceOf: async () => [] },
+      create: scriptedSource('That is Bahá’u’lláh in Gleanings [[P4]].') });
+    expect(r.reply).not.toContain('P4');
+    expect(r.reply).not.toMatch(/\]\(/);
+  });
+});

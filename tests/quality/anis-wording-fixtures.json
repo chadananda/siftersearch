@@ -15189,6 +15189,317 @@
      ]
     }
    ]
+  },
+  {
+   "id": "src-one-country-who",
+   "type": "source_resolution",
+   "persona": "both",
+   "source_endpoint": "search",
+   "canonical": "The earth is but one country, and mankind its citizens",
+   "truth": "Bahá'u'lláh, Gleanings CXVII / Epistle to the Son of the Wolf",
+   "expected_strategy": [
+    "quote",
+    "source",
+    "lookup",
+    "fact"
+   ],
+   "cite": {
+    "link": true,
+    "any": [
+     "bahaullah",
+     "gleanings|epistle to the son of the wolf|tablets of baha"
+    ]
+   },
+   "incident": "Chad 11-02: Anís must reach the sourcehunt engine for any question about where a quotation comes from (source_of tool); hand-written, not generated",
+   "variants": [
+    {
+     "id": "src-one-country-who#01",
+     "style": "source_of",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Who said 'The earth is but one country, and mankind its citizens'?"
+      }
+     ]
+    },
+    {
+     "id": "src-one-country-who#02",
+     "style": "polite",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Could you tell me who said \"The earth is but one country, and mankind its citizens\" and where it is written?"
+      }
+     ]
+    }
+   ],
+   "dropped": []
+  },
+  {
+   "id": "src-fruits-one-tree",
+   "type": "source_resolution",
+   "persona": "both",
+   "source_endpoint": "search",
+   "canonical": "Ye are the fruits of one tree, and the leaves of one branch",
+   "truth": "Bahá'u'lláh, Gleanings (the oneness-of-humanity passages)",
+   "expected_strategy": [
+    "quote",
+    "source",
+    "lookup",
+    "fact"
+   ],
+   "cite": {
+    "link": true,
+    "any": [
+     "bahaullah",
+     "gleanings|tablets of baha|epistle to the son of the wolf"
+    ]
+   },
+   "incident": "Chad 11-02: Anís must reach the sourcehunt engine for any question about where a quotation comes from (source_of tool); hand-written, not generated",
+   "variants": [
+    {
+     "id": "src-fruits-one-tree#01",
+     "style": "source_of",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Where does 'Ye are the fruits of one tree, and the leaves of one branch' come from?"
+      }
+     ]
+    },
+    {
+     "id": "src-fruits-one-tree#02",
+     "style": "find",
+     "messages": [
+      {
+       "role": "user",
+       "content": "where can I read the passage \"Ye are the fruits of one tree, and the leaves of one branch\""
+      }
+     ]
+    }
+   ],
+   "dropped": []
+  },
+  {
+   "id": "src-justice-authentic",
+   "type": "source_resolution",
+   "persona": "both",
+   "source_endpoint": "search",
+   "canonical": "The best beloved of all things in My sight is Justice",
+   "truth": "Bahá'u'lláh, The Hidden Words (Arabic) no. 2",
+   "expected_strategy": [
+    "quote",
+    "source",
+    "lookup",
+    "fact"
+   ],
+   "cite": {
+    "link": true,
+    "all": [
+     "hidden words",
+     "bahaullah"
+    ]
+   },
+   "incident": "Chad 11-02: Anís must reach the sourcehunt engine for any question about where a quotation comes from (source_of tool); hand-written, not generated",
+   "variants": [
+    {
+     "id": "src-justice-authentic#01",
+     "style": "source_of",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Is 'The best beloved of all things in My sight is Justice' from Bahá'u'lláh?"
+      }
+     ]
+    },
+    {
+     "id": "src-justice-authentic#02",
+     "style": "typo",
+     "messages": [
+      {
+       "role": "user",
+       "content": "is the line the best beloved of all things in my sight is justice really from bahaullah or someone else"
+      }
+     ]
+    }
+   ],
+   "dropped": []
+  },
+  {
+   "id": "src-light-of-unity-original",
+   "type": "source_resolution",
+   "persona": "both",
+   "source_endpoint": "search",
+   "canonical": "So powerful is the light of unity that it can illuminate the whole earth",
+   "truth": "Bahá'u'lláh (Tablets of Bahá'u'lláh / Gleanings); the original is Arabic or Persian - expectation kept to the English source",
+   "expected_strategy": [
+    "quote",
+    "source",
+    "lookup",
+    "fact"
+   ],
+   "cite": {
+    "link": true,
+    "any": [
+     "bahaullah"
+    ]
+   },
+   "incident": "Chad 11-02: Anís must reach the sourcehunt engine for any question about where a quotation comes from (source_of tool); hand-written, not generated",
+   "variants": [
+    {
+     "id": "src-light-of-unity-original#01",
+     "style": "source_of",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Where is the original of 'So powerful is the light of unity that it can illuminate the whole earth'?"
+      }
+     ]
+    },
+    {
+     "id": "src-light-of-unity-original#02",
+     "style": "non_native",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Please where I can find the original language text of: so powerful is the light of unity that it can illuminate the whole earth"
+      }
+     ]
+    }
+   ],
+   "dropped": []
+  },
+  {
+   "id": "src-apocryphal-quote",
+   "type": "misattribution",
+   "persona": "both",
+   "source_endpoint": "search",
+   "canonical": "Be the change you wish to see in the world",
+   "truth": "Not found in the Bahá'í Writings; popularly (and doubtfully) credited to Gandhi - the right answer says no published source holds it and does not attribute from memory",
+   "expected_strategy": [
+    "quote",
+    "source",
+    "lookup",
+    "fact"
+   ],
+   "cite": {
+    "any": [
+     "gandhi|no (published )?source|not (found|in the library|from|a quotation)|does not appear|cannot find|could not find|apocryph|unattributed|misattribut"
+    ],
+    "allow_not_found": true
+   },
+   "incident": "Chad 11-02: no published source -> say so plainly, never attribute from memory",
+   "variants": [
+    {
+     "id": "src-apocryphal-quote#01",
+     "style": "source_of",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Who said 'Be the change you wish to see in the world'? Is it from Bahá'u'lláh?"
+      }
+     ]
+    },
+    {
+     "id": "src-apocryphal-quote#02",
+     "style": "polite",
+     "messages": [
+      {
+       "role": "user",
+       "content": "Could you tell me which Baha'i writing contains \"Be the change you wish to see in the world\"?"
+      }
+     ]
+    }
+   ],
+   "dropped": []
+  },
+  {
+   "id": "src-paraphrase-justice",
+   "type": "source_resolution",
+   "persona": "both",
+   "source_endpoint": "search",
+   "canonical": "The best beloved of all things in My sight is Justice",
+   "truth": "Paraphrase of Hidden Words (Arabic) no. 2 - Bahá'u'lláh",
+   "expected_strategy": [
+    "quote",
+    "source",
+    "lookup",
+    "fact"
+   ],
+   "cite": {
+    "link": true,
+    "any": [
+     "hidden words"
+    ]
+   },
+   "incident": "Chad 11-02: Anís must reach the sourcehunt engine for any question about where a quotation comes from (source_of tool); hand-written, not generated",
+   "variants": [
+    {
+     "id": "src-paraphrase-justice#01",
+     "style": "lay_paraphrase",
+     "messages": [
+      {
+       "role": "user",
+       "content": "I remember Bahá'u'lláh saying that the thing God loves most is fairness - what's the exact quote and where is it?"
+      }
+     ]
+    },
+    {
+     "id": "src-paraphrase-justice#02",
+     "style": "bare",
+     "messages": [
+      {
+       "role": "user",
+       "content": "god loves justice most bahaullah quote source"
+      }
+     ]
+    }
+   ],
+   "dropped": []
+  },
+  {
+   "id": "src-two-wings-inexact",
+   "type": "source_resolution",
+   "persona": "both",
+   "source_endpoint": "search",
+   "canonical": "religion science two wings bird quote",
+   "truth": "'Abdu'l-Bahá, Paris Talks / The Promulgation of Universal Peace. INEXACT ask: the reply gives the main source quoted and linked plus 1-2 similar passages, and NO Persian text or Phelps Inventory unless asked",
+   "expected_strategy": [
+    "quote",
+    "source",
+    "lookup",
+    "fact"
+   ],
+   "cite": {
+    "link": true,
+    "any": [
+     "paris talks|promulgation of universal peace|abdul baha|abdulbaha"
+    ]
+   },
+   "incident": "Chad 11-02: email \"religion science two wings bird quote\" answered with Paris Talks, then the Persian original line and \"Phelps Inventory ABU0493\" - disconcerting when not asked; give the main source + a couple similar",
+   "variants": [
+    {
+     "id": "src-two-wings-inexact#01",
+     "style": "terse",
+     "messages": [
+      {
+       "role": "user",
+       "content": "religion science two wings bird quote"
+      }
+     ]
+    },
+    {
+     "id": "src-two-wings-inexact#02",
+     "style": "find",
+     "messages": [
+      {
+       "role": "user",
+       "content": "where is the quote about religion and science being two wings of a bird"
+      }
+     ]
+    }
+   ],
+   "dropped": []
   }
  ]
 }
