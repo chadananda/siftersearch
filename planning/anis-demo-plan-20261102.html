@@ -1,0 +1,112 @@
+<title>Anís Demo Plan</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{--bg:#f6f7f9;--paper:#ffffff;--ink:#17202b;--muted:#5a6675;--line:#d9dee5;--accent:#0f6e74;--accent-soft:#e2f1f1;--warn:#9a5b00;--bad:#a3262a;--good:#1f7a3a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161c;--paper:#18202a;--ink:#e6ebf1;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--bad:#ef7b7e;--good:#6fcf8c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11161c;--paper:#18202a;--ink:#e6ebf1;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--bad:#ef7b7e;--good:#6fcf8c;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "Public Sans",system-ui,sans-serif;padding:0 16px}
+main{max-width:860px;margin:0 auto;padding-block:40px 64px;display:flex;flex-direction:column;gap:36px}
+h1,h2{font-family:Literata,Georgia,serif;text-wrap:balance;margin:0;font-weight:650}
+h1{font-size:2rem;line-height:1.2}
+h2{font-size:1.3rem;margin-bottom:10px}
+p{margin:0 0 10px;max-width:68ch}
+.lede{color:var(--muted);font-size:1.02rem}
+.eyebrow{font:600 .72rem/1 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:10px}
+.verdict{background:var(--accent-soft);border-left:3px solid var(--accent);padding:14px 16px;border-radius:2px}
+.verdict p:last-child{margin:0}
+.wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .72rem "JetBrains Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bad{color:var(--bad)} .good{color:var(--good)} .warn{color:var(--warn)}
+ul,ol{margin:0;padding-left:20px;max-width:70ch} li{margin-bottom:6px}
+.day{display:grid;grid-template-columns:118px 1fr;gap:4px 16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.day:last-child{border-bottom:0}
+.day b{font-family:"JetBrains Mono",monospace;font-size:.82rem;color:var(--accent)}
+.gate{display:inline-block;font:600 .7rem "JetBrains Mono",monospace;background:var(--accent);color:var(--paper);padding:2px 6px;border-radius:2px;margin-left:6px;vertical-align:1px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:6px 16px}
+.note{color:var(--muted);font-size:.85rem}
+@media (max-width:560px){.day{grid-template-columns:1fr}}
+</style>
+<main>
+<header>
+  <span class="eyebrow">Plan · written 2 Nov 2026 · demo Mon 9 Nov</span>
+  <h1>Anís as a research assistant in seven days</h1>
+  <p class="lede">The target, the starting point, the numbers each stage must reach, the tests that decide them, and the day-by-day schedule.</p>
+</header>
+
+<div class="verdict">
+  <p><b>Short answer.</b> Seven days is enough for a demo that works on a fixed set of journeys and on the common question types. Reaching the same quality on any question a stranger types, scored by the judge at 8.5 of 10 across 100 conversations, takes about four weeks. Most of that time goes on turning real-use misses into tests and fixing them.</p>
+  <p><b>Where it stands today.</b> On the 10-conversation test on 1 Nov (the answering pipeline production runs now), an Opus judge scored Anís <b>3.85 of 10</b>. It found 108 defects, 11 of them critical, and 64 of the 108 were in the written answer. A new research agent (one model that searches the library and writes the answer, with code checking every citation) is built and tested, but it is switched off in production.</p>
+</div>
+
+<section>
+  <h2>What "a motivated research assistant" means here</h2>
+  <p>Five abilities, each with its own acceptance test:</p>
+  <div class="wrap"><table>
+    <tr><th>Ability</th><th>What the reader sees</th><th>Acceptance test</th></tr>
+    <tr><td>Finds and gives</td><td>Any book, passage or quotation asked for comes back as the library's own copy, linked.</td><td>40 book and quotation requests: every one linked to the right work.</td></tr>
+    <tr><td>Researches</td><td>Several searches, reads the surrounding passages, traces a statement back to its primary source, compares across traditions. Every claim cites a linked passage.</td><td>30 research questions, each turn compared with Perplexity: Anís wins or ties on at least 70%. No invented quotations.</td></tr>
+    <tr><td>Takes initiative</td><td>Works out what the reader is after. Asks one question only when the request is truly unclear. Offers a concrete next step. Remembers the conversation. Takes on a larger job ("gather everything on X") and delivers a report.</td><td>10 multi-turn conversations with a simulated reader: the new <i>initiative</i> score is at least 4 of 5. One long task is delivered.</td></tr>
+    <tr><td>Is honest</td><td>Says plainly when the library does not hold something. Uses the web only for what a library can't hold, and labels it.</td><td>10 questions the library can't answer: all 10 answered honestly, with nothing invented.</td></tr>
+    <tr><td>Responds in time</td><td>Progress is visible at once ("searching… reading…"). Simple questions are answered quickly. Research questions take longer.</td><td>First progress shown within 2 s. Typical answer under 5 s for simple questions and under 12 s for research questions.</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Staged metrics</h2>
+  <p>Every gate is run by the batteries, not by hand: the conversation test with a simulated reader and an Opus judge (two judges, so noise can be told apart from change), the comparison with Perplexity, and the 221-wording battery. A stage passes only when every row meets its number.</p>
+  <div class="wrap"><table>
+    <tr><th>Metric</th><th>Today</th><th>Gate 1 · Wed 4 Nov</th><th>Demo gate · Sun 8 Nov</th><th>4 weeks</th></tr>
+    <tr><td>Conversation score (judge, 1–10)</td><td class="n bad">3.85</td><td class="n">6.0</td><td class="n">7.5</td><td class="n">8.5</td></tr>
+    <tr><td>Critical defects per 10 conversations</td><td class="n bad">11</td><td class="n">≤ 3</td><td class="n">0</td><td class="n">0</td></tr>
+    <tr><td>Grounding (1–5)</td><td class="n bad">2.33</td><td class="n">3.5</td><td class="n">4.3</td><td class="n">4.7</td></tr>
+    <tr><td>Depth (1–5)</td><td class="n bad">2.11</td><td class="n">3.3</td><td class="n">4.0</td><td class="n">4.5</td></tr>
+    <tr><td>Follow-up handling (1–5)</td><td class="n warn">2.78</td><td class="n">3.5</td><td class="n">4.2</td><td class="n">4.6</td></tr>
+    <tr><td>Initiative (1–5, new)</td><td class="n">not measured</td><td class="n">3.0</td><td class="n">4.0</td><td class="n">4.5</td></tr>
+    <tr><td>Wins or ties against Perplexity</td><td class="n">not measured</td><td class="n">measured</td><td class="n">≥ 70%</td><td class="n">≥ 85%</td></tr>
+    <tr><td>Invented quotations</td><td class="n">not counted</td><td class="n">0</td><td class="n">0</td><td class="n">0</td></tr>
+    <tr><td>Book and quotation requests linked</td><td class="n">not counted</td><td class="n">95%</td><td class="n">100%</td><td class="n">100%</td></tr>
+    <tr><td>Wording battery pass rate</td><td class="n warn">87%</td><td class="n">90%</td><td class="n">93%</td><td class="n">96%</td></tr>
+    <tr><td>Typical answer time (research questions)</td><td class="n">5.4 s</td><td class="n">≤ 12 s</td><td class="n">≤ 12 s, progress shown within 2 s</td><td class="n">≤ 8 s</td></tr>
+  </table></div>
+  <p class="note">Today's numbers are from the 1 Nov runs: conversations "r6-base" (10 conversations, 50 turns) and the wording battery "r3c-regress" (221 wordings). The grounding, depth and follow-up scores are on the judge's 1–5 scale. The answer-time target is looser than today's on purpose: deeper research takes longer, and visible progress covers the wait.</p>
+</section>
+
+<section>
+  <h2>Schedule</h2>
+  <div class="panel">
+    <div class="day"><b>Mon 2 Nov</b><div>Write the demo script (12 reader journeys) and turn it into the acceptance tests. Add an <i>initiative</i> score to the judge and the Perplexity comparison to the conversation battery. Run the baseline on both answer engines (the current pipeline and the new agent), and choose the engine by the numbers.</div></div>
+    <div class="day"><b>Tue 3 Nov</b><div>The research loop: plan the search before running it, run several searches, read around each passage, trace each statement to its primary source. Rework how answers are written so they read like a research note. Fix the largest defect groups the baseline found.</div></div>
+    <div class="day"><b>Wed 4 Nov</b><div>Initiative: when to ask and when to proceed, concrete next steps, memory across turns, and long-task mode (a research brief delivered as a report or email). <span class="gate">GATE 1</span></div></div>
+    <div class="day"><b>Thu 5 Nov</b><div>Breadth: comparative questions across traditions, the web for what the library lacks, honest answers when something is missing.</div></div>
+    <div class="day"><b>Fri 6 Nov</b><div>Production: switch site chat to the chosen engine, show progress while it works, measure and trim the wait, report cost per conversation.</div></div>
+    <div class="day"><b>Sat 7 Nov</b><div>Full batteries and the 30-question Perplexity comparison. Fix regressions only; no new features.</div></div>
+    <div class="day"><b>Sun 8 Nov</b><div>Freeze. Rehearse the demo script three times in production, and write the demo-gate report. <span class="gate">DEMO GATE</span></div></div>
+    <div class="day"><b>Mon 9 Nov</b><div>Demo.</div></div>
+  </div>
+  <p class="note">Each day ends with a battery run and a one-paragraph status: the numbers and a pass or fail, never a list of answers for you to grade.</p>
+</section>
+
+<section>
+  <h2>Risks and costs</h2>
+  <ul>
+    <li><b>Judge noise.</b> One judge's score moves by about half a point from run to run. Each gate uses two judges, and a stage passes on the mean.</li>
+    <li><b>Testing cost.</b> About $2 per 10 judged conversations (1 Nov actual). With roughly 30 conversations a day plus the Perplexity comparison, the week costs about $60–80 (estimate).</li>
+    <li><b>Answer cost.</b> A stronger model for the hardest turns raises the cost per conversation. The 1 Nov cost was $0.015 per conversation, and I'll report the new figure each day. Today's figures don't support a reliable estimate of the new cost yet.</li>
+    <li><b>Search comes first.</b> Batteries run through the gateway at a steady pace, so searches by real readers are never slowed by testing.</li>
+    <li><b>Breadth across traditions.</b> I haven't measured yet how deep the other traditions' shelves go. Thursday's runs will show it; if a shelf is thin, Anís says so instead of covering it with web results.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>What I need from you</h2>
+  <ol>
+    <li><b>The audience and three to five things the demo must show.</b> I'll draft the 12 journeys tonight from the question survey. Strike or add any you like; otherwise they stand.</li>
+    <li><b>Answer model for the demo.</b> I propose Sonnet 5 for every turn, and Opus only for the long research tasks. I'll report the cost per conversation each day.</li>
+  </ol>
+</section>
+</main>
