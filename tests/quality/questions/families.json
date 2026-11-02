@@ -1,0 +1,1590 @@
+[
+ {
+  "id": "bahai_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Bahá'í Faith.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "bahai"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "bahai_practice",
+  "intent": "Rules and lived practice of the Bahá'í Faith: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "bahai"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "bahai_society",
+  "intent": "Community, conversion, membership, controversy and critique, social teachings of the Bahá'í Faith.",
+  "scope": "tradition",
+  "kind": "society",
+  "traditions": [
+   "bahai"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "bahai_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Bahá'í Faith.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "bahai"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "bahai_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Bahá'í Faith: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "bahai"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "bahai_original_terms",
+  "intent": "Original-language terms and native-script queries for the Bahá'í Faith (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "bahai"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "judaism_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Judaism.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "judaism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "judaism_practice",
+  "intent": "Rules and lived practice of the Judaism: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "judaism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "judaism_society",
+  "intent": "Community, conversion, membership, controversy and critique, social teachings of the Judaism.",
+  "scope": "tradition",
+  "kind": "society",
+  "traditions": [
+   "judaism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "judaism_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Judaism.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "judaism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "judaism_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Judaism: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "judaism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "judaism_original_terms",
+  "intent": "Original-language terms and native-script queries for the Judaism (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "judaism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "buddhism_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Buddhism.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "buddhism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "buddhism_practice",
+  "intent": "Rules and lived practice of the Buddhism: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "buddhism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "buddhism_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Buddhism.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "buddhism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "buddhism_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Buddhism: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "buddhism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "buddhism_original_terms",
+  "intent": "Original-language terms and native-script queries for the Buddhism (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "buddhism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "islam_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Islam.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "islam"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "islam_practice",
+  "intent": "Rules and lived practice of the Islam: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "islam"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "islam_society",
+  "intent": "Community, conversion, membership, controversy and critique, social teachings of the Islam.",
+  "scope": "tradition",
+  "kind": "society",
+  "traditions": [
+   "islam"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "islam_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Islam.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "islam"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "islam_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Islam: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "islam"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "islam_original_terms",
+  "intent": "Original-language terms and native-script queries for the Islam (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "islam"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "christianity_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Christianity.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "christianity_practice",
+  "intent": "Rules and lived practice of the Christianity: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "christianity_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Christianity.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "christianity"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "christianity_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Christianity: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "christianity_original_terms",
+  "intent": "Original-language terms and native-script queries for the Christianity (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "christianity"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "hinduism_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Hinduism.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "hinduism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "hinduism_practice",
+  "intent": "Rules and lived practice of the Hinduism: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "hinduism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "hinduism_society",
+  "intent": "Community, conversion, membership, controversy and critique, social teachings of the Hinduism.",
+  "scope": "tradition",
+  "kind": "society",
+  "traditions": [
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "hinduism_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Hinduism.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "hinduism_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Hinduism: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "hinduism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "hinduism_original_terms",
+  "intent": "Original-language terms and native-script queries for the Hinduism (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "zoroastrianism_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Zoroastrianism.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "zoroastrianism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "zoroastrianism_practice",
+  "intent": "Rules and lived practice of the Zoroastrianism: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "zoroastrianism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "zoroastrianism_society",
+  "intent": "Community, conversion, membership, controversy and critique, social teachings of the Zoroastrianism.",
+  "scope": "tradition",
+  "kind": "society",
+  "traditions": [
+   "zoroastrianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "zoroastrianism_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Zoroastrianism.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "zoroastrianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "zoroastrianism_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Zoroastrianism: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "zoroastrianism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "zoroastrianism_original_terms",
+  "intent": "Original-language terms and native-script queries for the Zoroastrianism (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "zoroastrianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "taoism_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Taoism.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "taoism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "taoism_practice",
+  "intent": "Rules and lived practice of the Taoism: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "taoism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "taoism_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Taoism.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "taoism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "taoism_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Taoism: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "taoism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "taoism_original_terms",
+  "intent": "Original-language terms and native-script queries for the Taoism (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "taoism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "confucianism_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Confucianism.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "confucianism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "confucianism_practice",
+  "intent": "Rules and lived practice of the Confucianism: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "confucianism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "confucianism_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Confucianism.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "confucianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "confucianism_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Confucianism: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "confucianism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "confucianism_original_terms",
+  "intent": "Original-language terms and native-script queries for the Confucianism (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "confucianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "sikhism_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Sikhism.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "sikhism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "sikhism_practice",
+  "intent": "Rules and lived practice of the Sikhism: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "sikhism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "sikhism_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Sikhism.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "sikhism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "sikhism_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Sikhism: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "sikhism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "sikhism_original_terms",
+  "intent": "Original-language terms and native-script queries for the Sikhism (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "sikhism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "jainism_beliefs",
+  "intent": "Core beliefs, God, afterlife, identity (is it a religion / a cult / monotheistic) of the Jainism.",
+  "scope": "tradition",
+  "kind": "beliefs",
+  "traditions": [
+   "jainism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "jainism_practice",
+  "intent": "Rules and lived practice of the Jainism: worship, prayer, fasting, diet, dress, marriage, death rites, festivals, 'can a X do Y'.",
+  "scope": "tradition",
+  "kind": "practice",
+  "traditions": [
+   "jainism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "jainism_history",
+  "intent": "Origins, founders, dates, schools/sects, demographics, authorship and canon of the Jainism.",
+  "scope": "tradition",
+  "kind": "history",
+  "traditions": [
+   "jainism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "jainism_scripture_quotes",
+  "intent": "Scripture lookups and quotations for the Jainism: 'verse about X', 'what does the [book] say about', '[founder] quotes on', 'did X say'.",
+  "scope": "tradition",
+  "kind": "scripture_quotes",
+  "traditions": [
+   "jainism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "jainism_original_terms",
+  "intent": "Original-language terms and native-script queries for the Jainism (meaning of a term, word for X, queries typed in the tradition's language).",
+  "scope": "tradition",
+  "kind": "original_terms",
+  "traditions": [
+   "jainism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "god_exists",
+  "intent": "Does God exist / is God real / proof of God",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "who_made_god_nature_of_god",
+  "intent": "Nature and attributes of God: who made God, does God love/punish/forgive, gender of God",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "meaning_purpose",
+  "intent": "Meaning and purpose of life",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "suffering_evil",
+  "intent": "Why does God allow suffering, evil, bad things to good people",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "afterlife_heaven_hell",
+  "intent": "What happens after death; heaven, hell, judgment",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "soul_spirit",
+  "intent": "What the soul/spirit is; is it immortal",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "prayer_how_why",
+  "intent": "How and why to pray; does prayer work",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "meditation_contemplation",
+  "intent": "Meditation and contemplation: how, why, which kind",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "faith_doubt",
+  "intent": "Faith, doubt, losing faith, how to believe",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "morality_sin_forgiveness",
+  "intent": "What is sin, is X a sin, forgiveness",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "salvation_exclusivity",
+  "intent": "Who is saved; is my religion the only way",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "why_many_religions",
+  "intent": "Why so many religions; which is true; do all worship the same God",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "love_happiness_peace",
+  "intent": "Love, happiness, inner peace, contentment",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "scripture_reliability",
+  "intent": "Are scriptures true/reliable/corrupted",
+  "scope": "universal",
+  "kind": "universal",
+  "traditions": [
+   "all",
+   "judaism",
+   "islam",
+   "christianity"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "marriage_interfaith",
+  "intent": "Marriage, weddings, interfaith marriage",
+  "scope": "practical",
+  "kind": "practical",
+  "traditions": [
+   "all",
+   "judaism",
+   "islam"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "divorce",
+  "intent": "Divorce and remarriage",
+  "scope": "practical",
+  "kind": "practical",
+  "traditions": [
+   "all",
+   "judaism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "death_funeral_grief_burial",
+  "intent": "Death, funerals, burial/cremation, grief and comfort",
+  "scope": "practical",
+  "kind": "practical",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "diet_alcohol_fasting",
+  "intent": "Diet, alcohol, fasting rules",
+  "scope": "practical",
+  "kind": "practical",
+  "traditions": [
+   "all",
+   "buddhism",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "occasion_prayers",
+  "intent": "Prayers for occasions (healing, the dead, protection, exams, comfort)",
+  "scope": "practical",
+  "kind": "practical",
+  "traditions": [
+   "all"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "children_family_sex",
+  "intent": "Children, family life, sexuality, chastity",
+  "scope": "practical",
+  "kind": "practical",
+  "traditions": [
+   "all",
+   "christianity"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "holidays_calendar_conversion",
+  "intent": "Holy days, calendars, how to convert",
+  "scope": "practical",
+  "kind": "practical",
+  "traditions": [
+   "all",
+   "judaism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "gender_race_equality",
+  "intent": "Equality of women and men; race and racism",
+  "scope": "social",
+  "kind": "social",
+  "traditions": [
+   "all",
+   "islam",
+   "hinduism",
+   "sikhism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "sexuality_abortion_euthanasia",
+  "intent": "Homosexuality, abortion, euthanasia, suicide",
+  "scope": "social",
+  "kind": "social",
+  "traditions": [
+   "all",
+   "judaism",
+   "islam",
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "poverty_war_justice",
+  "intent": "Wealth/poverty, war/peace, justice, world unity",
+  "scope": "social",
+  "kind": "social",
+  "traditions": [
+   "all"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "science_education_environment",
+  "intent": "Science and religion, evolution, education, environment",
+  "scope": "social",
+  "kind": "social",
+  "traditions": [
+   "all"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_afterlife_rebirth",
+  "intent": "Afterlife, reincarnation/rebirth, resurrection, nirvana/moksha across traditions",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "sikhism",
+   "jainism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_prayer_worship",
+  "intent": "Prayer and worship compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_diet_fasting_alcohol",
+  "intent": "Diet laws, fasting, alcohol compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "sikhism",
+   "jainism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_god_nature",
+  "intent": "God / ultimate reality compared (Allah vs God, Brahman, Tao, no-God Buddhism, Trinity vs Trimurti)",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "taoism",
+   "sikhism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_suffering",
+  "intent": "Suffering and evil compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_marriage_family",
+  "intent": "Marriage and family compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "islam",
+   "christianity",
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_death_funeral",
+  "intent": "Funerals, burial, cremation compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "zoroastrianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_salvation_karma_grace",
+  "intent": "Salvation, grace vs karma compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_soul",
+  "intent": "The soul compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_ethics_sin_golden_rule",
+  "intent": "Sin, ethics, the golden rule across traditions",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "confucianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_meaning_of_life",
+  "intent": "Meaning of life compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "taoism",
+   "confucianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_prophets_founders",
+  "intent": "Prophets and founders across traditions (Jesus in the Quran, Abraham in three faiths, Krishna vs Jesus)",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "zoroastrianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_scriptures",
+  "intent": "Scriptures compared (Bible vs Quran, Gita vs Bible, is X in both)",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "taoism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_eschatology_messiah",
+  "intent": "Messiah, return, end times, prophecy fulfilment compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "zoroastrianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_gender_social",
+  "intent": "Gender and social teachings compared",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_science_religion",
+  "intent": "Science and religion compared across traditions",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_mysticism",
+  "intent": "Mysticism compared (Sufism, Kabbalah, Vedanta, Christian mysticism)",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "taoism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_bahai_vs_others",
+  "intent": "The Bahá'í Faith compared with Islam, Christianity, Zoroastrianism and others",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "zoroastrianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_zoroastrian_abrahamic",
+  "intent": "Zoroastrianism and its relation to / influence on Judaism, Christianity, Islam",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "judaism",
+   "islam",
+   "christianity",
+   "zoroastrianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_dharmic_pairs",
+  "intent": "Hinduism, Buddhism, Jainism compared with each other",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "buddhism",
+   "hinduism",
+   "jainism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_sikhism_pairs",
+  "intent": "Sikhism compared with Hinduism and Islam",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "islam",
+   "hinduism",
+   "sikhism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_abrahamic_dharmic",
+  "intent": "Abrahamic vs Dharmic traditions (Christianity/Islam vs Hinduism/Buddhism)",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_chinese_traditions",
+  "intent": "Taoism, Confucianism, Buddhism compared; with Christianity",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "buddhism",
+   "christianity",
+   "taoism",
+   "confucianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_intra_tradition_branches",
+  "intent": "Branches within a tradition (Sunni/Shia, Jewish movements, Catholic/Protestant/Orthodox, Theravada/Mahayana)",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "judaism",
+   "islam",
+   "christianity"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "compare_tradition_pairs",
+  "intent": "Generic \"X vs Y\" / \"difference between X and Y\" head-to-head (Google autocomplete pairs)",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "zoroastrianism",
+   "taoism",
+   "confucianism",
+   "sikhism",
+   "jainism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "cross_what_do_religions_say",
+  "intent": "\"What do religions say about X\", \"which religion believes X\", \"religions that don't X\"",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "christianity"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "cross_unity_common_ground",
+  "intent": "Unity of religions, common ground, are all religions the same",
+  "scope": "cross",
+  "kind": "cross",
+  "traditions": [
+   "bahai",
+   "christianity"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "quote_who_said",
+  "intent": "Who said \"<quote>\" — attribute a quotation",
+  "scope": "source",
+  "kind": "source",
+  "traditions": [
+   "all"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": false
+ },
+ {
+  "id": "quote_is_it_real",
+  "intent": "Is this quote real / misattributed (fake Buddha, Confucius, Lao Tzu, Rumi quotes)",
+  "scope": "source",
+  "kind": "source",
+  "traditions": [
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "confucianism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": false
+ },
+ {
+  "id": "quote_find_passage",
+  "intent": "Find the passage that says X (topic or paraphrase, no exact words): \"verse about patience\", \"where does it say\"",
+  "scope": "source",
+  "kind": "source",
+  "traditions": [
+   "bahai",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": true
+ },
+ {
+  "id": "quote_verse_reference",
+  "intent": "Look up a reference: \"John 3:16\", \"surah 2 ayah 255\", \"Gita 2.47\", \"Hidden Words Arabic 5\"",
+  "scope": "source",
+  "kind": "source",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "taoism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": false
+ },
+ {
+  "id": "orig_word_meaning",
+  "intent": "\"What does X mean\", \"Hebrew/Arabic/Sanskrit/Greek word for Y\"",
+  "scope": "original_language",
+  "kind": "original_language",
+  "traditions": [
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "taoism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "orig_arabic_persian",
+  "intent": "Request for the original Arabic/Persian of a translated passage",
+  "scope": "original_language",
+  "kind": "original_language",
+  "traditions": [
+   "bahai",
+   "islam"
+  ],
+  "relative_frequency": "low",
+  "hype_relevant": false
+ },
+ {
+  "id": "orig_translation_compare",
+  "intent": "Which translation is best/accurate; original language of a scripture",
+  "scope": "original_language",
+  "kind": "original_language",
+  "traditions": [
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "taoism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": false
+ },
+ {
+  "id": "scholar_authorship_dating",
+  "intent": "Who wrote X, when was X written, how old is X",
+  "scope": "scholarly",
+  "kind": "scholarly",
+  "traditions": [
+   "judaism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "taoism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "scholar_history_of",
+  "intent": "History of a tradition, event, place or practice",
+  "scope": "scholarly",
+  "kind": "scholarly",
+  "traditions": [
+   "bahai",
+   "buddhism",
+   "islam",
+   "christianity",
+   "zoroastrianism",
+   "confucianism",
+   "sikhism",
+   "jainism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "scholar_world_religion_facts",
+  "intent": "Oldest religion, how many followers, largest religion",
+  "scope": "scholarly",
+  "kind": "scholarly",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "sikhism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": false
+ },
+ {
+  "id": "meta_find_work",
+  "intent": "Find a specific work: \"<book> pdf\", \"read <tablet> online\", \"full text of\"",
+  "scope": "meta",
+  "kind": "meta",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "zoroastrianism",
+   "taoism",
+   "confucianism",
+   "sikhism",
+   "jainism"
+  ],
+  "relative_frequency": "high",
+  "hype_relevant": false
+ },
+ {
+  "id": "meta_find_person",
+  "intent": "Who was X (founders, figures, saints, early believers)",
+  "scope": "meta",
+  "kind": "meta",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "buddhism",
+   "islam",
+   "christianity",
+   "hinduism",
+   "zoroastrianism",
+   "taoism",
+   "confucianism",
+   "sikhism",
+   "jainism"
+  ],
+  "relative_frequency": "medium",
+  "hype_relevant": true
+ },
+ {
+  "id": "meta_enumerate_define",
+  "intent": "List/enumerate (\"list of prophets\", \"how many X are there\", \"names of God\")",
+  "scope": "meta",
+  "kind": "meta",
+  "traditions": [
+   "bahai",
+   "judaism",
+   "islam",
+   "christianity",
+   "taoism"
+  ],
+  "relative_frequency": "low",
+  "hype_relevant": false
+ }
+]
