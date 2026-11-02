@@ -59,8 +59,13 @@ if (MULTI && !INTERNAL_KEY) {
   process.exit(2);
 }
 
-const rawFixtures = JSON.parse(readFileSync(join(__dirname, 'ocean-fixtures.json'), 'utf-8'));
-const FIXTURES = CATEGORY ? rawFixtures.filter(f => f.category === CATEGORY) : rawFixtures;
+// --fixtures=<file> (default ocean-fixtures.json), --sample=N (even stride, deterministic), --ids=a,b (only those; the gate's recheck)
+const argv = (k) => args.find(a => a.startsWith(`--${k}=`))?.split('=').slice(1).join('=') || null;
+const rawFixtures = JSON.parse(readFileSync(argv('fixtures') ? join(process.cwd(), argv('fixtures')) : join(__dirname, 'ocean-fixtures.json'), 'utf-8'));
+const IDS = argv('ids')?.split(',');
+const SAMPLE = parseInt(argv('sample') || '0', 10);
+let FIXTURES = (CATEGORY ? rawFixtures.filter(f => f.category === CATEGORY) : rawFixtures).filter(f => !IDS || IDS.includes(f.id));
+if (SAMPLE && SAMPLE < FIXTURES.length) { const step = FIXTURES.length / SAMPLE; FIXTURES = Array.from({ length: SAMPLE }, (_, i) => FIXTURES[Math.floor(i * step)]); }
 
 if (!API_KEY) {
   console.error('PUBLIC_SIFTER_API_KEY not set in .env-public');

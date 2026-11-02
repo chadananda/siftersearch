@@ -39,7 +39,8 @@ if (!API_KEY) { console.error('PUBLIC_SIFTER_API_KEY not set in .env-public'); p
 if (MULTI && !INTERNAL_KEY) { console.error('--multi needs DEPLOY_SECRET (or INTERNAL_API_KEY)'); process.exit(2); }
 
 const { fixtures: ALL } = JSON.parse(readFileSync(join(__dirname, 'search-type-fixtures.json'), 'utf-8'));
-const FIXTURES = TYPE ? ALL.filter((f) => f.type === TYPE) : ALL;
+const IDS = args.find((a) => a.startsWith('--ids='))?.split('=')[1].split(',');   // gate recheck
+const FIXTURES = (TYPE ? ALL.filter((f) => f.type === TYPE) : ALL).filter((f) => !IDS || IDS.includes(f.id));
 
 // Same folding as score-search.mjs: tags dropped (Meili <em> splits words otherwise), accents/apostrophes gone.
 export const fold = (s) => String(s || '').replace(/<[^>]+>/g, '').normalize('NFD').replace(/[̀-ͯ]/g, '')
