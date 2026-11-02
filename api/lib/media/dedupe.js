@@ -341,12 +341,15 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
   const prior = deps.prior || await defaultPrior();
   const cache = deps.pairCache || PAIR_CACHE;
   const now = deps.now || (() => new Date().toISOString());
+  // a drain stops the run between groups (11-02: one run held siftersearch-reports in 'draining' 45+ min); the 15-min loop re-runs it
+  const draining = deps.draining || (await import('../drain.js')).isDraining;
   const rows = await repo.dedupeRows();
   // candidates: every pair inside a Dewey-labelled group + every pair the library-wide content index finds (content-index.js)
   const byId = new Map(rows.map((r) => [Number(r.id), r]));
   const edges = new Map(), addEdge = (a, b, src) => { const k = a < b ? `${a}|${b}` : `${b}|${a}`; if (!edges.has(k)) edges.set(k, src); };
   for (const g of groupsFromRows(rows)) for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) addEdge(Number(g[i].id), Number(g[j].id), 'dewey');
-  const scan = repo.contentScanRows && !deps.noScan ? await contentScan(repo, { textStamp, readText, file: deps.sketchFile }) : null;
+  const scan = repo.contentScanRows && !deps.noScan ? await contentScan(repo, { textStamp, readText, file: deps.sketchFile, stop: draining }) : null;
+  if (scan?.stopped) return { write, yielded: true, stopped_in: 'content scan', reread: scan.reread };
   if (scan) {
     for (const r of scan.rows) if (!byId.has(Number(r.id))) byId.set(Number(r.id), r);
     for (const p of scan.pairs) addEdge(p.a, p.b, 'content index');
@@ -363,6 +366,7 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
     control: controls ? { pairs: 0, containment: Array(20).fill(0), max: 0, top: [] } : undefined,
     dissolved_groups: 0, split_groups: 0, dissolved_copies: 0, restored: { to: {}, docs: 0, republished: 0, meta: 0 }, ambiguous: [], contains: { pairs: 0, list: [] }, refused: [], sample: [], dissolved_sample: [], pair_list: listPairs ? [] : undefined, errors: [] };
   for (const { members, edges: gEdges } of groups) {
+    if (draining()) { out.yielded = true; break; }
     try {
       const copies = [];
       for (const r of members) {
@@ -448,22 +452,24 @@ export async function mediaDedupeJob({ write = false, sample = 25, pairs: listPa
 }
 
 /** The content scan: every talk's sketch brought up to date (only changed transcripts re-read), saved, then the candidate pairs. */
-async function contentScan(repo, { textStamp, readText, file }) {
+async function contentScan(repo, { textStamp, readText, file, stop = () => false }) {
   const ci = await import('./content-index.js');
   file ||= ci.SKETCH_FILE;
   const rows = await repo.contentScanRows();
   const { items } = await ci.loadSketches(file);
-  let reread = 0, changed = false;
+  let reread = 0, changed = false, stopped = false;
   const present = new Set();
   for (const r of rows) {
+    if (stop()) { stopped = true; break; }
     const id = Number(r.id); present.add(id);
     const stamp = await textStamp(r.dir).catch(() => null);
     if (!stamp) { if (items.delete(id)) changed = true; continue; }
     if (items.get(id)?.stamp === stamp) continue;
     items.set(id, { stamp, hs: ci.sketch(await readText(r.dir).catch(() => '')) }); reread++; changed = true;
   }
-  for (const id of [...items.keys()]) if (!present.has(id)) { items.delete(id); changed = true; }
-  if (changed) await ci.saveSketches(items, file);
+  if (!stopped) for (const id of [...items.keys()]) if (!present.has(id)) { items.delete(id); changed = true; }   // a stopped scan never saw the rest
+  if (changed) await ci.saveSketches(items, file);   // sketches made before a stop are kept
+  if (stopped) return { stopped, reread };
   const sketches = new Map([...items].filter(([, v]) => v.hs.length).map(([id, v]) => [id, v.hs]));
   return { rows, talks: rows.length, sketched: sketches.size, reread, pairs: ci.candidatePairs(sketches) };
 }

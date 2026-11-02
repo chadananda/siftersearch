@@ -483,5 +483,14 @@ describe('media-dedupe job: the library-wide scan', () => {
     // the second pass re-reads nothing
     const r2 = await mediaDedupeJob({}, deps);
     expect(r2.scan.reread).toBe(0);
+    // a drain (deploy) stops the run: mid-scan it yields keeping the sketches made so far; between groups it settles no more
+    let n = 0;
+    const r3 = await mediaDedupeJob({ write: true }, { ...deps, textStamp: async (dir) => `${dir}@2`, draining: () => ++n > 2 });
+    expect(r3).toMatchObject({ yielded: true, stopped_in: 'content scan', reread: 2 });
+    let m = 0; const marked = calls.marked.length;
+    const r4 = await mediaDedupeJob({ write: true }, { ...deps, textStamp: async (dir) => `${dir}@2`, draining: () => ++m > 3 })   // 3 scan rows, then the first group;
+    expect(r4.scan.reread).toBe(1);   // only the talk the stopped scan never reached
+    expect(r4.yielded).toBe(true);
+    expect(calls.marked.length).toBe(marked);
   });
 });
