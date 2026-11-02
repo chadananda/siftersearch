@@ -16,6 +16,14 @@ describe('service heartbeat', () => {
     expect(late.health).toBe('silent');
   });
 
+  it("a job's state file in the services dir (no started_at) is job state, never a silent service (Chad 11-02)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'svc-'));
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(join(dir, 'embed-gemini-x.json'), JSON.stringify({ name: 'embed-gemini', pid: 1, state: 'running', beat_at: '2026-10-29T17:55:36.253Z' }));
+    const [s] = readServices({ dir });
+    expect(s).toMatchObject({ kind: 'job-state', health: 'running' });
+  });
+
   it('reports event-loop lag: a blocked loop shows in the next beat', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'svc-'));
     const stop = startHeartbeat({ name: 'siftersearch-lag', dir, every: 400 });

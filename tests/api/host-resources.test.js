@@ -109,6 +109,11 @@ describe('which filesystems', () => {
     expect(ids).not.toContain('/tank/media');
     expect(ids.some((i) => i.includes('efivars'))).toBe(false);
   });
+  it('a read-only mount (a donor collection drive) is not watched: full by design (Chad 11-02)', () => {
+    const t = `${TOWER}\n@@df\n/dev/sdf1 ntfs3 2930000000 2930000000 0 100% /mnt/troxel-passport\n@@ro\n/mnt/troxel-passport\n`;
+    expect(filesystems(parseHostStat(t)).map((f) => f.id)).not.toContain('/mnt/troxel-passport');
+    expect(filesystems(parseHostStat(t.replace('@@ro\n/mnt/troxel-passport\n', ''))).map((f) => f.id)).toContain('/mnt/troxel-passport');
+  });
   it('btrfs subvolume mounts of one device collapse to one row', () => {
     const fs = filesystems(parseHostStat(BOSS_BTRFS));
     expect(fs.map((f) => f.id)).toEqual(['/']);

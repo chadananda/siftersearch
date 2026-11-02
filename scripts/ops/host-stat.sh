@@ -33,6 +33,7 @@ echo "ours-capped-scopes $ours -"
 command -v docker >/dev/null 2>&1 && echo "ours-containers $( (docker stats --no-stream --format '{{.MemUsage}}' 2>/dev/null || sudo -n docker stats --no-stream --format '{{.MemUsage}}' 2>/dev/null) | awk '{print $1}' | tr '\n' ',' )" 
 echo "@@meminfo"; grep -E '^(MemTotal|MemAvailable|SwapTotal|SwapFree):' /proc/meminfo
 echo "@@df"; df -PkT 2>/dev/null | tail -n +2
+echo "@@ro"; awk '$4 ~ /(^|,)ro(,|$)/ {print $2}' /proc/mounts 2>/dev/null   # read-only mounts: a full one is not filling (older copies omit it)
 if command -v zpool >/dev/null 2>&1; then
   echo "@@zpool"; zpool list -Hp -o name,size,alloc,free 2>/dev/null
   echo "@@zfs"; zfs list -Hp -t filesystem -o name,used 2>/dev/null

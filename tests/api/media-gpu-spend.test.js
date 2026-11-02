@@ -247,7 +247,9 @@ describe('system checks: CRITICAL findings for paid GPU', () => {
     expect(bad(g({ lane_updated_s: 900 }))).toEqual(['GPU pods without a lane']);
     expect(bad(g({ pods: [{ name: 'p1', live: true, idle_min: 12, cost_per_hr: 0.9 }] }))).toEqual(['GPU pods idle']);
     expect(bad(g({ efficiency_30m: 0.5 }))).toEqual(['GPU efficiency 30 min']);
-    expect(bad(g({ spent_usd: 49 }))).toEqual(['GPU spend vs cap']);
+    expect(bad(g({ spent_usd: 49 }))).toEqual([]);   // near the cap is approved spend, not broken (Chad 11-02)
+    expect(bad(g({ spent_usd: 60, queue: 0 }))).toEqual([]);
+    expect(bad(g({ spent_usd: 60, queue: 12 }))).toEqual(['GPU spend vs cap']);
     expect(podChecks(null)).toEqual([]);
   });
 });

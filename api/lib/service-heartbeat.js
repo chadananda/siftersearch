@@ -51,8 +51,11 @@ export function startHeartbeat({ name = process.env.name || 'unknown', every = 1
 export function readServices({ dir = DIR(), now = Date.now(), head = headCommit() } = {}) {
   let files = [];
   try { files = readdirSync(dir).filter((f) => f.endsWith('.json')); } catch { return []; }
+  // only startHeartbeat records (started_at) are services; other files here are job state (the phrase indexer's embed limiter
+  // and batch files) — a finished job's file is not a dead service (Chad 11-02), so it is never 'silent'
   return files.map((f) => { try { return JSON.parse(readFileSync(join(dir, f), 'utf8')); } catch { return null; } }).filter(Boolean).map((s) => ({
-    ...s, health: now - Date.parse(s.beat_at) > STALE_MS ? 'silent' : s.state, on_head: !!head && s.commit === head,
+    ...s, kind: s.started_at ? 'service' : 'job-state',
+    health: s.started_at && now - Date.parse(s.beat_at) > STALE_MS ? 'silent' : s.state, on_head: !!head && s.commit === head,
     age_s: Math.round((now - Date.parse(s.beat_at)) / 1000),
   })).sort((a, b) => a.name.localeCompare(b.name));
 }

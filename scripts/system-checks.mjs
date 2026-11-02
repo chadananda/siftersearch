@@ -107,7 +107,7 @@ let drainSeen = state.drainSeen || {};
   else {
     // a SILENT service (no heartbeat for 5 min) is not draining — it is not running (10-23: a module that would not load
     // showed as 'draining 13 min'): CRITICAL, with its commit and last beat
-    const silent = services.filter((x) => (x.health === 'silent' || Number(x.age_s) > 300) && !power?.stopped?.includes(x.name));
+    const silent = services.filter((x) => x.kind !== 'job-state' && (x.health === 'silent' || Number(x.age_s) > 300) && !power?.stopped?.includes(x.name));
     add('Services alive', !silent.length, 'critical', silent.length ? silent.map((x) => `${x.name} silent ${Math.round(Number(x.age_s) / 60)} min (last beat ${x.beat_at}, commit ${String(x.commit || '').slice(0, 8)})`).join(' · ') : 'ok');
     // heavy media processing running ON TOWER (Chad 10-24): counted in cores, named by process kind
     try {

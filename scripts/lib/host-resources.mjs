@@ -13,7 +13,7 @@ export const gb = (bytes) => (bytes / 1024 ** 3).toFixed(bytes >= 100 * 1024 ** 
 /** host-stat.sh text → structured snapshot. */
 export const DOCKER_MIN_FREE_GB = 30;
 export function parseHostStat(text) {
-  const out = { version: 0, host: null, nproc: 0, load: [], mem: {}, df: [], zpool: [], zfs: {}, du: {}, oomCount: 0, oom: [], xid: [], nvsmi: null, nvdev: null, journalErr: null, dockerRoot: null, psi: {}, zram: [], amd: null, vramProc: [], svc: {}, ours: {} };
+  const out = { version: 0, host: null, nproc: 0, load: [], mem: {}, df: [], zpool: [], zfs: {}, du: {}, oomCount: 0, oom: [], xid: [], nvsmi: null, nvdev: null, journalErr: null, dockerRoot: null, psi: {}, zram: [], amd: null, vramProc: [], svc: {}, ours: {}, ro: [] };
   let sec = null;
   for (const raw of String(text || '').split('\n')) {
     const line = raw.trimEnd();
@@ -35,6 +35,7 @@ export function parseHostStat(text) {
     }
     if (!line.trim()) continue;
     if (sec === 'meminfo') { const [, key, val] = line.match(/^(\w+):\s+(\d+)/) || []; if (key) out.mem[key] = kb(val); }
+    else if (sec === 'ro') { if (line.trim()) out.ro.push(line.trim()); }
     else if (sec === 'df') {
       const c = line.split(/\s+/);
       if (c.length >= 7) out.df.push({ source: c[0], type: c[1], size: kb(c[2]), used: kb(c[3]), avail: kb(c[4]), mount: c.slice(6).join(' ') });
@@ -63,6 +64,7 @@ export function filesystems(s) {
   const seen = new Map();
   for (const d of s.df) {
     if (SKIP_TYPES.has(d.type)) continue;
+    if (s.ro?.includes(d.mount)) continue;   // read-only (a donor collection drive): full by design, cannot fill (Chad 11-02)
     if (d.type === 'tmpfs' && !(d.mount === '/tmp' || d.mount.startsWith('/srv/'))) continue;
     if (!d.size) continue;
     const key = d.type === 'tmpfs' ? d.mount : d.source;
