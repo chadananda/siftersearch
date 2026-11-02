@@ -143,3 +143,17 @@ describe('a bare title is a request for the book (Chad 11-01: "Dawnbreakers" got
     expect(bareTitle('who was Nabil')).toBeNull();
   });
 });
+
+describe('a book reply never carries an unsourced middle (11-01 live: "Dawnbreakers" → "I didn\'t find a passage… tell me more")', () => {
+  it('a crafted middle with no passage link is dropped: link + offer only', async () => {
+    const { anisRespond } = await import('../../api/lib/assistant/respond.js');
+    const work = { doc: ROWS[1], others: [] };
+    const out = await anisRespond({ messages: [{ role: 'user', content: 'Dawnbreakers' }], deps: {
+      plan: async () => ({ shape: 'lookup' }), findWork: async () => work,
+      search: async () => ({ passages: [{ text: 'The Dawn-Breakers of Nabíl is a narrative every believer should master.', title: 'T', author: 'A', document_id: 99, paragraph_index: 0, source_url: 'https://x/about#1' }], _plan: { shape: 'topic' } }),
+      craft: async () => 'I didn’t find a passage that says this directly in this search. Could you tell me a little more about what you’re looking for?',
+      companion: async () => ({ append: '', plan: null, offer: false }),
+    } });
+    expect(out.reply).toBe(workReply(work));
+  });
+});

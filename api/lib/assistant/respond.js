@@ -770,7 +770,10 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const bare = dropPreamble(linked);
   // every book named in italics links to the library's copy (Chad 11-01)
   const titled = conversational ? { text: bare } : await (d.linkTitles || (deps ? async (t) => ({ text: t }) : linkTitles))(bare).catch(() => ({ text: bare }));
-  const reply = work ? [workLead(work), titled.text.trim(), workOffer(work)].filter(Boolean).join('\n\n') : titled.text;
+  // the middle of a book reply is what the sources say about it, linked — or nothing (11-01 live: "Dawnbreakers" got "I didn't
+  // find a passage… could you tell me more?" between the link and the offer)
+  const about = work && /\]\(https?:\/\/[^)]+\)/.test(titled.text.replace(/\[\*[^\]]*\*\]\([^)]*\)/g, '')) ? titled.text.trim() : '';
+  const reply = work ? [workLead(work), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text;
   if (comp?.log && comp.plan) comp.log(comp.plan);
 
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and
