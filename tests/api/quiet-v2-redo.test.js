@@ -1,7 +1,10 @@
 // Quiet v2 redo (Chad 11-01): a v1 remaster is stale (redone), stays on air meanwhile; the order is published first by loud CUTS; pods get Opus input.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+vi.mock('../../api/lib/db.js', () => ({ query: vi.fn(), queryOne: vi.fn(), queryAll: vi.fn(async () => []), transaction: vi.fn() }));
 import { loudCuts, redoOrder, hasQuiet, QUIET_REPAIR_VERSION } from '../../api/lib/media/quiet-record.js';
 import { REG, isStale, markStale, fpOf } from '../../api/lib/media/stages.js';
+import { readFileSync } from 'fs';
+import { mediaRerunJob } from '../../api/lib/ops/media-jobs.js';
 import { needsOpus } from '../../api/lib/media/r2-stage.js';
 
 describe('stale = redo', () => {
@@ -38,5 +41,27 @@ describe('pods get Opus input', () => {
     expect(needsOpus(317e6, 3600)).toBe(true);
     expect(needsOpus(30e6, 3600)).toBe(false);
     expect(needsOpus(1e6, 0)).toBe(false);
+  });
+});
+
+describe('UniPASE runs with PLC off (11-01: PLC invents audio and words in digital-zero gaps)', () => {
+  it('every model call passes enable_plc=False and the setting is recorded on the stage', () => {
+    for (const f of ['scripts/media/runpod_worker.py', 'scripts/media/unipase_job.py', 'scripts/media/remaster-rnd/run_boss_gen.py']) {
+      const src = readFileSync(f, 'utf8');
+      expect(src).toMatch(/enable_plc=False/); expect(src).not.toMatch(/enable_plc=True/);
+    }
+    expect(REG.BY.remaster.settings.plc).toBe(false);
+  });
+});
+
+describe('mediaRerunJob on the remaster', () => {
+  it('is accepted (typed chain redo) and returns the work order: published first, most loud cuts first', async () => {
+    const q = (n, s) => ({ remaster: { quiet: { stretches: n, noise_silenced_s: s } }, stages: { remaster: { at: 'x', tool: 'unipase', fp: 'old' } } });
+    const metas = { '/d/1': q(500, 900), '/d/2': q(5, 50), '/d/3': q(80, 10), '/d/4': q(80, 20) };
+    const cands = [1, 2, 3, 4].map((id) => ({ id, dir: `/d/${id}`, duration_s: 3600, state: 'done', published_at: id === 1 ? null : 'p' }));
+    const d = { ledger: { rerunCandidates: async () => cands, stageUsd: async () => [], syncItemStages: vi.fn() }, ops: { pendingRuns: async () => [] }, repo: { setIndex: vi.fn() }, readMeta: async (dir) => metas[dir], writeMeta: vi.fn() };
+    const r = await mediaRerunJob({ stage: 'remaster', mode: 'apply' }, d);
+    expect(r.order).toEqual([4, 3, 2, 1]);
+    expect(d.writeMeta.mock.calls[0][1].stages.remaster.stale).toBeTruthy();
   });
 });

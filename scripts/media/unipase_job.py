@@ -49,7 +49,7 @@ def main():
         wav_in, wav_out = os.path.join(d, 'i.wav'), os.path.join(d, 'o.wav')
         subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', a.input, '-ac', '1', '-ar', str(SR), '-c:a', 'pcm_f32le', wav_in], check=True)
         with torch.inference_mode():
-            IL.inference_file(wav_in, wav_out, m, sr_out=SR, enable_plc=True)
+            IL.inference_file(wav_in, wav_out, m, sr_out=SR, enable_plc=False)
         subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', wav_out, '-ac', '1', '-ar', str(SR), '-c:a', 'flac', '-f', 'flac', a.output], check=True)
         import soundfile as sf
         info = sf.info(wav_in)

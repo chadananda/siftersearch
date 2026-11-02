@@ -127,7 +127,7 @@ def run_job(d, up, inference_file, asr, release_restore=None):
     subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', src, '-ac', '1', '-ar', str(SR), '-c:a', 'pcm_f32le', wav_in], check=True)
     torch.cuda.reset_peak_memory_stats()
     with torch.inference_mode():
-        inference_file(wav_in, wav_out, up, sr_out=SR, enable_plc=True)   # sr_out=48000 runs the PostNet BWE; 8 s / 4 s hop defaults
+        inference_file(wav_in, wav_out, up, sr_out=SR, enable_plc=False)   # sr_out=48000 runs the PostNet BWE; 8 s / 4 s hop defaults
     t_up = time.time() - t0
     subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', wav_out, '-ac', '1', '-ar', str(SR), '-c:a', 'flac', '-sample_fmt', 's16', '-f', 'flac', os.path.join(d, 'out.flac.tmp')], check=True)
     os.replace(os.path.join(d, 'out.flac.tmp'), os.path.join(d, 'out.flac'))

@@ -59,7 +59,7 @@ def load(model):
             import soundfile as sf, tempfile
             d = tempfile.mkdtemp(dir=f'{ROOT}/tmp')
             sf.write(f'{d}/i.wav', x, SR)
-            IL.inference_file(f'{d}/i.wav', f'{d}/o.wav', m, sr_out=SR, enable_plc=True)
+            IL.inference_file(f'{d}/i.wav', f'{d}/o.wav', m, sr_out=SR, enable_plc=False)
             return read(f'{d}/o.wav')
         return run
     if model == 'stupase':   # StuPASE (Interspeech 2026; DeWavLM-R + flow-matching mel + 16 kHz vocoder), authors' defaults
