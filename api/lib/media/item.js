@@ -120,6 +120,12 @@ async function screenSlot(fn) {
 // search and catalogued (published) at once; the enrichment (subheaders, quotes, links, audience + moments) follows and
 // 'update' re-renders, re-ingests (only changed paragraphs: the ingester diffs) and re-catalogues the published talk in place
 /** The completed stages as the catalogue keeps them (",archive,grade,…,"; LIKE '%,quotes,%' counts them). */
+/** Why a remaster is held, the reason that actually held it: a splice, the worker's own hold (e.g. realign placed too few words —
+ *  11-02: talk 2313 was held by realign but showed "words differ in 11 % (> 15 %)"), a failed assessment, else the words check. */
+export const holdWhy = ({ spliced, g = {}, pod, wordsPct, maxPct }) => spliced ? `the copy mixes original and remastered audio (${g.swapped} sentences from the original): never published — re-render the pure copy`
+  : pod?.held ? (pod.qa?.reason || pod.why || 'held by the worker')
+  : pod?.qa?.output_assessment?.passed === false ? pod.qa.reason
+  : `the remaster's words differ from the original transcript in ${wordsPct} % of sentences (> ${maxPct} %): listen to check the remaster or the check`;
 export const stagesDone = (stages = {}) => `,${STAGES.filter((s) => stages[s]?.at).join(',')},`;
 
 /** Queue the search layers for one ingested media document (deduplicated by the ops queue: same job + params = one run). */
@@ -523,7 +529,7 @@ export async function runItem(item, opts = {}, deps = {}) {
             delete meta.remaster_tier;
           }
           if ((meta.enhancement.listening || 'safe') !== listeningBefore) markAudioPending(meta);
-          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: spliced ? `the copy mixes original and remastered audio (${g.swapped} sentences from the original): never published — re-render the pure copy` : pod?.qa?.output_assessment?.passed === false ? pod.qa.reason : `the remaster's words differ from the original transcript in ${wordsPct} % of sentences (> ${maxPct} %): listen to check the remaster or the check` }),
+          meta.remaster = { status: pass ? 'done' : 'review', verdict: pass ? (pod?.method === 'cleaned' ? 'pass-cleaned' : 'pass-auto') : 'review', ...(pod?.method ? { method: pod.method } : {}), ...(pass ? {} : { why: holdWhy({ spliced, g, pod, wordsPct, maxPct }) }),
             swapped: g.swapped, sentences: g.sentences, swapped_pct: g.swapped_pct, fallback_sent_pct: g.fallback_sent_pct ?? null, flagged_sent_pct: g.flagged_sent_pct ?? null, unguardable_s: g.unguardable_s ?? null, lag_ms: g.lag_ms, cloud: await readJson(join(dir, 'enhanced', 'unipase.done.json'), null), ...(pod?.quiet ? { quiet: quietRecord(pod.quiet, { host: 'worker' }) } : {}), ...(pod && existsSync(out) ? { stage_audio: { file: 'enhanced/unipase.opus', codec: 'opus', ...(pod.transit?.settings ? { b: pod.transit.settings.b, ar: pod.transit.settings.ar } : {}), sha256: await sha256File(out) } } : {}), at: d.now() };   // quiet: the worker silenced the word-free stretches (post.py step 4)
           for (const s of withDependents(['remaster'], reg).slice(1)) delete meta.stages[s];   // a new remaster result: what was made from the old one runs again (verify, realign, quiet, web, trim, update)
           rec.remaster = meta.remaster.verdict; rec.swapped_pct = g.swapped_pct;
