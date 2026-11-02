@@ -254,6 +254,7 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>Change topic</td><td>a new, unrelated question</td><td>Notice it and drop the old context.</td></tr>
     <tr><td>Vague opener</td><td><q>tell me about God</q> · a bare title</td><td>Give a good short answer and offer two directions. Ask a question only when no reasonable answer is possible.</td></tr>
   </table></div>
+  <p class="note" style="margin-top:10px">The same words can be either kind of message. <q>What about Islam?</q> after an answer on fasting is a comparison follow-up; as a first message it is a new question. <q>The second one</q> means nothing without the last reply. So every message is read together with its thread before it is classified.</p>
 </section>
 
 <section>
@@ -326,6 +327,7 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>Held-out check: Immerse's 61, never used for tuning, wins or ties vs Immerse's own answers</td><td class="n">12 of 61 wins (10-19)</td><td class="n">≥ 80%</td><td class="n">≥ 95%</td></tr>
     <tr><td>Invented quotations</td><td class="n">not counted</td><td class="n">0</td><td class="n">0</td></tr>
     <tr><td>Answer matches its scenario's shape</td><td class="n">not measured</td><td class="n">≥ 85%</td><td class="n">≥ 95%</td></tr>
+    <tr><td>New question vs follow-up told apart correctly (checked sample)</td><td class="n">not measured</td><td class="n">≥ 95%</td><td class="n">≥ 98%</td></tr>
     <tr><td>Jev picks the right route (checked sample)</td><td class="n">not built</td><td class="n">≥ 90%</td><td class="n">≥ 95%</td></tr>
     <tr><td>Time, lookups (group A)</td><td class="n">–</td><td class="n">≤ 3 s</td><td class="n">≤ 2 s</td></tr>
     <tr><td>Time, understanding and comparison (B, C, D, E)</td><td class="n">5.4 s typical</td><td class="n">≤ 12 s, progress within 2 s</td><td class="n">≤ 8 s</td></tr>
@@ -337,6 +339,7 @@ q{font-style:italic;quotes:"“" "”"}
 <section>
   <h2>The process</h2>
   <h3>Jev routes, recipes answer</h3>
+  <p><b>First, new question or follow-up.</b> Jev reads the message together with the thread so far and decides: a new question (classify it from scratch, drop the old context), or a follow-up, and which move (refer back, source, exact words, deepen, compare, push back, reshape). A follow-up is first rewritten as a self-contained request, with its references filled in from the thread (<q>the second one</q> becomes the exact passage; <q>what about Islam?</q> becomes <q>what does Islam teach about fasting</q>, as a comparison with the previous answer). Then it is routed like any question, carrying what the thread already found, so a reshape or a source request never searches again.</p>
   <p>Jev classifies each message in about a tenth of a second: which scenario (A1 to F6), which role, which traditions, which language, which works or people are named. Each scenario has a <b>route</b>: a recipe that already knows which tools to call, in which order, against which shelves, and what shape the answer takes. That replaces the slow part of an open agent, deciding what to do, which today takes several model turns to reach the same plan.</p>
   <div class="wrap"><table>
     <tr><th>Route</th><th>What the recipe does</th><th>Model work</th></tr>
@@ -348,6 +351,7 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>C1–C3 comparison</td><td>the same search once per tradition named, in parallel; check each side has a real passage</td><td>Sonnet writes one section per side</td></tr>
     <tr><td>D4 community guidance</td><td>latest applicable House of Justice messages first, by date, then the Writings behind them</td><td>Sonnet writes</td></tr>
     <tr><td>F1–F5 assignments</td><td>plan shown → many searches → group → document → email if long</td><td>Sonnet plans and writes; Opus for research briefs</td></tr>
+    <tr><td>Follow-up: reshape, source, exact words</td><td>reuse the previous answer and its passages; no new search</td><td>None, or a rewrite</td></tr>
     <tr><td>Unsure</td><td>Jev's confidence is low, or the route fails its checks</td><td>The full research agent, as today</td></tr>
   </table></div>
   <p style="margin-top:10px">This fits the 11-01 rule: quality first, speed earned. A route is switched on only after it scores as well as the full agent on its scenario's tests. Every routed answer is logged and judged; a wrong route becomes a Jev training example; a route that slips is switched off until fixed.</p>
@@ -355,7 +359,7 @@ q{font-style:italic;quotes:"“" "”"}
   <h3>The loop</h3>
   <ol>
     <li><b>Classes from evidence.</b> Every real question we hold (Immerse, SEO, survey, seed, seeker, later Anís's own logs) is labelled with its scenario. That gives each class its frequency, its typical wordings and its variations (named tradition or not, short or long, follow-up or opener). Jev does the labelling; I check a sample per class.</li>
-    <li><b>Fresh test questions per class.</b> For each class, new questions are generated in the variety the evidence shows, across topics and traditions the real questions never touched, and a new sample is drawn for every gate so nothing can be memorised. Immerse's 61 are kept aside as the held-out check.</li>
+    <li><b>Fresh test questions per class.</b> For each class, new questions are generated in the variety the evidence shows, across topics and traditions the real questions never touched. Many are generated as conversations, not single questions: openers followed by each kind of follow-up, plus topic changes and look-alikes (a follow-up that reads like a new question, and the reverse), so telling the two apart is tested every gate. A new sample is drawn for every gate so nothing can be memorised. Immerse's 61 are kept aside as the held-out check.</li>
     <li><b>Baseline.</b> Run the full agent on the fresh questions. Judge each answer blind against Perplexity and against its class's answer shape; run the held-out 61 against Immerse's answers.</li>
     <li><b>Classify every loss</b> by cause: not in the library, search missed it, didn't look, wrong route, wrote badly, invented something.</li>
     <li><b>Fix by cause, biggest first.</b> Search misses go to the index work (search stays first); writing faults go to the route's instructions; wrong routes go to Jev's examples.</li>
