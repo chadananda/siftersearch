@@ -10,7 +10,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbeddings } from './ai.js';
 import { queryEmbedding } from './query-embedding.js';
-import { searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, resolveQdrantFilters } from './search/qdrant-layers.js';
+import { geminiQueryVector, searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, resolveQdrantFilters } from './search/qdrant-layers.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
@@ -1310,6 +1310,34 @@ export async function multiIndexSearch(query, options = {}) {
   const _stamp = {};
   const timed = (name, p) => p.then((r) => { _stamp[name] = Date.now() - _t0; return r; });
   const qfilters = await resolveQdrantFilters(filters);   // a year range → doc ids (Qdrant points carry no year)
+  // the query vector, stamped on its own (memoized: every vector layer awaits this same promise) — the trace then splits
+  // a slow layer into embedding vs Qdrant (11-01: Gemini 0.1–0.2 s and cold Qdrant 0.1–0.2 s measured, layers p50 0.7–1.5 s)
+  if (!semanticOff || meiliOff) timed('embed', geminiQueryVector(query)).catch(() => {});
+  // CANON + AUTHORITATIVE passes (described below) start WITH the first wave, not after it (11-01: canon p50 788 ms, of which
+  // its own Qdrant query is 15–105 ms — the rest was waiting for the slowest first-wave layer). They count only when the
+  // phrase layer itself did not fail, as before.
+  const phraseRan = ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary) && !filters.documentId;
+  const bahaiScope = filters.religion === "Baha'i";
+  const canonP = !phraseRan ? null : (async () => {
+    const byRel = await getOlDocIdsByReligion();
+    let ids = filters.religion ? (byRel[filters.religion] || []) : Object.values(byRel).flat();
+    if (qfilters?.documentId != null) {   // a year range already arrived as doc ids → keep only canonical ones inside it
+      const inRange = new Set([].concat(qfilters.documentId).map(Number));
+      ids = ids.filter((id) => inRange.has(Number(id)));
+    }
+    const r = ids.length ? await timed('canon', searchPhrases(query, { limit: 12, filters: { ...qfilters, documentId: ids }, timeoutMs: 1500 })) : { hits: [] };
+    return { hits: await originalFirst(r.hits || []) };
+  })().catch((err) => { logger.warn({ err: err.message }, 'multiIndexSearch: canon layer failed'); return { hits: [] }; });
+  const doctrinalP = !(phraseRan && !filters.author && bahaiScope) ? null : (async () => {
+    const { DOCTRINAL_KEYS } = await import('./search/doctrinal-rank.js');
+    // phrases AND the doctrinal HyPE questions (a question finds the passage that answers it), writer filter only
+    const af = { ...qfilters, author: DOCTRINAL_KEYS, writerOnly: true, scope: 'primary' };
+    const [dp, dh] = await Promise.all([
+      timed('doctrinal', searchPhrases(query, { limit: 15, filters: af, timeoutMs: 2500 })).catch(() => ({ hits: [] })),
+      timed('doctrinal_hype', searchHypeQdrant(query, { limit: 15, filters: af, timeoutMs: 2500 })).catch(() => ({ hits: [] })),
+    ]);
+    return { hits: [...(dp.hits || []), ...(dh.hits || [])] };
+  })().catch((err) => { logger.warn({ err: err.message }, 'multiIndexSearch: authoritative pass failed'); return { hits: [] }; });
   let [mainResult, hypeResult, entityResult, keywordResult, phraseResult, qkeywordResult, qhypeResult, conceptResult, qconceptResult] = await Promise.all([
     meiliOff ? Promise.resolve({ hits: [] }) : timed('main', hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio })).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
@@ -1465,53 +1493,25 @@ export async function multiIndexSearch(query, options = {}) {
   // candidate list filled with QUOTING copies and the original never became a candidate — Qdrant-only lost the
   // exact_phrase cases Meili won (battery 10-10). Restricted to the ~600 canonical docs, the original always gets a slot;
   // authority + the OL multiplier then rank it. One extra filtered Qdrant query; the query vector is memoized.
-  const phraseRan = ((options.phraseLayer && !semanticOff) || meiliOff) && (!scope_config || scope_config.primary) && !filters.documentId;
   let canonResult = { hits: [] };
   let canonVerbatim = false;
-  if (phraseRan && !phraseResult.failed) {
-    try {
-      const byRel = await getOlDocIdsByReligion();
-      let ids = filters.religion ? (byRel[filters.religion] || []) : Object.values(byRel).flat();
-      if (qfilters?.documentId != null) {   // a year range already arrived as doc ids → keep only canonical ones inside it
-        const inRange = new Set([].concat(qfilters.documentId).map(Number));
-        ids = ids.filter((id) => inRange.has(Number(id)));
-      }
-      if (ids.length) canonResult = await timed('canon', searchPhrases(query, { limit: 12, filters: { ...qfilters, documentId: ids }, timeoutMs: 1500 }));
-      canonResult = { hits: await originalFirst(canonResult.hits || []) };
-      // a canonical passage matching near-verbatim IS a quotation, whatever the planner said (the planner classed
-      // "The earth is but one country…!" a topic; phrase similarity 0.90 says quote)
-      canonVerbatim = String(query).trim().split(/\s+/).length >= CANON_MIN_WORDS
-        && Math.max(0, ...canonResult.hits.map((h) => h.score || 0)) >= CANON_VERBATIM;
-    } catch (err) {
-      logger.warn({ err: err.message }, 'multiIndexSearch: canon layer failed');
-    }
+  if (canonP && !phraseResult.failed) {
+    canonResult = await canonP;
+    // a canonical passage matching near-verbatim IS a quotation, whatever the planner said (the planner classed
+    // "The earth is but one country…!" a topic; phrase similarity 0.90 says quote)
+    canonVerbatim = String(query).trim().split(/\s+/).length >= CANON_MIN_WORDS
+      && Math.max(0, ...canonResult.hits.map((h) => h.score || 0)) >= CANON_VERBATIM;
   }
 
   // AUTHORITATIVE PASS (Chad 10-20: "authority should weigh in from the outset"): the same phrase query restricted to the
   // doctrinal writers (author or quoted voice: Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi) in the library — so the
   // authoritative passages are always among the candidates, never crowded out by quoting copies on scraped sites.
-  let doctrinalResult = { hits: [] };
   // only inside a BAHÁ'Í-scoped search: interfaith results give each tradition its own slots, ranked within it — an
   // unscoped "what is nirvana" must not be handed Bahá'u'lláh's passages first (10-20 battery: nirvana, karma, Qur'anic
   // patience lost to Bahá'í texts)
-  const bahaiScope = filters.religion === "Baha'i";
   // only in a Bahá'í search: run unscoped too (10-20 trial) it displaced other traditions (karma, wu wei, nirvana, fasting;
   // battery 66 → 60). Unscoped Bahá'í topics need the planner to infer the scope instead.
-  const wantsDoctrinal = phraseRan && !phraseResult.failed && !filters.author && bahaiScope;
-  if (wantsDoctrinal) {
-    try {
-      const { DOCTRINAL_KEYS } = await import('./search/doctrinal-rank.js');
-      // phrases AND the doctrinal HyPE questions (a question finds the passage that answers it), writer filter only
-      const af = { ...qfilters, author: DOCTRINAL_KEYS, writerOnly: true, scope: 'primary' };
-      const [dp, dh] = await Promise.all([
-        timed('doctrinal', searchPhrases(query, { limit: 15, filters: af, timeoutMs: 2500 })).catch(() => ({ hits: [] })),
-        timed('doctrinal_hype', searchHypeQdrant(query, { limit: 15, filters: af, timeoutMs: 2500 })).catch(() => ({ hits: [] })),
-      ]);
-      doctrinalResult = { hits: [...(dp.hits || []), ...(dh.hits || [])] };
-    } catch (err) {
-      logger.warn({ err: err.message }, 'multiIndexSearch: authoritative pass failed');
-    }
-  }
+  const doctrinalResult = doctrinalP && !phraseResult.failed ? await doctrinalP : { hits: [] };
 
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
