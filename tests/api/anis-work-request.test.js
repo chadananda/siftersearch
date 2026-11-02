@@ -104,3 +104,26 @@ describe('every italicised book is a link to the library, and the reply never an
     expect(anisDirection({ question: 'What does Bahá’u’lláh write about the stages of the soul’s journey toward God?' })).not.toMatch(/2–4 sentences/);
   });
 });
+
+describe('the BOOK, not a talk about it (11-01 live: "Gleanings" and "Seven Valleys" linked Hooper Dunbar talks)', () => {
+  const R = [
+    { id: 11, title: 'Gleanings (part 14)', author: 'Hooper Dunbar', collection: 'Media', paragraph_count: 283 },
+    { id: 12, title: 'Gleanings', author: 'Hooper Dunbar', collection: 'Media', paragraph_count: 116 },
+    { id: 13, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', collection: 'Bahá’u’lláh', paragraph_count: 717 },
+    { id: 14, title: "Gleanings From the Writings of Bahá'u'lláh, pages 1-5", author: 'x', collection: null, paragraph_count: 13 },
+    { id: 21, title: 'Seven Valleys', author: 'Hooper Dunbar', collection: 'Media', paragraph_count: 195 },
+    { id: 22, title: 'The Seven Valleys', author: "Bahá'u'lláh", collection: 'Core Tablets', paragraph_count: 71 },
+    { id: 23, title: 'The Seven Valleys: A Meditation', author: 'George Townshend', collection: 'Papers', paragraph_count: 35 },
+    { id: 24, title: 'Tag: Haft Vadi (Seven Valleys)', author: 'tags', collection: null, paragraph_count: 57 },
+    { id: 31, title: 'Prayers and Meditations', author: 'Bahá’u’lláh', collection: 'Bahá’u’lláh', paragraph_count: 877 },
+    { id: 32, title: 'Prayers', author: 'x', collection: null, paragraph_count: 625 },
+  ].map((r) => ({ religion: "Bahá'í", slug: `s${r.id}`, language: 'en', ...r }));
+  const ix = buildIndex(R);
+  const f = (q) => findWork(q, { index: ix, match: matchTitle, listDocs: async ({ ids }) => ({ docs: R.filter((r) => ids.includes(r.id)) }) });
+  it.each([
+    ['can I get a copy of Gleanings?', 13],
+    ['Find Seven Valleys for me. I need the complete text, not a summary.', 22],
+    ['do you have the Seven Valleys?', 22],
+    ['where can I read Prayers and Meditations', 31],
+  ])('%s', async (q, id) => { expect((await f(q)).doc.id).toBe(id); });
+});

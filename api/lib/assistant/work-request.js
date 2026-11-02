@@ -10,6 +10,7 @@ const ASKS = /\b(?:locate|where (?:can|could|do|might|would|should) (?:i|we|one|
 // … unless it asks what the book SAYS (a passage, a quotation, a teaching in it) — that is a search
 const CONTENT = /\b(?:says?|said|saying|teach(?:es|ing)?|mean(?:s|ing)?|explain(?:s|ed)?) (?:about|on|that)\b|\bwhat does\b|\b(?:quote|quotation|passage|verse|paragraph|chapter|the part|the line|the bit|the words)\b/i;
 const TAIL = /\s+(?:and|that|which|so|because|since|when|where|while|if|in (?:the|your|this) library|on (?:the|your) (?:site|website)|online|please|pls|for me|myself|now|again|here|there|today|with me|by (?:the|its) author)\b.*$/i;
+const TAIL_KEEP_AND = new RegExp(TAIL.source.replace('(?:and|', '(?:'), 'i');
 // "the full text of X", "a book called X" — but never "The Book of" (a title: The Book of Certitude)
 const LEAD = /^(?:the\s+|a\s+)?(?:(?:(?:full|complete|whole|entire)\s+)?(?:text|copy|edition)\s+of|(?:book|work|text|volume)\s+(?:called|titled|named|entitled)|(?:book|work)(?=\s+(?!of\b)))\s+/i;
 const PRONOUN = /^(?:it|this|that|them|these|those|one|some|something|anything|more|a book|the book|books?)$/i;
@@ -23,11 +24,14 @@ export function workRequest(text) {
 export function titleCandidates(text, named = null) {
   const t = String(text || '').replace(/\s+/g, ' ');
   const out = [];
+  // each phrase twice: whole ("Prayers and Meditations") and cut at "and …" ("Seven Valleys and learn about it")
   const add = (s) => {
-    let c = String(s || '').replace(/^["“‘'*_]+|["”’'*_.,;:!?]+$/g, '').trim();
-    for (let i = 0; i < 3; i++) c = c.replace(LEAD, '').replace(TAIL, '').trim();
-    c = c.replace(/^(?:a|an)\s+/i, '');
-    if (c && !PRONOUN.test(c) && c.split(' ').length <= 10 && /\p{L}{4,}/u.test(c)) out.push(c);
+    for (const tail of [TAIL_KEEP_AND, TAIL]) {
+      let c = String(s || '').replace(/^["“‘'*_]+|["”’'*_.,;:!?]+$/g, '').trim();
+      for (let i = 0; i < 3; i++) c = c.replace(LEAD, '').replace(tail, '').trim();
+      c = c.replace(/^(?:a|an)\s+/i, '');
+      if (c && !PRONOUN.test(c) && c.split(' ').length <= 10 && /\p{L}{4,}/u.test(c)) out.push(c);
+    }
   };
   for (const m of t.matchAll(/["“*_]([^"”*_]{3,80})["”*_]/g)) add(m[1]);   // a quoted or emphasised title
   for (const m of t.matchAll(/\b(?:book|work|text|volume|title)\s+(?:called|titled|named|entitled)\s+([^.?!,;]+)/gi)) add(m[1]);
@@ -36,6 +40,19 @@ export function titleCandidates(text, named = null) {
   if (named?.type === 'work' && named.name) add(named.name);
   return [...new Set(out)];
 }
+
+// not the work itself: a recorded talk (Media), a tag page, a page-range or part fragment
+const notBook = (d) => /^media$/i.test(d.collection || '') || /^tag:/i.test(d.title || '') || /\b(?:part|pages?)\s*\d/i.test(d.title || '');
+// a work ABOUT the book (unless that is what was asked for)
+const DERIVED = /\b(?:study guide|guide|notes|interview|commentary|reflections?|meditation|principles|class|lecture|talks?|review|outline|questions|introduction|tag)\b/i;
+const AUTHORS = /bah[aá].?u.?ll[aá]h|abdu.?l.?bah[aá]|\bthe b[aá]b\b|shoghi effendi/i;
+// the fullest text by its own author: size first (an excerpt is not the book), the canonical author, the canonical site, English
+const workRank = (d, asked) => Math.log10((d.paragraph_count || 0) + 1) + (AUTHORS.test(d.author || '') ? 1 : 0)
+  + (d.source_site === 'oceanlibrary.com' ? 0.5 : 0) + (/^en/i.test(d.language || 'en') ? 0.5 : 0)
+  - (derived(d.title, asked) ? 2 : 0);
+const derived = (title, asked) => { const w = DERIVED.exec(title || '')?.[0]; return !!w && !new RegExp(`\\b${w}\\b`, 'i').test(asked); };
+
+const foldTitle = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/^the /, '');
 
 const lib = async () => Promise.all([import('../dewey/title-index.js'), import('../docs-repo.js')]);
 
@@ -52,16 +69,28 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
     const [ti, docs] = await lib();
     index ??= await ti.titleIndex(); match ??= ti.matchTitle; listDocs ??= docs.listDocs;
   }
-  // every candidate against the index; the best title score wins (a word slip in one phrase costs nothing)
+  // every candidate against the index; the best title score wins (a word slip in one phrase costs nothing). A wide net: a talk
+  // ON a book carries its title exactly ("Gleanings (part 14)", Hooper Dunbar), so dozens tie with the book at 1.0.
   const hits = new Map();
-  for (const c of cands) for (const h of match(index, c, { min, limit: 8 })) if ((hits.get(h.doc.id)?.score ?? 0) < h.score) hits.set(h.doc.id, h);
-  if (!hits.size) return null;
-  const top = Math.max(...[...hits.values()].map((h) => h.score));
-  const ids = [...hits.values()].filter((h) => h.score >= top - 0.03).map((h) => h.doc.id).slice(0, 12);
-  const { docs } = await listDocs({ ids, fields: ['id', 'title', 'author', 'religion', 'collection', 'slug', 'language', 'source_site', 'paragraph_count', 'encumbered'], limit: 12, count: false });
-  // the canonical OceanLibrary copy, then English, then the fullest
-  const rank = (d) => (d.source_site === 'oceanlibrary.com' ? 4 : 0) + (/^en/i.test(d.language || 'en') ? 2 : 0) + Math.min(1, (d.paragraph_count || 0) / 1000);
-  const sorted = docs.filter((d) => (d.paragraph_count ?? 1) > 0).sort((a, b) => rank(b) - rank(a) || (b.paragraph_count || 0) - (a.paragraph_count || 0));
+  for (const c of cands) for (const h of match(index, c, { min, limit: 60 })) if ((hits.get(h.doc.id)?.score ?? 0) < h.score) hits.set(h.doc.id, h);
+  // the BOOK, not a talk about it, a tag page or a page-range fragment (11-01 live: "Gleanings" and "Seven Valleys" linked
+  // Hooper Dunbar talks, "Find Seven Valleys … the complete text" got "the library does not contain the full writing")
+  const all = [...hits.values()];
+  let books = all.filter((h) => !notBook(h.doc));
+  // a short title that OPENS the book's ("Gleanings" → Gleanings from the Writings of Bahá'u'lláh): the title matcher scores a
+  // one-word query 0 against a longer title (right for the librarian's duplicate checks), so when no book matched, look for one
+  if (!books.length && index.docs) {
+    const qs = cands.map(foldTitle).filter((q) => q.length >= 4);
+    books = index.docs.filter((d) => !notBook(d) && qs.some((q) => foldTitle(d.title).startsWith(`${q} `))).slice(0, 200).map((doc) => ({ doc, score: min }));
+  }
+  const pool = books.length ? books : all;
+  if (!pool.length) return null;
+  const top = Math.max(...pool.map((h) => h.score));
+  const ids = pool.filter((h) => h.score >= top - 0.06).sort((a, b) => b.score - a.score).map((h) => h.doc.id).slice(0, 40);
+  const { docs } = await listDocs({ ids, fields: ['id', 'title', 'author', 'religion', 'collection', 'slug', 'language', 'source_site', 'paragraph_count', 'encumbered'], limit: 40, count: false });
+  const asked = cands.join(' ');
+  const sorted = docs.filter((d) => (d.paragraph_count ?? 1) > 0 && (books.length ? !notBook(d) : true))
+    .sort((a, b) => workRank(b, asked) - workRank(a, asked) || (b.paragraph_count || 0) - (a.paragraph_count || 0));
   if (!sorted.length) return null;
   const seen = new Set([sorted[0].title]);
   const others = sorted.slice(1).filter((d) => !seen.has(d.title) && seen.add(d.title)).slice(0, 2);
