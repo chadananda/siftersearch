@@ -1,0 +1,1163 @@
+{
+ "layer": "search",
+ "date": "2026-11-02",
+ "tag": "smoke",
+ "args": "--layer search --sample 40 --tag smoke --concurrency 2",
+ "summary": {
+  "total": 40,
+  "pass": 33,
+  "errors": 0,
+  "p50": 14908,
+  "p95": 20900,
+  "byFamily": {
+   "sikhism_history": {
+    "n": 1,
+    "pass": 1
+   },
+   "buddhism_original_terms": {
+    "n": 1,
+    "pass": 1
+   },
+   "buddhism_history": {
+    "n": 1,
+    "pass": 1
+   },
+   "gender_race_equality": {
+    "n": 1,
+    "pass": 1
+   },
+   "zoroastrianism_beliefs": {
+    "n": 1,
+    "pass": 1
+   },
+   "meta_find_work": {
+    "n": 2,
+    "pass": 2
+   },
+   "compare_death_funeral": {
+    "n": 1,
+    "pass": 0
+   },
+   "bahai_history": {
+    "n": 1,
+    "pass": 1
+   },
+   "islam_society": {
+    "n": 1,
+    "pass": 1
+   },
+   "compare_prayer_worship": {
+    "n": 1,
+    "pass": 1
+   },
+   "hinduism_scripture_quotes": {
+    "n": 2,
+    "pass": 2
+   },
+   "compare_god_nature": {
+    "n": 1,
+    "pass": 0
+   },
+   "soul_spirit": {
+    "n": 1,
+    "pass": 1
+   },
+   "islam_original_terms": {
+    "n": 1,
+    "pass": 1
+   },
+   "meaning_purpose": {
+    "n": 1,
+    "pass": 1
+   },
+   "islam_beliefs": {
+    "n": 1,
+    "pass": 1
+   },
+   "marriage_interfaith": {
+    "n": 2,
+    "pass": 2
+   },
+   "judaism_society": {
+    "n": 2,
+    "pass": 2
+   },
+   "christianity_beliefs": {
+    "n": 1,
+    "pass": 1
+   },
+   "islam_practice": {
+    "n": 1,
+    "pass": 1
+   },
+   "cross_unity_common_ground": {
+    "n": 1,
+    "pass": 0
+   },
+   "confucianism_history": {
+    "n": 1,
+    "pass": 1
+   },
+   "compare_gender_social": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_chinese_traditions": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_meaning_of_life": {
+    "n": 1,
+    "pass": 0
+   },
+   "love_happiness_peace": {
+    "n": 1,
+    "pass": 1
+   },
+   "christianity_original_terms": {
+    "n": 1,
+    "pass": 1
+   },
+   "jainism_history": {
+    "n": 1,
+    "pass": 1
+   },
+   "(none)": {
+    "n": 1,
+    "pass": 1
+   },
+   "taoism_scripture_quotes": {
+    "n": 1,
+    "pass": 1
+   },
+   "compare_soul": {
+    "n": 1,
+    "pass": 0
+   },
+   "cross_what_do_religions_say": {
+    "n": 1,
+    "pass": 1
+   },
+   "death_funeral_grief_burial": {
+    "n": 1,
+    "pass": 1
+   },
+   "divorce": {
+    "n": 1,
+    "pass": 1
+   },
+   "jainism_original_terms": {
+    "n": 1,
+    "pass": 1
+   },
+   "children_family_sex": {
+    "n": 1,
+    "pass": 1
+   }
+  },
+  "byTradition": {
+   "(universal)": {
+    "n": 30,
+    "pass": 30
+   },
+   "islam": {
+    "n": 6,
+    "pass": 2
+   },
+   "judaism": {
+    "n": 4,
+    "pass": 0
+   },
+   "christianity": {
+    "n": 7,
+    "pass": 1
+   },
+   "hinduism": {
+    "n": 5,
+    "pass": 0
+   },
+   "buddhism": {
+    "n": 5,
+    "pass": 0
+   },
+   "zoroastrianism": {
+    "n": 1,
+    "pass": 0
+   },
+   "bahai": {
+    "n": 5,
+    "pass": 1
+   },
+   "taoism": {
+    "n": 1,
+    "pass": 0
+   },
+   "sikhism": {
+    "n": 1,
+    "pass": 0
+   },
+   "confucianism": {
+    "n": 1,
+    "pass": 0
+   }
+  },
+  "byOrigin": {
+   "seo": {
+    "n": 16,
+    "pass": 15
+   },
+   "survey": {
+    "n": 24,
+    "pass": 18
+   }
+  },
+  "byFamilyTradition": {
+   "sikhism_history x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "buddhism_original_terms x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "buddhism_history x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "gender_race_equality x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "zoroastrianism_beliefs x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "meta_find_work x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "compare_death_funeral x islam": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_death_funeral x judaism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_death_funeral x christianity": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_death_funeral x hinduism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_death_funeral x buddhism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_death_funeral x zoroastrianism": {
+    "n": 1,
+    "pass": 0
+   },
+   "bahai_history x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "meta_find_work x islam": {
+    "n": 1,
+    "pass": 1
+   },
+   "islam_society x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "compare_prayer_worship x bahai": {
+    "n": 1,
+    "pass": 1
+   },
+   "compare_prayer_worship x islam": {
+    "n": 1,
+    "pass": 1
+   },
+   "hinduism_scripture_quotes x (universal)": {
+    "n": 2,
+    "pass": 2
+   },
+   "compare_god_nature x bahai": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_god_nature x judaism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_god_nature x buddhism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_god_nature x islam": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_god_nature x christianity": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_god_nature x hinduism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_god_nature x taoism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_god_nature x sikhism": {
+    "n": 1,
+    "pass": 0
+   },
+   "soul_spirit x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "islam_original_terms x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "meaning_purpose x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "islam_beliefs x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "marriage_interfaith x (universal)": {
+    "n": 2,
+    "pass": 2
+   },
+   "judaism_society x (universal)": {
+    "n": 2,
+    "pass": 2
+   },
+   "christianity_beliefs x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "islam_practice x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "cross_unity_common_ground x bahai": {
+    "n": 1,
+    "pass": 0
+   },
+   "cross_unity_common_ground x christianity": {
+    "n": 1,
+    "pass": 0
+   },
+   "confucianism_history x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "compare_gender_social x islam": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_gender_social x christianity": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_gender_social x judaism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_gender_social x bahai": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_gender_social x hinduism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_gender_social x buddhism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_chinese_traditions x confucianism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_chinese_traditions x christianity": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_meaning_of_life x hinduism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_meaning_of_life x buddhism": {
+    "n": 1,
+    "pass": 0
+   },
+   "love_happiness_peace x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "christianity_original_terms x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "jainism_history x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "(none) x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "taoism_scripture_quotes x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "compare_soul x hinduism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_soul x buddhism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_soul x christianity": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_soul x islam": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_soul x judaism": {
+    "n": 1,
+    "pass": 0
+   },
+   "compare_soul x bahai": {
+    "n": 1,
+    "pass": 0
+   },
+   "cross_what_do_religions_say x christianity": {
+    "n": 1,
+    "pass": 1
+   },
+   "death_funeral_grief_burial x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "divorce x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "jainism_original_terms x (universal)": {
+    "n": 1,
+    "pass": 1
+   },
+   "children_family_sex x (universal)": {
+    "n": 1,
+    "pass": 1
+   }
+  },
+  "crossTotal": 8,
+  "crossAll": 1,
+  "crossSides": {
+   "islam": {
+    "n": 5,
+    "pass": 3
+   },
+   "judaism": {
+    "n": 4,
+    "pass": 2
+   },
+   "christianity": {
+    "n": 6,
+    "pass": 2
+   },
+   "hinduism": {
+    "n": 5,
+    "pass": 3
+   },
+   "buddhism": {
+    "n": 5,
+    "pass": 2
+   },
+   "zoroastrianism": {
+    "n": 1,
+    "pass": 1
+   },
+   "bahai": {
+    "n": 5,
+    "pass": 5
+   },
+   "taoism": {
+    "n": 1,
+    "pass": 0
+   },
+   "sikhism": {
+    "n": 1,
+    "pass": 0
+   },
+   "confucianism": {
+    "n": 1,
+    "pass": 0
+   }
+  }
+ },
+ "rows": [
+  {
+   "id": "survey:sikhism_history:24ef940c",
+   "text": "who wrote guru granth sahib ji in his own hand",
+   "family": "sikhism_history",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 17911,
+   "error": null
+  },
+  {
+   "id": "survey:buddhism_original_terms:288427f8",
+   "text": "What does dharma mean in Buddhism?",
+   "family": "buddhism_original_terms",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 19777,
+   "error": null
+  },
+  {
+   "id": "survey:buddhism_history:69794cb1",
+   "text": "how many buddhists in the world",
+   "family": "buddhism_history",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 10086,
+   "error": null
+  },
+  {
+   "id": "survey:gender_race_equality:02b5f899",
+   "text": "What does religion say about slavery?",
+   "family": "gender_race_equality",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 19957,
+   "error": null
+  },
+  {
+   "id": "survey:zoroastrianism_beliefs:3e84034c",
+   "text": "is 'good words, good thoughts, good deeds' a motto of Zoroastrianism (r/Zoroastrianism, paraphrased)",
+   "family": "zoroastrianism_beliefs",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 17742,
+   "error": null
+  },
+  {
+   "id": "survey:meta_find_work:1723d8dc",
+   "text": "where can I read the Kitab-i-Iqan online",
+   "family": "meta_find_work",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 10438,
+   "error": null
+  },
+  {
+   "id": "survey:compare_death_funeral:94b5b96f",
+   "text": "what do the major religions say about funerals and burial?",
+   "family": "compare_death_funeral",
+   "origin": "survey",
+   "traditions": [
+    "islam",
+    "judaism",
+    "christianity",
+    "hinduism",
+    "buddhism",
+    "zoroastrianism"
+   ],
+   "scope": "cross",
+   "kind": "cross",
+   "rank": 2,
+   "pass": false,
+   "sides": {
+    "islam": null,
+    "judaism": 3,
+    "christianity": 4,
+    "hinduism": null,
+    "buddhism": null,
+    "zoroastrianism": 2
+   },
+   "ms": 8200,
+   "error": null
+  },
+  {
+   "id": "survey:bahai_history:94a81cff",
+   "text": "how many bahais in the world",
+   "family": "bahai_history",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 10691,
+   "error": null
+  },
+  {
+   "id": "survey:meta_find_work:a89ac9a1",
+   "text": "quran pdf with english translation",
+   "family": "meta_find_work",
+   "origin": "seo",
+   "traditions": [
+    "islam"
+   ],
+   "scope": "tradition",
+   "kind": "tradition",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 11276,
+   "error": null
+  },
+  {
+   "id": "survey:islam_society:e4f2be72",
+   "text": "All religions basically teach followers to do good deeds. Why should a person only follow Islam? Can he not follow any of the religions?",
+   "family": "islam_society",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 8566,
+   "error": null
+  },
+  {
+   "id": "survey:compare_prayer_worship:14f5eb59",
+   "text": "Do Baháʼí pray like Muslims?",
+   "family": "compare_prayer_worship",
+   "origin": "survey",
+   "traditions": [
+    "bahai",
+    "islam"
+   ],
+   "scope": "cross",
+   "kind": "cross",
+   "rank": 1,
+   "pass": true,
+   "sides": {
+    "bahai": 1,
+    "islam": 3
+   },
+   "ms": 17955,
+   "error": null
+  },
+  {
+   "id": "survey:hinduism_scripture_quotes:7ebbc2e4",
+   "text": "gita quote on detachment",
+   "family": "hinduism_scripture_quotes",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 9988,
+   "error": null
+  },
+  {
+   "id": "survey:compare_god_nature:cef29df5",
+   "text": "Brahman vs God",
+   "family": "compare_god_nature",
+   "origin": "survey",
+   "traditions": [
+    "bahai",
+    "judaism",
+    "buddhism",
+    "islam",
+    "christianity",
+    "hinduism",
+    "taoism",
+    "sikhism"
+   ],
+   "scope": "cross",
+   "kind": "cross",
+   "rank": 1,
+   "pass": false,
+   "sides": {
+    "bahai": 2,
+    "judaism": null,
+    "buddhism": 3,
+    "islam": null,
+    "christianity": null,
+    "hinduism": 1,
+    "taoism": null,
+    "sikhism": null
+   },
+   "ms": 7579,
+   "error": null
+  },
+  {
+   "id": "survey:soul_spirit:143e1e8b",
+   "text": "what is the soul stones power",
+   "family": "soul_spirit",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 10332,
+   "error": null
+  },
+  {
+   "id": "survey:islam_original_terms:8cbf4be8",
+   "text": "الوعد بالصدقة إذا حصل على عمل هل يأخذ حكم النذر؟ وحكم الشك فيه",
+   "family": "islam_original_terms",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 6902,
+   "error": null
+  },
+  {
+   "id": "survey:meaning_purpose:1cf356d2",
+   "text": "what is the purpose of daylight savings time",
+   "family": "meaning_purpose",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 8733,
+   "error": null
+  },
+  {
+   "id": "survey:islam_beliefs:ba8b81de",
+   "text": "islam god muhammad",
+   "family": "islam_beliefs",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 13184,
+   "error": null
+  },
+  {
+   "id": "survey:marriage_interfaith:20b09cd4",
+   "text": "What does my religion say about interfaith marriage?",
+   "family": "marriage_interfaith",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 10555,
+   "error": null
+  },
+  {
+   "id": "survey:judaism_society:6ef45c3e",
+   "text": "jewish intermarriage rate",
+   "family": "judaism_society",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 14908,
+   "error": null
+  },
+  {
+   "id": "survey:christianity_beliefs:1f79e2f3",
+   "text": "Is my sister in Heaven?",
+   "family": "christianity_beliefs",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 11451,
+   "error": null
+  },
+  {
+   "id": "survey:islam_practice:81716218",
+   "text": "is crypto halal islamqa",
+   "family": "islam_practice",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 17786,
+   "error": null
+  },
+  {
+   "id": "survey:cross_unity_common_ground:853ab403",
+   "text": "do all religions believe in the same god",
+   "family": "cross_unity_common_ground",
+   "origin": "seo",
+   "traditions": [
+    "bahai",
+    "christianity"
+   ],
+   "scope": "cross",
+   "kind": "cross",
+   "rank": 1,
+   "pass": false,
+   "sides": {
+    "bahai": 1,
+    "christianity": null
+   },
+   "ms": 14200,
+   "error": null
+  },
+  {
+   "id": "survey:confucianism_history:8d362070",
+   "text": "The nature and grounds of Xunzi's disagreement with Mencius",
+   "family": "confucianism_history",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 20900,
+   "error": null
+  },
+  {
+   "id": "survey:hinduism_scripture_quotes:616f66dc",
+   "text": "what did isa upanishad say about atman",
+   "family": "hinduism_scripture_quotes",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 17527,
+   "error": null
+  },
+  {
+   "id": "survey:compare_gender_social:b6a7a3ca",
+   "text": "do all religions teach women and men?",
+   "family": "compare_gender_social",
+   "origin": "survey",
+   "traditions": [
+    "islam",
+    "christianity",
+    "judaism",
+    "bahai",
+    "hinduism",
+    "buddhism"
+   ],
+   "scope": "cross",
+   "kind": "cross",
+   "rank": 1,
+   "pass": false,
+   "sides": {
+    "islam": 1,
+    "christianity": null,
+    "judaism": null,
+    "bahai": 8,
+    "hinduism": null,
+    "buddhism": null
+   },
+   "ms": 17815,
+   "error": null
+  },
+  {
+   "id": "survey:compare_chinese_traditions:846dd7eb",
+   "text": "The Silver Rule",
+   "family": "compare_chinese_traditions",
+   "origin": "survey",
+   "traditions": [
+    "confucianism",
+    "christianity"
+   ],
+   "scope": "cross",
+   "kind": "cross",
+   "rank": 2,
+   "pass": false,
+   "sides": {
+    "confucianism": null,
+    "christianity": 2
+   },
+   "ms": 11807,
+   "error": null
+  },
+  {
+   "id": "survey:compare_meaning_of_life:acf92556",
+   "text": "what do buddhism and hinduism say about the meaning of life?",
+   "family": "compare_meaning_of_life",
+   "origin": "survey",
+   "traditions": [
+    "hinduism",
+    "buddhism"
+   ],
+   "scope": "cross",
+   "kind": "cross",
+   "rank": 9,
+   "pass": false,
+   "sides": {
+    "hinduism": 9,
+    "buddhism": null
+   },
+   "ms": 7698,
+   "error": null
+  },
+  {
+   "id": "survey:love_happiness_peace:de16d734",
+   "text": "How to find inner peace spiritually",
+   "family": "love_happiness_peace",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 17813,
+   "error": null
+  },
+  {
+   "id": "survey:christianity_original_terms:e018bf24",
+   "text": "What does kenosis mean?",
+   "family": "christianity_original_terms",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 24297,
+   "error": null
+  },
+  {
+   "id": "survey:jainism_history:2421a4e2",
+   "text": "how many jains in the world",
+   "family": "jainism_history",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 19364,
+   "error": null
+  },
+  {
+   "id": "seeker:how-do-i-forgive-someone",
+   "text": "how do I forgive someone",
+   "family": null,
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 14195,
+   "error": null
+  },
+  {
+   "id": "survey:judaism_society:2e1aae5c",
+   "text": "Is Judaism racist for believing it is chosen?",
+   "family": "judaism_society",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 14793,
+   "error": null
+  },
+  {
+   "id": "survey:taoism_scripture_quotes:405f3cd6",
+   "text": "zhuangzi best quotes",
+   "family": "taoism_scripture_quotes",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 9168,
+   "error": null
+  },
+  {
+   "id": "survey:compare_soul:499cd9c0",
+   "text": "do all religions teach the soul?",
+   "family": "compare_soul",
+   "origin": "survey",
+   "traditions": [
+    "hinduism",
+    "buddhism",
+    "christianity",
+    "islam",
+    "judaism",
+    "bahai"
+   ],
+   "scope": "cross",
+   "kind": "cross",
+   "rank": 1,
+   "pass": false,
+   "sides": {
+    "hinduism": 3,
+    "buddhism": 2,
+    "christianity": null,
+    "islam": 5,
+    "judaism": 4,
+    "bahai": 1
+   },
+   "ms": 18408,
+   "error": null
+  },
+  {
+   "id": "survey:cross_what_do_religions_say:34486895",
+   "text": "what religion was hitler",
+   "family": "cross_what_do_religions_say",
+   "origin": "seo",
+   "traditions": [
+    "christianity"
+   ],
+   "scope": "tradition",
+   "kind": "tradition",
+   "rank": 2,
+   "pass": true,
+   "sides": null,
+   "ms": 17652,
+   "error": null
+  },
+  {
+   "id": "survey:death_funeral_grief_burial:b7f2645d",
+   "text": "Can the dead hear us?",
+   "family": "death_funeral_grief_burial",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 19755,
+   "error": null
+  },
+  {
+   "id": "survey:divorce:ddb0d57d",
+   "text": "What causes marriage breakdown spiritually?",
+   "family": "divorce",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 18841,
+   "error": null
+  },
+  {
+   "id": "survey:marriage_interfaith:5cfccf45",
+   "text": "interfaith marriage success rate",
+   "family": "marriage_interfaith",
+   "origin": "seo",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 20250,
+   "error": null
+  },
+  {
+   "id": "survey:jainism_original_terms:53d35fd2",
+   "text": "What is the Tattvartha Sutra?",
+   "family": "jainism_original_terms",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 19512,
+   "error": null
+  },
+  {
+   "id": "survey:children_family_sex:e9db422b",
+   "text": "What constitutes porneia?",
+   "family": "children_family_sex",
+   "origin": "survey",
+   "traditions": [],
+   "scope": "universal",
+   "kind": "any",
+   "rank": 1,
+   "pass": true,
+   "sides": null,
+   "ms": 15840,
+   "error": null
+  }
+ ]
+}

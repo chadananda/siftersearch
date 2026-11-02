@@ -1,0 +1,2 @@
+{"at":"2026-11-02T16:26:04.237Z","layer":"search","tag":"smoke","args":"--layer search --sample 40 --tag smoke --concurrency 2","total":40,"pass":33,"rate":0.825,"errors":0,"p50":14908,"p95":20900,"cross":"1/8"}
+{"at":"2026-11-02T16:28:42.627Z","layer":"hype","tag":"smoke","args":"--layer hype --sample 40 --tag smoke --concurrency 2","total":40,"pass":20,"rate":0.5,"errors":5,"p50":6730,"p95":13932,"cross":"0/4"}
