@@ -287,9 +287,10 @@ export function thermalSlots(host, base, { now = Date.now() } = {}) {
 }
 /** May a host take CPU-side work (probes) now? Not when warm (GPU ≥ 80 °C or CPU ≥ 96 °C). */
 export const coolEnough = (host) => { const d = diskInfo.get(host); if (!d) return true; return !d.heatPaused && (d.gpu_temp ?? 0) < 80 && (d.cpu_tctl ?? 0) < HEAT.slots; };
-/** A GRADE's RAM: it decodes the whole recording at its native rate (several float32 copies) besides DNSMOS/NISQA —
- *  10-23 19:15 the OOM killer took one on aorus at 7.7 GB. → GB */
-export const gradeNeedGb = (durationS = 3600, sampleRate = 48000) => Math.round((1.5 + (durationS || 3600) * (sampleRate || 48000) * 4 * 4 / 1e9) * 10) / 10;
+/** A GRADE's RAM: the native-rate pass streams (flat); the 16 kHz decode is held whole with a few float64 copies (loudness)
+ *  besides DNSMOS/NISQA. Measured 11-02: 5.1 GB peak on a 4.9 h 48 kHz talk (the old whole native decode was OOM-killed at
+ *  7.7 GB on a 2 h one, 10-23). The native rate no longer matters; the argument stays for callers. → GB */
+export const gradeNeedGb = (durationS = 3600, _sampleRate = 48000) => Math.round((1.5 + (durationS || 3600) * 16000 * 4 * 3.5 / 1e9) * 10) / 10;
 /** The REMASTER word guard (scripts/media/remaster_guard.py; CPU, numpy; runs on workers, the run() gate refuses it on tower): it MEASURES which sentences' words
  *  differ from the original transcript and writes the pure UniPASE copy aligned + leveled. It never mixes original audio in (Chad 10-31). opts: { original, unipase, work, asr, ref, af, output, report } → its JSON */
 export const GUARD = join(ROOT, 'scripts', 'media', 'remaster_guard.py');

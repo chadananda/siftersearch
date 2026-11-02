@@ -151,13 +151,14 @@ describe('RAM guard (10-23: boss at 8 % free with six transcriptions; aorus OOM-
 });
 
 describe('a grade needs RAM in proportion to the recording (10-23 19:15: OOM-killed on aorus at 7.7 GB)', () => {
-  it('a 2-hour 48 kHz talk needs ~7 GB, so aorus with 7 GB free sends it to tower; a short one fits', async () => {
+  it('the native pass streams: a 4.9 h 48 kHz talk measured 5.1 GB and fits a 12 GB worker; a 10 h one does not fit 5 GB free; a short one fits', async () => {
     const t = await import('../../api/lib/media/tools.js');
-    expect(t.gradeNeedGb(7200, 48000)).toBeGreaterThan(6.5);
+    expect(t.gradeNeedGb(17790, 48000)).toBeGreaterThanOrEqual(5.1);
+    expect(t.gradeNeedGb(17790, 48000)).toBeLessThan(10.2);   // the 12 GB container's 0.85 share: admissible (11-02: 15.2 waited forever)
     expect(t.gradeNeedGb(600, 44100)).toBeLessThan(2.5);
-    t.noteDisk('aorus', { free_gb: 3000, mem_avail_gb: 7 });
+    t.noteDisk('aorus', { free_gb: 3000, mem_avail_gb: 5 });
     const noop = async () => ({});
-    expect(t.diskOk('aorus', { refresh: noop, kind: 'grade', needGb: t.gradeNeedGb(7200, 48000) })).toBe(false);
+    expect(t.diskOk('aorus', { refresh: noop, kind: 'grade', needGb: t.gradeNeedGb(36000, 48000) })).toBe(false);
     expect(t.diskOk('aorus', { refresh: noop, kind: 'grade', needGb: t.gradeNeedGb(600, 44100) })).toBe(true);
   });
 });

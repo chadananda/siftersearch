@@ -689,6 +689,53 @@ def cmd_realign(a):
     print(jdumps({'placed': placed, 'total': total, 'seconds': round(time.time() - t0, 1)}))
 
 
+GRADE_NF = 2048
+GRADE_KEEP_FRAMES = 16384   # evenly spread native-rate frames kept for the spectra (~134 MB); the rest is streamed past
+
+
+def native_stats(path, sr, block_frames=4096):
+    """Clipping, peak, per-frame energy and an evenly spread sample of frames, streamed from one ffmpeg decode at the
+    native rate. RAM stays flat with length (11-02: a 5 h 48 kHz talk asked 15.2 GB, more than aorus has, and waited forever)."""
+    nf = GRADE_NF
+    dur = float(json.loads(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', path],
+                                          capture_output=True, text=True).stdout or '{}').get('format', {}).get('duration') or 0)
+    stride = max(1, int(dur * sr / nf / GRADE_KEEP_FRAMES) + 1)
+    p = subprocess.Popen(['ffmpeg', '-nostdin', '-v', 'error', '-i', path, '-ac', '1', '-ar', str(sr), '-f', 'f32le', '-'],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    clip = n = 0
+    peak = 0.0
+    ens, kept, kept_en = [], [], []
+    tail = np.zeros(0, dtype=np.float32)
+    idx = 0
+    while True:
+        buf = p.stdout.read(block_frames * nf * 4)
+        if not buf:
+            break
+        s = np.frombuffer(buf[: len(buf) // 4 * 4], dtype=np.float32)
+        clip += int(np.count_nonzero(np.abs(s) >= 0.999))
+        n += len(s)
+        if len(s):
+            peak = max(peak, float(np.max(np.abs(s))))
+        s = np.concatenate([tail, s])
+        m = len(s) // nf
+        f = s[: m * nf].reshape(-1, nf)
+        tail = s[m * nf:].copy()
+        e = 10 * np.log10(np.mean(f.astype(np.float64) ** 2, axis=1) + 1e-12)
+        ens.append(e)
+        pick = np.arange((-idx) % stride, m, stride)
+        if len(pick):
+            kept.append(f[pick].copy())
+            kept_en.append(e[pick])
+        idx += m
+    err = p.stderr.read().decode(errors='replace')
+    if p.wait() != 0 or not n:
+        raise RuntimeError(f'ffmpeg exit {p.returncode} on {os.path.basename(str(path))} (native {sr} Hz): {err.strip()[-300:]}')
+    return {'clip_pct': round(clip / n * 100, 4), 'peak_dbfs': round(float(20 * np.log10(peak + 1e-12)), 2),
+            'en': np.concatenate(ens) if ens else np.zeros(0),
+            'frames': np.concatenate(kept) if kept else np.zeros((0, nf), dtype=np.float32),
+            'frames_en': np.concatenate(kept_en) if kept_en else np.zeros(0)}
+
+
 def cmd_grade(a):
     """Signal measurements for the quality grade (the JS side grades them: api/lib/media/grade.js). Native-rate decode
     for clipping and bandwidth; 16 kHz for the rest; DNSMOS + NISQA (torchmetrics) on up to three 20 s speech excerpts."""
@@ -697,11 +744,11 @@ def cmd_grade(a):
     probe = json.loads(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=sample_rate', '-of', 'json', a.input],
                                       capture_output=True, text=True).stdout or '{}')
     sr_native = int((probe.get('streams') or [{}])[0].get('sample_rate') or 44100)
-    xn = load(a.input, sr=sr_native)
+    nat = native_stats(a.input, sr_native)
     x = load(a.input, sr=SR)
     out = {'duration_s': round(len(x) / SR, 1), 'sample_rate': sr_native, 'tools': {}}
     # clipping: samples at (or within 0.1 % of) full scale on the native-rate decode
-    out['clip_pct'] = round(float(np.mean(np.abs(xn) >= 0.999)) * 100, 4)
+    out['clip_pct'] = nat['clip_pct']
     # frames: 25 ms energy → speech/silence split by the noise floor
     n = int(SR * 0.025)
     f = x[: len(x) // n * n].reshape(-1, n)
@@ -710,7 +757,7 @@ def cmd_grade(a):
     speech = e > floor + 12
     out['speech_share'] = round(float(np.mean(speech)), 3)
     out['snr_db'] = round(float(np.percentile(e, 95) - floor), 1)
-    out['peak_dbfs'] = round(float(20 * np.log10(np.max(np.abs(xn)) + 1e-12)), 2)
+    out['peak_dbfs'] = nat['peak_dbfs']
     # dropouts: a sudden fall of ≥ 35 dB to near-silence for 60-400 ms, inside speech on both sides
     drop = 0
     i = 0
@@ -736,13 +783,11 @@ def cmd_grade(a):
     out['loudness_range_db'] = round(float(np.percentile(st, 95) - np.percentile(st, 10)), 1) if st else None
     # effective bandwidth: the highest frequency where the mean speech spectrum stays within 50 dB of its peak and 6 dB
     # above the noise spectrum (silence frames) — a muffled tape stops early
-    nf = 2048
-    fr = xn[: len(xn) // nf * nf].reshape(-1, nf)
-    en = 10 * np.log10(np.mean(fr ** 2, axis=1) + 1e-12)
-    thr = np.percentile(en, 10)
+    nf, en, fr, fen = GRADE_NF, nat['en'], nat['frames'], nat['frames_en']
+    thr = np.percentile(en, 10)   # the threshold over every frame; the spectra from the evenly spread sample
     win = np.hanning(nf)
-    loud = fr[en > thr + 12][:: max(1, int(np.sum(en > thr + 12) / 400))]
-    quiet = fr[en <= thr + 3][:: max(1, int(np.sum(en <= thr + 3) / 200))]
+    loud = fr[fen > thr + 12][:: max(1, int(np.sum(fen > thr + 12) / 400))]
+    quiet = fr[fen <= thr + 3][:: max(1, int(np.sum(fen <= thr + 3) / 200))]
     if len(loud):
         S = 10 * np.log10(np.mean(np.abs(np.fft.rfft(loud * win, axis=1)) ** 2, axis=0) + 1e-20)
         N = 10 * np.log10(np.mean(np.abs(np.fft.rfft(quiet * win, axis=1)) ** 2, axis=0) + 1e-20) if len(quiet) else np.full_like(S, -200)
