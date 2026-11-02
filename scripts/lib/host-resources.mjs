@@ -207,15 +207,24 @@ export function unreachableCheck(host, prevMisses = 0, why = '') {
 }
 
 const RANK = { info: 0, warn: 1, critical: 2 };
-/** Dedupe: failing conditions → the ones to mail now (new, or escalated) + the new 'seen' map. A condition that clears is
- *  forgotten, so its next occurrence mails again; while it holds, its highest level is kept (no re-mail on flapping). */
+export const REARM_CLEAR_RUNS = 3;
+/** Dedupe: failing conditions → the ones to mail now (new, or escalated) + the new 'seen' map. While a condition holds, its
+ *  highest level is kept (no re-mail on flapping). It re-arms only after REARM_CLEAR_RUNS checks in a row found it clear, so
+ *  a condition that dips under the line and back is one report, not one per dip (Chad 11-02). seen: key → level | {level, clear}. */
 export function alertPlan(checks, seen = {}) {
-  const next = {}, send = [];
+  const next = {}, send = [], failing = new Set();
+  const lvl = (v) => (typeof v === 'string' ? v : v?.level);
   for (const c of checks) {
     if (c.ok || !(c.level in RANK) || c.level === 'info') continue;
-    const was = seen[c.key];
+    failing.add(c.key);
+    const was = lvl(seen[c.key]);
     next[c.key] = was && RANK[was] > RANK[c.level] ? was : c.level;   // flapping 92 → 91 → 92 % mails once
     if (!was || RANK[c.level] > RANK[was]) send.push(c);
+  }
+  for (const [k, v] of Object.entries(seen)) {
+    if (failing.has(k)) continue;
+    const clear = (typeof v === 'string' ? 0 : v?.clear || 0) + 1;
+    if (clear < REARM_CLEAR_RUNS) next[k] = { level: lvl(v), clear };
   }
   return { send, seen: next };
 }
@@ -243,7 +252,9 @@ export function memoryPools(s) {
   const ours = Number(s.ours?.['ours-capped-scopes'] || 0);
   if (ours) parts.push(`our capped jobs ${g1(ours)} GB`);
   const availGb = avail / GiB;
-  const critical = (some ?? 0) >= 20 || availGb < 3 || vramPct >= 97;
-  const warn = (some ?? 0) >= 5 || availGb < 8 || vramPct >= 92 || (full ?? 0) >= 1;
+  // Pressure is shown, never alarmed on (Chad 11-02 "only raise an alarm for things that are actually broken"): with memory
+  // available it is a capped slice/container throttling itself, by design. Real shortage shows as low MemAvailable (and OOM kills).
+  const critical = availGb < 3 || vramPct >= 97;
+  const warn = availGb < 8 || vramPct >= 92;
   return { label: `${s.host || 'host'} ${parts.join(' · ')}`, ok: !critical && !warn, level: critical ? 'critical' : 'warn', avail_gb: availGb, psi_some10: some, psi_full10: full, vram_pct: vramPct };
 }

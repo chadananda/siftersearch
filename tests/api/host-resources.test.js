@@ -221,10 +221,22 @@ describe('alert dedupe', () => {
     expect(p.send).toEqual([]);
     p = alertPlan([c('aorus:disk /', 'critical')], p.seen);
     expect(p.send).toEqual([]);
-    p = alertPlan([c('aorus:disk /', 'ok', true)], p.seen);
+    for (let i = 0; i < 3; i++) p = alertPlan([c('aorus:disk /', 'ok', true)], p.seen);
     expect(p.seen).toEqual({});
     p = alertPlan([c('aorus:disk /', 'warn')], p.seen);
     expect(p.send.length).toBe(1);
+  });
+  it('a condition that clears briefly and returns is not re-reported; one that stays clear re-arms', () => {
+    let p = alertPlan([c('tower:pools', 'critical')], {});
+    expect(p.send.length).toBe(1);
+    p = alertPlan([c('tower:pools', 'ok', true)], p.seen);
+    p = alertPlan([c('tower:pools', 'ok', true)], p.seen);
+    p = alertPlan([c('tower:pools', 'critical')], p.seen);
+    expect(p.send).toEqual([]);
+    expect(p.seen['tower:pools']).toBe('critical');
+    for (let i = 0; i < 3; i++) p = alertPlan([], p.seen);
+    expect(p.seen).toEqual({});
+    expect(alertPlan([c('tower:pools', 'warn')], p.seen).send.length).toBe(1);
   });
   it('info and passing checks never mail', () => {
     expect(alertPlan([c('a', 'info'), c('b', 'warn', true)], {}).send).toEqual([]);
@@ -258,10 +270,11 @@ describe('boss memory is TWO pools (Chad 10-28)', () => {
     expect(p.label).toMatch(/memory pressure some 0 % \/ full 0 %/); expect(p.label).toMatch(/GPU VRAM 13 of 96 GB used/); expect(p.label).toMatch(/GTT 0\.1 of 15\.6 GB used/);
     expect(p.label).toMatch(/llama-coder idle GB now \/ peak 22\.1 GB|llama-coder idle GB now/); expect(p.label).toMatch(/top VRAM: .*unipase_job\.py/); expect(p.ok).toBe(true);
   });
-  it('warns on pressure / low MemAvailable / full VRAM, critical on heavy stalls', async () => {
+  it('warns on low MemAvailable / full VRAM, critical when nearly out; pressure alone never alarms', async () => {
     const m = await import('../../scripts/lib/host-resources.mjs');
     const lv = (o) => { const p = m.memoryPools(m.parseHostStat(text(o))); return p.ok ? 'ok' : p.level; };
-    expect(lv({})).toBe('ok'); expect(lv({ some: 6 })).toBe('warn'); expect(lv({ avail: 6 })).toBe('warn'); expect(lv({ vram: 93 })).toBe('warn');
-    expect(lv({ some: 25 })).toBe('critical'); expect(lv({ avail: 2 })).toBe('critical'); expect(lv({ full: 2 })).toBe('warn');
+    expect(lv({})).toBe('ok'); expect(lv({ avail: 6 })).toBe('warn'); expect(lv({ vram: 93 })).toBe('warn'); expect(lv({ avail: 2 })).toBe('critical');
+    // pressure with memory available = a capped slice throttling itself, by design (Chad 11-02): shown, never an alarm
+    expect(lv({ some: 25, full: 24 })).toBe('ok'); expect(lv({ some: 25, avail: 2 })).toBe('critical');
   });
 });
