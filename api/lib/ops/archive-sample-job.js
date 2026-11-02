@@ -63,12 +63,16 @@ async function stage(q, drive, it, deep, probe = false) {
   return bytes;
 }
 
+export const PULL_PAGE = 50;
+
 /** One pass: pull finished and failed jobs, then stage "More info" looks and new samples up to the window. → counts */
 export async function samplePass({ drive, window = 24, kinds: kinds_ = null, deps }) {
   const { q, store, imgStore, probeSave = setProbe, fpSave = upsertFile, bodySave = saveBody, toProbe = itemsToProbe, save = setSample, rec = setRec, answer = answerInfo, item = getItem, toSample = itemsToSample, wanting = itemsWantingInfo } = deps;
   const out = { pulled: 0, failed: 0, staged: 0, deep: 0, probed: 0, probes_staged: 0, errors: {} };
   const note = (why) => { why = String(why).slice(0, 160); out.errors[why] = (out.errors[why] || 0) + 1; };
-  for (const j of await q.listDone(50, 'intake')) {
+  const finished = await q.listDone(PULL_PAGE, 'intake');
+  out.more = finished.length >= PULL_PAGE;   // a full page: more results are waiting, so the caller pulls again without napping
+  for (const j of finished) {
     const b = j.body || {}, tmp = await mkdtemp(join(tmpdir(), 'intake-'));
     try {
       const names = (j.result?.outputs || []).map((o) => o.name);
@@ -187,7 +191,7 @@ export async function archiveSampleJob({ drive, window = 24, minutes = 20, round
     for (const k of ['pulled', 'failed', 'staged', 'deep', 'probed', 'probes_staged']) total[k] += p[k];
     for (const [k, v] of Object.entries(p.errors)) total.errors[k] = (total.errors[k] || 0) + v;
     if (draining() || Date.now() >= until) break;
-    await nap(60_000);
+    if (!p.more) await nap(60_000);
   }
   const st = await q.stats('intake'), inFlight = (st?.states?.queued?.n || 0) + (st?.states?.leased?.n || 0) + (st?.states?.done?.n || 0);
   total.in_flight = inFlight;

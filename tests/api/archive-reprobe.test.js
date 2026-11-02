@@ -53,6 +53,13 @@ describe('archiveReprobeJob', () => {
     const claimed = await q.claim({ host: 'w', types: ['intake'], stages: ['intake-book'], slots: 2 }).catch(() => null);
     expect(claimed).toBeDefined();
   });
+  it('a full page of finished jobs reports more, so the job pulls again without the minute nap', async () => {
+    const { samplePass, PULL_PAGE } = await import('../../api/lib/ops/archive-sample-job.js');
+    const page = (n) => ({ listDone: async (_n, _t, state) => (state ? [] : Array.from({ length: n }, (_, i) => ({ id: `intake-probe-${i}`, item_id: i, body: { probe: true } }))), get: async () => { throw new Error('gone'); }, stats: async () => ({}), ack: async () => {}, fail: async () => {}, put: async () => ({ bytes: 1 }), enqueue: async () => {} });
+    const deps = (q) => ({ q, store: {}, drive: { id: 'g', root }, probeSave: async () => {}, save: async () => {}, toProbe: async () => [], toSample: async () => [], wanting: async () => [] });
+    expect((await samplePass({ drive: 'g', window: 0, deps: deps(page(PULL_PAGE)) })).more).toBe(true);
+    expect((await samplePass({ drive: 'g', window: 0, deps: deps(page(3)) })).more).toBe(false);
+  });
   it('the pass saves a result (has a class) as the probe and a failure as a reprobe error, never over the old probe', async () => {
     const { samplePass } = await import('../../api/lib/ops/archive-sample-job.js');
     const saved = [], marked = [];

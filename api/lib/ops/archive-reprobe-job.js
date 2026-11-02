@@ -44,7 +44,7 @@ export async function archiveReprobeJob({ drive, window = 24, minutes = 20, redo
     for (const k of ['pulled', 'failed', 'probed', 'probes_staged']) total[k] += p[k];
     for (const [k, v] of Object.entries(p.errors)) total.errors[k] = (total.errors[k] || 0) + v;
     if (draining() || Date.now() >= until) break;
-    await nap(60_000);
+    if (!p.more) await nap(60_000);   // a full page pulled: results are backing up, pull again now (boss finishes ~85/min; one page a minute capped intake at ~3,000/h)
   }
   const st = await q.stats('intake'), inFlight = (st?.states?.queued?.n || 0) + (st?.states?.leased?.n || 0) + (st?.states?.done?.n || 0);
   total.in_flight = inFlight;
