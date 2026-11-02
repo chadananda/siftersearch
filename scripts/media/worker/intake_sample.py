@@ -185,7 +185,7 @@ def probe():
     src = IN[0]
     if not src.lower().endswith('.pdf'):
         return probe_doc()
-    info = sh(['pdfinfo', '-meta', src]).stdout
+    info = sh(['pdfinfo', src]).stdout   # -meta prints ONLY the XMP stream (no Pages: line) — the v1 probe read every PDF as 1 page and sampled page 1 alone
     m = re.search(r'^Pages:\s+(\d+)', info, re.M)
     n = int(m.group(1)) if m else 1
     pgs = pick_pages(n)
@@ -204,9 +204,9 @@ def probe():
     else:
         texts = layer
     text = '\n\n'.join(f'[page {p}]\n{texts[p][:3000]}' for p in pgs)
-    meta = re.sub(r'<[^>]+>', ' ', info)
+    meta = info + '\n' + re.sub(r'<[^>]+>', ' ', sh(['pdfinfo', '-meta', src]).stdout)
     fp, outs = fp_of(src, cls, text)
-    return {'probe': True, 'fp': fp, 'converter': 'fingerprint.py 1 (poppler pdftotext / tesseract)', 'class': cls, 'pages': n, 'sampled': pgs, 'text': text[:TEXT_MAX], 'meta_text': tidy(meta)[:4000], 'words_pp': round(words_pp, 1),
+    return {'probe': True, 'fp': fp, 'converter': 'fingerprint.py 1 (poppler pdftotext / tesseract)', 'probe_v': 2, 'class': cls, 'pages': n, 'sampled': pgs, 'text': text[:TEXT_MAX], 'meta_text': tidy(meta)[:4000], 'words_pp': round(words_pp, 1),
             'img_frac': round(img_frac, 2), 'hidden_font': bool(re.search(r'GlyphLess|Invisible|HiddenHorzOCR|Tesseract', fonts, re.I)), 'ocr': cls == 'scan', 'files': outs}
 
 

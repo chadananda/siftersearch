@@ -81,7 +81,7 @@ export async function samplePass({ drive, window = 24, kinds: kinds_ = null, dep
       const at = new Date().toISOString();
       if (b.probe) {   // the pre-OCR probe: class, pages, sampled text, PDF metadata — kept whole on the item, never a sample
         const fp = s.fp || {}, it0 = await item(j.item_id);
-        await probeSave(j.item_id, { class: s.class, pages: s.pages, sampled: s.sampled, text: s.text, meta_text: s.meta_text, words_pp: s.words_pp, img_frac: s.img_frac, hidden_font: !!s.hidden_font, ocr: !!s.ocr, fp: { sha256: fp.sha256 || null, norm_sha: fp.norm_sha || null, words: fp.words || 0 }, at });
+        await probeSave(j.item_id, { v: s.probe_v || 1, class: s.class, pages: s.pages, sampled: s.sampled, text: s.text, meta_text: s.meta_text, words_pp: s.words_pp, img_frac: s.img_frac, hidden_font: !!s.hidden_font, ocr: !!s.ocr, fp: { sha256: fp.sha256 || null, norm_sha: fp.norm_sha || null, words: fp.words || 0 }, at });
         // the dedup registry (all drives): the whole fingerprint incl. the MinHash, keyed drive+path
         // the collection db (one per drive, <ARCHIVES_DIR>/<drive>.data/): this file's row + its converted Markdown (md/) or a scan's pre-OCR sample (sample/), written here by the archive job
         if (it0 && fp.sha256) {

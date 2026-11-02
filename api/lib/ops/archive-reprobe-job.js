@@ -31,11 +31,13 @@ export async function archiveReprobeJob({ drive, window = 24, minutes = 20, redo
   const { r2StageStore } = await import('../media/r2-stage.js');
   const q = deps.q || (await import('../repos/media-queue-repo.js')).localQueue();
   const store = deps.store !== undefined ? deps.store : await r2StageStore();
-  const mark = deps.mark || setReprobe, save = deps.save || setProbe;
+  const mark0 = deps.mark || setReprobe, save = deps.save || setProbe;
+  // redo 'pages' (11-02): every v1 PDF probe again, fingerprinted or not; its markers carry v2 so the redo never offers an item twice
+  const pagesRedo = redo === 'pages', mark = pagesRedo ? (id, m) => mark0(id, { ...m, v2: 1 }) : mark0;
   const draining = deps.draining || (await import('../drain.js')).isDraining, nap = deps.nap || ((ms) => new Promise((r) => setTimeout(r, ms)));
   // the pass saves three kinds of probe record: a result (has a class) replaces the probe; a queued/failed marker goes to metadata.reprobe and never overwrites the earlier probe
   const probeSave = (id, p) => (p.class ? save(id, p) : p.queued ? mark(id, { queued: p.queued }) : mark(id, { error: p.error, at: p.at }));
-  const toProbe = (_d, { limit }) => nextToReprobe(drive, { limit, redo, select: deps.select, mark, done: deps.done });
+  const toProbe = (_d, { limit }) => nextToReprobe(drive, { limit, redo, select: deps.select, mark, done: pagesRedo ? () => new Set() : deps.done });
   const total = { drive, round, passes: 0, pulled: 0, failed: 0, probed: 0, probes_staged: 0, errors: {} };
   const until = Date.now() + minutes * 60_000;
   for (;;) {

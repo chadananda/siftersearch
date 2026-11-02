@@ -86,3 +86,22 @@ describe('the archive jobs yield to search (Chad 11-02: "We do need Tower\'s sea
     expect(eco.slice(i, i + 400)).toMatch(/interpreter: path\.join\(PROJECT_ROOT, 'scripts\/ops\/in-slice\.sh'\)/);
   });
 });
+
+describe("redo 'pages' (11-02: the v1 probe ran pdfinfo -meta, which has no Pages: line — every PDF read as 1 page, page 1 sampled alone)", () => {
+  it('re-offers fingerprinted files too, and every marker it sets carries v2 so no item is offered twice', async () => {
+    const p = pool([item(1, 'k/b1.pdf'), item(2, 'k/b2.pdf')]);
+    const marks = [];
+    const deps = { q, store: {}, getDrive: async () => ({ id: 'g', root }), select: p.select, mark: async (id, m) => { marks.push(m); await p.mark(id); },
+      done: () => new Set(['k/b1.pdf', 'k/b2.pdf']), draining: () => true, noRequeue: true, nap: async () => {} };
+    const r = await archiveReprobeJob({ drive: 'g', window: 50, redo: 'pages' }, deps);
+    expect(r.probes_staged).toBe(2);
+    expect(marks.length).toBe(2);
+    expect(marks.every((m) => m.v2 === 1 && m.queued)).toBe(true);
+  });
+  it('the probe reads the page count from plain pdfinfo, never -meta', async () => {
+    const { readFileSync } = await import('fs');
+    const py = readFileSync('scripts/media/worker/intake_sample.py', 'utf8');
+    expect(py).toMatch(/info = sh\(\['pdfinfo', src\]\)\.stdout/);
+    expect(py).toMatch(/'probe_v': 2/);
+  });
+});
