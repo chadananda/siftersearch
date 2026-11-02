@@ -58,12 +58,33 @@ const lib = async () => Promise.all([import('../dewey/title-index.js'), import('
 
 /** The question → { doc, others } — the library's best copy of the work asked for — or null. */
 export async function findWork(text, { named = null, index = null, match = null, listDocs = null } = {}) {
-  if (!workRequest(text)) return null;
-  return findTitled(titleCandidates(text, named), { index, match, listDocs });
+  if (workRequest(text)) return findTitled(titleCandidates(text, named), { index, match, listDocs });
+  // a bare title IS a request for the book (Chad 11-01: "Dawnbreakers" and "Seven Valleys" got unsourced summaries, no link):
+  // only the book's WHOLE title ("Dawnbreakers" = The Dawn-Breakers), or a phrase of 2+ words naming a work by a Central
+  // Figure or Shoghi Effendi ("Book of Certitude"): "Justice", "Love", "world peace" stay topic searches (checked against
+  // tower's index: they match "Justice: The Best Beloved…", "On Love", "World Peace: Warwick Leaflets")
+  const bare = bareTitle(text);
+  if (!bare) return null;
+  const w = await findTitled([bare], { index, match, listDocs, min: 0.95, prefix: false });
+  const sq = (t) => foldTitle(t).replace(/ /g, '');
+  const whole = w && sq(w.doc.title) === sq(bare) && (bare.includes(' ') || foldTitle(w.doc.title).includes(' '));
+  // and a BOOK: a word that happens to title a leaflet or a one-paragraph tablet ("True Seeker", "Spiritual Assemblies") is a topic
+  const central = AUTHORS.test(w?.doc.author || '');
+  const book = (w?.doc.paragraph_count || 0) >= (central ? 20 : 150);
+  return w && book && (whole || (bare.trim().includes(' ') && central)) ? w : null;
+}
+
+/** The question is nothing but a title ("Seven Valleys", "The Dawnbreakers?") → that title, else null. Pure. */
+export function bareTitle(text) {
+  const t = String(text || '').trim().replace(/[?.!]+$/, '').replace(/^["“*_]+|["”*_]+$/g, '').trim();
+  const w = t.split(/\s+/).filter(Boolean);
+  if (!w.length || w.length > 6 || CONTENT.test(t)) return null;
+  if (/^(?:who|what|why|how|when|where|which|whose|is|are|was|were|does|do|did|can|could|should|would|will|tell|explain|define|describe|list|give|show|compare|i|my|me|we|hi|hello|hey|thanks?|thank)\b/i.test(t)) return null;
+  return t;
 }
 
 /** Title phrases → { doc, others } (the researcher's find_work calls this with the title it chose), or null. */
-export async function findTitled(cands, { index = null, match = null, listDocs = null, min = 0.86 } = {}) {
+export async function findTitled(cands, { index = null, match = null, listDocs = null, min = 0.86, prefix = true } = {}) {
   if (!cands.length) return null;
   if (!index || !match || !listDocs) {
     const [ti, docs] = await lib();
@@ -79,7 +100,7 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
   let books = all.filter((h) => !notBook(h.doc));
   // a short title that OPENS the book's ("Gleanings" → Gleanings from the Writings of Bahá'u'lláh): the title matcher scores a
   // one-word query 0 against a longer title (right for the librarian's duplicate checks), so when no book matched, look for one
-  if (!books.length && index.docs) {
+  if (!books.length && prefix && index.docs) {
     const qs = cands.map(foldTitle).filter((q) => q.length >= 4);
     books = index.docs.filter((d) => !notBook(d) && qs.some((q) => foldTitle(d.title).startsWith(`${q} `))).slice(0, 200).map((doc) => ({ doc, score: min }));
   }
@@ -125,7 +146,7 @@ export function aboutWork(work, rows) {
   return rows.filter((q) => !own.has(Number(q.doc_id)) && names.some((n) => ` ${foldT(q.text)} `.includes(` ${n} `)));
 }
 /** The formatter's instructions for the middle of a work reply. */
-export const WORK_HOW = ({ doc }) => `The reader asked for the book *${doc.title}*. The link to it and the offer to read it together are ADDED BY CODE above and below your text — do not repeat the link, do not offer to read, no greeting, no sign-off. Write 2–4 sentences on the book's importance and role — what it is, why it matters, how it is regarded — from what the passages say ABOUT it, weaving in their exact words with their links. Never present a passage as a quotation FROM the book itself, and never say where the book begins.`;
+export const WORK_HOW = ({ doc }) => `The reader asked for the book *${doc.title}*. The link to it and the offer to read it together are ADDED BY CODE above and below your text — do not repeat the link, do not offer to read, no greeting, no sign-off. Write 2–4 sentences on the book's importance and role — what it is, why it matters, how it is regarded — ONLY from what the passages given say ABOUT it (Chad 11-01: "I do not want non-sourced answers"). Nothing from memory: no date, original title, translator, place or description that no passage states. Every sentence carries a passage's exact words as its link: ["exact words"](link). Name a source only as its writer and work ("Shoghi Effendi writes in *God Passes By* that …") — never put a work's title where the sentence needs a word. Never present a passage as a quotation FROM the book itself, and never say where the book begins. If the passages say little, write one sentence.`;
 
 // Every book a reply names in italics is a link to the library's copy (Chad 11-01: "Why not just have a policy to always link
 // the name of a book to the book in the library" — "The Seven Valleys" was italicised and linked nowhere). First mention only;

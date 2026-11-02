@@ -1,6 +1,6 @@
 // "Give me the book" → the library's copy, linked (work-request.js; Chad 11-01: Anís never gave the book asked for).
 import { describe, it, expect } from 'vitest';
-import { workRequest, titleCandidates, findWork, workReply, aboutWork, linkTitles, dropPreamble } from '../../api/lib/assistant/work-request.js';
+import { workRequest, titleCandidates, findWork, workReply, aboutWork, linkTitles, dropPreamble, bareTitle } from '../../api/lib/assistant/work-request.js';
 import { shortQuestion, anisDirection } from '../../api/lib/assistant/prompt.js';
 import { buildIndex, matchTitle } from '../../api/lib/dewey/title-index.js';
 
@@ -126,4 +126,20 @@ describe('the BOOK, not a talk about it (11-01 live: "Gleanings" and "Seven Vall
     ['do you have the Seven Valleys?', 22],
     ['where can I read Prayers and Meditations', 31],
   ])('%s', async (q, id) => { expect((await f(q)).doc.id).toBe(id); });
+});
+
+describe('a bare title is a request for the book (Chad 11-01: "Dawnbreakers" got an unsourced summary)', () => {
+  it.each([['Dawnbreakers', 2], ['Seven Valleys?', 6], ['Some Answered Questions', 4]])('%s', async (q, id) => {
+    const rows = [...ROWS, { id: 6, title: 'The Seven Valleys', author: "Bahá'u'lláh", religion: "Bahá'í", collection: 'Core Tablets', slug: 'sv', language: 'en', source_site: null, paragraph_count: 71 },
+      { id: 7, title: 'Prayers', author: 'x', religion: "Bahá'í", collection: 'c', slug: 'p', language: 'en', paragraph_count: 600 }];
+    const w = await findWork(q, { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) });
+    expect(w.doc.id).toBe(id);
+  });
+  it('a topic word or a question stays a search', async () => {
+    const rows = [{ id: 7, title: 'Prayers', author: 'x', religion: "Bahá'í", collection: 'c', slug: 'p', language: 'en', paragraph_count: 600 }, ...ROWS];
+    const o = { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) };
+    expect(await findWork('Prayers', o)).toBeNull();
+    expect(await findWork('What is the Dawn-Breakers about?', o)).toBeNull();
+    expect(bareTitle('who was Nabil')).toBeNull();
+  });
 });
