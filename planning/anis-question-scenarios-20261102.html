@@ -316,13 +316,14 @@ q{font-style:italic;quotes:"“" "”"}
 <section>
   <h2>The goal</h2>
   <div class="verdict">
-    <p><b>On every scenario, Anís's answer is at least as good as the best answer anyone else gives, and usually better.</b> Immerse's answers on its own 61 questions and Perplexity's answers on every turn are the minimum bar. We hold more than either: originals beside translations, twelve traditions, talks, letters, the entity graph. An answer that loses to them is a defect to fix.</p>
+    <p><b>On every scenario, Anís's answer is at least as good as the best answer anyone else gives, and usually better.</b> The bar is set per <b>class</b> of question, not per question: whatever Immerse or Perplexity would give for a question of that kind is the minimum. We hold more than either: originals beside translations, twelve traditions, talks, letters, the entity graph. An answer that loses to them is a defect to fix.</p>
+    <p><b>The real questions are evidence of the classes, not the test.</b> Immerse's 61, the SEO questions and the survey show which kinds of question people actually ask, how they word them and how often. We build and tune for the classes. Tuning on the 61 themselves would make Anís good at 61 questions and teach us nothing about the next stranger's.</p>
     <p>Answers arrive fast where the question is simple, and visibly at work where it is deep.</p>
   </div>
   <div class="wrap" style="margin-top:12px"><table>
     <tr><th>Acceptance measure</th><th>Today</th><th>Demo gate · 8 Nov</th><th>4 weeks</th></tr>
-    <tr><td>Immerse's 61: Anís wins or ties (blind Opus judge)</td><td class="n">12 of 61 wins (10-19)</td><td class="n">≥ 49 of 61</td><td class="n">≥ 58 of 61</td></tr>
-    <tr><td>Perplexity, every turn: wins or ties</td><td class="n">not measured</td><td class="n">≥ 85%</td><td class="n">≥ 95%</td></tr>
+    <tr><td>Fresh questions in every class: wins or ties vs Perplexity (blind Opus judge)</td><td class="n">not measured</td><td class="n">≥ 85% per class</td><td class="n">≥ 95% per class</td></tr>
+    <tr><td>Held-out check: Immerse's 61, never used for tuning, wins or ties vs Immerse's own answers</td><td class="n">12 of 61 wins (10-19)</td><td class="n">≥ 80%</td><td class="n">≥ 95%</td></tr>
     <tr><td>Invented quotations</td><td class="n">not counted</td><td class="n">0</td><td class="n">0</td></tr>
     <tr><td>Answer matches its scenario's shape</td><td class="n">not measured</td><td class="n">≥ 85%</td><td class="n">≥ 95%</td></tr>
     <tr><td>Jev picks the right route (checked sample)</td><td class="n">not built</td><td class="n">≥ 90%</td><td class="n">≥ 95%</td></tr>
@@ -330,7 +331,7 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>Time, understanding and comparison (B, C, D, E)</td><td class="n">5.4 s typical</td><td class="n">≤ 12 s, progress within 2 s</td><td class="n">≤ 8 s</td></tr>
     <tr><td>Assignments (F)</td><td class="n">–</td><td class="n">delivered, progress shown</td><td class="n">≤ 3 min</td></tr>
   </table></div>
-  <p class="note">This raises the Perplexity target in the demo plan from 70% to 85%, because you set these comparisons as the minimum. The Immerse target means losing no more than 12 of their 61 at the demo.</p>
+  <p class="note">This raises the Perplexity target in the demo plan from 70% to 85%, because you set these comparisons as the minimum. The 61 are a held-out check: they confirm the class work carries over to questions written by real people, and nobody looks at them while fixing. If the held-out score lags the fresh-question score, we are fitting our own test set, and that is a defect in the classes.</p>
 </section>
 
 <section>
@@ -353,12 +354,13 @@ q{font-style:italic;quotes:"“" "”"}
 
   <h3>The loop</h3>
   <ol>
-    <li><b>One labelled question set.</b> The registry holds Immerse's 61 (with their answers), the 7,130 survey wordings, the 132 seed questions, the 32 seeker queries and the conversation battery, each labelled with its scenario. Jev does the labelling; I check a sample per scenario.</li>
-    <li><b>Baseline.</b> Run the full agent on everything once. Judge each answer blind against Immerse or Perplexity and against its scenario's shape.</li>
+    <li><b>Classes from evidence.</b> Every real question we hold (Immerse, SEO, survey, seed, seeker, later Anís's own logs) is labelled with its scenario. That gives each class its frequency, its typical wordings and its variations (named tradition or not, short or long, follow-up or opener). Jev does the labelling; I check a sample per class.</li>
+    <li><b>Fresh test questions per class.</b> For each class, new questions are generated in the variety the evidence shows, across topics and traditions the real questions never touched, and a new sample is drawn for every gate so nothing can be memorised. Immerse's 61 are kept aside as the held-out check.</li>
+    <li><b>Baseline.</b> Run the full agent on the fresh questions. Judge each answer blind against Perplexity and against its class's answer shape; run the held-out 61 against Immerse's answers.</li>
     <li><b>Classify every loss</b> by cause: not in the library, search missed it, didn't look, wrong route, wrote badly, invented something.</li>
     <li><b>Fix by cause, biggest first.</b> Search misses go to the index work (search stays first); writing faults go to the route's instructions; wrong routes go to Jev's examples.</li>
-    <li><b>Gate.</b> Rerun the affected scenarios plus a sample of the rest. Ship only if nothing regresses. You get the verdict and the numbers, never answers to grade.</li>
-    <li><b>Real use feeds it.</b> Every real conversation is judged the same way; every miss becomes a permanent test.</li>
+    <li><b>Gate.</b> Rerun the affected classes on a fresh sample, plus a sample of the rest. Ship only if nothing regresses. You get the verdict and the numbers, never answers to grade.</li>
+    <li><b>Real use feeds it.</b> Every real conversation is judged the same way; a miss shows a weak class or a missing one; the class is fixed, and the question joins the evidence.</li>
   </ol>
 </section>
 
@@ -366,6 +368,6 @@ q{font-style:italic;quotes:"“" "”"}
   <h2>Gaps in this picture</h2>
   <p><b>No real Anís reader questions yet.</b> All 200 recorded Anís threads come from our own test batteries. The Immerse feed is the only real-user set we hold; the first real Anís conversations will change the frequencies above.</p>
   <p><b>Reading mode has no evidence.</b> B2 and F6 come from what a teaching assistant does, not from logs. They should reach real readers early.</p>
-  <p><b>Immerse's feed is a snapshot</b> of 61 shared answers from 10-19. A fresh copy would widen the bar; it has to come the same way the first one did, not by scraping.</p>
+  <p><b>Immerse's feed is a snapshot</b> of 61 shared answers from 10-19. Like the SEO questions, it shows what people ask; it is not the target. A fresh copy would add evidence; it has to come the same way the first one did, not by scraping.</p>
 </section>
 </main>
