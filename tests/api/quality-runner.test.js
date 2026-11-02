@@ -25,9 +25,22 @@ describe('scoreQuestion', () => {
     expect(scoreQuestion(q, [h(1, 'Islam'), h(2, 'Christian')])).toMatchObject({ pass: true, sides: { islam: 1, christianity: 2 } });
     expect(scoreQuestion(q, [h(1, 'Islam')])).toMatchObject({ pass: false, sides: { islam: 1, christianity: null } });
   });
-  it('universal without expectation passes on any result', () => {
-    expect(scoreQuestion({ expect: {}, traditions: [], scope: 'universal' }, [h(1)]).pass).toBe(true);
+  it('universal without terms: any result, labelled the weak kind', () => {
+    expect(scoreQuestion({ expect: {}, traditions: [], scope: 'universal' }, [h(1)])).toMatchObject({ pass: true, kind: 'any' });
     expect(scoreQuestion({ expect: {}, traditions: [], scope: 'universal' }, []).pass).toBe(false);
+  });
+  it('topic terms: an on-topic hit in the top 5, a stem only at a word start', () => {
+    const q = { expect: {}, traditions: [], scope: 'universal' }, topicTerms = ['death', 'afterl', 'soul'];
+    expect(scoreQuestion(q, [h(1, 'x', 'on prayer'), h(2, 'x', 'The Afterlife of the soul')], { topicTerms })).toMatchObject({ pass: true, rank: 2, kind: 'topic' });
+    expect(scoreQuestion(q, [h(1, 'x', 'consoul unrelated')], { topicTerms }).pass).toBe(false);
+    expect(scoreQuestion(q, [...Array(5).fill(h(1, 'x', 'nothing')), h(2, 'x', 'death')], { topicTerms }).pass).toBe(false);
+  });
+  it('topic terms gate tradition and cross sides too', () => {
+    const topicTerms = ['fast'];
+    const t = { expect: {}, traditions: ['islam'], scope: 'tradition' };
+    expect(scoreQuestion(t, [h(1, 'Islam', 'on charity'), h(2, 'Islam', 'Fasting in Ramadan')], { topicTerms })).toMatchObject({ pass: true, rank: 2 });
+    const c = { expect: {}, traditions: ['islam', 'christianity'], scope: 'cross' };
+    expect(scoreQuestion(c, [h(1, 'Islam', 'fasting'), h(2, 'Christian', 'grace')], { topicTerms })).toMatchObject({ pass: false, sides: { islam: 1, christianity: null } });
   });
 });
 describe('helpers', () => {

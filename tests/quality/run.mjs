@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadQuestions } from './questions/registry.mjs';
+const TOPIC = (() => { try { return JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'questions', 'topic-terms.json'), 'utf8')); } catch { return {}; } })();
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const TRAD_RELIGION = { bahai: ["Baha'i", 'Bahai', 'Baha’i'], islam: ['Islam'], christianity: ['Christian', 'Christianity'], judaism: ['Judaism', 'Jewish'], buddhism: ['Buddhist', 'Buddhism'],
   hinduism: ['Hindu', 'Hinduism'], zoroastrianism: ['Zoroastrian', 'Zoroastrianism'], taoism: ['Tao', 'Taoism', 'Taoist', 'Daoism'], confucianism: ['Confucian', 'Confucianism'], sikhism: ['Sikh', 'Sikhism'], jainism: ['Jain', 'Jainism'] };
@@ -17,8 +18,15 @@ export const normHits = (raw, layer) => {
   if (layer === 'hype') h = h.filter((x) => x.hype != null).sort((a, b) => a.hype - b.hype);
   return h;
 };
-// pure scorer. returns {pass, rank, sides, kind}
-export const scoreQuestion = (q, hits, { topK = 10 } = {}) => {
+// a hit is on topic when one of the family's stems (questions/topic-terms.json) starts a word of its text; no terms = any hit
+export const onTopic = (terms) => {
+  if (!terms?.length) return () => true;
+  const re = new RegExp(`\\b(?:${terms.map((t) => fold(t).replace(/[^a-z0-9'-]/g, '')).filter(Boolean).join('|')})`);
+  return (h) => re.test(fold(h.text));
+};
+// pure scorer. returns {pass, rank, sides, kind}. topicTerms gate the kinds with no expected doc/text: tradition and cross
+// hits must be of that tradition AND on topic; a universal question needs an on-topic hit in the top `topicK`.
+export const scoreQuestion = (q, hits, { topK = 10, topicTerms = null, topicK = 5 } = {}) => {
   const top = (hits || []).slice(0, topK), x = q.expect || {};
   if (x.docs?.length) {
     const ids = x.docs.map(Number), i = top.findIndex((h) => ids.includes(Number(h.docId))), max = x.max_rank ?? 10;
@@ -28,16 +36,18 @@ export const scoreQuestion = (q, hits, { topK = 10 } = {}) => {
     const needles = x.text_contains.map(fold), i = top.findIndex((h) => needles.some((n) => fold(h.text).includes(n)));
     return { kind: 'text', rank: i < 0 ? null : i + 1, pass: i >= 0, sides: null };
   }
+  const topical = onTopic(topicTerms), gated = !!topicTerms?.length;
   const trads = q.traditions || [];
-  const first = (t) => { const i = top.findIndex((h) => religionMatches(h.religion, t)); return i < 0 ? null : i + 1; };
+  const first = (t) => { const i = top.findIndex((h) => religionMatches(h.religion, t) && topical(h)); return i < 0 ? null : i + 1; };
   if (q.scope === 'cross' && trads.length) {
     const sides = Object.fromEntries(trads.map((t) => [t, first(t)]));
     const ranks = Object.values(sides).filter((r) => r != null);
-    return { kind: 'cross', rank: ranks.length ? Math.min(...ranks) : null, pass: ranks.length === trads.length, sides };
+    return { kind: gated ? 'cross+topic' : 'cross', rank: ranks.length ? Math.min(...ranks) : null, pass: ranks.length === trads.length, sides };
   }
-  if (trads.length) { const ranks = trads.map(first).filter((r) => r != null); return { kind: 'tradition', rank: ranks.length ? Math.min(...ranks) : null, pass: ranks.length > 0, sides: null }; }
-  // universal, no expectation: any result at all
-  return { kind: 'any', rank: top.length ? 1 : null, pass: top.length > 0, sides: null };
+  if (trads.length) { const ranks = trads.map(first).filter((r) => r != null); return { kind: gated ? 'tradition+topic' : 'tradition', rank: ranks.length ? Math.min(...ranks) : null, pass: ranks.length > 0, sides: null }; }
+  if (!gated) return { kind: 'any', rank: top.length ? 1 : null, pass: top.length > 0, sides: null };   // no terms for the family: weak check, labelled
+  const i = top.slice(0, topicK).findIndex(topical);
+  return { kind: 'topic', rank: i < 0 ? null : i + 1, pass: i >= 0, sides: null };
 };
 // deterministic stratified sample by origin|family, round-robin across strata
 export const rng = (seed) => { let a = (Number(seed) || 1) >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
@@ -58,14 +68,14 @@ export const summarize = (rows) => {
   const cross = rows.filter((r) => r.sides), side = {};
   for (const r of cross) for (const [t, rk] of Object.entries(r.sides)) { const c = (side[t] ||= { n: 0, pass: 0 }); c.n++; if (rk != null) c.pass++; }
   return { total: rows.length, pass: rows.filter((r) => r.pass).length, errors: rows.filter((r) => r.error).length, p50: pct(ms, 0.5), p95: pct(ms, 0.95),
-    byFamily: by((r) => r.family ?? '(none)'), byTradition: by((r) => r.traditions.length ? r.traditions : ['(universal)']), byOrigin: by((r) => r.origin),
+    byFamily: by((r) => r.family ?? '(none)'), byTradition: by((r) => r.traditions.length ? r.traditions : ['(universal)']), byOrigin: by((r) => r.origin), byKind: by((r) => r.kind),
     byFamilyTradition: by((r) => (r.traditions.length ? r.traditions : ['(universal)']).map((t) => `${r.family ?? '(none)'} x ${t}`)),
     crossTotal: cross.length, crossAll: cross.filter((r) => r.pass).length, crossSides: side };
 };
 export const toMarkdown = (meta, s) => {
   const tbl = (o, lim) => Object.entries(o).sort((a, b) => b[1].n - a[1].n).slice(0, lim || 999).map(([k, c]) => `| ${k} | ${c.pass}/${c.n} | ${PCT(c.pass, c.n)} |`).join('\n');
   const H = '| key | pass | rate |\n|---|---|---|\n';
-  return `# Run ${meta.layer} ${meta.date} ${meta.tag}\nargs: ${meta.args}\n\n**${s.pass}/${s.total} pass (${PCT(s.pass, s.total)})** · errors ${s.errors} · p50 ${s.p50} ms · p95 ${s.p95} ms\n\n## By origin\n${H}${tbl(s.byOrigin)}\n\n## By tradition\n${H}${tbl(s.byTradition)}\n\n## By family x tradition (top 40 by volume)\n${H}${tbl(s.byFamilyTradition, 40)}\n\n## Cross-tradition coverage\nall sides present: ${s.crossAll}/${s.crossTotal} (${PCT(s.crossAll, s.crossTotal)})\n\n${H}${tbl(s.crossSides)}\n`;
+  return `# Run ${meta.layer} ${meta.date} ${meta.tag}\nargs: ${meta.args}\n\n**${s.pass}/${s.total} pass (${PCT(s.pass, s.total)})** · errors ${s.errors} · p50 ${s.p50} ms · p95 ${s.p95} ms\n\n## By check kind\n${H}${tbl(s.byKind)}\n\n## By origin\n${H}${tbl(s.byOrigin)}\n\n## By tradition\n${H}${tbl(s.byTradition)}\n\n## By family x tradition (top 40 by volume)\n${H}${tbl(s.byFamilyTradition, 40)}\n\n## Cross-tradition coverage\nall sides present: ${s.crossAll}/${s.crossTotal} (${PCT(s.crossAll, s.crossTotal)})\n\n${H}${tbl(s.crossSides)}\n`;
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function main() {
@@ -93,7 +103,7 @@ async function main() {
   const worker = async () => { for (let i; (i = next++) < qs.length;) {
     const q = qs[i], t0 = Date.now(); let hits = [], error = null;
     for (let a = 0; a < 3; a++) { try { hits = normHits(await call(q), layer); error = null; break; } catch (e) { error = e.message; await sleep(2000 * (a + 1)); } }
-    const sc = error ? { pass: false, rank: null, sides: null, kind: 'error' } : scoreQuestion(q, hits);
+    const sc = error ? { pass: false, rank: null, sides: null, kind: 'error' } : scoreQuestion(q, hits, { topicTerms: TOPIC[q.family] });
     rows[i] = { id: q.id, parent: q.parent, text: q.text, family: q.family, origin: q.origin, traditions: q.traditions || [], scope: q.scope, ...sc, ms: Date.now() - t0, error };
   } };
   await Promise.all(Array.from({ length: Math.max(1, conc) }, worker));
