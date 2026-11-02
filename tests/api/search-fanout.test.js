@@ -246,4 +246,21 @@ describe('multiIndexSearch propagates scope_config', () => {
     expect(r.hits.map((h) => String(h.id))).toContain('77');
     expect(layers.searchKeywordQdrant).toHaveBeenLastCalledWith('Satya', expect.objectContaining({ timeoutMs: 8000 }));
   });
+
+  it('SEARCH_QDRANT=only: a call without meili:false runs the flat Qdrant form once, never a nested search (11-01)', async () => {
+    const prev = process.env.SEARCH_QDRANT;
+    process.env.SEARCH_QDRANT = 'only';
+    try {
+      qdrantCalls.length = 0;
+      const search = vi.fn(async () => ({ hits: [], processingTimeMs: 1 }));
+      meiliMock.index.mockImplementation(() => ({ search, getDocuments: vi.fn(async () => ({ results: [] })) }));
+      const r = await multiIndexSearch('test', { hype: false, scope_config: { primary: true, sites: [] } });
+      // one open phrase query + its canon pass, one BM25 — a nested qdrantClassic would double all three
+      expect(qdrantCalls.sort()).toEqual(['phrase', 'phrase', 'qkeyword']);
+      expect(search).not.toHaveBeenCalled();
+      expect(r.hits.map((h) => String(h.id))).toContain('77');
+    } finally {
+      if (prev === undefined) delete process.env.SEARCH_QDRANT; else process.env.SEARCH_QDRANT = prev;
+    }
+  });
 });

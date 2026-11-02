@@ -1298,7 +1298,11 @@ export async function multiIndexSearch(query, options = {}) {
   const semanticOff = options.semantic === false;
   // meili:false = Qdrant-only ranking (the swap candidate, P4): the Meili main/HyPE/keyword layers are skipped and the
   // Qdrant layers always run. Hit bodies are hydrated from SQLite (paragraphs-repo), never an engine.
-  const meiliOff = options.meili === false;
+  // Under SEARCH_QDRANT=only the Meili layers no longer exist: their entry points (hybridSearch, searchHypeQuestions) route to
+  // Qdrant, so a call without meili:false ran the main layer as a whole NESTED multiIndexSearch (qdrantClassic) — two fan-outs,
+  // two rankings, two hydrations per search (found 11-01; chat's executeSearch and the agent called it that way). Same routing
+  // rule as hybridSearch → the flat Qdrant form.
+  const meiliOff = options.meili === false || routesToQdrant(options);
   const mainSemanticRatio = semanticOff ? 0 : options.semanticRatio != null
     ? options.semanticRatio
     : (filters.religion && !filters.collection) ? 0.3 : 0.5;
