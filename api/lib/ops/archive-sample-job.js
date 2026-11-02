@@ -64,7 +64,7 @@ async function stage(q, drive, it, deep, probe = false) {
 }
 
 /** One pass: pull finished and failed jobs, then stage "More info" looks and new samples up to the window. → counts */
-export async function samplePass({ drive, window = 24, deps }) {
+export async function samplePass({ drive, window = 24, kinds: kinds_ = null, deps }) {
   const { q, store, imgStore, probeSave = setProbe, fpSave = upsertFile, bodySave = saveBody, toProbe = itemsToProbe, save = setSample, rec = setRec, answer = answerInfo, item = getItem, toSample = itemsToSample, wanting = itemsWantingInfo } = deps;
   const out = { pulled: 0, failed: 0, staged: 0, deep: 0, probed: 0, probes_staged: 0, errors: {} };
   const note = (why) => { why = String(why).slice(0, 160); out.errors[why] = (out.errors[why] || 0) + 1; };
@@ -124,7 +124,10 @@ export async function samplePass({ drive, window = 24, deps }) {
   }
   // a window per stage: talks wait on a GPU, books run on CPUs — a full talk window must not leave the book slots idle (order holds within each)
   const byStage = (await q.stats('intake'))?.queued_by_stage || {};
-  for (const [st, kinds] of [['intake-talk', ['talk', 'video']], ['intake-book', ['book', 'scan']]]) {
+  // params.kinds limits what is sampled (e.g. ['book','scan']: talks need a GPU the media processor is using)
+  for (const [st, all] of [['intake-talk', ['talk', 'video']], ['intake-book', ['book', 'scan']]]) {
+    const kinds = kinds_ ? all.filter((k) => kinds_.includes(k)) : all;
+    if (!kinds.length) continue;
     const queued = byStage[st] || 0;
     for (const it of window > queued ? await toSample(drive, { kinds, limit: window - queued }) : []) {
       try { await stage(q, d, it, false); await save(it.id, { queued: new Date().toISOString() }); out.staged++; }
@@ -163,7 +166,7 @@ export async function rerecDrive(drive, deps = {}) {
   return { items, resampled };
 }
 
-export async function archiveSampleJob({ drive, window = 24, minutes = 20, round = 1, rerec = false } = {}, deps = {}) {
+export async function archiveSampleJob({ drive, window = 24, minutes = 20, round = 1, rerec = false, kinds = null } = {}, deps = {}) {
   if (!drive) throw new Error('archive-sample needs drive');
   if (rerec) return { drive, rerec: await rerecDrive(drive, deps) };
   const d = await (deps.getDrive || getDrive)(drive);
@@ -179,7 +182,7 @@ export async function archiveSampleJob({ drive, window = 24, minutes = 20, round
   const total = { drive, round, passes: 0, pulled: 0, failed: 0, staged: 0, deep: 0, probed: 0, probes_staged: 0, errors: {} };
   const until = Date.now() + minutes * 60_000;
   for (;;) {
-    const p = await samplePass({ drive, window, deps: { ...deps, q, store, imgStore, drive: d } });
+    const p = await samplePass({ drive, window, kinds, deps: { ...deps, q, store, imgStore, drive: d } });
     total.passes++;
     for (const k of ['pulled', 'failed', 'staged', 'deep', 'probed', 'probes_staged']) total[k] += p[k];
     for (const [k, v] of Object.entries(p.errors)) total.errors[k] = (total.errors[k] || 0) + v;
@@ -188,7 +191,7 @@ export async function archiveSampleJob({ drive, window = 24, minutes = 20, round
   }
   const st = await q.stats('intake'), inFlight = (st?.states?.queued?.n || 0) + (st?.states?.leased?.n || 0) + (st?.states?.done?.n || 0);
   total.in_flight = inFlight;
-  total.remaining = (await (deps.toSample || itemsToSample)(drive, { limit: 1 })).length + (await (deps.toProbe || itemsToProbe)(drive, { limit: 1 })).length;
-  if ((inFlight || total.remaining) && !deps.noRequeue) await (deps.requeue || (async (p) => (await import('../repos/ops-report-repo.js')).enqueue('archive-sample', p, 'archive-sample')))({ drive, window, minutes, round: round + 1 });
+  total.remaining = (await (deps.toSample || itemsToSample)(drive, { limit: 1, ...(kinds ? { kinds } : {}) })).length + (await (deps.toProbe || itemsToProbe)(drive, { limit: 1 })).length;
+  if ((inFlight || total.remaining) && !deps.noRequeue) await (deps.requeue || (async (p) => (await import('../repos/ops-report-repo.js')).enqueue('archive-sample', p, 'archive-sample')))({ drive, window, minutes, round: round + 1, ...(kinds ? { kinds } : {}) });
   return total;
 }

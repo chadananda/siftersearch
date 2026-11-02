@@ -150,6 +150,12 @@ describe('samplePass', () => {
     expect((await q.stats('intake')).queued_by_stage).toMatchObject({ 'intake-talk': 2, 'intake-book': 1 });
     await q.cancel(['intake-21', 'intake-22', 'intake-24']);
   });
+  it('kinds: ["book","scan"] samples books only; no talk goes to the GPU queue', async () => {
+    const { deps } = rig([{ id: 25, kind: 'talk', primary_rel: 'talks/a.mp3', duration_s: 60, score: 90 }, { id: 26, kind: 'book', primary_rel: 'book.pdf', score: 5 }]);
+    expect(await samplePass({ drive: 'g', window: 2, kinds: ['book', 'scan'], deps })).toMatchObject({ staged: 1 });
+    expect((await q.stats('intake')).queued_by_stage?.['intake-talk'] || 0).toBe(0);
+    await q.cancel(['intake-26']);
+  });
 });
 
 describe('archiveSampleJob', () => {

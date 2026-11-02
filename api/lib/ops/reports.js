@@ -362,7 +362,7 @@ REPORTS['structure-summary'] = async () => (await import('../repos/sections-repo
 // the INDEXING jobs belong to siftersearch-indexer (index-reports.js): in this registry for queueing, never in these lanes
 Object.assign(REPORTS, INDEX_REPORTS);
 REPORTS['archive-adopt'] = archiveAdoptJob;   // params: { drive, donor, donorName, label, source, catalog }
-REPORTS['archive-sample'] = archiveSampleJob;   // params: { drive, window } — stages candidates to home workers (type 'intake'), pulls clip/text/title → R2 + item; requeues itself
+REPORTS['archive-sample'] = archiveSampleJob;   // params: { drive, window, kinds? (e.g. ["book","scan"]: no talks) } — stages candidates to home workers (type 'intake'), pulls clip/text/title → R2 + item; requeues itself
 REPORTS['archive-reprobe'] = archiveReprobeJob;   // params: { drive, window?, minutes?, redo? } — the current probe (fingerprint + body.md) over every catalogued book/document on home workers; books first; skips fingerprinted; requeues itself
 REPORTS['archive-import'] = archiveImportJob;   // params: { drive, limit? } — approved talks → media-scan, books → Dewey intake (_add-anyway, gate applies), each with "Donated by" provenance
 REPORTS['archive-import-dryrun'] = archiveImportDryrunJob;   // params: { drive, limit?, list? } — what the import would do (held / probably held / needs OCR / straight in); links and OCRs nothing
