@@ -20,7 +20,10 @@ bio-search 20 · library 10 · concept-senses 4 · answer-decisions 6 · seeker-
    expect: {docs[], text_contains[], author, original_lang, max_rank}, wordings[] (frozen variants), layers: [search, hype, anis]}`.
    - The 12 files are imported once, keeping their ids. Old files become read-only and are deleted when their scorers read the registry.
    - Wordings are generated per seed (natural question, paraphrase, misspelling/transliteration, original-language,
-     cross-tradition) and frozen. Each wording inherits the seed's `expect`, so nothing needs a hand label. Haiku; cost estimated first.
+     cross-tradition) and frozen.
+   - Comparative versions of every universal/practical family (Chad 11-02: "since this is interfaith"): "what do Islam
+     and Christianity say about X", "X in the Bible vs the Qur'an", "do all religions teach X". `expect` holds one
+     target per tradition named. The result passes only when EVERY side is represented, and each side is scored separately. Each wording inherits the seed's `expect`, so nothing needs a hand label. Haiku; cost estimated first.
 3. **One runner** `tests/quality/run.mjs --layer search|hype|anis [--family …] [--sample N] [--tag …]`. It writes
    per-question results to `reports/` and appends to one history.
 4. **One gate** `tests/quality/search-gate.mjs` compares two runs. Flipped questions are re-checked once to separate noise; exit 0 means ship, 1 means roll back.
