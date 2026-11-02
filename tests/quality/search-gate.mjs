@@ -96,7 +96,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     const dir = join(ROOT, arg('run')); mkdirSync(dir, { recursive: true });
     const jobs = [['search.json', 'score-search.mjs', ['--json', ...(fx ? [`--fixtures=${fx}`] : []), ...pass]], ['types.json', 'score-types.mjs', ['--raw', '--json', ...pass]],
       ['xl.json', 'score-crosslingual-api.mjs', [`--limit=${arg('xl-limit') || 300}`, `--out=${join(dir, 'xl.json')}`, ...pass]]];
-    for (const [out, script, a] of jobs) { const r = node(script, a); if (out !== 'xl.json') writeFileSync(join(dir, out), r.stdout); console.error(`${script} exit ${r.status} -> ${out}`); if (r.status && out !== 'xl.json') process.exit(2); }
+    for (const [out, script, a] of jobs) { const r = node(script, a); if (out !== 'xl.json') writeFileSync(join(dir, out), r.stdout); console.error(`${script} exit ${r.status} -> ${out}`); if (r.status > 1 && out !== 'xl.json') { console.error(String(r.stderr || '').slice(-2000)); process.exit(2); } }   // exit 1 = some fixtures failed (normal)
     process.exit(0);
   }
   if (!arg('before') || !arg('after')) { console.error('usage: search-gate --run <dir> | --before <dir> --after <dir> [--recheck] [--tag=x] [--noise=N]'); process.exit(2); }

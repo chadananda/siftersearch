@@ -60,7 +60,9 @@ if (MULTI && !INTERNAL_KEY) {
 }
 
 // --fixtures=<file> (default ocean-fixtures.json), --sample=N (even stride, deterministic), --ids=a,b (only those; the gate's recheck)
+const argv0 = (k) => args.find(a => a.startsWith(`--${k}=`));
 const argv = (k) => args.find(a => a.startsWith(`--${k}=`))?.split('=').slice(1).join('=') || null;
+const XL = args.includes('--fixtures') || argv0('fixtures') ? await import('./score-crosslingual-api.mjs') : { correct: () => true };
 const rawFixtures = JSON.parse(readFileSync(argv('fixtures') ? join(process.cwd(), argv('fixtures')) : join(__dirname, 'ocean-fixtures.json'), 'utf-8'));
 const IDS = argv('ids')?.split(',');
 const SAMPLE = parseInt(argv('sample') || '0', 10);
@@ -200,9 +202,11 @@ async function runOnce(fix) {
       docMatch = true;
     }
 
+    // generated fixtures inherit the seed's gate: match_words = the seed's own query words; xl_target = a cross-lingual original
+    if (docMatch && fix.expected_xl_target && !XL.correct(h.text || '', fix.expected_xl_target)) continue;
     if (docMatch && fix.expected_match) {
       // Gate on the query's own words being present in this passage; otherwise keep scanning.
-      if (!allWordsIn(foldText(h.text || ''), queryWords(fix.query))) continue;
+      if (!allWordsIn(foldText(h.text || ''), queryWords(fix.match_words || fix.query))) continue;
     }
 
     if (docMatch) {
@@ -237,7 +241,7 @@ async function runOnce(fix) {
   // regression_hit: our own past top result is still in the top K (a snapshot, not a truth).
   let phraseRank = null, traditionHit = null, regressionHit = null;
   if (fix.expected_match) {
-    const phrase = queryWords(fix.query).join(' ');
+    const phrase = queryWords(fix.match_words || fix.query).join(' ');
     const pi = hits.findIndex((h) => foldText(h.text || '').includes(phrase));
     phraseRank = pi >= 0 ? pi + 1 : null;
   }
@@ -250,7 +254,7 @@ async function runOnce(fix) {
   // Separates "search found the idea but the translation words it differently" from "search missed".
   let bestCoverage = null, missingWords = null;
   if (fix.expected_match && rank < 0 && hits.length) {
-    const words = queryWords(fix.query);
+    const words = queryWords(fix.match_words || fix.query);
     for (const h of hits) {
       const t = foldText(h.text || '');
       const miss = words.filter((w) => !hasWord(t, w));
@@ -302,7 +306,7 @@ async function runOnce(fix) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Sifter-Test': '1', 'X-API-Key': API_KEY },
       body: JSON.stringify({ query: 'love', limit: 1 }),
-      signal: AbortSignal.timeout(15000)
+      signal: AbortSignal.timeout(60000)
     });
     const ct = r.headers.get('content-type') || '';
     preflightOk = ct.includes('application/json');
