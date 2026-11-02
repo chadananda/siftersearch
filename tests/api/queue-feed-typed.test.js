@@ -322,6 +322,21 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect(Q.stats(E.sql, Date.now(), 'gpu').states).toEqual({});
     expect(st.qjobs).toEqual({}); expect(st.chains).toEqual({});
   });
+  it('a lost edge ack is owed in st and sent by the next pass: the done gpu step never lingers on the edge with its qjob gone', async () => {
+    lanOnly(); st.queue = [1];
+    let down = true; const ack = E.q.ack;
+    const d = { ...deps, edge: { ...E.q, ack: async (ids) => { if (down) throw Error('fetch failed'); return ack(ids); } } };
+    await feed(st, d); deliver('cpu-prep'); await pull(st, d);
+    const g = deliver('gpu', {}, E); await pull(st, d);
+    deliver('cpu-finish');
+    expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });   // the talk lands even though the ack call failed
+    expect(st.qjobs[g.id]).toBeUndefined();
+    expect(st.edge_ack_owed).toEqual([g.id]); expect(st.edge_ack_error.error).toMatch(/fetch failed/);
+    expect(Q.stats(E.sql, Date.now(), 'gpu').states.done.n).toBe(1);   // still on the edge
+    down = false; await pull(st, d);
+    expect(st.edge_ack_owed).toEqual([]); expect(st.edge_ack_error).toBeUndefined();
+    expect(Q.stats(E.sql, Date.now(), 'gpu').states).toEqual({});
+  });
   it('the edge gpu handoff runs beside the pass: the pass (deferEdgeGpu) leaves it, adoptEdgeGpu does it and times get/put', async () => {
     lanOnly(); st.queue = [1];
     const d = { ...deps, edge: E.q };

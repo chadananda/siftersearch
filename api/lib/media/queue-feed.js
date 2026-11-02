@@ -263,7 +263,8 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
   const buf = { staged_h: buffer?.buffer_h || 0, want_h: buffer?.want_h || 0 };
   st.chains ||= {};
   const ackEdge = [], qOf = (where) => (where === 'edge' ? edge : q);
-  const ackJob = (id) => { const list = st.qjobs[id]?.where === 'edge' ? ackEdge : ack; if (!list.includes(id)) list.push(id); delete st.qjobs[id]; };
+  // an edge ack is owed in st (saved) from the moment its qjob goes, so a lost ack call is retried, never forgotten (flushEdgeAcks)
+  const ackJob = (id) => { if (st.qjobs[id]?.where === 'edge') { ackEdge.push(id); owe(st, [id]); } else if (!ack.includes(id)) ack.push(id); delete st.qjobs[id]; };
   // every step type is pulled from both transports: gpu from the pods, cpu-prep/cpu-finish from a CPU pod (an edge step is acked on the edge)
   const tm = async (key, f) => { const t0 = now(); try { return await f(); } finally { trace?.sub(key, now() - t0); } };
   // one finished step; a job already being handed off (the pass and the edge mover overlap) is left to whoever holds it
@@ -366,8 +367,21 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
     for (const f of (await sq.stats(type)).failed || []) if (st.qjobs[f.id]) { errors++; logPullError(st, f.id, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`.slice(0, 300)); await failChain(st, f.id, ackJob, `queue ${type}${src === 'edge' ? ' (edge)' : ''}: ${f.error}`, repo); }
     trace?.sub(`${type}:${src}`, now() - t0);
   }
-  if (ackEdge.length) await edge.ack(ackEdge);   // the LAN list is acked by pull()
+  if (edge) await flushEdgeAcks(st, edge);   // the LAN list is acked by pull()
   return { adopted, steps, errors, ...(edge ? { edge_acked: ackEdge.length } : {}) };
+}
+const owe = (st, ids) => { st.edge_ack_owed = [...new Set([...(st.edge_ack_owed || []), ...ids])]; };
+const ACK_BATCH = 10;   // the edge deletes every R2 key of each acked job in one call (≤1000 keys): 197 jobs at once was refused (11-02)
+/** Send the owed edge acks; each batch leaves st only once the edge confirmed it. 11-02: acks lost to network blips left 199 adopted gpu steps
+ *  'done' with their qjobs gone, which filled the 200-row list-done page, so no new pod result was adopted for 20 h. */
+export async function flushEdgeAcks(st, edge) {
+  while (st.edge_ack_owed?.length) {
+    const b = st.edge_ack_owed.slice(0, ACK_BATCH);
+    try { await edge.ack(b); } catch (e) { st.edge_ack_error = { at: Date.now(), owed: st.edge_ack_owed.length, error: String(e.message).slice(0, 200) }; return false; }
+    st.edge_ack_owed = st.edge_ack_owed.filter((id) => !b.includes(id));
+  }
+  delete st.edge_ack_error;
+  return true;
 }
 
 /** The pods' R2 buffer (deps.buffer from the pod plan: buffer_h staged on the edge, want_h = BUFFER_H of pod work) is short while gpu steps
