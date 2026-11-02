@@ -69,7 +69,7 @@ describe('backfillRestored', () => {
 describe('stage + quality index', () => {
   it('backfill fills stages_missing, next_stage, verdict and NISQA in/out so the pipeline is one indexed read', async () => {
     resetRestoredVerify();
-    const m = { ...good(), stages: { ...ALL, links: undefined, assess: undefined }, remaster: { status: 'done', method: 'pod', output_assessment: { passed: true, reference: { nisqa: [2.1] }, restored: { nisqa: [3.9] } } } };
+    const m = { ...good(), stages: { ...ALL, links: undefined, assess: undefined }, remaster: { status: 'done', method: 'pod', quiet: { v: 2 }, output_assessment: { passed: true, reference: { nisqa: [2.1] }, restored: { nisqa: [3.9] } } } };
     await backfillRestored({ repo, readMeta: async (d) => (d === '/x/3' ? m : Promise.reject(new Error('x'))) });
     const r = db.prepare('SELECT restored, stages_missing sm, next_stage ns, verdict v, in_quality i, out_quality o FROM media_items WHERE id = 3').get();
     expect(r).toMatchObject({ restored: 0, sm: 2, ns: 'links', v: 'usable', i: 2.1, o: 3.9 });

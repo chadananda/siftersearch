@@ -112,7 +112,7 @@ describe('queue feed: restore kind', () => {
     expect(cfg).toMatchObject({ mode: 'restore', slug: 't9', assess_quality: true }); expect(store.has(`files/${j.file_id}/work.json`)).toBe(true);
     const { CONTRACT } = await import('../../api/lib/media/pod-post.js');
     const web = { ogg: 't9.ogg', m4a: 't9.m4a' }, out = { 'post.json': JSON.stringify({ ok: true, contract: CONTRACT.post, words_key: cfg.words_key, guard: {}, realign: {}, quiet: {}, web }),
-      'done.json': '{"audio_s":1800,"seconds":600}', 'post/unipase.flac': 'F', 'post/unipase.guard.json': '{}', 'post/realign.json': '{}', 'post/t9.ogg': 'o', 'post/t9.m4a': 'm' };
+      'done.json': '{"audio_s":1800,"seconds":600}', 'post/unipase.opus': 'F', 'post/quiet.json': '{}', 'post/unipase.guard.json': '{}', 'post/realign.json': '{}', 'post/t9.ogg': 'o', 'post/t9.m4a': 'm' };
     for (const [n, b] of Object.entries(out)) store.set(`results/${j.id}/${n}`, Buffer.from(b));
     Q.done(sql, { id: j.id, lease: j.lease, result: { outputs: Object.keys(out).map((name) => ({ name })) } });
     const queued = [];

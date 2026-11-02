@@ -30,8 +30,8 @@ describe('the registry reproduces the checklist exactly (no behaviour change)', 
     expect(TYPE_STAGES).toEqual({ intake: ['archive'], 'cpu-prep': ['grade'], gpu: ['enhance', 'transcribe', 'diarize'], 'cpu-finish': ['remaster', 'verify', 'realign', 'quiet', 'web', 'trim'],
       text: ['preview', 'correct', 'clean', 'describe', 'headings', 'quotes', 'links', 'assess'], publish: ['thumb', 'render', 'ingest', 'catalog', 'update'] });
   });
-  it('the feed completes only opt-in stages (quiet, as before); everything else waits for a campaign', () => {
-    expect(REG.FEED_STAGES).toEqual(['quiet']);
+  it('no stage is fed on its own: quiet v2 is decided on the GPU job (11-01), so every stage waits for a campaign', () => {
+    expect(REG.FEED_STAGES).toEqual([]);
   });
 });
 
@@ -139,8 +139,8 @@ describe('adding a stage queues only that stage', () => {
     const ledger = { campaignStages: async () => ['quotes', 'transcribe'], staleByStage: vi.fn(async (s) => (s === 'quotes' ? [{ id: 7 }] : [{ id: 8 }])) };
     await mediaLanesFeedPass({ repo: { nextToProcess: async () => [], nextTranscribed: async () => [], updateMediaItem: vi.fn(), nextToDownload: async () => [], youtubeHeldSince: async () => ({ n: 0 }), nextByStage: by },
       ops: { pendingRuns: async () => [] }, queue, computeDepth: 0, acceptedWorker: null, ledger });
-    expect(queue.mock.calls.filter((c) => c[0] === 'media-item').map((c) => c[1])).toEqual([{ id: 9, remaster: true, stage_feed: 'quiet' }, { id: 7, remaster: true, stage_feed: 'quotes' }]);
-    expect(by.mock.calls.map((c) => c[0])).toEqual(['quiet']);   // a transcribe campaign is never worked on tower
+    expect(queue.mock.calls.filter((c) => c[0] === 'media-item').map((c) => c[1])).toEqual([{ id: 7, remaster: true, stage_feed: 'quotes' }]);
+    expect(by.mock.calls.map((c) => c[0])).toEqual([]);   // a transcribe campaign is never worked on tower
   });
 });
 

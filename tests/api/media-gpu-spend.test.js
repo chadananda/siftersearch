@@ -641,7 +641,7 @@ describe('the pod does the heavy half of a remaster; tower validates and places'
     writeFileSync(join(dir, 'transcript.work.json'), workJson);
     const sha = wordsKey(stale ? { paragraphs: [] } : JSON.parse(workJson));   // the worker result is for these words (contract v3)
     const pod = join(dir, 'enhanced', 'pod');
-    writeFileSync(join(pod, 'unipase.flac'), 'FLAC'); writeFileSync(join(pod, 'unipase.guard.json'), '{}');
+    writeFileSync(join(pod, 'unipase.opus'), 'OPUS'); writeFileSync(join(pod, 'quiet.json'), '{}'); writeFileSync(join(pod, 'unipase.guard.json'), '{}');
     writeFileSync(join(pod, 'realign.json'), JSON.stringify({ times: { 1: [[1.03, 1.52], [1.53, 1.72], null] } }));
     const web = { ogg: 'x.ogg', m4a: 'x.m4a', orig_ogg: 'x.original.ogg', orig_m4a: 'x.original.m4a' };
     for (const f of Object.values(web)) writeFileSync(join(pod, 'web', f), f);
@@ -680,10 +680,10 @@ describe('the pod does the heavy half of a remaster; tower validates and places'
     expect(meta.remaster).toMatchObject({ status: 'review', verdict: 'review' });
     expect(meta.qa.remaster.verdict).not.toMatch(/usable|partial/);
   });
-  it('a worker result made for a DIFFERENT transcript is ignored: tower computes everything itself', async () => {
+  it('a worker result made for a DIFFERENT transcript is ignored, and tower does NOT compute the web copies itself (11-01: the remaster\'s copies carry quiet.json): it waits for a worker', async () => {
     const t = await talk({ stale: true });
-    await runItem(t.item, { redo: ['remaster', 'realign', 'web'], only: ['remaster', 'realign', 'web'], remaster: true }, t.deps);
-    expect(t.tools.remasterGuard).toHaveBeenCalled(); expect(t.tools.tool).toHaveBeenCalled(); expect(t.tools.ffmpeg).toHaveBeenCalled();
+    await expect(runItem(t.item, { redo: ['remaster', 'realign', 'web'], only: ['remaster', 'realign', 'web'], remaster: true }, t.deps)).rejects.toThrow(/waiting for a worker/);
+    expect(existsSync(join(t.dir, 'web', 'x.ogg'))).toBe(false);
   });
 });
 

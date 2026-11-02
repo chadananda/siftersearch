@@ -16,7 +16,7 @@ async function talk(post) {
   const dir = await mkdtemp(join(tmpdir(), 'talk-')), pod = join(dir, 'enhanced', 'pod');
   await mkdir(pod, { recursive: true });
   await writeFile(join(dir, 'transcript.work.json'), WORK);
-  await writeFile(join(pod, 'unipase.flac'), 'x');
+  await writeFile(join(pod, 'unipase.opus'), 'x');
   const words_key = await wordsKeyFile(join(dir, 'transcript.work.json'));
   await writeFile(join(pod, 'post.json'), JSON.stringify({ ok: true, guard: {}, words_key, contract: CONTRACT.post, ...post }));
   return dir;
@@ -54,7 +54,7 @@ describe('worker result contract', () => {
   it('a v2 result (whole-file work_sha, pre-fix image) is refused BY NAME even when its sha still matches', async () => {
     const dir = await talk({ ...full, words_key: undefined, contract: 2, work_sha: await sha256File(join(await talk(full), 'transcript.work.json')) });
     const v = await podVerdict(dir);
-    expect(v).toMatchObject({ ok: false, stale_image: true }); expect(v.why).toMatch(/v2 < v3/);
+    expect(v).toMatchObject({ ok: false, stale_image: true }); expect(v.why).toMatch(new RegExp(`v2 < v${CONTRACT.post}`));
   });
   it('post.py stamps the contract tower checks', async () => {
     const py = await readFile(new URL('../../scripts/media/worker/post.py', import.meta.url), 'utf8');
@@ -71,7 +71,7 @@ describe('adoptRestoreResult', () => {
     await mkdir(stage, { recursive: true });
     await writeFile(join(dir, 'transcript.work.json'), WORK);
     const words_key = await wordsKeyFile(join(dir, 'transcript.work.json'));
-    for (const f of ['unipase.flac', 'unipase.guard.json', 'realign.json', ...Object.values(web)]) if (!skip.includes(f)) await writeFile(join(stage, f), f);
+    for (const f of ['unipase.opus', 'quiet.json', 'unipase.guard.json', 'realign.json', ...Object.values(web)]) if (!skip.includes(f)) await writeFile(join(stage, f), f);
     await writeFile(join(stage, 'post.json'), JSON.stringify({ ok: true, guard: {}, words_key, contract: CONTRACT.post, realign: {}, quiet: {}, web, ...post }));
     return { dir, stage };
   }

@@ -163,7 +163,8 @@ describe('validateTyped: each step against job-types.json (B), never splice, qui
   });
   it('cpu-finish needs the quiet pass, except a held talk (measured regression → Chad decides)', () => {
     expect(() => validateTyped('cpu-finish', result('cpu-finish', { meta: { remaster: { swapped: 0 } } }))).toThrow(/quiet/);
-    expect(validateTyped('cpu-finish', result('cpu-finish', { meta: { remaster: { swapped: 0, quiet: { v: 1 } } } })).ok).toBe(true);
+    expect(validateTyped('cpu-finish', result('cpu-finish', { meta: { remaster: { swapped: 0, quiet: { v: 2 } } } })).ok).toBe(true);
+    expect(() => validateTyped('cpu-finish', result('cpu-finish', { meta: { remaster: { swapped: 0, quiet: { v: 1 } } } }))).toThrow(/quiet v2/);   // a v1 pass silenced real speech: redone
     expect(validateTyped('cpu-finish', result('cpu-finish', { meta: { remaster: { status: 'review' } } })).ok).toBe(true);
   });
 });

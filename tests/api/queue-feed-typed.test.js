@@ -57,7 +57,7 @@ function deliver(type, over = {}, where = null) {
   const files = requiredFiles(type).map((path) => { const b = Buffer.from(`${type}:${path}`); fs.set(`results/${j.id}/item/${path}`, b); return { path, sha256: sha(b) }; });
   const r = { v: 1, type, contract: CONTRACT.contract, ok: true, input_sha: j.body.job.input_sha, slug: `t${j.item_id}`, files,
     stages: type === 'gpu' ? { transcribe: { tool: 'whisper-large-v3', settings: { beam: 5 } } } : {},
-    meta: { slug: `t${j.item_id}`, stages, remaster: type === 'cpu-finish' ? { status: 'done', swapped: 0, quiet: { v: 1 } } : {} }, ...over };
+    meta: { slug: `t${j.item_id}`, stages, remaster: type === 'cpu-finish' ? { status: 'done', swapped: 0, quiet: { v: 2 } } : {} }, ...over };
   fs.set(`results/${j.id}/result.json`, Buffer.from(JSON.stringify(r)));
   Q.done(qs, { id: j.id, lease: j.lease, result: { outputs: [{ name: 'result.json' }, ...files.map((f) => ({ name: 'item/' + f.path }))] } });
   return j;
@@ -168,7 +168,7 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     expect(r.typed).toMatchObject({ adopted: 1, errors: 0 });
     expect(items[1].state).toBe('transcribed');
     const meta = JSON.parse(await readFile(join(items[1].dir, 'meta.json'), 'utf8'));
-    expect(meta.remaster).toMatchObject({ swapped: 0, quiet: { v: 1 } });
+    expect(meta.remaster).toMatchObject({ swapped: 0, quiet: { v: 2 } });
     expect(meta.stages.transcribe).toMatchObject({ tool: 'whisper-large-v3', fp: fpOf('whisper-large-v3', { beam: 5 }), host: 'aorus', job: g.id });
     expect(meta.stages.quiet).toMatchObject({ tool: 'quiet.py', host: 'boss', job: f.id });
     expect(synced[0][0]).toBe(1);
@@ -222,7 +222,7 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
   it('never splice: a finish result carrying original audio is refused, the whole chain acked, the talk retried', async () => {
     engage(); st.queue = [1];
     await feed(st, deps); deliver('cpu-prep'); await pull(st, deps); deliver('gpu'); await pull(st, deps);
-    deliver('cpu-finish', { meta: { slug: 't1', stages: {}, remaster: { swapped: 3, quiet: { v: 1 } } } });
+    deliver('cpu-finish', { meta: { slug: 't1', stages: {}, remaster: { swapped: 3, quiet: { v: 2 } } } });
     expect((await pull(st, deps)).typed.errors).toBe(1);
     expect(st.queue).toEqual([1]); expect(st.chains).toEqual({}); expect(st.qjobs).toEqual({});
     expect([...store.keys()].filter((k) => k.startsWith('results/'))).toEqual([]);
@@ -315,7 +315,7 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
 
     expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });
     const meta = JSON.parse(await readFile(join(items[1].dir, 'meta.json'), 'utf8'));
-    expect(meta.remaster).toMatchObject({ swapped: 0, quiet: { v: 1 } });
+    expect(meta.remaster).toMatchObject({ swapped: 0, quiet: { v: 2 } });
     expect(meta.stages.transcribe).toMatchObject({ host: 'pod', job: g.id });
     expect(st.done[0]).toMatchObject({ id: 1, mode: 'typed', prep: 'boss', gpu: 'pod', finish: 'boss' });
     expect([...onEdge('results/'), ...onEdge('files/')]).toEqual([]);   // edge acked: R2 emptied

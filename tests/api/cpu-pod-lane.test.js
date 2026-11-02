@@ -71,7 +71,7 @@ function deliver(type, T, host) {
     T.store.set(`results/${j.id}/item/${path}`, b); files.push({ path, sha256: sha(b) }); outputs.push({ name: 'item/' + path });
   }
   const r = { v: 1, type, contract: CONTRACT.contract, ok: true, input_sha: j.body.job.input_sha, slug: `t${j.item_id}`, files, stages: {},
-    meta: { slug: `t${j.item_id}`, stages, remaster: type === 'cpu-finish' ? { status: 'done', swapped: 0, quiet: { v: 1 } } : {} } };
+    meta: { slug: `t${j.item_id}`, stages, remaster: type === 'cpu-finish' ? { status: 'done', swapped: 0, quiet: { v: 2 } } : {} } };
   T.store.set(`results/${j.id}/result.json`, Buffer.from(JSON.stringify(r)));
   Q.done(T.sql, { id: j.id, lease: j.lease, result: { outputs } });
   return j;
@@ -170,7 +170,7 @@ describe('a step that finished on the edge is pulled, routed and acked there wha
     expect((await pull(st, deps)).typed).toMatchObject({ adopted: 1, errors: 0 });
     expect(st.done[0]).toMatchObject({ prep: 'cpupod-x1', gpu: 'aorus', finish: 'boss' });
   });
-  it('edge gpu → cpu-finish on the CPU pod when no home host takes finish; adopted from the edge with untransit; every edge step acked', async () => {
+  it('edge gpu → cpu-finish on the CPU pod when no home host takes finish; adopted from the edge (no decoded master, Opus kept); every edge step acked', async () => {
     await prepOnEdge();
     Q.claim(L.sql, { host: 'aorus', types: ['cpu-prep'], contract: CONTRACT.contract });   // no home GPU
     Q.claim(L.sql, { host: 'boss', types: ['cpu-prep'], contract: CONTRACT.contract });    // no home finish either
@@ -183,8 +183,7 @@ describe('a step that finished on the edge is pulled, routed and acked there wha
     const r = (await pull(st, deps)).typed;
     expect(r).toMatchObject({ adopted: 1, errors: 0, edge_acked: 2 });   // gpu + finish
     const it = items[f.item_id], meta = JSON.parse(await readFile(join(it.dir, 'meta.json'), 'utf8'));
-    expect(meta.master_transit.map((x) => x.path)).toContain('enhanced/unipase.flac');   // decoded back on tower
-    expect(await readFile(join(it.dir, 'enhanced/unipase.flac'), 'utf8')).toBe('decoded');
+    expect(meta.master_transit).toBeUndefined();   // 11-01: the finish lists no decoded master; the kept stage is the Opus itself, adopted as is
     expect(st.done[0]).toMatchObject({ prep: 'cpupod-x1', gpu: 'pod-9', finish: 'cpupod-x1' });
     expect([...E.store.keys()].filter((k) => k.includes(`-${f.item_id}-`) && k.startsWith('results/'))).toEqual([]);
     expect(decodedOnEdge()).toEqual([]);
