@@ -84,7 +84,7 @@ export default async function anisRoutes(fastify) {
     if (rd?.research) {
       const last = messages.map((m) => m.role).lastIndexOf('user');
       const withPage = messages.map((m, i) => (i === last ? { ...m, content: `${m.content}\n\n[Context: we are reading ${rd.book || 'a book'} together; the page I just sent them:]\n${rd.context || ''}` } : m));
-      const r = await anisTurn({ messages: withPage, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, engine, llm });
+      const r = await anisTurn({ messages: withPage, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email), email }, clientKey: who(email), research, engine, llm });
       let reply = r.reply;
       if (rd.thenNext) {
         const nx = await readingTurn({ messages: [{ role: 'user', content: 'next' }], participantId: who(email), inThread: true }).catch(() => null);
@@ -93,7 +93,7 @@ export default async function anisRoutes(fastify) {
       return { reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
         recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind, reading: rd.thenNext ? 'answer+next' : 'answer' }, conversationId: r.conversationId ?? null };
     }
-    const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, engine, llm,
+    const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email), email }, clientKey: who(email), research, engine, llm,
       ...(Array.isArray(variants) && variants.length ? { variants } : {}) });
     return { ...(r.variants ? { variants: r.variants, evidence: r.evidence ?? null } : {}), reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
       recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind }, conversationId: r.conversationId ?? null,

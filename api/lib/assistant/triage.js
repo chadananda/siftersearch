@@ -42,9 +42,19 @@ export const REACTIONS = {
   new_topic: 'moves on to a new topic',
 };
 
+// How deep the turn should go (Chad 11-03): Jev reads the conversation, the reader card and the channel as context. The
+// channel is a prior in these instructions only; no code rule sets depth by channel, and no word rule reads it.
+export const DEPTHS = {
+  answer: 'a direct answer from the library is enough: a fact, a passage, a definition, a quick explanation, a conversational follow-up',
+  research: 'a fuller researched answer in this reply: the question has several sides or sources to weigh, but one considered reply covers it',
+  deep_report: 'the person wants (or plainly needs) a thorough study: a report across many sources and aspects, for a paper, a talk, a study group or long reflection, more than one reply can hold',
+};
+export const DEPTH_Q = 'Read with the conversation, the reader and the channel: how deep should the reply to the latest user turn go? The channel is context, not a rule: a letter by email is a considered exchange and leans somewhat toward more research, while a chat leans toward a prompt answer, but what the person asks for and who the reader is decide. Choose deep_report only when the person asks for, or clearly needs, a thorough study.';
+export const ACCEPT_Q = 'Did the assistant\'s previous reply make an offer (for example to email a fuller report), and does the latest user message accept it, or supply what the assistant asked for to fulfil it (such as an email address)? A message that only asks something new, or declines, does not accept.';
+
 // Thresholds (playbook §7). A borderline score is ANSWERED on a guarded lane — a scholar quoting "instructions" from a
 // text must never be refused. Off-topic needs confidence: Anís's subject is broad, and a wrong pointer turns a seeker away.
-export const T = { malicious: 0.9, guarded: 0.5, offTopic: 0.8, cannedKind: 0.7, incomplete: 0.8, stop: 0.35, askBack: 0.7, outcome: 0.5 };
+export const T = { malicious: 0.9, guarded: 0.5, offTopic: 0.8, cannedKind: 0.7, incomplete: 0.8, stop: 0.35, askBack: 0.7, outcome: 0.5, depth: 0.6, accept: 0.6 };
 
 /**
  * Decide what happens to a message from a triage result.
@@ -68,9 +78,9 @@ const choice = (a) => (a ? { choice: a.choice ?? a.value ?? null, confidence: a.
 
 /** One Jev call. messages = the thread (last = the new message); `card` = the reader card (reader-card.js), read by Jev
  *  with the history and the turn's structural facts. Returns the normalised triage or null (fail open). */
-export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-triage'), timeoutMs = Number(process.env.ANIS_TRIAGE_TIMEOUT_MS) || 1500, card = messages?.card ?? null } = {}) {
+export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-triage'), timeoutMs = Number(process.env.ANIS_TRIAGE_TIMEOUT_MS) || 1500, card = messages?.card ?? null, channel = null } = {}) {
   const facts = turnFacts(messages);
-  const state = jevState({ messages, card, turns: 4, chars: 800 });
+  const state = `${channel ? `CHANNEL: ${channel}\n` : ''}${jevState({ messages, card, turns: 4, chars: 800 })}`;
   if (!apiKey || !facts.text.trim()) return null;
   const t0 = Date.now();
   // FIRST MESSAGE (structure): with no assistant reply before it, a message can never be a follow-up — Jev is not asked
@@ -92,7 +102,9 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
           stance: { type: 'choice', instructions: 'What is the person\'s stance in the latest message?', criteria: STANCES },
           lookup: { type: 'choice', instructions: LOOKUP_Q, criteria: LOOKUP_KINDS },
           outcome: { type: 'choice', instructions: 'Read with the conversation and the reader: does the latest user turn call for a library search (or an answer), a short question back, or neither?', criteria: OUTCOMES },
+          depth: { type: 'choice', instructions: DEPTH_Q, criteria: DEPTHS },
           ...(first ? {} : {
+            accepts_offer: { type: 'noul', instructions: ACCEPT_Q },
             reaction: { type: 'choice', instructions: 'How does the latest user message react to the assistant\'s previous reply?', criteria: REACTIONS },
             follow_up: { type: 'noul', instructions: 'Does the latest user message CONTINUE the previous exchange — asking more about, clarifying, challenging or reacting to the assistant\'s previous reply or the passage under discussion ("why?", "and the Báb?", "more", "in Persian", "the second one")? A message that starts a new subject is not a follow-up, even after "ok", "thanks" or "then", and neither is a request complete in itself that needs nothing from the history to be understood ("Okay, then can you find what the Báb wrote about Him Whom God shall make manifest?" is a new request).' },
           }),
@@ -103,9 +115,9 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
     if (!res.ok) return null;
     const a = (await res.json()).answers || {};
     const out = { malicious: noul(a.malicious), complete: noul(a.complete), stop_request: noul(a.stop_request),
-      kind: choice(a.kind), stance: choice(a.stance), lookup: choice(a.lookup), outcome: choice(a.outcome), features, ms: Date.now() - t0 };
-    if (first) Object.assign(out, { reaction: { choice: 'none', confidence: 1, by: 'first-message' }, follow_up: 0 });
-    else Object.assign(out, { reaction: choice(a.reaction), follow_up: noul(a.follow_up) });
+      kind: choice(a.kind), stance: choice(a.stance), lookup: choice(a.lookup), outcome: choice(a.outcome), depth: choice(a.depth), features, ms: Date.now() - t0 };
+    if (first) Object.assign(out, { reaction: { choice: 'none', confidence: 1, by: 'first-message' }, follow_up: 0, accepts_offer: 0 });
+    else Object.assign(out, { reaction: choice(a.reaction), follow_up: noul(a.follow_up), accepts_offer: noul(a.accepts_offer) });
     return out;
   } catch { return null; }
 }

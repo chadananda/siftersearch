@@ -48,6 +48,15 @@ export default async function deepResearchRoutes(fastify) {
     return { ...record, quotes };
   });
 
+  // The finished report (Anís deep_report): JSON + its rendered email body; 404 until complete
+  fastify.get('/deep-research/id/:id/report', async (req, reply) => {
+    const { getDeepResearchById } = await import('../lib/deep-research.js');
+    const { buildReport, renderReport } = await import('../lib/assistant/deep-report.js');
+    const report = buildReport(await getDeepResearchById(Number(req.params.id)));
+    if (!report) return reply.code(404).send({ error: 'Not ready' });
+    return { report, html: renderReport(report).html };
+  });
+
   // Single record by slug with quotes (public — used by research pages)
   fastify.get('/deep-research/slug/:slug', async (req, reply) => {
     const result = await getDeepResearchBySlug(req.params.slug);

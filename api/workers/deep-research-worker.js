@@ -107,6 +107,12 @@ async function processOne(task) {
     const chat = makeChatFn(costAcc, task.research_id);
     await runDeepResearch(task.research_id, { chat, search, costAcc });
     await finishQueueTask(task.id);
+    // Anís deep reports (Chad 11-03): mail the finished report to every address waiting on it
+    try {
+      const { makeReports } = await import('../lib/assistant/deep-report.js');
+      const sent = await makeReports().sendPending(task.research_id);
+      if (sent) logger.info({ researchId: task.research_id, sent }, 'Deep research report mailed');
+    } catch (err) { logger.warn({ err: err.message, researchId: task.research_id }, 'Deep research report mail failed (notify rows stay pending)'); }
     logger.info({ taskId: task.id, researchId: task.research_id, costUsd: costAcc.costUsd.toFixed(4), inputTokens: costAcc.inputTokens, outputTokens: costAcc.outputTokens }, 'Deep research cost summary');
   } catch (err) {
     await finishQueueTask(task.id, err.message);

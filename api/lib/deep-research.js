@@ -143,6 +143,30 @@ export async function recordQuestionHit(question, embedding = null) {
   }
 }
 
+/** One deep_research record by id (null if none). */
+export async function getDeepResearchById(id) {
+  return (await repo.getResearchById(id)) || null;
+}
+
+// Anís asked for a report (Jev depth = deep_report, Chad 11-03): no two-hit threshold. Find or create the record and queue
+// it now unless it is queued, running or done (a failed one is queued again). Returns { id, status }. The worker runs it.
+export const REPORT_PRIORITY = 100;
+export async function requestDeepResearch(question, { repo: r = repo, embed = async (q) => (await createEmbedding(q)).embedding } = {}) {
+  const q = String(question || '').trim();
+  if (!q) return null;
+  const hash = questionHash(q), now = new Date().toISOString();
+  let rec = await r.findByQuestionHash(hash);
+  if (rec) await r.incrementAskCount?.(rec.id, now);
+  else {
+    const res = await r.createPendingResearch({ question: q, embedBuf: embeddingToBuffer(await embed(q)), hash, slug: generateSlug(q).slice(0, 120), now });
+    rec = { id: Number(res.lastInsertRowid), status: 'pending' };
+  }
+  if (['queued', 'in_progress', 'complete'].includes(rec.status)) return { id: rec.id, status: rec.status };
+  await r.queueResearchTask(rec.id, REPORT_PRIORITY);
+  logger.info({ researchId: rec.id }, 'Deep research queued for an Anís report');
+  return { id: rec.id, status: 'queued' };
+}
+
 /**
  * Get curated quotes for a deep research record, ordered by rank.
  *

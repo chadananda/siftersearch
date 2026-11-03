@@ -55,7 +55,7 @@ describe('Jev decides the outcome; the prior for quoted words is context, not co
     expect(T.askBack).toBeGreaterThanOrEqual(T.outcome);
   });
   it('no production module decides intent from the words of a short turn (no "yes|ok|more|thanks" rules)', () => {
-    for (const f of ['triage.js', 'turn.js', 'short-turn.js', 'reader-card.js', 'request-features.js']) {
+    for (const f of ['triage.js', 'turn.js', 'short-turn.js', 'reader-card.js', 'request-features.js', 'deep-report.js']) {
       const src = readFileSync(new URL(`../../api/lib/assistant/${f}`, import.meta.url), 'utf8').replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
       expect(src, f).not.toMatch(/\/\^?\\?b?\(?(yes|ok|okay|more|thanks|thank you|next|why)\b[^/]*\/[gimsuy]*\.test/i);
     }
@@ -84,7 +84,7 @@ describe('anisTurn: card in, outcome routes, short searches resolved', () => {
     const h = harness({ triage: { ...base, kind: { choice: 'research', confidence: 0.9 }, outcome: { choice: 'search', confidence: 0.9 }, features: shortFollow } });
     await h.run(thread);
     expect(h.calls.card[0]).toMatchObject({ p: { id: 'sess_1', authed: true }, o: { channel: expect.any(String) } });
-    expect(h.calls.triage[0].opts).toEqual({ card: 'a signed-in reader via widget-chat; studying: hidden-words' });
+    expect(h.calls.triage[0].opts).toEqual({ card: 'a signed-in reader via widget-chat; studying: hidden-words', channel: 'widget-chat' });
     expect(h.calls.triage[0].messages.card).toBe('a signed-in reader via widget-chat; studying: hidden-words');
     expect(Object.keys(h.calls.triage[0].messages)).toEqual(['0', '1', '2']);   // non-enumerable: never serialised to the model as a message
     expect(h.calls.respond[0].direction).toMatchObject({ card: 'a signed-in reader via widget-chat; studying: hidden-words' });
@@ -128,7 +128,7 @@ describe('anisTurn: card in, outcome routes, short searches resolved', () => {
     const h = harness({ triage: { ...base, kind: { choice: 'research', confidence: 0.9 }, outcome: { choice: 'search', confidence: 0.9 }, features: shortFollow }, card: async () => { throw new Error('store down'); } });
     const r = await h.run(thread);
     expect(r.status).toBe('answered');
-    expect(h.calls.triage[0].opts).toEqual({ card: null });
+    expect(h.calls.triage[0].opts).toEqual({ card: null, channel: 'widget-chat' });
   });
 });
 

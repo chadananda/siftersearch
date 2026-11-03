@@ -1481,7 +1481,7 @@ export default async function chatRoutes(fastify) {
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
           channel: widget_token ? 'widget-chat' : 'site-chat',
           profile: { persona_name, default_tradition, mission: mission_prompt, scope_config },
-          participant: { id: userId, authed: !!request.user?.sub, userId: Number(request.user?.sub) || null },
+          participant: { id: userId, authed: !!request.user?.sub, userId: Number(request.user?.sub) || null, email: request.user?.email || null },
           conversationId: request.body.conversationId || null,
           clientKey: userId || request.ip,
           onEvent: sendEvent,

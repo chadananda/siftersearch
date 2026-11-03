@@ -20,6 +20,7 @@ import { withAIContext, currentAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
 import { phraseStage } from './phrases.js';
 import { resolveLookup } from './lookup.js';
+import { makeReports, renderReport, emailIn, REPORT_TEXT } from './deep-report.js';   // Jev depth = deep_report → a queued job + mail
 
 const OUTPUT_BREAK = 0.8;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -29,7 +30,7 @@ const liveLimits = makeLimits();
 async function defaultDeps() {
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
-    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, card: loadReaderCard, resolve: resolveQuery };
+    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, card: loadReaderCard, resolve: resolveQuery, reports: makeReports() };
 }
 
 /**
@@ -103,7 +104,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const strategyFn = d.strategy ?? (deps ? null : chooseStrategy);
   const strategyOn = strategyFn && engine === undefined && research === undefined && !variants;
   onEvent({ type: 'stage', stage: 'understand' });   // the neutral word until a decision exists — never a templated echo of the message
-  const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages, { card: card?.text ?? null })).catch(() => null),
+  const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id })).catch(() => null),
     strategyOn ? timed('strategy', () => strategyFn(messages, { profile }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null) : null]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
@@ -125,7 +126,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const triageSummary = tri && { kind: tri.kind?.choice, stance: tri.stance?.choice, reaction: tri.reaction?.choice,
     follow_up: tri.follow_up ?? null, first: tri.features?.first ?? null, features: tri.features ?? null, outcome: tri.outcome?.choice ?? null, query: resolved?.query ?? null, card: !!card?.text,
     malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms,
-    lookup: tri.lookup ? { choice: tri.lookup.choice, confidence: tri.lookup.confidence } : null };
+    lookup: tri.lookup ? { choice: tri.lookup.choice, confidence: tri.lookup.confidence } : null,
+    depth: tri.depth?.choice ?? null, accepts_offer: tri.accepts_offer ?? null };
   // THE "WHAT I UNDERSTOOD" LINE (understanding.js): Anís's own restatement of the resolved request, conditioned on Jev's decision,
   // emitted the moment it returns — beside the search, never waited on; none for a canned / refused turn; too late (answer done) = dropped.
   let turnDone = false, understood = null;
@@ -146,7 +148,27 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     return path;
   };
 
+  // DEEP REPORTS (Chad 11-03): an offer made in an earlier chat turn waits under the conversation; Jev's accepts_offer (read
+  // with the history) decides acceptance. The address comes from the account, else from the reply that supplies it.
+  const offerKey = ex?.conversationId || participant.id || null;
+  const offer = d.reports && offerKey && tri && !tri.features?.first && route.action !== 'refuse' ? await d.reports.pending(offerKey).catch(() => null) : null;
+
   try {
+    if (offer?.researchId && (tri.accepts_offer ?? 0) >= T.accept) {
+      const email = participant.email || emailIn(text);
+      const dr = { researchId: offer.researchId };
+      let reply = REPORT_TEXT.askEmail;
+      if (email) {
+        const out = await d.reports.deliver({ researchId: offer.researchId, email });
+        await d.reports.clear(offerKey).catch(() => {});
+        reply = out.sent ? REPORT_TEXT.sent(email) : REPORT_TEXT.queued(email);
+        Object.assign(dr, { sent: !!out.sent, queued: !!out.queued });
+      } else dr.asked = true;
+      onEvent({ type: 'stage', stage: 'craft' }); onEvent({ type: 'text', content: reply });
+      const path = await finish(reply, 'report', { deep_report: dr });
+      return { reply, status: 'report', citations: [], retrieved: [], plan: null, conversationId: ex?.conversationId ?? null, path, deep_report: dr, timings: { total_ms: Date.now() - t0 } };
+    }
+
     if (route.action === 'refuse' || route.action === 'canned') {
       if (route.strike) d.strikes.strike(who);
       const reply = cannedReply(route.action === 'refuse' ? 'refuse' : route.kind, { name, seed });
@@ -156,6 +178,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
         timings: { total_ms: Date.now() - t0 } };
     }
 
+    // Jev's depth = deep_report: the deep-research JOB is queued beside the normal answer (never run inline)
+    const deepOn = d.reports && engine === undefined && research === undefined && !variants && !llm && tri?.depth?.choice === 'deep_report' && (tri.depth.confidence ?? 0) >= T.depth;
+    const jobP = deepOn ? timed('deep-report', () => d.reports.start(resolved?.query || text)).catch(() => null) : null;
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { stance: triageSummary?.stance ?? null,
       kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, query: resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), strategy: strat, decisions, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
@@ -165,8 +190,25 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const broken = await timed('output-check', () => d.outputCheck(reply, { persona: name })).catch(() => null);
     const replaced = broken != null && broken >= OUTPUT_BREAK;
     if (replaced) { d.strikes.strike(who); reply = cannedReply('refuse', { name, seed }); }
+    // the report: a letter's reply IS the report when it is ready, else it follows by mail; a chat offers to email it
+    const job = jobP ? await jobP : null;
+    let deepReport;
+    if (job?.researchId && !replaced) {
+      if (channel.renderer === 'email-html') {
+        const ready = await d.reports.report(job.researchId).catch(() => null);
+        if (ready) { reply = renderReport(ready).markdown; deepReport = { researchId: job.researchId, delivered: 'reply' }; }
+        else if (participant.email) {
+          await d.reports.deliver({ researchId: job.researchId, email: participant.email }).catch(() => null);
+          reply = `${reply}\n\n${REPORT_TEXT.emailFollows}`; deepReport = { researchId: job.researchId, queued: true };
+        } else deepReport = { researchId: job.researchId, queued: false };
+      } else if (offerKey) {
+        await d.reports.offer(offerKey, { researchId: job.researchId, question: resolved?.query || text }).catch(() => {});
+        reply = `${reply}\n\n${REPORT_TEXT.offer}`; onEvent({ type: 'text', content: `\n\n${REPORT_TEXT.offer}` });
+        deepReport = { researchId: job.researchId, offered: true };
+      }
+    }
     const lint = lintReply(reply);
-    const path = await finish(reply, 'answered', { engine: 'anis', evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
+    const path = await finish(reply, 'answered', { engine: 'anis', ...(deepReport ? { deep_report: deepReport } : {}), evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
       // how the strategy was chosen (jev | jev:cached | backstop + why) and what the search was fed, for the thread view
       plan: { shape: r.plan?.shape ?? null, provenance: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, overridden: r.plan?.overridden ?? null,
         quote: r.plan?.quote?.phrase ?? null, ms: r.plan?.plan_ms ?? null, history_turns: Math.max(0, messages.length - 1), search_query: r.search_query ?? null,
@@ -181,7 +223,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       retrieved: r.retrieved?.length ?? 0,
       format: r.format ?? null, profile: r.profile ?? null,
       output_check: broken, replaced, lint, timings: r.timings, search_detail: r.plan?.timings ?? null });
-    return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path };
+    return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path, ...(deepReport ? { deep_report: deepReport } : {}) };
   } catch (err) {
     if (ex) await d.fail({ ...ex, error: err?.message }).catch(() => {});
     throw err;

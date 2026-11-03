@@ -321,6 +321,9 @@ const ENTRIES = [
     ['guidance', 'Current Guidance', async (c, x) => (await import('./guidance.js')).currentGuidance(x)],
     ['reference', 'Scripture Reference', async (c, x) => (await import('./scripture-ref.js')).scriptureReference(x)]]
     .map(([name, label, fn]) => ({ name, label, kind: 'strategy', internal: true, purpose: `The ${label.toLowerCase()} answer strategy (Jev chooses it).`, run: fn })),
+  // Jev's depth = deep_report: queue deep research as a job (the deep-research worker), return { researchId, status } at once
+  { name: 'deep_report', label: 'Deep Report', kind: 'strategy', internal: true, purpose: 'Queue a deep-research report as a job (Jev chooses the depth).',
+    run: async (input, ctx) => (await import('./deep-report.js')).startDeepReport(input, ctx) },
 ];
 
 export const REGISTRY = Object.freeze(Object.fromEntries(ENTRIES.map((e) => [e.name, Object.freeze(e)])));
