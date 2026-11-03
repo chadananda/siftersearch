@@ -19,6 +19,8 @@ export const MODEL_ROLES = {
     why: 'one fast call over raw search; ANIS_LLM env switches it (kept for compatibility)' },
   'assistant-term': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['fast', 'tiny-output'],
     why: 'extract the word a CTAI question is about (20 tokens)' },
+  'anis-understood': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-03', needs: ['fast', 'tiny-output'],
+    why: 'the "what I understood" line: one noun phrase restating the resolved request from Jev\'s decision (System One has no free-text type)' },
   'assistant-phrases': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-01', needs: ['fast', 'tiny-output'],
     why: 'name the search phrase (wording, person, work, term) of a specific question that has no quote marks; Jev still routes' },
   'deep-research-rerank': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['ranking', 'json'],

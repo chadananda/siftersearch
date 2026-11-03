@@ -30,7 +30,8 @@ describe('anisTurn', () => {
     expect(h.calls.respond[0].direction).toMatchObject({ stance: 'curious', guarded: false });
     expect(h.calls.close[0]).toMatchObject({ status: 'answered', path: { gate: 'research', engine: 'anis' } });
     expect(r).toMatchObject({ status: 'answered', conversationId: 'conv_1' });
-    expect(h.events[0]).toEqual({ type: 'session', conversation_id: 'conv_1' });
+    expect(h.events[0]).toEqual({ type: 'stage', stage: 'understand' });   // the neutral word first (W3), then the session
+    expect(h.events).toContainEqual({ type: 'session', conversation_id: 'conv_1' });
   });
 
   it('a thanks gets a canned reply with ZERO LLM calls', async () => {

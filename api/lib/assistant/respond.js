@@ -26,6 +26,8 @@ import { unmachine, dropQuibbles } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
 import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asksForOriginal } from './researcher.js';
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
+import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
+import { strategyOf } from './strategy-choice.js';
 
 // Default measured 2026-09-25 (scripts/wip/anis-model-race.mjs, lean prompt, 4 questions): Gemini 3.5 Flash-Lite
 // 0.53s first token / 1.5s total (gpt-4o-mini 0.61s / 2.3s; Haiku 0.72s / 4.3s; DeepSeek 0.77s / 2.4s). Every model
@@ -565,7 +567,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // THE AGENT (agent.js; Chad 11-01: "start with using haiku + tools to answer everything"): one loop with the library tools
   // answers the whole turn — on a channel listed in ANIS_AGENT ("site-chat", "email", "all") or when the caller asks
   // (direction.engine: 'agent' | 'pipeline'). A failure falls through to the routed pipeline below.
-  if (!fast && agentOn(direction) && !(deps && !d.agentCreate)) {
+  if (!fast && !strategyOf(direction.strategy) && agentOn(direction) && !(deps && !d.agentCreate)) {
     const A = await agentRespond({ messages, onEvent, d, t0 }).catch((err) => { console.warn('anis agent failed', err?.message); return null; });
     if (A) return A;
   }
@@ -658,16 +660,23 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       if (!study?.passages?.length) study = null;
     } catch { study = null; }
   }
+  // A STRATEGY JEV CHOSE from context (turn.js → direction.strategy; W3 11-03) is executed by code (strategies.js): the per-side
+  // searches of a comparison, the prayer shelf, the House of Justice's letters newest first, a chapter-and-verse reference.
+  // null = nothing found to execute (e.g. the reference did not parse) → the ordinary path; each decision lands in direction.decisions.
+  const strat = !fast && !researched && !sourced && !original && !study && !conversational && strategyOf(direction.strategy)
+    ? await timed('strategy', () => runStrategy(direction.strategy, { messages, question, plan, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
+      profile, decisions: direction.decisions, deps: d })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
+    : null;
   // A POSITION question ("the Bahá'í position on socialism, equality and property") → its themes, each searched, the
   // authoritative texts first (assistant/position.js; Chad 10-19: "extremely shallow and wishy washy")
-  const position = !researched && !sourced && !original && !study && !conversational && (d.looksLikePosition || looksLikePositionQuestion)(question)
+  const position = !strat && !researched && !sourced && !original && !study && !conversational && (d.looksLikePosition || looksLikePositionQuestion)(question)
     ? await positionResearch({ question, create: d.create || (await import('../role-client.js')).roleCreate, search: d.search,
       authorityOf: d.authorityOf || (async (p) => { try { return (await import('../authority.js')).getAuthority(p || {}); } catch { return 0; } }),
       defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, scope_config: profile.scope_config }).catch((err) => { console.warn('anis position research failed', err?.message); return null; })
     : null;
   // A LANGUAGE question (assistant/language.js): answered from knowledge of the language and the passage already under
   // discussion — a search would only bring unrelated quotations to pad it with (10-19, Lal's 'fí baytihi')
-  const language = !researched && !sourced && !original && !study && !position && !conversational && (d.looksLikeLanguage || looksLikeLanguageQuestion)(question);
+  const language = !strat && !researched && !sourced && !original && !study && !position && !conversational && (d.looksLikeLanguage || looksLikeLanguageQuestion)(question);
   const res = researched ? { passages: researched.passages || [], _plan: { shape: 'research', steps: researched.steps, ms: researched.ms } }
     : work && fast?.kind === 'book' ? { passages: [], _plan: { shape: 'work', work: work.doc.id, via: 'lookup-code' } }   // a requested book: the link and the offer, no "about" search (was 5.6 s live)
     : work ? { ...await timed('search', () => d.search({ query: (searchQ = workAboutQuery(work)), mode: 'passages', limit: 16, scope_config: profile.scope_config,
@@ -675,6 +684,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : fast?.passages ? { passages: fast.passages, _plan: { shape: fast.kind === 'reference' ? 'lookup' : 'quote', lookup: fast.kind, ...(fast.phrase ? { quote: { phrase: fast.phrase, via: 'lookup-code' } } : {}) } }
     : sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
     : conversational ? { passages: [], _plan: plan }
+    : strat ? { passages: strat.passages || [], _plan: strat.plan }
     : language ? { passages: [], _plan: { shape: 'language' } }
     : position?.passages?.length ? { passages: position.passages, _plan: { shape: 'position', themes: position.themes } }
     : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await phrasesP.then((p) => {
@@ -768,6 +778,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     // ORIGINAL_HOW only with an original in hand: without one the model said the passage was "not found" while the English
     // passage that answers sat in the evidence (px-smoke return-iqan T3); then the ordinary format + NO_ORIGINAL_HOW
     : original || retrieved.some((q) => q.via === 'original') ? Promise.resolve({ id: 'original', by: 'original', how: original?.how || ORIGINAL_HOW })   // the lookup's own instructions (e.g. a misattribution to correct)
+    : strat ? Promise.resolve(strat.format)
     : position?.passages?.length ? Promise.resolve({ id: 'position', by: 'position', how: POSITION_HOW })
     : language ? Promise.resolve({ id: 'language', by: 'language', how: LANGUAGE_HOW })
     : study ? Promise.resolve({ id: 'term_study', by: 'ctai', how: termFormatHow(study, channel) })

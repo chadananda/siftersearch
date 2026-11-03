@@ -1,18 +1,9 @@
-// What the reader sees while Anís works: a deterministic "what I understood" line (no LLM) and stage → progress words. Pure.
-const STAGE_TEXT = { search: 'Searching the library…', read: 'Reading the passages…', craft: 'Writing the answer…' };
-const SHORT = 90;
+// What the reader sees while Anís works: stage → progress words. Pure. The "what I understood" line is NOT templated here —
+// it is Anís's own restatement from Jev's decision (understanding.js, W3 11-03); until it arrives only the neutral word shows.
+const STAGE_TEXT = { understand: 'Thinking…', search: 'Searching the library…', read: 'Reading the passages…', craft: 'Writing the answer…' };
 
 export const progressText = (stage) => STAGE_TEXT[stage] ?? null;
-
-const clip = (s) => { const t = String(s ?? '').replace(/\s+/g, ' ').trim(); return t.length > SHORT ? `${t.slice(0, SHORT).replace(/\s\S*$/, '')}…` : t; };
-
-// route: { action, kind } from routeTriage. Canned / refuse routes answer at once, so they get no line.
-export const understoodLine = (route, text) => {
-  if (!route || route.action === 'canned' || route.action === 'refuse') return null;
-  const q = clip(text);
-  if (!q) return null;
-  return `I understand you're asking: “${q}” — I'll look in the library.`;
-};
+export const NEUTRAL = STAGE_TEXT.understand;
 
 // Time and cost of one conversation, from its rounds' path.meta (usd, latency_ms, calls). Missing numbers count as 0.
 export const conversationTotals = (rounds = []) => rounds.reduce((t, r) => {

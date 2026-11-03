@@ -1,0 +1,86 @@
+// PRAYER SHELF (W3; planning/anis-strategies.json D2): Jev said the reader wants a prayer. Code finds the prayer book, lists its
+// occasion sections, and JEV picks the section from the thread (a typed choice over the book's own section titles — no synonym
+// map, no keywords); the section's prayers are split on their attribution lines; the first is given IN FULL, two more offered.
+// No fitting section → a search scoped to the prayer book. Deps (injectable via ctx.deps): work-request findTitled, docs-repo
+// listDocs, sections-repo sectionsOfDoc, paragraphs-repo paragraphsInRange, hit-links withLinks, systemone jevFetch.
+import { jevFetch } from '../systemone.js';
+import { modelFor } from '../model-roles.js';
+import { ENDPOINT, MIN_CONFIDENCE } from '../scope-extract.js';
+import { NO_LOG, jevProbabilities } from './decision-log.js';
+import { stateOf } from './strategy-choice.js';
+
+export const PRAYER_BOOK = 'Bahá’í Prayers';
+const MAX_OCCASIONS = 40;
+
+export const PRAYER_HOW = (occasion) => `The reader asked for a prayer${occasion ? ` (${occasion})` : ''}. Give the FIRST prayer passage IN FULL, verbatim, as one block quotation — every paragraph of it, nothing shortened — with its attribution and link; nothing before it but at most one short line. Then, under "Two more", offer the two alternative prayers by their opening words, each linked. No commentary on the prayer's meaning unless asked.`;
+
+/** An attribution line closes a prayer: "_—Bahá’u’lláh_", "—‘Abdu’l-Bahá", "— The Báb". Pure. */
+export const isAttribution = (text) => /^[\s_*]*[—–-]\s*\S/.test(String(text || '')) && String(text || '').replace(/[_*]/g, '').trim().length < 60;
+
+/** Section rows → prayers: runs of paragraphs, each ending at an attribution line (a run without one is kept too). Pure. */
+export function splitPrayers(rows = []) {
+  const prayers = []; let cur = [];
+  for (const r of rows) {
+    if (!String(r.text || '').trim() || r.heading) continue;
+    cur.push(r);
+    if (isAttribution(r.text)) { prayers.push(cur); cur = []; }
+  }
+  if (cur.length) prayers.push(cur);
+  return prayers.filter((p) => p.some((r) => !isAttribution(r.text)));
+}
+
+const hit = (r, doc, theme) => ({ id: r.id, text: r.text, title: doc.title, author: doc.author, document_id: doc.id, paragraph_index: r.paragraph_index,
+  religion: doc.religion, collection: doc.collection, language: doc.language, source_url: r.url || null, theme });
+
+async function pickOccasion(messages, titles, { profile, fetchImpl, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = 900 }) {
+  if (!apiKey || !titles.length) return null;
+  const criteria = { ...Object.fromEntries(titles.map((t) => [t, `the prayers headed "${t}"`])), none: 'no listed heading fits what the reader asks for' };
+  const t0 = Date.now();
+  try {
+    const res = await fetchImpl(ENDPOINT, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: modelFor('assistant-triage').model, state: stateOf(messages, { profile }),
+        questions: { occasion: { type: 'choice', instructions: 'Which heading of the prayer book holds the prayer the reader asks for (by occasion, need, person or name)?', criteria } } }),
+      signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) return null;
+    const a = (await res.json()).answers?.occasion;
+    return a ? { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? null, distribution: a.distribution ?? null, ms: Date.now() - t0 } : null;
+  } catch { return null; }
+}
+
+export async function prayerShelf(ctx) {
+  const { messages, query, search, profile = {}, decisions = NO_LOG, deps = {} } = ctx;
+  const findTitled = deps.findTitled || (await import('./work-request.js')).findTitled;
+  const w = await findTitled([PRAYER_BOOK], { min: 0.9 }).catch(() => null);
+  const doc = w?.doc && /prayers/i.test(w.doc.title) ? w.doc : null;
+  decisions.record('prayer:book', { by: 'code', saw: PRAYER_BOOK, chosen: doc ? `${doc.id} ${doc.title}` : null, reason: doc ? 'title index' : 'no prayer book in the index' });
+  if (!doc) return null;
+  const sectionsOfDoc = deps.sectionsOfDoc || (await import('../repos/sections-repo.js')).sectionsOfDoc;
+  const sections = (await sectionsOfDoc(doc.id).catch(() => [])).filter((s) => s.title && s.paragraphs > 0);
+  const byTitle = new Map(); for (const s of sections) if (!byTitle.has(s.title)) byTitle.set(s.title, s);
+  const occasions = [...byTitle.values()].sort((a, b) => (a.level ?? 1) - (b.level ?? 1) || b.paragraphs - a.paragraphs).slice(0, MAX_OCCASIONS);
+  const pick = await (deps.pickOccasion || pickOccasion)(messages, occasions.map((s) => s.title), { profile, fetchImpl: deps.fetchImpl || jevFetch('anis-prayer-occasion') });
+  const confident = pick?.choice && pick.choice !== 'none' && byTitle.has(pick.choice) && (pick.confidence ?? 0) >= MIN_CONFIDENCE;
+  decisions.record('prayer:occasion', { by: 'jev', saw: occasions.map((s) => s.title), options: [...occasions.map((s) => s.title), 'none'], probabilities: jevProbabilities(pick),
+    chosen: confident ? pick.choice : 'none', reason: !pick ? 'no answer' : confident ? null : pick.choice === 'none' ? 'no heading fits' : 'low confidence', ms: pick?.ms ?? null });
+  const withLinks = deps.withLinks || (await import('../hit-links.js')).withLinks;
+  if (confident) {
+    const s = byTitle.get(pick.choice);
+    const paragraphsInRange = deps.paragraphsInRange || (await import('../paragraphs-repo.js')).paragraphsInRange;
+    const rows = await paragraphsInRange(doc.id, s.start_index, s.end_index).catch(() => []);
+    const prayers = splitPrayers(rows);
+    decisions.record('prayer:pick', { by: 'code', saw: { section: s.title, paragraphs: rows.length, prayers: prayers.length }, options: ['first in full + two more', 'search the book'],
+      chosen: prayers.length ? 'first in full + two more' : 'search the book', reason: prayers.length ? null : 'no prayer runs in the section' });
+    if (prayers.length) {
+      const chosen = [...prayers[0].map((r) => ({ r, theme: 'prayer' })), ...prayers.slice(1, 3).map((p) => ({ r: p[0], theme: 'alternative' }))];
+      const linked = await withLinks(chosen.map(({ r }) => ({ id: r.id, doc_id: doc.id, paragraph_index: r.paragraph_index, text: r.text, title: doc.title }))).catch(() => chosen.map(({ r }) => r));
+      const passages = chosen.map(({ r, theme }, i) => hit({ ...r, url: linked[i]?.url || null }, doc, theme));
+      return { passages, plan: { shape: 'prayer', book: doc.id, occasion: s.title, prayers: prayers.length }, format: { id: 'prayer', by: 'strategy:prayer', how: PRAYER_HOW(s.title) } };
+    }
+  }
+  // no fitting heading → the prayer book searched for the reader's words (never the whole library: a prayer is wanted)
+  const r = await search({ query, mode: 'passages', limit: 8, document_id: doc.id, scope_config: profile.scope_config, plan: { messages } }).catch(() => null);
+  const passages = (r?.passages || []).map((p) => ({ ...p, theme: 'prayer' }));
+  decisions.record('prayer:search', { by: 'code', saw: query, chosen: `${passages.length} passages`, reason: 'scoped to the prayer book' });
+  if (!passages.length) return null;
+  return { passages, plan: { shape: 'prayer', book: doc.id, occasion: null, searched: true }, format: { id: 'prayer', by: 'strategy:prayer', how: PRAYER_HOW(null) } };
+}

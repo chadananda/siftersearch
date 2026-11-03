@@ -141,6 +141,12 @@ export async function headingStarts(docId) {
     JOIN (SELECT heading, MIN(paragraph_index) mi FROM content WHERE doc_id = ? AND deleted_at IS NULL AND heading IS NOT NULL AND heading != '' GROUP BY heading) h
       ON c.doc_id = ? AND c.paragraph_index = h.mi ORDER BY c.paragraph_index LIMIT 2000`, [Number(docId), Number(docId)], 'paragraphs-repo:heading-starts');
 }
+/** A document's paragraphs in an index range (a section's rows: the prayer shelf, a scripture chapter). Capped; `context` carries
+ *  a verse marker where the edition has one ("Chapter 2 (verse 14)"). → rows in order. */
+export async function paragraphsInRange(docId, from, to, { limit = 400 } = {}) {
+  return queryAll(`SELECT id, doc_id, paragraph_index, text, heading, context, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL
+    AND paragraph_index BETWEEN ? AND ? ORDER BY paragraph_index LIMIT ?`, [Number(docId), Number(from), Number(to), Math.min(Number(limit) || 400, 2000)], 'paragraphs-repo:in-range');
+}
 
 /** For each live paragraph of a document: another live, canonical document holding the same words (normalized_hash), or
  *  null — the doc-overlap report (is a compilation of compilations already held piece by piece?). → [{ id, pidx, other }] */

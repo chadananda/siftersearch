@@ -11,7 +11,10 @@ import { strikes as liveStrikes, tarpitResponse } from './strikes.js';
 import { lintReply } from './lint.js';
 import { channelFor } from './channels.js';
 import { turnMeta } from './turn-meta.js';
-import { understoodLine, progressText } from './progress.js';
+import { progressText } from './progress.js';
+import { chooseStrategy, strategyOf } from './strategy-choice.js';   // W3: Jev chooses the strategy from context
+import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
+import { decisionLog } from './decision-log.js';
 import { withAIContext, currentAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
 import { phraseStage } from './phrases.js';
@@ -77,7 +80,10 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
     const tp = tarpitResponse(text, { name });
     if (tp.looksLike === 'research') {
-      { const u = understoodLine({ action: 'research' }, text); if (u) onEvent({ type: 'understood', text: u }); }   // same shape as a real research turn
+      // the same shape and pace as a real research turn: the neutral word, a decision's delay, an "understood" line (templates, no model)
+      onEvent({ type: 'stage', stage: 'understand' });
+      await d.sleep(500 + Math.floor(Math.random() * 600));
+      onEvent({ type: 'understood', text: understoodText(tarpitPhrase(seed)) });
       onEvent({ type: 'stage', stage: 'search' }); onEvent({ type: 'sources', sources: [], plan: null, ms: 180 });
       onEvent({ type: 'status', text: 'Searching more widely…' });
     }
@@ -92,10 +98,16 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // Jev decides (inside the triage call, no extra round trip) whether this is a lookup — a book, quoted words, a work + number;
   // lookup.js then only RESOLVES what Jev named (title index, exact-phrase search, pn/heading) — it never reads intent from wording.
   const lookupOn = engine === undefined && research === undefined && !variants && !llm && d.lookup;
-  const [ex, tri] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages)).catch(() => null)]);
+  // …and Jev's STRATEGY choice (strategy-choice.js: comparison / understanding / prayer / guidance / reference — from context, never
+  // from keywords; W3) beside them. Injected deps without one = off.
+  const strategyFn = d.strategy ?? (deps ? null : chooseStrategy);
+  const strategyOn = strategyFn && engine === undefined && research === undefined && !variants;
+  onEvent({ type: 'stage', stage: 'understand' });   // the neutral word until a decision exists — never a templated echo of the message
+  const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages)).catch(() => null),
+    strategyOn ? timed('strategy', () => strategyFn(messages, { profile }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null) : null]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
-  { const u = understoodLine(route, text); if (u) onEvent({ type: 'understood', text: u }); }
+  const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
   const lkIntent = lookupOn && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
   const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
   // "unclear" / "cut off" may only short-circuit a message with no substance. A real topic ("race unity") or a pasted
@@ -108,8 +120,17 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const triageSummary = tri && { kind: tri.kind?.choice, stance: tri.stance?.choice, reaction: tri.reaction?.choice,
     follow_up: tri.follow_up ?? null, first: tri.features?.first ?? null, features: tri.features ?? null,
     malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms };
+  // THE "WHAT I UNDERSTOOD" LINE (understanding.js): Anís's own restatement of the resolved request, conditioned on Jev's decision,
+  // emitted the moment it returns — beside the search, never waited on; none for a canned / refused turn; too late (answer done) = dropped.
+  let turnDone = false, understood = null;
+  const restateFn = d.restate ?? (deps ? null : restate);
+  const understoodP = !restateFn || route.action === 'canned' || route.action === 'refuse' ? Promise.resolve(null)
+    : timed('understood', () => restateFn(messages, { strategy: strategyOf(strat), sides: strat?.sides || [], kind: route.kind, features: triageSummary?.features })).catch(() => null);
+  understoodP.then((u) => { if (u?.text && !turnDone) { understood = u; onEvent({ type: 'understood', text: u.text, phrase: u.phrase, ms: u.ms }); } });
   const finish = async (reply, status, extra = {}) => {
-    const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop, ...extra };
+    turnDone = true;
+    const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop,
+      strategy: strat ? { choice: strat.strategy?.choice ?? null, sides: strat.sides ?? [], ms: strat.ms ?? null } : null, understood: understood?.phrase ?? null, decisions: decisions.list(), ...extra };
     path.meta = turnMeta({ status, path, meter, ms: Date.now() - t0 });
     // where the time went (route.timeline in the thread view): stage spans since turn start + each model call's completion
     path.timeline = timelineOf(timeline, t0); path.llm = meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null }));
@@ -131,7 +152,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
 
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { stance: triageSummary?.stance ?? null,
-      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
+      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), strategy: strat, decisions, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     let reply = r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).
