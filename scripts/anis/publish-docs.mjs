@@ -294,6 +294,9 @@ async function main() {
       body_md: body, layout: 'docs', active_section: d.slug, status: 'published' };
     const res = await fetch(`${API}/api/v1/admin/pages/${d.slug}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': KEY }, body: JSON.stringify(payload) });
     if (!res.ok) { console.error(`✗ ${d.slug}: PUT ${res.status} ${(await res.text()).slice(0, 200)}`); failed++; continue; }
+    // the edge holds the old page until its TTL: evict it so the site shows this publish now
+    const purge = await fetch(`${SITE}/_edge/purge?doc=${d.slug}`, { method: 'POST', headers: { 'x-internal-key': KEY } }).catch(() => null);
+    if (!purge?.ok) console.warn(`  ! ${d.slug}: edge purge ${purge?.status ?? 'failed'}; the site may show the old page for up to 5 min`);
     // Public reads, no key: the API row must be our body byte-for-byte (renderMarkdown left it alone), the page must show the h1.
     const api = await fetch(`${API}/api/v1/pages/${d.slug}`);
     const doc = api.ok ? (await api.json()).doc : null;

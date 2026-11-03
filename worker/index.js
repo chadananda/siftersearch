@@ -116,9 +116,12 @@ export function createExports(manifest) {
         }
         if (url.pathname === '/_edge/purge' && request.method === 'POST') {   // a talk's page + API entry (tower: api/lib/media/edge-purge.js)
           if (!env.S1_KEY || request.headers.get('x-internal-key') !== env.S1_KEY) return Response.json({ error: 'unauthorized' }, { status: 401 });
-          const slug = url.searchParams.get('slug') || '';
+          // ?slug= a talk; ?doc= a /docs page (scripts/anis/publish-docs.mjs) — its page, its API row and the docs nav list
+          const doc = url.searchParams.get('doc'), slug = doc || url.searchParams.get('slug') || '';
           if (!/^[a-z0-9][a-z0-9-]{0,160}$/.test(slug)) return Response.json({ error: 'bad slug' }, { status: 400 });
-          const keys = [cacheKey(new URL(`https://siftersearch.com/media/${slug}`), 'html', BUILD_VERSION), cacheKey(new URL(`https://siftersearch.com/api/media/${slug}`), 'api', BUILD_VERSION)];
+          const at = (p, kind) => cacheKey(new URL(`https://siftersearch.com${p}`), kind, BUILD_VERSION);
+          const keys = doc ? [at(`/docs/${slug}`, 'html'), at(`/api/v1/pages/${slug}`, 'api'), at('/api/v1/pages', 'api')]
+            : [at(`/media/${slug}`, 'html'), at(`/api/media/${slug}`, 'api')];
           await Promise.all(keys.map((k) => evict(k, env)));
           return Response.json({ purged: keys });
         }
