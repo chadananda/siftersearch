@@ -86,6 +86,22 @@ describe('resolveLookup (mocked deps)', () => {
     expect(r.kind).toBe('book');
     expect(searched).toBe(0);
   });
+  it('quote intent: a stub document titled with the wording is not a work; the phrase search runs', async () => {
+    const STUB = { doc: { id: 9, title: 'Be generous in prosperity', paragraph_count: 2 }, others: [] };
+    const r = await resolveLookup(user('"Be generous in prosperity, and thankful in adversity"'), { intent: 'quote', findTitled: async () => STUB,
+      search: async () => [{ text: 'Be generous in prosperity, and thankful in adversity. Be a treasure to the poor' }] });
+    expect(r.kind).toBe('quote');
+  });
+  it('a confident Jev reference choice outranks an "unclear" message kind, and the choice is recorded in the turn meta', async () => {
+    const seen = []; let closed;
+    const deps = { open: async () => ({ conversationId: 'c', round: 0 }), close: async (x) => { closed = x; }, fail: async () => {}, outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {},
+      triage: async () => ({ malicious: 0.01, complete: 0.99, stop_request: 0, kind: { choice: 'unclear', confidence: 0.95 }, stance: { choice: 'curious' }, lookup: { choice: 'reference', confidence: 0.99 } }),
+      lookup: async (m, o) => ({ kind: 'reference', intent: o.intent, passages: [] }),
+      respond: async (a) => { seen.push(a.direction); return { reply: 'r', citations: [], retrieved: [], plan: {}, timings: {} }; } };
+    await anisTurn({ messages: user('Gleanings 1'), participant: { id: 's' }, clientKey: 's', onEvent: () => {}, deps });
+    expect(seen[0]?.lookup?.kind).toBe('reference');
+    expect(closed.path.triage.lookup).toEqual({ choice: 'reference', confidence: 0.99 });
+  });
   it('quoted words not in any passage, or no Jev intent, return null (today\'s path)', async () => {
     expect(await resolveLookup(user(P), { intent: 'quote', findTitled: async () => null, search: async () => [{ text: 'mankind citizens earth' }] })).toBeNull();
     expect(await resolveLookup(user('Gleanings'), { findTitled: async () => GL })).toBeNull();

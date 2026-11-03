@@ -81,7 +81,9 @@ export async function resolveLookup(messages, deps = {}) {
   }
   if (intent === 'book') return bookOf({ min: 0.86 });
   // quote: Jev saw wording to find. Resolver check only — if the whole message IS a known title ("Epistle to the Son of the Wolf"), it is the book.
-  if (quoteStrip(text).split(/\s+/).length <= 10) { const b = await bookOf({ min: 0.97, prefix: false }); if (b) return b; }
+  if (quoteStrip(text).split(/\s+/).length <= 10) { const b = await bookOf({ min: 0.97, prefix: false });
+    // a title-match that is a stub (a prayer or fragment whose TITLE is its first line, doc 28444 "Be generous in prosperity…") is the wording itself, not a work
+    if (b && (b.work.doc.paragraph_count ?? 99) >= 20) return b; }
   const phrase = detectQuotation(text)?.phrase || quoteStrip(text);
   if (!phrase) return null;
   const search = deps.search || (await import('./agent-search.js')).agentSearch();

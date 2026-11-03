@@ -108,8 +108,6 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
-  const lkIntent = lookupOn && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
-  const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
   // "unclear" / "cut off" may only short-circuit a message with no substance. A real topic ("race unity") or a pasted
   // passage ("Find this. excerpt from a pilgrim note: …") goes to research (10-19 battery: both got a canned "say more" /
   // "part of your message went missing" instead of an answer — scored 1 against Immerse's 8)
@@ -117,9 +115,14 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // a pasted original or a translate / find-the-original request is research whatever triage called it (10-23 Liliane: her
   // Persian prayer + "can you translate this" was templated as small talk from a fresh address)
   if (route.action === 'canned' && textRequest(text).request) Object.assign(route, { action: 'research', overridden: route.kind });
+  // Jev's own confident call that this fetches something exact outranks his "unclear" (a bare "Gleanings 1" reads as unclear to the message-kind question)
+  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
+  const lkIntent = lookupOn && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
+  const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
   const triageSummary = tri && { kind: tri.kind?.choice, stance: tri.stance?.choice, reaction: tri.reaction?.choice,
     follow_up: tri.follow_up ?? null, first: tri.features?.first ?? null, features: tri.features ?? null,
-    malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms };
+    malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms,
+    lookup: tri.lookup ? { choice: tri.lookup.choice, confidence: tri.lookup.confidence } : null };
   // THE "WHAT I UNDERSTOOD" LINE (understanding.js): Anís's own restatement of the resolved request, conditioned on Jev's decision,
   // emitted the moment it returns — beside the search, never waited on; none for a canned / refused turn; too late (answer done) = dropped.
   let turnDone = false, understood = null;
