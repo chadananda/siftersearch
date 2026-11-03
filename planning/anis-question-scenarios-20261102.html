@@ -88,7 +88,7 @@ h3{margin-top:18px}
 </header>
 
 <div class="verdict">
-  <p><b>The vision.</b> Anyone, of any tradition or none, can ask Anís anything about the world's sacred writings and get an answer at least as good as the best anywhere, usually better, because every word rests on the texts, linked to the passage. Quick on simple questions, thorough on deep ones, honest when the library lacks the answer. He amplifies learning: people return because they learn more, and more gladly, with him than alone. Someone who comes to need him less is his success.</p>
+  <p><b>The vision.</b> Anyone, of any tradition or none, can ask Anís anything about the world's sacred writings and get the best answer the library can give, every word resting on the texts, linked to the passage. Quick on simple questions, thorough on deep ones, honest when the library lacks the answer. He amplifies learning: people return because they learn more, and more gladly, with him than alone. Someone who comes to need him less is his success.</p>
 </div>
 
 <nav class="toc" aria-label="Contents"><span class="eyebrow">Contents</span>
@@ -107,7 +107,7 @@ h3{margin-top:18px}
     <li><a href="#strategies">One strategy per request type</a></li>
     <li><a href="#how-he-gets-better">How he gets better</a><ol><li><a href="#jev-accuracy">Making Jev accurate</a></li><li><a href="#how-tested">How he is tested</a></li></ol></li>
     <li><a href="#goal">The goal</a></li>
-    <li><a href="#evidence">The evidence</a><ol><li><a href="#search-box">What the search box shows</a></li><li><a href="#immerse">What Immerse users ask</a></li><li><a href="#open-gaps">Open: gaps in this picture</a></li></ol></li>
+    <li><a href="#evidence">The evidence</a><ol><li><a href="#search-box">What the search box shows</a></li><li><a href="#open-gaps">Open: gaps in this picture</a></li></ol></li>
   </ol>
 </nav>
 
@@ -309,7 +309,7 @@ h3{margin-top:18px}
     <li><b>Leave alone.</b> Things they asked him not to raise again, and corrections they made to him.</li>
   </ul>
   <div class="steps">
-    <p><b>Terse, because it is everywhere.</b> The reader card (a few fixed fields, about 50 words) goes into every call serving this person: classifier, search plan, passage ranking, answer, letters. Example: <span class="mono">lang en · level reader · plain · traditions: Buddhist .7, Bahá'í .2 · interests: compassion, Pali canon, meditation · prefers: short, quotes · leave alone: conversion</span>. Behind it, the reader log: dated one-line facts read only by the background updater. When a conversation goes quiet, a small model merges what is new into the log (newest statement wins; a stated position changes only when they say something new), and code rebuilds the card.</p>
+    <p><b>Terse, because it is everywhere.</b> The reader card (a few fixed fields, about 50 words) goes into every call serving this person: Jev's decisions, search plan, passage ranking, answer, letters. Example: <span class="mono">lang en · level reader · plain · traditions: Buddhist .7, Bahá'í .2 · interests: compassion, Pali canon, meditation · prefers: short, quotes · leave alone: conversion</span>. Behind it, the reader log: dated one-line facts read only by the background updater. When a conversation goes quiet, a small model merges what is new into the log (newest statement wins; a stated position changes only when they say something new), and code rebuilds the card.</p>
     <p><b>The card ranks even when the question doesn't say.</b> Someone who has mostly talked about Buddhism asks for "quotes on compassion". The prompt names no tradition, but the card does, so Buddhist passages come first and the rest follow. A preference, never a filter. Precedence: this message, then this conversation, then the card, then the host site's default.</p>
     <p><b>Never kept:</b> health, sexuality, politics, finances, family crises, anything about other people, location finer than country and time zone, and any guess about whether someone might convert. Grief or distress is not recorded; it only pauses his letters for a while, with no reason stored.</p>
     <p><b>Theirs, and guarded.</b> People can see and share their own conversations in the app. The reader document is derived from them and is not shown or exported; clearing the account history on OceanLibrary.com erases both. Knowing someone's beliefs is how he serves them, so it is guarded like anything that must never be stolen:</p>
@@ -374,7 +374,7 @@ h3{margin-top:18px}
     <tr><td>People and events</td><td>Who someone was, who met whom, who was there, with the passages as evidence.</td><td><span class="chip live">live</span></td></tr>
     <tr><td>Email and letters</td><td>Answers by email; longer work delivered as a letter.</td><td><span class="chip live">live</span></td></tr>
     <tr><td>Compiled documents</td><td>A collection, study guide or research brief, delivered as a document.</td><td><span class="chip week">this week</span></td></tr>
-    <tr><td>Deep research (consulting the field)</td><td>For a hard question he consults everyone worth asking: Perplexity, other large models and our web research service. Not to borrow their answers, but to <b>never miss anything</b>, and to let their general knowledge point him to sources in our own library he would otherwise miss. What he learns is kept: it adds to the library's prepared knowledge and shows which documents we should acquire.</td><td><span class="chip week">partly live</span></td></tr>
+    <tr><td>Deep research (consulting the field)</td><td>For a hard question he consults everyone worth asking: other answer engines, other large models and our web research service. Not to borrow their answers, but to <b>never miss anything</b>, and to let their general knowledge point him to sources in our own library he would otherwise miss. What he learns is kept: it adds to the library's prepared knowledge and shows which documents we should acquire.</td><td><span class="chip week">partly live</span></td></tr>
     <tr><td>The web, labelled</td><td>Only for what a library can't hold (current events, news about a community), always marked as from the web.</td><td><span class="chip week">this week</span></td></tr>
     <tr><td>Memory</td><td>One history per person across chat and email, and one <b>reader document</b> (below) that every answer reads. Clearing the account history on OceanLibrary.com erases both.</td><td><span class="chip later">after launch</span></td></tr>
   </table></div>
@@ -391,22 +391,22 @@ h3{margin-top:18px}
     <div class="role"><span class="k">A dossier on each book</span><p>For every important book: how it came to be written, who is in it, anecdotes, its reception, the passages people love, the history around it. Asked about a book, he picks something varied and interesting from it, not the same summary. During a reading, it supplies the new anecdote that keeps the book alive.</p></div>
     <div class="role"><span class="k">A collection on each common topic</span><p>For frequent topics, the key passages across traditions, compiled, ordered and checked. He answers by selecting from it instead of searching from scratch: faster, cheaper, more complete. HyPE's idea one step further: prepared answers for whole topics and books, not just passages.</p></div>
   </div>
-  <p>The improvement loop decides what to prepare: when a question or book comes up often enough, it proposes a collection or dossier, and once built and checked, later requests take the shortcut. Deep research feeds both; both are refreshed as the library grows.</p>
+  <p>Both are wanted: topic research collections and book research dossiers. The improvement loop decides what to prepare first: when a question or book comes up often enough, it proposes a collection or dossier, and once built and checked, later requests take the shortcut. Deep research feeds both; both are refreshed as the library grows.</p>
 </section>
 
 <section id="how-he-decides">
   <h2><span class="num">11</span>How he decides, fast</h2>
   <div class="lead">
-    <p><b>What:</b> a fast classifier (Jev) makes every choice of what to do next; each request type has a strategy; a writing model only writes.</p>
+    <p><b>What:</b> a fast decision model (Jev) makes every choice of what to do next; each request type has a strategy; a writing model writes every answer.</p>
     <p><b>Why:</b> speed comes from deciding fast, not writing fast. Quick on simple questions, thorough on deep ones.</p>
   </div>
-  <p>An open AI agent spends 2–5 seconds of model time on each choice of what to do next. Anís makes those choices with Jev, our classifier, in about a tenth of a second each. Five decisions cost about half a second instead of 10–25 s. Only the final answer goes to the writing model.</p>
+  <p>Every choice of what to do next is a quick Jev decision, about a tenth of a second each, so a strategy can make several and still answer fast. Jev is never trained: each decision comes with the information it needs (the message, the thread, the reader card, what has been found), and that context is adjusted until he decides right. Only the final answer goes to the writing model.</p>
   <ol class="steps">
     <li><b>Read the thread first.</b> Jev decides: a new question (drop the old context) or a follow-up, and which move (refer back, source, exact words, deepen, compare, push back, reshape). A follow-up is rewritten as a self-contained request. <q>The second one</q> becomes the exact passage. <q>What about Islam?</q> becomes <q>what does Islam teach about fasting</q>, compared with the last answer. It carries what the thread already found, so a reshape or a source request never searches again.</li>
     <li><b>Classify.</b> First: <i>none</i> (greeting, thanks: he just replies), <i>search</i>, or <i>activity</i> (start it, continue it, or step outside it for one question, then resume). For a search: which of about 40 request types in eight groups, then the traditions, language, works and people named. Language is a parameter, not a type. One message in four needs more than one type. The lead type sets the answer's shape; the others add steps, not separate answers.</li>
     <li><b>Notice the reader.</b> Jev also records lasting interests. The first is translation insight: asking about an original word, a rendering, Arabic or Persian script. Once clear, answers set the original beside the English, and letters favour translation discoveries. For others, the original stays a quiet offer. Each interest is one line in the reader document.</li>
-    <li><b>Route.</b> Each type has a strategy. Lookups never reach a writing model: a book's name or words in quotation marks ask for the book or the source, not an essay. Search runs, and a template lays out the result. A model may format at the very end, never decide or add. If nothing is found, he says so and offers the nearest matches. A common topic or well-known book is answered first from its prepared collection or dossier.</li>
-    <li><b>Decide at every fork.</b> Routing is the first decision, not the only one. At each decision point Jev reads what has been found and picks the next step. Where two branches are cheap, both run at once. Each decision point is its own Jev task, with its own log, examples and accuracy.</li>
+    <li><b>Route.</b> Each type has a strategy. A lookup stays a lookup: a book's name or words in quotation marks ask for the book or the source, not an essay. Search runs, the chosen template shapes the result, and a light writing model writes it in his voice for this reader, adding nothing the data does not hold. If nothing is found, he says so and offers the nearest matches. A common topic or well-known book is answered first from its prepared collection or dossier.</li>
+    <li><b>Decide at every fork.</b> Routing is the first decision, not the only one. At each decision point Jev reads what has been found and picks the next step. Where two branches are cheap, both run at once. Each decision point is its own Jev decision, with its own context, log and measured accuracy.</li>
     <li><b>Fall back.</b> When Jev's confidence is below the route's threshold, or a strategy finds its premise false (no such title, no passage for a named tradition), the full research agent takes over. The 11-01 rule: quality first, speed earned. A strategy goes live only after it matches the agent on its type's tests. One that slips is switched off until fixed.</li>
   </ol>
   <h3 id="decision-points">The decision points</h3>
@@ -423,11 +423,11 @@ h3{margin-top:18px}
   <h3 id="three-part-reply">One reply in three parts</h3>
   <p>The reader never waits in silence and never reads the same thing twice.</p>
   <div class="stage">
-    <div><b>1 · AT ONCE (under 1 s)</b>What he understood and is doing: <q>Looking for what Bahá'u'lláh and the Buddha say about the soul after death…</q> Then progress. A template fills it from Jev's classification, no model. Lookups skip it.</div>
+    <div><b>1 · AT ONCE (under 1 s)</b>What he understood and is doing: <q>Looking for what Bahá'u'lláh and the Buddha say about the soul after death…</q> Then progress. A template fills it from Jev's decision, so it appears at once. Lookups skip it.</div>
     <div><b>2 · THE ANSWER</b>Two to five sentences and the one or two passages that carry them, quoted and linked. For most questions, the whole reply.</div>
     <div><b>3 · THE DETAILS</b>Only what part 2 left out: more passages, each side of a comparison, history, then a next step. Skipped for short questions.</div>
   </div>
-  <p>Research runs once. The writing model writes parts 2 and 3 as one piece in two sections, so nothing repeats. Part 2 streams first.</p>
+  <p>Research runs once. Every answer, lookups included, goes through the writing model, which adapts the evidence to his voice and to the reader card, so answers stay varied. It writes parts 2 and 3 as one piece in two sections, so nothing repeats. Part 2 streams first.</p>
   <h3 id="inside-a-strategy">Inside a strategy: one example</h3>
   <p>A strategy is a small decision tree of shared tools, built for one request type. Every strategy ends the same way: <b>choose a format</b>, then hand the data and format to the writing model. The writer writes; it never decides what to search.</p>
   <p>Steps differ in cost. A strategy stays near the cheap end:</p>
@@ -436,8 +436,8 @@ h3{margin-top:18px}
     <tr><td>Code check</td><td>quoted words present? exact hit? dates in the data? one result or many?</td><td class="n">≈ 0</td></tr>
     <tr><td>Tool call</td><td>library lookup, keyword search (BM25), literal phrase search, concept search (HyPE), source search (CTAI), read around, people and events</td><td class="n">10–300 ms</td></tr>
     <tr><td>Jev decision</td><td>a judgement code can't make: is this the source or a book quoting it? enough evidence?</td><td class="n">≈ 50 ms</td></tr>
-    <tr><td>Fast-LLM step</td><td>extract terms for keyword search; extract a phrase for literal search; recast the question into a clear one a concept search can answer</td><td class="n">0.5–2 s, paid</td></tr>
-    <tr><td>Writing model</td><td>the answer, from data and format, once per answer</td><td class="n">seconds, paid</td></tr>
+    <tr><td>Light LLM step</td><td>extract terms for keyword search; extract a phrase for literal search; recast the question into a clear one a concept search can answer. Runs without extended thinking, in the cheap price tier</td><td class="n">0.5–2 s, cheap</td></tr>
+    <tr><td>Writing model</td><td>every answer, once, from data and format, in his voice and for this reader; a light writing model for lookups</td><td class="n">seconds, paid</td></tr>
     <tr><td>Research agent</td><td>fallback only</td><td class="n">10–40 s</td></tr>
   </table></div>
   <ul><li><b>Few LLM steps.</b> One only where code can't do the job. Each must prove in testing that it changes the result, or it goes.</li>
@@ -446,7 +446,7 @@ h3{margin-top:18px}
   <p class="eyebrow">Example strategy: the quotation trace</p>
   <div class="flow"><svg viewBox="0 0 680 178" role="img" aria-label="Quotation trace: code extraction and BM25 first; a light LLM extraction only if nothing is found; phrase semantic search last; every path ends in choosing a format and writing"><defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z"/></marker></defs><rect class="j" x="0" y="10" width="96" height="28" rx="14"/><text x="48.0" y="24">Quotation?</text><rect class="t" x="116" y="10" width="140" height="28" rx="4"/><text x="186.0" y="24">Code: take quoted text</text><rect class="t" x="276" y="10" width="70" height="28" rx="4"/><text x="311.0" y="24">BM25</text><rect class="j" x="466" y="10" width="80" height="28" rx="14"/><text x="506.0" y="24">Found?</text><rect class="l" x="116" y="78" width="140" height="28" rx="4"/><text x="186.0" y="92">Light LLM: extract</text><rect class="t" x="276" y="78" width="70" height="28" rx="4"/><text x="311.0" y="92">BM25</text><rect class="j" x="366" y="78" width="80" height="28" rx="14"/><text x="406.0" y="92">Rerank</text><rect class="j" x="466" y="78" width="80" height="28" rx="14"/><text x="506.0" y="92">Found?</text><rect class="t" x="116" y="146" width="230" height="28" rx="4"/><text x="231.0" y="160">Phrase semantic search</text><rect class="j" x="366" y="146" width="80" height="28" rx="14"/><text x="406.0" y="160">Rerank</text><rect class="w" x="584" y="10" width="92" height="164" rx="6"/><text class="wt" x="630" y="80">Choose</text><text class="wt" x="630" y="96">format,</text><text class="wt" x="630" y="112">then write</text><path d="M96 24H112" marker-end="url(#ah)"/><path d="M256 24H272" marker-end="url(#ah)"/><path d="M346 24H462" marker-end="url(#ah)"/><path d="M546 24H580" marker-end="url(#ah)"/><path d="M256 92H272" marker-end="url(#ah)"/><path d="M346 92H362" marker-end="url(#ah)"/><path d="M446 92H462" marker-end="url(#ah)"/><path d="M546 92H580" marker-end="url(#ah)"/><path d="M346 160H362" marker-end="url(#ah)"/><path d="M446 160H580" marker-end="url(#ah)"/><path d="M506 38V58H186V74" marker-end="url(#ah)"/><path d="M506 106V126H231V142" marker-end="url(#ah)"/><text class="yn" x="564" y="16">yes</text><text class="yn" x="564" y="84">yes</text><text class="yn" x="518" y="51">no</text><text class="yn" x="518" y="119">no</text><text class="s" x="0" y="50">free</text><text class="s" x="0" y="92">+1 light LLM</text><text class="s" x="0" y="160">last resort</text></svg><div class="legend"><span><i style="background:var(--accent-soft);border-color:var(--accent)"></i>Jev decision</span><span><i style="background:var(--warn-soft);border-color:var(--warn);border-style:dashed"></i>LLM step</span><span><i style="background:var(--paper);border-color:var(--line)"></i>tool or code</span></div></div>
   <p class="note">What this example shows: most quotation questions stop on the first row, with no LLM step before the writer.</p>
-  <p><b>Choosing a format: measured, and it stays.</b> A blind judge compared 51 answers written with and without the chosen template (Nov 3). The template won 31 to 20, at the same accuracy: answers were shorter and better shaped, and slightly faster to write. The hope that a template lets a light model replace the stronger writing model did not hold for research answers: the best light model won 9 and lost 19, mostly on completeness. The roles are re-measured as models change.</p>
+  <p><b>A chosen format shapes each answer.</b> The format sets what the answer must contain and in what order; the writer fills it in his voice, for this reader, so two answers of the same kind never read alike.</p>
 
   <h3 id="target-times">Target times</h3>
   <div class="wrap"><table>
@@ -475,10 +475,10 @@ h3{margin-top:18px}
   </div>
   <ul>
     <li><b>Every run is recorded to replay.</b> Type and strategy, with versions. At each fork: what Jev saw, the options, his probability for each, the branch taken. Each search: query, shelf, passages and scores. The time and cost of every step. The answer, its citations, the verdict and the reason for any loss. One record per turn, stored like all other data.</li>
-    <li><b>Every answer is judged</b> by an independent model, against Perplexity's answer to the same question and the shape its type calls for.</li>
-    <li><b>First question: was this the right strategy?</b> Given the message, thread and reader card, did it call for this type at all? A well-run wrong strategy is still a loss, and grading its branches would tune the wrong thing. It is fixed at the classifier: a Jev training example, or a candidate new strategy if none fits.</li>
-    <li><b>Then every fork is graded.</b> On a sample, the branch not taken is replayed: better, same, or cheaper? Each decision point keeps its record. A wrong call becomes a Jev example. Missing information (the shelf a hit came from, whether a passage is an original) is added to the decision. Look-alike options get sharper definitions. A branch never worth taking is removed. If no branch would have won, the full agent on the same question shows the missing move, which becomes a new option.</li>
-    <li><b>Losses are fixed by cause, biggest first.</b> Not in the library, search missed it, didn't look, wrong route, wrote badly, invented something. Search misses go to the index (search comes first). Wrong decisions go to Jev. Writing faults go to the strategy's instructions.</li>
+    <li><b>Every answer is judged</b> by an independent model, against the shape its type calls for and the best the library could support.</li>
+    <li><b>First question: was this the right strategy?</b> Given the message, thread and reader card, did it call for this type at all? A well-run wrong strategy is still a loss, and grading its branches would tune the wrong thing. It is fixed in what Jev is given for that choice: a sharper definition or a contrasting example in his context, or a candidate new strategy if none fits.</li>
+    <li><b>Then every fork is graded.</b> On a sample, the branch not taken is replayed: better, same, or cheaper? Each decision point keeps its record. A wrong call becomes a test fixture, and Jev's context for that decision is adjusted until he gets it right. Missing information (the shelf a hit came from, whether a passage is an original) is added to the decision. Look-alike options get sharper definitions. A branch never worth taking is removed. If no branch would have won, the full agent on the same question shows the missing move, which becomes a new option.</li>
+    <li><b>Losses are fixed by cause, biggest first.</b> Not in the library, search missed it, didn't look, wrong route, wrote badly, invented something. Search misses go to the index (search comes first). Wrong decisions go to Jev's context. Writing faults go to the strategy's instructions.</li>
     <li><b>Strategies compete.</b> A new version runs beside the current one on fresh questions of its type. The better one, on quality and then speed, takes over.</li>
     <li><b>Speed is earned after quality.</b> Decisions move from the agent to Jev, searches run in parallel, and writing moves to a cheaper model only when the judge shows no loss.</li>
     <li><b>New types are found weekly.</b> Questions Jev can't place, or that keep falling to the agent, are grouped. A recurring group becomes a new type, its strategy built from how the agent handled it. What is asked often gets a prepared collection or dossier.</li>
@@ -487,31 +487,31 @@ h3{margin-top:18px}
   <h3 id="jev-accuracy">Making Jev accurate</h3>
   <ul>
     <li><b>Small questions, not one big one.</b> A chain of choices, each with a probability: new or follow-up → group → type → parameters. Uncertainty shows as low probability, not a confident wrong guess.</li>
-    <li><b>A labelled set to measure against.</b> A strong model labels real questions and conversations with the thread in view. A sample per type is checked by hand. The labels go into Jev's log, which also trains Laya, the model being trained from it. Part is held out.</li>
-    <li><b>Confusions fixed in pairs.</b> Teaching vs why-or-how, find a passage vs compile, a compare follow-up vs a new comparison. Each pair gets sharper definitions and contrasting examples, then is remeasured.</li>
+    <li><b>A labelled set to measure against.</b> A strong model labels real questions and conversations with the thread in view. A sample per type is checked by hand. The labels are test fixtures: they measure Jev's choices and are never used to train him. Part is held out.</li>
+    <li><b>Confusions fixed in pairs.</b> Teaching vs why-or-how, find a passage vs compile, a compare follow-up vs a new comparison. Each pair gets sharper definitions and contrasting examples in Jev's context, then is remeasured.</li>
     <li><b>A confidence threshold per route,</b> set so that above it the route is right at least 90% of the time. Where a mistake is cheap, it can be lower.</li>
-    <li><b>Laya takes over</b> only once it matches Jev on the held-out set.</li>
+    <li><b>Laya,</b> a smaller model learning from Jev's logged decisions, takes over a decision only once it matches Jev on the held-out set.</li>
   </ul>
   <h3 id="how-tested">How he is tested</h3>
   <ul>
     <li><b>Kinds, not questions.</b> Real questions show what kinds people ask, in what words, how often. We build and tune for the kinds.</li>
     <li><b>Fresh questions every check,</b> drawn per type in the variety the evidence shows. Many are conversations with follow-ups, topic changes and look-alikes, so nothing can be memorised.</li>
-    <li><b>A held-out set.</b> Immerse's 61 real questions are never used for tuning. If the held-out score lags the fresh-question score, we are fitting our own tests.</li>
+    <li><b>A held-out set.</b> A set of real questions is never used for tuning. If the held-out score lags the fresh-question score, we are fitting our own tests.</li>
     <li><b>A gate before anything ships.</b> Affected types rerun on a fresh sample, plus a sample of the rest. Nothing may regress. Chad gets verdicts and numbers, never answers to grade.</li>
     <li><b>Real use feeds it.</b> Every real conversation is judged the same way. A miss shows a weak or missing type, and the question joins the evidence.</li>
   </ul>
-  <p class="note">Reported weekly, per type and strategy version: wins against Perplexity, accuracy of each fork and what its replays show, share answered without the agent, time and cost per answer, types and options added. The numbers for launch are in <a href="#launch-doc">Anís Launch Week</a>.</p>
+  <p class="note">Reported weekly, per type and strategy version: judged quality, accuracy of each fork and what its replays show, share answered without the agent, time and cost per answer, types and options added. The numbers for launch are in <a href="#launch-doc">Anís Launch Week</a>.</p>
 </section>
 
 <section id="goal">
   <h2><span class="num">14</span>The goal</h2>
   <div class="lead">
-    <p><b>What:</b> on every kind of question, an answer at least as good as the best anyone else gives, and usually better.</p>
-    <p><b>Why:</b> we hold more than anyone else (originals, twelve traditions, talks, letters, the people in the texts). An answer that loses is a defect.</p>
+    <p><b>What:</b> on every kind of question, the best answer the library can give.</p>
+    <p><b>Why:</b> the library holds originals beside translations, twelve traditions, talks, letters and the people in the texts. An answer that leaves them unused is a defect.</p>
   </div>
   <div class="verdict">
-    <p><b>On every request type, Anís's answer is at least as good as the best anyone else gives, and usually better.</b> The bar is set per class of question, not per question: what Immerse or Perplexity would give for that kind of question is the minimum. We hold more than either (originals beside translations, twelve traditions, talks, letters, the entity graph), so an answer that loses to them is a defect.</p>
-    <p><b>Real questions are evidence of the classes, not the test.</b> Immerse's 61, the SEO questions and the survey show what kinds of question people ask, in what words, how often. We build and tune for the classes. Tuning on the 61 would make Anís good at 61 questions and teach us nothing about the next stranger's.</p>
+    <p><b>On every request type, Anís gives the answer the library makes possible.</b> The bar is set per class of question, not per question: what that kind of question deserves, drawn from originals beside translations, twelve traditions, talks, letters and the entity graph. An answer that falls short of what the library holds is a defect.</p>
+    <p><b>Real questions are evidence of the classes, not the test.</b> Published questions, the SEO questions and the survey show what kinds of question people ask, in what words, how often. We build and tune for the classes. Tuning on any fixed list would make Anís good at those questions and teach us nothing about the next stranger's.</p>
     <p>Fast where the question is simple; visibly at work where it is deep.</p>
   </div>
 </section>
@@ -519,7 +519,7 @@ h3{margin-top:18px}
 <section id="evidence">
   <h2><span class="num">15</span>The evidence</h2>
   <div class="lead">
-    <p><b>What:</b> what people actually ask, from search logs, published questions and a competitor's public feed.</p>
+    <p><b>What:</b> what people actually ask, from search logs, published questions and our own test conversations.</p>
     <p><b>Why:</b> we build for the kinds of question real people ask, in their words and proportions.</p>
   </div>
   <div class="wrap"><table>
@@ -527,8 +527,6 @@ h3{margin-top:18px}
     <tr><td>Interfaith question survey (11-02)</td><td class="n">7,130 wordings<br>125 families</td><td>What people type: 4,793 from Google autocomplete, 1,127 from FAQ and forum pages, 1,210 written to fill gaps. Twelve traditions and more.</td></tr>
     <tr><td>Published conversation pages</td><td class="n">132</td><td>Long, informed, often two-part questions.</td></tr>
     <tr><td>Keyword Planner seeker battery</td><td class="n">32</td><td>The highest-volume phrasings. HyPE v15 was tuned on these.</td></tr>
-    <tr><td>Immerse (bahaiwritings.app) public feed</td><td class="n">61 with answers</td><td>Real user questions with Immerse's answers, saved 10-19. The held-out set and the minimum bar.</td></tr>
-    <tr><td>Immerse newsletters</td><td class="n">14</td><td>What Immerse promotes: compilations, devotional programs, timelines, life stories, two accounts compared.</td></tr>
     <tr><td>Anís chat threads, last 365 days</td><td class="n">200</td><td>All from our own test batteries. No real reader traffic yet.</td></tr>
     <tr><td>Conversation battery</td><td class="n">5 personas · 7 moves</td><td>Refer back, ask the source, push back, ask for exact words, compare, deepen, ask for something that isn't there.</td></tr>
   </table></div>
@@ -548,16 +546,10 @@ h3{margin-top:18px}
     <tr><td>Personal</td><td class="n">0.8%</td><td><q>Is my sister in Heaven?</q></td></tr>
   </table></div>
   <p class="note">Cross-tradition families hold 999 wordings (14%). Languages: 94.5% English, then Persian, Chinese, Arabic, Hindi, Hebrew, Punjabi. Personal questions are rare in search; with a named companion they will be far more common.</p>
-  <h3 id="immerse">What Immerse users ask</h3>
-  <p>Mostly active Bahá'ís asking about community life. By hand count of the 61: doctrine ≈ 16, community practice ≈ 12, find or compile passages ≈ 10, stories ≈ 8, source a quotation ≈ 6, facts ≈ 6, challenge and interfaith ≈ 4, made things ≈ 4. Immerse answers at length (median 1,381 words).</p>
-  <div class="caution" style="margin-bottom:22px">
-    <p><b>The baseline, 10-19.</b> An Opus judge compared our researcher with Immerse on all 61, blind. Immerse 7.28 of 10, ours 5.23, better on 12 of 61 (best of four runs that day: 5.58). We hold more than Immerse, so the gap is in how we answer, not what we hold.</p>
-  </div>
   <h3 id="open-gaps">Open: gaps in this picture</h3>
   <ul>
     <li><b>No real Anís reader questions yet.</b> The first real conversations will change the frequencies above.</li>
     <li><b>Reading mode has no evidence.</b> Its types come from what a teaching assistant does, not from logs. They should reach real readers early.</li>
-    <li><b>Immerse's feed is a snapshot</b> of 61 answers from 10-19. A fresh copy must come the way the first did, not by scraping.</li>
   </ul>
 </section>
 

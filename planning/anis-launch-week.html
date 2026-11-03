@@ -154,7 +154,7 @@ h3{margin-top:18px}
   </div>
   <div class="wrap"><table>
     <tr><th>Day</th><th>Deliverables</th><th>Tests</th><th>Owner</th></tr>
-    <tr><td>1 · Tue 3 Nov</td><td>Vision agreed. Lookups (book names, quotations) answered without a writing model. Baseline run against Perplexity.</td><td>wording battery; lookup timing</td><td>Claude; Chad agrees the vision</td></tr>
+    <tr><td>1 · Tue 3 Nov</td><td>Vision agreed. Lookups (book names, quotations) answered fast: search, the chosen template, then a light writing model in his voice. Baseline run against Perplexity.</td><td>wording battery; lookup timing</td><td>Claude; Chad agrees the vision</td></tr>
     <tr><td>2 · Wed 4</td><td>Understanding and comparison strategies. Jev decision points (F14 logging). Three-part reply.</td><td>fresh-question battery per type; <b>Gate 1</b></td><td>Claude</td></tr>
     <tr><td>3 · Thu 5</td><td>Study companion and fireside roles. Honest "not in the library". Web results labelled as web.</td><td>conversation battery; soul battery</td><td>Claude</td></tr>
     <tr><td>4 · Fri 6</td><td>Site chat in production with progress shown, time and cost logged per conversation. First welcome letter (F11) to the allowlist.</td><td>email battery, stop and pause tests</td><td>Claude; Chad approves each first letter</td></tr>
@@ -184,7 +184,7 @@ h3{margin-top:18px}
     <tr><td>Follow-ups</td><td>reuse what the thread found; search again only when asked for something new</td></tr>
     <tr><td>Unsure</td><td>the full research agent</td></tr>
   </table></div>
-  <p>Jev fixes first, from the labelling pass: 302 pasted passages filed as teaching questions are really exact-words requests; 221 "show me the original" requests become their own type; 23 first messages were wrongly called follow-ups; 330 "in Hindi" and similar requests treat language as a parameter. Candidate new types, not this week: translation advice (about 10), quizzes (2), out of scope (about 6). Full strategy details: <a href="#strategies-doc">Anís Strategies &amp; Activities</a>.</p>
+  <p>Jev fixes first, from the labelling pass. Each fix changes the context Jev is given for that decision and is checked against the test labels; Jev is never trained. The fixes: 302 pasted passages filed as teaching questions are really exact-words requests; 221 "show me the original" requests become their own type; 23 first messages were wrongly called follow-ups; 330 "in Hindi" and similar requests treat language as a parameter. Candidate new types, not this week: translation advice (about 10), quizzes (2), out of scope (about 6). Full strategy details: <a href="#strategies-doc">Anís Strategies &amp; Activities</a>.</p>
 </section>
 
 <section id="budget">
@@ -197,10 +197,10 @@ h3{margin-top:18px}
     <tr><th>Item</th><th>Cost</th><th>Basis</th></tr>
     <tr><td>Testing</td><td>$60–80</td><td>about $2 per 10 judged conversations (1 Nov); about 30 a day plus comparisons</td></tr>
     <tr><td>Research answers</td><td>about $0.03 per reply</td><td>measured 2 Nov on 17 replies</td></tr>
-    <tr><td>Lookups</td><td>about $0</td><td>no writing model</td></tr>
+    <tr><td>Lookups</td><td>small; measured Day 1</td><td>search plus a light writing model, run without extended thinking in the cheap price tier</td></tr>
     <tr><td>Hosting and search</td><td>no new spend</td><td>existing server and edge</td></tr>
   </table></div>
-  <p>Models by role: the writing model writes answers; the stronger model writes only long research briefs and, if decided, letters; a cheaper model replaces either only after the judge shows no loss.</p>
+  <p>Models by role: the writing model writes every answer, lookups included, with a light writing model for lookups; the stronger model writes only long research briefs and, if decided, letters; a cheaper model replaces either only after the judge shows no loss.</p>
 </section>
 
 <section id="tests">
@@ -242,7 +242,7 @@ h3{margin-top:18px}
     <li>The reader document and long-term memory. Launch week remembers the conversation only.</li>
     <li>Re-engagement letters after silence (F12), news letters (F13), learning which letters work (F14 bandits).</li>
     <li>A visible reader profile (F10).</li>
-    <li>Prepared dossiers and topic collections.</li>
+    <li>Prepared knowledge: book research dossiers and topic research collections (both decided 11-03; built after launch).</li>
   </ul>
 </section>
 

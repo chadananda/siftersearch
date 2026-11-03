@@ -1,5 +1,5 @@
 {
- "_about": "Anís strategies (one per request type A1–H2, plus A7) and activities, as DATA. A strategy = small decision tree of shared tools, cheapest tier first, ending in 'choose format, then write'. Jev routes each message to a type; the agent (api/lib/assistant/agent.js) is the fallback. A strategy is switched on for its type only after it matches the agent on that type's tests. Test-question counts come from planning/anis-question-types-20261102.json (12,808 messages, a fast model's first-pass labels, not gold): lead = lead type, also = secondary type. A7 has no label in that file: counted by a request-for-original pattern (189 messages, mostly labelled A4/G3). Rendered by scripts/anis/build-strategies-page.mjs → planning/anis-strategies.html. Drafted 2026-11-03.",
+ "_about": "Anís strategies (one per request type A1–H2, plus A7) and activities, as DATA. A strategy = small decision tree of shared tools, cheapest tier first, ending in 'choose format, then write'. Jev routes each message to a type; the agent (api/lib/assistant/agent.js) is the fallback. A strategy is switched on for its type only after it matches the agent on that type's tests. Test-question counts come from planning/anis-question-types-20261102.json (12,808 messages, a fast model's first-pass labels; test fixtures for measuring Jev's choices, never training data): lead = lead type, also = secondary type. A7 has no label in that file: counted by a request-for-original pattern (189 messages, mostly labelled A4/G3). Rendered by scripts/anis/build-strategies-page.mjs → planning/anis-strategies.html. Drafted 2026-11-03.",
  "updated": "2026-11-03",
  "cost_ladder": [
   {
@@ -19,13 +19,13 @@
   },
   {
    "step": "Light LLM step",
-   "cost": "0.5–2 s, paid",
-   "examples": "extract a quote or search terms; recast a question for concept search. Only where code can't, only after a cheaper tier failed"
+   "cost": "0.5–2 s, cheap tier",
+   "examples": "extract a quote or search terms; recast a question for concept search. Runs without extended thinking, in the cheap price tier. Only where code can't, only after a cheaper tier failed"
   },
   {
    "step": "Writing model",
    "cost": "seconds",
-   "examples": "once per answer, from data + format. Never chooses what to search"
+   "examples": "every answer, lookups included: adapts the data to Anís's voice and the reader card, inside the chosen format. A light writing model for lookups. Never chooses what to search"
   },
   {
    "step": "Research agent",
@@ -219,7 +219,7 @@
   {
    "id": "collection",
    "name": "Prepared collection",
-   "does": "Pre-built, checked passage set for a common question or topic",
+   "does": "Prepared knowledge: topic research collections (checked passage sets for common topics); book research dossiers are the Work dossier",
    "where": "api/lib/deep-research.js:checkDeepResearch, getDeepResearchQuotes (per canonical question; topic collections to build)",
    "cost": "tool",
    "status": "partial"
@@ -308,7 +308,7 @@
    "id": "jev_type",
    "name": "Jev: request type",
    "does": "Message + thread → lead type and also-types (A1–H2), new or follow-up",
-   "where": "triage.js KINDS (coarse kinds) + search-plan.js:planSearch today; A1–H2 task: to build",
+   "where": "triage.js KINDS (coarse kinds) + search-plan.js:planSearch today; A1–H2 decision: to build (Jev is given the type list and the thread, never trained)",
    "cost": "jev",
    "status": "partial"
   },
@@ -316,7 +316,7 @@
    "id": "jev_decide",
    "name": "Jev decision point",
    "does": "found? enough? source or quoter? answers or only mentions?",
-   "where": "api/lib/systemone.js:ask (infra exists; each decision is a new task to train)",
+   "where": "api/lib/systemone.js:ask (infra exists; each decision gets the context it needs; never trained)",
    "cost": "jev",
    "status": "partial"
   },
@@ -347,7 +347,7 @@
   {
    "id": "writer",
    "name": "Writing model",
-   "does": "Writes once from data + format; never decides what to search",
+   "does": "Writes every answer once, from data + format, in Anís's voice and for the reader card; a light writing model for lookups; never decides what to search",
    "where": "api/lib/assistant/craft.js:anisCraft (role anis-writer / assistant-answer)",
    "cost": "writer",
    "status": "exists"
@@ -373,7 +373,7 @@
   {
    "id": "A",
    "name": "Quick lookups",
-   "note": "short question, short answer; most need no writing model"
+   "note": "short question, short answer; a light writing model puts it in Anís's voice"
   },
   {
    "id": "B",
@@ -610,7 +610,7 @@
      },
      {
       "jev": false,
-      "text": "Laid out from a template"
+      "text": "The work-link template shapes it; a light writing model writes it"
      }
     ],
     "ideal_answer": "The library's own copy, linked, with the title in italics as the link. One line on what it is. Nothing else unless asked. (the book, not a talk about it.)"
@@ -724,13 +724,13 @@
      ]
     }
    ],
-   "format": "work link template (workReply: italic title = link, one line, offer to read); no writer",
+   "format": "work link template (workReply: italic title = link, one line, offer to read); light writer",
    "fallback": "agent",
    "open_questions": [
     "Several editions or translations: which first? (OceanLibrary copy, then authorized translation?)",
     "'Give essence of this talk' (Immerse) is A2 + B2: link and a summary, or link only?"
    ],
-   "measure": "100 A2 from the log + survey (incl. non-Latin titles); right work linked, ≤ 1 s, no writer"
+   "measure": "100 A2 from the log + survey (incl. non-Latin titles); right work linked, ≤ 1 s with the light writer"
   },
   {
    "id": "A3",
@@ -889,10 +889,7 @@
    "post": "read_around each kept hit; 1 strong passage, or 2–4 by authority",
    "format": "find_passage / decisive_passage",
    "fallback": "agent",
-   "open_questions": [
-    "Which topics get prepared collections first? Proposal: the 50 most frequent A3/B1 topics in the log",
-    "Does the writer add anything for A3, or is a template enough (passage + one-line lead)?"
-   ],
+   "open_questions": [],
    "measure": "100 fresh A3 across traditions + Immerse A3s; top passage answers the topic, authority order, ≤ 3 s; judged vs agent and Perplexity"
   },
   {
@@ -933,7 +930,7 @@
      },
      {
       "jev": false,
-      "text": "Laid out from a template: verdict, passage, author, work, paragraph"
+      "text": "The source-hunt template (verdict, passage, author, work, paragraph) shapes it; a light writing model writes it"
      }
     ],
     "ideal_answer": "Verdict first: found, found with different wording, or not found. Then the real passage, linked. If misattributed, say where the saying really comes from when we can trace it."
@@ -1060,7 +1057,7 @@
     }
    ],
    "post": "on a hit: source_of; trace_source when the hit is a book quoting it (Jev: own words or quoted?)",
-   "format": "source-hunt template: verdict (found / different wording / not found), passage, author, work, link; no writer",
+   "format": "source-hunt template: verdict (found / different wording / not found), passage, author, work, link; light writer",
    "fallback": "agent",
    "open_questions": [
     "Misattributed quotes (fake Buddha/Rumi): web lead allowed to name the real origin, labelled?",
@@ -1202,13 +1199,12 @@
     }
    ],
    "post": "Jev: which translation or edition when several",
-   "format": "find_passage template: the text, linked, translation named; no writer",
+   "format": "find_passage template: the text, linked, translation named; light writer",
    "fallback": "agent",
    "open_questions": [
-    "Build one parser for Bible, Qur'an, Gita (book:chapter:verse) beside refs/cite.js?",
     "Default Bible / Qur'an translation when the reader names none?"
    ],
-   "measure": "All 295 A5 (lead+also); right verse, ≤ 1 s, zero writer calls"
+   "measure": "All 295 A5 (lead+also); right verse, ≤ 1 s with the light writer"
   },
   {
    "id": "A6",
@@ -1387,7 +1383,7 @@
      },
      {
       "jev": false,
-      "text": "Laid out from a template: the two texts side by side, both linked, the translator named"
+      "text": "The side-by-side template (both texts linked, the translator named) shapes it; a light writing model writes it"
      }
     ],
     "ideal_answer": "The passage and its original (or translation) side by side, both linked, the translator named. Never a fresh translation."
@@ -1508,10 +1504,10 @@
     }
    ],
    "post": "Original given → find_translation instead of find_original. No original in the library → say so; never a fresh translation",
-   "format": "side-by-side template: both texts linked, translator named (format 'original'); no writer",
+   "format": "side-by-side template: both texts linked, translator named (format 'original'); light writer",
    "fallback": "agent",
    "open_questions": [
-    "Add A7 to question-types.json and relabel the 189 so Jev learns it?",
+    "Add A7 to the test fixtures (question-types.json) and relabel the 189, so Jev's A7 choices can be measured?",
     "Non-Bahá'í originals (Tao Te Ching, Qur'an Arabic): which do we hold aligned?"
    ],
    "measure": "The 189 pattern matches + seed 'Show me the Persian original' set; right aligned paragraph, ≤ 2 s"
@@ -2710,7 +2706,7 @@
      },
      {
       "jev": false,
-      "text": "Side by side from a template; the writing model notes which is authoritative"
+      "text": "The side-by-side template shapes it; the writing model writes it and notes which is authoritative"
      }
     ],
     "ideal_answer": "The two texts side by side on the points that differ, with links. Say which is authoritative and why, without retranslating."
@@ -2965,7 +2961,7 @@
      },
      {
       "jev": false,
-      "text": "Laid out from a template: the prayer in full, two alternatives by title"
+      "text": "The prayer template (the prayer in full, two alternatives by title) shapes it; a light writing model writes the framing"
      }
     ],
     "ideal_answer": "The prayer itself in full, linked, with its source. One or two alternatives listed by title."
@@ -3054,7 +3050,7 @@
      ]
     }
    ],
-   "format": "prayer template: in full, linked, two alternatives by title; no writer",
+   "format": "prayer template: in full, linked, two alternatives by title; light writer for the framing",
    "fallback": "agent",
    "open_questions": [
     "Build the occasion index by hand (~40 occasions) or by HyPE over the prayer shelf?",
@@ -3621,7 +3617,7 @@
      },
      {
       "jev": false,
-      "text": "Template: “I can't find that in the library”, then the nearest real passage"
+      "text": "The honest-absence template (“I can't find that in the library”, then the nearest real passage) shapes it; the writing model writes it"
      }
     ],
     "ideal_answer": "“I can't find that in the library.” Then the closest real passage, labelled as such. Use the web only for things a library couldn't hold, and label it."
@@ -4203,7 +4199,7 @@
      },
      {
       "jev": false,
-      "text": "Template fills the visual; a light model writes the captions"
+      "text": "The template fills the visual; a light writing model writes the captions and the lead"
      }
     ],
     "ideal_answer": "A dated timeline where every event links to its source passage. Built from our dated facts; biography pages are the start."
@@ -4744,7 +4740,7 @@
      ]
     }
    ],
-   "format": "find_passage template, verbatim; no writer",
+   "format": "find_passage template, verbatim; light writer around the verbatim text",
    "fallback": "agent",
    "open_questions": [],
    "measure": "All 80; verbatim, linked, never paraphrased"
@@ -5085,7 +5081,7 @@
      },
      {
       "jev": false,
-      "text": "Template answer with the numbers and two things to try"
+      "text": "A template with the real numbers and two things to try shapes it; a light writing model writes it"
      }
     ],
     "ideal_answer": "Short, with real numbers, and an invitation to ask."
@@ -5147,7 +5143,7 @@
      ]
     }
    ],
-   "format": "canned / template with real numbers + two things to try; no writer",
+   "format": "template with real numbers + two things to try; light writer",
    "fallback": "agent",
    "open_questions": [],
    "measure": "All 31; real numbers, ≤ 1 s"
@@ -5285,7 +5281,7 @@
    "format": "the routed type's format, short, then two directions offered",
    "fallback": "agent",
    "open_questions": [
-    "302 are pasted passages: should Jev label them A4 directly (relabel the set)?"
+    "302 are pasted passages: should Jev route them to A4 directly (and the test labels change to match)?"
    ],
    "measure": "All 455; most likely reading answered, ≤ 3 s"
   }
@@ -5689,10 +5685,27 @@
    }
   }
  ],
- "open_questions_for_chad": [
-  "Jev needs a new task: the A1–H2 request type (today it has coarse triage kinds). Train it on the 12,808 first-pass labels, or hand-check a gold set first?",
-  "Prepared collections are the free tier for A3, B1, B3, C3, D1, D3. Approve building them for the top 50 log topics first?",
-  "Three indexes to build for whole types: prayers by occasion (D2), guidance by date with supersession (D4), the Bible/Qur'an/Gita reference parser (A5). Order?",
-  "Lookups (A2, A4, A5, A7, D2, G3, H1) answer from a template with no writer. Agreed?"
+ "open_questions_for_chad": [],
+ "decisions": [
+  {
+   "date": "2026-11-03",
+   "text": "Jev is never trained. Each decision is made by giving Jev the information it needs, then adjusting that context until he decides right. The 12,808 labels are test fixtures for measuring his choices, nothing more."
+  },
+  {
+   "date": "2026-11-03",
+   "text": "Prepared knowledge means two things, both wanted: topic research collections (the free tier for A3, B1, B3, C3, D1, D3) and book research dossiers."
+  },
+  {
+   "date": "2026-11-03",
+   "text": "All three indexes will be built: prayers by occasion (D2), guidance by date with what supersedes what (D4), and the Bible / Qur'an / Gita reference parser (A5)."
+  },
+  {
+   "date": "2026-11-03",
+   "text": "Every answer goes through a writing model, lookups included. The chosen format shapes the answer; the writer adapts the data to Anís's voice and the reader card and keeps answers varied. Lookups (A2, A4, A5, A7, D2, G3, H1) use a light writing model."
+  },
+  {
+   "date": "2026-11-03",
+   "text": "The light model runs without extended thinking and in its cheap price tier, for speed and cost."
+  }
  ]
 }

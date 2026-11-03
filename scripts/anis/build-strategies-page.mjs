@@ -194,6 +194,7 @@ q{font-style:italic;quotes:"“" "”"}
 .chip.g-strong,.chip.g-moderate{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
 .chip.g-few,.chip.g-thin{background:var(--warn-soft);color:var(--warn)}
 .open{font:600 .6rem "JetBrains Mono",monospace;background:var(--warn-soft);color:var(--warn);padding:1px 5px;border-radius:2px;text-transform:uppercase;letter-spacing:.05em}
+.done{font:600 .6rem "JetBrains Mono",monospace;background:var(--accent-soft);color:var(--accent);padding:1px 5px;border-radius:2px;text-transform:uppercase;letter-spacing:.05em}
 .toc{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 16px;font-size:.9rem}
 .toc ol{columns:2;column-gap:28px;max-width:none}
 .toc li{break-inside:avoid}
@@ -230,18 +231,18 @@ ${style}
   ${fams.map(f => `<li><a href="#family-${f.id.toLowerCase()}">${f.id} · ${esc(f.name)}</a> <span class="fam">${S.filter(s => s.family === f.id).map(s => `<a href="#${anchor(s.id)}">${s.id}</a>`).join(' ')}</span></li>`).join('\n  ')}
   <li><a href="#composition">Questions that need more than one strategy</a></li>
   <li><a href="#activities">Activities</a></li>
-  <li><a href="#open">Open questions</a></li>
+  <li><a href="#open">Decisions</a></li>
 </ol></nav>`);
 
 html.push(`<section id="intro">
   <h2>What a strategy is</h2>
   <p class="ww"><b>WHAT</b> A strategy is a small decision tree for one type of request: shared tools, in tiers, cheapest first, ending in one step: choose the answer's format, then write. <b>WHY</b> Most questions can be answered by code and fast tools in under a second; the expensive research agent should be the fallback, not the default.</p>
   <ul>
-    <li><b>Jev</b>, a fast classifier (about 50 ms), reads each message with its thread and names its type: a lead type and any others. Jev also makes the small yes/no decisions inside a strategy (found? enough? which person?).</li>
+    <li><b>Jev</b>, a fast decision model (about 50 ms), reads each message with its thread and names its type: a lead type and any others. Jev also makes the small yes/no decisions inside a strategy (found? enough? which person?). Jev is never trained: each decision comes with the information it needs, and we adjust that context until he decides right.</li>
     <li><b>Tiers.</b> Tier 1 uses only code, tools and Jev. A tier adds a light LLM step only when code cannot do the job, and only after the cheaper tier failed. If every tier fails, the research agent takes the question.</li>
-    <li><b>One writing step.</b> The writing model writes once, from the evidence and the chosen format. Lookups (find a book, trace a quote, a reference) need no writer: a template lays out the answer.</li>
+    <li><b>One writing step, for every answer.</b> The chosen format shapes the answer; the writing model writes it once, adapting the evidence to Anís's voice and the reader card, so answers stay varied and never sound canned. Lookups (find a book, trace a quote, a reference) go through a writer too, a light one, so they stay fast. The light model runs without extended thinking, in its cheap price tier.</li>
     <li><b>Switched on only when it matches the agent.</b> Each strategy is measured on fresh questions of its type, with Immerse's 61 held out, against the agent's answers and Perplexity's. It goes live for its type only when it matches or beats the agent within its target time. Until then the agent answers.</li>
-    <li><b>Grounding.</b> Counts come from 12,808 real test messages labelled by type (lead · also). Strong ≥ 100, moderate 20–99, few 3–19, thin &lt; 3 (needs questions). The labels are a first pass, not checked gold.</li>
+    <li><b>Grounding.</b> Counts come from 12,808 real test messages labelled by type (lead · also). Strong ≥ 100, moderate 20–99, few 3–19, thin &lt; 3 (needs questions). The labels are a first pass and serve only as test fixtures for measuring Jev's choices; Jev is never trained on them.</li>
   </ul>
 </section>
 <section id="ladder">
@@ -304,9 +305,10 @@ html.push(`<section id="activities">
 </section>`);
 
 html.push(`<section id="open">
-  <h2>Open questions</h2>
+  <h2>Decisions</h2>
   <p class="ww"><b>WHAT</b> The decisions that shape the most strategies at once. <b>WHY</b> Each unblocks several types; per-strategy questions are on the cards.</p>
-  <ul>${d.open_questions_for_chad.map(q => `<li><span class="open">open</span> ${esc(q)}</li>`).join('')}</ul>
+  <ul>${(d.decisions || []).map(x => `<li><span class="done">decided ${esc(x.date.slice(5))}</span> ${esc(x.text)}</li>`).join('')}</ul>
+  ${d.open_questions_for_chad.length ? `<h3>Still open</h3><ul>${d.open_questions_for_chad.map(q => `<li><span class="open">open</span> ${esc(q)}</li>`).join('')}</ul>` : '<p class="note">No cross-cutting questions are open.</p>'}
 </section>
 </main>`);
 
