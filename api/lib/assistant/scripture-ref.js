@@ -1,11 +1,13 @@
 // SCRIPTURE REFERENCE (W3; planning/anis-strategies.json A5): Jev said the message gives a chapter-and-verse reference. Code
 // PARSES it (Bible / Qur’án / Gita — deterministic, after his decision, never to decide intent), finds the book and the chapter
-// section, and the verse where the edition marks one (KJV: a "(verse N)" marker in `context`); where it marks none (Yusuf Ali,
+// section, and the verse where the edition marks one (KJV: a "(verse N)" marker in `context`; Pickthall's Qur’án: one verse per paragraph, by the
+// verse table in numbering.js); where it marks none (Yusuf Ali,
 // the Gita) the chapter is given and the place is labelled approximate. Numbered Bahá’í references ("Gleanings 27") are the
 // lookups fast path (lookup.js). Deps (injectable via ctx.deps): docs-repo listDocs, sections-repo sectionsOfDoc/findSections,
 // paragraphs-repo paragraphsInRange, work-request findTitled, hit-links withLinks.
 import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
+import { PICKTHALL, layoutTotal, quranRange } from './numbering.js';
 
 export const KJV = 'The Bible (KJV)';
 const BIBLE = {
@@ -64,10 +66,24 @@ export function verseRows(rows, verse, verseEnd = null) {
   return { rows: rows.slice(Math.max(0, i - 1), i + 2), exact: false };
 }
 
-export const REFERENCE_HOW = (ref, exact) => `The reader gave the reference ${ref.label}. Quote the passage VERBATIM from the passages (name the translation: the King James Bible, Yusuf Ali's Qur’án, the Gita's translator), with its link; one line of context at most. ${exact ? '' : 'This edition does not number the verses: say the chapter is given and the lines quoted are the APPROXIMATE place of the verse asked for.'}${ref.whole ? ' The whole chapter was asked for: give its opening and the link to read on.' : ''}`.trim();
+export const REFERENCE_HOW = (ref, exact) => `The reader gave the reference ${ref.label}. Quote the passage VERBATIM from the passages (name the translation: the King James Bible, Pickthall's or Yusuf Ali's Qur’án, the Gita's translator), with its link; one line of context at most. ${exact ? '' : 'This edition does not number the verses: say the chapter is given and the lines quoted are the APPROXIMATE place of the verse asked for.'}${ref.whole ? ' The whole chapter was asked for: give its opening and the link to read on.' : ''}`.trim();
 
 const hit = (r, doc, theme) => ({ id: r.id, text: r.text, title: doc.title || doc.book, author: doc.author, document_id: doc.id ?? doc.doc_id, paragraph_index: r.paragraph_index,
   religion: doc.religion ?? null, collection: doc.collection ?? null, language: doc.language ?? null, source_url: r.url || null, theme });
+
+const isHeadingRow = (r) => r.heading || /^\s*#/.test(String(r.text || ''));
+/** Qur’án reference → Pickthall's exact verse paragraphs, or null (edition absent, its layout changed, or no such verse). */
+async function quranExact(ref, { listDocs, paragraphsInRange, fields, decisions }) {
+  const { docs = [] } = await listDocs({ title: PICKTHALL.title, fields: [...fields, 'paragraph_count'], limit: 10, count: false }).catch(() => ({ docs: [] }));
+  const want = layoutTotal(PICKTHALL);
+  const doc = docs.find((d) => /qur/i.test(d.title || '') && Number(d.paragraph_count) === want) || null;
+  const range = doc ? quranRange(PICKTHALL, ref) : null;
+  const rows = range ? (await paragraphsInRange(doc.id, range[0], range[1]).catch(() => [])).filter((r) => !isHeadingRow(r) && String(r.text || '').trim()) : [];
+  decisions.record('reference:verse-table', { by: 'code', saw: { editions: docs.map((d) => `${d.id}:${d.paragraph_count}`), layout: want, range },
+    options: ['exact (verse table)', 'chapter section'], chosen: rows.length ? 'exact (verse table)' : 'chapter section',
+    reason: !doc ? 'no Pickthall edition with the expected layout' : !range ? 'no such verse' : rows.length ? `${doc.title} ¶${range[0]}–${range[1]}` : 'no paragraphs at the verse' });
+  return rows.length ? { doc, rows } : null;
+}
 
 export async function scriptureReference(ctx) {
   const { question, decisions = NO_LOG, deps = {} } = ctx;
@@ -86,6 +102,15 @@ export async function scriptureReference(ctx) {
   } else if (ref.kind === 'gita') {
     doc = (await runTool('document_search', { title: 'Bhagavad Gita', min: 0.9 }, { deps }).catch(() => null))?.works?.[0] || null;
   } else {
+    // EXACT first: Pickthall numbers one verse per paragraph — the verse table (numbering.js) gives the paragraph, checked
+    // against the edition's paragraph_count (launch gate 11-03: the approximate Yusuf Ali place gave Ṭálút for 2:255)
+    const exact = await quranExact(ref, { listDocs, paragraphsInRange, fields, decisions });
+    if (exact) {
+      const linked = await withLinks(exact.rows.map((r) => ({ id: r.id, doc_id: exact.doc.id, paragraph_index: r.paragraph_index, text: r.text, title: exact.doc.title }))).catch(() => exact.rows);
+      const passages = exact.rows.map((r, i) => hit({ ...r, url: linked[i]?.url || null }, exact.doc, ref.label));
+      return { passages, plan: { shape: 'reference', ref, exact: true, book: exact.doc.id, section: `Sūra ${ref.sura}` },
+        format: { id: 'reference', by: 'strategy:reference', how: REFERENCE_HOW({ ...ref, whole: ref.verse == null }, true) } };
+    }
     const findSections = deps.findSections || (await import('../repos/sections-repo.js')).findSections;
     const want = new RegExp(`^s[uūú]ra\\s+${roman(ref.sura)}\\.?$`, 'i');
     const s = (await findSections(`Sūra ${roman(ref.sura)}`, { limit: 30 }).catch(() => [])).find((x) => want.test(x.title) && /qur/i.test(x.book || ''));

@@ -8,6 +8,7 @@ import { prayerShelf, splitPrayers, isAttribution } from '../../api/lib/assistan
 import { currentGuidance, dateOf, newestFirst } from '../../api/lib/assistant/guidance.js';
 import { scriptureReference, parseScriptureRef, verseRows, roman } from '../../api/lib/assistant/scripture-ref.js';
 import { anisRespond } from '../../api/lib/assistant/respond.js';
+import { PICKTHALL, layoutTotal, quranIndex, quranRange } from '../../api/lib/assistant/numbering.js';
 
 const msgs = [{ role: 'user', content: 'How do the Qur’án and the Gospel each speak of forgiveness?' }];
 const jev = (answers) => async (url, init) => { jev.last = JSON.parse(init.body); return { ok: true, json: async () => ({ answers }) }; };
@@ -101,7 +102,8 @@ const prayerRows = [
 const prayerDeps = (pick, rows = prayerRows) => ({
   findTitled: async () => ({ doc: { id: 20762, title: 'Bahá’í Prayers', author: 'Bahá’u’lláh, the Báb, ‘Abdu’l-Bahá', religion: "Baha'i" } }),
   sectionsOfDoc: async () => [{ section_id: 1, title: 'Healing', level: 1, start_index: 260, end_index: 277, paragraphs: 18 }, { section_id: 2, title: 'Protection', level: 1, start_index: 426, end_index: 440, paragraphs: 15 }],
-  pickOccasion: async (m, titles) => { prayerDeps.titles = titles; return pick; }, paragraphsInRange: async () => rows, withLinks: async (h) => h.map((x) => ({ ...x, url: `https://ol/${x.id}` })) });
+  pickOccasion: async (m, titles) => { prayerDeps.titles = titles; return pick; }, paragraphsInRange: async () => rows, withLinks: async (h) => h.map((x) => ({ ...x, url: `https://ol/${x.id}` })),
+  searchKeywordQdrant: async () => ({ hits: [] }), resolveQdrantFilters: async (f) => f, paragraphsByIds: async () => [] });
 
 describe('prayer shelf', () => {
   it('splits prayers at attribution lines', () => {
@@ -124,6 +126,33 @@ describe('prayer shelf', () => {
     expect(calls[0]).toMatchObject({ document_id: 20762, query: 'a prayer for travel' });
     expect(out.passages[0].theme).toBe('prayer'); expect(out.plan.searched).toBe(true);
     expect(decisions.list().find((d) => d.point === 'prayer:occasion')).toMatchObject({ chosen: 'none', reason: 'low confidence' });
+  });
+});
+
+describe('prayer shelf: no confident heading (launch gate 11-03: "a prayer for the dead" → "didn\'t find")', () => {
+  const departed = [{ section_id: 9, title: 'For The Departed', level: 2, start_index: 106, end_index: 126, paragraphs: 21 }, { section_id: 14, title: 'Forgiveness', level: 2, start_index: 222, end_index: 255, paragraphs: 34 }];
+  const rows = [{ id: 50, paragraph_index: 107, text: 'O my God! This is Thy servant and the son of Thy servant…' }, { id: 51, paragraph_index: 108, text: '_—Bahá’u’lláh_' },
+    { id: 52, paragraph_index: 109, text: 'O my God! O Thou forgiver of sins…' }, { id: 53, paragraph_index: 110, text: '_—‘Abdu’l-Bahá_' }];
+  it('the planned search empty, the literal words scoped to the book find the heading → its prayers served whole', async () => {
+    const decisions = decisionLog(); const layer = [];
+    const deps = { ...prayerDeps({ choice: 'For The Departed', confidence: 0.35, distribution: { 'For The Departed': 0.35, Forgiveness: 0.3 } }, rows), sectionsOfDoc: async () => departed,
+      searchKeywordQdrant: async (q, o) => { layer.push([q, o.filters]); return { hits: [{ paragraph_id: 52 }] }; },
+      paragraphsByIds: async () => [{ id: 52, doc_id: 20762, paragraph_index: 109, text: 'O my God! O Thou forgiver of sins…' }] };
+    const out = await prayerShelf({ messages: msgs, query: 'prayer for the dead', search: async () => ({ passages: [] }), decisions, deps });
+    expect(layer[0]).toEqual(['prayer for the dead', { documentId: 20762 }]);
+    expect(out.plan).toMatchObject({ occasion: 'For The Departed', via: 'search' }); expect(out.passages[0]).toMatchObject({ id: 50, theme: 'prayer' });
+    expect(decisions.list().find((d) => d.point === 'prayer:section')).toMatchObject({ chosen: 'For The Departed', reason: "Jev's most probable heading among the hits" });
+  });
+  it('nothing found → Jev\'s top heading (below the bar) is served rather than "didn\'t find"', async () => {
+    const decisions = decisionLog();
+    const out = await prayerShelf({ messages: msgs, query: 'q', search: async () => ({ passages: [] }), decisions,
+      deps: { ...prayerDeps({ choice: 'For The Departed', confidence: 0.4 }, rows), sectionsOfDoc: async () => departed } });
+    expect(out.plan).toMatchObject({ occasion: 'For The Departed', via: 'jev-low' });
+    expect(decisions.list().find((d) => d.point === 'prayer:section').reason).toBe('search empty; Jev below the bar');
+  });
+  it('Jev says none and nothing is found → null', async () => {
+    expect(await prayerShelf({ messages: msgs, query: 'q', search: async () => ({ passages: [] }), decisions: decisionLog(),
+      deps: { ...prayerDeps({ choice: 'none', confidence: 0.9 }, rows), sectionsOfDoc: async () => departed } })).toBeNull();
   });
 });
 
@@ -182,12 +211,41 @@ describe('scripture reference', () => {
   });
   it('Qur’án: the sūra section by FTS, ayah approximate; no reference → null, logged', async () => {
     const decisions = decisionLog();
-    const deps = { findSections: async () => [{ section_id: 9, doc_id: 21206, book: 'The Qur’án', author: 'Yusuf Ali', title: 'Sūra II.', start_index: 10, end_index: 60 }],
+    const deps = { listDocs: async () => ({ docs: [] }), findSections: async () => [{ section_id: 9, doc_id: 21206, book: 'The Qur’án', author: 'Yusuf Ali', title: 'Sūra II.', start_index: 10, end_index: 60 }],
       paragraphsInRange: async () => Array.from({ length: 30 }, (_, i) => ({ id: i + 1, paragraph_index: 10 + i, text: `ayah ${i}` })), withLinks: async (h) => h };
     const out = await scriptureReference({ question: 'Quran 2:255', decisions, deps });
     expect(out.plan.exact).toBe(false); expect(out.format.how).toMatch(/APPROXIMATE/); expect(out.passages[0].document_id).toBe(21206);
     expect(await scriptureReference({ question: 'what is love', decisions, deps })).toBeNull();
     expect(decisions.list().at(-1)).toMatchObject({ point: 'reference:parse', chosen: 'none' });
+  });
+});
+
+describe('Qur’án by the verse table (launch gate 11-03: 2:255 gave Ṭálút from the approximate Yusuf Ali place)', () => {
+  it('Pickthall\'s layout: verified indices (2:255 → 261, 9:1 → 1241, 24:35 → 2846, 112:1 → 6330, 114:6 → 6346) and the 6347 total', () => {
+    expect(layoutTotal(PICKTHALL)).toBe(6347);
+    expect([[2, 255], [2, 1], [2, 286], [3, 1], [9, 1], [24, 35], [112, 1], [114, 6], [1, 1], [1, 7]].map(([a, b]) => quranIndex(PICKTHALL, a, b))).toEqual([261, 7, 292, 294, 1241, 2846, 6330, 6346, 2, 5]);
+    expect(quranIndex(PICKTHALL, 2, 287)).toBeNull(); expect(quranRange(PICKTHALL, { sura: 2, verse: 255, verseEnd: 256 })).toEqual([261, 262]);
+    expect(quranRange(PICKTHALL, { sura: 2 })).toEqual([6, 9]);
+  });
+  const editions = (n) => async (a) => { editions.asked = a; return { docs: [{ id: 21206, title: 'The Holy Qur’án (Yusuf Ali)', paragraph_count: 6403 }, { id: 21207, title: 'The Meaning of the Glorious Qur’án (Pickthall)', author: 'Pickthall', religion: 'Islam', paragraph_count: n }] }; };
+  it('the exact verse from Pickthall, heading rows dropped, linked, not labelled approximate', async () => {
+    const decisions = decisionLog(); const ranges = [];
+    const deps = { listDocs: editions(6347), findSections: async () => { throw new Error('not reached'); },
+      paragraphsInRange: async (id, a, b) => { ranges.push([id, a, b]); return [{ id: 900, paragraph_index: 261, text: '## Sūra II', heading: 1 }, { id: 901, paragraph_index: 261, text: 'Alláh! There is no God save Him, the Alive, the Eternal…' }]; },
+      withLinks: async (h) => h.map((x) => ({ ...x, url: `https://ol/${x.id}` })) };
+    const out = await scriptureReference({ question: 'Qur’án 2:255', decisions, deps });
+    expect(editions.asked.title).toBe('Pickthall'); expect(ranges).toEqual([[21207, 261, 261]]);
+    expect(out.passages).toHaveLength(1); expect(out.passages[0]).toMatchObject({ id: 901, document_id: 21207, source_url: 'https://ol/901', theme: 'Qur’án 2:255' });
+    expect(out.plan.exact).toBe(true); expect(out.format.how).not.toMatch(/APPROXIMATE/);
+    expect(decisions.list().find((d) => d.point === 'reference:verse-table').chosen).toBe('exact (verse table)');
+  });
+  it('a changed edition (paragraph count off the layout) falls back to the chapter section, logged', async () => {
+    const decisions = decisionLog();
+    const deps = { listDocs: editions(6350), findSections: async () => [{ section_id: 9, doc_id: 21206, book: 'The Qur’án', title: 'Sūra II.', start_index: 10, end_index: 60 }],
+      paragraphsInRange: async () => Array.from({ length: 30 }, (_, i) => ({ id: i + 1, paragraph_index: 10 + i, text: `ayah ${i}` })), withLinks: async (h) => h };
+    const out = await scriptureReference({ question: 'Quran 2:255', decisions, deps });
+    expect(out.plan.exact).toBe(false); expect(out.passages[0].document_id).toBe(21206);
+    expect(decisions.list().find((d) => d.point === 'reference:verse-table').reason).toBe('no Pickthall edition with the expected layout');
   });
 });
 

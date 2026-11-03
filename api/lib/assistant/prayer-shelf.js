@@ -65,24 +65,41 @@ export async function prayerShelf(ctx) {
   decisions.record('prayer:occasion', { by: 'jev', saw: occasions.map((s) => s.title), options: [...occasions.map((s) => s.title), 'none'], probabilities: jevProbabilities(pick),
     chosen: confident ? pick.choice : 'none', reason: !pick ? 'no answer (see jev:timeout when it timed out)' : confident ? null : pick.choice === 'none' ? 'no heading fits' : 'low confidence', ms: pick?.ms ?? null });
   const withLinks = deps.withLinks || (await import('../hit-links.js')).withLinks;
-  if (confident) {
-    const s = byTitle.get(pick.choice);
-    const paragraphsInRange = deps.paragraphsInRange || (await import('../paragraphs-repo.js')).paragraphsInRange;
+  const paragraphsInRange = deps.paragraphsInRange || (await import('../paragraphs-repo.js')).paragraphsInRange;
+  // a heading → its prayers: the first in full, two more by their opening lines (null when the section holds no prayer run)
+  const serve = async (s, how) => {
     const rows = await paragraphsInRange(doc.id, s.start_index, s.end_index).catch(() => []);
     const prayers = splitPrayers(rows);
-    decisions.record('prayer:pick', { by: 'code', saw: { section: s.title, paragraphs: rows.length, prayers: prayers.length }, options: ['first in full + two more', 'search the book'],
+    decisions.record('prayer:pick', { by: 'code', saw: { section: s.title, paragraphs: rows.length, prayers: prayers.length, how }, options: ['first in full + two more', 'search the book'],
       chosen: prayers.length ? 'first in full + two more' : 'search the book', reason: prayers.length ? null : 'no prayer runs in the section' });
-    if (prayers.length) {
-      const chosen = [...prayers[0].map((r) => ({ r, theme: 'prayer' })), ...prayers.slice(1, 3).map((p) => ({ r: p[0], theme: 'alternative' }))];
-      const linked = await withLinks(chosen.map(({ r }) => ({ id: r.id, doc_id: doc.id, paragraph_index: r.paragraph_index, text: r.text, title: doc.title }))).catch(() => chosen.map(({ r }) => r));
-      const passages = chosen.map(({ r, theme }, i) => hit({ ...r, url: linked[i]?.url || null }, doc, theme));
-      return { passages, plan: { shape: 'prayer', book: doc.id, occasion: s.title, prayers: prayers.length }, format: { id: 'prayer', by: 'strategy:prayer', how: PRAYER_HOW(s.title) } };
-    }
-  }
-  // no fitting heading → the prayer book searched for the reader's words (never the whole library: a prayer is wanted)
-  const r = await runTool('combined_search', { query, limit: 8, filters: { documentId: doc.id }, scope_config: profile.scope_config, messages }, { search }).catch(() => null);
-  const passages = (r?.passages || []).map((p) => ({ ...p, theme: 'prayer' }));
-  decisions.record('prayer:search', { by: 'code', saw: query, chosen: `${passages.length} passages`, reason: 'scoped to the prayer book' });
+    if (!prayers.length) return null;
+    const chosen = [...prayers[0].map((r) => ({ r, theme: 'prayer' })), ...prayers.slice(1, 3).map((p) => ({ r: p[0], theme: 'alternative' }))];
+    const linked = await withLinks(chosen.map(({ r }) => ({ id: r.id, doc_id: doc.id, paragraph_index: r.paragraph_index, text: r.text, title: doc.title }))).catch(() => chosen.map(({ r }) => r));
+    const passages = chosen.map(({ r, theme }, i) => hit({ ...r, url: linked[i]?.url || null }, doc, theme));
+    return { passages, plan: { shape: 'prayer', book: doc.id, occasion: s.title, prayers: prayers.length, ...(how !== 'jev' ? { via: how } : {}) }, format: { id: 'prayer', by: 'strategy:prayer', how: PRAYER_HOW(s.title) } };
+  };
+  if (confident) { const out = await serve(byTitle.get(pick.choice), 'jev'); if (out) return out; }
+  // no confident heading → the prayer book searched for the reader's words (never the whole library: a prayer is wanted) — the
+  // planned search AND the literal words, both scoped to the book through the tools registry (the planned one alone came back
+  // empty for "a prayer for the dead", launch gate 11-03)
+  const scoped = { query, limit: 8, filters: { documentId: doc.id } };
+  const [planned, literal] = await Promise.all([
+    runTool('combined_search', { ...scoped, scope_config: profile.scope_config, messages }, { search, deps }).catch(() => null),
+    runTool('literal_search', scoped, { deps }).catch(() => null)]);
+  const seen = new Set(); const found = [];
+  for (const p of [...(planned?.passages || []), ...(literal?.passages || [])]) { const k = p.id ?? `${p.document_id}:${p.paragraph_index}`; if (!seen.has(k)) { seen.add(k); found.push(p); } }
+  decisions.record('prayer:search', { by: 'code', saw: query, chosen: `${found.length} passages`, reason: `scoped to the prayer book (planned ${planned?.passages?.length ?? 0}, literal ${literal?.passages?.length ?? 0})` });
+  // the hits point at headings: Jev's most probable heading among them, else the heading of the best hit — its prayers served whole
+  const holding = (p) => sections.filter((x) => p.paragraph_index != null && p.paragraph_index >= x.start_index && p.paragraph_index <= x.end_index).sort((a, b) => a.paragraphs - b.paragraphs)[0];
+  const hitSections = [...new Map(found.map(holding).filter(Boolean).map((x) => [x.title, x])).values()];
+  const probs = jevProbabilities(pick) || {};
+  const ranked = [...hitSections].sort((a, b) => (probs[b.title] ?? 0) - (probs[a.title] ?? 0));
+  // nothing found: Jev's own top heading, though below the confidence bar, is still his best reading of the thread
+  const lowPick = !found.length && pick?.choice && pick.choice !== 'none' && byTitle.has(pick.choice) ? byTitle.get(pick.choice) : null;
+  decisions.record('prayer:section', { by: 'code', saw: { hits: found.length, sections: hitSections.map((x) => x.title) }, options: ['heading of the hits', "Jev's top heading", 'passages as found', 'none'],
+    chosen: ranked[0]?.title ?? lowPick?.title ?? (found.length ? 'passages as found' : 'none'), reason: ranked.length ? (probs[ranked[0].title] ? "Jev's most probable heading among the hits" : 'heading of the best hit') : lowPick ? 'search empty; Jev below the bar' : null });
+  for (const x of ranked.length ? ranked.slice(0, 2) : lowPick ? [lowPick] : []) { const out = await serve(x, ranked.length ? 'search' : 'jev-low'); if (out) return out; }
+  const passages = found.map((p) => ({ ...p, theme: 'prayer' }));
   if (!passages.length) return null;
   return { passages, plan: { shape: 'prayer', book: doc.id, occasion: null, searched: true }, format: { id: 'prayer', by: 'strategy:prayer', how: PRAYER_HOW(null) } };
 }
