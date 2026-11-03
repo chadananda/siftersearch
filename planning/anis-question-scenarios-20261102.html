@@ -234,34 +234,36 @@ h3{margin-top:18px}
   </div>
   <p>Anís calls these tools in-process. The endpoint column gives the route that exposes the same function to other callers (the site, the widget, outside developers). Everything he says comes from what these tools return: code checks every citation before an answer goes out, a quotation not in the library is removed, and every reference becomes a link.</p>
 
+  <p><b>Tool names.</b> Every tool has one name, used in strategies, in the code and in conversation. A <span class="mono">_search</span> tool takes words and returns ranked results; a <span class="mono">_lookup</span> tool takes one known passage, work or word and returns facts about it.</p>
+
   <h3 id="search-tools">Search Tools</h3>
-  <p>Each kind of search is its own tool, because strategies use them separately: a quotation needs literal search alone, a question about an idea needs phrase and HyPE search, a person needs biography search. <span class="mono">search_library</span> runs the passage searches together for an ordinary question. Every search tool takes the same filters.</p>
+  <p>Each kind of search is its own tool, because strategies use them separately: a quotation needs literal search alone, a question about an idea needs phrase and HyPE search, a person needs biography search. <span class="mono">combined_search</span> runs the passage searches together for an ordinary question. Every search tool takes the same filters.</p>
   <div class="wrap"><table>
     <tr><th>Tool</th><th>What it returns</th><th>Function</th><th>Endpoint</th><th>Status</th></tr>
     <tr><td><span class="mono">literal_search</span> (BM25)</td><td>Exact words and phrases: a term or a quotation.</td><td class="mono">keywordSearch</td><td class="mono">POST /api/search mode:keyword</td><td><span class="chip week">own tool: in progress</span></td></tr>
     <tr><td class="mono">phrase_search</td><td>Passages found by meaning, phrase by phrase: a passage on detachment answers a question about letting go.</td><td class="mono">searchPhrases</td><td class="mono">none</td><td><span class="chip week">own tool: in progress</span></td></tr>
     <tr><td class="mono">hype_search</td><td>Passages found through the questions each one answers, written in advance.</td><td class="mono">searchHypeQuestions</td><td class="mono">none</td><td><span class="chip week">own tool: in progress</span></td></tr>
-    <tr><td><span class="mono">search_library</span> (planned search)</td><td>The three layers run together, narrowed by filters, with people claims attached: 8 linked passages.</td><td class="mono">executeSearch → plannedSearch</td><td class="mono">POST /api/v1/tools/search · POST /api/v1/search</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">combined_search</td><td>The three layers run together, narrowed by filters, with people claims attached: 8 linked passages.</td><td class="mono">executeSearch → plannedSearch</td><td class="mono">POST /api/v1/tools/search · POST /api/v1/search</td><td><span class="chip live">live</span></td></tr>
     <tr><td class="mono">biography_search</td><td>People with cited claims: who someone was, who met whom.</td><td class="mono">peopleSearch</td><td class="mono">GET /api/v1/people/search · GET /api/graph/bio/search</td><td><span class="chip week">own tool: in progress</span></td></tr>
     <tr><td><span class="mono">document_search</span> (was <span class="mono">find_work</span>)</td><td>The library's copy of a named work, with its link.</td><td class="mono">findTitled</td><td class="mono">GET /api/v1/library/find-document</td><td><span class="chip live">live</span></td></tr>
   </table></div>
-  <p><b>Filters</b> (every search tool): tradition, collection, author (or the author's own words only), language, document, year range, named people, exact phrase. The agent's version of <span class="mono">search_library</span> takes tradition only.</p>
+  <p><b>Filters</b> (every search tool): tradition, collection, author (or the author's own words only), language, document, year range, named people, exact phrase. </p>
   
   <h3 id="source-tools">Source and Translation Tools</h3>
   <div class="wrap"><table>
     <tr><th>Tool</th><th>What it returns</th><th>Function</th><th>Endpoint</th><th>Status</th></tr>
-    <tr><td class="mono">passage_links</td><td>For one paragraph: its original, its translations and the works that quote it.</td><td class="mono">resolveLinks</td><td class="mono">GET /api/v1/paragraph/:id/links</td><td><span class="chip week">own tool: in progress</span></td></tr>
-    <tr><td class="mono">find_original</td><td>The Arabic or Persian original behind a translation, with its linked translations.</td><td class="mono">findOriginals, resolveLinks</td><td class="mono">POST /api/v1/search/original</td><td><span class="chip live">live</span></td></tr>
-    <tr><td class="mono">find_translation</td><td>An existing translation of an original, labelled authorized, published or Phelps.</td><td class="mono">findOriginals, resolveLinks</td><td class="mono">POST /api/v1/search/original</td><td><span class="chip live">live</span></td></tr>
-    <tr><td class="mono">word_study</td><td>Shoghi Effendi's renderings of a word, with counts, plus aligned passages (from CTAI.info).</td><td class="mono">ctaiTerm</td><td class="mono">ctai.info /api/v1/concordance, /passages</td><td><span class="chip live">live</span></td></tr>
-    <tr><td class="mono">trace_source</td><td>The primary passages a letter or a scholar rests on.</td><td class="mono">resolveLinks, executeSearch</td><td class="mono">GET /api/v1/paragraph/:id/links</td><td><span class="chip live">live</span></td></tr>
-    <tr><td class="mono">read_around</td><td>The paragraphs before and after a passage, so it is quoted in context (withheld for copyrighted books).</td><td class="mono">getParagraphs</td><td class="mono">GET /api/admin/docs/:id/paragraphs (internal)</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">links_lookup</td><td>For one paragraph: its original, its translations and the works that quote it.</td><td class="mono">resolveLinks</td><td class="mono">GET /api/v1/paragraph/:id/links</td><td><span class="chip week">own tool: in progress</span></td></tr>
+    <tr><td class="mono">original_lookup</td><td>The Arabic or Persian original behind a translation, with its linked translations.</td><td class="mono">findOriginals, resolveLinks</td><td class="mono">POST /api/v1/search/original</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">translation_lookup</td><td>An existing translation of an original, labelled authorized, published or Phelps.</td><td class="mono">findOriginals, resolveLinks</td><td class="mono">POST /api/v1/search/original</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">rendering_lookup</td><td>Shoghi Effendi's renderings of a word, with counts, plus aligned passages (from CTAI.info).</td><td class="mono">ctaiTerm</td><td class="mono">ctai.info /api/v1/concordance, /passages</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">source_trace</td><td>The primary passages a letter or a scholar rests on.</td><td class="mono">resolveLinks, executeSearch</td><td class="mono">GET /api/v1/paragraph/:id/links</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">context_lookup</td><td>The paragraphs before and after a passage, so it is quoted in context (withheld for copyrighted books).</td><td class="mono">getParagraphs</td><td class="mono">GET /api/admin/docs/:id/paragraphs (internal)</td><td><span class="chip live">live</span></td></tr>
   </table></div>
 
   <h3 id="other-tools">Other Tools</h3>
   <div class="wrap"><table>
     <tr><th>Tool</th><th>What it returns</th><th>Function</th><th>Endpoint</th><th>Status</th></tr>
-    <tr><td class="mono">about_work</td><td>Sourced notes on a core work.</td><td class="mono">canonWork (work-notes.json)</td><td class="mono">none</td><td><span class="chip live">agent only</span></td></tr>
+    <tr><td class="mono">work_notes_lookup</td><td>Sourced notes on a core work.</td><td class="mono">canonWork (work-notes.json)</td><td class="mono">none</td><td><span class="chip live">agent only</span></td></tr>
     <tr><td class="mono">web_search</td><td>A web answer, always labelled as from the web; only for what a library can't hold.</td><td class="mono">perplexityFallback</td><td class="mono">external (Perplexity)</td><td><span class="chip live">live</span></td></tr>
   </table></div>
 
@@ -269,10 +271,10 @@ h3{margin-top:18px}
   <p>Each strategy (see <a href="#strategies">Response Strategies</a>) is a fixed sequence of the tools above.</p>
   <div class="wrap"><table>
     <tr><th>Strategy</th><th>Tools it calls</th><th>Function</th></tr>
-    <tr><td>Quotation trace</td><td><span class="mono">phrase_search</span> and <span class="mono">literal_search</span> across the library, the Writings and the reader's tradition; Jev checks which passages actually hold the quotation; <span class="mono">passage_links</span> then gives the original and the works that quote it</td><td class="mono">sourceHunt</td></tr>
-    <tr><td>Comparison, Understanding</td><td><span class="mono">search_library</span> once per tradition, filtered by tradition</td><td class="mono">strategies.js</td></tr>
-    <tr><td>Prayer</td><td><span class="mono">find_work</span>, then the prayer book's sections and paragraphs, then <span class="mono">search_library</span> within that book</td><td class="mono">prayerShelf</td></tr>
-    <tr><td>Current guidance</td><td><span class="mono">search_library</span> filtered to the House of Justice, newest first</td><td class="mono">currentGuidance</td></tr>
+    <tr><td>Quotation trace</td><td><span class="mono">phrase_search</span> and <span class="mono">literal_search</span> across the library, the Writings and the reader's tradition; Jev checks which passages actually hold the quotation; <span class="mono">links_lookup</span> then gives the original and the works that quote it</td><td class="mono">sourceHunt</td></tr>
+    <tr><td>Comparison, Understanding</td><td><span class="mono">combined_search</span> once per tradition, filtered by tradition</td><td class="mono">strategies.js</td></tr>
+    <tr><td>Prayer</td><td><span class="mono">find_work</span>, then the prayer book's sections and paragraphs, then <span class="mono">combined_search</span> within that book</td><td class="mono">prayerShelf</td></tr>
+    <tr><td>Current guidance</td><td><span class="mono">combined_search</span> filtered to the House of Justice, newest first</td><td class="mono">currentGuidance</td></tr>
     <tr><td>Scripture reference</td><td>The book's sections, then the paragraphs of the chapter and verse</td><td class="mono">scriptureReference</td></tr>
   </table></div>
 
@@ -295,13 +297,21 @@ h3{margin-top:18px}
   </ul>
 
   <h3 id="tool-names">One Name, One Tool</h3>
-  <p>Names in the code still disagree, and must be made one before strategies name tools:</p>
-  <ul>
-    <li><span class="mono">search_library</span> means two engines: planned search in the researcher, and the unplanned search in the agent.</li>
-    <li>The researcher's tool names map to different internal keys (<span class="mono">find_original</span> → <span class="mono">original</span>, <span class="mono">source_of</span> → <span class="mono">sourceOf</span>, <span class="mono">read_around</span> → <span class="mono">around</span>, …), and the turn labels use a third set ("CTAI term study", "source hunt").</li>
-    <li><span class="mono">source_of</span> was listed as a tool but is the Quotation trace strategy; <span class="mono">trace_source</span> has the same shape (links, then a search) and is a candidate strategy too.</li>
-    <li>Anís chat and the older Jafar pipeline keep separate tool lists for the same functions.</li>
-  </ul>
+  <p>The canonical names above replace the code's older names, which disagreed with each other. The old names still work as aliases while the registry lands.</p>
+  <div class="wrap"><table>
+    <tr><th>Tool</th><th>Older names</th></tr>
+    <tr><td class="mono">combined_search</td><td><span class="mono">search_library</span> (two different engines shared this name: planned search in the researcher, unplanned search in the agent)</td></tr>
+    <tr><td class="mono">document_search</td><td><span class="mono">find_work</span>, <span class="mono">work</span></td></tr>
+    <tr><td class="mono">original_lookup</td><td><span class="mono">find_original</span>, <span class="mono">original</span>, <span class="mono">search/original</span></td></tr>
+    <tr><td class="mono">translation_lookup</td><td><span class="mono">find_translation</span>, <span class="mono">translation</span></td></tr>
+    <tr><td class="mono">rendering_lookup</td><td><span class="mono">word_study</span>, <span class="mono">wordStudy</span>, "CTAI term study"</td></tr>
+    <tr><td class="mono">context_lookup</td><td><span class="mono">read_around</span>, <span class="mono">around</span></td></tr>
+    <tr><td class="mono">links_lookup</td><td>(new as a tool)</td></tr>
+    <tr><td class="mono">work_notes_lookup</td><td><span class="mono">about_work</span></td></tr>
+    <tr><td class="mono">source_trace</td><td><span class="mono">trace_source</span>, <span class="mono">trace</span> (a candidate strategy: links, then a search)</td></tr>
+    <tr><td>Quotation trace (strategy)</td><td><span class="mono">source_of</span>, <span class="mono">sourceOf</span>, "source hunt"</td></tr>
+  </table></div>
+  <p>Anís chat and the older Jafar pipeline still keep separate tool lists for the same functions.</p>
 </section>
 
 <section id="activities">
