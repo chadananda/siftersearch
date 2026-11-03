@@ -246,9 +246,20 @@ Each feature lists what it is, why, the contract, who decides each part, and acc
 ### F8 · Memory: the summary chain
 - **Level 0, exchange:** `{asked, found, terms[], citations[], reaction}`, written by a small model through a forced tool call, asynchronously after each answer. Reaction comes from the next message's triage.
 - **Level 1, thread:** `{arc, conclusions[], open_questions[], stance, mood}`, written when a thread goes quiet.
-- **Level 2, person:** `{story_so_far[], through_lines[], unfinished[]}`, weekly.
+- **Level 2, person = the reader document (Chad 11-03: "foundation, not activity").** ONE terse document per person, the single place everything about them lives, read by every answer (the direction layer, F6) and every letter (F11/F12). Sections:
+  - `who` (name to use, languages, register, level, stated roles);
+  - `position` (where they stand, **only as they stated it**, quoted or close to it, never inferred);
+  - `interests[]` (topic/work/person/insight kind, e.g. `translation_insight`, each with `last_seen`, decaying if not renewed);
+  - `prefers` (length, originals beside the English, quotes vs explanation, channel);
+  - `in_progress` (book being read, open questions, activities);
+  - `leave_alone` (topics they asked him not to raise, corrections they made);
+  - `pause_outreach_until` (a date with no reason stored; set after grief or distress).
+  - **Shape:** about 300 words, one dated line per fact. Updated asynchronously when a thread goes quiet: a small model with a forced tool call merges the new facts in, the newest statement wins, and a position changes only on a new statement of their own. The background never asks them profiling questions.
+  - **Use:** shapes vocabulary, assumed knowledge, authority framing, depth, examples and hook choice. **Never recited, never a label, never "I see you're interested in…"**; it shows only in the fit.
+  - **Change over time:** interests decay (about 90 days) unless renewed; nothing is pinned. People drift of their own volition and the document follows.
+  - **Clear history** (OceanLibrary.com account action) deletes threads, L0/L1 and the reader document together, through the PERSON_DATA registry (F10). Export includes it.
 - **Consent-scoped:** Level 2 exists only for connected or remembered people (Companion R2+). Anonymous people get thread memory only.
-- **Never stored or inferred** (Companion 7.1): political identity, trauma, mental state, religious susceptibility.
+- **Never stored or inferred** (Companion 7.1, extended 11-03): health and mental state, trauma, sexuality, political identity, finances, family crises, details about other people, location finer than country/time zone, and religious susceptibility (no guess about conversion, ever). Religious position is kept only as the person stated it (it is special-category data under GDPR Art. 9; consent notice at connect: "Anís remembers what you tell him so he can help you; clear it any time").
 - **Thread replay:** the last 4 exchanges verbatim, older ones as one-line Level-0 summaries. Past a threshold the full text is compacted to the summary. An exchange without a summary is never compacted.
 - Replaces `respond.js`'s "last 6 turns trimmed".
 - **Acceptance:** a 40-exchange synthetic thread keeps its facts (a recall test on L0/L1), the prompt stays under budget, and nothing is compacted without a summary.
@@ -276,7 +287,7 @@ Each feature lists what it is, why, the contract, who decides each part, and acc
   - **Share a discussion**;
   - **Download my data**;
   - **Delete my account**.
-- **Never shown:** inferred interests, weights, engagement state, nudge history.
+- **Never shown on the page:** the reader document, weights, engagement state, nudge history. Not pushed in their face, but **included in Download my data** (a right of access) and erased by Clear history.
 - **Share:**
   - rounds come from `chat_messages` by conversation_id, **never from the client**, gated on `ownsThread` and rate-limited;
   - the regex floor plus the LLM sanitizer (already verified), then a Jev yes/no asking whether personal detail remains;
