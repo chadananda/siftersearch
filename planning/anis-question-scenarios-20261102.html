@@ -100,10 +100,10 @@ h3{margin-top:18px}
     <li><a href="#reader-document">User Profile and User Card</a></li>
     <li><a href="#tools">His Tools</a></li>
     <li><a href="#activities">Activities</a><ol><li><a href="#letters">Letters in detail</a></li><li><a href="#scenario-types">Scenario Types</a></li><li><a href="#scenario-recognition">Scenario Recognition</a></li></ol></li>
-    <li><a href="#strategies">Response Strategies</a><ol><li><a href="#strategy-types">Strategy Types</a></li><li><a href="#how-he-decides">Speed</a></li><li><a href="#decision-points">Decision Points</a></li><li><a href="#three-part-reply">Three-Part Reply</a></li><li><a href="#inside-a-strategy">Example Strategy: Quotation Trace</a></li><li><a href="#target-times">Target Times</a></li></ol></li>
+    <li><a href="#strategies">Response Strategies</a><ol><li><a href="#strategy-types">Strategy Types</a></li><li><a href="#how-he-decides">Speed</a></li><li><a href="#decision-points">Decision Points</a></li><li><a href="#three-part-reply">Three-Part Reply</a></li><li><a href="#inside-a-strategy">Example Strategy: Quotation Trace</a></li><li><a href="#target-times">Target Times</a></li><li><a href="#answer-look">Data Widgets</a></li></ol></li>
     <li><a href="#how-he-gets-better">Self-Improvement Cycle</a><ol><li><a href="#jev-accuracy">Jev Accuracy</a></li></ol></li>
     <li><a href="#search">Search</a><ol><li><a href="#prepared-knowledge">Prepared Knowledge</a></li></ol></li>
-    <li><a href="#answer-look">Data Widgets</a></li>
+    <li><a href="#engagement">Hyper-Engagement</a></li>
     <li><a href="#evidence">Testing and Evidence</a><ol><li><a href="#how-tested">Testing</a></li><li><a href="#evidence-sources">Evidence Sources</a></li><li><a href="#search-box">Search Box Evidence</a></li><li><a href="#open-gaps">Open Gaps</a></li></ol></li>
   </ol>
 </nav>
@@ -456,6 +456,26 @@ h3{margin-top:18px}
     <tr><td>Understanding, comparing, personal questions</td><td class="n">≤ 12 s, first words within 2 s</td></tr>
     <tr><td>Assignments (a compilation, a study guide, a brief)</td><td class="n">minutes, progress shown</td></tr>
   </table></div>
+  <h3 id="answer-look">Data Widgets</h3>
+  <p>A fixed set of presentation widgets (quotation, timeline, book card…), each rendered for every channel. One answer must look right in a widget, an email, a text message and a voice reply, and never break.</p>
+  <p>What Anís finds often has a shape: a quotation, a life, a run of dates, a word in its original. Each shape is a standard <b>block</b> with one design and a rendering for each channel, as rich as the channel allows, with a graceful fallback where it allows less. One answer becomes a styled card in the widget, a designed email, a few clean lines in a text, and spoken words in voice. Jev chooses the blocks; code renders them, so nothing breaks where a channel can't show something.</p>
+  <div class="wrap"><table>
+    <tr><th>Widget</th><th>Widget and email</th><th>Text message, Telegram</th><th>Voice</th></tr>
+    <tr><td>Quotation</td><td>The passage set apart, author and work as a link, a line on its context</td><td>Quoted text and a short link</td><td>Read aloud in a different voice, then "from <i>Gleanings</i>"</td></tr>
+    <tr><td>Original beside translation</td><td>Arabic or Persian and English side by side, right-to-left kept, the key word marked</td><td>Translation first, then the original</td><td>The English, then the key word spoken in the original</td></tr>
+    <tr><td>Biography card</td><td>Portrait with caption, dates, role, one telling line, link to the full biography</td><td>Name, dates, one line, link</td><td>Two sentences</td></tr>
+    <tr><td>Timeline</td><td>Dated events on a line, each with its source</td><td>A dated list</td><td>The few dates that matter, in order</td></tr>
+    <tr><td>Comparison</td><td>Two or more traditions side by side, a passage each</td><td>One short block per tradition</td><td>Each tradition in turn</td></tr>
+    <tr><td>Table</td><td>A real table, sortable when long</td><td>A list of rows</td><td>Summarised, with an offer to send it by email</td></tr>
+    <tr><td>List</td><td>Numbered or bulleted, each item linked</td><td>The same, plain</td><td>The first three, and an offer of the rest</td></tr>
+    <tr><td>Audio excerpt</td><td>A player with speaker, talk, date and transcript</td><td>A link to the moment in the talk</td><td>Played</td></tr>
+    <tr><td>Picture with caption</td><td>The image, sized for the screen, credited</td><td>A link with the caption</td><td>The caption, described</td></tr>
+    <tr><td>Video</td><td>A poster frame that plays in place, with the time it starts</td><td>A link to the moment</td><td>Described, and sent by email</td></tr>
+    <tr><td>External resource</td><td>A card: site, title, one line on why it is worth opening, marked as from the web</td><td>A labelled link</td><td>Named, and sent by email</td></tr>
+    <tr><td>Book card</td><td>Cover, author, translator, one line on why it matters, "read it" link</td><td>Title, author, link</td><td>Title and author, and an offer to read it with you</td></tr>
+    <tr><td>Document</td><td>A compilation, study guide or brief, attached</td><td>A link to it</td><td>Sent by email</td></tr>
+  </table></div>
+  <p class="note">Already declared in code: the answer formats (direct answer, timeline, comparison, term with its original, others) and each channel's capabilities. To build: this set of blocks with their renderers. New blocks are added like everything else: declared once, tested on every channel.</p>
 </section>
 
 <section id="how-he-gets-better">
@@ -506,30 +526,26 @@ h3{margin-top:18px}
   <p>Both are wanted: topic research collections and book research dossiers. The improvement loop decides what to prepare first: when a question or book comes up often enough, it proposes a collection or dossier, and once built and checked, later requests take the shortcut. Deep research feeds both; both are refreshed as the library grows.</p>
 </section>
 
-<section id="answer-look">
-  <h2><span class="num">10</span>Data Widgets</h2>
+<section id="engagement">
+  <h2><span class="num">10</span>Hyper-Engagement</h2>
   <div class="lead">
-    <p><b>What:</b> a fixed set of presentation widgets (quotation, timeline, book card…), each rendered for every channel.</p>
-    <p><b>Why:</b> one answer must look right in a widget, an email, a text message and a voice reply, and never break.</p>
+    <p><b>What:</b> bringing each person back to the texts, one real discovery at a time, counted by the people who reply and carry the conversation on.</p>
+    <p><b>Why:</b> one good answer brings someone back once. A companion who remembers them and writes when he has found something brings them back every week.</p>
   </div>
-  <p>What Anís finds often has a shape: a quotation, a life, a run of dates, a word in its original. Each shape is a standard <b>block</b> with one design and a rendering for each channel, as rich as the channel allows, with a graceful fallback where it allows less. One answer becomes a styled card in the widget, a designed email, a few clean lines in a text, and spoken words in voice. Jev chooses the blocks; code renders them, so nothing breaks where a channel can't show something.</p>
   <div class="wrap"><table>
-    <tr><th>Widget</th><th>Widget and email</th><th>Text message, Telegram</th><th>Voice</th></tr>
-    <tr><td>Quotation</td><td>The passage set apart, author and work as a link, a line on its context</td><td>Quoted text and a short link</td><td>Read aloud in a different voice, then "from <i>Gleanings</i>"</td></tr>
-    <tr><td>Original beside translation</td><td>Arabic or Persian and English side by side, right-to-left kept, the key word marked</td><td>Translation first, then the original</td><td>The English, then the key word spoken in the original</td></tr>
-    <tr><td>Biography card</td><td>Portrait with caption, dates, role, one telling line, link to the full biography</td><td>Name, dates, one line, link</td><td>Two sentences</td></tr>
-    <tr><td>Timeline</td><td>Dated events on a line, each with its source</td><td>A dated list</td><td>The few dates that matter, in order</td></tr>
-    <tr><td>Comparison</td><td>Two or more traditions side by side, a passage each</td><td>One short block per tradition</td><td>Each tradition in turn</td></tr>
-    <tr><td>Table</td><td>A real table, sortable when long</td><td>A list of rows</td><td>Summarised, with an offer to send it by email</td></tr>
-    <tr><td>List</td><td>Numbered or bulleted, each item linked</td><td>The same, plain</td><td>The first three, and an offer of the rest</td></tr>
-    <tr><td>Audio excerpt</td><td>A player with speaker, talk, date and transcript</td><td>A link to the moment in the talk</td><td>Played</td></tr>
-    <tr><td>Picture with caption</td><td>The image, sized for the screen, credited</td><td>A link with the caption</td><td>The caption, described</td></tr>
-    <tr><td>Video</td><td>A poster frame that plays in place, with the time it starts</td><td>A link to the moment</td><td>Described, and sent by email</td></tr>
-    <tr><td>External resource</td><td>A card: site, title, one line on why it is worth opening, marked as from the web</td><td>A labelled link</td><td>Named, and sent by email</td></tr>
-    <tr><td>Book card</td><td>Cover, author, translator, one line on why it matters, "read it" link</td><td>Title, author, link</td><td>Title and author, and an offer to read it with you</td></tr>
-    <tr><td>Document</td><td>A compilation, study guide or brief, attached</td><td>A link to it</td><td>Sent by email</td></tr>
+    <tr><th>Part</th><th>What it does</th></tr>
+    <tr><td>Engagement Measure</td><td>People who reply and continue, per person, over time. Never clicks or sends, which are easy to inflate and say nothing about learning.</td></tr>
+    <tr><td>First Letters</td><td>A short welcome when someone connects or first writes: at most three parts, days apart, each one vivid, real example of what he can do.</td></tr>
+    <tr><td>Discovery Letters</td><td>One real finding made for one person, read in a minute, ending with a plain invitation to write back. No bulk email, ever.</td></tr>
+    <tr><td>Letter Rhythm</td><td>Letters at growing intervals after the person's last message, then quiet. It steps back; it never escalates.</td></tr>
+    <tr><td>News Ride-Along</td><td>At most one relevant, unseen item of library news inside a person's own answer or letter, instead of a newsletter.</td></tr>
+    <tr><td>Activity Invitations</td><td>Activities (a book read together, a study plan) offered when they fit and started by a simple request.</td></tr>
+    <tr><td>Fresh Material</td><td>Book dossiers and topic collections (see <a href="#prepared-knowledge">Prepared Knowledge</a>), so he never sends the same summary twice.</td></tr>
+    <tr><td>Reader Page and Controls</td><td>A profile page showing what you did with Anís, to keep, share or erase. Memory you can see and clear.</td></tr>
+    <tr><td>Privacy and Consent</td><td>The least that serves the person, guarded fully: beliefs are exactly the data that must never leak.</td></tr>
+    <tr><td>Engagement Learning</td><td>Every reply teaches him which findings, openings and forms lead people to continue; what people actually answer is the only guide.</td></tr>
   </table></div>
-  <p class="note">Already declared in code: the answer formats (direct answer, timeline, comparison, term with its original, others) and each channel's capabilities. To build: this set of blocks with their renderers. New blocks are added like everything else: declared once, tested on every channel.</p>
+  <p>Full design, rhythm and measures: <a href="#engagement-doc">Anís Hyper Engagement</a>.</p>
 </section>
 
 <section id="evidence">
