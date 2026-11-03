@@ -4,16 +4,17 @@
 #   resume    mains back and stable 60 s: ups-power.sh resume
 #   lowbatt   final flush (fast — already done); upsmon then runs SHUTDOWNCMD (/usr/local/bin/sifter-ups-shutdown) by itself
 # ups-power.sh re-checks the live UPS status before acting and is inert without a UPS. SIFTER_TEST=1 logs instead of acting.
+# Each event is also a line in the UPS ledger (ups-power.sh ledger → scripts/ops/ups-ledger.mjs): the confirmation report's evidence.
 UPS_POWER="sudo -n -u chad /home/chad/sifter/siftersearch/scripts/ops/ups-power.sh"
 MAIL="/usr/local/bin/sifter-ups-mail"
 log() { logger -t upssched-cmd "$*"; }
 act() { if [ "${SIFTER_TEST:-0}" = 1 ]; then log "TEST would run: $*"; else "$@"; fi; }
 case "$1" in
-  onbatt)   log "ONBATT: on battery; read-only in 10 s unless mains returns" ;;
-  online)   log "ONLINE: mains back; resume in 60 s if it stays" ;;
+  onbatt)   log "ONBATT: on battery; read-only in 10 s unless mains returns"; act $UPS_POWER ledger onbatt ;;
+  online)   log "ONLINE: mains back; resume in 60 s if it stays"; act $UPS_POWER ledger online ;;
   readonly) log "READONLY: 10 s on battery — entering read-only mode"; act $UPS_POWER enter ;;
   resume)   log "RESUME: 60 s on mains — leaving read-only mode"; act $UPS_POWER resume ;;
-  lowbatt)  log "LOWBATT: final flush; upsmon shuts down"
+  lowbatt)  log "LOWBATT: final flush; upsmon shuts down"; act $UPS_POWER ledger lowbatt
             [ -x "$MAIL" ] && "$MAIL" powerdown "tower LOW BATTERY — shutting down" "Runtime ≤ 3 min: clean OS shutdown. Everything was already flushed." &
             act $UPS_POWER enter --grace 5 ;;
   commbad)  log "UPS communication lost"; [ -x "$MAIL" ] && "$MAIL" commbad "tower: UPS communication lost" "upsmon cannot reach the UPS for 5 min." & ;;

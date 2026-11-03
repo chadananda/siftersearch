@@ -7,22 +7,23 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, chmodSync, rmSync
 import { join } from 'path';
 import { tmpdir } from 'os';
 
-let dir, log, flag;
+let dir, log, flag, ledger;
 const bin = (name, body) => { const f = join(dir, 'bin', name); writeFileSync(f, `#!/bin/bash\n${body}\n`); chmodSync(f, 0o755); };
 const pm2json = JSON.stringify(['siftersearch-indexer', 'siftersearch-media', 'siftersearch-embedding', 'siftersearch-deep-research', 'siftersearch-api']
   .map((name) => ({ name, pm2_env: { status: 'online' } })).concat([{ name: 'siftersearch-library-watcher', pm2_env: { status: 'stopped' } }]));
 function run(args, env = {}) {
   return spawnSync('bash', ['scripts/ops/ups-power.sh', ...args], { encoding: 'utf8', env: {
     ...process.env, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, SIFTER_POWER_FILE: flag, SIFTER_DB_SHIP: join(dir, 'bin', 'db-ship'),
-    SIFTER_UPS_MAIL: '/nonexistent', SIFTER_UPS_SLEEP: 'true', SIFTER_UPS_GRACE: '5', LOG: log, FAKE_PM2: pm2json, ...env } });
+    SIFTER_UPS_MAIL: '/nonexistent', SIFTER_UPS_SLEEP: 'true', SIFTER_UPS_GRACE: '5', LOG: log, FAKE_PM2: pm2json, SIFTER_UPS_LEDGER: ledger, ...env } });
 }
 const calls = () => (existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n') : []);
 const state = () => JSON.parse(readFileSync(flag, 'utf8'));
+const steps = () => (existsSync(ledger) ? readFileSync(ledger, 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : []);
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'ups-'));
   spawnSync('mkdir', ['-p', join(dir, 'bin')]);
-  log = join(dir, 'calls.log'); flag = join(dir, 'power.json');
+  log = join(dir, 'calls.log'); flag = join(dir, 'power.json'); ledger = join(dir, 'ups', 'ledger.jsonl');
   bin('upsc', '[ -n "${FAKE_UPS:-}" ] || exit 1; echo "$FAKE_UPS"');
   bin('pm2', 'echo "pm2 $*" >> "$LOG"; [ "$1" = jlist ] && echo "$FAKE_PM2"; exit 0');
   bin('curl', 'echo "curl $*" >> "$LOG"; case "$*" in *power/flush*) echo \'{"ok":true}\';; *"/power"*) echo \'{"quiet_ms":9000}\';; esac; exit 0');
@@ -78,6 +79,27 @@ describe('ups-power.sh', { timeout: 60_000 }, () => {
     run(['resume'], { FAKE_UPS: 'OL CHRG' });
     expect(existsSync(flag)).toBe(false);
     expect(calls()).toEqual(expect.arrayContaining(['pm2 start siftersearch-deep-research', 'pm2 start siftersearch-embedding']));
+  });
+
+  it('writes each power step to the UPS ledger in plan order (the confirmation report reads it)', () => {
+    run(['enter'], { FAKE_UPS: 'OB DISCHRG' });
+    run(['resume'], { FAKE_UPS: 'OL CHRG' });
+    const l = steps();
+    expect(l.map((x) => x.step)).toEqual(['writers-stopped', 'readonly', 'db-flushed', 'ram-flushed', 'zpool-synced', 'db-shipped', 'resume']);
+    expect(l.every((x) => x.ok && x.at)).toBe(true);
+    expect(l[0].detail).toMatchObject({ stopped: expect.stringContaining('siftersearch-embedding') });
+    expect(l[2].detail).toMatchObject({ ok: true });
+  });
+
+  it('a failed writer flush is a failed ledger step', () => {
+    bin('curl', 'echo "curl $*" >> "$LOG"; case "$*" in *power/flush*) echo \'{"ok":false}\';; esac; exit 0');
+    run(['enter'], { FAKE_UPS: 'OB DISCHRG' });
+    expect(steps().find((x) => x.step === 'db-flushed')).toMatchObject({ ok: false, detail: { error: 'writer flush failed' } });
+  });
+
+  it('ledger subcommand appends a step (deploy/nut uses it for onbatt / online / lowbatt / poweroff)', () => {
+    expect(run(['ledger', 'onbatt']).status).toBe(0);
+    expect(steps()).toMatchObject([{ step: 'onbatt', ok: true }]);
   });
 
   it('resume reloads the RAM disk when qdrant-hot does not answer', () => {

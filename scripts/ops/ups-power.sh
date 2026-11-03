@@ -4,6 +4,7 @@
 #   enter   [--grace S]  on battery ≥ 10 s (upssched debounce): drain writers → read-only → flush everything held in RAM
 #   resume               mains back and stable 60 s: RAM state reloaded if lost → flag cleared → writers resume
 #   status               the flag + the UPS status
+#   ledger <step> [ok|fail] [detail]   append a step to the UPS ledger (scripts/ops/ups-ledger.mjs) — the report's evidence
 # INERT until a UPS is detected: no `upsc`, or `upsc` cannot read the UPS → exit 0, nothing done. Each action re-checks the
 # live UPS status (enter needs OB, resume needs OL — a second debounce). SIFTER_UPS_FORCE=1 skips both checks (drills).
 # The flag is power-mode.js's file: every service honours it (api/lib/power-mode.js). Env overrides exist for tests only.
@@ -18,6 +19,7 @@ GRACE=${SIFTER_UPS_GRACE:-60}            # longest wait for the drain before wri
 QUIET_MS=${SIFTER_UPS_QUIET_MS:-5000}    # …or sooner, once content writes have been quiet this long
 DB_SHIP=${SIFTER_DB_SHIP:-$ROOT/scripts/ops/db-ship.sh}
 MAIL=${SIFTER_UPS_MAIL:-$ROOT/scripts/ops/ups-mail.mjs}
+LEDGER=${SIFTER_UPS_LEDGER_CLI:-$ROOT/scripts/ops/ups-ledger.mjs}
 QRAM_URL=${QRAM_URL:-http://127.0.0.1:6335}
 # runService services drain + park on the flag by themselves; SIGHUP makes the drain immediate (the deploy drain)
 DRAIN_APPS=${SIFTER_UPS_DRAIN_APPS:-"siftersearch-indexer siftersearch-media siftersearch-reports siftersearch-reports-carry"}
@@ -27,6 +29,8 @@ SLEEP=${SIFTER_UPS_SLEEP:-sleep}
 
 log() { echo "$(date -u +%FT%TZ) ups-power: $*" >&2; logger -t ups-power "$*" 2>/dev/null || true; }
 mail() { [ -f "$MAIL" ] && ( node "$MAIL" "$@" >/dev/null 2>&1 || true ) & }
+# one ledger line per step (bounded: a power step never waits on its log)
+ledger() { [ -f "$LEDGER" ] || return 0; if command -v timeout >/dev/null 2>&1; then timeout 8 node "$LEDGER" append "$@" >/dev/null 2>&1; else node "$LEDGER" append "$@" >/dev/null 2>&1; fi; return 0; }
 ups_status() { command -v "$UPSC" >/dev/null 2>&1 || return 1; "$UPSC" "$UPS" ups.status 2>/dev/null; }
 mode() { [ -f "$POWER_FILE" ] && node -e 'try{console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).mode||"")}catch{}' "$POWER_FILE"; }
 field() { node -e 'try{const v=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))[process.argv[2]];console.log(Array.isArray(v)?v.join(" "):v??"")}catch{}' "$POWER_FILE" "$1"; }
@@ -71,16 +75,19 @@ cmd_enter() {
     $SLEEP 1; waited=$((waited + 1))
   done
   log "drain: ${waited}s"
+  ledger writers-stopped ok "{\"stopped\":\"$stopped\",\"drained\":\"$drain\",\"drain_s\":$waited}"
   # 3. writes refused from here on
   write_flag readonly "UPS on battery ($st)" "$stopped"
+  ledger readonly ok "UPS $st"
   # 4. flush everything held in RAM to disk
   local ok=1 r
-  r=$(curl -s -m 120 -X POST "$WRITER/power/flush") && log "writer flush: $r" || { log "writer flush FAILED: $r"; ok=0; }
+  if r=$(curl -s -m 120 -X POST "$WRITER/power/flush") && grep -q '"ok":true' <<<"$r"; then log "writer flush: $r"; ledger db-flushed ok "$r"
+  else log "writer flush FAILED: $r"; ok=0; ledger db-flushed fail "{\"error\":\"writer flush failed\",\"reply\":$(node -e 'console.log(JSON.stringify(process.argv[1]||""))' "$r")}"; fi
   if systemctl cat qram-flush.service >/dev/null 2>&1 || [ -n "${SIFTER_UPS_FORCE_QRAM:-}" ]; then
-    sudo -n systemctl start qram-flush.service && log "qdrant-hot flushed (RAM disk → snapshots)" || { log "qram flush FAILED"; ok=0; }
+    if sudo -n systemctl start qram-flush.service; then log "qdrant-hot flushed (RAM disk → snapshots)"; ledger ram-flushed ok; else log "qram flush FAILED"; ok=0; ledger ram-flushed fail "qram-flush.service failed"; fi
   fi
-  sudo -n zpool sync && log "zpool sync" || log "zpool sync failed (txg commits within 10 s anyway)"
-  "$DB_SHIP" && log "db-ship done" || { log "db-ship FAILED"; ok=0; }
+  if sudo -n zpool sync; then log "zpool sync"; ledger zpool-synced ok; else log "zpool sync failed (txg commits within 10 s anyway)"; ledger zpool-synced fail "zpool sync failed"; fi
+  if "$DB_SHIP"; then log "db-ship done"; ledger db-shipped ok; else log "db-ship FAILED"; ok=0; ledger db-shipped fail "db-ship.sh failed"; fi
   [ "$ok" = 1 ] || mail readonly-flush "tower read-only: a flush step FAILED" "See journalctl -t ups-power. Reads keep serving."
   write_flag readonly "UPS on battery ($st)" "$stopped" "$(date -u +%FT%TZ)"
   log "read-only; flushed (ok=$ok). Losing power now loses nothing."
@@ -98,6 +105,7 @@ cmd_resume() {
   fi
   rm -f "$POWER_FILE" && log "resume: flag cleared — writes accepted, parked services starting"
   for a in $stopped; do "$PM2" start "$a" >/dev/null 2>&1 && log "started $a"; done
+  ledger resume ok "restarted: ${stopped:-none}"
   mail online "tower back on mains — writers resumed" "Read-only mode ended; stopped services restarted: ${stopped:-none}."
 }
 
@@ -107,5 +115,6 @@ case "${1:-}" in
   enter) shift; [ "${1:-}" = --grace ] && GRACE=$2; cmd_enter ;;
   resume) cmd_resume ;;
   status) cmd_status ;;
-  *) echo "usage: ups-power.sh enter [--grace S] | resume | status" >&2; exit 2 ;;
+  ledger) shift; [ -n "${1:-}" ] && ledger "$@" ;;
+  *) echo "usage: ups-power.sh enter [--grace S] | resume | status | ledger <step> [ok|fail] [detail]" >&2; exit 2 ;;
 esac
