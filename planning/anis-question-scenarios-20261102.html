@@ -153,6 +153,28 @@ q{font-style:italic;quotes:"“" "”"}
 </section>
 
 <section>
+  <h2>How his answers look</h2>
+  <p>What Anís finds often has a shape of its own: a quotation, a life, a sequence of dates, a word in its original. Each shape is a standard <b>block</b> with one design, and every block has a rendering for each channel: as beautiful as the channel allows, and a graceful fallback where it allows less. The same answer becomes a styled card in the widget, a designed email, a few clean lines in a text message, and spoken words in voice. Jev chooses the blocks; code renders them for the channel, so nothing breaks where a channel can't show something.</p>
+  <div class="wrap"><table>
+    <tr><th>Block</th><th>Widget and email</th><th>Text message, Telegram</th><th>Voice</th></tr>
+    <tr><td>Quotation</td><td>The passage set apart, author and work as a link, a line on its context</td><td>Quoted text and a short link</td><td>Read aloud in a different voice, then "from <i>Gleanings</i>"</td></tr>
+    <tr><td>Original beside translation</td><td>Arabic or Persian and English side by side, right-to-left kept, the key word marked</td><td>Translation first, then the original</td><td>The English, then the key word spoken in the original</td></tr>
+    <tr><td>Biography card</td><td>Portrait with caption, dates, role, one telling line, link to the full biography</td><td>Name, dates, one line, link</td><td>Two sentences</td></tr>
+    <tr><td>Timeline</td><td>Dated events on a line, each with its source</td><td>A dated list</td><td>The few dates that matter, in order</td></tr>
+    <tr><td>Comparison</td><td>Two or more traditions side by side, a passage each</td><td>One short block per tradition</td><td>Each tradition in turn</td></tr>
+    <tr><td>Table</td><td>A real table, sortable when long</td><td>A list of rows</td><td>Summarised, with an offer to send it by email</td></tr>
+    <tr><td>List</td><td>Numbered or bulleted, each item linked</td><td>The same, plain</td><td>The first three, and an offer of the rest</td></tr>
+    <tr><td>Audio excerpt</td><td>A player with speaker, talk, date and transcript</td><td>A link to the moment in the talk</td><td>Played</td></tr>
+    <tr><td>Picture with caption</td><td>The image, sized for the screen, credited</td><td>A link with the caption</td><td>The caption, described</td></tr>
+    <tr><td>Video</td><td>A poster frame that plays in place, with the time it starts</td><td>A link to the moment</td><td>Described, and sent by email</td></tr>
+    <tr><td>External resource</td><td>A card: site, title, one line on why it is worth opening, marked as from the web</td><td>A labelled link</td><td>Named, and sent by email</td></tr>
+    <tr><td>Book card</td><td>Cover, author, translator, one line on why it matters, "read it" link</td><td>Title, author, link</td><td>Title and author, and an offer to read it with you</td></tr>
+    <tr><td>Document</td><td>A compilation, study guide or brief, attached</td><td>A link to it</td><td>Sent by email</td></tr>
+  </table></div>
+  <p class="note">Today the answer formats (direct answer, timeline, comparison, term with its original and others) and each channel's capabilities are already declared in code; this set of blocks, each with its renderers, is to build. New blocks are added the same way as everything else: declared once, tested on every channel.</p>
+</section>
+
+<section>
   <h2>His tools</h2>
   <p>Everything Anís says comes from what these tools find. Code checks every citation before an answer goes out: a quotation that isn't in the library is removed, and every reference becomes a link.</p>
   <div class="wrap"><table>
