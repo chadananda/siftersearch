@@ -198,3 +198,39 @@ describe('triage timeout', () => {
     expect(sig.aborted).toBe(false);
   });
 });
+
+describe('numbered works with no number in the text (gate fix 3: "Some Answered Questions 33", "Paris Talks 12")', async () => {
+  const { sectionRange } = await import('../../api/lib/assistant/numbering.js');
+  const SAQ = { id: 20911, title: 'Some Answered Questions', author: '‘Abdu’l-Bahá', paragraph_count: 788 };
+  const PT = { id: 20908, title: 'Paris Talks', author: '‘Abdu’l-Bahá', paragraph_count: 819 };
+  it('maps chapter / talk numbers to the edition\'s paragraph range', () => {
+    expect(sectionRange(SAQ, 33)).toEqual({ unit: 'chapter', num: 33, from: 355, to: 364 });
+    expect(sectionRange(SAQ, 4)).toEqual({ unit: 'chapter', num: 4, from: 40, to: 45 });
+    expect(sectionRange(SAQ, 84)).toEqual({ unit: 'chapter', num: 84, from: 775, to: 787 });
+    expect(sectionRange(PT, 12)).toEqual({ unit: 'talk', num: 12, from: 149, to: 159 });
+    expect(sectionRange(PT, 39)).toMatchObject({ from: 523, to: 548 });
+  });
+  it('another edition (paragraph count differs) or an out-of-range number gets no range', () => {
+    expect(sectionRange({ ...SAQ, paragraph_count: 790 }, 33)).toBeNull();
+    expect(sectionRange(SAQ, 85)).toBeNull();
+    expect(sectionRange({ title: 'Gleanings', paragraph_count: 788 }, 3)).toBeNull();
+  });
+  const deps = (doc, others = []) => ({ intent: 'reference', findTitled: async () => ({ doc: others.length ? GL.doc : doc, others }),
+    paragraphsByPn: async () => [], headingStarts: async () => [],
+    paragraphsInRange: async (id, a, b) => { deps.asked = [id, a, b]; return [{ id: 1, paragraph_index: a, heading: 'The Return', text: '# The Return' },
+      { id: 2, paragraph_index: a + 1, text: 'Thou hast asked about the return…' }, { id: 3, paragraph_index: a + 2, text: 'Second.' }]; },
+    withLinks: async (h) => h.map((x) => ({ ...x, url: `https://x/${x.doc_id}#${x.paragraph_index}` })) });
+  it('"Some Answered Questions 33" resolves to chapter 33\'s opening, heading rows dropped, linked', async () => {
+    const d = deps(SAQ);
+    const r = await resolveLookup(user('Some Answered Questions 33'), d);
+    expect(deps.asked).toEqual([20911, 355, 364]);
+    expect(r).toMatchObject({ kind: 'reference', section: { unit: 'chapter', num: 33, from: 355, to: 364 },
+      passages: [{ paragraph_index: 356, document_id: 20911, source_url: 'https://x/20911#356' }, { paragraph_index: 357 }] });
+  });
+  it('"Paris Talks 12" finds the numbered edition among the other copies the title index offers', async () => {
+    const r = await resolveLookup(user('Paris Talks 12'), deps(null, [PT]));
+    expect(deps.asked).toEqual([20908, 149, 159]);
+    expect(r).toMatchObject({ kind: 'reference', work: { doc: PT } });
+    expect(r.passages[0]).toMatchObject({ document_id: 20908, title: 'Paris Talks', paragraph_index: 150 });
+  });
+});

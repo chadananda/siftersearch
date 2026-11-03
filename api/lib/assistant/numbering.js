@@ -33,3 +33,25 @@ export function quranRange(L, { sura, verse = null, verseEnd = null }) {
   const a = quranIndex(L, sura, verse), b = quranIndex(L, sura, verseEnd ?? verse);
   return a == null || b == null || b < a ? null : [a, b];
 }
+
+/** Works whose chapters/talks carry no number in the text: chapter n starts at starts[n-1] and runs to the next start - 1 (the
+ *  last to `end`). Verified 11-03 against the editions' section outlines and the published tables of contents:
+ *  SAQ = its 84 chapters (doc 20911, 788 ¶; the outline's level/end_index are unreliable, so starts are listed);
+ *  Paris Talks = Part One's 39 talks (doc 20908, 819 ¶; the outline hides talk 1's title and some talks have no date). */
+export const WORK_SECTIONS = Object.freeze([
+  Object.freeze({ title: /answered\s+questions/i, paragraphCount: 788, unit: 'chapter', end: 787, starts: Object.freeze([
+    7, 14, 22, 40, 46, 52, 57, 73, 76, 102, 124, 169, 177, 191, 206, 215, 225, 232, 238, 246, 255, 265, 274, 281, 285, 293, 299, 309, 315, 328,
+    341, 348, 355, 365, 375, 381, 390, 403, 412, 419, 428, 433, 439, 451, 464, 474, 482, 493, 505, 514, 520, 525, 531, 538, 545, 552, 556, 569, 574, 584,
+    592, 598, 605, 608, 615, 619, 627, 637, 640, 647, 656, 665, 672, 680, 687, 689, 695, 709, 722, 726, 733, 748, 767, 775]) }),
+  Object.freeze({ title: /paris\s+talks/i, paragraphCount: 819, unit: 'talk', end: 548, starts: Object.freeze([
+    0, 17, 24, 34, 43, 69, 82, 89, 98, 125, 136, 149, 160, 180, 191, 203, 213, 226, 233, 245, 261, 267, 278, 286, 298, 319, 328, 339, 362, 403,
+    413, 423, 438, 463, 473, 489, 500, 510, 523]) }),
+]);
+
+/** A work (doc { title, paragraph_count }) + number → { unit, num, from, to } paragraph range, or null when no table fits the
+ *  edition (title or paragraph count differ) or the number is out of range. Pure. */
+export function sectionRange(doc, n) {
+  const t = WORK_SECTIONS.find((w) => w.title.test(String(doc?.title || '')) && Number(doc?.paragraph_count) === w.paragraphCount);
+  if (!t || !(n >= 1 && n <= t.starts.length)) return null;
+  return { unit: t.unit, num: n, from: t.starts[n - 1], to: n < t.starts.length ? t.starts[n] - 1 : t.end };
+}

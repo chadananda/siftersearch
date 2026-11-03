@@ -5,6 +5,7 @@
 import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { findTitled, titleCandidates } from './work-request.js';
+import { sectionRange } from './numbering.js';
 
 const ROMAN = /^(?=[ivxlcdm]+$)m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$/i;
 const romanToInt = (r) => { const v = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 }; let n = 0, p = 0;
@@ -43,6 +44,22 @@ export function holds(text, phrase) {
   return { exact, near: exact || w.filter((x) => ` ${f} `.includes(` ${x} `)).length >= Math.ceil(w.length * 0.7) };
 }
 
+const passageOf = (doc, row, url) => ({ id: row.id, text: row.text, title: doc.title, author: doc.author, document_id: doc.id,
+  paragraph_index: row.paragraph_index, religion: doc.religion, collection: doc.collection, language: doc.language, source_url: url || null });
+/** Works that number chapters/talks only by order (SAQ, Paris Talks): numbering.js's per-edition table → the chapter's
+ *  opening paragraphs (heading rows dropped). The edition must be the work Jev's title matched or one of its other copies. */
+async function bySectionTable(w, ref, deps, link) {
+  const doc = [w.doc, ...(w.others || [])].find((d) => d && sectionRange(d, ref.num));
+  if (!doc) return null;
+  const section = sectionRange(doc, ref.num);
+  const inRange = deps.paragraphsInRange || (await import('../paragraphs-repo.js')).paragraphsInRange;
+  const rows = (await inRange(doc.id, section.from, section.to).catch(() => []))
+    .filter((r) => String(r.text || '').trim() && !/^\s*#/.test(r.text) && !(r.heading && r.text.trim() === r.heading.trim())).slice(0, 3);
+  if (!rows.length) return null;
+  const linked = await link(rows.map((r) => ({ id: r.id, doc_id: doc.id, paragraph_index: r.paragraph_index, text: r.text, title: doc.title }))).catch(() => []);
+  return { kind: 'reference', ref, section, work: { ...w, doc }, passages: rows.map((r, i) => passageOf(doc, r, linked[i]?.url)) };
+}
+
 const quoteStrip = (t) => stripMarkup(t).replace(/^["“„«'‘\s]+|["”»'’.!?\s]+$/g, '').trim();
 
 /**
@@ -73,8 +90,9 @@ export async function resolveLookup(messages, deps = {}) {
     }
     // no display numbers (Dhammapada, Paris Talks, SAQ): the work's own chapter headings carry the number
     if (!row) row = byHeadingNumber(await (deps.headingStarts || repo.headingStarts || (await import('../paragraphs-repo.js')).headingStarts)(w.doc.id).catch(() => []), ref.num);
-    if (!row || !String(row.text || '').trim()) return null;
     const link = deps.withLinks || (await import('../hit-links.js')).withLinks;
+    if (!row) return done(await bySectionTable(w, ref, deps, link));
+    if (!String(row.text || '').trim()) return null;
     const [h] = await link([{ id: row.id, doc_id: w.doc.id, paragraph_index: row.paragraph_index, text: row.text, title: w.doc.title }]).catch(() => [null]);
     return done({ kind: 'reference', ref, work: w, passages: [{ id: row.id, text: row.text, title: w.doc.title, author: w.doc.author, document_id: w.doc.id,
       paragraph_index: row.paragraph_index, religion: w.doc.religion, collection: w.doc.collection, language: w.doc.language, source_url: h?.url || null }] });
