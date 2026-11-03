@@ -223,6 +223,7 @@ export const MODEL_REGISTRY = {
     type: 'chat',
     pricing: { input: 0.0001, output: 0.0005 },            // $0.10 / $0.50 per 1M on prompts up to 100k tokens
     longContext: { threshold: 100000, input: 0.0005, output: 0.0025 },   // 5× above 100k ($0.50 / $2.50) — keep calls under it
+    thinkingDefault: false,   // Chad 11-03: Haiku runs WITHOUT thinking (fast + cheap) unless a caller asks — thinkingParam()
     batch: 0.5,                                             // Message Batches: half price
     cacheRead: 0.1,
     contextWindow: 1000000,                                 // accepted; priced 5× past 100k
@@ -634,6 +635,22 @@ export function getModel(modelId) {
 export function getModelPricing(modelId) {
   const model = MODEL_REGISTRY[modelId];
   return model?.pricing || { input: 0, output: 0 };
+}
+
+/** The Anthropic `thinking` request for a call: false → disabled; an object → as given; true → the model's own default
+ *  (Haiku 5.5 thinks); unset → the registry's thinkingDefault (Haiku: false → disabled, Chad 11-03). → param | undefined. */
+export function thinkingParam(modelId, requested) {
+  if (requested === false) return { type: 'disabled' };
+  if (requested && typeof requested === 'object') return requested;
+  if (requested === true) return undefined;
+  return MODEL_REGISTRY[modelId]?.thinkingDefault === false ? { type: 'disabled' } : undefined;
+}
+
+/** A model's long-context PRICE boundary in prompt tokens (Haiku 5.5: 100k, 5× past it) — the registry value, or the
+ *  env override LONG_CONTEXT_THRESHOLD_<ID> (e.g. LONG_CONTEXT_THRESHOLD_CLAUDE_HAIKU_5_5) when Anthropic moves it. */
+export function longContextThreshold(modelId) {
+  const env = Number(process.env[`LONG_CONTEXT_THRESHOLD_${String(modelId || '').toUpperCase().replace(/[^A-Z0-9]/g, '_')}`]);
+  return env > 0 ? env : (MODEL_REGISTRY[modelId]?.longContext?.threshold ?? null);
 }
 
 /** Pricing for a call of this prompt size: a model with a longContext block bills its surcharged rates past the

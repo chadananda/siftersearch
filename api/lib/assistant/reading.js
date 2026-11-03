@@ -14,8 +14,9 @@ import { textRequest } from './text-request.js';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { modelFor } from '../model-roles.js';
-import { clientFor } from '../role-client.js';
+import { clientFor, thinkingFields } from '../role-client.js';
 import { getModel } from '../model-registry.js';
+import { guardLongContext } from '../anthropic-policy.js';
 import { logAIUsage } from '../ai-services.js';
 import { effectiveAuthor } from '../authorship/effective.js';
 
@@ -35,11 +36,12 @@ export function jsonOf(text) {
 
 export async function llmJson({ provider, model, system, user, maxTokens = 3000, caller, timeoutMs = 120000 }) {
   const reg = getModel(model) || {};
+  guardLongContext({ model, messages: [{ content: system }, { content: user }], caller });
   const res = await clientFor(provider).chat.completions.create({
     model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     [reg.maxTokensParam || 'max_tokens']: maxTokens,
     ...(reg.noTemperature ? {} : { temperature: 0.2 }),
-    ...(provider === 'deepseek' ? { thinking: { type: 'disabled' } } : {}),
+    ...thinkingFields(provider, model),   // Haiku 5.5: thinking off (Chad 11-03)
   }, { timeout: timeoutMs });
   const text = res.choices?.[0]?.message?.content || '';
   logAIUsage({ provider: provider === 'gemini' ? 'google' : provider, model, serviceType: 'chat', caller,

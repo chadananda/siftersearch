@@ -14,8 +14,8 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { logAIUsage } from './ai-services.js';
 import { currentAIContext } from './ai-context.js';   // ambient doc/stage attribution for every logged call
-import { getModel } from './model-registry.js';
-import { assertAnthropicAllowed, assertUnderLongContext } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
+import { getModel, thinkingParam } from './model-registry.js';
+import { assertAnthropicAllowed, guardLongContext } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
 
 // Lazy-initialized clients
 let openaiClient = null;
@@ -94,7 +94,7 @@ export async function chatCompletion(messages, options = {}) {
     const g = currentAIContext() || {};
     assertAnthropicAllowed({ provider, model, lang: g.lang, docId: g.docId, caller: g.caller || options.caller, stage: g.stage, originalLang: g.originalLang, sourceLang: g.sourceLang });
   // never cross a model's long-context price threshold (Haiku 5.5: 5× past 100k) — refuse rather than pay 5×
-  assertUnderLongContext({ model: model, chars: messages.reduce((n, m) => n + String(typeof m.content === 'string' ? m.content : JSON.stringify(m.content || '')).length, 0), threshold: getModel(model)?.longContext?.threshold });
+  guardLongContext({ model, messages, caller: g.caller || options.caller });
   }
 
   const dispatch = () => {
@@ -307,9 +307,9 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream, 
     max_tokens: maxTokens,
     // the 5.5 family rejects `temperature` ("deprecated for this model") — the registry says which (10-13)
     ...(getModel(model)?.noTemperature || temperature == null ? {} : { temperature }),
-    // thinking: false → disabled outright: Haiku 5.5 thinks by default and a tiny max_tokens came back EMPTY (11-01:
-    // the phrase and term extractors returned "" on every call — the whole budget went to a thinking block)
-    ...(thinking === false ? { thinking: { type: 'disabled' } } : {}),
+    // thinking from the registry (thinkingParam): Haiku 5.5 thinks by default, so it runs DISABLED unless the caller passes
+    // thinking:true (Chad 11-03: fast + cheap; 11-01 a tiny max_tokens came back EMPTY — the budget went to thinking)
+    ...((tp) => (tp ? { thinking: tp } : {}))(thinkingParam(model, thinking)),
     ...(systemParam !== undefined && { system: systemParam }),
     messages: otherMsgs.map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',

@@ -7,6 +7,8 @@ import { logAIUsage } from '../ai-services.js';
 import { noteProviderError } from '../spend-alerts.js';
 import { getModel } from '../model-registry.js';
 import { trimCutReply } from './quotes.js';
+import { thinkingFields } from '../role-client.js';
+import { guardLongContext } from '../anthropic-policy.js';
 
 const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1', gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/', anthropic: 'https://api.anthropic.com/v1/' };
 const KEY_ENV = { openai: 'OPENAI_API_KEY', groq: 'GROQ_API_KEY', deepseek: 'DEEPSEEK_API_KEY', gemini: 'GEMINI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' };
@@ -43,9 +45,10 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
     stream: true,
     stream_options: { include_usage: true },   // the final chunk reports tokens → spend (ai_usage)
     ...(effort ? { reasoning_effort: effort } : {}),
-    // DeepSeek v4-flash thinks unless told not to — TOP-LEVEL key, not extra_body (see ai-services chatDeepSeek).
-    ...(llm.provider === 'deepseek' ? { thinking: { type: 'disabled' } } : {}),
+    // DeepSeek v4-flash thinks unless told not to; Haiku 5.5 likewise — off unless llm.thinking asks (Chad 11-03). TOP-LEVEL key.
+    ...thinkingFields(llm.provider, llm.model, llm.thinking),
   };
+  guardLongContext({ model: llm.model, messages: params.messages, caller: llm.caller || 'anis-craft' });   // the cheap price tier
   let stream;
   try {
     stream = await client(llm.provider).chat.completions.create(params, signal ? { signal } : {});

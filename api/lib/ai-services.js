@@ -20,10 +20,10 @@ import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { query, telemetryQuery } from './db.js';
-import { getModel, effectivePricing } from './model-registry.js';
+import { getModel, effectivePricing, thinkingParam } from './model-registry.js';
 import { currentAIContext, withAIContext } from './ai-context.js';
 import { modelFor } from './model-roles.js';
-import { assertAnthropicAllowed, assertUnderLongContext } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
+import { assertAnthropicAllowed, guardLongContext, notePaidLongContext } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
 import { nowInPeak } from './pipeline/peak.js';
 
 // =============================================================================
@@ -258,6 +258,8 @@ export function logAIUsage({
   }
   // The cost is computed NOW (pure), so a per-turn meter can read it (ai-context `meter`: Anís records model + cost per
   // reply for the conversation digest); only the telemetry write is deferred.
+  // the BILLED prompt past a model's long-context price boundary → a warning naming the caller (Chad 11-03: the cheap tier)
+  if (success) notePaidLongContext({ model, promptTokens: promptTokens || totalTokens, caller });
   let cost = 0;
   try {
     // The REGISTRY is the price source of truth; MODEL_PRICING is a legacy duplicate kept only for ids the
@@ -616,7 +618,7 @@ async function chatAnthropic(messages, opts) {
   const g = currentAIContext() || {};
   assertAnthropicAllowed({ provider: 'anthropic', model: opts.model, lang: g.lang, docId: g.docId, caller: g.caller || opts.caller, stage: g.stage, originalLang: g.originalLang, sourceLang: g.sourceLang });
   // never cross a model's long-context price threshold (Haiku 5.5: 5× past 100k) — refuse rather than pay 5×
-  assertUnderLongContext({ model: opts.model, chars: messages.reduce((n, m) => n + String(typeof m.content === 'string' ? m.content : JSON.stringify(m.content || '')).length, 0), threshold: getModel(opts.model)?.longContext?.threshold });
+  guardLongContext({ model: opts.model, messages, caller: g.caller || opts.caller });
   const client = getClient('anthropic');
 
   // Convert to Anthropic format
@@ -644,7 +646,8 @@ async function chatAnthropic(messages, opts) {
     // the 5.5 family rejects `temperature` (400 "deprecated for this model") — the registry says which models
     ...(getModel(opts.model)?.noTemperature || opts.temperature == null ? {} : { temperature: opts.temperature }),
     ...(systemParam && { system: systemParam }),
-    ...(opts.thinking ? { thinking: opts.thinking } : {}),
+    // registry default: Haiku 5.5 runs with thinking DISABLED unless opts.thinking asks (Chad 11-03)
+    ...((tp) => (tp ? { thinking: tp } : {}))(thinkingParam(opts.model, opts.thinking)),
     messages: otherMsgs.map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.content

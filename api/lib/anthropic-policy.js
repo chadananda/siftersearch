@@ -16,6 +16,7 @@
 // The approved doc-set is DERIVED from profile.js so it can never drift from the routing table: to authorise a
 // new Persian book, pin it lang:'fa' in PROFILE_OVERRIDES and it becomes eligible automatically.
 import { PROFILE_OVERRIDES } from './pipeline/profile.js';
+import { longContextThreshold } from './model-registry.js';
 import { CORE_ROSTER } from './rag/concepts/core-roster.js';
 import { ALL_ORIGINAL_TARGET_IDS } from './rag/concepts/originals-targets.js';
 
@@ -120,17 +121,50 @@ export function isInteractiveAllowed({ stage, model } = {}) {
   return String(stage || '').startsWith('interactive:') && ['claude-sonnet-5-5', HAIKU].includes(String(model || ''));
 }
 
-/** Refuse a prompt near a model's long-context threshold (Haiku 5.5: 5× price past 100k tokens). ~3.5 chars/token,
- *  so the estimate errs high. → throws, or returns the estimate. */
-export function assertUnderLongContext({ model, chars, threshold, margin = 0.95 }) {
+// Haiku 5.5's tokenizer, MEASURED 11-03 (usage.prompt_tokens on real text): English prose/markdown 2.5–2.7 chars per token,
+// Arabic/Persian 1.5. The old flat 3.5 under-counted English by ~40% and Arabic by 2.3×, so a prompt it passed could bill
+// the 5× tier. Env dials: LONG_CONTEXT_CHARS_PER_TOKEN (Latin etc.), LONG_CONTEXT_ARABIC_CHARS_PER_TOKEN.
+const ARABIC = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+const cpt = () => Number(process.env.LONG_CONTEXT_CHARS_PER_TOKEN) || 2.5;
+const cptArabic = () => Number(process.env.LONG_CONTEXT_ARABIC_CHARS_PER_TOKEN) || 1.5;
+
+/** Refuse a prompt near a model's long-context PRICE threshold (Haiku 5.5: 5× past 100k tokens) — never pay the expensive
+ *  tier silently. Estimate = other chars / 2.5 + Arabic-script chars / 1.5 (measured, above); margin LONG_CONTEXT_MARGIN
+ *  (default 0.95). The BILLED count is checked after every call (notePaidLongContext). Logs the caller, then throws code
+ *  LONG_CONTEXT so the caller trims or splits. → throws, or returns the estimate. */
+export function assertUnderLongContext({ model, chars, arabicChars = 0, threshold, margin = Number(process.env.LONG_CONTEXT_MARGIN) || 0.95, caller = null }) {
   if (!threshold) return 0;
-  const est = Math.ceil(chars / 3.5);
+  const est = Math.ceil(Math.max(0, chars - arabicChars) / cpt() + arabicChars / cptArabic());
   if (est > threshold * margin) {
-    const e = new Error(`prompt ~${est} tokens is past ${Math.round(margin * 100)}% of ${model}'s ${threshold}-token long-context price threshold — split the request`);
+    console.warn(JSON.stringify({ long_context: 'refused', model, caller: caller || 'unknown', est_tokens: est, threshold }));
+    const e = new Error(`prompt ~${est} tokens is past ${Math.round(margin * 100)}% of ${model}'s ${threshold}-token long-context price threshold (caller ${caller || 'unknown'}) — trim or split the request`);
     e.fatal = false; e.code = 'LONG_CONTEXT';
     throw e;
   }
   return est;
+}
+
+const messageText = (m) => String(typeof m?.content === 'string' ? m.content : JSON.stringify(m?.content || ''))
+  + (m?.tool_calls ? JSON.stringify(m.tool_calls) : '');
+/** Characters in a chat prompt (string or block content, tool calls included) and how many are Arabic-script. Pure. */
+export function promptChars(messages = []) {
+  let chars = 0, arabicChars = 0;
+  for (const m of messages) { const t = messageText(m); chars += t.length; arabicChars += (t.match(ARABIC) || []).length; }
+  return { chars, arabicChars };
+}
+
+/** The pre-call guard for any client: this model's boundary from the registry (env-overridable). → the estimate. */
+export const guardLongContext = ({ model, messages, caller }) => {
+  const threshold = longContextThreshold(model);
+  return threshold ? assertUnderLongContext({ model, ...promptChars(messages), threshold, caller }) : 0;
+};
+
+/** After a call: the BILLED prompt crossed the boundary (the estimate let it through) → warn with the caller. → boolean. */
+export function notePaidLongContext({ model, promptTokens, caller }) {
+  const threshold = longContextThreshold(model);
+  if (!threshold || !(promptTokens > threshold)) return false;
+  console.warn(JSON.stringify({ long_context: 'PAID the long-context rate', model, caller: caller || 'unknown', prompt_tokens: promptTokens, threshold }));
+  return true;
 }
 
 export function assertAnthropicAllowed({ provider, model, lang, docId, caller, stage, originalLang, sourceLang } = {}) {

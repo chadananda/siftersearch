@@ -5,8 +5,8 @@
 // policy as stage `interactive:<role>`. Usage is logged for every call (streams: from the final usage chunk). Deps: openai SDK, model-roles, registry.
 import OpenAI from 'openai';
 import { modelFor, retireDeepSeek } from './model-roles.js';
-import { getModel } from './model-registry.js';
-import { assertAnthropicAllowed } from './anthropic-policy.js';
+import { getModel, thinkingParam } from './model-registry.js';
+import { assertAnthropicAllowed, guardLongContext } from './anthropic-policy.js';
 import { logAIUsage } from './ai-services.js';
 
 const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1',
@@ -16,24 +16,35 @@ const clients = {};
 export const clientFor = (provider) => (clients[provider] ||= new OpenAI({ apiKey: process.env[KEY_ENV[provider]], maxRetries: 1,
   ...(BASE_URL[provider] ? { baseURL: BASE_URL[provider] } : {}) }));
 
+/** Pure: the top-level `thinking` field for an OpenAI-compatible request (a top-level key — openai@6 for Node drops
+ *  extra_body). DeepSeek: always disabled. Anthropic: the registry default (Haiku 5.5 → disabled unless `requested`,
+ *  Chad 11-03 "fast and cheap"). Others: nothing. */
+export function thinkingFields(provider, model, requested) {
+  if (provider === 'deepseek') return { thinking: { type: 'disabled' } };
+  if (provider !== 'anthropic') return {};
+  const tp = thinkingParam(model, requested);
+  return tp ? { thinking: tp } : {};
+}
+
 /** Pure: the request a role's model accepts — model set, temperature dropped where rejected, the right max-tokens key,
  *  response_format dropped where the compat endpoint does not take it. */
 export function shapeParams(params, { provider, model }) {
   const reg = getModel(model) || {};
-  const { max_tokens: maxTokens, max_completion_tokens: maxCompletion, temperature, response_format: responseFormat, ...rest } = params;
+  const { max_tokens: maxTokens, max_completion_tokens: maxCompletion, temperature, response_format: responseFormat, thinking, ...rest } = params;
   const limit = maxCompletion ?? maxTokens;
   return {
     ...rest, model,
     ...(reg.noTemperature || temperature == null ? {} : { temperature }),
     ...(limit != null ? { [reg.maxTokensParam || 'max_tokens']: limit } : {}),
     ...(responseFormat && provider !== 'anthropic' ? { response_format: responseFormat } : {}),
-    ...(provider === 'deepseek' ? { thinking: { type: 'disabled' } } : {}),
+    ...thinkingFields(provider, model, thinking),
   };
 }
 
 export async function roleCreate(role, params, opts = {}) {
   const { provider, model } = retireDeepSeek(modelFor(role));
   if (provider === 'anthropic') assertAnthropicAllowed({ provider, model, stage: `interactive:${role}`, caller: role });
+  guardLongContext({ model, messages: params.messages || [], caller: role });   // the cheap price tier, never silently past it
   const shaped = shapeParams(params, { provider, model });
   if (params.stream) shaped.stream_options = { include_usage: true, ...params.stream_options };
   const res = await clientFor(provider).chat.completions.create(shaped, opts);
