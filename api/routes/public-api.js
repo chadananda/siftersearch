@@ -134,7 +134,7 @@ function logApiSearch({ query: q, apiKeyId, resultCount, durationMs, searchType,
 /**
  * API key authentication preHandler
  */
-async function apiKeyAuth(request, reply) {
+export async function apiKeyAuth(request, reply) {
   // Health endpoint is public — skip auth
   if (request.url.endsWith('/health')) return;
 

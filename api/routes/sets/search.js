@@ -23,6 +23,7 @@ import deweyRoutes from '../dewey.js';
 import deweyUploadRoutes from '../dewey-upload.js';
 import deweyMailRoutes from '../dewey-mail.js';
 import publicApiRoutes from '../public-api.js';
+import anisToolRoutes from '../anis-tools.js';
 import contentRoutes from '../content.js';
 import deployRoutes from '../deploy.js';
 import forumRoutes from '../forum.js';
@@ -62,6 +63,7 @@ export const SEARCH_ROUTES = [
   [deweyUploadRoutes, { prefix: '/api/dewey/upload' }],
   [deweyMailRoutes, { prefix: '/api/v1/dewey-mail' }],   // Dewey's email (internal key; worker/mail/dewey.js)
   [publicApiRoutes, { prefix: '/api/v1' }],
+  [anisToolRoutes, { prefix: '/api/v1' }],   // the Anís tools API (POST /api/v1/tools/<name>; docs/architecture/anis-tools-api.md)
   [contentRoutes, { prefix: '/api/v1' }],
   [deployRoutes, { prefix: '/api/deploy' }],
   [forumRoutes, { prefix: '/api/forum' }],
