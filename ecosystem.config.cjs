@@ -762,16 +762,17 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
-      // Monthly model re-assessment (Chad 10-11): roles × registry × 30-day spend → ONE [ACTION] email listing roles to
-      // re-measure (scripts/ops/model-review.mjs, table in api/lib/model-roles.js). 1st of the month, 08:00.
+      // Weekly model review (Chad 11-03): roles × registry × 30-day spend → flags; every 2 weeks a flagged role with an eval is
+      // re-measured (LLM/API work, budget MODEL_REVIEW_BUDGET_USD) → a section in data/run/maintenance/model-review.json for the
+      // weekly maintenance email; it sends no mail itself (scripts/ops/model-review.mjs, table in api/lib/model-roles.js). Mondays 06:00.
       name: 'siftersearch-model-review',
       script: 'scripts/ops/model-review.mjs',
-      args: '--alert',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),   // TIER 2 (Chad 11-02: search first, indexing second, all other work lower)
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
       autorestart: false,
-      cron_restart: '0 8 1 * *',
+      cron_restart: '0 6 * * 1',
       watch: false,
       env: { NODE_ENV: 'production' },
       error_file: './logs/model-review-error.log',

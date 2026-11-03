@@ -234,7 +234,7 @@ API (ours) may be extended for it (e.g. a "Shoghi Effendi word frequency chart" 
 - [x] Hollow check: 0 hollow books corpus-wide, 1 empty row (doc 14779); `scripts/ops/hollow-report.mjs`
 
 ## Parked until cleanup is done
-- [x] Model roles: ONE table `api/lib/model-roles.js` + `modelFor(role)`; monthly review (`siftersearch-model-review`, 1st 08:00, [ACTION] email); literal-model ratchet (34 files frozen)
+- [x] Model roles: ONE table `api/lib/model-roles.js` + `modelFor(role)`; weekly review (`siftersearch-model-review`, Mon 06:00; re-measures flagged roles with an `eval` every 2 weeks, budget-capped → section in `data/run/maintenance/model-review.json` for the weekly maintenance email, no mail of its own — 11-03); literal-model ratchet (34 files frozen)
 - [~] Model bake-off (in SifterSearch, no Claude Code needed): scoring + blind judge + multilingual scenarios DONE;
       next: runner (cost estimate + cap) → results in DB → monthly new-model detection (provider model-list APIs) →
       role assignments in DB (switch without deploy) → /model-refresh skill as a shortcut

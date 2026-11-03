@@ -1,10 +1,12 @@
 // WHICH model does WHICH job — the ONE table (Chad 10-11: "when we use llms in search strategies, we need to periodically
 // re-assess what models are targeted to use better, faster, cheaper newer models like haiku 5.5"). Call sites ask
-// modelFor('<role>') instead of naming a model; scripts/ops/model-review.mjs reads this table monthly and flags roles whose
-// model is deprecated, overdue for review, or beaten by a newer/cheaper registry model of the same kind.
+// modelFor('<role>') instead of naming a model; scripts/ops/model-review.mjs reads this table weekly, flags roles whose model is
+// deprecated, overdue for review, or beaten by a newer/cheaper registry model of the same kind, and every 2 weeks re-measures a
+// flagged role that declares an `eval` (Chad 11-03) — the result is a choice in the weekly maintenance email, never a switch.
 // Env override per role: MODEL_ROLE_<ROLE_IN_CAPS>="provider:model" (e.g. MODEL_ROLE_ANIS_ANSWER=anthropic:claude-haiku-5-5).
 
-/** reviewed = when this choice was last measured against the alternatives (ISO date). needs = what the job requires. */
+/** reviewed = when this choice was last measured against the alternatives (ISO date). needs = what the job requires.
+ *  eval = the harness that measures it (EVALS in api/lib/model-review.js); evalMode = its --mode. No eval = can't be measured yet. */
 export const MODEL_ROLES = {
   // ── search strategies (latency-critical) ──
   'search-planner': { provider: 'systemone', model: 'jev-latest', reviewed: '2026-09-24', needs: ['fast', 'json'],
@@ -13,7 +15,7 @@ export const MODEL_ROLES = {
     why: 'book hunt: which of several catalogue records is the book we hold (only when deterministic matching ties)' },
   'assistant-triage': { provider: 'systemone', model: 'jev-latest', reviewed: '2026-10-07', needs: ['fast', 'classification'],
     why: 'gate before any paid call; ms latency' },
-  'assistant-answer': { provider: 'gemini', model: 'gemini-3.5-flash-lite', reviewed: '2026-10-05', needs: ['fast', 'multilingual', 'grounded-writing'],
+  'assistant-answer': { provider: 'gemini', model: 'gemini-3.5-flash-lite', reviewed: '2026-10-05', needs: ['fast', 'multilingual', 'grounded-writing'], eval: 'anis-writer-ab', evalMode: 'current',
     why: 'one fast call over raw search; ANIS_LLM env switches it (kept for compatibility)' },
   'assistant-term': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['fast', 'tiny-output'],
     why: 'extract the word a CTAI question is about (20 tokens)' },
@@ -85,7 +87,7 @@ export const MODEL_ROLES = {
     why: 'plans the research loop over the library tools (Chad 10-19: "Even Haiku 5.5 might be sufficient for planning research")' },
   'anis-agent': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-11-01', needs: ['tool-use', 'grounded-writing', 'multilingual'],
     why: 'one loop that researches AND writes (agent.js). Quality first, speed earned later (Chad 11-01: "start with quality answers that are slow and then have a mechanism to improve speed"); Haiku 5.5 wrote 3.1 vs Sonnet 7.45 on 10-19' },
-  'anis-writer': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-19', needs: ['grounded-writing', 'multilingual'],
+  'anis-writer': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-19', needs: ['grounded-writing', 'multilingual'], eval: 'anis-writer-ab',
     why: 'battery 10-19 (10 real questions, Opus blind judge): Sonnet 5.5 writer mean 7.45, beat Perplexity 10/10; Haiku 5.5 writer 3.1 (blank/cut-off replies); old pipeline 5.0' },
   'anis-read-attachment': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-23', needs: ['vision', 'multilingual', 'persian-arabic-script'],
     why: 'reads a photo a reader attaches to a letter (10-23 Liliane: a Persian prayer-book page in nastaliq was dropped unread) — verbatim transcription in its own script; one call per image, rare' },
