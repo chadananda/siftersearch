@@ -1,10 +1,11 @@
 <title>Anís Vision</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650&family=Public+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&family=Noto+Naskh+Arabic:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650&family=Public+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Naskh+Arabic:wght@500&display=swap">
 <style>
-:root{--bg:#f6f7f9;--paper:#ffffff;--ink:#17202b;--muted:#5a6675;--line:#d9dee5;--accent:#0f6e74;--accent-soft:#e2f1f1;--warn:#9a5b00;--warn-soft:#fbf0de;--bar:#9cc9cb;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161c;--paper:#18202a;--ink:#e6ebf1;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#11161c;--paper:#18202a;--ink:#e6ebf1;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}
-body{background:var(--bg);color:var(--ink);font:15px/1.6 "Public Sans",system-ui,sans-serif;padding:0 16px}
+:root{--bg:#f6f7f9;--paper:#ffffff;--ink:#0d141c;--text:#3b4653;--muted:#5a6675;--line:#d9dee5;--accent:#0f6e74;--accent-soft:#e2f1f1;--warn:#9a5b00;--warn-soft:#fbf0de;--bar:#9cc9cb;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161c;--paper:#18202a;--ink:#f4f7fa;--text:#b4bfcb;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11161c;--paper:#18202a;--ink:#f4f7fa;--text:#b4bfcb;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}
+body{background:var(--bg);color:var(--text);font:15px/1.65 "Public Sans",system-ui,sans-serif;padding:0 16px}
+b,strong,h1,h2,h3{color:var(--ink)} b,strong{font-weight:700}
 main{max-width:900px;margin:0 auto;padding-block:40px 64px;display:flex;flex-direction:column;gap:40px}
 h1,h2,h3{font-family:Literata,Georgia,serif;text-wrap:balance;margin:0;font-weight:650}
 h1{font-size:2rem;line-height:1.2}
@@ -28,14 +29,15 @@ td.n{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;wh
 ul,ol{margin:0;padding-left:20px;max-width:70ch} li{margin-bottom:6px}
 q{font-style:italic;quotes:"“" "”"}
 .note{color:var(--muted);font-size:.85rem}
-.flow{display:grid;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;font-size:.82rem;max-width:760px}
-.flow .tier{display:flex;flex-wrap:wrap;align-items:center;gap:5px;color:var(--muted)}
-.flow span{padding:1px 7px;border-radius:3px;border:1px solid var(--line);color:var(--ink);white-space:nowrap}
-.flow .cost{border:0;padding:0;width:7.5em;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-.flow .j{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
-.flow .l{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
-.flow .ok,.flow .no{border:0;padding:0;color:var(--muted)}
-.flow .legend{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.72rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px}
+.flow{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;max-width:720px;overflow-x:auto}
+.flow svg{display:block;width:100%;min-width:560px;font:12px "Public Sans",system-ui,sans-serif}
+.flow text{fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.flow .t{fill:var(--paper);stroke:var(--line)} .flow .j{fill:var(--accent-soft);stroke:var(--accent)} .flow .l{fill:var(--warn-soft);stroke:var(--warn);stroke-dasharray:4 3}
+.flow .w{fill:var(--accent);stroke:var(--accent)} .flow .wt{fill:var(--paper);font-weight:600}
+.flow path{stroke:var(--muted);fill:none;stroke-width:1.2} .flow marker path{fill:var(--muted);stroke:none}
+.flow .s{fill:var(--muted);font-size:10.5px;text-anchor:start} .flow .yn{fill:var(--muted);font-size:10.5px}
+.flow .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.75rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.flow .legend i{display:inline-block;width:12px;height:10px;border:1px solid;border-radius:3px;vertical-align:-1px;margin-right:4px}
 .group{display:flex;flex-direction:column;gap:14px}
 .gtag{font:600 .7rem "JetBrains Mono",monospace;color:var(--accent);letter-spacing:.06em}
 .scen{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
@@ -282,8 +284,8 @@ q{font-style:italic;quotes:"“" "”"}
     <li><b>Reply in three parts.</b> At once: what he understood and is doing ("Looking for what Bahá'u'lláh and the Buddha say about the soul after death…"), then progress. Then the short answer, streamed. Then the details, only when warranted. One writing step produces the last two, so nothing is said twice.</li>
   </ol>
   <h3>Inside a strategy</h3>
-  <p>Each strategy is a decision tree: a custom flow chart of decisions and tools, built for its request type. Tools are shared and reused, both across strategies and within one path. Search often runs twice, the second time with what the first found. Every strategy ends the same way: a <b>format decision</b> (which format best presents the data of this answer?), and then the data and the chosen format go to the writing model for output. The writing model writes. It does not decide what to search.</p>
-  <p>Steps differ in cost, and a strategy is designed to stay near the cheap end:</p>
+  <p>A strategy is a small decision tree of shared tools, built for one request type. Every strategy ends the same way: <b>choose a format</b>, then hand the data and format to the writing model. The writer writes; it never decides what to search.</p>
+  <p>Steps differ in cost. A strategy stays near the cheap end:</p>
   <div class="wrap"><table>
     <tr><th>Step</th><th>Examples</th><th>Cost</th></tr>
     <tr><td>Code check</td><td>quoted words present? exact hit? dates in the data? one result or many?</td><td class="n">≈ 0</td></tr>
@@ -293,16 +295,11 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>Writing model</td><td>the answer, from data and format, once per answer</td><td class="n">seconds, paid</td></tr>
     <tr><td>Research agent</td><td>fallback only</td><td class="n">10–40 s</td></tr>
   </table></div>
-  <p><b>Minimise LLM steps.</b> A fast-LLM step is used only where code can't do the job: quoted words are taken as they are, a single term needs no extraction, and a clear question needs no recasting. Each LLM step on a strategy's path must show in the branch assessment that it changes the result, or it is removed.</p>
-  <p><b>Cheapest path first, LLM only as a fallback.</b> A strategy tries the deterministic route first and escalates only when Jev judges the answer invalid. The quotation trace ("who said 'the earth is but one country'?") is the model, with Jev's decisions in [brackets]:</p>
-  <div class="flow" role="img" aria-label="Quotation trace strategy: three tiers, cheapest first">
-    <div class="tier"><span class="cost">free</span><span class="j">[quotation trace?]</span>→<span>code: quoted block</span>→<span>BM25</span>→<span class="j">[valid?]</span><span class="ok">yes →</span><span class="j">[format]</span></div>
-    <div class="tier"><span class="cost">+1 light LLM</span><span class="no">no →</span><span class="l">extract quote</span>→<span>BM25</span>→<span class="j">[rerank]</span>→<span class="j">[valid?]</span><span class="ok">yes →</span><span class="j">[format]</span></div>
-    <div class="tier"><span class="cost">last resort</span><span class="no">no →</span><span>phrase semantic search</span>→<span class="j">[rerank]</span>→<span class="j">[format]</span></div>
-    <div class="legend"><span class="j">[Jev]</span> <span class="l">LLM step</span> <span>tool / code</span> · every path ends: [format] → writing model</div>
-  </div>
-  <p class="note">Most quotation questions end at the first [valid answer?]: code extraction, one BM25 search, no LLM step before the writing model. The light model runs only when the deterministic search misses, and the semantic phrase search only when that misses too. This is how every strategy is optimised for speed.</p>
-  <p><b>[Format choice] is a bet, to be measured.</b> It means picking the response template, and with it the widgets (passage card, timeline, comparison…), so the writing model fills a shape instead of designing one. The hope is that a filled-in template lets a light, fast model write answers that would otherwise need a slower, smarter one. It stays only if the measurements show it pays: answers with the template and without it, and several fast light models plus template against the smarter model (no model is mandated), compared on the same questions for quality, speed and cost. If it doesn't help, it goes.</p>
+  <p><b>Few LLM steps.</b> Use one only where code can't do the job. Each must prove in testing that it changes the result, or it goes.</p>
+  <p><b>Cheapest path first.</b> Try code and plain search; escalate only when nothing is found. The quotation trace ("who said 'the earth is but one country'?"):</p>
+  <div class="flow"><svg viewBox="0 0 680 178" role="img" aria-label="Quotation trace: code extraction and BM25 first; a light LLM extraction only if nothing is found; phrase semantic search last; every path ends in choosing a format and writing"><defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z"/></marker></defs><rect class="j" x="0" y="10" width="96" height="28" rx="14"/><text x="48.0" y="24">Quotation?</text><rect class="t" x="116" y="10" width="140" height="28" rx="4"/><text x="186.0" y="24">Code: take quoted text</text><rect class="t" x="276" y="10" width="70" height="28" rx="4"/><text x="311.0" y="24">BM25</text><rect class="j" x="466" y="10" width="80" height="28" rx="14"/><text x="506.0" y="24">Found?</text><rect class="l" x="116" y="78" width="140" height="28" rx="4"/><text x="186.0" y="92">Light LLM: extract</text><rect class="t" x="276" y="78" width="70" height="28" rx="4"/><text x="311.0" y="92">BM25</text><rect class="j" x="366" y="78" width="80" height="28" rx="14"/><text x="406.0" y="92">Rerank</text><rect class="j" x="466" y="78" width="80" height="28" rx="14"/><text x="506.0" y="92">Found?</text><rect class="t" x="116" y="146" width="230" height="28" rx="4"/><text x="231.0" y="160">Phrase semantic search</text><rect class="j" x="366" y="146" width="80" height="28" rx="14"/><text x="406.0" y="160">Rerank</text><rect class="w" x="584" y="10" width="92" height="164" rx="6"/><text class="wt" x="630" y="80">Choose</text><text class="wt" x="630" y="96">format,</text><text class="wt" x="630" y="112">then write</text><path d="M96 24H112" marker-end="url(#ah)"/><path d="M256 24H272" marker-end="url(#ah)"/><path d="M346 24H462" marker-end="url(#ah)"/><path d="M546 24H580" marker-end="url(#ah)"/><path d="M256 92H272" marker-end="url(#ah)"/><path d="M346 92H362" marker-end="url(#ah)"/><path d="M446 92H462" marker-end="url(#ah)"/><path d="M546 92H580" marker-end="url(#ah)"/><path d="M346 160H362" marker-end="url(#ah)"/><path d="M446 160H580" marker-end="url(#ah)"/><path d="M506 38V58H186V74" marker-end="url(#ah)"/><path d="M506 106V126H231V142" marker-end="url(#ah)"/><text class="yn" x="564" y="16">yes</text><text class="yn" x="564" y="84">yes</text><text class="yn" x="518" y="51">no</text><text class="yn" x="518" y="119">no</text><text class="s" x="0" y="50">free</text><text class="s" x="0" y="92">+1 light LLM</text><text class="s" x="0" y="160">last resort</text></svg><div class="legend"><span><i style="background:var(--accent-soft);border-color:var(--accent)"></i>Jev decision</span><span><i style="background:var(--warn-soft);border-color:var(--warn);border-style:dashed"></i>LLM step</span><span><i style="background:var(--paper);border-color:var(--line)"></i>tool or code</span></div></div>
+  <p class="note">Most quotation questions stop on the first row: no LLM step before the writer.</p>
+  <p><b>Choosing a format is a bet, to be measured.</b> Picking the template (passage card, timeline, comparison…) might let a fast, light model write what now needs a smarter one. We compare with and without the template, and light models against the smart one, on quality, brevity, speed and cost. If it doesn't help, it goes.</p>
 
   <div class="wrap"><table>
     <tr><th>Kind of question</th><th>Target time</th></tr>
