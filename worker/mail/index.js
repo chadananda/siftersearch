@@ -20,7 +20,7 @@ import { verifySns, isAmazonUrl } from './sns.js';
 import { composeLetter } from './letter.js';
 import { renderEmail } from '../../api/lib/mail-render.js';
 import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
-import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest, supportLetter, digestPage, inviteReader } from './drafting.js';
+import { reviewPage, draftReplies, reportDrafts, planOutreach, planWelcomes, dailyDigest, supportLetter, digestPage, inviteReader } from './drafting.js';
 import { deweyCron, deweyJobMail, deweyDaily, deweyLive, deweyRequests, injectInbound, pauseRequestsPage, approveRequestsPage, LOGO_BYTES } from './dewey.js';
 import { zeptoEvents } from './zepto.js';
 import { reviewsRoute, queueReviews } from './reviews.js';
@@ -379,8 +379,8 @@ async function adoptThread(db, mail) {
 async function runJob(request, env) {
   if (!internal(request, env)) return json({ error: 'unauthorized' }, 401);
   const job = new URL(request.url).searchParams.get('job');
-  const fn = { draft: draftReplies, outreach: planOutreach, welcome: planWelcomes, digest: dailyDigest, dewey: deweyCron, 'dewey-live': deweyLive, 'dewey-jobs': deweyJobMail, 'dewey-requests': deweyRequests, reviews: queueReviews }[job];
-  if (!fn) return json({ error: 'job must be draft | outreach | welcome | digest | dewey | dewey-live | dewey-jobs | dewey-requests | reviews' }, 400);
+  const fn = { draft: draftReplies, reports: reportDrafts, outreach: planOutreach, welcome: planWelcomes, digest: dailyDigest, dewey: deweyCron, 'dewey-live': deweyLive, 'dewey-jobs': deweyJobMail, 'dewey-requests': deweyRequests, reviews: queueReviews }[job];
+  if (!fn) return json({ error: 'job must be draft | reports | outreach | welcome | digest | dewey | dewey-live | dewey-jobs | dewey-requests | reviews' }, 400);
   const r = await fn(env);
   return json({ ran: job, ...(r && typeof r === 'object' ? r : {}) });
 }
@@ -390,7 +390,7 @@ export async function mailCron(cron, env) {
   if (cron === '0 14 * * *') return dailyDigest(env);
   if (cron === '0 * * * *') return Promise.all([planOutreach(env), deweyDaily(env).catch(() => null), queueReviews(env).catch(() => null)]);   // Dewey's daily work at its hour
   // * * * * * (also fires at :00 — each cron has one job, so nothing runs twice); Dewey's letters every minute beside Anís's
-  return Promise.all([draftReplies(env), deweyCron(env).catch(() => null), deweyJobMail(env).catch(() => null)]);
+  return Promise.all([draftReplies(env), reportDrafts(env).catch(() => null), deweyCron(env).catch(() => null), deweyJobMail(env).catch(() => null)]);
 }
 
 

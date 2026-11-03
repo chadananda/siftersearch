@@ -5,6 +5,8 @@
 //                  people (auto_send_invited; anyone who writes joins the list — Chad 10-12), otherwise a draft + review notice to Chad
 //   planOutreach   hourly, only while outreach_enabled = on: welcome letters (template) for people added to the list with
 //                  no history; then who is due by the rules → tower /anis/outreach → draft
+//   reportDrafts   every minute: finished deep reports waiting in tower's report outbox (/anis/outbox) → a DRAFT (kind 'report')
+//                  + review notice to Chad; never sent without his Send (Chad 11-03, launch)
 //   dailyDigest    once a day: everything that happened, to the reviewer
 //   reviewPage     GET shows the draft (editable) · POST send | discard. GET never changes anything.
 import { bodyHtml, wrapHtml, signatureHtml, stripSignOff, answerBody, composeLetter } from './letter.js';
@@ -107,7 +109,7 @@ async function sendOrReview(env, settings, draft, source) {
 
 async function notifyReviewer(env, settings, draft, source) {
   const link = await reviewUrl(draft.id, env.MAIL_LINK_SECRET);
-  const kind = { outreach: 'Letter Anís wants to start', welcome: 'Welcome letter' }[draft.kind] || 'Reply';
+  const kind = { outreach: 'Letter Anís wants to start', welcome: 'Welcome letter', report: 'Deep report a reader asked for' }[draft.kind] || 'Reply';
   // the draft exactly as the reader will get it (composeLetter = what sendMail sends; letters Anís starts add the pause footer)
   const letter = composeLetter(draft.text, null);
   const text = `${kind} to ${draft.to_addr} — review and send:\n${link}\n\n` +
@@ -116,6 +118,28 @@ async function notifyReviewer(env, settings, draft, source) {
     (source ? `<p style="color:#555">They wrote (<i>${esc(source.subject)}</i>):</p><blockquote style="color:#555;border-left:3px solid #ccc;padding-left:1em">${esc(ownText(source.text).slice(0, 1500)).replace(/\n/g, '<br>')}</blockquote>` : '') +
     `<p style="color:#555">Draft:</p>${letter.html}<p><a href="${link}">Review and send</a></p>`;
   await sendMail(env, { to: settings.reviewer_email, subject: `[Anís draft] ${draft.subject}`, text, html, system: true });
+}
+
+/** Deep reports (Chad 11-03, launch): tower never sends them. Each finished report waits in tower's outbox
+ *  (api/routes/assistant-mail.js GET /outbox); here it becomes a DRAFT row (kind 'report', meta research_id) and Chad gets
+ *  the review link. Only his Send delivers it (rules.js: a report needs approval). Acked once stored; a key already
+ *  stored is acked again, never drafted twice. */
+export async function reportDrafts(env, { call = tower, notify = notifyReviewer } = {}) {
+  const db = env.ANIS_DB;
+  const { mails = [] } = await call(env, '/outbox');
+  let drafted = 0;
+  for (const m of mails.slice(0, 10)) {
+    if (!m?.key || !String(m.to || '').includes('@')) continue;
+    if (!(await db.prepare(`SELECT 1 x FROM mail_messages WHERE mailbox = 'anis' AND direction = 'out' AND kind = 'report' AND meta_json LIKE ?`).bind(`%"key":"${m.key}"%`).first())) {
+      const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, thread_key, error, meta_json)
+        VALUES ('anis', 'report', 'out', 'draft', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, String(m.to).toLowerCase(), m.subject, m.text, m.html ?? toHtml(m.text),
+        `<${m.key}@oceanlibrary.com>`, `deep report ${m.research_id}; held for Chad`, JSON.stringify({ type: 'report', key: m.key, research_id: m.research_id ?? null })).first();
+      await notify(env, await loadSettings(db), draft, null);
+      drafted++;
+    }
+    await call(env, '/outbox/ack', { key: m.key });
+  }
+  return { drafted, waiting: mails.length };
 }
 
 /** New inbound mail to anis@ → a reply draft for review. A few per tick; failures are retried next tick. */
@@ -308,7 +332,7 @@ export async function reviewPage(request, env) {
   const verdict = sendDecision(await sendFacts(db, { ...d, approved: true }, settings), settings);   // would Send work now?
   const src = Number((d.error || '').match(/source:(\d+)/)?.[1]);
   const source = src ? await db.prepare('SELECT subject, text, from_name, created_at FROM mail_messages WHERE id = ?').bind(src).first() : null;
-  return page(`<h1>${{ outreach: 'A letter Anís wants to start', welcome: 'Welcome letter' }[d.kind] || 'Reply'} to ${esc(d.to_addr)}</h1>
+  return page(`<h1>${{ outreach: 'A letter Anís wants to start', welcome: 'Welcome letter', report: 'A deep report a reader asked for' }[d.kind] || 'Reply'} to ${esc(d.to_addr)}</h1>
 <p class="meta">${esc(d.error || '')}</p>
 ${verdict.ok ? '' : `<p class="warn">The rules would block this right now: ${esc(verdict.reason)}</p>`}
 ${source ? `<h3>${esc(source.from_name || d.to_addr)} wrote (${esc(source.created_at)} UTC)</h3><div class="them">${esc(ownText(source.text))}</div>` : ''}

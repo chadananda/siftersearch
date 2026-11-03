@@ -161,8 +161,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
       if (email) {
         const out = await d.reports.deliver({ researchId: offer.researchId, email });
         await d.reports.clear(offerKey).catch(() => {});
-        reply = out.sent ? REPORT_TEXT.sent(email) : REPORT_TEXT.queued(email);
-        Object.assign(dr, { sent: !!out.sent, queued: !!out.queued });
+        reply = out.ready ? REPORT_TEXT.ready(email) : REPORT_TEXT.queued(email);
+        Object.assign(dr, { sent: !!out.sent, drafted: !!out.drafted, queued: !!out.queued });
       } else dr.asked = true;
       onEvent({ type: 'stage', stage: 'craft' }); onEvent({ type: 'text', content: reply });
       const path = await finish(reply, 'report', { deep_report: dr });

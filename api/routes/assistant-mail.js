@@ -46,6 +46,19 @@ export default async function anisRoutes(fastify) {
   };
   const who = (email) => { rememberCorrespondent(email); return `email:${emailHash(email)}`; };   // admin Threads names them
 
+  // THE REPORT OUTBOX (Chad 11-03, launch: Chad approves every letter to a new correspondent). Finished deep reports wait
+  // here; the Worker (worker/mail/drafting.js reportDrafts) stores each as a review DRAFT, then acks. Tower never sends them.
+  fastify.get('/outbox', async (request, reply) => {
+    if (!internalOnly(request, reply)) return;
+    const { reportOutbox } = await import('../lib/assistant/deep-report.js');
+    return { mails: await reportOutbox().list() };
+  });
+  fastify.post('/outbox/ack', async (request, reply) => {
+    if (!internalOnly(request, reply)) return;
+    const { reportOutbox } = await import('../lib/assistant/deep-report.js');
+    return { ok: await reportOutbox().ack(String(request.body?.key || '')) };
+  });
+
   // The daily digest's conversations (worker/mail/drafting.js dailyDigest renders and sends them): every round of the last
   // `hours`, each with its audit; the reviewer's own questions excluded (?exclude=email,…).
   fastify.get('/digest', async (request, reply) => {

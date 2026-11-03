@@ -1,7 +1,10 @@
 // Deep reports (Chad 11-03): when Jev's triage says depth = deep_report, deep research runs as a JOB on the deep-research
 // worker queue (never inline); the finished record becomes a report (JSON + HTML/markdown/text) sent by mail. Chat offers
 // it; Jev reads acceptance from the history (triage accepts_offer), never a word rule. Deps: deep-research.js, services/email.js.
-import { mkdirSync, readFileSync, writeFileSync, rmSync, mkdtempSync } from 'node:fs';
+// DELIVERY (Chad 11-03, launch): a report is never sent from tower. It goes to the report OUTBOX; the Worker's mail system
+// pulls it (GET /api/v1/anis/outbox, worker/mail/drafting.js reportDrafts) and stores it as a draft Chad approves.
+// ANIS_REPORT_SEND=direct (off by default) restores sending straight from tower after the launch period.
+import { mkdirSync, readFileSync, writeFileSync, rmSync, mkdtempSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
@@ -9,8 +12,8 @@ import { createHash } from 'node:crypto';
 export const REPORT_TEXT = {
   offer: 'This question deserves more than one reply can hold, so I have begun a fuller report across the library. Would you like me to email it to you when it is ready?',
   askEmail: 'Gladly. What email address should I send the report to?',
-  sent: (email) => `I have sent the report to ${email}.`,
-  queued: (email) => `The report is still being prepared. I will send it to ${email} as soon as it is finished.`,
+  ready: (email) => `The report is ready. I will send it to ${email} shortly.`,
+  queued: (email) => `The report is still being prepared. I will send it to ${email} when it is finished.`,
   emailFollows: 'A fuller report on this question is being prepared, and I will send it to you in a separate letter when it is finished.',
 };
 
@@ -36,6 +39,20 @@ export function offerStore(dir = process.env.VITEST ? mkdtempSync(join(tmpdir(),
     async get(k) { try { return JSON.parse(readFileSync(file(k), 'utf8')); } catch { return null; } },
     async set(k, v) { mkdirSync(dir, { recursive: true }); writeFileSync(file(k), JSON.stringify({ ...v, at: v.at ?? new Date().toISOString() })); },
     async del(k) { rmSync(file(k), { force: true }); },
+  };
+}
+
+/** Reports waiting for the Worker to draft them for Chad's approval. File-backed, one file per key; ack removes it. */
+export function reportOutbox(dir = process.env.VITEST ? mkdtempSync(join(tmpdir(), 'anis-outbox-')) : join(process.cwd(), 'data', 'anis', 'report-outbox')) {
+  const file = (k) => join(dir, `${createHash('sha256').update(String(k)).digest('hex').slice(0, 32)}.json`);
+  return {
+    async put(m) { mkdirSync(dir, { recursive: true }); writeFileSync(file(m.key), JSON.stringify({ ...m, at: m.at ?? new Date().toISOString() })); },
+    async list() {
+      let names = []; try { names = readdirSync(dir).filter((f) => f.endsWith('.json')); } catch { return []; }
+      return names.map((f) => { try { return JSON.parse(readFileSync(join(dir, f), 'utf8')); } catch { return null; } }).filter(Boolean)
+        .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    },
+    async ack(k) { const f = file(k); if (!existsSync(f)) return false; rmSync(f, { force: true }); return true; },
   };
 }
 
@@ -82,26 +99,32 @@ export async function startDeepReport(input = {}, ctx = {}) {
 }
 
 /** Reports service. Every dependency is injectable; defaults are the live repo, queue and mail. */
-export function makeReports({ request, load, sendMail, addNotify, pending, mark, store = offerStore() } = {}) {
+export function makeReports({ request, load, sendMail, addNotify, pending, mark, store = offerStore(), outbox = reportOutbox(), mode = process.env.ANIS_REPORT_SEND } = {}) {
   const dr = () => import('../deep-research.js');
   const get = async (id) => (load ? load(id) : (await dr()).getDeepResearchById(id));
   const mail = async (m) => (sendMail ? sendMail(m) : (await import('../../services/email.js')).sendEmail(m));
   const report = async (id) => buildReport(await get(id));
-  const send = async (rep, email) => { const { subject, html, text } = renderReport(rep); await mail({ to: email, subject, html, text }); };
+  // default: an approval draft for the Worker (text = the report's Markdown, which the review page edits and re-renders)
+  const send = async (rep, email) => {
+    const { subject, html, text, markdown } = renderReport(rep);
+    if (mode === 'direct') { await mail({ to: email, subject, html, text }); return 'sent'; }
+    await outbox.put({ key: `report-${rep.id}-${String(email).toLowerCase()}`, research_id: rep.id, to: email, subject, html, text: markdown });
+    return 'drafted';
+  };
   return {
     report,
     start: (question) => startDeepReport({ question }, request ? { request } : {}),
     offer: (key, v) => store.set(key, v),
     pending: (key) => store.get(key),
     clear: (key) => store.del(key),
-    /** Send now if finished; otherwise record the address for the worker to send on completion. */
+    /** Finished → an approval draft (or, with ANIS_REPORT_SEND=direct, a send); else record the address for the worker. */
     async deliver({ researchId, email }) {
       const rep = await report(researchId);
-      if (rep) { await send(rep, email); return { sent: true, report: rep }; }
+      if (rep) { const how = await send(rep, email); return { ready: true, [how]: true, report: rep }; }
       await (addNotify ? addNotify(researchId, email) : (await dr()).addNotifyEmail(researchId, email));
       return { queued: true };
     },
-    /** The worker, after a job completes: mail every waiting address, then mark them. Returns how many were sent. */
+    /** The worker, after a job completes: draft (or send) for every waiting address, then mark them. Returns how many. */
     async sendPending(researchId) {
       const rep = await report(researchId);
       if (!rep) return 0;

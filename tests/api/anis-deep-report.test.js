@@ -1,6 +1,7 @@
 // Deep reports (Chad 11-03): Jev decides the depth (answer / research / deep_report) from the history, the reader card and
 // the channel as context, never a channel rule or a word rule. deep_report runs deep research as a JOB (the deep-research
-// worker queue); chat answers at once and offers to email the report; acceptance (Jev's call) sends it through mail.
+// worker queue); chat answers at once and offers to email the report; acceptance (Jev's call) hands it to the report outbox,
+// where the Worker drafts it for Chad's approval (launch). ANIS_REPORT_SEND=direct sends from tower instead.
 import { describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -8,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { triageMessage, DEPTHS, DEPTH_Q, T } from '../../api/lib/assistant/triage.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
 import { makeStrikes } from '../../api/lib/assistant/strikes.js';
-import { buildReport, renderReport, makeReports, offerStore, emailIn, startDeepReport, REPORT_TEXT } from '../../api/lib/assistant/deep-report.js';
+import { buildReport, renderReport, makeReports, offerStore, reportOutbox, emailIn, startDeepReport, REPORT_TEXT } from '../../api/lib/assistant/deep-report.js';
 import * as tools from '../../api/lib/assistant/tools.js';
 import { requestDeepResearch } from '../../api/lib/deep-research.js';
 
@@ -108,22 +109,58 @@ describe('deep_report is a registered strategy that queues a job, never runs res
   });
 });
 
-describe('delivery through mail', () => {
-  it('a ready report is sent at once; one not ready yet is queued for the worker to send', async () => {
-    const sendMail = vi.fn(async () => ({ success: true })), addNotify = vi.fn(async () => {});
-    const ready = makeReports({ load: async () => RECORD, sendMail, addNotify, store: memStore() });
-    expect(await ready.deliver({ researchId: 42, email: 'a@b.org' })).toMatchObject({ sent: true });
-    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'a@b.org', html: expect.stringContaining('<a href=') }));
-    const later = makeReports({ load: async () => ({ ...RECORD, status: 'in_progress' }), sendMail, addNotify, store: memStore() });
+const memOutbox = () => { const m = new Map(); return { m, put: async (x) => { m.set(x.key, x); }, list: async () => [...m.values()], ack: async (k) => m.delete(k) }; };
+
+describe('delivery through Chad\'s approval', () => {
+  it('default: a ready report becomes an approval draft in the outbox (to, subject, html, text, research_id) and sendEmail is never called', async () => {
+    const sendMail = vi.fn(async () => ({ success: true })), addNotify = vi.fn(async () => {}), outbox = memOutbox();
+    const ready = makeReports({ load: async () => RECORD, sendMail, addNotify, outbox, store: memStore(), mode: undefined });
+    expect(await ready.deliver({ researchId: 42, email: 'A@b.org' })).toMatchObject({ ready: true, drafted: true });
+    expect(sendMail).not.toHaveBeenCalled();
+    const [d] = await outbox.list();
+    expect(d).toMatchObject({ key: 'report-42-a@b.org', research_id: 42, to: 'A@b.org', subject: expect.stringMatching(/^Report: /), html: expect.stringContaining('<a href='), text: expect.stringContaining('Tests are benefits from God.') });
+    const later = makeReports({ load: async () => ({ ...RECORD, status: 'in_progress' }), sendMail, addNotify, outbox: memOutbox(), store: memStore() });
     expect(await later.deliver({ researchId: 42, email: 'a@b.org' })).toMatchObject({ queued: true });
     expect(addNotify).toHaveBeenCalledWith(42, 'a@b.org');
   });
-  it('sendPending (the worker, after the job completes): every waiting address gets the report, then is marked', async () => {
-    const sendMail = vi.fn(async () => ({ success: true })), mark = vi.fn(async () => {});
-    const r = makeReports({ load: async () => RECORD, sendMail, pending: async () => [{ id: 1, email: 'a@b.org' }, { id: 2, email: 'c@d.org' }], mark, store: memStore() });
-    expect(await r.sendPending(42)).toBe(2);
+  it('default never reaches services/email.js even without an injected sendMail', async () => {
+    vi.resetModules();
+    const sendEmail = vi.fn(async () => ({ success: true }));
+    vi.doMock('../../api/services/email.js', () => ({ sendEmail }));
+    const { makeReports: mk } = await import('../../api/lib/assistant/deep-report.js');
+    const outbox = memOutbox();
+    const r = mk({ load: async () => RECORD, pending: async () => [{ id: 1, email: 'a@b.org' }], mark: async () => {}, outbox, store: memStore(), mode: undefined });
+    expect(await r.sendPending(42)).toBe(1);
+    expect(outbox.m.size).toBe(1);
+    expect(sendEmail).not.toHaveBeenCalled();
+    vi.doUnmock('../../api/services/email.js');
+  });
+  it('ANIS_REPORT_SEND=direct: the report is sent from tower', async () => {
+    const sendMail = vi.fn(async () => ({ success: true })), outbox = memOutbox();
+    const r = makeReports({ load: async () => RECORD, sendMail, outbox, store: memStore(), mode: 'direct' });
+    expect(await r.deliver({ researchId: 42, email: 'a@b.org' })).toMatchObject({ ready: true, sent: true });
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'a@b.org', html: expect.stringContaining('<a href=') }));
+    expect(outbox.m.size).toBe(0);
+    const prev = process.env.ANIS_REPORT_SEND; process.env.ANIS_REPORT_SEND = 'direct';
+    try { await makeReports({ load: async () => RECORD, sendMail, outbox, store: memStore() }).deliver({ researchId: 42, email: 'c@d.org' }); }
+    finally { if (prev === undefined) delete process.env.ANIS_REPORT_SEND; else process.env.ANIS_REPORT_SEND = prev; }
     expect(sendMail).toHaveBeenCalledTimes(2);
+  });
+  it('sendPending (the worker, after the job completes): a draft for every waiting address, then they are marked', async () => {
+    const sendMail = vi.fn(async () => ({ success: true })), mark = vi.fn(async () => {}), outbox = memOutbox();
+    const r = makeReports({ load: async () => RECORD, sendMail, pending: async () => [{ id: 1, email: 'a@b.org' }, { id: 2, email: 'c@d.org' }], mark, outbox, store: memStore(), mode: undefined });
+    expect(await r.sendPending(42)).toBe(2);
+    expect(sendMail).not.toHaveBeenCalled();
+    expect([...outbox.m.keys()]).toEqual(['report-42-a@b.org', 'report-42-c@d.org']);
     expect(mark).toHaveBeenCalledWith([1, 2]);
+  });
+  it('the report outbox is file-backed: put, list, ack', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'outbox-'));
+    await reportOutbox(dir).put({ key: 'report-1-a@b.org', research_id: 1, to: 'a@b.org', subject: 's', html: 'h', text: 't' });
+    expect(await reportOutbox(dir).list()).toEqual([expect.objectContaining({ key: 'report-1-a@b.org', research_id: 1 })]);
+    expect(await reportOutbox(dir).ack('report-1-a@b.org')).toBe(true);
+    expect(await reportOutbox(dir).ack('report-1-a@b.org')).toBe(false);
+    expect(await reportOutbox(dir).list()).toEqual([]);
   });
   it('the offer store persists across instances (file-backed)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'offers-'));
@@ -141,8 +178,8 @@ describe('delivery through mail', () => {
 
 describe('anisTurn routes depth', () => {
   function harness({ triage, record = { ...RECORD, status: 'queued' }, store = memStore() } = {}) {
-    const calls = { respond: [], request: [], mail: [], notify: [] };
-    const reports = makeReports({ request: async (q) => { calls.request.push(q); return { id: 42, status: record.status }; }, load: async () => record,
+    const calls = { respond: [], request: [], mail: [], notify: [] }, outbox = memOutbox();
+    const reports = makeReports({ outbox, mode: undefined, request: async (q) => { calls.request.push(q); return { id: 42, status: record.status }; }, load: async () => record,
       sendMail: async (m) => { calls.mail.push(m); return { success: true }; }, addNotify: async (id, e) => { calls.notify.push([id, e]); }, store });
     const deps = {
       open: async () => ({ conversationId: 'conv_1', round: 0 }), close: async () => {}, fail: async () => {}, card: null, resolve: null,
@@ -151,7 +188,7 @@ describe('anisTurn routes depth', () => {
       outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {}, reports,
     };
     const run = (messages, extra = {}) => anisTurn({ messages, participant: { id: 'sess_1' }, clientKey: 'sess_1', onEvent: () => {}, deps, ...extra });
-    return { calls, run, store };
+    return { calls, run, store, outbox };
   }
   const base = { malicious: 0.01, complete: 0.99, stop_request: 0, kind: { choice: 'research', confidence: 0.9 }, outcome: { choice: 'search', confidence: 0.9 } };
   const q = [{ role: 'user', content: 'Please research the purpose of suffering in depth for my study group.' }];
@@ -193,20 +230,22 @@ describe('anisTurn routes depth', () => {
     expect(r2.reply).toContain(REPORT_TEXT.emailFollows);
     expect(running.calls.notify).toEqual([[42, 'a@b.org']]);
   });
-  it('acceptance (Jev\'s accepts_offer) with a known address sends the report through mail', async () => {
+  it('acceptance (Jev\'s accepts_offer) with a known address drafts the report for Chad\'s approval; the reply promises nothing immediate', async () => {
     const store = memStore(); await store.set('conv_1', { researchId: 42, question: 'x' });
     const h = harness({ triage: { ...base, accepts_offer: 0.92, features: { first: false } }, record: RECORD, store });
     const r = await h.run([...q, { role: 'assistant', content: `answer. ${REPORT_TEXT.offer}` }, { role: 'user', content: 'yes please' }],
       { channel: 'site-chat', participant: { id: 'sess_1', email: 'reader@example.org' } });
     expect(h.calls.respond).toHaveLength(0);
-    expect(h.calls.mail).toHaveLength(1);
-    expect(h.calls.mail[0]).toMatchObject({ to: 'reader@example.org' });
-    expect(h.calls.mail[0].html).toContain('Tests are benefits from God.');
-    expect(r.reply).toBe(REPORT_TEXT.sent('reader@example.org'));
+    expect(h.calls.mail).toHaveLength(0);
+    const [d] = await h.outbox.list();
+    expect(d).toMatchObject({ to: 'reader@example.org', research_id: 42 });
+    expect(d.html).toContain('Tests are benefits from God.');
+    expect(r.reply).toBe(REPORT_TEXT.ready('reader@example.org'));
+    expect(r.reply).not.toMatch(/have sent/);
     expect(r.status).toBe('report');
     expect(await store.get('conv_1')).toBeNull();
   });
-  it('acceptance with no known address asks for it; the next turn with the address sends', async () => {
+  it('acceptance with no known address asks for it; the next turn with the address drafts it', async () => {
     const store = memStore(); await store.set('conv_1', { researchId: 42, question: 'x' });
     const h = harness({ triage: { ...base, accepts_offer: 0.9, features: { first: false } }, record: RECORD, store });
     const thread = [...q, { role: 'assistant', content: `answer. ${REPORT_TEXT.offer}` }, { role: 'user', content: 'yes' }];
@@ -214,8 +253,9 @@ describe('anisTurn routes depth', () => {
     expect(r.reply).toBe(REPORT_TEXT.askEmail);
     expect(h.calls.mail).toHaveLength(0);
     const r2 = await h.run([...thread, { role: 'assistant', content: REPORT_TEXT.askEmail }, { role: 'user', content: 'reader@example.org' }], { channel: 'site-chat' });
-    expect(h.calls.mail[0]).toMatchObject({ to: 'reader@example.org' });
-    expect(r2.reply).toBe(REPORT_TEXT.sent('reader@example.org'));
+    expect((await h.outbox.list())[0]).toMatchObject({ to: 'reader@example.org' });
+    expect(h.calls.mail).toHaveLength(0);
+    expect(r2.reply).toBe(REPORT_TEXT.ready('reader@example.org'));
   });
   it('without Jev\'s acceptance a pending offer does not send (a new question is just answered)', async () => {
     const store = memStore(); await store.set('conv_1', { researchId: 42 });
