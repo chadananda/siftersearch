@@ -5,6 +5,7 @@
 // lookups fast path (lookup.js). Deps (injectable via ctx.deps): docs-repo listDocs, sections-repo sectionsOfDoc/findSections,
 // paragraphs-repo paragraphsInRange, work-request findTitled, hit-links withLinks.
 import { NO_LOG } from './decision-log.js';
+import { run as runTool } from './tools.js';
 
 export const KJV = 'The Bible (KJV)';
 const BIBLE = {
@@ -83,8 +84,7 @@ export async function scriptureReference(ctx) {
     const { docs = [] } = await listDocs({ collection: KJV, fields, limit: 100, count: false }).catch(() => ({ docs: [] }));
     doc = docs.find((d) => fold(d.title) === fold(ref.book)) || docs.find((d) => fold(d.title).endsWith(fold(ref.book))) || null;
   } else if (ref.kind === 'gita') {
-    const findTitled = deps.findTitled || (await import('./work-request.js')).findTitled;
-    doc = (await findTitled(['Bhagavad Gita'], { min: 0.9 }).catch(() => null))?.doc || null;
+    doc = (await runTool('document_search', { title: 'Bhagavad Gita', min: 0.9 }, { deps }).catch(() => null))?.works?.[0] || null;
   } else {
     const findSections = deps.findSections || (await import('../repos/sections-repo.js')).findSections;
     const want = new RegExp(`^s[uūú]ra\\s+${roman(ref.sura)}\\.?$`, 'i');

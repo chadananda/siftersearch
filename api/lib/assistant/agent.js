@@ -1,45 +1,33 @@
 // THE AGENT (Chad 11-01: "start with using haiku + tools to answer everything … it hallucinates constantly instead of using
 // its library"). One model loop that researches AND writes — no brief handed to a second writer — over the library tools
-// (researcher.js toolRunner) plus about_work (work-notes.json: sourced lines on a core work's importance). Grounding is code's
+// (researcher.js toolRunner over the tools.js registry) plus work_notes_lookup (work-notes.json: sourced lines on a core work's importance). Grounding is code's
 // job: the model cites only the refs its tools gave it ([[P3]] a passage, [[B1]] a book); renderRefs turns them into links and
 // drops any it was not given, and the quote gate removes a sentence quoting words no passage holds. Deps injectable (tests).
-import { TOOLS, toolRunner, libraryTools } from './researcher.js';
+import { toolRunner, libraryTools } from './researcher.js';
+import { llmTools, canonical, canonWork, run as runTool } from './tools.js';
 import { dropUnverified, fixQuoteSpeakers, linkQuotes } from './quotes.js';
 import { dropPreamble } from './work-request.js';
-import { CANON } from './work-canon.js';
 import { agentSearch } from './agent-search.js';
 
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
-const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`ʻʼ]/g, "'").toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim();
 
-const ABOUT_WORK = { type: 'function', function: { name: 'about_work',
-  description: "What the sources say about a CORE work's significance, purpose, station or impression (the Aqdas, the Íqán, the Hidden Words, God Passes By, The Dawn-Breakers…): verified quotations, best authority first. Call it beside find_work when a reader asks for or about a book.",
-  parameters: { type: 'object', properties: { title: { type: 'string' } }, required: ['title'] } } };
-export const AGENT_TOOLS = [...TOOLS, ABOUT_WORK];
-
-/** The canon entry a reader's title names (any alias, accents and "the" ignored), or null. Pure. */
-export function canonWork(title) {
-  const q = fold(title).replace(/^the /, '');
-  if (!q) return null;
-  return CANON.find((w) => [w.title, ...(w.aliases || [])].some((a) => fold(a).replace(/^the /, '') === q))
-    || CANON.find((w) => [w.title, ...(w.aliases || [])].some((a) => { const f = fold(a).replace(/^the /, ''); return f.length > 5 && (q.includes(f) || f.includes(q)); })) || null;
-}
-
-let NOTES = null;
-const loadNotes = async () => (NOTES ??= (await import('./work-notes.json', { with: { type: 'json' } })).default);
+// the agent's tools, by canonical name (tools.js registry): its search is fused_search (no planner), never combined_search under another name
+export const AGENT_TOOL_NAMES = ['fused_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_trace', 'document_search', 'work_notes_lookup', 'web_search'];
+export const AGENT_TOOLS = llmTools(AGENT_TOOL_NAMES);
+export { canonWork };
 
 export const AGENT_SYSTEM = `You are Anís, a study companion in a library of the world's sacred texts (above all the Bahá'í Writings, with their originals, history and scholarship). You answer readers in chat.
 
 ANSWER LIKE A SCHOLAR WHO KNOWS THE FIELD AND CHECKS EVERYTHING. Use what you know to decide what the answer is and where the texts say it — then find those texts with the tools and quote them. Every statement about a text, person, event, date, number or teaching carries the ref of a passage that supports it; a claim you cannot find support for is left out or plainly marked as unconfirmed in the library. Never present memory as a source.
 
-RESEARCH BEFORE WRITING. Your first round should launch several searches at once from different angles (the obvious primary source, Shoghi Effendi's account, the key term, the person's name with the event). Read the results; if the best source is still missing, search again with the words that source would use, or read_around the strongest passage. Stop when you hold the passages a well-read Bahá'í scholar would cite — not before.
+RESEARCH BEFORE WRITING. Your first round should launch several searches at once from different angles (the obvious primary source, Shoghi Effendi's account, the key term, the person's name with the event). Read the results; if the best source is still missing, search again with the words that source would use, or context_lookup the strongest passage. Stop when you hold the passages a well-read Bahá'í scholar would cite — not before.
 
 TOOLS — use them before answering; call several at once when they are independent:
-- find_work: whenever a book, tablet or work is named or asked for. It returns [B#] — the library's own copy. Always give it.
-- about_work: sourced lines on a core work's importance — use beside find_work when the reader asks for or about a book.
-- search_library: passages. Phrase the query in the words the texts would use; put an author or work name in the query to narrow it. Try another wording before concluding anything is missing.
-- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call source_of first, with search_library on the distinctive phrase in parallel. EXACT quotation (or the reader asks for the original/tablet/Persian/Arabic): answer with the source linked, the original when found, and works that quote it. INEXACT ask (keywords, a paraphrase, "the X quote"): give the MAIN source quoted and linked plus 1–2 similar passages from search_library, and NO original-language text, Phelps Inventory or tablet detail unless asked; if no published source holds the words, say so plainly — never attribute from memory.
-- read_around, source_of (where a quotation comes from), find_original, find_translation, word_study, trace_source (a letter or scholar stating a teaching → the primary passages), web_search (last resort; label it as from the web, never as scripture).
+- document_search: whenever a book, tablet or work is named or asked for. It returns [B#] — the library's own copy. Always give it.
+- work_notes_lookup: sourced lines on a core work's importance — use beside document_search when the reader asks for or about a book.
+- fused_search: passages. Phrase the query in the words the texts would use; put an author or work name in the query to narrow it. Try another wording before concluding anything is missing.
+- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_trace first, with fused_search on the distinctive phrase in parallel. EXACT quotation (or the reader asks for the original/tablet/Persian/Arabic): answer with the source linked, the original when found, and works that quote it. INEXACT ask (keywords, a paraphrase, "the X quote"): give the MAIN source quoted and linked plus 1–2 similar passages from fused_search, and NO original-language text, Phelps Inventory or tablet detail unless asked; if no published source holds the words, say so plainly — never attribute from memory.
+- context_lookup, quotation_trace (where a quotation comes from), original_lookup, translation_lookup, rendering_lookup, source_trace (a letter or scholar stating a teaching → the primary passages), web_search (last resort; label it as from the web, never as scripture).
 
 WRITING:
 - The first sentence gives the obvious answer plainly (who/what/where), as a reader would expect from a knowledgeable friend. No preamble, no "Great question", no "Let me", no "I found", no "Based on the library".
@@ -66,24 +54,23 @@ export function renderRefs(text, { found, works }) {
     .replace(/[ \t]+([.,;:!?])/g, '$1');
 }
 
-const STATUS = { search_library: (a) => `Searching the library: ${clip(a.query, 60)}`, find_work: (a) => `Finding ${clip(a.title, 60)}`,
-  about_work: (a) => `What the sources say about ${clip(a.title, 50)}`, read_around: () => 'Reading around a passage', source_of: () => 'Tracing a quotation',
-  find_original: () => 'Finding the original', find_translation: () => 'Finding a translation', word_study: (a) => `Word study: ${clip(a.word, 40)}`,
-  trace_source: () => 'Tracing to the primary texts', web_search: () => 'Searching the web' };
+const STATUS = { fused_search: (a) => `Searching the library: ${clip(a.query, 60)}`, combined_search: (a) => `Searching the library: ${clip(a.query, 60)}`, document_search: (a) => `Finding ${clip(a.title, 60)}`,
+  work_notes_lookup: (a) => `What the sources say about ${clip(a.title, 50)}`, context_lookup: () => 'Reading around a passage', quotation_trace: () => 'Tracing a quotation',
+  original_lookup: () => 'Finding the original', translation_lookup: () => 'Finding a translation', rendering_lookup: (a) => `Word study: ${clip(a.word, 40)}`,
+  source_trace: () => 'Tracing to the primary texts', web_search: () => 'Searching the web' };
 
 /**
  * One turn: → { reply, retrieved, citations, steps, usage, timings }. create = OpenAI-compatible chat (roleCreate('anis-agent')).
- * impl = libraryTools({ search }) (+ notes for about_work, tests).
+ * impl = libraryTools({ search }) (+ notes for work_notes_lookup, tests).
  */
 export async function agentAnswer({ messages, create, tools: impl, onEvent = () => {}, maxRounds = 8, maxCalls = 24 }) {
   const t0 = Date.now();
-  const { found, works, add, show, run } = toolRunner(impl);
-  run.about_work = async ({ title }) => {
-    const w = canonWork(title);
-    if (!w) return `no compiled notes for "${title}" — search_library for passages that name it`;
-    const notes = ((await (impl.notes || loadNotes)())?.works || []).find((x) => x.title === w.title)?.notes || [];
-    if (!notes.length) return `no compiled notes for ${w.title} — search_library for passages that name it`;
-    return show(notes.slice(0, 5).map((n, i) => add({ id: `note:${w.title}:${i}`, text: n.quote, title: n.source_title,
+  const { found, works, add, show, run } = toolRunner(impl, { search: 'fused_search' });
+  run.work_notes_lookup = async ({ title }) => {
+    const { work, notes } = await runTool('work_notes_lookup', { title }, { notes: impl.notes });
+    if (!work) return `no compiled notes for "${title}" — fused_search for passages that name it`;
+    if (!notes.length) return `no compiled notes for ${work} — fused_search for passages that name it`;
+    return show(notes.slice(0, 5).map((n, i) => add({ id: `note:${work}:${i}`, text: n.quote, title: n.source_title,
       author: n.speaker || n.source_author, source_url: n.url, religion: "Baha'i" })), 600);
   };
   const convo = messages.slice(-9).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: clip(m.content, 3000) }));
@@ -103,10 +90,10 @@ export async function agentAnswer({ messages, create, tools: impl, onEvent = () 
     const outs = await Promise.all(tcs.map(async (tc) => {
       let args = {};
       try { args = JSON.parse(tc.function?.arguments || '{}'); } catch { /* bad args → empty */ }
-      const name = tc.function?.name;
-      onEvent({ type: 'status', text: STATUS[name]?.(args) || name });
+      const name = tc.function?.name, fn = run[canonical(name)];
+      onEvent({ type: 'status', text: STATUS[canonical(name)]?.(args) || name });
       const s0 = Date.now();
-      const out = run[name] ? await run[name](args).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`) : 'unknown tool';
+      const out = fn ? await fn(args).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`) : 'unknown tool';
       steps.push({ tool: name, args, found: (String(out).match(/^\[[PWB]\d+\]/gm) || []).length, ms: Date.now() - s0 });
       return { tc, out };
     }));

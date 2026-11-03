@@ -8,6 +8,7 @@ import { modelFor } from '../model-roles.js';
 import { ENDPOINT, MIN_CONFIDENCE } from '../scope-extract.js';
 import { NO_LOG, jevProbabilities } from './decision-log.js';
 import { stateOf } from './strategy-choice.js';
+import { run as runTool } from './tools.js';
 
 export const PRAYER_BOOK = 'Bahá’í Prayers';
 const MAX_OCCASIONS = 40;
@@ -49,9 +50,8 @@ async function pickOccasion(messages, titles, { profile, fetchImpl, apiKey = pro
 
 export async function prayerShelf(ctx) {
   const { messages, query, search, profile = {}, decisions = NO_LOG, deps = {} } = ctx;
-  const findTitled = deps.findTitled || (await import('./work-request.js')).findTitled;
-  const w = await findTitled([PRAYER_BOOK], { min: 0.9 }).catch(() => null);
-  const doc = w?.doc && /prayers/i.test(w.doc.title) ? w.doc : null;
+  const w = (await runTool('document_search', { title: PRAYER_BOOK, min: 0.9 }, { deps }).catch(() => null))?.works?.[0];
+  const doc = w && /prayers/i.test(w.title) ? w : null;
   decisions.record('prayer:book', { by: 'code', saw: PRAYER_BOOK, chosen: doc ? `${doc.id} ${doc.title}` : null, reason: doc ? 'title index' : 'no prayer book in the index' });
   if (!doc) return null;
   const sectionsOfDoc = deps.sectionsOfDoc || (await import('../repos/sections-repo.js')).sectionsOfDoc;
@@ -78,7 +78,7 @@ export async function prayerShelf(ctx) {
     }
   }
   // no fitting heading → the prayer book searched for the reader's words (never the whole library: a prayer is wanted)
-  const r = await search({ query, mode: 'passages', limit: 8, document_id: doc.id, scope_config: profile.scope_config, plan: { messages } }).catch(() => null);
+  const r = await runTool('combined_search', { query, limit: 8, filters: { documentId: doc.id }, scope_config: profile.scope_config, messages }, { search }).catch(() => null);
   const passages = (r?.passages || []).map((p) => ({ ...p, theme: 'prayer' }));
   decisions.record('prayer:search', { by: 'code', saw: query, chosen: `${passages.length} passages`, reason: 'scoped to the prayer book' });
   if (!passages.length) return null;

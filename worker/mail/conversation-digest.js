@@ -34,7 +34,7 @@ export function mst(utc) {
 /** The files to edit for a turn type: persona, prompt, the type's own module, the model table, the letter look. Pure. */
 export function configFiles(type = '', channel = 'email') {
   if (channel === 'dewey') return ['api/lib/dewey/mail.js', 'worker/mail/dewey.js', 'api/routes/dewey-mail.js'];
-  const own = /reading/.test(type) ? ['api/lib/assistant/reading.js'] : /term study/.test(type) ? ['api/lib/assistant/ctai-term.js', 'api/lib/assistant/respond.js']
+  const own = /reading/.test(type) ? ['api/lib/assistant/reading.js'] : /term study|rendering lookup/i.test(type) ? ['api/lib/assistant/ctai-term.js', 'api/lib/assistant/respond.js']
     : /canned|triage/.test(type) ? ['api/lib/assistant/canned.js', 'api/lib/assistant/triage.js'] : /research/.test(type) ? ['api/lib/assistant/respond.js', 'api/lib/assistant/researcher.js']
       : ['api/lib/assistant/respond.js'];
   return ['api/lib/assistant/soul.md', 'api/lib/assistant/prompt.js', ...own, 'api/lib/model-roles.js', ...(channel === 'email' ? ['worker/mail/letter.js'] : [])];

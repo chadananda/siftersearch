@@ -5,6 +5,7 @@
 // Deps: respond.js passes search (executeSearch), query (searchQueryFor), distil (distilQuery), plan, profile, decisions.
 import { strategyOf } from './strategy-choice.js';
 import { NO_LOG } from './decision-log.js';
+import { run as runTool } from './tools.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
 const PER_SIDE = 6, MAX_PASSAGES = 12;
@@ -26,8 +27,8 @@ export function interleave(bySide, max = MAX_PASSAGES) {
 }
 
 async function searchSide({ search, query, messages, profile, religion, limit = PER_SIDE }) {
-  const r = await search({ query, mode: 'passages', limit, scope_config: profile?.scope_config, ...(religion ? { religion } : {}),
-    plan: { messages, defaults: religion ? { religion } : {} } });
+  const r = await runTool('combined_search', { query, limit, scope_config: profile?.scope_config, ...(religion ? { filters: { tradition: religion } } : {}),
+    messages, defaults: religion ? { religion } : {} }, { search });
   return r?.passages || [];
 }
 
@@ -91,11 +92,8 @@ export async function runStrategy(choice, ctx) {
   const name = strategyOf(choice);
   if (!name) return null;
   const log = ctx.decisions || NO_LOG;
-  const run = { comparison, understanding,
-    prayer: async (c, x) => (await import('./prayer-shelf.js')).prayerShelf(x),
-    guidance: async (c, x) => (await import('./guidance.js')).currentGuidance(x),
-    reference: async (c, x) => (await import('./scripture-ref.js')).scriptureReference(x) }[name];
-  const out = await run(choice, { ...ctx, decisions: log });
+  // the executors are registry strategies (tools.js): comparison, understanding, prayer, guidance, reference
+  const out = await runTool(name, choice, { ...ctx, decisions: log });
   if (!out) log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'executor found nothing to execute' });
   return out;
 }

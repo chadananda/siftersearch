@@ -477,7 +477,7 @@ For an unfiltered total of the whole library, use library_overview instead.`,
 // ─── Tool implementations ─────────────────────────────────────────────────
 
 // plan: { messages?, defaults? } → Jev-planned retrieval (search-plan.js) instead of the raw engine; same output + _plan.
-export async function executeSearch({ query, mode = 'passages', religion, collection, author, language, document_id, start = 0, limit = 10, scope_config, semanticRatio, entityIds, phrase, plan }) {
+export async function executeSearch({ query, mode = 'passages', religion, collection, author, writerOnly, language, document_id, yearFrom, yearTo, start = 0, limit = 10, scope_config, semanticRatio, entityIds, phrase, plan }) {
   const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
@@ -514,6 +514,9 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     if (author) filters.author = author;
     if (language) filters.language = language;
     if (document_id) filters.documentId = document_id;
+    if (writerOnly) filters.writerOnly = true;
+    if (yearFrom != null) filters.yearFrom = yearFrom;
+    if (yearTo != null) filters.yearTo = yearTo;
 
     let merged;
     let planInfo = null;

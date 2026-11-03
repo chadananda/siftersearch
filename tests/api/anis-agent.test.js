@@ -120,7 +120,7 @@ describe('source questions', async () => {
   });
   it('no result: the runner returns guidance, and a source the tools never gave is dropped', async () => {
     const { run } = toolRunner({ ...T, sourceOf: async () => [] });
-    expect(await run.source_of({ quotation: 'God helps those who help themselves' })).toMatch(/^no published source found for that wording — search_library/);
+    expect(await run.quotation_trace({ quotation: 'God helps those who help themselves' })).toMatch(/^no published source found for that wording — combined_search/);
     const r = await agentAnswer({ messages: [{ role: 'user', content: 'Where is this from: "God helps those who help themselves"' }], tools: { ...T, sourceOf: async () => [] },
       create: scriptedSource('That is Bahá’u’lláh in Gleanings [[P4]].') });
     expect(r.reply).not.toContain('P4');

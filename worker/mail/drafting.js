@@ -378,7 +378,8 @@ const QUIET = new Set(['battery@siftersearch.com', 'test-rerun@siftersearch.com'
 const sqlTime = (ms) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
 const atMs = (s) => Date.parse(String(s || '').replace(' ', 'T') + (/[zZ+]/.test(String(s)) ? '' : 'Z'));
 const LETTER_TYPE = { welcome: 'welcome letter', outreach: 'outreach letter' };
-const RECIPE = { define: 'CTAI term study', source: 'source hunt', original: 'original text', research: 'research answer', language: 'language answer', position: 'position answer' };
+// mirrors api/lib/assistant/turn-meta.js turnType (registry labels, tools.js — not imported into the Worker)
+const RECIPE = { define: 'Rendering Lookup (CTAI)', source: 'Quotation Trace', original: 'Original Lookup', research: 'research answer', language: 'language answer', position: 'position answer' };
 const routeType = (route, status) => (!route ? null : status === 'canned' || route.gate === 'canned' ? 'canned' : route.gate === 'tarpit' ? 'triage: tarpit'
   : RECIPE[route.strategy] || (route.strategy ? `answer (${route.strategy})` : null));
 // (the draft's error note 'source:N; anis:<status>' is cleared when it is sent, so this mostly sees drafts)

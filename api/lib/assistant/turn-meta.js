@@ -2,6 +2,7 @@
 // recipient so I can tweak"): its type, the models it called, what it cost and how long it took. The cost comes from
 // the per-turn meter (ai-context `meter`, filled by ai-services logAIUsage). Pure except meterTurn (an ai-context scope).
 import { withAIContext, currentAIContext } from '../ai-context.js';
+import { label } from './tools.js';
 
 /** The turn's type in words, from its status and path. Pure. */
 export function turnType({ status, gate, kind, recipe, format } = {}) {
@@ -9,7 +10,8 @@ export function turnType({ status, gate, kind, recipe, format } = {}) {
   if (status === 'tarpit' || gate === 'tarpit') return 'triage: tarpit';
   if (status === 'canned') return `canned${kind ? ` (${kind})` : ''}`;
   if (status === 'failed') return 'failed';
-  return { define: 'CTAI term study', source: 'source hunt', original: 'original text', research: 'research answer',
+  // a recipe that is one registry tool/strategy is named by its registry label (mirrored in worker/mail/drafting.js RECIPE)
+  return { define: label('rendering_lookup'), source: label('quotation_trace'), original: label('original_lookup'), research: 'research answer',
     language: 'language answer', position: 'position answer' }[recipe] || (recipe ? `answer (${recipe})` : 'answer');
 }
 

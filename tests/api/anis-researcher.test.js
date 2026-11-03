@@ -22,7 +22,7 @@ describe('researcher', () => {
     expect(r.steps.map((s) => s.tool)).toEqual(['search_library', 'find_original']);
     expect(r.passages.map((p) => p.id)).toEqual([606, 9001]);   // the repeated Gleanings passage keeps its P1
     expect(r.brief).toMatch(/ghurfa, ḥujra, khalwa \[own\]/);
-    expect(seen[0].tools.map((t) => t.function.name)).toContain('word_study');
+    expect(seen[0].tools.map((t) => t.function.name)).toContain('rendering_lookup');
     expect(String(seen[1].messages.at(-1).content)).toMatch(/\[P1\] Gleanings/);
   });
   it('the last round offers no tools, so it always ends with a brief', async () => {

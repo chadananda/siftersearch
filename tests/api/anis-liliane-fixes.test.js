@@ -104,10 +104,10 @@ describe('reflections', () => {
 });
 
 describe('the researcher finds an original from an older English translation', () => {
-  it('renders distinctive clauses into Persian and follows any original wording with find_translation', () => {
+  it('renders distinctive clauses into Persian and follows any original wording with translation_lookup', () => {
     expect(RESEARCH_SYSTEM).toMatch(/FINDING THE ORIGINAL of an English translation/);
     expect(RESEARCH_SYSTEM).toMatch(/ترک … تاجیک/);
-    expect(RESEARCH_SYSTEM).toMatch(/call find_translation with that exact original line/);
+    expect(RESEARCH_SYSTEM).toMatch(/call translation_lookup with that exact original line/);
     expect(RESEARCH_SYSTEM).toMatch(/ع ع\) is 'Abdu'l-Bahá's signature/);
   });
 });

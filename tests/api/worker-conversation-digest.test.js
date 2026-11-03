@@ -62,12 +62,13 @@ describe('conversationDigest', () => {
     expect(e).toBe('<p>a</p>');
     expect(configFiles('reading guide')).toContain('api/lib/assistant/reading.js');
     expect(configFiles('CTAI term study', 'widget-chat')).not.toContain('worker/mail/letter.js');
+    expect(configFiles('Rendering Lookup (CTAI)', 'widget-chat')).toContain('api/lib/assistant/ctai-term.js');
   });
 });
 
 describe('turn meta (the per-turn meter)', () => {
   it('types, models, cost, latency', async () => {
-    expect(turnType({ status: 'answered', recipe: 'define' })).toBe('CTAI term study');
+    expect(turnType({ status: 'answered', recipe: 'define' })).toBe('Rendering Lookup (CTAI)');
     expect(turnType({ status: 'reading' })).toBe('reading guide');
     expect(turnType({ status: 'canned', kind: 'greeting' })).toBe('canned (greeting)');
     expect(meterSummary([{ model: 'a', usd: 0.01 }, { model: 'b', usd: 0.02 }, { model: 'a', usd: 0 }])).toEqual({ models: ['a', 'b'], usd: 0.03, calls: 3 });

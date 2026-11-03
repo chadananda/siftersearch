@@ -27,8 +27,8 @@ describe('labels', () => {
 });
 
 describe('the researcher looks for an existing translation first', () => {
-  it('the system prompt orders it: find_translation, then source_of with a draft line, word_study before translating fresh', () => {
-    expect(RESEARCH_SYSTEM).toMatch(/FIRST look for an existing translation — find_translation/);
+  it('the system prompt orders it: translation_lookup, then quotation_trace with a draft line, rendering_lookup before translating fresh', () => {
+    expect(RESEARCH_SYSTEM).toMatch(/FIRST look for an existing translation — translation_lookup/);
     expect(RESEARCH_SYSTEM).toMatch(/provisional translation by Anís/);
   });
   it('find_translation shows the whole existing translation, labelled', async () => {
@@ -46,7 +46,7 @@ describe('the researcher looks for an existing translation first', () => {
     const seen = [];
     const create = async (p) => { seen.push(p); return { choices: [{ message: replies.shift() }] }; };
     await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { translation: async () => [] } });
-    expect(String(seen[1].messages.at(-1).content)).toMatch(/call source_of with it/);
+    expect(String(seen[1].messages.at(-1).content)).toMatch(/call quotation_trace with it/);
   });
 });
 
