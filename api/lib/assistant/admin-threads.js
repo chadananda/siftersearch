@@ -6,6 +6,7 @@ import { auditsFor } from '../repos/audit-store-repo.js';
 import fs from 'fs';
 import { emailHash } from './pause-link.js';
 import { turnType } from './turn-meta.js';
+import { conversationTotals } from './progress.js';
 
 const safeJson = (s) => { try { return JSON.parse(s); } catch { return null; } };
 
@@ -130,7 +131,9 @@ export async function threadDetail({ thread, messages, audits = auditsFor, peopl
           latency_ms: p.timings?.total_ms ?? null } };
     }
   }
-  return { id: t.id, channel: t.channel, title: t.title, started_at: t.started_at, last_activity: t.last_activity, person: personOf(t.participant_id, who), rounds: [...rounds.values()] };
+  return { id: t.id, channel: t.channel, title: t.title, started_at: t.started_at, last_activity: t.last_activity, person: personOf(t.participant_id, who), rounds: [...rounds.values()],
+    // time and cost of the whole conversation (sum of its rounds' meta)
+    totals: conversationTotals([...rounds.values()].map((e) => e.reply).filter(Boolean)) };
 }
 
 /** The audits as a WORK QUEUE (Chad 10-12: "whatever the audits identify as a useful extension for our search strategies is

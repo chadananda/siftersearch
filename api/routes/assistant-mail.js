@@ -122,6 +122,15 @@ export default async function anisRoutes(fastify) {
     return rec || reply.code(404).send({ status: 'unknown' });
   });
 
+  // The welcome template in the reader's language (worker/mail/drafting.js planWelcomes). Nothing is sent; the Worker holds the draft for Chad.
+  fastify.post('/welcome-translate', async (request, reply) => {
+    if (!internalOnly(request, reply)) return;
+    const { subject, body, lang } = request.body || {};
+    if (!subject || !body || !/^[a-z]{2,3}(-\w+)?$/i.test(String(lang || ''))) return reply.code(400).send({ error: 'subject, body, lang required' });
+    const r = await (await import('../lib/assistant/welcome.js')).translateWelcome({ subject, body, lang });
+    return r || reply.code(502).send({ error: 'translation failed' });
+  });
+
   // A letter Anís starts (onboarding / follow-up). step 0–1: a capability they have not used, shown on their own subject;
   // later steps: further research on their last question. Not a user turn, so it is not logged as one. Nothing found →
   // { silent: true }: silence beats a weak letter.

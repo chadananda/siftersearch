@@ -36,7 +36,9 @@ export function sendDecision(f, s = DEFAULTS) {
     // Chad asking for it IS the approval (invite-only, 2026-10-08): the outreach switch governs only what Anís starts
     if (!f.askedBy && s.outreach_enabled !== 'on') return { ok: false, reason: 'outreach is switched off' };
     if (f.stopped) return { ok: false, reason: 'this person paused letters or asked to stop' };
-    if (!f.allowlisted) return { ok: false, reason: 'welcome only to people added to the list' };
+    if (!f.invited) return { ok: false, reason: 'welcome only to people Chad invited' };
+    // A FIRST letter is never sent by the machine (launch 2026-11): it waits on Chad's review page; only his Send sets `approved`.
+    if (!f.approved) return { ok: false, reason: 'a first letter is held for Chad\'s approval' };
     if (f.welcomed) return { ok: false, reason: 'already welcomed' };
     return { ok: true };
   }
@@ -48,6 +50,7 @@ export function sendDecision(f, s = DEFAULTS) {
   if (s.outreach_enabled !== 'on') return { ok: false, reason: 'outreach is switched off' };
   if (f.stopped) return { ok: false, reason: 'this person paused letters or asked to stop' };
   if (!f.inboundCount) return { ok: false, reason: 'outreach only to people who have written to Anís' };
+  if (!f.invited) return { ok: false, reason: 'not invited: letters Anís starts go only to people Chad invited' };
   if (s.outreach_allowlist_only === 'on' && !f.allowlisted) return { ok: false, reason: 'not on the alpha allowlist' };
   const steps = String(s.cadence_days).split(',').map(Number).filter((n) => n > 0);
   const n = f.outreachSinceLastInbound;

@@ -20,7 +20,7 @@ import { verifySns, isAmazonUrl } from './sns.js';
 import { composeLetter } from './letter.js';
 import { renderEmail } from '../../api/lib/mail-render.js';
 import { sendDecision, settingsFrom, pauseToken, verifyPauseToken, emailHash } from './rules.js';
-import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest, supportLetter, digestPage } from './drafting.js';
+import { reviewPage, draftReplies, planOutreach, planWelcomes, dailyDigest, supportLetter, digestPage, inviteReader } from './drafting.js';
 import { deweyCron, deweyJobMail, deweyDaily, deweyLive, deweyRequests, injectInbound, pauseRequestsPage, approveRequestsPage, LOGO_BYTES } from './dewey.js';
 import { zeptoEvents } from './zepto.js';
 import { reviewsRoute, queueReviews } from './reviews.js';
@@ -237,10 +237,10 @@ async function send(request, env) {
 export async function loadSettings(db) { return settingsFrom((await db.prepare('SELECT key, value FROM mail_settings').all()).results); }
 
 /** Send one stored draft through the engagement rules; records the outcome on the row. → { id, status, reason?, ... } */
-export async function deliver(env, row) {
+export async function deliver(env, row, { approved = false } = {}) {   // approved: only Chad's Send on the review page (or his support letter) says true
   const db = env.ANIS_DB;
   const settings = await loadSettings(db);
-  const verdict = sendDecision(await sendFacts(db, row, settings), settings);
+  const verdict = sendDecision(await sendFacts(db, { ...row, approved }, settings), settings);
   if (!verdict.ok) {
     await db.prepare(`UPDATE mail_messages SET status = 'blocked', error = ? WHERE id = ?`).bind(verdict.reason, row.id).run();
     return { id: row.id, status: 'blocked', reason: verdict.reason };
@@ -269,6 +269,8 @@ export async function sendFacts(db, row, settings = {}) {
     ignored: ignoredBy([addr], rules.map((r) => r.pattern)),
     stopped: !!(await one('SELECT 1 x FROM mail_stop WHERE email_hash = ?', await emailHash(addr))),
     allowlisted: !!(await one('SELECT 1 x FROM mail_allowlist WHERE email = ?', addr)),
+    invited: !!(await one('SELECT 1 x FROM mail_allowlist WHERE email = ? AND invited = 1', addr)),
+    approved: !!row.approved,
     askedBy: (await one('SELECT asked_by FROM mail_allowlist WHERE email = ?', addr))?.asked_by ?? null,
     welcomed: !!(await one(`SELECT 1 x FROM mail_messages WHERE direction = 'out' AND kind = 'welcome' AND status = 'sent' AND to_addr = ?`, addr)),
     inboundCount: inbound?.n ?? 0,
@@ -327,12 +329,29 @@ export function mailRoute(request, env) {
   if (request.method === 'GET' && p === '/_mail/digest') return digestPage(request, env);
   if (request.method === 'POST' && p === '/_mail/run') return runJob(request, env);
   if (request.method === 'POST' && p === '/_mail/support') return support(request, env);
+  if (request.method === 'POST' && p === '/_mail/invite') return invite(request, env);
+  if (request.method === 'GET' && p === '/_mail/invites') return invites(request, env);
   if (request.method === 'POST' && p === '/_mail/zepto/events') return zeptoEvents(request, env);
   if (request.method === 'POST' && p === '/_mail/dewey/inject') return injectInbound(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/dewey/pause') return pauseRequestsPage(request, env);
   if ((request.method === 'GET' || request.method === 'POST') && p === '/_mail/dewey/approve') return approveRequestsPage(request, env);
   if (p === '/_mail/reviews' || p === '/_mail/reflect') return reviewsRoute(request, env);   // reviews + reflections (reviews.js)
   return null;
+}
+
+/** Chad invites readers (internal key): body { email, name?, lang? } or { invite: [ … ] }. They get a welcome DRAFT for his review —
+ *  nothing is sent here. Letters Anís starts go only to invited people. */
+async function invite(request, env) {
+  if (!internal(request, env)) return json({ error: 'unauthorized' }, 401);
+  let b; try { b = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
+  const out = [];
+  for (const one of Array.isArray(b.invite) ? b.invite : [b]) out.push(await inviteReader(env, one));
+  return json({ invited: out });
+}
+async function invites(request, env) {
+  if (!internal(request, env)) return json({ error: 'unauthorized' }, 401);
+  const { results } = await env.ANIS_DB.prepare(`SELECT email, name, lang, asked_by, added_at FROM mail_allowlist WHERE invited = 1 ORDER BY added_at`).all();
+  return json({ invited: results });
 }
 
 /** A support letter Chad approved (drafting.js supportLetter). Internal key. */

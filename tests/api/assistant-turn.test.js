@@ -57,7 +57,7 @@ describe('anisTurn', () => {
   it('the tarpit is undetectable: only event types the normal paths emit, and no gated field', async () => {
     const normal = harness({ triage: t() });
     await normal.run();
-    const normalTypes = new Set(['session', 'stage', 'sources', 'status', 'text', 'companion_offer']);
+    const normalTypes = new Set(['session', 'stage', 'sources', 'status', 'text', 'understood', 'progress', 'companion_offer']);
     const strikes = makeStrikes(); strikes.strike('sess_1'); strikes.strike('sess_1');
     const h = harness({ strikes });
     for (let i = 0; i < 6; i++) await h.run(`probe ${i}`);

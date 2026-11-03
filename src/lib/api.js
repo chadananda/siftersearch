@@ -656,7 +656,7 @@ export const chat = {
               if (evt.type === 'text') yield { type: 'chunk', text: evt.content };
               else if (evt.type === 'done') yield { type: 'complete', citations: evt.citations || [], conversation_id: evt.conversation_id, meta: evt.meta };
               else if (evt.type === 'session') yield evt; // pass through; UI may want to capture conversation_id
-              else if (evt.type === 'status') yield { type: 'search_start', message: evt.message };
+              else if (evt.type === 'status' && evt.message) yield { type: 'search_start', message: evt.message };
               else yield evt;
             } catch (_) { /* malformed SSE chunk */ }
           }

@@ -1311,6 +1311,11 @@
           researchMessages = researchMessages.map((m, i) =>
             i === assistantIdx ? { ...m, researchStatus: event.status } : m
           );
+        } else if (event.type === 'understood' && event.text) {
+          // instant: what Anís understood the question to be, before any searching
+          researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, understood: event.text } : m);
+        } else if (event.type === 'progress' && event.text) {
+          researchMessages = researchMessages.map((m, i) => i === assistantIdx ? { ...m, progress: event.text } : m);
         } else if (event.type === 'citations') {
           pendingCitations = event.citations || [];
           researchMessages = researchMessages.map((m, i) =>
@@ -2015,6 +2020,12 @@
                   <div class="research-searching">
                     <svg class="w-4 h-4 animate-spin text-accent" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
                     <span class="text-muted text-sm">Searching library{msg.searchQuery ? ` for "${msg.searchQuery}"` : ''}...</span>
+                  </div>
+                {/if}
+                {#if msg.isStreaming && !msg.content && (msg.understood || msg.progress)}
+                  <div class="research-progress text-sm text-muted" role="status" aria-live="polite">
+                    {#if msg.understood}<p class="text-secondary">{msg.understood}</p>{/if}
+                    {#if msg.progress}<p>{msg.progress}</p>{/if}
                   </div>
                 {/if}
                 <!-- Assistant response -->

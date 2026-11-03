@@ -10,6 +10,7 @@ import { strikes as liveStrikes, tarpitResponse } from './strikes.js';
 import { lintReply } from './lint.js';
 import { channelFor } from './channels.js';
 import { turnMeta } from './turn-meta.js';
+import { understoodLine, progressText } from './progress.js';
 import { withAIContext, currentAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
 import { phraseStage } from './phrases.js';
@@ -49,8 +50,10 @@ export async function anisTurn(args) {
 }
 
 async function turnBody({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},
-  conversationId = null, clientKey = null, onEvent = () => {}, research = undefined, engine = undefined, llm = undefined, variants = undefined, deps }, meter = [], timeline = []) {
+  conversationId = null, clientKey = null, onEvent: rawEvent = () => {}, research = undefined, engine = undefined, llm = undefined, variants = undefined, deps }, meter = [], timeline = []) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
+  // every stage event also says, in words, what Anís is doing (the site chat shows it)
+  const onEvent = (ev) => { rawEvent(ev); const p = ev?.type === 'stage' ? progressText(ev.stage) : null; if (p) rawEvent({ type: 'progress', stage: ev.stage, text: p }); };
   const channel = channelFor(channelName, { trusted });
   const text = lastUser(messages);
   const name = profile.persona_name || 'Anís';
@@ -65,6 +68,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
     const tp = tarpitResponse(text, { name });
     if (tp.looksLike === 'research') {
+      { const u = understoodLine({ action: 'research' }, text); if (u) onEvent({ type: 'understood', text: u }); }   // same shape as a real research turn
       onEvent({ type: 'stage', stage: 'search' }); onEvent({ type: 'sources', sources: [], plan: null, ms: 180 });
       onEvent({ type: 'status', text: 'Searching more widely…' });
     }
@@ -82,6 +86,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     lookupOn ? timed('lookup', () => (d.lookup || resolveLookup)(messages), (r) => (r ? { kind: r.kind } : null)).catch(() => null) : null]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
+  { const u = understoodLine(route, text); if (u) onEvent({ type: 'understood', text: u }); }
   // "unclear" / "cut off" may only short-circuit a message with no substance. A real topic ("race unity") or a pasted
   // passage ("Find this. excerpt from a pilgrim note: …") goes to research (10-19 battery: both got a canned "say more" /
   // "part of your message went missing" instead of an answer — scored 1 against Immerse's 8)

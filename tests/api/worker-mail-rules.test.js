@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { sendDecision, settingsFrom, DEFAULTS, pauseToken, verifyPauseToken } from '../../worker/mail/rules.js';
 
-const base = { kind: 'reply', suppressed: false, ignored: null, stopped: false, allowlisted: true, inboundCount: 1,
+const base = { kind: 'reply', suppressed: false, ignored: null, stopped: false, allowlisted: true, invited: true, approved: true, inboundCount: 1,
   daysSinceLastInbound: 0, outreachSinceLastInbound: 0, sentToPersonToday: 0, sentToday: 0 };
 const on = settingsFrom([{ key: 'outreach_enabled', value: 'on' }]);
 
@@ -60,7 +60,7 @@ describe('welcome letter', () => {
     expect(sendDecision({ ...w, askedBy: 'Chad' }, DEFAULTS).ok).toBe(true);          // Chad asked: goes even with outreach off
     expect(sendDecision({ ...w, askedBy: 'Chad', welcomed: true }, DEFAULTS).ok).toBe(false);
     expect(sendDecision({ ...w, welcomed: true }, on).reason).toMatch(/already/);
-    expect(sendDecision({ ...w, allowlisted: false }, on).reason).toMatch(/list/);
+    expect(sendDecision({ ...w, invited: false }, on).reason).toMatch(/invited/);
     expect(sendDecision({ ...w, stopped: true }, on).reason).toMatch(/paused/);
   });
 });

@@ -98,8 +98,9 @@ async function sendOrReview(env, settings, draft, source) {
   // a REPLY always goes at once (Chad 10-19: "if someone asks a question of Anis, they should get an immediate answer … I did
   // not say I wanted to be asked to approve anis emails") — the engagement rules (stop, bounces, caps) still decide in deliver()
   if (draft.kind === 'reply') return deliver(env, draft);
+  if (draft.kind === 'welcome') return notifyReviewer(env, settings, draft, source);   // a FIRST letter is always held for Chad
   const invited = settings.auto_send_invited === 'on'
-    && await env.ANIS_DB.prepare('SELECT 1 x FROM mail_allowlist WHERE email = ?').bind(draft.to_addr).first();
+    && await env.ANIS_DB.prepare('SELECT 1 x FROM mail_allowlist WHERE email = ? AND invited = 1').bind(draft.to_addr).first();
   if (invited) return deliver(env, draft);                             // in the daily digest as sent, or blocked with why
   return notifyReviewer(env, settings, draft, source);
 }
@@ -184,8 +185,8 @@ export async function supportLetter(env, b) {
   const key = `<support-${crypto.randomUUID()}@oceanlibrary.com>`;
   await db.prepare(`INSERT INTO mail_messages (mailbox, direction, status, message_id, thread_key, from_addr, from_name, to_addr, subject, text)
     VALUES ('support', 'in', 'handled', ?, ?, ?, ?, 'chad (forwarded)', ?, ?)`).bind(key, key, to, b.name ?? null, b.subject ?? '', b.question).run();
-  await db.prepare(`INSERT INTO mail_allowlist (email, name, asked_by, note) VALUES (?, ?, 'Chad', 'support letter')
-    ON CONFLICT(email) DO UPDATE SET name = coalesce(mail_allowlist.name, excluded.name)`).bind(to, b.name ?? null).run();
+  await db.prepare(`INSERT INTO mail_allowlist (email, name, asked_by, note, invited) VALUES (?, ?, 'Chad', 'support letter', 1)
+    ON CONFLICT(email) DO UPDATE SET name = coalesce(mail_allowlist.name, excluded.name), invited = 1`).bind(to, b.name ?? null).run();
   const welcomed = await db.prepare(`SELECT 1 x FROM mail_messages WHERE direction = 'out' AND status = 'sent' AND to_addr = ?`).bind(to).first();
   const tpl = await db.prepare('SELECT subject, body FROM mail_templates WHERE key = ?').bind(welcomed ? 'support_reply' : 'support_welcome').first();
   const vars = { greeting: b.name ? `Hello ${String(b.name).trim().split(/\s+/)[0]},` : 'Hello,', about: b.about ? ` about ${b.about}` : '',
@@ -194,29 +195,52 @@ export async function supportLetter(env, b) {
   const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, thread_key, error)
     VALUES ('anis', ?, 'out', 'draft', ?, ?, ?, ?, ?, ?, 'support letter; approved by Chad') RETURNING *`)
     .bind(welcomed ? 'reply' : 'welcome', FROM_ADDR, to, fill(tpl.subject, vars), text, toHtml(text), key).first();
-  return deliver(env, draft);
+  return deliver(env, draft, { approved: true });                      // Chad handed it over and approved the answer
 }
 
-/** Welcome letters: once, to each person added to the list who has never written and has no welcome yet (any status —
- *  a discarded welcome is a decision, not a gap). Template from D1 mail_templates. When Chad asked for it (asked_by)
- *  it is SENT at once — his request is the approval; otherwise it is drafted for review. */
-export async function planWelcomes(env, settings) {
+/** Welcome letters: once, to each INVITED person who has never written and has no welcome yet (any status — a discarded
+ *  welcome is a decision, not a gap). Template from D1 mail_templates, in the reader's language (allowlist.lang; tower
+ *  translates the template). ALWAYS a draft for Chad's review page — nothing here sends (launch rule: a first letter is held). */
+export async function planWelcomes(env, settings, { translate = translateWelcome } = {}) {
   const db = env.ANIS_DB;
   settings ||= await loadSettings(db);
   const tpl = await db.prepare(`SELECT subject, body FROM mail_templates WHERE key = 'welcome'`).first();
   if (!tpl) return;
-  const { results } = await db.prepare(`SELECT a.email, a.name, a.asked_by FROM mail_allowlist a
-    WHERE NOT EXISTS (SELECT 1 FROM mail_messages m WHERE m.direction = 'in' AND m.from_addr = a.email)
+  const { results } = await db.prepare(`SELECT a.email, a.name, a.asked_by, a.lang FROM mail_allowlist a
+    WHERE a.invited = 1
+      AND NOT EXISTS (SELECT 1 FROM mail_messages m WHERE m.direction = 'in' AND m.from_addr = a.email)
       AND NOT EXISTS (SELECT 1 FROM mail_messages m WHERE m.direction = 'out' AND m.kind = 'welcome' AND m.to_addr = a.email)`).all();
   for (const p of results) {
-    if (!sendDecision(await sendFacts(db, { to_addr: p.email, kind: 'welcome' }, settings), settings).ok) continue;   // e.g. not asked for, outreach off
-    const body = fillTemplate(tpl.body, p);
+    // eligibility only (approved: true asks "would Chad's Send be allowed?"); the send itself happens on the review page
+    if (!sendDecision(await sendFacts(db, { to_addr: p.email, kind: 'welcome', approved: true }, settings), settings).ok) continue;
+    let subject = tpl.subject, body = fillTemplate(tpl.body, p);
+    if (p.lang && !/^en/i.test(p.lang)) {
+      try { ({ subject, body } = await translate(env, { subject, body, lang: p.lang })); }
+      catch { continue; }                                              // tower unreachable: try next hour rather than send English to a Persian reader
+    }
     const draft = await db.prepare(`INSERT INTO mail_messages (mailbox, kind, direction, status, from_addr, to_addr, subject, text, html, error)
-      VALUES ('anis', 'welcome', 'out', 'draft', ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, p.email, tpl.subject, body, toHtml(body),
-      p.asked_by ? `welcome template; asked by ${p.asked_by}` : 'welcome template').first();
-    if (p.asked_by) await deliver(env, draft);                         // Chad asked: his request is the approval
-    else await sendOrReview(env, settings, draft, null);
+      VALUES ('anis', 'welcome', 'out', 'draft', ?, ?, ?, ?, ?, ?) RETURNING *`).bind(FROM_ADDR, p.email, subject, body, toHtml(body),
+      `welcome template${p.lang ? ` (${p.lang})` : ''}; held for Chad's approval${p.asked_by ? `; invited by ${p.asked_by}` : ''}`).first();
+    await notifyReviewer(env, settings, draft, null);                  // Chad's review page is the only way it goes out
   }
+}
+
+/** The welcome in the reader's language (tower writes it; Anís stays "he", the identity and links stay). */
+export async function translateWelcome(env, { subject, body, lang }) {
+  const r = await tower(env, '/welcome-translate', { subject, body, lang });
+  if (!r?.body || !r?.subject) throw new Error('empty translation');
+  return { subject: r.subject, body: r.body };
+}
+
+/** Chad invites someone (internal key): they join the list as invited; the welcome (a draft for Chad) follows on the next run.
+ *  Re-inviting updates name/lang. Returns the row. */
+export async function inviteReader(env, { email, name = null, lang = null, by = 'Chad' }) {
+  const to = String(email || '').trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return { error: 'a valid email is required' };
+  await env.ANIS_DB.prepare(`INSERT INTO mail_allowlist (email, name, asked_by, note, invited, lang) VALUES (?, ?, ?, 'invited', 1, ?)
+    ON CONFLICT(email) DO UPDATE SET invited = 1, name = coalesce(excluded.name, mail_allowlist.name), lang = coalesce(excluded.lang, mail_allowlist.lang),
+      asked_by = coalesce(mail_allowlist.asked_by, excluded.asked_by)`).bind(to, name, by, lang).run();
+  return { email: to, name, lang, invited: true };
 }
 
 /** Letters Anís starts: only while switched on, only to whom the rules allow now, one pending draft per person. */
@@ -277,11 +301,11 @@ export async function reviewPage(request, env) {
     }
     const subject = String(form.get('subject') || d.subject), text = String(form.get('text') || d.text);
     await db.prepare('UPDATE mail_messages SET subject = ?, text = ?, html = ? WHERE id = ?').bind(subject, text, toHtml(text), id).run();
-    const r = await deliver(env, { ...d, subject, text, html: toHtml(text) });
+    const r = await deliver(env, { ...d, subject, text, html: toHtml(text) }, { approved: true });   // the signed review link IS Chad's approval
     return page(r.status === 'sent' ? `<h1>Sent</h1><p class="meta">to ${esc(d.to_addr)}</p>` : `<h1>Not sent: ${esc(r.status)}</h1><p>${esc(r.reason || r.error || '')}</p>`);
   }
   const settings = await loadSettings(db);
-  const verdict = sendDecision(await sendFacts(db, d, settings), settings);
+  const verdict = sendDecision(await sendFacts(db, { ...d, approved: true }, settings), settings);   // would Send work now?
   const src = Number((d.error || '').match(/source:(\d+)/)?.[1]);
   const source = src ? await db.prepare('SELECT subject, text, from_name, created_at FROM mail_messages WHERE id = ?').bind(src).first() : null;
   return page(`<h1>${{ outreach: 'A letter Anís wants to start', welcome: 'Welcome letter' }[d.kind] || 'Reply'} to ${esc(d.to_addr)}</h1>
