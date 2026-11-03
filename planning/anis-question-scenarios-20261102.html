@@ -273,6 +273,35 @@ q{font-style:italic;quotes:"“" "”"}
     <li><b>Fall back.</b> When Jev is unsure, or a strategy fails its own checks, the full research agent takes the question. A strategy is switched on only after it answers as well as the agent on its type's tests.</li>
     <li><b>Reply in three parts.</b> At once: what he understood and is doing ("Looking for what Bahá'u'lláh and the Buddha say about the soul after death…"), then progress. Then the short answer, streamed. Then the details, only when warranted. One writing step produces the last two, so nothing is said twice.</li>
   </ol>
+  <h3>Inside a strategy</h3>
+  <p>Each strategy is a decision tree: a custom flow chart of decisions and tools, built for its request type. Tools are shared and reused, both across strategies and within one path. Search often runs twice, the second time with what the first found. Every strategy ends the same way: a <b>format decision</b> (which format best presents the data of this answer?), and then the data and the chosen format go to the writing model for output. The writing model writes. It does not decide what to search.</p>
+  <p>Steps differ in cost, and a strategy is designed to stay near the cheap end:</p>
+  <div class="wrap"><table>
+    <tr><th>Step</th><th>Examples</th><th>Cost</th></tr>
+    <tr><td>Code check</td><td>quoted words present? exact hit? dates in the data? one result or many?</td><td class="n">≈ 0</td></tr>
+    <tr><td>Tool call</td><td>library lookup, keyword search (BM25), literal phrase search, concept search (HyPE), source search (CTAI), read around, people and events</td><td class="n">10–300 ms</td></tr>
+    <tr><td>Jev decision</td><td>a judgement code can't make: is this the source or a book quoting it? enough evidence?</td><td class="n">≈ 50 ms</td></tr>
+    <tr><td>Fast-LLM step</td><td>extract terms for keyword search; extract a phrase for literal search; recast the question into a clear one a concept search can answer</td><td class="n">0.5–2 s, paid</td></tr>
+    <tr><td>Writing model</td><td>the answer, from data and format, once per answer</td><td class="n">seconds, paid</td></tr>
+    <tr><td>Research agent</td><td>fallback only</td><td class="n">10–40 s</td></tr>
+  </table></div>
+  <p><b>Minimise LLM steps.</b> A fast-LLM step is used only where code can't do the job: quoted words are taken as they are, a single term needs no extraction, and a clear question needs no recasting. Each LLM step on a strategy's path has to show in the branch assessment that it changes the result, or it is removed. One example, the quotation trace ("who said 'the earth is but one country'?"):</p>
+  <pre class="mermaid">
+flowchart TD
+  Q["Message + thread + reader card"] --> C{"Quoted words? (code)"}
+  C -- yes --> L["Literal phrase search (tool)"]
+  C -- no --> X["Extract the remembered phrase (fast LLM)"] --> L
+  L --> H{"Exact hit? (code)"}
+  H -- no --> B["Keyword search on the rarest words (tool)"] --> H2{"Close hit? (code)"}
+  H2 -- no --> K["Concept search (tool)"] --> S
+  H2 -- yes --> S
+  H -- yes --> S{"The original, or a book quoting it? (Jev)"}
+  S -- "quoting it" --> T["Literal search in earlier works (tool, reused)"] --> S
+  S -- original --> F{"Format: decisive passage, find passage or honest absence (code + Jev)"}
+  F --> W["Writing model: data + format → answer"]
+  </pre>
+  <p class="note">On the usual path ("quoted words, exact hit, original"), this costs no LLM step before the writing model.</p>
+
   <div class="wrap"><table>
     <tr><th>Kind of question</th><th>Target time</th></tr>
     <tr><td>A book's name, a quotation, a reference</td><td class="n">≤ 1 s</td></tr>
