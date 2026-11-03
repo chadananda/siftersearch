@@ -1,0 +1,5554 @@
+[
+ {
+  "id": "w8:db-03",
+  "q": "How did the Báb's pilgrimage to Mecca unfold — what did He do at the Ka‘bih, and what message did He send to the Sherif of Mecca?",
+  "expect": null,
+  "type": "history-story",
+  "ev": {
+   "stage": 184,
+   "progress": 184,
+   "session": 617,
+   "sources": 3842,
+   "status": 3842,
+   "text": 5821,
+   "chunk": 6653,
+   "citations": 6657,
+   "complete": 6657
+  },
+  "cid": "conv_6fc6281d-a9e4-4be3-b8eb-be88acb9188a",
+  "first": 5821,
+  "t1": "Regarding the layers of the tradition: revealed Scripture comprises the writings of the Báb Himself; authorized interpretation includes the works of ‘Abdu’l-Bahá and Shoghi Effendi (such as *A Traveler’s Narrative* and *God Passes By*); historical accounts like Nabil's chronicle record the events of the period; and official guidance from the Universal House of Justice directs the administrative affairs of the community today.",
+  "total": 6657,
+  "reply": "The Báb performed the traditional circumambulation of the Ka‘bih upon reaching Mecca, and afterward entrusted an epistle for the Sherif of the city to Quddús, calling upon him to recognize His mission. As Nabil Zarandi records in [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_426&selectionString=dawn-breakers-prod-version_en_ej.0~dawn-breakers-prod-version_en_ej.2768):\n\n> No sooner had the Báb performed the last of the observances in connection with His pilgrimage to Mecca than He addressed an epistle to the Sherif of that holy city, wherein He set forth, in clear and unmistakable terms, the distinguishing features of His mission, and called upon him to arise and embrace His Cause.\n> — [The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_426&selectionString=dawn-breakers-prod-version_en_ej.0~dawn-breakers-prod-version_en_ej.2768)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 34
+   },
+   {
+    "name": "open-log",
+    "at": 34,
+    "ms": 70
+   },
+   {
+    "name": "triage",
+    "at": 34,
+    "ms": 190
+   },
+   {
+    "name": "strategy",
+    "at": 36,
+    "ms": 212,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 248,
+    "ms": 3301
+   },
+   {
+    "name": "plan",
+    "at": 249,
+    "ms": 666
+   },
+   {
+    "name": "work",
+    "at": 915,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 915,
+    "ms": 2
+   },
+   {
+    "name": "search",
+    "at": 918,
+    "ms": 2614
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3532,
+    "ms": 12
+   },
+   {
+    "name": "companion",
+    "at": 3545,
+    "ms": 3
+   },
+   {
+    "name": "format",
+    "at": 3545,
+    "ms": 685
+   },
+   {
+    "name": "craft",
+    "at": 4230,
+    "ms": 2001
+   },
+   {
+    "name": "output-check",
+    "at": 6233,
+    "ms": 171
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00295,
+   "calls": 9,
+   "latency_ms": 6404
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:source-resolve",
+   "anis-understood",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-01",
+  "q": "Tell me the story of the evening Mullá Ḥusayn first met the Báb in Shíráz — what happened that night of His declaration?",
+  "expect": null,
+  "type": "history-story",
+  "ev": {
+   "stage": 199,
+   "progress": 199,
+   "session": 578,
+   "sources": 4840,
+   "status": 4840,
+   "text": 6231,
+   "chunk": 7043,
+   "citations": 7053,
+   "complete": 7053
+  },
+  "cid": "conv_df40062c-fb1b-459a-a3ee-34c03ee43ccb",
+  "first": 6231,
+  "t1": "What began as a quiet, nocturnal encounter in an obscure corner of Persia expanded into a worldwide observance anchoring the global Bahá’í calendar.",
+  "total": 7053,
+  "reply": "- 1844 (May 22, just after sunset): In the upper chamber of a modest Shíráz residence, the Báb declared His mission to Mullá Ḥusayn, who sat spellbound through the night as his Host revealed verses and prayers ([*God Passes By*](https://siftersearch.com/library/view?doc=21310) [paraId=para_26](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_26&selectionString=god_passes_by_ocean_en_3h.0~god_passes_by_ocean_en_3h.683), *God Passes By* [paraId=para_27](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_27&selectionString=god_passes_by_ocean_en_3i.0~god_passes_by_ocean_en_3i.1318)).\n- 1944: Shoghi Effendi instructed communities worldwide to mark the centenary by gathering at the exact hour and minute of the declaration—two hours and eleven minutes after sunset ([*Unfolding Destiny*](https://siftersearch.com/library/view?doc=21312) [paraId=para_1318](https://oceanlibrary.com/unfolding-destiny_shoghi-effendi/?paraId=para_1318&selectionString=unfolding_destiny_bahai_ocean_en-bl17v.0~unfolding_destiny_bahai_ocean_en-bl17v.285), [*Messages to the Indian Subcontinent*](https://siftersearch.com/library/view?doc=20888) [paraId=para_2690](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_2690&selectionString=messages_to_the_indian_subcontinent_en-bl1wm.0~messages_to_the_indian_subcontinent_en-bl1wm.977)).\n\nWhat began as a quiet, nocturnal encounter in an obscure corner of Persia expanded into a worldwide observance anchoring the global Bahá’í calendar.\n\nSource: [Messages to the Indian Subcontinent](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_2690&selectionString=messages_to_the_indian_subcontinent_en-bl1wm.0~messages_to_the_indian_subcontinent_en-bl1wm.977)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "timeline",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 43
+   },
+   {
+    "name": "open-log",
+    "at": 43,
+    "ms": 64
+   },
+   {
+    "name": "triage",
+    "at": 43,
+    "ms": 213
+   },
+   {
+    "name": "strategy",
+    "at": 44,
+    "ms": 198,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 256,
+    "ms": 2786
+   },
+   {
+    "name": "plan",
+    "at": 257,
+    "ms": 606
+   },
+   {
+    "name": "work",
+    "at": 863,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 863,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 864,
+    "ms": 3620
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4484,
+    "ms": 10
+   },
+   {
+    "name": "companion",
+    "at": 4495,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 4495,
+    "ms": 276
+   },
+   {
+    "name": "craft",
+    "at": 4771,
+    "ms": 1711
+   },
+   {
+    "name": "output-check",
+    "at": 6567,
+    "ms": 210
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00342,
+   "calls": 9,
+   "latency_ms": 6778
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "system1:source-resolve",
+   "anis-understood",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-02",
+  "q": "What happened at the fort of Shaykh Ṭabarsí? Walk me through the course of the siege as Nabíl tells it.",
+  "expect": null,
+  "type": "history-story",
+  "ev": {
+   "stage": 184,
+   "progress": 184,
+   "session": 585,
+   "sources": 4868,
+   "status": 4868,
+   "text": 6054,
+   "chunk": 7033,
+   "citations": 7043,
+   "complete": 7043
+  },
+  "cid": "conv_301c783f-e5de-4a88-ae56-8e579f6eab38",
+  "first": 6054,
+  "t1": "Despite their different vantage points, these passages share a view of the fort not merely as a military engagement, but as a crucible where the early community faced overwhelming government forces at immense human cost.",
+  "total": 7043,
+  "reply": "The siege of the fort of Shaykh Ṭabarsí began when believers, [\"mostly students and recluses, built the Fort of ̱S̱hayḵh Ṭabarsí and held out against the armies of Persia for eleven months\"](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=fn_129) — [*Memorials of the Faithful*](https://siftersearch.com/library/view?doc=20907).\n\nHere are three lines from the sources on that episode:\n\n* [\"At the time the movement had been devastated by the crushing defeat at Shaykh Tabarsi\"](https://oceanlibrary.com/kjv-gospel-of-luke) — [*Will and Testament*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_will-and-testament).\n* [\"built the Fort of S̱hayḵh Ṭabarsí and held out against the armies of Persia for eleven months\"](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=fn_129) — *Memorials of the Faithful*.\n* [\"We resolved to depart from Núr and lend Our assistance to its heroic defenders\"](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1779&selectionString=dawn-breakers-prod-version_en_1g4.0~dawn-breakers-prod-version_en_1g4.1833) — [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308), quoting Bahá'u'lláh.\n\nDespite their different vantage points, these passages share a view of the fort not merely as a military engagement, but as a crucible where the early community faced overwhelming government forces at immense human cost.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "range_of_voices",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 42
+   },
+   {
+    "name": "open-log",
+    "at": 42,
+    "ms": 71
+   },
+   {
+    "name": "triage",
+    "at": 42,
+    "ms": 405
+   },
+   {
+    "name": "strategy",
+    "at": 43,
+    "ms": 207,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 447,
+    "ms": 2601
+   },
+   {
+    "name": "plan",
+    "at": 448,
+    "ms": 1500
+   },
+   {
+    "name": "work",
+    "at": 1948,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1948,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 1948,
+    "ms": 2660
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4608,
+    "ms": 106
+   },
+   {
+    "name": "format",
+    "at": 4714,
+    "ms": 136
+   },
+   {
+    "name": "companion",
+    "at": 4715,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 4850,
+    "ms": 1735
+   },
+   {
+    "name": "output-check",
+    "at": 6635,
+    "ms": 153
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00299,
+   "calls": 8,
+   "latency_ms": 6788
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-06",
+  "q": "How was the Báb martyred in Tabríz in 1850? What happened with the first volley and Sám Khán's regiment?",
+  "expect": null,
+  "type": "history-story",
+  "ev": {
+   "stage": 156,
+   "progress": 156,
+   "session": 522,
+   "understood": 1478,
+   "sources": 2121,
+   "status": 2121,
+   "text": 3310,
+   "chunk": 3942,
+   "complete": 3942
+  },
+  "cid": "conv_e0f40855-2fa7-40c6-926a-118411880026",
+  "first": 3310,
+  "t1": "If you would like to explore the specific details of the execution further, you might search using terms like \"Sám Khán\" alongside the martyrdom.",
+  "total": 3942,
+  "reply": "I didn't find a passage detailing the exact events of the first volley and Sám Khán's regiment in this search, as the texts I can search mention the handover to Sám Khán and the general setting of the martyrdom in Tabríz, but do not describe the regiment's initial volley.\n\nIf you would like to explore the specific details of the execution further, you might search using terms like \"Sám Khán\" alongside the martyrdom.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 37
+   },
+   {
+    "name": "open-log",
+    "at": 37,
+    "ms": 67
+   },
+   {
+    "name": "triage",
+    "at": 37,
+    "ms": 337
+   },
+   {
+    "name": "strategy",
+    "at": 39,
+    "ms": 304,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 374,
+    "ms": 1029
+   },
+   {
+    "name": "plan",
+    "at": 375,
+    "ms": 217
+   },
+   {
+    "name": "work",
+    "at": 592,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 592,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 593,
+    "ms": 1353
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1946,
+    "ms": 99
+   },
+   {
+    "name": "companion",
+    "at": 2046,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 2046,
+    "ms": 163
+   },
+   {
+    "name": "craft",
+    "at": 2209,
+    "ms": 1401
+   },
+   {
+    "name": "output-check",
+    "at": 3616,
+    "ms": 161
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00264,
+   "calls": 9,
+   "latency_ms": 3777
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-04",
+  "q": "Describe the Báb's examination before the ‘ulamás of Tabríz: who questioned Him, what was He asked, and how did He answer?",
+  "expect": null,
+  "type": "history-story",
+  "ev": {
+   "stage": 162,
+   "progress": 162,
+   "session": 376,
+   "understood": 1283,
+   "sources": 3076,
+   "status": 3076,
+   "text": 4861,
+   "chunk": 6382,
+   "citations": 6410,
+   "complete": 6410
+  },
+  "cid": "conv_7001690d-2a18-4c1f-a5d5-cd9f32796c3b",
+  "first": 4861,
+  "t1": "These accounts share the central recognition that a formal ecclesiastical and governmental tribunal was convened to interrogate the Báb, yet it unexpectedly became the public stage for the bold assertion of His mission.",
+  "total": 6411,
+  "reply": "When the Báb reached Tabríz, He was brought before a government tribunal where prominent divines—including the Niẓámu’l-‘Ulamá’, Mullá Muḥammad-i-Mámáqání, Mírzá Aḥmad the Imám-Jum‘ih, and Mírzá ‘Alí-Aṣg̱har the Ṣhayḵhu’l-Islám—questioned Him concerning His claims, as recorded in [*A Traveler’s Narrative*](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_46&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_41.0~abdu-l-baha-traveler-s-narrative-ocean_en_41.765) by ‘Abdu’l-Bahá ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_46&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_41.0~abdu-l-baha-traveler-s-narrative-ocean_en_41.765)). When asked, the Báb openly stated His claim to the station of the Mahdí, which provoked a mighty tumult among the assembled doctors ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_46&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_41.0~abdu-l-baha-traveler-s-narrative-ocean_en_41.765)).\n\nHere are reflections on that examination across the historical and interpretive records:\n\n* [\"When the Báb reached Tabríz they brought Him after some days before the government tribunal.\"](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_46&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_41.0~abdu-l-baha-traveler-s-narrative-ocean_en_41.765) — [*A Traveler’s Narrative*](https://siftersearch.com/library/view?doc=20899)\n* [\"The avowed purpose of that convocation was to arraign the Prisoner, and deliberate on the steps to be taken for the extirpation of His so-called heresy.\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_63&selectionString=god_passes_by_ocean_en_4i.0~god_passes_by_ocean_en_4i.1191) — [*God Passes By*](https://siftersearch.com/library/view?doc=21310)\n* \"Upon His arrival, the Báb observed that every seat in that hall was occupied except one which had been reserved for the Valí-‘Ahd.\" ([The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_901&selectionString=dawn-breakers-prod-version_en_rq.0~dawn-breakers-prod-version_en_rq.2396)) — [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308)\n\nThese accounts share the central recognition that a formal ecclesiastical and governmental tribunal was convened to interrogate the Báb, yet it unexpectedly became the public stage for the bold assertion of His mission.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "range_of_voices",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 35
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 144
+   },
+   {
+    "name": "strategy",
+    "at": 36,
+    "ms": 119,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 179,
+    "ms": 986
+   },
+   {
+    "name": "plan",
+    "at": 180,
+    "ms": 122
+   },
+   {
+    "name": "work",
+    "at": 302,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 302,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 303,
+    "ms": 2578
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2881,
+    "ms": 58
+   },
+   {
+    "name": "format",
+    "at": 2939,
+    "ms": 361
+   },
+   {
+    "name": "companion",
+    "at": 2940,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 3301,
+    "ms": 2642
+   },
+   {
+    "name": "output-check",
+    "at": 5990,
+    "ms": 185
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00405,
+   "calls": 9,
+   "latency_ms": 6175
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-05",
+  "q": "What is the story of the 'Sifter of Wheat' in Iṣfahán in the Dawn-Breakers, and why is it remembered?",
+  "expect": null,
+  "type": "history-story",
+  "ev": {
+   "stage": 620,
+   "progress": 620,
+   "session": 905,
+   "understood": 1842,
+   "sources": 4000,
+   "status": 4000,
+   "text": 5309,
+   "chunk": 6214,
+   "citations": 6214,
+   "complete": 6214
+  },
+  "cid": "conv_2718b94b-374b-4b21-a8ff-b68abd26945f",
+  "first": 5309,
+  "t1": "Balyuzi ([Eminent Bahá’ís in the Time of Bahá’u’lláh](https://siftersearch.com/library/bahai/bahai-books/h-m-balyuzi_eminent-bahais-in-the-time-of-bahaullah#p199)).",
+  "total": 6214,
+  "reply": "The story of the sifter of wheat in Iṣfahán tells of Mullá Muḥammad Ja‘far Gandum-Pák-Kun, the very first person in that city to accept the Faith of the Báb upon hearing the call. He served Mullá Ḥusayn with devotion, became a zealous advocate of the new revelation, and eventually joined the defenders at the Fort of Ṭabarsí, where he perished during the siege. He is remembered because his unreserved acceptance and steadfastness are praised directly in the [*Kitáb-i-Aqdas*](https://siftersearch.com/library/view?doc=21307), where he is noted as one who _“donned the robe of discipleship.”_ ([The Kitáb-i-Aqdas](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=fn_183))\n\n***",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 562
+   },
+   {
+    "name": "open-log",
+    "at": 562,
+    "ms": 60
+   },
+   {
+    "name": "triage",
+    "at": 562,
+    "ms": 149
+   },
+   {
+    "name": "strategy",
+    "at": 562,
+    "ms": 156,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 718,
+    "ms": 1019
+   },
+   {
+    "name": "plan",
+    "at": 719,
+    "ms": 149
+   },
+   {
+    "name": "work",
+    "at": 868,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 868,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 869,
+    "ms": 3047
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3917,
+    "ms": 9
+   },
+   {
+    "name": "format",
+    "at": 3926,
+    "ms": 177
+   },
+   {
+    "name": "companion",
+    "at": 3927,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 4103,
+    "ms": 1674
+   },
+   {
+    "name": "output-check",
+    "at": 5803,
+    "ms": 230
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00307,
+   "calls": 9,
+   "latency_ms": 6033
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "anis-understood",
+   "search-query",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-07",
+  "q": "What happened to Bahá'u'lláh at Ámul after He tried to reach Shaykh Ṭabarsí — why was He beaten there?",
+  "expect": null,
+  "type": "history-story",
+  "ev": {
+   "stage": 215,
+   "progress": 215,
+   "session": 540,
+   "sources": 1429,
+   "status": 1429,
+   "understood": 1667,
+   "text": 2467,
+   "chunk": 4418,
+   "citations": 4418,
+   "complete": 4418
+  },
+  "cid": "conv_3528d9fb-8e31-44cd-9229-0a48107b5c61",
+  "first": 2467,
+  "t1": "The authorized interpretation by 'Abdu'l-Bahá notes that \"The Blessed Beauty was confined to prison in the town of Ámul, and, as the ‘ulamá gathered together in the mosque, He was delivered into their hands. Those iniquitous divines then rose up against Him with injustice and tyranny.\" — *Light of the World*.",
+  "total": 4418,
+  "reply": "Bahá’u’lláh’s journey to join the defenders at the Fort of Ṭabarsí was intercepted at Níyálá by Mírzá Taqí, the Governor of Ámul, who surrounded the village by night and brought Him back to Ámul with a small escort of riders. There, local authorities and clergy delivered Him into the hands of assembled divines who subjected Him to severe abuse and a bastinado.\n\nThe authorized interpretation by 'Abdu'l-Bahá notes that \"The Blessed Beauty was confined to prison in the town of Ámul, and, as the ‘ulamá gathered together in the mosque, He was delivered into their hands. Those iniquitous divines then rose up against Him with injustice and tyranny.\" ([Light of the World](https://oceanlibrary.com/light-of-the-world_abdul-baha/?paraId=para_115&selectionString=light_of_the_world_baha_i_ocean_en-bl61.0~light_of_the_world_baha_i_ocean_en-bl61.556)) — [*Light of the World*](https://siftersearch.com/library/view?doc=20906).",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 97
+   },
+   {
+    "name": "open-log",
+    "at": 98,
+    "ms": 57
+   },
+   {
+    "name": "triage",
+    "at": 98,
+    "ms": 137
+   },
+   {
+    "name": "strategy",
+    "at": 98,
+    "ms": 144,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 242,
+    "ms": 1327
+   },
+   {
+    "name": "plan",
+    "at": 243,
+    "ms": 204
+   },
+   {
+    "name": "work",
+    "at": 447,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 447,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 447,
+    "ms": 859
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1306,
+    "ms": 6
+   },
+   {
+    "name": "format",
+    "at": 1312,
+    "ms": 114
+   },
+   {
+    "name": "companion",
+    "at": 1313,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 1426,
+    "ms": 2076
+   },
+   {
+    "name": "output-check",
+    "at": 3528,
+    "ms": 263
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00287,
+   "calls": 9,
+   "latency_ms": 3791
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-08",
+  "q": "Who was Quddús, and what was his role at Shaykh Ṭabarsí?",
+  "expect": null,
+  "type": "who-was",
+  "ev": {
+   "stage": 163,
+   "progress": 163,
+   "session": 2091,
+   "understood": 2091,
+   "sources": 2467,
+   "status": 2467,
+   "text": 3692,
+   "chunk": 4261,
+   "citations": 4275,
+   "complete": 4275
+  },
+  "cid": "conv_580fd1db-a485-47b0-b410-74ff60341c6d",
+  "first": 3692,
+  "t1": "> \"the massacre of over 300 active believers amongst them prominent leaders and Letters of Living: Quddus and Mulla Husayn.\" - *Will and Testament*",
+  "total": 4275,
+  "reply": "Quddús was one of the Letters of the Living—an early leader of the Bábí movement—who perished alongside over three hundred believers during the crushing defeat and massacre at the Fort of Shaykh Ṭabarsí.\n\nThe sources record that he \"hastened away to the Fort of Ṭabarsí\" ([Memorials of the Faithful](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_712&selectionString=abdu-l-baha-memorials-of-the-faithful_en_og.0~abdu-l-baha-memorials-of-the-faithful_en_og.430)) ([*Memorials of the Faithful*](https://siftersearch.com/library/view?doc=20907)), where he displayed remarkable \"knowledge and sagacity,\" his companions ultimately recognizing his profound authority and resourcefulness ([*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308)).\n\n> \"the massacre of over 300 active believers amongst them prominent leaders and Letters of Living: Quddus and Mulla Husayn.\" - [*Will and Testament*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_will-and-testament)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 40
+   },
+   {
+    "name": "open-log",
+    "at": 40,
+    "ms": 61
+   },
+   {
+    "name": "triage",
+    "at": 40,
+    "ms": 145
+   },
+   {
+    "name": "strategy",
+    "at": 41,
+    "ms": 135,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 185,
+    "ms": 171
+   },
+   {
+    "name": "understood",
+    "at": 185,
+    "ms": 985
+   },
+   {
+    "name": "work",
+    "at": 356,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 356,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 356,
+    "ms": 1876
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2233,
+    "ms": 85
+   },
+   {
+    "name": "format",
+    "at": 2318,
+    "ms": 148
+   },
+   {
+    "name": "companion",
+    "at": 2319,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 2466,
+    "ms": 1280
+   },
+   {
+    "name": "output-check",
+    "at": 3787,
+    "ms": 97
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00238,
+   "calls": 8,
+   "latency_ms": 3884
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-09",
+  "q": "Who was Siyyid Káẕim-i-Rashtí, and what did he tell his disciples before his death about the Promised One?",
+  "expect": null,
+  "type": "who-was",
+  "ev": {
+   "stage": 371,
+   "progress": 371,
+   "session": 686,
+   "understood": 1590,
+   "sources": 2502,
+   "status": 2502,
+   "text": 3902,
+   "chunk": 5557,
+   "citations": 5563,
+   "complete": 5563
+  },
+  "cid": "conv_87951aa3-168e-4922-9da6-83c6a16dedd0",
+  "first": 3902,
+  "t1": "Similarly,  ‘Abdu’l-Bahá notes in [*Memorials of the Faithful*](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_690&selectionString=abdu-l-baha-memorials-of-the-faithful_en_nu.0~abdu-l-baha-memorials-of-the-faithful_en_nu.1172) that he repeatedly told his disciples:",
+  "total": 5563,
+  "reply": "Siyyid Káẓim-i-Rashtí was the disciple and successor of Shaykh Aḥmad-i-Aḥsá’í, dedicating his life to teaching the inner meanings of the Qur'án and preparing seekers for an imminent revelation. As his life drew to a close, he urged his followers to search for the Promised One, declaring that the dawn of the new Advent was at hand.\n\nShoghi Effendi records in [*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_208&selectionString=god_passes_by_ocean_en_8j.0~god_passes_by_ocean_en_8j.695):\n\n> “Verily, I say, after the Qá’im the Qayyúm will be made manifest. For when the star of the former has set the sun of the beauty of Ḥu...\"\n> — [God Passes By](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_208&selectionString=god_passes_by_ocean_en_8j.0~god_passes_by_ocean_en_8j.695)\n\nSimilarly,  ‘Abdu’l-Bahá notes in [*Memorials of the Faithful*](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_690&selectionString=abdu-l-baha-memorials-of-the-faithful_en_nu.0~abdu-l-baha-memorials-of-the-faithful_en_nu.1172) that he repeatedly told his disciples:\n\n> Ṭáhirih had caught fire. She set out for Karbilá, hoping to meet Siyyid Káẓim, but she arrived too late: ten days before she reached that city, he passed away. Not long before his death the Siyyid had shared with his disciples the good news that the promised Advent was at hand. “Go forth,” he repeatedly told them, “and seek out your Lord.” Thus the most distinguished of his followers gathered for retirement and prayer, for fasts and vigils, in the Masjid-i-Kúfih, while some awaited the Advent in …\n> — [Memorials of the Faithful](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_690&selectionString=abdu-l-baha-memorials-of-the-faithful_en_nu.0~abdu-l-baha-memorials-of-the-faithful_en_nu.1172)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 32
+   },
+   {
+    "name": "open-log",
+    "at": 32,
+    "ms": 59
+   },
+   {
+    "name": "triage",
+    "at": 32,
+    "ms": 213
+   },
+   {
+    "name": "strategy",
+    "at": 33,
+    "ms": 196,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 245,
+    "ms": 1012
+   },
+   {
+    "name": "plan",
+    "at": 246,
+    "ms": 185
+   },
+   {
+    "name": "work",
+    "at": 431,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 431,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 431,
+    "ms": 1731
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2162,
+    "ms": 3
+   },
+   {
+    "name": "companion",
+    "at": 2166,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 2166,
+    "ms": 104
+   },
+   {
+    "name": "craft",
+    "at": 2270,
+    "ms": 2646
+   },
+   {
+    "name": "output-check",
+    "at": 4919,
+    "ms": 129
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00369,
+   "calls": 9,
+   "latency_ms": 5048
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "anis-understood",
+   "search-query",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-10",
+  "q": "Who was Manúchihr Khán, the Mu‘tamidu'd-Dawlih, and how did he treat the Báb in Iṣfahán?",
+  "expect": null,
+  "type": "who-was",
+  "ev": {
+   "stage": 102,
+   "progress": 102,
+   "session": 338,
+   "understood": 1094,
+   "sources": 1637,
+   "status": 1637,
+   "text": 3154,
+   "chunk": 3846,
+   "complete": 3846
+  },
+  "cid": "conv_aca8f809-ab0f-47d9-a54b-df67ad76340d",
+  "first": 3154,
+  "t1": "The sources record that he conceived and carried out a design for the Báb's protection, lavishing honors upon Him in the privacy of his home until his passing.",
+  "total": 3846,
+  "reply": "Manúchihr Khán, the Mu‘tamidu'd-Dawlih, was the governor of Iṣfahán who extended protection and deep respect to the Báb upon His arrival in the province, offering Him lodging and later housing Him in his own private residence for safety.\n\nThe sources record that he conceived and carried out a design for the Báb's protection, lavishing honors upon Him in the privacy of his home until his passing.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 37
+   },
+   {
+    "name": "open-log",
+    "at": 37,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 37,
+    "ms": 130
+   },
+   {
+    "name": "strategy",
+    "at": 38,
+    "ms": 132,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 170,
+    "ms": 122
+   },
+   {
+    "name": "understood",
+    "at": 170,
+    "ms": 880
+   },
+   {
+    "name": "work",
+    "at": 292,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 292,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 292,
+    "ms": 1255
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1548,
+    "ms": 6
+   },
+   {
+    "name": "format",
+    "at": 1554,
+    "ms": 114
+   },
+   {
+    "name": "companion",
+    "at": 1555,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 1668,
+    "ms": 1576
+   },
+   {
+    "name": "output-check",
+    "at": 3247,
+    "ms": 136
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00264,
+   "calls": 9,
+   "latency_ms": 3383
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-11",
+  "q": "Who was Vaḥíd (Siyyid Yaḥyáy-i-Dárábí), how did he become a believer, and what happened to him at Nayríz?",
+  "expect": null,
+  "type": "who-was",
+  "ev": {
+   "stage": 95,
+   "progress": 95,
+   "session": 317,
+   "understood": 1102,
+   "sources": 1586,
+   "status": 1586,
+   "text": 2973,
+   "chunk": 4697,
+   "citations": 4710,
+   "complete": 4710
+  },
+  "cid": "conv_a15d25e0-7c9a-4359-93eb-d1d64a76991b",
+  "first": 2973,
+  "t1": "Across these accounts, the authors unite in remembering Vaḥíd as a luminous scholar whose steadfast loyalty and ultimate martyrdom crowned his transformation from investigator to defender.",
+  "total": 4711,
+  "reply": "Siyyid Yaḥyáy-i-Dárábí, titled Vaḥíd, was a renowned scholar who was sent by the Shah to investigate the Báb, met Him in Shíráz, and became a devoted follower after witnessing His profound knowledge and spiritual power.\n\nHere are words from the sources on his standing and sacrifice:\n\n- [\"the number of the name of God\"](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih#p679) — [*The Seven Proofs*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih) (quoting Nicolas's note on his title)\n- [\"In truth the testimony of God has come and the countenance of truth is unveiled.\"](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_tablet-of-patience-lawh-i-sabr-or-lawh-i-ayyub#p42) — [*Tablet of Patience*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_tablet-of-patience-lawh-i-sabr-or-lawh-i-ayyub)\n- [\"arose to serve His Cause and quaffed his fill of the draught of certitude\"](https://siftersearch.com/library/bahai/bahai-books/ahang-rabbani_the-babis-of-nayriz-history-and-documents-2#p1973) — quoted in [*The Bábís of Nayriz: History and Documents*](https://siftersearch.com/library/bahai/bahai-books/ahang-rabbani_the-babis-of-nayriz-history-and-documents-2) by Ahang Rabbani\n\nWhen Vaḥíd arrived in Nayríz, his eloquent defense of the Faith drew large crowds and inspired profound devotion among the people, as described in [*The Súrih of Patience*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_surah-of-patience) (*[Súrih of Patience (Súrat as-Sabr)](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_surih-of-patience-surat-as-sabr#p75)*). This gathering provoked fierce opposition from local authorities, culminating in a violent siege and tragic tribulations where Vaḥíd and his companions ultimately sacrificed their lives for the Cause.\n\nAcross these accounts, the authors unite in remembering Vaḥíd as a luminous scholar whose steadfast loyalty and ultimate martyrdom crowned his transformation from investigator to defender.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "range_of_voices",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 33,
+    "ms": 60
+   },
+   {
+    "name": "triage",
+    "at": 33,
+    "ms": 131
+   },
+   {
+    "name": "strategy",
+    "at": 34,
+    "ms": 113,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 164,
+    "ms": 870
+   },
+   {
+    "name": "plan",
+    "at": 165,
+    "ms": 138
+   },
+   {
+    "name": "work",
+    "at": 303,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 303,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 303,
+    "ms": 1014
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1317,
+    "ms": 198
+   },
+   {
+    "name": "companion",
+    "at": 1515,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 1515,
+    "ms": 134
+   },
+   {
+    "name": "craft",
+    "at": 1649,
+    "ms": 2161
+   },
+   {
+    "name": "output-check",
+    "at": 3870,
+    "ms": 163
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00371,
+   "calls": 9,
+   "latency_ms": 4033
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-12",
+  "q": "Who was Ḥujjat of Zanján and what happened in the Zanján upheaval?",
+  "expect": null,
+  "type": "who-was",
+  "ev": {
+   "stage": 746,
+   "progress": 746,
+   "session": 1529,
+   "understood": 3685,
+   "sources": 4408,
+   "status": 4408,
+   "text": 6579,
+   "chunk": 6913,
+   "citations": 6913,
+   "complete": 6913
+  },
+  "cid": "conv_bbe6f95b-facd-4443-b93b-d30be48e6c27",
+  "first": 6579,
+  "t1": "> [\"Unprecedented in both its duration and in the number of those who were swept away by its fury, this violent tempest that broke out in the west of Persia, and in which Mullá Muḥammad-‘Alíy-i-Zanjání, surnamed Ḥujjat, one of the ablest and most formidable champions of the Faith, together with no less\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_110&selectionString=god_passes_by_ocean_en_5t.0~god_passes_by_ocean_en_5t.1359) — *God Passes By*",
+  "total": 6913,
+  "reply": "Ḥujjat of Zanján was Mullá Muḥammad-‘Alíy-i-Zanjání, an eminent cleric and one of the most formidable champions of the early Bábí movement, and the Zanján upheaval was a devastating and prolonged military siege directed against him and his companions by royal forces.\n\nAs Shoghi Effendi describes the conflict in [*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_110&selectionString=god_passes_by_ocean_en_5t.0~god_passes_by_ocean_en_5t.1359):\n\n> [\"Unprecedented in both its duration and in the number of those who were swept away by its fury, this violent tempest that broke out in the west of Persia, and in which Mullá Muḥammad-‘Alíy-i-Zanjání, surnamed Ḥujjat, one of the ablest and most formidable champions of the Faith, together with no less\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_110&selectionString=god_passes_by_ocean_en_5t.0~god_passes_by_ocean_en_5t.1359) — [*God Passes By*](https://siftersearch.com/library/view?doc=21310)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "yes_no_with_proof",
+   "by": "default"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 42
+   },
+   {
+    "name": "open-log",
+    "at": 42,
+    "ms": 61
+   },
+   {
+    "name": "triage",
+    "at": 42,
+    "ms": 423
+   },
+   {
+    "name": "strategy",
+    "at": 42,
+    "ms": 462,
+    "choice": "other",
+    "sides": []
+   },
+   {
+    "name": "understood",
+    "at": 504,
+    "ms": 2018
+   },
+   {
+    "name": "plan",
+    "at": 505,
+    "ms": 680
+   },
+   {
+    "name": "work",
+    "at": 1185,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1185,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 1185,
+    "ms": 2224
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3410,
+    "ms": 2
+   },
+   {
+    "name": "companion",
+    "at": 3413,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 3413,
+    "ms": 601
+   },
+   {
+    "name": "craft",
+    "at": 4014,
+    "ms": 2223
+   },
+   {
+    "name": "output-check",
+    "at": 6244,
+    "ms": 130
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.0028,
+   "calls": 7,
+   "latency_ms": 6375
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-13",
+  "q": "Who was Mullá Ṣádiq-i-Khurásání and what was done to him in Shíráz after he changed the call to prayer?",
+  "expect": null,
+  "type": "who-was",
+  "ev": {
+   "stage": 493,
+   "progress": 493,
+   "session": 1469,
+   "sources": 3277,
+   "status": 3277,
+   "text": 4758,
+   "chunk": 5467,
+   "citations": 5467,
+   "complete": 5467
+  },
+  "cid": "conv_574ca498-9797-4200-a530-e8d4143e0125",
+  "first": 4758,
+  "t1": "As recorded by an eye-witness, \n> [\"I was present when Mullá Ṣádiq was being scourged. I watched his persecutors each in turn apply the lash to his bleeding shoulders, and continue the strokes until he became exhausted.\"](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_445&selectionString=dawn-breakers-prod-version_en_f2.0~dawn-breakers-prod-version_en_f2.1312) *The Dawn-Breakers*",
+  "total": 5467,
+  "reply": "Mullá Ṣádiq-i-Khurásání was a renowned scholar, a disciple of Siyyid Káẓim, and a trusted companion of Mullá Ḥusayn who became known for his purity of life and saintliness. When the governor of Fárs was induced by local clergy to persecute the Báb's missionaries, Mullá Ṣádiq was subjected to a brutal public scourging in Shíráz alongside others after a disturbance involving the call to prayer.\n\nAs recorded by an eye-witness, \n> [\"I was present when Mullá Ṣádiq was being scourged. I watched his persecutors each in turn apply the lash to his bleeding shoulders, and continue the strokes until he became exhausted.\"](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_445&selectionString=dawn-breakers-prod-version_en_f2.0~dawn-breakers-prod-version_en_f2.1312) [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 33,
+    "ms": 67
+   },
+   {
+    "name": "triage",
+    "at": 33,
+    "ms": 336
+   },
+   {
+    "name": "strategy",
+    "at": 33,
+    "ms": 336,
+    "choice": "other",
+    "sides": []
+   },
+   {
+    "name": "understood",
+    "at": 369,
+    "ms": 2505
+   },
+   {
+    "name": "plan",
+    "at": 370,
+    "ms": 631
+   },
+   {
+    "name": "work",
+    "at": 1001,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1001,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 1002,
+    "ms": 1634
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2640,
+    "ms": 227
+   },
+   {
+    "name": "format",
+    "at": 2867,
+    "ms": 286
+   },
+   {
+    "name": "companion",
+    "at": 2868,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 3153,
+    "ms": 1622
+   },
+   {
+    "name": "output-check",
+    "at": 4798,
+    "ms": 216
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00268,
+   "calls": 8,
+   "latency_ms": 5014
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:anis-format",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-14",
+  "q": "Who was Ḥájí Mírzá Áqásí, and why did he fear and oppose the Báb?",
+  "expect": null,
+  "type": "who-was",
+  "ev": {
+   "stage": 129,
+   "progress": 129,
+   "session": 472,
+   "understood": 1429,
+   "sources": 2091,
+   "status": 2091,
+   "text": 3168,
+   "chunk": 4555,
+   "citations": 4598,
+   "complete": 4599
+  },
+  "cid": "conv_8e60b2e4-953f-4472-888d-fed2d502e014",
+  "first": 3168,
+  "t1": "These sources share the view that Áqásí's hostility stemmed from a desperate desire to protect his own political survival and power by turning the monarch and clergy against the Báb's growing influence.",
+  "total": 4599,
+  "reply": "Ḥájí Mírzá Áqásí served as the Grand Vazír to Muḥammad Sháh, holding immense political influence before falling into disgrace and poverty as described in [*Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative). He opposed the Báb out of political preservation and fear.\n\n- [\"The overbearing and crafty Ḥájí Mírzá Áqásí, fearful lest the sway of the Báb encompass his sovereign and thus seal his own doom\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_50&selectionString=god_passes_by_ocean_en_45.0~god_passes_by_ocean_en_45.3355) — [*God Passes By*](https://siftersearch.com/library/view?doc=21310)\n- [\"Fearing that the growing popularity of the Báb might move Muḥammad Sháh to grant Him a personal audience, Ḥájí Mírzá Áqásí, the Prime Minister, set out to poison the minds of the ʿulamā of Isfahán.\"](https://siftersearch.com/library/bahai/bahai-books/mohammad-norozi_haji-mirza-aqasi-a-portrait-of-a-tyrannical-and-ignorant-prime-minister-with-a-2#p8) — *Hájí Mírzá Áqásí: A Portrait of a Tyrannical and Ignorant Prime Minister With a Translation of His Letter Addressed to the ‘Ulamá—the Learned Divines—of Isfahán*\n- [\"Áqásí echoes the invective of the clergy, portraying the Báb as both misguided and misleading, and insisting that His punishment was essential for the preservation of religion and the security of the state.\"](https://siftersearch.com/library/bahai/bahai-books/mohammad-norozi_haji-mirza-aqasi-a-portrait-of-a-tyrannical-and-ignorant-prime-minister-with-a-2#p9) — *Hájí Mírzá Áqásí: A Portrait of a Tyrannical and Ignorant Prime Minister With a Translation of His Letter Addressed to the ‘Ulamá—the Learned Divines—of Isfahán*\n\nThese sources share the view that Áqásí's hostility stemmed from a desperate desire to protect his own political survival and power by turning the monarch and clergy against the Báb's growing influence.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "range_of_voices",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 35
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 65
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 201
+   },
+   {
+    "name": "strategy",
+    "at": 36,
+    "ms": 196,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 236,
+    "ms": 1095
+   },
+   {
+    "name": "plan",
+    "at": 237,
+    "ms": 148
+   },
+   {
+    "name": "work",
+    "at": 385,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 385,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 386,
+    "ms": 1548
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1934,
+    "ms": 36
+   },
+   {
+    "name": "format",
+    "at": 1970,
+    "ms": 207
+   },
+   {
+    "name": "companion",
+    "at": 1971,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 2177,
+    "ms": 1958
+   },
+   {
+    "name": "output-check",
+    "at": 4187,
+    "ms": 157
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00386,
+   "calls": 9,
+   "latency_ms": 4344
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-15",
+  "q": "Who were the Seven Martyrs of Ṭihrán, and how did each die?",
+  "expect": null,
+  "type": "who-was",
+  "ev": {
+   "stage": 206,
+   "progress": 206,
+   "session": 724,
+   "understood": 1543,
+   "sources": 3615,
+   "status": 3615,
+   "text": 8626,
+   "chunk": 9668,
+   "complete": 9668
+  },
+  "cid": "conv_f4c6729e-4441-43e9-9563-de90759cfa3c",
+  "first": 8626,
+  "t1": "To explore their identities and martyrdoms further, one might examine works detailing early Persian history or seek passages discussing the specific records preserved by Nabíl and Bahá'u'lláh.",
+  "total": 9683,
+  "reply": "The Seven Martyrs of Ṭihrán were a group of prominent believers executed in February 1850 during the persecution under the Qájár administration. While the texts I can search note their collective tragedy in the Sabzih-Maydán—where their bodies were exposed to indignities—and mention Mírzá ‘Alí-í-Sabzavárí as one of the seven who proclaimed the Cause just before being beheaded, this search does not contain the detailed names and specific death of each individual.\n\nTo explore their identities and martyrdoms further, one might examine works detailing early Persian history or seek passages discussing the specific records preserved by Nabíl and Bahá'u'lláh.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "range_of_voices",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 35
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 61
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 219
+   },
+   {
+    "name": "strategy",
+    "at": 35,
+    "ms": 221,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 256,
+    "ms": 1203
+   },
+   {
+    "name": "plan",
+    "at": 257,
+    "ms": 397
+   },
+   {
+    "name": "work",
+    "at": 655,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 655,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 655,
+    "ms": 2701
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3357,
+    "ms": 4
+   },
+   {
+    "name": "format",
+    "at": 3361,
+    "ms": 362
+   },
+   {
+    "name": "companion",
+    "at": 3362,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 3723,
+    "ms": 1618
+   },
+   {
+    "name": "output-check",
+    "at": 5342,
+    "ms": 524
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00256,
+   "calls": 9,
+   "latency_ms": 5866
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "anis-understood",
+   "search-query",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-16",
+  "q": "On what date did the Báb declare His mission — Gregorian and Islamic — and where exactly in Shíráz did it take place?",
+  "expect": null,
+  "type": "date-place",
+  "ev": {
+   "stage": 614,
+   "progress": 614,
+   "session": 879,
+   "understood": 2267,
+   "sources": 2926,
+   "status": 2926,
+   "text": 7693,
+   "chunk": 9439,
+   "citations": 9439,
+   "complete": 9439
+  },
+  "cid": "conv_f31779ce-9a53-4247-a482-a71b22cc502c",
+  "first": 7693,
+  "t1": "> [\"The opening scene of the initial act of this great drama was laid in the upper chamber of the modest residence of the son of a mercer of S̱híráz, in an obscure corner of that city. The time was the hour before sunset, on the 22nd day of May, 1844.\"]](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_26&selectionString=god_passes_by_ocean_en_3h.0~god_passes_by_ocean_en_3h.683) *God Passes By*",
+  "total": 9439,
+  "reply": "The Báb declared His mission on the evening of May 23, 1844 (corresponding to the 5th day of Jamadi'u'l-Awal 1260 A.H., as noted in the editorial apparatus of [*The River of Life*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_the-river-of-life-a-selection-from-the-teachings)), in the upper chamber of a modest residence located in an obscure corner of Shíráz.\n\nThe sources for this event span different layers of literature. Revealed Scripture includes the Báb's own writings as presented in [*The Seven Proofs (Dalá'il-i-Sab'ih)*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih). Authorized interpretation is provided by Shoghi Effendi in [*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_26&selectionString=god_passes_by_ocean_en_3h.0~god_passes_by_ocean_en_3h.683) and through his [*Uncompiled Published Letters*](https://siftersearch.com/library/view?doc=20897), as well as by ‘Abdu’l-Bahá in [*Divine Philosophy*](https://oceanlibrary.com/divine-philosophy_abdul-baha/?paraId=para_12&selectionString=abdu_l_baha_on_divine_philosophy_bahai_ocean_en-bl32.0~abdu_l_baha_on_divine_philosophy_bahai_ocean_en-bl32.474). Official exposition and compilations, such as [*Bahá’í Sacred Writings*](https://oceanlibrary.com/bahai-sacred-writings/?paraId=para_1026&selectionString=baha_i_sacred_writings_en-blv1.0~baha_i_sacred_writings_en-blv1.960), also record the date and significance of the event. (Guidance from the Universal House of Justice, by contrast, pertains to administration, laws, and current direction rather than the interpretation of scripture.)\n\nThe precise setting and timing of this declaration are described by Shoghi Effendi:\n\n> [\"The opening scene of the initial act of this great drama was laid in the upper chamber of the modest residence of the son of a mercer of S̱híráz, in an obscure corner of that city. The time was the hour before sunset, on the 22nd day of May, 1844.\"]](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_26&selectionString=god_passes_by_ocean_en_3h.0~god_passes_by_ocean_en_3h.683) [*God Passes By*](https://siftersearch.com/library/view?doc=21310)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 28
+   },
+   {
+    "name": "open-log",
+    "at": 28,
+    "ms": 57
+   },
+   {
+    "name": "triage",
+    "at": 28,
+    "ms": 129
+   },
+   {
+    "name": "strategy",
+    "at": 28,
+    "ms": 144,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 172,
+    "ms": 1276
+   },
+   {
+    "name": "plan",
+    "at": 173,
+    "ms": 265
+   },
+   {
+    "name": "work",
+    "at": 438,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 438,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 438,
+    "ms": 1784
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2222,
+    "ms": 37
+   },
+   {
+    "name": "format",
+    "at": 2259,
+    "ms": 173
+   },
+   {
+    "name": "companion",
+    "at": 2260,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 2432,
+    "ms": 2584
+   },
+   {
+    "name": "output-check",
+    "at": 5116,
+    "ms": 700
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00372,
+   "calls": 8,
+   "latency_ms": 5817
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft"
+  ]
+ },
+ {
+  "id": "w8:db-17",
+  "q": "Where is Máh-Kú, and how long was the Báb imprisoned there before He was moved to Chihríq?",
+  "expect": null,
+  "type": "date-place",
+  "ev": {
+   "stage": 387,
+   "progress": 387,
+   "session": 694,
+   "understood": 5146,
+   "sources": 6194,
+   "status": 6194,
+   "text": 6888,
+   "chunk": 6897,
+   "citations": 6898,
+   "complete": 6898
+  },
+  "cid": "conv_85dcf465-aaaf-4931-b41c-753bbaac6b1d",
+  "first": 6888,
+  "t1": "As for the layers of authority on this historical question: revealed Scripture and authorized interpretation provide the accounts of the Báb's movements, while the geographical detail above comes from scholarship accompanying the translations.",
+  "total": 6898,
+  "reply": "Máh-Kú is a town with a mountain fortress located in the northwest corner of Iranian Adharbayjan, near the border with Turkey. The passages available in this search do not state the exact duration of the Báb's imprisonment there before His transfer to Chihríq, though they record that He was exiled there in 1847.\n\nThe primary sources locate and describe the place as follows:\n\n> [\"Mah-Ku\" — town with mountain fortress located in the northwest corner of Iranian Adharbayjan, now the town closest to the Iranian northwestern border with Turkey](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih#p206) — [*The Seven Proofs (Dalá'il-i-Sab'ih)*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 1
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 33,
+    "ms": 59
+   },
+   {
+    "name": "triage",
+    "at": 33,
+    "ms": 151
+   },
+   {
+    "name": "strategy",
+    "at": 33,
+    "ms": 226,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 259,
+    "ms": 1227
+   },
+   {
+    "name": "plan",
+    "at": 260,
+    "ms": 152
+   },
+   {
+    "name": "work",
+    "at": 412,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 412,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 413,
+    "ms": 1722
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2135,
+    "ms": 6
+   },
+   {
+    "name": "companion",
+    "at": 2142,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 2142,
+    "ms": 236
+   },
+   {
+    "name": "craft",
+    "at": 2380,
+    "ms": 2329
+   },
+   {
+    "name": "output-check",
+    "at": 4744,
+    "ms": 700
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00272,
+   "calls": 9,
+   "latency_ms": 5445
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "system1:anis-format:shadow",
+   "anis-craft"
+  ]
+ },
+ {
+  "id": "w8:db-19",
+  "q": "In what month and year did the siege of Shaykh Ṭabarsí end, and where is the shrine located?",
+  "expect": null,
+  "type": "date-place",
+  "ev": {
+   "stage": 102,
+   "progress": 102,
+   "session": 1427,
+   "understood": 7207,
+   "sources": 7207,
+   "status": 7207,
+   "text": 8440,
+   "chunk": 9423,
+   "citations": 9423,
+   "complete": 9423
+  },
+  "cid": "conv_c113d4ae-3b8e-46e1-ad15-2abfb72f617e",
+  "first": 8440,
+  "t1": "Ruhe notes in [*Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853*](https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1367), it is built around the \"shrine of a local saint in Mázindarán near Bábul.\"",
+  "total": 9423,
+  "reply": "I can't confirm the exact month and year of the end of the siege from the passages provided, though they note it took place around 1848 and 1849. Regarding its location, the sources describe it as the fort of Shaykh Ṭabarsí located in the province of Mázindarán. As David S. Ruhe notes in [*Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853*](https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1367), it is built around the \"shrine of a local saint in Mázindarán near Bábul.\"",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "yes_no_with_proof",
+   "by": "default"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 1,
+    "ms": 13
+   },
+   {
+    "name": "open-log",
+    "at": 14,
+    "ms": 320
+   },
+   {
+    "name": "triage",
+    "at": 14,
+    "ms": 328
+   },
+   {
+    "name": "strategy",
+    "at": 15,
+    "ms": 985
+   },
+   {
+    "name": "understood",
+    "at": 1000,
+    "ms": 1292
+   },
+   {
+    "name": "plan",
+    "at": 1001,
+    "ms": 986
+   },
+   {
+    "name": "work",
+    "at": 1987,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1987,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 1987,
+    "ms": 2196
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4183,
+    "ms": 82
+   },
+   {
+    "name": "format",
+    "at": 4265,
+    "ms": 601
+   },
+   {
+    "name": "companion",
+    "at": 4266,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 4866,
+    "ms": 3705
+   },
+   {
+    "name": "output-check",
+    "at": 8574,
+    "ms": 500
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00255,
+   "calls": 6,
+   "latency_ms": 9074
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:search-plan",
+   "anis-understood",
+   "search-query",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-20",
+  "q": "When and where was Ṭáhirih put to death in Ṭihrán?",
+  "expect": null,
+  "type": "date-place",
+  "ev": {
+   "stage": 102,
+   "progress": 102,
+   "session": 1492,
+   "understood": 7195,
+   "sources": 7205,
+   "status": 7205,
+   "text": 8630,
+   "chunk": 9679,
+   "citations": 9679,
+   "complete": 9679
+  },
+  "cid": "conv_83da226f-d33c-4f3a-a388-f9bd8131438f",
+  "first": 8630,
+  "t1": "Guidance from the Universal House of Justice forms the current administration and laws rather than doctrinal interpretation, while general history, scholarship, and community practice remain distinct from scripture.",
+  "total": 9679,
+  "reply": "Ṭáhirih was put to death in a garden in Ṭihrán, though the exact date is not detailed in the passages provided in this search.\n\nThe circumstances of her end are described by ‘Abdu’l-Bahá: \n> [\"They brought her into a garden, where the headsmen waited; but these wavered and then refused to end her life. A slave was found, far gone in drunkenness; besotted, vicious, black of heart. And he strangled Ṭáhirih. He forced a scarf between her lips and rammed it down her throat. Then they lifted up her unsullied body and flung it in a well, there in the garden, and over it threw down earth and stones.\"]](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_715&selectionString=abdu-l-baha-memorials-of-the-faithful_en_oj.0~abdu-l-baha-memorials-of-the-faithful_en_oj.455) [*Memorials of the Faithful*](https://siftersearch.com/library/view?doc=20907)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "yes_no_with_proof",
+   "by": "default"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 16
+   },
+   {
+    "name": "open-log",
+    "at": 16,
+    "ms": 314
+   },
+   {
+    "name": "strategy",
+    "at": 16,
+    "ms": 995
+   },
+   {
+    "name": "triage",
+    "at": 16,
+    "ms": 1000
+   },
+   {
+    "name": "plan",
+    "at": 1016,
+    "ms": 473
+   },
+   {
+    "name": "understood",
+    "at": 1016,
+    "ms": 1272
+   },
+   {
+    "name": "work",
+    "at": 1489,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1489,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 1489,
+    "ms": 2812
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4302,
+    "ms": 4
+   },
+   {
+    "name": "companion",
+    "at": 4306,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 4306,
+    "ms": 601
+   },
+   {
+    "name": "craft",
+    "at": 4907,
+    "ms": 4416
+   },
+   {
+    "name": "output-check",
+    "at": 9342,
+    "ms": 154
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00284,
+   "calls": 6,
+   "latency_ms": 9496
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:search-plan",
+   "anis-understood",
+   "search-query",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-18",
+  "q": "When and where was the conference of Badasht held, and who provided for it?",
+  "expect": null,
+  "type": "date-place",
+  "ev": {
+   "stage": 406,
+   "progress": 406,
+   "session": 982,
+   "understood": 7556,
+   "sources": 7556,
+   "status": 7556,
+   "text": 8682,
+   "chunk": 10025,
+   "citations": 10025,
+   "complete": 10025
+  },
+  "cid": "conv_ad5ab221-06f6-4426-8894-60559be2a489",
+  "first": 8682,
+  "t1": "Balyuzi and Moojan Momen) further chronicle the details of the gathering.",
+  "total": 10026,
+  "reply": "The conference of Badasht was held in a hamlet in the northeast of Persia (Khurasán) in June 1848, and the physical arrangements and provisions were supplied entirely by Bahá'u'lláh.\n\nIn the authorized interpretation of Shoghi Effendi, \n> [\"The scene of such a challenging and far-reaching proclamation was the hamlet of Badas̱ht, where Bahá’u’lláh had rented, amidst pleasant surroundings, three gardens, one of which He assigned to Quddús, another to Ṭáhirih, whilst the third He reserved for Himself. The eighty-one disciples who had gathered from various provinces were His guests from the day of their arrival to the day they dispersed.\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_87&selectionString=god_passes_by_ocean_en_56.0~god_passes_by_ocean_en_56.798)\n> — [*God Passes By*](https://siftersearch.com/library/view?doc=21310)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "yes_no_with_proof",
+   "by": "default"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 1,
+    "ms": 34
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 333
+   },
+   {
+    "name": "strategy",
+    "at": 36,
+    "ms": 333,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 369,
+    "ms": 2008
+   },
+   {
+    "name": "plan",
+    "at": 370,
+    "ms": 133
+   },
+   {
+    "name": "work",
+    "at": 503,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 503,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 503,
+    "ms": 2854
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3357,
+    "ms": 4
+   },
+   {
+    "name": "companion",
+    "at": 3362,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 3362,
+    "ms": 633
+   },
+   {
+    "name": "craft",
+    "at": 3995,
+    "ms": 5130
+   },
+   {
+    "name": "output-check",
+    "at": 9141,
+    "ms": 419
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00311,
+   "calls": 7,
+   "latency_ms": 9560
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-21",
+  "q": "Where and when was the Báb born, and who were His parents?",
+  "expect": null,
+  "type": "date-place",
+  "ev": {
+   "stage": 109,
+   "progress": 109,
+   "session": 457,
+   "sources": 4074,
+   "status": 4074,
+   "text": 5815,
+   "chunk": 6220,
+   "citations": 6231,
+   "complete": 6231
+  },
+  "cid": "conv_b42c4f30-5861-4f81-9f18-9e5161cb7a85",
+  "first": 5815,
+  "t1": "As recorded in *A Traveler’s Narrative*, He \"was born in the year one thousand two hundred and thirty-five [A.H.] on the first day of Muḥarram, and when after a few years His father Siyyid Muḥammad-Riḍá died, He was brought up in S̱híráz in the arms of His maternal uncle Mírzá Siyyid ‘Alí the merchant\" — *A Traveler’s Narrative*.",
+  "total": 6231,
+  "reply": "The Báb was born in Shíráz in October 1819, the son of Siyyid Muḥammad-Riḍá, a merchant, and was brought up by His maternal uncle after His father's early death.\n\nAs recorded in [*A Traveler’s Narrative*](https://siftersearch.com/library/view?doc=20899), He \"was born in the year one thousand two hundred and thirty-five [A.H.] on the first day of Muḥarram, and when after a few years His father Siyyid Muḥammad-Riḍá died, He was brought up in S̱híráz in the arms of His maternal uncle Mírzá Siyyid ‘Alí the merchant\" ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_10&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_31.0~abdu-l-baha-traveler-s-narrative-ocean_en_31.491)) — *A Traveler’s Narrative*.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 36
+   },
+   {
+    "name": "open-log",
+    "at": 36,
+    "ms": 64
+   },
+   {
+    "name": "triage",
+    "at": 36,
+    "ms": 255
+   },
+   {
+    "name": "strategy",
+    "at": 37,
+    "ms": 255,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 293,
+    "ms": 3543
+   },
+   {
+    "name": "plan",
+    "at": 295,
+    "ms": 152
+   },
+   {
+    "name": "work",
+    "at": 447,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 447,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 448,
+    "ms": 3516
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3965,
+    "ms": 30
+   },
+   {
+    "name": "companion",
+    "at": 3996,
+    "ms": 3
+   },
+   {
+    "name": "format",
+    "at": 3996,
+    "ms": 119
+   },
+   {
+    "name": "craft",
+    "at": 4115,
+    "ms": 1817
+   },
+   {
+    "name": "output-check",
+    "at": 5957,
+    "ms": 116
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00253,
+   "calls": 8,
+   "latency_ms": 6074
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-22",
+  "q": "Give me a timeline of the Báb's life from His birth to His martyrdom, with the places at each stage.",
+  "expect": null,
+  "type": "timeline",
+  "ev": {
+   "stage": 104,
+   "progress": 104,
+   "session": 1029,
+   "sources": 4799,
+   "status": 4799,
+   "text": 6028,
+   "chunk": 7420,
+   "citations": 7426,
+   "complete": 7426
+  },
+  "cid": "conv_43ddd523-e795-4196-9320-0c86c1a6aaaa",
+  "first": 6028,
+  "t1": "Universal House of Justice guidance pertains to administration and laws rather than doctrine, while history, scholarship, and community practice represent distinct layers of study.)*",
+  "total": 7426,
+  "reply": "The Báb’s earthly life spans from His birth in Shíráz in October 1819 to His public declaration in 1844, followed by a six-year ministry of imprisonment across Persia that ended with His martyrdom in Tabríz in 1850.\n\nAs recounted by ‘Abdu’l-Bahá, after proclaiming His mission in Shíráz, the Báb journeyed to Iṣfahán to escape a famine, was arrested and sent to Tabríz, transferred to Máh-Kú, and finally imprisoned in the castle of Chihríq before returning to Tabríz for His execution ([Talk in Cambridge on the declaration of the Báb](https://siftersearch.com/library/bahai/core-talks/abdul-baha_talk-in-cambridge-on-the-declaration-of-the-bab#p7)). Shoghi Effendi notes that His banishment to the mountains of Áḏhirbáyján included *\"His nine months’ unbroken confinement in the fortress of Máh-Kú, and His subsequent incarceration in the fortress of C̱hihríq\"* ([God Passes By](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_55&selectionString=god_passes_by_ocean_en_4a.0~god_passes_by_ocean_en_4a.1916)).\n\n*(Note on sources: Revealed Scripture includes the writings of the Báb, such as [The Seven Proofs (Dalá'il-i-Sab'ih)](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih#p177). Authorized interpretation is found in the works of ‘Abdu’l-Bahá and Shoghi Effendi. Universal House of Justice guidance pertains to administration and laws rather than doctrine, while history, scholarship, and community practice represent distinct layers of study.)*",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 1
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 1,
+    "ms": 34
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 145
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 875
+   },
+   {
+    "name": "strategy",
+    "at": 36,
+    "ms": 873,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 910,
+    "ms": 281
+   },
+   {
+    "name": "understood",
+    "at": 910,
+    "ms": 2682
+   },
+   {
+    "name": "work",
+    "at": 1191,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1191,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 1191,
+    "ms": 3521
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4713,
+    "ms": 6
+   },
+   {
+    "name": "companion",
+    "at": 4719,
+    "ms": 3
+   },
+   {
+    "name": "format",
+    "at": 4719,
+    "ms": 252
+   },
+   {
+    "name": "craft",
+    "at": 4971,
+    "ms": 1906
+   },
+   {
+    "name": "output-check",
+    "at": 6880,
+    "ms": 242
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00352,
+   "calls": 10,
+   "latency_ms": 7122
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:search-plan:shadow",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-23",
+  "q": "Lay out the sequence of the three major Bábí upheavals — Ṭabarsí, Nayríz and Zanján — with their dates and leaders.",
+  "expect": null,
+  "type": "timeline",
+  "ev": {
+   "stage": 172,
+   "progress": 172,
+   "session": 1164,
+   "sources": 5009,
+   "status": 5009,
+   "text": 6103,
+   "chunk": 7717,
+   "citations": 7719,
+   "complete": 7719
+  },
+  "cid": "conv_b29e3dbf-4181-46bf-9b2c-8835a531a7e7",
+  "first": 6103,
+  "t1": "- **Zanján:** Besieged under the military and clerical attack, with Mullá Muḥammad-‘Alí the mujtahid acting as chief ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_59&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_4e.0~abdu-l-baha-traveler-s-narrative-ocean_en_4e.795) - ‘Abdu’l-Bahá).",
+  "total": 7719,
+  "reply": "The major Bábí upheavals unfolded across Persia in the early years of the Faith, beginning with Shaykh Ṭabarsí in Máh-Mázindarán, followed by Nayríz in Fárs, and culminating in Zanján. Shoghi Effendi notes that in each of these episodes, Bábís were \"driven to desperation, withdrew in concert from their houses to a chosen retreat and, erecting defensive works about them, defied in arms further pursuit\" ([Uncompiled Published Letters](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_2761&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl2fg.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl2fg.824) - Shoghi Effendi).\n\nThe sequence and leadership are detailed in the authorized interpretations and historical records:\n- **Shaykh Ṭabarsí (Mázindarán):** Began in the late summer of 1848 and lasted until the spring of 1849, led initially by Mullá Ḥusayn of Buṣhrúyih ([*A Hymn to Love (Sáqí, bi-dih ábí)*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_a-hymn-to-love-saqi-bi-dih-abi)).\n- **Nayríz (Fárs):** Occurred in the late spring of 1850 (*A Hymn to Love (Sáqí, bi-dih ábí)*), with Siyyid Yaḥyá of Dáráb serving as the \"leader and arbiter\" ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_59&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_4e.0~abdu-l-baha-traveler-s-narrative-ocean_en_4e.795) - ‘Abdu’l-Bahá).\n- **Zanján:** Besieged under the military and clerical attack, with Mullá Muḥammad-‘Alí the mujtahid acting as chief ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_59&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_4e.0~abdu-l-baha-traveler-s-narrative-ocean_en_4e.795) - ‘Abdu’l-Bahá).",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 27
+   },
+   {
+    "name": "triage",
+    "at": 27,
+    "ms": 726
+   },
+   {
+    "name": "open-log",
+    "at": 27,
+    "ms": 791
+   },
+   {
+    "name": "strategy",
+    "at": 28,
+    "ms": 940
+   },
+   {
+    "name": "plan",
+    "at": 968,
+    "ms": 1302
+   },
+   {
+    "name": "understood",
+    "at": 968,
+    "ms": 2658
+   },
+   {
+    "name": "work",
+    "at": 2270,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 2270,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 2270,
+    "ms": 2437
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4707,
+    "ms": 104
+   },
+   {
+    "name": "format",
+    "at": 4811,
+    "ms": 159
+   },
+   {
+    "name": "companion",
+    "at": 4812,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 4970,
+    "ms": 2265
+   },
+   {
+    "name": "output-check",
+    "at": 7264,
+    "ms": 146
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00399,
+   "calls": 8,
+   "latency_ms": 7410
+  },
+  "llm": [
+   "system1:anis-triage",
+   "search-query",
+   "system1:search-plan",
+   "system1:source-resolve",
+   "anis-understood",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-24",
+  "q": "What were the stages of the Báb's journey from Iṣfahán to Máh-Kú — which towns did He pass through and roughly when?",
+  "expect": null,
+  "type": "timeline",
+  "ev": {
+   "stage": 115,
+   "progress": 115,
+   "session": 396,
+   "sources": 1970,
+   "status": 1970,
+   "text": 6926,
+   "chunk": 6930,
+   "citations": 6930,
+   "complete": 6930
+  },
+  "cid": "conv_0047ea13-25e2-47d1-a0cd-95b205e06f07",
+  "first": 6926,
+  "t1": "To look closer at the historical record of that route, we might search for specific accounts of His transfer under guard toward the northwest.",
+  "total": 6930,
+  "reply": "I didn't find a passage detailing the specific towns and dates of the Báb's journey between Iṣfahán and Máh-Kú in this search, though the Báb's own writings record that He was sent away from Iṣfahán \"with an escort of five guards on a journey which lasted seven days\" ([Selections from the Writings of the Báb](https://oceanlibrary.com/selections-from-the-writings-of-the-bab/?paraId=para_50&selectionString=selections_from_the_writings_of_the_bab_bahai_en-bl43.0~selections_from_the_writings_of_the_bab_bahai_en-bl43.349)) (Selections from the Writings of the Báb).\n\nTo look closer at the historical record of that route, we might search for specific accounts of His transfer under guard toward the northwest.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "yes_no_with_proof",
+   "by": "default"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 35
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 63
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 120
+   },
+   {
+    "name": "strategy",
+    "at": 36,
+    "ms": 204,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 240,
+    "ms": 2874
+   },
+   {
+    "name": "plan",
+    "at": 241,
+    "ms": 135
+   },
+   {
+    "name": "work",
+    "at": 376,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 376,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 376,
+    "ms": 1508
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1885,
+    "ms": 7
+   },
+   {
+    "name": "companion",
+    "at": 1892,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 1892,
+    "ms": 1218
+   },
+   {
+    "name": "craft",
+    "at": 3110,
+    "ms": 1731
+   },
+   {
+    "name": "output-check",
+    "at": 4843,
+    "ms": 365
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00243,
+   "calls": 8,
+   "latency_ms": 5208
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:source-resolve",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-25",
+  "q": "In what order did the Letters of the Living recognize the Báb, and roughly when did each arrive in Shíráz?",
+  "expect": null,
+  "type": "timeline",
+  "ev": {
+   "stage": 170,
+   "progress": 170,
+   "session": 455,
+   "sources": 5489,
+   "status": 5489,
+   "text": 5546,
+   "chunk": 6437,
+   "citations": 6446,
+   "complete": 6446
+  },
+  "cid": "conv_3fb18585-4c99-4492-8659-3855dd811172",
+  "first": 5546,
+  "t1": "They also record that following Mullá Ḥusayn's recognition, [\"Not until forty days had elapsed, however, did the enrollment of the seventeen remaining Letters of the Living commence.\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_31&selectionString=god_passes_by_ocean_en-bluf.0~god_passes_by_ocean_en-bluf.1435) — *God Passes By*, and mention figures such as Shaykh Sa’id Hindi traveling from the Indian sub-continent to attain this station, as described in [*Messages to the Indian Subcontinent*](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_23&selectionString=messages_to_subcontinent_en-bl3d.0~messages_to_subcontinent_en-bl3d.281).",
+  "total": 6446,
+  "reply": "I didn't find a passage detailing the specific chronological order in which each individual Letter of the Living recognized the Báb or the precise dates of their arrivals in Shíráz in this search.\n\nThe sources note that Mullá Ḥusayn was the first: [\"Among them was Mullá Ḥusayn, who became the recipient of the effulgent glory of the Sun of divine Revelation.\"](https://oceanlibrary.com/kitab-i-iqan_bahaullah/?paraId=para_260&selectionString=kitab-i-iqan-prod-version_en_a0.0~kitab-i-iqan-prod-version_en_a0.585) — [*The Kitáb-i-Íqán*](https://siftersearch.com/library/view?doc=28653). They also record that following Mullá Ḥusayn's recognition, [\"Not until forty days had elapsed, however, did the enrollment of the seventeen remaining Letters of the Living commence.\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_31&selectionString=god_passes_by_ocean_en-bluf.0~god_passes_by_ocean_en-bluf.1435) — [*God Passes By*](https://siftersearch.com/library/view?doc=21310), and mention figures such as Shaykh Sa’id Hindi traveling from the Indian sub-continent to attain this station, as described in [*Messages to the Indian Subcontinent*](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_23&selectionString=messages_to_subcontinent_en-bl3d.0~messages_to_subcontinent_en-bl3d.281).",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "range_of_voices",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 23
+   },
+   {
+    "name": "open-log",
+    "at": 24,
+    "ms": 55
+   },
+   {
+    "name": "triage",
+    "at": 24,
+    "ms": 154
+   },
+   {
+    "name": "strategy",
+    "at": 24,
+    "ms": 155,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 179,
+    "ms": 1434
+   },
+   {
+    "name": "plan",
+    "at": 180,
+    "ms": 206
+   },
+   {
+    "name": "work",
+    "at": 386,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 386,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 386,
+    "ms": 2509
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2900,
+    "ms": 13
+   },
+   {
+    "name": "format",
+    "at": 2913,
+    "ms": 307
+   },
+   {
+    "name": "companion",
+    "at": 2914,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 3220,
+    "ms": 2836
+   },
+   {
+    "name": "output-check",
+    "at": 6081,
+    "ms": 123
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.0031,
+   "calls": 8,
+   "latency_ms": 6204
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-26",
+  "q": "What happened, in order, between the Báb's martyrdom in July 1850 and the attempt on the Sháh's life in August 1852?",
+  "expect": null,
+  "type": "timeline",
+  "ev": {
+   "stage": 1324,
+   "progress": 1324,
+   "session": 1596,
+   "understood": 5053,
+   "sources": 5068,
+   "status": 5068,
+   "text": 7150,
+   "chunk": 7785,
+   "citations": 7796,
+   "complete": 7796
+  },
+  "cid": "conv_4bc528fc-f5cf-4f9c-bf16-e2d307ca8090",
+  "first": 7150,
+  "t1": "> [\"a certain Ṣádiq-i-Tabrízí, an assistant in a confectioner’s shop in Ṭihrán, proceeded on an August day (August 15, 1852), together with his accomplice, an equally obscure youth named Fatḥu’lláh-i-Qumí, to Níyávarán where the imperial army had encamped and the sovereign was\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_145&selectionString=god_passes_by_ocean_en_6s.75~god_passes_by_ocean_en_6s.310) *God Passes By*",
+  "total": 7796,
+  "reply": "I didn't find a detailed chronological record of every specific event between July 1850 and August 1852 in this search, though the period is marked by the tragic aftermath of the Báb's execution on 9 July 1850 [*The Seven Proofs (Dalá'il-i-Sab'ih)*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih#p210) and the bitter grief of the community leading directly to the attempt on the Sháh's life on August 15, 1852 [*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_145&selectionString=god_passes_by_ocean_en_6s.0~god_passes_by_ocean_en_6s.799).\n\nThe sources in front of us note that this interim culminated when\n\n> [\"a certain Ṣádiq-i-Tabrízí, an assistant in a confectioner’s shop in Ṭihrán, proceeded on an August day (August 15, 1852), together with his accomplice, an equally obscure youth named Fatḥu’lláh-i-Qumí, to Níyávarán where the imperial army had encamped and the sovereign was\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_145&selectionString=god_passes_by_ocean_en_6s.75~god_passes_by_ocean_en_6s.310) [*God Passes By*](https://siftersearch.com/library/view?doc=21310)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 1219
+   },
+   {
+    "name": "open-log",
+    "at": 1219,
+    "ms": 79
+   },
+   {
+    "name": "strategy",
+    "at": 1219,
+    "ms": 169,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "triage",
+    "at": 1219,
+    "ms": 169
+   },
+   {
+    "name": "understood",
+    "at": 1388,
+    "ms": 1452
+   },
+   {
+    "name": "plan",
+    "at": 1389,
+    "ms": 136
+   },
+   {
+    "name": "work",
+    "at": 1525,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1525,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 1525,
+    "ms": 2670
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4196,
+    "ms": 5
+   },
+   {
+    "name": "format",
+    "at": 4201,
+    "ms": 535
+   },
+   {
+    "name": "companion",
+    "at": 4202,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 4736,
+    "ms": 2729
+   },
+   {
+    "name": "output-check",
+    "at": 7484,
+    "ms": 114
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-embedding-2",
+    "clef-flash",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00338,
+   "calls": 10,
+   "latency_ms": 7598
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "anis-understood",
+   "search-query",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "system1:source-resolve:shadow",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-27",
+  "q": "In the Dawn-Breakers the Báb tells the Letters of the Living: \"O My beloved friends! You are the bearers of the name of God in this Day.\" Please explain this farewell address — what did He ask of them, and what did He warn them about?",
+  "expect": null,
+  "type": "explain-passage",
+  "ev": {
+   "stage": 115,
+   "progress": 115,
+   "session": 467,
+   "understood": 2227,
+   "sources": 6239,
+   "text": 6239,
+   "chunk": 6438,
+   "citations": 6439,
+   "complete": 6439
+  },
+  "cid": "conv_16afc5e4-d2b8-49cf-8231-dea5172c6141",
+  "first": 6239,
+  "t1": "These are the words of The Báb, from [*Farewell address to the Letters of the Living (provisional translation)*](https://portlandiator.github.io/PI_browser/?id=BBU0001#:~:text=O%20My%20beloved%20friends,God%20in%20this%20Day). The passage reads: «O My beloved friends! You are the bearers of the name of God in this Day». It is also quoted in [*The Chosen Highway*](https://bahai-library.com/blomfield_chosen_highway&chapter=all#:~:text=O%20My%20beloved%20friends,god%20in%20this%20Day), [*America's Spiritual Mission: Teaching Tablets Revealed by 'Abdu'l-Baha to the American Baha'is during 1916 and 1917*](https://bahai-library.com/abdul-baha_americas_spiritual_mission#:~:text=O%20my%20beloved%20friends,God%20in%20this%20Day) and [*Century of Light*](https://bahai-library.com/uhj_century_light&chapter=all#:~:text=O%20My%20beloved%20friends,God%20in%20this%20Day).",
+  "total": 6439,
+  "reply": "These are the words of The Báb, from [*Farewell address to the Letters of the Living (provisional translation)*](https://portlandiator.github.io/PI_browser/?id=BBU0001#:~:text=O%20My%20beloved%20friends,God%20in%20this%20Day). The passage reads: «O My beloved friends! You are the bearers of the name of God in this Day». It is also quoted in [*The Chosen Highway*](https://bahai-library.com/blomfield_chosen_highway&chapter=all#:~:text=O%20My%20beloved%20friends,god%20in%20this%20Day), [*America's Spiritual Mission: Teaching Tablets Revealed by 'Abdu'l-Baha to the American Baha'is during 1916 and 1917*](https://bahai-library.com/abdul-baha_americas_spiritual_mission#:~:text=O%20my%20beloved%20friends,God%20in%20this%20Day) and [*Century of Light*](https://bahai-library.com/uhj_century_light&chapter=all#:~:text=O%20My%20beloved%20friends,God%20in%20this%20Day).",
+  "strategy": "source",
+  "gate": "research",
+  "shape": "source",
+  "fmt": {
+   "choice": "source",
+   "by": "sourcehunt"
+  },
+  "stStage": {
+   "choice": "source",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 42
+   },
+   {
+    "name": "open-log",
+    "at": 42,
+    "ms": 64
+   },
+   {
+    "name": "triage",
+    "at": 42,
+    "ms": 122
+   },
+   {
+    "name": "strategy",
+    "at": 43,
+    "ms": 181,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 224,
+    "ms": 190
+   },
+   {
+    "name": "understood",
+    "at": 224,
+    "ms": 1927
+   },
+   {
+    "name": "work",
+    "at": 414,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 414,
+    "ms": 1,
+    "via": "quote-marks"
+   },
+   {
+    "name": "source-hunt",
+    "at": 415,
+    "ms": 5728
+   },
+   {
+    "name": "output-check",
+    "at": 6145,
+    "ms": 131
+   }
+  ],
+  "meta": {
+   "type": "source hunt",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "usd": 0.00135,
+   "calls": 18,
+   "latency_ms": 6276
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "search-query",
+   "system1:sourcehunt-holds",
+   "anis-understood",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-29",
+  "q": "In the Dawn-Breakers someone says: \"Our friends eventually dispersed, leaving Us at the mercy of Our enemies. When, at a later time, We went to Ámul, such was the turmoil which the people had raised...\" Who is speaking, and what is the context?",
+  "expect": null,
+  "type": "explain-passage",
+  "ev": {
+   "stage": 547,
+   "progress": 547,
+   "session": 914,
+   "understood": 1690,
+   "sources": 2903,
+   "text": 2903,
+   "chunk": 3124,
+   "citations": 3129,
+   "complete": 3129
+  },
+  "cid": "conv_fd184f77-dede-4c33-87d4-99f389b3d1ee",
+  "first": 2903,
+  "t1": "These are the words of Bahá’u’lláh, from [*Words spoken in the house of Aqay-i-Kalim to Nabil-i-A'zam 1 (provisional translation)*](https://portlandiator.github.io/PI_browser/?id=BHU0003#:~:text=How%20great%20was%20the,bewilderment%20filled%20their%20hearts). The passage reads: «How great was the consternation that seized the companions on that day! Fear and bewilderment filled their hearts». It is also quoted in [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1423&selectionString=dawn-breakers-prod-version_en_168.1~dawn-breakers-prod-version_en_168.134).",
+  "total": 3129,
+  "reply": "These are the words of Bahá’u’lláh, from [*Words spoken in the house of Aqay-i-Kalim to Nabil-i-A'zam 1 (provisional translation)*](https://portlandiator.github.io/PI_browser/?id=BHU0003#:~:text=How%20great%20was%20the,bewilderment%20filled%20their%20hearts). The passage reads: «How great was the consternation that seized the companions on that day! Fear and bewilderment filled their hearts». It is also quoted in [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1423&selectionString=dawn-breakers-prod-version_en_168.1~dawn-breakers-prod-version_en_168.134).",
+  "strategy": "source",
+  "gate": "research",
+  "shape": "source",
+  "fmt": {
+   "choice": "source",
+   "by": "sourcehunt"
+  },
+  "stStage": {
+   "choice": "source",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 1,
+    "ms": 224
+   },
+   {
+    "name": "strategy",
+    "at": 226,
+    "ms": 209,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "open-log",
+    "at": 226,
+    "ms": 278
+   },
+   {
+    "name": "triage",
+    "at": 226,
+    "ms": 281
+   },
+   {
+    "name": "plan",
+    "at": 507,
+    "ms": 188
+   },
+   {
+    "name": "understood",
+    "at": 507,
+    "ms": 875
+   },
+   {
+    "name": "work",
+    "at": 695,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 695,
+    "ms": 0,
+    "via": "quote-marks"
+   },
+   {
+    "name": "source-hunt",
+    "at": 695,
+    "ms": 1894
+   },
+   {
+    "name": "output-check",
+    "at": 2592,
+    "ms": 126
+   }
+  ],
+  "meta": {
+   "type": "source hunt",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "usd": 0.00127,
+   "calls": 13,
+   "latency_ms": 2718
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-28",
+  "q": "Nabíl writes: \"The siyyid's message stung Ḥájí Mírzá Karím Khán. Convulsed by a feeling of intense resentment which he could neither suppress nor gratify, he relinquished all hope...\" Who was Ḥájí Mírzá Karím Khán, who was the siyyid, and what was the message?",
+  "expect": null,
+  "type": "explain-passage",
+  "ev": {
+   "stage": 631,
+   "progress": 631,
+   "session": 1262,
+   "understood": 3241,
+   "sources": 4395,
+   "status": 4395,
+   "text": 5821,
+   "chunk": 6581,
+   "citations": 6590,
+   "complete": 6590
+  },
+  "cid": "conv_43aae693-2813-4adb-b69a-c58f02976769",
+  "first": 5821,
+  "t1": "> [\"Ḥájí Mírzá Muḥammad Karím Ḵhán-i-Kirmání (1810–circa 1873) was the self-appointed leader of the S̱hayḵhí community after the death of Siyyid Káẓim, who was the appointed successor to S̱hayḵh Aḥmad-i-Aḥsá’í.\"]](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=fn_186) — *The Kitáb-i-Aqdas*",
+  "total": 6590,
+  "reply": "Ḥájí Mírzá Muḥammad Karím Khán-i-Kirmání was the self-appointed leader of the Shaykhí community following the death of Siyyid Káẓim, who is the siyyid referenced as the teacher whose following awaited the promised Advent. The message that stirred such resentment was the announcement of the new Revelation and the summons to recognize the Báb.\n\nThe background of Karím Khán is noted in [*The Kitáb-i-Aqdas*](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=fn_186):\n\n> [\"Ḥájí Mírzá Muḥammad Karím Ḵhán-i-Kirmání (1810–circa 1873) was the self-appointed leader of the S̱hayḵhí community after the death of Siyyid Káẓim, who was the appointed successor to S̱hayḵh Aḥmad-i-Aḥsá’í.\"]](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=fn_186) — [*The Kitáb-i-Aqdas*](https://siftersearch.com/library/view?doc=21307)",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 30
+   },
+   {
+    "name": "open-log",
+    "at": 30,
+    "ms": 68
+   },
+   {
+    "name": "triage",
+    "at": 30,
+    "ms": 115
+   },
+   {
+    "name": "strategy",
+    "at": 31,
+    "ms": 611,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 642,
+    "ms": 400
+   },
+   {
+    "name": "understood",
+    "at": 642,
+    "ms": 2001
+   },
+   {
+    "name": "work",
+    "at": 1042,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1042,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 1042,
+    "ms": 2739
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3781,
+    "ms": 3
+   },
+   {
+    "name": "format",
+    "at": 3784,
+    "ms": 227
+   },
+   {
+    "name": "companion",
+    "at": 3785,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 4011,
+    "ms": 1746
+   },
+   {
+    "name": "output-check",
+    "at": 5782,
+    "ms": 104
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "clef",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00355,
+   "calls": 8,
+   "latency_ms": 5886
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:search-plan:shadow",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-31",
+  "q": "Nabíl says Mírzá Taqí Khán, the Amír-Niẕám, \"met his death in a public bath in Fín, near Káshán.\" What had he done against the Báb and His companions, and how does Nabíl frame his end?",
+  "expect": null,
+  "type": "explain-passage",
+  "ev": {
+   "stage": 97,
+   "progress": 97,
+   "session": 549,
+   "sources": 4401,
+   "status": 4401,
+   "text": 6018,
+   "chunk": 7084,
+   "citations": 7101,
+   "complete": 7101
+  },
+  "cid": "conv_aded7100-3353-4a6e-bcfe-60222229784c",
+  "first": 6018,
+  "t1": "The text that records his end notes:\n> [\"MÍRZÁ TAQÍ KHÁN, the Amír Nizám, the Grand Vazír of Násiri'd-Dín Sháh, who was directly responsible for the execution of the Báb, was disgraced and put to death by the royal order in the bath of the Palace of Fín, near Káshán.\"](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative#p247) — *Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*",
+  "total": 7101,
+  "reply": "I didn't find a passage from Nabíl-i-A'ẓám's own [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308) in this search describing the death of Mírzá Taqí Khán, the Amír-Niẓám. However, Shoghi Effendi records in [*Bahá’í Faith, The: 1844-1950*](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative) that he \"was directly responsible for the execution of the Báb, was disgraced and put to death by the royal order in the bath of the Palace of Fín, near Káshán\" ([Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative#p247)) ([*Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative)).\n\nThe text that records his end notes:\n> [\"MÍRZÁ TAQÍ KHÁN, the Amír Nizám, the Grand Vazír of Násiri'd-Dín Sháh, who was directly responsible for the execution of the Báb, was disgraced and put to death by the royal order in the bath of the Palace of Fín, near Káshán.\"](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative#p247) — *Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 24
+   },
+   {
+    "name": "triage",
+    "at": 24,
+    "ms": 275
+   },
+   {
+    "name": "open-log",
+    "at": 24,
+    "ms": 300
+   },
+   {
+    "name": "strategy",
+    "at": 25,
+    "ms": 274,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 324,
+    "ms": 175
+   },
+   {
+    "name": "understood",
+    "at": 324,
+    "ms": 2952
+   },
+   {
+    "name": "work",
+    "at": 499,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 499,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 500,
+    "ms": 3737
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4237,
+    "ms": 94
+   },
+   {
+    "name": "companion",
+    "at": 4331,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 4331,
+    "ms": 263
+   },
+   {
+    "name": "craft",
+    "at": 4594,
+    "ms": 2158
+   },
+   {
+    "name": "output-check",
+    "at": 6830,
+    "ms": 96
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00322,
+   "calls": 9,
+   "latency_ms": 6926
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-32",
+  "q": "\"The people of the Bayán, who utterly misconceived the purpose underlying that Tablet, thought it to be a mere exposition of the science of Jafr.\" Which Tablet is Nabíl talking about, and what is Jafr?",
+  "expect": null,
+  "type": "explain-passage",
+  "ev": {
+   "stage": 1794,
+   "progress": 1794,
+   "session": 2012,
+   "understood": 3851,
+   "sources": 6627,
+   "text": 6627,
+   "chunk": 6867,
+   "citations": 6877,
+   "complete": 6877
+  },
+  "cid": "conv_46eeef15-1bba-4776-8e94-cd84bf97a82d",
+  "first": 6627,
+  "t1": "These are the words of Bahá’u’lláh, from [*Tablet on the Paradise of Justice (Lawh-i Ridvánu'l-'Adl)*](http://bahaiprovisionaltablets.blogspot.com/2018/06/lawh-i-ridvanul-adl-paradise-of-justice.html#:~:text=The%20purpose%20of%20all,ye%20but%20know%20it). The passage reads: «The purpose of all that hath descended from the Kingdom of the Bayán was to make mention of Me and celebrate My praise, did ye but know it». I could not confirm the original tablet for this passage. It is also quoted in [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_873&selectionString=dawn-breakers-prod-version_en_qy.0~dawn-breakers-prod-version_en_qy.119).",
+  "total": 6877,
+  "reply": "These are the words of Bahá’u’lláh, from [*Tablet on the Paradise of Justice (Lawh-i Ridvánu'l-'Adl)*](http://bahaiprovisionaltablets.blogspot.com/2018/06/lawh-i-ridvanul-adl-paradise-of-justice.html#:~:text=The%20purpose%20of%20all,ye%20but%20know%20it). The passage reads: «The purpose of all that hath descended from the Kingdom of the Bayán was to make mention of Me and celebrate My praise, did ye but know it». I could not confirm the original tablet for this passage. It is also quoted in [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_873&selectionString=dawn-breakers-prod-version_en_qy.0~dawn-breakers-prod-version_en_qy.119).",
+  "strategy": "source",
+  "gate": "research",
+  "shape": "source",
+  "fmt": {
+   "choice": "source",
+   "by": "sourcehunt"
+  },
+  "stStage": {
+   "choice": "source",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 24
+   },
+   {
+    "name": "open-log",
+    "at": 24,
+    "ms": 58
+   },
+   {
+    "name": "triage",
+    "at": 24,
+    "ms": 129
+   },
+   {
+    "name": "strategy",
+    "at": 24,
+    "ms": 141,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 165,
+    "ms": 1939
+   },
+   {
+    "name": "plan",
+    "at": 166,
+    "ms": 627
+   },
+   {
+    "name": "work",
+    "at": 793,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 793,
+    "ms": 2,
+    "via": "quote-marks"
+   },
+   {
+    "name": "source-hunt",
+    "at": 794,
+    "ms": 4081
+   },
+   {
+    "name": "output-check",
+    "at": 4881,
+    "ms": 114
+   }
+  ],
+  "meta": {
+   "type": "source hunt",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "usd": 0.00172,
+   "calls": 18,
+   "latency_ms": 4995
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "search-query",
+   "anis-understood",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:db-30",
+  "q": "\"Awake, for lo! the morning Light has broken. Arise, for His Cause is made manifest.\" — who said this, to whom, and on what occasion in the Dawn-Breakers?",
+  "expect": null,
+  "type": "explain-passage",
+  "ev": {
+   "stage": 213,
+   "progress": 213,
+   "session": 410,
+   "sources": 6764,
+   "status": 6764,
+   "text": 8074,
+   "chunk": 8642,
+   "citations": 8648,
+   "complete": 8648
+  },
+  "cid": "conv_69918e52-fb4f-429c-b1f4-e17e70010d64",
+  "first": 8074,
+  "t1": "> [\"Awake, for, lo! the morning Light has broken. Arise, for His Cause is made manifest. The portal of His grace is open wide; enter therein, O peoples of the world! For He Who is your promised One is come!\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_28&selectionString=god_passes_by_ocean_en_3j.731~god_passes_by_ocean_en_3j.864) — *God Passes By*",
+  "total": 8648,
+  "reply": "The words you are looking at are spoken by Mulla Husayn, describing his inner state and realization during his historic encounter with the Báb on the night of May 22, 1843, in Shiraz—not within the pages of [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308) proper, but as recorded by Shoghi Effendi recounting that pivotal night.\n\nShoghi Effendi writes of Mulla Husayn's experience in [*God Passes By*](https://siftersearch.com/library/view?doc=21310):\n\n> [\"Awake, for, lo! the morning Light has broken. Arise, for His Cause is made manifest. The portal of His grace is open wide; enter therein, O peoples of the world! For He Who is your promised One is come!\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_28&selectionString=god_passes_by_ocean_en_3j.731~god_passes_by_ocean_en_3j.864) — *God Passes By*",
+  "strategy": "quote",
+  "gate": "research",
+  "shape": "quote",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "quote",
+   "by": "jev",
+   "reason": null,
+   "ms": 791
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 34
+   },
+   {
+    "name": "open-log",
+    "at": 34,
+    "ms": 64
+   },
+   {
+    "name": "triage",
+    "at": 34,
+    "ms": 151
+   },
+   {
+    "name": "strategy",
+    "at": 35,
+    "ms": 224,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "lookup",
+    "at": 259,
+    "ms": 141,
+    "kind": "quote",
+    "intent": "quote"
+   },
+   {
+    "name": "understood",
+    "at": 400,
+    "ms": 2501
+   },
+   {
+    "name": "plan",
+    "at": 401,
+    "ms": 2503
+   },
+   {
+    "name": "work",
+    "at": 2904,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 2904,
+    "ms": 0,
+    "via": "quote-marks"
+   },
+   {
+    "name": "search",
+    "at": 2904,
+    "ms": 2963
+   },
+   {
+    "name": "source-hunt",
+    "at": 2904,
+    "ms": 3715
+   },
+   {
+    "name": "upgrade-links",
+    "at": 6620,
+    "ms": 1
+   },
+   {
+    "name": "companion",
+    "at": 6621,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 6621,
+    "ms": 120
+   },
+   {
+    "name": "craft",
+    "at": 6742,
+    "ms": 1512
+   },
+   {
+    "name": "output-check",
+    "at": 8286,
+    "ms": 104
+   }
+  ],
+  "meta": {
+   "type": "answer (quote)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00354,
+   "calls": 17,
+   "latency_ms": 8391
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "search-query",
+   "anis-understood",
+   "system1:search-plan",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-holds",
+   "system1:source-resolve",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-01",
+  "q": "In Gate of the Heart, how does Nader Saiedi divide the Báb's writings into three stages, and what characterizes each stage?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 122,
+   "progress": 122,
+   "session": 507,
+   "understood": 2358,
+   "sources": 5350,
+   "status": 5350,
+   "text": 8730,
+   "chunk": 9636,
+   "complete": 9636
+  },
+  "cid": "conv_e40ef608-018e-4bf6-b2ab-754d8459031d",
+  "first": 8730,
+  "t1": "Because the passages returned in this search do not discuss its contents or the three stages of the Báb's writings, I cannot confirm them here.",
+  "total": 9636,
+  "reply": "I didn't find a passage on that in this search.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 1,
+    "ms": 35
+   },
+   {
+    "name": "open-log",
+    "at": 36,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 36,
+    "ms": 125
+   },
+   {
+    "name": "strategy",
+    "at": 37,
+    "ms": 187,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 224,
+    "ms": 2056
+   },
+   {
+    "name": "plan",
+    "at": 225,
+    "ms": 204
+   },
+   {
+    "name": "work",
+    "at": 429,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 429,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 430,
+    "ms": 4675
+   },
+   {
+    "name": "upgrade-links",
+    "at": 5107,
+    "ms": 6
+   },
+   {
+    "name": "format",
+    "at": 5113,
+    "ms": 2403
+   },
+   {
+    "name": "companion",
+    "at": 5114,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 7516,
+    "ms": 1286
+   },
+   {
+    "name": "output-check",
+    "at": 8805,
+    "ms": 390
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00239,
+   "calls": 8,
+   "latency_ms": 9196
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "anis-understood",
+   "search-query",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-02",
+  "q": "What does Saiedi mean by the Báb's 'interpretive revelation', and what are the modes of revelation he identifies in the Báb's writings?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 1831,
+   "progress": 1831,
+   "session": 2057,
+   "sources": 7610,
+   "status": 7610,
+   "text": 8845,
+   "chunk": 9793,
+   "citations": 9805,
+   "complete": 9805
+  },
+  "cid": "conv_63d0abce-c0ee-4322-ae3b-9bfca7ed7161",
+  "first": 8845,
+  "t1": "To explore this further, you might look directly into scholarly studies of the Báb's writings, such as Nader Saiedi's *Gate of the Heart*, which examines the philosophical and theological dimensions of the Báb's revelation.",
+  "total": 9805,
+  "reply": "I didn't find a passage detailing Saiedi's specific breakdown of \"interpretive revelation\" or the exact modes of revelation in the search results provided. The available passages touch on the character of the Báb's dispensation and His major works—such as Shoghi Effendi explaining that [\"The severe laws and injunctions revealed by the Báb can be properly appreciated and understood only when interpreted in the light of His own statements\" ([Messages to the Indian Subcontinent](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_1998&selectionString=messages_to_the_indian_subcontinent_en-bl1fo.0~messages_to_the_indian_subcontinent_en-bl1fo.960))](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_1998&selectionString=messages_to_the_indian_subcontinent_en-bl1fo.0~messages_to_subcontinent_en-bl1fo.960) ([*Messages to the Indian Subcontinent*](https://siftersearch.com/library/view?doc=20888)), and notes on Nader Saiedi's talks mentioning his approach to [*The Writings of the Bab: Notes from Talks given by Dr. Nader Saiedi*](https://siftersearch.com/library/view?doc=282885)—but they do not list the specific categories of revelation you are looking for.\n\nTo explore this further, you might look directly into scholarly studies of the Báb's writings, such as Nader Saiedi's [*Gate of the Heart*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab), which examines the philosophical and theological dimensions of the Báb's revelation.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 36
+   },
+   {
+    "name": "open-log",
+    "at": 36,
+    "ms": 58
+   },
+   {
+    "name": "strategy",
+    "at": 36,
+    "ms": 136,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "triage",
+    "at": 36,
+    "ms": 142
+   },
+   {
+    "name": "plan",
+    "at": 178,
+    "ms": 173
+   },
+   {
+    "name": "understood",
+    "at": 178,
+    "ms": 2665
+   },
+   {
+    "name": "work",
+    "at": 351,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 351,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 351,
+    "ms": 5455
+   },
+   {
+    "name": "upgrade-links",
+    "at": 5806,
+    "ms": 12
+   },
+   {
+    "name": "companion",
+    "at": 5818,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 5819,
+    "ms": 1645
+   },
+   {
+    "name": "output-check",
+    "at": 7557,
+    "ms": 350
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00327,
+   "calls": 9,
+   "latency_ms": 7907
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-03",
+  "q": "According to Gate of the Heart, what is the Primal Will in the Báb's theology, and how does it relate to the Point and to the Manifestation of God?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 1247,
+   "progress": 1247,
+   "session": 1544,
+   "sources": 6845,
+   "status": 6845,
+   "text": 8333,
+   "chunk": 10006,
+   "citations": 10011,
+   "complete": 10011
+  },
+  "cid": "conv_c99da2a3-842f-4551-8922-51c80b2fe99e",
+  "first": 8333,
+  "t1": "However, the precise metaphysical mechanics of how the Unseen Essence relates to this first emanation and the human reality of the Manifestations remain largely beyond exhaustive definition in the passages here, pointing instead to the infinite nature of the Divine creative act.",
+  "total": 10011,
+  "reply": "In the writings of the Báb, the Primal Will is described as the foundational emanation of the Divine, the first reality through which all things are brought into existence. As the Báb explains, [\"It is this Primal Will which appeareth resplendent in every Prophet and speaketh forth in every revealed Book. It knoweth no beginning, inasmuch as the First deriveth its firstness from It; and knoweth no end\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab/?paraId=para_563&selectionString=selections_from_the_writings_of_the_bab_bahai_en-blfk.0~selections_from_the_writings_of_the_bab_bahai_en-blfk.438) — [*Selections from the Writings of the Báb*](https://siftersearch.com/library/view?doc=20898).\n\nRegarding its relation to the Point and the Manifestation, authorized interpretation and scripture clarify that the Primal Will is perfectly reflected within each Manifestation of God. In [*Some Answered Questions*](https://siftersearch.com/library/view?doc=20911), ‘Abdu’l-Bahá notes that this emanation is the universal reality \"which the people of Bahá call the 'Primal Will'\" (https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_708&selectionString=some-answered-questions-prod-version_en_mm.0~some-answered-questions-prod-version_en_mm.612). Furthermore, prayers and commentaries link the Báb as the Primal Point to this station; as Bahá’u’lláh addresses Him, the Báb is [“Him Who is the Primal Point, the Divine Mystery, the Unseen Essence… and the Manifestation of Thy Lordship”](https://oceanlibrary.com/prayers-and-meditations-by-bahaullah/?paraId=para_346&selectionString=prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_cd.0~prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_cd.1132) — [*Prayers and Meditations*](https://siftersearch.com/library/view?doc=20805).\n\nWhile the texts establish the Primal Will as the eternal sun of reality shining through every Prophet, scholarly summaries note that it serves as the hidden secret and originator of beings in each dispensation. However, the precise metaphysical mechanics of how the Unseen Essence relates to this first emanation and the human reality of the Manifestations remain largely beyond exhaustive definition in the passages here, pointing instead to the infinite nature of the Divine creative act.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 35
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 56
+   },
+   {
+    "name": "strategy",
+    "at": 35,
+    "ms": 250,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 251
+   },
+   {
+    "name": "plan",
+    "at": 287,
+    "ms": 239
+   },
+   {
+    "name": "understood",
+    "at": 287,
+    "ms": 2634
+   },
+   {
+    "name": "work",
+    "at": 526,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 526,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 526,
+    "ms": 5109
+   },
+   {
+    "name": "upgrade-links",
+    "at": 5636,
+    "ms": 7
+   },
+   {
+    "name": "companion",
+    "at": 5644,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 5645,
+    "ms": 2843
+   },
+   {
+    "name": "output-check",
+    "at": 8586,
+    "ms": 122
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00417,
+   "calls": 10,
+   "latency_ms": 8708
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "system1:search-plan",
+   "system1:anis-triage:shadow",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-04",
+  "q": "How does Saiedi explain the Báb's distinction between the 'Sea of Names' and the 'Sea of Creation'?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 152,
+   "progress": 152,
+   "session": 469,
+   "sources": 4412,
+   "status": 4412,
+   "text": 8407,
+   "chunk": 9446,
+   "citations": 9446,
+   "complete": 9446
+  },
+  "cid": "conv_c6258c4f-e0d8-49e3-bdc1-c6060947eaef",
+  "first": 8407,
+  "t1": "To explore this further, you might look into Saiedi's published studies on the Báb's writings, such as *Gate of the Heart*, which examines the philosophical and mystical terminology of the Báb's revelation.",
+  "total": 9446,
+  "reply": "I didn't find a passage on that specific distinction in this search.\n\nThe passages do, however, point us to how the Báb describes the sea of names in His own writings, where He notes: [\"If thou art sailing upon the sea of God’s Names, which are reflected in all things, know thou that He is exalted and sanctified from being known through His creatures\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab/?paraId=para_561&selectionString=selections_from_the_writings_of_the_bab_bahai_en-blfi.0~selections_from_the_writings_of_the_bab_bahai_en-blfi.525) [*Selections from the Writings of the Báb*](https://siftersearch.com/library/view?doc=20898).\n\nRegarding how scholars discuss these themes, notes from Dr. Nader Saiedi's talks list topics such as *The Concept of God* and *The Concept of Manifestation of God* as central to understanding the Báb's works (as recorded in [The Writings of the Bab: Notes from Talks given by Dr. Nader Saiedi](https://bahai-library.com/saiedi_notes_writings_bab&tagsall=yes/?paraId=h2) [*The Writings of the Bab: Notes from Talks given by Dr. Nader Saiedi*](https://siftersearch.com/library/view?doc=282885)). However, those lecture notes alone do not detail the specific contrast between the 'Sea of Names' and the 'Sea of Creation'.\n\nTo explore this further, you might look into Saiedi's published studies on the Báb's writings, such as [*Gate of the Heart*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab), which examines the philosophical and mystical terminology of the Báb's revelation.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 32
+   },
+   {
+    "name": "open-log",
+    "at": 32,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 32,
+    "ms": 151
+   },
+   {
+    "name": "strategy",
+    "at": 33,
+    "ms": 204,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 238,
+    "ms": 3829
+   },
+   {
+    "name": "plan",
+    "at": 239,
+    "ms": 172
+   },
+   {
+    "name": "work",
+    "at": 411,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 411,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 411,
+    "ms": 3859
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4270,
+    "ms": 36
+   },
+   {
+    "name": "companion",
+    "at": 4306,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 4308,
+    "ms": 3993
+   },
+   {
+    "name": "output-check",
+    "at": 9098,
+    "ms": 111
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00347,
+   "calls": 9,
+   "latency_ms": 9210
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-06",
+  "q": "Saiedi argues that the Báb's writings are at once a critique of Islamic traditionalism and a critique of modernity. What is that argument?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 627,
+   "progress": 627,
+   "session": 3209,
+   "sources": 7307,
+   "status": 7307,
+   "text": 9348,
+   "chunk": 10164,
+   "citations": 10174,
+   "complete": 10174
+  },
+  "cid": "conv_0b8f1c80-08f4-4370-b0f6-03dd80e5fae1",
+  "first": 9348,
+  "t1": "What these studies share is the recognition that the Báb’s revelation occupies a unique third space, transcending both the backward-looking closure of traditionalism and the spiritually empty horizons of modern materialism to establish a dynamic framework for human spiritual evolution.",
+  "total": 10174,
+  "reply": "Nader Saiedi examines this argument in [*Gate of the Heart: Understanding the Writings of the Báb*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab#p34), noting that \"The writings of the Báb offered a novel solution to Islam's cultural and spiritual impasse\" ([*Gate of the Heart*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab)).\n\nAs a work of scholarship and exposition, Saiedi's analysis explores how the Báb's rejection of static literalism challenged clerical traditionalism, while simultaneously rejecting the reductionist materialism often associated with modern Western thought.\n\nWhat these studies share is the recognition that the Báb’s revelation occupies a unique third space, transcending both the backward-looking closure of traditionalism and the spiritually empty horizons of modern materialism to establish a dynamic framework for human spiritual evolution.",
+  "strategy": "topic",
+  "gate": "research",
+  "shape": "topic",
+  "fmt": {
+   "choice": "range_of_voices",
+   "by": "default"
+  },
+  "stStage": {
+   "choice": "topic",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 44
+   },
+   {
+    "name": "open-log",
+    "at": 44,
+    "ms": 162
+   },
+   {
+    "name": "triage",
+    "at": 44,
+    "ms": 2423
+   },
+   {
+    "name": "strategy",
+    "at": 44,
+    "ms": 2425
+   },
+   {
+    "name": "understood",
+    "at": 2469,
+    "ms": 2620
+   },
+   {
+    "name": "plan",
+    "at": 2470,
+    "ms": 358
+   },
+   {
+    "name": "work",
+    "at": 2828,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 2828,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 2829,
+    "ms": 2759
+   },
+   {
+    "name": "upgrade-links",
+    "at": 5589,
+    "ms": 1119
+   },
+   {
+    "name": "format",
+    "at": 6708,
+    "ms": 910
+   },
+   {
+    "name": "companion",
+    "at": 6709,
+    "ms": 3
+   },
+   {
+    "name": "craft",
+    "at": 7618,
+    "ms": 1710
+   },
+   {
+    "name": "output-check",
+    "at": 9372,
+    "ms": 118
+   }
+  ],
+  "meta": {
+   "type": "answer (topic)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00291,
+   "calls": 6,
+   "latency_ms": 9490
+  },
+  "llm": [
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-05",
+  "q": "Who is 'Him Whom God shall make manifest' in the Báb's writings, and how does Saiedi argue that the whole Bayán is oriented toward Him?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 121,
+   "progress": 121,
+   "session": 530,
+   "sources": 6828,
+   "status": 6828,
+   "text": 10230,
+   "chunk": 11641,
+   "citations": 11714,
+   "complete": 11714
+  },
+  "cid": "conv_b2fecfc6-11d0-41db-b0a5-bd9430a8851b",
+  "first": 10230,
+  "t1": "The texts leave open the precise details of how every specific injunction of the earlier dispensation was understood to transition under the authority of the promised One, pointing readers directly to the subsequent Revelation for that unfolding.",
+  "total": 11714,
+  "reply": "In the writings of the Báb, \"Him Whom God shall make manifest\" ([Will and Testament](https://oceanlibrary.com/kjv-gospel-of-luke)) is spoken of as a supreme Revealer whose station is immeasurably exalted above all others, described as the fulfillment of all creation. As the Báb testifies, He is the one [\"in Whose grasp lieth the source of proofs, and let not erroneous considerations shut thee out from Him, for He is immeasurably exalted above them\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab/?paraId=para_501&selectionString=selections_from_the_writings_of_the_bab_bahai_en-ble3.0~selections_from_the_writings_of_the_bab_bahai_en-ble3.817) — [*Selections from the Writings of the Báb*](https://siftersearch.com/library/view?doc=20898). Shoghi Effendi further explains that the Báb specified that the [*Bayán*](https://siftersearch.com/library/view?doc=329779) was not a completed code in itself, noting that [\"‘He Whom God would manifest’ (Bahá’u’lláh) would complete it, though not in its actual form, but only spiritually in the form of another book\"](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_1999&selectionString=messages_to_the_indian_subcontinent_en-bl1fp.0~messages_to_the_indian_subcontinent_en-bl1fp.206) — [*Messages to the Indian Subcontinent*](https://siftersearch.com/library/view?doc=20888).\n\nRegarding how Nader Saiedi approaches this, the available search results do not contain the text of his specific arguments concerning the orientation of the *Bayán*, so I cannot confirm his scholarly presentation from these particular passages.\n\nThe texts leave open the precise details of how every specific injunction of the earlier dispensation was understood to transition under the authority of the promised One, pointing readers directly to the subsequent Revelation for that unfolding.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 33,
+    "ms": 163
+   },
+   {
+    "name": "triage",
+    "at": 33,
+    "ms": 175
+   },
+   {
+    "name": "strategy",
+    "at": 33,
+    "ms": 302,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 335,
+    "ms": 3535
+   },
+   {
+    "name": "plan",
+    "at": 336,
+    "ms": 957
+   },
+   {
+    "name": "work",
+    "at": 1293,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1293,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 1293,
+    "ms": 5346
+   },
+   {
+    "name": "upgrade-links",
+    "at": 6639,
+    "ms": 107
+   },
+   {
+    "name": "companion",
+    "at": 6746,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 6748,
+    "ms": 4552
+   },
+   {
+    "name": "output-check",
+    "at": 11373,
+    "ms": 102
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00388,
+   "calls": 9,
+   "latency_ms": 11475
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-09",
+  "q": "What does the Báb teach about the Day of Resurrection according to Gate of the Heart — is it a literal event?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 113,
+   "progress": 113,
+   "session": 385,
+   "understood": 2122,
+   "sources": 3116,
+   "status": 3116,
+   "text": 3870,
+   "chunk": 6475,
+   "citations": 6490,
+   "complete": 6490
+  },
+  "cid": "conv_e91ba316-9ae4-43e6-b34f-1fe0025db99e",
+  "first": 3870,
+  "t1": "While the texts clearly define the resurrection as symbolic and spiritual rather than physical, they leave open the precise inner mechanics of how individuals recognize or fail to recognize the \"Tree of Reality\" when it appears among them.",
+  "total": 6490,
+  "reply": "The Báb teaches that the Day of Resurrection is not a literal event involving physical tombs or bodies rising from the earth, but rather the appearance of a new divine Manifestation.\n\nIn [*The Persian Bayán: Partial translation*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3#p141), the Báb explains this fundamental shift in understanding:\n\n> The substance of this chapter is that the meaning of 'the Day of Resurrection' is the day of the appearance of the Tree of Reality. It is clear that none of the adherents of the Shí’ih sect have understood (the meaning of) the Day of Resurrection. On the contrary, they have all vainly imagined something that possesses no reality in the eyes of God. — [*The Persian Bayán: Partial translation*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3)\n\nThis perspective is further elaborated in authorized interpretations by Shoghi Effendi, who notes that terms like \"tomb\" and \"resurrection\" are allegorical—representing the \"tomb of unbelief\" and the spiritual awakening or judgment that occurs when people are challenged to recognize a new Revelation ([*Dawn of a New Day*](https://siftersearch.com/library/view?doc=20883)). Bahá’u’lláh similarly employs these terms in works like [*The Day of Resurrection Is Come, and the Self-Subsisting Lord of Names Hath Arisen Therein*](https://oceanoflights.org/bahaullah-pub06-048-ar/#(%D9%82%D8%AF)(%D8%A7%D9%84%D8%AD%DA%A9%D9%8A%D9%85), describing the blowing of the trumpet and the stirring of the people in symbolic terms connected to the arrival of the \"Self-Subsisting Lord of Names.\"\n\nWhile the texts clearly define the resurrection as symbolic and spiritual rather than physical, they leave open the precise inner mechanics of how individuals recognize or fail to recognize the \"Tree of Reality\" when it appears among them.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 35
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 78
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 200
+   },
+   {
+    "name": "strategy",
+    "at": 37,
+    "ms": 190,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 235,
+    "ms": 1531
+   },
+   {
+    "name": "plan",
+    "at": 236,
+    "ms": 143
+   },
+   {
+    "name": "work",
+    "at": 379,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 379,
+    "ms": 2
+   },
+   {
+    "name": "strategy",
+    "at": 381,
+    "ms": 2591
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2972,
+    "ms": 10
+   },
+   {
+    "name": "companion",
+    "at": 2982,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 2984,
+    "ms": 2036
+   },
+   {
+    "name": "output-check",
+    "at": 5091,
+    "ms": 601
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00359,
+   "calls": 8,
+   "latency_ms": 5692
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-07",
+  "q": "What are the stages of divine creative action — Will, Determination, Destiny, Decree, Permission, Term, Book — in the Báb's writings as Saiedi presents them?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 130,
+   "progress": 130,
+   "session": 467,
+   "sources": 4929,
+   "status": 4929,
+   "text": 6680,
+   "chunk": 9232,
+   "complete": 9232
+  },
+  "cid": "conv_822c44cd-57ab-4306-941b-9b857ad234a5",
+  "first": 6680,
+  "t1": "However, the library's record notes the presence of these stages in the Báb's works, comprising Will (*Mashíyyat*), Determination (*Irádih*), Destiny (*Qadar*), Decree (*Qaḍá*), Permission (*Idhn*), Term (*Ajal*), and Book (*Kitáb*), reflecting how the phenomenal world comes into being as a mirror of its supreme Origin (*Selections from the Bahá’í Writings and from Shaykh Ahmad on the Seven Stages of Creation*).",
+  "total": 9232,
+  "reply": "I didn't find a passage in this search that details the full breakdown of the seven stages of divine action as Nader Saiedi presents them from the Báb's writings. However, the library's record notes the presence of these stages in the Báb's works, comprising Will (*Mashíyyat*), Determination (*Irádih*), Destiny (*Qadar*), Decree (*Qaḍá*), Permission (*Idhn*), Term (*Ajal*), and Book ([*Kitáb*](https://siftersearch.com/library/islam/miscellaneous/abu-al-faraj-al_kitab-al-aghani-arabic_ar)), reflecting how the phenomenal world comes into being as a mirror of its supreme Origin ([*Selections from the Bahá’í Writings and from Shaykh Ahmad on the Seven Stages of Creation*](https://siftersearch.com/library/bahai/tablet-translations/the-bab-translated_selections-from-the-bahai-writings-and-from-shaykh-ahmad-on-the-seven)).",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 41
+   },
+   {
+    "name": "open-log",
+    "at": 41,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 41,
+    "ms": 117
+   },
+   {
+    "name": "strategy",
+    "at": 42,
+    "ms": 199,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 241,
+    "ms": 2310
+   },
+   {
+    "name": "plan",
+    "at": 242,
+    "ms": 209
+   },
+   {
+    "name": "work",
+    "at": 451,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 451,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 451,
+    "ms": 4362
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4813,
+    "ms": 6
+   },
+   {
+    "name": "companion",
+    "at": 4820,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 4821,
+    "ms": 1848
+   },
+   {
+    "name": "output-check",
+    "at": 8774,
+    "ms": 234
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00279,
+   "calls": 9,
+   "latency_ms": 9008
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "system1:anis-triage:shadow",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-08",
+  "q": "Why is Saiedi's book called 'Gate of the Heart'? What does the Báb mean by the heart as a gate, in Saiedi's reading?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 2054,
+   "progress": 2054,
+   "session": 2288,
+   "understood": 4327,
+   "sources": 4917,
+   "status": 4917,
+   "text": 5983,
+   "chunk": 8639,
+   "citations": 8641,
+   "complete": 8641
+  },
+  "cid": "conv_9cc08151-3761-4025-84e1-2ecb3d539665",
+  "first": 5983,
+  "t1": "The texts here leave open the detailed scholarly arguments connecting this station directly to the interior landscape of the human heart, as explored in contemporary academic studies.",
+  "total": 8641,
+  "reply": "I didn't find a passage in this search that directly details Nader Saiedi’s specific explanation of the phrase [*Gate of the Heart*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab) or his reading of the heart as a gate.\n\nHowever, the scriptures and historical writings frequently address the station of the Báb as the Gate ([*Báb*](https://siftersearch.com/library/view?doc=28849)). As ‘Abdu’l-Bahá notes, the Báb “identified Himself as the Gate [Bab] for the advent of the promised Qa’im” ([Fire and Light](https://oceanlibrary.com/fire-and-light/?paraId=para_60&selectionString=fire_and_light_baha_i_ocean_en-bl41.0~fire_and_light_baha_i_ocean_en-bl41.627)) ([*Fire and Light*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_fire-and-light)). Similarly, Bahá’u’lláh recalls the Báb’s own station as the “Revealer of the Bayān [the Bāb] with wondrous, holy verses,” ([Sūrat al-Fatḥ [Extract]](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_surat-al-fath-extract#p8)) wherein He declared,\n\n> “I am the Gate of Knowledge (_bāb al-'ilm_) and whosoever is convinced of the truth of my Claim (_ḥaqqī_) in addition to that [surpassing that station] (_fūq dhalika_), hath assuredly invented lies about Me and acquires great sin within himself.” ([*Sūrat al-Fatḥ [Extract]*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_surat-al-fath-extract))\n\nWhile some contemporaries initially misunderstood this title as merely continuing a sequence of physical gates, as discussed in [*The Seven Proofs (Dalá'il-i-Sab'ih)*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih), the broader writings emphasize a spiritual significance.\n\nThe texts here leave open the detailed scholarly arguments connecting this station directly to the interior landscape of the human heart, as explored in contemporary academic studies.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 33,
+    "ms": 65
+   },
+   {
+    "name": "triage",
+    "at": 33,
+    "ms": 146
+   },
+   {
+    "name": "strategy",
+    "at": 34,
+    "ms": 141,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 179,
+    "ms": 184
+   },
+   {
+    "name": "understood",
+    "at": 179,
+    "ms": 2127
+   },
+   {
+    "name": "work",
+    "at": 363,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 363,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 363,
+    "ms": 2520
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2884,
+    "ms": 5
+   },
+   {
+    "name": "companion",
+    "at": 2890,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 2891,
+    "ms": 3363
+   },
+   {
+    "name": "output-check",
+    "at": 6324,
+    "ms": 207
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00356,
+   "calls": 9,
+   "latency_ms": 6531
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w8:goth-10",
+  "q": "How does Saiedi explain the severe laws of the Persian Bayán — were they ever meant to be enforced, and what was their purpose?",
+  "expect": null,
+  "type": "goth-concept",
+  "ev": {
+   "stage": 294,
+   "progress": 294,
+   "session": 1279,
+   "understood": 3439,
+   "sources": 5505,
+   "status": 5505,
+   "text": 5841,
+   "chunk": 7450,
+   "citations": 7459,
+   "complete": 7459
+  },
+  "cid": "conv_6904bc4c-aead-4f45-a9bd-a98c7a360b3f",
+  "first": 5841,
+  "t1": "Because scholars like Saiedi write from secondary academic perspectives rather than as authorized interpreters, their specific analyses of these legal structures sit outside the formal doctrinal layers of the Faith.",
+  "total": 7460,
+  "reply": "I didn't find a passage in this search that mentions Nader Saiedi’s specific explanation of the laws of the [*Persian Bayán*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3).\n\nWhen looking at the primary sources regarding the Bayán, the texts describe its station and laws in symbolic and preparatory terms rather than as codes for long-term civil enforcement. Shoghi Effendi notes in [*Uncompiled Published Letters*](https://siftersearch.com/library/view?doc=20897) that the Bayán was superseded by Bahá’u’lláh's laws, writing: [\"As the Bayán was superseded by Bahá’u’lláh’s laws it is not essential for us to have it at this time.\"](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_10316&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl9m6.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl9m6.247) — *Uncompiled Published Letters*.\n\nRegarding how its contents are understood, the Báb Himself describes the inner purpose of His book's letters and verses rather than a literal penal application, explaining that its contents point toward the coming Promised One. As a partial translation of [*The Persian Bayán*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3) records:\n\n> The Bayán has ever been and ever will be like the soul of a man who is alive; and all its letters of light and fire provide explanations of (what is in) the horizons and the souls of men. (https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3#p91) — [*The Persian Bayán: Partial translation*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3)\n\nAuthorized interpretations from Shoghi Effendi and the Central Figures treat the stringent laws of the Bayán as a dramatic rupture with Islamic clerical law designed to clear away past traditions, contingent entirely upon the immediate recognition of Him Whom God shall manifest. Because scholars like Saiedi write from secondary academic perspectives rather than as authorized interpreters, their specific analyses of these legal structures sit outside the formal doctrinal layers of the Faith.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 45
+   },
+   {
+    "name": "open-log",
+    "at": 45,
+    "ms": 50
+   },
+   {
+    "name": "triage",
+    "at": 45,
+    "ms": 774
+   },
+   {
+    "name": "strategy",
+    "at": 46,
+    "ms": 285,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 819,
+    "ms": 2057
+   },
+   {
+    "name": "plan",
+    "at": 820,
+    "ms": 400
+   },
+   {
+    "name": "work",
+    "at": 1220,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 1220,
+    "ms": 1
+   },
+   {
+    "name": "strategy",
+    "at": 1220,
+    "ms": 2455
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3675,
+    "ms": 73
+   },
+   {
+    "name": "companion",
+    "at": 3748,
+    "ms": 5
+   },
+   {
+    "name": "craft",
+    "at": 3753,
+    "ms": 3272
+   },
+   {
+    "name": "output-check",
+    "at": 7148,
+    "ms": 109
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00395,
+   "calls": 9,
+   "latency_ms": 7257
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ }
+]

@@ -1,0 +1,251 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anís Launch Gate</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650&family=Public+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Naskh+Arabic:wght@500&display=swap">
+<style>
+:root{--bg:#f6f7f9;--paper:#ffffff;--ink:#0d141c;--text:#3b4653;--muted:#5a6675;--line:#d9dee5;--accent:#0f6e74;--accent-soft:#e2f1f1;--warn:#9a5b00;--warn-soft:#fbf0de;--bar:#9cc9cb;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161c;--paper:#18202a;--ink:#f4f7fa;--text:#b4bfcb;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11161c;--paper:#18202a;--ink:#f4f7fa;--text:#b4bfcb;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}
+body{background:var(--bg);color:var(--text);font:15px/1.65 "Public Sans",system-ui,sans-serif;padding:0 16px}
+b,strong,h1,h2,h3{color:var(--ink)} b,strong{font-weight:700}
+main{max-width:900px;margin:0 auto;padding-block:40px 64px;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:Literata,Georgia,serif;text-wrap:balance;margin:0;font-weight:650}
+h1{font-size:2rem;line-height:1.2}
+h2{font-size:1.35rem;margin:0 0 4px}
+h3{font-size:1.05rem;margin:0 0 2px}
+p{margin:0 0 10px;max-width:68ch}
+.lede{color:var(--text);font-size:1.02rem}
+.eyebrow{font:600 .72rem/1 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:10px}
+.verdict{background:var(--accent-soft);border-left:3px solid var(--accent);padding:14px 16px;border-radius:2px}
+.verdict p:last-child{margin:0}
+.caution{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:2px}
+.caution p:last-child{margin:0}
+.wrap{margin-bottom:22px;overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem "JetBrains Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{display:inline-block;height:8px;background:var(--bar);border-radius:1px;vertical-align:middle;margin-right:6px}
+ul,ol{margin:0 0 12px;padding-left:20px;max-width:68ch} li{margin-bottom:6px}
+q{font-style:italic;quotes:"“" "”"}
+.note{color:var(--text);font-size:.85rem}
+.flow{margin-bottom:22px;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;max-width:720px;overflow-x:auto}
+.flow svg{display:block;width:100%;min-width:560px;font:12px "Public Sans",system-ui,sans-serif}
+.flow text{fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.flow .t{fill:var(--paper);stroke:var(--line)} .flow .j{fill:var(--accent-soft);stroke:var(--accent)} .flow .l{fill:var(--warn-soft);stroke:var(--warn);stroke-dasharray:4 3}
+.flow .w{fill:var(--accent);stroke:var(--accent)} .flow .wt{fill:var(--paper);font-weight:600}
+.flow path{stroke:var(--muted);fill:none;stroke-width:1.2} .flow marker path{fill:var(--muted);stroke:none}
+.flow .s{fill:var(--muted);font-size:10.5px;text-anchor:start} .flow .yn{fill:var(--muted);font-size:10.5px}
+.flow .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.75rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.flow .legend i{display:inline-block;width:12px;height:10px;border:1px solid;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.stage{margin-bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stage>div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.88rem}
+.stage b{display:block;font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--accent);margin-bottom:4px}
+.roles{margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.role{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:.9rem}
+.role p{margin:0}
+.role .k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mock{font-size:.88rem;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+.mock b{font-family:"JetBrains Mono",monospace;font-size:.75rem;color:var(--accent)}
+@media (max-width:640px){.roles,.stage{grid-template-columns:1fr}}
+.hero{gap:8px}
+.hero h1{font-size:2.6rem;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.ar{font-family:"Noto Naskh Arabic","Geeza Pro",serif;font-weight:500;color:var(--accent);font-size:2.2rem}
+.gloss{color:var(--muted);margin:0}
+.facts{margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.facts>div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.9rem}
+.k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+.soul{margin-bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.pillar{border-top:3px solid var(--accent);background:var(--paper);border-radius:0 0 4px 4px;padding:12px 14px;font-size:.88rem}
+.pillar ul{padding-left:16px}
+.voice{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.voice p{font-size:.92rem}
+.chip{font:600 .64rem "JetBrains Mono",monospace;padding:2px 6px;border-radius:2px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.chip.live{background:var(--accent-soft);color:var(--accent)}
+.chip.week{background:var(--warn-soft);color:var(--warn)}
+.chip.later{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.steps{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.divider{border-top:2px dashed var(--line);padding-top:18px}
+.mono{font-family:"JetBrains Mono",monospace;font-size:.85em}
+@media (max-width:640px){.facts,.soul{grid-template-columns:1fr}.hero h1{font-size:2.1rem}}
+.docnav{font:600 .74rem "JetBrains Mono",monospace;letter-spacing:.04em;color:var(--muted)} .docnav a{color:var(--accent);text-decoration:none} .docnav b{color:var(--ink)}
+.lead{background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:2px;padding:10px 14px;margin-bottom:16px;max-width:68ch}
+.lead p{margin:0 0 4px} .lead p:last-child{margin:0}
+.toc{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 18px}
+.toc ol{margin:6px 0 0;padding-left:22px} .toc li{margin-bottom:3px} .toc ol ol{margin:3px 0 4px;list-style:none;padding-left:4px;font-size:.88rem}
+.toc a{color:var(--accent);text-decoration:none} .toc a:hover{text-decoration:underline}
+h2 .num{font-family:"JetBrains Mono",monospace;font-size:.9rem;color:var(--accent);margin-right:8px}
+section{scroll-margin-top:16px}
+h3{margin-top:18px}
+.pass{color:var(--accent);font-weight:700}.fail{color:var(--warn);font-weight:700}.unm{color:var(--muted);font-weight:600}
+</style></head><body>
+<main>
+<header>
+  <span class="eyebrow">Anís · launch gate · W7 · Tue 3 Nov 2026</span>
+  <h1>Anís Launch Gate, 3 November</h1>
+  <p class="lede">Four batteries were run against production on 3 Nov, 17:30–18:15 UTC: lookups, short turns, the W3 strategies and the W8 audience questions. Each number below names the file it came from. Anything not measured is marked as not measured.</p>
+</header>
+
+<div class="verdict">
+  <p><b>Verdict: the gate does not pass today.</b> Telling new questions from follow-ups passes (98.5%). Every bar on lookups and quality fails, and strategy routing misses narrowly (88.9% against 90%).</p>
+  <p><b>The biggest finding is the gap between channels.</b> On the same questions, email beats Perplexity on 24/27 W3 questions and 18/18 answered W8 questions. Site chat does so on only 12/27 and 3/42. Every earlier battery went through the email path, so this gap had never been measured.</p>
+</div>
+
+<nav class="toc"><b>Contents</b>
+  <ol>
+    <li><a href="#gate">The gate, bar by bar</a></li>
+    <li><a href="#lookup">Lookup battery (W1, 42 items)</a></li>
+    <li><a href="#short">Short-turns battery</a></li>
+    <li><a href="#w3">W3 strategies (27 items)</a></li>
+    <li><a href="#w8">W8 audience (42 items)</a></li>
+    <li><a href="#defects">Top defects</a></li>
+    <li><a href="#decisions">Open decisions for Chad</a></li>
+    <li><a href="#method">Method, cost and caveats</a></li>
+  </ol>
+</nav>
+
+<section id="gate">
+  <h2><span class="num">1</span>The gate, bar by bar</h2>
+  <div class="lead"><p>The bars are from <span class="mono">planning/anis-launch-week.html</span> §1. The launch includes both Chat and Email, so both channels are reported.</p></div>
+  <div class="wrap"><table>
+    <tr><th>Measure</th><th>Bar</th><th>Measured 3 Nov</th><th>Result</th></tr>
+    <tr><td>Fresh questions, wins or ties vs Perplexity</td><td class="n">≥85% per type</td><td><b>Email:</b> W3 24/27 (89%), but reference is 3/5 and comparison 4/5. W8 18/18 among the questions answered; the other 24 hit the rate limit and were not measured.<br><b>Site chat:</b> W3 12/27 (44%), W8 3/42 (7%).</td><td class="fail">FAIL</td></tr>
+    <tr><td>Held-out 61 (Immerse)</td><td class="n">≥80%</td><td>Not run in W7.</td><td class="unm">not measured</td></tr>
+    <tr><td>Invented quotations</td><td class="n">0</td><td>None confirmed. The W8 email scorer flagged 8 quotes: one has no match in the library, seven are partial. Not all were checked by hand; db-01 is discussed in §5. Site chat: 0 flags.</td><td class="unm">open: 8 flags unchecked</td></tr>
+    <tr><td>Book or quotation answered with the right linked work</td><td class="n">100%</td><td>Lookups 40/42 after a hand check: #14 and #31 linked the wrong work. W8 site chat linked the expected book 13/42 times.</td><td class="fail">FAIL</td></tr>
+    <tr><td>Answer matches its type's shape</td><td class="n">≥85%</td><td>No scorer exists for this.</td><td class="unm">not measured</td></tr>
+    <tr><td>Right strategy for the context</td><td class="n">≥90%</td><td>W3 on site chat: 24/27 (88.9%). Two misses were Jev timeouts; one was a wrong choice.</td><td class="fail">FAIL (narrow)</td></tr>
+    <tr><td>Each branch decision right</td><td class="n">≥90%</td><td>Only the comparison sides were checked: 4/4 right. No other branch was scored.</td><td class="unm">partial</td></tr>
+    <tr><td>Jev picks the right route</td><td class="n">≥90%</td><td>88.9% after W2, from the coordinator. W7 did not re-measure this. Jev triage timed out on 2/42 lookups.</td><td class="fail">FAIL (from W2)</td></tr>
+    <tr><td>New question vs follow-up told apart</td><td class="n">≥95%</td><td>66/67 (98.5%).</td><td class="pass">PASS</td></tr>
+    <tr><td>Time: book names and quotations</td><td class="n">≤1 s</td><td>Within 1 s: books 8/14 (p50 0.60 s, p90 20.2 s); quotes 1/14 (p50 2.65 s).</td><td class="fail">FAIL</td></tr>
+    <tr><td>Time: other lookups</td><td class="n">≤3 s</td><td>Numbered references within 3 s: 8/14 (p50 2.06 s, p90 6.8 s). W3 scripture references: 5/5 within 2.0 s.</td><td class="fail">FAIL</td></tr>
+    <tr><td>Time: understanding and comparison</td><td class="n">≤12 s, progress within 2 s</td><td><b>Site chat:</b> first text at most 10.7 s; first progress event within 2 s on 26/27.<br><b>Email:</b> p50 26 s, p90 44 s.</td><td class="pass">PASS on chat</td></tr>
+    <tr><td>All suites, three clean rehearsals</td><td class="n">yes</td><td>Not run in W7.</td><td class="unm">not measured</td></tr>
+  </table></div>
+</section>
+
+<section id="lookup">
+  <h2><span class="num">2</span>Lookup battery (W1, 42 items)</h2>
+  <div class="lead"><p><b>Source:</b> <span class="mono">tests/quality/reports/launch-gate-20261103/lookup-battery.json</span>. The 42 items were sent to the production chat stream, 3 at a time, and the route was read from each thread.</p></div>
+  <div class="wrap"><table>
+    <tr><th>Kind</th><th>Fast*</th><th>First answer p50</th><th>p90</th><th>≤1 s</th><th>≤3 s</th><th>Server $</th></tr>
+    <tr><td>Books (14)</td><td class="n">13/14</td><td class="n">0.60 s</td><td class="n">20.2 s</td><td class="n">8/14</td><td class="n">10/14</td><td class="n">$0.005</td></tr>
+    <tr><td>Quotes (14)</td><td class="n">13/14</td><td class="n">2.65 s</td><td class="n">6.1 s</td><td class="n">1/14</td><td class="n">8/14</td><td class="n">$0.018</td></tr>
+    <tr><td>Refs (14)</td><td class="n">9/14</td><td class="n">2.06 s</td><td class="n">6.8 s</td><td class="n">0/14</td><td class="n">8/14</td><td class="n">$0.025</td></tr>
+    <tr><td><b>All</b></td><td class="n"><b>35/42</b> (W1: 31/42)</td><td colspan="5">Right work: 41/42 by the regex scorer, 40/42 after a hand check. W1 had 38/42.</td></tr>
+  </table></div>
+  <p class="note">*Fast means the lookup resolved and no planning stage ran. The times are the first answer text as the client received it. Server $ is the total of meta.usd for each kind.</p>
+  <h3>The misses and their triage.lookup</h3>
+  <div class="wrap"><table>
+    <tr><th>#</th><th>Question</th><th>triage.lookup</th><th>What happened</th></tr>
+    <tr><td class="n">2</td><td>Some Answered Questions</td><td>none</td><td>Jev triage ran past its 1.5 s cap (1,682 ms) and returned no result, so the full path ran and took 37 s. A /draft re-ask also returned no triage.</td></tr>
+    <tr><td class="n">26</td><td>"Hatred never ceases by hatred"</td><td>none (re-ask: quote, 1.0)</td><td>Jev triage took 2,739 ms and was cut off.</td></tr>
+    <tr><td class="n">31</td><td>Dhammapada 183</td><td>reference ≥0.6</td><td>Not resolved. The answer said verse 183 "does not appear" and cited a Sutra Collection: wrong work.</td></tr>
+    <tr><td class="n">33</td><td>Some Answered Questions 33</td><td>reference (re-ask 1.0)</td><td>Not resolved; it gave an essay about the book instead of chapter 33.</td></tr>
+    <tr><td class="n">35</td><td>Paris Talks 12</td><td>reference ≥0.6</td><td>Not resolved; it gave an essay.</td></tr>
+    <tr><td class="n">36</td><td>Epistle to the Son of the Wolf 20</td><td>reference ≥0.6</td><td>Not resolved (the lookup took 0 ms); it gave an essay.</td></tr>
+    <tr><td class="n">41</td><td>Dawn-Breakers 3</td><td>reference ≥0.6</td><td>Not resolved (the lookup took 4.4 s); it gave an essay citing <i>Prayers and Meditations</i>.</td></tr>
+  </table></div>
+  <h3>Hand check beyond the regex</h3>
+  <ul>
+    <li><b>#14 "the earth is but one country…"</b> Jev chose quote (1.0), but the lookup returned the book <i>The Earth Is But One Country</i> by Huddleston, a secondary work, instead of Bahá'u'lláh's words. The regex scored it right; it is the wrong work.</li>
+    <li><b>#23</b> was marked wrong by the regex but is right: Douay-Rheims, Matthew.</li>
+    <li><b>Weak but in the right work:</b> #21 cites <i>Star of the West</i> rather than a primary book. #25 cites no primary source. #40 Hidden Words 12 gives only the Arabic, without Shoghi Effendi's English. #32 and #38 (Tao Te Ching) give only the opening line. #34 Seven Valleys 5 describes the Valley of Search, probably the wrong section (unverified).</li>
+    <li><b>Slow cases:</b> #0 Kitáb-i-Íqán and #1 Hidden Words spent 7.4 s in the title-index lookup. #3 Paris Talks: the server timeline ended at about 1.9 s, but the first text reached the client at 20.2 s (cause unverified). Quote lookups run the light writer, whose understood and craft stages take 2–5 s, so quote p50 is 2.65 s.</li>
+  </ul>
+</section>
+
+<section id="short">
+  <h2><span class="num">3</span>Short-turns battery</h2>
+  <div class="lead"><p><b>Source:</b> <span class="mono">…/short-turns.json</span>, from <span class="mono">score-short-turns.mjs</span> against production. Script's own cost estimate: about $0.07.</p></div>
+  <div class="wrap"><table>
+    <tr><th>Measure</th><th>Result</th><th>Miss</th></tr>
+    <tr><td>Outcome (search / ask back / none)</td><td class="n">67/67 (100%): 42 + 9 + 16</td><td>none</td></tr>
+    <tr><td>Follow-up vs new question</td><td class="n">66/67 (98.5%) <span class="pass">PASS ≥95%</span></td><td>"bye for now": follow-up score 0.18</td></tr>
+    <tr><td>Resolved query names the subject</td><td class="n">41/42 (97.6%)</td><td>"'be generous in prosperity'" became "sacred texts teachings on generosity in prosperity"</td></tr>
+  </table></div>
+</section>
+
+<section id="w3">
+  <h2><span class="num">4</span>W3 strategies (27 items)</h2>
+  <div class="lead"><p><b>Sources:</b> <span class="mono">w3-site-chat-routes.json</span> (production chat stream, strategy choice on) and the judged files <span class="mono">w3-email-judged.json</span> and <span class="mono">w3-site-chat-judged.json</span>. Opus 5.5 judged each case blind against the same Perplexity sonar answer.</p>
+  <p><b>Why two channels:</b> <span class="mono">research-battery.mjs</span> sends <span class="mono">research:false</span>, which turns off both the lookup and the strategy choice (turn.js lines 96 and 104). The runner therefore measures email Anís without W3. To measure what chat readers get, the same questions were also sent through the chat stream and judged against the same Perplexity answers.</p></div>
+  <div class="wrap"><table>
+    <tr><th>Expected strategy</th><th>Jev chose right</th><th>Wins+ties: site chat</th><th>Wins+ties: email</th><th>Chat first text p50</th></tr>
+    <tr><td>comparison (5)</td><td class="n">4/5</td><td class="n">1/5</td><td class="n">4/5</td><td class="n">7.5 s</td></tr>
+    <tr><td>understanding (4)</td><td class="n">3/4</td><td class="n">2/4</td><td class="n">4/4</td><td class="n">9.1 s</td></tr>
+    <tr><td>prayer (5)</td><td class="n">5/5</td><td class="n">4/5</td><td class="n">5/5</td><td class="n">4.6 s</td></tr>
+    <tr><td>guidance (4)</td><td class="n">4/4</td><td class="n">3/4</td><td class="n">4/4</td><td class="n">4.4 s</td></tr>
+    <tr><td>reference (5)</td><td class="n">5/5</td><td class="n">1/5</td><td class="n">3/5</td><td class="n">1.7 s</td></tr>
+    <tr><td>none of these (4)</td><td class="n">3/4</td><td class="n">1/4</td><td class="n">4/4</td><td class="n">5.6 s</td></tr>
+    <tr><td><b>All</b></td><td class="n"><b>24/27 (88.9%)</b></td><td class="n"><b>12/27 (44%)</b>; mean 4.7 vs Perplexity 6.0</td><td class="n"><b>24/27 (89%)</b>; mean 7.22 vs 4.52</td><td class="n">email p50 26 s</td></tr>
+  </table></div>
+  <ul>
+    <li><b>Strategy misses.</b> "Bahá'í writings and the Book of Mormon on tithing" and "the soul's progress after death". In both, the Jev strategy call took longer than its 900 ms limit (1,390 ms and 1,461 ms) and returned nothing, so the ordinary planner answered with 'topic'. "The significance of the number 19 in the Bahá'í calendar" was sent to understanding, but no strategy was expected.</li>
+    <li><b>Sides:</b> all 4 comparisons that ran got the right sides, including the three-way Torah / Qur'án / Bahá'í case.</li>
+    <li><b>Judge noise:</b> the same Perplexity text was scored in both judgings, and its score differed by 1.06 points on average. Read the small per-type differences with that in mind. The 12-versus-24 gap is far larger than the noise. One Perplexity answer was a 429 error (gd-climate).</li>
+  </ul>
+</section>
+
+<section id="w8">
+  <h2><span class="num">5</span>W8 audience: Dawn-Breakers and Gate of the Heart (42 items)</h2>
+  <div class="lead"><p><b>Sources:</b> <span class="mono">w8-email-judged.json</span> with <span class="mono">w8-email-scored.md</span>, and <span class="mono">w8-site-chat-judged.json</span> with <span class="mono">w8-site-chat-scored.md</span>. Scored by <span class="mono">score-audience-battery.mjs</span> against production search. The earlier email run, at 16:25 UTC, had 39/42 (planning/anis-w8-audience-20261103.md).</p></div>
+  <div class="wrap"><table>
+    <tr><th>Type</th><th>n</th><th>Site chat wins+ties</th><th>Site chat linked work</th><th>Email wins+ties (answered)</th></tr>
+    <tr><td>history-story</td><td class="n">7</td><td class="n">0/7</td><td class="n">3/7</td><td class="n">7/7</td></tr>
+    <tr><td>who-was</td><td class="n">8</td><td class="n">0/8</td><td class="n">2/8</td><td class="n">8/8</td></tr>
+    <tr><td>date-place</td><td class="n">6</td><td class="n">2/6</td><td class="n">0/6</td><td class="n">3/3 (3 hit the rate limit)</td></tr>
+    <tr><td>timeline</td><td class="n">5</td><td class="n">0/5</td><td class="n">0/5</td><td class="n">all 5 hit the rate limit</td></tr>
+    <tr><td>explain-passage</td><td class="n">6</td><td class="n">0/6</td><td class="n">4/6</td><td class="n">all 6 hit the rate limit</td></tr>
+    <tr><td>goth-concept</td><td class="n">10</td><td class="n">1/10</td><td class="n">4/10</td><td class="n">all 10 hit the rate limit</td></tr>
+    <tr><td><b>All</b></td><td class="n">42</td><td class="n"><b>3/42 (7%)</b>; mean 3.5 vs 6.8</td><td class="n">13/42</td><td class="n"><b>18/18 wins</b>; mean 8.42 vs 5.03; 24 not measured</td></tr>
+  </table></div>
+  <ul>
+    <li><b>The rate limit (a harness defect, not reader-facing):</b> from db-18 on, all 24 email answers read "I'm answering a great many questions just now and need to pause". Every battery logs in as the same battery@ user. Two leftover runs from before the restart were still going at the same time and pushed that user over its limit. The raw runner total of 18/42 in the JSON is wrong for this reason; only the 18 answered cases count.</li>
+    <li><b>Site chat routes:</b> 29/42 were planned as 'fact', 8 as 'understanding', 3 as 'source', 1 'quote' and 1 'topic'. None of the site-chat turns reached the agent, while 59 of the 61 email turns did. The first answer arrived in 6.1 s at p50 and 10.2 s at most. The answers are fast but thin. Example, db-06 (the Báb's martyrdom): site chat scored 1 against Perplexity's 7, while email scored 9 against 6.</li>
+    <li><b>Invented-quote flags (email):</b> 8. One has no match: in db-01, "Behold, all these things are manifest in me" is cited to an essay on bahai-library.com (/2795), not to <i>The Dawn-Breakers</i>. Searching production found the neighbouring Nabíl paragraph ("Observe attentively…", #21308) but not this line. <b>Unverified</b>: it is probably Nabíl's own text, cited through a secondary source. The other 7 flags are partial matches and were not checked by hand.</li>
+  </ul>
+</section>
+
+<section id="defects">
+  <h2><span class="num">6</span>Top defects</h2>
+  <div class="lead"><p>Listed in order of impact on the gate. Code was not changed in this task, and nothing here is proposed as a keyword rule on user text. Where a cause was inferred rather than read, it says so.</p></div>
+  <div class="wrap"><table>
+    <tr><th>#</th><th>Defect</th><th>Real example</th><th>Cause (one line)</th></tr>
+    <tr><td class="n">1</td><td><b>Site chat is much weaker than email</b></td><td>W8 3/42 vs 18/18; W3 12/27 vs 24/27. db-06 martyrdom: chat 1 vs Perplexity 7.</td><td>The agent answers only on channels listed in ANIS_AGENT (respond.js:511). The env value was not read: it is inferred from 0 agent turns on chat and 59/61 on email. A chosen strategy also skips the agent (respond.js:570).</td></tr>
+    <tr><td class="n">2</td><td><b>Strategy executors say "didn't find" when the library has the text</b></td><td>"We lost my grandmother… what prayer for the dead?" got "I didn't find a passage on prayers for the dead" (0 retrieved). Qur'án 2:255 gave the Ṭálút passage. Gita 2:47: "this edition does not number the verses". Isaiah 11:6–9: "approximate portion".</td><td>The prayer shelf finds no prayers for this occasion. The scripture-reference lookup cannot map verse numbers in editions whose text carries no verse numbers (Yusuf Ali, this Gita).</td></tr>
+    <tr><td class="n">3</td><td><b>Numbered references to books don't resolve</b></td><td>"Some Answered Questions 33", "Paris Talks 12", "Epistle to the Son of the Wolf 20", "Dawn-Breakers 3" each got an essay about the book. "Dhammapada 183" said "does not appear" (wrong work).</td><td>Jev picks reference (≥0.6), but lookup.js has no chapter or section index for these works, so it falls through to the ordinary path.</td></tr>
+    <tr><td class="n">4</td><td><b>A quotation that is also a book title opens the book</b></td><td>#14 "the earth is but one country…" opened Huddleston's book, not Bahá'u'lláh's words.</td><td>The title-beats-quote rule in lookup resolution overrides Jev's quote choice (1.0).</td></tr>
+    <tr><td class="n">5</td><td><b>Jev calls past their time limits silently drop the decision</b></td><td>Triage: #2 took 1,682 ms and #26 2,739 ms. Strategy: tithing took 1,390 ms and soul-after-death 1,461 ms. All fell back to the default path.</td><td>Jev latency spikes past the 1.5 s triage and 900 ms strategy limits, and the code then runs the default path without a retry and without logging the timeout as a decision.</td></tr>
+    <tr><td class="n">6</td><td><b>Lookup latency tail</b></td><td>Íqán and Hidden Words: 7.4 s in the title index. Paris Talks: first text at 20.2 s after the server finished at 1.9 s. Quote p50 2.65 s.</td><td>A slow title-index stage; the writer runs on quote lookups. The Paris Talks stall is unexplained (unverified).</td></tr>
+    <tr><td class="n">7</td><td><b>Harness: batteries skip the launch path</b></td><td>W3 and W8 through the runner never ran a strategy or the lookup. Two runs started in the same millisecond swapped answers. 24 of the 42 W8 answers hit the rate limit.</td><td><span class="mono">research:false</span> turns off lookup and strategy. Job id = <span class="mono">Date.now()</span> plus a sequence number. Every run shares the battery@ user and its rate limit. The runner also records no dollars.</td></tr>
+    <tr><td class="n">8</td><td><b><i>Gate of the Heart</i> served as open (fix in progress)</b></td><td>#8632 is open. It should be encumbered, showing only the 40-¶ preview.</td><td>The rights class is wrong. The publisher is probably GR (Chad isn't certain). A fix is in progress.</td></tr>
+    <tr><td class="n">9</td><td><b>A primary text cited through a secondary source; a garbled section</b></td><td>db-01 cites an essay for Nabíl's narrative. In the three-way creation comparison, the Qur'án section is cut to "Hedjr*), commanding the angels…".</td><td>Citations follow the ranking rather than the citation order (best published source first). The cut-off text is in the stored reply, so this is a writer or link-upgrade defect (unverified which).</td></tr>
+  </table></div>
+  <p class="note">From the 16:25 W8 run, still open and not re-measured: the <i>Gate of the Heart</i> headings and junk paragraphs, and the Dawn-Breakers <span class="mono">[pg N]</span> markers that break verbatim matching.</p>
+</section>
+
+<section id="decisions">
+  <h2><span class="num">7</span>Open decisions for Chad</h2>
+  <ol>
+    <li><b>The welcome letter's corpus numbers</b> are unverified. Either run <span class="mono">scripts/corpus-status.mjs</span> against production and use the measured figures, or take the numbers out.</li>
+    <li><b>Strict route accuracy is below 90%</b> (88.9% after W2; W3 strategy choice is also 24/27 = 88.9% today). Either launch at 88.9% or hold for ≥90%. Two of the three W3 misses are timeouts (defect 5), not wrong choices.</li>
+    <li><b>The dossiers.</b> The W8 doc recommends pulling both forward as data fixes. For <i>Gate of the Heart</i>: headings, and re-ingest without the ~665 junk paragraphs. For <i>The Dawn-Breakers</i>: year, slug, the three stub records and the <span class="mono">[pg N]</span> markers.</li>
+    <li><b>New from today's data: which engine answers site chat?</b> Email (agent) wins 24/27 and 18/18 at a p50 of 26–28 s and about $0.13 a turn (measured). Chat (pipeline) answers in 6 s for about $0.003 but wins 12/27 and 3/42. The choice is to put site-chat in ANIS_AGENT with a progress stream, or to bring the pipeline up to the bar before 9 Nov.</li>
+  </ol>
+</section>
+
+<section id="method">
+  <h2><span class="num">8</span>Method, cost and caveats</h2>
+  <ul>
+    <li><b>Everything ran against production:</b> <span class="mono">/api/chat/stream</span>, <span class="mono">/api/v1/anis/draft</span> and the admin thread view. There was no database access.</li>
+    <li><b>Spend.</b> Measured: Anís server cost for battery@ turns since 17:50 UTC is $7.75 (61 turns); the chat-stream runs cost $0.27 (lookups $0.05, W3 $0.09, W8 $0.13). Estimated: about 185 Opus judge calls at roughly $0.05, so about $9, plus about 140 Perplexity calls, about $0.8. <b>Total about $17, over the $15 cap.</b> Two causes: the leftover runs, and the second judging pass needed to measure site chat.</li>
+    <li><b>The discarded runs:</b> the first W3 and W8 runs (17:50:05) started in the same millisecond, gave the same job ids and swapped answers. They are kept out of every number here.</li>
+    <li><b>Reading the site-chat numbers:</b> the site-chat judgings reuse the Perplexity answer from the email run of the same question, so both channels face the same rival text.</li>
+    <li><b>Files:</b> <span class="mono">tests/quality/reports/launch-gate-20261103/</span> holds the result JSON for every battery, the scorer output and the three helper scripts (lookup-battery, q-stream, mk-rejudge).</li>
+  </ul>
+</section>
+</main>
+</body></html>

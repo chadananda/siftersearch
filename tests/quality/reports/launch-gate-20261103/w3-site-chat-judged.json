@@ -1,0 +1,1240 @@
+{
+ "summary": {
+  "perplexity": {
+   "mean": 5.57,
+   "best": 15
+  },
+  "current": {
+   "mean": 4.7,
+   "best": 12,
+   "beats_perplexity": "12/27"
+  },
+  "haiku": {
+   "mean": null,
+   "best": 0,
+   "beats_perplexity": "0/27"
+  },
+  "sonnet": {
+   "mean": null,
+   "best": 0,
+   "beats_perplexity": "0/27"
+  }
+ },
+ "cases": [
+  {
+   "id": "w3:cmp-fasting-islam-bahai",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "comparison",
+     "decided_by": "jev",
+     "sides": [
+      "Islam",
+      "Baha'i"
+     ],
+     "must": "both sides from their own sources; each covered or said missing"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "How does fasting in Islam compare with the Bahá’í fast?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Both are annual daylight fasts centered on spiritual discipline, prayer, and greater awareness of God, but they differ in length, calendar, rules, and exemptions.\n\n| Aspect | Islam | Bahá’í Faith |\n|---|---|---|\n| **Period** | Ramadan, the ninth month of the Islamic lunar calendar; normally 29 or 30 days, so its Gregorian dates shift each year.[7] | The Bahá’í month of ʿAlá, normally March 2–20, immediately before Naw-Rúz, the Bahá’í New Year.[1] |\n| **Daily fast** | Abstention from food, drink, smoking, and sexual relations from dawn until sunset.[7] | Abstention from food and drink from sunrise until sunset; sexual relations are not prohibited by the fast.[2] |\n| **Spiritual purpose** | Worship, God-consciousness, self-restraint, gratitude, repentance, charity, and solidarity with those in need. | Prayer, meditation, spiritual renewal, and detachment from selfish or bodily desires; physical fasting is understood as a symbol of an inward spiritual fast.[1][3] |\n| **Who fasts** | Generally healthy, adult Muslims, with exemptions for illness, travel, pregnancy, nursing, menstruation, old age, and other relevant conditions; missed obligatory days may often be made up or compensated according to circumstances. | Generally Bahá’ís aged 15 through 70; exemptions include illness, old age, pregnancy or nursing, travel, and heavy physical labor.[3][6] |\n| **Daily rhythm** | A pre-dawn meal (*suḥūr*) and sunset meal (*iftār*) are customary; Ramadan also places strong emphasis on communal worship and charity. | Meals may be taken before sunrise and after sunset, while the period is especially associated with prayer and reflection; the fast is an individual religious obligation rather than one enforced by Bahá’í institutions.[2] |\n\nThe closest structural parallel is that both require abstaining during daylight hours and treat fasting as more than simply going without food. The main practical contrast is that Islamic Ramadan lasts roughly a lunar month and includes abstention from sexual activity during daylight, whereas the Bahá’í fast lasts 19 fixed days in early March and does not impose that sexual restriction.[2][7]",
+     "ms": 4236
+    },
+    "current": {
+     "text": "In Islam, fasting is prescribed by the Qur'án for believers during \"certain days\" (such as the month of Ramadan), with provisions for the sick or travelers to make up the days later or provide sustenance to a needy person as expiation, as recorded in [*The Quran (Rodwell)*](https://oceanlibrary.com/sura-ii-the-cow_muhammad/?paraId=para_111&selectionString=sura_ii_the_cow_quran_ocean_en-bl89.0~sura_ii_the_cow_quran_ocean_en-bl89.389). Traditions within Islamic sources also note various kinds of fasting and trace the practice back to earlier prophetic traditions, such as the fasting on 'Ashura' before Ramadan was prescribed, as mentioned in [*Ṣaḥíḥ al-Bukhárí*](https://oceanlibrary.com/sahih-al-bukhari/?paraId=para_3676&selectionString=a_i_al_bukhari_islam_ocean_en_2v8.0~a_i_al_bukhari_islam_ocean_en_2v8.256).\n\nThe Bahá’í fast, by contrast, is a defined nineteen-day period—starting as a rule from the second to the twentieth of March—that involves complete abstention from food and drink from sunrise to sunset. Shoghi Effendi describes it in [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6112&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl67v.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl67v.537) as essentially a period of \"meditation and prayer, of spiritual recuperation,\" where the believer strives to make readjustments in their inner life. Bahá’u’lláh similarly invokes the fast in prayers as a turning toward God \"for love of Thee, and for the sake of Thy pleasure\" ([*Prayers and Meditations*](https://siftersearch.com/library/view?doc=20805)](https://oceanlibrary.com/prayers-and-meditations-by-bahaullah/?paraId=para_345&selectionString=prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_cc.0~prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_cc.478)).\n\nBoth traditions view fasting as a divine enactment meant to draw human beings toward God, foster moral discipline, and connect believers to a lineage of earlier prophetic practice. Yet they differ structurally: Islam's primary fast is tied to the lunar month of Ramadan with specific exemptions and lunar adjustments, whereas the Bahá’í fast occupies a fixed nineteen-day period at the end of the Bahá’í year (Ayyám-i-Há preceding it), functioning explicitly as a defined season of inner spiritual renewal and prayer.",
+     "ms": 9603
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 6,
+      "why": "It grounds the answer in primary texts: the Qur'án, Bukhárí on 'Ashura', Shoghi Effendi's description of the Fast as 'meditation and prayer, of spiritual recuperation', and a prayer of Bahá'u'lláh. But the comparison is thin. It leaves out dawn vs sunrise, ages, most exemptions and what else is given up, its point about 'lineage of earlier prophetic practice' is vague, and one citation link is broken."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "It gives a clear, accurate comparison point by point: lunar vs fixed calendar, dawn vs sunrise, ages 15–70, exemptions including heavy labour, the fast as individual obligation, and its inner meaning. It also correctly says sexual relations are not forbidden in the Bahá'í fast. However, it quotes none of the Writings, its numbered citations point to nothing that can be seen, and it leaves out that smoking is also given up in the Bahá'í fast, which makes the contrast look sharper than it is."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:cmp-afterlife-hindu-christian",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "comparison",
+     "decided_by": "jev",
+     "sides": [
+      "Hindu",
+      "Christian"
+     ]
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "What do Hindu scriptures and the Gospels each teach about what happens after death?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Hindu scriptures and the Gospels both teach that death is not the end, but they describe the afterlife very differently.\n\n## Hindu scriptures\n\n- The **ātman**—the true self—is not destroyed when the body dies. The *Bhagavad Gītā* compares the body to worn-out clothing that the self lays aside and replaces.[1][2]\n- After death, the self ordinarily continues through **saṃsāra**, the cycle of birth, death, and rebirth. The next embodiment is shaped by **karma**, the moral consequences of one’s actions.[1][2]\n- The ultimate goal is **mokṣa**, liberation from saṃsāra. Hindu traditions describe this variously as realization of the self’s relation to Brahman, union with ultimate reality, or eternal nearness to the divine.[2][3]\n- Hindu scriptures also describe temporary heavenly or hellish realms, but these are generally not final destinations; when their karmic causes are exhausted, rebirth continues.[4]\n\n## The Gospels\n\n- Jesus’ teaching presents human life as a single earthly life followed by judgment, not an endless cycle of reincarnation. The Gospels speak of the dead being raised and judged by God.[5][6]\n- Jesus teaches **resurrection**: the dead will be raised, and people will receive a final destiny. In John, he promises resurrection and eternal life to those who believe in him.[7]\n- The final alternatives are described as **eternal life with God** and judgment or punishment for those who reject God’s will. Matthew 25:46 explicitly contrasts “eternal life” with “eternal punishment.”[8]\n- The Christian hope is therefore not escape from embodiment but resurrection and renewed life through Christ; Jesus’ own resurrection is presented as the pattern and guarantee of this hope.[6][7]\n\n**In summary:** Hindu scriptures generally teach transmigration through many lives until liberation, while the Gospels teach one earthly life, resurrection, final judgment, and an eternal destiny—life with God or separation from him. These are broad summaries: Hindu traditions differ over the nature of the self and mokṣa, and Christian traditions differ over the details of judgment and hell.",
+     "ms": 4420
+    },
+    "current": {
+     "text": "In Hindu texts, the soul assumes a subtle form after the physical body is destroyed, retaining consciousness of past actions [*The Mahabharata - Sabha and Udyoga Parva*](https://oceanlibrary.com/hymns-of-atharva-veda). According to this tradition, [\"The virtuous attain to a superior, and the vicious to an inferior form of existence\"](https://oceanlibrary.com/hymns-of-atharva-veda) ([*The Mahabharata - Sabha and Udyoga Parva*](https://siftersearch.com/library/view?doc=21015)), entering new bodily forms. Similarly, meditating upon the divine at the hour of death shapes one's destination ([*The Bhagavad-Gita*](https://siftersearch.com/library/view?doc=21038)).\n\nIn the Gospels and Christian scriptures, death leads directly to distinct spiritual states or an accounting before God. The Gospel of Luke records that after death, individuals are carried to distinct realms, such as being carried by angels into [\"Abraham’s bosom\"](https://oceanlibrary.com/kjv-gospel-of-luke/?paraId=para_589&selectionString=the-gospel-of-luke_en_j2.0~the-gospel-of-luke_en_j2.210) ([*The Bible (KJV), The Gospel of Luke*](https://siftersearch.com/library/view?doc=912528)), while others experience torment. Revelation further depicts the dead standing before God to be [\"judged out of those things which were written in the books, according to their works\"](https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos/?paraId=para_331&selectionString=the-apocalypse-of-john-nt_en_bv.0~the-apocalypse-of-john-nt_en_bv.196) ([*The Bible (KJV), Revelation*](https://siftersearch.com/library/view?doc=912528)).\n\nBoth traditions share the moral conviction that a person's condition or destination after death is intimately tied to their earthly deeds and choices. However, they diverge fundamentally in framework: the Hindu texts envision a continuous cycle of embodied existence and rebirth into various forms based on action, whereas the Christian scriptures present a linear trajectory of individual judgment and placement into distinct realms of rest or torment.",
+     "ms": 8474
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 5.5,
+      "why": "It quotes real texts: the Mahabharata on the virtuous and vicious, Luke 16's 'Abraham's bosom' and Revelation 20 on judgment 'according to their works'. The comparison at the end is sound. However, the Mahabharata link points to an Atharva Veda page, and it leans on Revelation, which is not a Gospel. It also leaves out mokṣa, the Gita's 'worn-out clothes' image, Jesus' teaching on resurrection and Matthew 25:46. The answer is thin overall."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "It gives a clear, accurate account of both traditions. For Hinduism it covers ātman, saṃsāra, karma, mokṣa and the fact that heavens and hells are temporary, and it cites the Gita's clothing image. For the Gospels it covers resurrection, John's promise of eternal life and Matthew 25:46. It also notes that views differ within each tradition. Weaknesses: the footnotes [1]–[8] are never identified, there are few direct quotations, and it skips Luke 16's picture of an immediate state after death."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:cmp-detachment-buddhist-bahai",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "comparison",
+     "decided_by": "jev",
+     "sides": [
+      "Buddhist",
+      "Baha'i"
+     ]
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Is Bahá’u’lláh’s detachment the same thing as Buddhist non-attachment?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Not exactly. **Bahá’u’lláh’s detachment and Buddhist non-attachment overlap ethically and psychologically, but they rest on different metaphysical foundations.**\n\n- **Common ground:** Both discourage clinging to transient possessions, pleasures, identities, and circumstances. Both aim to free a person from craving, fear, and dependence on impermanent things.[1][5]\n- **Bahá’í meaning:** Detachment is primarily **turning the soul toward God**—being free from anything that veils divine love or prevents service. It does not mean rejecting the world or abandoning ordinary responsibilities; Bahá’u’lláh even identifies productive work and self-support as expressions of detachment.[2][6]\n- **Buddhist meaning:** Non-attachment generally concerns relinquishing *taṇhā*—craving—and *upādāna*—clinging—through insight into impermanence, suffering, and non-self. Its goal is liberation from the causes of suffering, culminating in nirvana, rather than devotion to a creator God.\n\nSo the concepts are **analogous, not identical**. A useful comparison is:\n\n> Bahá’í detachment means “cling to nothing more than God”; Buddhist non-attachment means “cling to nothing,” including a permanent self or metaphysical claim.\n\nThis is a simplified contrast: Buddhist traditions differ considerably, and some forms of Buddhism use devotional language. Likewise, Bahá’í detachment is not indifference or emotional coldness; it is meant to support love, moral action, and selfless service.[6][7]",
+     "ms": 3511
+    },
+    "current": {
+     "text": "In the Bahá’í teachings, detachment is defined as turning toward the divine rather than an outward renunciation of material life. Bahá’u’lláh explains that [\"By detachment is not meant giving away and depleting all one's wealth. Rather, it denotes turning unto God and supplicating Him\"](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_he-who-knoweth-his-self-hath-known-his-lord-commentary#p13) — [*He who knoweth his self hath known his Lord: Commentary*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah-shoghi_he-who-knoweth-his-self-hath-known-his-lord-commentary). It is a state of purifying the heart from the world's limitations and vanities so that a person may [\"step thou into the vast immensity of the realm of detachment\"](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_four-tablets-to-maryam-3#p152) — [*Four Tablets to Maryam*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_four-tablets-to-maryam-3), remaining active in the world while inwardly directed toward God.\n\nIn Buddhist texts, non-attachment is rooted in cutting off the deep-seated mental roots of suffering, such as greed, anger, and infatuation, which perpetuate the cycle of rebirth on the paths of existence. As [*Sutra Collection (L)*](https://siftersearch.com/library/view?doc=20937) notes, [\"if these attachments are broken off, no signs of attachment nor of\"](https://oceanlibrary.com/sutra-collection-l/?paraId=para_307&selectionString=sutra_collection_l_ocean_buddhism_en-blc2.0~sutra_collection_l_ocean_buddhism_en-blc2.550) — *Sutra Collection (L)* further suffering remain. Similarly, [*The Dhammapada*](https://siftersearch.com/library/view?doc=20925) states that [\"Those who love nothing and hate nothing, have no fetters\"](https://oceanlibrary.com/dhammapada_buddha/?paraId=para_239&selectionString=the-dhammapada_en_9c.0~the-dhammapada_en_9c.103) — *The Dhammapada*, pointing toward an ultimate release from craving and emotional entanglement.\n\nBoth traditions treat detachment as essential for freeing the soul or mind from the illusions and bondages of material existence. However, they diverge fundamentally in their orientation: Buddhist non-attachment aims at the cessation of craving and release from the cycle of rebirth, whereas Bahá’í detachment is explicitly relational — turning away from worldly vanities specifically to turn toward and know God.",
+     "ms": 8169
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 6,
+      "why": "The contrast is clear and sensible: it names taṇhā and upādāna, gives a 'cling to nothing more than God' versus 'cling to nothing' formula, and is careful not to treat all Buddhist traditions as one. But it quotes no Bahá'í or Buddhist text, and its footnote markers point to no source. Its claim that Bahá'u'lláh identifies work as an expression of detachment is stated loosely and not supported."
+     },
+     "current": {
+      "score": 7,
+      "why": "It rests the Bahá'í definition on Bahá'u'lláh's own words ('By detachment is not meant giving away and depleting all one's wealth… turning unto God'), and it quotes the Dhammapada on the Buddhist side. The relational-versus-cessation contrast is accurate. However, the Sutra quotation is cut off mid-phrase and awkwardly spliced, and it gives less nuance than A about non-self and how Buddhist schools differ."
+     }
+    },
+    "best": "current",
+    "gaps": "A explains the Buddhist side more precisely (taṇhā and upādāna; non-self as the reason Buddhism drops even the metaphysical anchor) and notes that Buddhist traditions vary. B lacks this.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:cmp-three-way-creation",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "comparison",
+     "decided_by": "jev",
+     "sides": [
+      "Judaism",
+      "Islam",
+      "Baha'i"
+     ]
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Compare the Torah, the Qur’án and the Bahá’í writings on the creation of man."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The three traditions agree that humanity is created by one God, originates from earthly matter, and possesses a distinctive spiritual vocation. They differ chiefly in how literally they narrate Adam and Eve, how they understand humanity’s first disobedience, and whether creation is presented as a historical beginning or as a process with deeper symbolic meaning.\n\n## Comparative overview\n\n| Theme | Torah | Qur’án | Bahá’í writings |\n|---|---|---|---|\n| **First human beings** | Genesis presents Adam as formed from the dust of the ground and animated by God’s breath; Eve is subsequently made as Adam’s companion from his side or rib. Bahá’í commentary explicitly summarizes this Torah account.[1] | Adam is created from clay, dust, or molded earth; humanity’s descendants arise through biological generation. Adam’s mate is created from the same essential nature, and the Qur’án does not name her Eve.[2] | Bahá’u’lláh affirms that all people are created in the God-given nature and that humanity shares one origin and substance. The writings also interpret humanity’s formation as gradual, comparable to the development of an embryo.[3][4] |\n| **Image or likeness of God** | Genesis says humanity is created “in the image” and likeness of God. This gives human beings a special status within creation. | The Qur’án emphasizes that God taught Adam the names, honored humanity, and endowed human beings with knowledge, moral responsibility, and vicegerency on earth. | Bahá’u’lláh describes the human reality as a mirror reflecting God’s names and attributes, with the unique capacity to know and love God.[3] |\n| **Purpose of human creation** | Genesis portrays humans as responsible for cultivating and governing the earth, while remaining accountable to God. | Humans are created to worship and serve God, act as His trustees on earth, and live morally under divine guidance. | The central purpose is explicitly stated as knowing God and attaining His presence; human potential is realized through free will, spiritual development, and the reflection of divine qualities.[1][3] |\n| **Adam and Eve’s disobedience** | Adam and Eve eat from the forbidden tree after the serpent’s temptation. The act introduces shame, alienation, labor, and mortality into the human story. | Both Adam and his mate are involved in the lapse, Satan deceives them, and God accepts their repentance. The Qur’án does not present inherited original sin in the same way as later Christian theology.[2] | The Adam-and-Eve story is generally treated symbolically rather than as a literal account of biological origins. Bahá’í interpretation understands Adam as a Manifestation of God and the fall as conveying spiritual truths about humanity’s relationship to divine guidance.[5] |\n| **Human equality** | Genesis gives both sexes a shared human dignity through creation in God’s image, although the two creation narratives describe their origins differently. | Adam and his mate derive from a single soul or common nature, supporting a strong theme of shared human origin and moral equality.[2] | Bahá’í writings make common origin a basis for rejecting human superiority: all were created from the same dust so that no one should exalt himself over another.[4] |\n| **Literal or symbolic interpretation** | The Torah presents a narrative account of creation, though Jewish interpretation has long included symbolic and philosophical readings. | The Qur’án presents Adam as a real primordial human and prophet, while its descriptions of human formation use several complementary images—dust, clay, fluid, and stages. | Bahá’í writings do not require a literal reading of Genesis’s creation timetable and reconcile human origins with gradual development and scientific findings.[5] |\n\n## Main similarities\n\n- **Divine initiative:** In each tradition, humanity is not accidental but derives from God’s creative will.\n- **Earthly origin:** Dust, clay, earth, or a related material symbolizes human physical dependence and humility.[1][2][4]\n- **Distinctive human capacity:** Humans possess a special capacity for knowledge, moral choice, and relationship with God. Bahá’u’lláh describes this as the ability to know and love God and reflect divine attributes.[3]\n- **Moral responsibility:** Creation carries an ethical purpose: humans must obey God, care for creation, and develop spiritually.\n- **Common human origin:** All three traditions can support the",
+     "ms": 7278
+    },
+    "current": {
+     "text": "In the **Torah**, the LORD God [formed man of the dust of the ground, and breathed into his nostrils the breath of life; and man became a living soul](https://oceanlibrary.com/jps-book-of-genesis/?paraId=para_46&selectionString=torah_bereshit_judaism_ocean_en-bl3s.0~torah_bereshit_judaism_ocean_en-bl3s.110) ([*The Tanakh (JPS 1917), Torah - Bereshit (Genesis)*](https://siftersearch.com/library/view?doc=21228)). Midrashic commentary adds that when God consulted the Torah prior to creation, the Torah hesitated because human perversity would require deep forbearance, to which God declared mercy and truth ([*Tales and Maxims from the Midrash*](https://siftersearch.com/library/view?doc=21214)).\n\nHedjr*), commanding the angels to bow before this newly fashioned creation.\n\nIn the **Bahá’í writings**, Bahá’u’lláh addresses the creation of humanity by affirming, [\"With the hands of power I made thee and with the fingers of strength I created thee; and within thee have I placed the essence of My light\"](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_44&selectionString=the-hidden-words-prod_en_3z.0~the-hidden-words-prod_en_3z.236) ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/library/view?doc=20809)). Further elaboration notes that humans are created in a divine nature with pre-ordained measures, though inner potential requires personal volition and action to become manifest ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/library/view?doc=20783)).\n\nThese traditions share the foundational premise that human life originates directly from divine fashioning and the breath or spirit of God. Yet they diverge in focus: the Torah and Qur'án emphasize the physical materials of dust and clay infused with divine breath, alongside narrative interactions with angels or the Torah itself. The Bahá'í writings frame creation as an inward placement of divine light paired with the immediate demand for human moral agency and active volition.",
+     "ms": 11863
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 4,
+      "why": "It quotes Genesis 2:7 and Hidden Words Arabic no. 13 accurately. But the Qur'án section is garbled and basically missing (\"Hedjr*), commanding the angels…\"). The Gleanings point is a vague paraphrase, and it leaves out the core Bahá'í teachings: Adam as a symbol, gradual human development, and 'Abdu'l-Bahá's explanations. The comparison is thin."
+     },
+     "perplexity": {
+      "score": 6,
+      "why": "The table is broad and well organised and covers origin, image of God, purpose, the fall, equality, and literal versus symbolic reading. It correctly gives the Bahá'í view of Adam as a Manifestation, the embryo analogy for gradual development, and the 'same dust' teaching (Hidden Words Arabic no. 68). Weaknesses: it never quotes the texts directly, it doesn't say which footnote points to which source, it credits 'Abdu'l-Bahá's explanations loosely to 'the writings' or 'Bahá'í interpretation', and it breaks off mid-sentence."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:cmp-missing-side",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "comparison",
+     "decided_by": "jev",
+     "sides": [
+      "Baha'i"
+     ],
+     "must": "the side the library lacks is named as missing, never invented"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "How do the Bahá’í writings and the Book of Mormon treat tithing?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The two traditions both treat giving as a religious obligation, but they define and administer it differently.\n\n| Aspect | Bahá’í writings | Book of Mormon / Latter-day Saint practice |\n|---|---|---|\n| **Basic requirement** | The central financial law is **Ḥuqúqu’lláh** (“Right of God”), a fixed portion of accumulated wealth. Once a believer’s possessions reach the prescribed threshold, 19% is paid; thereafter, 19% of qualifying increases is due after necessary expenses. [9] | Tithing is **one-tenth of annual income or “interest.”** The later Latter-day Saint revelation describes it as “one-tenth of all their interest annually” and a standing law. [4][8] |\n| **Basis of calculation** | Net wealth or increases in wealth, after expenses and debts—not simply gross income. [3][9] | Income/annual increase, conventionally understood by the Church as one-tenth of income. [4][8] |\n| **How it is given** | It is a spiritual obligation left to individual conscience: believers are not to be individually pressured to pay it. Ḥuqúqu’lláh is distinct from voluntary contributions to Bahá’í funds. [5][9] | It is a commandment and a regular contribution to the Church. Tithing funds support Church buildings, congregations, programs, education, and other religious purposes. [8] |\n| **Who administers it** | The Universal House of Justice receives and administers Ḥuqúqu’lláh; the law also envisions assistance for the poor and community needs. [3][5] | Church authorities administer tithes for the work of the Church; the Book of Mormon’s presentation connects tithing with bringing offerings into the Lord’s “storehouse.” [4][8] |\n| **Spiritual meaning** | It is an act of obedience, purification, detachment from material possessions, and support for the common good. Payment should be made joyfully, when possible. [5][9] | It is an expression of faith, a test of priorities, and a commandment accompanied by promises of divine blessings, echoing the resurrected Christ’s teaching in 3 Nephi 24. [4][8] |\n\nA key distinction is that the **Book of Mormon itself does not give the later “one-tenth of annual interest” formula in the same form as Doctrine and Covenants 119**. It preserves Christ’s teaching that the people should bring tithes into the storehouse in 3 Nephi 24, quoting Malachi; the specific Latter-day Saint administrative definition of tithing comes from later revelation. [4][7]\n\nThus, Bahá’í Ḥuqúqu’lláh is primarily a **19% levy on qualifying accumulated wealth or increases**, voluntarily discharged to the central Bahá’í institution, whereas Latter-day Saint tithing is a **10% recurring payment on income**, made to the Church as a standing commandment.",
+     "ms": 5698
+    },
+    "current": {
+     "text": "I didn't find a passage on tithing in the Book of Mormon in this search, though the Bahá'í sources mention \"[The law of tithes](https://bahai-library.com/uhj_laws_not_binding/?paraId=h19)\" ([*Laws from the Kitab-i-Aqdas Not Yet Binding*](https://siftersearch.com/library/bahai/administrative/universal-house-of_laws-from-the-kitab-i-aqdas-not-yet-binding) by the Universal House of Justice) as a prior dispensation's law distinct from the [*Huququ'llah*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_huququllah-the-right-of-god), defined in [*The Kitáb-i-Aqdas*](https://siftersearch.com/library/view?doc=21307) as [\"The 'Right of God'\"](https://oceanlibrary.com/kitab-i-aqdas_bahaullah) instituted by Bahá'u'lláh.\n\nWhen looking at economic offerings across traditions, surface likenesses can hide different underlying principles. While a biblical or Restoration tradition often looks to specific tithes or the law of consecration as a binding percentage or stewardship of surplus, the *Huququ'llah* in the Bahá'í writings is calculated on one's remaining wealth after necessary expenses, treated as a spiritual right of God offered voluntarily through the Head of the Faith.\n\nIf you would like to explore how financial contributions or offerings are understood in either tradition specifically, we can look further into the texts.",
+     "ms": 11418
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "It says the Book of Mormon has no tithing passage, which is wrong: 3 Nephi 24:8–10 and Alma 13:15 both discuss tithing. It gives only a sketch of Ḥuqúqu'lláh, with no threshold, no rate and no quotation from Bahá'u'lláh. It ends by offering to look further instead of answering. It is thin and partly evasive."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "It correctly identifies 3 Nephi 24 (the resurrected Christ quoting Malachi). It rightly separates that passage from the later one-tenth formula in D&C 119, and it describes Ḥuqúqu'lláh accurately: the threshold, 19% of qualifying increases, payment after expenses, no individual solicitation, and receipt by the Universal House of Justice. Its weaknesses: it quotes nothing from the Kitáb-i-Aqdas or Bahá'u'lláh's tablets on the spiritual meaning of the law, it misses Alma 13:15, and its citations are bare numbers."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B gave a clear comparative structure and located the Book of Mormon text (3 Nephi 24), which A wrongly said did not exist. B also gave the actual mechanics of Ḥuqúqu'lláh (threshold, 19% rate, net-of-expenses basis) and drew the distinction between the Book of Mormon and D&C 119.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:und-return-of-christ",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "understanding",
+     "decided_by": "jev",
+     "religion": "Baha'i"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "I’m trying to understand what Bahá’ís actually mean when they say Christ has returned."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "When Bahá’ís say **“Christ has returned,” they do not mean that Jesus’s physical body or personal identity has reappeared**. They mean that the same divine authority, spiritual qualities, and role represented by Jesus have appeared again in a new Messenger of God—principally **Bahá’u’lláh**, with the Báb understood as the herald of his mission.[2][4]\n\nThe idea works like this:\n\n- **One divine source, successive Messengers:** Bahá’ís regard Jesus, Moses, Muhammad, the Buddha, the Báb, and Bahá’u’lláh as distinct human individuals who nevertheless manifest the same divine Spirit and authority. Thus, “return” means the return of the spiritual reality, not the return of the same person.[1][2]\n- **A biblical analogy:** Bahá’ís point to Jesus’ identification of John the Baptist with the promised return of Elijah. John was not literally Elijah resurrected; he came “in the spirit and power” of Elijah. Bahá’ís understand Bahá’u’lláh’s relationship to Christ similarly.[2][10]\n- **Prophecy is fulfilled symbolically:** References to Christ coming “in the clouds,” with glory, or under a new name are interpreted spiritually rather than as predictions of a visible descent through the sky. “Clouds,” in this reading, can symbolize the obscuring effects of unfamiliarity, human expectations, and religious authority.[3]\n- **The claim is already fulfilled:** Bahá’ís identify Bahá’u’lláh’s appearance in the nineteenth century as the promised return of Christ and the advent of God’s kingdom in a spiritual and social sense—not as the immediate physical transformation of the planet.[6]\n\nSo, in a single sentence: **Jesus has not returned as Jesus; Christ has “returned” because the divine Messenger who appeared in Bahá’u’lláh embodies the same Christ-like reality and continues the work of revealing God to humanity.**[1][2]",
+     "ms": 4215
+    },
+    "current": {
+     "text": "When Bahá’ís speak of the return of Christ, they mean that the eternal reality of the Spirit has appeared anew in a fresh Manifestation, identifying Bahá’u’lláh as that promised return.\n\nIn the scriptures, Bahá’u’lláh addresses the leaders of Christendom directly, asking: [\"O kings of Christendom! Heard ye not the saying of Jesus, the Spirit of God, ‘I go away, and come again unto you’?\"](https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah/?paraId=para_735&selectionString=gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_n5.0~gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_n5.973) — [*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/library/view?doc=20783).\n\nThis return is explained through the station of the Manifestation rather than a physical descent from the clouds. As ‘Abdu’l-Bahá notes in a pilgrim's account, [\"Christ is an Expression of the Divine Reality, the Single Essence and Heavenly Entity, which hath no beginning or ending. It has appearance, arising, and manifestation and setting in each one of the Cycles.\"](https://oceanlibrary.com/abdul-baha-in-london/?paraId=para_359&selectionString=abdu_l_baha_in_london_bahai_ocean_en-blcq.0~abdu_l_baha_in_london_bahai_ocean_en-blcq.220) — [*‘Abdu’l-Bahá in London*](https://siftersearch.com/library/view?doc=20921). Shoghi Effendi further clarifies this in his letters, writing that in accepting Bahá’u’lláh, one has accepted Christ in His appearance as the Father as foretold, rather than leaving Christ behind (as recalled by Shoghi Effendi in [*The Light of Divine Guidance (Volume II)*](https://siftersearch.com/library/view?doc=20891)).\n\nWhile the authoritative texts establish that the biblical promises of the Second Coming and the coming of the Spirit of Truth are fulfilled in the person of Bahá’u’lláh (and the Báb), they leave open the vast, unfolding implications of how this new spiritual cycle will progressively reshape human society and individual consciousness over the course of the long Bahá'í Era.",
+     "ms": 10290
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 6,
+      "why": "This is a clear and accurate account. It separates the return of the reality from the return of the person, and it gives the John/Elijah analogy and the symbolic reading of the clouds. But it quotes none of the Writings. It rests on unnamed numbered sources when Bahá'u'lláh's own explanation in the Kitáb-i-Íqán and 'Abdu'l-Bahá's in Some Answered Questions were the obvious texts to quote."
+     },
+     "current": {
+      "score": 7,
+      "why": "It grounds the answer in the right authorities: Bahá'u'lláh's address to the kings of Christendom, 'Abdu'l-Bahá's words recorded in London, and a Shoghi Effendi letter on accepting Christ in His appearance as the Father. It explains less than A. It leaves out the Elijah analogy and the Íqán on the clouds, its Shoghi Effendi point is paraphrased rather than quoted, and the closing paragraph is vague."
+     }
+    },
+    "best": "current",
+    "gaps": "A gave the John the Baptist/Elijah analogy ('in the spirit and power'), explained the 'clouds' symbolically (veils of human expectation and religious authority), and said plainly that the return is of the reality, not the person. B should have added these, drawing on the Kitáb-i-Íqán.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:und-infallibility",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "understanding",
+     "decided_by": "jev",
+     "religion": "Baha'i"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Help me understand the Bahá’í teaching on infallibility — I find it confusing."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Bahá’í teaching becomes clearer if **“infallibility” is divided into different meanings**. It does not mean that every Bahá’í, or every statement made by a religious leader, is automatically correct.\n\n## 1. Essential infallibility\n\nBahá’u’lláh and the other universal **Manifestations of God**—such as Abraham, Moses, Buddha, Christ, Muhammad, and the Báb—are described as possessing *essential infallibility*. This means that their revelation of God’s will is not merely a fallible personal opinion: their teachings and authoritative commands are understood to express divine truth for their age.[2]\n\n“Essential” means inseparable from their station. They are not simply unusually wise people who happen never to make mistakes; they occupy a unique role as the channels through which God’s guidance is revealed.[2]\n\n## 2. Conferred infallibility\n\nOther figures or institutions may possess **conferred infallibility**. This is not intrinsic to their personal nature. Rather, God is understood to protect them from error **within a specific religious function**.[1][2]\n\nIn the Bahá’í writings, this category applies in different ways to:\n\n- **‘Abdu’l-Bahá**, the son of Bahá’u’lláh and authorized interpreter of His teachings.\n- **Shoghi Effendi**, the Guardian of the Bahá’í Faith and authorized interpreter after ‘Abdu’l-Bahá.\n- **The Universal House of Justice**, particularly as a functioning institution rather than as individually infallible people.[1][3]\n\n## 3. The Universal House of Justice\n\nThe distinction between the **individual members** and the **institution** is crucial. Individual members are not regarded as essentially infallible; the protection is associated with the House of Justice acting as a body.[1]\n\nIts infallibility concerns its divinely assigned sphere: deciding questions not explicitly settled in the Bahá’í scriptures and applying the teachings to changing conditions. It does **not** mean that the institution is omniscient, knows every scientific fact, or cannot revise a decision when relevant facts change.[1][10]\n\n## 4. Infallibility is not omniscience\n\nA person or institution can be protected from making an error in a particular authoritative religious decision without possessing unlimited knowledge. Shoghi Effendi, for example, is described as not being an infallible authority on economics, science, or technical subjects; his authority concerned interpretation and application of the Bahá’í teachings.[10]\n\nSo the claim is not:\n\n> “This person knows everything.”\n\nIt is closer to:\n\n> “In this defined role, God protects the authoritative guidance given through this person or institution from religious error.”\n\n## 5. What about ordinary believers?\n\nOrdinary Bahá’ís—including scholars, administrators, and local or national assemblies—are **not infallible**. Individual interpretation is encouraged, but it remains personal and may be mistaken. The Bahá’í writings therefore emphasize humility, prayer, study, willingness to revise one’s views, and deference to the authoritative texts and institutions.[3]\n\n## A simple analogy\n\nThink of three levels:\n\n| Level | Meaning |\n|---|---|\n| **Manifestation of God** | Essential infallibility: the source of divine revelation for an age |\n| **Authorized interpreter** | Conferred authority and protection in interpreting the revelation |\n| **Universal House of Justice** | Conferred protection when acting collectively within its prescribed institutional sphere |\n| **Individual believer** | No infallibility; sincere understanding can still be mistaken |\n\nThe shortest summary is: **Bahá’í infallibility is authority-specific, not a claim that every religious figure is omniscient or personally incapable of error.** The central distinction is between the Manifestation’s essential infallibility and the limited, conferred infallibility associated with designated interpreters and the Universal House of Justice.[1][2]",
+     "ms": 6484
+    },
+    "current": {
+     "text": "The word *infallibility* carries several distinct stations in the texts, which can make it feel complex at first. At its root, the writings distinguish between an essential infallibility that belongs inherently to the Manifestations of God and a conferred attribute given to others.\n\nBahá'u'lláh explains in [*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_the-most-holy-book-kitab-i-aqdas#p190) that the term has a specific dimension regarding the Lawgiver Himself:\n> [\"Infallibility here, does not signify the same meaning as generally understood by the people, 'Prevention from sin or error,' nay, rather it means the station as held by the lawgiver which excludes Him from being governed by the laws that He gives to the people.\"](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_the-most-holy-book-kitab-i-aqdas#p190) — [*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/library/view?doc=21307)\n\nExpanding on this in authorized interpretation, ['Abdu'l-Bahá](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_612&selectionString=some-answered-questions-prod-version_en_jz.0~some-answered-questions-prod-version_en_jz.868) clarifies that [\"infallibility is of two kinds: infallibility in essence and infallibility as an attribute.\"](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_612&selectionString=some-answered-questions-prod-version_en_jz.0~some-answered-questions-prod-version_en_jz.868) [*Some Answered Questions*](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_612&selectionString=some-answered-questions-prod-version_en_jz.0~some-answered-questions-prod-version_en_jz.868) states that essential infallibility belongs exclusively to the universal Manifestations, while conferred infallibility is an attribute granted to sanctified souls or institutions—such as the Universal House of Justice, which operates under divine protection when established under its necessary conditions, as noted by ['Abdu'l-Bahá, quoted in this work by Research Department of the Universal House of Justice (compiler)](https://oceanlibrary.com/universal-house-of-justice_bahaullah/?paraId=para_83&selectionString=universal_house_of_justice_compilation_ocean_en-bl4n.0~universal_house_of_justice_compilation_ocean_en-bl4n.668).\n\nBeyond these explicit definitions in scripture and authorized interpretation, scholarship and historical accounts like those recorded in [*Pilgrimage, with translations of Tablets by Bahá'u'lláh and 'Abdu'l-Bahá*](https://siftersearch.com/library/bahai/pilgrim-notes/ali-kuli-khan_pilgrimage-with-translations-of-tablets-by-bahaullah-and-abdul-baha) offer further descriptions of intrinsic versus mediate infallibility. However, the precise inner workings of how conferred infallibility operates day-to-day in administrative bodies remain largely unelaborated in the texts, leaving room for ongoing study.",
+     "ms": 8729
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 5,
+      "why": "Uses the right source for the core distinction: 'Abdu'l-Bahá in Some Answered Questions on essential versus conferred infallibility. The Aqdas quotation, however, appears to come from an early translation or gloss rather than the authorized text, which speaks of the 'Most Great Infallibility.' The answer is thin and does not explain scope, the Guardian, or the limits of conferred infallibility. Its claim that the texts say little about this is overstated."
+     },
+     "perplexity": {
+      "score": 6.5,
+      "why": "Clear, well-structured and mostly accurate. It explains essential versus conferred infallibility, says infallibility is not omniscience (in line with letters written on Shoghi Effendi's behalf), and covers the sphere of the House and the standing of individual believers. However, it quotes no text, its footnote numbers point to nothing, it says 'three levels' over a four-row table, and it implies members are only 'not essentially' infallible when they are not infallible at all."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B covers more: what conferred infallibility applies to, that it is not omniscience (Shoghi Effendi on economics and science), that members of the House are not infallible as individuals, and that ordinary believers are not infallible, with a summary table. A only defines the terms.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:und-progressive-revelation-why",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "understanding",
+     "decided_by": "jev"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Why would God send more than one Messenger? I want to get the reasoning, not a list of names."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The basic reasoning is that **one divine message may need to be repeatedly delivered, locally communicated, practically embodied, and restored after people distort or neglect it**.\n\nFrom an Islamic perspective:\n\n- **Humanity is spread across different peoples and languages.** A messenger addressing one community would not automatically make the message equally accessible to every other community. The Qur’an presents messengers as speaking clearly in the language of their own people.[1]\n- **People do not remain unchanged.** Over generations, teachings can be forgotten, altered, mixed with superstition, or used to serve power. A later messenger can restore the original call rather than introduce a different God or purpose.[2][4]\n- **Different eras may require different laws or applications.** The central message—worship God and live rightly—can remain constant while detailed rules address a community’s particular circumstances.[2][5]\n- **A messenger is not merely a delivery mechanism.** People need a visible human example of how revelation is practiced under real pressures. Multiple messengers allow guidance to be embodied in different societies and conditions.[2]\n- **Multiple messengers reinforce moral responsibility.** Repeated warnings remove the excuse that people were left without guidance, while also giving communities renewed opportunities to return to truth.[2][7]\n- **Several messengers can cooperate.** One may support another, share the burden, or clarify the same mission for a larger or more resistant population.[1]\n\nSo the point is not that God needed several attempts to communicate one idea. Rather, **the recipients were different, history changed, communities drifted, and guidance had to remain accessible and compelling in real human circumstances**. In this view, the plurality of messengers reflects the continuity of one source and one fundamental call, expressed through successive acts of guidance—not competing religions.[1][4]",
+     "ms": 4838
+    },
+    "current": {
+     "text": "The reason for successive Messengers lies in changing human capacities and the shifting needs of society across time. As Ibn ‘Arabi describes in [*Selections from al-Futuhat al-Makkiyya*](https://oceanlibrary.com/selections-from-al-futuhat-al-makkiyya_shaykh-muhyiddin-ibn/?paraId=para_460&selectionString=the_meccan_revelations_islam_ocean_en-blm1.0~the_meccan_revelations_islam_ocean_en-blm1.429), *\"Messengers followed one another in different times and different situations,\"* each affirming those who came before while bringing specific guidance suited to their era: [\"Judgement is according to the time and the state as He said, 'We have appointed a law (Shari’a) and a practice for every one of you.'\"](https://oceanlibrary.com/selections-from-al-futuhat-al-makkiyya_shaykh-muhyiddin-ibn/?paraId=para_460&selectionString=the_meccan_revelations_islam_ocean_en-blm1.0~the_meccan_revelations_islam_ocean_en-blm1.429) [*Selections from al-Futuhat al-Makkiyya*](https://siftersearch.com/library/view?doc=21081).\n\nBeyond this structural view from mystical philosophy, Bahá'u'lláh explains in [*Epistle to the Son of the Wolf*](https://oceanlibrary.com/epistle-to-the-son-of-the-wolf_bahaullah/?paraId=para_163&selectionString=epistle_to_the_son_of_the_wolf_bahai_en-bl79.0~epistle_to_the_son_of_the_wolf_bahai_en-bl79.447) that divine guidance is delivered continuously so that humanity may be directed toward truth, noting that God has [\"sent forth His Messengers, and sent down His Books\"](https://oceanlibrary.com/epistle-to-the-son-of-the-wolf_bahaullah/?paraId=para_163&selectionString=epistle_to_the_son_of_the_wolf_bahai_en-bl79.0~epistle_to_the_son_of_the_wolf_bahai_en-bl79.447) [*Epistle to the Son of the Wolf*](https://siftersearch.com/library/view?doc=20780) to guide mankind.\n\nIn scholarship and comparative religion, such as Derakhshani's [*The Ethics*](https://oceanlibrary.com/ethics_benedict-spinoza), this is understood through the framework of progressive revelation—the idea that spiritual knowledge is imparted gradually as humanity matures, much like a curriculum suited to a growing student.\n\nWhile the texts explain that each dispensation corresponds to a distinct stage in human history, they leave open the precise mechanics of how each Messenger's specific laws are tailored to the hidden capacities of future eras yet to unfold.",
+     "ms": 13844
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "Its main argument rests on Ibn 'Arabi and on a garbled source ('Derakhshani's The Ethics', linked to Spinoza), which is a misattribution. Its only Bahá'í quotation is a thin generic phrase from Epistle to the Son of the Wolf that does not give the reasoning. It leaves out the core texts on capacity and progressive revelation, and its closing claim about 'leaving open the mechanics' is filler."
+     },
+     "perplexity": {
+      "score": 5,
+      "why": "It gives real reasoning, as the reader asked: different languages and peoples, teachings decaying and being restored, laws suited to each age, the need for a lived example, one source behind all the Messengers. But it speaks only from an Islamic perspective, its footnotes point nowhere, and it never draws on Bahá'u'lláh's own explanation: revelation measured to human capacity (Gleanings XXXIV/XXXVIII), the oneness of the Manifestations in the Kitáb-i-Íqán, and progressive revelation as set out by Shoghi Effendi."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "Neither answer used the primary Bahá'í texts. What was missing: Bahá'u'lláh's statements that each Revelation is measured to the capacity of humanity at the time (Gleanings XXXIV, XXXVIII), the Kitáb-i-Íqán on the oneness and return of the Manifestations, 'Abdu'l-Bahá on the seasons of the spiritual springtime and on humanity's growth from childhood to maturity (Some Answered Questions), and Shoghi Effendi's account of progressive revelation (World Order of Bahá'u'lláh). B's points about laws suited to each age and the restoring of a faded religion lined up with these texts but had no Bahá'í grounding.",
+    "kind": "doctrinal",
+    "authority_errors": [
+     "current: rests the doctrine of successive Messengers on Ibn 'Arabi and on a scholarly book ('Derakhshani's The Ethics', which is misattributed) instead of the Writings"
+    ]
+   }
+  },
+  {
+   "id": "w3:und-soul-after-body",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "understanding",
+     "decided_by": "jev"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "What does the Bahá’í view of the soul’s progress after death really come down to?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Bahá’í view comes down to **an eternal, one-way journey of the soul toward God**.\n\n- **Death is not extinction:** the body dies, but the soul survives and continues developing in spiritual realms.[1]\n- **Progress means greater spiritual perfection**—increasing love, knowledge, purity, and other virtues—not changing into a higher species or becoming God.[2][3]\n- **Earthly life matters:** the character and virtues developed here shape the soul’s condition after death.[1][7]\n- **There is no reincarnation:** the soul does not repeatedly return to physical life; its journey continues beyond this world.[6]\n- **Progress never ends:** divine perfections are infinite, so the soul can draw ever nearer to God eternally.[2]\n- **God’s grace and the prayers and good deeds of the living can assist departed souls.[1]\n\nIn short: **life is spiritual preparation, death is release from the body, and the afterlife is an endless process of drawing closer to God through divine mercy.**",
+     "ms": 4272
+    },
+    "current": {
+     "text": "To see how the sources present this, it is helpful to look at the hierarchy of texts:\n\n* [\"the soul, after its separation from the body, will continue to progress until it attaineth the presence of God\"](https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah/?paraId=para_474&selectionString=gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_fx.0~gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_fx.1978) — [*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/library/view?doc=20783)\n* [\"the perfections of man are infinite, he can also advance in these perfections after his ascension from this world\"](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_820&selectionString=some-answered-questions-prod-version_en_pq.0~some-answered-questions-prod-version_en_pq.101) — [*Some Answered Questions*](https://siftersearch.com/library/view?doc=20911)\n* [\"the soul will continue to ascend through many worlds\"](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_4081&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl3x3.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl3x3.242) — [*Uncompiled Published Letters*](https://siftersearch.com/library/view?doc=20897)\n* [\"The progress of the soul does not come to an end with death. It rather starts along a new line.\"](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=Concerning%20your%20question%20whether,%7Bid%3D%22para2563%22%20ilmid%3D%22bl1l6%22%20type%3D%22par%22%20language%3D%22en%22%7D) — quoted in [*Lights of Guidance*](https://siftersearch.com/library/view?doc=20891)\n\nThese statements share the core premise that physical death is not a termination of human consciousness or development, but an entry into an ongoing, unfolding journey through endless spiritual worlds.",
+     "ms": 13726
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 6.5,
+      "why": "Quotes Bahá'u'lláh (Gleanings LXXXI), 'Abdu'l-Bahá (SAQ) and the Guardian (including a letter on his behalf), in the right order and accurately. It is thin, though. It leaves out how earthly life shapes the soul's condition, the help that prayer and mercy give, the rejection of reincarnation, and the fact that the soul never becomes God, and its one-sentence summary doesn't really answer what it all 'comes down to'."
+     },
+     "perplexity": {
+      "score": 6,
+      "why": "A clear, accurate summary covering most of the main points: the soul survives, progresses in perfections without changing species, earthly life matters, no reincarnation, endless progress, and prayers help. But it quotes none of the Writings, its footnotes [1]–[7] point to nothing, and one bullet has a formatting slip, so the reader has nothing to check or explore."
+     }
+    },
+    "best": "current",
+    "gaps": "B gave a fuller synthesis: earthly virtues shape the soul's state after death, no reincarnation, progress is in perfection and not a change of species, and the prayers and good deeds of the living help departed souls. A should have supported each of these with texts (e.g. SAQ on souls progressing through prayer and mercy, Gleanings on the soul's condition after death), not stopping at four quotes.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:pr-ill-father",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "prayer",
+     "decided_by": "jev",
+     "occasion": "Healing",
+     "must": "a prayer in full, two more linked, no preamble"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "My father is in hospital. Is there a prayer I could say for him?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Of course. You might say:\n\n> **Loving God,**  \n> Please be close to my father now. Give him comfort, strength, and peace. Ease his pain and calm his fears. Guide the doctors, nurses, and everyone caring for him, and help his treatment work well. Surround him with love, and give our family courage and hope.  \n> **Amen.**\n\nYou can also simply repeat: **“God, please stay with my father and hold him in Your care.”** There is no perfect wording—speaking honestly from your heart is enough.",
+     "ms": 2810
+    },
+    "current": {
+     "text": "Thinking of your father right now.\n\n> [\"Make my prayer, O my Lord, a fountain of living waters whereby I may live as long as Thy sovereignty endureth, and may make mention of Thee in every world of Thy worlds.\"](https://oceanlibrary.com/prayers-and-meditations-by-bahaullah/?paraId=para_1204&selectionString=prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_107.0~prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_107.137)\n> — Bahá’u’lláh, [*Prayers and Meditations*](https://siftersearch.com/library/view?doc=20805)\n\nTwo more:\n- [\"O Thou Who art the Lord of all names and the Maker of the heavens!\"](https://oceanlibrary.com/prayers-and-meditations-by-bahaullah/?paraId=para_1198&selectionString=prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_101.0~prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_101.270) — *Prayers and Meditations*\n- [\"Ordain for me, O my Lord, and for those who believe in Thee that which is deemed best for us in Thine estimation\"](https://oceanlibrary.com/bahai-prayers/?paraId=para_468&selectionString=baha_i_prayers_bahai_ocean_en_ij.0~baha_i_prayers_bahai_ocean_en_ij.187) — quoted in [*Bahá’í Prayers*](https://siftersearch.com/library/bahai/bahaullah/compilation-bahai_bahai-prayers) by Compilation (Bahá'í Writings)",
+     "ms": 9943
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 5,
+      "why": "Gives real texts by Bahá'u'lláh with sources and a kind opening line. But the excerpts aren't healing prayers: the main quote is about prayer as a 'fountain of living waters', and the second is just an opening line with no body. It leaves out the obvious ones, 'Thy name is my healing, O my God…' and the long healing prayer, and offers no comfort or guidance beyond the citations."
+     },
+     "perplexity": {
+      "score": 4,
+      "why": "Warm, comforting and easy to use. But it offers a generic prayer the assistant wrote itself instead of anything from the Bahá'í Writings or another scripture, which fails a reader who came to a sacred-texts assistant. It gives no source and doesn't point to the well-known healing prayers."
+     }
+    },
+    "best": "current",
+    "gaps": "Neither answer gave the standard healing prayers: Bahá'u'lláh's short prayer 'Thy name is my healing, O my God, and remembrance of Thee is my remedy…', the long healing prayer, or 'Abdu'l-Bahá's prayers for the sick. Neither gave the full text of a prayer the reader could say at the bedside. B's warmth and its mention of the family's courage are useful, but its words aren't scripture.",
+    "kind": "practical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:pr-departed",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "prayer",
+     "decided_by": "jev",
+     "occasion": "For The Departed"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "We lost my grandmother last night. What prayer do Bahá’ís say for the dead?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "I’m so sorry for your loss. In the Bahá’í Faith, the **Prayer for the Dead** is recited before burial, usually by one believer while those present stand silently. It is required for Bahá’ís aged 15 or older; there is no need to face the Qiblih.[1]\n\nA shortened identification of the prayer is:\n\n> **O my God! This is Thy servant** who hath believed in Thee and in Thy signs, and turned toward Thee, detached from all except Thee. Thou art the Most Merciful. Deal with her according to Thy grace and mercy.\n\nThe full prayer is followed by saying **“Alláh-u-Abhá”** once, then each of these six verses **19 times**, with “Alláh-u-Abhá” said before each verse:\n\n- We all, verily, worship God.\n- We all, verily, bow down before God.\n- We all, verily, are devoted unto God.\n- We all, verily, give praise unto God.\n- We all, verily, yield thanks unto God.\n- We all, verily, are patient in God.[1][5]\n\nFor your grandmother, feminine wording such as “**Thy servant**” and “**her**” may be used. If the burial has already taken place, you can still offer prayers for her soul; the prescribed prayer’s formal requirement is that it precede interment.",
+     "ms": 3256
+    },
+    "current": {
+     "text": "I am so sorry for your loss.\n\nI didn't find a passage on prayers for the dead in this search.",
+     "ms": 6856
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 6,
+      "why": "Helpful and kind. It names the Prayer for the Dead and gets the practice right: recited before burial by one person while the others stand, required from age 15, no need to face the Qiblih, and the six verses each said 19 times with Alláh-u-Abhá. However, the opening is a loose paraphrase presented as a quotation. It also says \"Thy servant\" is the feminine wording, when the text for a woman reads \"Thy handmaiden and the daughter of Thy handmaiden.\" It leaves out the other prayers for the departed, such as 'Abdu'l-Bahá's, which a grieving family could say at any time."
+     },
+     "current": {
+      "score": 1,
+      "why": "Offers condolences, then gives up on a simple, well-known question and provides nothing of use."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "practical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:pr-morning",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "prayer",
+     "decided_by": "jev",
+     "occasion": "Morning"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "A short prayer to start the day with?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Lord, thank You for this new day. Guide my thoughts, words, and actions; give me wisdom, peace, and strength to face whatever comes. Help me love others well and walk closely with You. Amen.",
+     "ms": 1875
+    },
+    "current": {
+     "text": "> [\"All praise be unto Thee, O Lord! We shall seek Thy grace on the appointed Day and shall put our whole reliance in Thee, Who art our Lord. Glorified art Thou, O God! Grant us that which is good and seemly that we may be able to dispense with everything but Thee. Verily, Thou art the Lord of all worlds.\"]](https://oceanlibrary.com/bahai-prayers/?paraId=para_51&selectionString=baha_i_prayers_bahai_ocean_en_4u.0~baha_i_prayers_bahai_ocean_en_4u.243)\n> \n> — The Báb, quoted in [*Bahá’í Prayers*](https://oceanlibrary.com/bahai-prayers/?paraId=para_51&selectionString=baha_i_prayers_bahai_ocean_en_4u.0~baha_i_prayers_bahai_ocean_en_4u.243)\n\nTwo more:\n- [\"Ordain for me, O my Lord...\"](https://oceanlibrary.com/bahai-prayers/?paraId=para_468&selectionString=baha_i_prayers_bahai_ocean_en_ij.0~baha_i_prayers_bahai_ocean_en_ij.187) — [*Bahá’í Prayers*](https://siftersearch.com/library/bahai/bahaullah/compilation-bahai_bahai-prayers)\n- [\"Immensely exalted art Thou...\"](https://oceanlibrary.com/bahai-prayers/?paraId=para_716&selectionString=baha_i_prayers_bahai_ocean_en_q0.0~baha_i_prayers_bahai_ocean_en_q0.149) — *Bahá’í Prayers*",
+     "ms": 7763
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 6,
+      "why": "Gives a real, short prayer of the Báb from Bahá'í Prayers, with links and two more options. It leaves out the best-known short morning prayer, Bahá'u'lláh's \"I have wakened in Thy shelter, O my God…\". It also says nothing about the morning section of the prayer book or the morning obligatory-prayer option. The two extra options are only first words."
+     },
+     "perplexity": {
+      "score": 2,
+      "why": "A made-up, generic prayer in a Christian style. It does not come from the Writings, cites no source, and doesn't use the Bahá'í devotional texts the reader would expect."
+     }
+    },
+    "best": "current",
+    "gaps": "none",
+    "kind": "practical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:pr-tests",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "prayer",
+     "decided_by": "jev",
+     "occasion": "Tests and Difficulties"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "I am going through a very hard time. A prayer for difficulties?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "May this prayer bring you comfort:\n\n> **God of mercy,**  \n> I am tired, afraid, and overwhelmed. Please meet me in this difficult place. Give me strength for today, wisdom for the next step, and peace when I cannot see the way forward. Carry what I cannot carry, comfort my heart, and place caring people around me. Help me remember that I am not alone and that this painful season will not last forever.  \n> **Amen.**\n\nYou do not need perfect words—speaking honestly about your fear, grief, or exhaustion is enough. Prayer can be a way of asking for strength while also receiving support from people who care about you.[1][3] If you feel in immediate danger or might hurt yourself, contact emergency services or a crisis line now, and stay with someone you trust.",
+     "ms": 2482
+    },
+    "current": {
+     "text": "Hard times carry a heavy weight, and meeting them takes real strength. Here is a prayer for times of difficulty, written by Bahá’u’lláh:\n\n> [I am but a poor creature, O my Lord; I have clung to the hem of Thy riches. I am sore sick; I have held fast the cord of Thy healing. Deliver me from the ills that have encircled me, and wash me thoroughly with the waters of Thy graciousness and mercy, and attire me with the raiment of wholesomeness, through Thy forgiveness and bounty. Fix, then, mine eyes upon Thee, and rid me of all attachment to aught else except Thyself. Aid me to do what Thou desirest, and to fulfill what Thou pleasest.](https://oceanlibrary.com/bahai-prayers/?paraId=para_290&selectionString=baha_i_prayers_bahai_ocean_en_ch.0~baha_i_prayers_bahai_ocean_en_ch.402)\n> \n> — Bahá’u’lláh, quoted in [*Bahá’í Prayers*](https://siftersearch.com/library/bahai/bahaullah/compilation-bahai_bahai-prayers)\n\nTwo more:\n\n- [Lauded be Thy Name, O Lord my God!](https://oceanlibrary.com/bahai-prayers/?paraId=para_514&selectionString=baha_i_prayers_bahai_ocean_en_k2.0~baha_i_prayers_bahai_ocean_en_k2.527)\n- [All praise be to Thee, O my God, for the things Thou didst ordain for me](https://oceanlibrary.com/bahai-prayers/?paraId=para_455&selectionString=baha_i_prayers_bahai_ocean_en_i2.0~baha_i_prayers_bahai_ocean_en_i2.415)",
+     "ms": 3510
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 2,
+      "why": "Offers a prayer the assistant wrote itself, not one from the Writings, so the reader gets nothing from the texts they study. It also cites sources [1][3] that don't exist. The crisis-line advice is kind, but it doesn't replace the revealed prayers."
+     },
+     "current": {
+      "score": 7,
+      "why": "Gives a real prayer of Bahá'u'lláh from Bahá'í Prayers, with links, plus two more prayers. However, the one quoted is mainly a healing prayer, and it skips the best-known prayers for hardship, such as the Báb's 'Is there any Remover of difficulties' and 'O God, my God! Thou art my Hope'."
+     }
+    },
+    "best": "current",
+    "gaps": "none",
+    "kind": "practical",
+    "authority_errors": [
+     "perplexity: gives a prayer it composed itself and cites sources [1][3] that do not exist, instead of drawing on the revealed prayers"
+    ]
+   }
+  },
+  {
+   "id": "w3:pr-no-heading",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "prayer",
+     "decided_by": "jev",
+     "occasion": null,
+     "must": "no heading fits → the prayer book searched, not the whole library"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Is there a prayer for travelling safely?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Yes. You can pray:\n\n> **Lord, be my guide and protector as I travel. Watch over me, keep me safe from accidents and harm, give wisdom and alertness to everyone traveling, and bring me safely to my destination and home again. Amen.**\n\nA traditional Christian prayer asks God to “preserve those who travel,” surround them with loving care, protect them from danger, and bring them safely to their journey’s end.[1]",
+     "ms": 2115
+    },
+    "current": {
+     "text": "Here is a prayer for travelling:\n\n> [“Whoever sets out on a teaching journey to any place, let him recite this prayer day and night during his travels in foreign lands.”](https://oceanlibrary.com/bahai-prayers/?paraId=para_640&selectionString=bahai_prayers_bahai_ocean_en_nv.0_bahai_prayers_bahai_ocean_en_nv.107)\n> \n> [*Bahá’í Prayers*](https://siftersearch.com/library/bahai/bahaullah/compilation-bahai_bahai-prayers) — ‘Abdu’l-Bahá\n\nTwo more:\n- [Ordain for me, O my Lord](https://oceanlibrary.com/bahai-prayers/?paraId=para_468&selectionString=baha_i_prayers_bahai_ocean_en_ij.0~baha_i_prayers_bahai_ocean_en_ij.187) — *Bahá’í Prayers*\n- [Blessed is the spot](https://oceanlibrary.com/bahai-prayers/?paraId=para_3&selectionString=baha_i_prayers_bahai_ocean_en_2u.0~baha_i_prayers_bahai_ocean_en_2u.214) — *Bahá’í Prayers*",
+     "ms": 3638
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 4,
+      "why": "Correctly turns to the Bahá'í prayer book, but it quotes only the instruction line of 'Abdu'l-Bahá's teaching-journey prayer, not the prayer itself. That prayer is for teaching journeys, not safe travel in general, and 'Blessed is the spot' has nothing to do with travel. It leaves out Bahá'u'lláh's actual travel prayer ('O God, my God! I have set out from my home...') and gives no context. Thin, and only partly on target."
+     },
+     "perplexity": {
+      "score": 2,
+      "why": "Gives a prayer it made up, with no source, plus a paraphrase of a generic Christian prayer. It never mentions a Bahá'í prayer for travel, though the reader is studying the Bahá'í Writings, and its citation [1] points nowhere."
+     }
+    },
+    "best": "current",
+    "gaps": "Neither answer gives Bahá'u'lláh's prayer for travelling ('O God, my God! I have set out from my home, holding fast unto the cord of Thy love...') or the Báb's protection prayers, quoted in full with their sources.",
+    "kind": "practical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:gd-social-media",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "guidance",
+     "decided_by": "jev",
+     "must": "dates stated, newest first, presented as guidance not interpretation"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "What is the House of Justice’s most recent guidance on social media use?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The search results do not identify which **House of Justice** you mean. If you mean the **Universal House of Justice** of the Bahá’í Faith, no reliable result surfaced confirming its most recent social-media guidance.\n\nIf you mean the **U.S. Department of Justice**, its latest guidance says employees must follow ethics and department policies online, must not use social media in ways that harm the Department’s work, and may not conduct official business through personal accounts.[1]",
+     "ms": 2219
+    },
+    "current": {
+     "text": "I didn't find a passage on social media use in this search. The library's records for the Universal House of Justice include legislative guidance on email discussion groups—an earlier digital medium—noting that while such platforms \"can provide immense benefits for communication between people and for the teaching of the Faith,\" ([The Universal House of Justice](https://oceanlibrary.com/universal-house-of-justice_bahaullah/?paraId=para_361&selectionString=universal_house_of_justice_compilation_ocean_en-blb9.0~universal_house_of_justice_compilation_ocean_en-blb9.1223)) they \"can also give rise to far-reaching problems\" and require \"an adjustment of perception\" ([*The Universal House of Justice*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_the-universal-house-of-justice)).",
+     "ms": 5935
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 4,
+      "why": "Correctly treats the Universal House of Justice as the authority on this application question. It honestly says it found nothing on social media, then offers related guidance on email discussion groups, quoting the benefits and the dangers. But it never answers what was asked: there is nothing on recent social media guidance or its main themes, and the answer is thin."
+     },
+     "perplexity": {
+      "score": 2,
+      "why": "Pretends not to know which House of Justice is meant, which a reader of the Bahá'í Writings would find obtuse. It then fills the space with irrelevant US Department of Justice policy and gives nothing at all from the Universal House of Justice."
+     }
+    },
+    "best": "current",
+    "gaps": "Neither answer gives what the House has actually said on social media. Missing are its letters and messages on digital and social media: their effect on the mind and attention, unity and conduct online, avoiding contention and backbiting, upholding the dignity of the Faith, and using these tools for constructive conversation and teaching. Neither answer tries to identify the most recent letter or offers sources to explore further.",
+    "kind": "application",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:gd-elections",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "guidance",
+     "decided_by": "jev"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "What has the Universal House of Justice said lately about how Bahá’í elections should be conducted?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Lately, the Universal House of Justice has emphasized that Bahá’í elections must remain **spiritual, nonpartisan, and free from personal ambition**:\n\n- There are **no nominations, campaigning, canvassing, or factionalism**. Electors should be free to choose anyone they consider qualified to serve.[1]\n- Voting should take place in a **silent, prayerful atmosphere**, after prayer and reflection.[1][3]\n- Election to an Assembly is not a personal right or an honor to seek; it is a **duty and responsibility** to which a believer may be called.[1]\n- Ballots are cast **secretly**, and each elector must exercise their own judgment; voting by proxy is not permitted.[3]\n- The House has also stressed that the process should avoid competition and preserve the unity of the community. Bahá’í elections are intended to express a collective spiritual commitment rather than a contest between candidates.[1]\n\nFor the election of the Universal House of Justice itself, the process is indirect: believers elect delegates, delegates elect National Spiritual Assemblies, and members of those National Assemblies serve as delegates who elect the Universal House of Justice at the International Convention.[1]",
+     "ms": 2790
+    },
+    "current": {
+     "text": "The Universal House of Justice provides administrative guidance and legislative direction for Bahá’í elections, which are distinguished from political systems through compilations and letters issued across decades (such as those noted from 2009, 2001, and 1989). Rather than interpreting scripture, the House of Justice issues administrative guidance on how these elections are to be approached and protected.\n\nA central emphasis in this guidance is that participation is [\"not only as a right they exercise, but as a spiritual obligation\"](https://oceanlibrary.com/sanctity-and-nature-of-bahai-elections_bahaullah/?paraId=para_26&selectionString=the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl3j.0~the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl3j.254) — [*The Sanctity and Nature of Bahá’í Elections*](https://siftersearch.com/library/view?doc=945927). National Assemblies and Counsellors are directed to ensure that this sanctity is maintained through ongoing education throughout the year rather than merely during the weeks leading up to Riḍván, as seen in *The Counsellors and the National Spiritual Assemblies need to work together to ensure that the sanctity of Bahá'í elections is not violated* ([*Institution of the Counsellors*](https://siftersearch.com/library/bahai/administrative/universal-house-of_institution-of-the-counsellors)).\n\nThe guidance stresses that the method of voting is [\"at complete variance with the methods and practices of elections in political systems\"](https://oceanlibrary.com/sanctity-and-nature-of-bahai-elections_bahaullah/?paraId=para_90&selectionString=the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl59.0~the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl59.504) — *The Sanctity and Nature of Bahá’í Elections*, avoiding nominations, electioneering, and canvassing entirely so that elections remain free from the divisiveness common in partisan politics.",
+     "ms": 4600
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 6,
+      "why": "It rightly treats the House as the authority here and quotes its guidance on elections, including participation as a spiritual obligation and the contrast with political systems. It also notes the call for year-round education, which matches the House's 2007 letter on elections. But it gives no recent messages, so it doesn't really answer 'lately'. It also cites a document title as if it were a quotation and opens with an unnecessary remark about interpretation."
+     },
+     "perplexity": {
+      "score": 4,
+      "why": "Its points are clear and mostly accurate: no nominations, prayerful and secret voting, no proxies, and the indirect election of the House. But it has no quotations, its footnotes point to nothing, and it reads like a generic summary of the principles. Nothing in it is actually recent, even though it opens with 'Lately'."
+     }
+    },
+    "best": "current",
+    "gaps": "B is clearer and more complete on the procedures: no proxies, secret ballots and the steps in electing the House. Neither answer cites any recent Riḍván message or recent letter.",
+    "kind": "application",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:gd-climate",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "guidance",
+     "decided_by": "jev"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Current UHJ guidance on climate change?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "(error 429)",
+     "ms": 163
+    },
+    "current": {
+     "text": "The most recent relevant guidance from the Universal House of Justice on this topic is a letter dated November 29, 2017 ([*Об изменении климата и доверии к науке*](https://siftersearch.com/library/view?doc=22959)), which builds upon its earlier, more detailed correspondence from November 1, 2017 ([*Climate Change: Policies and Political Discourse*](https://siftersearch.com/library/bahai/administrative/universal-house-of_climate-change-policies-and-political-discourse)). These administrative letters provide current guidance from the Universal House of Justice regarding the community's approach to the subject, noting that international agreements represent a starting point for constructive action as \"another noteworthy demonstration of that development anticipated by ’Abdu’l-Bahá\" ([Climate Change: Policies and Political Discourse](https://siftersearch.com/library/bahai/administrative/universal-house-of_climate-change-policies-and-political-discourse#p21)) (*Climate Change: Policies and Political Discourse*).",
+     "ms": 3455
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 4,
+      "why": "Uses the right authority, the Universal House of Justice's letters on climate change, and gives one sourced quotation. But it is very thin. It says nothing of what the guidance actually advises: avoiding partisan political discourse, the role of science and religion, and constructive action in social action and discourse. It gives a Russian title for one source and dates that may be confused, and it ignores later messages."
+     },
+     "perplexity": {
+      "score": 1,
+      "why": "Error message (429). There is no content."
+     }
+    },
+    "best": "current",
+    "gaps": "none",
+    "kind": "application",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:gd-supersede",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "guidance",
+     "decided_by": "jev",
+     "must": "the later letter named as current"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Has the House of Justice changed its guidance on membership in political parties over the years? What is current?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Yes—but the change has been in **application and clarification**, not in the underlying principle. The Universal House of Justice continues to uphold Bahá’u’lláh’s and Shoghi Effendi’s principle that Bahá’ís should avoid partisan political activity and political-party identification.[1][2]\n\nHistorically, the guidance was stated broadly as **non-membership in political parties and political organizations**. Shoghi Effendi described the expected conduct as “non-identification with political parties” and “non-membership in political organizations.”[1]\n\nThe House of Justice has nevertheless recognized exceptional circumstances:\n\n- If party membership is legally compulsory, a Bahá’í should, where possible, pay the equivalent dues without formally joining.\n- If that is impossible, membership may be accepted reluctantly, but the Bahá’í must not become active—for example, by holding party office.[1]\n- Membership should not be accepted merely because it is encouraged, rewarded, or pressured by authorities when the law does not require it.[1]\n\nMore recent guidance places greater emphasis on distinguishing **partisan politics** from participation in the life of society. In its 23 December 2008 letter, the House stated that partisan political activity remains prohibited, while constructive discourse and action for social change are encouraged. It also acknowledged that changing social conditions may require further guidance on how to apply the principle.[2]\n\n**Current position:** A Bahá’í should not join or identify with a political party, participate in partisan political activity, campaign for parties or candidates, or hold partisan office. Bahá’ís may engage in nonpartisan civic affairs, social action, public discourse, and government or community service, provided these do not involve partisan political activity. Legally compulsory membership remains an exceptional case governed by the safeguards above.[1][2]",
+     "ms": 3837
+    },
+    "current": {
+     "text": "The Universal House of Justice guides the community to distinguish between partisan politics and constructive social action, stating that [\"The term 'politics' can have a broad meaning, and therefore it is important to distinguish between partisan political activity and the discourse and action intended to bring about constructive social change\"](https://oceanlibrary.com/social-action_bahaullah/?paraId=para_73&selectionString=social_action_ocean_en-bl44.0~social_action_ocean_en-bl44.1679) — [*Social Action*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_social-action). While partisan activities are proscribed, social change is enjoined.\n\nRegarding membership in political parties and related bodies, guidance compiled in [*Lights of Guidance*](https://siftersearch.com/library/view?doc=20891) addresses situations where party membership might be compulsory or pressured. When party membership is promoted through persuasion or privileges rather than absolute state compulsion, [\"then the Bahá'ís should refrain from joining the party, whatever the personal sacrifices may be\"](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=2.%20a.%20If%20the,%7Bid%3D%22para5506%22%20ilmid%3D%22bl3hx%22%20type%3D%22par%22%20language%3D%22en%22%7D) — quoted in *Lights of Guidance* by Helen Hornby (compiler). However, [\"If, however, it is ascertained by the National Spiritual Assembly, that the law requires every citizen to belong to the party, Bahá'ís may pay money equivalent to the dues involved, without accepting membership of the party\"](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=b.%20If%2C%20however%2C%20it,%7Bid%3D%22para5507%22%20ilmid%3D%22bl3hy%22%20type%3D%22par%22%20language%3D%22en%22%7D) — quoted in *Lights of Guidance* by Helen Hornby (compiler).\n\nThe search results provided here do not contain dated chronological letters to establish whether specific guidance on this point has formally shifted over time, only that the foundational prohibition against joining partisan political parties remains firm, while distinguishing it from non-partisan civic participation, non-political administrative work, or compulsory legal requirements.",
+     "ms": 6669
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 5,
+      "why": "Correctly treats the House as the authority on an application question. Its quotes from Lights of Guidance on compulsory membership are accurate, and it draws the partisan versus social-action distinction. But it doesn't answer whether the guidance has changed, saying only that its search results can't establish this. It also leaves out the fallback rule: if membership can't be avoided, a Bahá'í may join but must stay inactive."
+     },
+     "perplexity": {
+      "score": 8,
+      "why": "Answers the question directly: the principle is unchanged, while its application has been clarified. It roots the principle in Shoghi Effendi, lays out the House's safeguards for compulsory membership in full, and cites the more recent House guidance that separates partisan politics from social action. The 'current position' summary is clear. Some citations are only numbered and the claim about the 2008 letter is a paraphrase, but the substance is sound."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "application",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:ref-john-14-6",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "reference",
+     "decided_by": "jev",
+     "ref": "The Gospel of John 14:6",
+     "exact": true
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "What does John 14:6 say?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "John 14:6 (NIV) says:\n\n> “I am the way and the truth and the life. No one comes to the Father except through me.”[1]",
+     "ms": 2514
+    },
+    "current": {
+     "text": "In the King James Bible, Jesus answers Thomas's question about the way by declaring, [\"I am the way, the truth, and the life: no man cometh unto the Father, but by me\"](https://oceanlibrary.com/kjv-gospel-of-john/?paraId=para_532&selectionString=the-gospel-of-john_en_hg.0~the-gospel-of-john_en_hg.168) — [*The Gospel of John*](https://siftersearch.com/library/view?doc=20989). Because this digital edition does not number the verses, this passage marks the approximate place of the fourteenth chapter and sixth verse asked for.",
+     "ms": 1756
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 6,
+      "why": "Quotes the KJV correctly, gives the context (Jesus answering Thomas) and links the source. The note that the edition has no verse numbers is clumsy filler. It offers no further context, such as how Bahá'ís read the verse, and does not invite the reader to explore further."
+     },
+     "perplexity": {
+      "score": 5,
+      "why": "Quotes the NIV accurately, but that is all it does. There is no context, and the footnote [1] points to no source. It is correct but thin."
+     }
+    },
+    "best": "current",
+    "gaps": "none. B only gives a modern translation (NIV) where A gives the KJV, and adds nothing else.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:ref-isaiah-range",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "reference",
+     "decided_by": "jev",
+     "ref": "Isaiah 11:6–9",
+     "exact": true
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Quote Isaiah 11:6-9 for me."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "**Isaiah 11:6–9 (King James Version):**\n\n> 6 The wolf also shall dwell with the lamb, and the leopard shall lie down with the kid; and the calf and the young lion and the fatling together; and a little child shall lead them.  \n>\n> 7 And the cow and the bear shall feed; their young ones shall lie down together: and the lion shall eat straw like the ox.  \n>\n> 8 And the sucking child shall play on the hole of the asp, and the weaned child shall put his hand on the cockatrice’ den.  \n>\n> 9 They shall not hurt nor destroy in all my holy mountain: for the earth shall be full of the knowledge of the LORD, as the waters cover the sea.[1]",
+     "ms": 2984
+    },
+    "current": {
+     "text": "The retrieved text from the King James Bible gives this approximate portion for Isaiah 11:6–9: [\"And the sucking child shall play on the hole of the asp, and the weaned child shall put his hand on the cockatrice’ den. They shall not hurt nor destroy in all my holy mountain: for the earth shall be full of the knowledge of the LORD, as the waters cover the sea.\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_199&selectionString=isaiah-ot_en_88.0~isaiah-ot_en_88.97) [*Isaiah*](https://siftersearch.com/library/view?doc=21231). This edition does not number the verses, so these lines represent the approximate place of the passage asked for.",
+     "ms": 2019
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "It quotes only verses 8–9 and leaves out verses 6–7, including the well-known wolf-and-lamb lines. It also hedges that the passage is only 'approximate'. What it does quote is accurate and linked to a source, but the reader's request goes largely unanswered."
+     },
+     "perplexity": {
+      "score": 9,
+      "why": "It gives all four verses (6–9) word for word from the King James Version, numbered and clearly laid out, so the reader gets exactly what they asked for. The footnote marker [1] doesn't point to any visible citation, which is a minor flaw."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B gave the complete text of verses 6–7, which A left out.",
+    "kind": "practical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:ref-quran-ayat-kursi",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "reference",
+     "decided_by": "jev",
+     "ref": "Qur’án 2:255",
+     "exact": false,
+     "must": "labelled approximate — Yusuf Ali edition marks no ayah"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Can you give me Qur’án 2:255?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "**Qur’an 2:255 — Ayat al-Kursi**\n\nاللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ\n\n**Translation:**  \nAllah—there is no deity except Him, the Ever-Living, the Sustainer of all existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is before them and what will be after them, and they encompass not a thing of His knowledge except what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.[1]",
+     "ms": 3874
+    },
+    "current": {
+     "text": "I didn't find the specific verse for Qur’án 2:255 in this search, as the texts I can search from [*The Holy Qur-an (Yusuf Ali)*](https://oceanlibrary.com/holy-quran_yusuf-tr/?paraId=para_296&selectionString=the_holy_quran_tr_by_yusuf_ali_islam_ocean_en-blep.0~the_holy_quran_tr_by_yusuf_ali_islam_ocean_en-blep.259) cover other portions of Surah 2 such as the account of Talut and Goliath.",
+     "ms": 2284
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 8,
+      "why": "It gives the Arabic of Ayat al-Kursi accurately, with a sound English translation close to Sahih International. The footnote [1] has no source behind it, and there is no commentary or invitation to explore further (for example, Bahá'í references to the verse). Still, it fully answers what was asked."
+     },
+     "current": {
+      "score": 1,
+      "why": "It fails to provide the verse at all. It cites a Yusuf Ali link but turns that into an excuse for not answering, which is evasion on a simple request."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "practical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:ref-gita",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "reference",
+     "decided_by": "jev",
+     "ref": "Bhagavad Gita 2:47",
+     "exact": false
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Bhagavad Gita 2:47 — the verse about the right to work but not the fruits."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "**Bhagavad Gita 2:47**\n\n> कर्मण्येवाधिकारस्ते मा फलेषु कदाचन ।  \n> मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि ॥ २.४७ ॥\n\n**Transliteration:**\n\n*Karmaṇy evādhikāras te mā phaleṣu kadācana;*  \n*mā karma-phala-hetur bhūr mā te saṅgo ’stv akarmaṇi.*\n\n**Translation:**\n\n“You have a right to perform your duty, but not to the fruits of your actions. Do not let the results of action be your motive, and do not become attached to inaction.”[1][2]\n\nThe verse teaches disciplined action without attachment to outcomes: focus on performing one’s duty well, while accepting that results depend on causes beyond one’s control. It does **not** mean indifference or passivity; Krishna also warns against using detachment from results as an excuse not to act.[2][10]",
+     "ms": 5281
+    },
+    "current": {
+     "text": "I cannot confirm the specific text of Bhagavad Gita 2:47 in the texts I can search, as this edition does not number the verses, and the sections provided conclude Chapter II at [*The Bhagavad-Gita*](https://siftersearch.com/library/view?doc=21038) [2](https://oceanlibrary.com/bhagavad-gita/?paraId=para_44&selectionString=bhagavad-gita_en_42.0~bhagavad-gita_en_42.84).\n\nThe source material here includes Edwin Arnold's translation ([*The Song Celestial*](https://siftersearch.com/library/view?doc=146948)), which concludes the second chapter with descriptions of tranquillity and freedom from the yoke of flesh, such as when one [*Toucheth tranquillity!*](https://oceanlibrary.com/bhagavad-gita/?paraId=para_43&selectionString=bhagavad-gita_en_41.0~bhagavad-gita_en_41.307) *The Bhagavad-Gita* [1](https://oceanlibrary.com/bhagavad-gita/?paraId=para_43&selectionString=bhagavad-gita_en_41.0~bhagavad-gita_en_41.307).\n\nThe sources here do not settle the exact placement of the verse regarding action and the fruit of work, so I will not extend the claim beyond what is present in the text.",
+     "ms": 2366
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 2,
+      "why": "In effect declines. It says it cannot find the verse because the edition has no verse numbers, then quotes an unrelated line from the end of Chapter II. It gives the reader nothing about the verse or what it means, even though this verse is in Arnold's translation and is easy to find."
+     },
+     "perplexity": {
+      "score": 8,
+      "why": "Gives the correct Sanskrit, an accurate transliteration and a faithful translation. It also explains the verse soundly: act without being attached to the results, and do not use that as an excuse to stop acting. It could have named which translation it used, gone into key terms (adhikāra, karma-phala-hetu, akarma), or pointed to related verses such as 2:48 and 3:19."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "Answer A gave none of what B gave: the actual verse in Sanskrit, a transliteration, a translation, and an explanation of what the verse teaches (detached action, not inaction). A failed to find the passage in Arnold's translation, where it is present.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:ref-psalm-whole",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "reference",
+     "decided_by": "jev",
+     "ref": "Psalms 23",
+     "whole": true
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Read me Psalm 23."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "**Psalm 23 (King James Version)**\n\n1. The LORD is my shepherd; I shall not want.  \n2. He maketh me to lie down in green pastures: he leadeth me beside the still waters.  \n3. He restoreth my soul: he leadeth me in the paths of righteousness for his name’s sake.  \n4. Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me.  \n5. Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.  \n6. Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the LORD for ever.[1]",
+     "ms": 4798
+    },
+    "current": {
+     "text": "The twenty-third Psalm opens with the familiar words of the King David in the King James Bible, beginning with [\"The LORD is my shepherd; I shall not want.\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_348&selectionString=psalms-ot_en_cd.0~psalms-ot_en_cd.34) [*Psalms*](https://siftersearch.com/library/view?doc=21243). The pastoral imagery continues as [\"He maketh me to lie down in green pastures: he leadeth me beside the still waters.\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_349&selectionString=psalms-ot_en_ce.0~psalms-ot_en_ce.67) *Psalms*, restoring the soul and guiding the seeker along [\"the paths of righteousness for his name’s sake.\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_350&selectionString=psalms-ot_en_cf.0~psalms-ot_en_cf.71) *Psalms*.",
+     "ms": 2583
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 9,
+      "why": "Gives the full, accurate KJV text of Psalm 23, all six verses, which is exactly what the reader asked for. The footnote marker [1] points to nothing, a small flaw."
+     },
+     "current": {
+      "score": 3,
+      "why": "Gives only verses 1–3, broken up with narration and repeated citation clutter, so the reader never hears the rest of the psalm. Its phrase \"the King David\" is clumsy. It does not do what was asked."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "practical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:neg-word-compare",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "none",
+     "decided_by": "jev",
+     "trap": "the word \"compare\" is not a comparison"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Bahá’u’lláh says nothing compares to the love of God — where is that?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "You may be thinking of Bahá’u’lláh’s **Hidden Words**, Arabic no. 3:\n\n> “Veiled in My immemorial being and in the ancient eternity of My essence, I knew My love for thee; therefore I created thee, have engraved on thee Mine image and revealed to thee My beauty.”\n\nA related passage says:\n\n> “Love Me, that I may love thee. If thou lovest Me not, My love can in no wise reach thee.”\n\nThe wording “nothing compares to the love of God” is likely a paraphrase rather than an exact quotation. Another close passage appears in *The Hidden Words*: “There is no peace for thee save by renouncing thyself and turning unto Me… since I desire to be loved alone and above all that is.”[1]",
+     "ms": 4968
+    },
+    "current": {
+     "text": "These are the words of Bahá’u’lláh, from [*Additional Tablets and Extracts from Tablets Revealed by Bahá’u’lláh*](https://oceanlibrary.com/additional-tablets-and-extracts-from-tablets-revealed-by-bahaullah/?paraId=para_251&selectionString=additional_tablets_and_extracts_bahai_ocean_en-bl8e.447~additional_tablets_and_extracts_bahai_ocean_en-bl8e.527). The passage reads: «and naught that hath been created in the heaven or the earth is equal to a single atom of this love». The original is in Persian, in [*O handmaiden of God! Render praise unto the true Beloved, Who hath guided thee to the know…*](https://portlandiator.github.io/PI_browser/?id=BH04175#:~:text=%D9%88%20%D9%85%D8%B9%D8%A7%D8%AF%D9%84%D9%87%20%D9%86%D9%85%DB%8C%DA%A9%D9%86%D8%AF%20%D8%A8%D8%B0%D8%B1%D9%91%D9%87%D9%B4,%D9%88%20%D8%B2%D9%85%DB%8C%D9%86%20%D8%AE%D9%84%D9%82%20%D8%B4%D8%AF%D9%87), where it reads «و معادله نمیکند بذرّهٴ آن آنچه در آسمان و زمین خلق شده». Its entry in the Phelps Inventory is [Phelps Inventory BH04175](https://portlandiator.github.io/PI_browser/?id=BH04175).",
+     "ms": 6413
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 4,
+      "why": "Its Hidden Words quotations are accurate (Arabic 3, 5 and 8), but none of them says that nothing equals the love of God. It calls the reader's wording a paraphrase instead of finding the actual passage, and it leaves a footnote marker [1] with no note."
+     },
+     "current": {
+      "score": 9,
+      "why": "It finds the exact passage in Bahá'u'lláh's words ('naught that hath been created in the heaven or the earth is equal to a single atom of this love'), gives the Persian original and the Phelps Inventory number, and links both. It could have said a little about the tablet's context."
+     }
+    },
+    "best": "current",
+    "gaps": "none",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:neg-word-prayer",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "none",
+     "decided_by": "jev",
+     "trap": "about the prayer book, not a request for a prayer"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who compiled the first English book of Bahá’í prayers and when?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The first English book of Bahá’í prayers was compiled by **Anton Haddad** and published in **1897** (some bibliographies date it to **1897 or 1900**) under the title *Tablets, Communes and Holy Utterances*. It is described as the first prayer book and first compilation of Bahá’í writings published in the West.[4]",
+     "ms": 5045
+    },
+    "current": {
+     "text": "I didn't find a passage in this search that names who compiled the first English book of Bahá’í prayers or the exact date it was published.\n\nTo explore this further, you might look into early American Bahá'í publishing records or compilations prepared by the Bahá’í Publishing Committee in the early decades of the twentieth century.",
+     "ms": 5741
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 2,
+      "why": "Doesn't answer. It only points vaguely to 'publishing records' and gives no names, titles or dates."
+     },
+     "perplexity": {
+      "score": 6,
+      "why": "Gives a concrete answer: Anton Haddad and the title 'Tablets, Communes and Holy Utterances', placed around 1897–1900, with the uncertain date flagged. That matches early Chicago publishing history as I understand it, though I couldn't confirm it. Weaknesses: the citation [4] points to no stated source, it gives no publisher or context about other early prayer collections, and the 1897 date is doubtful."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B named a compiler, a title and an approximate date, and said this was the first Western compilation. A gave none of these.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w3:neg-word-reference",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "none",
+     "decided_by": "jev",
+     "trap": "a number, not a scripture reference"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "What is the significance of the number 19 in the Bahá’í calendar?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The number **19 symbolizes unity** in the Bahá’í tradition. In Arabic abjad numerology, *Váḥid*—meaning “Unity”—has a numerical value of 19; the term also refers to the Báb, together with His 18 first disciples, forming the first “Váḥid.”[8][10]\n\nThis symbolism shapes the Bahá’í calendar:\n\n- Each year has **19 months of 19 days**, with four or five intercalary days, called **Ayyám-i-Há**, added to complete the solar year.[4]\n- Bahá’ís gather for a **Nineteen Day Feast** at the beginning of each month and observe a **19-day fast** during the final month.[1]\n- The calendar also recognizes **19-year cycles**, called *Váḥid*; 19 such cycles form a 361-year period.[7]\n\nThus, 19 is both a practical organizing principle and a symbolic reference to divine unity and the unity of humanity.",
+     "ms": 6040
+    },
+    "current": {
+     "text": "The significance of the number nineteen is rooted in the sacred structure established in the writings of the Báb, where it reflects divine unity and the numerical structure of the *basmala* (the opening Islamic formula), with eighteen followers known as the \"Letters of the Living\" alongside the Báb Himself making nineteen ([Qayyum al-Asmá' Sura 93: Chapter of the Bees: A commentary on the Sura of Joseph](https://siftersearch.com/library/bahai/tablet-translations/the-bab_qayyum-al-asma-sura-93-chapter-of-the-bees-a-commentary-on-the-sura-of-joseph#p76)). Bahá'u'lláh confirmed this framework in [*The Kitáb-i-Aqdas*](https://siftersearch.com/library/view?doc=21307), stating: [\"The number of months in a year, appointed in the Book of God, is nineteen.\"]](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=para_134&selectionString=kitab_i_aqdas_bahai_en-bl6i.0~kitab_i_aqdas_bahai_en-bl6i.140) — *The Kitáb-i-Aqdas*.\n\nThis number shapes both the calendar—consisting of nineteen months of nineteen days each—and community life through institutions like the Nineteen Day Feast [4, 6]. Regarding its historical origins, ‘Abdu’l-Bahá explains that the Báb initially appointed eighteen disciples to match earlier Shi‘ih expectations of fourteen immaculate Souls and four Gates, with the Báb Himself as the nineteenth ([Additional Tablets, Extracts and Talks](https://oceanlibrary.com/additional-tablets-extracts-and-talks_abdul-baha/?paraId=para_77&selectionString=abdu_l_baha_additional_tablets_extracts_and_talks_430a4c77afa01f6eb5e4f2c4028e655d_4j.0~abdu_l_baha_additional_tablets_extracts_and_talks_430a4c77afa01f6eb5e4f2c4028e655d_4j.499)).\n\nBeyond these scriptural foundations and authorized interpretations, scholars such as Nader Saiedi have explored how the Báb's writings in works like the [*Persian Bayán*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3) invest the number nineteen with profound symbolic meanings related to human devotion and creation [9, 10].",
+     "ms": 3718
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "Accurate and complete on the calendar: Váḥid = 19 in abjad, the Báb with the 18 Letters of the Living as the first Váḥid, 19 months of 19 days, Ayyám-i-Há, the Feast, the Fast in the last month, and the 19-year Váḥid and 361-year Kull-i-Shay'. Its weakness is that it quotes no primary text. Its numbered citations point to sources it never names."
+     },
+     "current": {
+      "score": 6,
+      "why": "It draws more on the texts. It cites 'Abdu'l-Bahá on the eighteen Letters (fourteen Immaculate Souls plus four Gates), mentions the basmala, and labels Saiedi clearly as scholarly context. But the line it quotes as from the Kitáb-i-Aqdas ('The number of months... is nineteen') does not appear to be in the Aqdas. It seems to echo Qur'án 9:36 and the Bayán, so it is likely misattributed. It also leaves out Ayyám-i-Há, the Fast, and the Váḥid / Kull-i-Shay' cycles."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B quoted 'Abdu'l-Bahá's own explanation of why there were eighteen Letters of the Living (fourteen Immaculate Souls and four Gates) and tied the number to the basmala. A did not draw on any primary text.",
+    "kind": "doctrinal",
+    "authority_errors": [
+     "current: the quotation is presented as Kitáb-i-Aqdas text, but it appears not to be in the Aqdas (likely misattributed)"
+    ]
+   }
+  },
+  {
+   "id": "w3:neg-word-house",
+   "kind": "w3-strategy",
+   "expect": {
+    "extra": {
+     "strategy": "none",
+     "decided_by": "jev",
+     "trap": "history, not current guidance"
+    }
+   },
+   "extra": null,
+   "messages": [
+    {
+     "role": "user",
+     "content": "When was the Universal House of Justice first elected?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Universal House of Justice was first elected on **21 April 1963**, the first day of the Festival of Riḍván, during the First International Bahá’í Convention in Haifa.[1]",
+     "ms": 5155
+    },
+    "current": {
+     "text": "The Universal House of Justice was first elected in 1963 during the Festival of Riḍván, marking the culmination of the Ten Year Crusade and fulfilling the provisions set forth in the writings of ‘Abdu’l-Bahá.\n\nAs recorded by the Universal House of Justice itself, the body came into being [*“on the first day of the Festival of Riḍván in the one hundred and twentieth year of the Bahá’í Era”*](https://oceanlibrary.com/universal-house-of-justice_bahaullah/?paraId=para_213&selectionString=universal_house_of_justice_compilation_ocean_en-bl78.0~universal_house_of_justice_compilation_ocean_en-bl78.716) — [*The Universal House of Justice*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_the-universal-house-of-justice). This event brought together members of National Spiritual Assemblies from around the world to cast their ballots for the supreme legislative institution of the Faith.",
+     "ms": 3658
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 6,
+      "why": "It gets the year and Riḍván right and adds useful context: the Ten Year Crusade, and that members of the National Spiritual Assemblies were the electors. It does not give the exact date (21 April) or the place (Haifa, at the First International Convention). Its quotation's wording can't be verified and may be paraphrased."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "It gives the precise date, 21 April 1963, the first day of Riḍván, at the First International Bahá'í Convention in Haifa. That answers the question exactly. It is very thin, though: no context on the electors or the Ten Year Crusade, and its footnote [1] points to no source."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  }
+ ]
+}

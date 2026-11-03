@@ -1,0 +1,3541 @@
+[
+ {
+  "id": "w3:cmp-detachment-buddhist-bahai",
+  "q": "Is Bahá’u’lláh’s detachment the same thing as Buddhist non-attachment?",
+  "expect": "comparison",
+  "sides_expected": [
+   "Buddhist",
+   "Baha'i"
+  ],
+  "ev": {
+   "stage": 306,
+   "progress": 307,
+   "session": 795,
+   "understood": 2503,
+   "sources": 3877,
+   "status": 3877,
+   "text": 6418,
+   "chunk": 8126,
+   "citations": 8168,
+   "complete": 8169
+  },
+  "cid": "conv_7fd7a72c-10bf-4126-a466-b18407446fa4",
+  "first": 6418,
+  "t1": "However, they diverge fundamentally in their orientation: Buddhist non-attachment aims at the cessation of craving and release from the cycle of rebirth, whereas Bahá’í detachment is explicitly relational — turning away from worldly vanities specifically to turn toward and know God.",
+  "total": 8169,
+  "reply": "In the Bahá’í teachings, detachment is defined as turning toward the divine rather than an outward renunciation of material life. Bahá’u’lláh explains that [\"By detachment is not meant giving away and depleting all one's wealth. Rather, it denotes turning unto God and supplicating Him\"](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_he-who-knoweth-his-self-hath-known-his-lord-commentary#p13) — [*He who knoweth his self hath known his Lord: Commentary*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah-shoghi_he-who-knoweth-his-self-hath-known-his-lord-commentary). It is a state of purifying the heart from the world's limitations and vanities so that a person may [\"step thou into the vast immensity of the realm of detachment\"](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_four-tablets-to-maryam-3#p152) — [*Four Tablets to Maryam*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_four-tablets-to-maryam-3), remaining active in the world while inwardly directed toward God.\n\nIn Buddhist texts, non-attachment is rooted in cutting off the deep-seated mental roots of suffering, such as greed, anger, and infatuation, which perpetuate the cycle of rebirth on the paths of existence. As [*Sutra Collection (L)*](https://siftersearch.com/library/view?doc=20937) notes, [\"if these attachments are broken off, no signs of attachment nor of\"](https://oceanlibrary.com/sutra-collection-l/?paraId=para_307&selectionString=sutra_collection_l_ocean_buddhism_en-blc2.0~sutra_collection_l_ocean_buddhism_en-blc2.550) — *Sutra Collection (L)* further suffering remain. Similarly, [*The Dhammapada*](https://siftersearch.com/library/view?doc=20925) states that [\"Those who love nothing and hate nothing, have no fetters\"](https://oceanlibrary.com/dhammapada_buddha/?paraId=para_239&selectionString=the-dhammapada_en_9c.0~the-dhammapada_en_9c.103) — *The Dhammapada*, pointing toward an ultimate release from craving and emotional entanglement.\n\nBoth traditions treat detachment as essential for freeing the soul or mind from the illusions and bondages of material existence. However, they diverge fundamentally in their orientation: Buddhist non-attachment aims at the cessation of craving and release from the cycle of rebirth, whereas Bahá’í detachment is explicitly relational — turning away from worldly vanities specifically to turn toward and know God.",
+  "strategy": "comparison",
+  "gate": "research",
+  "shape": "comparison",
+  "fmt": {
+   "choice": "comparison",
+   "by": "strategy:comparison"
+  },
+  "stStage": {
+   "choice": "comparison",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 33,
+    "ms": 65
+   },
+   {
+    "name": "triage",
+    "at": 33,
+    "ms": 146
+   },
+   {
+    "name": "strategy",
+    "at": 34,
+    "ms": 211,
+    "choice": "comparison",
+    "sides": [
+     "Baha'i",
+     "Buddhist"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 245,
+    "ms": 1978
+   },
+   {
+    "name": "plan",
+    "at": 246,
+    "ms": 430
+   },
+   {
+    "name": "work",
+    "at": 676,
+    "ms": 1
+   },
+   {
+    "name": "phrases",
+    "at": 677,
+    "ms": 3
+   },
+   {
+    "name": "strategy",
+    "at": 679,
+    "ms": 2892
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3571,
+    "ms": 9
+   },
+   {
+    "name": "companion",
+    "at": 3580,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 3582,
+    "ms": 3943
+   },
+   {
+    "name": "output-check",
+    "at": 7643,
+    "ms": 117
+   }
+  ],
+  "meta": {
+   "type": "answer (comparison)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00395,
+   "calls": 9,
+   "latency_ms": 7760
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:search-plan",
+   "system1:search-plan",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:cmp-afterlife-hindu-christian",
+  "q": "What do Hindu scriptures and the Gospels each teach about what happens after death?",
+  "expect": "comparison",
+  "sides_expected": [
+   "Hindu",
+   "Christian"
+  ],
+  "ev": {
+   "stage": 308,
+   "progress": 308,
+   "session": 846,
+   "understood": 2498,
+   "sources": 5632,
+   "status": 5632,
+   "text": 6974,
+   "chunk": 8469,
+   "citations": 8473,
+   "complete": 8474
+  },
+  "cid": "conv_24ca1cf8-9554-49a3-a7e8-2bff582b0925",
+  "first": 6974,
+  "t1": "However, they diverge fundamentally in framework: the Hindu texts envision a continuous cycle of embodied existence and rebirth into various forms based on action, whereas the Christian scriptures present a linear trajectory of individual judgment and placement into distinct realms of rest or torment.",
+  "total": 8474,
+  "reply": "In Hindu texts, the soul assumes a subtle form after the physical body is destroyed, retaining consciousness of past actions [*The Mahabharata - Sabha and Udyoga Parva*](https://oceanlibrary.com/hymns-of-atharva-veda). According to this tradition, [\"The virtuous attain to a superior, and the vicious to an inferior form of existence\"](https://oceanlibrary.com/hymns-of-atharva-veda) ([*The Mahabharata - Sabha and Udyoga Parva*](https://siftersearch.com/library/view?doc=21015)), entering new bodily forms. Similarly, meditating upon the divine at the hour of death shapes one's destination ([*The Bhagavad-Gita*](https://siftersearch.com/library/view?doc=21038)).\n\nIn the Gospels and Christian scriptures, death leads directly to distinct spiritual states or an accounting before God. The Gospel of Luke records that after death, individuals are carried to distinct realms, such as being carried by angels into [\"Abraham’s bosom\"](https://oceanlibrary.com/kjv-gospel-of-luke/?paraId=para_589&selectionString=the-gospel-of-luke_en_j2.0~the-gospel-of-luke_en_j2.210) ([*The Bible (KJV), The Gospel of Luke*](https://siftersearch.com/library/view?doc=912528)), while others experience torment. Revelation further depicts the dead standing before God to be [\"judged out of those things which were written in the books, according to their works\"](https://oceanlibrary.com/kjv-apocalypse-saint-john-of-patmos/?paraId=para_331&selectionString=the-apocalypse-of-john-nt_en_bv.0~the-apocalypse-of-john-nt_en_bv.196) ([*The Bible (KJV), Revelation*](https://siftersearch.com/library/view?doc=912528)).\n\nBoth traditions share the moral conviction that a person's condition or destination after death is intimately tied to their earthly deeds and choices. However, they diverge fundamentally in framework: the Hindu texts envision a continuous cycle of embodied existence and rebirth into various forms based on action, whereas the Christian scriptures present a linear trajectory of individual judgment and placement into distinct realms of rest or torment.",
+  "strategy": "comparison",
+  "gate": "research",
+  "shape": "comparison",
+  "fmt": {
+   "choice": "comparison",
+   "by": "strategy:comparison"
+  },
+  "stStage": {
+   "choice": "comparison",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 35
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 59
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 531
+   },
+   {
+    "name": "strategy",
+    "at": 36,
+    "ms": 203,
+    "choice": "comparison",
+    "sides": [
+     "Hindu",
+     "Christian"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 566,
+    "ms": 179
+   },
+   {
+    "name": "understood",
+    "at": 566,
+    "ms": 1652
+   },
+   {
+    "name": "work",
+    "at": 745,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 746,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 746,
+    "ms": 3499
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4245,
+    "ms": 1103
+   },
+   {
+    "name": "companion",
+    "at": 5349,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 5351,
+    "ms": 2561
+   },
+   {
+    "name": "output-check",
+    "at": 7990,
+    "ms": 115
+   }
+  ],
+  "meta": {
+   "type": "answer (comparison)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00383,
+   "calls": 11,
+   "latency_ms": 8105
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "system1:search-plan",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:cmp-fasting-islam-bahai",
+  "q": "How does fasting in Islam compare with the Bahá’í fast?",
+  "expect": "comparison",
+  "sides_expected": [
+   "Islam",
+   "Baha'i"
+  ],
+  "ev": {
+   "stage": 319,
+   "progress": 319,
+   "session": 894,
+   "understood": 2509,
+   "sources": 6038,
+   "status": 6038,
+   "text": 7468,
+   "chunk": 9570,
+   "citations": 9603,
+   "complete": 9603
+  },
+  "cid": "conv_f5ba1b2f-68c0-4a00-9edd-3cc3101fb814",
+  "first": 7468,
+  "t1": "Yet they differ structurally: Islam's primary fast is tied to the lunar month of Ramadan with specific exemptions and lunar adjustments, whereas the Bahá’í fast occupies a fixed nineteen-day period at the end of the Bahá’í year (Ayyám-i-Há preceding it), functioning explicitly as a defined season of inner spiritual renewal and prayer.",
+  "total": 9603,
+  "reply": "In Islam, fasting is prescribed by the Qur'án for believers during \"certain days\" (such as the month of Ramadan), with provisions for the sick or travelers to make up the days later or provide sustenance to a needy person as expiation, as recorded in [*The Quran (Rodwell)*](https://oceanlibrary.com/sura-ii-the-cow_muhammad/?paraId=para_111&selectionString=sura_ii_the_cow_quran_ocean_en-bl89.0~sura_ii_the_cow_quran_ocean_en-bl89.389). Traditions within Islamic sources also note various kinds of fasting and trace the practice back to earlier prophetic traditions, such as the fasting on 'Ashura' before Ramadan was prescribed, as mentioned in [*Ṣaḥíḥ al-Bukhárí*](https://oceanlibrary.com/sahih-al-bukhari/?paraId=para_3676&selectionString=a_i_al_bukhari_islam_ocean_en_2v8.0~a_i_al_bukhari_islam_ocean_en_2v8.256).\n\nThe Bahá’í fast, by contrast, is a defined nineteen-day period—starting as a rule from the second to the twentieth of March—that involves complete abstention from food and drink from sunrise to sunset. Shoghi Effendi describes it in [*Uncompiled Published Letters*](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_6112&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl67v.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl67v.537) as essentially a period of \"meditation and prayer, of spiritual recuperation,\" where the believer strives to make readjustments in their inner life. Bahá’u’lláh similarly invokes the fast in prayers as a turning toward God \"for love of Thee, and for the sake of Thy pleasure\" ([*Prayers and Meditations*](https://siftersearch.com/library/view?doc=20805)](https://oceanlibrary.com/prayers-and-meditations-by-bahaullah/?paraId=para_345&selectionString=prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_cc.0~prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_cc.478)).\n\nBoth traditions view fasting as a divine enactment meant to draw human beings toward God, foster moral discipline, and connect believers to a lineage of earlier prophetic practice. Yet they differ structurally: Islam's primary fast is tied to the lunar month of Ramadan with specific exemptions and lunar adjustments, whereas the Bahá’í fast occupies a fixed nineteen-day period at the end of the Bahá’í year (Ayyám-i-Há preceding it), functioning explicitly as a defined season of inner spiritual renewal and prayer.",
+  "strategy": "comparison",
+  "gate": "research",
+  "shape": "comparison",
+  "fmt": {
+   "choice": "comparison",
+   "by": "strategy:comparison"
+  },
+  "stStage": {
+   "choice": "comparison",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 38
+   },
+   {
+    "name": "open-log",
+    "at": 38,
+    "ms": 52
+   },
+   {
+    "name": "strategy",
+    "at": 38,
+    "ms": 178,
+    "choice": "comparison",
+    "sides": [
+     "Islam",
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "triage",
+    "at": 38,
+    "ms": 546
+   },
+   {
+    "name": "plan",
+    "at": 584,
+    "ms": 107
+   },
+   {
+    "name": "understood",
+    "at": 584,
+    "ms": 1630
+   },
+   {
+    "name": "work",
+    "at": 691,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 691,
+    "ms": 1
+   },
+   {
+    "name": "strategy",
+    "at": 691,
+    "ms": 4996
+   },
+   {
+    "name": "upgrade-links",
+    "at": 5688,
+    "ms": 62
+   },
+   {
+    "name": "companion",
+    "at": 5751,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 5752,
+    "ms": 3222
+   },
+   {
+    "name": "output-check",
+    "at": 9014,
+    "ms": 141
+   }
+  ],
+  "meta": {
+   "type": "answer (comparison)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00474,
+   "calls": 10,
+   "latency_ms": 9155
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:cmp-missing-side",
+  "q": "How do the Bahá’í writings and the Book of Mormon treat tithing?",
+  "expect": "comparison",
+  "sides_expected": [
+   "Baha'i"
+  ],
+  "ev": {
+   "stage": 368,
+   "progress": 368,
+   "session": 3071,
+   "understood": 4773,
+   "sources": 7761,
+   "status": 7761,
+   "text": 10716,
+   "chunk": 11415,
+   "citations": 11418,
+   "complete": 11418
+  },
+  "cid": "conv_6ac30aae-0cc2-4ec7-90fd-2b367d3b9422",
+  "first": 10716,
+  "t1": "If you would like to explore how financial contributions or offerings are understood in either tradition specifically, we can look further into the texts.",
+  "total": 11418,
+  "reply": "I didn't find a passage on tithing in the Book of Mormon in this search, though the Bahá'í sources mention \"[The law of tithes](https://bahai-library.com/uhj_laws_not_binding/?paraId=h19)\" ([*Laws from the Kitab-i-Aqdas Not Yet Binding*](https://siftersearch.com/library/bahai/administrative/universal-house-of_laws-from-the-kitab-i-aqdas-not-yet-binding) by the Universal House of Justice) as a prior dispensation's law distinct from the [*Huququ'llah*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_huququllah-the-right-of-god), defined in [*The Kitáb-i-Aqdas*](https://siftersearch.com/library/view?doc=21307) as [\"The 'Right of God'\"](https://oceanlibrary.com/kitab-i-aqdas_bahaullah) instituted by Bahá'u'lláh.\n\nWhen looking at economic offerings across traditions, surface likenesses can hide different underlying principles. While a biblical or Restoration tradition often looks to specific tithes or the law of consecration as a binding percentage or stewardship of surplus, the *Huququ'llah* in the Bahá'í writings is calculated on one's remaining wealth after necessary expenses, treated as a spiritual right of God offered voluntarily through the Head of the Faith.\n\nIf you would like to explore how financial contributions or offerings are understood in either tradition specifically, we can look further into the texts.",
+  "strategy": "topic",
+  "gate": "research",
+  "shape": "topic",
+  "fmt": {
+   "choice": "comparison",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "topic",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 96
+   },
+   {
+    "name": "open-log",
+    "at": 96,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 96,
+    "ms": 2532
+   },
+   {
+    "name": "strategy",
+    "at": 97,
+    "ms": 1390
+   },
+   {
+    "name": "understood",
+    "at": 2628,
+    "ms": 1913
+   },
+   {
+    "name": "plan",
+    "at": 2630,
+    "ms": 1332
+   },
+   {
+    "name": "work",
+    "at": 3962,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 3962,
+    "ms": 2
+   },
+   {
+    "name": "search",
+    "at": 3965,
+    "ms": 3269
+   },
+   {
+    "name": "upgrade-links",
+    "at": 7234,
+    "ms": 272
+   },
+   {
+    "name": "format",
+    "at": 7506,
+    "ms": 572
+   },
+   {
+    "name": "companion",
+    "at": 7507,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 8078,
+    "ms": 2344
+   },
+   {
+    "name": "output-check",
+    "at": 10489,
+    "ms": 534
+   }
+  ],
+  "meta": {
+   "type": "answer (topic)",
+   "models": [
+    "jev-latest",
+    "claude-haiku-5-5",
+    "gemini-embedding-2",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00273,
+   "calls": 8,
+   "latency_ms": 11023
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:search-plan",
+   "anis-understood",
+   "search-query",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:und-return-of-christ",
+  "q": "I’m trying to understand what Bahá’ís actually mean when they say Christ has returned.",
+  "expect": "understanding",
+  "sides_expected": null,
+  "ev": {
+   "stage": 3009,
+   "progress": 3009,
+   "session": 3851,
+   "understood": 5630,
+   "sources": 7640,
+   "status": 7640,
+   "text": 8558,
+   "chunk": 10286,
+   "citations": 10290,
+   "complete": 10290
+  },
+  "cid": "conv_986e1b52-fe8c-411f-aeab-576e232dfef1",
+  "first": 8558,
+  "t1": "While the authoritative texts establish that the biblical promises of the Second Coming and the coming of the Spirit of Truth are fulfilled in the person of Bahá’u’lláh (and the Báb), they leave open the vast, unfolding implications of how this new spiritual cycle will progressively reshape human society and individual consciousness over the course of the long Bahá'í Era.",
+  "total": 10290,
+  "reply": "When Bahá’ís speak of the return of Christ, they mean that the eternal reality of the Spirit has appeared anew in a fresh Manifestation, identifying Bahá’u’lláh as that promised return.\n\nIn the scriptures, Bahá’u’lláh addresses the leaders of Christendom directly, asking: [\"O kings of Christendom! Heard ye not the saying of Jesus, the Spirit of God, ‘I go away, and come again unto you’?\"](https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah/?paraId=para_735&selectionString=gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_n5.0~gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_n5.973) — [*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/library/view?doc=20783).\n\nThis return is explained through the station of the Manifestation rather than a physical descent from the clouds. As ‘Abdu’l-Bahá notes in a pilgrim's account, [\"Christ is an Expression of the Divine Reality, the Single Essence and Heavenly Entity, which hath no beginning or ending. It has appearance, arising, and manifestation and setting in each one of the Cycles.\"](https://oceanlibrary.com/abdul-baha-in-london/?paraId=para_359&selectionString=abdu_l_baha_in_london_bahai_ocean_en-blcq.0~abdu_l_baha_in_london_bahai_ocean_en-blcq.220) — [*‘Abdu’l-Bahá in London*](https://siftersearch.com/library/view?doc=20921). Shoghi Effendi further clarifies this in his letters, writing that in accepting Bahá’u’lláh, one has accepted Christ in His appearance as the Father as foretold, rather than leaving Christ behind (as recalled by Shoghi Effendi in [*The Light of Divine Guidance (Volume II)*](https://siftersearch.com/library/view?doc=20891)).\n\nWhile the authoritative texts establish that the biblical promises of the Second Coming and the coming of the Spirit of Truth are fulfilled in the person of Bahá’u’lláh (and the Báb), they leave open the vast, unfolding implications of how this new spiritual cycle will progressively reshape human society and individual consciousness over the course of the long Bahá'í Era.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 2444
+   },
+   {
+    "name": "triage",
+    "at": 2444,
+    "ms": 613
+   },
+   {
+    "name": "open-log",
+    "at": 2444,
+    "ms": 655
+   },
+   {
+    "name": "strategy",
+    "at": 2445,
+    "ms": 614,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 3099,
+    "ms": 1995
+   },
+   {
+    "name": "plan",
+    "at": 3100,
+    "ms": 330
+   },
+   {
+    "name": "work",
+    "at": 3430,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 3430,
+    "ms": 1
+   },
+   {
+    "name": "strategy",
+    "at": 3430,
+    "ms": 3605
+   },
+   {
+    "name": "upgrade-links",
+    "at": 7036,
+    "ms": 45
+   },
+   {
+    "name": "companion",
+    "at": 7082,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 7083,
+    "ms": 2332
+   },
+   {
+    "name": "output-check",
+    "at": 9525,
+    "ms": 108
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00407,
+   "calls": 9,
+   "latency_ms": 9633
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:cmp-three-way-creation",
+  "q": "Compare the Torah, the Qur’án and the Bahá’í writings on the creation of man.",
+  "expect": "comparison",
+  "sides_expected": [
+   "Judaism",
+   "Islam",
+   "Baha'i"
+  ],
+  "ev": {
+   "stage": 108,
+   "progress": 108,
+   "session": 554,
+   "sources": 8538,
+   "status": 8538,
+   "text": 10275,
+   "chunk": 11860,
+   "citations": 11863,
+   "complete": 11863
+  },
+  "cid": "conv_f3318c89-de68-4d3e-b6a6-486c2c4a1fd5",
+  "first": 10275,
+  "t1": "The Bahá'í writings frame creation as an inward placement of divine light paired with the immediate demand for human moral agency and active volition.",
+  "total": 11863,
+  "reply": "In the **Torah**, the LORD God [formed man of the dust of the ground, and breathed into his nostrils the breath of life; and man became a living soul](https://oceanlibrary.com/jps-book-of-genesis/?paraId=para_46&selectionString=torah_bereshit_judaism_ocean_en-bl3s.0~torah_bereshit_judaism_ocean_en-bl3s.110) ([*The Tanakh (JPS 1917), Torah - Bereshit (Genesis)*](https://siftersearch.com/library/view?doc=21228)). Midrashic commentary adds that when God consulted the Torah prior to creation, the Torah hesitated because human perversity would require deep forbearance, to which God declared mercy and truth ([*Tales and Maxims from the Midrash*](https://siftersearch.com/library/view?doc=21214)).\n\nHedjr*), commanding the angels to bow before this newly fashioned creation.\n\nIn the **Bahá’í writings**, Bahá’u’lláh addresses the creation of humanity by affirming, [\"With the hands of power I made thee and with the fingers of strength I created thee; and within thee have I placed the essence of My light\"](https://oceanlibrary.com/hidden-words-of-bahaullah/?paraId=para_44&selectionString=the-hidden-words-prod_en_3z.0~the-hidden-words-prod_en_3z.236) ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/library/view?doc=20809)). Further elaboration notes that humans are created in a divine nature with pre-ordained measures, though inner potential requires personal volition and action to become manifest ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/library/view?doc=20783)).\n\nThese traditions share the foundational premise that human life originates directly from divine fashioning and the breath or spirit of God. Yet they diverge in focus: the Torah and Qur'án emphasize the physical materials of dust and clay infused with divine breath, alongside narrative interactions with angels or the Torah itself. The Bahá'í writings frame creation as an inward placement of divine light paired with the immediate demand for human moral agency and active volition.",
+  "strategy": "comparison",
+  "gate": "research",
+  "shape": "comparison",
+  "fmt": {
+   "choice": "comparison",
+   "by": "strategy:comparison"
+  },
+  "stStage": {
+   "choice": "comparison",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 32
+   },
+   {
+    "name": "open-log",
+    "at": 32,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 32,
+    "ms": 153
+   },
+   {
+    "name": "strategy",
+    "at": 33,
+    "ms": 222,
+    "choice": "comparison",
+    "sides": [
+     "Judaism",
+     "Islam",
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 255,
+    "ms": 4168
+   },
+   {
+    "name": "plan",
+    "at": 256,
+    "ms": 325
+   },
+   {
+    "name": "work",
+    "at": 581,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 581,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 581,
+    "ms": 7886
+   },
+   {
+    "name": "upgrade-links",
+    "at": 8467,
+    "ms": 13
+   },
+   {
+    "name": "companion",
+    "at": 8480,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 8481,
+    "ms": 3042
+   },
+   {
+    "name": "output-check",
+    "at": 11592,
+    "ms": 114
+   }
+  ],
+  "meta": {
+   "type": "answer (comparison)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "clef",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00516,
+   "calls": 14,
+   "latency_ms": 11706
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "system1:search-plan",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:search-plan:shadow",
+   "system1:source-resolve",
+   "system1:source-resolve",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:und-infallibility",
+  "q": "Help me understand the Bahá’í teaching on infallibility — I find it confusing.",
+  "expect": "understanding",
+  "sides_expected": null,
+  "ev": {
+   "stage": 91,
+   "progress": 91,
+   "session": 414,
+   "sources": 3927,
+   "status": 3927,
+   "text": 8399,
+   "chunk": 8714,
+   "citations": 8729,
+   "complete": 8729
+  },
+  "cid": "conv_955926a4-f982-4f67-aaa5-47d7e4eadd83",
+  "first": 8399,
+  "t1": "However, the precise inner workings of how conferred infallibility operates day-to-day in administrative bodies remain largely unelaborated in the texts, leaving room for ongoing study.",
+  "total": 8729,
+  "reply": "The word *infallibility* carries several distinct stations in the texts, which can make it feel complex at first. At its root, the writings distinguish between an essential infallibility that belongs inherently to the Manifestations of God and a conferred attribute given to others.\n\nBahá'u'lláh explains in [*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_the-most-holy-book-kitab-i-aqdas#p190) that the term has a specific dimension regarding the Lawgiver Himself:\n> [\"Infallibility here, does not signify the same meaning as generally understood by the people, 'Prevention from sin or error,' nay, rather it means the station as held by the lawgiver which excludes Him from being governed by the laws that He gives to the people.\"](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_the-most-holy-book-kitab-i-aqdas#p190) — [*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/library/view?doc=21307)\n\nExpanding on this in authorized interpretation, ['Abdu'l-Bahá](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_612&selectionString=some-answered-questions-prod-version_en_jz.0~some-answered-questions-prod-version_en_jz.868) clarifies that [\"infallibility is of two kinds: infallibility in essence and infallibility as an attribute.\"](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_612&selectionString=some-answered-questions-prod-version_en_jz.0~some-answered-questions-prod-version_en_jz.868) [*Some Answered Questions*](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_612&selectionString=some-answered-questions-prod-version_en_jz.0~some-answered-questions-prod-version_en_jz.868) states that essential infallibility belongs exclusively to the universal Manifestations, while conferred infallibility is an attribute granted to sanctified souls or institutions—such as the Universal House of Justice, which operates under divine protection when established under its necessary conditions, as noted by ['Abdu'l-Bahá, quoted in this work by Research Department of the Universal House of Justice (compiler)](https://oceanlibrary.com/universal-house-of-justice_bahaullah/?paraId=para_83&selectionString=universal_house_of_justice_compilation_ocean_en-bl4n.0~universal_house_of_justice_compilation_ocean_en-bl4n.668).\n\nBeyond these explicit definitions in scripture and authorized interpretation, scholarship and historical accounts like those recorded in [*Pilgrimage, with translations of Tablets by Bahá'u'lláh and 'Abdu'l-Bahá*](https://siftersearch.com/library/bahai/pilgrim-notes/ali-kuli-khan_pilgrimage-with-translations-of-tablets-by-bahaullah-and-abdul-baha) offer further descriptions of intrinsic versus mediate infallibility. However, the precise inner workings of how conferred infallibility operates day-to-day in administrative bodies remain largely unelaborated in the texts, leaving room for ongoing study.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 40
+   },
+   {
+    "name": "open-log",
+    "at": 40,
+    "ms": 63
+   },
+   {
+    "name": "triage",
+    "at": 40,
+    "ms": 169
+   },
+   {
+    "name": "strategy",
+    "at": 40,
+    "ms": 174,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 214,
+    "ms": 2591
+   },
+   {
+    "name": "plan",
+    "at": 215,
+    "ms": 430
+   },
+   {
+    "name": "work",
+    "at": 645,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 645,
+    "ms": 1
+   },
+   {
+    "name": "strategy",
+    "at": 645,
+    "ms": 3158
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3805,
+    "ms": 60
+   },
+   {
+    "name": "companion",
+    "at": 3865,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 3867,
+    "ms": 4500
+   },
+   {
+    "name": "output-check",
+    "at": 8427,
+    "ms": 112
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00464,
+   "calls": 9,
+   "latency_ms": 8540
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:und-soul-after-body",
+  "q": "What does the Bahá’í view of the soul’s progress after death really come down to?",
+  "expect": "understanding",
+  "sides_expected": null,
+  "ev": {
+   "stage": 97,
+   "progress": 97,
+   "session": 1684,
+   "understood": 3766,
+   "sources": 4488,
+   "status": 4488,
+   "text": 9081,
+   "chunk": 13725,
+   "citations": 13726,
+   "complete": 13726
+  },
+  "cid": "conv_638d66e6-40e8-4ab8-93b9-763079951d5f",
+  "first": 9081,
+  "t1": "These statements share the core premise that physical death is not a termination of human consciousness or development, but an entry into an ongoing, unfolding journey through endless spiritual worlds.",
+  "total": 13726,
+  "reply": "To see how the sources present this, it is helpful to look at the hierarchy of texts:\n\n* [\"the soul, after its separation from the body, will continue to progress until it attaineth the presence of God\"](https://oceanlibrary.com/gleanings-from-the-writings-of-bahaullah/?paraId=para_474&selectionString=gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_fx.0~gleanings_from_the_writings_of_baha_u_llah_ocean_ec2b280e895fd398ad84f4d11e78c9f2a_fx.1978) — [*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/library/view?doc=20783)\n* [\"the perfections of man are infinite, he can also advance in these perfections after his ascension from this world\"](https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_820&selectionString=some-answered-questions-prod-version_en_pq.0~some-answered-questions-prod-version_en_pq.101) — [*Some Answered Questions*](https://siftersearch.com/library/view?doc=20911)\n* [\"the soul will continue to ascend through many worlds\"](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_4081&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl3x3.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl3x3.242) — [*Uncompiled Published Letters*](https://siftersearch.com/library/view?doc=20897)\n* [\"The progress of the soul does not come to an end with death. It rather starts along a new line.\"](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=Concerning%20your%20question%20whether,%7Bid%3D%22para2563%22%20ilmid%3D%22bl1l6%22%20type%3D%22par%22%20language%3D%22en%22%7D) — quoted in [*Lights of Guidance*](https://siftersearch.com/library/view?doc=20891)\n\nThese statements share the core premise that physical death is not a termination of human consciousness or development, but an entry into an ongoing, unfolding journey through endless spiritual worlds.",
+  "strategy": "topic",
+  "gate": "research",
+  "shape": "topic",
+  "fmt": {
+   "choice": "range_of_voices",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "topic",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 33,
+    "ms": 456
+   },
+   {
+    "name": "triage",
+    "at": 33,
+    "ms": 1476
+   },
+   {
+    "name": "strategy",
+    "at": 34,
+    "ms": 1461
+   },
+   {
+    "name": "understood",
+    "at": 1509,
+    "ms": 2210
+   },
+   {
+    "name": "plan",
+    "at": 1510,
+    "ms": 773
+   },
+   {
+    "name": "work",
+    "at": 2283,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 2283,
+    "ms": 0
+   },
+   {
+    "name": "search",
+    "at": 2283,
+    "ms": 1891
+   },
+   {
+    "name": "upgrade-links",
+    "at": 4175,
+    "ms": 246
+   },
+   {
+    "name": "format",
+    "at": 4421,
+    "ms": 2811
+   },
+   {
+    "name": "companion",
+    "at": 4422,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 7232,
+    "ms": 5388
+   },
+   {
+    "name": "output-check",
+    "at": 12786,
+    "ms": 639
+   }
+  ],
+  "meta": {
+   "type": "answer (topic)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00394,
+   "calls": 8,
+   "latency_ms": 13425
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:und-progressive-revelation-why",
+  "q": "Why would God send more than one Messenger? I want to get the reasoning, not a list of names.",
+  "expect": "understanding",
+  "sides_expected": null,
+  "ev": {
+   "stage": 98,
+   "progress": 98,
+   "session": 617,
+   "sources": 8318,
+   "status": 8318,
+   "text": 9350,
+   "chunk": 13820,
+   "citations": 13844,
+   "complete": 13844
+  },
+  "cid": "conv_803648e1-7fd8-4f0d-bf36-bd07f19678c2",
+  "first": 9350,
+  "t1": "While the texts explain that each dispensation corresponds to a distinct stage in human history, they leave open the precise mechanics of how each Messenger's specific laws are tailored to the hidden capacities of future eras yet to unfold.",
+  "total": 13844,
+  "reply": "The reason for successive Messengers lies in changing human capacities and the shifting needs of society across time. As Ibn ‘Arabi describes in [*Selections from al-Futuhat al-Makkiyya*](https://oceanlibrary.com/selections-from-al-futuhat-al-makkiyya_shaykh-muhyiddin-ibn/?paraId=para_460&selectionString=the_meccan_revelations_islam_ocean_en-blm1.0~the_meccan_revelations_islam_ocean_en-blm1.429), *\"Messengers followed one another in different times and different situations,\"* each affirming those who came before while bringing specific guidance suited to their era: [\"Judgement is according to the time and the state as He said, 'We have appointed a law (Shari’a) and a practice for every one of you.'\"](https://oceanlibrary.com/selections-from-al-futuhat-al-makkiyya_shaykh-muhyiddin-ibn/?paraId=para_460&selectionString=the_meccan_revelations_islam_ocean_en-blm1.0~the_meccan_revelations_islam_ocean_en-blm1.429) [*Selections from al-Futuhat al-Makkiyya*](https://siftersearch.com/library/view?doc=21081).\n\nBeyond this structural view from mystical philosophy, Bahá'u'lláh explains in [*Epistle to the Son of the Wolf*](https://oceanlibrary.com/epistle-to-the-son-of-the-wolf_bahaullah/?paraId=para_163&selectionString=epistle_to_the_son_of_the_wolf_bahai_en-bl79.0~epistle_to_the_son_of_the_wolf_bahai_en-bl79.447) that divine guidance is delivered continuously so that humanity may be directed toward truth, noting that God has [\"sent forth His Messengers, and sent down His Books\"](https://oceanlibrary.com/epistle-to-the-son-of-the-wolf_bahaullah/?paraId=para_163&selectionString=epistle_to_the_son_of_the_wolf_bahai_en-bl79.0~epistle_to_the_son_of_the_wolf_bahai_en-bl79.447) [*Epistle to the Son of the Wolf*](https://siftersearch.com/library/view?doc=20780) to guide mankind.\n\nIn scholarship and comparative religion, such as Derakhshani's [*The Ethics*](https://oceanlibrary.com/ethics_benedict-spinoza), this is understood through the framework of progressive revelation—the idea that spiritual knowledge is imparted gradually as humanity matures, much like a curriculum suited to a growing student.\n\nWhile the texts explain that each dispensation corresponds to a distinct stage in human history, they leave open the precise mechanics of how each Messenger's specific laws are tailored to the hidden capacities of future eras yet to unfold.",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 23
+   },
+   {
+    "name": "open-log",
+    "at": 23,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 23,
+    "ms": 425
+   },
+   {
+    "name": "strategy",
+    "at": 24,
+    "ms": 258,
+    "choice": "understanding",
+    "sides": []
+   },
+   {
+    "name": "plan",
+    "at": 448,
+    "ms": 131
+   },
+   {
+    "name": "understood",
+    "at": 448,
+    "ms": 2514
+   },
+   {
+    "name": "work",
+    "at": 579,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 579,
+    "ms": 1
+   },
+   {
+    "name": "strategy",
+    "at": 579,
+    "ms": 7149
+   },
+   {
+    "name": "upgrade-links",
+    "at": 7729,
+    "ms": 511
+   },
+   {
+    "name": "companion",
+    "at": 8241,
+    "ms": 5
+   },
+   {
+    "name": "craft",
+    "at": 8246,
+    "ms": 4648
+   },
+   {
+    "name": "output-check",
+    "at": 13348,
+    "ms": 195
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00409,
+   "calls": 8,
+   "latency_ms": 13543
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:pr-ill-father",
+  "q": "My father is in hospital. Is there a prayer I could say for him?",
+  "expect": "prayer",
+  "sides_expected": null,
+  "ev": {
+   "stage": 613,
+   "progress": 613,
+   "session": 943,
+   "understood": 1745,
+   "sources": 3662,
+   "status": 3662,
+   "text": 4644,
+   "chunk": 9929,
+   "citations": 9943,
+   "complete": 9943
+  },
+  "cid": "conv_579f5f76-1db6-458e-a180-c353ea712798",
+  "first": 4644,
+  "t1": "Two more:\n- [\"O Thou Who art the Lord of all names and the Maker of the heavens!\"](https://oceanlibrary.com/prayers-and-meditations-by-bahaullah/?paraId=para_1198&selectionString=prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_101.0~prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_101.270) — *Prayers and Meditations*\n- [\"Ordain for me, O my Lord, and for those who believe in Thee that which is deemed best for us in Thine estimation\"](https://oceanlibrary.com/bahai-prayers/?paraId=para_468&selectionString=baha_i_prayers_bahai_ocean_en_ij.0~baha_i_prayers_bahai_ocean_en_ij.187) — quoted in *Bahá’í Prayers* by Compilation (Bahá'í Writings)",
+  "total": 9943,
+  "reply": "Thinking of your father right now.\n\n> [\"Make my prayer, O my Lord, a fountain of living waters whereby I may live as long as Thy sovereignty endureth, and may make mention of Thee in every world of Thy worlds.\"](https://oceanlibrary.com/prayers-and-meditations-by-bahaullah/?paraId=para_1204&selectionString=prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_107.0~prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_107.137)\n> — Bahá’u’lláh, [*Prayers and Meditations*](https://siftersearch.com/library/view?doc=20805)\n\nTwo more:\n- [\"O Thou Who art the Lord of all names and the Maker of the heavens!\"](https://oceanlibrary.com/prayers-and-meditations-by-bahaullah/?paraId=para_1198&selectionString=prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_101.0~prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_101.270) — *Prayers and Meditations*\n- [\"Ordain for me, O my Lord, and for those who believe in Thee that which is deemed best for us in Thine estimation\"](https://oceanlibrary.com/bahai-prayers/?paraId=para_468&selectionString=baha_i_prayers_bahai_ocean_en_ij.0~baha_i_prayers_bahai_ocean_en_ij.187) — quoted in [*Bahá’í Prayers*](https://siftersearch.com/library/bahai/bahaullah/compilation-bahai_bahai-prayers) by Compilation (Bahá'í Writings)",
+  "strategy": "prayer",
+  "gate": "research",
+  "shape": "prayer",
+  "fmt": {
+   "choice": "prayer",
+   "by": "strategy:prayer"
+  },
+  "stStage": {
+   "choice": "prayer",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 496
+   },
+   {
+    "name": "open-log",
+    "at": 496,
+    "ms": 40
+   },
+   {
+    "name": "strategy",
+    "at": 496,
+    "ms": 216,
+    "choice": "prayer",
+    "sides": []
+   },
+   {
+    "name": "triage",
+    "at": 496,
+    "ms": 227
+   },
+   {
+    "name": "understood",
+    "at": 723,
+    "ms": 912
+   },
+   {
+    "name": "plan",
+    "at": 724,
+    "ms": 119
+   },
+   {
+    "name": "work",
+    "at": 843,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 843,
+    "ms": 3
+   },
+   {
+    "name": "strategy",
+    "at": 844,
+    "ms": 2686
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3530,
+    "ms": 5
+   },
+   {
+    "name": "companion",
+    "at": 3536,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 3538,
+    "ms": 1966
+   },
+   {
+    "name": "output-check",
+    "at": 5535,
+    "ms": 304
+   }
+  ],
+  "meta": {
+   "type": "answer (prayer)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "clef",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00438,
+   "calls": 11,
+   "latency_ms": 5840
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "system1:anis-prayer-occasion",
+   "search-query",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:search-plan:shadow",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:pr-departed",
+  "q": "We lost my grandmother last night. What prayer do Bahá’ís say for the dead?",
+  "expect": "prayer",
+  "sides_expected": null,
+  "ev": {
+   "stage": 108,
+   "progress": 108,
+   "session": 449,
+   "sources": 5774,
+   "status": 5774,
+   "text": 6594,
+   "chunk": 6855,
+   "complete": 6856
+  },
+  "cid": "conv_dfe01985-e38f-48c4-bd1d-80a039684c51",
+  "first": 6594,
+  "t1": "I didn't find a passage on prayers for the dead in this search.",
+  "total": 6856,
+  "reply": "I am so sorry for your loss.\n\nI didn't find a passage on prayers for the dead in this search.",
+  "strategy": "prayer",
+  "gate": "research",
+  "shape": "prayer",
+  "fmt": {
+   "choice": "prayer",
+   "by": "strategy:prayer"
+  },
+  "stStage": {
+   "choice": "prayer",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 30
+   },
+   {
+    "name": "open-log",
+    "at": 30,
+    "ms": 61
+   },
+   {
+    "name": "triage",
+    "at": 30,
+    "ms": 137
+   },
+   {
+    "name": "strategy",
+    "at": 31,
+    "ms": 216,
+    "choice": "prayer",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 247,
+    "ms": 4260
+   },
+   {
+    "name": "plan",
+    "at": 248,
+    "ms": 229
+   },
+   {
+    "name": "work",
+    "at": 477,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 477,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 477,
+    "ms": 5214
+   },
+   {
+    "name": "upgrade-links",
+    "at": 5691,
+    "ms": 7
+   },
+   {
+    "name": "companion",
+    "at": 5698,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 5700,
+    "ms": 885
+   },
+   {
+    "name": "output-check",
+    "at": 6589,
+    "ms": 125
+   }
+  ],
+  "meta": {
+   "type": "answer (prayer)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00243,
+   "calls": 10,
+   "latency_ms": 6714
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "system1:anis-prayer-occasion",
+   "search-query",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:pr-morning",
+  "q": "A short prayer to start the day with?",
+  "expect": "prayer",
+  "sides_expected": null,
+  "ev": {
+   "stage": 95,
+   "progress": 95,
+   "session": 431,
+   "sources": 5383,
+   "status": 5383,
+   "text": 7161,
+   "chunk": 7757,
+   "citations": 7763,
+   "complete": 7763
+  },
+  "cid": "conv_05968365-87a6-4a13-b3b4-ddb6b583450c",
+  "first": 7161,
+  "t1": "Two more:\n- [\"Ordain for me, O my Lord...\"](https://oceanlibrary.com/bahai-prayers/?paraId=para_468&selectionString=baha_i_prayers_bahai_ocean_en_ij.0~baha_i_prayers_bahai_ocean_en_ij.187) — *Bahá’í Prayers*\n- [\"Immensely exalted art Thou...\"](https://oceanlibrary.com/bahai-prayers/?paraId=para_716&selectionString=baha_i_prayers_bahai_ocean_en_q0.0~baha_i_prayers_bahai_ocean_en_q0.149) — *Bahá’í Prayers*",
+  "total": 7763,
+  "reply": "> [\"All praise be unto Thee, O Lord! We shall seek Thy grace on the appointed Day and shall put our whole reliance in Thee, Who art our Lord. Glorified art Thou, O God! Grant us that which is good and seemly that we may be able to dispense with everything but Thee. Verily, Thou art the Lord of all worlds.\"]](https://oceanlibrary.com/bahai-prayers/?paraId=para_51&selectionString=baha_i_prayers_bahai_ocean_en_4u.0~baha_i_prayers_bahai_ocean_en_4u.243)\n> \n> — The Báb, quoted in [*Bahá’í Prayers*](https://oceanlibrary.com/bahai-prayers/?paraId=para_51&selectionString=baha_i_prayers_bahai_ocean_en_4u.0~baha_i_prayers_bahai_ocean_en_4u.243)\n\nTwo more:\n- [\"Ordain for me, O my Lord...\"](https://oceanlibrary.com/bahai-prayers/?paraId=para_468&selectionString=baha_i_prayers_bahai_ocean_en_ij.0~baha_i_prayers_bahai_ocean_en_ij.187) — [*Bahá’í Prayers*](https://siftersearch.com/library/bahai/bahaullah/compilation-bahai_bahai-prayers)\n- [\"Immensely exalted art Thou...\"](https://oceanlibrary.com/bahai-prayers/?paraId=para_716&selectionString=baha_i_prayers_bahai_ocean_en_q0.0~baha_i_prayers_bahai_ocean_en_q0.149) — *Bahá’í Prayers*",
+  "strategy": "prayer",
+  "gate": "research",
+  "shape": "prayer",
+  "fmt": {
+   "choice": "prayer",
+   "by": "strategy:prayer"
+  },
+  "stStage": {
+   "choice": "prayer",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 32
+   },
+   {
+    "name": "open-log",
+    "at": 32,
+    "ms": 65
+   },
+   {
+    "name": "triage",
+    "at": 32,
+    "ms": 311
+   },
+   {
+    "name": "strategy",
+    "at": 33,
+    "ms": 311,
+    "choice": "prayer",
+    "sides": []
+   },
+   {
+    "name": "plan",
+    "at": 344,
+    "ms": 142
+   },
+   {
+    "name": "understood",
+    "at": 344,
+    "ms": 4069
+   },
+   {
+    "name": "work",
+    "at": 486,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 486,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 486,
+    "ms": 4839
+   },
+   {
+    "name": "upgrade-links",
+    "at": 5325,
+    "ms": 4
+   },
+   {
+    "name": "companion",
+    "at": 5329,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 5331,
+    "ms": 2142
+   },
+   {
+    "name": "output-check",
+    "at": 7523,
+    "ms": 86
+   }
+  ],
+  "meta": {
+   "type": "answer (prayer)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00326,
+   "calls": 9,
+   "latency_ms": 7609
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:anis-prayer-occasion",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:pr-tests",
+  "q": "I am going through a very hard time. A prayer for difficulties?",
+  "expect": "prayer",
+  "sides_expected": null,
+  "ev": {
+   "stage": 117,
+   "progress": 117,
+   "session": 259,
+   "understood": 1090,
+   "sources": 1423,
+   "status": 1423,
+   "text": 2294,
+   "chunk": 3509,
+   "citations": 3510,
+   "complete": 3510
+  },
+  "cid": "conv_10957b6b-d510-4dd9-b86c-7d1c034a31ba",
+  "first": 2294,
+  "t1": "- [Lauded be Thy Name, O Lord my God!](https://oceanlibrary.com/bahai-prayers/?paraId=para_514&selectionString=baha_i_prayers_bahai_ocean_en_k2.0~baha_i_prayers_bahai_ocean_en_k2.527)\n- [All praise be to Thee, O my God, for the things Thou didst ordain for me](https://oceanlibrary.com/bahai-prayers/?paraId=para_455&selectionString=baha_i_prayers_bahai_ocean_en_i2.0~baha_i_prayers_bahai_ocean_en_i2.415)",
+  "total": 3510,
+  "reply": "Hard times carry a heavy weight, and meeting them takes real strength. Here is a prayer for times of difficulty, written by Bahá’u’lláh:\n\n> [I am but a poor creature, O my Lord; I have clung to the hem of Thy riches. I am sore sick; I have held fast the cord of Thy healing. Deliver me from the ills that have encircled me, and wash me thoroughly with the waters of Thy graciousness and mercy, and attire me with the raiment of wholesomeness, through Thy forgiveness and bounty. Fix, then, mine eyes upon Thee, and rid me of all attachment to aught else except Thyself. Aid me to do what Thou desirest, and to fulfill what Thou pleasest.](https://oceanlibrary.com/bahai-prayers/?paraId=para_290&selectionString=baha_i_prayers_bahai_ocean_en_ch.0~baha_i_prayers_bahai_ocean_en_ch.402)\n> \n> — Bahá’u’lláh, quoted in [*Bahá’í Prayers*](https://siftersearch.com/library/bahai/bahaullah/compilation-bahai_bahai-prayers)\n\nTwo more:\n\n- [Lauded be Thy Name, O Lord my God!](https://oceanlibrary.com/bahai-prayers/?paraId=para_514&selectionString=baha_i_prayers_bahai_ocean_en_k2.0~baha_i_prayers_bahai_ocean_en_k2.527)\n- [All praise be to Thee, O my God, for the things Thou didst ordain for me](https://oceanlibrary.com/bahai-prayers/?paraId=para_455&selectionString=baha_i_prayers_bahai_ocean_en_i2.0~baha_i_prayers_bahai_ocean_en_i2.415)",
+  "strategy": "prayer",
+  "gate": "research",
+  "shape": "prayer",
+  "fmt": {
+   "choice": "prayer",
+   "by": "strategy:prayer"
+  },
+  "stStage": {
+   "choice": "prayer",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 34
+   },
+   {
+    "name": "open-log",
+    "at": 34,
+    "ms": 61
+   },
+   {
+    "name": "triage",
+    "at": 34,
+    "ms": 119
+   },
+   {
+    "name": "strategy",
+    "at": 35,
+    "ms": 138,
+    "choice": "prayer",
+    "sides": []
+   },
+   {
+    "name": "understood",
+    "at": 173,
+    "ms": 867
+   },
+   {
+    "name": "plan",
+    "at": 174,
+    "ms": 135
+   },
+   {
+    "name": "work",
+    "at": 309,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 309,
+    "ms": 1
+   },
+   {
+    "name": "strategy",
+    "at": 310,
+    "ms": 1036
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1347,
+    "ms": 4
+   },
+   {
+    "name": "companion",
+    "at": 1352,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 1353,
+    "ms": 1716
+   },
+   {
+    "name": "output-check",
+    "at": 3116,
+    "ms": 234
+   }
+  ],
+  "meta": {
+   "type": "answer (prayer)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00341,
+   "calls": 10,
+   "latency_ms": 3350
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "system1:anis-prayer-occasion",
+   "search-query",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:pr-no-heading",
+  "q": "Is there a prayer for travelling safely?",
+  "expect": "prayer",
+  "sides_expected": null,
+  "ev": {
+   "stage": 98,
+   "progress": 98,
+   "session": 370,
+   "understood": 1125,
+   "sources": 1221,
+   "status": 1221,
+   "text": 2109,
+   "chunk": 3631,
+   "citations": 3638,
+   "complete": 3638
+  },
+  "cid": "conv_cf2cd7e0-61c5-42e5-b7af-2cba2b58ad41",
+  "first": 2109,
+  "t1": "Two more:\n- [Ordain for me, O my Lord](https://oceanlibrary.com/bahai-prayers/?paraId=para_468&selectionString=baha_i_prayers_bahai_ocean_en_ij.0~baha_i_prayers_bahai_ocean_en_ij.187) — *Bahá’í Prayers*\n- [Blessed is the spot](https://oceanlibrary.com/bahai-prayers/?paraId=para_3&selectionString=baha_i_prayers_bahai_ocean_en_2u.0~baha_i_prayers_bahai_ocean_en_2u.214) — *Bahá’í Prayers*",
+  "total": 3638,
+  "reply": "Here is a prayer for travelling:\n\n> [“Whoever sets out on a teaching journey to any place, let him recite this prayer day and night during his travels in foreign lands.”](https://oceanlibrary.com/bahai-prayers/?paraId=para_640&selectionString=bahai_prayers_bahai_ocean_en_nv.0_bahai_prayers_bahai_ocean_en_nv.107)\n> \n> [*Bahá’í Prayers*](https://siftersearch.com/library/bahai/bahaullah/compilation-bahai_bahai-prayers) — ‘Abdu’l-Bahá\n\nTwo more:\n- [Ordain for me, O my Lord](https://oceanlibrary.com/bahai-prayers/?paraId=para_468&selectionString=baha_i_prayers_bahai_ocean_en_ij.0~baha_i_prayers_bahai_ocean_en_ij.187) — *Bahá’í Prayers*\n- [Blessed is the spot](https://oceanlibrary.com/bahai-prayers/?paraId=para_3&selectionString=baha_i_prayers_bahai_ocean_en_2u.0~baha_i_prayers_bahai_ocean_en_2u.214) — *Bahá’í Prayers*",
+  "strategy": "prayer",
+  "gate": "research",
+  "shape": "prayer",
+  "fmt": {
+   "choice": "prayer",
+   "by": "strategy:prayer"
+  },
+  "stStage": {
+   "choice": "prayer",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 36
+   },
+   {
+    "name": "open-log",
+    "at": 36,
+    "ms": 66
+   },
+   {
+    "name": "triage",
+    "at": 36,
+    "ms": 202
+   },
+   {
+    "name": "strategy",
+    "at": 37,
+    "ms": 200,
+    "choice": "prayer",
+    "sides": []
+   },
+   {
+    "name": "understood",
+    "at": 238,
+    "ms": 835
+   },
+   {
+    "name": "plan",
+    "at": 239,
+    "ms": 125
+   },
+   {
+    "name": "work",
+    "at": 364,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 364,
+    "ms": 4
+   },
+   {
+    "name": "strategy",
+    "at": 365,
+    "ms": 791
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1157,
+    "ms": 4
+   },
+   {
+    "name": "companion",
+    "at": 1162,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 1164,
+    "ms": 1529
+   },
+   {
+    "name": "output-check",
+    "at": 2735,
+    "ms": 617
+   }
+  ],
+  "meta": {
+   "type": "answer (prayer)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00302,
+   "calls": 10,
+   "latency_ms": 3353
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "system1:anis-prayer-occasion",
+   "search-query",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:gd-social-media",
+  "q": "What is the House of Justice’s most recent guidance on social media use?",
+  "expect": "guidance",
+  "sides_expected": null,
+  "ev": {
+   "stage": 106,
+   "progress": 106,
+   "session": 315,
+   "understood": 1200,
+   "sources": 3675,
+   "status": 3675,
+   "text": 4405,
+   "chunk": 5925,
+   "citations": 5934,
+   "complete": 5934
+  },
+  "cid": "conv_ed868bd8-ff8c-4165-b19b-af79d28ecfc2",
+  "first": 4405,
+  "t1": "Scholarship, history, community practice, and my own synthesis are distinct from these formal authorities and carry no weight for doctrine.",
+  "total": 5935,
+  "reply": "I didn't find a passage on social media use in this search. The library's records for the Universal House of Justice include legislative guidance on email discussion groups—an earlier digital medium—noting that while such platforms \"can provide immense benefits for communication between people and for the teaching of the Faith,\" ([The Universal House of Justice](https://oceanlibrary.com/universal-house-of-justice_bahaullah/?paraId=para_361&selectionString=universal_house_of_justice_compilation_ocean_en-blb9.0~universal_house_of_justice_compilation_ocean_en-blb9.1223)) they \"can also give rise to far-reaching problems\" and require \"an adjustment of perception\" ([*The Universal House of Justice*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_the-universal-house-of-justice)).",
+  "strategy": "guidance",
+  "gate": "research",
+  "shape": "guidance",
+  "fmt": {
+   "choice": "guidance",
+   "by": "strategy:guidance"
+  },
+  "stStage": {
+   "choice": "guidance",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 1,
+    "ms": 34
+   },
+   {
+    "name": "open-log",
+    "at": 35,
+    "ms": 62
+   },
+   {
+    "name": "triage",
+    "at": 35,
+    "ms": 139
+   },
+   {
+    "name": "strategy",
+    "at": 36,
+    "ms": 139,
+    "choice": "guidance",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 175,
+    "ms": 151
+   },
+   {
+    "name": "understood",
+    "at": 175,
+    "ms": 974
+   },
+   {
+    "name": "work",
+    "at": 326,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 326,
+    "ms": 2
+   },
+   {
+    "name": "strategy",
+    "at": 326,
+    "ms": 2610
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2937,
+    "ms": 661
+   },
+   {
+    "name": "companion",
+    "at": 3598,
+    "ms": 6
+   },
+   {
+    "name": "craft",
+    "at": 3604,
+    "ms": 1480
+   },
+   {
+    "name": "output-check",
+    "at": 5107,
+    "ms": 141
+   }
+  ],
+  "meta": {
+   "type": "answer (guidance)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00273,
+   "calls": 9,
+   "latency_ms": 5249
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "search-query",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:gd-elections",
+  "q": "What has the Universal House of Justice said lately about how Bahá’í elections should be conducted?",
+  "expect": "guidance",
+  "sides_expected": null,
+  "ev": {
+   "stage": 114,
+   "progress": 114,
+   "session": 511,
+   "understood": 1390,
+   "sources": 2231,
+   "status": 2231,
+   "text": 3069,
+   "chunk": 4563,
+   "citations": 4599,
+   "complete": 4600
+  },
+  "cid": "conv_0b62b8cc-baa2-463c-a811-007f4ab8f951",
+  "first": 3069,
+  "t1": "The guidance stresses that the method of voting is [\"at complete variance with the methods and practices of elections in political systems\"](https://oceanlibrary.com/sanctity-and-nature-of-bahai-elections_bahaullah/?paraId=para_90&selectionString=the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl59.0~the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl59.504) — *The Sanctity and Nature of Bahá’í Elections*, avoiding nominations, electioneering, and canvassing entirely so that elections remain free from the divisiveness common in partisan politics.",
+  "total": 4600,
+  "reply": "The Universal House of Justice provides administrative guidance and legislative direction for Bahá’í elections, which are distinguished from political systems through compilations and letters issued across decades (such as those noted from 2009, 2001, and 1989). Rather than interpreting scripture, the House of Justice issues administrative guidance on how these elections are to be approached and protected.\n\nA central emphasis in this guidance is that participation is [\"not only as a right they exercise, but as a spiritual obligation\"](https://oceanlibrary.com/sanctity-and-nature-of-bahai-elections_bahaullah/?paraId=para_26&selectionString=the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl3j.0~the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl3j.254) — [*The Sanctity and Nature of Bahá’í Elections*](https://siftersearch.com/library/view?doc=945927). National Assemblies and Counsellors are directed to ensure that this sanctity is maintained through ongoing education throughout the year rather than merely during the weeks leading up to Riḍván, as seen in *The Counsellors and the National Spiritual Assemblies need to work together to ensure that the sanctity of Bahá'í elections is not violated* ([*Institution of the Counsellors*](https://siftersearch.com/library/bahai/administrative/universal-house-of_institution-of-the-counsellors)).\n\nThe guidance stresses that the method of voting is [\"at complete variance with the methods and practices of elections in political systems\"](https://oceanlibrary.com/sanctity-and-nature-of-bahai-elections_bahaullah/?paraId=para_90&selectionString=the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl59.0~the_sanctity_and_nature_of_bahai_elections_bahai_cf8591a44573db188858eceea36b50f7d-bl59.504) — *The Sanctity and Nature of Bahá’í Elections*, avoiding nominations, electioneering, and canvassing entirely so that elections remain free from the divisiveness common in partisan politics.",
+  "strategy": "guidance",
+  "gate": "research",
+  "shape": "guidance",
+  "fmt": {
+   "choice": "guidance",
+   "by": "strategy:guidance"
+  },
+  "stStage": {
+   "choice": "guidance",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 40
+   },
+   {
+    "name": "open-log",
+    "at": 40,
+    "ms": 70
+   },
+   {
+    "name": "triage",
+    "at": 40,
+    "ms": 106
+   },
+   {
+    "name": "strategy",
+    "at": 41,
+    "ms": 180,
+    "choice": "guidance",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 221,
+    "ms": 1099
+   },
+   {
+    "name": "plan",
+    "at": 222,
+    "ms": 202
+   },
+   {
+    "name": "work",
+    "at": 424,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 424,
+    "ms": 1
+   },
+   {
+    "name": "strategy",
+    "at": 425,
+    "ms": 1722
+   },
+   {
+    "name": "upgrade-links",
+    "at": 2147,
+    "ms": 4
+   },
+   {
+    "name": "companion",
+    "at": 2151,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 2153,
+    "ms": 2002
+   },
+   {
+    "name": "output-check",
+    "at": 4279,
+    "ms": 100
+   }
+  ],
+  "meta": {
+   "type": "answer (guidance)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00408,
+   "calls": 9,
+   "latency_ms": 4380
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:gd-climate",
+  "q": "Current UHJ guidance on climate change?",
+  "expect": "guidance",
+  "sides_expected": null,
+  "ev": {
+   "stage": 120,
+   "progress": 120,
+   "session": 327,
+   "understood": 1131,
+   "sources": 2014,
+   "status": 2014,
+   "text": 3085,
+   "chunk": 3455,
+   "citations": 3455,
+   "complete": 3455
+  },
+  "cid": "conv_6f83eaaf-aa59-49b5-8532-66aa2fffbde7",
+  "first": 3085,
+  "t1": "These administrative letters provide current guidance from the Universal House of Justice regarding the community's approach to the subject, noting that international agreements represent a starting point for constructive action as \"another noteworthy demonstration of that development anticipated by ’Abdu’l-Bahá\" (*Climate Change: Policies and Political Discourse*).",
+  "total": 3455,
+  "reply": "The most recent relevant guidance from the Universal House of Justice on this topic is a letter dated November 29, 2017 ([*Об изменении климата и доверии к науке*](https://siftersearch.com/library/view?doc=22959)), which builds upon its earlier, more detailed correspondence from November 1, 2017 ([*Climate Change: Policies and Political Discourse*](https://siftersearch.com/library/bahai/administrative/universal-house-of_climate-change-policies-and-political-discourse)). These administrative letters provide current guidance from the Universal House of Justice regarding the community's approach to the subject, noting that international agreements represent a starting point for constructive action as \"another noteworthy demonstration of that development anticipated by ’Abdu’l-Bahá\" ([Climate Change: Policies and Political Discourse](https://siftersearch.com/library/bahai/administrative/universal-house-of_climate-change-policies-and-political-discourse#p21)) (*Climate Change: Policies and Political Discourse*).",
+  "strategy": "guidance",
+  "gate": "research",
+  "shape": "guidance",
+  "fmt": {
+   "choice": "guidance",
+   "by": "strategy:guidance"
+  },
+  "stStage": {
+   "choice": "guidance",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 33,
+    "ms": 65
+   },
+   {
+    "name": "triage",
+    "at": 33,
+    "ms": 145
+   },
+   {
+    "name": "strategy",
+    "at": 34,
+    "ms": 186,
+    "choice": "guidance",
+    "sides": []
+   },
+   {
+    "name": "understood",
+    "at": 220,
+    "ms": 846
+   },
+   {
+    "name": "plan",
+    "at": 221,
+    "ms": 175
+   },
+   {
+    "name": "work",
+    "at": 396,
+    "ms": 26
+   },
+   {
+    "name": "phrases",
+    "at": 423,
+    "ms": 1
+   },
+   {
+    "name": "strategy",
+    "at": 423,
+    "ms": 1503
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1926,
+    "ms": 0
+   },
+   {
+    "name": "companion",
+    "at": 1927,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 1928,
+    "ms": 1200
+   },
+   {
+    "name": "output-check",
+    "at": 3180,
+    "ms": 104
+   }
+  ],
+  "meta": {
+   "type": "answer (guidance)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00272,
+   "calls": 9,
+   "latency_ms": 3285
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:search-plan",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:ref-john-14-6",
+  "q": "What does John 14:6 say?",
+  "expect": "reference",
+  "sides_expected": null,
+  "ev": {
+   "stage": 114,
+   "progress": 114,
+   "session": 315,
+   "sources": 506,
+   "status": 506,
+   "understood": 1084,
+   "text": 1392,
+   "chunk": 1756,
+   "citations": 1756,
+   "complete": 1756
+  },
+  "cid": "conv_318c157c-45c0-4ae1-952e-0ef61bedcd27",
+  "first": 1392,
+  "t1": "Because this digital edition does not number the verses, this passage marks the approximate place of the fourteenth chapter and sixth verse asked for.",
+  "total": 1756,
+  "reply": "In the King James Bible, Jesus answers Thomas's question about the way by declaring, [\"I am the way, the truth, and the life: no man cometh unto the Father, but by me\"](https://oceanlibrary.com/kjv-gospel-of-john/?paraId=para_532&selectionString=the-gospel-of-john_en_hg.0~the-gospel-of-john_en_hg.168) — [*The Gospel of John*](https://siftersearch.com/library/view?doc=20989). Because this digital edition does not number the verses, this passage marks the approximate place of the fourteenth chapter and sixth verse asked for.",
+  "strategy": "reference",
+  "gate": "research",
+  "shape": "reference",
+  "fmt": {
+   "choice": "reference",
+   "by": "strategy:reference"
+  },
+  "stStage": {
+   "choice": "reference",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 34
+   },
+   {
+    "name": "open-log",
+    "at": 34,
+    "ms": 61
+   },
+   {
+    "name": "triage",
+    "at": 34,
+    "ms": 108
+   },
+   {
+    "name": "strategy",
+    "at": 35,
+    "ms": 110,
+    "choice": "reference",
+    "sides": [
+     "Christian"
+    ]
+   },
+   {
+    "name": "lookup",
+    "at": 145,
+    "ms": 3,
+    "intent": "reference"
+   },
+   {
+    "name": "understood",
+    "at": 148,
+    "ms": 870
+   },
+   {
+    "name": "plan",
+    "at": 149,
+    "ms": 157
+   },
+   {
+    "name": "work",
+    "at": 306,
+    "ms": 1
+   },
+   {
+    "name": "phrases",
+    "at": 307,
+    "ms": 1,
+    "via": "named-object"
+   },
+   {
+    "name": "strategy",
+    "at": 308,
+    "ms": 33
+   },
+   {
+    "name": "upgrade-links",
+    "at": 341,
+    "ms": 85
+   },
+   {
+    "name": "companion",
+    "at": 427,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 428,
+    "ms": 1007
+   },
+   {
+    "name": "output-check",
+    "at": 1439,
+    "ms": 119
+   }
+  ],
+  "meta": {
+   "type": "answer (reference)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00211,
+   "calls": 7,
+   "latency_ms": 1559
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:ref-isaiah-range",
+  "q": "Quote Isaiah 11:6-9 for me.",
+  "expect": "reference",
+  "sides_expected": null,
+  "ev": {
+   "stage": 104,
+   "progress": 104,
+   "session": 342,
+   "sources": 562,
+   "status": 562,
+   "understood": 1221,
+   "text": 1709,
+   "chunk": 1994,
+   "citations": 1995,
+   "complete": 1995
+  },
+  "cid": "conv_d9f5bb0a-8460-4570-afca-89593162a8de",
+  "first": 1709,
+  "t1": "This edition does not number the verses, so these lines represent the approximate place of the passage asked for.",
+  "total": 2019,
+  "reply": "The retrieved text from the King James Bible gives this approximate portion for Isaiah 11:6–9: [\"And the sucking child shall play on the hole of the asp, and the weaned child shall put his hand on the cockatrice’ den. They shall not hurt nor destroy in all my holy mountain: for the earth shall be full of the knowledge of the LORD, as the waters cover the sea.\"](https://oceanlibrary.com/kjv-book-of-isaiah/?paraId=para_199&selectionString=isaiah-ot_en_88.0~isaiah-ot_en_88.97) [*Isaiah*](https://siftersearch.com/library/view?doc=21231). This edition does not number the verses, so these lines represent the approximate place of the passage asked for.",
+  "strategy": "reference",
+  "gate": "research",
+  "shape": "reference",
+  "fmt": {
+   "choice": "reference",
+   "by": "strategy:reference"
+  },
+  "stStage": {
+   "choice": "reference",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 34
+   },
+   {
+    "name": "open-log",
+    "at": 34,
+    "ms": 63
+   },
+   {
+    "name": "triage",
+    "at": 34,
+    "ms": 105
+   },
+   {
+    "name": "strategy",
+    "at": 34,
+    "ms": 165,
+    "choice": "reference",
+    "sides": []
+   },
+   {
+    "name": "plan",
+    "at": 200,
+    "ms": 153
+   },
+   {
+    "name": "understood",
+    "at": 200,
+    "ms": 968
+   },
+   {
+    "name": "work",
+    "at": 353,
+    "ms": 1
+   },
+   {
+    "name": "phrases",
+    "at": 354,
+    "ms": 0,
+    "via": "named-object"
+   },
+   {
+    "name": "strategy",
+    "at": 354,
+    "ms": 64
+   },
+   {
+    "name": "upgrade-links",
+    "at": 418,
+    "ms": 86
+   },
+   {
+    "name": "companion",
+    "at": 504,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 506,
+    "ms": 1100
+   },
+   {
+    "name": "output-check",
+    "at": 1629,
+    "ms": 209
+   }
+  ],
+  "meta": {
+   "type": "answer (reference)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00216,
+   "calls": 7,
+   "latency_ms": 1838
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:gd-supersede",
+  "q": "Has the House of Justice changed its guidance on membership in political parties over the years? What is current?",
+  "expect": "guidance",
+  "sides_expected": null,
+  "ev": {
+   "stage": 116,
+   "progress": 116,
+   "session": 346,
+   "understood": 1570,
+   "sources": 3495,
+   "status": 3495,
+   "text": 5166,
+   "chunk": 6669,
+   "citations": 6669,
+   "complete": 6669
+  },
+  "cid": "conv_f407d8df-c91f-4f1e-89f8-69a28010efd4",
+  "first": 5166,
+  "t1": "The search results provided here do not contain dated chronological letters to establish whether specific guidance on this point has formally shifted over time, only that the foundational prohibition against joining partisan political parties remains firm, while distinguishing it from non-partisan civic participation, non-political administrative work, or compulsory legal requirements.",
+  "total": 6669,
+  "reply": "The Universal House of Justice guides the community to distinguish between partisan politics and constructive social action, stating that [\"The term 'politics' can have a broad meaning, and therefore it is important to distinguish between partisan political activity and the discourse and action intended to bring about constructive social change\"](https://oceanlibrary.com/social-action_bahaullah/?paraId=para_73&selectionString=social_action_ocean_en-bl44.0~social_action_ocean_en-bl44.1679) — [*Social Action*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_social-action). While partisan activities are proscribed, social change is enjoined.\n\nRegarding membership in political parties and related bodies, guidance compiled in [*Lights of Guidance*](https://siftersearch.com/library/view?doc=20891) addresses situations where party membership might be compulsory or pressured. When party membership is promoted through persuasion or privileges rather than absolute state compulsion, [\"then the Bahá'ís should refrain from joining the party, whatever the personal sacrifices may be\"](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=2.%20a.%20If%20the,%7Bid%3D%22para5506%22%20ilmid%3D%22bl3hx%22%20type%3D%22par%22%20language%3D%22en%22%7D) — quoted in *Lights of Guidance* by Helen Hornby (compiler). However, [\"If, however, it is ascertained by the National Spiritual Assembly, that the law requires every citizen to belong to the party, Bahá'ís may pay money equivalent to the dues involved, without accepting membership of the party\"](https://oceanoflights.org/lights-of-guidance-baha-i-ocean-en/#:~:text=b.%20If%2C%20however%2C%20it,%7Bid%3D%22para5507%22%20ilmid%3D%22bl3hy%22%20type%3D%22par%22%20language%3D%22en%22%7D) — quoted in *Lights of Guidance* by Helen Hornby (compiler).\n\nThe search results provided here do not contain dated chronological letters to establish whether specific guidance on this point has formally shifted over time, only that the foundational prohibition against joining partisan political parties remains firm, while distinguishing it from non-partisan civic participation, non-political administrative work, or compulsory legal requirements.",
+  "strategy": "guidance",
+  "gate": "research",
+  "shape": "guidance",
+  "fmt": {
+   "choice": "guidance",
+   "by": "strategy:guidance"
+  },
+  "stStage": {
+   "choice": "guidance",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 29
+   },
+   {
+    "name": "open-log",
+    "at": 29,
+    "ms": 153
+   },
+   {
+    "name": "triage",
+    "at": 29,
+    "ms": 156
+   },
+   {
+    "name": "strategy",
+    "at": 30,
+    "ms": 156,
+    "choice": "guidance",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "plan",
+    "at": 186,
+    "ms": 225
+   },
+   {
+    "name": "understood",
+    "at": 186,
+    "ms": 1158
+   },
+   {
+    "name": "work",
+    "at": 411,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 411,
+    "ms": 0
+   },
+   {
+    "name": "strategy",
+    "at": 411,
+    "ms": 2646
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3058,
+    "ms": 1
+   },
+   {
+    "name": "companion",
+    "at": 3060,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 3061,
+    "ms": 3183
+   },
+   {
+    "name": "output-check",
+    "at": 6327,
+    "ms": 148
+   }
+  ],
+  "meta": {
+   "type": "answer (guidance)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00411,
+   "calls": 10,
+   "latency_ms": 6476
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "search-query",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:ref-quran-ayat-kursi",
+  "q": "Can you give me Qur’án 2:255?",
+  "expect": "reference",
+  "sides_expected": null,
+  "ev": {
+   "stage": 123,
+   "progress": 123,
+   "session": 363,
+   "sources": 870,
+   "status": 870,
+   "understood": 1663,
+   "text": 2000,
+   "chunk": 2284,
+   "citations": 2284,
+   "complete": 2284
+  },
+  "cid": "conv_701e5b8f-e6d6-4a80-9e56-7a2f39c11d2f",
+  "first": 2000,
+  "t1": "I didn't find the specific verse for Qur’án 2:255 in this search, as the texts I can search from [*The Holy Qur-an (Yusuf Ali)*](https://oceanlibrary.com/holy-quran_yusuf-tr/?paraId=para_296&selectionString=the_holy_quran_tr_by_yusuf_ali_islam_ocean_en-blep.0~the_holy_quran_tr_by_yusuf_ali_islam_ocean_en-blep.259) cover other portions of Surah 2 such as the account of Talut and Goliath.",
+  "total": 2284,
+  "reply": "I didn't find the specific verse for Qur’án 2:255 in this search, as the texts I can search from [*The Holy Qur-an (Yusuf Ali)*](https://oceanlibrary.com/holy-quran_yusuf-tr/?paraId=para_296&selectionString=the_holy_quran_tr_by_yusuf_ali_islam_ocean_en-blep.0~the_holy_quran_tr_by_yusuf_ali_islam_ocean_en-blep.259) cover other portions of Surah 2 such as the account of Talut and Goliath.",
+  "strategy": "reference",
+  "gate": "research",
+  "shape": "reference",
+  "fmt": {
+   "choice": "reference",
+   "by": "strategy:reference"
+  },
+  "stStage": {
+   "choice": "reference",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 40
+   },
+   {
+    "name": "open-log",
+    "at": 40,
+    "ms": 63
+   },
+   {
+    "name": "triage",
+    "at": 40,
+    "ms": 113
+   },
+   {
+    "name": "strategy",
+    "at": 41,
+    "ms": 189,
+    "choice": "reference",
+    "sides": [
+     "Islam"
+    ]
+   },
+   {
+    "name": "lookup",
+    "at": 230,
+    "ms": 3,
+    "intent": "reference"
+   },
+   {
+    "name": "plan",
+    "at": 233,
+    "ms": 155
+   },
+   {
+    "name": "understood",
+    "at": 233,
+    "ms": 1347
+   },
+   {
+    "name": "work",
+    "at": 388,
+    "ms": 2
+   },
+   {
+    "name": "phrases",
+    "at": 390,
+    "ms": 1,
+    "via": "named-object"
+   },
+   {
+    "name": "strategy",
+    "at": 390,
+    "ms": 162
+   },
+   {
+    "name": "upgrade-links",
+    "at": 553,
+    "ms": 212
+   },
+   {
+    "name": "companion",
+    "at": 766,
+    "ms": 5
+   },
+   {
+    "name": "craft",
+    "at": 771,
+    "ms": 1150
+   },
+   {
+    "name": "output-check",
+    "at": 1922,
+    "ms": 174
+   }
+  ],
+  "meta": {
+   "type": "answer (reference)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00221,
+   "calls": 7,
+   "latency_ms": 2096
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:ref-gita",
+  "q": "Bhagavad Gita 2:47 — the verse about the right to work but not the fruits.",
+  "expect": "reference",
+  "sides_expected": null,
+  "ev": {
+   "stage": 101,
+   "progress": 101,
+   "session": 382,
+   "sources": 581,
+   "status": 581,
+   "understood": 1318,
+   "text": 1662,
+   "chunk": 2366,
+   "citations": 2366,
+   "complete": 2366
+  },
+  "cid": "conv_7a00fee3-4ab1-4510-9d47-63d7021bf496",
+  "first": 1662,
+  "t1": "The sources here do not settle the exact placement of the verse regarding action and the fruit of work, so I will not extend the claim beyond what is present in the text.",
+  "total": 2366,
+  "reply": "I cannot confirm the specific text of Bhagavad Gita 2:47 in the texts I can search, as this edition does not number the verses, and the sections provided conclude Chapter II at [*The Bhagavad-Gita*](https://siftersearch.com/library/view?doc=21038) [2](https://oceanlibrary.com/bhagavad-gita/?paraId=para_44&selectionString=bhagavad-gita_en_42.0~bhagavad-gita_en_42.84).\n\nThe source material here includes Edwin Arnold's translation ([*The Song Celestial*](https://siftersearch.com/library/view?doc=146948)), which concludes the second chapter with descriptions of tranquillity and freedom from the yoke of flesh, such as when one [*Toucheth tranquillity!*](https://oceanlibrary.com/bhagavad-gita/?paraId=para_43&selectionString=bhagavad-gita_en_41.0~bhagavad-gita_en_41.307) *The Bhagavad-Gita* [1](https://oceanlibrary.com/bhagavad-gita/?paraId=para_43&selectionString=bhagavad-gita_en_41.0~bhagavad-gita_en_41.307).\n\nThe sources here do not settle the exact placement of the verse regarding action and the fruit of work, so I will not extend the claim beyond what is present in the text.",
+  "strategy": "reference",
+  "gate": "research",
+  "shape": "reference",
+  "fmt": {
+   "choice": "reference",
+   "by": "strategy:reference"
+  },
+  "stStage": {
+   "choice": "reference",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 34
+   },
+   {
+    "name": "open-log",
+    "at": 34,
+    "ms": 63
+   },
+   {
+    "name": "triage",
+    "at": 34,
+    "ms": 227
+   },
+   {
+    "name": "strategy",
+    "at": 35,
+    "ms": 207,
+    "choice": "reference",
+    "sides": [
+     "Hindu"
+    ]
+   },
+   {
+    "name": "lookup",
+    "at": 261,
+    "ms": 9,
+    "intent": "reference"
+   },
+   {
+    "name": "understood",
+    "at": 270,
+    "ms": 973
+   },
+   {
+    "name": "plan",
+    "at": 271,
+    "ms": 160
+   },
+   {
+    "name": "work",
+    "at": 431,
+    "ms": 1
+   },
+   {
+    "name": "phrases",
+    "at": 432,
+    "ms": 5,
+    "via": "quote-marks"
+   },
+   {
+    "name": "strategy",
+    "at": 437,
+    "ms": 31
+   },
+   {
+    "name": "upgrade-links",
+    "at": 469,
+    "ms": 49
+   },
+   {
+    "name": "companion",
+    "at": 518,
+    "ms": 4
+   },
+   {
+    "name": "craft",
+    "at": 522,
+    "ms": 1531
+   },
+   {
+    "name": "output-check",
+    "at": 2101,
+    "ms": 101
+   }
+  ],
+  "meta": {
+   "type": "answer (reference)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00252,
+   "calls": 7,
+   "latency_ms": 2203
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:ref-psalm-whole",
+  "q": "Read me Psalm 23.",
+  "expect": "reference",
+  "sides_expected": null,
+  "ev": {
+   "stage": 97,
+   "progress": 97,
+   "session": 658,
+   "sources": 915,
+   "status": 915,
+   "understood": 1457,
+   "text": 1979,
+   "chunk": 2567,
+   "citations": 2573,
+   "complete": 2573
+  },
+  "cid": "conv_b8d3c2a5-ab63-4474-be59-bd650afa4c1d",
+  "first": 1979,
+  "t1": "The pastoral imagery continues as [\"He maketh me to lie down in green pastures: he leadeth me beside the still waters.\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_349&selectionString=psalms-ot_en_ce.0~psalms-ot_en_ce.67) *Psalms*, restoring the soul and guiding the seeker along [\"the paths of righteousness for his name’s sake.\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_350&selectionString=psalms-ot_en_cf.0~psalms-ot_en_cf.71) *Psalms*.",
+  "total": 2583,
+  "reply": "The twenty-third Psalm opens with the familiar words of the King David in the King James Bible, beginning with [\"The LORD is my shepherd; I shall not want.\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_348&selectionString=psalms-ot_en_cd.0~psalms-ot_en_cd.34) [*Psalms*](https://siftersearch.com/library/view?doc=21243). The pastoral imagery continues as [\"He maketh me to lie down in green pastures: he leadeth me beside the still waters.\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_349&selectionString=psalms-ot_en_ce.0~psalms-ot_en_ce.67) *Psalms*, restoring the soul and guiding the seeker along [\"the paths of righteousness for his name’s sake.\"](https://oceanlibrary.com/book-of-psalms-tehilim_david/?paraId=para_350&selectionString=psalms-ot_en_cf.0~psalms-ot_en_cf.71) *Psalms*.",
+  "strategy": "reference",
+  "gate": "research",
+  "shape": "reference",
+  "fmt": {
+   "choice": "reference",
+   "by": "strategy:reference"
+  },
+  "stStage": {
+   "choice": "reference",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 34,
+    "ms": 63
+   },
+   {
+    "name": "strategy",
+    "at": 34,
+    "ms": 106,
+    "choice": "reference",
+    "sides": []
+   },
+   {
+    "name": "triage",
+    "at": 34,
+    "ms": 108
+   },
+   {
+    "name": "lookup",
+    "at": 142,
+    "ms": 427,
+    "intent": "reference"
+   },
+   {
+    "name": "understood",
+    "at": 569,
+    "ms": 838
+   },
+   {
+    "name": "plan",
+    "at": 570,
+    "ms": 149
+   },
+   {
+    "name": "work",
+    "at": 719,
+    "ms": 5
+   },
+   {
+    "name": "phrases",
+    "at": 724,
+    "ms": 0,
+    "via": "named-object"
+   },
+   {
+    "name": "strategy",
+    "at": 724,
+    "ms": 42
+   },
+   {
+    "name": "upgrade-links",
+    "at": 766,
+    "ms": 66
+   },
+   {
+    "name": "companion",
+    "at": 832,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 834,
+    "ms": 1439
+   },
+   {
+    "name": "output-check",
+    "at": 2325,
+    "ms": 98
+   }
+  ],
+  "meta": {
+   "type": "answer (reference)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00237,
+   "calls": 7,
+   "latency_ms": 2424
+  },
+  "llm": [
+   "system1:anis-strategy",
+   "system1:anis-triage",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:neg-word-reference",
+  "q": "What is the significance of the number 19 in the Bahá’í calendar?",
+  "expect": "none",
+  "sides_expected": null,
+  "ev": {
+   "stage": 107,
+   "progress": 107,
+   "session": 362,
+   "understood": 1181,
+   "sources": 1661,
+   "status": 1661,
+   "text": 2643,
+   "chunk": 3709,
+   "citations": 3718,
+   "complete": 3718
+  },
+  "cid": "conv_c46c1b6c-ad43-4b70-ad37-5a56151798e2",
+  "first": 2643,
+  "t1": "Beyond these scriptural foundations and authorized interpretations, scholars such as Nader Saiedi have explored how the Báb's writings in works like the *Persian Bayán* invest the number nineteen with profound symbolic meanings related to human devotion and creation [9, 10].",
+  "total": 3718,
+  "reply": "The significance of the number nineteen is rooted in the sacred structure established in the writings of the Báb, where it reflects divine unity and the numerical structure of the *basmala* (the opening Islamic formula), with eighteen followers known as the \"Letters of the Living\" alongside the Báb Himself making nineteen ([Qayyum al-Asmá' Sura 93: Chapter of the Bees: A commentary on the Sura of Joseph](https://siftersearch.com/library/bahai/tablet-translations/the-bab_qayyum-al-asma-sura-93-chapter-of-the-bees-a-commentary-on-the-sura-of-joseph#p76)). Bahá'u'lláh confirmed this framework in [*The Kitáb-i-Aqdas*](https://siftersearch.com/library/view?doc=21307), stating: [\"The number of months in a year, appointed in the Book of God, is nineteen.\"]](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=para_134&selectionString=kitab_i_aqdas_bahai_en-bl6i.0~kitab_i_aqdas_bahai_en-bl6i.140) — *The Kitáb-i-Aqdas*.\n\nThis number shapes both the calendar—consisting of nineteen months of nineteen days each—and community life through institutions like the Nineteen Day Feast [4, 6]. Regarding its historical origins, ‘Abdu’l-Bahá explains that the Báb initially appointed eighteen disciples to match earlier Shi‘ih expectations of fourteen immaculate Souls and four Gates, with the Báb Himself as the nineteenth ([Additional Tablets, Extracts and Talks](https://oceanlibrary.com/additional-tablets-extracts-and-talks_abdul-baha/?paraId=para_77&selectionString=abdu_l_baha_additional_tablets_extracts_and_talks_430a4c77afa01f6eb5e4f2c4028e655d_4j.0~abdu_l_baha_additional_tablets_extracts_and_talks_430a4c77afa01f6eb5e4f2c4028e655d_4j.499)).\n\nBeyond these scriptural foundations and authorized interpretations, scholars such as Nader Saiedi have explored how the Báb's writings in works like the [*Persian Bayán*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3) invest the number nineteen with profound symbolic meanings related to human devotion and creation [9, 10].",
+  "strategy": "understanding",
+  "gate": "research",
+  "shape": "understanding",
+  "fmt": {
+   "choice": "understanding",
+   "by": "strategy:understanding"
+  },
+  "stStage": {
+   "choice": "understanding",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 41
+   },
+   {
+    "name": "open-log",
+    "at": 41,
+    "ms": 63
+   },
+   {
+    "name": "triage",
+    "at": 41,
+    "ms": 124
+   },
+   {
+    "name": "strategy",
+    "at": 42,
+    "ms": 172,
+    "choice": "understanding",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 214,
+    "ms": 904
+   },
+   {
+    "name": "plan",
+    "at": 215,
+    "ms": 120
+   },
+   {
+    "name": "work",
+    "at": 335,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 335,
+    "ms": 1
+   },
+   {
+    "name": "strategy",
+    "at": 335,
+    "ms": 1209
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1544,
+    "ms": 36
+   },
+   {
+    "name": "companion",
+    "at": 1580,
+    "ms": 1
+   },
+   {
+    "name": "craft",
+    "at": 1581,
+    "ms": 1761
+   },
+   {
+    "name": "output-check",
+    "at": 3406,
+    "ms": 129
+   }
+  ],
+  "meta": {
+   "type": "answer (understanding)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "clef-flash",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00342,
+   "calls": 10,
+   "latency_ms": 3535
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "system1:search-plan",
+   "system1:anis-triage:shadow",
+   "anis-understood",
+   "system1:source-resolve",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:neg-word-prayer",
+  "q": "Who compiled the first English book of Bahá’í prayers and when?",
+  "expect": "none",
+  "sides_expected": null,
+  "ev": {
+   "stage": 115,
+   "progress": 115,
+   "session": 327,
+   "understood": 1459,
+   "sources": 3790,
+   "status": 3790,
+   "text": 5555,
+   "chunk": 5740,
+   "complete": 5741
+  },
+  "cid": "conv_af880b17-10e8-4d85-a15e-779b22bbcdaa",
+  "first": 5555,
+  "t1": "To explore this further, you might look into early American Bahá'í publishing records or compilations prepared by the Bahá’í Publishing Committee in the early decades of the twentieth century.",
+  "total": 5741,
+  "reply": "I didn't find a passage in this search that names who compiled the first English book of Bahá’í prayers or the exact date it was published.\n\nTo explore this further, you might look into early American Bahá'í publishing records or compilations prepared by the Bahá’í Publishing Committee in the early decades of the twentieth century.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 37
+   },
+   {
+    "name": "open-log",
+    "at": 37,
+    "ms": 61
+   },
+   {
+    "name": "triage",
+    "at": 37,
+    "ms": 138
+   },
+   {
+    "name": "strategy",
+    "at": 38,
+    "ms": 139,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 177,
+    "ms": 1213
+   },
+   {
+    "name": "plan",
+    "at": 178,
+    "ms": 161
+   },
+   {
+    "name": "work",
+    "at": 339,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 339,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 340,
+    "ms": 3212
+   },
+   {
+    "name": "upgrade-links",
+    "at": 3553,
+    "ms": 163
+   },
+   {
+    "name": "companion",
+    "at": 3717,
+    "ms": 2
+   },
+   {
+    "name": "format",
+    "at": 3717,
+    "ms": 113
+   },
+   {
+    "name": "craft",
+    "at": 3830,
+    "ms": 1663
+   },
+   {
+    "name": "output-check",
+    "at": 5495,
+    "ms": 89
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00233,
+   "calls": 9,
+   "latency_ms": 5584
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:neg-word-compare",
+  "q": "Bahá’u’lláh says nothing compares to the love of God — where is that?",
+  "expect": "none",
+  "sides_expected": null,
+  "ev": {
+   "stage": 129,
+   "progress": 129,
+   "session": 600,
+   "understood": 2120,
+   "sources": 6215,
+   "text": 6215,
+   "chunk": 6413,
+   "citations": 6413,
+   "complete": 6413
+  },
+  "cid": "conv_b81d7fde-7266-40bb-a779-4227adea8512",
+  "first": 6215,
+  "t1": "These are the words of Bahá’u’lláh, from [*Additional Tablets and Extracts from Tablets Revealed by Bahá’u’lláh*](https://oceanlibrary.com/additional-tablets-and-extracts-from-tablets-revealed-by-bahaullah/?paraId=para_251&selectionString=additional_tablets_and_extracts_bahai_ocean_en-bl8e.447~additional_tablets_and_extracts_bahai_ocean_en-bl8e.527). The passage reads: «and naught that hath been created in the heaven or the earth is equal to a single atom of this love». The original is in Persian, in [*O handmaiden of God! Render praise unto the true Beloved, Who hath guided thee to the know…*](https://portlandiator.github.io/PI_browser/?id=BH04175#:~:text=%D9%88%20%D9%85%D8%B9%D8%A7%D8%AF%D9%84%D9%87%20%D9%86%D9%85%DB%8C%DA%A9%D9%86%D8%AF%20%D8%A8%D8%B0%D8%B1%D9%91%D9%87%D9%B4,%D9%88%20%D8%B2%D9%85%DB%8C%D9%86%20%D8%AE%D9%84%D9%82%20%D8%B4%D8%AF%D9%87), where it reads «و معادله نمیکند بذرّهٴ آن آنچه در آسمان و زمین خلق شده». Its entry in the Phelps Inventory is [Phelps Inventory BH04175](https://portlandiator.github.io/PI_browser/?id=BH04175).",
+  "total": 6413,
+  "reply": "These are the words of Bahá’u’lláh, from [*Additional Tablets and Extracts from Tablets Revealed by Bahá’u’lláh*](https://oceanlibrary.com/additional-tablets-and-extracts-from-tablets-revealed-by-bahaullah/?paraId=para_251&selectionString=additional_tablets_and_extracts_bahai_ocean_en-bl8e.447~additional_tablets_and_extracts_bahai_ocean_en-bl8e.527). The passage reads: «and naught that hath been created in the heaven or the earth is equal to a single atom of this love». The original is in Persian, in [*O handmaiden of God! Render praise unto the true Beloved, Who hath guided thee to the know…*](https://portlandiator.github.io/PI_browser/?id=BH04175#:~:text=%D9%88%20%D9%85%D8%B9%D8%A7%D8%AF%D9%84%D9%87%20%D9%86%D9%85%DB%8C%DA%A9%D9%86%D8%AF%20%D8%A8%D8%B0%D8%B1%D9%91%D9%87%D9%B4,%D9%88%20%D8%B2%D9%85%DB%8C%D9%86%20%D8%AE%D9%84%D9%82%20%D8%B4%D8%AF%D9%87), where it reads «و معادله نمیکند بذرّهٴ آن آنچه در آسمان و زمین خلق شده». Its entry in the Phelps Inventory is [Phelps Inventory BH04175](https://portlandiator.github.io/PI_browser/?id=BH04175).",
+  "strategy": "source",
+  "gate": "research",
+  "shape": "source",
+  "fmt": {
+   "choice": "source",
+   "by": "sourcehunt"
+  },
+  "stStage": {
+   "choice": "source",
+   "by": null,
+   "reason": null,
+   "ms": null
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 0,
+    "ms": 30
+   },
+   {
+    "name": "open-log",
+    "at": 30,
+    "ms": 60
+   },
+   {
+    "name": "triage",
+    "at": 30,
+    "ms": 131
+   },
+   {
+    "name": "strategy",
+    "at": 30,
+    "ms": 166,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 196,
+    "ms": 1837
+   },
+   {
+    "name": "plan",
+    "at": 197,
+    "ms": 333
+   },
+   {
+    "name": "work",
+    "at": 530,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 530,
+    "ms": 6,
+    "via": "quote-marks"
+   },
+   {
+    "name": "source-hunt",
+    "at": 535,
+    "ms": 5587
+   },
+   {
+    "name": "output-check",
+    "at": 6126,
+    "ms": 106
+   }
+  ],
+  "meta": {
+   "type": "source hunt",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5"
+   ],
+   "usd": 0.0008,
+   "calls": 11,
+   "latency_ms": 6232
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-holds",
+   "system1:sourcehunt-span",
+   "system1:sourcehunt-span",
+   "system1:anis-persona-check"
+  ]
+ },
+ {
+  "id": "w3:neg-word-house",
+  "q": "When was the Universal House of Justice first elected?",
+  "expect": "none",
+  "sides_expected": null,
+  "ev": {
+   "stage": 91,
+   "progress": 91,
+   "session": 291,
+   "understood": 1343,
+   "sources": 1733,
+   "status": 1733,
+   "text": 3062,
+   "chunk": 3657,
+   "citations": 3658,
+   "complete": 3658
+  },
+  "cid": "conv_ad8683c2-8588-4a31-80b3-e3f8ba432779",
+  "first": 3062,
+  "t1": "This event brought together members of National Spiritual Assemblies from around the world to cast their ballots for the supreme legislative institution of the Faith.",
+  "total": 3658,
+  "reply": "The Universal House of Justice was first elected in 1963 during the Festival of Riḍván, marking the culmination of the Ten Year Crusade and fulfilling the provisions set forth in the writings of ‘Abdu’l-Bahá.\n\nAs recorded by the Universal House of Justice itself, the body came into being [*“on the first day of the Festival of Riḍván in the one hundred and twentieth year of the Bahá’í Era”*](https://oceanlibrary.com/universal-house-of-justice_bahaullah/?paraId=para_213&selectionString=universal_house_of_justice_compilation_ocean_en-bl78.0~universal_house_of_justice_compilation_ocean_en-bl78.716) — [*The Universal House of Justice*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_the-universal-house-of-justice). This event brought together members of National Spiritual Assemblies from around the world to cast their ballots for the supreme legislative institution of the Faith.",
+  "strategy": "fact",
+  "gate": "research",
+  "shape": "fact",
+  "fmt": {
+   "choice": "direct_answer",
+   "by": "jev"
+  },
+  "stStage": {
+   "choice": "fact",
+   "by": "jev:cached",
+   "reason": null,
+   "ms": 0
+  },
+  "timeline": [
+   {
+    "name": "card",
+    "at": 1,
+    "ms": 33
+   },
+   {
+    "name": "open-log",
+    "at": 34,
+    "ms": 71
+   },
+   {
+    "name": "triage",
+    "at": 34,
+    "ms": 119
+   },
+   {
+    "name": "strategy",
+    "at": 35,
+    "ms": 119,
+    "choice": "other",
+    "sides": [
+     "Baha'i"
+    ]
+   },
+   {
+    "name": "understood",
+    "at": 154,
+    "ms": 1135
+   },
+   {
+    "name": "plan",
+    "at": 155,
+    "ms": 119
+   },
+   {
+    "name": "work",
+    "at": 274,
+    "ms": 0
+   },
+   {
+    "name": "phrases",
+    "at": 274,
+    "ms": 1
+   },
+   {
+    "name": "search",
+    "at": 275,
+    "ms": 1384
+   },
+   {
+    "name": "upgrade-links",
+    "at": 1660,
+    "ms": 15
+   },
+   {
+    "name": "format",
+    "at": 1675,
+    "ms": 130
+   },
+   {
+    "name": "companion",
+    "at": 1676,
+    "ms": 2
+   },
+   {
+    "name": "craft",
+    "at": 1805,
+    "ms": 1525
+   },
+   {
+    "name": "output-check",
+    "at": 3395,
+    "ms": 110
+   }
+  ],
+  "meta": {
+   "type": "answer (fact)",
+   "models": [
+    "jev-latest",
+    "gemini-embedding-2",
+    "claude-haiku-5-5",
+    "gemini-3.5-flash-lite"
+   ],
+   "usd": 0.00284,
+   "calls": 9,
+   "latency_ms": 3506
+  },
+  "llm": [
+   "system1:anis-triage",
+   "system1:anis-strategy",
+   "system1:search-plan",
+   "search-query",
+   "anis-understood",
+   "system1:source-resolve",
+   "system1:anis-format",
+   "anis-craft",
+   "system1:anis-persona-check"
+  ]
+ }
+]

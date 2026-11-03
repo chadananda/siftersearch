@@ -1,0 +1,1201 @@
+{
+ "summary": {
+  "n": 67,
+  "outcome": "100.0% (67/67)",
+  "outcome_by_label": {
+   "search": "100.0% (42/42)",
+   "ask_back": "100.0% (9/9)",
+   "none": "100.0% (16/16)"
+  },
+  "follow_up": "98.5% (66/67)",
+  "resolved_query_names_subject": "97.6% (41/42)",
+  "errors": 0
+ },
+ "rows": [
+  {
+   "id": "in-persian",
+   "text": "in Persian",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "persian",
+     "justice",
+     "arabic"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.92,
+   "kind": "research",
+   "follow_up": 0.98,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Hidden Words Persian text on justice",
+   "query_ok": true
+  },
+  {
+   "id": "more-hw",
+   "text": "more",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "hidden words"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.99,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Hidden Words Bahá'u'lláh further passages Arabic Persian",
+   "query_ok": true
+  },
+  {
+   "id": "bare-name-quddus",
+   "text": "Quddús",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "quddús",
+     "quddus"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.65,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Quddús, Babi believer: life, role, and history",
+   "query_ok": true
+  },
+  {
+   "id": "why-bab",
+   "text": "why?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "báb",
+     "bab",
+     "declar"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.97,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Why the Báb declared his mission in Shiraz in 1844",
+   "query_ok": true
+  },
+  {
+   "id": "bare-name-first",
+   "text": "Nabíl",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "nabíl",
+     "nabil"
+    ],
+    "follow_up": false
+   },
+   "outcome": "search",
+   "outcomeC": 0.97,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Nabíl-i-A'zam, Nabíl, Bahá'í historian and author of The Dawn-Breakers",
+   "query_ok": true
+  },
+  {
+   "id": "and-the-bab",
+   "text": "and the Báb?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "báb",
+     "bab"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.98,
+   "ok": true,
+   "follow_ok": true,
+   "query": "The Báb: life, claims, and relationship to Bahá’u’lláh",
+   "query_ok": true
+  },
+  {
+   "id": "bare-title-first",
+   "text": "Kitáb-i-Íqán",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "íqán",
+     "iqan"
+    ],
+    "follow_up": false
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Kitáb-i-Íqán Bahá'u'lláh text history and content",
+   "query_ok": true
+  },
+  {
+   "id": "year-first",
+   "text": "1844",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "1844"
+    ],
+    "follow_up": false
+   },
+   "outcome": "search",
+   "outcomeC": 0.98,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true,
+   "query": "1844 year significance in sacred texts and religious history",
+   "query_ok": true
+  },
+  {
+   "id": "yes-to-offer",
+   "text": "yes",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "healing",
+     "prayer"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.94,
+   "kind": "research",
+   "follow_up": 0.97,
+   "ok": true,
+   "follow_ok": true,
+   "query": "full text of the healing prayer beginning \"Thy name is my healing, O my God\"",
+   "query_ok": true
+  },
+  {
+   "id": "the-original",
+   "text": "the original",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "arabic",
+     "justice",
+     "original"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.79,
+   "kind": "research",
+   "follow_up": 0.93,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Original Arabic text of Hidden Words Arabic no. 2 on justice",
+   "query_ok": true
+  },
+  {
+   "id": "the-whole",
+   "text": "the whole prayer",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "healing",
+     "prayer"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.98,
+   "kind": "research",
+   "follow_up": 0.98,
+   "ok": true,
+   "follow_ok": true,
+   "query": "full text of the short healing prayer, \"Thy name is my healing\"",
+   "query_ok": true
+  },
+  {
+   "id": "please-to-offer",
+   "text": "yes please",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "healing",
+     "prayer"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.94,
+   "kind": "research",
+   "follow_up": 0.97,
+   "ok": true,
+   "follow_ok": true,
+   "query": "full text of the healing prayer 'Thy name is my healing, O my God'",
+   "query_ok": true
+  },
+  {
+   "id": "the-arabic",
+   "text": "the Arabic",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "arabic",
+     "healing"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.97,
+   "kind": "research",
+   "follow_up": 0.95,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Arabic text of the short healing prayer \"Thy name is my healing\"",
+   "query_ok": true
+  },
+  {
+   "id": "who-wrote",
+   "text": "who wrote it?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "hidden words"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.98,
+   "kind": "research",
+   "follow_up": 0.96,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Who wrote the Hidden Words, author of the Hidden Words of Bahá’u’lláh",
+   "query_ok": true
+  },
+  {
+   "id": "when",
+   "text": "when?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "táhirih",
+     "tahirih",
+     "badasht"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.97,
+   "kind": "research",
+   "follow_up": 0.96,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Táhirih Fáṭimih Baraghání date of Badasht unveiling 1848",
+   "query_ok": true
+  },
+  {
+   "id": "where-born",
+   "text": "where was he born?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "quddús",
+     "quddus",
+     "bárfurúsh",
+     "barfurush"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.98,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Quddús Mullá Muḥammad-‘Alí Bárfurúsh birthplace origins Letter of the Living",
+   "query_ok": true
+  },
+  {
+   "id": "and-abdul-baha",
+   "text": "and ‘Abdu’l-Bahá?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "abdu"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.96,
+   "ok": true,
+   "follow_ok": true,
+   "query": "‘Abdu’l-Bahá: life, role, and writings in the Bahá’í Faith",
+   "query_ok": true
+  },
+  {
+   "id": "source",
+   "text": "source?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "justice",
+     "hidden words"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.98,
+   "kind": "source_lookup",
+   "follow_up": 0.97,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Hidden Words Arabic no. 2 source citation justice Bahá'u'lláh",
+   "query_ok": true
+  },
+  {
+   "id": "examples",
+   "text": "examples?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "hidden words"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.97,
+   "ok": true,
+   "follow_ok": true,
+   "query": "examples of passages from Bahá’u’lláh's Hidden Words",
+   "query_ok": true
+  },
+  {
+   "id": "the-second",
+   "text": "the second one",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "íqán",
+     "iqan"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.88,
+   "kind": "research",
+   "follow_up": 0.99,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Kitáb-i-Íqán translated by Shoghi Effendi",
+   "query_ok": true
+  },
+  {
+   "id": "go-on",
+   "text": "go on",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "táhirih",
+     "tahirih"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.98,
+   "kind": "research",
+   "follow_up": 0.99,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Táhirih Fáṭimih Baraghání later life, poetry, and martyrdom",
+   "query_ok": true
+  },
+  {
+   "id": "continue",
+   "text": "continue",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "quddús",
+     "quddus"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.97,
+   "kind": "research",
+   "follow_up": 0.95,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Quddús Mullá Muḥammad-‘Alí of Bárfurúsh: his life, role, and death in 1849",
+   "query_ok": true
+  },
+  {
+   "id": "the-last",
+   "text": "the last one",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "dawn-breakers",
+     "dawn breakers"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.86,
+   "kind": "research",
+   "follow_up": 0.98,
+   "ok": true,
+   "follow_ok": true,
+   "query": "The Dawn-Breakers by Nabíl-i-A'ṭam, Shoghi Effendi's translation",
+   "query_ok": true
+  },
+  {
+   "id": "in-hindi",
+   "text": "in Hindi please",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "bahá’u’lláh",
+     "baha",
+     "hindi"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.88,
+   "kind": "research",
+   "follow_up": 0.95,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Bahá’u’lláh biography in Hindi",
+   "query_ok": true
+  },
+  {
+   "id": "simpler",
+   "text": "again, in simpler words",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "justice"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.97,
+   "kind": "research",
+   "follow_up": 0.99,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Hidden Words of Bahá'u'lláh justice passage in simpler wording",
+   "query_ok": true
+  },
+  {
+   "id": "fa-card-persian",
+   "text": "اصلش",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "arabic",
+     "persian",
+     "justice",
+     "اصل"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.83,
+   "kind": "research",
+   "follow_up": 0.93,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Persian original text of Hidden Words Arabic no. 2 on justice",
+   "query_ok": true
+  },
+  {
+   "id": "define-it",
+   "text": "define it",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "mashriq"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.96,
+   "kind": "research",
+   "follow_up": 0.92,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Mashriqu’l-Adhkár definition meaning Bahá’í House of Worship",
+   "query_ok": true
+  },
+  {
+   "id": "signed-reading-next",
+   "text": "and then what happened at Badasht?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "badasht"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.98,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Badasht conference 1848 Táhirih unveiling and its aftermath",
+   "query_ok": true
+  },
+  {
+   "id": "both",
+   "text": "both",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "ḥusayn",
+     "husayn",
+     "quddús",
+     "quddus"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.64,
+   "kind": "research",
+   "follow_up": 0.83,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Mullá Ḥusayn and Quddús, the Letters of the Living, their lives and history",
+   "query_ok": true
+  },
+  {
+   "id": "his-death",
+   "text": "his death",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "quddús",
+     "quddus"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.98,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Quddús Mullá Muḥammad-‘Alí of Bárfurúsh death 1849 circumstances",
+   "query_ok": true
+  },
+  {
+   "id": "the-tablet",
+   "text": "the tablet itself",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "victoria"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.98,
+   "kind": "research",
+   "follow_up": 0.97,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Bahá’u’lláh Tablet to Queen Victoria text and translation",
+   "query_ok": true
+  },
+  {
+   "id": "quoted-first",
+   "text": "\"O Son of Spirit\"",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "son of spirit"
+    ],
+    "follow_up": false
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "source_lookup",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true,
+   "query": "\"O Son of Spirit\" Bahá'í writings passage and its context",
+   "query_ok": true
+  },
+  {
+   "id": "sources",
+   "text": "sources?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "táhirih",
+     "tahirih"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0.97,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Táhirih Fáṭimih Baraghání primary and scholarly sources",
+   "query_ok": true
+  },
+  {
+   "id": "meaning",
+   "text": "meaning?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "ridván",
+     "ridvan",
+     "riḍván"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.92,
+   "kind": "research",
+   "follow_up": 0.94,
+   "ok": true,
+   "follow_ok": true,
+   "query": "meaning of Riḍván, the twelve-day festival and Bahá’í garden declaration",
+   "query_ok": true
+  },
+  {
+   "id": "quoted-earth",
+   "text": "“The earth is but one country”",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "one country"
+    ],
+    "follow_up": false
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "source_lookup",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true,
+   "query": "\"The earth is but one country\" Bahá'í quotation source and context",
+   "query_ok": true
+  },
+  {
+   "id": "quoted-single",
+   "text": "'be generous in prosperity'",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "generous"
+    ],
+    "follow_up": false
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "source_lookup",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true,
+   "query": "sacred texts teachings on generosity in prosperity",
+   "query_ok": false
+  },
+  {
+   "id": "quoted-threaded",
+   "text": "\"the best beloved of all things\"",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "best beloved"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "source_lookup",
+   "follow_up": 0.74,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Hidden Words \"the best beloved of all things\" meaning and source passage",
+   "query_ok": true
+  },
+  {
+   "id": "quoted-where",
+   "text": "where is \"a mine rich in gems\" from?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "mine rich in gems"
+    ],
+    "follow_up": false
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "source_lookup",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true,
+   "query": "source of the phrase \"a mine rich in gems\" in sacred texts",
+   "query_ok": true
+  },
+  {
+   "id": "thanks",
+   "text": "thanks",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "thanks",
+   "follow_up": 0.71,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "quoted-guillemets",
+   "text": "«My calamity is My providence»",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "calamity"
+    ],
+    "follow_up": false
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "source_lookup",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true,
+   "query": "origin and context of the phrase \"My calamity is My providence\" in Bahá'í writings",
+   "query_ok": true
+  },
+  {
+   "id": "thank-you-much",
+   "text": "thank you so much!",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "thanks",
+   "follow_up": 0.78,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "ok",
+   "text": "ok",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "feedback",
+   "follow_up": 0.67,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "what-about-women",
+   "text": "what about women?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "women",
+     "hidden words"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 0.98,
+   "kind": "research",
+   "follow_up": 0.93,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Hidden Words of Bahá'u'lláh passages on women",
+   "query_ok": true
+  },
+  {
+   "id": "noted",
+   "text": "noted.",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "feedback",
+   "follow_up": 0.85,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "bye",
+   "text": "bye for now",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "thanks",
+   "follow_up": 0.18,
+   "ok": true,
+   "follow_ok": false
+  },
+  {
+   "id": "got-it",
+   "text": "got it",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "feedback",
+   "follow_up": 0.88,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "perfect",
+   "text": "perfect",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "feedback",
+   "follow_up": 0.92,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "beautiful",
+   "text": "that’s beautiful",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "feedback",
+   "follow_up": 0.96,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "no-thanks",
+   "text": "no thanks",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "thanks",
+   "follow_up": 0.91,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "thumbs",
+   "text": "👍",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "feedback",
+   "follow_up": 0.9,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "i-see",
+   "text": "I see",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "feedback",
+   "follow_up": 0.89,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "quoted-term-threaded",
+   "text": "\"Letters of the Living\"?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "letters of the living"
+    ],
+    "follow_up": true
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "source_lookup",
+   "follow_up": 0.62,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Letters of the Living: the Báb's first disciples, Shiraz, 1844",
+   "query_ok": true
+  },
+  {
+   "id": "scare-quotes-2",
+   "text": "my \"study group\" will love this",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 0.5,
+   "kind": "feedback",
+   "follow_up": 0.84,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "scare-quotes",
+   "text": "so he was \"brilliant\" indeed",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 0.76,
+   "kind": "source_lookup",
+   "follow_up": 0.94,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "hello-first",
+   "text": "good morning!",
+   "expect": {
+    "outcome": "none",
+    "follow_up": false
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "thanks",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "makes-sense",
+   "text": "makes sense, thanks",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 1,
+   "kind": "thanks",
+   "follow_up": 0.92,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "it-first",
+   "text": "it",
+   "expect": {
+    "outcome": "ask_back",
+    "follow_up": false
+   },
+   "outcome": "ask_back",
+   "outcomeC": 1,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "that-one-first",
+   "text": "that one",
+   "expect": {
+    "outcome": "ask_back",
+    "follow_up": false
+   },
+   "outcome": "ask_back",
+   "outcomeC": 0.97,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "translate-first",
+   "text": "translate",
+   "expect": {
+    "outcome": "ask_back",
+    "follow_up": false
+   },
+   "outcome": "ask_back",
+   "outcomeC": 1,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "do-it-first",
+   "text": "do it",
+   "expect": {
+    "outcome": "ask_back",
+    "follow_up": false
+   },
+   "outcome": "ask_back",
+   "outcomeC": 1,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "yes-first",
+   "text": "yes",
+   "expect": {
+    "outcome": "ask_back",
+    "follow_up": false
+   },
+   "outcome": "ask_back",
+   "outcomeC": 0.92,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "in-persian-first",
+   "text": "in Persian",
+   "expect": {
+    "outcome": "ask_back",
+    "follow_up": false
+   },
+   "outcome": "ask_back",
+   "outcomeC": 0.98,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "the-other-no-list",
+   "text": "the other one",
+   "expect": {
+    "outcome": "ask_back",
+    "follow_up": true
+   },
+   "outcome": "ask_back",
+   "outcomeC": 0.5,
+   "kind": "research",
+   "follow_up": 0.95,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "one-i-mentioned",
+   "text": "the one I mentioned",
+   "expect": {
+    "outcome": "ask_back",
+    "follow_up": false
+   },
+   "outcome": "ask_back",
+   "outcomeC": 0.97,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "same-first",
+   "text": "same",
+   "expect": {
+    "outcome": "ask_back",
+    "follow_up": false
+   },
+   "outcome": "ask_back",
+   "outcomeC": 0.91,
+   "kind": "unclear",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "yes-no-offer",
+   "text": "yes",
+   "expect": {
+    "outcome": "none",
+    "follow_up": true
+   },
+   "outcome": "none",
+   "outcomeC": 0.97,
+   "kind": "feedback",
+   "follow_up": 0.93,
+   "ok": true,
+   "follow_ok": true
+  },
+  {
+   "id": "quoted-term-explain",
+   "text": "what does \"Mashriqu'l-Adhkar\" mean?",
+   "expect": {
+    "outcome": "search",
+    "query_terms": [
+     "mashriq"
+    ],
+    "follow_up": false
+   },
+   "outcome": "search",
+   "outcomeC": 1,
+   "kind": "research",
+   "follow_up": 0,
+   "ok": true,
+   "follow_ok": true,
+   "query": "Mashriqu'l-Adhkar meaning and significance in the Bahá'í Faith",
+   "query_ok": true
+  }
+ ]
+}

@@ -1,0 +1,1980 @@
+{
+ "summary": {
+  "perplexity": {
+   "mean": 6.83,
+   "best": 39
+  },
+  "current": {
+   "mean": 3.55,
+   "best": 3,
+   "beats_perplexity": "3/42"
+  },
+  "haiku": {
+   "mean": null,
+   "best": 0,
+   "beats_perplexity": "0/42"
+  },
+  "sonnet": {
+   "mean": null,
+   "best": 0,
+   "beats_perplexity": "0/42"
+  }
+ },
+ "cases": [
+  {
+   "id": "w8:db-01",
+   "kind": "history-story",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "Mullá Ḥusayn"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Tell me the story of the evening Mullá Ḥusayn first met the Báb in Shíráz — what happened that night of His declaration?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "On the evening of **22 May 1844**, Mullá Ḥusayn arrived at the gate of Shíráz after searching throughout Persia for the Promised One. There he encountered a radiant young merchant wearing a green turban—Siyyid ʿAlí-Muḥammad, later known as the Báb—who greeted him warmly, as though they were old friends, and invited him to His home.[2]\n\nMullá Ḥusayn initially hesitated because his companions were waiting for him, but the young man assured him that God would protect them. At the house, the Báb asked whom he was seeking. Mullá Ḥusayn described the signs taught by his spiritual master, Siyyid Káẓim: the Promised One would be of the lineage of Fáṭimih, between twenty and thirty years old, of medium height, and possess divinely given knowledge rather than learning acquired from books.[1][8]\n\nThe Báb then declared that all those signs were present in Him. Mullá Ḥusayn remained cautious and presented a difficult theological treatise connected with the teachings of Siyyid Káẓim. The Báb answered its questions with extraordinary insight. He then took up a pen and, with remarkable speed, began writing a commentary on the Súrih of Joseph—the *Qayyúmu’l-Asmá’*, regarded as the first major revealed work of the Báb.[1][2]\n\nAt **two hours and eleven minutes after sunset**, Mullá Ḥusayn recognized that his long search had ended. The Báb announced that He was the Promised One and said that this very hour would one day be commemorated.[8][10] The conversation continued until dawn, when the Báb addressed him:\n\n> “O thou who art the first to believe in Me! Verily I say, I am the Báb, the Gate of God, and thou art the Bábu’l-Báb, the gate of that Gate.”[2][8]\n\nThe Báb then instructed him not to proclaim the news immediately. Eighteen souls, He said, had to recognize Him independently and without being summoned; these became the **Letters of the Living**, the first followers of the new revelation.[2][5]\n\nThus, in the quiet upper room of a modest house in Shíráz, the Báb’s declaration began—not with a public announcement, but with an all-night encounter between the Báb and the first person to recognize Him.",
+     "ms": 5792
+    },
+    "current": {
+     "text": "- 1844 (May 22, just after sunset): In the upper chamber of a modest Shíráz residence, the Báb declared His mission to Mullá Ḥusayn, who sat spellbound through the night as his Host revealed verses and prayers ([*God Passes By*](https://siftersearch.com/library/view?doc=21310) [paraId=para_26](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_26&selectionString=god_passes_by_ocean_en_3h.0~god_passes_by_ocean_en_3h.683), *God Passes By* [paraId=para_27](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_27&selectionString=god_passes_by_ocean_en_3i.0~god_passes_by_ocean_en_3i.1318)).\n- 1944: Shoghi Effendi instructed communities worldwide to mark the centenary by gathering at the exact hour and minute of the declaration—two hours and eleven minutes after sunset ([*Unfolding Destiny*](https://siftersearch.com/library/view?doc=21312) [paraId=para_1318](https://oceanlibrary.com/unfolding-destiny_shoghi-effendi/?paraId=para_1318&selectionString=unfolding_destiny_bahai_ocean_en-bl17v.0~unfolding_destiny_bahai_ocean_en-bl17v.285), [*Messages to the Indian Subcontinent*](https://siftersearch.com/library/view?doc=20888) [paraId=para_2690](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_2690&selectionString=messages_to_the_indian_subcontinent_en-bl1wm.0~messages_to_the_indian_subcontinent_en-bl1wm.977)).\n\nWhat began as a quiet, nocturnal encounter in an obscure corner of Persia expanded into a worldwide observance anchoring the global Bahá’í calendar.\n\nSource: [Messages to the Indian Subcontinent](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_2690&selectionString=messages_to_the_indian_subcontinent_en-bl1wm.0~messages_to_the_indian_subcontinent_en-bl1wm.977)",
+     "ms": 7053
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "Accurately cites God Passes By and the 1944 centenary instructions, but it barely tells the story the reader asked for. It skips the meeting at the gate, the signs, the treatise, the Qayyúmu'l-Asmá' and the Báb's words, and pads with later commemoration."
+     },
+     "perplexity": {
+      "score": 8,
+      "why": "Tells the evening's story faithfully as Nabíl gives it: the meeting outside the gate, the companions, the signs from Siyyid Káẓim, the treatise, the revelation of the Súrih of Joseph commentary, the hour of 2:11 after sunset, the 'first to believe in Me' address and the eighteen Letters of the Living. Its weakness is sourcing: the numbered footnotes have no source list, and it never names The Dawn-Breakers or quotes Shoghi Effendi's account."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-02",
+   "kind": "history-story",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "Ṭabarsí"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "What happened at the fort of Shaykh Ṭabarsí? Walk me through the course of the siege as Nabíl tells it."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Nabíl’s account presents Shaykh Ṭabarsí as a seven-month ordeal, beginning as a defensive refuge and ending in betrayal. The principal stages are these:\n\n1. **The defenders gather at the shrine.**  \n   After conflict at Bárfurúsh, Quddús and his companions withdrew to the shrine of Shaykh Ṭabarsí and fortified it. Nabíl gives their number as a little over three hundred, with Mullá Ḥusayn among their leaders.[4]\n\n2. **The first attacks are repulsed.**  \n   Local forces and then government troops repeatedly attacked the enclosure, but the defenders made sorties and scattered them. Quddús’s counterattacks forced the besiegers to retreat on several occasions.[9]\n\n3. **Royal forces encircle the fort.**  \n   Prince Mihdí-Qulí Mírzá arrived with a larger army, later reinforced by commanders including ʿAbbás-Qulí Khán and Sulaymán Khán. The besiegers constructed barricades and trenches around the fort, gradually tightening the blockade.[3]\n\n4. **The siege becomes an artillery war.**  \n   Cannon and mortar batteries were brought up, and the fort was heavily bombarded. The defenders’ position deteriorated as their ammunition and food ran low; they even had to dig a well inside the enclosure because access to water was severely restricted.[3][6]\n\n5. **Mullá Ḥusayn’s last sortie.**  \n   On 2 February 1849, Mullá Ḥusayn led about 313 companions out of the fort at night, crying “Yá Ṣáḥibu’z-Zamán!” They broke through three successive barricades and routed the troops. During the charge, however, Mullá Ḥusayn’s horse became entangled in a tent rope. A soldier’s bullet struck him in the breast; he was carried back into the fort and died soon afterward. Nabíl records that seventy-two defenders had fallen by that day.[1][3]\n\n6. **Quddús continues the resistance.**  \n   After Mullá Ḥusayn’s death, Quddús directed further sorties. In one, Mírzá Muḥammad-Báqir and eighteen companions captured an enemy artillery tower, threw down its guns, and demolished the surrounding barricades. In another attack, he led thirty-six men out, returned with an abandoned enemy banner, and lost five companions.[2]\n\n7. **Starvation breaks the fort’s material resistance.**  \n   By early April, the defenders had exhausted their grain and rice. They slaughtered and ate their remaining horses, then survived on grass, carrion, bones, skins, and leather. Nabíl portrays this suffering as the final phase of a siege that military force alone had failed to end.[10]\n\n8. **The surrender is secured by an oath.**  \n   After prolonged resistance, the prince’s forces offered safe conduct if the defenders left the fort. The guarantee was confirmed by Qurʾāns and sworn assurances. The survivors—about 220, according to the account—therefore evacuated on 9 May 1849.[4][10]\n\n9. **The promise is immediately broken.**  \n   Once the defenders had emerged, the royal troops disarmed and attacked them. Many were massacred or dispersed despite the pledged protection. Quddús was taken to Bárfurúsh and killed there, while the surviving companions were subjected to further executions and humiliation.[2][3]\n\nThus, in Nabíl’s telling, the fort was not conquered by a successful assault. Its defenders repeatedly defeated the besieging army, but starvation, attrition, and finally a violated Qurʾānic guarantee brought the siege to its tragic conclusion.",
+     "ms": 6740
+    },
+    "current": {
+     "text": "The siege of the fort of Shaykh Ṭabarsí began when believers, [\"mostly students and recluses, built the Fort of ̱S̱hayḵh Ṭabarsí and held out against the armies of Persia for eleven months\"](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=fn_129) — [*Memorials of the Faithful*](https://siftersearch.com/library/view?doc=20907).\n\nHere are three lines from the sources on that episode:\n\n* [\"At the time the movement had been devastated by the crushing defeat at Shaykh Tabarsi\"](https://oceanlibrary.com/kjv-gospel-of-luke) — [*Will and Testament*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_will-and-testament).\n* [\"built the Fort of S̱hayḵh Ṭabarsí and held out against the armies of Persia for eleven months\"](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=fn_129) — *Memorials of the Faithful*.\n* [\"We resolved to depart from Núr and lend Our assistance to its heroic defenders\"](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1779&selectionString=dawn-breakers-prod-version_en_1g4.0~dawn-breakers-prod-version_en_1g4.1833) — [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308), quoting Bahá'u'lláh.\n\nDespite their different vantage points, these passages share a view of the fort not merely as a military engagement, but as a crucible where the early community faced overwhelming government forces at immense human cost.",
+     "ms": 7043
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 8,
+      "why": "Gives a clear, staged walkthrough that follows Nabíl closely: the gathering at the shrine, the sorties, Prince Mihdí-Qulí Mírzá's army, the artillery and the well, Mullá Ḥusayn's last sortie and death, Mírzá Muḥammad-Báqir's raid, the starvation, the Qur'án oath and the betrayal. Most details are accurate. It does not quote Nabíl directly, its footnote markers point to no sources, and it leaves out Bahá'u'lláh's attempt to join the defenders and his arrest at Ámul. A few figures (for example the 220 survivors) are imprecise."
+     },
+     "current": {
+      "score": 2,
+      "why": "Does not walk through the siege at all. It offers three scattered fragments, one of them misattributed to the Báb's 'Will and Testament' with a link to the Gospel of Luke. It leans on a footnote's figure of 'eleven months' instead of Nabíl's account, and closes with generic filler."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": [
+     "current: presents a scholarly or editorial line as if it came from the Báb's 'Will and Testament' (misattribution), and relies on a footnote instead of Nabíl's primary account"
+    ]
+   }
+  },
+  {
+   "id": "w8:db-03",
+   "kind": "history-story",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "How did the Báb's pilgrimage to Mecca unfold — what did He do at the Ka‘bih, and what message did He send to the Sherif of Mecca?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Báb’s pilgrimage took place in late 1844. He traveled from Shiraz to Bushihr, sailed to Jeddah, and then proceeded to Mecca with Quddús. There He performed the prescribed rites of the ḥajj, observing the customary practices of the pilgrimage.[1][5]\n\nAt the Kaʿbih, after completing the rites, the Báb seized the ring of the door and proclaimed three times, in a clear voice:\n\n> “I am that Qá’im whose advent you have been awaiting.”[1][7]\n\nThe declaration was made before the assembled pilgrims, publicly asserting His identity as the Promised One of Islam.[2]\n\nHe then composed an epistle to the Sherif of Mecca. In it, He explained the distinctive features of His mission, proclaimed the advent of His Revelation, and invited the Sherif to arise and accept His Cause. The Báb entrusted the letter, together with selections from His other writings, to Quddús for delivery.[6]\n\nThe Sherif did not respond: the message was ignored at the time, reportedly because he was preoccupied with his affairs. Later accounts state that he recognized the gravity of having disregarded the Báb’s summons, but only after the Báb’s martyrdom.[6][9]",
+     "ms": 4118
+    },
+    "current": {
+     "text": "The Báb performed the traditional circumambulation of the Ka‘bih upon reaching Mecca, and afterward entrusted an epistle for the Sherif of the city to Quddús, calling upon him to recognize His mission. As Nabil Zarandi records in [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_426&selectionString=dawn-breakers-prod-version_en_ej.0~dawn-breakers-prod-version_en_ej.2768):\n\n> No sooner had the Báb performed the last of the observances in connection with His pilgrimage to Mecca than He addressed an epistle to the Sherif of that holy city, wherein He set forth, in clear and unmistakable terms, the distinguishing features of His mission, and called upon him to arise and embrace His Cause.\n> — [The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_426&selectionString=dawn-breakers-prod-version_en_ej.0~dawn-breakers-prod-version_en_ej.2768)",
+     "ms": 6657
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7.5,
+      "why": "Covers the whole arc: the journey from Bushihr with Quddús, the threefold declaration while holding the ring of the Ka‘bih's door, the epistle to the Sherif with its contents, Quddús as bearer, and the Sherif's neglect and his later realisation after the martyrdom, as Nabíl records it. It is broadly accurate. However, the footnotes are unlinked and unnamed, so the reader can't tell which accounts are primary. It also leaves out details Nabíl gives, such as the sacrifice of the lambs."
+     },
+     "current": {
+      "score": 5,
+      "why": "Quotes Nabíl accurately with a link, which is good primary sourcing. But it is thin: on what happened at the Ka‘bih it gives only the circumambulation, and it says nothing of the Báb's declaration there or of how the Sherif responded."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-04",
+   "kind": "history-story",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Describe the Báb's examination before the ‘ulamás of Tabríz: who questioned Him, what was He asked, and how did He answer?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Báb was examined at the governor’s residence in Tabríz before the heir to the throne, Náṣiri’d-Dín Mírzá, and a gathering of leading clerics. The principal questioner was **Ḥájí Mullá Maḥmūd, the Niẓámu’l-ʿUlamá**, tutor to the crown prince; among the other prominent divines present were **Mullá Muḥammad-i-Mamaqānī**, **Mírzā Aḥmad the Imām-Jumʿih**, and **Mírzá ʿAlí-Aṣghar, the Shaykhu’l-Islām of Tabríz**.[1][3][5]\n\nThe Niẓámu’l-ʿUlamá asked Him, in substance:\n\n- **Who are You, and what claim do You make?**\n- **What message have You brought?**\n- **What proof can You offer for Your mission?**\n\nThe Báb answered emphatically:\n\n> “I am, I am, the Promised One!”\n\nHe explained that He was the One whose advent Muslims had invoked and awaited for a thousand years, and declared that the peoples of East and West were required to obey His word.[1][2][5]\n\nWhen asked for proof, He replied that **the greatest proof of a divine Messenger is His own revealed Word**. He added that He could reveal, in two days and two nights, verses equal in number to the Qur’án.[2][5]\n\nAt the Niẓámu’l-ʿUlamá’s request, the Báb then began describing the proceedings in language resembling the Qur’án. **Mullá Muḥammad-i-Mamaqānī interrupted, criticizing what he called a grammatical error.** The Báb answered that God’s Word cannot be constrained by grammatical rules devised by human beings; rather, those rules had themselves been derived from revealed Scripture. He further pointed to similar departures from conventional grammar in the Qur’án.[1][2][3]\n\nSome accounts also record that the clerics asked Him learned questions, including one concerning the stars and planets. The Báb replied that He had not studied astronomy or astrology, and that such knowledge flowed from Him spontaneously, like His revealed verses.[4]",
+     "ms": 4061
+    },
+    "current": {
+     "text": "When the Báb reached Tabríz, He was brought before a government tribunal where prominent divines—including the Niẓámu’l-‘Ulamá’, Mullá Muḥammad-i-Mámáqání, Mírzá Aḥmad the Imám-Jum‘ih, and Mírzá ‘Alí-Aṣg̱har the Ṣhayḵhu’l-Islám—questioned Him concerning His claims, as recorded in [*A Traveler’s Narrative*](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_46&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_41.0~abdu-l-baha-traveler-s-narrative-ocean_en_41.765) by ‘Abdu’l-Bahá ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_46&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_41.0~abdu-l-baha-traveler-s-narrative-ocean_en_41.765)). When asked, the Báb openly stated His claim to the station of the Mahdí, which provoked a mighty tumult among the assembled doctors ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_46&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_41.0~abdu-l-baha-traveler-s-narrative-ocean_en_41.765)).\n\nHere are reflections on that examination across the historical and interpretive records:\n\n* [\"When the Báb reached Tabríz they brought Him after some days before the government tribunal.\"](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_46&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_41.0~abdu-l-baha-traveler-s-narrative-ocean_en_41.765) — [*A Traveler’s Narrative*](https://siftersearch.com/library/view?doc=20899)\n* [\"The avowed purpose of that convocation was to arraign the Prisoner, and deliberate on the steps to be taken for the extirpation of His so-called heresy.\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_63&selectionString=god_passes_by_ocean_en_4i.0~god_passes_by_ocean_en_4i.1191) — [*God Passes By*](https://siftersearch.com/library/view?doc=21310)\n* \"Upon His arrival, the Báb observed that every seat in that hall was occupied except one which had been reserved for the Valí-‘Ahd.\" ([The Dawn-Breakers](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_901&selectionString=dawn-breakers-prod-version_en_rq.0~dawn-breakers-prod-version_en_rq.2396)) — [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308)\n\nThese accounts share the central recognition that a formal ecclesiastical and governmental tribunal was convened to interrogate the Báb, yet it unexpectedly became the public stage for the bold assertion of His mission.",
+     "ms": 6411
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "It names the divines correctly and draws on the right primary sources (A Traveler's Narrative, God Passes By, The Dawn-Breakers). But it barely answers the question: there is nothing on the questions put to the Báb beyond His claim to be the Mahdí, and nothing on how He answered. The bullet 'reflections' are scene-setting quotations that leave the substance out, the citations repeat, and the closing summary is padding."
+     },
+     "perplexity": {
+      "score": 8,
+      "why": "It answers all three parts of the question in line with Nabíl and Shoghi Effendi: who questioned Him (the Niẓámu'l-'Ulamá, Mamaqání and the others), what He was asked (His claim, His message, His proof), and how He answered. That includes His proof from revealed verses, the offer to reveal in two days and two nights verses equal to the Qur'án, and the exchange with Mamaqání over grammar. There are flaws: the footnotes [1]–[5] never say which sources they mean, the famous declaration is shortened (God Passes By has 'I am' three times, not twice), and the astronomy point is weakly sourced."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-05",
+   "kind": "history-story",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "What is the story of the 'Sifter of Wheat' in Iṣfahán in the Dawn-Breakers, and why is it remembered?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "In *The Dawn-Breakers*, the “Sifter of Wheat” is identified in later notes as **Mullá Jaʿfar**, commonly called **Gandum-Pák-Kun**. He was a humble wheat sifter in Iṣfahán and the **first person in the city to accept the Báb’s message**. He served Mullá Ḥusayn devotedly and became an ardent supporter of the new faith.[1][2]\n\nWhen he later heard about the siege of Shaykh Ṭabarsí, he immediately set out to join the Báb’s defenders, still carrying his sieve. When asked why, he said he intended to “sift” the people he met along the way—finding those willing to embrace the Cause and accompany him to martyrdom.[1]\n\nHe eventually joined the defenders and was killed at Shaykh Ṭabarsí.[3] His story is remembered because it contrasts **humble spiritual insight with the failure of Iṣfahán’s celebrated scholars**: although the city was renowned for learning and religious institutions, the Báb said that only this ordinary laborer recognized the truth and received the “robe of Divine virtue.”[1] The sieve thus became a symbol of discernment, wholehearted faith, and the principle that spiritual greatness is not determined by social rank or scholarly reputation.",
+     "ms": 3160
+    },
+    "current": {
+     "text": "The story of the sifter of wheat in Iṣfahán tells of Mullá Muḥammad Ja‘far Gandum-Pák-Kun, the very first person in that city to accept the Faith of the Báb upon hearing the call. He served Mullá Ḥusayn with devotion, became a zealous advocate of the new revelation, and eventually joined the defenders at the Fort of Ṭabarsí, where he perished during the siege. He is remembered because his unreserved acceptance and steadfastness are praised directly in the [*Kitáb-i-Aqdas*](https://siftersearch.com/library/view?doc=21307), where he is noted as one who _“donned the robe of discipleship.”_ ([The Kitáb-i-Aqdas](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=fn_183))\n\n***",
+     "ms": 6214
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 5,
+      "why": "The core facts are right: Mullá Ja'far Gandum-Pák-Kun was the first believer in Iṣfahán, served Mullá Ḥusayn and died at Ṭabarsí. It correctly ties his memory to the Kitáb-i-Aqdas (¶166 and note 183). But it barely draws on The Dawn-Breakers. It leaves out the Báb's contrast in the Persian Bayán between Iṣfahán's divines and the sifter, which is the main reason he is remembered. The 'robe of discipleship' wording is put down to the Aqdas a bit loosely."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "This is a fuller story. It gives the central meaning: a humble labourer recognised the truth while Iṣfahán's famous divines did not, which the Báb himself pointed out. It also covers his joining Ṭabarsí and his martyrdom, and draws out what the story means. Weaknesses: the line about 'sifting' people along the road with his sieve looks embellished or unsupported, and it says the name comes from 'later notes' when Nabíl gives it directly. 'Robe of Divine virtue' may not match the source, and it misses the Aqdas reference."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B gave the Báb's own contrast between Iṣfahán's learned divines and the humble sifter, which is the reason the story is remembered. It also gave more of the Dawn-Breakers narrative: how he joined Ṭabarsí, and how the story stands as a lesson that spiritual rank does not follow learning or station. A had only the Aqdas mention.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-06",
+   "kind": "history-story",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "Sám Khán"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "How was the Báb martyred in Tabríz in 1850? What happened with the first volley and Sám Khán's regiment?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Báb was executed in Tabríz on **9 July 1850**. He and His companion, **Mírzá Muḥammad-‘Alí—known as Anís**, were suspended by ropes from a nail in the wall of the barracks square. About **750 soldiers** of the Armenian Christian regiment of Urúmíyyih, commanded by **Sám Khán**, fired in three successive volleys.[2][5]\n\nWhen the smoke cleared, Anís was still alive and unharmed, while the Báb had disappeared from the wall. The bullets had severed the ropes without injuring either man; the Báb was then found back in the room where He had been held, completing a conversation with His secretary.[3][5]\n\nSám Khán was deeply shaken and refused to fire again or allow his regiment to participate further. He withdrew his men, reportedly declaring that he would not undertake an act that might harm the Báb, even at the cost of his own life.[3][8] A second regiment, commanded by **Áqá Ján Khán-i-Khamsih**, was brought in. The Báb and Anís were suspended again, and the subsequent volley killed them; their bodies were severely shattered.[4][5]",
+     "ms": 3147
+    },
+    "current": {
+     "text": "I didn't find a passage detailing the exact events of the first volley and Sám Khán's regiment in this search, as the texts I can search mention the handover to Sám Khán and the general setting of the martyrdom in Tabríz, but do not describe the regiment's initial volley.\n\nIf you would like to explore the specific details of the execution further, you might search using terms like \"Sám Khán\" alongside the martyrdom.",
+     "ms": 3942
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 1,
+      "why": "Gives no information about events that are well documented in Nabíl and God Passes By. It declines to answer and only suggests the reader search for themselves."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "An accurate narrative that matches Nabíl and Shoghi Effendi: the date, Anís, the 750 Armenian soldiers firing in three files, the ropes severed, the Báb found finishing His talk with His secretary, Sám Khán withdrawing, and Áqá Ján Khán-i-Khamsih's regiment carrying out the second execution. It leaves out Sám Khán's earlier plea to the Báb and the Báb's reply, the Báb's warning to the farrásh-báshí, His last words to the crowd, and the whirlwind of dust. It also cites by numbers instead of naming the primary sources."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-07",
+   "kind": "history-story",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "Ámul"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "What happened to Bahá'u'lláh at Ámul after He tried to reach Shaykh Ṭabarsí — why was He beaten there?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "After setting out from Núr with companions to aid the besieged Bábís at Shaykh Ṭabarsí, Bahá’u’lláh was arrested about nine miles from the fort and taken to Ámul.[1][2]\n\nAt Ámul, the local clergy stirred up the population against the captives, portraying them as enemies of Islam and demanding severe punishment. The acting governor, fearing the mob and the clerics, ordered the prisoners to be bastinadoed—beaten on the soles of their feet.[3][4]\n\nBahá’u’lláh intervened to save His companions, declaring that they were innocent and offering Himself to receive the punishment in their place. He was therefore beaten alone, with rods until His feet bled, and was then subjected to further abuse from the crowd, including stones and insults.[2][6] He was beaten not because He had committed a specific crime, but as a political and religious concession intended to appease the hostile clergy and mob.",
+     "ms": 2847
+    },
+    "current": {
+     "text": "Bahá’u’lláh’s journey to join the defenders at the Fort of Ṭabarsí was intercepted at Níyálá by Mírzá Taqí, the Governor of Ámul, who surrounded the village by night and brought Him back to Ámul with a small escort of riders. There, local authorities and clergy delivered Him into the hands of assembled divines who subjected Him to severe abuse and a bastinado.\n\nThe authorized interpretation by 'Abdu'l-Bahá notes that \"The Blessed Beauty was confined to prison in the town of Ámul, and, as the ‘ulamá gathered together in the mosque, He was delivered into their hands. Those iniquitous divines then rose up against Him with injustice and tyranny.\" ([Light of the World](https://oceanlibrary.com/light-of-the-world_abdul-baha/?paraId=para_115&selectionString=light_of_the_world_baha_i_ocean_en-bl61.0~light_of_the_world_baha_i_ocean_en-bl61.556)) — [*Light of the World*](https://siftersearch.com/library/view?doc=20906).",
+     "ms": 4418
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 5,
+      "why": "The quotation from 'Abdu'l-Bahá is a good primary source, and the interception and handover to the divines are right. But it never answers the 'why': it leaves out the clergy's agitation, Bahá'u'lláh taking the punishment in His companions' place, and the governor's role. Calling a historical passage an 'authorized interpretation' is a muddle, and the citation is padded with duplicate links."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "It gives the fuller story Nabíl tells: the arrest near the fort, the clergy stirring up the people, the bastinado ordered to appease them, Bahá'u'lláh offering Himself in His companions' place, and the motive behind it. Its weaknesses: footnotes with no named sources, no direct quotation from Nabíl or God Passes By, and possibly embellished details such as the stoning. It also leaves out the governor's later protection of Him."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-08",
+   "kind": "who-was",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "Quddús"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who was Quddús, and what was his role at Shaykh Ṭabarsí?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Quddús was the title of **Mullá Muḥammad-ʿAlí of Bárfurúsh**, a prominent early follower of the Báb and one of the **Letters of the Living**. The Báb chose him as His sole companion on the pilgrimage to Mecca and Medina and regarded him as one of His foremost disciples.[1][3]\n\nAt **Shaykh Ṭabarsí**, Quddús joined the Bábí defenders after being released from confinement in Sárí. He became their principal spiritual leader after Mullá Ḥusayn’s death, while others directed the fort’s military operations; thus, he provided religious authority, guidance, and moral leadership to the besieged community.[2][5][8] Following the fort’s surrender, Quddús was taken to Bárfurúsh and killed on May 16, 1849.[1][2]",
+     "ms": 2730
+    },
+    "current": {
+     "text": "Quddús was one of the Letters of the Living—an early leader of the Bábí movement—who perished alongside over three hundred believers during the crushing defeat and massacre at the Fort of Shaykh Ṭabarsí.\n\nThe sources record that he \"hastened away to the Fort of Ṭabarsí\" ([Memorials of the Faithful](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_712&selectionString=abdu-l-baha-memorials-of-the-faithful_en_og.0~abdu-l-baha-memorials-of-the-faithful_en_og.430)) ([*Memorials of the Faithful*](https://siftersearch.com/library/view?doc=20907)), where he displayed remarkable \"knowledge and sagacity,\" his companions ultimately recognizing his profound authority and resourcefulness ([*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308)).\n\n> \"the massacre of over 300 active believers amongst them prominent leaders and Letters of Living: Quddus and Mulla Husayn.\" - [*Will and Testament*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_will-and-testament)",
+     "ms": 4275
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 2,
+      "why": "Very thin. It never gives his name, his place among the Letters of the Living or the pilgrimage with the Báb. It says he 'perished' in the massacre, but he was actually executed later in Bárfurúsh. The quotations are misused: the Memorials line probably describes a different believer, and the 'Will and Testament' passage looks like an editor's note, not the Báb's own words."
+     },
+     "perplexity": {
+      "score": 6,
+      "why": "The core facts are right: his name, his rank as a Letter of the Living, his role as the Báb's only companion to Mecca, his release from Sárí and his death in Bárfurúsh in May 1849. But it misstates his role at the fort. Nabíl shows Mullá Ḥusayn deferring to Quddús as leader from the moment he arrived, not only after Mullá Ḥusayn's death. The numbered citations point to no sources, and it uses no primary accounts such as Nabíl or God Passes By."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B gave his name, his Bárfurúsh origin, the Mecca pilgrimage, his release from Sárí and the date of his martyrdom. A had none of this.",
+    "kind": "historical",
+    "authority_errors": [
+     "current: misattributes an editorial gloss to the Báb's Will and Testament"
+    ]
+   }
+  },
+  {
+   "id": "w8:db-09",
+   "kind": "who-was",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who was Siyyid Káẕim-i-Rashtí, and what did he tell his disciples before his death about the Promised One?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Siyyid Káẓim-i-Rashtí (1793–1843) was the successor of Shaykh Aḥmad-i-Aḥsá’í and leader of the Shaykhí movement. He taught that the Promised One—the Qa’im or Mahdi—was already living on earth and would soon appear.[1][2]\n\nBefore his death, he urged his disciples to leave their homes, detach themselves from worldly concerns, scatter far and wide, and search for the Promised One rather than wait for him to come to them.[2][4] He described the Promised One as:\n\n- Descended from the Prophet Muḥammad and the family of Fāṭimah\n- Of noble and pure lineage\n- Young—more than 20 but less than 30\n- Possessed of innate knowledge\n- Of medium height\n- Free from bodily defects and not a smoker[1][6]\n\nHe reportedly added that he himself would not live to see the Promised One’s appearance, but that his disciples would find Him in their own lifetime.[7]",
+     "ms": 3823
+    },
+    "current": {
+     "text": "Siyyid Káẓim-i-Rashtí was the disciple and successor of Shaykh Aḥmad-i-Aḥsá’í, dedicating his life to teaching the inner meanings of the Qur'án and preparing seekers for an imminent revelation. As his life drew to a close, he urged his followers to search for the Promised One, declaring that the dawn of the new Advent was at hand.\n\nShoghi Effendi records in [*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_208&selectionString=god_passes_by_ocean_en_8j.0~god_passes_by_ocean_en_8j.695):\n\n> “Verily, I say, after the Qá’im the Qayyúm will be made manifest. For when the star of the former has set the sun of the beauty of Ḥu...\"\n> — [God Passes By](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_208&selectionString=god_passes_by_ocean_en_8j.0~god_passes_by_ocean_en_8j.695)\n\nSimilarly,  ‘Abdu’l-Bahá notes in [*Memorials of the Faithful*](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_690&selectionString=abdu-l-baha-memorials-of-the-faithful_en_nu.0~abdu-l-baha-memorials-of-the-faithful_en_nu.1172) that he repeatedly told his disciples:\n\n> Ṭáhirih had caught fire. She set out for Karbilá, hoping to meet Siyyid Káẓim, but she arrived too late: ten days before she reached that city, he passed away. Not long before his death the Siyyid had shared with his disciples the good news that the promised Advent was at hand. “Go forth,” he repeatedly told them, “and seek out your Lord.” Thus the most distinguished of his followers gathered for retirement and prayer, for fasts and vigils, in the Masjid-i-Kúfih, while some awaited the Advent in …\n> — [Memorials of the Faithful](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_690&selectionString=abdu-l-baha-memorials-of-the-faithful_en_nu.0~abdu-l-baha-memorials-of-the-faithful_en_nu.1172)",
+     "ms": 5563
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 6,
+      "why": "Uses the right primary sources: Shoghi Effendi's God Passes By (the Qá'im/Qayyúm saying, though cut off mid-sentence) and 'Abdu'l-Bahá's Memorials ('Go forth and seek out your Lord'). It is thin on biography and leaves out the signs of the Promised One that Nabíl records, which are the heart of what the reader is asking for."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "More informative. It gives accurate dates, his Shaykhí role, his teaching that the Promised One was already living, and the signs (lineage, age 20–30, innate knowledge, medium height, no smoking, no bodily defect) along with his saying he would not live to see the appearance. All of this matches Nabíl's account, but the answer never names Nabíl or quotes him, and its footnote numbers point to no sources."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B gave the specific signs of the Promised One from Nabíl's Dawn-Breakers (descent from Fáṭimih, age between 20 and 30, innate knowledge, medium height, abstaining from smoking, no bodily defect). It also gave his dates and his statement that he would not live to see the Advent. A lacked all of this.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-10",
+   "kind": "who-was",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who was Manúchihr Khán, the Mu‘tamidu'd-Dawlih, and how did he treat the Báb in Iṣfahán?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Manúchihr Khán Mu‘tamidu’d-Dawlih was the Georgian-born, Christian-born eunuch who served as governor-general of Iṣfahán under Muḥammad Shāh Qājār. Though regarded as a forceful and capable administrator, he became deeply impressed by the Báb and, according to Bahá’í accounts, accepted His message.[3][5][8]\n\nWhen the Báb approached Iṣfahán in 1846, He wrote to Manúchihr Khán requesting shelter. The governor arranged for the Báb to be received respectfully in the home of Mírzá Muḥammad, the Imám-Jum‘ih, where He stayed for about forty days.[5][6][10] Manúchihr Khán then visited Him, convened a gathering of prominent divines, and invited the Báb to demonstrate the truth of Islam’s prophetic mission; the Báb’s eloquence reportedly heightened the governor’s admiration.[5]\n\nWhen opposition from the clerics intensified and the Báb was ordered toward Tihrán, Manúchihr Khán protected Him rather than allowing Him to fall into hostile hands. He secretly transferred the Báb to his own residence, the Imārat-i-Khurshīd, where the Báb remained for roughly four months under the governor’s protection.[5][8] Bahá’í sources further state that Manúchihr Khán offered the Báb his wealth and military resources, and that he repented of the oppressive origins of his fortune.[4][6] His death in early 1847 ended this period of protection, after which the Báb was exposed again to official and clerical hostility.[1][4]",
+     "ms": 4164
+    },
+    "current": {
+     "text": "Manúchihr Khán, the Mu‘tamidu'd-Dawlih, was the governor of Iṣfahán who extended protection and deep respect to the Báb upon His arrival in the province, offering Him lodging and later housing Him in his own private residence for safety.\n\nThe sources record that he conceived and carried out a design for the Báb's protection, lavishing honors upon Him in the privacy of his home until his passing.",
+     "ms": 3846
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "Gives a full and mostly accurate account that matches Nabíl and God Passes By: a Georgian eunuch born Christian; the Báb's letter asking for shelter; forty days at the Imám-Jum'ih's house; the gathering of divines; the pretended departure for Tihrán; four months in the 'Imárat-i-Khurshíd; the offer of his wealth and army; and his death in 1847. Weaknesses: it doesn't name or quote Nabíl or Shoghi Effendi (the bracketed numbers point to nothing identifiable). It gives the Imám-Jum'ih's name loosely as 'Mírzá Muḥammad'. It leaves out the treatise on the specific prophethood of Muḥammad, the Báb's foretelling of the governor's death, and Gurgín Khán's betrayal afterwards."
+     },
+     "current": {
+      "score": 3,
+      "why": "Accurate but very thin. It doesn't say who he was beyond being governor, gives no dates, and leaves out the Imám-Jum'ih, the meeting with the clergy, the 'Imárat-i-Khurshíd and what followed. It refers to 'the sources' without naming any."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "Neither answer quotes Nabíl's Dawn-Breakers or God Passes By directly. Both leave out the Báb's treatise on the specific prophethood of Muḥammad, written at the governor's request; the Báb's foretelling of his death; and how Gurgín Khán sent the Báb away after he died.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-11",
+   "kind": "who-was",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who was Vaḥíd (Siyyid Yaḥyáy-i-Dárábí), how did he become a believer, and what happened to him at Nayríz?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Vaḥíd—Siyyid Yaḥyáy-i-Dárábí (c. 1811–1850)—was a distinguished Persian Shíʿí scholar and theologian. The Báb gave him the title **Vaḥíd**, meaning “Unique” or “Peerless,” and he became one of the foremost Bábí leaders and teachers.[3][5]\n\nIn 1845–46, the Sháh sent him to investigate the Báb’s claims. Vaḥíd met the Báb three times in Shiraz. As a private test, he resolved that, during the third interview, he would silently ask the Báb to write a commentary on the Qur’anic Súrih al-Kawthar. Without being told of this request, the Báb produced the commentary in a manner that convinced Vaḥíd of His divine mission. Vaḥíd returned not as an investigator but as a committed believer and subsequently devoted himself to teaching the Báb’s message.[4][5]\n\nAt Nayríz in 1850, Vaḥíd publicly proclaimed the Báb’s religion and gathered a substantial group of followers. Hostilities with the local governor led him and his companions to withdraw to the fort of Khájih, where they resisted government forces.[2][10]\n\nA promise was eventually made that Vaḥíd’s followers would be spared and that he would be treated honorably if he surrendered. The promise was broken: the defenders were massacred, and Vaḥíd was captured. He was bound to a horse and dragged through the streets of Nayríz until he died; his martyrdom occurred on June 6, 1850.[2][5]",
+     "ms": 4174
+    },
+    "current": {
+     "text": "Siyyid Yaḥyáy-i-Dárábí, titled Vaḥíd, was a renowned scholar who was sent by the Shah to investigate the Báb, met Him in Shíráz, and became a devoted follower after witnessing His profound knowledge and spiritual power.\n\nHere are words from the sources on his standing and sacrifice:\n\n- [\"the number of the name of God\"](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih#p679) — [*The Seven Proofs*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih) (quoting Nicolas's note on his title)\n- [\"In truth the testimony of God has come and the countenance of truth is unveiled.\"](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_tablet-of-patience-lawh-i-sabr-or-lawh-i-ayyub#p42) — [*Tablet of Patience*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_tablet-of-patience-lawh-i-sabr-or-lawh-i-ayyub)\n- [\"arose to serve His Cause and quaffed his fill of the draught of certitude\"](https://siftersearch.com/library/bahai/bahai-books/ahang-rabbani_the-babis-of-nayriz-history-and-documents-2#p1973) — quoted in [*The Bábís of Nayriz: History and Documents*](https://siftersearch.com/library/bahai/bahai-books/ahang-rabbani_the-babis-of-nayriz-history-and-documents-2) by Ahang Rabbani\n\nWhen Vaḥíd arrived in Nayríz, his eloquent defense of the Faith drew large crowds and inspired profound devotion among the people, as described in [*The Súrih of Patience*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_surah-of-patience) (*[Súrih of Patience (Súrat as-Sabr)](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_surih-of-patience-surat-as-sabr#p75)*). This gathering provoked fierce opposition from local authorities, culminating in a violent siege and tragic tribulations where Vaḥíd and his companions ultimately sacrificed their lives for the Cause.\n\nAcross these accounts, the authors unite in remembering Vaḥíd as a luminous scholar whose steadfast loyalty and ultimate martyrdom crowned his transformation from investigator to defender.",
+     "ms": 4711
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "Says almost nothing concrete. It skips the Kawthar test, the three interviews, the fort of Khájih, the broken oath and how Vaḥíd died. Its quotations are short fragments only loosely tied to the question, it relies on Rabbani and Nicolas rather than Nabíl, and its closing summary is padding."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "An accurate, well-ordered account. It covers the title, the Sháh's mission, the three interviews and the silent request for a commentary on the Kawthar, the Nayríz uprising, the fort of Khájih, the broken promise and his death by being dragged through the streets. However, it gives the date of martyrdom as 6 June; Nabíl gives 29 June 1850. Its numbered citations point to nothing, and it quotes no primary text (Nabíl, or Bahá'u'lláh's Tablet commemorating Vaḥíd)."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": [
+     "current: leans on a secondary scholar (Rabbani's 'The Bábís of Nayriz') and Nicolas's note, not on primary accounts such as Nabíl's narrative"
+    ]
+   }
+  },
+  {
+   "id": "w8:db-12",
+   "kind": "who-was",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "Zanján"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who was Ḥujjat of Zanján and what happened in the Zanján upheaval?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Ḥujjat of Zanján was **Mullá Muḥammad-ʿAlí al-Zanjānī**, a prominent Islamic scholar and religious authority in Zanján, northwestern Persia. After accepting the Báb’s message, the Báb conferred on him the title **Ḥujjat**, meaning “the Proof.” He became the leading Bábí figure in Zanján and attracted a large following.[3][4]\n\n## The Zanján upheaval\n\nThe upheaval began in **May 1850**, when tensions between the Bábís, the local clergy, and the Qajar governor erupted into armed conflict. Ḥujjat and roughly 2,000 Bábí fighters, together with their families, withdrew to the fort and quarter of **ʿAlí-Mardán Khán** and resisted a much larger royal army.[1]\n\nThe siege lasted approximately **seven to nine months**, involving repeated assaults, bombardment, famine, and severe deprivation. At its height, the fortified area sheltered as many as 3,000 people, including women and children.[2][6] Ḥujjat was wounded in the right arm during the bombardment and died in prayer in early January 1851.[4][9]\n\nAfter his death, resistance weakened. The remaining Bábís were eventually induced to surrender through promises, oaths on the Qur’an, and negotiated agreements. The Qajar forces then violated the terms and massacred many of the survivors; fewer than 100 fighters remained to face execution, while Bahá’í sources give the total Bábí deaths as at least 1,800.[1][6] The Zanján upheaval consequently became one of the most prolonged and destructive confrontations between the early Bábí community and the Qajar state.[1][6]",
+     "ms": 3634
+    },
+    "current": {
+     "text": "Ḥujjat of Zanján was Mullá Muḥammad-‘Alíy-i-Zanjání, an eminent cleric and one of the most formidable champions of the early Bábí movement, and the Zanján upheaval was a devastating and prolonged military siege directed against him and his companions by royal forces.\n\nAs Shoghi Effendi describes the conflict in [*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_110&selectionString=god_passes_by_ocean_en_5t.0~god_passes_by_ocean_en_5t.1359):\n\n> [\"Unprecedented in both its duration and in the number of those who were swept away by its fury, this violent tempest that broke out in the west of Persia, and in which Mullá Muḥammad-‘Alíy-i-Zanjání, surnamed Ḥujjat, one of the ablest and most formidable champions of the Faith, together with no less\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_110&selectionString=god_passes_by_ocean_en_5t.0~god_passes_by_ocean_en_5t.1359) — [*God Passes By*](https://siftersearch.com/library/view?doc=21310)",
+     "ms": 6913
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "It rightly turns to Shoghi Effendi's God Passes By as the primary source. But it quotes a single sentence that is cut off mid-clause and gives no account of the siege at all: no dates, no fort of ʿAlí-Mardán Khán, no death of Ḥujjat, no betrayal or massacre. That leaves the question largely unanswered."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "It tells the whole story accurately: the title Ḥujjat conferred by the Báb, the outbreak in May 1850, the fort of ʿAlí-Mardán Khán, about 3,000 people besieged, Ḥujjat's arm wound and death, the false oaths on the Qur'an, the massacre, and at least 1,800 dead. However, its numbered citations point to no named source. It also never quotes God Passes By or Nabíl's narrative, the primary accounts that should anchor a historical answer."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "The best answer (B) gave the actual course of events: the start in May 1850, the defence of the fort of ʿAlí-Mardán Khán, the numbers besieged, Ḥujjat's wound and death, the treacherous surrender on oaths and the massacre of 1,800 or more. The other answer offered only a truncated one-sentence quotation.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-13",
+   "kind": "who-was",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who was Mullá Ṣádiq-i-Khurásání and what was done to him in Shíráz after he changed the call to prayer?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Mullá Ṣádiq-i-Khurásání—also known as **Mullá Ṣádiq-i-Muqaddas** and later titled **Ismu’lláhu’l-Aṣdaq**—was a Khurásání Muslim cleric who became one of the earliest followers of the Báb and a prominent early Bábí teacher.[1][3]\n\nAfter receiving instructions from the Báb, he altered the **adhán** (Muslim call to prayer) in Shíráz by adding words affirming the Báb’s revelation. When he recited the amended call publicly, the city was thrown into turmoil and the governor of Fárs, Ḥusayn Khán, ordered his arrest.[1][7]\n\nHe was subjected to severe public punishment:\n\n- He was scourged—accounts give **more than 900 strokes**, or traditionally 1,000 lashes.[1][4]\n- His beard was burned or torn out.\n- His nose was pierced and a halter was passed through it.\n- He was paraded through the streets and bazaars of Shíráz.\n- He was then expelled from the city.[1][6]\n\nHe endured the flogging with remarkable composure; one account says that after the first several strokes he became largely insensitive to the pain.[7] He and Quddús are remembered as among the first people persecuted in Persia for the Bábí Faith.[7]",
+     "ms": 5274
+    },
+    "current": {
+     "text": "Mullá Ṣádiq-i-Khurásání was a renowned scholar, a disciple of Siyyid Káẓim, and a trusted companion of Mullá Ḥusayn who became known for his purity of life and saintliness. When the governor of Fárs was induced by local clergy to persecute the Báb's missionaries, Mullá Ṣádiq was subjected to a brutal public scourging in Shíráz alongside others after a disturbance involving the call to prayer.\n\nAs recorded by an eye-witness, \n> [\"I was present when Mullá Ṣádiq was being scourged. I watched his persecutors each in turn apply the lash to his bleeding shoulders, and continue the strokes until he became exhausted.\"](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_445&selectionString=dawn-breakers-prod-version_en_f2.0~dawn-breakers-prod-version_en_f2.1312) [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308)",
+     "ms": 5467
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 5,
+      "why": "It quotes a real eyewitness passage from Nabíl's Dawn-Breakers, which is the right primary source. But it never says what the change to the call to prayer was or that the Báb ordered it. It leaves out the beard-burning, the nose-piercing and halter, the parading through the streets and the expulsion, and it describes the cause only as a vague 'disturbance'."
+     },
+     "perplexity": {
+      "score": 8,
+      "why": "It gives his titles (Muqaddas, Ismu'lláhu'l-Aṣdaq), explains the Báb's instruction and the amended adhán, and names Ḥusayn Khán. It lists the punishments accurately (the 900+ strokes, burned beard, pierced nose with halter, parading, expulsion), and Mullá Ṣádiq's own testimony about growing numb to the pain is also in Nabíl. It also notes, as Shoghi Effendi does, that he and Quddús were among the first persecuted in Persia. Weaknesses: the numbered citations point to no named source, there are no direct quotations from Nabíl or Shoghi Effendi, and Mullá 'Alí-Akbar-i-Ardistání is left out."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B gave the full story where A did not: the Báb's instruction to change the adhán, the name of Governor Ḥusayn Khán, the full list of punishments (more than 900 strokes, burned beard, pierced nose and halter, parading, expulsion), his titles, and his place among the first persecuted on Persian soil.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-14",
+   "kind": "who-was",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who was Ḥájí Mírzá Áqásí, and why did he fear and oppose the Báb?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Ḥájí Mírzá Áqásí (c. 1783–1849), born ʿAbbás Iravání, was the **grand vizier of Persia under Muḥammad Sháh Qájár** from 1835 to 1848. He exercised extraordinary influence over the shah, partly as his former tutor and spiritual adviser.[1][5]\n\nHe feared the Báb primarily because the Báb threatened his personal power:\n\n- **A rival for the shah’s confidence:** The Báb’s growing reputation and spiritual authority could cause Muḥammad Sháh to rely on Him instead of Áqásí.[1][5]\n- **The prospect of a personal meeting:** Áqásí blocked a meeting between the Báb and the shah because he feared it could lead to his loss of influence and eventual downfall.[4][7]\n- **The Báb’s possible healing of the shah:** The Báb reportedly offered to cure Muḥammad Sháh’s illness. Áqásí feared that, if successful, the shah would become even more devoted to the Báb and withdraw his favor from the prime minister.[2][4]\n- **Political and religious upheaval:** The rapid spread of the Báb’s message, including among influential figures, suggested to Áqásí that the movement might destabilize the Qájár state—especially amid the shah’s illness and existing rebellions.[1]\n\nÁqásí therefore encouraged clerical opposition, prevented the Báb from reaching Tehran, and arranged His confinement first at Máh-Kú and later at Chihríq in Azerbaijan.[2][5] His opposition was thus driven by a combination of **self-preservation, fear of losing royal influence, and anxiety that the Bábí movement might threaten the monarchy and established religious order**.[1][7]",
+     "ms": 5589
+    },
+    "current": {
+     "text": "Ḥájí Mírzá Áqásí served as the Grand Vazír to Muḥammad Sháh, holding immense political influence before falling into disgrace and poverty as described in [*Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative). He opposed the Báb out of political preservation and fear.\n\n- [\"The overbearing and crafty Ḥájí Mírzá Áqásí, fearful lest the sway of the Báb encompass his sovereign and thus seal his own doom\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_50&selectionString=god_passes_by_ocean_en_45.0~god_passes_by_ocean_en_45.3355) — [*God Passes By*](https://siftersearch.com/library/view?doc=21310)\n- [\"Fearing that the growing popularity of the Báb might move Muḥammad Sháh to grant Him a personal audience, Ḥájí Mírzá Áqásí, the Prime Minister, set out to poison the minds of the ʿulamā of Isfahán.\"](https://siftersearch.com/library/bahai/bahai-books/mohammad-norozi_haji-mirza-aqasi-a-portrait-of-a-tyrannical-and-ignorant-prime-minister-with-a-2#p8) — *Hájí Mírzá Áqásí: A Portrait of a Tyrannical and Ignorant Prime Minister With a Translation of His Letter Addressed to the ‘Ulamá—the Learned Divines—of Isfahán*\n- [\"Áqásí echoes the invective of the clergy, portraying the Báb as both misguided and misleading, and insisting that His punishment was essential for the preservation of religion and the security of the state.\"](https://siftersearch.com/library/bahai/bahai-books/mohammad-norozi_haji-mirza-aqasi-a-portrait-of-a-tyrannical-and-ignorant-prime-minister-with-a-2#p9) — *Hájí Mírzá Áqásí: A Portrait of a Tyrannical and Ignorant Prime Minister With a Translation of His Letter Addressed to the ‘Ulamá—the Learned Divines—of Isfahán*\n\nThese sources share the view that Áqásí's hostility stemmed from a desperate desire to protect his own political survival and power by turning the monarch and clergy against the Báb's growing influence.",
+     "ms": 4599
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 6,
+      "why": "Quotes Shoghi Effendi's God Passes By directly on Áqásí's fear that the Báb's influence would reach the Shah. That is the right primary source, and the scholarly portrait by Norozi is clearly labelled as such. However, the answer is thin. It leaves out who Áqásí was (his role as the Shah's tutor and Sufi guide, his dates) and the concrete results of his opposition (stopping the Báb from reaching Tehran, the imprisonments at Máh-Kú and Chihríq)."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "Informative and well organised. It covers the right biographical facts, his hold over the Shah as former tutor, his blocking of an audience, and the Báb's confinement at Máh-Kú and Chihríq. Its weaknesses: it quotes no primary source such as Shoghi Effendi or Nabíl, its numbered citations are opaque, and the claim that the Báb offered to heal the Shah is given without a clear source."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B gave more context than A: Áqásí's dates, his position as the Shah's tutor and spiritual adviser, the blocked audience in Tehran, the confinement at Máh-Kú and Chihríq, and his fear that the movement could destabilise the state. Neither answer drew on Nabíl's account of Áqásí.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-15",
+   "kind": "who-was",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who were the Seven Martyrs of Ṭihrán, and how did each die?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The **Seven Martyrs of Ṭihrán** were prominent Bábís publicly executed in Ṭihrán in 1850 after refusing to renounce their faith. They were:\n\n- **Ḥájí Mírzá Siyyid ʿAlí** — a leading merchant of Shíráz and the Báb’s maternal uncle; he was beheaded first.[1][2]\n- **Mírzá Qurbán-ʿAlí** — a revered dervish; he was beheaded second.[1][2]\n- **Ḥájí Mullá Ismáʿíl-i-Qumí** — a learned religious scholar; he was beheaded.[3]\n- **Mullá ʿAbdu’l-Wahháb-i-Qazvíní** — a teacher and scholar of religious law; he was beheaded.[4]\n- **Ḥájí Muḥammad-Taqíy-i-Káshání** — a merchant; he was beheaded.[4]\n- **Siyyid Murtaḍáy-i-Zanjání** — a merchant from Zanján; he was beheaded.[1]\n- **Muḥammad-Ḥusayn-i-Marághihí** — a quiet believer who refused to speak to his captors; he was beheaded.[3]\n\nThe executioners killed the first four separately. The final three—**Muḥammad-Taqí, Siyyid Murtaḍá, and Muḥammad-Ḥusayn**—each pleaded to die before the others; their insistence was so strong that they were beheaded simultaneously.[1][4] Thus, although the method was the same for all seven, the accounts especially emphasize their voluntary eagerness and refusal to recant.[2][5]",
+     "ms": 4638
+    },
+    "current": {
+     "text": "The Seven Martyrs of Ṭihrán were a group of prominent believers executed in February 1850 during the persecution under the Qájár administration. While the texts I can search note their collective tragedy in the Sabzih-Maydán—where their bodies were exposed to indignities—and mention Mírzá ‘Alí-í-Sabzavárí as one of the seven who proclaimed the Cause just before being beheaded, this search does not contain the detailed names and specific death of each individual.\n\nTo explore their identities and martyrdoms further, one might examine works detailing early Persian history or seek passages discussing the specific records preserved by Nabíl and Bahá'u'lláh.",
+     "ms": 9683
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 2,
+      "why": "Gives no names and no account of how any of them died. Its one specific claim is wrong: 'Mírzá ʿAlí-i-Sabzavárí' was not one of the Seven. Pointing the reader to Nabíl is fair, but the answer simply admits it has nothing."
+     },
+     "perplexity": {
+      "score": 6,
+      "why": "Answers the question the way Nabíl's account does. It names the Báb's maternal uncle and Mírzá Qurbán-ʿAlí as the first two to die, and correctly says the last three were beheaded together because each begged to go first. But it has errors: it puts Mullá ʿAbdu'l-Wahháb-i-Qazvíní on the list instead of Siyyid Ḥusayn-i-Turshízí, the mujtahid, and it calls Ḥájí Muḥammad-Taqí 'Káshání' where Nabíl has 'Kirmání'. It also leaves out well-known details, such as Qurbán-ʿAlí's verse and the botched first blow, and the per-martyr descriptions are thin."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "Neither answer is clearly marked as Anís. B gave the actual names and the order of execution taken from Nabíl's narrative; A gave none.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-16",
+   "kind": "date-place",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "1844"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "On what date did the Báb declare His mission — Gregorian and Islamic — and where exactly in Shíráz did it take place?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Báb declared His mission on **23 May 1844**, corresponding to **5 Jumádá al-Awwal 1260 AH** in the Islamic lunar calendar.[1][2]\n\nThe declaration took place **shortly after sunset on the evening of 22 May**, in **the Báb’s own house in Shíráz**, during His meeting with Mullá Husayn. The house—now destroyed—was located in the **Old City of Shíráz**, traditionally identified as the **house of the Báb in the Khán neighborhood**, near the **Masjid-i-Ilkhání**.[1][2]",
+     "ms": 2809
+    },
+    "current": {
+     "text": "The Báb declared His mission on the evening of May 23, 1844 (corresponding to the 5th day of Jamadi'u'l-Awal 1260 A.H., as noted in the editorial apparatus of [*The River of Life*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_the-river-of-life-a-selection-from-the-teachings)), in the upper chamber of a modest residence located in an obscure corner of Shíráz.\n\nThe sources for this event span different layers of literature. Revealed Scripture includes the Báb's own writings as presented in [*The Seven Proofs (Dalá'il-i-Sab'ih)*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih). Authorized interpretation is provided by Shoghi Effendi in [*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_26&selectionString=god_passes_by_ocean_en_3h.0~god_passes_by_ocean_en_3h.683) and through his [*Uncompiled Published Letters*](https://siftersearch.com/library/view?doc=20897), as well as by ‘Abdu’l-Bahá in [*Divine Philosophy*](https://oceanlibrary.com/divine-philosophy_abdul-baha/?paraId=para_12&selectionString=abdu_l_baha_on_divine_philosophy_bahai_ocean_en-bl32.0~abdu_l_baha_on_divine_philosophy_bahai_ocean_en-bl32.474). Official exposition and compilations, such as [*Bahá’í Sacred Writings*](https://oceanlibrary.com/bahai-sacred-writings/?paraId=para_1026&selectionString=baha_i_sacred_writings_en-blv1.0~baha_i_sacred_writings_en-blv1.960), also record the date and significance of the event. (Guidance from the Universal House of Justice, by contrast, pertains to administration, laws, and current direction rather than the interpretation of scripture.)\n\nThe precise setting and timing of this declaration are described by Shoghi Effendi:\n\n> [\"The opening scene of the initial act of this great drama was laid in the upper chamber of the modest residence of the son of a mercer of S̱híráz, in an obscure corner of that city. The time was the hour before sunset, on the 22nd day of May, 1844.\"]](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_26&selectionString=god_passes_by_ocean_en_3h.0~god_passes_by_ocean_en_3h.683) [*God Passes By*](https://siftersearch.com/library/view?doc=21310)",
+     "ms": 9439
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 6,
+      "why": "Gives the correct Islamic date (5 Jamádiyu'l-Avval 1260) and quotes Shoghi Effendi's God Passes By on the upper chamber of the Báb's house in Shíráz, which is the right primary source. But it says 'evening of May 23', which contradicts its own quotation (22 May). It leaves out the exact hour from Nabíl (two hours and eleven minutes after sunset) and pads the answer with irrelevant talk about layers of authority."
+     },
+     "perplexity": {
+      "score": 4,
+      "why": "Correctly handles the eve-of-22-May / 23-May framing and the Hijri date. But 'shortly after sunset' is imprecise, since the declaration came two hours and eleven minutes after sunset. The neighbourhood and mosque details ('Khán neighborhood', 'Masjid-i-Ilkhání') look unsupported or invented. It quotes no primary source, and its footnote markers point to no listed references."
+     }
+    },
+    "best": "current",
+    "gaps": "Neither answer gives Nabíl's precise timing (two hours and eleven minutes after sunset on 22 May), the meeting with Mullá Ḥusayn at the Kázirún gate, or the Báb's own words ('This night, this very hour…'). Neither notes that the house was destroyed in 1979.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-17",
+   "kind": "date-place",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "Máh-Kú"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where is Máh-Kú, and how long was the Báb imprisoned there before He was moved to Chihríq?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Máh-Kú was a remote mountain fortress in northwestern Persia (present-day West Azerbaijan, Iran), near the Ottoman/Turkish and Russian frontiers. The Báb was imprisoned there for **nine months**, from about July 1847 until April 1848, before being transferred to Chihríq.[2][7]",
+     "ms": 2737
+    },
+    "current": {
+     "text": "Máh-Kú is a town with a mountain fortress located in the northwest corner of Iranian Adharbayjan, near the border with Turkey. The passages available in this search do not state the exact duration of the Báb's imprisonment there before His transfer to Chihríq, though they record that He was exiled there in 1847.\n\nThe primary sources locate and describe the place as follows:\n\n> [\"Mah-Ku\" — town with mountain fortress located in the northwest corner of Iranian Adharbayjan, now the town closest to the Iranian northwestern border with Turkey](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih#p206) — [*The Seven Proofs (Dalá'il-i-Sab'ih)*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih)",
+     "ms": 6898
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "It answers both parts correctly. It gives the location in northwestern Persia near the Ottoman and Russian frontiers, and the nine months there (summer 1847 to April 1848), which matches Shoghi Effendi's account in God Passes By. However, it is thin. It doesn't quote any primary account such as Nabíl or God Passes By, and its citation markers [2][7] don't point to any sources the reader can see."
+     },
+     "current": {
+      "score": 3,
+      "why": "It gives the location correctly but says it cannot find how long the imprisonment lasted, which is the main fact asked for and is easy to find in God Passes By and Nabíl. It also calls a translator's glossary note a 'primary source', which it is not. Overall it is incomplete and partly evasive."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": [
+     "current: presents a translator's glossary note to The Seven Proofs as a 'primary source' for the location"
+    ]
+   }
+  },
+  {
+   "id": "w8:db-18",
+   "kind": "date-place",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "Badasht"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "When and where was the conference of Badasht held, and who provided for it?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Conference of Badasht was held for **22 days, from June 26 to July 17, 1848**, in the village of **Badasht near Shahrud, in present-day Semnan Province, Iran**.[1][2]\n\nIt was **organized, hosted, and financed by Bahá’u’lláh**, who rented three gardens for himself, Quddús, and Táhirih and provided hospitality for the 81 attendees.[2][3]",
+     "ms": 2583
+    },
+    "current": {
+     "text": "The conference of Badasht was held in a hamlet in the northeast of Persia (Khurasán) in June 1848, and the physical arrangements and provisions were supplied entirely by Bahá'u'lláh.\n\nIn the authorized interpretation of Shoghi Effendi, \n> [\"The scene of such a challenging and far-reaching proclamation was the hamlet of Badas̱ht, where Bahá’u’lláh had rented, amidst pleasant surroundings, three gardens, one of which He assigned to Quddús, another to Ṭáhirih, whilst the third He reserved for Himself. The eighty-one disciples who had gathered from various provinces were His guests from the day of their arrival to the day they dispersed.\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_87&selectionString=god_passes_by_ocean_en_56.0~god_passes_by_ocean_en_56.798)\n> — [*God Passes By*](https://siftersearch.com/library/view?doc=21310)",
+     "ms": 10026
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 6,
+      "why": "Gets the main facts right: 22 days in summer 1848, near Shahrud, 81 attendees, and Bahá'u'lláh renting three gardens and hosting everyone. But the footnotes [1][2][3] point to no real sources, and the exact dates (June 26 to July 17) are a scholarly reconstruction presented as settled fact. It quotes no primary account."
+     },
+     "current": {
+      "score": 8,
+      "why": "Rests the answer on Shoghi Effendi's own account in God Passes By, quoted accurately: the three rented gardens, the 81 guests, and Bahá'u'lláh hosting them throughout. That is the right kind of source for a history question. Weaknesses: calling a historical account an 'authorized interpretation' is a slip; the location is vague, as Badasht lies near Shahrud on the edge of Khurasan; and it gives only 'June 1848', leaving out that the gathering lasted 22 days and ran into July."
+     }
+    },
+    "best": "current",
+    "gaps": "Answer A gives more precise details: the 22-day length, the nearby town of Shahrud and the modern province (Semnan).",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-19",
+   "kind": "date-place",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "1849"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "In what month and year did the siege of Shaykh Ṭabarsí end, and where is the shrine located?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The siege of Shaykh Ṭabarsí ended in **May 1849**, specifically on **May 10, 1849**.[1][7] The shrine is located in **Mazandaran Province, northern Iran**, about 14 miles southeast of present-day **Babol**.[1][3]",
+     "ms": 2184
+    },
+    "current": {
+     "text": "I can't confirm the exact month and year of the end of the siege from the passages provided, though they note it took place around 1848 and 1849. Regarding its location, the sources describe it as the fort of Shaykh Ṭabarsí located in the province of Mázindarán. As David S. Ruhe notes in [*Robe of Light: The Persian Years of the Supreme Prophet Bahá'u'lláh 1817-1853*](https://siftersearch.com/library/bahai/bahai-books/david-s-ruhe_robe-of-light-the-persian-years-of-the-supreme-prophet-bahaullah-1817-1853#p1367), it is built around the \"shrine of a local saint in Mázindarán near Bábul.\"",
+     "ms": 9423
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "Says it cannot confirm the date and gives only a vague '1848 and 1849', so it fails the main part of the question. The location (Mázindarán, near Bábul) is correct but rests only on Ruhe, a secondary scholar, with no primary account such as Nabíl."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "Answers both parts correctly: the siege ended in May 1849 (Nabíl dates the departure and massacre to around 9–10 May), and the shrine is in Mázindarán, about 14 miles (roughly 22 km) southeast of Bábul. Its numbered citations point to no listed sources, and it doesn't draw on Nabíl or Shoghi Effendi's God Passes By, or add any context such as the siege's start in October 1848 or Quddús."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-20",
+   "kind": "date-place",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "Ṭáhirih"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "When and where was Ṭáhirih put to death in Ṭihrán?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Ṭáhirih was put to death on **August 31, 1852**—though some Bahá’í sources give **September 15, 1852**—in the **Ilkhani Garden on the outskirts of Ṭihrán**. She was strangled, and her body was thrown into a well and covered with stones.[4][5][7]",
+     "ms": 2250
+    },
+    "current": {
+     "text": "Ṭáhirih was put to death in a garden in Ṭihrán, though the exact date is not detailed in the passages provided in this search.\n\nThe circumstances of her end are described by ‘Abdu’l-Bahá: \n> [\"They brought her into a garden, where the headsmen waited; but these wavered and then refused to end her life. A slave was found, far gone in drunkenness; besotted, vicious, black of heart. And he strangled Ṭáhirih. He forced a scarf between her lips and rammed it down her throat. Then they lifted up her unsullied body and flung it in a well, there in the garden, and over it threw down earth and stones.\"]](https://oceanlibrary.com/memorials-of-the-faithful_abdul-baha/?paraId=para_715&selectionString=abdu-l-baha-memorials-of-the-faithful_en_oj.0~abdu-l-baha-memorials-of-the-faithful_en_oj.455) [*Memorials of the Faithful*](https://siftersearch.com/library/view?doc=20907)",
+     "ms": 9679
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 6.5,
+      "why": "Answers both parts: the Ílkhání garden outside the city, in late summer 1852 (it gives two dates). The strangling and the body thrown into a well are correct. But it quotes no primary source, such as Shoghi Effendi's God Passes By, which names the Ílkhání garden, or 'Abdu'l-Bahá. Its citation markers lead nowhere, and it does not explain why the date is uncertain."
+     },
+     "current": {
+      "score": 5.5,
+      "why": "Quotes 'Abdu'l-Bahá's account in Memorials of the Faithful, the best primary source on how she died. But it does not name the garden and does not give the date, putting the gap down to the search results. So half the question goes unanswered."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "The primary text: 'Abdu'l-Bahá's description of the garden, the drunken slave, the scarf and the well (Memorials of the Faithful). B quoted it and A did not.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-21",
+   "kind": "date-place",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "1819"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Where and when was the Báb born, and who were His parents?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Báb—born **Siyyid ʿAlí-Muḥammad**—was born in **Shiraz, Persia (modern-day Iran), on October 20, 1819** (the first day of Muḥarram 1235 AH).[1][3]\n\nHis parents were **Siyyid Muḥammad-Riḍá**, a merchant, and **Fáṭimih-Bágum**. Both were descendants of the Prophet Muhammad.[3][6]",
+     "ms": 2467
+    },
+    "current": {
+     "text": "The Báb was born in Shíráz in October 1819, the son of Siyyid Muḥammad-Riḍá, a merchant, and was brought up by His maternal uncle after His father's early death.\n\nAs recorded in [*A Traveler’s Narrative*](https://siftersearch.com/library/view?doc=20899), He \"was born in the year one thousand two hundred and thirty-five [A.H.] on the first day of Muḥarram, and when after a few years His father Siyyid Muḥammad-Riḍá died, He was brought up in S̱híráz in the arms of His maternal uncle Mírzá Siyyid ‘Alí the merchant\" ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_10&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_31.0~abdu-l-baha-traveler-s-narrative-ocean_en_31.491)) — *A Traveler’s Narrative*.",
+     "ms": 6231
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "Gives all the facts correctly: Shíráz, 1 Muḥarram 1235 / 20 October 1819, father Siyyid Muḥammad-Riḍá (a merchant) and mother Fáṭimih-Bagum, both descended from the Prophet. However, the footnote markers point to no actual sources, it quotes no primary account, and it is very thin."
+     },
+     "current": {
+      "score": 6,
+      "why": "Accurately quotes a primary source, 'Abdu'l-Bahá's A Traveler's Narrative, for the date, the father and the upbringing by the maternal uncle Mírzá Siyyid 'Alí. But it never names the mother, which the reader asked for, and it gives only 'October 1819' rather than the exact Gregorian date."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "A names the mother (Fáṭimih-Bagum), notes that both parents descended from the Prophet, and gives the exact date (20 October 1819). B gives the primary-source quotation from A Traveler's Narrative and the detail of the maternal uncle raising Him.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-22",
+   "kind": "timeline",
+   "expect": {
+    "docs": [
+     21308
+    ],
+    "text_contains": [
+     "1844",
+     "1850"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Give me a timeline of the Báb's life from His birth to His martyrdom, with the places at each stage."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "- **20 October 1819 — Birth:** The Báb, born Siyyid ʿAlí-Muḥammad, was born in **Shiraz, Persia (present-day Iran)**.[1][3]\n- **Childhood and youth — Shiraz:** He was raised in Shiraz in a family of prosperous merchants and later worked in the family’s commercial business.[3]\n- **1839–1841 — Bushihr:** He lived and worked as a merchant in **Bushihr**, a Persian Gulf port.[1]\n- **1841–1844 — Karbala:** He traveled to **Karbala, Iraq**, where He studied under Siyyid Kázim-i-Rashtí, a prominent religious leader.[3]\n- **22–23 May 1844 — Shiraz:** Returning to **Shiraz**, He declared His mission to Mullá Ḥusayn, becoming the Báb and announcing the imminent appearance of “Him Whom God shall make manifest.”[3]\n- **1844 — Shiraz and other cities:** He sent His first disciples throughout Persia and Iraq to proclaim His message.[1]\n- **September–December 1844 — Bushihr and Mecca:** He departed from **Bushihr** for pilgrimage, traveling by sea to **Mecca**. At the Kaaba, He publicly announced His station and addressed the Sharif of Mecca.[1][3]\n- **June 1845 — Shiraz:** He returned to **Shiraz**, where the governor and clergy opposed Him. He was publicly interrogated, placed under restrictions, and later confined.[1]\n- **September 1846 — Isfahan:** Expelled from Shiraz, He traveled to **Isfahan**, where Governor Manúchihr Khán protected Him and arranged for Him to reside discreetly.[1][3]\n- **1847 — Kashan and Tehran:** After the governor’s death, the Báb was summoned toward **Tehran**. On the journey He passed through **Kashan** and was eventually taken to **Tabriz**.[1][3]\n- **July 1847–April 1848 — Máh-Kú:** He was imprisoned in the remote fortress of **Máh-Kú**, near Persia’s northwestern frontier.[3]\n- **April 1848–July 1850 — Chihríq:** He was transferred to the fortress of **Chihríq**, where He remained for most of the final two years of His life.[3]\n- **July 1848 — Tabriz:** He was taken to **Tabriz**, interrogated before religious and government authorities, and bastinadoed after asserting His prophetic mission.[3][5]\n- **1850 — Tabriz:** Returned to Chihríq, He was later brought back to **Tabriz** on the orders of the Grand Vizier.[3][10]\n- **9 July 1850 — Martyrdom in Tabriz:** The Báb was executed by firing squad in the barracks square of **Tabriz**, at the age of 30.[2][6][10]",
+     "ms": 5340
+    },
+    "current": {
+     "text": "The Báb’s earthly life spans from His birth in Shíráz in October 1819 to His public declaration in 1844, followed by a six-year ministry of imprisonment across Persia that ended with His martyrdom in Tabríz in 1850.\n\nAs recounted by ‘Abdu’l-Bahá, after proclaiming His mission in Shíráz, the Báb journeyed to Iṣfahán to escape a famine, was arrested and sent to Tabríz, transferred to Máh-Kú, and finally imprisoned in the castle of Chihríq before returning to Tabríz for His execution ([Talk in Cambridge on the declaration of the Báb](https://siftersearch.com/library/bahai/core-talks/abdul-baha_talk-in-cambridge-on-the-declaration-of-the-bab#p7)). Shoghi Effendi notes that His banishment to the mountains of Áḏhirbáyján included *\"His nine months’ unbroken confinement in the fortress of Máh-Kú, and His subsequent incarceration in the fortress of C̱hihríq\"* ([God Passes By](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_55&selectionString=god_passes_by_ocean_en_4a.0~god_passes_by_ocean_en_4a.1916)).\n\n*(Note on sources: Revealed Scripture includes the writings of the Báb, such as [The Seven Proofs (Dalá'il-i-Sab'ih)](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih#p177). Authorized interpretation is found in the works of ‘Abdu’l-Bahá and Shoghi Effendi. Universal House of Justice guidance pertains to administration and laws rather than doctrine, while history, scholarship, and community practice represent distinct layers of study.)*",
+     "ms": 7426
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 6,
+      "why": "Gives the dated, place-by-place timeline the reader asked for, and most dates are right (birth 1819, Declaration 1844, pilgrimage, Isfahan 1846, Máh-Kú, Chihríq, martyrdom 9 July 1850). But it has real errors. It places Him in Karbala from 1841 to 1844 when His stay was about a year, and says He 'studied under' Siyyid Kázim, which the primary accounts deny. The July 1848 Tabriz trial is listed after the Chihríq period, which muddles the order. It omits Kulayn, the Báb's marriage and the return via Bushihr in 1845, and its footnote numbers point to sources that are never given."
+     },
+     "current": {
+      "score": 3,
+      "why": "Rightly draws on primary voices ('Abdu'l-Bahá and God Passes By), but it does not give a timeline. It has almost no dates and leaves out Mecca, Kashan, Kulayn and the 1848 Tabriz trial. Its source note pads the answer without helping the reader."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-23",
+   "kind": "timeline",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Lay out the sequence of the three major Bábí upheavals — Ṭabarsí, Nayríz and Zanján — with their dates and leaders."
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The three major Bábí upheavals occurred in this sequence:\n\n1. **Shaykh Ṭabarsí (Māzandarān): October 1848–9 May 1849**  \n   Led principally by **Mullá Ḥusayn-i-Bushrú’í** and **Quddús** (Mullá Muḥammad ʿAlí of Bārfurūsh); the Qajar forces were commanded by **Prince Mihdí-Qulí Mírzá**.[1][7]\n\n2. **Nayríz (Fars): 27 May–21 June 1850**  \n   Led by **Siyyid Yaḥyá Dárábí**, known as **Vaḥíd**. This was the first of the two major upheavals in 1850 and ended with the betrayal and massacre of the Bábí defenders.[2][6][9]\n\n3. **Zanjān: May 1850–January 1851**  \n   Led by **Ḥujjat**—Mullá Muḥammad-ʿAlí al-Zanjání. Although it began shortly before Nayríz ended, it continued much longer; its commonly given dates are **13 May 1850–January 1851**.[3][6][9]\n\nThus, the chronological order is **Ṭabarsí → Nayríz → Zanjān**, with **Nayríz and Zanjān overlapping in 1850**.",
+     "ms": 3597
+    },
+    "current": {
+     "text": "The major Bábí upheavals unfolded across Persia in the early years of the Faith, beginning with Shaykh Ṭabarsí in Máh-Mázindarán, followed by Nayríz in Fárs, and culminating in Zanján. Shoghi Effendi notes that in each of these episodes, Bábís were \"driven to desperation, withdrew in concert from their houses to a chosen retreat and, erecting defensive works about them, defied in arms further pursuit\" ([Uncompiled Published Letters](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_2761&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl2fg.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl2fg.824) - Shoghi Effendi).\n\nThe sequence and leadership are detailed in the authorized interpretations and historical records:\n- **Shaykh Ṭabarsí (Mázindarán):** Began in the late summer of 1848 and lasted until the spring of 1849, led initially by Mullá Ḥusayn of Buṣhrúyih ([*A Hymn to Love (Sáqí, bi-dih ábí)*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_a-hymn-to-love-saqi-bi-dih-abi)).\n- **Nayríz (Fárs):** Occurred in the late spring of 1850 (*A Hymn to Love (Sáqí, bi-dih ábí)*), with Siyyid Yaḥyá of Dáráb serving as the \"leader and arbiter\" ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_59&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_4e.0~abdu-l-baha-traveler-s-narrative-ocean_en_4e.795) - ‘Abdu’l-Bahá).\n- **Zanján:** Besieged under the military and clerical attack, with Mullá Muḥammad-‘Alí the mujtahid acting as chief ([A Traveler’s Narrative](https://oceanlibrary.com/travelers-narrative_abdul-baha/?paraId=para_59&selectionString=abdu-l-baha-traveler-s-narrative-ocean_en_4e.0~abdu-l-baha-traveler-s-narrative-ocean_en_4e.795) - ‘Abdu’l-Bahá).",
+     "ms": 7719
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 4.5,
+      "why": "Its strengths are primary sources: Shoghi Effendi's description of how the Bábís withdrew and defended themselves, and 'Abdu'l-Bahá's A Traveller's Narrative for the leaders of Nayríz and Zanján. But it gives no dates for Zanján, leaves out Quddús at Ṭabarsí, and puts the start of Ṭabarsí too early ('late summer 1848'; the siege began in October). It takes its dates from the notes to a tablet translation, an odd and unlabelled source. It also calls historical records 'authorized interpretations', and it never names Ḥujjat or Vaḥíd by their titles."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "It does exactly what was asked: the correct order, accurate dates (Ṭabarsí October 1848 to May 1849; Nayríz May to June 1850; Zanján May 1850 to January 1851), the right leaders with their titles (Mullá Ḥusayn and Quddús, Vaḥíd, Ḥujjat), and a helpful note that Nayríz and Zanján overlapped. Its weaknesses: the footnote numbers point to no actual sources, it cites no primary account (Nabíl, God Passes By), and calling Nayríz 'the first' upheaval of 1850 sits awkwardly with Zanján starting earlier that May."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B gave complete, accurate dates for all three upheavals (Zanján's above all), named Quddús as co-leader at Ṭabarsí, used the titles Vaḥíd and Ḥujjat, and pointed out that Nayríz and Zanján overlapped in 1850.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-24",
+   "kind": "timeline",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "What were the stages of the Báb's journey from Iṣfahán to Máh-Kú — which towns did He pass through and roughly when?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The route was not a single uninterrupted march: the escort first took the Báb **north toward Ṭihrán**, then diverted Him west and north-west to **Máh-Kú**.\n\n| Stage | Place | Approximate date |\n|---|---|---|\n| Departure from Iṣfahán | Iṣfahán | **March 1847**, after the death of Manúchihr Khán |\n| First major stop | **Káshán** | About **20–22 March 1847**; He stayed three nights and celebrated Naw-Rúz there[1] |\n| En route to Ṭihrán | **Qum** | Late March; the party passed by without entering the city[1] |\n| Approach to the capital | **Kinár-Gird** | About **28 March 1847**, roughly 45 km south-east of Ṭihrán[1] |\n| Diversion from Ṭihrán | **Kulayn** | Late March–April 1847; the prime minister ordered the escort to stop there instead of entering Ṭihrán[1] |\n| Interim northern stage | **Siyáh-Dahán**, near Qazvín | During the ensuing journey north-west; the Báb’s stay in this area is generally placed in **spring–summer 1847**[2] |\n| Major city on the final route | **Tabríz** | Probably **June–July 1847**; He remained there about 40 days[3] |\n| Destination | **Máh-Kú** | Reached in **late summer 1847**, traditionally dated around **17 July 1847** in one detailed chronology[4] |\n\nIn compact form, the itinerary was therefore:\n\n**Iṣfahán → Káshán → Qum (bypassed) → Kinár-Gird → Kulayn → the Qazvín/Siyáh-Dahán area → Tabríz → Máh-Kú.**\n\nThe dating is clearest for Káshán, Kinár-Gird, and the general arrival at Máh-Kú; the precise dates of the intermediate north-western stages are less certain. Some accounts summarize the route simply as Iṣfahán–Ṭihrán–Tabríz–Máh-Kú, because Kulayn and the stop near Qazvín were temporary halts rather than principal destinations.[5]",
+     "ms": 4683
+    },
+    "current": {
+     "text": "I didn't find a passage detailing the specific towns and dates of the Báb's journey between Iṣfahán and Máh-Kú in this search, though the Báb's own writings record that He was sent away from Iṣfahán \"with an escort of five guards on a journey which lasted seven days\" ([Selections from the Writings of the Báb](https://oceanlibrary.com/selections-from-the-writings-of-the-bab/?paraId=para_50&selectionString=selections_from_the_writings_of_the_bab_bahai_en-bl43.0~selections_from_the_writings_of_the_bab_bahai_en-bl43.349)) (Selections from the Writings of the Báb).\n\nTo look closer at the historical record of that route, we might search for specific accounts of His transfer under guard toward the northwest.",
+     "ms": 6930
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 2,
+      "why": "Says it found nothing on the route and gives one quotation from the Báb, which doesn't answer the question about towns and dates. In practice this is a non-answer with an offer to search again."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "Gives the route that matches Nabíl and God Passes By: Káshán at Naw-Rúz 1847 (three nights), Qum bypassed, Kinár-Gird, the halt at Kulayn, Siyáh-Dihán near Qazvín, about 40 days in Tabríz, then Máh-Kú. It also says honestly which dates are uncertain. It leaves out Zanján and Mílán, and its dates contradict each other: it calls 17 July 'late summer' and puts it on top of a June–July stay in Tabríz. Its footnotes [1]–[5] point to no named sources, and it never names Nabíl or Shoghi Effendi as the primary accounts."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-25",
+   "kind": "timeline",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "In what order did the Letters of the Living recognize the Báb, and roughly when did each arrive in Shíráz?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The recognition order, with **approximate arrival in Shíráz**, was:\n\n| Order | Letter of the Living | Approximate arrival or recognition |\n|---:|---|---|\n| 1 | **Mullá Ḥusayn-i-Bushrú’í** | Night of the Báb’s declaration, **22–23 May 1844** |\n| 2 | **Mullá Muḥammad-Ḥasan Bushrú’í** | Shortly afterward, in **late May or early June** |\n| 3 | **Mullá Muḥammad-Báqir Bushrú’í** | With his father and uncle, **late May or early June** |\n| 4 | **Mullá ʿAlíy-i-Basṭámí** | Soon after Mullá Ḥusayn, probably **late May or early June** |\n| 5 | **Mullá Khudá-Bakhsh-i-Qúchání** | With the same early group, **late May or early June** |\n| 6 | **Mullá Ḥasan-i-Bajistání** | With the early group, **late May or early June** |\n| 7 | **Siyyid Ḥusayn-i-Yazdí** | With the early group, **late May or early June** |\n| 8 | **Mullá Muḥammad-Rawḍih-Khán-i-Yazdí** | With the early group, **late May or early June** |\n| 9 | **Saʿíd Hindí** | In the following weeks, probably **June 1844** |\n| 10 | **Mullá Maḥmúd-i-Khúʾí** | Probably **June 1844** |\n| 11 | **Mullá Jalíl-i-Urúmiyí** | Probably **June 1844** |\n| 12 | **Mullá Aḥmad-i-Ibdál-i-Marághí** | Probably **June 1844** |\n| 13 | **Mullá Báqir-i-Tabrízí** | Probably **June 1844** |\n| 14 | **Mullá Yúsuf-i-Ardibílí** | Probably **June 1844** |\n| 15 | **Mullá Muḥammad-ʿAlíy-i-Qazvíní**, later **Quddús’s companion** | Recognition by letter from Ṭáhirih; approximately **June 1844** |\n| 16 | **Ṭáhirih** | Recognized the Báb remotely through a letter; **she never went to Shíráz** |\n| 17 | **Mullá Muḥammad-ʿAlíy-i-Bárfurúshí, Quddús** | Last to arrive, in **summer 1844**, probably **late June or July** |\n\nThe main qualification is that the sources distinguish **order of recognition** from **order of physical arrival**. Mullá ʿAlíy-i-Basṭámí recognized the Báb before the other members of his traveling party, but the party’s members were later assigned the formal numerical order as Letters. A later group of roughly thirteen disciples reached Shíráz together in **late June 1844**, while Quddús came last and was recognized as the eighteenth and final Letter.[1][2][3][4]\n\nṬáhirih is the exception: she was the only Letter who did not arrive in Shíráz; her recognition and appointment occurred through correspondence, conveyed by her brother-in-law Mullá Muḥammad-ʿAlíy-i-Qazvíní.[2][3]",
+     "ms": 7675
+    },
+    "current": {
+     "text": "I didn't find a passage detailing the specific chronological order in which each individual Letter of the Living recognized the Báb or the precise dates of their arrivals in Shíráz in this search.\n\nThe sources note that Mullá Ḥusayn was the first: [\"Among them was Mullá Ḥusayn, who became the recipient of the effulgent glory of the Sun of divine Revelation.\"](https://oceanlibrary.com/kitab-i-iqan_bahaullah/?paraId=para_260&selectionString=kitab-i-iqan-prod-version_en_a0.0~kitab-i-iqan-prod-version_en_a0.585) — [*The Kitáb-i-Íqán*](https://siftersearch.com/library/view?doc=28653). They also record that following Mullá Ḥusayn's recognition, [\"Not until forty days had elapsed, however, did the enrollment of the seventeen remaining Letters of the Living commence.\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_31&selectionString=god_passes_by_ocean_en-bluf.0~god_passes_by_ocean_en-bluf.1435) — [*God Passes By*](https://siftersearch.com/library/view?doc=21310), and mention figures such as Shaykh Sa’id Hindi traveling from the Indian sub-continent to attain this station, as described in [*Messages to the Indian Subcontinent*](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_23&selectionString=messages_to_subcontinent_en-bl3d.0~messages_to_subcontinent_en-bl3d.281).",
+     "ms": 6446
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 5,
+      "why": "Gives a list that mostly matches Nabíl's order for the first fourteen Letters, which is genuinely useful. But it has serious errors. It leaves out Mírzá Hádíy-i-Qazvíní, so the table has only 17 names. It says Mírzá Muḥammad-ʿAlíy-i-Qazvíní recognized the Báb 'by letter from Ṭáhirih', when in fact he came in person and carried her letter. It numbers Quddús 17th in the table but calls him the 18th in the text. Its 'late May/early June' dates ignore the forty-day gap after Mullá Ḥusayn's recognition. It cites no primary source, such as Nabíl or God Passes By."
+     },
+     "current": {
+      "score": 4,
+      "why": "Quotes the Kitáb-i-Íqán and God Passes By accurately, including the key fact that the other seventeen Letters began enrolling only forty days later. It also mentions Saʿíd Hindí. But it mostly admits it could not find the answer: it gives no order and no arrival times, and it doesn't point the reader to Nabíl's Dawn-Breakers, where the list appears."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-26",
+   "kind": "timeline",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "What happened, in order, between the Báb's martyrdom in July 1850 and the attempt on the Sháh's life in August 1852?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "In chronological order:\n\n1. **July 9, 1850 — The Báb was executed in Tabriz.** His companion, Anís, was also killed, and their bodies were cast outside the city.[1][8]\n\n2. **Late 1850–1851 — The Bábí community was left leaderless and subjected to continuing persecution.** Many prominent Bábís had already been killed or imprisoned, and the movement increasingly operated underground.[2][7]\n\n3. **During this period — Some Bábís came to regard the Sháh as responsible for the Báb’s death and the persecution of his followers.** Two young Bábís, Ṣádiq-i-Tabrízí and Fath’u’lláh-i-Qumí, eventually resolved to avenge these deaths.[9]\n\n4. **August 15, 1852 — The attempt on the Sháh’s life took place near Niávárán, outside Tehran.** The two approached Nāṣiri’d-Dín Shāh as he was setting out and fired at him with a pistol loaded with birdshot. He suffered no serious injury, and the attackers were immediately seized.[1][2][9]\n\n5. **Afterward — The failed attempt triggered a far wider persecution of the Bábís**, including mass arrests and executions and Bahá’u’lláh’s imprisonment in Tehran’s Siyāh-Chāl.[2][4]",
+     "ms": 3391
+    },
+    "current": {
+     "text": "I didn't find a detailed chronological record of every specific event between July 1850 and August 1852 in this search, though the period is marked by the tragic aftermath of the Báb's execution on 9 July 1850 [*The Seven Proofs (Dalá'il-i-Sab'ih)*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih#p210) and the bitter grief of the community leading directly to the attempt on the Sháh's life on August 15, 1852 [*God Passes By*](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_145&selectionString=god_passes_by_ocean_en_6s.0~god_passes_by_ocean_en_6s.799).\n\nThe sources in front of us note that this interim culminated when\n\n> [\"a certain Ṣádiq-i-Tabrízí, an assistant in a confectioner’s shop in Ṭihrán, proceeded on an August day (August 15, 1852), together with his accomplice, an equally obscure youth named Fatḥu’lláh-i-Qumí, to Níyávarán where the imperial army had encamped and the sovereign was\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_145&selectionString=god_passes_by_ocean_en_6s.75~god_passes_by_ocean_en_6s.310) [*God Passes By*](https://siftersearch.com/library/view?doc=21310)",
+     "ms": 7796
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 5,
+      "why": "A gives an accurate frame: the Báb's execution with Anís, the bodies thrown out, the attack at Níyávarán with birdshot, and the persecution that followed. But it skips nearly everything that happened in between. It leaves out the end of the Zanján upheaval under Ḥujjat (early 1851), the rescue of the Báb's remains, Bahá'u'lláh's time in Karbilá at Amír Kabír's suggestion (1851–52), Amír Kabír's fall and death, Bahá'u'lláh's return to Ṭihrán, and the role of Mírzá Áqá Khán. Steps 2 and 3 are vague filler, and its numbered citations don't point to identifiable primary sources such as God Passes By or Nabíl."
+     },
+     "current": {
+      "score": 3,
+      "why": "B mostly says it found no detailed chronology. It gives only the two end dates and one quotation from God Passes By about Ṣádiq-i-Tabrízí. Its sourcing is primary and correct, but it does not answer the 'in order' question at all and leaves out every event in between."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "Both answers lack the events in between, which God Passes By (ch. 4–5) and Nabíl cover: the fall of Zanján and Ḥujjat's death (January 1851), the hidden keeping of the Báb's remains, Bahá'u'lláh in Karbilá (1851–52) and his return, Amír Kabír's dismissal and execution (late 1851 to January 1852), and Mírzá Áqá Khán-i-Núrí becoming Grand Vizier. B also lacks any structure at all.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-27",
+   "kind": "explain-passage",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers",
+    "note": "¶227"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "In the Dawn-Breakers the Báb tells the Letters of the Living: \"O My beloved friends! You are the bearers of the name of God in this Day.\" Please explain this farewell address — what did He ask of them, and what did He warn them about?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The Báb’s farewell was both a **commission** and a **warning**. He was sending the Letters of the Living into the world as the first representatives of His new revelation—not merely to announce a doctrine, but to make its spiritual reality visible in their own lives.\n\n## What He asked of them\n\n- **Manifest God’s attributes:** Their words and actions were to display righteousness, power, glory, integrity, devotion, and every virtue associated with a true servant of God. Their entire conduct—“the very members” of their bodies—was to testify to the nobility of their mission.[1][2]\n- **Teach through example:** Their purity and renunciation should enable people to recognize God and draw nearer to Him. They were to be living evidence of the truth they proclaimed, not simply its verbal messengers.[1][2]\n- **Arise and proclaim the Cause:** Each was assigned a field of service and instructed to announce that the “Gate to the Promised One” had opened, while avoiding self-glorifying emphasis on the Báb’s own person.[2][9]\n- **Remain detached and selfless:** They were to expect neither food, reward, comfort, nor worldly advantage from those among whom they taught. Their reliance was to be on God alone.[2]\n- **Cultivate spiritual virtues:** The Báb told them to purge their hearts of worldly desires, trample earthly attachments beneath their feet, obey God promptly, and preserve the grace entrusted to them from worldly affections and transient pursuits.[1][4]\n- **Trust in divine power:** Though conscious of their weakness, they were not to be paralyzed by it. They were to arise in God’s name, rely wholly on Him, and proceed with confidence in ultimate victory.[6]\n\n## What He warned them about\n\nThe central warning was the danger of **turning back**—allowing fear, comfort, ambition, attachment, or worldly desire to corrupt their mission. If they failed to live up to the station to which they had been called, God could replace them with “another people” who would prove more faithful and take from them the spiritual kingdom entrusted to them.[1][2]\n\nThus, “bearers of the name of God” does not mean that they possessed a permanent privilege simply because they had been chosen. It meant that they had to **bear God’s name through their character**. Their honor depended on faithfulness: the world should encounter the Báb’s message in the form of their purity, courage, detachment, service, and deeds.\n\nThe farewell therefore combines extraordinary dignity with severe responsibility. The Báb assures them that they have been selected as repositories of divine mystery, but He also makes clear that election alone is insufficient. They must preserve that trust through action, so that He may, in the next world, rejoice before God in what they accomplished.[4][10]",
+     "ms": 4975
+    },
+    "current": {
+     "text": "These are the words of The Báb, from [*Farewell address to the Letters of the Living (provisional translation)*](https://portlandiator.github.io/PI_browser/?id=BBU0001#:~:text=O%20My%20beloved%20friends,God%20in%20this%20Day). The passage reads: «O My beloved friends! You are the bearers of the name of God in this Day». It is also quoted in [*The Chosen Highway*](https://bahai-library.com/blomfield_chosen_highway&chapter=all#:~:text=O%20My%20beloved%20friends,god%20in%20this%20Day), [*America's Spiritual Mission: Teaching Tablets Revealed by 'Abdu'l-Baha to the American Baha'is during 1916 and 1917*](https://bahai-library.com/abdul-baha_americas_spiritual_mission#:~:text=O%20my%20beloved%20friends,God%20in%20this%20Day) and [*Century of Light*](https://bahai-library.com/uhj_century_light&chapter=all#:~:text=O%20My%20beloved%20friends,God%20in%20this%20Day).",
+     "ms": 6439
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 2,
+      "why": "A only identifies where the line appears and lists other books that quote it. It does not explain what the Báb asked of the Letters of the Living or what He warned them about. Some of the attributions, such as The Chosen Highway, are doubtful, and the source is wrongly labelled a 'provisional translation' when the reader quoted Nabíl's narrative. It is evasive."
+     },
+     "perplexity": {
+      "score": 8,
+      "why": "B gives an accurate, well-organised summary of the address as Nabíl records it. It covers the call to show forth God's attributes in their own lives, detachment, expecting no reward, announcing that the Gate has opened without stressing the Báb's own person, and trusting God's power. It also gives the warning that God would put 'another people' in their place if they turned back. It would be stronger with more direct quotation, such as the comparison with Christ's disciples and the passage 'Ye are the lowly of the earth', and with an explicit chapter reference in The Dawn-Breakers."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-28",
+   "kind": "explain-passage",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers",
+    "note": "¶366"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Nabíl writes: \"The siyyid's message stung Ḥájí Mírzá Karím Khán. Convulsed by a feeling of intense resentment which he could neither suppress nor gratify, he relinquished all hope...\" Who was Ḥájí Mírzá Karím Khán, who was the siyyid, and what was the message?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Ḥájí Mírzá Karím Khán Kirmání (1809–1871) was a prominent **Shaykhī leader and theologian** in Kirmán. He had been a disciple and close associate of **Siyyid Káẓim Rashtí**, Shaykh Aḥmad al-Aḥsáʾí’s successor, but aspired to establish himself as the movement’s independent leader in Kirmán after Siyyid Káẓim’s death.[1][2]\n\nThe “siyyid” was **Siyyid Káẓim**. Karím Khán had sent him a book he wanted Siyyid Káẓim to read and endorse in his own handwriting. Siyyid Káẓim returned it with the pointed message:\n\n> “Tell your master that he, better than anyone else, can estimate the value of his own book.”[2]\n\nThe book apparently contained doctrines that Siyyid Káẓim regarded as heretical and atheistic, and the request for his endorsement exposed Karím Khán’s attempt to secure Siyyid Káẓim’s support while preparing his own theological and political ascendancy. Siyyid Káẓim’s refusal therefore shattered Karím Khán’s expectation of inheriting undisputed leadership in Kirmán.[1][2]\n\nThis episode should be distinguished from a later message associated with the Báb: Mullá Ḥusayn instructed Mullá Ṣādiq to go to Kirmán and inform Karím Khán of the new Revelation, then proceed to Shiraz.[3][6]",
+     "ms": 5006
+    },
+    "current": {
+     "text": "Ḥájí Mírzá Muḥammad Karím Khán-i-Kirmání was the self-appointed leader of the Shaykhí community following the death of Siyyid Káẓim, who is the siyyid referenced as the teacher whose following awaited the promised Advent. The message that stirred such resentment was the announcement of the new Revelation and the summons to recognize the Báb.\n\nThe background of Karím Khán is noted in [*The Kitáb-i-Aqdas*](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=fn_186):\n\n> [\"Ḥájí Mírzá Muḥammad Karím Ḵhán-i-Kirmání (1810–circa 1873) was the self-appointed leader of the S̱hayḵhí community after the death of Siyyid Káẓim, who was the appointed successor to S̱hayḵh Aḥmad-i-Aḥsá’í.\"]](https://oceanlibrary.com/kitab-i-aqdas_bahaullah/?paraId=fn_186) — [*The Kitáb-i-Aqdas*](https://siftersearch.com/library/view?doc=21307)",
+     "ms": 6590
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "Correctly identifies Karím Khán, quoting the Aqdas note. It gets the episode wrong, though: it reads the message as the announcement of the Báb's Revelation. In Nabíl's passage the siyyid is Siyyid Káẓim and the message is his refusal to endorse Karím Khán's book. The answer is thin and does not deal with the actual passage."
+     },
+     "perplexity": {
+      "score": 8,
+      "why": "Correctly names Siyyid Káẓim as the siyyid and explains that the message was his refusal to endorse Karím Khán's book, quoting his pointed reply. It also explains why this crushed Karím Khán's ambitions and separates the episode from the later summons to Kirmán about the Báb. The footnote markers are loose and some dates and details are approximate, but the answer meets the question fully."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B correctly names the siyyid (Siyyid Káẓim) and gives the actual message, his refusal to endorse Karím Khán's book, with his reply. It also explains what Nabíl's account shows about Karím Khán's hopes of leadership and separates this episode from the later summons about the Báb.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-29",
+   "kind": "explain-passage",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers",
+    "note": "¶1039"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "In the Dawn-Breakers someone says: \"Our friends eventually dispersed, leaving Us at the mercy of Our enemies. When, at a later time, We went to Ámul, such was the turmoil which the people had raised...\" Who is speaking, and what is the context?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The speaker is **Bahá’u’lláh**. He is recounting His journey through **Mázindarán** with **Quddús** and companions during the early Bábí movement, shortly after the conference of Badasht.\n\nIn context, Bahá’u’lláh and His party had traveled through places including **Sárí** and then **Ámul**. Local religious leaders and inhabitants, alarmed by the Bábí message, stirred up hostility against them. At Ámul, thousands gathered, the leading mullá denounced Bahá’u’lláh, and the group was eventually confined. When the governor later released or protected them, the townspeople attacked the governor’s residence and hurled abuse and stones at Bahá’u’lláh and His companions.[1]\n\nThe passage appears in **Chapter XXI, “The Seven Martyrs of Ṭihrán,”** where Bahá’u’lláh’s personal account is inserted into Nabíl’s broader narrative. “Us” is therefore Bahá’u’lláh’s first-person plural style, not Nabíl speaking.[1]",
+     "ms": 3226
+    },
+    "current": {
+     "text": "These are the words of Bahá’u’lláh, from [*Words spoken in the house of Aqay-i-Kalim to Nabil-i-A'zam 1 (provisional translation)*](https://portlandiator.github.io/PI_browser/?id=BHU0003#:~:text=How%20great%20was%20the,bewilderment%20filled%20their%20hearts). The passage reads: «How great was the consternation that seized the companions on that day! Fear and bewilderment filled their hearts». It is also quoted in [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_1423&selectionString=dawn-breakers-prod-version_en_168.1~dawn-breakers-prod-version_en_168.134).",
+     "ms": 3129
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "Names Bahá'u'lláh correctly but gives no context. It quotes a different sentence from a provisional translation in place of the passage the reader asked about, and does not explain the attack at Níyálá or the episode at Ámul."
+     },
+     "perplexity": {
+      "score": 6,
+      "why": "Names Bahá'u'lláh correctly and gives useful context: the period after Badasht, hostile clergy, and the confinement and stoning at Ámul. But it runs together the attack at Níyálá right after Badasht (when the friends scattered) and the later arrest at Ámul. It also places the passage in Chapter XXI, which is probably wrong, since Bahá'u'lláh's account of this follows Nabíl's narrative of Badasht. And it never mentions Níyálá by name."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-30",
+   "kind": "explain-passage",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers",
+    "note": "¶185"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "\"Awake, for lo! the morning Light has broken. Arise, for His Cause is made manifest.\" — who said this, to whom, and on what occasion in the Dawn-Breakers?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "The words were **not spoken aloud by the Báb**. In *The Dawn-Breakers*, **Mullá Ḥusayn** says that, after the Báb declared His mission to him, he felt as though he were “the Voice of Gabriel personified,” proclaiming these words **to all humanity**.[1][2]\n\nThe occasion was the Báb’s **first declaration of His mission**, during His meeting with Mullá Ḥusayn in Shiraz on the night of **22–23 May 1844**—the eve of the fifth day of Jamádíyu’l-Avval, 1260 A.H. The Báb had identified Himself as the promised One, named Mullá Ḥusayn the **Báb al-Báb** (“Gate of the Gate”), and revealed the opening portion of the *Qayyúmu’l-Asmá’*.[1][9]",
+     "ms": 2837
+    },
+    "current": {
+     "text": "The words you are looking at are spoken by Mulla Husayn, describing his inner state and realization during his historic encounter with the Báb on the night of May 22, 1843, in Shiraz—not within the pages of [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308) proper, but as recorded by Shoghi Effendi recounting that pivotal night.\n\nShoghi Effendi writes of Mulla Husayn's experience in [*God Passes By*](https://siftersearch.com/library/view?doc=21310):\n\n> [\"Awake, for, lo! the morning Light has broken. Arise, for His Cause is made manifest. The portal of His grace is open wide; enter therein, O peoples of the world! For He Who is your promised One is come!\"](https://oceanlibrary.com/god-passes-by_shoghi-effendi/?paraId=para_28&selectionString=god_passes_by_ocean_en_3j.731~god_passes_by_ocean_en_3j.864) — *God Passes By*",
+     "ms": 8648
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 2,
+      "why": "It names Mullá Ḥusayn correctly, but it gets the year wrong (1843 instead of 1844). It also wrongly says the passage is not in The Dawn-Breakers, when it comes from his own account in chapter 3 of that book. It leaves out the 'Voice of Gabriel personified' framing and that the words were addressed to all mankind, so it does not really answer 'to whom'."
+     },
+     "perplexity": {
+      "score": 8,
+      "why": "It correctly gives Mullá Ḥusayn's own account in The Dawn-Breakers: he felt like 'the Voice of Gabriel personified' calling to all humanity. The date is right (eve of 5 Jamádíyu'l-Avval 1260, 22–23 May 1844), and so is the setting: the Declaration in Shiraz and the opening of the Qayyúmu'l-Asmá'. It answers who, to whom and on what occasion. It could have quoted more of the surrounding text."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-31",
+   "kind": "explain-passage",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers",
+    "note": "¶1314"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Nabíl says Mírzá Taqí Khán, the Amír-Niẕám, \"met his death in a public bath in Fín, near Káshán.\" What had he done against the Báb and His companions, and how does Nabíl frame his end?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Mírzá Taqí Khán’s crimes included:\n\n- Directing the campaign against the defenders of Ṭabarsí.\n- Authorizing the execution of the Seven Martyrs of Ṭihrán.\n- Ordering the assault on Vaḥíd and his companions.\n- Securing and enforcing the death sentence of the Báb.\n- Precipitating the bloodshed at Zanján.[1][3]\n\nNabíl frames his death as the grim end of a career marked by terror: the minister who had helped destroy the Báb and His followers was himself killed—his veins opened in the bath at Fín—after losing the Shah’s favor. The narrative thus presents a stark reversal of power, from an apparently triumphant persecutor to a disgraced and helpless victim of royal intrigue.[1][3]",
+     "ms": 2794
+    },
+    "current": {
+     "text": "I didn't find a passage from Nabíl-i-A'ẓám's own [*The Dawn-Breakers*](https://siftersearch.com/library/view?doc=21308) in this search describing the death of Mírzá Taqí Khán, the Amír-Niẓám. However, Shoghi Effendi records in [*Bahá’í Faith, The: 1844-1950*](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative) that he \"was directly responsible for the execution of the Báb, was disgraced and put to death by the royal order in the bath of the Palace of Fín, near Káshán\" ([Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative#p247)) ([*Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative)).\n\nThe text that records his end notes:\n> [\"MÍRZÁ TAQÍ KHÁN, the Amír Nizám, the Grand Vazír of Násiri'd-Dín Sháh, who was directly responsible for the execution of the Báb, was disgraced and put to death by the royal order in the bath of the Palace of Fín, near Káshán.\"](https://siftersearch.com/library/bahai/bahai-books/shoghi-effendi_bahai-faith-the-1844-1950-information-statistical-and-comparative#p247) — *Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*",
+     "ms": 7101
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 6,
+      "why": "Gives the right list of acts Nabíl charges him with: Ṭabarsí, the Seven Martyrs, Vaḥíd, the Báb's execution and Zanján. But it quotes none of Nabíl's words, and its footnote numbers point nowhere. It also reads his end as royal intrigue and a reversal of power, missing that Nabíl presents it as divine retribution for what he did to the Báb."
+     },
+     "current": {
+      "score": 3,
+      "why": "Says it could not find the passage in Nabíl. It falls back on one Shoghi Effendi sentence, which is a sound primary source but quoted twice over. It covers only the Báb's execution and says nothing about Nabíl's framing, so most of the question goes unanswered."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:db-32",
+   "kind": "explain-passage",
+   "expect": {
+    "docs": [
+     21308
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "dawn-breakers",
+    "note": "¶576"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "\"The people of the Bayán, who utterly misconceived the purpose underlying that Tablet, thought it to be a mere exposition of the science of Jafr.\" Which Tablet is Nabíl talking about, and what is Jafr?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Nabíl is referring to the **Lawḥ-i-Ḥurūfāt**—the **Tablet of the Letters**—which the Báb revealed in honor of **Dayyán** during His confinement in Chihríq. The passage says that the Báb regarded the Tablet itself as an extraordinary proof of His revelation, while some followers of the Bayán mistakenly reduced it to a treatise on Jafr.[1]\n\n**Jafr**—Arabic *jafr*, often translated in this context as the “science of divination”—is an Islamic esoteric discipline involving the interpretation of letters and their numerical values, especially through the **abjad** system, to derive hidden meanings or predict events.[3] It was also associated with a legendary book or body of occult knowledge attributed to Imam ʿAlī, said to contain knowledge of past and future events.[5]\n\nIn the Bahá’í interpretation, the Tablet was **not merely a work of letter-divination**. It contained deeper allusions, including references to the **Mustaghāth** and to the nineteen-year interval between the Báb’s declaration and Bahá’u’lláh’s.[2]",
+     "ms": 3053
+    },
+    "current": {
+     "text": "These are the words of Bahá’u’lláh, from [*Tablet on the Paradise of Justice (Lawh-i Ridvánu'l-'Adl)*](http://bahaiprovisionaltablets.blogspot.com/2018/06/lawh-i-ridvanul-adl-paradise-of-justice.html#:~:text=The%20purpose%20of%20all,ye%20but%20know%20it). The passage reads: «The purpose of all that hath descended from the Kingdom of the Bayán was to make mention of Me and celebrate My praise, did ye but know it». I could not confirm the original tablet for this passage. It is also quoted in [*The Dawn-Breakers*](https://oceanlibrary.com/dawn-breakers_nabil/?paraId=para_873&selectionString=dawn-breakers-prod-version_en_qy.0~dawn-breakers-prod-version_en_qy.119).",
+     "ms": 6877
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 8,
+      "why": "Correctly names the Lawḥ-i-Ḥurúfát, revealed at Chihríq for Dayyán, as Nabíl tells it in The Dawn-Breakers. It explains Jafr accurately, covering letters, abjad values and the tradition linked to Imam 'Alí, and notes the hidden reference to the Mustagháth and the nineteen years. It could have quoted Nabíl's own words about the Mustagháth and given a fuller source for 'the Bahá'í interpretation'."
+     },
+     "current": {
+      "score": 1,
+      "why": "Doesn't answer the question. It wrongly says the quoted sentence comes from Bahá'u'lláh's Tablet on the Paradise of Justice and quotes an unrelated passage. It never names the Tablet Nabíl means and never explains Jafr."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": [
+     "current: claims Nabíl's narrative sentence is Bahá'u'lláh's own words from a different Tablet (misattribution)"
+    ]
+   }
+  },
+  {
+   "id": "w8:goth-01",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ],
+    "text_contains": [
+     "Saiedi"
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "In Gate of the Heart, how does Nader Saiedi divide the Báb's writings into three stages, and what characterizes each stage?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Saiedi divides the Báb’s writings into **three broad, overlapping stages**, emphasizing that the categories are orientations rather than rigid boundaries:[4]\n\n1. **Interpretive stage (1844–early 1846):** The Báb primarily reinterprets the Qur’an, Islamic theology, and Shi‘i traditions. His writings present the new revelation through familiar Islamic concepts and texts.[1][2]\n\n2. **Philosophical stage (January 1846–April 1847):** The focus shifts toward an extensive metaphysical explanation of **being, creation, divine action, and the Primal Will**.[2][7]\n\n3. **Legislative stage (April 1847–July 1850):** The Báb formulates the laws and institutions of the new religion, especially in the *Persian Bayán*. This stage brings together his mystical and historical principles and increasingly emphasizes the coming of **“Him Whom God Shall Make Manifest.”**[3][6][9]\n\nThe stages overlap: themes introduced earlier continue into later writings, while the third stage gives the Báb’s earlier interpretive and philosophical ideas their fullest historical and legislative expression.[1]",
+     "ms": 2993
+    },
+    "current": {
+     "text": "I didn't find a passage on that in this search.",
+     "ms": 9636
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "Gets Saiedi's three stages right: interpretive (1844–early 1846), philosophical (1846–1847) and legislative (1847–1850). It describes each stage accurately and notes that Saiedi treats them as overlapping. It names no representative works, such as the Qayyúmu'l-Asmá', the Commentary on the Súrih of Kawthar, the Ṣaḥífiy-i-'Adlíyyih, the Persian Bayán or the Seven Proofs. It also leaves out the link to the Báb's own modes of revelation, and its citation markers point to nothing."
+     },
+     "current": {
+      "score": 1,
+      "why": "Declines to answer and gives no substance at all."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:goth-02",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "What does Saiedi mean by the Báb's 'interpretive revelation', and what are the modes of revelation he identifies in the Báb's writings?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Saiedi uses **“interpretive revelation”** to describe the Báb’s first literary and theological stage, roughly from 1844 to early 1846. Rather than initially presenting a separate legal system, the Báb disclosed His new revelation through the **reinterpretation of Islamic—especially Qur’anic and Shaykhi—texts and concepts**. This method both asserted His own prophetic station and transformed ideas such as God, revelation, the Qur’an, resurrection, and religious authority according to the principle of the unity and renewal of divine revelation.[1][4][9]\n\nThe Báb’s interpretive method treats earlier scripture as possessing a concealed, living meaning that is unveiled by the new Manifestation of God. The *Qayyúmu’l-Asmá’*, begun at the Báb’s declaration, is Saiedi’s central example: it reinterprets the Qur’anic Súrih of Joseph while simultaneously revealing the Báb’s station and pointing toward Bahá’u’lláh.[8][10]\n\n## The modes of revelation\n\nSaiedi identifies **five modes or styles** in the Báb’s writings:\n\n- **Divine verses** (*âyât*): revealed verses in the highest and most authoritative form.\n- **Prayers and supplications** (*munâjât*): devotional revelation addressed to God.\n- **Commentaries** (*tafsîr*): interpretations of Qur’anic passages and earlier scriptures.\n- **Rational or scientific treatises**: systematic discourses analyzing theological, philosophical, or metaphysical questions.\n- **Persian writings**: works composed in Persian, often intended for wider accessibility.[1][6]\n\nThese five modes are not merely literary genres. They correspond to different ways divine truth is disclosed and to distinct dimensions of the Báb’s mission. In some passages the Báb groups the writings into four principal modes—verses, prayers, commentaries, and rational/scientific discourses—while treating Persian works separately or as overlapping with the others.[6]\n\nThus, “interpretive revelation” refers both to a **historical stage** in the Báb’s ministry and to a **method of revelation**: the creation of new religious meaning through the authoritative interpretation and spiritual renewal of earlier scripture.",
+     "ms": 4504
+    },
+    "current": {
+     "text": "I didn't find a passage detailing Saiedi's specific breakdown of \"interpretive revelation\" or the exact modes of revelation in the search results provided. The available passages touch on the character of the Báb's dispensation and His major works—such as Shoghi Effendi explaining that [\"The severe laws and injunctions revealed by the Báb can be properly appreciated and understood only when interpreted in the light of His own statements\" ([Messages to the Indian Subcontinent](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_1998&selectionString=messages_to_the_indian_subcontinent_en-bl1fo.0~messages_to_the_indian_subcontinent_en-bl1fo.960))](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_1998&selectionString=messages_to_the_indian_subcontinent_en-bl1fo.0~messages_to_subcontinent_en-bl1fo.960) ([*Messages to the Indian Subcontinent*](https://siftersearch.com/library/view?doc=20888)), and notes on Nader Saiedi's talks mentioning his approach to [*The Writings of the Bab: Notes from Talks given by Dr. Nader Saiedi*](https://siftersearch.com/library/view?doc=282885)—but they do not list the specific categories of revelation you are looking for.\n\nTo explore this further, you might look directly into scholarly studies of the Báb's writings, such as Nader Saiedi's [*Gate of the Heart*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab), which examines the philosophical and theological dimensions of the Báb's revelation.",
+     "ms": 9805
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "Gets Saiedi right: interpretive revelation is the first stage (1844 to early 1846), in which the Báb reworks Qur'anic and Shaykhi texts, with the Qayyúmu'l-Asmá' as the main example. It also lists the five modes the Báb Himself gives in the Bayán: verses, prayers, commentaries, scientific treatises and Persian. However, it leaves out Saiedi's later philosophical and legislative stages, which give 'interpretive' its meaning. It does not quote the Bayán passage where the Báb names the modes, and its remark about a 'four modes' grouping is vague."
+     },
+     "current": {
+      "score": 2,
+      "why": "Mostly declines to answer. It offers an unrelated Shoghi Effendi quote with a broken, duplicated link, then simply points the reader to Gate of the Heart without saying anything about its content."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:goth-03",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "According to Gate of the Heart, what is the Primal Will in the Báb's theology, and how does it relate to the Point and to the Manifestation of God?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "In *Gate of the Heart*, the **Primal Will** is the first emanation from God: the intermediary between the utterly unknowable Divine Essence and creation. It is the “knowable God,” the source and creator of the phenomenal world, while created things manifest the Will—not God’s transcendent Essence.[1][2]\n\nThe **Point** is the Primal Will in its concentrated, originating form. The Báb identifies Himself as the “Primal Point” from which all created things are generated; thus, “Point” signifies the being or essential reality of the Primal Will.[2] In the Báb’s theology, the Point can also be considered in two stations: the absolute station of pure divine revelation and the station of determination, in which it is known as the Primal Will.[3]\n\nThe **Manifestation of God** is the locus in which the Primal Will becomes perfectly visible and articulate. The same Primal Will appears in every Prophet and speaks through every revealed Book—Adam, Noah, Abraham, Moses, Jesus, Muhammad, the Báb as the Point of the Bayán, and future Manifestations.[2][6] Therefore, the Báb is not claiming that the human person of a prophet is identical with God’s unknowable Essence; rather, the Manifestation is the perfect mirror and focal point through which the Primal Will is revealed in a particular historical Dispensation.[1][2]",
+     "ms": 3426
+    },
+    "current": {
+     "text": "In the writings of the Báb, the Primal Will is described as the foundational emanation of the Divine, the first reality through which all things are brought into existence. As the Báb explains, [\"It is this Primal Will which appeareth resplendent in every Prophet and speaketh forth in every revealed Book. It knoweth no beginning, inasmuch as the First deriveth its firstness from It; and knoweth no end\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab/?paraId=para_563&selectionString=selections_from_the_writings_of_the_bab_bahai_en-blfk.0~selections_from_the_writings_of_the_bab_bahai_en-blfk.438) — [*Selections from the Writings of the Báb*](https://siftersearch.com/library/view?doc=20898).\n\nRegarding its relation to the Point and the Manifestation, authorized interpretation and scripture clarify that the Primal Will is perfectly reflected within each Manifestation of God. In [*Some Answered Questions*](https://siftersearch.com/library/view?doc=20911), ‘Abdu’l-Bahá notes that this emanation is the universal reality \"which the people of Bahá call the 'Primal Will'\" (https://oceanlibrary.com/some-answered-questions_abdul-baha/?paraId=para_708&selectionString=some-answered-questions-prod-version_en_mm.0~some-answered-questions-prod-version_en_mm.612). Furthermore, prayers and commentaries link the Báb as the Primal Point to this station; as Bahá’u’lláh addresses Him, the Báb is [“Him Who is the Primal Point, the Divine Mystery, the Unseen Essence… and the Manifestation of Thy Lordship”](https://oceanlibrary.com/prayers-and-meditations-by-bahaullah/?paraId=para_346&selectionString=prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_cd.0~prayers_and_meditations_by_baha_u_llah_ocean_bahai0ab08b9a76883efd6ac65691b713a5a4_cd.1132) — [*Prayers and Meditations*](https://siftersearch.com/library/view?doc=20805).\n\nWhile the texts establish the Primal Will as the eternal sun of reality shining through every Prophet, scholarly summaries note that it serves as the hidden secret and originator of beings in each dispensation. However, the precise metaphysical mechanics of how the Unseen Essence relates to this first emanation and the human reality of the Manifestations remain largely beyond exhaustive definition in the passages here, pointing instead to the infinite nature of the Divine creative act.",
+     "ms": 10011
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 5,
+      "why": "Quotes the Báb's own words on the Primal Will, plus Some Answered Questions and Bahá'u'lláh's address to the Primal Point. These are the right authorities, but A never engages Gate of the Heart, which is what the reader asked about. It barely explains how the Point relates to the Will, alludes vaguely to unnamed 'scholarly summaries', and ends with a filler disclaimer."
+     },
+     "perplexity": {
+      "score": 7,
+      "why": "Answers the question as asked. It correctly summarises Saiedi's account: the Primal Will as the first emanation and the 'knowable God', the Point as its essential reality, the two stations, and the Manifestation as the mirror of the Will in each Dispensation. Reporting a scholar's reading when the reader asks for it is legitimate. However, B gives no primary quotations, and its numbered citations point to nothing visible."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B quotes none of the Báb's own words, such as the passage in Selections that A gives: 'It is this Primal Will which appeareth resplendent in every Prophet…'. Its citation markers are also unresolved.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:goth-04",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart",
+    "note": "¶900"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "How does Saiedi explain the Báb's distinction between the 'Sea of Names' and the 'Sea of Creation'?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Saiedi explains the distinction through the **two directions or stations of the Primal Will**:\n\n- **Sea of Names:** The higher, subjective direction of the Will, in which it functions as the perfect mirror of God. At this level, nothing is perceived except God; there is no differentiation, creation, or plurality of divine names and attributes. Saiedi stresses that this is not the divine Essence itself, but the Will’s complete reflection of God’s unity.[1]\n\n- **Sea of Creation:** The lower, objective direction of the Will, in which the Will is regarded as a created reality. Here its “self”—its capacity to mirror and manifest divine names—comes into view, and creation becomes possible. Through its relation to the higher station, the Will worships and reveals God.[1]\n\nThus, the two “seas” are not contradictory realms but complementary aspects of the Báb’s conception of the Point and the Primal Will: one expresses undivided divine revelation, while the other expresses the created, manifesting reality through which that revelation reaches creation.[1]",
+     "ms": 3058
+    },
+    "current": {
+     "text": "I didn't find a passage on that specific distinction in this search.\n\nThe passages do, however, point us to how the Báb describes the sea of names in His own writings, where He notes: [\"If thou art sailing upon the sea of God’s Names, which are reflected in all things, know thou that He is exalted and sanctified from being known through His creatures\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab/?paraId=para_561&selectionString=selections_from_the_writings_of_the_bab_bahai_en-blfi.0~selections_from_the_writings_of_the_bab_bahai_en-blfi.525) [*Selections from the Writings of the Báb*](https://siftersearch.com/library/view?doc=20898).\n\nRegarding how scholars discuss these themes, notes from Dr. Nader Saiedi's talks list topics such as *The Concept of God* and *The Concept of Manifestation of God* as central to understanding the Báb's works (as recorded in [The Writings of the Bab: Notes from Talks given by Dr. Nader Saiedi](https://bahai-library.com/saiedi_notes_writings_bab&tagsall=yes/?paraId=h2) [*The Writings of the Bab: Notes from Talks given by Dr. Nader Saiedi*](https://siftersearch.com/library/view?doc=282885)). However, those lecture notes alone do not detail the specific contrast between the 'Sea of Names' and the 'Sea of Creation'.\n\nTo explore this further, you might look into Saiedi's published studies on the Báb's writings, such as [*Gate of the Heart*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab), which examines the philosophical and mystical terminology of the Báb's revelation.",
+     "ms": 9446
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 6,
+      "why": "Answers the question directly and coherently. It lays out Saiedi's reading of the two seas as two aspects of the Primal Will: one turned toward God, with no plurality, and one in which the Will appears as a created reality that manifests the divine names. Reporting Saiedi is fine because the reader asked about him. However, it gives no words from the Báb, names no work by the Báb, and cites Saiedi with no page or passage, so its accuracy is hard to check."
+     },
+     "current": {
+      "score": 3,
+      "why": "Mostly declines to answer. It offers one relevant quotation from the Báb on the sea of God's Names and points to Gate of the Heart, but says nothing about Saiedi's actual distinction or about the Sea of Creation. The mention of lecture-note topic headings is filler."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "A gave the substance of Saiedi's explanation that B lacked: the Primal Will's two aspects, one toward God and one toward its created self, mapped onto the two seas. Neither answer quoted the Báb's own text on the Sea of Creation, and neither cited specific pages of Gate of the Heart.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:goth-05",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Who is 'Him Whom God shall make manifest' in the Báb's writings, and how does Saiedi argue that the whole Bayán is oriented toward Him?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "“Him Whom God shall make manifest” is **Bahá’u’lláh**—the future Manifestation whom the Báb announced and toward whom His own revelation was deliberately oriented.[1][2] The designation appears throughout the Bayán and refers to a figure whose authority would supersede and fulfill the Báb’s dispensation.[3]\n\nSaiedi’s argument is that the Bayán is not primarily a self-contained legal or theological system. Its **entire purpose is preparatory**:\n\n- The Báb repeatedly presents the Bayán as a **gift, sign, and testimony** offered for the recognition of Him Whom God shall make manifest.\n- Its laws and teachings function as a spiritual training: they are meant to purify believers, cultivate qualities such as refinement and detachment, and prepare them to recognize and obey the coming Manifestation.\n- The Bayán’s meaning is therefore completed only at His appearance. The Báb compares the Bayán in its present condition to a **seed**, whose “resurrection” and full perfection occur through Him Whom God shall make manifest.[4]\n- The decisive test of understanding the Bayán is not merely observing its laws but **recognizing the One to whom those laws point**. Those who reject Him, the Báb says, have failed to understand the Bayán, even if they outwardly follow its ordinances.[4]\n- His revelation is also subordinated to the later one: a single verse revealed by Him Whom God shall make manifest is described as surpassing a thousand readings of the Bayán.[3]\n\nThus, Saiedi reads the Bayán as an intentionally **open, dynamic, and self-transcending revelation**. Its laws, concepts, and rhetoric continually direct the reader beyond the Báb toward Bahá’u’lláh; the Bayán reaches its intended goal not in its own independent permanence but in preparing humanity to recognize the next Manifestation of God.[5]",
+     "ms": 4269
+    },
+    "current": {
+     "text": "In the writings of the Báb, \"Him Whom God shall make manifest\" ([Will and Testament](https://oceanlibrary.com/kjv-gospel-of-luke)) is spoken of as a supreme Revealer whose station is immeasurably exalted above all others, described as the fulfillment of all creation. As the Báb testifies, He is the one [\"in Whose grasp lieth the source of proofs, and let not erroneous considerations shut thee out from Him, for He is immeasurably exalted above them\"](https://oceanlibrary.com/selections-from-the-writings-of-the-bab/?paraId=para_501&selectionString=selections_from_the_writings_of_the_bab_bahai_en-ble3.0~selections_from_the_writings_of_the_bab_bahai_en-ble3.817) — [*Selections from the Writings of the Báb*](https://siftersearch.com/library/view?doc=20898). Shoghi Effendi further explains that the Báb specified that the [*Bayán*](https://siftersearch.com/library/view?doc=329779) was not a completed code in itself, noting that [\"‘He Whom God would manifest’ (Bahá’u’lláh) would complete it, though not in its actual form, but only spiritually in the form of another book\"](https://oceanlibrary.com/messages-to-the-indian-subcontinent_shoghi-effendi/?paraId=para_1999&selectionString=messages_to_the_indian_subcontinent_en-bl1fp.0~messages_to_the_indian_subcontinent_en-bl1fp.206) — [*Messages to the Indian Subcontinent*](https://siftersearch.com/library/view?doc=20888).\n\nRegarding how Nader Saiedi approaches this, the available search results do not contain the text of his specific arguments concerning the orientation of the *Bayán*, so I cannot confirm his scholarly presentation from these particular passages.\n\nThe texts leave open the precise details of how every specific injunction of the earlier dispensation was understood to transition under the authority of the promised One, pointing readers directly to the subsequent Revelation for that unfolding.",
+     "ms": 11714
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "Clearly names Bahá'u'lláh and gives a full, accurate account of Saiedi's reading: the Bayán as preparation, the seed image, recognition as the test of understanding, and a thousand readings of the Bayán not equalling one verse. Its weaknesses are that the footnotes [1]–[5] point to no named sources, and it paraphrases the Báb and Shoghi Effendi instead of quoting them."
+     },
+     "current": {
+      "score": 4,
+      "why": "It gives two genuine primary quotations, one from Selections from the Writings of the Báb and one from Shoghi Effendi, but it has a broken citation (a 'Will and Testament' link that goes to the Gospel of Luke). It never plainly says the figure is Bahá'u'lláh except inside a quotation, and it refuses the Saiedi half of the question, which is evasion."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "B gave verbatim primary quotations, including Shoghi Effendi saying that Bahá'u'lláh would complete the Bayán 'only spiritually in the form of another book' and the Báb's own words on the exalted station of the Promised One. A uses no quotations from the Writings and no traceable citations.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:goth-06",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart",
+    "note": "¶24-60"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Saiedi argues that the Báb's writings are at once a critique of Islamic traditionalism and a critique of modernity. What is that argument?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Saiedi’s argument is that the Báb challenges **both poles of the modern religious crisis**: Islamic traditionalism on one side and secular modernity on the other.\n\n- **Against Islamic traditionalism:** The Báb rejects the idea that Islam’s revelation and law are final, unchangeable, and adequately represented by inherited clerical interpretations. He reinterprets Islamic concepts, abolishes the existing Sharíʿa, and replaces legalistic authority with a new, living revelation embodied in the Manifestation of God. Thus, religion is not a fixed system preserved by scholars but an ongoing dialogue between God and humanity.[1][5][7]\n\n- **Against modernity’s secularist reaction:** The Báb also rejects the modern attempt to solve religious oppression by eliminating religion altogether. Saiedi argues that modern Western thinkers often treated revelation, belief in God, and religious authority as equivalent to fanaticism, and sought to establish reason or political order “on the ruins of religion.” The Báb instead presents reason, science, and social transformation as compatible with revelation, while grounding them in a spiritual conception of reality.[1]\n\nThe result is not simply an Islamic reform or a secular revolution. The Báb’s writings **transcend both traditionalism and secularism**: they criticize religious authority when it becomes rigid and coercive, but also criticize modernity when it reduces reality to the material and rejects the sacred. His alternative is a dynamic religion in which revelation renews itself, human beings possess spiritual and intellectual agency, and social progress rests on both reason and divine guidance.[1][4][9]",
+     "ms": 3843
+    },
+    "current": {
+     "text": "Nader Saiedi examines this argument in [*Gate of the Heart: Understanding the Writings of the Báb*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab#p34), noting that \"The writings of the Báb offered a novel solution to Islam's cultural and spiritual impasse\" ([*Gate of the Heart*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab)).\n\nAs a work of scholarship and exposition, Saiedi's analysis explores how the Báb's rejection of static literalism challenged clerical traditionalism, while simultaneously rejecting the reductionist materialism often associated with modern Western thought.\n\nWhat these studies share is the recognition that the Báb’s revelation occupies a unique third space, transcending both the backward-looking closure of traditionalism and the spiritually empty horizons of modern materialism to establish a dynamic framework for human spiritual evolution.",
+     "ms": 10174
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 3,
+      "why": "It offers one quotation from Gate of the Heart and a vague 'third space' summary. It never sets out the actual argument: abrogation of the Sharíʿa, the dynamic and ongoing nature of revelation, or the critique of secular rationalism. 'What these studies share' is filler, since only one study is discussed."
+     },
+     "perplexity": {
+      "score": 8,
+      "why": "It sets out the two-sided argument clearly: against traditionalism (finality, clerical authority, abolition of the Sharíʿa, revelation as ongoing), against secular modernity ('on the ruins of religion'), and the Báb's alternative that goes beyond both. It correctly presents this as Saiedi's reading. The footnote markers point to no listed sources, and it quotes none of the Báb's own words that Saiedi relies on."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none (no answer is labelled Anís). Both answers would be stronger with passages from the Báb's own writings, such as the Persian Bayán on progressive revelation, that Saiedi uses to support his argument.",
+    "kind": "historical",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:goth-07",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "What are the stages of divine creative action — Will, Determination, Destiny, Decree, Permission, Term, Book — in the Báb's writings as Saiedi presents them?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Saiedi presents the seven stages as a **two-part process**: the first three establish a thing’s ontological reality, while the final four bring it into the phenomenal world.[1][2]\n\n1. **Will** (*mashiyya*) — the originating creative principle; it corresponds to **existence**.\n2. **Determination** (*irāda*) — the specification or definition of what is created; it corresponds to **essence**.\n3. **Destiny** (*qadar*) — the synthesis of Will and Determination, joining existence and essence into a determinate reality. The first three therefore form a trinity.[2]\n4. **Decree** (*qaḍāʾ*) — the actualization of that determinate reality in the order of time and space.\n5. **Permission** (*idhn*) — the enabling or execution of the Decree, allowing the thing to appear.\n6. **Term** (*ajal*) — the fixed duration or lifespan assigned to the thing.\n7. **Book** (*kitāb*) — the disclosure or recording of the thing’s completed form and perfection.[8]\n\nIn short: **Will gives existence; Determination gives essence; Destiny unites them; Decree, Permission, Term, and Book accomplish and reveal the thing’s appearance in the phenomenal world.**[2][8]",
+     "ms": 3101
+    },
+    "current": {
+     "text": "I didn't find a passage in this search that details the full breakdown of the seven stages of divine action as Nader Saiedi presents them from the Báb's writings. However, the library's record notes the presence of these stages in the Báb's works, comprising Will (*Mashíyyat*), Determination (*Irádih*), Destiny (*Qadar*), Decree (*Qaḍá*), Permission (*Idhn*), Term (*Ajal*), and Book ([*Kitáb*](https://siftersearch.com/library/islam/miscellaneous/abu-al-faraj-al_kitab-al-aghani-arabic_ar)), reflecting how the phenomenal world comes into being as a mirror of its supreme Origin ([*Selections from the Bahá’í Writings and from Shaykh Ahmad on the Seven Stages of Creation*](https://siftersearch.com/library/bahai/tablet-translations/the-bab-translated_selections-from-the-bahai-writings-and-from-shaykh-ahmad-on-the-seven)).",
+     "ms": 9232
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "Answers the question as asked. It sets out the seven stages with their transliterated terms and gives Saiedi's framing in Gate of the Heart: Will as existence, Determination as essence, Destiny as their union, and the last four as appearance in the world. This is broadly accurate. It quotes none of the Báb's own words (for example from the Persian Bayán or the Ṣaḥífiy-i-'Adlíyyih), and some stage glosses, such as Permission and Book, are thin. The bracketed citations are unexplained."
+     },
+     "current": {
+      "score": 2,
+      "why": "Mostly declines: it says it found no detailed breakdown and only lists the seven terms. It adds a wrong link that sends 'Kitáb' to the Kitáb al-Aghání, a medieval Arabic poetry anthology. It gives none of Saiedi's analysis, which is what the reader asked for."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "A full summary of Saiedi's scheme: the first three stages as ontological (existence, essence, their union) and the last four as appearance in the world, with a gloss for each stage. Neither answer gives the Báb's own words on the stages.",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:goth-08",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "Why is Saiedi's book called 'Gate of the Heart'? What does the Báb mean by the heart as a gate, in Saiedi's reading?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Saiedi calls the book *Gate of the Heart* because he brings together two central Bábí ideas: the Báb as **“the Gate”** and the heart as the inner place where divine knowledge is encountered. “Gate” is not merely a title for the Báb’s historical role; it describes his function as the mediator through whom the seeker approaches God, the hidden Imam, and the next Manifestation of God.[1]\n\nIn Saiedi’s reading, the **heart is itself a gate—or sanctuary—of understanding**. It is not simply the seat of emotion. The heart is the spiritual faculty through which reality becomes intelligible and through which the seeker recognizes God’s revelation. The Báb is therefore described as the Gate to the “sanctuary of the heart”: he opens access to an inward realm in which the seeker can perceive the meaning of all things.[1][3]\n\nThe title also signals Saiedi’s interpretive method. The Báb’s writings use symbolic and mystical language, so they cannot be understood adequately through literal or purely historical analysis. They must be approached through the heart—that is, through spiritual perception and transformation.[3] In this sense, the Báb is both:\n\n- **The Gate to the heart:** the divine mediator who leads the seeker inward.\n- **The Gate of the heart:** the point at which revelation is received and recognized within the believer.\n- **The heart’s own reality:** in Saiedi’s presentation, the Báb’s heart reflects the divine heart and, spiritually, he dwells in the hearts of believers.[1]\n\nThus, “the heart as a gate” means that access to truth is not external alone. The Báb’s revelation opens an inward sanctuary where the seeker encounters divine reality; conversely, genuine understanding of the Báb requires the heart’s spiritual awakening.",
+     "ms": 5185
+    },
+    "current": {
+     "text": "I didn't find a passage in this search that directly details Nader Saiedi’s specific explanation of the phrase [*Gate of the Heart*](https://siftersearch.com/library/bahai/bahai-books/nader-saiedi_gate-of-the-heart-understanding-the-writings-of-the-bab) or his reading of the heart as a gate.\n\nHowever, the scriptures and historical writings frequently address the station of the Báb as the Gate ([*Báb*](https://siftersearch.com/library/view?doc=28849)). As ‘Abdu’l-Bahá notes, the Báb “identified Himself as the Gate [Bab] for the advent of the promised Qa’im” ([Fire and Light](https://oceanlibrary.com/fire-and-light/?paraId=para_60&selectionString=fire_and_light_baha_i_ocean_en-bl41.0~fire_and_light_baha_i_ocean_en-bl41.627)) ([*Fire and Light*](https://siftersearch.com/library/bahai/research-department-compilations/research-department_fire-and-light)). Similarly, Bahá’u’lláh recalls the Báb’s own station as the “Revealer of the Bayān [the Bāb] with wondrous, holy verses,” ([Sūrat al-Fatḥ [Extract]](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_surat-al-fath-extract#p8)) wherein He declared,\n\n> “I am the Gate of Knowledge (_bāb al-'ilm_) and whosoever is convinced of the truth of my Claim (_ḥaqqī_) in addition to that [surpassing that station] (_fūq dhalika_), hath assuredly invented lies about Me and acquires great sin within himself.” ([*Sūrat al-Fatḥ [Extract]*](https://siftersearch.com/library/bahai/tablet-translations/bahaullah_surat-al-fath-extract))\n\nWhile some contemporaries initially misunderstood this title as merely continuing a sequence of physical gates, as discussed in [*The Seven Proofs (Dalá'il-i-Sab'ih)*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-seven-proofs-dalail-i-sabih), the broader writings emphasize a spiritual significance.\n\nThe texts here leave open the detailed scholarly arguments connecting this station directly to the interior landscape of the human heart, as explored in contemporary academic studies.",
+     "ms": 8641
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "Answers the question directly. It explains the title as combining the Báb's station as the Gate with the heart as the inward faculty of spiritual understanding, and links this to Saiedi's way of reading the texts. Relying on Saiedi is right here, since the reader asked for his reading. Gaps: it doesn't name the Báb's term fu'ád (the inmost heart) or quote any of the Báb's own passages, and its footnotes are vague."
+     },
+     "current": {
+      "score": 3,
+      "why": "Says it couldn't find Saiedi's explanation and never answers the question. It drifts into general quotations about the Báb as the Gate. The extract from Súrat al-Fatḥ is garbled and confusingly worded, and the answer ends by putting the topic off onto 'academic studies'. This is evasion."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "none",
+    "kind": "doctrinal",
+    "authority_errors": []
+   }
+  },
+  {
+   "id": "w8:goth-09",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "What does the Báb teach about the Day of Resurrection according to Gate of the Heart — is it a literal event?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "According to Nader Saiedi’s *Gate of the Heart*, the Báb does **not** teach the Day of Resurrection primarily as a literal, cosmic destruction of the physical universe. He interprets it as the historical-spiritual advent of a new Manifestation of God—“the Tree of divine Reality”—and the period of that Manifestation’s revelation.[5]\n\nThe Báb’s teaching can be summarized as follows:\n\n- **Resurrection is the appearance of a new divine Messenger.** The “Day of Resurrection” begins when the Manifestation appears and lasts through the period of His revelation.[2][3]\n- **Judgment means humanity’s response to that Messenger.** People are brought before God by encountering and recognizing the new Manifestation; acceptance or rejection constitutes judgment.[3][7]\n- **Raising the dead is spiritual revival.** “True resurrection from the sepulchers” means being spiritually quickened through the Manifestation’s Word and conforming to God’s will.[1][4]\n- **The event may occur during an ordinary-looking historical day.** The Báb says the sun can rise and set as usual while the Day of Resurrection is nevertheless taking place.[2]\n- **The Báb’s own revelation inaugurated a Resurrection.** In Bábí terminology, the Resurrection of the Qur’án began with the Báb’s declaration in 1844, while the Resurrection of the Bayán would occur with the appearance of “Him Whom God shall make manifest,” understood by Bahá’ís as Bahá’u’lláh.[3]\n\nThus, the Báb is not simply denying resurrection. Rather, he **redefines its literal referent**: resurrection is real, but its reality is the appearance of divine revelation, the renewal of religion, and the spiritual awakening—or death—of individuals in relation to that revelation. Physical resurrection is not presented as the primary meaning of the doctrine in *Gate of the Heart*.[1][2]",
+     "ms": 5303
+    },
+    "current": {
+     "text": "The Báb teaches that the Day of Resurrection is not a literal event involving physical tombs or bodies rising from the earth, but rather the appearance of a new divine Manifestation.\n\nIn [*The Persian Bayán: Partial translation*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3#p141), the Báb explains this fundamental shift in understanding:\n\n> The substance of this chapter is that the meaning of 'the Day of Resurrection' is the day of the appearance of the Tree of Reality. It is clear that none of the adherents of the Shí’ih sect have understood (the meaning of) the Day of Resurrection. On the contrary, they have all vainly imagined something that possesses no reality in the eyes of God. — [*The Persian Bayán: Partial translation*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3)\n\nThis perspective is further elaborated in authorized interpretations by Shoghi Effendi, who notes that terms like \"tomb\" and \"resurrection\" are allegorical—representing the \"tomb of unbelief\" and the spiritual awakening or judgment that occurs when people are challenged to recognize a new Revelation ([*Dawn of a New Day*](https://siftersearch.com/library/view?doc=20883)). Bahá’u’lláh similarly employs these terms in works like [*The Day of Resurrection Is Come, and the Self-Subsisting Lord of Names Hath Arisen Therein*](https://oceanoflights.org/bahaullah-pub06-048-ar/#(%D9%82%D8%AF)(%D8%A7%D9%84%D8%AD%DA%A9%D9%8A%D9%85), describing the blowing of the trumpet and the stirring of the people in symbolic terms connected to the arrival of the \"Self-Subsisting Lord of Names.\"\n\nWhile the texts clearly define the resurrection as symbolic and spiritual rather than physical, they leave open the precise inner mechanics of how individuals recognize or fail to recognize the \"Tree of Reality\" when it appears among them.",
+     "ms": 6490
+    }
+   },
+   "verdict": {
+    "scores": {
+     "current": {
+      "score": 7,
+      "why": "It answers from the Báb's own words, quoting the Persian Bayán on the Day of Resurrection as the appearance of the Tree of Reality. It also brings in Bahá'u'lláh's usage. However, it barely touches Gate of the Heart, the book the reader named. It is thin: it leaves out the duration of the Day, judgment as one's response to the Manifestation, the sun rising and setting as usual, and the Resurrection of the Qur'án versus that of the Bayán. Its 'tomb of unbelief' attribution to Shoghi Effendi via Dawn of a New Day is loosely sourced."
+     },
+     "perplexity": {
+      "score": 5,
+      "why": "Its summary of the teaching is accurate and fuller: the Day lasts through the Manifestation's revelation, judgment is the response to Him, the sun can rise and set as usual, and the Resurrection of the Qur'án began in 1844 while that of the Bayán awaits Him Whom God shall make manifest. It also takes up the reader's framing. But it states the doctrine entirely on Saiedi's authority, quotes none of the Báb's words, and its footnotes [1]–[7] point to no actual sources."
+     }
+    },
+    "best": "current",
+    "gaps": "B covered more: the Day as the whole period of the Manifestation's revelation (Bayán II:7), the sun rising and setting as usual during it, judgment as acceptance or rejection, spiritual quickening from the sepulchres, and the Resurrection of the Qur'án in 1844 versus that of the Bayán with Him Whom God shall make manifest. A also never engaged with Gate of the Heart, the book the reader asked about.",
+    "kind": "doctrinal",
+    "authority_errors": [
+     "perplexity: rests the Báb's doctrine of the Resurrection entirely on Nader Saiedi's Gate of the Heart (a scholar) rather than on the Báb's own text"
+    ]
+   }
+  },
+  {
+   "id": "w8:goth-10",
+   "kind": "goth-concept",
+   "expect": {
+    "docs": [
+     8632
+    ]
+   },
+   "extra": {
+    "battery": "audience-dawnbreakers-goth",
+    "work": "gate-of-the-heart"
+   },
+   "messages": [
+    {
+     "role": "user",
+     "content": "How does Saiedi explain the severe laws of the Persian Bayán — were they ever meant to be enforced, and what was their purpose?"
+    }
+   ],
+   "answers": {
+    "perplexity": {
+     "text": "Saiedi argues that the harsh laws of the Persian *Bayán* were **not intended as a permanent, literal legal code**. Their implementation was made conditional on the appearance and approval of “Him whom God shall make manifest”—the Promised One—and they would automatically be abrogated unless He reaffirmed them.[1][2]\n\nTheir purpose was therefore primarily **rhetorical, symbolic, and transitional**:\n\n- **To break the force of Islamic tradition:** Their deliberately radical character challenged entrenched clerical authority and obsolete religious institutions.[1]\n- **To prepare believers for the next revelation:** The laws repeatedly directed attention away from the Báb as the final lawgiver and toward the imminent Promised One.[3]\n- **To test obedience and detach followers from inherited norms:** The severity dramatized the Báb’s authority while teaching that true religious obedience ultimately belonged to the Manifestation who would soon appear.[2]\n- **To mark a historical transition:** Saiedi sees the *Bayán* less as a durable constitution than as a proclamation that an old religious order had ended and a new one was imminent.[1]\n\nThus, in Saiedi’s interpretation, the laws’ apparent severity was intentional, but their **literal enforcement was generally never meant to occur**. Their effectiveness lay in their symbolic function: disrupting the past and preparing the Báb’s followers to recognize and obey Bahá’u’lláh, “Him whom God shall make manifest.”[4]",
+     "ms": 4861
+    },
+    "current": {
+     "text": "I didn't find a passage in this search that mentions Nader Saiedi’s specific explanation of the laws of the [*Persian Bayán*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3).\n\nWhen looking at the primary sources regarding the Bayán, the texts describe its station and laws in symbolic and preparatory terms rather than as codes for long-term civil enforcement. Shoghi Effendi notes in [*Uncompiled Published Letters*](https://siftersearch.com/library/view?doc=20897) that the Bayán was superseded by Bahá’u’lláh's laws, writing: [\"As the Bayán was superseded by Bahá’u’lláh’s laws it is not essential for us to have it at this time.\"](https://oceanlibrary.com/uncompiled-published-letters_shoghi-effendi/?paraId=para_10316&selectionString=published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl9m6.0~published_uncompiled_letters_from_shoghi_effendi_b2a6b4c2e078beaa6f19ad12bc5c92b39-bl9m6.247) — *Uncompiled Published Letters*.\n\nRegarding how its contents are understood, the Báb Himself describes the inner purpose of His book's letters and verses rather than a literal penal application, explaining that its contents point toward the coming Promised One. As a partial translation of [*The Persian Bayán*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3) records:\n\n> The Bayán has ever been and ever will be like the soul of a man who is alive; and all its letters of light and fire provide explanations of (what is in) the horizons and the souls of men. (https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3#p91) — [*The Persian Bayán: Partial translation*](https://siftersearch.com/library/bahai/tablet-translations/the-bab_the-persian-bayan-partial-translation-3)\n\nAuthorized interpretations from Shoghi Effendi and the Central Figures treat the stringent laws of the Bayán as a dramatic rupture with Islamic clerical law designed to clear away past traditions, contingent entirely upon the immediate recognition of Him Whom God shall manifest. Because scholars like Saiedi write from secondary academic perspectives rather than as authorized interpreters, their specific analyses of these legal structures sit outside the formal doctrinal layers of the Faith.",
+     "ms": 7460
+    }
+   },
+   "verdict": {
+    "scores": {
+     "perplexity": {
+      "score": 7,
+      "why": "It answers the question that was asked. It gives a clear and mostly accurate summary of Saiedi's reading in Gate of the Heart: the laws depend on Him Whom God shall make manifest, they break with Islamic tradition, and they point believers toward the next revelation. It clearly labels this as Saiedi's interpretation. Weaknesses: it quotes neither the Báb nor Saiedi, it never sets Saiedi against Shoghi Effendi's own account of the Bayán's severe laws, its footnotes lead nowhere, and 'automatically abrogated' is a loose paraphrase."
+     },
+     "current": {
+      "score": 3,
+      "why": "It admits it found nothing on Saiedi, so it does not answer the question. It credits a 'dramatic rupture' view to 'authorized interpretations' of Shoghi Effendi without quoting any. Its one Bayán quotation does not bear on the laws. It closes with an unrequested lecture on how scholars stand outside authority instead of engaging with what the reader asked about."
+     }
+    },
+    "best": "perplexity",
+    "gaps": "Neither answer quotes the primary texts. Shoghi Effendi explains the severity of the Bayán's laws in God Passes By, and the Báb Himself makes them conditional on Him Whom God shall make manifest. A would be stronger if it set Saiedi's reading beside these texts and quoted Saiedi's own words.",
+    "kind": "doctrinal",
+    "authority_errors": [
+     "current: attributes the 'rupture with Islamic law, contingent on recognition' view to Shoghi Effendi and the Central Figures without quoting any text"
+    ]
+   }
+  }
+ ]
+}

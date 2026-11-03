@@ -1,0 +1,78 @@
+[
+ {
+  "q": "Dhammapada 183",
+  "ms": 2876,
+  "lookup": null,
+  "format": "reading-guide",
+  "reply": "Gladly — let's read **The Dhammapada** together, a page at a time, with notes on the people, places, works and words it mentions.\n\nWhere would you like to begin?\n\n- 1\n- 2\n- 3\n- 4\n- 5\n- 6\n- 7\n- 8\n- 9\n-"
+ },
+ {
+  "q": "Dawn-Breakers 3",
+  "ms": 4799,
+  "lookup": null,
+  "format": "reading-guide",
+  "reply": "Gladly — let's read **The Dawn-Breakers** together, a page at a time, with notes on the people, places, works and words it mentions.\n\nWhere would you like to begin?\n\n- Intro\n- Preface\n- 1 — The Missio"
+ },
+ {
+  "q": "Some Answered Questions",
+  "ms": 9696,
+  "lookup": null,
+  "recipe": "agent",
+  "format": "agent",
+  "reply": "*Some Answered Questions* is a collection of table talks by 'Abdu'l-Bahá. You can read it here: [*Some Answered Questions*](https://siftersearch.com/library/view?doc=20911).\n\n- **Origin:** Shoghi Effe"
+ },
+ {
+  "q": "Epistle to the Son of the Wolf 20",
+  "ms": 9902,
+  "lookup": null,
+  "format": "reading-guide",
+  "reply": "Gladly — let's read **Epistle to the Son of the Wolf** together, a page at a time, with notes on the people, places, works and words it mentions.\n\nWhere would you like to begin?\n\n\n\nFor a first reading"
+ },
+ {
+  "q": "\"the earth is but one country and mankind its citizens\"",
+  "ms": 10002,
+  "lookup": {
+   "choice": "quote",
+   "confidence": 1
+  },
+  "kind": "source_lookup",
+  "outcome": "search",
+  "recipe": "work",
+  "format": "work",
+  "reply": "[*The Earth Is But One Country*](https://siftersearch.com/library/bahai/bahai-books/john-huddleston_the-earth-is-but-one-country-2) by John Huddleston is in the library. It is still under copyright, s"
+ },
+ {
+  "q": "\"Hatred never ceases by hatred\"",
+  "ms": 13086,
+  "lookup": {
+   "choice": "quote",
+   "confidence": 1
+  },
+  "kind": "source_lookup",
+  "outcome": "search",
+  "recipe": "quote",
+  "format": "find_passage",
+  "reply": "The line you have in mind is from the Dhammapada, the verse collection traditionally attributed to the Buddha. The clearest rendering in the passages is this one: [\"For hatred does not cease by hatred"
+ },
+ {
+  "q": "Some Answered Questions 33",
+  "ms": 30337,
+  "lookup": {
+   "choice": "reference",
+   "confidence": 1
+  },
+  "kind": "unclear",
+  "outcome": "search",
+  "recipe": "agent",
+  "format": "agent",
+  "reply": "Chapter 33 of *Some Answered Questions* ([*Some Answered Questions*](https://siftersearch.com/library/view?doc=20911)) is ʻAbdu'l-Bahá's explanation of how John the Baptist could be the promised Elias"
+ },
+ {
+  "q": "Paris Talks 12",
+  "ms": 59146,
+  "lookup": null,
+  "recipe": "research",
+  "format": "research",
+  "reply": "Paris Talks is the collection of 'Abdu'l-Bahá's talks given in Paris in 1911 and 1912, and the inventory describes it as 59 talks in all. I can't confirm from what I found which talk carries the numbe"
+ }
+]

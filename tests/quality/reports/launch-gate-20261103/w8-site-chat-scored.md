@@ -1,0 +1,164 @@
+| type | n | wins+ties | Anís | Perplexity | linked work | quotes | invented |
+|---|---|---|---|---|---|---|---|
+| history-story | 7 | 0/7 (0%) ⚠ | 3.4 | 7.5 | 3/7 (43%) | 2 | 0 |
+| who-was | 8 | 0/8 (0%) ⚠ | 3.8 | 6.9 | 2/8 (25%) | 3 | 0 |
+| date-place | 6 | 2/6 (33%) ⚠ | 5.3 | 6.3 | 0/6 (0%) | 4 | 0 |
+| timeline | 5 | 0/5 (0%) ⚠ | 3.3 | 6 | 0/5 (0%) | 3 | 0 |
+| explain-passage | 6 | 0/6 (0%) ⚠ | 2.3 | 7.3 | 4/6 (67%) | 2 | 0 |
+| goth-concept | 10 | 1/10 (10%) ⚠ | 3.3 | 6.8 | 4/10 (40%) | 6 | 0 |
+| all | 42 | 3/42 (7%) ⚠ | 3.5 | 6.8 | 13/42 (31%) | 20 | 0 |
+
+## Defects
+
+- **w8:db-01** (history-story) Tell me the story of the evening Mullá Ḥusayn first met the Báb in Shíráz — what happened that night of His declaration?
+  - loss 3 vs 8
+  - linked work missing
+  - judge: none
+- **w8:db-02** (history-story) What happened at the fort of Shaykh Ṭabarsí? Walk me through the course of the siege as Nabíl tells it.
+  - loss 2 vs 8
+  - judge: none
+- **w8:db-03** (history-story) How did the Báb's pilgrimage to Mecca unfold — what did He do at the Ka‘bih, and what message did He send to the Sherif of Mecca?
+  - loss 5 vs 7.5
+  - judge: none
+- **w8:db-04** (history-story) Describe the Báb's examination before the ‘ulamás of Tabríz: who questioned Him, what was He asked, and how did He answer?
+  - loss 3 vs 8
+  - judge: none
+- **w8:db-05** (history-story) What is the story of the 'Sifter of Wheat' in Iṣfahán in the Dawn-Breakers, and why is it remembered?
+  - loss 5 vs 7
+  - linked work missing
+  - judge: B gave the Báb's own contrast between Iṣfahán's learned divines and the humble sifter, which is the reason the story is remembered. It also gave more of the Dawn-Breakers narrative: how he joined Ṭabarsí, and how the story stands as a lesson that spiritual rank does not follow learning or station. A
+- **w8:db-06** (history-story) How was the Báb martyred in Tabríz in 1850? What happened with the first volley and Sám Khán's regiment?
+  - loss 1 vs 7
+  - linked work missing
+  - judge: none
+- **w8:db-07** (history-story) What happened to Bahá'u'lláh at Ámul after He tried to reach Shaykh Ṭabarsí — why was He beaten there?
+  - loss 5 vs 7
+  - linked work missing
+  - judge: none
+- **w8:db-08** (who-was) Who was Quddús, and what was his role at Shaykh Ṭabarsí?
+  - loss 2 vs 6
+  - judge: B gave his name, his Bárfurúsh origin, the Mecca pilgrimage, his release from Sárí and the date of his martyrdom. A had none of this.
+- **w8:db-09** (who-was) Who was Siyyid Káẕim-i-Rashtí, and what did he tell his disciples before his death about the Promised One?
+  - loss 6 vs 7
+  - linked work missing
+  - judge: B gave the specific signs of the Promised One from Nabíl's Dawn-Breakers (descent from Fáṭimih, age between 20 and 30, innate knowledge, medium height, abstaining from smoking, no bodily defect). It also gave his dates and his statement that he would not live to see the Advent. A lacked all of this.
+- **w8:db-10** (who-was) Who was Manúchihr Khán, the Mu‘tamidu'd-Dawlih, and how did he treat the Báb in Iṣfahán?
+  - loss 3 vs 7
+  - linked work missing
+  - judge: Neither answer quotes Nabíl's Dawn-Breakers or God Passes By directly. Both leave out the Báb's treatise on the specific prophethood of Muḥammad, written at the governor's request; the Báb's foretelling of his death; and how Gurgín Khán sent the Báb away after he died.
+- **w8:db-11** (who-was) Who was Vaḥíd (Siyyid Yaḥyáy-i-Dárábí), how did he become a believer, and what happened to him at Nayríz?
+  - loss 3 vs 7
+  - linked work missing
+  - judge: none
+- **w8:db-12** (who-was) Who was Ḥujjat of Zanján and what happened in the Zanján upheaval?
+  - loss 3 vs 7
+  - linked work missing
+  - judge: The best answer (B) gave the actual course of events: the start in May 1850, the defence of the fort of ʿAlí-Mardán Khán, the numbers besieged, Ḥujjat's wound and death, the treacherous surrender on oaths and the massacre of 1,800 or more. The other answer offered only a truncated one-sentence quota
+- **w8:db-13** (who-was) Who was Mullá Ṣádiq-i-Khurásání and what was done to him in Shíráz after he changed the call to prayer?
+  - loss 5 vs 8
+  - judge: B gave the full story where A did not: the Báb's instruction to change the adhán, the name of Governor Ḥusayn Khán, the full list of punishments (more than 900 strokes, burned beard, pierced nose and halter, parading, expulsion), his titles, and his place among the first persecuted on Persian soil.
+- **w8:db-14** (who-was) Who was Ḥájí Mírzá Áqásí, and why did he fear and oppose the Báb?
+  - loss 6 vs 7
+  - linked work missing
+  - judge: B gave more context than A: Áqásí's dates, his position as the Shah's tutor and spiritual adviser, the blocked audience in Tehran, the confinement at Máh-Kú and Chihríq, and his fear that the movement could destabilise the state. Neither answer drew on Nabíl's account of Áqásí.
+- **w8:db-15** (who-was) Who were the Seven Martyrs of Ṭihrán, and how did each die?
+  - loss 2 vs 6
+  - linked work missing
+  - judge: Neither answer is clearly marked as Anís. B gave the actual names and the order of execution taken from Nabíl's narrative; A gave none.
+- **w8:db-16** (date-place) On what date did the Báb declare His mission — Gregorian and Islamic — and where exactly in Shíráz did it take place?
+  - linked work missing
+  - judge: Neither answer gives Nabíl's precise timing (two hours and eleven minutes after sunset on 22 May), the meeting with Mullá Ḥusayn at the Kázirún gate, or the Báb's own words ('This night, this very hour…'). Neither notes that the house was destroyed in 1979.
+- **w8:db-17** (date-place) Where is Máh-Kú, and how long was the Báb imprisoned there before He was moved to Chihríq?
+  - loss 3 vs 7
+  - linked work missing
+  - judge: none
+- **w8:db-18** (date-place) When and where was the conference of Badasht held, and who provided for it?
+  - linked work missing
+  - judge: Answer A gives more precise details: the 22-day length, the nearby town of Shahrud and the modern province (Semnan).
+- **w8:db-19** (date-place) In what month and year did the siege of Shaykh Ṭabarsí end, and where is the shrine located?
+  - loss 3 vs 7
+  - linked work missing
+  - judge: none
+- **w8:db-20** (date-place) When and where was Ṭáhirih put to death in Ṭihrán?
+  - loss 5.5 vs 6.5
+  - linked work missing
+  - judge: The primary text: 'Abdu'l-Bahá's description of the garden, the drunken slave, the scarf and the well (Memorials of the Faithful). B quoted it and A did not.
+- **w8:db-21** (date-place) Where and when was the Báb born, and who were His parents?
+  - loss 6 vs 7
+  - linked work missing
+  - judge: A names the mother (Fáṭimih-Bagum), notes that both parents descended from the Prophet, and gives the exact date (20 October 1819). B gives the primary-source quotation from A Traveler's Narrative and the detail of the maternal uncle raising Him.
+- **w8:db-22** (timeline) Give me a timeline of the Báb's life from His birth to His martyrdom, with the places at each stage.
+  - loss 3 vs 6
+  - linked work missing
+  - judge: none
+- **w8:db-23** (timeline) Lay out the sequence of the three major Bábí upheavals — Ṭabarsí, Nayríz and Zanján — with their dates and leaders.
+  - loss 4.5 vs 7
+  - linked work missing
+  - judge: B gave complete, accurate dates for all three upheavals (Zanján's above all), named Quddús as co-leader at Ṭabarsí, used the titles Vaḥíd and Ḥujjat, and pointed out that Nayríz and Zanján overlapped in 1850.
+- **w8:db-24** (timeline) What were the stages of the Báb's journey from Iṣfahán to Máh-Kú — which towns did He pass through and roughly when?
+  - loss 2 vs 7
+  - linked work missing
+  - judge: none
+- **w8:db-25** (timeline) In what order did the Letters of the Living recognize the Báb, and roughly when did each arrive in Shíráz?
+  - loss 4 vs 5
+  - linked work missing
+  - judge: none
+- **w8:db-26** (timeline) What happened, in order, between the Báb's martyrdom in July 1850 and the attempt on the Sháh's life in August 1852?
+  - loss 3 vs 5
+  - linked work missing
+  - judge: Both answers lack the events in between, which God Passes By (ch. 4–5) and Nabíl cover: the fall of Zanján and Ḥujjat's death (January 1851), the hidden keeping of the Báb's remains, Bahá'u'lláh in Karbilá (1851–52) and his return, Amír Kabír's dismissal and execution (late 1851 to January 1852), an
+- **w8:db-27** (explain-passage) In the Dawn-Breakers the Báb tells the Letters of the Living: "O My beloved friends! You are the bearers of the name of God in this Day." Please explain this farewell address — what did He ask of them, and what did He warn them about?
+  - loss 2 vs 8
+  - linked work missing
+  - judge: none
+- **w8:db-28** (explain-passage) Nabíl writes: "The siyyid's message stung Ḥájí Mírzá Karím Khán. Convulsed by a feeling of intense resentment which he could neither suppress nor gratify, he relinquished all hope..." Who was Ḥájí Mírzá Karím Khán, who was the siyyid, and what was the message?
+  - loss 3 vs 8
+  - linked work missing
+  - judge: B correctly names the siyyid (Siyyid Káẓim) and gives the actual message, his refusal to endorse Karím Khán's book, with his reply. It also explains what Nabíl's account shows about Karím Khán's hopes of leadership and separates this episode from the later summons about the Báb.
+- **w8:db-29** (explain-passage) In the Dawn-Breakers someone says: "Our friends eventually dispersed, leaving Us at the mercy of Our enemies. When, at a later time, We went to Ámul, such was the turmoil which the people had raised..." Who is speaking, and what is the context?
+  - loss 3 vs 6
+  - judge: none
+- **w8:db-30** (explain-passage) "Awake, for lo! the morning Light has broken. Arise, for His Cause is made manifest." — who said this, to whom, and on what occasion in the Dawn-Breakers?
+  - loss 2 vs 8
+  - judge: none
+- **w8:db-31** (explain-passage) Nabíl says Mírzá Taqí Khán, the Amír-Niẕám, "met his death in a public bath in Fín, near Káshán." What had he done against the Báb and His companions, and how does Nabíl frame his end?
+  - loss 3 vs 6
+  - judge: none
+- **w8:db-32** (explain-passage) "The people of the Bayán, who utterly misconceived the purpose underlying that Tablet, thought it to be a mere exposition of the science of Jafr." Which Tablet is Nabíl talking about, and what is Jafr?
+  - loss 1 vs 8
+  - judge: none
+- **w8:goth-01** (goth-concept) In Gate of the Heart, how does Nader Saiedi divide the Báb's writings into three stages, and what characterizes each stage?
+  - loss 1 vs 7
+  - linked work missing
+  - judge: none
+- **w8:goth-02** (goth-concept) What does Saiedi mean by the Báb's 'interpretive revelation', and what are the modes of revelation he identifies in the Báb's writings?
+  - loss 2 vs 7
+  - judge: none
+- **w8:goth-03** (goth-concept) According to Gate of the Heart, what is the Primal Will in the Báb's theology, and how does it relate to the Point and to the Manifestation of God?
+  - loss 5 vs 7
+  - linked work missing
+  - judge: B quotes none of the Báb's own words, such as the passage in Selections that A gives: 'It is this Primal Will which appeareth resplendent in every Prophet…'. Its citation markers are also unresolved.
+- **w8:goth-04** (goth-concept) How does Saiedi explain the Báb's distinction between the 'Sea of Names' and the 'Sea of Creation'?
+  - loss 3 vs 6
+  - judge: A gave the substance of Saiedi's explanation that B lacked: the Primal Will's two aspects, one toward God and one toward its created self, mapped onto the two seas. Neither answer quoted the Báb's own text on the Sea of Creation, and neither cited specific pages of Gate of the Heart.
+- **w8:goth-05** (goth-concept) Who is 'Him Whom God shall make manifest' in the Báb's writings, and how does Saiedi argue that the whole Bayán is oriented toward Him?
+  - loss 4 vs 7
+  - linked work missing
+  - judge: B gave verbatim primary quotations, including Shoghi Effendi saying that Bahá'u'lláh would complete the Bayán 'only spiritually in the form of another book' and the Báb's own words on the exalted station of the Promised One. A uses no quotations from the Writings and no traceable citations.
+- **w8:goth-06** (goth-concept) Saiedi argues that the Báb's writings are at once a critique of Islamic traditionalism and a critique of modernity. What is that argument?
+  - loss 3 vs 8
+  - judge: none (no answer is labelled Anís). Both answers would be stronger with passages from the Báb's own writings, such as the Persian Bayán on progressive revelation, that Saiedi uses to support his argument.
+- **w8:goth-07** (goth-concept) What are the stages of divine creative action — Will, Determination, Destiny, Decree, Permission, Term, Book — in the Báb's writings as Saiedi presents them?
+  - loss 2 vs 7
+  - linked work missing
+  - judge: A full summary of Saiedi's scheme: the first three stages as ontological (existence, essence, their union) and the last four as appearance in the world, with a gloss for each stage. Neither answer gives the Báb's own words on the stages.
+- **w8:goth-08** (goth-concept) Why is Saiedi's book called 'Gate of the Heart'? What does the Báb mean by the heart as a gate, in Saiedi's reading?
+  - loss 3 vs 7
+  - judge: none
+- **w8:goth-09** (goth-concept) What does the Báb teach about the Day of Resurrection according to Gate of the Heart — is it a literal event?
+  - linked work missing
+  - judge: B covered more: the Day as the whole period of the Manifestation's revelation (Bayán II:7), the sun rising and setting as usual during it, judgment as acceptance or rejection, spiritual quickening from the sepulchres, and the Resurrection of the Qur'án in 1844 versus that of the Bayán with Him Whom 
+- **w8:goth-10** (goth-concept) How does Saiedi explain the severe laws of the Persian Bayán — were they ever meant to be enforced, and what was their purpose?
+  - loss 3 vs 7
+  - linked work missing
+  - judge: Neither answer quotes the primary texts. Shoghi Effendi explains the severity of the Bayán's laws in God Passes By, and the Báb Himself makes them conditional on Him Whom God shall make manifest. A would be stronger if it set Saiedi's reading beside these texts and quoted Saiedi's own words.
