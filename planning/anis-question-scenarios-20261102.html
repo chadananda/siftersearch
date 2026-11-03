@@ -285,22 +285,19 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>Writing model</td><td>the answer, from data and format, once per answer</td><td class="n">seconds, paid</td></tr>
     <tr><td>Research agent</td><td>fallback only</td><td class="n">10–40 s</td></tr>
   </table></div>
-  <p><b>Minimise LLM steps.</b> A fast-LLM step is used only where code can't do the job: quoted words are taken as they are, a single term needs no extraction, and a clear question needs no recasting. Each LLM step on a strategy's path has to show in the branch assessment that it changes the result, or it is removed. One example, the quotation trace ("who said 'the earth is but one country'?"):</p>
+  <p><b>Minimise LLM steps.</b> A fast-LLM step is used only where code can't do the job: quoted words are taken as they are, a single term needs no extraction, and a clear question needs no recasting. Each LLM step on a strategy's path must show in the branch assessment that it changes the result, or it is removed.</p>
+  <p><b>Cheapest path first, LLM only as a fallback.</b> A strategy tries the deterministic route first and escalates only when Jev judges the answer invalid. The quotation trace ("who said 'the earth is but one country'?") is the model, with Jev's decisions in [brackets]:</p>
   <pre class="mermaid">
 flowchart TD
-  Q["Message + thread + reader card"] --> C{"Quoted words? (code)"}
-  C -- yes --> L["Literal phrase search (tool)"]
-  C -- no --> X["Extract the remembered phrase (fast LLM)"] --> L
-  L --> H{"Exact hit? (code)"}
-  H -- no --> B["Keyword search on the rarest words (tool)"] --> H2{"Close hit? (code)"}
-  H2 -- no --> K["Concept search (tool)"] --> S
-  H2 -- yes --> S
-  H -- yes --> S{"The original, or a book quoting it? (Jev)"}
-  S -- "quoting it" --> T["Literal search in earlier works (tool, reused)"] --> S
-  S -- original --> F{"Format: decisive passage, find passage or honest absence (code + Jev)"}
+  M["Message + thread + reader card"] --> S{"[Quotation trace?] Jev"}
+  S -- yes --> D["Extract the quoted block (code, no LLM)"] --> B1["BM25 search (tool)"] --> V1{"[Valid answer?] Jev"}
+  V1 -- yes --> F{"[Format choice] Jev"}
+  V1 -- no --> X["Extract the quote to search (light fast model, e.g. Haiku)"] --> B2["BM25 search (tool, reused)"] --> R1{"[Rerank] Jev"} --> V2{"[Valid answer?] Jev"}
+  V2 -- yes --> F
+  V2 -- no --> P["Phrase semantic search (tool)"] --> R2{"[Rerank] Jev"} --> F
   F --> W["Writing model: data + format → answer"]
   </pre>
-  <p class="note">On the usual path ("quoted words, exact hit, original"), this costs no LLM step before the writing model.</p>
+  <p class="note">Most quotation questions end at the first [valid answer?]: code extraction, one BM25 search, no LLM step before the writing model. The light model runs only when the deterministic search misses, and the semantic phrase search only when that misses too. This is how every strategy is optimised for speed.</p>
 
   <div class="wrap"><table>
     <tr><th>Kind of question</th><th>Target time</th></tr>
