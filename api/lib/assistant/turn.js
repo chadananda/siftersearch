@@ -13,7 +13,8 @@ import { lintReply } from './lint.js';
 import { channelFor } from './channels.js';
 import { turnMeta } from './turn-meta.js';
 import { progressText } from './progress.js';
-import { chooseStrategy, strategyOf } from './strategy-choice.js';   // W3: Jev chooses the strategy from context
+import { chooseStrategy, strategyOf } from './strategy-choice.js';
+import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
 import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
 import { decisionLog } from './decision-log.js';
 import { withAIContext, currentAIContext } from '../ai-context.js';
@@ -104,11 +105,14 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const strategyFn = d.strategy ?? (deps ? null : chooseStrategy);
   const strategyOn = strategyFn && engine === undefined && research === undefined && !variants;
   onEvent({ type: 'stage', stage: 'understand' });   // the neutral word until a decision exists — never a templated echo of the message
-  const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id })).catch(() => null),
-    strategyOn ? timed('strategy', () => strategyFn(messages, { profile }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null) : null]);
+  // a Jev call past its measured limit is retried once within budget and never silent: each one is a jev:timeout decision + meta.jev_timeouts
+  const jevTimeouts = []; const onJev = (info) => { jevTimeouts.push(info); };
+  const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id, onJev })).catch(() => null),
+    strategyOn ? timed('strategy', () => strategyFn(messages, { profile, onJev }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null) : null]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
+  for (const info of jevTimeouts) decisions.record('jev:timeout', timeoutDecision(info));
   // Jev's OUTCOME field — the turn read with the history and the card — decides what a short or odd message is; its words
   // never do (Chad 11-03). A search behind an "unclear" / "cut off" verdict is researched ("race unity", a bare name, a
   // pasted passage); a turn even the context cannot resolve is asked back (the 'unclear' canned reply).
@@ -140,6 +144,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop,
       strategy: strat ? { choice: strat.strategy?.choice ?? null, sides: strat.sides ?? [], ms: strat.ms ?? null } : null, understood: understood?.phrase ?? null, decisions: decisions.list(), ...extra };
     path.meta = turnMeta({ status, path, meter, ms: Date.now() - t0 });
+    const jt = jevTimeoutsOf(path.decisions); if (jt) path.meta.jev_timeouts = jt;
     // where the time went (route.timeline in the thread view): stage spans since turn start + each model call's completion
     path.timeline = timelineOf(timeline, t0); path.llm = meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null }));
     if (ex) await d.close({ ...ex, reply, status, path, channel: channel.id }).catch(() => {});

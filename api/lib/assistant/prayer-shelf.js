@@ -9,6 +9,7 @@ import { ENDPOINT, MIN_CONFIDENCE } from '../scope-extract.js';
 import { NO_LOG, jevProbabilities } from './decision-log.js';
 import { stateOf } from './strategy-choice.js';
 import { run as runTool } from './tools.js';
+import { jevCall, JEV_LIMITS, timeoutDecision } from './jev-call.js';
 
 export const PRAYER_BOOK = 'Bahá’í Prayers';
 const MAX_OCCASIONS = 40;
@@ -33,19 +34,19 @@ export function splitPrayers(rows = []) {
 const hit = (r, doc, theme) => ({ id: r.id, text: r.text, title: doc.title, author: doc.author, document_id: doc.id, paragraph_index: r.paragraph_index,
   religion: doc.religion, collection: doc.collection, language: doc.language, source_url: r.url || null, theme });
 
-async function pickOccasion(messages, titles, { profile, fetchImpl, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = 900 }) {
+export async function pickOccasion(messages, titles, { profile, fetchImpl, apiKey = process.env.TYPESAFE_API_KEY, onJev = null, ...limits }) {
   if (!apiKey || !titles.length) return null;
   const criteria = { ...Object.fromEntries(titles.map((t) => [t, `the prayers headed "${t}"`])), none: 'no listed heading fits what the reader asks for' };
   const t0 = Date.now();
-  try {
+  const call = await jevCall('occasion', async (signal) => {
     const res = await fetchImpl(ENDPOINT, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelFor('assistant-triage').model, state: stateOf(messages, { profile }),
         questions: { occasion: { type: 'choice', instructions: 'Which heading of the prayer book holds the prayer the reader asks for (by occasion, need, person or name)?', criteria } } }),
-      signal: AbortSignal.timeout(timeoutMs) });
-    if (!res.ok) return null;
-    const a = (await res.json()).answers?.occasion;
-    return a ? { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? null, distribution: a.distribution ?? null, ms: Date.now() - t0 } : null;
-  } catch { return null; }
+      signal });
+    return res.ok ? (await res.json()).answers?.occasion ?? null : null;
+  }, { ...JEV_LIMITS.occasion, ...limits, onJev });
+  const a = call.value;
+  return a ? { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? null, distribution: a.distribution ?? null, ms: Date.now() - t0 } : null;
 }
 
 export async function prayerShelf(ctx) {
@@ -58,10 +59,11 @@ export async function prayerShelf(ctx) {
   const sections = (await sectionsOfDoc(doc.id).catch(() => [])).filter((s) => s.title && s.paragraphs > 0);
   const byTitle = new Map(); for (const s of sections) if (!byTitle.has(s.title)) byTitle.set(s.title, s);
   const occasions = [...byTitle.values()].sort((a, b) => (a.level ?? 1) - (b.level ?? 1) || b.paragraphs - a.paragraphs).slice(0, MAX_OCCASIONS);
-  const pick = await (deps.pickOccasion || pickOccasion)(messages, occasions.map((s) => s.title), { profile, fetchImpl: deps.fetchImpl || jevFetch('anis-prayer-occasion') });
+  const pick = await (deps.pickOccasion || pickOccasion)(messages, occasions.map((s) => s.title), { profile, fetchImpl: deps.fetchImpl || jevFetch('anis-prayer-occasion'),
+    onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) });
   const confident = pick?.choice && pick.choice !== 'none' && byTitle.has(pick.choice) && (pick.confidence ?? 0) >= MIN_CONFIDENCE;
   decisions.record('prayer:occasion', { by: 'jev', saw: occasions.map((s) => s.title), options: [...occasions.map((s) => s.title), 'none'], probabilities: jevProbabilities(pick),
-    chosen: confident ? pick.choice : 'none', reason: !pick ? 'no answer' : confident ? null : pick.choice === 'none' ? 'no heading fits' : 'low confidence', ms: pick?.ms ?? null });
+    chosen: confident ? pick.choice : 'none', reason: !pick ? 'no answer (see jev:timeout when it timed out)' : confident ? null : pick.choice === 'none' ? 'no heading fits' : 'low confidence', ms: pick?.ms ?? null });
   const withLinks = deps.withLinks || (await import('../hit-links.js')).withLinks;
   if (confident) {
     const s = byTitle.get(pick.choice);

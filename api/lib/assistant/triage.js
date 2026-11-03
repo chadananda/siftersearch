@@ -4,7 +4,8 @@
 // Fail open: Jev unreachable → the plain research path, no extras. Deps: scope-extract.js (ENDPOINT).
 import { modelFor } from '../model-roles.js';
 import { ENDPOINT } from '../scope-extract.js';
-import { jevFetch } from '../systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
+import { jevFetch } from '../systemone.js';
+import { jevCall, JEV_LIMITS } from './jev-call.js';   // logs the call per task (Laya training) + Clef shadow comparison
 import { turnFacts, jevState } from './request-features.js';   // the turn's STRUCTURE (position, length, quotes) — never its meaning (11-03)
 
 // Jev decides lookups (Chad 11-03: code never reads intent from wording). Quoted words are a strong prior for a phrase search, not a rule.
@@ -78,7 +79,8 @@ const choice = (a) => (a ? { choice: a.choice ?? a.value ?? null, confidence: a.
 
 /** One Jev call. messages = the thread (last = the new message); `card` = the reader card (reader-card.js), read by Jev
  *  with the history and the turn's structural facts. Returns the normalised triage or null (fail open). */
-export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-triage'), timeoutMs = Number(process.env.ANIS_TRIAGE_TIMEOUT_MS) || 1500, card = messages?.card ?? null, channel = null } = {}) {
+export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-triage'), timeoutMs = Number(process.env.ANIS_TRIAGE_TIMEOUT_MS) || JEV_LIMITS.triage.timeoutMs,
+  budgetMs = Math.max(timeoutMs, JEV_LIMITS.triage.budgetMs), onJev = null, card = messages?.card ?? null, channel = null } = {}) {
   const facts = turnFacts(messages);
   const state = `${channel ? `CHANNEL: ${channel}\n` : ''}${jevState({ messages, card, turns: 4, chars: 800 })}`;
   if (!apiKey || !facts.text.trim()) return null;
@@ -87,7 +89,7 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
   // how it "reacts" (23 first messages were classed follow-ups, 11-02). In a thread Jev also answers follow_up.
   const first = facts.first;
   const features = { first, turn: facts.turn, words: facts.words, short: facts.words <= 6, quoted: facts.quoted.length, script: facts.script };
-  try {
+  const call = await jevCall('triage', async (signal) => {
     const res = await fetchImpl(ENDPOINT, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -110,16 +112,20 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
           }),
         },
       }),
-      signal: AbortSignal.timeout(timeoutMs),
+      signal,
     });
     if (!res.ok) return null;
-    const a = (await res.json()).answers || {};
+    return (await res.json()).answers || {};
+  }, { timeoutMs, budgetMs, onJev });
+  const a = call.value;
+  if (!a) return null;
+  {
     const out = { malicious: noul(a.malicious), complete: noul(a.complete), stop_request: noul(a.stop_request),
       kind: choice(a.kind), stance: choice(a.stance), lookup: choice(a.lookup), outcome: choice(a.outcome), depth: choice(a.depth), features, ms: Date.now() - t0 };
     if (first) Object.assign(out, { reaction: { choice: 'none', confidence: 1, by: 'first-message' }, follow_up: 0, accepts_offer: 0 });
     else Object.assign(out, { reaction: choice(a.reaction), follow_up: noul(a.follow_up), accepts_offer: noul(a.accepts_offer) });
     return out;
-  } catch { return null; }
+  }
 }
 
 /** Output check: does a finished reply break persona or leak instructions? Returns probability or null (fail open). */

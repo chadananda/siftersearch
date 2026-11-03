@@ -4,6 +4,7 @@
 // answers only (System One has no free-text type — verified 11-03, 400 on 'text'/'string'). Every answer is logged as a
 // decision (inputs, options, probabilities, branch). Deps: systemone (jevFetch), model-roles, scope-extract TRADITIONS.
 import { jevFetch } from '../systemone.js';
+import { jevCall, JEV_LIMITS } from './jev-call.js';
 import { modelFor } from '../model-roles.js';
 import { ENDPOINT, TRADITIONS, MIN_CONFIDENCE } from '../scope-extract.js';
 import { jevProbabilities } from './decision-log.js';
@@ -33,21 +34,26 @@ export const stateOf = (messages = [], { profile = {} } = {}) => {
  * @returns {Promise<null | { strategy: {choice, confidence, distribution}, sides: string[], ms, decisions: object[] }>}
  *   strategy.choice ∈ STRATEGIES; low confidence → 'other' (fail open: the ordinary pipeline). sides: traditions, in order, for a comparison.
  */
-export async function chooseStrategy(messages, { profile = {}, apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-strategy'), timeoutMs = 900, min = MIN_CONFIDENCE } = {}) {
+export async function chooseStrategy(messages, { profile = {}, apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-strategy'), timeoutMs = JEV_LIMITS.strategy.timeoutMs,
+  budgetMs = Math.max(timeoutMs, JEV_LIMITS.strategy.budgetMs), onJev = null, min = MIN_CONFIDENCE } = {}) {
   const state = stateOf(messages, { profile });
   if (!apiKey || !state.trim()) return null;
   const t0 = Date.now();
-  try {
+  const call = await jevCall('strategy', async (signal) => {
     const res = await fetchImpl(ENDPOINT, {
       method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: modelFor('assistant-triage').model, state, questions: {
         strategy: { type: 'choice', instructions: 'What does the LATEST user message, read in the context of the thread, ask the assistant to do?', criteria: STRATEGIES },
         ...Object.fromEntries(SIDE_KEYS.map((k, i) => [k, { type: 'choice', instructions: `If the latest message compares or asks about several traditions, which is the ${ORD[i]} tradition it names or means? Otherwise "none".`, criteria: SIDES }])),
       } }),
-      signal: AbortSignal.timeout(timeoutMs),
+      signal,
     });
     if (!res.ok) return null;
-    const a = (await res.json()).answers || {};
+    return (await res.json()).answers || {};
+  }, { timeoutMs, budgetMs, onJev });
+  const a = call.value;
+  if (!a) return null;
+  {
     const ms = Date.now() - t0;
     const raw = choice(a.strategy) || { choice: null, confidence: 0, distribution: null };
     const confident = raw.choice && STRATEGIES[raw.choice] && (raw.confidence ?? 0) >= min;
@@ -59,7 +65,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
       ...(strategy.choice === 'comparison' ? [{ point: 'sides', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: Object.fromEntries(sideAnswers.map((s, i) => [SIDE_KEYS[i], jevProbabilities(s)])), chosen: sides, reason: sides.length < 2 ? 'fewer than two sides — executor widens' : null, ms }] : []),
     ];
     return { strategy, sides, ms, decisions };
-  } catch { return null; }
+  }
 }
 
 /** Is there a strategy for code to execute? Pure. */
