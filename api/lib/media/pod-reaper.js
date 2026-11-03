@@ -5,6 +5,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { LEDGER, POD_PREFIX, reapReason } from './pod-ledger.js';
 import * as C from './cloud.js';
+import { laneLog } from './lane-log.js';
 
 export const REAPER_FILE = join(dirname(C.STATE_FILE), 'pod-reaper.json');
 // the lane and this reaper run in the same service: a deploy drain stops both, so the lane's state is as old as the drain when the new
@@ -24,7 +25,7 @@ export async function reapPass(deps = {}) {
   for (const p of pods) {
     const why = reapReason(p, st?.pods?.[p.id] || null, lane, now, deps.cfg || LEDGER);
     if (!why) continue;
-    try { await kill(p.id, deps); out.reaped.push({ id: p.id, name: p.name, why }); }
+    try { await kill(p.id, deps); out.reaped.push({ id: p.id, name: p.name, why }); laneLog('reap', { id: p.id, name: p.name, why }); }
     catch (err) { out.errors.push(`${p.name}: ${String(err.message).slice(0, 120)}`); }
   }
   if (deps.write !== false) {

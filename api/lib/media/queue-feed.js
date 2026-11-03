@@ -21,6 +21,7 @@ import { adoptedState } from './whole-result.js';
 import { untransitArgs, TRANSIT, isDecoded } from '../../../scripts/media/worker/transit.mjs';
 import { decide } from './exclusions.js';
 import { cbPerson, cbVerdict } from './cb-date.js';
+import { laneLog } from './lane-log.js';
 
 export const TARGET_H = 2.5, LOW_H = 2;
 export const jobIdFor = (itemId, sha, kind = 'whole') => `${kind}-${itemId}-${sha.slice(0, 12)}`;
@@ -186,7 +187,7 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
   // the pods' gpu buffer is full (measured: staged ≥ want_h, core.bufferPolicy) and prep still has work queued: feeding more only piles prep
   // output behind the GPU — and each fed talk costs tower a hash + copy inside the pass that also pulls results and plans rentals
   // (11-01: 160 h of prep queued, 167 h of gpu staged vs want 112 h; the pass sat 8+ min feeding at ~2.5 min a talk, the pod plan went stale)
-  if (buffer && buffer.buffer_low === false && (t.queued_audio_h || 0) > 0) return { fed: 0, why: `gpu buffer full (${Math.round(buffer.buffer_h ?? 0)} h staged, want ${Math.round(buffer.want_h ?? 0)} h); ${Math.round(t.queued_audio_h)} h of prep queued` };
+  if (buffer && buffer.buffer_low === false && (t.queued_audio_h || 0) > 0) { const why = `gpu buffer full (${Math.round(buffer.buffer_h ?? 0)} h staged, want ${Math.round(buffer.want_h ?? 0)} h); ${Math.round(t.queued_audio_h)} h of prep queued`; laneLog('feed', { fed: 0, why }); return { fed: 0, why }; }
   // an edge CPU host (the CPU pod) adds its measured prep rate; its queue counts as fed (rebalancePrep moves the overflow there)
   const ep = edge ? edgePrep(await edge.capacity?.().catch(() => null)) : null, eRate = ep?.rate || 0;
   let queuedS = (t.queued_audio_h || 0) * 3600 + (ep ? ep.queued_audio_h * 3600 : 0), fed = 0, held = 0;
@@ -226,6 +227,8 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
       queuedS += audio_s; fed++;
     } catch (e) { st.queue.push(itemId); bad.add(itemId); errors.push(`#${itemId}: ${e.message}`.slice(0, 300)); }
   }
+  // 11-03: every feed round is logged with what it fed and what it could not (and why)
+  laneLog('feed', { fed, held, queued_h: Math.round(queuedS / 36) / 100, left: st.queue.length, errors: errors.length ? errors : undefined });
   return { fed, ...(held ? { held } : {}), ...(errors.length ? { error: errors[0], errors } : {}) };
 }
 
@@ -437,9 +440,9 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
   // with pods the home GPU is CPU-first (core.bufferPolicy lan_keep_h): the LAN keeps only its own BUFFER_H, the rest goes to the pods
   const keepH = Number.isFinite(buffer?.lan_keep_h) ? buffer.lan_keep_h : null;
   let lanH = waiting.reduce((a, [, qj]) => a + (qj.audio_s || 0), 0) / 3600;
-  const putOnce = async (have, fileId, name, file) => { const size = (await stat(file)).size; if (have.get(name) === size) { skipped++; return; } await edge.put('files', fileId, name, file); bytes += size; };
+  const putOnce = async (have, fileId, name, file, mine) => { const size = (await stat(file)).size; if (have.get(name) === size) { skipped++; return; } await edge.put('files', fileId, name, file); bytes += size; if (mine) mine.bytes += size; };
   const moveOne = async (id, qj) => {
-    const ch = st.chains[qj.itemId], prep = ch['cpu-prep'], files = sentFiles(prep.files);
+    const ch = st.chains[qj.itemId], prep = ch['cpu-prep'], files = sentFiles(prep.files), mine = { bytes: 0, t0: now() };
     if (lanOnly(ch)) throw Error(`refusing to stage decoded audio ${ch.input} on the edge (talk ${qj.itemId})`);   // 11-03: a bug if it ever gets here
     // the pass runs beside the move on the same state: a home GPU may take, finish and have this step adopted meanwhile (its prep then acked)
     const waitingStill = () => st.qjobs[id] === qj && !qj.adopted && st.chains?.[qj.itemId] === ch;
@@ -447,11 +450,11 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
     let withdrawn = false;
     try {
       const have = new Map(((await edge.list?.('files', ch.fileId).catch(() => null)) || []).map((o) => [o.name, o.bytes]));
-      await putOnce(have, ch.fileId, ch.input, chainSrc(it, m, ch));
+      await putOnce(have, ch.fileId, ch.input, chainSrc(it, m, ch), mine);
       for (const f of files) {
         const tmp = join(stg, 'item', f.path);
         try { await q.get('results', prep.id, 'item/' + f.path, tmp); } catch (e) { if (e.status === 404) e.lost = true; throw e; }
-        await putOnce(have, ch.fileId, 'item/' + f.path, tmp);
+        await putOnce(have, ch.fileId, 'item/' + f.path, tmp, mine);
       }
       if (!st.qjobs[id] || !(await q.withdraw([id]))?.withdrawn) return;   // a home GPU took it (or it finished) meanwhile: it stays home
       withdrawn = true;
@@ -460,7 +463,9 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
       delete st.qjobs[id];
       st.qjobs[job.id] = { ...qj, at: now(), where: 'edge' };
       moved++; audioS += ch.audio_s || 0;
+      laneLog('move', { id: qj.itemId, job: id, audio_s: ch.audio_s || 0, bytes: mine.bytes, ms: now() - mine.t0, ok: true });   // per-move timing (11-03: a 586-min pass had none)
     } catch (e) {   // the LAN copy was withdrawn but the edge refused it: put it back so the talk is not lost
+      laneLog('move', { id: qj.itemId, job: id, audio_s: ch.audio_s || 0, bytes: mine.bytes, ms: now() - mine.t0, ok: false, error: String(e.message).slice(0, 200), withdrawn });
       if (e.code === 'ABANDONED' && !withdrawn) throw e;
       if (e.lost && !withdrawn) { if (waitingStill() && await restartLost(st, id, qj, { q, repo, now }, e.message)) lost++; }
       else if (withdrawn) await q.enqueue([SJ.typedJob('gpu', { itemId: qj.itemId, fileId: ch.fileId, wj: { input: ch.input, input_sha: ch.sha, threads: 4 }, prev: { id: prep.id, files: prep.files, staged: false }, band: SJ.bandOf(st, qj.itemId), audio_s: ch.audio_s })]).catch(() => {});
@@ -477,6 +482,7 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
     }
   }));
   const ms = now() - t0;
+  laneLog('move_pass', { moved, bytes, ms, waiting: waiting.length, edge_h: Math.round(edgeH * 100) / 100, want_h: wantH, lan_keep_h: keepH, lan_h: Math.round(lanH * 100) / 100, skipped, lost, mb_per_audio_h: audioS ? Math.round(bytes / 1e6 / (audioS / 3600)) : null });
   return { moved, bytes, ms, ...(audioS ? { mb_per_audio_h: Math.round(bytes / 1e6 / (audioS / 3600)) } : {}), ...(ms > 0 && audioS ? { audio_h_per_h: +((audioS / 3600) / (ms / 3600e3)).toFixed(1) } : {}),
     ...(skipped ? { resumed_files: skipped } : {}), ...(lost ? { restarted_lost: lost } : {}) };
 }
@@ -589,6 +595,7 @@ export async function repairDecoded(st, { q, repo = null, now = Date.now }) {
     delete st.chains[key];
     st.queue = [id, ...st.queue.filter((x) => x !== id)];
     dropped.push({ id, job: cur[0], input: ch.input });
+    laneLog('repair', { id, job: cur[0], input: ch.input, why: 'decoded chain input without an Opus plan; dropped and re-queued first' });
   }
   return dropped;
 }

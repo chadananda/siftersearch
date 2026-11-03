@@ -188,13 +188,14 @@ describe('a step that finished on the edge is pulled, routed and acked there wha
     expect([...E.store.keys()].filter((k) => k.includes(`-${f.item_id}-`) && k.startsWith('results/'))).toEqual([]);
     expect(decodedOnEdge()).toEqual([]);
   });
-  it('a WAV talk prepped at home never routes its gpu step to the edge, even with no home GPU (it stays for a home GPU)', async () => {
+  it('a WAV talk is planned for Opus; a prep result without the Opus input is refused — no gpu step, nothing on the edge (11-03: no WAV fallback)', async () => {
     await mkItems({ 1: 'wav' });
     claimLan('boss', ['cpu-prep', 'cpu-finish']);
-    await feed(st, deps);   // gpu excused: pods on the edge
+    await feed(st, deps);
+    expect(st.chains[1].plan).toMatchObject({ how: 'opus' });
     deliver('cpu-prep', L, 'boss');
-    expect((await pull(st, { ...deps, stageInline: true })).typed).toMatchObject({ steps: 1, errors: 0 });
-    expect(Q.stats(L.sql, Date.now(), 'gpu').states.queued.n).toBe(1);
+    expect((await pull(st, { ...deps, stageInline: true })).typed).toMatchObject({ steps: 0, errors: 1 });
+    expect(Q.stats(L.sql, Date.now(), 'gpu').states.queued?.n || 0).toBe(0);
     expect(E.store.size).toBe(0);
   });
 });

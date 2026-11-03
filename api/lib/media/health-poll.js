@@ -9,6 +9,7 @@ import { appendFile, mkdir, readdir, readFile, unlink, writeFile, rename } from 
 import { gzip as gzipCb, gunzip as gunzipCb } from 'zlib';
 import { promisify } from 'util';
 import { join } from 'path';
+import { laneLog } from './lane-log.js';
 import { compact } from '../../../scripts/media/worker/health.mjs';
 
 const gzip = promisify(gzipCb), gunzip = promisify(gunzipCb);
@@ -132,7 +133,7 @@ export async function tick(st, { targets: ts, history, fetchFn, now = Date.now, 
   for (const [name, q] of Object.entries(queues)) {
     try {
       const got = await q.call('last-words-list', { since: seen[name] || now() - 86_400_000, limit: 100 });
-      for (const w of got || []) { history?.push(lastWordsRow(w, name)); seen[name] = Math.max(seen[name] || 0, w.at); }
+      for (const w of got || []) { history?.push(lastWordsRow(w, name)); laneLog('pod', { event: 'last_words', queue: name, host: w.host, reason: w.words?.reason || null, words: w.words }); seen[name] = Math.max(seen[name] || 0, w.at); }
     } catch (e) { st.last_words_error = `${name}: ${String(e.message).slice(0, 160)}`; }
   }
   await history?.flush().catch((e) => { st.health_log_error = String(e.message).slice(0, 160); });

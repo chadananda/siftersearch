@@ -10,6 +10,7 @@ import { homeScaleMode, homeGpuOrder } from '../media/loop-health.js';
 import { late } from '../media/late.js';
 import * as WC from '../media/worker-cards.js';
 import { hostProfile, hostRegistry } from '../media/tools.js';
+import { laneLog } from '../media/lane-log.js';
 import {audioVersion, markAudioPending} from '../media/talk-audio.js';
 import { readdir, stat, writeFile, mkdir, rename } from 'fs/promises';
 import { createReadStream, createWriteStream, existsSync, readFileSync, readdirSync } from 'fs';
@@ -1770,6 +1771,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
   const closePod = async (p, why, { gone = false } = {}) => {
     if (!gone) try { await C.terminatePod(p.id, deps); } catch (err) { p.terminate_error = String(err.message).slice(0, 200); return false; }
     p.terminated = now(); p.why = why; if (gone) p.gone = true;
+    laneLog('pod', { event: 'closed', name: p.name, id: p.id, why: String(why).slice(0, 300), gone, minutes: Math.round((p.terminated - (p.created || p.terminated)) / 60_000), jobs_assigned: p.jobs_assigned || 0, worked: C.podWorked ? C.podWorked(st, p) : p.jobs_assigned > 0, usd: p.costPerHr ? Math.round(p.costPerHr * Math.max(0, p.terminated - (p.created || p.terminated)) / 36e5 * 100) / 100 : null });
     console.warn(`[media-cloud] closed ${p.name} (${p.id}) after ${Math.round((p.terminated - (p.created || p.terminated)) / 60_000)} min: ${why}`);   // every close is in the pm2 log
     if (gone) { (st.vanished_log ||= []).push({ at: now(), pod: p.name, id: p.id, why: String(why).slice(0, 160), last_ok: p.lastOk || null }); st.vanished_log = st.vanished_log.slice(-30); }
     // an agent pod's edge leases go back to the queue NOW and its host stops counting as engaged (not at lease expiry / HOST_FRESH_MS)
@@ -2051,10 +2053,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           (st.buffer_log ||= []).push({ at: now(), staged_h: Math.round(plan.staged_h * 100) / 100, want_h: Math.round(buf.want_h * 100) / 100, finish_q: caps[0]?.by_type?.['cpu-finish']?.queued ?? null, pods: livePods });
           if (st.buffer_log.length > 360) st.buffer_log.splice(0, st.buffer_log.length - 360);
           st.q_pass = { started: passAt, phase: 'done', done: now(), ms: now() - passAt, error: null, sub: st.q_pass?.sub };
+          laneLog('pass', { ms: now() - passAt, pulled: pulledN, lan_error: lan.error || null, edge_error: edgeR.error || null, moved: edgeR.moved || null, moved_prep: edgeR.moved_prep || null, repaired: lan.repaired?.length || 0, sub: st.q_pass.sub, plan: { mode: plan.mode, target: plan.target ?? null, staged_h: plan.staged_h, movable_h: split.movable_h, lan_only_h: split.lan_only_h, lan_only_n: split.lan_only_n, buffer_low: buf.buffer_low, want_h: buf.want_h }, pods: livePods });
           LH.beat(st, 'q_pass', { n: pulledN }, now());
         })().catch((e) => {
           if (!alive()) return;   // an abandoned pass that woke: its error is the abandonment, already logged
-          const error = String(e.message).slice(0, 300); st.q_last = { at: now(), error }; st.q_pass = { ...(st.q_pass || {}), started: passAt, failed: now(), ms: now() - passAt, error };
+          const error = String(e.message).slice(0, 300); laneLog('pass', { ms: now() - passAt, error, phase: st.q_pass?.phase }); st.q_last = { at: now(), error }; st.q_pass = { ...(st.q_pass || {}), started: passAt, failed: now(), ms: now() - passAt, error };
           for (const s of ['q_pass', { lan: 'q_lan', edge: 'q_edge', plan: 'pod_plan' }[st.q_pass.phase]].filter(Boolean)) if (st.loop_beats?.[s]?.running_since) LH.beat(st, s, { ok: false, err: error }, now());
           console.warn(`[media-cloud] queue pass failed in ${st.q_pass.phase}: ${error}`);
         }).finally(() => { if (alive()) qPass = null; });
@@ -2109,10 +2112,11 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       const gate = typedPods && rentWanted ? (await import('../../../worker/queue/core.js')).rentGate(st.pod_plan, { pods: live.map((p) => ({ ready: p.status === 'ready', leased: st.q_last?.leased?.[`pod-${p.name}`] || 0 })),
         movableH: st.pod_plan.movable_h || 0, moving: (st.q_moved?.moved || 0) > 0 && !st.q_moved?.error }) : null;
       if (gate) st.rent_gate = { at: now(), want, ...gate };
-      if (gate && !gate.ok) { const { ok, reason, ...nums } = gate; st.rent_refused = { at: now(), since: st.rent_refused?.reason === reason ? st.rent_refused.since : now(), reason, want, live: live.length, ...nums }; LH.beat(st, 'rentals', { n: want }, now()); }
+      if (gate && !gate.ok) { const { ok, reason, ...nums } = gate; if (st.rent_refused?.reason !== reason) laneLog('rent_refused', { reason, want, live: live.length, ...nums }); st.rent_refused = { at: now(), since: st.rent_refused?.reason === reason ? st.rent_refused.since : now(), reason, want, live: live.length, ...nums }; LH.beat(st, 'rentals', { n: want }, now()); }
       else if (rentWanted) {
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
         const pod = await C.createPod(name, pub, { ...deps, prefer: acceptedWorker?.prefer_community?{cloud:'COMMUNITY',dcs:[]}:C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
+        laneLog('rent', { name, want, live: live.length, ok: !pod.error, error: pod.error?.slice(0, 200) || null, pod: pod.id || null, cost_hr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, gate: gate ? { reason: gate.reason, staged_n: gate.staged_n, movable_h: gate.movable_h } : null, plan: { mode: st.pod_plan?.mode, target: st.pod_plan?.target ?? null, lan_only_h: st.pod_plan?.lan_only_h } });
         if (pod.error) { st.last_error = pod.error.slice(0, 300); (st.rental_refusals ||= []).push({ at: now(), why: st.last_error }); if (st.rental_refusals.length > 50) st.rental_refusals.shift(); console.warn(`[media-cloud] RunPod refused a rental: ${st.last_error}`); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; (st.breaker_log ||= []).push({ at: now(), reason: st.breaker_reason }); st.breaker_log = st.breaker_log.slice(-20); } }
         else {
           st.pods[pod.id] = { id: pod.id, name, created: now(), health_port: pod.health_port || null, costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting',image:acceptedWorker?.image||null, cloud: pod.cloudType || null };
@@ -2175,7 +2179,7 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
             if (/READY/.test(stdout)) {
               // nvidia-smi can see a card CUDA cannot open (pod 342, 10-29: every job died "CUDA unknown error"): prove the GPU before it gets work
               const cu = await C.podSsh(run, p, C.CUDA_PROBE, { timeoutMs: 120_000 }).catch((e) => ({ stdout: String(e.message || e) }));
-              if (/CUDA_OK/.test(cu.stdout || '')) { p.status = 'ready'; p.ready_at = now(); p.cuda_ok = true; }
+              if (/CUDA_OK/.test(cu.stdout || '')) { p.status = 'ready'; p.ready_at = now(); p.cuda_ok = true; laneLog('pod', { event: 'ready', name: p.name, id: p.id, boot_s: Math.round((p.ready_at - p.created) / 1000) }); }
               else { p.gpu_broken = true; p.boot_log = String(cu.stdout || '').slice(-300); st.last_error = `GPU unusable on ${p.name}: ${p.boot_log.slice(-160)}`; await closePod(p, 'GPU unusable: CUDA does not initialise'); st.pod_failures++; }
             }
             else if (/BOOTFAIL/.test(stdout)) { p.boot_log = stdout.slice(-400); st.last_error = `boot failed on ${p.name}: ${stdout.slice(-200)}`; await closePod(p, 'bootstrap failed'); st.pod_failures++; }

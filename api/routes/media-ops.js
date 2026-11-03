@@ -85,6 +85,14 @@ export default async function mediaOps(fastify) {
     const rows = await HP.readHistory(join(dirname(STATE_FILE), 'health'), { machine: String(q.machine || ''), from, to, limit: Math.min(Number(q.limit) || 2000, 20000) });
     return { machine: q.machine || null, from: new Date(from).toISOString(), to: new Date(to).toISOString(), n: rows.length, rows };
   });
+  // the lane event log (11-03): ?since=ISO|ms|<n>h  &kind=rent,rent_refused  &limit=n — why the lane did what it did, all night
+  fastify.get('/ops/media/log', guard, async (req) => {
+    const q = req.query || {}, LL = await import('../lib/media/lane-log.js');
+    const h = /^(\d+(?:\.\d+)?)h$/.exec(String(q.since || '')), since = h ? Date.now() - Number(h[1]) * 3600_000 : q.since == null || q.since === '' ? 0 : /^\d+$/.test(String(q.since)) ? Number(q.since) : Date.parse(q.since);
+    if (!Number.isFinite(since)) return { error: 'since: ISO time, ms, or <n>h' };
+    const rows = await LL.readLaneLog({ since, kind: q.kind || null, limit: Math.min(Number(q.limit) || 200, 5000) });
+    return { since: since ? new Date(since).toISOString() : null, kind: q.kind || null, n: rows.length, rows };
+  });
   // rentals valve: { pause: "reason" | false, maxPods?: 1-6 } → the pause file + the capacity file the lane reads every tick
   fastify.post('/ops/media/rentals', guard, async (req, reply) => {
     const b = req.body || {}, C = await import('../lib/media/cloud.js');
