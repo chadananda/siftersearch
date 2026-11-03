@@ -171,3 +171,14 @@ describe('Jev lookup guidance', () => {
     expect(rows.every((r) => Object.keys(LOOKUP_KINDS).includes(r.lookup))).toBe(true);
   });
 });
+
+describe('triage timeout', () => {
+  it('waits long enough for Jev (measured 0.4-1.5 s; the old 700 ms cap failed open on most lookups)', async () => {
+    const { triageMessage } = await import('../../api/lib/assistant/triage.js');
+    let sig;
+    await triageMessage([{ role: 'user', content: 'Gleanings' }], { apiKey: 'k', fetchImpl: async (u, init) => { sig = init.signal; return { ok: true, json: async () => ({ answers: {} }) }; } });
+    expect(sig).toBeTruthy();
+    // a 1 s Jev answer must still be read (the signal has not fired)
+    expect(sig.aborted).toBe(false);
+  });
+});

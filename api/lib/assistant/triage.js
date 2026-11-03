@@ -60,7 +60,7 @@ const noul = (a) => (typeof a?.noul === 'number' ? a.noul : typeof a === 'number
 const choice = (a) => (a ? { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? 0 } : null);
 
 /** One Jev call. messages = the thread (last = the new message). Returns the normalised triage or null (fail open). */
-export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-triage'), timeoutMs = 700 } = {}) {
+export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-triage'), timeoutMs = Number(process.env.ANIS_TRIAGE_TIMEOUT_MS) || 1500 } = {}) {
   const state = (messages || []).slice(-4).map((m) => `${m.role}: ${String(m.content || '').slice(0, 800)}`).join('\n');
   if (!apiKey || !state.trim()) return null;
   const t0 = Date.now();
