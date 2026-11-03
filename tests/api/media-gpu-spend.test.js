@@ -249,7 +249,8 @@ describe('system checks: CRITICAL findings for paid GPU', () => {
     expect(bad(g({ efficiency_30m: 0.5 }))).toEqual(['GPU efficiency 30 min']);
     expect(bad(g({ spent_usd: 49 }))).toEqual([]);   // near the cap is approved spend, not broken (Chad 11-02)
     expect(bad(g({ spent_usd: 60, queue: 0 }))).toEqual([]);
-    expect(bad(g({ spent_usd: 60, queue: 12 }))).toEqual(['GPU spend vs cap']);
+    expect(bad(g({ spent_usd: 203, queue: 8 }))).toEqual([]);   // past the cap, lane still renting (typed pods: no $ cap) — 11-03 false CRITICAL
+    expect(bad(g({ spent_usd: 60, queue: 12, money_stopped: 'cap $60 reached ($60)' }))).toEqual(['GPU spend vs cap']);
     expect(podChecks(null)).toEqual([]);
   });
 });

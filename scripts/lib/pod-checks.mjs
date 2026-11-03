@@ -16,9 +16,9 @@ export function podChecks(g, { minEfficiency = 0.7, capWarn = 0.8, idleMin = 10 
   const lowEff = live.length > 0 && g.efficiency_30m != null && g.efficiency_30m < minEfficiency;
   out.push({ name: 'GPU efficiency 30 min', ok: !lowEff, detail: g.efficiency_30m == null ? 'not enough rented time yet' : `${Math.round(g.efficiency_30m * 100)} % of rented GPU time busy (floor ${Math.round(minEfficiency * 100)} %) · rented $${g.rented_usd} · productive $${g.productive_usd}` });
   // approaching the cap is approved spend, not a fault (Chad 11-02: "only raise an alarm for things that are actually broken");
-  // the cap stopping work that is waiting is — it needs Chad's cap decision
-  const near = g.cap_usd > 0 && g.spent_usd >= capWarn * g.cap_usd, atCap = g.cap_usd > 0 && g.spent_usd >= g.cap_usd;
-  const blocked = atCap && ((g.queue || 0) > 0 || (g.in_flight || 0) > 0);
-  out.push({ name: 'GPU spend vs cap', ok: !blocked, detail: `$${g.spent_usd} of $${g.cap_usd}${blocked ? ` — at the cap with ${g.queue || 0} talks waiting: raise the cap or they wait` : near ? ` (≥ ${Math.round(capWarn * 100)} %)` : ''}` });
+  // the lane actually STOPPING for money is — it needs Chad's decision. Spend past the cap alone is not: the typed pod lane enforces no
+  // $ cap (Chad 10-31), so 11-03's "$203 of $200 — raise the cap or they wait" was a false CRITICAL while pods kept working.
+  const near = g.cap_usd > 0 && g.spent_usd >= capWarn * g.cap_usd, blocked = !!g.money_stopped;
+  out.push({ name: 'GPU spend vs cap', ok: !blocked, detail: `$${g.spent_usd} of $${g.cap_usd}${blocked ? ` — pods stopped: ${g.money_stopped}` : near ? ` (≥ ${Math.round(capWarn * 100)} %)` : ''}` });
   return out;
 }
