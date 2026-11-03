@@ -8,7 +8,7 @@ _Draft for discussion, 2026-09-27. Built from the three sources below plus an in
 | **Seeker Companion PRD** (`~/Desktop/prd planning/Bahai-ai-compantion-plan.md`; code in `api/lib/companion/`) | The ethics: authority classes, answer-first, consent, no funnel from vulnerability, silence over weak outreach, and fading as independence grows. |
 | **`.xswarm/ANIS.md`** | The mandate: hyper-engage across channels (chat and email, with more later). The falsifier: *return conversations*. |
 
-The alpha runs on siftersearch.com as `anis@siftersearch.com` and moves to `anis@oceanlibrary.com` later. Everything here is built so that move is a configuration change.
+Anís writes and receives mail as **`anis@oceanlibrary.com`** (Ocean 2.0), from the first letter. The sending address is configuration, never hard-coded. Public text never names the internal laboratory that hosts the engine.
 
 ---
 
@@ -253,13 +253,13 @@ Each feature lists what it is, why, the contract, who decides each part, and acc
 - Replaces `respond.js`'s "last 6 turns trimmed".
 - **Acceptance:** a 40-exchange synthetic thread keeps its facts (a recall test on L0/L1), the prompt stays under budget, and nothing is compacted without a summary.
 
-### F9 · Email channel (`anis@siftersearch.com`)
+### F9 · Email channel (`anis@oceanlibrary.com`)
 - **Inbound:** Cloudflare Email Routing sends mail to an Email Worker, which POSTs the parsed message to `/api/v1/anis/inbound` (signed with a shared secret). Then:
   - quoted history is stripped;
   - the person is resolved by address, and an email-only user created if none exists;
   - the thread is resolved by headers;
   - the message goes into F1.
-- **Outbound:** the existing `services/email.js` queue via **ZeptoMail** (the one provider), from `Anis <anis@siftersearch.com>` with the right `In-Reply-To`/`References`. SPF, DKIM and DMARC are set on the domain.
+- **Outbound:** the existing `services/email.js` queue via **ZeptoMail** (the one provider), from `Anís <anis@oceanlibrary.com>` with the right `In-Reply-To`/`References`. SPF, DKIM and DMARC are set on oceanlibrary.com, and inbound routing for `anis@` lives on that zone.
 - **Stop machinery (before anything else is sent):**
   - ZeptoMail's bounce and complaint webhooks feed a **suppression list** (hash of the address) that blocks all mail to it;
   - every inbound reply gets Jev `stop_request` and `hostile` checks at a **low threshold**. Either ends outreach while replies to their own letters continue;
@@ -312,6 +312,17 @@ Each feature lists what it is, why, the contract, who decides each part, and acc
   - a course track after sustained interest (S10, **never triggered by vulnerability**).
 - **Scoring (Jev):** relevance, surprise, fit, depth against level, and a **veto** if it could unsettle them. Code combines these with evidence strength and their record of what worked. **Silence beats a weak message:** below the quality floor, nothing is sent this cycle.
 - **Opening templates** (about 40, filtered by stage: early ones fuller, later ones lighter, the last with an explicit easy close). Jev picks the opening and one LLM call writes the letter from the template, findings and register, adding no facts.
+- **Letter craft, taken from Jafar (ctai.info `src/lib/jafar/outreach/`, Chad 11-03: "most pleased" with its 11-02 letter *Four words behind one: "bounty"*).** That letter worked because it was **one discovery, shown with real numbers**: the English word, four originals with transliteration and counts, one sentence on why it matters, and a link to the page that holds the full range. No recap, no sales line, no description of the machinery. Rules to carry over:
+  - **The example comes first and is real.** Each spotlight or hook names a recipe whose output is computed, cached and reused across readers until the corpus changes. **No example strong enough → no letter** (the runner skips; it never sends a thin letter).
+  - **Templates are suggestions, never text.** The packet gives the writer the *idea* (`how`), the findings and the conversation so far; Anís writes it his own way.
+  - **One format call, the same soul as chat**, with the packet as research JSON, then the same grounding pass as answers (quotes, original-language terms, attributions). It adds no facts.
+  - **Hard word ranges by kind:** first letter 110–180 words; later onboarding parts 70–130; re-engagement 80–150; late stages under 60.
+  - **Never repeat himself:** sentences reused from his earlier letters to this reader (or recent letters to anyone) get one rewrite told exactly what to avoid; still repeating → not sent.
+  - **Identity once, in his own words:** the first letter says plainly that he is an AI research assistant for Ocean 2.0 and that `anis@oceanlibrary.com` is his own address. A fixed line is only the last resort.
+  - **The subject is written from the letter itself:** 3–9 words, names the word or passage, no exclamation, question, emoji or newsletter language. A fixed subject is a spam fingerprint.
+  - **Close:** a plain invitation to write back, tied to what this letter showed, never a stock line. The last onboarding letter closes lightly.
+  - **Never describe how he works** (indexes, searches, systems); his character description is who he is, not text to recite.
+  - **Anís spotlights** (his counterparts to Jafar's `spot_*`): the original behind an English word; the passage from a half-remembered phrase; who was in the room (people and events); a book's untold anecdote (from its dossier); a talk excerpt to listen to; a reading plan for a book; a topic collection.
 - **Companion guards:**
   - no contact from distress or personal disclosure;
   - never escalate urgency after silence;
