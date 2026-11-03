@@ -6,6 +6,8 @@
 //   --immerse tmp/immerse/<feed>.json: the questions people put to bahaiwritings.app, judged against Immerse's own answer
 //   (Chad 10-19: "make sure we can give a more detailed, doctrinal, nuanced and interesting answer to each")
 //   --no-perplexity  --concurrency N
+import dns from 'node:dns'; dns.setDefaultResultOrder('ipv4first');
+import net from 'node:net'; net.setDefaultAutoSelectFamilyAttemptTimeout(5000);   // Mac → api.anthropic.com connects in ~0.5 s; node's 250 ms happy-eyeballs default fails it ('Connection error.', 11-03 judge)
 import dotenv from 'dotenv';
 import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
@@ -138,13 +140,19 @@ async function judge(c, answers) {
     authority_errors: (v.authority_errors || []).map((e) => e.replace(/^\s*(?:answer\s+)?([A-Z])\s*:/i, (m, l) => `${back[l.toUpperCase()] || l}:`)) };
 }
 
-const only = arg('only')?.split(',').map(Number);
+const only = arg('only')?.split(',').map((s) => s.trim());
 const immerseFile = arg('immerse');
+// --questions <registry .jsonl> (tests/quality/questions/schema.md): one case per line, kind = its type, expect kept for scoring
+// (tests/quality/score-audience-battery.mjs). Default variant = current (production Anís) vs Perplexity; --tag names the output file.
+const questionsFile = arg('questions');
 const cases = immerseFile
   ? JSON.parse(readFileSync(immerseFile, 'utf8')).map((x, i) => ({ id: i + 1, kind: `immerse: ${x.title || ''}`.slice(0, 60), url: x.url,
     messages: [{ role: 'user', content: x.question }], immerse: x.answer }))
-  : CASES;
-const variants = (arg('variants') || (immerseFile ? 'sonnet' : 'current,haiku,sonnet')).split(',');
+  : questionsFile
+    ? readFileSync(questionsFile, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
+      .map((q) => ({ id: q.id, kind: q.type || 'question', expect: q.expect || null, extra: q.extra || null, messages: [{ role: 'user', content: q.text }] }))
+    : CASES;
+const variants = (arg('variants') || (immerseFile ? 'sonnet' : questionsFile ? 'current' : 'current,haiku,sonnet')).split(',');
 const withPx = !process.argv.includes('--no-perplexity');
 const clipA = (t) => (String(t || '').length > 14000 ? `${String(t).slice(0, 14000)}…` : String(t || ''));
 async function runCase(c) {
@@ -172,9 +180,9 @@ if (rejudge) {
     return { ...c, verdict };
   })));
 }
-const file = join(ROOT, 'tmp', `anis-battery-${immerseFile ? 'immerse-' : ''}${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
-const todo = rejudge ? [] : cases.filter((x) => !only || only.includes(x.id));
-const N = Number(arg('concurrency') || (immerseFile ? 3 : 1));
+const file = join(ROOT, 'tmp', `anis-battery-${immerseFile ? 'immerse-' : ''}${arg('tag') ? `${arg('tag')}-` : ''}${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+const todo = rejudge ? [] : cases.filter((x) => !only || only.includes(String(x.id)));
+const N = Number(arg('concurrency') || (immerseFile || questionsFile ? 3 : 1));
 for (let i = 0; i < todo.length; i += N) {
   out.push(...await Promise.all(todo.slice(i, i + N).map((c) => runCase(c).catch((e) => ({ ...c, answers: {}, verdict: { error: e.message, scores: {} } })))));
   writeFileSync(file, JSON.stringify({ partial: true, cases: out }, null, 1));   // saved as it goes
