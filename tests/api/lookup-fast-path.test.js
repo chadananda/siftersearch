@@ -1,6 +1,6 @@
 // Lookups fast path (W1): book / quoted words / numbered reference resolved by code, no agent/planner/format call, light writer.
 import { describe, it, expect } from 'vitest';
-import { parseReference, headingNumber, byHeadingNumber, holds, resolveLookup } from '../../api/lib/assistant/lookup.js';
+import { parseReference, headingNumber, byHeadingNumber, holds, resolveLookup, pickQuoteOrBook } from '../../api/lib/assistant/lookup.js';
 import { anisRespond } from '../../api/lib/assistant/respond.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
 import { makeStrikes } from '../../api/lib/assistant/strikes.js';
@@ -80,11 +80,11 @@ describe('resolveLookup (mocked deps)', () => {
     expect(r.kind).toBe('book');
     expect(seen).toContain('Kitáb-i-Íqán');
   });
-  it('Jev said quote but the whole message is a known title: the book wins (resolver check), with no search', async () => {
-    let searched = 0;
-    const r = await resolveLookup(user('Epistle to the Son of the Wolf'), { intent: 'quote', findTitled: async () => GL, search: async () => { searched++; return []; } });
+  it('Jev said quote but the whole message is a known title and no passage holds the words: the book (the only candidate), Jev not asked', async () => {
+    let asked = 0;
+    const r = await resolveLookup(user('Epistle to the Son of the Wolf'), { intent: 'quote', findTitled: async () => GL, search: async () => [], pickQuoteOrBook: async () => { asked++; } });
     expect(r.kind).toBe('book');
-    expect(searched).toBe(0);
+    expect(asked).toBe(0);
   });
   it('quote intent: a stub document titled with the wording is not a work; the phrase search runs', async () => {
     const STUB = { doc: { id: 9, title: 'Be generous in prosperity', paragraph_count: 2 }, others: [] };
@@ -232,5 +232,50 @@ describe('numbered works with no number in the text (gate fix 3: "Some Answered 
     expect(deps.asked).toEqual([20908, 149, 159]);
     expect(r).toMatchObject({ kind: 'reference', work: { doc: PT } });
     expect(r.passages[0]).toMatchObject({ document_id: 20908, title: 'Paris Talks', paragraph_index: 150 });
+  });
+});
+
+describe('a quote that is also a book title (gate fix 5: "the earth is but one country" opened Huddleston)', () => {
+  const BOOK = { doc: { id: 77, title: 'The Earth Is But One Country', author: 'John Huddleston', paragraph_count: 900 }, others: [] };
+  const HIT = { id: 3, title: 'Gleanings from the Writings of Bahá’u’lláh', text: `${P} Let not a man glory…` };
+  const log = () => { const rows = []; return { rows, record: (point, d) => rows.push({ point, ...d }) }; };
+  const base = (pick, decisions) => ({ intent: 'quote', findTitled: async () => BOOK, search: async () => [HIT], decisions, pickQuoteOrBook: pick });
+  it('both candidates exist: Jev chooses with both in view (the passage), and the choice is logged', async () => {
+    let seen; const d = log();
+    const r = await resolveLookup(user('the earth is but one country'), base(async (m, c) => { seen = c; return { choice: 'quote', confidence: 0.9, distribution: { quote: 0.9, book: 0.1 } }; }, d));
+    expect(r).toMatchObject({ kind: 'quote', contested: { book: 77, by: 'jev' } });
+    expect(r.passages[0].text).toContain(P);
+    expect(seen.book.work.doc.id).toBe(77);
+    expect(seen.quote.passages[0].id).toBe(3);
+    expect(d.rows).toEqual([expect.objectContaining({ point: 'lookup:quote-or-book', by: 'jev', chosen: 'quote', options: ['quote', 'book'] })]);
+  });
+  it('Jev chooses the book: the book', async () => {
+    const r = await resolveLookup(user('the earth is but one country'), base(async () => ({ choice: 'book', confidence: 0.8 }), log()));
+    expect(r).toMatchObject({ kind: 'book', work: BOOK });
+  });
+  it('Jev gives no answer (timeout) or a weak one: his lookup call (quote) stands, logged as such', async () => {
+    for (const pick of [async () => null, async () => ({ choice: 'book', confidence: 0.4 })]) {
+      const d = log();
+      const r = await resolveLookup(user('the earth is but one country'), base(pick, d));
+      expect(r.kind).toBe('quote');
+      expect(d.rows[0]).toMatchObject({ by: 'code', chosen: 'quote' });
+    }
+  });
+  it('pickQuoteOrBook sends both candidates to Jev as a typed choice and reads his answer', async () => {
+    let body;
+    const fetchImpl = async (u, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ answers: { target: { choice: 'quote', confidence: 0.92 } } }) }; };
+    const a = await pickQuoteOrBook(user('the earth is but one country'), { book: { kind: 'book', work: BOOK }, quote: { kind: 'quote', passages: [HIT] } }, { fetchImpl, apiKey: 'k' });
+    expect(a).toMatchObject({ choice: 'quote', confidence: 0.92 });
+    expect(body.questions.target.type).toBe('choice');
+    expect(body.questions.target.criteria.book).toContain('The Earth Is But One Country');
+    expect(body.questions.target.criteria.quote).toContain('mankind its citizens');
+  });
+  it('pickQuoteOrBook: a timeout is retried within budget, then reported through onJev and returns null', async () => {
+    const seen = [];
+    const fetchImpl = async () => { const e = new Error('t'); e.name = 'TimeoutError'; throw e; };
+    const a = await pickQuoteOrBook(user('x'), { book: { work: BOOK }, quote: { passages: [HIT] } }, { fetchImpl, apiKey: 'k', onJev: (i) => seen.push(i) });
+    expect(a).toBeNull();
+    expect(seen[0]).toMatchObject({ call: 'lookup' });
+    expect(seen[0].timeouts.length).toBe(2);
   });
 });

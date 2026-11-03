@@ -122,7 +122,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // Jev's own confident call that this fetches something exact outranks his "unclear" (a bare "Gleanings 1" reads as unclear to the message-kind question)
   if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
   const lkIntent = lookupOn && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
-  const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
+  const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
   // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
   // and the card (short-turn.js) — respond.js searches those words, not the bare message
   const resolved = route.action === 'research' && outcome === 'search' && tri?.features?.short && !tri.features.first && d.resolve

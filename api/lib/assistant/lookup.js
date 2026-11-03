@@ -98,16 +98,50 @@ export async function resolveLookup(messages, deps = {}) {
       paragraph_index: row.paragraph_index, religion: w.doc.religion, collection: w.doc.collection, language: w.doc.language, source_url: h?.url || null }] });
   }
   if (intent === 'book') return bookOf({ min: 0.86 });
-  // quote: Jev saw wording to find. Resolver check only — if the whole message IS a known title ("Epistle to the Son of the Wolf"), it is the book.
-  if (quoteStrip(text).split(/\s+/).length <= 10) { const b = await bookOf({ min: 0.97, prefix: false });
-    // a title-match that is a stub (a prayer or fragment whose TITLE is its first line, doc 28444 "Be generous in prosperity…") is the wording itself, not a work
-    if (b && (b.work.doc.paragraph_count ?? 99) >= 20) return b; }
+  // quote: Jev saw wording to find. Two things can answer it: a work whose TITLE is the wording ("Epistle to the Son of the Wolf")
+  // and passages that HOLD the wording ("the earth is but one country" — also a book title; launch gate 11-03 opened the book).
+  // Code only gathers the candidates; when both exist Jev chooses with both in view.
   const phrase = detectQuotation(text)?.phrase || quoteStrip(text);
-  if (!phrase) return null;
-  const search = deps.search || (await import('./agent-search.js')).agentSearch();
-  const hits = await search(phrase, null, 10).catch(() => []);
-  const ok = hits.map((h) => ({ h, ...holds(h.text, phrase) })).filter((x) => x.near);
-  if (!ok.length) return null;
-  ok.sort((a, b) => Number(b.exact) - Number(a.exact));
-  return done({ kind: 'quote', phrase, passages: ok.slice(0, 5).map((x) => x.h) });
+  const search = phrase ? deps.search || (await import('./agent-search.js')).agentSearch() : null;
+  const [b, hits] = await Promise.all([
+    quoteStrip(text).split(/\s+/).length <= 10 ? bookOf({ min: 0.97, prefix: false }) : null,
+    search ? search(phrase, null, 10).catch(() => []) : []]);
+  // a title-match that is a stub (a prayer or fragment whose TITLE is its first line, doc 28444 "Be generous in prosperity…") is the wording itself, not a work
+  const book = b && (b.work.doc.paragraph_count ?? 99) >= 20 ? b : null;
+  const ok = hits.map((h) => ({ h, ...holds(h.text, phrase) })).filter((x) => x.near).sort((a, b2) => Number(b2.exact) - Number(a.exact));
+  const quote = ok.length ? done({ kind: 'quote', phrase, passages: ok.slice(0, 5).map((x) => x.h) }) : null;
+  if (!book || !quote) return book || quote;
+  const pick = await (deps.pickQuoteOrBook || pickQuoteOrBook)(messages, { book, quote }, { profile: deps.profile, onJev: deps.onJev,
+    fetchImpl: deps.fetchImpl || (await import('../systemone.js')).jevFetch('anis-quote-or-book') });
+  const choice = pick?.choice && (pick.confidence ?? 0) >= MIN_JEV ? pick.choice : null;
+  // no confident answer: Jev's own lookup call for this turn was 'quote', so the passages stand
+  const chosen = choice === 'book' ? book : quote;
+  deps.decisions?.record('lookup:quote-or-book', { by: choice ? 'jev' : 'code', saw: { phrase, book: book.work.doc.title, passages: quote.passages.length },
+    options: ['quote', 'book'], probabilities: pick?.distribution ?? null, chosen: chosen.kind,
+    reason: choice ? null : !pick ? 'no answer (see jev:timeout when it timed out): Jev\'s lookup call (quote) stands' : 'low confidence: Jev\'s lookup call (quote) stands', ms: pick?.ms ?? null });
+  return { ...chosen, ms: Date.now() - t0, contested: { book: book.work.doc.id, quote: quote.passages.length, by: choice ? 'jev' : 'lookup intent' } };
+}
+
+const MIN_JEV = 0.6;
+/** Jev's typed choice between the two candidates of a quote lookup: the book whose title is the words, or the passages holding them.
+ *  → { choice: 'quote'|'book', confidence, distribution, ms } | null (no key / timeout / failure). */
+export async function pickQuoteOrBook(messages, { book, quote }, { profile = {}, fetchImpl, apiKey = process.env.TYPESAFE_API_KEY, onJev = null, ...limits } = {}) {
+  if (!apiKey || !fetchImpl) return null;
+  const [{ ENDPOINT }, { modelFor }, { stateOf }, { jevCall, JEV_LIMITS }] = await Promise.all([import('../scope-extract.js'), import('../model-roles.js'),
+    import('./strategy-choice.js'), import('./jev-call.js')]);
+  const d = book.work.doc, p = quote.passages[0] || {};
+  const criteria = {
+    book: `the reader wants the work titled "${d.title}"${d.author ? ` by ${d.author}` : ''} (${d.paragraph_count ?? '?'} paragraphs) — to open or read the book itself`,
+    quote: `the reader wants the passage that says these words ("${String(p.text || '').slice(0, 220)}" — ${p.title || 'a passage'}${p.author ? `, ${p.author}` : ''}): where they come from, the source`,
+  };
+  const t0 = Date.now();
+  const call = await jevCall('lookup', async (signal) => {
+    const res = await fetchImpl(ENDPOINT, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: modelFor('assistant-triage').model, state: stateOf(messages, { profile }),
+        questions: { target: { type: 'choice', instructions: 'The reader\'s words are both a book title in the library and words found in a passage. Which does the reader want, read with the conversation?', criteria } } }),
+      signal });
+    return res.ok ? (await res.json()).answers?.target ?? null : null;
+  }, { ...JEV_LIMITS.lookup, ...limits, onJev });
+  const a = call.value;
+  return a ? { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? null, distribution: a.distribution ?? null, ms: Date.now() - t0 } : null;
 }
