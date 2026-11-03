@@ -144,11 +144,11 @@ export async function itemsToProbe(driveId, { limit = 50 } = {}) {
 }
 /** RE-PROBE selection (archive-reprobe): every book/document of a drive (not set aside) the re-probe has not touched yet — `kind` 'book' before 'scan' is the caller's order, best score first.
  *  metadata.reprobe is the marker ({queued} | {error} | {skipped}); `redo` also returns the ones that errored.
- *  `redo: 'pages'` instead returns every PDF whose probe predates probe v2 (v1 read every PDF as 1 page and sampled page 1 alone) and that this redo has not queued yet (reprobe.v2). */
+ *  `redo: 'pages'` instead returns (approved import candidates first) every PDF whose probe predates probe v2 (v1 read every PDF as 1 page and sampled page 1 alone) and that this redo has not queued yet (reprobe.v2). */
 export async function itemsToReprobe(driveId, { kind = 'book', limit = 50, redo = false } = {}) {
   const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND section != 'set-aside' AND kind = ? AND (${PROBE_EXT.map(() => 'lower(primary_rel) LIKE ?').join(' OR ')})
     AND (${redo === 'pages' ? "lower(primary_rel) LIKE '%.pdf' AND COALESCE(json_extract(metadata, '$.probe.v'), 1) < 2 AND json_extract(metadata, '$.reprobe.v2') IS NULL"
-    : `json_extract(metadata, '$.reprobe') IS NULL${redo ? " OR json_extract(metadata, '$.reprobe.error') IS NOT NULL" : ''}`}) ORDER BY score DESC, id LIMIT ?`,
+    : `json_extract(metadata, '$.reprobe') IS NULL${redo ? " OR json_extract(metadata, '$.reprobe.error') IS NOT NULL" : ''}`}) ORDER BY ${redo === 'pages' ? "decision = 'approve' DESC, " : ''}score DESC, id LIMIT ?`,
   [driveId, kind, ...PROBE_EXT.map((e) => `%.${e}`), Math.min(Number(limit) || 50, 500)], 'archives:items-to-reprobe');
   return rows.map(parseItem);
 }

@@ -192,3 +192,14 @@ describe('archive-adopt report', () => {
     expect(r).toMatchObject({ section: { 'set-aside': 2, main: 1 }, match: { junk: 1, copy: 1, new: 1 } });
   });
 });
+
+describe("itemsToReprobe redo 'pages'", () => {
+  it('offers approved import candidates first, then the rest by score; skips v2 probes and items it already queued', async () => {
+    await repo.upsertItems('d1', [item('hi.pdf', { score: 90 }), item('ok.pdf', { score: 10 }), item('v2.pdf', { score: 80 }), item('q.pdf', { score: 70 }), item('e.epub', { score: 95 })]);
+    const by = Object.fromEntries((await repo.listItems('d1')).map((i) => [i.primary_rel, i.id]));
+    await repo.decideItem(by['ok.pdf'], { decision: 'approve' });
+    await repo.setProbe(by['v2.pdf'], { v: 2, class: 'scan', pages: 9 });
+    await repo.setReprobe(by['q.pdf'], { queued: 'x', v2: 1 });
+    expect((await repo.itemsToReprobe('d1', { redo: 'pages' })).map((i) => i.primary_rel)).toEqual(['ok.pdf', 'hi.pdf']);
+  });
+});
