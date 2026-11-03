@@ -208,7 +208,7 @@ export async function bookAuthorPhotoSetJob({ fixes = [], write = false } = {}, 
 export const OPEN_PUBLISHERS = Object.freeze(['Bahá’í Publishing Trust', 'Bahá’í Publishing (US)', 'Association for Bahá’í Studies', 'Wilmette Institute']);
 // Books Chad ruled encumbered by hand — never reopened by a publisher match. 8632: Chad 11-03 "Gate of the Heart is NOT
 // open. It is encumbered." (the hunt read its acknowledgments as the copyright page; the publisher is Wilfrid Laurier UP).
-export const RULED_ENCUMBERED = Object.freeze([8632]);
+export const RULED_ENCUMBERED = Object.freeze([8632, 956168]);   // 956168 Emergence: on the approved ISBN list, kept limited (Chad 10-23)
 const metaPublisher = (d) => { const m = parse(d.metadata) || {}; return String(m.publicationName || m.publisher || '').trim() || null; };
 export async function rightsOpenPublisherJob({ write = false, except = [] } = {}, deps = {}) {
   const { page = huntScanPage, rows = allHuntRows, open = (await import('../repos/book-hunt-repo.js')).openForPublisher } = deps;
