@@ -234,6 +234,7 @@ h3{margin-top:18px}
   </div>
   <p>Anís calls these tools in-process. The endpoint column gives the route that exposes the same function to other callers (the site, the widget, outside developers). Everything he says comes from what these tools return: code checks every citation before an answer goes out, a quotation not in the library is removed, and every reference becomes a link.</p>
 
+  <p><b>One API.</b> Every tool is an endpoint of one OpenAPI API, <span class="mono">POST /api/v1/tools/&lt;name&gt;</span>, with a stated purpose, typed parameters and a plain JSON output (shared Passage and Work shapes, no prose). Strategies call the same contract in-process, so one tool's output feeds the next without an LLM reading it in between; trusted outside users call it with an API key. The tool list is at <span class="mono">GET /api/v1/tools</span>, the spec in the API's Swagger page. <span class="chip week">in progress</span></p>
   <p><b>Tool names.</b> Every tool has one name, used in strategies, in the code and in conversation. A <span class="mono">_search</span> tool takes words and returns ranked results; a <span class="mono">_lookup</span> tool takes one known passage, work or word and returns facts about it.</p>
 
   <h3 id="search-tools">Search Tools</h3>
