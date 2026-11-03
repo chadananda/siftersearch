@@ -257,6 +257,28 @@ describe("Chad's rights decisions (10-23)", () => {
     expect(open).not.toHaveBeenCalled();
     expect((await rightsOpenPublisherJob({ write: true, except: [4] }, { page, rows, open })).opened).toBe(1);
   });
+  it('a hunt publisher contradicted by the book\'s own metadata publisher is a conflict, never opened', async () => {
+    const { rightsOpenPublisherJob } = await import('../../api/lib/ops/book-hunt-job.js');
+    const meta = JSON.stringify({ publicationName: 'Wilfrid Laurier University Press' });
+    const pg = async ({ afterId }) => [{ ...docs[0], id: 9, title: 'Some Book', metadata: meta }].filter((d) => d.id > afterId);
+    const rw = async () => [{ doc_id: 9, found: f('Association for Bahá’í Studies') }];
+    const open = vi.fn(async () => ({ changed: 1 }));
+    const r = await rightsOpenPublisherJob({ write: true }, { page: pg, rows: rw, open });
+    expect(r.would_open).toEqual([]);
+    expect(r.conflicts).toEqual([{ id: 9, title: 'Some Book', hunt: 'Association for Bahá’í Studies', metadata: 'Wilfrid Laurier University Press' }]);
+    expect(open).not.toHaveBeenCalled();
+  });
+  it('Gate of the Heart (8632) is ruled encumbered and never opened, whatever the hunt says', async () => {
+    const { rightsOpenPublisherJob, RULED_ENCUMBERED } = await import('../../api/lib/ops/book-hunt-job.js');
+    expect(RULED_ENCUMBERED).toContain(8632);
+    const pg = async ({ afterId }) => [{ ...docs[0], id: 8632, title: 'Gate of the Heart' }].filter((d) => d.id > afterId);
+    const rw = async () => [{ doc_id: 8632, found: f('Association for Bahá’í Studies') }];
+    const open = vi.fn(async () => ({ changed: 1 }));
+    const r = await rightsOpenPublisherJob({ write: true }, { page: pg, rows: rw, open });
+    expect(r.would_open).toEqual([]);
+    expect(r.ruled_encumbered.map((x) => x.id)).toEqual([8632]);
+    expect(open).not.toHaveBeenCalled();
+  });
   it('Ruhi books are found (author, title, file) and only soft-deleted on write; letters about Ruhi and Rúhíyyih stay', async () => {
     const { excludeRuhiJob } = await import('../../api/lib/ops/book-hunt-job.js');
     const del = vi.fn(async (ids) => ({ deleted: ids.length, refused: [] }));

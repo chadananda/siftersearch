@@ -206,11 +206,16 @@ export async function bookAuthorPhotoSetJob({ fixes = [], write = false } = {}, 
  *  non-canonical book whose own pages (or a high-confidence match) name one of them is made fully readable. `except` keeps
  *  books Chad ruled encumbered on other grounds. params { write, except } — dry run unless write. */
 export const OPEN_PUBLISHERS = Object.freeze(['Bahá’í Publishing Trust', 'Bahá’í Publishing (US)', 'Association for Bahá’í Studies', 'Wilmette Institute']);
+// Books Chad ruled encumbered by hand — never reopened by a publisher match. 8632: Chad 11-03 "Gate of the Heart is NOT
+// open. It is encumbered." (the hunt read its acknowledgments as the copyright page; the publisher is Wilfrid Laurier UP).
+export const RULED_ENCUMBERED = Object.freeze([8632]);
+const metaPublisher = (d) => { const m = parse(d.metadata) || {}; return String(m.publicationName || m.publisher || '').trim() || null; };
 export async function rightsOpenPublisherJob({ write = false, except = [] } = {}, deps = {}) {
   const { page = huntScanPage, rows = allHuntRows, open = (await import('../repos/book-hunt-repo.js')).openForPublisher } = deps;
   const hunted = new Map((await rows()).map((r) => [r.doc_id, parse(r.found)]));
   const skip = new Set(except.map(Number));
-  const out = { write, matched: 0, already_open: 0, opened: 0, would_open: [], kept_by_exception: [] };
+  const ruled = new Set(RULED_ENCUMBERED);
+  const out = { write, matched: 0, already_open: 0, opened: 0, would_open: [], kept_by_exception: [], ruled_encumbered: [], conflicts: [] };
   for await (const d of books(page)) {
     if (canonicalOf(d).canonical) continue;
     const f = hunted.get(d.id)?.fields?.publisher;
@@ -218,7 +223,11 @@ export async function rightsOpenPublisherJob({ write = false, except = [] } = {}
     const name = publisherClass(f.value)?.name;
     if (!OPEN_PUBLISHERS.includes(name)) continue;
     out.matched++;
+    if (ruled.has(d.id)) { out.ruled_encumbered.push({ id: d.id, title: d.title, publisher: name }); continue; }
     if (skip.has(d.id)) { out.kept_by_exception.push({ id: d.id, title: d.title, publisher: name }); continue; }
+    // the book's own metadata names another publisher → the hunt may have misread the page; never open on a contradiction
+    const mp = metaPublisher(d);
+    if (mp && publisherClass(mp)?.name !== name) { out.conflicts.push({ id: d.id, title: d.title, hunt: name, metadata: mp }); continue; }
     if (!d.encumbered) { out.already_open++; continue; }
     out.would_open.push({ id: d.id, title: d.title, author: d.author, publisher: name, was: d.rights_reason || 'collection default', evidence: f.evidence });
     if (write) { const r = await open(d.id, `open: institutional publisher ${name} (Chad 10-23)`); if (r.changed) out.opened++; }
