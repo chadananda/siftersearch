@@ -224,13 +224,18 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   // … and, when the seeker named another tradition, inside that tradition's texts (its scripture is crowded out by the
   // Bahá'í books that quote it)
   const none = Promise.resolve({ hits: [] });
+  // a layer that FAILS is not a layer that found nothing (11-01 00:44: the phrase layer timed out under load; BM25 alone ranks
+  // the Mánikchí tablet's one-line paragraph above Gleanings' and the Epistle's long ones, and Anís named the tablet as the
+  // source of "Ye are the fruits of one tree"). A failed call is retried once; still failing → the result says `degraded`.
+  const degraded = new Set();
+  const layer = async (name, fn) => { try { return await fn(); } catch { try { return await fn(); } catch { degraded.add(name); return { hits: [] }; } } };
   const [ph, kw, phD, kwD, phR, kwR] = await Promise.all([
-    d.phrases(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
-    d.keyword(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
-    d.phrases(q.match, { limit: 20, filters: DOC, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
-    d.keyword(q.match, { limit: 10, filters: DOC, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
-    religion ? d.phrases(q.match, { limit: 20, filters: { religion }, timeoutMs: QD_MS }).catch(() => ({ hits: [] })) : none,
-    religion ? d.keyword(q.match, { limit: 10, filters: { religion }, timeoutMs: QD_MS }).catch(() => ({ hits: [] })) : none,
+    layer('phrase', () => d.phrases(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS })),
+    layer('keyword', () => d.keyword(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS })),
+    layer('phrase', () => d.phrases(q.match, { limit: 20, filters: DOC, timeoutMs: QD_MS })),
+    layer('keyword', () => d.keyword(q.match, { limit: 10, filters: DOC, timeoutMs: QD_MS })),
+    religion ? layer('phrase', () => d.phrases(q.match, { limit: 20, filters: { religion }, timeoutMs: QD_MS })) : none,
+    religion ? layer('keyword', () => d.keyword(q.match, { limit: 10, filters: { religion }, timeoutMs: QD_MS })) : none,
   ]);
   const order = [...phR.hits, ...kwR.hits, ...phD.hits, ...ph.hits, ...kwD.hits, ...kw.hits];
   const ids = [...new Set(order.map((h) => h.paragraph_id))];
@@ -280,8 +285,8 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   if (quoteAuthor) {
     const f = { author: quoteAuthor, religion: "Baha'i" };
     const [p2, k2] = await Promise.all([
-      d.phrases(q.match, { limit: 20, filters: f, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
-      d.keyword(q.match, { limit: 20, filters: f, timeoutMs: QD_MS }).catch(() => ({ hits: [] })),
+      layer('phrase', () => d.phrases(q.match, { limit: 20, filters: f, timeoutMs: QD_MS })),
+      layer('keyword', () => d.keyword(q.match, { limit: 20, filters: f, timeoutMs: QD_MS })),
     ]);
     const more = [...new Set([...p2.hits, ...k2.hits].map((h) => h.paragraph_id))].filter((id) => !pool.some((c) => c.id === id) && !byId.has(id));
     const moreRows = await d.rows(more);
@@ -296,7 +301,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
     }
     say('targeted', { searched: more.length, pool: pool.length });
   }
-  if (!pool.length) return { quote: q.text, origin: null, citedBy: [], tablet: await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0 };
+  if (!pool.length) return { quote: q.text, origin: null, citedBy: [], tablet: await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0, ...(degraded.size ? { degraded: [...degraded] } : {}) };
 
   // how many paragraphs the link graph records as quoting each leading candidate — the original is quoted, the compilation
   // that reprints it rarely is (the tiebreak when publication years are missing)
@@ -362,6 +367,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
     tablet,
     ms: Date.now() - t0,
     stages,
+    ...(degraded.size ? { degraded: [...degraded] } : {}),   // a search layer failed twice: the origin may be missing from the pool
   };
 }
 

@@ -243,10 +243,24 @@ describe('SourceHunt as Anís’s tool (kind source_lookup)', async () => {
     const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
     expect(r.reply).not.toMatch(/also quoted|Aqdas/);
   });
-  it('a quotation with no confirmed original says so, in one sentence', async () => {
+  // Chad 11-02: "which writing says this?" got "I could not confirm the original tablet" — unasked, it only puzzles
+  it('no confirmed original: said only when the seeker asked for the original', async () => {
     const d = deps({ sourceHunt: async () => ({ ...HUNT, tablet: { certain: false, candidates: [] }, citedBy: [] }) });
     const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
-    expect(r.reply).toMatch(/I could not confirm the original tablet/);
+    expect(r.reply).not.toMatch(/could not confirm/);
+  });
+  it('a hunt whose search was degraded does not answer — the ordinary search does (11-01: Mánikchí named for Gleanings)', async () => {
+    const d = deps({ sourceHunt: async () => ({ ...HUNT, degraded: ['phrase'] }) });
+    await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    expect(d.calls.search).toHaveLength(1);
+  });
+  it('a scraped page with no real title is never named as quoting it ("abdul-baha-bkw21_en")', async () => {
+    const d = deps({ sourceHunt: async () => ({ ...HUNT, tablet: { certain: false }, citedBy: [
+      { title: 'abdul-baha-bkw21_en', url: 'https://oceanoflights.org/abdul-baha-bkw21-en/', rangeUrl: 'https://oceanoflights.org/abdul-baha-bkw21-en/#:~:text=the%20fruit' },
+      { title: 'A Traveler’s Narrative', url: 'https://x/tn', rangeUrl: 'https://x/tn?paraId=para_176' }] }) });
+    const r = await anisRespond({ messages: ask, deps: d, direction: { kind: 'source_lookup' } });
+    expect(r.reply).toMatch(/Traveler’s Narrative/);
+    expect(r.reply).not.toMatch(/bkw21/);
   });
   it('nothing found → the ordinary search', async () => {
     const d = deps({ sourceHunt: async () => ({ origin: null }) });

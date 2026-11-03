@@ -83,6 +83,17 @@ describe('sourceHunt', () => {
     expect(r.tablet.candidates[0]).toMatchObject({ id: 90, basis: 'cross-lingual', score: 0.71 });
   });
 
+  // 11-01 00:44: the phrase layer timed out, BM25 alone missed Gleanings and the Epistle, the Mánikchí tablet was named
+  it('a phrase layer that times out once is retried; failing twice, the result says degraded', async () => {
+    const base = deps();
+    let n = 0;
+    const once = await sourceHunt(QUOTE, deps({ phrases: async (q, o) => { if (!o.filters?.documentId && !o.filters?.langGroup && n++ === 0) throw new Error('timeout'); return base.phrases(q, o); } }));
+    expect(once.origin).toMatchObject({ id: 1, title: 'Gleanings' });
+    expect(once.degraded).toBeUndefined();
+    const down = await sourceHunt(QUOTE, deps({ phrases: async (q, o) => { if (!o.filters?.documentId && !o.filters?.langGroup) throw new Error('timeout'); return base.phrases(q, o); } }));
+    expect(down.degraded).toEqual(['phrase']);
+  });
+
   it('too short a quote is refused', async () => {
     expect((await sourceHunt('one country', deps())).error).toMatch(/four words/);
   });

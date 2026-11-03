@@ -367,7 +367,10 @@ async function huntSource(d, question) {
   // ("Jesus said …", "which gospel" — the founder or scripture named as the speaker counts: search-plan speakerTradition)
   const religion = speakerTradition(question) || null;
   const r = await hunt(quotationIn(question), undefined, religion ? { religion } : undefined).catch(() => null);
-  if (!r?.origin) return null;
+  // a search layer failed twice (Qdrant under load): the source may be missing from the pool, and the hunt's template would
+  // name the next best as THE source (11-01: Gleanings and the Epistle dropped out, the Mánikchí tablet was named) → the
+  // ordinary search answers instead
+  if (!r?.origin || r.degraded?.length) return null;
   const family = (x) => (['Judaism', 'Christian'].includes(x) ? 'Bible' : x);
   if (religion && family(r.origin.religion) !== family(religion)) return null;
   // Chad 11-02: going to the original tablet can disconcert a reader who did not ask — an INEXACT ask (keywords, a paraphrase) gets the main
@@ -382,7 +385,9 @@ async function huntSource(d, question) {
   // produced "It is also quoted in The Kitáb-i-Aqdas" for a Hidden Word (r5, 11-01)
   // r5 rerun: the Aqdas still came back with a rangeUrl that was only the book's front page — the link must point INTO the book
   const atParagraph = (u) => /[?&](?:paraId|selectionString)=|#p\d+|#:~:text=/.test(String(u || ''));
-  const others = (r.citedBy || []).filter((c) => atParagraph(c.rangeUrl)).slice(0, 3);
+  // a scraped page with no real title ("abdul-baha-bkw21_en", "Page 14") is not named to a reader
+  const slugTitle = (x) => /^page \d+$/i.test(String(x || '').trim()) || (!/\s/.test(String(x || '').trim()) && /[-_]/.test(String(x || '')));
+  const others = (r.citedBy || []).filter((c) => atParagraph(c.rangeUrl) && !slugTitle(c.title)).slice(0, 3);
   const tags = { book: { title: o.title, url: o.rangeUrl || o.url } };
   sims.forEach((p, i) => { tags[`sim${i + 1}`] = { title: p.title, url: p.source_url || p.readerUrl || p.url }; });
   if (t) tags.tablet = { title: tTitle, url: t.meta?.links?.oceanoflightsRange || ool || t.rangeUrl || t.url };
@@ -402,7 +407,7 @@ async function huntSource(d, question) {
     'Never write a URL, a markdown link or a title in brackets. Write each source as its tag exactly — {book}, {tablet}, {inventory}, {cited1}… — the tag is replaced by the linked title, so do not also write the title.',
     `At most four sentences. Say the quotation comes from {book} and whose words they are (${author || 'the author'}).`,
     t ? `Say the original is ${lang}, in {tablet}${origWords ? `, where it reads «${origWords}» — quote exactly those words` : ''}.${tags.inventory ? ' Mention {inventory}.' : ''}`
-      : inexact ? '' : 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.',
+      : asksForOriginal(question) ? 'The original tablet could not be confirmed: say so plainly in one sentence, without guessing.' : '',
     sims.length ? `In one sentence, say similar passages are in ${sims.map((c, i) => `{sim${i + 1}}`).join(' and ')}.` : '',
     others.length ? `In one sentence, say it is also quoted in ${others.map((c, i) => `{cited${i + 1}}`).join(', ')}.` : '',
     'Do not describe what kind of text it is or its authority (no "authorized interpretation", "scripture" or similar). Do not interpret the passage unless the seeker asks.',
@@ -424,7 +429,7 @@ async function huntSource(d, question) {
     shown ? `The passage reads: «${shown}».` : '',
     scripture && others.length ? 'This is scripture itself; the Bahá’í texts below quote it rather than originate it.' : '',
     t ? `The original is in ${lang}, in {tablet}${origWords ? `, where it reads «${origWords}»` : ''}.${tags.inventory ? ' Its entry in the Phelps Inventory is {inventory}.' : ''}`
-      : inexact ? '' : 'I could not confirm the original tablet for this passage.',
+      : asksForOriginal(question) ? 'I could not confirm the original tablet for this passage.' : '',   // unasked, it only puzzles (Chad 11-02)
     sims.length ? `Similar passages are in ${sims.map((c, i) => `{sim${i + 1}}`).join(' and ')}.` : '',
     others.length ? `It is also quoted in ${others.map((c, i) => `{cited${i + 1}}`).join(others.length > 2 ? ', ' : ' and ').replace(/, (\{cited\d\})$/, ' and $1')}.` : '',
   ].filter(Boolean).join(' ');
