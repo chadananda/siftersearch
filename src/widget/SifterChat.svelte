@@ -643,6 +643,10 @@
   .bubble :global(a) { color: var(--accent); text-decoration-color: color-mix(in srgb, var(--gold) 60%, transparent); text-underline-offset: 2px; }
   .bubble :global(em) { color: color-mix(in srgb, currentColor 82%, var(--accent)); }
   .bubble :global(strong) { font-weight: 650; color: color-mix(in srgb, currentColor 88%, var(--accent-deep)); }
+  /* a heading or a bold-only label belongs to the text below it: more space above than below (Chad 11-03) */
+  .bubble :global(h1), .bubble :global(h2), .bubble :global(h3), .bubble :global(h4) { margin: 1.1em 0 .3em; font-size: 1.05em; font-weight: 650; line-height: 1.3; }
+  .bubble :global(h1:first-child), .bubble :global(h2:first-child), .bubble :global(h3:first-child), .bubble :global(h4:first-child) { margin-top: 0; }
+  .bubble :global(p:has(> strong:only-child)) { margin: 1em 0 .25em; }
   /* Blockquoted passages — the gilded rule motif marks the sacred text itself. */
   .bubble :global(blockquote) {
     margin: .5em 0; padding: .35em 0 .35em .85em;

@@ -3813,6 +3813,13 @@
   .message-prose :global(ul), .message-prose :global(ol) { margin: 0 0 0.75em 1.25em; }
   .message-prose :global(li) { margin: 0.2em 0; }
   .message-prose :global(strong) { font-weight: 600; }
+  /* a heading or a bold-only label belongs to the text BELOW it: more space above than below (Chad 11-03) */
+  .message-prose :global(h1), .message-prose :global(h2), .message-prose :global(h3), .message-prose :global(h4) { margin: 1.1em 0 0.3em; font-weight: 600; line-height: 1.3; }
+  .message-prose :global(h1:first-child), .message-prose :global(h2:first-child), .message-prose :global(h3:first-child), .message-prose :global(h4:first-child) { margin-top: 0; }
+  .message-prose :global(h3) { font-size: 1.05em; }
+  .message-prose :global(h4) { font-size: 1em; }
+  .message-prose :global(p:has(> strong:only-child)) { margin: 1em 0 0.25em; }
+  .message-prose :global(p:has(> strong:only-child):first-child) { margin-top: 0; }
   .message-prose :global(em) { font-style: italic; }
   .message-prose :global(a) {
     color: var(--accent-primary);

@@ -49,6 +49,8 @@ export function markdownHtml(md, { breaks = false, palette = PALETTE } = {}) {
     .replace(/<strong>/g, `<strong style="color:${ink}">`)
     .replace(/<ul>/g, '<ul style="margin:6px 0 14px;padding-left:22px">').replace(/<ol(\s[^>]*)?>/g, (m, a = '') => `<ol${a} style="margin:6px 0 14px;padding-left:24px">`)
     .replace(/<hr\s*\/?>/g, `<hr style="border:0;border-top:1px solid ${rule};margin:18px 0">`)
+    // a bold-only paragraph is a label for the text below it: more space above than below (Chad 11-03)
+    .replace(/<p>(<strong style="[^"]*">[^<]{1,80}<\/strong>:?)<\/p>/g, '<p dir="auto" style="margin:16px 0 4px">$1</p>')
     .replace(/<p>/g, '<p dir="auto" style="margin:0 0 14px">')
     .replace(/<mark>/g, '<mark style="background:#f7e9b9;color:inherit;padding:0 2px;border-radius:2px">')
     .replace(/<blockquote>/g, `<blockquote style="margin:16px 0;padding:2px 0 2px 18px;border-left:2px solid ${rule};color:#3f3a34">`)

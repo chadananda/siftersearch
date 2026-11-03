@@ -96,3 +96,18 @@ describe('Anís replies: what SES is handed (no real send)', () => {
     expect(toHtml(MD)).toBe(composeLetter(MD, null).html);
   });
 });
+
+describe('a heading or label sits tight above its own text (Chad 11-03)', () => {
+  const gap = (style) => style.match(/margin:(\d+)px 0 (\d+)px/).slice(1, 3).map(Number);
+  it('headings: more space above than below', () => {
+    const html = markdownHtml('Intro.\n\n## Where it appears\n\nText.\n\n#### Note\n\nMore.');
+    for (const m of html.matchAll(/<h[34] dir="auto" style="([^"]*)"/g)) { const [above, below] = gap(m[1]); expect(above).toBeGreaterThan(below); }
+  });
+  it('a bold-only label paragraph gets heading spacing; an ordinary paragraph keeps its space below', () => {
+    const html = markdownHtml('Intro.\n\n**Sources:**\n\nThe Íqán.\n\nPlain **bold** inside.');
+    const label = html.match(/<p dir="auto" style="([^"]*)"><strong[^>]*>Sources:<\/strong><\/p>/);
+    expect(label).toBeTruthy();
+    const [above, below] = gap(label[1]); expect(above).toBeGreaterThan(below);
+    expect(html).toMatch(/<p dir="auto" style="margin:0 0 14px">Plain <strong/);
+  });
+});
