@@ -166,6 +166,7 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>People and events</td><td>Who someone was, who met whom, who was there, with the passages as evidence.</td><td><span class="chip live">live</span></td></tr>
     <tr><td>Email and letters</td><td>Answers by email; longer work delivered as a letter.</td><td><span class="chip live">live</span></td></tr>
     <tr><td>Compiled documents</td><td>A collection, study guide or research brief, delivered as a document.</td><td><span class="chip week">this week</span></td></tr>
+    <tr><td>Deep research (consulting the field)</td><td>For a hard question he consults everyone worth asking: Perplexity, Claude and other large models, and our web research service. Not to borrow their answers but for two things: <b>never miss anything</b>, and use their broad general knowledge to point him to sources in our own library he would otherwise not find. What he learns is kept: it adds to the library's prepared knowledge and shows which documents we should acquire.</td><td><span class="chip week">partly live</span></td></tr>
     <tr><td>The web, labelled</td><td>Only for what a library can't hold (current events, news about a community), always marked as from the web.</td><td><span class="chip week">this week</span></td></tr>
     <tr><td>Memory</td><td>One history per person across chat and email; a profile they can see, export and delete.</td><td><span class="chip later">after launch</span></td></tr>
   </table></div>
@@ -196,11 +197,21 @@ q{font-style:italic;quotes:"“" "”"}
 </section>
 
 <section>
+  <h2>Prepared knowledge</h2>
+  <p>Some research is worth doing once and drawing on many times. Anís keeps it ready, so common requests are answered at once from material already gathered, and so he has something fresh to say each time.</p>
+  <div class="roles">
+    <div class="role"><span class="k">A dossier on each book</span><p>For every important book, a research document ready to draw from: how it came to be written, who is in it, anecdotes, its reception, the passages people love, the history around it. Asked about a book, he chooses from it something varied and interesting rather than the same summary. While someone is reading, it supplies the new anecdote that keeps the book alive for them.</p></div>
+    <div class="role"><span class="k">A collection on each common topic</span><p>For topics people ask about often, a research collection already compiled: the key passages across traditions, ordered and checked. A question on that topic is answered by selecting from the collection instead of searching from scratch: faster, cheaper and more complete. It is HyPE's idea taken a step further: prepared answers for whole topics and books, not only for passages.</p></div>
+  </div>
+  <p>The improvement loop decides what to prepare. When a question or a book comes up often enough, it proposes a collection or a dossier; once built and checked, later requests take the shortcut. Deep research feeds both, and both are refreshed when the library grows.</p>
+</section>
+
+<section>
   <h2>How he decides, fast</h2>
   <p>Speed comes from deciding quickly, not from writing quickly. An open AI agent spends 2–5 seconds of model time on each choice of what to do next. Anís makes those choices with Jev, our classifier, in about a tenth of a second each.</p>
   <ol class="steps">
     <li><b>Classify.</b> Every message, with the conversation so far, gets one first decision from Jev: is it <b>none</b> (a greeting, thanks, small talk: Anís just replies, with no search), a <b>search</b>, or an <b>activity</b>? Then which kind. For a search, which of about 40 request types, in eight groups (lookups, understanding, comparing, personal life and practice, hard questions, assignments, follow-ups, small talk), and whether it is new or follows up the last reply. For an activity, which one, and whether the message starts it, continues it (today's reading, the next turn of a discussion) or steps outside it for a moment (a question in the middle of reading is a search, and the activity resumes after). Then the traditions, language, works and people named. A message can carry several types; the lead type sets the shape of the answer.</li>
-    <li><b>Route.</b> Each type has a strategy: a small map of steps with decision points between them. Lookups (a book, a quotation, a reference) go straight to search and come back from a template, with no writing model. Everything else follows its strategy, with Jev choosing at each decision point: is there enough evidence, should he search another shelf, is this passage the source or a book quoting it.</li>
+    <li><b>Route.</b> Each type has a strategy: a small map of steps with decision points between them. Lookups (a book, a quotation, a reference) go straight to search and come back from a template, with no writing model. A common topic or a well-known book is answered first from its prepared collection or dossier. Everything else follows its strategy, with Jev choosing at each decision point: is there enough evidence, should he search another shelf, is this passage the source or a book quoting it.</li>
     <li><b>Fall back.</b> When Jev is unsure, or a strategy fails its own checks, the full research agent takes the question. A strategy is switched on only after it answers as well as the agent on its type's tests.</li>
     <li><b>Reply in three parts.</b> At once: what he understood and is doing ("Looking for what Bahá'u'lláh and the Buddha say about the soul after death…"), then progress. Then the short answer, streamed. Then the details, only when warranted. One writing step produces the last two, so nothing is said twice.</li>
   </ol>
@@ -222,6 +233,7 @@ q{font-style:italic;quotes:"“" "”"}
     <li><b>Fixes go by cause, biggest first.</b> Search misses go to the index (search comes first). Wrong decisions become training examples for Jev. Missing moves become new strategy options. Writing faults go to the strategy's instructions.</li>
     <li><b>Tests are fresh every time.</b> New questions are drawn per type for each check, in the variety real questions show, so nothing can be memorised. A set of 61 real questions from another product is held out and never used for tuning.</li>
     <li><b>Two things grow without limit: activities and search strategies.</b> Each new one is added the same way (declared, tested against its fresh questions, switched on only when it beats what it replaces), so Anís becomes a stronger learning amplifier week by week.</li>
+    <li><b>What is asked often gets prepared.</b> Frequent topics and books are proposed for a prepared collection or dossier, so the next person gets a faster and richer answer.</li>
     <li><b>Real conversations feed it.</b> Questions no type fits are grouped each week; a recurring group becomes a new type with its own strategy.</li>
     <li><b>A weekly report</b> per type: wins against Perplexity, accuracy of each decision, share answered without the agent, time and cost per answer, types and options added.</li>
   </ul>
