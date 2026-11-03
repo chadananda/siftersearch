@@ -7,6 +7,14 @@ import { ENDPOINT } from '../scope-extract.js';
 import { jevFetch } from '../systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 import { requestFeatures } from './request-features.js';   // first message, pasted passage, original request (deterministic, 11-03)
 
+// Jev decides lookups (Chad 11-03: code never reads intent from wording). Quoted words are a strong prior for a phrase search, not a rule.
+export const LOOKUP_KINDS = {
+  none: 'Anything else: a question, topic, explanation or discussion.',
+  book: 'Wants a particular work itself (open it, link it, "do you have X"). The target is a title or alias.',
+  quote: 'Wants the exact words found in the library: a quoted phrase or a remembered line to locate.',
+  reference: 'Wants one numbered place in a work: "Gleanings 27", "Hidden Words Arabic 5", a section, verse or chapter number.',
+};
+export const LOOKUP_Q = 'Is the latest user message a request to FETCH something exact from the library rather than to discuss it? Strong prior: words in quotation marks usually mean "find this exact text" (quote), unless the quotes are scare quotes, a mention of a term, or a term the person wants explained, which is none. A bare work title is book; a work plus a number is reference.';
 export const KINDS = {
   research: 'a question or request about religion, scripture, spirituality, history, people, texts, or ideas — anything to look up or think through',
   source_lookup: 'gives a quotation (often pasted) and asks where it comes from — which book, author, tablet or original text — or pastes a quotation with nothing else',
@@ -74,6 +82,7 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
           stop_request: { type: 'noul', instructions: 'Does the latest user message ask the assistant to stop writing to them, stop contacting them, unsubscribe, or leave them alone?' },
           kind: { type: 'choice', instructions: 'What kind of message is the latest user turn?', criteria: KINDS },
           stance: { type: 'choice', instructions: 'What is the person\'s stance in the latest message?', criteria: STANCES },
+          lookup: { type: 'choice', instructions: LOOKUP_Q, criteria: LOOKUP_KINDS },
           ...(first ? {} : {
             reaction: { type: 'choice', instructions: 'How does the latest user message react to the assistant\'s previous reply?', criteria: REACTIONS },
             follow_up: { type: 'noul', instructions: 'Does the latest user message CONTINUE the previous exchange — asking more about, clarifying, challenging or reacting to the assistant\'s previous reply or the passage under discussion ("why?", "and the Persian?", "what about the Báb?") — rather than asking a new, self-contained question that would make sense on its own?' },
@@ -85,7 +94,7 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
     if (!res.ok) return null;
     const a = (await res.json()).answers || {};
     const out = { malicious: noul(a.malicious), complete: noul(a.complete), stop_request: noul(a.stop_request),
-      kind: choice(a.kind), stance: choice(a.stance), features, ms: Date.now() - t0 };
+      kind: choice(a.kind), stance: choice(a.stance), lookup: choice(a.lookup), features, ms: Date.now() - t0 };
     if (first) Object.assign(out, { reaction: { choice: 'none', confidence: 1, by: 'first-message' }, follow_up: 0 });
     else Object.assign(out, { reaction: choice(a.reaction), follow_up: noul(a.follow_up) });
     // PASTED RULE: a pasted passage (bare, or with "where is this from?") is a source lookup whatever kind Jev saw in it

@@ -669,6 +669,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // discussion — a search would only bring unrelated quotations to pad it with (10-19, Lal's 'fí baytihi')
   const language = !researched && !sourced && !original && !study && !position && !conversational && (d.looksLikeLanguage || looksLikeLanguageQuestion)(question);
   const res = researched ? { passages: researched.passages || [], _plan: { shape: 'research', steps: researched.steps, ms: researched.ms } }
+    : work && fast?.kind === 'book' ? { passages: [], _plan: { shape: 'work', work: work.doc.id, via: 'lookup-code' } }   // a requested book: the link and the offer, no "about" search (was 5.6 s live)
     : work ? { ...await timed('search', () => d.search({ query: (searchQ = workAboutQuery(work)), mode: 'passages', limit: 16, scope_config: profile.scope_config,
       plan: { messages: [{ role: 'user', content: workAboutQuery(work) }] } })), _plan: { shape: 'work', work: work.doc.id } }
     : fast?.passages ? { passages: fast.passages, _plan: { shape: fast.kind === 'reference' ? 'lookup' : 'quote', lookup: fast.kind, ...(fast.phrase ? { quote: { phrase: fast.phrase, via: 'lookup-code' } } : {}) } }

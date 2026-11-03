@@ -89,13 +89,15 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   }
 
   // Write it down before trying — in parallel with triage, so logging adds no latency.
-  // …and the lookups fast path (lookup.js: book / quoted words / numbered reference, found by code, no model) runs beside them
+  // Jev decides (inside the triage call, no extra round trip) whether this is a lookup — a book, quoted words, a work + number;
+  // lookup.js then only RESOLVES what Jev named (title index, exact-phrase search, pn/heading) — it never reads intent from wording.
   const lookupOn = engine === undefined && research === undefined && !variants && !llm && d.lookup;
-  const [ex, tri, lk] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages)).catch(() => null),
-    lookupOn ? timed('lookup', () => (d.lookup || resolveLookup)(messages), (r) => (r ? { kind: r.kind } : null)).catch(() => null) : null]);
+  const [ex, tri] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages)).catch(() => null)]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
   { const u = understoodLine(route, text); if (u) onEvent({ type: 'understood', text: u }); }
+  const lkIntent = lookupOn && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
+  const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
   // "unclear" / "cut off" may only short-circuit a message with no substance. A real topic ("race unity") or a pasted
   // passage ("Find this. excerpt from a pilgrim note: …") goes to research (10-19 battery: both got a canned "say more" /
   // "part of your message went missing" instead of an answer — scored 1 against Immerse's 8)

@@ -135,6 +135,13 @@ export async function paragraphsByPn(docId, pn) {
     AND CAST(json_extract(block_attrs, '$.pn') AS TEXT) = ? ORDER BY paragraph_index LIMIT 3`, [Number(docId), String(pn)], 'paragraphs-repo:by-pn');
 }
 
+/** The first paragraph under each distinct heading, in reading order (numbering by chapter heading: "Some Answered Questions 33"). → [{ id, doc_id, paragraph_index, text, heading }] */
+export async function headingStarts(docId) {
+  return queryAll(`SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading FROM content c
+    JOIN (SELECT heading, MIN(paragraph_index) mi FROM content WHERE doc_id = ? AND deleted_at IS NULL AND heading IS NOT NULL AND heading != '' GROUP BY heading) h
+      ON c.doc_id = ? AND c.paragraph_index = h.mi ORDER BY c.paragraph_index LIMIT 2000`, [Number(docId), Number(docId)], 'paragraphs-repo:heading-starts');
+}
+
 /** For each live paragraph of a document: another live, canonical document holding the same words (normalized_hash), or
  *  null — the doc-overlap report (is a compilation of compilations already held piece by piece?). → [{ id, pidx, other }] */
 export async function paragraphsHeldElsewhere(docId) {
