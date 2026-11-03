@@ -5,6 +5,7 @@
 import { modelFor } from '../model-roles.js';
 import { ENDPOINT } from '../scope-extract.js';
 import { jevFetch } from '../systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
+import { requestFeatures } from './request-features.js';   // first message, pasted passage, original request (deterministic, 11-03)
 
 export const KINDS = {
   research: 'a question or request about religion, scripture, spirituality, history, people, texts, or ideas — anything to look up or think through',
@@ -55,6 +56,11 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
   const state = (messages || []).slice(-4).map((m) => `${m.role}: ${String(m.content || '').slice(0, 800)}`).join('\n');
   if (!apiKey || !state.trim()) return null;
   const t0 = Date.now();
+  // FIRST MESSAGE (deterministic): with no assistant reply before it, a message can never be a follow-up — Jev is not
+  // asked how it "reacts" (23 first messages were classed follow-ups, 11-02). In a thread Jev also answers follow_up.
+  const feats = requestFeatures(messages);
+  const first = feats.first;
+  const features = { first, pasted: feats.pasted ? feats.pasted.kind : null, original: feats.original?.target ?? null, language: feats.language?.role === 'answer' ? feats.language.lang : null };
   try {
     const res = await fetchImpl(ENDPOINT, {
       method: 'POST',
@@ -68,15 +74,25 @@ export async function triageMessage(messages, { apiKey = process.env.TYPESAFE_AP
           stop_request: { type: 'noul', instructions: 'Does the latest user message ask the assistant to stop writing to them, stop contacting them, unsubscribe, or leave them alone?' },
           kind: { type: 'choice', instructions: 'What kind of message is the latest user turn?', criteria: KINDS },
           stance: { type: 'choice', instructions: 'What is the person\'s stance in the latest message?', criteria: STANCES },
-          reaction: { type: 'choice', instructions: 'How does the latest user message react to the assistant\'s previous reply?', criteria: REACTIONS },
+          ...(first ? {} : {
+            reaction: { type: 'choice', instructions: 'How does the latest user message react to the assistant\'s previous reply?', criteria: REACTIONS },
+            follow_up: { type: 'noul', instructions: 'Does the latest user message CONTINUE the previous exchange — asking more about, clarifying, challenging or reacting to the assistant\'s previous reply or the passage under discussion ("why?", "and the Persian?", "what about the Báb?") — rather than asking a new, self-contained question that would make sense on its own?' },
+          }),
         },
       }),
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return null;
     const a = (await res.json()).answers || {};
-    return { malicious: noul(a.malicious), complete: noul(a.complete), stop_request: noul(a.stop_request),
-      kind: choice(a.kind), stance: choice(a.stance), reaction: choice(a.reaction), ms: Date.now() - t0 };
+    const out = { malicious: noul(a.malicious), complete: noul(a.complete), stop_request: noul(a.stop_request),
+      kind: choice(a.kind), stance: choice(a.stance), features, ms: Date.now() - t0 };
+    if (first) Object.assign(out, { reaction: { choice: 'none', confidence: 1, by: 'first-message' }, follow_up: 0 });
+    else Object.assign(out, { reaction: choice(a.reaction), follow_up: noul(a.follow_up) });
+    // PASTED RULE: a pasted passage (bare, or with "where is this from?") is a source lookup whatever kind Jev saw in it
+    if (feats.pasted && ['bare', 'source', 'original'].includes(feats.pasted.kind) && !['source_lookup', 'research'].includes(out.kind?.choice) && (out.malicious ?? 0) < T.malicious) {
+      out.kind = { choice: 'source_lookup', confidence: 1, by: 'pasted-rule', was: out.kind?.choice ?? null };
+    }
+    return out;
   } catch { return null; }
 }
 

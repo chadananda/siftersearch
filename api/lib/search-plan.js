@@ -7,6 +7,7 @@ import { TRADITIONS, MIN_CONFIDENCE, ENDPOINT } from './scope-extract.js';
 import { detectQuotation, isMeaningQuestion, stripMarkup } from './quote-detect.js';
 import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 import { resolveNamed, resolveNamedAll, objectPhrases, nameSpans } from './named-object.js';
+import { requestFeatures } from './assistant/request-features.js';   // pasted passage, original-text request, answer language (11-03)
 
 // A wrong author hides far more than a wrong tradition, so it needs more certainty to act on.
 const AUTHOR_MIN_CONFIDENCE = 0.8;
@@ -223,19 +224,35 @@ export function layersFor(plan) {
 // Jev's classification + the quote rule and converse guard (planSearch below adds the object rules).
 async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_KEY, timeoutMs = Number(process.env.SEARCH_PLAN_TIMEOUT_MS) || 2500, fetchImpl = jevFetch('search-plan'), cache = true } = {}) {
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
-  const state = messages.slice(-6).map((m) => `${m.role}: ${stripMarkup(m.content).slice(0, 600)}`).join('\n');
   const t0 = Date.now();
   const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content;
+  // REQUEST FEATURES (deterministic, 11-03): the answer LANGUAGE is a parameter, not a kind of request — Jev classifies the
+  // request with "in Hindi" removed ("dhammapada meaning in hindi" is define, answered in Hindi); a pasted PASSAGE is
+  // wording to find; "show me the original" is a request for the original text (A7) on top of whatever shape it has.
+  const feats = requestFeatures(messages);
+  const language = feats.language?.role === 'answer' ? { lang: feats.language.lang, name: feats.language.name } : null;
+  const lastIdx = messages.length - 1 - [...messages].reverse().findIndex((m) => m.role === 'user');
+  const state = messages.slice(-6).map((m, i, arr) => {
+    const text = language && arr.length - 1 - i === messages.length - 1 - lastIdx ? feats.language.stripped : m.content;
+    return `${m.role}: ${stripMarkup(text).slice(0, 600)}`;
+  }).join('\n');
   // QUOTATION RULE (deterministic, never waits on Jev): wording to find is shape 'quote' whatever the backstop default or
   // Jev said — a 700 ms timeout once left the empty default (topic) and a quote hunt answered with unrelated people (11-01).
   // …but never words the assistant itself said earlier in the thread, quoted back to it (r5, 11-01)
   const said = messages.slice(0, -1).filter((m) => m.role === 'assistant').map((m) => String(m.content || ''));
-  const quote = detectQuotation(lastUser, { said });
+  // PASTED RULE: a paragraph of scripture pasted in (bare, or with "where is this from?" / "what does this mean?") is a
+  // passage to FIND first — 11-02 labels filed 302 such pastes as teaching questions. The ask rides along (plan.quote.ask).
+  const pasted = feats.pasted && feats.pasted.kind !== 'other' ? feats.pasted : null;
+  const original = feats.original;
+  const quote = detectQuotation(lastUser, { said })
+    || (pasted && { phrase: pasted.phrase, via: 'pasted', ask: pasted.kind === 'bare' ? null : pasted.kind })
+    || (original?.phrase && { phrase: original.phrase, via: 'original' });   // "the Persian original of 'We were one day'": find those words first
   // MEANING RULE: an etymology / meaning / comparison question is define (or topic, for a comparison), never a quote hunt
   const meaning = !quote && isMeaningQuestion(stripMarkup(lastUser));
   const pushback = said.length > 0 && isPushback(lastUser);
   const ruled = (plan, provenance, reason, extra = {}) => {
     const out = { ...plan, source: { ...plan.source }, provenance, reason: reason ?? null, ...extra };
+    if (language) { out.language = language; out.source = { ...out.source, language: 'language-rule' }; }
     // CONVERSE GUARD (deterministic): two or more content words that are no greeting, thanks or question about the assistant are
     // a request for library content, never small talk (11-01 wording battery: "hidden words work" answered as a greeting)
     if (!quote && plan.shape === 'converse' && !SMALL_TALK.test(String(lastUser || '')) && (String(lastUser || '').match(/\p{L}{3,}/gu) || []).length >= 2) {
@@ -248,9 +265,20 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
       out.source = { ...out.source, shape: 'meaning-rule' };
     }
     if (quote) {
-      if (plan.shape !== 'quote') out.overridden = { shape: plan.shape, about: plan.about, by: 'quote-rule' };
+      const by = quote.via === 'pasted' ? 'pasted-rule' : quote.via === 'original' ? 'original-rule' : 'quote-rule';
+      if (plan.shape !== 'quote') out.overridden = { shape: plan.shape, about: plan.about, by };
       Object.assign(out, { shape: 'quote', about: 'texts', quote });
-      out.source.shape = 'quote-rule';
+      out.source.shape = by;
+    }
+    // ORIGINAL RULE: "show me the Persian original of …" / "the Arabic of this verse" / "is there a translation of this
+    // tablet" asks for the TEXT in another language (A7) — a request on top of the shape (quote when it carries wording).
+    if (original) {
+      out.request = original.target; out.original = original;
+      out.source = { ...out.source, request: 'original-rule' };
+      if (out.shape === 'converse' || out.shape === 'define' || out.shape === 'fact') {
+        out.overridden = { shape: out.shape, about: out.about, by: 'original-rule' };
+        Object.assign(out, { shape: original.passage ? 'quote' : 'lookup', about: 'texts' }); out.source.shape = 'original-rule';
+      }
     }
     // PUSHBACK RULE: a challenge to the last reply with no wording of its own to find is about the passage under discussion
     if (pushback) {

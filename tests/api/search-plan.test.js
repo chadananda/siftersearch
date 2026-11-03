@@ -282,3 +282,47 @@ describe('pushback, comparison and follow-up asks (r6-after)', () => {
     expect(followUpAsks('Who wrote "O Son of Spirit! My first counsel is this: Possess a pure, kindly and radiant heart"?')).toEqual([]);
   });
 });
+
+describe('planSearch — deterministic request features (W2, 11-03)', () => {
+  const fake = (o = {}) => async () => ({ ok: true, json: async () => ({ answers: ans(o) }) });
+  const opts = (o) => ({ apiKey: 'k', fetchImpl: fake(o), resolveName: null, resolveMentions: null, cache: false });
+  const msgs = (...texts) => texts.map((content, i) => ({ role: i % 2 ? 'assistant' : 'user', content }));
+
+  it('a PASTED passage is an exact-words search whatever Jev called it (302 misroutes)', async () => {
+    const p = await planSearch(msgs('O Son of Spirit! My first counsel is this: Possess a pure, kindly and radiant heart, that thine may be a sovereignty ancient, imperishable and everlasting. Where is this from?'), opts({ shape: 'topic' }));
+    expect(p.shape).toBe('quote');
+    expect(p.quote).toMatchObject({ via: 'pasted', ask: 'source' });
+    expect(p.quote.phrase).toMatch(/^O Son of Spirit/);
+    expect(p.overridden).toMatchObject({ by: 'pasted-rule' });
+  });
+
+  it('"show me the original" is an original-text REQUEST (its own type), carrying the quoted phrase', async () => {
+    const p = await planSearch(msgs('Show me the original Persian of "the earth is but one country and mankind its citizens"'), opts({ shape: 'converse' }));
+    expect(p.request).toBe('original');
+    expect(p.original).toMatchObject({ target: 'original', language: 'fa' });
+    expect(p.quote.phrase).toMatch(/^the earth is but one country/);   // the quoted phrase (detectQuotation wins; original-rule is the backstop)
+    expect(p.shape).toBe('quote');
+    expect(p.source.request).toBe('original-rule');
+  });
+
+  it('a definition that merely MENTIONS a source language is not an original request', async () => {
+    const p = await planSearch(msgs('what does the Arabic word tawhid mean'), opts({ shape: 'define' }));
+    expect(p.request).toBeUndefined();
+    expect(p.shape).toBe('define');
+  });
+
+  it('"in Hindi" is a PARAMETER of the request — captured, stripped from what Jev classifies, shape untouched (330 misroutes)', async () => {
+    let seen;
+    const fetchImpl = async (_u, init) => { seen = JSON.parse(init.body); return { ok: true, json: async () => ({ answers: ans({ shape: 'topic' }) }) }; };
+    const p = await planSearch(msgs('what do the writings say about the soul in Hindi'), { apiKey: 'k', fetchImpl, resolveName: null, resolveMentions: null, cache: false });
+    expect(p.language).toMatchObject({ lang: 'hi', name: 'hindi' });
+    expect(p.source.language).toBe('language-rule');
+    expect(p.shape).toBe('topic');
+    expect(JSON.stringify(seen)).not.toMatch(/in Hindi/i);
+  });
+
+  it('"quotes in Arabic" names the SOURCE language — a scope, not an answer language', async () => {
+    const p = await planSearch(msgs('quotes about unity in Arabic'), opts({ shape: 'topic' }));
+    expect(p.language).toBeUndefined();
+  });
+});

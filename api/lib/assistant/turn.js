@@ -104,6 +104,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // Persian prayer + "can you translate this" was templated as small talk from a fresh address)
   if (route.action === 'canned' && textRequest(text).request) Object.assign(route, { action: 'research', overridden: route.kind });
   const triageSummary = tri && { kind: tri.kind?.choice, stance: tri.stance?.choice, reaction: tri.reaction?.choice,
+    follow_up: tri.follow_up ?? null, first: tri.features?.first ?? null, features: tri.features ?? null,
     malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms };
   const finish = async (reply, status, extra = {}) => {
     const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop, ...extra };
@@ -128,7 +129,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
 
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { stance: triageSummary?.stance ?? null,
-      kind: route.kind, guarded: route.action === 'guarded', channel, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
+      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     let reply = r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).

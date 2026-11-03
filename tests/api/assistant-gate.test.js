@@ -121,3 +121,38 @@ describe('mixed-script repair (10-12 term study: "Bahá’u’لlláh")', async 
     expect(mixedScript('عرفان (*ʿirfān*)')).toBe('عرفان (*ʿirfān*)');
   });
 });
+
+describe('triageMessage — deterministic request features (W2, 11-03)', () => {
+  const capture = (answers) => { const c = {}; c.fetch = async (_u, init) => { c.body = JSON.parse(init.body); return { ok: true, json: async () => ({ answers }) }; }; return c; };
+  const base = { malicious: { noul: 0.01 }, complete: { noul: 0.99 }, stop_request: { noul: 0.01 }, kind: { choice: 'research', confidence: 0.9 }, stance: { choice: 'curious', confidence: 0.8 } };
+
+  it('a FIRST message is never a follow-up: the reaction question is not even asked', async () => {
+    const c = capture({ ...base, reaction: { choice: 'follow_up', confidence: 0.9 }, follow_up: { noul: 0.9 } });
+    const t = await triageMessage([{ role: 'user', content: 'and what about the Persian?' }], { apiKey: 'k', fetchImpl: c.fetch });
+    expect(c.body.questions.reaction).toBeUndefined();
+    expect(c.body.questions.follow_up).toBeUndefined();
+    expect(t).toMatchObject({ reaction: { choice: 'none', by: 'first-message' }, follow_up: 0, features: { first: true } });
+  });
+
+  it('in a THREAD Jev is asked follow_up and its probability is kept', async () => {
+    const c = capture({ ...base, reaction: { choice: 'follow_up', confidence: 0.8 }, follow_up: { noul: 0.93 } });
+    const t = await triageMessage([{ role: 'user', content: 'what is the Hidden Words' }, { role: 'assistant', content: 'A collection…' }, { role: 'user', content: 'and the Persian ones?' }], { apiKey: 'k', fetchImpl: c.fetch });
+    expect(c.body.questions.follow_up).toBeDefined();
+    expect(t).toMatchObject({ reaction: { choice: 'follow_up' }, follow_up: 0.93, features: { first: false } });
+  });
+
+  it('a PASTED passage is a source lookup whatever kind Jev chose (pasted-rule)', async () => {
+    const c = capture({ ...base, kind: { choice: 'conversation', confidence: 0.9 } });
+    const t = await triageMessage([{ role: 'user', content: 'O Son of Man! Veiled in My immemorial being and in the ancient eternity of My essence, I knew My love for thee. Where is this from?' }], { apiKey: 'k', fetchImpl: c.fetch });
+    expect(t.kind).toMatchObject({ choice: 'source_lookup', by: 'pasted-rule', was: 'conversation' });
+    expect(t.features).toMatchObject({ pasted: 'source' });
+  });
+
+  it('features name the original-text request and the answer language', async () => {
+    const c = capture(base);
+    const t = await triageMessage([{ role: 'user', content: 'show me the original Arabic of "He is God" in Persian' }], { apiKey: 'k', fetchImpl: c.fetch });
+    expect(t.features.original).toBe('original');
+    const u = await triageMessage([{ role: 'user', content: 'explain the Kitab-i-Iqan in Hindi' }], { apiKey: 'k', fetchImpl: c.fetch });
+    expect(u.features.language).toBe('hi');
+  });
+});
