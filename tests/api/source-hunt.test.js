@@ -99,6 +99,20 @@ describe('sourceHunt', () => {
   });
 });
 
+describe('Gleanings first', () => {
+  // Chad 11-02: 'fruit of one tree' named Epistle to the Son of the Wolf (quoted 35 times) ahead of Gleanings (0)
+  it('Gleanings outranks the Epistle when both hold the words, whatever the quote counts', () => {
+    const c = (id, title, quotedCount) => ({ id, title, writer: 'Bahá’u’lláh', ownWork: true, overlap: 1, holds: true, collection: 'Core Publications', quotedCount });
+    const top = rankOrigins([c(7, 'Epistle to the Son of the Wolf', 35), c(8, 'Gleanings from the Writings of Bahá’u’lláh', 0)], 'Bahá’u’lláh');
+    expect(top[0].id).toBe(8);
+  });
+  it('Iqan > Gleanings > Hidden Words > Prayers and Meditations > Epistle', () => {
+    const titles = ['Epistle to the Son of the Wolf', 'Prayers and Meditations', 'The Hidden Words of Bahá’u’lláh', 'Gleanings from the Writings of Bahá’u’lláh', 'The Kitáb-i-Íqán'];
+    const c = (title, id) => ({ id, title, writer: 'Bahá’u’lláh', ownWork: true, overlap: 1, holds: true, quotedCount: 50 - id });
+    expect(rankOrigins(titles.map(c), 'Bahá’u’lláh').map((x) => x.title)).toEqual([...titles].reverse());
+  });
+});
+
 describe('quote author', () => {
   it("a UHJ letter quoting Bahá’u’lláh: the quote is His, and His own book wins over the letter's 'own work'", () => {
     const m = [

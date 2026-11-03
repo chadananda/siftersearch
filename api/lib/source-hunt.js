@@ -174,10 +174,16 @@ export function quoteAuthorOf(matches) {
 // Works Shoghi Effendi translated himself: his English outranks any committee or later translation of the same words
 // (Chad 10-12: "why would a committee translation come up after a Shoghi Effendi translation. that is awful" —
 // 'The earth is but one country' gave Tablets of Bahá’u’lláh, not Gleanings CXVII).
-const GUARDIAN_WORKS = /^(gleanings from the writings of bah|the kit[aá]b-i-[ií]q[aá]n|kitab-i-iqan|the hidden words|hidden words of bah|prayers and meditations|epistle to the son of the wolf|the dawn-breakers)/i;
-// 2 = a work he translated (Gleanings); 1 = his English reused elsewhere (the committee's Tablets volume keeps his rendering of
+// Ordered best first (Chad 11-02: "Iqan > Gleanings > hidden words > Prayers and Meditations > Epistle" — 'fruit of one tree'
+// named the Epistle, which quotes the passage 35 times over, ahead of Gleanings).
+const GUARDIAN_WORKS = [/^(the )?kit[aá]b-i-[ií]q[aá]n|^kitab-i-iqan/i, /^gleanings from the writings of bah/i, /^(the )?hidden words/i,
+  /^prayers and meditations/i, /^epistle to the son of the wolf/i, /^the dawn-breakers/i];
+// above 1 = a work he translated, ranked by GUARDIAN_WORKS order; 1 = his English reused elsewhere (the committee's Tablets volume keeps his rendering of
 // a passage he had translated — true, but the source to cite is his own publication); 0 = another translation.
-export const guardianTranslation = (c) => (GUARDIAN_WORKS.test(String(c.title || '').trim()) ? 2 : translatedBy(c) === 'Shoghi Effendi' ? 1 : 0);
+export const guardianTranslation = (c) => {
+  const t = String(c.title || '').trim(), i = GUARDIAN_WORKS.findIndex((re) => re.test(t));
+  return i >= 0 ? 1 + GUARDIAN_WORKS.length - i : translatedBy(c) === 'Shoghi Effendi' ? 1 : 0;
+};
 
 // the Hebrew Bible is shelved under both Judaism and Christianity: a Psalm named by the seeker may sit in either
 const sameTradition = (a, b) => !!a && !!b && (a === b || (['Judaism', 'Christian'].includes(a) && ['Judaism', 'Christian'].includes(b)));
