@@ -6,6 +6,7 @@
 // Effendi's renderings of a word, the source of a quotation, the web — and ends with a BRIEF for the writer. Its
 // passages become the reply's evidence, so the quote gate and link rules still hold. Deps injectable (tests).
 import { logger } from '../logger.js';
+import { withDeadlines } from './deadline.js';
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
 export const TOOLS = [
@@ -194,7 +195,7 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
     source_url: p.source_url || p.readerUrl || p.url || null, document_id: p.document_id ?? p.documentId ?? p.doc_id, paragraph_index: p.paragraph_index ?? p.paragraphIndex,
     religion: p.religion || p.document?.religion || null, collection: p.collection || p.document?.collection || null, language: p.language || p.source_lang || 'en',
     translation: p.translation || (/\(provisional translation\)/i.test(p.title || p.document?.title || '') ? translationLabel('Stephen Phelps', 'provisional-phelps') : null) });
-  return {
+  return withDeadlines({
     search: async (query, tradition) => fastSearch ? (await fastSearch(query, tradition)).map(shape) : ((await search({ query, mode: 'passages', limit: 8,
       plan: { messages: [{ role: 'user', content: query }], defaults: tradition ? { religion: tradition } : {} } }))?.passages || [])
       .filter((p) => String(p.text || '').length <= 8000).map(shape),
@@ -282,5 +283,5 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
         ...(r.citedBy || []).slice(0, 3).map((c) => shape({ text: c.text || c.excerpt || `${c.title} quotes it${c.paragraphs ? ` (${c.paragraphs} paragraphs)` : ''}.`, title: c.title, author: c.author, source_url: c.rangeUrl || c.url, document_id: c.documentId }))];
     },
     web: async (query) => (await import('../perplexity.js')).perplexityFallback(query, { caller: 'anis-researcher', maxTokens: 700 }),
-  };
+  }, { search: [], around: [], original: [], translation: [], wordStudy: null });
 }

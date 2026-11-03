@@ -2,6 +2,7 @@
 // research answer (respond.js) → output check → voice lint → complete the log with the path. Transport-neutral: the
 // widget streams onEvent, email uses the returned text. Every non-research reply costs zero LLM tokens.
 // Deps (injectable): exchange-log, triage, canned, strikes, lint, channels, respond.
+import { makeLimits } from './limits.js';
 import { textRequest } from './text-request.js';
 import { openExchange, closeExchange, failExchange } from './exchange-log.js';
 import { triageMessage, routeTriage, outputBreaksPersona } from './triage.js';
@@ -20,10 +21,11 @@ const OUTPUT_BREAK = 0.8;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
 
+const liveLimits = makeLimits();
 async function defaultDeps() {
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
-    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup };
+    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits };
 }
 
 /**
@@ -61,6 +63,13 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const t0 = Date.now();
   const who = clientKey || participant.id || 'anon';
   const logArgs = { participantId: participant.id ?? null, userId: participant.userId ?? null, conversationId, channel: channel.id, text };
+
+  // F15: kill switch + per-person / global hourly caps — a fixed reply, no classifier, no LLM
+  const capped = d.limits?.(who);
+  if (capped) {
+    onEvent({ type: 'text', content: capped.reply });
+    return { reply: capped.reply, status: 'limited', limit: capped.reason, citations: [], retrieved: [], plan: null, conversationId: null, timings: { total_ms: Date.now() - t0 } };
+  }
 
   // Tarpit: templates only — no classifier, no LLM — at the pace of the path it imitates.
   if (d.strikes.inTarpit(who)) {

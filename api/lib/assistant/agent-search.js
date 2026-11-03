@@ -1,7 +1,9 @@
 // Anís agent's search_library: query as written → multiIndexSearch → withLinks. No LLM, no planner, no relax rungs (the agent writes precise queries).
 // Deps: search.js multiIndexSearch, hit-links.js withLinks (injectable for tests)
+import { withDeadline, TOOL_DEADLINE_MS } from './deadline.js';
 export function agentSearch(d = {}) {
-  return async (query, tradition, limit = 8) => {
+  return (query, tradition, limit = 8) => withDeadline(() => run(query, tradition, limit), d.deadlineMs ?? TOOL_DEADLINE_MS(), [], 'agent-search');
+  async function run(query, tradition, limit) {
     const t0 = Date.now();
     const multi = d.multiIndexSearch || (await import('../search.js')).multiIndexSearch;
     const link = d.withLinks || (await import('../hit-links.js')).withLinks;
@@ -11,5 +13,5 @@ export function agentSearch(d = {}) {
     const out = linked.map((h) => ({ ...h, document_id: h.doc_id ?? h.document_id, source_url: h.url || h.source_url || null }));   // full text: the quote guard verifies against it; show() clips what the model sees
     out.ms = Date.now() - t0;
     return out;
-  };
+  }
 }
