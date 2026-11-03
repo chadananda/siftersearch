@@ -1,6 +1,167 @@
 {
-  "generated": "2026-11-01T04:03:44.425Z",
+  "generated": "2026-11-03T15:34:51.258Z",
   "entries": [
+    {
+      "hash": "cdc45464",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Anís voice likely ships as a standalone app",
+      "scope": null
+    },
+    {
+      "hash": "1b2de70e",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Prose tightened; quotation trace framed as an example strategy",
+      "scope": null
+    },
+    {
+      "hash": "809d9f19",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Compact graphical strategy chart (no brackets), body text softened so bold stands out, strategy section tightened",
+      "scope": null
+    },
+    {
+      "hash": "07437ea9",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Models by role, re-measured when the monthly review flags a newer/cheaper candidate",
+      "scope": null
+    },
+    {
+      "hash": "21180aff",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Every chain input is Opus — video, MP3, M4A, WAV, FLAC alike (Chad 11-03: \"everything is converted to Opus, even video or MP3. The original file is kept and the metadata extracted, but we only process Opus.\")",
+      "scope": null
+    },
+    {
+      "hash": "e4c47c8c",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "A pod is rented only for work it can claim — LAN-only gpu hours are not pod work, no rent when the edge has nothing claimable (11-03)",
+      "scope": null
+    },
+    {
+      "hash": "715f48ce",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "No decoded audio is ever processed — a WAV/FLAC/AIFF original is always planned for Opus; a decoded chain is refused or repaired (11-03)",
+      "scope": null
+    },
+    {
+      "hash": "314cd49b",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "The LAN queue no longer gets home_gpu:false — pods never lease from the LAN, so it stranded the LAN-only gpu steps (394, decoded inputs) with Aorus idle",
+      "scope": null
+    },
+    {
+      "hash": "c1df7637",
+      "date": "2026-11-02",
+      "type": "Other",
+      "description": "A result tower has read becomes 'collected' and leaves the done list (files kept until ack)",
+      "scope": null
+    },
+    {
+      "hash": "89b625ae",
+      "date": "2026-11-02",
+      "type": "Other",
+      "description": "Anís demo plan (9 Nov) — target, baseline, staged metrics, acceptance tests, schedule",
+      "scope": null
+    },
+    {
+      "hash": "02e0b1bf",
+      "date": "2026-11-02",
+      "type": "Other",
+      "description": "Qdrant-main cutover done (gate PASS, qdrant-next stopped, data kept to 11-09); entity-aware ranking item open",
+      "scope": null
+    },
+    {
+      "hash": "98775dba",
+      "date": "2026-11-02",
+      "type": "Other",
+      "description": "A talk R2 refuses as over its single-upload limit is skipped (sent to its pod direct) instead of failing every tick (11-02: a 15 GB .mpg 'whole' at the head of the line blocked all staging)",
+      "scope": null
+    },
+    {
+      "hash": "c72ca993",
+      "date": "2026-11-02",
+      "type": "Other",
+      "description": "Comparative (multi-tradition) question versions, every side scored",
+      "scope": null
+    },
+    {
+      "hash": "8031e1b5",
+      "date": "2026-11-02",
+      "type": "Other",
+      "description": "Search quality hub — one question registry (survey families), one runner, one gate, HyPE coverage, feedback intake",
+      "scope": null
+    },
+    {
+      "hash": "3d3c2c63",
+      "date": "2026-11-02",
+      "type": "Test",
+      "description": "Siftersearch-reports (which runs the archive jobs) stays inside the capped bulk slice (Chad 11-02: search is top priority)",
+      "scope": null
+    },
+    {
+      "hash": "d2a3b69b",
+      "date": "2026-11-02",
+      "type": "Other",
+      "description": "Hype collection keeps full vectors in RAM (on_disk false, applied live 11-02: hype x6 0.38→0.18 s, x30 1.4→0.55 s)",
+      "scope": null
+    },
+    {
+      "hash": "cab8d616",
+      "date": "2026-11-01",
+      "type": "Other",
+      "description": "Bahai-library tag index pages excluded from every search (Anís cited 'Tag: …' pages); phrase+hype rescore oversampling 4→2 (measured 29–30/30 top-30 agreement, half the disk reads)",
+      "scope": null
+    },
+    {
+      "hash": "acb27e03",
+      "date": "2026-11-01",
+      "type": "Other",
+      "description": "Under SEARCH_QDRANT=only, multiIndexSearch without meili:false runs the flat Qdrant form — the retired Meili main layer had been routing to qdrantClassic, a whole nested multiIndexSearch (two fan-outs, rankings and hydrations per search; chat executeSearch and the Anís agent called it that way)",
+      "scope": null
+    },
+    {
+      "hash": "1d83e1c1",
+      "date": "2026-11-01",
+      "type": "Other",
+      "description": "Canon and authoritative passes start with the first wave instead of after it (canon p50 788 ms, its own query 15–105 ms); query embedding stamped as 'embed' in the trace so a slow layer splits into Gemini vs Qdrant",
+      "scope": null
+    },
+    {
+      "hash": "43bed286",
+      "date": "2026-11-01",
+      "type": "Other",
+      "description": "Anís round 9 done; next = speaker attribution, links, citation order",
+      "scope": null
+    },
+    {
+      "hash": "e1c1d0f4",
+      "date": "2026-11-01",
+      "type": "Other",
+      "description": "Anís round 9 state at laptop shutdown; citation source order (Chad 11-01)",
+      "scope": null
+    },
+    {
+      "hash": "52176047",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "Anís wording battery → then simulated-conversation quality loop (Chad 10-31)",
+      "scope": null
+    },
+    {
+      "hash": "c192c318",
+      "date": "2026-10-31",
+      "type": "Other",
+      "description": "Deterministic quotation hunt (quote shape overrides Jev topic), plan provenance on the thread, honest absence on a quote miss, search tracing restored on the live path",
+      "scope": null
+    },
     {
       "hash": "867b3108",
       "date": "2026-10-31",
@@ -3339,171 +3500,177 @@
       "type": "Other",
       "description": "2.187.727 — the /media pages (listing + player) and the Worker's R2 cache for media files",
       "scope": "site"
-    },
-    {
-      "hash": "2362c284",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Interpreted talks detected on twelve 12-second windows (two languages each heard twice) — six 30 s windows heard only the dominant language in Chad's English + Romanian talk; a file-name title that names nothing (\"01 (thursday)\", \"Class 5\") gives way to the recording's own subject",
-      "scope": "media"
-    },
-    {
-      "hash": "2b22b265",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Proposed corrections trimmed to the name itself (context words copied on both sides, swallowed common words, a name inside a longer span) — on the 2nd Grossmann run 50 of 57 refused edits become right fixes and no spoken word is lost; the prompt asks for the name only; speaker photos: Wikidata searched without diacritics, the Bahá'í religion claim accepted, Commons by file name as fallback",
-      "scope": "media"
-    },
-    {
-      "hash": "349eaff6",
-      "date": "2026-10-22",
-      "type": "Docs",
-      "description": "Storage plan rollout status (R1–R8 done, R5 re-measure pending); backup check timings as measured",
-      "scope": null
-    },
-    {
-      "hash": "4140aea7",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The vocabulary's entity names come from LIVE graph entities by importance (the first build filtered on religion/mention_count, which these records do not carry, and found none)",
-      "scope": "media"
-    },
-    {
-      "hash": "8a09c007",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "A failing recording is recorded on its item (admin status, morning summary) instead of raising an ops alert mail per file; ordered YouTube queue (881 talks: curated → single-speaker channels → other Hands/UHJ); status update",
-      "scope": "media"
-    },
-    {
-      "hash": "0e631a2b",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Vectors-backup never blocks indexing — own 'backup' lane; a store whose writer runs (or starts mid-copy) is skipped for the next run, not waited on; big stores verified by header + page count + size + random rows vs source (seconds) instead of a full quick_check (240 GB on the HDD fell to ~1 MB/s after 4 h); a complete .partial is adopted, never copied again (completion marker, or header/size/source-unchanged for older copies); failed copies kept as .bad",
-      "scope": "ops"
-    },
-    {
-      "hash": "d125d0ce",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "A between-stages yield also records the stage it stops before (so the resumed run skips its from/reslug)",
-      "scope": "media"
-    },
-    {
-      "hash": "610cc8eb",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "A resumed media-item run continues at its saved stage and never redoes its from / reslug (a from:web run redid web on every resume; a resumed reslug would have deleted its own new folder)",
-      "scope": "media"
-    },
-    {
-      "hash": "f188b83c",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The correction guard keeps every spoken word — an edit whose first or last word is a common English word the term lacks is refused (pilot: \"Shogu Effendi told\" → \"Shoghi Effendi\" dropped \"told\"; 4 such of 74 model edits, all now refused, no correct fix lost)",
-      "scope": "media"
-    },
-    {
-      "hash": "a1cc65aa",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "AAC clips (and the .m4a file) where the browser cannot play Ogg Opus (older Safari), in the site player and the standalone page",
-      "scope": "media"
-    },
-    {
-      "hash": "1f6ec5f9",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "No orphaned children on a drain — the transcribe stage waits for both its children (allSettled) and every live child is killed when the process exits (10-22 00:13 an ssh to boss outlived its drained service); the media service gets its own small entry (api/workers/media-worker.js) so other services' deploys do not drain a transcription",
-      "scope": "media"
-    },
-    {
-      "hash": "75b57d80",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Interpreted talks found by an UNFORCED language ID on six excerpts (the probe forced the hinted language, so Furútan's Persian+English talk read as English-only); the majority language when one; short misheard names are suspects too (\"Beloved Bob\" → the Báb)",
-      "scope": "media"
-    },
-    {
-      "hash": "dfdb6317",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Waveform normalisation looped instead of spreading 220k values (a 92-minute talk overflowed the stack and failed its web stage); a speaker written in the file name stands when the naming model leaves it out",
-      "scope": "media"
-    },
-    {
-      "hash": "d7db39e0",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Tower-side media processes capped at 8 threads (measured: diarization at 12 threads pushed search p90 to 3.8 s / max 5.3 s; at 8 search stayed at median 1.6 s, p90 2.1 s); the transcript completes a surname-only speaker; search-latency probe (fresh queries, API client)",
-      "scope": "media"
-    },
-    {
-      "hash": "20712188",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "YouTube rate limit (tower got 429 after the target-list discovery) holds the item without a failure alert and starts no YouTube work for a 6-hour cool-down (local files go on), then one polite retry; yt-dlp uses deno (user space) for YouTube's player; transcript search hits only at timed paragraphs",
-      "scope": "media"
-    },
-    {
-      "hash": "f014a562",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Dewey's media drop folder is watched (a dropped file queues the pipeline); diarization fragments folded into their neighbours (the pilot lecture came back as 94 voices) and unnamed voices get no label; status draft",
-      "scope": "media"
-    },
-    {
-      "hash": "7ec96925",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Cross-references only from canonical works (book authority ≥ 7, most authoritative yes wins — the pilot linked a visitor's account); a clipped name is offered its full form (\"Baola\" → Bahá’u’lláh, the pilot corrected it to Bahá)",
-      "scope": "media"
-    },
-    {
-      "hash": "e0641b51",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Drain-aware media pipeline — every long child process (ffmpeg, DeepFilterNet, ASR on boss, diarization) is killed the moment its service drains and the run yields with { resume: { id, stage } } (finished stages are the checkpoint; the gate on boss kills its work when the ssh session goes); diarization runs on tower beside the boss ASR; media jobs move to their own service siftersearch-media (OPS_ONLY) so a transcription never parks the reports lanes (10-21 watch finding)",
-      "scope": "media"
-    },
-    {
-      "hash": "4625e3ae",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Diarization on English speaker embeddings (wespeaker, threshold 0.7: a 92-min Q&A → 12 voices, the zh model gave 131); boss always runs this checkout's media_tool.py (installed through the gate); any two languages in the probe → interpreted mode (Chad's talks are English + Romanian)",
-      "scope": "media"
-    },
-    {
-      "hash": "b9b54fc7",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "Search hits on a transcript link to the recording (▶ Listen → /media/<slug>?p=<paragraph_index>, mapped at ingest); force-reslug of a pilot item retires its transcript doc; diarize subcommand + English speaker embeddings (threshold tuning); pilot review script (reads the archive folders only)",
-      "scope": "media"
-    },
-    {
-      "hash": "c38fe3cf",
-      "date": "2026-10-21",
-      "type": "Docs",
-      "description": "Add single-speaker channels and Persian-name searches to the YouTube talk targets",
-      "scope": "media"
-    },
-    {
-      "hash": "d6291c3a",
-      "date": "2026-10-21",
-      "type": "Fixed",
-      "description": "Vectors-backup finishes the store in progress through an update drain (SIGHUP) and yields between stores; only a stop aborts — SQLite backup cannot resume, and another agent's deploy discarded 101 of 240 GB (10-21)",
-      "scope": "ops"
-    },
-    {
-      "hash": "6350ae6b",
-      "date": "2026-10-21",
-      "type": "New",
-      "description": "/media listing + /media/<slug> player (click a word to play, paragraph play buttons, FAB, follow-scroll, playing-word highlight token, ?t= ranges, Media Session, quotes + cross-reference breakouts); YouTube items default to full playback with a per-channel permission record (Chad 10-21), download off; Dewey add_media tool; linked originals never chmodded (a hard link shares the source's inode); the model's naming wins over folder guesses; reslug for unpublished items; Python tools forced to CPU",
-      "scope": "media"
     }
   ],
   "grouped": {
+    "2026-11-03": [
+      {
+        "hash": "cdc45464",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Anís voice likely ships as a standalone app",
+        "scope": null
+      },
+      {
+        "hash": "1b2de70e",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Prose tightened; quotation trace framed as an example strategy",
+        "scope": null
+      },
+      {
+        "hash": "809d9f19",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Compact graphical strategy chart (no brackets), body text softened so bold stands out, strategy section tightened",
+        "scope": null
+      },
+      {
+        "hash": "07437ea9",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Models by role, re-measured when the monthly review flags a newer/cheaper candidate",
+        "scope": null
+      },
+      {
+        "hash": "21180aff",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Every chain input is Opus — video, MP3, M4A, WAV, FLAC alike (Chad 11-03: \"everything is converted to Opus, even video or MP3. The original file is kept and the metadata extracted, but we only process Opus.\")",
+        "scope": null
+      },
+      {
+        "hash": "e4c47c8c",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "A pod is rented only for work it can claim — LAN-only gpu hours are not pod work, no rent when the edge has nothing claimable (11-03)",
+        "scope": null
+      },
+      {
+        "hash": "715f48ce",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "No decoded audio is ever processed — a WAV/FLAC/AIFF original is always planned for Opus; a decoded chain is refused or repaired (11-03)",
+        "scope": null
+      },
+      {
+        "hash": "314cd49b",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "The LAN queue no longer gets home_gpu:false — pods never lease from the LAN, so it stranded the LAN-only gpu steps (394, decoded inputs) with Aorus idle",
+        "scope": null
+      }
+    ],
+    "2026-11-02": [
+      {
+        "hash": "c1df7637",
+        "date": "2026-11-02",
+        "type": "Other",
+        "description": "A result tower has read becomes 'collected' and leaves the done list (files kept until ack)",
+        "scope": null
+      },
+      {
+        "hash": "89b625ae",
+        "date": "2026-11-02",
+        "type": "Other",
+        "description": "Anís demo plan (9 Nov) — target, baseline, staged metrics, acceptance tests, schedule",
+        "scope": null
+      },
+      {
+        "hash": "02e0b1bf",
+        "date": "2026-11-02",
+        "type": "Other",
+        "description": "Qdrant-main cutover done (gate PASS, qdrant-next stopped, data kept to 11-09); entity-aware ranking item open",
+        "scope": null
+      },
+      {
+        "hash": "98775dba",
+        "date": "2026-11-02",
+        "type": "Other",
+        "description": "A talk R2 refuses as over its single-upload limit is skipped (sent to its pod direct) instead of failing every tick (11-02: a 15 GB .mpg 'whole' at the head of the line blocked all staging)",
+        "scope": null
+      },
+      {
+        "hash": "c72ca993",
+        "date": "2026-11-02",
+        "type": "Other",
+        "description": "Comparative (multi-tradition) question versions, every side scored",
+        "scope": null
+      },
+      {
+        "hash": "8031e1b5",
+        "date": "2026-11-02",
+        "type": "Other",
+        "description": "Search quality hub — one question registry (survey families), one runner, one gate, HyPE coverage, feedback intake",
+        "scope": null
+      },
+      {
+        "hash": "3d3c2c63",
+        "date": "2026-11-02",
+        "type": "Test",
+        "description": "Siftersearch-reports (which runs the archive jobs) stays inside the capped bulk slice (Chad 11-02: search is top priority)",
+        "scope": null
+      },
+      {
+        "hash": "d2a3b69b",
+        "date": "2026-11-02",
+        "type": "Other",
+        "description": "Hype collection keeps full vectors in RAM (on_disk false, applied live 11-02: hype x6 0.38→0.18 s, x30 1.4→0.55 s)",
+        "scope": null
+      }
+    ],
+    "2026-11-01": [
+      {
+        "hash": "cab8d616",
+        "date": "2026-11-01",
+        "type": "Other",
+        "description": "Bahai-library tag index pages excluded from every search (Anís cited 'Tag: …' pages); phrase+hype rescore oversampling 4→2 (measured 29–30/30 top-30 agreement, half the disk reads)",
+        "scope": null
+      },
+      {
+        "hash": "acb27e03",
+        "date": "2026-11-01",
+        "type": "Other",
+        "description": "Under SEARCH_QDRANT=only, multiIndexSearch without meili:false runs the flat Qdrant form — the retired Meili main layer had been routing to qdrantClassic, a whole nested multiIndexSearch (two fan-outs, rankings and hydrations per search; chat executeSearch and the Anís agent called it that way)",
+        "scope": null
+      },
+      {
+        "hash": "1d83e1c1",
+        "date": "2026-11-01",
+        "type": "Other",
+        "description": "Canon and authoritative passes start with the first wave instead of after it (canon p50 788 ms, its own query 15–105 ms); query embedding stamped as 'embed' in the trace so a slow layer splits into Gemini vs Qdrant",
+        "scope": null
+      },
+      {
+        "hash": "43bed286",
+        "date": "2026-11-01",
+        "type": "Other",
+        "description": "Anís round 9 done; next = speaker attribution, links, citation order",
+        "scope": null
+      },
+      {
+        "hash": "e1c1d0f4",
+        "date": "2026-11-01",
+        "type": "Other",
+        "description": "Anís round 9 state at laptop shutdown; citation source order (Chad 11-01)",
+        "scope": null
+      }
+    ],
     "2026-10-31": [
+      {
+        "hash": "52176047",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "Anís wording battery → then simulated-conversation quality loop (Chad 10-31)",
+        "scope": null
+      },
+      {
+        "hash": "c192c318",
+        "date": "2026-10-31",
+        "type": "Other",
+        "description": "Deterministic quotation hunt (quote shape overrides Jev topic), plan provenance on the thread, honest absence on a quote miss, search tracing restored on the live path",
+        "scope": null
+      },
       {
         "hash": "867b3108",
         "date": "2026-10-31",
@@ -6856,169 +7023,6 @@
         "type": "Other",
         "description": "2.187.727 — the /media pages (listing + player) and the Worker's R2 cache for media files",
         "scope": "site"
-      },
-      {
-        "hash": "2362c284",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Interpreted talks detected on twelve 12-second windows (two languages each heard twice) — six 30 s windows heard only the dominant language in Chad's English + Romanian talk; a file-name title that names nothing (\"01 (thursday)\", \"Class 5\") gives way to the recording's own subject",
-        "scope": "media"
-      },
-      {
-        "hash": "2b22b265",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Proposed corrections trimmed to the name itself (context words copied on both sides, swallowed common words, a name inside a longer span) — on the 2nd Grossmann run 50 of 57 refused edits become right fixes and no spoken word is lost; the prompt asks for the name only; speaker photos: Wikidata searched without diacritics, the Bahá'í religion claim accepted, Commons by file name as fallback",
-        "scope": "media"
-      },
-      {
-        "hash": "349eaff6",
-        "date": "2026-10-22",
-        "type": "Docs",
-        "description": "Storage plan rollout status (R1–R8 done, R5 re-measure pending); backup check timings as measured",
-        "scope": null
-      },
-      {
-        "hash": "4140aea7",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The vocabulary's entity names come from LIVE graph entities by importance (the first build filtered on religion/mention_count, which these records do not carry, and found none)",
-        "scope": "media"
-      },
-      {
-        "hash": "8a09c007",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "A failing recording is recorded on its item (admin status, morning summary) instead of raising an ops alert mail per file; ordered YouTube queue (881 talks: curated → single-speaker channels → other Hands/UHJ); status update",
-        "scope": "media"
-      },
-      {
-        "hash": "0e631a2b",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Vectors-backup never blocks indexing — own 'backup' lane; a store whose writer runs (or starts mid-copy) is skipped for the next run, not waited on; big stores verified by header + page count + size + random rows vs source (seconds) instead of a full quick_check (240 GB on the HDD fell to ~1 MB/s after 4 h); a complete .partial is adopted, never copied again (completion marker, or header/size/source-unchanged for older copies); failed copies kept as .bad",
-        "scope": "ops"
-      },
-      {
-        "hash": "d125d0ce",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "A between-stages yield also records the stage it stops before (so the resumed run skips its from/reslug)",
-        "scope": "media"
-      },
-      {
-        "hash": "610cc8eb",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "A resumed media-item run continues at its saved stage and never redoes its from / reslug (a from:web run redid web on every resume; a resumed reslug would have deleted its own new folder)",
-        "scope": "media"
-      },
-      {
-        "hash": "f188b83c",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The correction guard keeps every spoken word — an edit whose first or last word is a common English word the term lacks is refused (pilot: \"Shogu Effendi told\" → \"Shoghi Effendi\" dropped \"told\"; 4 such of 74 model edits, all now refused, no correct fix lost)",
-        "scope": "media"
-      },
-      {
-        "hash": "a1cc65aa",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "AAC clips (and the .m4a file) where the browser cannot play Ogg Opus (older Safari), in the site player and the standalone page",
-        "scope": "media"
-      },
-      {
-        "hash": "1f6ec5f9",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "No orphaned children on a drain — the transcribe stage waits for both its children (allSettled) and every live child is killed when the process exits (10-22 00:13 an ssh to boss outlived its drained service); the media service gets its own small entry (api/workers/media-worker.js) so other services' deploys do not drain a transcription",
-        "scope": "media"
-      },
-      {
-        "hash": "75b57d80",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Interpreted talks found by an UNFORCED language ID on six excerpts (the probe forced the hinted language, so Furútan's Persian+English talk read as English-only); the majority language when one; short misheard names are suspects too (\"Beloved Bob\" → the Báb)",
-        "scope": "media"
-      }
-    ],
-    "2026-10-21": [
-      {
-        "hash": "dfdb6317",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Waveform normalisation looped instead of spreading 220k values (a 92-minute talk overflowed the stack and failed its web stage); a speaker written in the file name stands when the naming model leaves it out",
-        "scope": "media"
-      },
-      {
-        "hash": "d7db39e0",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Tower-side media processes capped at 8 threads (measured: diarization at 12 threads pushed search p90 to 3.8 s / max 5.3 s; at 8 search stayed at median 1.6 s, p90 2.1 s); the transcript completes a surname-only speaker; search-latency probe (fresh queries, API client)",
-        "scope": "media"
-      },
-      {
-        "hash": "20712188",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "YouTube rate limit (tower got 429 after the target-list discovery) holds the item without a failure alert and starts no YouTube work for a 6-hour cool-down (local files go on), then one polite retry; yt-dlp uses deno (user space) for YouTube's player; transcript search hits only at timed paragraphs",
-        "scope": "media"
-      },
-      {
-        "hash": "f014a562",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Dewey's media drop folder is watched (a dropped file queues the pipeline); diarization fragments folded into their neighbours (the pilot lecture came back as 94 voices) and unnamed voices get no label; status draft",
-        "scope": "media"
-      },
-      {
-        "hash": "7ec96925",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Cross-references only from canonical works (book authority ≥ 7, most authoritative yes wins — the pilot linked a visitor's account); a clipped name is offered its full form (\"Baola\" → Bahá’u’lláh, the pilot corrected it to Bahá)",
-        "scope": "media"
-      },
-      {
-        "hash": "e0641b51",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Drain-aware media pipeline — every long child process (ffmpeg, DeepFilterNet, ASR on boss, diarization) is killed the moment its service drains and the run yields with { resume: { id, stage } } (finished stages are the checkpoint; the gate on boss kills its work when the ssh session goes); diarization runs on tower beside the boss ASR; media jobs move to their own service siftersearch-media (OPS_ONLY) so a transcription never parks the reports lanes (10-21 watch finding)",
-        "scope": "media"
-      },
-      {
-        "hash": "4625e3ae",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Diarization on English speaker embeddings (wespeaker, threshold 0.7: a 92-min Q&A → 12 voices, the zh model gave 131); boss always runs this checkout's media_tool.py (installed through the gate); any two languages in the probe → interpreted mode (Chad's talks are English + Romanian)",
-        "scope": "media"
-      },
-      {
-        "hash": "b9b54fc7",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "Search hits on a transcript link to the recording (▶ Listen → /media/<slug>?p=<paragraph_index>, mapped at ingest); force-reslug of a pilot item retires its transcript doc; diarize subcommand + English speaker embeddings (threshold tuning); pilot review script (reads the archive folders only)",
-        "scope": "media"
-      },
-      {
-        "hash": "c38fe3cf",
-        "date": "2026-10-21",
-        "type": "Docs",
-        "description": "Add single-speaker channels and Persian-name searches to the YouTube talk targets",
-        "scope": "media"
-      },
-      {
-        "hash": "d6291c3a",
-        "date": "2026-10-21",
-        "type": "Fixed",
-        "description": "Vectors-backup finishes the store in progress through an update drain (SIGHUP) and yields between stores; only a stop aborts — SQLite backup cannot resume, and another agent's deploy discarded 101 of 240 GB (10-21)",
-        "scope": "ops"
-      },
-      {
-        "hash": "6350ae6b",
-        "date": "2026-10-21",
-        "type": "New",
-        "description": "/media listing + /media/<slug> player (click a word to play, paragraph play buttons, FAB, follow-scroll, playing-word highlight token, ?t= ranges, Media Session, quotes + cross-reference breakouts); YouTube items default to full playback with a per-channel permission record (Chad 10-21), download off; Dewey add_media tool; linked originals never chmodded (a hard link shares the source's inode); the model's naming wins over folder guesses; reslug for unpublished items; Python tools forced to CPU",
-        "scope": "media"
       }
     ]
   }
