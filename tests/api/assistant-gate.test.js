@@ -80,6 +80,11 @@ describe('voice lint — the FORBIDDEN validator (logs, never blocks)', () => {
   it('flags the forbidden and generic patterns', () => {
     expect(lintReply('We Bahá’ís believe this.').map((h) => h.id)).toContain('we-bahais');
     expect(lintReply('The Bahá\'í position is that…').map((h) => h.id)).toContain('the-position');
+    // W4 11-03: the library is never declared silent — only this search
+    for (const t of ['The texts I can search do not discuss Buddhist concepts.', 'The library does not contain that passage.', 'That line is not in the library.', 'The sources I have available to search here do not settle it.'])
+      expect(lintReply(t).map((h) => h.id), t).toContain('library-silent');
+    for (const t of ['I didn\'t find a passage on that in this search.', 'The library holds twelve traditions.', 'This search found no passage with those words.'])
+      expect(lintReply(t).map((h) => h.id), t).not.toContain('library-silent');
     expect(lintReply('God wants you to read this.').map((h) => h.id)).toContain('god-wants-you');
     expect(lintReply('What a great question!').map((h) => h.id)).toContain('generic-praise');
     expect(lintReply('You are spiritually ready.').map((h) => h.id)).toContain('spiritual-rank');

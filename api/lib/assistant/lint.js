@@ -6,6 +6,8 @@ export const LINT = [
   { id: 'the-position', re: /\bthe\s+(bah[aá]['’]?[ií]|christian|muslim|islamic|jewish|buddhist|hindu)\s+position\s+is\b/i, why: 'a reading presented as a tradition\'s position' },
   { id: 'god-wants-you', re: /\bgod\s+(wants|wishes|desires|is\s+calling)\s+you\b/i, why: 'claims God\'s personal will for the person' },
   { id: 'spiritual-rank', re: /\byou\s+are\s+(spiritually\s+)?(ready|chosen|pure|closed|not\s+ready)\b/i, why: 'declares the person\'s spiritual state' },
+  // W4 11-03: absence is only ever THIS search's; the library is never declared silent (r6-after: 4 false absences, 84 such lines)
+  { id: 'library-silent', re: /\b(the\s+(library|texts?|sources?|passages?|works?|writings)\s+(i|that\s+i|which\s+i)\s+(can|have|am\s+able\s+to)\s+(\w+\s+){0,3}?(search|access|see|consult|available)\w*(\s+here)?|(the\s+library|the\s+(available\s+)?(texts?|sources?)\s+(available|at\s+hand))\s+(do(es)?\s+not|don't|doesn't)\s+(discuss|contain|include|cover|address|settle|speak|mention|hold)|not\s+in\s+the\s+library\b|the\s+library\s+(has|contains)\s+nothing)/i, why: 'declares the library silent instead of this search' },
   { id: 'generic-praise', re: /\b(great|excellent|wonderful|fantastic|profound|beautiful)\s+question\b/i, why: 'generic praise' },
   { id: 'superlative', re: /\b(truly|incredibly|profoundly|deeply)\s+(profound|beautiful|magnificent|moving|remarkable)\b/i, why: 'superlative instead of a specific observation' },
   { id: 'urgency', re: /\b(don['’]?t\s+wait|before\s+it['’]?s\s+too\s+late|act\s+now|right\s+away)\b/i, why: 'pressure or urgency' },

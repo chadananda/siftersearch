@@ -14,7 +14,7 @@ import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
 import { calculateCost } from '../model-registry.js';
-import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, fixQuoteSpeakers } from './quotes.js';
+import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink } from './quotes.js';
 import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
@@ -500,7 +500,7 @@ async function defaultDeps() {
   };
 }
 
-const QUOTE_MISS_HOW = 'The person asked to find a quotation and no passage in the library contains those words. Say so plainly in one or two sentences, quoting their wording back. Do NOT offer related passages, people, events or other topics, and do not guess a source. Suggest checking the exact wording or giving the author, work or a few more words.';
+const QUOTE_MISS_HOW = 'The person asked to find a quotation and this search found no passage containing those words — say that (never that the library lacks them). Say so plainly in one or two sentences, quoting their wording back. Do NOT offer related passages, people, events or other topics, and do not guess a source. Suggest checking the exact wording or giving the author, work or a few more words.';
 // In a thread, a miss may be wording the conversation already sourced (r5): point back to that source instead of absence.
 const QUOTE_MISS_THREAD = ' If the conversation above already quoted these words from a linked source, say they come from that source (with its link) rather than calling them absent; if they were your own paraphrase, say so plainly.';
 
@@ -688,7 +688,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   const searchMs = Date.now() - t0;
   const retrieved = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
-    text: p.text || '', source_title: p.title || '', source_author: p.author || '', book_author: p.book_author || null, citation_url: p.source_url || null,
+    text: p.text || '', source_title: p.title || '', source_author: p.author || '', book_author: p.book_author || null, citation_url: exactLink(p),
+    ...(p.web ? { web: true } : {}), ...(p.quoted?.length ? { quoted: p.quoted } : {}),   // web results stay labelled; reported voices reach the header
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned', standing: p.standing || null, theme: p.theme || null,
     ...(p.translation ? { translation: p.translation } : {}),   // an existing translation the reply quotes whole (researcher.js)
@@ -724,14 +725,17 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // A QUOTATION HUNT keeps only passages that hold the wording (or nearly all its words). Nothing near → say so plainly:
   // no neighbours, no people, no other topic to pivot to (11-01: "find the quote …" was answered with the Letters of the Living).
   const huntPhrase = !researched && !sourced && !original && !study ? res?._plan?.quote?.phrase : null;
-  let quoteMiss = false, select = null;
+  let quoteMiss = false, select = null, saidEarlierHow = null;
   if (huntPhrase) {
     const want = foldVerbatim(huntPhrase), ws = [...new Set(want.split(' '))];
     const near = (t) => { const f = foldVerbatim(t); return f.includes(want) || ws.filter((w) => ` ${f} `.includes(` ${w} `)).length >= Math.ceil(ws.length * 0.7); };
     const keep = retrieved.filter((q) => near(q.text));
-    select = { of: retrieved.length, kept: keep.length, by: 'phrase-match' };
-    quoteMiss = !keep.length;
-    retrieved.splice(0, retrieved.length, ...keep);
+    // words this thread already quoted from a linked source are never "absent" (r6: the Íqán, SAQ, a privation passage)
+    const earlier = !keep.length && saidEarlier(messages, huntPhrase) ? (earlierLinkFor(messages, huntPhrase) || true) : null;
+    select = { of: retrieved.length, kept: keep.length, by: earlier ? 'said-earlier' : 'phrase-match' };
+    quoteMiss = !keep.length && !earlier;
+    if (!earlier) retrieved.splice(0, retrieved.length, ...keep);
+    if (earlier) saidEarlierHow = `The words asked for were quoted earlier in this conversation${typeof earlier === 'string' ? ` from ${earlier}` : ''}: say where they came from, with that link — never that they are not in the library.`;
     if (quoteMiss && res) { res.entities = null; res.peopleAnswer = null; }
   }
   // A copyrighted (encumbered) book is evidence only as an EXCERPT of ≤ 80 words (Chad 10-23). The quote gate verifies every
@@ -782,7 +786,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const format = await formatP;
   // a follow-up with several asks answers EACH, and a challenge is checked against the passages, never smoothed over (r6-after)
   const noOriginal = wantsOriginal && !researched && !sourced && !original && !quoteMiss && !retrieved.some((q) => q.via === 'original');
-  const extraHow = [asks.length ? ASKS_HOW(asks) : '', plan?.pushback && !quoteMiss ? PUSHBACK_HOW : '', noOriginal ? NO_ORIGINAL_HOW : ''].filter(Boolean).join('\n');
+  const extraHow = [saidEarlierHow || '', asks.length ? ASKS_HOW(asks) : '', plan?.pushback && !quoteMiss ? PUSHBACK_HOW : '', noOriginal ? NO_ORIGINAL_HOW : ''].filter(Boolean).join('\n');
   if (extraHow && format) format.how = `${format.how ? `${format.how}\n` : ''}${extraHow}`;
 
   onEvent({ type: 'stage', stage: 'craft' });

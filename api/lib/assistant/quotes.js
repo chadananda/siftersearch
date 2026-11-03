@@ -3,6 +3,7 @@
 // Pure. Used by the live reply guard (respond.js) and the model race (scripts/wip/anis-model-race.mjs).
 
 import { quoteSpans, containsQuote } from '../quote-text.js';
+import { foldVerbatim } from '../search/verbatim.js';
 
 export { quoteSpans };
 
@@ -256,4 +257,58 @@ export function fixQuoteSpeakers(text, passages) {
     return out;
   });
   return { text: lines.join('\n'), fixed };
+}
+
+// ── SAID EARLIER / EXACT LINKS ───────────────────────────────────────────────────────────────────────────────────────────
+// r6: four conversations called wording "not in the library" that Anís himself had quoted and linked a turn or two before
+// (the Íqán, SAQ, a privation passage). A hunt for words the thread already sourced is never a miss.
+/** True when an earlier ASSISTANT turn contains the phrase (folded, or ≥ 70 % of its distinct words together). Pure. */
+export function saidEarlier(messages, phrase) {
+  const want = foldVerbatim(String(phrase || '')); if (!want) return false;
+  const ws = [...new Set(want.split(' ').filter(Boolean))];
+  const prior = (messages || []).slice(0, -1).filter((m) => m.role === 'assistant').map((m) => foldVerbatim(String(m.content || '')));
+  return prior.some((f) => f.includes(want) || ws.filter((w) => ` ${f} `.includes(` ${w} `)).length >= Math.ceil(ws.length * 0.7));
+}
+
+/** The earlier assistant turn's link nearest the phrase, so the reply can point back to it. Pure. */
+export function earlierLinkFor(messages, phrase) {
+  const want = foldVerbatim(String(phrase || ''));
+  const ws = [...new Set(want.split(' ').filter(Boolean))].slice(0, 6);
+  for (const m of (messages || []).slice(0, -1).reverse()) {
+    if (m.role !== 'assistant') continue;
+    const text = String(m.content || '');
+    const links = [...text.matchAll(/\[([^\]]{1,300})\]\(((?:https?:)?\/\/[^)\s]{1,600}|https?:[^)\s]{1,600})\)/g)];
+    if (!links.length) continue;
+    const near = links.find((l) => { const f = foldVerbatim(l[1]); return f.includes(want) || ws.filter((w) => ` ${f} `.includes(` ${w} `)).length >= Math.ceil(ws.length * 0.7); });
+    return (near || links[0])[2];
+  }
+  return null;
+}
+
+/** A citation link must reach the paragraph (r6: SAQ, Wesley, Cole were linked at book level while the paragraph was
+ *  known). An external link that is paragraph-level stays; a book-level one gives way to the paragraph page. Pure. */
+const PARAGRAPH_LEVEL = /paraId=|selectionString=|#p\d+|[?&]p=\d+|#\(|~q=/;
+export const paragraphLevelUrl = (url) => PARAGRAPH_LEVEL.test(String(url || ''));
+export function exactLink(p) {
+  const url = p?.source_url || p?.citation_url || null, reader = p?.reader_url || null;
+  if (!url) return reader;
+  if (p?.paragraph_index == null || paragraphLevelUrl(url) || !reader) return url;
+  return paragraphLevelUrl(reader) ? reader : url;
+}
+
+/** Figures whose words a passage REPORTS (named beside a speech verb, with quoted speech present), other than the writer:
+ *  a narrator's paragraph that quotes a figure. Feeds the passage header so the writer credits the words to the speaker
+ *  and names the narrator as the one who records them. Pure over the passage text. */
+export function reportedVoices(text, author = '') {
+  const t = String(text || '');
+  if (!/["“”«»]/.test(t)) return [];
+  const own = figureOf(author);
+  const out = [];
+  for (const [key, re] of FIGURES) {
+    if (key === own) continue;
+    const name = new RegExp(`(${re.source})(?![’']s)(?:,[^,]{0,40},)?\\s+(?:\\w+ly\\s+|then\\s+|also\\s+|himself\\s+)?${SPEECH}\\b`, 'u');
+    const m = t.match(name);
+    if (m) out.push(m[1]);
+  }
+  return out;
 }
