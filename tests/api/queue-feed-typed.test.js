@@ -722,6 +722,21 @@ describe('no decoded input, ever (11-03)', () => {
     expect(out.map((x) => [x.id, x.input])).toEqual([[1, 'in.mp3']]);
     expect(st.queue).toEqual([1]); expect(st.chains[2]).toBeTruthy();
   });
+  it('repair: an EDGE-queued step on a non-Opus input is withdrawn there and the talk re-queued first; one the edge will not withdraw (leased) finishes', async () => {
+    engage(); st.queue = [1, 2]; await wavTalk(1); await wavTalk(2);
+    await feed(st, deps);
+    const cur = (id) => Object.entries(st.qjobs).find(([, qj]) => qj.itemId === id && !qj.adopted)[0];
+    const [j1, j2] = [cur(1), cur(2)];
+    for (const id of [1, 2]) { Object.assign(st.chains[id], { input: 'in.mpg' }); delete st.chains[id].plan; st.qjobs[cur(id)].where = 'edge'; }
+    const asked = [], edge = { withdraw: async ([id]) => { asked.push(id); return { withdrawn: id === j1 ? 1 : 0 }; } };
+    st.queue = [];
+    expect(await repairDecoded(st, { q, repo })).toEqual([]);   // no edge client: edge steps are left alone
+    const out = await repairDecoded(st, { q, edge, repo });
+    expect(asked).toEqual([j1, j2]);
+    expect(out).toEqual([{ id: 1, job: j1, input: 'in.mpg', where: 'edge' }]);
+    expect(st.queue).toEqual([1]); expect(st.chains[1]).toBeUndefined(); expect(st.qjobs[j1]).toBeUndefined();
+    expect(st.chains[2]).toBeTruthy(); expect(st.qjobs[j2]).toBeTruthy();
+  });
   it('repair leaves a fresh chain alone (input = the original, plan = opus: cpu-prep makes the Opus) and the tick reports the count', async () => {
     engage(); st.queue = [1]; await wavTalk(1); await feed(st, deps);
     expect(await repairDecoded(st, { q, repo })).toEqual([]);

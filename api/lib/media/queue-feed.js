@@ -578,25 +578,28 @@ async function restartLost(st, id, qj, { q, repo, now }, error) {
 
 /** Standing repair (11-03, Chad: "we only process Opus"): a chain fed before every input became Opus keeps a non-Opus input (in.wav, in.m4a, the mp3)
  *  and has no plan to convert it — 385 WAV chains fed 11-01 could only run on the home GPU and were counted as pod work. Every such chain whose current step is still
- *  QUEUED on the LAN is dropped (its jobs cancelled) and its talk goes to the FRONT of the queue; feedTyped plans the Opus conversion on the re-feed.
- *  A leased step finishes first. A fresh chain (input = the original, plan = opus) is NOT bad: cpu-prep makes its Opus. Idempotent. → [{ id, job, input }] */
-export async function repairDecoded(st, { q, repo = null, now = Date.now }) {
+ *  QUEUED (LAN, or the edge: withdrawn there, which only takes a still-queued job) is dropped (its jobs cancelled) and its talk goes to the FRONT of
+ *  the queue; feedTyped plans the Opus conversion on the re-feed. A leased step finishes first. Withdrawn edge inputs expire with stage/ (2 days). A fresh chain (input = the original, plan = opus) is NOT bad: cpu-prep makes its Opus. Idempotent. → [{ id, job, input }] */
+export async function repairDecoded(st, { q, edge = null, repo = null, now = Date.now }) {
   const dropped = [];
   const bad = Object.entries(st.chains || {}).filter(([, ch]) => !isOpus(ch.input) && ch.plan?.how !== 'opus');
   if (!bad.length) return dropped;
   const leased = new Set((await Promise.all(SJ.AUDIO_TYPES.map((t) => q.stats(t).catch(() => null)))).flatMap((s) => (s?.leased || []).map((j) => j.id)));
   for (const [key, ch] of bad) {
-    const id = Number(key) || key, jobs = Object.entries(st.qjobs || {}).filter(([, qj]) => qj.itemId === id && qj.kind === 'typed' && !qj.where);
-    const cur = jobs.find(([, qj]) => !qj.adopted);
-    if (!cur || leased.has(cur[0])) continue;   // a leased step (or one already done awaiting its pull) is left to finish
-    const ids = [...new Set([...jobs.map(([j]) => j), ...SJ.AUDIO_TYPES.map((t) => ch[t]?.id).filter(Boolean)])];
+    const id = Number(key) || key, all = Object.entries(st.qjobs || {}).filter(([, qj]) => qj.itemId === id && qj.kind === 'typed');
+    const cur = all.find(([, qj]) => !qj.adopted), onEdge = cur?.[1].where === 'edge';
+    if (!cur || (onEdge ? !edge : leased.has(cur[0]))) continue;   // a leased LAN step (or one already done awaiting its pull) is left to finish
+    if (onEdge && !(await edge.withdraw([cur[0]]).catch(() => null))?.withdrawn) continue;   // leased or done on the edge: it finishes
+    const jobs = all.filter(([, qj]) => !qj.where);
+    const ids = [...new Set([...jobs.map(([j]) => j), ...SJ.AUDIO_TYPES.map((t) => ch[t]?.id).filter(Boolean)])].filter((j) => !(onEdge && j === cur[0]));
     await q.cancel?.(ids);
+    if (onEdge) delete st.qjobs[cur[0]];
     for (const j of ids) delete st.qjobs[j];
     await dropChainSrc(ch, id, repo);
     delete st.chains[key];
     st.queue = [id, ...st.queue.filter((x) => x !== id)];
-    dropped.push({ id, job: cur[0], input: ch.input });
-    laneLog('repair', { id, job: cur[0], input: ch.input, why: 'non-Opus chain input without an Opus plan; dropped and re-queued first' });
+    dropped.push({ id, job: cur[0], input: ch.input, where: onEdge ? 'edge' : 'lan' });
+    laneLog('repair', { id, job: cur[0], input: ch.input, where: onEdge ? 'edge' : 'lan', why: 'non-Opus chain input without an Opus plan; dropped and re-queued first' });
   }
   return dropped;
 }
