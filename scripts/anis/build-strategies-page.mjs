@@ -150,6 +150,7 @@ p{margin:0 0 10px;max-width:70ch}
 section{display:flex;flex-direction:column;gap:14px}
 section>p,section>ul{margin:0}
 .lede{color:var(--muted);font-size:1.02rem}
+.docnav{font:600 .74rem "JetBrains Mono",monospace;letter-spacing:.04em;color:var(--muted)} .docnav a{color:var(--accent);text-decoration:none} .docnav b{color:var(--ink)}
 .eyebrow{font:600 .72rem/1 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 header{display:flex;flex-direction:column;gap:10px}
 .ww{background:var(--accent-soft);border-left:3px solid var(--accent);padding:10px 14px;border-radius:2px;font-size:.92rem;max-width:none}
@@ -219,6 +220,7 @@ ${style}
   <span class="eyebrow">Strategies &amp; Activities · draft · ${esc(d.updated)}</span>
   <h1>Anís Strategies &amp; Activities</h1>
   <p class="lede">How Anís answers each kind of request: one strategy per type, built from shared tools, cheapest steps first, then the activities that run on top of him. Everything here is generated from one data file (<span class="mono">planning/anis-strategies.json</span>); every strategy is a self-contained record.</p>
+  <nav class="docnav"><a href="#vision-doc">Vision</a> · <b>Strategies &amp; Activities</b> · <a href="#launch-doc">Launch Week</a></nav>
 </header>
 <nav class="toc" aria-label="Contents"><span class="k">Contents</span><ol>
   <li><a href="#intro">What a strategy is</a></li>
