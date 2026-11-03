@@ -98,7 +98,7 @@ h3{margin-top:18px}
     <li><a href="#character">Personality</a></li>
     <li><a href="#how-you-meet-him">Interaction Modes</a></li>
     <li><a href="#reader-document">User Profile and User Card</a></li>
-    <li><a href="#tools">Research Tools</a><ol><li><a href="#search-tools">Search Tools</a></li><li><a href="#source-tools">Source and Translation Tools</a></li><li><a href="#other-tools">Other Tools</a></li><li><a href="#strategy-executors">Tools Strategies Use</a></li><li><a href="#prepared-knowledge">Prepared Knowledge</a></li><li><a href="#tools-gaps">Not Yet Tools</a></li><li><a href="#tool-names">One Name, One Tool</a></li></ol></li>
+    <li><a href="#tools">Research Tools</a><ol><li><a href="#search-tools">Search Tools</a></li><li><a href="#source-tools">Source and Translation Tools</a></li><li><a href="#other-tools">Other Tools</a></li><li><a href="#context-tools">Contextual Awareness Tools</a></li><li><a href="#strategy-executors">Tools Strategies Use</a></li><li><a href="#prepared-knowledge">Prepared Knowledge</a></li><li><a href="#tools-gaps">Not Yet Tools</a></li><li><a href="#tool-names">One Name, One Tool</a></li></ol></li>
     <li><a href="#activities">Complex Activities</a><ol><li><a href="#letters">Letters in detail</a></li><li><a href="#scenario-types">Scenario Types</a></li><li><a href="#scenario-recognition">Scenario Recognition</a></li></ol></li>
     <li><a href="#strategies">Response Strategies</a><ol><li><a href="#strategy-types">Strategy Types</a></li><li><a href="#how-he-decides">Speed</a></li><li><a href="#decision-points">Decision Points</a></li><li><a href="#three-part-reply">Three-Part Reply</a></li><li><a href="#inside-a-strategy">Example Strategy: Quotation Trace</a></li><li><a href="#target-times">Target Times</a></li><li><a href="#answer-look">Data Widgets</a></li></ol></li>
     <li><a href="#how-he-gets-better">Self-Improvement Cycle</a><ol><li><a href="#jev-accuracy">Jev Accuracy</a></li></ol></li>
@@ -266,6 +266,15 @@ h3{margin-top:18px}
     <tr><td class="mono">work_notes_lookup</td><td>Sourced notes on a core work.</td><td class="mono">canonWork (work-notes.json)</td><td class="mono">none</td><td><span class="chip live">agent only</span></td></tr>
     <tr><td class="mono">web_search</td><td>A web answer, always labelled as from the web; only for what a library can't hold.</td><td class="mono">perplexityFallback</td><td class="mono">external (Perplexity)</td><td><span class="chip live">live</span></td></tr>
   </table></div>
+
+  <h3 id="context-tools">Contextual Awareness Tools</h3>
+  <p>Tools that tell Anís where the reader is in time, so a reply can meet the moment: the fast, a holy day, a Feast, another tradition's observance this week. None is built yet.</p>
+  <div class="wrap"><table>
+    <tr><th>Tool</th><th>What it returns</th><th>Status</th></tr>
+    <tr><td class="mono">calendar_lookup</td><td>For a date and place: the Badí' date, the current Feast and month, Bahá'í holy days and the Fast, and the holy days and seasons of the other traditions in the library (Ramadan, Lent, Passover, Diwali, Vesak, …), with what each commemorates.</td><td><span class="chip later">not built</span></td></tr>
+    <tr><td class="mono">occasion_search</td><td>Passages and prayers fitting an occasion: the Feast's month name, a holy day, a season of another tradition.</td><td><span class="chip later">not built</span></td></tr>
+  </table></div>
+  <p>The User Card supplies the reader's place and tradition; the calendar supplies the day. Together they let a letter open with the Feast that begins tomorrow, or a reading for Naw-Rúz.</p>
 
   <h3 id="strategy-executors">Tools Strategies Use</h3>
   <p>Each strategy (see <a href="#strategies">Response Strategies</a>) is a fixed sequence of the tools above.</p>
