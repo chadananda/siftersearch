@@ -13,6 +13,7 @@ import { questionSubject } from '../planned-search.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
+import { calculateCost } from '../model-registry.js';
 import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, fixQuoteSpeakers } from './quotes.js';
 import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
@@ -547,9 +548,10 @@ const keepRetrievedLinks = (text, quotes) => {
  * @param {object} [a.llm]        override; default = ANIS_LLM env → DEFAULT_LLM
  * @param {Function} [a.onEvent]  receives { type: 'stage'|'sources'|'text'|'companion_offer', … }
  * @param {object} [a.direction]  { stance, guarded, channel } from the triage gate (turn.js) → the formatter's DIRECTION
+ * @param {Array}  [a.variants]   internal A/B only (/draft): [{ id, format: 'auto'|'none', writer }] → the writing step once per variant
  * @returns {{ reply, citations, retrieved, plan, timings }}
  */
-export async function anisRespond({ messages, profile = {}, participant = {}, llm, onEvent = () => {}, direction = {}, deps }) {
+export async function anisRespond({ messages, profile = {}, participant = {}, llm, onEvent = () => {}, direction = {}, variants = null, deps }) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
   const persona = profile.persona_name || 'Anís';
   // a pasted <br> run is never part of the question (r5); line breaks stay (a pasted passage's attribution line is read by line)
@@ -778,47 +780,60 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   if (extraHow && format) format.how = `${format.how ? `${format.how}\n` : ''}${extraHow}`;
 
   onEvent({ type: 'stage', stage: 'craft' });
-  // Stream a sentence at a time, releasing only sentences whose quotes are in the passages — an invented quote is
-  // never SHOWN, not even for the moment before the final text replaces it. first_token_ms = first text SEEN.
-  let firstTokenMs = null;
   // Links allowed = the passages' URLs + the people record's evidence URLs. Applied per sentence while STREAMING
   // (the stream once showed a link the model had moved onto another domain; only the final text caught it).
   const paEvidence = pa ? [...(pa.contested || []).flatMap((p) => [...p.evidence, ...p.against]), ...(pa.notMet || []).flatMap((p) => p.evidence)] : [];
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url })),
     ...(sourced?.extraUrls || huntExtra?.extraUrls || []).map((u) => ({ citation_url: u })), ...(study?.researchUrl ? [{ citation_url: study.researchUrl }] : [])];
   const exactUrls = sourced ? [...retrieved.map((q) => q.citation_url), ...sourced.extraUrls].filter(Boolean) : null;
-  const cleanLinks = (t) => dropQuibbles(unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(fillTags(t, sourced.tags), exactUrls) : t, retrieved), allowed)), { question, format: format?.id });
-  const gate = createSentenceGate(retrieved, (t) => {
-    if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
-    onEvent({ type: 'text', content: cleanLinks(t).replace(/\[\[(?:RENDERINGS|PASSAGES)\]\]\n?/g, '') });   // code fills these in the final text
-  });
-  const raw = await timed('craft', () => d.craft({
-    user_question: question, retrieved_quotes: sourced ? retrieved.map(({ citation_url: _u, ...q }) => q) : retrieved, conversation_summary: conversationSummary(messages, persona),
-    persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
-    comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, target: res?._plan?.target || null, direction: { ...direction, format }, llm: llm || (researched ? modelFor('anis-writer') : parseLlm(process.env.ANIS_LLM)),
-    onChunk: (t) => gate.push(t),
-  }));
-  gate.flush();
-  // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
-  // (the widget reconciles its streamed text to this; email sends only this).
-  const guarded = dropUnverified(cleanLinks(raw), retrieved);
-  // …and a lead-in whose quotation went missing ("…writes in God Passes By:" then nothing, r5) gets the verified passage it
-  // names, or is rewritten — a reply never ends an introduction without its quotation.
-  const introduced = completeIntroducedQuotes(study ? placeRenderings(guarded.text, study, channel) : guarded.text, conversational ? [] : retrieved);
-  // …and every quotation a passage holds carries that passage's link (r6-base class A: 16 of 108 defects).
-  // The speaker named for a quotation is the writer of the passage that holds it (r6-base class B: on-behalf letters credited
-  // to Shoghi Effendi or to Bahá'u'lláh, the Guardian's words framed as Bahá'u'lláh's).
-  const speakers = fixQuoteSpeakers(introduced.text, conversational ? [] : retrieved);
-  const quoteLinked = linkQuotes(speakers.text, conversational ? [] : retrieved);
-  const linked = ensureLinks(quoteLinked.text, conversational ? [] : retrieved);   // the counts come from code
-  // a book asked for: its link first and the offer to read it last, by code (work-request.js)
-  const bare = dropPreamble(linked);
-  // every book named in italics links to the library's copy (Chad 11-01)
-  const titled = conversational ? { text: bare } : await (d.linkTitles || (deps ? async (t) => ({ text: t }) : linkTitles))(bare).catch(() => ({ text: bare }));
-  // the middle of a book reply is what the sources say about it, linked — or nothing (11-01 live: "Dawnbreakers" got "I didn't
-  // find a passage… could you tell me more?" between the link and the offer)
-  const about = work && /\]\(https?:\/\/[^)]+\)/.test(titled.text.replace(/\[\*[^\]]*\*\]\([^)]*\)/g, '')) ? titled.text.trim() : '';
-  const reply = work ? [workLead(work), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text;
+  const defaultWriter = llm || (researched ? modelFor('anis-writer') : parseLlm(process.env.ANIS_LLM));
+  // THE WRITING STEP — once, or once per VARIANT (internal A/B via /api/v1/anis/draft): everything above (plan, evidence,
+  // format choice, companion) is shared; only the template (format 'none') or the writer model differs. Only the first streams.
+  const write = async (v, primary) => {
+    const fmt = variantFormat(format, v?.format, extraHow);
+    const writer = v?.writer ? { ...parseLlm(v.writer), ...(primary ? {} : { caller: 'anis-craft-variant' }) } : defaultWriter;
+    const cleanLinks = (t) => dropQuibbles(unmachine((d.stripLinks || keepRetrievedLinks)(linkMarkers(exactUrls ? exactLinks(fillTags(t, sourced.tags), exactUrls) : t, retrieved), allowed)), { question, format: fmt?.id });
+    // Stream a sentence at a time, releasing only sentences whose quotes are in the passages — an invented quote is
+    // never SHOWN, not even for the moment before the final text replaces it. first_token_ms = first text SEEN.
+    let firstTokenMs = null, usage = null;
+    const gate = createSentenceGate(retrieved, (t) => {
+      if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
+      if (primary) onEvent({ type: 'text', content: cleanLinks(t).replace(/\[\[(?:RENDERINGS|PASSAGES)\]\]\n?/g, '') });   // code fills these in the final text
+    });
+    const w0 = Date.now();
+    const raw = await timed(primary ? 'craft' : `craft:${v.id}`, () => d.craft({
+      user_question: question, retrieved_quotes: sourced ? retrieved.map(({ citation_url: _u, ...q }) => q) : retrieved, conversation_summary: conversationSummary(messages, persona),
+      persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
+      comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, target: res?._plan?.target || null, direction: { ...direction, format: fmt }, llm: writer,
+      onChunk: (t) => gate.push(t), ...(v ? { onUsage: (u) => { usage = u; } } : {}),
+    }));
+    const writeMs = Date.now() - w0;
+    gate.flush();
+    // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
+    // (the widget reconciles its streamed text to this; email sends only this).
+    const guarded = dropUnverified(cleanLinks(raw), retrieved);
+    // …and a lead-in whose quotation went missing ("…writes in God Passes By:" then nothing, r5) gets the verified passage it
+    // names, or is rewritten — a reply never ends an introduction without its quotation.
+    const introduced = completeIntroducedQuotes(study ? placeRenderings(guarded.text, study, channel) : guarded.text, conversational ? [] : retrieved);
+    // …and every quotation a passage holds carries that passage's link (r6-base class A: 16 of 108 defects).
+    // The speaker named for a quotation is the writer of the passage that holds it (r6-base class B: on-behalf letters credited
+    // to Shoghi Effendi or to Bahá'u'lláh, the Guardian's words framed as Bahá'u'lláh's).
+    const speakers = fixQuoteSpeakers(introduced.text, conversational ? [] : retrieved);
+    const quoteLinked = linkQuotes(speakers.text, conversational ? [] : retrieved);
+    const linked = ensureLinks(quoteLinked.text, conversational ? [] : retrieved);   // the counts come from code
+    // a book asked for: its link first and the offer to read it last, by code (work-request.js)
+    const bare = dropPreamble(linked);
+    // every book named in italics links to the library's copy (Chad 11-01)
+    const titled = conversational ? { text: bare } : await (d.linkTitles || (deps ? async (t) => ({ text: t }) : linkTitles))(bare).catch(() => ({ text: bare }));
+    // the middle of a book reply is what the sources say about it, linked — or nothing (11-01 live: "Dawnbreakers" got "I didn't
+    // find a passage… could you tell me more?" between the link and the offer)
+    const about = work && /\]\(https?:\/\/[^)]+\)/.test(titled.text.replace(/\[\*[^\]]*\*\]\([^)]*\)/g, '')) ? titled.text.trim() : '';
+    const reply = work ? [workLead(work), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text;
+    return { reply, guarded, introduced, speakers, quoteLinked, firstTokenMs, fmt, writer, writeMs, usage };
+  };
+  const runs = variantList(variants);
+  const written = await Promise.all(runs.map((v, i) => write(v, i === 0)));
+  const { reply, guarded, introduced, speakers, quoteLinked, firstTokenMs } = written[0];
   if (comp?.log && comp.plan) comp.log(comp.plan);
 
   // Chips = the sources the reply actually links, not every passage retrieved (screenshot: Book of Mormon and
@@ -831,5 +846,34 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       + study.renderings.map((r) => `${r.en} ${r.count}`).join(', ') }] : [];
   return { reply, quotes_removed: guarded.removed, quotes_completed: introduced.completed || introduced.rewritten ? { placed: introduced.completed, rewritten: introduced.rewritten } : null, quotes_linked: quoteLinked.linked || 0, quotes_recredited: speakers.fixed || 0, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
     search_query: searchQ ?? searchQueryFor(messages), select, format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
-    timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 } };
+    timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 },
+    ...(runs[0] ? { variants: written.map((w, i) => variantResult(runs[i], w)) } : {}) };
+}
+
+// ── Writing-step VARIANTS (internal A/B only: POST /api/v1/anis/draft {variants}; tests/quality/anis-writer-ab.mjs) ──
+const MAX_VARIANTS = 4;
+// chooseFormat's response templates; recipe instructions (research brief, source hunt, work, term study…) carry evidence, not a shape
+const TEMPLATE_BY = new Set(['jev', 'code', 'default']);
+/** [{ id, format: 'auto'|'none', writer: 'provider:model' }] (≤ 4, ids unique) → the runs; none → [null] (one ordinary write). Pure. */
+export function variantList(variants) {
+  if (!Array.isArray(variants) || !variants.length) return [null];
+  const seen = new Set();
+  return variants.slice(0, MAX_VARIANTS).map((v, i) => {
+    let id = String(v?.id || `v${i + 1}`).replace(/[^\w.-]/g, '').slice(0, 40) || `v${i + 1}`;
+    if (seen.has(id)) id = `${id}-${i + 1}`;
+    seen.add(id);
+    return { id, format: v?.format === 'none' ? 'none' : 'auto', writer: typeof v?.writer === 'string' && v.writer.includes(':') ? v.writer : null };
+  });
+}
+/** format 'none' drops a chosen TEMPLATE (the writer picks the shape); the turn's own asks/pushback lines stay. Recipes are kept. Pure. */
+export function variantFormat(format, mode, extraHow = '') {
+  if (mode !== 'none' || !format || !TEMPLATE_BY.has(format.by)) return format;
+  return { id: 'none', by: 'variant', how: extraHow || null, template: format.id };
+}
+const words = (t) => (String(t || '').replace(/\]\([^)]*\)/g, ']').match(/\S+/g) || []).length;
+function variantResult(v, w) {
+  const usd = w.usage ? +calculateCost(w.writer.model, w.usage.promptTokens, w.usage.completionTokens).toFixed(6) : null;
+  return { id: v.id, reply: w.reply, ms: w.writeMs, first_token_ms: w.firstTokenMs, writer: `${w.writer.provider}:${w.writer.model}`,
+    format_id: w.fmt?.id ?? null, template: w.fmt?.template ?? null, format_stripped: !!w.fmt?.template,
+    usage: w.usage, usd, words: words(w.reply), links: (w.reply.match(/\]\(https?:\/\//g) || []).length, quotes_removed: w.guarded.removed };
 }

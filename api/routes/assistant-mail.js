@@ -68,7 +68,8 @@ export default async function anisRoutes(fastify) {
     const { result, meter, ms } = await meterTurn(() => draftBody(b));
     return { ...result, meta: turnMeta({ status: result.status, path: { ...(result.path || {}), format: result.format, recipe: result.recipe }, meter, ms }) };
   }
-  async function draftBody({ messages, email = '', research = undefined, engine = undefined, writer = null, attachments = null, reading = null }) {
+  // variants (internal A/B, tests/quality/anis-writer-ab.mjs): the writing step once per variant on the same evidence → result.variants
+  async function draftBody({ messages, email = '', research = undefined, engine = undefined, writer = null, attachments = null, reading = null, variants = null }) {
     // what the reader attached (photos of a page) is read and becomes part of their message (10-23 Liliane's prayer photo)
     if (attachments?.length) messages = await (await import('../lib/assistant/attachments.js')).withAttachments(messages, attachments, { log: logger });
     const { parseLlm } = await import('../lib/assistant/respond.js');
@@ -92,8 +93,9 @@ export default async function anisRoutes(fastify) {
       return { reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
         recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind, reading: rd.thenNext ? 'answer+next' : 'answer' }, conversationId: r.conversationId ?? null };
     }
-    const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, engine, llm });
-    return { reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
+    const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email) }, clientKey: who(email), research, engine, llm,
+      ...(Array.isArray(variants) && variants.length ? { variants } : {}) });
+    return { ...(r.variants ? { variants: r.variants, evidence: r.evidence ?? null } : {}), reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
       recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind }, conversationId: r.conversationId ?? null,
       research: ['research', 'agent'].includes(r.plan?.shape) ? { steps: r.plan.steps, ms: r.plan.ms ?? r.timings?.total_ms, usage: r.plan.usage ?? null } : null };
   }

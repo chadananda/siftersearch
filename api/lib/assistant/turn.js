@@ -48,7 +48,7 @@ export async function anisTurn(args) {
 }
 
 async function turnBody({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},
-  conversationId = null, clientKey = null, onEvent = () => {}, research = undefined, engine = undefined, llm = undefined, deps }, meter = [], timeline = []) {
+  conversationId = null, clientKey = null, onEvent = () => {}, research = undefined, engine = undefined, llm = undefined, variants = undefined, deps }, meter = [], timeline = []) {
   const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
   const channel = channelFor(channelName, { trusted });
   const text = lastUser(messages);
@@ -108,8 +108,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
         timings: { total_ms: Date.now() - t0 } };
     }
 
-    // research / llm: a caller's override (the /draft battery compares the researcher and writers before they go live)
-    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), direction: { stance: triageSummary?.stance ?? null,
+    // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
+    const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { stance: triageSummary?.stance ?? null,
       kind: route.kind, guarded: route.action === 'guarded', channel, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     let reply = r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
