@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { OPUS_IN, opusArgs, demuxArgs, codecArgs, demuxExt, chainPlan, needsOpus, NAME_RE } from '../../scripts/media/worker/chain-input.mjs';
+import { OPUS_IN, opusArgs, demuxArgs, codecArgs, demuxExt, chainPlan, isOpus, NAME_RE } from '../../scripts/media/worker/chain-input.mjs';
 import { opusEncoder, audioDemuxer } from '../../api/lib/media/r2-stage.js';
 import { typedJob } from '../../api/lib/media/stage-jobs.js';
 import { fileSha, adoptWholeResult } from '../../api/lib/media/whole-result.js';
@@ -31,14 +31,10 @@ describe('chain-input.mjs: one source for tower and the worker image', () => {
     expect(a.ext).toBe('ogg');
     expect(calls.slice(1)).toEqual([['ffprobe', codecArgs('/x/v.webm')], ['ffmpeg', demuxArgs('/x/v.webm', a.file, 'ogg', null)]]);
   });
-  it('chainPlan: above 96 kbps → opus; a video → demux; anything else → the original', () => {
-    expect(chainPlan('a.wav', 13_000 * 3600, 3600)).toEqual({ how: 'opus' });
-    expect(chainPlan('a.MP4', 300e6, 3600)).toEqual({ how: 'opus' });   // a big video: Opus straight from it
-    expect(chainPlan('a.mp4', 5e6, 3600)).toEqual({ how: 'demux' });
-    expect(chainPlan('a.mp3', 5e6, 3600)).toBeNull();
-    expect(chainPlan('a.mp3', 100, 0)).toBeNull();   // no duration: no rate, no plan
-    for (const n of ['a.wav', 'a.FLAC', 'a.aif', 'a.aiff']) expect(chainPlan(n, 100, 0)).toEqual({ how: 'opus' });   // 11-03: decoded audio is always converted, whatever its size or length
-    expect(needsOpus(12_001, 1)).toBe(true); expect(needsOpus(12_000, 1)).toBe(false);
+  it('chainPlan: EVERY source is converted to Opus — audio, compressed or video, whatever its size (11-03, Chad: "we only process Opus"); an .opus is already Opus', () => {
+    for (const n of ['a.wav', 'a.FLAC', 'a.aif', 'a.aiff', 'a.mp3', 'a.m4a', 'a.aac', 'a.wma', 'a.ogg', 'a.mp4', 'a.MPG', 'a.avi', 'a.webm', 'a']) expect(chainPlan(n)).toEqual({ how: 'opus' });
+    expect(chainPlan('a.opus')).toBeNull(); expect(chainPlan('original/A.OPUS')).toBeNull();
+    expect(isOpus('in.opus')).toBe(true); expect(isOpus('in.m4a')).toBe(false); expect(isOpus('in.wav')).toBe(false); expect(isOpus(null)).toBe(false);
     expect(NAME_RE.test('in.opus')).toBe(true); expect(NAME_RE.test('../in.opus')).toBe(false); expect(NAME_RE.test('in.')).toBe(false);
   });
 });

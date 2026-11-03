@@ -14,7 +14,7 @@
 // and acked there whatever its type. A talk whose input is FLAC/WAV never leaves the LAN (no decoded audio in the cloud), and since 11-03 none is ever processed: a decoded original is always planned for Opus (chainPlan),
 // a decoded chain is refused at prep adoption, and repairDecoded drops the old ones.
 import { join } from 'node:path';
-import { chainPlan, NAME_RE, CHAIN_DIR } from '../../../scripts/media/worker/chain-input.mjs';
+import { chainPlan, isOpus, NAME_RE, CHAIN_DIR } from '../../../scripts/media/worker/chain-input.mjs';
 import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
 import * as SJ from './stage-jobs.js';
 import { adoptedState } from './whole-result.js';
@@ -151,8 +151,8 @@ export async function feed(st, deps) {
 }
 
 const typedFileId = (itemId, sha) => `t${itemId}-${sha.slice(0, 12)}`;
-// Chad 10-30: "pushing video around to process audio is simply absurd"; 11-01: pods get Opus 96k, not a 317 MB WAV. A typed chain's input is
-// the recording's AUDIO: Opus 96k for a source above 96 kbps, else a video's stream-copied track, else the original (chain-input.mjs chainPlan).
+// Chad 10-30: "pushing video around to process audio is simply absurd"; 11-03: "everything is converted to Opus, even video or MP3 … we only
+// process Opus." A typed chain's input is ALWAYS Opus 96k made from the original (chain-input.mjs chainPlan); a .opus original is used as it is.
 // 11-02: tower only PLANS it (ch.plan → the prep job's chain_input); cpu-prep makes it on a home CPU host and runs on it (the encode on tower
 // took ~40 s a talk: 801 s of a 962 s feed round for 20 talks, ~75 talks/h). When prep is adopted the chain SWITCHES to it (takeChainInput):
 // ch.sha/input/fileId name the chain input from then on, ch.orig_sha keeps the original's, and tower keeps a copy beside the talk as
@@ -210,9 +210,9 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
       delete st.feedLater[itemId];
       // tower feeds the ORIGINAL (a hardlink, no ffmpeg); the plan tells cpu-prep which chain input to make of it
       const input = join(it.dir, m.original), sha = await shaOf(st, wr, input, ft), audio_s = m.duration_s || 0;
-      const plan = chainPlan(m.original, (await stat(input).catch(() => null))?.size, audio_s);
-      // 11-03 (Chad): "No fallback to WAV or FLAC. That is not acceptable!" a decoded original is ALWAYS converted to Opus by cpu-prep; no plan = not fed
-      if (isDecoded(m.original) && plan?.how !== 'opus') throw Error(`${m.original} is decoded audio and no Opus conversion is planned — a WAV/FLAC chain is never fed`);
+      const plan = chainPlan(m.original);
+      // 11-03 (Chad): "we only process Opus" — cpu-prep converts every non-Opus original (no fallback); no Opus plan = not fed
+      if (!isOpus(m.original) && plan?.how !== 'opus') throw Error(`${m.original} is not Opus and no Opus conversion is planned — only Opus chains are fed`);
       const wj = { ...wr.wholeJob(it, m, sha), threads: 4, ...(plan ? { chain_input: plan } : {}) }, fileId = typedFileId(itemId, sha);
       const job = SJ.typedJob('cpu-prep', { itemId, fileId, wj, band: SJ.bandOf(st, itemId), audio_s });
       // job ids are deterministic (talk + input sha): a talk fed again after its chain was dropped would meet its OLD step under the same
@@ -222,10 +222,11 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
       const { bytes } = await ft('put', () => q.put('files', fileId, wj.input, input, { link: true }));   // a hardlink on tower's own store: the original's bytes are not copied
       job.invoice.bytes = bytes;
       await ft('enqueue', () => q.enqueue([job]));
+      laneLog('feed_talk', { id: itemId, original: m.original, ext: String(m.original).split('.').pop().toLowerCase(), convert: plan?.how || 'none (already Opus)', audio_s });
       st.chains[itemId] = { sha, orig_sha: sha, fileId, slug: it.slug, input: wj.input, audio_s, at: now(), bytes, ...(plan ? { plan } : {}) };
       st.qjobs[job.id] = { itemId, slug: it.slug, sha, kind: 'typed', type: 'cpu-prep', audio_s, at: now() };
       queuedS += audio_s; fed++;
-    } catch (e) { st.queue.push(itemId); bad.add(itemId); errors.push(`#${itemId}: ${e.message}`.slice(0, 300)); }
+    } catch (e) { st.queue.push(itemId); bad.add(itemId); errors.push(`#${itemId}: ${e.message}`.slice(0, 300)); laneLog('feed_talk', { id: itemId, error: String(e.message).slice(0, 300) }); }
   }
   // 11-03: every feed round is logged with what it fed and what it could not (and why)
   laneLog('feed', { fed, held, queued_h: Math.round(queuedS / 36) / 100, left: st.queue.length, errors: errors.length ? errors : undefined });
@@ -311,9 +312,9 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
           // a prep result is made from the original (ch.orig_sha once the chain has switched to its chain input; ch.sha before, and for old chains)
           const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: type === 'cpu-prep' ? ch.orig_sha || ch.sha : ch.sha, slug: qj.slug, outputs: outputs.length ? outputs : null });
           if (type === 'cpu-prep' && r.chain_input) await tm(`${type}:${src}:chain_input`, () => takeChainInput(it, ch, r, j, sq, wr));
-          // 11-03: a prep that made no Opus chain input (an older worker image) leaves a decoded chain; it must not go on to gpu as a WAV/FLAC
-          else if (type === 'cpu-prep' && lanOnly(ch)) throw Error(`cpu-prep result refused: no Opus chain input for decoded audio ${ch.input} (no WAV/FLAC chains)`);
-          else if (type === 'cpu-prep' && ch.plan && !ch.chain_input) { st.chain_input_missing = (st.chain_input_missing || 0) + 1; ch.chain_input = { missing: true, plan: ch.plan.how }; }   // a worker image without chain-input support: the chain runs on the original (correct; a WAV stays on the LAN)
+          // 11-03 (Chad): "we only process Opus" — a prep that left the chain on a non-Opus input (an older worker image, or a step planned before
+          // 11-03 that stream-copied a video's track) never goes on to gpu; the chain is dropped and the talk re-fed with an Opus plan
+          if (type === 'cpu-prep' && !isOpus(ch.input)) throw Error(`cpu-prep result refused: the chain input ${ch.input} is not Opus (we only process Opus)`);
           r.files = notChain(r.files);   // the chain input is the next step's in.<ext>, not one of its item/ inputs
           ch[type] = SJ.stepOf(j, r, now());
           logStep(st, type, j.host, ch.audio_s, now());
@@ -575,13 +576,13 @@ async function restartLost(st, id, qj, { q, repo, now }, error) {
   return true;
 }
 
-/** Standing repair (11-03, Chad: "No fallback to WAV or FLAC"): a chain fed before the Opus chain input existed keeps a decoded input (in.wav) and has no
- *  plan to convert it — 385 chains fed 11-01 could only run on the home GPU and were counted as pod work. Every such chain whose current step is still
+/** Standing repair (11-03, Chad: "we only process Opus"): a chain fed before every input became Opus keeps a non-Opus input (in.wav, in.m4a, the mp3)
+ *  and has no plan to convert it — 385 WAV chains fed 11-01 could only run on the home GPU and were counted as pod work. Every such chain whose current step is still
  *  QUEUED on the LAN is dropped (its jobs cancelled) and its talk goes to the FRONT of the queue; feedTyped plans the Opus conversion on the re-feed.
  *  A leased step finishes first. A fresh chain (input = the original, plan = opus) is NOT bad: cpu-prep makes its Opus. Idempotent. → [{ id, job, input }] */
 export async function repairDecoded(st, { q, repo = null, now = Date.now }) {
   const dropped = [];
-  const bad = Object.entries(st.chains || {}).filter(([, ch]) => lanOnly(ch) && ch.plan?.how !== 'opus');
+  const bad = Object.entries(st.chains || {}).filter(([, ch]) => !isOpus(ch.input) && ch.plan?.how !== 'opus');
   if (!bad.length) return dropped;
   const leased = new Set((await Promise.all(SJ.AUDIO_TYPES.map((t) => q.stats(t).catch(() => null)))).flatMap((s) => (s?.leased || []).map((j) => j.id)));
   for (const [key, ch] of bad) {
@@ -595,7 +596,7 @@ export async function repairDecoded(st, { q, repo = null, now = Date.now }) {
     delete st.chains[key];
     st.queue = [id, ...st.queue.filter((x) => x !== id)];
     dropped.push({ id, job: cur[0], input: ch.input });
-    laneLog('repair', { id, job: cur[0], input: ch.input, why: 'decoded chain input without an Opus plan; dropped and re-queued first' });
+    laneLog('repair', { id, job: cur[0], input: ch.input, why: 'non-Opus chain input without an Opus plan; dropped and re-queued first' });
   }
   return dropped;
 }

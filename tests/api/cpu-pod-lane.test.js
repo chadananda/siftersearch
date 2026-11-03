@@ -80,10 +80,10 @@ const decodedOnEdge = () => [...E.store.keys()].filter((k) => isDecoded(k));
 
 describe('CPU overflow: home CPU hosts first, the CPU pod on the edge takes the excess prep', () => {
   it('the feed adds the CPU pod\'s measured rate; rebalancePrep moves only the excess over TARGET_H at the home rate, newest first', async () => {
-    await mkItems({ 1: 'mp3', 2: 'mp3', 3: 'mp3', 4: 'mp3' });
+    await mkItems({ 1: 'opus', 2: 'opus', 3: 'opus', 4: 'opus' });
     claimLan('boss', ['cpu-prep', 'cpu-finish']); claimLan('aorus', ['gpu']);
     expect((await feed(st, { ...deps, edge: null })).typed.fed).toBe(3);   // home only: TARGET_H (2.5 h) at boss's 1x → 3 talks of 1 h
-    await mkItems({ 1: 'mp3', 2: 'mp3', 3: 'mp3', 4: 'mp3' }); L = mkQueue(); deps.q = L.q;
+    await mkItems({ 1: 'opus', 2: 'opus', 3: 'opus', 4: 'opus' }); L = mkQueue(); deps.q = L.q;
     claimLan('boss', ['cpu-prep', 'cpu-finish']); claimLan('aorus', ['gpu']); cpuPod();
     expect((await feed(st, deps)).typed.fed).toBe(4);   // + the CPU pod's rate: 5 h wanted, 4 talks exist
     expect(Q.stats(E.sql, Date.now(), 'cpu-prep').states).toEqual({});   // the feed itself never uploads
@@ -93,11 +93,11 @@ describe('CPU overflow: home CPU hosts first, the CPU pod on the edge takes the 
     expect(onEdge).toEqual([3, 4]);   // newest moved; home keeps the ones it reaches first
     expect(Q.stats(L.sql, Date.now(), 'cpu-prep').states.queued.n).toBe(2);
     expect(Q.stats(E.sql, Date.now(), 'cpu-prep').states.queued.n).toBe(2);
-    for (const id of [3, 4]) expect(String(E.store.get(`files/${st.chains[id].fileId}/in.mp3`))).toBe(`audio-${id}`);
+    for (const id of [3, 4]) expect(String(E.store.get(`files/${st.chains[id].fileId}/in.opus`))).toBe(`audio-${id}`);
     expect((await rebalancePrep(st, deps)).moved).toBe(0);   // balanced: nothing more moves
   });
   it('home keeps only what it measurably DRAINS: a slow home (0.5 audio-h/h finished in the window) sends the rest of the prep to the CPU pod', async () => {
-    await mkItems({ 1: 'mp3', 2: 'mp3', 3: 'mp3', 4: 'mp3' });
+    await mkItems({ 1: 'opus', 2: 'opus', 3: 'opus', 4: 'opus' });
     claimLan('boss', ['cpu-prep', 'cpu-finish']); claimLan('aorus', ['gpu']); cpuPod();
     await feed(st, deps);
     L.sql.exec(`INSERT INTO done_log (host, type, audio_s, claimed, at) VALUES ('boss', 'cpu-prep', 3600, ?, ?)`, Date.now() - 600_000, Date.now() - 60_000);
@@ -106,25 +106,25 @@ describe('CPU overflow: home CPU hosts first, the CPU pod on the edge takes the 
     expect(r.moved).toBe(3);   // keep 2.5 h × 0.5 = 1.25 audio-h home (one talk), not 2.5 h at boss's 1x single-job speed (two)
   });
   it('no CPU pod engaged on the edge: nothing moves', async () => {
-    await mkItems({ 1: 'mp3', 2: 'mp3', 3: 'mp3' });
+    await mkItems({ 1: 'opus', 2: 'opus', 3: 'opus' });
     claimLan('boss', ['cpu-prep', 'cpu-finish']); claimLan('aorus', ['gpu']);
     await feed(st, deps);
     expect(await rebalancePrep(st, deps)).toMatchObject({ moved: 0, why: expect.stringMatching(/no edge cpu-prep host/) });
     expect(E.store.size).toBe(0);
   });
-  it('a talk whose original is WAV or FLAC stays on the LAN: never staged on the edge (no decoded audio in the cloud)', async () => {
-    await mkItems({ 1: 'mp3', 2: 'wav', 3: 'flac', 4: 'mp3' });
+  it('a talk whose original still needs its Opus made (WAV, FLAC, MP3, video) stays on the LAN for prep: its original never goes up the uplink', async () => {
+    await mkItems({ 1: 'opus', 2: 'wav', 3: 'flac', 4: 'opus', 5: 'mp3' });
     claimLan('boss', ['cpu-prep', 'cpu-finish']); claimLan('aorus', ['gpu']); cpuPod();
-    expect((await feed(st, deps)).typed.fed).toBe(4);
+    expect((await feed(st, { ...deps, max: 5 })).typed.fed).toBe(5);
     const r = await rebalancePrep(st, deps);
-    expect(r).toMatchObject({ moved: 2, kept_lan: 2 });
+    expect(r).toMatchObject({ moved: 2, kept_lan: 3 });
     const onEdge = Object.values(st.qjobs).filter((x) => x.where === 'edge').map((x) => x.itemId).sort();
     expect(onEdge).toEqual([1, 4]);
     expect(decodedOnEdge()).toEqual([]);
-    for (const id of [2, 3]) expect(st.qjobs[Object.keys(st.qjobs).find((k) => st.qjobs[k].itemId === id)].where).toBeUndefined();
+    for (const id of [2, 3, 5]) expect(st.qjobs[Object.keys(st.qjobs).find((k) => st.qjobs[k].itemId === id)].where).toBeUndefined();
   });
   it('a home host that leased the step meanwhile keeps it; an edge that refuses a withdrawn step gets it back on the LAN', async () => {
-    await mkItems({ 1: 'mp3', 2: 'mp3', 3: 'mp3', 4: 'mp3' });
+    await mkItems({ 1: 'opus', 2: 'opus', 3: 'opus', 4: 'opus' });
     claimLan('boss', ['cpu-prep', 'cpu-finish']); claimLan('aorus', ['gpu']); cpuPod();
     await feed(st, deps);
     const enq = E.q.enqueue; E.q.enqueue = async () => { throw Error('edge 503'); };
@@ -136,7 +136,7 @@ describe('CPU overflow: home CPU hosts first, the CPU pod on the edge takes the 
 });
 
 describe('a step that finished on the edge is pulled, routed and acked there whatever its type', () => {
-  async function prepOnEdge(spec = { 1: 'mp3', 2: 'mp3', 3: 'mp3', 4: 'mp3' }) {
+  async function prepOnEdge(spec = { 1: 'opus', 2: 'opus', 3: 'opus', 4: 'opus' }) {
     await mkItems(spec);
     claimLan('boss', ['cpu-prep', 'cpu-finish']); cpuPod();
     claimLan('aorus', ['gpu']);
@@ -161,7 +161,7 @@ describe('a step that finished on the edge is pulled, routed and acked there wha
     expect((await pull(st, deps)).typed).toMatchObject({ steps: 1, errors: 0 });
     const g = deliver('gpu', L, 'aorus');
     expect(g.item_id).toBe(p.item_id);
-    expect(String(L.store.get(`files/${g.file_id}/in.mp3`))).toBe(`audio-${p.item_id}`);
+    expect(String(L.store.get(`files/${g.file_id}/in.opus`))).toBe(`audio-${p.item_id}`);
     expect(g.body.inputs.map((i) => i.path)).not.toContain('item/enhanced/light.flac');
     for (const i of g.body.inputs) { expect(i.store).toBe('files'); expect(sha(L.store.get(`files/${i.id}/${i.path}`))).toBe(i.sha256); }
     expect((await pull(st, deps)).typed).toMatchObject({ steps: 1, errors: 0, edge_acked: 1 });

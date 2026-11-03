@@ -4,11 +4,10 @@
 import { createHash } from 'crypto';
 import { createReadStream } from 'fs';
 import { rm, stat } from 'fs/promises';
-import { isDecoded } from '../../../scripts/media/worker/transit.mjs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 // one source for the args + rules: the worker's cpu-prep makes the typed chain's input with the same module
-import { VIDEO, OPUS_IN, needsOpus, opusArgs, codecArgs, demuxArgs, demuxExt } from '../../../scripts/media/worker/chain-input.mjs';
+import { VIDEO, OPUS_IN, isOpus, opusArgs, codecArgs, demuxArgs, demuxExt } from '../../../scripts/media/worker/chain-input.mjs';
 
 export const STAGE = {
   aheadS: Number(process.env.MEDIA_STAGE_AHEAD_H ?? 100) * 3600,   // audio staged ahead of the pods (≈ 4 h of 3-5 pods)
@@ -34,7 +33,7 @@ export async function r2StageStore(env = process.env) {
   };
 }
 
-export { VIDEO, OPUS_IN, needsOpus };
+export { VIDEO, OPUS_IN, isOpus };
 
 /** The audio track of a video, stream-copied (no re-encode) to a temp file → { file, ext }, or null (no audio / a codec with no safe
  *  container: the original is sent). `run` is tower's process gate (tools.js run: ffmpeg -c:a copy is 'light'). */
@@ -49,7 +48,7 @@ export function audioDemuxer(run, tmpDir = tmpdir(), { seconds = null } = {}) { 
   };
 }
 
-// Pods get Opus 96k mono 48 kHz (Chad 11-01; OPUS_IN/needsOpus in chain-input.mjs) — a 317 MB WAV tape saturated the uplink. Only a source above 96 kbps is encoded (a smaller one is already as small; no second generation).
+// Pods get Opus 96k mono 48 kHz (Chad 11-01; OPUS_IN in chain-input.mjs) — a 317 MB WAV tape saturated the uplink. 11-03: every non-Opus original is encoded ("we only process Opus").
 /** src → { file, ext: 'opus' } beside `dir`. `run` = tower's process gate (tools.js run: a libopus ffmpeg is an 'encode', ONE at a time; any other path would WorkerWait). */
 export function opusEncoder(run, tmpDir = tmpdir()) {
   return async (src, dir = tmpDir) => {
@@ -81,19 +80,14 @@ export async function stageTick(st, { store, getItem, readMeta, busy = () => fal
     if (!m?.original) { (st.stage_skip ||= {})[id] = 'no original'; continue; }
     const src = `${it.dir}/${m.original}`;
     let ext = (m.original.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, ''), file = src, tmp = null;
-    // Chad 10-30: "pushing video around to process audio is simply absurd" — a video sends only its audio track, bit for bit (stream copy, no re-encode)
-    const bytes0 = opus && st.items?.[id]?.kind !== 'whole' ? (await stat(src).catch(() => null))?.size : 0;
-    // 11-03 (Chad): "No fallback to WAV or FLAC." Opus required (any decoded original; a compressed one above 96 kbps) and not made → nothing is uploaded, the item is skipped with its error
-    const decoded = isDecoded(m.original);
-    if (decoded || (opus && needsOpus(bytes0, st.items?.[id]?.duration_s || m.duration_s))) {
+    // 11-03 (Chad): "everything is converted to Opus, even video or MP3 … we only process Opus." Every non-Opus original is encoded; not made →
+    // nothing is uploaded, the item is skipped with its error (no fallback to the original)
+    if (!isOpus(m.original)) {
       let a = null, err = opus ? null : 'no Opus encoder';
       if (opus) a = await opus(src).catch((e) => { err = String(e?.message || e).slice(0, 200); return null; });
       if (!a) { (st.stage_errors ||= {})[id] = { at: now, error: `Opus conversion failed for ${m.original}: ${err || 'no output'}` }; continue; }
       delete st.stage_errors?.[id];
       ({ file, ext } = a); tmp = a.file;
-    } else if (VIDEO.has(ext) && st.items?.[id]?.kind !== 'whole' && demux) {
-      const a = await demux(src).catch(() => null);
-      if (a) { ({ file, ext } = a); tmp = a.file; }
     }
     try {
       const key = `${cfg.prefix}${id}-${createHash('sha1').update(src).digest('hex').slice(0, 12)}.${ext}`;

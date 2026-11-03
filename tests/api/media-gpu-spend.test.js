@@ -434,7 +434,7 @@ describe('the lane: GPU is rented only for work', () => {
     const x = setup({ talks: 4, seconds: 3600 }), puts = [], removed = [];
     const store = { put: async (k) => { puts.push(k); return 10; }, remove: async (k) => { removed.push(k); }, signed: async (k) => `https://r2/${k}` };
     const st = { queue: [3, 1, 2, 4], jobs: {}, items: {}, staged: { 9: { key: 'stage/old', bytes: 5, at: 0 } } };
-    const opts = { store, getItem: async (id) => x.items[id], readMeta: async (d) => JSON.parse(readFileSync(join(d, 'meta.json'), 'utf8')), now: 1000, cfg: { aheadS: 2 * 3600, maxBytes: 1e9, maxAgeMs: 1e9, prefix: 'stage/' } };
+    const opts = { store, getItem: async (id) => x.items[id], readMeta: async (d) => JSON.parse(readFileSync(join(d, 'meta.json'), 'utf8')), opus: async (src) => ({ file: src + '.opus', ext: 'opus' }), now: 1000, cfg: { aheadS: 2 * 3600, maxBytes: 1e9, maxAgeMs: 1e9, prefix: 'stage/' } };
     expect(await stageTick(st, opts)).toBe('uploaded');
     expect(removed).toEqual(['stage/old']);
     expect(await stageTick(st, opts)).toBe('uploaded');
@@ -448,7 +448,7 @@ describe('the lane: GPU is rented only for work', () => {
     let fail = 'Your proposed upload exceeds the maximum allowed object size.';
     const store = { put: async (k) => { if (k.startsWith('stage/1-') && fail) throw new Error(fail); puts.push(k); return 10; }, remove: async () => {}, signed: async (k) => k };
     const st = { queue: [1, 2], jobs: {}, items: {}, staged: {} };
-    const opts = { store, getItem: async (id) => x.items[id], readMeta: async (d) => JSON.parse(readFileSync(join(d, 'meta.json'), 'utf8')), now: 1000, cfg: { aheadS: 1e9, maxBytes: 1e12, maxAgeMs: 1e9, prefix: 'stage/' } };
+    const opts = { store, getItem: async (id) => x.items[id], readMeta: async (d) => JSON.parse(readFileSync(join(d, 'meta.json'), 'utf8')), opus: async (src) => ({ file: src + '.opus', ext: 'opus' }), now: 1000, cfg: { aheadS: 1e9, maxBytes: 1e12, maxAgeMs: 1e9, prefix: 'stage/' } };
     expect(await stageTick(st, opts)).toBe('uploaded');
     expect(Object.keys(st.staged)).toEqual(['2']);
     expect(st.stage_skip[1]).toMatch(/single-upload limit.*sent direct/);
@@ -457,19 +457,19 @@ describe('the lane: GPU is rented only for work', () => {
     await expect(stageTick(st2, opts)).rejects.toThrow(/ECONNRESET/);
     expect(st2.stage_skip).toBeUndefined();
   });
-  it('stage-ahead skips what pods may not take, and a video sends only its audio track (Chad 10-30: "pushing video around to process audio is simply absurd")', async () => {
+  it('stage-ahead skips what pods may not take, and a video sends only its audio, as Opus (Chad 10-30: "pushing video around to process audio is simply absurd"; 11-03: "we only process Opus")', async () => {
     const { stageTick, audioDemuxer } = await import('../../api/lib/media/r2-stage.js');
-    const x = setup({ talks: 3, seconds: 3600 }), puts = [], demuxed = [];
+    const x = setup({ talks: 3, seconds: 3600 }), puts = [], encoded = [];
     for (const id of [1, 2, 3]) { const f = join(x.items[id].dir, 'meta.json'); const m = JSON.parse(readFileSync(f, 'utf8')); m.original = 'original/talk.mp4'; writeFileSync(f, JSON.stringify(m)); }
-    const tmpA = join(x.items[1].dir, 'a.m4a'); writeFileSync(tmpA, 'aud');
+    const tmpA = join(x.items[1].dir, 'a.opus'); writeFileSync(tmpA, 'aud');
     const store = { put: async (k, path) => { puts.push([k, path]); return 3; }, remove: async () => {}, signed: async (k) => k };
     const st = { queue: [1, 2, 3], jobs: {}, items: { 1: { kind: 'whole' }, 3: { kind: 'whole' } }, staged: {} };
-    const opts = { store, getItem: async (id) => x.items[id], readMeta: async (d) => JSON.parse(readFileSync(join(d, 'meta.json'), 'utf8')), eligible: (id) => st.items[id]?.kind !== 'whole', demux: async (src) => { demuxed.push(src); return { file: tmpA, ext: 'm4a' }; }, now: 1000 };
+    const opts = { store, getItem: async (id) => x.items[id], readMeta: async (d) => JSON.parse(readFileSync(join(d, 'meta.json'), 'utf8')), eligible: (id) => st.items[id]?.kind !== 'whole', opus: async (src) => { encoded.push(src); return { file: tmpA, ext: 'opus' }; }, now: 1000 };
     expect(await stageTick(st, opts)).toBe('uploaded');
     expect(Object.keys(st.staged)).toEqual(['2']);   // the whole recordings ahead of it are left for the home worker
-    expect(puts[0][0]).toMatch(/^stage\/2-.*\.m4a$/);
+    expect(puts[0][0]).toMatch(/^stage\/2-.*\.opus$/);
     expect(puts[0][1]).toBe(tmpA);
-    expect(st.staged[2]).toMatchObject({ ext: 'm4a', audio_only: true, src: join(x.items[2].dir, 'original/talk.mp4') });
+    expect(st.staged[2]).toMatchObject({ ext: 'opus', audio_only: true, src: join(x.items[2].dir, 'original/talk.mp4') });
     expect(existsSync(tmpA)).toBe(false);   // the temp audio is removed once uploaded
     // the demuxer: ffprobe names the codec, ffmpeg stream-copies it into a container that holds it as-is — never a re-encode
     const calls = []; const fake = async (cmd, args) => { calls.push([cmd, ...args]); return { stdout: cmd === 'ffprobe' ? 'aac\n' : '' }; };

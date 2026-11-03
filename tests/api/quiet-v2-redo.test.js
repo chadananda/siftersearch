@@ -5,7 +5,7 @@ import { loudCuts, redoOrder, hasQuiet, QUIET_REPAIR_VERSION } from '../../api/l
 import { REG, isStale, markStale, fpOf } from '../../api/lib/media/stages.js';
 import { readFileSync } from 'fs';
 import { mediaRerunJob } from '../../api/lib/ops/media-jobs.js';
-import { needsOpus } from '../../api/lib/media/r2-stage.js';
+import { isOpus } from '../../api/lib/media/r2-stage.js';
 
 describe('stale = redo', () => {
   const v1 = { stages: { remaster: { at: 'x', tool: 'unipase', fp: fpOf('unipase', {}) } } };
@@ -37,10 +37,9 @@ describe('redo order: published first, most loud cuts first (not seconds)', () =
 });
 
 describe('pods get Opus input', () => {
-  it('a source above 96 kbps (a 317 MB WAV tape) is encoded; one already small is not', () => {
-    expect(needsOpus(317e6, 3600)).toBe(true);
-    expect(needsOpus(30e6, 3600)).toBe(false);
-    expect(needsOpus(1e6, 0)).toBe(false);
+  it('every source but an .opus is encoded, whatever its size (11-03, Chad: "we only process Opus")', () => {
+    for (const n of ['tape.wav', 'talk.mp3', 'talk.mp4']) expect(isOpus(n)).toBe(false);
+    expect(isOpus('talk.opus')).toBe(true);
   });
 });
 

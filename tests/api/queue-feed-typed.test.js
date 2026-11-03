@@ -32,8 +32,8 @@ beforeEach(async () => {
   items = {};
   for (const id of [1, 2]) {
     const dir = join(root, String(id)); await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, 'orig.mp3'), `audio-${id}`);
-    await writeFile(join(dir, 'meta.json'), JSON.stringify({ slug: `t${id}`, original: 'orig.mp3', duration_s: 3600, stages: tick(['archive']) }));
+    await writeFile(join(dir, 'orig.opus'), `audio-${id}`);   // already Opus: the chain runs on it as it is (other sources: setOriginal)
+    await writeFile(join(dir, 'meta.json'), JSON.stringify({ slug: `t${id}`, original: 'orig.opus', duration_s: 3600, stages: tick(['archive']) }));
     items[id] = { id, dir, slug: `t${id}`, state: 'whole_queued' };
   }
   repo = { getMediaItem: async (id) => items[id], updateMediaItem: async (id, p) => Object.assign(items[id], p) };
@@ -145,7 +145,7 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     expect((await feed(st, deps)).typed.fed).toBe(1);
     expect(Q.stats(sql, Date.now(), 'cpu-prep').states).toMatchObject({ queued: { n: 1 } });
     expect(store.has(`results/${old.id}/result.json`)).toBe(false);
-    expect(String(store.get(`files/${old.file_id}/in.mp3`))).toBe('audio-1');   // the staged input is put after the cancel
+    expect(String(store.get(`files/${old.file_id}/in.opus`))).toBe('audio-1');   // the staged input is put after the cancel
     const again = deliver('cpu-prep');
     expect(again.id).toBe(old.id);
     expect((await pull(st, deps)).typed).toMatchObject({ steps: 1, errors: 0 });
@@ -156,7 +156,7 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     expect(Q.claim(sql, { host: 'old', types: ['cpu-prep'], contract: 0 })).toBeNull();   // a stale image never takes it
     const p = deliver('cpu-prep');
     expect(p.file_id).toMatch(/^t1-/); expect(p.body.job.meta).toEqual({ slug: 't1' }); expect(p.body.inputs).toEqual([]);
-    expect(String(store.get(`files/${p.file_id}/in.mp3`))).toBe('audio-1');
+    expect(String(store.get(`files/${p.file_id}/in.opus`))).toBe('audio-1');
 
     expect((await pull(st, deps)).typed).toMatchObject({ steps: 1, errors: 0 });
     const g = deliver('gpu');
@@ -204,7 +204,7 @@ describe('typed chain: prep on Boss -> gpu on Aorus -> finish on Boss -> adopted
     await toFinish();
     const f = deliver('cpu-finish');
     const m1 = join(items[1].dir, 'meta.json');
-    const published = { slug: 't1', original: 'orig.mp3', stages: { ...tick(['archive', 'trim', 'correct', 'catalog', 'assess']), quiet: { at: 1, job: f.id } } };
+    const published = { slug: 't1', original: 'orig.opus', stages: { ...tick(['archive', 'trim', 'correct', 'catalog', 'assess']), quiet: { at: 1, job: f.id } } };
     await writeFile(m1, JSON.stringify(published));
     Object.assign(items[1], { state: 'done', stage: 'catalog', verdict: null });
     expect((await pull(st, deps)).typed).toMatchObject({ adopted: 1, errors: 0 });
@@ -307,7 +307,7 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect(Q.claim(sql, { host: 'aorus', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 })).toBeNull();   // not on the LAN
     const g = deliver('gpu', {}, E);
     expect(g.file_id).toBe(p.file_id);
-    expect(String(E.store.get(`files/${g.file_id}/in.mp3`))).toBe('audio-1');   // the original, staged on the edge
+    expect(String(E.store.get(`files/${g.file_id}/in.opus`))).toBe('audio-1');   // the original, staged on the edge
     expect(g.body.inputs.map((i) => [i.store, i.id, i.path])).toEqual(requiredFiles('cpu-prep').filter((f) => f !== 'enhanced/light.flac').map((f) => ['files', p.file_id, 'item/' + f]));
     for (const i of g.body.inputs) expect(sha(E.store.get(`files/${i.id}/${i.path}`))).toBe(i.sha256);   // what the pod checks
     expect(store.has(`results/${p.id}/result.json`)).toBe(true);   // prep stays until gpu has run
@@ -387,7 +387,7 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 1 });   // staged before any pod is rented (Chad 10-31)
     expect(Q.stats(sql, Date.now(), 'gpu').states).toEqual({});
     const g = deliver('gpu', {}, E);
-    expect(String(E.store.get(`files/${g.file_id}/in.mp3`))).toBe('audio-1');
+    expect(String(E.store.get(`files/${g.file_id}/in.opus`))).toBe('audio-1');
     for (const i of g.body.inputs) { expect(i.store).toBe('files'); expect(sha(E.store.get(`files/${i.id}/${i.path}`))).toBe(i.sha256); }
     expect((await pull(st, d)).typed).toMatchObject({ steps: 1, errors: 0 });
     expect(store.has(`results/${p.id}/result.json`)).toBe(false);   // prep acked on the LAN
@@ -401,7 +401,7 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     const d = { ...deps, edge: E.q };
     await feed(st, d); deliver('cpu-prep'); deliver('cpu-prep'); await pull(st, d);
     const ch = st.chains[1], put = E.q.put, sent = [];
-    await put('files', ch.fileId, ch.input, join(items[1].dir, 'orig.mp3'));   // the cut move's first file made it
+    await put('files', ch.fileId, ch.input, join(items[1].dir, 'orig.opus'));   // the cut move's first file made it
     E.q.put = async (kind, id, name, file) => { sent.push(`${id}/${name}`); return put(kind, id, name, file); };
     expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 2, resumed_files: 1 });
     expect(sent).not.toContain(`${ch.fileId}/${ch.input}`);
@@ -468,24 +468,35 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     expect(String(await readFile(join(items[1].dir, 'orig.wav')))).toBe(WAV);
     expect(st.chains).toEqual({});
   });
-  it('a video talk runs on its audio track only: prep (LAN) makes the stream-copied track; gpu and the pod get the track, never the video; tower keeps the video', async () => {
+  it('a video talk runs on Opus made from its audio (11-03: "everything is converted to Opus, even video"): gpu and the pod get the Opus, never the video; tower keeps the video', async () => {
     engage(); st.queue = [1];
     await setOriginal(1, 'orig.mp4', 'VIDEO+audio-1');
     const d = { ...deps, edge: E.q };
     await feed(st, d);
-    expect(st.chains[1]).toMatchObject({ input: 'in.mp4', plan: { how: 'demux' } });
-    const p = deliver('cpu-prep', chainOut(sha('VIDEO+audio-1'), 'in.m4a', 'audio-1', 'demux'));
-    expect(p.body.job).toMatchObject({ input: 'in.mp4', chain_input: { how: 'demux' } });
+    expect(st.chains[1]).toMatchObject({ input: 'in.mp4', plan: { how: 'opus' } });
+    const p = deliver('cpu-prep', chainOut(sha('VIDEO+audio-1'), 'in.opus', 'audio-1', 'opus'));
+    expect(p.body.job).toMatchObject({ input: 'in.mp4', chain_input: { how: 'opus' } });
     await pull(st, d);
-    expect(st.chains[1]).toMatchObject({ input: 'in.m4a', sha: sha('audio-1'), src: '.typed-input.m4a' });
+    expect(st.chains[1]).toMatchObject({ input: 'in.opus', sha: sha('audio-1'), src: '.typed-input.opus' });
     expect(Q.stats(sql, Date.now(), 'gpu').states.queued.n).toBe(1);   // home GPU: same transport, the track under the new file id
-    expect(String(store.get(`files/${st.chains[1].fileId}/in.m4a`))).toBe('audio-1');
+    expect(String(store.get(`files/${st.chains[1].fileId}/in.opus`))).toBe('audio-1');
     expect((await qtick(st, { ...d, buffer: { want_h: 5 } })).moved).toMatchObject({ moved: 1 });
     expect(onEdge('files/').filter((k) => /\/in\./.test(k)).map((k) => String(E.store.get(k)))).toEqual(['audio-1']);   // the pod's input: audio only
     deliver('gpu', {}, E); await pull(st, d); deliver('cpu-finish');
     expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });
-    await expect(readFile(join(items[1].dir, '.typed-input.m4a'))).rejects.toThrow();
+    await expect(readFile(join(items[1].dir, '.typed-input.opus'))).rejects.toThrow();
     expect(String(await readFile(join(items[1].dir, 'orig.mp4')))).toBe('VIDEO+audio-1');
+  });
+  it('a prep planned before 11-03 that stream-copied a video track (in.m4a) is refused: the chain is dropped and the talk re-fed for Opus', async () => {
+    engage(); st.queue = [1];
+    await setOriginal(1, 'orig.mp4', 'VIDEO+audio-1');
+    const d = { ...deps, edge: E.q };
+    await feed(st, d);
+    deliver('cpu-prep', chainOut(sha('VIDEO+audio-1'), 'in.m4a', 'audio-1', 'demux'));
+    expect((await pull(st, d)).typed).toMatchObject({ steps: 0, errors: 1 });
+    expect(st.pull_errors.at(-1).error).toMatch(/chain input in\.m4a is not Opus/);
+    expect(st.chains[1]).toBeUndefined(); expect(Q.stats(sql, Date.now(), 'gpu').states.queued).toBeUndefined();
+    expect(st.queue).toContain(1);
   });
   it('a worker image without chain-input support: a decoded original is REFUSED (no WAV chain, 11-03); the chain is dropped and the talk retried', async () => {
     lanOnly(); st.queue = [1];
@@ -494,7 +505,7 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     const d = { ...deps, edge: E.q };
     await feed(st, d); deliver('cpu-prep');   // an old image: no chain_input in its result
     expect((await pull(st, d)).typed).toMatchObject({ steps: 0, errors: 1 });
-    expect(st.pull_errors.at(-1).error).toMatch(/no Opus chain input for decoded audio in\.wav/);
+    expect(st.pull_errors.at(-1).error).toMatch(/chain input in\.wav is not Opus/);
     expect(st.chains[1]).toBeUndefined(); expect(Q.stats(sql, Date.now(), 'gpu').states.queued).toBeUndefined();   // no gpu step on a WAV
     expect(st.queue).toContain(1);
   });
@@ -654,7 +665,7 @@ describe('feed beside the pass: timed parts, one hash per unchanged original, ha
     expect(r.typed.fed).toBe(1);
     expect(r.sub['feed:demux']).toBeUndefined();
     for (const k of ['select', 'gate', 'dup', 'hash', 'cancel', 'put', 'enqueue']) expect(r.sub[`feed:${k}`].n).toBe(1);
-    expect(st.sha_cache[join(items[1].dir, 'orig.mp3')].sha).toBe(st.chains[1].sha);
+    expect(st.sha_cache[join(items[1].dir, 'orig.opus')].sha).toBe(st.chains[1].sha);
     expect(typeof r.ms).toBe('number');
   });
   it('shaOf reads an unchanged file once (path+size+mtime) and again when it changes', async () => {
@@ -700,6 +711,16 @@ describe('no decoded input, ever (11-03)', () => {
     expect(await repairDecoded(st, { q, repo })).toEqual([]);   // idempotent
     expect((await feed(st, deps)).typed.fed).toBe(1);
     expect(st.chains[other].plan).toEqual({ how: 'opus' });
+  });
+  it('repair: a queued chain on an MP3 or a demuxed track (no Opus plan, fed before 11-03) is dropped too; an Opus chain input is left alone', async () => {
+    engage(); st.queue = [1, 2]; await wavTalk(1); await wavTalk(2);
+    await feed(st, deps);
+    Object.assign(st.chains[1], { input: 'in.mp3' }); delete st.chains[1].plan;   // 11-02: a small MP3 ran on the original
+    Object.assign(st.chains[2], { input: 'in.opus' }); delete st.chains[2].plan;  // already switched to its Opus
+    st.queue = [];
+    const out = await repairDecoded(st, { q, repo });
+    expect(out.map((x) => [x.id, x.input])).toEqual([[1, 'in.mp3']]);
+    expect(st.queue).toEqual([1]); expect(st.chains[2]).toBeTruthy();
   });
   it('repair leaves a fresh chain alone (input = the original, plan = opus: cpu-prep makes the Opus) and the tick reports the count', async () => {
     engage(); st.queue = [1]; await wavTalk(1); await feed(st, deps);
