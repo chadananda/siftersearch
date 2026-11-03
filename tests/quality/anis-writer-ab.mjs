@@ -28,6 +28,8 @@ const r2 = (x, d = 2) => (x == null ? null : Math.round(x * 10 ** d) / 10 ** d);
 const COMPARE = arg('compare') || 'format';
 if (!['format', 'writer'].includes(COMPARE)) { console.error('--compare format|writer'); process.exit(2); }
 const ROLE = arg('role') || (COMPARE === 'writer' ? 'anis-writer' : 'assistant-answer');
+// the agent loop answers the whole turn and has no separate writing step, so variants need the routed pipeline (11-03 run: 90/90 agent, n=0)
+const ENGINE = arg('engine') || 'pipeline';
 const MODE = arg('mode') || (COMPARE === 'writer' ? 'research' : 'current');   // research:true is the anis-writer path; current = the planner path
 const N = Number(arg('sample') || (COMPARE === 'writer' ? 30 : 60)), CONC = Number(arg('concurrency') || 3), SEED = arg('seed') || 'ab1', TAG = arg('tag');
 const DATE = new Date().toISOString().slice(0, 10), KEY = process.env.INTERNAL_API_KEY;
@@ -104,7 +106,7 @@ async function anis(item) {
   const variants = VARIANTS.map(({ id, format, writer }) => ({ id, writer, ...(format ? { format } : {}) }));
   try {
     const s = await jfetch(`${API}/api/v1/anis/draft`, { method: 'POST', headers: H, body: JSON.stringify({ messages, email: `battery+writer-ab-${item.key}@siftersearch.com`,
-      async: true, job: key, research: MODE === 'research', variants }) });
+      async: true, job: key, research: MODE === 'research', engine: ENGINE, variants }) });
     if (!s.r.ok) return { error: `start ${s.r.status}` };
     for (;;) {
       await sleep(2500);
