@@ -488,6 +488,17 @@ export const REBUILT = SJ.REBUILT;
 export const sentFiles = (files = []) => files.filter((f) => !REBUILT.has(f.path));
 /** A chain whose input is decoded audio (FLAC/WAV) stays on the LAN: the edge client refuses the name, and no decoded audio goes to the cloud. */
 export const lanOnly = (ch) => isDecoded(ch?.input);
+/** The LAN's waiting gpu steps split by whether a pod could ever take them (11-03): movable = what rebalanceGpu would stage on the edge; the rest
+ *  (decoded input, or no prep files to send) can only run at home and is not pod work. leased = gpu job ids a host already holds. → hours + counts */
+export function gpuMovable(st, leased = new Set()) {
+  const out = { movable_h: 0, movable_n: 0, lan_only_h: 0, lan_only_n: 0 };
+  for (const [id, qj] of Object.entries(st.qjobs || {})) {
+    if (qj.kind !== 'typed' || qj.type !== 'gpu' || qj.where || leased.has(id)) continue;
+    const ch = st.chains?.[qj.itemId], ok = !!ch?.['cpu-prep'] && !lanOnly(ch), k = ok ? 'movable' : 'lan_only';
+    out[`${k}_h`] += (qj.audio_s || 0) / 3600; out[`${k}_n`]++;
+  }
+  return out;
+}
 /** A prep step that makes a chain input (ch.plan) stays home too: moving it would send the whole original up tower's uplink, the very bytes
  *  the Opus chain input exists to keep off it (and a video's demuxed track may be FLAC, which a cloud host cannot hand on). */
 const prepLanOnly = (ch) => lanOnly(ch) || (!!ch?.plan && !ch.src);

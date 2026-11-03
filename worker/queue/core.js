@@ -339,7 +339,9 @@ export function homeMode({ workH = 0, rHomeGpu = 0, rFinish = 0, horizonH = 2 } 
   return workH <= Math.min(rHomeGpu || 0, rFinish || 0) * horizonH ? 'small' : 'scale';
 }
 /** capacity (or [LAN, edge] capacities: tower runs both transports) → the rates, the pod target and its binding limit. */
-export function podPlan(caps, { horizonH = 2 } = {}) {
+// lanOnlyH (11-03): gpu hours queued on the LAN that no pod can claim (decoded/WAV chains, steps without prep files). 11-02/03: 255 audio-h of such work was counted
+// as pod work, ~30 pods were rented overnight, found nothing claimable on the edge and ended themselves idle. Pod work = what a pod can actually take.
+export function podPlan(caps, { horizonH = 2, lanOnlyH = 0 } = {}) {
   const edgeCap = Array.isArray(caps) && caps.length > 1 ? caps[1] : null;
   const all = (Array.isArray(caps) ? caps : [caps]).filter((c) => c?.by_type);
   const sum = (f) => all.reduce((a, c) => a + (f(c) || 0), 0);
@@ -347,17 +349,19 @@ export function podPlan(caps, { horizonH = 2 } = {}) {
   const podMeas = all.map((c) => c.by_type.gpu?.pod_throughput).filter((r) => r > 0);
   const rPrepM = meas('cpu-prep'), rFinishM = meas('cpu-finish'), rPodM = podMeas.length ? podMeas.reduce((a, b) => a + b, 0) / podMeas.length : null;
   const rrP = roleRates(all, 'cpu-prep'), rrF = roleRates(all, 'cpu-finish');
-  const gpu_queued_h = sum((c) => c.by_type.gpu?.queued_audio_h), prep_buffer = gpu_queued_h / horizonH;   // prepped gpu work feeds the GPUs in place of prep
+  const gpu_queued_all_h = sum((c) => c.by_type.gpu?.queued_audio_h), lan_only_h = Math.min(Math.max(0, lanOnlyH || 0), gpu_queued_all_h);
+  const gpu_queued_h = gpu_queued_all_h - lan_only_h, prep_buffer = gpu_queued_h / horizonH;   // prepped gpu work (a pod can take) feeds the GPUs in place of prep
   const chain = rrP && rrF ? cpuChain(rrP.each, rrF.each, { prepBuffer: prep_buffer }) : null;   // per-host roles known: one capacity per host, split between the steps
   const r_prep = chain ? chain.r_prep : rPrepM ?? sum((c) => c.by_type['cpu-prep']?.rate), r_finish = chain ? chain.r_finish : rFinishM ?? sum((c) => c.by_type['cpu-finish']?.rate), r_pod = rPodM ?? PRIOR_POD;
   const prepMeasured = chain ? rrP.measured : rPrepM != null, finishMeasured = chain ? rrF.measured : rFinishM != null;
   const priors = [...(!prepMeasured ? ['prep'] : []), ...(!finishMeasured ? ['finish'] : []), ...(rPodM == null ? ['pod'] : [])];
   const finish_queued_h = sum((c) => c.by_type['cpu-finish']?.queued_audio_h);
-  const plan = { gpu_queued_h, prep_buffer, prep_queued_h: sum((c) => c.by_type['cpu-prep']?.queued_audio_h),
+  const plan = { gpu_queued_h, gpu_queued_all_h, lan_only_h, prep_buffer, prep_queued_h: sum((c) => c.by_type['cpu-prep']?.queued_audio_h),
     finish_queued_h, finish_backlog_h: r_finish > 0 ? finish_queued_h / r_finish : null,   // hours of finish work waiting at the finishing hosts' pace
     staged_h: edgeCap?.by_type?.gpu?.queued_audio_h || 0, staged_n: edgeCap?.by_type?.gpu?.queued || 0, r_home_gpu: sum((c) => c.by_type.gpu?.home_rate),
     r_prep, r_finish, r_pod, priors, horizon_h: horizonH, ...(chain ? { prep_share: chain.prep_share, prep_each: rrP.each, finish_each: rrF.each } : {}) };
-  const workH = plan.gpu_queued_h + plan.prep_queued_h, mode = homeMode({ workH, rHomeGpu: plan.r_home_gpu, rFinish: r_finish, horizonH });
+  // the pods' work excludes LAN-only hours; the home/pod MODE counts all of it (the home GPUs are the ones that take the LAN-only steps)
+  const workH = plan.gpu_queued_h + plan.prep_queued_h, mode = homeMode({ workH: workH + lan_only_h, rHomeGpu: plan.r_home_gpu, rFinish: r_finish, horizonH });
   // scale: the home GPUs take no gpu work, so nothing comes off the top for them; small: no pods (the home hosts clear it in the horizon)
   const t = podTarget({ rPrep: r_prep + prep_buffer, rFinish: r_finish, rPod: r_pod, rHome: 0, workH, horizonH, measured: !priors.length });
   if (mode === 'small') return { ...plan, mode, ...t, target: 0, binding: 'home', pods: 0 };
@@ -376,8 +380,18 @@ export function bufferPolicy(plan, { pods = 0, targetH = BUFFER_H, rent = true }
   // SCALE (pods wanted or live, Chad 10-31 23:50Z): the LAN keeps NO gpu work (lan_keep_h 0: the mover sends every step to the pods); the home
   // GPUs stop claiming gpu (home_gpu false) only while a pod is live to take it, so the gpu lane always has a consumer
   if (n > 0) { const want = targetH * plan.r_pod * n; return { where: 'edge', buffer_low: (plan.staged_h || 0) < want, buffer_h: plan.staged_h || 0, want_h: want, lan_keep_h: 0, home_gpu: !(pods > 0) }; }
-  const want = targetH * (plan?.r_home_gpu || 0), lanH = Math.max(0, (plan?.gpu_queued_h || 0) - (plan?.staged_h || 0));
+  const want = targetH * (plan?.r_home_gpu || 0), lanH = Math.max(0, (plan?.gpu_queued_all_h ?? plan?.gpu_queued_h ?? 0) - (plan?.staged_h || 0));   // home GPUs take LAN-only steps too
   return { where: 'lan', buffer_low: lanH < want, buffer_h: lanH, want_h: want };
+}
+/** Rent a new pod only for work it can CLAIM (11-03, Chad: "running expensive PODs with no work is also not acceptable"): the edge holds gpu jobs beyond
+ *  what the live pods can take right now, or movable LAN gpu work exists and the mover is delivering. pods: [{ ready, leased }] (their gpu leases now);
+ *  a pod's slots are the most any pod is measured to hold (min 1), no fixed number. A pod that ended itself idle is not replaced while nothing is claimable. → { ok, reason, ...numbers } */
+export function rentGate(plan, { pods = [], movableH = 0, moving = false } = {}) {
+  const claimable = plan?.staged_n || 0, perPod = Math.max(1, ...pods.map((p) => p.leased || 0)), held = pods.reduce((a, p) => a + (p.leased || 0), 0);
+  const slots = pods.length * perPod, headroom = Math.max(0, slots - held), n = { claimable, headroom, pods: pods.length, per_pod: perPod, movable_h: Math.round(movableH * 100) / 100, moving, lan_only_h: Math.round((plan?.lan_only_h || 0) * 100) / 100 };
+  if (claimable > headroom) return { ok: true, reason: `edge holds ${claimable} unclaimed gpu jobs, ${headroom} open pod slots`, ...n };
+  if (movableH > 0 && moving) return { ok: true, reason: `${n.movable_h} h of movable LAN gpu work and the move pass is delivering`, ...n };
+  return { ok: false, reason: `nothing for a new pod to claim: edge ${claimable} gpu jobs vs ${headroom} open slots on ${pods.length} pods; movable LAN ${n.movable_h} h, move pass ${moving ? 'delivering' : 'not delivering'}; ${n.lan_only_h} h LAN-only`, ...n };
 }
 export function fail(sql, { id, lease, error }, now = Date.now()) {
   const j = held(sql, id, lease, now);

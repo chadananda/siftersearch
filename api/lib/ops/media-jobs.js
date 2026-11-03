@@ -1786,7 +1786,8 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       st.boot_fails = (st.boot_fails || 0) + 1;
       (st.waste_log ||= []).push({ at: now(), pod: p.name, why: String(why).slice(0, 120), usd: Math.round(wasted * 100) / 100, host: p.host_key || null, boot_s: p.ready_at ? Math.round((p.ready_at - p.created) / 1000) : null });
       st.waste_log = st.waste_log.slice(-30);
-      if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} pods in a row never worked (last: ${String(why).slice(0, 100)})`; st.proven = false; st.boot_fails = 0; st.breaker_trips = (st.breaker_trips || 0) + 1; }
+      if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} pods in a row never worked (last: ${String(why).slice(0, 100)})`; st.proven = false; st.boot_fails = 0; st.breaker_trips = (st.breaker_trips || 0) + 1;
+        (st.breaker_log ||= []).push({ at: now(), reason: st.breaker_reason, pods: (st.waste_log || []).slice(-3) }); st.breaker_log = st.breaker_log.slice(-20); }   // why it tripped, kept (11-03)
     }
     st.spent_closed = Math.round(((st.spent_closed || 0) + (p.costPerHr || 0) * Math.max(0, p.terminated - p.created) / 3600_000) * 100) / 100;
     for (const [j, x] of Object.entries(st.jobs)) if (x.pod === p.id) { st.queue.unshift(x.itemId); delete st.jobs[j]; }
@@ -2036,10 +2037,12 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           LH.beatStart(st, 'pod_plan', now());
           // the typed pod plan (Chad 10-31) over both queues, every pass: supportable = floor(min(R_prep, R_finish) / R_pod), limited only by work
           const caps = await Promise.all([localQueue().capacity(), queueClient({ key: queueKey }).capacity()].map((p) => p.catch(() => null)));
-          const plan = QC.podPlan(caps);
+          // pod work excludes LAN-only gpu hours (decoded/no-prep-files steps): a pod can never claim them (11-03, QC.podPlan lanOnlyH)
+          const split = QF.gpuMovable(st, new Set(((await localQueue().stats('gpu').catch(() => null))?.leased || []).map((j) => j.id)));
+          const plan = QC.podPlan(caps, { lanOnlyH: split.lan_only_h });
           const buf = QC.bufferPolicy(plan, { pods: podTyped ? livePods : 0, rent });
           if (!alive()) return;
-          st.pod_plan = { at: now(), ...plan, buffer: buf };
+          st.pod_plan = { at: now(), ...plan, movable_h: split.movable_h, movable_n: split.movable_n, lan_only_n: split.lan_only_n, buffer: buf };
           LH.beat(st, 'pod_plan', { ok: caps.some(Boolean), err: 'no queue answered capacity', n: plan.target ?? null }, now());
           // the claim order every multi-role host gets (core.claimOrder): buffer low → prep first; else finish → gpu → prep.
           // No home_gpu:false here (11-03): pods never lease from the LAN queue, so it only stranded the LAN-only gpu steps
@@ -2101,10 +2104,16 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
       // nothing to rent for and nobody else to give the tail to: the run ends here, spending nothing (the queue stays in the state file)
       if (!wantRaw && !homeHosts.length && !live.length && !inflight && st.queue.length && !st.cloud_stopped) { stop = `${st.queue.length} talks (${Math.round(waitingH * 10) / 10} h) wait, below the ${minHours} h a pod needs — none rented`; break; }
       const breakerOn = !!st.breaker_until && now() < st.breaker_until;
-      if (live.length < want && (!held || st.queue.some((id) => !feedsBacklog(st, id))) && !breakerOn) {
+      // a pod is rented only for work it can CLAIM (core.rentGate, 11-03): 30 pods were rented overnight against LAN-only work, found nothing on the edge and ended idle
+      const rentWanted = live.length < want && (!held || st.queue.some((id) => !feedsBacklog(st, id))) && !breakerOn;
+      const gate = typedPods && rentWanted ? (await import('../../../worker/queue/core.js')).rentGate(st.pod_plan, { pods: live.map((p) => ({ ready: p.status === 'ready', leased: st.q_last?.leased?.[`pod-${p.name}`] || 0 })),
+        movableH: st.pod_plan.movable_h || 0, moving: (st.q_moved?.moved || 0) > 0 && !st.q_moved?.error }) : null;
+      if (gate) st.rent_gate = { at: now(), want, ...gate };
+      if (gate && !gate.ok) { const { ok, reason, ...nums } = gate; st.rent_refused = { at: now(), since: st.rent_refused?.reason === reason ? st.rent_refused.since : now(), reason, want, live: live.length, ...nums }; LH.beat(st, 'rentals', { n: want }, now()); }
+      else if (rentWanted) {
         const name = `sifter-unipase-${Object.keys(st.pods).length + 1}`;
         const pod = await C.createPod(name, pub, { ...deps, prefer: acceptedWorker?.prefer_community?{cloud:'COMMUNITY',dcs:[]}:C.rentalPrefer(st) }).catch((err) => ({ error: err.message }));
-        if (pod.error) { st.last_error = pod.error.slice(0, 300); (st.rental_refusals ||= []).push({ at: now(), why: st.last_error }); if (st.rental_refusals.length > 50) st.rental_refusals.shift(); console.warn(`[media-cloud] RunPod refused a rental: ${st.last_error}`); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; } }
+        if (pod.error) { st.last_error = pod.error.slice(0, 300); (st.rental_refusals ||= []).push({ at: now(), why: st.last_error }); if (st.rental_refusals.length > 50) st.rental_refusals.shift(); console.warn(`[media-cloud] RunPod refused a rental: ${st.last_error}`); st.pod_failures++; st.boot_fails = (st.boot_fails || 0) + 1; if (st.boot_fails >= (deps.breakerAfter ?? 3)) { st.breaker_until = now() + (deps.breakerMs ?? 30 * 60_000); st.breaker_reason = `${st.boot_fails} rentals failed (${st.last_error.slice(0, 100)})`; st.proven = false; st.boot_fails = 0; (st.breaker_log ||= []).push({ at: now(), reason: st.breaker_reason }); st.breaker_log = st.breaker_log.slice(-20); } }
         else {
           st.pods[pod.id] = { id: pod.id, name, created: now(), health_port: pod.health_port || null, costPerHr: pod.costPerHr ?? pod.adjustedCostPerHr ?? null, status: 'booting',image:acceptedWorker?.image||null, cloud: pod.cloudType || null };
           if (typedPods) { (st.ramp_log ||= []).push({ at: now(), pods: live.length + 1, talks_h: LH.talksPerHour(st, { now: now(), horizonH: st.pod_plan.horizon_h || 2 }) }); if (st.ramp_log.length > 100) st.ramp_log.shift(); }
