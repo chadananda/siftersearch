@@ -250,7 +250,7 @@ h3{margin-top:18px}
   <h3 id="source-tools">Source and Translation Tools</h3>
   <div class="wrap"><table>
     <tr><th>Tool</th><th>What it returns</th><th>Function</th><th>Endpoint</th><th>Status</th></tr>
-    <tr><td class="mono">source_of</td><td>Who said a quotation and where: the published source, the original tablet, the works that quote it.</td><td class="mono">sourceHunt</td><td class="mono">POST /api/v1/source-hunt</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">passage_links</td><td>For one paragraph: its original, its translations and the works that quote it.</td><td class="mono">resolveLinks</td><td class="mono">GET /api/v1/paragraph/:id/links</td><td><span class="chip week">own tool: in progress</span></td></tr>
     <tr><td class="mono">find_original</td><td>The Arabic or Persian original behind a translation, with its linked translations.</td><td class="mono">findOriginals, resolveLinks</td><td class="mono">POST /api/v1/search/original</td><td><span class="chip live">live</span></td></tr>
     <tr><td class="mono">find_translation</td><td>An existing translation of an original, labelled authorized, published or Phelps.</td><td class="mono">findOriginals, resolveLinks</td><td class="mono">POST /api/v1/search/original</td><td><span class="chip live">live</span></td></tr>
     <tr><td class="mono">word_study</td><td>Shoghi Effendi's renderings of a word, with counts, plus aligned passages (from CTAI.info).</td><td class="mono">ctaiTerm</td><td class="mono">ctai.info /api/v1/concordance, /passages</td><td><span class="chip live">live</span></td></tr>
@@ -269,6 +269,7 @@ h3{margin-top:18px}
   <p>Each strategy (see <a href="#strategies">Response Strategies</a>) is a fixed sequence of the tools above.</p>
   <div class="wrap"><table>
     <tr><th>Strategy</th><th>Tools it calls</th><th>Function</th></tr>
+    <tr><td>Quotation trace</td><td><span class="mono">phrase_search</span> and <span class="mono">literal_search</span> across the library, the Writings and the reader's tradition; Jev checks which passages actually hold the quotation; <span class="mono">passage_links</span> then gives the original and the works that quote it</td><td class="mono">sourceHunt</td></tr>
     <tr><td>Comparison, Understanding</td><td><span class="mono">search_library</span> once per tradition, filtered by tradition</td><td class="mono">strategies.js</td></tr>
     <tr><td>Prayer</td><td><span class="mono">find_work</span>, then the prayer book's sections and paragraphs, then <span class="mono">search_library</span> within that book</td><td class="mono">prayerShelf</td></tr>
     <tr><td>Current guidance</td><td><span class="mono">search_library</span> filtered to the House of Justice, newest first</td><td class="mono">currentGuidance</td></tr>
@@ -298,6 +299,7 @@ h3{margin-top:18px}
   <ul>
     <li><span class="mono">search_library</span> means two engines: planned search in the researcher, and the unplanned search in the agent.</li>
     <li>The researcher's tool names map to different internal keys (<span class="mono">find_original</span> → <span class="mono">original</span>, <span class="mono">source_of</span> → <span class="mono">sourceOf</span>, <span class="mono">read_around</span> → <span class="mono">around</span>, …), and the turn labels use a third set ("CTAI term study", "source hunt").</li>
+    <li><span class="mono">source_of</span> was listed as a tool but is the Quotation trace strategy; <span class="mono">trace_source</span> has the same shape (links, then a search) and is a candidate strategy too.</li>
     <li>Anís chat and the older Jafar pipeline keep separate tool lists for the same functions.</li>
   </ul>
 </section>
