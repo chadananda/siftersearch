@@ -490,7 +490,6 @@ h3{margin-top:18px}
     <li><b>A labelled set to measure against.</b> A strong model labels real questions and conversations with the thread in view. A sample per type is checked by hand. The labels are test fixtures: they measure Jev's choices and are never used to train him. Part is held out.</li>
     <li><b>Confusions fixed in pairs.</b> Teaching vs why-or-how, find a passage vs compile, a compare follow-up vs a new comparison. Each pair gets sharper definitions and contrasting examples in Jev's context, then is remeasured.</li>
     <li><b>A confidence threshold per route,</b> set so that above it the route is right at least 90% of the time. Where a mistake is cheap, it can be lower.</li>
-    <li><b>Laya,</b> a smaller model learning from Jev's logged decisions, takes over a decision only once it matches Jev on the held-out set.</li>
   </ul>
   <h3 id="how-tested">How he is tested</h3>
   <ul>
