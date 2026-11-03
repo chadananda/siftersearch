@@ -18,7 +18,7 @@ import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuote
 import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
-import { chooseFormat } from './formats.js';
+import { chooseFormat, codeFormat } from './formats.js';
 import { channelFor } from './channels.js';
 import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
@@ -557,18 +557,22 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // a pasted <br> run is never part of the question (r5); line breaks stay (a pasted passage's attribution line is read by line)
   const question = lastUser(messages).replace(/<[^>]{0,200}>/g, ' ').replace(/[ \t]+(?=\n)/g, '').replace(/\n{3,}/g, '\n\n').trim();
   const t0 = Date.now();
+  // LOOKUPS FAST PATH (lookup.js; turn.js resolves it beside triage): a book, quoted wording or a numbered reference already found by
+  // code → no agent, no planner, no phrase/format call; the template is chosen by code and a light writer (Haiku, thinking off) writes it.
+  const fast = direction.lookup && !direction.guarded && direction.engine !== 'agent' && direction.research !== true
+    && !looksLikeSourceQuestion(question) && !looksLikeOriginalQuestion(question) ? direction.lookup : null;
 
   // THE AGENT (agent.js; Chad 11-01: "start with using haiku + tools to answer everything"): one loop with the library tools
   // answers the whole turn — on a channel listed in ANIS_AGENT ("site-chat", "email", "all") or when the caller asks
   // (direction.engine: 'agent' | 'pipeline'). A failure falls through to the routed pipeline below.
-  if (agentOn(direction) && !(deps && !d.agentCreate)) {
+  if (!fast && agentOn(direction) && !(deps && !d.agentCreate)) {
     const A = await agentRespond({ messages, onEvent, d, t0 }).catch((err) => { console.warn('anis agent failed', err?.message); return null; });
     if (A) return A;
   }
   // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
   // the query's embedding starts now, beside the plan, so the search layers find it ready (planned-search prewarmSearch)
-  Promise.resolve(d.prewarm?.(messages)).catch(() => {});
-  const plan = d.plan ? await timed('plan', () => d.plan(messages)).catch(() => null) : null;
+  if (!fast) Promise.resolve(d.prewarm?.(messages)).catch(() => {});
+  const plan = fast ? { shape: fast.kind === 'book' ? 'lookup' : 'quote', provenance: 'lookup-code', reason: fast.kind } : d.plan ? await timed('plan', () => d.plan(messages)).catch(() => null) : null;
   // a pasted original or a translate / find-the-original request is never small talk (10-23 Liliane's Persian prayer)
   let conversational = plan?.shape === 'converse' && !textRequest([...messages].reverse().find((m) => m.role === 'user')?.content).request;
 
@@ -588,21 +592,21 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // "Where can I read the Book of Certitude?" / "the full text of Dawnbreakers" → the library's own copy, linked (work-request.js;
   // Chad 11-01: these went to passage search and the reply quoted works that MENTION the book, with no link to it)
   // Then the passages ABOUT the book (its importance and role) fill the middle (Chad 11-01: "very thin … juicy bits"); none → link + offer.
-  const work = conversational ? null
+  const work = conversational ? null : fast ? (fast.kind === 'book' ? fast.work : null)
     : await timed('work', () => (d.findWork || (deps ? async () => null : findWork))(question, { named: plan?.named })).catch(() => null);
   onEvent({ type: 'stage', stage: 'search' });
   // WHAT to search (assistant/phrases.js; Jev has already routed): quote marks / the named object (a work by its library title,
   // a person in the seeker's spelling) decide it with no call; else one Haiku call for a quote/lookup → {exact, names, spellings,
   // author, work, tradition}, a follow-up given the previous turn + reply. STARTED NOW, beside the researcher / source hunt /
   // original lookup; only the search waits for it. Timeout / bad JSON → via 'fallback' and the v1 query (searchQueryFor).
-  const phrasesP = !conversational && plan ? timed('phrases', async () => fixedPhrases(plan) || (d.phrases || (deps ? async () => null : extractPhrases))(question, plan, { messages }),
+  const phrasesP = !conversational && plan && !fast ? timed('phrases', async () => fixedPhrases(plan) || (d.phrases || (deps ? async () => null : extractPhrases))(question, plan, { messages }),
     (p) => (p ? { via: p.via, ...(p.reason ? { reason: p.reason } : {}) } : null)).catch(() => null) : Promise.resolve(null);
   let phrased = null, searchQ = null;
   // THE RESEARCHER (researcher.js; Chad 10-19: "we have made it too determinative"): a model plans the research with the
   // library's tools instead of regexes choosing one lookup. On for a channel listed in ANIS_RESEARCH ("email", "all") or
   // when the caller asks (direction.research); any failure falls back to the routed pipeline below.
   // injected deps without a researcher (a test harness) keep it off; tests opt in with deps.research
-  const researchOn = !conversational && !work && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
+  const researchOn = !fast && !conversational && !work && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
   const R = researchOn ? await (d.research || runResearch)({ messages,
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;
@@ -618,7 +622,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // a quotation hunt needs a quotation: in a thread, the triage kind alone ("source_lookup") with no wording set apart from the
   // question once hunted the reader's own sentence (px-smoke return-iqan T2/T3: City of God for an Íqán question)
   const separate = quoted !== trimTalk(question.trim()) && quoted !== question.trim();
-  const huntable = !researched && !work && !plan?.named && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4 && (separate || messages.length <= 1))
+  const huntable = !fast && !researched && !work && !plan?.named && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4 && (separate || messages.length <= 1))
     || looksLikeSourceQuestion(question) || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8));
   // FOLLOW-UP ASKS (search-plan followUpAsks): "where is it from — and who translated it, which volume, what happened next?"
   // The hunt's template answers only the origin and dropped every other ask (r6-after: 7 strategy defects). With other asks
@@ -667,6 +671,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const res = researched ? { passages: researched.passages || [], _plan: { shape: 'research', steps: researched.steps, ms: researched.ms } }
     : work ? { ...await timed('search', () => d.search({ query: (searchQ = workAboutQuery(work)), mode: 'passages', limit: 16, scope_config: profile.scope_config,
       plan: { messages: [{ role: 'user', content: workAboutQuery(work) }] } })), _plan: { shape: 'work', work: work.doc.id } }
+    : fast?.passages ? { passages: fast.passages, _plan: { shape: fast.kind === 'reference' ? 'lookup' : 'quote', lookup: fast.kind, ...(fast.phrase ? { quote: { phrase: fast.phrase, via: 'lookup-code' } } : {}) } }
     : sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
     : conversational ? { passages: [], _plan: plan }
     : language ? { passages: [], _plan: { shape: 'language' } }
@@ -750,7 +755,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   retrieved.forEach((q, i) => { q.authority = findings[i]?.authority?.name || null; });
   const evidenceProfile = dataProfile(findings, { plan: res?._plan || null, question });
   const channel = direction.channel || channelFor('widget-chat');
-  const choose = d.chooseFormat || chooseFormat;
+  const choose = fast ? (a) => codeFormat({ ...a, shape: fast.kind === 'book' ? 'lookup' : 'quote' }) : (d.chooseFormat || chooseFormat);
   const formatP = work ? Promise.resolve({ id: 'work', by: 'title-index', how: WORK_HOW(work) })
     : quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW + (messages.length > 1 ? QUOTE_MISS_THREAD : '') })
     : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: RESEARCH_HOW(researched.brief) })
@@ -786,7 +791,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url })),
     ...(sourced?.extraUrls || huntExtra?.extraUrls || []).map((u) => ({ citation_url: u })), ...(study?.researchUrl ? [{ citation_url: study.researchUrl }] : [])];
   const exactUrls = sourced ? [...retrieved.map((q) => q.citation_url), ...sourced.extraUrls].filter(Boolean) : null;
-  const defaultWriter = llm || (researched ? modelFor('anis-writer') : parseLlm(process.env.ANIS_LLM));
+  const defaultWriter = llm || (fast ? modelFor('anis-light-writer') : researched ? modelFor('anis-writer') : parseLlm(process.env.ANIS_LLM));
   // THE WRITING STEP — once, or once per VARIANT (internal A/B via /api/v1/anis/draft): everything above (plan, evidence,
   // format choice, companion) is shared; only the template (format 'none') or the writer model differs. Only the first streams.
   const write = async (v, primary) => {

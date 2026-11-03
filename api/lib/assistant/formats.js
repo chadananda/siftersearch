@@ -96,3 +96,10 @@ export async function chooseFormat({ question, profile, channel, apiKey = proces
   const f = defaultFormat(feasible, profile);
   return { id: f.id, how: f.how, by: 'default' };
 }
+
+/** Format by code alone (the lookups fast path: no Jev call). shape 'quote' → find_passage, else direct_answer. → { id, how, by } */
+export function codeFormat({ profile, channel, shape = 'lookup' }) {
+  const feasible = feasibleFormats(profile, channel);
+  const f = defaultFormat(feasible, { ...profile, shape });
+  return { id: f.id, how: f.how, by: 'code' };
+}

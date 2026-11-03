@@ -129,6 +129,12 @@ export async function paragraphsAt(pairs) {
     ps.flatMap((p) => [Number(p.doc_id), Number(p.index)]), 'paragraphs-repo:at');
 }
 
+/** A document's paragraph by its DISPLAY number (block_attrs.pn: "Gleanings 27"). → rows (more than one = a shared number, no reference). */
+export async function paragraphsByPn(docId, pn) {
+  return queryAll(`SELECT id, doc_id, paragraph_index, text, heading FROM content WHERE doc_id = ? AND deleted_at IS NULL
+    AND CAST(json_extract(block_attrs, '$.pn') AS TEXT) = ? ORDER BY paragraph_index LIMIT 3`, [Number(docId), String(pn)], 'paragraphs-repo:by-pn');
+}
+
 /** For each live paragraph of a document: another live, canonical document holding the same words (normalized_hash), or
  *  null — the doc-overlap report (is a compilation of compilations already held piece by piece?). → [{ id, pidx, other }] */
 export async function paragraphsHeldElsewhere(docId) {

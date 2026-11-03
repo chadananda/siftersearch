@@ -89,6 +89,8 @@ export const MODEL_ROLES = {
     why: 'one loop that researches AND writes (agent.js). Quality first, speed earned later (Chad 11-01: "start with quality answers that are slow and then have a mechanism to improve speed"); Haiku 5.5 wrote 3.1 vs Sonnet 7.45 on 10-19' },
   'anis-writer': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-19', needs: ['grounded-writing', 'multilingual'], eval: 'anis-writer-ab',
     why: 'battery 10-19 (10 real questions, Opus blind judge): Sonnet 5.5 writer mean 7.45, beat Perplexity 10/10; Haiku 5.5 writer 3.1 (blank/cut-off replies); old pipeline 5.0' },
+  'anis-light-writer': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-03', needs: ['grounded-writing', 'fast'], eval: 'anis-writer-ab',
+    why: 'writes LOOKUP replies only (a book, a quotation, a numbered reference: code finds the passage, the template is chosen, this writes it in his voice). Thinking OFF, cheap price tier (Chad 11-03); research answers stay on anis-writer (A/B 11-03: Haiku no-think 5 win / 24 loss vs Sonnet on research, fine for a one-passage lookup)' },
   'anis-read-attachment': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-23', needs: ['vision', 'multilingual', 'persian-arabic-script'],
     why: 'reads a photo a reader attaches to a letter (10-23 Liliane: a Persian prayer-book page in nastaliq was dropped unread) — verbatim transcription in its own script; one call per image, rare' },
   'anis-research-brief': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-19', needs: ['json', 'fast'],

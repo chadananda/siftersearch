@@ -13,6 +13,7 @@ import { turnMeta } from './turn-meta.js';
 import { withAIContext, currentAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
 import { phraseStage } from './phrases.js';
+import { resolveLookup } from './lookup.js';
 
 const OUTPUT_BREAK = 0.8;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -21,7 +22,7 @@ const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.rol
 async function defaultDeps() {
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
-    fail: failExchange, strikes: liveStrikes, sleep };
+    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup };
 }
 
 /**
@@ -75,7 +76,10 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   }
 
   // Write it down before trying — in parallel with triage, so logging adds no latency.
-  const [ex, tri] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages)).catch(() => null)]);
+  // …and the lookups fast path (lookup.js: book / quoted words / numbered reference, found by code, no model) runs beside them
+  const lookupOn = engine === undefined && research === undefined && !variants && !llm && d.lookup;
+  const [ex, tri, lk] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages)).catch(() => null),
+    lookupOn ? timed('lookup', () => (d.lookup || resolveLookup)(messages), (r) => (r ? { kind: r.kind } : null)).catch(() => null) : null]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
   // "unclear" / "cut off" may only short-circuit a message with no substance. A real topic ("race unity") or a pasted
@@ -110,7 +114,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
 
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { stance: triageSummary?.stance ?? null,
-      kind: route.kind, guarded: route.action === 'guarded', channel, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
+      kind: route.kind, guarded: route.action === 'guarded', channel, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     let reply = r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).
