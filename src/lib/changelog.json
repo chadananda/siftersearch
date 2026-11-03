@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-03T15:47:04.472Z",
+  "generated": "2026-11-03T16:34:02.963Z",
   "entries": [
+    {
+      "hash": "5fdac9e3",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Deadline + empty-result degrade for slow library search; F15 chat kill switch and per-person/global hourly caps (with tests)",
+      "scope": null
+    },
     {
       "hash": "43a75332",
       "date": "2026-11-03",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Status — full local run queued (402 recordings, 31 duplicates), post-fix correction sample 20/20",
       "scope": "media"
-    },
-    {
-      "hash": "398cfdb9",
-      "date": "2026-10-22",
-      "type": "Docs",
-      "description": "Morning status — pilot results (enhancement by measurement, quote/CR precision read by hand, corrections, cost, speed), live links, the full run, YouTube block, decisions",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-03": [
+      {
+        "hash": "5fdac9e3",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Deadline + empty-result degrade for slow library search; F15 chat kill switch and per-person/global hourly caps (with tests)",
+        "scope": null
+      },
       {
         "hash": "43a75332",
         "date": "2026-11-03",
@@ -7015,13 +7022,6 @@
         "date": "2026-10-22",
         "type": "Docs",
         "description": "Status — full local run queued (402 recordings, 31 duplicates), post-fix correction sample 20/20",
-        "scope": "media"
-      },
-      {
-        "hash": "398cfdb9",
-        "date": "2026-10-22",
-        "type": "Docs",
-        "description": "Morning status — pilot results (enhancement by measurement, quote/CR precision read by hand, corrections, cost, speed), live links, the full run, YouTube block, decisions",
         "scope": "media"
       }
     ]
