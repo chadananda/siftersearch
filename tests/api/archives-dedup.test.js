@@ -58,6 +58,12 @@ describe('cascade (hash, normalised body, title+length, library, best copy)', ()
     expect(x.clusters[0].members[0]).toMatchObject({ step: 'title+length', id: expect.any(Number) });
     expect(x.dups.has('b:g/3.pdf')).toBe(false);
   });
+  it('another volume of a series is not a copy: "Witnesses 1" ≠ "Witnesses_3"; an unnumbered copy or a year still matches', () => {
+    const x = clusterDuplicates([r('a', 'w/Witnesses 1 Genesis.pdf', { id: 1, title: 'Witnesses 1: Genesis', pages: 200 }), r('a', 'w/Witnesses_3_Genesis.pdf', { id: 2, title: 'Witnesses 3: Genesis', pages: 200 }),
+      r('b', 'x/Tribute (1958).pdf', { id: 3, title: 'A Tribute to Shoghi Effendi', pages: 90 }), r('b', 'x/tribute.pdf', { id: 4, title: 'A Tribute to Shoghi Effendi', pages: 91 })]);
+    expect(x.dups.has('a:w/Witnesses 1 Genesis.pdf') || x.dups.has('a:w/Witnesses_3_Genesis.pdf')).toBe(false);
+    expect(x.clusters).toHaveLength(1);
+  });
   it('the best copy is kept: complete over partial, text layer over scan, then larger — and listed members name it', () => {
     const x = clusterDuplicates([r('a', 's.pdf', { id: 1, title: 'Gleanings Whole', pages: 300, cls: 'scan' }), r('a', 't.pdf', { id: 2, title: 'Gleanings Whole', pages: 296, cls: 'born_digital' }), r('b', 'u.pdf', { id: 3, title: 'Gleanings Whole', pages: 290, cls: 'image_pdf' })]);
     expect(x.clusters[0].keep).toMatchObject({ id: 2 });

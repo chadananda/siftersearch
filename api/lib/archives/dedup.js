@@ -26,6 +26,10 @@ const sizeAlike = (a, b) => (a.words && b.words ? Math.min(a.words, b.words) / M
   : a.pages && b.pages ? Math.abs(a.pages - b.pages) / Math.max(a.pages, b.pages) <= 0.1 : a.bytes && b.bytes ? Math.min(a.bytes, b.bytes) / Math.max(a.bytes, b.bytes) >= 0.8 : false);
 const tier = (r) => (r.words ? ['w', r.words] : r.pages ? ['p', r.pages] : r.bytes ? ['b', r.bytes] : null);
 const skel2 = (k) => k.replace(/\b(?:the|a|an|of|and)\b/g, '').replace(/[^a-z]/g, '').replace(/[aeiouy]/g, '').slice(0, 2);
+// volume / part numbers (1–3 digits, from title and file name; years are editions, not volumes): both numbered and none shared = another volume of a series
+// (11-03: "Witnesses 1: Genesis" had been a title+length copy of "Witnesses 3 Muayyad")
+const volNums = (r) => { const f = String(r.rel || '').split('/').pop().replace(/\.[^.]+$/, ''); return new Set(`${r.title || ''} ${/[a-z]/i.test(f) ? f : ''}`.match(/(?<![\d])\d{1,3}(?![\d])/g) || []); };   // a bare-number file name (1.pdf) says nothing
+const otherVolume = (a, b) => { const A = volNums(a), B = volNums(b); return A.size > 0 && B.size > 0 && ![...A].some((n) => B.has(n)); };
 const est = (a, b) => { let n = 0; for (let i = 0; i < 64; i++) if (a.slice(i * 16, i * 16 + 16) === b.slice(i * 16, i * 16 + 16)) n++; return n / 64; };
 
 /**
@@ -55,7 +59,7 @@ export function clusterDuplicates(rows, { libShas = new Set() } = {}) {
   for (const [b, list] of buckets) {
     const [s, t, c] = b.split('|'), near = [list, buckets.get(`${s}|${t}|${+c + 1}`) || []];
     list.forEach((r, i) => near.forEach((grp, gi) => grp.forEach((o, j) => {
-      if ((gi === 0 && j <= i) || !sizeAlike(r, o)) return;
+      if ((gi === 0 && j <= i) || !sizeAlike(r, o) || otherVolume(r, o)) return;
       const sc = titleScore(keyOf.get(r.key), keyOf.get(o.key));
       if (sc >= TITLE_MIN) link(r.key, o.key, 'title+length', sc);
     })));
