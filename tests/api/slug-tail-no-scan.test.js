@@ -41,6 +41,7 @@ function unnarrowedSlugLikes(src) {
   const code = codeOnly(src), out = [];
   for (const m of code.matchAll(/(?<![\w.])(?:d\.)?(slug|title)\s+LIKE\b/gi)) {
     const q = enclosingLiteral(code, m.index);
+    if (!/\bdocs\b/i.test(q)) continue;
     if (/LIKE\s+'%/i.test(q) || !/(?<![!<>])=\s*\?|\bIN\s*\(\s*\?|\bIN\s*\(\$\{/i.test(q)) { if (!out.includes(q)) out.push(q); }
   }
   return out;

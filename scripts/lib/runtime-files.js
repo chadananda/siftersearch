@@ -5,5 +5,5 @@
 const NON_RUNTIME = /^(tests\/|docs\/|planning\/|tmp\/|src\/|worker\/|public\/|\.claude\/|scripts\/(anis|wip)\/|[^/]+\.md$|.+\/(CLAUDE|README)\.md$)/;
 // Edge Worker modules that tower ALSO imports are runtime (10-31: worker/queue/core.js — the queue core the LAN queue and the pod plan run —
 // was pulled "touching no runtime code", so the media lane kept the old plan). tests/api/updater-runtime-files.test.js keeps this list complete.
-export const SHARED_WITH_TOWER = ['worker/queue/core.js', 'worker/dewey-upload.js'];
+export const SHARED_WITH_TOWER = ['worker/queue/core.js', 'worker/queue/last-words.js', 'worker/dewey-upload.js'];
 export const touchesRuntime = (files) => !files.length || files.some((f) => SHARED_WITH_TOWER.includes(f) || !NON_RUNTIME.test(f));

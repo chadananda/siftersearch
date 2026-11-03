@@ -7,7 +7,7 @@
   import { admin } from '../../lib/api.js';
   import { svcFixed } from '../../lib/imagekit.js';
   // title pages are written by archive-sample to the public `siftersearch` bucket, which the image service resizes (/img/a/…)
-  const R2 = 'https://pub-e57ab96621a24ba18bcce728b4c51de2.r2.dev/';
+  const R2 = '/img/a/'; // service path of that bucket (src/lib/imagekit.js maps it)
   const titleImg = (key, w, h) => svcFixed(`${R2}${key}`, w, h);
 
   const PAGE = 100;

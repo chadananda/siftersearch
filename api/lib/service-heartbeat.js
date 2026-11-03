@@ -3,6 +3,7 @@
 // 15 s: pid, the COMMIT it runs (its version — an unaffected service keeps an older one through deploys), state (running |
 // draining), work in flight and what it is doing. GET /api/admin/ops/services reads them; the coordinator (updater) and
 // Chad see every service at a glance. File-based: no writer, no DB. Deps: node:fs, drain.js.
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync, renameSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
@@ -21,7 +22,10 @@ export function headCommit(root = process.cwd()) {
     try { return readFileSync(join(root, '.git', ref), 'utf8').trim().slice(0, 12); } catch { /* packed */ }
     const packed = readFileSync(join(root, '.git', 'packed-refs'), 'utf8').split('\n').find((l) => l.endsWith(` ${ref}`));
     return packed ? packed.slice(0, 12) : null;
-  } catch { return null; }
+  } catch {
+    // a git worktree has .git as a file, not a directory — ask git
+    try { return execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8', timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'] }).trim().slice(0, 12) || null; } catch { return null; }
+  }
 }
 
 /** Start beating. state() → { inflight, doing, … } merged in each beat. → stop(). */
