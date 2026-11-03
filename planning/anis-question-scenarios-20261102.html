@@ -98,7 +98,7 @@ h3{margin-top:18px}
     <li><a href="#character">Personality</a></li>
     <li><a href="#how-you-meet-him">Interaction Modes</a></li>
     <li><a href="#reader-document">User Profile and User Card</a></li>
-    <li><a href="#tools">Research Tools</a><ol><li><a href="#keyword-search">Keyword Search (BM25)</a></li><li><a href="#semantic-search">Semantic Search</a></li><li><a href="#hype-search">HyPE Search</a></li><li><a href="#prepared-knowledge">Prepared Knowledge</a></li></ol></li>
+    <li><a href="#tools">Research Tools</a><ol><li><a href="#search-tools">Search Tools</a></li><li><a href="#source-tools">Source and Translation Tools</a></li><li><a href="#other-tools">Other Tools</a></li><li><a href="#strategy-executors">Tools Strategies Use</a></li><li><a href="#prepared-knowledge">Prepared Knowledge</a></li><li><a href="#tools-gaps">Not Yet Tools</a></li><li><a href="#tool-names">One Name, One Tool</a></li></ol></li>
     <li><a href="#activities">Complex Activities</a><ol><li><a href="#letters">Letters in detail</a></li><li><a href="#scenario-types">Scenario Types</a></li><li><a href="#scenario-recognition">Scenario Recognition</a></li></ol></li>
     <li><a href="#strategies">Response Strategies</a><ol><li><a href="#strategy-types">Strategy Types</a></li><li><a href="#how-he-decides">Speed</a></li><li><a href="#decision-points">Decision Points</a></li><li><a href="#three-part-reply">Three-Part Reply</a></li><li><a href="#inside-a-strategy">Example Strategy: Quotation Trace</a></li><li><a href="#target-times">Target Times</a></li><li><a href="#answer-look">Data Widgets</a></li></ol></li>
     <li><a href="#how-he-gets-better">Self-Improvement Cycle</a><ol><li><a href="#jev-accuracy">Jev Accuracy</a></li></ol></li>
@@ -229,42 +229,52 @@ h3{margin-top:18px}
 <section id="tools">
   <h2><span class="num">5</span>Research Tools</h2>
   <div class="lead">
-    <p><b>What:</b> the searches and services every answer is built from.</p>
-    <p><b>Why:</b> he says only what these tools find, and code checks every citation before an answer goes out.</p>
+    <p><b>What:</b> every tool Anís can call, by the name the code gives it, with the function behind it and the API that exposes it.</p>
+    <p><b>Why:</b> strategies are written in terms of tools. Each tool name must map to exactly one internal function, so a strategy that names a tool runs that tool.</p>
   </div>
-  <p>Everything Anís says comes from what these tools find. Code checks every citation before an answer goes out: a quotation not in the library is removed, and every reference becomes a link.</p>
+  <p>Anís calls these tools in-process. The endpoint column gives the route that exposes the same function to other callers (the site, the widget, outside developers). Everything he says comes from what these tools return: code checks every citation before an answer goes out, a quotation not in the library is removed, and every reference becomes a link.</p>
+
+  <h3 id="search-tools">Search Tools</h3>
+  <p>Each kind of search is its own tool, because strategies use them separately: a quotation needs literal search alone, a question about an idea needs phrase and HyPE search, a person needs biography search. <span class="mono">search_library</span> runs the passage searches together for an ordinary question. Every search tool takes the same filters.</p>
   <div class="wrap"><table>
-    <tr><th>Tool</th><th>What it gives him</th><th>Status</th></tr>
-    <tr><td>Keyword search <span class="mono">(BM25)</span></td><td>Exact words and phrases: a term or a quotation (see <a href="#keyword-search">Keyword Search</a>).</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Semantic search</td><td>Passages found by meaning, not just words (see <a href="#semantic-search">Semantic Search</a>).</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>HyPE search</td><td>Passages found by the questions they answer (see <a href="#hype-search">HyPE Search</a>).</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Prepared knowledge</td><td>Research done once and reused: book dossiers and topic collections (see <a href="#prepared-knowledge">Prepared Knowledge</a>).</td><td><span class="chip week">partly built</span></td></tr>
-    <tr><td>The library</td><td>Knows the books: finds one by name or description, tells you about it (author, date, translator, what it is, why it matters), links to it, and helps you read it paragraph by paragraph.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Source search</td><td>The original behind a translation, for discussion as well as citation: the Arabic or Persian words, their roots and range of meaning, how Shoghi Effendi rendered them and what that implies. <i>"What is the original term for 'justice' in the first Hidden Word, and what are its implications?"</i></td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Translation insight <span class="mono">(CTAI.info)</span></td><td>The concordance of Shoghi Effendi's translations, used as a tool, not a site to visit. Four questions:
-      <ul>
-        <li><b>An original word's renderings:</b> a root, its forms, every way he translated it, with counts.</li>
-        <li><b>The originals behind an English word:</b> "bounty" → júd, karam, faḍl, ʿaṭá', with counts.</li>
-        <li><b>His rendering of an exact passage:</b> original and English aligned.</li>
-        <li><b>A translation guide for any original passage:</b> the sense each term carries here, his usual phrasings, examples.</li>
-      </ul>Each answer links to the full page on CTAI.</td><td><span class="chip live">part live</span> (word → renderings is live)</td></tr>
-    <tr><td>Quotation trace</td><td>Who said a quotation and where: the original work first, then the books that quote it. Among Shoghi Effendi's translations, his own publications first (Íqán, Gleanings, Hidden Words, Prayers and Meditations, Epistle).</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Read around</td><td>The paragraphs before and after a passage, so it is quoted in context.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>People and events</td><td>Who someone was, who met whom, who was there, with the passages as evidence.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Email and letters</td><td>Answers by email; longer work delivered as a letter.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Compiled documents</td><td>A collection, study guide or research brief, delivered as a document.</td><td><span class="chip week">this week</span></td></tr>
-    <tr><td>Deep research (consulting the field)</td><td>For a hard question he consults everyone worth asking: other answer engines, other large models and our web research service. Not to borrow their answers, but to <b>never miss anything</b>, and to let their general knowledge point him to sources in our own library he would otherwise miss. What he learns is kept: it adds to the library's prepared knowledge and shows which documents we should acquire.</td><td><span class="chip week">partly live</span></td></tr>
-    <tr><td>The web, labelled</td><td>Only for what a library can't hold (current events, news about a community), always marked as from the web.</td><td><span class="chip week">this week</span></td></tr>
-    <tr><td>Memory</td><td>One history per person across chat and email, and one <b>User Profile</b> (above) that every answer reads. Clearing the account history on OceanLibrary.com erases both.</td><td><span class="chip later">after launch</span></td></tr>
+    <tr><th>Tool</th><th>What it returns</th><th>Function</th><th>Endpoint</th><th>Status</th></tr>
+    <tr><td><span class="mono">literal_search</span> (BM25)</td><td>Exact words and phrases: a term or a quotation.</td><td class="mono">keywordSearch</td><td class="mono">POST /api/search mode:keyword</td><td><span class="chip week">own tool: in progress</span></td></tr>
+    <tr><td class="mono">phrase_search</td><td>Passages found by meaning, phrase by phrase: a passage on detachment answers a question about letting go.</td><td class="mono">searchPhrases</td><td class="mono">none</td><td><span class="chip week">own tool: in progress</span></td></tr>
+    <tr><td class="mono">hype_search</td><td>Passages found through the questions each one answers, written in advance.</td><td class="mono">searchHypeQuestions</td><td class="mono">none</td><td><span class="chip week">own tool: in progress</span></td></tr>
+    <tr><td><span class="mono">search_library</span> (planned search)</td><td>The three layers run together, narrowed by filters, with people claims attached: 8 linked passages.</td><td class="mono">executeSearch → plannedSearch</td><td class="mono">POST /api/v1/tools/search · POST /api/v1/search</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">biography_search</td><td>People with cited claims: who someone was, who met whom.</td><td class="mono">peopleSearch</td><td class="mono">GET /api/v1/people/search · GET /api/graph/bio/search</td><td><span class="chip week">own tool: in progress</span></td></tr>
+    <tr><td><span class="mono">document_search</span> (was <span class="mono">find_work</span>)</td><td>The library's copy of a named work, with its link.</td><td class="mono">findTitled</td><td class="mono">GET /api/v1/library/find-document</td><td><span class="chip live">live</span></td></tr>
   </table></div>
-  <span id="search"></span>
-  <p>Most of the tools above stand on three searches underneath, run together: exact words, a meaning and a question each find passages the others miss.</p>
-  <h3 id="keyword-search">Keyword Search (BM25)</h3>
-  <p>Exact words and phrases: a term or a quotation, found fast and cheaply in any tradition and narrowed by author or work. It runs first: it is the cheapest search and the most precise.</p>
-  <h3 id="semantic-search">Semantic Search</h3>
-  <p>Ideas, not just words: passages found by meaning, phrase by phrase, so a passage on detachment turns up when the reader asks about letting go.</p>
-  <h3 id="hype-search">HyPE Search</h3>
-  <p>The questions each passage answers, written in advance, so a reader's question meets the passage that answers it even when they share no words.</p>
+  <p><b>Filters</b> (every search tool): tradition, collection, author (or the author's own words only), language, document, year range, named people, exact phrase. The agent's version of <span class="mono">search_library</span> takes tradition only.</p>
+  
+  <h3 id="source-tools">Source and Translation Tools</h3>
+  <div class="wrap"><table>
+    <tr><th>Tool</th><th>What it returns</th><th>Function</th><th>Endpoint</th><th>Status</th></tr>
+    <tr><td class="mono">source_of</td><td>Who said a quotation and where: the published source, the original tablet, the works that quote it.</td><td class="mono">sourceHunt</td><td class="mono">POST /api/v1/source-hunt</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">find_original</td><td>The Arabic or Persian original behind a translation, with its linked translations.</td><td class="mono">findOriginals, resolveLinks</td><td class="mono">POST /api/v1/search/original</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">find_translation</td><td>An existing translation of an original, labelled authorized, published or Phelps.</td><td class="mono">findOriginals, resolveLinks</td><td class="mono">POST /api/v1/search/original</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">word_study</td><td>Shoghi Effendi's renderings of a word, with counts, plus aligned passages (from CTAI.info).</td><td class="mono">ctaiTerm</td><td class="mono">ctai.info /api/v1/concordance, /passages</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">trace_source</td><td>The primary passages a letter or a scholar rests on.</td><td class="mono">resolveLinks, executeSearch</td><td class="mono">GET /api/v1/paragraph/:id/links</td><td><span class="chip live">live</span></td></tr>
+    <tr><td class="mono">read_around</td><td>The paragraphs before and after a passage, so it is quoted in context (withheld for copyrighted books).</td><td class="mono">getParagraphs</td><td class="mono">GET /api/admin/docs/:id/paragraphs (internal)</td><td><span class="chip live">live</span></td></tr>
+  </table></div>
+
+  <h3 id="other-tools">Other Tools</h3>
+  <div class="wrap"><table>
+    <tr><th>Tool</th><th>What it returns</th><th>Function</th><th>Endpoint</th><th>Status</th></tr>
+    <tr><td class="mono">about_work</td><td>Sourced notes on a core work.</td><td class="mono">canonWork (work-notes.json)</td><td class="mono">none</td><td><span class="chip live">agent only</span></td></tr>
+    <tr><td class="mono">web_search</td><td>A web answer, always labelled as from the web; only for what a library can't hold.</td><td class="mono">perplexityFallback</td><td class="mono">external (Perplexity)</td><td><span class="chip live">live</span></td></tr>
+  </table></div>
+
+  <h3 id="strategy-executors">Tools Strategies Use</h3>
+  <p>Each strategy (see <a href="#strategies">Response Strategies</a>) is a fixed sequence of the tools above.</p>
+  <div class="wrap"><table>
+    <tr><th>Strategy</th><th>Tools it calls</th><th>Function</th></tr>
+    <tr><td>Comparison, Understanding</td><td><span class="mono">search_library</span> once per tradition, filtered by tradition</td><td class="mono">strategies.js</td></tr>
+    <tr><td>Prayer</td><td><span class="mono">find_work</span>, then the prayer book's sections and paragraphs, then <span class="mono">search_library</span> within that book</td><td class="mono">prayerShelf</td></tr>
+    <tr><td>Current guidance</td><td><span class="mono">search_library</span> filtered to the House of Justice, newest first</td><td class="mono">currentGuidance</td></tr>
+    <tr><td>Scripture reference</td><td>The book's sections, then the paragraphs of the chapter and verse</td><td class="mono">scriptureReference</td></tr>
+  </table></div>
+
   <h3 id="prepared-knowledge">Prepared Knowledge</h3>
   <p>Research done once and reused: a dossier per important book, a collection per common topic.</p>
   <p>Some research is worth doing once and using many times. Prepared material answers common requests at once and gives him something fresh to say each time.</p>
@@ -273,6 +283,23 @@ h3{margin-top:18px}
     <div class="role"><span class="k">A collection on each common topic</span><p>For frequent topics, the key passages across traditions, compiled, ordered and checked. He answers by selecting from it instead of searching from scratch: faster, cheaper, more complete. The same idea one step further: prepared answers for whole topics and books, not just passages.</p></div>
   </div>
   <p>Both are wanted: topic research collections and book research dossiers. The improvement loop decides what to prepare first: when a question or book comes up often enough, it proposes a collection or dossier, and once built and checked, later requests take the shortcut. Deep research feeds both; both are refreshed as the library grows.</p>
+  <h3 id="tools-gaps">Not Yet Tools</h3>
+  <ul>
+    <li><b>Deep research</b> (consulting other answer engines and models so nothing is missed): <span class="mono">runDeepResearch</span> and <span class="mono">/api/v1/deep-research</span> exist, but Anís does not call them.</li>
+    <li><b>Biography and entity endpoints</b> (<span class="mono">/api/v1/entities/*</span>, <span class="mono">/api/graph/bio/search</span>): built, not used by Anís directly.</li>
+    <li><b>Library quotes and outlines</b> (<span class="mono">/api/v1/library/quotes</span>, <span class="mono">/library/documents/:id/outline</span>): built, not used by Anís.</li>
+    <li><b>CTAI translation guide</b> for an original passage: not built; only the concordance and passages are used.</li>
+    <li><b>Compiled documents</b> (collections, study guides, briefs delivered as a document): not built.</li>
+    <li><b>Memory</b>: the User Card is read on every turn; it is context, not a tool.</li>
+  </ul>
+
+  <h3 id="tool-names">One Name, One Tool</h3>
+  <p>Names in the code still disagree, and must be made one before strategies name tools:</p>
+  <ul>
+    <li><span class="mono">search_library</span> means two engines: planned search in the researcher, and the unplanned search in the agent.</li>
+    <li>The researcher's tool names map to different internal keys (<span class="mono">find_original</span> → <span class="mono">original</span>, <span class="mono">source_of</span> → <span class="mono">sourceOf</span>, <span class="mono">read_around</span> → <span class="mono">around</span>, …), and the turn labels use a third set ("CTAI term study", "source hunt").</li>
+    <li>Anís chat and the older Jafar pipeline keep separate tool lists for the same functions.</li>
+  </ul>
 </section>
 
 <section id="activities">
