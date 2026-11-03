@@ -2041,8 +2041,10 @@ export async function mediaCloudRemasterJob({ write = false, ids = null, limit =
           if (!alive()) return;
           st.pod_plan = { at: now(), ...plan, buffer: buf };
           LH.beat(st, 'pod_plan', { ok: caps.some(Boolean), err: 'no queue answered capacity', n: plan.target ?? null }, now());
-          // the claim order every multi-role host gets (core.claimOrder): buffer low → prep first; else finish → gpu → prep
-          await localQueue().policy({ buffer_low: buf.buffer_low, buffer_h: buf.buffer_h, want_h: buf.want_h, ...(buf.home_gpu === false ? { home_gpu: false } : {}), mode: plan.mode }).catch(() => null);
+          // the claim order every multi-role host gets (core.claimOrder): buffer low → prep first; else finish → gpu → prep.
+          // No home_gpu:false here (11-03): pods never lease from the LAN queue, so it only stranded the LAN-only gpu steps
+          // (decoded inputs, never staged to R2) — 394 of them with Aorus idle. Home GPUs take LAN gpu after finish work.
+          await localQueue().policy({ buffer_low: buf.buffer_low, buffer_h: buf.buffer_h, want_h: buf.want_h, mode: plan.mode }).catch(() => null);
           (st.buffer_log ||= []).push({ at: now(), staged_h: Math.round(plan.staged_h * 100) / 100, want_h: Math.round(buf.want_h * 100) / 100, finish_q: caps[0]?.by_type?.['cpu-finish']?.queued ?? null, pods: livePods });
           if (st.buffer_log.length > 360) st.buffer_log.splice(0, st.buffer_log.length - 360);
           st.q_pass = { started: passAt, phase: 'done', done: now(), ms: now() - passAt, error: null, sub: st.q_pass?.sub };
