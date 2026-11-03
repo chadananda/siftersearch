@@ -31,12 +31,17 @@ const est = (a, b) => { let n = 0; for (let i = 0; i < 64; i++) if (a.slice(i * 
 /**
  * rows → { dups: Map(key → { of, of_id, of_drive, of_rel, step, score }), clusters: [{ keep, members: [{ key, id, drive, rel, step, score }] }], by_step }.
  * libShas = Set of sha256 the library (Dewey) already holds.
+ * Exact steps (hash, normalised body) join copies freely. The fuzzy steps (title+length, fingerprint) never chain: a copy joins a cluster only by its OWN match to the
+ * cluster's centre (the largest copy), so A~B and B~C no longer make A a duplicate of C. (11-03: chaining had made one golden-age cluster of 3,461 unrelated newspapers
+ * and books — the 1915 Íqán and the 1939 Prayers "duplicates" of a German text.) The fingerprint needs MIN_WORDS on both sides: short or OCR-garbage text is noise.
  */
+export const MIN_WORDS = 300;
 export function clusterDuplicates(rows, { libShas = new Set() } = {}) {
-  const byKey = new Map(rows.map((r) => [r.key, r])), parent = new Map(rows.map((r) => [r.key, r.key])), edges = [];
+  const parent = new Map(rows.map((r) => [r.key, r.key])), weak = [], edges = [];
   const find = (x) => { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; };
-  const link = (a, b, step, score) => { if (a === b) return; edges.push({ a, b, step, score: +score.toFixed(3) }); const ra = find(a), rb = find(b); if (ra !== rb) parent.set(rb, ra); };
-  const same = (field, step) => { const m = new Map(); for (const r of rows) if (r[field]) { if (m.has(r[field])) link(m.get(r[field]), r.key, step, 1); else m.set(r[field], r.key); } };
+  const rank = (s) => STEPS.indexOf(s), better = (x, y) => rank(x.step) - rank(y.step) || y.score - x.score;
+  const same = (field, step) => { const m = new Map(); for (const r of rows) if (r[field]) { if (m.has(r[field])) { const a = m.get(r[field]); edges.push({ a, b: r.key, step, score: 1 }); const ra = find(a), rb = find(r.key); if (ra !== rb) parent.set(rb, ra); } else m.set(r[field], r.key); } };
+  const link = (a, b, step, score) => { if (a !== b) weak.push({ a, b, step, score: +score.toFixed(3) }); };
   same('sha', 'hash'); same('norm_sha', 'normalised-body');
   // title + length: bucket by the title's consonant start + a length class; compare within a class and its neighbours
   const buckets = new Map(), keyOf = new Map();
@@ -57,7 +62,7 @@ export function clusterDuplicates(rows, { libShas = new Set() } = {}) {
   }
   // fingerprint: LSH bands over the MinHash, candidates confirmed by the estimated Jaccard
   const lsh = new Map(), seen = new Set();
-  for (const r of rows) if (r.minhash && r.minhash.length >= 64 * 16) for (let b = 0; b < BANDS; b++) {
+  for (const r of rows) if (r.minhash && r.minhash.length >= 64 * 16 && (r.words || 0) >= MIN_WORDS) for (let b = 0; b < BANDS; b++) {
     const k = `${b}:${r.minhash.slice(b * ROWS * 16, (b + 1) * ROWS * 16)}`; (lsh.get(k) || lsh.set(k, []).get(k)).push(r);
   }
   for (const g of lsh.values()) if (g.length > 1 && g.length <= 60) for (let i = 1; i < g.length; i++) for (let j = 0; j < i; j++) {
@@ -65,27 +70,44 @@ export function clusterDuplicates(rows, { libShas = new Set() } = {}) {
     if (seen.has(id)) continue; seen.add(id);
     const jac = est(g[i].minhash, g[j].minhash); if (jac >= JACCARD) link(g[j].key, g[i].key, 'fingerprint', jac);
   }
-  const clusters = new Map();
-  for (const r of rows) (clusters.get(find(r.key)) || clusters.set(find(r.key), []).get(find(r.key))).push(r);
+  // exact copies → components; each component's best fuzzy edge to every other component
+  const comps = new Map();
+  for (const r of rows) (comps.get(find(r.key)) || comps.set(find(r.key), []).get(find(r.key))).push(r);
+  const cw = new Map();   // compA → Map(compB → best edge)
+  for (const e of weak) {
+    const ca = find(e.a), cb = find(e.b); if (ca === cb) continue;
+    for (const [x, y] of [[ca, cb], [cb, ca]]) { const m = cw.get(x) || cw.set(x, new Map()).get(x); if (!m.has(y) || better(e, m.get(y)) < 0) m.set(y, e); }
+  }
+  // star clusters: the largest unassigned component is a centre and takes every unassigned component with a DIRECT fuzzy edge to it
+  const size = (c) => Math.max(...comps.get(c).map(measure)), order = [...comps.keys()].sort((x, y) => size(y) - size(x) || (x < y ? -1 : 1)), owner = new Map();
+  const clusters = [];
+  for (const c of order) {
+    if (owner.has(c)) continue;
+    owner.set(c, c); const sat = [];
+    for (const [o, e] of cw.get(c) || []) if (!owner.has(o)) { owner.set(o, c); sat.push([o, e]); }
+    clusters.push({ centre: c, sat });
+  }
   const dups = new Map(), out = [], by_step = Object.fromEntries(STEPS.map((s) => [s, 0]));
-  const rank = (s) => STEPS.indexOf(s);
   // a file the library already holds is a duplicate of the library's copy, whatever its cluster
   for (const r of rows) if (r.sha && libShas.has(r.sha)) { dups.set(r.key, { of: null, of_id: null, of_drive: null, of_rel: 'library (same file already ingested)', step: 'library-hash', score: 1 }); by_step['library-hash']++; }
-  for (const members of clusters.values()) {
+  for (const { centre, sat } of clusters) {
+    const members = [...comps.get(centre), ...sat.flatMap(([o]) => comps.get(o))];
     if (members.length < 2) continue;
     const top = Math.max(...members.map(measure)), complete = (r) => measure(r) >= 0.95 * top;
     const keep = [...members].sort((a, b) => complete(b) - complete(a) || quality(b) - quality(a) || measure(b) - measure(a) || (a.key < b.key ? -1 : 1))[0];
+    const kc = find(keep.key), viaCentre = new Map(sat), exact = (m) => edges.filter((e) => e.a === m.key || e.b === m.key).sort(better)[0];
     const list = [];
     for (const m of members) {
       if (m === keep) continue;
-      const mine = edges.filter((e) => e.a === m.key || e.b === m.key), direct = mine.filter((e) => e.a === keep.key || e.b === keep.key);
-      const e = (direct.length ? direct : mine).sort((x, y) => rank(x.step) - rank(y.step) || y.score - x.score)[0];
+      const mc = find(m.key);
+      // same component as the keep: an exact copy · otherwise the fuzzy edge that joined its component to the keep's (directly, or each to the centre)
+      const e = mc === kc ? exact(m) : kc === centre ? viaCentre.get(mc) : mc === centre ? viaCentre.get(kc) : [viaCentre.get(mc), viaCentre.get(kc)].sort(better).pop();
       list.push({ key: m.key, id: m.id, drive: m.drive, rel: m.rel, title: m.title || null, cls: m.cls || null, step: e.step, score: e.score });
       if (!dups.has(m.key)) { dups.set(m.key, { of: keep.key, of_id: keep.id, of_drive: keep.drive, of_rel: keep.rel, step: e.step, score: e.score }); by_step[e.step]++; }
     }
     // the cluster's own step + score = its weakest link (the member joined by the lowest-ranked step, at the lowest score): what a person should doubt first
-    const weak = [...list].sort((x, y) => rank(y.step) - rank(x.step) || x.score - y.score)[0];
-    out.push({ keep: { key: keep.key, id: keep.id, drive: keep.drive, rel: keep.rel, title: keep.title || null, cls: keep.cls, size: measure(keep) }, step: weak.step, score: weak.score, members: list });
+    const weakest = [...list].sort((x, y) => rank(y.step) - rank(x.step) || x.score - y.score)[0];
+    out.push({ keep: { key: keep.key, id: keep.id, drive: keep.drive, rel: keep.rel, title: keep.title || null, cls: keep.cls, size: measure(keep) }, step: weakest.step, score: weakest.score, members: list });
   }
   return { dups, clusters: out, by_step };
 }

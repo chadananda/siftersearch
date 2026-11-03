@@ -4,7 +4,7 @@ import { spawnSync } from 'child_process';
 import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { clusterDuplicates, itemRow, registryRow, JACCARD } from '../../api/lib/archives/dedup.js';
+import { clusterDuplicates, itemRow, registryRow, JACCARD, MIN_WORDS } from '../../api/lib/archives/dedup.js';
 
 const PY = spawnSync('python3', ['--version']).status === 0;
 const fp = (path) => JSON.parse(spawnSync('python3', [join(process.cwd(), 'scripts/media/worker/fingerprint.py'), path], { encoding: 'utf8', maxBuffer: 1 << 26 }).stdout);
@@ -73,5 +73,26 @@ describe('cascade (hash, normalised body, title+length, library, best copy)', ()
   it('rows from the registry and from a drive item share one shape', () => {
     expect(registryRow({ drive_id: 'd', path: 'p.pdf', item_id: 3, sha256: 's', title: 'T', words: 5, minhash: 'm' })).toMatchObject({ key: 'd:p.pdf', id: 3, sha: 's', words: 5 });
     expect(itemRow('d', { id: 4, primary_rel: 'q.pdf', title: 'T', metadata: { probe: { class: 'scan', pages: 9, fp: { sha256: 'x', words: 0 } } } })).toMatchObject({ key: 'd:q.pdf', cls: 'scan', pages: 9, sha: 'x' });
+  });
+});
+
+describe('fuzzy steps never chain (11-03: one golden-age cluster held 3,461 unrelated files)', () => {
+  const chunk = (c, i) => `${c}${String(i).padStart(15, '0')}`;
+  const mh = (f) => Array.from({ length: 64 }, (_, i) => f(i)).join('');
+  const r = (rel, minhash, words, o = {}) => ({ key: `g:${rel}`, id: o.id, drive: 'g', rel, title: null, bytes: null, cls: 'born_digital', pages: null, sha: o.sha ?? null, words, norm_sha: null, minhash });
+  const A = mh((i) => chunk('a', i)), B = mh((i) => (i < 32 ? chunk('a', i) : chunk('b', i))), C = mh((i) => (i < 32 ? chunk('c', i) : chunk('b', i)));
+  it('A~B and B~C (Jaccard 0.5 each) but A and C share nothing: C is not a duplicate of A', () => {
+    const x = clusterDuplicates([r('a.txt', A, 9000, { id: 1 }), r('b.txt', B, 8000, { id: 2 }), r('c.txt', C, 7000, { id: 3 })]);
+    expect(x.clusters).toHaveLength(1);
+    expect(x.clusters[0].keep).toMatchObject({ id: 1 });
+    expect(x.clusters[0].members.map((m) => m.id)).toEqual([2]);
+    expect(x.dups.has('g:c.txt')).toBe(false);
+  });
+  it('an exact copy of a satellite rides with it, reported by the fuzzy edge that joined it', () => {
+    const x = clusterDuplicates([r('a.txt', A, 9000, { id: 1 }), r('b.txt', B, 8000, { id: 2, sha: 'S' }), r('b2.txt', B, 8000, { id: 4, sha: 'S' })]);
+    expect(x.dups.get('g:b2.txt')).toMatchObject({ of_id: 1, step: 'fingerprint', score: 0.5 });
+  });
+  it(`a fingerprint needs ${MIN_WORDS} words on both sides`, () => {
+    expect(clusterDuplicates([r('a.txt', A, 9000, { id: 1 }), r('b.txt', B, MIN_WORDS - 1, { id: 2 })]).clusters).toHaveLength(0);
   });
 });
