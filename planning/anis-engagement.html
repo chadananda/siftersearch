@@ -1,0 +1,343 @@
+<title>Anís Hyper Engagement</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650&family=Public+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Naskh+Arabic:wght@500&display=swap">
+<style>
+:root{--bg:#f6f7f9;--paper:#ffffff;--ink:#0d141c;--text:#3b4653;--muted:#5a6675;--line:#d9dee5;--accent:#0f6e74;--accent-soft:#e2f1f1;--warn:#9a5b00;--warn-soft:#fbf0de;--bar:#9cc9cb;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161c;--paper:#18202a;--ink:#f4f7fa;--text:#b4bfcb;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11161c;--paper:#18202a;--ink:#f4f7fa;--text:#b4bfcb;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}
+body{background:var(--bg);color:var(--text);font:15px/1.65 "Public Sans",system-ui,sans-serif;padding:0 16px}
+b,strong,h1,h2,h3{color:var(--ink)} b,strong{font-weight:700}
+main{max-width:900px;margin:0 auto;padding-block:40px 64px;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:Literata,Georgia,serif;text-wrap:balance;margin:0;font-weight:650}
+h1{font-size:2rem;line-height:1.2}
+h2{font-size:1.35rem;margin-bottom:10px}
+h3{font-size:1.05rem;margin-bottom:6px}
+p{margin:0 0 10px;max-width:68ch}
+.lede{color:var(--text);font-size:1.02rem}
+.eyebrow{font:600 .72rem/1 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:10px}
+.verdict{background:var(--accent-soft);border-left:3px solid var(--accent);padding:14px 16px;border-radius:2px}
+.verdict p:last-child{margin:0}
+.caution{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:2px}
+.caution p:last-child{margin:0}
+.wrap{margin-bottom:22px;overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem "JetBrains Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{display:inline-block;height:8px;background:var(--bar);border-radius:1px;vertical-align:middle;margin-right:6px}
+ul,ol{margin:0 0 12px;padding-left:20px;max-width:68ch} li{margin-bottom:6px}
+q{font-style:italic;quotes:"“" "”"}
+.note{color:var(--text);font-size:.85rem}
+.flow{margin-bottom:22px;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;max-width:720px;overflow-x:auto}
+.flow svg{display:block;width:100%;min-width:560px;font:12px "Public Sans",system-ui,sans-serif}
+.flow text{fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.flow .t{fill:var(--paper);stroke:var(--line)} .flow .j{fill:var(--accent-soft);stroke:var(--accent)} .flow .l{fill:var(--warn-soft);stroke:var(--warn);stroke-dasharray:4 3}
+.flow .w{fill:var(--accent);stroke:var(--accent)} .flow .wt{fill:var(--paper);font-weight:600}
+.flow path{stroke:var(--muted);fill:none;stroke-width:1.2} .flow marker path{fill:var(--muted);stroke:none}
+.flow .s{fill:var(--muted);font-size:10.5px;text-anchor:start} .flow .yn{fill:var(--muted);font-size:10.5px}
+.flow .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.75rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.flow .legend i{display:inline-block;width:12px;height:10px;border:1px solid;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.stage{margin-bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stage>div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.88rem}
+.stage b{display:block;font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--accent);margin-bottom:4px}
+.roles{margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.role{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:.9rem}
+.role p{margin:0}
+.role .k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mock{font-size:.88rem;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+.mock b{font-family:"JetBrains Mono",monospace;font-size:.75rem;color:var(--accent)}
+@media (max-width:640px){.roles,.stage{grid-template-columns:1fr}}
+.hero{gap:8px}
+.hero h1{font-size:2.6rem;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.ar{font-family:"Noto Naskh Arabic","Geeza Pro",serif;font-weight:500;color:var(--accent);font-size:2.2rem}
+.gloss{color:var(--muted);margin:0}
+.facts{margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.facts>div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.9rem}
+.k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+.soul{margin-bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.pillar{border-top:3px solid var(--accent);background:var(--paper);border-radius:0 0 4px 4px;padding:12px 14px;font-size:.88rem}
+.pillar ul{padding-left:16px}
+.voice{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.voice p{font-size:.92rem}
+.chip{font:600 .64rem "JetBrains Mono",monospace;padding:2px 6px;border-radius:2px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.chip.live{background:var(--accent-soft);color:var(--accent)}
+.chip.week{background:var(--warn-soft);color:var(--warn)}
+.chip.later{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.steps{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.divider{border-top:2px dashed var(--line);padding-top:18px}
+.mono{font-family:"JetBrains Mono",monospace;font-size:.85em}
+@media (max-width:640px){.facts,.soul{grid-template-columns:1fr}.hero h1{font-size:2.1rem}}
+.docnav{font:600 .74rem "JetBrains Mono",monospace;letter-spacing:.04em;color:var(--muted)} .docnav a{color:var(--accent);text-decoration:none} .docnav b{color:var(--ink)}
+.lead{background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:2px;padding:10px 14px;margin-bottom:16px;max-width:68ch}
+.lead p{margin:0 0 4px} .lead p:last-child{margin:0}
+.toc{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 18px}
+.toc ol{margin:6px 0 0;padding-left:22px} .toc li{margin-bottom:3px} .toc ol ol{margin:3px 0 4px;list-style:none;padding-left:4px;font-size:.88rem}
+.toc a{color:var(--accent);text-decoration:none} .toc a:hover{text-decoration:underline}
+h2 .num{font-family:"JetBrains Mono",monospace;font-size:.9rem;color:var(--accent);margin-right:8px}
+section{scroll-margin-top:16px}
+h3{margin-top:18px}
+</style>
+<main>
+<header class="hero">
+  <span class="eyebrow">Hyper Engagement · 3 Nov 2026</span>
+  <h1>Anís Hyper Engagement</h1>
+  <p class="lede">How Anís, the Ocean AI Research Assistant of Ocean 2.0 (<span class="mono">OceanLibrary.com</span>), keeps people learning and coming back: not with campaigns, but by being a companion worth returning to, who remembers them and now and then writes with something new.</p>
+  <nav class="docnav"><a href="#vision-doc">Vision</a> · <a href="#strategies-doc">Strategies &amp; Activities</a> · <b>Hyper Engagement</b> · <a href="#launch-doc">Launch Week</a></nav>
+</header>
+
+<div class="verdict">
+  <p><b>The idea.</b> People come back to someone, not to a search box. Anís remembers each person across chat and email, brings them one real discovery when he has one, invites them into reading and study that run over weeks, and stays silent when he has nothing worth saying. Success is people who reply and carry the conversation on, and people who end up reading on their own.</p>
+</div>
+
+<nav class="toc" aria-label="Contents"><span class="eyebrow">Contents</span>
+  <ol>
+    <li><a href="#engagement">What engagement means</a></li>
+    <li><a href="#reader">Who you are to him: the reader card and document</a></li>
+    <li><a href="#privacy">Privacy and consent</a></li>
+    <li><a href="#onboarding">First letters</a></li>
+    <li><a href="#letters">Letters: one discovery each</a><ol><li><a href="#sample-letter">A sample letter</a></li><li><a href="#translation-letters">Translation discoveries</a></li></ol></li>
+    <li><a href="#rhythm">The rhythm, and its limits</a></li>
+    <li><a href="#news">News that rides along</a></li>
+    <li><a href="#activities">Activities as invitations</a></li>
+    <li><a href="#prepared">Dossiers and topic collections</a></li>
+    <li><a href="#modes">Each mode's part</a></li>
+    <li><a href="#profile">Your page and your controls</a></li>
+    <li><a href="#learning">How he learns what works</a></li>
+    <li><a href="#measure">How success is measured</a></li>
+    <li><a href="#open">Open questions</a></li>
+  </ol>
+</nav>
+
+<section id="engagement">
+  <h2><span class="num">1</span>What engagement means</h2>
+  <div class="lead">
+    <p><b>What:</b> people who reply to him and carry the conversation on, counted per person, over time.</p>
+    <p><b>Why:</b> clicks and sends are easy to inflate and say nothing about learning. A returning conversation does.</p>
+  </div>
+  <p><b>Counted on people, never on sends.</b> The headline number is return conversations per person. A letter nobody answers is not engagement; neither is a long session that taught nothing.</p>
+  <p><b>Point at the texts, not at himself.</b> When Anís has a choice of what to bring someone, a finding that sends them to a primary text or furthers their own study comes before anything that sends them back to him. A person who now reads on their own is a success, not a lost user.</p>
+  <p><b>Silence beats a weak message.</b> Every outreach decision can end in "nothing this time", and that outcome is as legitimate as a letter. He never manufactures urgency, never writes "we miss you", and never sends to everyone at once.</p>
+  <p><b>A companion among seekers.</b> He says he is an AI, speaks for no community or institution, and never uses a personal moment to persuade. Engagement built on trust lasts; engagement built on pressure does not.</p>
+</section>
+
+<section id="reader">
+  <h2><span class="num">2</span>Who you are to him: the reader card and document</h2>
+  <div class="lead">
+    <p><b>What:</b> one short private document per person, and a tiny card drawn from it that every answer and letter reads.</p>
+    <p><b>Why:</b> he can only bring someone the right discovery if he remembers who they are and what they care about.</p>
+  </div>
+  <p><b>The reader document</b> is the one place everything about a person lives: who they are (name to use, languages, plain or scholarly, stated roles), where they stand <i>as they have said it</i>, their interests, how they like answers, what is in progress (a book, an open question, an activity), and what to leave alone (topics they asked him not to raise, corrections they made).</p>
+  <p><b>The reader card</b> is about fifty words of fixed fields, small enough to sit in every decision made for this person: understanding the request, planning the search, ranking passages, shaping the answer, choosing a letter. Example:</p>
+  <p class="mock"><b>CARD</b> lang en · level reader · plain · traditions: Buddhist .7, Bahá'í .2 · interests: compassion, Pali canon, meditation · prefers: short, quotes · leave alone: conversion</p>
+  <ul>
+    <li><b>It shows only in the fit.</b> He never recites it, never labels anyone, never says "I see you're interested in…". A Buddhist reader asking for "quotes on compassion" simply sees Buddhist passages first. It is a preference, never a filter: this message comes first, then this conversation, then the card, then the host site's default.</li>
+    <li><b>It follows people as they change.</b> Interests fade after about ninety days unless renewed, and a stated position changes only when the person says something new. Nothing is pinned.</li>
+    <li><b>It is built quietly.</b> When a conversation goes quiet, a small model adds what is new to a dated log behind the card, and the card is rebuilt. He never asks profiling questions.</li>
+    <li><b>It powers the letters.</b> Every finding in section 5 is checked against this document: what they asked, what they have already seen, what they want left alone.</li>
+  </ul>
+  <p><b>Before and after connecting.</b> An anonymous visitor gets memory for the conversation only. Connecting (or writing to him by email) creates the person; that browser's recent conversation (the last 30 days) joins their history and starts their document. Signing in or out starts a shared computer fresh, and anonymous history that is never claimed expires after 90 days.</p>
+</section>
+
+<section id="privacy">
+  <h2><span class="num">3</span>Privacy and consent</h2>
+  <div class="lead">
+    <p><b>What:</b> keep the least that serves the person, and guard it fully.</p>
+    <p><b>Why:</b> knowing someone's beliefs is how he serves them, and it is exactly the kind of data that must never leak.</p>
+  </div>
+  <p><b>Never kept:</b> health or mental state, trauma, sexuality, politics, finances, family crises, details about other people, location finer than country and time zone, and any guess about whether someone might convert. Religious position is kept only in the person's own words. Grief or distress is not recorded; it only pauses his letters for a while, with no reason stored.</p>
+  <p><b>Guarded like anything that must never be stolen.</b> The reader document is encrypted at rest with its key kept apart. It is reached through one guarded path where every read is accounted for. It is never logged, never in admin views or exports, never sent to host sites, and shown to a model only inside that person's own answer, never to a provider that trains on what it is sent.</p>
+  <p><b>Consent, plainly.</b> One line at connect says it: <q>Anís remembers what you tell him so he can help you; clear it any time.</q> Connecting is consent to be remembered and to the short welcome sequence, whose first letter says plainly that he will write now and then and how to pause. The plan is that later letters come only after the person has replied at least once, because a correspondence they took part in is real consent.</p>
+  <p><b>Clear history</b> on OceanLibrary.com erases the conversations and the reader document together, at once.</p>
+</section>
+
+<section id="onboarding">
+  <h2><span class="num">4</span>First letters</h2>
+  <div class="lead">
+    <p><b>What:</b> a short welcome by email when someone connects or first writes to him, at most three parts, days apart.</p>
+    <p><b>Why:</b> most people never discover what he can do. One vivid, real example teaches more than a feature list.</p>
+  </div>
+  <p><b>He waits.</b> The first letter goes only after any chat has gone quiet, so it can refer to what they just asked.</p>
+  <ul>
+    <li><b>If they have asked him something,</b> the first letter picks it up (<q>You asked me about…, and I've been thinking about it since</q>) with a researched follow-up. After that, the ordinary rhythm applies.</li>
+    <li><b>If they haven't,</b> the first letter introduces him with one vivid, real example. The second and third each show one thing they haven't tried, in the form <q>I neglected to mention that I can also…</q>: find a half-remembered passage, show the original words behind a translation, tell you who was in the room, trace a term.</li>
+    <li><b>Any reply</b> turns the sequence into ordinary correspondence. No reply after the third part, and he stops for good.</li>
+    <li><b>He introduces himself once, in his own words:</b> that he is an AI research assistant for Ocean 2.0 and that <span class="mono">anis@oceanlibrary.com</span> is his own address, where replies reach him.</li>
+  </ul>
+  <p class="note">At the start, letters go only to an allowlist, and Chad approves the first letter of every sequence, seeing exactly what will be sent.</p>
+</section>
+
+<section id="letters">
+  <h2><span class="num">5</span>Letters: one discovery each</h2>
+  <div class="lead">
+    <p><b>What:</b> a short meditation on one real finding made for one person, read in a minute, ending with a plain invitation to write back.</p>
+    <p><b>Why:</b> a friend who studies with you writes when they have found something. That is the only kind of letter worth sending.</p>
+  </div>
+  <p><b>The model is a letter Jafar sent</b>, <i>Four words behind one: "bounty"</i>. It worked because it held one discovery, shown concretely: the English word, the four originals behind it with transliteration and counts, one sentence on why that matters, and a link to the page with the full range. No recap, no sales line, no talk of how it was found. Anís ranges wider than one word, but keeps that shape.</p>
+  <p><b>Where findings come from.</b> About twenty kinds of research hook, each checked against the person's history, run as real research, and dropped if they have already seen the result:</p>
+  <ul>
+    <li>a question left open in their conversation that can now be answered;</li>
+    <li>two of their interests meeting in one passage;</li>
+    <li>a person they asked about appearing in a scene they haven't read;</li>
+    <li>the original words behind a translation they read;</li>
+    <li>a new text in their area, or a correction they made that has since been fixed;</li>
+    <li>a Holy Day, or the anniversary of an event they studied;</li>
+    <li>a primary-text reading that takes their inquiry further (preferred, because it points at the text);</li>
+    <li>after sustained interest, a course of study (never prompted by vulnerability).</li>
+  </ul>
+  <p><b>What a letter can carry.</b> The original behind an English word, the passage behind a half-remembered phrase, who was in the room, a book's untold anecdote, a talk excerpt to listen to, a reading plan for a book, a topic collection.</p>
+  <p><b>Only the best gets sent.</b> Jev scores each candidate for relevance, surprise, fit and depth for this reader, with a veto for anything that could unsettle them. Below the quality floor, nothing goes this time. If no example is strong enough, there is no letter.</p>
+  <p><b>How a letter is written.</b> A suggested opening gives the idea, never the words. The writing model writes the letter in Anís's own voice from the finding and the conversation so far, and the same grounding check as every answer then verifies each quotation, original term and attribution. A letter adds no fact beyond its research. Letters can take their time, so they get a more careful writer than chat.</p>
+  <div class="wrap"><table>
+    <tr><th>Kind of letter</th><th>Length</th></tr>
+    <tr><td>First letter</td><td class="n">110–180 words</td></tr>
+    <tr><td>Later welcome letters</td><td class="n">70–130 words</td></tr>
+    <tr><td>Re-engagement letters</td><td class="n">80–150 words</td></tr>
+    <tr><td>Late in the rhythm</td><td class="n">under 60 words</td></tr>
+  </table></div>
+  <ul>
+    <li><b>The subject comes from the letter:</b> three to nine words naming the word or passage. No exclamation, question, emoji or newsletter language.</li>
+    <li><b>He never repeats himself.</b> A sentence reused from his earlier letters gets one rewrite; if it still repeats, the letter isn't sent.</li>
+    <li><b>The close</b> is a plain invitation tied to what this letter showed, never a stock line. The last letter of a sequence closes lightly.</li>
+  </ul>
+
+  <h3 id="sample-letter">A sample letter</h3>
+  <p>Weeks ago a reader asked who Quddús was and was pointed to his story in <i>The Dawn-Breakers</i>. The finding: a person they asked about appears in a scene they haven't read.</p>
+  <div class="mock"><b>SUBJECT</b> Quddús in a scene you haven't read<br><br>
+  When you asked me who Quddús was, we left him in <i>The Dawn-Breakers</i>, chapter 19. Since then I found him somewhere you haven't been yet. In …, he is seen through the eyes of …, who writes: “…” (link).<br><br>
+  It is a small scene, but it shows what the chronicle passes over: … . Read side by side, the two accounts give you a fuller man than either does alone.<br><br>
+  If you like, I can gather every passage where the two of them meet. Or just tell me what you make of this one.<br><br>
+  Anís</div>
+  <p class="note">The "…" stand for the real passage and finding. Without them, there is no letter.</p>
+
+  <h3 id="translation-letters">Translation discoveries</h3>
+  <p>Some people keep asking about original words: what the Arabic says, how a term was rendered, why one English word covers several. When that shows up twice in their questions, or they ask for it outright, Anís treats it as a lasting interest. Their answers then show the original beside the English by default, and their letters lean toward translation discoveries: the several originals behind one English word, the many renderings of one original, Shoghi Effendi's rendering of a passage aligned with its source. This is the letter closest to Jafar's, and the one most likely to delight a reader who cares about the words themselves.</p>
+</section>
+
+<section id="rhythm">
+  <h2><span class="num">6</span>The rhythm, and its limits</h2>
+  <div class="lead">
+    <p><b>What:</b> letters at growing intervals after the person's last message, then quiet.</p>
+    <p><b>Why:</b> persistence without pressure. The rhythm steps back; it never escalates.</p>
+  </div>
+  <p><b>Growing gaps:</b> 3, 5, 12, 25, then 44 days after their last message, each only if there is something worth sending. Any reply resets it. One budget covers every channel. After the last step he goes quiet.</p>
+  <ul>
+    <li><b>He fades as they grow.</b> The more someone studies on their own, the less he writes, and what he does write points at the texts.</li>
+    <li><b>Never from grief, distress or a personal disclosure.</b> Those pause letters; nothing is written from them.</li>
+    <li><b>Never more urgent after silence.</b> A later letter is lighter than an earlier one, not louder.</li>
+    <li><b>Stop means stop.</b> A reply asking him to stop, or a hostile one, ends outreach at once, and he reads such replies generously; he still answers replies to his own letters. A bounce or a complaint blocks all mail to that address.</li>
+    <li><b>Every letter carries a one-click link</b> to pause letters or remove the person's history, with no sign-in needed.</li>
+    <li><b>Safety switches.</b> Outreach can be stopped everywhere, or per sequence, at once. Every letter is kept with the research behind it and the decision that sent it. There are caps per person and overall, a rehearsal mode that writes letters into a review queue without sending them, and no outreach to minors without separate review.</li>
+  </ul>
+</section>
+
+<section id="news">
+  <h2><span class="num">7</span>News that rides along</h2>
+  <div class="lead">
+    <p><b>What:</b> at most one relevant, unseen item of news inside a person's own answer or letter.</p>
+    <p><b>Why:</b> the library keeps growing, and people should hear about what matters to them without a newsletter.</p>
+  </div>
+  <p>News comes from two places: items created automatically as the library grows (a new text, a new translation or original, a new layer of people and events), and feature news added by hand. An item joins an answer or letter only when it fits what this person cares about and they haven't seen it. Never in back-to-back answers, never on a yes-or-no question, a dispute or a grief message, and never twice. <b>There is no way to send news to everyone.</b></p>
+</section>
+
+<section id="activities">
+  <h2><span class="num">8</span>Activities as invitations</h2>
+  <div class="lead">
+    <p><b>What:</b> things he does with you over days or weeks, offered when they fit and started by a simple request.</p>
+    <p><b>Why:</b> one good answer brings someone back once. A book read together brings them back every week.</p>
+  </div>
+  <p>Each activity runs on his own character, voice and tools, adding only its steps, schedule and output. A letter or an answer can invite one (<q>Shall we read it together, a page at a time?</q>), and the person starts it by asking. A question in the middle of an activity is answered on its own, and the activity resumes.</p>
+  <div class="roles">
+    <div class="role"><span class="k">Read a book with him</span><p>One page or section at a time, with short notes on the hard paragraphs in the author's own words, a question about what the reader makes of it, and his place remembered. By email, one page per letter, the next on reply or on an agreed rhythm.</p></div>
+    <div class="role"><span class="k">Plan my study</span><p>Agree a goal and the time available, build a calendar from a book's structure or a topic collection, send each day's reading, and re-plan without guilt when the reader falls behind.</p></div>
+    <div class="role"><span class="k">Research a book</span><p>Chapter by chapter, he picks what would interest this reader (a person, an allusion, a term, the history), researches each, and adds it as notes on the passage, for this reader and later ones.</p></div>
+    <div class="role"><span class="k">Discussion</span><p>When a challenge continues past a couple of turns, he carries it on, each side argued from the texts. At the end he offers to publish it, with consent, as a dialogue page and later as podcast-style audio.</p></div>
+  </div>
+  <p><b>Series and read-alongs.</b> The fullest form of the same idea: Anís as professor, reading a whole book in instalments with research interjections (who a figure was, the history behind a word, what a tablet of the time says). Imagine <i>The Dawn-Breakers</i> as a radio series, read in full, each episode a reason to return for the next. Each activity's steps and status: <a href="#strategies-doc">Strategies &amp; Activities</a>.</p>
+</section>
+
+<section id="prepared">
+  <h2><span class="num">9</span>Dossiers and topic collections</h2>
+  <div class="lead">
+    <p><b>What:</b> research done once and reused: a dossier on each important book, a collection on each common topic.</p>
+    <p><b>Why:</b> engagement needs fresh material. The same summary twice is a reason not to come back.</p>
+  </div>
+  <p><b>A dossier on each book</b> holds how it came to be written, who is in it, its anecdotes, its reception, the passages people love and the history around it. Asked about a book, he picks something varied from it. During a reading, it supplies the new anecdote that keeps the book alive. In a letter, "a book's untold anecdote" comes from here.</p>
+  <p><b>A collection on each common topic</b> holds the key passages across traditions, compiled, ordered and checked. He answers by choosing from it rather than searching from scratch, and a topic collection can itself be the gift in a letter or the spine of a study plan.</p>
+  <p>Both grow from use: when a topic or a book comes up often enough, the improvement loop proposes a collection or dossier. Both are refreshed as the library grows.</p>
+</section>
+
+<section id="modes">
+  <h2><span class="num">10</span>Each mode's part</h2>
+  <div class="lead">
+    <p><b>What:</b> chat, voice, email and tutorials share one person and one conversation; each plays a different part in bringing people back.</p>
+    <p><b>Why:</b> people learn in different places and moods. Only the length and form change, never who he is.</p>
+  </div>
+  <div class="wrap"><table>
+    <tr><th>Mode</th><th>Its part in engagement</th></tr>
+    <tr><td><b>Chat</b></td><td>Where questions begin. An answer may carry one small discovery found by research, never invented: an original word behind a translation, two of their interests meeting, a rare variant, a scene connection, a surprising count. It may close by inviting a second look or a primary-text reading. Nothing is offered to someone who is grieving beyond what they asked.</td></tr>
+    <tr><td><b>Voice</b></td><td>A hands-free companion for solo study or a group. He speaks only when addressed, rarely and politely offers one addition, and can read a passage aloud or play a talk excerpt.</td></tr>
+    <tr><td><b>Email</b></td><td>The home of letters and of slow activities: a page at a time, a study plan, a research brief attached. A reply to any letter simply continues the conversation.</td></tr>
+    <tr><td><b>Tutorials and series</b></td><td>Lectures and serialized read-alongs that give people a standing reason to return: the next episode.</td></tr>
+  </table></div>
+</section>
+
+<section id="profile">
+  <h2><span class="num">11</span>Your page and your controls</h2>
+  <div class="lead">
+    <p><b>What:</b> a profile page that shows what you did with Anís, and lets you keep, share or erase it.</p>
+    <p><b>Why:</b> people trust a companion whose memory they can see and clear.</p>
+  </div>
+  <ul>
+    <li><b>Shown:</b> name, email, member since, sign-in method; counts of conversations and questions; your conversations, with a topic browser and filter; anything you explicitly asked him to remember, which you can remove.</li>
+    <li><b>Share a discussion:</b> a conversation becomes a public dialogue page after personal details are scrubbed, with an editable preview, and can be unpublished at any time.</li>
+    <li><b>Download my data, delete my account, clear history.</b> Every kind of personal data is listed in one register, so export and deletion cannot miss any.</li>
+    <li><b>Never shown or exported:</b> the reader document, scores, engagement state, letter history. They are derived from conversations you can already see, and clearing history erases them too.</li>
+  </ul>
+</section>
+
+<section id="learning">
+  <h2><span class="num">12</span>How he learns what works</h2>
+  <div class="lead">
+    <p><b>What:</b> every reply teaches him which findings, openings and forms lead people to continue.</p>
+    <p><b>Why:</b> what delights one reader bores another. The only honest guide is what people actually answer.</p>
+  </div>
+  <ul>
+    <li><b>Every reaction counts.</b> A reply's reaction is credited to the finding, opening, format and closing that came before it. Even a two-word "wow, fascinating" counts.</li>
+    <li><b>Per person, starting from everyone.</b> He learns which kinds of finding each person answers, starting from what works for everyone and keeping about one choice in ten exploratory, so he doesn't fall into a rut. What works at each stage can move the rhythm itself, for example a later first letter.</li>
+    <li><b>Right strategy first.</b> Each answer's path is recorded, and the first question asked of it is whether this was the right strategy for this person and message. Only then is each step judged right, wrong or unnecessary. The weakest decision is fixed first.</li>
+    <li><b>Jev is steered, not trained.</b> When Jev decides wrongly, the information he is given is adjusted until he decides right. Corrected cases become tests.</li>
+    <li><b>Prepared knowledge follows demand.</b> Frequent topics and books become collections and dossiers.</li>
+  </ul>
+  <p class="note">This learning ships last and is audited, because a system that optimises for replies must never drift toward pressure.</p>
+</section>
+
+<section id="measure">
+  <h2><span class="num">13</span>How success is measured</h2>
+  <div class="lead">
+    <p><b>What:</b> one headline, a few guards, and a measure for each activity.</p>
+    <p><b>Why:</b> what is counted is what gets built. Count people learning, and alarm on harm.</p>
+  </div>
+  <div class="wrap"><table>
+    <tr><th>Measure</th><th>What it tells us</th></tr>
+    <tr><td><b>Return conversations per person</b></td><td>The headline: people coming back to continue.</td></tr>
+    <tr><td>Replies per letter</td><td>Whether letters carry something worth answering.</td></tr>
+    <tr><td>Stop and complaint rates</td><td>Guards, with alarms. A rise means he is pressing, whatever else improves.</td></tr>
+    <tr><td>Readers who reach a second session</td><td>Read a book with him.</td></tr>
+    <tr><td>Plans kept for two weeks; readers who finish</td><td>Plan my study.</td></tr>
+    <tr><td>Discussions past three turns; publish offers accepted</td><td>Discussion.</td></tr>
+    <tr><td>People who now read on their own</td><td>Success, not churn.</td></tr>
+  </table></div>
+</section>
+
+<section id="open">
+  <h2><span class="num">14</span>Open questions</h2>
+  <ul>
+    <li><b>Fading.</b> This plan reads "fade as independent study grows" as letters that point at the texts rather than at him, with fewer letters as a result. To confirm.</li>
+    <li><b>Consent for later letters.</b> Only after a first reply, as proposed in section 3? To confirm.</li>
+    <li><b>Language of letters.</b> Should letters follow the language a person writes in, Persian for example?</li>
+    <li><b>Sharing discussions</b> publicly waits for Chad's go-ahead.</li>
+    <li><b>Courses</b> as a letter finding from the start, or later?</li>
+  </ul>
+</section>
+</main>
