@@ -195,12 +195,17 @@ export function poolRunStart(st, now = Date.now()) {
  *  st.ramp_log = [{ at, pods, talks_h }] — one entry per typed rental, talks_h measured when it was rented. Compared with the entry that
  *  FIRST brought the pool to its current size since it was last smaller. A replacement at the same size is not a baseline: its talks_h already
  *  holds the lost pod's output (10-31: 390 replaced 387/388 at 22 talks/h, pool held at 2 although it rose 6.5 → 20 since pod 2 first came).
- *  No entry for this size = nothing to compare = ok. Pure. */
+ *  No entry for this size = nothing to compare = ok. A reading made of this many pods' output (or more) is no baseline either: 11-03 the
+ *  9-h cap ended 3 pods at once, the pool regrew to 2 at 23 talks/h — the 3 pods' trailing output — and held there at 18 with 160 talks staged. Pure. */
+/** Distinct pods whose gpu output was adopted in [from, to) — how many pods a talks/h reading measured. Pure. */
+const outputHosts = (st, from, to) => new Set((st.done || []).filter((d) => d.mode === 'typed' && d.at >= from && d.at < to && /^pod-/.test(String(d.gpu || ''))).map((d) => d.gpu)).size;
 export function rampGrowth(st, { now = Date.now(), horizonH = 2, pods = 0 } = {}) {
   const talks_h = talksPerHour(st, { now, horizonH });
   const since = poolRunStart(st, now), log = (st.ramp_log || []).filter((x) => !since || !(x.at < since)), smaller = log.findLastIndex((x) => x.pods < pods);
   const ref = log.slice(smaller + 1).find((x) => x.pods === pods);
   if (!ref) return { ok: true, talks_h, ref_talks_h: null, why: 'no rental at this size recorded' };
+  const by = outputHosts(st, ref.at - horizonH * 3600e3, ref.at);
+  if (by >= pods) return { ok: true, talks_h, ref_talks_h: null, why: `the talks/h when pod ${pods} came (${ref.talks_h}) was ${by} pods' output: no baseline` };
   const ok = talks_h > ref.talks_h;
   return { ok, talks_h, ref_talks_h: ref.talks_h, why: ok ? `talks/h rose ${ref.talks_h} → ${talks_h} since pod ${pods} came` : `talks/h ${talks_h} not above ${ref.talks_h} when pod ${pods} came: hold at ${pods}` };
 }
