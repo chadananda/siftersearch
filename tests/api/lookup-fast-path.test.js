@@ -47,6 +47,14 @@ describe('resolveLookup (mocked deps)', () => {
     expect(r.kind).toBe('reference');
     expect(r.passages[0]).toMatchObject({ source_url: 'https://x/g#40', title: GL.doc.title });
   });
+  it('a section number also tries the Roman pn (Gleanings 27 → XXVII)', async () => {
+    const asked = [];
+    const r = await resolveLookup(user('Gleanings 27'), {
+      findTitled: async () => GL, paragraphsByPn: async (id, n) => { asked.push(String(n)); return n === 'XXVII' ? [{ id: 9, paragraph_index: 70, text: P }] : []; },
+      withLinks: async (h) => h.map((x) => ({ ...x, url: 'https://x/g#70' })) });
+    expect(asked).toEqual(['27', 'XXVII']);
+    expect(r).toMatchObject({ kind: 'reference', passages: [{ paragraph_index: 70 }] });
+  });
   it('an ambiguous pn (2 rows) is not a reference; falls through', async () => {
     const r = await resolveLookup(user('Gleanings 27'), { findTitled: async () => GL, paragraphsByPn: async () => [{ text: 'a' }, { text: 'b' }], findWork: async () => null, search: async () => [] });
     expect(r).toBeNull();

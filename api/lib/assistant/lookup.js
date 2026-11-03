@@ -9,6 +9,9 @@ import { findWork, findTitled } from './work-request.js';
 const ROMAN = /^(?=[ivxlcdm]+$)m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$/i;
 const romanToInt = (r) => { const v = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 }; let n = 0, p = 0;
   for (const c of r.toLowerCase().split('').reverse()) { n += v[c] < p ? -v[c] : v[c]; p = Math.max(p, v[c]); } return n; };
+// Gleanings-style books number their sections in Roman capitals (pn "XXVII", "XXVII.2"): "Gleanings 27" asks for pn "XXVII" (live 11-03: it missed)
+const toRoman = (n) => n > 0 && n < 4000 ? [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]
+  .reduce((o, [v, r]) => { while (n >= v) { o += r; n -= v; } return o; }, '') : null;
 const ASKY = /^(?:who|what|why|how|when|where|which|whose|is|are|was|were|does|do|did|can|could|should|would|will|tell|explain|define|describe|list|give|show|compare|summari[sz]e|i|my|me|we|hi|hello|hey|thanks?|thank|please|find|quote|translate)\b/i;
 
 /** "Gleanings 27", "Hidden Words no. 12", "Gleanings section CXXVII" → { title, num } | null. Pure. */
@@ -50,7 +53,8 @@ export async function resolveLookup(messages, deps = {}) {
     const w = await (deps.findTitled || findTitled)([ref.title], { min: 0.9 }).catch(() => null);
     if (w) {
       const { paragraphsByPn } = deps.paragraphsByPn ? { paragraphsByPn: deps.paragraphsByPn } : await import('../paragraphs-repo.js');
-      const rows = await paragraphsByPn(w.doc.id, ref.num).catch(() => []);
+      let rows = [];
+      for (const pn of [ref.num, toRoman(ref.num)].filter(Boolean)) { rows = await paragraphsByPn(w.doc.id, pn).catch(() => []); if (rows.length) break; }
       if (rows.length === 1 && String(rows[0].text || '').trim()) {
         const r = rows[0], link = deps.withLinks || (await import('../hit-links.js')).withLinks;
         const [h] = await link([{ id: r.id, doc_id: w.doc.id, paragraph_index: r.paragraph_index, text: r.text, title: w.doc.title }]).catch(() => [null]);
