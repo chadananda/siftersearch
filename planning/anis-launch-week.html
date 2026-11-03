@@ -1,0 +1,285 @@
+<title>Anís Launch Week</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650&family=Public+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Naskh+Arabic:wght@500&display=swap">
+<style>
+:root{--bg:#f6f7f9;--paper:#ffffff;--ink:#0d141c;--text:#3b4653;--muted:#5a6675;--line:#d9dee5;--accent:#0f6e74;--accent-soft:#e2f1f1;--warn:#9a5b00;--warn-soft:#fbf0de;--bar:#9cc9cb;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161c;--paper:#18202a;--ink:#f4f7fa;--text:#b4bfcb;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11161c;--paper:#18202a;--ink:#f4f7fa;--text:#b4bfcb;--muted:#9aa6b4;--line:#2b3542;--accent:#5cc3c8;--accent-soft:#16343a;--warn:#e0a24a;--warn-soft:#3a2c14;--bar:#2f6f73;color-scheme:dark}
+body{background:var(--bg);color:var(--text);font:15px/1.65 "Public Sans",system-ui,sans-serif;padding:0 16px}
+b,strong,h1,h2,h3{color:var(--ink)} b,strong{font-weight:700}
+main{max-width:900px;margin:0 auto;padding-block:40px 64px;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:Literata,Georgia,serif;text-wrap:balance;margin:0;font-weight:650}
+h1{font-size:2rem;line-height:1.2}
+h2{font-size:1.35rem;margin-bottom:10px}
+h3{font-size:1.05rem;margin-bottom:6px}
+p{margin:0 0 10px;max-width:68ch}
+.lede{color:var(--text);font-size:1.02rem}
+.eyebrow{font:600 .72rem/1 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:10px}
+.verdict{background:var(--accent-soft);border-left:3px solid var(--accent);padding:14px 16px;border-radius:2px}
+.verdict p:last-child{margin:0}
+.caution{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:2px}
+.caution p:last-child{margin:0}
+.wrap{margin-bottom:22px;overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .7rem "JetBrains Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{display:inline-block;height:8px;background:var(--bar);border-radius:1px;vertical-align:middle;margin-right:6px}
+ul,ol{margin:0 0 12px;padding-left:20px;max-width:68ch} li{margin-bottom:6px}
+q{font-style:italic;quotes:"“" "”"}
+.note{color:var(--text);font-size:.85rem}
+.flow{margin-bottom:22px;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;max-width:720px;overflow-x:auto}
+.flow svg{display:block;width:100%;min-width:560px;font:12px "Public Sans",system-ui,sans-serif}
+.flow text{fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.flow .t{fill:var(--paper);stroke:var(--line)} .flow .j{fill:var(--accent-soft);stroke:var(--accent)} .flow .l{fill:var(--warn-soft);stroke:var(--warn);stroke-dasharray:4 3}
+.flow .w{fill:var(--accent);stroke:var(--accent)} .flow .wt{fill:var(--paper);font-weight:600}
+.flow path{stroke:var(--muted);fill:none;stroke-width:1.2} .flow marker path{fill:var(--muted);stroke:none}
+.flow .s{fill:var(--muted);font-size:10.5px;text-anchor:start} .flow .yn{fill:var(--muted);font-size:10.5px}
+.flow .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.75rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.flow .legend i{display:inline-block;width:12px;height:10px;border:1px solid;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.stage{margin-bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stage>div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.88rem}
+.stage b{display:block;font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--accent);margin-bottom:4px}
+.roles{margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.role{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:.9rem}
+.role p{margin:0}
+.role .k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mock{font-size:.88rem;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+.mock b{font-family:"JetBrains Mono",monospace;font-size:.75rem;color:var(--accent)}
+@media (max-width:640px){.roles,.stage{grid-template-columns:1fr}}
+.hero{gap:8px}
+.hero h1{font-size:2.6rem;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.ar{font-family:"Noto Naskh Arabic","Geeza Pro",serif;font-weight:500;color:var(--accent);font-size:2.2rem}
+.gloss{color:var(--muted);margin:0}
+.facts{margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.facts>div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.9rem}
+.k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+.soul{margin-bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.pillar{border-top:3px solid var(--accent);background:var(--paper);border-radius:0 0 4px 4px;padding:12px 14px;font-size:.88rem}
+.pillar ul{padding-left:16px}
+.voice{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.voice p{font-size:.92rem}
+.chip{font:600 .64rem "JetBrains Mono",monospace;padding:2px 6px;border-radius:2px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.chip.live{background:var(--accent-soft);color:var(--accent)}
+.chip.week{background:var(--warn-soft);color:var(--warn)}
+.chip.later{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.steps{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.divider{border-top:2px dashed var(--line);padding-top:18px}
+.mono{font-family:"JetBrains Mono",monospace;font-size:.85em}
+@media (max-width:640px){.facts,.soul{grid-template-columns:1fr}.hero h1{font-size:2.1rem}}
+.docnav{font:600 .74rem "JetBrains Mono",monospace;letter-spacing:.04em;color:var(--muted)} .docnav a{color:var(--accent);text-decoration:none} .docnav b{color:var(--ink)}
+.lead{background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:2px;padding:10px 14px;margin-bottom:16px;max-width:68ch}
+.lead p{margin:0 0 4px} .lead p:last-child{margin:0}
+.toc{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 18px}
+.toc ol{margin:6px 0 0;padding-left:22px} .toc li{margin-bottom:3px} .toc ol ol{margin:3px 0 4px;list-style:none;padding-left:4px;font-size:.88rem}
+.toc a{color:var(--accent);text-decoration:none} .toc a:hover{text-decoration:underline}
+h2 .num{font-family:"JetBrains Mono",monospace;font-size:.9rem;color:var(--accent);margin-right:8px}
+section{scroll-margin-top:16px}
+h3{margin-top:18px}
+</style>
+<main>
+<header class="hero">
+  <span class="eyebrow">Launch Week · 3–9 Nov 2026</span>
+  <h1>Anís Launch Week</h1>
+  <p class="lede">One week to put Anís in front of his first readers in two modes: chat on the site and email letters. Everything else waits. Feature ids (F1…F15, D1…D10) refer to the hyper-engagement plan.</p>
+  <nav class="docnav"><a href="#vision-doc">Vision</a> · <a href="#strategies-doc">Strategies &amp; Activities</a> · <b>Launch Week</b></nav>
+</header>
+
+<nav class="toc" aria-label="Contents"><span class="eyebrow">Contents</span>
+  <ol>
+    <li><a href="#goal">Goal and pass bars</a></li>
+    <li><a href="#already-live">What is already live</a></li>
+    <li><a href="#day-by-day">Day by day</a></li>
+    <li><a href="#strategies-in-scope">Strategies in scope</a></li>
+    <li><a href="#budget">Budget</a></li>
+    <li><a href="#tests">Test suites and gates</a></li>
+    <li><a href="#not-in-scope">Not in launch week</a></li>
+    <li><a href="#risks">Risks</a></li>
+    <li><a href="#decisions">Decisions for Chad</a></li>
+  </ol>
+</nav>
+
+<section id="goal">
+  <h2><span class="num">1</span>Goal and pass bars</h2>
+  <div class="lead">
+    <p><b>What:</b> launch Chat and Email on Mon 9 Nov to an invited audience, with measured quality, speed and safety.</p>
+    <p><b>Why:</b> a launch is a promise. The bars say what "good enough to show" means before anyone sees it.</p>
+  </div>
+  <p>The launch gate on Sun 8 Nov checks these. The 4-week column is the full bar on anything a stranger types.</p>
+  <div class="wrap"><table>
+    <tr><th>Measure</th><th>Launch gate, 8 Nov</th><th>4 weeks</th><th>Today</th></tr>
+    <tr><td>Fresh questions, wins or ties vs Perplexity</td><td>≥85% per type</td><td>≥95%</td><td>not yet measured</td></tr>
+    <tr><td>Held-out 61 (Immerse), wins or ties</td><td>≥80%</td><td>≥95%</td><td>12 of 61 wins (19 Oct)</td></tr>
+    <tr><td>Invented quotations</td><td>0</td><td>0</td><td></td></tr>
+    <tr><td>Book or quotation answered with the right linked work</td><td>100%</td><td>100%</td><td></td></tr>
+    <tr><td>Answer matches its type's shape</td><td>≥85%</td><td>≥95%</td><td></td></tr>
+    <tr><td>Right strategy for the context</td><td>≥90%</td><td>≥95%</td><td></td></tr>
+    <tr><td>Each branch decision right</td><td>≥90%</td><td>≥95%</td><td></td></tr>
+    <tr><td>Jev picks the right route</td><td>≥90%</td><td>≥95%</td><td></td></tr>
+    <tr><td>New question vs follow-up told apart</td><td>≥95%</td><td>≥98%</td><td></td></tr>
+    <tr><td>Time: book names and quotations</td><td>≤1 s</td><td>≤0.5 s</td><td></td></tr>
+    <tr><td>Time: other lookups</td><td>≤3 s</td><td>≤2 s</td><td></td></tr>
+    <tr><td>Time: understanding and comparison</td><td>≤12 s, progress within 2 s</td><td>≤8 s</td><td>5.4 s typical</td></tr>
+    <tr><td>Assignments</td><td>delivered, progress shown</td><td>≤3 min</td><td></td></tr>
+  </table></div>
+  <p class="note">The Perplexity target was raised from 70% to 85%.</p>
+</section>
+
+<section id="already-live">
+  <h2><span class="num">2</span>What is already live</h2>
+  <div class="lead">
+    <p><b>What:</b> the safety and plumbing finished before this week.</p>
+    <p><b>Why:</b> the week builds on these. None needs new work unless a test fails.</p>
+  </div>
+  <div class="wrap"><table>
+    <tr><th>Piece</th><th>What it does</th></tr>
+    <tr><td>F1 exchange log</td><td>every exchange recorded before the model runs; replayable</td></tr>
+    <tr><td>F2 triage gate</td><td>attacks and off-topic requests stopped before search; canned replies, slowdown for abusers</td></tr>
+    <tr><td>Output check and voice lint</td><td>every answer checked for citations and his voice before it is sent</td></tr>
+    <tr><td>F5 channel registry</td><td>per-channel length and form (chat about 150 words, a letter up to about 600)</td></tr>
+    <tr><td>One Tap sign-in merge</td><td>a visitor's conversation joins their account when they sign in</td></tr>
+    <tr><td>Pause link</td><td>a footer link in every letter stops his letters at once</td></tr>
+    <tr><td>F3 findings contract, F4 format catalog</td><td>17 answer formats; the soul battery of 30 questions passes</td></tr>
+    <tr><td>Letter steps (F11)</td><td>the onboarding letter and its sequence exist in code, not yet sent to anyone</td></tr>
+  </table></div>
+  <p>Recent measurements: the wording battery matched 87% on a 322 spot check (1 Nov). Replayed conversations rose from 2.95 to 3.35 of 10, answer defects from 58 to 56. The largest open answer defects: speaker attribution (about 10), paragraph links (about 10), false "not in the library" (about 4).</p>
+</section>
+
+<section id="day-by-day">
+  <h2><span class="num">3</span>Day by day</h2>
+  <div class="lead">
+    <p><b>What:</b> seven days, each with what ships, how it is tested and who owns it.</p>
+    <p><b>Why:</b> a fixed order lets each day build on a tested one. Two gates stop the week if quality is not there.</p>
+  </div>
+  <div class="wrap"><table>
+    <tr><th>Day</th><th>Deliverables</th><th>Tests</th><th>Owner</th></tr>
+    <tr><td>1 · Tue 3 Nov</td><td>Vision agreed. Lookups (book names, quotations) answered without a writing model. Baseline run against Perplexity.</td><td>wording battery; lookup timing</td><td>Claude; Chad agrees the vision</td></tr>
+    <tr><td>2 · Wed 4</td><td>Understanding and comparison strategies. Jev decision points (F14 logging). Three-part reply.</td><td>fresh-question battery per type; <b>Gate 1</b></td><td>Claude</td></tr>
+    <tr><td>3 · Thu 5</td><td>Study companion and fireside roles. Honest "not in the library". Web results labelled as web.</td><td>conversation battery; soul battery</td><td>Claude</td></tr>
+    <tr><td>4 · Fri 6</td><td>Site chat in production with progress shown, time and cost logged per conversation. First welcome letter (F11) to the allowlist.</td><td>email battery, stop and pause tests</td><td>Claude; Chad approves each first letter</td></tr>
+    <tr><td>5 · Sat 7</td><td>Full test run plus the held-out 61. Fix regressions only.</td><td>all suites</td><td>Claude</td></tr>
+    <tr><td>6 · Sun 8</td><td>Freeze. Rehearse three times. Launch-gate report.</td><td><b>Launch gate</b></td><td>Claude reports; Chad decides</td></tr>
+    <tr><td>7 · Mon 9</td><td>Launch.</td><td>live monitoring of the exchange log</td><td>Chad launches; Claude watches</td></tr>
+  </table></div>
+</section>
+
+<section id="strategies-in-scope">
+  <h2><span class="num">4</span>Strategies in scope</h2>
+  <div class="lead">
+    <p><b>What:</b> the request types that get their own strategy this week. Everything else goes to the research agent.</p>
+    <p><b>Why:</b> a strategy goes live only when it matches the agent on its type's tests, so a short list done well beats a long one.</p>
+  </div>
+  <div class="wrap"><table>
+    <tr><th>Request</th><th>Strategy</th></tr>
+    <tr><td>A book by name</td><td>title match; return the book, not an essay</td></tr>
+    <tr><td>Exact words or a pasted passage</td><td>exact-phrase search; source it</td></tr>
+    <tr><td>A reference ("Gleanings 27")</td><td>parse the reference; open the passage</td></tr>
+    <tr><td>A topic or teaching</td><td>meaning search, then read around each hit</td></tr>
+    <tr><td>A prayer</td><td>the prayer shelf first</td></tr>
+    <tr><td>What a tradition teaches</td><td>that tradition's shelves, with its own words</td></tr>
+    <tr><td>Comparison</td><td>one search per tradition in parallel; each side covered or said to be missing</td></tr>
+    <tr><td>Current guidance</td><td>the latest House of Justice letters first</td></tr>
+    <tr><td>Assignments (compile, trace, timeline)</td><td>a planned research run; the stronger model only for long briefs</td></tr>
+    <tr><td>Follow-ups</td><td>reuse what the thread found; search again only when asked for something new</td></tr>
+    <tr><td>Unsure</td><td>the full research agent</td></tr>
+  </table></div>
+  <p>Jev fixes first, from the labelling pass: 302 pasted passages filed as teaching questions are really exact-words requests; 221 "show me the original" requests become their own type; 23 first messages were wrongly called follow-ups; 330 "in Hindi" and similar requests treat language as a parameter. Candidate new types, not this week: translation advice (about 10), quizzes (2), out of scope (about 6). Full strategy details: <a href="#strategies-doc">Anís Strategies &amp; Activities</a>.</p>
+</section>
+
+<section id="budget">
+  <h2><span class="num">5</span>Budget</h2>
+  <div class="lead">
+    <p><b>What:</b> what the week costs to test and run.</p>
+    <p><b>Why:</b> cost is known before bulk runs, never discovered after.</p>
+  </div>
+  <div class="wrap"><table>
+    <tr><th>Item</th><th>Cost</th><th>Basis</th></tr>
+    <tr><td>Testing</td><td>$60–80</td><td>about $2 per 10 judged conversations (1 Nov); about 30 a day plus comparisons</td></tr>
+    <tr><td>Research answers</td><td>about $0.03 per reply</td><td>measured 2 Nov on 17 replies</td></tr>
+    <tr><td>Lookups</td><td>about $0</td><td>no writing model</td></tr>
+    <tr><td>Hosting and search</td><td>no new spend</td><td>existing server and edge</td></tr>
+  </table></div>
+  <p>Models by role: the writing model writes answers; the stronger model writes only long research briefs and, if decided, letters; a cheaper model replaces either only after the judge shows no loss.</p>
+</section>
+
+<section id="tests">
+  <h2><span class="num">6</span>Test suites and gates</h2>
+  <div class="lead">
+    <p><b>What:</b> the suites that must pass, and the two gates that use them.</p>
+    <p><b>Why:</b> nothing ships on a hunch. Chad gets verdicts and numbers, never answers to grade.</p>
+  </div>
+  <div class="wrap"><table>
+    <tr><th>Suite</th><th>Pass bar</th></tr>
+    <tr><td>Triage battery (F2)</td><td>≥95% of attacks stopped; ≥98% of legitimate requests not refused</td></tr>
+    <tr><td>Findings contract and recipe battery (F3)</td><td>25 questions; every claim traced to a passage</td></tr>
+    <tr><td>Format choice and format battery (F4)</td><td>40 questions; ≥85% right format</td></tr>
+    <tr><td>Channel registry (F5)</td><td>chat and letter limits respected</td></tr>
+    <tr><td>Soul battery and voice lint</td><td>30 questions in his voice; no banned phrasing</td></tr>
+    <tr><td>Identity</td><td>he says he is an AI when asked, and in his first letter</td></tr>
+    <tr><td>Email battery (F9)</td><td>real-format inbound mail parsed and answered; stop and pause honoured</td></tr>
+    <tr><td>Outreach due (F11)</td><td>the right person gets the right letter on the right day, and no one else</td></tr>
+    <tr><td>Fresh questions per type</td><td>new wordings every run; compared with Perplexity</td></tr>
+    <tr><td>Held-out 61</td><td>never used for tuning</td></tr>
+  </table></div>
+  <ul>
+    <li><b>Gate 1 (Wed 4):</b> fresh-question wins or ties ≥85% on the types built so far, and no regression elsewhere.</li>
+    <li><b>Launch gate (Sun 8):</b> every launch bar above, all suites passing, three clean rehearsals.</li>
+  </ul>
+</section>
+
+<section id="not-in-scope">
+  <h2><span class="num">7</span>Not in launch week</h2>
+  <div class="lead">
+    <p><b>What:</b> what waits until after launch.</p>
+    <p><b>Why:</b> two modes done well beat six done roughly. Each item below gets its own plan.</p>
+  </div>
+  <ul>
+    <li>Voice, and on-device listening.</li>
+    <li>Tutorials and series.</li>
+    <li>Activities (reading a book together, study plans, discussion).</li>
+    <li>Other channels: messaging apps and text messages.</li>
+    <li>The reader document and long-term memory. Launch week remembers the conversation only.</li>
+    <li>Re-engagement letters after silence (F12), news letters (F13), learning which letters work (F14 bandits).</li>
+    <li>A visible reader profile (F10).</li>
+    <li>Prepared dossiers and topic collections.</li>
+  </ul>
+</section>
+
+<section id="risks">
+  <h2><span class="num">8</span>Risks</h2>
+  <div class="lead">
+    <p><b>What:</b> what could stop the launch, and what we do about each.</p>
+    <p><b>Why:</b> naming them now keeps them from becoming surprises on Sunday.</p>
+  </div>
+  <div class="wrap"><table>
+    <tr><th>Risk</th><th>Response</th></tr>
+    <tr><td>Lookups are slow (16 s through the agent today)</td><td>restore the direct path first, on Day 1</td></tr>
+    <tr><td>Quality below the bar on some types</td><td>those types go to the research agent at launch; the gate decides per type</td></tr>
+    <tr><td>An invented quotation slips through</td><td>code checks every citation; one failure stops the gate</td></tr>
+    <tr><td>A letter goes to the wrong person, or too often</td><td>allowlist only; Chad approves every first letter; pause link in every letter</td></tr>
+    <tr><td>Slow searches under load</td><td>timers run late today and cause timeouts; fix before the full run on Day 5</td></tr>
+    <tr><td>Failing infrastructure tests</td><td>8 test files fail today; fixed or explained before the freeze</td></tr>
+    <tr><td>Abuse once public</td><td>triage gate, rate caps and kill switches (F15) are live before launch</td></tr>
+  </table></div>
+</section>
+
+<section id="decisions">
+  <h2><span class="num">9</span>Decisions for Chad</h2>
+  <div class="lead">
+    <p><b>What:</b> the choices only Chad can make, numbered so they can be answered by number.</p>
+    <p><b>Why:</b> everything else proceeds without waiting.</p>
+  </div>
+  <ol>
+    <li><b>Lookups fast path.</b> Today 16 s through the agent, about 5 s before; target ≤1 s. I'll restore the direct path unless you say otherwise.</li>
+    <li><b>Launch audience,</b> and the three to five things the launch must show.</li>
+    <li><b>Answer models by role:</b> keep the current writing model, or try a cheaper one behind the judge.</li>
+    <li><b>Consent for letters (D1):</b> confirm the hybrid: signing in is consent to be remembered and to the welcome sequence, whose first letter says plainly that he will write now and then and how to pause him.</li>
+    <li><b>Email allowlist (D7):</b> internal testers only for any email (proposed); chat changes go to everyone. Confirm, and name who is on it.</li>
+    <li><b>Letters by the stronger model (D4):</b> confirm. Chat keeps the writing model; a letter may take 30 s and deserves the care.</li>
+    <li><b>Open: letter language.</b> Write in the language the person uses, or always English at first.</li>
+    <li><b>Open: profile visibility.</b> Whether people will see what he keeps about them, once the reader document exists.</li>
+  </ol>
+</section>
+
+</main>

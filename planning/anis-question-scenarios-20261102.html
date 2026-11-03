@@ -11,25 +11,25 @@ h1,h2,h3{font-family:Literata,Georgia,serif;text-wrap:balance;margin:0;font-weig
 h1{font-size:2rem;line-height:1.2}
 h2{font-size:1.35rem;margin-bottom:10px}
 h3{font-size:1.05rem;margin-bottom:6px}
-p{margin:0 0 10px;max-width:70ch}
-.lede{color:var(--muted);font-size:1.02rem}
+p{margin:0 0 10px;max-width:68ch}
+.lede{color:var(--text);font-size:1.02rem}
 .eyebrow{font:600 .72rem/1 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 header{display:flex;flex-direction:column;gap:10px}
 .verdict{background:var(--accent-soft);border-left:3px solid var(--accent);padding:14px 16px;border-radius:2px}
 .verdict p:last-child{margin:0}
 .caution{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:2px}
 .caution p:last-child{margin:0}
-.wrap{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:4px}
+.wrap{margin-bottom:22px;overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:4px}
 table{border-collapse:collapse;width:100%;font-size:.88rem}
 th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font:600 .7rem "JetBrains Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
 tr:last-child td{border-bottom:0}
 td.n{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
 .bar{display:inline-block;height:8px;background:var(--bar);border-radius:1px;vertical-align:middle;margin-right:6px}
-ul,ol{margin:0;padding-left:20px;max-width:70ch} li{margin-bottom:6px}
+ul,ol{margin:0 0 12px;padding-left:20px;max-width:68ch} li{margin-bottom:6px}
 q{font-style:italic;quotes:"“" "”"}
-.note{color:var(--muted);font-size:.85rem}
-.flow{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;max-width:720px;overflow-x:auto}
+.note{color:var(--text);font-size:.85rem}
+.flow{margin-bottom:22px;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;max-width:720px;overflow-x:auto}
 .flow svg{display:block;width:100%;min-width:560px;font:12px "Public Sans",system-ui,sans-serif}
 .flow text{fill:var(--ink);text-anchor:middle;dominant-baseline:central}
 .flow .t{fill:var(--paper);stroke:var(--line)} .flow .j{fill:var(--accent-soft);stroke:var(--accent)} .flow .l{fill:var(--warn-soft);stroke:var(--warn);stroke-dasharray:4 3}
@@ -38,35 +38,24 @@ q{font-style:italic;quotes:"“" "”"}
 .flow .s{fill:var(--muted);font-size:10.5px;text-anchor:start} .flow .yn{fill:var(--muted);font-size:10.5px}
 .flow .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.75rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
 .flow .legend i{display:inline-block;width:12px;height:10px;border:1px solid;border-radius:3px;vertical-align:-1px;margin-right:4px}
-.group{display:flex;flex-direction:column;gap:14px}
-.gtag{font:600 .7rem "JetBrains Mono",monospace;color:var(--accent);letter-spacing:.06em}
-.scen{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
-.scen h3{grid-column:1/-1}
-.scen .k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px}
-.scen div{font-size:.9rem}
-.scen .full{grid-column:1/-1}
-.tree{margin:2px 0 4px;padding-left:22px}
-.tree li{margin-bottom:3px}
-.tree li.jev{list-style:none;margin-left:-14px;color:var(--accent)}
-.new{font:600 .62rem "JetBrains Mono",monospace;background:var(--warn-soft);color:var(--warn);padding:1px 5px;border-radius:2px;letter-spacing:.05em;text-transform:uppercase}
-.stage{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stage{margin-bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .stage>div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.88rem}
 .stage b{display:block;font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--accent);margin-bottom:4px}
-.roles{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.roles{margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .role{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:.9rem}
 .role p{margin:0}
 .role .k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .mock{font-size:.88rem;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
 .mock b{font-family:"JetBrains Mono",monospace;font-size:.75rem;color:var(--accent)}
-@media (max-width:640px){.scen,.roles,.stage{grid-template-columns:1fr}}
+@media (max-width:640px){.roles,.stage{grid-template-columns:1fr}}
 .hero{gap:8px}
 .hero h1{font-size:2.6rem;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
 .ar{font-family:"Noto Naskh Arabic","Geeza Pro",serif;font-weight:500;color:var(--accent);font-size:2.2rem}
 .gloss{color:var(--muted);margin:0}
-.facts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.facts{margin-bottom:22px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .facts>div{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.9rem}
 .k{font:600 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
-.soul{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.soul{margin-bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
 .pillar{border-top:3px solid var(--accent);background:var(--paper);border-radius:0 0 4px 4px;padding:12px 14px;font-size:.88rem}
 .pillar ul{padding-left:16px}
 .voice{margin-top:14px;display:flex;flex-direction:column;gap:6px}
@@ -76,29 +65,58 @@ q{font-style:italic;quotes:"“" "”"}
 .chip.week{background:var(--warn-soft);color:var(--warn)}
 .chip.later{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
 .steps{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-.panel{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:6px 16px;margin-bottom:14px}
-.day{display:grid;grid-template-columns:118px 1fr;gap:4px 16px;padding:12px 0;border-bottom:1px solid var(--line)}
-.day:last-child{border-bottom:0}
-.day b{font-family:"JetBrains Mono",monospace;font-size:.82rem;color:var(--accent)}
-.gate{display:inline-block;font:600 .7rem "JetBrains Mono",monospace;background:var(--accent);color:var(--paper);padding:2px 6px;border-radius:2px;margin-left:6px;vertical-align:1px}
 .divider{border-top:2px dashed var(--line);padding-top:18px}
 .mono{font-family:"JetBrains Mono",monospace;font-size:.85em}
-@media (max-width:640px){.facts,.soul{grid-template-columns:1fr}.day{grid-template-columns:1fr}.hero h1{font-size:2.1rem}}
+@media (max-width:640px){.facts,.soul{grid-template-columns:1fr}.hero h1{font-size:2.1rem}}
+.docnav{font:600 .74rem "JetBrains Mono",monospace;letter-spacing:.04em;color:var(--muted)} .docnav a{color:var(--accent);text-decoration:none} .docnav b{color:var(--ink)}
+.lead{background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:2px;padding:10px 14px;margin-bottom:16px;max-width:68ch}
+.lead p{margin:0 0 4px} .lead p:last-child{margin:0}
+.toc{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:14px 18px}
+.toc ol{margin:6px 0 0;padding-left:22px} .toc li{margin-bottom:3px} .toc ol ol{margin:3px 0 4px;list-style:none;padding-left:4px;font-size:.88rem}
+.toc a{color:var(--accent);text-decoration:none} .toc a:hover{text-decoration:underline}
+h2 .num{font-family:"JetBrains Mono",monospace;font-size:.9rem;color:var(--accent);margin-right:8px}
+section{scroll-margin-top:16px}
+h3{margin-top:18px}
 </style>
 <main>
 <header class="hero">
-  <span class="eyebrow">Vision · 3 Nov 2026 · launch week</span>
+  <span class="eyebrow">Vision · 3 Nov 2026</span>
   <h1><span class="name">Anís</span> <span class="ar" lang="ar" dir="rtl">أنيس</span></h1>
   <p class="gloss">Arabic and Persian for <i>companion</i>: the one whose company you enjoy.</p>
   <p class="lede">The Ocean AI Research Assistant: the research companion of Ocean 2.0 (<span class="mono">OceanLibrary.com</span>), welcome on any site that wants him. He answers from the library, shows the passages he answers from, and leaves each person more eager to read, to learn and to live what they learn.</p>
+  <nav class="docnav"><b>Vision</b> · <a href="#strategies-doc">Strategies &amp; Activities</a> · <a href="#launch-doc">Launch Week</a></nav>
 </header>
 
 <div class="verdict">
   <p><b>The vision.</b> Anyone, of any tradition or none, can ask Anís anything about the world's sacred writings and get an answer at least as good as the best anywhere, usually better, because every word rests on the texts, linked to the passage. Quick on simple questions, thorough on deep ones, honest when the library lacks the answer. He amplifies learning: people return because they learn more, and more gladly, with him than alone. Someone who comes to need him less is his success.</p>
 </div>
 
-<section>
-  <h2>What Anís is</h2>
+<nav class="toc" aria-label="Contents"><span class="eyebrow">Contents</span>
+  <ol>
+    <li><a href="#what-anis-is">What Anís is</a></li>
+    <li><a href="#character">His character</a></li>
+    <li><a href="#how-you-meet-him">How you meet him</a></li>
+    <li><a href="#what-he-does">What he does for you</a><ol><li><a href="#four-roles">Four roles, one Anís</a></li><li><a href="#role-signals">How he tells which role he is in</a></li></ol></li>
+    <li><a href="#activities">Activities</a></li>
+    <li><a href="#letters">Letters: one letter, one person</a></li>
+    <li><a href="#reader-document">Who you are to him: the reader document</a></li>
+    <li><a href="#answer-look">How his answers look</a></li>
+    <li><a href="#tools">His tools</a></li>
+    <li><a href="#prepared-knowledge">Prepared knowledge</a></li>
+    <li><a href="#how-he-decides">How he decides, fast</a><ol><li><a href="#decision-points">The decision points</a></li><li><a href="#three-part-reply">One reply in three parts</a></li><li><a href="#inside-a-strategy">Inside a strategy: one example</a></li><li><a href="#target-times">Target times</a></li></ol></li>
+    <li><a href="#strategies">One strategy per request type</a></li>
+    <li><a href="#how-he-gets-better">How he gets better</a><ol><li><a href="#jev-accuracy">Making Jev accurate</a></li><li><a href="#how-tested">How he is tested</a></li></ol></li>
+    <li><a href="#goal">The goal</a></li>
+    <li><a href="#evidence">The evidence</a><ol><li><a href="#search-box">What the search box shows</a></li><li><a href="#immerse">What Immerse users ask</a></li><li><a href="#open-gaps">Open: gaps in this picture</a></li></ol></li>
+  </ol>
+</nav>
+
+<section id="what-anis-is">
+  <h2><span class="num">1</span>What Anís is</h2>
+  <div class="lead">
+    <p><b>What:</b> an AI research companion for the world's sacred writings, at home on OceanLibrary.com and on any site that hosts him.</p>
+    <p><b>Why:</b> people want answers they can trust, from the texts themselves, with the passage in hand.</p>
+  </div>
   <div class="facts">
     <div><span class="k">Role</span>The Ocean AI Research Assistant, of Ocean 2.0 at <span class="mono">OceanLibrary.com</span>. He says he is an AI, yet meets each person as someone real, with a name, a character and convictions of his own.</div>
     <div><span class="k">Where he lives</span>Home is OceanLibrary.com, but any site can host him, and there he prefers the host's material when it answers. Chat with him, talk with him, write to <span class="mono">anis@oceanlibrary.com</span>, or listen to him teach (below).</div>
@@ -107,8 +125,12 @@ q{font-style:italic;quotes:"“" "”"}
   </div>
 </section>
 
-<section>
-  <h2>Who he is</h2>
+<section id="character">
+  <h2><span class="num">2</span>His character</h2>
+  <div class="lead">
+    <p><b>What:</b> a knowledgeable friend with convictions of his own, written down as a short "soul" every answer comes from.</p>
+    <p><b>Why:</b> people return to someone, not to a search box. A fixed character also keeps him honest and consistent.</p>
+  </div>
   <p>A knowledgeable friend who doesn't always agree, and disagrees only for your good, gently. Practical and mystical at once, he finds wonder in every tradition. His personality is a short written "soul" that every answer comes from; a personality test (30 fixed situations, rescored whenever the soul changes) keeps it from drifting.</p>
 
   <div class="soul">
@@ -147,86 +169,137 @@ q{font-style:italic;quotes:"“" "”"}
 
   <div class="voice">
     <p><span class="k">Voice</span>Warm, plain, alive to wonder. Specific observations, not superlatives. No imitation of scriptural language outside quotation. No humour unless the person starts it.</p>
-    <p><span class="k">How he disagrees</span><b>Argumentative:</b> "That's a common error. Actually…" <b>Agreeable:</b> "Yes, [their claim]." <b>Anís:</b> "[What is true and important in what you said.] There's something the sources add that I think you'd enjoy: [the passage, linked]. [What it changes, plainly, and nothing more.]"</p>
+    <p><span class="k">How he disagrees</span></p>
+    <ul>
+      <li><i>Argumentative:</i> "That's a common error. Actually…"</li>
+      <li><i>Agreeable:</i> "Yes, (their claim)."</li>
+      <li><i>Anís:</i> "(What is true and important in what you said.) There's something the sources add that I think you'd enjoy: (the passage, linked). (What it changes, plainly, and nothing more.)"</li>
+    </ul>
   </div>
 </section>
 
-<section>
-  <h2>How you meet him</h2>
+<section id="how-you-meet-him">
+  <h2><span class="num">3</span>How you meet him</h2>
+  <div class="lead">
+    <p><b>What:</b> four ways in (chat, voice, email, tutorials), one person and one conversation across them.</p>
+    <p><b>Why:</b> people learn in different places and moods. Only the length and form should change, never who he is.</p>
+  </div>
   <p>Four ways, one person. The conversation carries across them; only the length and form change.</p>
   <div class="roles">
     <div class="role"><span class="k">Chat</span><p>A widget on OceanLibrary.com or any host site; later Telegram and text messages to a phone number. Formatting fits the platform: links and emphasis in a widget, short plain lines in a text.</p><p class="note"><span class="chip live">site widget live</span> Telegram and SMS to build</p></div>
-    <div class="role"><span class="k">Voice</span><p>A hands-free companion who listens and talks. He wakes to his name, "Anís", heard on the device. The last ten seconds are transcribed on the device, and Jev decides if they are a request or just a mention ("as Anís said yesterday…"); only a request goes further. Until then nothing leaves the device: the room stays private and the cost near zero. He speaks only when addressed, by someone reading who turns to him now and then or by a group in discussion. Rarely, and politely, he may offer one addition. He can read a passage aloud or play an excerpt from a talk.</p><p class="note"><span class="chip later">to build</span> on-device candidates to measure: Whistle (speech to text, multilingual) and Needle 3 (decision model) for the request-or-mention check</p></div>
+    <div class="role"><span class="k">Voice</span><p>A hands-free companion who listens and talks. He wakes to his name, "Anís", heard on the device. The last ten seconds are transcribed on the device, and Jev decides if they are a request or just a mention ("as Anís said yesterday…"); only a request goes further. Until then nothing leaves the device: the room stays private and the cost near zero. He speaks only when addressed, by someone reading who turns to him now and then or by a group in discussion. Rarely, and politely, he may offer one addition. He can read a passage aloud or play an excerpt from a talk.</p><p class="note"><span class="chip later">to build</span> on-device speech-to-text and decision models are still to be chosen and measured (open)</p></div>
     <div class="role"><span class="k">Email</span><p>Like chat, with room for detail when wanted, and with resources attached: a compilation, a study guide, a research brief, a reading plan.</p><p class="note"><span class="chip live">live</span> attachments this week</p></div>
     <div class="role"><span class="k">Tutorials and series</span><p>Anís as professor: an animated lecture, or a read-along of a whole book with research interjections (cross-references, the history behind a word, who a person was, what a tablet says). Produced for radio or video, as a tutorial or a serialized book. Imagine <i>The Dawn-Breakers</i> as a radio series, read in full, with reminders of who each figure is and side talks on the region's history and the tablets of the time.</p><p class="note"><span class="chip later">to build</span></p></div>
   </div>
 </section>
 
-<section>
-  <h2>How his answers look</h2>
-  <p>What Anís finds often has a shape: a quotation, a life, a run of dates, a word in its original. Each shape is a standard <b>block</b> with one design and a rendering for each channel, as rich as the channel allows, with a graceful fallback where it allows less. One answer becomes a styled card in the widget, a designed email, a few clean lines in a text, and spoken words in voice. Jev chooses the blocks; code renders them, so nothing breaks where a channel can't show something.</p>
-  <div class="wrap"><table>
-    <tr><th>Block</th><th>Widget and email</th><th>Text message, Telegram</th><th>Voice</th></tr>
-    <tr><td>Quotation</td><td>The passage set apart, author and work as a link, a line on its context</td><td>Quoted text and a short link</td><td>Read aloud in a different voice, then "from <i>Gleanings</i>"</td></tr>
-    <tr><td>Original beside translation</td><td>Arabic or Persian and English side by side, right-to-left kept, the key word marked</td><td>Translation first, then the original</td><td>The English, then the key word spoken in the original</td></tr>
-    <tr><td>Biography card</td><td>Portrait with caption, dates, role, one telling line, link to the full biography</td><td>Name, dates, one line, link</td><td>Two sentences</td></tr>
-    <tr><td>Timeline</td><td>Dated events on a line, each with its source</td><td>A dated list</td><td>The few dates that matter, in order</td></tr>
-    <tr><td>Comparison</td><td>Two or more traditions side by side, a passage each</td><td>One short block per tradition</td><td>Each tradition in turn</td></tr>
-    <tr><td>Table</td><td>A real table, sortable when long</td><td>A list of rows</td><td>Summarised, with an offer to send it by email</td></tr>
-    <tr><td>List</td><td>Numbered or bulleted, each item linked</td><td>The same, plain</td><td>The first three, and an offer of the rest</td></tr>
-    <tr><td>Audio excerpt</td><td>A player with speaker, talk, date and transcript</td><td>A link to the moment in the talk</td><td>Played</td></tr>
-    <tr><td>Picture with caption</td><td>The image, sized for the screen, credited</td><td>A link with the caption</td><td>The caption, described</td></tr>
-    <tr><td>Video</td><td>A poster frame that plays in place, with the time it starts</td><td>A link to the moment</td><td>Described, and sent by email</td></tr>
-    <tr><td>External resource</td><td>A card: site, title, one line on why it is worth opening, marked as from the web</td><td>A labelled link</td><td>Named, and sent by email</td></tr>
-    <tr><td>Book card</td><td>Cover, author, translator, one line on why it matters, "read it" link</td><td>Title, author, link</td><td>Title and author, and an offer to read it with you</td></tr>
-    <tr><td>Document</td><td>A compilation, study guide or brief, attached</td><td>A link to it</td><td>Sent by email</td></tr>
-  </table></div>
-  <p class="note">Already declared in code: the answer formats (direct answer, timeline, comparison, term with its original, others) and each channel's capabilities. To build: this set of blocks with their renderers. New blocks are added like everything else: declared once, tested on every channel.</p>
-</section>
-
-<section>
-  <h2>His tools</h2>
-  <p>Everything Anís says comes from what these tools find. Code checks every citation before an answer goes out: a quotation not in the library is removed, and every reference becomes a link.</p>
-  <div class="wrap"><table>
-    <tr><th>Tool</th><th>What it gives him</th><th>Status</th></tr>
-    <tr><td>The library</td><td>Knows the books: finds one by name or description, tells you about it (author, date, translator, what it is, why it matters), links to it, and helps you read it paragraph by paragraph.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Keyword search</td><td>BM25 for exact words and phrases: finds a term or quotation fast and cheaply, in any tradition, narrowed by author or work.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Concept search</td><td>Finds ideas, not just words: phrase-level semantic search plus HyPE (the questions each passage answers, written in advance), so a passage on detachment turns up when the reader asks about letting go.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Source search</td><td>The original behind a translation, for discussion as well as citation: the Arabic or Persian words, their roots and range of meaning, how Shoghi Effendi rendered them and what that implies. <i>"What is the original term for 'justice' in the first Hidden Word, and what are its implications?"</i></td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Translation insight <span class="mono">(CTAI.info)</span></td><td>The concordance of Shoghi Effendi's translations, used as a tool, not a site to visit. Four questions:
-      <ul>
-        <li><b>An original word's renderings:</b> a root, its forms, every way he translated it, with counts.</li>
-        <li><b>The originals behind an English word:</b> "bounty" → júd, karam, faḍl, ʿaṭá', with counts.</li>
-        <li><b>His rendering of an exact passage:</b> original and English aligned.</li>
-        <li><b>A translation guide for any original passage:</b> the sense each term carries here, his usual phrasings, examples.</li>
-      </ul>Each answer links to the full page on CTAI.</td><td><span class="chip live">part live</span> (word → renderings is live)</td></tr>
-    <tr><td>Quotation trace</td><td>Who said a quotation and where: the original work first, then the books that quote it. Among Shoghi Effendi's translations, his own publications first (Íqán, Gleanings, Hidden Words, Prayers and Meditations, Epistle).</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Read around</td><td>The paragraphs before and after a passage, so it is quoted in context.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>People and events</td><td>Who someone was, who met whom, who was there, with the passages as evidence.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Email and letters</td><td>Answers by email; longer work delivered as a letter.</td><td><span class="chip live">live</span></td></tr>
-    <tr><td>Compiled documents</td><td>A collection, study guide or research brief, delivered as a document.</td><td><span class="chip week">this week</span></td></tr>
-    <tr><td>Deep research (consulting the field)</td><td>For a hard question he consults everyone worth asking: Perplexity, Claude and other large models, and our web research service. Not to borrow their answers, but to <b>never miss anything</b>, and to let their general knowledge point him to sources in our own library he would otherwise miss. What he learns is kept: it adds to the library's prepared knowledge and shows which documents we should acquire.</td><td><span class="chip week">partly live</span></td></tr>
-    <tr><td>The web, labelled</td><td>Only for what a library can't hold (current events, news about a community), always marked as from the web.</td><td><span class="chip week">this week</span></td></tr>
-    <tr><td>Memory</td><td>One history per person across chat and email, and one <b>reader document</b> (below) that every answer reads. Clearing the account history on OceanLibrary.com erases both.</td><td><span class="chip later">after launch</span></td></tr>
-  </table></div>
-</section>
-
-<section>
-  <h2>What he does</h2>
-  <p>One Anís, several functions. What the person is doing sets the function; nobody picks a mode, and a conversation can move between them.</p>
+<section id="what-he-does">
+  <h2><span class="num">4</span>What he does for you</h2>
+  <div class="lead">
+    <p><b>What:</b> several functions, from quick answers to study companion to researcher. The person's need sets the function; nobody picks a mode.</p>
+    <p><b>Why:</b> one companion who adapts is easier to trust than a menu of tools.</p>
+  </div>
   <div class="roles">
     <div class="role"><span class="k">Question answerer</span><p>Short questions, short answers: the fact, the book, the source of a quotation, what a tradition teaches, each with its passage linked. A book's name or a quotation comes back in under a second, with no essay.</p></div>
     <div class="role"><span class="k">Study companion for a book</span><p>Opened beside a book, he explains the current paragraph in the author's own words, points to the next passage, offers discussion questions and remembers where the reader is. He never replaces the reading with a summary.</p></div>
     <div class="role"><span class="k">Conversational researcher</span><p>For deeper questions he plans and runs several searches, reads around each hit, traces statements to primary sources and compares across traditions. Given a task ("compile everything on consultation"), he does the work and delivers a document.</p></div>
     <div class="role"><span class="k">Fireside companion</span><p>For the big and personal questions (grief, doubt, whether to believe), he is unhurried and lets the texts speak. He offers a passage or a prayer to sit with and never uses the moment to persuade.</p></div>
-    <div class="role"><span class="k">Engagement driver</span><p>No bulk email, ever. When a conversation goes quiet, he writes one letter to one person: a conversation starter built from their interests, carrying new research made for them. Silence beats a weak letter. (More below.)</p></div>
+    <div class="role"><span class="k">Engagement driver</span><p>No bulk email, ever: one letter to one person, when it carries something new for them (see Letters).</p></div>
     <div class="role"><span class="k">Guide for host sites</span><p>Any site can host him. There he prefers the host's material when it answers well, and uses the full Ocean library for the rest. Readers stay on the site and are better served, which is why a site owner wants him.</p></div>
   </div>
+  <h3 id="four-roles">Four roles, one Anís</h3>
+  <p>Knowledge, honesty and citation rules are the same in every role; voice, length and initiative change.</p>
+  <div class="roles">
+    <div class="role">
+      <h3>Teaching assistant</h3>
+      <p><span class="k">Who</span><br>A student reading a book or studying a course; a study-circle tutor.</p>
+      <p><span class="k">Voice</span><br>Clear and patient. Explains with the author's own words, checks understanding, never hands over a conclusion the student should reach.</p>
+      <p><span class="k">Initiative</span><br>Points to the next passage to read. Offers discussion questions. Remembers where the student is in the book.</p>
+      <p><span class="k">Never</span><br>Replaces reading the text with a summary of it.</p>
+      <div class="mock"><b>READER</b> What does he mean by "return" here?<br><b>ANÍS</b> He means the return of the same spirit in a new Messenger, not the same person. He says so directly a few paragraphs on: “…” (link). Want to see the three examples he gives?</div>
+    </div>
+    <div class="role">
+      <h3>Study buddy</h3>
+      <p><span class="k">Who</span><br>Someone exploring on their own, curious, following threads.</p>
+      <p><span class="k">Voice</span><br>Light and quick. Short answers to short questions. Shares a good find with some pleasure.</p>
+      <p><span class="k">Initiative</span><br>One concrete next step (<q>there's a striking passage on this in the Hidden Words</q>). Doesn't pile on.</p>
+      <p><span class="k">Never</span><br>Answers a five-word question with five paragraphs.</p>
+      <div class="mock"><b>READER</b> who was quddus<br><b>ANÍS</b> Quddús (Mullá Muḥammad-'Alí of Bárfurúsh, 1822–1849) was the last of the Báb's eighteen Letters of the Living and the one the Báb esteemed most. <i>God Passes By</i> calls him… (link). His story is in <i>The Dawn-Breakers</i>, ch. 19.</div>
+    </div>
+    <div class="role">
+      <h3>Fireside teacher</h3>
+      <p><span class="k">Who</span><br>A seeker from any background, or someone in pain, asking the big questions.</p>
+      <p><span class="k">Voice</span><br>Warm, unhurried, respectful of the person's own tradition. Lets the Writings speak; says little himself.</p>
+      <p><span class="k">Initiative</span><br>Asks about the person when it helps. Offers a prayer or a passage to sit with. Offers more reading only when invited.</p>
+      <p><span class="k">Never</span><br>Preaches, pressures, or treats another tradition as a foil.</p>
+      <div class="mock"><b>READER</b> My grandmother died. Will I see her again?<br><b>ANÍS</b> I'm sorry about your grandmother. 'Abdu'l-Bahá was asked this many times. He wrote: “…” (link). Would you like a prayer for her?</div>
+    </div>
+    <div class="role">
+      <h3>Research companion</h3>
+      <p><span class="k">Who</span><br>A scholar, writer, study leader, or anyone with a job to finish.</p>
+      <p><span class="k">Voice</span><br>Precise and collegial. Exact titles, dates, original terms, who said what. Separates finding from interpretation.</p>
+      <p><span class="k">Initiative</span><br>Plans the search and shows the plan. Does the work without asking at every step. Reports what it couldn't find. Delivers a document and offers the next step.</p>
+      <p><span class="k">Never</span><br>Invents a quotation, or hides that a search came up empty.</p>
+      <div class="mock"><b>READER</b> Compile the Writings on consultation for our LSA retreat.<br><b>ANÍS</b> Searching Bahá'u'lláh, 'Abdu'l-Bahá, Shoghi Effendi and the House of Justice… I've grouped 24 passages under five headings: purpose, spirit, conduct, decisions, unity after. Document (link). I left out pilgrim notes. Want discussion questions added?</div>
+    </div>
+  </div>
+  <p class="note">The exchanges show shape only. Each "…" stands for a real passage he must find, quote and pass through the citation check.</p>
+  <h3 id="role-signals">How he tells which role he is in</h3>
+  <div class="wrap"><table>
+    <tr><th>Signal</th><th>Leans toward</th></tr>
+    <tr><td>Short query, keyword style, a bare title or name</td><td>Study buddy: short answer, link</td></tr>
+    <tr><td>Opened from a book page, or "here", "this paragraph"</td><td>Teaching assistant, anchored to that paragraph</td></tr>
+    <tr><td>Personal words (my, I feel, died, afraid, lost), or "should I"</td><td>Fireside teacher</td></tr>
+    <tr><td>An imperative: compile, prepare, put together, trace, timeline, find all</td><td>Research companion, assignment mode</td></tr>
+    <tr><td>Precise terms, original-language words, named editions</td><td>Research companion</td></tr>
+    <tr><td>Follow-ups that push back or ask for exact words</td><td>Same role, more precision</td></tr>
+  </table></div>
 </section>
 
-<section>
-  <h2>Who you are to him: the reader document</h2>
-  <p>Part of the foundation, under every mode and activity. Each person has <b>one</b> short document: who they are, where they stand, what they care about, how they like answers. Every answer reads it, so Anís serves this person, not a generic reader. It stays in the background: he never recites it, never labels anyone, never says "I see you're interested in…". It shows only in how well the answer fits.</p>
+<section id="activities">
+  <h2><span class="num">5</span>Activities</h2>
+  <div class="lead">
+    <p><b>What:</b> things he does with you over days or weeks, beyond answering one question.</p>
+    <p><b>Why:</b> learning happens over time. A companion who reads with you does more than one who only answers.</p>
+  </div>
+  <p>Each activity is a plugin on his personality and tools. It inherits his character, voice and every search tool, and adds only its own steps, schedule and output, so it never sounds like someone else. You start one by asking ("help me read the Íqán").</p>
+  <p>The first four: help me read a book, help me plan my study, help me research a book, and discussion. More follow as we learn what helps people learn. Each one's steps and status: <a href="#strategies-doc">Anís Strategies &amp; Activities</a>.</p>
+</section>
+
+<section id="letters">
+  <h2><span class="num">6</span>Letters: one letter, one person</h2>
+  <div class="lead">
+    <p><b>What:</b> when a conversation goes quiet, he may write one short letter to one person, carrying a new finding made for them.</p>
+    <p><b>Why:</b> re-engagement should feel like a friend who studies with you, never like a campaign.</p>
+  </div>
+  <p>No newsletters, campaigns or "we miss you". Each letter starts from what the person cares about and brings something new.</p>
+  <ul>
+    <li><b>The form: a short meditation on one discovery.</b> The model is Jafar's 2 November letter, <i>Four words behind one: "bounty"</i>. About a hundred words: one English word, the four originals behind it with counts, a sentence on why that matters, a link to the full range. No recap, no pitch, no talk of how he works. Anís ranges wider (a person, a scene, a talk, a book's untold anecdote, a reading) but keeps the shape: one real finding, shown concretely, read in a minute, ending with a plain invitation to write back. The subject line names the finding.</li>
+    <li><b>His own address.</b> He writes from <span class="mono">anis@oceanlibrary.com</span>, and replies come back there. His first letter says once, in his own words, that he is an AI and that this is his address.</li>
+    <li><b>Research hooks.</b> About twenty kinds, each checked against the person's history. Hooks that point to the texts and their own study come before hooks that point back to him. Examples:
+      <ul>
+        <li>a question from their thread that can now be answered;</li>
+        <li>two of their interests meeting in one passage;</li>
+        <li>a person they asked about appearing in a scene they haven't read;</li>
+        <li>the original behind a translation they read;</li>
+        <li>a new text in their area, or a date that matters to what they studied;</li>
+        <li>a primary-text reading that takes their inquiry further.</li>
+      </ul></li>
+    <li><b>Only the best gets sent.</b> Jev scores each candidate for relevance, surprise, fit and depth, with a veto for anything that could unsettle the person. Below the quality floor, nothing goes: silence beats a weak letter.</li>
+    <li><b>A rhythm that steps back.</b> Gaps of 3, 5, 12, 25, then 44 days after their last message, one budget across all channels; any reply turns it back into ordinary correspondence. After the last step he goes quiet. The more someone studies on their own, the less he writes.</li>
+    <li><b>Guards.</b> Never from grief, distress or a personal disclosure; never more urgent after silence; never a funnel. A letter adds no fact beyond the research it carries, and that is checked.</li>
+    <li><b>Starting carefully.</b> First letters go only to an allowlist, and a person approves the first letter of every sequence before it is sent.</li>
+  </ul>
+  <p class="note">Success counts people, not sends: people who reply and carry the conversation on. Full design: the hyper-engagement plan (F11 onboarding, F12 re-engagement, F14 learning loop).</p>
+</section>
+
+<section id="reader-document">
+  <h2><span class="num">7</span>Who you are to him: the reader document</h2>
+  <div class="lead">
+    <p><b>What:</b> one short private document per person that every answer reads.</p>
+    <p><b>Why:</b> so he serves this person, not a generic reader, without ever reciting what he knows about them.</p>
+  </div>
+  <p>One short document: who they are, where they stand, what they care about, how they like answers. He never recites it or labels anyone. It shows only in how well the answer fits. Built after launch; launch week keeps memory to the conversation.</p>
   <ul>
     <li><b>Who.</b> Name to use, languages, how they write (plain or scholarly), level, and stated roles: study-circle tutor, translator, teacher.</li>
     <li><b>Position.</b> Where they stand, <i>only as they have said it</i>: "a Bahá'í for thirty years", "a Christian curious about Bahá'u'lláh", "a historian, not a believer". It shapes his vocabulary, what he can assume and how he frames authority. Never inferred, never a judgement.</li>
@@ -250,42 +323,69 @@ q{font-style:italic;quotes:"“" "”"}
   </div>
 </section>
 
-<section>
-  <h2>Activities</h2>
-  <p>Beyond answering, Anís does things with you over days or weeks. Each activity is a plugin on top of his personality and tools: it inherits his character, voice and every search tool, and adds only its own steps, schedule and output, so it can never sound like someone else. Start one by asking ("help me read the Íqán"). These four come first; more follow as we learn what helps people learn.</p>
-  <div class="roles">
-    <div class="role"><span class="k">Help me read a book</span><p>He steps through a book a passage at a time, explains what is hard, asks what you make of it and discusses your answer. Works by voice too, so you can read with him while driving.</p><p class="note"><span class="chip live">partly live</span> a page per email today; voice to build</p></div>
-    <div class="role"><span class="k">Help me plan my study</span><p>He builds a study calendar from what you want to learn and the time you have, sends each day's reading, notices when you fall behind and helps you pick it up again without guilt.</p><p class="note"><span class="chip later">to build</span></p></div>
-    <div class="role"><span class="k">Help me research a book</span><p>He finds what in a book would interest you (a person, an allusion, a term, the history behind a passage), researches each, and adds the findings to Ocean as notes on the passage, for you and later readers.</p><p class="note"><span class="chip later">to build</span></p></div>
-    <div class="role"><span class="k">Discussion</span><p>When you challenge something, he carries the thread: each side argued from the texts, for as many turns as it takes. At the end he offers to publish it as a dialogue page and a podcast-style conversation, like the dialogues on Ocean.</p><p class="note"><span class="chip week">pages exist</span> the synthesized dialogues; from-a-conversation and podcast to build</p></div>
+<section id="answer-look">
+  <h2><span class="num">8</span>How his answers look</h2>
+  <div class="lead">
+    <p><b>What:</b> a fixed set of answer blocks (quotation, timeline, book card…), each rendered for every channel.</p>
+    <p><b>Why:</b> one answer must look right in a widget, an email, a text message and a voice reply, and never break.</p>
   </div>
+  <p>What Anís finds often has a shape: a quotation, a life, a run of dates, a word in its original. Each shape is a standard <b>block</b> with one design and a rendering for each channel, as rich as the channel allows, with a graceful fallback where it allows less. One answer becomes a styled card in the widget, a designed email, a few clean lines in a text, and spoken words in voice. Jev chooses the blocks; code renders them, so nothing breaks where a channel can't show something.</p>
+  <div class="wrap"><table>
+    <tr><th>Block</th><th>Widget and email</th><th>Text message, Telegram</th><th>Voice</th></tr>
+    <tr><td>Quotation</td><td>The passage set apart, author and work as a link, a line on its context</td><td>Quoted text and a short link</td><td>Read aloud in a different voice, then "from <i>Gleanings</i>"</td></tr>
+    <tr><td>Original beside translation</td><td>Arabic or Persian and English side by side, right-to-left kept, the key word marked</td><td>Translation first, then the original</td><td>The English, then the key word spoken in the original</td></tr>
+    <tr><td>Biography card</td><td>Portrait with caption, dates, role, one telling line, link to the full biography</td><td>Name, dates, one line, link</td><td>Two sentences</td></tr>
+    <tr><td>Timeline</td><td>Dated events on a line, each with its source</td><td>A dated list</td><td>The few dates that matter, in order</td></tr>
+    <tr><td>Comparison</td><td>Two or more traditions side by side, a passage each</td><td>One short block per tradition</td><td>Each tradition in turn</td></tr>
+    <tr><td>Table</td><td>A real table, sortable when long</td><td>A list of rows</td><td>Summarised, with an offer to send it by email</td></tr>
+    <tr><td>List</td><td>Numbered or bulleted, each item linked</td><td>The same, plain</td><td>The first three, and an offer of the rest</td></tr>
+    <tr><td>Audio excerpt</td><td>A player with speaker, talk, date and transcript</td><td>A link to the moment in the talk</td><td>Played</td></tr>
+    <tr><td>Picture with caption</td><td>The image, sized for the screen, credited</td><td>A link with the caption</td><td>The caption, described</td></tr>
+    <tr><td>Video</td><td>A poster frame that plays in place, with the time it starts</td><td>A link to the moment</td><td>Described, and sent by email</td></tr>
+    <tr><td>External resource</td><td>A card: site, title, one line on why it is worth opening, marked as from the web</td><td>A labelled link</td><td>Named, and sent by email</td></tr>
+    <tr><td>Book card</td><td>Cover, author, translator, one line on why it matters, "read it" link</td><td>Title, author, link</td><td>Title and author, and an offer to read it with you</td></tr>
+    <tr><td>Document</td><td>A compilation, study guide or brief, attached</td><td>A link to it</td><td>Sent by email</td></tr>
+  </table></div>
+  <p class="note">Already declared in code: the answer formats (direct answer, timeline, comparison, term with its original, others) and each channel's capabilities. To build: this set of blocks with their renderers. New blocks are added like everything else: declared once, tested on every channel.</p>
 </section>
 
-<section>
-  <h2>Hyper-engagement: one letter, one person</h2>
-  <p>No bulk email: no newsletters, campaigns or "we miss you". Anís re-engages like a friend who studies with you: one letter for one person, opening a conversation worth having. Each starts from what they care about and brings something new, researched for them.</p>
-  <ul>
-    <li><b>The form: a short meditation on one discovery.</b> The model is Jafar's 2 November letter, <i>Four words behind one: "bounty"</i> (Jafar is Anís's sibling at ctai.info, narrower in mission). About a hundred words: one English word, the four originals behind it with counts, a sentence on why that matters, a link to the full range. No recap, no pitch, no talk of how he works. Anís ranges wider (a person, a scene, a talk, a book's untold anecdote, a reading) but keeps the shape: one real finding, shown concretely, read in a minute, ending with a plain invitation to write back. The subject line names the finding.</li>
-    <li><b>His own address.</b> He writes from <span class="mono">anis@oceanlibrary.com</span>, and replies come back there. His first letter says once, in his own words, that he is an AI and that this is his address.</li>
-    <li><b>Research hooks.</b> About twenty kinds, each checked against the person's history. Hooks that point to the texts and their own study come before hooks that point back to him. Examples:
+<section id="tools">
+  <h2><span class="num">9</span>His tools</h2>
+  <div class="lead">
+    <p><b>What:</b> the searches and services every answer is built from.</p>
+    <p><b>Why:</b> he says only what these tools find, and code checks every citation before an answer goes out.</p>
+  </div>
+  <p>Everything Anís says comes from what these tools find. Code checks every citation before an answer goes out: a quotation not in the library is removed, and every reference becomes a link.</p>
+  <div class="wrap"><table>
+    <tr><th>Tool</th><th>What it gives him</th><th>Status</th></tr>
+    <tr><td>The library</td><td>Knows the books: finds one by name or description, tells you about it (author, date, translator, what it is, why it matters), links to it, and helps you read it paragraph by paragraph.</td><td><span class="chip live">live</span></td></tr>
+    <tr><td>Keyword search</td><td>BM25 for exact words and phrases: finds a term or quotation fast and cheaply, in any tradition, narrowed by author or work.</td><td><span class="chip live">live</span></td></tr>
+    <tr><td>Concept search</td><td>Finds ideas, not just words: phrase-level semantic search plus HyPE (the questions each passage answers, written in advance), so a passage on detachment turns up when the reader asks about letting go.</td><td><span class="chip live">live</span></td></tr>
+    <tr><td>Source search</td><td>The original behind a translation, for discussion as well as citation: the Arabic or Persian words, their roots and range of meaning, how Shoghi Effendi rendered them and what that implies. <i>"What is the original term for 'justice' in the first Hidden Word, and what are its implications?"</i></td><td><span class="chip live">live</span></td></tr>
+    <tr><td>Translation insight <span class="mono">(CTAI.info)</span></td><td>The concordance of Shoghi Effendi's translations, used as a tool, not a site to visit. Four questions:
       <ul>
-        <li>a question from their thread that can now be answered;</li>
-        <li>two of their interests meeting in one passage;</li>
-        <li>a person they asked about appearing in a scene they haven't read;</li>
-        <li>the original behind a translation they read;</li>
-        <li>a new text in their area, or a date that matters to what they studied;</li>
-        <li>a primary-text reading that takes their inquiry further.</li>
-      </ul></li>
-    <li><b>Only the best gets sent.</b> Jev scores each candidate for relevance, surprise, fit and depth, with a veto for anything that could unsettle the person. Below the quality floor, nothing goes: silence beats a weak letter.</li>
-    <li><b>A rhythm that steps back.</b> Gaps of 3, 5, 12, 25, then 44 days after their last message, one budget across all channels; any reply turns it back into ordinary correspondence. After the last step he goes quiet. The more someone studies on their own, the less he writes.</li>
-    <li><b>Guards.</b> Never from grief, distress or a personal disclosure; never more urgent after silence; never a funnel. A letter adds no fact beyond the research it carries, and that is checked.</li>
-    <li><b>Starting carefully.</b> First letters go only to an allowlist, and a person approves the first letter of every sequence before it is sent.</li>
-  </ul>
-  <p class="note">Success counts people, not sends: people who reply and carry the conversation on. Full design: the hyper-engagement plan (F11 onboarding, F12 re-engagement, F14 learning loop).</p>
+        <li><b>An original word's renderings:</b> a root, its forms, every way he translated it, with counts.</li>
+        <li><b>The originals behind an English word:</b> "bounty" → júd, karam, faḍl, ʿaṭá', with counts.</li>
+        <li><b>His rendering of an exact passage:</b> original and English aligned.</li>
+        <li><b>A translation guide for any original passage:</b> the sense each term carries here, his usual phrasings, examples.</li>
+      </ul>Each answer links to the full page on CTAI.</td><td><span class="chip live">part live</span> (word → renderings is live)</td></tr>
+    <tr><td>Quotation trace</td><td>Who said a quotation and where: the original work first, then the books that quote it. Among Shoghi Effendi's translations, his own publications first (Íqán, Gleanings, Hidden Words, Prayers and Meditations, Epistle).</td><td><span class="chip live">live</span></td></tr>
+    <tr><td>Read around</td><td>The paragraphs before and after a passage, so it is quoted in context.</td><td><span class="chip live">live</span></td></tr>
+    <tr><td>People and events</td><td>Who someone was, who met whom, who was there, with the passages as evidence.</td><td><span class="chip live">live</span></td></tr>
+    <tr><td>Email and letters</td><td>Answers by email; longer work delivered as a letter.</td><td><span class="chip live">live</span></td></tr>
+    <tr><td>Compiled documents</td><td>A collection, study guide or research brief, delivered as a document.</td><td><span class="chip week">this week</span></td></tr>
+    <tr><td>Deep research (consulting the field)</td><td>For a hard question he consults everyone worth asking: Perplexity, other large models and our web research service. Not to borrow their answers, but to <b>never miss anything</b>, and to let their general knowledge point him to sources in our own library he would otherwise miss. What he learns is kept: it adds to the library's prepared knowledge and shows which documents we should acquire.</td><td><span class="chip week">partly live</span></td></tr>
+    <tr><td>The web, labelled</td><td>Only for what a library can't hold (current events, news about a community), always marked as from the web.</td><td><span class="chip week">this week</span></td></tr>
+    <tr><td>Memory</td><td>One history per person across chat and email, and one <b>reader document</b> (below) that every answer reads. Clearing the account history on OceanLibrary.com erases both.</td><td><span class="chip later">after launch</span></td></tr>
+  </table></div>
 </section>
 
-<section>
-  <h2>Prepared knowledge</h2>
+<section id="prepared-knowledge">
+  <h2><span class="num">10</span>Prepared knowledge</h2>
+  <div class="lead">
+    <p><b>What:</b> research done once and reused: a dossier per important book, a collection per common topic.</p>
+    <p><b>Why:</b> common requests get faster, richer and more varied answers.</p>
+  </div>
   <p>Some research is worth doing once and using many times. Prepared material answers common requests at once and gives him something fresh to say each time.</p>
   <div class="roles">
     <div class="role"><span class="k">A dossier on each book</span><p>For every important book: how it came to be written, who is in it, anecdotes, its reception, the passages people love, the history around it. Asked about a book, he picks something varied and interesting from it, not the same summary. During a reading, it supplies the new anecdote that keeps the book alive.</p></div>
@@ -294,23 +394,41 @@ q{font-style:italic;quotes:"“" "”"}
   <p>The improvement loop decides what to prepare: when a question or book comes up often enough, it proposes a collection or dossier, and once built and checked, later requests take the shortcut. Deep research feeds both; both are refreshed as the library grows.</p>
 </section>
 
-<section>
-  <h2>How he decides, fast</h2>
-  <p>Speed comes from deciding fast, not writing fast. An open AI agent spends 2–5 seconds of model time on each choice of what to do next. Anís makes those choices with Jev, our classifier, in about a tenth of a second each.</p>
+<section id="how-he-decides">
+  <h2><span class="num">11</span>How he decides, fast</h2>
+  <div class="lead">
+    <p><b>What:</b> a fast classifier (Jev) makes every choice of what to do next; each request type has a strategy; a writing model only writes.</p>
+    <p><b>Why:</b> speed comes from deciding fast, not writing fast. Quick on simple questions, thorough on deep ones.</p>
+  </div>
+  <p>An open AI agent spends 2–5 seconds of model time on each choice of what to do next. Anís makes those choices with Jev, our classifier, in about a tenth of a second each. Five decisions cost about half a second instead of 10–25 s. Only the final answer goes to the writing model.</p>
   <ol class="steps">
-    <li><b>Classify.</b> Jev's first decision on every message, with the conversation so far:
-      <ul>
-        <li><i>None</i> (greeting, thanks, small talk): Anís just replies, no search.</li>
-        <li><i>Search</i>: which of about 40 request types in eight groups (lookups, understanding, comparing, personal life and practice, hard questions, assignments, follow-ups, small talk), and whether it is new or follows up the last reply.</li>
-        <li><i>Activity</i>: which one, and whether the message starts it, continues it (today's reading, the next turn of a discussion) or steps outside it briefly (a question mid-reading is a search; the activity resumes after).</li>
-      </ul>
-      Then the traditions, language, works and people named. A message can carry several types; the lead type sets the answer's shape.</li>
-    <li><b>Notice the reader.</b> Jev also records lasting interests the message shows. The first is <b>translation insight</b>: asking about an original word, a rendering, a transliteration, Arabic or Persian script, or "what does the original say". Once clear, answers set the original beside the English with a sentence on the word behind it, and letters favour translation discoveries (Jafar's "four words behind one" kind). For others, the original stays a quiet offer. Each interest is one line on the person's profile, which they can see and remove.</li>
-    <li><b>Route.</b> Each type has a strategy: a small map of steps with decision points. Lookups (a book, a quotation, a reference) go straight to search and return through a template, no writing model. A common topic or well-known book is answered first from its prepared collection or dossier. Everything else follows its strategy, with Jev choosing at each decision point: enough evidence? search another shelf? is this passage the source or a book quoting it?</li>
-    <li><b>Fall back.</b> When Jev is unsure, or a strategy fails its own checks, the full research agent takes over. A strategy is switched on only after it matches the agent on its type's tests.</li>
-    <li><b>Reply in three parts.</b> At once, what he understood and is doing ("Looking for what Bahá'u'lláh and the Buddha say about the soul after death…"), then progress. Then the short answer, streamed. Then details, only when warranted. One writing step produces the last two, so nothing is said twice.</li>
+    <li><b>Read the thread first.</b> Jev decides: a new question (drop the old context) or a follow-up, and which move (refer back, source, exact words, deepen, compare, push back, reshape). A follow-up is rewritten as a self-contained request. <q>The second one</q> becomes the exact passage. <q>What about Islam?</q> becomes <q>what does Islam teach about fasting</q>, compared with the last answer. It carries what the thread already found, so a reshape or a source request never searches again.</li>
+    <li><b>Classify.</b> First: <i>none</i> (greeting, thanks: he just replies), <i>search</i>, or <i>activity</i> (start it, continue it, or step outside it for one question, then resume). For a search: which of about 40 request types in eight groups, then the traditions, language, works and people named. Language is a parameter, not a type. One message in four needs more than one type. The lead type sets the answer's shape; the others add steps, not separate answers.</li>
+    <li><b>Notice the reader.</b> Jev also records lasting interests. The first is translation insight: asking about an original word, a rendering, Arabic or Persian script. Once clear, answers set the original beside the English, and letters favour translation discoveries. For others, the original stays a quiet offer. Each interest is one line in the reader document.</li>
+    <li><b>Route.</b> Each type has a strategy. Lookups never reach a writing model: a book's name or words in quotation marks ask for the book or the source, not an essay. Search runs, and a template lays out the result. A model may format at the very end, never decide or add. If nothing is found, he says so and offers the nearest matches. A common topic or well-known book is answered first from its prepared collection or dossier.</li>
+    <li><b>Decide at every fork.</b> Routing is the first decision, not the only one. At each decision point Jev reads what has been found and picks the next step. Where two branches are cheap, both run at once. Each decision point is its own Jev task, with its own log, examples and accuracy.</li>
+    <li><b>Fall back.</b> When Jev's confidence is below the route's threshold, or a strategy finds its premise false (no such title, no passage for a named tradition), the full research agent takes over. The 11-01 rule: quality first, speed earned. A strategy goes live only after it matches the agent on its type's tests. One that slips is switched off until fixed.</li>
   </ol>
-  <h3>Inside a strategy</h3>
+  <h3 id="decision-points">The decision points</h3>
+  <div class="wrap"><table>
+    <tr><th>Decision point</th><th>Jev chooses between</th></tr>
+    <tr><td>After the first search</td><td>enough evidence · other words · another shelf · go to originals</td></tr>
+    <tr><td>Quotation not found exactly</td><td>same text, close wording · paraphrase of a known passage · misattributed · not in the library</td></tr>
+    <tr><td>A hit in a secondary book</td><td>the book's own words · quoted from an earlier source, trace it</td></tr>
+    <tr><td>A named person or work</td><td>which bearer of the name · which edition or translation</td></tr>
+    <tr><td>Does this passage answer?</td><td>answers it · only mentions the topic · contradicts another hit</td></tr>
+    <tr><td>Comparison, each side</td><td>covered · thin, search wider · the library lacks it, say so</td></tr>
+    <tr><td>Before writing</td><td>answer now · ask the one question that matters · offer it as an assignment; and whether part 3 is needed</td></tr>
+  </table></div>
+  <h3 id="three-part-reply">One reply in three parts</h3>
+  <p>The reader never waits in silence and never reads the same thing twice.</p>
+  <div class="stage">
+    <div><b>1 · AT ONCE (under 1 s)</b>What he understood and is doing: <q>Looking for what Bahá'u'lláh and the Buddha say about the soul after death…</q> Then progress. A template fills it from Jev's classification, no model. Lookups skip it.</div>
+    <div><b>2 · THE ANSWER</b>Two to five sentences and the one or two passages that carry them, quoted and linked. For most questions, the whole reply.</div>
+    <div><b>3 · THE DETAILS</b>Only what part 2 left out: more passages, each side of a comparison, history, then a next step. Skipped for short questions.</div>
+  </div>
+  <p>Research runs once. The writing model writes parts 2 and 3 as one piece in two sections, so nothing repeats. Part 2 streams first.</p>
+  <h3 id="inside-a-strategy">Inside a strategy: one example</h3>
   <p>A strategy is a small decision tree of shared tools, built for one request type. Every strategy ends the same way: <b>choose a format</b>, then hand the data and format to the writing model. The writer writes; it never decides what to search.</p>
   <p>Steps differ in cost. A strategy stays near the cheap end:</p>
   <div class="wrap"><table>
@@ -322,14 +440,15 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>Writing model</td><td>the answer, from data and format, once per answer</td><td class="n">seconds, paid</td></tr>
     <tr><td>Research agent</td><td>fallback only</td><td class="n">10–40 s</td></tr>
   </table></div>
-  <p><b>Few LLM steps.</b> Use one only where code can't do the job. Each must prove in testing that it changes the result, or it goes.</p>
-  <p><b>Cheapest path first.</b> Try code and plain search; escalate only when nothing is found.</p>
-  <p>The chart below is one example, the quotation trace ("who said 'the earth is but one country'?"), chosen because it is the simplest. Every request type gets its own strategy, built from the same parts: code checks, shared tools, Jev decisions, a light LLM step only as a fallback, and at the end, choose a format → write.</p>
+  <ul><li><b>Few LLM steps.</b> One only where code can't do the job. Each must prove in testing that it changes the result, or it goes.</li>
+  <li><b>Cheapest path first.</b> Try code and plain search. Escalate only when nothing is found.</li></ul>
+  <p>One example, for illustration: the quotation trace ("who said 'the earth is but one country'?"), chosen because it is the simplest. Every other strategy is built from the same parts. The details of each live in <a href="#strategies-doc">Anís Strategies &amp; Activities</a>.</p>
   <p class="eyebrow">Example strategy: the quotation trace</p>
   <div class="flow"><svg viewBox="0 0 680 178" role="img" aria-label="Quotation trace: code extraction and BM25 first; a light LLM extraction only if nothing is found; phrase semantic search last; every path ends in choosing a format and writing"><defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z"/></marker></defs><rect class="j" x="0" y="10" width="96" height="28" rx="14"/><text x="48.0" y="24">Quotation?</text><rect class="t" x="116" y="10" width="140" height="28" rx="4"/><text x="186.0" y="24">Code: take quoted text</text><rect class="t" x="276" y="10" width="70" height="28" rx="4"/><text x="311.0" y="24">BM25</text><rect class="j" x="466" y="10" width="80" height="28" rx="14"/><text x="506.0" y="24">Found?</text><rect class="l" x="116" y="78" width="140" height="28" rx="4"/><text x="186.0" y="92">Light LLM: extract</text><rect class="t" x="276" y="78" width="70" height="28" rx="4"/><text x="311.0" y="92">BM25</text><rect class="j" x="366" y="78" width="80" height="28" rx="14"/><text x="406.0" y="92">Rerank</text><rect class="j" x="466" y="78" width="80" height="28" rx="14"/><text x="506.0" y="92">Found?</text><rect class="t" x="116" y="146" width="230" height="28" rx="4"/><text x="231.0" y="160">Phrase semantic search</text><rect class="j" x="366" y="146" width="80" height="28" rx="14"/><text x="406.0" y="160">Rerank</text><rect class="w" x="584" y="10" width="92" height="164" rx="6"/><text class="wt" x="630" y="80">Choose</text><text class="wt" x="630" y="96">format,</text><text class="wt" x="630" y="112">then write</text><path d="M96 24H112" marker-end="url(#ah)"/><path d="M256 24H272" marker-end="url(#ah)"/><path d="M346 24H462" marker-end="url(#ah)"/><path d="M546 24H580" marker-end="url(#ah)"/><path d="M256 92H272" marker-end="url(#ah)"/><path d="M346 92H362" marker-end="url(#ah)"/><path d="M446 92H462" marker-end="url(#ah)"/><path d="M546 92H580" marker-end="url(#ah)"/><path d="M346 160H362" marker-end="url(#ah)"/><path d="M446 160H580" marker-end="url(#ah)"/><path d="M506 38V58H186V74" marker-end="url(#ah)"/><path d="M506 106V126H231V142" marker-end="url(#ah)"/><text class="yn" x="564" y="16">yes</text><text class="yn" x="564" y="84">yes</text><text class="yn" x="518" y="51">no</text><text class="yn" x="518" y="119">no</text><text class="s" x="0" y="50">free</text><text class="s" x="0" y="92">+1 light LLM</text><text class="s" x="0" y="160">last resort</text></svg><div class="legend"><span><i style="background:var(--accent-soft);border-color:var(--accent)"></i>Jev decision</span><span><i style="background:var(--warn-soft);border-color:var(--warn);border-style:dashed"></i>LLM step</span><span><i style="background:var(--paper);border-color:var(--line)"></i>tool or code</span></div></div>
   <p class="note">What this example shows: most quotation questions stop on the first row, with no LLM step before the writer.</p>
-  <p><b>Choosing a format is a bet, to be measured.</b> Picking the template (passage card, timeline, comparison…) might let a fast, light model write what now needs a smarter one. We compare with and without the template, and light models against the smart one, on quality, brevity, speed and cost. If it doesn't help, it goes.</p>
+  <p><b>Choosing a format: measured, and it stays.</b> A blind judge compared 51 answers written with and without the chosen template (Nov 3). The template won 31 to 20, at the same accuracy: answers were shorter and better shaped, and slightly faster to write. The hope that a template lets a light model replace the stronger writing model did not hold for research answers: the best light model won 9 and lost 19, mostly on completeness. The roles are re-measured as models change.</p>
 
+  <h3 id="target-times">Target times</h3>
   <div class="wrap"><table>
     <tr><th>Kind of question</th><th>Target time</th></tr>
     <tr><td>A book's name, a quotation, a reference</td><td class="n">≤ 1 s</td></tr>
@@ -339,526 +458,107 @@ q{font-style:italic;quotes:"“" "”"}
   </table></div>
 </section>
 
-<section>
-  <h2>How he gets better</h2>
-  <p>Nothing is fixed. Request types, strategies, the options at each decision and the thresholds all change as the records show what works. Self-improvement, in quality and speed, is the core of the design.</p>
+<section id="strategies">
+  <h2><span class="num">12</span>One strategy per request type</h2>
+  <div class="lead">
+    <p><b>What:</b> every kind of request has its own strategy, tested against the answer it deserves.</p>
+    <p><b>Why:</b> a fact, a quotation, a grief and a compilation each need different searches and a different answer.</p>
+  </div>
+  <p>About 40 kinds of request: a fact, a book, a quotation, a teaching, a comparison, a grief, a compilation and more. Questions that need several at once get combined strategies. The full catalogue, with real wordings, frequencies, strategies and ideal answers, is in <a href="#strategies-doc">Anís Strategies &amp; Activities</a>.</p>
+</section>
+
+<section id="how-he-gets-better">
+  <h2><span class="num">13</span>How he gets better</h2>
+  <div class="lead">
+    <p><b>What:</b> every answer is recorded, judged and traced to its cause. Strategies, decisions and types change as the records show what works.</p>
+    <p><b>Why:</b> self-improvement, in quality and speed, is the core of the design. Nothing is fixed.</p>
+  </div>
   <ul>
-    <li><b>One strategy per request type, built as efficient branching.</b> A short path of steps with a decision at each fork: is the passage found, or search another shelf? Source, or a book quoting it? Enough evidence, or trace further? A good strategy takes the cheapest branch that still reaches the right answer; it is fast because it skips what this question doesn't need.</li>
-    <li><b>First question: given this context, was this the right strategy?</b> Before grading any fork, ask whether the message, conversation and reader card called for this type and strategy at all. A well-run wrong strategy is still a loss, and grading its branches would tune the wrong thing. It is fixed at the classifier: the case becomes a Jev training example or, if no strategy fits, a candidate for a new one. Only a right strategy gets its branches graded.</li>
-    <li><b>Every branch decision is assessed, every time.</b> Each fork records what Jev saw, which way he went, his confidence, and the branch's time and money cost; the final verdict grades each decision on the path. On a sample, the branch not taken is replayed: better, the same, or cheaper? Each decision point keeps its record (how often right, how often the replay beats it, cost). Weak forks get fixed: wrong calls become Jev training examples, thresholds move, a branch never worth taking is removed, a recurring need becomes a new branch.</li>
-    <li><b>Every answer is recorded in enough detail to replay:</b> type and strategy (with versions), what Jev saw and chose at each decision, every search and its passages, the time and cost of each step, the answer and its verdict.</li>
-    <li><b>Every answer is judged</b> by an independent model against Perplexity's answer to the same question and against the shape its type calls for. A loss is traced to its cause: the library lacks it, search missed it, a wrong decision, a missing strategy, or the writing.</li>
-    <li><b>Fixes go by cause, biggest first.</b> Search misses go to the index (search comes first). Wrong decisions become Jev training examples. Missing moves become new strategy options. Writing faults go to the strategy's instructions.</li>
-    <li><b>Tests are fresh every time.</b> New questions are drawn per type for each check, as varied as real questions, so nothing can be memorised. 61 real questions from another product are held out and never used for tuning.</li>
-    <li><b>Two things grow without limit: activities and search strategies.</b> Each new one is declared, tested on fresh questions and switched on only when it beats what it replaces, so Anís becomes a stronger learning amplifier week by week.</li>
-    <li><b>What is asked often gets prepared.</b> Frequent topics and books are proposed for a collection or dossier, so the next person gets a faster, richer answer.</li>
-    <li><b>Real conversations feed it.</b> Questions no type fits are grouped weekly; a recurring group becomes a new type with its own strategy.</li>
-    <li><b>A weekly report</b> per type and decision point: wins against Perplexity, accuracy of each fork and what its replays show, share answered without the agent, time and cost per answer, types and options added.</li>
+    <li><b>Every run is recorded to replay.</b> Type and strategy, with versions. At each fork: what Jev saw, the options, his probability for each, the branch taken. Each search: query, shelf, passages and scores. The time and cost of every step. The answer, its citations, the verdict and the reason for any loss. One record per turn, stored like all other data.</li>
+    <li><b>Every answer is judged</b> by an independent model, against Perplexity's answer to the same question and the shape its type calls for.</li>
+    <li><b>First question: was this the right strategy?</b> Given the message, thread and reader card, did it call for this type at all? A well-run wrong strategy is still a loss, and grading its branches would tune the wrong thing. It is fixed at the classifier: a Jev training example, or a candidate new strategy if none fits.</li>
+    <li><b>Then every fork is graded.</b> On a sample, the branch not taken is replayed: better, same, or cheaper? Each decision point keeps its record. A wrong call becomes a Jev example. Missing information (the shelf a hit came from, whether a passage is an original) is added to the decision. Look-alike options get sharper definitions. A branch never worth taking is removed. If no branch would have won, the full agent on the same question shows the missing move, which becomes a new option.</li>
+    <li><b>Losses are fixed by cause, biggest first.</b> Not in the library, search missed it, didn't look, wrong route, wrote badly, invented something. Search misses go to the index (search comes first). Wrong decisions go to Jev. Writing faults go to the strategy's instructions.</li>
+    <li><b>Strategies compete.</b> A new version runs beside the current one on fresh questions of its type. The better one, on quality and then speed, takes over.</li>
+    <li><b>Speed is earned after quality.</b> Decisions move from the agent to Jev, searches run in parallel, and writing moves to a cheaper model only when the judge shows no loss.</li>
+    <li><b>New types are found weekly.</b> Questions Jev can't place, or that keep falling to the agent, are grouped. A recurring group becomes a new type, its strategy built from how the agent handled it. What is asked often gets a prepared collection or dossier.</li>
+    <li><b>Two things grow without limit:</b> activities and strategies. Each is declared, tested on fresh questions and switched on only when it beats what it replaces.</li>
   </ul>
-  <div class="wrap"><table>
-    <tr><th>Measure</th><th>Launch gate · 8 Nov</th><th>4 weeks</th></tr>
-    <tr><td>Fresh questions, every type: wins or ties against Perplexity</td><td class="n">≥ 85%</td><td class="n">≥ 95%</td></tr>
-    <tr><td>Held-out real questions: wins or ties</td><td class="n">≥ 80%</td><td class="n">≥ 95%</td></tr>
-    <tr><td>Invented quotations</td><td class="n">0</td><td class="n">0</td></tr>
-    <tr><td>Book and quotation requests answered with the right linked work</td><td class="n">100%</td><td class="n">100%</td></tr>
-    <tr><td>Right strategy for the context (graded first, every answer)</td><td class="n">≥ 90%</td><td class="n">≥ 95%</td></tr>
-    <tr><td>Each branch decision right (graded every answer; the branch not taken replayed on a sample)</td><td class="n">≥ 90%</td><td class="n">≥ 95%</td></tr>
-    <tr><td>Jev picks the right route (checked sample)</td><td class="n">≥ 90%</td><td class="n">≥ 95%</td></tr>
-  </table></div>
-</section>
-
-<section>
-  <h2>Launch week</h2>
-  <p>A week is enough to launch at this quality on common questions, with honest fallbacks on the rest. The full bar on anything a stranger types takes about four weeks of turning real misses into fixes. Each day ends with a test run and a short status: numbers, pass or fail.</p>
-  <div class="panel">
-    <div class="day"><b>Tue 3 Nov</b><div>Agree this vision. Lookups routed without a writing model. Baseline: fresh questions in every type, judged against Perplexity.</div></div>
-    <div class="day"><b>Wed 4 Nov</b><div>Strategies for understanding and comparing questions, with Jev at their decision points. The three-part reply. <span class="gate">GATE 1</span></div></div>
-    <div class="day"><b>Thu 5 Nov</b><div>Study companion beside a book; the fireside role; honest answers when the library lacks something; the web, labelled.</div></div>
-    <div class="day"><b>Fri 6 Nov</b><div>Production: site chat on the chosen strategies, progress shown, time and cost per conversation reported. The first welcome letter, sent only to an allowlist, each first send approved by Chad.</div></div>
-    <div class="day"><b>Sat 7 Nov</b><div>Full tests, plus the held-out set. Fix regressions only.</div></div>
-    <div class="day"><b>Sun 8 Nov</b><div>Freeze. Rehearse three times in production. Launch-gate report. <span class="gate">LAUNCH GATE</span></div></div>
-    <div class="day"><b>Mon 9 Nov</b><div>Launch.</div></div>
-  </div>
-  <h3>Budget for the week</h3>
-  <div class="wrap"><table>
-    <tr><th>Item</th><th>Cost</th><th>Basis</th></tr>
-    <tr><td>Testing (judged conversations, Perplexity comparisons)</td><td class="n">$60–80</td><td>Estimate from the 1 Nov actual of about $2 per 10 judged conversations, at about 30 a day plus comparisons.</td></tr>
-    <tr><td>Answers, research questions</td><td class="n">≈ $0.03 per reply</td><td>Measured 2 Nov on 17 replies from the research agent. Routed strategies should cost less; reported daily.</td></tr>
-    <tr><td>Answers, lookups</td><td class="n">≈ $0</td><td>No writing model; Jev's classification only.</td></tr>
-    <tr><td>Hosting and search</td><td class="n">no new spend</td><td>Runs on the existing server and Cloudflare.</td></tr>
-  </table></div>
-  <p class="note">Models: Sonnet writes the answers, Opus only the long research briefs. A cheaper model replaces a stronger one on a type only after the judge shows no loss there.</p>
-</section>
-
-<section class="caution">
-  <h2>To settle before we build further</h2>
-  <p><b>1. Lookups take the fast path.</b> Since Jev's reload, "where is this quote from" goes to the research agent: right answers, but typically 16 s against about 5 s before. This vision routes them to search and a template (≤ 1 s). I'll restore that unless you say otherwise.</p>
-  <p><b>2. The launch audience</b>, and three to five things the launch must show.</p>
-  <p><b>3. The answer models</b> as listed under the budget.</p>
-</section>
-
-<div class="divider"><span class="eyebrow">The working detail</span><p class="note">The evidence, every request type with its strategy, and the process in full. Internal; to be trimmed before this page is published.</p></div>
-
-<section>
-  <h2>The evidence</h2>
-  <div class="wrap"><table>
-    <tr><th>Source</th><th>Size</th><th>What it tells us</th></tr>
-    <tr><td>Interfaith question survey (11-02)</td><td class="n">7,130 wordings<br>125 families</td><td>What people actually type. 4,793 from Google autocomplete, 1,127 from FAQ and forum pages, 1,210 written to fill gaps. Covers 12 traditions plus universal, practical, social, cross-tradition, quotation, original-language and scholarly questions.</td></tr>
-    <tr><td>SEO conversation pages (seed questions)</td><td class="n">132</td><td>The questions our published conversation pages answer. Long and informed, often two-part: <q>Buddhism teaches anatta, no permanent self. The Bahá'í writings speak of an eternal soul…</q></td></tr>
-    <tr><td>Keyword Planner seeker battery</td><td class="n">32</td><td>The highest-volume search phrasings. HyPE v15 was tuned on these.</td></tr>
-    <tr><td>Immerse (bahaiwritings.app) public feed</td><td class="n">61 questions<br>with answers</td><td>Real Immerse user questions with Immerse's full answers and sources, saved 10-19 (<code>tmp/immerse/immerse-feed-2026-10-19.json</code>). Run once against our researcher, judged blind (below). The minimum bar.</td></tr>
-    <tr><td>Immerse newsletters</td><td class="n">14 examples</td><td>The questions Immerse promotes to you (Jul–Oct 2026): compilations, devotional programs, timelines, life stories, comparing two accounts.</td></tr>
-    <tr><td>Anís chat threads (last 365 days)</td><td class="n">200 threads</td><td><b>No real reader traffic yet.</b> Every thread is from our own test batteries; the 72 without a test email repeat the battery openings word for word. Real-use evidence starts when people use Anís.</td></tr>
-    <tr><td>Conversation battery design</td><td class="n">5 personas<br>7 moves</td><td>The follow-up behaviours we already test: refer back, ask the source, push back, ask for exact words, compare, deepen, ask for something that doesn't exist.</td></tr>
-  </table></div>
-</section>
-
-<section>
-  <h2>What the search-box questions look like</h2>
-  <p>A rough keyword classification of the 7,130 survey wordings: about a third are keyword fragments (<q>bahai religion marriage rules</q>) that fit no pattern, and 48% are not phrased as questions.</p>
-  <div class="wrap"><table>
-    <tr><th>Shape</th><th>Share</th><th>Real examples</th></tr>
-    <tr><td>What is X / is X …</td><td class="n"><span class="bar" style="width:56px"></span>13.9%</td><td><q>what is bahai faith</q> · <q>is the talmud reliable</q> · <q>Is baptism necessary for salvation?</q></td></tr>
-    <tr><td>What does X believe or say about Y</td><td class="n"><span class="bar" style="width:48px"></span>12.0%</td><td><q>what does the torah say about jesus</q> · <q>what do christians believe happens after death</q></td></tr>
-    <tr><td>Who, when, where, how many</td><td class="n"><span class="bar" style="width:36px"></span>8.9%</td><td><q>who wrote the vedas</q> · <q>how many zoroastrians are left</q> · <q>Who is Kali?</q></td></tr>
-    <tr><td>Compare (shape alone)</td><td class="n"><span class="bar" style="width:34px"></span>8.5%</td><td><q>difference between buddhism and hinduism beliefs</q> · <q>Do all religions have an afterlife?</q></td></tr>
-    <tr><td>Practical: can I, how do I, rules</td><td class="n"><span class="bar" style="width:28px"></span>6.9%</td><td><q>are muslims allowed to celebrate halloween</q> · <q>bahai religion funeral traditions</q></td></tr>
-    <tr><td>Word meaning, original language</td><td class="n"><span class="bar" style="width:26px"></span>6.5%</td><td><q>bible meaning in hebrew</q> · <q>hindu word for supreme being</q></td></tr>
-    <tr><td>Why and how (explain)</td><td class="n"><span class="bar" style="width:22px"></span>5.4%</td><td><q>How is Sikh monotheism different from Islamic tawhid?</q></td></tr>
-    <tr><td>Find a quotation or verse</td><td class="n"><span class="bar" style="width:24px"></span>≈ 6%</td><td><q>torah verse about lying</q> · <q>Lao Tzu quote about silence where does it come from</q> (423 wordings contain "quote")</td></tr>
-    <tr><td>Find a book or text</td><td class="n"><span class="bar" style="width:22px"></span>≈ 5.7%</td><td><q>bhagavad gita pdf chapter 15</q> · <q>bahai history books</q>. "Find a specific work" is the largest single family (320 wordings).</td></tr>
-    <tr><td>Personal</td><td class="n"><span class="bar" style="width:4px"></span>0.8%</td><td><q>Is my sister in Heaven?</q> · <q>What happens to my child who died?</q></td></tr>
-  </table></div>
-  <p class="note">Counting by family instead of by shape: cross-tradition families hold 999 wordings (14%), with 272 plain "X vs Y". Languages: 94.5% English, then Persian 118, Chinese 86, Arabic 83, Hindi 50, Hebrew 31, Punjabi 14. Personal questions are rare in search logs because people don't confide in Google; with a named companion they will be far more common, as the seed questions and our personas assume.</p>
-</section>
-
-<section>
-  <h2>What Immerse users actually ask, and how we did</h2>
-  <p>A different crowd from the search box: mostly active Bahá'ís working inside their community, asking about the Fund, voting, junior youth camps, the Nine Year Plan, centres of intense activity, Feast programs. Our personas include no one like them. Questions are long and specific; Immerse answers at length (median 1,381 words, 1 to 40 sources).</p>
-  <div class="wrap"><table>
-    <tr><th>Kind (my hand count of the 61)</th><th>Count</th><th>Examples</th></tr>
-    <tr><td>Doctrine and explanation (B1, B3)</td><td class="n">≈ 16</td><td><q>What do our Writings say about hypocrisy?</q> · <q>How do the writings articulate the unknowability of God while…</q> · <q>space travel</q></td></tr>
-    <tr><td>Community practice and guidance (D3, new)</td><td class="n">≈ 12</td><td><q>How should Baha'is vote?</q> · <q>how should we treat JY with different needs</q> · <q>If a parent has disowned a child, does that child still need their consent for marriage?</q></td></tr>
-    <tr><td>Find or compile passages (A3, F1)</td><td class="n">≈ 10</td><td><q>show me the hidden words that talk about justice</q> · <q>Create a short compilation on the Bahá'í Fund</q> · <q>nine quotes on eternity</q></td></tr>
-    <tr><td>Stories and history (B4)</td><td class="n">≈ 8</td><td><q>the story of Lua Getsinger's chronic condition disappearing</q> · <q>Could the Guardian read people's thoughts? Any stories?</q></td></tr>
-    <tr><td>Source or verify a quotation (A4)</td><td class="n">≈ 6</td><td><q>source this: "The essential is that all the friends…"</q> · <q>Find this. excerpt from a pilgrim note</q></td></tr>
-    <tr><td>Facts (A1)</td><td class="n">≈ 6</td><td><q>What is the Bahá'í temple in India called</q> · <q>When was ABS founded and by whom?</q></td></tr>
-    <tr><td>Challenge and interfaith (E1, C)</td><td class="n">≈ 4</td><td><q>How should Bahá'ís respond to Muslims who cite Qur'an 33:40?</q> · <q>Is this guidance superseded?</q></td></tr>
-    <tr><td>Made things (F2, F4)</td><td class="n">≈ 4</td><td><q>Create a table of all the Bahá'í shrines and temples</q> · <q>devotional program on service, add a few songs</q></td></tr>
-  </table></div>
-  <div class="caution" style="margin-top:12px">
-    <p><b>The result on 10-19.</b> An Opus judge compared our researcher with Immerse's answers, blind, on all 61. Immerse <b>7.28</b> of 10, ours 5.23, better on 12 of 61; the best of four runs that day was 5.58. We hold more than Immerse (originals, other traditions, talks, the entity graph), so the loss comes from how we answer, not what we hold.</p>
-  </div>
-</section>
-
-<section class="group">
-  <div>
-    <h2>The scenarios</h2>
-    <p>Every test message we hold, <b>12,808</b> in all, was classified by type: survey and SEO wordings, seed and seeker questions, the wording battery with its threads, Immerse's 61, and the 412 turns of the conversation runs, each read with the thread before it. Haiku 5.5 labelled them for $0.78 (<code>planning/anis-question-types-20261102.json</code>). Each message has a lead type, whose strategy drives the answer, and any other types whose strategies must also run. 3,343 (26%) need more than one; see <a href="#combined">combined strategies</a>.</p>
-    <p>Each type shows real wordings, frequency, the research strategy and the answer it deserves; the answer shape is the contract we build and test against. <span style="color:var(--accent)">◆</span> marks a Jev decision; <span class="new">new</span> marks a tool not yet built. The labels are Haiku's first pass, not checked gold; their confusions are under <a href="#jev-accuracy">making Jev accurate</a>.</p>
-  </div>
-
-  <span class="gtag">A · QUICK LOOKUPS · short question, short answer</span>
-  <div class="scen"><h3>A1 · A fact</h3>
-    <div><span class="k">Sounds like</span><q>when did sikhism arise</q> · <q>who wrote 108 upanishads</q> · <q>how old is avesta</q></div>
-    <div><span class="k">How often</span><b>943</b> as lead type (7.4%) · 108 more as part of another<br><span class="note">Most often with: A1 + E2 (40) · A1 + A2 (32) · A1 + B4 (22)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Jev pulls out the subject: a person, work, place or event</li><li>Fact lookup: catalogue (<code>about_work</code>), biography (<code>people</code>), entity graph</li><li class="jev">◆ found in the record · not there → search the library for a sentence stating it</li><li class="jev">◆ one answer · sources disagree → give both with sources · nothing → E2</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The fact first, in one to three sentences, source linked, plus one line of context if it changes the meaning. No preamble, no essay. Under 3 seconds.</div></div>
-  <div class="scen"><h3>A2 · Find a book or text</h3>
-    <div><span class="k">Sounds like</span><q>Kitáb-i-Íqán pdf</q> · <q>read the Tablet of Ahmad online</q> · <q>God Passes By</q> (a bare title)</div>
-    <div><span class="k">How often</span><b>615</b> as lead type (4.8%) · 99 more as part of another<br><span class="note">Most often with: A1 + A2 (32) · A3 + A2 (18) · B1 + A2 (18)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Title index (<code>find_work</code>, fuzzy, all languages)</li><li class="jev">◆ one match → link · several → list, best first · none → nearest titles, then search by author or topic</li><li>Laid out from a template</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The library's own copy, linked, with the title in italics as the link. One line on what it is. Nothing else unless asked. (Your rule from 11-01: the book, not a talk about it.)</div></div>
-  <div class="scen"><h3>A3 · Find a passage by topic</h3>
-    <div><span class="k">Sounds like</span><q>new testament verse about forgiveness</q> · <q>Where does Bahá'u'lláh say justice is the best beloved?</q></div>
-    <div><span class="k">How often</span><b>2,033</b> as lead type (15.9%) · 692 more as part of another<br><span class="note">Most often with: B1 + A3 (290) · A3 + B1 (76) · A3 + A6 (64)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>In parallel: library search on the topic (authoritative shelves first) · HyPE questions</li><li class="jev">◆ passage answers it · only mentions the topic · nothing → reword, or search another shelf</li><li><code>read_around</code> each kept hit; wording checked against the text</li><li class="jev">◆ one strong passage · several (2–4, by authority)</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The passage, quoted exactly, linked to its paragraph; two or three more if the topic has several. Most authoritative source first.</div></div>
-  <div class="scen"><h3>A4 · Who said this? Is this quote real?</h3>
-    <div><span class="k">Sounds like</span><q>who said "the earth is but one country"</q> · fake Buddha and Rumi quotes</div>
-    <div><span class="k">How often</span><b>1,404</b> as lead type (11.0%) · 160 more as part of another<br><span class="note">Most often with: A4 + B2 (32) · A4 + A5 (31) · A4 + E2 (30)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Exact-phrase search (phrase index)</li><li class="jev">◆ exact · close wording · paraphrase of a known passage · nothing</li><li>On a hit: <code>source_of</code>, then <code>trace_source</code> when the hit sits in a secondary book</li><li class="jev">◆ the book's own words · quoted from earlier, trace it · misattributed → find the real origin (web, labelled)</li><li>Laid out from a template: verdict, passage, author, work, paragraph</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>Verdict first: found, found with different wording, or not found. Then the real passage, linked. If misattributed, say where the saying really comes from when we can trace it.</div></div>
-  <div class="scen"><h3>A5 · Look up a reference</h3>
-    <div><span class="k">Sounds like</span><q>John 3:16</q> · <q>surah 2 ayah 255</q> · <q>Hidden Words Arabic 5</q></div>
-    <div><span class="k">How often</span><b>116</b> as lead type (0.9%) · 179 more as part of another<br><span class="note">Most often with: A4 + A5 (31) · G3 + A5 (21) · A3 + A5 (19)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Parse the reference: Bible, Qur'an, Gita, numbered Bahá'í texts <span class="new">new</span> (one parser; <code>tablets</code> covers part of the Bahá'í side)</li><li>Fetch the paragraph</li><li class="jev">◆ which translation or edition</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The text, linked, with its translation named. Nothing more.</div></div>
-  <div class="scen"><h3>A6 · What does this word mean?</h3>
-    <div><span class="k">Sounds like</span><q>what does Tao Te Ching mean</q> · <q>sikh word for thank you</q> · <q>What does the name 'Abdu'l-Bahá mean?</q> (Immerse)</div>
-    <div><span class="k">How often</span><b>919</b> as lead type (7.2%) · 316 more as part of another<br><span class="note">Most often with: B1 + A6 (100) · A6 + B1 (90) · A3 + A6 (64)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li><code>word_study</code> and glossary</li><li class="jev">◆ a term of the Writings · a general religious term · a name</li><li><code>find_original</code> for script and transliteration; one passage that uses it</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The meaning in one line, the original script and transliteration, and one passage using it. Offer a fuller word study if the term is central to the Writings.</div></div>
-
-  <div class="scen"><h3>A7 · Show me the original (or a translation) of this passage <span class="new">new type</span></h3>
-    <div><span class="k">Sounds like</span><q>Show me the Persian original of 'praiseworthy deeds and upright character…'</q> · <q>the Arabic of this verse</q> · <q>is there an English translation of this tablet?</q></div>
-    <div><span class="k">How often</span><b>221</b> messages, found when the classification put 194 of them under A4. A quotation lookup finds the passage; these need the next step too, so they get their own type.</div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>A4 to find the passage (exact phrase, then close wording)</li><li><code>find_original</code> or <code>find_translation</code> on the paragraph (cross-lingual alignment)</li><li class="jev">◆ aligned paragraph exists · only the whole work is paired → closest paragraph by alignment score, labelled · no original in the library → say so</li><li>Laid out from a template: the two texts side by side, both linked, the translator named</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The passage and its original (or translation) side by side, both linked, the translator named. Never a fresh translation.</div></div>
-
-  <span class="gtag">B · UNDERSTANDING · the reader wants to learn</span>
-  <div class="scen"><h3>B1 · What does tradition X teach about Y?</h3>
-    <div><span class="k">Sounds like</span><q>what do christians believe happens after death</q> · <q>Do Bahá'ís believe in hell?</q></div>
-    <div><span class="k">How often</span><b>2,139</b> as lead type (16.7%) · 479 more as part of another<br><span class="note">Most often with: B1 + A3 (290) · B1 + A6 (100) · A6 + B1 (90)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Jev fills in tradition, topic and any named author</li><li>In parallel: scripture · authoritative interpretation · HyPE questions</li><li class="jev">◆ enough · reword · search the originals · search a wider shelf</li><li><code>read_around</code> each hit</li><li class="jev">◆ for each passage: answers · only mentions · contradicts another hit</li><li>The writing model writes, citation code checks every quote</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A direct answer in the first sentence, then 2–4 passages from that tradition's own scripture, quoted and linked; 150–300 words. Authority order: scripture, then authoritative interpretation, then scholarship labelled as such.</div></div>
-  <div class="scen"><h3>B2 · Explain this passage (while reading)</h3>
-    <div><span class="k">Sounds like</span><q>what does "return" mean in this paragraph?</q> · <q>who is the "Pen of Glory" here?</q> · <q>summarise this chapter</q></div>
-    <div><span class="k">How often</span><b>193</b> as lead type (1.5%) · 112 more as part of another<br><span class="note">Most often with: A4 + B2 (32) · G1 + B2 (19) · A3 + B2 (12)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Anchor: the paragraph the reader is on</li><li class="jev">◆ what to explain: a term · a person or event (→ B5, B4) · the argument · a summary</li><li><code>read_around</code>; the same term elsewhere by the same author; <code>find_original</code> for the key word</li><li>Writing model, short, then offers more</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>Anchored to the reader's paragraph. Explain with the author's own words elsewhere (where else this is said, the original term). Short, with an offer to go deeper. Never replace the text with a paraphrase.</div></div>
-  <div class="scen"><h3>B3 · Why or how</h3>
-    <div><span class="k">Sounds like</span><q>Why does God allow suffering?</q> · <q>How is Sikh monotheism different from Islamic tawhid?</q></div>
-    <div><span class="k">How often</span><b>417</b> as lead type (3.3%) · 162 more as part of another<br><span class="note">Most often with: B3 + D3 (39) · B3 + B1 (33) · A3 + B3 (22)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>As B1, but searching for the reason given (purpose, because, wisdom of) and for interpreters</li><li class="jev">◆ one authoritative explanation · interpreters differ → show each · no reason given in the texts → say so</li><li>The writing model builds the reasoning one cited step at a time</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A clear line of reasoning built from cited passages, one step per passage. Name where interpreters differ. End with the one passage most worth reading in full.</div></div>
-  <div class="scen"><h3>B4 · Tell me the story</h3>
-    <div><span class="k">Sounds like</span><q>What is the story of the Báb's childhood in Shiraz?</q> · <q>Recount the life of Quddús before…</q> (both Immerse)</div>
-    <div><span class="k">How often</span><b>182</b> as lead type (1.4%) · 99 more as part of another<br><span class="note">Most often with: A1 + B4 (22) · B4 + B5 (21) · B5 + B4 (19)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Resolve the person or event (entity graph)</li><li>Historical shelf in date order: Nabíl, <i>God Passes By</i>, Balyuzi; <code>read_around</code></li><li class="jev">◆ accounts agree · accounts differ → note where (C4)</li><li>The writing model narrates, dated, each event cited</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A narrative in order, each event cited to its historical source (Nabíl, Shoghi Effendi, Balyuzi), with dates. Note where accounts disagree.</div></div>
-  <div class="scen"><h3>B5 · Who was this person?</h3>
-    <div><span class="k">Sounds like</span><q>Who was Ṭáhirih?</q> · <q>who is Kali?</q></div>
-    <div><span class="k">How often</span><b>257</b> as lead type (2.0%) · 97 more as part of another<br><span class="note">Most often with: B5 + A3 (47) · A3 + B5 (47) · B4 + B5 (21)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Biography record (<code>people</code>)</li><li class="jev">◆ which bearer of the name (a bare name means the most prominent one) · not in the record → search by name</li><li>Passages about them from the Writings</li><li>Short write-up; link the biography page</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>Who they were in two sentences, key dates, and the passages in the Writings about them. Link the biography page.</div></div>
-
-  <span class="gtag">C · COMPARISON · the interfaith core</span>
-  <div class="scen"><h3>C1 · Two traditions on one topic</h3>
-    <div><span class="k">Sounds like</span><q>suffering in buddhism vs christianity</q> · <q>How does the Bahá'í soul differ from Hindu and Buddhist reincarnation?</q></div>
-    <div><span class="k">How often</span><b>270</b> as lead type (2.1%) · 38 more as part of another<br><span class="note">Most often with: C1 + B1 (17) · C1 + A3 (15) · C1 + D3 (13)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>B1 once per tradition, all in parallel</li><li class="jev">◆ each side: covered · thin → search wider · missing → say so</li><li>The writing model writes one section per side in its own terms, then what is shared and what differs</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>One section per tradition, each in its own scripture's words, linked; then what is shared and what differs. Each side treated equally fairly, in its own terms. If our shelf for one side is thin, say so.</div></div>
-  <div class="scen"><h3>C2 · X vs Y head to head</h3>
-    <div><span class="k">Sounds like</span><q>confucianism vs taoism</q> · <q>difference between varna and jati</q></div>
-    <div><span class="k">How often</span><b>518</b> as lead type (4.0%) · 51 more as part of another<br><span class="note">Most often with: C2 + E3 (13) · C2 + A6 (13) · C2 + B1 (11)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li class="jev">◆ what is compared: two traditions (→ C1) · two concepts in one tradition · two works or people · two practices</li><li>Retrieval for each side in parallel</li><li>Table of 4–6 points, a source on every row, then the writing model's paragraph</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A short table of 4–6 points with a source on each row, then a paragraph. Offer to go deeper on one point.</div></div>
-  <div class="scen"><h3>C3 · What do all religions say about X?</h3>
-    <div><span class="k">Sounds like</span><q>Do all religions have an afterlife?</q> · <q>the Golden Rule in many religions</q></div>
-    <div><span class="k">How often</span><b>259</b> as lead type (2.0%) · 61 more as part of another<br><span class="note">Most often with: D3 + C3 (19) · C3 + A3 (17) · A3 + C3 (13)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Fan out across all twelve traditions in parallel, best passage for each</li><li class="jev">◆ each tradition: a real passage · none → leave it out</li><li>The writing model writes the survey and the pattern</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A survey: one quoted line per tradition (only those with a real passage), then the pattern. Here the library's breadth is the product.</div></div>
-  <div class="scen"><h3>C4 · Two accounts or translations of one thing</h3>
-    <div><span class="k">Sounds like</span><q>Compare Shoghi Effendi's account of Badasht with Nabíl's</q> (Immerse) · <q>which Tao Te Ching translation is best</q></div>
-    <div><span class="k">How often</span><b>23</b> as lead type (0.2%) · 14 more as part of another<br><span class="note">Most often with: G5 + C4 (4) · C4 + A1 (2) · C4 + A4 (2)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Find both works or translations (<code>about_work</code>, <code>find_translation</code>)</li><li>Align the matching passages (cross-lingual alignment)</li><li class="jev">◆ differences of meaning · of wording only</li><li>Side by side from a template; the writing model notes which is authoritative</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The two texts side by side on the points that differ, with links. Say which is authoritative and why, without retranslating.</div></div>
-
-  <span class="gtag">D · PERSONAL AND PRACTICAL · the reader brings their life</span>
-  <div class="scen"><h3>D1 · Grief, fear, doubt</h3>
-    <div><span class="k">Sounds like</span><q>My grandmother passed away… will I recognise her?</q> · <q>How do I overcome doubt in my faith?</q></div>
-    <div><span class="k">How often</span><b>65</b> as lead type (0.5%) · 48 more as part of another<br><span class="note">Most often with: D1 + B1 (15) · B1 + D1 (11) · D1 + B3 (11)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li class="jev">◆ wants comfort · wants meaning (→ B3) · a sign of crisis → point to real help first</li><li>Search the Writings and prayers for this specific loss or fear</li><li>Writing model: short and warm, one or two passages in full, a prayer offered</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>Short and warm. One or two passages that speak to it, quoted in full. No lecture, no list. A gentle question back, or a prayer offered. Never preach.</div></div>
-  <div class="scen"><h3>D2 · A prayer for an occasion</h3>
-    <div><span class="k">Sounds like</span><q>prayer for healing</q> · <q>a prayer for someone who just died</q></div>
-    <div><span class="k">How often</span><b>62</b> as lead type (0.5%) · 8 more as part of another<br><span class="note">Most often with: A3 + D2 (5) · D2 + D3 (4) · A4 + D2 (3)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Prayers by occasion <span class="new">new</span>: a prayer shelf indexed by occasion and need</li><li class="jev">◆ one clear occasion · several fit · none → closest prayers by theme</li><li>Laid out from a template: the prayer in full, two alternatives by title</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The prayer itself in full, linked, with its source. One or two alternatives listed by title.</div></div>
-  <div class="scen"><h3>D3 · Rules and practice</h3>
-    <div><span class="k">Sounds like</span><q>is it haram to eat bugs</q> · <q>Can Bahá'ís drink alcohol?</q> · <q>bahai funeral traditions</q></div>
-    <div><span class="k">How often</span><b>838</b> as lead type (6.5%) · 213 more as part of another<br><span class="note">Most often with: D3 + A3 (61) · B1 + D3 (50) · A3 + D3 (39)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>B1 restricted to law: Aqdas, Questions and Answers, compilations, letters</li><li class="jev">◆ clear law · custom, not law · a personal ruling → the right institution</li><li>Writing model: yes, no or it depends in the first line, then the text</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>Yes, no or it depends in the first line, then the text that says so. Separate law from custom. For personal rulings, point to the right institution instead of ruling.</div></div>
-  <div class="scen"><h3>D4 · Community life and service</h3>
-    <div><span class="k">Sounds like</span><q>How should Bahá'ís vote?</q> · <q>how can a community choose a neighbourhood for intense activity, per recent guidance</q> · <q>Can administrative roles have term limits?</q></div>
-    <div><span class="k">How often</span><b>17</b> as lead type (0.1%) · 5 more as part of another<br><span class="note">Most often with: B3 + D4 (2) · D3 + D4 (2) · D4 + B3 (2)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Guidance by date <span class="new">new</span>: House of Justice messages indexed by date and topic, with what supersedes what</li><li class="jev">◆ current guidance found · superseded → give the current one · none → the Writings behind the practice</li><li>Writing model: what to do, one passage per point</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>Current guidance first (the latest applicable House of Justice message, dated), then the Writings behind it. Say when guidance is superseded. Practical and organised: what to do, with the passage for each point.</div></div>
-  <div class="scen"><h3>D5 · Is it a cult? Should I join? How do I convert?</h3>
-    <div><span class="k">Sounds like</span><q>is baha'i faith a cult</q> · <q>Why I Left the Baha'i Faith</q></div>
-    <div><span class="k">How often</span><b>63</b> as lead type (0.5%) · 4 more as part of another<br><span class="note">Most often with: D5 + D1 (5) · D5 + E3 (4) · D5 + C2 (3)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Fixed set of checked facts (no clergy, how one enrols, how the community is organised) plus B1 on the specific worry</li><li class="jev">◆ hostile · curious · ready to join → enrolment link</li><li>Writing model: fair, calm, no pressure</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>Fair and calm. Facts with sources, the question acknowledged honestly, no pressure. The fireside teacher's moment.</div></div>
-
-  <span class="gtag">E · CHALLENGE · the reader tests Anís</span>
-  <div class="scen"><h3>E1 · Pushback and apparent contradiction</h3>
-    <div><span class="k">Sounds like</span><q>Does the text really say that, or is that your interpretation?</q> · <q>How is equality reconciled with men-only House of Justice?</q></div>
-    <div><span class="k">How often</span><b>59</b> as lead type (0.5%) · 39 more as part of another<br><span class="note">Most often with: E1 + B3 (17) · E1 + B1 (13) · B3 + E1 (12)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Recover the claim and the earlier answer from the thread</li><li>In parallel: the exact words of the passage · authoritative interpretation of it</li><li class="jev">◆ our answer overreached → concede · the text supports it → show it · a real tension → say so and cite the explanations</li><li>Writing model</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>Concede what is interpretation. Show the exact words. Give the authoritative explanation where one exists and say plainly where none does. Never defend with vagueness.</div></div>
-  <div class="scen"><h3>E2 · Something that isn't there</h3>
-    <div><span class="k">Sounds like</span>A quote that doesn't exist, a ruling never made, a date not recorded.</div>
-    <div><span class="k">How often</span><b>219</b> as lead type (1.7%) · 119 more as part of another<br><span class="note">Most often with: A1 + E2 (40) · E2 + A3 (33) · A4 + E2 (30)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Run the strategy of the type asked for; this one takes over when that comes back empty</li><li class="jev">◆ a near match → offer it, labelled · not in the library · a web-only matter → web search, labelled</li><li>Template: <q>I can't find that in the library</q>, then the nearest real passage</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span><q>I can't find that in the library.</q> Then the closest real passage, labelled as such. Use the web only for things a library couldn't hold, and label it.</div></div>
-  <div class="scen"><h3>E3 · Controversy</h3>
-    <div><span class="k">Sounds like</span><q>what does christianity say about homosexuality</q> · abortion, euthanasia</div>
-    <div><span class="k">How often</span><b>173</b> as lead type (1.4%) · 213 more as part of another<br><span class="note">Most often with: E3 + B1 (84) · B1 + E3 (63) · A3 + E3 (38)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>B1 with strict authority order; search both the law and the guidance on how to treat people</li><li class="jev">◆ the texts are clear · interpretation differs → show each, attributed</li><li>Writing model, no editorial in either direction</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The texts, quoted accurately and in context, with the authoritative guidance. No editorialising in either direction.</div></div>
-
-  <span class="gtag">F · ASSIGNMENTS · the reader hands Anís a job</span>
-  <div class="scen"><h3>F1 · Compile quotations on a theme</h3>
-    <div><span class="k">Sounds like</span><q>Find quotes on the mystery of sacrifice and suffering</q> (Immerse) · <q>gather everything on detachment</q></div>
-    <div><span class="k">How often</span><b>84</b> as lead type (0.7%) · 5 more as part of another<br><span class="note">Most often with: F1 + A4 (14) · F1 + E3 (4) · F3 + F1 (3)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Plan shown to the reader (sub-themes, shelves)</li><li>Many searches in parallel, one per sub-theme</li><li class="jev">◆ each sub-theme: enough · thin → search wider · drop it</li><li>Remove duplicates, group, order by authority</li><li>Document; email when long. The writing model plans and groups</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A grouped compilation: sections of exact, linked passages ordered by authority, delivered as a document to keep, print or email. Takes minutes; progress shown.</div></div>
-  <div class="scen"><h3>F2 · Devotional program</h3>
-    <div><span class="k">Sounds like</span><q>Put together a devotional program for the Twin Holy Birthdays</q> · <q>…for the next Feast</q> (3 of Immerse's 14)</div>
-    <div><span class="k">How often</span><b>4</b> as lead type (0.0%) · 3 more as part of another<br><span class="note">Most often with: F2 + A3 (2) · A5 + A4 + F2 (1) · F2 + D3 (1)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Calendar <span class="new">new</span>: which Feast or Holy Day, its theme</li><li>Prayers (D2) and readings (A3) on the theme in parallel</li><li class="jev">◆ length and audience: children · mixed · devotional gathering</li><li>Program template; the writing model chooses and orders</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A ready-to-read program: opening prayer, 4–6 readings in order with who reads them, closing prayer, each linked. Knows the calendar (which Feast is next).</div></div>
-  <div class="scen"><h3>F3 · Study session preparation</h3>
-    <div><span class="k">Sounds like</span><q>I'm preparing a study session on the Íqán's treatment of "return"</q></div>
-    <div><span class="k">How often</span><b>22</b> as lead type (0.2%) · 18 more as part of another<br><span class="note">Most often with: F3 + A3 (13) · A3 + F3 (6) · A1 + F3 (5)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>F1 on the topic, then <code>read_around</code> for the passages to read aloud</li><li class="jev">◆ audience: study circle · class · talk</li><li>The writing model adds how the passages connect and 3–5 discussion questions; handout</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The passages to read aloud, where they are, how they connect, and 3–5 discussion questions. A handout, not a chat reply.</div></div>
-  <div class="scen"><h3>F4 · Timeline, chart or map</h3>
-    <div><span class="k">Sounds like</span><q>Show me a timeline of the ministries of the Central Figures</q> (Immerse)</div>
-    <div><span class="k">How often</span><b>30</b> as lead type (0.2%) · 3 more as part of another<br><span class="note">Most often with: F4 + B4 (4) · A2 + F4 (3) · F4 + B3 (3)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Dated events <span class="new">new</span>: from the entity graph and biography records, each with its source passage</li><li class="jev">◆ timeline · table · map</li><li>Template fills the visual; Haiku writes the captions</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A dated timeline where every event links to its source passage. Built from our dated facts; biography pages are the start.</div></div>
-  <div class="scen"><h3>F5 · Research brief</h3>
-    <div><span class="k">Sounds like</span><q>Trace how 'Abdu'l-Bahá uses "Most Great Justice" across his talks</q> · <q>How did Isfahání clerics respond to the Báb?</q> (Immerse)</div>
-    <div><span class="k">How often</span><b>9</b> as lead type (0.1%) · 5 more as part of another<br><span class="note">Most often with: F5 + C1 (3) · C1 + F5 (3) · F5 + C3 (2)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Deep-research job (<code>deep-research</code>): plan shown</li><li>Searches in parallel, <code>trace_source</code> on every key claim</li><li class="jev">◆ after each round: enough · another round · stop and report the gap</li><li>Report written by the stronger model, emailed</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A short report: the question, what was searched, findings with every claim cited, what remains uncertain. Sent by email when it takes more than a minute.</div></div>
-  <div class="scen"><h3>F6 · Teach me over time</h3>
-    <div><span class="k">Sounds like</span><q>a daily reading on justice</q> · <q>help me read the Íqán this month</q> · <q>quiz me on chapter 2</q></div>
-    <div><span class="k">How often</span><b>14</b> as lead type (0.1%) · 1 more as part of another<br><span class="note">Most often with: F6 + A2 (2) · F6 + C2 (2) · C2 + F6 (1)</span></div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Reader memory <span class="new">new</span>: what they read and where they stopped</li><li>A reading plan built from the work's structure</li><li class="jev">◆ each session: next portion · review · question to check understanding</li><li>Scheduled sends; writing model</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>A plan the reader agrees to, which Anís then keeps: he remembers where they are, sends the next portion, checks understanding gently.</div></div>
-
-  <span class="gtag">H · OPENERS AND THE LIBRARY ITSELF</span>
-  <div class="scen"><h3>H1 · About Anís or the library</h3>
-    <div><span class="k">Sounds like</span><q>which religions are in the library</q> · <q>what are you?</q> · <q>free online sacred texts</q></div>
-    <div><span class="k">How often</span><b>30</b> as lead type (0.2%)</div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Live library counts from the corpus status report</li><li class="jev">◆ about the library · about Anís · a greeting</li><li>Template answer with the numbers and two things to try</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>Short, with real numbers, and an invitation to ask.</div></div>
-  <div class="scen"><h3>H2 · A bare word or a pasted fragment</h3>
-    <div><span class="k">Sounds like</span><q>Mashriqu'l-Adhkár</q> · <q>confucius history</q> · <q>river of life-giving waters and may yield</q></div>
-    <div><span class="k">How often</span><b>455</b> as lead type (3.6%). <b>302 of them are pasted passages</b> of five words or more without quotation marks; they are really A4, and Jev must treat them so.</div>
-    <div class="full"><span class="k">Research strategy</span><ol class="tree"><li>Phrase index first, quotation marks or not</li><li class="jev">◆ the text matches a passage → A4 · a title → A2 · a name → B5 · a term → A6 · a topic → A3 with a short answer</li><li>Short answer, then two directions offered</li></ol></div>
-    <div class="full"><span class="k">Ideal answer</span>The most likely reading answered briefly, and two directions offered. A question back only when no reasonable answer is possible.</div></div>
-
-  <span class="gtag">G · CONVERSATION MOVES · these happen inside every group above</span>
-  <div class="wrap"><table>
-    <tr><th>Move</th><th>Lead · also</th><th>Sounds like</th><th>What Anís must do</th></tr>
-    <tr><td>Refer back</td><td class="n">66 · 4</td><td><q>the second one</q> · <q>that passage</q></td><td>Resolve it to the exact item from his last reply.</td></tr>
-    <tr><td>Source?</td><td class="n">65 · 40</td><td><q>who wrote that, and where is it?</q></td><td>Author, work, paragraph, link.</td></tr>
-    <tr><td>Exact words</td><td class="n">67 · 13</td><td><q>what are the actual words?</q></td><td>Quote verbatim, linked. Never paraphrase again.</td></tr>
-    <tr><td>Deepen</td><td class="n">17 · 1</td><td><q>what does "detachment" really mean there?</q></td><td>Word study, other uses, original term.</td></tr>
-    <tr><td>Compare</td><td class="n">57 · 11</td><td><q>how does that compare with the Gita?</q></td><td>Switch to C1 with the earlier topic carried over.</td></tr>
-    <tr><td>Push back</td><td class="n">96 · 21</td><td><q>isn't that just your reading?</q></td><td>E1.</td></tr>
-    <tr><td>Reshape</td><td class="n">0</td><td><q>shorter</q> · <q>in Persian</q> · <q>simpler, for my kids</q> · <q>email me this</q></td><td>Same content, new form. Don't search again.</td></tr>
-    <tr><td>Change topic</td><td class="n">–</td><td>a new, unrelated question</td><td>Notice it and drop the old context.</td></tr>
-    <tr><td>Vague opener</td><td class="n">H2</td><td><q>tell me about God</q> · a bare title</td><td>Give a good short answer and offer two directions. Ask a question only when no reasonable answer is possible.</td></tr>
-  </table></div>
-  <p class="note" style="margin-top:10px">The same words can be either kind of message. <q>What about Islam?</q> after an answer on fasting is a comparison follow-up; as a first message it is a new question. <q>The second one</q> means nothing without the last reply. So every message is read together with its thread before it is classified.</p>
-  <p class="note">In the conversation runs, 336 of the 393 turns that follow an earlier turn are follow-up moves, and <b>389 of the 412 turns need more than one strategy</b>: the move, plus the strategy of what it asks for (a pushback that questions a citation runs E1 and A4; <q>which Hidden Word is that?</q> runs refer-back and A5). No test message asks for a reshape (<q>shorter</q>, <q>in Persian</q>, <q>email me this</q>), so the conversation runs must add them.</p>
-</section>
-
-<section id="combined">
-  <h2>Questions that need more than one strategy</h2>
-  <p>One message in four (3,343 of 12,808) needs more than one strategy, as do 34 of Immerse's 61; only 96 need three or more. Common sets repeat, so each becomes a <b>combined strategy</b>: independent strategies run in parallel, share what they find, and one writing step produces one answer.</p>
-  <div class="wrap"><table>
-    <tr><th>Set</th><th class="n">Count</th><th>Real example</th><th>How they combine</th></tr>
-    <tr><td>B1 teaching + A3 passages</td><td class="n">366</td><td><q>whats the bahai teaching on life after death, sources plz</q></td><td>One search serves both: B1's passages are quoted in full rather than paraphrased.</td></tr>
-    <tr><td>B1 teaching + A6 word</td><td class="n">190</td><td><q>What does Islamic teaching say about Ikhlas?</q></td><td>The word study (original term, meaning) runs beside the teaching search; the answer opens with the meaning.</td></tr>
-    <tr><td>B1 teaching + E3 controversy</td><td class="n">147</td><td><q>What does Buddhism say about homosexuality?</q> · <q>can christians believe in evolution</q></td><td>B1 with E3's rules: strict authority order, both the law and the guidance on treating people, no editorial.</td></tr>
-    <tr><td>D3 rules + A3 passages</td><td class="n">100</td><td><q>What do Jewish scriptures teach about kosher dietary practices?</q> · <q>bahai funeral rites</q></td><td>Yes or no first, then the passage that says so in full.</td></tr>
-    <tr><td>A3 passages + A6 word</td><td class="n">95</td><td><q>Where does it say what dharma means? I want to read the explanation myself.</q></td><td>Search the term in its original and translated forms; one line of meaning above the passages.</td></tr>
-    <tr><td>A3 passages + B5 person</td><td class="n">94</td><td><q>Who is Ghoddus, and where in the texts is he mentioned?</q></td><td>Resolve the person first (which bearer of the name), then search passages about them.</td></tr>
-    <tr><td>B1 teaching + D3 rules</td><td class="n">81</td><td><q>do christians believe in cremation</q></td><td>Separate the teaching (why) from the rule (what), each cited.</td></tr>
-    <tr><td>A1 fact + E2 not there</td><td class="n">56</td><td><q>Who wrote the Hidden Words? I have it down as Shoghi Effendi's work.</q></td><td>The false premise is checked first; the answer corrects it, then gives the real fact.</td></tr>
-    <tr><td>A4 quotation + A5 reference / B2 explain</td><td class="n">41 · 41</td><td><q>where does it say be generous in prosperity… I want to read the full context</q></td><td>Find the source (template), then <code>read_around</code> and, for B2, a short explanation below it.</td></tr>
-    <tr><td>C1 traditions + A3 passages</td><td class="n">12</td><td><q>Find where the scriptures of Islam and Judaism each talk about fasting, and how each one views it</q></td><td>The per-tradition searches double as the passage finder; each section quotes its own scripture.</td></tr>
-    <tr><td>Follow-up move + the type it asks for</td><td class="n">389 of 412 turns</td><td><q>That passage you quoted is from 'Abdu'l-Bahá, not Bahá'u'lláh…</q></td><td>The move resolves what is meant from the thread; the type's strategy then runs, starting from the passages already found.</td></tr>
-  </table></div>
-  <p style="margin-top:10px"><b>The rule for combining.</b> Jev names the lead type and the others in one classification.</p>
+  <h3 id="jev-accuracy">Making Jev accurate</h3>
   <ul>
-    <li>The lead sets the answer's shape; the others add steps to the plan, not separate answers.</li>
-    <li>Independent steps run in parallel; a premise check (E2) or name resolution (B5) runs first because the rest depends on it.</li>
-    <li>The writing model gets everything found and writes once, so nothing is said twice.</li>
-    <li>Each common set is logged and judged as its own strategy; a combination that keeps losing gets its own tree.</li>
+    <li><b>Small questions, not one big one.</b> A chain of choices, each with a probability: new or follow-up → group → type → parameters. Uncertainty shows as low probability, not a confident wrong guess.</li>
+    <li><b>A labelled set to measure against.</b> A strong model labels real questions and conversations with the thread in view. A sample per type is checked by hand. The labels go into Jev's log, which also trains Laya, the model being trained from it. Part is held out.</li>
+    <li><b>Confusions fixed in pairs.</b> Teaching vs why-or-how, find a passage vs compile, a compare follow-up vs a new comparison. Each pair gets sharper definitions and contrasting examples, then is remeasured.</li>
+    <li><b>A confidence threshold per route,</b> set so that above it the route is right at least 90% of the time. Where a mistake is cheap, it can be lower.</li>
+    <li><b>Laya takes over</b> only once it matches Jev on the held-out set.</li>
   </ul>
-  <p class="note">Every example is a real test message from that set. Each count is one exact set of types (lead and others, any order).</p>
+  <h3 id="how-tested">How he is tested</h3>
+  <ul>
+    <li><b>Kinds, not questions.</b> Real questions show what kinds people ask, in what words, how often. We build and tune for the kinds.</li>
+    <li><b>Fresh questions every check,</b> drawn per type in the variety the evidence shows. Many are conversations with follow-ups, topic changes and look-alikes, so nothing can be memorised.</li>
+    <li><b>A held-out set.</b> Immerse's 61 real questions are never used for tuning. If the held-out score lags the fresh-question score, we are fitting our own tests.</li>
+    <li><b>A gate before anything ships.</b> Affected types rerun on a fresh sample, plus a sample of the rest. Nothing may regress. Chad gets verdicts and numbers, never answers to grade.</li>
+    <li><b>Real use feeds it.</b> Every real conversation is judged the same way. A miss shows a weak or missing type, and the question joins the evidence.</li>
+  </ul>
+  <p class="note">Reported weekly, per type and strategy version: wins against Perplexity, accuracy of each fork and what its replays show, share answered without the agent, time and cost per answer, types and options added. The numbers for launch are in <a href="#launch-doc">Anís Launch Week</a>.</p>
 </section>
 
-<section>
-  <h2>Four roles, one Anís</h2>
-  <p>Knowledge, honesty and citation rules are the same in every role; voice, length and initiative change. Anís moves between roles within one conversation as the need changes; the reader never chooses a mode.</p>
-  <div class="roles">
-    <div class="role">
-      <h3>Teaching assistant</h3>
-      <p><span class="k">Who</span><br>A student reading a book or studying a course; a study-circle tutor.</p>
-      <p><span class="k">Scenarios</span><br>B2, B3, A6, D4, F3, F6, every follow-up move.</p>
-      <p><span class="k">Voice</span><br>Clear and patient. Explains with the author's own words, checks understanding, never hands over a conclusion the student should reach.</p>
-      <p><span class="k">Initiative</span><br>Points to the next passage to read. Offers discussion questions. Remembers where the student is in the book.</p>
-      <p><span class="k">Never</span><br>Replaces reading the text with a summary of it.</p>
-      <div class="mock"><b>READER</b> What does he mean by "return" here?<br><b>ANÍS</b> He means the return of the same spirit in a new Messenger, not the same person. He says so directly a few paragraphs on: “…” (link). Want to see the three examples he gives?</div>
-    </div>
-    <div class="role">
-      <h3>Study buddy</h3>
-      <p><span class="k">Who</span><br>Someone exploring on their own, curious, following threads.</p>
-      <p><span class="k">Scenarios</span><br>A1–A6, B1, B4, B5, C2, quick follow-ups.</p>
-      <p><span class="k">Voice</span><br>Light and quick. Short answers to short questions. Shares a good find with some pleasure.</p>
-      <p><span class="k">Initiative</span><br>One concrete next step (<q>there's a striking passage on this in the Hidden Words</q>). Doesn't pile on.</p>
-      <p><span class="k">Never</span><br>Answers a five-word question with five paragraphs.</p>
-      <div class="mock"><b>READER</b> who was quddus<br><b>ANÍS</b> Quddús (Mullá Muḥammad-'Alí of Bárfurúsh, 1822–1849) was the last of the Báb's eighteen Letters of the Living and the one the Báb esteemed most. <i>God Passes By</i> calls him… (link). His story is in <i>The Dawn-Breakers</i>, ch. 19.</div>
-    </div>
-    <div class="role">
-      <h3>Fireside teacher</h3>
-      <p><span class="k">Who</span><br>A seeker from any background, or someone in pain, asking the big questions.</p>
-      <p><span class="k">Scenarios</span><br>D1, D5, B1 and B3 for the universal questions, C3, E1, E3.</p>
-      <p><span class="k">Voice</span><br>Warm, unhurried, respectful of the person's own tradition. Lets the Writings speak; says little himself.</p>
-      <p><span class="k">Initiative</span><br>Asks about the person when it helps. Offers a prayer or a passage to sit with. Offers more reading only when invited.</p>
-      <p><span class="k">Never</span><br>Preaches, pressures, or treats another tradition as a foil.</p>
-      <div class="mock"><b>READER</b> My grandmother died. Will I see her again?<br><b>ANÍS</b> I'm sorry about your grandmother. 'Abdu'l-Bahá was asked this many times. He wrote: “…” (link). Would you like a prayer for her?</div>
-    </div>
-    <div class="role">
-      <h3>Research companion</h3>
-      <p><span class="k">Who</span><br>A scholar, writer, study leader, or anyone with a job to finish.</p>
-      <p><span class="k">Scenarios</span><br>F1–F5, C1, C4, A4, E2, research briefs.</p>
-      <p><span class="k">Voice</span><br>Precise and collegial. Exact titles, dates, original terms, who said what. Separates finding from interpretation.</p>
-      <p><span class="k">Initiative</span><br>Plans the search and shows the plan. Does the work without asking at every step. Reports what it couldn't find. Delivers a document and offers the next step.</p>
-      <p><span class="k">Never</span><br>Invents a quotation, or hides that a search came up empty.</p>
-      <div class="mock"><b>READER</b> Compile the Writings on consultation for our LSA retreat.<br><b>ANÍS</b> Searching Bahá'u'lláh, 'Abdu'l-Bahá, Shoghi Effendi and the House of Justice… I've grouped 24 passages under five headings: purpose, spirit, conduct, decisions, unity after. Document (link). I left out pilgrim notes. Want discussion questions added?</div>
-    </div>
+<section id="goal">
+  <h2><span class="num">14</span>The goal</h2>
+  <div class="lead">
+    <p><b>What:</b> on every kind of question, an answer at least as good as the best anyone else gives, and usually better.</p>
+    <p><b>Why:</b> we hold more than anyone else (originals, twelve traditions, talks, letters, the people in the texts). An answer that loses is a defect.</p>
   </div>
-  <p class="note">The mock exchanges show shape only. Each "…" stands for a real passage Anís must find and quote; the Quddús dates and chapter come from <i>The Dawn-Breakers</i> and must pass the same citation check as any answer.</p>
-</section>
-
-<section>
-  <h2>How Anís tells which role he's in</h2>
-  <div class="wrap"><table>
-    <tr><th>Signal</th><th>Leans toward</th></tr>
-    <tr><td>Short query, keyword style, a bare title or name</td><td>Study buddy: short answer, link</td></tr>
-    <tr><td>Opened from a book page, or "here", "this paragraph"</td><td>Teaching assistant, anchored to that paragraph</td></tr>
-    <tr><td>Personal words (my, I feel, died, afraid, lost), or "should I"</td><td>Fireside teacher</td></tr>
-    <tr><td>An imperative: compile, prepare, put together, trace, timeline, find all</td><td>Research companion, assignment mode</td></tr>
-    <tr><td>Precise terms, original-language words, named editions</td><td>Research companion</td></tr>
-    <tr><td>Follow-ups that push back or ask for exact words</td><td>Same role, more precision</td></tr>
-  </table></div>
-</section>
-
-<section>
-  <h2>The goal</h2>
   <div class="verdict">
-    <p><b>On every scenario, Anís's answer is at least as good as the best anyone else gives, and usually better.</b> The bar is set per class of question, not per question: what Immerse or Perplexity would give for that kind of question is the minimum. We hold more than either (originals beside translations, twelve traditions, talks, letters, the entity graph), so an answer that loses to them is a defect.</p>
+    <p><b>On every request type, Anís's answer is at least as good as the best anyone else gives, and usually better.</b> The bar is set per class of question, not per question: what Immerse or Perplexity would give for that kind of question is the minimum. We hold more than either (originals beside translations, twelve traditions, talks, letters, the entity graph), so an answer that loses to them is a defect.</p>
     <p><b>Real questions are evidence of the classes, not the test.</b> Immerse's 61, the SEO questions and the survey show what kinds of question people ask, in what words, how often. We build and tune for the classes. Tuning on the 61 would make Anís good at 61 questions and teach us nothing about the next stranger's.</p>
     <p>Fast where the question is simple; visibly at work where it is deep.</p>
   </div>
-  <div class="wrap" style="margin-top:12px"><table>
-    <tr><th>Acceptance measure</th><th>Today</th><th>Demo gate · 8 Nov</th><th>4 weeks</th></tr>
-    <tr><td>Fresh questions in every class: wins or ties vs Perplexity (blind Opus judge)</td><td class="n">not measured</td><td class="n">≥ 85% per class</td><td class="n">≥ 95% per class</td></tr>
-    <tr><td>Held-out check: Immerse's 61, never used for tuning, wins or ties vs Immerse's own answers</td><td class="n">12 of 61 wins (10-19)</td><td class="n">≥ 80%</td><td class="n">≥ 95%</td></tr>
-    <tr><td>Invented quotations</td><td class="n">not counted</td><td class="n">0</td><td class="n">0</td></tr>
-    <tr><td>Answer matches its scenario's shape</td><td class="n">not measured</td><td class="n">≥ 85%</td><td class="n">≥ 95%</td></tr>
-    <tr><td>New question vs follow-up told apart correctly (checked sample)</td><td class="n">not measured</td><td class="n">≥ 95%</td><td class="n">≥ 98%</td></tr>
-    <tr><td>Jev picks the right route (checked sample)</td><td class="n">not built</td><td class="n">≥ 90%</td><td class="n">≥ 95%</td></tr>
-    <tr><td>Time, book names and quotations</td><td class="n">–</td><td class="n">≤ 1 s</td><td class="n">≤ 0.5 s</td></tr>
-    <tr><td>Time, other lookups (group A)</td><td class="n">–</td><td class="n">≤ 3 s</td><td class="n">≤ 2 s</td></tr>
-    <tr><td>Time, understanding and comparison (B, C, D, E)</td><td class="n">5.4 s typical</td><td class="n">≤ 12 s, progress within 2 s</td><td class="n">≤ 8 s</td></tr>
-    <tr><td>Assignments (F)</td><td class="n">–</td><td class="n">delivered, progress shown</td><td class="n">≤ 3 min</td></tr>
-  </table></div>
-  <p class="note">This raises the demo plan's Perplexity target from 70% to 85%, because you set these comparisons as the minimum. The 61 are held out: they confirm the class work carries over to real people's questions, and nobody looks at them while fixing. If the held-out score lags the fresh-question score, we are fitting our own test set, a defect in the classes.</p>
 </section>
 
-<section>
-  <h2>The process</h2>
-  <h3>Jev routes, recipes answer</h3>
-  <p><b>First, new question or follow-up.</b> Jev reads the message with the thread and decides: a new question (classify from scratch, drop the old context) or a follow-up, and which move (refer back, source, exact words, deepen, compare, push back, reshape). A follow-up is first rewritten as a self-contained request, its references filled in from the thread: <q>the second one</q> becomes the exact passage; <q>what about Islam?</q> becomes <q>what does Islam teach about fasting</q>, compared with the previous answer. It is then routed like any question, carrying what the thread already found, so a reshape or source request never searches again.</p>
-  <p><b>Lookups never reach a writing model.</b> A book's name or words in quotation marks ask for the book or the source, not an essay. They go straight to search: Jev at most confirms the kind of request (about a tenth of a second), title matching or exact-phrase search runs, and a template lays out the result (the book's link and catalogue line; or the passage with its author, work and paragraph, linked). A model may only format at the very end, never decide or add. If nothing is found, Anís says so plainly and offers the nearest matches; only if the reader asks more does it go to a research route.</p>
-  <p>Jev classifies each message in about a tenth of a second: scenario (A1 to F6), role, traditions, language, named works or people. Each scenario has a <b>route</b>: a recipe that knows which tools to call, in what order, on which shelves, and the answer's shape. It replaces the slow part of an open agent, deciding what to do, which today takes several model turns.</p>
-  <div class="wrap"><table>
-    <tr><th>Route</th><th>What the recipe does</th><th>Model work</th></tr>
-    <tr><td>A2 a book's name</td><td>title match on the catalogue → link and catalogue line</td><td>None (template)</td></tr>
-    <tr><td>A5 reference</td><td>parse the reference → fetch the passage</td><td>None</td></tr>
-    <tr><td>A4 words in quotation marks</td><td>exact-phrase search → closest wording if no exact match → earliest authoritative source</td><td>None (template); formatting only</td></tr>
-    <tr><td>A3 a passage by topic</td><td>semantic search → read around the hit → verify wording</td><td>Short write-up</td></tr>
-    <tr><td>D2 prayer</td><td>prayer shelf by occasion</td><td>None</td></tr>
-    <tr><td>B1 teaching on a topic</td><td>search the tradition's scripture, then authoritative interpretation; read around each hit</td><td>Writing model writes, cites every claim</td></tr>
-    <tr><td>C1–C3 comparison</td><td>the same search once per tradition named, in parallel; check each side has a real passage</td><td>Writing model writes one section per side</td></tr>
-    <tr><td>D4 community guidance</td><td>latest applicable House of Justice messages first, by date, then the Writings behind them</td><td>Writing model writes</td></tr>
-    <tr><td>F1–F5 assignments</td><td>plan shown → many searches → group → document → email if long</td><td>Writing model plans and writes; the stronger model for research briefs</td></tr>
-    <tr><td>Follow-up: reshape, source, exact words</td><td>reuse the previous answer and its passages; no new search</td><td>None, or a rewrite</td></tr>
-    <tr><td>Unsure</td><td>Jev's confidence is low, or the route fails its checks</td><td>The full research agent, as today</td></tr>
-  </table></div>
-  <p style="margin-top:10px">The 11-01 rule: quality first, speed earned. A route goes live only after it matches the full agent on its scenario's tests. Every routed answer is logged and judged; a wrong route becomes a Jev training example; a route that slips is switched off until fixed.</p>
-
-  <h3>One reply in three parts</h3>
-  <p>The reader never waits in silence and never reads the same thing twice. A research answer comes in up to three parts from one writing step, so the details never repeat the summary.</p>
-  <div class="stage">
-    <div><b>1 · AT ONCE (under 1 s)</b>What Anís understood and is doing, in the reader's words: <q>Looking for what Bahá'u'lláh and the Buddha say about the soul after death…</q> Then progress: <q>found 6 passages, reading the two strongest</q>. A template fills it from Jev's classification; no model. Lookups (book, quotation, reference) skip it: they are answered in under a second.</div>
-    <div><b>2 · THE ANSWER (short)</b>Two to five sentences and the one or two passages that carry them, quoted and linked. For most questions, the whole reply.</div>
-    <div><b>3 · THE DETAILS (when warranted)</b>Only what part 2 left out: further passages, each side of a comparison, points of interpretation, history; then the next step offered. Skipped when part 2 is complete, and always for short questions.</div>
+<section id="evidence">
+  <h2><span class="num">15</span>The evidence</h2>
+  <div class="lead">
+    <p><b>What:</b> what people actually ask, from search logs, published questions and a competitor's public feed.</p>
+    <p><b>Why:</b> we build for the kinds of question real people ask, in their words and proportions.</p>
   </div>
-  <p style="margin-top:10px"><b>How it runs.</b> Part 1 goes out as soon as Jev classifies the message. Research runs once. The writing model gets everything found and writes parts 2 and 3 as one piece in two sections, so it decides what goes where and never repeats itself. Part 2 streams first; the reader starts while part 3 is written. Whether part 3 is needed is decided at the <q>before writing</q> decision point (below), from the type and how much was found; that decision and the reader's reaction (asked for more, or less) are logged like any other.</p>
-  <p class="note">Measured per type: time to part 1, time to part 2, how often part 3 is written, and judge findings of repetition between parts 2 and 3 (target 0).</p>
-
-  <h3>Jev at every decision point, not just the first</h3>
-  <p>Routing is the first branch, not the only one. A research plan is a small map of steps with <b>decision points</b>; at each, Jev reads what has been found and picks the next step in about a tenth of a second. An open agent spends a model turn on each, 2–5 s apiece. Five decisions then cost about half a second instead of 10–25 s, and only the final answer goes to the writing model.</p>
   <div class="wrap"><table>
-    <tr><th>Decision point</th><th>Jev chooses between</th></tr>
-    <tr><td>After the first search</td><td>enough evidence · search again with other words · search another shelf · go to originals</td></tr>
-    <tr><td>Quotation not found exactly</td><td>closest wording is the same text · paraphrase of a known passage · misattributed · not in the library</td></tr>
-    <tr><td>A hit in a secondary book</td><td>the words are the book's own · quoted from an earlier source, trace it</td></tr>
-    <tr><td>A named person or work</td><td>which bearer of the name · which edition or translation</td></tr>
-    <tr><td>Does this passage answer?</td><td>answers it · only mentions the topic · contradicts another hit</td></tr>
-    <tr><td>Comparison, each side</td><td>this tradition is covered · thin, search wider · the library lacks it, say so</td></tr>
-    <tr><td>Before writing</td><td>answer now · ask the one question that matters · offer it as an assignment; and whether the reply needs part 3 (details)</td></tr>
+    <tr><th>Source</th><th>Size</th><th>What it tells us</th></tr>
+    <tr><td>Interfaith question survey (11-02)</td><td class="n">7,130 wordings<br>125 families</td><td>What people type: 4,793 from Google autocomplete, 1,127 from FAQ and forum pages, 1,210 written to fill gaps. Twelve traditions and more.</td></tr>
+    <tr><td>Published conversation pages</td><td class="n">132</td><td>Long, informed, often two-part questions.</td></tr>
+    <tr><td>Keyword Planner seeker battery</td><td class="n">32</td><td>The highest-volume phrasings. HyPE v15 was tuned on these.</td></tr>
+    <tr><td>Immerse (bahaiwritings.app) public feed</td><td class="n">61 with answers</td><td>Real user questions with Immerse's answers, saved 10-19. The held-out set and the minimum bar.</td></tr>
+    <tr><td>Immerse newsletters</td><td class="n">14</td><td>What Immerse promotes: compilations, devotional programs, timelines, life stories, two accounts compared.</td></tr>
+    <tr><td>Anís chat threads, last 365 days</td><td class="n">200</td><td>All from our own test batteries. No real reader traffic yet.</td></tr>
+    <tr><td>Conversation battery</td><td class="n">5 personas · 7 moves</td><td>Refer back, ask the source, push back, ask for exact words, compare, deepen, ask for something that isn't there.</td></tr>
   </table></div>
-  <p style="margin-top:10px">Each decision point is its own Jev task, with its own log, labelled examples and accuracy figure, as Jev's log is already kept for training Laya. Where two branches are cheap, both run at once and the decision picks a result instead of waiting.</p>
-
-  <h3>Self-improvement: the core of the plan</h3>
-  <p>Each strategy is a <b>versioned decision tree</b>. Every run is recorded fully enough to replay. Nothing is fixed: request types, trees, the options at each decision, the information Jev decides with, and the thresholds all change as the records show what works.</p>
+  <h3 id="search-box">What the search box shows</h3>
+  <p>About a third of the survey wordings are keyword fragments (<q>bahai religion marriage rules</q>), and 48% are not questions.</p>
   <div class="wrap"><table>
-    <tr><th>Recorded on every run</th><th>What it lets us do</th></tr>
-    <tr><td>The request type and the strategy tree, with their versions</td><td>Compare versions; replace a tree with a better one</td></tr>
-    <tr><td>At each decision: what Jev was shown, the options offered, its probability for each, the branch taken</td><td>Find the decision that went wrong; see whether Jev lacked information or lacked a good option</td></tr>
-    <tr><td>Each search: the query, the shelf, the passages returned (by id, with scores)</td><td>Tell a search miss from a wrong decision; rerun the same search after index changes</td></tr>
-    <tr><td>Time and cost of every step</td><td>Find the slow and expensive steps and branch around them</td></tr>
-    <tr><td>The answer, the passages it cites, the judge's verdict and the reason for any loss</td><td>Tie the outcome to the path that produced it</td></tr>
+    <tr><th>Shape</th><th>Share</th><th>Example</th></tr>
+    <tr><td>What is X / is X …</td><td class="n">13.9%</td><td><q>is the talmud reliable</q></td></tr>
+    <tr><td>What does X say about Y</td><td class="n">12.0%</td><td><q>what does the torah say about jesus</q></td></tr>
+    <tr><td>Who, when, where, how many</td><td class="n">8.9%</td><td><q>who wrote the vedas</q></td></tr>
+    <tr><td>Compare</td><td class="n">8.5%</td><td><q>difference between buddhism and hinduism beliefs</q></td></tr>
+    <tr><td>Practical rules</td><td class="n">6.9%</td><td><q>bahai religion funeral traditions</q></td></tr>
+    <tr><td>Word meaning</td><td class="n">6.5%</td><td><q>hindu word for supreme being</q></td></tr>
+    <tr><td>A quotation</td><td class="n">≈ 6%</td><td><q>Lao Tzu quote about silence where does it come from</q></td></tr>
+    <tr><td>A book</td><td class="n">≈ 5.7%</td><td><q>bhagavad gita pdf chapter 15</q> (the largest single family, 320 wordings)</td></tr>
+    <tr><td>Why and how</td><td class="n">5.4%</td><td><q>How is Sikh monotheism different from Islamic tawhid?</q></td></tr>
+    <tr><td>Personal</td><td class="n">0.8%</td><td><q>Is my sister in Heaven?</q></td></tr>
   </table></div>
-  <p style="margin-top:10px">One record per run (one turn), kept with its thread, stored through the API like all other data.</p>
-  <ol>
-    <li><b>Forensics on every run.</b> A loss is traced to its cause: request type, a decision, a search, the writing, or a missing strategy. A loss pinned to a decision is replayed from there with each other branch; the winner becomes a labelled example for that decision.</li>
-    <li><b>Better decision support.</b> If Jev chose wrong because it couldn't see what mattered (the shelf a hit came from, whether a passage was an original, how many traditions were covered so far), that information is added to the decision point. If it confused two similar options, their definitions are sharpened and contrasting examples added.</li>
-    <li><b>Better options.</b> If no existing branch would have won, the full agent on the same question shows the missing move. It becomes a new option or step, switched on only after passing the gate on fresh questions.</li>
-    <li><b>Strategies compete.</b> A new tree version runs beside the current one on fresh questions of the same type; the better one on quality, then speed, takes over. A tree that keeps losing is replaced.</li>
-    <li><b>New request types are discovered.</b> Each week, questions Jev can't place confidently, or that keep falling through to the agent, are grouped by similarity. A recurring group that needs its own approach becomes a new type, its tree built from how the agent handled it.</li>
-    <li><b>Speed is earned the same way.</b> Once a tree wins on quality, its slow steps are attacked: decisions moved from the agent to Jev, searches run in parallel, writing moved to a cheaper model only when the judge shows no loss.</li>
-  </ol>
-  <p class="note">Reported weekly, never answers to grade. Per type and tree version: win rate against Perplexity, accuracy of each decision point, share of runs finished without the agent, time and cost per answer, new types or options added.</p>
-
-  <h3 id="jev-accuracy">Making Jev's classification accurate</h3>
-  <p><b>What the first classification shows.</b> Haiku's first pass over the 12,808 messages shows where the definitions are weak. These go first into the definitions and contrasting examples:</p>
+  <p class="note">Cross-tradition families hold 999 wordings (14%). Languages: 94.5% English, then Persian, Chinese, Arabic, Hindi, Hebrew, Punjabi. Personal questions are rare in search; with a named companion they will be far more common.</p>
+  <h3 id="immerse">What Immerse users ask</h3>
+  <p>Mostly active Bahá'ís asking about community life. By hand count of the 61: doctrine ≈ 16, community practice ≈ 12, find or compile passages ≈ 10, stories ≈ 8, source a quotation ≈ 6, facts ≈ 6, challenge and interfaith ≈ 4, made things ≈ 4. Immerse answers at length (median 1,381 words).</p>
+  <div class="caution" style="margin-bottom:22px">
+    <p><b>The baseline, 10-19.</b> An Opus judge compared our researcher with Immerse on all 61, blind. Immerse 7.28 of 10, ours 5.23, better on 12 of 61 (best of four runs that day: 5.58). We hold more than Immerse, so the gap is in how we answer, not what we hold.</p>
+  </div>
+  <h3 id="open-gaps">Open: gaps in this picture</h3>
   <ul>
-    <li><b>A pasted passage without quotation marks</b> (302 messages) was called a vague opener (H2). It is a quotation lookup: the deterministic check must run the phrase index on any fragment of five or more words, marked or not.</li>
-    <li><b>"Show me the original of …"</b> (221) was called a quotation lookup (A4). It is a new type, A7, with its own strategy.</li>
-    <li><b>23 messages with no thread were called follow-ups</b>, mostly <q>this passage beginning with …</q>. A message carrying its own text is never a follow-up.</li>
-    <li><b>"… in Hindi", "… in Telugu"</b> (330): language is a parameter (reply in that language, prefer the library's translations), not a type.</li>
-    <li><b>Candidate new types</b> (too few to build yet; tracked): recommend a translation or edition (≈ 10, now under C4), quiz me (2, under F6), outside the library's scope (≈ 6, to E2).</li>
+    <li><b>No real Anís reader questions yet.</b> The first real conversations will change the frequencies above.</li>
+    <li><b>Reading mode has no evidence.</b> Its types come from what a teaching assistant does, not from logs. They should reach real readers early.</li>
+    <li><b>Immerse's feed is a snapshot</b> of 61 answers from 10-19. A fresh copy must come the way the first did, not by scraping.</li>
   </ul>
-  <ol>
-    <li><b>Small questions, not one big one.</b> Jev answers a short chain, each a choice with a probability: new or follow-up (and which move) → group (A–G) → scenario → parameters (traditions, language, named work or person, occasion). Each step has a written definition and examples; uncertainty shows as low probability, not a confident wrong guess.</li>
-    <li><b>A labelled set to measure against.</b> Opus labels the real questions and generated conversations with the thread in view; I check a sample per class; the labels are stored as gold answers in Jev's log (already kept for training Laya). Part is held out as a test.</li>
-    <li><b>Find the confusions.</b> Accuracy per scenario, with the pairs Jev mixes up (B1 teaching vs B3 why/how, A3 find a passage vs F1 compile, a compare follow-up vs a new comparison). Each pair gets a sharper definition and contrasting examples, then is remeasured.</li>
-    <li><b>A confidence threshold per route,</b> set from held-out results so that above it the route is right at least 90% of the time; below it, the full agent takes the question. Where a mistake is cheap (a lookup that finds nothing and falls through), the threshold can be lower.</li>
-    <li><b>Routes check themselves.</b> A route that finds its premise false (no such title, no passage for a named tradition) hands the question to the agent instead of answering badly.</li>
-    <li><b>Production keeps teaching it.</b> Every routed turn is judged; a wrong route becomes a gold example; Jev's log trains Laya, which takes over only once it matches Jev on the held-out set.</li>
-  </ol>
-  <p class="note">Success: new-vs-follow-up ≥ 95% and route choice ≥ 90% on held-out questions, with the share routed (not sent to the agent) rising weekly while judged scores hold.</p>
-
-  <h3>The loop</h3>
-  <ol>
-    <li><b>Classes from evidence.</b> Every real question we hold (Immerse, SEO, survey, seed, seeker, later Anís's own logs) is labelled with its scenario, giving each class its frequency, typical wordings and variations (named tradition or not, short or long, follow-up or opener). Jev labels; I check a sample per class.</li>
-    <li><b>Fresh test questions per class,</b> generated in the variety the evidence shows, across topics and traditions the real questions never touched. Many are conversations: openers followed by each kind of follow-up, plus topic changes and look-alikes (a follow-up that reads like a new question, and the reverse), so telling them apart is tested at every gate. Each gate draws a new sample, so nothing can be memorised. Immerse's 61 stay aside as the held-out check.</li>
-    <li><b>Baseline.</b> Run the full agent on the fresh questions. Judge each answer blind against Perplexity and its class's answer shape; run the held-out 61 against Immerse's answers.</li>
-    <li><b>Classify every loss</b> by cause: not in the library, search missed it, didn't look, wrong route, wrote badly, invented something.</li>
-    <li><b>Fix by cause, biggest first.</b> Search misses go to the index work (search stays first); writing faults go to the route's instructions; wrong routes go to Jev's examples.</li>
-    <li><b>Gate.</b> Rerun the affected classes on a fresh sample, plus a sample of the rest. Ship only if nothing regresses. You get the verdict and numbers, never answers to grade.</li>
-    <li><b>Real use feeds it.</b> Every real conversation is judged the same way; a miss shows a weak or missing class; the class is fixed and the question joins the evidence.</li>
-  </ol>
 </section>
 
-<section class="caution">
-  <h2>Gaps in this picture</h2>
-  <p><b>No real Anís reader questions yet.</b> All 200 recorded threads come from our test batteries. The Immerse feed is our only real-user set; the first real Anís conversations will change the frequencies above.</p>
-  <p><b>Reading mode has no evidence.</b> B2 and F6 come from what a teaching assistant does, not from logs. They should reach real readers early.</p>
-  <p><b>Immerse's feed is a snapshot</b> of 61 shared answers from 10-19. Like the SEO questions, it shows what people ask; it is not the target. A fresh copy would add evidence, but must come the way the first did, not by scraping.</p>
-</section>
 </main>

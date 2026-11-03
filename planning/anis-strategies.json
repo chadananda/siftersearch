@@ -1,0 +1,5698 @@
+{
+ "_about": "Anís strategies (one per request type A1–H2, plus A7) and activities, as DATA. A strategy = small decision tree of shared tools, cheapest tier first, ending in 'choose format, then write'. Jev routes each message to a type; the agent (api/lib/assistant/agent.js) is the fallback. A strategy is switched on for its type only after it matches the agent on that type's tests. Test-question counts come from planning/anis-question-types-20261102.json (12,808 messages, a fast model's first-pass labels, not gold): lead = lead type, also = secondary type. A7 has no label in that file: counted by a request-for-original pattern (189 messages, mostly labelled A4/G3). Rendered by scripts/anis/build-strategies-page.mjs → planning/anis-strategies.html. Drafted 2026-11-03.",
+ "updated": "2026-11-03",
+ "cost_ladder": [
+  {
+   "step": "Code check",
+   "cost": "≈0",
+   "examples": "quoted words present? exact hit? one result or many? dates in the data?"
+  },
+  {
+   "step": "Tool call",
+   "cost": "10–300 ms",
+   "examples": "title index, BM25, verbatim, HyPE, CTAI, read around, people"
+  },
+  {
+   "step": "Jev decision",
+   "cost": "≈50 ms",
+   "examples": "found? enough? source or a book quoting it? which bearer of the name?"
+  },
+  {
+   "step": "Light LLM step",
+   "cost": "0.5–2 s, paid",
+   "examples": "extract a quote or search terms; recast a question for concept search. Only where code can't, only after a cheaper tier failed"
+  },
+  {
+   "step": "Writing model",
+   "cost": "seconds",
+   "examples": "once per answer, from data + format. Never chooses what to search"
+  },
+  {
+   "step": "Research agent",
+   "cost": "10–40 s",
+   "examples": "fallback only"
+  }
+ ],
+ "grounding_scale": {
+  "strong": "100+ test questions",
+  "moderate": "20–99",
+  "few": "3–19",
+  "thin": "under 3: needs questions"
+ },
+ "tools": [
+  {
+   "id": "find_work",
+   "name": "Title index",
+   "does": "A work by any spelling of its title → the library's copy, linked",
+   "where": "api/lib/assistant/work-request.js:findWork, findTitled (dewey/title-index.js)",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "about_work",
+   "name": "Work dossier",
+   "does": "What a book is, who wrote it, why it matters, from library passages",
+   "where": "work-request.js:aboutWork + work-notes.json (work-canon.js CANON, ~56 works)",
+   "cost": "tool",
+   "status": "partial"
+  },
+  {
+   "id": "bm25",
+   "name": "Keyword search (BM25)",
+   "does": "Exact words and terms, fast; narrowed by tradition, author or work",
+   "where": "api/lib/search.js:keywordSearch → search/qdrant-layers.js (paragraphs_kw sparse)",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "verbatim",
+   "name": "Verbatim lead",
+   "does": "A passage that contains the words in order leads the results",
+   "where": "api/lib/search/verbatim.js:verbatimLead, foldVerbatim",
+   "cost": "code",
+   "status": "exists"
+  },
+  {
+   "id": "phrase_semantic",
+   "name": "Phrase semantic search",
+   "does": "Phrase-level vectors: the closest wording, with its span",
+   "where": "search/qdrant-layers.js:searchPhrases (opt-in layer)",
+   "cost": "tool",
+   "status": "partial"
+  },
+  {
+   "id": "hype",
+   "name": "HyPE concept search",
+   "does": "The questions each passage answers, matched to the reader's question",
+   "where": "api/lib/search.js:searchHypeQuestions (search/hype.js)",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "library_search",
+   "name": "Planned library search",
+   "does": "Jev plan → scoped multi-layer search, narrow then relax, authority-ranked",
+   "where": "api/lib/planned-search.js:plannedSearch → search.js:multiIndexSearch; search/doctrinal-rank.js",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "shelf",
+   "name": "Shelf presets",
+   "does": "Search one named shelf: scripture, authoritative interpretation, law, history, prayers",
+   "where": "search/named-scope.js:namedScopes + search-scope.js (presets not defined yet)",
+   "cost": "tool",
+   "status": "partial"
+  },
+  {
+   "id": "rerank",
+   "name": "Rerank",
+   "does": "Re-order candidates for the question (cross-encoder today; a Jev rerank task proposed)",
+   "where": "api/lib/reranker.js:rerank (Voyage); Jev rerank task: to build",
+   "cost": "tool",
+   "status": "partial"
+  },
+  {
+   "id": "read_around",
+   "name": "Read around",
+   "does": "Paragraphs before and after a hit; refuses copyrighted books",
+   "where": "assistant/researcher.js:libraryTools().around (docs-repo getParagraphs)",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "source_of",
+   "name": "Source hunt",
+   "does": "A quotation → published source, the original tablet, works that quote it",
+   "where": "api/lib/source-hunt.js:sourceHunt; researcher.js libraryTools().sourceOf",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "trace_source",
+   "name": "Trace to primary",
+   "does": "A letter, scholar or compilation → the primary passages it rests on",
+   "where": "researcher.js libraryTools().trace (passage-links.js:resolveLinks)",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "ref_parse",
+   "name": "Reference parser",
+   "does": "'John 3:16', 'surah 2:255', 'Gleanings CXXV', 'Hidden Words Arabic 5' → the paragraph",
+   "where": "api/lib/refs/cite.js:parseCitation, refs/schemes.js; respond.js:hiddenWordRef. Bible, Qur'an, Gita: to build",
+   "cost": "code",
+   "status": "partial"
+  },
+  {
+   "id": "find_original",
+   "name": "Find original",
+   "does": "English passage → aligned Arabic/Persian original + linked translations",
+   "where": "api/lib/passage-links.js:findOriginals; researcher.js libraryTools().original",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "find_translation",
+   "name": "Find translation",
+   "does": "Original text → existing translations (authorized, published, Phelps provisional)",
+   "where": "researcher.js libraryTools().translation",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "word_study",
+   "name": "CTAI word study",
+   "does": "Shoghi Effendi's renderings of a word or root, with counts and paired passages",
+   "where": "api/lib/assistant/ctai-term.js:resolveTerm, ctaiTerm. Passage rendering + translation guide: to build",
+   "cost": "tool",
+   "status": "partial"
+  },
+  {
+   "id": "term_in_passage",
+   "name": "Original term in passage",
+   "does": "The original word behind an English word in one paragraph",
+   "where": "api/lib/original-term.js:originalTermForParagraph, originalTermForQuote",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "glossary",
+   "name": "Glossary / concept lexicon",
+   "does": "Short meaning of a term, name or foreign word, with a proof paragraph",
+   "where": "api/lib/search/concepts.js:loadLexicon, proofParagraph (concept lexicon); general religious glossary: to build",
+   "cost": "tool",
+   "status": "partial"
+  },
+  {
+   "id": "people",
+   "name": "People record",
+   "does": "Who someone was: biography record and cited claims",
+   "where": "api/lib/entity-api.js:entityLookup, entityDossier; api/lib/bio.js",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "resolve_name",
+   "name": "Name resolver",
+   "does": "Which bearer of a name or which work a message means (bare name = most prominent)",
+   "where": "api/lib/named-object.js:resolveNamed, resolveNamedAll",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "people_search",
+   "name": "People search",
+   "does": "Who did X, members of a group, who met whom, each with cited claims",
+   "where": "api/lib/people-search.js:peopleSearch; api/lib/encounters.js:encounterSearch",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "dated_events",
+   "name": "Dated events",
+   "does": "Dated facts with source passages, for timelines across people and events",
+   "where": "api/lib/bio-timeline.js:selectFacts (one person only); cross-entity: to build",
+   "cost": "tool",
+   "status": "partial"
+  },
+  {
+   "id": "collection",
+   "name": "Prepared collection",
+   "does": "Pre-built, checked passage set for a common question or topic",
+   "where": "api/lib/deep-research.js:checkDeepResearch, getDeepResearchQuotes (per canonical question; topic collections to build)",
+   "cost": "tool",
+   "status": "partial"
+  },
+  {
+   "id": "prayers",
+   "name": "Prayers by occasion",
+   "does": "Prayer shelf indexed by occasion and need",
+   "where": "—",
+   "cost": "tool",
+   "status": "to build"
+  },
+  {
+   "id": "guidance",
+   "name": "Guidance by date",
+   "does": "House of Justice messages by date and topic, with what supersedes what",
+   "where": "api/lib/letters/letters.js (letter lookup by author/date); supersession index: to build",
+   "cost": "tool",
+   "status": "partial"
+  },
+  {
+   "id": "calendar",
+   "name": "Holy-day calendar",
+   "does": "Which Feast or Holy Day is next, and its theme",
+   "where": "—",
+   "cost": "code",
+   "status": "to build"
+  },
+  {
+   "id": "checked_facts",
+   "name": "Checked fact sheets",
+   "does": "Fixed, sourced facts for recurring questions (no clergy, how one enrols, how the Faith is organised)",
+   "where": "—",
+   "cost": "code",
+   "status": "to build"
+  },
+  {
+   "id": "library_stats",
+   "name": "Library counts",
+   "does": "Live counts of traditions, works, languages",
+   "where": "api/lib/assistant/library-facts.js:religionsReply; api/lib/library/library-stats.js",
+   "cost": "code",
+   "status": "exists"
+  },
+  {
+   "id": "web",
+   "name": "Web, labelled",
+   "does": "The open web as a LEAD or for what a library can't hold; always labelled",
+   "where": "api/lib/perplexity.js:perplexityFallback; api/lib/web-lead.js:extractWebLeads",
+   "cost": "tool",
+   "status": "exists"
+  },
+  {
+   "id": "thread",
+   "name": "Last turn's evidence",
+   "does": "The passages, links and claims of the previous reply; 'that one' resolved to an item",
+   "where": "respond.js:referenceOf, evidenceOf; search-plan.js:followUpAsks. Item-level refer-back: to build",
+   "cost": "code",
+   "status": "partial"
+  },
+  {
+   "id": "reader_card",
+   "name": "Reader card",
+   "does": "~50-word profile of the reader: language, level, traditions, interests, place in a book",
+   "where": "assistant/reading.js keeps reading position only; card + log: to build",
+   "cost": "code",
+   "status": "to build"
+  },
+  {
+   "id": "quote_gate",
+   "name": "Citation gate",
+   "does": "After writing: drops any quote not in the passages, links every quote, fixes speakers",
+   "where": "api/lib/assistant/quotes.js:dropUnverified, linkQuotes, fixQuoteSpeakers",
+   "cost": "code",
+   "status": "exists"
+  },
+  {
+   "id": "choose_format",
+   "name": "Format chooser",
+   "does": "Picks the answer template from question + evidence profile + channel",
+   "where": "api/lib/assistant/formats.js:chooseFormat; findings.js:dataProfile",
+   "cost": "jev",
+   "status": "exists"
+  },
+  {
+   "id": "jev_type",
+   "name": "Jev: request type",
+   "does": "Message + thread → lead type and also-types (A1–H2), new or follow-up",
+   "where": "triage.js KINDS (coarse kinds) + search-plan.js:planSearch today; A1–H2 task: to build",
+   "cost": "jev",
+   "status": "partial"
+  },
+  {
+   "id": "jev_decide",
+   "name": "Jev decision point",
+   "does": "found? enough? source or quoter? answers or only mentions?",
+   "where": "api/lib/systemone.js:ask (infra exists; each decision is a new task to train)",
+   "cost": "jev",
+   "status": "partial"
+  },
+  {
+   "id": "extract",
+   "name": "Light LLM: extract",
+   "does": "Pull the quote, names, author, work and search terms out of a message",
+   "where": "api/lib/assistant/phrases.js:extractPhrases (fixedPhrases is the free code path)",
+   "cost": "llm",
+   "status": "exists"
+  },
+  {
+   "id": "recast",
+   "name": "Light LLM: recast",
+   "does": "Rewrite a vague or colloquial question into one a concept search can answer",
+   "where": "—",
+   "cost": "llm",
+   "status": "to build"
+  },
+  {
+   "id": "plan_subthemes",
+   "name": "Light LLM: plan",
+   "does": "Split an assignment into sub-themes and shelves, shown to the reader",
+   "where": "deep-research.js:discoveryFanOut (partial)",
+   "cost": "llm",
+   "status": "partial"
+  },
+  {
+   "id": "writer",
+   "name": "Writing model",
+   "does": "Writes once from data + format; never decides what to search",
+   "where": "api/lib/assistant/craft.js:anisCraft (role anis-writer / assistant-answer)",
+   "cost": "writer",
+   "status": "exists"
+  },
+  {
+   "id": "agent",
+   "name": "Research agent",
+   "does": "One model loop over the library tools; the fallback for every strategy",
+   "where": "api/lib/assistant/agent.js; researcher.js TOOLS",
+   "cost": "agent",
+   "status": "exists"
+  },
+  {
+   "id": "deep_research",
+   "name": "Deep-research job",
+   "does": "Multi-round research with a shown plan; emailed report",
+   "where": "api/lib/deep-research.js",
+   "cost": "agent",
+   "status": "exists"
+  }
+ ],
+ "families": [
+  {
+   "id": "A",
+   "name": "Quick lookups",
+   "note": "short question, short answer; most need no writing model"
+  },
+  {
+   "id": "B",
+   "name": "Understanding",
+   "note": "the reader wants to learn"
+  },
+  {
+   "id": "C",
+   "name": "Comparing",
+   "note": "the interfaith core; mostly B1 run per side"
+  },
+  {
+   "id": "D",
+   "name": "Life and practice",
+   "note": "the reader brings their life"
+  },
+  {
+   "id": "E",
+   "name": "Hard questions",
+   "note": "the reader tests Anís"
+  },
+  {
+   "id": "F",
+   "name": "Assignments",
+   "note": "a job; minutes, progress shown, a document"
+  },
+  {
+   "id": "G",
+   "name": "Follow-ups",
+   "note": "start from the last turn's evidence; search again only for what it lacks"
+  },
+  {
+   "id": "H",
+   "name": "Small talk and openers",
+   "note": ""
+  }
+ ],
+ "strategies": [
+  {
+   "id": "A1",
+   "family": "A",
+   "family_name": "Quick lookups",
+   "name": "A fact",
+   "types": [
+    "A1"
+   ],
+   "status": "draft",
+   "target_time": "≤ 3 s",
+   "scenario": {
+    "title": "A fact",
+    "sounds_like": [
+     "when did sikhism arise",
+     "who wrote 108 upanishads",
+     "how old is avesta"
+    ],
+    "how_often": "943 as lead type (7.4%) · 108 more as part of another",
+    "often_with": "A1 + E2 (40) · A1 + A2 (32) · A1 + B4 (22)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Jev pulls out the subject: a person, work, place or event"
+     },
+     {
+      "jev": false,
+      "text": "Fact lookup: catalogue (about_work), biography (people), entity graph"
+     },
+     {
+      "jev": true,
+      "text": "found in the record · not there → search the library for a sentence stating it"
+     },
+     {
+      "jev": true,
+      "text": "one answer · sources disagree → give both with sources · nothing → E2"
+     }
+    ],
+    "ideal_answer": "The fact first, in one to three sentences, source linked, plus one line of context if it changes the meaning. No preamble, no essay. Under 3 seconds."
+   },
+   "jev": {
+    "cues": [
+     "when / who / where / how old / how many + a named subject",
+     "asks for one checkable fact, not an explanation"
+    ],
+    "example_phrasings": [
+     "When was ABS founded and by whom?",
+     "Báb executed where",
+     "how old is Taoism",
+     "who wrote the torah books",
+     "did guru gobind singh speak punjabi"
+    ],
+    "near_misses": [
+     {
+      "text": "what hapened to the body of the Bab after he was killed",
+      "goes_to": "B4",
+      "why": "a story, not one fact"
+     },
+     {
+      "text": "Who wrote the Hidden Words? I have it down as Shoghi Effendi's work.",
+      "goes_to": "A1 + E2",
+      "why": "false premise checked first"
+     },
+     {
+      "text": "where is the phrase \"Some Answerd Questions\" from? which book is it in",
+      "goes_to": "A1 + A2",
+      "why": "ends in a book link"
+     }
+    ],
+    "required_slots": [
+     "subject (person, work, place, event)",
+     "fact asked (date, place, author, count)"
+    ],
+    "disqualifiers": [
+     "asks why or what it means",
+     "pasted passage of five words or more"
+    ],
+    "confusable_with": [
+     "B4",
+     "B5",
+     "A2"
+    ],
+    "composes_with": [
+     "E2",
+     "A2",
+     "B4"
+    ]
+   },
+   "test_questions": {
+    "lead": 943,
+    "also": 108,
+    "examples": [
+     "When was ABS founded and by whom? (Immerse)",
+     "What is the Baha'i temple in India called (Immerse)",
+     "Báb executed where",
+     "how old is Taoism"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "resolve_name",
+       "label": "Name resolver"
+      },
+      {
+       "kind": "tool",
+       "id": "people",
+       "label": "Record / dossier"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "In the record?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "bm25",
+       "label": "BM25 subject+fact"
+      },
+      {
+       "kind": "tool",
+       "id": "hype",
+       "label": "HyPE"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Stated?"
+      }
+     ]
+    },
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "recast",
+       "label": "Light LLM: recast"
+      },
+      {
+       "kind": "tool",
+       "id": "library_search",
+       "label": "Library search"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Stated?"
+      }
+     ]
+    }
+   ],
+   "format": "direct_answer (sources disagree → both, cited; nothing → E2)",
+   "fallback": "agent",
+   "open_questions": [
+    "Facts about works (date, translator) live in about_work only for ~56 canon works: extend the catalogue fields to all works?",
+    "General-religion facts (how old is Taoism) often aren't stated in a passage: web lead, labelled, or say not found?"
+   ],
+   "measure": "60 fresh A1 + Immerse A1s; fact correct and sourced, ≤ 3 s, beats or ties agent"
+  },
+  {
+   "id": "A2",
+   "family": "A",
+   "family_name": "Quick lookups",
+   "name": "Find a book",
+   "types": [
+    "A2"
+   ],
+   "status": "draft",
+   "target_time": "≤ 1 s",
+   "scenario": {
+    "title": "Find a book or text",
+    "sounds_like": [
+     "Kitáb-i-Íqán pdf",
+     "read the Tablet of Ahmad online",
+     "God Passes By"
+    ],
+    "sounds_like_note": "(a bare title)",
+    "how_often": "615 as lead type (4.8%) · 99 more as part of another",
+    "often_with": "A1 + A2 (32) · A3 + A2 (18) · B1 + A2 (18)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Title index (find_work, fuzzy, all languages)"
+     },
+     {
+      "jev": true,
+      "text": "one match → link · several → list, best first · none → nearest titles, then search by author or topic"
+     },
+     {
+      "jev": false,
+      "text": "Laid out from a template"
+     }
+    ],
+    "ideal_answer": "The library's own copy, linked, with the title in italics as the link. One line on what it is. Nothing else unless asked. (the book, not a talk about it.)"
+   },
+   "jev": {
+    "cues": [
+     "a title alone, or a title + pdf / read / online / where is",
+     "'the book called', 'locate the work'"
+    ],
+    "example_phrasings": [
+     "dawnbreakers",
+     "Okay, can you locate the work called The Most Holy Book for me?",
+     "bok of certitude where is it",
+     "upanishads pdf in sanskrit",
+     "کلمات مکنونه"
+    ],
+    "near_misses": [
+     {
+      "text": "hidden words worksheet pdf",
+      "goes_to": "F3",
+      "why": "a teaching handout, not the book"
+     },
+     {
+      "text": "Hidden Words Arabic 5",
+      "goes_to": "A5",
+      "why": "a numbered reference inside the book"
+     },
+     {
+      "text": "Could anyone suggest some books to get started and learn more deeply about Daoism",
+      "goes_to": "F6",
+      "why": "a reading path, not one named book"
+     }
+    ],
+    "required_slots": [
+     "work title (any spelling or script)"
+    ],
+    "disqualifiers": [
+     "a passage quoted from the book",
+     "a question about the book's content"
+    ],
+    "confusable_with": [
+     "A5",
+     "H2",
+     "F6"
+    ],
+    "composes_with": [
+     "A1",
+     "B2",
+     "A3"
+    ]
+   },
+   "test_questions": {
+    "lead": 615,
+    "also": 99,
+    "examples": [
+     "dawnbreakers",
+     "Kitáb-i-Íqán pdf",
+     "Dhammapada pdf",
+     "کلمات مکنونه"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "find_work",
+       "label": "Title index"
+      },
+      {
+       "kind": "code",
+       "id": "",
+       "label": "One / several?"
+      }
+     ]
+    },
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "extract",
+       "label": "Light LLM: title"
+      },
+      {
+       "kind": "tool",
+       "id": "find_work",
+       "label": "Title index"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Match?"
+      }
+     ]
+    },
+    {
+     "cost": "last resort",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "bm25",
+       "label": "Search author/topic"
+      },
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Nearest titles"
+      }
+     ]
+    }
+   ],
+   "format": "work link template (workReply: italic title = link, one line, offer to read); no writer",
+   "fallback": "agent",
+   "open_questions": [
+    "Several editions or translations: which first? (OceanLibrary copy, then authorized translation?)",
+    "'Give essence of this talk' (Immerse) is A2 + B2: link and a summary, or link only?"
+   ],
+   "measure": "100 A2 from the log + survey (incl. non-Latin titles); right work linked, ≤ 1 s, no writer"
+  },
+  {
+   "id": "A3",
+   "family": "A",
+   "family_name": "Quick lookups",
+   "name": "Passages on a topic",
+   "types": [
+    "A3"
+   ],
+   "status": "draft",
+   "target_time": "≤ 3 s",
+   "scenario": {
+    "title": "Find a passage by topic",
+    "sounds_like": [
+     "new testament verse about forgiveness",
+     "Where does Bahá'u'lláh say justice is the best beloved?"
+    ],
+    "how_often": "2,033 as lead type (15.9%) · 692 more as part of another",
+    "often_with": "B1 + A3 (290) · A3 + B1 (76) · A3 + A6 (64)",
+    "route": [
+     {
+      "jev": false,
+      "text": "In parallel: library search on the topic (authoritative shelves first) · HyPE questions"
+     },
+     {
+      "jev": true,
+      "text": "passage answers it · only mentions the topic · nothing → reword, or search another shelf"
+     },
+     {
+      "jev": false,
+      "text": "read_around each kept hit; wording checked against the text"
+     },
+     {
+      "jev": true,
+      "text": "one strong passage · several (2–4, by authority)"
+     }
+    ],
+    "ideal_answer": "The passage, quoted exactly, linked to its paragraph; two or three more if the topic has several. Most authoritative source first."
+   },
+   "jev": {
+    "cues": [
+     "what does [work/tradition] say about X, find / show me passages, verse about X, quotes on X (short list)",
+     "wants the text itself, not a summary"
+    ],
+    "example_phrasings": [
+     "What do our Writings say about hypocrisy?",
+     "show me the hidden words that talk about justice",
+     "quran patience",
+     "What does the Bible say about justice as a virtue?",
+     "mencius quotes on education"
+    ],
+    "near_misses": [
+     {
+      "text": "Find quotes on the mystery of sacrifice and suffering",
+      "goes_to": "F1",
+      "why": "a compilation job"
+     },
+     {
+      "text": "jewish teaching on repentance",
+      "goes_to": "B1",
+      "why": "wants the teaching explained"
+     },
+     {
+      "text": "talmud verse about mary",
+      "goes_to": "A3 + E2",
+      "why": "the passage may not exist"
+     }
+    ],
+    "required_slots": [
+     "topic",
+     "optional: tradition, work, author"
+    ],
+    "disqualifiers": [
+     "asks for many quotes grouped by theme",
+     "an exact quotation given"
+    ],
+    "confusable_with": [
+     "B1",
+     "F1",
+     "A4"
+    ],
+    "composes_with": [
+     "B1",
+     "A6",
+     "B5",
+     "D3"
+    ]
+   },
+   "test_questions": {
+    "lead": 2033,
+    "also": 692,
+    "examples": [
+     "What do our Writings say about hypocrisy? (Immerse)",
+     "show me the hidden words that talk about justice (Immerse)",
+     "quran patience",
+     "new testament verse about forgiveness"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "collection",
+       "label": "Prepared collection"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Covers it?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "library_search",
+       "label": "BM25 ∥ HyPE, scoped"
+      },
+      {
+       "kind": "tool",
+       "id": "rerank",
+       "label": "Rerank"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Answers it?"
+      }
+     ]
+    },
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "recast",
+       "label": "Light LLM: recast"
+      },
+      {
+       "kind": "tool",
+       "id": "hype",
+       "label": "HyPE, wider shelf"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Answers it?"
+      }
+     ]
+    }
+   ],
+   "post": "read_around each kept hit; 1 strong passage, or 2–4 by authority",
+   "format": "find_passage / decisive_passage",
+   "fallback": "agent",
+   "open_questions": [
+    "Which topics get prepared collections first? Proposal: the 50 most frequent A3/B1 topics in the log",
+    "Does the writer add anything for A3, or is a template enough (passage + one-line lead)?"
+   ],
+   "measure": "100 fresh A3 across traditions + Immerse A3s; top passage answers the topic, authority order, ≤ 3 s; judged vs agent and Perplexity"
+  },
+  {
+   "id": "A4",
+   "family": "A",
+   "family_name": "Quick lookups",
+   "name": "Quotation trace",
+   "types": [
+    "A4",
+    "H2 pasted passage"
+   ],
+   "status": "draft",
+   "target_time": "≤ 1 s",
+   "scenario": {
+    "title": "Who said this? Is this quote real?",
+    "sounds_like": [
+     "who said \"the earth is but one country\""
+    ],
+    "sounds_like_note": "fake Buddha and Rumi quotes",
+    "how_often": "1,404 as lead type (11.0%) · 160 more as part of another",
+    "often_with": "A4 + B2 (32) · A4 + A5 (31) · A4 + E2 (30)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Exact-phrase search (phrase index)"
+     },
+     {
+      "jev": true,
+      "text": "exact · close wording · paraphrase of a known passage · nothing"
+     },
+     {
+      "jev": false,
+      "text": "On a hit: source_of, then trace_source when the hit sits in a secondary book"
+     },
+     {
+      "jev": true,
+      "text": "the book's own words · quoted from earlier, trace it · misattributed → find the real origin (web, labelled)"
+     },
+     {
+      "jev": false,
+      "text": "Laid out from a template: verdict, passage, author, work, paragraph"
+     }
+    ],
+    "ideal_answer": "Verdict first: found, found with different wording, or not found. Then the real passage, linked. If misattributed, say where the saying really comes from when we can trace it."
+   },
+   "jev": {
+    "cues": [
+     "quotation marks, 'who said', 'is this real', 'where is the quote', 'exact location of'",
+     "a pasted run of five or more words, marked or not"
+    ],
+    "example_phrasings": [
+     "poor in ur midst r my trust",
+     "I wonder if you could tell me the exact location of \"but it will always be present as a necessary element\"?",
+     "where can I read the verse that starts with let there be no compulsion in religion",
+     "Jesús sed too luv yore enemys",
+     "They are My trustees among My servants and the manifestations of My commandments amidst My people."
+    ],
+    "near_misses": [
+     {
+      "text": "Show me the original Persian wording of 'Give Thou ear unto what the Tongue'",
+      "goes_to": "A7",
+      "why": "wants the original beside it"
+     },
+     {
+      "text": "What does the text mean by 'By Thine aloneness the Sun of Oneness'?",
+      "goes_to": "B2",
+      "why": "wants it explained"
+     },
+     {
+      "text": "2 Corinthians 5:17",
+      "goes_to": "A5",
+      "why": "a reference, not words"
+     }
+    ],
+    "required_slots": [
+     "quoted or pasted text"
+    ],
+    "disqualifiers": [
+     "no wording given (only a topic)",
+     "asks for the original or a translation"
+    ],
+    "confusable_with": [
+     "A7",
+     "B2",
+     "A5",
+     "H2"
+    ],
+    "composes_with": [
+     "B2",
+     "A5",
+     "E2",
+     "A7"
+    ]
+   },
+   "test_questions": {
+    "lead": 1404,
+    "also": 160,
+    "examples": [
+     "who said \"the earth is but one country\"",
+     "quran verse no forced religion",
+     "poor in ur midst r my trust",
+     "Jesús sed too luv yore enemys"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Code: quoted text"
+      },
+      {
+       "kind": "tool",
+       "id": "verbatim",
+       "label": "BM25 + verbatim"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Found?"
+      }
+     ]
+    },
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "extract",
+       "label": "Light LLM: extract"
+      },
+      {
+       "kind": "tool",
+       "id": "bm25",
+       "label": "BM25"
+      },
+      {
+       "kind": "jev",
+       "id": "rerank",
+       "label": "Rerank"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Found?"
+      }
+     ]
+    },
+    {
+     "cost": "last resort",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "phrase_semantic",
+       "label": "Phrase semantic search"
+      },
+      {
+       "kind": "jev",
+       "id": "rerank",
+       "label": "Rerank"
+      }
+     ]
+    }
+   ],
+   "post": "on a hit: source_of; trace_source when the hit is a book quoting it (Jev: own words or quoted?)",
+   "format": "source-hunt template: verdict (found / different wording / not found), passage, author, work, link; no writer",
+   "fallback": "agent",
+   "open_questions": [
+    "Misattributed quotes (fake Buddha/Rumi): web lead allowed to name the real origin, labelled?",
+    "Garbled wordings ('poor in ur midst'): is the light LLM extract enough, or does tier 1 need a spelling fold first?"
+   ],
+   "measure": "The 430 log A4s + regression A4s; correct source, ≤ 1 s on tier 1; share answered per tier reported"
+  },
+  {
+   "id": "A5",
+   "family": "A",
+   "family_name": "Quick lookups",
+   "name": "Look up a reference",
+   "types": [
+    "A5"
+   ],
+   "status": "draft",
+   "target_time": "≤ 1 s",
+   "scenario": {
+    "title": "Look up a reference",
+    "sounds_like": [
+     "John 3:16",
+     "surah 2 ayah 255",
+     "Hidden Words Arabic 5"
+    ],
+    "how_often": "116 as lead type (0.9%) · 179 more as part of another",
+    "often_with": "A4 + A5 (31) · G3 + A5 (21) · A3 + A5 (19)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Parse the reference: Bible, Qur'an, Gita, numbered Bahá'í texts (to build) (one parser; tablets covers part of the Bahá'í side)"
+     },
+     {
+      "jev": false,
+      "text": "Fetch the paragraph"
+     },
+     {
+      "jev": true,
+      "text": "which translation or edition"
+     }
+    ],
+    "ideal_answer": "The text, linked, with its translation named. Nothing more."
+   },
+   "jev": {
+    "cues": [
+     "book + chapter:verse, surah N, Gita chapter N, paragraph N, numbered Hidden Word",
+     "a named passage (Ayatul Kursi, the Lord is my shepherd)"
+    ],
+    "example_phrasings": [
+     "Isaiah 41:10",
+     "2 Corinthians 5:17",
+     "Kitab-i-Aqdas paragraph 1",
+     "Tao Te Ching chapter 11 usefulness of emptiness",
+     "गीता अध्याय 1"
+    ],
+    "near_misses": [
+     {
+      "text": "معنی آیه الکرسی",
+      "goes_to": "B2 + A5",
+      "why": "asks the meaning"
+     },
+     {
+      "text": "golden rule in the bible verse",
+      "goes_to": "A4 / A3",
+      "why": "a topic, no reference"
+     },
+     {
+      "text": "which chapter of the Gita is the best for anxiety",
+      "goes_to": "D1",
+      "why": "a need, not a reference"
+     }
+    ],
+    "required_slots": [
+     "work",
+     "reference (chapter, verse, paragraph, number)"
+    ],
+    "disqualifiers": [
+     "no number or named passage"
+    ],
+    "confusable_with": [
+     "A4",
+     "A3"
+    ],
+    "composes_with": [
+     "A4",
+     "B2",
+     "G3"
+    ]
+   },
+   "test_questions": {
+    "lead": 116,
+    "also": 179,
+    "examples": [
+     "Isaiah 41:10",
+     "Matthew 6:33",
+     "jesus love enemies verse",
+     "गीता अध्याय 1"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "ref_parse",
+       "label": "Parse reference"
+      },
+      {
+       "kind": "tool",
+       "id": "read_around",
+       "label": "Fetch paragraph"
+      },
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Got it?"
+      }
+     ]
+    },
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "extract",
+       "label": "Light LLM: verse words"
+      },
+      {
+       "kind": "tool",
+       "id": "verbatim",
+       "label": "BM25 + verbatim"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Found?"
+      }
+     ]
+    }
+   ],
+   "post": "Jev: which translation or edition when several",
+   "format": "find_passage template: the text, linked, translation named; no writer",
+   "fallback": "agent",
+   "open_questions": [
+    "Build one parser for Bible, Qur'an, Gita (book:chapter:verse) beside refs/cite.js?",
+    "Default Bible / Qur'an translation when the reader names none?"
+   ],
+   "measure": "All 295 A5 (lead+also); right verse, ≤ 1 s, zero writer calls"
+  },
+  {
+   "id": "A6",
+   "family": "A",
+   "family_name": "Quick lookups",
+   "name": "What a word means",
+   "types": [
+    "A6"
+   ],
+   "status": "draft",
+   "target_time": "≤ 3 s",
+   "scenario": {
+    "title": "What does this word mean?",
+    "sounds_like": [
+     "what does Tao Te Ching mean",
+     "sikh word for thank you",
+     "What does the name 'Abdu'l-Bahá mean?"
+    ],
+    "sounds_like_note": "(Immerse)",
+    "how_often": "919 as lead type (7.2%) · 316 more as part of another",
+    "often_with": "B1 + A6 (100) · A6 + B1 (90) · A3 + A6 (64)",
+    "route": [
+     {
+      "jev": false,
+      "text": "word_study and glossary"
+     },
+     {
+      "jev": true,
+      "text": "a term of the Writings · a general religious term · a name"
+     },
+     {
+      "jev": false,
+      "text": "find_original for script and transliteration; one passage that uses it"
+     }
+    ],
+    "ideal_answer": "The meaning in one line, the original script and transliteration, and one passage using it. Offer a fuller word study if the term is central to the Writings."
+   },
+   "jev": {
+    "cues": [
+     "what is / what does X mean / meaning of / word for",
+     "a single term, often foreign"
+    ],
+    "example_phrasings": [
+     "what is zakat",
+     "meaning of dharma",
+     "What is shraddha?",
+     "Hebrew word for peace shalom meaning",
+     "What does the name 'Abdu'l-Bahá mean?"
+    ],
+    "near_misses": [
+     {
+      "text": "what are the Four Sprouts",
+      "goes_to": "A6 + B1",
+      "why": "a teaching behind the term"
+     },
+     {
+      "text": "Who is Kali?",
+      "goes_to": "B5 / A6",
+      "why": "a figure; Jev decides name vs term"
+     },
+     {
+      "text": "Mawangdui Tao Te Ching 恒 vs 常 difference",
+      "goes_to": "C4",
+      "why": "two readings of one text"
+     }
+    ],
+    "required_slots": [
+     "term"
+    ],
+    "disqualifiers": [
+     "a phrase of five or more words (→ A4 / B2)"
+    ],
+    "confusable_with": [
+     "B5",
+     "B1",
+     "B2"
+    ],
+    "composes_with": [
+     "B1",
+     "A3",
+     "C2"
+    ]
+   },
+   "test_questions": {
+    "lead": 919,
+    "also": 316,
+    "examples": [
+     "What does the name 'Abdu'l-Bahá mean? (Immerse)",
+     "What does True Practioners of Peace mean? (Immerse)",
+     "what is zakat",
+     "Who is Kali?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "glossary",
+       "label": "Glossary / lexicon"
+      },
+      {
+       "kind": "tool",
+       "id": "word_study",
+       "label": "CTAI word study"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Defined?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "bm25",
+       "label": "BM25 term"
+      },
+      {
+       "kind": "tool",
+       "id": "hype",
+       "label": "HyPE 'what is X'"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Defined?"
+      }
+     ]
+    }
+   ],
+   "post": "Jev: term of the Writings · general religious term · a name (→ B5); find_original for script; one passage that uses it",
+   "format": "term_with_original",
+   "fallback": "agent",
+   "open_questions": [
+    "General religious terms (zakat, dharma): glossary from library passages only, or allow a labelled web definition?",
+    "Offer the full CTAI word study always, or only for terms central to the Writings?"
+   ],
+   "measure": "100 A6 incl. Immerse; meaning right, script + one passage, ≤ 3 s"
+  },
+  {
+   "id": "A7",
+   "family": "A",
+   "family_name": "Quick lookups",
+   "name": "Show the original (or translation)",
+   "types": [
+    "A7",
+    "G3 original"
+   ],
+   "status": "draft",
+   "target_time": "≤ 1 s",
+   "scenario": {
+    "title": "Show me the original (or a translation) of this passage",
+    "sounds_like": [
+     "Show me the Persian original of 'praiseworthy deeds and upright character…'",
+     "the Arabic of this verse",
+     "is there an English translation of this tablet?"
+    ],
+    "how_often": "221 messages, found when the classification put 194 of them under A4. A quotation lookup finds the passage; these need the next step too, so they get their own type.",
+    "route": [
+     {
+      "jev": false,
+      "text": "A4 to find the passage (exact phrase, then close wording)"
+     },
+     {
+      "jev": false,
+      "text": "find_original or find_translation on the paragraph (cross-lingual alignment)"
+     },
+     {
+      "jev": true,
+      "text": "aligned paragraph exists · only the whole work is paired → closest paragraph by alignment score, labelled · no original in the library → say so"
+     },
+     {
+      "jev": false,
+      "text": "Laid out from a template: the two texts side by side, both linked, the translator named"
+     }
+    ],
+    "ideal_answer": "The passage and its original (or translation) side by side, both linked, the translator named. Never a fresh translation."
+   },
+   "jev": {
+    "cues": [
+     "original / Arabic / Persian / Hebrew / Sanskrit of + a passage",
+     "is there a translation of this tablet"
+    ],
+    "example_phrasings": [
+     "Show me the Persian original of 'This Hem of His Robe hath ever been'",
+     "can I read where \"the Tao that can be spoken is not the true Tao\" appears in the original text?",
+     "Where is the original of 'So powerful is the light of unity…'?",
+     "Show me the original Persian wording of 'Give Thou ear unto what the Tongue'"
+    ],
+    "near_misses": [
+     {
+      "text": "Persian eschatology",
+      "goes_to": "B1",
+      "why": "'Persian' names a tradition, not a script"
+     },
+     {
+      "text": "Hebrew word for peace shalom meaning",
+      "goes_to": "A6",
+      "why": "one word"
+     },
+     {
+      "text": "best English translation of the Tao Te Ching",
+      "goes_to": "C4",
+      "why": "choosing between translations"
+     }
+    ],
+    "required_slots": [
+     "passage (quoted or in thread)",
+     "target language or 'original'"
+    ],
+    "disqualifiers": [
+     "one word only"
+    ],
+    "confusable_with": [
+     "A4",
+     "A6",
+     "C4",
+     "G3"
+    ],
+    "composes_with": [
+     "A4",
+     "G3",
+     "F1"
+    ]
+   },
+   "test_questions": {
+    "lead": 0,
+    "also": 189,
+    "derived": "by pattern; the first pass put most under A4 or G3",
+    "examples": [
+     "Show me the Persian original of 'praiseworthy deeds and upright character…'",
+     "can I read where \"the Tao that can be spoken is not the true Tao\" appears in the original text?",
+     "Where is the original of 'So powerful is the light of unity…'?",
+     "Can you find where the major world religions teach the golden rule, so I can read the original wording for each?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "A4",
+       "label": "A4 tier 1: find it"
+      },
+      {
+       "kind": "tool",
+       "id": "find_original",
+       "label": "Find original"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Aligned ¶?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Whole work paired"
+      },
+      {
+       "kind": "tool",
+       "id": "find_original",
+       "label": "Closest ¶ by score"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Good enough?"
+      }
+     ]
+    },
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "A4",
+       "label": "A4 tiers 2–3"
+      },
+      {
+       "kind": "tool",
+       "id": "find_original",
+       "label": "Find original"
+      }
+     ]
+    }
+   ],
+   "post": "Original given → find_translation instead of find_original. No original in the library → say so; never a fresh translation",
+   "format": "side-by-side template: both texts linked, translator named (format 'original'); no writer",
+   "fallback": "agent",
+   "open_questions": [
+    "Add A7 to question-types.json and relabel the 189 so Jev learns it?",
+    "Non-Bahá'í originals (Tao Te Ching, Qur'an Arabic): which do we hold aligned?"
+   ],
+   "measure": "The 189 pattern matches + seed 'Show me the Persian original' set; right aligned paragraph, ≤ 2 s"
+  },
+  {
+   "id": "B1",
+   "family": "B",
+   "family_name": "Understanding",
+   "name": "What a tradition teaches",
+   "types": [
+    "B1"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "What does tradition X teach about Y?",
+    "sounds_like": [
+     "what do christians believe happens after death",
+     "Do Bahá'ís believe in hell?"
+    ],
+    "how_often": "2,139 as lead type (16.7%) · 479 more as part of another",
+    "often_with": "B1 + A3 (290) · B1 + A6 (100) · A6 + B1 (90)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Jev fills in tradition, topic and any named author"
+     },
+     {
+      "jev": false,
+      "text": "In parallel: scripture · authoritative interpretation · HyPE questions"
+     },
+     {
+      "jev": true,
+      "text": "enough · reword · search the originals · search a wider shelf"
+     },
+     {
+      "jev": false,
+      "text": "read_around each hit"
+     },
+     {
+      "jev": true,
+      "text": "for each passage: answers · only mentions · contradicts another hit"
+     },
+     {
+      "jev": false,
+      "text": "The writing model writes, citation code checks every quote"
+     }
+    ],
+    "ideal_answer": "A direct answer in the first sentence, then 2–4 passages from that tradition's own scripture, quoted and linked; 150–300 words. Authority order: scripture, then authoritative interpretation, then scholarship labelled as such."
+   },
+   "jev": {
+    "cues": [
+     "what does [tradition] teach / believe / say about Y",
+     "do [believers] believe in Y",
+     "teaching on Y"
+    ],
+    "example_phrasings": [
+     "How can people be happier?",
+     "jewish teaching on repentance",
+     "does confucianism believe in heaven and hell",
+     "Do Bahá'ís believe in hell?",
+     "बौद्ध धर्म की शिक्षाएं"
+    ],
+    "near_misses": [
+     {
+      "text": "why do christians fast",
+      "goes_to": "B3",
+      "why": "asks the reason"
+     },
+     {
+      "text": "sikh funeral process",
+      "goes_to": "D3",
+      "why": "practice, not teaching"
+     },
+     {
+      "text": "what does the baha i faith say about homosexuality",
+      "goes_to": "E3",
+      "why": "contested topic: strict rules"
+     }
+    ],
+    "required_slots": [
+     "topic",
+     "tradition (or none = all, or host's)"
+    ],
+    "disqualifiers": [
+     "a quotation given",
+     "asks to compare two traditions"
+    ],
+    "confusable_with": [
+     "B3",
+     "A3",
+     "D3",
+     "E3"
+    ],
+    "composes_with": [
+     "A3",
+     "A6",
+     "E3",
+     "D3"
+    ]
+   },
+   "test_questions": {
+    "lead": 2139,
+    "also": 479,
+    "examples": [
+     "How can people be happier? (Immerse)",
+     "What is the understanding of Idol worship (Immerse)",
+     "jewish teaching on repentance",
+     "Do Bahá'ís believe in hell?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Tradition, topic, author"
+      },
+      {
+       "kind": "tool",
+       "id": "collection",
+       "label": "Prepared collection"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Enough?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "Scripture ∥ interp. ∥ HyPE"
+      },
+      {
+       "kind": "tool",
+       "id": "read_around",
+       "label": "Read around"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Enough?"
+      }
+     ]
+    },
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "recast",
+       "label": "Light LLM: recast"
+      },
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "Originals / wider"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Enough?"
+      }
+     ]
+    }
+   ],
+   "post": "Jev per passage: answers · only mentions · contradicts another hit; trace_source on secondary hits",
+   "format": "direct_answer / authority_layers; writer 150–300 words",
+   "fallback": "agent",
+   "open_questions": [
+    "Tradition not named and no reader card: default to all traditions, or the host site's tradition?",
+    "Who decides 'enough': a fixed count by authority, or Jev?"
+   ],
+   "measure": "100 fresh B1 across 12 traditions + Immerse B1s; judged vs agent and Perplexity; ≤ 12 s, first words ≤ 2 s"
+  },
+  {
+   "id": "B2",
+   "family": "B",
+   "family_name": "Understanding",
+   "name": "Explain this passage",
+   "types": [
+    "B2"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Explain this passage (while reading)",
+    "sounds_like": [
+     "what does \"return\" mean in this paragraph?",
+     "who is the \"Pen of Glory\" here?",
+     "summarise this chapter"
+    ],
+    "how_often": "193 as lead type (1.5%) · 112 more as part of another",
+    "often_with": "A4 + B2 (32) · G1 + B2 (19) · A3 + B2 (12)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Anchor: the paragraph the reader is on"
+     },
+     {
+      "jev": true,
+      "text": "what to explain: a term · a person or event (→ B5, B4) · the argument · a summary"
+     },
+     {
+      "jev": false,
+      "text": "read_around; the same term elsewhere by the same author; find_original for the key word"
+     },
+     {
+      "jev": false,
+      "text": "Writing model, short, then offers more"
+     }
+    ],
+    "ideal_answer": "Anchored to the reader's paragraph. Explain with the author's own words elsewhere (where else this is said, the original term). Short, with an offer to go deeper. Never replace the text with a paraphrase."
+   },
+   "jev": {
+    "cues": [
+     "what does this passage / the text mean by '…'",
+     "anchored: 'this paragraph', 'here', reader is in a book",
+     "parable / verse + what does it say"
+    ],
+    "example_phrasings": [
+     "What does the passage mean by 'Noble have I created thee…'?",
+     "What does the passage about returning to the Self say, and what is its full context?",
+     "What does the parable of the Good Samaritan teach about helping others?",
+     "Butterfly Dream in Zhuang Zi - what's that passage about?"
+    ],
+    "near_misses": [
+     {
+      "text": "poor in ur midst r my trust",
+      "goes_to": "A4",
+      "why": "wants the source, not an explanation"
+     },
+     {
+      "text": "Why didn't Paul tell Christian slaveowners to free their slaves (Col. 4:1)?",
+      "goes_to": "E1",
+      "why": "a challenge"
+     },
+     {
+      "text": "what does the text say about cleanliness and purtiy practices?",
+      "goes_to": "A3",
+      "why": "a topic, no passage"
+     }
+    ],
+    "required_slots": [
+     "anchor passage (thread, reader position, or quoted)"
+    ],
+    "disqualifiers": [
+     "no passage can be found or inferred"
+    ],
+    "confusable_with": [
+     "A3",
+     "A4",
+     "G1",
+     "A6"
+    ],
+    "composes_with": [
+     "A4",
+     "A5",
+     "G1"
+    ]
+   },
+   "test_questions": {
+    "lead": 193,
+    "also": 112,
+    "examples": [
+     "What does the passage mean by 'Noble have I created thee, yet thou hast abased thyself'?",
+     "What is the meaning of the statement that the earth is one country…?",
+     "Butterfly Dream in Zhuang Zi — what's that passage about?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "thread",
+       "label": "Anchor ¶ (reader / thread)"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Have the ¶?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "A4",
+       "label": "A4: find the ¶"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "What to explain?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "read_around",
+       "label": "Read around"
+      },
+      {
+       "kind": "tool",
+       "id": "bm25",
+       "label": "Same author, same term"
+      },
+      {
+       "kind": "tool",
+       "id": "term_in_passage",
+       "label": "Original term"
+      }
+     ]
+    }
+   ],
+   "post": "What to explain: a term (→ A6) · a person or event (→ B5, B4) · the argument · a summary",
+   "format": "decisive_passage + study_question; writer short, offers more",
+   "fallback": "agent",
+   "open_questions": [
+    "Widget beside a book: does it send the paragraph id the reader is on? (needed for tier 1)",
+    "'Summarise this chapter': allowed, or always point back to reading it?"
+   ],
+   "measure": "All 305 B2 + reading-companion sessions; anchored to the right ¶, author's own words used, ≤ 8 s"
+  },
+  {
+   "id": "B3",
+   "family": "B",
+   "family_name": "Understanding",
+   "name": "Why or how",
+   "types": [
+    "B3"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Why or how",
+    "sounds_like": [
+     "Why does God allow suffering?",
+     "How is Sikh monotheism different from Islamic tawhid?"
+    ],
+    "how_often": "417 as lead type (3.3%) · 162 more as part of another",
+    "often_with": "B3 + D3 (39) · B3 + B1 (33) · A3 + B3 (22)",
+    "route": [
+     {
+      "jev": false,
+      "text": "As B1, but searching for the reason given (purpose, because, wisdom of) and for interpreters"
+     },
+     {
+      "jev": true,
+      "text": "one authoritative explanation · interpreters differ → show each · no reason given in the texts → say so"
+     },
+     {
+      "jev": false,
+      "text": "The writing model builds the reasoning one cited step at a time"
+     }
+    ],
+    "ideal_answer": "A clear line of reasoning built from cited passages, one step per passage. Name where interpreters differ. End with the one passage most worth reading in full."
+   },
+   "jev": {
+    "cues": [
+     "why … / how does … work / purpose of",
+     "asks for reasons, not facts"
+    ],
+    "example_phrasings": [
+     "Why consult with others before taking action?",
+     "Why meditate?",
+     "What is the purpose of tests and trials?",
+     "Why do Buddhists not drink alcohol?",
+     "why do jews have curls"
+    ],
+    "near_misses": [
+     {
+      "text": "Why was Guru Arjan martyred?",
+      "goes_to": "B4",
+      "why": "a historical event"
+     },
+     {
+      "text": "Why does God not answer my prayers?",
+      "goes_to": "D1",
+      "why": "personal distress"
+     },
+     {
+      "text": "When Islam is against idol worship why do the Muslims … bow down to the Kaaba",
+      "goes_to": "E1",
+      "why": "an objection"
+     }
+    ],
+    "required_slots": [
+     "subject"
+    ],
+    "disqualifiers": [
+     "about a past event (→ B4)"
+    ],
+    "confusable_with": [
+     "B1",
+     "D1",
+     "E1"
+    ],
+    "composes_with": [
+     "D3",
+     "B1",
+     "D4"
+    ]
+   },
+   "test_questions": {
+    "lead": 417,
+    "also": 162,
+    "examples": [
+     "Why consult with others before taking action? (Immerse)",
+     "Why does God allow suffering?",
+     "Why meditate?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "collection",
+       "label": "Prepared collection"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Reason given?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "hype",
+       "label": "HyPE 'why X'"
+      },
+      {
+       "kind": "tool",
+       "id": "bm25",
+       "label": "BM25 purpose/wisdom"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Reason given?"
+      }
+     ]
+    },
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "recast",
+       "label": "Light LLM: recast"
+      },
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "Interpreters shelf"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Reason given?"
+      }
+     ]
+    }
+   ],
+   "post": "Jev: one authoritative explanation · interpreters differ → each · none given → say so",
+   "format": "authority_layers; writer builds one cited step per passage",
+   "fallback": "agent",
+   "open_questions": [
+    "Comparative 'how' (Sikh monotheism vs tawhid) belongs to C2: route there?"
+   ],
+   "measure": "60 fresh B3 + Immerse; every step cited, ≤ 12 s, vs agent"
+  },
+  {
+   "id": "B4",
+   "family": "B",
+   "family_name": "Understanding",
+   "name": "Tell the story",
+   "types": [
+    "B4"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Tell me the story",
+    "sounds_like": [
+     "What is the story of the Báb's childhood in Shiraz?",
+     "Recount the life of Quddús before…"
+    ],
+    "sounds_like_note": "(both Immerse)",
+    "how_often": "182 as lead type (1.4%) · 99 more as part of another",
+    "often_with": "A1 + B4 (22) · B4 + B5 (21) · B5 + B4 (19)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Resolve the person or event (entity graph)"
+     },
+     {
+      "jev": false,
+      "text": "Historical shelf in date order: Nabíl, God Passes By, Balyuzi; read_around"
+     },
+     {
+      "jev": true,
+      "text": "accounts agree · accounts differ → note where (C4)"
+     },
+     {
+      "jev": false,
+      "text": "The writing model narrates, dated, each event cited"
+     }
+    ],
+    "ideal_answer": "A narrative in order, each event cited to its historical source (Nabíl, Shoghi Effendi, Balyuzi), with dates. Note where accounts disagree."
+   },
+   "jev": {
+    "cues": [
+     "story of / history of / what happened / recount / background to",
+     "events in time"
+    ],
+    "example_phrasings": [
+     "What is the story of Lua Getsinger's chronic condition disappearing?",
+     "how did Islam spread",
+     "what hapened to the body of the Bab after he was killed",
+     "Why was Guru Arjan martyred?",
+     "islam history in america"
+    ],
+    "near_misses": [
+     {
+      "text": "judaism history timeline",
+      "goes_to": "F4",
+      "why": "a visual"
+     },
+     {
+      "text": "history of Buddhism",
+      "goes_to": "B4 (long) / F5",
+      "why": "scope decides"
+     },
+     {
+      "text": "who was abdu l baha",
+      "goes_to": "B5",
+      "why": "a person, not an event"
+     }
+    ],
+    "required_slots": [
+     "person or event",
+     "optional period"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "B5",
+     "A1",
+     "F4"
+    ],
+    "composes_with": [
+     "B5",
+     "A1",
+     "C4"
+    ]
+   },
+   "test_questions": {
+    "lead": 182,
+    "also": 99,
+    "examples": [
+     "What is the story of Lua Getsinger's chronic condition disappearing? (Immerse)",
+     "give background to the Lawh-i-Aflakhiyyih… (Immerse)",
+     "how did Islam spread"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "resolve_name",
+       "label": "Resolve person/event"
+      },
+      {
+       "kind": "tool",
+       "id": "dated_events",
+       "label": "Dated claims"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Enough?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "History shelf, by date"
+      },
+      {
+       "kind": "tool",
+       "id": "read_around",
+       "label": "Read around"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Accounts agree?"
+      }
+     ]
+    }
+   ],
+   "post": "Accounts differ → note where (C4)",
+   "format": "timeline (≥3 dates) or narrative; writer, each event cited",
+   "fallback": "agent",
+   "open_questions": [
+    "History shelf order: Nabíl, God Passes By, Balyuzi; other traditions' history shelves?",
+    "Tablet background (Immerse) needs tablet-meta (Phelps inventory): add as a tool?"
+   ],
+   "measure": "All 182 lead + Immerse B4s; dated, each event cited, ≤ 12 s"
+  },
+  {
+   "id": "B5",
+   "family": "B",
+   "family_name": "Understanding",
+   "name": "Who was this person",
+   "types": [
+    "B5"
+   ],
+   "status": "draft",
+   "target_time": "≤ 3 s",
+   "scenario": {
+    "title": "Who was this person?",
+    "sounds_like": [
+     "Who was Ṭáhirih?",
+     "who is Kali?"
+    ],
+    "how_often": "257 as lead type (2.0%) · 97 more as part of another",
+    "often_with": "B5 + A3 (47) · A3 + B5 (47) · B4 + B5 (21)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Biography record (people)"
+     },
+     {
+      "jev": true,
+      "text": "which bearer of the name (a bare name means the most prominent one) · not in the record → search by name"
+     },
+     {
+      "jev": false,
+      "text": "Passages about them from the Writings"
+     },
+     {
+      "jev": false,
+      "text": "Short write-up; link the biography page"
+     }
+    ],
+    "ideal_answer": "Who they were in two sentences, key dates, and the passages in the Writings about them. Link the biography page."
+   },
+   "jev": {
+    "cues": [
+     "who was / who is / person + name alone",
+     "a name in any script"
+    ],
+    "example_phrasings": [
+     "Vahid person",
+     "Abdul Baha who",
+     "who was Rumi",
+     "بهاءالله کیست",
+     "I wonder if you could tell me who Zarrin-Taj is?"
+    ],
+    "near_misses": [
+     {
+      "text": "Mulla Hosein",
+      "goes_to": "H2 → B5",
+      "why": "bare name, routed by H2"
+     },
+     {
+      "text": "Who is Kali?",
+      "goes_to": "A6 / B5",
+      "why": "a deity: term or figure"
+     },
+     {
+      "text": "siyyid ali muhammad of shiraz who is he, find me where it says",
+      "goes_to": "B5 + A3",
+      "why": "wants the passages too"
+     }
+    ],
+    "required_slots": [
+     "person name"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "A6",
+     "B4",
+     "H2"
+    ],
+    "composes_with": [
+     "A3",
+     "B4"
+    ]
+   },
+   "test_questions": {
+    "lead": 257,
+    "also": 97,
+    "examples": [
+     "Vahid person",
+     "Abdul Baha who",
+     "who was Rumi",
+     "بهاءالله کیست"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "resolve_name",
+       "label": "Name resolver"
+      },
+      {
+       "kind": "tool",
+       "id": "people",
+       "label": "Biography record"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Right person?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "bm25",
+       "label": "BM25 name forms"
+      },
+      {
+       "kind": "tool",
+       "id": "hype",
+       "label": "HyPE 'who was'"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Found?"
+      }
+     ]
+    }
+   ],
+   "post": "Passages about them from the Writings; link the biography page",
+   "format": "people_record",
+   "fallback": "agent",
+   "open_questions": [
+    "Non-Bahá'í figures (Rumi, Kali) have no biography record: answer from passages only?"
+   ],
+   "measure": "All 257 lead; right bearer, 2 sentences + dates + passages, ≤ 3 s"
+  },
+  {
+   "id": "C1",
+   "family": "C",
+   "family_name": "Comparing",
+   "name": "Two traditions on one topic",
+   "types": [
+    "C1"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Two traditions on one topic",
+    "sounds_like": [
+     "suffering in buddhism vs christianity",
+     "How does the Bahá'í soul differ from Hindu and Buddhist reincarnation?"
+    ],
+    "how_often": "270 as lead type (2.1%) · 38 more as part of another",
+    "often_with": "C1 + B1 (17) · C1 + A3 (15) · C1 + D3 (13)",
+    "route": [
+     {
+      "jev": false,
+      "text": "B1 once per tradition, all in parallel"
+     },
+     {
+      "jev": true,
+      "text": "each side: covered · thin → search wider · missing → say so"
+     },
+     {
+      "jev": false,
+      "text": "The writing model writes one section per side in its own terms, then what is shared and what differs"
+     }
+    ],
+    "ideal_answer": "One section per tradition, each in its own scripture's words, linked; then what is shared and what differs. Each side treated equally fairly, in its own terms. If our shelf for one side is thin, say so."
+   },
+   "jev": {
+    "cues": [
+     "two or more named traditions + one topic",
+     "vs / compare / differ / similarities"
+    ],
+    "example_phrasings": [
+     "islam judaism fasting views compare",
+     "Abraham in three religions",
+     "how does the islam view of fasting differ from the judaism?",
+     "where can i read buddhist vs christian compassion side by side",
+     "Jesus said not to make promises. is there such an imperative in the Baha'i Writings?"
+    ],
+    "near_misses": [
+     {
+      "text": "Zen vs Taoism",
+      "goes_to": "C2",
+      "why": "two traditions as wholes, no topic"
+     },
+     {
+      "text": "do all religions teach prayer?",
+      "goes_to": "C3",
+      "why": "all traditions"
+     },
+     {
+      "text": "bible vs quran contradictions",
+      "goes_to": "E1",
+      "why": "an objection"
+     }
+    ],
+    "required_slots": [
+     "traditions (2+)",
+     "topic"
+    ],
+    "disqualifiers": [
+     "only one tradition"
+    ],
+    "confusable_with": [
+     "C2",
+     "C3",
+     "G5"
+    ],
+    "composes_with": [
+     "B1",
+     "A3",
+     "D3"
+    ]
+   },
+   "test_questions": {
+    "lead": 270,
+    "also": 38,
+    "examples": [
+     "Jesus said not to make promises. Is there such an imperative in the Baha'i Writings? (Immerse)",
+     "islam judaism fasting views compare",
+     "Abraham in three religions"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "B1",
+       "label": "B1 per tradition ∥"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Each side covered?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "Thin side: wider"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Covered?"
+      }
+     ]
+    }
+   ],
+   "post": "Missing side → say the shelf is thin",
+   "format": "comparison / comparison_table; writer, one section per side, then shared/different",
+   "fallback": "agent",
+   "open_questions": [
+    "Equal length per side even when one shelf is far richer?"
+   ],
+   "measure": "100 C1 across tradition pairs; both sides in own scripture, fairness judged, ≤ 12 s"
+  },
+  {
+   "id": "C2",
+   "family": "C",
+   "family_name": "Comparing",
+   "name": "X vs Y",
+   "types": [
+    "C2"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "X vs Y head to head",
+    "sounds_like": [
+     "confucianism vs taoism",
+     "difference between varna and jati"
+    ],
+    "how_often": "518 as lead type (4.0%) · 51 more as part of another",
+    "often_with": "C2 + E3 (13) · C2 + A6 (13) · C2 + B1 (11)",
+    "route": [
+     {
+      "jev": true,
+      "text": "what is compared: two traditions (→ C1) · two concepts in one tradition · two works or people · two practices"
+     },
+     {
+      "jev": false,
+      "text": "Retrieval for each side in parallel"
+     },
+     {
+      "jev": false,
+      "text": "Table of 4–6 points, a source on every row, then the writing model's paragraph"
+     }
+    ],
+    "ideal_answer": "A short table of 4–6 points with a source on each row, then a paragraph. Offer to go deeper on one point."
+   },
+   "jev": {
+    "cues": [
+     "X vs Y / difference between X and Y",
+     "two concepts, works, people or whole traditions without a topic"
+    ],
+    "example_phrasings": [
+     "Zen vs Taoism",
+     "Gita vs Bible",
+     "difference between varna and jati",
+     "What is the difference between the first epoch and the six epoch",
+     "is jainism a branch of buddhism"
+    ],
+    "near_misses": [
+     {
+      "text": "how does the islam view of fasting differ from the judaism?",
+      "goes_to": "C1",
+      "why": "one topic, two traditions"
+     },
+     {
+      "text": "Red Pine vs Stephen Mitchell Tao Te Ching",
+      "goes_to": "C4",
+      "why": "two translations"
+     },
+     {
+      "text": "difference between islam and radical islam",
+      "goes_to": "C2 + E3",
+      "why": "contested"
+     }
+    ],
+    "required_slots": [
+     "two things compared"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "C1",
+     "C4"
+    ],
+    "composes_with": [
+     "E3",
+     "A6",
+     "B1"
+    ]
+   },
+   "test_questions": {
+    "lead": 518,
+    "also": 51,
+    "examples": [
+     "What is the difference between the first epoch and the sixth epoch (Immerse)",
+     "Zen vs Taoism",
+     "Gita vs Bible",
+     "difference between varna and jati"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "What is compared?"
+      },
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Two traditions → C1"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "library_search",
+       "label": "Each side ∥"
+      },
+      {
+       "kind": "tool",
+       "id": "glossary",
+       "label": "Glossary each"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Both covered?"
+      }
+     ]
+    }
+   ],
+   "format": "comparison_table (4–6 rows, a source per row) + paragraph",
+   "fallback": "agent",
+   "open_questions": [
+    "Two works (Gita vs Bible) or two religions as a whole: compare on which axes? A fixed axis list per pair?"
+   ],
+   "measure": "100 C2; every row sourced, ≤ 12 s, vs agent"
+  },
+  {
+   "id": "C3",
+   "family": "C",
+   "family_name": "Comparing",
+   "name": "All religions on X",
+   "types": [
+    "C3"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "What do all religions say about X?",
+    "sounds_like": [
+     "Do all religions have an afterlife?",
+     "the Golden Rule in many religions"
+    ],
+    "how_often": "259 as lead type (2.0%) · 61 more as part of another",
+    "often_with": "D3 + C3 (19) · C3 + A3 (17) · A3 + C3 (13)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Fan out across all twelve traditions in parallel, best passage for each"
+     },
+     {
+      "jev": true,
+      "text": "each tradition: a real passage · none → leave it out"
+     },
+     {
+      "jev": false,
+      "text": "The writing model writes the survey and the pattern"
+     }
+    ],
+    "ideal_answer": "A survey: one quoted line per tradition (only those with a real passage), then the pattern. Here the library's breadth is the product."
+   },
+   "jev": {
+    "cues": [
+     "all / world / every / different religions + topic",
+     "which religions …"
+    ],
+    "example_phrasings": [
+     "world religions golden rule",
+     "are all religions true",
+     "Why do religions fast?",
+     "do all religions teach prayer?",
+     "religions that don't believe in god"
+    ],
+    "near_misses": [
+     {
+      "text": "Abraham in three religions",
+      "goes_to": "C1",
+      "why": "named set"
+     },
+     {
+      "text": "Can you find where the major world religions teach the golden rule, so I can read the original wording for each?",
+      "goes_to": "F1 + A7",
+      "why": "a compilation with originals"
+     }
+    ],
+    "required_slots": [
+     "topic"
+    ],
+    "disqualifiers": [
+     "two named traditions only"
+    ],
+    "confusable_with": [
+     "C1",
+     "F1"
+    ],
+    "composes_with": [
+     "A3",
+     "D3"
+    ]
+   },
+   "test_questions": {
+    "lead": 259,
+    "also": 61,
+    "examples": [
+     "world religions golden rule",
+     "Do all religions have an afterlife?",
+     "Why do religions fast?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "collection",
+       "label": "Prepared collection"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Covers it?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "12 traditions ∥"
+      },
+      {
+       "kind": "jev",
+       "id": "rerank",
+       "label": "Best per tradition"
+      },
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Drop empty"
+      }
+     ]
+    }
+   ],
+   "format": "range_of_voices / list_enumerate; writer adds the pattern",
+   "fallback": "agent",
+   "open_questions": [
+    "Fan-out of 12 searches: cost and latency fine at ≤ 300 ms each in parallel?"
+   ],
+   "measure": "All 320 C3; only real passages, ≥ 5 traditions when held, ≤ 12 s"
+  },
+  {
+   "id": "C4",
+   "family": "C",
+   "family_name": "Comparing",
+   "name": "Two accounts or translations",
+   "types": [
+    "C4"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Two accounts or translations of one thing",
+    "sounds_like": [
+     "Compare Shoghi Effendi's account of Badasht with Nabíl's",
+     "which Tao Te Ching translation is best"
+    ],
+    "sounds_like_note": "(Immerse)",
+    "how_often": "23 as lead type (0.2%) · 14 more as part of another",
+    "often_with": "G5 + C4 (4) · C4 + A1 (2) · C4 + A4 (2)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Find both works or translations (about_work, find_translation)"
+     },
+     {
+      "jev": false,
+      "text": "Align the matching passages (cross-lingual alignment)"
+     },
+     {
+      "jev": true,
+      "text": "differences of meaning · of wording only"
+     },
+     {
+      "jev": false,
+      "text": "Side by side from a template; the writing model notes which is authoritative"
+     }
+    ],
+    "ideal_answer": "The two texts side by side on the points that differ, with links. Say which is authoritative and why, without retranslating."
+   },
+   "jev": {
+    "cues": [
+     "which translation / best translation / most accurate",
+     "two accounts of one event, two translators named"
+    ],
+    "example_phrasings": [
+     "is the NIV or ESV more accurate",
+     "best Quran translation reddit",
+     "which translation of the bible is most accurate",
+     "Red Pine vs Stephen Mitchell Tao Te Ching"
+    ],
+    "near_misses": [
+     {
+      "text": "Zen vs Taoism",
+      "goes_to": "C2",
+      "why": "not one text"
+     },
+     {
+      "text": "Show me the Persian original of …",
+      "goes_to": "A7",
+      "why": "original, not a choice"
+     }
+    ],
+    "required_slots": [
+     "work or event",
+     "the two versions (or 'best')"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "C2",
+     "A7",
+     "A2"
+    ],
+    "composes_with": [
+     "A1",
+     "A4",
+     "G5"
+    ]
+   },
+   "test_questions": {
+    "lead": 23,
+    "also": 14,
+    "examples": [
+     "Compare Shoghi Effendi's account of Badasht with Nabíl's (Immerse)",
+     "which Tao Te Ching translation is best",
+     "is the NIV or ESV more accurate"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "find_work",
+       "label": "Both works"
+      },
+      {
+       "kind": "tool",
+       "id": "find_translation",
+       "label": "Align passages"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Meaning or wording?"
+      }
+     ]
+    }
+   ],
+   "format": "side-by-side; writer notes which is authoritative, never retranslates",
+   "fallback": "agent",
+   "open_questions": [
+    "Aligning two English accounts (not original↔translation) has no tool: build a same-language alignment?"
+   ],
+   "measure": "All 37 C4 + 20 written; correct pairs, authority stated"
+  },
+  {
+   "id": "D1",
+   "family": "D",
+   "family_name": "Life and practice",
+   "name": "Grief, fear, doubt",
+   "types": [
+    "D1"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Grief, fear, doubt",
+    "sounds_like": [
+     "My grandmother passed away… will I recognise her?",
+     "How do I overcome doubt in my faith?"
+    ],
+    "how_often": "65 as lead type (0.5%) · 48 more as part of another",
+    "often_with": "D1 + B1 (15) · B1 + D1 (11) · D1 + B3 (11)",
+    "route": [
+     {
+      "jev": true,
+      "text": "wants comfort · wants meaning (→ B3) · a sign of crisis → point to real help first"
+     },
+     {
+      "jev": false,
+      "text": "Search the Writings and prayers for this specific loss or fear"
+     },
+     {
+      "jev": false,
+      "text": "Writing model: short and warm, one or two passages in full, a prayer offered"
+     }
+    ],
+    "ideal_answer": "Short and warm. One or two passages that speak to it, quoted in full. No lecture, no list. A gentle question back, or a prayer offered. Never preach."
+   },
+   "jev": {
+    "cues": [
+     "first person + loss, fear, doubt, loneliness, meaning",
+     "my / I / am I"
+    ],
+    "example_phrasings": [
+     "Is my sister in Heaven?",
+     "does god love me",
+     "how to find inner peace",
+     "What happens to my child who died?",
+     "Why am I here?"
+    ],
+    "near_misses": [
+     {
+      "text": "What happens after death in Hinduism?",
+      "goes_to": "B1",
+      "why": "impersonal (illustrative; written)"
+     },
+     {
+      "text": "Should I change my faith for the sake of marriage",
+      "goes_to": "D5",
+      "why": "about conversion"
+     }
+    ],
+    "required_slots": [
+     "the loss or fear (from the message)"
+    ],
+    "disqualifiers": [
+     "no personal element"
+    ],
+    "confusable_with": [
+     "B1",
+     "B3",
+     "D5"
+    ],
+    "composes_with": [
+     "B1",
+     "B3",
+     "D2"
+    ]
+   },
+   "test_questions": {
+    "lead": 65,
+    "also": 48,
+    "examples": [
+     "My grandmother passed away… will I recognise her?",
+     "How do I overcome doubt in my faith?",
+     "does god love me",
+     "Godless Grief"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Comfort / meaning / crisis?"
+      },
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Crisis → real help"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "collection",
+       "label": "Collection: this loss"
+      },
+      {
+       "kind": "tool",
+       "id": "prayers",
+       "label": "Prayer"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Speaks to it?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "hype",
+       "label": "HyPE, Writings"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Speaks to it?"
+      }
+     ]
+    }
+   ],
+   "format": "decisive_passage; writer short and warm, a prayer offered",
+   "fallback": "agent",
+   "open_questions": [
+    "Crisis resources: which list, per country?"
+   ],
+   "measure": "All 113 D1 + soul battery; warmth/no preaching judged, crisis cases 100%"
+  },
+  {
+   "id": "D2",
+   "family": "D",
+   "family_name": "Life and practice",
+   "name": "A prayer for an occasion",
+   "types": [
+    "D2"
+   ],
+   "status": "draft",
+   "target_time": "≤ 1 s",
+   "scenario": {
+    "title": "A prayer for an occasion",
+    "sounds_like": [
+     "prayer for healing",
+     "a prayer for someone who just died"
+    ],
+    "how_often": "62 as lead type (0.5%) · 8 more as part of another",
+    "often_with": "A3 + D2 (5) · D2 + D3 (4) · A4 + D2 (3)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Prayers by occasion (to build): a prayer shelf indexed by occasion and need"
+     },
+     {
+      "jev": true,
+      "text": "one clear occasion · several fit · none → closest prayers by theme"
+     },
+     {
+      "jev": false,
+      "text": "Laid out from a template: the prayer in full, two alternatives by title"
+     }
+    ],
+    "ideal_answer": "The prayer itself in full, linked, with its source. One or two alternatives listed by title."
+   },
+   "jev": {
+    "cues": [
+     "prayer for / dua / prayer before + occasion or need"
+    ],
+    "example_phrasings": [
+     "prayer for unity",
+     "prayer for exams",
+     "دعاء الاستخارة",
+     "bahai prayer for protection",
+     "buddhist prayer for healing"
+    ],
+    "near_misses": [
+     {
+      "text": "baha'i faith prayers",
+      "goes_to": "A3 / A2",
+      "why": "no occasion; the prayer book"
+     },
+     {
+      "text": "jain prayer before sleeping",
+      "goes_to": "D2 + B1",
+      "why": "also what the practice is"
+     }
+    ],
+    "required_slots": [
+     "occasion or need",
+     "optional tradition"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "A3",
+     "A2"
+    ],
+    "composes_with": [
+     "D3",
+     "A3"
+    ]
+   },
+   "test_questions": {
+    "lead": 62,
+    "also": 8,
+    "examples": [
+     "prayer for healing",
+     "prayer for unity",
+     "prayer for exams",
+     "دعاء الاستخارة"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "prayers",
+       "label": "Prayers by occasion"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "One / several?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "hype",
+       "label": "HyPE, prayer shelf"
+      },
+      {
+       "kind": "tool",
+       "id": "bm25",
+       "label": "BM25 theme"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Fits?"
+      }
+     ]
+    }
+   ],
+   "format": "prayer template: in full, linked, two alternatives by title; no writer",
+   "fallback": "agent",
+   "open_questions": [
+    "Build the occasion index by hand (~40 occasions) or by HyPE over the prayer shelf?",
+    "Prayers of other traditions (du'a, Psalms): same index?"
+   ],
+   "measure": "All 70 D2; a fitting prayer in full, ≤ 1 s"
+  },
+  {
+   "id": "D3",
+   "family": "D",
+   "family_name": "Life and practice",
+   "name": "Rules and practice",
+   "types": [
+    "D3"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Rules and practice",
+    "sounds_like": [
+     "is it haram to eat bugs",
+     "Can Bahá'ís drink alcohol?",
+     "bahai funeral traditions"
+    ],
+    "how_often": "838 as lead type (6.5%) · 213 more as part of another",
+    "often_with": "D3 + A3 (61) · B1 + D3 (50) · A3 + D3 (39)",
+    "route": [
+     {
+      "jev": false,
+      "text": "B1 restricted to law: Aqdas, Questions and Answers, compilations, letters"
+     },
+     {
+      "jev": true,
+      "text": "clear law · custom, not law · a personal ruling → the right institution"
+     },
+     {
+      "jev": false,
+      "text": "Writing model: yes, no or it depends in the first line, then the text"
+     }
+    ],
+    "ideal_answer": "Yes, no or it depends in the first line, then the text that says so. Separate law from custom. For personal rulings, point to the right institution instead of ruling."
+   },
+   "jev": {
+    "cues": [
+     "can / may / is it allowed / haram / obligatory / rules for / how do I + practice"
+    ],
+    "example_phrasings": [
+     "If a parent has disowned a child, does that child still need their consent for marriage?",
+     "can muslims smoke",
+     "do jews eat pork",
+     "How do I pray?",
+     "Is the Nineteen Day Feast obligatory?"
+    ],
+    "near_misses": [
+     {
+      "text": "Why do Buddhists not drink alcohol?",
+      "goes_to": "B3",
+      "why": "asks the reason"
+     },
+     {
+      "text": "how to achive unity in the bahai community",
+      "goes_to": "D4",
+      "why": "community life"
+     },
+     {
+      "text": "buddhism rules for women",
+      "goes_to": "E3",
+      "why": "contested"
+     }
+    ],
+    "required_slots": [
+     "practice",
+     "tradition"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "B1",
+     "B3",
+     "D4",
+     "E3"
+    ],
+    "composes_with": [
+     "A3",
+     "B1",
+     "C3"
+    ]
+   },
+   "test_questions": {
+    "lead": 838,
+    "also": 213,
+    "examples": [
+     "If a parent has disowned a child, does that child still need their consent for marriage? (Immerse)",
+     "Can Bahá'ís drink alcohol?",
+     "is it haram to eat bugs",
+     "How do I pray?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "collection",
+       "label": "Prepared collection"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Clear law?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "Law shelf: Aqdas, Q&A…"
+      },
+      {
+       "kind": "tool",
+       "id": "bm25",
+       "label": "BM25 law terms"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Law / custom / ruling?"
+      }
+     ]
+    },
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "recast",
+       "label": "Light LLM: recast"
+      },
+      {
+       "kind": "tool",
+       "id": "hype",
+       "label": "HyPE"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Found?"
+      }
+     ]
+    }
+   ],
+   "post": "A personal ruling → point to the right institution",
+   "format": "yes_no_with_proof",
+   "fallback": "agent",
+   "open_questions": [
+    "Law shelves for other traditions (fiqh, halakha): which works do we hold?"
+   ],
+   "measure": "100 D3 across traditions; yes/no/depends first line, correct text, ≤ 8 s"
+  },
+  {
+   "id": "D4",
+   "family": "D",
+   "family_name": "Life and practice",
+   "name": "Community life and service",
+   "types": [
+    "D4"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Community life and service",
+    "sounds_like": [
+     "How should Bahá'ís vote?",
+     "how can a community choose a neighbourhood for intense activity, per recent guidance",
+     "Can administrative roles have term limits?"
+    ],
+    "how_often": "17 as lead type (0.1%) · 5 more as part of another",
+    "often_with": "B3 + D4 (2) · D3 + D4 (2) · D4 + B3 (2)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Guidance by date (to build): House of Justice messages indexed by date and topic, with what supersedes what"
+     },
+     {
+      "jev": true,
+      "text": "current guidance found · superseded → give the current one · none → the Writings behind the practice"
+     },
+     {
+      "jev": false,
+      "text": "Writing model: what to do, one passage per point"
+     }
+    ],
+    "ideal_answer": "Current guidance first (the latest applicable House of Justice message, dated), then the Writings behind it. Say when guidance is superseded. Practical and organised: what to do, with the passage for each point."
+   },
+   "jev": {
+    "cues": [
+     "community, Feast, administration, elections, service, activities, guidance"
+    ],
+    "example_phrasings": [
+     "how to achive unity in the bahai community",
+     "Can Baha'i administration roles have 'term limits' to avoid having the same people be elected everytime?",
+     "what is the Nineteen Day Feast",
+     "can baha'is vote"
+    ],
+    "near_misses": [
+     {
+      "text": "jain marriage bureau",
+      "goes_to": "outside scope",
+      "why": "a service listing, not guidance"
+     },
+     {
+      "text": "Is the Nineteen Day Feast obligatory?",
+      "goes_to": "D3",
+      "why": "a rule"
+     }
+    ],
+    "required_slots": [
+     "practice or institution"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "D3",
+     "B3"
+    ],
+    "composes_with": [
+     "B3",
+     "D3"
+    ]
+   },
+   "test_questions": {
+    "lead": 17,
+    "also": 5,
+    "examples": [
+     "how to achieve unity in the bahai community (Immerse)",
+     "Can Baha'i administration roles have term limits…? (Immerse)",
+     "what is the Nineteen Day Feast"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "guidance",
+       "label": "Guidance by date"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Current found?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "Writings behind it"
+      },
+      {
+       "kind": "tool",
+       "id": "hype",
+       "label": "HyPE"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Found?"
+      }
+     ]
+    }
+   ],
+   "post": "Superseded → give the current one, dated",
+   "format": "authority_layers / list_enumerate; writer: what to do, a passage per point",
+   "fallback": "agent",
+   "open_questions": [
+    "Supersession: who marks which message replaces which? (manual list for the current Plan?)"
+   ],
+   "measure": "All 22 + 20 written by Chad; latest guidance cited and dated"
+  },
+  {
+   "id": "D5",
+   "family": "D",
+   "family_name": "Life and practice",
+   "name": "Cult? join? convert?",
+   "types": [
+    "D5"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Is it a cult? Should I join? How do I convert?",
+    "sounds_like": [
+     "is baha'i faith a cult",
+     "Why I Left the Baha'i Faith"
+    ],
+    "how_often": "63 as lead type (0.5%) · 4 more as part of another",
+    "often_with": "D5 + D1 (5) · D5 + E3 (4) · D5 + C2 (3)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Fixed set of checked facts (no clergy, how one enrols, how the community is organised) plus B1 on the specific worry"
+     },
+     {
+      "jev": true,
+      "text": "hostile · curious · ready to join → enrolment link"
+     },
+     {
+      "jev": false,
+      "text": "Writing model: fair, calm, no pressure"
+     }
+    ],
+    "ideal_answer": "Fair and calm. Facts with sources, the question acknowledged honestly, no pressure. The fireside teacher's moment."
+   },
+   "jev": {
+    "cues": [
+     "cult / join / convert / become / leave / ex-"
+    ],
+    "example_phrasings": [
+     "is bahai faith a cult",
+     "How does one initially become a Buddhist?",
+     "Dual religion, conversion of faith",
+     "Should I change my faith for the sake of marriage",
+     "Reason to follow Jainism"
+    ],
+    "near_misses": [
+     {
+      "text": "Is Judaism racist for believing it is chosen?",
+      "goes_to": "E3",
+      "why": "a charge, not joining"
+     },
+     {
+      "text": "How do I know which church is the right one?",
+      "goes_to": "B1 / D5",
+      "why": "choosing, borderline"
+     }
+    ],
+    "required_slots": [
+     "tradition"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "E1",
+     "E3",
+     "D1"
+    ],
+    "composes_with": [
+     "D1",
+     "E3",
+     "C2"
+    ]
+   },
+   "test_questions": {
+    "lead": 63,
+    "also": 4,
+    "examples": [
+     "is baha'i faith a cult",
+     "Why I Left the Baha'i Faith",
+     "I left (r/exbahai)"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Hostile / curious / ready?"
+      },
+      {
+       "kind": "tool",
+       "id": "checked_facts",
+       "label": "Checked facts"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "B1",
+       "label": "B1 on the worry"
+      }
+     ]
+    }
+   ],
+   "post": "Ready to join → enrolment link",
+   "format": "direct_answer; writer fair, calm, no pressure",
+   "fallback": "agent",
+   "open_questions": [
+    "Who writes and signs off the checked fact sheet?"
+   ],
+   "measure": "All 67 + soul battery; no pressure, facts sourced"
+  },
+  {
+   "id": "E1",
+   "family": "E",
+   "family_name": "Hard questions",
+   "name": "Pushback, contradiction",
+   "types": [
+    "E1",
+    "G6"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Pushback and apparent contradiction",
+    "sounds_like": [
+     "Does the text really say that, or is that your interpretation?",
+     "How is equality reconciled with men-only House of Justice?"
+    ],
+    "how_often": "59 as lead type (0.5%) · 39 more as part of another",
+    "often_with": "E1 + B3 (17) · E1 + B1 (13) · B3 + E1 (12)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Recover the claim and the earlier answer from the thread"
+     },
+     {
+      "jev": false,
+      "text": "In parallel: the exact words of the passage · authoritative interpretation of it"
+     },
+     {
+      "jev": true,
+      "text": "our answer overreached → concede · the text supports it → show it · a real tension → say so and cite the explanations"
+     },
+     {
+      "jev": false,
+      "text": "Writing model"
+     }
+    ],
+    "ideal_answer": "Concede what is interpretation. Show the exact words. Give the authoritative explanation where one exists and say plainly where none does. Never defend with vagueness."
+   },
+   "jev": {
+    "cues": [
+     "but / really / isn't that / contradiction / how do I answer someone who",
+     "a challenge to a text or to Anís"
+    ],
+    "example_phrasings": [
+     "How should Baha'is respond to Muslims who insist that Muhammad was the final prophet…Quran 33:40?",
+     "Is faith blind?",
+     "Has the Torah been changed?",
+     "Did the Jews really receive the Torah at Sinai?",
+     "How do I answer a person who thinks Christians have deluded themselves?"
+    ],
+    "near_misses": [
+     {
+      "text": "You first presented this as scripture… but it is a 1932 letter from Shoghi Effendi",
+      "goes_to": "G6",
+      "why": "pushes back on Anís's own answer"
+     },
+     {
+      "text": "why do christians fast",
+      "goes_to": "B3",
+      "why": "curiosity, not challenge"
+     }
+    ],
+    "required_slots": [
+     "the claim challenged"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "B3",
+     "G6",
+     "E3"
+    ],
+    "composes_with": [
+     "B3",
+     "B1",
+     "A4"
+    ]
+   },
+   "test_questions": {
+    "lead": 59,
+    "also": 39,
+    "examples": [
+     "How should Baha'is respond to Muslims who … point to Quran 33:40? (Immerse)",
+     "Is faith blind?",
+     "is the talmud reliable"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "thread",
+       "label": "Claim + our answer"
+      },
+      {
+       "kind": "use",
+       "id": "A4",
+       "label": "Exact words"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Overreached?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "Authoritative interp."
+      },
+      {
+       "kind": "tool",
+       "id": "trace_source",
+       "label": "Trace to primary"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Real tension?"
+      }
+     ]
+    }
+   ],
+   "post": "Overreached → concede; text supports it → show it; real tension → say so, cite explanations",
+   "format": "authority_layers; writer",
+   "fallback": "agent",
+   "open_questions": [
+    "Interfaith apologetics (Quran 33:40): include the Bahá'í answer only, or each side's reading?"
+   ],
+   "measure": "All 98 E1 + 117 G6 turns; concedes when wrong, exact words shown"
+  },
+  {
+   "id": "E2",
+   "family": "E",
+   "family_name": "Hard questions",
+   "name": "Something that isn't there",
+   "types": [
+    "E2"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Something that isn't there",
+    "sounds_like": [],
+    "sounds_like_note": "A quote that doesn't exist, a ruling never made, a date not recorded.",
+    "how_often": "219 as lead type (1.7%) · 119 more as part of another",
+    "often_with": "A1 + E2 (40) · E2 + A3 (33) · A4 + E2 (30)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Run the strategy of the type asked for; this one takes over when that comes back empty"
+     },
+     {
+      "jev": true,
+      "text": "a near match → offer it, labelled · not in the library · a web-only matter → web search, labelled"
+     },
+     {
+      "jev": false,
+      "text": "Template: “I can't find that in the library”, then the nearest real passage"
+     }
+    ],
+    "ideal_answer": "“I can't find that in the library.” Then the closest real passage, labelled as such. Use the web only for things a library couldn't hold, and label it."
+   },
+   "jev": {
+    "cues": [
+     "a premise that may be false: a quote, ruling, verse or fact that may not exist",
+     "Jev cannot tell up front; runs as a wrapper when the asked type comes back empty"
+    ],
+    "example_phrasings": [
+     "Jesus said God helps those who help themselves",
+     "is krishna jesus",
+     "where in the bible does it say not to celebrate halloween",
+     "torah verse about prophet muhammad",
+     "Theravaden Zen?"
+    ],
+    "near_misses": [
+     {
+      "text": "Could the guardian read people's thoughts?…",
+      "goes_to": "E2 + B4",
+      "why": "stories asked; may be none"
+     }
+    ],
+    "required_slots": [
+     "the claim"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "A1",
+     "A3",
+     "A4"
+    ],
+    "composes_with": [
+     "A1",
+     "A3",
+     "A4",
+     "A5"
+    ]
+   },
+   "test_questions": {
+    "lead": 219,
+    "also": 119,
+    "examples": [
+     "Could the Guardian read people's thoughts? Any stories…? (Immerse)",
+     "Jesus said God helps those who help themselves",
+     "is krishna jesus"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "",
+       "label": "Asked type's strategy"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Empty?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "phrase_semantic",
+       "label": "Nearest real passage"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Near match?"
+      }
+     ]
+    },
+    {
+     "cost": "last resort",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "web",
+       "label": "Web lead, labelled"
+      }
+     ]
+    }
+   ],
+   "post": "Runs as a wrapper: it takes over only when the asked type comes back empty. A premise check runs first when the premise is explicit",
+   "format": "honest_absence template: 'I can't find that in the library', then the nearest passage, labelled",
+   "fallback": "agent",
+   "open_questions": [
+    "When is the web allowed to say where a misquote really comes from (Ben Franklin)?"
+   ],
+   "measure": "All 338; never invents, nearest passage labelled; false-premise corrected first"
+  },
+  {
+   "id": "E3",
+   "family": "E",
+   "family_name": "Hard questions",
+   "name": "Controversy",
+   "types": [
+    "E3"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Controversy",
+    "sounds_like": [
+     "what does christianity say about homosexuality"
+    ],
+    "sounds_like_note": "abortion, euthanasia",
+    "how_often": "173 as lead type (1.4%) · 213 more as part of another",
+    "often_with": "E3 + B1 (84) · B1 + E3 (63) · A3 + E3 (38)",
+    "route": [
+     {
+      "jev": false,
+      "text": "B1 with strict authority order; search both the law and the guidance on how to treat people"
+     },
+     {
+      "jev": true,
+      "text": "the texts are clear · interpretation differs → show each, attributed"
+     },
+     {
+      "jev": false,
+      "text": "Writing model, no editorial in either direction"
+     }
+    ],
+    "ideal_answer": "The texts, quoted accurately and in context, with the authoritative guidance. No editorialising in either direction."
+   },
+   "jev": {
+    "cues": [
+     "sex, gender, women, homosexuality, abortion, violence, race, politics + a tradition"
+    ],
+    "example_phrasings": [
+     "How should Baha'is vote?",
+     "can jews be gay",
+     "Confucianism and women",
+     "quran verse about hitting wife",
+     "what does sikhism say about homosexuality"
+    ],
+    "near_misses": [
+     {
+      "text": "what does hinduism say about women",
+      "goes_to": "E3 + B1",
+      "why": "same rules"
+     },
+     {
+      "text": "Is witchcraft real?",
+      "goes_to": "B1",
+      "why": "belief question; labelled E3 by the first pass"
+     }
+    ],
+    "required_slots": [
+     "topic",
+     "tradition"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "B1",
+     "D3",
+     "E1"
+    ],
+    "composes_with": [
+     "B1",
+     "A3",
+     "C2"
+    ]
+   },
+   "test_questions": {
+    "lead": 173,
+    "also": 213,
+    "examples": [
+     "How should Baha'is vote? (Immerse)",
+     "can jews be gay",
+     "Is anal sex a sin?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "B1",
+       "label": "B1, strict authority"
+      },
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "Law ∥ treat people"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Clear / differs?"
+      }
+     ]
+    }
+   ],
+   "format": "authority_layers; writer, no editorial either way",
+   "fallback": "agent",
+   "open_questions": [
+    "No collection shortcut here (context matters each time)?"
+   ],
+   "measure": "All 386; accuracy + no-editorial judged; soul battery clean"
+  },
+  {
+   "id": "F1",
+   "family": "F",
+   "family_name": "Assignments",
+   "name": "Compile quotations",
+   "types": [
+    "F1"
+   ],
+   "status": "draft",
+   "target_time": "minutes; progress shown",
+   "scenario": {
+    "title": "Compile quotations on a theme",
+    "sounds_like": [
+     "Find quotes on the mystery of sacrifice and suffering",
+     "gather everything on detachment"
+    ],
+    "sounds_like_note": "(Immerse)",
+    "how_often": "84 as lead type (0.7%) · 5 more as part of another",
+    "often_with": "F1 + A4 (14) · F1 + E3 (4) · F3 + F1 (3)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Plan shown to the reader (sub-themes, shelves)"
+     },
+     {
+      "jev": false,
+      "text": "Many searches in parallel, one per sub-theme"
+     },
+     {
+      "jev": true,
+      "text": "each sub-theme: enough · thin → search wider · drop it"
+     },
+     {
+      "jev": false,
+      "text": "Remove duplicates, group, order by authority"
+     },
+     {
+      "jev": false,
+      "text": "Document; email when long. The writing model plans and groups"
+     }
+    ],
+    "ideal_answer": "A grouped compilation: sections of exact, linked passages ordered by authority, delivered as a document to keep, print or email. Takes minutes; progress shown."
+   },
+   "jev": {
+    "cues": [
+     "quotes (plural, a number, 'all'), compile, gather everything, a list of passages"
+    ],
+    "example_phrasings": [
+     "What are nine quotes on eternity…",
+     "analects best quotes",
+     "guru granth sahib quotes in punjabi",
+     "Find quotes on the mystery of sacrifice and suffering",
+     "7 common misquotes of Jesus"
+    ],
+    "near_misses": [
+     {
+      "text": "mencius quotes on education",
+      "goes_to": "A3",
+      "why": "a short list"
+     },
+     {
+      "text": "judaism quotes gcse",
+      "goes_to": "F3",
+      "why": "for a class"
+     }
+    ],
+    "required_slots": [
+     "theme",
+     "optional count, tradition, language"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "A3",
+     "F3"
+    ],
+    "composes_with": [
+     "A4",
+     "E3",
+     "A7"
+    ]
+   },
+   "test_questions": {
+    "lead": 84,
+    "also": 5,
+    "examples": [
+     "What are nine quotes on eternity … to meditate on? (Immerse)",
+     "Find quotes on the mystery of sacrifice and suffering (Immerse)",
+     "Can you find where the major world religions teach the golden rule…?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "plan_subthemes",
+       "label": "Light LLM: sub-themes"
+      },
+      {
+       "kind": "use",
+       "id": "A3",
+       "label": "A3 per sub-theme ∥"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Each enough?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "shelf",
+       "label": "Thin: wider shelf"
+      },
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Dedupe, order"
+      }
+     ]
+    }
+   ],
+   "format": "list_enumerate / letter (document; email when long); writer groups",
+   "fallback": "deep_research",
+   "open_questions": [
+    "Plan shown to the reader before searching, or only progress?",
+    "Document output: Claude Doc, PDF, or OceanLibrary page?"
+   ],
+   "measure": "All 89 + Immerse F1s; every passage exact and linked, grouped, minutes"
+  },
+  {
+   "id": "F2",
+   "family": "F",
+   "family_name": "Assignments",
+   "name": "Devotional program",
+   "types": [
+    "F2"
+   ],
+   "status": "draft",
+   "target_time": "minutes; progress shown",
+   "scenario": {
+    "title": "Devotional program",
+    "sounds_like": [
+     "Put together a devotional program for the Twin Holy Birthdays",
+     "…for the next Feast"
+    ],
+    "sounds_like_note": "(3 of Immerse's 14)",
+    "how_often": "4 as lead type (0.0%) · 3 more as part of another",
+    "often_with": "F2 + A3 (2) · A5 + A4 + F2 (1) · F2 + D3 (1)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Calendar (to build): which Feast or Holy Day, its theme"
+     },
+     {
+      "jev": false,
+      "text": "Prayers (D2) and readings (A3) on the theme in parallel"
+     },
+     {
+      "jev": true,
+      "text": "length and audience: children · mixed · devotional gathering"
+     },
+     {
+      "jev": false,
+      "text": "Program template; the writing model chooses and orders"
+     }
+    ],
+    "ideal_answer": "A ready-to-read program: opening prayer, 4–6 readings in order with who reads them, closing prayer, each linked. Knows the calendar (which Feast is next)."
+   },
+   "jev": {
+    "cues": [
+     "devotional / program / Feast / funeral program / Holy Day + make or create"
+    ],
+    "example_phrasings": [
+     "create a devotional program on importance of service; add a few songs as well",
+     "bahai funeral program"
+    ],
+    "near_misses": [
+     {
+      "text": "sikh funeral invitation templates free",
+      "goes_to": "outside scope",
+      "why": "a template, not readings"
+     }
+    ],
+    "required_slots": [
+     "occasion or theme",
+     "audience, length"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "F1",
+     "D2"
+    ],
+    "composes_with": [
+     "A3",
+     "D2",
+     "D3"
+    ]
+   },
+   "test_questions": {
+    "lead": 4,
+    "also": 3,
+    "examples": [
+     "create a devotional program on importance of service; add a few songs as well (Immerse)",
+     "bahai funeral program"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "calendar",
+       "label": "Calendar: occasion"
+      },
+      {
+       "kind": "use",
+       "id": "D2",
+       "label": "D2 ∥ A3 on theme"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Audience?"
+      }
+     ]
+    }
+   ],
+   "format": "program template; writer orders",
+   "fallback": "agent",
+   "open_questions": [
+    "Needs questions: write 15 (Feasts, Holy Days, funerals, children)"
+   ],
+   "measure": "needs questions"
+  },
+  {
+   "id": "F3",
+   "family": "F",
+   "family_name": "Assignments",
+   "name": "Study session",
+   "types": [
+    "F3"
+   ],
+   "status": "draft",
+   "target_time": "minutes; progress shown",
+   "scenario": {
+    "title": "Study session preparation",
+    "sounds_like": [
+     "I'm preparing a study session on the Íqán's treatment of \"return\""
+    ],
+    "how_often": "22 as lead type (0.2%) · 18 more as part of another",
+    "often_with": "F3 + A3 (13) · A3 + F3 (6) · A1 + F3 (5)",
+    "route": [
+     {
+      "jev": false,
+      "text": "F1 on the topic, then read_around for the passages to read aloud"
+     },
+     {
+      "jev": true,
+      "text": "audience: study circle · class · talk"
+     },
+     {
+      "jev": false,
+      "text": "The writing model adds how the passages connect and 3–5 discussion questions; handout"
+     }
+    ],
+    "ideal_answer": "The passages to read aloud, where they are, how they connect, and 3–5 discussion questions. A handout, not a chat reply."
+   },
+   "jev": {
+    "cues": [
+     "study session / class / gcse / worksheet / teaching + topic"
+    ],
+    "example_phrasings": [
+     "Ten Questions on Taoism",
+     "judaism quotes gcse",
+     "what did mahavira say about the caste system class 6",
+     "I'm preparing a study session on the Íqán's treatment of 'return'"
+    ],
+    "near_misses": [
+     {
+      "text": "hidden words worksheet pdf",
+      "goes_to": "A2 / F3",
+      "why": "may only want the book"
+     }
+    ],
+    "required_slots": [
+     "topic",
+     "audience"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "F1",
+     "A3"
+    ],
+    "composes_with": [
+     "F1",
+     "A3"
+    ]
+   },
+   "test_questions": {
+    "lead": 22,
+    "also": 18,
+    "examples": [
+     "I'm preparing a study session on the Íqán's treatment of \"return\"",
+     "prayer and meditation (Bahá'í, RE Online)",
+     "judaism quotes gcse"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "+1 light LLM",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "F1",
+       "label": "F1 on the topic"
+      },
+      {
+       "kind": "tool",
+       "id": "read_around",
+       "label": "Read-aloud passages"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Audience?"
+      }
+     ]
+    }
+   ],
+   "format": "study_question (handout); writer adds links + 3–5 questions",
+   "fallback": "agent",
+   "open_questions": [
+    "Handout format and length per audience?"
+   ],
+   "measure": "All 40 + 10 written; passages + questions, a handout"
+  },
+  {
+   "id": "F4",
+   "family": "F",
+   "family_name": "Assignments",
+   "name": "Timeline, table, map",
+   "types": [
+    "F4"
+   ],
+   "status": "draft",
+   "target_time": "minutes; progress shown",
+   "scenario": {
+    "title": "Timeline, chart or map",
+    "sounds_like": [
+     "Show me a timeline of the ministries of the Central Figures"
+    ],
+    "sounds_like_note": "(Immerse)",
+    "how_often": "30 as lead type (0.2%) · 3 more as part of another",
+    "often_with": "F4 + B4 (4) · A2 + F4 (3) · F4 + B3 (3)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Dated events (to build): from the entity graph and biography records, each with its source passage"
+     },
+     {
+      "jev": true,
+      "text": "timeline · table · map"
+     },
+     {
+      "jev": false,
+      "text": "Template fills the visual; a light model writes the captions"
+     }
+    ],
+    "ideal_answer": "A dated timeline where every event links to its source passage. Built from our dated facts; biography pages are the start."
+   },
+   "jev": {
+    "cues": [
+     "timeline / table / chart / map / picture / visual"
+    ],
+    "example_phrasings": [
+     "Create a table of all the bahai shrines and temples",
+     "judaism history timeline",
+     "Dietary cheat sheet by religion",
+     "Create a visual that shows how Ali Nakhjavani reframes…"
+    ],
+    "near_misses": [
+     {
+      "text": "jainism god photo",
+      "goes_to": "outside scope",
+      "why": "images we don't hold"
+     }
+    ],
+    "required_slots": [
+     "subject",
+     "kind of visual"
+    ],
+    "disqualifiers": [
+     "image search"
+    ],
+    "confusable_with": [
+     "B4",
+     "C3"
+    ],
+    "composes_with": [
+     "B4",
+     "A1",
+     "B3"
+    ]
+   },
+   "test_questions": {
+    "lead": 30,
+    "also": 3,
+    "examples": [
+     "Show me a timeline of the ministries of the Central Figures (Immerse)",
+     "Create a table of all the bahai shrines and temples (Immerse)",
+     "Dietary cheat sheet by religion"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "dated_events",
+       "label": "Dated events"
+      },
+      {
+       "kind": "tool",
+       "id": "people_search",
+       "label": "Entity graph"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Timeline/table/map?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "C3",
+       "label": "Per-row search ∥"
+      }
+     ]
+    }
+   ],
+   "format": "timeline / comparison_table; light writer for captions",
+   "fallback": "agent",
+   "open_questions": [
+    "Maps: out of scope for launch?"
+   ],
+   "measure": "All 33; every row/event sourced"
+  },
+  {
+   "id": "F5",
+   "family": "F",
+   "family_name": "Assignments",
+   "name": "Research brief",
+   "types": [
+    "F5"
+   ],
+   "status": "draft",
+   "target_time": "minutes; progress shown",
+   "scenario": {
+    "title": "Research brief",
+    "sounds_like": [
+     "Trace how 'Abdu'l-Bahá uses \"Most Great Justice\" across his talks",
+     "How did Isfahání clerics respond to the Báb?"
+    ],
+    "sounds_like_note": "(Immerse)",
+    "how_often": "9 as lead type (0.1%) · 5 more as part of another",
+    "often_with": "F5 + C1 (3) · C1 + F5 (3) · F5 + C3 (2)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Deep-research job (deep-research): plan shown"
+     },
+     {
+      "jev": false,
+      "text": "Searches in parallel, trace_source on every key claim"
+     },
+     {
+      "jev": true,
+      "text": "after each round: enough · another round · stop and report the gap"
+     },
+     {
+      "jev": false,
+      "text": "Report written by the stronger model, emailed"
+     }
+    ],
+    "ideal_answer": "A short report: the question, what was searched, findings with every claim cited, what remains uncertain. Sent by email when it takes more than a minute."
+   },
+   "jev": {
+    "cues": [
+     "essay, analysis, research, trace across, report, comparative analysis"
+    ],
+    "example_phrasings": [
+     "A Comparison of Dietary Laws in Two World Religions",
+     "religion and science summary",
+     "Perspectives of Major World Religions regarding Euthanasia and Assisted Suicide: A Comparative Analysis"
+    ],
+    "near_misses": [
+     {
+      "text": "confucianism history extended essay ideas",
+      "goes_to": "F5 / F3",
+      "why": "ideas, not the research"
+     }
+    ],
+    "required_slots": [
+     "question"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "F1",
+     "C1",
+     "B4"
+    ],
+    "composes_with": [
+     "C1",
+     "C3"
+    ]
+   },
+   "test_questions": {
+    "lead": 9,
+    "also": 5,
+    "examples": [
+     "How did Isfahání clerics respond to the Báb? (Immerse)",
+     "Trace how 'Abdu'l-Bahá uses \"Most Great Justice\" across his talks",
+     "A Comparison of Dietary Laws in Two World Religions"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "agent",
+     "steps": [
+      {
+       "kind": "llm",
+       "id": "plan_subthemes",
+       "label": "Plan, shown"
+      },
+      {
+       "kind": "tool",
+       "id": "deep_research",
+       "label": "Deep-research rounds"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Enough / gap?"
+      }
+     ]
+    }
+   ],
+   "format": "letter (report, emailed)",
+   "fallback": "agent",
+   "open_questions": [
+    "Already agent-shaped: is a strategy needed, or only the plan + email wrapper?"
+   ],
+   "measure": "All 14 + 10 written; every claim cited, gaps named"
+  },
+  {
+   "id": "F6",
+   "family": "F",
+   "family_name": "Assignments",
+   "name": "Teach me over time",
+   "types": [
+    "F6"
+   ],
+   "status": "draft",
+   "target_time": "minutes; progress shown",
+   "scenario": {
+    "title": "Teach me over time",
+    "sounds_like": [
+     "a daily reading on justice",
+     "help me read the Íqán this month",
+     "quiz me on chapter 2"
+    ],
+    "how_often": "14 as lead type (0.1%) · 1 more as part of another",
+    "often_with": "F6 + A2 (2) · F6 + C2 (2) · C2 + F6 (1)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Reader memory (to build): what they read and where they stopped"
+     },
+     {
+      "jev": false,
+      "text": "A reading plan built from the work's structure"
+     },
+     {
+      "jev": true,
+      "text": "each session: next portion · review · question to check understanding"
+     },
+     {
+      "jev": false,
+      "text": "Scheduled sends; writing model"
+     }
+    ],
+    "ideal_answer": "A plan the reader agrees to, which Anís then keeps: he remembers where they are, sends the next portion, checks understanding gently."
+   },
+   "jev": {
+    "cues": [
+     "read-along, over time, daily, this month, course, how to start reading, quiz me"
+    ],
+    "example_phrasings": [
+     "Zhuangzi read-along",
+     "Where to learn neidan",
+     "how to read the torah in english",
+     "Is starting with the Zhuangzi instead of the Tao Te Ching a mistake"
+    ],
+    "near_misses": [
+     {
+      "text": "Could anyone suggest some books to get started and learn more deeply about Daoism",
+      "goes_to": "A2 (reading suggestion)",
+      "why": "one answer, no plan"
+     }
+    ],
+    "required_slots": [
+     "work or subject"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "A2"
+    ],
+    "composes_with": [
+     "A2",
+     "C2"
+    ]
+   },
+   "test_questions": {
+    "lead": 14,
+    "also": 1,
+    "examples": [
+     "Zhuangzi read-along",
+     "help me read the Íqán this month",
+     "how to read the torah in english"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "",
+       "label": "Start an activity"
+      }
+     ]
+    }
+   ],
+   "format": "hands over to an activity (read_book or study_plan)",
+   "fallback": "agent",
+   "open_questions": [
+    "F6 is the door to activities: Jev 'activity' route instead of a search type?"
+   ],
+   "measure": "Activity start rate on the 15; see activities"
+  },
+  {
+   "id": "G1",
+   "family": "G",
+   "family_name": "Follow-ups",
+   "name": "Refer back",
+   "types": [
+    "G1"
+   ],
+   "status": "draft",
+   "target_time": "≤ 3 s",
+   "scenario": {
+    "title": "Refer back",
+    "sounds_like": [
+     "the second one",
+     "that passage"
+    ],
+    "how_often": "66 · 4 (lead · also)",
+    "ideal_answer": "Resolve it to the exact item from his last reply."
+   },
+   "jev": {
+    "cues": [
+     "refers to the last reply: it, that, he, the second one, those sources, 'ok and'"
+    ],
+    "example_phrasings": [
+     "ok and when did he travel to America?",
+     "ok it's Dhammapada. where can i read it?",
+     "Ok good. Then show me the Hindu understanding of karma in those sources",
+     "Did these two religious figures have any personal meetings or direct contact with one another?"
+    ],
+    "near_misses": [
+     {
+      "text": "this passage beginning with …",
+      "goes_to": "A4 / B2",
+      "why": "carries its own text: never a follow-up"
+     }
+    ],
+    "required_slots": [
+     "thread"
+    ],
+    "disqualifiers": [
+     "no previous turn"
+    ],
+    "confusable_with": [
+     "B2",
+     "G5"
+    ],
+    "composes_with": [
+     "A2",
+     "A1",
+     "B2",
+     "A3"
+    ]
+   },
+   "test_questions": {
+    "lead": 66,
+    "also": 4,
+    "examples": [
+     "ok and when did he travel to America?",
+     "ok it's Dhammapada. where can i read it?",
+     "This passage you just quoted is very clear… Is it also in the Hidden Words?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "thread",
+       "label": "Last turn's items"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Which item?"
+      },
+      {
+       "kind": "use",
+       "id": "",
+       "label": "Asked type, seeded"
+      }
+     ]
+    }
+   ],
+   "format": "asked type's format",
+   "fallback": "agent",
+   "open_questions": [
+    "Store each reply's items (passage ids, people, works) in the exchange log so 'the second one' resolves by code?"
+   ],
+   "measure": "All 70 conversation turns; right item resolved"
+  },
+  {
+   "id": "G2",
+   "family": "G",
+   "family_name": "Follow-ups",
+   "name": "Source?",
+   "types": [
+    "G2"
+   ],
+   "status": "draft",
+   "target_time": "≤ 3 s",
+   "scenario": {
+    "title": "Source?",
+    "sounds_like": [
+     "who wrote that, and where is it?"
+    ],
+    "how_often": "65 · 40 (lead · also)",
+    "ideal_answer": "Author, work, paragraph, link."
+   },
+   "jev": {
+    "cues": [
+     "source? who wrote that, where is it, which book"
+    ],
+    "example_phrasings": [
+     "You say the saying is in Kitab Al-Kafi too… Who exactly wrote the words, and where…",
+     "This passage you just quoted is very clear… Is it also in the Hidden Words, or only in this Summons?"
+    ],
+    "near_misses": [],
+    "required_slots": [
+     "thread",
+     "the claim"
+    ],
+    "disqualifiers": [
+     "no previous turn"
+    ],
+    "confusable_with": [
+     "G3",
+     "A4"
+    ],
+    "composes_with": [
+     "A4",
+     "A5"
+    ]
+   },
+   "test_questions": {
+    "lead": 65,
+    "also": 40,
+    "examples": [
+     "You say the saying is in Kitab Al-Kafi… Who exactly wrote the words, and where in the book?",
+     "Is it also in the Hidden Words, or only in this Summons?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "thread",
+       "label": "Cited items"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Already sourced?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "A4",
+       "label": "A4 on the words"
+      }
+     ]
+    }
+   ],
+   "format": "find_passage template",
+   "fallback": "agent",
+   "open_questions": [],
+   "measure": "All 105; author, work, ¶, link"
+  },
+  {
+   "id": "G3",
+   "family": "G",
+   "family_name": "Follow-ups",
+   "name": "Exact words",
+   "types": [
+    "G3"
+   ],
+   "status": "draft",
+   "target_time": "≤ 1 s",
+   "scenario": {
+    "title": "Exact words",
+    "sounds_like": [
+     "what are the actual words?"
+    ],
+    "how_often": "67 · 13 (lead · also)",
+    "ideal_answer": "Quote verbatim, linked. Never paraphrase again."
+   },
+   "jev": {
+    "cues": [
+     "exact words / actual words / original of what you quoted / I don't see the quote"
+    ],
+    "example_phrasings": [
+     "Show me the Arabic original of 'not the blood of any one…'",
+     "Anís, the quote you said you will show, I don't see it…"
+    ],
+    "near_misses": [],
+    "required_slots": [
+     "thread"
+    ],
+    "disqualifiers": [
+     "no previous turn"
+    ],
+    "confusable_with": [
+     "G2",
+     "A7"
+    ],
+    "composes_with": [
+     "A5",
+     "A7"
+    ]
+   },
+   "test_questions": {
+    "lead": 67,
+    "also": 13,
+    "examples": [
+     "Anís, the quote you said you will show, I don't see it…",
+     "Show me the Persian original of 'praiseworthy deeds and upright character…'"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "thread",
+       "label": "Passage in thread"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Have it?"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "A4",
+       "label": "A4 (or A7 for original)"
+      }
+     ]
+    }
+   ],
+   "format": "find_passage template, verbatim; no writer",
+   "fallback": "agent",
+   "open_questions": [],
+   "measure": "All 80; verbatim, linked, never paraphrased"
+  },
+  {
+   "id": "G4",
+   "family": "G",
+   "family_name": "Follow-ups",
+   "name": "Go deeper",
+   "types": [
+    "G4"
+   ],
+   "status": "draft",
+   "target_time": "≤ 3 s",
+   "scenario": {
+    "title": "Deepen",
+    "sounds_like": [
+     "what does \"detachment\" really mean there?"
+    ],
+    "how_often": "17 · 1 (lead · also)",
+    "ideal_answer": "Word study, other uses, original term."
+   },
+   "jev": {
+    "cues": [
+     "go deeper on a word or idea just used"
+    ],
+    "example_phrasings": [
+     "You say the Bahá'í text is 'ontological'… What is the original word in Arabic or Persian…"
+    ],
+    "near_misses": [],
+    "required_slots": [
+     "thread",
+     "the word"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "A6",
+     "G3"
+    ],
+    "composes_with": [
+     "A6",
+     "A7"
+    ]
+   },
+   "test_questions": {
+    "lead": 17,
+    "also": 1,
+    "examples": [
+     "You say the Bahá'í text is \"ontological\"… What is the original word in Arabic or Persian, and where else does Bahá'u'lláh use it?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "thread",
+       "label": "Topic + passages"
+      },
+      {
+       "kind": "tool",
+       "id": "term_in_passage",
+       "label": "Original term"
+      },
+      {
+       "kind": "tool",
+       "id": "word_study",
+       "label": "Word study"
+      }
+     ]
+    }
+   ],
+   "format": "term_with_original",
+   "fallback": "agent",
+   "open_questions": [
+    "Few distinct questions (the 17 repeat 3–4 wordings): write more"
+   ],
+   "measure": "few: write 15 more"
+  },
+  {
+   "id": "G5",
+   "family": "G",
+   "family_name": "Follow-ups",
+   "name": "Compare with another",
+   "types": [
+    "G5"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Compare",
+    "sounds_like": [
+     "how does that compare with the Gita?"
+    ],
+    "how_often": "57 · 11 (lead · also)",
+    "ideal_answer": "Switch to C1 with the earlier topic carried over."
+   },
+   "jev": {
+    "cues": [
+     "is this like X / and in Y? / how does that compare"
+    ],
+    "example_phrasings": [
+     "You said the greatest light comes 'where human hopelessness and agony are deepest.' Is this like Muhammad in the cave of Hira…",
+     "Ok good. Then show me the Hindu understanding of karma in those sources"
+    ],
+    "near_misses": [
+     {
+      "text": "What about Islam? (as a first message)",
+      "goes_to": "B1",
+      "why": "no thread (illustrative)"
+     }
+    ],
+    "required_slots": [
+     "thread",
+     "the second side"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "C1",
+     "G1"
+    ],
+    "composes_with": [
+     "C1",
+     "C4"
+    ]
+   },
+   "test_questions": {
+    "lead": 57,
+    "also": 11,
+    "examples": [
+     "Is this like Muhammad in the cave of Hira, or Moses at the burning bush — or is the Síyáh-Chál different?",
+     "Then show me the Hindu understanding of karma in those sources"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "thread",
+       "label": "Carry topic + side A"
+      },
+      {
+       "kind": "use",
+       "id": "C1",
+       "label": "C1: side B only"
+      }
+     ]
+    }
+   ],
+   "format": "comparison",
+   "fallback": "agent",
+   "open_questions": [],
+   "measure": "All 68; side A reused, not searched again"
+  },
+  {
+   "id": "G6",
+   "family": "G",
+   "family_name": "Follow-ups",
+   "name": "Pushback on the answer",
+   "types": [
+    "G6"
+   ],
+   "status": "draft",
+   "target_time": "≤ 12 s, first words ≤ 2 s",
+   "scenario": {
+    "title": "Push back",
+    "sounds_like": [
+     "isn't that just your reading?"
+    ],
+    "how_often": "96 · 21 (lead · also)",
+    "ideal_answer": "E1."
+   },
+   "jev": {
+    "cues": [
+     "you said / you first presented / that's wrong / you still haven't"
+    ],
+    "example_phrasings": [
+     "You first presented this as scripture… but it is a 1932 letter from Shoghi Effendi…",
+     "You still haven't said where the Maimonides sits…"
+    ],
+    "near_misses": [
+     {
+      "text": "Is faith blind?",
+      "goes_to": "E1",
+      "why": "challenges the text, not Anís"
+     }
+    ],
+    "required_slots": [
+     "thread",
+     "the disputed claim"
+    ],
+    "disqualifiers": [
+     "no previous turn"
+    ],
+    "confusable_with": [
+     "E1",
+     "G2"
+    ],
+    "composes_with": [
+     "E1",
+     "A4"
+    ]
+   },
+   "test_questions": {
+    "lead": 96,
+    "also": 21,
+    "examples": [
+     "You first presented this as scripture … but it is a 1932 letter from Shoghi Effendi",
+     "I doubt \"illness, poverty, and ignorance\" is his wording"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "thread",
+       "label": "What we said"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Did we say it?"
+      },
+      {
+       "kind": "use",
+       "id": "E1",
+       "label": "E1"
+      }
+     ]
+    }
+   ],
+   "format": "as E1; PUSHBACK_HOW",
+   "fallback": "agent",
+   "open_questions": [],
+   "measure": "All 117; concedes errors, checks citations"
+  },
+  {
+   "id": "G7",
+   "family": "G",
+   "family_name": "Follow-ups",
+   "name": "Reshape the answer",
+   "types": [
+    "G7"
+   ],
+   "status": "draft",
+   "target_time": "≤ 3 s",
+   "scenario": {
+    "title": "Reshape",
+    "sounds_like": [
+     "shorter",
+     "in Persian",
+     "simpler, for my kids",
+     "email me this"
+    ],
+    "how_often": "0 (lead · also)",
+    "ideal_answer": "Same content, new form. Don't search again."
+   },
+   "jev": {
+    "cues": [
+     "shorter / simpler / in Persian / email me this / as a list (none in the sets yet)"
+    ],
+    "example_phrasings": [],
+    "near_misses": [],
+    "required_slots": [
+     "thread",
+     "the new form"
+    ],
+    "disqualifiers": [
+     "no previous turn"
+    ],
+    "confusable_with": [
+     "G1"
+    ],
+    "composes_with": []
+   },
+   "test_questions": {
+    "lead": 0,
+    "also": 0,
+    "examples": [
+     "(none in the sets) shorter · in Persian · simpler, for my kids · email me this"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "code",
+       "id": "thread",
+       "label": "Last answer + evidence"
+      },
+      {
+       "kind": "code",
+       "id": "choose_format",
+       "label": "New form / channel"
+      }
+     ]
+    }
+   ],
+   "format": "same evidence, new format; writer only (no search)",
+   "fallback": "agent",
+   "open_questions": [
+    "Needs questions: add 20 reshape turns to the conversation runs"
+   ],
+   "measure": "needs questions"
+  },
+  {
+   "id": "H1",
+   "family": "H",
+   "family_name": "Small talk and openers",
+   "name": "About Anís or the library",
+   "types": [
+    "H1"
+   ],
+   "status": "draft",
+   "target_time": "≤ 1 s",
+   "scenario": {
+    "title": "About Anís or the library",
+    "sounds_like": [
+     "which religions are in the library",
+     "what are you?",
+     "free online sacred texts"
+    ],
+    "how_often": "30 as lead type (0.2%)",
+    "route": [
+     {
+      "jev": false,
+      "text": "Live library counts from the corpus status report"
+     },
+     {
+      "jev": true,
+      "text": "about the library · about Anís · a greeting"
+     },
+     {
+      "jev": false,
+      "text": "Template answer with the numbers and two things to try"
+     }
+    ],
+    "ideal_answer": "Short, with real numbers, and an invitation to ask."
+   },
+   "jev": {
+    "cues": [
+     "about the library or Anís: what are you, which religions, how many"
+    ],
+    "example_phrasings": [
+     "religions in library",
+     "I wonder if you could let me know which religions the library covers. Thank you!",
+     "what are you?",
+     "کتابخانهٔ آثار بهائی",
+     "Why are you a Bahá'í?"
+    ],
+    "near_misses": [
+     {
+      "text": "free online sacred texts",
+      "goes_to": "A2 / H1",
+      "why": "may want a book"
+     },
+     {
+      "text": "What do you think happens to you after you die?",
+      "goes_to": "B1",
+      "why": "asks a teaching"
+     }
+    ],
+    "required_slots": [],
+    "disqualifiers": [],
+    "confusable_with": [
+     "A2",
+     "B1"
+    ],
+    "composes_with": []
+   },
+   "test_questions": {
+    "lead": 30,
+    "also": 1,
+    "examples": [
+     "religions in library",
+     "library religions list",
+     "Why are you a Bahá'í?"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Library / Anís / greeting?"
+      },
+      {
+       "kind": "tool",
+       "id": "library_stats",
+       "label": "Library counts"
+      }
+     ]
+    }
+   ],
+   "format": "canned / template with real numbers + two things to try; no writer",
+   "fallback": "agent",
+   "open_questions": [],
+   "measure": "All 31; real numbers, ≤ 1 s"
+  },
+  {
+   "id": "H2",
+   "family": "H",
+   "family_name": "Small talk and openers",
+   "name": "Bare word or fragment",
+   "types": [
+    "H2"
+   ],
+   "status": "draft",
+   "target_time": "≤ 3 s",
+   "scenario": {
+    "title": "A bare word or a pasted fragment",
+    "sounds_like": [
+     "Mashriqu'l-Adhkár",
+     "confucius history",
+     "river of life-giving waters and may yield"
+    ],
+    "how_often": "455 as lead type (3.6%). 302 of them are pasted passages of five words or more without quotation marks; they are really A4, and Jev must treat them so.",
+    "route": [
+     {
+      "jev": false,
+      "text": "Phrase index first, quotation marks or not"
+     },
+     {
+      "jev": true,
+      "text": "the text matches a passage → A4 · a title → A2 · a name → B5 · a term → A6 · a topic → A3 with a short answer"
+     },
+     {
+      "jev": false,
+      "text": "Short answer, then two directions offered"
+     }
+    ],
+    "ideal_answer": "The most likely reading answered briefly, and two directions offered. A question back only when no reasonable answer is possible."
+   },
+   "jev": {
+    "cues": [
+     "one to three words with no verb, or a pasted fragment without quotation marks"
+    ],
+    "example_phrasings": [
+     "Heart pf man",
+     "space travel",
+     "Mulla Hosein",
+     "Confucius say",
+     "None can withstand the operation of My will or the exercise of My might."
+    ],
+    "near_misses": [
+     {
+      "text": "Thus hath it been decided by Him Who is the All-Powerful, the Almighty.",
+      "goes_to": "A4",
+      "why": "a passage: five words or more"
+     },
+     {
+      "text": "Atharva Veda",
+      "goes_to": "A2",
+      "why": "a title"
+     }
+    ],
+    "required_slots": [],
+    "disqualifiers": [],
+    "confusable_with": [
+     "A4",
+     "A2",
+     "B5",
+     "A6",
+     "A3"
+    ],
+    "composes_with": []
+   },
+   "test_questions": {
+    "lead": 455,
+    "also": 1,
+    "examples": [
+     "Heart pf man (Immerse)",
+     "space travel (Immerse)",
+     "Mulla Hosein",
+     "river of life-giving waters and may yield"
+    ]
+   },
+   "tiers": [
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "verbatim",
+       "label": "Phrase / verbatim"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "A passage?"
+      },
+      {
+       "kind": "code",
+       "id": "",
+       "label": "→ A4"
+      }
+     ]
+    },
+    {
+     "cost": "free",
+     "steps": [
+      {
+       "kind": "tool",
+       "id": "resolve_name",
+       "label": "Title / name index"
+      },
+      {
+       "kind": "jev",
+       "id": "jev_decide",
+       "label": "Title/name/term?"
+      },
+      {
+       "kind": "code",
+       "id": "",
+       "label": "→ A2 / B5 / A6"
+      }
+     ]
+    },
+    {
+     "cost": "tools",
+     "steps": [
+      {
+       "kind": "use",
+       "id": "A3",
+       "label": "A3, short"
+      }
+     ]
+    }
+   ],
+   "format": "the routed type's format, short, then two directions offered",
+   "fallback": "agent",
+   "open_questions": [
+    "302 are pasted passages: should Jev label them A4 directly (relabel the set)?"
+   ],
+   "measure": "All 455; most likely reading answered, ≤ 3 s"
+  }
+ ],
+ "composition": {
+  "intro": "One message in four (3,343 of 12,808) needs more than one strategy, as do 34 of Immerse's 61; only 96 need three or more. Common sets repeat, so each becomes a combined strategy: independent strategies run in parallel, share what they find, and one writing step produces one answer.",
+  "rules": [
+   "The lead sets the answer's shape; the others add steps to the plan, not separate answers.",
+   "Independent steps run in parallel; a premise check (E2) or name resolution (B5) runs first because the rest depends on it.",
+   "The writing model gets everything found and writes once, so nothing is said twice.",
+   "Each common set is logged and judged as its own strategy; a combination that keeps losing gets its own tree."
+  ],
+  "sets": [
+   {
+    "set": "B1 teaching + A3 passages",
+    "count": "366",
+    "example": "“whats the bahai teaching on life after death, sources plz”",
+    "how": "One search serves both: B1's passages are quoted in full rather than paraphrased."
+   },
+   {
+    "set": "B1 teaching + A6 word",
+    "count": "190",
+    "example": "“What does Islamic teaching say about Ikhlas?”",
+    "how": "The word study (original term, meaning) runs beside the teaching search; the answer opens with the meaning."
+   },
+   {
+    "set": "B1 teaching + E3 controversy",
+    "count": "147",
+    "example": "“What does Buddhism say about homosexuality?” · “can christians believe in evolution”",
+    "how": "B1 with E3's rules: strict authority order, both the law and the guidance on treating people, no editorial."
+   },
+   {
+    "set": "D3 rules + A3 passages",
+    "count": "100",
+    "example": "“What do Jewish scriptures teach about kosher dietary practices?” · “bahai funeral rites”",
+    "how": "Yes or no first, then the passage that says so in full."
+   },
+   {
+    "set": "A3 passages + A6 word",
+    "count": "95",
+    "example": "“Where does it say what dharma means? I want to read the explanation myself.”",
+    "how": "Search the term in its original and translated forms; one line of meaning above the passages."
+   },
+   {
+    "set": "A3 passages + B5 person",
+    "count": "94",
+    "example": "“Who is Ghoddus, and where in the texts is he mentioned?”",
+    "how": "Resolve the person first (which bearer of the name), then search passages about them."
+   },
+   {
+    "set": "B1 teaching + D3 rules",
+    "count": "81",
+    "example": "“do christians believe in cremation”",
+    "how": "Separate the teaching (why) from the rule (what), each cited."
+   },
+   {
+    "set": "A1 fact + E2 not there",
+    "count": "56",
+    "example": "“Who wrote the Hidden Words? I have it down as Shoghi Effendi's work.”",
+    "how": "The false premise is checked first; the answer corrects it, then gives the real fact."
+   },
+   {
+    "set": "A4 quotation + A5 reference / B2 explain",
+    "count": "41 · 41",
+    "example": "“where does it say be generous in prosperity… I want to read the full context”",
+    "how": "Find the source (template), then read_around and, for B2, a short explanation below it."
+   },
+   {
+    "set": "C1 traditions + A3 passages",
+    "count": "12",
+    "example": "“Find where the scriptures of Islam and Judaism each talk about fasting, and how each one views it”",
+    "how": "The per-tradition searches double as the passage finder; each section quotes its own scripture."
+   },
+   {
+    "set": "Follow-up move + the type it asks for",
+    "count": "389 of 412 turns",
+    "example": "“That passage you quoted is from 'Abdu'l-Bahá, not Bahá'u'lláh…”",
+    "how": "The move resolves what is meant from the thread; the type's strategy then runs, starting from the passages already found."
+   }
+  ],
+  "note": "Every example is a real test message from that set. Each count is one exact set of types (lead and others, any order).",
+  "moves_note": [
+   "The same words can be either kind of message. “What about Islam?” after an answer on fasting is a comparison follow-up; as a first message it is a new question. “The second one” means nothing without the last reply. So every message is read together with its thread before it is classified.",
+   "In the conversation runs, 336 of the 393 turns that follow an earlier turn are follow-up moves, and 389 of the 412 turns need more than one strategy: the move, plus the strategy of what it asks for (a pushback that questions a citation runs E1 and A4; “which Hidden Word is that?” runs refer-back and A5). No test message asks for a reshape (“shorter”, “in Persian”, “email me this”), so the conversation runs must add them."
+  ],
+  "other_moves": [
+   {
+    "move": "Change topic",
+    "sounds_like": "a new, unrelated question",
+    "must_do": "Notice it and drop the old context."
+   },
+   {
+    "move": "Vague opener",
+    "sounds_like": "“tell me about God” · a bare title",
+    "must_do": "Give a good short answer and offer two directions. Ask a question only when no reasonable answer is possible."
+   }
+  ]
+ },
+ "activities_about": "Activities are plugins on top of Anís: they inherit his character, voice and every tool and strategy, and add only their own steps, schedule, output and state. Jev's first decision on each message is none / search / activity; for an activity it also says start, continue, or step outside (a question mid-activity runs as a search; the activity resumes after). Channels: chat and email first; voice and tutorials later.",
+ "activities": [
+  {
+   "id": "read_book",
+   "name": "Read a book with him",
+   "start": "Jev: activity · start ('help me read the Íqán', F6) · continue ('next', 'again', 'where was I') · step outside (a question about the paragraph → B2, then resume)",
+   "steps": [
+    "find_work → the book's outline (sections, paragraphs)",
+    "send one page/section",
+    "notes on hard paragraphs (B2 strategy, author's own words)",
+    "ask what the reader makes of it; discuss the answer",
+    "remember the place"
+   ],
+   "schedule": "Reader-paced in chat; email: one page per letter, next on reply or on the agreed rhythm",
+   "reuses": [
+    "find_work",
+    "read_around",
+    "term_in_passage",
+    "word_study",
+    "B2",
+    "A6",
+    "B5"
+   ],
+   "channels": [
+    "email",
+    "chat"
+   ],
+   "later_channels": [
+    "voice"
+   ],
+   "output": "A page per turn with short notes and one question",
+   "state": "book, position (section/paragraph), notes level, open questions",
+   "status": "partly live (a page per email: api/lib/assistant/reading.js)",
+   "week": "week 1",
+   "open_questions": [
+    "Chat beside a book needs the reader's current paragraph from the widget",
+    "Notes level: default light or full?"
+   ],
+   "measure": "Readers who reach a second session; B2 questions mid-reading answered from the right paragraph",
+   "jev": {
+    "cues": [
+     "read with me, read-along, help me read X, next, again, where was I"
+    ],
+    "example_phrasings": [
+     "Zhuangzi read-along",
+     "help me read the Íqán this month",
+     "how to read the torah in english"
+    ],
+    "near_misses": [
+     {
+      "text": "Kitáb-i-Íqán pdf",
+      "goes_to": "A2",
+      "why": "just the book"
+     }
+    ],
+    "required_slots": [
+     "work"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "study_plan",
+     "A2"
+    ],
+    "composes_with": [
+     "B2",
+     "A6",
+     "B5"
+    ]
+   }
+  },
+  {
+   "id": "study_plan",
+   "name": "Plan my study",
+   "start": "Jev: activity · start ('a daily reading on justice', 'help me read X this month')",
+   "steps": [
+    "agree goal + time available",
+    "build a calendar from the work's structure or a topic collection",
+    "send each day's reading",
+    "notice falling behind; re-plan without guilt"
+   ],
+   "schedule": "Daily or agreed days; re-plan after 2 missed",
+   "reuses": [
+    "find_work",
+    "collection",
+    "A3",
+    "read_book"
+   ],
+   "channels": [
+    "email"
+   ],
+   "later_channels": [
+    "chat reminders",
+    "voice"
+   ],
+   "output": "A plan the reader agrees to, then daily readings",
+   "state": "plan, progress, misses",
+   "status": "to build",
+   "week": "later",
+   "open_questions": [
+    "Reader memory (reader card) must exist first"
+   ],
+   "measure": "Plans kept for 2 weeks; readers who finish",
+   "jev": {
+    "cues": [
+     "daily / weekly / this month / plan / course / quiz me"
+    ],
+    "example_phrasings": [
+     "a daily reading on justice",
+     "Gathas 101 course (N.A.M.C., r/Zoroastrianism)",
+     "Finding the right systematic approach to learning Neidan"
+    ],
+    "near_misses": [
+     {
+      "text": "Where to learn neidan",
+      "goes_to": "A2 / F6",
+      "why": "may want a book or teacher"
+     }
+    ],
+    "required_slots": [
+     "subject or work",
+     "time available"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "read_book"
+    ],
+    "composes_with": [
+     "A3",
+     "F1"
+    ]
+   }
+  },
+  {
+   "id": "research_book",
+   "name": "Research a book",
+   "start": "Jev: activity · start ('help me research the Dawn-Breakers', 'what's behind this chapter')",
+   "steps": [
+    "read the chapter for context",
+    "pick what would interest this reader (person, allusion, term, history)",
+    "research each (B5, B4, A6, trace_source)",
+    "gate each note (no summary, no repetition)",
+    "add as notes on the passage"
+   ],
+   "schedule": "Chapter by chapter, job-based; progress shown",
+   "reuses": [
+    "read_around",
+    "people",
+    "dated_events",
+    "word_study",
+    "trace_source",
+    "B4",
+    "B5",
+    "A6"
+   ],
+   "channels": [
+    "email"
+   ],
+   "later_channels": [
+    "chat"
+   ],
+   "output": "Notes on passages in Ocean, for this reader and later readers",
+   "state": "notes ledger per paragraph (api/lib/notes/ledger.js)",
+   "status": "partial (instructor-notes runner: api/lib/notes/chapter.js, gates.js)",
+   "week": "later",
+   "open_questions": [
+    "Who approves notes before they are public on Ocean?"
+   ],
+   "measure": "Notes passing the gates; reader replies to notes",
+   "jev": {
+    "cues": [
+     "research this book / what's behind this chapter / notes on"
+    ],
+    "example_phrasings": [],
+    "near_misses": [],
+    "required_slots": [
+     "work",
+     "chapter"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "read_book",
+     "F5"
+    ],
+    "composes_with": [
+     "B4",
+     "B5",
+     "A6"
+    ]
+   }
+  },
+  {
+   "id": "discussion",
+   "name": "Discussion",
+   "start": "Jev: activity · start when a challenge (E1/G6) continues past two turns, or 'let's discuss X'",
+   "steps": [
+    "carry the thread: each side argued from the texts (E1)",
+    "as many turns as it takes",
+    "at the end, offer to publish",
+    "publish a dialogue page + podcast-style audio"
+   ],
+   "schedule": "Reader-paced",
+   "reuses": [
+    "E1",
+    "G6",
+    "A4",
+    "trace_source",
+    "shelf"
+   ],
+   "channels": [
+    "chat",
+    "email"
+   ],
+   "later_channels": [
+    "podcast"
+   ],
+   "output": "The conversation; on consent, a dialogue page (and later a podcast)",
+   "state": "thread, claims and evidence per side, consent",
+   "status": "pages exist (synthesized dialogues); from-a-conversation + podcast to build",
+   "week": "later (E1/G6 turns in week 1)",
+   "open_questions": [
+    "Consent and anonymity before a reader's words are published"
+   ],
+   "measure": "Discussions over 3 turns; publish offers accepted",
+   "jev": {
+    "cues": [
+     "a challenge kept up past two turns; let's discuss"
+    ],
+    "example_phrasings": [
+     "You still haven't said where the Maimonides sits…"
+    ],
+    "near_misses": [
+     {
+      "text": "Is faith blind?",
+      "goes_to": "E1",
+      "why": "one turn"
+     }
+    ],
+    "required_slots": [
+     "thread"
+    ],
+    "disqualifiers": [],
+    "confusable_with": [
+     "E1",
+     "G6"
+    ],
+    "composes_with": [
+     "E1",
+     "A4"
+    ]
+   }
+  },
+  {
+   "id": "letters",
+   "name": "Letters: one letter, one person",
+   "start": "Not a reader request: starts on connect / first email (onboarding, F11), or when a conversation goes quiet (re-engagement, F12). Any reply turns it into ordinary correspondence",
+   "steps": [
+    "wait until the chat thread is quiet",
+    "candidate hooks from the reader's history (~20 kinds)",
+    "run each hook (cached recipe; e.g. word_study, people_search)",
+    "Jev scores relevance, surprise, fit, depth; veto anything unsettling",
+    "below the floor → no letter",
+    "one writer call from the hook's findings",
+    "grounding pass; never repeat; subject from the letter"
+   ],
+   "schedule": "Onboarding: up to 3 parts, days apart. Re-engagement: 3, 5, 12, 25, 44 days after their last message, then quiet",
+   "reuses": [
+    "word_study",
+    "people_search",
+    "find_original",
+    "about_work",
+    "collection",
+    "quote_gate"
+   ],
+   "channels": [
+    "email"
+   ],
+   "later_channels": [],
+   "output": "A ~100-word letter on one real discovery, from Anís's own address",
+   "state": "sequence stage, hooks sent, reader card, pause/stop",
+   "status": "partial (outreach.js steps; earlier letter craft to port)",
+   "week": "week 1: first welcome letter to an allowlist, Chad approves each first send. Re-engagement cadence: later (P5)",
+   "open_questions": [
+    "The allowlist for week 1",
+    "Which hooks are ready (cached) for the first letters?"
+   ],
+   "measure": "People who reply and carry on (not sends); guard metrics quiet",
+   "jev": {
+    "cues": [
+     "not a reader request: starts on connect or after silence; a reply to a letter is a conversation"
+    ],
+    "example_phrasings": [],
+    "near_misses": [],
+    "required_slots": [
+     "reader card",
+     "allowlist"
+    ],
+    "disqualifiers": [
+     "not on the allowlist",
+     "paused or stopped"
+    ],
+    "confusable_with": [],
+    "composes_with": []
+   }
+  }
+ ],
+ "open_questions_for_chad": [
+  "Jev needs a new task: the A1–H2 request type (today it has coarse triage kinds). Train it on the 12,808 first-pass labels, or hand-check a gold set first?",
+  "Prepared collections are the free tier for A3, B1, B3, C3, D1, D3. Approve building them for the top 50 log topics first?",
+  "Three indexes to build for whole types: prayers by occasion (D2), guidance by date with supersession (D4), the Bible/Qur'an/Gita reference parser (A5). Order?",
+  "Lookups (A2, A4, A5, A7, D2, G3, H1) answer from a template with no writer. Agreed?"
+ ]
+}
