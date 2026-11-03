@@ -18,8 +18,10 @@ const { title, description, activeSection } = Astro.props;
 // Only section group titles + order are configured (chrome). Unknown sections
 // title-case + sort last. Any source failing degrades gracefully (empty rail).
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
-// A section with a `parent` nests under that item of another section, indented.
-const SECTION_PARENT = { anis: ['agents', 'anis'] };
+// A section nested under one item of another section: that item opens `lead`; the rest (in `order`) indent beneath it.
+const SECTION_PARENT = { anis: { parent: ['agents', 'anis'], lead: 'anis-vision', order: ['anis-strategies', 'anis-engagement', 'anis-launch-week'] } };
+// Agent pages kept but left out of the sidebar for now (Chad 11-03).
+const HIDDEN_AGENTS = new Set(['researcher', 'narrator']);
 const SECTION_META = {
   'getting-started': { title: 'Getting Started', order: 1 },
   research: { title: 'Research', order: 2 },
@@ -40,6 +42,7 @@ try {
 try {
   for (const a of await getCollection('agents')) {
     const s = a.id.replace(/^agent-/, '');
+    if (HIDDEN_AGENTS.has(s)) continue;
     push('agents', { href: `/docs/agents/${s}`, label: a.data.title || `${titleCase(s)} Agent`, slug: s, sort: a.data.order ?? 100 });
   }
 } catch (err) {
@@ -56,10 +59,14 @@ const STATIC_PAGES = [
   { section: 'research', href: '/docs/translation-pipeline', label: 'Translation Pipeline', slug: 'translation-pipeline', sort: 140 },
 ];
 for (const p of STATIC_PAGES) push(p.section, { href: p.href, label: p.label, slug: p.slug, sort: p.sort });
-for (const [key, [parentKey, parentSlug]] of Object.entries(SECTION_PARENT)) {
+for (const [key, { parent: [parentKey, parentSlug], lead, order = [] }] of Object.entries(SECTION_PARENT)) {
   const parent = groups.get(parentKey)?.find((i) => i.slug === parentSlug);
   if (!parent || !groups.has(key)) continue;
-  parent.children = groups.get(key).sort((a, b) => (a.sort - b.sort) || a.label.localeCompare(b.label));
+  const items = groups.get(key);
+  const leadItem = items.find((i) => i.slug === lead);
+  if (leadItem) Object.assign(parent, { href: leadItem.href, slug: leadItem.slug });
+  const rank = (i) => (order.includes(i.slug) ? order.indexOf(i.slug) : order.length);
+  parent.children = items.filter((i) => i !== leadItem).sort((a, b) => rank(a) - rank(b) || a.label.localeCompare(b.label));
   groups.delete(key);
 }
 const navSections = [...groups]

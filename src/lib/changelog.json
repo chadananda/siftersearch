@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-03T15:41:52.084Z",
+  "generated": "2026-11-03T15:47:04.472Z",
   "entries": [
+    {
+      "hash": "43a75332",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "No implementation details (index/method names, test-set names, dates of internal rules) — plain concepts only",
+      "scope": null
+    },
     {
       "hash": "c3f9d1da",
       "date": "2026-11-03",
@@ -3493,17 +3500,17 @@
       "type": "Docs",
       "description": "Morning status — pilot results (enhancement by measurement, quote/CR precision read by hand, corrections, cost, speed), live links, the full run, YouTube block, decisions",
       "scope": "media"
-    },
-    {
-      "hash": "4ce5126e",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Transcription and diarization run DETACHED — the boss ASR job (gate verbs start/poll/fetch/cancel) and the tower diarization keep running through a drain and the resumed stage re-attaches (meta.asr_job, the pid file); deploys every few minutes had kept killing a 15-minute stage",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-03": [
+      {
+        "hash": "43a75332",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "No implementation details (index/method names, test-set names, dates of internal rules) — plain concepts only",
+        "scope": null
+      },
       {
         "hash": "c3f9d1da",
         "date": "2026-11-03",
@@ -7015,13 +7022,6 @@
         "date": "2026-10-22",
         "type": "Docs",
         "description": "Morning status — pilot results (enhancement by measurement, quote/CR precision read by hand, corrections, cost, speed), live links, the full run, YouTube block, decisions",
-        "scope": "media"
-      },
-      {
-        "hash": "4ce5126e",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Transcription and diarization run DETACHED — the boss ASR job (gate verbs start/poll/fetch/cancel) and the tower diarization keep running through a drain and the resumed stage re-attaches (meta.asr_job, the pid file); deploys every few minutes had kept killing a 15-minute stage",
         "scope": "media"
       }
     ]
