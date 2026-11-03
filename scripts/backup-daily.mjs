@@ -40,13 +40,13 @@ process.env.BACKUP_STAGE_DIR ||= '/fast/backup-stage';
 const crumb = (m) => console.error(`[backup-daily ${new Date().toISOString()}] ${m}`);   // unbuffered breadcrumbs — pino's first lines sit in a buffer while execSync blocks, so a killed run used to look like it never started
 
 const { runBackup } = await import('../api/lib/backup.js');
-const { sendEmail } = await import('../api/services/email.js');
+const { actionRequired } = await import('../api/lib/ops/alert.js');
 const { logger } = await import('../api/lib/logger.js');
 
-const TO = process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL || '';
 const BACKUP_DIR = process.env.BACKUP_DIR || '/tank/backups/siftersearch';
 const LIVE_DB = process.env.SIFTER_DB_PATH || join(ROOT, 'data', 'sifter.db');
-const alarm = (subject, text) => (TO ? sendEmail({ to: TO, subject, text }).catch((e) => logger.error({ err: e.message }, 'backup alarm email failed')) : Promise.resolve());
+// a failed backup is an [ACTION] through the one alert path (api/lib/ops/alert.js) — one per failed run (quietMs 0)
+const alarm = (subject, text) => actionRequired({ key: 'backup-daily', quietMs: 0, severity: 'action', subject, text });
 // argv, not a shell string: BACKUP_DIR and SIFTER_DB_PATH are env-set paths, and this
 // runs unattended every night against the corpus. Matches api/lib/backup.js.
 // quick_check reads the whole ~42GB copy off /tank: 25-38 min on a quiet box, and it grows daily — 10-09 it passed the
@@ -143,7 +143,7 @@ console.log(JSON.stringify(summary));
 
 if (problems.length) {
   await alarm(
-    problems.length === 1 && verify.timedOut ? '⚠️ SifterSearch daily backup UNVERIFIED (verify timed out)' : '⚠️ SifterSearch DAILY BACKUP FAILED',
+    problems.length === 1 && verify.timedOut ? 'SifterSearch daily backup UNVERIFIED (verify timed out)' : 'SifterSearch DAILY BACKUP FAILED',
     `The daily backup did not fully succeed (${mins}min):\n\n- ${problems.join('\n- ')}\n\n` +
     `Snapshot: ${snap}\nVerification: quick_check=${verify.quickCheck ?? 'n/a'}, docs snapshot=${verify.docsSnap} vs live=${verify.docsLive}\n\n` +
     `Backups are the loss-prevention layer — investigate today. (Runs via cron; rerun manually: node scripts/backup-daily.mjs)`);

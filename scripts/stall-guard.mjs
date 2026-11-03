@@ -22,13 +22,13 @@ dotenv.config({ path: join(ROOT, '.env-public') });
 
 const { getIntegrationProgress } = await import('../api/lib/bio.js');
 const { queryOne } = await import('../api/lib/db.js');
-const { sendEmail } = await import('../api/services/email.js');
+const { actionRequired, clearAlert } = await import('../api/lib/ops/alert.js');
+const { queueMaintenance } = await import('../api/lib/ops/maintenance.js');
 const { logger } = await import('../api/lib/logger.js');
 
 const STATE = join(ROOT, 'logs', 'stall-guard-state.json');
 const API = process.env.INTERNAL_API_URL || apiBase();
 const KEY = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY || '';
-const TO = process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL || '';
 const SPEND_THRESHOLD = Number(process.env.STALL_SPEND_USD || 20); // $ spent in the hour that DEMANDS ≥1 completion
 const MIN_BOOKS = Number(process.env.STALL_MIN_BOOKS || 1);        // completions required to clear that spend
 const STRIKES_TO_HALT = 2;                                          // consecutive "nothing moving at all" hours before halting
@@ -66,7 +66,9 @@ async function setMode(mode) {
     return r.ok;
   } catch (e) { logger.error({ err: e.message, mode }, 'stall-guard: setMode failed'); return false; }
 }
-const alarm = (subject, text) => TO ? sendEmail({ to: TO, subject, text }).catch((e) => logger.error({ err: e.message }, 'stall-guard: email failed')) : Promise.resolve();
+// HALTED alarms at once through the one alert path ([ACTION]; the halted state already dedupes it). "Resumed" is good news:
+// it goes to the weekly maintenance email and re-arms the alarm (Chad 11-03).
+const alarm = (subject, text) => actionRequired({ key: 'stall-guard-halted', quietMs: 0, severity: 'action', subject, text, pre: true });
 
 (async () => {
   const prog = await getIntegrationProgress();
@@ -100,7 +102,7 @@ const alarm = (subject, text) => TO ? sendEmail({ to: TO, subject, text }).catch
     if (doHalt && !halted) {
       const ok = await setMode('override');
       await alarm(
-        `⚠️ SifterSearch HALTED — grounding spending with no completions`,
+        `SifterSearch HALTED — grounding spending with no completions`,
         `Spend-without-completion detected: ${reason}.\n` +
         `  done-count: ${prev.doneBooks} → ${doneBooks} of ${totalBooks}\n` +
         `  net-new entities this hour: ${dEntities}\n` +
@@ -113,8 +115,10 @@ const alarm = (subject, text) => TO ? sendEmail({ to: TO, subject, text }).catch
       logger.error({ dSpend, strikes, noCompletionHours }, 'STALL GUARD: halted grounding + alarmed');
     } else if (halted && completed) {
       await setMode('plan');
-      await alarm(`✅ SifterSearch — grounding resumed (completions returned)`,
-        `Completions returned (+${dBooks} books, now ${doneBooks}/${totalBooks}); grounding auto-resumed (mode=plan).`);
+      clearAlert('stall-guard-halted');
+      queueMaintenance({ source: 'stall-guard', key: `stall-guard-resumed-${new Date().toISOString().slice(0, 13)}`, severity: 'suggestion',
+        title: 'Grounding resumed after a stall-guard halt',
+        text: `Completions returned (+${dBooks} books, now ${doneBooks}/${totalBooks}); grounding auto-resumed (mode=plan).` });
       halted = false; strikes = 0; noCompletionHours = 0;
       logger.info('STALL GUARD: completions returned → resumed');
     }

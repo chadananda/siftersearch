@@ -1,6 +1,9 @@
-// Ops sentinel + daily digest for the whole system. Runs on tower-nas via cron:
-//   */30 * * * *  --check   → email ONLY when something critical breaks (rate-limited)
-//   05 7 * * *    --daily   → ALWAYS email the morning ops digest (silence is never ambiguous)
+// Ops sentinel + WEEKLY maintenance email for the whole system (Chad 11-03: "a weekly maintenance email with such suggestions
+// flagged. Daily or Hourly emails only for issues that need addressed right away"). Runs on tower-nas via cron:
+//   */30 * * * *  --check   → criticals alarm at once via api/lib/ops/alert.js ([PAGE] site/API/tunnel down, else [ACTION]);
+//                             warnings are queued (api/lib/ops/maintenance.js); a finished UPS power event is confirmed
+//   05 7 * * *    --daily   → the heavy checks, queued; on WEEKLY_DAY (default Monday) it also sends the weekly (= --weekly)
+//   --weekly      → send the weekly maintenance email now (health + audit digest + every queued item/section), then drain
 // Checks: service health (api/writer/meili/tunnel/site) · pm2 anomalies · grounding progress,
 // stalls + failure storms · AI spend · embedding backlog · answer cache · widget traffic · HOSTS (tower/aorus/boss: disk,
 // memory, OOM, load, GPU — scripts/lib/host-resources.mjs, deduped alerts).
@@ -14,7 +17,10 @@ dotenv.config({ path: '.env-public' });
 // --report: the same checks, printed as JSON — no email, no state written (Chad 10-19: "check for these errors
 // periodically … seems stupid for the system to email me and then I tell you"): the agent's own watch reads this
 import { settleMs } from './lib/settle.mjs';
-const MODE = process.argv.includes('--daily') ? 'daily' : process.argv.includes('--report') ? 'report' : 'check';
+const MODE = process.argv.includes('--weekly') ? 'weekly' : process.argv.includes('--daily') ? 'daily' : process.argv.includes('--report') ? 'report' : 'check';
+const HEAVY = MODE === 'daily' || MODE === 'weekly';   // the once-a-day checks (whole-table scans, wear deltas)
+const WEEKLY_DAY = Number(process.env.WEEKLY_DAY ?? 1);   // 0 = Sunday … 1 = Monday (local time on tower)
+const SEND_WEEKLY = MODE === 'weekly' || (MODE === 'daily' && new Date().getDay() === WEEKLY_DAY);
 const KEY = process.env.DEPLOY_SECRET || process.env.INTERNAL_API_KEY;
 const TO = process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL;
 const STATE_FILE = 'logs/system-checks-state.json';
@@ -312,7 +318,7 @@ const hostChecks = [];
 // ── 5. Corpus + cache + widget metrics (report-only) ─────────────────────────
 // Drive wear (Chad 10-28): per-device TB/day from /proc/diskstats deltas between DAILY runs, projected life, top writer
 let wearNow = null;
-if (MODE === 'daily') {
+if (HEAVY) {
   try {
     const { parseDiskBytes, wearRates, dominantWriter, wearVerdict } = await import('./lib/storage-wear.mjs');
     const procs = {};
@@ -336,7 +342,7 @@ if (db) {
   const a = (sql) => { try { return db.prepare(sql).all(); } catch { return null; } };
   // WHOLE-TABLE scans of content (9M rows) only in the DAILY run: every 30 min they evicted the cache search hydrates from
   // (10-19: primary-key lookups at 200–1000 ms, searches at 5–15 s). The half-hourly check stays on small tables.
-  const heavy = MODE === 'daily';
+  const heavy = HEAVY;
   metrics.embedBacklog = heavy ? g(`SELECT COUNT(*) n FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND length(trim(text)) > 20`)?.n : undefined;
   if (metrics.embedBacklog != null) {
     const prev = state.embedBacklog;
@@ -354,7 +360,7 @@ if (db) {
   // Hollow-done guard (daily only — heavier query): a substantial book whose disambiguation is complete
   // but with ZERO extracted people or claims is a silent extraction failure being grandfathered as done,
   // never a "sparse book". These docs are full of historical gems; surface them instead of hiding them.
-  if (MODE === 'daily') {
+  if (HEAVY) {
     // The disambiguation predicate MUST be the one in api/lib/pipeline/processed.js: `context IS NOT NULL`.
     // This used to add `AND context != ''`, making it a FOURTH definition of "disambiguated" — and the wrong
     // one, because an empty note means "examined, nothing to resolve", a complete result. Five separate
@@ -386,7 +392,7 @@ if (db) {
   // starts with a ranked, actionable list instead of a vague sense that things are slow. Two shapes are
   // named explicitly because the pipeline has been hurt by BOTH: one enormous scan, and a small query on a
   // hot loop. Daily-only — it is a report, not an alarm.
-  if (MODE === 'daily') {
+  if (HEAVY) {
     try {
       const since = Math.floor(Date.now() / 1000) - 86400;
       const sinks = tdb.prepare(
@@ -505,9 +511,9 @@ console.log(text);
 fs.mkdirSync('logs', { recursive: true });
 const newState = { ...state, gpuIdleAt: newGpuIdleAt, restarts, drainSeen, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, wear: wearNow ?? state.wear, lastRun: Date.now() };
 
-// HOST alerts (disk / memory / OOM / load / GPU / unreachable): their own deduped path — a condition mails ONCE, again only
-// when it escalates (warn → critical), re-arms when it clears; WARNs mail too (a disk filling at 85 % must not wait for the
-// morning digest). One mail per run; a CRITICAL disk is a [PAGE].
+// HOST alerts (disk / memory / OOM / load / GPU / unreachable): their own deduped path — a condition is reported ONCE, again
+// only when it escalates (warn → critical), re-arms when it clears. CRITICAL alarms at once (a CRITICAL disk is a [PAGE]);
+// a WARN goes to the weekly maintenance queue (Chad 11-03), keyed per condition so it is listed once with its count.
 {
   const { alertPlan } = await import('./lib/host-resources.mjs');
   const plan = alertPlan(hostChecks, hostRes.seen || {});
@@ -515,41 +521,86 @@ const newState = { ...state, gpuIdleAt: newGpuIdleAt, restarts, drainSeen, embed
   const dark = Object.entries(hostRes.hosts || {}).filter(([, v]) => v.misses > 0).map(([h]) => `${h}:`);
   for (const [k, v] of Object.entries(hostRes.seen || {})) if (dark.some((h) => k.startsWith(h)) && !(k in plan.seen)) plan.seen[k] = v;
   let delivered = true;
-  if (plan.send.length) {
+  const crit = plan.send.filter((c) => c.level === 'critical');
+  const warnOnly = plan.send.filter((c) => c.level !== 'critical');
+  if (warnOnly.length) {
+    const { queueMaintenance } = await import('../api/lib/ops/maintenance.js');
+    for (const c of warnOnly) queueMaintenance({ source: 'host', key: `host:${c.key || c.name}`, severity: 'warn', title: c.name, text: c.detail || '' });
+    console.log(`[system-checks] host warnings queued for the weekly email: ${warnOnly.map((c) => c.name).join(' · ')}`);
+  }
+  if (crit.length) {
     const { actionRequired } = await import('../api/lib/ops/alert.js');
-    const crit = plan.send.filter((c) => c.level === 'critical');
     const page = crit.some((c) => /:disk /.test(c.key));
-    const head = crit[0] || plan.send[0];
     delivered = await actionRequired({
       key: 'host-resources', quietMs: 0, severity: page ? 'page' : 'action',
-      subject: `${head.level === 'critical' ? 'CRITICAL' : 'WARN'} ${head.name}${plan.send.length > 1 ? ` (+${plan.send.length - 1} more)` : ''}`,
+      subject: `CRITICAL ${crit[0].name}${crit.length > 1 ? ` (+${crit.length - 1} more)` : ''}`,
       text: [`New or escalated host conditions (${new Date().toISOString()}):`, '',
         ...plan.send.map((c) => `- **${c.level.toUpperCase()}** ${c.name}: ${c.detail}`), '', 'All host checks:', '',
         ...hostChecks.map((c) => `- ${mark(c)} ${c.name}: ${c.detail}`)].join('\n'),
     });
-    console.log(`[system-checks] host alert ${delivered ? 'sent' : 'NOT sent'}: ${plan.send.map((c) => `${c.level} ${c.name}`).join(' · ')}`);
+    console.log(`[system-checks] host alert ${delivered ? 'sent' : 'NOT sent'}: ${crit.map((c) => `${c.level} ${c.name}`).join(' · ')}`);
   }
   newState.hostRes = { ...hostRes, seen: delivered ? plan.seen : (hostRes.seen || {}), lastCheckAt: Date.now() };
 }
 
-// Decide whether to email. --daily always sends; --check only on criticals, and not the same
-// alert-set more than once per 6h (a down service at 2am = one email, not twelve). Host criticals went out above, deduped.
-const alertKey = criticals.filter((c) => !c.host).map((c) => c.name).sort().join('|');
-const recentlyAlerted = state.alertKey === alertKey && Date.now() - (state.alertAt || 0) < 6 * 3600 * 1000;
-let shouldSend = MODE === 'daily' || (criticals.some((c) => !c.host) && !recentlyAlerted);
+// Non-host warnings and criticals → the weekly queue (one item per check name; `seen` counts the runs it failed).
+{
+  const { queueMaintenance } = await import('../api/lib/ops/maintenance.js');
+  for (const c of [...criticals, ...warns].filter((x) => !x.host)) {
+    queueMaintenance({ source: 'system-checks', key: `health:${c.name}`, severity: 'warn', title: `${c.level === 'critical' ? 'CRITICAL' : 'Warning'}: ${c.name}`, text: c.detail || '' });
+  }
+}
 
-if (shouldSend && TO) {
-  const { sendEmail } = await import('../api/services/email.js');
-  const subject = criticals.length
-    ? `🔴 SifterSearch ALERT: ${criticals[0].name}${criticals.length > 1 ? ` (+${criticals.length - 1} more)` : ''}`
-    : `🟢 SifterSearch daily ops — all nominal · ${done24} books done 24h · $${spendRows.reduce((s, r) => s + r.usd, 0).toFixed(2)} spend`;
+// Alarm on criticals: ONE path (api/lib/ops/alert.js). Site, API or tunnel down = [PAGE]; any other critical = [ACTION].
+// Not the same alert-set more than once per 6 h (a down service at 2am = one email, not twelve). Host criticals went out above.
+const PAGE_CHECKS = new Set(['API :7839', 'Public API (tunnel)', 'Site siftersearch.com']);
+const hard = criticals.filter((c) => !c.host);
+const alertKey = hard.map((c) => c.name).sort().join('|');
+const recentlyAlerted = state.alertKey === alertKey && Date.now() - (state.alertAt || 0) < 6 * 3600 * 1000;
+if (hard.length && !recentlyAlerted) {
+  const { actionRequired } = await import('../api/lib/ops/alert.js');
+  const sent = await actionRequired({
+    key: 'system-checks-alert', quietMs: 0, pre: true, text,
+    severity: hard.some((c) => PAGE_CHECKS.has(c.name)) ? 'page' : 'action',
+    subject: `SifterSearch ALERT: ${hard[0].name}${hard.length > 1 ? ` (+${hard.length - 1} more)` : ''}`,
+  });
+  console.log(`\n[system-checks] alarm ${sent ? 'sent' : 'NOT sent'} (${alertKey})`);
+  if (sent) { newState.alertKey = alertKey; newState.alertAt = Date.now(); }
+  else process.exitCode = 1;
+}
+
+// A UPS power event that has finished (mains back, or booted after a UPS shutdown) → its one confirmation report.
+if (MODE === 'check') {
   try {
-    await sendEmail({ to: TO, subject, text, pre: true });   // an aligned report: monospaced, links live (lib/mail-render.js)
-    console.log(`\n[system-checks] emailed ${TO} (${MODE})`);
-    if (criticals.length) { newState.alertKey = alertKey; newState.alertAt = Date.now(); }
-  } catch (e) { console.error(`[system-checks] email failed: ${e.message}`); process.exitCode = 1; }
-} else if (!TO) {
-  console.error('[system-checks] no recipient (set DIGEST_EMAIL or SITE_ADMIN_EMAIL)');
+    const { spawnSync } = await import('child_process');
+    const r = spawnSync(process.execPath, ['scripts/ops/ups-ledger.mjs', 'confirm'], { encoding: 'utf8', timeout: 120000 });
+    if ((r.stdout || '').trim()) console.log(`[system-checks] ups: ${r.stdout.trim()}`);
+  } catch (e) { console.error(`[system-checks] ups confirm failed: ${e.message}`); }
+}
+
+// The WEEKLY maintenance email: health now + the audit digest + every queued item and section, then drained. An empty
+// week still sends one short "all nominal" mail — the only all-green mail there is.
+if (SEND_WEEKLY) {
+  if (!TO) console.error('[system-checks] no recipient (set DIGEST_EMAIL or SITE_ADMIN_EMAIL)');
+  else {
+    const { spawnSync } = await import('child_process');
+    spawnSync(process.execPath, ['scripts/audit/audit-digest.mjs', '--hours=168'], { stdio: 'inherit', timeout: 300000 });   // refresh its section
+    const { pendingMaintenance, drainMaintenance, buildWeekly } = await import('../api/lib/ops/maintenance.js');
+    const { queued, sections } = pendingMaintenance();
+    const metricLines = [
+      `${done24} books grounded in the last 24 h · spend 24 h $${spendRows.reduce((a, r) => a + r.usd, 0).toFixed(2)}`,
+      `paragraphs ${metrics.paras?.toLocaleString() ?? '?'} · docs with HyPE ${metrics.hypedDocs ?? '?'}`,
+      `answer cache ${metrics.cache?.n ?? '?'} entries (${metrics.cache?.hits ?? '?'} lifetime hits) · widget 24 h ${metrics.widget24?.sessions ?? 0} sessions`,
+    ];
+    const mail = buildWeekly({ health: { criticals, warns, metrics: metricLines }, sections, queued });
+    try {
+      const { sendEmail } = await import('../api/services/email.js');
+      await sendEmail({ to: TO, subject: mail.subject, text: mail.text, html: mail.html });
+      const d = drainMaintenance();
+      console.log(`[system-checks] weekly maintenance email sent to ${TO} (${queued.length} items, ${sections.length} sections → ${d.to})`);
+      newState.weeklyAt = Date.now();
+    } catch (e) { console.error(`[system-checks] weekly email failed (queue kept): ${e.message}`); process.exitCode = 1; }
+  }
 }
 
 fs.writeFileSync(STATE_FILE, JSON.stringify(newState, null, 2));

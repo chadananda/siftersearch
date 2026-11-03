@@ -1513,7 +1513,7 @@ export default async function groundingRoutes(fastify) {
     const asked = Number(b.since) || (now - 3600);
     if (b.preview) { const d = await digest.buildDigest(asked); return { since: asked, now, count: d.books.length, processing: d.processing.length, html: digest.renderDigestHtml(d) }; }
     const since = (b.test || b.force) ? asked : digest.windowStart(asked);   // never re-report a window already sent
-    const r = await digest.sendDigest(since, { force: !!(b.test || b.force) });   // test/force → always send (verify email)
+    const r = await digest.sendDigest(since, { force: !!(b.test || b.force) });   // test/force → always send (verify email); hourly → queued for the weekly email
     if (!(b.test || b.force)) digest.markSent(now);
     return { since, now, ...r };
   });

@@ -3,11 +3,13 @@
 // backlog of missing books during peak, when grounding is paused. One hourly email either way, so the
 // subject line always says which half of the day it is. Data: docs (what landed) + the admin snapshot
 // (what's left). Pure render functions; sending lives in sendIngestDigest. Deps: db, email, snapshot.
+// Since 11-03 the hourly run QUEUES into the weekly maintenance email (api/lib/ops/maintenance.js); only `force` mails.
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { queryAll, queryOne } from '../db.js';
 import { logger } from '../logger.js';
 import { sendEmail } from '../../services/email.js';
+import { queueMaintenance } from '../ops/maintenance.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const commas = (n) => Number(n || 0).toLocaleString('en-US');
@@ -75,10 +77,29 @@ export function renderIngestDigestHtml({ books, paras, retired, queue }) {
   </div>`;
 }
 
+/** Weekly roll-up of the hourly ingest digests (pure): documents/¶/retired add up (newest 200 titles kept), the queue is the latest. */
+export function mergeIngestWeek(prev, d) {
+  const books = [...(prev?.books || []), ...d.books.map((b) => ({ id: b.id, title: b.title, author: b.author, paras: b.paras || 0 }))];
+  return { count: (prev?.count || 0) + d.books.length, paras: (prev?.paras || 0) + (d.paras || 0), retired: (prev?.retired || 0) + (d.retired || 0),
+    books: books.slice(-200), queue: d.queue };
+}
+export function ingestWeekText(w) {
+  return [`${commas(w.count)} document(s) · ${commas(w.paras)} paragraphs landed · ${commas(w.retired)} duplicate(s) retired.`,
+    ...(w.queue?.haveSource != null ? [`Left: ${commas(w.queue.haveSource)} sourced books, ${commas(w.queue.noSource)} without a source.`] : []), '',
+    ...w.books.slice(-40).map((b) => `- ${b.title} — ${b.author || '?'} (${commas(b.paras)} ¶)`),
+    ...(w.books.length > 40 ? [`- …and ${w.books.length - 40} more`] : [])].join('\n');
+}
+
 export async function sendIngestDigest(sinceEpoch, deps = {}) {
   const d = await buildIngestDigest(sinceEpoch, deps);
   // Quiet when nothing happened — an hourly "0 books" email trains the reader to ignore the digest.
   if (!d.books.length && !d.retired && !deps.force) return { count: 0, sentTo: null };
+  if (!deps.force) {
+    (deps.queue || queueMaintenance)({ source: 'ingest', key: 'ingest-digest', severity: 'suggestion', data: d, merge: mergeIngestWeek,
+      render: (w) => ({ title: `Ingest: ${commas(w.count)} document(s), ${commas(w.paras)} ¶ landed this week`, text: ingestWeekText(w) }) });
+    logger.info({ count: d.books.length, paras: d.paras }, 'ingest digest queued for the weekly maintenance email');
+    return { count: d.books.length, paras: d.paras, sentTo: null, queued: true };
+  }
   const to = deps.to || process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL;
   if (!to) { logger.warn('ingest digest: no recipient (set DIGEST_EMAIL or SITE_ADMIN_EMAIL)'); return { count: d.books.length, sentTo: null }; }
   const left = d.queue.haveSource == null ? '' : ` — ${commas(d.queue.haveSource)} sourced books left`;

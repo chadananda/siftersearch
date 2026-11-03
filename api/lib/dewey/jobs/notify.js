@@ -147,8 +147,9 @@ export async function noticePass({ repo = realRepo, append, userIdOf, now = () =
   return { sent };
 }
 
-/** What the Worker should email now. → [{ key, to, name, subject, md, buttons }] (job notices + the operator's 80 % spend note). */
-export async function outbox({ repo = realRepo, nameOf = async () => null, admin = () => (process.env.DEWEY_ADMIN_EMAILS || 'chadananda@gmail.com').split(',')[0].trim() } = {}) {
+/** What the Worker should email now. → [{ key, to, name, subject, md, buttons }] (job notices). The operator's 80 % spend note is
+ *  no longer mailed: it goes to the weekly maintenance email (Chad 11-03 — at 100 % jobs are refused; 80 % is a note). */
+export async function outbox({ repo = realRepo, nameOf = async () => null, queue = null } = {}) {
   const mails = [];
   for (const job of await repo.noticeCandidates()) {
     const stage = stageOf(job);
@@ -159,8 +160,10 @@ export async function outbox({ repo = realRepo, nameOf = async () => null, admin
   const day = repo.dayOf(), n80 = await repo.getFlag(`note80:${day}`);
   if (n80 && !(await repo.getFlag(`note80-sent:${day}`))) {
     const g = JSON.parse(n80);
-    mails.push({ key: `note80:${day}`, to: admin(), subject: `Dewey: ${Math.round((g.spent / g.ceiling) * 100)}% of today's spend ceiling used`,
-      md: `Dear Chad,\n\nDewey has spent $${Number(g.spent).toFixed(2)} of today's $${g.ceiling} ceiling (80% reached). At 100% every new job is refused until midnight UTC or until you lift the pause.\n\nTo see where it went: the dewey-jobs ops report. To stop everything now: set DEWEY_V2=0 or the paused flag.\n\nWith thanks,`, buttons: [] });
+    const q = queue || (await import('../../ops/maintenance.js')).queueMaintenance;
+    q({ source: 'dewey', key: `dewey-note80:${day}`, severity: 'suggestion', title: `Dewey used ${Math.round((g.spent / g.ceiling) * 100)}% of the ${day} spend ceiling`,
+      text: `Dewey spent $${Number(g.spent).toFixed(2)} of the $${g.ceiling} ceiling on ${day}. At 100% every new job is refused until midnight UTC or until the pause is lifted. To see where it went, check the dewey-jobs ops report.` });
+    await repo.setFlag(`note80-sent:${day}`, new Date().toISOString());
   }
   return mails;
 }

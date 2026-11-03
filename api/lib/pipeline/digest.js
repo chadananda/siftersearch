@@ -1,4 +1,5 @@
-// Grounding progress DIGEST — an hourly "here's what finished" email so the run can be trusted while unattended.
+// Grounding progress DIGEST — hourly "here's what finished", now QUEUED into the weekly maintenance email (Chad 11-03); a forced
+// /grounding/digest {test|force} still mails at once (delivery check).
 // Reports every book that reached full grounding in the window (author · title · description · people grounded ·
 // net-new people added to the graph) plus where the whole plan stands (documents + paragraphs done/remaining).
 // Sent only when ≥1 book completed in the window. Data: grounding_queue (what finished) + bio.getIntegrationProgress
@@ -9,6 +10,7 @@ import { logger } from '../logger.js';
 import { sendEmail } from '../../services/email.js';
 import { getIntegrationProgress } from '../bio.js';
 import { slugifyPath } from '../slug.js';
+import { queueMaintenance } from '../ops/maintenance.js';
 
 // Link a book title to its page. Prefer the SifterSearch library URL (works for every doc with a slug); fall back
 // to the Ocean source_url when present. Same scheme as the sitemap: /library/<religion>/<collection>/<slug>.
@@ -194,15 +196,34 @@ export function markSent(through, file = DIGEST_STATE) {
   try { writeFileSync(file, JSON.stringify({ sentThrough: through, at: new Date().toISOString() })); } catch { /* best effort */ }
 }
 
-// Build + send the digest for (sinceEpoch, now]. Returns {count, sentTo|null}. Sends nothing when no book finished.
+/** Weekly roll-up of the hourly digests (pure): books add up (newest 200 kept), the plan line is the latest. */
+export function mergeGroundingWeek(prev, d) {
+  const books = [...(prev?.books || []), ...d.books.map((b) => ({ title: b.title, author: b.author, url: b.url || null, people: b.people || 0, newPeople: b.newPeople || 0 }))];
+  return { count: (prev?.count || 0) + d.books.length, people: (prev?.people || 0) + d.books.reduce((a, b) => a + (b.people || 0), 0),
+    newPeople: (prev?.newPeople || 0) + d.books.reduce((a, b) => a + (b.newPeople || 0), 0), books: books.slice(-200), plan: d.plan };
+}
+export function groundingWeekText(w) {
+  return [`${commas(w.count)} document(s) fully grounded · ${commas(w.people)} people grounded · +${commas(w.newPeople)} new to the graph.`,
+    `Plan: ${commas(w.plan.docsDone)} of ${commas(w.plan.docsTotal)} documents (${w.plan.docsPct}%), ${commas(w.plan.parasDone)} of ${commas(w.plan.parasTotal)} paragraphs (${w.plan.parasPct}%).`, '',
+    ...w.books.slice(-40).map((b) => `- ${b.url ? `[${b.title}](${b.url})` : b.title} — ${b.author}`),
+    ...(w.books.length > 40 ? [`- …and ${w.books.length - 40} more`] : [])].join('\n');
+}
+
+// Build the digest for (sinceEpoch, now]. Hourly: books that finished are QUEUED for the weekly email (nothing mailed; nothing
+// queued when no book finished). `force` (a manual test) mails at once, so the recipient can confirm delivery. Returns
+// {count, processing, sentTo|null, queued}.
 export async function sendDigest(sinceEpoch, deps = {}) {
   const digest = await buildDigest(sinceEpoch, deps);
-  // Hourly cron: skip the email when nothing finished. `force` (a manual test) always sends, so the recipient can
-  // confirm delivery immediately and still see in-progress + plan status.
-  if (!digest.books.length && !deps.force) return { count: 0, processing: digest.processing.length, sentTo: null };
+  if (!deps.force) {
+    if (!digest.books.length) return { count: 0, processing: digest.processing.length, sentTo: null };
+    (deps.queue || queueMaintenance)({ source: 'grounding', key: 'grounding-digest', severity: 'suggestion', data: digest, merge: mergeGroundingWeek,
+      render: (w) => ({ title: `Grounding: ${commas(w.count)} document(s) fully grounded this week`, text: groundingWeekText(w) }) });
+    logger.info({ count: digest.books.length }, 'grounding digest queued for the weekly maintenance email');
+    return { count: digest.books.length, processing: digest.processing.length, sentTo: null, queued: true };
+  }
   const to = deps.to || process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL;
   if (!to) { logger.warn('digest: no recipient (set DIGEST_EMAIL or SITE_ADMIN_EMAIL)'); return { count: digest.books.length, sentTo: null }; }
-  const tag = deps.force && !digest.books.length ? '[TEST] ' : '';
+  const tag = !digest.books.length ? '[TEST] ' : '';
   const subject = `${tag}SifterSearch: ${digest.books.length} grounded, ${digest.processing.length} in progress — ${digest.plan.docsDone}/${digest.plan.docsTotal} done (${digest.plan.docsPct}%)`;
   await (deps.sendEmail || sendEmail)({ to, subject, text: renderDigestText(digest), html: renderDigestHtml(digest) });
   logger.info({ to, count: digest.books.length, processing: digest.processing.length }, 'grounding digest sent');

@@ -99,10 +99,27 @@ describe('ingest digest', () => {
     expect(r.count).toBe(0);
   });
 
-  it('sends when a book landed, with the remaining count in the subject', async () => {
+  it('a landed book is QUEUED for the weekly maintenance email, not mailed (Chad 11-03)', async () => {
+    let sent = null; const queued = [];
+    const r = await sendIngestDigest(0, {
+      to: 'chad@example.com',
+      queryAll: async () => [{ id: 7, title: 'The Light in the Lantern', author: 'x', paras: 68 }],
+      queryOne: async () => ({ n: 0 }),
+      sendEmail: async (m) => { sent = m; },
+      queue: (i) => queued.push(i),
+    });
+    expect(sent).toBeNull();
+    expect(r).toMatchObject({ count: 1, sentTo: null, queued: true });
+    expect(queued[0]).toMatchObject({ source: 'ingest', key: 'ingest-digest' });
+    const w = queued[0].merge(queued[0].merge(null, queued[0].data), queued[0].data);
+    expect(w).toMatchObject({ count: 2, paras: 136 });
+    expect(queued[0].render(w).text).toContain('The Light in the Lantern');
+  });
+
+  it('force still mails at once (delivery check), with the remaining count in the subject', async () => {
     let sent = null;
     await sendIngestDigest(0, {
-      to: 'chad@example.com',
+      to: 'chad@example.com', force: true,
       queryAll: async () => [{ id: 7, title: 'The Light in the Lantern', author: 'x', paras: 68 }],
       queryOne: async () => ({ n: 0 }),
       sendEmail: async (m) => { sent = m; },

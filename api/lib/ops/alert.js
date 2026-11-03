@@ -12,7 +12,7 @@ const alertDir = () => process.env.ALERT_DIR || '/tank/sifter/alerts';
 
 /** @returns {Promise<boolean>} true when an email went out */
 export const SEVERITY_PREFIX = Object.freeze({ page: '[PAGE]', action: '[ACTION]' });
-export async function actionRequired({ key, subject, text = null, markdown = null, html = null, quietMs = 6 * 3600 * 1000, severity = 'action' }, deps = {}) {
+export async function actionRequired({ key, subject, text = null, markdown = null, html = null, pre = false, quietMs = 6 * 3600 * 1000, severity = 'action' }, deps = {}) {
   try {
     if (process.env.VITEST && !deps.sendEmail) return false;   // a test run never mails Chad
     const dir = deps.dir || alertDir();
@@ -28,8 +28,8 @@ export async function actionRequired({ key, subject, text = null, markdown = nul
     const send = deps.sendEmail || (await import('../../services/email.js')).sendEmail;
     const prefix = SEVERITY_PREFIX[severity] || SEVERITY_PREFIX.action;
     // rendered by the one email renderer (services/email.js → lib/mail-render.js): `markdown` is formatted, `text` is
-    // read as Markdown too — never a raw <pre> of Markdown again (Chad 10-22)
-    await send({ to, subject: `${prefix} ${subject}`, text, markdown, html });
+    // read as Markdown too — never a raw <pre> of Markdown again (Chad 10-22); `pre` keeps an aligned plain report monospaced
+    await send({ to, subject: `${prefix} ${subject}`, text, markdown, html, ...(pre ? { pre: true } : {}) });
     logger.error({ key, subject, severity }, `${prefix} alert sent`);
     return true;
   } catch (e) {

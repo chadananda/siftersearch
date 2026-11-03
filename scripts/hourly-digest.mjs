@@ -2,7 +2,8 @@
 // off-peak pricing. The off-peak half (entity/grounding progress) is ALREADY sent hourly by the existing
 // system crontab on tower-nas, which POSTs /api/admin/grounding/digest — the same scheduler that runs
 // system-checks.mjs and backup-daily.mjs. So this deliberately does NOTHING off-peak: sending there too
-// would put two identical grounding emails in the inbox every hour.
+// would put two identical grounding emails in the inbox every hour. Since 11-03 the hourly run QUEUES into the weekly
+// maintenance email (nothing mailed); --force still mails at once.
 //   node scripts/hourly-digest.mjs [--force] [--since-hours N]
 import { nowInPeak } from '../api/lib/pipeline/peak.js';
 
@@ -19,7 +20,7 @@ if (!nowInPeak() && !FORCE) {
 try {
   const { sendIngestDigest } = await import('../api/lib/pipeline/ingest-digest.js');
   const r = await sendIngestDigest(since, { force: FORCE });
-  console.log(`ingest digest: ${r.count} docs → ${r.sentTo || '(nothing to report)'}`);
+  console.log(`ingest digest: ${r.count} docs → ${r.sentTo || (r.queued ? 'queued for the weekly maintenance email' : '(nothing to report)')}`);
 } catch (e) {
   console.error('hourly ingest digest failed:', e.message);
   process.exit(1);

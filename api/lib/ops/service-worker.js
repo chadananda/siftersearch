@@ -6,7 +6,7 @@
 import os from 'os';
 import { logger } from '../logger.js';
 import { claimNext, finish, requeueStale, saveResume, enqueue } from '../repos/ops-report-repo.js';
-import { sendEmail } from '../../services/email.js';
+import { actionRequired } from './alert.js';
 import { logActivity } from '../repos/activity-repo.js';
 import { drainOnSignals, isDraining, nap, startDrain } from '../drain.js';
 import { watchPower, waitForNormalPower } from '../power-mode.js';
@@ -16,14 +16,13 @@ import { nextRetry, retryDelayMs, MAX_RETRIES } from './retry-policy.js';
 
 const IDLE_MS = 15_000;
 
-// A job that FAILS or STOPS SHORT (budget cap, monthly cap) is mailed at once (10-16: a phrase run stopped at its $20 cap
-// and went unnoticed for 11 hours; Chad: "you were supposed to be watching it closely"). Never throws.
+// A job that FAILS or STOPS SHORT (budget cap, monthly cap) is an [ACTION] at once, through the one alert path
+// (api/lib/ops/alert.js; 10-16: a phrase run stopped at its $20 cap and went unnoticed for 11 hours; Chad: "you were supposed
+// to be watching it closely"). One per run × outcome. Never throws.
 async function alert(run, what, detail) {
-  const to = process.env.DIGEST_EMAIL || process.env.SITE_ADMIN_EMAIL;
-  if (!to) return;
-  await sendEmail({ to, subject: `SifterSearch ops: ${run.name} #${run.id} ${what}`,
-    text: `${run.name} #${run.id} ${what}.\n\n${detail}\n\nParams: ${JSON.stringify(run.params || {}).slice(0, 400)}` })
-    .catch((err) => logger.warn({ err: err.message, id: run.id }, 'ops: alert mail failed'));
+  await actionRequired({ key: `ops-job-${run.id}-${what}`, quietMs: 0, severity: 'action', pre: true,
+    subject: `SifterSearch ops: ${run.name} #${run.id} ${what}`,
+    text: `${run.name} #${run.id} ${what}.\n\n${detail}\n\nParams: ${JSON.stringify(run.params || {}).slice(0, 400)}` });
 }
 // Stopped-short mails are THROTTLED (10-23: ~100 mails from one shared media budget key): the first per job × budget-key
 // family × day is mailed; the rest are counted (activity log + the next day's first mail carries yesterday's count).

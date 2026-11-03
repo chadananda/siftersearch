@@ -643,14 +643,15 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
-      // Daily audit digest email to Chad, 07:00 server time.
+      // Weekly audit digest SECTION (no mail): last 7 days → data/run/maintenance/audit-digest.json, read by the weekly
+      // maintenance email (system-checks --daily on Monday 07:05, which also refreshes it first). Chad 11-03.
       name: 'siftersearch-audit-digest',
       script: 'scripts/audit/audit-digest.mjs',
       cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
       autorestart: false,
-      cron_restart: '0 7 * * *',
+      cron_restart: '45 6 * * 1',
       watch: false,
       env: { NODE_ENV: 'production' },
       error_file: './logs/audit-digest-error.log',

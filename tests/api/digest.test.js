@@ -85,11 +85,15 @@ describe('sendDigest', () => {
     expect(r).toEqual({ count: 0, processing: 0, sentTo: null });
     expect(sent).toHaveLength(0);
   });
-  it('sends when a book finished', async () => {
-    const sent = [];
-    const r = await sendDigest(500, deps({ sendEmail: async (m) => sent.push(m), to: 'a@b.c' }));
-    expect(r).toMatchObject({ count: 1, sentTo: 'a@b.c' });
-    expect(sent[0].subject).toContain('1 grounded');
+  it('a finished book is QUEUED for the weekly maintenance email, not mailed (Chad 11-03)', async () => {
+    const sent = [], queued = [];
+    const r = await sendDigest(500, deps({ sendEmail: async (m) => sent.push(m), to: 'a@b.c', queue: (i) => queued.push(i) }));
+    expect(r).toMatchObject({ count: 1, sentTo: null, queued: true });
+    expect(sent).toHaveLength(0);
+    expect(queued[0]).toMatchObject({ source: 'grounding', key: 'grounding-digest' });
+    const week = queued[0].merge(queued[0].merge(null, queued[0].data), queued[0].data);
+    expect(week.count).toBe(2);
+    expect(queued[0].render(week).title).toContain('2 document(s)');
   });
   it('force sends a TEST email even with no completed books', async () => {
     const sent = [];

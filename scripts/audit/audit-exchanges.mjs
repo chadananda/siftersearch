@@ -78,12 +78,14 @@ const QUIET = new Set(['battery@siftersearch.com', 'test-rerun@siftersearch.com'
   .filter(Boolean).map((e) => `email:${emailHash(e)}`));
 const participantOf = content.prepare('SELECT participant_id FROM chat_sessions WHERE id = ?');
 export const quiet = (sessionId) => QUIET.has(participantOf.get(sessionId)?.participant_id);
+// a poor answer is QUEUED for the weekly maintenance email, never mailed per exchange (Chad 11-03: daily/hourly mail only for
+// what needs addressing right away)
 async function alertPoorAnswer({ row, question, verdict: v }) {
   if (quiet(row.session_id)) return;
-  const { actionRequired } = await import('../../api/lib/ops/alert.js');
+  const { queueMaintenance } = await import('../../api/lib/ops/maintenance.js');
   const { poorAnswerMarkdown } = await import('./poor-answer-mail.mjs');
   const md = poorAnswerMarkdown({ row, question, verdict: v });
-  await actionRequired({ key: `anis-poor-answer-${row.id}`, subject: `Anís answer needs a look: ${String(question).replace(/\s+/g, ' ').slice(0, 70)}`, markdown: md });
+  queueMaintenance({ source: 'anis-audit', key: `anis-poor-answer-${row.id}`, severity: 'warn', title: `Anís answer needs a look: ${String(question).replace(/\s+/g, ' ').slice(0, 70)}`, text: md });
 }
 
 async function audit(row) {
@@ -104,8 +106,7 @@ async function audit(row) {
     if (call) call.input = { ...(await verifyHoldings(call.input, findHeld)), audit_v: AUDIT_V, ...(competitor?.text ? { competitor: { text: competitor.text.slice(0, 4000), citations: (competitor.citations || []).slice(0, 10) } } : {}) };
     put.run({ ...base, usd: costOf(res.usage, PRICING), input_tokens: res.usage?.input_tokens ?? 0, output_tokens: res.usage?.output_tokens ?? 0,
       status: call ? 'done' : 'error', verdict_json: call ? JSON.stringify(call.input) : null, error: call ? null : `no tool call (${res.stop_reason})` });
-    // a POOR ANSWER reaches Chad AT ONCE (Chad 10-19: "every single interaction with Anis should be audited immediately after
-    // for quality" — Lal's 'chamber' reply was audited "not answered, 7 problems" and nothing happened until the next digest)
+    // every exchange is audited at once (Chad 10-19); a POOR ANSWER goes to the weekly maintenance list (Chad 11-03)
     if (call && flagged(call.input)) await alertPoorAnswer({ row, question, verdict: call.input }).catch((e) => console.error(JSON.stringify({ alert_failed: String(e.message).slice(0, 160) })));
   } catch (e) {
     // the CALL failed (auth, network, rate limit): nothing is recorded, so this exchange is retried — never skipped
