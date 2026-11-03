@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-03T15:34:51.258Z",
+  "generated": "2026-11-03T15:41:52.084Z",
   "entries": [
+    {
+      "hash": "c3f9d1da",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Laya removed for now (a cost saving for a system that must work first)",
+      "scope": null
+    },
     {
       "hash": "cdc45464",
       "date": "2026-11-03",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Transcription and diarization run DETACHED — the boss ASR job (gate verbs start/poll/fetch/cancel) and the tower diarization keep running through a drain and the resumed stage re-attaches (meta.asr_job, the pid file); deploys every few minutes had kept killing a 15-minute stage",
       "scope": "media"
-    },
-    {
-      "hash": "26ec693b",
-      "date": "2026-10-22",
-      "type": "Other",
-      "description": "2.187.727 — the /media pages (listing + player) and the Worker's R2 cache for media files",
-      "scope": "site"
     }
   ],
   "grouped": {
     "2026-11-03": [
+      {
+        "hash": "c3f9d1da",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Laya removed for now (a cost saving for a system that must work first)",
+        "scope": null
+      },
       {
         "hash": "cdc45464",
         "date": "2026-11-03",
@@ -7016,13 +7023,6 @@
         "type": "Fixed",
         "description": "Transcription and diarization run DETACHED — the boss ASR job (gate verbs start/poll/fetch/cancel) and the tower diarization keep running through a drain and the resumed stage re-attaches (meta.asr_job, the pid file); deploys every few minutes had kept killing a 15-minute stage",
         "scope": "media"
-      },
-      {
-        "hash": "26ec693b",
-        "date": "2026-10-22",
-        "type": "Other",
-        "description": "2.187.727 — the /media pages (listing + player) and the Worker's R2 cache for media files",
-        "scope": "site"
       }
     ]
   }

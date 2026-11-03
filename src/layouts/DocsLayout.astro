@@ -18,10 +18,11 @@ const { title, description, activeSection } = Astro.props;
 // Only section group titles + order are configured (chrome). Unknown sections
 // title-case + sort last. Any source failing degrades gracefully (empty rail).
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+// A section with a `parent` nests under that item of another section, indented.
+const SECTION_PARENT = { anis: ['agents', 'anis'] };
 const SECTION_META = {
   'getting-started': { title: 'Getting Started', order: 1 },
   research: { title: 'Research', order: 2 },
-  anis: { title: 'Anís', order: 2.5 },
   agents: { title: 'Agents', order: 3 },
   api: { title: 'API Reference', order: 4 },
 };
@@ -55,6 +56,12 @@ const STATIC_PAGES = [
   { section: 'research', href: '/docs/translation-pipeline', label: 'Translation Pipeline', slug: 'translation-pipeline', sort: 140 },
 ];
 for (const p of STATIC_PAGES) push(p.section, { href: p.href, label: p.label, slug: p.slug, sort: p.sort });
+for (const [key, [parentKey, parentSlug]] of Object.entries(SECTION_PARENT)) {
+  const parent = groups.get(parentKey)?.find((i) => i.slug === parentSlug);
+  if (!parent || !groups.has(key)) continue;
+  parent.children = groups.get(key).sort((a, b) => (a.sort - b.sort) || a.label.localeCompare(b.label));
+  groups.delete(key);
+}
 const navSections = [...groups]
   .map(([key, items]) => ({
     title: SECTION_META[key]?.title || titleCase(key),
@@ -92,6 +99,15 @@ const navSections = [...groups]
                     >
                       {item.label}
                     </a>
+                    {item.children && (
+                      <ul class="nav-list nav-sub">
+                        {item.children.map((c) => (
+                          <li>
+                            <a href={c.href} class:list={['nav-item', 'nav-item-sub', { active: activeSection === c.slug }]}>{c.label}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -241,6 +257,11 @@ const navSections = [...groups]
     padding: 0.5rem 1rem;
     border-left: 2px solid transparent;
     transition: all 0.15s;
+  }
+
+  .nav-item-sub {
+    padding: 0.35rem 1rem 0.35rem 2rem;
+    font-size: 0.82rem;
   }
 
   .nav-item:hover {
