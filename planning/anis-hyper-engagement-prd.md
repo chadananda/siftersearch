@@ -257,9 +257,12 @@ Each feature lists what it is, why, the contract, who decides each part, and acc
   - **Shape:** about 300 words, one dated line per fact. Updated asynchronously when a thread goes quiet: a small model with a forced tool call merges the new facts in, the newest statement wins, and a position changes only on a new statement of their own. The background never asks them profiling questions.
   - **Use:** shapes vocabulary, assumed knowledge, authority framing, depth, examples and hook choice. **Never recited, never a label, never "I see you're interested in…"**; it shows only in the fit.
   - **Change over time:** interests decay (about 90 days) unless renewed; nothing is pinned. People drift of their own volition and the document follows.
-  - **Clear history** (OceanLibrary.com account action) deletes threads, L0/L1 and the reader document together, through the PERSON_DATA registry (F10). Export includes it.
+  - **Clear history** (OceanLibrary.com account action) deletes threads, L0/L1 and the reader document together, through the PERSON_DATA registry (F10). Export covers conversations only; the derived document is not exported.
 - **Consent-scoped:** Level 2 exists only for connected or remembered people (Companion R2+). Anonymous people get thread memory only.
-- **Never stored or inferred** (Companion 7.1, extended 11-03): health and mental state, trauma, sexuality, political identity, finances, family crises, details about other people, location finer than country/time zone, and religious susceptibility (no guess about conversion, ever). Religious position is kept only as the person stated it (it is special-category data under GDPR Art. 9; consent notice at connect: "Anís remembers what you tell him so he can help you; clear it any time").
+- **Never stored or inferred** (Companion 7.1, extended 11-03): health and mental state, trauma, sexuality, political identity, finances, family crises, details about other people, location finer than country/time zone, and religious susceptibility (no guess about conversion, ever). Religious position is kept only as the person stated it.
+- **Privacy stance (Chad 11-03):** "minimal necessary compliance with the letter, full compliance with the safeguards." Knowing a reader's beliefs is how Anís serves them, the way a car site remembers your favourite colour. The law treats it as special-category data, so:
+  - **Letter:** one plain line at connect ("Anís remembers what you tell him so he can help you; clear it any time"), the privacy policy, and Clear history. The lawful basis for that data is explicit consent at connect. If Ocean 2.0 is a not-for-profit with a religious aim, Art. 9(2)(d) may also apply (confirm with counsel once, not in code). A formal access request that reaches the derived document is answered by hand, not in the app.
+  - **Safeguards, in full:** the reader document is encrypted at rest with a key held outside the DB. It is read and written only through one repo function, and every read is attributed (db_write_stats / ops). It is never logged, never in admin views or exports, and never sent to host sites. It reaches a model only inside that person's own answer prompt, and never a provider that trains on inputs. Its rows are not keyed by plaintext email. Backups carry the same encryption. Clear history deletes it at once, and backups age it out.
 - **Thread replay:** the last 4 exchanges verbatim, older ones as one-line Level-0 summaries. Past a threshold the full text is compacted to the summary. An exchange without a summary is never compacted.
 - Replaces `respond.js`'s "last 6 turns trimmed".
 - **Acceptance:** a 40-exchange synthetic thread keeps its facts (a recall test on L0/L1), the prompt stays under budget, and nothing is compacted without a summary.
@@ -287,7 +290,7 @@ Each feature lists what it is, why, the contract, who decides each part, and acc
   - **Share a discussion**;
   - **Download my data**;
   - **Delete my account**.
-- **Never shown on the page:** the reader document, weights, engagement state, nudge history. Not pushed in their face, but **included in Download my data** (a right of access) and erased by Clear history.
+- **Never shown or exported:** the reader document, weights, engagement state, nudge history. They are derived from the conversations, which the person can see, export and share. Clear history erases them with the conversations.
 - **Share:**
   - rounds come from `chat_messages` by conversation_id, **never from the client**, gated on `ownsThread` and rate-limited;
   - the regex floor plus the LLM sanitizer (already verified), then a Jev yes/no asking whether personal detail remains;
