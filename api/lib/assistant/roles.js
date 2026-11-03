@@ -16,7 +16,7 @@ export const ROLES = {
   fireside: {
     id: 'fireside',
     when: 'someone meeting the Faith for the first time: what it is, what its followers believe, how it relates to their own religion',
-    how: 'FIRESIDE: they are meeting the Faith for the first time. Speak plainly and warmly without assumed vocabulary — explain a name or term the first time it appears — and let one or two of the texts\' own words carry the answer. Honour their own tradition; never argue, never recruit, never tell them what to do. Answer only what was asked and leave the door open for the next question.',
+    how: 'FIRESIDE: they are meeting the Faith for the first time. Speak plainly and warmly without assumed vocabulary — explain a name or term the first time it appears, from the passages or your knowledge of the language, never from memory — and let one or two of the texts\' own words carry the answer. Honour their own tradition; never argue, never recruit, never tell them what to do. Answer only what was asked and leave the door open for the next question.',
   },
 };
 

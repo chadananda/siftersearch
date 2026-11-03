@@ -55,7 +55,7 @@ export const FORMATS = [
     how: 'Answer from the passages, then close with one question back that helps them think further — not a quiz.' },
   { id: 'honest_absence', needs: [], fits: (p) => p.absence || p.passages === 0,
     when: 'nothing found answers the question',
-    how: 'Say plainly, in one line, that this search found no passage that answers it — never that the library lacks it or does not discuss it — then the nearest thing the passages do hold, and a way to ask (a work, author or wording). Do not pad with what the texts do not say.' },
+    how: 'Say plainly, in one line, that this search found no passage that answers it — never that the library lacks it or does not discuss it — then the nearest thing the passages do hold, and a way to ask — a wording, or a work or author that a passage or the person named, never one from memory. Do not pad with what the texts do not say.' },
   { id: 'letter', needs: ['headings', 'charts'], fits: (p) => p.passages > 0,
     when: 'a considered written reply, quoting fully, for a reader who has time',
     how: 'A letter: greet, answer, quote the passages fully with their sources, reflect briefly, close warmly.' },
