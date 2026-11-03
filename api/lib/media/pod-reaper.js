@@ -7,6 +7,9 @@ import { LEDGER, POD_PREFIX, reapReason } from './pod-ledger.js';
 import * as C from './cloud.js';
 
 export const REAPER_FILE = join(dirname(C.STATE_FILE), 'pod-reaper.json');
+// the lane and this reaper run in the same service: a deploy drain stops both, so the lane's state is as old as the drain when the new
+// process starts. Its age counts from this start (11-03: a 16-min drain, then the first pass reaped 452 + 453 mid-work, 16 talks leased).
+const STARTED = Date.now();
 
 /** One pass → { seen, reaped: [{ id, name, why }], errors }. Deps injectable (listPods, terminatePod, state, now). */
 export async function reapPass(deps = {}) {
@@ -14,11 +17,12 @@ export async function reapPass(deps = {}) {
   const list = deps.listPods || C.listPods, kill = deps.terminatePod || C.terminatePod;
   const st = deps.state !== undefined ? deps.state : await readFile(deps.stateFile || C.STATE_FILE, 'utf8').then(JSON.parse).catch(() => null);
   if (st && deps.state === undefined) { const b = Number(await readFile(`${deps.stateFile || C.STATE_FILE}.beat`, 'utf8').catch(() => 0)); if (b > (st.updated || 0)) st.updated = b; }   // the lane's own liveness timer
+  const started = deps.started ?? STARTED, lane = st && (st.updated || 0) < started ? { ...st, updated: started } : st;
   const out = { at: now, seen: 0, reaped: [], errors: [] };
   const pods = (await list(deps)).filter((p) => String(p.name || '').startsWith(POD_PREFIX) && (p.desiredStatus || 'RUNNING') === 'RUNNING');
   out.seen = pods.length;
   for (const p of pods) {
-    const why = reapReason(p, st?.pods?.[p.id] || null, st, now, deps.cfg || LEDGER);
+    const why = reapReason(p, st?.pods?.[p.id] || null, lane, now, deps.cfg || LEDGER);
     if (!why) continue;
     try { await kill(p.id, deps); out.reaped.push({ id: p.id, name: p.name, why }); }
     catch (err) { out.errors.push(`${p.name}: ${String(err.message).slice(0, 120)}`); }

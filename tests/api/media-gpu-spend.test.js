@@ -213,7 +213,15 @@ describe('the reaper touches only idle / stuck / unreachable / old / orphan / la
   });
   it('the lane dead (controller killed): its pods are reaped by the independent pass', async () => {
     const killed = [];
-    await reapPass({ now: () => now, write: false, state: { ...st(), updated: now - 30 * MIN }, listPods: async () => [pod()], terminatePod: async (id) => { killed.push(id); } });
+    await reapPass({ now: () => now, started: now - 60 * MIN, write: false, state: { ...st(), updated: now - 30 * MIN }, listPods: async () => [pod()], terminatePod: async (id) => { killed.push(id); } });
+    expect(killed).toEqual(['x']);
+  });
+  it('a deploy drain is not a dead lane: its state age counts from this service start (11-03: 452 + 453 reaped mid-work after a 16-min drain)', async () => {
+    const killed = [], kill = async (id) => { killed.push(id); };
+    await reapPass({ now: () => now, started: now - 1 * MIN, write: false, state: { ...st(), updated: now - 16 * MIN }, listPods: async () => [pod()], terminatePod: kill });
+    expect(killed).toEqual([]);
+    // the new process never writes the lane state either: reaped once it has been up longer than the stale limit
+    await reapPass({ now: () => now, started: now - 11 * MIN, write: false, state: { ...st(), updated: now - 27 * MIN }, listPods: async () => [pod()], terminatePod: kill });
     expect(killed).toEqual(['x']);
   });
 });
