@@ -98,7 +98,7 @@ export async function prayerShelf(ctx) {
   const lowPick = !found.length && pick?.choice && pick.choice !== 'none' && byTitle.has(pick.choice) ? byTitle.get(pick.choice) : null;
   decisions.record('prayer:section', { by: 'code', saw: { hits: found.length, sections: hitSections.map((x) => x.title) }, options: ['heading of the hits', "Jev's top heading", 'passages as found', 'none'],
     chosen: ranked[0]?.title ?? lowPick?.title ?? (found.length ? 'passages as found' : 'none'), reason: ranked.length ? (probs[ranked[0].title] ? "Jev's most probable heading among the hits" : 'heading of the best hit') : lowPick ? 'search empty; Jev below the bar' : null });
-  for (const x of ranked.length ? ranked.slice(0, 2) : lowPick ? [lowPick] : []) { const out = await serve(x, ranked.length ? 'search' : 'jev-low'); if (out) return out; }
+  for (const x of ranked.length ? ranked.slice(0, 2) : lowPick ? [lowPick] : []) { const out = await serve(x, ranked.length ? 'search' : 'low-confidence'); if (out) return out; }
   const passages = found.map((p) => ({ ...p, theme: 'prayer' }));
   if (!passages.length) return null;
   return { passages, plan: { shape: 'prayer', book: doc.id, occasion: null, searched: true }, format: { id: 'prayer', by: 'strategy:prayer', how: PRAYER_HOW(null) } };

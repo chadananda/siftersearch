@@ -147,7 +147,7 @@ describe('prayer shelf: no confident heading (launch gate 11-03: "a prayer for t
     const decisions = decisionLog();
     const out = await prayerShelf({ messages: msgs, query: 'q', search: async () => ({ passages: [] }), decisions,
       deps: { ...prayerDeps({ choice: 'For The Departed', confidence: 0.4 }, rows), sectionsOfDoc: async () => departed } });
-    expect(out.plan).toMatchObject({ occasion: 'For The Departed', via: 'jev-low' });
+    expect(out.plan).toMatchObject({ occasion: 'For The Departed', via: 'low-confidence' });
     expect(decisions.list().find((d) => d.point === 'prayer:section').reason).toBe('search empty; Jev below the bar');
   });
   it('Jev says none and nothing is found → null', async () => {
