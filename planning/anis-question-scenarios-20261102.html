@@ -298,6 +298,7 @@ flowchart TD
   F --> W["Writing model: data + format → answer"]
   </pre>
   <p class="note">Most quotation questions end at the first [valid answer?]: code extraction, one BM25 search, no LLM step before the writing model. The light model runs only when the deterministic search misses, and the semantic phrase search only when that misses too. This is how every strategy is optimised for speed.</p>
+  <p><b>[Format choice] is a bet, to be measured.</b> It means picking the response template, and with it the widgets (passage card, timeline, comparison…), so the writing model fills a shape instead of designing one. The hope is that a filled-in template lets a light, fast model write answers that would otherwise need a slower, smarter one. It stays only if the measurements show it pays: answers with the template and without it, and the light model plus template against the smarter model, compared on the same questions for quality, speed and cost. If it doesn't help, it goes.</p>
 
   <div class="wrap"><table>
     <tr><th>Kind of question</th><th>Target time</th></tr>
