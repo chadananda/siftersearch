@@ -127,7 +127,7 @@ describe('mixed-script repair (10-12 term study: "Bahá’u’لlláh")', async 
   });
 });
 
-describe('triageMessage — deterministic request features (W2, 11-03)', () => {
+describe('triageMessage — context and fields (W2, 11-03: history + card in, outcome out, no word rules)', () => {
   const capture = (answers) => { const c = {}; c.fetch = async (_u, init) => { c.body = JSON.parse(init.body); return { ok: true, json: async () => ({ answers }) }; }; return c; };
   const base = { malicious: { noul: 0.01 }, complete: { noul: 0.99 }, stop_request: { noul: 0.01 }, kind: { choice: 'research', confidence: 0.9 }, stance: { choice: 'curious', confidence: 0.8 } };
 
@@ -146,18 +146,25 @@ describe('triageMessage — deterministic request features (W2, 11-03)', () => {
     expect(t).toMatchObject({ reaction: { choice: 'follow_up' }, follow_up: 0.93, features: { first: false } });
   });
 
-  it('a PASTED passage is a source lookup whatever kind Jev chose (pasted-rule)', async () => {
-    const c = capture({ ...base, kind: { choice: 'conversation', confidence: 0.9 } });
-    const t = await triageMessage([{ role: 'user', content: 'O Son of Man! Veiled in My immemorial being and in the ancient eternity of My essence, I knew My love for thee. Where is this from?' }], { apiKey: 'k', fetchImpl: c.fetch });
-    expect(t.kind).toMatchObject({ choice: 'source_lookup', by: 'pasted-rule', was: 'conversation' });
-    expect(t.features).toMatchObject({ pasted: 'source' });
+  it('Jev reads the READER card, the TURN facts and the CONVERSATION, and answers outcome (search / ask_back / none)', async () => {
+    const c = capture({ ...base, outcome: { choice: 'search', confidence: 0.91 }, reaction: { choice: 'deeper', confidence: 0.8 }, follow_up: { noul: 0.9 } });
+    const m = [{ role: 'user', content: 'what is the Hidden Words' }, { role: 'assistant', content: 'A collection…' }, { role: 'user', content: 'more' }];
+    const t = await triageMessage(m, { apiKey: 'k', fetchImpl: c.fetch, card: 'a returning visitor via widget-chat; studying: hidden-words' });
+    expect(c.body.state).toMatch(/^READER: a returning visitor via widget-chat; studying: hidden-words\nTURN: user message #2 of a thread \(the history below is what it may continue\); a single word/);
+    expect(c.body.state).toMatch(/CONVERSATION:\nuser: what is the Hidden Words\nassistant: A collection…\nuser: more$/);
+    expect(c.body.questions.outcome.criteria).toHaveProperty('ask_back');
+    expect(c.body.questions.outcome.criteria.search).toMatch(/quoted words/i);
+    expect(t.outcome).toEqual({ choice: 'search', confidence: 0.91 });
+    expect(t.features).toEqual({ first: false, turn: 2, words: 1, short: true, quoted: 0, script: null });
   });
 
-  it('features name the original-text request and the answer language', async () => {
+  it('the card rides on the messages array when no option names it; features are structure only (no pasted / original / language verdicts)', async () => {
     const c = capture(base);
-    const t = await triageMessage([{ role: 'user', content: 'show me the original Arabic of "He is God" in Persian' }], { apiKey: 'k', fetchImpl: c.fetch });
-    expect(t.features.original).toBe('original');
-    const u = await triageMessage([{ role: 'user', content: 'explain the Kitab-i-Iqan in Hindi' }], { apiKey: 'k', fetchImpl: c.fetch });
-    expect(u.features.language).toBe('hi');
+    const m = [{ role: 'user', content: 'show me the original Arabic of "He is God" in Persian' }];
+    Object.defineProperty(m, 'card', { value: 'a signed-in reader', enumerable: false });
+    const t = await triageMessage(m, { apiKey: 'k', fetchImpl: c.fetch });
+    expect(c.body.state).toMatch(/^READER: a signed-in reader\n/);
+    expect(t.features).toEqual({ first: true, turn: 1, words: 11, short: false, quoted: 1, script: null });
+    expect(t.kind).toEqual({ choice: 'research', confidence: base.kind.confidence });   // nothing overrides Jev's kind
   });
 });

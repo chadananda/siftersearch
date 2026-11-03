@@ -2,31 +2,20 @@
 import { describe, it, expect } from 'vitest';
 import { planSearch } from '../../api/lib/search-plan.js';
 import { ensureLinks } from '../../api/lib/assistant/respond.js';
-import { readingIntent } from '../../api/lib/assistant/reading.js';
+import { readingTurn } from '../../api/lib/assistant/reading.js';
 
-describe('reading guide never starts on a story that merely says "read … with me"', () => {
-  it('"Someone read it aloud and it stayed with me" is not "read <book> with me"', () => {
-    expect(readingIntent('Last night someone read a line aloud that stuck with me. Which writing is it from?').kind).toBe('none');
-    expect(readingIntent('Someone read it aloud and it stayed with me: "The best beloved of all things" - where is it?').kind).toBe('none');
-    expect(readingIntent("I'm preparing a talk and my friend read an idea to me that stuck with me").kind).toBe('none');
-  });
-  it('real start requests still start', () => {
-    expect(readingIntent('help me study The Dawn-Breakers').kind).toBe('start');
-    expect(readingIntent('read the Kitab-i-Iqan with me').book).toBe('Kitab-i-Iqan');
-    expect(readingIntent("let's read Gleanings").kind).toBe('start');
+describe('reading guide never starts on a story that merely says "read … with me" — the model says none, and no rule overrides it', () => {
+  const deps = { latestSession: async () => null, card: null, understand: async () => ({ json: { kind: 'none', language: 'en' } }), listDocs: async () => ({ docs: [] }) };
+  it.each(['Last night someone read a line aloud that stuck with me. Which writing is it from?',
+    'Someone read it aloud and it stayed with me: "The best beloved of all things" - where is it?'])('%s → not the guide', async (t) => {
+    expect(await readingTurn({ messages: [{ role: 'user', content: t }], participantId: 'email:x', inThread: false, deps })).toBeNull();
   });
 });
 
-import { hasSubstance } from '../../api/lib/assistant/turn.js';
-describe('a bare name or title is a lookup, not "unclear"', () => {
-  it.each(['Ghoddus', 'Vahid', 'NABIL', 'dawnbreakers', "Babu'l-Bab"])('%s has substance', (t) => expect(hasSubstance(t)).toBe(true));
-  it.each(['hi?', 'ok', '??', 'hm'])('%s still does not', (t) => expect(hasSubstance(t)).toBe(false));
-});
-
-describe('converse guard', () => {
+describe('converse is Jev\'s call (11-03: the converse guard is gone; his criteria say a title or phrase is never conversation)', () => {
   const jev = (shape) => async () => ({ ok: true, json: async () => ({ answers: { shape: { choice: shape, confidence: 0.9 } } }) });
-  it('"hidden words work" is never small talk', async () => {
-    const p = await planSearch('hidden words work', { apiKey: 'k', fetchImpl: jev('converse'), cache: false });
+  it('"hidden words work" as Jev\'s lookup stays a lookup', async () => {
+    const p = await planSearch('hidden words work', { apiKey: 'k', fetchImpl: jev('lookup'), cache: false, resolveName: null });
     expect(p.shape).toBe('lookup');
   });
   it('a greeting stays conversation', async () => {

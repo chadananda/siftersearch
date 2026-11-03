@@ -1,6 +1,6 @@
 // Anís reading guide (Chad 10-12): "help me study X" → a page per email with notes; next / again / back / skip / questions.
 import { describe, it, expect } from 'vitest';
-import { readingIntent, bookFrom, startFrom, understandReply } from '../../api/lib/assistant/reading.js';
+import { understandReply, UNDERSTAND_SYSTEM } from '../../api/lib/assistant/reading.js';
 import { parseOutline, pageFrom, startIndex, addressOf, romanToInt } from '../../api/lib/assistant/reading.js';
 import { subjectFor, renderPage, readingTurn, ownWords, renumber, highlight, noteSpans, ownCitations, msg } from '../../api/lib/assistant/reading.js';
 import { sameName } from '../../api/lib/assistant/reading.js';
@@ -26,49 +26,48 @@ At a time when the shining reality of the Faith. {id="para_132" type="par"}
 {id="para_133" type="par"}
 `;
 
-describe('reading intent', () => {
-  it('a start names the book and where to begin', () => {
-    const t = "Help me study the Dawn-Breakers. Let's start from the introduction";
-    expect(bookFrom(t)).toBe('Dawn-Breakers');
-    expect(startFrom(t)).toBe('introduction');
-    expect(readingIntent(t)).toMatchObject({ kind: 'start', book: 'Dawn-Breakers', from: 'introduction' });
-    expect(readingIntent('Can you read God Passes By with me?')).toMatchObject({ kind: 'start', book: 'God Passes By' });
-    expect(readingIntent('Help me study the Dawn-Breakers, start from the introduction')).toMatchObject({ kind: 'start', book: 'Dawn-Breakers', from: 'introduction' });
+describe('reading replies are understood by MEANING only (Chad 10-13; 11-03: no keyword fallback)', () => {
+  const model = (json) => async () => ({ json });
+  it('a start names the book and where to begin — the model\'s fields', async () => {
+    expect(await understandReply("Help me study the Dawn-Breakers. Let's start from the introduction", { llm: model({ kind: 'start', book: 'The Dawn-Breakers', from: 'the introduction', language: 'en' }) }))
+      .toMatchObject({ kind: 'start', book: 'The Dawn-Breakers', from: 'the introduction', by: 'model' });
   });
-  it('continue/next → next page; again → deeper; others → navigation or a question', () => {
-    for (const t of ['continue', 'Next', 'next please', 'ok', '']) expect(readingIntent(t, { active: true }).kind).toBe('next');
-    for (const t of ['again', 'Try again', 'try again please']) expect(readingIntent(t, { active: true }).kind).toBe('again');
-    expect(readingIntent('back', { active: true }).kind).toBe('back');
-    expect(readingIntent('skip to chapter 5', { active: true })).toMatchObject({ kind: 'jump', target: 'chapter 5' });
-    expect(readingIntent('Where are we?', { active: true }).kind).toBe('where');
-    expect(readingIntent('Why did the Shah fear him?', { active: true }).kind).toBe('question');
+  it('in a reading: next / again / back / jump / where / stop / question, a level and "then next" ride along', async () => {
+    expect(await understandReply('good. next please. and use the advanced level of notes', { active: true, llm: model({ kind: 'next', level: 'advanced' }) })).toMatchObject({ kind: 'next', level: 'advanced' });
+    expect(await understandReply('skip to chapter 5', { active: true, llm: model({ kind: 'jump', target: 'chapter 5' }) })).toMatchObject({ kind: 'jump', target: 'chapter 5' });
+    expect(await understandReply('Who was Mírzá Músá? and then continue', { active: true, llm: model({ kind: 'question', then_next: true }) })).toMatchObject({ kind: 'question', thenNext: true });
+    expect((await understandReply('Where are we?', { active: true, llm: model({ kind: 'where' }) })).kind).toBe('where');
   });
-  it('conversational replies in a reading thread (10-13: "good. next please…" fell through to an ordinary answer)', () => {
-    expect(readingIntent('good. next please. and use the advanced level of notes', { active: true })).toMatchObject({ kind: 'next', level: 'advanced' });
-    expect(readingIntent('Thanks!', { active: true }).kind).toBe('next');
-    expect(readingIntent('Lovely, please continue', { active: true }).kind).toBe('next');
-    expect(readingIntent('use simpler notes', { active: true })).toMatchObject({ kind: 'again', level: 'introductory', relevel: true });
-    expect(readingIntent('Can you dig deeper on this page?', { active: true }).kind).toBe('question');
-    expect(readingIntent('Who was Mírzá Músá?', { active: true }).kind).toBe('question');
-    expect(readingIntent('dig deeper please', { active: true }).kind).toBe('again');
+  it('the model sees the thread and the reader card', async () => {
+    let seen;
+    await understandReply('ok', { active: true, page: 'Dawn-Breakers #1.4', card: 'a returning visitor; reading now: The Dawn-Breakers', history: [{ role: 'assistant', content: 'Page #1.4 …' }], llm: async (m) => { seen = m; return { json: { kind: 'next' } }; } });
+    expect(seen.system).toBe(UNDERSTAND_SYSTEM);
+    expect(seen.user).toMatch(/^READER: a returning visitor; reading now: The Dawn-Breakers\nREADING: Dawn-Breakers #1\.4\nCONVERSATION:\nassistant: Page #1\.4 …\nTHEIR MESSAGE: ok$/);
   });
-  it('with no book open, "next" is not a reading turn', () => {
-    expect(readingIntent('next').kind).toBe('none');
+  it('with no book open, "next" opens nothing', async () => {
+    expect((await understandReply('next', { active: false, llm: model({ kind: 'next' }) })).kind).toBe('none');
   });
   it('the reader’s own words: quoted history is cut', () => {
     expect(ownWords('next\n\nOn Mon, Anís wrote:\n> old page')).toBe('next');
   });
 });
 
-describe('understandReply — by meaning, not by keyword (Chad 10-13)', () => {
-  it('a free-form reply the rules cannot read is understood by the model', async () => {
+describe('understandReply — a failure is retried once, then the reader is asked (never a guess from the words)', () => {
+  it('a free-form reply is understood by the model', async () => {
     const llm = async () => ({ json: { kind: 'next', level: 'advanced', target: null, book: null } });
     expect(await understandReply('Wonderful page! Keep them coming, but go heavier on the scholarship', { active: true, llm })).toMatchObject({ kind: 'next', level: 'advanced', by: 'model' });
   });
-  it('a model failure or nonsense falls back to the rules', async () => {
-    expect(await understandReply('next please', { active: true, llm: async () => { throw new Error('down'); } })).toMatchObject({ kind: 'next' });
-    expect(await understandReply('next please', { active: true, llm: async () => ({ json: { kind: 'dance' } }) })).toMatchObject({ kind: 'next' });
-    expect(await understandReply('skip ahead', { active: true, llm: async () => ({ json: { kind: 'jump', target: null } }) }).then((r) => r.by)).toBeUndefined();
+  it('a model failure or nonsense is tried once more, then unclear — even for "next please"', async () => {
+    let n = 0;
+    expect(await understandReply('next please', { active: true, llm: async () => { n++; throw new Error('down'); } })).toMatchObject({ kind: 'unclear', by: 'model-failed' });
+    expect(n).toBe(2);
+    expect(await understandReply('next please', { active: true, llm: async () => ({ json: { kind: 'dance' } }) })).toMatchObject({ kind: 'unclear' });
+    expect(await understandReply('skip ahead', { active: true, llm: async () => ({ json: { kind: 'jump', target: null } }) })).toMatchObject({ kind: 'unclear' });
+    expect(await understandReply('next please', { active: true })).toMatchObject({ kind: 'unclear', by: 'no-model' });
+  });
+  it('the second try succeeds → its answer', async () => {
+    let n = 0;
+    expect(await understandReply('next', { active: true, llm: async () => { if (n++ === 0) throw new Error('timeout'); return { json: { kind: 'next' } }; } })).toMatchObject({ kind: 'next', by: 'model' });
   });
   it('outside a reading, only a request to read a book opens one — in any language (Chad 10-13)', async () => {
     const llm = async () => ({ json: { kind: 'start', book: 'The Dawn-Breakers', language: 'es' } });
@@ -77,8 +76,12 @@ describe('understandReply — by meaning, not by keyword (Chad 10-13)', () => {
     expect(await understandReply('hola, ¿qué tal?', { active: false, llm: async () => ({ json: { kind: 'none', language: 'es' } }) })).toMatchObject({ kind: 'none', language: 'es' });
     expect(await understandReply('hola', { active: false, llm: async () => ({ json: { kind: 'next', language: 'es' } }) })).toMatchObject({ kind: 'none' });   // nothing to continue
   });
-  it('without a model, the script still tells Persian / Arabic', async () => {
-    expect((await understandReply('لطفاً ادامه بدهید', { active: true })).language).toBe('fa');   // ی: Persian-only letter
+  it('no regex or keyword classifier decides intent in reading.js (Chad 11-03)', async () => {
+    const { readFileSync } = await import('fs');
+    const src = readFileSync(new URL('../../api/lib/assistant/reading.js', import.meta.url), 'utf8');
+    expect(src).not.toMatch(/readingIntent|replyKind|explicitReadingCommand|textRequest|bookFrom|levelFrom|scriptLang/);
+    expect(src).not.toMatch(/\/\\b\(next|\/\\b\(stop|\/\\b\(try again|\/\\b\(advanced/);
+    expect(src).toMatch(/kind: 'unclear', language: null, by: 'model-failed'/);
   });
 });
 
@@ -169,6 +172,13 @@ describe('readingTurn', () => {
         getParagraphs: async () => [],
         libraryBase: '/nonexistent',
         readFile: async () => MD,
+        card: null,
+        understand: async ({ user }) => {   // a fake model: in production understandReply asks Haiku; here the fixture answers by its scripted replies
+          const t = user.split('THEIR MESSAGE: ').pop();
+          const scripted = { "Help me study the Dawn-Breakers. Let's start from the introduction": { kind: 'start', book: 'Dawn-Breakers', from: 'the introduction', language: 'en' },
+            next: { kind: 'next' }, 'Who was Nabíl?': { kind: 'question' }, 'Who was Nabíl? And then continue.': { kind: 'question', then_next: true } };
+          return { json: scripted[t] || { kind: 'none' } };
+        },
         researchPage: async ({ items }) => ({ targets: [
           { pid: items[0].pid, name: 'Bahá’í Movement', key: 'n:bahai movement', evidence: { claims: [] }, labels: new Set(['S1']) },
           { pid: items[0].pid, name: 'Nabíl', key: 'n:nabil', evidence: { claims: [] } }], sources: [{ title: 'God Passes By', url: 'https://oceanlibrary.com/gpb' }] }),

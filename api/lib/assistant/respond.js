@@ -690,7 +690,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : study ? { passages: [], _plan: { shape: 'define', term: study.term, root: study.root, via: 'ctai' } } : await phrasesP.then((p) => {
       phrased = p;
       // the phrase replaces the v1 query (a follow-up's prefixed previous question with it); quote marks keep it — planned-search hunts the quote itself
-      searchQ = (p?.via === 'named-object' || p?.via === 'haiku') && p.phrase ? p.phrase : searchQueryFor(messages);
+      searchQ = (p?.via === 'named-object' || p?.via === 'haiku') && p.phrase ? p.phrase : direction.query || searchQueryFor(messages);   // direction.query: a short turn resolved from history + card (turn.js, 11-03)
       const hints = hintsOf(p);
       return timed('search', () => d.search({ query: searchQ, mode: 'passages', limit: 8, scope_config: profile.scope_config,
         plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));

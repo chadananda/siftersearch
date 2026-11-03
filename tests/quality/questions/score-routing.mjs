@@ -1,7 +1,7 @@
 // Routing scorer: the 11-02 question-type labels → planSearch()/triageMessage() of a given checkout; reports route accuracy
 // (shape ∈ allowed(type)), new-vs-follow-up, and the four 11-03 slices (pasted passage, original request, answer language,
 // first message). Never the held-out immerse items. Jev mode costs ~$0.05/1k items (≈1k tokens × 2 calls × $0.042/M).
-//   node tests/quality/questions/score-routing.mjs --deterministic                 # rules only, no network
+//   node tests/quality/questions/score-routing.mjs                                 # backstop only (Jev answers the default), no network
 //   node tests/quality/questions/score-routing.mjs --jev --sample 2000 --seed 7 --lib /path/to/checkout [--json out.json]
 import fs from 'node:fs';
 import path from 'node:path';
@@ -77,12 +77,12 @@ if (SAMPLE && SAMPLE < all.length) {
   items = all.filter((it) => pick.has(it.i));
 }
 const est = items.length * 2 * 1000 / 1e6 * 0.042;
-console.log(`labels: ${LABELS}\nlib: ${LIB}\nitems: ${items.length} of ${all.length} (immerse + H2 + G-only-threads excluded) ${JEV ? `— Jev mode, est. cost $${est.toFixed(3)}` : '— deterministic mode (no network)'}`);
+console.log(`labels: ${LABELS}\nlib: ${LIB}\nitems: ${items.length} of ${all.length} (immerse + H2 + G-only-threads excluded) ${JEV ? `— Jev mode, est. cost $${est.toFixed(3)}` : '— backstop mode (no network, Jev answers the default)'}`);
 
 const FROM = arg('--from');   // re-score a saved --json run offline (gold map changes, no new Jev calls)
 const { planSearch } = FROM ? {} : await import(path.join(LIB, 'api/lib/search-plan.js'));
 const { triageMessage } = FROM ? {} : await import(path.join(LIB, 'api/lib/assistant/triage.js'));
-// deterministic mode: Jev "answers" the backstop default so only the rules decide; Jev mode: the real endpoint
+// no --jev: Jev "answers" the backstop default (what the plan does with no decision at all); --jev: the real endpoint
 const fakeJev = async () => ({ ok: true, json: async () => ({ answers: { tradition: { answer: 'none', confidence: 0.9 }, comparative: { answer: false, confidence: 0.9 }, author: { answer: 'none', confidence: 0.9 }, shape: { answer: 'topic', confidence: 0.9 }, about: { answer: 'texts', confidence: 0.9 }, kind: { answer: 'research', confidence: 0.9 }, stance: { answer: 'curious', confidence: 0.9 }, reaction: { answer: 'none', confidence: 0.9 }, follow_up: 0 } }) });
 const fetchImpl = JEV ? globalThis.fetch : fakeJev;
 if (JEV && !process.env.TYPESAFE_API_KEY) { console.error('TYPESAFE_API_KEY missing'); process.exit(2); }
@@ -109,7 +109,7 @@ const allowedFor = (it, map = ALLOWED) => new Set([it.lead, ...(it.also || [])].
 const routeOk = (r, { corrected, map = ALLOWED }) => {
   const allowed = allowedFor(r.it, map), shape = r.plan?.shape;
   if (corrected) {
-    if (r.it.slices.includes('original-ish') && ORIGINAL_TYPES.has(r.it.lead)) return r.plan?.request === 'original' || r.plan?.request === 'translation';
+    if (r.it.slices.includes('original-ish') && ORIGINAL_TYPES.has(r.it.lead)) return r.plan?.request === 'original_text' || r.plan?.request === 'translation';
     if (r.it.slices.includes('pasted')) allowed.add('quote');
   }
   return allowed.has(shape);

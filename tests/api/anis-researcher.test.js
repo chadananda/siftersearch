@@ -53,15 +53,6 @@ describe('brief markers', () => {
   });
 });
 
-describe('the gate never deflects a real question (10-19 battery)', () => {
-  it('"race unity" and a pasted excerpt have substance; "hi?" does not', async () => {
-    const { hasSubstance } = await import('../../api/lib/assistant/turn.js');
-    expect(hasSubstance('race unity')).toBe(true);
-    expect(hasSubstance('Find this. excerpt from a pilgrim note: "But this working day of eight hours is only the beginning"')).toBe(true);
-    expect(hasSubstance('hi?')).toBe(false);
-  });
-});
-
 describe('trace_source (Chad 10-19: a signpost points at something specific)', () => {
   it('a House letter in the evidence is traced to the primary passage, which is what gets kept', async () => {
     const { research } = await import('../../api/lib/assistant/researcher.js');

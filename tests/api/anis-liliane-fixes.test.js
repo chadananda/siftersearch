@@ -24,10 +24,12 @@ describe('a pasted original or a translate request is a text request', () => {
     expect(textRequest('what happens to the Báb after this?').request).toBe(false);
     expect(textRequest('هو الله').request).toBe(false);
   });
-  it('the reading guide never takes it, even with an open reading the model calls a question', async () => {
+  it('the reading guide takes the MODEL\'s reading of her message (no word rule overrides it — Chad 11-03); a question goes to the researcher', async () => {
     const llm = async () => ({ json: { kind: 'question', language: 'en' } });
-    expect((await understandReply(HER_903, { active: true, page: 'Dawn-Breakers #5.7', llm })).kind).toBe('none');
+    expect((await understandReply(HER_903, { active: true, page: 'Dawn-Breakers #5.7', llm })).kind).toBe('question');
     expect((await understandReply('who was Quddús?', { active: true, page: 'Dawn-Breakers #5.7', llm })).kind).toBe('question');
+    const none = async () => ({ json: { kind: 'none', language: 'fa' } });
+    expect(await understandReply(HER_903, { active: true, page: 'Dawn-Breakers #5.7', llm: none })).toMatchObject({ kind: 'none', language: 'fa' });
   });
 });
 
@@ -111,46 +113,34 @@ describe('the researcher finds an original from an older English translation', (
 });
 
 // 10-23 Chad "WTH??": a NEW email with a real question, from an address with an open reading, got the next reading page
-import { readingTurn, readingIntent, explicitReadingCommand } from '../../api/lib/assistant/reading.js';
-describe('the reading guide takes only replies in a reading thread or explicit commands', () => {
-  const CHAD = 'I seem to remember the Guardian used to explain that the Arabs would continue to agitate until they were ejected completely from the Holy Land. Can you look for all related passages so I can refresh my memory?';
+import { readingTurn } from '../../api/lib/assistant/reading.js';
+describe('the reading guide takes only replies in a reading thread, a start, or a bare short command — by the model\'s reading, never by words', () => {
+  const CHAD = 'I seem to remember the Guardian used to explain that the Arabs would continue to agitate until they were ejected completely from the Holy Land. Can you look for all related passages so I can read them?';
   const session = { doc_id: 1, title: 'The Dawn-Breakers', cursor: 5, pages: [{ from: 4, subject: 'Dawn-Breakers #Intro.4' }], explained: {} };
-  const deps = { latestSession: async () => session, understand: async () => ({ json: { kind: 'next', language: 'en' } }),
+  const deps = { latestSession: async () => session, card: null, understand: async () => ({ json: { kind: 'question', language: 'en' } }),
     listDocs: async () => ({ docs: [{ id: 1, title: 'The Dawn-Breakers' }] }) };
   it("Chad's new-thread question with an open reading → not the guide (null → the researcher)", async () => {
     expect(await readingTurn({ messages: [{ role: 'user', content: CHAD }], participantId: 'email:x', inThread: false, deps })).toBeNull();
   });
-  it('"continue" inside a sentence is not a command; a question wins over the model\'s "next"', async () => {
-    expect(readingIntent(CHAD, { active: true }).kind).toBe('question');
-    expect(explicitReadingCommand(CHAD)).toBeNull();
-    const { understandReply } = await import('../../api/lib/assistant/reading.js');
-    expect((await understandReply(CHAD, { active: true, llm: async () => ({ json: { kind: 'next', language: 'en' } }) })).kind).toBe('question');
-  });
-  it('"next" and "help me study <book>" are explicit commands anywhere; a reply in the reading thread reaches the guide', async () => {
-    expect(explicitReadingCommand('next')?.kind).toBe('next');
-    expect(explicitReadingCommand('continue please')?.kind).toBe('next');
-    expect(explicitReadingCommand('stop reading')?.kind).toBe('stop');
-    expect(readingIntent('help me study The Dawn-Breakers').kind).toBe('start');
+  it('out of the thread even a model "next" on a long message is not a command; a bare "next" is', async () => {
+    const next = { ...deps, understand: async () => ({ json: { kind: 'next', language: 'en' } }) };
+    expect(await readingTurn({ messages: [{ role: 'user', content: CHAD }], participantId: 'email:x', inThread: false, deps: next })).toBeNull();
     let reached = false;
-    const d2 = { ...deps, latestSession: async () => { reached = true; return null; } };
-    await readingTurn({ messages: [{ role: 'user', content: 'lovely, more please' }], participantId: 'email:x', inThread: true, deps: d2 }).catch(() => null);
-    expect(reached).toBe(true);
-    reached = false;
+    const d2 = { ...next, latestSession: async () => { reached = true; return null; } };
     await readingTurn({ messages: [{ role: 'user', content: 'next' }], participantId: 'email:x', inThread: false, deps: d2 }).catch(() => null);
     expect(reached).toBe(true);
   });
-});
-
-import { replyKind } from '../../api/lib/assistant/reading.js';
-describe('a reply in a reading: question / next / both (Chad 10-23)', () => {
-  it('rules', () => {
-    expect(replyKind('Who was Mullá Ḥusayn?')).toBe('question');
-    expect(replyKind('Can you explain what the Shaykhís believed')).toBe('question');
-    expect(replyKind('next')).toBe('next');
-    expect(replyKind('go on please')).toBe('next');
-    expect(replyKind('Who was Mullá Ḥusayn? And then continue.')).toBe('both');
-    expect(replyKind('I seem to remember the Guardian used to explain that the Arabs would continue to agitate until they were ejected completely from the Holy Land.')).toBeNull();
-    expect(replyKind('lovely')).toBeNull();
+  it('in the thread a question is answered by the researcher with the page as context; "unclear" asks the reader back', async () => {
+    const r = await readingTurn({ messages: [{ role: 'user', content: 'Who was Mullá Ḥusayn?' }], participantId: 'email:x', inThread: true, deps: { ...deps, pageContext: async () => '' } });
+    expect(r).toMatchObject({ research: true, thenNext: false, book: 'The Dawn-Breakers' });
+    const u = await readingTurn({ messages: [{ role: 'user', content: 'hm' }], participantId: 'email:x', inThread: true, deps: { ...deps, understand: async () => { throw new Error('down'); } } });
+    expect(u.reply).toMatch(/not sure what you'd like/);
+  });
+  it('the model sees the thread and the reader card', async () => {
+    let seen;
+    await readingTurn({ messages: [{ role: 'assistant', content: 'Page #Intro.4 …' }, { role: 'user', content: 'ok' }], participantId: 'email:x', inThread: true,
+      deps: { ...deps, card: async () => ({ text: 'a returning visitor via email; reading now: The Dawn-Breakers' }), understand: async (m) => { seen = m; return { json: { kind: 'next' } }; }, listDocs: async () => ({ docs: [] }) } }).catch(() => null);
+    expect(seen.user).toMatch(/^READER: a returning visitor via email; reading now: The Dawn-Breakers\nREADING: Dawn-Breakers #Intro\.4\nCONVERSATION:\nassistant: Page #Intro\.4 …\nTHEIR MESSAGE: ok$/);
   });
 });
 

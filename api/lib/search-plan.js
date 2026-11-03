@@ -4,10 +4,10 @@
 // Rules: fail open; a comparative is never narrowed; caller-given filters win. Deps: scope-extract.js (TRADITIONS).
 import { modelFor } from './model-roles.js';
 import { TRADITIONS, MIN_CONFIDENCE, ENDPOINT } from './scope-extract.js';
-import { detectQuotation, isMeaningQuestion, stripMarkup } from './quote-detect.js';
+import { detectQuotation, stripMarkup } from './quote-detect.js';
 import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 import { resolveNamed, resolveNamedAll, objectPhrases, nameSpans } from './named-object.js';
-import { requestFeatures } from './assistant/request-features.js';   // pasted passage, original-text request, answer language (11-03)
+import { jevState, turnFacts } from './assistant/request-features.js';   // the turn's STRUCTURE + reader card + history, for Jev (11-03)
 
 // A wrong author hides far more than a wrong tradition, so it needs more certainty to act on.
 const AUTHOR_MIN_CONFIDENCE = 0.8;
@@ -27,14 +27,28 @@ const AUTHORS = {
 
 export const SMALL_TALK = /\b(hi|hello|hey|greetings|salaam|thanks?|thank you|bye|goodbye|good (morning|afternoon|evening)|how are you|who are you|what are you|your name|what can you|can you help|are you (a|an|ai|real|human|there)|you)\b/i;
 const SHAPES = {
-  quote: 'the user gives the wording of a passage — verbatim, a fragment, or half-remembered — and wants to find it or its source: "find the quote including …", "where does it say …", "who said …", "source of …"; also when the user paraphrases ONE particular saying or image of an author and wants that passage ("what did ‘Abdu’l-Bahá say about fighting thoughts of war with thoughts of peace"); NOT a request for an author\'s quotes, passages or works that explain, elaborate on or expand an idea — that is topic, even when the idea is worded as a well-known phrase',
+  quote: 'the user gives the wording of a passage — verbatim, a fragment, half-remembered, or a whole pasted sentence or paragraph of scripture or prayer ("O Thou …", "Thou seest me …", "Ponder thereon, that …", "Know thou of a truth that …"), pasted bare or with "where is this from?" / "what does this mean?" (the passage is found FIRST — a pasted passage is never a theme and never conversation) — and wants to find it or its source; words in quotation marks are nearly always wording to find, unless they are a term to explain or scare quotes — or the assistant\'s OWN words from its previous reply quoted back with a challenge or a question about them ("you said "…" — is that really in the text?"), which is topic about the passage under discussion, unless the person asks for that quoted passage itself, its source or its original: "find the quote including …", "where does it say …", "who said …", "source of …"; also when the user paraphrases ONE particular saying or image of an author and wants that passage ("what did ‘Abdu’l-Bahá say about fighting thoughts of war with thoughts of peace"); NOT a request for an author\'s quotes, passages or works that explain, elaborate on or expand an idea — that is topic, even when the idea is worded as a well-known phrase',
   fact: 'a factual question about people, places, dates, events or documents: who, when, where, how many, what happened, who a person is or where a name comes from; also a question about this library itself (which religions or works it holds)',
-  topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea — including what one author wrote on a theme ("Shoghi Effendi on the Administrative Order", "what the Báb wrote about Him Whom God shall make manifest") and requests for an author\'s quotes, passages or works that elaborate on an idea ("Shoghi Effendi quotes on all the Prophets being one", "where the Guardian explains progressive revelation"); never who a person is or what a word means',
-  define: 'asks what a term, name or concept means ("what does dharma mean", "meaning of nirvana")',
+  topic: 'asks what the teachings or scriptures say about a theme, virtue, practice or idea — including what one author wrote on a theme ("Shoghi Effendi on the Administrative Order", "what the Báb wrote about Him Whom God shall make manifest") and requests for an author\'s quotes, passages or works that elaborate on an idea ("Shoghi Effendi quotes on all the Prophets being one", "where the Guardian explains progressive revelation"); also a challenge to or question about the assistant\'s previous reply (its own words quoted back: "you said … — is that really in the text?") is topic about the passage under discussion; never who a person is or what a word means',
+  define: 'asks what a term, name or concept means ("what does dharma mean", "meaning of nirvana"), or its etymology or root — even when a word is quoted as the term to explain; a comparison of two ideas or views is topic, not define',
   lookup: 'names a specific work or person and wants that item itself — to read, find or identify it ("where can I read the Bhagavad Gita", "Dawnbreakers", "Dhammapada text"); not what an author wrote on a theme',
   enumerate: 'asks for a list: members of a group, attendees of an event, all instances of something (not a list of what the library holds)',
-  converse: 'conversation, not a lookup: a greeting, thanks, small talk, or a question about the assistant itself (its name, what it can do). A title, a name or a phrase of the library\'s content ("hidden words work", "<phrase> source") is NEVER conversation',
+  converse: 'conversation, not a lookup: a greeting, thanks, small talk, or a question about the assistant itself (its name, what it can do). A title, a name, a phrase of the library\'s content ("hidden words work", "<phrase> source") or a pasted line of prayer or scripture addressed to God ("Thou seest me submerged …") is NEVER conversation — that is quote',
 };
+
+// REQUEST and answer LANGUAGE are Jev's fields (11-03), never read from the words in code: "show me the Persian original"
+// is a request for the text in its own language on top of whatever shape the turn has; "in Hindi" is a parameter of the
+// answer, not a kind of request ("dhammapada meaning in hindi" is define, answered in Hindi).
+export const REQUESTS = {
+  plain: 'an ordinary request: find, explain, discuss, list, read — the shape says which',
+  original_text: 'asks for the ORIGINAL-language text (the Arabic / Persian / Hebrew / Pali / Sanskrit original) of a passage, verse or work ("show me the Persian original of …", "the Arabic of this prayer"), or which language it was revealed or written in',
+  translation: 'asks for an existing translation of a NAMED passage or work into another language, or whether one exists ("is there a Hindi translation of the Íqán", "translate this prayer"); NOT "<work> meaning in <language>" or "<topic> in <language>", which only name the language the answer should be in — those are plain, with the language field set',
+};
+export const LANGUAGES = { none: 'no language is named as the language the person wants to read in. A query ending "in <language>" names it — "<work> meaning in Kannada", "christian quotes in telugu", "who wrote the Gita in Marathi", "hidden words in english", "explain in Hindi" — even when it reads like a search-engine query. Only a language named as the SOURCE text — "the Persian text", "the original Persian", "the Arabic original" — is not an answer language, nor is merely writing in a language',
+  en: 'English', fa: 'Persian / Farsi', ar: 'Arabic', hi: 'Hindi', ur: 'Urdu', bn: 'Bengali / Bangla', ta: 'Tamil', te: 'Telugu', kn: 'Kannada', ml: 'Malayalam', mr: 'Marathi', gu: 'Gujarati', pa: 'Punjabi', ne: 'Nepali', si: 'Sinhala',
+  es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese', it: 'Italian', nl: 'Dutch', pl: 'Polish', tr: 'Turkish', ru: 'Russian', he: 'Hebrew', zh: 'Chinese', ja: 'Japanese', ko: 'Korean', vi: 'Vietnamese', th: 'Thai', id: 'Indonesian / Malay', sw: 'Swahili', tl: 'Tagalog / Filipino' };
+const LANGUAGE_NAMES = { en: 'english', fa: 'persian', ar: 'arabic', hi: 'hindi', ur: 'urdu', bn: 'bengali', ta: 'tamil', te: 'telugu', kn: 'kannada', ml: 'malayalam', mr: 'marathi', gu: 'gujarati', pa: 'punjabi', ne: 'nepali', si: 'sinhala',
+  es: 'spanish', fr: 'french', de: 'german', pt: 'portuguese', it: 'italian', nl: 'dutch', pl: 'polish', tr: 'turkish', ru: 'russian', he: 'hebrew', zh: 'chinese', ja: 'japanese', ko: 'korean', vi: 'vietnamese', th: 'thai', id: 'indonesian', sw: 'swahili', tl: 'tagalog' };
 
 // Deterministic BACKSTOP only (used when Jev is unreachable): a tradition or scripture the query NAMES.
 // Moved here from routes/public-api.js so the legacy path and the backstop share one list.
@@ -161,6 +175,7 @@ const ABOUT = {
   events: 'an event, place or date as such (what happened at X, where Y is)',
 };
 
+const FIELD_MIN_CONFIDENCE = 0.5;   // request / language: Jev's choice over 'plain' / 'none' must be the likelier reading
 const EMPTY = { filters: {}, prefer: null, comparative: false, shape: 'topic', about: 'texts', confidence: {}, source: {} };
 
 /** Jev answers (or null) → plan. Pure. */
@@ -174,6 +189,9 @@ export function buildPlan(answers, { given = {} } = {}) {
     plan.confidence = { tradition: t.confidence ?? 0, author: a.confidence ?? 0, shape: s.confidence ?? 0 };
     if (s.choice && SHAPES[s.choice]) plan.shape = s.choice;
     if (answers.about?.choice && ABOUT[answers.about.choice]) plan.about = answers.about.choice;
+    const rq = answers.request || {}, lg = answers.language || {};
+    if (rq.choice && rq.choice !== 'plain' && REQUESTS[rq.choice] && (rq.confidence ?? 0) >= FIELD_MIN_CONFIDENCE) { plan.request = rq.choice; plan.source.request = 'jev'; }
+    if (lg.choice && lg.choice !== 'none' && LANGUAGES[lg.choice] && (lg.confidence ?? 0) >= FIELD_MIN_CONFIDENCE) { plan.language = { lang: lg.choice, name: LANGUAGE_NAMES[lg.choice] }; plan.source.language = 'jev'; }
     if (!plan.comparative) {
       if (t.choice && t.choice !== 'none' && TRADITIONS[t.choice] && (t.confidence ?? 0) >= MIN_CONFIDENCE) {
         plan.filters.religion = t.choice;
@@ -226,72 +244,36 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: String(input || '') }];
   const t0 = Date.now();
   const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content;
-  // REQUEST FEATURES (deterministic, 11-03): the answer LANGUAGE is a parameter, not a kind of request — Jev classifies the
-  // request with "in Hindi" removed ("dhammapada meaning in hindi" is define, answered in Hindi); a pasted PASSAGE is
-  // wording to find; "show me the original" is a request for the original text (A7) on top of whatever shape it has.
-  const feats = requestFeatures(messages);
-  const language = feats.language?.role === 'answer' ? { lang: feats.language.lang, name: feats.language.name } : null;
-  const lastIdx = messages.length - 1 - [...messages].reverse().findIndex((m) => m.role === 'user');
-  const state = messages.slice(-6).map((m, i, arr) => {
-    const text = language && arr.length - 1 - i === messages.length - 1 - lastIdx ? feats.language.stripped : m.content;
-    return `${m.role}: ${stripMarkup(text).slice(0, 600)}`;
-  }).join('\n');
-  // QUOTATION RULE (deterministic, never waits on Jev): wording to find is shape 'quote' whatever the backstop default or
-  // Jev said — a 700 ms timeout once left the empty default (topic) and a quote hunt answered with unrelated people (11-01).
-  // …but never words the assistant itself said earlier in the thread, quoted back to it (r5, 11-01)
+  // CONTEXT for Jev (11-03): the reader card, the turn's structural facts (position, length, quoted spans, script), then
+  // the conversation. Nothing here reads the words for intent — Jev does, and answers shape / request / language as
+  // fields of his decision (Chad: "don't try to use deterministic parsing of words to gather intent").
+  const facts = turnFacts(messages);
+  const state = jevState({ messages, card: messages.card ?? null, turns: 6, chars: 600, clean: stripMarkup });
+  // once Jev has decided the turn hunts WORDING, the words to hunt are read by structure: a quoted span (never one the
+  // assistant itself said earlier in the thread, quoted back — r5), else the message minus its asking frame, else all of it
   const said = messages.slice(0, -1).filter((m) => m.role === 'assistant').map((m) => String(m.content || ''));
-  // PASTED RULE: a paragraph of scripture pasted in (bare, or with "where is this from?" / "what does this mean?") is a
-  // passage to FIND first — 11-02 labels filed 302 such pastes as teaching questions. The ask rides along (plan.quote.ask).
-  const pasted = feats.pasted && feats.pasted.kind !== 'other' ? feats.pasted : null;
-  const original = feats.original;
-  const quote = detectQuotation(lastUser, { said })
-    || (pasted && { phrase: pasted.phrase, via: 'pasted', ask: pasted.kind === 'bare' ? null : pasted.kind })
-    || (original?.phrase && { phrase: original.phrase, via: 'original' });   // "the Persian original of 'We were one day'": find those words first
-  // MEANING RULE: an etymology / meaning / comparison question is define (or topic, for a comparison), never a quote hunt
-  const meaning = !quote && isMeaningQuestion(stripMarkup(lastUser));
+  const phraseOf = () => detectQuotation(lastUser, { said })
+    || (facts.quoted.length ? { phrase: [...facts.quoted].sort((a, b) => b.length - a.length)[0].slice(0, 400), via: 'quoted' } : null)   // Jev chose quote: a quoted-back span is still the words
+    || { phrase: stripMarkup(lastUser).replace(/\s+/g, ' ').trim().slice(0, 400), via: 'turn' };
+  const quotedBack = () => facts.quoted.length > 0 && facts.quotedBack === facts.quoted.length;   // backstop only (no Jev to read the fact)
   const pushback = said.length > 0 && isPushback(lastUser);
   const ruled = (plan, provenance, reason, extra = {}) => {
     const out = { ...plan, source: { ...plan.source }, provenance, reason: reason ?? null, ...extra };
-    if (language) { out.language = language; out.source = { ...out.source, language: 'language-rule' }; }
-    // CONVERSE GUARD (deterministic): two or more content words that are no greeting, thanks or question about the assistant are
-    // a request for library content, never small talk (11-01 wording battery: "hidden words work" answered as a greeting)
-    if (!quote && plan.shape === 'converse' && !SMALL_TALK.test(String(lastUser || '')) && (String(lastUser || '').match(/\p{L}{3,}/gu) || []).length >= 2) {
-      out.overridden = { shape: 'converse', about: plan.about, by: 'converse-guard' };
-      Object.assign(out, { shape: 'lookup' }); out.source = { ...out.source, shape: 'converse-guard' };
-    }
-    if (meaning && plan.shape === 'quote') {
-      out.overridden = { shape: 'quote', about: plan.about, by: 'meaning-rule' };
-      out.shape = /differ|compar|contrast|similar/i.test(String(lastUser)) ? 'topic' : 'define';
-      out.source = { ...out.source, shape: 'meaning-rule' };
-    }
-    if (quote) {
-      const by = quote.via === 'pasted' ? 'pasted-rule' : quote.via === 'original' ? 'original-rule' : 'quote-rule';
-      if (plan.shape !== 'quote') out.overridden = { shape: plan.shape, about: plan.about, by };
-      Object.assign(out, { shape: 'quote', about: 'texts', quote });
-      out.source.shape = by;
-    }
-    // ORIGINAL RULE: "show me the Persian original of …" / "the Arabic of this verse" / "is there a translation of this
-    // tablet" asks for the TEXT in another language (A7) — a request on top of the shape (quote when it carries wording).
-    if (original) {
-      out.request = original.target; out.original = original;
-      out.source = { ...out.source, request: 'original-rule' };
-      if (out.shape === 'converse' || out.shape === 'define' || out.shape === 'fact') {
-        out.overridden = { shape: out.shape, about: out.about, by: 'original-rule' };
-        Object.assign(out, { shape: original.passage ? 'quote' : 'lookup', about: 'texts' }); out.source.shape = 'original-rule';
-      }
-    }
+    // request (original text / translation) and language are PARAMETERS beside Jev's shape — they never change it.
+    // The assistant's own words quoted back are a TURN fact Jev reads (r5 → 11-03): his shape stands.
+    if (out.shape === 'quote') { out.quote = out.quote || phraseOf(); out.about = 'texts'; }
     // PUSHBACK RULE: a challenge to the last reply with no wording of its own to find is about the passage under discussion
     if (pushback) {
       out.pushback = true;
-      if (!quote && out.shape === 'quote') {
+      if (!facts.quoted.length && out.shape === 'quote') {
         out.overridden = { shape: out.shape, about: out.about, by: 'pushback-rule' };
-        Object.assign(out, { shape: 'topic', about: 'texts' }); out.source = { ...out.source, shape: 'pushback-rule' };
+        Object.assign(out, { shape: 'topic', about: 'texts' }); delete out.quote; out.source = { ...out.source, shape: 'pushback-rule' };
       }
     }
-    // COMPARISON RULE: "how is that different from / close to the Buddhist view" is a comparison, not a definition
-    if (!quote && out.shape === 'define' && comparesTradition(stripMarkup(lastUser))) {
+    // COMPARISON (Jev's field): a comparison Jev also called a definition is a topic across the things compared
+    if (out.comparative && out.shape === 'define') {
       out.overridden = { shape: 'define', about: out.about, by: 'comparison-rule' };
-      Object.assign(out, { shape: 'topic', comparative: true }); out.source = { ...out.source, shape: 'comparison-rule' };
+      Object.assign(out, { shape: 'topic' }); out.source = { ...out.source, shape: 'comparison-rule' };
       if (out.source.religion !== 'caller') { out.filters = { ...out.filters }; delete out.filters.religion; }
     }
     return out;
@@ -299,6 +281,9 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
   // Jev unreachable/slow → still honour a tradition the user NAMED, rather than searching everything.
   const backstop = (reason, extra) => {
     const plan = buildPlan(null, { given });
+    // a span in quotation marks of four or more words is, with no Jev to say otherwise, wording to find (11-01: a timeout
+    // left the empty default and a quote hunt answered with unrelated people). Structure, not words.
+    if (facts.quoted.some((q) => q.split(' ').length >= 4) && !quotedBack()) { plan.shape = 'quote'; plan.about = 'texts'; plan.source.shape = 'backstop-quoted'; }
     const t = !plan.filters.religion && keywordTradition(lastUser);
     if (t) { plan.filters.religion = t; plan.source.religion = 'keyword-backstop'; }
     const a = keywordAuthor(lastUser);
@@ -336,8 +321,10 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
             instructions: 'Whose own WORDS or WRITINGS does the user want to read? Answer "none" when a person is only the subject of the question.',
             criteria: Object.fromEntries(Object.entries(AUTHORS).map(([k, v]) => [k, v.about])),
           },
-          shape: { type: 'choice', instructions: 'What kind of request is the latest user turn?', criteria: SHAPES },
+          shape: { type: 'choice', instructions: 'What kind of request is the latest user turn, read with the conversation and the reader? A short turn ("more", "and the Báb?", a name) continues the previous subject.', criteria: SHAPES },
           about: { type: 'choice', instructions: 'What is the latest user turn ABOUT?', criteria: ABOUT },
+          request: { type: 'choice', instructions: 'Does the latest user turn ask for a text in its ORIGINAL language, or for a TRANSLATION — or is it a plain request?', criteria: REQUESTS },
+          language: { type: 'choice', instructions: 'Does the latest user turn name the language the ANSWER should be written in ("in Hindi", "answer in Spanish", "بالعربية")? Answer none otherwise.', criteria: LANGUAGES },
         },
       }),
       signal: AbortSignal.timeout(timeoutMs),
@@ -478,5 +465,5 @@ function normalizeAnswers(a) {
     const c = x.choice ?? x.value ?? null;
     return { choice: c, confidence: x.confidence ?? x.distribution?.[c] ?? 0 };
   };
-  return { tradition: choice(a.tradition), author: choice(a.author), shape: choice(a.shape), about: choice(a.about), comparative: a.comparative };
+  return { tradition: choice(a.tradition), author: choice(a.author), shape: choice(a.shape), about: choice(a.about), request: choice(a.request), language: choice(a.language), comparative: a.comparative };
 }

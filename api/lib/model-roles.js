@@ -27,6 +27,8 @@ export const MODEL_ROLES = {
     why: 'legacy choice — not measured against the 5.5 family' },
   'deep-research-hero-prompt': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['short-writing'],
     why: 'legacy choice' },
+  'turn-resolver': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-03', needs: ['fast', 'json'],
+    why: 'short turn ("more", "and the Báb?") → one self-contained query from history + reader card; Jev decided it is a search (W2 11-03)' },
   'reading-targets': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['fast', 'json'],
     why: 'reading guide: list what on a page deserves a note (people, places, works, terms) — a small JSON list' },
   'reading-notes': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-12', needs: ['grounded-writing', 'persian-arabic-names', 'json'],

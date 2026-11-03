@@ -3,14 +3,16 @@
 //   1. MODEL CALL — llmJson: one JSON reply from any OpenAI-compatible provider, logged to ai_usage.
 //   2. OUTLINE    — the book's OceanLibrary markdown → sections (Intro, Preface, chapters) + paragraphs (para_N, #3.4, topic).
 //   3. REPLIES    — what a reader's message asks for: start / next / again / back / jump / where / stop / question, and a
-//                   notes level; understood by meaning (small model) with keyword rules as the fallback.
+//                   notes level; understood by MEANING only (small model, with the thread and the reader card). A model
+//                   failure is retried once, then the reader is asked a short question back. No keyword rule decides
+//                   intent (Chad 11-03: "never guess intent from words").
 //   4. RESEARCH   — what on a page deserves a note, and the cited evidence: entity dossiers, library passages; the web
 //                   (Perplexity, Parallel.ai) only where the library cannot answer.
 //   5. GUIDE      — readingTurn(): bookmark + pages + what is already explained per reader × book (reading_sessions),
 //                   one page built, notes written (Sonnet 5.5), rendered as the email and as a structured page (audio).
 // Deps: role-client (provider clients), model-roles + registry, ai-services (usage), repos/reading-repo, docs-repo, planned-search, hit-links,
 // entity-api, perplexity, parallel-ai, config (library path). Every dependency is injectable for tests.
-import { textRequest } from './text-request.js';
+import { loadReaderCard } from './reader-card.js';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { modelFor } from '../model-roles.js';
@@ -134,121 +136,58 @@ export function startIndex(paragraphs, want) {
 
 // ════ 3. REPLIES ════════════════════════════════════════════════════════════════════════════════════════════════════
 
-const START = /\b(?:help me (?:study|read|go through)|(?:study|read|go through)\s+(.+?)\s+with me|(?:be|act as) my (?:reading|study) (?:companion|guide)(?: for)?|reading (?:companion|guide) for|let'?s (?:study|read))\b\s*(.*)/i;
-
-/** The book a start message names: "help me study the Dawn-Breakers. Let's start from the introduction" → "Dawn-Breakers". */
-export function bookFrom(text) {
-  const t = String(text || '').replace(/\s+/g, ' ').trim();
-  const m = t.match(START);
-  if (!m) return null;
-  // "<verb> X with me" is a request only as a command ("read X with me", "can you read X with me"), never inside a story
-  // ("someone read it aloud and it stayed with me") — the word before the verb and the shape of X decide (11-01 wording battery)
-  if (m[1]) {
-    const before = t.slice(0, m.index).trimEnd();
-    if (before && !/(?:[.!?,:;]|\b(?:please|can you|could you|would you|will you|to|and|then|let'?s|us)|\bme to)$/i.test(before)) return null;
-    if (/^(?:it|this|that|them|these|those|aloud|out|a|an|one|my|his|her)\b/i.test(m[1]) || m[1].split(/\s+/).length > 8) return null;
-  }
-  const raw = (m[1] || m[2] || '').split(/[.!?;\n]| starting | start(?:ing)? (?:at|from|with)\b| from the | beginning /i)[0];
-  const book = raw.split(/,\s*(?:and\s+)?(?:let'?s|starting|start|begin|beginning|from)\b/i)[0]
-    .replace(/^(?:the book|book)\s+/i, '').replace(/^["“'‘]|["”'’]$/g, '').replace(/^(?:the\s+)(?=\S)/i, '').replace(/[\s,;:]+$/, '').trim();
-  return book || null;
-}
-
-/** Where a start message asks to begin ("start from the introduction", "begin with chapter 3"). */
-export function startFrom(text) {
-  const t = String(text || '');
-  const m = t.match(/\b(?:start|begin|starting|beginning)\b[^.?!]*?\b(?:from|with|at)\s+(?:the\s+)?([^.?!,;]+)/i);
-  return m ? m[1].trim() : null;
-}
-
-/** A notes LEVEL the reader asks for, anywhere in the message (Chad 10-13: "use the advanced level of notes"). Pure. */
-export function levelFrom(text) {
-  const t = String(text || '').toLowerCase();
-  if (/\b(advanced|scholarly|scholar|expert|academic|in[- ]depth|more detailed|deeper)\b[^.?!]{0,30}\b(notes?|level|research)\b|\b(notes?|level)\b[^.?!]{0,20}\b(advanced|scholarly|expert|academic)\b/.test(t)) return 'advanced';
-  if (/\b(simpler|simple|basic|beginner|introductory|lighter|less detail(ed)?)\b[^.?!]{0,30}\b(notes?|level)\b|\b(notes?|level)\b[^.?!]{0,20}\b(simpler|basic|beginner|introductory)\b/.test(t)) return 'introductory';
-  if (/\b(normal|standard|default|regular)\b[^.?!]{0,10}\b(notes?|level)\b/.test(t)) return 'serious';
-  return null;
-}
-
-/** → { kind, book?, from?, target?, level? }. `active` = the reader has a book open. Inside a reading thread replies are
- *  conversational ("good. next please. and use the advanced level of notes" — 10-13 this fell through to an ordinary
- *  answer): a navigation word anywhere counts; a bare acknowledgement means "next"; a level request rides along. */
-export function readingIntent(text, { active = false } = {}) {
-  const t = String(text || '').replace(/\s+/g, ' ').trim();
-  const book = bookFrom(t);
-  if (book) return { kind: 'start', book, from: startFrom(t), level: levelFrom(t) };
-  if (!active) return { kind: 'none' };
-  const low = t.toLowerCase();
-  const level = levelFrom(t);
-  const withLevel = (o) => (level ? { ...o, level } : o);
-  const asks = /\?/.test(low) || /^(who|what|why|how|when|where(?! are we)|which|is|was|were|did|does|do|can|could|tell me|explain)\b/.test(low);
-  if (/\b(stop|pause|end) (reading|the book|the reading)\b/.test(low)) return { kind: 'stop' };
-  if (/\bwhere (are|were) we\b|\bwhat page\b|\bbookmark\b/.test(low)) return { kind: 'where' };
-  const jump = low.match(/\b(?:skip|jump|go|move|turn)\s+(?:ahead\s+)?to\s+([^.?!,;]+)/);
-  if (jump && !/^the next\b/.test(jump[1])) return withLevel({ kind: 'jump', target: jump[1].trim() });
-  if (/\b(try again|again|dig deeper|go deeper|not deep enough|redo)\b/.test(low) && !asks) return withLevel({ kind: 'again' });
-  if (/\b(go back|previous page|last page)\b|^back\b/.test(low)) return withLevel({ kind: 'back' });
-  // a command word inside a real sentence is not a command (10-23: "…would continue to agitate…" in Chad's NEW question
-  // turned the next reading page)
-  const short = t.split(' ').length <= 12 && !asks;
-  if (short && /\b(next|continue|go on|keep going|carry on|proceed|onward|read on|more please)\b/.test(low)) return withLevel({ kind: 'next' });
-  if (level && !asks) return { kind: 'again', level, relevel: true };   // "use simpler notes" alone → this page again at that level
-  if (!low || /^(ok(ay)?|yes|good|great|thanks?|thank you|lovely|wonderful|beautiful|perfect|got it|nice)[\s.!,]*(thanks?|thank you)?[\s.!]*$/.test(low)) return { kind: 'next' };
-  return { kind: 'question' };
-}
+// The book, the starting point and the notes level are the MODEL's fields (understandReply); nothing here reads them from
+// the words. startIndex() (outline) still matches a named place to a paragraph once the model has named it.
 
 // ── understanding a reply by MEANING (Chad 10-13: "you cannot control how a person responds and force them to use exactly
 // one word") ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-export const UNDERSTAND_SYSTEM = `Someone writes to a reading companion by email. They may be in the middle of reading a book with it (READING
-says which), and they may write in ANY language. Decide what they want. Reply with JSON only:
-{"kind":"next|again|back|jump|where|stop|question|start|none","level":"introductory|serious|advanced|null","target":"chapter/section/event to jump to, or null","book":"the book's title, or null","language":"ISO 639-1 code of the language THEY wrote in"}
-- start: they ask to read or study a book with you (any wording, any language) — "book" = its title (its usual English title when you know it)
-- none: not reading-related at all (only when READING is "none")
-- next: keep reading (any wording: "carry on", "lovely, more", "ok", "seguir", "ادامه", a comment with no request)
-- again: the same page redone deeper or differently
+export const UNDERSTAND_SYSTEM = `Someone writes to a reading companion. They may be in the middle of reading a book with it (READING
+says which), and they may write in ANY language. READER says what is known of them; CONVERSATION is the recent thread. Decide
+what the latest message wants, from its meaning in that context. Reply with JSON only:
+{"kind":"next|again|back|jump|where|stop|question|start|none|unclear","level":"introductory|serious|advanced|null","target":"chapter/section/event to jump to, or null","book":"the book's title, or null","from":"where to begin (a chapter, section or event they name), or null","then_next":true|false,"language":"ISO 639-1 code of the language they write in"}
+- start: they ask to read or study a book with you (any wording, any language; never a story that merely says someone "read" something to them) — "book" = its title (its usual English title when you know it); "from" = where they ask to begin, if they say
+- none: not reading-related (only when READING is "none"); also a pasted passage, or a request to translate or find the original of a text — the library assistant handles those, unless they name a book to start reading
+- next: keep reading (any wording: "carry on", "lovely, more", "ok", "thanks!", "seguir", "ادامه", a comment with no request)
+- again: the same page redone deeper or differently (also a bare request for simpler or more scholarly notes)
 - back / where / stop: previous page / where are we / pause the reading
-- jump: go to a named chapter, section or event
-- question: they ask something about what they read (answer it; do not move on) — if they ALSO ask to continue, choose next
+- jump: go to a named chapter, section or event ("target")
+- question: they ask something — about the page or anything else (answer it; the reading does not move on). A command word inside a real sentence ("…would continue to agitate…") is not a command. If they ALSO ask to continue afterwards ("…and then the next page"), kind is question with then_next true
+- unclear: even with the thread you cannot tell what they want
 - level: only if they ask for simpler / more scholarly notes.`;
 
-// a script tells the language without a model (fallback when the model is unavailable)
-const scriptLang = (t) => (/[پچژگی]/.test(t) ? 'fa' : /[\u0600-\u06FF]/.test(t) ? 'ar' : /[\u0590-\u05FF]/.test(t) ? 'he' : null);
+const KINDS = ['next', 'again', 'back', 'jump', 'where', 'stop', 'question', 'start', 'none', 'unclear'];
+const LEVELS = ['introductory', 'serious', 'advanced'];
 
-/** The message's meaning (and its language) from a small model — in or out of a reading, any language; the keyword
- *  rules are the fallback. Never throws. */
-export async function understandReply(text, { active = false, page = '', llm } = {}) {
-  const rules = { ...readingIntent(text, { active }), language: scriptLang(String(text)) };
-  // a pasted original or a translate / find-the-original request is never a reading command or a question about the page
-  // (10-23 Liliane: her Persian prayer + "can you translate this one" went to the reading guide) — unless it names a book
-  // to start reading
-  if (rules.kind !== 'start' && textRequest(text).request) return { kind: 'none', language: rules.language, by: 'text-request' };
-  if (!llm || (!active && rules.kind === 'start')) return rules;
-  try {
-    const r = await llm({ system: UNDERSTAND_SYSTEM, user: `READING: ${active ? page || 'a book' : 'none'}\nTHEIR MESSAGE: ${String(text).slice(0, 1500)}` });
-    const j = r?.json;
-    const language = /^[a-z]{2}$/.test(j?.language || '') ? j.language : rules.language;
-    const kinds = ['next', 'again', 'back', 'jump', 'where', 'stop', 'question', 'start', 'none'];
-    if (!j || !kinds.includes(j.kind)) return rules;
-    if (j.kind === 'start') return j.book ? { kind: 'start', book: j.book, from: startFrom(text), language, by: 'model' } : rules;
-    if (!active) return { kind: 'none', language };                      // only a start can open a reading
-    if (j.kind === 'none') return { ...rules, language };
-    const level = ['introductory', 'serious', 'advanced'].includes(j.level) ? j.level : rules.level || null;
-    // a real question always wins over a command reading of it (10-23)
-    if (['next', 'again'].includes(j.kind) && rules.kind === 'question' && /\?|^(who|what|why|how|when|which|is|was|did|does|can|could|tell me|explain|please (find|look|show|search))\b/i.test(String(text).trim())) return { ...rules, language };
-    const out = { kind: j.kind, ...(level ? { level } : {}), ...(j.kind === 'jump' && j.target ? { target: j.target } : {}), language, by: 'model' };
-    if (out.kind === 'jump' && !out.target) return { ...rules, language };
-    return out;
-  } catch { return rules; }
+/** The message's meaning (and its language) from a small model, given the reading, the recent thread and the reader card.
+ *  A failure or an unreadable answer is tried once more; then { kind: 'unclear' } — the guide asks the reader a short
+ *  question back. Nothing is guessed from the words. Never throws. */
+export async function understandReply(text, { active = false, page = '', llm, history = [], card = null } = {}) {
+  if (!llm) return { kind: 'unclear', language: null, by: 'no-model' };
+  const thread = (history || []).slice(-4).map((m) => `${m.role}: ${String(m.content || '').replace(/\s+/g, ' ').slice(0, 500)}`).join('\n');
+  const user = `READER: ${card || 'unknown'}\nREADING: ${active ? page || 'a book' : 'none'}\n${thread ? `CONVERSATION:\n${thread}\n` : ''}THEIR MESSAGE: ${String(text).slice(0, 1500)}`;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const j = (await llm({ system: UNDERSTAND_SYSTEM, user }))?.json;
+      if (!j || !KINDS.includes(j.kind)) continue;   // unreadable → once more
+      const language = /^[a-z]{2}$/.test(j.language || '') ? j.language : null;
+      const level = LEVELS.includes(j.level) ? j.level : null;
+      if (j.kind === 'start') return j.book ? { kind: 'start', book: String(j.book), from: j.from ? String(j.from) : null, ...(level ? { level } : {}), language, by: 'model' } : { kind: 'unclear', language, by: 'model' };
+      if (!active) return { kind: 'none', language, by: 'model' };                      // only a start can open a reading
+      if (j.kind === 'jump' && !j.target) return { kind: 'unclear', language, by: 'model' };
+      return { kind: j.kind, ...(level ? { level } : {}), ...(j.kind === 'jump' ? { target: String(j.target) } : {}), ...(j.kind === 'question' && j.then_next ? { thenNext: true } : {}), language, by: 'model' };
+    } catch { /* model failure → once more */ }
+  }
+  return { kind: 'unclear', language: null, by: 'model-failed' };
 }
 
 // The guide's few fixed sentences, per language (the message-catalogue rule: no user-facing literal in code — planning/
 // backlog-anis-any-language-20261009.md). Model-written text (notes, answers, topics) follows the reader's language on its
 // own; an unlisted language falls back to English here only.
 const MESSAGES = {
-  en: { welcome: "Gladly — let's read **{book}** together, a page at a time, with notes on the people, places, works and words it mentions.", where: 'Where would you like to begin?', recommend: "For a first reading I'd start with the **Introduction**. Just reply with where you'd like to start.", at: "We're in **{book}**, at {address} ({section}).", end: "We've reached the end of **{book}**.", paused: "I've kept our place in **{book}** — write whenever you'd like to continue.", notFound: 'I couldn\'t find "{book}" in the library. Could you give me its exact title or author?' },
-  es: { welcome: 'Con gusto: leamos **{book}** juntos, una página a la vez, con notas sobre las personas, lugares, obras y palabras que menciona.', where: '¿Por dónde quieres empezar?', recommend: 'Para una primera lectura empezaría por la **Introducción**. Responde con el punto de partida que prefieras.', at: 'Estamos en **{book}**, en {address} ({section}).', end: 'Hemos llegado al final de **{book}**.', paused: 'He guardado nuestro lugar en **{book}**; escríbeme cuando quieras continuar.', notFound: 'No encontré «{book}» en la biblioteca. ¿Me das el título exacto o el autor?' },
-  fa: { welcome: 'با کمال میل — **{book}** را با هم صفحه به صفحه می‌خوانیم، با یادداشت‌هایی دربارهٔ اشخاص، مکان‌ها، آثار و واژه‌ها.', where: 'از کجا شروع کنیم؟', recommend: 'برای خواندن نخست پیشنهاد می‌کنم از **مقدمه** آغاز کنیم. بنویسید از کجا شروع کنیم.', at: 'در **{book}** هستیم، در {address} ({section}).', end: 'به پایان **{book}** رسیدیم.', paused: 'جای ما در **{book}** را نگه داشتم؛ هر وقت خواستید ادامه دهیم بنویسید.', notFound: '«{book}» را در کتابخانه نیافتم. لطفاً عنوان دقیق یا نام نویسنده را بنویسید.' },
-  ar: { welcome: 'بكل سرور — لنقرأ **{book}** معًا صفحةً صفحة، مع ملاحظات عن الأشخاص والأماكن والآثار والكلمات.', where: 'من أين تحب أن نبدأ؟', recommend: 'للقراءة الأولى أقترح أن نبدأ بـ**المقدمة**. اكتب من أين تريد البدء.', at: 'نحن في **{book}**، عند {address} ({section}).', end: 'وصلنا إلى نهاية **{book}**.', paused: 'حفظت مكاننا في **{book}**؛ اكتب متى شئت أن نتابع.', notFound: 'لم أجد «{book}» في المكتبة. هل تذكر العنوان الدقيق أو اسم المؤلف؟' },
+  en: { unclear: "I'm not sure what you'd like — the next page, this page again, a question about it, or to stop for now? A word will do.", welcome: "Gladly — let's read **{book}** together, a page at a time, with notes on the people, places, works and words it mentions.", where: 'Where would you like to begin?', recommend: "For a first reading I'd start with the **Introduction**. Just reply with where you'd like to start.", at: "We're in **{book}**, at {address} ({section}).", end: "We've reached the end of **{book}**.", paused: "I've kept our place in **{book}** — write whenever you'd like to continue.", notFound: 'I couldn\'t find "{book}" in the library. Could you give me its exact title or author?' },
+  es: { unclear: 'No estoy seguro de qué quieres: ¿la página siguiente, esta página otra vez, una pregunta sobre ella, o parar por ahora? Con una palabra basta.', welcome: 'Con gusto: leamos **{book}** juntos, una página a la vez, con notas sobre las personas, lugares, obras y palabras que menciona.', where: '¿Por dónde quieres empezar?', recommend: 'Para una primera lectura empezaría por la **Introducción**. Responde con el punto de partida que prefieras.', at: 'Estamos en **{book}**, en {address} ({section}).', end: 'Hemos llegado al final de **{book}**.', paused: 'He guardado nuestro lugar en **{book}**; escríbeme cuando quieras continuar.', notFound: 'No encontré «{book}» en la biblioteca. ¿Me das el título exacto o el autor?' },
+  fa: { unclear: 'مطمئن نیستم چه می‌خواهید — صفحهٔ بعد، همین صفحه دوباره، پرسشی دربارهٔ آن، یا فعلاً توقف؟ یک کلمه کافی است.', welcome: 'با کمال میل — **{book}** را با هم صفحه به صفحه می‌خوانیم، با یادداشت‌هایی دربارهٔ اشخاص، مکان‌ها، آثار و واژه‌ها.', where: 'از کجا شروع کنیم؟', recommend: 'برای خواندن نخست پیشنهاد می‌کنم از **مقدمه** آغاز کنیم. بنویسید از کجا شروع کنیم.', at: 'در **{book}** هستیم، در {address} ({section}).', end: 'به پایان **{book}** رسیدیم.', paused: 'جای ما در **{book}** را نگه داشتم؛ هر وقت خواستید ادامه دهیم بنویسید.', notFound: '«{book}» را در کتابخانه نیافتم. لطفاً عنوان دقیق یا نام نویسنده را بنویسید.' },
+  ar: { unclear: 'لست متأكدًا مما تريد — الصفحة التالية، أم هذه الصفحة مرة أخرى، أم سؤال عنها، أم التوقف الآن؟ كلمة واحدة تكفي.', welcome: 'بكل سرور — لنقرأ **{book}** معًا صفحةً صفحة، مع ملاحظات عن الأشخاص والأماكن والآثار والكلمات.', where: 'من أين تحب أن نبدأ؟', recommend: 'للقراءة الأولى أقترح أن نبدأ بـ**المقدمة**. اكتب من أين تريد البدء.', at: 'نحن في **{book}**، عند {address} ({section}).', end: 'وصلنا إلى نهاية **{book}**.', paused: 'حفظت مكاننا في **{book}**؛ اكتب متى شئت أن نتابع.', notFound: 'لم أجد «{book}» في المكتبة. هل تذكر العنوان الدقيق أو اسم المؤلف؟' },
 };
 export const msg = (lang, key, vars = {}) => String((MESSAGES[lang] || MESSAGES.en)[key] ?? MESSAGES.en[key]).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
 
@@ -605,50 +544,25 @@ function layoutReply(doc, outline, lang = 'en') {
 // a language code → its name, for the model's instruction (Intl knows them all)
 const langName = (code) => { try { return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) || code; } catch { return code; } };
 
-/** One reading turn. → null (not reading: ordinary Anís) | { reply, subject } */
-/** Out of a reading thread, only an explicit reading command may reach the guide: start ("help me study <book>") or a
- *  short bare command ("next", "continue", "stop reading", "where are we"). Pure. */
-export function explicitReadingCommand(text) {
-  const t = String(text || '').replace(/\s+/g, ' ').trim();
-  const r = readingIntent(t, { active: true });
-  if (r.kind === 'start') return r;
-  if (['next', 'again', 'back', 'jump', 'where', 'stop'].includes(r.kind) && t.split(' ').length <= 6 && !/\?/.test(t) && t.length > 0) return r;
-  return null;
-}
-
-/** What a reply in a reading wants (Chad 10-23: "Anís should discriminate between a request for another reading vs a general
- *  question … it should be able to engage in question answering before I request the next paragraph"): 'question' (answered
- *  by the researcher, position unchanged), 'next' (an explicit next / continue / more), 'both' (a question AND "then
- *  continue" — answer first, then the next page), or null = unclear (the small model decides). Rules only. Pure. */
-export function replyKind(text) {
-  const t = String(text || '').replace(/\s+/g, ' ').trim();
-  const low = t.toLowerCase();
-  const words = t ? t.split(' ').length : 0;
-  const cmd = /\b(next( page| paragraph| passage)?|continue|go on|keep going|carry on|read on|more please|on to the next)\b/.test(low);
-  const question = /\?/.test(t) || /^(who|what|why|how|when|where(?! are we)|which|is|was|were|did|does|do|can|could|would|tell me|explain|please (?:find|look|show|search|explain|tell))\b/.test(low)
-    || /\b(can|could|would) you (look|find|search|explain|tell|show|help)\b/.test(low) || /\b(i (?:wonder|don't understand|do not understand)|what does .* mean)\b/.test(low);
-  // a command word inside a long statement ("…would continue to agitate…") is not a command
-  const commandClause = cmd && (words <= 12 || /\b(then|and|now|please)\s+(continue|go on|carry on|read on|the next)\b|\b(continue|next)[.!]?\s*$/.test(low));
-  if (question && commandClause && words > 3) return 'both';
-  if (question) return 'question';
-  if (commandClause) return 'next';
-  return null;
-}
-
-/** inThread: the message replies to a reading email (the Worker knows from the thread; Chad 10-23 "WTH??" — a NEW email
+/** One reading turn. → null (not reading: ordinary Anís) | { reply, subject } | { research, thenNext, book, context }
+ *  inThread: the message replies to a reading email (the Worker knows from the thread; Chad 10-23 "WTH??" — a NEW email
  *  with a real question, from an address with an open reading, got the next Dawn-Breakers page). Out of a reading thread
- *  only an explicit command reaches the guide; anything else → null (the researcher answers). */
+ *  only a start, or a short bare command the model read as one, reaches the guide; anything else → null (the researcher
+ *  answers). The reply is understood by MEANING (understandReply: model, thread, reader card) — never by its words. */
 export async function readingTurn({ messages = [], participantId, reset = false, deps, inThread = true } = {}) {
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
   const text = ownWords(lastUser?.content);
   if (!text || !participantId) return null;
-  if (!inThread && !explicitReadingCommand(text)) return null;
   const d = { ...(await defaults()), ...(deps || {}) };
   let session = await d.latestSession(participantId).catch(() => null);
-  // a reply in a reading is understood by meaning (a small model, in the API: no waiting); the rules are the fallback
   const lastPage = session?.pages?.at(-1)?.subject || '';
-  const intent = await understandReply(text, { active: !!session, page: lastPage,
+  const card = d.card === null ? null : await (d.card || ((id) => loadReaderCard({ id }, { channel: 'email', reading: session ? { title: session.title, at: lastPage } : null })))(participantId).catch(() => null);
+  const intent = await understandReply(text, { active: !!session, page: lastPage, history: messages.slice(0, -1), card: card?.text ?? card ?? null,
     llm: d.understand ?? ((m) => d.llmJson({ ...modelFor('reading-targets'), caller: 'reading-understand', maxTokens: 200, ...m })) });
+  // out of the thread: a start, or a bare short command (≤ 6 words — structure) the model read as one; a question or a
+  // comment is the researcher's whatever the open reading
+  const words = text.split(/\s+/).length;
+  if (!inThread && intent.kind !== 'start' && !(['next', 'again', 'back', 'jump', 'where', 'stop'].includes(intent.kind) && words <= 6)) return null;
   // a notes level asked for anywhere ("…and use the advanced level of notes") is kept for the rest of the book
   if (intent.level && session) session = { ...session, explained: { ...(session.explained || {}), __prefs: { ...(session.explained?.__prefs || {}), level: intent.level } } };
   // the reader's language follows them (Chad 10-13: "some users might speak Spanish or Farsi and the interaction should
@@ -656,17 +570,15 @@ export async function readingTurn({ messages = [], participantId, reset = false,
   const lang = intent.language || session?.explained?.__prefs?.language || 'en';
   if (session && intent.language) session = { ...session, explained: { ...(session.explained || {}), __prefs: { ...(session.explained?.__prefs || {}), language: intent.language } } };
   // INTENT decides, in the thread too (Chad 10-23): a question — about the page or anything else — is answered by the
-  // researcher with the page as context; the position does not move. "Both" = answer, then the next page. Rules first; the
-  // small model's reading of an unclear reply (above) is used only when the rules cannot tell.
-  const rk = replyKind(text);
-  const kind = rk === 'question' || rk === 'both' ? rk : rk === 'next' ? 'next' : intent.kind;
-  if ((kind === 'question' || kind === 'both') && session?.pages?.length) {
-    return { research: true, thenNext: kind === 'both', book: session.title || null, context: await pageContext(d, session).catch(() => '') };
+  // researcher with the page as context; the position does not move. thenNext = answer, then the next page.
+  if (intent.kind === 'question' && session?.pages?.length) {
+    return { research: true, thenNext: !!intent.thenNext, book: session.title || null, context: await pageContext(d, session).catch(() => '') };
   }
-  if (rk === 'next' && intent.kind !== 'next' && session?.pages?.length && intent.kind !== 'stop') Object.assign(intent, { kind: 'next' });
+  // the model could not read the reply (or failed twice): in a reading, ask back; out of one, the researcher answers
+  if (intent.kind === 'unclear') return session ? { reply: msg(lang, 'unclear'), subject: null } : null;
   if (intent.kind === 'none' || intent.kind === 'question') {
     // a session waiting for its starting point: a reply naming one ("the introduction", "chapter 3") starts it
-    if (session && !session.pages?.length && intent.kind === 'question') {
+    if (session && !session.pages?.length) {
       const doc = { id: session.doc_id, title: session.title };
       const full = (await d.listDocs({ ids: [session.doc_id], fields: ['id', 'title', 'author', 'religion', 'file_path'], limit: 1, count: false })).docs[0];
       const { outline } = await outlineOf(d, full || doc);

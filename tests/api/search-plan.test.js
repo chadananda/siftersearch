@@ -9,6 +9,8 @@ const ans = (o) => ({
   author: { choice: o.author ?? 'none', confidence: o.ac ?? 0.95 },
   shape: { choice: o.shape ?? 'topic', confidence: o.sc ?? 0.9 },
   about: { choice: o.about ?? 'texts', confidence: o.abc ?? 0.9 },
+  request: { choice: o.request ?? 'plain', confidence: o.rc ?? 0.9 },
+  language: { choice: o.language ?? 'none', confidence: o.lc ?? 0.9 },
 });
 
 describe('buildPlan — scope', () => {
@@ -164,27 +166,26 @@ describe('planSearch — the one network call', () => {
 
 describe('planSearch — quotation rule and provenance', () => {
   const Q = 'can you find the quote including  "but it will always be present as a necessary element"';
-  it('Jev timeout → backstop plan is shape quote, with provenance and reason', async () => {
+  it('Jev timeout → backstop plan is shape quote (a quoted span of 4+ words, by structure), with provenance and reason', async () => {
     const fetchImpl = async () => { const e = new Error('The operation was aborted due to timeout'); e.name = 'TimeoutError'; throw e; };
     const p = await planSearch(Q, { apiKey: 'k', fetchImpl, cache: false });
     expect(p.shape).toBe('quote');
     expect(p.about).toBe('texts');
-    expect(p.source.shape).toBe('quote-rule');
+    expect(p.source.shape).toBe('backstop-quoted');
     expect(p.provenance).toBe('backstop');
     expect(p.reason).toBe('timeout');
     expect(p.quote.phrase).toBe('but it will always be present as a necessary element');
     expect(layersFor(p).keyword).toBe(true);
   });
-  it('overrides a Jev "topic" answer when the rule fires', async () => {
-    const fetchImpl = async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'topic', about: 'people' }) }) });
-    const p = await planSearch(Q, { apiKey: 'k', fetchImpl, cache: false });
-    expect(p.shape).toBe('quote');
-    expect(p.about).toBe('texts');
-    expect(p.provenance).toBe('jev');
-    expect(p.overridden).toEqual({ shape: 'topic', about: 'people', by: 'quote-rule' });
+  it('Jev decides (11-03): his "quote" carries the quoted span as the phrase; his "topic" is not overridden by the quotation marks', async () => {
+    const p = await planSearch(Q, { apiKey: 'k', fetchImpl: async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'quote' }) }) }), cache: false, resolveName: null });
+    expect(p).toMatchObject({ shape: 'quote', about: 'texts', provenance: 'jev', quote: { phrase: 'but it will always be present as a necessary element', via: 'quoted' } });
+    const t = await planSearch(Q, { apiKey: 'k', fetchImpl: async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'topic', about: 'people' }) }) }), cache: false, resolveName: null });
+    expect(t.shape).toBe('topic');
+    expect(t.overridden).toBeUndefined();
   });
-  it('a cached plan reports jev:cached and the rule still applies', async () => {
-    const fetchImpl = async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'topic' }) }) });
+  it('a cached plan reports jev:cached and the phrase is still extracted', async () => {
+    const fetchImpl = async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'quote' }) }) });
     const q = Q + ' cache probe';
     await planSearch(q, { apiKey: 'k', fetchImpl });
     const p = await planSearch(q, { apiKey: 'k', fetchImpl });
@@ -220,20 +221,23 @@ describe('quote rule — follow-ups (r5)', () => {
     expect(p.shape).toBe('fact');
     expect(p.quote).toBeUndefined();
   });
-  it('an etymology question Jev called quote becomes define; a comparison becomes topic', async () => {
-    const p = await planSearch('You said al-insāf comes from the root n-ṣ-f. Does that sense shape the "turn not away from it" in the Hidden Word?', opts('quote'));
+  it('an etymology question is define because Jev says so (the criteria name etymology and a quoted term to explain); a comparison he also called define is topic', async () => {
+    const p = await planSearch('You said al-insāf comes from the root n-ṣ-f. Does that sense shape the "turn not away from it" in the Hidden Word?', opts('define'));
     expect(p.shape).toBe('define');
-    expect(p.overridden?.by).toBe('meaning-rule');
-    const c = await planSearch('How is "the knowledge of God which comes to the heart of man" different from what Hooper Dunbar says?', opts('quote'));
+    expect(p.quote).toBeUndefined();
+    const c = await planSearch('How is "the knowledge of God which comes to the heart of man" different from what Hooper Dunbar says?',
+      { apiKey: 'k', fetchImpl: async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'define', comparative: 0.9 }) }) }), cache: false, resolveName: null });
     expect(c.shape).toBe('topic');
+    expect(c.overridden?.by).toBe('comparison-rule');
   });
 });
 
 // r6-after (11-01 conversation replay): the real turns Jev routed wrong — pushback hunted as quotes, a comparison as a
 // definition, and multi-ask follow-ups sent to the one-paragraph source hunt that drops every ask but the origin.
 describe('pushback, comparison and follow-up asks (r6-after)', () => {
+  const capture = (o = {}) => { const c = {}; c.fetch = async (_u, init) => { c.body = JSON.parse(init.body); return { ok: true, json: async () => ({ answers: ans(o) }) }; }; return c; };
   const jev = (shape) => async () => ({ ok: true, json: async () => ({ answers: ans({ shape }) }) });
-  const opts = (shape) => ({ apiKey: 'k', fetchImpl: jev(shape), cache: false, resolveName: null });
+  const opts = (shape) => ({ apiKey: 'k', fetchImpl: typeof shape === 'string' ? jev(shape) : shape.fetch, cache: false, resolveName: null });
   const SEED93_T3 = 'You said "these" refers directly to "justice and right," but is that actually what the Tablet to the Hague says, or are you reading it in? And the line about justice being "the very air your daily choices breathe" sounds like your own interpretation rather than anything \'Abdu\'l-Bahá wrote.';
   const DETACH_T5 = 'You say this passage shows "the systematic release of specific supports... whose cessation brings an end to becoming," but the text itself only poses a rhetorical question about whether becoming would be discerned without clinging. Where does it say anything about "systematic release," or is that your gloss, and does the sutra even use the word non-attachment?';
   const DETACH_T4 = 'This passage shows non-attachment approached not as a static label, but through the systematic release of specific supports—sensuality, views, and doctrines of the self—whose cessation brings an end to becoming.';
@@ -241,17 +245,25 @@ describe('pushback, comparison and follow-up asks (r6-after)', () => {
     const m = [{ role: 'user', content: 'What does the Tablet to the Hague say about justice?' },
       { role: 'assistant', content: 'Here "these" refers to justice and right; justice becomes the very air your daily choices breathe.' },
       { role: 'user', content: SEED93_T3 }];
-    const p = await planSearch(m, opts('quote'));
+    const c = capture({ shape: 'topic' });
+    const p = await planSearch(m, opts(c));
+    expect(c.body.state).toMatch(/TURN: .*every span is the assistant's OWN words from its previous reply, quoted back/);
     expect(p.shape).toBe('topic');
     expect(p.pushback).toBe(true);
-    expect(p.overridden?.by).toBe('pushback-rule');
+    expect(p.overridden).toBeUndefined();   // Jev's own reading, nothing overrode it
   });
   it('detachment T5: Anís\'s own words quoted back with an ellipsis are not hunted', async () => {
     const m = [{ role: 'user', content: 'Where does the Buddha define non-attachment?' }, { role: 'assistant', content: DETACH_T4 }, { role: 'user', content: DETACH_T5 }];
-    const p = await planSearch(m, opts('quote'));
+    const c = capture({ shape: 'topic' });
+    const p = await planSearch(m, opts(c));
+    expect(c.body.state).toMatch(/every span is the assistant's OWN words from its previous reply, quoted back/);
     expect(p.quote).toBeUndefined();
     expect(p.shape).toBe('topic');
     expect(p.pushback).toBe(true);
+    // and when Jev, reading the same fact, still says quote ("show me the original of what you quoted"), the words are hunted
+    const q = await planSearch(m, opts(capture({ shape: 'quote' })));
+    expect(q.shape).toBe('quote');
+    expect(q.quote).toMatchObject({ via: 'quoted' });
   });
   it('a first message is never pushback; ordinary questions are not challenges', async () => {
     expect((await planSearch('Are you sure the Báb was executed in Tabríz?', opts('fact'))).pushback).toBeUndefined();
@@ -263,7 +275,7 @@ describe('pushback, comparison and follow-up asks (r6-after)', () => {
     const t = 'That passage says the Bahá\'ís accept a "return of the attributes and qualities" but not of "the essence or the reality of things" — but what does that distinction actually mean ontologically, and isn\'t it close to the Buddhist view that no essence transmigrates, only a causal stream of qualities?';
     const m = [{ role: 'user', content: 'Do Bahá\'ís believe in reincarnation?' },
       { role: 'assistant', content: 'The Bahá\'ís accept a return of the attributes and qualities, but not of the essence or the reality of things.' }, { role: 'user', content: t }];
-    const p = await planSearch(m, opts('define'));
+    const p = await planSearch(m, { apiKey: 'k', fetchImpl: async () => ({ ok: true, json: async () => ({ answers: ans({ shape: 'define', comparative: 0.9 }) }) }), cache: false, resolveName: null });   // Jev's comparative field (11-03: no word rule)
     expect(p.shape).toBe('topic');
     expect(p.comparative).toBe(true);
     expect(p.overridden?.by).toBe('comparison-rule');
@@ -283,46 +295,50 @@ describe('pushback, comparison and follow-up asks (r6-after)', () => {
   });
 });
 
-describe('planSearch — deterministic request features (W2, 11-03)', () => {
-  const fake = (o = {}) => async () => ({ ok: true, json: async () => ({ answers: ans(o) }) });
-  const opts = (o) => ({ apiKey: 'k', fetchImpl: fake(o), resolveName: null, resolveMentions: null, cache: false });
+describe('planSearch — request, language and context are Jev\'s fields (W2, 11-03: no word parsing)', () => {
+  const capture = (o = {}) => { const c = {}; c.fetch = async (_u, init) => { c.body = JSON.parse(init.body); return { ok: true, json: async () => ({ answers: ans(o) }) }; }; return c; };
+  const opts = (c) => ({ apiKey: 'k', fetchImpl: c.fetch, resolveName: null, resolveMentions: null, cache: false });
   const msgs = (...texts) => texts.map((content, i) => ({ role: i % 2 ? 'assistant' : 'user', content }));
+  const PASTE = 'O Son of Spirit! My first counsel is this: Possess a pure, kindly and radiant heart, that thine may be a sovereignty ancient, imperishable and everlasting. where is this from?';
 
-  it('a PASTED passage is an exact-words search whatever Jev called it (302 misroutes)', async () => {
-    const p = await planSearch(msgs('O Son of Spirit! My first counsel is this: Possess a pure, kindly and radiant heart, that thine may be a sovereignty ancient, imperishable and everlasting. Where is this from?'), opts({ shape: 'topic' }));
+  it('Jev sees the reader card, the turn facts and the history — and is asked request and language', async () => {
+    const c = capture({ shape: 'topic' });
+    const m = msgs('who was Táhirih?', 'A poet of Qazvín…', 'and the Báb?');
+    Object.defineProperty(m, 'card', { value: 'a signed-in reader; studying: dawn-breakers', enumerable: false });
+    await planSearch(m, opts(c));
+    expect(c.body.state).toMatch(/^READER: a signed-in reader; studying: dawn-breakers\nTURN: user message #2 of a thread.*3 words/);
+    expect(c.body.state).toMatch(/CONVERSATION:\nuser: who was Táhirih\?\nassistant: A poet of Qazvín…\nuser: and the Báb\?$/);
+    expect(Object.keys(c.body.questions)).toEqual(expect.arrayContaining(['shape', 'about', 'request', 'language']));
+    expect(c.body.questions.language.criteria.hi).toBe('Hindi');
+  });
+  it('a pasted passage Jev read as quote is hunted whole (no quotation marks: the phrase is the turn itself)', async () => {
+    const p = await planSearch(msgs(PASTE), opts(capture({ shape: 'quote' })));
     expect(p.shape).toBe('quote');
-    expect(p.quote).toMatchObject({ via: 'pasted', ask: 'source' });
+    expect(p.quote).toMatchObject({ via: 'turn' });
     expect(p.quote.phrase).toMatch(/^O Son of Spirit/);
-    expect(p.overridden).toMatchObject({ by: 'pasted-rule' });
   });
-
-  it('"show me the original" is an original-text REQUEST (its own type), carrying the quoted phrase', async () => {
-    const p = await planSearch(msgs('Show me the original Persian of "the earth is but one country and mankind its citizens"'), opts({ shape: 'converse' }));
-    expect(p.request).toBe('original');
-    expect(p.original).toMatchObject({ target: 'original', language: 'fa' });
-    expect(p.quote.phrase).toMatch(/^the earth is but one country/);   // the quoted phrase (detectQuotation wins; original-rule is the backstop)
-    expect(p.shape).toBe('quote');
-    expect(p.source.request).toBe('original-rule');
+  it('request = original_text is a parameter beside the shape — it never changes Jev\'s shape', async () => {
+    const p = await planSearch(msgs('Show me the original Persian of "the earth is but one country and mankind its citizens"'), opts(capture({ shape: 'quote', request: 'original_text' })));
+    expect(p).toMatchObject({ request: 'original_text', shape: 'quote', source: { request: 'jev' } });
+    expect(p.quote.phrase).toMatch(/^the earth is but one country/);
+    const l = await planSearch(msgs('which language was the Kitáb-i-Íqán revealed in?'), opts(capture({ shape: 'fact', request: 'original_text' })));
+    expect(l).toMatchObject({ request: 'original_text', shape: 'fact' });
+    expect(l.overridden).toBeUndefined();
+    const d = await planSearch(msgs('what does the Arabic word tawhid mean'), opts(capture({ shape: 'define', request: 'plain' })));
+    expect(d.request).toBeUndefined();
+    expect(d.shape).toBe('define');
   });
-
-  it('a definition that merely MENTIONS a source language is not an original request', async () => {
-    const p = await planSearch(msgs('what does the Arabic word tawhid mean'), opts({ shape: 'define' }));
-    expect(p.request).toBeUndefined();
-    expect(p.shape).toBe('define');
-  });
-
-  it('"in Hindi" is a PARAMETER of the request — captured, stripped from what Jev classifies, shape untouched (330 misroutes)', async () => {
-    let seen;
-    const fetchImpl = async (_u, init) => { seen = JSON.parse(init.body); return { ok: true, json: async () => ({ answers: ans({ shape: 'topic' }) }) }; };
-    const p = await planSearch(msgs('what do the writings say about the soul in Hindi'), { apiKey: 'k', fetchImpl, resolveName: null, resolveMentions: null, cache: false });
-    expect(p.language).toMatchObject({ lang: 'hi', name: 'hindi' });
-    expect(p.source.language).toBe('language-rule');
+  it('language is a PARAMETER Jev reports; a low-confidence or "none" answer leaves none', async () => {
+    const p = await planSearch(msgs('what do the writings say about the soul in Hindi'), opts(capture({ shape: 'topic', language: 'hi' })));
+    expect(p.language).toEqual({ lang: 'hi', name: 'hindi' });
+    expect(p.source.language).toBe('jev');
     expect(p.shape).toBe('topic');
-    expect(JSON.stringify(seen)).not.toMatch(/in Hindi/i);
+    expect((await planSearch(msgs('quotes about unity in Arabic'), opts(capture({ shape: 'topic', language: 'none' })))).language).toBeUndefined();
+    expect((await planSearch(msgs('explain this in Spanish'), opts(capture({ shape: 'topic', language: 'es', lc: 0.3 })))).language).toBeUndefined();
   });
-
-  it('"quotes in Arabic" names the SOURCE language — a scope, not an answer language', async () => {
-    const p = await planSearch(msgs('quotes about unity in Arabic'), opts({ shape: 'topic' }));
-    expect(p.language).toBeUndefined();
+  it('search-plan.js keeps no converse guard, meaning rule or pasted rule — Jev decides those', async () => {
+    const { readFileSync } = await import('fs');
+    const src = readFileSync(new URL('../../api/lib/search-plan.js', import.meta.url), 'utf8');
+    expect(src).not.toMatch(/converse-guard|meaning-rule|pasted-rule|original-rule|language-rule|isMeaningQuestion|SMALL_TALK\.test/);
   });
 });

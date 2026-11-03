@@ -3,9 +3,10 @@
 // widget streams onEvent, email uses the returned text. Every non-research reply costs zero LLM tokens.
 // Deps (injectable): exchange-log, triage, canned, strikes, lint, channels, respond.
 import { makeLimits } from './limits.js';
-import { textRequest } from './text-request.js';
+import { loadReaderCard } from './reader-card.js';
+import { resolveQuery } from './short-turn.js';
 import { openExchange, closeExchange, failExchange } from './exchange-log.js';
-import { triageMessage, routeTriage, outputBreaksPersona } from './triage.js';
+import { triageMessage, routeTriage, outputBreaksPersona, T } from './triage.js';
 import { cannedReply } from './canned.js';
 import { strikes as liveStrikes, tarpitResponse } from './strikes.js';
 import { lintReply } from './lint.js';
@@ -28,7 +29,7 @@ const liveLimits = makeLimits();
 async function defaultDeps() {
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
-    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits };
+    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, card: loadReaderCard, resolve: resolveQuery };
 }
 
 /**
@@ -40,11 +41,6 @@ async function defaultDeps() {
  * @param {string} [a.conversationId] a thread the client asks to resume (honoured only if owned)
  * @param {string} [a.clientKey]    strike key (participant id, else IP)
  */
-/** A message worth researching: two real words, or a passage of 40+ characters. Pure. */
-export const hasSubstance = (text) => (String(text || '').match(/\p{L}{3,}/gu) || []).length >= 2 || String(text || '').trim().length >= 40
-  // one bare name or title ("Ghoddus", "Vahid", "Nabil", "Dawnbreakers") is a lookup, not an unclear message (11-01 wording battery)
-  || /^[\p{L}][\p{L}'’ʼ‘-]{3,}[?.!]?$/u.test(String(text || '').trim());
-
 // Every turn runs under a per-turn METER (ai-context): each model call's model and cost land in the turn's path.meta
 // (type · models · usd · latency) — what the daily conversation digest shows (Chad 10-22). An outer meter is reused.
 export async function anisTurn(args) {
@@ -98,29 +94,36 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // Jev decides (inside the triage call, no extra round trip) whether this is a lookup — a book, quoted words, a work + number;
   // lookup.js then only RESOLVES what Jev named (title index, exact-phrase search, pn/heading) — it never reads intent from wording.
   const lookupOn = engine === undefined && research === undefined && !variants && !llm && d.lookup;
+  // The READER CARD (who is asking: channel, relationship, remembered facts, study tracks) rides with the thread into every
+  // decision — triage, the search plan, the resolver — as a non-enumerable property of the messages array respond.js passes on.
+  const card = d.card ? await timed('card', () => d.card(participant, { channel: channel.id })).catch(() => null) : null;
+  try { Object.defineProperty(messages, 'card', { value: card?.text ?? null, enumerable: false, configurable: true, writable: true }); } catch { /* frozen thread: Jev reads it without the card */ }
   // …and Jev's STRATEGY choice (strategy-choice.js: comparison / understanding / prayer / guidance / reference — from context, never
   // from keywords; W3) beside them. Injected deps without one = off.
   const strategyFn = d.strategy ?? (deps ? null : chooseStrategy);
   const strategyOn = strategyFn && engine === undefined && research === undefined && !variants;
   onEvent({ type: 'stage', stage: 'understand' });   // the neutral word until a decision exists — never a templated echo of the message
-  const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages)).catch(() => null),
+  const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages, { card: card?.text ?? null })).catch(() => null),
     strategyOn ? timed('strategy', () => strategyFn(messages, { profile }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null) : null]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
-  // "unclear" / "cut off" may only short-circuit a message with no substance. A real topic ("race unity") or a pasted
-  // passage ("Find this. excerpt from a pilgrim note: …") goes to research (10-19 battery: both got a canned "say more" /
-  // "part of your message went missing" instead of an answer — scored 1 against Immerse's 8)
-  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && hasSubstance(text)) Object.assign(route, { action: 'research', overridden: route.kind });
-  // a pasted original or a translate / find-the-original request is research whatever triage called it (10-23 Liliane: her
-  // Persian prayer + "can you translate this" was templated as small talk from a fresh address)
-  if (route.action === 'canned' && textRequest(text).request) Object.assign(route, { action: 'research', overridden: route.kind });
+  // Jev's OUTCOME field — the turn read with the history and the card — decides what a short or odd message is; its words
+  // never do (Chad 11-03). A search behind an "unclear" / "cut off" verdict is researched ("race unity", a bare name, a
+  // pasted passage); a turn even the context cannot resolve is asked back (the 'unclear' canned reply).
+  const outcome = tri?.outcome?.choice ?? null, outcomeC = tri?.outcome?.confidence ?? 0;
+  if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && outcome === 'search' && outcomeC >= T.outcome) Object.assign(route, { action: 'research', overridden: route.kind, by: 'outcome' });
+  if (route.action === 'research' && outcome === 'ask_back' && outcomeC >= T.askBack) Object.assign(route, { action: 'canned', kind: 'unclear', overridden: 'research', by: 'outcome' });
   // Jev's own confident call that this fetches something exact outranks his "unclear" (a bare "Gleanings 1" reads as unclear to the message-kind question)
   if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
   const lkIntent = lookupOn && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
   const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
+  // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
+  // and the card (short-turn.js) — respond.js searches those words, not the bare message
+  const resolved = route.action === 'research' && outcome === 'search' && tri?.features?.short && !tri.features.first && d.resolve
+    ? await timed('resolve', () => d.resolve({ messages, card: card?.text ?? null })).catch(() => null) : null;
   const triageSummary = tri && { kind: tri.kind?.choice, stance: tri.stance?.choice, reaction: tri.reaction?.choice,
-    follow_up: tri.follow_up ?? null, first: tri.features?.first ?? null, features: tri.features ?? null,
+    follow_up: tri.follow_up ?? null, first: tri.features?.first ?? null, features: tri.features ?? null, outcome: tri.outcome?.choice ?? null, query: resolved?.query ?? null, card: !!card?.text,
     malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms,
     lookup: tri.lookup ? { choice: tri.lookup.choice, confidence: tri.lookup.confidence } : null };
   // THE "WHAT I UNDERSTOOD" LINE (understanding.js): Anís's own restatement of the resolved request, conditioned on Jev's decision,
@@ -155,7 +158,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
 
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { stance: triageSummary?.stance ?? null,
-      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), strategy: strat, decisions, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
+      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, query: resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), strategy: strat, decisions, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     let reply = r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).
