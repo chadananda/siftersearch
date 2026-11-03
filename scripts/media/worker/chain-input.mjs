@@ -14,10 +14,11 @@ export const demuxArgs = (src, out, ext, seconds = null) => ['-nostdin', '-y', '
 /** ffprobe's codec_name output → the stream-copy container ext, or null (no audio / no safe container: the original is the input). */
 export const demuxExt = (stdout) => AUDIO_EXT[String(stdout || '').trim().split('\n')[0]] || null;
 
-/** Tower: what cpu-prep makes of this original → { how: 'opus' } (above 96 kbps) | { how: 'demux' } (a video) | null (the original is the input). */
+/** Tower: what cpu-prep makes of this original → { how: 'opus' } (above 96 kbps, or ANY decoded WAV/FLAC/AIFF) | { how: 'demux' } (a video) | null (the original is the input). */
 export function chainPlan(original, bytes, durS) {
-  if (needsOpus(bytes, durS)) return { how: 'opus' };
   const ext = String(original || '').slice(String(original || '').lastIndexOf('.') + 1).toLowerCase();
+  // 11-03 (Chad): "We do not process WAV files. We first convert to Ogg (Opus) and then we work with Opus." Decoded audio is converted whatever its size or length
+  if (['wav', 'flac', 'aif', 'aiff'].includes(ext) || needsOpus(bytes, durS)) return { how: 'opus' };
   return VIDEO.has(ext) ? { how: 'demux' } : null;
 }
 /** Where cpu-prep puts the chain input inside item/ (listed in result.json, so it is uploaded like any output; never under original/). */

@@ -11,7 +11,7 @@
 // is long, and learns one measured rate per type. Priority is ORDER (bands new > remaster > rerun; 1 claim in 5 to the oldest lower band).
 export const LEASE_MS = 10 * 60_000;
 // no decoded audio is ever stored in R2 (Chad 10-31: "never store flac in the cloud"): the Worker refuses these names on every PUT
-export const decodedAudio = (name) => /\.(flac|wav)$/i.test(String(name || ''));
+export const decodedAudio = (name) => /\.(flac|wav|aiff?)$/i.test(String(name || ''));
 export const MAX_ATTEMPTS = 3;
 export const TYPED = new Set(['cpu-prep', 'gpu', 'cpu-finish']);
 export const CPU_TYPED = ['cpu-prep', 'cpu-finish'];   // the CPU roles, in tie order (prep feeds the GPUs)

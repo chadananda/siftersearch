@@ -1,7 +1,7 @@
 // No decoded audio in the cloud (Chad 10-31: "never store flac in the cloud"). A typed result that lists a FLAC/WAV and is bound for the
 // edge (R2) sends an Opus transit of it instead (split_restore.py TRANSIT settings); tower decodes it back to the listed name on adoption.
 // REBUILT files are not sent at all (the next step rebuilds them). Shipped beside queue-agent.mjs; imported by tower (stage-jobs, queue-feed). Pure.
-export const DECODED = /\.(flac|wav)$/i;
+export const DECODED = /\.(flac|wav|aiff?)$/i;   // 11-03: AIFF is decoded audio too
 export const isDecoded = (p) => DECODED.test(String(p || ''));
 // files a step rebuilds from the previous step's checkpoint: light.flac = one deterministic ffmpeg pass over the original (enh_ck.m0)
 export const REBUILT = new Set(['enhanced/light.flac']);

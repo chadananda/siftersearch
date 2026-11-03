@@ -4,6 +4,7 @@
 import { createHash } from 'crypto';
 import { createReadStream } from 'fs';
 import { rm, stat } from 'fs/promises';
+import { isDecoded } from '../../../scripts/media/worker/transit.mjs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 // one source for the args + rules: the worker's cpu-prep makes the typed chain's input with the same module
@@ -82,9 +83,14 @@ export async function stageTick(st, { store, getItem, readMeta, busy = () => fal
     let ext = (m.original.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, ''), file = src, tmp = null;
     // Chad 10-30: "pushing video around to process audio is simply absurd" — a video sends only its audio track, bit for bit (stream copy, no re-encode)
     const bytes0 = opus && st.items?.[id]?.kind !== 'whole' ? (await stat(src).catch(() => null))?.size : 0;
-    if (opus && needsOpus(bytes0, st.items?.[id]?.duration_s || m.duration_s)) {
-      const a = await opus(src).catch(() => null);
-      if (a) { ({ file, ext } = a); tmp = a.file; }
+    // 11-03 (Chad): "No fallback to WAV or FLAC." Opus required (any decoded original; a compressed one above 96 kbps) and not made → nothing is uploaded, the item is skipped with its error
+    const decoded = isDecoded(m.original);
+    if (decoded || (opus && needsOpus(bytes0, st.items?.[id]?.duration_s || m.duration_s))) {
+      let a = null, err = opus ? null : 'no Opus encoder';
+      if (opus) a = await opus(src).catch((e) => { err = String(e?.message || e).slice(0, 200); return null; });
+      if (!a) { (st.stage_errors ||= {})[id] = { at: now, error: `Opus conversion failed for ${m.original}: ${err || 'no output'}` }; continue; }
+      delete st.stage_errors?.[id];
+      ({ file, ext } = a); tmp = a.file;
     } else if (VIDEO.has(ext) && st.items?.[id]?.kind !== 'whole' && demux) {
       const a = await demux(src).catch(() => null);
       if (a) { ({ file, ext } = a); tmp = a.file; }

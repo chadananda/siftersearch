@@ -36,7 +36,8 @@ describe('chain-input.mjs: one source for tower and the worker image', () => {
     expect(chainPlan('a.MP4', 300e6, 3600)).toEqual({ how: 'opus' });   // a big video: Opus straight from it
     expect(chainPlan('a.mp4', 5e6, 3600)).toEqual({ how: 'demux' });
     expect(chainPlan('a.mp3', 5e6, 3600)).toBeNull();
-    expect(chainPlan('a.wav', 100, 0)).toBeNull();   // no duration: no rate, no plan
+    expect(chainPlan('a.mp3', 100, 0)).toBeNull();   // no duration: no rate, no plan
+    for (const n of ['a.wav', 'a.FLAC', 'a.aif', 'a.aiff']) expect(chainPlan(n, 100, 0)).toEqual({ how: 'opus' });   // 11-03: decoded audio is always converted, whatever its size or length
     expect(needsOpus(12_001, 1)).toBe(true); expect(needsOpus(12_000, 1)).toBe(false);
     expect(NAME_RE.test('in.opus')).toBe(true); expect(NAME_RE.test('../in.opus')).toBe(false); expect(NAME_RE.test('in.')).toBe(false);
   });

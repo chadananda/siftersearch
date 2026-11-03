@@ -11,7 +11,8 @@
 // original + the previous step's files into the other queue's files/<file id>/ and acks each step on the queue that holds it.
 // CPU pod (Chad 10-31): an edge host that lists cpu-prep/cpu-finish (a rented CPU pod, cloud.createCpuPod) takes the OVERFLOW of the home CPU
 // hosts: the feed adds its measured rate, rebalancePrep moves the excess prep steps to the edge, and a step that finished on the edge is pulled
-// and acked there whatever its type. A talk whose input is FLAC/WAV never leaves the LAN (no decoded audio in the cloud).
+// and acked there whatever its type. A talk whose input is FLAC/WAV never leaves the LAN (no decoded audio in the cloud), and since 11-03 none is ever processed: a decoded original is always planned for Opus (chainPlan),
+// a decoded chain is refused at prep adoption, and repairDecoded drops the old ones.
 import { join } from 'node:path';
 import { chainPlan, NAME_RE, CHAIN_DIR } from '../../../scripts/media/worker/chain-input.mjs';
 import { readFile, writeFile, rm, rename, stat } from 'node:fs/promises';
@@ -190,8 +191,10 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
   const ep = edge ? edgePrep(await edge.capacity?.().catch(() => null)) : null, eRate = ep?.rate || 0;
   let queuedS = (t.queued_audio_h || 0) * 3600 + (ep ? ep.queued_audio_h * 3600 : 0), fed = 0, held = 0;
   st.feedLater ||= {};   // talk id → the same-length copy it waits behind (fed last, never dropped)
-  const ok = (id) => SJ.typedEligible(st, id) && SJ.typedShare(id, fraction) && !st.chains[id];
-  while (queuedS < TARGET_H * 3600 * (rate + eRate) && fed < max) {
+  // 11-03: one talk that cannot be fed (no Opus input could be made) goes to the back with its error and the pass goes on to the next; attempts share `max`
+  const bad = new Set(), errors = [];
+  const ok = (id) => SJ.typedEligible(st, id) && SJ.typedShare(id, fraction) && !st.chains[id] && !bad.has(id);
+  while (queuedS < TARGET_H * 3600 * (rate + eRate) && fed + bad.size < max) {
     let i = SJ.pickNext(st, (id) => ok(id) && !st.feedLater[id]), last = false;
     if (i < 0) { i = SJ.pickNext(st, ok); last = true; }   // nothing else left: the same-length copies run now
     if (i < 0) break;
@@ -207,6 +210,8 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
       // tower feeds the ORIGINAL (a hardlink, no ffmpeg); the plan tells cpu-prep which chain input to make of it
       const input = join(it.dir, m.original), sha = await shaOf(st, wr, input, ft), audio_s = m.duration_s || 0;
       const plan = chainPlan(m.original, (await stat(input).catch(() => null))?.size, audio_s);
+      // 11-03 (Chad): "No fallback to WAV or FLAC. That is not acceptable!" a decoded original is ALWAYS converted to Opus by cpu-prep; no plan = not fed
+      if (isDecoded(m.original) && plan?.how !== 'opus') throw Error(`${m.original} is decoded audio and no Opus conversion is planned — a WAV/FLAC chain is never fed`);
       const wj = { ...wr.wholeJob(it, m, sha), threads: 4, ...(plan ? { chain_input: plan } : {}) }, fileId = typedFileId(itemId, sha);
       const job = SJ.typedJob('cpu-prep', { itemId, fileId, wj, band: SJ.bandOf(st, itemId), audio_s });
       // job ids are deterministic (talk + input sha): a talk fed again after its chain was dropped would meet its OLD step under the same
@@ -219,9 +224,9 @@ async function feedTyped(st, cap, { q, edge = null, gpuEdge = true, repo, wr, re
       st.chains[itemId] = { sha, orig_sha: sha, fileId, slug: it.slug, input: wj.input, audio_s, at: now(), bytes, ...(plan ? { plan } : {}) };
       st.qjobs[job.id] = { itemId, slug: it.slug, sha, kind: 'typed', type: 'cpu-prep', audio_s, at: now() };
       queuedS += audio_s; fed++;
-    } catch (e) { st.queue.push(itemId); return { fed, held, error: `#${itemId}: ${e.message}`.slice(0, 300) }; }
+    } catch (e) { st.queue.push(itemId); bad.add(itemId); errors.push(`#${itemId}: ${e.message}`.slice(0, 300)); }
   }
-  return { fed, ...(held ? { held } : {}) };
+  return { fed, ...(held ? { held } : {}), ...(errors.length ? { error: errors[0], errors } : {}) };
 }
 
 /** A dropped chain's chain-input copy beside the talk (.typed-input.<ext>) goes with it; the re-feed starts from the original. */
@@ -303,6 +308,8 @@ async function pullTyped(st, ack, { trace = null, only = null, deferEdgeGpu: def
           // a prep result is made from the original (ch.orig_sha once the chain has switched to its chain input; ch.sha before, and for old chains)
           const r = SJ.validateTyped(type, await readJson(join(stg, 'result.json')), { inputSha: type === 'cpu-prep' ? ch.orig_sha || ch.sha : ch.sha, slug: qj.slug, outputs: outputs.length ? outputs : null });
           if (type === 'cpu-prep' && r.chain_input) await tm(`${type}:${src}:chain_input`, () => takeChainInput(it, ch, r, j, sq, wr));
+          // 11-03: a prep that made no Opus chain input (an older worker image) leaves a decoded chain; it must not go on to gpu as a WAV/FLAC
+          else if (type === 'cpu-prep' && lanOnly(ch)) throw Error(`cpu-prep result refused: no Opus chain input for decoded audio ${ch.input} (no WAV/FLAC chains)`);
           else if (type === 'cpu-prep' && ch.plan && !ch.chain_input) { st.chain_input_missing = (st.chain_input_missing || 0) + 1; ch.chain_input = { missing: true, plan: ch.plan.how }; }   // a worker image without chain-input support: the chain runs on the original (correct; a WAV stays on the LAN)
           r.files = notChain(r.files);   // the chain input is the next step's in.<ext>, not one of its item/ inputs
           ch[type] = SJ.stepOf(j, r, now());
@@ -433,6 +440,7 @@ export async function rebalanceGpu(st, { q, edge, repo, readMeta = readMetaFile,
   const putOnce = async (have, fileId, name, file) => { const size = (await stat(file)).size; if (have.get(name) === size) { skipped++; return; } await edge.put('files', fileId, name, file); bytes += size; };
   const moveOne = async (id, qj) => {
     const ch = st.chains[qj.itemId], prep = ch['cpu-prep'], files = sentFiles(prep.files);
+    if (lanOnly(ch)) throw Error(`refusing to stage decoded audio ${ch.input} on the edge (talk ${qj.itemId})`);   // 11-03: a bug if it ever gets here
     // the pass runs beside the move on the same state: a home GPU may take, finish and have this step adopted meanwhile (its prep then acked)
     const waitingStill = () => st.qjobs[id] === qj && !qj.adopted && st.chains?.[qj.itemId] === ch;
     const it = await repo.getMediaItem(qj.itemId), m = await readMeta(it.dir), stg = join(it.dir, '.typed-move');
@@ -550,6 +558,30 @@ async function restartLost(st, id, qj, { q, repo, now }, error) {
   return true;
 }
 
+/** Standing repair (11-03, Chad: "No fallback to WAV or FLAC"): a chain fed before the Opus chain input existed keeps a decoded input (in.wav) and has no
+ *  plan to convert it — 385 chains fed 11-01 could only run on the home GPU and were counted as pod work. Every such chain whose current step is still
+ *  QUEUED on the LAN is dropped (its jobs cancelled) and its talk goes to the FRONT of the queue; feedTyped plans the Opus conversion on the re-feed.
+ *  A leased step finishes first. A fresh chain (input = the original, plan = opus) is NOT bad: cpu-prep makes its Opus. Idempotent. → [{ id, job, input }] */
+export async function repairDecoded(st, { q, repo = null, now = Date.now }) {
+  const dropped = [];
+  const bad = Object.entries(st.chains || {}).filter(([, ch]) => lanOnly(ch) && ch.plan?.how !== 'opus');
+  if (!bad.length) return dropped;
+  const leased = new Set((await Promise.all(SJ.AUDIO_TYPES.map((t) => q.stats(t).catch(() => null)))).flatMap((s) => (s?.leased || []).map((j) => j.id)));
+  for (const [key, ch] of bad) {
+    const id = Number(key) || key, jobs = Object.entries(st.qjobs || {}).filter(([, qj]) => qj.itemId === id && qj.kind === 'typed' && !qj.where);
+    const cur = jobs.find(([, qj]) => !qj.adopted);
+    if (!cur || leased.has(cur[0])) continue;   // a leased step (or one already done awaiting its pull) is left to finish
+    const ids = [...new Set([...jobs.map(([j]) => j), ...SJ.AUDIO_TYPES.map((t) => ch[t]?.id).filter(Boolean)])];
+    await q.cancel?.(ids);
+    for (const j of ids) delete st.qjobs[j];
+    await dropChainSrc(ch, id, repo);
+    delete st.chains[key];
+    st.queue = [id, ...st.queue.filter((x) => x !== id)];
+    dropped.push({ id, job: cur[0], input: ch.input });
+  }
+  return dropped;
+}
+
 /** A restore-kind result → <talk>/enhanced/pod through the one intake (refused by name otherwise); done.json → enhanced/unipase.done.json. */
 async function adoptRestore(j, it, rj, q) {
   const enh = join(it.dir, 'enhanced'), stg = join(enh, 'pod-stage');
@@ -642,6 +674,7 @@ export async function tick(st, deps) {
   const timed = async (key, f) => { const t0 = now(); trace?.step({ job: key }); try { return await f(); } finally { trace?.sub(key, now() - t0); } };
   const out = { pulled: await timed('pull', () => pull(st, deps)) };
   const forgiven = forgiveOurs(st); if (forgiven.length) out.forgiven = forgiven;
+  if (deps.typed) { const rep = await repairDecoded(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) })); if (rep.error) out.repair_error = rep.error; else if (rep.length) out.repaired = rep; }
   if (deps.typed && deps.edge && deps.rebalance !== false) {
     out.moved = await rebalanceGpu(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));
     out.moved_prep = await rebalancePrep(st, deps).catch((e) => ({ error: String(e.message).slice(0, 200) }));

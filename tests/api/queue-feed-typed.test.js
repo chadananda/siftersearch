@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import * as Q from '../../worker/queue/core.js';
-import { feed, pull, tick as qtick, forgiveOurs, adoptEdgeGpu, adoptFinish, feedBeside, shaOf } from '../../api/lib/media/queue-feed.js';
+import { feed, pull, tick as qtick, forgiveOurs, adoptEdgeGpu, adoptFinish, feedBeside, shaOf, repairDecoded } from '../../api/lib/media/queue-feed.js';
 import { CONTRACT, requiredFiles, fpOf, typedJob } from '../../api/lib/media/stage-jobs.js';
 
 const doSql = () => { const db = new Database(':memory:'); return { exec: (q, ...b) => { const st = db.prepare(q); const r = st.reader ? st.all(...b) : (st.run(...b), []); return { toArray: () => r }; } }; };
@@ -487,19 +487,16 @@ describe('typed chain over two transports: prep on Boss (LAN) -> gpu on a pod (e
     await expect(readFile(join(items[1].dir, '.typed-input.m4a'))).rejects.toThrow();
     expect(String(await readFile(join(items[1].dir, 'orig.mp4')))).toBe('VIDEO+audio-1');
   });
-  it('a worker image without chain-input support: the chain runs on the original (a WAV stays on the LAN), counted in st.chain_input_missing', async () => {
+  it('a worker image without chain-input support: a decoded original is REFUSED (no WAV chain, 11-03); the chain is dropped and the talk retried', async () => {
     lanOnly(); st.queue = [1];
     await setOriginal(1, 'orig.wav', WAV, 1);
     Q.claim(sql, { host: 'aorus', types: ['gpu'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 });   // a home GPU engaged
     const d = { ...deps, edge: E.q };
-    await feed(st, d); const p = deliver('cpu-prep');   // an old image: no chain_input in its result
-    expect((await pull(st, d)).typed).toMatchObject({ steps: 1, errors: 0 });
-    expect(st.chain_input_missing).toBe(1);
-    expect(st.chains[1]).toMatchObject({ input: 'in.wav', sha: sha(WAV), chain_input: { missing: true } });
-    const g = deliver('gpu');
-    expect(g.file_id).toBe(p.file_id); expect(onEdge('files/')).toEqual([]);   // decoded audio never leaves the LAN
-    await pull(st, d); deliver('cpu-finish');
-    expect((await pull(st, d)).typed).toMatchObject({ adopted: 1, errors: 0 });
+    await feed(st, d); deliver('cpu-prep');   // an old image: no chain_input in its result
+    expect((await pull(st, d)).typed).toMatchObject({ steps: 0, errors: 1 });
+    expect(st.pull_errors.at(-1).error).toMatch(/no Opus chain input for decoded audio in\.wav/);
+    expect(st.chains[1]).toBeUndefined(); expect(Q.stats(sql, Date.now(), 'gpu').states.queued).toBeUndefined();   // no gpu step on a WAV
+    expect(st.queue).toContain(1);
   });
   it('a chain input that does not match what prep listed (or was made from another original) is refused, the chain dropped', async () => {
     engage(); st.queue = [1];
@@ -667,5 +664,48 @@ describe('feed beside the pass: timed parts, one hash per unchanged original, ha
     expect(a).toBe(b); expect(reads).toBe(1);
     await writeFile(f, 'BBBBB');
     expect(await shaOf(st, wr, f)).not.toBe(a); expect(reads).toBe(2);
+  });
+});
+
+// 11-03 (Chad): "We do not process WAV files. We first convert to Ogg (Opus) and then we work with Opus." / "No fallback to WAV or FLAC."
+describe('no decoded input, ever (11-03)', () => {
+  const wavTalk = async (id, body = 'tiny') => {
+    await writeFile(join(items[id].dir, 'orig.wav'), body);
+    const f = join(items[id].dir, 'meta.json'); await writeFile(f, JSON.stringify({ ...JSON.parse(await readFile(f, 'utf8')), original: 'orig.wav', duration_s: 3600 }));
+  };
+  it('a small WAV (below 96 kbps by the size rule) is still planned for Opus: the prep job carries chain_input opus', async () => {
+    engage(); st.queue = [1]; await wavTalk(1);
+    expect((await feed(st, deps)).typed.fed).toBe(1);
+    expect(st.chains[1].plan).toEqual({ how: 'opus' });
+    const p = deliver('cpu-prep'); expect(p.body.job).toMatchObject({ chain_input: { how: 'opus' } });
+  });
+  it('a talk that cannot be fed is recorded and the pass goes on to the next talk (never fed as a WAV)', async () => {
+    engage(); st.queue = [1, 2]; await wavTalk(1); await wavTalk(2);
+    const getMediaItem = repo.getMediaItem; repo.getMediaItem = async (id) => { if (id === 1) throw Error('no Opus could be made'); return getMediaItem(id); };
+    const r = (await feed(st, deps)).typed;
+    expect(r.fed).toBe(1); expect(r.errors).toEqual([expect.stringMatching(/#1: no Opus could be made/)]); expect(r.error).toBe(r.errors[0]);
+    expect(st.chains[1]).toBeUndefined(); expect(st.chains[2].plan.how).toBe('opus'); expect(st.queue).toEqual([1]);
+    expect(Object.values(st.chains).some((c) => /\.wav$/.test(c.input) && !c.plan)).toBe(false);
+  });
+  it('repair: a queued chain with a decoded input and no Opus plan is dropped, its job cancelled, the talk back at the FRONT; a leased one is left alone; then re-fed with a plan', async () => {
+    engage(); st.queue = [1, 2]; await wavTalk(1); await wavTalk(2);
+    await feed(st, deps); for (const c of Object.values(st.chains)) delete c.plan;   // as the chains fed 11-01 (input in.wav, nothing to convert it)
+    const leased = Q.claim(sql, { host: 'boss', types: ['cpu-finish', 'cpu-prep'], contract: CONTRACT.contract, vram_mb: 24000, ram_gb: 32 }).item_id, other = leased === 1 ? 2 : 1;
+    st.queue = [9];
+    const out = await repairDecoded(st, { q, repo });
+    expect(out.map((x) => x.id)).toEqual([other]); expect(out[0].input).toBe('in.wav');
+    expect(st.queue).toEqual([other, 9]); expect(st.chains[other]).toBeUndefined(); expect(st.chains[leased]).toBeTruthy();
+    expect(Object.values(st.qjobs).map((j) => j.itemId)).toEqual([leased]);
+    expect(Q.stats(sql, Date.now(), 'cpu-prep').states.queued).toBeUndefined();   // the queued job is gone from the queue too
+    expect(await repairDecoded(st, { q, repo })).toEqual([]);   // idempotent
+    expect((await feed(st, deps)).typed.fed).toBe(1);
+    expect(st.chains[other].plan).toEqual({ how: 'opus' });
+  });
+  it('repair leaves a fresh chain alone (input = the original, plan = opus: cpu-prep makes the Opus) and the tick reports the count', async () => {
+    engage(); st.queue = [1]; await wavTalk(1); await feed(st, deps);
+    expect(await repairDecoded(st, { q, repo })).toEqual([]);
+    delete st.chains[1].plan; st.queue = [];
+    const t = await qtick(st, { ...deps, deferFeed: true });
+    expect(t.repaired).toEqual([expect.objectContaining({ id: 1 })]); expect(st.queue).toEqual([1]);
   });
 });
