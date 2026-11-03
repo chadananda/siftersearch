@@ -286,6 +286,8 @@ q{font-style:italic;quotes:"“" "”"}
   <h2>How he gets better</h2>
   <p>Nothing about the system is fixed. Request types, strategies, the options at each decision and the thresholds all change as the records show what works. Improving itself in quality and in speed is the core of the design.</p>
   <ul>
+    <li><b>A strategy for each request type, and a strategy is efficient branching.</b> Each type has its own strategy: a short path of steps with a decision at each fork. Is the passage found, or should he search another shelf? Is this the source or a book quoting it? Is there enough evidence to answer, or should he trace further? A good strategy takes the cheapest branch that still reaches the right answer, so it is fast because it skips what this question doesn't need.</li>
+    <li><b>Every branch decision is assessed, every time.</b> Each fork is recorded with what Jev saw, which way he went, his confidence, and what the branch cost in time and money. The final verdict then grades each decision on the path: was it the right way to go? On a sample, the branch not taken is replayed too, to show whether it would have been better, the same or cheaper. Each decision point has its own record: how often it is right, how often the replay beats it, and what it costs. The weak forks are what get fixed. Wrong calls become training examples for Jev, thresholds move, a branch that is never worth taking is removed, and a recurring need becomes a new branch.</li>
     <li><b>Every answer is recorded in enough detail to replay:</b> the type and strategy (with versions), what Jev saw and chose at each decision, every search and the passages it returned, the time and cost of each step, the answer and its verdict.</li>
     <li><b>Every answer is judged</b> by an independent model against what Perplexity gives for the same question, and against the shape its type calls for. A loss is traced to its cause: the library lacks it, search missed it, a wrong decision, a missing strategy, or the writing.</li>
     <li><b>Fixes go by cause, biggest first.</b> Search misses go to the index (search comes first). Wrong decisions become training examples for Jev. Missing moves become new strategy options. Writing faults go to the strategy's instructions.</li>
@@ -293,7 +295,7 @@ q{font-style:italic;quotes:"“" "”"}
     <li><b>Two things grow without limit: activities and search strategies.</b> Each new one is added the same way (declared, tested against its fresh questions, switched on only when it beats what it replaces), so Anís becomes a stronger learning amplifier week by week.</li>
     <li><b>What is asked often gets prepared.</b> Frequent topics and books are proposed for a prepared collection or dossier, so the next person gets a faster and richer answer.</li>
     <li><b>Real conversations feed it.</b> Questions no type fits are grouped each week; a recurring group becomes a new type with its own strategy.</li>
-    <li><b>A weekly report</b> per type: wins against Perplexity, accuracy of each decision, share answered without the agent, time and cost per answer, types and options added.</li>
+    <li><b>A weekly report</b> per type and per decision point: wins against Perplexity, accuracy of each fork and what its replays show, share answered without the agent, time and cost per answer, types and options added.</li>
   </ul>
   <div class="wrap"><table>
     <tr><th>Measure</th><th>Launch gate · 8 Nov</th><th>4 weeks</th></tr>
@@ -301,6 +303,7 @@ q{font-style:italic;quotes:"“" "”"}
     <tr><td>Held-out real questions: wins or ties</td><td class="n">≥ 80%</td><td class="n">≥ 95%</td></tr>
     <tr><td>Invented quotations</td><td class="n">0</td><td class="n">0</td></tr>
     <tr><td>Book and quotation requests answered with the right linked work</td><td class="n">100%</td><td class="n">100%</td></tr>
+    <tr><td>Each branch decision right (graded every answer; the branch not taken replayed on a sample)</td><td class="n">≥ 90%</td><td class="n">≥ 95%</td></tr>
     <tr><td>Jev picks the right route (checked sample)</td><td class="n">≥ 90%</td><td class="n">≥ 95%</td></tr>
   </table></div>
 </section>
