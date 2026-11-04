@@ -22,6 +22,8 @@ export const ORIGIN_MS = 400;
 // "Bahá'u'lláh" on some excerpts; Star of the West; World Order magazine; BIC statements). Title/shelf/author metadata. Pure.
 const PERIODICAL = [/^(?:the )?bah[aá]['’‘]?[ií] world\b(?!\s+faith)/i, /\bstar of the west\b/i, /^world order\b(?!\s+of\b)/i,
   /^(?:the )?bah[aá]['’‘]?[ií] news\b/i, /\bherald of the south\b/i, /\bstatement\b/i, /\bbah[aá]['’‘]?[ií] international community\b/i];
+/** A raw file of letters nobody compiled: the same words in any published book or compilation are cited first. */
+const UNCOMPILED = /\buncompiled\b/i;
 export function isPeriodical(p = {}) {
   const t = String(p.title ?? p.source_title ?? '');
   if (PERIODICAL.some((re) => re.test(t))) return true;
@@ -35,9 +37,12 @@ export const seTranslation = (c, translatedBy = null) => guardianTranslation(c) 
 
 /** Kind rank of one copy of the words of `writer` (lower first). Pure.
  *  0 his translation in the author's own work · 1 his own book quoting it · 2 the author's own work, another translation ·
- *  3 an authorized compilation · 4 the House of Justice quoting it · 5 other secondary · 6 periodical / statement. */
+ *  3 an authorized compilation · 4 the House of Justice quoting it · 5 other secondary, and the uncompiled letter files (last
+ *  resort — Chad 11-01/11-04: "Man will always have to toil…" named Uncompiled Published Letters over Lights of Guidance) ·
+ *  6 periodical / statement. */
 export function originRank(c, translatedBy = null) {
   if (isPeriodical(c)) return 6;
+  if (UNCOMPILED.test(`${c.title || ''} ${c.collection || ''}`)) return 5;
   const w = key(c.author), b = key(c.book_author) || w;
   const own = w && w === b && c.blocktype !== 'footnote';
   const comp = docType({ title: c.title, collection: c.collection }) === 'compilation';

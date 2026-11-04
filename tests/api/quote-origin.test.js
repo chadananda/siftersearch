@@ -96,3 +96,13 @@ describe('clip: the writer sees the whole paragraph up to PASSAGE_CHARS, cuts at
     expect(out).toMatch(/words\. …$/);
   });
 });
+
+describe('quote origin: uncompiled letter files are the last resort (Chad 11-04, "Man will always have to toil…")', () => {
+  it('Lights of Guidance (a compilation) outranks Uncompiled Published Letters for the same Guardian letter', async () => {
+    const { originRank } = await import('../../api/lib/assistant/quote-origin.js');
+    const upl = { title: 'Uncompiled Published Letters', collection: 'Shoghi Effendi', author: 'Shoghi Effendi', book_author: 'Shoghi Effendi', religion: "Bahá'í" };
+    const log = { title: 'Lights of Guidance', collection: 'Compilations', author: 'Shoghi Effendi', book_author: 'Helen Hornby', religion: "Bahá'í" };
+    expect(originRank(upl)).toBe(5);
+    expect(originRank(log)).toBeLessThan(originRank(upl));
+  });
+});

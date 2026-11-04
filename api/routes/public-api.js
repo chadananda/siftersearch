@@ -50,7 +50,8 @@ import { validateApiKey } from '../lib/api-keys.js';
 import { query, queryOne, queryAll, userQuery, userQueryOne, telemetryQuery } from '../lib/db.js';
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
 import { slugifyPath } from '../lib/slug.js';
-import { participantId as resolveParticipant, writeSessionCookieRaw } from '../lib/anonymous.js';
+import { participantId as resolveParticipant, writeSessionCookieRaw, accountFromCookie } from '../lib/anonymous.js';
+import { optionalAuthenticate } from '../lib/auth.js';
 import { deriveThreadTitle, ownsThread, ownThreadsFilter, TITLE_AFTER_ROUNDS } from '../lib/threads.js';
 import { resolveLinks, findOriginals, getPassages } from '../lib/passage-links.js';
 
@@ -1443,13 +1444,16 @@ export default async function publicApiRoutes(fastify) {
       // apiKeyUserId is the KEY OWNER, not the seeker, so it must never be used: it would pool every
       // visitor into one shared memory bucket.
       // Verified account, else the temporary session (x-user-id, else the sifter_sid cookie).
+      // A signed-in seeker is CONNECTED: the site sends its JWT (no auth hook runs on /v1, so read it here) and a connected
+      // widget carries the signed account cookie. Without this every signed-in visitor was asked to connect with Google.
+      if (!request.user && request.headers.authorization?.startsWith('Bearer ')) await optionalAuthenticate(request).catch(() => {});
       const participant_id = resolveParticipant(request);
       const result = await runJafarPipeline({
         messages: messages.map(m => ({ role: m.role, content: m.content })),
         sendEvent,
         debug,
         participant_id,
-        authed: !!request.user?.sub,
+        authed: !!(request.user?.sub || accountFromCookie(request)),
       });
 
       // Pipeline now streams the crafter's chunks via sendEvent → 'text'

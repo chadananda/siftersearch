@@ -14,7 +14,7 @@ import { readLibraryStats, countList, religionCollectionCounts } from '../lib/li
 import { hybridSearch, keywordSearch, multiIndexSearch } from '../lib/search.js';
 import { entityLookup, entityDossier, entitySearch } from '../lib/entity-api.js';
 import { optionalAuthenticate } from '../lib/auth.js';
-import { participantId, writeSessionCookieRaw } from '../lib/anonymous.js';
+import { participantId, writeSessionCookieRaw, accountFromCookie } from '../lib/anonymous.js';
 import { linkFor } from '../lib/source-links.js';
 import { logger } from '../lib/logger.js';
 import { queryOne, queryAll } from '../lib/db.js';
@@ -1499,7 +1499,7 @@ export default async function chatRoutes(fastify) {
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
           channel: widget_token ? 'widget-chat' : 'site-chat',
           profile: { persona_name, default_tradition, mission: mission_prompt, scope_config },
-          participant: { id: userId, authed: !!request.user?.sub, userId: Number(request.user?.sub) || null, email: request.user?.email || null },
+          participant: { id: userId, authed: !!(request.user?.sub || accountFromCookie(request)), userId: Number(request.user?.sub) || null, email: request.user?.email || null },
           conversationId: request.body.conversationId || null,
           clientKey: userId || request.ip,
           onEvent: sendEvent,
@@ -1538,7 +1538,7 @@ export default async function chatRoutes(fastify) {
           default_tradition,
           mission: mission_prompt,
           participant_id: userId,  // Seeker Companion: relationship/memory/exposure key (user id or anon id)
-          authed: !!request.user?.sub   // connecting is what grants retention, so "has an id" is not "connected"
+          authed: !!(request.user?.sub || accountFromCookie(request))   // connecting is what grants retention, so "has an id" is not "connected"
         });
       }
 
