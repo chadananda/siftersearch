@@ -135,6 +135,12 @@ export async function itemsToImport(driveId, { limit = 100, offset = 0 } = {}) {
     [driveId, Math.min(Number(limit) || 100, 1000), Math.max(Number(offset) || 0, 0)], 'archives:items-to-import');
   return rows.map(parseItem);
 }
+/** Books and scans nobody has decided yet (main section, catalogued new or unsure): the dry run's 'undecided' scope, so dedup + the library check run before anyone reviews value. */
+export async function itemsUndecided(driveId, { limit = 100, offset = 0 } = {}) {
+  const rows = await queryAll(`SELECT * FROM intake_items WHERE drive_id = ? AND section = 'main' AND kind IN ('book', 'scan') AND match IN ('new', 'unsure') AND decision IS NULL AND imported_at IS NULL ORDER BY score DESC, id LIMIT ? OFFSET ?`,
+    [driveId, Math.min(Number(limit) || 100, 1000), Math.max(Number(offset) || 0, 0)], 'archives:items-undecided');
+  return rows.map(parseItem);
+}
 const PROBE_EXT = ['pdf', 'epub', 'docx', 'odt', 'rtf', 'txt', 'md', 'html', 'htm', 'xhtml'];   // what fingerprint.py reads
 /** Approved PDFs and text documents with no probe yet (neither result nor queued/error marker): the worker samples them for the dedup check (archive-sample, type 'intake' probe). Best score first. */
 export async function itemsToProbe(driveId, { limit = 50 } = {}) {

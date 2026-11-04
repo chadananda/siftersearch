@@ -31,6 +31,8 @@ describe('archives repo: catalogue', () => {
     expect((await repo.listItems('d2'))[0].metadata).toEqual({ a: 1 });
     await repo.decideItems([a.id, b.id], { decision: 'approve' });
     expect((await repo.itemsToImport('d1', { limit: 1, offset: 1 }))).toHaveLength(1);
+    await repo.upsertItems('d1', [item('u.pdf'), item('h.pdf', { match: 'held' }), item('t.mp3', { kind: 'talk' }), item('x.pdf', { section: 'set-aside' })]);
+    expect((await repo.itemsUndecided('d1')).map((x) => x.primary_rel)).toEqual(['u.pdf']);
   });
 });
 describe('archives repo', () => {

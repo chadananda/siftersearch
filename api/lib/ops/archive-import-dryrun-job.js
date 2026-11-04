@@ -1,12 +1,12 @@
 // archive-import-dryrun ops report: BEFORE a drive's approved books are imported (and OCR is paid for) — how many are held / probably held / need OCR / go straight in?
 // Same checks as the real import, nothing linked, queued or OCR'd: a text-layer file is read (ocr:false) and checked against the library by its text; a scan is
-// checked by its catalogue title/author (metadata.catalog, set via POST /imports/drives/:id/catalogue) or file name. params { drive, limit?, offset?, list? }.
+// checked by its catalogue title/author (metadata.catalog, set via POST /imports/drives/:id/catalogue) or file name. params { drive, limit?, offset?, list?, scope? } — scope 'undecided' checks the books/scans nobody has decided yet (dedup + library first, value review after) instead of the approved ones.
 // PDFs are classed by the worker probe (metadata.probe, set by archive-sample): born_digital (text read directly, as above) · image_pdf (page images under a hidden OCR layer) ·
 // scan. Image PDFs and scans get the PRE-OCR dedup (archives/pre-ocr.js: ISBN, title+author, sampled-page text through checkHoldings) and survivors are the SLP-bound set
 // (bucket needs_ocr, row.class) — `slp` totals its pages and estimated $ (measured per-page rate from earlier SLP jobs when there are any). ONE copy per work across ALL drives first (archives/dedup.js cascade over the dedup registry: hash · normalised body · title+length · MinHash fingerprint): the best copy is checked, the rest go to `duplicates` with the step + score, `dedup.clusters` lists members. A PDF with no probe yet lands in
 // `unprobed` (run archive-sample first). Chapter files of a multi-file book are listed in `chapter_sets`, not checked. Runs in slices and checks the drain between items: on a drain it yields { resume: {...params, offset, limit, partial} } (tallies + capped lists so far);
 // the ops service saves that into the requeued run's params, so the next run continues at `offset` with the tallies in `partial`.
-import { itemsToImport, getDrive } from '../repos/archives-repo.js';
+import { itemsToImport, itemsUndecided, getDrive } from '../repos/archives-repo.js';
 import { importPlan, driveDedup } from './archive-import-job.js';
 import { itemRow } from '../archives/dedup.js';
 import { toMarkdownText } from '../dewey/convert.js';
@@ -26,12 +26,12 @@ export const holdingsOf = (bucket, row) => { const e = (row.evidence || []).slic
     length_ratio: t.length_ratio ?? null, candidates: e, ...(row.step ? { dup: { of: row.of || null, of_rel: row.of_rel || null, step: row.step, score: row.score } } : {}) }; };
 
 export async function archiveImportDryrunJob(params = {}, deps = {}) {
-  const { drive: driveId, limit = 2000, offset = 0, list = 40, partial } = params;
+  const { drive: driveId, limit = 2000, offset = 0, list = 40, partial, scope } = params;
   const { draining = (await import('../drain.js')).isDraining, saveHoldings = setHoldings, read = (path, name) => toMarkdownText(null, name, { path, full: false, ocr: false }), check = checkHoldings, byIsbn = docsByIsbn } = deps;
   const drive = deps.drive || await getDrive(driveId);
   if (!drive) throw new Error(`no drive ${driveId}`);
   // slices of 200 (deps.items = the whole window starting at `offset`, for tests)
-  const slice = async (at, n) => deps.items ? deps.items.slice(at - offset, at - offset + n) : itemsToImport(drive.id, { limit: n, offset: at });
+  const slice = async (at, n) => deps.items ? deps.items.slice(at - offset, at - offset + n) : (scope === 'undecided' ? itemsUndecided : itemsToImport)(drive.id, { limit: n, offset: at });
   // list entries are capped at `list`; counts and uncat carry the true totals across a yield
   const buckets = Object.fromEntries(KEYS.map((k) => [k, [...(partial?.lists?.[k] || [])]]));
   const counts = Object.fromEntries(KEYS.map((k) => [k, partial?.counts?.[k] || 0]));
