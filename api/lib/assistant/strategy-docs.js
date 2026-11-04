@@ -20,8 +20,12 @@ export function publicStrategies({ snapshot, activities = [], stats = [], branch
   // failed rules only (decision.numbers never holds a question).
   const replayOf = (id, v) => {
     const p = (promotions || []).find((x) => x.strategy_id === id && Number(x.version) === Number(v) && x.action !== 'rollback' && x.decision);
-    return p ? { action: p.action, promote: !!p.decision.promote, failed: p.decision.failed || [], numbers: p.decision.numbers || null,
-      usd: p.usd ?? null, at: p.created_at ?? null } : null;
+    if (!p) return null;
+    const n = p.decision.numbers || {};
+    const scores = n.mean_candidate != null ? `score ${n.mean_candidate} vs ${n.mean_current} on ${n.n_class} questions` : null;
+    const verdict = p.decision.promote ? (p.action === 'dry' ? 'would promote' : 'promoted') : `held: ${(p.decision.failed || [])[0] ?? p.action}`;
+    return { action: p.action, promote: !!p.decision.promote, failed: p.decision.failed || [], numbers: p.decision.numbers || null,
+      usd: p.usd ?? null, at: p.created_at ?? null, summary: [verdict, scores].filter(Boolean).join(' · ') };
   };
   const act = new Map(activities.map((a) => [a.name, a]));
   const steps = new Map(snapshot.steps.map((s) => [`${s.id}@${s.version}`, s]));
