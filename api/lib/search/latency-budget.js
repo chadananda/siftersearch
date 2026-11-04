@@ -7,7 +7,7 @@
 // Engine stages. Parallel layers are completion OFFSETS from the engine's start (a vector layer's offset includes the
 // embedding it awaits); hydrate/rank/merge/total are durations. `qdrant` = the slowest single Qdrant call in the search.
 export const ENGINE_BUDGETS = Object.freeze({
-  qdrant: { ms: 10, note: 'any one Qdrant call, wall (Chad: fixed). identity transport 7-11 ms; phrases+payload ~21 ms server' },
+  qdrant: { ms: 10, note: "an indexed Qdrant lookup (Qdrant's own time, qsrv:<collection>; Chad 11-04): < 10 ms = working correctly, > 100 ms = something is wrong (the only finding). Wall rows (qdrant, qdrant:<c>) are measured, never judged: wall − qsrv = our overhead" },
   embed: { ms: 400, note: 'Gemini query embedding over the network: 212-438 ms serial measured; memoized 10 min' },
   phrase: { ms: 450, note: 'embed + phrases query' },
   qhype: { ms: 450, note: 'embed + hype groups query' },
@@ -67,7 +67,8 @@ export const QUERY_BUDGETS = Object.freeze({
 /** A named statement's average-ms budget, or null when it has none. */
 export const queryBudgetFor = (name) => QUERY_BUDGETS[name]?.ms ?? null;
 
-export const QDRANT_CALL_MS = ENGINE_BUDGETS.qdrant.ms;
+export const QDRANT_CALL_MS = ENGINE_BUDGETS.qdrant.ms;   // the target: below it Qdrant is working correctly
+export const QDRANT_WRONG_MS = 100;                       // above it something is wrong — what qsrv rows are judged against
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
@@ -76,7 +77,7 @@ export function engineStages(t = {}) {
   const out = {};
   for (const k of Object.keys(ENGINE_BUDGETS)) if (num(t[k]) != null) out[k] = t[k];
   for (const [c, ms] of Object.entries(t.qdrant_by || {})) if (num(ms) != null) out[`qdrant:${c}`] = ms;
-  // Qdrant's own time for that collection's slowest-server call: informational (no budget) — wall − server = our overhead
+  // Qdrant's own time for that collection's slowest-server call — judged only past 100 ms (wall − server = our overhead)
   for (const [c, ms] of Object.entries(t.qdrant_server_by || {})) if (num(ms) != null) out[`qsrv:${c}`] = ms;
   // hydrate's split (11-04, digest #167): ids asked / served from the id cache (counts), read inside the thread vs wait for one (ms)
   for (const [k, v] of Object.entries(t.hydrate_by || {})) if (num(v) != null) out[`hydrate:${k}`] = v;
@@ -92,9 +93,11 @@ export function plannedStages(t = {}) {
   return out;
 }
 
-/** The budget for a stage of a kind ('engine' | 'planned'); `qdrant:<collection>` shares the per-call budget. */
+/** The budget for a stage of a kind ('engine' | 'planned'). A Qdrant lookup (`qsrv:<collection>`, Qdrant's own time) is
+ *  judged only past QDRANT_WRONG_MS; the wall rows (`qdrant`, `qdrant:<collection>`) are measurements with no budget. */
 export function budgetFor(kind, stage) {
-  if (kind === 'engine' && stage.startsWith('qdrant:')) return QDRANT_CALL_MS;
+  if (kind === 'engine' && stage.startsWith('qsrv:')) return QDRANT_WRONG_MS;
+  if (kind === 'engine' && (stage === 'qdrant' || stage.startsWith('qdrant:'))) return null;
   if (kind === 'planned' && stage.startsWith('claims:')) return CLAIMS_BUDGETS[stage.slice(7)]?.ms ?? null;
   return (kind === 'planned' ? PLANNED_BUDGETS : ENGINE_BUDGETS)[stage]?.ms ?? null;
 }

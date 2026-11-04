@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { ENGINE_BUDGETS, PLANNED_BUDGETS, CLAIMS_BUDGETS, QDRANT_CALL_MS, engineStages, plannedStages, summarizeStages, summarizeTraceRows,
+import { ENGINE_BUDGETS, PLANNED_BUDGETS, CLAIMS_BUDGETS, QDRANT_CALL_MS, QDRANT_WRONG_MS, engineStages, plannedStages, summarizeStages, summarizeTraceRows,
   latencyBreaches, latencyChecks, budgetFor } from '../../api/lib/search/latency-budget.js';
 
 const ROOT = join(import.meta.dirname, '..', '..');
@@ -31,19 +31,23 @@ describe('every stamped stage has a budget', () => {
     expect(stages).toEqual(expect.arrayContaining(['plan', 'jev', 'lookup', 'search', 'total', 'passages', 'resolve']));
     expect(stages.filter((k) => !PLANNED_BUDGETS[k])).toEqual([]);
   });
-  it('any one Qdrant call: 10 ms (Chad, fixed); every budget is a positive number with a note', () => {
+  it('Qdrant lookup: < 10 ms working, > 100 ms wrong (Qdrant\'s own time, qsrv); wall rows carry no budget; every budget is a positive number with a note', () => {
     expect(QDRANT_CALL_MS).toBe(10);
+    expect(QDRANT_WRONG_MS).toBe(100);
     for (const b of [...Object.values(ENGINE_BUDGETS), ...Object.values(PLANNED_BUDGETS)]) { expect(b.ms).toBeGreaterThan(0); expect(b.note).toBeTruthy(); }
     expect(PLANNED_BUDGETS.total.ms).toBe(1000);
-    expect(budgetFor('engine', 'qdrant:phrases_f16')).toBe(10);
+    expect(budgetFor('engine', 'qsrv:phrases_f16')).toBe(100);
+    expect(budgetFor('engine', 'qdrant:phrases_f16')).toBeNull();
+    expect(budgetFor('engine', 'qdrant')).toBeNull();
   });
 });
 
 describe('summaries', () => {
-  it('engineStages reports Qdrant server time per collection as qsrv:<c>, informational (no budget; wall − server = our overhead)', () => {
+  it('engineStages reports Qdrant server time per collection as qsrv:<c>, judged only past 100 ms; wall qdrant:<c> is not judged', () => {
     expect(engineStages({ qdrant_by: { phrases: 30 }, qdrant_server_by: { phrases: 21.5 } })).toEqual({ 'qdrant:phrases': 30, 'qsrv:phrases': 21.5 });
-    const rows = summarizeStages('engine', [{ 'qsrv:phrases': 99 }]);
-    expect(rows[0]).toMatchObject({ stage: 'qsrv:phrases', budget: null, over: false });
+    expect(summarizeStages('engine', [{ 'qsrv:phrases': 99 }])[0]).toMatchObject({ stage: 'qsrv:phrases', budget: 100, over: false });
+    expect(summarizeStages('engine', [{ 'qsrv:phrases': 140 }])[0]).toMatchObject({ stage: 'qsrv:phrases', budget: 100, over: true });
+    expect(summarizeStages('engine', [{ 'qdrant:phrases': 99 }])[0]).toMatchObject({ stage: 'qdrant:phrases', budget: null, over: false });
   });
   it('engineStages reports hydrate\'s split as informational hydrate:<k> rows (ids/cached counts, read/wait ms; digest #167)', () => {
     expect(engineStages({ hydrate: 90, hydrate_by: { ids: 90, cached: 60, read: 12, wait: 70 } }))
@@ -71,9 +75,9 @@ describe('summaries', () => {
     expect(src('api/lib/planned-search.js')).toMatch(/flat\[`claims_\$\{k\}`\]/);
   });
   it('summarizeStages: p50/p95/max per stage, worst ratio to budget first', () => {
-    const rows = summarizeStages('engine', Array.from({ length: 20 }, (_, i) => ({ total: 100 + i * 10, qdrant: 5 + i })));
-    expect(rows[0].stage).toBe('qdrant');   // p95 24 / 10 beats total 290 / 600
-    expect(rows[0]).toMatchObject({ n: 20, p95: 23, max: 24, budget: 10, over: true });
+    const rows = summarizeStages('engine', Array.from({ length: 20 }, (_, i) => ({ total: 100 + i * 10, 'qsrv:phrases': 95 + i })));
+    expect(rows[0].stage).toBe('qsrv:phrases');   // p95 113 / 100 beats total 290 / 600
+    expect(rows[0]).toMatchObject({ n: 20, p95: 113, max: 114, budget: 100, over: true });
     expect(rows[1]).toMatchObject({ stage: 'total', p50: 190, over: false });
   });
   it('summarizeTraceRows: planned rows by endpoint, every other endpoint is an engine call; bad JSON skipped', () => {
@@ -87,11 +91,11 @@ describe('summaries', () => {
   });
   it('a breach is a user-visible TOTAL over budget × 1.5 with enough samples; stage overruns are its causes', () => {
     const many = (t) => Array.from({ length: 25 }, () => t);
-    const sum = { engine: summarizeStages('engine', many({ total: 1000, embed: 700, qdrant: 30 })), planned: summarizeStages('planned', many({ total: 1200 })) };
+    const sum = { engine: summarizeStages('engine', many({ total: 1000, embed: 700, 'qsrv:phrases': 130 })), planned: summarizeStages('planned', many({ total: 1200 })) };
     const b = latencyBreaches(sum);
     expect(b.map((x) => x.kind)).toEqual(['engine']);   // planned 1200 ≤ 1500
     expect(b[0].detail).toMatch(/engine search p95 1000 ms vs 600/);
-    expect(b[0].causes.join()).toMatch(/qdrant p95 30\/10/);
+    expect(b[0].causes.join()).toMatch(/qsrv:phrases p95 130\/100/);
     expect(latencyBreaches({ engine: summarizeStages('engine', [{ total: 5000 }]) })).toEqual([]);   // 1 sample: no verdict
   });
   it('system-check verdict: first sighting = warn (weekly), two checks running = critical; quiet = one info line', () => {
@@ -101,9 +105,9 @@ describe('summaries', () => {
     const v = latencyChecks(slow, ['engine']);
     expect(v.checks[0].level).toBe('critical');
     expect(v.slow).toEqual(['engine']);
-    const stageOnly = latencyChecks({ engine: summarizeStages('engine', many({ total: 400, qdrant: 20 })), planned: [] }, []);
+    const stageOnly = latencyChecks({ engine: summarizeStages('engine', many({ total: 400, 'qsrv:phrases': 120 })), planned: [] }, []);
     expect(stageOnly.checks).toEqual([expect.objectContaining({ name: 'Search stage budgets', level: 'warn' })]);
-    const fine = latencyChecks({ engine: summarizeStages('engine', many({ total: 400, qdrant: 8 })), planned: [] }, ['engine']);
+    const fine = latencyChecks({ engine: summarizeStages('engine', many({ total: 400, 'qsrv:phrases': 8, qdrant: 400 })), planned: [] }, ['engine']);
     expect(fine).toMatchObject({ slow: [], checks: [{ ok: true, level: 'info' }] });
   });
 });

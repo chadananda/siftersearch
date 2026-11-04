@@ -156,7 +156,7 @@ const searchParams = (p) => ({ quantization: { rescore: p.rescore, oversampling:
 export const qdrantHeaders = (json = true) => ({ ...(json ? { 'Content-Type': 'application/json' } : {}), 'Accept-Encoding': 'identity', 'api-key': process.env.QDRANT_KEY || '' });
 
 // Per-search log of every Qdrant call {collection, ms} — multiIndexSearch opens one (withQdrantCallLog) so the trace
-// carries each call's wall time against the 10 ms budget (api/lib/search/latency-budget.js). Outside a log: no cost.
+// carries each call's wall + Qdrant's own time (latency-budget.js judges the own time: < 10 ms working, > 100 ms wrong). Outside a log: no cost.
 const callLog = new AsyncLocalStorage();
 export const withQdrantCallLog = (log, fn) => callLog.run(log, fn);
 
