@@ -7,6 +7,7 @@ import { strategyOf } from './strategy-choice.js';
 import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
 import { booksFound, namedSource } from './researcher.js';
+import { drawFromCriteria } from '../search-plan.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
 const PER_SIDE = 6, MAX_PASSAGES = 12, MAX_COMPARED = 18;
@@ -30,6 +31,19 @@ export function interleave(bySide, max = MAX_PASSAGES) {
 // a passage belongs to a side when its tradition is that side's (data field; a passage with no tradition recorded is kept)
 const foldTrad = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 export const ofSide = (p, side) => !p?.religion || foldTrad(p.religion) === foldTrad(side);
+
+// The comparison's SUBJECT as a search string: the question without the names it compares (the name spans of the thread —
+// drawFromCriteria, structure only; the same spans Jev classified as books). "How do the Bahá’í writings and the Book of
+// Mormon treat tithing?" → "How do the writings and the treat tithing?": inside the Book of Mormon the whole question ranked
+// "the wolf shall dwell with the lamb" over 3 Nephi 24's tithes (p7 missing-side). Not intent — only what is searched. Pure.
+const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export function subjectQuery(query, messages) {
+  const spans = Object.keys(drawFromCriteria(messages) || {}).filter((k) => k !== 'none').sort((x, y) => y.length - x.length);
+  let q = String(query || '');
+  for (const n of spans) q = q.replace(new RegExp(esc(n), 'g'), ' ');
+  q = q.replace(/\s+/g, ' ').replace(/\s+([?.,;:!])/g, '$1').trim();
+  return q && q !== String(query || '').trim() && q.replace(/[^\p{L}]/gu, '').length >= 3 ? q : null;
+}
 
 async function searchSide({ search, query, messages, profile, religion, limit = PER_SIDE }) {
   const r = await runTool('combined_search', { query, limit, scope_config: profile?.scope_config, ...(religion ? { filters: { tradition: religion } } : {}),
@@ -61,10 +75,10 @@ export async function comparison(choice, ctx) {
     const [hits, subj, src] = await Promise.all([
       searchSide({ search, query, messages, profile, religion: side }).catch(() => []),
       wider ? searchSide({ search, query: wider, messages, profile, religion: side }).catch(() => []) : [],
-      name ? namedSource(name, query, sourceTools).catch(() => null) : null,
+      name ? namedSource(name, wider || query, sourceTools).catch(() => null) : null,
     ]);
     const own = dedupe(interleave([hits, subj], Infinity)).filter((p) => ofSide(p, side));
-    const books = searchIn ? booksFound({ works: src?.works || [], searched: [{ query, docs: own.map((p) => p.document_id) }], question: query, n: name ? 2 : 1 }) : [];
+    const books = searchIn ? booksFound({ works: src?.works || [], searched: [{ query: wider || query, docs: own.map((p) => p.document_id) }], question: wider || query, n: name ? 2 : 1 }) : [];
     const inside = (await Promise.all(books.map((b) => searchIn(b.query, b.document_id).catch(() => [])))).map((l) => l.filter((p) => ofSide(p, side)));
     const fromSource = [...(src?.passages || []).filter((p) => ofSide(p, side)), ...(name ? inside[0] || [] : [])];
     const all = dedupe([...fromSource, ...own, ...inside.slice(name ? 1 : 0).flat()]);
@@ -72,8 +86,8 @@ export async function comparison(choice, ctx) {
       options: ['side search', 'named book + side search'], chosen: `${all.length} passages (${fromSource.length} from the named book)`, reason: name ? 'Jev named this side\'s book' : null });
     return all;
   };
-  let wider = distil ? distil(query) : null;
-  if (wider === query) wider = null;
+  const base = distil ? distil(query) : query;
+  let wider = subjectQuery(base, messages) || (base !== query ? base : null);
   const first = await Promise.all(sides.map((s) => sideRun(s).catch((err) => {
     decisions.record(`side:${s}`, { by: 'code', saw: { error: String(err?.message || err).slice(0, 160) }, options: ['side search'], chosen: '0 passages', reason: 'side failed' }); return []; })));
   const coverage = {}; const final = [];

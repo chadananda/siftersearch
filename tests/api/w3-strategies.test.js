@@ -2,7 +2,7 @@
 // covered or said missing), understanding, prayer shelf (Jev picks the occasion), current guidance (newest first), scripture reference.
 import { describe, it, expect } from 'vitest';
 import { chooseStrategy, strategyOf, STRATEGIES } from '../../api/lib/assistant/strategy-choice.js';
-import { comparison, understanding, runStrategy, interleave, COMPARISON_HOW, ofSide } from '../../api/lib/assistant/strategies.js';
+import { comparison, understanding, runStrategy, interleave, COMPARISON_HOW, ofSide, subjectQuery } from '../../api/lib/assistant/strategies.js';
 import { decisionLog, jevProbabilities } from '../../api/lib/assistant/decision-log.js';
 import { prayerShelf, splitPrayers, isAttribution, isHeadingRow } from '../../api/lib/assistant/prayer-shelf.js';
 import { currentGuidance, dateOf, newestFirst } from '../../api/lib/assistant/guidance.js';
@@ -90,6 +90,19 @@ describe('comparison executor', () => {
     expect(out.passages.filter((p) => p.theme === 'Christian').map((p) => p.id)).toEqual([40, 41, 5]);
     expect(out.plan.coverage.Christian).toBe('covered');
     expect(decisions.list().find((d) => d.point === 'side:Christian')).toMatchObject({ by: 'jev', saw: { source: 'Book of Mormon', source_works: [21322] } });
+  });
+  it('the subject (the question without the names it compares) is searched beside the question, and inside the named book', async () => {
+    const q = 'How do the Bahá’í writings and the Book of Mormon treat tithing?';
+    const m = [{ role: 'user', content: q }];
+    expect(subjectQuery(q, m)).toBe('How do the writings and the treat tithing?');
+    expect(subjectQuery('tithing', [{ role: 'user', content: 'tithing' }])).toBe(null);   // no names → nothing different to search
+    const queries = [], inQ = [];
+    const search = async (a) => { queries.push([a.religion, a.query]); return { passages: [hit(queries.length, a.religion)] }; };
+    const sourceTools = { work: async (t) => (t === 'Book of Mormon' ? { doc: { id: 21322, title: 'The Book Of Mormon', paragraph_count: 6000 } } : null), probe: async () => [], searchBy: async () => [] };
+    const searchIn = async (sq, id) => { inQ.push([sq, id]); return []; };
+    await comparison({ sides: ["Baha'i", 'Christian'], sources: { Christian: 'Book of Mormon' } }, { messages: m, query: q, search, searchIn, sourceTools, decisions: decisionLog() });
+    expect(queries.filter(([r]) => r === 'Christian').map(([, x]) => x).sort()).toEqual([q, 'How do the writings and the treat tithing?'].sort());
+    expect(inQ.find(([, id]) => id === 21322)?.[0]).toBe('How do the writings and the treat tithing?');
   });
   it('fewer than two sides → one wide search, never narrowed, logged', async () => {
     const calls = []; const decisions = decisionLog();
