@@ -504,7 +504,7 @@ async function defaultDeps() {
 }
 
 // A live chat's one-round research has no brief: the writer works from the passages themselves (researcher.js ONE_ROUND).
-const QUICK_RESEARCH_HOW = 'Write the reply from the passages found for this question. Answer what the person is reaching for: a quick question gets a direct answer first; a study question gets an organised answer — a short bold lead for each part, the passages that carry it quoted in their exact words (linked as the house style says), the distinctions that matter and specifics (names, dates, references). Doctrine rests on the Writings and Shoghi Effendi first; a scholar or an institution is commentary, named as such. A passage from the web is named as from the web, never as scripture. Never volunteer what could not be found; give what is known. End with the thread to pull, as an invitation — no summary, no remarks about sources.';
+const QUICK_RESEARCH_HOW = 'Write the reply from the passages found for this question. Answer what the person is reaching for: a quick question gets a direct answer first; a study question gets an organised answer — a short bold lead for each part, the passages that carry it quoted in their exact words (linked as the house style says), the distinctions that matter and specifics (names, dates, references). A STORY or a SEQUENCE of events (what happened, how it unfolded, a timeline) is told fully and in order from the passages — each event with its date and place, the people in it, and the narrators’ own words quoted (Nabíl, Shoghi Effendi, the historians) — drawing on every source found, not one; never a summary of a summary. When the reader names a period, every event given lies inside it: check each date against the period, and leave out (or mark as earlier background) what falls outside. Doctrine rests on the Writings and Shoghi Effendi first; a scholar or an institution is commentary, named as such. A passage from the web is named as from the web, never as scripture. Never volunteer what could not be found; give what is known. End with the thread to pull, as an invitation — no summary, no remarks about sources.';
 const QUOTE_MISS_HOW = 'The person asked to find a quotation and this search found no passage containing those words — say that (never that the library lacks them). Say so plainly in one or two sentences, quoting their wording back. Do NOT offer related passages, people, events or other topics, and do not guess a source. Suggest checking the exact wording or giving the author, work or a few more words.';
 // In a thread, a miss may be wording the conversation already sourced (r5): point back to that source instead of absence.
 const QUOTE_MISS_THREAD = ' If the conversation above already quoted these words from a linked source, say they come from that source (with its link) rather than calling them absent; if they were your own paraphrase, say so plainly.';
@@ -521,10 +521,12 @@ export function agentOn(direction = {}, env = process.env.ANIS_AGENT) {
 
 /** The researcher's shape on a LIVE channel (channels.js `live`): ONE planning round whose calls run in parallel, no brief,
  *  then code searches INSIDE the top books that round found (inBooks; 11-03: one round missed the narrative passages of the
- *  histories and Saiedi's own words). Jev's depth = research only widens both (deeper work is the deep_report job). Not live → null (the full loop). Pure. */
+ *  histories and Saiedi's own words). Jev's depth = research widens both and reads each book with a second of the round's queries (perBook, within extraMs:
+ *  11-03 smoke, three per book on every turn put the first text at 11-15 s on a loaded tower) — deeper work is the deep_report job. Not live → null (the full loop). Pure. */
 export function liveResearch({ channel, depth } = {}) {
   if (!channel?.live) return null;
-  return { maxRounds: 1, maxCalls: depth === 'research' ? 8 : 5, brief: false, inBooks: depth === 'research' ? 4 : 3 };
+  return { maxRounds: 1, maxCalls: depth === 'research' ? 8 : 5, brief: false, inBooks: depth === 'research' ? 4 : 3,
+    ...(depth === 'research' ? { perBook: 2, extraMs: 800 } : {}) };
 }
 
 async function agentRespond({ messages, onEvent, d, t0 }) {

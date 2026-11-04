@@ -127,14 +127,18 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
  */
 // A LIVE chat (respond.js liveResearch): one round, no brief — the model asks for everything at once and the writer works
 // from the passages (11-03: the 6-round loop + brief put first text at 23-26 s median).
-const ONE_ROUND = 'THIS TURN HAS ONE ROUND: a reader is waiting. Ask now, in this one reply, for EVERY tool call the answer needs (they run in parallel; you will not see their results and write no brief) — search the main question and each of its sides or aspects separately, and add a lookup or trace only where the question calls for one.';
+const ONE_ROUND = 'THIS TURN HAS ONE ROUND: a reader is waiting. Ask now, in this one reply, for EVERY tool call the answer needs (they run in parallel; you will not see their results and write no brief) — search the main question and each of its sides or aspects separately, and add a lookup or trace only where the question calls for one. When the answer turns on WHEN things happened (a date, a sequence, a story across months or years), one of your searches asks for the dates themselves — the chronology of those events, in the words a history or a chronology would use — so every event can be dated from a passage.';
 const BOOK_STEP = 'After your round, the library is searched again INSIDE the books your searches found, for the passages that tell the story or make the argument. When the answer lies in a particular book or author (a history such as The Dawn-Breakers, a study such as Gate of the Heart), also call document_search for that book, so it is one of them.';
 
 /** The books a one-round research found, for the in-book step: works asked for by title first (with the reader's question; stubs skipped),
- *  then each search's documents round-robin by rank (with the query that found it), distinct, at most n. Pure. */
-export function booksFound({ works = [], searched = [], question = '', n = 3 }) {
+ *  then each search's documents round-robin by rank (with the query that found it), distinct, at most n. Each book also carries
+ *  `queries`: the query that found it, then the round's other searches, then the reader's question — distinct, at most perBook —
+ *  so a history is read for every side the round asked about (11-03: one query per book left the story half told). Pure. */
+export function booksFound({ works = [], searched = [], question = '', n = 3, perBook = 1 }) {
   const out = [], seen = new Set();
-  const take = (id, query) => { const k = Number(id); if (!Number.isFinite(k) || seen.has(k) || out.length >= n) return; seen.add(k); out.push({ document_id: k, query }); };
+  const all = [...new Set(searched.map((s) => s.query).filter(Boolean))];
+  const queriesFor = (first) => [...new Set([first, ...all, question].filter(Boolean))].slice(0, Math.max(1, perBook));
+  const take = (id, query) => { const k = Number(id); if (!Number.isFinite(k) || seen.has(k) || out.length >= n) return; seen.add(k); out.push({ document_id: k, query, queries: queriesFor(query) }); };
   for (const w of works) if (!(Number(w.paragraph_count) < 10)) take(w.id, question);   // a stub (a catalogue entry, a tag page) is no book
   for (let rank = 0; out.length < n && searched.some((s) => rank < s.docs.length); rank++) for (const s of searched) if (rank < s.docs.length) take(s.docs[rank], s.query);
   return out;
@@ -168,7 +172,7 @@ export async function namedSource(name, question, impl, { maxAuthors = 2 } = {})
   return { works, passages, authors };
 }
 
-export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, drawFrom = null }) {
+export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, perBook = 1, extraMs = Infinity, drawFrom = null }) {
   const t0 = Date.now();
   const { found, works, searched, run, add, addWork } = toolRunner(impl);
   // the source Jev named is resolved BESIDE the planning round (no added wait); its passages and works join before the book step
@@ -217,10 +221,24 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     // the BOOK STEP (coordinator 11-03): code, no model call — each top book searched with the query that found it, in parallel
     // (the named source's works come first: booksFound takes works before searched documents)
     const question = userQ;
-    const books = booksFound({ works: [...(src?.works || []), ...works.values()], searched, question, n: inBooks });
-    const outs = await Promise.all(books.map(async (b) => ({ b, hits: await impl.searchIn(b.query, b.document_id).catch((err) => {
-      log.warn({ document_id: b.document_id, err: String(err?.message).slice(0, 160) }, 'in-book search failed'); return []; }) })));
-    for (const { b, hits } of outs) steps.push({ tool: 'in_book_search', args: b, found: (hits || []).map((p) => add(p)).filter(Boolean).length });
+    const books = booksFound({ works: [...(src?.works || []), ...works.values()], searched, question, n: inBooks, perBook });
+    // every (book × query) pair at once: the fan-out widens the evidence without another model round. Each book's own query is
+    // awaited (as before the fan-out); the extra queries get at most extraMs beyond those, and a late one costs only its passages
+    // (11-03 smoke: 9 searches at once ran 2.5-5.8 s on a loaded tower and doubled the first text)
+    const pairs = books.flatMap((b) => b.queries.map((q, i) => ({ b, q, extra: i > 0 })));
+    const one = ({ b, q }) => impl.searchIn(q, b.document_id).catch((err) => {
+      log.warn({ document_id: b.document_id, err: String(err?.message).slice(0, 160) }, 'in-book search failed'); return []; });
+    const started = pairs.map((x) => ({ ...x, p: one(x) }));
+    await Promise.all(started.filter((x) => !x.extra).map((x) => x.p));
+    let timer;
+    const late = Number.isFinite(extraMs) ? new Promise((r) => { timer = setTimeout(() => r('late'), extraMs); }) : null;
+    const outs = await Promise.all(started.map(async (x) => {
+      const hits = x.extra && late ? await Promise.race([x.p, late]) : await x.p;
+      return { ...x, hits: hits === 'late' ? [] : hits, late: hits === 'late' };
+    }));
+    clearTimeout(timer);
+    if (outs.some((o) => o.late)) log.info({ late: outs.filter((o) => o.late).length, extraMs }, 'in-book extra searches past the budget');
+    for (const { b, q, hits, late } of outs) steps.push({ tool: 'in_book_search', args: { document_id: b.document_id, query: q }, ...(late ? { late: true } : {}), found: (hits || []).map((p) => add(p)).filter(Boolean).length });
   }
   if (!wantBrief) {
     log.info({ steps: steps.map((s) => `${s.tool}:${s.found}`), found: found.size, ms: Date.now() - t0 }, 'researched (one round)');

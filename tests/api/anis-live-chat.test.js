@@ -2,7 +2,7 @@
 // watches (channel data `live`), Jev's strategy runs instead of the researcher, the researcher plans ONE round of tool calls
 // that run in parallel, and one Sonnet writer (thinking off) streams the answer. Email keeps the full researcher.
 import { describe, it, expect, afterEach } from 'vitest';
-import { research } from '../../api/lib/assistant/researcher.js';
+import { research, booksFound } from '../../api/lib/assistant/researcher.js';
 import { anisRespond, agentOn, liveResearch } from '../../api/lib/assistant/respond.js';
 import { channelFor, CHANNELS } from '../../api/lib/assistant/channels.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
@@ -81,6 +81,41 @@ describe('researcher: the second round searches INSIDE the books the first round
     expect(String(seen[1].messages[0].content)).not.toMatch(/INSIDE the books/);
   });
 
+  it('perBook: each top book is searched with the round\'s other queries too, all at once (one model call)', async () => {
+    const seen = [], within = [];
+    const create = async (params) => { seen.push(params); return { choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'siege of Tabarsi' }), call('b', 'combined_search', { query: 'Tabarsi chronology 1849 dates' })] } }] }; };
+    const search = async (q) => q.startsWith('siege') ? [inBook(7, 1)] : [inBook(9, 1)];
+    const searchIn = async (query, documentId) => { within.push([documentId, query]); return [inBook(documentId, 10 + within.length)]; };
+    const q = 'How did the siege of Tabarsi end?';
+    const r = await research({ messages: [{ role: 'user', content: q }], create, tools: { search, searchIn }, maxRounds: 1, brief: false, inBooks: 2, perBook: 3 });
+    expect(seen).toHaveLength(1);
+    expect(within).toEqual([[7, 'siege of Tabarsi'], [7, 'Tabarsi chronology 1849 dates'], [7, q], [9, 'Tabarsi chronology 1849 dates'], [9, 'siege of Tabarsi'], [9, q]]);
+    expect(r.steps.filter((s) => s.tool === 'in_book_search')).toHaveLength(6);
+  });
+
+  it('extraMs: a book\'s own query is always awaited; an extra query past the budget costs only its passages', async () => {
+    const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'main' }), call('b', 'combined_search', { query: 'other' })] } }] });
+    const searchIn = (query, documentId) => new Promise((r) => setTimeout(() => r([inBook(documentId, query === 'main' ? 1 : 2)]), query === 'main' ? 30 : 400));
+    const t = Date.now();
+    const r = await research({ messages: [{ role: 'user', content: 'main' }], create, tools: { search: async () => [inBook(7, 9)], searchIn }, maxRounds: 1, brief: false, inBooks: 1, perBook: 3, extraMs: 20 });
+    expect(Date.now() - t).toBeLessThan(300);
+    expect(r.passages.map((p) => p.id)).toEqual(expect.arrayContaining([701]));
+    expect(r.passages.some((p) => p.id === 702)).toBe(false);
+    expect(r.steps.filter((s) => s.late)).toHaveLength(1);
+  });
+
+  it('booksFound: queries are distinct and capped at perBook; perBook 1 keeps the finding query alone', () => {
+    const searched = [{ query: 'a', docs: [1] }, { query: 'b', docs: [2] }, { query: 'a', docs: [3] }];
+    expect(booksFound({ searched, question: 'a', n: 2, perBook: 3 }).map((b) => b.queries)).toEqual([['a', 'b'], ['b', 'a']]);
+    expect(booksFound({ searched, question: 'q', n: 1 }).map((b) => b.queries)).toEqual([['a']]);
+  });
+
+  it('the one-round prompt asks for a dates search when the answer turns on when things happened', async () => {
+    const seen = [];
+    await research({ messages: [{ role: 'user', content: 'q' }], create: async (p) => { seen.push(p); return { choices: [{ message: { content: '' } }] }; }, tools: { search: async () => [] }, maxRounds: 1, brief: false });
+    expect(String(seen[0].messages[0].content)).toMatch(/chronology of those events/);
+  });
+
   it('a failed in-book search costs only its own passages', async () => {
     const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'x' })] } }] });
     const r = await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [inBook(7, 1)], searchIn: async () => { throw new Error('timeout'); } },
@@ -93,7 +128,7 @@ describe('liveResearch: the shape of the researcher on a live channel, from Jev\
   it('one planning round, no brief; depth=research only widens the round', () => {
     expect(liveResearch({ channel: channelFor('site-chat'), depth: 'answer' })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3 });
     expect(liveResearch({ channel: channelFor('site-chat'), depth: null })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3 });
-    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'research' })).toEqual({ maxRounds: 1, maxCalls: 8, brief: false, inBooks: 4 });
+    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'research' })).toEqual({ maxRounds: 1, maxCalls: 8, brief: false, inBooks: 4, perBook: 2, extraMs: 800 });
     expect(liveResearch({ channel: channelFor('email', { trusted: true }), depth: 'answer' })).toBeNull();   // email: the full loop
   });
 });
@@ -138,7 +173,7 @@ describe('anisRespond on a live channel', () => {
     const { d, log } = respondDeps();
     const r = await anisRespond({ messages: soulQ, deps: d, direction: { channel: channelFor('site-chat'), research: true, depth: 'research' } });
     expect(log.research).toHaveLength(1);
-    expect(log.research[0]).toMatchObject({ maxRounds: 1, maxCalls: 8, brief: false, inBooks: 4 });
+    expect(log.research[0]).toMatchObject({ maxRounds: 1, maxCalls: 8, brief: false, inBooks: 4, perBook: 2, extraMs: 800 });
     expect(log.crafts).toHaveLength(1);
     expect(log.crafts[0].llm).toMatchObject({ model: 'claude-sonnet-5-5', thinking: false });
     expect(log.crafts[0].direction.format.id).toBe('research');
