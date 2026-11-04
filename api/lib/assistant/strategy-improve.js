@@ -7,11 +7,12 @@
 import { catalog } from '../repos/strategies-repo.js';
 import { recordGap, openGaps, logDesign, saveCandidate, listCandidates, pinFor, promote, logPromotion, listPromotions,
   ensureCandidatesSchema, heldQuestions, countDesigns, decisionFor } from '../repos/strategy-candidates-repo.js';
-import { untestedDataSuggestions, testingSuggestions, markTesting, settleSuggestions, diagnosesFor } from '../repos/improve-repo.js';
+import { untestedDataSuggestions, testingSuggestions, markTesting, settleSuggestions, diagnosesFor, strategyQuestions } from '../repos/improve-repo.js';
 import { groupDataSuggestions, uneditable, designEdit } from './strategy-edit.js';
 import { gapOf, clusterGaps, IMPROVE_CFG } from './strategy-gaps.js';
 import { designCandidate } from './strategy-design.js';
 import { runPromotion, liveWriteQuestions, liveJudge } from './strategy-promote.js';
+import { classSet, freezeClassSet } from '../repos/jev-theories-repo.js';
 
 /** Free: a turn → a gap row when it is one. turn: { turnId, threadId, question, path, judge }. → 1 | 0 */
 export function captureGap(db, turn) {
@@ -49,11 +50,15 @@ export async function localPromotionDeps() {
 }
 
 /** Replay-promote id@version. dry = measure and log, never change status. → { id, version, promoted, decision, usd, rows } */
-export async function promoteCandidate(db, { id, version, dry = false, deps = null, cat = catalog(), capUsd = IMPROVE_CFG.candidate_usd, by = 'improve', onProgress } = {}) {
+export async function promoteCandidate(db, { id, version, dry = false, deps = null, cat = catalog(), capUsd = IMPROVE_CFG.candidate_usd, by = 'improve', onProgress,
+  cfg = null, keepChoice = false, historic = [] } = {}) {
   ensureCandidatesSchema(db);
-  const pin = pinFor(db, id, version);
-  if (!pin) throw new Error(`no strategy ${id}@${version}`);
-  const run = await runPromotion({ pin, held: heldQuestions(db, id, pin.version), cat, deps: deps || await localPromotionDeps(), capUsd, onProgress });
+  const found = pinFor(db, id, version);
+  if (!found) throw new Error(`no strategy ${id}@${version}`);
+  const pin = keepChoice ? { ...found, keepChoice: true } : found;
+  // the class set is FROZEN per strategy: written by Opus once, then every later version is measured on the same questions
+  const run = await runPromotion({ pin, held: heldQuestions(db, id, pin.version), cat, deps: deps || await localPromotionDeps(), capUsd, onProgress,
+    cfg: { ...IMPROVE_CFG.promote, ...(cfg || {}) }, frozen: classSet(db, id), historic, onFreeze: (qs) => freezeClassSet(db, id, qs) });
   const decision = { ...run.decision, rows: run.rows.map((r) => ({ set: r.set, of: r.of ?? null, jev_pick: r.jev_pick ?? r.cand?.jev_pick ?? null,
     cand: r.cand ? { score: r.cand.score, ms: r.cand.ms, usd: r.cand.usd } : null, cur: r.cur ? { score: r.cur.score, ms: r.cur.ms, usd: r.cur.usd } : null })) };
   // the ledger keeps the numbers per row, never the question text (that stays in strategy_gaps)
@@ -128,7 +133,9 @@ export async function editStage(db, { improveDb, call, cat = catalog(), acts, st
   const saved = saveCandidate(db, d.normalized, { by: 'opus-edit' });
   logDesign(db, { cluster_key: `edit:${g.strategy.id}`, label, status: 'edit', strategy_id: saved.id, version: saved.version, attempts: d.attempts, usd: d.usd });
   markTesting(improveDb, ids, `${saved.id}@${saved.version}`);
-  const r = await promoteCandidate(db, { id: saved.id, version: saved.version, deps, cat, capUsd: cfg.candidate_usd, by: 'improve-edit' });
+  let historic = [];
+  try { historic = strategyQuestions(improveDb, g.strategy.name, { limit: cfg.class_sets?.historic_n ?? 6 }); } catch { /* an old store: no historic set */ }
+  const r = await promoteCandidate(db, { id: saved.id, version: saved.version, deps, cat, capUsd: cfg.candidate_usd, by: 'improve-edit', historic });
   settled += settleTested(db, improveDb);
   return { status: r.promoted ? 'promoted' : 'rejected', id: saved.id, version: saved.version, failed: r.decision?.failed, usd: d.usd + r.usd, settled };
 }

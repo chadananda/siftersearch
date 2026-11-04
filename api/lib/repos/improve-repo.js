@@ -24,7 +24,10 @@ CREATE TABLE IF NOT EXISTS improvements (
   classes_json TEXT, severity INTEGER DEFAULT 2, evidence_n INTEGER DEFAULT 1, evidence_json TEXT,
   status TEXT DEFAULT 'open', status_note TEXT, status_at TEXT, first_seen TEXT, last_seen TEXT);
 CREATE INDEX IF NOT EXISTS idx_improvements_status ON improvements(status);
-CREATE TABLE IF NOT EXISTS improve_cursor (name TEXT PRIMARY KEY, value TEXT, updated_at TEXT);`;
+CREATE TABLE IF NOT EXISTS improve_cursor (name TEXT PRIMARY KEY, value TEXT, updated_at TEXT);
+CREATE TABLE IF NOT EXISTS behavior_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, scenario TEXT NOT NULL, proposal INTEGER, state TEXT NOT NULL, checks_json TEXT, commit_sha TEXT, at TEXT);
+CREATE INDEX IF NOT EXISTS idx_behavior_runs ON behavior_runs(proposal, scenario, id);`;
 // Columns added after the first deploy (idempotent ALTERs on every writable open): the deep analysis's own conclusion
 // (diagnosis, root cause, the improvement ids it produced or confirmed) and when each step ran (throughput per hour);
 // each improvement's target (who can apply it: data for the live loop, code for Claude Code) and who reviewed it, when.
@@ -273,3 +276,37 @@ export function diagnosesFor(db, keys = []) {
   return [...new Set(keys)].map((k) => { const r = one.get(k); if (!r) return null; const d = safeJson(r.deep_json) || {};
     return { diagnosis: d.diagnosis ?? null, root_cause: d.root_cause ?? null, judge_why: r.why ?? null, score: r.score ?? null }; }).filter(Boolean);
 }
+
+// ── the decision-theory loop's reads (jev-tuning/theories.js) ──
+/** Weak verdicts whose judge named a Jev gate (+ the right option), newest first — the theory loop's input. Never more than `limit`. */
+export const weakGateVerdicts = (db, { limit = 20 } = {}) => db.prepare(`SELECT item_key, json_extract(payload_json, '$.question') AS question,
+    json_extract(payload_json, '$.turn_id') AS turn_id, judge_json FROM forensics WHERE judge_state = 'done'
+    AND json_extract(judge_json, '$.verdict') = 'weak' AND json_extract(judge_json, '$.gate') IS NOT NULL
+    ORDER BY COALESCE(judged_at, updated_at) DESC LIMIT ?`).all(limit)
+  .map((r) => { const j = safeJson(r.judge_json) || {}; return { item_key: r.item_key, question: r.question, turn_id: r.turn_id, gate: j.gate, right: j.right ?? null,
+    why: j.why ?? null, classes: j.classes || [], severity: j.severity ?? null }; });
+
+/** Historic questions a strategy served (forensic reply payloads carry path.strategy.choice as `strategy`), newest first, distinct. */
+export const strategyQuestions = (db, strategy, { limit = 6 } = {}) => db.prepare(`SELECT DISTINCT json_extract(payload_json, '$.question') AS q FROM forensics
+    WHERE kind = 'reply' AND json_extract(payload_json, '$.strategy') = ? AND json_extract(payload_json, '$.question') IS NOT NULL
+    ORDER BY asked_at DESC LIMIT ?`).all(strategy, limit).map((r) => r.q);
+
+// ── behaviour scenarios (tests/behavior/run.mjs posts each run through the admin API) ──
+export const BEHAVIOR_STATES = ['passing', 'failing'];
+/** rows: [{ scenario, proposal?, state, checks, commit? }] → inserted count */
+export function recordBehaviorRuns(rows = [], opts) {
+  return withDb(opts, (db) => {
+    const ins = db.prepare('INSERT INTO behavior_runs (scenario, proposal, state, checks_json, commit_sha, at) VALUES (?, ?, ?, ?, ?, ?)');
+    const at = nowIso();
+    let n = 0;
+    db.transaction(() => { for (const r of rows) { if (!r?.scenario || !BEHAVIOR_STATES.includes(r.state)) continue;
+      ins.run(String(r.scenario).slice(0, 200), r.proposal != null ? Number(r.proposal) : null, r.state, JSON.stringify(r.checks || []), r.commit ?? null, at); n++; } })();
+    return n;
+  });
+}
+/** The last run per (proposal, scenario). → Map 'proposal|scenario' → { state, at } (empty when the table is not there yet). */
+export const behaviorRunStates = (opts) => withDb(opts, (db) => {
+  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'behavior_runs'").get()) return new Map();
+  return new Map(db.prepare(`SELECT proposal, scenario, state, at FROM behavior_runs WHERE id IN (SELECT MAX(id) FROM behavior_runs GROUP BY proposal, scenario)`).all()
+    .map((r) => [`${r.proposal ?? ''}|${r.scenario}`, { state: r.state, at: r.at }]));
+}, { readonly: true }) || new Map();

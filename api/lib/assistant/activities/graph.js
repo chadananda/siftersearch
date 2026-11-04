@@ -3,9 +3,10 @@
 // → per-node maps, everything validated; an invalid DB graph → the checked-in seed's) and run node by node: each activity
 // returns its edge, the edge picks the next node ('*' = any other edge, '$end' = done). Per node it records
 // {node, step: 'id@v', ms, edge} into s.trace (→ path.steps). A sync activity is not awaited, so the run adds no ticks to it.
-// ANIS_STRATEGY_GRAPH=0 → respond.js / strategies.js run the old code (Phase-1 rollback only).
+// ANIS_STRATEGY_GRAPH=0 → respond.js / strategies.js run the old code (Phase-1 rollback only). A node whose step params carry
+// `enrich` runs inside ctx.jevEnrich — the ONLY way a tested Jev theory reaches the reply path (jev-tuning/enrich.js).
 import { catalog } from '../../repos/strategies-repo.js';
-import { currentAIContext } from '../../ai-context.js';
+import { currentAIContext, withAIContext } from '../../ai-context.js';
 import { STRATEGIES as SEED_STRATEGIES, STEPS as SEED_STEPS, END_NODE } from '../strategy-seed.js';
 import { activities as registry } from './index.js';
 import { GATHERED } from '../respond.js';
@@ -84,7 +85,10 @@ export async function runGraph(g, s) {
     if (hops > 1000) throw new Error(`strategy ${g.id}: no end after 1000 steps`);
     const n = g.nodes[id];
     const t = performance.now(), j0 = jevCalls?.length ?? 0;
-    let edge = n.run(s, n.params);
+    // a decision step's params.enrich (a tested Jev theory, jev-tuning/theories.js): its Jev calls get the registered enrichers
+    // (systemone reads ctx.jevEnrich). No enrich → the node runs exactly as before (one property read).
+    let edge = n.params.enrich?.length ? withAIContext({ jevEnrich: { list: n.params.enrich, messages: s.messages ?? s.ctx?.messages ?? [] } }, () => n.run(s, n.params))
+      : n.run(s, n.params);
     if (edge && typeof edge.then === 'function') edge = await edge;
     const entry = { node: id, step: n.step, ms: Math.round((performance.now() - t) * 100) / 100, edge };
     if (s.note) { Object.assign(entry, s.note); s.note = null; }

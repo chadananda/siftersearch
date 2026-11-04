@@ -18,6 +18,7 @@ import { logAIUsage } from './ai-services.js';
 import { assertSpendCap } from './spend-caps.js';   // every Jev / Clef call is SPEND (ai_usage) as well as a log row
 import { noteProviderError } from './spend-alerts.js';   // out-of-credit → immediate email
 import { currentAIContext, setAIContext } from './ai-context.js';
+import { enrichCall } from './jev-tuning/enrich.js';   // a decision step's params.enrich (reply path only when graph.js opens one)
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -163,7 +164,11 @@ export function minConfidence(answers = {}) {
  */
 export async function ask(task, state, questions, { ref = null, timeoutMs = 20000, shadow, log = true, retries = 4, backend = null } = {}) {
   if (!task) throw new Error('systemone.ask: task type is required (training is per task type)');
-  await assertSpendCap(`system1:${task}`, { provider: 'jev' });   // the daily cap (anis group), before the call
+  await assertSpendCap(`system1:${task}`, { provider: 'jev' });
+  if (currentAIContext().jevEnrich) {   // a decision step's params.enrich (graph.js → jev-tuning/enrich.js); absent = untouched
+    const e = await enrichCall(task, typeof state === 'string' ? state : JSON.stringify(state), questions);
+    if (e) ({ state, questions } = e);
+  }   // the daily cap (anis group), before the call
   // backend: force one model for this call (an ENSEMBLE caller asks several and votes) — logged, no background shadows
   const route = backend ? { ...routeFor(task), primary: backend, shadow: false } : routeFor(task);
   if (backend && CLEF.has(backend) && !clefOn()) throw new Error(`${backend} unavailable (no edge key)`);
@@ -272,6 +277,7 @@ export function record(task, state, questions, { answers, ms = null, model = nul
  *  response, a COPY of the answer is logged under `task` with the request's state + questions (record() → Clef shadows). */
 export const jevFetch = (task, base = (...a) => globalThis.fetch(...a)) => async (url, init = {}) => {
   const t0 = Date.now();
+  if (currentAIContext().jevEnrich) init = await enrichInit(task, init);   // absent (every call but an enriched step's) = untouched
   const res = await base(url, init);
   if (res && !res.ok && typeof res.clone === 'function') {
     res.clone().text().then((t) => noteProviderError('Jev (TypeSafe)', { status: res.status, message: t })).catch(() => {});
@@ -284,6 +290,15 @@ export const jevFetch = (task, base = (...a) => globalThis.fetch(...a)) => async
   }
   return res;
 };
+
+/** A request's JSON body with the step's enrich applied to its state/questions (unparseable or nothing applied → as it was). */
+async function enrichInit(task, init) {
+  try {
+    const b = JSON.parse(init.body || '{}');
+    const e = await enrichCall(task, typeof b.state === 'string' ? b.state : JSON.stringify(b.state ?? ''), b.questions);
+    return e ? { ...init, body: JSON.stringify({ ...b, state: e.state, questions: e.questions }) } : init;
+  } catch { return init; }
+}
 
 function recordShadow(id, backend, answers, ms, error) {
   try {

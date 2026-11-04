@@ -4,7 +4,7 @@
 // the improve group, never anis) through the ai-context `billTo` key; its searches are traced with route 'replay:<id@v>'.
 // The pinned strategy (ai-context strategyPin) is read by graph.js / templates.js, so a candidate runs although it is not active.
 // With a pin, Jev is ALSO asked with the candidate's option text added (the promotion check) — what he picked is returned as
-// jev_pick, then the choice is forced. → { reply, path, steps, ms, usd, jev_pick, status }. Deps: turn.js, strategy-choice.js.
+// jev_pick, then the choice is forced (pin.keepChoice: not forced — a decision-step theory runs wherever Jev routes to its graph). → { reply, path, steps, ms, usd, jev_pick, status }. Deps: turn.js, strategy-choice.js.
 import { withAIContext } from '../ai-context.js';
 import { anisTurn, defaultDeps } from './turn.js';
 import { chooseStrategy, strategyOptions } from './strategy-choice.js';
@@ -37,7 +37,7 @@ export async function tryStrategy({ question, history = [], pin = null, caller =
   const strategy = async (messages, o) => {
     const r = await choose(messages, { ...o, ...(options ? { options } : {}) }).catch(() => null);
     jevPick = r?.strategy?.choice ?? null;
-    if (!pin) return r;
+    if (!pin || pin.keepChoice) return r;   // keepChoice: Jev routes as live; the pinned graph runs wherever its strategy is chosen
     const forced = { choice: pin.row.name, confidence: 1, distribution: null, forced: true, jev: jevPick };
     return { ...(r || { sides: [], sources: {}, ms: 0, decisions: [] }), strategy: forced,
       decisions: [...(r?.decisions || []), { point: 'strategy:forced', by: 'dry-run', chosen: `${pin.row.id}@${pin.row.version}`, reason: `jev picked ${jevPick ?? 'nothing'}` }] };

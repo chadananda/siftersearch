@@ -27,18 +27,27 @@ const r3 = (x) => (x == null ? null : Math.round(x * 1000) / 1000);
 export const scoreOf = (j) => (j == null ? null : Number.isFinite(Number(j.score)) && j.score !== null ? Math.max(0, Math.min(10, Number(j.score)))
   : j.verdict === 'pass' ? 10 : Math.max(0, 10 - 3 * (Number(j.severity) || 2)));
 
-/** The question set. → [{ question, set: 'fresh'|'held'|'guard', of? }], usd. Pure apart from `writeQuestions`. */
-export async function questionSet({ row, held = [], cat, writeQuestions, nFresh = IMPROVE_CFG.promote.n_fresh, nGuard = IMPROVE_CFG.promote.n_guard }) {
+/** The question set. → { questions: [{ question, set: 'fresh'|'held'|'historic'|'guard', of? }], usd, fresh: [to freeze] | null }.
+ *  frozen (the strategy's frozen class set, jev-theories-repo classSet) → reused as is, no Opus call; else Opus writes it and
+ *  `fresh` is returned for the caller to freeze. historic = real questions this strategy served (forensics), measured as class rows.
+ *  Pure apart from `writeQuestions`. */
+export async function questionSet({ row, held = [], cat, writeQuestions, nFresh = IMPROVE_CFG.promote.n_fresh, nGuard = IMPROVE_CFG.promote.n_guard, frozen = null, historic = [] }) {
+  const heldSet = new Set(held.map((q) => q.trim()));
+  const hist = [...new Set(historic.map((q) => String(q || '').trim()).filter((q) => q && !heldSet.has(q)))].map((question) => ({ question, set: 'historic' }));
+  const tail = [...held.map((question) => ({ question, set: 'held' })), ...hist];
+  if (frozen?.length) {
+    const f = frozen.filter((q) => !heldSet.has(q.question) && !hist.some((h) => h.question === q.question));
+    return { questions: [...f.filter((q) => q.set === 'fresh'), ...tail, ...f.filter((q) => q.set === 'guard')], usd: 0, fresh: null };
+  }
   const others = cat.strategies.filter((s) => s.id !== row.id && s.name !== 'other' && s.name !== row.name);
   const fromExemplars = [];
   for (let i = 0; fromExemplars.length < nGuard && others.some((s) => (s.exemplars || [])[i]); i++)
     for (const s of others) if (s.exemplars?.[i] && fromExemplars.length < nGuard) fromExemplars.push({ question: s.exemplars[i], set: 'guard', of: s.name });
   const w = await writeQuestions({ row, others, nFresh, nGuard: nGuard - fromExemplars.length });
-  const heldSet = new Set(held.map((q) => q.trim()));
   const fresh = (w.class || []).map((q) => String(q).trim()).filter((q) => q && !heldSet.has(q)).slice(0, nFresh).map((question) => ({ question, set: 'fresh' }));
   const guards = [...fromExemplars, ...(w.guard || []).filter((g) => g?.question && others.some((s) => s.name === g.strategy))
     .map((g) => ({ question: String(g.question), set: 'guard', of: g.strategy }))].slice(0, nGuard);
-  return { questions: [...fresh, ...held.map((question) => ({ question, set: 'held' })), ...guards], usd: w.usd || 0 };
+  return { questions: [...fresh, ...tail, ...guards], usd: w.usd || 0, fresh: [...fresh, ...guards] };
 }
 
 /** The decision over measured rows. rows: class rows { set, cand:{score, ms, usd, jev_pick}, cur:{score, ms, usd} } and guard
@@ -71,10 +80,12 @@ export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote } = {}) 
  * tryTurn({question, pin}) → {reply, path, ms, usd, jev_pick}, judge({question, reply, path}) → {verdict, score, usd},
  * jevPick({question, pin}) → name }. Stops at capUsd. → { decision, rows, usd, stopped }
  */
-export async function runPromotion({ pin, held = [], cat, deps, capUsd = IMPROVE_CFG.candidate_usd, cfg = IMPROVE_CFG.promote, onProgress = () => {} }) {
+export async function runPromotion({ pin, held = [], cat, deps, capUsd = IMPROVE_CFG.candidate_usd, cfg = IMPROVE_CFG.promote, onProgress = () => {},
+  frozen = null, historic = [], onFreeze = null }) {
   const row = pin.row;
   let usd = 0, stopped = null;
-  const qs = await questionSet({ row, held, cat, writeQuestions: deps.writeQuestions, nFresh: cfg.n_fresh, nGuard: cfg.n_guard });
+  const qs = await questionSet({ row, held, cat, writeQuestions: deps.writeQuestions, nFresh: cfg.n_fresh, nGuard: cfg.n_guard, frozen, historic });
+  if (qs.fresh?.length && onFreeze) { try { onFreeze(qs.fresh); } catch { /* freezing is a saving, never a failure */ } }
   usd += qs.usd;
   const rows = [];
   for (const q of qs.questions) {

@@ -1,7 +1,7 @@
 // Variant registry for the Jev tuning harness (ops.mjs jev-try). A variant is DATA: an id + params, applied to a logged
 // call's state/questions before Jev is re-asked. apply({state, questions, row, params, deps}) → { state, questions } (async,
 // pure of side effects; deps.history(row, turns) → text supplies conversation context). A winner ships as a change to that
-// gate's state builder — the registry never reaches the reply path. Add an enricher = add an entry here.
+// gate's state builder, or as a decision step's params.enrich (enrich.js, applied by graph.js → systemone). Add an enricher = add an entry here.
 const clone = (x) => JSON.parse(JSON.stringify(x ?? {}));
 const eachQuestion = (questions, only, fn) => { const q = clone(questions); for (const [name, d] of Object.entries(q)) if (!only || only === name) fn(d, name); return q; };
 
@@ -18,6 +18,12 @@ export const VARIANTS = {
       const h = await deps.history?.(row, Number(params.turns) || 4);
       return { state: h ? `${state}\n\nEARLIER IN THIS CONVERSATION:\n${h}` : state, questions, skipped: !h };
     } },
+  // a WORDING theory: a question's instructions and/or option descriptions replaced (the diagnosis's 'reword'); ships as params.enrich
+  reword: { describe: 'replace a question\'s instructions and/or option descriptions. params: {question?, instructions?, options?: {option: text}}',
+    apply: ({ state, questions, params }) => ({ state, questions: eachQuestion(questions, params.question, (d) => {
+      if (params.instructions) d.instructions = params.instructions;
+      for (const [o, t] of Object.entries(params.options || {})) if (d.criteria && o in d.criteria) d.criteria[o] = t;
+    }) }) },
 };
 
 /** variant spec ('id' | {id, params}) → { id, params, apply }. Throws with the list when unknown. */

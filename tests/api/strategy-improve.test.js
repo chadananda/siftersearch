@@ -273,4 +273,16 @@ describe('improve worker: the strategy unit runs only when judge work is idle', 
     const cap = Object.assign(new Error('cap'), { code: 'SPEND_CAP', retryAfterMs: 5 });
     expect(await strategyWork({ deps: { db: {}, designStage: async () => { throw cap; } } })).toEqual({ wait: 5 });
   });
+  it('a decision theory runs after edit, before promotion; idle/capped falls through; a spend cap waits', async () => {
+    const { strategyWork } = await import('../../api/workers/improve-worker.js');
+    const calls = [];
+    const base = { db: {}, designStage: async () => 'idle', promotionStage: async () => { calls.push('promote'); return 'idle'; }, liveTheoryDeps: async () => ({}) };
+    expect(await strategyWork({ deps: { ...base, theoryStage: async () => { calls.push('theory'); return { gate: 'search-plan', item_key: 'k', theories: [{ kind: 'enrich', verdict: 'won' }], usd: 0.2 }; } } })).toBe('done');
+    expect(calls).toEqual(['theory']);
+    calls.length = 0;
+    expect(await strategyWork({ deps: { ...base, theoryStage: async () => { calls.push('theory'); return 'capped'; } } })).toBe('idle');
+    expect(calls).toEqual(['theory', 'promote']);
+    const cap = Object.assign(new Error('cap'), { code: 'SPEND_CAP', retryAfterMs: 7 });
+    expect(await strategyWork({ deps: { ...base, theoryStage: async () => { throw cap; } } })).toEqual({ wait: 7 });
+  });
 });

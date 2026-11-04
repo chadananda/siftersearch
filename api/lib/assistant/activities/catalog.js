@@ -4,6 +4,7 @@
 import { activities } from './index.js';
 import { AGENT_TOOL_NAMES } from '../agent.js';
 import { RESEARCH_TOOL_NAMES } from '../researcher.js';
+import { TIERS, tierOf, ACTIVITY_GATES, activitiesForGate } from '../../jev-tuning/gates.js';
 
 const strategyExec = (tool, what) => ({ description: `Runs the ${what} strategy executor (the ${tool} tool) on Jev's choice and gathers its passages.`,
   input: 'choice, turn context', output: 'passages + plan (→ found | empty)', tools: [tool] });
@@ -38,7 +39,11 @@ export const ACTIVITY_META = {
 };
 
 /** Every registered activity with its catalog entry: name, kind, cls, edges, description, input, output, tools. */
+// The COST LADDER (north star): tier per activity + the Jev gates it asks live in jev-tuning/gates.js (re-exported).
+export { TIERS, tierOf, ACTIVITY_GATES, activitiesForGate };
+
 export const activityCatalog = () => Object.entries(activities()).map(([name, a]) => {
   const m = ACTIVITY_META[name] || {};
-  return { name, kind: a.kind, cls: a.cls, edges: a.edges, description: m.description ?? null, input: m.input ?? null, output: m.output ?? null, tools: m.tools || [] };
+  return { name, kind: a.kind, cls: a.cls, tier: tierOf(a.cls), gates: ACTIVITY_GATES[name] || [], edges: a.edges, description: m.description ?? null,
+    input: m.input ?? null, output: m.output ?? null, tools: m.tools || [] };
 });

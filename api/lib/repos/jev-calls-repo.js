@@ -83,10 +83,14 @@ export function labelCall(id, answer, { q = null, basis = 'manual' } = {}) {
   return { ok: true, gold };
 }
 
-/** Label every call of `task` made in turn `ref` with the right choice, on the one question that offers it. → calls labelled */
+/** An automatic label's basis (the judge's): such gold may be relabelled by a later judge; any other basis is HUMAN gold. Pure. */
+export const isAutoBasis = (basis) => basis == null || /^opus-|judge/.test(String(basis));
+/** Label every call of `task` made in turn `ref` with the right choice, on the one question that offers it. A call that already
+ *  holds HUMAN gold (a basis other than a judge's) is never overwritten. → calls labelled */
 export function labelByRef(task, ref, right, basis = 'opus-judge') {
   let n = 0;
-  for (const r of callsDb().prepare('SELECT id, questions FROM calls WHERE task = ? AND ref = ?').all(task, String(ref))) {
+  for (const r of callsDb().prepare('SELECT id, questions, gold, gold_basis FROM calls WHERE task = ? AND ref = ?').all(task, String(ref))) {
+    if (r.gold != null && !isAutoBasis(r.gold_basis)) continue;
     const qs = Object.entries(parse(r.questions) || {}).filter(([, d]) => Object.keys(d?.criteria || {}).includes(right));
     if (qs.length === 1 && labelCall(r.id, right, { q: qs[0][0], basis }).ok) n++;   // ambiguous or not an option here → no guess
   }

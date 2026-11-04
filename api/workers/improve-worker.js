@@ -114,8 +114,21 @@ async function editNow(improveDb, deps = {}) {
   } catch (err) { if (!isSpendCap(err)) console.error('[improve] strategy edit:', err?.message || err); return 'idle'; }
 }
 
+/** Decision theories (brief v3 A): the newest weak Jev-gate verdict → Opus theories → experiments on historic + frozen synthetic gold →
+ *  a winner ships as params.enrich on its decision step (replay-promoted); needs-code → CODE suggestion. Spend caps propagate. */
+async function theoryWork(db, { improveDb, deps }) {
+  if (deps && !deps.theoryStage) return 'idle';
+  if (!deps && !improveDb) return 'idle';
+  const th = deps?.theoryStage ? { theoryStage: deps.theoryStage, liveTheoryDeps: deps.liveTheoryDeps } : await import('../lib/jev-tuning/theories.js');
+  const { catalog } = await import('../lib/repos/strategies-repo.js');
+  const r = await th.theoryStage(db, { deps: await th.liveTheoryDeps({ improveDb, db }), cat: catalog() });
+  if (r === 'idle' || r === 'capped') return 'idle';
+  console.log(`[improve] decision theory: ${JSON.stringify({ gate: r.gate, item: r.item_key, theories: r.theories.map((x) => `${x.kind}:${x.verdict}`), usd: r.usd })}`);
+  return 'done';
+}
+
 /** The LOWEST priority unit, run only when judge/deep work is idle: design a candidate for the first ready gap cluster, else
- *  edit a strategy from open DATA suggestions (Phase 4), else replay-promote the oldest untried candidate. → 'idle' | 'done' | { wait } */
+ *  edit a strategy from open DATA suggestions (Phase 4), else test a decision theory, else replay-promote the oldest untried candidate. → 'idle' | 'done' | { wait } */
 export async function strategyWork({ deps = null, improveDb = null } = {}) {
   try {
     const m = deps || await import('../lib/assistant/strategy-improve.js');
@@ -126,6 +139,8 @@ export async function strategyWork({ deps = null, improveDb = null } = {}) {
       const e = await m.editStage(db, { improveDb });
       if (e !== 'idle' && e.status && e.status !== 'capped') { console.log(`[improve] strategy edit: ${JSON.stringify({ status: e.status, id: e.id, version: e.version, settled: e.settled, usd: e.usd })}`); return 'done'; }
     }
+    const t = await theoryWork(db, { improveDb, deps });
+    if (t === 'done') return 'done';
     const p = await m.promotionStage(db);
     if (p !== 'idle') {
       console.log(`[improve] strategy promotion: ${JSON.stringify({ id: p.id, version: p.version, promoted: p.promoted, usd: p.usd, failed: p.decision?.failed })}`);

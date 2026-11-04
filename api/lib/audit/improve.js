@@ -234,13 +234,13 @@ export function turnFromPath({ question, reply, path = {}, traces = [] }) {
   if (!searches.length && evidence.length) searches.push({ trace_id: null, tool: p.recipe || 'retrieval', query: p.plan?.search_query || question, filters: {}, hits: evidence });
   const urls = new Set((String(reply || '').match(/\]\((https?:[^)\s]+)\)/g) || []).map((m) => m.slice(2, -1)));
   const cited = evidence.filter((e) => e.url && urls.has(e.url)).map((e) => ({ doc_id: e.doc_id, title: e.title }));
-  return { route: routeOf(p.recipe || p.plan?.shape), question, reply, searches, writer_passages: evidence, cited };
+  return { route: routeOf(p.recipe || p.plan?.shape), strategy: p.strategy?.choice ?? null, question, reply, searches, writer_passages: evidence, cited };
 }
 
 /** Forensic + judge item for a reply; one per search (each trace gets its own verdict). */
 export function itemsForTurn(turn, { messageId, sessionId, turnId = null } = {}) {
   const f = forensicPass(turn);
-  const reply = { key: `reply:${messageId}`, kind: 'reply', ref_id: String(messageId), session_id: sessionId ?? null, turn_id: turnId, route: f.route,
+  const reply = { key: `reply:${messageId}`, kind: 'reply', ref_id: String(messageId), session_id: sessionId ?? null, turn_id: turnId, route: f.route, strategy: turn.strategy ?? null,
     question: turn.question, reply: turn.reply, searches: turn.searches, writer_passages: turn.writer_passages, defects: f.defects };
   const searches = f.searches.filter((s) => s.trace_id).map((s) => {
     const src = turn.searches.find((x) => x.trace_id === s.trace_id) || {};
