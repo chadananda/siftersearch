@@ -8,7 +8,7 @@
 import { userQuery } from '../db.js';
 import { logger } from '../logger.js';
 
-export const USER_DB_CURRENT_VERSION = 11;
+export const USER_DB_CURRENT_VERSION = 12;
 
 export const userMigrations = {
   // Version 1: Create all user tables in user database
@@ -422,5 +422,24 @@ export const userMigrations = {
   11: async () => {
     await userQuery(`CREATE TABLE IF NOT EXISTS dewey_allowlist (email TEXT PRIMARY KEY, note TEXT, added_by TEXT, added_at TEXT)`);
     logger.info('User migration 11 complete: dewey_allowlist');
+  },
+
+  // Version 12: listener feedback on talks (Chad 11-03: "comments and a score for each talk and also … the best start point").
+  // One row per user × talk (media_items.id in the content DB — no cross-DB FK); suggested_start_s is recording time (the
+  // page's own clock, the one ?t= uses). Written by repos/talk-feedback-repo.js; read on /media/<slug>.
+  12: async () => {
+    await userQuery(`CREATE TABLE IF NOT EXISTS talk_feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      score INTEGER CHECK (score IS NULL OR score BETWEEN 1 AND 5),
+      comment TEXT,
+      suggested_start_s REAL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE (media_id, user_id)
+    )`);
+    await userQuery('CREATE INDEX IF NOT EXISTS idx_talk_feedback_user ON talk_feedback(user_id)');
+    logger.info('User migration 12 complete: talk_feedback');
   },
 };

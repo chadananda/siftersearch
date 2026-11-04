@@ -1617,4 +1617,7 @@ export const media = {
   // 'clips' items: a signed clip for start..end (end ≤ start + clip_cap) → { url, start, end }
   // fmt 'm4a' where the browser cannot play Ogg Opus (older Safari)
   clip: (clipUrl, start, end, fmt = null) => mediaGet(`${clipUrl}?t=${encodeURIComponent(`${start}-${end}`)}${fmt ? `&fmt=${fmt}` : ''}`),
+  // listeners' feedback (score, comment, best start) — personal, never edge-cached; save needs sign-in
+  feedback: (slug) => request(`/api/media/${encodeURIComponent(slug)}/feedback`),
+  saveFeedback: (slug, body) => request(`/api/media/${encodeURIComponent(slug)}/feedback`, { method: 'PUT', body: JSON.stringify(body) }),
 };

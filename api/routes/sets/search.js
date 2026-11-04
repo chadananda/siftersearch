@@ -35,6 +35,7 @@ import graphRoutes from '../graph.js';
 import peopleRoutes from '../people.js';
 import deepResearchRoutes from '../deep-research.js';
 import mediaRoutes, { speakerRoutes } from '../media.js';
+import talkFeedbackRoutes from '../talk-feedback.js';
 import importsRoutes from '../imports.js';
 
 export const SEARCH_ROUTES = [
@@ -75,5 +76,6 @@ export const SEARCH_ROUTES = [
   [peopleRoutes, { prefix: '/api/v1' }],
   [deepResearchRoutes, { prefix: '/api/v1' }],
   [mediaRoutes, { prefix: '/api/media' }],   // the media library: listing, items, files (Range), signed clips (planning/media-library-plan.md)
-  [speakerRoutes, { prefix: '/api/speakers' }],   // media speakers and their canonical portraits
+  [talkFeedbackRoutes, { prefix: '/api/media' }],   // GET/PUT /api/media/:slug/feedback — listeners' score, comment, best start (user DB)
+  [speakerRoutes, { prefix: '/api/speakers' }],  // media speakers and their canonical portraits
 ];

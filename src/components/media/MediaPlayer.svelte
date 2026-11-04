@@ -15,6 +15,7 @@
   import RecordLabel from './listening/RecordLabel.svelte';
   import { anchorFor as followAnchor, followStep, isManualScroll } from '../../lib/media-follow.js';
   import ShareRow from './ShareRow.svelte';
+  import TalkFeedback from './TalkFeedback.svelte';
   import { CLIP_MAX_MS, clipPath } from '../../../api/lib/media/clip-text.js';
   import { SITE } from '../../lib/share.js';
   import { eraVar, duration as dur } from '../../lib/media-listing.js';
@@ -528,6 +529,7 @@
         {#if level === 'full' && item.rights?.download && item.audio?.m4a}
           <a href={media.href(item.audio.m4a)} download class="chip">Download the audio</a>
         {/if}
+        <TalkFeedback slug={item.slug} {duration} getCurrent={() => current} onpreview={(t) => (canPlay ? playFrom(t, { end: null }) : seek(t))} />
       </div>
     </div>
   </div>
