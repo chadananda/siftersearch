@@ -73,16 +73,22 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
     return show(hits.map((p) => add(p)));
   };
   // keyed by canonical tool name (tools.js); a call by an old name resolves through canonical()
+  // a copyrighted (encumbered) book is never read around — consecutive paragraphs are not a short excerpt (Chad 10-23)
+  // rowsAround → the neighbouring passages, or the copyright notice (a string); readAround also adds them for the model
+  const COPYRIGHT = 'this book is under copyright: quote only the excerpt you already have (with its link); its neighbouring paragraphs are not available';
+  const rowsAround = async (p, before, after) => {
+    const enc = await (impl.encumberedAmong || (await import('../repos/rights-repo.js')).encumberedAmong)([p.document_id]).catch(() => new Set());
+    if (enc.has(Number(p.document_id))) return COPYRIGHT;
+    return impl.around(p, Math.min(5, before), Math.min(5, after));
+  };
+  const readAround = async (p, before, after) => { const r = await rowsAround(p, before, after); return typeof r === 'string' ? r : show(r.map((x) => add(x))); };
   const run = {
     combined_search: searchLibrary,
     fused_search: searchLibrary,
     context_lookup: async ({ ref, before = 2, after = 2 }) => {
       const p = found.get(String(ref).toUpperCase());
       if (!p?.document_id) return 'unknown ref';
-      // a copyrighted (encumbered) book is never read around — consecutive paragraphs are not a short excerpt (Chad 10-23)
-      const enc = await (impl.encumberedAmong || (await import('../repos/rights-repo.js')).encumberedAmong)([p.document_id]).catch(() => new Set());
-      if (enc.has(Number(p.document_id))) return 'this book is under copyright: quote only the excerpt you already have (with its link); its neighbouring paragraphs are not available';
-      return show((await impl.around(p, Math.min(5, before), Math.min(5, after))).map((x) => add(x)));
+      return readAround(p, before, after);
     },
     document_search: async ({ title }) => {
       const w = await (impl.work || (async (t) => (await import('./work-request.js')).findTitled([t])))(title).catch(() => null);
@@ -120,7 +126,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       return `[${ref}] (WEB — not the library)\n${clipText(r.text, 1500)}${r.citations?.length ? `\nSources: ${r.citations.slice(0, 5).map((c) => c.url || c).join(' · ')}` : ''}`;
     },
   };
-  return { found, works, searched, add, addWork, show, run };
+  return { found, works, searched, add, addWork, show, run, readAround, rowsAround };
 }
 
 /**
@@ -154,6 +160,26 @@ export function aroundTargets(books = [], outs = [], { books: nb = 1, hits: nh =
     .filter((p) => p?.document_id != null && p.paragraph_index != null).slice(0, nh));
 }
 
+/** BRIDGE reads: two read-around targets in one book that are further apart than one window but within `span` paragraphs mark
+ *  the two ends of one stretch of narrative (db-24: the order to leave Iṣfahán at 409, the order to go on to Tabríz at 455 —
+ *  Káshán, Qum, Kulayn lie between). Up to two points evenly between them are read too. Positions only, never the words. Pure. */
+export function bridgeTargets(targets = [], { span = 0, before = 2, after = 2 } = {}) {
+  if (!(span > 0)) return [];
+  const win = before + after + 1, out = [];
+  const byDoc = new Map();
+  for (const p of targets) byDoc.set(p.document_id, [...(byDoc.get(p.document_id) || []), p]);
+  for (const [doc, hits] of byDoc) {
+    const at = [...new Set(hits.map((p) => Number(p.paragraph_index)))].sort((x, y) => x - y);
+    for (let i = 1; i < at.length; i++) {
+      const gap = at[i] - at[i - 1];
+      if (gap <= win || gap > span) continue;
+      const k = Math.min(2, Math.floor(gap / win) - 1) || 1;
+      for (let j = 1; j <= k; j++) out.push({ document_id: doc, paragraph_index: at[i - 1] + Math.round((gap * j) / (k + 1)), title: hits[0].title, bridge: true });
+    }
+  }
+  return out;
+}
+
 /**
  * THE SOURCE JEV NAMED (search-plan `drawFrom`: the book or author the answer is to be drawn from — "Gate of the Heart",
  * "Saiedi", "Nabíl") → its library documents and passages. Code resolves the name against the LIBRARY, never the user's
@@ -184,7 +210,7 @@ export async function namedSource(name, question, impl, { maxAuthors = 2 } = {})
 
 export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, perBook = 1, extraMs = Infinity, drawFrom = null, around = null }) {
   const t0 = Date.now();
-  const { found, works, searched, run, add, addWork } = toolRunner(impl);
+  const { found, works, searched, run, add, addWork, rowsAround } = toolRunner(impl);
   // the source Jev named is resolved BESIDE the planning round (no added wait); its passages and works join before the book step
   const userQ = clipText([...messages].reverse().find((m) => m.role === 'user')?.content, 300);
   const sourceP = drawFrom ? namedSource(drawFrom, userQ, impl).catch((err) => { log.warn({ drawFrom, err: String(err?.message).slice(0, 160) }, 'named source failed'); return null; }) : null;
@@ -239,7 +265,19 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     const one = ({ b, q }) => impl.searchIn(q, b.document_id).catch((err) => {
       log.warn({ document_id: b.document_id, err: String(err?.message).slice(0, 160) }, 'in-book search failed'); return []; });
     const started = pairs.map((x) => ({ ...x, p: one(x) }));
-    await Promise.all(started.filter((x) => !x.extra).map((x) => x.p));
+    const own = await Promise.all(started.filter((x) => !x.extra).map(async (x) => ({ ...x, hits: await x.p })));
+    // READ AROUND (coordinator 11-03): the main books' best hits are read with their neighbours (context_lookup), so the writer
+    // has the consecutive passages of the story, not single paragraphs (db-24: Nabíl's hit was the order to go on to Tabríz;
+    // the towns before it, Káshán, Qum, Kinár-Gird, Kulayn, never reached the writer), plus up to two BRIDGE reads between two
+    // hits of one book (bridgeTargets). Code, no model call; started as soon as the books' own searches are back, so the reads
+    // run beside the extra queries; a read past `around.ms` is dropped. A copyrighted book is never read around (rowsAround).
+    const targets = around && impl.around ? (() => { const best = aroundTargets(books, own, around); return [...best, ...bridgeTargets(best, around)]; })() : [];
+    let t2;
+    const cut = targets.length && Number.isFinite(around.ms) ? new Promise((r) => { t2 = setTimeout(() => r('late'), around.ms); }) : null;
+    const readsP = Promise.all(targets.map(async (p) => {
+      const read = rowsAround(p, around.before ?? 2, around.after ?? 2).catch((err) => `tool failed: ${String(err?.message).slice(0, 160)}`);
+      return { p, out: cut ? await Promise.race([read, cut]) : await read };
+    }));
     let timer;
     const late = Number.isFinite(extraMs) ? new Promise((r) => { timer = setTimeout(() => r('late'), extraMs); }) : null;
     const outs = await Promise.all(started.map(async (x) => {
@@ -249,23 +287,13 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     clearTimeout(timer);
     if (outs.some((o) => o.late)) log.info({ late: outs.filter((o) => o.late).length, extraMs }, 'in-book extra searches past the budget');
     for (const { b, q, hits, late } of outs) steps.push({ tool: 'in_book_search', args: { document_id: b.document_id, query: q }, ...(late ? { late: true } : {}), found: (hits || []).map((p) => add(p)).filter(Boolean).length });
-    // READ AROUND (coordinator 11-03): the main books' best hits are read with their neighbours (context_lookup), so the writer
-    // has the consecutive passages of the story, not single paragraphs (db-24: Nabíl's hit was the order to go on to Tabríz;
-    // the towns before it, Káshán, Qum, Kinár-Gird, Kulayn, never reached the writer). Code, no model call; all at once; a read
-    // past `around.ms` is dropped. A copyrighted book is never read around (run.context_lookup).
-    if (around && impl.around) {
-      const best = aroundTargets(books, outs, around);
-      let t2;
-      const cut = Number.isFinite(around.ms) ? new Promise((r) => { t2 = setTimeout(() => r('late'), around.ms); }) : null;
-      const reads = await Promise.all(best.map(async (p) => {
-        const ref = add(p);
-        const read = run.context_lookup({ ref, before: around.before ?? 2, after: around.after ?? 2 }).catch((err) => `tool failed: ${String(err?.message).slice(0, 160)}`);
-        const out = cut ? await Promise.race([read, cut]) : await read;
-        return { p, out };
-      }));
-      clearTimeout(t2);
-      for (const { p, out } of reads) steps.push({ tool: 'context_lookup', args: { document_id: p.document_id, paragraph_index: p.paragraph_index }, ...(out === 'late' ? { late: true } : {}),
-        found: out === 'late' ? 0 : (String(out).match(/^\[[PW]\d+\]/gm) || []).length });
+    // the reads join after the in-book hits (passage order unchanged); a bridge point is a position, never itself a passage
+    const reads = await readsP;
+    clearTimeout(t2);
+    for (const { p, out } of reads) {
+      if (!p.bridge) add(p);
+      const rows = Array.isArray(out) ? out.map((x) => add(x)).filter(Boolean) : [];
+      steps.push({ tool: 'context_lookup', args: { document_id: p.document_id, paragraph_index: p.paragraph_index, ...(p.bridge ? { bridge: true } : {}) }, ...(out === 'late' ? { late: true } : {}), found: rows.length });
     }
   }
   if (!wantBrief) {

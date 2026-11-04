@@ -2,7 +2,7 @@
 // watches (channel data `live`), Jev's strategy runs instead of the researcher, the researcher plans ONE round of tool calls
 // that run in parallel, and one Sonnet writer (thinking off) streams the answer. Email keeps the full researcher.
 import { describe, it, expect, afterEach } from 'vitest';
-import { research, booksFound, aroundTargets } from '../../api/lib/assistant/researcher.js';
+import { research, booksFound, aroundTargets, bridgeTargets } from '../../api/lib/assistant/researcher.js';
 import { anisRespond, agentOn, liveResearch } from '../../api/lib/assistant/respond.js';
 import { channelFor, CHANNELS, frameFor, DEPTH_FRAME } from '../../api/lib/assistant/channels.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
@@ -164,6 +164,30 @@ describe('researcher: the second round searches INSIDE the books the first round
     expect(aroundTargets([b1, b2], outs, { books: 1, hits: 1 })).toEqual([h(1, 5)]);
   });
 
+  it('bridgeTargets: two hits further apart than one window but within span get up to two evenly spaced reads between them (db-24: 409 → 455)', () => {
+    const h = (doc, i) => ({ document_id: doc, paragraph_index: i, title: 'DB' });
+    const o = { span: 60, before: 3, after: 4 };
+    expect(bridgeTargets([h(1, 455), h(1, 409)], o).map((p) => p.paragraph_index)).toEqual([424, 440]);
+    expect(bridgeTargets([h(1, 455), h(1, 409)], o).every((p) => p.bridge && p.document_id === 1)).toBe(true);
+    expect(bridgeTargets([h(1, 100), h(1, 105)], o)).toEqual([]);          // overlapping windows: nothing between
+    expect(bridgeTargets([h(1, 100), h(1, 300)], o)).toEqual([]);          // too far apart: two different stories
+    expect(bridgeTargets([h(1, 100), h(2, 120)], o)).toEqual([]);          // different books never bridge
+    expect(bridgeTargets([h(1, 409), h(1, 455)], { ...o, span: 0 })).toEqual([]);
+    expect(bridgeTargets([h(1, 100), h(1, 112)], o).map((p) => p.paragraph_index)).toEqual([106]);
+  });
+
+  it('read around with span: the bridge point is read (its neighbours reach the writer) but is not itself a passage', async () => {
+    const reads = [];
+    const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'journey' })] } }] });
+    const r = await research({ messages: [{ role: 'user', content: 'the journey' }], create, maxRounds: 1, brief: false, inBooks: 1,
+      around: { books: 1, hits: 2, before: 1, after: 1, span: 30 },
+      tools: { search: async () => [inBook(7, 1)], searchIn: async (q, doc) => [inBook(doc, 10), inBook(doc, 22)], encumberedAmong: async () => new Set(),
+        around: async (p, b, a) => { reads.push(p.paragraph_index); return [-1, 0, 1].map((k) => ({ ...P(p.paragraph_index + k), document_id: 7, title: 'Book 7' })); } } });
+    expect(reads.sort((x, y) => x - y)).toEqual([710, 714, 718, 722]);
+    expect(r.steps.filter((s) => s.tool === 'context_lookup' && s.args.bridge)).toHaveLength(2);
+    expect(r.passages.map((p) => p.id)).toEqual(expect.arrayContaining([713, 715, 717, 719]));
+  });
+
   it('a failed in-book search costs only its own passages', async () => {
     const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'x' })] } }] });
     const r = await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [inBook(7, 1)], searchIn: async () => { throw new Error('timeout'); } },
@@ -174,7 +198,7 @@ describe('researcher: the second round searches INSIDE the books the first round
 
 describe('liveResearch: the shape of the researcher on a live channel, from Jev\'s depth', () => {
   it('one planning round, no brief; depth=research only widens the round', () => {
-    const near = { books: 1, hits: 2, before: 2, after: 3, ms: 900 }, wide = { books: 2, hits: 2, before: 3, after: 4, ms: 1200 };
+    const near = { books: 1, hits: 2, before: 2, after: 3, ms: 900 }, wide = { books: 2, hits: 2, before: 3, after: 4, ms: 1200, span: 60 };
     expect(liveResearch({ channel: channelFor('site-chat'), depth: 'answer' })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3, around: near });
     expect(liveResearch({ channel: channelFor('site-chat'), depth: null })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3, around: near });
     expect(liveResearch({ channel: channelFor('site-chat'), depth: 'research' })).toEqual({ maxRounds: 1, maxCalls: 8, brief: false, inBooks: 4, around: wide, perBook: 2, extraMs: 800 });
