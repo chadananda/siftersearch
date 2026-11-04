@@ -63,11 +63,13 @@ async function keywordLoop() {
     const infer = await (await import('../lib/repos/sections-repo.js')).autoInferCandidates().catch(() => []);
     if (infer.length) await enqueue('structure-infer', { ids: infer }, 'structure-loop').catch((err) => logger.warn({ err: err.message }, 'structure loop: infer enqueue failed'));
     // PAID follow-through (phrase vectors for new books) runs only under a standing daily cap — AUTO_INDEX_USD_DAY,
-    // 0/unset = off (Chad sets it); each run carries its own maxUsd and the shared budget key
+    // 0/unset = off (Chad sets it); each run carries its own maxUsd and a DATED budget key (the indexer's cap is cumulative
+    // per key: the old fixed 'auto-ingest' key made the daily cap a lifetime one)
     const cap = Number(process.env.AUTO_INDEX_USD_DAY || 0);
     if (cap > 0) {
       const phraseless = await (await import('../lib/repos/coverage-repo.js')).newDocsMissingLayer('phrase').catch(() => []);
-      if (phraseless.length) await enqueue('phrase-index', { docs: phraseless, maxUsd: cap, budgetKey: 'auto-ingest' }, 'follow-through').catch((err) => logger.warn({ err: err.message }, 'follow-through: phrase enqueue failed'));
+      const budgetKey = (await import('../lib/ops/index-follow.js')).dailyKey('phrase');
+      if (phraseless.length) await enqueue('phrase-index', { docs: phraseless, maxUsd: cap, budgetKey }, 'follow-through').catch((err) => logger.warn({ err: err.message }, 'follow-through: phrase enqueue failed'));
     }
     await nap(600_000);
   }
