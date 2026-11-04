@@ -128,6 +128,8 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
           logger.warn({ err: err.message }, 'encounter index warm-up failed'));
         // people search's claim corpus loads on its own worker thread (claim-search.js) — started here, never awaited
         await import('./claim-search.js').then((m) => m.warmClaimSearch()).catch(() => {});
+        // search hydration's thread pool (search/hydrate-thread.js) — started here so the first search pays no thread start
+        await import('./search/hydrate-thread.js').then((m) => m.warmHydrateThreads()).catch(() => {});
         await warmOlDocIdCache().catch((err) => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));
         // The concept lexicon (~4 s: one synchronous read per proof book, yielding between them). Left lazy, the first search
         // of every fresh process loaded it and took 6–10 s (10-22). BOUNDED: past 20 s this process listens anyway and the

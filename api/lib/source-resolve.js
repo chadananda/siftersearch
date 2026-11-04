@@ -111,10 +111,11 @@ export async function jevJudge({ passages, groups }, { apiKey = process.env.TYPE
  *  candidate. Replaced a Meili exact-phrase multiSearch — measured 10-09 on 40 spans from real paragraphs: source paragraph
  *  found 32/40 vs 25/40, verified copies 96 vs 77, same latency (~0.3 s). */
 export async function qdrantPhraseSearch(span, { religion } = {}) {
-  const [{ searchKeywordQdrant }, { paragraphsByIds }] = await Promise.all([import('./search/qdrant-layers.js'), import('./paragraphs-repo.js')]);
+  // bodies read on the hydrate thread pool (search/hydrate-thread.js): never a synchronous read beside in-flight Qdrant calls
+  const [{ searchKeywordQdrant }, { hydrateParagraphs }] = await Promise.all([import('./search/qdrant-layers.js'), import('./search/hydrate-thread.js')]);
   try {
     const { hits } = await searchKeywordQdrant(String(span), { limit: 40, filters: religion ? { religion } : {} });
-    const byId = new Map((await paragraphsByIds(hits.map((h) => h.paragraph_id))).map((p) => [Number(p.id), p]));
+    const byId = new Map((await hydrateParagraphs(hits.map((h) => h.paragraph_id), null)).map((p) => [Number(p.id), p]));
     return hits.map((h) => byId.get(Number(h.paragraph_id))).filter(Boolean);
   } catch {
     return [];

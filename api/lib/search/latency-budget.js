@@ -18,7 +18,7 @@ export const ENGINE_BUDGETS = Object.freeze({
   qkeyword: { ms: 60, note: 'BM25 sparse, no embedding: 0.7 ms server, 43 ms offset measured' },
   qkeyword_retry: { ms: 500, note: 'retry after a failed keyword call (rare)' },
   concept: { ms: 25, note: 'in-memory lexicon match (29k entries indexed by first word, 89653a25)' },
-  hydrate: { ms: 60, note: 'SQLite paragraphsByIds of stub hits: avg 20 / worst 90 ms (query_stats search:hydrate, 2 h)' },
+  hydrate: { ms: 60, note: 'stub hits read + highlighted on the hydrate thread pool (search/hydrate-thread.js, 11-04; was main-thread SQLite avg 20 / worst 90 ms); wall incl. thread queue' },
   rank: { ms: 60, note: 'RRF + rerank + diversify after hydration (CPU)' },
   merge: { ms: 120, note: 'everything after the last layer: hydrate + rank' },
   main_embed: { ms: 400, note: 'legacy Meili main layer (retired; absent when SEARCH_QDRANT=only)' },

@@ -1561,11 +1561,13 @@ async function multiIndexSearchRun(query, options, qcalls) {
   const _tHydrate = Date.now();
   if (stubIds.length > 0) {
     try {
-      const { paragraphsByIds } = await import('./paragraphs-repo.js');
-      for (const doc of await paragraphsByIds(stubIds)) {
+      // OFF the event loop (search/hydrate-thread.js): this synchronous read + highlighting used to run while sibling
+      // engine calls' Qdrant fetches were in flight, inflating their wall time ~10x over Qdrant's own (11-04)
+      const { hydrateParagraphs } = await import('./search/hydrate-thread.js');
+      for (const doc of await hydrateParagraphs(stubIds, query)) {
         const e = aggregate.get(doc.id) ?? aggregate.get(String(doc.id));
-        // no engine highlighted this hit (SQLite hydration) → mark the query terms, as Meili's _formatted did
-        if (e) e.paragraph = { ...doc, _formatted: { text: highlightText(doc.text, query) }, _stub: false };
+        // no engine highlighted this hit (SQLite hydration) → the query terms are marked, as Meili's _formatted did
+        if (e) e.paragraph = { ...doc, _stub: false };
       }
     } catch (err) {
       logger.warn({ err: err.message, stubCount: stubIds.length }, 'multiIndexSearch: SQLite hydration failed');

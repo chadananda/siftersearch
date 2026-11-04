@@ -623,6 +623,14 @@ const APOS = /[‘’ʼʻ`']/;
 function foldWithMap(text) {
   let folded = ''; const map = [];
   for (let i = 0; i < text.length; i++) {
+    // ASCII fast path (most characters): no NFD, no regex — ~3x cheaper per paragraph (11-04, hydrate CPU)
+    const code = text.charCodeAt(i);
+    if (code < 128) {
+      if (code === 39 || code === 96) continue;   // ' and ` (APOS)
+      folded += code >= 65 && code <= 90 ? String.fromCharCode(code + 32) : text[i];
+      map.push(i);
+      continue;
+    }
     const ch = text[i];
     if (APOS.test(ch)) continue;
     const f = ch.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
