@@ -55,6 +55,9 @@ export async function getRun(docId) {
   try { return row?.run_json ? JSON.parse(row.run_json) : null; } catch { return null; }
 }
 
+// idx_doc_pipeline_run (migration 196) serves it: 8 entries of a partial index, not a scan + sort (was avg 126 ms, 11-03)
+export const ACTIVE_RUNS_SQL = `SELECT doc_id, run_json, updated_at FROM doc_pipeline WHERE run_json IS NOT NULL ORDER BY updated_at DESC LIMIT 8`;
+
 /**
  * EVERY doc grounding right now, freshest first. Books legitimately run in parallel (e.g. a Persian book on
  * anthropic alongside an English book on deepseek — different providers, no rate-limit contention), so the live
@@ -62,7 +65,7 @@ export async function getRun(docId) {
  */
 export async function activeRuns() {
   const rows = await queryAll(
-    `SELECT doc_id, run_json, updated_at FROM doc_pipeline WHERE run_json IS NOT NULL ORDER BY updated_at DESC LIMIT 8`);
+    ACTIVE_RUNS_SQL, [], 'pipeline:active-runs');
   const now = Math.floor(Date.now() / 1000);
   const live = [];
   for (const r of rows) {

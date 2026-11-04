@@ -61,6 +61,7 @@ export const CLAIMS_BUDGETS = Object.freeze({
 export const QUERY_BUDGETS = Object.freeze({
   'docs-repo:path-slug-candidates': { ms: 10, note: 'slug-fallback candidates, light columns, memoised per religion/collection (was avg 356 / worst 900 ms, 473 calls / 6 h: whole collections with descriptions)' },
   'paragraphs-repo:ext-ids': { ms: 5, note: 'OceanLibrary ids of unhydrated chat hits by primary key (was a per-doc paragraph_index IN walking the document: 2,881 calls, avg 24 / worst 2,466 ms)' },
+  'pipeline:active-runs': { ms: 2, note: 'live grounding runs: 8 entries of partial index idx_doc_pipeline_run, migration 196 (was SCAN + temp sort: 958 calls, avg 126 ms)' },
 });
 
 /** A named statement's average-ms budget, or null when it has none. */

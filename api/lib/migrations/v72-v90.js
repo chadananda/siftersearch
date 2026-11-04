@@ -2101,6 +2101,14 @@ export const migrations = {
     await query('DROP TABLE IF EXISTS dedup_registry');
     logger.info('Migration 195 complete: dedup_registry dropped');
   },
+
+  196: async () => {
+    // activeRuns() (pipeline/state.js) SCANned doc_pipeline + temp-sorted to find the few rows with a run_json: 958 calls,
+    // avg 126 ms on the API thread (11-03, query-time report). Partial index: only rows mid-run, so it stays tiny and the
+    // read is 8 index entries. Small table (one row per doc), not content — safe in a normal deploy.
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_pipeline_run ON doc_pipeline(updated_at) WHERE run_json IS NOT NULL');
+    logger.info('Migration 196 complete: idx_doc_pipeline_run');
+  },
 };
 
 export const graphMigrations = {
