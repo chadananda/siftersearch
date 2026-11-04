@@ -16,16 +16,33 @@
 import { randomUUID } from 'crypto';
 import { createHash } from 'crypto';
 import { currentAIContext, withAIContext } from './ai-context.js';
-import { sourceTier } from './assistant/source-tier.js';
+import { sourceTier, tierGap } from './assistant/source-tier.js';
 
 const num = (v) => (Number.isFinite(v) ? v : 0);
 const j = (v) => { try { return v == null ? null : JSON.stringify(v); } catch { return null; } };
 const parse = (v) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
 
 export const HITS_KEPT = 20;
-// sourceTier → one letter in the stored list (W writings, G Guardian, R reported, H House, S secondary, null other)
-const TIER_CODE = { writings: 'W', guardian: 'G', reported: 'R', house: 'H', secondary: 'S' };
+// sourceTier → one letter in the stored list (W writings, G Guardian, C a Writings compilation's unattributed passage,
+// R reported, H House, S secondary, null other tradition; X = NO TIER READABLE: the document has no religion — tierGap)
+const TIER_CODE = { writings: 'W', guardian: 'G', compilation: 'C', reported: 'R', house: 'H', secondary: 'S' };
 export const TIER_NAME = Object.fromEntries(Object.entries(TIER_CODE).map(([k, v]) => [v, k]));
+export const GAP_CODE = 'X';
+
+// TIER GAPS (11-04 digest #227/#242): a hit whose document carries no religion has no readable standing — it is silently
+// neither a Writing nor commentary. Counted per process and logged LOUDLY once per document (a metadata defect to fix at
+// the library, never guessed at search time). tierGapStats() → { hits, docs, sample }.
+const gapDocs = new Set();
+let gapHits = 0;
+export const tierGapStats = () => ({ hits: gapHits, docs: gapDocs.size, sample: [...gapDocs].slice(0, 20) });
+function noteGap(h) {
+  gapHits++;
+  const doc = h.doc_id ?? h.document_id ?? null;
+  if (doc == null || gapDocs.has(doc) || gapDocs.size >= 5000) return;
+  gapDocs.add(doc);
+  import('./logger.js').then(({ logger }) => logger.warn({ doc_id: doc, title: h.title ? String(h.title).slice(0, 120) : null, author: h.author ?? null },
+    'search hit has NO source tier: its document has no religion (metadata gap — fix the document, the tier cannot be read)')).catch(() => {});
+}
 
 /**
  * Which layer found the top hit? This is the number that tells you whether HyPE earns its weight.
@@ -45,7 +62,10 @@ const isHypeLayer = (l) => l === 'hype' || l === 'qhype';
 export function compactHit(h = {}) {
   const score = h._rrfScore ?? h.score ?? h._score ?? null;
   let tier = null;
-  try { tier = TIER_CODE[sourceTier(h)] ?? null; } catch { /* a tier is decoration, never a failure */ }
+  try {
+    tier = TIER_CODE[sourceTier(h)] ?? null;
+    if (!tier && !h._stub && tierGap(h)) { tier = GAP_CODE; noteGap(h); }
+  } catch { /* a tier is decoration, never a failure */ }
   return [h.paragraph_id ?? h.id ?? null, h.doc_id ?? h.document_id ?? null,
     typeof score === 'number' ? Math.round(score * 1e5) / 1e5 : null, h._layerRanks ? topLayer(h) : (h._layer ?? null), tier];
 }
@@ -57,8 +77,12 @@ export function expandHits(json, titles = new Map()) {
     const d = titles.get(Number(doc_id));
     // a layer hit carries no author, so its tier is read from the document (same rule, sourceTier)
     let t = TIER_NAME[tier] ?? null;
-    if (!t && d) { try { t = sourceTier({ author: d.author, title: d.title, collection: d.collection, religion: d.religion }); } catch { t = null; } }
-    return { rank: i + 1, doc_id, para_id, title: d?.title ?? null, author: d?.author ?? null, tier: t, layer, score };
+    let gap = tier === GAP_CODE ? 'no-religion' : null;
+    if (!t && !gap && d) {
+      try { t = sourceTier({ author: d.author, title: d.title, collection: d.collection, religion: d.religion }); } catch { t = null; }
+      if (!t && 'religion' in d) gap = tierGap({ ...d, doc_id }) ?? null;
+    }
+    return { rank: i + 1, doc_id, para_id, title: d?.title ?? null, author: d?.author ?? null, tier: t, ...(gap ? { tier_gap: gap } : {}), layer, score };
   });
 }
 

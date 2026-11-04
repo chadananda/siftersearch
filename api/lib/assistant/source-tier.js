@@ -1,9 +1,10 @@
 // SOURCE TIER of a Bahá'í passage, from metadata the library already has (writer fold, collection, docType) — never from its
 // words (Chad 11-04: "'Abdu'l-Baha's talks are not totally authoritative (similar to pilgrim notes), the original tablets are
-// authoritative"). writings > guardian > reported (talks, pilgrims' notes) > house (law, administration) > secondary.
+// authoritative"). writings > guardian > compilation (a Writings compilation's unattributed passage) > reported (talks,
+// pilgrims' notes) > house (law, administration) > secondary.
 // Labels the passage heads the researcher and the writer read, and orders a search's passages. Pure. Deps: canonical, doctrinal-rank.
 import { docType } from '../rights/canonical.js';
-import { foldKey, isTalk } from '../search/doctrinal-rank.js';
+import { foldKey, isTalk, writingsCompilation } from '../search/doctrinal-rank.js';
 
 const WRITINGS = new Set(['bahaullah', 'thebab', 'bab', 'abdulbaha']);
 const GUARDIAN = 'shoghieffendi';
@@ -32,7 +33,7 @@ export const AUTHENTICATED_WORKS = [
 ];
 const authenticatedWork = (title) => AUTHENTICATED_WORKS.find((w) => w.re.test(String(title || '')));
 
-/** → 'writings' | 'guardian' | 'reported' | 'house' | 'secondary' for a Bahá'í passage; null for other traditions and web
+/** → 'writings' | 'guardian' | 'compilation' | 'reported' | 'house' | 'secondary' for a Bahá'í passage; null for other traditions and web
  *  results (they keep their own standing). p: { author|source_author, book_author, title|source_title, collection, religion }. */
 export function sourceTier(p = {}) {
   if (!p || p.web) return null;
@@ -49,15 +50,27 @@ export function sourceTier(p = {}) {
   // a Central Figure quoted inside another writer's book is a pointer to the text, not the text (the writer traces it)
   const book = keyOf(p.book_author);
   const ownBook = (k) => ['bahaullah', 'thebab', 'abdulbaha', GUARDIAN].some((w) => k.includes(w)) || HOUSE.test(k);   // "Bahá'u'lláh and 'Abdu'l-Bahá" too
-  const quotedElsewhere = central && book && book !== author && !ownBook(book) && kind !== 'compilation';
+  // a compilation of the Writings ("Compilation (Bahá’í Writings)") is the text's home, not another writer's book (11-04 #242)
+  const writingsBook = () => writingsCompilation({ ...doc, author: p.book_author, book_author: p.book_author });
+  const quotedElsewhere = central && book && book !== author && !ownBook(book) && kind !== 'compilation' && !writingsBook();
   if (quotedElsewhere) return 'secondary';
   if (WRITINGS.has(author)) return 'writings';
   if (author === GUARDIAN) return 'guardian';
   if (HOUSE.test(author)) return 'house';
+  // a passage of a compilation of the Writings with no writer attributed: not commentary (11-04 digest #242 — "Bahá’í World
+  // Faith", "Bahá’í Sacred Writings" were all 'secondary'), not a confirmed Writing either (doctrinal-rank.js writingsCompilation)
+  if (writingsCompilation({ ...doc, book_author: p.book_author })) return 'compilation';
   return 'secondary';
 }
 
-export const TIER_ORDER = ['writings', 'guardian', 'reported', 'house', 'secondary'];
+/** Why a passage has no tier when it may be Bahá'í: its document has no religion, so its standing cannot be read (the 11-04
+ *  traces: "The Pattern of Bahá'í Life", author '4461', religion null). A METADATA gap — logged and counted, never guessed. */
+export function tierGap(p = {}) {
+  if (!p || p.web || !('religion' in p) || p.religion) return null;   // no religion FIELD = a raw layer hit, not a hydrated document
+  return 'no-religion';
+}
+
+export const TIER_ORDER = ['writings', 'guardian', 'compilation', 'reported', 'house', 'secondary'];
 const rankOf = (p) => { const t = sourceTier(p); const i = TIER_ORDER.indexOf(t); return i < 0 ? TIER_ORDER.length : i; };
 
 /** Passages in tier order, search rank kept within a tier (stable). Non-Bahá'í passages keep their place after the tiers. Pure. */
@@ -70,6 +83,7 @@ export const hasAuthoritative = (ps = []) => ps.some((p) => ['writings', 'guardi
 export const TIER_LABEL = {
   writings: 'WRITINGS (a written text of the Báb, Bahá’u’lláh or ‘Abdu’l-Bahá — authoritative)',
   guardian: 'SHOGHI EFFENDI (authoritative interpretation)',
+  compilation: 'COMPILATION OF THE WRITINGS (this passage’s writer is not attributed — cite the compilation by name; do not attribute it to a Central Figure unless another passage confirms who wrote it)',
   reported: 'REPORTED SPEECH (a talk or a pilgrim’s recollection, not a written text — say so when you cite it: "in a talk recorded in…")',
   house: 'UNIVERSAL HOUSE OF JUSTICE (law and administration — no doctrinal or interpretive authority)',
   secondary: 'SECONDARY (commentary — a signpost to the Writings, never their support)',

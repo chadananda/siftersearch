@@ -67,6 +67,7 @@ export function copyClass(h = {}) {
     if (/shoghi/i.test(String(h.translator || '')) || SE_TRANSLATED.test(title)) return 'se-translation';
     return COMPILATION.test(title) ? 'compilation' : 'writing';
   }
+  if (tier === 'compilation') return 'compilation';   // a Writings compilation, the passage's writer unattributed
   if (tier === 'guardian' || tier === 'house') return 'quoted-authoritative';
   if (tier === 'reported') return 'reported';
   return 'secondary';

@@ -63,7 +63,7 @@ small flaws, 4 = a real weakness, 0 = wrong or useless). Give it for every item,
 
 // ── compact input: what the judge needs and nothing more (bounded text, tiers precomputed) ──
 const clip = (s, n) => { const t = String(s ?? '').replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n)}…` : t; };
-export const compactHit = (h, n = 160) => `#${h.rank ?? '?'} [${h.tier || copyClass(h)}${h.language ? ` ${h.language}` : ''}] ${clip(h.title, 80)}`
+export const compactHit = (h, n = 160) => `#${h.rank ?? '?'} [${h.tier || (h.tier_gap ? `no tier (${h.tier_gap})` : copyClass(h))}${h.language ? ` ${h.language}` : ''}] ${clip(h.title, 80)}`
   + `${h.author ? ` — ${clip(h.author, 40)}` : ''}${h.text ? `: ${clip(h.text, n)}` : ''}`;
 
 /** One judge input. item = { kind:'search'|'reply', route, question, query?, tool?, hits?, reply?, searches?, defects } */

@@ -51,6 +51,30 @@ export function keyFactor(authorFold, scope, collection = null, domain = 'doctri
   return scope === 'supplemental' ? f * 0.7 : f;
 }
 
+// A COMPILATION OF THE WRITINGS whose passage carries no writer of its own (content.authors unset, so the paragraph's author is
+// the book's: "Compilation (Bahá'í Writings)", "Bahá'u'lláh and 'Abdu'l-Bahá (compiled)"). Its words are the Writings', but
+// which Figure (or the Guardian) wrote this passage is not attributed — so it sits below Shoghi Effendi's attested words
+// and above pilgrims' notes (11-04 digest #242/#118: such passages were labelled and weighed as commentary). An
+// ATTRIBUTED passage keeps its writer's weight; a House / Research Department compilation stays the House's (no lift above
+// pilgrims' notes on doctrine). Metadata only (book author + collection), never the passage's words.
+export const COMPILATION = 2.2;
+const COMPILED = /\bcompil|\bselect(?:ed|ions)\b|\bextracts\b/i;
+const OF_WRITINGS = /\bwritings\b|\btablets\b/i;
+const HOUSE_ANY = /universalhouseofjustice|researchdepartment/;
+/** Is this passage an unattributed passage of a compilation of the Writings? p: { author, book_author, title, collection }. Pure. */
+export function writingsCompilation(p = {}) {
+  const book = String(p.book_author ?? p.author ?? ''), coll = String(p.collection || '');
+  const writer = foldKey(p.author ?? p.source_author), bookKey = foldKey(book), collKey = foldKey(coll);
+  if (!writer || TIER.has(writer)) return false;   // no writer given (a cross-tradition weighing) · a recognised writer: their own tier
+  if (bookKey && writer !== bookKey) return false;                       // the passage has its own writer: theirs governs
+  if (HOUSE_ANY.test(bookKey) || HOUSE_ANY.test(collKey) || HOUSE_ANY.test(writer)) return false;
+  if (isTalk(coll) || /pilgrim notes|talks/i.test(coll)) return false;
+  const compiled = COMPILED.test(book) || COMPILED.test(String(p.title ?? p.source_title ?? '')) || /^compilations$/i.test(coll.trim());
+  if (!compiled) return false;
+  const central = (k) => DOCTRINAL_KEYS.some((w) => k.includes(w));
+  return central(bookKey) || central(collKey) || OF_WRITINGS.test(book);
+}
+
 /** The factor for an authority NUMBER (1–10) — other traditions and unrecognised writers. */
 export function numberFactor(auth) {
   const a = Number(auth);
@@ -75,6 +99,7 @@ export function doctrinalFactor(hit, auth, domain = 'doctrine') {
   // compilations of the Writings, the House's) — quoted or recalled in a secondary book (a pilgrim's account, a paper) they
   // are a pointer to the original, never its equal (10-20: "Visiting the Bahá'í World Centre" outranked the Íqán)
   if (t != null && hit.book_authority != null && Number(hit.book_authority) < 7) t = Math.min(t, 1.3);
+  if (t == null && writingsCompilation(hit)) t = COMPILATION;
   let f = t ?? numberFactor(auth);
   // a copy on a scraped site (not OceanLibrary, not the library itself) yields to the library's own text
   const site = hit.source_site || '';
