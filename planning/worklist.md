@@ -6,6 +6,12 @@
 - LATER (11-04): retire cleanup (api/lib/index-outbox.js drain) deletes a retired/deleted doc's points from phrases, paragraphs_kw, hype only — NOT concepts or phrases_hot. Low urgency: indexers now skip duplicate_of + bahai-library tag pages (44fdc503); excluded-points purge record planning/qdrant-excluded-purge-20261104.tsv.
 - Hub next: calibrate topic terms (run.mjs --sample 150), HyPE coverage check, chad.jsonl intake, admin page, retire old scorers.
 
+## 11-04 night — search latency + quote citations (deployed 629854b0)
+- DONE: excluded-docs shared refresh (1c83be01, the post-deploy facet stampede); hydration + entity/docs/bio reads on a 3-thread read pool (0b53421a, 629854b0); own-source = literal BM25 writer-scoped lookup, 69–121 ms, swaps live (e50597f9); quote writer sees a window around the phrase (5bab0a41; Gleanings CXVII line sits at char 2025 of 2076).
+- Bench after 629854b0: engine total p50/p95 231/324 (ok); planned total 673/1494 (budget 1000); hydrate 58/137 (60); merge 68/146 (120); app Qdrant 23–36/41–58 vs Qdrant's own 7–19 at p50 — the ≤10 ms contract also needs Qdrant-side tuning (paragraphs_kw, phrases at ~18 ms server-side).
+- CHAD DECIDES (migration): idx_emv2_entity_surface ON entity_mentions_v2(entity_id, surface) (synthetic 121→13 ms); covering index entity_lookup_keys(skeleton_key, entity_id, is_canonical, surface_norm, surface) (unmeasured). Hydrate ~20 ms/read is I/O on a 67 GB DB with 1 GB mmap — narrower column reads or a larger mmap.
+- Research-path total ~17 s = writer streaming 10–14 s (first text ~4 s); search+tools done by ~2.3 s.
+
 ## STATUS 10-12 12:55 — running on tower (watched: background stall-check every 20 min)
 - reingest-carry: 1,155 / 1,806 books (run 46 of 35–53), ~115 books/h → done ≈ 19:00
 - ingest-files: batch 15 (the Arabic fiqh tail: Radd al-Muhtar 171,927 ¶, Jawahir 126k ¶ — hours each), 16–24 queued after
