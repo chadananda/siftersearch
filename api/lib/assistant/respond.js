@@ -26,7 +26,7 @@ import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { unmachine, dropQuibbles } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
-import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asksForOriginal } from './researcher.js';
+import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asksForOriginal, namesTheWork } from './researcher.js';
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
 import { strategyOf } from './strategy-choice.js';
@@ -365,14 +365,17 @@ export const scriptureOf = (religion, o) => !SCRIPTURE[religion] || SCRIPTURE[re
 /** SourceHunt as Anís's tool for "where is this from?": the published source and the original tablet become the
  *  passages the reply is written from (so the sentence gate still holds). The model never sees a URL — it writes tags
  *  ({book}, {tablet}, …) that become exact links; it once copied a 400-char text-fragment URL into a repeating loop. */
-async function huntSource(d, question) {
+async function huntSource(d, question, { named = null } = {}) {
   const hunt = d.sourceHunt || (await import('../source-hunt.js')).sourceHunt;
   // a tradition the seeker NAMED ("the Buddha said …", "which sura …") is searched too, and an origin outside it is not
   // the answer (a Bahá'í book quoting the Dhammapada is not where the Buddha said it) → the ordinary search answers
   // ("Jesus said …", "which gospel" — the founder or scripture named as the speaker counts: search-plan speakerTradition)
   const religion = speakerTradition(question) || null;
   // the source must be core literature, never secondary commentary (Chad 11-03)
-  const r = await hunt(quotationIn(question), undefined, { coreOnly: true, ...(religion ? { religion } : {}) }).catch(() => null);
+  // the book the reader NAMED ("in the Dawn-Breakers …"; Jev's draw_from span) is the source when it holds the words — never a
+  // provisional translation or a work quoting it (w8:db-27, 11-04)
+  const prefer = named ? (c) => [c.pubTitle, c.title].some((t) => t && namesTheWork(named, { title: t, author: c.book_author })) : null;
+  const r = await hunt(quotationIn(question), undefined, { coreOnly: true, ...(religion ? { religion } : {}), ...(prefer ? { prefer } : {}) }).catch(() => null);
   // a search layer failed twice (Qdrant under load): the source may be missing from the pool, and the hunt's template would
   // name the next best as THE source (11-01: Gleanings and the Epistle dropped out, the Mánikchí tablet was named) → the
   // ordinary search answers instead
@@ -658,8 +661,11 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // The hunt's template answers only the origin and dropped every other ask (r6-after: 7 strategy defects). With other asks
   // the hunt runs as EVIDENCE beside the ordinary search and the reply answers all of them.
   const asks = huntable ? followUpAsks(question) : [];
-  const huntP = huntable ? timed('source-hunt', () => huntSource(d, question)).catch(() => null) : null;
-  const sourced = huntP && !asks.length ? await huntP : null;
+  // a STRATEGY Jev chose (understanding, comparison, …) means the reader asks something of the passage — the hunt is evidence
+  // for that answer, never the template reply (w8:db-27: "explain this farewell address" got only "it is from …")
+  const huntAsEvidence = asks.length > 0 || !!strategyOf(direction.strategy);
+  const huntP = huntable ? timed('source-hunt', () => huntSource(d, question, { named: plan?.drawFrom?.name || null })).catch(() => null) : null;
+  const sourced = huntP && !huntAsEvidence ? await huntP : null;
   // "What are those words in Persian?" about a numbered passage → the canonical paragraph WITH its aligned original
   const original = !sourced && originalP ? await originalP : null;
   if (sourced) {
@@ -775,7 +781,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     });
   }
   // the hunt's origin (and the original tablet) lead the evidence for a multi-ask turn; its extra links are allowed too
-  const huntExtra = huntP && asks.length && !sourced && !researched && !original && !study ? await huntP : null;
+  const huntExtra = huntP && huntAsEvidence && !sourced && !researched && !original && !study ? await huntP : null;
   if (huntExtra?.retrieved?.length) {
     const seen = new Set(huntExtra.retrieved.map((q) => q.citation_url).filter(Boolean));
     retrieved.splice(0, retrieved.length, ...huntExtra.retrieved.map((q) => ({ ...q })), ...retrieved.filter((q) => !q.citation_url || !seen.has(q.citation_url)));

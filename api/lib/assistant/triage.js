@@ -15,10 +15,10 @@ export const LOOKUP_KINDS = {
   quote: 'Wants the exact words found in the library: a quoted phrase or a remembered line to locate.',
   reference: 'Wants one numbered place in a work: "Gleanings 27", "Hidden Words Arabic 5", a section, verse or chapter number.',
 };
-export const LOOKUP_Q = 'Is the latest user message a request to FETCH something exact from the library rather than to discuss it? Strong prior: words in quotation marks usually mean "find this exact text" (quote), unless the quotes are scare quotes, a mention of a term, or a term the person wants explained, which is none. A bare work title is book; a work plus a number is reference.';
+export const LOOKUP_Q = 'Is the latest user message a request to FETCH something exact from the library rather than to discuss it? Strong prior: words in quotation marks usually mean "find this exact text" (quote), unless the quotes are scare quotes, a mention of a term, a term the person wants explained, or a passage quoted as the context of a question about its meaning or story, which is none. A bare work title is book; a work plus a number is reference.';
 export const KINDS = {
-  research: 'a question or request about religion, scripture, spirituality, history, people, texts, or ideas — anything to look up or think through',
-  source_lookup: 'gives a quotation (often a pasted paragraph of scripture) and asks where it comes from — which book, author, tablet or original text — or pastes a quotation with nothing else, or asks what a pasted passage means (the passage is found first)',
+  research: 'a question or request about religion, scripture, spirituality, history, people, texts, or ideas — anything to look up or think through. This includes a question ABOUT a passage the person quotes: what it means, teaches, asks or warns, how to understand or apply it, or the story and events around it (the quotation is the context of the question, even when it names the book it comes from)',
+  source_lookup: 'gives a quotation (often a pasted paragraph of scripture) and asks only where it comes from — which book, author, tablet, translation or original text — or pastes a quotation with nothing else. A quotation followed by any other question about it (its meaning, teaching, history or application) is research, not this',
   about_anis: 'a question about the assistant itself: who or what it is, what it can do, what model powers it, how it works',
   thanks: 'thanks, appreciation or a pleasantry that asks for nothing further',
   feedback: 'a comment on the assistant\'s previous answer or on the site (praise, complaint, a report of an error) that asks for nothing new',

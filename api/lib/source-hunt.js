@@ -193,13 +193,24 @@ const sameTradition = (a, b) => !!a && !!b && (a === b || (['Judaism', 'Christia
 // pilgrim notes and talks below) — among books that QUOTE the words, the higher author's book first (11-03: "The earth is but
 // one country" named The World Order of Bahá'u'lláh, then a Bahá'í World volume). No book author known → the writer's.
 export const bookStanding = (c) => { const b = c.book_author || c.writer || c.author; return keyFactor(foldKey(firstPerson(b || '') || b), null, c.collection); };
+// a PROVISIONAL translation (the Phelps Inventory's, a title marked so) is a reading aid, not a publication: the same words in a
+// published translation of standing — core literature, or a work Shoghi Effendi translated — are the source to cite
+// (w8:db-27, 11-04: the Báb's farewell address in The Dawn-Breakers lost to "Farewell address … (provisional translation)").
+export const isProvisional = (c) => /\bprovisional translation\b/i.test(`${c?.title || ''} ${c?.pubTitle || ''} ${c?.source_title || ''}`)
+  || siteOf(c?.url || c?.source_url || '', c?.source_site) === 'phelps' || /\bphelps\b/i.test(translatedBy(c || {}) || '');
+// the Writings (a doctrinal writer's paragraph) in a book Shoghi Effendi translated: his English of their words (The Dawn-Breakers
+// carries the Báb's addresses in his translation, under Nabíl's name)
+const guardianWritings = (c) => guardianTranslation(c) > 1 && DOCTRINAL.has(firstPerson(c.writer || '') || c.writer);
 export function rankOrigins(cands, quoteAuthor = null, religion = null) {
   const canon = (n) => firstPerson(n || '') || n;
+  // only a pool holding a provisional translation is reordered: a published holder of standing then outranks it
+  const anyProvisional = cands.some(isProvisional);
+  const published = (c) => (anyProvisional && !isProvisional(c) && (guardianWritings(c) || isCoreHolder(c)) ? 1 : 0);
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
   // scripture itself (another tradition's text holding the words) is the origin of a Bahá'í book that quotes it (11-01 wording battery)
   const scripture = (c) => (c.holds ?? ((c.overlap || 0) >= VERBATIM)) && c.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(c.religion) && (c.overlap || 0) >= VERBATIM ? 1 : 0;
   // a tradition the seeker NAMED ("the Buddha said …", "which sura …") outranks a Bahá'í book that quotes it (11-01 battery)
-  const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, religion && sameTradition(c.religion, religion) ? 1 : 0, scripture(c), quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0, bookStanding(c),
+  const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, religion && sameTradition(c.religion, religion) ? 1 : 0, scripture(c), quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, published(c), c.ownWork ? 1 : 0, bookStanding(c),
     // the paragraph holding the WORDING beats one the decision passed on meaning only — a neighbour (Liliane 10-05: Gleanings
     // 60.3 beat the verbatim 60.2) or another Core book that paraphrases (the Tablets book over Gleanings for 'Tear asunder').
     // A different translation is verbatim nowhere, so cross-translation ranking is unchanged.
@@ -219,7 +230,11 @@ const docBrief = (r) => ({ id: r.doc_id, title: r.title, site: r.source_site || 
 // still name the best holder of any kind). Commentary still competes in ranking and is still listed as citing it.
 const bookAuthority = (c) => { if (c.book_authority != null) return c.book_authority; try { return getAuthority({ ...c, author: c.book_author }); } catch { return null; } };
 const isCoreHolder = (c) => isCoreLiterature({ ...c, author: c.writer, book_authority: bookAuthority(c) });
-export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null, religion = null, coreOnly = false } = {}) {
+// a core origin: core literature, or the Writings in Shoghi Effendi's own translation (guardianWritings)
+const isCoreOrigin = (c) => isCoreHolder(c) || guardianWritings(c);
+// opts.prefer(candidate): the work the seeker NAMED ("in the Dawn-Breakers …") — the best-ranked holder it accepts is the origin,
+// ahead of coreOnly (the reader chose the book; Anís respond.js passes Jev's draw_from span)
+export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null, religion = null, coreOnly = false, prefer = null } = {}) {
   const NEED = ['phrases', 'keyword', 'links', 'passages', 'meta', 'rows'];
   let d = NEED.every((k) => deps[k]) ? deps : { ...(await defaultDeps()), ...deps };
   // exclude: { documentIds, titles } — publications that may not be the answer (checking a compilation's own selections: the
@@ -326,7 +341,9 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const lead = rankOrigins(pool, quoteAuthor, religion).slice(0, 8);
   const qc = await d.links(lead.map((c) => c.id), { quotedBy: true }).catch(() => new Map());
   for (const c of lead) c.quotedCount = qc.get(c.id)?.quotedBy?.count || 0;
-  const ranked = rankOrigins(pool, quoteAuthor, religion), origin = coreOnly ? ranked.find(isCoreHolder) : ranked[0];
+  const ranked = rankOrigins(pool, quoteAuthor, religion);
+  const named = prefer ? ranked.find((c) => { try { return !!prefer(c); } catch { return false; } }) : null;
+  const origin = named || (coreOnly ? ranked.find(isCoreOrigin) : ranked[0]);
   if (!origin) {
     say('origin', { origin: null, candidates: ranked.length, coreOnly: true });
     return { quote: q.text, quoteAuthor, origin: null, citedBy: [], tablet: null, coreOnly: 'no core-literature holder', ms: Date.now() - t0,

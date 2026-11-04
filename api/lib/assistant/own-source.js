@@ -50,8 +50,10 @@ export async function literalOwnSearch(span, { author } = {}, { limit = OWN_SOUR
 /** The chosen passage's link (hit-links withLinks: the best publisher of the same words). */
 export const linkHits = async (hits) => (await import('../hit-links.js')).withLinks(hits);
 
-// the writer's own work holding the span verbatim
-const ownHolder = (q, writer, span) => canon(q?.author) === writer && canon(q?.book_author || q?.author) === writer && holds(q.text, span).exact;
+// the writer's own work holding the span verbatim — never a provisional translation (source-hunt isProvisional): a published
+// book's passage is not traded for a reading aid (w8:db-27: The Dawn-Breakers → "Farewell address … (provisional translation)")
+const ownHolder = (q, writer, span, provisional) => canon(q?.author) === writer && canon(q?.book_author || q?.author) === writer
+  && !provisional(q) && holds(q.text, span).exact;
 
 /**
  * passages → { passages, swapped: [{ from, to, writer }], searches, late, ms }. Each quoted passage's slot goes to the writer's
@@ -66,11 +68,11 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
   const t0 = Date.now();
   const done = (extra = {}) => ({ passages, swapped: [], searches: 0, late: 0, ...extra, ms: Date.now() - t0 });
   if (!Array.isArray(passages) || !passages.length) return done();
-  const { DOCTRINAL } = await import('../source-hunt.js');
+  const { DOCTRINAL, isProvisional } = await import('../source-hunt.js');
   const jobs = passages.map((p, i) => ({ p, i })).filter(({ p }) => quotedElsewhere(p, DOCTRINAL) && !keep?.(p))
     .map((j) => ({ ...j, writer: canon(j.p.author), span: quotedSpan(j.p.text) })).filter((j) => j.span);
   if (!jobs.length) return done();
-  for (const j of jobs) j.own = passages.find((q) => q !== j.p && ownHolder(q, j.writer, j.span)) || null;
+  for (const j of jobs) j.own = passages.find((q) => q !== j.p && ownHolder(q, j.writer, j.span, isProvisional)) || null;
   const need = jobs.filter((j) => !j.own && search);
   let late = 0;
   if (need.length) {
@@ -81,7 +83,7 @@ export async function preferOwnWork(passages, { search = null, link = null, budg
     const lookup = async (j) => {
       const hits = await search(j.span, { author: j.writer }, { timeoutMs: left() });
       const ranked = await quoteCandidates(Array.isArray(hits) ? hits : [], j.span);
-      const hit = ranked.find((h) => ownHolder(h, j.writer, j.span));
+      const hit = ranked.find((h) => ownHolder(h, j.writer, j.span, isProvisional));
       if (!hit) return null;
       const [linked] = link ? await link([hit]).catch(() => [hit]) : [hit];
       return shape(linked || hit);

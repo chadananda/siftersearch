@@ -12,11 +12,11 @@ import { drawFromCriteria } from '../search-plan.js';
 
 export const STRATEGIES = {
   comparison: 'asks how TWO OR MORE religions, scriptures or traditions each treat, teach or differ on something — side by side ("Buddhism and Christianity on forgiveness", "does the Qur’án agree with the Gospels about…", "what do the world religions say about the soul")',
-  understanding: 'wants to understand a teaching, concept, practice or passage in depth within ONE tradition — its meaning, the scripture behind it and how it has been explained ("help me understand progressive revelation", "what the Bahá’í writings teach about the soul after death")',
+  understanding: 'wants to understand a teaching, concept, practice or passage in depth within ONE tradition — its meaning, the scripture behind it and how it has been explained; this includes a passage the person quotes and asks to have explained (what it means, asks, warns or teaches, or the occasion it belongs to), even when the question names the book it is from ("help me understand progressive revelation", "what the Bahá’í writings teach about the soul after death")',
   prayer: 'wants a PRAYER to say — for an occasion, need or person (healing, the departed, protection, children, marriage, unity, morning, evening, the Fast, tests) or a particular prayer by name or opening words',
   guidance: 'asks what the Universal House of Justice (the Bahá’í world body) has said, says now or has decided on a matter — present-day guidance, letters, messages, policy, elections, institutions',
   reference: 'gives a chapter-and-verse or numbered scripture reference and wants THAT passage: "John 3:16", "Qur’án 2:255", "Sura 24", "Bhagavad Gita chapter 2", "Psalm 23", "Matthew 5", "Isaiah 11:6"',
-  other: 'none of these: a quote to find, a book or person to look up, a fact or date, a word’s meaning, a greeting, conversation, or a general question',
+  other: 'none of these: a quote to locate or trace with no further question about it, a book or person to look up, a fact or date, a word’s meaning, a greeting, conversation, or a general question',
 };
 const SIDES = { ...Object.fromEntries(Object.entries(TRADITIONS).filter(([k]) => k !== 'none')), none: 'no such tradition in the question' };
 const SIDE_KEYS = ['side_a', 'side_b', 'side_c'];
