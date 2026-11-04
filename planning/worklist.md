@@ -3,6 +3,7 @@
 ## 11-02 search engine cutover DONE (planning/qdrant-status-20261028.md)
 - qdrant-main :6343 serves; gate PASS (81% vs 77%, xl hit@10 0.35 vs 0.19, p95 11 s vs 25 s). qdrant-next stopped, data kept → delete ≥11-09.
 - OPEN: entity-aware 2/9 — Dawn-Breakers outranked by newer topical works (ranking, not engine).
+- LATER (11-04): retire cleanup (api/lib/index-outbox.js drain) deletes a retired/deleted doc's points from phrases, paragraphs_kw, hype only — NOT concepts or phrases_hot. Low urgency: indexers now skip duplicate_of + bahai-library tag pages (44fdc503); excluded-points purge record planning/qdrant-excluded-purge-20261104.tsv.
 - Hub next: calibrate topic terms (run.mjs --sample 150), HyPE coverage check, chad.jsonl intake, admin page, retire old scorers.
 
 ## STATUS 10-12 12:55 — running on tower (watched: background stall-check every 20 min)
