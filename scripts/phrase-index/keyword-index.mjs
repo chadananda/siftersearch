@@ -15,6 +15,7 @@ import { paragraphLang } from '../../api/lib/phrase-vectors.js';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
 import { paragraphAuthor, paragraphVoices } from '../../api/lib/authorship/effective.js';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
+import { INDEXABLE_DOC_SQL } from '../../api/lib/search/excluded-docs.js';   // retired duplicates + tag index pages never indexed
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
@@ -47,7 +48,7 @@ const src = new Database(DB, { readonly: true, fileMustExist: true });
 const BP = SCOPE === 'supplemental' ? boilerplateTexts(src) : null;
 const wanted = (text) => !BP || keepSiteParagraph(text, BP);
 const SQL = `SELECT c.id, c.doc_id, c.text, c.authors, d.language, d.religion, d.collection, d.author FROM content c JOIN docs d ON d.id = c.doc_id
-  WHERE d.scope = '${DB_SCOPE}' AND d.deleted_at IS NULL AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0
+  WHERE d.scope = '${DB_SCOPE}' AND d.deleted_at IS NULL AND ${INDEXABLE_DOC_SQL} AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0
   AND c.id > ? ORDER BY c.id`;
 
 let state = !has('fresh') && existsSync(CKPT) ? JSON.parse(readFileSync(CKPT, 'utf8')) : null;

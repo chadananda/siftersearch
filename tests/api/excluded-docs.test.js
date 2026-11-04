@@ -1,6 +1,8 @@
 // The search exclusion list sends only the excluded docs that still have Qdrant points; none → no filter at all.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { computeExclusion } from '../../api/lib/search/excluded-docs.js';
+import { readFileSync } from 'fs';
+import Database from 'better-sqlite3';
+import { computeExclusion, isTagIndex, TAG_INDEX_SQL, INDEXABLE_DOC_SQL } from '../../api/lib/search/excluded-docs.js';
 
 // listDocs fake: metadata [5, 8746]; duplicates 1..2500 in pages of 1000 (paged by afterId)
 // tag pages: 9001 'Tag: Ahmad of Yazd' (kept), 9002 'The Price Tag' (a book, not kept), 9003 'All tags' (kept)
@@ -54,5 +56,37 @@ describe('docPointCounts', () => {
     expect(r.phrases.get(7)).toBe(12);
     expect(r.phrases_hot.size).toBe(0);
     expect(fetch.mock.calls.map(([u]) => u.replace(/^http:\/\/[^/]+/, ''))).toContain('/collections/concepts/facet');
+  });
+});
+
+// Indexers skip what search excludes (11-04): otherwise purged points come back on the next build.
+describe('indexers skip excluded docs', () => {
+  const TITLES = ['Tag: Ahmad of Yazd', 'TAG: x', 'tag:x', 'All tags', 'All tags: A–C', 'all tags (2)', 'All tagsets', 'The Price Tag', 'Tags of the Dawn', '', null];
+  const db = () => {
+    const d = new Database(':memory:');
+    d.exec('CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, source_site TEXT, duplicate_of INTEGER, doc_role TEXT)');
+    return d;
+  };
+  it('TAG_INDEX_SQL answers exactly as isTagIndex', () => {
+    const d = db(), ins = d.prepare('INSERT INTO docs (id, title, source_site) VALUES (?, ?, ?)');
+    let id = 0; const rows = [];
+    for (const site of ['bahai-library.com', 'oceanlibrary.com', null]) for (const title of TITLES) { ins.run(++id, title, site); rows.push({ id, title, source_site: site }); }
+    const sql = new Set(d.prepare(`SELECT d.id FROM docs d WHERE ${TAG_INDEX_SQL}`).all().map((r) => r.id));
+    for (const r of rows) expect([r.title, r.source_site, sql.has(r.id)]).toEqual([r.title, r.source_site, isTagIndex(r)]);
+    expect(sql.size).toBe(5);   // 'Tag: …', 'TAG: x', 'All tags', 'All tags: A–C', 'all tags (2)' — on bahai-library.com only
+  });
+  it('INDEXABLE_DOC_SQL drops retired duplicates and tag pages; keeps the metadata doc and ordinary docs', () => {
+    const d = db();
+    d.exec(`INSERT INTO docs VALUES (1, 'A book', NULL, NULL, NULL), (2, 'A copy', NULL, 1, NULL), (3, 'Tag: Ahmad of Yazd', 'bahai-library.com', NULL, NULL),
+      (8746, 'Partial Inventory', NULL, NULL, 'metadata'), (5, 'An essay', 'bahai-library.com', NULL, NULL)`);
+    expect(d.prepare(`SELECT d.id FROM docs d WHERE ${INDEXABLE_DOC_SQL} ORDER BY d.id`).all().map((r) => r.id)).toEqual([1, 5, 8746]);
+  });
+  it('every Qdrant indexer reads its rows through INDEXABLE_DOC_SQL', () => {
+    for (const f of ['scripts/phrase-index/indexer.mjs', 'scripts/phrase-index/keyword-index.mjs', 'api/lib/repos/keyword-repo.js']) {
+      const src = readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
+      expect([f, /AND \$\{INDEXABLE_DOC_SQL\}/.test(src)]).toEqual([f, true]);
+    }
+    // the phrase indexer's upsert also withholds stored units of those docs (units stored before the doc was retired)
+    expect(readFileSync(new URL('../../scripts/phrase-index/indexer.mjs', import.meta.url), 'utf8')).toMatch(/duplicate_of IS NOT NULL OR \$\{TAG_INDEX_SQL\}/);
   });
 });

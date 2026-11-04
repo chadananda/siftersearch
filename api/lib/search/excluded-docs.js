@@ -11,6 +11,16 @@ let all = [], ids = [], status = null, at = 0, loading = null;
 
 export const isTagIndex = (d) => d?.source_site === 'bahai-library.com' && /^(tag: |all tags\b)/i.test(String(d.title || ''));
 
+/** isTagIndex as SQL over `docs d` (same rule; NULL-safe). tests/api/excluded-docs.test.js holds the two to the same answers. */
+export const TAG_INDEX_SQL = "(COALESCE(d.source_site, '') = 'bahai-library.com' AND (lower(COALESCE(d.title, '')) LIKE 'tag: %'"
+  + " OR lower(COALESCE(d.title, '')) = 'all tags' OR (lower(COALESCE(d.title, '')) LIKE 'all tags%' AND substr(lower(d.title), 9, 1) NOT GLOB '[a-z0-9_]')))";
+
+/** Docs an INDEXER may send to Qdrant (phrases · phrases_hot · paragraphs_kw · hype · concepts): not a retired duplicate, not
+ *  a tag index page — what search excludes must not be (re)written, or its points come back after a purge (11-04: 9,701
+ *  excluded docs still had points, ~460K, every search carried a ~9,700-id must_not). Metadata docs (8746) ARE indexed:
+ *  search filters them on purpose. Deleted docs are left out by every indexer's own deleted_at test. */
+export const INDEXABLE_DOC_SQL = `d.duplicate_of IS NULL AND NOT ${TAG_INDEX_SQL}`;
+
 /** Every id listDocs gives for `opts`, paged by id (a single page was capped at 1000, which would cut the list silently). */
 async function listAllIds(listDocs, opts, keep = () => true) {
   const out = [];

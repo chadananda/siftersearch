@@ -23,13 +23,13 @@ const { keywordFillJob, keywordPoint } = await import('../../api/lib/ops/keyword
 beforeEach(() => {
   measured.length = 0;
   raw = new Database(':memory:');
-  raw.exec(`CREATE TABLE docs (id INTEGER PRIMARY KEY, language TEXT, religion TEXT, collection TEXT, author TEXT, scope TEXT, deleted_at TEXT, duplicate_of INTEGER);
+  raw.exec(`CREATE TABLE docs (id INTEGER PRIMARY KEY, language TEXT, religion TEXT, collection TEXT, author TEXT, scope TEXT, deleted_at TEXT, duplicate_of INTEGER, title TEXT, source_site TEXT);
     CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, text TEXT, authors TEXT, deleted_at TEXT, is_duplicate INTEGER, paragraph_index INTEGER);
     CREATE TABLE index_coverage (doc_id INTEGER, layer TEXT, total INTEGER, indexed INTEGER, core INTEGER);
     CREATE TABLE doc_structure (doc_id INTEGER PRIMARY KEY, sections INTEGER, source TEXT, indexed_at INTEGER);
     CREATE TABLE doc_sections (doc_id INTEGER, ord INTEGER, level INTEGER, title TEXT, start_index INTEGER, end_index INTEGER);
     INSERT INTO doc_structure (doc_id, sections) VALUES (1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(100,0);
-    INSERT INTO docs VALUES (1,'en','Islam','Core','Muhammad','primary',NULL,NULL), (2,'en','Islam','Lit','X','primary',NULL,NULL),
+    INSERT INTO docs (id, language, religion, collection, author, scope, deleted_at, duplicate_of) VALUES (1,'en','Islam','Core','Muhammad','primary',NULL,NULL), (2,'en','Islam','Lit','X','primary',NULL,NULL),
       (3,'en','Islam','Lit','Y','primary',NULL,NULL), (4,'en','Other','Web','Z','supplemental',NULL,NULL);
     INSERT INTO content (id, doc_id, text, authors, deleted_at, is_duplicate) VALUES (10,1,'In the name of God',NULL,NULL,0), (11,1,'the Merciful',NULL,NULL,0), (12,1,'gone',NULL,'2026',0),
       (13,1,'copy',NULL,NULL,1), (14,1,'',NULL,NULL,0);
@@ -42,12 +42,23 @@ describe('keyword fill', () => {
     expect((await keywordGapDocs({ scope: 'supplemental' })).map((d) => d.id)).toEqual([4]);
   });
   it('significant gaps only: nothing indexed or > max(20, 2%) short — not a few punctuation-only paragraphs', async () => {
-    raw.exec(`INSERT INTO docs VALUES (5,'en','Islam','Lit','W','primary',NULL,NULL), (6,'en','Islam','Lit','V','primary',NULL,NULL);
+    raw.exec(`INSERT INTO docs (id, language, religion, collection, author, scope, deleted_at, duplicate_of) VALUES (5,'en','Islam','Lit','W','primary',NULL,NULL), (6,'en','Islam','Lit','V','primary',NULL,NULL);
       INSERT INTO index_coverage VALUES (5,'keyword',138000,137780,0), (6,'keyword',138000,130000,0);`);
     expect((await keywordGapDocs({ significant: true })).map((d) => d.id)).toEqual([1, 6, 2]);
   });
   it('a document\'s rows: live, not duplicate, not empty', async () => {
     expect((await keywordRowsForDoc(1)).map((r) => r.id)).toEqual([10, 11]);
+  });
+  it('retired duplicates and bahai-library tag index pages: no rows and never a gap (search excludes them — 11-04 purge)', async () => {
+    raw.exec(`INSERT INTO docs (id, scope, duplicate_of, title, source_site) VALUES (7,'primary',1,'Copy',NULL), (8,'supplemental',NULL,'Tag: Ahmad of Yazd','bahai-library.com'),
+        (9,'supplemental',NULL,'An essay','bahai-library.com');
+      INSERT INTO content (id, doc_id, text, deleted_at, is_duplicate) VALUES (70,7,'In the name of God',NULL,0), (80,8,'Tablet to Ahmad',NULL,0), (90,9,'An essay',NULL,0);
+      INSERT INTO doc_structure (doc_id, sections) VALUES (7,0),(8,0),(9,0);
+      INSERT INTO index_coverage VALUES (7,'keyword',1,0,0), (8,'keyword',1,0,0), (9,'keyword',1,0,0);`);
+    expect(await keywordRowsForDoc(7)).toEqual([]);
+    expect(await keywordRowsForDoc(8)).toEqual([]);
+    expect((await keywordRowsForDoc(9)).map((r) => r.id)).toEqual([90]);
+    expect((await keywordGapDocs({ scope: 'supplemental' })).map((d) => d.id)).toEqual([4, 9]);
   });
   it('a point: id = paragraph id, sparse bm25, payload as the indexer writes it; no tokens → no point', () => {
     const p = keywordPoint({ id: 10, doc_id: 1, text: 'In the name of God', language: 'en', religion: 'Islam', collection: 'Core', author: 'Muhammad', scope: 'primary' }, 74);
@@ -72,7 +83,7 @@ describe('keyword fill', () => {
     expect(stats).toMatchObject({ docs: 1, tokenless: 1, recorded_only: 1, points: 0 });
   });
   it('supplemental: site page chrome (repeated across >= 10 site documents) and markup lines are left out, not sent', async () => {
-    raw.exec(`INSERT INTO docs VALUES ${Array.from({ length: 10 }, (_, k) => `(${100 + k},'en','Other','Web','Z','supplemental',NULL,NULL)`).join(',')};
+    raw.exec(`INSERT INTO docs (id, language, religion, collection, author, scope, deleted_at, duplicate_of) VALUES ${Array.from({ length: 10 }, (_, k) => `(${100 + k},'en','Other','Web','Z','supplemental',NULL,NULL)`).join(',')};
       INSERT INTO content (id, doc_id, text, authors, deleted_at, is_duplicate) VALUES ${Array.from({ length: 10 }, (_, k) => `(${1000 + k},${100 + k},'Home | About | Contact',NULL,NULL,0)`).join(',')},
         (1100,100,'A real paragraph of the site',NULL,NULL,0), (1101,100,'<table>',NULL,NULL,0);
       INSERT INTO index_coverage VALUES (100,'keyword',3,0,0);`);

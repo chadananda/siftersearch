@@ -34,6 +34,7 @@ import { faShare } from '../../api/lib/arabic-script.js';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
 import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
+import { INDEXABLE_DOC_SQL, TAG_INDEX_SQL } from '../../api/lib/search/excluded-docs.js';
 import { parseStoredHypQuestions } from '../../api/lib/search/hype.js';
 import { logAIUsage } from '../../api/lib/ai-services.js';   // every Gemini batch is ALSO a row in the shared spend ledger
 import { noteProviderError, isExhaustion } from '../../api/lib/spend-alerts.js';
@@ -124,7 +125,7 @@ function source() {
   // API every 15 min trying to free it (the 2026-10-03 "restart storm"). Never stream a long build through one statement.
   const page = src.prepare(`SELECT c.id, c.doc_id, ${col} AS text, ${FIELD === 'original' ? 'COALESCE(c.original_lang, d.language)' : 'd.language'} AS language,
       c.authors, d.author, d.religion, d.collection, d.scope${FIELD === 'hype' ? ', c.hyp_questions, c.hyp_thesis' : ''}${FIELD === 'concepts' ? `, ${claimsOf} AS claims` : ''} FROM content c JOIN docs d ON d.id = c.doc_id
-    WHERE ${where} AND d.deleted_at IS NULL AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(${col}) > 0
+    WHERE ${where} AND d.deleted_at IS NULL AND ${INDEXABLE_DOC_SQL} AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(${col}) > 0
       ${FIELD === 'hype' ? "AND (COALESCE(c.hyp_questions, '') <> '' OR COALESCE(c.hyp_thesis, '') <> '')" : ''}
       AND c.id > ? ORDER BY c.id LIMIT 5000`);
   // An explicit --docs list is read ONE DOCUMENT AT A TIME on the doc_id index (10-14): as `d.id IN (<thousands>) …
@@ -300,8 +301,20 @@ async function reconcileHot() {
 
 const page = store.prepare(`SELECT u.*, v.v FROM units u JOIN vec v ON v.key = u.key WHERE u.upserted = 0 LIMIT 256`);
 const mark = store.prepare('UPDATE units SET upserted = ? WHERE point_id = ?');
+// Units stored before their doc was retired as a duplicate or found to be a tag index page (or reset by --reconcile-hot)
+// must not reach Qdrant: search excludes those docs, and their points were purged (11-04). The unit row is dropped — its
+// vector stays in `vec`, so a doc restored later re-derives the unit at no spend. One short read of docs per run.
+let withheld = null;
+const withheldDocs = () => {
+  if (withheld) return withheld;
+  const src = new Database(DB, { readonly: true, fileMustExist: true });
+  try { withheld = new Set(src.prepare(`SELECT d.id FROM docs d WHERE d.duplicate_of IS NOT NULL OR ${TAG_INDEX_SQL}`).all().map((r) => String(r.id))); }
+  finally { src.close(); }
+  return withheld;
+};
 async function upsert() {
-  let sent = 0, pages = 0;
+  let sent = 0, pages = 0, dropped = 0;
+  const skip = withheldDocs();
   while (stale.length) {
     const points = stale.splice(0, 1000);
     await qd('POST', `/collections/${COLL}/points/delete?wait=true`, { points });
@@ -313,8 +326,11 @@ async function upsert() {
       if (free != null && free < need) { stopped = `hot RAM disk ${HOT_PATH} has ${(free / 1e9).toFixed(1)} GB free (< ${(need / 1e9).toFixed(1)} GB: min ${HOT_MIN_FREE / 1e9} GB and room for a snapshot): fold into main or enlarge before indexing more`; break; }
     }
     let t1 = Date.now();
-    const rows = page.all(); if (!rows.length) break;
+    let rows = page.all(); if (!rows.length) break;
+    const out = rows.filter((r) => skip.has(String(r.doc_id)));
+    if (out.length) { store.transaction(() => out.forEach((r) => dropUnit.run(r.point_id)))(); dropped += out.length; rows = rows.filter((r) => !skip.has(String(r.doc_id))); }
     T.sqlite_ms += Date.now() - t1; t1 = Date.now();
+    if (!rows.length) continue;
     await qd('PUT', `/collections/${UP.coll}/points?wait=true`, { points: rows.map((r) => ({ id: r.point_id, vector: { literal: unpackF16(r.v) },
       payload: { paragraph_id: Number(r.paragraph_id), doc_id: Number(r.doc_id), k: r.k, start: r.start, end: r.end, seg_v: r.seg_v,
         lang_group: r.lang_group || 'ar-fa', fa_share: r.fa_share, religion: r.religion, author: r.author, author_fold: authorKey(r.author), collection: r.collection,
@@ -324,6 +340,7 @@ async function upsert() {
     T.sqlite_ms += Date.now() - t1;
     sent += rows.length;
   }
+  if (dropped) note({ phase: 'withheld', units: dropped, reason: 'retired duplicate or tag index page' });
   return sent;
 }
 
