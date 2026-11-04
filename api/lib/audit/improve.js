@@ -54,6 +54,7 @@ ${Object.keys(FIX_WHERE).join(', ')}, wrong-route, padded-answer, missed-questio
 
 OUTPUT: exactly one JSON object and nothing else:
 {"verdict":"pass"|"weak","classes":["kebab-class",...],"stage":"${STAGES.join('|')}"|null,"severity":1|2|3,"why":"one or two sentences naming the hit numbers and titles"}
+When stage is STRATEGY because a Jev decision gate chose the wrong option, you may add "gate":"<anis-strategy|anis-triage|anis-quote-or-book|anis-format>" and "right":"<the option that should have been chosen>" (it becomes that gate's test label); omit both when unsure.
 severity: 3 = the reader got a wrong or weaker source on a doctrinal question; 2 = a real but recoverable weakness;
 1 = minor. For a pass, classes is [] and stage is null and severity is 0.`;
 
@@ -89,7 +90,8 @@ export function parseJudge(text) {
   const classes = (Array.isArray(j.classes) ? j.classes : []).map((c) => String(c).toLowerCase().replace(/[^a-z0-9-]+/g, '-')).filter(Boolean).slice(0, 8);
   const stage = STAGES.includes(String(j.stage || '').toUpperCase()) ? String(j.stage).toUpperCase() : null;
   const severity = j.verdict === 'pass' ? 0 : Math.min(3, Math.max(1, Number(j.severity) || 2));
-  return { verdict: j.verdict, classes: j.verdict === 'pass' ? [] : classes, stage: j.verdict === 'pass' ? null : stage, severity, why: clip(j.why, 400) };
+  return { verdict: j.verdict, classes: j.verdict === 'pass' ? [] : classes, stage: j.verdict === 'pass' ? null : stage, severity, why: clip(j.why, 400),
+    ...(j.verdict === 'weak' && typeof j.gate === 'string' && typeof j.right === 'string' && j.gate && j.right ? { gate: clip(j.gate, 60), right: clip(j.right, 80) } : {}) };
 }
 
 // ── deep analysis: weak items only; replay + full passages + the code stage map → suggestions ──

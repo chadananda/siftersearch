@@ -94,6 +94,8 @@ export async function work(db, { call = callOpus, replay = replayCurrent } = {})
       const judge = parseJudge(r.text);
       if (!judge) throw new Error(`unparseable judge reply: ${String(r.text).slice(0, 120)}`);
       saveJudge(db, w.item_key, { judge, usd: r.usd, usage: r.usage });
+      // the judge named the right option of a Jev gate → that gate's gold label (labelByRef only labels an option the gate offered)
+      if (judge.gate && judge.right && w.item.turn_id) { try { (await import('../lib/repos/jev-calls-repo.js')).labelByRef(judge.gate, w.item.turn_id, judge.right, 'opus-judge'); } catch { /* a label is a bonus, never a failure */ } }
     } else {
       const rep = await replay(w.item).catch(() => null);
       const passages = (w.item.writer_passages || w.item.hits || []).filter((h) => h.text);

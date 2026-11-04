@@ -12,6 +12,7 @@
 //   node scripts/ops/ops.mjs anis-trace <thread|thread:round>  an Anís thread / turn: every search (tool, query, ranked hits), writer passages, citations
 //   node scripts/ops/ops.mjs search-trace [<traceId>] [--query w --tool t --doc id|title --thread id --turn id --endpoint e --days n --limit n --zero --slow ms]
 //   node scripts/ops/ops.mjs search-replay <traceId|thread:round>  re-run on current code (no LLM): old vs new ranks
+//   node scripts/ops/ops.mjs jev-gates [--days 7] | jev-bank <gate> [--chosen X --q question --wrong|--right|--unlabelled --since 7d --limit n --state] | jev-label <call_id> <answer> [--q question --basis note] | jev-try <gate> <variant> [--n 200 --params '{json}' --chosen X --stored --since 30d --any --max-usd 2]  (Jev decision-gate bank + tuning; --json for JSON)
 //   (the three print tables; --json prints the API's JSON)
 // Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key — the key requireInternal checks).
 import { apiBase } from '../lib/api-base.mjs';
@@ -101,6 +102,33 @@ else if (['anis-trace', 'search-trace', 'search-replay'].includes(cmd)) {   // s
       days: val('--days'), limit: val('--limit') || 30, slowerThan: val('--slow'), sort: flag('--slow') ? 'slow' : undefined, zeroOnly: flag('--zero') ? 1 : undefined }).filter(([, v]) => v != null && v !== ''));
     await show(await call('GET', `/search-trace?${qs}`), traceListText);
   } else { console.error('usage: ops.mjs anis-trace <thread|thread:round> | search-trace [<traceId>] [--query --tool --doc --thread --turn --endpoint --days --limit --zero --slow ms] | search-replay <traceId|thread:round>  [--json]'); process.exit(2); }
+}
+else if (cmd === 'jev-gates') {   // every Jev decision gate: calls, answer mix, gold coverage/accuracy, shadow agreement, $ of a 200-call experiment
+  const j = await call('GET', `/jev/gates?days=${val('--days') || 7}`);
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`JEV GATES · last ${j.days} days\n${'gate'.padEnd(24)} ${'calls'.padStart(7)} ${'tok'.padStart(6)} ${'ms'.padStart(5)} ${'gold'.padStart(5)} ${'acc'.padStart(5)}  $200-try  answers\n${j.gates.map((g) => `${g.task.padEnd(24)} ${String(g.calls).padStart(7)} ${String(g.avg_tokens).padStart(6)} ${String(g.avg_ms).padStart(5)} ${String(g.gold).padStart(5)} ${String(g.accuracy ?? '–').padStart(5)}  $${String(g.cost_200_usd).padEnd(7)} `
+      + Object.entries(g.answers).map(([q, d]) => `${q}: ${Object.entries(d).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([c, n]) => `${c}=${n}`).join(' ')}`).join(' | ')).join('\n')}\n`, r));
+} else if (cmd === 'jev-bank' && name) {   // one gate's decisions with their context: jev-bank <gate> [--chosen X] [--q question] [--wrong|--right|--unlabelled] [--since 7d] [--limit n] [--state] [--json]
+  const qs = new URLSearchParams(Object.entries({ task: name, chosen: val('--chosen'), q: val('--q'), since: val('--since'), ref: val('--ref'), limit: val('--limit') || 30,
+    gold: flag('--wrong') ? 'wrong' : flag('--right') ? 'right' : flag('--unlabelled') ? 'none' : flag('--labelled') ? 'any' : undefined }).filter(([, v]) => v != null && v !== ''));
+  const j = await call('GET', `/jev/calls?${qs}`);
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`${j.calls.map((c) => `#${c.id} ${new Date(c.at).toISOString().slice(0, 16)} ${c.ref || '-'}  chose ${JSON.stringify(c.chosen)}${c.gold ? `  GOLD ${JSON.stringify(c.gold)} (${c.gold_basis})${c.correct === false ? '  WRONG' : ''}` : ''}${c.question ? `\n    asked: ${c.question}` : ''}${flag('--state') ? `\n    state: ${String(c.state).slice(0, 1500)}` : ''}`).join('\n') || '(none)'}\n${j.count} call(s)\n`, r));
+} else if (cmd === 'jev-label' && name) {   // jev-label <call_id> <answer> [--q question] [--basis note]
+  await out(await call('POST', '/jev/label', { id: Number(name), answer: process.argv[4], q: val('--q'), basis: val('--basis') || 'manual' }));
+} else if (cmd === 'jev-try' && name && process.argv[4] && !process.argv[4].startsWith('--')) {   // jev-try <gate> <variant> [--n 200] [--params '{json}'] [--chosen X] [--stored] [--since 30d] [--any] [--max-usd 2]
+  const variant = val('--params') ? { id: process.argv[4], params: JSON.parse(val('--params')) } : process.argv[4];
+  let job = await call('POST', '/jev/experiment', { task: name, variant, n: Number(val('--n')) || 200, baseline: flag('--stored') ? 'stored' : 'rerun', maxUsd: Number(val('--max-usd')) || 2,
+    sample: { filter: { ...(val('--chosen') ? { chosen: val('--chosen') } : {}), ...(val('--q') ? { q: val('--q') } : {}), ...(val('--since') ? { since: val('--since') } : {}), ...(flag('--any') ? { gold: 'any' } : {}) } } });
+  console.error(`experiment ${job.key} ${job.status}`);
+  const deadline = Date.now() + 30 * 60_000;
+  while (job.status === 'running' && Date.now() < deadline) { await new Promise((r) => setTimeout(r, 5000)); job = await call('GET', `/jev/experiment/${job.key}`); }
+  const x = job.result;
+  if (flag('--json') || !x) await out(job);
+  else await new Promise((r) => process.stdout.write(`${x.task} · ${x.variant.id} ${JSON.stringify(x.variant.params)} · sampled ${x.sampled}, done ${x.done}, errors ${x.errors}, skipped ${x.skipped}${x.truncated ? `, TRUNCATED (${x.truncated})` : ''}\n`
+    + `accuracy vs gold (${x.labelled} labelled): baseline ${x.accuracy.baseline} → variant ${x.accuracy.variant}  (Δ ${x.accuracy.delta})  fixed ${x.fixed}, broken ${x.broken}\n`
+    + `changed ${x.changed}: ${Object.entries(x.flips).sort((a, b) => b[1] - a[1]).map(([f, n]) => `${f} ×${n}`).join(' · ') || '–'}\n`
+    + `tokens ${x.avg_tokens.baseline} → ${x.avg_tokens.variant} · ms ${x.avg_ms.baseline} → ${x.avg_ms.variant} · $${x.usd}\n`, r));
 }
 else if (cmd === 'failures') await out(await call('GET', `/ops/failures?hours=${val('--hours') || 24}`));   // failed ops jobs (what the FAILED mails report)
 else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until none are left
