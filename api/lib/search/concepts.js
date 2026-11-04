@@ -107,11 +107,12 @@ export function proofParagraph(rows, { proof_para_id, proof_verbatim }) {
 /** A lexicon symbol is NAMED by the question when every content word of it appears there ("the sun" in "what does
  *  the sun symbolise"; "Sun of Truth" is not named by it). Pure. */
 const STOP = new Set(['the', 'of', 'a', 'an', 'and', 'his', 'her', 'its', 'my', 'thy', 'in', 'to', 'god', "god's"]);
+const symbolWords = (symbol) => flat(symbol).split(/[^a-z0-9'á-ž]+/).filter((w) => w.length > 2 && !STOP.has(w));
+const queryTerms = (query) => new Set(flat(query).split(/[^a-z0-9'á-ž]+/).flatMap((w) => [w, w.replace(/'s$/, ''), w.replace(/s$/, '')]));
+const wordsNamed = (words, q) => words.every((w) => q.has(w) || q.has(w.replace(/s$/, '')));
 export function symbolNamed(symbol, query) {
-  const words = flat(symbol).split(/[^a-z0-9'á-ž]+/).filter((w) => w.length > 2 && !STOP.has(w));
-  if (!words.length) return false;
-  const q = new Set(flat(query).split(/[^a-z0-9'á-ž]+/).flatMap((w) => [w, w.replace(/'s$/, ''), w.replace(/s$/, '')]));
-  return words.every((w) => q.has(w) || q.has(w.replace(/s$/, '')));
+  const words = symbolWords(symbol);
+  return words.length > 0 && wordsNamed(words, queryTerms(query));
 }
 
 /** CONCEPT LAYER: the authoritative interpretation of a symbol the question names (concept_lexicon, cited) → its proof
@@ -162,7 +163,7 @@ export async function loadLexicon({ rows: given = null, rowsOf = rowsForDoc, pre
 }
 function startLexiconLoad() {
   lexLoading = loadLexicon({ previous: lexicon ? { sig: lexicon.sig, entries: lexicon } : null })
-    .then((l) => { lexicon = l; lexAt = Date.now(); }).catch(() => {}).finally(() => { lexLoading = null; });
+    .then((l) => { lexiconIndex(l); lexicon = l; lexAt = Date.now(); }).catch(() => {}).finally(() => { lexLoading = null; });
   return lexLoading;
 }
 function lexiconNow() {
@@ -175,12 +176,36 @@ export const warmLexicon = () => { lexiconNow(); return lexLoading || Promise.re
 export const refreshLexicon = () => lexLoading || startLexiconLoad();
 export const lexiconLoaded = () => !!lexicon;
 
+// Each lexicon's symbols folded ONCE, indexed by first content word (and that word less a final s — the match accepts
+// either). The full scan re-folded ~29,000 symbols and the query per entry: ~300 ms of blocked event loop per engine call,
+// 2-4 calls per planned search, in the API's one process — concurrent searches queued behind it (11-03 profile).
+const lexIdx = new WeakMap();
+function lexiconIndex(list) {
+  let ix = lexIdx.get(list);
+  if (ix) return ix;
+  const words = new Array(list.length), byFirst = new Map();
+  const add = (k, i) => { const a = byFirst.get(k); if (a) { if (a[a.length - 1] !== i) a.push(i); } else byFirst.set(k, [i]); };
+  for (let i = 0; i < list.length; i++) {
+    if (!list[i]?.paragraph_id) continue;
+    const w = words[i] = symbolWords(list[i].symbol);
+    if (w.length) { add(w[0], i); add(w[0].replace(/s$/, ''), i); }
+  }
+  ix = { words, byFirst };
+  lexIdx.set(list, ix);
+  return ix;
+}
+
 /** CONCEPT LAYER: the authoritative interpretation of a symbol the question names (concept_lexicon, cited) → its proof
  *  paragraph, as a ranked list for multiIndexSearch. Empty unless a symbol is actually named. entries: tests. */
 export async function searchConceptProofs(_deps, query, { limit = 8, entries = null } = {}) {
   if (!query) return { hits: [] };
   const seen = new Set();
-  const hits = (entries || lexiconNow()).filter((h) => h.paragraph_id && symbolNamed(h.symbol, query))
+  const list = entries || lexiconNow();
+  const { words, byFirst } = lexiconIndex(list);
+  const q = queryTerms(query);
+  const at = new Set();
+  for (const t of q) for (const i of byFirst.get(t) || []) at.add(i);
+  const hits = [...at].sort((a, b) => a - b).filter((i) => wordsNamed(words[i], q)).map((i) => list[i])
     .sort((a, b) => (a.authority_tier ?? 99) - (b.authority_tier ?? 99))
     .filter((h) => !seen.has(h.paragraph_id) && seen.add(h.paragraph_id)).slice(0, limit);
   return { hits: hits.map((h) => ({ paragraph_id: h.paragraph_id, doc_id: h.proof_doc_id, concept: { symbol: h.symbol, interpretation: h.interpretation, authority: h.authority } })) };
