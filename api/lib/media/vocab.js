@@ -2,6 +2,7 @@
 // names, built by the media-vocab job), the matching that proposes corrections, and the GUARD that keeps the corrector
 // to names and terms — an edit must turn a few words into a vocabulary entry that sounds like them, or it is refused.
 // Edits are applied to aligned WORDS (each keeps a time), so a corrected name stays clickable. Pure.
+import { existsSync, readFileSync } from 'fs';
 import { fold } from './names.js';
 
 /** Curated core — Shoghi Effendi's transliteration as the library prints it (curly apostrophes, ‘ for ‘ayn). */
@@ -81,7 +82,8 @@ export function soundsAlike(from, to) {
   const a = keyOf(stripPoss(from)), b = keyOf(to);
   if (!a || !b) return false;
   if (a === b) return true;
-  const allowed = Math.max(2, Math.ceil(b.length * 0.4));
+  // a short term allows one letter (Bob → Báb); 2 let "And" → Anís, "Since" → Sinai, "We've" → Weber (11-03, tichenor-cobb-2-1969)
+  const allowed = b.length <= 5 ? 1 : Math.max(2, Math.ceil(b.length * 0.4));
   return levenshtein(a, b, allowed) <= allowed;
 }
 
@@ -201,7 +203,59 @@ export function trimEdit(from, to, vocab = null) {
   return { from: fw.join(' '), to: tw.join(' ').replace(/[,.;:!?]+$/, '') };
 }
 
-export function guardEdits(words, proposed, vocab) {
+let DICT;
+/** The host's English word list (/usr/share/dict), lower-cased; null where there is none. */
+export function englishWords() {
+  if (DICT !== undefined) return DICT;
+  const files = ['/usr/share/dict/american-english', '/usr/share/dict/british-english', '/usr/share/dict/words'].filter((f) => existsSync(f));
+  DICT = files.length ? new Set(files.flatMap((f) => readFileSync(f, 'utf8').split('\n').map((w) => w.trim().toLowerCase()).filter(Boolean))) : null;
+  return DICT;
+}
+
+/** The words an edit actually changes: words both sides share at the edges are left out ("Dorothy Baker" → "Dorothy
+ *  Anderson" changes Baker; "World War II" → "World War I" changes II). Pure. */
+export function changedPart(from, to) {
+  const fw = String(from).split(/\s+/).filter(Boolean), tw = String(to).split(/\s+/).filter(Boolean);
+  const k = (w) => keyOf(stripPoss(w));
+  while (fw.length > 1 && tw.length > 1 && k(fw[0]) === k(tw[0])) { fw.shift(); tw.shift(); }
+  while (fw.length > 1 && tw.length > 1 && k(fw[fw.length - 1]) === k(tw[tw.length - 1])) { fw.pop(); tw.pop(); }
+  return { from: fw.join(' '), to: tw.join(' ') };
+}
+
+/** Every word is ordinary English the recogniser spelled right — a common word, a contraction or a dictionary word. Pure. */
+export function heardAsEnglish(from, dict = null) {
+  return String(from).split(/\s+/).filter(Boolean).every((w) => {
+    const c = core(w).toLowerCase(), b = stripPoss(c);
+    return COMMON.has(c) || /^[a-z]+(?:n['’]t|['’](?:ve|re|ll|d|m))$/.test(c) || !!dict?.has(c) || !!dict?.has(b);
+  });
+}
+
+/** Why the words an edit CHANGES may not change, or null. Equal word counts are judged word by word ("Babs' paper's" →
+ *  "Báb's letter" changes paper → letter). Pure. */
+export function changeRefused(from, to, vocab, dict = null) {
+  const kw = (w) => keyOf(stripPoss(w));
+  const fw = String(from).split(/\s+/).filter(Boolean), tw = String(to).split(/\s+/).filter(Boolean);
+  // a name the speaker said is never lengthened ("Universal House" → Universal House of Justice, "Bahá’í" → Bahá’í News)
+  if (tw.length > fw.length && [0, tw.length - fw.length].some((o) => fw.every((w, i) => kw(w) === kw(tw[o + i])))) return 'adds words the speaker did not say';
+  const ch = changedPart(from, to);
+  // a vocabulary name is never swapped for another ("‘Abdu’l-Bahá" → ‘Abdu’lláh Páshá)
+  if (vocab?.byKey?.has(kw(ch.from)) && kw(ch.from) !== keyOf(ch.to)) return 'already a vocabulary name';
+  const a = ch.from.split(/\s+/).filter(Boolean), b = ch.to.split(/\s+/).filter(Boolean);
+  const pairs = a.length === b.length ? a.map((w, i) => [w, b[i]]) : [[ch.from, ch.to]];
+  for (const [f, t] of pairs) {
+    const ka = kw(f), kb = keyOf(t);
+    if (ka === kb) continue;
+    if (ka.length < 3) return 'changes a short word';
+    if (!soundsAlike(f, t)) return 'does not sound alike';
+    if (heardAsEnglish(f, dict) && levenshtein(ka, kb, 2) > 1) return 'an English word the speaker said';
+  }
+  return null;
+}
+
+// 11-03 (tichenor-cobb-2-1969): the model turned words the recogniser heard right into names — "Having" → Havana, "Lord" →
+// Lahore, "Israel" → Ishmael, "the heart" → The Hague, "Dorothy Baker" → Dorothy Anderson, "World War II" → World War I.
+// So only the changed words are judged, and a correctly spelled English word becomes a name only one letter away ("Bob" → Báb).
+export function guardEdits(words, proposed, vocab, { dict = null } = {}) {
   const ok = [], refused = [], used = new Set();
   for (const e0 of proposed || []) {
     const e = trimEdit(e0?.from, e0?.to, vocab);
@@ -220,6 +274,8 @@ export function guardEdits(words, proposed, vocab) {
     if (!soundsAlike(from, to)) { refused.push({ from, to, why: 'does not sound alike' }); continue; }
     if (!edgesAlike(from, to)) { refused.push({ from, to, why: 'would drop or change a word' }); continue; }
     if (addsWords(from, to)) { refused.push({ from, to, why: 'adds words the speaker did not say' }); continue; }
+    const why = changeRefused(from, to, vocab, dict);
+    if (why) { refused.push({ from, to, why }); continue; }
     const i0 = findSpan(words, from);
     if (i0 < 0) { refused.push({ from, to, why: 'not in the text' }); continue; }
     const i1 = i0 + from.split(/\s+/).length;

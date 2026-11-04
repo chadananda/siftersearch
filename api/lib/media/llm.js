@@ -8,7 +8,7 @@ import { getModel } from '../model-registry.js';
 import { modelFor } from '../model-roles.js';
 import { paragraphText } from './paragraphs.js';
 import { formatTime } from './range.js';
-import { exactEdits, suspects, guardEdits, applyEdits } from './vocab.js';
+import { exactEdits, suspects, guardEdits, applyEdits, englishWords } from './vocab.js';
 
 const jsonOf = (s) => { const m = String(s || '').match(/\{[\s\S]*\}/); try { return m ? JSON.parse(m[0]) : null; } catch { return null; } };
 
@@ -127,7 +127,7 @@ Return JSON {"edits":[{"p": paragraph number, "from": "exact words from the tran
     for (const [pn, edits] of byP) {
       const p = byN.get(pn);
       if (!p) { refused.push(...edits.map((e) => ({ ...e, why: 'no such paragraph' }))); continue; }
-      const g = guardEdits(p.words, edits, vocab);
+      const g = guardEdits(p.words, edits, vocab, { dict: englishWords() });
       refused.push(...g.refused.map((r) => ({ p: pn, ...r })));
       if (!g.ok.length) continue;
       for (const x of g.ok) diff.push({ p: pn, at: p.words[x.i0].s, from: x.from, to: x.to, method: 'model' });
