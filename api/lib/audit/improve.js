@@ -54,10 +54,12 @@ Known classes (prefer these names; coin a short kebab-case class only when none 
 ${Object.keys(FIX_WHERE).join(', ')}, wrong-route, padded-answer, missed-question.
 
 OUTPUT: exactly one JSON object and nothing else:
-{"verdict":"pass"|"weak","classes":["kebab-class",...],"stage":"${STAGES.join('|')}"|null,"severity":1|2|3,"why":"one or two sentences naming the hit numbers and titles"}
+{"verdict":"pass"|"weak","score":0-10,"classes":["kebab-class",...],"stage":"${STAGES.join('|')}"|null,"severity":1|2|3,"why":"one or two sentences naming the hit numbers and titles"}
 When stage is STRATEGY because a Jev decision gate chose the wrong option, you may add "gate":"<anis-strategy|anis-triage|anis-quote-or-book|anis-format>" and "right":"<the option that should have been chosen>" (it becomes that gate's test label); omit both when unsure.
 severity: 3 = the reader got a wrong or weaker source on a doctrinal question; 2 = a real but recoverable weakness;
-1 = minor. For a pass, classes is [] and stage is null and severity is 0.`;
+1 = minor. For a pass, classes is [] and stage is null and severity is 0.
+score: the overall quality of the item for this reader, an integer 0-10 (10 = the best answer the library allows, 7 = good with
+small flaws, 4 = a real weakness, 0 = wrong or useless). Give it for every item, pass or weak; it is compared across strategies.`;
 
 // ── compact input: what the judge needs and nothing more (bounded text, tiers precomputed) ──
 const clip = (s, n) => { const t = String(s ?? '').replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n)}…` : t; };
@@ -84,14 +86,16 @@ export function judgeMessage(item, { maxHits = 12 } = {}) {
 }
 
 const firstJson = (t) => { const m = String(t || '').match(/\{[\s\S]*\}/); if (!m) return null; try { return JSON.parse(m[0]); } catch { return null; } };
-/** The judge's text → { verdict, classes, stage, severity, why } (unparseable → null: the item is retried, never guessed). */
+/** The judge's text → { verdict, score, classes, stage, severity, why } (score 0-10, null on verdicts from before 11-04) (unparseable → null: the item is retried, never guessed). */
 export function parseJudge(text) {
   const j = firstJson(text);
   if (!j || !['pass', 'weak'].includes(j.verdict)) return null;
   const classes = (Array.isArray(j.classes) ? j.classes : []).map((c) => String(c).toLowerCase().replace(/[^a-z0-9-]+/g, '-')).filter(Boolean).slice(0, 8);
   const stage = STAGES.includes(String(j.stage || '').toUpperCase()) ? String(j.stage).toUpperCase() : null;
   const severity = j.verdict === 'pass' ? 0 : Math.min(3, Math.max(1, Number(j.severity) || 2));
-  return { verdict: j.verdict, classes: j.verdict === 'pass' ? [] : classes, stage: j.verdict === 'pass' ? null : stage, severity, why: clip(j.why, 400),
+  const n = Number(j.score);
+  const score = j.score != null && Number.isFinite(n) ? Math.min(10, Math.max(0, Math.round(n))) : null;
+  return { verdict: j.verdict, score, classes: j.verdict === 'pass' ? [] : classes, stage: j.verdict === 'pass' ? null : stage, severity, why: clip(j.why, 400),
     ...(j.verdict === 'weak' && typeof j.gate === 'string' && typeof j.right === 'string' && j.gate && j.right ? { gate: clip(j.gate, 60), right: clip(j.right, 80) } : {}) };
 }
 

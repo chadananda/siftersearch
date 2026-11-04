@@ -54,6 +54,12 @@ describe('parsing', () => {
     expect(parseJudge('looks fine to me')).toBeNull();
     expect(parseJudge('{"verdict":"maybe"}')).toBeNull();
   });
+  it('judge: score 0-10 kept for comparison across strategies, clamped; absent (older verdicts) → null', () => {
+    expect(parseJudge('{"verdict":"pass","score":8}').score).toBe(8);
+    expect(parseJudge('{"verdict":"weak","score":14,"severity":2}').score).toBe(10);
+    expect(parseJudge('{"verdict":"weak","score":"3.6"}').score).toBe(4);
+    expect(parseJudge('{"verdict":"pass"}').score).toBeNull();
+  });
   it('deep: suggestions bounded to 3, need a change', () => {
     const s = parseSuggestions('```json\n{"suggestions":[{"stage":"rank","file":"api/lib/search/doctrinal-rank.js","fn":"rankCopies","change":"rank copies of one passage by copy class","expected_effect":"Writings lead quote routes","severity":3},{"stage":"WRITER","change":""}]}\n```');
     expect(s).toHaveLength(1);
