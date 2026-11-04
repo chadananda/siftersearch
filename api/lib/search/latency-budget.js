@@ -30,7 +30,9 @@ export const ENGINE_BUDGETS = Object.freeze({
 // Planned-search stages (all durations from the plannedSearch start or the stage's own start).
 export const PLANNED_BUDGETS = Object.freeze({
   spell: { ms: 20, note: 'spelling correction, synchronous: known words <1 ms; a long word with no 1-edit neighbour runs the 2-edit search, 40-80 ms on a 1.8M vocabulary (measured locally)' },
-  plan: { ms: 400, note: 'Jev plan LLM: 136-587 ms serial measured' },
+  plan: { ms: 400, note: 'spell → Jev + name lookup → named scopes; 11-03 prod p50 395 / p95 2292: the tail was the lookup, not Jev' },
+  jev: { ms: 400, note: 'the Jev call alone (plan.ms): 104-434 ms measured 11-03 (Mac p95 197, tower 107-434); 2.8k tokens, flat in turns' },
+  lookup: { ms: 100, note: 'name-lookup wait after Jev: sync entityLookups, now sequential + memoised + deadline-bound (were 1.5-1.9 s stalls)' },
   named: { ms: 150, note: 'named works -> doc ids (timeout 800)' },
   passages: { ms: 600, note: 'all engine calls of the relax ladder: 287-582 ms serial' },
   claims: { ms: 600, note: 'people / encounter claims beside the passages' },

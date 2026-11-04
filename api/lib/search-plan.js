@@ -363,7 +363,8 @@ function namedFor(text, resolve, tag = 'one') {
   const k = `${tag}\u0000${String(text || '').trim()}`;
   const hit = nameCache.get(k);
   if (hit && Date.now() - hit.at < NAME_TTL_MS) return hit.p;
-  const p = Promise.race([Promise.resolve(resolve(String(text || '').trim())).catch(() => null), new Promise((r) => setTimeout(() => r(null), NAME_WAIT_MS).unref?.())]);
+  // the deadline lets the resolver stop starting lookups: they are synchronous queries, which the timer below cannot interrupt
+  const p = Promise.race([Promise.resolve().then(() => resolve(String(text || '').trim(), { deadline: Date.now() + NAME_WAIT_MS })).catch(() => null), new Promise((r) => setTimeout(() => r(null), NAME_WAIT_MS).unref?.())]);
   if (nameCache.size >= 1000) nameCache.delete(nameCache.keys().next().value);
   nameCache.set(k, { at: Date.now(), p });
   return p;
@@ -453,8 +454,11 @@ export async function planSearch(input, opts = {}) {
   const long = lastUser && !objectPhrases(lastUser).length;
   const mentionsP = resolveMentions && long ? namedFor(lastUser, resolveMentions, 'all') : null;
   const plan = await planCore(input, opts);
-  const out = applyObjectRules(plan, lastUser, namedP ? await namedP : null);
-  return applyMentions(out, lastUser, mentionsP ? await mentionsP : null);
+  // lookup_ms = how long the plan waited on the name lookup AFTER Jev answered (plan.ms is Jev's own) — budgeted stages
+  const tw = Date.now();
+  const named = namedP ? await namedP : null, mentions = mentionsP ? await mentionsP : null;
+  const out = applyMentions(applyObjectRules(plan, lastUser, named), lastUser, mentions);
+  return namedP || mentionsP ? { ...out, lookup_ms: Date.now() - tw } : out;
 }
 
 // Jev reports a choice's confidence either directly or as its share of the distribution.

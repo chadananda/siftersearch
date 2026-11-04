@@ -25,7 +25,22 @@ async function resolveDocs(docIds) {
 // A record whose own name OR a researched alias is exactly the query ranks first ("Bábu'l-Báb" → Mullá Ḥusayn, not the
 // Báb, whose canonical "Báb" shares a key); `surfaces` = the matched names/aliases, so a caller can match on an alias.
 const lookupNorm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['‘’`ʻ".]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
+// MEMOISED (11-03 latency contract): the lookup is a synchronous SQLite group-by on the API's main thread (query_stats
+// 'entity:lookup', api: avg 50 / worst 492 ms) run by every planned search's name resolution and search-target for the
+// same few names turn after turn. Entity names change on a pipeline's timescale, so 10 min of staleness is invisible.
+const LOOKUP_MS = Number(process.env.ENTITY_LOOKUP_CACHE_MS) || 10 * 60_000;
+const lookupMemo = new Map();
+export const _resetLookupMemo = () => lookupMemo.clear();
 export async function entityLookup(q, { type = null, limit = 20 } = {}) {
+  const k = `${type || ''}|${Math.min(50, +limit || 20)}|${String(q || '')}`;
+  const hit = lookupMemo.get(k);
+  if (hit && Date.now() - hit.at < LOOKUP_MS) return hit.rows.map((r) => ({ ...r, surfaces: [...r.surfaces] }));
+  const rows = await lookupRows(q, { type, limit });
+  if (lookupMemo.size >= 2000) lookupMemo.delete(lookupMemo.keys().next().value);
+  lookupMemo.set(k, { at: Date.now(), rows });
+  return rows.map((r) => ({ ...r, surfaces: [...r.surfaces] }));
+}
+async function lookupRows(q, { type = null, limit = 20 } = {}) {
   const keys = [...skeletonKeys(q || '')];
   if (!q || !keys.length) return [];
   const exact = [...new Set([lookupNorm(q), String(q).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()])];
@@ -37,7 +52,7 @@ export async function entityLookup(q, { type = null, limit = 20 } = {}) {
       WHERE lk.skeleton_key IN (${keys.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
         AND ${LIVE_SQL('ge.')}
       GROUP BY lk.entity_id ORDER BY exact DESC, canon DESC, shared DESC, (ge.importance IS NULL), ge.importance DESC LIMIT ?`,
-    [...exact, ...keys, ...(type ? [type] : []), Math.min(50, +limit || 20)]);
+    [...exact, ...keys, ...(type ? [type] : []), Math.min(50, +limit || 20)], 'entity:lookup');
   return rows.map((r) => ({ id: r.id, name: r.name, type: r.type, importance: r.importance, shared_keys: r.shared, canonical_match: !!r.canon,
     exact_match: !!r.exact, surfaces: parse(r.surfaces).filter((x) => x && x !== r.name).sort((a, b) => exact.includes(lookupNorm(b)) - exact.includes(lookupNorm(a))).slice(0, 12) }));
 }

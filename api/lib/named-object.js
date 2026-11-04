@@ -94,18 +94,33 @@ function pick(p, workOnly, cands) {
   return hit ? { type: hit.type, id: hit.id, name: hit.name, matched: p } : null;
 }
 
-/** → { type: 'person'|'work', id, name, matched } for the first object phrase that names one entity, else null. Never throws. */
-export async function resolveNamed(text, { lookup } = {}) {
+// LATENCY (11-03): entityLookup is a SYNCHRONOUS SQLite query on the API's main thread, so a Promise.all of them blocks
+// the event loop for their whole sum and search-plan's timeout race cannot cut it (a timer cannot fire mid-query) —
+// the planner's 1.5-2 s tail. Phrases are looked up one at a time in their priority order, stopping at the first that
+// decides (pick() order unchanged → same answer), yielding to the event loop between lookups, none started after `deadline`.
+const yieldLoop = () => new Promise((r) => setImmediate(r));
+async function firstDecided(phrases, find, deadline) {
+  for (let i = 0; i < phrases.length; i++) {
+    // yield first too: the caller (planSearch) starts this beside Jev — let Jev's request leave before a query blocks
+    await yieldLoop();
+    if (deadline && Date.now() > deadline) return { late: true, hit: null };
+    const { phrase: p, workOnly } = phrases[i];
+    const cands = await Promise.resolve().then(() => find(p, { limit: 20 })).catch(() => []);
+    const hit = pick(p, workOnly, cands);
+    if (hit === false) return { hit: null };
+    if (hit) return { hit };
+  }
+  return { hit: null };
+}
+
+/** → { type: 'person'|'work', id, name, matched } for the first object phrase that names one entity, else null. Never throws.
+ *  `deadline` (epoch ms): no lookup starts after it. */
+export async function resolveNamed(text, { lookup, deadline = null } = {}) {
   const phrases = objectPhrases(text);
   if (!phrases.length) return null;
   try {
     const find = lookup || (await import('./entity-api.js')).entityLookup;
-    const results = await Promise.all(phrases.map((o) => find(o.phrase, { limit: 20 }).then((cands) => ({ ...o, cands })).catch(() => ({ ...o, cands: [] }))));
-    for (const { phrase: p, workOnly, cands } of results) {
-      const hit = pick(p, workOnly, cands);
-      if (hit === false) return null;
-      if (hit) return hit;
-    }
+    return (await firstDecided(phrases, find, deadline)).hit;
   } catch { /* no lookup → no rule */ }
   return null;
 }
@@ -154,22 +169,18 @@ export function nameSpans(text, max = 12) {
 
 /** Every person and work a long text names (the whole text scanned, not just a ≤ 6-word object): each span of nameSpans
  *  resolved like a short object, strict whole-name match. → [{ type, id, name, matched }] (distinct, ≤ max). Never throws. */
-export async function resolveNamedAll(text, { lookup, max = 6 } = {}) {
+export async function resolveNamedAll(text, { lookup, max = 6, deadline = null } = {}) {
   const spans = nameSpans(text);
   if (!spans.length) return [];
   try {
     const find = lookup || (await import('./entity-api.js')).entityLookup;
-    const per = await Promise.all(spans.map(async (s) => {
-      const phrases = objectPhrases(s);
-      const results = await Promise.all(phrases.map((o) => find(o.phrase, { limit: 20 }).then((cands) => ({ ...o, cands })).catch(() => ({ ...o, cands: [] }))));
-      for (const { phrase: p, workOnly, cands } of results) {
-        const hit = pick(p, workOnly, cands);
-        if (hit === false) return null;
-        if (hit) return hit;
-      }
-      return null;
-    }));
-    const seen = new Set();
-    return per.filter((h) => h && !seen.has(h.id) && seen.add(h.id)).slice(0, max);
+    const out = [], seen = new Set();
+    // spans in order, one lookup at a time (see firstDecided); past `deadline` the names found so far still count
+    for (let i = 0; i < spans.length && out.length < max; i++) {
+      const { hit, late } = await firstDecided(objectPhrases(spans[i]), find, deadline);
+      if (hit && !seen.has(hit.id)) { seen.add(hit.id); out.push(hit); }
+      if (late) break;
+    }
+    return out;
   } catch { return []; }
 }

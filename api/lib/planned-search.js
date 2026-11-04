@@ -169,6 +169,8 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   const target = targeter ?? (engine ? null : async (q) => (await import('./search-target.js')).resolveTarget(q));
   const targetP = target ? target(query).catch(() => null) : Promise.resolve(null);
   let plan = await planner(messages?.length ? messages : query, { given });
+  // plan_ms split into its budgeted parts: Jev's own call and the name-lookup wait after it (latency-budget.js)
+  const planParts = { ...(Number.isFinite(plan?.ms) ? { jev_ms: plan.ms } : {}), ...(Number.isFinite(plan?.lookup_ms) ? { lookup_ms: plan.lookup_ms } : {}) };
   // NAMED WORKS (search/named-scope.js): every work or writer the question names → its library documents, searched for
   // their own passages on EVERY route (px-smoke return-iqan: an Íqán question answered from Divine Philosophy; the City of
   // God and Lights of Guidance never searched). A named work outside the inferred tradition makes that tradition a lean.
@@ -203,7 +205,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
 
   const run = engine || (await import('./search.js')).multiIndexSearch;
   const t1 = Date.now();
-  const stages = { spell_ms: spellMs };   // per-stage ms, so the 1s budget can be held stage by stage
+  const stages = { spell_ms: spellMs, ...planParts };   // per-stage ms, so the 1s budget can be held stage by stage
   if (plan.mentions?.length || plan.spans?.length) Object.assign(stages, { named_ms: namedMs, ...(namedLate ? { named_timeout: true } : {}) });
   // A quotation hunt searches the WORDS (the request frame — "can you find the quote including" — is not in the passage).
   const quotePhrase = plan.quote?.phrase || null;

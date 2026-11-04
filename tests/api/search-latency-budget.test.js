@@ -28,7 +28,7 @@ describe('every stamped stage has a budget', () => {
     const s = src('api/lib/planned-search.js');
     const stamped = [...s.matchAll(/stages\.([a-z]+)_ms\b/g), ...s.matchAll(/\b([a-z]+)_ms:/g)].map((m) => m[1]);
     const stages = [...new Set(stamped)];
-    expect(stages).toEqual(expect.arrayContaining(['plan', 'search', 'total', 'passages', 'resolve']));
+    expect(stages).toEqual(expect.arrayContaining(['plan', 'jev', 'lookup', 'search', 'total', 'passages', 'resolve']));
     expect(stages.filter((k) => !PLANNED_BUDGETS[k])).toEqual([]);
   });
   it('any one Qdrant call: 10 ms (Chad, fixed); every budget is a positive number with a note', () => {
