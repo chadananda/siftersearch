@@ -6,6 +6,15 @@
 - LATER (11-04): retire cleanup (api/lib/index-outbox.js drain) deletes a retired/deleted doc's points from phrases, paragraphs_kw, hype only — NOT concepts or phrases_hot. Low urgency: indexers now skip duplicate_of + bahai-library tag pages (44fdc503); excluded-points purge record planning/qdrant-excluded-purge-20261104.tsv.
 - Hub next: calibrate topic terms (run.mjs --sample 150), HyPE coverage check, chad.jsonl intake, admin page, retire old scorers.
 
+## 11-04 late night — Anís quality + index follow-through
+- ⛔ BLOCKER 10:20 UTC: production Anthropic credit balance exhausted ("credit balance is too low") → every Claude-written Anís answer errors. Chad must add credits. My doubled prod11 battery (~12 concurrent research chats) was running when it ran out.
+- DEPLOYED: 8517e635 HyPE/concept follow-through (settle hooks + indexer follow loop, INDEX_FOLLOW_USD_DAY $1/day, dated key); dc1f2eca quote gate leaves nothing pointing at a dropped quote; d211e711 AUTO_INDEX_USD_DAY dated budget key (was a lifetime cap).
+- prod10 (before those): W8 39/42 beats Perplexity (baseline 32), W3 19/27 (baseline 21). prod11 re-run blocked by the credit outage.
+- HyPE backlog: scanOnly says 494,278 units / ~$1.95 to embed (library); run queued (budgetKey hype-backlog-20261104, maxUsd 2) behind the follow-loop job.
+- Rejected: Qdrant 2-bit quantization — without rescore ranks are scrambled (0.25/30 overlap); with rescore = today's quality at 2× RAM.
+- OPEN: db-15 incomplete enumeration (agent on it); library defects — Dawn-Breakers footnote labels stripped, Gita/KJV without verse numbers, Book of Mormon missing, Atharva Veda URL on Mahabharata links.
+- git: GitHub refuses every local SSH key; push via HTTPS + gh credential helper.
+
 ## 11-04 night — search latency + quote citations (deployed 629854b0)
 - DONE: excluded-docs shared refresh (1c83be01, the post-deploy facet stampede); hydration + entity/docs/bio reads on a 3-thread read pool (0b53421a, 629854b0); own-source = literal BM25 writer-scoped lookup, 69–121 ms, swaps live (e50597f9); quote writer sees a window around the phrase (5bab0a41; Gleanings CXVII line sits at char 2025 of 2076).
 - Bench after 629854b0: engine total p50/p95 231/324 (ok); planned total 673/1494 (budget 1000); hydrate 58/137 (60); merge 68/146 (120); app Qdrant 23–36/41–58 vs Qdrant's own 7–19 at p50 — the ≤10 ms contract also needs Qdrant-side tuning (paragraphs_kw, phrases at ~18 ms server-side).
