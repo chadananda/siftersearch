@@ -55,3 +55,24 @@ export function sectionRange(doc, n) {
   if (!t || !(n >= 1 && n <= t.starts.length)) return null;
   return { unit: t.unit, num: n, from: t.starts[n - 1], to: n < t.starts.length ? t.starts[n] - 1 : t.end };
 }
+
+/** Works numbered by VERSE straight through, across chapters (the reference "Dhammapada 183" is verse 183, not chapter 183):
+ *  `chapters` = verses per chapter in the standard numbering (Dhammapada: 26 vaggas, 423 verses). The edition's own chapter
+ *  headings place the chapter; the verse is counted inside it, exact only when the chapter has one paragraph per verse. */
+export const VERSE_WORKS = Object.freeze([
+  Object.freeze({ title: /dhammapada/i, unit: 'verse', chapters: Object.freeze([20, 12, 11, 16, 16, 14, 10, 16, 13, 17, 11, 10, 12, 18, 12, 12, 14, 21, 17, 17, 16, 14, 14, 26, 23, 41]) }),
+]);
+
+/** The verse-numbered layout a work (doc { title }) follows, or null. Pure. */
+export const verseWork = (doc) => VERSE_WORKS.find((w) => w.title.test(String(doc?.title || ''))) || null;
+
+/** Verse n of a verse-numbered layout → { chapter (1-based), offset (0-based inside the chapter), verses (in that chapter) } | null. Pure. */
+export function versePlace(t, n) {
+  if (!t || !(n >= 1)) return null;
+  let first = 1;
+  for (let c = 0; c < t.chapters.length; c++) {
+    if (n < first + t.chapters[c]) return { chapter: c + 1, offset: n - first, verses: t.chapters[c] };
+    first += t.chapters[c];
+  }
+  return null;
+}

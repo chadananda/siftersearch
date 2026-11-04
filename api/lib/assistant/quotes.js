@@ -547,3 +547,56 @@ export function reportedVoices(text, author = '') {
   }
   return out;
 }
+
+// ── Blockquotes hold only book text (Chad 11-04) ─────────────────────────────────────────────────────────────────────
+// "Anis block-quotes himself instead of the book." A `>` line must be words from a passage given (or the reader's own); the
+// writer's words in a blockquote leave it as plain paragraphs, and a block left with no book text loses its source line.
+const PAGE_MARK = /\[pg\s*\d+\]\s*/gi;
+const bqClean = (l) => String(l).replace(/^\s*>\s?/, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_]/g, '')
+  .replace(PAGE_MARK, '').replace(/^\s*\(?\d{1,4}[.):]?\s+(?=\S)/, '').replace(/^[\s"“‘'«]+|[\s"”’'»]+$/g, '').trim();
+const tight = (s) => s.replace(/ /g, '');
+/** A blockquote line's kind against the hays: 'held' (every sentence of ≥3 words is in one of them), 'own', 'attr', 'neutral'. */
+function bqKind(line, hays) {
+  if (isAttribution(line)) return 'attr';
+  const pieces = sentencePieces(bqClean(line)).flatMap((p) => p.text.split(/\.\.\.|…|\[[^\]]*\]/))
+    .map(foldVerbatim).filter((f) => f.split(' ').filter(Boolean).length >= 3);
+  if (!pieces.length) return 'neutral';
+  return pieces.every((f) => hays.some((h) => h.loose.includes(f) || h.tight.includes(tight(f)))) ? 'held' : 'own';
+}
+/** Every blockquote line that is not book text (passages[].text) or the reader's words (`asked`) leaves the blockquote. Pure.
+ *  → { text, unquoted } (unquoted = lines moved out). */
+export function bookOnlyBlockquotes(text, passages, { asked = [] } = {}) {
+  const src = String(text || '');
+  if (!/^\s*>/m.test(src)) return { text: src, unquoted: 0 };
+  const hays = [...(passages || []).map((p) => p.text), ...[asked].flat()].filter(Boolean)
+    .map((t) => { const loose = foldVerbatim(String(t).replace(PAGE_MARK, '')); return { loose, tight: tight(loose) }; });
+  const lines = src.split('\n'), out = [];
+  let unquoted = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^\s*>/.test(lines[i])) { out.push(lines[i]); continue; }
+    let j = i;
+    while (j < lines.length && /^\s*>/.test(lines[j])) j++;
+    const block = lines.slice(i, j).map((l) => ({ l, kind: bqKind(l, hays) }));
+    i = j - 1;
+    if (!block.some((b) => b.kind === 'own')) { out.push(...block.map((b) => b.l)); continue; }
+    const book = block.some((b) => b.kind === 'held');
+    // regroup: runs of book lines stay quoted; own lines become paragraphs (blank lines around them, so markdown's lazy
+    // continuation does not pull them back into the quote)
+    const parts = [];
+    for (const b of block) {
+      if (b.kind === 'attr' && !book) continue;
+      const quoted = b.kind !== 'own', body = b.l.replace(/^\s*>\s?/, '');
+      if (!quoted) unquoted++;
+      const last = parts[parts.length - 1];
+      if (last && last.quoted === quoted) last.lines.push(quoted ? b.l : body);
+      else parts.push({ quoted, lines: [quoted ? b.l : body] });
+    }
+    const groups = parts.map((p) => (p.quoted ? p.lines.filter((l, k, a) => !(/^\s*>\s*$/.test(l) && (k === 0 || k === a.length - 1))) : p.lines.filter((l) => l.trim())))
+      .filter((g) => g.some((l) => !/^\s*>\s*$/.test(l)));
+    if (out.length && out[out.length - 1].trim()) out.push('');
+    groups.forEach((g, k) => { if (k) out.push(''); out.push(...g); });
+    if (!book && j < lines.length && isAttribution(lines[j])) i = j;   // its source line goes with it
+    if (i + 1 < lines.length && lines[i + 1].trim()) out.push('');
+  }
+  return { text: out.join('\n').replace(/\n{3,}/g, '\n\n').trim(), unquoted };
+}

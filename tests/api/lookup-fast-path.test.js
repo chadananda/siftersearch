@@ -46,8 +46,9 @@ describe('resolveLookup (mocked deps)', () => {
     expect(r).toMatchObject({ kind: 'book', work: GL });
     expect(searched).toBe(0);
   });
-  it('a reference resolves to exactly one paragraph with its link', async () => {
-    const r = await resolveLookup(user('Gleanings 27'), { intent: 'reference',
+  it('a reference resolves to its numbered paragraph with its link (a paragraph-numbered work: the next pn ends it)', async () => {
+    const r = await resolveLookup(user('Gleanings 27'), { intent: 'reference', headingStarts: async () => [],
+      paragraphsInRange: async (id, a) => [{ id: 5, paragraph_index: 40, text: P, block_attrs: '{"pn":"27"}' }, { id: 6, paragraph_index: 41, text: 'Next.', block_attrs: '{"pn":"28"}' }].filter((r) => r.paragraph_index >= a),
       findTitled: async () => GL, paragraphsByPn: async (id, n) => [{ id: 5, paragraph_index: 40, text: P, n }],
       withLinks: async (h) => h.map((x) => ({ ...x, url: 'https://x/g#40' })) });
     expect(r.kind).toBe('reference');
@@ -55,7 +56,7 @@ describe('resolveLookup (mocked deps)', () => {
   });
   it('a section number also tries the Roman pn (Gleanings 27 → XXVII)', async () => {
     const asked = [];
-    const r = await resolveLookup(user('Gleanings 27'), { intent: 'reference',
+    const r = await resolveLookup(user('Gleanings 27'), { intent: 'reference', headingStarts: async () => [], paragraphsInRange: async () => [],
       findTitled: async () => GL, paragraphsByPn: async (id, n) => { asked.push(String(n)); return n === 'XXVII' ? [{ id: 9, paragraph_index: 70, text: P }] : []; },
       withLinks: async (h) => h.map((x) => ({ ...x, url: 'https://x/g#70' })) });
     expect(asked).toEqual(['27', 'XXVII']);
@@ -73,6 +74,7 @@ describe('resolveLookup (mocked deps)', () => {
   });
   it('a reference on a work with no pn maps onto its chapter heading', async () => {
     const r = await resolveLookup(user('Some Answered Questions 33'), { intent: 'reference', findTitled: async () => GL, paragraphsByPn: async () => [],
+      paragraphsInRange: async () => [],
       headingStarts: async () => [{ id: 1, paragraph_index: 3, heading: '32. A', text: 'a' }, { id: 2, paragraph_index: 9, heading: '33. B', text: P }],
       withLinks: async (h) => h.map((x) => ({ ...x, url: 'https://x/saq#9' })) });
     expect(r).toMatchObject({ kind: 'reference', passages: [{ paragraph_index: 9, source_url: 'https://x/saq#9' }] });

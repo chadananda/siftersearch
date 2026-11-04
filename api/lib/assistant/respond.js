@@ -16,7 +16,8 @@ import { modelFor } from '../model-roles.js';
 import { calculateCost } from '../model-registry.js';
 import { preferOwnWork, literalOwnSearch, linkHits } from './own-source.js';
 import { toPassage } from './tools.js';
-import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, markQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink } from './quotes.js';
+import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, markQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink, bookOnlyBlockquotes } from './quotes.js';
+import { referenceHow, ensureWholeReference } from './lookup.js';
 import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
@@ -844,6 +845,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const channel = direction.channel || channelFor('widget-chat');
   const choose = fast ? (a) => codeFormat({ ...a, shape: fast.kind === 'book' ? 'lookup' : 'quote' }) : (d.chooseFormat || chooseFormat);
   const formatP = work ? Promise.resolve({ id: 'work', by: 'title-index', how: WORK_HOW(work) })
+    : fast?.kind === 'reference' ? Promise.resolve({ id: 'reference', by: 'lookup-reference', how: referenceHow(fast) })   // the passage itself, verbatim (Chad 11-04)
     : quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW + (messages.length > 1 ? QUOTE_MISS_THREAD : '') })
     : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: researched.brief ? RESEARCH_HOW(researched.brief) : QUICK_RESEARCH_HOW })
     : sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
@@ -911,7 +913,11 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     gate.flush();
     // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
     // (the widget reconciles its streamed text to this; email sends only this).
-    const guarded = dropUnverified(cleanLinks(raw), retrieved, { asked: readerWords });
+    const verified = dropUnverified(cleanLinks(raw), retrieved, { asked: readerWords });
+    // a blockquote holds only book text: the writer's own words leave it (Chad 11-04); a numbered reference is the passage whole
+    const bookOnly = bookOnlyBlockquotes(verified.text, conversational ? [] : retrieved, { asked: readerWords });
+    const guarded = { ...verified, text: fast?.kind === 'reference' ? ensureWholeReference(bookOnly.text, fast) : bookOnly.text,
+      ...(bookOnly.unquoted ? { ownWordsUnquoted: bookOnly.unquoted } : {}) };
     // …and a lead-in whose quotation went missing ("…writes in God Passes By:" then nothing, r5) gets the verified passage it
     // names, or is rewritten — a reply never ends an introduction without its quotation.
     const introduced = completeIntroducedQuotes(study ? placeRenderings(guarded.text, study, channel) : guarded.text, conversational ? [] : retrieved);

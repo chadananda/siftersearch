@@ -6,7 +6,7 @@
 import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { findTitled, titleCandidates, coreWork } from './work-request.js';
-import { sectionRange } from './numbering.js';
+import { sectionRange, verseWork, versePlace } from './numbering.js';
 import { isCoreLiterature } from '../rights/canonical.js';
 import { firstPerson } from '../authorship/reader.js';
 import { authorAuthority } from '../authority.js';
@@ -30,7 +30,7 @@ export function parseReference(text) {
 
 /** The number a heading carries ("Chapter 33", "XXXIII. On ...", "33 — ...", "Verse 183"), or null. Pure. */
 export function headingNumber(h) {
-  const m = /^\s*(?:(?:chapter|section|part|talk|lesson|verse|prayer|tablet|no\.?|number|#)\s*)?(\d{1,4}|[ivxlcdm]{1,8})(?=$|[\s.:)\-–—,])/i.exec(String(h || ''));
+  const m = /^\s*(?:\[pg\s*\d+\]\s*)*(?:(?:chapter|section|part|talk|lesson|verse|prayer|tablet|no\.?|number|#)\s*)?(\d{1,4}|[ivxlcdm]{1,8})(?=$|[\s.:)\-–—,])/i.exec(String(h || ''));
   if (!m) return null;
   return /^\d+$/.test(m[1]) ? Number(m[1]) : ROMAN.test(m[1]) ? romanToInt(m[1]) : null;
 }
@@ -58,11 +58,88 @@ async function bySectionTable(w, ref, deps, link) {
   if (!doc) return null;
   const section = sectionRange(doc, ref.num);
   const inRange = deps.paragraphsInRange || (await import('../paragraphs-repo.js')).paragraphsInRange;
-  const rows = (await inRange(doc.id, section.from, section.to).catch(() => []))
-    .filter((r) => String(r.text || '').trim() && !/^\s*#/.test(r.text) && !(r.heading && r.text.trim() === r.heading.trim())).slice(0, 3);
+  const rows = (await inRange(doc.id, section.from, section.to).catch(() => [])).filter(isBookText);   // the whole chapter
   if (!rows.length) return null;
   const linked = await link(rows.map((r) => ({ id: r.id, doc_id: doc.id, paragraph_index: r.paragraph_index, text: r.text, title: doc.title }))).catch(() => []);
-  return { kind: 'reference', ref, section, work: { ...w, doc }, passages: rows.map((r, i) => passageOf(doc, r, linked[i]?.url)) };
+  return { kind: 'reference', ref, section, exact: true, label: `${doc.title}, ${section.unit} ${ref.num}`, work: { ...w, doc },
+    passages: rows.map((r, i) => passageOf(doc, r, linked[i]?.url)) };
+}
+
+/** A row that is the book's own text (not empty, not a heading row). Pure. */
+const isBookText = (r) => {
+  const t = String(r?.text || '').trim();
+  return !!t && !/^\s*#/.test(t) && r.blocktype !== 'heading' && !(r.heading && t === String(r.heading).trim());
+};
+/** block_attrs.pn of a row (JSON string or object), or null. Pure. */
+export const pnOf = (r) => {
+  let a = r?.block_attrs;
+  if (typeof a === 'string') { try { a = JSON.parse(a); } catch { a = null; } }
+  return a && a.pn != null ? a.pn : null;
+};
+const RUN_CHUNK = 60, RUN_MAX = 400;
+/** The rows from `start` on while keep(row) holds (a section, a chapter), read in chunks through the repo. */
+async function runFrom(docId, start, inRange, keep) {
+  const out = [];
+  for (let from = start; out.length < RUN_MAX; from += RUN_CHUNK) {
+    const rows = await inRange(docId, from, from + RUN_CHUNK - 1, { limit: RUN_CHUNK }).catch(() => []);
+    if (!rows.length) break;
+    for (const r of rows) { if (!keep(r)) return out; out.push(r); }
+  }
+  return out;
+}
+const SHORT_VERSE = 10;   // words: a verse this short is shown with its neighbours
+/** Works numbered by verse straight through (numbering.js VERSE_WORKS): the edition's chapter headings place chapter c; verse n is
+ *  counted inside it. Exact when the chapter has one paragraph per verse; otherwise the nearest rows, marked approximate. */
+async function byVerseTable(w, ref, heads, inRange) {
+  const t = verseWork(w.doc), place = versePlace(t, ref.num);
+  if (!place) return null;
+  const startOf = new Map();
+  for (const h of heads) {
+    const n = headingNumber(h.heading);
+    if (n != null && n >= 1 && n <= t.chapters.length && !(startOf.get(n) <= h.paragraph_index)) startOf.set(n, h.paragraph_index);
+  }
+  if (startOf.size !== t.chapters.length) return null;   // the edition's headings do not carry the chapters: not this layout
+  const rows = (await runFrom(w.doc.id, startOf.get(place.chapter), inRange, (r) => headingNumber(r.heading) === place.chapter)).filter(isBookText);
+  if (!rows.length) return null;
+  const label = `${w.doc.title}, ${t.unit} ${ref.num}`;
+  if (rows.length === place.verses) {
+    const r = rows[place.offset], short = String(r.text).split(/\s+/).filter(Boolean).length < SHORT_VERSE;
+    return { doc: w.doc, rows: short ? rows.slice(Math.max(0, place.offset - 1), place.offset + 2) : [r], extra: { label, exact: true } };
+  }
+  const i = Math.min(rows.length - 1, Math.round(place.offset * rows.length / place.verses));
+  return { doc: w.doc, rows: rows.slice(Math.max(0, i - 1), i + 2),
+    extra: { label, exact: false, approx: { unit: t.unit, chapter: place.chapter, verses: place.verses, paragraphs: rows.length } } };
+}
+
+const PAGE_MARK = /\[pg\s*\d+\]\s*/gi;
+/** The writer's instruction for a numbered reference: the passage itself, verbatim, in one blockquote. Pure. */
+export function referenceHow(r) {
+  const label = r?.label || `${r?.work?.doc?.title || 'the work'} ${r?.ref?.num ?? ''}`.trim();
+  const approx = r?.exact === false && r.approx
+    ? ` This edition does not number its ${r.approx.unit}s: the place was counted within chapter ${r.approx.chapter}, so it is approximate — say so in the one framing line.`
+    : '';
+  return `The reader asked for a numbered passage (${label}). The reply IS that passage: give every passage below VERBATIM, in order, `
+    + `whole, in ONE markdown blockquote (paragraphs separated by a line holding only ">"; leave out page markers like "[pg 49]"), ending `
+    + `with the line "> — [${label}](URL of the first passage)". At most one short framing line before it.${approx} No interpretation, `
+    + 'no summary, no opinion, no comment on what the library holds, nothing after the quotation. Never put your own words in a blockquote.';
+}
+
+/** The reply for a numbered reference, checked: when its blockquotes do not hold every passage whole, code writes it — the
+ *  passages verbatim in one blockquote with the linked citation (and the approximate-place line when the edition is unnumbered). */
+export function ensureWholeReference(text, r) {
+  const ps = (r?.passages || []).filter((p) => String(p.text || '').trim());
+  if (!ps.length) return text;
+  const quoted = foldVerbatim(String(text || '').split('\n').filter((l) => /^\s*>/.test(l)).map((l) => l.replace(/^\s*>\s?/, '')).join(' ').replace(PAGE_MARK, ''));
+  if (ps.every((p) => quoted.includes(foldVerbatim(String(p.text).replace(PAGE_MARK, ''))))) return text;
+  const label = r.label || `${ps[0].title} ${r.ref?.num ?? ''}`.trim(), url = ps[0].source_url;
+  const lines = [];
+  if (r.exact === false && r.approx) lines.push(`This edition does not number its ${r.approx.unit}s, so the place is approximate: counted within chapter ${r.approx.chapter}.`, '');
+  ps.forEach((p, i) => {
+    if (i) lines.push('>');
+    for (const l of String(p.text).replace(PAGE_MARK, '').trim().split(/\n+/)) lines.push(`> ${l.trim()}`);
+  });
+  lines.push('>', `> — ${url ? `[${label}](${url})` : label}`);
+  return lines.join('\n');
 }
 
 const quoteStrip = (t) => stripMarkup(t).replace(/^["“„«'‘\s]+|["”»'’.!?\s]+$/g, '').trim();
@@ -87,20 +164,39 @@ export async function resolveLookup(messages, deps = {}) {
     const ref = parseReference(text);
     const w = ref && await titled([ref.title], { min: 0.9 }).catch(() => null);
     if (!w) return null;
-    const repo = deps.paragraphsByPn ? {} : await import('../paragraphs-repo.js');
-    let row = null;
-    for (const pn of [ref.num, toRoman(ref.num)].filter(Boolean)) {
-      const rows = await (deps.paragraphsByPn || repo.paragraphsByPn)(w.doc.id, pn).catch(() => []);
-      if (rows.length === 1) { row = rows[0]; break; }
-    }
-    // no display numbers (Dhammapada, Paris Talks, SAQ): the work's own chapter headings carry the number
-    if (!row) row = byHeadingNumber(await (deps.headingStarts || repo.headingStarts || (await import('../paragraphs-repo.js')).headingStarts)(w.doc.id).catch(() => []), ref.num);
+    // a numbered reference answers with the WHOLE numbered unit (Chad 11-04: "Gleanings 27" is all of section XXVII, never one line)
+    const repo = deps.paragraphsByPn && deps.paragraphsInRange && deps.headingStarts ? {} : await import('../paragraphs-repo.js');
+    const byPn = deps.paragraphsByPn || repo.paragraphsByPn, inRange = deps.paragraphsInRange || repo.paragraphsInRange;
+    const starts = deps.headingStarts || repo.headingStarts;
     const link = deps.withLinks || (await import('../hit-links.js')).withLinks;
-    if (!row) return done(await bySectionTable(w, ref, deps, link));
-    if (!String(row.text || '').trim()) return null;
-    const [h] = await link([{ id: row.id, doc_id: w.doc.id, paragraph_index: row.paragraph_index, text: row.text, title: w.doc.title }]).catch(() => [null]);
-    return done({ kind: 'reference', ref, work: w, passages: [{ id: row.id, text: row.text, title: w.doc.title, author: w.doc.author, document_id: w.doc.id,
-      paragraph_index: row.paragraph_index, religion: w.doc.religion, collection: w.doc.collection, language: w.doc.language, source_url: h?.url || null }] });
+    const answer = async (doc, rows, extra) => {
+      const keep = rows.filter(isBookText);
+      if (!keep.length) return null;
+      const linked = await link(keep.map((r) => ({ id: r.id, doc_id: doc.id, paragraph_index: r.paragraph_index, text: r.text, title: doc.title }))).catch(() => []);
+      return done({ kind: 'reference', ref, work: { ...w, doc }, exact: true, ...extra, passages: keep.map((r, i) => passageOf(doc, r, linked[i]?.url)) });
+    };
+    // 1. display numbers (pn): the numbered paragraph and the rest of ITS section (Gleanings pn "XXVII" → "XXVII.2" … "XXVII.6");
+    //    a work numbered by paragraph (pn "27", next "28") stays that one paragraph
+    for (const pn of [ref.num, toRoman(ref.num)].filter(Boolean)) {
+      const rows = await byPn(w.doc.id, pn).catch(() => []);
+      if (rows.length !== 1) continue;
+      const first = rows[0];
+      const section = await runFrom(w.doc.id, first.paragraph_index, inRange, (r) => r.paragraph_index === first.paragraph_index
+        || (pnOf(r) != null ? String(pnOf(r)).startsWith(`${pn}.`) : (r.heading || '') === (first.heading || '')));
+      return answer(w.doc, section.length ? section : [first], { label: `${w.doc.title}, ${pn}` });
+    }
+    const heads = await (starts ? starts(w.doc.id).catch(() => []) : []);
+    // 2. works numbered by verse straight through (Dhammapada 183 = verse 183, not chapter 183): counted inside the edition's chapter
+    const verse = await byVerseTable(w, ref, heads, inRange);
+    if (verse) return answer(verse.doc, verse.rows, verse.extra);
+    // 3. numbered chapter headings: every row under that heading
+    const row = byHeadingNumber(heads, ref.num);
+    if (row) {
+      const rows = await runFrom(w.doc.id, row.paragraph_index, inRange, (r) => (r.heading || '') === (row.heading || ''));
+      return answer(w.doc, rows.length ? rows : [row], { label: `${w.doc.title}, ${ref.num}` });
+    }
+    // 4. chapters numbered only by order (numbering.js tables: SAQ, Paris Talks)
+    return done(await bySectionTable(w, ref, { ...deps, paragraphsInRange: inRange }, link));
   }
   if (intent === 'book') return bookOf({ min: 0.86 });
   // quote: Jev saw wording to find. Two things can answer it: a work whose TITLE is the wording ("Epistle to the Son of the Wolf")
