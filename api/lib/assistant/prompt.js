@@ -152,7 +152,7 @@ export function passageHeader(p, i) {
   const voices = quoted.length ? ` · reports the words of ${quoted.join(', ')} (credit those words to them, as ${credit} records)` : '';
   // the passage's standing from library metadata (source-tier.js) unless a pipeline already set one (position.js)
   const tier = p.standing ? null : tierLabel(p);
-  return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${voices}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${tier ? ` · ${tier}` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}${originalNote(p)}`;
+  return `[${i + 1}] ${p.source_title || 'Untitled'}${p.locator ? ` · at ${p.locator}` : ''}${who ? ` — ${who}` : ''}${voices}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${tier ? ` · ${tier}` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}${originalNote(p)}`;
 }
 
 export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {

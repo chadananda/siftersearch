@@ -25,7 +25,8 @@ export const PASSAGE = { $id: 'AnisPassage', type: 'object', additionalPropertie
   title: nul('string'), author: nul('string'), book_author: nul('string'), religion: nul('string'), collection: nul('string'), language: nul('string'),
   text: { type: 'string' }, source_url: nul('string'), link_site: nul('string'), score: nul('number'),
   translation: { ...nul('string'), description: 'What kind of translation this is (authorized / published / provisional)' },
-  role: { ...nul('string'), description: 'quotation_trace: source | original | possible_original | cited_by' } } };
+  role: { ...nul('string'), description: 'quotation_trace: source | original | possible_original | cited_by' },
+  locator: { ...nul('string'), description: 'Where in the work to cite it: traditional number (Gleanings CXVII, Hidden Words Arabic 5, Íqán ¶12) or the section heading' } } };
 export const WORK = { $id: 'AnisWork', type: 'object', additionalProperties: true, required: ['id', 'title'], properties: {
   id: { type: 'integer' }, title: { type: 'string' }, author: nul('string'), religion: nul('string'), collection: nul('string'),
   url: nul('string'), encumbered: { ...nul('integer'), description: '1 = copyrighted: opening pages only' } } };
@@ -63,7 +64,8 @@ export const toPassage = (p) => ({ id: p.id, text: p.text || '', title: p.title 
   source_url: p.source_url || p.readerUrl || p.url || null, document_id: p.document_id ?? p.documentId ?? p.doc_id, paragraph_index: p.paragraph_index ?? p.paragraphIndex,
   religion: p.religion || p.document?.religion || null, collection: p.collection || p.document?.collection || null, language: p.language || p.source_lang || 'en',
   translation: p.translation || (/\(provisional translation\)/i.test(p.title || p.document?.title || '') ? translationLabel('Stephen Phelps', 'provisional-phelps') : null),
-  ...(p.score != null ? { score: p.score } : {}), ...(p.link?.site || p.link_site ? { link_site: p.link_site || p.link.site } : {}), ...(p.role ? { role: p.role } : {}) });
+  ...(p.score != null ? { score: p.score } : {}), ...(p.link?.site || p.link_site ? { link_site: p.link_site || p.link.site } : {}), ...(p.role ? { role: p.role } : {}),
+  ...(p.locator ? { locator: p.locator } : {}) });   // where in the work to cite it: 'CXVII', 'Arabic 5', a section heading (#156)
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`ʻʼ]/g, "'").toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim();
 /** The canon entry a reader's title names (any alias, accents and "the" ignored), or null. */

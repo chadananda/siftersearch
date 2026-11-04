@@ -782,6 +782,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned', standing: p.standing || null, theme: p.theme || null,
     ...(p.translation ? { translation: p.translation } : {}),   // an existing translation the reply quotes whole (researcher.js)
+    ...(p.locator ? { locator: p.locator } : {}),   // where in the work to cite it (Gleanings CXVII, Arabic 5, a section; #156)
   }));
   // the uncompiled letter files are cited last: a copy another passage holds never reaches the writer; code names it at the end
   const { passages: retrieved, held: heldLast } = holdUncompiledCopies(retrievedAll);

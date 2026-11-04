@@ -6,6 +6,7 @@ import { queryAll, transaction } from './db.js';
 import { authorAuthority, getAuthority } from './authority.js';
 import { paragraphAuthor } from './authorship/effective.js';
 import { olCiteTitle } from './library/ol-works.js';
+import { paragraphLocator } from './refs/locator.js';
 
 /** Paragraph row + its doc row → the search document (no vectors). `authority` = the doc's, when the caller has it. */
 export function paragraphDoc(p, doc, authority = null) {
@@ -29,6 +30,9 @@ export function paragraphDoc(p, doc, authority = null) {
     religion: doc.religion, collection: doc.collection, language: doc.language,
     year: doc.year ? parseInt(doc.year, 10) : null, authority: paraAuthority, book_authority: docAuthority,
     heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
+    // where in the work a reader cites it: traditional number (block_attrs.pn: Gleanings CXVII, Arabic 5, Íqán ¶12) else the
+    // nearest section heading; null when neither (refs/locator.js, digest #156)
+    locator: paragraphLocator({ pn: p.pn, heading: p.heading, title: doc.title }),
     source_site: doc.source_site || null,
     source_url: doc.source_url || null,
     external_para_id: p.external_para_id || null,
@@ -44,7 +48,7 @@ export async function paragraphsByIds(ids) {
     const chunk = want.slice(i, i + 500);
     const rows = await queryAll(`
       SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype, c.translation, c.translation_segments,
-             c.context, c.external_para_id, c.pdf_page, c.text_grounded, c.authors,
+             c.context, c.external_para_id, c.pdf_page, c.text_grounded, c.authors, json_extract(c.block_attrs, '$.pn') AS pn,
              d.title AS d_title, d.author AS d_author, d.religion AS d_religion, d.collection AS d_collection,
              d.language AS d_language, d.year AS d_year, d.filename AS d_filename, d.slug AS d_slug,
              d.source_site AS d_source_site, d.source_url AS d_source_url

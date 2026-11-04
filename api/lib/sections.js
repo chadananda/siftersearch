@@ -9,6 +9,9 @@
 const fold = (s) => String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\*\*|__|(?<!\w)[*_](?=\S)|(?<=\S)[*_](?!\w)/g, '')
   .replace(/^[\s\\\-–—#*_]+|[\s\\\-–—#*_]+$/g, '').replace(/^\d{1,4}\s*[-–—.:)]\s+(?=\p{L})/u, '').replace(/\s+/g, ' ').trim();
 
+/** A stored heading as a reader would name it (markup, item number and edge punctuation out). */
+export const cleanHeading = fold;
+
 /** A heading that names nothing a reader would look for: page numbers, bare dates or numerals, separators, runaway text. */
 export function isNoiseHeading(title) {
   const t = fold(title);
