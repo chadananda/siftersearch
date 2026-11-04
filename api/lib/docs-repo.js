@@ -526,22 +526,46 @@ async function collectionNames() {
   _collections = { at: Date.now(), names: rows.map((r) => r.collection) };
   return _collections.names;
 }
-export function _resetCollectionNames() { _collections = { at: 0, names: [] }; }
+export function _resetCollectionNames() { _collections = { at: 0, names: [] }; _pathSlugMemo.clear(); }
 
 /**
  * The library-page slug fallback's candidates: docs whose religion AND collection slugify to the URL's segments. It used
  * to read EVERY doc row (~158k with descriptions) on the API main thread whenever a stale URL missed — 31.9 s cold
- * (10-20 15:22, three gateway timeouts). Now: collection names from the index → only the matching collections' rows.
+ * (10-20 15:22, three gateway timeouts). Then: collection names from the index → only the matching collections' rows,
+ * still 355 ms avg / 900 ms worst on prod (11-03, 473 calls in 6 h: whole collections, descriptions included). Now:
+ * only the columns slug matching reads, memoised per (religion, collection) for 10 min; the page row is read by id
+ * (docForPage) once a candidate matches.
  */
-export const PATH_SLUG_CANDIDATES_SQL = (n) => `SELECT id, title, author, religion, collection, language, year, description,
-            paragraph_count, encumbered, purchase_url, cover_url, file_path, filename, slug, created_at, updated_at,
+export const PATH_SLUG_CANDIDATES_SQL = (n) => `SELECT id, title, author, religion, collection, language, filename, slug,
             deleted_at, duplicate_of
        FROM docs WHERE religion IS NOT NULL AND collection IN (${Array(n).fill('?').join(',')})`;
+const PATH_SLUG_TTL_MS = 10 * 60 * 1000;
+const PATH_SLUG_MEMO_MAX = 24;
+const _pathSlugMemo = new Map(); // key → { at, rows }; insertion order = LRU order
 export async function docsForPathSlugs(religionSlug, collectionSlug, slugify) {
+  const key = `${religionSlug}|${collectionSlug}`;
+  const hit = _pathSlugMemo.get(key);
+  if (hit && Date.now() - hit.at < PATH_SLUG_TTL_MS) {
+    _pathSlugMemo.delete(key); _pathSlugMemo.set(key, hit);
+    return hit.rows.slice();
+  }
   const names = (await collectionNames()).filter((c) => slugify(c) === collectionSlug);
-  if (!names.length) return [];
-  const rows = await queryAll(PATH_SLUG_CANDIDATES_SQL(names.length), names, 'docs-repo:path-slug-candidates');
-  return rows.filter((d) => slugify(d.religion || '') === religionSlug);
+  const rows = names.length
+    ? (await queryAll(PATH_SLUG_CANDIDATES_SQL(names.length), names, 'docs-repo:path-slug-candidates'))
+      .filter((d) => slugify(d.religion || '') === religionSlug)
+    : [];
+  _pathSlugMemo.delete(key);
+  _pathSlugMemo.set(key, { at: Date.now(), rows });
+  while (_pathSlugMemo.size > PATH_SLUG_MEMO_MAX) _pathSlugMemo.delete(_pathSlugMemo.keys().next().value);
+  return rows.slice();
+}
+
+/** The by-path page's full row for a matched slug candidate, by primary key (any scope, no duplicate follow). */
+export const PAGE_FIELDS = Object.freeze(['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description',
+  'paragraph_count', 'encumbered', 'purchase_url', 'cover_url', 'file_path', 'filename', 'slug', 'created_at', 'updated_at',
+  'deleted_at', 'duplicate_of']);
+export async function docForPage(docId) {
+  return getDoc(docId, { scope: 'all', follow: false, fields: PAGE_FIELDS });
 }
 
 /**

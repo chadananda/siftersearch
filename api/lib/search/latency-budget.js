@@ -54,6 +54,17 @@ export const CLAIMS_BUDGETS = Object.freeze({
   total: { ms: 600, note: 'the whole peopleSearch = PLANNED_BUDGETS.claims' },
 });
 
+// Named SQLite statements on the request path (query_stats name → AVERAGE ms per call). better-sqlite3 is synchronous, so
+// every ms here is a ms the API's event loop serves nothing — it is why Qdrant measured 50-70 ms in the app against 16-40
+// ms on the server (11-03: api frozen 7.0% of 6 h, GET /api/admin/server/query-time?hours=6). Read by the query-time
+// report (budgetMs / overBudget per row). Before-numbers are that report's; each fix's test pins the cheap shape.
+export const QUERY_BUDGETS = Object.freeze({
+  'docs-repo:path-slug-candidates': { ms: 10, note: 'slug-fallback candidates, light columns, memoised per religion/collection (was avg 356 / worst 900 ms, 473 calls / 6 h: whole collections with descriptions)' },
+});
+
+/** A named statement's average-ms budget, or null when it has none. */
+export const queryBudgetFor = (name) => QUERY_BUDGETS[name]?.ms ?? null;
+
 export const QDRANT_CALL_MS = ENGINE_BUDGETS.qdrant.ms;
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);

@@ -14,6 +14,7 @@ import * as state from '../lib/pipeline/stage-state.js';
 import { nowInPeak, peakEndsAt } from '../lib/pipeline/peak.js';
 import { join } from 'node:path';
 import { PROSE_SQL } from '../lib/pipeline/processed.js';
+import { queryBudgetFor } from '../lib/search/latency-budget.js';
 
 // Where logs can live: the app's own ./logs (what ecosystem.config.cjs declares) and PM2's default
 // store (what an app started before that config actually uses). Checked in that order.
@@ -780,6 +781,8 @@ export default async function ingestRoutes(fastify) {
         totalMin: Math.round(r.total_ms / 600) / 100,
         avgMs: Math.round(r.total_ms / Math.max(1, r.n)),
         worstMs: r.max_ms,
+        budgetMs: queryBudgetFor(r.name),
+        overBudget: queryBudgetFor(r.name) != null && r.total_ms / Math.max(1, r.n) > queryBudgetFor(r.name),
         // The shape of the problem, named — so the fix is obvious from the report alone.
         pattern: r.max_ms >= 5000 ? 'BLOCKING scan' : (r.n >= 200 && r.total_ms >= 60000 ? 'death by a thousand cuts' : 'ok'),
         sql: r.sql_sample,

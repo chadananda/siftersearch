@@ -26,7 +26,7 @@ import { ApiError } from '../lib/errors.js';
 import { previewWindow, PREVIEW_PARAGRAPHS, PREVIEW_MESSAGE, canReadFull } from '../lib/rights/preview.js';
 import { bookFacts } from '../lib/repos/book-hunt-repo.js';
 import { hiddenReligions as HIDDEN } from '../lib/authority.js';
-import { findDocuments, docsForPathSlugs, canonicalForPage, getLinkMeta } from '../lib/docs-repo.js';
+import { findDocuments, docsForPathSlugs, docForPage, canonicalForPage, getLinkMeta } from '../lib/docs-repo.js';
 import { lettersOf } from '../lib/repos/letters-repo.js';
 import { browseDocuments } from '../lib/repos/library-browse-repo.js';
 import { paragraphsAt } from '../lib/paragraphs-repo.js';
@@ -1777,6 +1777,8 @@ Return ONLY the description text, no quotes or formatting.`;
 
         return false;
       });
+      // candidates carry only the slug-matching columns (memoised); the page reads its full row by id
+      if (document) document = (await docForPage(document.id)) || null;
 
       // A link whose AUTHOR prefix is wrong (old builders slugged the paragraph's effective author, 10-22): the title
       // part names the book within this religion/collection → 301 to its canonical URL (the #p anchor rides along).

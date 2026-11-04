@@ -9,7 +9,7 @@ const DOCS = [
   { id: 3, religion: "Bahá'í", collection: 'Pilgrim Notes' },
 ];
 vi.mock('../../api/lib/db.js', () => ({
-  query: vi.fn(), queryOne: vi.fn(),
+  query: vi.fn(), queryOne: vi.fn(async (sql, params) => { seen.push(sql); return { id: params[0], description: 'full row' }; }),
   queryAll: vi.fn(async (sql, params) => {
     seen.push(sql);
     if (/SELECT DISTINCT collection FROM docs/.test(sql)) return [...new Set(DOCS.map((d) => d.collection))].map((collection) => ({ collection }));
@@ -19,7 +19,7 @@ vi.mock('../../api/lib/db.js', () => ({
 }));
 vi.mock('../../api/lib/logger.js', () => ({ logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }));
 
-const { docsForPathSlugs, _resetCollectionNames } = await import('../../api/lib/docs-repo.js');
+const { docsForPathSlugs, docForPage, PATH_SLUG_CANDIDATES_SQL, _resetCollectionNames } = await import('../../api/lib/docs-repo.js');
 const { slugifyPath } = await import('../../api/lib/slug.js');
 
 describe('docsForPathSlugs', () => {
@@ -35,6 +35,27 @@ describe('docsForPathSlugs', () => {
   it('unknown collection → no row read at all', async () => {
     expect(await docsForPathSlugs('bahai', 'no-such-shelf', slugifyPath)).toEqual([]);
     expect(seen.filter((s) => /collection IN/.test(s))).toHaveLength(0);
+  });
+  // 11-03: still 355 ms avg / 900 ms worst on prod (473 calls / 6 h) — whole collections with descriptions, every miss.
+  it('selects only the slug-matching columns (no description, no wide text)', () => {
+    const sql = PATH_SLUG_CANDIDATES_SQL(1);
+    for (const col of ['id', 'title', 'author', 'religion', 'collection', 'language', 'filename', 'slug', 'deleted_at', 'duplicate_of']) expect(sql).toMatch(new RegExp(`\\b${col}\\b`));
+    for (const col of ['description', 'metadata', 'frontmatter', 'file_path']) expect(sql).not.toMatch(new RegExp(`\\b${col}\\b`));
+  });
+  it('a repeat lookup of the same religion/collection reads nothing (memo)', async () => {
+    await docsForPathSlugs(slugifyPath("Bahá'í"), slugifyPath('Foundational Texts'), slugifyPath);
+    seen.length = 0;
+    const r = await docsForPathSlugs(slugifyPath("Bahá'í"), slugifyPath('Foundational Texts'), slugifyPath);
+    expect(r.map((d) => d.id)).toEqual([1]);
+    expect(seen).toHaveLength(0);
+    r.push({ id: 99 }); // callers get a copy; the memo is not mutated
+    expect((await docsForPathSlugs(slugifyPath("Bahá'í"), slugifyPath('Foundational Texts'), slugifyPath)).map((d) => d.id)).toEqual([1]);
+  });
+  it('docForPage reads the full page row by primary key', async () => {
+    const row = await docForPage(1);
+    expect(row).toMatchObject({ id: 1, description: 'full row' });
+    expect(seen.at(-1)).toMatch(/WHERE d\.id = \?$/);
+    expect(seen.at(-1)).toMatch(/d\.description/);
   });
 });
 
