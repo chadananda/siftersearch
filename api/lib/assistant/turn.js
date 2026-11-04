@@ -131,7 +131,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     follow_up: tri.follow_up ?? null, first: tri.features?.first ?? null, features: tri.features ?? null, outcome: tri.outcome?.choice ?? null, query: resolved?.query ?? null, card: !!card?.text,
     malicious: tri.malicious, stop: tri.stop_request, ms: tri.ms,
     lookup: tri.lookup ? { choice: tri.lookup.choice, confidence: tri.lookup.confidence } : null,
-    depth: tri.depth?.choice ?? null, accepts_offer: tri.accepts_offer ?? null };
+    depth: tri.depth?.choice ?? null, depth_confidence: tri.depth?.confidence ?? null, accepts_offer: tri.accepts_offer ?? null };
   // THE "WHAT I UNDERSTOOD" LINE (understanding.js): Anís's own restatement of the resolved request, conditioned on Jev's decision,
   // emitted the moment it returns — beside the search, never waited on; none for a canned / refused turn; too late (answer done) = dropped.
   let turnDone = false, understood = null;

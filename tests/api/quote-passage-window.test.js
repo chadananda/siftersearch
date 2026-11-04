@@ -4,7 +4,7 @@
 // exact phrase … as a numbered Gleanings paragraph" and built the answer from The Bahá'í World XIV and The World Order of
 // Bahá'u'lláh, which quote it.
 import { describe, it, expect } from 'vitest';
-import { passageText, phraseSpan, anisUserPayload, PASSAGE_CHARS } from '../../api/lib/assistant/prompt.js';
+import { passageText, phraseSpan, anisUserPayload, PASSAGE_CHARS, headOf } from '../../api/lib/assistant/prompt.js';
 import { anisRespond } from '../../api/lib/assistant/respond.js';
 
 const PHRASE = 'The earth is but one country';
@@ -23,12 +23,23 @@ describe('passageText: a long passage is shown around the wording it was found f
     expect(t.startsWith('… ')).toBe(true);
     expect(t.length).toBeLessThanOrEqual(PASSAGE_CHARS + 4);
   });
-  it('without a focus (an ordinary search passage) the cut is unchanged: the first 1,300 characters', () => {
-    expect(passageText({ text: GLEANINGS_CXVII })).toBe(GLEANINGS_CXVII.slice(0, PASSAGE_CHARS));
+  it('without a focus (an ordinary search passage) the writer sees the head: ≤1,300 characters, ended at a sentence and marked " …"', () => {
+    const t = passageText({ text: GLEANINGS_CXVII });
+    expect(t).toBe(headOf(GLEANINGS_CXVII, PASSAGE_CHARS));
+    expect(t.endsWith(' …')).toBe(true);
+    expect(t.length).toBeLessThanOrEqual(PASSAGE_CHARS + 2);
+    expect(GLEANINGS_CXVII.startsWith(t.slice(0, -2))).toBe(true);
+    expect(t.slice(0, -2)).toMatch(/[.!?…][”"’)\]]*$/);
+  });
+  it('headOf never ends mid-word (11-04: a footnote cut at "with the first el" read as the whole passage)', () => {
+    const fn = 'This interregnum lasted for years and the Hands of the Cause guided the community through it all. This interregnum ended in 1963 with the first election of the Universal House of Justice.';
+    expect(headOf(fn, 150)).toBe('This interregnum lasted for years and the Hands of the Cause guided the community through it all. …');
+    expect(headOf('one two three four five six seven eight nine ten', 30)).toBe('one two three four five six …');
+    expect(headOf('short', 30)).toBe('short');
   });
   it('a focus already inside the first 1,300 characters, or one the text does not hold, changes nothing', () => {
-    expect(passageText({ text: GLEANINGS_CXVII, focus: 'The Great Being, wishing to reveal' })).toBe(GLEANINGS_CXVII.slice(0, PASSAGE_CHARS));
-    expect(passageText({ text: GLEANINGS_CXVII, focus: 'words this paragraph never says' })).toBe(GLEANINGS_CXVII.slice(0, PASSAGE_CHARS));
+    expect(passageText({ text: GLEANINGS_CXVII, focus: 'The Great Being, wishing to reveal' })).toBe(headOf(GLEANINGS_CXVII, PASSAGE_CHARS));
+    expect(passageText({ text: GLEANINGS_CXVII, focus: 'words this paragraph never says' })).toBe(headOf(GLEANINGS_CXVII, PASSAGE_CHARS));
   });
   it('a short passage is whole', () => {
     expect(passageText({ text: 'The earth is but one country and mankind its citizens.', focus: PHRASE })).toBe('The earth is but one country and mankind its citizens.');

@@ -9,6 +9,7 @@ import { logger } from '../logger.js';
 import { withDeadlines } from './deadline.js';
 import { run as runTool, llmTools, canonical, toPassage, translationLabel, letterVariants } from './tools.js';
 import { authorMatch, fold, mainKey } from '../dewey/title-index.js';
+import { headOf, PASSAGE_CHARS } from './prompt.js';
 export { translationLabel, letterVariants };
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
@@ -40,7 +41,8 @@ Reaching for: <one line>
 Thread to pull: <one line>
 KEEP: <the refs the reply should quote or cite, e.g. P2, P5 — only those that carry a point>`;
 
-const clipText = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
+// a cut ends at a sentence (else a word) and says the text goes on — never mid-word (prompt.js headOf)
+const clipText = (t, n) => headOf(String(t || '').replace(/\s+/g, ' ').trim(), n);
 
 /** The researcher's closing message → { brief, keep: ['P2', …] }. Pure. */
 export function parseBrief(text) {
@@ -65,7 +67,9 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
     return ref;
   };
   // an existing translation is shown whole (the writer quotes it line by line) and says what kind it is
-  const show = (refs, n = 900) => refs.filter(Boolean).map((r) => { const p = found.get(r); return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}\n${clipText(p.text, p.translation ? Math.max(n, 4000) : n)}`; }).join('\n\n') || '(nothing)';
+  // the researcher reads a passage as long as the writer will (11-04: at 900 a 1,083-character Dawn-Breakers paragraph lost
+  // its last sentence, "It was left to Bahá'u'lláh to unveil it")
+  const show = (refs, n = PASSAGE_CHARS) => refs.filter(Boolean).map((r) => { const p = found.get(r); return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}\n${clipText(p.text, p.translation ? Math.max(n, 4000) : n)}`; }).join('\n\n') || '(nothing)';
   const searched = [];   // each search's query and its passages' documents in rank order (research's book step)
   const searchLibrary = async ({ query, tradition }) => {
     const hits = (await impl.search(query, tradition)).slice(0, 8);

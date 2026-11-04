@@ -122,6 +122,8 @@ export async function threadDetail({ thread, messages, audits = auditsFor, peopl
       const p = safeJson(r.path_json) || {};
       e.reply = { id: r.id, text: r.content, status: r.status, at: r.answered_at || r.created_at, channel: r.channel,
         route: { gate: p.gate || null, strategy: p.recipe || p.plan?.shape || null, format: p.format?.id || null, retrieved: p.retrieved ?? p.passages ?? null,
+          // Jev's depth sets the length frame (150–250 words vs 500–900) and the reply cap: a short reply is traced to it (11-04)
+          ...(p.triage?.depth ? { depth: p.triage.depth, depth_confidence: p.triage.depth_confidence ?? null } : {}),
           ...(p.plan ? { plan: p.plan } : {}),   // every route, not only Jev-planned ones (r5: source/term/language turns showed no history_turns)
           ...(p.timeline?.length ? { timeline: p.timeline, llm: p.llm || [], search_detail: p.search_detail || null } : {}),   // how the strategy was chosen: jev | jev:cached | backstop + reason
           ...(p.evidence?.length ? { evidence: p.evidence } : {}) },   // the passages the writer had (title, author, url, text ≤1200): answer-stage defects are traced against them (r9)

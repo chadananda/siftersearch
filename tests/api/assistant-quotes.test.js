@@ -133,3 +133,39 @@ describe('linkQuotes, one link per passage per paragraph', () => {
     expect(r.linked).toBe(1);
   });
 });
+
+// 11-04 prod regressions: a comparison lost its whole Bahá'í section for ONE unverified quote (the splitter only broke
+// on ". " + ASCII capital, so "**Bahá'í.**" headings and “…” endings glued sections together), and a reply cut at the
+// token cap ended on an empty heading.
+import { splitSentences, trimCutReply, dropDanglingTail } from '../../api/lib/assistant/quotes.js';
+describe('sentence pieces and section-safe dropping', () => {
+  it('splits after a closing quote, after a bold heading, and before non-ASCII capitals', () => {
+    expect(splitSentences('He wrote “the best beloved is Justice.” Then more.')).toEqual(['He wrote “the best beloved is Justice.”', 'Then more.']);
+    expect(splitSentences('**Bahá\'í.** The fast lasts nineteen days.')).toEqual(['**Bahá\'í.**', 'The fast lasts nineteen days.']);
+    expect(splitSentences('It ends. Ḥuqúqu\'lláh is a law. ‘Abdu\'l-Bahá said so.')).toHaveLength(3);
+  });
+  it('never splits inside an open quotation', () => {
+    expect(splitSentences('He said “first. Second part.” Done.')).toEqual(['He said “first. Second part.”', 'Done.']);
+  });
+  it('drops only the sentence with the bad quote; the rest of its section and the line breaks stay', () => {
+    const text = '**Islam.**\nRamadan is a month.\n\n**Bahá\'í.**\nThe fast is nineteen days. He states "the foundation of all human virtues is justice". It is written: "the best beloved of all things in My sight is Justice".';
+    const out = dropUnverified(text, passages);
+    expect(out.removed).toBe(1);
+    expect(out.text).toContain('**Bahá\'í.**\nThe fast is nineteen days.');
+    expect(out.text).toContain('best beloved');
+    expect(out.text).toContain('**Islam.**\nRamadan is a month.');
+    expect(out.text).not.toContain('foundation');
+  });
+  it('a heading whose whole section was dropped goes with it', () => {
+    const text = 'Intro sentence.\n\n**Invented.**\nHe states "the foundation of all human virtues is justice".\n\n**Real.**\nIt is written: "the best beloved of all things in My sight is Justice".';
+    const out = dropUnverified(text, passages);
+    expect(out.text).not.toContain('**Invented.**');
+    expect(out.text).toContain('**Real.**');
+  });
+  it('a reply cut at the cap never ends on an empty heading or a bare list marker', () => {
+    expect(trimCutReply('Some text. More text here.\n\n**Where the House speaks about change.**\n\nThe House wro')).toBe('Some text. More text here.');
+    expect(trimCutReply('Some text.\n\n## Next\n\nCut mid')).toBe('Some text.');
+    expect(dropDanglingTail('Some text.\n\n1. First point.\n2.')).toBe('Some text.\n\n1. First point.');
+    expect(dropDanglingTail('Plain ending.')).toBe('Plain ending.');
+  });
+});

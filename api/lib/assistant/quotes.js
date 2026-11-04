@@ -18,8 +18,39 @@ export function unverifiedQuotes(text, passages) {
   });
 }
 
+// ── Sentences and sections (11-04) ─────────────────────────────────────────────────────────────────────────────────
+// A sentence ends at . ! ? … with any closing quote, bracket or bold/italic mark after it, before a capital in ANY script
+// (Á, Ḥ, ʻ…), an opening quote or bracket, a mark, a digit or a list/heading marker; a line break always ends one. A break
+// inside an open quotation or link text is not an end. 11-04 prod: the old split (/(?<=[.!?])\s+(?=[A-Z“"[*>(])/) never
+// split after `.”`, `.**` or before `Ḥ`/`‘`, so a whole paragraph read as ONE sentence — one unverified quote in it took the
+// run-in heading **Bahá'í.** and every sentence of the Bahá'í side with it (cmp-fasting-islam-bahai: 3.8k → 1.9k characters).
+const BREAK = /[ \t]*\n\s*|(?<=[.!?…][”"’'»)\]*_]*)\s+(?=[\p{Lu}“"‘'«[*_>(\d#ʻʿ-])/gu;
+const isOpen = (s) => (s.match(/“/g) || []).length > (s.match(/”/g) || []).length || (s.match(/"/g) || []).length % 2 === 1
+  || (s.match(/\[/g) || []).length > (s.match(/\]/g) || []).length;
+/** A paragraph → its sentences, each with the whitespace before it ({ text, sep }). Pure. */
+export function sentencePieces(para) {
+  const s = String(para || ''), out = [];
+  let start = 0, sep = '';
+  for (const m of s.matchAll(BREAK)) {
+    if (m.index === start) { start += m[0].length; if (out.length) sep = m[0]; continue; }
+    const text = s.slice(start, m.index);
+    if (!m[0].includes('\n') && isOpen(text)) continue;
+    out.push({ text, sep });
+    sep = m[0]; start = m.index + m[0].length;
+  }
+  if (start < s.length) out.push({ text: s.slice(start), sep });
+  return out.filter((p) => p.text.trim());
+}
+export const splitSentences = (para) => sentencePieces(para).map((p) => p.text);
+/** A heading: a markdown `#` line or a line that is all bold/italic (a run-in "**Bahá'í.**" counts). Pure. */
+export const isHeading = (t) => { const x = String(t || '').trim(); return /^#{1,6}\s+\S/.test(x) || /^(\*\*|__)[^*_\n]+(\*\*|__)[:.]?$/.test(x); };
+const bareMarker = (t) => /^\s*(?:[-*•+]|\d+[.)])\s*$/.test(t);
+// rejoin kept sentences: a line break between them (from any dropped run) is kept, else a space
+const rejoin = (pieces) => pieces.reduce((acc, p) => (acc ? acc + (/\n/.test(p.gap ?? p.sep) ? (p.gap ?? p.sep).replace(/^[ \t]+/, '') : ' ') : '') + p.text, '').trim();
+
 /** A reply cut by the token cap ends at its last whole sentence, never mid-word or mid-link (r9: "…[Some Answered Qu").
- *  An unclosed quotation or link at the end goes with the cut sentence. Pure. */
+ *  An unclosed quotation or link at the end goes with the cut sentence; a heading or a bare list marker left last goes too
+ *  (11-04 gd-supersede: the reply ended on "**Where the House speaks about change.**" — its body cut by the cap). Pure. */
 export function trimCutReply(text) {
   let t = String(text || '').trimEnd();
   const lastEnd = (s) => {
@@ -32,29 +63,64 @@ export function trimCutReply(text) {
     const end = lastEnd(t);
     if (end < 0) return '';
     const cut = t.slice(0, end).trimEnd();
-    if (balanced(cut)) return cut;
+    if (balanced(cut)) return dropDanglingTail(cut);
     t = t.slice(0, end - 1);
+  }
+  return t;
+}
+
+/** The end of a reply never a heading without its body, or a bare list marker. Pure. */
+export function dropDanglingTail(text) {
+  let t = String(text || '').trimEnd();
+  for (let guard = 0; guard < 20 && t; guard++) {
+    const cut = t.search(/\n[^\n]*$/), line = cut < 0 ? t : t.slice(cut + 1);
+    const pieces = sentencePieces(line), last = pieces.at(-1)?.text ?? '';
+    if (!last || !(isHeading(last) || bareMarker(last))) break;
+    const at = (cut < 0 ? 0 : cut + 1) + line.lastIndexOf(last);
+    t = t.slice(0, at).trimEnd();
   }
   return t;
 }
 
 const NOTHING_LEFT = 'I didn’t find a passage that says this directly in this search. Could you tell me a little more about what you’re looking for?';   // r9: never a claim about the whole library
 
-/** Drop every sentence that carries an unverified quote. Returns the cleaned text and how many sentences went. */
+/** Drop every sentence that carries an unverified quote — that sentence only (sentencePieces), never its neighbours — and a
+ *  heading whose whole section went with it. Returns the cleaned text and how many sentences went. */
 export function dropUnverified(text, passages) {
   const bad = unverifiedQuotes(text, passages);
   if (!bad.length) return { text, removed: 0 };
   let removed = 0;
-  const paragraphs = String(text).split(/\n{2,}/).map((para) => {
-    const sentences = para.split(/(?<=[.!?])\s+(?=[A-Z“"[*>(])/);
-    const kept = sentences.filter((s) => {
-      const hit = bad.some((q) => s.includes(q));
-      if (hit) removed++;
-      return !hit;
-    });
-    return kept.join(' ').trim();
-  }).filter(Boolean);
-  const out = paragraphs.join('\n\n').trim();
+  const paras = String(text).split(/\n{2,}/).map((para) => sentencePieces(para).map((p) => {
+    const hit = bad.some((q) => p.text.includes(q));
+    if (hit) removed++;
+    return { ...p, drop: hit, heading: isHeading(p.text) };
+  }));
+  // a quotation the split still cut in two (its words span pieces): drop every piece it touches, as before
+  for (const q of bad) for (const ps of paras) {
+    if (ps.some((p) => p.drop && p.text.includes(q))) continue;
+    const joined = ps.map((p) => p.text).join(' ');
+    const at = joined.indexOf(q);
+    if (at < 0) continue;
+    let pos = 0;
+    for (const p of ps) { const end = pos + p.text.length; if (end > at && pos < at + q.length && !p.drop) { p.drop = true; removed++; } pos = end + 1; }
+  }
+  // a heading whose section (every sentence up to the next heading) was dropped goes too
+  const flat = paras.flat();
+  flat.forEach((p, i) => {
+    if (!p.heading || p.drop) return;
+    const body = [];
+    for (let j = i + 1; j < flat.length && !flat[j].heading; j++) body.push(flat[j]);
+    if (body.length && body.every((b) => b.drop)) p.drop = true;
+  });
+  const out = paras.map((ps) => {
+    let gap = null;
+    const kept = [];
+    for (const p of ps) {
+      if (p.drop) { if (/\n/.test(p.sep)) gap = p.sep; continue; }
+      kept.push({ ...p, gap: kept.length && gap && !/\n/.test(p.sep) ? gap : p.sep }); gap = null;
+    }
+    return rejoin(kept);
+  }).filter(Boolean).join('\n\n').trim();
   return { text: out && quoteSpans(out).length + out.split(/\s+/).length > 12 ? out : NOTHING_LEFT, removed };
 }
 
@@ -94,7 +160,7 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 const FOLLOWED = /^\s*(>|[-*•+]\s|\d+[.)]\s|\||["“«]|\*["“])/;
 const QUOTE_INTRO = /\b(writes?|wrote|written|says?|said|states?|stated|describes?|described|recounts?|recounted|records?|recorded|reads?|passages?|words|quotes?|quotations?|statements?|lines|verses?|puts it|as follows|following|here is|here's|here are)\b/i;
 const BARE_FRAME = /^(?:here(?: is| are|'s|’s)|this is|these are|below is|below are|the following (?:is|are)|in (?:his|her|its|their) (?:own )?words)\b[^.!?]{0,160}:\s*$/i;
-const sentencesOf = (p) => p.split(/(?<=[.!?])\s+(?=[A-Z“"[*>(])/);
+const sentencesOf = (p) => splitSentences(p);
 
 function namedPassage(lead, passages) {
   const f = ` ${fold(lead)} `;

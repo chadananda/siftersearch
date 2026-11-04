@@ -3,7 +3,7 @@
 // and speed can change without code. Deps: openai SDK, anis/prompt.js.
 import OpenAI from 'openai';
 import { anisSystem, anisUserPayload, anisDirection } from './prompt.js';
-import { frameFor } from './channels.js';
+import { frameFor, DEPTH_FRAME } from './channels.js';
 import { logAIUsage } from '../ai-services.js';
 import { noteProviderError } from '../spend-alerts.js';
 import { getModel } from '../model-registry.js';
@@ -28,7 +28,10 @@ export function replyCap(direction = {}, effort = null) {
   const id = direction.format?.id;
   if (id === 'research') return 8000;
   const long = id === 'position' || /email/.test(String(direction.channel?.id || direction.channel?.name || ''));
-  const base = ROOMY.has(id) ? 2400 : effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 1100;
+  // Jev's depth = research gives the writer the full-answer frame (DEPTH_FRAME, "often 500–900 words"): its cap must hold that
+  // answer with its links (11-04: guidance at 1,100 ended on a heading, gd-supersede; understanding at 2,400 hit the cap, goth-03)
+  const deep = frameFor(direction.channel, direction.depth) === DEPTH_FRAME;
+  const base = deep ? 3200 : ROOMY.has(id) ? 2400 : effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 1100;
   return base + (long ? 2000 : 0);
 }
 

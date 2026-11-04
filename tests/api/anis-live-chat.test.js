@@ -315,6 +315,15 @@ describe('replyCap: the writer has room for a two-sided or a study answer (coord
     expect(replyCap({ format: { id: 'position' } })).toBe(3100);
     expect(replyCap({ format: { id: 'guidance' }, channel: { id: 'email' } })).toBe(3100);
   });
+  it('Jev\'s depth = research on a live channel (the full-answer frame) gets 3,200 whatever the format (11-04 gd-supersede ended on a heading at 1,100)', async () => {
+    const { replyCap } = await import('../../api/lib/assistant/craft.js');
+    const site = channelFor('site-chat');
+    expect(replyCap({ format: { id: 'guidance' }, channel: site, depth: 'research' })).toBe(3200);
+    expect(replyCap({ format: { id: 'understanding' }, channel: site, depth: 'research' })).toBe(3200);
+    expect(replyCap({ format: { id: 'guidance' }, channel: site, depth: 'answer' })).toBe(1100);
+    expect(replyCap({ format: { id: 'guidance' }, channel: channelFor('email', { trusted: true }), depth: 'research' })).toBe(3100);
+    expect(replyCap({ format: { id: 'research' }, channel: site, depth: 'research' })).toBe(8000);
+  });
 });
 
 describe('reply length follows Jev\'s depth, never a word rule', () => {

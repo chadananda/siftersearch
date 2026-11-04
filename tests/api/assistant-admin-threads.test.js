@@ -133,4 +133,11 @@ describe('digestConversations (Chad 10-19: Anís daily digest like Jafar\'s)', (
       messages: async () => [{ id: 12, round_index: 0, role: 'assistant', content: 'x', status: 'answered', path_json: JSON.stringify(path) }] }, 's1');
     expect(t.rounds[0].reply.route.plan).toMatchObject({ provenance: 'backstop', reason: 'timeout', history_turns: 2 });
   });
+
+  it("shows Jev's depth on the route (it sets the reply's length frame; 11-04 short prod replies could not be traced)", async () => {
+    const path = { gate: 'research', recipe: 'topic', triage: { depth: 'answer', depth_confidence: 0.26 } };
+    const t = await threadDetail({ thread: async () => ({ id: 's1', channel: 'site-chat', participant_id: 'x' }), audits, people,
+      messages: async () => [{ id: 12, round_index: 0, role: 'assistant', content: 'x', status: 'answered', path_json: JSON.stringify(path) }] }, 's1');
+    expect(t.rounds[0].reply.route).toMatchObject({ depth: 'answer', depth_confidence: 0.26 });
+  });
 });
