@@ -3,6 +3,7 @@
   // "audit each interaction to determine if a better search strategy was warranted". List + the open thread, round by round.
   import { onMount, tick } from 'svelte';
   import { marked } from 'marked';
+  import { styleQuotes } from '../../../api/lib/quote-style.js';
   import { admin } from '../../lib/api.js';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
 
@@ -21,7 +22,7 @@
   const FILTERS = [['all', 'All'], ['strategy', 'Better strategy warranted'], ['problems', 'Problems'], ['pending', 'Not yet audited']];
   const when = (s) => (s ? new Date(String(s).replace(' ', 'T') + (String(s).includes('Z') ? '' : 'Z')).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '');
   const who = (p) => p?.name && p?.email ? `${p.name} · ${p.email}` : p?.email || p?.name || 'unknown';
-  const md = (t) => marked.parse(String(t || ''), { async: false });
+  const md = (t) => styleQuotes(marked.parse(String(t || ''), { async: false }));   // quoted words styled as readers see them
   const tone = (v) => (v === 'right' || v === 'fully' ? 'text-success' : v === 'acceptable' || v === 'partly' ? 'text-warning' : v ? 'text-error' : 'text-muted');
 
   async function loadList() {
@@ -201,4 +202,9 @@
   .reply :global(td), .reply :global(th) { padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
   .reply :global(pre) { overflow-x: auto; font-size: 0.75rem; }
   .reply :global(a) { color: var(--accent-primary); }
+  /* quoted words (quote-style.js), as readers see them */
+  .reply :global(blockquote.quote) { color: var(--quote); border-left-color: color-mix(in srgb, var(--quote) 45%, transparent); }
+  .reply :global(em.quote) { color: var(--quote); }
+  .reply :global(em.quote[dir="rtl"]) { font-style: normal; }
+  .reply :global(.quote a) { color: inherit; }
 </style>

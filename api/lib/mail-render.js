@@ -6,9 +6,11 @@
 // a ```bilingual fence, or detected `RTL : LTR` lines / list items — becomes a two-column table (original right,
 // English left; stacked on phones), never one mixed bidi run; a block with Arabic/Persian/Hebrew gets an explicit dir;
 // a stray RTL word inside an English sentence is isolated (<span dir="rtl">). Text part: original line, translation line.
+// Quoted words (Chad 11-04): an italic quotation and a blockquote take the quotation ink (quote-style.js); RTL stays upright.
 import { Marked, Lexer } from 'marked';
+import { styleQuotes, QUOTE_INK } from './quote-style.js';
 
-export const PALETTE = Object.freeze({ ink: '#2b2621', sea: '#1f6f8b', mist: '#8fa3ab', rule: '#a9cbd6' });
+export const PALETTE = Object.freeze({ ink: '#2b2621', sea: '#1f6f8b', mist: '#8fa3ab', rule: '#a9cbd6', quote: QUOTE_INK.light });
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const SAFE_URL = /^(https?:|mailto:|#)/i;
 // inline tags a writer may use on purpose (the reading guide's <mark>, superscript note numbers); everything else is shown as text
@@ -39,6 +41,7 @@ for (const m of [marked, markedBreaks]) {
  *  (for plain-text reports passed as Markdown). Pure. */
 export function markdownHtml(md, { breaks = false, palette = PALETTE } = {}) {
   const { ink, sea, rule } = palette;
+  const quote = palette.quote || QUOTE_INK.light;
   const slots = [];
   let html;
   bilSlots = slots;
@@ -53,7 +56,7 @@ export function markdownHtml(md, { breaks = false, palette = PALETTE } = {}) {
     .replace(/<p>(<strong style="[^"]*">[^<]{1,80}<\/strong>:?)<\/p>/g, '<p dir="auto" style="margin:16px 0 4px">$1</p>')
     .replace(/<p>/g, '<p dir="auto" style="margin:0 0 14px">')
     .replace(/<mark>/g, '<mark style="background:#f7e9b9;color:inherit;padding:0 2px;border-radius:2px">')
-    .replace(/<blockquote>/g, `<blockquote style="margin:16px 0;padding:2px 0 2px 18px;border-left:2px solid ${rule};color:#3f3a34">`)
+    .replace(/<blockquote>/g, `<blockquote style="margin:16px 0;padding:2px 0 2px 18px;border-left:2px solid ${rule};color:${quote}">`)
     .replace(/<a href=/g, `<a style="color:${sea};text-decoration:none;border-bottom:1px solid ${sea}66" href=`)
     .replace(/<li>/g, '<li dir="auto" style="margin:0 0 6px">')
     .replace(/<pre>/g, '<pre style="font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;background:#f4f6f7;padding:10px 12px;border-radius:6px;overflow-x:auto">')
@@ -61,6 +64,7 @@ export function markdownHtml(md, { breaks = false, palette = PALETTE } = {}) {
     .replace(/<table>/g, '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:16px 0;font-size:15px">')
     .replace(/<th(\s[^>]*)?>/g, (m, a = '') => `<th${a} dir="auto" style="text-align:left;padding:6px 14px 6px 0;border-bottom:1px solid ${rule};color:${sea};vertical-align:bottom">`)
     .replace(/<td(\s[^>]*)?>/g, (m, a = '') => `<td${a} dir="auto" style="padding:6px 14px 6px 0;border-bottom:1px solid #e3ebee;vertical-align:top">`);
+  html = styleQuotes(html, { inline: true, color: quote });
   return isolateRtl(directionalize(html))
     .replace(/(?:<p[^>]*>)?@@BIL(\d+)@@\s*(?:<\/p>)?/g, (m, i) => bilingualHtml(slots[Number(i)] || [], palette));
 }
@@ -252,8 +256,8 @@ export function bilingualHtml(pairs, palette = PALETTE) {
   const rows = pairs.map((p) => {
     const l = p.orig ? rtlLang(p.orig) : lang;
     return '<tr>'
-      + `<td class="em-bil-o" dir="rtl" lang="${l}" width="50%" style="width:50%;text-align:right;vertical-align:top;padding:8px 0 8px 14px;border-bottom:1px solid #e3ebee;font-family:${FONT[l]};font-size:18.5px;line-height:1.8;font-style:normal;color:${palette.ink}">${inlineHtml(p.orig)}</td>`
-      + `<td class="em-bil-t" dir="ltr" lang="en" width="50%" style="width:50%;text-align:left;vertical-align:top;padding:10px 14px 8px 0;border-bottom:1px solid #e3ebee;font-style:italic;font-size:15px;line-height:1.55;color:#4a545c">${inlineHtml(p.trans)}</td>`
+      + `<td class="em-bil-o" dir="rtl" lang="${l}" width="50%" style="width:50%;text-align:right;vertical-align:top;padding:8px 0 8px 14px;border-bottom:1px solid #e3ebee;font-family:${FONT[l]};font-size:18.5px;line-height:1.8;font-style:normal;color:${palette.quote || QUOTE_INK.light}">${inlineHtml(p.orig)}</td>`
+      + `<td class="em-bil-t" dir="ltr" lang="en" width="50%" style="width:50%;text-align:left;vertical-align:top;padding:10px 14px 8px 0;border-bottom:1px solid #e3ebee;font-style:italic;font-size:15px;line-height:1.55;color:${palette.quote || QUOTE_INK.light}">${inlineHtml(p.trans)}</td>`
       + '</tr>';
   }).join('');
   return `<table role="presentation" class="em-bil" dir="rtl" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:10px 0 18px">${rows}</table>`;

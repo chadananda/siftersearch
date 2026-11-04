@@ -9,6 +9,7 @@
   // Transcript persists in localStorage per token. Soft WebAudio feedback (synthesized, muteable).
   // token/api from the loader; accent/name/mission are optional per-page overrides (data-* attrs)
   // that tune the widget without touching the DB profile. ONE public domain; the edge worker proxies /api.
+  import { styleQuotes } from '../../api/lib/quote-style.js';
   let { token = '', api = 'https://siftersearch.com', accent = '', name = '', mission = '' } = $props();
 
   // Ocean mark (public/ocean-noback.svg) — one path constant, used for header roundel,
@@ -218,9 +219,9 @@
   function renderRich(t) {
     const esc = String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const inline = (s) => s
-      .replace(/\[([^\]]{1,160})\]\((https:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      .replace(/\[([^\]]{1,600})\]\((https:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
       .replace(/\*\*([^*\n]{1,200})\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*\n]{1,160})\*/g, '<em>$1</em>');
+      .replace(/\*([^*\n]{1,600})\*/g, '<em>$1</em>');   // 600: a ~30-word quotation fits (quotes.js LONG_QUOTE_WORDS)
     const lines = esc.split('\n');
     const out = [];
     let quoteRun = [];
@@ -236,7 +237,7 @@
       out.push(inline(line));
     }
     flushQuote();
-    return out.join('\n');
+    return styleQuotes(out.join('\n'));   // quoted words styled apart from Anís's own (Chad 11-04)
   }
   // Query-prep (perceived speed): while the user types their FIRST question, debounce
   // partials to /api/chat/prep — a settled pause starts the answer pipeline server-side,
@@ -492,6 +493,7 @@
     --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
     --gold: #c8a24b;
     --gold-soft: #e7d5a4;
+    --quote: #6b4a2b;   /* = global.css --quote / quote-style.js QUOTE_INK */
     --accent-deep: color-mix(in srgb, var(--accent) 72%, #14273a);
     --halo: color-mix(in srgb, var(--accent) 28%, transparent);
   }
@@ -654,6 +656,11 @@
     background: color-mix(in srgb, var(--gold) 5%, transparent);
     border-radius: 0 6px 6px 0; font-style: italic;
   }
+  /* quoted words (quote-style.js): the quotation ink, italic inline, upright in a block and in RTL (Chad 11-04) */
+  .bubble :global(em.quote) { color: var(--quote); font-style: italic; }
+  .bubble :global(em.quote[dir="rtl"]) { font-style: normal; unicode-bidi: isolate; }
+  .bubble :global(blockquote.quote) { color: var(--quote); font-style: normal; }
+  .bubble :global(.quote a) { color: inherit; }
   .bubble :global(.li) { display: block; padding-left: .95em; text-indent: -0.95em; }
 
   /* Streaming caret — a breathing quill of accent-to-gold light. */
@@ -711,6 +718,7 @@
 
   /* ── Dark: deep ink, warm text, lifted links, same gold. ── */
   @media (prefers-color-scheme: dark) {
+    .root { --quote: #dcc4a0; }
     .panel { background: linear-gradient(178deg, #14181e, #0e1217); color: #e9e6dd; }
     .watermark { color: #b9c8dd; opacity: .045; }
     .msg.assistant .bubble { background: #1b212a; border-color: #2b3442; color: #e9e6dd; box-shadow: none; }

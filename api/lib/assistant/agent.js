@@ -5,7 +5,7 @@
 // drops any it was not given, and the quote gate removes a sentence quoting words no passage holds. Deps injectable (tests).
 import { toolRunner, libraryTools, TOOL_CHARS } from './researcher.js';
 import { llmTools, canonical, canonWork, run as runTool } from './tools.js';
-import { dropUnverified, fixQuoteSpeakers, linkQuotes } from './quotes.js';
+import { dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes } from './quotes.js';
 import { dropPreamble } from './work-request.js';
 import { agentSearch } from './agent-search.js';
 import { roleReplyCap } from './reply-cap.js';
@@ -107,7 +107,7 @@ export async function agentAnswer({ messages, create, tools: impl, onEvent = () 
   const guarded = dropUnverified(rendered, retrieved, { asked: messages.filter((m) => m.role === 'user').map((m) => String(m.content || '')) });
   const speakers = fixQuoteSpeakers(guarded.text, retrieved);
   const linked = linkQuotes(speakers.text, retrieved);
-  const reply = dropPreamble(linked.text).trim();
+  const reply = markQuotes(dropPreamble(linked.text).trim(), retrieved).text;   // quoted words styled apart (Chad 11-04)
   const citations = [...[...works.values()].map((w) => ({ title: w.title, author: w.author, url: w.url, religion: w.religion, document_id: w.id, paragraph_index: null, text: '' })),
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));

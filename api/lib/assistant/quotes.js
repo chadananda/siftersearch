@@ -2,7 +2,7 @@
 // Invented words presented as scripture are removed with their sentence (which also carries the false attribution).
 // Pure. Used by the live reply guard (respond.js) and the model race (scripts/wip/anis-model-race.mjs).
 
-import { quoteSpans, containsQuote } from '../quote-text.js';
+import { quoteSpans, containsQuote, foldText } from '../quote-text.js';
 import { foldVerbatim } from '../search/verbatim.js';
 
 export { quoteSpans };
@@ -324,6 +324,104 @@ export function linkQuotes(text, passages) {
     return `${m} (${link(p)})`;
   }); });
   return { text: res.join('\n'), linked };
+}
+
+// ── QUOTATION STYLE (Chad 11-04: "quotes are hard to distinguish from text") ─────────────────────────────────────────────
+/** A quotation longer than this many words leaves its sentence for a block of its own. Measured 11-04 over 739 inline
+ *  quotations (≥5 words) in 288 battery replies (11-01 r8, 11-03 writer A/B): median 11 words, p90 23, p95 30 — so only the
+ *  longest ~4%, the ones running past two lines of a chat bubble, become blocks. */
+export const LONG_QUOTE_WORDS = 30;
+const RTL_LETTER = /[֐-׿؀-ۿݐ-ݿࢠ-ࣿיִ-﷿ﹰ-﻿]/gu;
+const LATIN_LETTER = /\p{Script=Latin}/gu;
+const letters = (s, re) => (String(s).replace(/\]\([^)]*\)/g, ']').match(re) || []).length;
+const wordCount = (s) => String(s).trim().split(/\s+/).filter(Boolean).length;
+const LINKED_Q = /(?:(?<![*_])([*_])|)\[([*_]?)(["“])([^"”\n\]]+)(["”])([*_]?)\]\(([^)\s]+)\)(?:([*_])(?![*_])|)/g;
+const BARE_Q = /(?:(?<![*_\w])([*_])|)(["“])([^"”\n]+?)(["”])(?:([*_])(?![*_\w])|)/g;
+const CITES = /^(?:\s*(?:\(\s*\[[^\]\n]*\]\([^)\s]*\)\s*\)|[—–]\s*(?:\[[^\]\n]*\]\([^)\s]*\)|\*[^*\n]+\*)))+/;
+const PLAIN_LINE = (line) => !/^\s*(?:>|[-*+•]\s|\d+[.)]\s|#|\|)/.test(line);
+
+/**
+ * Mark the quotations in a reply so every surface renders them the same way (quote-style.js does the rendering):
+ * - a quotation a retrieved passage holds (≥5 words: containsQuote; 2–4 words: the folded phrase in a passage) is italic —
+ *   `*“…”*`, or `[*“…”*](url)` when the quotation is the link;
+ * - italics around a quotation NO passage holds (the reader's own words, a paraphrase) are removed — never styled as a source;
+ * - a held quotation of more than `longWords` words that ends its sentence becomes a blockquote with its citation under it
+ *   ("> — [Title](url)"); its lead-in stays a paragraph, ending in a colon;
+ * - in a reply written in Latin script, a line wholly in Arabic/Persian/Hebrew script (an original) is wrapped `*…*` — the
+ *   renderer keeps it upright and right-to-left, in the quotation colour.
+ * Blockquote lines, code fences and one-word quotations are left as they are. Pure.
+ */
+export function markQuotes(text, passages, { longWords = LONG_QUOTE_WORDS } = {}) {
+  const src = String(text || '');
+  if (!src) return { text: src, marked: 0, blocks: 0 };
+  const hays = (passages || []).map((p) => p.text || '').filter(Boolean);
+  const folded = hays.map((h) => ` ${foldText(h)} `);
+  const held = (words) => {
+    const w = String(words).replace(/[*_]/g, '').trim(), n = wordCount(w);
+    if (n >= 5) return hays.some((h) => containsQuote(h, w));
+    if (n < 2) return false;
+    const f = foldText(w);
+    return !!f && folded.some((h) => h.includes(` ${f} `));
+  };
+  // a Latin-script reply: more of its lines are mostly Latin than mostly RTL (by lines, so a long original can't flip it)
+  const lean = src.split('\n').map((l) => Math.sign(letters(l, LATIN_LETTER) - letters(l, RTL_LETTER)));
+  const latinReply = lean.some((v) => v > 0) && lean.filter((v) => v > 0).length >= lean.filter((v) => v < 0).length;
+  let marked = 0, blocks = 0, fence = false;
+  const out = [];
+  for (const line of src.split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) { fence = !fence; out.push(line); continue; }
+    if (fence || /^\s*>/.test(line) || !line.trim()) { out.push(line); continue; }
+    // an original in right-to-left script on its own line (list marker allowed)
+    const lead = line.match(/^\s*(?:[-*+•]\s+|\d+[.)]\s+)?/)[0], body = line.slice(lead.length);
+    if (latinReply && letters(body, RTL_LETTER) && !letters(body, LATIN_LETTER) && !/[*_]/.test(body)) { out.push(`${lead}*${body.trim()}*`); marked++; continue; }
+    // quotations → tokens (linked first, so a bare pass never sees the quote marks inside link text)
+    const toks = [];
+    const tok = (o) => { toks.push(o); return `\u0001${toks.length - 1}\u0001`; };
+    let s = line.replace(LINKED_Q, (m, o1, i1, q1, words, q2, i2, url, o2) => {
+      const n = wordCount(words);
+      if (n < 2) return m;
+      const pair = o1 && o2 && o1 === o2;
+      const keepOuter = (t) => (pair ? t : `${o1 || ''}${t}${o2 || ''}`);
+      if (!held(words)) return tok({ md: keepOuter(`[${q1}${words}${q2}](${url})`) });
+      marked++;
+      const outer = !pair && !!(o1 || o2);
+      return tok({ md: `${outer ? o1 || '' : ''}[*${q1}${words}${q2}*](${url})${outer ? o2 || '' : ''}`, block: `[${q1}${words}${q2}](${url})`, long: n > longWords && !outer, stops: /[.!?…]$/.test(words.trim()) });
+    });
+    s = s.replace(BARE_Q, (m, o1, q1, words, q2, o2) => {
+      const n = wordCount(words);
+      if (n < 2) return m;
+      const pair = o1 && o2 && o1 === o2;
+      if (!held(words)) return pair ? `${q1}${words}${q2}` : m;
+      marked++;
+      return tok({ md: `${pair ? '' : o1 || ''}*${q1}${words}${q2}*${pair ? '' : o2 || ''}`, block: `${q1}${words}${q2}`, long: n > longWords && !(o1 || o2), stops: /[.!?…]$/.test(words.trim()) });
+    });
+    // long quotations that end their sentence → their own block (plain paragraph lines only)
+    const parts = s.split(/\u0001(\d+)\u0001/);
+    const canBlock = PLAIN_LINE(line);
+    const paras = [];
+    let buf = '';
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 0) { buf += parts[i]; continue; }
+      const t = toks[Number(parts[i])];
+      const next = parts[i + 1] ?? '';
+      const cites = (next.match(CITES) || [''])[0];
+      const rest = next.slice(cites.length);
+      // the sentence ends with the quotation: nothing follows, a full stop follows, or the quotation's own words end the
+      // sentence and a new one (capital letter) starts
+      const endsSentence = /^\s*$|^\s*[.!?…]+["”’)]*(?:\s|$)/.test(rest) || (t.stops && /^\s+\p{Lu}/u.test(rest));
+      if (!(canBlock && t.long && endsSentence)) { buf += t.md; continue; }
+      const intro = buf.trimEnd();
+      if (intro) paras.push(/[:.!?…]["”’)]*$/.test(intro) ? intro : `${intro.replace(/[,;—–-]+$/, '').trimEnd()}:`);
+      const cite = cites.replace(/\(\s*(\[[^\]\n]*\]\([^)\s]*\))\s*\)/g, '$1').replace(/^\s*[—–]\s*/, '').replace(/\s+/g, ' ').trim();
+      paras.push(`> ${t.block}${cite ? `  \n> — ${cite}` : ''}`);   // two spaces: a hard break, the citation on its own line
+      blocks++;
+      parts[i + 1] = rest.replace(/^\s*[.!?…]*["”’)]*\s*/, '');
+      buf = '';
+    }
+    if (buf.trim() || !paras.length) paras.push(buf);
+    out.push(paras.join('\n\n').replace(/\u0001(\d+)\u0001/g, (m, k) => toks[Number(k)].md));
+  }
+  return { text: out.join('\n'), marked, blocks };
 }
 
 // ── WHO SAID IT ──────────────────────────────────────────────────────────────────────────────────────────────────────────

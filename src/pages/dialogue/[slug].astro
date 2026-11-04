@@ -7,6 +7,7 @@ import NavBar from '../../components/common/NavBar.svelte';
 import DialogScrollSpy from '../../components/dialogue/DialogScrollSpy.svelte';
 import DialogQuoteMarker from '../../components/dialogue/DialogQuoteMarker.svelte';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
+import { styleQuotes } from '../../../api/lib/quote-style.js';   // quoted words styled apart from Anís's own (Chad 11-04)
 import { heroUrl, cardUrl, heroSet, cardSet } from '../../lib/imagekit.js';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
@@ -218,7 +219,7 @@ const TOPIC_LABELS: Record<string, string> = {
 
         <!-- CENTER: the dialog body itself -->
         <div class="dialog-body prose">
-          <Fragment set:html={dialog.body_html} />
+          <Fragment set:html={styleQuotes(dialog.body_html || '')} />
         </div>
       </div>
 
@@ -893,6 +894,11 @@ const TOPIC_LABELS: Record<string, string> = {
   }
 
   .dialog-body :global(em) { color: var(--text-secondary); }
+  /* quoted words (quote-style.js): quotation ink, italic inline, upright in a block and in RTL (Chad 11-04) */
+  .dialog-body :global(em.quote) { color: var(--quote); font-style: italic; }
+  .dialog-body :global(em.quote[dir="rtl"]) { font-style: normal; }
+  .dialog-body :global(blockquote.quote) { color: var(--quote); font-style: normal; }
+  .dialog-body :global(.quote a) { color: inherit; }
 
   .dialog-body :global(hr) {
     border: none;

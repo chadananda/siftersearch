@@ -50,6 +50,10 @@
   /* Highlighter pen (SourceHunt quote marks): light yellow ink; lower alpha in dark mode keeps light text readable */
   --highlight-pen: light-dark(rgba(253, 230, 90, 0.62), rgba(250, 214, 64, 0.30));
 
+  /* Quoted words (Anís replies, Chad 11-04): a warm sepia so a source's words read apart from Anís's own. Mirrored for
+     email in api/lib/quote-style.js QUOTE_INK. Light ~8:1 on white, dark ~10:1 on slate-900. */
+  --quote: light-dark(#6b4a2b, #dcc4a0);
+
   /* Media player (/media/<slug>): the word now playing (very light yellow) and a selected ?t=a-b range (subtle blue wash) */
   --highlight-playing: light-dark(rgba(254, 240, 138, 0.55), rgba(253, 224, 71, 0.22));
   --highlight-range: light-dark(rgba(14, 165, 233, 0.08), rgba(56, 189, 248, 0.10));
@@ -256,6 +260,7 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
   --color-info: var(--info);
+  --color-quote: var(--quote);
 
   /* Highlights (media player) */
   --color-highlight-playing: var(--highlight-playing);
@@ -421,6 +426,13 @@ mark {
   border-radius: 0.2em;
   font-weight: 500;
 }
+
+/* Quoted words in rendered replies (api/lib/quote-style.js adds the classes): italic + quotation ink inline; a quotation
+   block in the same ink, upright; Arabic/Persian/Hebrew upright, right-to-left */
+em.quote { color: var(--quote); font-style: italic; }
+em.quote[dir="rtl"] { font-style: normal; unicode-bidi: isolate; }
+em.quote a, blockquote.quote a { color: inherit; }
+blockquote.quote { color: var(--quote); font-style: normal; }
 
 /* SourceHunt - the quote inside the published passage */
 .sourcehunt-quote mark {

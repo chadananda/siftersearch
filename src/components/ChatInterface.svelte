@@ -3,6 +3,7 @@
   import { flip } from 'svelte/animate';
   import { fade, slide } from 'svelte/transition';
   import { marked } from 'marked';
+  import { styleQuotes } from '../../api/lib/quote-style.js';
   import { search, session, documents, chat, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
   import ReligionIcon from './ReligionIcon.svelte';
   import { toCurlyQuotes } from '../lib/text-utils.js';
@@ -1499,7 +1500,7 @@
     if (!text) return '';
     let result = toCurlyQuotes(text);
     result = result.replace(/_([stkdzcSCDTZG]h)/g, '$1');
-    result = marked.parse(result);
+    result = styleQuotes(marked.parse(result));   // quoted words styled apart from Anís's own (Chad 11-04)
     result = result.replace(/<a href="/g, '<a target="_blank" rel="noopener noreferrer" class="text-link" href="');
     return result;
   }
@@ -3833,6 +3834,17 @@
     background-color: color-mix(in srgb, var(--accent-primary) 8%, transparent);
     border-radius: 2px;
   }
+  /* quoted words (quote-style.js): italic quotation ink inline; a block for a long quotation; RTL upright */
+  .message-prose :global(em.quote), .research-bubble .prose :global(em.quote) { color: var(--quote); font-style: italic; }
+  .message-prose :global(em.quote[dir="rtl"]), .research-bubble .prose :global(em.quote[dir="rtl"]) { font-style: normal; }
+  .message-prose :global(blockquote.quote), .research-bubble .prose :global(blockquote.quote) {
+    color: var(--quote); font-style: normal; opacity: 1;
+    margin: 0.6em 0 0.9em; padding: 0.15em 0 0.15em 0.9em;
+    border-left: 2px solid color-mix(in srgb, var(--quote) 45%, transparent);
+  }
+  .message-prose :global(blockquote.quote a), .research-bubble .prose :global(blockquote.quote a),
+  .message-prose :global(em.quote a), .research-bubble .prose :global(em.quote a) { color: inherit; }
+  .message-prose :global(blockquote.quote p) { margin: 0 0 0.3em; }
 
   /* AI Analysis */
   .analysis-container {

@@ -16,7 +16,7 @@ import { modelFor } from '../model-roles.js';
 import { calculateCost } from '../model-registry.js';
 import { preferOwnWork, literalOwnSearch, linkHits } from './own-source.js';
 import { toPassage } from './tools.js';
-import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink } from './quotes.js';
+import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, markQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink } from './quotes.js';
 import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
 import { toFindings, dataProfile, describeProfile } from './findings.js';
@@ -928,7 +928,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     // the middle of a book reply is what the sources say about it, linked — or nothing (11-01 live: "Dawnbreakers" got "I didn't
     // find a passage… could you tell me more?" between the link and the offer)
     const about = work && /\]\(https?:\/\/[^)]+\)/.test(titled.text.replace(/\[\*[^\]]*\*\]\([^)]*\)/g, '')) ? titled.text.trim() : '';
-    const reply = work ? [workLead(work), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text;
+    // quoted words look different from Anís's own (Chad 11-04): held quotations italic, long ones a block, originals marked —
+    // last, so linkTitles never reads an italic quotation as a book title
+    const reply = markQuotes(work ? [workLead(work), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text, conversational ? [] : retrieved).text;
     return { reply, guarded, introduced, speakers, quoteLinked, firstTokenMs, fmt, writer, writeMs, usage };
   };
   const runs = variantList(variants);
