@@ -6,7 +6,7 @@ import { comparison, understanding, runStrategy, interleave, COMPARISON_HOW } fr
 import { decisionLog, jevProbabilities } from '../../api/lib/assistant/decision-log.js';
 import { prayerShelf, splitPrayers, isAttribution } from '../../api/lib/assistant/prayer-shelf.js';
 import { currentGuidance, dateOf, newestFirst } from '../../api/lib/assistant/guidance.js';
-import { scriptureReference, parseScriptureRef, verseRows, roman } from '../../api/lib/assistant/scripture-ref.js';
+import { scriptureReference, parseScriptureRef, verseRows, roman, REFERENCE_HOW } from '../../api/lib/assistant/scripture-ref.js';
 import { anisRespond } from '../../api/lib/assistant/respond.js';
 import { PICKTHALL, layoutTotal, quranIndex, quranRange } from '../../api/lib/assistant/numbering.js';
 
@@ -212,6 +212,15 @@ describe('scripture reference', () => {
     const plain = Array.from({ length: 20 }, (_, i) => ({ id: i, text: `l${i}` }));
     const v = verseRows(plain, 10); expect(v.exact).toBe(false); expect(v.rows.length).toBe(3);
     expect(verseRows(plain, null)).toMatchObject({ exact: true, whole: true });
+  });
+  it('an unmarked range covers every verse asked for (W3 11-03: Isaiah 11:6-9 lost 6-7); a whole short chapter is served whole (Psalm 23)', () => {
+    const plain = Array.from({ length: 16 }, (_, i) => ({ id: i + 1, text: `v${i + 1}` }));   // one row per verse, no markers
+    const r = verseRows(plain, 6, 9); expect(r.exact).toBe(false);
+    expect(r.rows.map((x) => x.id)).toEqual([5, 6, 7, 8, 9, 10]);   // 6..9 plus one line either side (approximate place)
+    expect(verseRows(plain, null).rows).toHaveLength(16);
+    expect(verseRows(Array.from({ length: 200 }, (_, i) => ({ id: i })), null).rows).toHaveLength(60);
+    expect(REFERENCE_HOW({ label: 'Psalms 23', whole: true }, true)).toMatch(/whole chapter/i);
+    expect(REFERENCE_HOW({ label: 'Psalms 23', whole: true }, true)).not.toMatch(/opening and the link/);
   });
   it('Bible: KJV book → chapter section → verse rows, linked, logged', async () => {
     const decisions = decisionLog();

@@ -53,20 +53,22 @@ export function parseScriptureRef(text) {
 export const verseSpan = (row) => { const m = /\(verses?\s+(\d+)(?:\s*[–-]\s*(\d+))?\)/i.exec(String(row?.context || '')); return m ? [+m[1], +(m[2] || m[1])] : null; };
 
 /** Rows of a chapter → the rows holding the verse(s): exact where marked, else approximate by position (labelled). Pure. */
+const WHOLE_MAX = 60;   // rows of a whole chapter given to the writer
 export function verseRows(rows, verse, verseEnd = null) {
   if (!rows.length) return { rows: [], exact: false };
-  if (verse == null) return { rows: rows.slice(0, 3), exact: true, whole: true };
+  if (verse == null) return { rows: rows.slice(0, WHOLE_MAX), exact: true, whole: true };   // a whole chapter is served whole (Psalm 23; W3 11-03)
   const to = verseEnd ?? verse;
   const marked = rows.filter((r) => { const s = verseSpan(r); return s && s[1] >= verse && s[0] <= to; });
   if (marked.length) return { rows: marked, exact: true };
   if (rows.some(verseSpan)) return { rows: [], exact: true };   // the edition marks verses and has no such verse
   const last = verseSpan(rows[rows.length - 1]);
   const total = last ? last[1] : rows.length;
-  const i = Math.min(rows.length - 1, Math.max(0, Math.round(((verse - 1) / Math.max(total, 1)) * rows.length)));
-  return { rows: rows.slice(Math.max(0, i - 1), i + 2), exact: false };
+  const at = (v) => Math.min(rows.length - 1, Math.max(0, Math.round(((v - 1) / Math.max(total, 1)) * rows.length)));
+  // every verse asked for plus one line either side (W3 11-03: Isaiah 11:6-9 got only the place of verse 6 ± 1)
+  return { rows: rows.slice(Math.max(0, at(verse) - 1), at(to) + 2), exact: false };
 }
 
-export const REFERENCE_HOW = (ref, exact) => `The reader gave the reference ${ref.label}. Quote the passage VERBATIM from the passages (name the translation: the King James Bible, Pickthall's or Yusuf Ali's Qur’án, the Gita's translator), with its link; one line of context at most. ${exact ? '' : 'This edition does not number the verses: say the chapter is given and the lines quoted are the APPROXIMATE place of the verse asked for.'}${ref.whole ? ' The whole chapter was asked for: give its opening and the link to read on.' : ''}`.trim();
+export const REFERENCE_HOW = (ref, exact) => `The reader gave the reference ${ref.label}. Quote the passage VERBATIM from the passages (name the translation: the King James Bible, Pickthall's or Yusuf Ali's Qur’án, the Gita's translator), with its link; one line of context at most. ${exact ? '' : 'This edition does not number the verses: say the chapter is given and the lines quoted are the APPROXIMATE place of the verse asked for.'}${ref.whole ? ' The whole chapter was asked for: quote the whole chapter, every line of the passages in order (a very long chapter: as much as the passages hold, then the link to read on).' : ''}`.trim();
 
 const hit = (r, doc, theme) => ({ id: r.id, text: r.text, title: doc.title || doc.book, author: doc.author, document_id: doc.id ?? doc.doc_id, paragraph_index: r.paragraph_index,
   religion: doc.religion ?? null, collection: doc.collection ?? null, language: doc.language ?? null, source_url: r.url || null, theme });
