@@ -32,6 +32,30 @@ export function descends(pid, root, ppid = (p) => Number(readFileSync(`/proc/${p
 }
 
 /** Current GPU utilisation % (logged with each claim), or null when it can't be read. */
+// Host temperatures (°C): CPU package (k10temp Tctl / coretemp) and the hottest NVIDIA GPU; null when unreadable
+export function hostTemps(device) {
+  let cpuC = null, gpuC = null;
+  try {
+    for (const h of readdirSync('/sys/class/hwmon')) {
+      if (!['k10temp', 'coretemp'].includes(readFileSync(`/sys/class/hwmon/${h}/name`, 'utf8').trim())) continue;
+      cpuC = Number(readFileSync(`/sys/class/hwmon/${h}/temp1_input`, 'utf8')) / 1000; break;
+    }
+  } catch {}
+  if (device === 'cuda') {
+    const r = spawnSync('nvidia-smi', ['--query-gpu=temperature.gpu', '--format=csv,noheader,nounits'], { encoding: 'utf8', timeout: 5000 });
+    const v = Math.max(...String(r.stdout).split('\n').filter(Boolean).map(Number));
+    if (r.status === 0 && Number.isFinite(v)) gpuC = v;
+  }
+  return { cpuC, gpuC };
+}
+// No new claims while a part is at its ceiling; once held, stay held until it is `cool` degrees under (no flapping at the line).
+// 11-03 aorus: GPU 83 °C in thermal slowdown + CPU 91 °C under CPU+GPU work → Xid 79, the card fell off the bus.
+export function thermalHold({ cpuC, gpuC }, { maxCpuC = Infinity, maxGpuC = Infinity, held = false, cool = 4 } = {}) {
+  const lim = (max) => (held ? max - cool : max);
+  if (cpuC != null && cpuC >= lim(maxCpuC)) return `cpu ${Math.round(cpuC)}°C (max ${maxCpuC})`;
+  if (gpuC != null && gpuC >= lim(maxGpuC)) return `gpu ${Math.round(gpuC)}°C (max ${maxGpuC})`;
+  return null;
+}
 export function gpuUtil(device) {
   try {
     if (device === 'rocm') {

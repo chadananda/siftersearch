@@ -65,7 +65,7 @@ it('the agent asks wantAnother before every claim', () => {
   const agent = readFileSync('scripts/media/worker/queue-agent.mjs', 'utf8');
   // every claim is gated: wantAnother (the GPU deck), the spare-cores gate (--spill types: deck full, CPU < 60 %) or, for CPU types in
   // docker containers, the measured admission (cpu-pace.mjs fitCpu) — and a claim then names only the types its gate admitted
-  expect(agent).toMatch(/const want = !stopping && \(!ADAPT \|\| NEEDS_GPU\) && wantAnother\(\{/);
+  expect(agent).toMatch(/const want = !stopping && !hot && !gpuLostAt && \(!ADAPT \|\| NEEDS_GPU\) && wantAnother\(\{/);   // + thermal hold, lost GPU
   expect(agent).toMatch(/if \(want \|\| spare \|\| cpuReady\) \{\n(\s*.*\n){0,2}\s*const job = await q\.claim\(claimArgs\(!!spare, types\)\)/);
   expect(agent).toMatch(/const cpuReady = fit\.length > 0;/);
   expect(agent).toMatch(/toGpu\.set\(job\.id/);
