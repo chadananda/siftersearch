@@ -19,7 +19,8 @@ describe('Haiku thinking is OFF by default', () => {
     expect(thinkingParam(HAIKU, true)).toBeUndefined();                       // the caller asked: Haiku's own thinking
     expect(thinkingParam(HAIKU, { type: 'adaptive' })).toEqual({ type: 'adaptive' });
     expect(thinkingParam(SONNET)).toBeUndefined();
-    expect(thinkingParam(SONNET, false)).toEqual({ type: 'disabled' });
+    // Sonnet 5.5 rejects {type:'disabled'} (400, 11-03): its "off" is between_tools — no thinking before the reply
+    expect(thinkingParam(SONNET, false)).toEqual({ type: 'between_tools' });
   });
   it('OpenAI-compatible requests (role-client, craft, reading) carry the top-level thinking field', () => {
     expect(shapeParams({ messages: [], max_tokens: 10 }, { provider: 'anthropic', model: HAIKU }).thinking).toEqual({ type: 'disabled' });

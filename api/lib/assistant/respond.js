@@ -369,7 +369,8 @@ async function huntSource(d, question) {
   // the answer (a Bahá'í book quoting the Dhammapada is not where the Buddha said it) → the ordinary search answers
   // ("Jesus said …", "which gospel" — the founder or scripture named as the speaker counts: search-plan speakerTradition)
   const religion = speakerTradition(question) || null;
-  const r = await hunt(quotationIn(question), undefined, religion ? { religion } : undefined).catch(() => null);
+  // the source must be core literature, never secondary commentary (Chad 11-03)
+  const r = await hunt(quotationIn(question), undefined, { coreOnly: true, ...(religion ? { religion } : {}) }).catch(() => null);
   // a search layer failed twice (Qdrant under load): the source may be missing from the pool, and the hunt's template would
   // name the next best as THE source (11-01: Gleanings and the Epistle dropped out, the Mánikchí tablet was named) → the
   // ordinary search answers instead
@@ -502,6 +503,8 @@ async function defaultDeps() {
   };
 }
 
+// A live chat's one-round research has no brief: the writer works from the passages themselves (researcher.js ONE_ROUND).
+const QUICK_RESEARCH_HOW = 'Write the reply from the passages found for this question. Answer what the person is reaching for: a quick question gets a direct answer first; a study question gets an organised answer — a short bold lead for each part, the passages that carry it quoted in their exact words (linked as the house style says), the distinctions that matter and specifics (names, dates, references). Doctrine rests on the Writings and Shoghi Effendi first; a scholar or an institution is commentary, named as such. A passage from the web is named as from the web, never as scripture. Never volunteer what could not be found; give what is known. End with the thread to pull, as an invitation — no summary, no remarks about sources.';
 const QUOTE_MISS_HOW = 'The person asked to find a quotation and this search found no passage containing those words — say that (never that the library lacks them). Say so plainly in one or two sentences, quoting their wording back. Do NOT offer related passages, people, events or other topics, and do not guess a source. Suggest checking the exact wording or giving the author, work or a few more words.';
 // In a thread, a miss may be wording the conversation already sourced (r5): point back to that source instead of absence.
 const QUOTE_MISS_THREAD = ' If the conversation above already quoted these words from a linked source, say they come from that source (with its link) rather than calling them absent; if they were your own paraphrase, say so plainly.';
@@ -510,7 +513,17 @@ const QUOTE_MISS_THREAD = ' If the conversation above already quoted these words
 /** The agent answers this turn: the caller's engine choice, else the channel is listed in ANIS_AGENT. Pure. */
 export function agentOn(direction = {}, env = process.env.ANIS_AGENT) {
   if (direction.engine) return direction.engine === 'agent';
+  // a LIVE chat gets the agent only when ANIS_AGENT names it — never through the ANIS_RESEARCH fallback (11-03: the Sonnet
+  // loop answered only at its end, 23-26 s median to first text on site chat)
+  if (env === undefined && direction.channel?.live) return false;
   return researchEnabled(direction.channel, env);
+}
+
+/** The researcher's shape on a LIVE channel (channels.js `live`): ONE planning round whose calls run in parallel, no brief;
+ *  Jev's depth = research only widens that round (deeper work is the deep_report job). Not live → null (the full loop). Pure. */
+export function liveResearch({ channel, depth } = {}) {
+  if (!channel?.live) return null;
+  return { maxRounds: 1, maxCalls: depth === 'research' ? 8 : 5, brief: false };
 }
 
 async function agentRespond({ messages, onEvent, d, t0 }) {
@@ -608,8 +621,12 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // library's tools instead of regexes choosing one lookup. On for a channel listed in ANIS_RESEARCH ("email", "all") or
   // when the caller asks (direction.research); any failure falls back to the routed pipeline below.
   // injected deps without a researcher (a test harness) keep it off; tests opt in with deps.research
-  const researchOn = !fast && !conversational && !work && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
-  const R = researchOn ? await (d.research || runResearch)({ messages,
+  // On a LIVE chat Jev's strategy comes first (it shapes the answer; the researcher once overrode every W3 strategy) and the
+  // researcher is one parallel round (liveResearch).
+  const live = liveResearch(direction);
+  const researchOn = !fast && !conversational && !work && !(live && strategyOf(direction.strategy))
+    && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
+  const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}),
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;
   const researched = R?.passages?.length || R?.brief ? R : null;
@@ -773,7 +790,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const choose = fast ? (a) => codeFormat({ ...a, shape: fast.kind === 'book' ? 'lookup' : 'quote' }) : (d.chooseFormat || chooseFormat);
   const formatP = work ? Promise.resolve({ id: 'work', by: 'title-index', how: WORK_HOW(work) })
     : quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW + (messages.length > 1 ? QUOTE_MISS_THREAD : '') })
-    : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: RESEARCH_HOW(researched.brief) })
+    : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: researched.brief ? RESEARCH_HOW(researched.brief) : QUICK_RESEARCH_HOW })
     : sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
     // ORIGINAL_HOW only with an original in hand: without one the model said the passage was "not found" while the English
     // passage that answers sat in the evidence (px-smoke return-iqan T3); then the ordinary format + NO_ORIGINAL_HOW
@@ -807,7 +824,11 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const allowed = [...retrieved, ...[...(res?.entities || []).flatMap((p) => p.evidence || []), ...paEvidence].map((e) => ({ citation_url: e.url })),
     ...(sourced?.extraUrls || huntExtra?.extraUrls || []).map((u) => ({ citation_url: u })), ...(study?.researchUrl ? [{ citation_url: study.researchUrl }] : [])];
   const exactUrls = sourced ? [...retrieved.map((q) => q.citation_url), ...sourced.extraUrls].filter(Boolean) : null;
-  const defaultWriter = llm || (fast ? modelFor('anis-light-writer') : researched ? modelFor('anis-writer') : parseLlm(process.env.ANIS_LLM));
+  // a LIVE chat's researched or strategy answer: the Sonnet writer with thinking OFF (11-03: adaptive thinking put its first token
+  // 5.7-11.4 s after the call); email keeps the thinking writer
+  const defaultWriter = llm || (fast ? modelFor('anis-light-writer')
+    : live && (researched || strat) ? { ...modelFor('anis-writer'), thinking: false }
+    : researched ? modelFor('anis-writer') : parseLlm(process.env.ANIS_LLM));
   // THE WRITING STEP — once, or once per VARIANT (internal A/B via /api/v1/anis/draft): everything above (plan, evidence,
   // format choice, companion) is shared; only the template (format 'none') or the writer model differs. Only the first streams.
   const write = async (v, primary) => {

@@ -188,7 +188,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const jobP = deepOn ? timed('deep-report', () => d.reports.start(resolved?.query || text)).catch(() => null) : null;
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { stance: triageSummary?.stance ?? null,
-      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, query: resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), strategy: strat, decisions, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
+      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), strategy: strat, decisions, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     let reply = r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).

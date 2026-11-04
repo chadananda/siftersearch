@@ -181,7 +181,7 @@ describe('source hunt: a tradition the seeker names', () => {
       plan: async () => ({ shape: 'quote' }), phrases: async () => null,
       sourceHunt: async (q, _d, opts) => { calls.opts = opts; return { origin: { religion: "Baha'i", title: 'Abdu’l-Bahá in London', text: 'x' }, citedBy: [] }; } };
     const r = await anisRespond({ messages: [{ role: 'user', content: 'where does the Buddha say that hatred is never ended by more hatred' }], deps: d, direction: { kind: 'source_lookup' } });
-    expect(calls.opts).toEqual({ religion: 'Buddhist' });
+    expect(calls.opts).toEqual({ coreOnly: true, religion: 'Buddhist' });
     expect(calls.search).toBe(1);
     expect(r.plan?.shape).not.toBe('source');
   });
@@ -191,7 +191,7 @@ describe('source hunt: a tradition the seeker names', () => {
       plan: async () => ({ shape: 'quote' }), phrases: async () => null,
       sourceHunt: async (q, _d, opts) => { calls.opts = opts; return { origin: { religion: "Baha'i", title: "Love's Odyssey", text: 'x' }, citedBy: [] }; } };
     const r = await anisRespond({ messages: [{ role: 'user', content: 'Could you please help me find where Jesus said God helps those who help themselves?' }], deps: d, direction: { kind: 'source_lookup' } });
-    expect(calls.opts).toEqual({ religion: 'Christian' });
+    expect(calls.opts).toEqual({ coreOnly: true, religion: 'Christian' });
     expect(calls.search).toBe(1);
     expect(r.plan?.shape).not.toBe('source');
   });

@@ -119,15 +119,19 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
  * → { passages, brief, steps, ms } or null. passages carry the search shape respond.js expects (text, title, author,
  * source_url, document_id, paragraph_index, religion, collection, language, id, ref).
  */
-export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10 }) {
+// A LIVE chat (respond.js liveResearch): one round, no brief — the model asks for everything at once and the writer works
+// from the passages (11-03: the 6-round loop + brief put first text at 23-26 s median).
+const ONE_ROUND = 'THIS TURN HAS ONE ROUND: a reader is waiting. Ask now, in this one reply, for EVERY tool call the answer needs (they run in parallel; you will not see their results and write no brief) — search the main question and each of its sides or aspects separately, and add a lookup or trace only where the question calls for one.';
+export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true }) {
   const t0 = Date.now();
   const { found, run } = toolRunner(impl);
   const convo = messages.slice(-7).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: clipText(m.content, 3000) }));
-  const msgs = [{ role: 'system', content: RESEARCH_SYSTEM }, ...convo];
+  const msgs = [{ role: 'system', content: wantBrief ? RESEARCH_SYSTEM : `${RESEARCH_SYSTEM}\n\n${ONE_ROUND}` }, ...convo];
   const steps = [];
   let calls = 0, final = '';
   for (let round = 0; round < maxRounds; round++) {
-    const last = round === maxRounds - 1 || calls >= maxCalls;
+    // without a brief every round may call tools (the last one too); with one, the last round writes it
+    const last = wantBrief && (round === maxRounds - 1 || calls >= maxCalls);
     // one retry for a timed-out or dropped round; the failure says which round and how long (10-19: bare "Request timed out")
     const ask = () => create({ messages: msgs, ...(last ? {} : { tools: TOOLS, tool_choice: 'auto' }), max_tokens: 4000 });
     let r;
@@ -139,15 +143,25 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     const tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
     if (!tcs.length) { final = String(m.content || ''); break; }
     msgs.push({ role: 'assistant', content: m.content || '', tool_calls: tcs });
-    for (const tc of tcs) {
-      calls++;
+    // a round's calls run IN PARALLEL (11-03: one by one, three searches and a trace cost 6-15 s). P# refs are numbered as
+    // the tools return; the steps and tool messages keep the model's order.
+    calls += tcs.length;
+    const outs = await Promise.all(tcs.map(async (tc) => {
       let args = {};
       try { args = JSON.parse(tc.function?.arguments || '{}'); } catch { /* bad args → empty */ }
       const fn = run[canonical(tc.function?.name)];
       const out = fn ? await fn(args).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`) : 'unknown tool';
+      return { tc, args, out };
+    }));
+    for (const { tc, args, out } of outs) {
       steps.push({ tool: tc.function?.name, args, found: (String(out).match(/^\[[PW]\d+\]/gm) || []).length });
       msgs.push({ role: 'tool', tool_call_id: tc.id, content: clipText(out, 12000) });
     }
+    if (!wantBrief && (round === maxRounds - 1 || calls >= maxCalls)) break;
+  }
+  if (!wantBrief) {
+    log.info({ steps: steps.map((s) => `${s.tool}:${s.found}`), found: found.size, ms: Date.now() - t0 }, 'researched (one round)');
+    return found.size ? { passages: [...found.values()], brief: null, steps, ms: Date.now() - t0 } : null;
   }
   const { brief, keep } = parseBrief(final);
   // the reply's evidence: what the researcher kept, else everything it found (in order)

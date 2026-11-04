@@ -250,6 +250,7 @@ export const MODEL_REGISTRY = {
     contextWindow: 1000000, maxOutput: 128000,
     capabilities: ['reasoning', 'coding', 'analysis', 'vision', 'extraction'], quality: 'quality', speed: 'medium',
     recommended: ['complex_extraction', 'adjudication'], released: '2026-09-28',
+    thinkingOff: { type: 'between_tools' },   // the API rejects {type:'disabled'} (400, 11-03); this = no thinking before the reply
   },
   'claude-opus-5-5': {
     provider: 'anthropic',
@@ -640,7 +641,7 @@ export function getModelPricing(modelId) {
 /** The Anthropic `thinking` request for a call: false → disabled; an object → as given; true → the model's own default
  *  (Haiku 5.5 thinks); unset → the registry's thinkingDefault (Haiku: false → disabled, Chad 11-03). → param | undefined. */
 export function thinkingParam(modelId, requested) {
-  if (requested === false) return { type: 'disabled' };
+  if (requested === false) return MODEL_REGISTRY[modelId]?.thinkingOff ?? { type: 'disabled' };
   if (requested && typeof requested === 'object') return requested;
   if (requested === true) return undefined;
   return MODEL_REGISTRY[modelId]?.thinkingDefault === false ? { type: 'disabled' } : undefined;
