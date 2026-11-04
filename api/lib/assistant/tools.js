@@ -4,6 +4,7 @@
 
 import { CANON } from './work-canon.js';
 import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
+import { currentAIContext, withAIContext } from '../ai-context.js';
 
 // ── shared schemas ──────────────────────────────────────────────────────────────────────────────────────────────────────
 export const FILTERS = { $id: 'AnisToolFilters', type: 'object', additionalProperties: false, description: 'Hard filters, the same for every passage search.',
@@ -80,10 +81,13 @@ const MOD = { layers: '../search/qdrant-layers.js', paragraphs: '../paragraphs-r
   plinks: '../passage-links.js', people: '../people-search.js', works: './work-request.js', web: '../perplexity.js', ctai: './ctai-term.js',
   docs: '../docs-repo.js', search: '../search.js', hunt: '../source-hunt.js', position: './position.js', rights: '../repos/rights-repo.js', srcl: '../source-links.js' };
 const dep = async (ctx, name, mod) => ctx?.deps?.[name] || (await import(MOD[mod]))[name];
+// a raw Qdrant layer, its calls traced as layer:<name> while a tool runs it (search-trace.js traceLayer); a test's injected one is not wrapped
+const layerDep = async (ctx, fnName) => (ctx?.deps?.[fnName] ? ctx.deps[fnName]
+  : (await import('../search-trace.js')).tracedLayer(fnName, await dep(ctx, fnName, 'layers')));
 
 // one Qdrant layer: filters (a year range → doc ids) → the layer → paragraphs in rank order → links → Passages
 async function layerSearch(fnName, { query, limit = 8, filters } = {}, ctx = {}) {
-  const fn = await dep(ctx, fnName, 'layers');
+  const fn = await layerDep(ctx, fnName);
   const f = await (await dep(ctx, 'resolveQdrantFilters', 'layers'))(engineFilters(filters));
   const hits = (await fn(String(query), { limit, filters: f, ...(ctx.timeoutMs ? { timeoutMs: ctx.timeoutMs } : {}) }))?.hits || [];
   if (!hits.length) return { passages: [] };
@@ -361,13 +365,14 @@ export const list = () => ENTRIES.filter((e) => !e.internal).map(({ name, label:
 export async function run(name, input = {}, ctx = {}) {
   const e = resolve(name);
   if (!e) throw Object.assign(new Error(`unknown tool: ${name}`), { code: 'unknown_tool' });
-  return e.run(input, ctx);
+  // every search the tool makes is traced with its name (search_trace.tool) — ambient, AsyncLocalStorage (ai-context.js)
+  return withAIContext({ trace: { ...(currentAIContext().trace || {}), tool: e.name } }, () => e.run(input, ctx));
 }
 /** A Qdrant search tool's raw layer function (what sourceHunt takes as deps.phrases / deps.keyword). */
 export async function layerFn(name, ctx = {}) {
   const e = resolve(name);
   if (!e?.layer) throw new Error(`${name} is not a layer search`);
-  return dep(ctx, e.layer, 'layers');
+  return layerDep(ctx, e.layer);
 }
 
 /** OpenAI-style tool definitions for `names` (canonical), generated from the input schemas minus llmOmit. A tool on a known

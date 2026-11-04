@@ -900,6 +900,9 @@ async function runPeriodicTasks() {
   if (now - lastTelemetryPruneTime >= 24 * 3600 * 1000 && !isPowerHold()) {
     lastTelemetryPruneTime = now;
     pruneTelemetryStore().then((n) => n && logger.info({ deleted: n }, 'telemetry store pruned')).catch((err) => logger.warn({ err: err.message }, 'telemetry prune failed'));
+    // search_trace ranked lists (~1 KB a row): kept 14 days for non-Anís searches, for good on Anís turns (search-trace-repo)
+    import('../lib/repos/search-trace-repo.js').then(({ pruneTraceHits }) => pruneTraceHits({ keepDays: Number(process.env.SIFTER_TRACE_HITS_KEEP_DAYS || 14) }))
+      .then((n) => n && logger.info({ cleared: n }, 'search_trace ranked lists pruned')).catch((err) => logger.warn({ err: err.message }, 'search_trace hits prune failed'));
   }
 }
 

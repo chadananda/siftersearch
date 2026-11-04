@@ -1,48 +1,90 @@
 // Search trace — one durable row per search, detailed enough to reconstruct WHY it returned what it did.
 //
 // Chad: "search quality is vitally important … we can only [iterate] if we have very good metrics and paths
-// of search strategy and timings."
-//
-// WHAT WAS MISSING. `search_log` recorded query, result_count, duration_ms, search_type, filters — nothing
-// about strategy. And SOURCE_STATS in search.js, which DOES track whether HyPE or the main index led, lived
-// only in process memory: lost on every restart, never queryable. On 2026-09-24 that cost most of a day —
-// a search returned the wrong tradition and there was no way to tell whether the HyPE layer had contributed,
-// so the wrong suspect was chased. `_layers` was computed and then stripped by the response schema.
+// of search strategy and timings." (09-24) — and (11-04) "There is no reason you should have to write code to
+// check search history": so a row also keeps its RANKED LIST (top 20, compact) and WHO asked (the Anís thread,
+// turn, route, tool), and replay re-runs it on today's code (search/trace-replay.js).
 //
 // A trace answers, for ONE search: which layers ran, which layer FOUND the top hit, what the filters were and
-// where they came from, where the milliseconds went, whether it came from cache, and at which engine version.
-// That turns a quality argument into an attribution.
+// where they came from, where the milliseconds went, whether it came from cache, at which engine version, what
+// it returned in which order (hits_json), and which Anís turn/tool asked for it.
 //
-// TRACING MUST NEVER BREAK A SEARCH. buildTrace tolerates partial input and recordTrace is fire-and-forget.
+// TRACING MUST NEVER BREAK OR SLOW A SEARCH. buildTrace tolerates partial input and is pure; recordTrace is
+// fire-and-forget through the single writer; the context rides AsyncLocalStorage (ai-context.js) — no extra query.
 //
-// Deps: db (write via query(), single-writer routed), logger. Read API: routes/admin.js search-trace endpoints.
+// Deps: repos/search-trace-repo (write + reads), ai-context (the ambient trace context), assistant/source-tier.
 import { randomUUID } from 'crypto';
 import { createHash } from 'crypto';
+import { currentAIContext, withAIContext } from './ai-context.js';
+import { sourceTier } from './assistant/source-tier.js';
 
 const num = (v) => (Number.isFinite(v) ? v : 0);
 const j = (v) => { try { return v == null ? null : JSON.stringify(v); } catch { return null; } };
+const parse = (v) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
+
+export const HITS_KEPT = 20;
+// sourceTier → one letter in the stored list (W writings, G Guardian, R reported, H House, S secondary, null other)
+const TIER_CODE = { writings: 'W', guardian: 'G', reported: 'R', house: 'H', secondary: 'S' };
+export const TIER_NAME = Object.fromEntries(Object.entries(TIER_CODE).map(([k, v]) => [v, k]));
 
 /**
  * Which layer found the top hit? This is the number that tells you whether HyPE earns its weight.
  * A layer "led" when it ranked the top hit better than the others did (absent = did not find it at all).
+ * Every layer the engine reports counts (the Qdrant layers too — before 11-04 only main/hype/entity were read, so a
+ * Qdrant-path search always traced top1_layer 'none').
  */
 export function topLayer(hit) {
   const r = hit?._layerRanks || {};
-  const cands = [['main', r.main], ['hype', r.hype], ['entity', r.entity]]
-    .filter(([, v]) => typeof v === 'number');
+  const cands = Object.entries(r).filter(([, v]) => typeof v === 'number');
   if (!cands.length) return 'none';
   return cands.sort((a, b) => a[1] - b[1])[0][0];
 }
+const isHypeLayer = (l) => l === 'hype' || l === 'qhype';
 
-/** Shape one trace row. Pure; never throws. */
+/** One hit → [para_id, doc_id, score, layer, tier] — ~60 bytes; titles hydrate on read from docs. */
+export function compactHit(h = {}) {
+  const score = h._rrfScore ?? h.score ?? h._score ?? null;
+  let tier = null;
+  try { tier = TIER_CODE[sourceTier(h)] ?? null; } catch { /* a tier is decoration, never a failure */ }
+  return [h.paragraph_id ?? h.id ?? null, h.doc_id ?? h.document_id ?? null,
+    typeof score === 'number' ? Math.round(score * 1e5) / 1e5 : null, h._layerRanks ? topLayer(h) : (h._layer ?? null), tier];
+}
+
+/** Stored list → readable rows (titles from a Map(doc_id → {title, author}) when given). */
+export function expandHits(json, titles = new Map()) {
+  const arr = Array.isArray(json) ? json : parse(json) || [];
+  return arr.map(([para_id, doc_id, score, layer, tier], i) => {
+    const d = titles.get(Number(doc_id));
+    // a layer hit carries no author, so its tier is read from the document (same rule, sourceTier)
+    let t = TIER_NAME[tier] ?? null;
+    if (!t && d) { try { t = sourceTier({ author: d.author, title: d.title, collection: d.collection, religion: d.religion }); } catch { t = null; } }
+    return { rank: i + 1, doc_id, para_id, title: d?.title ?? null, author: d?.author ?? null, tier: t, layer, score };
+  });
+}
+
+// engine options that can be replayed (JSON-safe; functions, trace plumbing and per-request objects dropped)
+const REPLAY_DROP = new Set(['traceEndpoint', 'noTrace', 'filtersSource', 'signal', 'messages']);
+export function replayOptions(options = {}) {
+  const out = {};
+  for (const [k, v] of Object.entries(options || {})) {
+    if (REPLAY_DROP.has(k) || typeof v === 'function' || v === undefined) continue;
+    out[k] = v;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/** Shape one trace row. Pure; never throws. ctx = the ambient trace context ({thread, turn, route, tool, step, parent}). */
 export function buildTrace({
   traceId, endpoint, query, searchVersion, cacheStatus, filters, filtersSource,
-  layers, timings, hits, relaxed, userId, apiKeyId,
+  layers, timings, hits, relaxed, userId, apiKeyId, options, ctx = {},
 } = {}) {
   const top = (hits || [])[0] || null;
   const layer = top ? topLayer(top) : 'none';
+  const id = traceId || randomUUID();
+  let hitsJson = null;
+  try { hitsJson = hits?.length ? JSON.stringify(hits.slice(0, HITS_KEPT).map(compactHit)) : null; } catch { hitsJson = null; }
   return {
-    trace_id: traceId || randomUUID(),
+    trace_id: id,
     endpoint: endpoint || 'unknown',
     query: query == null ? null : String(query).slice(0, 500),
     query_hash: query ? createHash('sha256').update(String(query).toLowerCase().trim()).digest('hex').slice(0, 16) : null,
@@ -54,7 +96,7 @@ export function buildTrace({
     filters_source: filtersSource || (filters && Object.keys(filters).length ? 'caller' : 'none'),
     layers_json: j(layers || null),
     top1_layer: layer,
-    hype_led: layer === 'hype' ? 1 : 0,
+    hype_led: isHypeLayer(layer) ? 1 : 0,
     timings_json: j(timings || null),
     total_ms: num(timings?.total),
     result_count: (hits || []).length,
@@ -65,19 +107,22 @@ export function buildTrace({
     widened: relaxed?.length ? 1 : 0,
     user_id: userId ?? null,
     api_key_id: apiKeyId ?? null,
+    hits_json: hitsJson,
+    options_json: j(replayOptions(options)),
+    thread_id: ctx.thread ?? null,
+    turn_id: ctx.turn ?? null,
+    route: ctx.route ? String(ctx.route).slice(0, 80) : null,
+    tool: ctx.tool ?? null,
+    step: ctx.step ?? null,
+    parent_trace: ctx.parent && ctx.parent !== id ? ctx.parent : null,
   };
 }
 
 /** Fire-and-forget write. A tracing failure is logged and swallowed — never surfaced to the caller. */
 export async function recordTrace(row) {
   try {
-    const { query: dbQuery } = await import('./db.js');
-    const cols = Object.keys(row);
-    await dbQuery(
-      `INSERT INTO search_trace (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
-      cols.map((c) => row[c]),
-      'search-trace:insert',
-    );
+    const { insertTrace } = await import('./repos/search-trace-repo.js');
+    await insertTrace(row);
   } catch (err) {
     const { logger } = await import('./logger.js');
     logger.warn({ err: err.message }, 'search-trace write failed (search unaffected)');
@@ -85,11 +130,68 @@ export async function recordTrace(row) {
   return row.trace_id;
 }
 
-/** The live search path's one call: shape a trace from a finished multiIndexSearch and record it (fire-and-forget; `record` injectable). */
-export function traceSearch({ options = {}, query, filters, layers, timings, hits }, record = recordTrace) {
+/** The ambient trace context (who is searching): set by the Anís turn, tools and planned search. */
+export const traceContext = () => currentAIContext().trace || {};
+
+/** Run `fn` with `patch` merged into the trace context (thread/turn/route/tool/step/parent). */
+export const withSearchContext = (patch, fn) => withAIContext({ trace: { ...traceContext(), ...patch } }, fn);
+
+/** The live search path's one call: shape a trace from a finished search and record it (fire-and-forget; `record` injectable). */
+export function traceSearch({ options = {}, query, filters, layers, timings, hits, traceId, ctx }, record = recordTrace) {
   const requested = ['keywordLayer', 'phraseLayer', 'qdrantKeyword', 'qdrantHype', 'hype', 'conceptLayer'].filter((k) => options[k]);
-  return record(buildTrace({ endpoint: options.traceEndpoint || 'multi-index', query, searchVersion: process.env.SEARCH_VERSION || null, filters,
-    filtersSource: options.filtersSource, layers: { ...layers, requested }, timings, hits }));
+  return record(buildTrace({ traceId, endpoint: options.traceEndpoint || 'multi-index', query, searchVersion: process.env.SEARCH_VERSION || null, filters,
+    filtersSource: options.filtersSource, layers: { ...layers, requested }, timings, hits, options, ctx: ctx ?? traceContext() }));
+}
+
+/**
+ * A raw layer call made by an Anís tool (literal/phrase/hype search, the quotation trace's lookups) — traced as
+ * `layer:<name>` ONLY inside a tool context, so the library's own internal layer calls add no rows. Returns `res`.
+ */
+export function traceLayer(name, query, args, res, ms) {
+  try {
+    const ctx = traceContext();
+    if (!ctx.tool || process.env.NODE_ENV === 'test') return res;
+    const hits = Array.isArray(res) ? res : res?.hits || [];
+    traceSearch({ options: { traceEndpoint: `layer:${name}`, ...(args && typeof args === 'object' ? args : {}) }, query, filters: args?.filters,
+      layers: { [name]: hits.length }, timings: { total: ms ?? 0 }, hits: hits.map((h) => ({ ...h, _layer: h._layer ?? name })), ctx }).catch?.(() => {});
+  } catch { /* never */ }
+  return res;
+}
+
+/** Wrap an async layer function so each call by a tool is traced (see traceLayer). */
+export const tracedLayer = (name, fn) => async (query, args = {}, ...rest) => {
+  const t = Date.now();
+  const res = await fn(query, args, ...rest);
+  return traceLayer(name, query, args, res, Date.now() - t);
+};
+
+/** A stored row → readable (JSON columns parsed; hits expanded with titles when a Map is given). */
+export function expandTrace(r, titles) {
+  if (!r) return r;
+  const { hits_json, options_json, filters_json, layers_json, timings_json, relaxed_json, ...rest } = r;
+  return { ...rest, filters: parse(filters_json), layers: parse(layers_json), timings: parse(timings_json), relaxed: parse(relaxed_json),
+    options: parse(options_json), hits: hits_json ? expandHits(hits_json, titles) : null };
+}
+
+/** Every doc id in some rows' ranked lists (to hydrate titles in one read). */
+export const hitDocIds = (rows = []) => rows.flatMap((r) => (parse(r?.hits_json) || []).map((h) => h[1])).filter((d) => d != null);
+
+/**
+ * Old ranked list vs new: per passage its old rank, new rank and the move (+ = climbed), plus what dropped out and what
+ * came in. Keyed by paragraph (doc when a hit has none). Pure.
+ */
+export function rankDiff(oldHits = [], newHits = []) {
+  const key = (h) => (h.para_id != null ? `p${h.para_id}` : `d${h.doc_id}`);
+  const oldAt = new Map(oldHits.map((h, i) => [key(h), i + 1]));
+  const newAt = new Map(newHits.map((h, i) => [key(h), i + 1]));
+  const rows = newHits.map((h, i) => {
+    const was = oldAt.get(key(h)) ?? null;
+    return { ...h, rank: i + 1, old_rank: was, move: was == null ? 'new' : was - (i + 1) };
+  });
+  const dropped = oldHits.filter((h) => !newAt.has(key(h))).map((h) => ({ ...h, old_rank: oldAt.get(key(h)) }));
+  const same = oldHits.length === newHits.length && rows.every((r) => r.move === 0);
+  return { same, top1_changed: key(oldHits[0] || {}) !== key(newHits[0] || {}), kept: rows.filter((r) => r.move !== 'new').length,
+    entered: rows.filter((r) => r.move === 'new').length, dropped_count: dropped.length, rows, dropped };
 }
 
 const pct = (arr, p) => (arr.length ? arr[Math.min(arr.length - 1, Math.floor(arr.length * p))] : 0);

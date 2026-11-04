@@ -7,6 +7,7 @@
 // passages become the reply's evidence, so the quote gate and link rules still hold. Deps injectable (tests).
 import { logger } from '../logger.js';
 import { withDeadlines } from './deadline.js';
+import { currentAIContext, withAIContext } from '../ai-context.js';
 import { run as runTool, llmTools, canonical, toPassage, translationLabel, letterVariants } from './tools.js';
 import { authorMatch, fold, mainKey } from '../dewey/title-index.js';
 import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
@@ -369,7 +370,8 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
       let args = {};
       try { args = JSON.parse(tc.function?.arguments || '{}'); } catch { /* bad args → empty */ }
       const fn = run[canonical(tc.function?.name)];
-      const out = fn ? await fn(args).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`) : 'unknown tool';
+      const step = { trace: { ...(currentAIContext().trace || {}), step: canonical(tc.function?.name) || tc.function?.name } };   // search_trace.step
+      const out = fn ? await withAIContext(step, () => fn(args)).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`) : 'unknown tool';
       return { tc, args, out };
     }));
     for (const { tc, args, out } of outs) {

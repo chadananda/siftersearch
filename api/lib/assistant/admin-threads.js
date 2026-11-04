@@ -7,6 +7,8 @@ import fs from 'fs';
 import { emailHash } from './pause-link.js';
 import { turnType } from './turn-meta.js';
 import { conversationTotals } from './progress.js';
+import { sourceTier } from './source-tier.js';
+import { expandTrace, hitDocIds } from '../search-trace.js';
 
 const safeJson = (s) => { try { return JSON.parse(s); } catch { return null; } };
 
@@ -106,12 +108,60 @@ export async function threadsOverview({ listThreads, audits = auditsFor, people 
 }
 
 /** One thread: every round (question → reply) with the route taken and its audit. */
-export async function threadDetail({ thread, messages, audits = auditsFor, people = mailPeople }, sessionId) {
+// ── search introspection (Chad 11-04: "no reason you should have to write code to check search history") ──────────────────
+/** A turn's traced searches (search_trace rows) → [{ trace_id, endpoint, tool, step, query, filters, ms, results, hits (top n, titled) }]. */
+export function searchesView(rows = [], titles = new Map(), n = 10) {
+  return rows.map((r) => {
+    const x = expandTrace(r, titles);
+    return { trace_id: x.trace_id, at: x.created_at ?? null, endpoint: x.endpoint, tool: x.tool ?? null, step: x.step ?? null, route: x.route ?? null,
+      parent: x.parent_trace ?? null, query: x.query, filters: x.filters, ms: x.total_ms, results: x.result_count, top1_layer: x.top1_layer,
+      hits: (x.hits || []).slice(0, n) };
+  });
+}
+/** The passages the writer had (path.evidence) with their standing, and which of them the reply cites (its link is in the text). */
+export function writerView(evidence = [], replyText = '') {
+  const text = String(replyText || '');
+  const writer_passages = (evidence || []).map((e, i) => {
+    let tier = null;
+    try { tier = sourceTier({ author: e.author, title: e.title, religion: e.religion }); } catch { tier = null; }
+    return { n: i + 1, title: e.title ?? null, author: e.author ?? null, url: e.url ?? null, tier, cited: !!(e.url && text.includes(e.url)) };
+  });
+  return { writer_passages, cited: writer_passages.filter((p) => p.cited).map(({ n, title, author, url, tier }) => ({ n, title, author, url, tier })) };
+}
+const byTurn = (rows = []) => rows.reduce((m, r) => { if (r.turn_id) (m.get(r.turn_id) || m.set(r.turn_id, []).get(r.turn_id)).push(r); return m; }, new Map());
+/** "<thread>:<round>" → { thread, round } (thread ids may hold ':'; the round is after the last one). */
+export const parseTurnId = (id) => { const s = String(id || ''); const i = s.lastIndexOf(':'); const round = Number(s.slice(i + 1));
+  return i > 0 && Number.isInteger(round) ? { thread: s.slice(0, i), round } : null; };
+
+/**
+ * ONE turn, fully: the question, the route, every search it made (top 20 each, titled), the writer's passages and what the
+ * reply cites. deps: { thread, messages, traces(turnId), titles(ids) }.
+ */
+export async function turnTrace({ thread, messages, traces, titles }, turnId) {
+  const k = parseTurnId(turnId);
+  if (!k) return null;
+  const t = await thread(k.thread);
+  if (!t) return null;
+  const rows = (await messages(k.thread)).filter((r) => Number(r.round_index) === k.round);
+  const q = rows.find((r) => r.role === 'user'), a = rows.find((r) => r.role === 'assistant');
+  const tr = await traces(String(turnId));
+  const names = await titles(hitDocIds(tr)).catch(() => new Map());
+  const p = safeJson(a?.path_json) || {};
+  return { turn: String(turnId), thread: k.thread, round: k.round, question: q?.content ?? null, reply: a?.content ?? null, status: a?.status ?? null,
+    route: { gate: p.gate || null, kind: p.kind || null, strategy: p.recipe || p.plan?.shape || null, plan: p.plan || null },
+    searches: searchesView(tr, names, 20), ...writerView(p.evidence, a?.content) };
+}
+
+export async function threadDetail({ thread, messages, audits = auditsFor, people = mailPeople, traces = null, titles = null }, sessionId) {
   const t = await thread(sessionId);
   if (!t) return null;
   const rows = await messages(sessionId);
   const replies = rows.filter((r) => r.role === 'assistant');
   const [byId, who] = [audits(replies.map((r) => r.id)), await people()];
+  // the thread's searches (one indexed read), grouped by turn; titles for their ranked lists in one more
+  const traced = traces ? await traces(sessionId).catch(() => []) : [];
+  const turns = byTurn(traced);
+  const names = traced.length && titles ? await titles(hitDocIds(traced)).catch(() => new Map()) : new Map();
   const rounds = new Map();
   for (const r of rows) {
     const k = r.round_index;
@@ -127,6 +177,8 @@ export async function threadDetail({ thread, messages, audits = auditsFor, peopl
           ...(p.plan ? { plan: p.plan } : {}),   // every route, not only Jev-planned ones (r5: source/term/language turns showed no history_turns)
           ...(p.timeline?.length ? { timeline: p.timeline, llm: p.llm || [], search_detail: p.search_detail || null } : {}),   // how the strategy was chosen: jev | jev:cached | backstop + reason
           ...(p.evidence?.length ? { evidence: p.evidence } : {}) },   // the passages the writer had (title, author, url, text ≤1200): answer-stage defects are traced against them (r9)
+        // per round: the searches it made (top 10 each), the writer's passages with their standing, and what the reply cites
+        ...(traces ? { searches: searchesView(turns.get(`${sessionId}:${k}`) || [], names, 10), ...writerView(p.evidence, r.content) } : {}),
         audit: auditView(byId.get(Number(r.id))),
         // type · models · usd · latency (turn-meta.js; turns before 10-22 carry no meter → type and latency only)
         meta: p.meta || { type: turnType({ status: r.status, gate: p.gate, kind: p.kind, recipe: p.recipe, format: p.format?.id ?? p.format }), models: [], usd: null,

@@ -59,7 +59,6 @@
   "api/lib/rag/concepts/source-survey.js",
   "api/lib/rag/entities/link.js",
   "api/lib/search-cache.js",
-  "api/lib/search-trace.js",
   "api/lib/search.js",
   "api/lib/search/concepts.js",
   "api/lib/sonnet-enrichment.js",

@@ -2109,6 +2109,22 @@ export const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_doc_pipeline_run ON doc_pipeline(updated_at) WHERE run_json IS NOT NULL');
     logger.info('Migration 196 complete: idx_doc_pipeline_run');
   },
+
+  197: async () => {
+    // SEARCH INTROSPECTION (Chad 11-04: "There is no reason you should have to write code to check search history"). Each trace
+    // keeps its ranked list (hits_json: top 20 as compact [para, doc, score, layer, tier] — titles hydrate on read), the engine
+    // options it ran with (options_json: what a replay re-runs), and WHO asked: the Anís thread + turn, the tool, the researcher
+    // step, the route, and the planned search it ran under (parent_trace). ADD COLUMN is O(1); the indexes are partial, so they
+    // hold only Anís/tool rows (a small share of ~11k traces a day). hits_json of non-Anís rows is pruned after 14 days (worker).
+    for (const col of ['hits_json TEXT', 'options_json TEXT', 'thread_id TEXT', 'turn_id TEXT', 'tool TEXT', 'step TEXT', 'route TEXT', 'parent_trace TEXT']) {
+      try { await query(`ALTER TABLE search_trace ADD COLUMN ${col}`); } catch (e) { if (!/duplicate column/i.test(e.message)) throw e; }
+    }
+    await query('CREATE INDEX IF NOT EXISTS idx_strace_thread ON search_trace(thread_id, created_at) WHERE thread_id IS NOT NULL');
+    await query('CREATE INDEX IF NOT EXISTS idx_strace_turn ON search_trace(turn_id) WHERE turn_id IS NOT NULL');
+    await query('CREATE INDEX IF NOT EXISTS idx_strace_tool ON search_trace(tool, created_at) WHERE tool IS NOT NULL');
+    await query('CREATE INDEX IF NOT EXISTS idx_strace_parent ON search_trace(parent_trace) WHERE parent_trace IS NOT NULL');
+    logger.info('Migration 197 complete: search_trace ranked hits + Anís turn context');
+  },
 };
 
 export const graphMigrations = {

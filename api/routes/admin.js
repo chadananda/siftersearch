@@ -52,11 +52,6 @@ import { config } from '../lib/config.js';
 import { readFileSync } from 'fs';
 import { ApiError } from '../lib/errors.js';
 import { requireTier, requireInternal } from '../lib/auth.js';
-// Traces store JSON in columns so the table stays queryable; expand for human/agent reading.
-const expandTrace = (r) => {
-  const parse = (v) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
-  return { ...r, filters: parse(r.filters_json), layers: parse(r.layers_json), timings: parse(r.timings_json), relaxed: parse(r.relaxed_json) };
-};
 
 import { getStats as getSearchStats, getMeili, probeSearchEngine } from '../lib/search.js';
 import { EMB_TOTAL_SQL, EMB_MISSING_SQL } from '../lib/pipeline/snapshot-queries.js';
@@ -3262,69 +3257,11 @@ Collection: ${paragraph.collection || 'Unknown'}
   /**
    * Get PM2 logs for debugging
    */
-  // ── SEARCH FORENSICS (2026-09-24) ─────────────────────────────────────────────────────────────────────
-  // requireInternal, NOT requireTier('admin'): the analytics routes need a browser JWT, so a dev agent could
-  // not read them at all and had to query sqlite directly. These are the numbers search quality is judged by,
-  // so they must be reachable with the internal key.
-  //
-  // GET /search-trace                → many: recent, slowest, zero-result, by question
-  // GET /search-trace/:traceId       → ONE search, fully deconstructed
-  // GET /search-stats?days=7         → the aggregate: p50/p95, zero-result rate, which layer leads, cache rate
-  fastify.get('/search-trace', { preHandler: requireInternal }, async (request) => {
-    const q = request.query || {};
-    const limit = Math.min(parseInt(q.limit, 10) || 50, 500);
-    const where = ['1=1'];
-    const params = [];
-    if (q.days) { where.push("created_at >= unixepoch('now', ?)"); params.push(`-${parseInt(q.days, 10) || 7} days`); }
-    if (q.endpoint) { where.push('endpoint = ?'); params.push(q.endpoint); }
-    if (q.query) { where.push('query LIKE ?'); params.push(`%${q.query}%`); }
-    if (q.zeroOnly === '1' || q.zeroOnly === 'true') where.push('result_count = 0');
-    if (q.slowerThan) { where.push('total_ms >= ?'); params.push(parseInt(q.slowerThan, 10) || 0); }
-    if (q.layer) { where.push('top1_layer = ?'); params.push(q.layer); }
-    const order = q.sort === 'slow' ? 'total_ms DESC' : 'created_at DESC';
-    const rows = await queryAll(
-      `SELECT * FROM search_trace WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT ?`,
-      [...params, limit], 'admin:search-trace-list');
-    const { summarizeTraces } = await import('../lib/search-trace.js');
-    return { count: rows.length, summary: summarizeTraces(rows), traces: rows.map(expandTrace) };
-  });
-
-  fastify.get('/search-trace/:traceId', { preHandler: requireInternal }, async (request, reply) => {
-    const row = await queryOne(`SELECT * FROM search_trace WHERE trace_id = ?`, [request.params.traceId], 'admin:search-trace-one');
-    if (!row) { reply.code(404); return { error: 'trace not found' }; }
-    // Same question asked before/after a change — the comparison that attributes a quality shift.
-    const siblings = await queryAll(
-      `SELECT trace_id, created_at, search_version, total_ms, result_count, top1_layer, top1_title, cache_status
-         FROM search_trace WHERE query_hash = ? AND trace_id != ? ORDER BY created_at DESC LIMIT 20`,
-      [row.query_hash, row.trace_id], 'admin:search-trace-siblings');
-    return { trace: expandTrace(row), same_question: siblings };
-  });
+  // ── SEARCH FORENSICS: /search-trace, /search-trace/:id(/replay), /search-stats → routes/search-trace-admin.js (repo-backed, 11-04)
 
   // GET /search-engine → Meili version, experimental features, and whether each filter KIND really filters.
   // Exists because a rejected CONTAINS filter was swallowed as "zero hits" and nothing reachable could say why.
   fastify.get('/search-engine', { preHandler: requireInternal }, async () => probeSearchEngine());
-
-  fastify.get('/search-stats', { preHandler: requireInternal }, async (request) => {
-    const days = parseInt(request.query?.days, 10) || 7;
-    const rows = await queryAll(
-      `SELECT * FROM search_trace WHERE created_at >= unixepoch('now', ?)`,
-      [`-${days} days`], 'admin:search-stats');
-    const { summarizeTraces } = await import('../lib/search-trace.js');
-    const byEndpoint = {}, byVersion = {};
-    for (const r of rows) {
-      (byEndpoint[r.endpoint || 'unknown'] ||= []).push(r);
-      (byVersion[r.search_version || 'unknown'] ||= []).push(r);
-    }
-    const map = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, summarizeTraces(v)]));
-    return {
-      days, overall: summarizeTraces(rows),
-      by_endpoint: map(byEndpoint),
-      // Per-version, so "did that change help?" is answerable from data rather than memory.
-      by_search_version: map(byVersion),
-      worst_zero_result_questions: rows.filter((r) => !r.result_count)
-        .reduce((acc, r) => { acc[r.query] = (acc[r.query] || 0) + 1; return acc; }, {}),
-    };
-  });
 
   fastify.get('/server/logs', { preHandler: requireInternal }, async (request) => {
     const { lines = 50, process: processName = 'siftersearch-api' } = request.query || {};

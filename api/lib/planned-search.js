@@ -9,6 +9,8 @@ import { foldVerbatim, isVerbatimQuery } from './search/verbatim.js';
 import { hintPlan, applyHints } from './search/hints.js';
 import { withNamed } from './search/named-scope.js';
 import { correctQuery, vocabulary } from './search/spell.js';
+import { randomUUID } from 'crypto';
+import { currentAIContext, withAIContext } from './ai-context.js';
 
 const TTL_MS = 10 * 60 * 1000;
 const TARGET_MS = 1200;
@@ -149,7 +151,15 @@ export const qdrantDefault = (v = process.env.SEARCH_QDRANT || '') => ({ phrase:
 export const qdrantOption = (v) => v === true ? { phrase: true, keyword: true, hype: false, only: false } : v === 'only' ? { phrase: true, keyword: true, hype: true, only: true }
   : v && typeof v === 'object' ? { phrase: !!v.phrase, keyword: !!v.keyword, hype: !!v.hype, only: !!v.only } : v === false ? { phrase: false, keyword: false, hype: false, only: false } : qdrantDefault();
 
-export async function plannedSearch(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab, citer, hints, namedScope } = {}) {
+// The planned row's id is chosen up front and set as `parent` in the trace context, so every engine call the plan makes
+// (traced as planned:<shape>) links to it — replay of a planned row re-runs exactly those calls (search/trace-replay.js).
+export function plannedSearch(query, opts) {
+  const trace = currentAIContext().trace || {};
+  const id = randomUUID();
+  return withAIContext({ trace: { ...trace, parent: id, planned: id } }, () => plannedSearchRun(query, opts));
+}
+
+async function plannedSearchRun(query, { messages, given = {}, defaults = {}, limit = 10, scope_config, entityIds, planner = planSearch, engine, resolver, people, encounters, encounterProbe, paragraphs, voices, minResults = 3, budgetMs = 1000, targeter, qdrant = qdrantDefault(), weights, vocab, citer, hints, namedScope } = {}) {
   const t0 = Date.now();
   const deadline = t0 + budgetMs;   // the whole strategy (Chad: 1s); late stages get what is left, then degrade
   // A reader's misspellings are corrected against the library's own vocabulary BEFORE anything searches (search/spell.js):
@@ -387,8 +397,9 @@ function tracePlanned(query, plan, timings, hits) {
   const flat = Object.fromEntries(Object.entries(timings).filter(([, v]) => typeof v === 'number'));
   // the claims layer's own stages (peopleSearch timings) ride along flat, as claims_<stage> (latency-budget CLAIMS_BUDGETS)
   for (const [k, v] of Object.entries(timings.claims_timings || {})) if (typeof v === 'number') flat[`claims_${k}`] = v;
+  const traceId = currentAIContext().trace?.planned;   // the id the engine calls already name as their parent (plannedSearch)
   import('./search-trace.js').then(({ traceSearch }) => traceSearch({ options: { traceEndpoint: 'planned' }, query, filters: plan?.filters,
-    layers: { shape: plan?.shape || null }, timings: { ...flat, total: timings.total_ms }, hits })).catch(() => {});
+    layers: { shape: plan?.shape || null }, timings: { ...flat, total: timings.total_ms }, hits, traceId })).catch(() => {});
 }
 
 /** A citation → its paragraph in the search-hit shape (SQLite, paragraphs-repo), with { work, pn } attached; else null. */

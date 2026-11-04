@@ -18,7 +18,7 @@ import { chooseStrategy, strategyOf } from './strategy-choice.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
 import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
 import { decisionLog } from './decision-log.js';
-import { withAIContext, currentAIContext } from '../ai-context.js';
+import { withAIContext, currentAIContext, setAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
 import { phraseStage } from './phrases.js';
 import { resolveLookup } from './lookup.js';
@@ -116,6 +116,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     strategyOn ? timed('strategy', () => strategyFn(messages, { profile, onJev }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null) : null]);
   if (ex) onEvent({ type: 'session', conversation_id: ex.conversationId });
   const route = routeTriage(tri);
+  // every search this turn makes is traced with its thread + turn (search_trace.thread_id / turn_id = "<thread>:<round>")
+  if (ex?.conversationId) setAIContext({ trace: { ...(currentAIContext().trace || {}), thread: ex.conversationId, turn: `${ex.conversationId}:${ex.round}`,
+    route: [route.action, route.kind].filter(Boolean).join(':') || null } });
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
   for (const info of jevTimeouts) decisions.record('jev:timeout', timeoutDecision(info));
   // Jev's OUTCOME field — the turn read with the history and the card — decides what a short or odd message is; its words

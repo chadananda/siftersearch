@@ -6,9 +6,14 @@
 //   node scripts/ops/ops.mjs media held | rejudge [id…] | progress | log [--since 6h|ISO --kind k1,k2 --limit n] | gauges [--host h] [--hours n] [--rows] | health-history <machine> [--from --to] | status <id|slug|words> | stage <stage> [--missing] [--status done] [--after N] | add <url|path>… | redo <id> <stage>…
 //   node scripts/ops/ops.mjs spend-caps                      each caller group's spend today vs. its daily cap, and whether it is blocking
 //   node scripts/ops/ops.mjs search-latency [--minutes 60]   per-stage p50/p95 vs the search budget (search/latency-budget.js)
-// Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key).
+//   node scripts/ops/ops.mjs anis-trace <thread|thread:round>  an Anís thread / turn: every search (tool, query, ranked hits), writer passages, citations
+//   node scripts/ops/ops.mjs search-trace [<traceId>] [--query w --tool t --doc id|title --thread id --turn id --endpoint e --days n --limit n --zero --slow ms]
+//   node scripts/ops/ops.mjs search-replay <traceId|thread:round>  re-run on current code (no LLM): old vs new ranks
+//   (the three print tables; --json prints the API's JSON)
+// Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key — the key requireInternal checks).
 import { apiBase } from '../lib/api-base.mjs';
 import dotenv from 'dotenv';
+import { turnText, threadText, traceListText, traceText, replayText } from './trace-format.mjs';
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 const API = apiBase();
@@ -43,6 +48,19 @@ else if (cmd === 'report' && name) {
 else if (cmd === 'cancel' && name) await out(await call('DELETE', `/ops/reports/runs/${Number(name)}`));
 else if (cmd === 'spend-caps') await out(await call('GET', '/ops/spend-caps'));
 else if (cmd === 'search-latency') await out(await call('GET', `/ops/search-latency?minutes=${val('--minutes') || 60}`));
+else if (['anis-trace', 'search-trace', 'search-replay'].includes(cmd)) {   // search introspection (11-04): no code needed to read search history
+  const isTurn = (x) => /:\d+$/.test(String(x || ''));
+  const show = async (res, fmt) => (flag('--json') ? out(res) : new Promise((r) => process.stdout.write(`${fmt(res)}\n`, r)));
+  const e = encodeURIComponent;
+  if (cmd === 'anis-trace' && name) await (isTurn(name) ? show(await call('GET', `/anis/turns/${e(name)}/trace`), turnText) : show(await call('GET', `/anis/threads/${e(name)}`), threadText));
+  else if (cmd === 'search-replay' && name) await show(await call('POST', isTurn(name) ? `/anis/turns/${e(name)}/replay` : `/search-trace/${e(name)}/replay`, {}), replayText);
+  else if (cmd === 'search-trace' && name && !name.startsWith('--')) await show(await call('GET', `/search-trace/${e(name)}`), traceText);
+  else if (cmd === 'search-trace') {
+    const qs = new URLSearchParams(Object.entries({ query: val('--query'), tool: val('--tool'), doc: val('--doc'), thread: val('--thread'), turn: val('--turn'), endpoint: val('--endpoint'),
+      days: val('--days'), limit: val('--limit') || 30, slowerThan: val('--slow'), sort: flag('--slow') ? 'slow' : undefined, zeroOnly: flag('--zero') ? 1 : undefined }).filter(([, v]) => v != null && v !== ''));
+    await show(await call('GET', `/search-trace?${qs}`), traceListText);
+  } else { console.error('usage: ops.mjs anis-trace <thread|thread:round> | search-trace [<traceId>] [--query --tool --doc --thread --turn --endpoint --days --limit --zero --slow ms] | search-replay <traceId|thread:round>  [--json]'); process.exit(2); }
+}
 else if (cmd === 'failures') await out(await call('GET', `/ops/failures?hours=${val('--hours') || 24}`));   // failed ops jobs (what the FAILED mails report)
 else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until none are left
   let r; do { r = await call('POST', '/ops/bio-slugs/backfill', { limit: 25 }); console.error(`minted ${r.minted.length}; ${r.with_slug}/${r.total}`); } while (r.minted.length && r.left > 0);
