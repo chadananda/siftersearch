@@ -14,6 +14,8 @@ export const LINT = [
   { id: 'method-narration', re: /\b(to understand (this|what)[^.]{0,60}\bwe (must|need)|we must (carefully )?distinguish|let us (first )?(distinguish|consider|look))\b/i, why: 'narrates its method instead of answering' },
   { id: 'machinery', re: /\b(retrieved (sources|passages|texts)|the provided (texts|passages|sources|writings)|the passages (provided|given|above)|our library'?s? (cited )?record|in the (sources|passages) (i was|i've been) given)\b/i, why: 'mentions the pipeline instead of the works' },
   { id: 'authority-layers', re: /\b(authority layers?|the provided evidence|ground every claim)\b/i, why: 'pipeline vocabulary in a letter' },
+  // 11-04: "if you like, I can search the tablets for…" — the research is Anís's to run, never the reader's to approve
+  { id: 'search-offer', re: /\b(?:if\s+you(?:['’]d)?\s+like|would\s+you\s+like\s+me\s+to|i\s+(?:can|could)\s+(?:also\s+)?(?:then\s+)?(?=search|look|run|check|trace|find|dig))[^.\n]{0,80}?\b(?:search\w*|look\s+(?:for|into|further|through)|trace|dig|check\s+the\s+(?:original|tablets?|writings))\b/i, why: 'offers a search it could run itself' },
   { id: 'human-claim', re: /\bas\s+a\s+(human|person|believer\s+myself)\b|\bi\s+am\s+(a\s+)?human\b/i, why: 'claims to be human' },
 ];
 

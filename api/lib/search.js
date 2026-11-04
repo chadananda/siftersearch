@@ -787,7 +787,7 @@ export async function hybridSearch(query, options = {}) {
   const filterParts = [];
   if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
   if (filters.collection) filterParts.push(containsClause('collection', filters.collection));
-  if (filters.author) filterParts.push(containsClause('author', filters.author));
+  if (filters.author) { const as = [].concat(filters.author).map((a) => containsClause('author', a)); filterParts.push(as.length === 1 ? as[0] : `(${as.join(' OR ')})`); }
   if (filters.language) filterParts.push(`language = "${filters.language}"`);
   if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
   if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
@@ -1257,6 +1257,9 @@ export function getSearchSourceStats() { return SOURCE_STATS; }
  * Folded substring: diacritics and apostrophe style never decide whether ‘Abdu'l-Bahá is ‘Abdu'l-Bahá.
  */
 export function authorMatches(paragraphAuthor, filterAuthor) {
+  // a LIST of authors (the authoritative-tier pass: the doctrinal writers' keys) matches any one of them (11-04: the Qdrant
+  // layers took a list, but this post-filter folded it into one string and dropped every hit)
+  if (Array.isArray(filterAuthor)) return !filterAuthor.length || filterAuthor.some((a) => authorMatches(paragraphAuthor, a));
   const want = foldAuthor(filterAuthor);
   if (!want) return true;                       // no constraint
   const have = foldAuthor(paragraphAuthor);

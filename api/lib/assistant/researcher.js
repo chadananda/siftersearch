@@ -9,7 +9,9 @@ import { logger } from '../logger.js';
 import { withDeadlines } from './deadline.js';
 import { run as runTool, llmTools, canonical, toPassage, translationLabel, letterVariants } from './tools.js';
 import { authorMatch, fold, mainKey } from '../dewey/title-index.js';
+import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
 import { headOf, PASSAGE_CHARS } from './prompt.js';
+import { byTier, hasAuthoritative, tierLabel } from './source-tier.js';
 export { translationLabel, letterVariants };
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
@@ -33,6 +35,9 @@ export const RESEARCH_SYSTEM = `You are the research mind behind Anís, a study 
 - Earlier replies in the conversation are context, not something to audit: never review or correct them unless the reader questions them (you cannot see how an earlier chart or count was built — 10-19 three "corrections" of Lal's chart were all false). If the reader does question one, say precisely what was wrong, with the passage.
 - An empty tool result means only that this lookup found nothing — never treat it as evidence, and never disown or "correct" an earlier reply unless a passage shows it was wrong.
 - Never conclude "nothing found" while a reasonable search is untried. If the library truly lacks something, say what it does have that helps.
+- A FOLLOW-UP that disputes, narrows or asks for the evidence is a new question: search for what it asks now (11-04: a brief written from the earlier reply alone, with no search, told the reader nothing settled it).
+- WHAT THE TEACHINGS SAY ON A SOCIAL OR LEGAL MATTER (taxation, consultation, work, wealth, punishment, marriage, the arts…): search the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá first, in the words a tablet would use (the matter's own terms and its older names), then Shoghi Effendi; talks and pilgrims' notes after them, as REPORTED SPEECH; commentary last, only as a signpost. Each passage head carries its standing (WRITINGS, SHOGHI EFFENDI, REPORTED SPEECH, UNIVERSAL HOUSE OF JUSTICE, SECONDARY). In the brief, put what the passages DO say first, each point with its standing, then list the sub-questions they leave open as "Open: …".
+- Never propose a search for the reader to approve: if one is worth running, run it now.
 When done, reply with no tool call, in exactly this form:
 BRIEF:
 Reaching for: <one line>
@@ -90,15 +95,29 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
   const show = (refs, n = PASSAGE_CHARS) => {
     const ps = refs.filter(Boolean).map((r) => [r, found.get(r)]);
     if (!ps.length) return '(nothing)';
-    const heads = ps.map(([r, p]) => `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}`);
+    // each head says the passage's standing (source-tier.js: Writings, Shoghi Effendi, reported speech, the House, commentary)
+    const heads = ps.map(([r, p]) => { const tier = tierLabel(p);
+      return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${tier ? ` · ${tier}` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}`; });
     const texts = ps.map(([, p]) => String(p.text || '').replace(/\s+/g, ' ').trim());
     // + "\n", the " …" a cut adds, and the "\n\n" between passages
     const caps = fitLengths(texts.map((t, i) => Math.min(t.length, ps[i][1].translation ? Math.max(n, 4000) : n)), SHOW_CHARS - heads.reduce((a, h) => a + h.length + 5, 0));
     return ps.map((_, i) => `${heads[i]}\n${headOf(texts[i], caps[i])}`).join('\n\n');
   };
   const searched = [];   // each search's query and its passages' documents in rank order (research's book step)
+  // AUTHORITATIVE TIER FIRST (11-04 taxation: the Writings never reached the brief; talks and Esslemont did). A Bahá'í search
+  // whose hits hold no written Writings and nothing of Shoghi Effendi is searched again in those writers' works alone
+  // (impl.writings), and every search's passages are shown in tier order, search rank kept within a tier. Metadata, never words.
+  const bahaiSearch = (tradition, hits) => /bah/i.test(String(tradition || '')) || hits.filter((p) => /bah/i.test(String(p.religion || ''))).length * 2 > hits.length;
   const searchLibrary = async ({ query, tradition }) => {
-    const hits = (await impl.search(query, tradition)).slice(0, 8);
+    let hits = (await impl.search(query, tradition)).slice(0, 8);
+    if (impl.writings && hits.length !== 0 && bahaiSearch(tradition, hits) && !hasAuthoritative(hits)) {
+      const extra = await impl.writings(query).catch(() => []);
+      const seen = new Set(hits.map((p) => p.id).filter((x) => x != null));
+      hits = [...(extra || []).filter((p) => p.id == null || !seen.has(p.id)).slice(0, 4), ...hits];
+    } else if (impl.writings && !hits.length && /bah/i.test(String(tradition || ''))) {
+      hits = (await impl.writings(query).catch(() => [])).slice(0, 4);
+    }
+    hits = byTier(hits).slice(0, 10);
     searched.push({ query, docs: hits.map((p) => p.document_id).filter((x) => x != null) });
     return show(hits.map((p) => add(p)));
   };
@@ -290,7 +309,9 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     // one retry for a timed-out or dropped round; the failure says which round and how long (10-19: bare "Request timed out")
     // a live ONE-ROUND research (no brief) exists only to gather passages: the round must call the library (p7 db-26: Haiku answered
     // from memory with no call, 1 of 37, and the turn fell back to a 1,000-character "fact" reply)
-    const ask = () => create({ messages: msgs, ...(last ? {} : { tools: TOOLS, tool_choice: !wantBrief && maxRounds === 1 ? 'required' : 'auto' }), max_tokens: 4000 });
+    // the FIRST round must search too (11-04 mail-1403: a disputing follow-up on taxation got a brief written from memory with
+    // zero calls, and the letter said the search found nothing settling it); later rounds may stop and write
+    const ask = () => create({ messages: msgs, ...(last ? {} : { tools: TOOLS, tool_choice: round === 0 || (!wantBrief && maxRounds === 1) ? 'required' : 'auto' }), max_tokens: 4000 });
     let r;
     try { r = await ask(); } catch (err) {
       log.warn({ round, calls, ms: Date.now() - t0, err: String(err?.message).slice(0, 160) }, 'research round failed — retrying once');
@@ -373,10 +394,13 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
   const kept = (keep.length ? keep : [...found.keys()]).map((r) => found.get(r)).filter(Boolean);
   log.info({ steps: steps.map((s) => `${s.tool}:${s.found}`), found: found.size, kept: kept.length, ms: Date.now() - t0 }, 'researched');
   if (!brief) return null;
+  // a brief with no evidence behind it is not research: the routed pipeline answers instead (11-04 mail-1403: steps [], the
+  // letter written from an empty evidence set said nothing was found)
+  if (!found.size) { log.warn({ steps: steps.length, ms: Date.now() - t0 }, 'research brief without passages — not used'); return null; }
   return { passages: kept, brief, steps, ms: Date.now() - t0 };
 }
 
-export const RESEARCH_HOW = (brief) => `Write the reply from this research brief — it says what the person is reaching for and what the answer holds. Give the substance generously: every point of the brief. A study question gets a full, organised answer — a short bold lead for each part, several quoted passages, the distinctions that matter, and specifics (names, dates, references); a quick question gets a direct answer first. When the reader asks for a table, a list or a programme, give exactly that; quote the passages that carry it (exact words, linked as the house style says). A point marked [own] is your knowledge of the language or general background — say it plainly as a scholar friend would, without a source. A point from W# is from the web: name it as such, never as scripture. Never comment on, review or correct your earlier replies unless the reader questioned them — and then only precisely, with the passage. Never write the brief's markers (P#, W#, [own]) — they are notes to you. TRANSLATIONS: a passage marked EXISTING TRANSLATION is quoted verbatim, never re-translated; only lines it does not cover are your own (the brief says which). Never volunteer what could not be found or confirmed; give what is known. Well-known background is fine to state (Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán). End with the thread to pull, as an invitation — no summary, no remarks about sources or authority.\n\nBRIEF:\n${brief}`;
+export const RESEARCH_HOW = (brief) => `Write the reply from this research brief — it says what the person is reaching for and what the answer holds. Give the substance generously: every point of the brief. A study question gets a full, organised answer — a short bold lead for each part, several quoted passages, the distinctions that matter, and specifics (names, dates, references); a quick question gets a direct answer first. When the reader asks for a table, a list or a programme, give exactly that; quote the passages that carry it (exact words, linked as the house style says). A point marked [own] is your knowledge of the language or general background — say it plainly as a scholar friend would, without a source. A point from W# is from the web: name it as such, never as scripture. Never comment on, review or correct your earlier replies unless the reader questioned them — and then only precisely, with the passage. Never write the brief's markers (P#, W#, [own]) — they are notes to you. TRANSLATIONS: a passage marked EXISTING TRANSLATION is quoted verbatim, never re-translated; only lines it does not cover are your own (the brief says which). Give what the passages DO say first, quoted and cited at their standing (REPORTED SPEECH is a talk or recollection — "in a talk recorded in…"; SECONDARY is commentary, never the support); then, for each sub-question the brief marks Open, one plain sentence that the texts here do not settle it. Never write that nothing was found while the brief gives passages. Well-known background is fine to state (Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán). End with the thread to pull, as an invitation to read — never an offer to search ("if you like, I can search…"): the research is done — no summary, no remarks about sources or authority.\n\nBRIEF:\n${brief}`;
 
 /** An EXACT quotation: a quoted run of 6+ words, or a bare 9+ word sentence that is not framed as a keyword/paraphrase ask. Pure (Chad 11-02: "religion science two wings bird quote" is inexact). */
 export const isExactQuote = (text) => { const t = String(text || '').trim(), q = [...t.matchAll(/[“"«]([^”"»]+)[”"»]/g)].some((m) => m[1].trim().split(/\s+/).length >= 6);
@@ -400,6 +424,9 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
     probe: async (query) => (await passages('fused_search', { query, limit: 20 })).map(shape),
     // inside one author's works (namedSource): the author's library name as the filter
     searchBy: async (query, author) => (await passages('fused_search', { query, limit: 6, filters: { author } }))
+      .filter((p) => String(p.text || '').length <= 8000).map(shape),
+    // the authoritative written tier alone: the Báb, Bahá'u'lláh, 'Abdu'l-Bahá and Shoghi Effendi as WRITERS (searchLibrary)
+    writings: async (query) => (await passages('fused_search', { query, tradition: "Baha'i", limit: 6, filters: { author: DOCTRINAL_KEYS, writerOnly: true } }))
       .filter((p) => String(p.text || '').length <= 8000).map(shape),
     // a work by its title (document_search) → { doc, others } (toolRunner's and namedSource's shape)
     work: async (title) => { const r = await runTool('document_search', { title }, ctx); return r?.works?.length ? { doc: r.works[0], others: r.works.slice(1) } : null; },
@@ -427,5 +454,5 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
         title: `${p.title}${role === 'original' ? tag('original') : role === 'possible_original' ? tag('possible original') : ''}` }));
     },
     web: async (query) => { const r = await runTool('web_search', { query }, ctx); return r.text ? { text: r.text, citations: r.citations.map((url) => ({ url })) } : null; },
-  }, { search: [], probe: [], searchBy: [], work: null, around: [], original: [], translation: [], wordStudy: null });
+  }, { search: [], probe: [], searchBy: [], writings: [], work: null, around: [], original: [], translation: [], wordStudy: null });
 }

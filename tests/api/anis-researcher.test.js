@@ -28,7 +28,7 @@ describe('researcher', () => {
   it('the last round offers no tools, so it always ends with a brief', async () => {
     let n = 0;
     const create = async (params) => ({ choices: [{ message: params.tools ? { tool_calls: [call(`c${n++}`, 'search_library', { query: 'x' })] } : { content: 'BRIEF:\nReaching for: x\n- y [own]\nKEEP:' } }] });
-    const r = await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [] }, maxRounds: 3 });
+    const r = await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [GLEANINGS] }, maxRounds: 3 });
     expect(r.steps).toHaveLength(2);
     expect(r.brief).toMatch(/Reaching for: x/);
   });

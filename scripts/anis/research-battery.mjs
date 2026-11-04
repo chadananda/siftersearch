@@ -14,6 +14,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
 import { competitorQuery } from '../../api/lib/audit/auditor.js';
+import { teachingsCheck } from '../../api/lib/assistant/teachings-check.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 for (const f of ['.env-secrets', '.env-public', '.env']) dotenv.config({ path: join(ROOT, f), quiet: true });
@@ -60,6 +61,20 @@ const CASES = [
   { id: 18, kind: 'administration: the House is primary', must: /Universal House of Justice|House of Justice/i,
     messages: [{ role: 'user', content: 'Can a Bahá\'í be elected to a Local Spiritual Assembly if they are under 21, and who decides the age?' }] },
   { id: 12, kind: 'original of an unpublished English prayer', must: /AB05355|ترک تاجیک|ترک و تاجیک/, messages: [{ role: 'user', content: LILIANE_PRAYER }] },
+  // WHAT THE TEACHINGS SAY ON A SOCIAL / LEGAL MATTER (11-04: a taxation letter leaned on Esslemont and talks, said nothing
+  // settled it and offered searches it never ran). `teachings`: the reply cites the Writings proper (the job's `cited` tiers),
+  // labels any talk or pilgrim's note it cites as reported speech, and never offers a search (teachingsCheck)
+  { id: 19, kind: 'teachings: consultation', teachings: true, messages: [{ role: 'user', content: 'What do the Bahá\'í teachings say about consultation? Is the decision of the majority binding even when I think it is wrong?' }] },
+  { id: 20, kind: 'teachings: work as worship', teachings: true, messages: [{ role: 'user', content: 'Is it true that work is considered worship in the Bahá\'í Faith? Where does that come from?' }] },
+  { id: 21, kind: 'teachings: wealth and poverty', teachings: true, messages: [{ role: 'user', content: 'What do the Bahá\'í Writings say about extremes of wealth and poverty, and how they should be adjusted?' }] },
+  { id: 22, kind: 'teachings: capital punishment', teachings: true, messages: [{ role: 'user', content: 'Does Bahá\'í law allow the death penalty? What is the textual basis?' }] },
+  { id: 23, kind: 'teachings: monogamy (disputing follow-up)', teachings: true, messages: [
+    { role: 'user', content: 'Do Bahá\'ís practise monogamy?' },
+    { role: 'assistant', content: 'Yes — Bahá\'í marriage is between one man and one woman.' },
+    { role: 'user', content: 'But I read that the Kitáb-i-Aqdas permits two wives. What is the actual evidence that it is monogamous?' }] },
+  { id: 24, kind: 'teachings: the arts', teachings: true, messages: [{ role: 'user', content: 'What is the place of the arts and crafts in the Bahá\'í teachings?' }] },
+  { id: 25, kind: 'teachings: education of girls', teachings: true, messages: [{ role: 'user', content: 'Why do the Bahá\'í teachings give priority to educating daughters over sons?' }] },
+  { id: 26, kind: 'teachings: backbiting', teachings: true, messages: [{ role: 'user', content: 'How seriously do the Bahá\'í Writings treat backbiting, and what do they say it does?' }] },
 ];
 
 const VARIANTS = {
@@ -88,7 +103,7 @@ async function anisOnce(messages, v, t0) {
   for (;;) {
     await new Promise((z) => setTimeout(z, 5000));
     const g = await fetch(`${API}/api/v1/anis/draft/job/${job}`, { headers, signal: AbortSignal.timeout(30000) }).then((x) => x.json()).catch(() => ({ status: 'poll-failed' }));
-    if (g.status === 'done') { const j = g.result || {}; return { text: j.reply || '(empty reply)', format: j.format, research: j.research, ms: Date.now() - t0 }; }
+    if (g.status === 'done') { const j = g.result || {}; return { text: j.reply || '(empty reply)', format: j.format, research: j.research, cited: j.cited || null, ms: Date.now() - t0 }; }
     if (g.status === 'failed' || g.status === 'lost') return { text: `(error: job ${g.status} ${g.error || ''})`, error: g.status, ms: Date.now() - t0 };
     if (Date.now() - t0 > 600000) return { text: '(error: job still running after 10 min)', error: 'timeout', ms: Date.now() - t0 };
   }
@@ -181,8 +196,9 @@ async function runCase(c) {
   const verdict = await judge(c, answers).catch((e) => ({ error: e.message, scores: {} }));
   // a case with `must` also says whether each Anís answer holds what a right answer must (e.g. the tablet's PI number)
   const musts = c.must || c.mustNot ? Object.fromEntries(variants.map((v) => [v, (!c.must || c.must.test(answers[v]?.text || '')) && !(c.mustNot && c.mustNot.test(answers[v]?.text || ''))])) : null;
-  console.log(`#${c.id} ${c.kind.padEnd(34)} ${Object.keys(answers).map((k) => `${k} ${verdict.scores[k]?.score ?? '?'}`).join(' · ')}  best: ${verdict.best}${musts ? `  must: ${JSON.stringify(musts)}` : ''}`);
-  return { ...c, must: c.must ? String(c.must) : undefined, mustNot: c.mustNot ? String(c.mustNot) : undefined, musts, answers, verdict };
+  const teach = c.teachings ? Object.fromEntries(variants.map((v) => [v, teachingsCheck(answers[v])])) : null;
+  console.log(`#${c.id} ${c.kind.padEnd(34)} ${Object.keys(answers).map((k) => `${k} ${verdict.scores[k]?.score ?? '?'}`).join(' · ')}  best: ${verdict.best}${musts ? `  must: ${JSON.stringify(musts)}` : ''}${teach ? `  teachings: ${JSON.stringify(teach)}` : ''}`);
+  return { ...c, must: c.must ? String(c.must) : undefined, mustNot: c.mustNot ? String(c.mustNot) : undefined, musts, teach, answers, verdict };
 }
 const out = [];
 mkdirSync(join(ROOT, 'tmp'), { recursive: true });

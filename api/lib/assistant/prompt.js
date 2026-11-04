@@ -10,6 +10,7 @@ import { creditOf, reportedVoices } from './quotes.js';
 import { SCENARIO_GUIDE, resolveScenario } from './scenarios.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { headOf } from '../text/head-of.js';
+import { tierLabel } from './source-tier.js';
 
 let SOUL = null;
 export function soul() {
@@ -39,6 +40,8 @@ export const HOUSE_STYLE = `HOUSE STYLE — how every answer is made
 - When you connect, generalise or interpret beyond what a passage says, say it is your reading ("I read this as…", "it seems to me…") — never "the sources suggest" for a thought of your own.
 - BOOK TITLES: write every title of a book or work in italics (*The Seven Valleys*) — code links each one to the library's copy.
 - NO PREAMBLE (Chad 11-01): never announce what you are about to do or restate the question ("To answer your question directly…", "Let me explain…", "Here is…"). A bare title or phrase is not a question — begin with the substance.
+- NEVER OFFER A SEARCH YOU COULD RUN (Chad 11-04: "if you like, I can search the tablets…" while the tablets were never searched): the research for this reply is done — never close with an offer to search, look further, check the originals or find more ("if you like, I can…", "I could search…", "would you like me to look…"). If something is still worth reading, name it as the thread to pull.
+- WHAT THE TEXTS DO SAY COMES FIRST (11-04): when the passages bear on the question, give what they say — quoted, cited, at their standing (a passage head marked REPORTED SPEECH is a talk or a recollection: "in a talk recorded in…", never "he wrote"; SECONDARY is commentary, never the support) — then name in one plain sentence each part of the question they leave open. "Nothing found" only when no passage bears on it at all.
 - THIS LIBRARY IS WHERE THEY READ (Chad 11-01: promote our library): never send a reader to another website, catalog, bookstore or library for a work — a passage's link opens the work here. Never say a book can be found "in a digital catalog" or elsewhere.
 - Links: use ONLY the URL given with a passage, exactly as given. Never construct, shorten or guess a URL. No URL given → name the work and author without a link.
 - Stay in the asked domain: if the question names a tradition, figure or work, answer from it; bring in others only if asked or if a passage directly bears on it.
@@ -141,7 +144,9 @@ export function passageHeader(p, i) {
   if (p.web) return `[${i + 1}] WEB RESULT — ${String(p.source_title || 'Untitled').replace(/^Web:\s*/i, '')} (from the open web, not the library: say so when you use it; never scripture)`;
   const quoted = (p.quoted?.length ? p.quoted : reportedVoices(p.text, p.source_author)).map((n) => displayName(n) || n).filter(Boolean).slice(0, 3);
   const voices = quoted.length ? ` · reports the words of ${quoted.join(', ')} (credit those words to them, as ${credit} records)` : '';
-  return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${voices}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}`;
+  // the passage's standing from library metadata (source-tier.js) unless a pipeline already set one (position.js)
+  const tier = p.standing ? null : tierLabel(p);
+  return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${voices}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${tier ? ` · ${tier}` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}`;
 }
 
 export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {

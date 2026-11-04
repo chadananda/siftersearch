@@ -6,6 +6,7 @@ import { query, queryAll } from '../lib/db.js';
 import { verifyPauseToken, emailHash } from '../lib/assistant/pause-link.js';
 import { rememberCorrespondent } from '../lib/assistant/admin-threads.js';
 import { logger } from '../lib/logger.js';
+import { sourceTier } from '../lib/assistant/source-tier.js';
 
 const page = (body) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Anís — letters</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:34rem;margin:3rem auto;padding:0 1rem;color:#1d2521;background:#f6f7f5}
@@ -110,7 +111,9 @@ export default async function anisRoutes(fastify) {
       ...(Array.isArray(variants) && variants.length ? { variants } : {}) });
     return { ...(r.variants ? { variants: r.variants, evidence: r.evidence ?? null } : {}), reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
       recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind }, conversationId: r.conversationId ?? null,
-      research: ['research', 'agent'].includes(r.plan?.shape) ? { steps: r.plan.steps, ms: r.plan.ms ?? r.timings?.total_ms, usage: r.plan.usage ?? null } : null };
+      research: ['research', 'agent'].includes(r.plan?.shape) ? { steps: r.plan.steps, ms: r.plan.ms ?? r.timings?.total_ms, usage: r.plan.usage ?? null } : null,
+      // the passages the reply cites, each with its standing (source-tier.js) — the battery checks the Writings were cited (11-04)
+      cited: (r.retrieved || []).slice(0, 30).map((p) => ({ title: p.source_title || null, author: p.source_author || null, collection: p.collection || null, tier: sourceTier(p) })) };
   }
   let jobs = null;
   const draftJobs = async () => (jobs ||= (await import('../lib/jobs/async-jobs.js')).jobStore());
