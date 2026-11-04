@@ -19,11 +19,17 @@ export const PRAYER_HOW = (occasion) => `The reader asked for a prayer${occasion
 /** An attribution line closes a prayer: "_—Bahá’u’lláh_", "—‘Abdu’l-Bahá", "— The Báb". Pure. */
 export const isAttribution = (text) => /^[\s_*]*[—–-]\s*\S/.test(String(text || '')) && String(text || '').replace(/[_*]/g, '').trim().length < 60;
 
+/** Is this row a heading line (not body text)? `heading` on a content row is the SECTION it sits under (every prayer under
+ *  "For The Departed" carries heading "For The Departed"), so it never marks the row itself: blocktype does, or a markdown
+ *  "#" line, or a row whose whole text is its heading. A bare `heading: true` (older fixtures) still counts. Pure. */
+export const isHeadingRow = (r) => r?.blocktype === 'heading' || r?.heading === true || /^\s*#/.test(String(r?.text || ''))
+  || (typeof r?.heading === 'string' && r.heading.trim() !== '' && String(r.text || '').trim() === r.heading.trim());
+
 /** Section rows → prayers: runs of paragraphs, each ending at an attribution line (a run without one is kept too). Pure. */
 export function splitPrayers(rows = []) {
   const prayers = []; let cur = [];
   for (const r of rows) {
-    if (!String(r.text || '').trim() || r.heading) continue;
+    if (!String(r.text || '').trim() || isHeadingRow(r)) continue;
     cur.push(r);
     if (isAttribution(r.text)) { prayers.push(cur); cur = []; }
   }

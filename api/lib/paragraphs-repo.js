@@ -173,7 +173,7 @@ export async function headingStarts(docId) {
 /** A document's paragraphs in an index range (a section's rows: the prayer shelf, a scripture chapter). Capped; `context` carries
  *  a verse marker where the edition has one ("Chapter 2 (verse 14)"). → rows in order. */
 export async function paragraphsInRange(docId, from, to, { limit = 400 } = {}) {
-  return queryAll(`SELECT id, doc_id, paragraph_index, text, heading, context, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL
+  return queryAll(`SELECT id, doc_id, paragraph_index, text, heading, blocktype, context, block_attrs FROM content WHERE doc_id = ? AND deleted_at IS NULL
     AND paragraph_index BETWEEN ? AND ? ORDER BY paragraph_index LIMIT ?`, [Number(docId), Number(from), Number(to), Math.min(Number(limit) || 400, 2000)], 'paragraphs-repo:in-range');
 }
 

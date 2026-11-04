@@ -8,6 +8,7 @@
 import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
 import { PICKTHALL, layoutTotal, quranRange } from './numbering.js';
+import { isHeadingRow } from './prayer-shelf.js';
 
 export const KJV = 'The Bible (KJV)';
 const BIBLE = {
@@ -73,7 +74,6 @@ export const REFERENCE_HOW = (ref, exact) => `The reader gave the reference ${re
 const hit = (r, doc, theme) => ({ id: r.id, text: r.text, title: doc.title || doc.book, author: doc.author, document_id: doc.id ?? doc.doc_id, paragraph_index: r.paragraph_index,
   religion: doc.religion ?? null, collection: doc.collection ?? null, language: doc.language ?? null, source_url: r.url || null, theme });
 
-const isHeadingRow = (r) => r.heading || /^\s*#/.test(String(r.text || ''));
 /** Qur’án reference → Pickthall's exact verse paragraphs, or null (edition absent, its layout changed, or no such verse). */
 async function quranExact(ref, { listDocs, paragraphsInRange, fields, decisions }) {
   const { docs = [] } = await listDocs({ title: PICKTHALL.title, fields: [...fields, 'paragraph_count'], limit: 10, count: false }).catch(() => ({ docs: [] }));

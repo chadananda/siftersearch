@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { chooseStrategy, strategyOf, STRATEGIES } from '../../api/lib/assistant/strategy-choice.js';
 import { comparison, understanding, runStrategy, interleave, COMPARISON_HOW } from '../../api/lib/assistant/strategies.js';
 import { decisionLog, jevProbabilities } from '../../api/lib/assistant/decision-log.js';
-import { prayerShelf, splitPrayers, isAttribution } from '../../api/lib/assistant/prayer-shelf.js';
+import { prayerShelf, splitPrayers, isAttribution, isHeadingRow } from '../../api/lib/assistant/prayer-shelf.js';
 import { currentGuidance, dateOf, newestFirst } from '../../api/lib/assistant/guidance.js';
 import { scriptureReference, parseScriptureRef, verseRows, roman, REFERENCE_HOW } from '../../api/lib/assistant/scripture-ref.js';
 import { anisRespond } from '../../api/lib/assistant/respond.js';
@@ -125,6 +125,17 @@ describe('prayer shelf', () => {
   it('splits prayers at attribution lines', () => {
     expect(isAttribution('_—Bahá’u’lláh_')).toBe(true); expect(isAttribution('— ‘Abdu’l-Bahá')).toBe(true); expect(isAttribution('O my Lord — hear me, for the night is long and the way is dark and I know not')).toBe(false);
     expect(splitPrayers(prayerRows).map((p) => p.length)).toEqual([3, 2, 2]);
+  });
+  it('production rows carry their SECTION title in `heading` — every prayer row is still body text (pr-departed 11-04: the section split to 0 prayers)', () => {
+    const rows = [{ paragraph_index: 105, text: 'For The Departed', heading: 'For The Departed', blocktype: 'heading' },
+      { paragraph_index: 106, text: '(The Prayer for the Dead is to be used for Bahá’ís over the age of fifteen.)', heading: 'For The Departed', blocktype: 'paragraph' },
+      { paragraph_index: 107, text: 'O my God! This is Thy servant and the son of Thy servant…', heading: 'For The Departed', blocktype: 'paragraph' },
+      { paragraph_index: 116, text: '_—Bahá’u’lláh_', heading: 'For The Departed', blocktype: 'paragraph' },
+      { paragraph_index: 117, text: 'Glory be to Thee, O Lord my God!…', heading: 'For The Departed', blocktype: 'paragraph' },
+      { paragraph_index: 118, text: '_—Bahá’u’lláh_', heading: 'For The Departed', blocktype: 'paragraph' }];
+    expect(splitPrayers(rows).map((p) => p.map((r) => r.paragraph_index))).toEqual([[106, 107, 116], [117, 118]]);
+    expect(isHeadingRow(rows[0])).toBe(true); expect(isHeadingRow(rows[2])).toBe(false);
+    expect(isHeadingRow({ text: 'Morning', heading: 'Morning' })).toBe(true); expect(isHeadingRow({ text: '## Sūra II', heading: 1 })).toBe(true);
   });
   it('Jev picks the occasion from the book\'s own headings; the first prayer in full, two more by opening line, all linked', async () => {
     const decisions = decisionLog();
