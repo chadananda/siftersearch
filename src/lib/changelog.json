@@ -1,6 +1,76 @@
 {
-  "generated": "2026-11-04T03:38:24.900Z",
+  "generated": "2026-11-04T16:11:57.906Z",
   "entries": [
+    {
+      "hash": "a699af57",
+      "date": "2026-11-04",
+      "type": "Other",
+      "description": "11-04 late night state (credit outage, deploys, HyPE backlog)",
+      "scope": null
+    },
+    {
+      "hash": "30fc9a8e",
+      "date": "2026-11-04",
+      "type": "Other",
+      "description": "Qdrant 10 ms — per-collection measurements and ranked proposals (11-04, read-only)",
+      "scope": null
+    },
+    {
+      "hash": "18b4a4f0",
+      "date": "2026-11-04",
+      "type": "Other",
+      "description": "11-04 night search latency + quote citation status, index proposals for Chad",
+      "scope": null
+    },
+    {
+      "hash": "0b53421a",
+      "date": "2026-11-04",
+      "type": "Other",
+      "description": "Hydration off the event loop — synchronous SQLite reads were inflating Qdrant wall time ~10x",
+      "scope": null
+    },
+    {
+      "hash": "23402a7e",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Retire cleanup skips concepts + phrases_hot (left for later; indexers already skip excluded docs)",
+      "scope": null
+    },
+    {
+      "hash": "0fee886b",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "The subject is the question without the names it compares (thread name spans), searched per side and inside the named book",
+      "scope": null
+    },
+    {
+      "hash": "36a3250f",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Each side searched with the question and its subject, kept to its own tradition; Jev names each side's book and it is read first",
+      "scope": null
+    },
+    {
+      "hash": "49d644ea",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Anís site-chat latency breakdown before/after (first text W3 6.4 s, W8 9.4 s p50; quality gate fails: W3 14/27, W8 14/42)",
+      "scope": null
+    },
+    {
+      "hash": "dd5afabd",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "HyPE and concept layers use a plain top-(limit×2) Qdrant query grouped per paragraph here (like phrases), escalating ×4 then /query/groups — measured hype 3.7 vs 7.8 ms, concepts 4.4 vs 7.0 ms server, recall@10 unchanged or better",
+      "scope": null
+    },
+    {
+      "hash": "37a00619",
+      "date": "2026-11-03",
+      "type": "Other",
+      "description": "Talk feedback popup on the player page",
+      "scope": null
+    },
     {
       "hash": "b0582d98",
       "date": "2026-11-03",
@@ -2877,451 +2947,82 @@
       "type": "Fixed",
       "description": "PERSON LINKS — the spoken words decide (QA audit 10-22: 16 of 17 lookup-fallback links were wrong: 'Dr. Ḥakím' → Khayru'lláh, a Covenant-breaker; Leroy Ioas → Laura Barney ×5; the model's 'Muḥammad-‘Alí' = Quddús): a person is linked only when the mention's words are one person's name or alias, or a contiguous part of exactly one person's name; the model's canonical name only chooses among those; the identity-lookup fallback is removed; Covenant-breakers are never linked, and words that also name one are linked to no one; the 18 QA cases are a test",
       "scope": "media"
-    },
-    {
-      "hash": "473e14f6",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The passage gate keeps long prose — a long run counts as a list only when it has almost no sentence ends AND almost no commas (the first audit refused 49 real passages, e.g. Shoghi Effendi's long sentences in The World Order of Bahá’u’lláh)",
-      "scope": "media"
-    },
-    {
-      "hash": "a72df8b1",
-      "date": "2026-10-22",
-      "type": "Docs",
-      "description": "QA audit of the 73 published talks — 319 issues, 20 classes, prioritised fixes",
-      "scope": "media"
-    },
-    {
-      "hash": "572fbfbc",
-      "date": "2026-10-22",
-      "type": "Test",
-      "description": "QA audit fixtures for the 73 published talks (Chad 10-22: scrub them while we are early)",
-      "scope": "media"
-    },
-    {
-      "hash": "09675529",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "The queue by historical tier (Chad 10-22: 'first please focus on the historical materials') — 1 historic recordings (historic/pilgrim/early collections and the first generation: Martha Root, Louis Gregory, Dorothy Baker, …) · 2 Hands of the Cause · 3 members of the Universal House of Justice · 4 other historic speakers from the local collections · 5 modern scholars (the curated webinars) last; oldest first within a tier; rank = tier × 10⁷ + year × 10³ + order, for downloads and processing alike; /api/media/progress by_source = historic · hands · uhj · historic-speakers · scholars; the rank / stage-sync / quote-audit jobs run in the light portraits lane (the downloads lane is always busy)",
-      "scope": "media"
-    },
-    {
-      "hash": "efff025b",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "GET /api/library/landing — the /library landing's live numbers (Chad 10-22)",
-      "scope": "library"
-    },
-    {
-      "hash": "db82ea00",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The PASSAGE GATE for quote and cross-reference links (Chad 10-22: a 'quote' card showed a scraped PDF's table of contents, cited by its file slug) — a linked source must be a sentence-level passage of a properly catalogued work: no heading/contents/index blocks, no front matter, no numbered-entry or title-case runs, sentences required, no file-name titles or authors; the quote linker tries the next source when one fails, the cross-reference candidates are filtered the same way; excerpts lose their markup ('* *'); media-quote-audit checks the existing links and (write) relinks the affected talks",
-      "scope": "media"
-    },
-    {
-      "hash": "8eb277c3",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Pages never wait on tower — stale-while-revalidate edge cache in the Worker (Chad 10-22)",
-      "scope": "edge"
-    },
-    {
-      "hash": "ed330af0",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Every ingested talk queues its search layers at once (Chad 10-22: 'start ingesting for search') — keyword-fill (BM25), section-index (subheaders) and phrase-index (≤ $0.25 a talk) for the document right after ingest/update; coverage of the 73 published talks before: embedded 72, keyword 68, sections 11, phrases 0",
-      "scope": "media"
-    },
-    {
-      "hash": "18d5e049",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "/api/media/progress/live — by_stage for the process strip: { import, enhance, transcribe, correct, publish, subheaders, quotes, links, moments: { count, items: [{ slug, title, speaker, thumb, started_at }] (latest first, ≤ 12) } } + queued (count); each in-progress item also carries stage_started_at",
-      "scope": "media"
-    },
-    {
-      "hash": "c5d9d86c",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "The import in detail (Chad 10-22) — /api/media/progress adds enhanced, remastered, aligned, cross_referenced (+ quote_links, concept_crs) beside downloaded / transcribed / published / failed, from each item's completed stages (migration 173 stages_done, written after every stage; media-stages-sync back-fills from meta.json); GET /api/media/progress/live: the items being worked on now with their named steps (download · grade · enhance · transcribe · align · diarize · cleanup · faithfulness · publish · subheaders · crossref · links · assess · moments: done / running / pending / failed, ms) and the last six published — a handful of rows, memoised and edge-cached 10 s; media-rank registers EVERY target (the talks file's videos minus Shorts, 'about' videos and repeat uploads: the queue had skipped clips under ~4 min) and ranks them within their own section",
-      "scope": "media"
-    },
-    {
-      "hash": "8e3b5efb",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Tune-in — eval set, speaker aliases, transcript search fuses three layers, talk matches first",
-      "scope": "media"
-    },
-    {
-      "hash": "4dbbb4fe",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "PUBLISH EARLY (Chad 10-22: 'talks should be published as they are completed … start ingesting for search') — the core (transcript, name corrections, the copy-edit with its faithfulness check, a short description) is rendered, ingested for search and catalogued at once; subheaders, quotes, links, audience and moments follow and an 'update' stage re-renders, re-ingests (changed paragraphs only) and re-catalogues in place; a published talk stays published while later stages or re-runs work on it; the playback job re-publishes with redo ['update'] (not 'from render', which would now redo the enrichment)",
-      "scope": "media"
-    },
-    {
-      "hash": "0f11dbdb",
-      "date": "2026-10-22",
-      "type": "Chore",
-      "description": "Deploy (import progress on /admin/media)",
-      "scope": null
-    },
-    {
-      "hash": "25c992b0",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "GET /api/media/progress — the import in public (Chad 10-22: 'the total number being imported and their progress'): total targets, downloaded, transcribed, published, failed, by source (curated · hooper-dunbar · hands-uhj · local · other, from the queue rank), items per hour (first publications over 6 h: migration 172 published_at) and an ETA; one indexed group-by, memoised 60 s, edge-cached 60 s; /admin/media shows the same numbers",
-      "scope": "media"
-    },
-    {
-      "hash": "40dd7482",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The Google button matches the site theme and never shows a white box",
-      "scope": "auth"
-    },
-    {
-      "hash": "e5547c63",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The guest sign-in menu stays on screen",
-      "scope": "nav"
-    },
-    {
-      "hash": "f8fb4a5f",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "With four items in flight, tower's model work (grade's DNSMOS/NISQA, enhance's DeepFilterNet) runs one at a time at 4 threads (search p90 had reached 5.3 s); items that failed on a transient error (5 'Request timed out.' in one 20-min window) go back to the queue after 30 min, at most twice",
-      "scope": "media"
-    },
-    {
-      "hash": "179aaddb",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The guest account button presents sign-in, not just a menu row",
-      "scope": "auth"
-    },
-    {
-      "hash": "6bc94b79",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "A flaky tunnel no longer signs people out",
-      "scope": "auth"
-    },
-    {
-      "hash": "4020ff77",
-      "date": "2026-10-22",
-      "type": "Chore",
-      "description": "Deploy (media import progress on /admin/media)",
-      "scope": null
-    },
-    {
-      "hash": "d9aa15cc",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "THROUGHPUT (Chad 10-22: one item at a time ≈ a month) — DOWNLOADS apart from processing: a downloads lane (media-fetch: the next YouTube items by rank into the archive, yt-dlp+PO → Titan → Seemuapps, paced 25–50 s, held on a bot check) fills the archive continuously; PROCESSING runs four items at once (pipeline lane × MEDIA_PARALLEL=4) fed every 30 s by rank, as priority runs ahead of re-runs of published items; boss sized from a measurement (10 min of audio, large-v3-turbo: 1 job × 24 threads 5.3 audio-min per minute, 2 × 12 8.3, 3 × 8 9.4, 4 × 6 14.4) → 6 ASR threads per item + diarization beside it; tower's share stays ≤ 8 threads in total; the QUEUE ORDER (migration 171 queue_rank, media-rank): the curated sheet → Hooper Dunbar → other Hands/UHJ → local Hands/UHJ → local others; /admin/media shows downloaded / in progress / published / failed / held / waiting by source and the last 24 h",
-      "scope": "media"
-    },
-    {
-      "hash": "49a926e9",
-      "date": "2026-10-22",
-      "type": "Test",
-      "description": "The index cache-file check waits (bounded) for the background write instead of a fixed 50 ms",
-      "scope": "media"
-    },
-    {
-      "hash": "3406f9e5",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "/media outage — SSR threw mid-stream on the new extended-portrait shape; payload made safe; HTML cache shortened",
-      "scope": "media"
-    },
-    {
-      "hash": "e365b712",
-      "date": "2026-10-22",
-      "type": "Docs",
-      "description": "Status — diarization on boss, extended portrait masters, Portrait Cinema default",
-      "scope": "media"
-    },
-    {
-      "hash": "5f7368b1",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "Spell vocabulary (1.8M words) warms at boot, off the request path",
-      "scope": "search"
-    },
-    {
-      "hash": "89757c4d",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "First search of a fresh API process no longer pays for the concept lexicon load (6–10 s → normal)",
-      "scope": "search"
-    },
-    {
-      "hash": "e3582d0b",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The catalogue writes the audience level (missing from updateMediaItem's column list, so ?audience= and its facet were empty)",
-      "scope": "media"
-    },
-    {
-      "hash": "798a12e0",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The shorts' URL watermark has a dark outline (it vanished on light backgrounds); SHORT_VERSION 5",
-      "scope": "media"
-    },
-    {
-      "hash": "716c7a7b",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Portraits get their own lane in the media service (minutes of image calls never wait behind transcription)",
-      "scope": "media"
-    },
-    {
-      "hash": "496f6aad",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Slim player appears after a jump past the hero (phones); test: the suite's flaky tests made load-proof",
-      "scope": "media"
-    },
-    {
-      "hash": "7771abbe",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Portrait extensions are recorded with a plain UPDATE (upsertSpeaker's INSERT needs the name: 89 masters were generated and uploaded, then not recorded) and an uploaded-but-unrecorded master is adopted, not regenerated",
-      "scope": "media"
-    },
-    {
-      "hash": "3b3aacfb",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Follow mode never holds the playing line under the nav + slim player; momentum scroll no longer cancels it",
-      "scope": "media"
-    },
-    {
-      "hash": "6944b38b",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Portrait extension reads the image's own size (tools.imageSize) — tools.ffprobe is the audio prober and has no width/height, so every size was NaN; extendPortrait refuses a missing size with a clear error",
-      "scope": "media"
-    },
-    {
-      "hash": "3a1d3f71",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Outpaint canvas offsets are even and padded in RGB — tower's ffmpeg 6.1 refused an odd pad offset on 4:2:0 frames (all 89 portraits failed: 'Error reinitializing filters')",
-      "scope": "media"
-    },
-    {
-      "hash": "11edf9de",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "No stretched pictures + one-time AI-extended portrait masters + Portrait Cinema by default (Chad 10-22) — the Portrait Cinema Ken Burns zoomed a square crop into a 9:16 frame (stretched): every image is now scaled uniformly and cropped (a test guards the renderer); a speaker portrait gets ONE extended 9:16 master (1152×2048): placed uniformly on the canvas, the margins filled by the image-outpaint role (gemini-3.1-flash-image, ~$0.04 and ~12 s each), the original pixels pasted back with a feathered edge — stored beside the original in cdn-assets (media-speakers/<key>-ext.jpg), recorded on media_speakers (ext_file/sha/of/model/prompt/usd/at/error, migration 170), job media-portraits-extend; shorts and the API's speaker portrait (thumb.extended) use it. Shorts default to Portrait Cinema (Scripture Insert when the range quotes the Writings; others on request) with a face-centred slow push-in and light styling: a gentle warm grade, a soft vignette, a fine static grain, a thin amber rule over the call-sign lower third; portraits are requested at the frame's own aspect; SHORT_VERSION 4",
-      "scope": "media"
-    },
-    {
-      "hash": "627e9c95",
-      "date": "2026-10-22",
-      "type": "Test",
-      "description": "Pictures never stretch — every media <img> in a box is object-fit: cover; the image service scales uniformly before cropping; quote cards resize with fit cover",
-      "scope": "media"
-    },
-    {
-      "hash": "802a3c4b",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Diarization runs on BOSS (10-22 watch: pyannote on tower at ~630 % CPU took on-tower search to 6.6–8.6 s) — the audio goes through the gate's diarize verb beside the boss ASR job, the turns come back on stdout (media_tool --emit-turns); tower runs it only when boss is unreachable, detached at ≤ 4 threads and nice 19, and never while on-tower search p90 > 4 s (waits up to 30 min, then defers the item); the grade stage's models capped at 4 threads",
-      "scope": "media"
-    },
-    {
-      "hash": "378599c7",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Nothing typed before the listing hydrates is lost — an inline recorder keeps the tuner's value, focus and caret; ListeningRoom applies them on hydration (tested on a cold load at 6x CPU: 'sears' typed pre-hydration filters, keeps focus and caret)",
-      "scope": "media"
-    },
-    {
-      "hash": "d4ea66b5",
-      "date": "2026-10-22",
-      "type": "Docs",
-      "description": "Status — compressed shorts, sizes, edge timing",
-      "scope": "media"
-    },
-    {
-      "hash": "a0b0eb1d",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Previews played 'undefined' — index rows' new 'au' field is the AUDIENCE level, not audio URLs",
-      "scope": "media"
-    },
-    {
-      "hash": "d410c8fa",
-      "date": "2026-10-22",
-      "type": "Chore",
-      "description": "Deploy (edge caches shorts)",
-      "scope": null
-    },
-    {
-      "hash": "09feb3c7",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "Covering index for the dossier's claim count/sample (migration 169)",
-      "scope": "people"
-    },
-    {
-      "hash": "5afd16d6",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Shorts compress (Chad 10-22: 'we do want to work with compression') — Archive Tape was 203 MB for 30 s: per-frame random grain → grain, sepia and vignette drawn once and looped, only a slow flicker moves; static grounds (no drifting gradient); every template CRF 26 capped at 1.2 Mbit/s, GOP 2 s, 30 fps, AAC 128k mono, faststart. Measured per 60 s: On Air 4.8 MB · Archive Tape 7.6 · Portrait Cinema 6.1 · Scripture Insert 4.2 · Minimal 3.5; captions and faces stay sharp. The edge keeps a short's content-keyed files in R2 (no ?v needed; immutable) and each render warms it, so the first viewer is served from the edge; SHORT_VERSION 3 (new keys)",
-      "scope": "media"
-    },
-    {
-      "hash": "2287476e",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "The listing island hydrates on idle (the hero is its own island), the hero's Caslon italic is preloaded — /media mobile 89–100",
-      "scope": "media"
-    },
-    {
-      "hash": "acb80e7e",
-      "date": "2026-10-22",
-      "type": "Docs",
-      "description": "Status — text fixes, audiogram shorts",
-      "scope": "media"
-    },
-    {
-      "hash": "fa97640f",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "/media hero as its own small island; home page reserves its live content's space (CLS)",
-      "scope": null
-    },
-    {
-      "hash": "7e45d737",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "People dossier 39.6 s cold → bounded; OceanLibrary link lookup indexed",
-      "scope": "people, ocean-links"
-    },
-    {
-      "hash": "52ae4a42",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Copy-edit guard narrows a same-length edit to the words that change — 'all of a sudden He said' → '… he said' (Shoghi Effendi, house style) was refused as too long; it is the one word 'He'",
-      "scope": "media"
-    },
-    {
-      "hash": "7ce168da",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Short result layout — video column and full-width share actions",
-      "scope": "media"
-    },
-    {
-      "hash": "a1df8eaf",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Media-shorts-moments — queue a short for the top moments (default 2) of every Hands of the Cause / House of Justice talk (≤ 60 s; template by content or rotation; rendered ones are reused)",
-      "scope": "media"
-    },
-    {
-      "hash": "cfd35a1b",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Make a short wired to the media pipeline's shorts API (moments): template choice (or best for the moment), elapsed-time progress, the video inline, Share video / Download / post text / .srt",
-      "scope": "media"
-    },
-    {
-      "hash": "13d1cca9",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Shorts' portrait fetch — three tries with backoff, the failure reason recorded (portrait_error)",
-      "scope": "media"
-    },
-    {
-      "hash": "63787c6c",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Moment/clip quote scales down with its length (long clips no longer fill three screens)",
-      "scope": "media"
-    },
-    {
-      "hash": "c885880f",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Shorts — the portrait is fetched twice before falling back (the first short after a restart cached a portrait-less render), whether one was used is recorded; an internal force re-render; a long end-card address breaks onto two lines",
-      "scope": "media"
-    },
-    {
-      "hash": "f3eda818",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Share ANY passage — stateless clip pages, selection sharing, shareable transcript hits, 'Make a short'",
-      "scope": "media"
-    },
-    {
-      "hash": "50643add",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Shorts get their own lane in the media service (seconds each, on boss) — a requested short no longer waits behind the archive's transcription queue",
-      "scope": "media"
-    },
-    {
-      "hash": "3f547028",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Transcript hits from the site's search engine (concepts, not words); talk hero server-rendered",
-      "scope": "media"
-    },
-    {
-      "hash": "10b37406",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "AUDIOGRAM SHORTS (Chad 10-22) — a vertical 1080×1920 (or 1:1) H.264/AAC clip of a moment or any range ≤ 60 s (≤ 180 s on request): captions from our word alignment (clean words, phrase-grouped 2–6 words at pauses/punctuation, the current word highlighted) + .srt/.vtt sidecars; five templates — On Air (tuning dial at the talk's year, amber valve glow, the portrait on a turning record, captions on a cream card) · Archive Tape (sepia portrait, grain and flicker, turning reels, typewriter captions) · Scripture Insert (the speaker's words above, the quoted passage and its citation on a card below) · Portrait Cinema (slow Ken Burns, big kinetic word-by-word captions) · Minimal (a page of the excerpt in a large serif, current word amber, later words dim) — chosen by content (a quotation of the Writings in range → Scripture Insert; recorded ≤ 1975 or grade D/E → Archive Tape) else rotated deterministically per moment; the link back baked in (a small URL watermark throughout, an end card with 'Hear the full talk', speaker and talk, the short URL and a QR code to the full talk at that moment); a ready-to-paste post (title, the quote, speaker, talk, link, hashtags). Rendered on boss's CPU through a new fixed-recipe gate verb (short: tar in, MP4 out; static layers computed once: 19 s clip in 3–8 s); cached per talk version × range × format × template in the item's shorts/; POST /api/media/shorts (public for a talk's moments, any range with the internal key; queue cap) + GET /api/media/shorts/run/:id; served wherever clips may be",
-      "scope": "media"
-    },
-    {
-      "hash": "fac2a020",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "'Heard in the transcripts' identifies the voice and highlights the match; fonts: optional display + self-hosted Observatory faces",
-      "scope": "media"
-    },
-    {
-      "hash": "4ab882bf",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "A model call that times out or drops is retried twice (5 s, 20 s) before it fails the item — item 30 failed at describe on one 'Request timed out.'",
-      "scope": "media"
-    },
-    {
-      "hash": "62f828bc",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Whisper's mojibake and markup in indexed text (Chad 10-22 screenshots) — 'ìWhy … book?î' is in the recogniser's OWN output (transcript.raw.json; CP1252 punctuation read as MacRoman, learned from bad subtitles): repaired where ASR words enter (flattenWords → text-repair.js: quotes at word edges, English contractions on whitelisted stems so Bábís/Anís/Majíd/Idrís keep their í, double-encoded â€™/‚Äú/Ã©/√© forms); audit: 199 raw words in 14 items. transcript.md is plain text (348 inline quote/name/work links in 28 items had reached content.text, keyword search, embeddings and snippets — '[Shoghi Effendi](https://…'); links stay in transcript.json, content_source_links and media_links; snippet text of older ingests is stripped. Copy-edit house style: He/Him/His capitalised only for God, the Manifestations and ‘Abdu’l-Bahá — never Shoghi Effendi — decided from context. media-item fan-out passes priority",
-      "scope": "media"
-    },
-    {
-      "hash": "ae0d7f19",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "Fonts never block the first paint — Libre Caslon self-hosted with metric fallbacks; Amiri non-blocking",
-      "scope": "site"
-    },
-    {
-      "hash": "629e3d74",
-      "date": "2026-10-22",
-      "type": "Chore",
-      "description": "Deploy (moment ?m= redirect)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-11-04": [
+      {
+        "hash": "a699af57",
+        "date": "2026-11-04",
+        "type": "Other",
+        "description": "11-04 late night state (credit outage, deploys, HyPE backlog)",
+        "scope": null
+      },
+      {
+        "hash": "30fc9a8e",
+        "date": "2026-11-04",
+        "type": "Other",
+        "description": "Qdrant 10 ms — per-collection measurements and ranked proposals (11-04, read-only)",
+        "scope": null
+      },
+      {
+        "hash": "18b4a4f0",
+        "date": "2026-11-04",
+        "type": "Other",
+        "description": "11-04 night search latency + quote citation status, index proposals for Chad",
+        "scope": null
+      },
+      {
+        "hash": "0b53421a",
+        "date": "2026-11-04",
+        "type": "Other",
+        "description": "Hydration off the event loop — synchronous SQLite reads were inflating Qdrant wall time ~10x",
+        "scope": null
+      }
+    ],
     "2026-11-03": [
+      {
+        "hash": "23402a7e",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Retire cleanup skips concepts + phrases_hot (left for later; indexers already skip excluded docs)",
+        "scope": null
+      },
+      {
+        "hash": "0fee886b",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "The subject is the question without the names it compares (thread name spans), searched per side and inside the named book",
+        "scope": null
+      },
+      {
+        "hash": "36a3250f",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Each side searched with the question and its subject, kept to its own tradition; Jev names each side's book and it is read first",
+        "scope": null
+      },
+      {
+        "hash": "49d644ea",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Anís site-chat latency breakdown before/after (first text W3 6.4 s, W8 9.4 s p50; quality gate fails: W3 14/27, W8 14/42)",
+        "scope": null
+      },
+      {
+        "hash": "dd5afabd",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "HyPE and concept layers use a plain top-(limit×2) Qdrant query grouped per paragraph here (like phrases), escalating ×4 then /query/groups — measured hype 3.7 vs 7.8 ms, concepts 4.4 vs 7.0 ms server, recall@10 unchanged or better",
+        "scope": null
+      },
+      {
+        "hash": "37a00619",
+        "date": "2026-11-03",
+        "type": "Other",
+        "description": "Talk feedback popup on the player page",
+        "scope": null
+      },
       {
         "hash": "b0582d98",
         "date": "2026-11-03",
@@ -6218,447 +5919,6 @@
         "type": "Fixed",
         "description": "PERSON LINKS — the spoken words decide (QA audit 10-22: 16 of 17 lookup-fallback links were wrong: 'Dr. Ḥakím' → Khayru'lláh, a Covenant-breaker; Leroy Ioas → Laura Barney ×5; the model's 'Muḥammad-‘Alí' = Quddús): a person is linked only when the mention's words are one person's name or alias, or a contiguous part of exactly one person's name; the model's canonical name only chooses among those; the identity-lookup fallback is removed; Covenant-breakers are never linked, and words that also name one are linked to no one; the 18 QA cases are a test",
         "scope": "media"
-      },
-      {
-        "hash": "473e14f6",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The passage gate keeps long prose — a long run counts as a list only when it has almost no sentence ends AND almost no commas (the first audit refused 49 real passages, e.g. Shoghi Effendi's long sentences in The World Order of Bahá’u’lláh)",
-        "scope": "media"
-      },
-      {
-        "hash": "a72df8b1",
-        "date": "2026-10-22",
-        "type": "Docs",
-        "description": "QA audit of the 73 published talks — 319 issues, 20 classes, prioritised fixes",
-        "scope": "media"
-      },
-      {
-        "hash": "572fbfbc",
-        "date": "2026-10-22",
-        "type": "Test",
-        "description": "QA audit fixtures for the 73 published talks (Chad 10-22: scrub them while we are early)",
-        "scope": "media"
-      },
-      {
-        "hash": "09675529",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "The queue by historical tier (Chad 10-22: 'first please focus on the historical materials') — 1 historic recordings (historic/pilgrim/early collections and the first generation: Martha Root, Louis Gregory, Dorothy Baker, …) · 2 Hands of the Cause · 3 members of the Universal House of Justice · 4 other historic speakers from the local collections · 5 modern scholars (the curated webinars) last; oldest first within a tier; rank = tier × 10⁷ + year × 10³ + order, for downloads and processing alike; /api/media/progress by_source = historic · hands · uhj · historic-speakers · scholars; the rank / stage-sync / quote-audit jobs run in the light portraits lane (the downloads lane is always busy)",
-        "scope": "media"
-      },
-      {
-        "hash": "efff025b",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "GET /api/library/landing — the /library landing's live numbers (Chad 10-22)",
-        "scope": "library"
-      },
-      {
-        "hash": "db82ea00",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The PASSAGE GATE for quote and cross-reference links (Chad 10-22: a 'quote' card showed a scraped PDF's table of contents, cited by its file slug) — a linked source must be a sentence-level passage of a properly catalogued work: no heading/contents/index blocks, no front matter, no numbered-entry or title-case runs, sentences required, no file-name titles or authors; the quote linker tries the next source when one fails, the cross-reference candidates are filtered the same way; excerpts lose their markup ('* *'); media-quote-audit checks the existing links and (write) relinks the affected talks",
-        "scope": "media"
-      },
-      {
-        "hash": "8eb277c3",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Pages never wait on tower — stale-while-revalidate edge cache in the Worker (Chad 10-22)",
-        "scope": "edge"
-      },
-      {
-        "hash": "ed330af0",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Every ingested talk queues its search layers at once (Chad 10-22: 'start ingesting for search') — keyword-fill (BM25), section-index (subheaders) and phrase-index (≤ $0.25 a talk) for the document right after ingest/update; coverage of the 73 published talks before: embedded 72, keyword 68, sections 11, phrases 0",
-        "scope": "media"
-      },
-      {
-        "hash": "18d5e049",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "/api/media/progress/live — by_stage for the process strip: { import, enhance, transcribe, correct, publish, subheaders, quotes, links, moments: { count, items: [{ slug, title, speaker, thumb, started_at }] (latest first, ≤ 12) } } + queued (count); each in-progress item also carries stage_started_at",
-        "scope": "media"
-      },
-      {
-        "hash": "c5d9d86c",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "The import in detail (Chad 10-22) — /api/media/progress adds enhanced, remastered, aligned, cross_referenced (+ quote_links, concept_crs) beside downloaded / transcribed / published / failed, from each item's completed stages (migration 173 stages_done, written after every stage; media-stages-sync back-fills from meta.json); GET /api/media/progress/live: the items being worked on now with their named steps (download · grade · enhance · transcribe · align · diarize · cleanup · faithfulness · publish · subheaders · crossref · links · assess · moments: done / running / pending / failed, ms) and the last six published — a handful of rows, memoised and edge-cached 10 s; media-rank registers EVERY target (the talks file's videos minus Shorts, 'about' videos and repeat uploads: the queue had skipped clips under ~4 min) and ranks them within their own section",
-        "scope": "media"
-      },
-      {
-        "hash": "8e3b5efb",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Tune-in — eval set, speaker aliases, transcript search fuses three layers, talk matches first",
-        "scope": "media"
-      },
-      {
-        "hash": "4dbbb4fe",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "PUBLISH EARLY (Chad 10-22: 'talks should be published as they are completed … start ingesting for search') — the core (transcript, name corrections, the copy-edit with its faithfulness check, a short description) is rendered, ingested for search and catalogued at once; subheaders, quotes, links, audience and moments follow and an 'update' stage re-renders, re-ingests (changed paragraphs only) and re-catalogues in place; a published talk stays published while later stages or re-runs work on it; the playback job re-publishes with redo ['update'] (not 'from render', which would now redo the enrichment)",
-        "scope": "media"
-      },
-      {
-        "hash": "0f11dbdb",
-        "date": "2026-10-22",
-        "type": "Chore",
-        "description": "Deploy (import progress on /admin/media)",
-        "scope": null
-      },
-      {
-        "hash": "25c992b0",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "GET /api/media/progress — the import in public (Chad 10-22: 'the total number being imported and their progress'): total targets, downloaded, transcribed, published, failed, by source (curated · hooper-dunbar · hands-uhj · local · other, from the queue rank), items per hour (first publications over 6 h: migration 172 published_at) and an ETA; one indexed group-by, memoised 60 s, edge-cached 60 s; /admin/media shows the same numbers",
-        "scope": "media"
-      },
-      {
-        "hash": "40dd7482",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The Google button matches the site theme and never shows a white box",
-        "scope": "auth"
-      },
-      {
-        "hash": "e5547c63",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The guest sign-in menu stays on screen",
-        "scope": "nav"
-      },
-      {
-        "hash": "f8fb4a5f",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "With four items in flight, tower's model work (grade's DNSMOS/NISQA, enhance's DeepFilterNet) runs one at a time at 4 threads (search p90 had reached 5.3 s); items that failed on a transient error (5 'Request timed out.' in one 20-min window) go back to the queue after 30 min, at most twice",
-        "scope": "media"
-      },
-      {
-        "hash": "179aaddb",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The guest account button presents sign-in, not just a menu row",
-        "scope": "auth"
-      },
-      {
-        "hash": "6bc94b79",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "A flaky tunnel no longer signs people out",
-        "scope": "auth"
-      },
-      {
-        "hash": "4020ff77",
-        "date": "2026-10-22",
-        "type": "Chore",
-        "description": "Deploy (media import progress on /admin/media)",
-        "scope": null
-      },
-      {
-        "hash": "d9aa15cc",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "THROUGHPUT (Chad 10-22: one item at a time ≈ a month) — DOWNLOADS apart from processing: a downloads lane (media-fetch: the next YouTube items by rank into the archive, yt-dlp+PO → Titan → Seemuapps, paced 25–50 s, held on a bot check) fills the archive continuously; PROCESSING runs four items at once (pipeline lane × MEDIA_PARALLEL=4) fed every 30 s by rank, as priority runs ahead of re-runs of published items; boss sized from a measurement (10 min of audio, large-v3-turbo: 1 job × 24 threads 5.3 audio-min per minute, 2 × 12 8.3, 3 × 8 9.4, 4 × 6 14.4) → 6 ASR threads per item + diarization beside it; tower's share stays ≤ 8 threads in total; the QUEUE ORDER (migration 171 queue_rank, media-rank): the curated sheet → Hooper Dunbar → other Hands/UHJ → local Hands/UHJ → local others; /admin/media shows downloaded / in progress / published / failed / held / waiting by source and the last 24 h",
-        "scope": "media"
-      },
-      {
-        "hash": "49a926e9",
-        "date": "2026-10-22",
-        "type": "Test",
-        "description": "The index cache-file check waits (bounded) for the background write instead of a fixed 50 ms",
-        "scope": "media"
-      },
-      {
-        "hash": "3406f9e5",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "/media outage — SSR threw mid-stream on the new extended-portrait shape; payload made safe; HTML cache shortened",
-        "scope": "media"
-      },
-      {
-        "hash": "e365b712",
-        "date": "2026-10-22",
-        "type": "Docs",
-        "description": "Status — diarization on boss, extended portrait masters, Portrait Cinema default",
-        "scope": "media"
-      },
-      {
-        "hash": "5f7368b1",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "Spell vocabulary (1.8M words) warms at boot, off the request path",
-        "scope": "search"
-      },
-      {
-        "hash": "89757c4d",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "First search of a fresh API process no longer pays for the concept lexicon load (6–10 s → normal)",
-        "scope": "search"
-      },
-      {
-        "hash": "e3582d0b",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The catalogue writes the audience level (missing from updateMediaItem's column list, so ?audience= and its facet were empty)",
-        "scope": "media"
-      },
-      {
-        "hash": "798a12e0",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The shorts' URL watermark has a dark outline (it vanished on light backgrounds); SHORT_VERSION 5",
-        "scope": "media"
-      },
-      {
-        "hash": "716c7a7b",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Portraits get their own lane in the media service (minutes of image calls never wait behind transcription)",
-        "scope": "media"
-      },
-      {
-        "hash": "496f6aad",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Slim player appears after a jump past the hero (phones); test: the suite's flaky tests made load-proof",
-        "scope": "media"
-      },
-      {
-        "hash": "7771abbe",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Portrait extensions are recorded with a plain UPDATE (upsertSpeaker's INSERT needs the name: 89 masters were generated and uploaded, then not recorded) and an uploaded-but-unrecorded master is adopted, not regenerated",
-        "scope": "media"
-      },
-      {
-        "hash": "3b3aacfb",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Follow mode never holds the playing line under the nav + slim player; momentum scroll no longer cancels it",
-        "scope": "media"
-      },
-      {
-        "hash": "6944b38b",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Portrait extension reads the image's own size (tools.imageSize) — tools.ffprobe is the audio prober and has no width/height, so every size was NaN; extendPortrait refuses a missing size with a clear error",
-        "scope": "media"
-      },
-      {
-        "hash": "3a1d3f71",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Outpaint canvas offsets are even and padded in RGB — tower's ffmpeg 6.1 refused an odd pad offset on 4:2:0 frames (all 89 portraits failed: 'Error reinitializing filters')",
-        "scope": "media"
-      },
-      {
-        "hash": "11edf9de",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "No stretched pictures + one-time AI-extended portrait masters + Portrait Cinema by default (Chad 10-22) — the Portrait Cinema Ken Burns zoomed a square crop into a 9:16 frame (stretched): every image is now scaled uniformly and cropped (a test guards the renderer); a speaker portrait gets ONE extended 9:16 master (1152×2048): placed uniformly on the canvas, the margins filled by the image-outpaint role (gemini-3.1-flash-image, ~$0.04 and ~12 s each), the original pixels pasted back with a feathered edge — stored beside the original in cdn-assets (media-speakers/<key>-ext.jpg), recorded on media_speakers (ext_file/sha/of/model/prompt/usd/at/error, migration 170), job media-portraits-extend; shorts and the API's speaker portrait (thumb.extended) use it. Shorts default to Portrait Cinema (Scripture Insert when the range quotes the Writings; others on request) with a face-centred slow push-in and light styling: a gentle warm grade, a soft vignette, a fine static grain, a thin amber rule over the call-sign lower third; portraits are requested at the frame's own aspect; SHORT_VERSION 4",
-        "scope": "media"
-      },
-      {
-        "hash": "627e9c95",
-        "date": "2026-10-22",
-        "type": "Test",
-        "description": "Pictures never stretch — every media <img> in a box is object-fit: cover; the image service scales uniformly before cropping; quote cards resize with fit cover",
-        "scope": "media"
-      },
-      {
-        "hash": "802a3c4b",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Diarization runs on BOSS (10-22 watch: pyannote on tower at ~630 % CPU took on-tower search to 6.6–8.6 s) — the audio goes through the gate's diarize verb beside the boss ASR job, the turns come back on stdout (media_tool --emit-turns); tower runs it only when boss is unreachable, detached at ≤ 4 threads and nice 19, and never while on-tower search p90 > 4 s (waits up to 30 min, then defers the item); the grade stage's models capped at 4 threads",
-        "scope": "media"
-      },
-      {
-        "hash": "378599c7",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Nothing typed before the listing hydrates is lost — an inline recorder keeps the tuner's value, focus and caret; ListeningRoom applies them on hydration (tested on a cold load at 6x CPU: 'sears' typed pre-hydration filters, keeps focus and caret)",
-        "scope": "media"
-      },
-      {
-        "hash": "d4ea66b5",
-        "date": "2026-10-22",
-        "type": "Docs",
-        "description": "Status — compressed shorts, sizes, edge timing",
-        "scope": "media"
-      },
-      {
-        "hash": "a0b0eb1d",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Previews played 'undefined' — index rows' new 'au' field is the AUDIENCE level, not audio URLs",
-        "scope": "media"
-      },
-      {
-        "hash": "d410c8fa",
-        "date": "2026-10-22",
-        "type": "Chore",
-        "description": "Deploy (edge caches shorts)",
-        "scope": null
-      },
-      {
-        "hash": "09feb3c7",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "Covering index for the dossier's claim count/sample (migration 169)",
-        "scope": "people"
-      },
-      {
-        "hash": "5afd16d6",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Shorts compress (Chad 10-22: 'we do want to work with compression') — Archive Tape was 203 MB for 30 s: per-frame random grain → grain, sepia and vignette drawn once and looped, only a slow flicker moves; static grounds (no drifting gradient); every template CRF 26 capped at 1.2 Mbit/s, GOP 2 s, 30 fps, AAC 128k mono, faststart. Measured per 60 s: On Air 4.8 MB · Archive Tape 7.6 · Portrait Cinema 6.1 · Scripture Insert 4.2 · Minimal 3.5; captions and faces stay sharp. The edge keeps a short's content-keyed files in R2 (no ?v needed; immutable) and each render warms it, so the first viewer is served from the edge; SHORT_VERSION 3 (new keys)",
-        "scope": "media"
-      },
-      {
-        "hash": "2287476e",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "The listing island hydrates on idle (the hero is its own island), the hero's Caslon italic is preloaded — /media mobile 89–100",
-        "scope": "media"
-      },
-      {
-        "hash": "acb80e7e",
-        "date": "2026-10-22",
-        "type": "Docs",
-        "description": "Status — text fixes, audiogram shorts",
-        "scope": "media"
-      },
-      {
-        "hash": "fa97640f",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "/media hero as its own small island; home page reserves its live content's space (CLS)",
-        "scope": null
-      },
-      {
-        "hash": "7e45d737",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "People dossier 39.6 s cold → bounded; OceanLibrary link lookup indexed",
-        "scope": "people, ocean-links"
-      },
-      {
-        "hash": "52ae4a42",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Copy-edit guard narrows a same-length edit to the words that change — 'all of a sudden He said' → '… he said' (Shoghi Effendi, house style) was refused as too long; it is the one word 'He'",
-        "scope": "media"
-      },
-      {
-        "hash": "7ce168da",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Short result layout — video column and full-width share actions",
-        "scope": "media"
-      },
-      {
-        "hash": "a1df8eaf",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Media-shorts-moments — queue a short for the top moments (default 2) of every Hands of the Cause / House of Justice talk (≤ 60 s; template by content or rotation; rendered ones are reused)",
-        "scope": "media"
-      },
-      {
-        "hash": "cfd35a1b",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Make a short wired to the media pipeline's shorts API (moments): template choice (or best for the moment), elapsed-time progress, the video inline, Share video / Download / post text / .srt",
-        "scope": "media"
-      },
-      {
-        "hash": "13d1cca9",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Shorts' portrait fetch — three tries with backoff, the failure reason recorded (portrait_error)",
-        "scope": "media"
-      },
-      {
-        "hash": "63787c6c",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Moment/clip quote scales down with its length (long clips no longer fill three screens)",
-        "scope": "media"
-      },
-      {
-        "hash": "c885880f",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Shorts — the portrait is fetched twice before falling back (the first short after a restart cached a portrait-less render), whether one was used is recorded; an internal force re-render; a long end-card address breaks onto two lines",
-        "scope": "media"
-      },
-      {
-        "hash": "f3eda818",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Share ANY passage — stateless clip pages, selection sharing, shareable transcript hits, 'Make a short'",
-        "scope": "media"
-      },
-      {
-        "hash": "50643add",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Shorts get their own lane in the media service (seconds each, on boss) — a requested short no longer waits behind the archive's transcription queue",
-        "scope": "media"
-      },
-      {
-        "hash": "3f547028",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Transcript hits from the site's search engine (concepts, not words); talk hero server-rendered",
-        "scope": "media"
-      },
-      {
-        "hash": "10b37406",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "AUDIOGRAM SHORTS (Chad 10-22) — a vertical 1080×1920 (or 1:1) H.264/AAC clip of a moment or any range ≤ 60 s (≤ 180 s on request): captions from our word alignment (clean words, phrase-grouped 2–6 words at pauses/punctuation, the current word highlighted) + .srt/.vtt sidecars; five templates — On Air (tuning dial at the talk's year, amber valve glow, the portrait on a turning record, captions on a cream card) · Archive Tape (sepia portrait, grain and flicker, turning reels, typewriter captions) · Scripture Insert (the speaker's words above, the quoted passage and its citation on a card below) · Portrait Cinema (slow Ken Burns, big kinetic word-by-word captions) · Minimal (a page of the excerpt in a large serif, current word amber, later words dim) — chosen by content (a quotation of the Writings in range → Scripture Insert; recorded ≤ 1975 or grade D/E → Archive Tape) else rotated deterministically per moment; the link back baked in (a small URL watermark throughout, an end card with 'Hear the full talk', speaker and talk, the short URL and a QR code to the full talk at that moment); a ready-to-paste post (title, the quote, speaker, talk, link, hashtags). Rendered on boss's CPU through a new fixed-recipe gate verb (short: tar in, MP4 out; static layers computed once: 19 s clip in 3–8 s); cached per talk version × range × format × template in the item's shorts/; POST /api/media/shorts (public for a talk's moments, any range with the internal key; queue cap) + GET /api/media/shorts/run/:id; served wherever clips may be",
-        "scope": "media"
-      },
-      {
-        "hash": "fac2a020",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "'Heard in the transcripts' identifies the voice and highlights the match; fonts: optional display + self-hosted Observatory faces",
-        "scope": "media"
-      },
-      {
-        "hash": "4ab882bf",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "A model call that times out or drops is retried twice (5 s, 20 s) before it fails the item — item 30 failed at describe on one 'Request timed out.'",
-        "scope": "media"
-      },
-      {
-        "hash": "62f828bc",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Whisper's mojibake and markup in indexed text (Chad 10-22 screenshots) — 'ìWhy … book?î' is in the recogniser's OWN output (transcript.raw.json; CP1252 punctuation read as MacRoman, learned from bad subtitles): repaired where ASR words enter (flattenWords → text-repair.js: quotes at word edges, English contractions on whitelisted stems so Bábís/Anís/Majíd/Idrís keep their í, double-encoded â€™/‚Äú/Ã©/√© forms); audit: 199 raw words in 14 items. transcript.md is plain text (348 inline quote/name/work links in 28 items had reached content.text, keyword search, embeddings and snippets — '[Shoghi Effendi](https://…'); links stay in transcript.json, content_source_links and media_links; snippet text of older ingests is stripped. Copy-edit house style: He/Him/His capitalised only for God, the Manifestations and ‘Abdu’l-Bahá — never Shoghi Effendi — decided from context. media-item fan-out passes priority",
-        "scope": "media"
-      },
-      {
-        "hash": "ae0d7f19",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "Fonts never block the first paint — Libre Caslon self-hosted with metric fallbacks; Amiri non-blocking",
-        "scope": "site"
-      },
-      {
-        "hash": "629e3d74",
-        "date": "2026-10-22",
-        "type": "Chore",
-        "description": "Deploy (moment ?m= redirect)",
-        "scope": null
       }
     ]
   }

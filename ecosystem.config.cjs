@@ -651,7 +651,7 @@ module.exports = {
     {
       // Improvement cycle (Chad 11-04): forensic pass on every reply + search trace, Opus 5.5 judge on each, deep analysis of
       // weak ones → suggestions (GET /api/admin/anis/improvements). llm-class async; own SQLite (IMPROVE_DB). Spend group
-      // 'improve' (IMPROVE_DAILY_USD unset = unbudgeted; ready value 5). IMPROVE_LLM=0 = forensics only.
+      // 'improve' (config/spend-caps.json: large at the start, reduced over time). IMPROVE_LLM=0 = forensics only.
       name: 'siftersearch-improve',
       script: 'api/workers/improve-worker.js',
       interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),
@@ -661,8 +661,7 @@ module.exports = {
       autorestart: true,
       restart_delay: 60000,
       watch: false,
-      // IMPROVE_LLM '0' until Chad confirms the Opus judge spend (projected $75–170/day unbudgeted, 11-04): forensics only, free
-      env: { NODE_ENV: 'production', IMPROVE_LLM: '0' },
+      env: { NODE_ENV: 'production' },
       error_file: './logs/improve-error.log',
       out_file: './logs/improve-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
