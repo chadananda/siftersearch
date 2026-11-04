@@ -89,3 +89,42 @@ describe('names fold alike in the keyword index (#136)', () => {
     expect(tokens('Baha’u’llah')).toEqual(tokens('Bahá’u’lláh'));
   });
 });
+
+// PRODUCTION FOLLOW-UP (11-04, replays on tower after f46c28d7): the shapes below are the REAL documents of the digest traces
+// (docs table: author, collection, religion; authority from authority.js getAuthority on that row). Two defects:
+//  1. the ops replay printed '·' for every 'compilation' and every tier gap (trace-format.mjs knew neither code), so the
+//     fix looked absent — the JSON carried tier 'compilation' (doc 967528) and tier_gap 'no-religion' (209071, 329706, 22751…);
+//  2. the unscoped (cross-tradition) rerank withholds the writer (author: null → authority NUMBER), so the compilation rule
+//     never ran there: "Bahá’í World Faith" read authority 5 → 0.85, under a scholar's book filed in Pilgrim Notes (1.6).
+describe('production shapes: the cross-tradition weighing and the replay printout', () => {
+  const BWF = { author: 'Bahá’u’lláh and ‘Abdu’l-Bahá (compiled)', book_author: 'Bahá’u’lláh and ‘Abdu’l-Bahá (compiled)', religion: 'Bahá’í', collection: null, title: 'Bahá’í World Faith: Selected Writings of Bahá’u’lláh and ‘Abdu’l-Bahá' };
+  const SACRED = { author: "Compilation (Bahá'í Writings)", book_author: "Compilation (Bahá'í Writings)", religion: 'Bahá’í', collection: 'Bahá’u’lláh', title: 'Bahá’í Sacred Writings' };
+  const PATTERN = { author: '4461', book_author: '4461', religion: null, collection: '', title: "The Pattern of Baha'i life" };
+  const NOTES_SHELVED = { author: 'Jack McLean', book_author: 'Jack McLean', religion: 'Bahá’í', collection: 'Pilgrim Notes', title: 'A Memoir' };
+  const cross = (p) => ({ ...p, author: null, writings_compilation: writingsCompilation(p) });   // what search.js passes unscoped
+
+  it('across traditions a Writings compilation weighs at its place (2.2), not by a low authority number', () => {
+    expect(doctrinalFactor({ ...BWF, author: null }, 5)).toBe(0.85);                // before: the writer withheld, number 5
+    expect(doctrinalFactor(cross(BWF), 5)).toBe(COMPILATION);
+    expect(doctrinalFactor(cross(BWF), 5)).toBeGreaterThan(doctrinalFactor(cross(NOTES_SHELVED), 5));
+    expect(doctrinalFactor(cross(SACRED), 8)).toBe(COMPILATION);                   // already 2.2 by its number: unchanged
+    expect(doctrinalFactor(cross(SACRED), 10)).toBe(2.8);                          // a higher number is never lowered
+  });
+  it('nothing else moves across traditions: other scripture, House compilations, untagged books keep their number', () => {
+    expect(doctrinalFactor(cross({ author: 'Various', religion: 'Zoroastrianism', collection: 'Zoroastrian', title: 'Khordeh Avesta' }), 5)).toBe(0.85);
+    expect(doctrinalFactor(cross(RD), 7)).toBe(1.3);
+    expect(doctrinalFactor(cross(PATTERN), 5)).toBe(0.85);   // no religion, numeric author: a metadata gap, not guessed
+    expect(writingsCompilation(PATTERN)).toBe(false);
+  });
+  it('the replay printout marks C for a compilation and X for a tier gap (was · for both)', async () => {
+    const { tierMark, hitLines } = await import('../../scripts/ops/trace-format.mjs');
+    expect(tierMark({ tier: 'compilation' })).toBe('C');
+    expect(tierMark({ tier: null, tier_gap: 'no-religion' })).toBe('X');
+    expect(tierMark({ tier: null })).toBe('·');
+    const [h] = expandHits([compactHit({ ...BWF, doc_id: 967528, id: 1 })], new Map([[967528, BWF]]));
+    expect(h).toMatchObject({ tier: 'compilation', collection: null, religion: 'Bahá’í' });
+    expect(hitLines([h])[0]).toMatch(/^\s+1 C /);
+    const [g] = expandHits([[2, 22751, 0.1, 'phrase', null]], new Map([[22751, PATTERN]]));
+    expect(hitLines([g])[0]).toMatch(/^\s+1 X /);
+  });
+});

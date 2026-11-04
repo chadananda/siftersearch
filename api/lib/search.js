@@ -1529,7 +1529,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
 
   // Qdrant layers: hits carry paragraph_id + doc_id only → stubs, filled by the fetch below. The phrase layer
   // also returns the matched span so callers can highlight the phrase, not the whole paragraph.
-  const { keyFactor, doctrinalFactor, queryDomain, aboutTalks, talksAfterCore } = await import('./search/doctrinal-rank.js');
+  const { keyFactor, doctrinalFactor, queryDomain, aboutTalks, talksAfterCore, writingsCompilation } = await import('./search/doctrinal-rank.js');
   // TALKS are supplementary (Chad 10-31) unless the search is FOR talks: the media shelf, one speaker, or a question about talks
   const talksAsked = !!(options.talks || filters.collection || filters.author || aboutTalks(query));
   // doctrine (default) or law / administration — the House is primary only on the latter (Chad 10-23); 'talks' weighs talks neutrally
@@ -1615,7 +1615,8 @@ async function multiIndexSearchRun(query, options, qcalls) {
     let auth = 5;
     try { auth = getAuthority({ author: e.paragraph.author || null, religion: e.paragraph.religion || null, collection: e.paragraph.collection || null, source_site: e.paragraph.source_site || null, title: e.paragraph.title || null, authority: null }); } catch { /* neutral */ }
     // the Bahá'í doctrinal tiers inside a Bahá'í search; across traditions every passage by its own authority number
-    e._factor = doctrinalFactor(bahaiScope ? e.paragraph : { ...e.paragraph, author: null }, auth, authorityDomain);
+    // (a Writings compilation's unattributed passage is flagged first: with the writer withheld the rule cannot see it — pure, no I/O)
+    e._factor = doctrinalFactor(bahaiScope ? e.paragraph : { ...e.paragraph, author: null, writings_compilation: writingsCompilation(e.paragraph) }, auth, authorityDomain);
     e._rankKey = e.score >= topScore * 0.5 ? e.score * e._factor : e.score * Math.min(1, e._factor);
     return e._rankKey;
   };

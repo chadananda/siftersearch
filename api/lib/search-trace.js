@@ -82,7 +82,9 @@ export function expandHits(json, titles = new Map()) {
       try { t = sourceTier({ author: d.author, title: d.title, collection: d.collection, religion: d.religion }); } catch { t = null; }
       if (!t && 'religion' in d) gap = tierGap({ ...d, doc_id }) ?? null;
     }
-    return { rank: i + 1, doc_id, para_id, title: d?.title ?? null, author: d?.author ?? null, tier: t, ...(gap ? { tier_gap: gap } : {}), layer, score };
+    // collection + religion shown (already read): a tier is decided by them, so a replay shows WHY a hit has the tier it has
+    const meta = d ? { ...('collection' in d ? { collection: d.collection ?? null } : {}), ...('religion' in d ? { religion: d.religion ?? null } : {}) } : {};
+    return { rank: i + 1, doc_id, para_id, title: d?.title ?? null, author: d?.author ?? null, ...meta, tier: t, ...(gap ? { tier_gap: gap } : {}), layer, score };
   });
 }
 

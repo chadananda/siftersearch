@@ -101,6 +101,11 @@ export function doctrinalFactor(hit, auth, domain = 'doctrine') {
   if (t != null && hit.book_authority != null && Number(hit.book_authority) < 7) t = Math.min(t, 1.3);
   if (t == null && writingsCompilation(hit)) t = COMPILATION;
   let f = t ?? numberFactor(auth);
+  // ACROSS TRADITIONS the writer is withheld (author null: each passage by its authority number), so the compilation rule
+  // cannot see who wrote the book — the caller flags it (writings_compilation). A Writings compilation is then weighed on
+  // the same scale at its place, never below it (prod 11-04: "Bahá’í World Faith" read authority 5 → 0.85, under a
+  // scholar's book filed as pilgrim notes at 1.6), and never lowered (a higher authority number keeps its own).
+  if (t == null && hit.writings_compilation) f = Math.max(f, COMPILATION);
   // a copy on a scraped site (not OceanLibrary, not the library itself) yields to the library's own text
   const site = hit.source_site || '';
   if (site && site !== 'oceanlibrary.com') f *= 0.7;

@@ -1,12 +1,15 @@
 // Human-readable tables for the search-introspection API (ops.mjs anis-trace | search-trace | search-replay). Pure: JSON in, text out.
 const cut = (s, n) => { const t = String(s ?? '').replace(/\s+/g, ' '); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
 const pad = (s, n) => cut(s, n).padEnd(n);
-const TIER = { writings: 'W', guardian: 'G', reported: 'R', house: 'H', secondary: 'S' };
+// one letter per source tier (api/lib/search-trace.js TIER_CODE): C = a Writings compilation's unattributed passage;
+// X = NO TIER READABLE (tier_gap: the document has no religion — a metadata gap); · = another tradition / web
+const TIER = { writings: 'W', guardian: 'G', compilation: 'C', reported: 'R', house: 'H', secondary: 'S' };
+export const tierMark = (h = {}) => TIER[h.tier] || (h.tier_gap ? 'X' : '·');
 const when = (t) => (t == null ? '' : typeof t === 'number' ? new Date(t * 1000).toISOString().slice(0, 16).replace('T', ' ') : String(t).slice(0, 16));
 const filt = (f) => (f && Object.keys(f).length ? JSON.stringify(f) : '');
 
 /** A ranked list → lines "  rank tier layer score  title — author". */
-export const hitLines = (hits = [], n = 10) => hits.slice(0, n).map((h) => `   ${String(h.rank).padStart(2)} ${TIER[h.tier] || '·'} ${pad(h.layer || '', 8)} ${pad(h.score ?? '', 8)} ${cut(h.title || `doc ${h.doc_id}`, 60)}${h.author ? ` — ${cut(h.author, 30)}` : ''}  [d${h.doc_id} p${h.para_id}]`);
+export const hitLines = (hits = [], n = 10) => hits.slice(0, n).map((h) => `   ${String(h.rank).padStart(2)} ${tierMark(h)} ${pad(h.layer || '', 8)} ${pad(h.score ?? '', 8)} ${cut(h.title || `doc ${h.doc_id}`, 60)}${h.author ? ` — ${cut(h.author, 30)}` : ''}  [d${h.doc_id} p${h.para_id}]`);
 
 /** One search (a trace or a thread-view search) → a header line + its hits. */
 export const searchBlock = (s, n = 10) => [
@@ -14,7 +17,7 @@ export const searchBlock = (s, n = 10) => [
   ...hitLines(s.hits || [], n)];
 
 const writerLines = (t) => [
-  ...(t.writer_passages?.length ? [' writer passages:', ...t.writer_passages.map((p) => `   ${String(p.n).padStart(2)} ${TIER[p.tier] || '·'} ${p.cited ? 'CITED' : '     '} ${cut(p.title, 60)}${p.author ? ` — ${cut(p.author, 30)}` : ''}`)] : [' writer passages: none recorded']),
+  ...(t.writer_passages?.length ? [' writer passages:', ...t.writer_passages.map((p) => `   ${String(p.n).padStart(2)} ${tierMark(p)} ${p.cited ? 'CITED' : '     '} ${cut(p.title, 60)}${p.author ? ` — ${cut(p.author, 30)}` : ''}`)] : [' writer passages: none recorded']),
 ];
 
 /** GET /anis/turns/:id/trace → text. */
@@ -62,7 +65,7 @@ export function replayText(res) {
     if (x.error) { lines.push(`   cannot replay: ${x.error}`); continue; }
     const d = x.diff;
     lines.push(`   ${d.same ? 'SAME ranking' : `kept ${d.kept}, new ${d.entered}, dropped ${d.dropped_count}${d.top1_changed ? ', TOP-1 CHANGED' : ''}`}   ${x.old_ms ?? '?'} ms → ${x.new_ms} ms`);
-    lines.push(...d.rows.slice(0, 20).map((h) => `   ${String(h.rank).padStart(2)} (was ${h.old_rank == null ? ' —' : String(h.old_rank).padStart(2)}) ${moveOf(h.move).padStart(4)} ${TIER[h.tier] || '·'} ${cut(h.title || `doc ${h.doc_id}`, 60)}`));
+    lines.push(...d.rows.slice(0, 20).map((h) => `   ${String(h.rank).padStart(2)} (was ${h.old_rank == null ? ' —' : String(h.old_rank).padStart(2)}) ${moveOf(h.move).padStart(4)} ${tierMark(h)} ${cut(h.title || `doc ${h.doc_id}`, 60)}`));
     lines.push(...d.dropped.slice(0, 10).map((h) => `   -- (was ${String(h.old_rank).padStart(2)}) DROPPED ${cut(h.title || `doc ${h.doc_id}`, 60)}`));
   }
   return lines.join('\n');
