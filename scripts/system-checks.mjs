@@ -239,6 +239,21 @@ if (db) {
   }
 }
 
+// ── 4b. Search latency vs its contract (api/lib/search/latency-budget.js; Chad 11-03 "it keeps being slow again"): the last
+// hour of search traces, p95 per stage. CRITICAL only for a total breach on two checks running; stage overruns → weekly.
+let searchSlow = state.searchSlow || [];
+{
+  const r = await http('http://127.0.0.1:7839/api/admin/ops/search-latency?minutes=60', { headers: H, timeout: 15000 });
+  let s = null; try { s = r.status === 200 ? JSON.parse(r.body) : null; } catch { /* not JSON */ }
+  if (!s?.engine) add('Search latency', true, 'info', `unavailable (${why(r)})`);
+  else {
+    const { latencyChecks } = await import('../api/lib/search/latency-budget.js');
+    const v = latencyChecks(s, state.searchSlow || []);
+    for (const c of v.checks) add(c.name, c.ok, c.level, c.detail);
+    searchSlow = v.slow;
+  }
+}
+
 let newGpuIdleAt = state.gpuIdleAt || 0;
 // ── 4b. Media pipeline (10-22: every compute run failed for hours and nothing said so) ──────────────────────
 // through the API (/api/media/progress/live → health), never the DB. WARN: failures in the last hour above the limit, or a lane
@@ -509,7 +524,7 @@ console.log(text);
 
 // Persist state for delta checks.
 fs.mkdirSync('logs', { recursive: true });
-const newState = { ...state, gpuIdleAt: newGpuIdleAt, restarts, drainSeen, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, wear: wearNow ?? state.wear, lastRun: Date.now() };
+const newState = { ...state, gpuIdleAt: newGpuIdleAt, searchSlow, restarts, drainSeen, embedBacklog: metrics.embedBacklog ?? state.embedBacklog, wear: wearNow ?? state.wear, lastRun: Date.now() };
 
 // HOST alerts (disk / memory / OOM / load / GPU / unreachable): their own deduped path — a condition is reported ONCE, again
 // only when it escalates (warn → critical), re-arms when it clears. CRITICAL alarms at once (a CRITICAL disk is a [PAGE]);

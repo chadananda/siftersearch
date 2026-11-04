@@ -87,6 +87,14 @@ export default async function opsReportRoutes(fastify) {
   fastify.get('/ops/media/supersede/:slug', { preHandler: requireInternal }, async (req) => (await import('../lib/media/supersede.js')).mediaSupersede({ action: 'history', slug: req.params.slug }));
   // Failed ops jobs (the same ones that email "FAILED"): `ops.mjs failures [--hours N]` so nobody pastes mail.
   fastify.get('/ops/failures', { preHandler: requireInternal }, async (req) => ({ failures: await failed(req.query?.hours, req.query?.limit) }));
+  // SEARCH LATENCY vs its contract (api/lib/search/latency-budget.js): per-stage p50/p95 over the last `minutes` of
+  // search_trace (a capped range read on its created_at index — no scan), worst stage first, plus the user-visible breaches.
+  fastify.get('/ops/search-latency', { preHandler: requireInternal }, async (req) => {
+    const minutes = Math.min(Math.max(Number(req.query?.minutes) || 60, 1), 7 * 24 * 60);
+    const [{ recentTraceTimings }, budget] = await Promise.all([import('../lib/repos/search-trace-repo.js'), import('../lib/search/latency-budget.js')]);
+    const summary = budget.summarizeTraceRows(await recentTraceTimings({ minutes }));
+    return { minutes, ...summary, breaches: budget.latencyBreaches(summary) };
+  });
   fastify.get('/ops/reports', { preHandler: requireInternal }, async () => ({ reports: reportNames(), recent: await recent(20) }));
   fastify.post('/ops/reports/:name', { preHandler: requireInternal }, async (req) => {
     known(req.params.name);

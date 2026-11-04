@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 const calls = [];
 vi.mock('../../api/lib/search/qdrant-layers.js', () => ({
+  withQdrantCallLog: (log, fn) => fn(),
   searchKeywordQdrant: vi.fn(async (q, opts) => { calls.push(opts.filters); return q === 'boom' ? Promise.reject(new Error('down')) : { hits: [{ paragraph_id: 9 }, { paragraph_id: 4 }, { paragraph_id: 7 }] }; }),
 }));
 vi.mock('../../api/lib/paragraphs-repo.js', () => ({

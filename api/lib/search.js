@@ -10,7 +10,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbeddings } from './ai.js';
 import { queryEmbedding } from './query-embedding.js';
-import { geminiQueryVector, searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, resolveQdrantFilters } from './search/qdrant-layers.js';
+import { geminiQueryVector, searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, resolveQdrantFilters, withQdrantCallLog } from './search/qdrant-layers.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll, query } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
@@ -1277,7 +1277,14 @@ export function perDocCapFor(filters = {}, limit = 10) {
   return filters?.author || (filters?.documentId != null && [].concat(filters.documentId).length) ? limit : 1;
 }
 
+// Every Qdrant call of one search is logged {collection, ms} (qdrant-layers withQdrantCallLog) so `_timings` carries the
+// slowest call against the 10 ms budget (search/latency-budget.js).
 export async function multiIndexSearch(query, options = {}) {
+  const qcalls = [];
+  return withQdrantCallLog(qcalls, () => multiIndexSearchRun(query, options, qcalls));
+}
+
+async function multiIndexSearchRun(query, options, qcalls) {
   const limit = options.limit || 10;
   const overFetch = Math.max(limit * 3, 30);
   const weights = { ...DEFAULT_WEIGHTS, ...(options.weights || {}) };
@@ -1551,6 +1558,7 @@ export async function multiIndexSearch(query, options = {}) {
   // SQLite does not return is a deleted / duplicate paragraph still in an index: it is dropped, never fetched back from
   // an engine (a Meili fallback here resurrected deleted rows). Stubs only come from main-library ids (Qdrant, HyPE).
   const stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
+  const _tHydrate = Date.now();
   if (stubIds.length > 0) {
     try {
       const { paragraphsByIds } = await import('./paragraphs-repo.js');
@@ -1563,6 +1571,7 @@ export async function multiIndexSearch(query, options = {}) {
       logger.warn({ err: err.message, stubCount: stubIds.length }, 'multiIndexSearch: SQLite hydration failed');
     }
   }
+  const hydrateMs = Date.now() - _tHydrate;
 
   // Sort by RRF score, drop entries that couldn't be fetched.
   // For cross-tradition queries (no religion filter), apply the same per-religion
@@ -1692,7 +1701,13 @@ export async function multiIndexSearch(query, options = {}) {
     returned: hits.length
   }, 'multi-index search complete');
 
-  const timings = { ...(_stamp), main_embed: mainResult?._ms?.embed, main_engine: mainResult?._ms?.engine, main_cross: mainResult?._ms?.cross || undefined, merge: Date.now() - _t0 - Math.max(0, ..._stampValues(_stamp)), total: Date.now() - _t0 };
+  const merge = Date.now() - _t0 - Math.max(0, ..._stampValues(_stamp));
+  const qdrantBy = {};
+  for (const c of qcalls) qdrantBy[c.collection] = Math.max(qdrantBy[c.collection] || 0, c.ms);
+  // hydrate = SQLite paragraphsByIds (+ highlight); rank = the rest of merge (RRF, rerank, diversify); qdrant = slowest call
+  const timings = { ...(_stamp), main_embed: mainResult?._ms?.embed, main_engine: mainResult?._ms?.engine, main_cross: mainResult?._ms?.cross || undefined,
+    hydrate: hydrateMs, rank: Math.max(0, merge - hydrateMs), merge, total: Date.now() - _t0,
+    ...(qcalls.length ? { qdrant: Math.max(...qcalls.map((c) => c.ms)), qdrant_calls: qcalls.length, qdrant_by: qdrantBy } : {}) };
   const layerCounts = {
     main: (mainResult.hits || []).length,
     hype: (hypeResult.hits || []).length,

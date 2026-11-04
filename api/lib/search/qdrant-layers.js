@@ -9,6 +9,7 @@ import { bm25Query } from '../keyword-tokens.js';
 import { excludedDocIds } from './excluded-docs.js';
 import { docIdsInYearRange } from '../docs-repo.js';
 import { logAIUsage } from '../ai-services.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 const QD = () => process.env.QDRANT_URL || 'http://127.0.0.1:6333';
 // PHASE 0 HOT LAYER (planning/storage-wear-ram-plan.md §6.6, Chad 10-21): until the MP44 arrives, NEW phrase points go to
@@ -121,13 +122,26 @@ export const SEARCH_PARAMS = Object.freeze({
 });
 const searchParams = (p) => ({ quantization: { rescore: p.rescore, oversampling: p.oversampling }, ...(p.hnsw_ef ? { hnsw_ef: p.hnsw_ef } : {}) });
 
+// UNCOMPRESSED replies (11-03, search-budget). Node's fetch sends `Accept-Encoding: gzip, deflate` unasked; Qdrant then
+// gzips + chunks every reply and the call stalls ~40 ms once the body passes ~1-2 KB (tower, same query: 49-53 ms wall
+// with gzip vs 7-11 ms identity). Loopback has no use for compression. Every Qdrant request uses these headers.
+export const qdrantHeaders = (json = true) => ({ ...(json ? { 'Content-Type': 'application/json' } : {}), 'Accept-Encoding': 'identity', 'api-key': process.env.QDRANT_KEY || '' });
+
+// Per-search log of every Qdrant call {collection, ms} — multiIndexSearch opens one (withQdrantCallLog) so the trace
+// carries each call's wall time against the 10 ms budget (api/lib/search/latency-budget.js). Outside a log: no cost.
+const callLog = new AsyncLocalStorage();
+export const withQdrantCallLog = (log, fn) => callLog.run(log, fn);
+
 async function qdrant(path, body, timeoutMs = 2500, base = QD()) {
-  const r = await fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'api-key': process.env.QDRANT_KEY || '' },
+  const t = performance.now();
+  const r = await fetch(base + path, { method: 'POST', headers: qdrantHeaders(),
     // 2.5 s: past the search budget a layer is dropped, not waited on — and the relax ladder re-runs the engine, so a stalled
     // Qdrant (a payload backfill or build beside it, 2026-10-04) cost 5 s per rung at the old 5 s.
     body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) });
   if (!r.ok) throw new Error(`qdrant ${path} ${r.status} ${(await r.text()).slice(0, 120)}`);
-  return (await r.json()).result;
+  const out = (await r.json()).result;
+  callLog.getStore()?.push({ collection: path.split('/')[2] || path, ms: Math.round(performance.now() - t) });
+  return out;
 }
 
 /** Qdrant liveness + each search collection's status (green = fully indexed; yellow = optimizing, searches slower). */
@@ -135,14 +149,14 @@ export async function qdrantHealth(timeoutMs = 3000) {
   try {
     const out = {};
     for (const c of ['phrases', 'paragraphs_kw', 'hype']) {
-      const r = await fetch(`${QD()}/collections/${c}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(timeoutMs) });
+      const r = await fetch(`${QD()}/collections/${c}`, { headers: qdrantHeaders(false), signal: AbortSignal.timeout(timeoutMs) });
       const j = r.ok ? (await r.json()).result : null;
       out[c] = j ? { status: j.status, points: j.points_count, unindexed: Math.max(0, (j.points_count || 0) - (j.indexed_vectors_count || 0)) } : { status: `http ${r.status}` };
     }
     // phase 0 hot layer: informational — search degrades to main without it, so it never fails health
     let hot;
     if (hotUrl()) {
-      hot = await fetch(`${hotUrl()}/collections/${HOT_PHRASES()}`, { headers: { 'api-key': process.env.QDRANT_KEY || '' }, signal: AbortSignal.timeout(timeoutMs) })
+      hot = await fetch(`${hotUrl()}/collections/${HOT_PHRASES()}`, { headers: qdrantHeaders(false), signal: AbortSignal.timeout(timeoutMs) })
         .then(async (r) => (r.ok ? (({ status, points_count: points, indexed_vectors_count: ix }) => ({ status, points, unindexed: Math.max(0, (points || 0) - (ix || 0)) }))((await r.json()).result) : { status: `http ${r.status}` }))
         .catch((err) => ({ status: 'unreachable', error: err.message }));
     }

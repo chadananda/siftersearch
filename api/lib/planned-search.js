@@ -159,7 +159,9 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // verified numbering (refs/cite.js) — read from the query as typed, before spelling correction touches "PHW" or "Iqan".
   const cite = citer ?? (engine ? null : resolveCitation);
   const citedP = cite ? cite(original).catch(() => null) : Promise.resolve(null);
+  const tSpell = Date.now();
   const spelled = correctQuery(query, vocab ?? vocabulary());
+  const spellMs = Date.now() - tSpell;   // synchronous: a long word with no 1-edit neighbour runs the 2-edit search (~40-80 ms)
   query = spelled.query;
   // The query embedding needs no plan: start it now so it is ready when the engine asks (shared, one call).
   if (!engine) prewarmSearch(original, { qdrant }).catch(() => {});
@@ -201,7 +203,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
 
   const run = engine || (await import('./search.js')).multiIndexSearch;
   const t1 = Date.now();
-  const stages = {};   // per-stage ms, so the 1s budget can be held stage by stage
+  const stages = { spell_ms: spellMs };   // per-stage ms, so the 1s budget can be held stage by stage
   if (plan.mentions?.length || plan.spans?.length) Object.assign(stages, { named_ms: namedMs, ...(namedLate ? { named_timeout: true } : {}) });
   // A quotation hunt searches the WORDS (the request frame — "can you find the quote including" — is not in the passage).
   const quotePhrase = plan.quote?.phrase || null;
@@ -362,7 +364,18 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   };
   if (cache.size >= MAX) cache.delete(cache.keys().next().value);
   cache.set(key, { at: Date.now(), value });
-  return { ...value, cached: false, timings: { plan_ms: planMs, search_ms: Date.now() - t1, total_ms: Date.now() - t0, ...stages, resolve_ms: resolution?.ms ?? null } };
+  const timings = { plan_ms: planMs, search_ms: Date.now() - t1, total_ms: Date.now() - t0, ...stages, resolve_ms: resolution?.ms ?? null };
+  if (!engine) tracePlanned(original, plan, timings, hits);
+  return { ...value, cached: false, timings };
+}
+
+// One 'planned' trace row per planned search (the engine calls inside it trace themselves as 'planned:<shape>'), so the
+// plan-level stages (plan, resolve, passages, total) are measured against search/latency-budget.js. Numbers only.
+function tracePlanned(query, plan, timings, hits) {
+  if (process.env.NODE_ENV === 'test') return;
+  const flat = Object.fromEntries(Object.entries(timings).filter(([, v]) => typeof v === 'number'));
+  import('./search-trace.js').then(({ traceSearch }) => traceSearch({ options: { traceEndpoint: 'planned' }, query, filters: plan?.filters,
+    layers: { shape: plan?.shape || null }, timings: { ...flat, total: timings.total_ms }, hits })).catch(() => {});
 }
 
 /** A citation → its paragraph in the search-hit shape (SQLite, paragraphs-repo), with { work, pn } attached; else null. */

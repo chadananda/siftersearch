@@ -3,6 +3,7 @@
 //   node scripts/ops/ops.mjs reports                         list reports + recent runs
 //   node scripts/ops/ops.mjs report <name> [--days 14 | --ids 1,2,3 | --params '{json}'] [--wait] [--latest]
 //   node scripts/ops/ops.mjs media held | rejudge [id…] | progress | log [--since 6h|ISO --kind k1,k2 --limit n] | gauges [--host h] [--hours n] [--rows] | health-history <machine> [--from --to] | status <id|slug|words> | stage <stage> [--missing] [--status done] [--after N] | add <url|path>… | redo <id> <stage>…
+//   node scripts/ops/ops.mjs search-latency [--minutes 60]   per-stage p50/p95 vs the search budget (search/latency-budget.js)
 // Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key).
 import { apiBase } from '../lib/api-base.mjs';
 import dotenv from 'dotenv';
@@ -37,6 +38,7 @@ else if (cmd === 'report' && name) {
   }
 } else if (cmd === 'run' && name) await out(await call('GET', `/ops/reports/runs/${name}`));   // one run by id (e.g. the media-item jobs a report queued)
 else if (cmd === 'cancel' && name) await out(await call('DELETE', `/ops/reports/runs/${Number(name)}`));
+else if (cmd === 'search-latency') await out(await call('GET', `/ops/search-latency?minutes=${val('--minutes') || 60}`));
 else if (cmd === 'failures') await out(await call('GET', `/ops/failures?hours=${val('--hours') || 24}`));   // failed ops jobs (what the FAILED mails report)
 else if (cmd === 'bio-slugs') {   // mint biography slugs in batches of 25 until none are left
   let r; do { r = await call('POST', '/ops/bio-slugs/backfill', { limit: 25 }); console.error(`minted ${r.minted.length}; ${r.with_slug}/${r.total}`); } while (r.minted.length && r.left > 0);

@@ -32,7 +32,7 @@ vi.mock('../../api/lib/media/sketch.js', async (orig) => ({ ...(await orig()), s
 vi.mock('../../api/lib/search.js', () => ({ multiIndexSearch: vi.fn(async (q, o) => ({ hits: o.filters?.collection === 'Media'
   ? [{ paragraph_id: 501, _formatted: { text: 'The <em>soul</em> is a sign' } }, { paragraph_id: 502 }] : [] })) }));
 
-vi.mock('../../api/lib/search/qdrant-layers.js', () => ({ searchKeywordQdrant: vi.fn(async () => ({ hits: [{ paragraph_id: 501 }] })), searchPhrases: vi.fn(async () => ({ hits: [] })) }));
+vi.mock('../../api/lib/search/qdrant-layers.js', () => ({ searchKeywordQdrant: vi.fn(async () => ({ hits: [{ paragraph_id: 501 }] })), searchPhrases: vi.fn(async () => ({ hits: [] })), withQdrantCallLog: (log, fn) => fn() }));
 
 let app;
 beforeAll(async () => {

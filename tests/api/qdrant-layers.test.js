@@ -181,3 +181,37 @@ describe('qdrantHealth', () => {
     expect(h.collections.hype).toEqual({ status: 'http 404' });
   });
 });
+
+// 11-03 (search-budget): Node fetch asks for gzip by default; Qdrant then gzips + chunks every reply and the call stalls
+// ~40 ms once the body passes ~1-2 KB (measured on tower: 49-53 ms wall vs 7-11 ms with identity, same query).
+describe('qdrant transport', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it('every Qdrant request (search + health) asks for an uncompressed reply; Gemini is not touched', async () => {
+    const { qdrantHealth } = await import('../../api/lib/search/qdrant-layers.js');
+    const seen = [];
+    vi.stubGlobal('fetch', vi.fn(async (url, init = {}) => {
+      seen.push({ url, headers: init.headers || {} });
+      if (url.includes('generativelanguage')) return { ok: true, json: async () => ({ embedding: { values: [0.1, 0.2] } }) };
+      if (init.method !== 'POST') return { ok: true, json: async () => ({ result: { status: 'green', points_count: 1, indexed_vectors_count: 1 } }) };
+      return { ok: true, json: async () => ({ result: { points: [{ score: 1, payload: { paragraph_id: 1, doc_id: 1 } }] } }) };
+    }));
+    await searchKeywordQdrant('transport check one', { limit: 3 });
+    await searchPhrases('transport check two', { limit: 3 });
+    await qdrantHealth();
+    const qd = seen.filter((s) => !s.url.includes('generativelanguage'));
+    expect(qd.length).toBeGreaterThanOrEqual(5);
+    for (const s of qd) expect(s.headers['Accept-Encoding']).toBe('identity');
+  });
+
+  it('each Qdrant call inside withQdrantCallLog is logged with its collection and wall ms', async () => {
+    const { withQdrantCallLog } = await import('../../api/lib/search/qdrant-layers.js');
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ result: { points: [] } }) })));
+    const log = [];
+    await withQdrantCallLog(log, () => searchKeywordQdrant('logged call words', { limit: 3 }));
+    expect(log).toHaveLength(1);
+    expect(log[0].collection).toBe('paragraphs_kw');
+    expect(typeof log[0].ms).toBe('number');
+    await searchKeywordQdrant('outside any log', { limit: 3 });
+    expect(log).toHaveLength(1);
+  });
+});
