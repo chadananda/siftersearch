@@ -10,6 +10,7 @@ import { sectionRange } from './numbering.js';
 import { isCoreLiterature } from '../rights/canonical.js';
 import { firstPerson } from '../authorship/reader.js';
 import { authorAuthority } from '../authority.js';
+import { isPeriodical, traceQuote } from './quote-origin.js';
 
 const ROMAN = /^(?=[ivxlcdm]+$)m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$/i;
 const romanToInt = (r) => { const v = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 }; let n = 0, p = 0;
@@ -118,7 +119,12 @@ export async function resolveLookup(messages, deps = {}) {
   // only CORE literature makes a quote candidate (Chad 11-03): a line held only by commentary, a talk or a pilgrim note is not
   // a quotation to source here (those books are still cited later in answers; only this candidate step is scoped)
   const ok = await quoteCandidates(hits, phrase, search);
-  const quote = ok.length ? done({ kind: 'quote', phrase, passages: ok.slice(0, 5) }) : null;
+  // the ORIGIN among them (quote-origin.js, Chad 11-04): the Guardian's translation of the author's own work first, the Tablet's
+  // name, the original-language line, a short "also quoted in"; periodicals never the source. Injected search (tests) → no
+  // library metadata reads unless the deps give them.
+  const origin = ok.length ? await traceQuote(ok, { phrase, ...(deps.search ? { translatorsOf: deps.translatorsOf || null, originalsOf: deps.originalsOf || null } : {}) })
+    .catch((err) => { console.warn('anis quote origin failed', err?.message); return null; }) : null;
+  const quote = ok.length ? done({ kind: 'quote', phrase, passages: ok.slice(0, 5), ...(origin ? { origin } : {}) }) : null;
   if (!book || !quote) return book || quote;
   const pick = await (deps.pickQuoteOrBook || pickQuoteOrBook)(messages, { book, quote }, { profile: deps.profile, onJev: deps.onJev,
     fetchImpl: deps.fetchImpl || (await import('../systemone.js')).jevFetch('anis-quote-or-book') });
@@ -144,7 +150,7 @@ export async function quoteCandidates(hits, phrase, search = null) {
   const cands = (list) => list.filter(isCoreLiterature).map((h) => ({ h, ...holds(h.text, phrase) })).filter((x) => x.near).map(({ h, exact }) => {
     const writer = h.author || null, book = h.book_author || writer;
     return { ...h, holds: exact, overlap: exact ? 1 : 0, writer, book_author: book, authority: authorAuthority(writer) ?? 0,
-      ownWork: !!writer && canon(writer) === canon(book) && h.blocktype !== 'footnote', _hit: h };
+      ownWork: !!writer && canon(writer) === canon(book) && h.blocktype !== 'footnote' && !isPeriodical(h), _hit: h };   // a periodical's excerpt is never the writer's own work
   }).filter((c) => { const k = c.id ?? c._hit; if (seen.has(k)) return false; seen.add(k); return true; });
   const pool = cands(hits);
   const quoteAuthor = pool.length ? quoteAuthorOf(pool) : null;

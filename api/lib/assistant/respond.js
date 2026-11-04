@@ -30,6 +30,8 @@ import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asks
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
 import { strategyOf } from './strategy-choice.js';
+import { PASSAGE_CHARS } from './prompt.js';
+import { quoteSourceHow } from './quote-origin.js';
 
 // Default measured 2026-09-25 (scripts/wip/anis-model-race.mjs, lean prompt, 4 questions): Gemini 3.5 Flash-Lite
 // 0.53s first token / 1.5s total (gpt-4o-mini 0.61s / 2.3s; Haiku 0.72s / 4.3s; DeepSeek 0.77s / 2.4s). Every model
@@ -198,9 +200,15 @@ export function exactLinks(text, urls) {
   });
 }
 
-const clip = (text = '', ranges = [], before = 240, after = 320) => {
-  if (!ranges?.length || text.length <= 700) return text;
-  const a = Math.max(0, ranges[0][0] - before), b = Math.min(text.length, ranges[ranges.length - 1][1] + after);
+// a quotation-trace passage reaches the writer WHOLE up to PASSAGE_CHARS (11-04: a ~560-character window around the highlight
+// let a quotation end at a cut); a longer one → a PASSAGE_CHARS window around the highlight, widened to whole sentences. Pure.
+export const clip = (text = '', ranges = [], max = PASSAGE_CHARS) => {
+  if (text.length <= max) return text;
+  const mid = ranges?.length ? Math.floor((ranges[0][0] + ranges[ranges.length - 1][1]) / 2) : 0;
+  let a = Math.max(0, Math.min(mid - Math.floor(max / 2), text.length - max)), b = Math.min(text.length, a + max);
+  // start after the sentence end before `a`, end at the sentence end after `b`
+  if (a > 0) { const m = text.slice(0, a).match(/.*[.!?؟।]["'”’)\]]*\s+/s); a = m ? m[0].length : a; }
+  if (b < text.length) { const m = text.slice(b).match(/[.!?؟।]["'”’)\]]*(?=\s|$)/); b = m ? b + m.index + m[0].length : b; }
   return `${a > 0 ? '… ' : ''}${text.slice(a, b).trim()}${b < text.length ? ' …' : ''}`;
 };
 
@@ -720,7 +728,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : work && fast?.kind === 'book' ? { passages: [], _plan: { shape: 'work', work: work.doc.id, via: 'lookup-code' } }   // a requested book: the link and the offer, no "about" search (was 5.6 s live)
     : work ? { ...await timed('search', () => d.search({ query: (searchQ = workAboutQuery(work)), mode: 'passages', limit: 16, scope_config: profile.scope_config,
       plan: { messages: [{ role: 'user', content: workAboutQuery(work) }] } })), _plan: { shape: 'work', work: work.doc.id } }
-    : fast?.passages ? { passages: fast.passages, _plan: { shape: fast.kind === 'reference' ? 'lookup' : 'quote', lookup: fast.kind, ...(fast.phrase ? { quote: { phrase: fast.phrase, via: 'lookup-code' } } : {}) } }
+    : fast?.passages ? { passages: fast.origin?.passages || fast.passages, _plan: { shape: fast.kind === 'reference' ? 'lookup' : 'quote', lookup: fast.kind, ...(fast.phrase ? { quote: { phrase: fast.phrase, via: 'lookup-code' } } : {}) } }
     : sourced ? { passages: [], _plan: { shape: 'source', sourceHunt: sourced.hunt } } : original ? { passages: [], _plan: original.plan }
     : conversational ? { passages: [], _plan: plan }
     : strat ? { passages: strat.passages || [], _plan: strat.plan }
@@ -780,6 +788,13 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       if (o) retrieved.splice(retrieved.length, 0, { ...retrieved[i], text: o.original, source_title: `${retrieved[i].source_title} (original)`, source_lang: o.lang, via: 'original' });
     });
   }
+  // a traced quotation (quote-origin.js): the original-language paragraph of its Tablet joins the evidence, marked (original)
+  const qo = fast?.origin?.original;
+  if (qo?.text) {
+    const lang = /^fa|pers/i.test(String(qo.language || '')) ? 'Persian' : /^ar/i.test(String(qo.language || '')) ? 'Arabic' : qo.language || 'original';
+    retrieved.push({ text: qo.text, source_title: `${fast.origin.tablet || qo.title || fast.origin.source.title} (original, ${lang})`, source_author: fast.origin.writer || '',
+      citation_url: qo.url || null, doc_id: qo.document_id ?? null, paragraph_index: qo.paragraph_index ?? null, source_lang: qo.language || null, via: 'quote-original' });
+  }
   // the hunt's origin (and the original tablet) lead the evidence for a multi-ask turn; its extra links are allowed too
   const huntExtra = huntP && huntAsEvidence && !sourced && !researched && !original && !study ? await huntP : null;
   if (huntExtra?.retrieved?.length) {
@@ -794,7 +809,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   if (huntPhrase) {
     const want = foldVerbatim(huntPhrase), ws = [...new Set(want.split(' '))];
     const near = (t) => { const f = foldVerbatim(t); return f.includes(want) || ws.filter((w) => ` ${f} `.includes(` ${w} `)).length >= Math.ceil(ws.length * 0.7); };
-    const keep = retrieved.filter((q) => near(q.text));
+    const keep = retrieved.filter((q) => q.via === 'quote-original' || near(q.text));   // the original holds the words in its own language
     // the writer is shown each kept passage AROUND the wording (prompt.js passageText): the line can end a long paragraph
     for (const q of keep) q.focus = huntPhrase;
     // words this thread already quoted from a linked source are never "absent" (r6: the Íqán, SAQ, a privation passage)
@@ -832,6 +847,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW + (messages.length > 1 ? QUOTE_MISS_THREAD : '') })
     : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: researched.brief ? RESEARCH_HOW(researched.brief) : QUICK_RESEARCH_HOW })
     : sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
+    : fast?.origin?.source ? Promise.resolve({ id: 'quote_source', by: 'quote-origin', how: quoteSourceHow(fast.origin) })   // who, the Tablet, the translation, the original
     // ORIGINAL_HOW only with an original in hand: without one the model said the passage was "not found" while the English
     // passage that answers sat in the evidence (px-smoke return-iqan T3); then the ordinary format + NO_ORIGINAL_HOW
     : original || retrieved.some((q) => q.via === 'original') ? Promise.resolve({ id: 'original', by: 'original', how: original?.how || ORIGINAL_HOW })   // the lookup's own instructions (e.g. a misattribution to correct)
