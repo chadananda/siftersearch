@@ -104,6 +104,17 @@ describe('researcher: the second round searches INSIDE the books the first round
     expect(r.steps.filter((s) => s.late)).toHaveLength(1);
   });
 
+  it('document_search: only the best title match takes a book slot; its lesser matches (chapter files) leave room for the searched books', async () => {
+    const within = [];
+    const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'document_search', { title: 'The Dawn-Breakers' }), call('b', 'combined_search', { query: 'Mulla Husayn Shiraz' })] } }] });
+    const r = await research({ messages: [{ role: 'user', content: 'the first night' }], create,
+      tools: { search: async () => [inBook(5, 1), inBook(6, 1)], searchIn: async (query, documentId) => { within.push(documentId); return []; },
+        work: async () => ({ doc: { id: 21308, title: 'The Dawn-Breakers', paragraph_count: 1224 }, others: [{ id: 33842, title: 'THE DAWN-BREAKERS---Chapter X', paragraph_count: 69 }, { id: 33841, title: 'Chapter I', paragraph_count: 68 }] }) },
+      maxRounds: 1, brief: false, inBooks: 3 });
+    expect(within).toEqual([21308, 5, 6]);
+    expect(r.steps.find((s) => s.tool === 'document_search')).toBeTruthy();
+  });
+
   it('booksFound: queries are distinct and capped at perBook; perBook 1 keeps the finding query alone', () => {
     const searched = [{ query: 'a', docs: [1] }, { query: 'b', docs: [2] }, { query: 'a', docs: [3] }];
     expect(booksFound({ searched, question: 'a', n: 2, perBook: 3 }).map((b) => b.queries)).toEqual([['a', 'b'], ['b', 'a']]);

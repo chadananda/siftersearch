@@ -88,7 +88,9 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       const w = await (impl.work || (async (t) => (await import('./work-request.js')).findTitled([t])))(title).catch(() => null);
       if (!w) return `no work titled "${title}" in the library`;
       const { readerUrl } = await import('../source-links.js');
-      return [w.doc, ...w.others].map((x) => `[${addWork({ ...x, url: readerUrl(x) })}] ${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${readerUrl(x)}`).join('\n\n');
+      // only the best match is the book asked for; the others (chapter files, namesakes) are listed but take no book-step slot
+      // (11-03: The Dawn-Breakers + its Chapter X + Chapter I filled all three slots and crowded out the other histories)
+      return [w.doc, ...w.others].map((x, i) => `[${addWork({ ...x, url: readerUrl(x), ...(i ? { other: true } : {}) })}] ${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${readerUrl(x)}`).join('\n\n');
     },
     original_lookup: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
     translation_lookup: async ({ original }) => {
@@ -130,7 +132,8 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
 const ONE_ROUND = 'THIS TURN HAS ONE ROUND: a reader is waiting. Ask now, in this one reply, for EVERY tool call the answer needs (they run in parallel; you will not see their results and write no brief) — search the main question and each of its sides or aspects separately, and add a lookup or trace only where the question calls for one. When the answer turns on WHEN things happened (a date, a sequence, a story across months or years), one of your searches asks for the dates themselves — the chronology of those events, in the words a history or a chronology would use — so every event can be dated from a passage.';
 const BOOK_STEP = 'After your round, the library is searched again INSIDE the books your searches found, for the passages that tell the story or make the argument. When the answer lies in a particular book or author (a history such as The Dawn-Breakers, a study such as Gate of the Heart), also call document_search for that book, so it is one of them.';
 
-/** The books a one-round research found, for the in-book step: works asked for by title first (with the reader's question; stubs skipped),
+/** The books a one-round research found, for the in-book step: works asked for by title first (with the reader's question; stubs and
+ *  lesser title matches skipped),
  *  then each search's documents round-robin by rank (with the query that found it), distinct, at most n. Each book also carries
  *  `queries`: the query that found it, then the round's other searches, then the reader's question — distinct, at most perBook —
  *  so a history is read for every side the round asked about (11-03: one query per book left the story half told). Pure. */
@@ -139,7 +142,7 @@ export function booksFound({ works = [], searched = [], question = '', n = 3, pe
   const all = [...new Set(searched.map((s) => s.query).filter(Boolean))];
   const queriesFor = (first) => [...new Set([first, ...all, question].filter(Boolean))].slice(0, Math.max(1, perBook));
   const take = (id, query) => { const k = Number(id); if (!Number.isFinite(k) || seen.has(k) || out.length >= n) return; seen.add(k); out.push({ document_id: k, query, queries: queriesFor(query) }); };
-  for (const w of works) if (!(Number(w.paragraph_count) < 10)) take(w.id, question);   // a stub (a catalogue entry, a tag page) is no book
+  for (const w of works) if (!w.other && !(Number(w.paragraph_count) < 10)) take(w.id, question);   // a stub (a catalogue entry, a tag page) is no book; a lesser title match is not the book asked for
   for (let rank = 0; out.length < n && searched.some((s) => rank < s.docs.length); rank++) for (const s of searched) if (rank < s.docs.length) take(s.docs[rank], s.query);
   return out;
 }
