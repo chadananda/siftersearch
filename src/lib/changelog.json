@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-04T16:11:57.906Z",
+  "generated": "2026-11-04T17:37:04.111Z",
   "entries": [
+    {
+      "hash": "abab9e7d",
+      "date": "2026-11-04",
+      "type": "Other",
+      "description": "Deterministic markdown validity on every reply (nested link, unbalanced emphasis, broken link) → WRITER malformed-markdown, free",
+      "scope": null
+    },
     {
       "hash": "a699af57",
       "date": "2026-11-04",
@@ -2856,101 +2863,17 @@
       "type": "Performance",
       "description": "LLM lane fan-out — name-correction and copy-edit chunks run at once; quotations and teachings linked together",
       "scope": "media"
-    },
-    {
-      "hash": "232b4104",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Aorus (RTX 3070) takes ASR first, plus DeepFilterNet and the grade; boss for diarization and overflow",
-      "scope": "media"
-    },
-    {
-      "hash": "1f725bbe",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Match Chad's Bindery cover map to docs BY TITLE (apply-covers.mjs, an API client) — the Sikh covers never attached because import-covers matched md5(OceanLibrary bookid) only, and those books live in the main library under subtitled titles ('The Sikh Religion Vol. 1 - Life of Guru Nanak' = 'The Sikh Religion, Volume I'); ambiguous titles are listed, never guessed",
-      "scope": "covers"
-    },
-    {
-      "hash": "e0b85104",
-      "date": "2026-10-22",
-      "type": "Chore",
-      "description": "2.187.776 — /library redesign live",
-      "scope": "release"
-    },
-    {
-      "hash": "9c803b19",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Gate unbound-variable on optional args + metrics rolloff IndexError killed every compute run; failures retried (capped) and watched",
-      "scope": "media"
-    },
-    {
-      "hash": "c6dc8a1d",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Ẓuhúru'l-Ḥaqq is one nine-volume work; /library lighter and more accessible (Chad 10-22)",
-      "scope": "library"
-    },
-    {
-      "hash": "fc070d99",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "POST /api/covers/:docId (internal key) — store a cover original (upload or copy from Bindery) and point the doc at its content-hash URL",
-      "scope": "covers"
-    },
-    {
-      "hash": "ac61a661",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "Tower's model work in two slots (4 threads each = the 8-thread budget) — one slot made enhance the compute lane's bottleneck (7 items waiting while boss idled)",
-      "scope": "media"
-    },
-    {
-      "hash": "0472e63e",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "/library redesigned — editorial and cover-first, live from the edge cache (Chad 10-22)",
-      "scope": "library"
-    },
-    {
-      "hash": "e362ef5f",
-      "date": "2026-10-22",
-      "type": "Chore",
-      "description": "2.187.773 — mail renderer + conversation digest in the Worker",
-      "scope": "deploy"
-    },
-    {
-      "hash": "7f568ba0",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "STAGE LANES + restart-proof compute (Chad 10-22: 'no internet dependencies on GPU processing. Queue up work and keep them busy') — the compute stages (archive · grade · enhance · web · transcribe with alignment and diarization) are media-compute jobs in their own lane (4 workers, one per boss ASR slot), the API stages (names · copy-edit · description · publish · enrichment) media-llm jobs in theirs (6 workers): an item leaves compute 'transcribed' and the LLM feed takes it, so an API storm never holds a compute slot; the feed keeps 8 compute and 8 LLM runs queued; naming falls back to the file path when the API is unreachable. Restarts lose nothing: diarization is now a DETACHED boss job (gate: start … --verb diarize) re-attached by its id like the ASR job, grade and DeepFilterNet run as detached tower processes re-attached by pid file; boss's model calls run with HF_HUB_OFFLINE (every model local)",
-      "scope": "media"
-    },
-    {
-      "hash": "96f64465",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Daily digest of EVERY conversation exactly as the reader saw it (Chad 10-22: \"so I can tweak\")",
-      "scope": "anis"
-    },
-    {
-      "hash": "a8d52bd3",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "One email renderer — every mail multipart, Markdown rendered (Chad 10-22: \"Anís digests of unrendered markdown\")",
-      "scope": "mail"
-    },
-    {
-      "hash": "3bc80354",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "PERSON LINKS — the spoken words decide (QA audit 10-22: 16 of 17 lookup-fallback links were wrong: 'Dr. Ḥakím' → Khayru'lláh, a Covenant-breaker; Leroy Ioas → Laura Barney ×5; the model's 'Muḥammad-‘Alí' = Quddús): a person is linked only when the mention's words are one person's name or alias, or a contiguous part of exactly one person's name; the model's canonical name only chooses among those; the identity-lookup fallback is removed; Covenant-breakers are never linked, and words that also name one are linked to no one; the 18 QA cases are a test",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-04": [
+      {
+        "hash": "abab9e7d",
+        "date": "2026-11-04",
+        "type": "Other",
+        "description": "Deterministic markdown validity on every reply (nested link, unbalanced emphasis, broken link) → WRITER malformed-markdown, free",
+        "scope": null
+      },
       {
         "hash": "a699af57",
         "date": "2026-11-04",
@@ -5827,97 +5750,6 @@
         "date": "2026-10-22",
         "type": "Performance",
         "description": "LLM lane fan-out — name-correction and copy-edit chunks run at once; quotations and teachings linked together",
-        "scope": "media"
-      },
-      {
-        "hash": "232b4104",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Aorus (RTX 3070) takes ASR first, plus DeepFilterNet and the grade; boss for diarization and overflow",
-        "scope": "media"
-      },
-      {
-        "hash": "1f725bbe",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Match Chad's Bindery cover map to docs BY TITLE (apply-covers.mjs, an API client) — the Sikh covers never attached because import-covers matched md5(OceanLibrary bookid) only, and those books live in the main library under subtitled titles ('The Sikh Religion Vol. 1 - Life of Guru Nanak' = 'The Sikh Religion, Volume I'); ambiguous titles are listed, never guessed",
-        "scope": "covers"
-      },
-      {
-        "hash": "e0b85104",
-        "date": "2026-10-22",
-        "type": "Chore",
-        "description": "2.187.776 — /library redesign live",
-        "scope": "release"
-      },
-      {
-        "hash": "9c803b19",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Gate unbound-variable on optional args + metrics rolloff IndexError killed every compute run; failures retried (capped) and watched",
-        "scope": "media"
-      },
-      {
-        "hash": "c6dc8a1d",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Ẓuhúru'l-Ḥaqq is one nine-volume work; /library lighter and more accessible (Chad 10-22)",
-        "scope": "library"
-      },
-      {
-        "hash": "fc070d99",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "POST /api/covers/:docId (internal key) — store a cover original (upload or copy from Bindery) and point the doc at its content-hash URL",
-        "scope": "covers"
-      },
-      {
-        "hash": "ac61a661",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "Tower's model work in two slots (4 threads each = the 8-thread budget) — one slot made enhance the compute lane's bottleneck (7 items waiting while boss idled)",
-        "scope": "media"
-      },
-      {
-        "hash": "0472e63e",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "/library redesigned — editorial and cover-first, live from the edge cache (Chad 10-22)",
-        "scope": "library"
-      },
-      {
-        "hash": "e362ef5f",
-        "date": "2026-10-22",
-        "type": "Chore",
-        "description": "2.187.773 — mail renderer + conversation digest in the Worker",
-        "scope": "deploy"
-      },
-      {
-        "hash": "7f568ba0",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "STAGE LANES + restart-proof compute (Chad 10-22: 'no internet dependencies on GPU processing. Queue up work and keep them busy') — the compute stages (archive · grade · enhance · web · transcribe with alignment and diarization) are media-compute jobs in their own lane (4 workers, one per boss ASR slot), the API stages (names · copy-edit · description · publish · enrichment) media-llm jobs in theirs (6 workers): an item leaves compute 'transcribed' and the LLM feed takes it, so an API storm never holds a compute slot; the feed keeps 8 compute and 8 LLM runs queued; naming falls back to the file path when the API is unreachable. Restarts lose nothing: diarization is now a DETACHED boss job (gate: start … --verb diarize) re-attached by its id like the ASR job, grade and DeepFilterNet run as detached tower processes re-attached by pid file; boss's model calls run with HF_HUB_OFFLINE (every model local)",
-        "scope": "media"
-      },
-      {
-        "hash": "96f64465",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Daily digest of EVERY conversation exactly as the reader saw it (Chad 10-22: \"so I can tweak\")",
-        "scope": "anis"
-      },
-      {
-        "hash": "a8d52bd3",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "One email renderer — every mail multipart, Markdown rendered (Chad 10-22: \"Anís digests of unrendered markdown\")",
-        "scope": "mail"
-      },
-      {
-        "hash": "3bc80354",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "PERSON LINKS — the spoken words decide (QA audit 10-22: 16 of 17 lookup-fallback links were wrong: 'Dr. Ḥakím' → Khayru'lláh, a Covenant-breaker; Leroy Ioas → Laura Barney ×5; the model's 'Muḥammad-‘Alí' = Quddús): a person is linked only when the mention's words are one person's name or alias, or a contiguous part of exactly one person's name; the model's canonical name only chooses among those; the identity-lookup fallback is removed; Covenant-breakers are never linked, and words that also name one are linked to no one; the 18 QA cases are a test",
         "scope": "media"
       }
     ]

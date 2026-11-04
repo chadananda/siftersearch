@@ -72,7 +72,7 @@ This uses Opus and the improve budget only. It never runs on the reply path.
 
 Chad 11-04: "split out the 'Activities' doc from the 'Response Strategies' doc page and generate the content of the response strategies from querying the db."
 
-There are two pages, both edge-cached, with numbers that refresh live.
+There are three pages, all edge-cached, with numbers that refresh live.
 
 - **/docs/response-strategies** is generated entirely from strategies.db. For each active strategy it shows:
   - the graph, its steps and its templates (template names only);
@@ -80,7 +80,8 @@ There are two pages, both edge-cached, with numbers that refresh live.
   - its branches;
   - its candidates and their replay results.
 - **/docs/anis-activities** is the catalog of activities, generated from the code registry: kind, class, input and output, which strategies use each one, and per-activity numbers. Scheduled, cron-like learning activities are PARKED (docs/architecture/anis-activities.md).
-- The old static page `search-strategy` (doc_pages) keeps indexing, intent, formats and audit. Its section 3 links to the two pages.
+- **/docs/anis-tools** is generated from the tool registry (tools.js REGISTRY): each tool's schema, the activities that call it, and its live latency.
+- The old static page `search-strategy` (doc_pages) keeps indexing, intent, formats and audit. Its section 3 links to the three pages.
 
 ## Phases
 
