@@ -182,7 +182,20 @@ describe('plannedSearch', () => {
     const t0 = Date.now();
     const r = await plannedSearch('the role of the Hands of the Cause', { planner: planPeople, engine: engine(() => many(5)).fn, people, resolver, encounterProbe: () => false, encounters: async () => null });
     expect(r.timings.claims_late).toBe(true);
+    // a late layer is measured at the moment it was given up on (it used to be invisible: claims_ms landed after the trace)
+    expect(r.timings.claims_ms).toBeGreaterThanOrEqual(1400);
     expect(Date.now() - t0).toBeLessThan(2200);   // max(1000, 1500), not 1000 + 1500
+  });
+
+  it('the claims layer passes its own stage timings through (claims_timings)', async () => {
+    const planPeople = async (_i, { given } = {}) => ({ ...buildPlan({
+      tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 }, author: { choice: 'none', confidence: 0.9 },
+      shape: { choice: 'enumerate', confidence: 0.9 }, about: { choice: 'people', confidence: 0.95 },
+    }, { given }), ms: 5 });
+    const people = async () => ({ people: [], timings: { group: 2, bio: 30, entity: 40, dossiers: 0, total: 45 } });
+    const r = await plannedSearch('who were the Hands of the Cause', { planner: planPeople, engine: engine(() => many(5)).fn, people, encounterProbe: () => false, encounters: async () => null });
+    expect(r.timings.claims_timings).toMatchObject({ bio: 30, entity: 40, total: 45 });
+    expect(typeof r.timings.claims_ms).toBe('number');
   });
 
   it('does not run the people layer for a question about what a text says', async () => {

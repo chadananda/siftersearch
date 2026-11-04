@@ -223,10 +223,13 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // Who-met-whom answers from the in-memory encounter index (ms); every other people question from peopleSearch.
   // Who-met-whom is detected deterministically (ms) on EVERY query, so a slow or failed plan cannot drop it.
   const encounterFn = encounters ?? (engine || people ? null : async (q) => (await import('./encounters.js')).encounterPeople(q));
-  const searchPeople = people ?? (engine ? null : async (q) => (await import('./people-search.js')).peopleSearch(q));
+  // judge:false (11-03): the claims layer never waits on a model — bioSearch's Haiku judge took 5-12 s, so every judged
+  // people question ran past the grace and its answer was dropped. Deterministic paths + cited evidence answer it in ms.
+  const searchPeople = people ?? (engine ? null : async (q) => (await import('./people-search.js')).peopleSearch(q, { judge: false }));
   const peopleFn = async (q) => (encounterFn ? await encounterFn(q) : null) ?? (layers.claims && searchPeople ? searchPeople(q) : { people: [] });
   const claimsP = !quotePhrase && ((layers.claims && searchPeople) || encounterFn) ? peopleFn(query).catch((err) => ({ people: [], error: err.message }))
-    .finally(() => { stages.claims_ms = Date.now() - t1; }) : null;
+    .then((r) => { if (r?.timings) stages.claims_timings = r.timings; return r; })
+    .finally(() => { if (!stages.claims_late) stages.claims_ms = Date.now() - t1; }) : null;
   // A QUOTATION (6+ words, not a question) is also searched verbatim — keyword only, unscoped, the whole text — beside the
   // planned search: the plan's subject-stripping, scope and author preference were built for questions and lost exact
   // matches (known-item test 10-16: production found a passage's own words first 73% vs the engine's 86%).
@@ -251,7 +254,10 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   stages.passages_ms = Date.now() - t1;
   // CLAIMS GRACE starts NOW (the passages are in) and runs beside target / hints / source resolution — it used to start
   // after resolve, so a late claims layer cost resolve + 1.5 s (11-03 bench: 2.2-2.5 s planned searches)
-  const claimsGraceP = claimsP ? Promise.race([claimsP, new Promise((ok) => { const t = setTimeout(() => { stages.claims_late = true; ok(null); }, CLAIMS_GRACE_MS); t.unref?.(); })]) : null;
+  const claimsGraceP = claimsP ? Promise.race([claimsP, new Promise((ok) => {
+    // a late layer is stamped HERE (time given up at): its .finally lands after the trace was written, so late claims
+    // were invisible — the 60-min trace showed claims p95 71 ms while judged people questions ran 5-12 s
+    const t = setTimeout(() => { stages.claims_late = true; stages.claims_ms = Date.now() - t1; ok(null); }, CLAIMS_GRACE_MS); t.unref?.(); })]) : null;
   const quotedIds = plan.prefer
     ? await (voices ?? (engine ? null : quotingParagraphs))?.(r.results.map((h) => h.id), plan.prefer.aliases).catch(() => new Set()) ?? new Set()
     : new Set();
@@ -377,6 +383,8 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
 function tracePlanned(query, plan, timings, hits) {
   if (process.env.NODE_ENV === 'test') return;
   const flat = Object.fromEntries(Object.entries(timings).filter(([, v]) => typeof v === 'number'));
+  // the claims layer's own stages (peopleSearch timings) ride along flat, as claims_<stage> (latency-budget CLAIMS_BUDGETS)
+  for (const [k, v] of Object.entries(timings.claims_timings || {})) if (typeof v === 'number') flat[`claims_${k}`] = v;
   import('./search-trace.js').then(({ traceSearch }) => traceSearch({ options: { traceEndpoint: 'planned' }, query, filters: plan?.filters,
     layers: { shape: plan?.shape || null }, timings: { ...flat, total: timings.total_ms }, hits })).catch(() => {});
 }

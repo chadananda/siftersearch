@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Search latency bench vs the contract (api/lib/search/latency-budget.js): POST /api/search/multi through the gateway, bare
 // and/or planned, at a concurrency; prints per-stage p50/p95 vs budget and EXITS 1 on any p95 over budget (2 = errors).
-//   node scripts/ops/search-bench.mjs [--conc 1] [--rounds 2] [--mode bare|plan|both] [--warm] [--totals-only] [--json]
+//   node scripts/ops/search-bench.mjs [--conc 1] [--rounds 2] [--mode bare|plan|both] [--queries topics|people] [--warm] [--totals-only] [--json]
+// --queries people: who-did-what / group questions, the ones that exercise the claims layer (peopleSearch).
 // Each query gets a run nonce (cold caches) unless --warm. Keep load modest: --conc ≤ 8. Env: SIFTER_API, DEPLOY_SECRET.
 import dotenv from 'dotenv';
 import { apiBase } from '../lib/api-base.mjs';
@@ -13,13 +14,19 @@ const flag = (k) => process.argv.includes(k);
 const API = apiBase(), KEY = process.env.DEPLOY_SECRET || '';
 const conc = Math.min(8, Math.max(1, Number(arg('--conc', 1)))), rounds = Math.max(1, Number(arg('--rounds', 2)));
 const modes = arg('--mode', 'both') === 'both' ? ['bare', 'plan'] : [arg('--mode')];
-const QUERIES = [
+const TOPICS = [
   'progressive revelation and the unity of the prophets', 'the station of the Bab as the Gate', 'life after death and the progress of the soul',
   "consultation in Baha'i administration", 'the equality of women and men', 'tithing and Huququllah', 'the oneness of mankind and world peace',
   'prayer and fasting as spiritual obligations', 'the covenant and the appointment of Abdul-Baha', 'science and religion in harmony',
   'detachment from the world', 'the lesser peace and the most great peace', 'education of children', 'the purpose of creation knowing God',
   'martyrdom of the Bab in Tabriz', 'the Guardian and the Universal House of Justice',
 ];
+const PEOPLE = [
+  'Who were the Seven Martyrs of Tehran?', 'Who were the Hands of the Cause?', 'Which Letters of the Living participated in Badasht?',
+  'Who accompanied the Bab to Maku?', 'Who met Bahaullah in Baghdad?', 'Who was imprisoned with Bahaullah in the Siyah-Chal?',
+  'Who died at the fort of Shaykh Tabarsi?', 'Who were the Letters of the Living?',
+];
+const QUERIES = arg('--queries', 'topics') === 'people' ? PEOPLE : TOPICS;
 const nonce = flag('--warm') ? '' : ` ${Math.random().toString(36).slice(2, 6)}`;
 
 async function one(q, plan) {

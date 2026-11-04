@@ -634,31 +634,54 @@ async function buildBioPerson(id, claimsMax) {
 // Intelligent meaning-search over the cast (descriptive/reasoning queries the token filter can't do, e.g.
 // "letters of the living who died at Shaykh Ṭabarsí"). Resolves known groups deterministically from
 // graph_relations; otherwise asks DeepSeek to judge from summaries. Returns { ids, q, group?, reasoning }.
-export async function bioSearch(rawQ) {
-  const q = String(rawQ || '').trim().slice(0, 200);
-  if (!q) return { ids: [], q };
-  const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/gi, ' ').toLowerCase();
-  const STOP = new Set(['the', 'of', 'and', 'who', 'a', 'an', 'in', 'at', 'to', 'is', 'are', 'were', 'all', 'show', 'me', 'list', 'group']);
-  const qtok = new Set(norm(q).split(/\s+/).filter((t) => t.length > 2 && !STOP.has(t)));
+// The group catalog and the person-name list change only when the graph is rebuilt: 5-min caches, so a people question
+// no longer re-reads every group row (+ JSON aliases) and every person row per request (11-03 latency contract).
+const BIO_LIST_TTL_MS = 5 * 60_000;
+const bioLists = new Map();   // key → { at, p }
+function cachedList(key, load) {
+  const c = bioLists.get(key);
+  if (c && Date.now() - c.at < BIO_LIST_TTL_MS) return c.p;
+  const p = load().catch((err) => { bioLists.delete(key); throw err; });
+  bioLists.set(key, { at: Date.now(), p });
+  return p;
+}
+export const _resetBioListCache = () => bioLists.clear();
+const bioNorm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/gi, ' ').toLowerCase();
+const BIO_STOP = new Set(['the', 'of', 'and', 'who', 'a', 'an', 'in', 'at', 'to', 'is', 'are', 'were', 'all', 'show', 'me', 'list', 'group']);
+const groupCatalog = () => cachedList('groups', async () => (await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases, er.summary FROM graph_entities ge
+    LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.entity_type='group'`))
+  .map((g) => ({ ...g, toks: [g.name, ...(() => { try { return JSON.parse(g.aliases || '[]'); } catch { return []; } })()]
+    .map((nm) => bioNorm(nm).split(/\s+/).filter((t) => t.length > 2 && !BIO_STOP.has(t))) })));
 
-  // deterministic group resolution: if the query names a modeled group, return its members from graph_relations
-  let memberIds = [], bareGroup = false, best = null;
-  const groups = await queryAll(`SELECT ge.id, ge.canonical_name AS name, er.aliases, er.summary FROM graph_entities ge
-    LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name WHERE ge.entity_type='group'`);
-  for (const g of groups) {
-    const names = [g.name, ...(() => { try { return JSON.parse(g.aliases || '[]'); } catch { return []; } })()];
-    for (const nm of names) {
-      const gtok = norm(nm).split(/\s+/).filter((t) => t.length > 2 && !STOP.has(t));
+/** Deterministic group resolution (no model): the modeled group the query names (≥2 name tokens), its person members
+ *  from graph_relations, and whether the query IS the group's name. → { best: {id, ov, name, summary}|null, memberIds, bareGroup } */
+export async function bioGroup(rawQ) {
+  const q = String(rawQ || '').trim().slice(0, 200);
+  const qtok = new Set(bioNorm(q).split(/\s+/).filter((t) => t.length > 2 && !BIO_STOP.has(t)));
+  let best = null;
+  for (const g of await groupCatalog()) {
+    for (const gtok of g.toks) {
       const overlap = gtok.filter((t) => qtok.has(t)).length;
       if (overlap >= 2 && (!best || overlap > best.ov)) best = { id: g.id, ov: overlap, name: g.name, summary: g.summary };
     }
   }
-  if (best) {
-    const mem = await queryAll(`SELECT gr.source_entity_id AS id FROM graph_relations gr JOIN graph_entities ge ON ge.id = gr.source_entity_id
+  if (!best) return { best: null, memberIds: [], bareGroup: false };
+  const mem = await queryAll(`SELECT gr.source_entity_id AS id FROM graph_relations gr JOIN graph_entities ge ON ge.id = gr.source_entity_id
       WHERE gr.target_entity_id = ? AND ge.entity_type='person' ORDER BY (ge.importance IS NULL), ge.importance DESC`, [best.id]);
-    memberIds = [...new Set(mem.map((r) => r.id))];
-    bareGroup = best.ov >= qtok.size;
-  }
+  return { best, memberIds: [...new Set(mem.map((r) => r.id))], bareGroup: best.ov >= qtok.size };
+}
+
+/** judge:false = DETERMINISTIC (planned search's claims layer, 11-03): every path that needs no model answers as before;
+ *  the connection path returns its cited-connected set with each person's connecting claim; the precision (meaning)
+ *  path returns no ids — the caller's evidence search answers it. Never calls an LLM. `group` = a bioGroup() result. */
+export async function bioSearch(rawQ, { judge = true, group = null } = {}) {
+  const q = String(rawQ || '').trim().slice(0, 200);
+  if (!q) return { ids: [], q };
+  const norm = bioNorm;
+  const STOP = BIO_STOP;
+
+  // deterministic group resolution: if the query names a modeled group, return its members from graph_relations
+  const { best, memberIds, bareGroup } = group || await bioGroup(q);
   if (bareGroup && memberIds.length) return { ids: memberIds, q, group: best.id, reasoning: { summary: best.summary || `${best.name} — ${memberIds.length} members.`, evidence: {} } };
 
   // ── Candidate catalog = each person's PROOF-GATED CLAIMS (entity_claims): every fact carries a verbatim proof span
@@ -693,8 +716,8 @@ export async function bioSearch(rawQ) {
   let connTarget = null;
   if (connQ) {
     const gtoks = new Set(best ? tokize(best.name) : []);
-    const persons = await queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE entity_type = 'person'
-      AND ${LIVE_SQL()}`);
+    const persons = await cachedList('persons', () => queryAll(`SELECT id, canonical_name cn FROM graph_entities WHERE entity_type = 'person'
+      AND ${LIVE_SQL()}`));
     const qf = ' ' + fold(q) + ' ';
     for (const p of persons) {
       if (best && p.id === best.id) continue;
@@ -710,6 +733,9 @@ export async function bioSearch(rawQ) {
   // this set is a strict superset of the claims that can influence the result.
   const preToks = [...new Set(norm(q).split(/\s+/).filter((t) => t.length > 2 && !STOP.has(t)))].slice(0, 8);
   if (!preToks.length && !connTarget) return { ids: [], q };
+  // DETERMINISTIC mode: the meaning path (no connection target) needs the judge — answer nothing here and let the
+  // caller's cited-evidence search answer; the group (if any) still bounds that answer.
+  if (!judge && !connTarget) return { ids: [], q, ...(best ? { group: best.id } : {}), reasoning: { summary: '', evidence: {} }, deterministic: true };
   // OFF THE MAIN THREAD (10-20: this scan took 5.8 s on the API's event loop): the claim-search worker runs it
   const claimRows = await (await import('./claim-search.js')).bioClaimRows(preToks, connTarget ? connTarget.id : null);
   // Resolve the SOURCE DOCUMENT for every cited claim from the docs table (NOT a hardcoded book list). Every claim
@@ -787,6 +813,16 @@ export async function bioSearch(rawQ) {
         || (b.url ? 1 : 0) - (a.url ? 1 : 0) || (b.proof || '').length - (a.proof || '').length).slice(0, 6);
       members.push({ id, name: nameById[id] || `#${id}`, conn });
     }
+    if (members.length && !judge) {
+      // DETERMINISTIC: the cited-connected set IS the answer; each person's connecting claim is the one the vividness
+      // order put first (the judge would only reword it, or drop a proof that does not bear the connection).
+      const evidence = {};
+      for (const m of members) {
+        const c = m.conn[0];
+        evidence[m.id] = { quote: cl(c.statement), proof: cl(c.proof) || null, source: c.source, paraId: c.paraId, url: c.url || null, clause: '' };
+      }
+      return { ids: members.map((m) => m.id), q, ...(best ? { group: best.id } : {}), reasoning: { summary: '', evidence }, deterministic: true };
+    }
     if (members.length) {
       const CSYS = `For each person, choose the ONE fact that most CONCRETELY shows the connection the QUESTION asks about, and write a SPECIFIC clause (≤16 words, begin with a verb) that names the PLACE, TIME, or CIRCUMSTANCE of the connection. PREFER THE BOOK'S OWN WORDING taken verbatim from that fact's « proof » — lightly trimmed to a clean phrase — rather than paraphrasing (e.g. "was privileged to enter the presence of Bahá'u'lláh in Ṭihrán", "walked with Bahá'u'lláh in the streets of Badasht", "tenderly embraced Him and conducted Him to the place of honour"). NEVER write a bare "met X": do NOT choose a fact whose proof merely says someone "described", "referred to", or "mentioned" the person — prefer a fact whose proof shows the actual encounter (where/when/how it happened). Each fact is indexed "[i] statement « verbatim proof »". If NO fact actually shows the connection, use clause "SKIP". Return ONLY JSON: {"lead":"<one short sentence>","clauses":[{"id":<number>,"i":<chosen fact index>,"clause":"<specific book-worded verb phrase or SKIP>"}]}.`;
       const body = members.map((m) => `${m.id}|${m.name}:\n` + m.conn.map((c, i) => `  [${i}] ${cl(c.statement)} « ${cl(c.proof)} »`).join('\n')).join('\n');
@@ -821,6 +857,7 @@ export async function bioSearch(rawQ) {
       if (best) return { ids: [], q, group: best.id, reasoning: { summary: `No cited connection between the ${grp} and ${connTarget.name} is borne out by the sources.`, evidence: {} } };
     }
   }
+  if (!judge) return { ids: [], q, ...(best ? { group: best.id } : {}), reasoning: { summary: '', evidence: {} }, deterministic: true };
   // ── Precision path (place/event/meaning, incl. connection+place): judge the query over each candidate's cited claims.
   //    Pool = the cited-connected set (if a target was named) else entities whose claim proof/statement matches the query
   //    terms. Every candidate line carries the claim's VERBATIM PROOF so the model judges on evidence, not paraphrase.

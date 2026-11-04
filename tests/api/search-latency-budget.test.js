@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { ENGINE_BUDGETS, PLANNED_BUDGETS, QDRANT_CALL_MS, engineStages, plannedStages, summarizeStages, summarizeTraceRows,
+import { ENGINE_BUDGETS, PLANNED_BUDGETS, CLAIMS_BUDGETS, QDRANT_CALL_MS, engineStages, plannedStages, summarizeStages, summarizeTraceRows,
   latencyBreaches, latencyChecks, budgetFor } from '../../api/lib/search/latency-budget.js';
 
 const ROOT = join(import.meta.dirname, '..', '..');
@@ -52,6 +52,17 @@ describe('summaries', () => {
     expect(engineStages({ embed: 300, merge: 50, total: 500, qdrant: 12, qdrant_calls: 5, qdrant_by: { phrases: 12, hype: 7 }, junk: 3 }))
       .toEqual({ embed: 300, merge: 50, total: 500, qdrant: 12, 'qdrant:phrases': 12, 'qdrant:hype': 7 });
     expect(plannedStages({ plan_ms: 200, total_ms: 900, named_timeout: true, engine: [] })).toEqual({ plan: 200, total: 900 });
+  });
+  it('claims sub-stages: every peopleSearch timings key has a CLAIMS_BUDGETS row; trace (flat) and live (object) forms both read', () => {
+    const ps = src('api/lib/people-search.js');
+    const keys = [...ps.matchAll(/\b(?:lap|timed)\('([a-z]+)'/g)].map((m) => m[1]);
+    expect(new Set(keys)).toEqual(new Set(['group', 'bio', 'entity', 'dossiers', 'total']));
+    expect(keys.filter((k) => !CLAIMS_BUDGETS[k])).toEqual([]);
+    expect(CLAIMS_BUDGETS.total.ms).toBe(PLANNED_BUDGETS.claims.ms);
+    expect(plannedStages({ claims_ms: 90, claims_bio: 40, claims_entity: 70 })).toEqual({ claims: 90, 'claims:bio': 40, 'claims:entity': 70 });
+    expect(plannedStages({ claims_timings: { group: 3, dossiers: 9, cached: true } })).toEqual({ 'claims:group': 3, 'claims:dossiers': 9 });
+    expect(budgetFor('planned', 'claims:entity')).toBe(CLAIMS_BUDGETS.entity.ms);
+    expect(src('api/lib/planned-search.js')).toMatch(/flat\[`claims_\$\{k\}`\]/);
   });
   it('summarizeStages: p50/p95/max per stage, worst ratio to budget first', () => {
     const rows = summarizeStages('engine', Array.from({ length: 20 }, (_, i) => ({ total: 100 + i * 10, qdrant: 5 + i })));

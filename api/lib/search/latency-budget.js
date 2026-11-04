@@ -41,6 +41,17 @@ export const PLANNED_BUDGETS = Object.freeze({
   total: { ms: 1000, note: "Chad's 1 s budget for the whole planned search" },
 });
 
+// The claims layer's own stages (peopleSearch `timings`, judge:false; traced as claims_<stage>, reported as claims:<stage>).
+// 11-03 before: bioSearch's Haiku judge 5-12 s serial (GET /api/v1/people/search on tower), so every judged people question
+// ran out the 1.5 s grace and was dropped; entitySearch alone 120-290 ms (GET /api/v1/entities/search?limit=30).
+export const CLAIMS_BUDGETS = Object.freeze({
+  group: { ms: 30, note: 'bioGroup: cached group catalog (5 min) + one roster query' },
+  bio: { ms: 400, note: 'bioSearch judge:false: bare-group / bare-name / cited-connection paths, no model call' },
+  entity: { ms: 400, note: 'entitySearch: claim-search worker scan + doc resolve, 120-290 ms measured' },
+  dossiers: { ms: 150, note: 'entityDossier of bioSearch ids missing from the evidence, in parallel (were serial)' },
+  total: { ms: 600, note: 'the whole peopleSearch = PLANNED_BUDGETS.claims' },
+});
+
 export const QDRANT_CALL_MS = ENGINE_BUDGETS.qdrant.ms;
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -59,12 +70,15 @@ export function engineStages(t = {}) {
 export function plannedStages(t = {}) {
   const out = {};
   for (const k of Object.keys(PLANNED_BUDGETS)) { const v = num(t[`${k}_ms`]); if (v != null) out[k] = v; }
+  // claims sub-stages: flat claims_<k> (trace rows) or the claims_timings object (a live response)
+  for (const k of Object.keys(CLAIMS_BUDGETS)) { const v = num(t[`claims_${k}`] ?? t.claims_timings?.[k]); if (v != null) out[`claims:${k}`] = v; }
   return out;
 }
 
 /** The budget for a stage of a kind ('engine' | 'planned'); `qdrant:<collection>` shares the per-call budget. */
 export function budgetFor(kind, stage) {
   if (kind === 'engine' && stage.startsWith('qdrant:')) return QDRANT_CALL_MS;
+  if (kind === 'planned' && stage.startsWith('claims:')) return CLAIMS_BUDGETS[stage.slice(7)]?.ms ?? null;
   return (kind === 'planned' ? PLANNED_BUDGETS : ENGINE_BUDGETS)[stage]?.ms ?? null;
 }
 
