@@ -33,6 +33,9 @@ const GPU_LOCK = arg('gpu-lock'), MIN_AVAIL_GB = Number(arg('min-avail-gb', 5)),
 const CAN = arg('can', 'whole,restore,post,cleanup').split(',').filter(Boolean);
 const list = (k) => (arg(k, '') || '').split(',').filter(Boolean);
 const SPILL = list('spill'), CPUS = String(arg('cpus', 6)), PROFILE = arg('profile');
+// --cpu-slots N: a hard ceiling on CPU-typed jobs at once, whatever the measurement admits. 11-03 aorus ran 9 cpu-prep (6 cores each, 24-core box)
+// beside 2 UniPASE jobs; the RTX 3070 fell off the bus (Xid 79) and the box needed a reboot. A shared desktop gets a ceiling.
+const CPU_SLOTS = Number(arg('cpu-slots', Infinity));
 // --cgroup-parent <system slice>: dockerd starts containers outside the agent's own cgroup, so a host that caps its bulk work (tower: Chad 10-31,
 // cpu-finish only, in sifter-bulk.slice) names the slice and every job container lands in it
 export const CGROUP = arg('cgroup-parent');
@@ -211,6 +214,7 @@ async function work(job) {
     log('done', { job: job.id, type: info.type, s: Math.round((Date.now() - t0) / 1000), ...timing, audio_s: info.audio_s, outputs: outputs.length });
   } catch (e) {
     log('failed', { job: job.id, error: String(e.message).slice(-2500) });
+    if (kindOf(job)?.needs === 'gpu' && GPU_GONE.test(e.message) && !gpuLostAt) { gpuLostAt = Date.now(); log('gpu lost — no GPU claims until nvidia-smi answers', { error: String(e.message).slice(-300) }); }
     lastError = { at: Date.now(), job: job.id, msg: String(e.message).slice(-500) };
     if (!lost) await q.fail({ id: job.id, lease: job.lease, error: `${HOST}: ${String(e.message).slice(-2500)}` }).catch(() => {});
   } finally {
@@ -310,6 +314,10 @@ function startHealth() {
   };
 }
 const gpuSeen = [];   // GPU utilisation over the last minute: idle + nothing queued at it → ramp one more talk into CPU prep
+// a lost GPU (driver error, Xid 79 'fallen off the bus') claims no GPU work — every claim would fail and requeue — until the probe answers again
+const GPU_GONE = /nvml error|fallen off the bus|NVIDIA-SMI has failed|no CUDA-capable device|CUDA error: unknown error|hipErrorNoDevice/i;
+let gpuLostAt = 0, gpuProbeAt = 0;
+const gpuBack = () => DEVICE !== 'cuda' || spawnSync('nvidia-smi', ['-L'], { stdio: 'ignore', timeout: 20_000 }).status === 0;
 let claimedAt = 0, depth = 1, depthAt = 0;   // depth: talks kept on the GPU deck, learned from starvation (gpu-pace nextDepth)
 const cpuSeen = [];   // CPU samples over the last ~2 min: a full CPU holds claims (the GPU-feeding stages would only slow)
 // one agent per root: a second start refuses (a swap drains the old agent first, so the lock is free by then)
@@ -329,7 +337,8 @@ while (!stopping || running.size) {
   if (shallower !== depth) { depth = shallower; depthAt = Date.now(); log('deck depth', { depth, gpu_waiting: deck.waiting }); }
   // ADAPT: CPU types are admitted by measurement (fitCpu), the GPU deck counts GPU jobs only; otherwise every job counts against --slots
   const gpuRunning = ADAPT ? [...jobs.values()].filter((j) => j.needs !== 'cpu').length : running.size;
-  const want = !stopping && (!ADAPT || NEEDS_GPU) && wantAnother({ running: gpuRunning, cap: CAP, onDeck: onDeckN, depth, waiting: deck.waiting, memGb: memAvailGb(), minGb: MIN_AVAIL_GB, cpu,
+  if (gpuLostAt && Date.now() - gpuProbeAt >= 600_000) { gpuProbeAt = Date.now(); if (gpuBack()) { log('gpu back', { lost_min: Math.round((Date.now() - gpuLostAt) / 60_000) }); gpuLostAt = 0; } }
+  const want = !stopping && !gpuLostAt && (!ADAPT || NEEDS_GPU) && wantAnother({ running: gpuRunning, cap: CAP, onDeck: onDeckN, depth, waiting: deck.waiting, memGb: memAvailGb(), minGb: MIN_AVAIL_GB, cpu,
     gpuIdle, sinceClaimMs: Date.now() - claimedAt, diskGb: diskFreeGb(), minDiskGb: DISK_PER_TALK })
     // CPU-only work: one claim a minute while busy, so the CPU sample sees each job's load before the next
     && (NEEDS_GPU || !running.size || Date.now() - claimedAt >= 60_000);
@@ -337,7 +346,8 @@ while (!stopping || running.size) {
   // 11-01: one claim a minute held boss at 1–2 cpu-finish jobs (each ~1–4 min) with 36 queued and 14 allowed. The next claim waits for the
   // job in fetch to have its inputs (a progress gate, not a timer): 11-01 06:02 aorus took 7 at once and all 7 fetches timed out on the link
   const fetching = [...jobs.values()].some((j) => j.phase === 'fetch');
-  const fit = ADAPT && !stopping && !fetching && diskFreeGb() >= DISK_PER_TALK ? fitCpu(cpu, c) : [];
+  const cpuJobs = [...jobs.values()].filter((j) => j.needs === 'cpu').length;
+  const fit = ADAPT && !stopping && !fetching && cpuJobs < CPU_SLOTS && diskFreeGb() >= DISK_PER_TALK ? fitCpu(cpu, c) : [];
   const cpuReady = fit.length > 0;
   // the GPU deck is full but cores are spare: offer them to the spill types (the queue gives one only while that backlog is over 1 h)
   const spare = !want && !stopping && SPILL.length && running.size < CAP && memAvailGb() >= MIN_AVAIL_GB + GB_PER_TALK && diskFreeGb() >= DISK_PER_TALK
