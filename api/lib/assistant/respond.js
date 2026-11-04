@@ -16,7 +16,7 @@ import { modelFor } from '../model-roles.js';
 import { calculateCost } from '../model-registry.js';
 import { preferOwnWork, literalOwnSearch, linkHits } from './own-source.js';
 import { toPassage } from './tools.js';
-import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, markQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink, bookOnlyBlockquotes } from './quotes.js';
+import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, markQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink, bookOnlyBlockquotes, restoreElisions } from './quotes.js';
 import { referenceHow, ensureWholeReference } from './lookup.js';
 import { guardRows } from '../rights/guard.js';
 import { termQuestion, resolveTerm, ctaiTerm, termEvidence, termFormatHow, placeRenderings } from './ctai-term.js';
@@ -25,7 +25,7 @@ import { chooseFormat, codeFormat } from './formats.js';
 import { channelFor } from './channels.js';
 import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
-import { unmachine, dropQuibbles } from './lint.js';
+import { unmachine, dropQuibbles, dropSearchOffer } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
 import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asksForOriginal, namesTheWork } from './researcher.js';
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
@@ -931,7 +931,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     gate.flush();
     // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
     // (the widget reconciles its streamed text to this; email sends only this).
-    const verified = dropUnverified(cleanLinks(raw), retrieved, { asked: readerWords });
+    // a "…" inside a quotation that bridges its passage's own words becomes those words, to a sentence end (11-04 #161/#138)
+    const verified = dropUnverified(restoreElisions(cleanLinks(raw), retrieved, { asked: readerWords }).text, retrieved, { asked: readerWords });
     // a blockquote holds only book text: the writer's own words leave it (Chad 11-04); a numbered reference is the passage whole
     const bookOnly = bookOnlyBlockquotes(verified.text, conversational ? [] : retrieved, { asked: readerWords });
     const guarded = { ...verified, text: fast?.kind === 'reference' ? ensureWholeReference(bookOnly.text, fast) : bookOnly.text,
@@ -946,7 +947,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     const quoteLinked = linkQuotes(speakers.text, conversational ? [] : retrieved);
     const linked = ensureLinks(quoteLinked.text, conversational ? [] : retrieved);   // the counts come from code
     // a book asked for: its link first and the offer to read it last, by code (work-request.js)
-    const bare = dropPreamble(linked);
+    // …and a closing offer to search is the research left undone: it goes (11-04 #163)
+    const bare = dropSearchOffer(dropPreamble(linked)).text;
     // every book named in italics links to the library's copy (Chad 11-01)
     const titled = conversational ? { text: bare } : await (d.linkTitles || (deps ? async (t) => ({ text: t }) : linkTitles))(bare).catch(() => ({ text: bare }));
     // the middle of a book reply is what the sources say about it, linked — or nothing (11-01 live: "Dawnbreakers" got "I didn't

@@ -5,7 +5,8 @@
 // drops any it was not given, and the quote gate removes a sentence quoting words no passage holds. Deps injectable (tests).
 import { toolRunner, libraryTools, TOOL_CHARS } from './researcher.js';
 import { llmTools, canonical, canonWork, run as runTool } from './tools.js';
-import { dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes } from './quotes.js';
+import { dropUnverified, fixQuoteSpeakers, linkQuotes, markQuotes, restoreElisions } from './quotes.js';
+import { dropSearchOffer } from './lint.js';
 import { dropPreamble } from './work-request.js';
 import { agentSearch } from './agent-search.js';
 import { roleReplyCap } from './reply-cap.js';
@@ -27,7 +28,7 @@ TOOLS — use them before answering; call several at once when they are independ
 - document_search: whenever a book, tablet or work is named or asked for. It returns [B#] — the library's own copy. Always give it.
 - work_notes_lookup: sourced lines on a core work's importance — use beside document_search when the reader asks for or about a book.
 - fused_search: passages. Phrase the query in the words the texts would use; put an author or work name in the query to narrow it. Try another wording before concluding anything is missing.
-- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_trace first, with fused_search on the distinctive phrase in parallel. EXACT quotation (or the reader asks for the original/tablet/Persian/Arabic): answer with the source linked, the original when found, and works that quote it. INEXACT ask (keywords, a paraphrase, "the X quote"): give the MAIN source quoted and linked plus 1–2 similar passages from fused_search, and NO original-language text, Phelps Inventory or tablet detail unless asked; if no published source holds the words, say so plainly — never attribute from memory.
+- SOURCE QUESTIONS (a reader gives a quotation, or asks where words come from, who said them, whether they are authentic): call quotation_trace first, with fused_search on the distinctive phrase in parallel. EXACT quotation (or the reader asks for the original/tablet/Persian/Arabic): answer with the source linked, the original when found, and works that quote it. INEXACT ask (keywords, a paraphrase, "the X quote"): give the MAIN source quoted and linked plus 1–2 similar passages from fused_search, and NO original-language text, Phelps Inventory or tablet detail unless asked; if no published source holds the words, say so plainly — never attribute from memory. Quote the located sentence and its surrounding sentences verbatim, with no "…" inside a quotation (keep the source's own spelling, even a typo); wording variants between copies go in a separate line, never stitched into the quote.
 - context_lookup, quotation_trace (where a quotation comes from), original_lookup, translation_lookup, rendering_lookup, source_trace (a letter or scholar stating a teaching → the primary passages), web_search (last resort; label it as from the web, never as scripture).
 
 WRITING:
@@ -39,7 +40,7 @@ WRITING:
 - Readings in the community's sense: "the House" = the Universal House of Justice, "the Master" = 'Abdu'l-Bahá, "the Guardian" = Shoghi Effendi, "the Blessed Beauty" = Bahá'u'lláh, "the Most Holy Book" = the Kitáb-i-Aqdas, "the Nine Year Plan" = 2022–2031.
 - When the library does not hold what was asked, say so in one sentence and give what it does hold that helps, with refs. Never fill a gap from memory.
 - Never send the reader to another website or catalogue for something the library holds.
-- End, if useful, with one short offer to go further. No summary, no remarks about your sources or tools.`;
+- Never end with an offer to search, look up, check or find more: run that lookup now, in this turn; if the library does not hold it, say so plainly in one sentence. No summary, no remarks about your sources or tools.`;
 
 /** [[P3]] / [[P3, P5]] / [[B1]] (single brackets too) → links from what the tools returned; any other ref is dropped. Pure. */
 export function renderRefs(text, { found, works }) {
@@ -104,15 +105,19 @@ export async function agentAnswer({ messages, create, tools: impl, onEvent = () 
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   const rendered = renderRefs(final, { found, works });
-  const guarded = dropUnverified(rendered, retrieved, { asked: messages.filter((m) => m.role === 'user').map((m) => String(m.content || '')) });
+  const asked = messages.filter((m) => m.role === 'user').map((m) => String(m.content || ''));
+  const whole = restoreElisions(rendered, retrieved, { asked });   // a "…" bridging the passage's own words → its contiguous words (11-04 #161/#138)
+  const guarded = dropUnverified(whole.text, retrieved, { asked });
   const speakers = fixQuoteSpeakers(guarded.text, retrieved);
   const linked = linkQuotes(speakers.text, retrieved);
-  const reply = markQuotes(dropPreamble(linked.text).trim(), retrieved).text;   // quoted words styled apart (Chad 11-04)
+  const offerless = dropSearchOffer(dropPreamble(linked.text).trim());   // the research is his to run, never an offer (11-04 #163)
+  const reply = markQuotes(offerless.text, retrieved).text;   // quoted words styled apart (Chad 11-04)
   const citations = [...[...works.values()].map((w) => ({ title: w.title, author: w.author, url: w.url, religion: w.religion, document_id: w.id, paragraph_index: null, text: '' })),
     ...retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url, religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index ?? null, text: String(q.text).slice(0, 300) }))]
     .filter((c) => c.url && reply.includes(c.url));
   return { reply, raw: final, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), citations, steps, usage,
     quotes_removed: guarded.removed, quotes_recredited: speakers.fixed || 0, quotes_linked: linked.linked || 0,
+    quotes_restored: whole.restored, offers_dropped: offerless.dropped,
     timings: { first_tool_ms: firstToolMs, total_ms: Date.now() - t0 } };
 }
 

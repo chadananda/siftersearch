@@ -1,6 +1,13 @@
 // Anis voice lint — the missing validator for the Companion's FORBIDDEN list and the soul's voice rules. Runs on every
 // final reply; LOGS hits, never blocks (a false positive must not censor an answer — the soul battery is the gate).
-// Pure. Deps: none.
+// Pure. Deps: none. One rule BLOCKS: a reply ending in an offer to search loses that offer (dropSearchOffer).
+
+// An offer to run a lookup Anís could run himself: "would you like me to look…", "I can look up X if you'd like", "shall I
+// search…". Not a statement of what was found ("all I could find", "I could find no…") and not an offer to READ with the reader.
+const OFFER_VERB = String.raw`(?:search\w*|look(?:\s+(?:up|for|into|further|through|at))?|find|trace|dig|check|pull\s+up|locate|hunt|fetch|explore|go\s+(?:deeper|further))`;
+export const SEARCH_OFFER = new RegExp(String.raw`\b(?:would\s+you\s+like|do\s+you\s+want|(?:like|want|wish)\s+me|shall\s+i|should\s+i)\b[^.?!\n]{0,100}?\b${OFFER_VERB}\b`
+  + String.raw`|(?<!\b(?:all|what|as|that|which|where)\s)\bi(?:\s+(?:can|could)|['’]d\s+be\s+(?:glad|happy)\s+to|\s+would\s+be\s+(?:glad|happy)\s+to|['’]m\s+happy\s+to|\s+am\s+happy\s+to)`
+  + String.raw`\s+(?:also\s+|then\s+|next\s+|gladly\s+|further\s+)?${OFFER_VERB}\b(?!\s+(?:no|nothing|none|only|it\s+in\s+no)\b)`, 'i');
 export const LINT = [
   { id: 'we-bahais', re: /\bwe\s+bah[aá]['’]?[ií]s?\b/i, why: 'speaks for a community' },
   { id: 'the-position', re: /\bthe\s+(bah[aá]['’]?[ií]|christian|muslim|islamic|jewish|buddhist|hindu)\s+position\s+is\b/i, why: 'a reading presented as a tradition\'s position' },
@@ -15,7 +22,7 @@ export const LINT = [
   { id: 'machinery', re: /\b(retrieved (sources|passages|texts)|the provided (texts|passages|sources|writings)|the passages (provided|given|above)|our library'?s? (cited )?record|in the (sources|passages) (i was|i've been) given)\b/i, why: 'mentions the pipeline instead of the works' },
   { id: 'authority-layers', re: /\b(authority layers?|the provided evidence|ground every claim)\b/i, why: 'pipeline vocabulary in a letter' },
   // 11-04: "if you like, I can search the tablets for…" — the research is Anís's to run, never the reader's to approve
-  { id: 'search-offer', re: /\b(?:if\s+you(?:['’]d)?\s+like|would\s+you\s+like\s+me\s+to|i\s+(?:can|could)\s+(?:also\s+)?(?:then\s+)?(?=search|look|run|check|trace|find|dig))[^.\n]{0,80}?\b(?:search\w*|look\s+(?:for|into|further|through)|trace|dig|check\s+the\s+(?:original|tablets?|writings))\b/i, why: 'offers a search it could run itself' },
+  { id: 'search-offer', re: SEARCH_OFFER, why: 'offers a search it could run itself' },
   { id: 'human-claim', re: /\bas\s+a\s+(human|person|believer\s+myself)\b|\bi\s+am\s+(a\s+)?human\b/i, why: 'claims to be human' },
 ];
 
@@ -23,6 +30,41 @@ export const LINT = [
 export function lintReply(text) {
   const own = String(text || '').split('\n').filter((l) => !/^\s*>/.test(l)).join('\n').replace(/[“"][^”"]{0,600}[”"]/g, ' ');
   return LINT.filter((r) => r.re.test(own)).map(({ id, why }) => ({ id, why }));
+}
+
+/** An offer to search, outside quoted material. Pure. */
+export const isSearchOffer = (s) => SEARCH_OFFER.test(String(s || '').replace(/[“"][^”"]{0,600}[”"]/g, ' '));
+
+// THE TRAILING SEARCH OFFER — BLOCKING (11-04 digest #163: "I can look up the Gleanings section number … if you'd like").
+// The research is Anís's to run; an offer to run it is removed. Only the reply's closing sentences are examined (an offer
+// is a sign-off), walking back over trailing paragraphs; a follow-on "Just ask." / "Let me know." goes with it. Blockquotes,
+// tables, headings and lists are never touched, and the reply is never emptied. Pure.
+const NUDGE = /^\s*(?:just\s+(?:ask|say|let\s+me\s+know)|let\s+me\s+know|happy\s+to\s+help|i['’]m\s+here\b)[^.!?\n]{0,80}[.!?]?\s*$/i;
+const STRUCTURED = /^\s*(?:>|\||#|[-*+]\s|\d+[.)]\s)/;
+export function dropSearchOffer(text) {
+  const src = String(text || '');
+  const paras = src.split(/\n{2,}/);
+  let dropped = 0;
+  for (let i = paras.length - 1; i >= 0; i--) {
+    const p = paras[i];
+    if (!p.trim()) continue;
+    if (STRUCTURED.test(p) || p.includes('\n')) break;
+    const sents = p.match(/[^.!?]+(?:[.!?]+["”’)*_]*|$)\s*/g) || [p];
+    let n = sents.length;
+    while (n > 0) {
+      if (isSearchOffer(sents[n - 1])) n -= 1;
+      else if (n > 1 && NUDGE.test(sents[n - 1]) && isSearchOffer(sents[n - 2])) n -= 2;
+      else break;
+      dropped += 1;
+    }
+    if (n === sents.length) break;
+    const kept = sents.slice(0, n).join('').trim();
+    if (kept) { paras[i] = kept; break; }
+    paras[i] = '';
+  }
+  if (!dropped) return { text: src, dropped: 0 };
+  const out = paras.filter((p) => p.trim()).join('\n\n');
+  return out.trim() ? { text: out, dropped } : { text: src, dropped: 0 };
 }
 
 // Deterministic BACKSTOP for the one machinery phrase the formatter keeps producing when something is missing

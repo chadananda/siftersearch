@@ -604,3 +604,95 @@ export function bookOnlyBlockquotes(text, passages, { asked = [] } = {}) {
   }
   return { text: out.join('\n').replace(/\n{3,}/g, '\n\n').trim(), unquoted };
 }
+
+// ── Elided quotations made whole (11-04 digest #161, #138) ────────────────────────────────────────────────────────────
+// A quotation with an ellipsis INSIDE it that bridges words its passage has ("the entire human race. … It is not for him",
+// "a struggle… Progress is attained" where the copy reads "a struggle Progress") is a stitched, clipped Writing. Code puts
+// back the passage's own words, verbatim (its typos kept — never repaired with an ellipsis), and ends the quotation at the
+// sentence end. A bridged stretch longer than ELIDED_GAP_WORDS is not filled: the quotation starts instead at the sentence
+// that opens the part the reader asked about (else the last part) — trimmed only at a sentence boundary, never with "…".
+export const ELIDED_GAP_WORDS = 80;
+const ELLIPSIS = /\s*(?:\.\.\.|…)\s*/;
+const QUOTE_MARK = /[‘’ʼ`'"“”]/;
+/** raw → { s: foldText(raw), at: [raw index of each folded char] } — foldText with a map back to the raw text. */
+function foldMapped(raw) {
+  let s = '';
+  const at = [];
+  for (let i = 0; i < raw.length; i++) {
+    for (const ch of raw[i].normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()) {
+      if (QUOTE_MARK.test(ch)) continue;
+      if (/[a-z0-9]/.test(ch)) { s += ch; at.push(i); } else if (s && s[s.length - 1] !== ' ') { s += ' '; at.push(i); }
+    }
+  }
+  if (s.endsWith(' ')) { s = s.slice(0, -1); at.pop(); }
+  return { s, at };
+}
+/** The folded piece's first whole-word occurrence in s at or after `from` → index, or -1. */
+function findWords(s, piece, from) {
+  for (let i = s.indexOf(piece, from); i >= 0; i = s.indexOf(piece, i + 1)) {
+    if ((i === 0 || s[i - 1] === ' ') && (i + piece.length === s.length || s[i + piece.length] === ' ')) return i;
+  }
+  return -1;
+}
+const SENT_END = /^[^.!?\n]*?[.!?]+["”’'»)\]]*(?=\s|$)/;
+/** Where the sentence holding raw[i] begins (just after the previous . ! ? and its closing marks, or the passage start). */
+function sentenceStart(raw, i) {
+  const m = [...raw.slice(0, i).matchAll(/[.!?]+["”’'»)\]]*\s+/g)].pop();
+  return m ? m.index + m[0].length : 0;
+}
+const wordsIn = (s) => String(s).trim().split(/\s+/).filter(Boolean).length;
+/** One quoted span's inner text → the passage's contiguous words, or null (nothing to change, or no ONE passage holds every
+ *  part in order — that is the unverified-quote gate's business). `asked` = the reader's words. Pure. */
+export function wholeQuote(inner, passages, { asked = [] } = {}) {
+  const parts = String(inner).split(ELLIPSIS);
+  const lead = !parts[0].trim(), trail = parts.length > 1 && !parts[parts.length - 1].trim();
+  const pieces = parts.map((p) => p.trim()).filter(Boolean);
+  if (!(pieces.length >= 2 || (trail && pieces.length === 1))) return null;
+  const folded = pieces.map(foldText);
+  if (folded.some((f) => !f)) return null;
+  const readers = [asked].flat().filter(Boolean).map(foldText);
+  for (const p of passages || []) {
+    const raw = String(p?.text || '');
+    if (!raw) continue;
+    const { s, at } = foldMapped(raw);
+    const spans = [];
+    let from = 0;
+    for (const f of folded) {
+      const i = findWords(s, f, from);
+      if (i < 0) break;
+      spans.push([at[i], at[i + f.length - 1] + 1]);
+      from = i + f.length;
+    }
+    if (spans.length !== folded.length) continue;
+    // runs of parts joined by bridges short enough to fill; a longer bridge starts a new run
+    const runs = [[0]];
+    for (let k = 1; k < spans.length; k++) {
+      if (wordsIn(raw.slice(spans[k - 1][1], spans[k][0])) > ELIDED_GAP_WORDS) runs.push([k]); else runs[runs.length - 1].push(k);
+    }
+    const asks = (k) => folded[k].split(' ').length >= 3 && readers.some((r) => r.includes(folded[k]));
+    const run = runs.find((r) => r.some(asks)) || runs[runs.length - 1];
+    let start = spans[run[0]][0], end = spans[run[run.length - 1]][1];
+    if (run[0] > 0) start = sentenceStart(raw, start);   // a part left out: begin at its sentence, never mid-passage
+    const tail = raw.slice(end).match(SENT_END);
+    if (tail && wordsIn(tail[0]) <= ELIDED_GAP_WORDS) end += tail[0].length;
+    const words = raw.slice(start, end).replace(PAGE_MARK, '').replace(/\s+/g, ' ').trim()
+      .replace(/^["“‘'«]+|["”’'»]+$/g, '').replace(/“/g, '‘').replace(/”/g, '’').replace(/"/g, '\'');
+    const midSentence = lead && run[0] === 0 && start > sentenceStart(raw, start);
+    const out = `${midSentence ? '… ' : ''}${words}`;
+    return out !== String(inner).trim() ? out : null;
+  }
+  return null;
+}
+/** Every quoted span with an ellipsis inside it (or a trailing one) → its passage's own contiguous words (wholeQuote). Spans
+ *  across lines or holding a link are left alone. → { text, restored }. Pure. */
+export function restoreElisions(text, passages, { asked = [] } = {}) {
+  let restored = 0;
+  const out = String(text || '').replace(/(["“])([^"”\n]+)(["”])/g, (m, open, inner, close) => {
+    if (!ELLIPSIS.test(inner) || /\]\(/.test(inner) || wordsIn(inner) < 5) return m;
+    const whole = wholeQuote(inner, passages, { asked });
+    if (!whole) return m;
+    restored++;
+    return `${open}${whole}${close}`;
+  });
+  return { text: out, restored };
+}
