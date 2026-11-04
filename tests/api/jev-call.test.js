@@ -73,7 +73,8 @@ describe('the Jev callers retry and report', () => {
       sectionsOfDoc: async () => [{ title: 'For The Departed', level: 2, start_index: 106, end_index: 126, paragraphs: 21 }],
       fetchImpl: flaky(1, { occasion: { choice: 'For The Departed', confidence: 0.9 } }),
       paragraphsInRange: async () => [{ id: 1, paragraph_index: 107, text: 'O my God! This is Thy servant…' }, { id: 2, paragraph_index: 108, text: '_—Bahá’u’lláh_' }],
-      withLinks: async (h) => h };
+      withLinks: async (h) => h, searchPhrases: async () => ({ hits: [] }), searchKeywordQdrant: async () => ({ hits: [] }),
+      resolveQdrantFilters: async (f) => f, paragraphsByIds: async () => [] };
     const out = await prayerShelf({ messages: msgs, query: 'q', search: async () => ({ passages: [] }), decisions, deps });
     expect(out.plan.occasion).toBe('For The Departed');
     expect(decisions.list().find((d) => d.point === 'jev:timeout')).toMatchObject({ saw: 'occasion', chosen: 'answered on retry' });

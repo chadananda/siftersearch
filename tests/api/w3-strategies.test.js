@@ -164,7 +164,7 @@ const prayerDeps = (pick, rows = prayerRows) => ({
   findTitled: async () => ({ doc: { id: 20762, title: 'Bahá’í Prayers', author: 'Bahá’u’lláh, the Báb, ‘Abdu’l-Bahá', religion: "Baha'i" } }),
   sectionsOfDoc: async () => [{ section_id: 1, title: 'Healing', level: 1, start_index: 260, end_index: 277, paragraphs: 18 }, { section_id: 2, title: 'Protection', level: 1, start_index: 426, end_index: 440, paragraphs: 15 }],
   pickOccasion: async (m, titles) => { prayerDeps.titles = titles; return pick; }, paragraphsInRange: async () => rows, withLinks: async (h) => h.map((x) => ({ ...x, url: `https://ol/${x.id}` })),
-  searchKeywordQdrant: async () => ({ hits: [] }), resolveQdrantFilters: async (f) => f, paragraphsByIds: async () => [] });
+  searchKeywordQdrant: async () => ({ hits: [] }), searchPhrases: async () => ({ hits: [] }), resolveQdrantFilters: async (f) => f, paragraphsByIds: async () => [] });
 
 describe('prayer shelf', () => {
   it('splits prayers at attribution lines', () => {
@@ -192,12 +192,43 @@ describe('prayer shelf', () => {
     const occ = decisions.list().find((d) => d.point === 'prayer:occasion');
     expect(occ).toMatchObject({ by: 'jev', chosen: 'Healing', probabilities: { Healing: 0.9, Protection: 0.1 }, ms: 30 }); expect(occ.options).toContain('none');
   });
-  it('no fitting heading (or low confidence) → the prayer book searched, never the whole library', async () => {
-    const calls = []; const decisions = decisionLog();
-    const out = await prayerShelf({ messages: msgs, query: 'a prayer for travel', search: async (a) => { calls.push(a); return { passages: [hit(5, "Baha'i")] }; }, decisions, deps: prayerDeps({ choice: 'Healing', confidence: 0.3 }) });
-    expect(calls[0]).toMatchObject({ document_id: 20762, query: 'a prayer for travel' });
-    expect(out.passages[0].theme).toBe('prayer'); expect(out.plan.searched).toBe(true);
+  it('no fitting heading (or low confidence) → the prayer book searched BY MEANING; the prayer holding the hit is served, not the heading\'s first', async () => {
+    const decisions = decisionLog(); const layer = [];
+    const protection = [{ id: 20, paragraph_index: 426, text: 'Say: God sufficeth all things above all things…' }, { id: 21, paragraph_index: 427, text: '_—The Báb_' },
+      { id: 22, paragraph_index: 439, text: 'O God, my God! I have set out from my home, holding fast unto the cord of Thy love…' }, { id: 23, paragraph_index: 440, text: '_—Bahá’u’lláh_' }];
+    const deps = { ...prayerDeps({ choice: 'Healing', confidence: 0.3 }, protection),
+      searchPhrases: async (q, o) => { layer.push(['phrase', q, o.filters]); return { hits: [{ paragraph_id: 22 }] }; },
+      paragraphsByIds: async () => [{ id: 22, doc_id: 20762, paragraph_index: 439, text: protection[2].text }] };
+    const out = await prayerShelf({ messages: msgs, query: 'Is there a prayer for travelling safely?', decisions, deps });
+    expect(layer[0]).toEqual(['phrase', 'Is there a prayer for travelling safely?', { documentId: 20762 }]);
+    expect(out.passages.map((p) => [p.id, p.theme])).toEqual([[22, 'prayer'], [23, 'prayer'], [20, 'alternative']]);
+    expect(out.plan).toMatchObject({ shape: 'prayer', occasion: 'Protection', via: 'search', found: 439 });
     expect(decisions.list().find((d) => d.point === 'prayer:occasion')).toMatchObject({ chosen: 'none', reason: 'low confidence' });
+  });
+  it('hits from ANOTHER book never map onto this book\'s headings (w3:pr-no-heading 11-04: a Prayers and Meditations ¶ → "Tablets of Visitation")', async () => {
+    const deps = { ...prayerDeps({ choice: 'none', confidence: 0.9 }),
+      searchPhrases: async () => ({ hits: [{ paragraph_id: 99 }] }), paragraphsByIds: async () => [{ id: 99, doc_id: 20805, paragraph_index: 262, text: 'O Thou Whose face is the object of my adoration…' }] };
+    expect(await prayerShelf({ messages: msgs, query: 'q', decisions: decisionLog(), deps })).toBeNull();
+  });
+  it('Jev picks a FOUND prayer from the choice (offered beside the headings) → that prayer in full, the next found as an alternative', async () => {
+    const decisions = decisionLog(); let offered;
+    const deps = { ...prayerDeps(null),
+      pickOccasion: async (m, titles, o) => { offered = o.found; return { choice: 'found:265', confidence: 0.8, distribution: { 'found:265': 0.8, 'found:263': 0.1 } }; },
+      searchPhrases: async () => ({ hits: [{ paragraph_id: 4 }, { paragraph_id: 6 }, { paragraph_id: 5 }] }),
+      paragraphsByIds: async () => prayerRows.filter((r) => [4, 5, 6].includes(r.id)).map((r) => ({ ...r, doc_id: 20762 })) };
+    const out = await prayerShelf({ messages: msgs, query: 'q', decisions, deps });
+    expect(offered.map((f) => f.key)).toEqual(['found:263', 'found:265']); // the attribution line is no candidate
+    expect(offered[0]).toMatchObject({ heading: 'Healing' }); expect(offered[0].text).toMatch(/Healer/);
+    expect(out.passages.map((p) => [p.id, p.theme])).toEqual([[6, 'prayer'], [7, 'prayer'], [4, 'alternative'], [1, 'alternative']]);
+    expect(out.plan).toMatchObject({ via: 'jev', found: 265 });
+    expect(decisions.list().find((d) => d.point === 'prayer:occasion').options).toEqual(['Healing', 'Protection', 'found:263', 'found:265', 'none']);
+  });
+  it('a confident heading serves the found prayer inside it first', async () => {
+    const deps = { ...prayerDeps({ choice: 'Healing', confidence: 0.9 }),
+      searchPhrases: async () => ({ hits: [{ paragraph_id: 4 }] }), paragraphsByIds: async () => [{ ...prayerRows[3], doc_id: 20762 }] };
+    const out = await prayerShelf({ messages: msgs, query: 'q', decisions: decisionLog(), deps });
+    expect(out.passages.map((p) => [p.id, p.theme])).toEqual([[4, 'prayer'], [5, 'prayer'], [1, 'alternative'], [6, 'alternative']]);
+    expect(out.plan).toMatchObject({ occasion: 'Healing', prayers: 3 });
   });
 });
 
@@ -205,22 +236,31 @@ describe('prayer shelf: no confident heading (launch gate 11-03: "a prayer for t
   const departed = [{ section_id: 9, title: 'For The Departed', level: 2, start_index: 106, end_index: 126, paragraphs: 21 }, { section_id: 14, title: 'Forgiveness', level: 2, start_index: 222, end_index: 255, paragraphs: 34 }];
   const rows = [{ id: 50, paragraph_index: 107, text: 'O my God! This is Thy servant and the son of Thy servant…' }, { id: 51, paragraph_index: 108, text: '_—Bahá’u’lláh_' },
     { id: 52, paragraph_index: 109, text: 'O my God! O Thou forgiver of sins…' }, { id: 53, paragraph_index: 110, text: '_—‘Abdu’l-Bahá_' }];
-  it('the planned search empty, the literal words scoped to the book find the heading → its prayers served whole', async () => {
+  it('the literal words scoped to the book find a prayer under the heading → that prayer served whole, the heading\'s others offered', async () => {
     const decisions = decisionLog(); const layer = [];
     const deps = { ...prayerDeps({ choice: 'For The Departed', confidence: 0.35, distribution: { 'For The Departed': 0.35, Forgiveness: 0.3 } }, rows), sectionsOfDoc: async () => departed,
       searchKeywordQdrant: async (q, o) => { layer.push([q, o.filters]); return { hits: [{ paragraph_id: 52 }] }; },
       paragraphsByIds: async () => [{ id: 52, doc_id: 20762, paragraph_index: 109, text: 'O my God! O Thou forgiver of sins…' }] };
     const out = await prayerShelf({ messages: msgs, query: 'prayer for the dead', search: async () => ({ passages: [] }), decisions, deps });
     expect(layer[0]).toEqual(['prayer for the dead', { documentId: 20762 }]);
-    expect(out.plan).toMatchObject({ occasion: 'For The Departed', via: 'search' }); expect(out.passages[0]).toMatchObject({ id: 50, theme: 'prayer' });
-    expect(decisions.list().find((d) => d.point === 'prayer:section')).toMatchObject({ chosen: 'For The Departed', reason: "Jev's most probable heading among the hits" });
+    expect(out.plan).toMatchObject({ occasion: 'For The Departed', via: 'search', found: 109 });
+    expect(out.passages.map((p) => [p.id, p.theme])).toEqual([[52, 'prayer'], [53, 'prayer'], [50, 'alternative']]);
+    expect(decisions.list().find((d) => d.point === 'prayer:section')).toMatchObject({ chosen: 'the found prayers', reason: "Jev's most probable found prayer first (0.35 with its heading)" });
+  });
+  it('Jev\'s belief split between a heading and the found prayer under it adds up: the found prayer under his heading leads', async () => {
+    const decisions = decisionLog();
+    const deps = { ...prayerDeps({ choice: 'For The Departed', confidence: 0.45, distribution: { 'For The Departed': 0.45, 'found:107': 0.2, Forgiveness: 0.1 } }, rows), sectionsOfDoc: async () => departed,
+      searchPhrases: async () => ({ hits: [{ paragraph_id: 60 }, { paragraph_id: 50 }] }),
+      paragraphsByIds: async () => [{ id: 60, doc_id: 20762, paragraph_index: 230, text: 'O Lord! Forgive my sins…' }, { id: 50, doc_id: 20762, paragraph_index: 107, text: rows[0].text }] };
+    const out = await prayerShelf({ messages: msgs, query: 'q', decisions, deps });
+    expect(out.passages[0]).toMatchObject({ id: 50, theme: 'prayer' }); expect(out.plan).toMatchObject({ via: 'jev', found: 107, occasion: 'For The Departed' });
   });
   it('nothing found → Jev\'s top heading (below the bar) is served rather than "didn\'t find"', async () => {
     const decisions = decisionLog();
     const out = await prayerShelf({ messages: msgs, query: 'q', search: async () => ({ passages: [] }), decisions,
       deps: { ...prayerDeps({ choice: 'For The Departed', confidence: 0.4 }, rows), sectionsOfDoc: async () => departed } });
     expect(out.plan).toMatchObject({ occasion: 'For The Departed', via: 'low-confidence' });
-    expect(decisions.list().find((d) => d.point === 'prayer:section').reason).toBe('search empty; Jev below the bar');
+    expect(decisions.list().find((d) => d.point === 'prayer:section').reason).toBe('nothing found; Jev below the bar');
   });
   it('Jev says none and nothing is found → null', async () => {
     expect(await prayerShelf({ messages: msgs, query: 'q', search: async () => ({ passages: [] }), decisions: decisionLog(),
