@@ -19,6 +19,18 @@ function client(provider) {
   }));
 }
 
+/** The reply's token cap from its format and channel. A research reply gets room (Sonnet 5.5 thinking: 2,700 tokens at 2,218
+ *  characters, 10-19); a comparison or understanding answer covers several sides (11-03: 4 of 5 comparisons and 2 of 4
+ *  understandings stopped at 1,100); a letter or position answer +2,000 (10-19: cut mid-sentence). Pure. */
+const ROOMY = new Set(['comparison', 'understanding']);
+export function replyCap(direction = {}, effort = null) {
+  const id = direction.format?.id;
+  if (id === 'research') return 8000;
+  const long = id === 'position' || /email/.test(String(direction.channel?.id || direction.channel?.name || ''));
+  const base = ROOMY.has(id) ? 2400 : effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 1100;
+  return base + (long ? 2000 : 0);
+}
+
 export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, target = null, onUsage = null, direction = {}, llm, onChunk, signal }) {
   // System = soul + house style (constant → cached prefix); everything about THIS reply goes in the user message.
   const dir = anisDirection({ channelFrame: direction.channel?.frame ?? null, stance: direction.stance ?? null, guarded: !!direction.guarded,
@@ -27,12 +39,7 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
   // max_completion_tokens and should not reason for a chat reply (reasoning_effort minimal).
   const reg = getModel(llm.model) || {};
   const effort = llm.reasoning_effort ?? reg.reasoningEffort;
-  // a LETTER (email) or a POSITION answer is longer than a chat reply: 700 tokens cut both mid-sentence (10-19 — Chad's
-  // socialism answer ended at "'Abdu'l-Bah", another mid-link). Chat stays short.
-  // a RESEARCH reply (Sonnet 5.5, which thinks first) hit 2,700 tokens at 2,218 characters (10-19 battery): it gets room
-  const research = direction.format?.id === 'research';
-  const long = direction.format?.id === 'position' || /email/.test(String(direction.channel?.id || direction.channel?.name || ''));
-  const maxTok = research ? 8000 : (effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 1100) + (long ? 2000 : 0);
+  const maxTok = replyCap(direction, effort);
   const params = {
     model: llm.model,
     messages: [

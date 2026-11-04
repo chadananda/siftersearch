@@ -6,6 +6,7 @@
 import { strategyOf } from './strategy-choice.js';
 import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
+import { booksFound } from './researcher.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
 const PER_SIDE = 6, MAX_PASSAGES = 12;
@@ -67,7 +68,7 @@ export async function comparison(choice, ctx) {
 }
 
 export async function understanding(choice, ctx) {
-  const { messages, query, distil, search, plan, profile = {}, decisions = NO_LOG } = ctx;
+  const { messages, query, distil, search, plan, profile = {}, decisions = NO_LOG, searchIn, inBooks = 0 } = ctx;
   const religion = plan?.filters?.religion || profile.default_tradition || null;
   decisions.record('understanding:scope', { by: plan?.source?.religion === 'jev' ? 'jev' : 'code', saw: { plan: plan?.filters?.religion ?? null, reader: profile.default_tradition ?? null },
     options: ['one tradition', 'whole library'], chosen: religion || 'whole library', reason: religion ? 'tradition from the plan / reader' : 'no tradition known' });
@@ -81,9 +82,20 @@ export async function understanding(choice, ctx) {
     hits = dedupe([...hits, ...more]); c = coverageOf(hits.length);
   }
   decisions.record('understanding:coverage', { by: 'code', saw: hits.length, options: ['covered', 'thin', 'missing'], chosen: c, reason: `${hits.length} passages` });
+  let top = hits.slice(0, MAX_PASSAGES);
+  if (searchIn && inBooks && top.length) {
+    // LIVE chat's book step (coordinator 11-03: the narrative passages, Saiedi): the top books the search found, each searched
+    // inside with the same query, in parallel; a failed book costs only its own passages
+    const books = booksFound({ searched: [{ query, docs: top.map((p) => p.document_id) }], n: inBooks });
+    const inside = await Promise.all(books.map((b) => searchIn(b.query, b.document_id).catch(() => [])));
+    const had = new Set(top.map((p) => `${p.document_id}:${p.paragraph_index}`));
+    const more = dedupe(inside.flat()).filter((p) => !had.has(`${p.document_id}:${p.paragraph_index}`));
+    decisions.record('understanding:in-books', { by: 'code', saw: books.map((b) => b.document_id), options: ['top books searched inside'], chosen: `${more.length} passages added`, reason: 'live chat book step' });
+    top = [...top, ...more];
+  }
   // scripture first, then interpretation (the writer leads with the Writings themselves)
   const scripture = (p) => /scripture|revelation|doctrine/i.test(p.standing || '') ? 0 : 1;
-  const passages = hits.slice(0, MAX_PASSAGES).map((p) => ({ ...p, theme: scripture(p) === 0 ? 'scripture' : 'interpretation' })).sort((a, b) => scripture(a) - scripture(b));
+  const passages = top.map((p) => ({ ...p, theme: scripture(p) === 0 ? 'scripture' : 'interpretation' })).sort((a, b) => scripture(a) - scripture(b));
   return { passages, plan: { shape: 'understanding', religion, coverage: c }, format: { id: 'understanding', by: 'strategy:understanding', how: UNDERSTANDING_HOW(religion, c) } };
 }
 

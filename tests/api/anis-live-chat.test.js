@@ -47,11 +47,53 @@ describe('researcher: one round runs its tool calls in parallel', () => {
   });
 });
 
+describe('researcher: the second round searches INSIDE the books the first round found (coordinator 11-03)', () => {
+  const inBook = (doc, n) => ({ ...P(doc * 100 + n), document_id: doc, title: `Book ${doc}` });
+  it('the top books of round one, best rank first, each searched with the query that found it; no second model call', async () => {
+    const seen = [], within = [];
+    const create = async (params) => { seen.push(params); return { choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'Mulla Husayn first night' }), call('b', 'combined_search', { query: 'declaration of the Bab Shiraz' })] } }] }; };
+    const search = async (q) => q.startsWith('Mulla') ? [inBook(7, 1), inBook(8, 1), inBook(7, 2)] : [inBook(9, 1), inBook(7, 3)];
+    const searchIn = async (query, documentId) => { within.push([documentId, query]); return [inBook(documentId, 50)]; };
+    const r = await research({ messages: [{ role: 'user', content: 'Tell me the story of the evening Mulla Husayn met the Bab' }], create, tools: { search, searchIn }, maxRounds: 1, brief: false, inBooks: 3 });
+    expect(seen).toHaveLength(1);
+    expect(within).toEqual([[7, 'Mulla Husayn first night'], [9, 'declaration of the Bab Shiraz'], [8, 'Mulla Husayn first night']]);
+    expect(r.passages.map((p) => p.id)).toEqual(expect.arrayContaining([750, 950, 850]));
+    expect(r.steps.filter((s) => s.tool === 'in_book_search').map((s) => s.args.document_id)).toEqual([7, 9, 8]);
+  });
+
+  it('a book the model asked for by title (document_search) is searched first, with the reader\'s question', async () => {
+    const within = [];
+    const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'document_search', { title: 'Gate of the Heart' }), call('b', 'combined_search', { query: 'Saiedi interpretive revelation' })] } }] });
+    const r = await research({ messages: [{ role: 'user', content: 'What does Saiedi mean by interpretive revelation?' }], create,
+      tools: { search: async () => [inBook(5, 1)], work: async () => ({ doc: { id: 42, title: 'Gate of the Heart', author: 'Nader Saiedi' }, others: [] }),
+        searchIn: async (query, documentId) => { within.push([documentId, query]); return [inBook(documentId, 9)]; } },
+      maxRounds: 1, brief: false, inBooks: 2 });
+    expect(within).toEqual([[42, 'What does Saiedi mean by interpretive revelation?'], [5, 'Saiedi interpretive revelation']]);
+    expect(r.passages.some((p) => p.document_id === 42)).toBe(true);
+  });
+
+  it('the one-round prompt says a book step follows only when inBooks is set', async () => {
+    const seen = [];
+    const create = async (params) => { seen.push(params); return { choices: [{ message: { content: '' } }] }; };
+    await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [], searchIn: async () => [] }, maxRounds: 1, brief: false, inBooks: 3 });
+    await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [] }, maxRounds: 1, brief: false });
+    expect(String(seen[0].messages[0].content)).toMatch(/INSIDE the books/);
+    expect(String(seen[1].messages[0].content)).not.toMatch(/INSIDE the books/);
+  });
+
+  it('a failed in-book search costs only its own passages', async () => {
+    const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'x' })] } }] });
+    const r = await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [inBook(7, 1)], searchIn: async () => { throw new Error('timeout'); } },
+      maxRounds: 1, brief: false, inBooks: 3 });
+    expect(r.passages.map((p) => p.id)).toEqual([701]);
+  });
+});
+
 describe('liveResearch: the shape of the researcher on a live channel, from Jev\'s depth', () => {
   it('one planning round, no brief; depth=research only widens the round', () => {
-    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'answer' })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false });
-    expect(liveResearch({ channel: channelFor('site-chat'), depth: null })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false });
-    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'research' })).toEqual({ maxRounds: 1, maxCalls: 8, brief: false });
+    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'answer' })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3 });
+    expect(liveResearch({ channel: channelFor('site-chat'), depth: null })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3 });
+    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'research' })).toEqual({ maxRounds: 1, maxCalls: 8, brief: false, inBooks: 4 });
     expect(liveResearch({ channel: channelFor('email', { trusted: true }), depth: 'answer' })).toBeNull();   // email: the full loop
   });
 });
@@ -96,7 +138,7 @@ describe('anisRespond on a live channel', () => {
     const { d, log } = respondDeps();
     const r = await anisRespond({ messages: soulQ, deps: d, direction: { channel: channelFor('site-chat'), research: true, depth: 'research' } });
     expect(log.research).toHaveLength(1);
-    expect(log.research[0]).toMatchObject({ maxRounds: 1, maxCalls: 8, brief: false });
+    expect(log.research[0]).toMatchObject({ maxRounds: 1, maxCalls: 8, brief: false, inBooks: 4 });
     expect(log.crafts).toHaveLength(1);
     expect(log.crafts[0].llm).toMatchObject({ model: 'claude-sonnet-5-5', thinking: false });
     expect(log.crafts[0].direction.format.id).toBe('research');
@@ -150,5 +192,18 @@ describe('anisTurn passes Jev\'s lookup intent to respond even when the lookup f
     await anisTurn({ messages: [{ role: 'user', content: 'Dawnbreakers' }], participant: { id: 's' }, clientKey: 's', onEvent: () => {}, deps });
     expect(respond[0].direction.lookupIntent).toBe('book');
     expect(respond[0].direction.lookup).toBeUndefined();
+  });
+});
+
+describe('replyCap: the writer has room for a two-sided or a study answer (coordinator 11-03: comparison/understanding hit 1,100)', () => {
+  it('comparison and understanding get 2,400; research 8,000; a plain chat reply 1,100; a letter +2,000', async () => {
+    const { replyCap } = await import('../../api/lib/assistant/craft.js');
+    expect(replyCap({ format: { id: 'comparison' } })).toBe(2400);
+    expect(replyCap({ format: { id: 'understanding' } })).toBe(2400);
+    expect(replyCap({ format: { id: 'research' } })).toBe(8000);
+    expect(replyCap({ format: { id: 'prayer' } })).toBe(1100);
+    expect(replyCap({ format: { id: 'prayer' } }, 'low')).toBe(1500);
+    expect(replyCap({ format: { id: 'position' } })).toBe(3100);
+    expect(replyCap({ format: { id: 'guidance' }, channel: { id: 'email' } })).toBe(3100);
   });
 });

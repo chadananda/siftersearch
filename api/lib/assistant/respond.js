@@ -519,11 +519,12 @@ export function agentOn(direction = {}, env = process.env.ANIS_AGENT) {
   return researchEnabled(direction.channel, env);
 }
 
-/** The researcher's shape on a LIVE channel (channels.js `live`): ONE planning round whose calls run in parallel, no brief;
- *  Jev's depth = research only widens that round (deeper work is the deep_report job). Not live → null (the full loop). Pure. */
+/** The researcher's shape on a LIVE channel (channels.js `live`): ONE planning round whose calls run in parallel, no brief,
+ *  then code searches INSIDE the top books that round found (inBooks; 11-03: one round missed the narrative passages of the
+ *  histories and Saiedi's own words). Jev's depth = research only widens both (deeper work is the deep_report job). Not live → null (the full loop). Pure. */
 export function liveResearch({ channel, depth } = {}) {
   if (!channel?.live) return null;
-  return { maxRounds: 1, maxCalls: depth === 'research' ? 8 : 5, brief: false };
+  return { maxRounds: 1, maxCalls: depth === 'research' ? 8 : 5, brief: false, inBooks: depth === 'research' ? 4 : 3 };
 }
 
 async function agentRespond({ messages, onEvent, d, t0 }) {
@@ -682,7 +683,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // null = nothing found to execute (e.g. the reference did not parse) → the ordinary path; each decision lands in direction.decisions.
   const strat = !fast && !researched && !sourced && !original && !study && !conversational && strategyOf(direction.strategy)
     ? await timed('strategy', () => runStrategy(direction.strategy, { messages, question, plan, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-      profile, decisions: direction.decisions, deps: d })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
+      profile, decisions: direction.decisions, deps: d,
+      // a live chat's strategy gets the same in-book step as its researcher (coordinator 11-03: goth questions route to understanding)
+      ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn } : {}) })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
     : null;
   // A POSITION question ("the Bahá'í position on socialism, equality and property") → its themes, each searched, the
   // authoritative texts first (assistant/position.js; Chad 10-19: "extremely shallow and wishy washy")

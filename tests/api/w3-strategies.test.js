@@ -83,6 +83,22 @@ describe('understanding executor', () => {
     expect(decisions.list().map((d) => d.point)).toEqual(['understanding:scope', 'understanding:widen', 'understanding:coverage']);
     expect(decisions.list()[0].by).toBe('jev');
   });
+  it('live: searches INSIDE the top books the search found, in parallel, adding their passages (coordinator 11-03: narrative passages, Saiedi)', async () => {
+    const decisions = decisionLog(); const inside = [];
+    const search = async () => ({ passages: [hit(1, "Baha'i"), hit(2, "Baha'i"), { ...hit(3, "Baha'i"), document_id: 101 }, hit(4, "Baha'i")] });
+    const searchIn = async (q, id) => { inside.push([q, id]); if (id === 102) throw new Error('down'); return [{ ...hit(50 + id, "Baha'i"), document_id: id, paragraph_index: 7 }]; };
+    const out = await understanding({}, { messages: msgs, query: 'q', search, plan: {}, decisions, searchIn, inBooks: 3 });
+    expect(inside).toEqual([['q', 101], ['q', 102], ['q', 104]]);
+    expect(out.passages.map((p) => p.id)).toEqual(expect.arrayContaining([1, 2, 3, 4, 151, 154]));
+    expect(out.passages.some((p) => p.id === 152)).toBe(false);   // the failed book costs only its own passages
+    expect(decisions.list().map((d) => d.point)).toContain('understanding:in-books');
+  });
+  it('no searchIn (not a live channel) → no book step', async () => {
+    const decisions = decisionLog();
+    const out = await understanding({}, { messages: msgs, query: 'q', search: async () => ({ passages: [hit(1, 'x'), hit(2, 'x'), hit(3, 'x')] }), plan: {}, decisions });
+    expect(out.passages).toHaveLength(3);
+    expect(decisions.list().map((d) => d.point)).not.toContain('understanding:in-books');
+  });
 });
 
 describe('runStrategy', () => {

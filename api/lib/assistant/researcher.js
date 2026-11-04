@@ -65,7 +65,12 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
   };
   // an existing translation is shown whole (the writer quotes it line by line) and says what kind it is
   const show = (refs, n = 900) => refs.filter(Boolean).map((r) => { const p = found.get(r); return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}\n${clipText(p.text, p.translation ? Math.max(n, 4000) : n)}`; }).join('\n\n') || '(nothing)';
-  const searchLibrary = async ({ query, tradition }) => show((await impl.search(query, tradition)).slice(0, 8).map((p) => add(p)));
+  const searched = [];   // each search's query and its passages' documents in rank order (research's book step)
+  const searchLibrary = async ({ query, tradition }) => {
+    const hits = (await impl.search(query, tradition)).slice(0, 8);
+    searched.push({ query, docs: hits.map((p) => p.document_id).filter((x) => x != null) });
+    return show(hits.map((p) => add(p)));
+  };
   // keyed by canonical tool name (tools.js); a call by an old name resolves through canonical()
   const run = {
     combined_search: searchLibrary,
@@ -112,7 +117,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       return `[${ref}] (WEB — not the library)\n${clipText(r.text, 1500)}${r.citations?.length ? `\nSources: ${r.citations.slice(0, 5).map((c) => c.url || c).join(' · ')}` : ''}`;
     },
   };
-  return { found, works, add, addWork, show, run };
+  return { found, works, searched, add, addWork, show, run };
 }
 
 /**
@@ -122,11 +127,23 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
 // A LIVE chat (respond.js liveResearch): one round, no brief — the model asks for everything at once and the writer works
 // from the passages (11-03: the 6-round loop + brief put first text at 23-26 s median).
 const ONE_ROUND = 'THIS TURN HAS ONE ROUND: a reader is waiting. Ask now, in this one reply, for EVERY tool call the answer needs (they run in parallel; you will not see their results and write no brief) — search the main question and each of its sides or aspects separately, and add a lookup or trace only where the question calls for one.';
-export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true }) {
+const BOOK_STEP = 'After your round, the library is searched again INSIDE the books your searches found, for the passages that tell the story or make the argument. When the answer lies in a particular book or author (a history such as The Dawn-Breakers, a study such as Gate of the Heart), also call document_search for that book, so it is one of them.';
+
+/** The books a one-round research found, for the in-book step: works asked for by title first (with the reader's question),
+ *  then each search's documents round-robin by rank (with the query that found it), distinct, at most n. Pure. */
+export function booksFound({ works = [], searched = [], question = '', n = 3 }) {
+  const out = [], seen = new Set();
+  const take = (id, query) => { const k = Number(id); if (!Number.isFinite(k) || seen.has(k) || out.length >= n) return; seen.add(k); out.push({ document_id: k, query }); };
+  for (const w of works) take(w.id, question);
+  for (let rank = 0; out.length < n && searched.some((s) => rank < s.docs.length); rank++) for (const s of searched) if (rank < s.docs.length) take(s.docs[rank], s.query);
+  return out;
+}
+
+export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0 }) {
   const t0 = Date.now();
-  const { found, run } = toolRunner(impl);
+  const { found, works, searched, run, add } = toolRunner(impl);
   const convo = messages.slice(-7).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: clipText(m.content, 3000) }));
-  const msgs = [{ role: 'system', content: wantBrief ? RESEARCH_SYSTEM : `${RESEARCH_SYSTEM}\n\n${ONE_ROUND}` }, ...convo];
+  const msgs = [{ role: 'system', content: wantBrief ? RESEARCH_SYSTEM : `${RESEARCH_SYSTEM}\n\n${ONE_ROUND}${inBooks && impl.searchIn ? ` ${BOOK_STEP}` : ''}` }, ...convo];
   const steps = [];
   let calls = 0, final = '';
   for (let round = 0; round < maxRounds; round++) {
@@ -159,6 +176,14 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     }
     if (!wantBrief && (round === maxRounds - 1 || calls >= maxCalls)) break;
   }
+  if (!wantBrief && inBooks && impl.searchIn) {
+    // the BOOK STEP (coordinator 11-03): code, no model call — each top book searched with the query that found it, in parallel
+    const question = clipText([...messages].reverse().find((m) => m.role === 'user')?.content, 300);
+    const books = booksFound({ works: [...works.values()], searched, question, n: inBooks });
+    const outs = await Promise.all(books.map(async (b) => ({ b, hits: await impl.searchIn(b.query, b.document_id).catch((err) => {
+      log.warn({ document_id: b.document_id, err: String(err?.message).slice(0, 160) }, 'in-book search failed'); return []; }) })));
+    for (const { b, hits } of outs) steps.push({ tool: 'in_book_search', args: b, found: (hits || []).map((p) => add(p)).filter(Boolean).length });
+  }
   if (!wantBrief) {
     log.info({ steps: steps.map((s) => `${s.tool}:${s.found}`), found: found.size, ms: Date.now() - t0 }, 'researched (one round)');
     return found.size ? { passages: [...found.values()], brief: null, steps, ms: Date.now() - t0 } : null;
@@ -187,6 +212,9 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
   const passages = async (name, input) => (await runTool(name, input, ctx)).passages;
   return withDeadlines({
     search: async (query, tradition) => (await passages(fastSearch ? 'fused_search' : 'combined_search', { query, ...(tradition ? { tradition } : {}) }))
+      .filter((p) => String(p.text || '').length <= 8000).map(shape),
+    // inside one book: the query as written, no planner (the book IS the scope) — research's book step
+    searchIn: async (query, documentId) => (await passages('fused_search', { query, limit: 5, filters: { documentId: Number(documentId) } }))
       .filter((p) => String(p.text || '').length <= 8000).map(shape),
     // the found passage's own title/author/religion label its neighbours (ctx.meta), as before
     around: async (p, before, after) => (await runTool('context_lookup', { document_id: p.document_id, paragraph_index: Number(p.paragraph_index) || 0, before, after },
