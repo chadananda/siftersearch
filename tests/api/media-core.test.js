@@ -232,8 +232,8 @@ describe('vocabulary hygiene and the no-added-words rule (10-22: "Nabips Narrati
 
 describe('the guard never turns words heard right into names (11-03, tichenor-cobb-2-1969)', () => {
   const v = buildVocab([['Sinai', 'Weber', 'Havana', 'Lahore', 'Ishmael', 'The Hague', 'Dorothy Anderson', 'Dorothy Baker', 'World War I',
-    "Báb's letter", '‘Abdu’lláh Páshá', 'Bahá’í News', 'Universal House of Justice', 'Riḍván', 'Green Acre', 'Báb', '‘Abdu’l-Bahá']]);
-  const dict = new Set(['having', 'lord', 'israel', 'heart', 'baker', 'paper', 'bob', 'world', 'war', 'universal', 'house']);
+    "Báb's letter", '‘Abdu’lláh Páshá', 'Bahá’í News', 'Universal House of Justice', 'Riḍván', 'Green Acre', 'Báb', '‘Abdu’l-Bahá', 'Germany', 'Advent of Islam', 'Vísí Páshá', 'Seven Valleys']]);
+  const dict = new Set(['germans', 'germany', 'adventist', 'visigoth', 'seven', 'day', 'having', 'lord', 'israel', 'heart', 'baker', 'paper', 'bob', 'world', 'war', 'universal', 'house']);
   const ws = (t) => t.split(' ').map((w, i) => ({ w, s: i, e: i + 1 }));
   const one = (text, from, to) => guardEdits(ws(text), [{ from, to }], v, { dict });
   it('refuses what the model did to that talk', () => {
@@ -242,7 +242,8 @@ describe('the guard never turns words heard right into names (11-03, tichenor-co
       ['in the heart of', 'the heart', 'The Hague'], ['Dorothy Baker came', 'Dorothy Baker', 'Dorothy Anderson'],
       ['after World War II.', 'World War II.', 'World War I'], ["the Babs' paper's text", "Babs' paper's", "Báb's letter"],
       ['‘Abdu’l-Bahá said', '‘Abdu’l-Bahá', '‘Abdu’lláh Páshá'], ['a Bahá’í? yes', 'Bahá’í?', 'Bahá’í News'],
-      ['the Universal House. said', 'Universal House.', 'Universal House of Justice']];
+      ['the Universal House. said', 'Universal House.', 'Universal House of Justice'], ['the Germans, came', 'Germans,', 'Germany'],
+      ['the Adventists said', 'Adventists', 'Advent of Islam'], ['the Visigoths, came', 'Visigoths,', 'Vísí Páshá'], ['a Seven-Day fast', 'Seven-Day', 'Seven Valleys']];
     for (const [text, from, to] of cases) expect([from, one(text, from, to).ok.length]).toEqual([from, 0]);
   });
   it('keeps misheard names, including a real word one letter away', () => {

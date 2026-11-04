@@ -224,9 +224,9 @@ export function changedPart(from, to) {
 
 /** Every word is ordinary English the recogniser spelled right — a common word, a contraction or a dictionary word. Pure. */
 export function heardAsEnglish(from, dict = null) {
-  return String(from).split(/\s+/).filter(Boolean).every((w) => {
+  return String(from).split(/[\s-]+/).filter(Boolean).every((w) => {
     const c = core(w).toLowerCase(), b = stripPoss(c);
-    return COMMON.has(c) || /^[a-z]+(?:n['’]t|['’](?:ve|re|ll|d|m))$/.test(c) || !!dict?.has(c) || !!dict?.has(b);
+    return COMMON.has(c) || /^[a-z]+(?:n['’]t|['’](?:ve|re|ll|d|m))$/.test(c) || !!dict?.has(c) || !!dict?.has(b) || (/s$/.test(b) && !!dict?.has(b.slice(0, -1)));
   });
 }
 
@@ -247,7 +247,8 @@ export function changeRefused(from, to, vocab, dict = null) {
     if (ka === kb) continue;
     if (ka.length < 3) return 'changes a short word';
     if (!soundsAlike(f, t)) return 'does not sound alike';
-    if (heardAsEnglish(f, dict) && levenshtein(ka, kb, 2) > 1) return 'an English word the speaker said';
+    // one letter away is a misheard name only when the target is not English too ("Bob" → Báb yes; "Germans" → Germany, "Muslim" → Muslims no)
+    if (heardAsEnglish(f, dict) && (levenshtein(ka, kb, 2) > 1 || (dict && heardAsEnglish(t, dict)))) return 'an English word the speaker said';
   }
   return null;
 }
