@@ -41,6 +41,7 @@ describe('researcher: one round runs its tool calls in parallel', () => {
     const r = await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [P(++n)] }, maxRounds: 1, brief: false });
     expect(seen).toHaveLength(1);
     expect(seen[0].tools.length).toBeGreaterThan(0);
+    expect(seen[0].tool_choice).toBe('required');   // the one round must call the library (p7 db-26 answered from memory)
     expect(String(seen[0].messages[0].content)).toMatch(/ONE ROUND/);
     expect(r.brief).toBeNull();
     expect(r.passages.map((p) => p.id)).toEqual([1, 2]);
@@ -238,7 +239,7 @@ describe('anisRespond on a live channel', () => {
     await anisRespond({ messages: [{ role: 'user', content: 'How do the Qur’án and the Gospel each speak of forgiveness?' }], profile: { default_tradition: "Baha'i" }, deps: d,
       direction: { channel: channelFor('site-chat'), research: true, strategy: { strategy: { choice: 'comparison', confidence: 0.9 }, sides: ['Islam', 'Christian'] }, decisions } });
     expect(log.research).toHaveLength(0);
-    expect(log.searches.map((s) => s.religion)).toEqual(['Islam', 'Christian']);
+    expect(log.searches.map((s) => s.religion)).toEqual(['Islam', 'Islam', 'Christian', 'Christian']);   // each side: the question, then its subject (the names taken out)
     expect(log.crafts[0].llm).toMatchObject({ model: 'claude-sonnet-5-5', thinking: false });
   });
 

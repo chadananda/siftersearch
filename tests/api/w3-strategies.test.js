@@ -337,7 +337,7 @@ describe('anisRespond with a strategy', () => {
       craft: async (args) => { crafts.push(args); args.onChunk('x'); return 'Side by side.'; }, companion: async () => null };
     const decisions = decisionLog();
     await anisRespond({ messages: msgs, profile: { default_tradition: "Baha'i" }, deps: d, direction: { strategy: { strategy: { choice: 'comparison', confidence: 0.9 }, sides: ['Islam', 'Christian'] }, decisions } });
-    expect(searches.map((s) => s.religion)).toEqual(['Islam', 'Christian']);
+    expect(searches.map((s) => s.religion)).toEqual(['Islam', 'Islam', 'Christian', 'Christian']);   // each side: the question, then its subject (the names taken out)
     const c = JSON.stringify(crafts[0]);
     expect(c).toMatch(/strategy:comparison|COMPARISON/);
     expect(decisions.list().map((x) => x.point)).toContain('coverage:Islam');

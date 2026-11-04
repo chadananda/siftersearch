@@ -222,7 +222,9 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     // without a brief every round may call tools (the last one too); with one, the last round writes it
     const last = wantBrief && (round === maxRounds - 1 || calls >= maxCalls);
     // one retry for a timed-out or dropped round; the failure says which round and how long (10-19: bare "Request timed out")
-    const ask = () => create({ messages: msgs, ...(last ? {} : { tools: TOOLS, tool_choice: 'auto' }), max_tokens: 4000 });
+    // a live ONE-ROUND research (no brief) exists only to gather passages: the round must call the library (p7 db-26: Haiku answered
+    // from memory with no call, 1 of 37, and the turn fell back to a 1,000-character "fact" reply)
+    const ask = () => create({ messages: msgs, ...(last ? {} : { tools: TOOLS, tool_choice: !wantBrief && maxRounds === 1 ? 'required' : 'auto' }), max_tokens: 4000 });
     let r;
     try { r = await ask(); } catch (err) {
       log.warn({ round, calls, ms: Date.now() - t0, err: String(err?.message).slice(0, 160) }, 'research round failed — retrying once');
