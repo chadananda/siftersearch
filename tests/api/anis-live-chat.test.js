@@ -136,3 +136,19 @@ describe('quotation source: core literature only (Chad 11-03: "limited to core l
     expect(opts[0]).toMatchObject({ coreOnly: true });
   });
 });
+
+describe('anisTurn passes Jev\'s lookup intent to respond even when the lookup finds nothing', () => {
+  it('direction.lookupIntent = book, no direction.lookup', async () => {
+    const respond = [];
+    const deps = {
+      open: async () => ({ conversationId: 'c', round: 0 }), close: async () => {}, fail: async () => {},
+      triage: async () => ({ malicious: 0.01, complete: 0.99, stop_request: 0, kind: { choice: 'research', confidence: 0.9 }, stance: { choice: 'curious' }, lookup: { choice: 'book', confidence: 0.9 } }),
+      lookup: async () => null,
+      respond: async (a) => { respond.push(a); return { reply: 'ok', citations: [], retrieved: [], plan: { shape: 'topic' }, timings: {} }; },
+      outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {},
+    };
+    await anisTurn({ messages: [{ role: 'user', content: 'Dawnbreakers' }], participant: { id: 's' }, clientKey: 's', onEvent: () => {}, deps });
+    expect(respond[0].direction.lookupIntent).toBe('book');
+    expect(respond[0].direction.lookup).toBeUndefined();
+  });
+});

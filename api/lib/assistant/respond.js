@@ -608,7 +608,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // Chad 11-01: these went to passage search and the reply quoted works that MENTION the book, with no link to it)
   // Then the passages ABOUT the book (its importance and role) fill the middle (Chad 11-01: "very thin … juicy bits"); none → link + offer.
   const work = conversational ? null : fast ? (fast.kind === 'book' ? fast.work : null)
-    : await timed('work', () => (d.findWork || (deps ? async () => null : findWork))(question, { named: plan?.named })).catch(() => null);
+    : await timed('work', () => (d.findWork || (deps ? async () => null : findWork))(question, { named: plan?.named, ...(direction.lookupIntent === 'book' ? {} : { coreOnly: true }) })).catch(() => null);
   onEvent({ type: 'stage', stage: 'search' });
   // WHAT to search (assistant/phrases.js; Jev has already routed): quote marks / the named object (a work by its library title,
   // a person in the seeker's spelling) decide it with no call; else one Haiku call for a quote/lookup → {exact, names, spellings,

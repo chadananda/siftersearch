@@ -4,6 +4,12 @@
 // such turns went to passage search and the reply quoted works that MENTION the book and sent readers to "a digital catalog".
 // Pure: workRequest / titleCandidates / workReply. findWork takes the index + listDocs injected (tests) or loads them lazily.
 import { readerUrl } from '../source-links.js';
+import { isCoreLiterature } from '../rights/canonical.js';
+import { getAuthority } from '../authority.js';
+
+// a work is core literature by the same rule as a passage (rights/canonical.js isCoreLiterature), its author being the book's
+export const coreWork = (doc) => { let a = doc.book_authority; if (a == null) { try { a = getAuthority(doc); } catch { a = null; } }
+  return isCoreLiterature({ ...doc, book_authority: a }); };
 
 // the turn asks for the book itself: to read it, find it, get a copy, a link, or whether the library holds it
 const ASKS = /\b(?:locate|where (?:can|could|do|might|would|should) (?:i|we|one|you) (?:read|find|get|access|see|look)|where(?:'s| is) (?:the (?:book|text)|a copy)|(?:full|complete|whole|entire) text|a copy of|(?:want|like|love|wish|hope) to read|read (?:it|the book|the full)|link(?: me)? to|do you (?:have|hold|carry)|have you got|show me (?:where|the book)|(?:open|download|access) (?:the|a|it)|in (?:the|your) library)\b/i;
@@ -57,7 +63,9 @@ const foldTitle = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036
 const lib = async () => Promise.all([import('../dewey/title-index.js'), import('../docs-repo.js')]);
 
 /** The question → { doc, others } — the library's best copy of the work asked for — or null. */
-export async function findWork(text, { named = null, index = null, match = null, listDocs = null } = {}) {
+/** coreOnly (respond.js, unless Jev's lookup intent is 'book'): a bare title opens only a CORE work (Chad 11-03: "the earth is but
+ *  one country" opened Hugh Adamson's book of that name); an explicit request for a book still resolves every book. */
+export async function findWork(text, { named = null, index = null, match = null, listDocs = null, coreOnly = false } = {}) {
   if (workRequest(text)) return findTitled(titleCandidates(text, named), { index, match, listDocs });
   // a bare title IS a request for the book (Chad 11-01: "Dawnbreakers" and "Seven Valleys" got unsourced summaries, no link):
   // only the book's WHOLE title ("Dawnbreakers" = The Dawn-Breakers), or a phrase of 2+ words naming a work by a Central
@@ -71,7 +79,7 @@ export async function findWork(text, { named = null, index = null, match = null,
   // and a BOOK: a word that happens to title a leaflet or a one-paragraph tablet ("True Seeker", "Spiritual Assemblies") is a topic
   const central = AUTHORS.test(w?.doc.author || '');
   const book = (w?.doc.paragraph_count || 0) >= (central ? 20 : 150);
-  return w && book && (whole || (bare.trim().includes(' ') && central)) ? w : null;
+  return w && book && (whole || (bare.trim().includes(' ') && central)) && (!coreOnly || coreWork(w.doc)) ? w : null;
 }
 
 /** The question is nothing but a title ("Seven Valleys", "The Dawnbreakers?") → that title, else null. Pure. */

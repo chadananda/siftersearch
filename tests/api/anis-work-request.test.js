@@ -157,3 +157,30 @@ describe('a book reply never carries an unsourced middle (11-01 live: "Dawnbreak
     expect(out.reply).toBe(workReply(work));
   });
 });
+
+describe('a bare title opens only a CORE book unless Jev decided the reader wants a book (Chad 11-03: Adamson\'s "The Earth Is But One Country")', () => {
+  const rows = [...ROWS, { id: 78, title: 'The Earth Is But One Country', author: 'Hugh C. Adamson', religion: "Baha'i", collection: "Baha'i Books", book_authority: 5, slug: 'adamson', language: 'en', paragraph_count: 900 }];
+  const o = { index: buildIndex(rows), match: matchTitle, listDocs: async ({ ids }) => ({ docs: rows.filter((r) => ids.includes(r.id)) }) };
+  it('"the earth is but one country" with coreOnly does not open Adamson\'s book', async () => {
+    expect(await findWork('the earth is but one country', { ...o, coreOnly: true })).toBeNull();
+  });
+  it('without coreOnly (Jev said book) the same words still find it', async () => {
+    expect((await findWork('the earth is but one country', o))?.doc.id).toBe(78);
+  });
+  it('an explicit request for the book resolves every book, coreOnly or not', async () => {
+    expect((await findWork('where can I read The Earth Is But One Country?', { ...o, coreOnly: true }))?.doc.id).toBe(78);
+  });
+});
+
+describe('respond: findWork is core-only unless Jev\'s lookup intent is book', () => {
+  const run = async (direction) => {
+    const { anisRespond } = await import('../../api/lib/assistant/respond.js');
+    const seen = [];
+    await anisRespond({ messages: [{ role: 'user', content: 'the earth is but one country' }], direction,
+      deps: { plan: async () => ({ shape: 'quote' }), search: async () => ({ passages: [], _plan: { shape: 'quote' } }), craft: async () => 'ok',
+        companion: async () => ({}), sourceHunt: async () => null, phrases: async () => null, findWork: async (q, opts) => { seen.push(opts); return null; } } });
+    return seen[0];
+  };
+  it('no book intent → coreOnly', async () => { expect(await run({})).toMatchObject({ coreOnly: true }); });
+  it('Jev said book (no lookup result) → every book', async () => { expect((await run({ lookupIntent: 'book' }))?.coreOnly).toBeFalsy(); });
+});
