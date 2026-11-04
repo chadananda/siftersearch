@@ -9,6 +9,7 @@ import OpenAI from 'openai';
 import { logger } from './logger.js';
 import { config } from './config.js';
 import { queryOne, queryAll } from './db.js';
+import { paragraphMetaAt } from './paragraphs-repo.js';
 import { executeSearch } from '../routes/chat.js';
 
 // Lazy client: constructing OpenAI at module scope throws when no key is set,
@@ -93,7 +94,15 @@ const SUBAGENT_TOOLS = [
   }
 ];
 
-async function buildOutline(document_id, paragraphRange) {
+/** Excerpt indices whose heading (or, for an OceanLibrary doc, paragraph id) no tool result supplied. Pure. */
+export function backfillMissing(indices, seen, needOl) {
+  return [...new Set(indices)].filter(i => {
+    const k = seen.get(i);
+    return !k || !('heading' in k) || (needOl && !('external_para_id' in k));
+  });
+}
+
+async function buildOutline(document_id, paragraphRange, note = () => {}) {
   const doc = await queryOne(
     'SELECT id, title, author, religion, collection, year, description FROM docs WHERE id = ? AND deleted_at IS NULL',
     [document_id]
@@ -135,7 +144,7 @@ async function buildOutline(document_id, paragraphRange) {
     estimated_tokens: estimatedTokens,
     paragraph_range: { start: totalRow.lo, end: totalRow.hi },
     headings: headings.map(h => ({ paragraph_index: h.paragraph_index, heading: h.heading })),
-    preview: previewRows.map(p => ({
+    preview: previewRows.map(p => (note(p.paragraph_index, { heading: p.heading || null }), {
       paragraph_index: p.paragraph_index,
       heading: p.heading || null,
       text: (p.text || '').slice(0, 600)
@@ -143,12 +152,12 @@ async function buildOutline(document_id, paragraphRange) {
   };
 }
 
-async function searchInDocument(document_id, query, limit) {
+async function searchInDocument(document_id, query, limit, note = () => {}) {
   const safeLimit = Math.min(Math.max(limit || 8, 1), 20);
   const result = await executeSearch({ query, mode: 'passages', document_id, limit: safeLimit });
   if (result?.error) return { error: result.error };
   return {
-    hits: (result.passages || []).map(p => ({
+    hits: (result.passages || []).map(p => (note(p.paragraph_index, { external_para_id: p.external_para_id || null }), {
       paragraph_index: p.paragraph_index,
       heading: p.heading || null,
       text: (p.text || '').slice(0, 800)
@@ -156,7 +165,7 @@ async function searchInDocument(document_id, query, limit) {
   };
 }
 
-async function readParagraphRange(document_id, start, count, paragraphRange) {
+async function readParagraphRange(document_id, start, count, paragraphRange, note = () => {}) {
   const safeCount = Math.min(Math.max(count || 30, 1), 150);
   let lo = start;
   let hi = start + safeCount - 1;
@@ -165,11 +174,12 @@ async function readParagraphRange(document_id, start, count, paragraphRange) {
     hi = Math.min(hi, paragraphRange.end);
   }
   const rows = await queryAll(
-    `SELECT paragraph_index, text, heading FROM content
+    `SELECT paragraph_index, text, heading, external_para_id FROM content
      WHERE doc_id = ? AND paragraph_index >= ? AND paragraph_index <= ?
        AND deleted_at IS NULL ORDER BY paragraph_index`,
     [document_id, lo, hi]
   );
+  for (const p of rows) note(p.paragraph_index, { heading: p.heading || null, external_para_id: p.external_para_id || null });
   return {
     paragraphs: rows.map(p => ({
       paragraph_index: p.paragraph_index,
@@ -290,6 +300,9 @@ export async function answerFromDocument({
 
   let finalAnswer = null;
   let finalExcerpts = [];
+  // heading / OceanLibrary id of every paragraph a tool returned — the excerpts' backfill reads only what is missing here
+  const seen = new Map();
+  const note = (i, f) => { if (Number.isInteger(i)) seen.set(i, { ...seen.get(i), ...f }); };
   let toolCallsLog = [];
   let iterations = 0;
 
@@ -325,9 +338,9 @@ export async function answerFromDocument({
       let result;
       try {
         if (name === 'get_outline') {
-          result = await buildOutline(document_id, paragraphRange);
+          result = await buildOutline(document_id, paragraphRange, note);
         } else if (name === 'search_in_document') {
-          result = await searchInDocument(document_id, args.query, args.limit);
+          result = await searchInDocument(document_id, args.query, args.limit, note);
           if (sendEvent) sendEvent({
             type: 'debug_subagent_search_result',
             query: args.query,
@@ -337,7 +350,7 @@ export async function answerFromDocument({
             }))
           });
         } else if (name === 'read_paragraph_range') {
-          result = await readParagraphRange(document_id, args.start, args.count, paragraphRange);
+          result = await readParagraphRange(document_id, args.start, args.count, paragraphRange, note);
         } else if (name === 'finish') {
           finalAnswer = typeof args.answer === 'string' ? args.answer : '';
           finalExcerpts = Array.isArray(args.excerpts) ? args.excerpts : [];
@@ -371,31 +384,18 @@ export async function answerFromDocument({
     });
   }
 
-  // Backfill heading metadata on the returned excerpts
-  const indices = finalExcerpts.map(e => e.paragraph_index).filter(n => typeof n === 'number');
-  let headingsByIndex = new Map();
-  if (indices.length > 0) {
-    const placeholders = indices.map(() => '?').join(',');
-    const rows = await queryAll(
-      `SELECT paragraph_index, heading FROM content WHERE doc_id = ? AND paragraph_index IN (${placeholders})`,
-      [document_id, ...indices]
-    );
-    headingsByIndex = new Map(rows.map(r => [r.paragraph_index, r.heading || null]));
-  }
-
-  // Look up external_para_id for OL deep links
-  const paraExtIds = new Map();
-  if (indices.length > 0) {
-    const placeholders2 = indices.map(() => '?').join(',');
-    const extRows = await queryAll(
-      `SELECT paragraph_index, external_para_id FROM content
-       WHERE doc_id = ? AND paragraph_index IN (${placeholders2}) AND deleted_at IS NULL`,
-      [document_id, ...indices]
-    );
-    for (const r of extRows) {
-      if (r.external_para_id) paraExtIds.set(r.paragraph_index, r.external_para_id);
+  // Backfill heading + OceanLibrary id on the returned excerpts: from the tool results first; only paragraphs no tool
+  // returned are read (paragraphMetaAt walks the document — the old two `paragraph_index IN` reads hit 2,466 ms, 11-03)
+  const indices = finalExcerpts.map(e => e.paragraph_index).filter(n => Number.isInteger(n));
+  const needOl = !!(meta.source_site && meta.source_url); // the paragraph id is only used for an OceanLibrary link
+  const missing = backfillMissing(indices, seen, needOl);
+  if (missing.length) {
+    for (const r of await paragraphMetaAt(document_id, missing)) {
+      note(r.paragraph_index, { heading: r.heading || null, external_para_id: r.external_para_id || null });
     }
   }
+  const headingsByIndex = new Map(indices.map(i => [i, seen.get(i)?.heading || null]));
+  const paraExtIds = new Map(indices.filter(i => seen.get(i)?.external_para_id).map(i => [i, seen.get(i).external_para_id]));
 
   const buildParaUrl = (paragraphIndex) => {
     const extParaId = paraExtIds.get(paragraphIndex);

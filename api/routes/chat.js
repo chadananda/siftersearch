@@ -18,6 +18,7 @@ import { participantId, writeSessionCookieRaw } from '../lib/anonymous.js';
 import { linkFor } from '../lib/source-links.js';
 import { logger } from '../lib/logger.js';
 import { queryOne, queryAll } from '../lib/db.js';
+import { externalParaIdsByIds, paragraphMetaAt } from '../lib/paragraphs-repo.js';
 import { previewWindow, PREVIEW_PARAGRAPHS } from '../lib/rights/preview.js';
 
 const ENCUMBERED_RANGE = 3;   // the most consecutive paragraphs of a copyrighted book a chat tool reads at once
@@ -477,6 +478,36 @@ For an unfiltered total of the whole library, use library_overview instead.`,
 // ─── Tool implementations ─────────────────────────────────────────────────
 
 // plan: { messages?, defaults? } → Jev-planned retrieval (search-plan.js) instead of the raw engine; same output + _plan.
+/**
+ * (doc_id:paragraph_index) → external_para_id for OceanLibrary hits. Hydrated hits carry it (paragraphDoc); the rest are
+ * read by content id (primary key). It was one `doc_id = ? AND paragraph_index IN (...)` per doc, which walks the whole
+ * document (no such index): worst 2,466 ms on the API thread (11-03). Hits with neither are left without a deep link.
+ */
+export async function olParaIds(olHits, { byIds = externalParaIdsByIds, at = paragraphMetaAt } = {}) {
+  const out = new Map();
+  const key = (h) => `${h.doc_id || h.document_id}:${h.paragraph_index}`;
+  const hasId = (h) => h.id != null && Number.isInteger(Number(h.id));
+  const need = olHits.filter((h) => {
+    if (h.external_para_id === undefined) return true;
+    if (h.external_para_id) out.set(key(h), h.external_para_id);
+    return false;
+  });
+  const withId = need.filter(hasId);
+  // keyed by the row's own doc/index, so an id that is not this hit's paragraph never lends it a link
+  if (withId.length) for (const r of await byIds(withId.map((h) => h.id))) {
+    if (r.external_para_id) out.set(`${r.doc_id}:${r.paragraph_index}`, r.external_para_id);
+  }
+  // a hit with no content id: the (doc, index) read — rare, and the slow path
+  const byDoc = new Map();
+  for (const h of need) {
+    const d = h.doc_id || h.document_id;
+    if (hasId(h) || d == null || !Number.isInteger(h.paragraph_index)) continue;
+    (byDoc.get(d) || byDoc.set(d, []).get(d)).push(h.paragraph_index);
+  }
+  for (const [d, idx] of byDoc) for (const r of await at(d, idx)) if (r.external_para_id) out.set(`${d}:${r.paragraph_index}`, r.external_para_id);
+  return out;
+}
+
 export async function executeSearch({ query, mode = 'passages', religion, collection, author, writerOnly, language, document_id, yearFrom, yearTo, start = 0, limit = 10, scope_config, semanticRatio, entityIds, phrase, plan }) {
   const safeLimit = Math.min(limit || 10, 100);
 
@@ -644,31 +675,12 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
       return (b._authorityScore || 0) - (a._authorityScore || 0);
     });
 
-    // Pull external_para_id per (doc_id, paragraph_index) for OL hits.
+    // external_para_id per (doc_id, paragraph_index) for OL hits — what hydration already carried, else by content id.
     const olHits = top.filter(h => {
       const m = docMeta.get(h.doc_id || h.document_id);
       return m && m.source_site;
     });
-    let paraExtIds = new Map();
-    if (olHits.length > 0) {
-      // Build (doc_id, paragraph_index) → external_para_id map. One IN per doc.
-      for (const docId of new Set(olHits.map(h => h.doc_id || h.document_id))) {
-        const indices = olHits
-          .filter(h => (h.doc_id || h.document_id) === docId)
-          .map(h => h.paragraph_index);
-        const placeholders = indices.map(() => '?').join(',');
-        const rows = await queryAll(
-          `SELECT paragraph_index, external_para_id FROM content
-            WHERE doc_id = ? AND paragraph_index IN (${placeholders}) AND deleted_at IS NULL`,
-          [docId, ...indices]
-        );
-        for (const r of rows) {
-          if (r.external_para_id) {
-            paraExtIds.set(`${docId}:${r.paragraph_index}`, r.external_para_id);
-          }
-        }
-      }
-    }
+    const paraExtIds = await olParaIds(olHits);
 
     return {
       ...(planInfo ? { _plan: planInfo } : {}),

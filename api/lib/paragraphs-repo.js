@@ -120,6 +120,35 @@ export async function quotedVoiceRows({ afterId = 0, span = 100000 } = {}) {
     WHERE c.id > ? AND c.id <= ? AND c.deleted_at IS NULL AND c.authors LIKE '%"quoted"%'`, [Number(afterId), Number(afterId) + Number(span)], 'paragraphs-repo:quoted-voices');
 }
 
+/**
+ * OceanLibrary paragraph ids of search hits, by content id (primary key). The chat passages path read them with
+ * `doc_id = ? AND paragraph_index IN (...)`, which no index serves (idx_content_doc_deleted walks the whole document:
+ * 2,881 calls, worst 2,466 ms on prod, 11-03). → rows { id, doc_id, paragraph_index, external_para_id }.
+ */
+export async function externalParaIdsByIds(ids) {
+  const want = [...new Set((ids || []).filter((v) => v != null && v !== '').map(Number).filter(Number.isInteger))];
+  const out = [];
+  for (let i = 0; i < want.length; i += 500) {
+    const chunk = want.slice(i, i + 500);
+    out.push(...await queryAll(`SELECT id, doc_id, paragraph_index, external_para_id FROM content
+      WHERE id IN (${chunk.map(() => '?').join(',')}) AND deleted_at IS NULL`, chunk, 'paragraphs-repo:ext-ids'));
+  }
+  return out;
+}
+
+/**
+ * Heading + OceanLibrary id at (doc, paragraph_index), for the few indices a caller holds no row for (the document
+ * subagent's excerpts it never read through a tool). Walks the document's rows — no (doc_id, paragraph_index) index on
+ * content — so callers pass only leftovers. → rows { paragraph_index, heading, external_para_id }.
+ */
+export async function paragraphMetaAt(docId, indices) {
+  const want = [...new Set((indices || []).filter(Number.isInteger))];
+  if (!want.length) return [];
+  return queryAll(`SELECT paragraph_index, heading, external_para_id FROM content
+    WHERE doc_id = ? AND paragraph_index IN (${want.map(() => '?').join(',')}) AND deleted_at IS NULL`,
+  [Number(docId), ...want], 'paragraphs-repo:meta-at');
+}
+
 /** Paragraphs by (doc, paragraph_index) — what a link needs (OceanLibrary para id, block attrs, text). pairs [{ doc_id, index }]. */
 export async function paragraphsAt(pairs) {
   const ps = (pairs || []).filter((p) => p && p.doc_id != null && p.index != null);

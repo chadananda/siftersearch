@@ -60,6 +60,7 @@ export const CLAIMS_BUDGETS = Object.freeze({
 // report (budgetMs / overBudget per row). Before-numbers are that report's; each fix's test pins the cheap shape.
 export const QUERY_BUDGETS = Object.freeze({
   'docs-repo:path-slug-candidates': { ms: 10, note: 'slug-fallback candidates, light columns, memoised per religion/collection (was avg 356 / worst 900 ms, 473 calls / 6 h: whole collections with descriptions)' },
+  'paragraphs-repo:ext-ids': { ms: 5, note: 'OceanLibrary ids of unhydrated chat hits by primary key (was a per-doc paragraph_index IN walking the document: 2,881 calls, avg 24 / worst 2,466 ms)' },
 });
 
 /** A named statement's average-ms budget, or null when it has none. */
