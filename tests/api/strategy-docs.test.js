@@ -1,6 +1,7 @@
 // Strategy graph Phase 2, public side: the /api/v1/anis/{strategies,activities,tools} shapes leak no turn id, question or
-// template/prompt text; the admin stats routes are internal-only; the graph layout; the three docs pages render from the
-// API with live refresh; the edge cache lists the reads; the activity catalog covers every registered activity.
+// template/prompt text; the admin stats routes are internal-only; the graph layout; the plan merged in (tools by id, classes
+// with served-by, reader activities); the three docs pages (Tools → Response Strategies → Activities) render from the API;
+// the old /docs/anis-strategies redirects; the edge cache lists the reads; the step catalog covers every registered step.
 import { describe, it, expect, afterAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import Fastify from 'fastify';
@@ -8,11 +9,12 @@ import { strategiesSnapshot, resetStrategiesCache } from '../../api/lib/repos/st
 import { activities } from '../../api/lib/assistant/activities/index.js';
 import { activityCatalog, ACTIVITY_META } from '../../api/lib/assistant/activities/catalog.js';
 import { REGISTRY } from '../../api/lib/assistant/tools.js';
-import { publicStrategies, publicActivities, publicTools } from '../../api/lib/assistant/strategy-docs.js';
+import { publicStrategies, publicSteps, publicTools, publicStrategyPlan, publicReaderActivities, PLAN_TO_REGISTRY, SERVES } from '../../api/lib/assistant/strategy-docs.js';
+import { loadPlan } from '../../api/lib/assistant/anis-docs-data.js';
 import anisDocsRoutes from '../../api/routes/anis-docs.js';
 import strategiesAdminRoutes from '../../api/routes/strategies-admin.js';
 import { layoutGraph, END } from '../../src/lib/strategy-graph-layout.js';
-import { strategiesFlat, activitiesFlat, toolsFlat, show } from '../../src/lib/anis-docs.js';
+import { strategiesFlat, toolsFlat, show } from '../../src/lib/anis-docs.js';
 import { policyFor } from '../../worker/edge-cache.js';
 
 afterAll(() => resetStrategiesCache());
@@ -71,13 +73,13 @@ describe('public shapes', () => {
       const v = t[field];
       if (typeof v === 'string' && v.length > 40) expect(json).not.toContain(v.slice(0, 40));
     }
-    const acts = JSON.stringify(publicActivities({ activities: activityCatalog(), snapshot: snap, live: {} }));
+    const acts = JSON.stringify(publicSteps({ activities: activityCatalog(), snapshot: snap, live: {} }));
     expect(acts).not.toContain(SECRET_Q);
   });
 
-  it('activities: every registered one has a catalog entry and its users', () => {
+  it('building steps: every registered one has a catalog entry and its users', () => {
     expect(Object.keys(activities()).filter((n) => !ACTIVITY_META[n])).toEqual([]);
-    const { activities: list } = publicActivities({ activities: activityCatalog(), snapshot: strategiesSnapshot(), live: { 'respond.plan': { runs: 3, p50_ms: 10, usd: null } } });
+    const { steps: list } = publicSteps({ activities: activityCatalog(), snapshot: strategiesSnapshot(), live: { 'respond.plan': { runs: 3, p50_ms: 10, usd: null } } });
     const plan = list.find((a) => a.name === 'respond.plan');
     expect(plan.used_by.some((u) => u.strategy === 'respond')).toBe(true);
     expect(plan.live.runs).toBe(3);
@@ -90,6 +92,73 @@ describe('public shapes', () => {
     expect(d.activities).toContain('respond.work');
     expect(d.live.calls).toBe(2);
     expect(JSON.stringify(out.schemas)).not.toContain('"$id"');
+  });
+});
+
+describe('the plan (planning/anis-strategies.json) on the three pages', () => {
+  const plan = loadPlan();
+  const tools = Object.values(REGISTRY).filter((e) => !e.internal);
+  const strategies = publicStrategies({ snapshot: strategiesSnapshot(), activities: activityCatalog() }).strategies;
+
+  it('loads, and every alias points at a registered tool', () => {
+    expect(plan?.strategies?.length).toBeGreaterThan(30);
+    const names = new Set(tools.map((t) => t.name));
+    expect(Object.values(PLAN_TO_REGISTRY).filter((n) => !names.has(n))).toEqual([]);
+    expect(loadPlan('/nonexistent/plan.json')).toBeNull();
+  });
+
+  it('tools: registry rows carry the plan row; every plan tool lands exactly once (merged, built or planned)', () => {
+    const out = publicTools({ tools, activities: activityCatalog(), plan });
+    const fw = out.tools.find((t) => t.name === 'document_search');
+    expect(fw.plan).toMatchObject({ id: 'find_work', status_class: 'live' });
+    expect(fw.plan.does).toBeTruthy();
+    expect(fw.plan.classes).toContain('A2');
+    expect(fw.plan.reader_activities).toContain('read_book');
+    const placed = [...out.tools.filter((t) => t.plan).map((t) => t.plan.id), ...out.built.map((t) => t.id), ...out.planned.map((t) => t.id)];
+    expect(placed.sort()).toEqual(plan.tools.map((t) => t.id).sort());
+    expect(out.built.every((t) => t.status_class === 'live')).toBe(true);
+    expect(out.planned.length).toBeGreaterThan(0);
+    expect(out.planned.every((t) => t.status_class !== 'live')).toBe(true);
+    expect(out.counts.exists + out.counts.partial + out.counts.to_build).toBe(plan.tools.length);
+    expect(publicTools({ tools, activities: [], plan: null })).toMatchObject({ built: [], planned: [], plan_source: null });
+  });
+
+  it('classes A1–H2 grouped by family, each served by its graph or naming the fallback', () => {
+    const p = publicStrategyPlan({ plan, strategies });
+    expect(p.classes.map((c) => c.id)).toEqual(plan.strategies.map((s) => s.id));
+    expect(p.families.flatMap((f) => f.classes).sort()).toEqual(p.classes.map((c) => c.id).sort());
+    const active = new Set(strategies.map((s) => s.id));
+    for (const [id, cls] of Object.entries(SERVES)) if (active.has(id)) for (const c of cls) expect(p.classes.find((x) => x.id === c).served_by.id).toBe(id);
+    const a1 = p.classes.find((c) => c.id === 'A1');
+    expect(a1.served_by).toBeNull();
+    expect(a1.falls_back).toMatch(/^no graph yet — falls back to the general strategy/);
+    expect(a1.sounds_like.length).toBeGreaterThan(0);
+    expect(a1.route.some((r) => r.jev)).toBe(true);
+    expect(a1.ideal_answer).toBeTruthy();
+    expect(a1.jev.near_misses.length).toBeGreaterThan(0);
+    expect(a1.tiers[1].steps.find((s) => s.id === 'bm25').href).toBe('/docs/anis-tools#literal_search');   // plan id → registry name
+    expect(a1.tiers[0].steps.find((s) => s.id === 'people').href).toBe('/docs/anis-tools#people');         // plan-only tool, own row
+    expect(p.decisions.some((d) => d.date === '2026-11-03')).toBe(true);
+    expect(p.composition.sets.length).toBeGreaterThan(0);
+    expect(p.ladder.length).toBeGreaterThan(3);
+    // a row carrying its own classes overrides the default map
+    const own = publicStrategyPlan({ plan, strategies: [{ id: 'x', name: 'x', classes: ['A1'] }] });
+    expect(own.classes.find((c) => c.id === 'A1').served_by).toEqual({ id: 'x', name: 'x' });
+    expect(publicStrategyPlan({ plan: null })).toBeNull();
+  });
+
+  it('reader activities: steps link the class or tool they use', () => {
+    const r = publicReaderActivities({ plan, strategies });
+    expect(r.about).toBeTruthy();
+    const book = r.activities.find((a) => a.name === 'Read a book with him');
+    expect(book.start).toBeTruthy();
+    expect(book.schedule).toBeTruthy();
+    const links = book.steps.flatMap((s) => s.links);
+    expect(links).toContainEqual(expect.objectContaining({ kind: 'tool', id: 'find_work', href: '/docs/anis-tools#document_search' }));
+    expect(links).toContainEqual(expect.objectContaining({ kind: 'class', id: 'B2', href: '/docs/response-strategies#class-B2', strategy: 'understanding' }));
+    expect(book.reuses.every((x) => x.href)).toBe(true);
+    expect(JSON.stringify(r)).not.toContain('respond.');   // no code building step names on the activities page
+    expect(publicReaderActivities({ plan: null })).toMatchObject({ activities: [] });
   });
 });
 
@@ -154,30 +223,41 @@ describe('graph layout', () => {
 
 describe('docs pages', () => {
   const src = (p) => readFileSync(new URL(`../../src/pages/docs/${p}.astro`, import.meta.url), 'utf8');
-  const pages = { 'response-strategies': ['/api/v1/anis/strategies', 'strategiesFlat'], 'anis-activities': ['/api/v1/anis/activities', 'activitiesFlat'], 'anis-tools': ['/api/v1/anis/tools', 'toolsFlat'] };
+  const pages = { 'anis-tools': ['/api/v1/anis/tools', 'toolsFlat'], 'response-strategies': ['/api/v1/anis/strategies', 'strategiesFlat'], 'anis-activities': ['/api/v1/anis/activities', null] };
 
-  it.each(Object.entries(pages))('%s renders from its API with live refresh and reserved numbers', (page, [api, flat]) => {
+  it.each(Object.entries(pages))('%s renders from its API (live refresh where it has numbers), names the plan file', (page, [api, flat]) => {
     const s = src(page);
     expect(s).toContain(`'${api}'`);
-    expect(s).toContain(`bindLive(`);
-    expect(s).toContain(flat);
-    expect(s).toMatch(/data-live=/);
+    if (flat) { expect(s).toContain('bindLive('); expect(s).toContain(flat); expect(s).toMatch(/data-live=/); }
+    expect(s).toMatch(/source\.file|plan_source\.file/);   // footer: question classes: planning/anis-strategies.json
     expect(s.split('---').slice(2).join('---')).not.toMatch(/siftersearch/i);   // public copy never names the host site
     expect(s).not.toMatch(/\[var\(--/);   // semantic tokens, no arbitrary Tailwind values
   });
 
-  it('cross-links: strategy nodes → activities → tools; strategies page has the intro, the flow and <details> cards', () => {
+  it('three layers: tools → strategies (graphs, classes, building steps) → activities; nav order; the old page redirects', () => {
     const s = src('response-strategies');
-    expect(s).toContain('/docs/anis-activities#${n.activity}');
+    expect(s).toContain('#step-${n.activity}');
+    expect(s).toContain('id={`step-${a.name}`}');
+    expect(s).toContain('id={`class-${c.id}`}');
     expect(s).toMatch(/<details class="card"/);
-    expect(s).toContain('What a strategy is');
-    expect(s).toContain('How strategies improve');
+    for (const h of ['What a strategy is', 'How strategies improve', 'The strategy of strategies', 'Question classes', 'Building steps', 'Combining strategies', 'Follow-up moves', 'Decisions']) expect(s).toContain(h);
+    expect(s.indexOf('The strategy of strategies')).toBeLessThan(s.indexOf('<h2>The strategies</h2>'));
+    expect(s.indexOf('<h2>The strategies</h2>')).toBeLessThan(s.indexOf('<h2>Question classes</h2>'));
+    expect(s.indexOf('<h2>Question classes</h2>')).toBeLessThan(s.indexOf('<h2>Building steps</h2>'));
     for (const k of ['summary.active', 'summary.candidates', 'summary.promotions_30d']) expect(s).toContain(k);
-    expect(src('anis-activities')).toContain('/docs/anis-tools#${t}');
-    expect(src('anis-tools')).toContain('/docs/anis-activities#${a}');
+    const t = src('anis-tools');
+    expect(t).toContain('/docs/response-strategies#step-${a}');
+    expect(t).toContain('Planned tools');
+    const a = src('anis-activities');
+    expect(a).not.toMatch(/`step-\$\{|activitiesFlat|data-live/);   // the code step catalog lives on the strategies page only
+    expect(a).toContain('How it starts');
     const nav = readFileSync(new URL('../../src/layouts/DocsLayout.astro', import.meta.url), 'utf8');
     const index = readFileSync(new URL('../../src/pages/docs/index.astro', import.meta.url), 'utf8');
     for (const p of Object.keys(pages)) { expect(nav).toContain(`/docs/${p}`); expect(index).toContain(`/docs/${p}`); }
+    expect(nav).toContain("order: ['anis-tools', 'response-strategies', 'anis-activities',");
+    expect(nav).not.toContain("'anis-strategies'");
+    const astro = readFileSync(new URL('../../astro.config.mjs', import.meta.url), 'utf8');
+    expect(astro).toMatch(/'\/docs\/anis-strategies': \{ status: 301, destination: '\/docs\/response-strategies' \}/);
   });
 
   it('the flat maps feed SSR and live refresh the same text', () => {
@@ -187,7 +267,7 @@ describe('docs pages', () => {
     expect(show(m, 's.respond.p50_ms', 'ms')).toBe('900 ms');
     expect(show(m, 'b.respond.abc123abc123.share', 'share')).toBe('100.0%');
     expect(show(m, 's.prayer.score', 'score')).toBe('–');
-    expect(activitiesFlat({ activities: [{ name: 'a', live: { runs: 2 } }] })['a.a.runs']).toBe(2);
+    expect(strategiesFlat({ steps: [{ name: 'a', live: { runs: 2 } }] })['a.a.runs']).toBe(2);
     expect(toolsFlat({ tools: [{ name: 't', live: null }] })['t.t.calls']).toBeNull();
   });
 });

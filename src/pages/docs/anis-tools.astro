@@ -1,7 +1,8 @@
 ---
-// /docs/anis-tools — the tool registry (api/lib/assistant/tools.js) as GET /api/v1/anis/tools serves it (edge-cached): each
-// tool's purpose, input/output schemas, the activities that call it, and live 7-day calls / errors / p50 / p95 (data-live,
-// refreshed by liveRefresh in src/lib/anis-docs.js). Anchors are #<tool name>; shared schemas are #schema-<name>.
+// /docs/anis-tools — layer 1 of 3 (Tools → Response Strategies → Activities). GET /api/v1/anis/tools (edge-cached): the tools.js
+// registry (schemas, the building steps that call each, live 7-day calls / errors / p50 / p95 via data-live + liveRefresh in
+// src/lib/anis-docs.js) merged with the plan's tool rows (status, does, cost, where); plan-only tools as built-in / planned.
+// Anchors: #<registry name>, #<plan id> (merged rows carry both), #schema-<name>.
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import { toolsFlat, show } from '../../lib/anis-docs.js';
 
@@ -11,29 +12,46 @@ const data = await soft('/api/v1/anis/tools', 8000);
 if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
 const m = toolsFlat(data);
 const tools = data?.tools || [];
+const built = data?.built || [];
+const planned = data?.planned || [];
+const counts = data?.counts;
 const schemas = Object.entries(data?.schemas || {});
 const json = (x) => JSON.stringify(x, null, 2);
 ---
 
-<DocsLayout title="Tools" description="The tools the Ocean AI Research Assistant's activities call, with their schemas and live numbers" activeSection="anis-tools">
+<DocsLayout title="Tools" description="The foundation of the Ocean AI Research Assistant: every tool its strategies call, what it costs, and how it performs" activeSection="anis-tools">
   <h1>Tools</h1>
-  <p class="subtitle">What the research assistant can call, and how each call performs</p>
+  <p class="subtitle">The foundation: what the research assistant can do</p>
 
   <p>
-    Tools are the lowest layer: library searches, lookups and traces with a fixed input and output schema.
-    <a href="/docs/anis-activities">Activities</a> call them, and <a href="/docs/response-strategies">response strategies</a>
-    arrange the activities. Calls, errors and timings below cover the last 7 days.
+    Tools are the bottom layer. Each one does a single job with a fixed input and output: find a book by any spelling of
+    its title, search the library by exact words or by meaning, trace a quotation to its source, show the original of a
+    passage. <a href="/docs/response-strategies">Response strategies</a> are built on top of them: graphs of steps, each step
+    a use of a tool, a fast decision or a writing step. <a href="/docs/anis-activities">Activities</a>, such as reading a book
+    together, are built on top of the strategies.
   </p>
+  <p>
+    Every tool has a cost tier: code (about free), tool (10–300 ms), Jev decision (about 50 ms), light LLM step, writer, or the
+    research agent. A strategy stays cheap by using the cheapest tier that can do the job.
+    Calls, errors and timings below cover the last 7 days.
+  </p>
+  {counts && (
+    <p class="counts"><span><strong>{counts.registry}</strong> callable tools</span><span><strong>{counts.exists}</strong> planned tools exist</span>
+      <span><strong>{counts.partial}</strong> partial</span><span><strong>{counts.to_build}</strong> to build</span></p>
+  )}
 
   {!data && <p class="note">The tool list could not be loaded just now. It will appear on the next visit.</p>}
 
-  <h2>Summary</h2>
+  <h2>Callable tools</h2>
+  <p class="note">The tools a strategy step or the research agent can call by name.</p>
   <div class="scroll">
     <table id="tool-table">
-      <thead><tr><th>Tool</th><th>Calls</th><th>Errors</th><th>p50</th><th>p95</th></tr></thead>
+      <thead><tr><th>Tool</th><th>Status</th><th>Cost</th><th>Calls</th><th>Errors</th><th>p50</th><th>p95</th></tr></thead>
       <tbody>
         {tools.map((t) => (
-          <tr><td><a href={`#${t.name}`}>{t.name}</a></td>
+          <tr><td><a href={`#${t.name}`}>{t.name}</a>{t.plan && <><br /><span class="plan-id">{t.plan.id}</span></>}</td>
+            <td>{t.plan ? <span class={`chip ${t.plan.status_class}`}>{t.plan.status}</span> : <span class="chip live">exists</span>}</td>
+            <td>{t.plan?.cost ?? 'tool'}</td>
             <td data-live={`t.${t.name}.calls`} data-fmt="n">{show(m, `t.${t.name}.calls`)}</td>
             <td data-live={`t.${t.name}.errors`} data-fmt="n">{show(m, `t.${t.name}.errors`)}</td>
             <td data-live={`t.${t.name}.p50_ms`} data-fmt="ms">{show(m, `t.${t.name}.p50_ms`, 'ms')}</td>
@@ -43,20 +61,47 @@ const json = (x) => JSON.stringify(x, null, 2);
     </table>
   </div>
 
-  <h2>Each tool</h2>
   {tools.map((t) => (
     <section class="tool" id={t.name}>
+      {t.plan && <span id={t.plan.id} class="alias"></span>}
       <h3><a href={`#${t.name}`}><code>{t.name}</code></a> <span class="label">{t.label}</span></h3>
       {t.purpose && <p>{t.purpose}</p>}
       <dl>
+        {t.plan && (<><dt>Plan</dt><dd><code>{t.plan.id}</code> · {t.plan.name}: {t.plan.does}</dd></>)}
+        {t.plan && (<><dt>Status</dt><dd><span class={`chip ${t.plan.status_class}`}>{t.plan.status}</span> · cost: {t.plan.cost}</dd></>)}
+        {t.plan?.where && (<><dt>Where</dt><dd><code class="where">{t.plan.where}</code></dd></>)}
         <dt>Returns</dt><dd>{t.outputName ? <code>{t.outputName}</code> : 'see schema'}</dd>
         <dt>Called by</dt>
-        <dd>{t.activities?.length ? t.activities.map((a, i) => <>{i > 0 && ', '}<a href={`/docs/anis-activities#${a}`}>{a}</a></>) : 'the research agents directly'}</dd>
+        <dd>{t.activities?.length ? t.activities.map((a, i) => <>{i > 0 && ', '}<a href={`/docs/response-strategies#step-${a}`}>{a}</a></>) : 'the research agents directly'}</dd>
+        {t.plan?.classes?.length > 0 && (<><dt>Question classes</dt><dd>{t.plan.classes.map((c, i) => <>{i > 0 && ' · '}<a href={`/docs/response-strategies#class-${c}`}>{c}</a></>)}</dd></>)}
+        {t.plan?.reader_activities?.length > 0 && (<><dt>Activities</dt><dd>{t.plan.reader_activities.map((a, i) => <>{i > 0 && ' · '}<a href={`/docs/anis-activities#${a}`}>{a.replace(/_/g, ' ')}</a></>)}</dd></>)}
       </dl>
       {t.description && t.description !== t.purpose && <details><summary>Full description</summary><p class="desc">{t.description}</p></details>}
       {t.input && <details><summary>Input schema</summary><pre>{json(t.input)}</pre></details>}
       {t.output && <details><summary>Output schema</summary><pre>{json(t.output)}</pre></details>}
     </section>
+  ))}
+
+  {[['built', 'Built-in tools', 'These exist in code and run inside the reply pipeline (decisions, the writer, the citation gate, the fallbacks); no model calls them by name.', built],
+    ['planned', 'Planned tools', 'Partly built or still to build. Each is named by the question classes whose strategies need it.', planned]].map(([key, title, intro, list]) => list.length > 0 && (
+    <>
+      <h2 id={`${key}-tools`}>{title}</h2>
+      <p class="note">{intro}</p>
+      <div class="scroll">
+        <table class="plan-table">
+          <thead><tr><th>Tool</th><th>Does</th><th>Cost</th><th>Status</th><th>Used by</th></tr></thead>
+          <tbody>
+            {list.map((t) => (
+              <tr id={t.id}><td><strong>{t.name}</strong><br /><span class="plan-id">{t.id}</span></td>
+                <td>{t.does}{t.where && t.where !== '—' && <><br /><code class="where">{t.where}</code></>}</td>
+                <td>{t.cost}</td>
+                <td><span class={`chip ${t.status_class}`}>{t.status}</span></td>
+                <td>{t.classes.map((c, i) => <>{i > 0 && ' · '}<a href={`/docs/response-strategies#class-${c}`}>{c}</a></>)}{t.classes.length > 0 && t.reader_activities.length > 0 && ' · '}{t.reader_activities.map((a, i) => <>{i > 0 && ' · '}<a href={`/docs/anis-activities#${a}`}>{a.replace(/_/g, ' ')}</a></>)}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   ))}
 
   {schemas.length > 0 && (
@@ -68,6 +113,8 @@ const json = (x) => JSON.stringify(x, null, 2);
     </>
   )}
 
+  {data?.plan_source && <p class="note source">Question classes, status, cost and planned tools: <code>{data.plan_source.file}</code>{data.plan_source.updated && ` (${data.plan_source.updated})`}.</p>}
+
   <script>
     import { bindLive, toolsFlat } from '../../lib/anis-docs.js';
     bindLive(document.getElementById('tool-table'), '/api/v1/anis/tools', toolsFlat);
@@ -75,18 +122,30 @@ const json = (x) => JSON.stringify(x, null, 2);
 </DocsLayout>
 
 <style>
+  h2 { margin-top: 2.2rem; margin-bottom: 0.3rem; }
   .note { font-size: 0.92rem; }
+  .counts { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; font-size: 0.92rem; }
   .scroll { overflow-x: auto; }
   #tool-table td { min-width: 6ch; }
+  .plan-id { font-family: var(--font-mono, monospace); font-size: 0.78rem; opacity: 0.75; }
+  .where { font-size: 0.76rem; word-break: break-word; }
+  .plan-table td { vertical-align: top; font-size: 0.88rem; }
+  .chip { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border: 1px solid var(--border-default); border-radius: 4px; padding: 0 0.35rem; }
+  .chip.live { color: var(--success); }
+  .chip.partial { color: var(--warning); }
+  .chip.later { opacity: 0.75; }
   .tool { border-top: 1px solid var(--border-subtle); }
   .tool h3 { margin: 1.4rem 0 0.2rem; font-size: 1rem; }
   .tool h3 a { text-decoration: none; }
+  .alias { display: block; position: relative; top: -1rem; }
   .label { font-weight: 400; font-size: 0.88rem; opacity: 0.8; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.9rem; margin: 0.4rem 0; font-size: 0.92rem; }
   dt { font-weight: 600; }
-  dd { margin: 0; }
+  dd { margin: 0; min-width: 0; }
   details { margin: 0.3rem 0; }
   summary { cursor: pointer; font-size: 0.9rem; }
   pre { font-size: 0.78rem; overflow-x: auto; max-height: 28rem; padding: 0.6rem; border: 1px solid var(--border-default); border-radius: 6px; }
   .desc { white-space: pre-wrap; font-size: 0.9rem; }
+  .source { margin-top: 2rem; }
+  @media (max-width: 640px) { dl { grid-template-columns: 1fr; } dt { margin-top: 0.3rem; } }
 </style>

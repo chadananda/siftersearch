@@ -1,8 +1,8 @@
 ---
-// /docs/response-strategies — the Ocean AI Research Assistant's response strategies, generated from the strategy store via
-// GET /api/v1/anis/strategies (edge-cached). A static intro (what a strategy is, how the set improves itself) then one card
-// per active strategy (<details>: the full graph, steps, templates, branches, candidates are in the SSR HTML). Every number
-// carries data-live and refreshes through liveRefresh (src/lib/anis-docs.js); SSR reserves its space.
+// /docs/response-strategies — layer 2 of 3 (Tools → Response Strategies → Activities), from GET /api/v1/anis/strategies
+// (edge-cached). Intro + improvement loop, the cost ladder (plan), one card per active graph (#strategy-<id>), question classes
+// A1–H2 by family with served-by (#class-<id>, plan), the code building steps (#step-<name>), composition + moves, decisions.
+// Every number carries data-live and refreshes through liveRefresh (src/lib/anis-docs.js); SSR reserves its space.
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import { strategiesFlat, show } from '../../lib/anis-docs.js';
 import { layoutGraph } from '../../lib/strategy-graph-layout.js';
@@ -16,6 +16,11 @@ const strategies = data?.strategies || [];
 const oneLine = (s) => { const t = String(s || '').split(/\s[—–]\s|;\s|\.\s/)[0]; return t.length > 150 ? `${t.slice(0, 147)}…` : t; };
 const label = (s) => (s === 'other' ? 'general (everything else)' : s);
 const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1')).join(' · ');
+const plan = data?.plan || null;
+const steps = data?.steps || [];
+const classById = new Map((plan?.classes || []).map((c) => [c.id, c]));
+const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
+const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui: 'Reader interface' };
 ---
 
 <DocsLayout title="Response Strategies" description="How the Ocean AI Research Assistant chooses a way to answer each question, and how those strategies are measured and improved" activeSection="response-strategies">
@@ -25,10 +30,12 @@ const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1'))
   <section id="intro">
     <h2>What a strategy is</h2>
     <p>
-      Every question gets an answer built from <strong>activities</strong>: small pieces of code that each do one thing well:
-      find a named book, trace a quotation to its source, search the original-language tablets, study how a term is translated,
-      write the reply. Activities are code. A <strong>strategy</strong> is data: a small graph that says which activities run, in
-      what order, and where each outcome leads next. Strategies live in a database, not in the program, so they can be added,
+      Strategies are the middle layer. Below them are the <a href="/docs/anis-tools">tools</a>; above them are the
+      <a href="/docs/anis-activities">activities</a>, such as reading a book together, which reuse them. Every answer is built
+      from <a href="#building-steps">building steps</a>: small pieces of code that each do one thing well, most of them one use of
+      a tool: find a named book, trace a quotation to its source, search the original-language tablets, study how a term is
+      translated, write the reply. Building steps are code. A <strong>strategy</strong> is data: a small graph that says which
+      steps run, in what order, and where each outcome leads next. Strategies live in a database, not in the program, so they can be added,
       changed, measured and rolled back without a code release.
     </p>
     <p>
@@ -46,10 +53,10 @@ const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1'))
     <ul>
       <li><strong>Every step is measured.</strong> Each step of each strategy records how long it took, what it cost and which way it branched, so every strategy and every path through it has its own numbers.</li>
       <li><strong>Every reply is judged.</strong> A separate judge model scores replies and names what went wrong, so quality joins speed and cost in the numbers below.</li>
-      <li><strong>Gaps become candidates.</strong> When a class of questions is not served well by any strategy, a stronger model designs a candidate strategy from the existing activities.</li>
+      <li><strong>Gaps become candidates.</strong> When a class of questions is not served well by any strategy, a stronger model designs a candidate strategy from the existing building steps.</li>
       <li><strong>Candidates must win.</strong> A candidate is replayed on fresh questions of that class plus a set of guard questions. It is promoted only if it measurably wins, and the old version is kept so a promotion can be rolled back.</li>
       <li><strong>Weak steps get the same treatment.</strong> A step or branch that scores poorly gets candidate edits, which are replayed and promoted the same way.</li>
-      <li><strong>Code problems go to engineers.</strong> Weaknesses that a strategy cannot fix (an activity, a tool, a search index) become recommendations for the engineers.</li>
+      <li><strong>Code problems go to engineers.</strong> Weaknesses that a strategy cannot fix (a building step, a tool, a search index) become recommendations for the engineers.</li>
     </ul>
 
     <svg class="flow" viewBox="0 0 760 120" role="img" aria-label="The improvement loop: question, Jev picks a strategy, the steps run and are measured, the judge scores the reply, a candidate is designed and replayed, and promoted only if it wins">
@@ -71,10 +78,40 @@ const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1'))
       <span><strong data-live="summary.promotions_30d" data-fmt="n">{show(m, 'summary.promotions_30d')}</strong> promotions in the last 30 days</span>
     </p>
     <p class="note">
-      Each step names an <a href="/docs/anis-activities">activity</a>; activities call the <a href="/docs/anis-tools">tools</a>.
+      Each step names a <a href="#building-steps">building step</a>; building steps call the <a href="/docs/anis-tools">tools</a>.
       The numbers below cover the last 7 days. The judge score is out of 10 and is the mean of the replies that have one.
     </p>
   </section>
+
+  {plan && (
+    <section id="ladder">
+      <h2>The strategy of strategies</h2>
+      <p>
+        Code first, then Jev, then a fast language model, and never a slow model on the reply path. Each step of every strategy
+        uses the cheapest tier that can do the job, and a costlier tier runs only after a cheaper one could not settle it.
+      </p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Tier</th><th>Cost</th><th>Used for</th></tr></thead>
+          <tbody>{plan.ladder.map((l) => <tr><td><strong>{l.step}</strong></td><td class="nowrap">{l.cost}</td><td>{l.examples}</td></tr>)}</tbody>
+        </table>
+      </div>
+      <p class="note">Target times: a book, quote or reference ≤ 1 s · other lookups ≤ 3 s · understanding and comparing ≤ 12 s, first words within 2 s · assignments take minutes, with progress shown.</p>
+      <ul>
+        <li><strong>Jev</strong>, the fast decision model (about 50 ms), reads each message with its thread and names its class: a lead class and any others. Jev also makes the small yes/no decisions inside a strategy (found? enough? which person?). Jev is never trained: each decision comes with the information it needs, and that context is adjusted until he decides right.</li>
+        <li><strong>Tiers.</strong> The first tier uses only code, tools and Jev. A tier adds a light LLM step only when code cannot do the job, and only after the cheaper tier failed. If every tier fails, the research agent takes the question.</li>
+        <li><strong>One writing step, for every answer.</strong> The chosen format shapes the answer; the writing model writes it once, adapting the evidence to Anís's voice and the reader, so answers stay varied and never sound canned. Lookups (find a book, trace a quote, a reference) go through a light writer too, so they stay fast.</li>
+        <li><strong>Switched on only when it matches the agent.</strong> Each strategy is measured on fresh questions of its class, with a held-out set kept aside, against the research agent's answers. It goes live for its class only when it matches or beats the agent within its target time. Until then the agent answers.</li>
+      </ul>
+      {plan.grounding_scale && (
+        <p class="note">
+          <strong>Grounding</strong> is how many real test questions a class has to measure it with (lead · also). The labels are only
+          test fixtures for measuring Jev's choices:
+          {Object.entries(plan.grounding_scale).map(([k, v], i) => <>{i > 0 && ' · '}<span class={`chip g-${k}`}>{k}</span> {v}</>)}.
+        </p>
+      )}
+    </section>
+  )}
 
   <h2>The strategies</h2>
   {!data && <p class="note">The strategy list could not be loaded just now. It will appear on the next visit.</p>}
@@ -94,6 +131,9 @@ const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1'))
           </summary>
           <div class="body">
             {s.description && <p>{s.description}</p>}
+            {s.classes?.length > 0 && (
+              <p class="note">Serves question classes: {s.classes.map((c, i) => <>{i > 0 && ' · '}<a href={`#class-${c}`}>{c}{classById.get(c) ? ` ${classById.get(c).name}` : ''}</a></>)}</p>
+            )}
             {s.exemplars.length > 0 && (<><h3>Questions it serves</h3><ul>{s.exemplars.map((e) => <li>{e}</li>)}</ul></>)}
 
             <h3>Last 7 days</h3>
@@ -123,7 +163,7 @@ const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1'))
                   <g><rect x={n.x} y={n.y} width={n.w} height={n.h} rx="17" class="fill-surface-2 stroke-border" />
                     <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-secondary">end</text></g>
                 ) : (
-                  <a href={`/docs/anis-activities#${n.activity}`}>
+                  <a href={`#step-${n.activity}`}>
                     <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="6" class={`fill-surface-1 stroke-border kind-${n.kind}`} />
                     <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-primary">{n.id}</text>
                   </a>
@@ -137,7 +177,7 @@ const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1'))
               <tbody>
                 {s.graph.nodes.map((n) => (
                   <tr><td>{n.id}</td><td><code>{n.step}@{n.step_version}</code></td>
-                    <td><a href={`/docs/anis-activities#${n.activity}`}>{n.activity}</a></td><td>{n.kind}</td><td>{n.cls}</td></tr>
+                    <td><a href={`#step-${n.activity}`}>{n.activity}</a></td><td>{n.kind}</td><td>{n.cls}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -179,6 +219,174 @@ const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1'))
     })}
   </div>
 
+  {plan && (
+    <section id="classes">
+      <h2>Question classes</h2>
+      <p>
+        Every kind of question a reader asks falls into one of these classes, found by labelling {plan.classes.reduce((n, c) => n + (c.test_questions?.lead || 0), 0).toLocaleString('en-US')} real
+        messages. Each class has a planned route: the steps it takes, cheapest first, with Jev's decisions marked. A class is
+        served by the active strategy built for it; a class with no graph yet falls back to the general strategy.
+      </p>
+      <div class="scroll">
+        <table class="glance">
+          <thead><tr><th>Class</th><th>Tests (lead · also)</th><th>Tiers</th><th>LLM steps</th><th>Target</th><th>Grounding</th><th>Served by</th></tr></thead>
+          <tbody>
+            {plan.classes.map((c) => (
+              <tr><td><a href={`#class-${c.id}`}><strong>{c.id}</strong> {c.name}</a></td>
+                <td class="nowrap">{c.test_questions ? `${c.test_questions.lead ?? 0} · ${c.test_questions.also ?? 0}` : '–'}</td>
+                <td>{c.tiers.length}</td><td>{c.llm_steps}</td><td class="nowrap">{c.target_time || '–'}</td>
+                <td><span class={`chip g-${c.grounding}`}>{c.grounding}</span></td>
+                <td>{c.served_by ? <a href={`#strategy-${c.served_by.id}`}>{label(c.served_by.name)}</a> : <span class="muted">general (no graph yet)</span>}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {plan.families.map((f) => (
+        <>
+          <h3 class="family" id={`family-${f.id}`}>{f.id}. {f.name}</h3>
+          {f.note && <p class="note">{f.note}</p>}
+          <div class="cards">
+            {f.classes.map((id) => classById.get(id)).filter(Boolean).map((c) => (
+              <details class="card" id={`class-${c.id}`}>
+                <summary>
+                  <span class="name plain">{c.id} {c.name} {c.status && <span class="chip">{c.status}</span>}</span>
+                  <span class="keys">
+                    <span>target <strong>{c.target_time || '–'}</strong></span>
+                    <span>grounding <strong>{c.grounding}</strong></span>
+                    <span>{c.served_by ? <>served by <strong>{label(c.served_by.name)}</strong></> : <span class="muted">no graph yet</span>}</span>
+                  </span>
+                </summary>
+                <div class="body">
+                  {c.sounds_like.length > 0 && (<><h4>Sounds like</h4><ul class="quotes">{c.sounds_like.map((q) => <li>“{q}”</li>)}</ul>{c.sounds_like_note && <p class="note">{c.sounds_like_note}</p>}</>)}
+                  {(c.how_often || c.often_with) && (<><h4>How often</h4><p>{c.how_often}{c.often_with && <><br /><span class="note">Often with: {c.often_with}</span></>}</p></>)}
+                  {c.test_questions && (
+                    <><h4>Test questions: {c.test_questions.lead ?? 0} lead · {c.test_questions.also ?? 0} also{c.test_questions.derived && ` · ${c.test_questions.derived}`}</h4>
+                      {c.test_questions.examples?.length > 0 && <p class="note">{c.test_questions.examples.map((q) => `“${q}”`).join(' · ')}</p>}</>
+                  )}
+                  {c.route.length > 0 && (
+                    <><h4>Route</h4>
+                      <ol class="route">{c.route.map((r) => <li class={r.jev ? 'jev' : ''}>{r.jev && <span class="chip">Jev</span>} {r.text}</li>)}</ol></>
+                  )}
+                  {c.ideal_answer && (<><h4>Ideal answer</h4><p>{c.ideal_answer}{c.target_time && <> <span class="note">Target: {c.target_time}.</span></>}</p></>)}
+                  {c.tiers.length > 0 && (
+                    <><h4>Steps by tier</h4>
+                      <table class="tiers"><tbody>
+                        {c.tiers.map((t) => (
+                          <tr><th>{t.cost}</th><td>{t.steps.map((s, i) => <>{i > 0 && ' · '}{s.href ? <a href={s.href}>{s.label}</a> : s.label}</>)}</td></tr>
+                        ))}
+                      </tbody></table>
+                      {c.post && <p class="note">Then: {c.post}</p>}
+                      {c.format && <p class="note">Format: {c.format}</p>}</>
+                  )}
+                  {c.jev && (
+                    <><h4>How Jev tells it apart</h4>
+                      <dl>
+                        {c.jev.cues?.length > 0 && (<><dt>Cues</dt><dd>{c.jev.cues.join(' · ')}</dd></>)}
+                        {c.jev.required_slots?.length > 0 && (<><dt>Needs</dt><dd>{c.jev.required_slots.join(' · ')}</dd></>)}
+                        {c.jev.disqualifiers?.length > 0 && (<><dt>Not when</dt><dd>{c.jev.disqualifiers.join(' · ')}</dd></>)}
+                        {c.jev.confusable_with?.length > 0 && (<><dt>Confused with</dt><dd>{c.jev.confusable_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{x}</a></>)}</dd></>)}
+                        {c.jev.composes_with?.length > 0 && (<><dt>Combines with</dt><dd>{c.jev.composes_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{x}</a></>)}</dd></>)}
+                      </dl>
+                      {c.jev.example_phrasings?.length > 0 && (<p class="note">Example phrasings: {c.jev.example_phrasings.map((q) => `“${q}”`).join(' · ')}</p>)}
+                      {c.jev.near_misses?.length > 0 && (
+                        <><p class="note"><strong>Near misses</strong></p>
+                          <ul class="misses">{c.jev.near_misses.map((n) => <li>“{n.text}” → <strong>{n.goes_to}</strong>{n.why && <>: {n.why}</>}</li>)}</ul></>
+                      )}</>
+                  )}
+                  {c.measure && (<><h4>Measure</h4><p>{c.measure}</p></>)}
+                  <h4>Served by</h4>
+                  <p>{c.served_by ? <><a href={`#strategy-${c.served_by.id}`}>{label(c.served_by.name)}</a><span class="note"> · if every tier fails: {c.fallback}</span></> : c.falls_back}</p>
+                  {c.open_questions.length > 0 && (<><h4>Open questions</h4><ul>{c.open_questions.map((q) => <li>{q}</li>)}</ul></>)}
+                </div>
+              </details>
+            ))}
+          </div>
+        </>
+      ))}
+    </section>
+  )}
+
+  <section id="building-steps">
+    <h2>Building steps</h2>
+    <p>
+      The code every strategy graph is made of. Each step does one thing: a tool call, a decision by Jev, a transform of what
+      has been gathered, the writer, or a check. New strategies are composed from these steps without changing any code; a new
+      step is new code, with its own test. Runs, p50 and cost cover the last 7 days.
+    </p>
+    {!data && <p class="note">The step list could not be loaded just now.</p>}
+    <div class="scroll">
+      <table class="steps">
+        <thead><tr><th>Step</th><th>Tier</th><th>What it does</th><th>Runs</th><th>p50</th><th>Cost</th></tr></thead>
+        {stepGroups.map((g) => (
+          <tbody>
+            <tr class="group"><th colspan="6">{GROUP_TITLE[g] || g}</th></tr>
+            {steps.filter((a) => a.name.split('.')[0] === g).map((a) => (
+              <tr id={`step-${a.name}`}>
+                <td><code>{a.name}</code></td><td>{a.kind}{a.cls && <span class="muted"> · {a.cls}</span>}</td>
+                <td>{a.description}{a.tools?.length > 0 && <><br /><span class="note">Tools: {a.tools.map((t, i) => <>{i > 0 && ', '}<a href={`/docs/anis-tools#${t}`}>{t}</a></>)}</span></>}
+                  {a.used_by?.length > 0 && <><br /><span class="note">In: {[...new Map(a.used_by.map((u) => [u.strategy, u])).values()].map((u, i) => <>{i > 0 && ', '}<a href={`#strategy-${u.strategy}`}>{label(u.name)}</a></>)}</span></>}</td>
+                <td data-live={`a.${a.name}.runs`} data-fmt="n">{show(m, `a.${a.name}.runs`)}</td>
+                <td data-live={`a.${a.name}.p50_ms`} data-fmt="ms">{show(m, `a.${a.name}.p50_ms`, 'ms')}</td>
+                <td data-live={`a.${a.name}.usd`} data-fmt="usd">{show(m, `a.${a.name}.usd`, 'usd')}</td>
+              </tr>
+            ))}
+          </tbody>
+        ))}
+      </table>
+    </div>
+  </section>
+
+  {plan && (
+    <section id="composition">
+      <h2>Combining strategies</h2>
+      {plan.composition.intro && <p>{plan.composition.intro}</p>}
+      {plan.composition.rules.length > 0 && <p><strong>The rule for combining.</strong> Jev names the lead class and the others in one classification.</p>}
+      {plan.composition.rules.length > 0 && <ul>{plan.composition.rules.map((r) => <li>{r}</li>)}</ul>}
+      {plan.composition.sets.length > 0 && (
+        <>
+          <h3>Common combinations</h3>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Set</th><th>Messages</th><th>How they combine</th></tr></thead>
+              <tbody>{plan.composition.sets.map((s) => <tr><td><strong>{s.set}</strong>{s.example && <><br /><span class="note">{s.example}</span></>}</td><td>{s.count}</td><td>{s.how}</td></tr>)}</tbody>
+            </table>
+          </div>
+          {plan.composition.note && <p class="note">{plan.composition.note}</p>}
+        </>
+      )}
+      {(plan.composition.moves_note.length > 0 || plan.composition.other_moves.length > 0) && (
+        <>
+          <h3 id="moves">Follow-up moves</h3>
+          {plan.composition.moves_note.map((n) => <p>{n}</p>)}
+          {plan.composition.other_moves.length > 0 && (
+            <div class="scroll">
+              <table>
+                <thead><tr><th>Move</th><th>Sounds like</th><th>Must do</th></tr></thead>
+                <tbody>{plan.composition.other_moves.map((x) => <tr><td><strong>{x.move}</strong></td><td>{x.sounds_like}</td><td>{x.must_do}</td></tr>)}</tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  )}
+
+  {plan?.decisions.length > 0 && (
+    <section id="decisions">
+      <h2>Decisions</h2>
+      <ul class="decisions">{plan.decisions.map((d) => <li><span class="date">{d.date}</span> {d.text}</li>)}</ul>
+    </section>
+  )}
+  {plan?.open_questions.length > 0 && (
+    <section id="open-questions">
+      <h2>Open questions</h2>
+      <ul>{plan.open_questions.map((q) => <li>{typeof q === 'string' ? q : (q.text ?? q.q ?? JSON.stringify(q))}</li>)}</ul>
+    </section>
+  )}
+
+  {plan && <p class="note source">Question classes: <code>{plan.source.file}</code>{plan.source.updated && ` (${plan.source.updated})`}. Graphs and building steps: the strategy store and the code.</p>}
+
   <script>
     import { bindLive, strategiesFlat } from '../../lib/anis-docs.js';
     bindLive(document.getElementById('strategies')?.parentElement, '/api/v1/anis/strategies', strategiesFlat);
@@ -209,4 +417,30 @@ const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1'))
   .graph a:hover rect { stroke: var(--accent-primary); }
   .elabel { font-size: 10px; }
   .path { font-size: 0.82rem; }
+  h2 { margin-top: 2.4rem; margin-bottom: 0.3rem; }
+  h4 { margin: 1.1rem 0 0.2rem; font-size: 0.92rem; }
+  .family { margin-top: 2rem; }
+  .scroll { overflow-x: auto; }
+  .nowrap { white-space: nowrap; }
+  .muted { opacity: 0.7; }
+  .card .name.plain { text-transform: none; }
+  .chip { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border: 1px solid var(--border-default); border-radius: 4px; padding: 0 0.35rem; }
+  .chip.g-strong { color: var(--success); }
+  .chip.g-moderate { color: var(--info); }
+  .chip.g-few { color: var(--warning); }
+  .chip.g-thin { color: var(--error); }
+  .glance td, .steps td { vertical-align: top; font-size: 0.9rem; }
+  .steps tr.group th { text-align: left; padding-top: 1rem; }
+  .steps td:nth-child(n+4) { min-width: 6ch; white-space: nowrap; }
+  .route { padding-left: 1.3rem; }
+  .route li.jev { font-weight: 500; }
+  .quotes, .misses { font-size: 0.92rem; }
+  .tiers th { text-align: left; white-space: nowrap; vertical-align: top; padding-right: 0.8rem; font-weight: 600; font-size: 0.88rem; }
+  .tiers td { font-size: 0.9rem; }
+  .body dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.9rem; margin: 0.4rem 0; font-size: 0.92rem; }
+  .body dt { font-weight: 600; }
+  .body dd { margin: 0; min-width: 0; }
+  .decisions .date { font-weight: 600; white-space: nowrap; margin-right: 0.4rem; }
+  .source { margin-top: 2.4rem; }
+  @media (max-width: 640px) { .body dl { grid-template-columns: 1fr; } .tiers th { white-space: normal; } }
 </style>

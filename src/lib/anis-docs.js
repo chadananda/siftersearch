@@ -1,4 +1,4 @@
-// The three Anís docs pages' numbers (/docs/response-strategies, /docs/anis-activities, /docs/anis-tools): one formatter set
+// The Anís docs pages' live numbers (/docs/anis-tools, /docs/response-strategies incl. its building steps): one formatter set
 // and one flat key → value map per API payload, used by SSR (first render) AND the live refresh, so both print the same
 // text. Elements carry data-live="<key>" data-fmt="<kind>"; bindLive() patches them from /api/v1/anis/* (liveRefresh).
 import { liveRefresh } from './live-data.js';
@@ -26,12 +26,7 @@ export function strategiesFlat(d) {
     for (const b of s.branches || []) put(m, `b.${s.id}.${b.hash}`, b, ['share', 'turns', 'p50_ms', 'score']);
     for (const c of s.candidates || []) put(m, `c.${s.id}.${c.version}`, c.stats, STAT_KEYS);
   }
-  return m;
-}
-/** /api/v1/anis/activities → flat map. */
-export function activitiesFlat(d) {
-  const m = {};
-  for (const a of d?.activities || []) put(m, `a.${a.name}`, a.live, ['runs', 'p50_ms', 'usd']);
+  for (const a of d?.steps || []) put(m, `a.${a.name}`, a.live, ['runs', 'p50_ms', 'usd']);   // the code building steps
   return m;
 }
 /** /api/v1/anis/tools → flat map. */

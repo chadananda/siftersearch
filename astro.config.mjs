@@ -33,7 +33,9 @@ export default defineConfig({
   // engines update their indexes. Add new entries here when moving content
   // between slugs; the .astro file at the old slug can be deleted.
   redirects: {
-    '/docs/chatbot-personality': '/docs/research-assistant'
+    '/docs/chatbot-personality': '/docs/research-assistant',
+    // retired 11-04: its content now lives on Tools / Response Strategies / Activities
+    '/docs/anis-strategies': { status: 301, destination: '/docs/response-strategies' }
   },
 
   adapter: cloudflare({

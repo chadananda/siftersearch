@@ -11,8 +11,6 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const DOCS = [
   { slug: 'anis-vision', file: 'planning/anis-question-scenarios-20261102.html', title: 'Anís Vision', nav_label: 'Vision', sort_order: 10,
     description: 'What Anís, the Ocean AI research assistant, is: his character, how people meet him, what he does for them, and how his answers look.' },
-  { slug: 'anis-strategies', file: 'planning/anis-strategies.html', title: 'Anís Strategies & Activities', nav_label: 'Strategies & Activities', sort_order: 20,
-    description: 'The strategies and activities Anís uses to answer: deterministic decision trees first, model work only where they fail.' },
   { slug: 'anis-engagement', file: 'planning/anis-engagement.html', title: 'Anís Hyper Engagement', nav_label: 'Hyper Engagement', sort_order: 25,
     description: 'How Anís keeps people learning and coming back: the reader card, letters with one discovery each, a rhythm that steps back, activities, and success counted in people who reply.' },
   { slug: 'anis-launch-week', file: 'planning/anis-launch-week.html', title: 'Anís Launch Week', nav_label: 'Launch Week', sort_order: 30,
@@ -21,7 +19,7 @@ export const DOCS = [
 const SECTION = 'anis';
 const SCOPE = '#anis-doc';
 // Cross-document placeholders the artifacts use → public docs URLs (same origin, relative).
-const DOC_LINKS = { '#vision-doc': '/docs/anis-vision', '#strategies-doc': '/docs/anis-strategies', '#engagement-doc': '/docs/anis-engagement', '#launch-doc': '/docs/anis-launch-week' };
+const DOC_LINKS = { '#vision-doc': '/docs/anis-vision', '#strategies-doc': '/docs/response-strategies', '#engagement-doc': '/docs/anis-engagement', '#launch-doc': '/docs/anis-launch-week' };
 
 // Artifact tokens → the site's semantic tokens (src/styles/global.css), so the page wears the site theme.
 // Tokens not listed keep the artifact's own light/dark pair as light-dark().

@@ -1,85 +1,100 @@
 ---
-// /docs/anis-activities — every activity the response strategies compose, from GET /api/v1/anis/activities (edge-cached):
-// what it does, its kind/class, input → output, the strategies and steps that use it, the tools it calls, and live 7-day
-// runs / p50 / $ (data-live, refreshed by liveRefresh in src/lib/anis-docs.js). Anchors are #<activity name>.
+// /docs/anis-activities — layer 3 of 3 (Tools → Response Strategies → Activities): the reader-facing activities (reading a
+// book together, a study plan, letters…) from GET /api/v1/anis/activities (edge-cached; plan = planning/anis-strategies.json).
+// Each step links the question class (→ /docs/response-strategies#class-X) or tool (→ /docs/anis-tools#<tool>) it uses.
+// Anchors are #<activity id>. The code building steps live on the Response Strategies page (#step-<name>), not here.
 import DocsLayout from '../../layouts/DocsLayout.astro';
-import { activitiesFlat, show } from '../../lib/anis-docs.js';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const soft = (path, ms) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const data = await soft('/api/v1/anis/activities', 8000);
 if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
-const m = activitiesFlat(data);
 const list = data?.activities || [];
-const groups = [...new Set(list.map((a) => a.name.split('.')[0]))];
-const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui: 'Reader interface' };
+const first = list.filter((a) => /^week 1/i.test(a.when || ''));
+const later = list.filter((a) => !/^week 1/i.test(a.when || ''));
 ---
 
-<DocsLayout title="Activities" description="The building blocks the Ocean AI Research Assistant's response strategies are made of" activeSection="anis-activities">
+<DocsLayout title="Activities" description="The longer things the Ocean AI Research Assistant does with a reader over time: reading, planning, researching, writing letters" activeSection="anis-activities">
   <h1>Activities</h1>
-  <p class="subtitle">The building blocks of every answer</p>
+  <p class="subtitle">What Anís does with a reader over time</p>
 
   <p>
-    An activity is a small piece of code that does one thing: a search tool, a decision made by the fast Jev model, a
-    transform of what has been gathered, the writer, or a check. A <a href="/docs/response-strategies">response strategy</a> is
-    data: a graph of steps stored in a database, and each step is one use of an activity. New strategies can be composed from
-    the activities below without changing any code; a new activity is new code, with its own test.
+    Activities are the top layer. Reading a book together, following a study plan or keeping up a correspondence each run
+    over several messages or days. An activity is built on the <a href="/docs/response-strategies">response strategies</a>:
+    a question asked in the middle of one is answered by the strategy for its class, and the activity then resumes. The
+    strategies in turn are built on the <a href="/docs/anis-tools">tools</a>. Each step below links the strategy or tool it uses.
   </p>
-  <p>
-    Activities that work over time (a reading plan with a daily reminder, for example) are planned but not built yet. They
-    will come after the response strategies are settled.
-  </p>
-  <p class="note">
-    Runs, p50 time and cost cover the last 7 days. The tools an activity calls are described on the
-    <a href="/docs/anis-tools">tools page</a>.
-  </p>
+  {data?.about && <p>{data.about}</p>}
 
   {!data && <p class="note">The activity list could not be loaded just now. It will appear on the next visit.</p>}
 
+  {list.length > 0 && (
+    <p class="note">
+      First, in chat and email: {first.map((a, i) => <>{i > 0 && '; '}<a href={`#${a.id}`}>{a.name}</a></>)}.
+      {later.length > 0 && <> Later: {later.map((a, i) => <>{i > 0 && '; '}<a href={`#${a.id}`}>{a.name}</a></>)}.</>}
+    </p>
+  )}
+
   <div id="activities">
-    {groups.map((g) => (
-      <>
-        <h2>{GROUP_TITLE[g] || g}</h2>
-        {list.filter((a) => a.name.split('.')[0] === g).map((a) => (
-          <section class="activity" id={a.name}>
-            <h3><a href={`#${a.name}`}><code>{a.name}</code></a> <span class="tag">{a.kind}</span>{a.cls && <span class="tag">{a.cls}</span>}</h3>
-            {a.description && <p>{a.description}</p>}
+    {list.map((a) => (
+      <section class="activity" id={a.id}>
+        <h2><a href={`#${a.id}`}>{a.name}</a> <span class={`chip ${a.status_class}`}>{a.status_class === 'live' ? 'live' : a.status_class === 'partial' ? 'partial' : 'planned'}</span>{a.when && <span class="chip">{a.when}</span>}</h2>
+        {a.start && (<><h3>How it starts</h3><p>{a.start}</p></>)}
+        {a.steps.length > 0 && (
+          <><h3>Steps</h3>
+            <ol class="steps">
+              {a.steps.map((s) => <li>{s.text}{s.links.length > 0 && <span class="uses"> · uses {s.links.map((r, i) => <>{i > 0 && ', '}{r.href ? <a href={r.href}>{r.label}</a> : r.label}</>)}</span>}</li>)}
+            </ol></>
+        )}
+        <dl>
+          {a.schedule && (<><dt>Schedule</dt><dd>{a.schedule}</dd></>)}
+          {a.reuses.length > 0 && (<><dt>Reuses</dt><dd>{a.reuses.map((r, i) => <>{i > 0 && ' · '}{r.href ? <a href={r.href}>{r.label}</a> : r.label}</>)}</dd></>)}
+          {a.channels.length > 0 && (<><dt>Channels</dt><dd>{a.channels.join(', ')}{a.later_channels.length > 0 && <span class="note"> · later: {a.later_channels.join(', ')}</span>}</dd></>)}
+          {a.output && (<><dt>Output</dt><dd>{a.output}</dd></>)}
+          {a.state && (<><dt>Remembers</dt><dd>{a.state}</dd></>)}
+          {a.status && (<><dt>Status</dt><dd>{a.status}</dd></>)}
+          {a.measure && (<><dt>Measure</dt><dd>{a.measure}</dd></>)}
+        </dl>
+        {a.jev && (
+          <details>
+            <summary>How Jev recognises it</summary>
             <dl>
-              {a.input && (<><dt>Input</dt><dd>{a.input}</dd></>)}
-              {a.output && (<><dt>Output</dt><dd>{a.output}</dd></>)}
-              {a.edges?.length > 0 && (<><dt>Outcomes</dt><dd>{a.edges.map((e, i) => <>{i > 0 && ', '}<code>{e}</code></>)}</dd></>)}
-              <dt>Tools</dt>
-              <dd>{a.tools?.length ? a.tools.map((t, i) => <>{i > 0 && ', '}<a href={`/docs/anis-tools#${t}`}>{t}</a></>) : 'none'}</dd>
-              <dt>Used by</dt>
-              <dd>{a.used_by?.length ? a.used_by.map((u, i) => <>{i > 0 && '; '}<a href={`/docs/response-strategies#strategy-${u.strategy}`}>{u.name === 'other' ? 'general' : u.name}</a> (step <code>{u.node}</code>)</>) : 'no active strategy'}</dd>
+              {a.jev.cues?.length > 0 && (<><dt>Cues</dt><dd>{a.jev.cues.join(' · ')}</dd></>)}
+              {a.jev.example_phrasings?.length > 0 && (<><dt>Real phrasings</dt><dd>{a.jev.example_phrasings.map((q) => `“${q}”`).join(' · ')}</dd></>)}
+              {a.jev.required_slots?.length > 0 && (<><dt>Needs</dt><dd>{a.jev.required_slots.join(' · ')}</dd></>)}
+              {a.jev.disqualifiers?.length > 0 && (<><dt>Not when</dt><dd>{a.jev.disqualifiers.join(' · ')}</dd></>)}
+              {a.jev.confusable_with?.length > 0 && (<><dt>Confused with</dt><dd>{a.jev.confusable_with.join(' · ')}</dd></>)}
+              {a.jev.composes_with?.length > 0 && (<><dt>Combines with</dt><dd>{a.jev.composes_with.join(' · ')}</dd></>)}
             </dl>
-            <p class="live">
-              <span>runs <strong data-live={`a.${a.name}.runs`} data-fmt="n">{show(m, `a.${a.name}.runs`)}</strong></span>
-              <span>p50 <strong data-live={`a.${a.name}.p50_ms`} data-fmt="ms">{show(m, `a.${a.name}.p50_ms`, 'ms')}</strong></span>
-              <span>cost <strong data-live={`a.${a.name}.usd`} data-fmt="usd">{show(m, `a.${a.name}.usd`, 'usd')}</strong></span>
-            </p>
-          </section>
-        ))}
-      </>
+            {a.jev.near_misses?.length > 0 && <ul class="note">{a.jev.near_misses.map((n) => <li>“{n.text}” → <strong>{n.goes_to}</strong>{n.why && <>: {n.why}</>}</li>)}</ul>}
+          </details>
+        )}
+        {a.open_questions.length > 0 && (<><h3>Open questions</h3><ul>{a.open_questions.map((q) => <li>{q}</li>)}</ul></>)}
+      </section>
     ))}
   </div>
 
-  <script>
-    import { bindLive, activitiesFlat } from '../../lib/anis-docs.js';
-    bindLive(document.getElementById('activities'), '/api/v1/anis/activities', activitiesFlat);
-  </script>
+  {data?.source && <p class="note source">Question classes and activities: <code>{data.source.file}</code>{data.source.updated && ` (${data.source.updated})`}.</p>}
 </DocsLayout>
 
 <style>
   .note { font-size: 0.92rem; }
-  .activity { border-top: 1px solid var(--border-subtle); padding-top: 0.2rem; }
-  .activity h3 { margin: 1.4rem 0 0.2rem; font-size: 1rem; }
-  .activity h3 a { text-decoration: none; }
+  .activity { border-top: 1px solid var(--border-subtle); }
+  .activity h2 { margin: 2rem 0 0.3rem; font-size: 1.2rem; }
+  .activity h2 a { text-decoration: none; }
+  .activity h3 { margin: 1rem 0 0.2rem; font-size: 0.95rem; }
   .activity p { margin: 0.2rem 0; }
-  .tag { font-size: 0.75rem; font-weight: 400; border: 1px solid var(--border-default); border-radius: 999px; padding: 0 0.5rem; margin-left: 0.4rem; }
-  dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.9rem; margin: 0.4rem 0; font-size: 0.92rem; }
+  .steps { padding-left: 1.3rem; margin: 0.2rem 0; }
+  .steps li { margin-bottom: 0.2rem; }
+  .uses { font-size: 0.88rem; }
+  .chip { font-size: 0.7rem; font-weight: 400; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border: 1px solid var(--border-default); border-radius: 4px; padding: 0 0.35rem; margin-left: 0.4rem; vertical-align: 2px; }
+  .chip.live { color: var(--success); }
+  .chip.partial { color: var(--warning); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.9rem; margin: 0.8rem 0 0.4rem; font-size: 0.92rem; }
   dt { font-weight: 600; }
-  dd { margin: 0; }
-  .live { display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; font-size: 0.88rem; }
-  .live strong { display: inline-block; min-width: 6ch; }
+  dd { margin: 0; min-width: 0; }
+  details { margin: 0.4rem 0; }
+  summary { cursor: pointer; font-size: 0.9rem; }
+  .source { margin-top: 2.4rem; }
+  @media (max-width: 640px) { dl { grid-template-columns: 1fr; } dt { margin-top: 0.3rem; } }
 </style>

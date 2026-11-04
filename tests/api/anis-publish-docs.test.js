@@ -51,7 +51,8 @@ describe('anis publish-docs transform', () => {
     expect(body).toMatch(/#anis-doc\{[^}]*display:flex;gap:40px/);
   });
   it('rewrites cross-doc links and reports the heading', () => {
-    expect(body).toContain('href="/docs/anis-strategies"');
+    expect(body).toContain('href="/docs/response-strategies"');   // the retired Strategies & Activities page's successor
+    expect(body).not.toContain('/docs/anis-strategies');
     expect(heading).toBe('He said "hi" &amp; ‘bye’');
   });
   it('shields every CSS string', () => {
