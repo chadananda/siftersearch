@@ -24,6 +24,7 @@ const PERIODICAL = [/^(?:the )?bah[aá]['’‘]?[ií] world\b(?!\s+faith)/i, /\
   /^(?:the )?bah[aá]['’‘]?[ií] news\b/i, /\bherald of the south\b/i, /\bstatement\b/i, /\bbah[aá]['’‘]?[ií] international community\b/i];
 /** A raw file of letters nobody compiled: the same words in any published book or compilation are cited first. */
 const UNCOMPILED = /\buncompiled\b/i;
+export const isUncompiled = (c = {}) => UNCOMPILED.test(`${c.title ?? c.source_title ?? ''} ${c.collection || ''}`);
 export function isPeriodical(p = {}) {
   const t = String(p.title ?? p.source_title ?? '');
   if (PERIODICAL.some((re) => re.test(t))) return true;
@@ -42,7 +43,7 @@ export const seTranslation = (c, translatedBy = null) => guardianTranslation(c) 
  *  6 periodical / statement. */
 export function originRank(c, translatedBy = null) {
   if (isPeriodical(c)) return 6;
-  if (UNCOMPILED.test(`${c.title || ''} ${c.collection || ''}`)) return 5;
+  if (isUncompiled(c)) return 5;
   const w = key(c.author), b = key(c.book_author) || w;
   const own = w && w === b && c.blocktype !== 'footnote';
   const comp = docType({ title: c.title, collection: c.collection }) === 'compilation';
@@ -113,7 +114,10 @@ export async function traceQuote(passages, deps = {}) {
   // also quoted in: the other works (one per title), the House and the Guardian first; periodicals only when nothing else
   const seen = new Set([foldKey(source.title || '')]);
   const others = ranked.slice(1).filter((x) => { const k = foldKey(x.p.title || ''); if (!k || seen.has(k)) return false; seen.add(k); return true; });
-  const alsoIn = (others.some((x) => x.rank < 6) ? others.filter((x) => x.rank < 6) : others).slice(0, 3).map((x) => x.p);
+  // the uncompiled letter files are correct but not a real book (Chad 11-04: "they are correct, but should be cited last"):
+  // never the source while a book holds the words, and always the LAST "also quoted in"
+  const kept = others.some((x) => x.rank < 6) ? others.filter((x) => x.rank < 6) : others;
+  const alsoIn = [...kept.filter((x) => !isUncompiled(x.p)).slice(0, 3), ...kept.filter((x) => isUncompiled(x.p)).slice(0, 1)].map((x) => x.p);
   return { source, rank: best.rank, kind: RANK_NAME[best.rank], writer, tablet: tablet || (original?.title && !original.stored ? original.title : null),
     translatedBy: best.rank <= 1 ? 'Shoghi Effendi' : (tr?.get(Number(source.id)) || null), original, alsoIn, passages: [source, ...alsoIn],
     secondaryOnly: !best.copy || best.rank >= 4 };
@@ -139,4 +143,30 @@ export function quoteSourceHow(o) {
     o.alsoIn.length ? `Then, in one short sentence, say they are also quoted in ${o.alsoIn.map((p) => `*${p.title}*`).join(', ')} — no more about those works.` : '',
     'Never call a periodical, statement or a work that quotes the words their source; never mention search or search results; never add a claim about the authority of anyone who quotes them.',
   ].filter(Boolean).join(' ');
+}
+
+// ── THE UNCOMPILED FILES, LAST (Chad 11-04: "Uncompiled letters is supposed to catch things that are found nowhere else, not
+// be a first choice source. It is not a real book" · "they are correct, but should be cited last"). Every route's writer
+// passages: an uncompiled-file passage whose words another passage also holds is HELD BACK from the writer (it cannot be cited
+// first), and code names it after everything else — "Also in [title](url)." — when the reply quotes its words. Pure.
+const SHINGLE = 8;
+const shingles = (t) => { const w = foldVerbatim(t || '').split(/\s+/).filter(Boolean); const s = new Set(); for (let i = 0; i + SHINGLE <= w.length; i++) s.add(w.slice(i, i + SHINGLE).join(' ')); return s; };
+const titleOf = (p) => p.source_title ?? p.title ?? '';
+export function holdUncompiledCopies(passages = []) {
+  const others = passages.filter((p) => !isUncompiled({ title: titleOf(p), collection: p.collection }));
+  if (others.length === passages.length || !others.length) return { passages, held: [] };
+  const seen = new Set(others.flatMap((p) => [...shingles(p.text)]));
+  const held = passages.filter((p) => isUncompiled({ title: titleOf(p), collection: p.collection }) && [...shingles(p.text)].some((s) => seen.has(s)));
+  return held.length ? { passages: passages.filter((p) => !held.includes(p)), held } : { passages, held: [] };
+}
+/** The reply quoting words a held uncompiled passage holds → one closing "Also in [title](url)." line, the last citation. */
+export function citeHeldLast(text, held = []) {
+  const src = String(text || '');
+  if (!held.length) return src;
+  const quoted = [...src.matchAll(/["“]([^"”\n]+)["”]/g)].map((m) => m[1]).concat(src.split('\n').filter((l) => /^\s*>/.test(l)).map((l) => l.replace(/^\s*>\s?/, '')))
+    .map((q) => foldVerbatim(q.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_]/g, ''))).filter((q) => q.split(/\s+/).length >= 5);
+  const cite = held.filter((p) => p.citation_url && !src.includes(p.citation_url) && quoted.some((q) => foldVerbatim(p.text || '').includes(q)));
+  const seen = new Set();
+  const links = cite.filter((p) => !seen.has(titleOf(p)) && seen.add(titleOf(p))).map((p) => `[*${titleOf(p)}*](${p.citation_url})`);
+  return links.length ? `${src.trimEnd()}\n\nAlso in ${links.join(', ')}.` : src;
 }

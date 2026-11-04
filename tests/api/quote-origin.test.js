@@ -105,4 +105,39 @@ describe('quote origin: uncompiled letter files are the last resort (Chad 11-04,
     expect(originRank(upl)).toBe(5);
     expect(originRank(log)).toBeLessThan(originRank(upl));
   });
+  // 11-04 prod, after the rank fix: the source was right but the reply still said "also appears in Uncompiled Published Letters"
+  const P = 'Man will always have to toil in order to earn his living';
+  const UPL = { id: 1, title: 'Uncompiled Published Letters', collection: 'Shoghi Effendi', author: 'Shoghi Effendi', book_author: 'Shoghi Effendi', religion: "Bahá'í", text: `Question 6. ${P}.` };
+  const LOG = { id: 2, title: 'Lights of Guidance', collection: 'Compilations', author: 'Shoghi Effendi', book_author: 'Helen Hornby', religion: "Bahá'í", text: `${P}, and effort is an inseparable part of man's life.` };
+  it('cites a real book first and the uncompiled file last', async () => {
+    const BOOK = { ...LOG, id: 3, title: 'The Compilation of Compilations' };
+    const o = await traceQuote([UPL, LOG, BOOK], { phrase: P, translatorsOf: null, originalsOf: null });
+    expect(o.source.title).not.toMatch(/uncompiled/i);
+    expect(o.passages.map((p) => p.title).at(-1)).toBe('Uncompiled Published Letters');
+    const how = quoteSourceHow(o);
+    expect(how.indexOf('Uncompiled')).toBeGreaterThan(how.indexOf('Compilation of Compilations'));
+  });
+  it('still cites the uncompiled file when it is the only copy', async () => {
+    const o = await traceQuote([UPL], { phrase: P, translatorsOf: null, originalsOf: null });
+    expect(o.source.title).toBe('Uncompiled Published Letters');
+  });
+});
+
+// 11-04 prod (research route, conv_f99f29e1:1): the writer got Lights of Guidance AND Uncompiled Published Letters as equals and
+// linked the uncompiled file first. Code holds the duplicate back and names it last.
+import { holdUncompiledCopies, citeHeldLast } from '../../api/lib/assistant/quote-origin.js';
+describe('uncompiled letter files: held from the writer, cited last', () => {
+  const W = 'Man will always have to toil in order to earn his living, and effort is an inseparable part of man\'s life.';
+  const LOG = { source_title: 'Lights of Guidance', text: `Letter of 26 December 1935. ${W}`, citation_url: 'https://x/log' };
+  const UPL = { source_title: 'Uncompiled Published Letters', text: `Question 6. ${W}`, citation_url: 'https://x/upl' };
+  const ONLY = { source_title: 'Uncompiled Published Letters', text: 'A sentence that no other book in the library holds at all, anywhere.', citation_url: 'https://x/upl2' };
+  it('holds back an uncompiled copy another passage holds; keeps one found nowhere else', () => {
+    expect(holdUncompiledCopies([UPL, LOG, ONLY])).toEqual({ passages: [LOG, ONLY], held: [UPL] });
+    expect(holdUncompiledCopies([UPL])).toEqual({ passages: [UPL], held: [] });
+  });
+  it('names the held copy after everything else, only when the reply quotes its words', () => {
+    const reply = `Shoghi Effendi wrote: *"Man will always have to toil in order to earn his living"* ([Lights of Guidance](https://x/log)).`;
+    expect(citeHeldLast(reply, [UPL])).toBe(`${reply}\n\nAlso in [*Uncompiled Published Letters*](https://x/upl).`);
+    expect(citeHeldLast('Work is worship, he says.', [UPL])).toBe('Work is worship, he says.');
+  });
 });

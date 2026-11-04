@@ -32,7 +32,7 @@ import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './pos
 import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
 import { strategyOf } from './strategy-choice.js';
 import { PASSAGE_CHARS } from './prompt.js';
-import { quoteSourceHow } from './quote-origin.js';
+import { quoteSourceHow, holdUncompiledCopies, citeHeldLast } from './quote-origin.js';
 
 // Default measured 2026-09-25 (scripts/wip/anis-model-race.mjs, lean prompt, 4 questions): Gemini 3.5 Flash-Lite
 // 0.53s first token / 1.5s total (gpt-4o-mini 0.61s / 2.3s; Haiku 0.72s / 4.3s; DeepSeek 0.77s / 2.4s). Every model
@@ -761,13 +761,15 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     }
   }
   const searchMs = Date.now() - t0;
-  const retrieved = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
+  const retrievedAll = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
     text: p.text || '', source_title: p.title || '', source_author: p.author || '', book_author: p.book_author || null, citation_url: exactLink(p),
     ...(p.web ? { web: true } : {}), ...(p.quoted?.length ? { quoted: p.quoted } : {}),   // web results stay labelled; reported voices reach the header
     doc_id: p.document_id, paragraph_index: p.paragraph_index, religion: p.religion || null,
     collection: p.collection || null, source_lang: p.language || null, via: 'planned', standing: p.standing || null, theme: p.theme || null,
     ...(p.translation ? { translation: p.translation } : {}),   // an existing translation the reply quotes whole (researcher.js)
   }));
+  // the uncompiled letter files are cited last: a copy another passage holds never reaches the writer; code names it at the end
+  const { passages: retrieved, held: heldLast } = holdUncompiledCopies(retrievedAll);
   if (work) {
     retrieved.splice(0, retrieved.length, ...aboutWork(work, retrieved).slice(0, 8));
     if (!retrieved.length) {   // nothing speaks of the book: the link and the offer
@@ -936,7 +938,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     const about = work && /\]\(https?:\/\/[^)]+\)/.test(titled.text.replace(/\[\*[^\]]*\*\]\([^)]*\)/g, '')) ? titled.text.trim() : '';
     // quoted words look different from Anís's own (Chad 11-04): held quotations italic, long ones a block, originals marked —
     // last, so linkTitles never reads an italic quotation as a book title
-    const reply = markQuotes(work ? [workLead(work), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text, conversational ? [] : retrieved).text;
+    const reply = citeHeldLast(markQuotes(work ? [workLead(work), about, workOffer(work)].filter(Boolean).join('\n\n') : titled.text, conversational ? [] : retrieved).text, conversational || work ? [] : heldLast);
     return { reply, guarded, introduced, speakers, quoteLinked, firstTokenMs, fmt, writer, writeMs, usage };
   };
   const runs = variantList(variants);
