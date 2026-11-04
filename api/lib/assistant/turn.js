@@ -113,6 +113,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   onEvent({ type: 'stage', stage: 'understand' });   // the neutral word until a decision exists — never a templated echo of the message
   // a Jev call past its measured limit is retried once within budget and never silent: each one is a jev:timeout decision + meta.jev_timeouts
   openJevTurn();   // calls made from here (triage, strategy, …) are remembered and stamped with the turn once its thread exists
+  setAIContext({ graphRuns: [] });   // every strategy-graph run of the turn (graph.js) → step_runs/turn_runs at finish (strategy-stats-repo)
   const jevTimeouts = []; const onJev = (info) => { jevTimeouts.push(info); };
   const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id, onJev })).catch(() => null),
     strategyOn ? timed('strategy', () => strategyFn(messages, { profile, onJev }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null) : null]);
@@ -158,6 +159,8 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     const jt = jevTimeoutsOf(path.decisions); if (jt) path.meta.jev_timeouts = jt;
     // where the time went (route.timeline in the thread view): stage spans since turn start + each model call's completion
     try { const jc = jevTurnCalls(); if (jc.length) path.jev_calls = jc; } catch { /* the gate link is bookkeeping */ }   // [{gate, id}] → calls.db rows of this turn's Jev decisions
+    const runs = currentAIContext().graphRuns;   // measured off the reply path: buffered pushes, flushed by a timer
+    if (runs?.length && ex?.conversationId) import('../repos/strategy-stats-repo.js').then((m) => m.logTurnRuns({ turnId: `${ex.conversationId}:${ex.round}`, runs, usd: path.meta?.usd ?? null })).catch(() => {});
     path.timeline = timelineOf(timeline, t0); path.llm = meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null }));
     if (ex) await d.close({ ...ex, reply, status, path, channel: channel.id }).catch(() => {});
     // the Observatory terminal: that a turn happened, how it was routed — never its text or who asked

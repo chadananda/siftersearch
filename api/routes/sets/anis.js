@@ -5,10 +5,12 @@ import assistantMailRoutes from '../assistant-mail.js';
 import readingRoutes from '../reading.js';
 import chatRoutes from '../chat.js';
 import widgetRoutes from '../widget.js';
+import anisDocsRoutes from '../anis-docs.js';
 
 export const ANIS_ROUTES = [
   [companionMeRoutes, { prefix: '/api/v1/companion' }],
   [assistantMailRoutes, { prefix: '/api/v1/anis' }],   // Anís letters: footer pause link
+  [anisDocsRoutes, { prefix: '/api/v1/anis' }],   // public docs reads: /strategies, /activities, /tools (strategy graph Phase 2)
   [readingRoutes, { prefix: '/api/v1/reading' }],   // reading guide: one turn, any channel
   [chatRoutes, { prefix: '/api/chat' }],
   [widgetRoutes, {}],   // SifterChat embed: /widget.js, /widget/sifter-chat.js, /api/v1/widget/config/:token (absolute paths)

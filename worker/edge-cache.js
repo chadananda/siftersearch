@@ -39,6 +39,7 @@ const API_ROUTES = [
   [/^\/api\/search\/stats$/, 300, true],
   [/^\/api\/v1\/dialogs(\/[^/]+)?$/, 300, false],
   [/^\/api\/v1\/deep-research(\/slug\/[^/]+)?$/, 300, false],
+  [/^\/api\/v1\/anis\/(strategies|activities|tools)$/, 120, true],   // the three Anís docs pages' data (structure + 7-day aggregates)
 ];
 
 // Public SSR pages (none reads cookies; only /admin's middleware does). Fresh = the page's own s-maxage, else 60 s.

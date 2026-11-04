@@ -8,6 +8,11 @@ import { catalog } from '../../repos/strategies-repo.js';
 import { STRATEGIES as SEED_STRATEGIES, STEPS as SEED_STEPS, END_NODE } from '../strategy-seed.js';
 import { activities as registry } from './index.js';
 import { GATHERED } from '../respond.js';
+import { currentAIContext } from '../../ai-context.js';
+
+// Phase 2 measurement (strategy-stats-repo): each run is offered to the turn's ctx.graphRuns ([{graph:'id@v', trace}], opened by
+// turn.js) and each trace entry carries, NON-enumerably, the Jev calls its node made — neither changes path.steps' JSON.
+const hide = (o, k, v) => Object.defineProperty(o, k, { value: v, enumerable: false, configurable: true, writable: true });
 
 export const strategyGraphOn = (env = process.env.ANIS_STRATEGY_GRAPH) => env !== '0';
 
@@ -65,15 +70,18 @@ export function graphFor(id) {
 /** Run a compiled graph over the state `s` (s.trace collects the steps). Returns s. */
 export async function runGraph(g, s) {
   s.trace ||= [];
+  const ac = currentAIContext(), jevCalls = ac.jevTurn?.calls;
+  if (Array.isArray(ac.graphRuns)) ac.graphRuns.push({ graph: `${g.id}@${g.version}`, trace: s.trace });
   let id = g.entry;
   for (let hops = 0; id !== END_NODE; hops++) {
     if (hops > 1000) throw new Error(`strategy ${g.id}: no end after 1000 steps`);
     const n = g.nodes[id];
-    const t = performance.now();
+    const t = performance.now(), j0 = jevCalls?.length ?? 0;
     let edge = n.run(s, n.params);
     if (edge && typeof edge.then === 'function') edge = await edge;
     const entry = { node: id, step: n.step, ms: Math.round((performance.now() - t) * 100) / 100, edge };
     if (s.note) { Object.assign(entry, s.note); s.note = null; }
+    if (jevCalls && jevCalls.length > j0) hide(entry, 'jevCalls', jevCalls.slice(j0));
     s.trace.push(entry);
     id = n.out.get(edge) ?? n.any;
     if (id === undefined) throw new Error(`strategy ${g.id}: node ${n.id} returned unrouted edge ${edge}`);

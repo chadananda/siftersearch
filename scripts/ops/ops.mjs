@@ -16,6 +16,9 @@
 //   node scripts/ops/ops.mjs search-trace [<traceId>] [--query w --tool t --doc id|title --thread id --turn id --endpoint e --days n --limit n --zero --slow ms]
 //   node scripts/ops/ops.mjs search-replay <traceId|thread:round>  re-run on current code (no LLM): old vs new ranks
 //   node scripts/ops/ops.mjs anis-strategies [--json]  (Anís strategy graph: versions, node paths, activities)
+//   node scripts/ops/ops.mjs anis-strategy-stats [--days 7] [--json]  (per strategy@version: turns, p50/p95, $/turn, judge score, weak %)
+//   node scripts/ops/ops.mjs anis-branches <strategy> [--days 7] [--json]  (per branch: node:edge path, share, p50, score)
+//   node scripts/ops/ops.mjs anis-step-stats [--days 7] [--json]  (per step@version: runs, p50/p95, $, edge mix, Jev accuracy)
 //   node scripts/ops/ops.mjs jev-gates [--days 7] | jev-bank <gate> [--chosen X --q question --wrong|--right|--unlabelled --since 7d --limit n --state] | jev-label <call_id> <answer> [--q question --basis note] | jev-try <gate> <variant> [--n 200 --params '{json}' --chosen X --stored --since 30d --any --max-usd 2]  (Jev decision-gate bank + tuning; --json for JSON)
 //   (the three print tables; --json prints the API's JSON)
 // Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key — the key requireInternal checks).
@@ -143,6 +146,27 @@ else if (cmd === 'anis-strategies') {   // Anís strategy graph (strategies-repo
     await new Promise((r) => process.stdout.write(`ANÍS STRATEGIES · rev ${j.rev} · ${j.source}${j.db ? ` (${j.db})` : ''} · ${j.templates.length} templates · ${j.steps.length} steps · ${j.activities?.length ?? 0} activities\n`
       + [...latest.values()].map((s) => `${`${s.id}@${s.version}`.padEnd(18)} ${String(s.name).padEnd(14)} ${s.status.padEnd(7)} ${path(s.graph)}`).join('\n') + '\n', r));
   }
+}
+else if (cmd === 'anis-strategy-stats') {   // strategy-stats-repo: every strategy@version over --days, quality joined from the improve judge
+  const j = await call('GET', `/anis/strategies/stats?days=${val('--days') || 7}`);
+  const f = (x, d = '–') => (x == null ? d : String(x));
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`ANÍS STRATEGY STATS · last ${j.days} days  (score: judge 0–10, mean of scored)\n${'strategy@v'.padEnd(20)} ${'turns'.padStart(6)} ${'share'.padStart(6)} ${'p50'.padStart(7)} ${'p95'.padStart(7)} ${'$/turn'.padStart(8)} ${'judged'.padStart(6)} ${'score/n'.padStart(8)} ${'weak%'.padStart(6)}  top defects\n`
+    + j.strategies.map((s) => `${s.key.padEnd(20)} ${f(s.turns).padStart(6)} ${f(s.share).padStart(6)} ${f(s.p50_ms).padStart(7)} ${f(s.p95_ms).padStart(7)} ${f(s.usd_per_turn).padStart(8)} ${f(s.judged).padStart(6)} ${`${f(s.score)}/${s.n_scored ?? 0}`.padStart(8)} ${f(s.weak_pct).padStart(6)}  ${s.top_defects.map((d) => `${d.class}×${d.n}`).join(' ')}`).join('\n') + '\n', r));
+}
+else if (cmd === 'anis-branches' && name) {   // one strategy's branches (ordered node:edge paths) with share and quality
+  const j = await call('GET', `/anis/strategies/${encodeURIComponent(name)}/branches?days=${val('--days') || 7}`);
+  const f = (x, d = '–') => (x == null ? d : String(x));
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`BRANCHES of ${j.strategy} · last ${j.days} days\n`
+    + j.branches.map((b) => `${b.hash}  ${f(b.turns).padStart(5)} turns  share ${f(b.share)}  p50 ${f(b.p50_ms)} ms  p95 ${f(b.p95_ms)} ms  score ${f(b.score)} (${b.n_scored ?? 0} scored, ${b.judged} judged, weak ${f(b.weak_pct)}%)\n    ${b.branch.join(' → ')}`).join('\n') + '\n', r));
+}
+else if (cmd === 'anis-step-stats') {   // every step@version: runs, latency, edge mix; decision steps: Jev accuracy against the bank's gold
+  const j = await call('GET', `/anis/steps/stats?days=${val('--days') || 7}`);
+  const f = (x, d = '–') => (x == null ? d : String(x));
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`ANÍS STEP STATS · last ${j.days} days\n${'step@v'.padEnd(30)} ${'runs'.padStart(6)} ${'p50'.padStart(8)} ${'p95'.padStart(8)} ${'$'.padStart(7)} ${'err'.padStart(4)}  edges${' '.repeat(30)}jev acc\n`
+    + j.steps.map((s) => `${s.key.padEnd(30)} ${f(s.runs).padStart(6)} ${f(s.p50_ms).padStart(8)} ${f(s.p95_ms).padStart(8)} ${f(s.usd).padStart(7)} ${f(s.errors).padStart(4)}  ${Object.entries(s.edges).sort((a, b) => b[1] - a[1]).map(([e, n]) => `${e}=${n}`).join(' ').padEnd(34)} ${s.jev ? `${f(s.jev.accuracy)} (${s.jev.labelled}/${s.jev.calls})` : ''}`).join('\n') + '\n', r));
 }
 else if (cmd === 'jev-gates') {   // every Jev decision gate: calls, answer mix, gold coverage/accuracy, shadow agreement, $ of a 200-call experiment
   const j = await call('GET', `/jev/gates?days=${val('--days') || 7}`);

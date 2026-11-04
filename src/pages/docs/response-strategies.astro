@@ -1,0 +1,212 @@
+---
+// /docs/response-strategies — the Ocean AI Research Assistant's response strategies, generated from the strategy store via
+// GET /api/v1/anis/strategies (edge-cached). A static intro (what a strategy is, how the set improves itself) then one card
+// per active strategy (<details>: the full graph, steps, templates, branches, candidates are in the SSR HTML). Every number
+// carries data-live and refreshes through liveRefresh (src/lib/anis-docs.js); SSR reserves its space.
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { strategiesFlat, show } from '../../lib/anis-docs.js';
+import { layoutGraph } from '../../lib/strategy-graph-layout.js';
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const soft = (path, ms) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+const data = await soft('/api/v1/anis/strategies', 8000);
+if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+const m = strategiesFlat(data);
+const strategies = data?.strategies || [];
+const oneLine = (s) => { const t = String(s || '').split(/\s[—–]\s|;\s|\.\s/)[0]; return t.length > 150 ? `${t.slice(0, 147)}…` : t; };
+const label = (s) => (s === 'other' ? 'general (everything else)' : s);
+const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1')).join(' · ');
+---
+
+<DocsLayout title="Response Strategies" description="How the Ocean AI Research Assistant chooses a way to answer each question, and how those strategies are measured and improved" activeSection="response-strategies">
+  <h1>Response Strategies</h1>
+  <p class="subtitle">How the Ocean AI Research Assistant decides how to answer, and how it gets better at it</p>
+
+  <section id="intro">
+    <h2>What a strategy is</h2>
+    <p>
+      Every question gets an answer built from <strong>activities</strong>: small pieces of code that each do one thing well:
+      find a named book, trace a quotation to its source, search the original-language tablets, study how a term is translated,
+      write the reply. Activities are code. A <strong>strategy</strong> is data: a small graph that says which activities run, in
+      what order, and where each outcome leads next. Strategies live in a database, not in the program, so they can be added,
+      changed, measured and rolled back without a code release.
+    </p>
+    <p>
+      There are several strategies because questions differ. A request for a prayer, a comparison between two traditions and a
+      chapter-and-verse reference each need different steps. For each question, a fast and inexpensive decision model (Jev) reads
+      the conversation and picks one strategy. After that choice the work is mostly deterministic: the strategy runs its steps,
+      and the large language models are used only where they add something. Because the expensive reasoning is used once, to
+      choose, execution stays cheap and predictable, and the system can serve many readers at once.
+    </p>
+
+    <h2>How strategies improve</h2>
+    <p>
+      The strategies are not fixed. A measurement and improvement loop runs alongside them:
+    </p>
+    <ul>
+      <li><strong>Every step is measured.</strong> Each step of each strategy records how long it took, what it cost and which way it branched, so every strategy and every path through it has its own numbers.</li>
+      <li><strong>Every reply is judged.</strong> A separate judge model scores replies and names what went wrong, so quality joins speed and cost in the numbers below.</li>
+      <li><strong>Gaps become candidates.</strong> When a class of questions is not served well by any strategy, a stronger model designs a candidate strategy from the existing activities.</li>
+      <li><strong>Candidates must win.</strong> A candidate is replayed on fresh questions of that class plus a set of guard questions. It is promoted only if it measurably wins, and the old version is kept so a promotion can be rolled back.</li>
+      <li><strong>Weak steps get the same treatment.</strong> A step or branch that scores poorly gets candidate edits, which are replayed and promoted the same way.</li>
+      <li><strong>Code problems go to engineers.</strong> Weaknesses that a strategy cannot fix (an activity, a tool, a search index) become recommendations for the engineers.</li>
+    </ul>
+
+    <svg class="flow" viewBox="0 0 760 120" role="img" aria-label="The improvement loop: question, Jev picks a strategy, the steps run and are measured, the judge scores the reply, a candidate is designed and replayed, and promoted only if it wins">
+      <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fill-muted" /></marker></defs>
+      {[['Question', 0], ['Jev picks a strategy', 1], ['Steps run, measured', 2], ['Judge scores reply', 3], ['Candidate designed, replayed', 4]].map(([t, i]) => (
+        <g>
+          <rect x={8 + i * 150} y="16" width="132" height="44" rx="8" class="fill-surface-1 stroke-border" />
+          <text x={74 + i * 150} y="43" text-anchor="middle" class="fill-primary">{t}</text>
+          {i < 4 && <path d={`M${140 + i * 150},38 L${156 + i * 150},38`} class="stroke-muted" marker-end="url(#arr)" />}
+        </g>
+      ))}
+      <path d="M674,60 C674,108 224,108 224,64" class="stroke-accent" fill="none" marker-end="url(#arr)" />
+      <text x="450" y="112" text-anchor="middle" class="fill-accent">promoted only if it wins; the old version is kept</text>
+    </svg>
+
+    <p class="numbers">
+      <span><strong data-live="summary.active" data-fmt="n">{show(m, 'summary.active')}</strong> active strategies</span>
+      <span><strong data-live="summary.candidates" data-fmt="n">{show(m, 'summary.candidates')}</strong> candidates under replay</span>
+      <span><strong data-live="summary.promotions_30d" data-fmt="n">{show(m, 'summary.promotions_30d')}</strong> promotions in the last 30 days</span>
+    </p>
+    <p class="note">
+      Each step names an <a href="/docs/anis-activities">activity</a>; activities call the <a href="/docs/anis-tools">tools</a>.
+      The numbers below cover the last 7 days. The judge score is out of 10 and is the mean of the replies that have one.
+    </p>
+  </section>
+
+  <h2>The strategies</h2>
+  {!data && <p class="note">The strategy list could not be loaded just now. It will appear on the next visit.</p>}
+  <div id="strategies" class="cards">
+    {strategies.map((s) => {
+      const L = layoutGraph(s.graph);
+      return (
+        <details class="card" id={`strategy-${s.id}`}>
+          <summary>
+            <span class="name">{label(s.name)} <span class="ver">v{s.version}</span></span>
+            <span class="desc">{oneLine(s.description)}</span>
+            <span class="keys">
+              <span>share <strong data-live={`s.${s.id}.share`} data-fmt="share">{show(m, `s.${s.id}.share`, 'share')}</strong></span>
+              <span>score <strong data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</strong></span>
+              <span>p50 <strong data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</strong></span>
+            </span>
+          </summary>
+          <div class="body">
+            {s.description && <p>{s.description}</p>}
+            {s.exemplars.length > 0 && (<><h3>Questions it serves</h3><ul>{s.exemplars.map((e) => <li>{e}</li>)}</ul></>)}
+
+            <h3>Last 7 days</h3>
+            <table class="stats">
+              <tbody>
+                <tr><th>Turns</th><td data-live={`s.${s.id}.turns`} data-fmt="n">{show(m, `s.${s.id}.turns`)}</td>
+                  <th>Share of turns</th><td data-live={`s.${s.id}.share`} data-fmt="share">{show(m, `s.${s.id}.share`, 'share')}</td></tr>
+                <tr><th>p50</th><td data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</td>
+                  <th>p95</th><td data-live={`s.${s.id}.p95_ms`} data-fmt="ms">{show(m, `s.${s.id}.p95_ms`, 'ms')}</td></tr>
+                <tr><th>Judge score</th><td data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</td>
+                  <th>Scored replies</th><td data-live={`s.${s.id}.n_scored`} data-fmt="n">{show(m, `s.${s.id}.n_scored`)}</td></tr>
+                <tr><th>Weak</th><td data-live={`s.${s.id}.weak_pct`} data-fmt="pct">{show(m, `s.${s.id}.weak_pct`, 'pct')}</td>
+                  <th>Cost per turn</th><td data-live={`s.${s.id}.usd_per_turn`} data-fmt="usd">{show(m, `s.${s.id}.usd_per_turn`, 'usd')}</td></tr>
+              </tbody>
+            </table>
+
+            <h3>Graph</h3>
+            <div class="graph">
+              <svg viewBox={`0 0 ${L.width} ${L.height}`} width={L.width} height={L.height} role="img" aria-label={`${label(s.name)} strategy graph`}>
+                {L.edges.map((e) => (
+                  <g>
+                    <path d={e.d} class={e.side ? 'stroke-accent' : 'stroke-muted'} fill="none" />
+                    {e.label && <text x={e.lx} y={e.ly} class="elabel fill-secondary">{e.label}</text>}
+                  </g>
+                ))}
+                {L.nodes.map((n) => n.end ? (
+                  <g><rect x={n.x} y={n.y} width={n.w} height={n.h} rx="17" class="fill-surface-2 stroke-border" />
+                    <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-secondary">end</text></g>
+                ) : (
+                  <a href={`/docs/anis-activities#${n.activity}`}>
+                    <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="6" class={`fill-surface-1 stroke-border kind-${n.kind}`} />
+                    <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-primary">{n.id}</text>
+                  </a>
+                ))}
+              </svg>
+            </div>
+
+            <h3>Steps</h3>
+            <table>
+              <thead><tr><th>Node</th><th>Step</th><th>Activity</th><th>Kind</th><th>Class</th></tr></thead>
+              <tbody>
+                {s.graph.nodes.map((n) => (
+                  <tr><td>{n.id}</td><td><code>{n.step}@{n.step_version}</code></td>
+                    <td><a href={`/docs/anis-activities#${n.activity}`}>{n.activity}</a></td><td>{n.kind}</td><td>{n.cls}</td></tr>
+                ))}
+              </tbody>
+            </table>
+
+            <h3>Templates</h3>
+            {s.templates.length ? <ul>{s.templates.map((t) => <li><code>{t.id}@{t.version}</code></li>)}</ul> : <p class="note">This strategy has no writer templates of its own.</p>}
+
+            <h3>Branches</h3>
+            {s.branches.length ? (
+              <table>
+                <thead><tr><th>Path taken</th><th>Share</th><th>p50</th><th>Score</th></tr></thead>
+                <tbody>
+                  {s.branches.map((b) => (
+                    <tr><td class="path">{branchText(b)}</td>
+                      <td data-live={`b.${s.id}.${b.hash}.share`} data-fmt="share">{show(m, `b.${s.id}.${b.hash}.share`, 'share')}</td>
+                      <td data-live={`b.${s.id}.${b.hash}.p50_ms`} data-fmt="ms">{show(m, `b.${s.id}.${b.hash}.p50_ms`, 'ms')}</td>
+                      <td data-live={`b.${s.id}.${b.hash}.score`} data-fmt="score">{show(m, `b.${s.id}.${b.hash}.score`, 'score')}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : <p class="note">No measured turns in the last 7 days.</p>}
+
+            <h3>Candidate versions</h3>
+            {s.candidates.length ? (
+              <table>
+                <thead><tr><th>Version</th><th>Status</th><th>Replay</th><th>Score</th></tr></thead>
+                <tbody>
+                  {s.candidates.map((c) => (
+                    <tr><td>v{c.version}</td><td>{c.status}</td>
+                      <td>{c.replay ? (c.replay.summary ?? `${c.replay.wins ?? '–'} wins / ${c.replay.n ?? '–'} questions`) : '–'}</td>
+                      <td data-live={`c.${s.id}.${c.version}.score`} data-fmt="score">{show(m, `c.${s.id}.${c.version}.score`, 'score')}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : <p class="note">No candidate versions at the moment.</p>}
+          </div>
+        </details>
+      );
+    })}
+  </div>
+
+  <script>
+    import { bindLive, strategiesFlat } from '../../lib/anis-docs.js';
+    bindLive(document.getElementById('strategies')?.parentElement, '/api/v1/anis/strategies', strategiesFlat);
+  </script>
+</DocsLayout>
+
+<style>
+  h3 { margin: 1.6rem 0 0.3rem; font-size: 1rem; }
+  .flow { width: 100%; max-width: 760px; height: auto; margin: 1.2rem 0 0.4rem; font-size: 12px; }
+  .flow rect, .graph rect { stroke-width: 1; }
+  .flow path { stroke-width: 1.5; }
+  .numbers { display: flex; flex-wrap: wrap; gap: 0.6rem 1.8rem; margin-top: 1rem; }
+  .numbers strong { display: inline-block; min-width: 2.2ch; text-align: right; }
+  .note { font-size: 0.92rem; }
+  .cards { display: grid; gap: 0.7rem; margin-top: 0.6rem; }
+  .card { border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-1); }
+  .card > summary { cursor: pointer; list-style: none; display: grid; gap: 0.25rem; padding: 0.8rem 1rem; }
+  .card > summary::-webkit-details-marker { display: none; }
+  .card .name { font-weight: 600; text-transform: capitalize; }
+  .card .ver { font-weight: 400; font-size: 0.8rem; opacity: 0.7; text-transform: none; }
+  .card .desc { font-size: 0.92rem; }
+  .card .keys { display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; font-size: 0.88rem; }
+  .card .keys strong { display: inline-block; min-width: 6ch; }
+  .card .body { padding: 0 1rem 1rem; border-top: 1px solid var(--border-subtle); }
+  .stats td { min-width: 7ch; }
+  .graph { overflow-x: auto; margin-top: 0.4rem; }
+  .graph svg { font-size: 11.5px; max-width: none; }
+  .graph a:hover rect { stroke: var(--accent-primary); }
+  .elabel { font-size: 10px; }
+  .path { font-size: 0.82rem; }
+</style>

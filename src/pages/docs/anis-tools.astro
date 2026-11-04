@@ -1,0 +1,92 @@
+---
+// /docs/anis-tools — the tool registry (api/lib/assistant/tools.js) as GET /api/v1/anis/tools serves it (edge-cached): each
+// tool's purpose, input/output schemas, the activities that call it, and live 7-day calls / errors / p50 / p95 (data-live,
+// refreshed by liveRefresh in src/lib/anis-docs.js). Anchors are #<tool name>; shared schemas are #schema-<name>.
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { toolsFlat, show } from '../../lib/anis-docs.js';
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const soft = (path, ms) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+const data = await soft('/api/v1/anis/tools', 8000);
+if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+const m = toolsFlat(data);
+const tools = data?.tools || [];
+const schemas = Object.entries(data?.schemas || {});
+const json = (x) => JSON.stringify(x, null, 2);
+---
+
+<DocsLayout title="Tools" description="The tools the Ocean AI Research Assistant's activities call, with their schemas and live numbers" activeSection="anis-tools">
+  <h1>Tools</h1>
+  <p class="subtitle">What the research assistant can call, and how each call performs</p>
+
+  <p>
+    Tools are the lowest layer: library searches, lookups and traces with a fixed input and output schema.
+    <a href="/docs/anis-activities">Activities</a> call them, and <a href="/docs/response-strategies">response strategies</a>
+    arrange the activities. Calls, errors and timings below cover the last 7 days.
+  </p>
+
+  {!data && <p class="note">The tool list could not be loaded just now. It will appear on the next visit.</p>}
+
+  <h2>Summary</h2>
+  <div class="scroll">
+    <table id="tool-table">
+      <thead><tr><th>Tool</th><th>Calls</th><th>Errors</th><th>p50</th><th>p95</th></tr></thead>
+      <tbody>
+        {tools.map((t) => (
+          <tr><td><a href={`#${t.name}`}>{t.name}</a></td>
+            <td data-live={`t.${t.name}.calls`} data-fmt="n">{show(m, `t.${t.name}.calls`)}</td>
+            <td data-live={`t.${t.name}.errors`} data-fmt="n">{show(m, `t.${t.name}.errors`)}</td>
+            <td data-live={`t.${t.name}.p50_ms`} data-fmt="ms">{show(m, `t.${t.name}.p50_ms`, 'ms')}</td>
+            <td data-live={`t.${t.name}.p95_ms`} data-fmt="ms">{show(m, `t.${t.name}.p95_ms`, 'ms')}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Each tool</h2>
+  {tools.map((t) => (
+    <section class="tool" id={t.name}>
+      <h3><a href={`#${t.name}`}><code>{t.name}</code></a> <span class="label">{t.label}</span></h3>
+      {t.purpose && <p>{t.purpose}</p>}
+      <dl>
+        <dt>Returns</dt><dd>{t.outputName ? <code>{t.outputName}</code> : 'see schema'}</dd>
+        <dt>Called by</dt>
+        <dd>{t.activities?.length ? t.activities.map((a, i) => <>{i > 0 && ', '}<a href={`/docs/anis-activities#${a}`}>{a}</a></>) : 'the research agents directly'}</dd>
+      </dl>
+      {t.description && t.description !== t.purpose && <details><summary>Full description</summary><p class="desc">{t.description}</p></details>}
+      {t.input && <details><summary>Input schema</summary><pre>{json(t.input)}</pre></details>}
+      {t.output && <details><summary>Output schema</summary><pre>{json(t.output)}</pre></details>}
+    </section>
+  ))}
+
+  {schemas.length > 0 && (
+    <>
+      <h2>Shared schemas</h2>
+      {schemas.map(([name, s]) => (
+        <details class="schema" id={`schema-${name}`}><summary><code>{name}</code></summary><pre>{json(s)}</pre></details>
+      ))}
+    </>
+  )}
+
+  <script>
+    import { bindLive, toolsFlat } from '../../lib/anis-docs.js';
+    bindLive(document.getElementById('tool-table'), '/api/v1/anis/tools', toolsFlat);
+  </script>
+</DocsLayout>
+
+<style>
+  .note { font-size: 0.92rem; }
+  .scroll { overflow-x: auto; }
+  #tool-table td { min-width: 6ch; }
+  .tool { border-top: 1px solid var(--border-subtle); }
+  .tool h3 { margin: 1.4rem 0 0.2rem; font-size: 1rem; }
+  .tool h3 a { text-decoration: none; }
+  .label { font-weight: 400; font-size: 0.88rem; opacity: 0.8; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.9rem; margin: 0.4rem 0; font-size: 0.92rem; }
+  dt { font-weight: 600; }
+  dd { margin: 0; }
+  details { margin: 0.3rem 0; }
+  summary { cursor: pointer; font-size: 0.9rem; }
+  pre { font-size: 0.78rem; overflow-x: auto; max-height: 28rem; padding: 0.6rem; border: 1px solid var(--border-default); border-radius: 6px; }
+  .desc { white-space: pre-wrap; font-size: 0.9rem; }
+</style>

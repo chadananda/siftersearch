@@ -366,8 +366,17 @@ export async function run(name, input = {}, ctx = {}) {
   const e = resolve(name);
   if (!e) throw Object.assign(new Error(`unknown tool: ${name}`), { code: 'unknown_tool' });
   // every search the tool makes is traced with its name (search_trace.tool) — ambient, AsyncLocalStorage (ai-context.js)
-  return withAIContext({ trace: { ...(currentAIContext().trace || {}), tool: e.name } }, () => e.run(input, ctx));
+  const trace = currentAIContext().trace || {}, t0 = performance.now();
+  // each call's wall time → tool_runs (strategy-stats-repo; buffered, off the reply path) — the tools page's live numbers
+  const done = (ok) => { const ms = performance.now() - t0; stats().then((m) => m.logToolRun({ tool: e.name, ms, ok, turnId: trace.turn ?? null })).catch(() => {}); };
+  try {
+    const out = await withAIContext({ trace: { ...trace, tool: e.name } }, () => e.run(input, ctx));
+    done(true);
+    return out;
+  } catch (err) { done(false); throw err; }
 }
+let statsMod = null;
+const stats = () => (statsMod ||= import('../repos/strategy-stats-repo.js'));
 /** A Qdrant search tool's raw layer function (what sourceHunt takes as deps.phrases / deps.keyword). */
 export async function layerFn(name, ctx = {}) {
   const e = resolve(name);

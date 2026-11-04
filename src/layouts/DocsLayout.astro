@@ -19,7 +19,7 @@ const { title, description, activeSection } = Astro.props;
 // title-case + sort last. Any source failing degrades gracefully (empty rail).
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 // A section nested under one item of another section: that item opens `lead`; the rest (in `order`) indent beneath it.
-const SECTION_PARENT = { anis: { parent: ['agents', 'anis'], lead: 'anis-vision', order: ['anis-strategies', 'anis-engagement', 'anis-launch-week'] } };
+const SECTION_PARENT = { anis: { parent: ['agents', 'anis'], lead: 'anis-vision', order: ['anis-strategies', 'response-strategies', 'anis-activities', 'anis-tools', 'anis-engagement', 'anis-launch-week'] } };
 // Agent pages kept but left out of the sidebar for now (Chad 11-03).
 const HIDDEN_AGENTS = new Set(['researcher', 'narrator']);
 const SECTION_META = {
@@ -57,6 +57,9 @@ const STATIC_PAGES = [
   { section: 'research', href: '/docs/search-quality', label: 'Search Quality Testing', slug: 'search-quality', sort: 120 },
   { section: 'research', href: '/docs/ocean-search-testing', label: "David's Search Tests", slug: 'ocean-search-testing', sort: 130 },
   { section: 'research', href: '/docs/translation-pipeline', label: 'Translation Pipeline', slug: 'translation-pipeline', sort: 140 },
+  { section: 'anis', href: '/docs/response-strategies', label: 'Response Strategies', slug: 'response-strategies', sort: 20 },
+  { section: 'anis', href: '/docs/anis-activities', label: 'Activities', slug: 'anis-activities', sort: 21 },
+  { section: 'anis', href: '/docs/anis-tools', label: 'Tools', slug: 'anis-tools', sort: 22 },
 ];
 for (const p of STATIC_PAGES) push(p.section, { href: p.href, label: p.label, slug: p.slug, sort: p.sort });
 for (const [key, { parent: [parentKey, parentSlug], lead, order = [] }] of Object.entries(SECTION_PARENT)) {

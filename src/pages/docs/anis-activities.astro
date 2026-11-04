@@ -1,0 +1,85 @@
+---
+// /docs/anis-activities — every activity the response strategies compose, from GET /api/v1/anis/activities (edge-cached):
+// what it does, its kind/class, input → output, the strategies and steps that use it, the tools it calls, and live 7-day
+// runs / p50 / $ (data-live, refreshed by liveRefresh in src/lib/anis-docs.js). Anchors are #<activity name>.
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import { activitiesFlat, show } from '../../lib/anis-docs.js';
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const soft = (path, ms) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+const data = await soft('/api/v1/anis/activities', 8000);
+if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+const m = activitiesFlat(data);
+const list = data?.activities || [];
+const groups = [...new Set(list.map((a) => a.name.split('.')[0]))];
+const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui: 'Reader interface' };
+---
+
+<DocsLayout title="Activities" description="The building blocks the Ocean AI Research Assistant's response strategies are made of" activeSection="anis-activities">
+  <h1>Activities</h1>
+  <p class="subtitle">The building blocks of every answer</p>
+
+  <p>
+    An activity is a small piece of code that does one thing: a search tool, a decision made by the fast Jev model, a
+    transform of what has been gathered, the writer, or a check. A <a href="/docs/response-strategies">response strategy</a> is
+    data: a graph of steps stored in a database, and each step is one use of an activity. New strategies can be composed from
+    the activities below without changing any code; a new activity is new code, with its own test.
+  </p>
+  <p>
+    Activities that work over time (a reading plan with a daily reminder, for example) are planned but not built yet. They
+    will come after the response strategies are settled.
+  </p>
+  <p class="note">
+    Runs, p50 time and cost cover the last 7 days. The tools an activity calls are described on the
+    <a href="/docs/anis-tools">tools page</a>.
+  </p>
+
+  {!data && <p class="note">The activity list could not be loaded just now. It will appear on the next visit.</p>}
+
+  <div id="activities">
+    {groups.map((g) => (
+      <>
+        <h2>{GROUP_TITLE[g] || g}</h2>
+        {list.filter((a) => a.name.split('.')[0] === g).map((a) => (
+          <section class="activity" id={a.name}>
+            <h3><a href={`#${a.name}`}><code>{a.name}</code></a> <span class="tag">{a.kind}</span>{a.cls && <span class="tag">{a.cls}</span>}</h3>
+            {a.description && <p>{a.description}</p>}
+            <dl>
+              {a.input && (<><dt>Input</dt><dd>{a.input}</dd></>)}
+              {a.output && (<><dt>Output</dt><dd>{a.output}</dd></>)}
+              {a.edges?.length > 0 && (<><dt>Outcomes</dt><dd>{a.edges.map((e, i) => <>{i > 0 && ', '}<code>{e}</code></>)}</dd></>)}
+              <dt>Tools</dt>
+              <dd>{a.tools?.length ? a.tools.map((t, i) => <>{i > 0 && ', '}<a href={`/docs/anis-tools#${t}`}>{t}</a></>) : 'none'}</dd>
+              <dt>Used by</dt>
+              <dd>{a.used_by?.length ? a.used_by.map((u, i) => <>{i > 0 && '; '}<a href={`/docs/response-strategies#strategy-${u.strategy}`}>{u.name === 'other' ? 'general' : u.name}</a> (step <code>{u.node}</code>)</>) : 'no active strategy'}</dd>
+            </dl>
+            <p class="live">
+              <span>runs <strong data-live={`a.${a.name}.runs`} data-fmt="n">{show(m, `a.${a.name}.runs`)}</strong></span>
+              <span>p50 <strong data-live={`a.${a.name}.p50_ms`} data-fmt="ms">{show(m, `a.${a.name}.p50_ms`, 'ms')}</strong></span>
+              <span>cost <strong data-live={`a.${a.name}.usd`} data-fmt="usd">{show(m, `a.${a.name}.usd`, 'usd')}</strong></span>
+            </p>
+          </section>
+        ))}
+      </>
+    ))}
+  </div>
+
+  <script>
+    import { bindLive, activitiesFlat } from '../../lib/anis-docs.js';
+    bindLive(document.getElementById('activities'), '/api/v1/anis/activities', activitiesFlat);
+  </script>
+</DocsLayout>
+
+<style>
+  .note { font-size: 0.92rem; }
+  .activity { border-top: 1px solid var(--border-subtle); padding-top: 0.2rem; }
+  .activity h3 { margin: 1.4rem 0 0.2rem; font-size: 1rem; }
+  .activity h3 a { text-decoration: none; }
+  .activity p { margin: 0.2rem 0; }
+  .tag { font-size: 0.75rem; font-weight: 400; border: 1px solid var(--border-default); border-radius: 999px; padding: 0 0.5rem; margin-left: 0.4rem; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.9rem; margin: 0.4rem 0; font-size: 0.92rem; }
+  dt { font-weight: 600; }
+  dd { margin: 0; }
+  .live { display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; font-size: 0.88rem; }
+  .live strong { display: inline-block; min-width: 6ch; }
+</style>
