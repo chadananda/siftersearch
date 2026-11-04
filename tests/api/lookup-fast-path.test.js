@@ -7,7 +7,7 @@ import { makeStrikes } from '../../api/lib/assistant/strikes.js';
 import { codeFormat } from '../../api/lib/assistant/formats.js';
 import { modelFor } from '../../api/lib/model-roles.js';
 
-const GL = { doc: { id: 8312, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', religion: "Baha'i" }, score: 1 };
+const GL = { doc: { id: 8312, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', religion: "Baha'i", collection: 'Bahá’u’lláh', source_site: 'oceanlibrary.com', book_authority: 8 }, score: 1 };
 const P = 'The earth is but one country, and mankind its citizens.';
 const user = (content) => [{ role: 'user', content }];
 // a passage in CORE literature (Chad 11-03: only core matches make a quote candidate) and one in commentary
@@ -116,12 +116,12 @@ describe('resolveLookup (mocked deps)', () => {
     expect(r).toMatchObject({ kind: 'quote' });
     expect(r.passages.map((h) => h.id)).toEqual([2]);
   });
-  it('commentary only, but the words are a book title: the book (no quote candidate to contest it), Jev not asked', async () => {
+  it('commentary only, and the words are a commentary book\'s title: no candidate at all (today\'s path), Jev not asked', async () => {
     let asked = 0;
-    const BOOK = { doc: { id: 77, title: 'The Earth Is But One Country', author: 'John Huddleston', paragraph_count: 900 }, others: [] };
+    const BOOK = { doc: { id: 77, title: 'The Earth Is But One Country', author: 'John Huddleston', religion: "Baha'i", collection: "Baha'i Books", book_authority: 5, paragraph_count: 900 }, others: [] };
     const r = await resolveLookup(user('the earth is but one country'), { intent: 'quote', findTitled: async () => BOOK,
       search: async () => [{ ...COMMENTARY, text: P }], pickQuoteOrBook: async () => { asked++; } });
-    expect(r).toMatchObject({ kind: 'book', work: BOOK });
+    expect(r).toBeNull();
     expect(asked).toBe(0);
   });
   it('quoted words not in any passage, or no Jev intent, return null (today\'s path)', async () => {
@@ -257,28 +257,29 @@ describe('numbered works with no number in the text (gate fix 3: "Some Answered 
   });
 });
 
-describe('a quote that is also a book title (gate fix 5: "the earth is but one country" opened Huddleston)', () => {
-  const BOOK = { doc: { id: 77, title: 'The Earth Is But One Country', author: 'John Huddleston', paragraph_count: 900 }, others: [] };
-  const HIT = { ...CORE, id: 3, title: 'Gleanings from the Writings of Bahá’u’lláh', text: `${P} Let not a man glory…` };
+describe('a CORE title that is also a core line: both candidates, Jev chooses ("The Promised Day Is Come")', () => {
+  const Q = 'The promised day is come';
+  const BOOK = { doc: { id: 77, title: 'The Promised Day Is Come', author: 'Shoghi Effendi', religion: "Baha'i", collection: 'Shoghi Effendi', source_site: 'oceanlibrary.com', book_authority: 7, paragraph_count: 900 }, others: [] };
+  const HIT = { ...CORE, id: 3, title: 'Gleanings from the Writings of Bahá’u’lláh', text: `Say: ${Q}, and the Lord of Hosts hath appeared.` };
   const log = () => { const rows = []; return { rows, record: (point, d) => rows.push({ point, ...d }) }; };
   const base = (pick, decisions) => ({ intent: 'quote', findTitled: async () => BOOK, search: async () => [HIT], decisions, pickQuoteOrBook: pick });
   it('both candidates exist: Jev chooses with both in view (the passage), and the choice is logged', async () => {
     let seen; const d = log();
-    const r = await resolveLookup(user('the earth is but one country'), base(async (m, c) => { seen = c; return { choice: 'quote', confidence: 0.9, distribution: { quote: 0.9, book: 0.1 } }; }, d));
+    const r = await resolveLookup(user(Q.toLowerCase()), base(async (m, c) => { seen = c; return { choice: 'quote', confidence: 0.9, distribution: { quote: 0.9, book: 0.1 } }; }, d));
     expect(r).toMatchObject({ kind: 'quote', contested: { book: 77, by: 'jev' } });
-    expect(r.passages[0].text).toContain(P);
+    expect(r.passages[0].text).toContain(Q);
     expect(seen.book.work.doc.id).toBe(77);
     expect(seen.quote.passages[0].id).toBe(3);
     expect(d.rows).toEqual([expect.objectContaining({ point: 'lookup:quote-or-book', by: 'jev', chosen: 'quote', options: ['quote', 'book'] })]);
   });
   it('Jev chooses the book: the book', async () => {
-    const r = await resolveLookup(user('the earth is but one country'), base(async () => ({ choice: 'book', confidence: 0.8 }), log()));
+    const r = await resolveLookup(user(Q.toLowerCase()), base(async () => ({ choice: 'book', confidence: 0.8 }), log()));
     expect(r).toMatchObject({ kind: 'book', work: BOOK });
   });
   it('Jev gives no answer (timeout) or a weak one: his lookup call (quote) stands, logged as such', async () => {
     for (const pick of [async () => null, async () => ({ choice: 'book', confidence: 0.4 })]) {
       const d = log();
-      const r = await resolveLookup(user('the earth is but one country'), base(pick, d));
+      const r = await resolveLookup(user(Q.toLowerCase()), base(pick, d));
       expect(r.kind).toBe('quote');
       expect(d.rows[0]).toMatchObject({ by: 'code', chosen: 'quote' });
     }
@@ -286,11 +287,11 @@ describe('a quote that is also a book title (gate fix 5: "the earth is but one c
   it('pickQuoteOrBook sends both candidates to Jev as a typed choice and reads his answer', async () => {
     let body;
     const fetchImpl = async (u, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ answers: { target: { choice: 'quote', confidence: 0.92 } } }) }; };
-    const a = await pickQuoteOrBook(user('the earth is but one country'), { book: { kind: 'book', work: BOOK }, quote: { kind: 'quote', passages: [HIT] } }, { fetchImpl, apiKey: 'k' });
+    const a = await pickQuoteOrBook(user(Q.toLowerCase()), { book: { kind: 'book', work: BOOK }, quote: { kind: 'quote', passages: [HIT] } }, { fetchImpl, apiKey: 'k' });
     expect(a).toMatchObject({ choice: 'quote', confidence: 0.92 });
     expect(body.questions.target.type).toBe('choice');
-    expect(body.questions.target.criteria.book).toContain('The Earth Is But One Country');
-    expect(body.questions.target.criteria.quote).toContain('mankind its citizens');
+    expect(body.questions.target.criteria.book).toContain('The Promised Day Is Come');
+    expect(body.questions.target.criteria.quote).toContain('Lord of Hosts');
   });
   it('pickQuoteOrBook: a timeout is retried within budget, then reported through onJev and returns null', async () => {
     const seen = [];
@@ -299,5 +300,28 @@ describe('a quote that is also a book title (gate fix 5: "the earth is but one c
     expect(a).toBeNull();
     expect(seen[0]).toMatchObject({ call: 'lookup' });
     expect(seen[0].timeouts.length).toBe(2);
+  });
+});
+
+describe('a commentary title never competes with a core line (Chad 11-03: Adamson\'s "The Earth Is But One Country")', () => {
+  const ADAMSON = { doc: { id: 78, title: 'The Earth Is But One Country', author: 'Hugh C. Adamson', religion: "Baha'i", collection: "Baha'i Books", book_authority: 5, paragraph_count: 900 }, others: [] };
+  const GLEANINGS = { ...CORE, id: 3, title: 'Gleanings from the Writings of Bahá’u’lláh', text: `${P} Let not a man glory…` };
+  it('"the earth is but one country": the quote only, Bahá\'u\'lláh\'s passage, Jev not asked, nothing contested', async () => {
+    let asked = 0;
+    const r = await resolveLookup(user('the earth is but one country'), { intent: 'quote', findTitled: async () => ADAMSON,
+      search: async () => [GLEANINGS], pickQuoteOrBook: async () => { asked++; } });
+    expect(r).toMatchObject({ kind: 'quote', passages: [{ id: 3, author: 'Bahá’u’lláh' }] });
+    expect(r.contested).toBeUndefined();
+    expect(asked).toBe(0);
+  });
+  it('an explicit book request (Jev: book) still finds the commentary book', async () => {
+    const r = await resolveLookup(user('do you have the book The Earth Is But One Country?'), { intent: 'book', findTitled: async () => ADAMSON });
+    expect(r).toMatchObject({ kind: 'book', work: ADAMSON });
+  });
+  it('a work with no authority on the row is judged by getAuthority on its author and shelf (no fixture number)', async () => {
+    const noNum = { doc: { ...ADAMSON.doc, book_authority: undefined }, others: [] };
+    const r = await resolveLookup(user('the earth is but one country'), { intent: 'quote', findTitled: async () => noNum, search: async () => [GLEANINGS],
+      pickQuoteOrBook: async () => { throw new Error('not asked'); } });
+    expect(r.kind).toBe('quote');
   });
 });

@@ -7,6 +7,7 @@ import { foldVerbatim } from '../search/verbatim.js';
 import { findTitled, titleCandidates } from './work-request.js';
 import { sectionRange } from './numbering.js';
 import { isCoreLiterature } from '../rights/canonical.js';
+import { getAuthority } from '../authority.js';
 
 const ROMAN = /^(?=[ivxlcdm]+$)m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$/i;
 const romanToInt = (r) => { const v = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 }; let n = 0, p = 0;
@@ -108,7 +109,10 @@ export async function resolveLookup(messages, deps = {}) {
     quoteStrip(text).split(/\s+/).length <= 10 ? bookOf({ min: 0.97, prefix: false }) : null,
     search ? search(phrase, null, 10).catch(() => []) : []]);
   // a title-match that is a stub (a prayer or fragment whose TITLE is its first line, doc 28444 "Be generous in prosperity…") is the wording itself, not a work
-  const book = b && (b.work.doc.paragraph_count ?? 99) >= 20 ? b : null;
+  // … and only a CORE work's title competes with the wording (Chad 11-03: Adamson's "The Earth Is But One Country" is commentary
+  // and must not stand beside Bahá'u'lláh's line). Work level: the book's author, shelf and authority. An explicit book request
+  // (intent 'book' above) still searches every work.
+  const book = b && (b.work.doc.paragraph_count ?? 99) >= 20 && coreWork(b.work.doc) ? b : null;
   // only CORE literature makes a quote candidate (Chad 11-03): a line held only by commentary, a talk or a pilgrim note is not
   // a quotation to source here (those books are still cited later in answers; only this candidate step is scoped)
   const ok = hits.filter(isCoreLiterature).map((h) => ({ h, ...holds(h.text, phrase) })).filter((x) => x.near).sort((a, b2) => Number(b2.exact) - Number(a.exact));
@@ -125,6 +129,9 @@ export async function resolveLookup(messages, deps = {}) {
   return { ...chosen, ms: Date.now() - t0, contested: { book: book.work.doc.id, quote: quote.passages.length, by: choice ? 'jev' : 'lookup intent' } };
 }
 
+// a work is core literature by the same rule as a passage (rights/canonical.js isCoreLiterature), its author being the book's
+const coreWork = (doc) => { let a = doc.book_authority; if (a == null) { try { a = getAuthority(doc); } catch { a = null; } }
+  return isCoreLiterature({ ...doc, book_authority: a }); };
 const MIN_JEV = 0.6;
 /** Jev's typed choice between the two candidates of a quote lookup: the book whose title is the words, or the passages holding them.
  *  → { choice: 'quote'|'book', confidence, distribution, ms } | null (no key / timeout / failure). */
