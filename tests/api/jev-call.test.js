@@ -53,6 +53,14 @@ describe('the Jev callers retry and report', () => {
     const out = await triageMessage(msgs, { apiKey: 'k', fetchImpl: f, onJev: (i) => seen.push(i) });
     expect(f.calls).toBe(2); expect(out.kind.choice).toBe('research'); expect(seen[0]).toMatchObject({ call: 'triage', attempts: 2 });
   });
+  it('triage: the deep-report fields (depth, accepts_offer) ride the same retried Jev call and survive a timeout', async () => {
+    const seen = []; const thread = [...msgs, { role: 'assistant', content: 'I can write you a full report.' }, { role: 'user', content: 'yes please' }];
+    const f = flaky(1, { kind: { choice: 'research', confidence: 0.9 }, depth: { choice: 'deep_report', confidence: 0.8 }, accepts_offer: 0.93 });
+    const out = await triageMessage(thread, { apiKey: 'k', fetchImpl: f, onJev: (i) => seen.push(i) });
+    expect(f.calls).toBe(2);
+    expect(out).toMatchObject({ depth: { choice: 'deep_report', confidence: 0.8 }, accepts_offer: 0.93 });
+    expect(seen[0]).toMatchObject({ call: 'triage', attempts: 2 });
+  });
   it('strategy: two timeouts → null (fail open) and reported', async () => {
     const seen = []; const f = flaky(5, {});
     expect(await chooseStrategy(msgs, { apiKey: 'k', fetchImpl: f, timeoutMs: 5, budgetMs: 100, onJev: (i) => seen.push(i) })).toBeNull();
