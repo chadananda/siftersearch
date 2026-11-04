@@ -116,8 +116,9 @@ for (const s of ['SIGTERM', 'SIGINT']) process.on(s, () => { stopping = true; lo
 function runner(job, dir) {
   const [bin, script] = kindOf(job).cmd;
   if (RUN === 'local') return spawn(bin === 'python' || bin.endsWith('/python') ? 'python' : process.execPath, [script, dir], { env: { ...process.env, SIFTER_GPU_LEASES: '1' }, stdio: ['ignore', 'ignore', 'pipe'] });
+  // CPU jobs get no GPU flags: a wedged driver (aorus 11-03, nvml error) must not fail cpu-prep in docker's prestart hook
   const lock = GPU_LOCK ? ['-v', `${GPU_LOCK}:/gpu.lock`, '-e', 'SIFTER_LEGACY_GPU_LOCK=/gpu.lock'] : [];
-  return docker(['run', '--rm', '--name', `q-${job.id}`, ...(CGROUP ? ['--cgroup-parent', CGROUP] : []), ...ACCEL[DEVICE](), '--network', 'none', '--cpus', CPUS, '--memory', `${containerMemGb(memTotalGb())}g`, '-v', `${dir}:/job`,
+  return docker(['run', '--rm', '--name', `q-${job.id}`, ...(CGROUP ? ['--cgroup-parent', CGROUP] : []), ...(kindOf(job).needs === 'gpu' ? ACCEL[DEVICE]() : []), '--network', 'none', '--cpus', CPUS, '--memory', `${containerMemGb(memTotalGb())}g`, '-v', `${dir}:/job`,
     '-v', `${ROOT}/leases:/workspace/.gpu-admission`, '-e', 'SIFTER_GPU_LEASES=1', ...lock, '--entrypoint', bin, IMAGE, script, '/job'], { stdio: ['ignore', 'ignore', 'pipe'] });
 }
 // the container writes as root: a plain rm then fails with EACCES (10-30: #1915 failed every retry on its own leftovers), so docker removes it
