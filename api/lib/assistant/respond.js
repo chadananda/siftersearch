@@ -783,6 +783,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     const want = foldVerbatim(huntPhrase), ws = [...new Set(want.split(' '))];
     const near = (t) => { const f = foldVerbatim(t); return f.includes(want) || ws.filter((w) => ` ${f} `.includes(` ${w} `)).length >= Math.ceil(ws.length * 0.7); };
     const keep = retrieved.filter((q) => near(q.text));
+    // the writer is shown each kept passage AROUND the wording (prompt.js passageText): the line can end a long paragraph
+    for (const q of keep) q.focus = huntPhrase;
     // words this thread already quoted from a linked source are never "absent" (r6: the Íqán, SAQ, a privation passage)
     const earlier = !keep.length && saidEarlier(messages, huntPhrase) ? (earlierLinkFor(messages, huntPhrase) || true) : null;
     select = { of: retrieved.length, kept: keep.length, by: earlier ? 'said-earlier' : 'phrase-match' };

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { quotedIn } from './findings.js';
 import { creditOf, reportedVoices } from './quotes.js';
 import { SCENARIO_GUIDE, resolveScenario } from './scenarios.js';
+import { foldVerbatim } from '../search/verbatim.js';
 
 let SOUL = null;
 export function soul() {
@@ -97,6 +98,39 @@ export function displayName(name, { slug = 'cap' } = {}) {
 // account in Messages to America, the sentence on evil after "To another who inquired" — never reached the reply)
 export const PASSAGE_CHARS = 1300;
 
+/** Where `phrase` stands in `text` (accents, apostrophes, punctuation and case ignored, as the quote gate compares) →
+ *  [start, end) in the ORIGINAL text, or null. Word-level: each whitespace token folds to its words. Pure. */
+export function phraseSpan(text, phrase) {
+  const want = foldVerbatim(phrase).split(' ').filter(Boolean);
+  if (!want.length) return null;
+  const words = [];   // { w, start, end } — a token like "world's," or "‘Abdu’l-Bahá" folds to one or more words
+  for (const m of String(text || '').matchAll(/\S+/g)) for (const w of foldVerbatim(m[0]).split(' ').filter(Boolean)) words.push({ w, start: m.index, end: m.index + m[0].length });
+  for (let i = 0; i + want.length <= words.length; i++) {
+    let k = 0;
+    while (k < want.length && words[i + k].w === want[k]) k++;
+    if (k === want.length) return [words[i].start, words[i + k - 1].end];
+  }
+  return null;
+}
+
+/** The part of a passage the writer is shown: the whole when it fits; a long one is cut at PASSAGE_CHARS — except that a
+ *  passage held for its WORDING (p.focus, the quotation being sourced) is cut AROUND those words. 11-04: Gleanings CXVII ends
+ *  with "The earth is but one country…" at character ~2,025 of 2,076; cut at 1,300 the writer never saw the line in the
+ *  words' own source, wrote "I did not find the exact phrase … as a numbered Gleanings paragraph" and built the answer from
+ *  the Bahá'í World and The World Order of Bahá'u'lláh (which quote it). The quote gate still checks against the full text. */
+export function passageText(p) {
+  const t = String(p?.text || ''), max = p?.translation ? 4000 : PASSAGE_CHARS;
+  if (t.length <= max) return t;
+  const span = p?.focus ? phraseSpan(t, p.focus) : null;
+  if (!span || span[1] <= max) return t.slice(0, max);
+  // a window of `max` characters with the wording in its later half (the lead-in that introduces the words comes with it)
+  let start = Math.max(0, Math.min(t.length - max, span[0] - Math.floor(max * 0.6)));
+  let end = Math.min(t.length, start + max);
+  if (start > 0) { const sp = t.indexOf(' ', start); if (sp >= 0 && sp < span[0]) start = sp + 1; }
+  if (end < t.length) { const sp = t.lastIndexOf(' ', end); if (sp >= span[1]) end = sp; }
+  return `${start > 0 ? '… ' : ''}${t.slice(start, end)}${end < t.length ? ' …' : ''}`;
+}
+
 /** The header line the writer credits from: "<title> — <writer>[, as quoted in this work by <author> (…)], <religion> · …". */
 export function passageHeader(p, i) {
   const credit = displayName(creditOf(p)) || creditOf(p), book = displayName(p.book_author, { slug: 'drop' });
@@ -108,7 +142,7 @@ export function passageHeader(p, i) {
 }
 
 export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {
-  const lines = passages.map((p, i) => `${passageHeader(p, i)}\nURL: ${p.citation_url || '(none)'}\n${String(p.text || '').slice(0, p.translation ? 4000 : PASSAGE_CHARS)}`);
+  const lines = passages.map((p, i) => `${passageHeader(p, i)}\nURL: ${p.citation_url || '(none)'}\n${passageText(p)}`);
   // Each piece of evidence goes with its verbatim PROOF — the model reads what the source actually says.
   const cite = (e) => `${e.statement}${e.when ? ` (${e.when})` : ''} — ${e.source || 'source'}${e.url ? ` URL: ${e.url}` : ''}${e.proof ? ` — proof: "${String(e.proof).slice(0, 220)}"` : ''}`;
   const people = (entities || []).map((p) => `- ${p.name}: ${(p.evidence || []).map(cite).join('; ')}`);
