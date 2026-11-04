@@ -319,6 +319,7 @@ const gpuSeen = [];   // GPU utilisation over the last minute: idle + nothing qu
 // a lost GPU (driver error, Xid 79 'fallen off the bus') claims no GPU work — every claim would fail and requeue — until the probe answers again
 const GPU_GONE = /nvml error|fallen off the bus|NVIDIA-SMI has failed|no CUDA-capable device|CUDA error: unknown error|hipErrorNoDevice/i;
 let gpuLostAt = 0, gpuProbeAt = 0, hot = null;
+const tempSeen = [];
 const gpuBack = () => DEVICE !== 'cuda' || spawnSync('nvidia-smi', ['-L'], { stdio: 'ignore', timeout: 20_000 }).status === 0;
 let claimedAt = 0, depth = 1, depthAt = 0;   // depth: talks kept on the GPU deck, learned from starvation (gpu-pace nextDepth)
 const cpuSeen = [];   // CPU samples over the last ~2 min: a full CPU holds claims (the GPU-feeding stages would only slow)
@@ -341,9 +342,12 @@ while (!stopping || running.size) {
   const gpuRunning = ADAPT ? [...jobs.values()].filter((j) => j.needs !== 'cpu').length : running.size;
   if (gpuLostAt && Date.now() - gpuProbeAt >= 600_000) { gpuProbeAt = Date.now(); if (gpuBack()) { log('gpu back', { lost_min: Math.round((Date.now() - gpuLostAt) / 60_000) }); gpuLostAt = 0; } }
   if (MAX_CPU_C < Infinity || MAX_GPU_C < Infinity) {
-    const t = hostTemps(DEVICE), was = hot;
+    // a 60 s mean: Ryzen Tctl jumps ±5 °C in seconds (11-04 aorus: hold/ok/hold 5 s apart on raw readings)
+    tempSeen.push({ at: Date.now(), ...hostTemps(DEVICE) }); while (Date.now() - tempSeen[0].at > 60_000) tempSeen.shift();
+    const mean = (k) => { const v = tempSeen.map((x) => x[k]).filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+    const t = { cpuC: mean('cpuC'), gpuC: mean('gpuC') }, was = hot;
     hot = thermalHold(t, { maxCpuC: MAX_CPU_C, maxGpuC: MAX_GPU_C, held: !!was });
-    if (!!hot !== !!was) log(hot ? 'thermal hold' : 'thermal ok', { why: hot, cpu_c: t.cpuC, gpu_c: t.gpuC, running: running.size });
+    if (!!hot !== !!was) log(hot ? 'thermal hold' : 'thermal ok', { why: hot, cpu_c: Math.round(t.cpuC ?? 0), gpu_c: Math.round(t.gpuC ?? 0), running: running.size });
   }
   const want = !stopping && !hot && !gpuLostAt && (!ADAPT || NEEDS_GPU) && wantAnother({ running: gpuRunning, cap: CAP, onDeck: onDeckN, depth, waiting: deck.waiting, memGb: memAvailGb(), minGb: MIN_AVAIL_GB, cpu,
     gpuIdle, sinceClaimMs: Date.now() - claimedAt, diskGb: diskFreeGb(), minDiskGb: DISK_PER_TALK })
