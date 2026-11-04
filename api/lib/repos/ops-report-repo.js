@@ -5,10 +5,13 @@ import { query, queryOne, queryAll } from '../db.js';
 const now = () => new Date().toISOString();
 const parse = (r) => (r ? { ...r, params: r.params ? JSON.parse(r.params) : null, result: r.result ? JSON.parse(r.result) : null } : null);
 
+export const ENQUEUE_SAME_SQL = `SELECT * FROM ops_report_runs INDEXED BY idx_ops_report_runs_status WHERE status IN ('queued', 'running') AND name = ? AND COALESCE(params, '') = COALESCE(?, '') ORDER BY id DESC LIMIT 1`;
+
 /** Queue a run; an identical queued/running run is reused instead of piling up. → run row */
 export async function enqueue(name, params = null, requestedBy = 'internal') {
   const p = params ? JSON.stringify(params) : null;
-  const same = await queryOne(`SELECT * FROM ops_report_runs WHERE name = ? AND COALESCE(params, '') = COALESCE(?, '') AND status IN ('queued', 'running') ORDER BY id DESC LIMIT 1`, [name, p]);
+  // Status index: the live rows only. By name it walked every finished run of the name (11-03: 17.6k calls, avg 613 ms).
+  const same = await queryOne(ENQUEUE_SAME_SQL, [name, p], 'ops-report:enqueue-same');
   if (same) return parse(same);
   const r = await query('INSERT INTO ops_report_runs (name, params, status, requested_by, requested_at) VALUES (?, ?, ?, ?, ?)', [name, p, 'queued', requestedBy, now()]);
   return getRun(Number(r.lastInsertRowid));
