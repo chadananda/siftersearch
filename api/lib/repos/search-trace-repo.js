@@ -12,6 +12,12 @@ export const recentTraceTimings = ({ minutes = 60, limit = 5000 } = {}) => query
   [now() - Math.max(1, Number(minutes) || 60) * 60, Math.min(Math.max(1, Number(limit) || 5000), 20000)],
   'search-trace:recent-timings');
 
+/** Traces after id `after` (the improve worker's cursor), oldest first, at most `limit`, none older than `sinceDays`.
+ *  SELECT * so the hits the introspection layer stores ride along without a second read. Range on the id PK. */
+export const tracesAfter = (after = 0, { sinceDays = 30, limit = 200 } = {}) => queryAll(
+  `SELECT * FROM search_trace WHERE id > ? AND created_at >= ? ORDER BY id LIMIT ?`,
+  [Number(after) || 0, Math.floor(Date.now() / 1000) - Math.max(1, Number(sinceDays) || 30) * 86400, Math.min(Math.max(1, Number(limit) || 200), 1000)],
+  'search-trace:after');
 /** One trace row (buildTrace's shape) → INSERT through the writer. */
 export const insertTrace = (row) => {
   const cols = Object.keys(row);

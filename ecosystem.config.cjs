@@ -649,6 +649,25 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
     {
+      // Improvement cycle (Chad 11-04): forensic pass on every reply + search trace, Opus 5.5 judge on each, deep analysis of
+      // weak ones → suggestions (GET /api/admin/anis/improvements). llm-class async; own SQLite (IMPROVE_DB). Spend group
+      // 'improve' (IMPROVE_DAILY_USD unset = unbudgeted; ready value 5). IMPROVE_LLM=0 = forensics only.
+      name: 'siftersearch-improve',
+      script: 'api/workers/improve-worker.js',
+      interpreter: path.join(PROJECT_ROOT, 'scripts/ops/in-slice.sh'),
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      restart_delay: 60000,
+      watch: false,
+      // IMPROVE_LLM '0' until Chad confirms the Opus judge spend (projected $75–170/day unbudgeted, 11-04): forensics only, free
+      env: { NODE_ENV: 'production', IMPROVE_LLM: '0' },
+      error_file: './logs/improve-error.log',
+      out_file: './logs/improve-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    {
       // Weekly audit digest SECTION (no mail): last 7 days → data/run/maintenance/audit-digest.json, read by the weekly
       // maintenance email (system-checks --daily on Monday 07:05, which also refreshes it first). Chad 11-03.
       name: 'siftersearch-audit-digest',

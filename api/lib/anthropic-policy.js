@@ -121,6 +121,13 @@ export function isInteractiveAllowed({ stage, model } = {}) {
   return String(stage || '').startsWith('interactive:') && ['claude-sonnet-5-5', HAIKU].includes(String(model || ''));
 }
 
+// IMPROVEMENT CYCLE (Chad 11-04: "Every search result, for time being, should be fed back to Opus 5.5 to determine quality.
+// If Opus finds weakness … refer it back for deep analysis"). Only Opus 5.5, only the improve worker's own stages
+// ('improve:judge', 'improve:analysis' — api/workers/improve-worker.js), metered in its own spend group ('improve').
+export function isImproveAllowed({ stage, model } = {}) {
+  return String(stage || '').startsWith('improve:') && String(model || '') === 'claude-opus-5-5';
+}
+
 // Haiku 5.5's tokenizer, MEASURED 11-03 (usage.prompt_tokens on real text): English prose/markdown 2.5–2.7 chars per token,
 // Arabic/Persian 1.5. The old flat 3.5 under-counted English by ~40% and Arabic by 2.3×, so a prompt it passed could bill
 // the 5× tier. Env dials: LONG_CONTEXT_CHARS_PER_TOKEN (Latin etc.), LONG_CONTEXT_ARABIC_CHARS_PER_TOKEN.
@@ -178,7 +185,8 @@ export function assertAnthropicAllowed({ provider, model, lang, docId, caller, s
   if (isFileSegmentAllowed({ stage, model, sourceLang })) return;
   if (isModelEvalAllowed({ stage, model })) return;                          // the bake-off's blind judge
   if (isHaikuAllowed({ model })) return;                                      // Haiku 5.5: any stage, any language
-  if (isInteractiveAllowed({ stage, model })) return;                         // Sonnet 5.5 for interactive roles           // file-level Arabic/Persian segmentation (Haiku 5.5)
+  if (isInteractiveAllowed({ stage, model })) return;                         // Sonnet 5.5 for interactive roles
+  if (isImproveAllowed({ stage, model })) return;                             // Opus 5.5 for the improvement cycle (judge + deep analysis)
   const e = new Error(
     `Anthropic spend policy: ${model || 'claude'} REFUSED — Anthropic is authorised only for grounding the ` +
     `approved Persian plan books (Mázandarání Ẓuhúru'l-Ḥaqq). Got lang=${lang || 'none'}, doc=${docId ?? 'none'}, ` +

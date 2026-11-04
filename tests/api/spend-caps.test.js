@@ -35,6 +35,17 @@ describe('the dated schedule', () => {
   });
 });
 
+describe('the improvement cycle group (Chad 11-04)', () => {
+  it('improve-* is its own group (ahead of anis), unbudgeted until IMPROVE_DAILY_USD is set', () => {
+    expect(groupOf('improve-judge')).toBe('improve');
+    expect(groupOf('improve-analysis')).toBe('improve');
+    expect(capFor('improve', '2026-11-04', undefined, {})).toBe(Infinity);
+    expect(capFor('improve', '2026-11-04', undefined, { IMPROVE_DAILY_USD: '5' })).toBe(5);
+    expect(capFor('improve', '2026-11-04', undefined, { IMPROVE_DAILY_USD: '5', SPEND_CAP_IMPROVE_USD: '7' })).toBe(7);
+    expect(capFor('anis', '2026-11-04', undefined, { IMPROVE_DAILY_USD: '5' })).toBe(30);
+  });
+});
+
 describe('blocking at the cap', () => {
   const now = Date.parse('2026-11-08T12:00:00Z');
   it('passes under the cap, throws SPEND_CAP at it, and reads the group sum across its callers', async () => {

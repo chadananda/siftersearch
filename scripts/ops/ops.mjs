@@ -6,6 +6,9 @@
 //   node scripts/ops/ops.mjs media held | rejudge [id…] | progress | log [--since 6h|ISO --kind k1,k2 --limit n] | gauges [--host h] [--hours n] [--rows] | health-history <machine> [--from --to] | status <id|slug|words> | stage <stage> [--missing] [--status done] [--after N] | add <url|path>… | redo <id> <stage>…
 //   node scripts/ops/ops.mjs spend-caps                      each caller group's spend today vs. its daily cap, and whether it is blocking
 //   node scripts/ops/ops.mjs search-latency [--minutes 60]   per-stage p50/p95 vs the search budget (search/latency-budget.js)
+//   node scripts/ops/ops.mjs anis-forensics [--days 7] [--stage rank] [--json]   stage × class defect queue (replies, searches) + Opus judge tally
+//   node scripts/ops/ops.mjs anis-improvements [--status open] | anis-improvement-status <id> <open|accepted|done|rejected> [note]
+//   node scripts/ops/ops.mjs search-replay --class <class> [--days 7]   re-run that class's turns (no LLM) → how many the current code fixes
 //   node scripts/ops/ops.mjs anis-trace <thread|thread:round>  an Anís thread / turn: every search (tool, query, ranked hits), writer passages, citations
 //   node scripts/ops/ops.mjs search-trace [<traceId>] [--query w --tool t --doc id|title --thread id --turn id --endpoint e --days n --limit n --zero --slow ms]
 //   node scripts/ops/ops.mjs search-replay <traceId|thread:round>  re-run on current code (no LLM): old vs new ranks
@@ -14,6 +17,7 @@
 import { apiBase } from '../lib/api-base.mjs';
 import dotenv from 'dotenv';
 import { turnText, threadText, traceListText, traceText, replayText } from './trace-format.mjs';
+import { forensicTable, assessSearch } from '../../api/lib/audit/forensics.js';   // pure (no db)
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 const API = apiBase();
@@ -48,6 +52,43 @@ else if (cmd === 'report' && name) {
 else if (cmd === 'cancel' && name) await out(await call('DELETE', `/ops/reports/runs/${Number(name)}`));
 else if (cmd === 'spend-caps') await out(await call('GET', '/ops/spend-caps'));
 else if (cmd === 'search-latency') await out(await call('GET', `/ops/search-latency?minutes=${val('--minutes') || 60}`));
+else if (cmd === 'anis-forensics') {
+  const j = await call('GET', `/anis/forensics?days=${val('--days') || 7}${val('--stage') ? `&stage=${encodeURIComponent(val('--stage'))}` : ''}`);
+  if (flag('--json')) await out(j);
+  else {
+    const jd = j.judge || {};
+    await new Promise((r) => process.stdout.write(`ANÍS FORENSICS · last ${j.days} days${j.stage ? ` · stage ${j.stage}` : ''}\n\nREPLIES\n${forensicTable(j.replies)}\n\nSEARCHES\n${forensicTable(j.searches)}\n\n`
+      + `JUDGE (Opus 5.5): judged ${jd.judged} · pending ${jd.pending} · weak ${jd.weak} (${jd.weak_rate ?? '–'}) · $${jd.usd} ($${jd.usd_per_item ?? '–'}/item)\n`
+      + (jd.weak_classes || []).slice(0, 15).map((c) => `  ${c.class.padEnd(26)} ${c.n}`).join('\n') + '\n', r));
+  }
+} else if (cmd === 'anis-improvements') {
+  const j = await call('GET', `/anis/improvements?status=${val('--status') || 'open'}&limit=${val('--limit') || 50}`);
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`${(j.improvements || []).map((x) => `#${x.id} [${x.status}] score ${x.score} (evidence ${x.evidence_n} × sev ${x.severity}) ${x.stage} ${x.file || ''}${x.fn ? ` ${x.fn}` : ''}\n    ${x.change}\n    → ${x.expected_effect || ''}`).join('\n') || '(none)'}\n`, r));
+} else if (cmd === 'anis-improvement-status' && name) {
+  const [, , status, ...note] = process.argv.slice(2);
+  await out(await call('POST', `/anis/improvements/${Number(name)}/status`, { status, ...(note.length ? { note: note.join(' ') } : {}) }));
+} else if (cmd === 'search-replay' && val('--class')) {   // re-run a defect class's turns through today's search (no LLM) and re-assess
+  const cls = val('--class');
+  if (!cls) { console.error('usage: ops.mjs search-replay --class <defect-class> [--days 7]'); process.exit(2); }
+  const j = await call('GET', `/anis/forensics?days=${val('--days') || 7}&examples=10`);
+  const isSearch = (j.searches?.queue || []).some((e) => e.class === cls);
+  const entry = [...(j.searches?.queue || []), ...(j.replies?.queue || [])].find((e) => e.class === cls);
+  // only the ranked list re-runs without an LLM: classes owned by later stages (SELECTION, WRITER, …) need a new reply
+  if (entry && !['RETRIEVAL', 'RANK', 'LATENCY'].includes(entry.stage)) { await out({ class: cls, stage: entry.stage, found: entry.n, note: 'not replayable without the writer (no LLM here)' }); process.exit(0); }
+  const res = [];
+  for (const x of entry?.examples || []) {
+    const path = isSearch ? `/search-trace/${encodeURIComponent(x.message_id)}/replay` : x.turn_id ? `/anis/turns/${encodeURIComponent(x.turn_id)}/replay` : null;
+    if (!path) { res.push({ id: x.message_id, error: 'no turn id (reply recorded before 11-04 tracing)' }); continue; }
+    try {
+      const r = await call('POST', path, {});
+      const reps = (r.replays || []).filter((p) => !p.error);
+      const still = reps.some((p) => assessSearch({ trace_id: p.trace_id, tool: p.tool, query: p.query, hits: p.diff?.rows || [] }).defects.some((d) => d.class === cls));
+      res.push({ id: x.turn_id || x.message_id, ...(reps.length ? { fixed: !still } : { error: (r.replays || [])[0]?.error || 'nothing replayable' }) });
+    } catch (e) { res.push({ id: x.turn_id || x.message_id, error: e.message.slice(0, 120) }); }
+  }
+  await out({ class: cls, stage: entry?.stage ?? null, found: entry?.n ?? 0, replayed: res.filter((r) => !r.error).length, fixed: res.filter((r) => r.fixed).length, items: res });
+}
 else if (['anis-trace', 'search-trace', 'search-replay'].includes(cmd)) {   // search introspection (11-04): no code needed to read search history
   const isTurn = (x) => /:\d+$/.test(String(x || ''));
   const show = async (res, fmt) => (flag('--json') ? out(res) : new Promise((r) => process.stdout.write(`${fmt(res)}\n`, r)));

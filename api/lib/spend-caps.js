@@ -28,10 +28,13 @@ export function groupOf(caller, cfg = CONFIG) {
   return hit ? hit.group : cfg.default;
 }
 
-/** The group's cap in USD on a UTC day (Infinity = none): env SPEND_CAP_<GROUP>_USD, else the latest dated entry. Pure. */
+/** The group's cap in USD on a UTC day (Infinity = none): env SPEND_CAP_<GROUP>_USD, else the group's env alias
+ *  (cfg.env_alias, e.g. improve → IMPROVE_DAILY_USD), else the latest dated entry. Pure. */
 export function capFor(group, day = dayOf(), cfg = CONFIG, env = process.env) {
-  const o = env[`SPEND_CAP_${String(group).toUpperCase()}_USD`];
-  if (o != null && o !== '' && Number.isFinite(Number(o))) return Number(o);
+  for (const k of [`SPEND_CAP_${String(group).toUpperCase()}_USD`, cfg.env_alias?.[group]].filter(Boolean)) {
+    const o = env[k];
+    if (o != null && o !== '' && Number.isFinite(Number(o))) return Number(o);
+  }
   const e = (cfg.caps[group] || []).filter((x) => x.from <= day).sort((a, b) => (a.from < b.from ? -1 : 1)).at(-1);
   return e ? e.usd : Infinity;
 }

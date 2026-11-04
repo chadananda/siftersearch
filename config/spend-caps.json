@@ -1,14 +1,67 @@
 {
   "_header": "Daily hard caps (USD) on paid LLM calls, per caller group (Chad 11-04). Read by api/lib/spend-caps.js. DAY BOUNDARY = the UTC day, the same one the ai_usage daily rollup uses (ai-usage-repo rollupSpend: date('now') / toISOString). A caller maps to the FIRST rule it matches (exact or prefix), else `default`. Each cap entry applies from its `from` date (UTC) until a later entry replaces it. Env override: SPEND_CAP_<GROUP>_USD (e.g. SPEND_CAP_MEDIA_USD=60). Callers in `exempt` are counted but never refused (user search must not stop). Anthropic batch calls count at their half-price rate, when the batch result is logged.",
   "default": "other",
-  "exempt": ["search-query"],
+  "exempt": [
+    "search-query"
+  ],
   "rules": [
-    { "group": "media", "prefix": ["media-"] },
-    { "group": "anis", "prefix": ["anis-", "assistant-", "reading-", "chat-", "system1:", "sourcehunt", "source-hunt", "battery-judge"], "exact": ["turn-resolver", "exchange-audit"] }
+    {
+      "group": "improve",
+      "prefix": [
+        "improve-"
+      ]
+    },
+    {
+      "group": "media",
+      "prefix": [
+        "media-"
+      ]
+    },
+    {
+      "group": "anis",
+      "prefix": [
+        "anis-",
+        "assistant-",
+        "reading-",
+        "chat-",
+        "system1:",
+        "sourcehunt",
+        "source-hunt",
+        "battery-judge"
+      ],
+      "exact": [
+        "turn-resolver",
+        "exchange-audit"
+      ]
+    }
   ],
   "caps": {
-    "media": [{ "from": "2026-11-04", "usd": 40 }],
-    "anis": [{ "from": "2026-11-04", "usd": 30 }, { "from": "2026-11-08", "usd": 20 }],
-    "other": [{ "from": "2026-11-04", "usd": 10 }]
-  }
+    "media": [
+      {
+        "from": "2026-11-04",
+        "usd": 40
+      }
+    ],
+    "anis": [
+      {
+        "from": "2026-11-04",
+        "usd": 30
+      },
+      {
+        "from": "2026-11-08",
+        "usd": 20
+      }
+    ],
+    "other": [
+      {
+        "from": "2026-11-04",
+        "usd": 10
+      }
+    ],
+    "improve": []
+  },
+  "env_alias": {
+    "improve": "IMPROVE_DAILY_USD"
+  },
+  "_improve": "Improvement cycle (Opus 5.5 judge on every search trace + reply, deep analysis on weak ones; Chad 11-04). Unbudgeted for the start: no cap entry. Ready value: set IMPROVE_DAILY_USD=5 (or add {\"from\":\"<day>\",\"usd\":5}). Over the cap the improve worker DELAYS work (weak replies first, then new searches, then backfill), never drops it."
 }

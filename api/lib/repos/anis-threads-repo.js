@@ -26,3 +26,13 @@ export async function anisThread(sessionId) {
   return (await queryAll(`SELECT id, channel, title, participant_id, started_at, last_activity, status FROM chat_sessions WHERE id = ?`,
     [String(sessionId)], 'anis-threads:one'))[0] || null;
 }
+
+/** Anís replies after id `after` (the improve worker's cursor), oldest first, with the question that asked them.
+ *  Bounded: id range + `sinceDays` + `limit`. */
+export async function anisRepliesAfter(after = 0, { sinceDays = 30, limit = 100 } = {}) {
+  const since = new Date(Date.now() - sinceDays * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+  return queryAll(`SELECT m.id, m.session_id, m.round_index, m.channel, m.content AS reply, m.path_json, m.created_at,
+      (SELECT u.content FROM chat_messages u WHERE u.session_id = m.session_id AND u.round_index = m.round_index AND u.role = 'user' ORDER BY u.id DESC LIMIT 1) AS question
+    FROM chat_messages m WHERE m.id > ? AND m.role = 'assistant' AND m.status IN ('answered','canned') AND m.created_at >= ?
+    ORDER BY m.id LIMIT ?`, [Number(after) || 0, since, Math.min(Math.max(1, Number(limit) || 100), 500)], 'anis-threads:replies-after');
+}

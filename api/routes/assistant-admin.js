@@ -8,6 +8,8 @@ import { threadsOverview, threadDetail, strategyGaps, turnTrace, parseTurnId } f
 import { tracesForThread, tracesForTurn, childTraces, docTitles } from '../lib/repos/search-trace-repo.js';
 import { auditsSince } from '../lib/repos/audit-store-repo.js';
 import { listAnisThreads, anisThread, anisThreadMessages } from '../lib/repos/anis-threads-repo.js';
+import { forensicsSince, listImprovements, setImprovementStatus, improveStats, IMPROVEMENT_STATUSES } from '../lib/repos/improve-repo.js';
+import { forensicsReport, rankImprovements } from '../lib/audit/improve.js';
 
 export default async function anisAdminRoutes(fastify) {
   fastify.get('/anis/overview', {
@@ -49,4 +51,30 @@ export default async function anisAdminRoutes(fastify) {
     preHandler: requireInternal,
     schema: { querystring: { type: 'object', properties: { days: { type: 'integer', minimum: 1, maximum: 365, default: 30 } } } },
   }, async (request) => ({ days: request.query.days || 30, ...strategyGaps(auditsSince(request.query.days || 30)) }));
+  // Improvement cycle (Chad 11-04; api/workers/improve-worker.js): forensic stage × class queue for replies and searches, with
+  // the Opus judge's tally — and the deduped improvement suggestions, ranked evidence × severity, with a status to set.
+  fastify.get('/anis/forensics', {
+    preHandler: requireInternal,
+    schema: { querystring: { type: 'object', properties: { days: { type: 'integer', minimum: 1, maximum: 90, default: 7 },
+      stage: { type: 'string' }, examples: { type: 'integer', minimum: 0, maximum: 10, default: 3 } } } },
+  }, async (request) => {
+    const days = request.query.days || 7;
+    const all = forensicsSince(2 * days);
+    const cut = new Date(Date.now() - days * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+    return { days, stage: request.query.stage || null, stats_24h: improveStats(1),
+      ...forensicsReport(all.filter((r) => r.asked_at >= cut), all.filter((r) => r.asked_at < cut), { stage: request.query.stage || null, examples: request.query.examples ?? 3 }) };
+  });
+
+  fastify.get('/anis/improvements', {
+    preHandler: requireInternal,
+    schema: { querystring: { type: 'object', properties: { status: { type: 'string', enum: IMPROVEMENT_STATUSES }, limit: { type: 'integer', minimum: 1, maximum: 1000, default: 100 } } } },
+  }, async (request) => ({ improvements: rankImprovements(listImprovements({ status: request.query.status || null, limit: request.query.limit || 100 })) }));
+
+  fastify.post('/anis/improvements/:id/status', {
+    preHandler: requireInternal,
+    schema: { body: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: IMPROVEMENT_STATUSES }, note: { type: 'string', maxLength: 2000 } } } },
+  }, async (request, reply) => {
+    const changed = setImprovementStatus(request.params.id, request.body.status, request.body.note ?? null);
+    return changed ? { ok: true, id: Number(request.params.id), status: request.body.status } : reply.code(404).send({ error: 'no such improvement' });
+  });
 }
