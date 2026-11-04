@@ -137,10 +137,15 @@ export async function resolveQdrantFilters(filters = {}) {
 // oversampling 1 vs 4 (at limit×4): phrase ×2 top-30 28.4/30, top-10 9.4/10 (old ×4 os2: 29.3, 9.7); hype grouped
 // 29.7/30 (os2 29.8). No rescore: 20.8/30 phrase, 24.4 hype — not acceptable. Cost: phrases 43 → 17 ms, hype 33 → 23 ms
 // (conc 8: 155 → 40, 61 → 40). Only originals in RAM (hype ≈ 14–28 GB) get a rescored search near 10 ms.
+// 11-04 (tower, read-only, 30 fresh real vectors, scripts/search/qdrant-knobs.mjs; planning/qdrant-10ms-plan-20261104.md):
+// hnsw_ef 64 (default = ef_construct 100; a larger limit×oversampling still raises it, so the ×4 escalation is untouched):
+// phrases 8.7 → 7.3 ms p50, 11.2 → 8.1 p95, top-30 overlap vs os4/ef512 0.990 → 0.983 (Bahá'í filter 0.994 → 0.990,
+// doctrinal 0.982 = 0.982); hype 4.8 → 3.8 ms, 0.996 → 0.998; at 3 engine calls in flight phrases 15.1 → 13.3, hype 11.6 → 8.4.
+// concept oversampling 4 → 2: 4.8 → 3.4 ms, top-30 vs EXACT 0.997 → 0.991; cold rescore reads halve.
 export const SEARCH_PARAMS = Object.freeze({
-  phrase: Object.freeze({ rescore: true, oversampling: 1, hnsw_ef: null }),
-  hype: Object.freeze({ rescore: true, oversampling: 1, hnsw_ef: null }),
-  concept: Object.freeze({ rescore: true, oversampling: 4, hnsw_ef: null }),
+  phrase: Object.freeze({ rescore: true, oversampling: 1, hnsw_ef: 64 }),
+  hype: Object.freeze({ rescore: true, oversampling: 1, hnsw_ef: 64 }),
+  concept: Object.freeze({ rescore: true, oversampling: 2, hnsw_ef: null }),
 });
 const searchParams = (p) => ({ quantization: { rescore: p.rescore, oversampling: p.oversampling }, ...(p.hnsw_ef ? { hnsw_ef: p.hnsw_ef } : {}) });
 

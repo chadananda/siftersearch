@@ -230,6 +230,13 @@ describe('SEARCH_PARAMS', async () => {
     expect(SEARCH_PARAMS.hype).toMatchObject({ rescore: true, oversampling: 1 });
     expect(SEARCH_PARAMS.concept.rescore).toBe(true);
   });
+  // 11-04 (tower, 30 fresh vectors, scripts/search/qdrant-knobs.mjs): ef 64 top-30 overlap vs os4/ef512 phrases 0.983
+  // (default 0.990), hype 0.998, filtered shapes unchanged; concept os2 vs EXACT 0.991 (os4 0.997). Re-measure before changing.
+  it('phrase and hype search at hnsw_ef 64, concepts at oversampling 2 (measured 11-04)', () => {
+    expect(SEARCH_PARAMS.phrase.hnsw_ef).toBe(64);
+    expect(SEARCH_PARAMS.hype.hnsw_ef).toBe(64);
+    expect(SEARCH_PARAMS.concept).toMatchObject({ rescore: true, oversampling: 2 });
+  });
 });
 
 describe('qdrantHealth', () => {
