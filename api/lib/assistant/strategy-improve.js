@@ -110,7 +110,8 @@ export async function editStage(db, { improveDb, call, cat = catalog(), acts, st
   const open = untestedDataSuggestions(improveDb);
   if (!open.length) return done();
   const groups = groupDataSuggestions(open, cat);
-  for (const g of groups) { const why = uneditable(g); if (why) { settleSuggestions(improveDb, g.rows.map((r) => r.id), 'rejected', why); settled += g.rows.length; } }
+  // a suggestion that names no strategy (written before the field existed) stays open: no edit to make, but the diagnosis is kept
+  for (const g of groups) { const why = g.name ? uneditable(g) : null; if (why) { settleSuggestions(improveDb, g.rows.map((r) => r.id), 'rejected', why); settled += g.rows.length; } }
   const busy = new Set(testingSuggestions(improveDb).map((r) => keyOf(r.candidate).id));
   const g = groups.find((x) => !uneditable(x) && !busy.has(x.strategy.id));
   if (!g) return done();

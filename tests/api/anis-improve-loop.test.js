@@ -79,14 +79,14 @@ describe('Phase 4: DATA suggestions become tested candidates', () => {
     expect(listDesigns(db).filter((d) => d.cluster_key?.startsWith('edit:'))).toHaveLength(1);
   });
 
-  it('uneditable groups (unknown strategy, none named, the respond graph) are rejected with the reason and no Opus call', async () => {
+  it('uneditable groups (unknown strategy, the respond graph) are rejected with the reason and no Opus call; unnamed ones stay open', async () => {
     const db = freshS(), idb = openImproveDb(':memory:');
     const ids = seed(idb, [sug('nosuch', 'x change', 'reply:1'), sug(null, 'y change', 'reply:2')]);
     const call = opus();
-    expect(await editStage(db, { improveDb: idb, call, deps: deps(true), branches: null })).toMatchObject({ settled: 2 });
+    expect(await editStage(db, { improveDb: idb, call, deps: deps(true), branches: null })).toMatchObject({ settled: 1 });
     expect(call).not.toHaveBeenCalled();
     expect(row(idb, ids[0]).status_note).toMatch(/no active strategy "nosuch"/);
-    expect(row(idb, ids[1]).status_note).toMatch(/names no strategy/);
+    expect(row(idb, ids[1]).status).not.toBe('rejected');
     const other = groupDataSuggestions([{ strategy: 'other' }], { strategies: [{ id: 'other', name: 'other' }] })[0];
     expect(uneditable(other)).toMatch(/respond graph/);
   });
