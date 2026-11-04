@@ -9,14 +9,21 @@ export { quoteSpans };
 
 /** Spans whose words appear in no ONE passage (containsQuote: ellipsis-joined pieces of ≥3 words each must match).
  *  One quotation, one passage: the pieces of a quotation must all come from the same passage — r9 found quotations stitched
- *  from two passages (often by different authors) and presented as one, which a check against all passages joined let pass. */
-export function unverifiedQuotes(text, passages) {
-  const hays = (passages || []).map((p) => p.text || '').filter(Boolean);
+ *  from two passages (often by different authors) and presented as one, which a check against all passages joined let pass.
+ *  Not a quotation of a text: the READER's own words given back ("the verse about \u201cthe right to work but not the fruits\u201d"), and
+ *  a passage's book title (`asked` = the reader's question / turns). 11-04 prod (w3:ref-gita, w8:goth-08): the writer's
+ *  first sentence quoted the reader, the gate dropped it, and the reply opened "What they do hold\u2026" with nothing for "they". */
+export function unverifiedQuotes(text, passages, { asked = [] } = {}) {
+  const hays = [...(passages || []).map((p) => p.text || ''), ...(passages || []).map((p) => p.source_title || p.title || '')].filter(Boolean);
+  const reader = [asked].flat().filter(Boolean);
+  // a quotation LINKED as a source's words must be in a passage, even when the reader typed it (a misquote asked about)
+  const linked = (q) => new RegExp(`\\[[*_]*["\u201c]\\s*${escapeRe(q)}\\s*["\u201d][*_]*\\]\\(`).test(text);
   return quoteSpans(text).filter((q) => {
     const pieces = String(q).split(/\.\.\.|\u2026/).filter((p) => p.trim().split(/\s+/).length >= 3);
-    return pieces.length > 0 && !hays.some((h) => containsQuote(h, q));
+    return pieces.length > 0 && !hays.some((h) => containsQuote(h, q)) && !(reader.some((h) => containsQuote(h, q)) && !linked(q));
   });
 }
+const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // ── Sentences and sections (11-04) ─────────────────────────────────────────────────────────────────────────────────
 // A sentence ends at . ! ? … with any closing quote, bracket or bold/italic mark after it, before a capital in ANY script
@@ -84,10 +91,40 @@ export function dropDanglingTail(text) {
 
 const NOTHING_LEFT = 'I didn’t find a passage that says this directly in this search. Could you tell me a little more about what you’re looking for?';   // r9: never a claim about the whole library
 
+// ── What a dropped sentence leaves behind (11-04 prod10) ───────────────────────────────────────────────────────────────
+// A sentence that LEANS BACK on the one before it: a pronoun or demonstrative as its first or second word ("What they do
+// hold…", "That is the closest…", "In this sense…"), or a connective first ("But…", "So…"). Read on the writer's text only.
+// Not "it": too often a dummy subject ("It is written: …").
+const strip = (t) => String(t || '').replace(/^[\s>*_#\-–—•\d.)]+/, '').replace(/[[\]*_]/g, '');
+const BACK_ANY = /^(?:they|them|their|he|she|him|his|her|this|that|these|those|such|both|neither)$/i;
+const BACK_FIRST = /^(?:but|yet|so|instead|however|rather|still|thus|hence|therefore)$/i;
+export function leansBack(t) {
+  const w = strip(t).split(/\s+/).slice(0, 2).map((x) => x.replace(/[^\p{L}']/gu, ''));
+  return BACK_FIRST.test(w[0] || '') || w.some((x) => BACK_ANY.test(x));
+}
+const isQuoteLine = (t) => /^\s*>/.test(t);
+const PARAPHRASE_WORDS = 20;
+const bareQuoteMark = (t) => /^[\s>]*$/.test(t);
+// a source line under a quotation: "— [*The Gospel of Luke*](…) (KJV)", "> — Bahá'u'lláh, *Gleanings*"
+const isAttribution = (t) => /^[\s>*_]*(?:[—–―]|--)\s*\S/.test(t) && !quoteSpans(t).length && String(t).length < 400;
+/** The quotation's words kept as the writer's own: quote marks and the source link go, so it reads as a paraphrase. Pure. */
+export function unquote(t, bad) {
+  let s = String(t);
+  for (const q of bad) {
+    const e = escapeRe(q);
+    s = s.replace(new RegExp(`\\[[*_]*["“]\\s*${e}\\s*["”][*_]*\\]\\([^)]*\\)`, 'g'), q).replace(new RegExp(`["“]\\s*${e}\\s*["”]`, 'g'), q);
+  }
+  return s;
+}
+
 /** Drop every sentence that carries an unverified quote — that sentence only (sentencePieces), never its neighbours — and a
- *  heading whose whole section went with it. Returns the cleaned text and how many sentences went. */
-export function dropUnverified(text, passages) {
-  const bad = unverifiedQuotes(text, passages);
+ *  heading whose whole section went with it. Nothing it leaves refers to what went (11-04 prod10): a sentence leaning back on
+ *  a dropped one goes too — unless the dropped one OPENED the reply, which then stays with its quotation unquoted (a
+ *  paraphrase) so the reply does not open "What they do hold…"; a source line ("— [Luke](…)") whose quotation went goes with
+ *  it, and an emptied blockquote leaves no bare ">". `asked` = the reader's words (see unverifiedQuotes). Returns the cleaned
+ *  text, how many sentences went, and how many quotations were kept as paraphrase. */
+export function dropUnverified(text, passages, { asked = [] } = {}) {
+  const bad = unverifiedQuotes(text, passages, { asked });
   if (!bad.length) return { text, removed: 0 };
   let removed = 0;
   const paras = String(text).split(/\n{2,}/).map((para) => sentencePieces(para).map((p) => {
@@ -104,8 +141,36 @@ export function dropUnverified(text, passages) {
     let pos = 0;
     for (const p of ps) { const end = pos + p.text.length; if (end > at && pos < at + q.length && !p.drop) { p.drop = true; removed++; } pos = end + 1; }
   }
-  // a heading whose section (every sentence up to the next heading) was dropped goes too
   const flat = paras.flat();
+  // a sentence leaning back on a dropped one: the dropped one stays as paraphrase (its quotation unquoted) when it OPENED the
+  // reply, or when the follower quotes a passage (its own evidence, not to be lost); otherwise the follower goes with it
+  let unquoted = 0;
+  const firstText = flat.findIndex((p) => !p.heading);
+  for (let i = 0; i < flat.length; i++) {
+    const d = flat[i];
+    if (!d.drop || d.heading) continue;
+    const next = flat.find((p, k) => k > i && !p.drop && !bareQuoteMark(p.text));
+    if (!next || next.heading || isQuoteLine(next.text) || isAttribution(next.text) || !leansBack(next.text)) continue;
+    // never a long one: words the gate keeps out (an invented passage, or a copyrighted book past its clipped excerpt —
+    // encumbered-leaks) must not come back unquoted
+    const mine = bad.filter((q) => d.text.includes(q));
+    const paraphrase = !isQuoteLine(d.text) && mine.length > 0 && mine.every((q) => q.split(/\s+/).length <= PARAPHRASE_WORDS);
+    if (paraphrase && (i === firstText || quoteSpans(next.text).length)) { d.text = unquote(d.text, bad); d.drop = false; removed--; unquoted++; }
+    else if (!quoteSpans(next.text).length) { next.drop = true; removed++; }
+  }
+  // a source line whose quotation went: in a blockquote, when every line of its quotation went; else when the line before went
+  flat.forEach((p, i) => {
+    if (p.drop || !isAttribution(p.text)) return;
+    const before = [];
+    for (let k = i - 1; k >= 0; k--) {
+      if (bareQuoteMark(flat[k].text)) continue;
+      if (isQuoteLine(p.text) && isQuoteLine(flat[k].text)) { before.push(flat[k]); continue; }
+      if (!before.length) before.push(flat[k]);
+      break;
+    }
+    if (!before.length || before.every((b) => b.drop)) p.drop = true;
+  });
+  // a heading whose section (every sentence up to the next heading) was dropped goes too
   flat.forEach((p, i) => {
     if (!p.heading || p.drop) return;
     const body = [];
@@ -119,19 +184,25 @@ export function dropUnverified(text, passages) {
       if (p.drop) { if (/\n/.test(p.sep)) gap = p.sep; continue; }
       kept.push({ ...p, gap: kept.length && gap && !/\n/.test(p.sep) ? gap : p.sep }); gap = null;
     }
-    return rejoin(kept);
+    return noBareQuoteMarks(rejoin(kept));
   }).filter(Boolean).join('\n\n').trim();
-  return { text: out && quoteSpans(out).length + out.split(/\s+/).length > 12 ? out : NOTHING_LEFT, removed };
+  return { text: out && quoteSpans(out).length + out.split(/\s+/).length > 12 ? out : NOTHING_LEFT, removed, ...(unquoted ? { unquoted } : {}) };
 }
+// a ">" line with no quoted line on both sides of it (the blockquote's words went) goes; a paragraph of only ">" is empty
+const noBareQuoteMarks = (para) => {
+  const lines = para.split('\n'), content = (l) => l !== undefined && isQuoteLine(l) && !bareQuoteMark(l);
+  return lines.filter((l, i) => !bareQuoteMark(l) || !isQuoteLine(l) || (lines.slice(0, i).some(content) && lines.slice(i + 1).some(content)))
+    .join('\n').trim();
+};
 
 /**
  * Streaming gate: release text a SENTENCE at a time, and only sentences whose quotes are verified — so an invented
  * quote is never shown, even briefly. A "." inside an open quotation is not a sentence end. push() per token chunk;
  * flush() at the end releases the remainder (verified the same way).
  */
-export function createSentenceGate(passages, emit) {
+export function createSentenceGate(passages, emit, { asked = [] } = {}) {
   let buf = '';
-  const release = (s) => { if (s && !unverifiedQuotes(s, passages).length) emit(s); };
+  const release = (s) => { if (s && !unverifiedQuotes(s, passages, { asked }).length) emit(s); };
   const nextEnd = () => {
     let open = false;
     for (let i = 0; i < buf.length; i++) {

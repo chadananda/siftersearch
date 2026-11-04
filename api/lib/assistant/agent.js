@@ -103,7 +103,7 @@ export async function agentAnswer({ messages, create, tools: impl, onEvent = () 
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));
   const rendered = renderRefs(final, { found, works });
-  const guarded = dropUnverified(rendered, retrieved);
+  const guarded = dropUnverified(rendered, retrieved, { asked: messages.filter((m) => m.role === 'user').map((m) => String(m.content || '')) });
   const speakers = fixQuoteSpeakers(guarded.text, retrieved);
   const linked = linkQuotes(speakers.text, retrieved);
   const reply = dropPreamble(linked.text).trim();

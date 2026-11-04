@@ -169,3 +169,92 @@ describe('sentence pieces and section-safe dropping', () => {
     expect(dropDanglingTail('Plain ending.')).toBe('Plain ending.');
   });
 });
+
+// 11-04 prod10 (after 8891a295's per-sentence drop): w3:ref-gita and w8:goth-08 opened "What they do hold…" / "What they do
+// show…" — the opening sentence went, and "they" pointed at nothing; w3:cmp-afterlife-hindu-christian kept the Luke
+// blockquote's "> — [*The Gospel of Luke*](…)" line with no quotation above it, and ref-gita a bare "— [The Bhagavad-Gita…]".
+import { leansBack, unquote } from '../../api/lib/assistant/quotes.js';
+import { containsQuote } from '../../api/lib/quote-text.js';
+describe('a dropped quotation leaves nothing behind that points at it', () => {
+  const gita = [
+    { text: 'Yea! whoso, shaking off the yoke of fleshLives lord, not servant, of his lusts; set freeFrom pride, from passion, from the sin of “Self,”Toucheth tranquillity!', source_title: 'The Bhagavad-Gita', citation_url: 'https://oceanlibrary.com/bhagavad-gita/?paraId=para_43' },
+    { text: 'HERE ENDETH CHAPTER II. OF THE BHAGAVAD-GITA,Entitled “Sankhya-Yog,”Or “The Book of Doctrines.”', source_title: 'The Bhagavad-Gita', citation_url: 'https://oceanlibrary.com/bhagavad-gita/?paraId=para_44' },
+  ];
+  const saiedi = [
+    { text: "Many of the Báb's writings speak of this station or perspective of the heart, which indeed constitutes the cornerstone of His entire approach to reality.", source_title: 'Gate of the Heart: Understanding the Writings of the Báb', citation_url: 'https://x/p546' },
+    { text: 'One can most directly approach noumenal reality through the sanctuary of the heart.', source_title: 'Gate of the Heart: Understanding the Writings of the Báb', citation_url: 'https://x/p871' },
+  ];
+  const gitaQ = 'Bhagavad Gita 2:47 — the verse about the right to work but not the fruits.';
+  const gitaReply = 'The passages in this search don\'t hold the verse about "the right to work but not the fruits" itself. What they do hold is the very end of Chapter II, in the Edwin Arnold translation, which does not number its verses.\n\nThe chapter closes under the title ["Sankhya-Yog," or "The Book of Doctrines"](https://oceanlibrary.com/bhagavad-gita/?paraId=para_44).';
+
+  it('the reader\'s own words given back in quotation marks are not an unverified quotation', () => {
+    const out = dropUnverified(gitaReply, gita, { asked: [gitaQ] });
+    expect(out.removed).toBe(0);
+    expect(out.text).toBe(gitaReply);
+  });
+  it('…but the reader\'s words LINKED as a source\'s words must still be in a passage', () => {
+    expect(unverifiedQuotes('Krishna says ["the right to work but not the fruits"](https://x).', gita, { asked: [gitaQ] })).toHaveLength(1);
+  });
+  it('a quotation of a passage\'s book title is not an unverified quotation', () => {
+    expect(unverifiedQuotes('Saiedi called it "Gate of the Heart: Understanding the Writings of the Báb".', saiedi)).toEqual([]);
+  });
+  it('the reply\'s opening sentence, leaned on by the next, stays as paraphrase — never "What they do hold…" first', () => {
+    const out = dropUnverified(gitaReply, gita);   // no reader words: the opening quotation is unverified
+    expect(out.text).toMatch(/^The passages in this search don't hold the verse about the right to work but not the fruits itself\. What they do hold/);
+    expect(out.text).not.toMatch(/["“]the right to work/);
+    expect(out).toMatchObject({ removed: 0, unquoted: 1 });
+    const goth = 'I didn\'t find a passage where Saiedi writes that ["the heart is the gate through which every soul must pass"](https://x/p1) as the reason for his title. What they do show is the idea the title points to.\n\nSaiedi writes that ["One can most directly approach noumenal reality through the sanctuary of the heart"](https://x/p871).';
+    const g = dropUnverified(goth, saiedi);
+    expect(g.text).toMatch(/^I didn't find a passage where Saiedi writes that the heart is the gate through which every soul must pass as the reason/);
+    expect(g.text).not.toContain('](https://x/p1)');
+    expect(g.text).toContain('What they do show');
+  });
+  it('elsewhere, a sentence leaning on a dropped one goes with it; an independent one stays', () => {
+    const text = 'Saiedi reads the heart as central to the Báb. He writes that "the heart is the only gate to the divine Word for every soul". That is the closest the passages come to a reason. There is also the word báb itself, which means gate.';
+    const out = dropUnverified(text, saiedi);
+    expect(out.text).toBe('Saiedi reads the heart as central to the Báb. There is also the word báb itself, which means gate.');
+    expect(out.removed).toBe(2);
+  });
+  it('a follower that quotes a passage is never lost to the cascade: the dropped sentence stays as paraphrase instead', () => {
+    const text = 'Saiedi reads the heart as central to the Báb. He calls it "the only gate to the divine Word for every soul". In this sense, he says, "One can most directly approach noumenal reality through the sanctuary of the heart".';
+    const out = dropUnverified(text, saiedi);
+    expect(out.text).toContain('He calls it the only gate to the divine Word for every soul.');
+    expect(out.text).toContain('sanctuary of the heart');
+    expect(out).toMatchObject({ removed: 0, unquoted: 1 });
+  });
+  it('a dummy "It is written:" is not a lean-back, and its verified quotation stays', () => {
+    const text = 'The fast is nineteen days. He states "the foundation of all human virtues is justice". It is written: "the best beloved of all things in My sight is Justice".';
+    expect(dropUnverified(text, passages).text).toBe('The fast is nineteen days. It is written: "the best beloved of all things in My sight is Justice".');
+  });
+  it('leansBack: a pronoun or demonstrative in the first two words, or an opening connective — not a later "that"', () => {
+    for (const t of ['What they do hold is the end.', 'That is the closest.', 'In this sense the heart…', 'But the passages show…', '**They** say…']) expect(leansBack(t)).toBe(true);
+    for (const t of ['Saiedi writes that the heart…', 'There is also the word.', 'The Gita gives the same teaching.', 'Here each person dies once.']) expect(leansBack(t)).toBe(false);
+  });
+  it('a blockquote whose quotation went loses its source line and every bare ">" (cmp-afterlife Luke)', () => {
+    const text = 'The passage I found is Luke\'s account of the rich man and Lazarus:\n\n> "And it came to pass, that the beggar died, and was carried by the angels into Abraham\'s bosom"\n>\n> — [*The Gospel of Luke*](https://siftersearch.com/library/view?doc=20990) (KJV), [link](https://oceanlibrary.com/kjv-gospel-of-luke/?paraId=para_589)\n\nHere each person dies once, and awareness continues after death. The Gita gives the soul a body after body.';
+    const out = dropUnverified(text, gita);
+    expect(out.text).not.toContain('Gospel of Luke*]');
+    expect(out.text).not.toMatch(/^>/m);
+    expect(out.text).toContain('Here each person dies once');
+  });
+  it('a source line standing alone after a dropped blockquote goes too (ref-gita "— [The Bhagavad-Gita, Chapter II](…)")', () => {
+    const text = 'Those closing lines describe the person the chapter has been building toward.\n\n> "He who has gone beyond desire and lives free of every longing for the world"\n\n— [The Bhagavad-Gita, Chapter II](https://oceanlibrary.com/bhagavad-gita/?paraId=para_43)\n\nSince this translation gives only the chapter, treat these lines as the neighbourhood of your reference.';
+    const out = dropUnverified(text, gita);
+    expect(out.text).not.toContain('— [The Bhagavad-Gita');
+    expect(out.text).toContain('Since this translation gives only the chapter');
+  });
+  it('a kept quotation keeps its source line', () => {
+    const text = 'Arnold closes the chapter:\n\n> "shaking off the yoke of flesh Lives lord, not servant, of his lusts"\n> — [The Bhagavad-Gita](https://oceanlibrary.com/bhagavad-gita/?paraId=para_43)\n\nHe adds "the foundation of all human virtues is justice" here. More text follows to keep the reply long enough.';
+    const out = dropUnverified(text, gita);
+    expect(out.text).toContain('> — [The Bhagavad-Gita]');
+    expect(out.text).toContain('yoke of flesh Lives lord');
+  });
+  it('verse stored without its line breaks still verifies ("fleshLives")', () => {
+    expect(containsQuote(gita[0].text, 'shaking off the yoke of flesh Lives lord, not servant, of his lusts')).toBe(true);
+    expect(containsQuote(gita[0].text, 'shaking off the yoke of the body entirely')).toBe(false);
+  });
+  it('unquote keeps the words and drops the marks and the link', () => {
+    expect(unquote('He wrote ["five words of invented text"](https://x) here, and "five more invented words here".', ['five words of invented text', 'five more invented words here']))
+      .toBe('He wrote five words of invented text here, and five more invented words here.');
+  });
+});

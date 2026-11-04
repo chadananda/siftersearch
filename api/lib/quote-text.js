@@ -15,5 +15,8 @@ export function quoteSpans(text) {
 export function containsQuote(text, span) {
   const hay = foldText(text);
   const pieces = String(span).split(/\.\.\.|…/).map(foldText).filter((p) => p.split(' ').length >= 3);
-  return pieces.length > 0 && pieces.every((p) => hay.includes(p));
+  // verse stored with its line breaks lost ("the yoke of fleshLives lord", Arnold's Gita, 11-04 w3:ref-gita): the quotation's
+  // "flesh / Lives" matches when both sides are compared without spaces
+  let tight = null;
+  return pieces.length > 0 && pieces.every((p) => hay.includes(p) || (tight ??= hay.replace(/ /g, '')).includes(p.replace(/ /g, '')));
 }

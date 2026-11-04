@@ -134,7 +134,10 @@ describe('Anís evidence', () => {
     expect(words(p.text)).toBeLessThanOrEqual(EXCERPT_WORDS + 1);
     expect(p.citation_url).toBe('https://x/p3');
     const longQuote = `As he wrote, “${LONG.split(' ').slice(0, 120).join(' ')}”. That is all.`;
-    expect(dropUnverified(longQuote, [p]).removed).toBe(1);
+    // the long quote goes (its follower "That is all." leans on it and goes with it — quotes.js lean-back rule)
+    const dropped = dropUnverified(longQuote, [p]);
+    expect(dropped.removed).toBeGreaterThanOrEqual(1);
+    expect(dropped.text).not.toContain('w100');
     const shortQuote = `As he wrote, “${LONG.split(' ').slice(0, 30).join(' ')}”. That is all.`;
     expect(dropUnverified(shortQuote, [p]).removed).toBe(0);
   });

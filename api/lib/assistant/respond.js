@@ -871,6 +871,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     : researched ? modelFor('anis-writer') : parseLlm(process.env.ANIS_LLM));
   // THE WRITING STEP — once, or once per VARIANT (internal A/B via /api/v1/anis/draft): everything above (plan, evidence,
   // format choice, companion) is shared; only the template (format 'none') or the writer model differs. Only the first streams.
+  // the reader's own words, which the reply may give back in quotation marks without a passage holding them (quotes.js)
+  const readerWords = (messages || []).filter((m) => m.role === 'user').map((m) => String(m.content || ''));
   const write = async (v, primary) => {
     const fmt = variantFormat(format, v?.format, extraHow);
     const writer = v?.writer ? { ...parseLlm(v.writer), ...(primary ? {} : { caller: 'anis-craft-variant' }) } : defaultWriter;
@@ -881,7 +883,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     const gate = createSentenceGate(retrieved, (t) => {
       if (firstTokenMs === null) firstTokenMs = Date.now() - t0;
       if (primary) onEvent({ type: 'text', content: cleanLinks(t).replace(/\[\[(?:RENDERINGS|PASSAGES)\]\]\n?/g, '') });   // code fills these in the final text
-    });
+    }, { asked: readerWords });
     const w0 = Date.now();
     const raw = await timed(primary ? 'craft' : `craft:${v.id}`, () => d.craft({
       user_question: question, retrieved_quotes: sourced ? retrieved.map(({ citation_url: _u, ...q }) => q) : retrieved, conversation_summary: conversationSummary(messages, persona),
@@ -893,7 +895,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     gate.flush();
     // Final text: markers → links, ungrounded links unlinked, and any sentence quoting words found in NO passage removed
     // (the widget reconciles its streamed text to this; email sends only this).
-    const guarded = dropUnverified(cleanLinks(raw), retrieved);
+    const guarded = dropUnverified(cleanLinks(raw), retrieved, { asked: readerWords });
     // …and a lead-in whose quotation went missing ("…writes in God Passes By:" then nothing, r5) gets the verified passage it
     // names, or is rewritten — a reply never ends an introduction without its quotation.
     const introduced = completeIntroducedQuotes(study ? placeRenderings(guarded.text, study, channel) : guarded.text, conversational ? [] : retrieved);
