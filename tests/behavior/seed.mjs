@@ -27,7 +27,7 @@ export function seedRouting(fx) {
   for (const [shapes, cases] of groups) {
     if (cases.length < 2) { notConverted.push(...cases.map((c) => ({ id: c.id, reason: `only case of class "${shapes}"` }))); continue; }
     chunk(cases).forEach((cs, i) => scenarios.push({ title: `Routing: plan shape ${shapes} (${i + 1})`, source: { fixture: 'routing-fixtures.json', ids: cs.map((c) => c.id) },
-      draft: { research: false },   // the planner path, where the plan shape is the route (the researcher's shape is always 'research')
+      draft: { engine: 'pipeline', research: false },   // the planner path (engine: an email draft otherwise goes to the agent — ANIS_RESEARCH=all), where the plan shape is the route (the researcher's shape is always 'research')
       given: { reader: NEW_READER, history: [] }, when: { asks: `a question the planner should treat as ${shapes.split(' | ').join(' or ')}`, examples: cs.map((c) => c.query) },
       then: [{ check: 'shape', expect: shapes }] }));
   }
