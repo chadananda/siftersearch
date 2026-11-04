@@ -315,6 +315,7 @@ export function linkQuotes(text, passages) {
   const res = out.map((line) => { const done = new Set(); return /^\s*>/.test(line) ? line : line.replace(/["“]([^"”\n]+)["”]/g, (m, words, off, all) => {
     if (words.trim().split(/\s+/).length < 5) return m;
     const before = all.slice(0, off), after = all.slice(off + m.length);
+    if (/^[*_]*\]\(/.test(after)) return m;   // already link text ([*"…"*](url)): a link inside it would nest and break both
     const start = Math.max(before.search(/[.!?]\s[^.!?]*$/), 0);
     const end = after.search(/[.!?](\s|$)/);
     const p = holder(words, before.slice(start) + (end < 0 ? after : after.slice(0, end + 1)));

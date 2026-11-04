@@ -126,6 +126,20 @@ describe('linkQuotes', () => {
   });
 });
 
+// 11-04 prod: the writer linked the quotation itself to another copy ([*"…"*](other-url)); linkQuotes put its link INSIDE the
+// link text → "[**"…"* ([Title](url))*](other-url)", a nested, broken link. A quotation that is already link text keeps its link.
+describe('linkQuotes, a quotation that is already a link', () => {
+  const P = [{ text: 'It is incumbent upon each one of you to engage in some occupation such as a craft, a trade or the like.', source_title: 'The Kitáb-i-Aqdas', citation_url: 'https://bahai-library.com/aqdas' }];
+  it('leaves link text alone even when it links a different copy', () => {
+    const t = 'Bahá’u’lláh writes that [*"It is incumbent upon each one of you to engage in some occupation"*](https://oceanlibrary.com/aqdas#p40) and more.';
+    expect(linkQuotes(t, P)).toEqual({ text: t, linked: 0 });
+  });
+  it('leaves an unstyled linked quotation alone', () => {
+    const t = 'He writes [“It is incumbent upon each one of you to engage”](https://oceanlibrary.com/aqdas#p40).';
+    expect(linkQuotes(t, P).text).toBe(t);
+  });
+});
+
 describe('linkQuotes, one link per passage per paragraph', () => {
   it('two quotations of one passage in a paragraph get one link', () => {
     const P = [{ text: 'Disencumber yourselves of all attachment to this world and the vanities thereof. Beware that ye approach them not.', source_title: 'Gleanings', citation_url: 'u1' }];
