@@ -525,7 +525,9 @@ export function agentOn(direction = {}, env = process.env.ANIS_AGENT) {
  *  11-03 smoke, three per book on every turn put the first text at 11-15 s on a loaded tower) — deeper work is the deep_report job. Not live → null (the full loop). Pure. */
 export function liveResearch({ channel, depth } = {}) {
   if (!channel?.live) return null;
-  return { maxRounds: 1, maxCalls: depth === 'research' ? 8 : 5, brief: false, inBooks: depth === 'research' ? 4 : 3,
+  // read around the main book's best hits (consecutive passages of the story); Jev's depth = research reads two books wider
+  const around = depth === 'research' ? { books: 2, hits: 2, before: 3, after: 4, ms: 1200 } : { books: 1, hits: 2, before: 2, after: 3, ms: 900 };
+  return { maxRounds: 1, maxCalls: depth === 'research' ? 8 : 5, brief: false, inBooks: depth === 'research' ? 4 : 3, around,
     ...(depth === 'research' ? { perBook: 2, extraMs: 800 } : {}) };
 }
 

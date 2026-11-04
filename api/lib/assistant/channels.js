@@ -33,5 +33,14 @@ export function channelFor(name, { trusted = false } = {}) {
   return { id: name, ...c };
 }
 
+/** The reply-length frame from Jev's DEPTH for this turn (triage `depth`), never from the wording: depth = research on a chat
+ *  channel replaces the brief chat frame (11-03: stories stopped at 2.4-3.6k characters under "about 150-250 words", before
+ *  the climax, while the baseline told them in ~7.5k). Any other depth keeps the channel's own frame. Pure. */
+export const DEPTH_FRAME = 'Jev judged this question to need a full answer: give it fully, as long as the passages support — a story told in order through to its end (its climax and outcome), every side of the question covered — often 500–900 words. No padding, no preamble; each paragraph carries passages or specifics.';
+export function frameFor(channel = {}, depth = null) {
+  if (depth === 'research' && channel?.live) return DEPTH_FRAME;
+  return channel?.frame ?? null;
+}
+
 /** Formats a channel can display: drop any whose needs the channel lacks. */
 export const supports = (channel, needs = []) => needs.every((n) => channel.capabilities.includes(n));

@@ -237,7 +237,8 @@ const ENTRIES = [
       // a copyrighted (encumbered) book is never read around — consecutive paragraphs are not a short excerpt (Chad 10-23)
       const enc = await (await dep(ctx, 'encumberedAmong', 'rights'))([docId]).catch(() => new Set());
       if (enc.has(docId)) return { passages: [], copyright: true };
-      const rows = await (await dep(ctx, 'getParagraphs', 'docs'))(docId, { offset: Math.max(0, idx - before), limit: before + after + 1 });
+      // by paragraph_index: an OFFSET skipped the footnotes the prose read filters and landed ~87 paragraphs late (11-03)
+      const rows = await (await dep(ctx, 'getParagraphsAround', 'docs'))(docId, idx, { before, after });
       const meta = ctx?.meta || (await (await dep(ctx, 'getLinkMeta', 'docs'))([docId]).catch(() => new Map())).get(docId) || {};
       const linked = await (await dep(ctx, 'withLinks', 'links'))(rows.map((r) => ({ id: r.id, doc_id: docId, paragraph_index: r.paragraph_index, text: r.text, title: meta.title }))).catch(() => []);
       return { passages: rows.map((r, i) => toPassage({ ...r, title: meta.title, author: meta.author, religion: meta.religion, document_id: docId, source_url: linked[i]?.url || null })), copyright: false };

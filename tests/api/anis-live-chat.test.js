@@ -2,9 +2,9 @@
 // watches (channel data `live`), Jev's strategy runs instead of the researcher, the researcher plans ONE round of tool calls
 // that run in parallel, and one Sonnet writer (thinking off) streams the answer. Email keeps the full researcher.
 import { describe, it, expect, afterEach } from 'vitest';
-import { research, booksFound } from '../../api/lib/assistant/researcher.js';
+import { research, booksFound, aroundTargets } from '../../api/lib/assistant/researcher.js';
 import { anisRespond, agentOn, liveResearch } from '../../api/lib/assistant/respond.js';
-import { channelFor, CHANNELS } from '../../api/lib/assistant/channels.js';
+import { channelFor, CHANNELS, frameFor, DEPTH_FRAME } from '../../api/lib/assistant/channels.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
 import { makeStrikes } from '../../api/lib/assistant/strikes.js';
 import { decisionLog } from '../../api/lib/assistant/decision-log.js';
@@ -127,6 +127,43 @@ describe('researcher: the second round searches INSIDE the books the first round
     expect(String(seen[0].messages[0].content)).toMatch(/chronology of those events/);
   });
 
+  it('read around: the main book\'s best hits are read with their neighbours, all at once, after the book step (db-24)', async () => {
+    const reads = [];
+    const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'journey Isfahan Tabriz' })] } }] });
+    const r = await research({ messages: [{ role: 'user', content: 'the journey' }], create, maxRounds: 1, brief: false, inBooks: 2,
+      around: { books: 1, hits: 2, before: 2, after: 1 },
+      tools: { search: async () => [inBook(7, 1), inBook(8, 1)], searchIn: async (q, doc) => [inBook(doc, 55), inBook(doc, 60), inBook(doc, 70)],
+        encumberedAmong: async () => new Set(),
+        around: async (p, before, after) => { reads.push([p.document_id, p.paragraph_index, before, after]);
+          return [-2, -1, 0, 1].map((k) => ({ ...P(p.paragraph_index + k), document_id: p.document_id, title: 'Book 7' })).slice(2 - before, 3 + after); } } });
+    expect(reads).toEqual([[7, 755, 2, 1], [7, 760, 2, 1]]);   // book 7 only (books: 1), its two best hits
+    expect(r.passages.map((p) => p.id)).toEqual(expect.arrayContaining([753, 754, 756, 758, 759, 761]));
+    expect(r.steps.filter((s) => s.tool === 'context_lookup')).toHaveLength(2);
+  });
+
+  it('read around: a copyrighted book is never read around; a read past around.ms is dropped', async () => {
+    const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'x' })] } }] });
+    const base = { search: async () => [inBook(7, 1)], searchIn: async (q, doc) => [inBook(doc, 55)] };
+    let called = 0;
+    const enc = await research({ messages: [{ role: 'user', content: 'q' }], create, maxRounds: 1, brief: false, inBooks: 1, around: { books: 1, hits: 1 },
+      tools: { ...base, encumberedAmong: async () => new Set([7]), around: async () => { called++; return [inBook(7, 54)]; } } });
+    expect(called).toBe(0);
+    expect(enc.passages.some((p) => p.id === 754)).toBe(false);
+    const t = Date.now();
+    const slow = await research({ messages: [{ role: 'user', content: 'q' }], create, maxRounds: 1, brief: false, inBooks: 1, around: { books: 1, hits: 1, ms: 20 },
+      tools: { ...base, encumberedAmong: async () => new Set(), around: () => sleep(400).then(() => [inBook(7, 54)]) } });
+    expect(Date.now() - t).toBeLessThan(300);
+    expect(slow.steps.find((s) => s.tool === 'context_lookup').late).toBe(true);
+  });
+
+  it('aroundTargets: the first books\' own-query hits in rank order; extra-query hits and unplaced passages are not read around', () => {
+    const b1 = { document_id: 1 }, b2 = { document_id: 2 };
+    const h = (doc, i) => ({ document_id: doc, paragraph_index: i });
+    const outs = [{ b: b1, extra: false, hits: [h(1, 5), h(1, 9), h(1, 2)] }, { b: b1, extra: true, hits: [h(1, 40)] }, { b: b2, extra: false, hits: [{ document_id: 2 }, h(2, 3)] }];
+    expect(aroundTargets([b1, b2], outs, { books: 2, hits: 2 })).toEqual([h(1, 5), h(1, 9), h(2, 3)]);
+    expect(aroundTargets([b1, b2], outs, { books: 1, hits: 1 })).toEqual([h(1, 5)]);
+  });
+
   it('a failed in-book search costs only its own passages', async () => {
     const create = async () => ({ choices: [{ message: { tool_calls: [call('a', 'combined_search', { query: 'x' })] } }] });
     const r = await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { search: async () => [inBook(7, 1)], searchIn: async () => { throw new Error('timeout'); } },
@@ -137,9 +174,10 @@ describe('researcher: the second round searches INSIDE the books the first round
 
 describe('liveResearch: the shape of the researcher on a live channel, from Jev\'s depth', () => {
   it('one planning round, no brief; depth=research only widens the round', () => {
-    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'answer' })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3 });
-    expect(liveResearch({ channel: channelFor('site-chat'), depth: null })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3 });
-    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'research' })).toEqual({ maxRounds: 1, maxCalls: 8, brief: false, inBooks: 4, perBook: 2, extraMs: 800 });
+    const near = { books: 1, hits: 2, before: 2, after: 3, ms: 900 }, wide = { books: 2, hits: 2, before: 3, after: 4, ms: 1200 };
+    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'answer' })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3, around: near });
+    expect(liveResearch({ channel: channelFor('site-chat'), depth: null })).toEqual({ maxRounds: 1, maxCalls: 5, brief: false, inBooks: 3, around: near });
+    expect(liveResearch({ channel: channelFor('site-chat'), depth: 'research' })).toEqual({ maxRounds: 1, maxCalls: 8, brief: false, inBooks: 4, around: wide, perBook: 2, extraMs: 800 });
     expect(liveResearch({ channel: channelFor('email', { trusted: true }), depth: 'answer' })).toBeNull();   // email: the full loop
   });
 });
@@ -251,5 +289,16 @@ describe('replyCap: the writer has room for a two-sided or a study answer (coord
     expect(replyCap({ format: { id: 'prayer' } }, 'low')).toBe(1500);
     expect(replyCap({ format: { id: 'position' } })).toBe(3100);
     expect(replyCap({ format: { id: 'guidance' }, channel: { id: 'email' } })).toBe(3100);
+  });
+});
+
+describe('reply length follows Jev\'s depth, never a word rule', () => {
+  it('research depth on a live channel replaces the short-reply frame; answer/null depth and non-live channels keep it', () => {
+    const site = channelFor('site-chat');
+    expect(frameFor(site, 'research')).toBe(DEPTH_FRAME);
+    expect(frameFor(site, 'answer')).toBe(site.frame);
+    expect(frameFor(site, null)).toBe(site.frame);
+    const mail = Object.values(CHANNELS).find((c) => !c.live);
+    if (mail) expect(frameFor(mail, 'research')).toBe(mail.frame ?? null);
   });
 });

@@ -119,3 +119,15 @@ describe('turn labels', () => {
     expect(tools.label('literal_search')).toBe('Literal Search (BM25)');
   });
 });
+
+describe('context_lookup reads by paragraph_index, not a row offset (11-03: a read at 455 returned 542–554)', () => {
+  it('asks the repo for the paragraphs around the index itself; a copyrighted book is not read', async () => {
+    const around = vi.fn(async (doc, at, { before, after }) => Array.from({ length: before + after + 1 }, (_, k) => ({ id: at - before + k, paragraph_index: at - before + k, text: `p${at - before + k}` })));
+    const deps = { encumberedAmong: async () => new Set(), getParagraphsAround: around, getLinkMeta: async () => new Map([[9, { title: 'Dawn-Breakers' }]]), withLinks: async (r) => r.map(() => ({ url: null })) };
+    const r = await tools.run('context_lookup', { document_id: 9, paragraph_index: 455, before: 2, after: 3 }, { deps });
+    expect(around).toHaveBeenCalledWith(9, 455, { before: 2, after: 3 });
+    expect(r.passages.map((p) => p.paragraph_index)).toEqual([453, 454, 455, 456, 457, 458]);
+    const enc = await tools.run('context_lookup', { document_id: 9, paragraph_index: 455 }, { deps: { ...deps, encumberedAmong: async () => new Set([9]) } });
+    expect(enc).toEqual({ passages: [], copyright: true });
+  });
+});

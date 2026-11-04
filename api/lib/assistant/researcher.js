@@ -147,6 +147,13 @@ export function booksFound({ works = [], searched = [], question = '', n = 3, pe
   return out;
 }
 
+/** The passages the book step reads AROUND: in each of the first `books` books, its best `hits` from its own query (rank order).
+ *  `outs` are the book step's results ({ b, hits, extra }). Pure. */
+export function aroundTargets(books = [], outs = [], { books: nb = 1, hits: nh = 1 } = {}) {
+  return books.slice(0, nb).flatMap((b) => (outs.find((o) => o.b === b && !o.extra)?.hits || [])
+    .filter((p) => p?.document_id != null && p.paragraph_index != null).slice(0, nh));
+}
+
 /**
  * THE SOURCE JEV NAMED (search-plan `drawFrom`: the book or author the answer is to be drawn from — "Gate of the Heart",
  * "Saiedi", "Nabíl") → its library documents and passages. Code resolves the name against the LIBRARY, never the user's
@@ -175,7 +182,7 @@ export async function namedSource(name, question, impl, { maxAuthors = 2 } = {})
   return { works, passages, authors };
 }
 
-export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, perBook = 1, extraMs = Infinity, drawFrom = null }) {
+export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, perBook = 1, extraMs = Infinity, drawFrom = null, around = null }) {
   const t0 = Date.now();
   const { found, works, searched, run, add, addWork } = toolRunner(impl);
   // the source Jev named is resolved BESIDE the planning round (no added wait); its passages and works join before the book step
@@ -242,6 +249,24 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     clearTimeout(timer);
     if (outs.some((o) => o.late)) log.info({ late: outs.filter((o) => o.late).length, extraMs }, 'in-book extra searches past the budget');
     for (const { b, q, hits, late } of outs) steps.push({ tool: 'in_book_search', args: { document_id: b.document_id, query: q }, ...(late ? { late: true } : {}), found: (hits || []).map((p) => add(p)).filter(Boolean).length });
+    // READ AROUND (coordinator 11-03): the main books' best hits are read with their neighbours (context_lookup), so the writer
+    // has the consecutive passages of the story, not single paragraphs (db-24: Nabíl's hit was the order to go on to Tabríz;
+    // the towns before it, Káshán, Qum, Kinár-Gird, Kulayn, never reached the writer). Code, no model call; all at once; a read
+    // past `around.ms` is dropped. A copyrighted book is never read around (run.context_lookup).
+    if (around && impl.around) {
+      const best = aroundTargets(books, outs, around);
+      let t2;
+      const cut = Number.isFinite(around.ms) ? new Promise((r) => { t2 = setTimeout(() => r('late'), around.ms); }) : null;
+      const reads = await Promise.all(best.map(async (p) => {
+        const ref = add(p);
+        const read = run.context_lookup({ ref, before: around.before ?? 2, after: around.after ?? 2 }).catch((err) => `tool failed: ${String(err?.message).slice(0, 160)}`);
+        const out = cut ? await Promise.race([read, cut]) : await read;
+        return { p, out };
+      }));
+      clearTimeout(t2);
+      for (const { p, out } of reads) steps.push({ tool: 'context_lookup', args: { document_id: p.document_id, paragraph_index: p.paragraph_index }, ...(out === 'late' ? { late: true } : {}),
+        found: out === 'late' ? 0 : (String(out).match(/^\[[PW]\d+\]/gm) || []).length });
+    }
   }
   if (!wantBrief) {
     log.info({ steps: steps.map((s) => `${s.tool}:${s.found}`), found: found.size, ms: Date.now() - t0 }, 'researched (one round)');

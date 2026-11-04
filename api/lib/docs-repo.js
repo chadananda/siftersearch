@@ -342,6 +342,23 @@ export async function getParagraphs(docId, { proseOnly = true, limit = 100000, o
     [Number(docId), limit, offset], 'docs-repo:paragraphs');
 }
 
+/** The prose paragraphs AROUND one paragraph_index: up to `before` live paragraphs below it, the paragraph itself and up to
+ *  `after` above it, in order. By paragraph_index, never by OFFSET: paragraph_index also counts the footnotes and headings
+ *  that prose-only reads skip, so an offset of index-before landed ~87 paragraphs late in The Dawn-Breakers (11-03:
+ *  context_lookup at 455, the Báb ordered to Tabríz, returned 542-554, the Badasht chapter). */
+export async function getParagraphsAround(docId, index, { before = 2, after = 2 } = {}) {
+  const kinds = `AND COALESCE(c.blocktype,'paragraph') IN ('paragraph','quote')`;
+  const cols = 'c.id, c.doc_id, c.paragraph_index, c.external_para_id, c.text, c.heading, c.blocktype, c.language';
+  const id = Number(docId), at = Number(index) || 0;
+  const [below, from] = await Promise.all([
+    before > 0 ? queryAll(`SELECT ${cols} FROM content c WHERE c.doc_id = ? AND c.paragraph_index < ? AND c.deleted_at IS NULL ${kinds}
+      ORDER BY c.paragraph_index DESC LIMIT ?`, [id, at, before], 'docs-repo:paragraphs-before') : [],
+    queryAll(`SELECT ${cols} FROM content c WHERE c.doc_id = ? AND c.paragraph_index >= ? AND c.deleted_at IS NULL ${kinds}
+      ORDER BY c.paragraph_index LIMIT ?`, [id, at, after + 1], 'docs-repo:paragraphs-from'),
+  ]);
+  return [...below.reverse(), ...from];
+}
+
 /**
  * Enrichment coverage for one document: how many paragraphs carry a disambiguation note, HyPE, and an
  * aligned original — broken down by the VERSION that stamped them.

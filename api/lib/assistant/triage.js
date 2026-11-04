@@ -47,7 +47,7 @@ export const REACTIONS = {
 // channel is a prior in these instructions only; no code rule sets depth by channel, and no word rule reads it.
 export const DEPTHS = {
   answer: 'a direct answer from the library is enough: a fact, a passage, a definition, a quick explanation, a conversational follow-up',
-  research: 'a fuller researched answer in this reply: the question has several sides or sources to weigh, but one considered reply covers it',
+  research: 'a fuller researched answer in this reply: the question has several sides or sources to weigh, or asks for a story, a life or a sequence of events to be told (what happened, how it unfolded, the stages or timeline), but one considered reply covers it',
   deep_report: 'the person wants (or plainly needs) a thorough study: a report across many sources and aspects, for a paper, a talk, a study group or long reflection, more than one reply can hold',
 };
 export const DEPTH_Q = 'Read with the conversation, the reader and the channel: how deep should the reply to the latest user turn go? The channel is context, not a rule: a letter by email is a considered exchange and leans somewhat toward more research, while a chat leans toward a prompt answer, but what the person asks for and who the reader is decide. Choose deep_report only when the person asks for, or clearly needs, a thorough study.';
