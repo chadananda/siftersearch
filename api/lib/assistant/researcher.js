@@ -13,12 +13,25 @@ import { authorMatch, fold, mainKey } from '../dewey/title-index.js';
 import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
 import { headOf, PASSAGE_CHARS } from './prompt.js';
 import { byTier, hasAuthoritative, tierLabel } from './source-tier.js';
+import { copyClass, COPY_CLASSES } from '../audit/forensics.js';
 export { translationLabel, letterVariants };
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
 // the researcher's tools, by canonical name (tools.js registry); the definitions are generated from the registry's schemas
 export const RESEARCH_TOOL_NAMES = ['combined_search', 'originals_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_trace', 'document_search', 'web_search'];
 export const TOOLS = llmTools(RESEARCH_TOOL_NAMES);
+// THE ENGLISH BESIDE AN ORIGINAL (11-04 digest #147): of an original's linked English copies, the translation of that work
+// (Shoghi Effendi's first, then another translation of the Writing) is its rendering; a compilation, or a letter or talk quoting
+// it, is only the fallback, and says what it is. Stable among equals (the links arrive best first). Pure.
+const RENDERING_CLASSES = new Set(['se-translation', 'writing']);
+export function pickRendering(list = []) {
+  const ranked = (list || []).filter(Boolean).map((t, i) => ({ t, i, cls: copyClass(t) }))
+    .sort((a, b) => COPY_CLASSES.indexOf(a.cls) - COPY_CLASSES.indexOf(b.cls) || a.i - b.i);
+  return ranked.length ? { ...ranked[0], rendering: RENDERING_CLASSES.has(ranked[0].cls) } : null;
+}
+/** The head for the English shown beside original ref: a translation is named one; any other copy is named by its class. */
+export const renderingTitle = (title, ref, pick) => (!pick || pick.rendering ? `${title} (English translation of the original ${ref})`
+  : `${title} (${pick.cls.replace(/-/g, ' ')} copy of the original ${ref} — not its own translation)`);
 /** How many original-language Writings a Bahá'í search keeps beside its English hits (the per-language quota). */
 export const ORIGINALS_QUOTA = 3;
 // a shown passage head in Arabic/Persian: "[P3] Title — Author (fa) · …" (show())
@@ -132,10 +145,13 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
     const linked = (ids.length && impl.translationsOf ? await impl.translationsOf(ids).catch(() => null) : null) || new Map();
     return orig.map((p) => {
       const ref = add(p);
-      const t = (linked.get?.(p.id) || [])[0] || (p.english ? { ...p, id: `${p.id}-en`, text: p.english, language: 'en', english: undefined, translation: translationLabel(null, null) } : null);
-      const tref = t ? add({ ...t, translation: t.translation || 'translation', title: `${t.title || p.title} (English translation of the original ${ref})` }) : null;
+      const pick = pickRendering(linked.get?.(p.id));
+      const t = pick?.t || (p.english ? { ...p, id: `${p.id}-en`, text: p.english, language: 'en', english: undefined, translation: translationLabel(null, null) } : null);
+      const tref = t ? add({ ...t, translation: t.translation || 'translation', title: renderingTitle(t.title || p.title, ref, pick?.t === t ? pick : null) }) : null;
       const o = found.get(ref);
-      if (o && !o.note) o.note = tref ? `ORIGINAL — its linked translation is ${tref}: quote that verbatim beside this original line`
+      if (o && !o.note) o.note = tref ? (pick && pick.t === t && !pick.rendering
+        ? `ORIGINAL — no translation of this work is linked; its English appears in ${tref}, a ${pick.cls.replace(/-/g, ' ')} copy: quote that verbatim beside this original line and name it as that copy, not as the translation`
+        : `ORIGINAL — its linked translation is ${tref}: quote that verbatim beside this original line`)
         : `ORIGINAL — no linked translation: render the key line yourself, marked "provisional translation by Anís", with the original line beside it, linked to this tablet`;
       return [ref, tref];
     }).flat();
