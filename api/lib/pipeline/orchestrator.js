@@ -81,6 +81,7 @@ export async function runStage(docId, stage) {
     if (!ok) { await setStage(docId, stage, 'error', { error: `${script} exited non-zero` }); return false; }
   }
   await setStage(docId, stage, 'done', { version: STAGE_VERSION[stage], error: null });
+  if (stage === 'hype') await (await import('../ops/index-follow.js')).queueFollowIndex('hype', [docId], 'pipeline-hype');   // settled HyPE → hype vectors
   return true;
 }
 

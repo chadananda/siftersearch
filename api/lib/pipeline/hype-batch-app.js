@@ -7,9 +7,12 @@ import { logAIUsage } from '../ai-services.js';
 import { budgetStatus } from './queue.js';
 import { logger } from '../logger.js';
 import { createHypeBatch } from './hype-batch.js';
+import { queueFollowIndex } from '../ops/index-follow.js';
 
 export const makeHypeBatch = (over = {}) => createHypeBatch({
   rag, transport: anthropicBatchTransport({ stage: 'hype' }), langOf, assertSpend: assertSpendAllowed, log: logger,
+  // settled questions go straight to the hype vectors (hype-index on the indexer; the follow loop is the backstop)
+  onSettled: (docIds) => queueFollowIndex('hype', docIds, 'hype-settle', { log: logger }),
   budgetOver: async () => ((await budgetStatus().catch(() => [])) || []).some((b) => b.provider === 'anthropic' && b.over),
   meter: ({ model, docId, ok, usage, error }) => logAIUsage(ok
     ? { provider: 'anthropic', model, serviceType: 'grounding:hype', caller: 'hype-batch', documentId: docId, batch: true, success: true,

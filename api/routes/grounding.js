@@ -141,6 +141,8 @@ export default async function groundingRoutes(fastify) {
         break;
       }
     }
+    // the claims just extracted → the 'concepts' claim vectors (concept-index on the indexer, under the follow cap)
+    if (!dryRun && out.ran.includes('extract') && out.stats.extract?.written > 0) out.claimIndex = await (await import('../lib/ops/index-follow.js')).queueFollowIndex('concepts', [docId], 'concepts-run');
     // Index what was just extracted. Without this the concepts exist only as rows: searchable claims hanging
     // off paragraphs, but not concepts a reader can query in their own right across traditions (§6). Indexing
     // as part of the run means "extracted" and "findable" cannot drift apart — the failure mode that left

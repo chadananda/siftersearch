@@ -19,7 +19,7 @@ const cid = (docId, paraId, part) => `d${docId}_p${paraId}_s${part}`;
 const parseCid = (c) => { const m = /^d(\d+)_p(\d+)_s(\d+)$/.exec(c); return m ? { docId: +m[1], id: +m[2], part: +m[3] } : null; };
 
 export function createHypeBatch({ rag, transport, budgetOver = async () => false, langOf = async () => null, assertSpend = () => {}, meter = () => {},
-  dir = DEFAULT_DIR, now = () => Date.now(), log = console, maxRequests = MAX_REQUESTS, maxBytes = MAX_BYTES, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+  onSettled = null, dir = DEFAULT_DIR, now = () => Date.now(), log = console, maxRequests = MAX_REQUESTS, maxBytes = MAX_BYTES, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const file = path.join(dir, 'state.json');
   const load = () => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return { batches: {}, attempts: {}, split: [] }; } };
   const save = (st) => { fs.mkdirSync(dir, { recursive: true }); const t = `${file}.${process.pid}.tmp`; fs.writeFileSync(t, JSON.stringify(st)); fs.renameSync(t, file); };
@@ -64,6 +64,7 @@ export function createHypeBatch({ rag, transport, budgetOver = async () => false
   /** Collect every ended batch: validate + write through rag.retrieval.settle, meter usage, retry bookkeeping. Idempotent. */
   async function collect() {
     const st = load(); const sum = { checked: 0, ended: 0, written: 0, failed: 0, exhausted: 0, alreadyDone: 0, pending: 0, errors: [] };
+    const wrote = new Set();   // docs that gained questions this collect → onSettled (index follow-through)
     for (const [id, b] of Object.entries(st.batches)) {
       sum.checked++;
       let s; try { s = await transport.status(id); } catch (e) { sum.pending++; sum.errors.push(`status ${id}: ${e.message}`); continue; }
@@ -86,7 +87,7 @@ export function createHypeBatch({ rag, transport, budgetOver = async () => false
         const exhaust = new Set(outcomes.filter((o) => (st.attempts[o.id] || 0) + 1 >= MAX_ATTEMPTS).map((o) => o.id));
         try {
           const r = await rag.retrieval.settle(Number(docId), outcomes, { exhaust });
-          sum.written += r.written; sum.exhausted += r.exhausted; sum.alreadyDone += r.alreadyDone; sum.failed += r.failed.length;
+          sum.written += r.written; if (r.written > 0) wrote.add(Number(docId)); sum.exhausted += r.exhausted; sum.alreadyDone += r.alreadyDone; sum.failed += r.failed.length;
           for (const f of r.failed) { st.attempts[f] = (st.attempts[f] || 0) + 1; if (byDoc[docId]?.[f]?.truncated) (st.split ||= []).includes(f) || st.split.push(f); }
           for (const o of outcomes) if (!r.failed.includes(o.id)) { delete st.attempts[o.id]; st.split = (st.split || []).filter((x) => x !== o.id); }
           b.settled[docId] = true; save(st);
@@ -94,6 +95,7 @@ export function createHypeBatch({ rag, transport, budgetOver = async () => false
       }
       if (allSettled) { delete st.batches[id]; save(st); log.info?.({ batch: id, ...sum }, 'hype-batch collected'); }
     }
+    if (wrote.size && onSettled) { try { await onSettled([...wrote]); } catch (e) { sum.errors.push(`onSettled: ${e.message}`); } }
     return sum;
   }
 

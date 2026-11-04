@@ -7,6 +7,7 @@
 import { execSync } from 'node:child_process';
 import os from 'node:os';
 import { setRun } from './state.js';
+import { queueFollowIndex } from '../ops/index-follow.js';
 const { rag, withUsageScope, langOf } = await import('../rag-adapter/index.js');
 const { setAIContext } = await import('../ai-context.js');   // stamp the live stage onto the metering scope
 const { acquireGraphBand, releaseGraphBand } = await import('./lock.js'); // graph-band mutex (project→dedup only)
@@ -15,7 +16,11 @@ const { acquireGraphBand, releaseGraphBand } = await import('./lock.js'); // gra
 // half price, restart-safe. HYPE_MODE=sync (urgent single-doc work) or a non-Anthropic model override keeps the live path.
 async function hypeStage(docId, opts) {
   const { hypeMode } = await import('./hype-batch.js');
-  if (hypeMode() === 'sync' || (opts.model && !/^claude/i.test(opts.model))) return rag.retrieval.index(docId, opts);
+  if (hypeMode() === 'sync' || (opts.model && !/^claude/i.test(opts.model))) {
+    const r = await rag.retrieval.index(docId, opts);
+    await queueFollowIndex('hype', [docId], 'hype-sync');   // the batch path queues from its settle hook (hype-batch-app.js)
+    return r;
+  }
   const { makeHypeBatch } = await import('./hype-batch-app.js');
   const r = await makeHypeBatch().run([docId], { noDisambig: opts.noDisambig, upgrade: opts.upgrade, ...(opts.model ? { model: opts.model } : {}) });
   opts.onProgress?.(r.written, r.written);

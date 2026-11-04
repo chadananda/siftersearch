@@ -200,6 +200,12 @@ export const newDocsMissingLayer = async (layer, { days = 7, limit = 200 } = {})
     WHERE i.layer = ? AND i.total > 0 AND i.indexed = 0 AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.created_at >= ?
     ORDER BY i.core DESC, i.doc_id LIMIT ?`, [layer, new Date(Date.now() - days * 86400000).toISOString(), limit], 'coverage:new-missing')).map((r) => r.id);
 
+/** One layer's rows that HAVE derived data, on live primary-scope documents → [{ doc_id, generated, current, indexed }] —
+ *  the index follower's input (ops/index-follow.js; one pass per 30 min from the single-instance indexer). Supplemental
+ *  (scraped-site) documents are left out, as `--scope library` leaves them out of the indexer. */
+export const layerRowsWithData = (layer) => queryAll(`SELECT i.doc_id, i.generated, i.current, i.indexed FROM index_coverage i JOIN docs d ON d.id = i.doc_id
+    WHERE i.layer = ? AND i.generated > 0 AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND COALESCE(d.scope, 'primary') = 'primary'`, [layer], 'coverage:layer-rows');
+
 /** The most recently ADDED documents with every layer's ledger row — Dewey's "added books" column (Chad 10-17). */
 export async function recentDocsCoverage(limit = 25) {
   const docs = await queryAll(`SELECT id, title, author, religion, language, collection, created_at, paragraph_count, cover_url FROM docs

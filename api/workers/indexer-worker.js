@@ -73,6 +73,19 @@ async function keywordLoop() {
   }
 }
 
+// HyPE questions + concept claims → Qdrant without a manual run (11-04; ops/index-follow.js): every 30 min, docs whose
+// ledger signature moved since their last clean index are queued as hype-index / concept-index under the daily cap
+// (INDEX_FOLLOW_USD_DAY, default $1, 0 = off). This service runs one instance, so the pass runs once, not ×6.
+async function indexFollowLoop() {
+  const { followPass } = await import('../lib/ops/index-follow.js');
+  await nap(120_000);   // let the rolling refresh move first after a restart
+  while (!isDraining()) {
+    const r = await followPass().catch((err) => { logger.warn({ err: err.message }, 'index-follow: pass failed'); return null; });
+    for (const [field, x] of Object.entries(r || {})) if (x?.due) logActivity('index', `${field} follow: ${x.due} docs behind their SQLite data → queued`);
+    await nap(1_800_000);
+  }
+}
+
 // Phase 0 hot layer (storage plan §6.6): after any restart — of this service, of qdrant-hot, or of tower — re-send whatever
 // phrase points the RAM disk lost since its last snapshot. Cheap when nothing is missing (id lookups); the queue dedupes it.
 if (process.env.QDRANT_HOT_URL) {
@@ -81,4 +94,4 @@ if (process.env.QDRANT_HOT_URL) {
 }
 
 await runService({ name: process.env.name || 'siftersearch-indexer', registry: INDEX_REPORTS, lanes: INDEX_LANES, laneWorkers: LANE_WORKERS,
-  loops: [rollingCoverage, keywordLoop] });
+  loops: [rollingCoverage, keywordLoop, indexFollowLoop] });

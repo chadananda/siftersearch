@@ -3,6 +3,7 @@
 // small import graph — a change to Dewey, Anís or any other ops job never reaches it, so a deploy leaves indexing running.
 // reports.js includes them too (one registry for queueing), but the reports worker never claims them.
 import { phraseIndexJob, phraseHotReconcileJob } from './phrase-index-job.js';
+import { followedIndexJob } from './index-follow.js';
 import { sectionIndexJob } from './section-index-job.js';
 import { keywordFillJob } from './keyword-fill-job.js';
 import { coverageRefreshJob } from './coverage-job.js';
@@ -14,9 +15,10 @@ import { phraseF16BuildJob } from './phrase-f16-build.js';
 export const INDEX_REPORTS = {
   'phrase-index': phraseIndexJob,       // params: { docs? | scope?, maxUsd (required), budgetKey } — one indexer at a time
   'phrase-hot-reconcile': phraseHotReconcileJob,   // phase 0: re-send phrase units qdrant-hot lost (no spend); queued at indexer start
-  // HyPE questions and concept claims each have their OWN vector store + collection, so they index beside the phrase build
-  'hype-index': (p = {}) => phraseIndexJob({ ...p, field: 'hype' }),
-  'concept-index': (p = {}) => phraseIndexJob({ ...p, field: 'concepts' }),
+  // HyPE questions and concept claims each have their OWN vector store + collection, so they index beside the phrase build.
+  // A clean run marks its docs for the follow loop (ops/index-follow.js); { scanOnly: true } is the dry run (est_usd, no spend)
+  'hype-index': (p = {}) => followedIndexJob('hype', p),
+  'concept-index': (p = {}) => followedIndexJob('concepts', p),
   'phrase-f16-build': phraseF16BuildJob,   // storage plan R12: phrases (main+hot) → float16 collection on qdrant-main (/faster); params { mode: setup|copy|reconcile|finish }
   'section-index': sectionIndexJob,
   'keyword-fill': keywordFillJob,       // params: { ids?, limit?, scope?, significant? } — BM25 gaps from the ledger, core first (Chad 10-16)
