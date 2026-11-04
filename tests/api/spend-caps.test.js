@@ -36,10 +36,10 @@ describe('the dated schedule', () => {
 });
 
 describe('the improvement cycle group (Chad 11-04)', () => {
-  it('improve-* is its own group (ahead of anis), unbudgeted until IMPROVE_DAILY_USD is set', () => {
+  it('improve-* is its own group (ahead of anis); a large start budget (Chad 11-04: cover everything, reduce over time), env overrides', () => {
     expect(groupOf('improve-judge')).toBe('improve');
     expect(groupOf('improve-analysis')).toBe('improve');
-    expect(capFor('improve', '2026-11-04', undefined, {})).toBe(Infinity);
+    expect(capFor('improve', '2026-11-04', undefined, {})).toBe(200);
     expect(capFor('improve', '2026-11-04', undefined, { IMPROVE_DAILY_USD: '5' })).toBe(5);
     expect(capFor('improve', '2026-11-04', undefined, { IMPROVE_DAILY_USD: '5', SPEND_CAP_IMPROVE_USD: '7' })).toBe(7);
     expect(capFor('anis', '2026-11-04', undefined, { IMPROVE_DAILY_USD: '5' })).toBe(30);
