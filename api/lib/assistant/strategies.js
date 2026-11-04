@@ -6,7 +6,7 @@
 import { strategyOf } from './strategy-choice.js';
 import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
-import { booksFound } from './researcher.js';
+import { booksFound, namedSource } from './researcher.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
 const PER_SIDE = 6, MAX_PASSAGES = 12;
@@ -68,7 +68,9 @@ export async function comparison(choice, ctx) {
 }
 
 export async function understanding(choice, ctx) {
-  const { messages, query, distil, search, plan, profile = {}, decisions = NO_LOG, searchIn, inBooks = 0 } = ctx;
+  const { messages, query, distil, search, plan, profile = {}, decisions = NO_LOG, searchIn, inBooks = 0, drawFrom = null, sourceTools = null } = ctx;
+  // the book / author Jev named as the source (plan.drawFrom), resolved beside the search (researcher namedSource)
+  const sourceP = drawFrom && sourceTools ? namedSource(drawFrom, query, sourceTools).catch(() => null) : null;
   const religion = plan?.filters?.religion || profile.default_tradition || null;
   decisions.record('understanding:scope', { by: plan?.source?.religion === 'jev' ? 'jev' : 'code', saw: { plan: plan?.filters?.religion ?? null, reader: profile.default_tradition ?? null },
     options: ['one tradition', 'whole library'], chosen: religion || 'whole library', reason: religion ? 'tradition from the plan / reader' : 'no tradition known' });
@@ -83,10 +85,18 @@ export async function understanding(choice, ctx) {
   }
   decisions.record('understanding:coverage', { by: 'code', saw: hits.length, options: ['covered', 'thin', 'missing'], chosen: c, reason: `${hits.length} passages` });
   let top = hits.slice(0, MAX_PASSAGES);
+  const src = sourceP ? await sourceP : null;
+  if (src) {
+    decisions.record('understanding:named-source', { by: 'jev', saw: { name: drawFrom, authors: src.authors, works: src.works.map((w) => w.id) },
+      options: ['drawn from the named source'], chosen: `${src.passages.length} passages`, reason: 'Jev named the book or author the answer is drawn from' });
+    // the named source's own passages lead (the reader asked what THAT book / author says)
+    const had = new Set(src.passages.map((p) => `${p.document_id}:${p.paragraph_index}`));
+    top = [...dedupe(src.passages), ...top.filter((p) => !had.has(`${p.document_id}:${p.paragraph_index}`))];
+  }
   if (searchIn && inBooks && top.length) {
     // LIVE chat's book step (coordinator 11-03: the narrative passages, Saiedi): the top books the search found, each searched
-    // inside with the same query, in parallel; a failed book costs only its own passages
-    const books = booksFound({ searched: [{ query, docs: top.map((p) => p.document_id) }], n: inBooks });
+    // inside with the same query, in parallel; a failed book costs only its own passages (the named source's works first)
+    const books = booksFound({ works: src?.works || [], searched: [{ query, docs: top.map((p) => p.document_id) }], question: query, n: inBooks });
     const inside = await Promise.all(books.map((b) => searchIn(b.query, b.document_id).catch(() => [])));
     const had = new Set(top.map((p) => `${p.document_id}:${p.paragraph_index}`));
     const more = dedupe(inside.flat()).filter((p) => !had.has(`${p.document_id}:${p.paragraph_index}`));

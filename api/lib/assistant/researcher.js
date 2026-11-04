@@ -8,6 +8,7 @@
 import { logger } from '../logger.js';
 import { withDeadlines } from './deadline.js';
 import { run as runTool, llmTools, canonical, toPassage, translationLabel, letterVariants } from './tools.js';
+import { authorMatch } from '../dewey/title-index.js';
 export { translationLabel, letterVariants };
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
@@ -129,19 +130,50 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
 const ONE_ROUND = 'THIS TURN HAS ONE ROUND: a reader is waiting. Ask now, in this one reply, for EVERY tool call the answer needs (they run in parallel; you will not see their results and write no brief) — search the main question and each of its sides or aspects separately, and add a lookup or trace only where the question calls for one.';
 const BOOK_STEP = 'After your round, the library is searched again INSIDE the books your searches found, for the passages that tell the story or make the argument. When the answer lies in a particular book or author (a history such as The Dawn-Breakers, a study such as Gate of the Heart), also call document_search for that book, so it is one of them.';
 
-/** The books a one-round research found, for the in-book step: works asked for by title first (with the reader's question),
+/** The books a one-round research found, for the in-book step: works asked for by title first (with the reader's question; stubs skipped),
  *  then each search's documents round-robin by rank (with the query that found it), distinct, at most n. Pure. */
 export function booksFound({ works = [], searched = [], question = '', n = 3 }) {
   const out = [], seen = new Set();
   const take = (id, query) => { const k = Number(id); if (!Number.isFinite(k) || seen.has(k) || out.length >= n) return; seen.add(k); out.push({ document_id: k, query }); };
-  for (const w of works) take(w.id, question);
+  for (const w of works) if (!(Number(w.paragraph_count) < 10)) take(w.id, question);   // a stub (a catalogue entry, a tag page) is no book
   for (let rank = 0; out.length < n && searched.some((s) => rank < s.docs.length); rank++) for (const s of searched) if (rank < s.docs.length) take(s.docs[rank], s.query);
   return out;
 }
 
-export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0 }) {
+/**
+ * THE SOURCE JEV NAMED (search-plan `drawFrom`: the book or author the answer is to be drawn from — "Gate of the Heart",
+ * "Saiedi", "Nabíl") → its library documents and passages. Code resolves the name against the LIBRARY, never the user's
+ * words: the work by title (document_search) beside a wide search of the name with the question; the documents whose
+ * AUTHOR is that name give the author's library names (at most 2: "saiedi", "Nader Saiedi"), and the question is then
+ * searched in each author's own works (fused_search filters.author; 11-03: Saiedi's words were never found by topic alone).
+ * A title match of a stub (under 10 paragraphs) is not the work. → { works, passages, authors }.
+ */
+export async function namedSource(name, question, impl, { maxAuthors = 2 } = {}) {
+  const nm = String(name || '').trim();
+  if (!nm || !(impl?.probe || impl?.search)) return { works: [], passages: [], authors: [] };
+  const [w, hits] = await Promise.all([
+    impl.work ? impl.work(nm).catch(() => null) : null,
+    (impl.probe || impl.search)(`${nm} ${question}`.slice(0, 400)).catch(() => []),
+  ]);
+  const works = w?.doc?.id != null && !(Number(w.doc.paragraph_count) < 10) ? [w.doc] : [];
+  const authors = [...new Set((hits || []).filter((p) => p.author && authorMatch(nm, p.author) === true).map((p) => p.author))].slice(0, maxAuthors);
+  const own = impl.searchBy ? await Promise.all(authors.map((a) => impl.searchBy(question, a).catch(() => []))) : [];
+  const isWork = (p) => works.some((x) => Number(x.id) === Number(p.document_id));
+  const passages = [...(hits || []).filter((p) => authors.includes(p.author) || isWork(p)), ...own.flat()];
+  // each author's best-ranked document joins the works, so the book step reads inside it
+  for (const [i, a] of authors.entries()) {
+    const top = own[i]?.[0] || hits.find((p) => p.author === a);
+    if (top?.document_id != null && !isWork(top)) works.push({ id: Number(top.document_id), title: top.title, author: a });
+  }
+  return { works, passages, authors };
+}
+
+export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, drawFrom = null }) {
   const t0 = Date.now();
-  const { found, works, searched, run, add } = toolRunner(impl);
+  const { found, works, searched, run, add, addWork } = toolRunner(impl);
+  // the source Jev named is resolved BESIDE the planning round (no added wait); its passages and works join before the book step
+  const userQ = clipText([...messages].reverse().find((m) => m.role === 'user')?.content, 300);
+  const sourceP = drawFrom ? namedSource(drawFrom, userQ, impl).catch((err) => { log.warn({ drawFrom, err: String(err?.message).slice(0, 160) }, 'named source failed'); return null; }) : null;
   const convo = messages.slice(-7).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: clipText(m.content, 3000) }));
   const msgs = [{ role: 'system', content: wantBrief ? RESEARCH_SYSTEM : `${RESEARCH_SYSTEM}\n\n${ONE_ROUND}${inBooks && impl.searchIn ? ` ${BOOK_STEP}` : ''}` }, ...convo];
   const steps = [];
@@ -176,10 +208,16 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     }
     if (!wantBrief && (round === maxRounds - 1 || calls >= maxCalls)) break;
   }
+  const src = sourceP ? await sourceP : null;
+  if (src) {
+    for (const w of src.works) addWork(w);
+    steps.push({ tool: 'named_source', args: { name: drawFrom, authors: src.authors, works: src.works.map((w) => w.id) }, found: src.passages.map((p) => add(p)).filter(Boolean).length });
+  }
   if (!wantBrief && inBooks && impl.searchIn) {
     // the BOOK STEP (coordinator 11-03): code, no model call — each top book searched with the query that found it, in parallel
-    const question = clipText([...messages].reverse().find((m) => m.role === 'user')?.content, 300);
-    const books = booksFound({ works: [...works.values()], searched, question, n: inBooks });
+    // (the named source's works come first: booksFound takes works before searched documents)
+    const question = userQ;
+    const books = booksFound({ works: [...(src?.works || []), ...works.values()], searched, question, n: inBooks });
     const outs = await Promise.all(books.map(async (b) => ({ b, hits: await impl.searchIn(b.query, b.document_id).catch((err) => {
       log.warn({ document_id: b.document_id, err: String(err?.message).slice(0, 160) }, 'in-book search failed'); return []; }) })));
     for (const { b, hits } of outs) steps.push({ tool: 'in_book_search', args: b, found: (hits || []).map((p) => add(p)).filter(Boolean).length });
@@ -216,6 +254,13 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
     // inside one book: the query as written, no planner (the book IS the scope) — research's book step
     searchIn: async (query, documentId) => (await passages('fused_search', { query, limit: 5, filters: { documentId: Number(documentId) } }))
       .filter((p) => String(p.text || '').length <= 8000).map(shape),
+    // a wide plain search (namedSource's probe for the named author's documents)
+    probe: async (query) => (await passages('fused_search', { query, limit: 20 })).map(shape),
+    // inside one author's works (namedSource): the author's library name as the filter
+    searchBy: async (query, author) => (await passages('fused_search', { query, limit: 6, filters: { author } }))
+      .filter((p) => String(p.text || '').length <= 8000).map(shape),
+    // a work by its title (document_search) → { doc, others } (toolRunner's and namedSource's shape)
+    work: async (title) => { const r = await runTool('document_search', { title }, ctx); return r?.works?.length ? { doc: r.works[0], others: r.works.slice(1) } : null; },
     // the found passage's own title/author/religion label its neighbours (ctx.meta), as before
     around: async (p, before, after) => (await runTool('context_lookup', { document_id: p.document_id, paragraph_index: Number(p.paragraph_index) || 0, before, after },
       { ...ctx, meta: { title: p.title, author: p.author, religion: p.religion } })).passages,
@@ -240,5 +285,5 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
         title: `${p.title}${role === 'original' ? tag('original') : role === 'possible_original' ? tag('possible original') : ''}` }));
     },
     web: async (query) => { const r = await runTool('web_search', { query }, ctx); return r.text ? { text: r.text, citations: r.citations.map((url) => ({ url })) } : null; },
-  }, { search: [], around: [], original: [], translation: [], wordStudy: null });
+  }, { search: [], probe: [], searchBy: [], work: null, around: [], original: [], translation: [], wordStudy: null });
 }

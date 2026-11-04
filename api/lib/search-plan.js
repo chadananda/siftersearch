@@ -192,6 +192,12 @@ export function buildPlan(answers, { given = {} } = {}) {
     const rq = answers.request || {}, lg = answers.language || {};
     if (rq.choice && rq.choice !== 'plain' && REQUESTS[rq.choice] && (rq.confidence ?? 0) >= FIELD_MIN_CONFIDENCE) { plan.request = rq.choice; plan.source.request = 'jev'; }
     if (lg.choice && lg.choice !== 'none' && LANGUAGES[lg.choice] && (lg.confidence ?? 0) >= FIELD_MIN_CONFIDENCE) { plan.language = { lang: lg.choice, name: LANGUAGE_NAMES[lg.choice] }; plan.source.language = 'jev'; }
+    // the named book / author the answer is drawn from (Jev chose among the turn's own name spans; researcher namedSource resolves it)
+    const df = answers.draw_from || {};
+    if (typeof df.choice === 'string' && df.choice.trim() && df.choice !== 'none' && (df.confidence ?? 0) >= FIELD_MIN_CONFIDENCE) {
+      plan.drawFrom = { name: df.choice.trim(), confidence: df.confidence };
+      plan.source.drawFrom = 'jev';
+    }
     if (!plan.comparative) {
       if (t.choice && t.choice !== 'none' && TRADITIONS[t.choice] && (t.confidence ?? 0) >= MIN_CONFIDENCE) {
         plan.filters.religion = t.choice;
@@ -249,6 +255,9 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
   // fields of his decision (Chad: "don't try to use deterministic parsing of words to gather intent").
   const facts = turnFacts(messages);
   const state = jevState({ messages, card: messages.card ?? null, turns: 6, chars: 600, clean: stripMarkup });
+  // the named things of the conversation's last user turns (structure: capitalised spans) are Jev's OPTIONS for the source
+  // the answer is drawn from — Jev chooses, or none (11-03 goth: "how does Saiedi explain…" never reached Gate of the Heart)
+  const sources = drawFromCriteria(messages);
   // once Jev has decided the turn hunts WORDING, the words to hunt are read by structure: a quoted span (never one the
   // assistant itself said earlier in the thread, quoted back — r5), else the message minus its asking frame, else all of it
   const said = messages.slice(0, -1).filter((m) => m.role === 'assistant').map((m) => String(m.content || ''));
@@ -325,6 +334,7 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
           about: { type: 'choice', instructions: 'What is the latest user turn ABOUT?', criteria: ABOUT },
           request: { type: 'choice', instructions: 'Does the latest user turn ask for a text in its ORIGINAL language, or for a TRANSLATION — or is it a plain request?', criteria: REQUESTS },
           language: { type: 'choice', instructions: 'Does the latest user turn name the language the ANSWER should be written in ("in Hindi", "answer in Spanish", "بالعربية")? Answer none otherwise.', criteria: LANGUAGES },
+          ...(sources ? { draw_from: { type: 'choice', instructions: DRAW_FROM_ASK, criteria: sources } } : {}),
         },
       }),
       signal: AbortSignal.timeout(timeoutMs),
@@ -461,6 +471,18 @@ export async function planSearch(input, opts = {}) {
   return namedP || mentionsP ? { ...out, lookup_ms: Date.now() - tw } : out;
 }
 
+// DRAW-FROM (11-03): which named book or author the answer is to be drawn from. The options are the conversation's own
+// name spans (named-object nameSpans: structure, not meaning); Jev reads them in context and chooses one or none.
+export const DRAW_FROM_ASK = 'Is the answer to be drawn from a particular BOOK or AUTHOR the conversation names — the reader asks what that book says or how that author explains, presents or narrates something ("In Gate of the Heart, how…", "How does Saiedi explain…", "Nabíl writes…")? Choose that name. Answer none when no book or author is the source — a person who is only the SUBJECT of the question (whom the question is about) is not a source.';
+const DRAW_FROM_NONE = 'none: no named book or author is the source; the names are subjects of the question, or there are none';
+/** The draw-from options for a conversation: the name spans of its last two user turns (latest first) + none, or null. Pure. */
+export function drawFromCriteria(messages, max = 8) {
+  const users = (messages || []).filter((m) => m.role === 'user').slice(-2).reverse();
+  const spans = [...new Set(users.flatMap((m) => nameSpans(stripMarkup(String(m.content || '')))))].slice(0, max);
+  if (!spans.length) return null;
+  return { ...Object.fromEntries(spans.map((n) => [n, `${n}: the answer is drawn from this named book or author's own writing`])), none: DRAW_FROM_NONE };
+}
+
 // Jev reports a choice's confidence either directly or as its share of the distribution.
 function normalizeAnswers(a) {
   if (!a) return null;
@@ -469,5 +491,5 @@ function normalizeAnswers(a) {
     const c = x.choice ?? x.value ?? null;
     return { choice: c, confidence: x.confidence ?? x.distribution?.[c] ?? 0 };
   };
-  return { tradition: choice(a.tradition), author: choice(a.author), shape: choice(a.shape), about: choice(a.about), request: choice(a.request), language: choice(a.language), comparative: a.comparative };
+  return { tradition: choice(a.tradition), author: choice(a.author), shape: choice(a.shape), about: choice(a.about), request: choice(a.request), language: choice(a.language), draw_from: choice(a.draw_from), comparative: a.comparative };
 }

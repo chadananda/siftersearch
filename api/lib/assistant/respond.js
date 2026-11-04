@@ -627,7 +627,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const live = liveResearch(direction);
   const researchOn = !fast && !conversational && !work && !(live && strategyOf(direction.strategy))
     && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
-  const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}),
+  const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}), drawFrom: plan?.drawFrom?.name || null,
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;
   const researched = R?.passages?.length || R?.brief ? R : null;
@@ -685,7 +685,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     ? await timed('strategy', () => runStrategy(direction.strategy, { messages, question, plan, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
       profile, decisions: direction.decisions, deps: d,
       // a live chat's strategy gets the same in-book step as its researcher (coordinator 11-03: goth questions route to understanding)
-      ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn } : {}) })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
+      // and the source Jev named (plan.drawFrom → researcher namedSource), resolved beside the strategy's own search
+      ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn } : {}),
+      ...(live && plan?.drawFrom?.name ? { drawFrom: plan.drawFrom.name, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}) })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
     : null;
   // A POSITION question ("the Bahá'í position on socialism, equality and property") → its themes, each searched, the
   // authoritative texts first (assistant/position.js; Chad 10-19: "extremely shallow and wishy washy")
