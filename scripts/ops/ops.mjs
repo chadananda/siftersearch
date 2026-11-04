@@ -12,6 +12,7 @@
 //   node scripts/ops/ops.mjs anis-trace <thread|thread:round>  an Anís thread / turn: every search (tool, query, ranked hits), writer passages, citations
 //   node scripts/ops/ops.mjs search-trace [<traceId>] [--query w --tool t --doc id|title --thread id --turn id --endpoint e --days n --limit n --zero --slow ms]
 //   node scripts/ops/ops.mjs search-replay <traceId|thread:round>  re-run on current code (no LLM): old vs new ranks
+//   node scripts/ops/ops.mjs anis-strategies [--json]  (Anís strategy graph: versions, node paths, activities)
 //   node scripts/ops/ops.mjs jev-gates [--days 7] | jev-bank <gate> [--chosen X --q question --wrong|--right|--unlabelled --since 7d --limit n --state] | jev-label <call_id> <answer> [--q question --basis note] | jev-try <gate> <variant> [--n 200 --params '{json}' --chosen X --stored --since 30d --any --max-usd 2]  (Jev decision-gate bank + tuning; --json for JSON)
 //   (the three print tables; --json prints the API's JSON)
 // Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key — the key requireInternal checks).
@@ -102,6 +103,16 @@ else if (['anis-trace', 'search-trace', 'search-replay'].includes(cmd)) {   // s
       days: val('--days'), limit: val('--limit') || 30, slowerThan: val('--slow'), sort: flag('--slow') ? 'slow' : undefined, zeroOnly: flag('--zero') ? 1 : undefined }).filter(([, v]) => v != null && v !== ''));
     await show(await call('GET', `/search-trace?${qs}`), traceListText);
   } else { console.error('usage: ops.mjs anis-trace <thread|thread:round> | search-trace [<traceId>] [--query --tool --doc --thread --turn --endpoint --days --limit --zero --slow ms] | search-replay <traceId|thread:round>  [--json]'); process.exit(2); }
+}
+else if (cmd === 'anis-strategies') {   // Anís strategy graph (strategies-repo): each strategy's active version + its node path, the store's rev/source
+  const j = await call('GET', '/anis/strategies');
+  if (flag('--json')) await out(j);
+  else {
+    const latest = new Map(); for (const s of j.strategies) if (!latest.has(s.id) || latest.get(s.id).version < s.version) latest.set(s.id, s);
+    const path = (g) => { const seen = [], next = new Map(); for (const e of g?.edges || []) if (e.on === '*') next.set(e.from, e.to); for (let n = g?.entry; n && n !== '$end' && !seen.includes(n);) { seen.push(n); n = next.get(n); } return seen.join(' → '); };
+    await new Promise((r) => process.stdout.write(`ANÍS STRATEGIES · rev ${j.rev} · ${j.source}${j.db ? ` (${j.db})` : ''} · ${j.templates.length} templates · ${j.steps.length} steps · ${j.activities?.length ?? 0} activities\n`
+      + [...latest.values()].map((s) => `${`${s.id}@${s.version}`.padEnd(18)} ${String(s.name).padEnd(14)} ${s.status.padEnd(7)} ${path(s.graph)}`).join('\n') + '\n', r));
+  }
 }
 else if (cmd === 'jev-gates') {   // every Jev decision gate: calls, answer mix, gold coverage/accuracy, shadow agreement, $ of a 200-call experiment
   const j = await call('GET', `/jev/gates?days=${val('--days') || 7}`);

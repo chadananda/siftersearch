@@ -9,6 +9,7 @@ import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
 import { PICKTHALL, layoutTotal, quranRange } from './numbering.js';
 import { isHeadingRow } from './prayer-shelf.js';
+import { render, template } from './activities/templates.js';
 
 export const KJV = 'The Bible (KJV)';
 const BIBLE = {
@@ -69,7 +70,8 @@ export function verseRows(rows, verse, verseEnd = null) {
   return { rows: rows.slice(Math.max(0, at(verse) - 1), at(to) + 2), exact: false };
 }
 
-export const REFERENCE_HOW = (ref, exact) => `The reader gave the reference ${ref.label}. Quote the passage VERBATIM from the passages (name the translation: the King James Bible, Pickthall's or Yusuf Ali's Qur’án, the Gita's translator), with its link; one line of context at most. ${exact ? '' : 'This edition does not number the verses: say the chapter is given and the lines quoted are the APPROXIMATE place of the verse asked for.'}${ref.whole ? ' The whole chapter was asked for: quote the whole chapter, every line of the passages in order (a very long chapter: as much as the passages hold, then the link to read on).' : ''}`.trim();
+export const REFERENCE_HOW = (ref, exact) => render('reference.how', {   // words = template rows (strategy-seed.js)
+  label: ref.label, approx: exact ? '' : template('reference.approx'), whole: ref.whole ? template('reference.whole') : '' }).trim();
 
 const hit = (r, doc, theme) => ({ id: r.id, text: r.text, title: doc.title || doc.book, author: doc.author, document_id: doc.id ?? doc.doc_id, paragraph_index: r.paragraph_index,
   religion: doc.religion ?? null, collection: doc.collection ?? null, language: doc.language ?? null, source_url: r.url || null, theme });

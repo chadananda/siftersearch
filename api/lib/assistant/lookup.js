@@ -11,6 +11,7 @@ import { isCoreLiterature } from '../rights/canonical.js';
 import { firstPerson } from '../authorship/reader.js';
 import { authorAuthority } from '../authority.js';
 import { isPeriodical, traceQuote } from './quote-origin.js';
+import { render } from './activities/templates.js';
 
 const ROMAN = /^(?=[ivxlcdm]+$)m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$/i;
 const romanToInt = (r) => { const v = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 }; let n = 0, p = 0;
@@ -113,15 +114,10 @@ async function byVerseTable(w, ref, heads, inRange) {
 
 const PAGE_MARK = /\[pg\s*\d+\]\s*/gi;
 /** The writer's instruction for a numbered reference: the passage itself, verbatim, in one blockquote. Pure. */
-export function referenceHow(r) {
+export function referenceHow(r) {   // words = template rows (strategy-seed.js); slots filled here
   const label = r?.label || `${r?.work?.doc?.title || 'the work'} ${r?.ref?.num ?? ''}`.trim();
-  const approx = r?.exact === false && r.approx
-    ? ` This edition does not number its ${r.approx.unit}s: the place was counted within chapter ${r.approx.chapter}, so it is approximate — say so in the one framing line.`
-    : '';
-  return `The reader asked for a numbered passage (${label}). The reply IS that passage: give every passage below VERBATIM, in order, `
-    + `whole, in ONE markdown blockquote (paragraphs separated by a line holding only ">"; leave out page markers like "[pg 49]"), ending `
-    + `with the line "> — [${label}](URL of the first passage)". At most one short framing line before it.${approx} No interpretation, `
-    + 'no summary, no opinion, no comment on what the library holds, nothing after the quotation. Never put your own words in a blockquote.';
+  const approx = r?.exact === false && r.approx ? render('lookup.reference.approx', { unit: r.approx.unit, chapter: r.approx.chapter }) : '';
+  return render('lookup.reference.how', { label, approx });
 }
 
 /** The reply for a numbered reference, checked: when its blockquotes do not hold every passage whole, code writes it — the

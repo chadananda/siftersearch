@@ -4,11 +4,12 @@
 // Deps (injectable via ctx.deps): docs-repo listDocs. Search: respond.js executeSearch with the author filter.
 import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
+import { render } from './activities/templates.js';
 
 export const UHJ = 'Universal House of Justice';
 const MAX = 8;
 
-export const GUIDANCE_HOW = (dates) => `The reader asks for the Universal House of Justice's guidance. The passages are its letters, NEWEST FIRST (each header's theme is the letter's date${dates.length ? `: ${dates.join(', ')}` : ''}). Lead with the most recent and say its date; where an earlier letter differs, say which is current and that the later one supersedes it. Quote the letters' own words. The House of Justice gives guidance and legislates — present these as its guidance on the matter, never as interpretation of the Writings; do not add views it has not stated.`;
+export const GUIDANCE_HOW = (dates) => render('guidance.how', { dates: dates.length ? render('guidance.dates', { dates: dates.join(', ') }) : '' });   // words = template rows
 
 /** A letter's date from its document: YYYY-MM-DD in the file name, else the year. Pure. */
 export const dateOf = (doc = {}) => {

@@ -226,6 +226,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     }
     const lint = lintReply(reply);
     const path = await finish(reply, 'answered', { engine: 'anis', ...(deepReport ? { deep_report: deepReport } : {}), evidence: r.evidence ?? null, recipe: r.plan?.shape ?? null,
+      ...(r.steps ? { steps: r.steps } : {}),   // the strategy graph's trace [{node, step@v, ms, edge}], beside path.jev_calls
       // how the strategy was chosen (jev | jev:cached | backstop + why) and what the search was fed, for the thread view
       plan: { shape: r.plan?.shape ?? null, provenance: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, overridden: r.plan?.overridden ?? null,
         quote: r.plan?.quote?.phrase ?? null, ms: r.plan?.plan_ms ?? null, history_turns: Math.max(0, messages.length - 1), search_query: r.search_query ?? null,

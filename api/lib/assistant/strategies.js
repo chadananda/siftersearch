@@ -8,14 +8,23 @@ import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
 import { booksFound, namedSource } from './researcher.js';
 import { drawFromCriteria } from '../search-plan.js';
+import { render, template } from './activities/templates.js';
+import { strategyGraphOn, runStrategyGraph } from './activities/graph.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
 const PER_SIDE = 6, MAX_PASSAGES = 12, MAX_COMPARED = 18;
 
-export const COMPARISON_HOW = (sides, coverage) => `This is a COMPARISON across ${sides.length ? sides.join(', ') : 'the traditions the passages come from'}. Answer side by side: one short section per tradition, in the order named, built ONLY from that tradition's own passages (the passage header's theme names its tradition) and in its own terms; then two or three sentences on the common ground and the real differences — no false harmony.
-${Object.entries(coverage).filter(([, c]) => c === 'missing').map(([s]) => `The library returned NOTHING from ${s} on this: say so plainly in that section ("the library has nothing from ${s} on this") — never fill it from another tradition or from memory.`).join('\n')}${Object.entries(coverage).filter(([, c]) => c === 'thin').map(([s]) => `Only a passage or two came from ${s}: say the coverage is thin there.`).join('\n')}`.trim();
+// the writer's instruction: words = template rows (strategy-seed.js → strategies-repo), slots filled here
+export const COMPARISON_HOW = (sides, coverage) => render('comparison.how', {
+  sides: sides.length ? sides.join(', ') : template('comparison.sides_default'),
+  missing: Object.entries(coverage).filter(([, c]) => c === 'missing').map(([s]) => render('comparison.missing', { side: s })).join('\n'),
+  thin: Object.entries(coverage).filter(([, c]) => c === 'thin').map(([s]) => render('comparison.thin', { side: s })).join('\n'),
+}).trim();
 
-export const UNDERSTANDING_HOW = (religion, coverage) => `The reader wants to UNDERSTAND this${religion ? ` within ${religion}` : ''}, not a list. Lead with what the scripture itself says (quote it), then how it has been explained or applied (the passages' authors and standing tell you which is which), then what the passages leave open. ${coverage === 'missing' ? 'The library returned nothing on this: say so plainly and do not answer from memory.' : coverage === 'thin' ? 'Coverage is thin — say what the one or two passages support and no more.' : ''}`.trim();
+export const UNDERSTANDING_HOW = (religion, coverage) => render('understanding.how', {
+  within: religion ? render('understanding.within', { religion }) : '',
+  coverage: coverage === 'missing' ? template('understanding.missing') : coverage === 'thin' ? template('understanding.thin') : '',
+}).trim();
 
 const tag = (hits, theme) => (hits || []).map((p) => ({ ...p, theme }));
 const coverageOf = (n) => (n >= COVER.covered ? 'covered' : n >= COVER.thin ? 'thin' : 'missing');
@@ -154,8 +163,10 @@ export async function runStrategy(choice, ctx) {
   const name = strategyOf(choice);
   if (!name) return null;
   const log = ctx.decisions || NO_LOG;
-  // the executors are registry strategies (tools.js): comparison, understanding, prayer, guidance, reference
-  const out = await runTool(name, choice, { ...ctx, decisions: log });
+  // the executors are registry strategies (tools.js): comparison, understanding, prayer, guidance, reference — run by the
+  // strategy's graph (activities/graph.js; ANIS_STRATEGY_GRAPH=0 → the registry tool directly, the Phase-1 rollback)
+  const viaGraph = strategyGraphOn() ? await runStrategyGraph(name, choice, { ...ctx, decisions: log }) : undefined;
+  const out = viaGraph !== undefined ? viaGraph : await runTool(name, choice, { ...ctx, decisions: log });
   if (!out) log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'executor found nothing to execute' });
   return out;
 }

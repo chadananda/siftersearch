@@ -7,6 +7,7 @@ import userRoutes from '../user.js';
 import adminRoutes from '../admin.js';
 import searchTraceAdminRoutes from '../search-trace-admin.js';
 import jevAdminRoutes from '../jev-admin.js';
+import strategiesAdminRoutes from '../strategies-admin.js';
 import docsRepoRoutes from '../docs.js';
 import entityReviewRoutes from '../entity-review.js';
 import groundingRoutes from '../grounding.js';
@@ -48,6 +49,7 @@ export const SEARCH_ROUTES = [
   [adminRoutes, { prefix: '/api/admin' }],
   [searchTraceAdminRoutes, { prefix: '/api/admin' }],   // search forensics: traces, replay, stats (search-trace-repo)
   [jevAdminRoutes, { prefix: '/api/admin' }],   // Jev decision-gate bank + tuning harness (jev-calls-repo)
+  [strategiesAdminRoutes, { prefix: '/api/admin' }],   // Anís strategy graph rows, read-only (strategies-repo)
   [docsRepoRoutes, { prefix: '/api/admin' }],   // the ONE document surface (docs-repo)
   [entityReviewRoutes, { prefix: '/api/admin' }],
   [groundingRoutes, { prefix: '/api/admin' }],

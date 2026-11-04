@@ -12,13 +12,14 @@ import { NO_LOG, jevProbabilities } from './decision-log.js';
 import { stateOf } from './strategy-choice.js';
 import { run as runTool } from './tools.js';
 import { jevCall, JEV_LIMITS, timeoutDecision } from './jev-call.js';
+import { render } from './activities/templates.js';
 
 export const PRAYER_BOOK = 'Bahá’í Prayers';
 const MAX_OCCASIONS = 40;
 // the book searched by meaning (phrase vectors: a prayer's own words for the need) and by the literal words; each one Qdrant call
 const MEANING_HITS = 6, LITERAL_HITS = 3, EXCERPT = 220;
 
-export const PRAYER_HOW = (occasion) => `The reader asked for a prayer${occasion ? ` (${occasion})` : ''}. Give the FIRST prayer passage IN FULL, verbatim, as one block quotation — every paragraph of it, nothing shortened — with its attribution and link; nothing before it but at most one short line. Then, under "Two more", offer the two alternative prayers by their opening words, each linked. No commentary on the prayer's meaning unless asked.`;
+export const PRAYER_HOW = (occasion) => render('prayer.how', { occasion: occasion ? render('prayer.occasion', { occasion }) : '' });   // words = template rows
 
 /** An attribution line closes a prayer: "_—Bahá’u’lláh_", "—‘Abdu’l-Bahá", "— The Báb". Pure. */
 export const isAttribution = (text) => /^[\s_*]*[—–-]\s*\S/.test(String(text || '')) && String(text || '').replace(/[_*]/g, '').trim().length < 60;

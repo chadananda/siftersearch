@@ -31,6 +31,7 @@ import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asks
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
 import { strategyOf } from './strategy-choice.js';
+import { gatherByGraph, strategyGraphOn } from './activities/graph.js';   // the strategy graph (Phase 1: the same steps as data)
 import { PASSAGE_CHARS } from './prompt.js';
 import { quoteSourceHow, holdUncompiledCopies, citeHeldLast } from './quote-origin.js';
 
@@ -181,7 +182,7 @@ export function quotationIn(text) {
 // Thank you." diluted Sura II below verbatim and the Arabic Bayán won — r5-x, 11-01): cut at the first question sentence or
 // request clause after at least four words of quotation.
 const TALK = new RegExp(String.raw`(?:[.!;,?]\s+(?=(?:wh?at|which|where|who|can|could|please|pls|thank|thanks|thx|i)\b)|\s+(?=(?:(?:wh?at|which) (?:book|writing|chapter|verse|source)|where (?:is|does) (?:this|that|it) (?:from|come)|can (?:you|u)|could you|pls|please|thank|thanks|thx|i (?:can['’]?t|cant))\b))`, 'i');
-function trimTalk(s) {
+export function trimTalk(s) {
   let q = String(s || '').trim();
   if (q.includes('\n')) return q;   // a pasted passage with its reference line / P.S. is SourceHunt's to strip
   const cut = q.search(TALK);
@@ -284,7 +285,7 @@ export function quotedPassages(text) {
 }
 
 /** → { retrieved, how, plan } or null: the canonical English paragraph(s) with their aligned originals as evidence. */
-async function originalWording(d, question, messages) {
+export async function originalWording(d, question, messages) {
   const ref = hiddenWordRef(question) || hiddenWordRef(messages.map((m) => m.content).join('\n'));
   if (!ref) return quotedOriginal(d, question);
   if (ref) {
@@ -374,7 +375,7 @@ export const scriptureOf = (religion, o) => !SCRIPTURE[religion] || SCRIPTURE[re
 /** SourceHunt as Anís's tool for "where is this from?": the published source and the original tablet become the
  *  passages the reply is written from (so the sentence gate still holds). The model never sees a URL — it writes tags
  *  ({book}, {tablet}, …) that become exact links; it once copied a 400-char text-fragment URL into a repeating loop. */
-async function huntSource(d, question, { named = null } = {}) {
+export async function huntSource(d, question, { named = null } = {}) {
   const hunt = d.sourceHunt || (await import('../source-hunt.js')).sourceHunt;
   // a tradition the seeker NAMED ("the Buddha said …", "which sura …") is searched too, and an origin outside it is not
   // the answer (a Bahá'í book quoting the Dhammapada is not where the Buddha said it) → the ordinary search answers
@@ -549,7 +550,7 @@ export function liveResearch({ channel, depth } = {}) {
     ...(depth === 'research' ? { perBook: 2, extraMs: 800 } : {}) };
 }
 
-async function agentRespond({ messages, onEvent, d, t0 }) {
+export async function agentRespond({ messages, onEvent, d, t0 }) {
   const { agentAnswer, agentTools } = await import('./agent.js');
   onEvent({ type: 'stage', stage: 'search' });
   const A = await agentAnswer({ messages, onEvent,
@@ -578,23 +579,12 @@ const keepRetrievedLinks = (text, quotes) => {
   return String(text || '').replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, url) => (ok.has(url) ? m : label));
 };
 
-/**
- * @param {object} a
- * @param {Array}  a.messages     the thread (last = the seeker's question)
- * @param {object} [a.profile]    { persona_name, default_tradition, mission, scope_config } — per site
- * @param {object} [a.participant]{ id, authed } — the Seeker Companion relationship key
- * @param {object} [a.llm]        override; default = ANIS_LLM env → DEFAULT_LLM
- * @param {Function} [a.onEvent]  receives { type: 'stage'|'sources'|'text'|'companion_offer', … }
- * @param {object} [a.direction]  { stance, guarded, channel } from the triage gate (turn.js) → the formatter's DIRECTION
- * @param {Array}  [a.variants]   internal A/B only (/draft): [{ id, format: 'auto'|'none', writer }] → the writing step once per variant
- * @returns {{ reply, citations, retrieved, plan, timings }}
- */
-export async function anisRespond({ messages, profile = {}, participant = {}, llm, onEvent = () => {}, direction = {}, variants = null, deps }) {
-  const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
-  const persona = profile.persona_name || 'Anís';
-  // a pasted <br> run is never part of the question (r5); line breaks stay (a pasted passage's attribution line is read by line)
-  const question = lastUser(messages).replace(/<[^>]{0,200}>/g, ' ').replace(/[ \t]+(?=\n)/g, '').replace(/\n{3,}/g, '\n\n').trim();
-  const t0 = Date.now();
+// THE GATHER CASCADE as it was before the strategy graph (ANIS_STRATEGY_GRAPH=0, the Phase-1 rollback): l.598–762 of anisRespond
+// at abab9e7d, moved here VERBATIM (its three early answers return their reply object, passed straight through). The graph
+// (strategy-seed.js RESPOND_GRAPH, activities/respond-steps.js) runs the same steps in the same order;
+// tests/api/strategy-graph-equivalence.test.js holds the two to the same calls and the same reply.
+export const GATHERED = Symbol('gathered');
+async function legacyGather({ messages, question, direction, profile, onEvent, d, deps, t0 }) {
   // LOOKUPS FAST PATH (lookup.js; turn.js resolves it beside triage): a book, quoted wording or a numbered reference already found by
   // code → no agent, no planner, no phrase/format call; the template is chosen by code and a light writer (Haiku, thinking off) writes it.
   const fast = direction.lookup && !direction.guarded && direction.engine !== 'agent' && direction.research !== true
@@ -760,6 +750,31 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       if (own.searches || own.swapped.length) res._plan = { ...(res._plan || {}), ownSource: { swapped: own.swapped, searches: own.searches, late: own.late, ms: own.ms } };
     }
   }
+  return { [GATHERED]: true, fast, plan, conversational, work, live, researched, wantsOriginal, asks, huntAsEvidence, huntP, sourced, original,
+    study, strat, position, language, res, searchQ };
+}
+
+/**
+ * @param {object} a
+ * @param {Array}  a.messages     the thread (last = the seeker's question)
+ * @param {object} [a.profile]    { persona_name, default_tradition, mission, scope_config } — per site
+ * @param {object} [a.participant]{ id, authed } — the Seeker Companion relationship key
+ * @param {object} [a.llm]        override; default = ANIS_LLM env → DEFAULT_LLM
+ * @param {Function} [a.onEvent]  receives { type: 'stage'|'sources'|'text'|'companion_offer', … }
+ * @param {object} [a.direction]  { stance, guarded, channel } from the triage gate (turn.js) → the formatter's DIRECTION
+ * @param {Array}  [a.variants]   internal A/B only (/draft): [{ id, format: 'auto'|'none', writer }] → the writing step once per variant
+ * @returns {{ reply, citations, retrieved, plan, timings }}
+ */
+export async function anisRespond({ messages, profile = {}, participant = {}, llm, onEvent = () => {}, direction = {}, variants = null, deps }) {
+  const d = { ...(deps ? {} : await defaultDeps()), ...(deps || {}) };
+  const persona = profile.persona_name || 'Anís';
+  // a pasted <br> run is never part of the question (r5); line breaks stay (a pasted passage's attribution line is read by line)
+  const question = lastUser(messages).replace(/<[^>]{0,200}>/g, ' ').replace(/[ \t]+(?=\n)/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  const t0 = Date.now();
+  const s = { messages, question, direction, profile, onEvent, d, deps, t0, trace: [] };
+  const g = strategyGraphOn() ? await gatherByGraph(s) : await legacyGather(s);   // the strategy graph (Phase 1) or the old cascade
+  if (!g[GATHERED]) return s.trace.length ? { ...g, steps: s.trace } : g;   // answered while gathering (agent / library facts / source hunt)
+  const { fast, plan, conversational, work, live, researched, wantsOriginal, asks, huntAsEvidence, huntP, sourced, original, study, strat, position, language, res, searchQ } = g;
   const searchMs = Date.now() - t0;
   const retrievedAll = sourced ? sourced.retrieved : original ? original.retrieved : study ? termEvidence(study) : (res?.passages || []).map((p) => ({
     text: p.text || '', source_title: p.title || '', source_author: p.author || '', book_author: p.book_author || null, citation_url: exactLink(p),
@@ -779,7 +794,8 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       onEvent({ type: 'stage', stage: 'craft' });
       onEvent({ type: 'text', content: reply });
       return { reply, quotes_removed: 0, citations, retrieved: [], evidence: [], plan: { ...plan, shape: 'work', work: work.doc.id }, search_query: searchQ,
-        format: { id: 'work', by: 'title-index' }, profile: null, timings: { search_ms: Date.now() - t0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
+        format: { id: 'work', by: 'title-index' }, profile: null, timings: { search_ms: Date.now() - t0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 },
+        ...(s.trace.length ? { steps: s.trace } : {}) };
     }
   }
   // An original-language question answered by the ordinary search: each hit that has an aligned original carries it too
@@ -957,7 +973,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   return { reply, quotes_removed: guarded.removed, quotes_completed: introduced.completed || introduced.rewritten ? { placed: introduced.completed, rewritten: introduced.rewritten } : null, quotes_linked: quoteLinked.linked || 0, quotes_recredited: speakers.fixed || 0, evidence: [...studyEvidence, ...evidenceOf(retrieved)], citations: cited, retrieved: retrieved.filter((q) => q.citation_url && reply.includes(q.citation_url)), plan: res?._plan || null,
     search_query: searchQ ?? searchQueryFor(messages), select, format: format ? { id: format.id, by: format.by } : null, profile: describeProfile(evidenceProfile),
     timings: { search_ms: searchMs, first_token_ms: firstTokenMs ?? Date.now() - t0, total_ms: Date.now() - t0 },
-    ...(runs[0] ? { variants: written.map((w, i) => variantResult(runs[i], w)) } : {}) };
+    ...(runs[0] ? { variants: written.map((w, i) => variantResult(runs[i], w)) } : {}), ...(s.trace.length ? { steps: s.trace } : {}) };   // steps = the strategy graph's trace
 }
 
 // ── Writing-step VARIANTS (internal A/B only: POST /api/v1/anis/draft {variants}; tests/quality/anis-writer-ab.mjs) ──
