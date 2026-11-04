@@ -3,6 +3,7 @@
 // defects, each owned by the STAGE that must change: STRATEGY · RETRIEVAL · RANK · SELECTION · WRITER · LATENCY · HOLDINGS.
 // Plus a verdict per SEARCH, so a bad rank shows even when the reply recovered. Class rules only (never a question's words).
 // Free: no model, no DB. Pure. Deps: source-tier, lint, teachings-check, latency-budget, doctrinal-rank (foldKey).
+import { markdownDefects } from '../assistant/md-valid.js';
 import { sourceTier } from '../assistant/source-tier.js';
 import { lintReply } from '../assistant/lint.js';
 import { teachingsCheck } from '../assistant/teachings-check.js';
@@ -24,6 +25,7 @@ export const FIX_WHERE = {
   'no-writings-cited': 'api/lib/assistant/prompt.js (the Writings first) · researcher.js passage choice',
   'process-talk': 'api/lib/assistant/prompt.js HOUSE_STYLE · lint.js machinery',
   'clipped-quote': 'api/lib/assistant/quotes.js (a quote never ends in a clip)',
+  'malformed-markdown': 'api/lib/assistant/md-valid.js names the defect · the respond.js post-writer step that produced it (quotes.js linkQuotes/markQuotes, linkTitles)',
   'bare-link': 'api/lib/assistant/prompt.js citation = link text',
   'search-offer': 'api/lib/assistant/prompt.js · lint.js search-offer',
   'wrong-author': 'api/lib/assistant/prompt.js citation author · library metadata',
@@ -130,6 +132,7 @@ function writerDefects(reply, cited = [], hits = []) {
   const lint = lintReply(text).map((x) => x.id);
   if (PROCESS_TALK.test(text) || lint.some((id) => ['machinery', 'authority-layers', 'method-narration'].includes(id))) out.push(['process-talk', (text.match(PROCESS_TALK) || [lint[0]])[0]]);
   if (CLIPPED.test(text)) out.push(['clipped-quote', text.match(CLIPPED)[0].slice(-60)]);
+  for (const m of markdownDefects(text).slice(0, 1)) out.push(['malformed-markdown', `${m.id}: ${m.at}`]);
   if (BARE_LINK.test(text.replace(/\]\([^)]*\)/g, ''))) out.push(['bare-link', text.replace(/\]\([^)]*\)/g, '').match(BARE_LINK)[0].trim()]);
   if (lint.includes('search-offer')) out.push(['search-offer', 'offers a search it could run']);
   for (const c of cited) {
