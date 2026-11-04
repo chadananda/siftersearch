@@ -14,6 +14,7 @@ import { activeRuns } from './state.js';
 import { spawnGrounding } from './spawn.js';
 import { GROUNDING_STAGES } from './run-grounding.js';
 import { logger } from '../logger.js';
+import { assertSpendCap } from '../spend-caps.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
 import { spendSince as ledgerSpend } from './spend-ledger.js';
 import fs from 'node:fs';
@@ -440,6 +441,8 @@ async function _tick() {
   //  • PEAK-BLOCKED (offpeak_only set AND currently a peak-pricing window — hold DeepSeek books for the cheap hours).
   // Blocked books stay queued; the next tick launches them once the wall clears. Computed once per tick.
   const blockedProviders = new Set((await budgetStatus()).filter((b) => b.over || b.peakBlocked || b.pending).map((b) => b.provider));
+  // the daily spend cap (spend-caps.js): at the cap no book starts; they stay queued (no retry consumed) and the next tick looks again (cached)
+  try { await assertSpendCap('corpus-rag'); } catch (err) { if (err.code !== 'SPEND_CAP') throw err; return { started: [], busy, blocked: [...blockedProviders], spend_capped: err.group }; }
   const started = [];
   // Skip rows still in retry-backoff (next_attempt_at in the future) so a just-requeued book waits its cooldown.
   for (const r of await queryAll(`SELECT * FROM grounding_queue WHERE status='queued' AND (next_attempt_at IS NULL OR next_attempt_at <= unixepoch()) ORDER BY position ASC, id ASC`)) {

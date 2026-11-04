@@ -2,6 +2,7 @@
 // ANIS_TURNS_GLOBAL_PER_HOUR (all, 1500). Server-side, in-process rolling hour; a restart forgives. Fixed reply, zero LLM. Pure apart from the Map.
 const HOUR = 3600_000;
 export const LIMITED_REPLY = "I'm answering a great many questions just now and need to pause for a little while. Please write again a bit later, and thank you for your patience.";
+export const SPEND_CAP_REPLY = "I've reached today's limit and will be back tomorrow. Thank you for your patience.";   // the anis group's daily spend cap (spend-caps.js)
 export const PAUSED_REPLY = "I'm resting for the moment while the library is looked after. Please come back a little later.";
 
 export function makeLimits({ now = () => Date.now(), env = process.env } = {}) {

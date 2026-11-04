@@ -5,6 +5,7 @@
 // Fail-closed: no PERPLEXITY_API_KEY → returns null → behavior unchanged.
 import { logger } from './logger.js';
 import { logAIUsage } from './ai-services.js';
+import { assertSpendCap } from './spend-caps.js';
 
 const PPLX_URL = 'https://api.perplexity.ai/chat/completions';
 const TIMEOUT_MS = 20000;
@@ -20,6 +21,7 @@ export function perplexityAvailable() {
 export async function perplexityFallback(question, { caller = null, system = null, maxTokens = 600 } = {}) {
   const key = process.env.PERPLEXITY_API_KEY;
   if (!key) return null;
+  await assertSpendCap(caller || 'perplexity', { provider: 'perplexity' });   // the daily cap, before the call
   // Retry once on a TRANSIENT failure ('fetch failed' / timeout / 5xx / 429): the web
   // answer is the whole point when the library misses, so one flaky call must not lose it.
   for (let attempt = 0; attempt < 2; attempt++) {

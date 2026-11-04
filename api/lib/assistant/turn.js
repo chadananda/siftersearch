@@ -2,7 +2,8 @@
 // research answer (respond.js) → output check → voice lint → complete the log with the path. Transport-neutral: the
 // widget streams onEvent, email uses the returned text. Every non-research reply costs zero LLM tokens.
 // Deps (injectable): exchange-log, triage, canned, strikes, lint, channels, respond.
-import { makeLimits } from './limits.js';
+import { makeLimits, SPEND_CAP_REPLY } from './limits.js';
+import { assertSpendCap, isSpendCap } from '../spend-caps.js';
 import { loadReaderCard } from './reader-card.js';
 import { resolveQuery } from './short-turn.js';
 import { openExchange, closeExchange, failExchange } from './exchange-log.js';
@@ -31,7 +32,7 @@ const liveLimits = makeLimits();
 async function defaultDeps() {
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
-    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, card: loadReaderCard, resolve: resolveQuery, reports: makeReports() };
+    fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, spendCap: assertSpendCap, card: loadReaderCard, resolve: resolveQuery, reports: makeReports() };
 }
 
 /**
@@ -71,6 +72,10 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     onEvent({ type: 'text', content: capped.reply });
     return { reply: capped.reply, status: 'limited', limit: capped.reason, citations: [], retrieved: [], plan: null, conversationId: null, timings: { total_ms: Date.now() - t0 } };
   }
+
+  // the anis group's daily spend cap: a short polite reply (never a 5xx), no classifier, no LLM
+  const spendLimited = async () => { onEvent({ type: 'text', content: SPEND_CAP_REPLY }); return { reply: SPEND_CAP_REPLY, status: 'limited', limit: 'spend-cap', citations: [], retrieved: [], plan: null, conversationId: null, timings: { total_ms: Date.now() - t0 } }; };
+  if (d.spendCap) { try { await d.spendCap('anis-turn'); } catch (err) { if (isSpendCap(err)) return spendLimited(); throw err; } }
 
   // Tarpit: templates only — no classifier, no LLM — at the pace of the path it imitates.
   if (d.strikes.inTarpit(who)) {
@@ -231,6 +236,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     return { ...r, reply, status: 'answered', conversationId: ex?.conversationId ?? null, path, ...(deepReport ? { deep_report: deepReport } : {}) };
   } catch (err) {
     if (ex) await d.fail({ ...ex, error: err?.message }).catch(() => {});
+    if (isSpendCap(err)) return spendLimited();   // the cap was reached mid-turn (a later paid call): same polite reply
     throw err;
   }
 }

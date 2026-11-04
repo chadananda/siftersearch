@@ -3,6 +3,7 @@
 // PARALLELAI_API_KEY or an error → null. Logged to ai_usage (per-run price: registry task-<processor>). Deps: logger, ai-services.
 import { logger } from './logger.js';
 import { logAIUsage } from './ai-services.js';
+import { assertSpendCap } from './spend-caps.js';
 
 const BASE = 'https://api.parallel.ai/v1';
 
@@ -12,6 +13,7 @@ export const parallelAvailable = () => !!process.env.PARALLELAI_API_KEY;
 export async function parallelResearch(question, { processor = 'base', timeoutS = 90, caller = 'parallel-research' } = {}) {
   const key = process.env.PARALLELAI_API_KEY;
   if (!key || !question) return null;
+  await assertSpendCap(caller, { provider: 'parallel' });   // the daily cap, before the call
   const h = { 'x-api-key': key, 'content-type': 'application/json' };
   try {
     const run = await (await fetch(`${BASE}/tasks/runs`, { method: 'POST', headers: h, body: JSON.stringify({ input: String(question).slice(0, 4000), processor }),

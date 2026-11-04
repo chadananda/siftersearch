@@ -899,14 +899,6 @@ export const admin = {
     return request('/api/admin/ai-usage/status');
   },
 
-  /**
-   * Resume AI processing after budget pause
-   */
-  async resumeAIProcessing() {
-    return request('/api/admin/ai-usage/resume', {
-      method: 'POST'
-    });
-  },
 
   // Library Management
   async getLibraryOverview() {

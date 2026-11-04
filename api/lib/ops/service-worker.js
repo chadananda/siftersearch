@@ -7,6 +7,7 @@ import os from 'os';
 import { logger } from '../logger.js';
 import { claimNext, finish, requeueStale, saveResume, enqueue } from '../repos/ops-report-repo.js';
 import { actionRequired } from './alert.js';
+import { isSpendCap, waitMs as capWaitMs } from '../spend-caps.js';
 import { logActivity } from '../repos/activity-repo.js';
 import { drainOnSignals, isDraining, nap, startDrain } from '../drain.js';
 import { watchPower, waitForNormalPower } from '../power-mode.js';
@@ -92,6 +93,14 @@ export async function runService({ name, registry, lanes = {}, laneWorkers = {},
         // restarts). The child's death can reach us before our own signal does: a killed child ("exit null") waits for it.
         if (!isDraining() && /exit null|SIGTERM|SIGINT|SIGKILL/.test(String(err.message))) await new Promise((r) => setTimeout(r, 2000));
         if (isDraining() && /exit null|SIGTERM|SIGINT|SIGKILL/.test(String(err.message))) { logger.warn({ id: run.id, name: run.name, lane: laneName }, 'job interrupted by shutdown — requeued on next start'); break; }
+        // the daily spend cap (spend-caps.js) is not a failure: the run is finished as deferred (no FAILED mail, no retry count used), the lane backs off, and the same job is queued again for after the wait
+        if (isSpendCap(err)) {
+          await finish(run.id, { result: { deferred: 'spend-cap', why: String(err.message).slice(0, 300) }, ms: Date.now() - t0 }).catch(() => {});
+          logActivity('job', `⏸ ${run.name} · #${run.id} waits for the daily spend cap (${err.group})`);
+          await nap(err.retryAfterMs || capWaitMs());
+          await enqueue(run.name, run.params || {}, 'spend-cap').catch((e) => logger.warn({ err: e.message }, 'ops: spend-cap re-enqueue failed'));
+          continue;
+        }
         await finish(run.id, { error: String(err.message || err).slice(0, 500), ms: Date.now() - t0 }).catch(() => {});
         const retry = nextRetry(run, err.message || err);
         if (retry) {

@@ -212,9 +212,11 @@ export async function mediaItemJob({ id, ids = null, from = null, only = null, r
     return { id, slug: r.slug, done: r.done, cost_usd: r.meta?.cost?.usd ?? null, stages: r.meta?.stages };
   } catch (err) {
     // no worker could take the stage (tower never does heavy work): not a failure — the item goes back in the queue and is retried after a pause
-    if (err.code === 'WORKER_WAIT') {
-      if (!(item.state === 'done' || item.published_at || /,catalog,/.test(item.stages_done || ''))) await updateMediaItem(id, { state: 'queued', why: `waiting for a worker: ${String(err.message).slice(0, 200)}` }).catch(() => {});
-      await new Promise((r) => setTimeout(r, deps.waitMs ?? 90_000));   // damps the retry loop: each lane worker retries at most once a minute and a half
+    // SPEND_CAP (the media group's daily cap, spend-caps.js) is the same: not failed, not held — queued, and the lane backs off (up to 30 min a look, the check is cached) until the next UTC day
+    if (err.code === 'WORKER_WAIT' || err.code === 'SPEND_CAP') {
+      const cap = err.code === 'SPEND_CAP';
+      if (!(item.state === 'done' || item.published_at || /,catalog,/.test(item.stages_done || ''))) await updateMediaItem(id, { state: 'queued', why: `${cap ? 'waiting for the daily spend cap' : 'waiting for a worker'}: ${String(err.message).slice(0, 200)}` }).catch(() => {});
+      await new Promise((r) => setTimeout(r, deps.waitMs ?? (cap ? err.retryAfterMs || 60_000 : 90_000)));   // damps the retry loop: each lane worker retries at most once a minute and a half
       return { id, waiting: true, why: String(err.message).slice(0, 200) };
     }
     // a bot check / rate limit is not a failure (no alert mail): the item waits out the YouTube cool-down and is retried
@@ -776,7 +778,7 @@ export async function mediaComputeJob({ id, ...rest } = {}, deps = {}) {
     return {id,whole_worker:true,stages:Object.keys(m.stages)};
   } catch(err){
     if(err.code==='DRAIN')return {id,yielded:true};
-    await repo.updateMediaItem(id,{state:err.code==='WORKER_WAIT'?'queued':'failed',why:String(err.message).slice(0,500)});
+    await repo.updateMediaItem(id,{state:err.code==='WORKER_WAIT'||err.code==='SPEND_CAP'?'queued':'failed',why:String(err.message).slice(0,500)});
     throw err;
   }
 }

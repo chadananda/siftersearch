@@ -151,6 +151,19 @@ describe('worker backpressure keeps the current pipeline stage', () => {
   });
 });
 
+describe('the daily spend cap is a wait, not a failure', () => {
+  it('requeues the item with the cap as the reason, never failed or held', async () => {
+    const { mediaComputeJob } = await import('../../api/lib/ops/media-jobs.js');
+    const { SpendCapError } = await import('../../api/lib/spend-caps.js');
+    const repo = await import('../../api/lib/repos/media-repo.js');
+    store.items.push({ id: 1, state: 'running', source_kind: 'file', source_ref: '/recording.mp3' });
+    const r = await mediaComputeJob({ id: 1 }, { repo, waitMs: 0, runItem: async () => { throw new SpendCapError({ group: 'media', spent: 40, cap: 40, caller: 'media-assess', retryAfterMs: 0 }); } });
+    expect(r.waiting).toBe(true);
+    expect(store.items[0].state).toBe('queued');
+    expect(store.items[0].why).toMatch(/waiting for the daily spend cap/);
+  });
+});
+
 describe('media-find', () => {
   it('looks items up by source path and writes rank/speaker/title only when given', async () => {
     const { mediaFindJob } = await import('../../api/lib/ops/media-jobs.js');

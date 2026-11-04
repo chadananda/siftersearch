@@ -19,7 +19,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
-import { query, telemetryQuery } from './db.js';
+import { telemetryQuery } from './db.js';
+import { assertSpendCap } from './spend-caps.js';
 import { getModel, effectivePricing, thinkingParam } from './model-registry.js';
 import { currentAIContext, withAIContext } from './ai-context.js';
 import { modelFor } from './model-roles.js';
@@ -63,51 +64,8 @@ const MODEL_PRICING = {
 // SPENDING LIMITS & SAFEGUARDS
 // =============================================================================
 
-const DAILY_SPENDING_LIMIT_USD = 100;  // Per-service daily limit
-
-// In-memory state (persisted to DB for recovery)
-let aiProcessingPaused = false;
-let pausedReason = null;
-let pausedAt = null;
-
-/**
- * Custom error for budget exceeded - allows UI to show specific message
- */
-export class AIBudgetExceededError extends Error {
-  constructor(service, dailySpend, limit) {
-    super(`AI processing paused: ${service} exceeded daily limit ($${dailySpend.toFixed(2)} / $${limit})`);
-    this.name = 'AIBudgetExceededError';
-    this.service = service;
-    this.dailySpend = dailySpend;
-    this.limit = limit;
-    this.isPaused = true;
-  }
-}
-
-/**
- * Check if AI processing is paused
- */
-export function isAIProcessingPaused() {
-  return {
-    paused: aiProcessingPaused,
-    reason: pausedReason,
-    pausedAt
-  };
-}
-
-/**
- * Get daily spending for a service type
- */
-async function getDailySpending(serviceType) {
-  try {
-    // incremental rollup (ai-usage-repo) — this ran a full-day SUM on EVERY budget-checked call (~5 s under load, 10-14)
-    const { dailySpendByService } = await import('./repos/ai-usage-repo.js');
-    return (await dailySpendByService())[serviceType] || 0;
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Failed to check daily spending');
-    return 0;  // Don't block on error
-  }
-}
+// The daily cap is spend-caps.js (per caller group, config/spend-caps.json): assertSpendCap runs before every paid call here.
+export { SpendCapError } from './spend-caps.js';
 
 /**
  * Get all daily spending by service
@@ -119,107 +77,6 @@ export async function getAllDailySpending() {
   } catch (err) {
     logger.warn({ err: err.message }, 'Failed to get all daily spending');
     return {};
-  }
-}
-
-/**
- * Service types exempt from the spending pause.
- * Search/chat AI should always work for users, and embeddings
- * must keep running to maintain the search index pipeline.
- * The embedding worker has its own backoff for API errors (429s).
- */
-const PAUSE_EXEMPT_SERVICES = new Set(['fast', 'balanced', 'quality', 'creative', 'segmentation', 'embedding']);
-
-/**
- * Check spending and pause if over limit
- * Returns true if processing should continue, throws if paused
- */
-async function checkSpendingLimit(serviceType) {
-  // Exempt services bypass spending limits entirely
-  if (PAUSE_EXEMPT_SERVICES.has(serviceType)) {
-    return true;
-  }
-
-  // If already paused, block non-exempt services
-  if (aiProcessingPaused) {
-    throw new AIBudgetExceededError(pausedReason, 0, DAILY_SPENDING_LIMIT_USD);
-  }
-
-  const dailySpend = await getDailySpending(serviceType);
-
-  if (dailySpend >= DAILY_SPENDING_LIMIT_USD) {
-    // Pause all AI processing
-    aiProcessingPaused = true;
-    pausedReason = serviceType;
-    pausedAt = new Date().toISOString();
-
-    logger.error({
-      serviceType,
-      dailySpend,
-      limit: DAILY_SPENDING_LIMIT_USD
-    }, '🚨 AI PROCESSING PAUSED - Daily spending limit exceeded');
-
-    // Persist pause state to DB for recovery after restart
-    try {
-      await query(
-        `INSERT OR REPLACE INTO app_config (key, value, updated_at)
-         VALUES ('ai_processing_paused', ?, datetime('now'))`,
-        [JSON.stringify({ paused: true, reason: serviceType, pausedAt })]
-      );
-    } catch (err) {
-      logger.warn({ err: err.message }, 'Failed to persist pause state');
-    }
-
-    throw new AIBudgetExceededError(serviceType, dailySpend, DAILY_SPENDING_LIMIT_USD);
-  }
-
-  return true;
-}
-
-/**
- * Resume AI processing (admin action)
- */
-export async function resumeAIProcessing() {
-  aiProcessingPaused = false;
-  pausedReason = null;
-  pausedAt = null;
-
-  logger.info('✅ AI processing resumed by admin');
-
-  // Clear persisted pause state
-  try {
-    await query(
-      `INSERT OR REPLACE INTO app_config (key, value, updated_at)
-       VALUES ('ai_processing_paused', ?, datetime('now'))`,
-      [JSON.stringify({ paused: false })]
-    );
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Failed to clear pause state');
-  }
-
-  return { success: true, message: 'AI processing resumed' };
-}
-
-/**
- * Initialize pause state from DB (call on startup)
- */
-export async function initAIProcessingState() {
-  try {
-    const result = await query(
-      `SELECT value FROM app_config WHERE key = 'ai_processing_paused'`
-    );
-    if (result.rows?.[0]?.value) {
-      const state = JSON.parse(result.rows[0].value);
-      if (state.paused) {
-        aiProcessingPaused = true;
-        pausedReason = state.reason;
-        pausedAt = state.pausedAt;
-        logger.warn({ reason: pausedReason, pausedAt }, 'AI processing is paused (restored from DB)');
-      }
-    }
-  } catch (err) {
-    // Table might not exist yet, that's fine
-    logger.debug({ err: err.message }, 'Could not restore AI pause state');
   }
 }
 
@@ -830,7 +687,7 @@ export function aiService(serviceType, options = {}) {
 
       // Check spending limit before making AI call (skip for local/free models)
       if (opts.provider !== 'ollama' && opts.provider !== 'lmstudio') {
-        await checkSpendingLimit(serviceType);
+        await assertSpendCap(caller, { provider: opts.provider });
       }
 
       logger.debug({
@@ -921,7 +778,7 @@ export function aiService(serviceType, options = {}) {
 
       // Check spending limit before making AI call (skip for local/free models)
       if (svcConfig.provider !== 'ollama') {
-        await checkSpendingLimit(serviceType);
+        await assertSpendCap(options.caller, { provider: svcConfig.provider });
       }
 
       const startTime = Date.now();

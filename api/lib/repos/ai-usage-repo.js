@@ -66,6 +66,12 @@ export async function dailySpendByService(deps) {
   return Object.fromEntries([...sums].map(([k, v]) => [k, v.usd]));
 }
 
+/** Today's (UTC) spend per caller (incremental) — the spend caps' input (spend-caps.js). → { [caller or '']: usd } */
+export async function dailySpendByCaller(deps) {
+  const sums = await rollupSpend('daily-by-caller', { key: `COALESCE(caller, '')`, dayBound: true }, deps);
+  return Object.fromEntries([...sums].map(([k, v]) => [k, v.usd]));
+}
+
 /** All-time pipeline spend per book × provider (incremental). → [{ docId, provider, calls, usd }] by usd desc */
 export async function pipelineSpendByBook(deps) {
   const sums = await rollupSpend('pipeline-by-book', { key: `CAST(document_id AS INT) || '|' || provider`, where: `caller='corpus-rag' AND document_id IS NOT NULL` }, deps);

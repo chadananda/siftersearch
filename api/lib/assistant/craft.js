@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import { anisSystem, anisUserPayload, anisDirection } from './prompt.js';
 import { frameFor, DEPTH_FRAME } from './channels.js';
 import { logAIUsage } from '../ai-services.js';
+import { assertSpendCap } from '../spend-caps.js';
 import { noteProviderError } from '../spend-alerts.js';
 import { getModel } from '../model-registry.js';
 import { trimCutReply } from './quotes.js';
@@ -61,6 +62,7 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
     ...thinkingFields(llm.provider, llm.model, llm.thinking),
   };
   guardLongContext({ model: llm.model, messages: params.messages, caller: llm.caller || 'anis-craft' });   // the cheap price tier
+  await assertSpendCap(llm.caller || 'anis-craft', { provider: llm.provider });   // the daily cap, before the call
   let stream;
   try {
     stream = await client(llm.provider).chat.completions.create(params, signal ? { signal } : {});

@@ -17,6 +17,15 @@ export default async function opsReportRoutes(fastify) {
     const Q = await import('../lib/repos/media-queue-repo.js');
     return { url: 'http://tower-nas:7843/api/admin/ops/queue', stats: await Q.queueCall('stats'), capacity: await Q.queueCall('capacity'), ...(req.query?.key === '1' ? { machine_key: Q.machineKey() } : {}) };
   });
+  // Daily spend caps (config/spend-caps.json): each group's spend today vs. its cap, and whether it is blocking
+  fastify.get('/ops/spend-caps', { preHandler: requireInternal }, async () => ({ groups: await (await import('../lib/spend-caps.js')).capStatus() }));
+  // An outside script's paid call (the research-battery Opus judge) reports its usage here so the ledger — and the cap — see it. Only the battery-judge caller.
+  fastify.post('/ops/spend-ledger', { preHandler: requireInternal }, async (req) => {
+    const b = req.body || {};
+    if (b.caller !== 'battery-judge' || !b.model || !b.provider) throw Object.assign(new Error('spend-ledger takes caller "battery-judge" with model + provider'), { statusCode: 400 });
+    (await import('../lib/ai-services.js')).logAIUsage({ provider: b.provider, model: b.model, serviceType: 'battery-judge', caller: 'battery-judge', promptTokens: Number(b.prompt_tokens) || 0, completionTokens: Number(b.completion_tokens) || 0, cachedTokens: Number(b.cached_tokens) || 0, cacheWriteTokens: Number(b.cache_write_tokens) || 0 });
+    return { ok: true };
+  });
   await fastify.register(deweyJobsOps);   // Dewey's job registry + worker contract (api/routes/dewey-jobs-ops.js)
   const known = (name) => { if (!reportNames().includes(name)) throw ApiError.notFound?.(`unknown report ${name}`) ?? Object.assign(new Error(`unknown report ${name}`), { statusCode: 404 }); };
   // Biography slugs, minted in small batches through the single writer (never one large UPDATE): call repeatedly until left = 0.

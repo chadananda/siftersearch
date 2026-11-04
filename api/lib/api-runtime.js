@@ -13,7 +13,6 @@ import { startSyncWorker, stopSyncWorker } from '../services/sync-worker.js';
 import { stopEmbeddingWorker } from '../services/embedding-worker.js';
 import { stopLibraryWatcher } from '../services/library-watcher.js';
 import { config } from './config.js';
-import { initAIProcessingState } from './ai-services.js';
 import { prewarmCache, POPULAR_QUERIES, warmOlDocIdCache, ensureEngineFeatures } from './search.js';
 import { runsSingletons } from './instance.js';
 
@@ -114,13 +113,6 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
           if (testResult) logger.info({ email: testResult.email, action: testResult.action }, 'Test admin user seeded');
         } catch (err) {
           logger.warn({ err }, 'Failed to seed test admin user');
-        }
-
-        // Restore AI processing pause state from database
-        try {
-          await initAIProcessingState();
-        } catch (err) {
-          logger.warn({ err }, 'Failed to restore AI processing state');
         }
       };
       const warmIndexes = async () => {

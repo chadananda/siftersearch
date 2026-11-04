@@ -13,6 +13,7 @@ import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { logAIUsage } from './ai-services.js';
+import { assertSpendCap } from './spend-caps.js';
 import { currentAIContext } from './ai-context.js';   // ambient doc/stage attribution for every logged call
 import { getModel, thinkingParam } from './model-registry.js';
 import { assertAnthropicAllowed, guardLongContext } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
@@ -97,6 +98,7 @@ export async function chatCompletion(messages, options = {}) {
   guardLongContext({ model, messages, caller: g.caller || options.caller });
   }
 
+  await assertSpendCap(currentAIContext().caller || options.caller, { provider });   // the daily cap (spend-caps.js), before the call
   const dispatch = () => {
     switch (provider) {
       case 'openai':
@@ -261,6 +263,7 @@ export function anthropicBatchTransport({ stage = 'hype', client = null } = {}) 
   const api = () => client || getAnthropic();
   return {
     async create(requests, { model }) {
+      await assertSpendCap('hype-batch', { provider: 'anthropic' });   // before the batch submit
       assertAnthropicAllowed({ provider: 'anthropic', model, stage, caller: 'hype-batch' });
       const b = await api().messages.batches.create({ requests: requests.map((r) => ({ custom_id: r.custom_id, params: {
         model, max_tokens: r.maxTokens, thinking: { type: 'disabled' },
@@ -424,6 +427,7 @@ export async function createEmbedding(text, options = {}) {
     caller = 'embedding'
   } = options;
 
+  await assertSpendCap(caller, { provider: 'openai' });
   const openai = getOpenAI();
 
   const response = await openai.embeddings.create({
@@ -463,6 +467,7 @@ export async function createEmbeddings(texts, options = {}) {
     caller = 'embedding-batch'
   } = options;
 
+  await assertSpendCap(caller, { provider: 'openai' });
   const openai = getOpenAI();
 
   const response = await openai.embeddings.create({

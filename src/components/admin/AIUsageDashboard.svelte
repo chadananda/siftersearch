@@ -17,7 +17,6 @@
   let loading = $state(true);
   let authReady = $state(false);
   let error = $state(null);
-  let resuming = $state(false);
 
   // Filter state
   let filterModel = $state('');
@@ -56,21 +55,6 @@
       error = err.message || 'Failed to load AI usage data';
     } finally {
       loading = false;
-    }
-  }
-
-  async function handleResumeProcessing() {
-    if (resuming) return;
-    resuming = true;
-    try {
-      await admin.resumeAIProcessing();
-      // Refresh status
-      aiStatus = await admin.getAIUsageStatus();
-    } catch (err) {
-      console.error('Failed to resume AI processing:', err);
-      error = err.message || 'Failed to resume AI processing';
-    } finally {
-      resuming = false;
     }
   }
 
@@ -149,7 +133,7 @@
     </header>
 
     <!-- AI Processing Paused Alert -->
-    {#if aiStatus?.paused}
+    {#if aiStatus?.paused && aiStatus.groups}
       <div class="alert-banner alert-error">
         <div class="alert-icon">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,33 +141,14 @@
           </svg>
         </div>
         <div class="alert-content">
-          <strong>AI Processing Paused</strong>
+          <strong>Daily spend cap reached</strong>
           <p>
-            Daily spending limit (${aiStatus.dailyLimit}) exceeded for <strong>{aiStatus.reason}</strong>.
-            {#if aiStatus.pausedAt}
-              Paused at {new Date(aiStatus.pausedAt).toLocaleString()}.
-            {/if}
+            {#each aiStatus.groups.filter((g) => g.blocking) as g}
+              <span class="spending-item">{g.group}: ${g.spent_usd.toFixed(2)} of ${g.cap_usd}</span>
+            {/each}
+            Queue work waits and Anís says she is at today's limit; the cap resets at 00:00 UTC (config/spend-caps.json).
           </p>
-          {#if aiStatus.dailySpending}
-            <p class="spending-breakdown">
-              Today's spending:
-              {#each Object.entries(aiStatus.dailySpending) as [service, amount]}
-                <span class="spending-item">{service}: ${amount.toFixed(2)}</span>
-              {/each}
-            </p>
-          {/if}
         </div>
-        <button
-          class="btn-resume"
-          onclick={handleResumeProcessing}
-          disabled={resuming}
-        >
-          {#if resuming}
-            Resuming...
-          {:else}
-            Continue AI Processing
-          {/if}
-        </button>
       </div>
     {/if}
 
@@ -760,25 +725,4 @@
     font-size: 0.8rem;
   }
 
-  .btn-resume {
-    flex-shrink: 0;
-    padding: 0.75rem 1.5rem;
-    background: var(--error);
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-  }
-
-  .btn-resume:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--error) 85%, black);
-    transform: translateY(-1px);
-  }
-
-  .btn-resume:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
 </style>

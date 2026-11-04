@@ -115,6 +115,20 @@ AUTHORITY DECIDES (Chad 10-23, a decision — "The House of Justice has zero doc
 - HISTORICAL: primary accounts (the Central Figures, Shoghi Effendi's histories, Nabíl) first; scholars only as labelled context.
 Then: the most HELPFUL and INFORMATIVE answer for this reader — takes up what they are reaching for, gives real substance from the right sources (their own words, originals where relevant, sound language knowledge), invites exploration, never declines or quibbles. Penalise errors, invented quotations or sources, misattribution, padding and evasion. Length is not substance. Judge each answer on its own merits — the labels are random.`;
 
+// The judge's Opus calls are paid and bypass the app's ledger: headroom is checked through the internal API before running, and each call's usage is reported
+// back (caller battery-judge) so the anis daily cap sees it. Scripts never touch the DB — API only (X-Internal-Key = DEPLOY_SECRET).
+const internal = (path, init = {}) => fetch(`${API}/api/admin/ops${path}`, { ...init, headers: { 'X-Internal-Key': process.env.DEPLOY_SECRET || '', 'content-type': 'application/json' } });
+async function anisHeadroom() {
+  const r = await internal('/spend-caps');
+  if (!r.ok) throw new Error(`spend-caps check failed: HTTP ${r.status} — refusing to run an unmetered Opus judge`);
+  const g = ((await r.json()).groups || []).find((x) => x.group === 'anis');
+  return g && (g.blocking || (g.remaining_usd != null && g.remaining_usd <= 0)) ? g : null;
+}
+async function reportJudgeUsage(u) {
+  await internal('/spend-ledger', { method: 'POST', body: JSON.stringify({ caller: 'battery-judge', provider: 'anthropic', model: 'claude-opus-5-5', prompt_tokens: u?.input_tokens || 0, completion_tokens: u?.output_tokens || 0, cached_tokens: u?.cache_read_input_tokens || 0, cache_write_tokens: u?.cache_creation_input_tokens || 0 }) })
+    .catch((e) => console.warn(`could not report the judge's usage to the ledger: ${e.message}`));
+}
+
 async function judge(c, answers) {
   const labels = Object.keys(answers).sort(() => Math.random() - 0.5);
   const tag = Object.fromEntries(labels.map((k, i) => [k, String.fromCharCode(65 + i)]));
@@ -130,6 +144,7 @@ async function judge(c, answers) {
       anis_gaps: { type: 'string', description: 'what the best non-Anís answer gave that the Anís answers lacked (texts, facts, structure, depth) — concrete, or "none"' } } } }],
     tool_choice: { type: 'auto' },   // Opus 5.5 rejects a forced tool choice
     messages: [{ role: 'user', content: `THE CONVERSATION:\n${convo}\n\n${body}\n\nScore every answer (1–10) and name the best, by calling the verdict tool.` }] });
+  await reportJudgeUsage(res.usage);
   const v = res.content.find((b) => b.type === 'tool_use')?.input || { scores: [] };
   const back = Object.fromEntries(Object.entries(tag).map(([k, t]) => [t, k]));
   // the judge sometimes writes "Answer B" for "B" (10-19: those scores were dropped as '?')
@@ -140,6 +155,8 @@ async function judge(c, answers) {
     authority_errors: (v.authority_errors || []).map((e) => e.replace(/^\s*(?:answer\s+)?([A-Z])\s*:/i, (m, l) => `${back[l.toUpperCase()] || l}:`)) };
 }
 
+const blocked = await anisHeadroom();
+if (blocked) { console.error(`The anis spend group has no headroom today ($${blocked.spent_usd} of $${blocked.cap_usd}) — not running the judge. Resets 00:00 UTC.`); process.exit(2); }
 const only = arg('only')?.split(',').map((s) => s.trim());
 const immerseFile = arg('immerse');
 // --questions <registry .jsonl> (tests/quality/questions/schema.md): one case per line, kind = its type, expect kept for scoring

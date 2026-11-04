@@ -20,6 +20,7 @@ import { clientFor, thinkingFields } from '../role-client.js';
 import { getModel } from '../model-registry.js';
 import { guardLongContext } from '../anthropic-policy.js';
 import { logAIUsage } from '../ai-services.js';
+import { assertSpendCap } from '../spend-caps.js';
 import { effectiveAuthor } from '../authorship/effective.js';
 
 // ════ 1. MODEL CALL ═════════════════════════════════════════════════════════════════════════════════════════════════
@@ -38,6 +39,7 @@ export function jsonOf(text) {
 
 export async function llmJson({ provider, model, system, user, maxTokens = 3000, caller, timeoutMs = 120000 }) {
   const reg = getModel(model) || {};
+  await assertSpendCap(caller, { provider });   // the daily cap, before the call
   guardLongContext({ model, messages: [{ content: system }, { content: user }], caller });
   const res = await clientFor(provider).chat.completions.create({
     model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }],

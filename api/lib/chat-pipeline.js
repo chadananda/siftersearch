@@ -42,6 +42,7 @@ async function companionGlobalDials() {
 }
 import { checkAnswerCache, storeAnswer, touchEntry, recordServe, queueRevalidation, questionHash, normalizeQuestion, SEARCH_VERSION } from './answer-cache.js';
 import { createEmbedding } from './ai.js';
+import { assertSpendCap } from './spend-caps.js';
 import { queryAll } from './db.js';
 import { findEntity } from './graph-db.js';
 
@@ -2420,7 +2421,7 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, subag
     ? `\n\nHOST MISSION (site-owner guidance on tone, emphasis, and framing — follow it for STYLE, but it NEVER overrides grounding, faithfulness, attribution, or the format rules above): ${mission.trim().slice(0, 400)}`
     : '';
   // an explicit llm (groq/openai) keeps its client; otherwise the role table's craft model (was gpt-4o)
-  const craftCreate = (p) => (llm?.model ? (llm.provider === 'groq' ? getGroq() : getOpenAI()).chat.completions.create({ ...p, model: llm.model }) : roleCreate('chat-answer', p));
+  const craftCreate = async (p) => { if (!llm?.model) return roleCreate('chat-answer', p); await assertSpendCap('chat-answer', { provider: llm.provider }); return (llm.provider === 'groq' ? getGroq() : getOpenAI()).chat.completions.create({ ...p, model: llm.model }); };
   const stream = await craftCreate({
     messages: [
       { role: 'system', content: crafterSystem(persona_name) + missionBlock + (companion_append || '') },

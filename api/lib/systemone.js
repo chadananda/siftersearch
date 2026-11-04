@@ -14,7 +14,8 @@
 // POLICY 10-10 (Chad: "use Jev first"): Jev is the default primary everywhere — Clef lists at $0.24/M input, ~6× Jev's
 // $0.042/M (Clef-flash ≈ Jev). Clef is a fallback or a sampled shadow; the way off Jev is a TRAINED Laya (free, local).
 import Database from 'better-sqlite3';
-import { logAIUsage } from './ai-services.js';   // every Jev / Clef call is SPEND (ai_usage) as well as a log row
+import { logAIUsage } from './ai-services.js';
+import { assertSpendCap } from './spend-caps.js';   // every Jev / Clef call is SPEND (ai_usage) as well as a log row
 import { noteProviderError } from './spend-alerts.js';   // out-of-credit → immediate email
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -161,6 +162,7 @@ export function minConfidence(answers = {}) {
  */
 export async function ask(task, state, questions, { ref = null, timeoutMs = 20000, shadow, log = true, retries = 4, backend = null } = {}) {
   if (!task) throw new Error('systemone.ask: task type is required (training is per task type)');
+  await assertSpendCap(`system1:${task}`, { provider: 'jev' });   // the daily cap (anis group), before the call
   // backend: force one model for this call (an ENSEMBLE caller asks several and votes) — logged, no background shadows
   const route = backend ? { ...routeFor(task), primary: backend, shadow: false } : routeFor(task);
   if (backend && CLEF.has(backend) && !clefOn()) throw new Error(`${backend} unavailable (no edge key)`);

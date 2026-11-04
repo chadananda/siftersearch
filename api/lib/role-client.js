@@ -8,6 +8,7 @@ import { modelFor, retireDeepSeek } from './model-roles.js';
 import { getModel, thinkingParam } from './model-registry.js';
 import { assertAnthropicAllowed, guardLongContext } from './anthropic-policy.js';
 import { logAIUsage } from './ai-services.js';
+import { assertSpendCap } from './spend-caps.js';
 
 const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1',
   gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/', anthropic: 'https://api.anthropic.com/v1/' };
@@ -43,6 +44,7 @@ export function shapeParams(params, { provider, model }) {
 
 export async function roleCreate(role, params, opts = {}) {
   const { provider, model } = retireDeepSeek(modelFor(role));
+  await assertSpendCap(role, { provider });   // the daily cap (spend-caps.js), before the call
   if (provider === 'anthropic') assertAnthropicAllowed({ provider, model, stage: `interactive:${role}`, caller: role });
   guardLongContext({ model, messages: params.messages || [], caller: role });   // the cheap price tier, never silently past it
   const shaped = shapeParams(params, { provider, model });
@@ -61,6 +63,7 @@ export async function roleCreate(role, params, opts = {}) {
 export async function roleBatchCreate(role, params, { client } = {}) {
   const { provider, model } = retireDeepSeek(modelFor(role));
   if (provider !== 'anthropic') throw new Error(`roleBatchCreate: ${role} resolves to ${provider}, not Anthropic — not batchable`);
+  await assertSpendCap(role, { provider });   // before the submit
   assertAnthropicAllowed({ provider, model, stage: `interactive:${role}`, caller: role });
   guardLongContext({ model, messages: params.messages || [], caller: role });
   const shaped = shapeParams(params, { provider, model });

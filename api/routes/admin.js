@@ -65,7 +65,8 @@ import { getSyncStats, forceSyncNow, getUnsyncedCount } from '../services/sync-w
 import { getWatcherStats, isWatcherRunning } from '../services/library-watcher.js';
 import { spawn } from 'child_process';
 import { logger } from '../lib/logger.js';
-import { isAIProcessingPaused, resumeAIProcessing, getAllDailySpending } from '../lib/ai-services.js';
+import { getAllDailySpending } from '../lib/ai-services.js';
+import { capStatus } from '../lib/spend-caps.js';
 import { content } from '../lib/content.js';
 import { paragraphIndexForSite } from '../lib/search/scope.js';
 import { createApiKey, listApiKeys, revokeApiKey, getAllApiKeys } from '../lib/api-keys.js';
@@ -4586,25 +4587,11 @@ Collection: ${paragraph.collection || 'Unknown'}
       return _aiStatusCache;
     }
 
-    const [pauseState, spending] = await Promise.all([
-      Promise.resolve(isAIProcessingPaused()),
-      getAllDailySpending()
-    ]);
+    const [groups, spending] = await Promise.all([capStatus(), getAllDailySpending()]);
 
-    _aiStatusCache = {
-      ...pauseState,
-      dailySpending: spending,
-      dailyLimit: 100  // USD per service
-    };
+    _aiStatusCache = { paused: groups.some((g) => g.blocking), groups, dailySpending: spending };
     _aiStatusCacheTime = now;
     return _aiStatusCache;
-  });
-
-  // Resume AI processing (admin action after budget review)
-  fastify.post('/ai-usage/resume', { preHandler: requireTier('admin') }, async () => {
-    const result = await resumeAIProcessing();
-    logger.info('Admin resumed AI processing');
-    return result;
   });
 
   // =============================================
