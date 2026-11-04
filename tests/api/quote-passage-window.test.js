@@ -1,5 +1,5 @@
 // Quote fast path, the WRITER's view (prompt.js passageText): a passage held for the wording is shown to the writer around
-// that wording, not cut at its first 1,300 characters. Production 11-04 (main 0b53421a): lookup put Gleanings CXVII first
+// that wording, not cut at its head (1,300 then; since 11-04 a passage is whole up to 4,000). Production 11-04 (main 0b53421a): lookup put Gleanings CXVII first
 // (doc 20783 ¶503) but the line stands at character ~2,025 of 2,076, so the writer never saw it, wrote "I did not find the
 // exact phrase … as a numbered Gleanings paragraph" and built the answer from The Bahá'í World XIV and The World Order of
 // Bahá'u'lláh, which quote it.
@@ -11,24 +11,34 @@ const PHRASE = 'The earth is but one country';
 // Gleanings CXVII as production holds it (doc 20783, paragraph index 503), verbatim
 const GLEANINGS_CXVII = "The Great Being, wishing to reveal the prerequisites of the peace and tranquillity of the world and the advancement of its peoples, hath written: The time must come when the imperative necessity for the holding of a vast, an all-embracing assemblage of men will be universally realized. The rulers and kings of the earth must needs attend it, and, participating in its deliberations, must consider such ways and means as will lay the foundations of the world’s Great Peace amongst men. Such a peace demandeth that the Great Powers should resolve, for the sake of the tranquillity of the peoples of the earth, to be fully reconciled among themselves. Should any king take up arms against another, all should unitedly arise and prevent him. If this be done, the nations of the world will no longer require any armaments, except for the purpose of preserving the security of their realms and of maintaining internal order within their territories. This will ensure the peace and composure of every people, government and nation. We fain would hope that the kings and rulers of the earth, the mirrors of the gracious and almighty name of God, may attain unto this station, and shield mankind from the onslaught of tyranny.… The day is approaching when all the peoples of the world will have adopted one universal language and one common script. When this is achieved, to whatsoever city a man may journey, it shall be as if he were entering his own home. These things are obligatory and absolutely essential. It is incumbent upon every man of insight and understanding to strive to translate that which hath been written into reality and action.… That one indeed is a man who, today, dedicateth himself to the service of the entire human race. The Great Being saith: Blessed and happy is he that ariseth to promote the best interests of the peoples and kindreds of the earth. In another passage He hath proclaimed: It is not for him to pride himself who loveth his own country, but rather for him who loveth the whole world. The earth is but one country, and mankind its citizens.";
 
-describe('passageText: a long passage is shown around the wording it was found for', () => {
-  it('the fixture is the production shape: the line sits past the 1,300-character cut', () => {
-    expect(GLEANINGS_CXVII.length).toBeGreaterThan(PASSAGE_CHARS);
-    expect(GLEANINGS_CXVII.indexOf('The earth is but one country')).toBeGreaterThan(PASSAGE_CHARS);
+// a paragraph longer than PASSAGE_CHARS (0.05 % of library paragraphs, 11-04 sample): Gleanings CXVII behind ~2,100 characters
+// of lead-in, so the line sits past the 4,000-character cut
+const LEAD = 'The Great Being hath spoken of the oneness of mankind in many Tablets, and the friends have long pondered these words. '.repeat(18);
+const LONG = LEAD + GLEANINGS_CXVII;
+
+describe('passageText: the writer sees a passage whole; only a very long one is cut, and then around the wording it was found for', () => {
+  it('Gleanings CXVII (2,076 characters) reaches the writer whole — the line and the end of the paragraph with it (11-04)', () => {
+    expect(GLEANINGS_CXVII.length).toBeLessThan(PASSAGE_CHARS);
+    expect(passageText({ text: GLEANINGS_CXVII })).toBe(GLEANINGS_CXVII);
+    expect(passageText({ text: GLEANINGS_CXVII, focus: PHRASE })).toBe(GLEANINGS_CXVII);
+  });
+  it('the long fixture puts the line past the cut', () => {
+    expect(LONG.length).toBeGreaterThan(PASSAGE_CHARS);
+    expect(LONG.indexOf('The earth is but one country')).toBeGreaterThan(PASSAGE_CHARS);
   });
   it('with the wording as focus, the writer sees the line (and the lead-in to it), within the budget', () => {
-    const t = passageText({ text: GLEANINGS_CXVII, focus: PHRASE });
+    const t = passageText({ text: LONG, focus: PHRASE });
     expect(t).toContain('The earth is but one country, and mankind its citizens.');
     expect(t).toContain('It is not for him to pride himself who loveth his own country');
     expect(t.startsWith('… ')).toBe(true);
     expect(t.length).toBeLessThanOrEqual(PASSAGE_CHARS + 4);
   });
-  it('without a focus (an ordinary search passage) the writer sees the head: ≤1,300 characters, ended at a sentence and marked " …"', () => {
-    const t = passageText({ text: GLEANINGS_CXVII });
-    expect(t).toBe(headOf(GLEANINGS_CXVII, PASSAGE_CHARS));
+  it('without a focus (an ordinary search passage) a very long one shows its head: ≤ PASSAGE_CHARS, ended at a sentence and marked " …"', () => {
+    const t = passageText({ text: LONG });
+    expect(t).toBe(headOf(LONG, PASSAGE_CHARS));
     expect(t.endsWith(' …')).toBe(true);
     expect(t.length).toBeLessThanOrEqual(PASSAGE_CHARS + 2);
-    expect(GLEANINGS_CXVII.startsWith(t.slice(0, -2))).toBe(true);
+    expect(LONG.startsWith(t.slice(0, -2))).toBe(true);
     expect(t.slice(0, -2)).toMatch(/[.!?…][”"’)\]]*$/);
   });
   it('headOf never ends mid-word (11-04: a footnote cut at "with the first el" read as the whole passage)', () => {
@@ -37,9 +47,9 @@ describe('passageText: a long passage is shown around the wording it was found f
     expect(headOf('one two three four five six seven eight nine ten', 30)).toBe('one two three four five six …');
     expect(headOf('short', 30)).toBe('short');
   });
-  it('a focus already inside the first 1,300 characters, or one the text does not hold, changes nothing', () => {
-    expect(passageText({ text: GLEANINGS_CXVII, focus: 'The Great Being, wishing to reveal' })).toBe(headOf(GLEANINGS_CXVII, PASSAGE_CHARS));
-    expect(passageText({ text: GLEANINGS_CXVII, focus: 'words this paragraph never says' })).toBe(headOf(GLEANINGS_CXVII, PASSAGE_CHARS));
+  it('a focus already inside the first PASSAGE_CHARS, or one the text does not hold, changes nothing', () => {
+    expect(passageText({ text: LONG, focus: 'The Great Being hath spoken of the oneness' })).toBe(headOf(LONG, PASSAGE_CHARS));
+    expect(passageText({ text: LONG, focus: 'words this paragraph never says' })).toBe(headOf(LONG, PASSAGE_CHARS));
   });
   it('a short passage is whole', () => {
     expect(passageText({ text: 'The earth is but one country and mankind its citizens.', focus: PHRASE })).toBe('The earth is but one country and mankind its citizens.');

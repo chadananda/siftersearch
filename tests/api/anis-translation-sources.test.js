@@ -51,13 +51,13 @@ describe('the researcher looks for an existing translation first', () => {
 });
 
 describe('the writer', () => {
-  it('gets an existing translation whole and marked "quote it verbatim"; other passages stay short', () => {
+  it('gets an existing translation whole and marked "quote it verbatim"; other passages are whole up to PASSAGE_CHARS (4,000, 11-04)', () => {
     const u = anisUserPayload({ question: 'q', passages: [
       { source_title: PHELPS.title, citation_url: PHELPS.source_url, text: LONG_EN, translation: PHELPS.translation },
-      { source_title: 'Other', text: 'x'.repeat(3000) }] });
+      { source_title: 'Other', text: 'x '.repeat(2500) }] });
     expect(u).toMatch(/EXISTING TRANSLATION \(provisional — Stephen Phelps \(public domain\)\) — quote it verbatim/);
     expect(u).toContain('May the East embrace the West.');
-    expect(u).not.toContain('x'.repeat(1301));
+    expect(u).not.toContain('x '.repeat(2001));   // a 5,000-character passage is cut near 4,000
   });
   it('the email frame asks for a ```bilingual block with a source marker per line — and that block renders as pairs', () => {
     expect(CHANNELS.email.frame).toMatch(/```bilingual/);

@@ -3,12 +3,13 @@
 // and speed can change without code. Deps: openai SDK, anis/prompt.js.
 import OpenAI from 'openai';
 import { anisSystem, anisUserPayload, anisDirection } from './prompt.js';
-import { frameFor, DEPTH_FRAME } from './channels.js';
+import { frameFor } from './channels.js';
 import { logAIUsage } from '../ai-services.js';
 import { assertSpendCap } from '../spend-caps.js';
 import { noteProviderError } from '../spend-alerts.js';
 import { getModel } from '../model-registry.js';
 import { trimCutReply } from './quotes.js';
+import { replyCap } from './reply-cap.js';
 import { thinkingFields } from '../role-client.js';
 import { guardLongContext } from '../anthropic-policy.js';
 
@@ -21,20 +22,9 @@ function client(provider) {
   }));
 }
 
-/** The reply's token cap from its format and channel. A research reply gets room (Sonnet 5.5 thinking: 2,700 tokens at 2,218
- *  characters, 10-19); a comparison or understanding answer covers several sides (11-03: 4 of 5 comparisons and 2 of 4
- *  understandings stopped at 1,100); a letter or position answer +2,000 (10-19: cut mid-sentence). Pure. */
-const ROOMY = new Set(['comparison', 'understanding']);
-export function replyCap(direction = {}, effort = null) {
-  const id = direction.format?.id;
-  if (id === 'research') return 8000;
-  const long = id === 'position' || /email/.test(String(direction.channel?.id || direction.channel?.name || ''));
-  // Jev's depth = research gives the writer the full-answer frame (DEPTH_FRAME, "often 500–900 words"): its cap must hold that
-  // answer with its links (11-04: guidance at 1,100 ended on a heading, gd-supersede; understanding at 2,400 hit the cap, goth-03)
-  const deep = frameFor(direction.channel, direction.depth) === DEPTH_FRAME;
-  const base = deep ? 3200 : ROOMY.has(id) ? 2400 : effort && effort !== 'none' && effort !== 'minimal' ? 1500 : 1100;
-  return base + (long ? 2000 : 0);
-}
+// ONE ceiling for every reply (reply-cap.js): a safety stop, never a length control — the old per-format caps (1,100 guidance,
+// 2,400 comparison, …) cut finished answers (11-04: a truncated email; Chad: "truncation does not save us tokens")
+export { replyCap } from './reply-cap.js';
 
 export async function anisCraft({ user_question, retrieved_quotes, conversation_summary, persona_name, mission, companion_append, conversational = false, entities = null, peopleAnswer = null, target = null, onUsage = null, direction = {}, llm, onChunk, signal }) {
   // System = soul + house style (constant → cached prefix); everything about THIS reply goes in the user message.
@@ -45,7 +35,7 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
   // max_completion_tokens and should not reason for a chat reply (reasoning_effort minimal).
   const reg = getModel(llm.model) || {};
   const effort = llm.reasoning_effort ?? reg.reasoningEffort;
-  const maxTok = replyCap(direction, effort);
+  const maxTok = replyCap(llm.model);
   const params = {
     model: llm.model,
     messages: [
@@ -77,10 +67,9 @@ export async function anisCraft({ user_question, retrieved_quotes, conversation_
     if (chunk.choices?.[0]?.finish_reason) finish = chunk.choices[0].finish_reason;
     if (chunk.usage) usage = chunk.usage;
   }
-  // a reply CUT by the token cap is never silent (10-19: two letters ended mid-sentence)
-  // …and it ends at its last whole sentence (r9: replies cut mid-link at the 700-token chat cap; the cap is now 1,100)
+  // a reply that reaches the safety ceiling is never silent; it ends at its last whole sentence (only a runaway gets here)
   if (finish === 'length') {
-    console.warn(JSON.stringify({ anis_craft: 'reply hit the token cap', max_tokens: maxTok, chars: full.length, format: direction.format?.id || null }));
+    console.warn(JSON.stringify({ anis_craft: 'reply hit the token ceiling', max_tokens: maxTok, chars: full.length, format: direction.format?.id || null }));
     full = trimCutReply(full) || full;
   }
   // Spend: every Anís reply. Providers that don't report usage on a stream get an estimate (~4 chars/token).

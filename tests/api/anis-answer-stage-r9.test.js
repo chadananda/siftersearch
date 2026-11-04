@@ -70,8 +70,8 @@ describe('numbers from memory and passages cut short (D, G)', () => {
     expect(HOUSE_STYLE).toMatch(/NUMBERS AND POSITIONS come only from a passage/);
     expect(HOUSE_STYLE).toMatch(/ONE QUOTATION, ONE PASSAGE/);
   });
-  it('the writer sees 1,300 characters of each passage (700 cut the dream account of r8 #50)', () => {
-    expect(PASSAGE_CHARS).toBe(1300);
+  it('the writer sees each passage whole up to 4,000 characters (700 cut the dream account of r8 #50; 1,300 cut a quotation 11-04)', () => {
+    expect(PASSAGE_CHARS).toBe(4000);
     const u = anisUserPayload({ question: 'q', passages: [{ source_title: 'T', text: `${'a '.repeat(500)}END-OF-ACCOUNT` }] });
     expect(u).toContain('END-OF-ACCOUNT');
   });

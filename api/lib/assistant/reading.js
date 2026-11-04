@@ -16,6 +16,7 @@ import { loadReaderCard } from './reader-card.js';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { modelFor } from '../model-roles.js';
+import { roleReplyCap } from './reply-cap.js';
 import { clientFor, thinkingFields } from '../role-client.js';
 import { getModel } from '../model-registry.js';
 import { guardLongContext } from '../anthropic-policy.js';
@@ -521,7 +522,7 @@ EVIDENCE (cite with the labels):
 ${evidenceBlock(research.targets)}
 
 ALREADY_EXPLAINED: ${research.targets.filter((t) => t.seenAt).map((t) => `${t.name} (${t.seenAt})`).join('; ') || 'none'}`;
-  const r = await d.llmJson({ ...role, caller: 'reading-notes', system: NOTES_SYSTEM, user, maxTokens: depth > 1 ? 5000 : 3500 });
+  const r = await d.llmJson({ ...role, caller: 'reading-notes', system: NOTES_SYSTEM, user, maxTokens: roleReplyCap('reading-notes') });   // safety ceiling, never a length cut (11-04)
   const { notes, sources } = renumber(groundedOnly(ownCitations(r.json || { paragraphs: [] }, research.targets)), research.sources);
   // explained = what a note actually covered (a researched target the writer skipped stays available for later)
   const noted = (notes.paragraphs || []).flatMap((p) => (p.notes || []).map((n) => n.name));
@@ -659,7 +660,7 @@ export async function answerInReading(d, { session, text }) {
   const r = await d.search(text, { limit: 6, budgetMs: 3000, ...(doc.religion ? { given: { religion: doc.religion } } : {}) }).catch(() => null);
   const hits = await d.links((r?.hits || []).slice(0, 6)).catch(() => []);
   const sources = hits.map((h) => ({ title: h.title || 'library', url: h.url || null }));
-  const out = await d.llmJson({ ...modelFor('reading-notes'), caller: 'reading-answer', maxTokens: 1500, system: ANSWER_SYSTEM,
+  const out = await d.llmJson({ ...modelFor('reading-notes'), caller: 'reading-answer', maxTokens: roleReplyCap('reading-notes'), system: ANSWER_SYSTEM,
     user: `ANSWER IN: ${langName(session?.explained?.__prefs?.language || 'en')} (the reader's language; quotations stay as published)\nBOOK: ${doc.title}\nPAGE:\n${items.map((p) => `${addressOf(p)} ${p.text}`).join('\n\n')}\n\nLIBRARY:\n${hits.map((h, i) => `[S${i + 1}] ${h.title}: ${String(h.text || '').replace(/⁅\/?s\d+⁆/g, '').slice(0, 700)}`).join('\n\n') || 'none'}\n\nQUESTION: ${text}` });
   const answer = out.json?.answer || out.text || '';
   const { notes, sources: used } = renumber({ paragraphs: [{ pid: 'a', notes: [{ name: 'a', note: answer }] }] }, sources);

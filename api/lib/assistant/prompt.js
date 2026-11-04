@@ -98,9 +98,11 @@ export function displayName(name, { slug = 'cap' } = {}) {
   if (/\p{Lu}/u.test(n)) return n;
   return slug === 'drop' ? '' : n.replace(/[_-]+/g, ' ').replace(/(^|\s)(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase());
 }
-// a passage is given to the writer at this length (r9: at 700 characters the half of a paragraph that answered — the dream
-// account in Messages to America, the sentence on evil after "To another who inquired" — never reached the reply)
-export const PASSAGE_CHARS = 1300;
+// a passage is given to the writer WHOLE up to this length (r9: at 700 characters the half of a paragraph that answered never
+// reached the reply; 11-04: at 1,300 a Star of the West quotation reached a reader ending "must be free from paying …").
+// Measured 11-04 (2 % sample of paragraphs ≥ 200 chars): 1,300 clipped 10 % of them; at 4,000 only 0.05 % are cut, and a
+// 10-passage payload grows ~7 % (mean 6,034 → 6,483 chars). The writer can quote any passage, so it sees the whole paragraph.
+export const PASSAGE_CHARS = 4000;
 
 /** Where `phrase` stands in `text` (accents, apostrophes, punctuation and case ignored, as the quote gate compares) →
  *  [start, end) in the ORIGINAL text, or null. Word-level: each whitespace token folds to its words. Pure. */

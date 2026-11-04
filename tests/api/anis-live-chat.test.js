@@ -304,25 +304,27 @@ describe('anisTurn passes Jev\'s lookup intent to respond even when the lookup f
   });
 });
 
-describe('replyCap: the writer has room for a two-sided or a study answer (coordinator 11-03: comparison/understanding hit 1,100)', () => {
-  it('comparison and understanding get 2,400; research 8,000; a plain chat reply 1,100; a letter +2,000', async () => {
+describe('replyCap: ONE safety ceiling for every reply, never a length cut (Chad 11-04: "do not artificially cut off the length of Anis messages")', () => {
+  it('every format, channel and depth gets the same ceiling: the model\'s output limit, at most 16,000', async () => {
     const { replyCap } = await import('../../api/lib/assistant/craft.js');
-    expect(replyCap({ format: { id: 'comparison' } })).toBe(2400);
-    expect(replyCap({ format: { id: 'understanding' } })).toBe(2400);
-    expect(replyCap({ format: { id: 'research' } })).toBe(8000);
-    expect(replyCap({ format: { id: 'prayer' } })).toBe(1100);
-    expect(replyCap({ format: { id: 'prayer' } }, 'low')).toBe(1500);
-    expect(replyCap({ format: { id: 'position' } })).toBe(3100);
-    expect(replyCap({ format: { id: 'guidance' }, channel: { id: 'email' } })).toBe(3100);
+    const { REPLY_CEILING, roleReplyCap } = await import('../../api/lib/assistant/reply-cap.js');
+    expect(REPLY_CEILING).toBe(16000);
+    expect(replyCap('claude-sonnet-5-5')).toBe(16000);   // registry maxOutput 128,000 → the ceiling
+    expect(replyCap('claude-haiku-5-5')).toBe(16000);
+    expect(replyCap('no-such-model')).toBe(16000);
+    const { getModel } = await import('../../api/lib/model-registry.js');
+    expect(getModel('gpt-4-turbo').maxOutput).toBe(4096);
+    expect(replyCap('gpt-4-turbo')).toBe(4096);   // a model that cannot write 16,000 gets its own limit (never a rejected request)
+    for (const role of ['anis-agent', 'anis-writer', 'reading-notes']) expect(roleReplyCap(role)).toBeGreaterThanOrEqual(4096);
   });
-  it('Jev\'s depth = research on a live channel (the full-answer frame) gets 3,200 whatever the format (11-04 gd-supersede ended on a heading at 1,100)', async () => {
-    const { replyCap } = await import('../../api/lib/assistant/craft.js');
-    const site = channelFor('site-chat');
-    expect(replyCap({ format: { id: 'guidance' }, channel: site, depth: 'research' })).toBe(3200);
-    expect(replyCap({ format: { id: 'understanding' }, channel: site, depth: 'research' })).toBe(3200);
-    expect(replyCap({ format: { id: 'guidance' }, channel: site, depth: 'answer' })).toBe(1100);
-    expect(replyCap({ format: { id: 'guidance' }, channel: channelFor('email', { trusted: true }), depth: 'research' })).toBe(3100);
-    expect(replyCap({ format: { id: 'research' }, channel: site, depth: 'research' })).toBe(8000);
+  it('no Anís reply call carries a per-format or hard-coded cap', async () => {
+    const { readFileSync } = await import('fs');
+    const src = (f) => readFileSync(new URL(`../../api/lib/assistant/${f}`, import.meta.url), 'utf8');
+    expect(src('craft.js')).not.toMatch(/ROOMY|\b(1100|2400|3200|8000)\b/);
+    expect(src('craft.js')).toMatch(/replyCap\(llm\.model\)/);
+    expect(src('agent.js')).not.toMatch(/max_tokens: \d/);
+    expect(src('welcome.js')).not.toMatch(/max_tokens: \d/);
+    expect(src('reading.js')).not.toMatch(/caller: 'reading-(notes|answer)'[^\n]*maxTokens: (depth|\d)/);
   });
 });
 

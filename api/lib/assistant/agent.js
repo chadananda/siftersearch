@@ -8,6 +8,7 @@ import { llmTools, canonical, canonWork, run as runTool } from './tools.js';
 import { dropUnverified, fixQuoteSpeakers, linkQuotes } from './quotes.js';
 import { dropPreamble } from './work-request.js';
 import { agentSearch } from './agent-search.js';
+import { roleReplyCap } from './reply-cap.js';
 
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 
@@ -79,7 +80,7 @@ export async function agentAnswer({ messages, create, tools: impl, onEvent = () 
   let calls = 0, final = '', firstToolMs = null;
   for (let round = 0; round < maxRounds; round++) {
     const last = round === maxRounds - 1 || calls >= maxCalls;
-    const r = await create({ messages: msgs, ...(last ? {} : { tools: AGENT_TOOLS, tool_choice: 'auto' }), max_tokens: 3000 });
+    const r = await create({ messages: msgs, ...(last ? {} : { tools: AGENT_TOOLS, tool_choice: 'auto' }), max_tokens: roleReplyCap('anis-agent') });   // the reply's safety ceiling, never a length cut (11-04)
     usage.in += r?.usage?.prompt_tokens || 0; usage.out += r?.usage?.completion_tokens || 0;
     const m = r?.choices?.[0]?.message || {};
     const tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
