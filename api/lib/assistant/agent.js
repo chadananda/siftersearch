@@ -3,7 +3,7 @@
 // (researcher.js toolRunner over the tools.js registry) plus work_notes_lookup (work-notes.json: sourced lines on a core work's importance). Grounding is code's
 // job: the model cites only the refs its tools gave it ([[P3]] a passage, [[B1]] a book); renderRefs turns them into links and
 // drops any it was not given, and the quote gate removes a sentence quoting words no passage holds. Deps injectable (tests).
-import { toolRunner, libraryTools } from './researcher.js';
+import { toolRunner, libraryTools, TOOL_CHARS } from './researcher.js';
 import { llmTools, canonical, canonWork, run as runTool } from './tools.js';
 import { dropUnverified, fixQuoteSpeakers, linkQuotes } from './quotes.js';
 import { dropPreamble } from './work-request.js';
@@ -98,7 +98,7 @@ export async function agentAnswer({ messages, create, tools: impl, onEvent = () 
       return { tc, out };
     }));
     calls += tcs.length;
-    for (const { tc, out } of outs) msgs.push({ role: 'tool', tool_call_id: tc.id, content: clip(out, 12000) });
+    for (const { tc, out } of outs) msgs.push({ role: 'tool', tool_call_id: tc.id, content: clip(out, TOOL_CHARS) });
   }
   // code does the grounding: refs → links, unverifiable quotations out, speakers fixed, quotations linked, no preamble
   const retrieved = [...found.values()].map((p) => ({ ...p, citation_url: p.source_url, source_title: p.title, source_author: p.author, doc_id: p.document_id }));

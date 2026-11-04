@@ -468,6 +468,10 @@ export function conversationSummary(messages, persona) {
   return prior.map((m, i) => `${m.role === 'user' ? 'Seeker' : persona}: ${m.content.slice(0, i === lastAt ? 1800 : m.role === 'assistant' ? 1000 : 500)}`).join('\n');
 }
 
+/** Anís' search: executeSearch with the full paragraph (≤ 8000, filtered upstream) — he cuts for himself (prompt.js
+ *  passageText, researcher.js show); the quote gate checks the whole. */
+export const anisSearch = (executeSearch) => (args) => executeSearch({ ...args, textChars: Infinity });
+
 async function defaultDeps() {
   const [{ executeSearch }, { craftAnswerStream, stripUngroundedLinks }, companion, { anisCraft }, { planSearch }] = await Promise.all([
     import('../../routes/chat.js'), import('../chat-pipeline.js'), import('../companion/index.js'), import('./craft.js'),
@@ -477,7 +481,7 @@ async function defaultDeps() {
     // Planned once here; executeSearch's plannedSearch then hits the plan cache (same conversation state).
     plan: (messages) => planSearch(messages),
     prewarm: async (messages) => (await import('../planned-search.js')).prewarmSearch(searchQueryFor(messages)),
-    search: executeSearch,
+    search: anisSearch(executeSearch),
     // Lean Anis prompt by default; ANIS_PROMPT=jafar uses the 12k-token Jafar crafter (comparison / rollback).
     craft: process.env.ANIS_PROMPT === 'jafar' ? craftAnswerStream : anisCraft,
     stripLinks: stripUngroundedLinks,

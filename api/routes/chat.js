@@ -23,6 +23,7 @@ import { previewWindow, PREVIEW_PARAGRAPHS } from '../lib/rights/preview.js';
 
 const ENCUMBERED_RANGE = 3;   // the most consecutive paragraphs of a copyrighted book a chat tool reads at once
 import { slugifyPath } from '../lib/slug.js';
+import { headOf } from '../lib/text/head-of.js';
 import { rankByTitle } from '../lib/title-rank.js';
 
 const SITE_URL = 'https://siftersearch.com';
@@ -508,7 +509,12 @@ export async function olParaIds(olHits, { byIds = externalParaIdsByIds, at = par
   return out;
 }
 
-export async function executeSearch({ query, mode = 'passages', religion, collection, author, writerOnly, language, document_id, yearFrom, yearTo, start = 0, limit = 10, scope_config, semanticRatio, entityIds, phrase, plan }) {
+// A passage's text is cut (sentence-bounded, marked " …") at textChars: external API callers and the legacy chat tool loop
+// keep their old ~500-character size. Anís passes Infinity and cuts for himself (prompt.js passageText, researcher.js show):
+// a 500 cut lost a footnote's date ("…ended in 1963 with the first el") and every quoted phrase past character 500.
+export const SEARCH_TEXT_CHARS = 500;
+
+export async function executeSearch({ query, mode = 'passages', religion, collection, author, writerOnly, language, document_id, yearFrom, yearTo, start = 0, limit = 10, scope_config, semanticRatio, entityIds, phrase, plan, textChars = SEARCH_TEXT_CHARS }) {
   const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
@@ -529,7 +535,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     return {
       ...(win.previewLimit ? { copyright: `Under copyright: only the first ${win.previewLimit} paragraphs can be read; quote it only in short excerpts.` } : {}),
       document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year },
-      paragraphs: paragraphs.map(p => ({ index: p.paragraph_index, heading: p.heading || null, text: p.text.substring(0, 1000) }))
+      paragraphs: paragraphs.map(p => ({ index: p.paragraph_index, heading: p.heading || null, text: headOf(p.text, 1000) }))
     };
   }
 
@@ -687,13 +693,13 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
       ...(entitiesOut ? { entities: entitiesOut } : {}),
       ...(peopleAnswerOut ? { peopleAnswer: peopleAnswerOut } : {}),
       // a whole-book "paragraph" (an unsegmented import awaiting re-ingest) is never a passage (Chad 10-19: "Never should we
-      // search an unsegmented book") — filtered BEFORE the 500-character cut below hides its size
+      // search an unsegmented book") — filtered BEFORE the textChars cut below hides its size
       passages: await withBetterCopies(top.filter((hit) => String(hit.text || '').length <= 8000).map(hit => {
         const docId = hit.doc_id || hit.document_id;
         const meta = docMeta.get(docId);
         const extParaId = paraExtIds.get(`${docId}:${hit.paragraph_index}`);
         const result = {
-          text: (hit.text || '').substring(0, 500),
+          text: headOf(hit.text || '', textChars),
           title: hit.title || 'Unknown',
           author: hit.author || '',
           // the BOOK's catalogue author: a paragraph whose author differs is quoted IN that book (r5: a Hidden Word quoted in a
@@ -1276,7 +1282,7 @@ export async function executeLibraryCount({ author, religion, site, language, co
 // Tools that don't need scope just ignore ctx.
 export async function executeTool(name, args, ctx = {}) {
   switch (name) {
-    case 'search': return executeSearch({ ...args, scope_config: ctx.scope_config, entityIds: ctx.entityIds });
+    case 'search': return executeSearch({ ...args, scope_config: ctx.scope_config, entityIds: ctx.entityIds, textChars: SEARCH_TEXT_CHARS });   // a model's args never widen the cut
     case 'library_overview': return executeLibraryOverview();
     case 'library_count': return executeLibraryCount(args);
     case 'find_document_for_citation': return executeFindDocumentForCitation(args);

@@ -46,7 +46,9 @@ const HOUSE = /universal house of justice/i;
 export const isDoctrine = (p) => DOCTRINAL.test(String(p.author || '')) && !HOUSE.test(String(p.author || '')) && !/pilgrim|memoir|reminiscen/i.test(`${p.collection || ''} ${p.title || ''}`);
 /** The House of Justice's own guidance — authoritative on applying the law, labelled as such. Pure. */
 export const isApplication = (p) => HOUSE.test(String(p.author || '')) && !/pilgrim/i.test(`${p.collection || ''} ${p.title || ''}`);
-const GIANT = 6000;   // a "paragraph" this long is a whole unsegmented book (pdf imports) — it matches everything
+// a "paragraph" this long is a whole unsegmented book (pdf imports) — it matches everything. 8000 = executeSearch's own
+// filter: at 6000 this never fired while search cut text at 500, and would drop real 6–8k paragraphs now Anís gets them whole
+const GIANT = 8000;
 
 /** Rank passages: authoritative author first, then the library's authority, then search order; giants out. Pure but for authorityOf. */
 export async function rankByAuthority(passages, authorityOf = async () => 0, works = []) {

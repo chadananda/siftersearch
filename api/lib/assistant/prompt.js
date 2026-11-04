@@ -9,6 +9,7 @@ import { quotedIn } from './findings.js';
 import { creditOf, reportedVoices } from './quotes.js';
 import { SCENARIO_GUIDE, resolveScenario } from './scenarios.js';
 import { foldVerbatim } from '../search/verbatim.js';
+import { headOf } from '../text/head-of.js';
 
 let SOUL = null;
 export function soul() {
@@ -113,22 +114,13 @@ export function phraseSpan(text, phrase) {
   return null;
 }
 
+export { headOf };   // lives in text/head-of.js (search results cut the same way)
+
 /** The part of a passage the writer is shown: the whole when it fits; a long one is cut at PASSAGE_CHARS — except that a
  *  passage held for its WORDING (p.focus, the quotation being sourced) is cut AROUND those words. 11-04: Gleanings CXVII ends
  *  with "The earth is but one country…" at character ~2,025 of 2,076; cut at 1,300 the writer never saw the line in the
  *  words' own source, wrote "I did not find the exact phrase … as a numbered Gleanings paragraph" and built the answer from
  *  the Bahá'í World and The World Order of Bahá'u'lláh (which quote it). The quote gate still checks against the full text. */
-/** The head of a long text, cut at its last sentence end in the final third of `max` (else the last word break), marked " …"
- *  so the reader knows the paragraph goes on (11-04: a cut mid-word read as the whole passage; the writer reported "the
- *  passage breaks off there" and guessed the rest). Pure. */
-export function headOf(t, max) {
-  const s = String(t || '');
-  if (s.length <= max) return s;
-  const head = s.slice(0, max), ends = [...head.matchAll(/[.!?…][”"’)\]]*(?=\s)/g)].map((m) => m.index + m[0].length);
-  const end = ends.filter((e) => e >= max * 0.6).at(-1) ?? (head.lastIndexOf(' ') > max * 0.5 ? head.lastIndexOf(' ') : max);
-  return `${s.slice(0, end).trimEnd()} …`;
-}
-
 export function passageText(p) {
   const t = String(p?.text || ''), max = p?.translation ? 4000 : PASSAGE_CHARS;
   if (t.length <= max) return t;

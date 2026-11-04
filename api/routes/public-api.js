@@ -37,7 +37,7 @@ import { isTestRequest } from '../lib/test-traffic.js';
 import { hybridSearch, keywordSearch, getStats } from '../lib/search.js';
 import { readLibraryStats, countList, religionCollectionCounts } from '../lib/library/library-stats.js';
 import { findDocuments } from '../lib/docs-repo.js';
-import { executeSearch, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
+import { executeSearch, SEARCH_TEXT_CHARS, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
 import { analyzePassagesParallel, unanalyzedResults } from '../lib/parallel-analyzer.js';
 import { keywordTradition } from '../lib/search-plan.js';
 import { logger } from '../lib/logger.js';
@@ -990,7 +990,7 @@ export default async function publicApiRoutes(fastify) {
     }
   }, async (request) => {
     const startTime = Date.now();
-    const result = await executeSearch(request.body);
+    const result = await executeSearch({ ...request.body, textChars: SEARCH_TEXT_CHARS });   // a caller's body never widens the cut
     const durationMs = Date.now() - startTime;
     logApiSearch({ query: request.body.query, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: result.totalMatches || result.passages?.length || 0, durationMs, searchType: 'tools_search', filters: { mode: request.body.mode, religion: request.body.religion, collection: request.body.collection } });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'tools_search', false).catch(() => {});

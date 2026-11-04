@@ -43,6 +43,24 @@ KEEP: <the refs the reply should quote or cite, e.g. P2, P5 — only those that 
 
 // a cut ends at a sentence (else a word) and says the text goes on — never mid-word (prompt.js headOf)
 const clipText = (t, n) => headOf(String(t || '').replace(/\s+/g, ' ').trim(), n);
+// a tool's output reaches the model clipped at TOOL_CHARS (agent.js, research()); show() shares SHOW_CHARS of it among its
+// passages (the rest is room for a tool's own lines), so a long paragraph shortens the others instead of pushing the last out
+export const TOOL_CHARS = 12000;
+const SHOW_CHARS = TOOL_CHARS - 500;
+
+/** Per-item lengths that fit `room` in all: each keeps `want[i]` when the total fits, else every item above a common
+ *  level is cut to it (the short ones stay whole). Pure. */
+export function fitLengths(want, room) {
+  if (want.reduce((a, w) => a + w, 0) <= room) return want;
+  let left = Math.max(0, room), level = 0;
+  const order = want.map((w, i) => [w, i]).sort((a, b) => a[0] - b[0]);
+  for (let k = 0; k < order.length; k++) {
+    const share = Math.floor(left / (order.length - k));
+    if (order[k][0] > share) { level = share; break; }
+    left -= order[k][0];
+  }
+  return want.map((w) => Math.min(w, Math.max(200, level)));
+}
 
 /** The researcher's closing message → { brief, keep: ['P2', …] }. Pure. */
 export function parseBrief(text) {
@@ -69,7 +87,15 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
   // an existing translation is shown whole (the writer quotes it line by line) and says what kind it is
   // the researcher reads a passage as long as the writer will (11-04: at 900 a 1,083-character Dawn-Breakers paragraph lost
   // its last sentence, "It was left to Bahá'u'lláh to unveil it")
-  const show = (refs, n = PASSAGE_CHARS) => refs.filter(Boolean).map((r) => { const p = found.get(r); return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}\n${clipText(p.text, p.translation ? Math.max(n, 4000) : n)}`; }).join('\n\n') || '(nothing)';
+  const show = (refs, n = PASSAGE_CHARS) => {
+    const ps = refs.filter(Boolean).map((r) => [r, found.get(r)]);
+    if (!ps.length) return '(nothing)';
+    const heads = ps.map(([r, p]) => `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}`);
+    const texts = ps.map(([, p]) => String(p.text || '').replace(/\s+/g, ' ').trim());
+    // + "\n", the " …" a cut adds, and the "\n\n" between passages
+    const caps = fitLengths(texts.map((t, i) => Math.min(t.length, ps[i][1].translation ? Math.max(n, 4000) : n)), SHOW_CHARS - heads.reduce((a, h) => a + h.length + 5, 0));
+    return ps.map((_, i) => `${heads[i]}\n${headOf(texts[i], caps[i])}`).join('\n\n');
+  };
   const searched = [];   // each search's query and its passages' documents in rank order (research's book step)
   const searchLibrary = async ({ query, tradition }) => {
     const hits = (await impl.search(query, tradition)).slice(0, 8);
@@ -286,7 +312,7 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     }));
     for (const { tc, args, out } of outs) {
       steps.push({ tool: tc.function?.name, args, found: (String(out).match(/^\[[PW]\d+\]/gm) || []).length });
-      msgs.push({ role: 'tool', tool_call_id: tc.id, content: clipText(out, 12000) });
+      msgs.push({ role: 'tool', tool_call_id: tc.id, content: clipText(out, TOOL_CHARS) });
     }
     if (!wantBrief && (round === maxRounds - 1 || calls >= maxCalls)) break;
   }

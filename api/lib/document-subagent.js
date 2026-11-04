@@ -154,13 +154,13 @@ async function buildOutline(document_id, paragraphRange, note = () => {}) {
 
 async function searchInDocument(document_id, query, limit, note = () => {}) {
   const safeLimit = Math.min(Math.max(limit || 8, 1), 20);
-  const result = await executeSearch({ query, mode: 'passages', document_id, limit: safeLimit });
+  const result = await executeSearch({ query, mode: 'passages', document_id, limit: safeLimit, textChars: 800 });
   if (result?.error) return { error: result.error };
   return {
     hits: (result.passages || []).map(p => (note(p.paragraph_index, { external_para_id: p.external_para_id || null }), {
       paragraph_index: p.paragraph_index,
       heading: p.heading || null,
-      text: (p.text || '').slice(0, 800)
+      text: p.text || ''   // cut at 800 by executeSearch, sentence-bounded
     }))
   };
 }
