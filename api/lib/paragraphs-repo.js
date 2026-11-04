@@ -23,6 +23,9 @@ export function paragraphDoc(p, doc, authority = null) {
     // a part of a multi-part OceanLibrary work (KJV, Qur'an…) is titled — and so cited — "<work>, <part>" (ol-works.js)
     // slug = the DOC's stored slug (docs.slug): links are built from it, never from the paragraph's author + title
     title: olCiteTitle(doc), author, filename: doc.filename, slug: doc.slug || null,
+    // the BOOK's author beside the paragraph's writer: a quotation (author Bahá'u'lláh) in The World Order of Bahá'u'lláh
+    // has book_author Shoghi Effendi — who wrote the WORK (quote ranking, prompt "as quoted in this work by")
+    book_author: doc.author || null,
     religion: doc.religion, collection: doc.collection, language: doc.language,
     year: doc.year ? parseInt(doc.year, 10) : null, authority: paraAuthority, book_authority: docAuthority,
     heading: p.heading || '', blocktype: p.blocktype || 'paragraph',

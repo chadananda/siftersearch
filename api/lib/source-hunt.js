@@ -11,6 +11,7 @@ import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
 import { authorAuthority, getAuthority } from './authority.js';
 import { isCoreLiterature } from './rights/canonical.js';
+import { keyFactor, foldKey } from './search/doctrinal-rank.js';
 import { segment, cleanText } from './phrases.js';
 
 /** Stored text still carries HTML entities in ~96k paragraphs (mostly the bahai-library.com copies: `&quot;` around a
@@ -188,13 +189,17 @@ export const guardianTranslation = (c) => {
 
 // the Hebrew Bible is shelved under both Judaism and Christianity: a Psalm named by the seeker may sit in either
 const sameTradition = (a, b) => !!a && !!b && (a === b || (['Judaism', 'Christian'].includes(a) && ['Judaism', 'Christian'].includes(b)));
+// the standing of the WORK's author (doctrinal-rank's tier: Bahá'u'lláh / the Báb > 'Abdu'l-Bahá > Shoghi Effendi > the rest;
+// pilgrim notes and talks below) — among books that QUOTE the words, the higher author's book first (11-03: "The earth is but
+// one country" named The World Order of Bahá'u'lláh, then a Bahá'í World volume). No book author known → the writer's.
+export const bookStanding = (c) => { const b = c.book_author || c.writer || c.author; return keyFactor(foldKey(firstPerson(b || '') || b), null, c.collection); };
 export function rankOrigins(cands, quoteAuthor = null, religion = null) {
   const canon = (n) => firstPerson(n || '') || n;
   const year = (c) => { const y = parseInt(c.year, 10); return y > 0 ? y : 9999; };
   // scripture itself (another tradition's text holding the words) is the origin of a Bahá'í book that quotes it (11-01 wording battery)
   const scripture = (c) => (c.holds ?? ((c.overlap || 0) >= VERBATIM)) && c.religion && !/ba?h[aá]['’ʼ‘]?[ií]/i.test(c.religion) && (c.overlap || 0) >= VERBATIM ? 1 : 0;
   // a tradition the seeker NAMED ("the Buddha said …", "which sura …") outranks a Bahá'í book that quotes it (11-01 battery)
-  const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, religion && sameTradition(c.religion, religion) ? 1 : 0, scripture(c), quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0,
+  const key = (c) => [c.holds ?? ((c.overlap || 0) >= VERBATIM) ? 1 : 0, religion && sameTradition(c.religion, religion) ? 1 : 0, scripture(c), quoteAuthor && canon(c.writer) === canon(quoteAuthor) ? 1 : 0, c.ownWork ? 1 : 0, bookStanding(c),
     // the paragraph holding the WORDING beats one the decision passed on meaning only — a neighbour (Liliane 10-05: Gleanings
     // 60.3 beat the verbatim 60.2) or another Core book that paraphrases (the Tablets book over Gleanings for 'Tear asunder').
     // A different translation is verbatim nowhere, so cross-translation ranking is unchanged.

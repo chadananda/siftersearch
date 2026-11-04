@@ -1,12 +1,15 @@
 // Lookups fast path (W1, 11-03): JEV decides a message is a lookup (book / quote / reference) and this file RESOLVES it by CODE —
 // title index, exact-phrase search, pn / heading number; no planner, no agent. Never reads intent from wording. null = not
 // (provably) found → today's path. Confirmed by evidence only: a book in the index, the wording in a passage, the number in the book.
-// Deps (injectable): work-request findWork, assistant/agent-search, paragraphs-repo paragraphsByPn, hit-links withLinks.
+// Deps (injectable): work-request findWork, assistant/agent-search, paragraphs-repo paragraphsByPn, hit-links withLinks;
+// quote order = source-hunt rankOrigins (the words' author's own work first).
 import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { findTitled, titleCandidates, coreWork } from './work-request.js';
 import { sectionRange } from './numbering.js';
 import { isCoreLiterature } from '../rights/canonical.js';
+import { firstPerson } from '../authorship/reader.js';
+import { authorAuthority } from '../authority.js';
 
 const ROMAN = /^(?=[ivxlcdm]+$)m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$/i;
 const romanToInt = (r) => { const v = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 }; let n = 0, p = 0;
@@ -114,8 +117,8 @@ export async function resolveLookup(messages, deps = {}) {
   const book = b && (b.work.doc.paragraph_count ?? 99) >= 20 && coreWork(b.work.doc) ? b : null;
   // only CORE literature makes a quote candidate (Chad 11-03): a line held only by commentary, a talk or a pilgrim note is not
   // a quotation to source here (those books are still cited later in answers; only this candidate step is scoped)
-  const ok = hits.filter(isCoreLiterature).map((h) => ({ h, ...holds(h.text, phrase) })).filter((x) => x.near).sort((a, b2) => Number(b2.exact) - Number(a.exact));
-  const quote = ok.length ? done({ kind: 'quote', phrase, passages: ok.slice(0, 5).map((x) => x.h) }) : null;
+  const ok = await quoteCandidates(hits, phrase, search);
+  const quote = ok.length ? done({ kind: 'quote', phrase, passages: ok.slice(0, 5) }) : null;
   if (!book || !quote) return book || quote;
   const pick = await (deps.pickQuoteOrBook || pickQuoteOrBook)(messages, { book, quote }, { profile: deps.profile, onJev: deps.onJev,
     fetchImpl: deps.fetchImpl || (await import('../systemone.js')).jevFetch('anis-quote-or-book') });
@@ -128,6 +131,29 @@ export async function resolveLookup(messages, deps = {}) {
   return { ...chosen, ms: Date.now() - t0, contested: { book: book.work.doc.id, quote: quote.passages.length, by: choice ? 'jev' : 'lookup intent' } };
 }
 
+/** The core passages that hold the wording, the SOURCE first (Chad's standing rule, 11-03: the work by the author of the words
+ *  beats a work that quotes them; then the quoting work's author by standing; the best published edition among equals). The
+ *  order is source-hunt's rankOrigins — the one origin ranking — over search hits: the paragraph's writer (`author`) against
+ *  the book's (`book_author`). Search order alone put The World Order of Bahá'u'lláh (Shoghi Effendi quoting the line) and a
+ *  Bahá'í World volume ahead of Gleanings CXVII / the Tablet of Maqṣúd. When no hit is the writer's OWN work (a line quoted by
+ *  many books crowds its source out of the first ten), one more search inside that writer's texts, as source-hunt does. */
+export async function quoteCandidates(hits, phrase, search = null) {
+  const { rankOrigins, quoteAuthorOf } = await import('../source-hunt.js');
+  const canon = (n) => firstPerson(n || '') || n || null;
+  const seen = new Set();
+  const cands = (list) => list.filter(isCoreLiterature).map((h) => ({ h, ...holds(h.text, phrase) })).filter((x) => x.near).map(({ h, exact }) => {
+    const writer = h.author || null, book = h.book_author || writer;
+    return { ...h, holds: exact, overlap: exact ? 1 : 0, writer, book_author: book, authority: authorAuthority(writer) ?? 0,
+      ownWork: !!writer && canon(writer) === canon(book) && h.blocktype !== 'footnote', _hit: h };
+  }).filter((c) => { const k = c.id ?? c._hit; if (seen.has(k)) return false; seen.add(k); return true; });
+  const pool = cands(hits);
+  const quoteAuthor = pool.length ? quoteAuthorOf(pool) : null;
+  if (quoteAuthor && search && !pool.some((c) => c.holds && c.ownWork && canon(c.writer) === quoteAuthor)) {
+    pool.push(...cands(await search(phrase, null, 10, { author: quoteAuthor }).catch(() => [])));
+  }
+  return rankOrigins(pool, quoteAuthor).map((c) => c._hit);
+}
+
 const MIN_JEV = 0.6;
 /** Jev's typed choice between the two candidates of a quote lookup: the book whose title is the words, or the passages holding them.
  *  → { choice: 'quote'|'book', confidence, distribution, ms } | null (no key / timeout / failure). */
@@ -135,10 +161,12 @@ export async function pickQuoteOrBook(messages, { book, quote }, { profile = {},
   if (!apiKey || !fetchImpl) return null;
   const [{ ENDPOINT }, { modelFor }, { stateOf }, { jevCall, JEV_LIMITS }] = await Promise.all([import('../scope-extract.js'), import('../model-roles.js'),
     import('./strategy-choice.js'), import('./jev-call.js')]);
-  const d = book.work.doc, p = quote.passages[0] || {};
+  // p = the SOURCE (quoteCandidates puts the words' own author's work first); named by the work's author, the writer only when quoted
+  const d = book.work.doc, p = quote.passages[0] || {}, by = p.book_author || p.author;
+  const quoting = p.author && by && p.author !== by ? ` (quoting ${p.author})` : '';
   const criteria = {
     book: `the reader wants the work titled "${d.title}"${d.author ? ` by ${d.author}` : ''} (${d.paragraph_count ?? '?'} paragraphs) — to open or read the book itself`,
-    quote: `the reader wants the passage that says these words ("${String(p.text || '').slice(0, 220)}" — ${p.title || 'a passage'}${p.author ? `, ${p.author}` : ''}): where they come from, the source`,
+    quote: `the reader wants the passage that says these words ("${String(p.text || '').slice(0, 220)}" — ${p.title || 'a passage'}${by ? `, ${by}${quoting}` : ''}): where they come from, the source`,
   };
   const t0 = Date.now();
   const call = await jevCall('lookup', async (signal) => {
