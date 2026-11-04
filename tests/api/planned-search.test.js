@@ -170,6 +170,21 @@ describe('plannedSearch', () => {
     expect(r.hits.length).toBe(5);
   });
 
+  // 11-03 bench: two planned searches took 2.2-2.5 s = passages + resolve + the full 1.5 s grace. The grace runs from the
+  // moment the passages are in, BESIDE source resolution, so a slow resolve and a late claims layer overlap.
+  it('the claims grace runs beside source resolution, not after it', async () => {
+    const planPeople = async (_i, { given } = {}) => ({ ...buildPlan({
+      tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 }, author: { choice: 'none', confidence: 0.9 },
+      shape: { choice: 'enumerate', confidence: 0.9 }, about: { choice: 'people', confidence: 0.95 },
+    }, { given }), ms: 5 });
+    const people = () => new Promise((ok) => setTimeout(() => ok({ people: [] }), 10_000));
+    const resolver = (hits) => new Promise((ok) => setTimeout(() => ok({ hits, resolved: 0 }), 1000));
+    const t0 = Date.now();
+    const r = await plannedSearch('the role of the Hands of the Cause', { planner: planPeople, engine: engine(() => many(5)).fn, people, resolver, encounterProbe: () => false, encounters: async () => null });
+    expect(r.timings.claims_late).toBe(true);
+    expect(Date.now() - t0).toBeLessThan(2200);   // max(1000, 1500), not 1000 + 1500
+  });
+
   it('does not run the people layer for a question about what a text says', async () => {
     let called = false;
     await plannedSearch('x', { planner: planOf({}), engine: engine(() => many(3)).fn, people: async () => { called = true; return { people: [] }; } });

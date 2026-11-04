@@ -249,6 +249,9 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
     quotation ? search({}, verbatimQ, KEYWORD_ONLY).catch(() => []) : Promise.resolve([]),
   ]);
   stages.passages_ms = Date.now() - t1;
+  // CLAIMS GRACE starts NOW (the passages are in) and runs beside target / hints / source resolution — it used to start
+  // after resolve, so a late claims layer cost resolve + 1.5 s (11-03 bench: 2.2-2.5 s planned searches)
+  const claimsGraceP = claimsP ? Promise.race([claimsP, new Promise((ok) => { const t = setTimeout(() => { stages.claims_late = true; ok(null); }, CLAIMS_GRACE_MS); t.unref?.(); })]) : null;
   const quotedIds = plan.prefer
     ? await (voices ?? (engine ? null : quotingParagraphs))?.(r.results.map((h) => h.id), plan.prefer.aliases).catch(() => new Set()) ?? new Set()
     : new Set();
@@ -296,7 +299,7 @@ export async function plannedSearch(query, { messages, given = {}, defaults = {}
   // CLAIMS GRACE (10-21: after a restart the claim worker loads its corpus ~10 s, and the first people-ish searches waited it out
   // — 10.6 s for "the role of the Hands of the Cause today", passages ready at 1.5 s): once the passages are in, the claims get
   // CLAIMS_GRACE_MS more; late, the answer goes out without them (stages.claims_late) and the worker keeps warming
-  const pr = claimsP ? await Promise.race([claimsP, new Promise((ok) => { const t = setTimeout(() => { stages.claims_late = true; ok(null); }, CLAIMS_GRACE_MS); t.unref?.(); })]) : null;
+  const pr = claimsGraceP ? await claimsGraceP : null;
   // A who-met-whom probe that found nothing on a non-people plan is not a people answer.
   if (pr && (layers.claims || pr.pattern)) {
     // A pattern answer (the encounter index answered the question) is COMPLETE — a group's whole roster — so it is
