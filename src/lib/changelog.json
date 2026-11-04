@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-04T17:37:04.111Z",
+  "generated": "2026-11-04T17:52:19.775Z",
   "entries": [
     {
       "hash": "abab9e7d",
@@ -2828,41 +2828,6 @@
       "type": "New",
       "description": "By-slug collection/religion listings carry cover_url",
       "scope": "library"
-    },
-    {
-      "hash": "03533b7f",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "CUDA out of memory → the same work on the CPU (aorus's 8 GB is shared by two transcriptions, probes and DeepFilterNet; a third concurrent job ran out of memory — measured peak 7.8 GB — so aorus stays at 2 slots)",
-      "scope": "media"
-    },
-    {
-      "hash": "2688aeeb",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Collection pages broke client-side since same-origin (PUBLIC_API_URL='' → new URL('/api/…') throws 'Invalid URL'); resolve against window.location.origin. Deploy 2.187.777",
-      "scope": "library"
-    },
-    {
-      "hash": "08d7222d",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Aorus starved — the enhance probes ran on a loaded boss; feed deeper, two download runs, live view = running runs",
-      "scope": "media"
-    },
-    {
-      "hash": "fda665bd",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Matcher — compilations credited to their compiler agree with the Writings they gather; slug authors (writings-shoghieffendi-…) agree; Bindery titles never subtitle-split (Torah books); a title on >4 docs is sections, listed not covered; runner caches image hashes, survives network errors, --skip-docs for matches rejected by eye",
-      "scope": "covers"
-    },
-    {
-      "hash": "e637771c",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "LLM lane fan-out — name-correction and copy-edit chunks run at once; quotations and teachings linked together",
-      "scope": "media"
     }
   ],
   "grouped": {
@@ -5716,41 +5681,6 @@
         "type": "New",
         "description": "By-slug collection/religion listings carry cover_url",
         "scope": "library"
-      },
-      {
-        "hash": "03533b7f",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "CUDA out of memory → the same work on the CPU (aorus's 8 GB is shared by two transcriptions, probes and DeepFilterNet; a third concurrent job ran out of memory — measured peak 7.8 GB — so aorus stays at 2 slots)",
-        "scope": "media"
-      },
-      {
-        "hash": "2688aeeb",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Collection pages broke client-side since same-origin (PUBLIC_API_URL='' → new URL('/api/…') throws 'Invalid URL'); resolve against window.location.origin. Deploy 2.187.777",
-        "scope": "library"
-      },
-      {
-        "hash": "08d7222d",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Aorus starved — the enhance probes ran on a loaded boss; feed deeper, two download runs, live view = running runs",
-        "scope": "media"
-      },
-      {
-        "hash": "fda665bd",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Matcher — compilations credited to their compiler agree with the Writings they gather; slug authors (writings-shoghieffendi-…) agree; Bindery titles never subtitle-split (Torah books); a title on >4 docs is sections, listed not covered; runner caches image hashes, survives network errors, --skip-docs for matches rejected by eye",
-        "scope": "covers"
-      },
-      {
-        "hash": "e637771c",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "LLM lane fan-out — name-correction and copy-edit chunks run at once; quotations and teachings linked together",
-        "scope": "media"
       }
     ]
   }
