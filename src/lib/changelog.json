@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-04T18:13:15.507Z",
+  "generated": "2026-11-04T18:34:29.293Z",
   "entries": [
+    {
+      "hash": "0543d0a6",
+      "date": "2026-11-04",
+      "type": "Docs",
+      "description": "Retire Strategies & Activities — its content now lives on three layered pages: Tools (registry merged with the plan, planned tools), Response Strategies (the strategy of strategies, question classes A1–H2 with served-by, building steps, composition, decisions), Activities (reader activities with linked steps); /docs/anis-strategies 301s to /docs/response-strategies; builder script removed",
+      "scope": null
+    },
     {
       "hash": "abab9e7d",
       "date": "2026-11-04",
@@ -2793,24 +2800,17 @@
       "type": "New",
       "description": "Media-item re-runs take slugs as well as ids",
       "scope": "media"
-    },
-    {
-      "hash": "cd2725e6",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "ASR loops repaired and a publish gate (QA item 2)",
-      "scope": "media"
-    },
-    {
-      "hash": "fd22bc8e",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The shared GPU — a job waits under a lock until the card has the memory its kind needs (transcribe 3.5 GB, probe 2 GB, grade/dfn 1 GB), so jobs no longer run aorus out of memory and fall to the CPU (a 57-min talk took 9+ min on the CPU fallback)",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-04": [
+      {
+        "hash": "0543d0a6",
+        "date": "2026-11-04",
+        "type": "Docs",
+        "description": "Retire Strategies & Activities — its content now lives on three layered pages: Tools (registry merged with the plan, planned tools), Response Strategies (the strategy of strategies, question classes A1–H2 with served-by, building steps, composition, decisions), Activities (reader activities with linked steps); /docs/anis-strategies 301s to /docs/response-strategies; builder script removed",
+        "scope": null
+      },
       {
         "hash": "abab9e7d",
         "date": "2026-11-04",
@@ -5624,20 +5624,6 @@
         "date": "2026-10-22",
         "type": "New",
         "description": "Media-item re-runs take slugs as well as ids",
-        "scope": "media"
-      },
-      {
-        "hash": "cd2725e6",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "ASR loops repaired and a publish gate (QA item 2)",
-        "scope": "media"
-      },
-      {
-        "hash": "fd22bc8e",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The shared GPU — a job waits under a lock until the card has the memory its kind needs (transcribe 3.5 GB, probe 2 GB, grade/dfn 1 GB), so jobs no longer run aorus out of memory and fall to the CPU (a 57-min talk took 9+ min on the CPU fallback)",
         "scope": "media"
       }
     ]
