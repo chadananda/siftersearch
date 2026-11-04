@@ -110,11 +110,41 @@ TARGET — who can apply the change. DATA (the live loop may apply it): "strateg
 "step" (one step's parameters inside a strategy), "template" (an answer template or format). CODE (an engineer applies it):
 "activity" (api/lib/assistant/activities), "tool" (a search/lookup tool), "index" (search, ranking, Qdrant/phrase index,
 embeddings), "writer-code" (the writer's prompt, quoting, linting), "other-code". Prefer a DATA target when a strategy
-change alone fixes the class; name a CODE target when it cannot.
+change alone fixes the class; name a CODE target when it cannot. For a DATA target, "strategy" names the strategy id it edits.
+SCENARIOS — a proposal and its acceptance tests come together. Every CODE suggestion carries 1-3 executable acceptance
+scenarios (a runner replays the examples and checks the trace). given.reader names the reader and the CLASS of context,
+never this question ("a reader asking where a known quotation comes from"); given.history (optional) prior turns as short
+class descriptions; when.asks the class of request; when.examples 2-3 concrete SYNTHETIC questions of that class (not this
+question, not its words); then: checks, deterministic first — "strategy" (expect: the strategy id chosen), "tool_called" /
+"tool_not_called" (expect: tool name), "source_tier" (expect: the tier the top cited source must have), "cites_original"
+(expect: what original is cited first), "links_book" (expect: which book is linked); "judge" (expect: a criterion the judge
+grades) only when no trace field can show it.
 OUTPUT: exactly one JSON object: {"diagnosis":"what went wrong for the reader, in one or two sentences",
 "root_cause":"the code-level cause (stage, file, function) behind it","suggestions":[{"stage":"STAGE","file":"path/to/file.js","fn":"functionName or null",
-"target":"strategy|step|template|activity|tool|index|writer-code|other-code","change":"what to change, concretely","expected_effect":"what gets better, for which class of question","classes":["kebab-class"],
-"severity":1|2|3}]} — at most 3 suggestions, most important first.`;
+"target":"strategy|step|template|activity|tool|index|writer-code|other-code","strategy":"strategy id or null","change":"what to change, concretely","expected_effect":"what gets better, for which class of question",
+"scenarios":[{"title":"…","given":{"reader":"…","history":["…"]},"when":{"asks":"…","examples":["…","…"]},"then":[{"check":"tool_called","expect":"…"}]}],
+"classes":["kebab-class"],"severity":1|2|3}]} — at most 3 suggestions, most important first.`;
+
+export const SCENARIO_CHECKS = ['strategy', 'tool_called', 'tool_not_called', 'source_tier', 'cites_original', 'links_book', 'judge'];
+const strs = (xs, n, len) => (Array.isArray(xs) ? xs : []).filter((x) => typeof x === 'string' && x.trim()).slice(0, n).map((x) => clip(x.trim(), len));
+/** One acceptance scenario → the validated shape, or null when malformed (the suggestion is kept; only the scenario drops).
+ *  Needs given.reader, when.asks, 2-3 examples and at least one known check with an expect. */
+export function parseScenario(s) {
+  if (!s || typeof s !== 'object') return null;
+  const reader = clip(s.given?.reader, 300), asks = clip(s.when?.asks, 300);
+  const examples = strs(s.when?.examples, 3, 300);
+  const then = (Array.isArray(s.then) ? s.then : []).filter((c) => c && SCENARIO_CHECKS.includes(c.check) && typeof c.expect === 'string' && c.expect.trim())
+    .slice(0, 6).map((c) => ({ check: c.check, expect: clip(c.expect.trim(), 300) }));
+  if (!reader || !asks || examples.length < 2 || !then.length) return null;
+  return { title: clip(s.title, 160) || clip(asks, 160), given: { reader, history: strs(s.given?.history, 4, 200) }, when: { asks, examples }, then };
+}
+export const parseScenarios = (xs) => (Array.isArray(xs) ? xs : []).slice(0, 3).map(parseScenario).filter(Boolean);
+/** A stored row's scenarios (scenarios_json text, or the parsed array) → validated scenarios ([] for rows from before). */
+export const scenariosOf = (r) => {
+  const v = r?.scenarios ?? r?.scenarios_json;
+  if (!v) return [];
+  try { return parseScenarios(typeof v === 'string' ? JSON.parse(v) : v); } catch { return []; }
+};
 
 export function deepMessage(item, judge, { replay = null, passages = [], codeMap = FIX_WHERE } = {}) {
   const L = [judgeMessage(item, { maxHits: 20 }), `JUDGE: ${judge.verdict} ${judge.stage || ''} [${(judge.classes || []).join(', ')}] — ${judge.why || ''}`];
@@ -135,6 +165,8 @@ export function parseSuggestions(text) {
     return { stage, file, fn: s.fn ? clip(s.fn, 120) : null,
       target: TARGETS.includes(t) ? t : inferTarget({ stage, file }),   // the analyst names it; inferred when unnamed or invalid
       change: clip(s.change, 1200), expected_effect: clip(s.expected_effect, 600),
+      strategy: typeof s.strategy === 'string' && s.strategy.trim() && s.strategy !== 'null' ? clip(s.strategy.trim(), 80) : null,
+      scenarios: parseScenarios(s.scenarios),
       classes: (Array.isArray(s.classes) ? s.classes : []).map(String).slice(0, 6),
       severity: Math.min(3, Math.max(1, Number(s.severity) || 2)) };
   }).filter((s) => s.change);
@@ -160,7 +192,7 @@ export function mergeSuggestions(open = [], incoming = [], evidenceKey) {
   const inserts = [], bumps = [];
   for (const s of incoming) {
     const hit = open.find((o) => sameSuggestion(o, s)) || inserts.find((o) => sameSuggestion(o, s));
-    if (hit?.id != null) { if (!bumps.some((b) => b.id === hit.id)) bumps.push({ id: hit.id, evidence_key: evidenceKey, severity: s.severity }); }
+    if (hit?.id != null) { if (!bumps.some((b) => b.id === hit.id)) bumps.push({ id: hit.id, evidence_key: evidenceKey, severity: s.severity, scenarios: s.scenarios?.length ? s.scenarios : null, strategy: s.strategy ?? null }); }
     else if (!hit) inserts.push({ ...s, evidence: [evidenceKey] });
   }
   return { inserts, bumps };
@@ -304,7 +336,7 @@ export function improveDigest(data, { since, cap = null } = {}) {
     .map((r) => ({ r, evidence_new: r.evidence.filter(fresh).length, is_new: (r.first_seen || '') >= S }))
     .filter((x) => x.is_new || x.evidence_new > 0)
     .map(({ r, evidence_new, is_new }) => ({ id: r.id, new: is_new, status: r.status, target: r.target, stage: r.stage, file: r.file, fn: r.fn,
-      change: r.change, expected_effect: r.expected_effect, severity: r.severity, evidence_n: r.evidence_n, evidence_new, score: r.score,
+      scenarios: scenariosOf(r), change: r.change, expected_effect: r.expected_effect, severity: r.severity, evidence_n: r.evidence_n, evidence_new, score: r.score,
       examples: [...r.evidence].reverse().map(example).filter(Boolean).slice(0, 2) }));
   const dataChanges = rows.filter((r) => targetClass(r.target) === 'data' && ((r.first_seen || '') >= S || (r.status_at || '') >= S))
     .map((r) => ({ id: r.id, state: r.status === 'done' ? 'applied' : r.status === 'rejected' ? 'rejected' : 'proposed', status: r.status,

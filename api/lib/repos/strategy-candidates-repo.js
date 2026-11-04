@@ -141,3 +141,38 @@ export function rollback(db, id, { by = 'ops' } = {}) {
     return { id, rolled_back: cur.version, restored: prev?.version ?? null };
   })();
 }
+
+// ── Phase 4: EDITS of an existing strategy from the improve analyst's DATA suggestions (cluster_key 'edit:<strategy>') ──
+/** Design runs whose cluster_key starts with `prefix`, created at/after `since` ('YYYY-MM-DD HH:MM:SS'). → count */
+export const countDesigns = (db, { prefix, since }) => Number(ensureCandidatesSchema(db)
+  .prepare('SELECT COUNT(*) AS n FROM strategy_designs WHERE cluster_key LIKE ? AND created_at >= ?').get(`${prefix}%`, since)?.n || 0);
+/** The newest design row that produced id@version (its label is the one-line change), or null. */
+export const designFor = (db, id, version) => ensureCandidatesSchema(db)
+  .prepare('SELECT * FROM strategy_designs WHERE strategy_id = ? AND version = ? ORDER BY id DESC LIMIT 1').get(id, version) || null;
+/** The deciding ledger row for id@version (promote | reject | already-active; a dry run decides nothing), or null. */
+export function decisionFor(db, id, version) {
+  const r = ensureCandidatesSchema(db).prepare(`SELECT * FROM strategy_promotions WHERE strategy_id = ? AND version = ?
+    AND action IN ('promote', 'reject', 'already-active') ORDER BY id DESC LIMIT 1`).get(id, version);
+  if (!r) return null;
+  const { decision_json, ...rest } = r;
+  return { ...rest, decision: safeJson(decision_json) };
+}
+
+/** The progress page's reads (audit/improve-overview.js shapes them): the ledger's newest rows with each version's parent and the
+ *  one-line change its design logged; the candidates no ledger row has tried yet (= under test now); gap counts (open; designs
+ *  since `since`, edits excluded). No question text. */
+export function overviewReads(db, { since, limit = 200 } = {}) {
+  ensureCandidatesSchema(db);
+  const label = db.prepare('SELECT cluster_key, label FROM strategy_designs WHERE strategy_id = ? AND version = ? ORDER BY id DESC LIMIT 1');
+  const parent = db.prepare('SELECT parent_version FROM strategies WHERE id = ? AND version = ?');
+  const change = (id, v) => { const d = label.get(id, v); if (!d) return null;
+    return String(d.cluster_key).startsWith('edit:') ? d.label : `new design for the "${d.label || '?'}" gap class`; };
+  const promotions = listPromotions(db, { limit }).map((p) => ({ ...p, parent_version: p.version != null ? parent.get(p.strategy_id, p.version)?.parent_version ?? null : null,
+    change: p.version != null ? change(p.strategy_id, p.version) : null }));
+  const tried = new Set(db.prepare('SELECT DISTINCT strategy_id, version FROM strategy_promotions').all().map((r) => `${r.strategy_id}@${r.version}`));
+  const candidates = db.prepare("SELECT id, version, parent_version, created_at FROM strategies WHERE status = 'candidate' ORDER BY created_at, version").all()
+    .filter((c) => !tried.has(`${c.id}@${c.version}`)).map((c) => ({ ...c, change: change(c.id, c.version) }));
+  const gaps = { open: Number(db.prepare('SELECT COUNT(*) AS n FROM strategy_gaps WHERE design_id IS NULL').get().n || 0),
+    designed: Number(db.prepare("SELECT COUNT(*) AS n FROM strategy_designs WHERE cluster_key NOT LIKE 'edit:%' AND created_at >= ?").get(since || '').n || 0) };
+  return { promotions, candidates, gaps };
+}

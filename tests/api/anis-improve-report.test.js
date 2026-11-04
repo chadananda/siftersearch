@@ -12,6 +12,7 @@ import { inferTarget, targetClass } from '../../api/lib/audit/improve-targets.js
 import { work } from '../../api/workers/improve-worker.js';
 
 vi.mock('../../api/lib/auth.js', () => ({ requireInternal: async (req) => {
+  if (req.headers['x-internal-key'] === 'admin-jwt') { req.user = { sub: 'u1', email: 'a@b.c', tier: 'admin' }; return; }   // an admin, not the key
   if (req.headers['x-internal-key'] !== 'ik') throw Object.assign(new Error('Admin access required'), { statusCode: 401 });
   req.user = { sub: 'internal', email: 'internal@system', internal: true };
 } }));
@@ -247,5 +248,19 @@ describe('GET /api/admin/anis/improve-report', () => {
     const db = new Database(process.env.IMPROVE_DB, { readonly: true });
     expect(db.prepare('SELECT reviewed_by FROM improvements WHERE id = 2').get().reviewed_by).toBe('internal:claude-code');
     db.close();
+  });
+  it('POST status: an admin session (not the internal key) is refused — no human gate', async () => {
+    const res = await app.inject({ method: 'POST', url: '/api/admin/anis/improvements/2/status', headers: { 'x-internal-key': 'admin-jwt' }, payload: { status: 'done' } });
+    expect(res.statusCode).toBe(403);
+  });
+  it('GET /anis/improve-overview: headline, flow, changes, testing, waiting, spend; no question text', async () => {
+    const res = await get('/anis/improve-overview');
+    expect(res.statusCode).toBe(200);
+    const b = res.json();
+    expect(Object.keys(b)).toEqual(['available', 'generated_at', 'headline', 'flow', 'changes', 'testing', 'waiting', 'spend']);
+    expect(b.headline.daily).toHaveLength(30);
+    expect(b.headline.status.sentence).toMatch(/code behaviour/);
+    expect(b.spend).toMatchObject({ today_usd: 1.25, cap_usd: 200 });
+    expect(JSON.stringify(b)).not.toMatch(/"q reply:|"q search:/);
   });
 });

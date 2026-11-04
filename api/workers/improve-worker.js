@@ -20,6 +20,7 @@ import { startHeartbeat } from '../lib/service-heartbeat.js';
 import { assessSearch, routeOf } from '../lib/audit/forensics.js';
 import { JUDGE_SYSTEM, DEEP_SYSTEM, JUDGE_ROLE, DEEP_ROLE, judgeMessage, parseJudge, deepMessage, parseDeep,
   mergeSuggestions, costOf, priorityOf, turnFromPath, itemsForTurn } from '../lib/audit/improve.js';
+import { targetClass } from '../lib/audit/improve-targets.js';
 import { anisRepliesAfter } from '../lib/repos/anis-threads-repo.js';
 import { tracesAfter, tracesForTurn, docTitles } from '../lib/repos/search-trace-repo.js';
 import { expandHits } from '../lib/search-trace.js';
@@ -101,16 +102,36 @@ async function strategyGap(turn, deps = {}) {
   } catch (err) { console.error('[improve] strategy gap:', err?.message || err); return 0; }
 }
 
+/** Phase 4 at once: a diagnosis that proposed a DATA change → its strategy edit is built and replayed in the same cycle.
+ *  Errors never fail the deep step (a spend cap leaves the suggestions open; the idle strategy unit picks them up). */
+async function editNow(improveDb, deps = {}) {
+  try {
+    const m = deps.m || await import('../lib/assistant/strategy-improve.js');
+    const db = deps.db || (await import('../lib/repos/strategy-candidates-repo.js')).candidatesDb();
+    const e = await m.editStage(db, { improveDb, ...(deps.opts || {}) });
+    if (e !== 'idle') console.log(`[improve] strategy edit: ${JSON.stringify({ status: e.status, id: e.id, version: e.version, settled: e.settled, failed: e.failed?.[0], usd: e.usd })}`);
+    return e;
+  } catch (err) { if (!isSpendCap(err)) console.error('[improve] strategy edit:', err?.message || err); return 'idle'; }
+}
+
 /** The LOWEST priority unit, run only when judge/deep work is idle: design a candidate for the first ready gap cluster, else
- *  replay-promote the oldest untried candidate. → 'idle' | 'done' | { wait } */
-export async function strategyWork({ deps = null } = {}) {
+ *  edit a strategy from open DATA suggestions (Phase 4), else replay-promote the oldest untried candidate. → 'idle' | 'done' | { wait } */
+export async function strategyWork({ deps = null, improveDb = null } = {}) {
   try {
     const m = deps || await import('../lib/assistant/strategy-improve.js');
     const db = deps?.db || (await import('../lib/repos/strategy-candidates-repo.js')).candidatesDb();
     const d = await m.designStage(db);
     if (d !== 'idle') { console.log(`[improve] strategy design: ${JSON.stringify({ status: d.status, id: d.id, version: d.version, usd: d.usd })}`); return 'done'; }
+    if (m.editStage && improveDb) {
+      const e = await m.editStage(db, { improveDb });
+      if (e !== 'idle' && e.status && e.status !== 'capped') { console.log(`[improve] strategy edit: ${JSON.stringify({ status: e.status, id: e.id, version: e.version, settled: e.settled, usd: e.usd })}`); return 'done'; }
+    }
     const p = await m.promotionStage(db);
-    if (p !== 'idle') { console.log(`[improve] strategy promotion: ${JSON.stringify({ id: p.id, version: p.version, promoted: p.promoted, usd: p.usd, failed: p.decision?.failed })}`); return 'done'; }
+    if (p !== 'idle') {
+      console.log(`[improve] strategy promotion: ${JSON.stringify({ id: p.id, version: p.version, promoted: p.promoted, usd: p.usd, failed: p.decision?.failed })}`);
+      if (m.settleTested && improveDb) m.settleTested(db, improveDb);   // an edit candidate finished here settles its suggestions
+      return 'done';
+    }
     return 'idle';
   } catch (err) {
     if (isSpendCap(err)) return { wait: err.retryAfterMs || 60_000 };
@@ -120,7 +141,7 @@ export async function strategyWork({ deps = null } = {}) {
 }
 
 /** Step 2: one unit of LLM work in priority order. → 'idle' | 'done' | { wait: ms } */
-export async function work(db, { call = callOpus, replay = replayCurrent } = {}) {
+export async function work(db, { call = callOpus, replay = replayCurrent, edit = editNow } = {}) {
   const w = nextWork(db);
   if (!w) return 'idle';
   try {
@@ -139,6 +160,7 @@ export async function work(db, { call = callOpus, replay = replayCurrent } = {})
       const deep = parseDeep(r.text);   // the conclusion (diagnosis, root cause) is kept with the ids of the fixes it led to
       const ids = applySuggestions(db, mergeSuggestions(openImprovements(db), deep.suggestions, w.item_key));
       saveDeepDone(db, w.item_key, { usd: r.usd, deep: { diagnosis: deep.diagnosis, root_cause: deep.root_cause, improvement_ids: ids } });
+      if (deep.suggestions.some((s) => targetClass(s.target) === 'data')) await edit(db);   // tested in this same cycle
     }
     return 'done';
   } catch (err) {
@@ -181,7 +203,7 @@ export async function main() {
       doing = 'judge';
       let r = await work(db);
       if (r === 'done') { judged++; continue; }
-      if (r === 'idle') { doing = 'strategy'; r = await strategyWork(); if (r === 'done') continue; }
+      if (r === 'idle') { doing = 'strategy'; r = await strategyWork({ improveDb: db }); if (r === 'done') continue; }
       doing = r === 'idle' ? 'idle' : 'spend-cap wait';
       await nap(r === 'idle' ? (fresh ? 1000 : IDLE_MS) : Math.min(r.wait, 15 * 60_000));
     } catch (err) {

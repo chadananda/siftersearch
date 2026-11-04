@@ -1,6 +1,7 @@
 {
   "_doc": "Strategy graph Phase 3 tunables (api/lib/assistant/strategy-gaps.js, strategy-design.js, strategy-promote.js). Numbers, not logic.",
   "candidate_usd": 3,
+  "edits_per_day": 10,
   "gaps": { "similarity": 0.12, "min_questions": 3, "min_threads": 2 },
   "design": { "dedupe_similarity": 0.45, "max_tokens": 3000, "nearest": 3 },
   "promote": { "n_fresh": 12, "n_guard": 6, "margin": 0.5, "max_regress": 2, "ms_ratio": 1.5, "usd_ratio": 1.5, "jev_class_share": 0.6, "jev_guard_max": 0 }

@@ -83,7 +83,7 @@ describe('dedup: the same fix seen again is evidence, not a new row', () => {
   });
   it('merge: bump the open one, insert the new one, never two bumps per item', () => {
     const r = mergeSuggestions([a], [{ ...a, id: undefined, severity: 3 }, { ...a, id: undefined }, { stage: 'WRITER', file: 'api/lib/assistant/prompt.js', change: 'no process talk', severity: 1 }], 'reply:7');
-    expect(r.bumps).toEqual([{ id: 1, evidence_key: 'reply:7', severity: 3 }]);
+    expect(r.bumps).toEqual([{ id: 1, evidence_key: 'reply:7', severity: 3, scenarios: null, strategy: null }]);
     expect(r.inserts.map((x) => x.stage)).toEqual(['WRITER']);
     expect(rankImprovements([{ id: 1, evidence_n: 2, severity: 1 }, { id: 2, evidence_n: 1, severity: 3 }]).map((x) => x.id)).toEqual([2, 1]);
   });

@@ -824,9 +824,9 @@ export const admin = {
     return request(`/api/admin/anis/improve-report?${q}`);
   },
 
-  /** Set an improvement's status (open | accepted | done | rejected) with a note; the server records who reviewed it. */
-  async setAnisImprovementStatus(id, status, note = null) {
-    return request(`/api/admin/anis/improvements/${Number(id)}/status`, { method: 'POST', body: JSON.stringify({ status, ...(note ? { note } : {}) }) });
+  /** The improvement progress page: headline + status sentence, the loop's flow, what changed, testing now, waiting for Claude Code, spend. */
+  async getAnisImproveOverview() {
+    return request('/api/admin/anis/improve-overview');
   },
 
   /**

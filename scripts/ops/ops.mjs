@@ -27,6 +27,7 @@ import { apiBase } from '../lib/api-base.mjs';
 import dotenv from 'dotenv';
 import { turnText, threadText, traceListText, traceText, replayText } from './trace-format.mjs';
 import { forensicTable, assessSearch } from '../../api/lib/audit/forensics.js';   // pure (no db)
+import { digestText } from '../../api/lib/audit/improve-digest-text.js';   // pure (no db)
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 const API = apiBase();
@@ -84,22 +85,7 @@ else if (cmd === 'anis-forensics') {
 } else if (cmd === 'anis-improve-digest') {
   const j = await call('GET', `/anis/improve-digest?since=${encodeURIComponent(val('--since') || '24h')}`);
   if (flag('--json')) await out(j);
-  else {
-    const a = j.assessment || {};
-    const L = [`ANÍS IMPROVEMENT DIGEST · since ${j.since}${j.available ? '' : ' · (no improve store)'}`,
-      `assessment: judged ${a.judged} · weak ${a.weak} (${a.weak_pct ?? '–'}%) · mean severity ${a.mean_severity ?? '–'} (weak verdicts, 1-3) · $${a.spend_usd}${a.cap_usd != null ? ` · today $${a.spent_today_usd} of $${a.cap_usd} cap` : ''}`,
-      `  by stage: ${Object.entries(a.by_stage || {}).map(([k, n]) => `${k} ${n}`).join(' · ') || '–'}`,
-      `  top classes: ${(a.top_classes || []).map((c) => `${c.class} ${c.n}`).join(' · ') || '–'}`,
-      '', `CODE recommendations, new or grown (${(j.code || []).length}):`];
-    for (const c of j.code || []) {
-      L.push(`#${c.id} ${c.new ? 'NEW' : `+${c.evidence_new}`} [${c.status}] ${c.target} · ${c.stage} · ${c.file || '?'}${c.fn ? ` ${c.fn}` : ''} · evidence ${c.evidence_n} × sev ${c.severity}`,
-        `    ${c.change}`, ...(c.expected_effect ? [`    → ${c.expected_effect}`] : []),
-        ...c.examples.map((e) => `    e.g. ${e.turn_id || e.item_key}  ${e.trace || ''}`));
-    }
-    L.push('', `DATA changes (${(j.data || []).length}):`, ...(j.data || []).map((x) => `#${x.id} ${x.state} [${x.status}] ${x.target} · ${x.stage} · evidence ${x.evidence_n} — ${x.change}`));
-    L.push('', 'Act: node scripts/ops/ops.mjs anis-improve-status <id> <accepted|done|rejected> --note "…"');
-    await new Promise((r) => process.stdout.write(`${L.join('\n')}\n`, r));
-  }
+  else await new Promise((r) => process.stdout.write(`${digestText(j)}\n`, r));
 } else if (cmd === 'anis-improve-status' && name) {
   const status = process.argv[4];
   if (!['open', 'accepted', 'done', 'rejected'].includes(status)) { console.error('usage: ops.mjs anis-improve-status <id> <accepted|done|rejected|open> [--note "…"]'); process.exit(2); }

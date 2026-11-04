@@ -8,7 +8,10 @@ import { threadsOverview, threadDetail, strategyGaps, turnTrace, parseTurnId } f
 import { tracesForThread, tracesForTurn, childTraces, docTitles } from '../lib/repos/search-trace-repo.js';
 import { auditsSince } from '../lib/repos/audit-store-repo.js';
 import { listAnisThreads, anisThread, anisThreadMessages } from '../lib/repos/anis-threads-repo.js';
-import { forensicsSince, listImprovements, setImprovementStatus, improveStats, improveReportData, improveDigestData, IMPROVEMENT_STATUSES } from '../lib/repos/improve-repo.js';
+import { forensicsSince, listImprovements, setImprovementStatus, improveStats, improveReportData, improveDigestData, improveOverviewData, IMPROVEMENT_STATUSES } from '../lib/repos/improve-repo.js';
+import { improveOverview } from '../lib/audit/improve-overview.js';
+import { candidatesDb, overviewReads } from '../lib/repos/strategy-candidates-repo.js';
+import { readServices } from '../lib/service-heartbeat.js';
 import { forensicsReport, rankImprovements, improveReport, improveDigest } from '../lib/audit/improve.js';
 import { TARGETS } from '../lib/audit/improve-targets.js';
 import { capStatus } from '../lib/spend-caps.js';
@@ -104,6 +107,20 @@ export default async function anisAdminRoutes(fastify) {
     return improveDigest(improveDigestData({ since }), { since, cap });
   });
 
+  // The progress page (Chad 11-04, AnisImprove.svelte): headline (7-day score/weak rate, 30 days, a deterministic status sentence),
+  // the loop's flow, what changed (strategy promotions + code behaviours Claude Code finished), what is under test, what waits
+  // for Claude Code, improve spend. Repos read; improve-overview.js shapes. No question text. Each read degrades to empty alone.
+  fastify.get('/anis/improve-overview', { preHandler: requireInternal }, async (request) => {
+    const now = Date.now();
+    const since7 = new Date(now - 7 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
+    let strat = { promotions: [], candidates: [], gaps: { open: 0, designed: 0 } };
+    try { strat = overviewReads(candidatesDb(), { since: since7 }); } catch (err) { request.log?.warn?.({ err }, 'improve-overview: strategy store unreadable'); }
+    const cap = (await capStatus().catch(() => [])).find((g) => g.group === 'improve') || null;
+    let heartbeat = null;
+    try { heartbeat = (await readServices()).find((s) => s.name === 'siftersearch-improve') || null; } catch { /* no heartbeat store: unknown */ }
+    return improveOverview({ data: improveOverviewData({ now }), ...strat, cap, heartbeat, now });
+  });
+
   fastify.get('/anis/improvements', {
     preHandler: requireInternal,
     schema: { querystring: { type: 'object', properties: { status: { type: 'string', enum: IMPROVEMENT_STATUSES }, limit: { type: 'integer', minimum: 1, maximum: 1000, default: 100 } } } },
@@ -114,9 +131,10 @@ export default async function anisAdminRoutes(fastify) {
     schema: { body: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: IMPROVEMENT_STATUSES }, note: { type: 'string', maxLength: 2000 },
       by: { type: 'string', maxLength: 80 } } } },
   }, async (request, reply) => {
-    // reviewed_by: the admin's email; an internal-key caller (ops tooling, Claude Code) may name itself in `by`
+    // No human gate (11-04 v2): only Claude Code and the system set a status, with the internal key; the page never calls this.
     const u = request.user || {};
-    const by = u.internal ? (request.body.by ? `internal:${request.body.by}` : 'internal-key') : (u.email || u.sub || null);
+    if (!u.internal) return reply.code(403).send({ error: 'improvement status is set by Claude Code or the system (internal key)' });
+    const by = request.body.by ? `internal:${request.body.by}` : 'internal-key';
     const changed = setImprovementStatus(request.params.id, request.body.status, request.body.note ?? null, undefined, by);
     return changed ? { ok: true, id: Number(request.params.id), status: request.body.status } : reply.code(404).send({ error: 'no such improvement' });
   });

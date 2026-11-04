@@ -29,7 +29,9 @@ CREATE TABLE IF NOT EXISTS improve_cursor (name TEXT PRIMARY KEY, value TEXT, up
 // (diagnosis, root cause, the improvement ids it produced or confirmed) and when each step ran (throughput per hour);
 // each improvement's target (who can apply it: data for the live loop, code for Claude Code) and who reviewed it, when.
 const ADDED_COLUMNS = [['forensics', 'deep_json', 'TEXT'], ['forensics', 'judged_at', 'TEXT'], ['forensics', 'deep_at', 'TEXT'],
-  ['improvements', 'target', 'TEXT'], ['improvements', 'reviewed_at', 'TEXT'], ['improvements', 'reviewed_by', 'TEXT']];
+  ['improvements', 'target', 'TEXT'], ['improvements', 'reviewed_at', 'TEXT'], ['improvements', 'reviewed_by', 'TEXT'],
+  // 11-04 v2: a CODE fix's acceptance scenarios (improve.js parseScenario); a DATA fix's strategy and the candidate (id@version) testing it
+  ['improvements', 'scenarios_json', 'TEXT'], ['improvements', 'strategy', 'TEXT'], ['improvements', 'candidate', 'TEXT']];
 const hasColumn = (db, table, col) => db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === col);
 function evolve(db) {
   for (const [t, c, type] of ADDED_COLUMNS) if (!hasColumn(db, t, c)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} ${type}`);
@@ -99,20 +101,39 @@ export const openImprovements = (db) => db.prepare(`SELECT * FROM improvements W
 export function applySuggestions(db, { inserts = [], bumps = [] }) {
   const ids = [];
   const now = nowIso();
-  const ins = db.prepare(`INSERT INTO improvements (stage, file, fn, target, change, expected_effect, classes_json, severity, evidence_n, evidence_json, first_seen, last_seen)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`);
+  const ins = db.prepare(`INSERT INTO improvements (stage, file, fn, target, strategy, change, expected_effect, scenarios_json, classes_json, severity, evidence_n, evidence_json, first_seen, last_seen)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`);
   const get = db.prepare('SELECT evidence_json FROM improvements WHERE id = ?');
-  const upd = db.prepare('UPDATE improvements SET evidence_n = evidence_n + 1, evidence_json = ?, severity = MAX(severity, ?), last_seen = ? WHERE id = ?');
+  // a repeat keeps the first scenarios (first wins); a row written before scenarios existed takes the new ones
+  const upd = db.prepare(`UPDATE improvements SET evidence_n = evidence_n + 1, evidence_json = ?, severity = MAX(severity, ?), last_seen = ?,
+    scenarios_json = COALESCE(scenarios_json, ?), strategy = COALESCE(strategy, ?) WHERE id = ?`);
+  const sj = (xs) => (xs?.length ? JSON.stringify(xs) : null);
   db.transaction(() => {
-    for (const s of inserts) ids.push(Number(ins.run(s.stage, s.file, s.fn, targetOf(s), s.change, s.expected_effect, JSON.stringify(s.classes || []), s.severity, JSON.stringify(s.evidence || []), now, now).lastInsertRowid));
+    for (const s of inserts) ids.push(Number(ins.run(s.stage, s.file, s.fn, targetOf(s), s.strategy ?? null, s.change, s.expected_effect, sj(s.scenarios),
+      JSON.stringify(s.classes || []), s.severity, JSON.stringify(s.evidence || []), now, now).lastInsertRowid));
     for (const b of bumps) {
       ids.push(b.id);
       const ev = safeJson(get.get(b.id)?.evidence_json) || [];
       if (ev.includes(b.evidence_key)) continue;
-      upd.run(JSON.stringify([...ev, b.evidence_key].slice(-50)), b.severity, now, b.id);
+      upd.run(JSON.stringify([...ev, b.evidence_key].slice(-50)), b.severity, now, sj(b.scenarios), b.strategy ?? null, b.id);
     }
   })();
   return ids;
+}
+
+// ── Phase 4 (the worker's handle): DATA suggestions → one tested strategy candidate; the status follows the outcome ──
+/** Open DATA suggestions no candidate is testing yet. */
+export const untestedDataSuggestions = (db) => db.prepare(`SELECT * FROM improvements WHERE status = 'open' AND candidate IS NULL
+  AND target IN ('strategy', 'step', 'template') ORDER BY id`).all();
+/** DATA suggestions a candidate (id@version) is testing now — still open, candidate set. */
+export const testingSuggestions = (db) => db.prepare("SELECT * FROM improvements WHERE status = 'open' AND candidate IS NOT NULL ORDER BY id").all();
+export function markTesting(db, ids, candidate) {
+  const st = db.prepare('UPDATE improvements SET candidate = ? WHERE id = ?');
+  db.transaction(() => { for (const id of ids) st.run(candidate, Number(id)); })();
+}
+/** The system settles DATA suggestions (no human step): done | rejected with its reason; reviewed_by 'system'. */
+export function settleSuggestions(db, ids, status, note) {
+  for (const id of ids) setImprovementStatus(id, status, note, { db }, 'system');
 }
 
 // ── reads for the admin routes (read-only open; a missing store reads as empty) ──
@@ -206,3 +227,49 @@ export const improveDigestData = ({ since }, opts) => withDb(opts, (db) => {
   for (const k of new Set(improvements.flatMap((r) => safeJson(r.evidence_json) || []))) { const r = one.get(k); if (r) evidence.set(k, r); }
   return { judged, spend_usd, improvements, evidence };
 }, { readonly: true });
+
+/** The progress page's reads (improve-overview.js shapes them), one read-only open, no question text:
+ *  judged/weak/score per UTC day for 30 days (by judged_at), the last 7 days vs the 7 before, judged in the last hour and
+ *  today, the backlog, diagnoses this week, the improvements open or touched in 30 days, their evidence rows (ids only)
+ *  and improve $ today. A store not yet evolved reads the new columns as NULL. → null when the store does not exist yet. */
+export const improveOverviewData = ({ now = Date.now() } = {}, opts) => withDb(opts, (db) => {
+  const ts = (ms) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+  const p = { d30: `${ts(now - 29 * 86400000).slice(0, 10)} 00:00:00`, d7: ts(now - 7 * 86400000), d14: ts(now - 14 * 86400000),
+    hourAgo: ts(now - 3600000), today: `${ts(now).slice(0, 10)} 00:00:00` };
+  const has = (t, c) => hasColumn(db, t, c);
+  const judgedAt = has('forensics', 'judged_at') ? 'COALESCE(judged_at, updated_at)' : 'updated_at';
+  const deepAt = has('forensics', 'deep_at') ? 'COALESCE(deep_at, updated_at)' : 'updated_at';
+  const score = "CAST(json_extract(judge_json, '$.score') AS REAL)";
+  const weak = "json_extract(judge_json, '$.verdict') = 'weak'";
+  const daily = db.prepare(`SELECT substr(${judgedAt}, 1, 10) AS day, COUNT(*) AS judged, COALESCE(SUM(${weak}), 0) AS weak,
+      SUM(${score}) AS score_sum, COUNT(${score}) AS score_n
+    FROM forensics WHERE judge_state = 'done' AND ${judgedAt} >= @d30 GROUP BY day ORDER BY day`).all(p);
+  const win = (from, to) => db.prepare(`SELECT COUNT(*) AS judged, COALESCE(SUM(${weak}), 0) AS weak, SUM(${score}) AS score_sum, COUNT(${score}) AS score_n
+    FROM forensics WHERE judge_state = 'done' AND ${judgedAt} >= ? AND ${judgedAt} < ?`).get(from, to);
+  const counts = db.prepare(`SELECT COALESCE(SUM(judge_state = 'done' AND ${judgedAt} >= @hourAgo), 0) AS judged_last_hour,
+      COALESCE(SUM(judge_state = 'done' AND ${judgedAt} >= @today), 0) AS judged_today,
+      COALESCE(SUM(deep_state = 'done' AND ${deepAt} >= @d7), 0) AS diagnosed_7d,
+      COALESCE(SUM(attempts < 5 AND (judge_state = 'pending' OR deep_state = 'pending')), 0) AS backlog,
+      ROUND(COALESCE(SUM(CASE WHEN ${judgedAt} >= @today THEN judge_usd END), 0) + COALESCE(SUM(CASE WHEN ${deepAt} >= @today THEN deep_usd END), 0), 4) AS today_usd
+    FROM forensics`).get(p);
+  const cols = ['scenarios_json', 'strategy', 'candidate', 'reviewed_by'].map((c) => (has('improvements', c) ? c : `NULL AS ${c}`)).join(', ');
+  const improvements = db.prepare(`SELECT id, stage, file, fn, target, change, severity, evidence_n, evidence_json, status, status_note, status_at,
+      first_seen, last_seen, ${cols}
+    FROM improvements WHERE status IN ('open', 'accepted') OR last_seen >= @d30 OR status_at >= @d30`).all(p)
+    .map((r) => ({ ...r, target: r.target || targetOf(r) }));
+  const one = db.prepare(`SELECT item_key, kind, ref_id, session_id, json_extract(payload_json, '$.turn_id') AS turn_id FROM forensics WHERE item_key = ?`);
+  const evidence = new Map();
+  for (const r of improvements) {
+    if (!['open', 'accepted'].includes(r.status) || targetClass(r.target) !== 'code') continue;
+    for (const k of (safeJson(r.evidence_json) || []).slice(-3)) { const e = one.get(k); if (e) evidence.set(k, e); }
+  }
+  return { daily, w7: win(p.d7, ts(now + 1000)), wprev: win(p.d14, p.d7), counts, improvements, evidence };
+}, { readonly: true });
+
+/** The deep analyses (diagnosis, root cause, judge why) behind evidence keys — the edit designer's context. Never the question. */
+export function diagnosesFor(db, keys = []) {
+  const deep = hasColumn(db, 'forensics', 'deep_json') ? 'deep_json' : 'NULL AS deep_json';
+  const one = db.prepare(`SELECT ${deep}, json_extract(judge_json, '$.why') AS why, json_extract(judge_json, '$.score') AS score FROM forensics WHERE item_key = ?`);
+  return [...new Set(keys)].map((k) => { const r = one.get(k); if (!r) return null; const d = safeJson(r.deep_json) || {};
+    return { diagnosis: d.diagnosis ?? null, root_cause: d.root_cause ?? null, judge_why: r.why ?? null, score: r.score ?? null }; }).filter(Boolean);
+}
