@@ -232,8 +232,9 @@ describe('vocabulary hygiene and the no-added-words rule (10-22: "Nabips Narrati
 
 describe('the guard never turns words heard right into names (11-03, tichenor-cobb-2-1969)', () => {
   const v = buildVocab([['Sinai', 'Weber', 'Havana', 'Lahore', 'Ishmael', 'The Hague', 'Dorothy Anderson', 'Dorothy Baker', 'World War I',
-    "Báb's letter", '‘Abdu’lláh Páshá', 'Bahá’í News', 'Universal House of Justice', 'Riḍván', 'Green Acre', 'Báb', '‘Abdu’l-Bahá', 'Germany', 'Advent of Islam', 'Vísí Páshá', 'Seven Valleys']]);
-  const dict = new Set(['germans', 'germany', 'adventist', 'visigoth', 'seven', 'day', 'having', 'lord', 'israel', 'heart', 'baker', 'paper', 'bob', 'world', 'war', 'universal', 'house']);
+    "Báb's letter", '‘Abdu’lláh Páshá', 'Bahá’í News', 'Universal House of Justice', 'Riḍván', 'Green Acre', 'Báb', '‘Abdu’l-Bahá', 'Mullá Ḥusayn', 'Shoghi Effendi', 'Germany', 'Advent of Islam', 'Vísí Páshá', 'Seven Valleys']]);
+  const dict = new Set(['adventist', 'seven', 'day', 'having', 'lord', 'heart', 'paper', 'bob', 'world', 'war', 'universal', 'house']);
+  dict.names = new Set(['germans', 'germany', 'visigoth', 'israel', 'ishmael', 'baker', 'hussein', 'baal']);
   const ws = (t) => t.split(' ').map((w, i) => ({ w, s: i, e: i + 1 }));
   const one = (text, from, to) => guardEdits(ws(text), [{ from, to }], v, { dict });
   it('refuses what the model did to that talk', () => {
@@ -247,7 +248,7 @@ describe('the guard never turns words heard right into names (11-03, tichenor-co
     for (const [text, from, to] of cases) expect([from, one(text, from, to).ok.length]).toEqual([from, 0]);
   });
   it('keeps misheard names, including a real word one letter away', () => {
-    for (const [text, from, to] of [['the Bob declared', 'Bob', 'Báb'], ['at Rizwan time', 'Rizwan', 'Riḍván'], ['at Greenacre school', 'Greenacre', 'Green Acre']]) {
+    for (const [text, from, to] of [['the Bob declared', 'Bob', 'Báb'], ['the Baal declared', 'Baal,', 'Báb'], ['and Mullá Hussein came', 'Mullá Hussein', 'Mullá Ḥusayn'], ['as Shunga Fendi, said', 'Shunga Fendi,', 'Shoghi Effendi'], ['at Rizwan time', 'Rizwan', 'Riḍván'], ['at Greenacre school', 'Greenacre', 'Green Acre']]) {
       expect([from, one(text, from, to).ok.map((e) => e.to)]).toEqual([from, [to]]);
     }
   });

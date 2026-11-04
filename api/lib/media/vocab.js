@@ -82,8 +82,7 @@ export function soundsAlike(from, to) {
   const a = keyOf(stripPoss(from)), b = keyOf(to);
   if (!a || !b) return false;
   if (a === b) return true;
-  // a short term allows one letter (Bob → Báb); 2 let "And" → Anís, "Since" → Sinai, "We've" → Weber (11-03, tichenor-cobb-2-1969)
-  const allowed = b.length <= 5 ? 1 : Math.max(2, Math.ceil(b.length * 0.4));
+  const allowed = Math.max(2, Math.ceil(b.length * 0.4));   // ordinary words heard right are kept by changeRefused, not by this distance
   return levenshtein(a, b, allowed) <= allowed;
 }
 
@@ -143,7 +142,7 @@ const COMMON = new Set(`a an the and or but if so as at by for from in into of o
 i you he she it we they me him her us them my your his its our their this that these those there here then now when where who
 whom which what why how is was are were be been being am has have had do does did done will would shall should can could may
 might must not no yes very just also only even still always never ever again said says say told tell tells came come comes went
-go goes wrote writes write explained explains spoke speaks speak asked asks answered answers called calls know knew known
+go goes since while because until though wrote writes write explained explains spoke speaks speak asked asks answered answers called calls know knew known
 think thought see saw seen made make makes gave give gives took take takes`.split(/\s+/));
 
 /** Neither edge of a multi-word edit may be a common English word the term itself lacks ("the Báb" may take "the"). Pure. */
@@ -204,11 +203,15 @@ export function trimEdit(from, to, vocab = null) {
 }
 
 let DICT;
-/** The host's English word list (/usr/share/dict), lower-cased; null where there is none. */
+/** The host's English word list (/usr/share/dict): a Set of its lower-case words, its proper names in .names; null where there is none. */
 export function englishWords() {
   if (DICT !== undefined) return DICT;
   const files = ['/usr/share/dict/american-english', '/usr/share/dict/british-english', '/usr/share/dict/words'].filter((f) => existsSync(f));
-  DICT = files.length ? new Set(files.flatMap((f) => readFileSync(f, 'utf8').split('\n').map((w) => w.trim().toLowerCase()).filter(Boolean))) : null;
+  if (!files.length) return (DICT = null);
+  // ordinary words are the lower-case entries; capitalised ones (Hussein, Baal, Israel) are the list's proper names, kept apart in .names
+  const all = files.flatMap((f) => readFileSync(f, 'utf8').split('\n').map((w) => w.trim()).filter(Boolean));
+  DICT = new Set(all.filter((w) => w === w.toLowerCase()));
+  DICT.names = new Set(all.filter((w) => w !== w.toLowerCase()).map((w) => w.toLowerCase()));
   return DICT;
 }
 
@@ -223,10 +226,11 @@ export function changedPart(from, to) {
 }
 
 /** Every word is ordinary English the recogniser spelled right — a common word, a contraction or a dictionary word. Pure. */
-export function heardAsEnglish(from, dict = null) {
+export function heardAsEnglish(from, dict = null, set = dict) {
   return String(from).split(/[\s-]+/).filter(Boolean).every((w) => {
     const c = core(w).toLowerCase(), b = stripPoss(c);
-    return COMMON.has(c) || /^[a-z]+(?:n['’]t|['’](?:ve|re|ll|d|m))$/.test(c) || !!dict?.has(c) || !!dict?.has(b) || (/s$/.test(b) && !!dict?.has(b.slice(0, -1)));
+    if (set === dict && (COMMON.has(c) || /^[a-z]+(?:n['’]t|['’](?:ve|re|ll|d|m))$/.test(c))) return true;
+    return !!set?.has(c) || !!set?.has(b) || (/s$/.test(b) && !!set?.has(b.slice(0, -1)));
   });
 }
 
@@ -240,15 +244,18 @@ export function changeRefused(from, to, vocab, dict = null) {
   const ch = changedPart(from, to);
   // a vocabulary name is never swapped for another ("‘Abdu’l-Bahá" → ‘Abdu’lláh Páshá)
   if (vocab?.byKey?.has(kw(ch.from)) && kw(ch.from) !== keyOf(ch.to)) return 'already a vocabulary name';
+  if (kw(ch.from).length < 3 && kw(ch.from) !== keyOf(ch.to)) return 'changes a short word';
+  if (!soundsAlike(ch.from, ch.to)) return 'does not sound alike';
   const a = ch.from.split(/\s+/).filter(Boolean), b = ch.to.split(/\s+/).filter(Boolean);
   const pairs = a.length === b.length ? a.map((w, i) => [w, b[i]]) : [[ch.from, ch.to]];
+  const names = dict?.names || null, real = (w) => heardAsEnglish(w, dict) || (!!names && heardAsEnglish(w, dict, names));
   for (const [f, t] of pairs) {
     const ka = kw(f), kb = keyOf(t);
     if (ka === kb) continue;
-    if (ka.length < 3) return 'changes a short word';
-    if (!soundsAlike(f, t)) return 'does not sound alike';
-    // one letter away is a misheard name only when the target is not English too ("Bob" → Báb yes; "Germans" → Germany, "Muslim" → Muslims no)
-    if (heardAsEnglish(f, dict) && (levenshtein(ka, kb, 2) > 1 || (dict && heardAsEnglish(t, dict)))) return 'an English word the speaker said';
+    // one letter away is a misheard name only when the target is not a real word too ("Bob" → Báb yes; "Germans" → Germany, "Muslim" → Muslims no)
+    if (heardAsEnglish(f, dict) && (levenshtein(ka, kb, 2) > 1 || (dict && real(t)))) return 'an English word the speaker said';
+    // a real name heard right is not swapped for another real name ("Israel" → Ishmael); Hussein → Ḥusayn, Baal → Báb are respellings
+    if (names && heardAsEnglish(f, dict, names) && (real(t) || t.split(/\s+/).length > f.split(/\s+/).length)) return 'a different real name';
   }
   return null;
 }

@@ -67,8 +67,8 @@ export const STAGE_DEFS = [
   { name: 'preview', class: 'llm', job: 'text', tool: 'preview', settings: {}, required: false },
   { name: 'diarize', class: 'gpu', job: 'gpu', tool: 'diarize', settings: {}, blocksAir: true },
   { name: 'trim', class: 'cpu', job: 'cpu-finish', after: ['quiet'], tool: 'trim', settings: {}, required: false },
-  // guard 3 (11-03): the edit guard judges only changed words; English words heard right stay (vocab.js changeRefused)
-  { name: 'correct', class: 'llm', job: 'text', tool: llm('media-correct').tool, settings: { ...llm('media-correct').settings, guard: 3 }, blocksAir: true },
+  // guard 4 (11-03): the edit guard judges only changed words; English words heard right stay (vocab.js changeRefused)
+  { name: 'correct', class: 'llm', job: 'text', tool: llm('media-correct').tool, settings: { ...llm('media-correct').settings, guard: 4 }, blocksAir: true },
   { name: 'clean', class: 'llm', job: 'text', after: ['correct'], get tool() { return `llm:${cleanRole()}`; }, get settings() { return { model: MODEL_ROLES[cleanRole()]?.model ?? null }; }, required: false },
   { name: 'describe', class: 'llm', job: 'text', ...llm('media-meta'), required: false },
   { name: 'thumb', class: 'llm', job: 'publish', tool: 'thumb', settings: {}, required: false },
