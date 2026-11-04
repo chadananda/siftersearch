@@ -4,6 +4,7 @@
 // and resumes after the restart (api/lib/media/item.js). Shared machinery: api/lib/ops/service-worker.js.
 import dotenv from 'dotenv';
 import { logger } from '../lib/logger.js';
+import { mediaLlmBatching } from '../lib/model-roles.js';
 import { isDraining, nap } from '../lib/drain.js';
 import { runService } from '../lib/ops/service-worker.js';
 import { mediaScanJob, mediaArchiveImportJob, mediaItemJob, mediaVocabJob, mediaDropPass, mediaSpeakersJob, mediaSpeakerSketchJob, mediaSpeakerSketchSweepJob, mediaPlaybackJob, mediaGradeJob, mediaShortJob, mediaShortsMomentsJob, mediaPortraitsExtendJob, mediaFetchJob, mediaRankJob, mediaLanesFeedPass, mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJob, mediaIdentityJob, mediaRelinkJob, mediaSafeListeningJob, mediaSpeakerMergeJob, mediaTalkIdentitiesJob, mediaRemasterJob, mediaRemasterRevertJob, mediaCloudRemasterJob, mediaRemasterQualityJob, mediaCloudOrderJob, mediaQuietRepairJob, mediaLightBackfillJob, mediaPreviewJob, mediaRemasterReviewPackJob, mediaRemasterDecideJob, mediaRemasterRejudgeJob, mediaTrimAuditJob, mediaStagesSyncJob, mediaQuoteAuditJob } from '../lib/ops/media-jobs.js';
@@ -39,10 +40,12 @@ MEDIA_LANES.portraits.push('media-gallery', 'media-portrait-inventory', 'media-c
 // compute (prep): 16 — prep mostly waits on the GPU host and boss (its tower CPU work stays capped by towerLight, 4 × 2 threads)
 // asr: the transcription slots + 4 — the extra workers do a talk's language ID and upload while the slots are busy, so a
 // freed aorus slot is taken within seconds (06:50: 3-min clips finish in 12 s and the GPU sat idle between them)
-// llm: API-bound — 12 workers; the per-provider adaptive gates in media/llm.js pace the actual calls
+// llm: API-bound — 12 workers; the per-provider adaptive gates in media/llm.js pace the actual calls. Batched (11-04, MEDIA_LLM_BATCH≠0):
+// 100 llm workers + 24 pipeline (campaign reruns run as media-item there) — each mostly WAITS on an Anthropic batch (minutes–hours),
+// heavy work stays gated by tools.js run(); MEDIA_LLM_BATCH=0 restores 12 / 3
 export const MEDIA_LANE_WORKERS = { compute: Number(process.env.MEDIA_PREP_WORKERS) || 16, asr: (asrHosts().reduce((n, h) => n + h.slots, 0) || mediaParallel()) + 4,
   diar: Number(process.env.MEDIA_DIAR_WORKERS) || 14,   // boss 6 + aorus 1 started; the rest re-attach (old aorus jobs) or wait
-  llm: Number(process.env.MEDIA_LLM_WORKERS) || 12, pipeline: 3, downloads: Number(process.env.MEDIA_FETCH_RUNS) || 2, remaster: Number(process.env.MEDIA_REMASTER_WORKERS) || 6, cloud: 1, quiet: 1 };
+  llm: Number(process.env.MEDIA_LLM_WORKERS) || (mediaLlmBatching() ? 100 : 12), pipeline: Number(process.env.MEDIA_PIPELINE_WORKERS) || (mediaLlmBatching() ? 24 : 3), downloads: Number(process.env.MEDIA_FETCH_RUNS) || 2, remaster: Number(process.env.MEDIA_REMASTER_WORKERS) || 6, cloud: 1, quiet: 1 };
 
 // the FEED: N new items in processing by rank, one download run queued (30 s)
 async function mediaFeedLoop() {

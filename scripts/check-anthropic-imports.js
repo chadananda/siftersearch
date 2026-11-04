@@ -11,7 +11,8 @@ const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const SCAN_DIR = join(ROOT, 'api');
 
 // The ONLY files permitted to touch the Anthropic SDK. Each MUST also reference the gate (assertAnthropicAllowed).
-const SANCTIONED = new Set(['api/lib/ai.js', 'api/lib/ai-services.js']);
+// anthropic-batch.js: the Message Batches client for the media roles (Chad 11-04); gated per request in submit().
+const SANCTIONED = new Set(['api/lib/ai.js', 'api/lib/ai-services.js', 'api/lib/anthropic-batch.js']);
 const SDK_RE = /@anthropic-ai\/sdk|new\s+Anthropic\s*\(/;
 const GATE_RE = /assertAnthropicAllowed/;
 

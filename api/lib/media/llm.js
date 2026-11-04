@@ -1,23 +1,26 @@
 // The media pipeline's model calls (roles in model-roles.js: media-meta, media-correct, media-quotes, media-verify — all
 // Haiku-class, never a hard-coded model). Each returns its result + the tokens it used; the guard in vocab.js decides what
-// a correction may change. Deps injected: create = roleCreate.
+// a correction may change. Deps injected: create = roleCreate, batchCreate = roleBatchCreate. Roles marked `batch` (model-roles)
+// go through the Message Batches API at half price (Chad 11-04): no gate, no sync retry, no fallback — a failed request fails the stage.
 import { BAHAI_GREETING_HINT } from './editing-context.js';
 import { DESCRIPTION_STYLE, descriptionEvidence, validDescription } from './descriptions.js';
-import { roleCreate } from '../role-client.js';
+import { roleCreate, roleBatchCreate } from '../role-client.js';
 import { getModel } from '../model-registry.js';
-import { modelFor } from '../model-roles.js';
+import { modelFor, batchRole } from '../model-roles.js';
 import { paragraphText } from './paragraphs.js';
 import { formatTime } from './range.js';
 import { exactEdits, suspects, guardEdits, applyEdits, englishWords } from './vocab.js';
 
 const jsonOf = (s) => { const m = String(s || '').match(/\{[\s\S]*\}/); try { return m ? JSON.parse(m[0]) : null; } catch { return null; } };
 
-/** $ for a response's usage on a role's model (registry prices are per 1K tokens). */
-export function costOf(role, usage) {
-  const p = getModel(modelFor(role).model)?.pricing;
+/** $ for a response's usage on a role's model (registry prices are per 1K tokens; a batched call at the registry's batch rate). */
+export function costOf(role, usage, { batch = false } = {}) {
+  const m = getModel(modelFor(role).model), p = m?.pricing;
   if (!p || !usage) return 0;
-  return ((usage.prompt_tokens || 0) * p.input + (usage.completion_tokens || 0) * p.output) / 1000;
+  return ((usage.prompt_tokens || 0) * p.input + (usage.completion_tokens || 0) * p.output) / 1000 * (batch ? (m.batch ?? 1) : 1);
 }
+/** How many of a talk's chunks go out at once: all of them for a batch role (they coalesce into one batch), else MEDIA_LLM_FANOUT (4). */
+export const fanoutFor = (role) => (batchRole(role) ? Infinity : Number(process.env.MEDIA_LLM_FANOUT) || 4);
 
 // a timed-out or dropped request is retried (twice, 5 s / 20 s apart) before it fails the item (10-22: a describe call timed
 // out and failed a whole talk); other errors are raised at once
@@ -51,7 +54,20 @@ export const gateFor = (role) => {
 };
 export const gateStats = () => Object.fromEntries([...gates].map(([k, g]) => [k, { limit: g.limit, live: g.live, waiting: g.waiters.length, rate_limited: g.limited }]));
 
-async function ask(role, prompt, { create = roleCreate, max = 6000, spend, retryMs = [5000, 20000], gate = gateFor(role), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+async function ask(role, prompt, { create, batchCreate, max = 6000, spend, retryMs = [5000, 20000], gate, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+  // batch roles: the batch client coalesces, polls and retries the submit itself; the gate does not throttle them. (An injected
+  // `create` alone — tests — keeps the synchronous path.)
+  if (batchRole(role) && (batchCreate || !create)) {
+    const res = await (batchCreate || roleBatchCreate)(role, { max_tokens: max, messages: [{ role: 'user', content: prompt }] });
+    if (spend) {
+      const billed = res?.billed !== false;
+      spend.usd = (spend.usd || 0) + (billed ? costOf(role, res?.usage, { batch: true }) : 0); spend.calls = (spend.calls || 0) + 1;
+      spend.in = (spend.in || 0) + (billed ? res?.usage?.prompt_tokens || 0 : 0); spend.out = (spend.out || 0) + (billed ? res?.usage?.completion_tokens || 0 : 0);
+      spend.batched = (spend.batched || 0) + 1;
+    }
+    return jsonOf(res?.choices?.[0]?.message?.content);
+  }
+  create ||= roleCreate; gate ||= gateFor(role);
   let res;
   for (let k = 0, rl = 0; ; k++) {
     await gate.acquire();
@@ -106,7 +122,7 @@ export async function correctParagraphs(paragraphs, vocab, { chunkWords = 1500, 
   if (cur.length) chunks.push(cur);
   const byN = new Map(ps.map((p) => [p.n, p]));
   // the chunks hold disjoint paragraphs: their calls run AT ONCE (10-22: 96–162 s one after another), applied in order
-  const outs = await mapPool(chunks, Number(process.env.MEDIA_LLM_FANOUT) || 4, async (ch) => {
+  const outs = await mapPool(chunks, fanoutFor('media-correct'), async (ch) => {
     const sus = ch.flatMap((p) => suspects(p.words, vocab, { limit: 15 }).map((s) => ({ ...s, p: p.n })));
     if (!sus.length) return null;
     const offered = [...new Set(sus.flatMap((s) => s.candidates))];
@@ -181,7 +197,7 @@ export async function findQuotations(paragraphs, { chunkWords = 2000, ...opts } 
   for (const p of paragraphs) { cur.push(p); n += p.words.length; if (n >= chunkWords) { chunks.push(cur); cur = []; n = 0; } }
   if (cur.length) chunks.push(cur);
   // the chunks are independent reads: all at once (10-23: find took 23–96 s of the quotes stage, one chunk after another)
-  const outs = await mapPool(chunks, Number(process.env.MEDIA_LLM_FANOUT) || 4, (ch) => ask('media-quotes', `A transcript of a talk (lines: [paragraph @time voice] text). Find two things.
+  const outs = await mapPool(chunks, fanoutFor('media-quotes'), (ch) => ask('media-quotes', `A transcript of a talk (lines: [paragraph @time voice] text). Find two things.
 (a) QUOTATIONS — where the speaker recites or reads the words of Bahá'u'lláh, the Báb, ‘Abdu'l-Bahá, Shoghi Effendi or the Universal House of Justice: introduced ("Bahá'u'lláh says: …", "as the Guardian wrote, …") or recited without introduction (recognisable scripture, often elevated language: "O Son of Spirit! …"). Give the recited words EXACTLY as they appear in the transcript (at least 6 words; leave out the introduction).
 (b) ATTRIBUTED TEACHINGS — where the speaker states in their own words what one of them taught or explained ("the Guardian taught that…", "‘Abdu'l-Bahá explains that the soul…"). Give the teaching as one plain sentence and the speaker's words that state it (exact, at most 30 words).
 Only these five writers; not the speaker's own views, not other authors.
@@ -237,5 +253,5 @@ export async function verifyMoment(m, ctxText, opts = {}) {
 /** The whole-talk copy-edit + names + mentions pass (cleanup.js). opts: { role ('media-clean' | 'media-clean-strong'), ctx, spend } */
 export async function cleanTranscript(paragraphs, { role = process.env.MEDIA_CLEAN_ROLE || 'media-clean-strong', ctx = {}, ...opts } = {}) {
   const { cleanParagraphs } = await import('./cleanup.js');
-  return cleanParagraphs(paragraphs, (prompt) => ask(role, prompt, { ...opts, max: 16000 }), { ...opts, ctx });
+  return cleanParagraphs(paragraphs, (prompt) => ask(role, prompt, { ...opts, max: 16000 }), { ...opts, ctx, ...(batchRole(role) ? { fanout: Infinity } : {}) });
 }

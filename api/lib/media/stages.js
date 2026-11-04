@@ -2,7 +2,7 @@
 // One declaration per stage; STAGES, COMPLETE_STAGES, DEPENDENTS, TYPE_STAGES, the feed's stages and every fp derive from it.
 // Pure (worker bundle imports it via item.js): no server imports. How to add a stage: docs/architecture/media-stages.md.
 import { createHash } from 'node:crypto';
-import { MODEL_ROLES } from '../model-roles.js';
+import { MODEL_ROLES, mediaLlmBatching } from '../model-roles.js';
 import { QUIET_REPAIR_VERSION } from './quiet-record.js';
 
 /** The job type = the bundle a stage is delivered in (planning/stage-queue-20261031.md §2; the audio bundles are scripts/media/worker/job-types.json). */
@@ -18,7 +18,7 @@ const envN = (k, d) => (Number(process.env[k]) > 0 ? Number(process.env[k]) : d)
 export const CLASSES = {
   gpu: { tower: false, hosts: ['pod', 'aorus'], get concurrency() { return envN('MEDIA_GPU_CONCURRENCY', 2); } },
   cpu: { tower: false, hosts: ['boss', 'aorus'], get concurrency() { return envN('MEDIA_STAGE_DEPTH', 2); } },
-  llm: { tower: true, hosts: ['tower', 'any'], get concurrency() { return envN('MEDIA_LLM_CONCURRENCY', 12); }, get rpm() { return envN('MEDIA_LLM_RPM', 120); } },
+  llm: { tower: true, hosts: ['tower', 'any'], get concurrency() { return envN('MEDIA_LLM_CONCURRENCY', mediaLlmBatching() ? 48 : 12); }, get rpm() { return envN('MEDIA_LLM_RPM', 120); } },
 };
 /** WORKER PROFILES (Chad 10-31: "Workers are either GPU, CPU+LLM, or LLM") → the classes each takes. The orchestrator gives a job to a worker
  *  whose profile takes the job's class. gpu = pods, Aorus's GPU · cpu+llm = Boss, Aorus's spare cores · llm = tower, anywhere.

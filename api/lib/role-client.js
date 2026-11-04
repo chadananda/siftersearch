@@ -54,6 +54,26 @@ export async function roleCreate(role, params, opts = {}) {
   return logStreamUsage(res, log);
 }
 
+/** The Message Batches twin of roleCreate (half price) for roles marked `batch` (model-roles batchRole): same spend policy,
+ *  same long-context guard, same model/thinking/temperature shaping — only the transport differs. Native params go into the
+ *  process-wide batch (anthropic-batch.js); the result comes back chat.completions-shaped. Usage is logged batch=true with
+ *  the real token counts, once per billed request. No synchronous fallback: a failed batch request throws. */
+export async function roleBatchCreate(role, params, { client } = {}) {
+  const { provider, model } = retireDeepSeek(modelFor(role));
+  if (provider !== 'anthropic') throw new Error(`roleBatchCreate: ${role} resolves to ${provider}, not Anthropic — not batchable`);
+  assertAnthropicAllowed({ provider, model, stage: `interactive:${role}`, caller: role });
+  guardLongContext({ model, messages: params.messages || [], caller: role });
+  const shaped = shapeParams(params, { provider, model });
+  const native = { model, max_tokens: params.max_completion_tokens ?? params.max_tokens, messages: params.messages,
+    ...(shaped.temperature != null ? { temperature: shaped.temperature } : {}), ...(shaped.thinking ? { thinking: shaped.thinking } : {}) };
+  const c = client || (await import('./anthropic-batch.js')).batchClient();
+  const res = await c.submit({ role, params: native });
+  const u = res?.usage;
+  if (u && res.billed !== false) logAIUsage({ provider, model, serviceType: 'chat', caller: role, batch: true,
+    promptTokens: u.prompt_tokens ?? 0, completionTokens: u.completion_tokens ?? 0, cachedTokens: u.cached_tokens ?? 0, cacheWriteTokens: u.cache_write_tokens ?? 0 });
+  return res;
+}
+
 /** A stream's usage arrives on its last chunk: log it once the caller has read the stream (11-02: streamed Sonnet
  *  chat-answer and dewey-chat were billed but never in ai_usage). The stream object is kept; only its iterator wraps. */
 export function logStreamUsage(stream, log) {

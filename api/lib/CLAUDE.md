@@ -45,6 +45,7 @@ One-line index for AI navigation. Open the file for full documentation.
 - `ai.js` — base OpenAI / Anthropic clients.
 - `ai-services.js` — `aiService(name).embed/chat/segment` — provider-routed AI calls with usage logging.
 - `model-roles.js` — WHICH model each job uses (the only place); `role-client.js` — `roleCreate(role, params)`, a drop-in for openai chat.completions on any provider.
+- `anthropic-batch.js` — Message Batches client (half price) for roles marked `batch` (media pipeline): coalesces ~2 s/200 requests, polls 30 s→5 min, resolves by custom_id, persists to data/run/anthropic-batches.json (restart adopts). Entry: `roleBatchCreate`; kill switch MEDIA_LLM_BATCH=0.
 - `model-registry.js` — `MODEL_REGISTRY` of all models with pricing + capabilities; helpers like `getModel`, `getModelsByType`.
 - `enhancement-ai.js` — **LEGACY** (local-Qwen disambig+HyPE prompt builders; old newline HyPE format). Retired 2026-07-10.
 - `enrichment-prompts.js` — **LEGACY** prompts for the retired enrichment workers.

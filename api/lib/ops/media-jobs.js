@@ -826,6 +826,7 @@ export async function mediaLlmJob({ id, ...rest } = {}, deps = {}) {
 /** Stages the feed completes on EVERY published talk lacking them: the registry's `feed` stages (opt-in; today quiet). Other stages run only for a campaign's marked talks. */
 export { FEED_STAGES } from '../media/stages.js';
 import { FEED_STAGES, REG as STAGE_REG, feedDepth, rerunSet, markStale, towerMay } from '../media/stages.js';
+import { mediaLlmBatching } from '../model-roles.js';
 /** stage → the last talk id the stage feed queued (in-process; a restart starts the rotation from the lowest id again). */
 const STAGE_CURSOR = {};
 export async function mediaLanesFeedPass(deps = {}) {
@@ -838,7 +839,7 @@ export async function mediaLanesFeedPass(deps = {}) {
   // 27× real time starves on a shallow queue)
   const computeWorkers = deps.computeWorkers ?? (await import('../media/tools.js')).asrHosts().reduce((n, h) => n + h.slots, 0);
   const computeDepth = deps.computeDepth ?? (Number(process.env.MEDIA_COMPUTE_DEPTH) || 3 * (computeWorkers || 4));
-  const llmDepth = deps.llmDepth ?? (Number(process.env.MEDIA_LLM_DEPTH) || 8);
+  const llmDepth = deps.llmDepth ?? (Number(process.env.MEDIA_LLM_DEPTH) || (mediaLlmBatching() ? 100 : 8));   // batched: talks wait on batches, not on us
   const out = { compute: [], llm: [] };
   if (repo.restorePublished) { const back = await repo.restorePublished(); if (back.length) out.restored = back; }
   if (repo.unclassifiedDone) { const n = await backfillRestored({ repo, readMeta: deps.readMeta }); if (n) out.restored_flagged = n; }
