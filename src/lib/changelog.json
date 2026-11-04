@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-04T18:34:29.293Z",
+  "generated": "2026-11-04T19:17:23.436Z",
   "entries": [
     {
       "hash": "0543d0a6",
@@ -2737,69 +2737,6 @@
       "type": "Fixed",
       "description": "Dewey-scout yields to a drain — between works, channels and copies; resumes with the rest of its limit, handled works skipped (10-22: #2819 held siftersearch-reports 'draining' 30+ min, nothing claimed)",
       "scope": "ops"
-    },
-    {
-      "hash": "598e6fd4",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "A published talk whose re-run fails stays published — the reason kept in why ('update failed: …') and counted in health.published_problems (blocked re-links had taken 15 talks off the catalogue; they come back through the capped retry)",
-      "scope": "media"
-    },
-    {
-      "hash": "b5098206",
-      "date": "2026-10-22",
-      "type": "Docs",
-      "description": "Data shapes for the design agent (progress, live view, health, extended thumbs, series titles)",
-      "scope": "media"
-    },
-    {
-      "hash": "a43bad78",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Loops repaired on every render/update (the gate had blocked re-links of talks transcribed before the repair); loop thresholds above ordinary repetition; media subheaders reach the section index",
-      "scope": "media"
-    },
-    {
-      "hash": "48d39234",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "The copy-edit is never worse than the ASR (QA items 5–6) — no function-word swaps that change the sound ('is in' → 'is him', 'or' → 'are'); a stutter keeps sentence case; the series and part frame the copy-edit ('Gems of Vyad Mysteries')",
-      "scope": "media"
-    },
-    {
-      "hash": "55342364",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Work links go to the work itself (QA item 4) — never a work about it, a talk/paper/newspaper, one unnamed volume, a chapter page, an original-language compilation entry or another language; re-run fan-outs skip busy items",
-      "scope": "media"
-    },
-    {
-      "hash": "d8a7d645",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "A lossy ASR word (U+FFFD, a Persian letter split between tokens) takes its text from the whole-decoded segment text — the publish gate had blocked item 8 on 'قب��'",
-      "scope": "media"
-    },
-    {
-      "hash": "ab76d89f",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "CUDA out of memory → the job starts again as a fresh process (back on the GPU after waiting for memory; the CPU only on a second OOM). The in-process CPU retry kept the dead model's 2.2 GB of VRAM and ran 30+ min — three such jobs held 6.8 GB of aorus's 8",
-      "scope": "media"
-    },
-    {
-      "hash": "78e724db",
-      "date": "2026-10-22",
-      "type": "Fixed",
-      "description": "Citation gate refuses file-/pdf- authors and language-suffixed file titles (QA item 3); the quote audit never queues a second run on a busy item",
-      "scope": "media"
-    },
-    {
-      "hash": "35fd7060",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Media-item re-runs take slugs as well as ids",
-      "scope": "media"
     }
   ],
   "grouped": {
@@ -5562,69 +5499,6 @@
         "type": "Fixed",
         "description": "Dewey-scout yields to a drain — between works, channels and copies; resumes with the rest of its limit, handled works skipped (10-22: #2819 held siftersearch-reports 'draining' 30+ min, nothing claimed)",
         "scope": "ops"
-      },
-      {
-        "hash": "598e6fd4",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "A published talk whose re-run fails stays published — the reason kept in why ('update failed: …') and counted in health.published_problems (blocked re-links had taken 15 talks off the catalogue; they come back through the capped retry)",
-        "scope": "media"
-      },
-      {
-        "hash": "b5098206",
-        "date": "2026-10-22",
-        "type": "Docs",
-        "description": "Data shapes for the design agent (progress, live view, health, extended thumbs, series titles)",
-        "scope": "media"
-      },
-      {
-        "hash": "a43bad78",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Loops repaired on every render/update (the gate had blocked re-links of talks transcribed before the repair); loop thresholds above ordinary repetition; media subheaders reach the section index",
-        "scope": "media"
-      },
-      {
-        "hash": "48d39234",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "The copy-edit is never worse than the ASR (QA items 5–6) — no function-word swaps that change the sound ('is in' → 'is him', 'or' → 'are'); a stutter keeps sentence case; the series and part frame the copy-edit ('Gems of Vyad Mysteries')",
-        "scope": "media"
-      },
-      {
-        "hash": "55342364",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Work links go to the work itself (QA item 4) — never a work about it, a talk/paper/newspaper, one unnamed volume, a chapter page, an original-language compilation entry or another language; re-run fan-outs skip busy items",
-        "scope": "media"
-      },
-      {
-        "hash": "d8a7d645",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "A lossy ASR word (U+FFFD, a Persian letter split between tokens) takes its text from the whole-decoded segment text — the publish gate had blocked item 8 on 'قب��'",
-        "scope": "media"
-      },
-      {
-        "hash": "ab76d89f",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "CUDA out of memory → the job starts again as a fresh process (back on the GPU after waiting for memory; the CPU only on a second OOM). The in-process CPU retry kept the dead model's 2.2 GB of VRAM and ran 30+ min — three such jobs held 6.8 GB of aorus's 8",
-        "scope": "media"
-      },
-      {
-        "hash": "78e724db",
-        "date": "2026-10-22",
-        "type": "Fixed",
-        "description": "Citation gate refuses file-/pdf- authors and language-suffixed file titles (QA item 3); the quote audit never queues a second run on a busy item",
-        "scope": "media"
-      },
-      {
-        "hash": "35fd7060",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Media-item re-runs take slugs as well as ids",
-        "scope": "media"
       }
     ]
   }
