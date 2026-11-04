@@ -60,13 +60,14 @@ const ownHolder = (q, writer, span) => canon(q?.author) === writer && canon(q?.b
  * per passage (live: literalOwnSearch), all in parallel, ranked by quoteCandidates (rankOrigins); the winner alone goes through
  * link (live: linkHits). Search + rank + link of every passage share the budget: later than budgetMs, failed, or no own passage
  * holding the span EXACTLY → the original passage stays. `shape` turns a (linked) hit into the caller's passage shape.
+ * `keep(p)` true → never swapped: a passage of the book the reader named is that book's words, not a copy to trade away.
  */
-export async function preferOwnWork(passages, { search = null, link = null, budgetMs = OWN_SOURCE_MS, shape = (h) => h } = {}) {
+export async function preferOwnWork(passages, { search = null, link = null, budgetMs = OWN_SOURCE_MS, shape = (h) => h, keep = null } = {}) {
   const t0 = Date.now();
   const done = (extra = {}) => ({ passages, swapped: [], searches: 0, late: 0, ...extra, ms: Date.now() - t0 });
   if (!Array.isArray(passages) || !passages.length) return done();
   const { DOCTRINAL } = await import('../source-hunt.js');
-  const jobs = passages.map((p, i) => ({ p, i })).filter(({ p }) => quotedElsewhere(p, DOCTRINAL))
+  const jobs = passages.map((p, i) => ({ p, i })).filter(({ p }) => quotedElsewhere(p, DOCTRINAL) && !keep?.(p))
     .map((j) => ({ ...j, writer: canon(j.p.author), span: quotedSpan(j.p.text) })).filter((j) => j.span);
   if (!jobs.length) return done();
   for (const j of jobs) j.own = passages.find((q) => q !== j.p && ownHolder(q, j.writer, j.span)) || null;

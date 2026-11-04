@@ -126,7 +126,7 @@ export async function understanding(choice, ctx) {
   let top = hits.slice(0, MAX_PASSAGES);
   const src = sourceP ? await sourceP : null;
   if (src) {
-    decisions.record('understanding:named-source', { by: 'jev', saw: { name: drawFrom, authors: src.authors, works: src.works.map((w) => w.id) },
+    decisions.record('understanding:named-source', { by: 'jev', saw: { name: drawFrom, ...(src.name && src.name !== drawFrom ? { resolved: src.name } : {}), authors: src.authors, works: src.works.filter((w) => !w.other).map((w) => w.id) },
       options: ['drawn from the named source'], chosen: `${src.passages.length} passages`, reason: 'Jev named the book or author the answer is drawn from' });
     // the named source's own passages lead (the reader asked what THAT book / author says)
     const had = new Set(src.passages.map((p) => `${p.document_id}:${p.paragraph_index}`));
@@ -145,7 +145,8 @@ export async function understanding(choice, ctx) {
   // scripture first, then interpretation (the writer leads with the Writings themselves)
   const scripture = (p) => /scripture|revelation|doctrine/i.test(p.standing || '') ? 0 : 1;
   const passages = top.map((p) => ({ ...p, theme: scripture(p) === 0 ? 'scripture' : 'interpretation' })).sort((a, b) => scripture(a) - scripture(b));
-  return { passages, plan: { shape: 'understanding', religion, coverage: c }, format: { id: 'understanding', by: 'strategy:understanding', how: UNDERSTANDING_HOW(religion, c) } };
+  const named = (src?.works || []).filter((w) => !w.other).map((w) => Number(w.id));
+  return { passages, plan: { shape: 'understanding', religion, coverage: c, ...(named.length ? { namedWorks: named } : {}) }, format: { id: 'understanding', by: 'strategy:understanding', how: UNDERSTANDING_HOW(religion, c) } };
 }
 
 /** Run the executor for Jev's choice. null = nothing to execute. */

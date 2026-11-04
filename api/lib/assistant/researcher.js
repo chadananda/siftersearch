@@ -8,7 +8,7 @@
 import { logger } from '../logger.js';
 import { withDeadlines } from './deadline.js';
 import { run as runTool, llmTools, canonical, toPassage, translationLabel, letterVariants } from './tools.js';
-import { authorMatch } from '../dewey/title-index.js';
+import { authorMatch, fold, mainKey } from '../dewey/title-index.js';
 export { translationLabel, letterVariants };
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
@@ -190,22 +190,58 @@ export function bridgeTargets(targets = [], { span = 0, before = 2, after = 2 } 
  */
 export async function namedSource(name, question, impl, { maxAuthors = 2 } = {}) {
   const nm = String(name || '').trim();
-  if (!nm || !(impl?.probe || impl?.search)) return { works: [], passages: [], authors: [] };
+  if (!nm || !(impl?.probe || impl?.search)) return { works: [], passages: [], authors: [], name: nm };
+  const r = await resolveSource(nm, question, impl, maxAuthors);
+  if (r.works.length || r.authors.length) return r;
+  // nothing in the library answers to the whole span: its tail from each later capitalised word, longest first
+  // ("According to Gate of the Heart" → "Gate of the Heart"; 11-04 goth-03: the sentence's opening word joined the title)
+  for (const tail of nameTails(nm)) {
+    const t = await resolveSource(tail, question, impl, maxAuthors);
+    if (t.works.length || t.authors.length) return t;
+  }
+  return r;
+}
+
+/** The tails of a name span that start at a later capitalised word, longest first ("According to Gate of the Heart" →
+ *  ["Gate of the Heart", "Heart"]). Structure only (capitalisation), never a word list. Pure. */
+export function nameTails(name) {
+  const w = String(name || '').trim().split(/\s+/);
+  return w.map((x, i) => (i > 0 && /^\p{Lu}/u.test(x) ? w.slice(i).join(' ') : null)).filter((t) => t && t.length >= 3);
+}
+
+/** Is the title match the work the name names? Its author is the named author, or the name covers the title's main words
+ *  ("Gate of the Heart" covers "Gate of the Heart: Understanding…"; "Nabíl" does not cover "Nabil's Narrative"). Pure. */
+export function namesTheWork(name, doc, authors = []) {
+  if (authors.some((a) => fold(a) === fold(doc?.author))) return true;
+  const nw = fold(name).split(' ').filter((w) => w.length > 2);
+  const tw = fold(mainKey(doc?.title || '')).split(' ').filter((w) => w.length > 2);
+  return !!tw.length && tw.every((t) => nw.some((n) => n === t || (n.length >= 5 && t.length >= 5 && (n.startsWith(t) || t.startsWith(n)))));
+}
+
+async function resolveSource(nm, question, impl, maxAuthors) {
   const [w, hits] = await Promise.all([
     impl.work ? impl.work(nm).catch(() => null) : null,
     (impl.probe || impl.search)(`${nm} ${question}`.slice(0, 400)).catch(() => []),
   ]);
-  const works = w?.doc?.id != null && !(Number(w.doc.paragraph_count) < 10) ? [w.doc] : [];
-  const authors = [...new Set((hits || []).filter((p) => p.author && authorMatch(nm, p.author) === true).map((p) => p.author))].slice(0, maxAuthors);
+  // the named author is the passage's writer OR its book's author: a quotation inside Saiedi's book carries the Báb as its
+  // voice and Saiedi as book_author (11-04 goth-05: every Gate of the Heart hit was a quotation, so "Saiedi" matched no one)
+  const authors = [...new Set((hits || []).flatMap((p) => [p.author, p.book_author]).filter((a) => a && authorMatch(nm, a) === true))].slice(0, maxAuthors);
+  const byNamed = (p) => authors.includes(p.author) || authors.includes(p.book_author);
+  // a title match is the work only when it is not a stub (< 10 paragraphs) and, when the name is an author's, it is that
+  // author's or the name covers its title (11-04 db-32: "Nabíl" matched the title "Nabil's Narrative", another writer's 408
+  // paragraphs, which then led the in-book step and its read-around instead of The Dawn-Breakers)
+  const titled = w?.doc?.id != null && !(Number(w.doc.paragraph_count) < 10) ? w.doc : null;
+  const works = titled && (!authors.length || namesTheWork(nm, titled, authors)) ? [titled] : [];
   const own = impl.searchBy ? await Promise.all(authors.map((a) => impl.searchBy(question, a).catch(() => []))) : [];
   const isWork = (p) => works.some((x) => Number(x.id) === Number(p.document_id));
-  const passages = [...(hits || []).filter((p) => authors.includes(p.author) || isWork(p)), ...own.flat()];
-  // each author's best-ranked document joins the works, so the book step reads inside it
+  const passages = [...(hits || []).filter((p) => byNamed(p) || isWork(p)), ...own.flat()];
   for (const [i, a] of authors.entries()) {
-    const top = own[i]?.[0] || hits.find((p) => p.author === a);
+    const top = own[i]?.[0] || (hits || []).find((p) => p.author === a || p.book_author === a);
     if (top?.document_id != null && !isWork(top)) works.push({ id: Number(top.document_id), title: top.title, author: a });
   }
-  return { works, passages, authors };
+  // the lesser title match stays listed after the author's works, never searched inside (booksFound skips `other`)
+  if (titled && !works.some((x) => Number(x.id) === Number(titled.id))) works.push({ ...titled, other: true });
+  return { works, passages, authors, name: nm };
 }
 
 export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, perBook = 1, extraMs = Infinity, drawFrom = null, around = null }) {
@@ -253,7 +289,7 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
   const src = sourceP ? await sourceP : null;
   if (src) {
     for (const w of src.works) addWork(w);
-    steps.push({ tool: 'named_source', args: { name: drawFrom, authors: src.authors, works: src.works.map((w) => w.id) }, found: src.passages.map((p) => add(p)).filter(Boolean).length });
+    steps.push({ tool: 'named_source', args: { name: drawFrom, ...(src.name && src.name !== drawFrom ? { resolved: src.name } : {}), authors: src.authors, works: src.works.filter((w) => !w.other).map((w) => w.id) }, found: src.passages.map((p) => add(p)).filter(Boolean).length });
   }
   if (!wantBrief && inBooks && impl.searchIn) {
     // the BOOK STEP (coordinator 11-03): code, no model call — each top book searched with the query that found it, in parallel

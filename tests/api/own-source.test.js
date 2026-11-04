@@ -44,6 +44,14 @@ describe('own source: a Central Figure quoted in another author\'s book → the 
     expect(r.searches).toBe(1);
     expect(r.ms).toBeLessThan(OWN_SOURCE_MS);
   });
+  it('a passage of the book the reader named is kept, never swapped (keep): no search, no swap', async () => {
+    const calls = [];
+    const search = async (q) => { calls.push(q); return [GLEANINGS]; };
+    const r = await preferOwnWork([PROMISED_DAY, OTHER], { search, shape: toPassage, keep: (p) => p.document_id === 20901 });
+    expect(calls).toHaveLength(0);
+    expect(r.passages.map((p) => p.id)).toEqual([311, 77]);
+    expect(r.swapped).toEqual([]);
+  });
   it('a search later than the budget keeps the original passage, and the step ends at the budget', async () => {
     const search = async () => wait(1000, [GLEANINGS]);
     const t0 = Date.now();

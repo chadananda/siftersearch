@@ -732,7 +732,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   // the original stays. The quote fast path already ranks its own (lookup.js).
   if (!fast && !work && !sourced && !original && !study && res?.passages?.length) {
     const ownDeps = deps ? { search: d.ownSourceSearch || null, link: d.ownSourceLink || null } : { search: literalOwnSearch, link: linkHits };
-    const own = await timed('own-source', () => preferOwnWork(res.passages, { ...ownDeps, shape: toPassage }),
+    // the book the reader named (Jev's drawFrom, resolved by namedSource) keeps its own passages: never swapped away (11-04)
+    const named = new Set([...(res._plan?.namedWorks || []), ...(res._plan?.steps || []).filter((x) => x.tool === 'named_source').flatMap((x) => x.args?.works || [])].map(Number));
+    const own = await timed('own-source', () => preferOwnWork(res.passages, { ...ownDeps, shape: toPassage, keep: named.size ? (p) => named.has(Number(p.document_id)) : null }),
       (r) => ({ swapped: r.swapped.length, searches: r.searches, late: r.late })).catch((err) => { console.warn('anis own-source failed', err?.message); return null; });
     if (own) {
       res.passages = own.passages;

@@ -3,7 +3,7 @@
 // the library (work by title, author by the documents' author field) and its works lead the in-book step.
 import { describe, it, expect } from 'vitest';
 import { buildPlan, planSearch, drawFromCriteria } from '../../api/lib/search-plan.js';
-import { namedSource, research } from '../../api/lib/assistant/researcher.js';
+import { namedSource, research, nameTails, namesTheWork } from '../../api/lib/assistant/researcher.js';
 import { understanding } from '../../api/lib/assistant/strategies.js';
 
 const GATE = { id: 8632, title: 'Gate of the Heart: Understanding the Writings of the Báb', author: 'Nader Saiedi' };
@@ -98,5 +98,59 @@ describe('the named source reaches the in-book step', () => {
       drawFrom: 'Saiedi', sourceTools });
     expect(inside[0]).toBe(8632);
     expect(out.passages.some((x) => x.document_id === 8632)).toBe(true);
+    expect(out.plan.namedWorks).toEqual([8632]);   // respond's own-source step keeps this book's passages (never swapped)
+  });
+});
+
+// 11-04 production regressions (goth-05, goth-03, db-32): the name was in the plan, the library resolution lost it
+describe('namedSource — 11-04 resolution fixes', () => {
+  const q = (doc, i, author, book_author, title = 'T') => ({ ...p(doc, i, author, title), book_author });
+  it('the named author is the BOOK\'s author too: a quotation in Saiedi\'s book (voice: the Báb) names Saiedi', async () => {
+    const byCalls = [];
+    const impl = {
+      work: async () => ({ doc: { id: 921203, title: 'saiedi_oppression_empowerment', paragraph_count: 1 }, others: [] }),   // a stub
+      probe: async () => [q(8632, 40, 'The Báb', 'Nader Saiedi', GATE.title), q(20898, 3, 'The Báb', 'The Báb')],
+      searchBy: async (x, a) => { byCalls.push(a); return [q(8632, 41, 'Nader Saiedi', 'Nader Saiedi', GATE.title)]; },
+    };
+    const r = await namedSource('Saiedi', 'Him Whom God shall make manifest', impl);
+    expect(r.authors).toEqual(['Nader Saiedi']);
+    expect(byCalls).toEqual(['Nader Saiedi']);
+    expect(r.works.map((w) => w.id)).toEqual([8632]);
+    expect(r.passages.map((x) => `${x.document_id}:${x.paragraph_index}`)).toEqual(['8632:40', '8632:41']);   // the Báb's own book is not Saiedi
+  });
+  it('a span that resolves to nothing falls back to its tail from a later capitalised word', async () => {
+    const asked = [];
+    const impl = {
+      work: async (n) => { asked.push(n); return n === 'Gate of the Heart' ? { doc: { ...GATE, paragraph_count: 2113 }, others: [] } : null; },
+      probe: async () => [], searchBy: async () => [],
+    };
+    const r = await namedSource('According to Gate of the Heart', 'the Primal Will', impl);
+    expect(asked[0]).toBe('According to Gate of the Heart');
+    expect(r.name).toBe('Gate of the Heart');
+    expect(r.works.map((w) => w.id)).toEqual([8632]);
+  });
+  it('a name that resolves keeps its whole span (no tail search)', async () => {
+    const asked = [];
+    const impl = { work: async (n) => { asked.push(n); return { doc: { ...GATE, paragraph_count: 2113 }, others: [] }; }, probe: async () => [], searchBy: async () => [] };
+    await namedSource('Gate of the Heart', 'x', impl);
+    expect(asked).toEqual(['Gate of the Heart']);
+  });
+  it('an author\'s name: another writer\'s title match ("Nabil\'s Narrative") does not lead — the author\'s own book does', async () => {
+    const impl = {
+      work: async () => ({ doc: { id: 913750, title: "Nabil's Narrative", author: 'russian-hist-nabil', paragraph_count: 408 }, others: [] }),
+      probe: async () => [q(21308, 576, 'Nabil Zarandi', null, 'The Dawn-Breakers')],
+      searchBy: async (x, a) => [q(21308, 575, a, null, 'The Dawn-Breakers')],
+    };
+    const r = await namedSource('Nabíl', 'Which Tablet?', impl);
+    expect(r.authors).toEqual(['Nabil Zarandi']);
+    expect(r.works.map((w) => [w.id, !!w.other])).toEqual([[21308, false], [913750, true]]);
+    expect(r.passages.some((x) => x.document_id === 913750)).toBe(false);
+  });
+  it('nameTails / namesTheWork are structure only', () => {
+    expect(nameTails('According to Gate of the Heart')).toEqual(['Gate of the Heart', 'Heart']);
+    expect(nameTails('Saiedi')).toEqual([]);
+    expect(namesTheWork('Gate of the Heart', GATE, [])).toBe(true);
+    expect(namesTheWork('Nabíl', { title: "Nabil's Narrative", author: 'russian-hist-nabil' }, ['Nabil Zarandi'])).toBe(false);
+    expect(namesTheWork('Nabíl', { title: 'The Dawn-Breakers', author: 'Nabil Zarandi' }, ['Nabil Zarandi'])).toBe(true);
   });
 });
