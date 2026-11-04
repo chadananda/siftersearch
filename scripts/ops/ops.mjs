@@ -8,6 +8,9 @@
 //   node scripts/ops/ops.mjs search-latency [--minutes 60]   per-stage p50/p95 vs the search budget (search/latency-budget.js)
 //   node scripts/ops/ops.mjs anis-forensics [--days 7] [--stage rank] [--json]   stage × class defect queue (replies, searches) + Opus judge tally
 //   node scripts/ops/ops.mjs anis-improvements [--status open] | anis-improvement-status <id> <open|accepted|done|rejected> [note]
+//   node scripts/ops/ops.mjs anis-improve-digest [--since 24h|ISO] [--json]   DAILY for Claude Code: assessment + new/grown CODE recommendations + DATA changes
+//   node scripts/ops/ops.mjs anis-improve-report [--days 7] [--target code|data|<target>] [--stage S] [--status open] [--since ISO]   audits → conclusions → solutions (JSON)
+//   node scripts/ops/ops.mjs anis-improve-status <id> <accepted|done|rejected|open> [--note "what was done"]   sets status + reviewed_by internal:claude-code
 //   node scripts/ops/ops.mjs search-replay --class <class> [--days 7]   re-run that class's turns (no LLM) → how many the current code fixes
 //   node scripts/ops/ops.mjs anis-trace <thread|thread:round>  an Anís thread / turn: every search (tool, query, ranked hits), writer passages, citations
 //   node scripts/ops/ops.mjs search-trace [<traceId>] [--query w --tool t --doc id|title --thread id --turn id --endpoint e --days n --limit n --zero --slow ms]
@@ -70,6 +73,33 @@ else if (cmd === 'anis-forensics') {
 } else if (cmd === 'anis-improvement-status' && name) {
   const [, , status, ...note] = process.argv.slice(2);
   await out(await call('POST', `/anis/improvements/${Number(name)}/status`, { status, ...(note.length ? { note: note.join(' ') } : {}) }));
+} else if (cmd === 'anis-improve-report') {
+  const q = new URLSearchParams({ days: val('--days') || '7' });
+  for (const k of ['target', 'stage', 'status', 'kind', 'since', 'limit']) if (val(`--${k}`)) q.set(k, val(`--${k}`));
+  await out(await call('GET', `/anis/improve-report?${q}`));
+} else if (cmd === 'anis-improve-digest') {
+  const j = await call('GET', `/anis/improve-digest?since=${encodeURIComponent(val('--since') || '24h')}`);
+  if (flag('--json')) await out(j);
+  else {
+    const a = j.assessment || {};
+    const L = [`ANÍS IMPROVEMENT DIGEST · since ${j.since}${j.available ? '' : ' · (no improve store)'}`,
+      `assessment: judged ${a.judged} · weak ${a.weak} (${a.weak_pct ?? '–'}%) · mean severity ${a.mean_severity ?? '–'} (weak verdicts, 1-3) · $${a.spend_usd}${a.cap_usd != null ? ` · today $${a.spent_today_usd} of $${a.cap_usd} cap` : ''}`,
+      `  by stage: ${Object.entries(a.by_stage || {}).map(([k, n]) => `${k} ${n}`).join(' · ') || '–'}`,
+      `  top classes: ${(a.top_classes || []).map((c) => `${c.class} ${c.n}`).join(' · ') || '–'}`,
+      '', `CODE recommendations, new or grown (${(j.code || []).length}):`];
+    for (const c of j.code || []) {
+      L.push(`#${c.id} ${c.new ? 'NEW' : `+${c.evidence_new}`} [${c.status}] ${c.target} · ${c.stage} · ${c.file || '?'}${c.fn ? ` ${c.fn}` : ''} · evidence ${c.evidence_n} × sev ${c.severity}`,
+        `    ${c.change}`, ...(c.expected_effect ? [`    → ${c.expected_effect}`] : []),
+        ...c.examples.map((e) => `    e.g. ${e.turn_id || e.item_key}  ${e.trace || ''}`));
+    }
+    L.push('', `DATA changes (${(j.data || []).length}):`, ...(j.data || []).map((x) => `#${x.id} ${x.state} [${x.status}] ${x.target} · ${x.stage} · evidence ${x.evidence_n} — ${x.change}`));
+    L.push('', 'Act: node scripts/ops/ops.mjs anis-improve-status <id> <accepted|done|rejected> --note "…"');
+    await new Promise((r) => process.stdout.write(`${L.join('\n')}\n`, r));
+  }
+} else if (cmd === 'anis-improve-status' && name) {
+  const status = process.argv[4];
+  if (!['open', 'accepted', 'done', 'rejected'].includes(status)) { console.error('usage: ops.mjs anis-improve-status <id> <accepted|done|rejected|open> [--note "…"]'); process.exit(2); }
+  await out(await call('POST', `/anis/improvements/${Number(name)}/status`, { status, by: val('--by') || 'claude-code', ...(val('--note') ? { note: val('--note') } : {}) }));
 } else if (cmd === 'search-replay' && val('--class')) {   // re-run a defect class's turns through today's search (no LLM) and re-assess
   const cls = val('--class');
   if (!cls) { console.error('usage: ops.mjs search-replay --class <defect-class> [--days 7]'); process.exit(2); }

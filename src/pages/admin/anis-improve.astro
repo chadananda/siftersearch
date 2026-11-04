@@ -1,0 +1,14 @@
+---
+// Anís improvement report (Chad 11-04): audits → conclusions → solutions, live. Also the "Improvement" tab of /admin/anis.
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../components/common/IslandSkeleton.astro';
+import AnisImprove from '../../components/admin/AnisImprove.svelte';
+---
+
+<AdminLayout title="Anís improvement">
+  <div class="p-6">
+    <h1 class="text-2xl font-semibold text-primary">Anís improvement</h1>
+    <p class="mb-4 text-muted">Every reply and search is judged; weak ones get a deep analysis; its fixes are ranked here. Code fixes are for Claude Code (daily digest: <code>ops.mjs anis-improve-digest</code>); data fixes the live loop may apply.</p>
+    <AnisImprove client:only="svelte"><IslandSkeleton slot="fallback" /></AnisImprove>
+  </div>
+</AdminLayout>

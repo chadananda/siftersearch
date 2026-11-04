@@ -818,6 +818,17 @@ export const admin = {
     return request(`/api/admin/anis/threads/${encodeURIComponent(id)}`);
   },
 
+  /** The live improvement report: pipeline, spend, audits → conclusions → solutions. params: days, stage, status, kind, target, since. */
+  async getAnisImproveReport(params = {}) {
+    const q = new URLSearchParams(Object.entries(params).filter(([, v]) => v != null && v !== ''));
+    return request(`/api/admin/anis/improve-report?${q}`);
+  },
+
+  /** Set an improvement's status (open | accepted | done | rejected) with a note; the server records who reviewed it. */
+  async setAnisImprovementStatus(id, status, note = null) {
+    return request(`/api/admin/anis/improvements/${Number(id)}/status`, { method: 'POST', body: JSON.stringify({ status, ...(note ? { note } : {}) }) });
+  },
+
   /**
    * Update a user
    */

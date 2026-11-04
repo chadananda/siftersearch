@@ -4,6 +4,7 @@
 import { getModel } from '../model-registry.js';
 import { modelFor } from '../model-roles.js';
 import { STAGES, FIX_WHERE, COPY_CLASSES, copyClass, routeOf, forensicPass, forensicQueue } from './forensics.js';
+import { TARGETS, inferTarget, targetOf, targetClass } from './improve-targets.js';
 
 export const IMPROVE_V = 1;
 export const JUDGE_ROLE = 'search-judge', DEEP_ROLE = 'improve-analysis';
@@ -101,8 +102,14 @@ of the search on today's code (Writings-tier rows first; old_rank shows how it m
 function owns each stage). Find the ROOT cause in code and propose the smallest change that fixes the CLASS of failure,
 never this one question: no rule that names this question's words, titles or doc ids. A library gap is not a code change:
 for HOLDINGS say what to acquire. Source order: se-translation > writing > compilation > quoted-authoritative > reported > secondary.
-OUTPUT: exactly one JSON object: {"suggestions":[{"stage":"STAGE","file":"path/to/file.js","fn":"functionName or null",
-"change":"what to change, concretely","expected_effect":"what gets better, for which class of question","classes":["kebab-class"],
+TARGET — who can apply the change. DATA (the live loop may apply it): "strategy" (a route recipe / strategy definition),
+"step" (one step's parameters inside a strategy), "template" (an answer template or format). CODE (an engineer applies it):
+"activity" (api/lib/assistant/activities), "tool" (a search/lookup tool), "index" (search, ranking, Qdrant/phrase index,
+embeddings), "writer-code" (the writer's prompt, quoting, linting), "other-code". Prefer a DATA target when a strategy
+change alone fixes the class; name a CODE target when it cannot.
+OUTPUT: exactly one JSON object: {"diagnosis":"what went wrong for the reader, in one or two sentences",
+"root_cause":"the code-level cause (stage, file, function) behind it","suggestions":[{"stage":"STAGE","file":"path/to/file.js","fn":"functionName or null",
+"target":"strategy|step|template|activity|tool|index|writer-code|other-code","change":"what to change, concretely","expected_effect":"what gets better, for which class of question","classes":["kebab-class"],
 "severity":1|2|3}]} — at most 3 suggestions, most important first.`;
 
 export function deepMessage(item, judge, { replay = null, passages = [], codeMap = FIX_WHERE } = {}) {
@@ -118,13 +125,21 @@ export function deepMessage(item, judge, { replay = null, passages = [], codeMap
 
 export function parseSuggestions(text) {
   const j = firstJson(text);
-  return (Array.isArray(j?.suggestions) ? j.suggestions : []).slice(0, 3).map((s) => ({
-    stage: STAGES.includes(String(s.stage || '').toUpperCase()) ? String(s.stage).toUpperCase() : 'STRATEGY',
-    file: clip(s.file, 200) || null, fn: s.fn ? clip(s.fn, 120) : null,
-    change: clip(s.change, 1200), expected_effect: clip(s.expected_effect, 600),
-    classes: (Array.isArray(s.classes) ? s.classes : []).map(String).slice(0, 6),
-    severity: Math.min(3, Math.max(1, Number(s.severity) || 2)),
-  })).filter((s) => s.change);
+  return (Array.isArray(j?.suggestions) ? j.suggestions : []).slice(0, 3).map((s) => {
+    const stage = STAGES.includes(String(s.stage || '').toUpperCase()) ? String(s.stage).toUpperCase() : 'STRATEGY';
+    const file = clip(s.file, 200) || null, t = String(s.target || '').toLowerCase().trim();
+    return { stage, file, fn: s.fn ? clip(s.fn, 120) : null,
+      target: TARGETS.includes(t) ? t : inferTarget({ stage, file }),   // the analyst names it; inferred when unnamed or invalid
+      change: clip(s.change, 1200), expected_effect: clip(s.expected_effect, 600),
+      classes: (Array.isArray(s.classes) ? s.classes : []).map(String).slice(0, 6),
+      severity: Math.min(3, Math.max(1, Number(s.severity) || 2)) };
+  }).filter((s) => s.change);
+}
+
+/** The analyst's text → { diagnosis, root_cause, suggestions } (the conclusion the report page shows beside its fixes). */
+export function parseDeep(text) {
+  const j = firstJson(text);
+  return { diagnosis: j?.diagnosis ? clip(j.diagnosis, 1200) : null, root_cause: j?.root_cause ? clip(j.root_cause, 1200) : null, suggestions: parseSuggestions(text) };
 }
 
 // ── dedup: the same fix seen again adds evidence, it does not add a row ──
@@ -215,6 +230,89 @@ export function forensicsReport(rows = [], prevRows = [], { stage = null, exampl
     judge: { judged: judged.length, pending: rows.length - judged.length, weak: weak.length, weak_rate: judged.length ? +(weak.length / judged.length).toFixed(3) : null,
       weak_classes: Object.entries(byClass).sort((a, b) => b[1] - a[1]).map(([cls, n]) => ({ class: cls, n })),
       usd: +usd.toFixed(4), usd_per_item: judged.length ? +(usd / judged.length).toFixed(5) : null },
+  };
+}
+
+/** GET /api/admin/anis/improve-report: improve-repo improveReportData() + the improve group's cap status → audits (weak
+ *  verdicts) → conclusions (deep analyses) → solutions (ranked improvements with their evidence audits), every item linked
+ *  by item_key, with the admin links to its trace, replay and thread. Pure. */
+export function improveReport(data, { days = 7, cap = null, filters = {} } = {}) {
+  const j = (s) => { if (s && typeof s === 'object') return s; try { return JSON.parse(s); } catch { return null; } };
+  const links = (r) => {
+    const turn = r.turn_id || null;
+    return {
+      trace: turn ? `/api/admin/anis/turns/${encodeURIComponent(turn)}/trace` : r.kind === 'search' ? `/api/admin/search-trace/${encodeURIComponent(r.ref_id)}` : null,
+      replay: turn ? `/api/admin/anis/turns/${encodeURIComponent(turn)}/replay` : r.kind === 'search' ? `/api/admin/search-trace/${encodeURIComponent(r.ref_id)}/replay` : null,
+      thread: r.session_id ? `/admin/anis#threads:${encodeURIComponent(r.session_id)}` : null,
+    };
+  };
+  const base = (r) => ({ item_key: r.item_key, kind: r.kind, ref_id: r.ref_id, session_id: r.session_id ?? null, turn_id: r.turn_id ?? null,
+    question: r.question ?? null, route: r.route ?? null, asked_at: r.asked_at ?? null, links: links(r) });
+  const d = data || { pipeline: [], spend: {}, audits: [], conclusions: [], improvements: [], evidence: new Map() };
+  const solutions = rankImprovements(d.improvements.map((r) => ({ ...r, classes: j(r.classes_json) || [], evidence: j(r.evidence_json) || [] })))
+    .map(({ classes_json, evidence_json, ...r }) => ({ ...r, target: targetOf(r), target_class: targetClass(targetOf(r)), target_inferred: !TARGETS.includes(r.target),
+      evidence_audits: r.evidence.map((k) => { const e = d.evidence.get(k); const v = j(e?.judge_json); return e ? { ...base(e), why: v?.why ?? null, stage: v?.stage ?? null } : { item_key: k, missing: true }; }) }));
+  // a conclusion links to its fixes: the ids it recorded, else (deep runs before deep_json) the improvements whose evidence names it
+  const conclusions = d.conclusions.map((r) => {
+    const deep = j(r.deep_json), v = j(r.judge_json);
+    const ids = deep?.improvement_ids || solutions.filter((s) => s.evidence.includes(r.item_key)).map((s) => s.id);
+    return { ...base(r), diagnosis: deep?.diagnosis ?? null, root_cause: deep?.root_cause ?? null, recorded: !!deep, judge_why: v?.why ?? null,
+      judge_stage: v?.stage ?? null, improvement_ids: ids, deep_usd: r.deep_usd ?? 0, deep_at: r.deep_at ?? null };
+  });
+  const audits = d.audits.map((r) => {
+    const v = j(r.judge_json) || {};
+    return { ...base(r), verdict: v.verdict ?? null, severity: v.severity ?? null, stage: v.stage ?? null, classes: v.classes || [], why: v.why ?? null,
+      gate: v.gate ?? null, right: v.right ?? null, defects: j(r.defects_json) || [], deep_state: r.deep_state, judged_at: r.judged_at ?? null,
+      usd: +((r.judge_usd || 0) + (r.deep_usd || 0)).toFixed(4), improvement_ids: solutions.filter((s) => s.evidence.includes(r.item_key)).map((s) => s.id) };
+  });
+  const sum = (k) => d.pipeline.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+  const total = Object.fromEntries(['items', 'judged', 'weak', 'deep_done', 'judge_pending', 'deep_pending', 'judged_last_hour', 'deep_last_hour', 'stuck'].map((k) => [k, sum(k)]));
+  return {
+    generated_at: new Date().toISOString(), days, filters, available: !!data,
+    pipeline: { total: { ...total, weak_rate: total.judged ? +(total.weak / total.judged).toFixed(3) : null },
+      by_kind: Object.fromEntries(d.pipeline.map(({ kind, ...r }) => [kind, Object.fromEntries(Object.entries(r).map(([k, v]) => [k, Number(v) || 0]))])) },
+    spend: { today_usd: cap?.spent_usd ?? d.spend?.today_usd ?? 0, today_store_usd: d.spend?.today_usd ?? 0, window_usd: d.spend?.window_usd ?? 0,
+      cap_usd: cap?.cap_usd ?? null, remaining_usd: cap?.remaining_usd ?? null, blocking: !!cap?.blocking },
+    audits, conclusions, solutions,
+  };
+}
+
+/** GET /api/admin/anis/improve-digest (Chad 11-04: "Claude Code should check these daily") — terse, for an agent: the
+ *  assessment since `since` (judged, weak %, mean severity of weak verdicts — the judge gives no numeric score —, top defect
+ *  classes, spend), CODE recommendations that are new or gained evidence since then (with 2 example turns + trace links),
+ *  and DATA changes proposed or applied since then. data = improve-repo improveDigestData(). Pure. */
+export function improveDigest(data, { since, cap = null } = {}) {
+  const d = data || { judged: [], spend_usd: 0, improvements: [], evidence: new Map() };
+  const S = new Date(Date.parse(since)).toISOString().slice(0, 19).replace('T', ' ');   // the store's timestamp format
+  const j = (s) => { if (s && typeof s === 'object') return s; try { return JSON.parse(s); } catch { return null; } };
+  const verdicts = d.judged.map((r) => j(r.judge_json) || {});
+  const weak = verdicts.filter((v) => v.verdict === 'weak');
+  const count = (xs) => Object.entries(xs.reduce((m, x) => (m[x] = (m[x] || 0) + 1, m), {})).sort((a, b) => b[1] - a[1]);
+  const sev = weak.map((v) => Number(v.severity)).filter(Number.isFinite);
+  const example = (k) => { const e = d.evidence.get(k); if (!e) return null;
+    const turn = e.turn_id || null;
+    return { item_key: k, turn_id: turn, judged_at: e.judged_at ?? null,
+      trace: turn ? `/api/admin/anis/turns/${encodeURIComponent(turn)}/trace` : e.kind === 'search' ? `/api/admin/search-trace/${encodeURIComponent(e.ref_id)}` : null,
+      thread: e.session_id ? `/admin/anis#threads:${encodeURIComponent(e.session_id)}` : null }; };
+  const rows = rankImprovements(d.improvements.map((r) => ({ ...r, evidence: j(r.evidence_json) || [], target: targetOf(r) })));
+  const fresh = (k) => (d.evidence.get(k)?.judged_at || '') >= S;
+  const code = rows.filter((r) => targetClass(r.target) === 'code' && ['open', 'accepted'].includes(r.status))
+    .map((r) => ({ r, evidence_new: r.evidence.filter(fresh).length, is_new: (r.first_seen || '') >= S }))
+    .filter((x) => x.is_new || x.evidence_new > 0)
+    .map(({ r, evidence_new, is_new }) => ({ id: r.id, new: is_new, status: r.status, target: r.target, stage: r.stage, file: r.file, fn: r.fn,
+      change: r.change, expected_effect: r.expected_effect, severity: r.severity, evidence_n: r.evidence_n, evidence_new, score: r.score,
+      examples: [...r.evidence].reverse().map(example).filter(Boolean).slice(0, 2) }));
+  const dataChanges = rows.filter((r) => targetClass(r.target) === 'data' && ((r.first_seen || '') >= S || (r.status_at || '') >= S))
+    .map((r) => ({ id: r.id, state: r.status === 'done' ? 'applied' : r.status === 'rejected' ? 'rejected' : 'proposed', status: r.status,
+      target: r.target, stage: r.stage, change: r.change, evidence_n: r.evidence_n, severity: r.severity, status_note: r.status_note ?? null }));
+  return {
+    since, generated_at: new Date().toISOString(), available: !!data,
+    assessment: { judged: verdicts.length, weak: weak.length, weak_pct: verdicts.length ? +(100 * weak.length / verdicts.length).toFixed(1) : null,
+      mean_severity: sev.length ? +(sev.reduce((a, b) => a + b, 0) / sev.length).toFixed(2) : null, score_note: 'judge has no numeric score; mean_severity is over weak verdicts (1-3)',
+      by_stage: Object.fromEntries(count(weak.map((v) => v.stage || '?'))),
+      top_classes: count(weak.flatMap((v) => v.classes || [])).slice(0, 8).map(([cls, n]) => ({ class: cls, n })),
+      spend_usd: +(d.spend_usd || 0).toFixed(4), cap_usd: cap?.cap_usd ?? null, spent_today_usd: cap?.spent_usd ?? null },
+    code, data: dataChanges,
   };
 }
 

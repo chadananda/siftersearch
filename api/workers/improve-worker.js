@@ -18,7 +18,7 @@ import { isSpendCap } from '../lib/spend-caps.js';
 import { drainOnSignals, isDraining, nap } from '../lib/drain.js';
 import { startHeartbeat } from '../lib/service-heartbeat.js';
 import { assessSearch, routeOf } from '../lib/audit/forensics.js';
-import { JUDGE_SYSTEM, DEEP_SYSTEM, JUDGE_ROLE, DEEP_ROLE, judgeMessage, parseJudge, deepMessage, parseSuggestions,
+import { JUDGE_SYSTEM, DEEP_SYSTEM, JUDGE_ROLE, DEEP_ROLE, judgeMessage, parseJudge, deepMessage, parseDeep,
   mergeSuggestions, costOf, priorityOf, turnFromPath, itemsForTurn } from '../lib/audit/improve.js';
 import { anisRepliesAfter } from '../lib/repos/anis-threads-repo.js';
 import { tracesAfter, tracesForTurn, docTitles } from '../lib/repos/search-trace-repo.js';
@@ -106,8 +106,9 @@ export async function work(db, { call = callOpus, replay = replayCurrent } = {})
       const rep = await replay(w.item).catch(() => null);
       const passages = (w.item.writer_passages || w.item.hits || []).filter((h) => h.text);
       const r = await call(DEEP_ROLE, DEEP_SYSTEM, deepMessage(w.item, w.judge || {}, { replay: rep, passages }), 2000);
-      applySuggestions(db, mergeSuggestions(openImprovements(db), parseSuggestions(r.text), w.item_key));
-      saveDeepDone(db, w.item_key, { usd: r.usd });
+      const deep = parseDeep(r.text);   // the conclusion (diagnosis, root cause) is kept with the ids of the fixes it led to
+      const ids = applySuggestions(db, mergeSuggestions(openImprovements(db), deep.suggestions, w.item_key));
+      saveDeepDone(db, w.item_key, { usd: r.usd, deep: { diagnosis: deep.diagnosis, root_cause: deep.root_cause, improvement_ids: ids } });
     }
     return 'done';
   } catch (err) {

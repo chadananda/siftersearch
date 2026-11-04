@@ -4,6 +4,7 @@
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
+import { targetOf, targetClass } from '../audit/improve-targets.js';
 
 export const IMPROVE_DB = () => process.env.IMPROVE_DB || '/tank/sifter/audit/improve.db';
 const safeJson = (s) => { try { return JSON.parse(s); } catch { return null; } };
@@ -24,6 +25,18 @@ CREATE TABLE IF NOT EXISTS improvements (
   status TEXT DEFAULT 'open', status_note TEXT, status_at TEXT, first_seen TEXT, last_seen TEXT);
 CREATE INDEX IF NOT EXISTS idx_improvements_status ON improvements(status);
 CREATE TABLE IF NOT EXISTS improve_cursor (name TEXT PRIMARY KEY, value TEXT, updated_at TEXT);`;
+// Columns added after the first deploy (idempotent ALTERs on every writable open): the deep analysis's own conclusion
+// (diagnosis, root cause, the improvement ids it produced or confirmed) and when each step ran (throughput per hour);
+// each improvement's target (who can apply it: data for the live loop, code for Claude Code) and who reviewed it, when.
+const ADDED_COLUMNS = [['forensics', 'deep_json', 'TEXT'], ['forensics', 'judged_at', 'TEXT'], ['forensics', 'deep_at', 'TEXT'],
+  ['improvements', 'target', 'TEXT'], ['improvements', 'reviewed_at', 'TEXT'], ['improvements', 'reviewed_by', 'TEXT']];
+const hasColumn = (db, table, col) => db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === col);
+function evolve(db) {
+  for (const [t, c, type] of ADDED_COLUMNS) if (!hasColumn(db, t, c)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} ${type}`);
+  // rows from before the analyst named a target: inferred from stage + file (improve-targets.js), once
+  const old = db.prepare('SELECT id, stage, file FROM improvements WHERE target IS NULL').all();
+  if (old.length) { const set = db.prepare('UPDATE improvements SET target = ? WHERE id = ?'); db.transaction(() => { for (const r of old) set.run(targetOf(r), r.id); })(); }
+}
 
 /** Open (and create) the store. Callers close it; tests pass ':memory:'. */
 export function openImproveDb(path = IMPROVE_DB(), { readonly = false } = {}) {
@@ -31,7 +44,7 @@ export function openImproveDb(path = IMPROVE_DB(), { readonly = false } = {}) {
   if (!readonly && path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
   const db = new Database(path, readonly ? { readonly: true, fileMustExist: true } : {});
   db.pragma('busy_timeout = 5000');
-  if (!readonly) { db.pragma('journal_mode = WAL'); db.exec(SCHEMA); }
+  if (!readonly) { db.pragma('journal_mode = WAL'); db.exec(SCHEMA); evolve(db); }
   return db;
 }
 const withDb = (opts, fn, { readonly = false } = {}) => {
@@ -66,32 +79,40 @@ export function nextWork(db, { maxAttempts = 5 } = {}) {
   return r ? { ...r, step: r.deep_state === 'pending' ? 'deep' : 'judge', item: safeJson(r.payload_json), judge: safeJson(r.judge_json) } : null;
 }
 export function saveJudge(db, key, { judge, usd, usage }) {
-  db.prepare(`UPDATE forensics SET judge_state = 'done', judge_json = ?, judge_usd = ?, judge_tokens_json = ?, deep_state = ?, error = NULL, updated_at = ? WHERE item_key = ?`)
-    .run(JSON.stringify(judge), usd, JSON.stringify(usage || null), judge.verdict === 'weak' ? 'pending' : 'none', nowIso(), key);
+  const now = nowIso();
+  db.prepare(`UPDATE forensics SET judge_state = 'done', judge_json = ?, judge_usd = ?, judge_tokens_json = ?, deep_state = ?, error = NULL, judged_at = ?, updated_at = ? WHERE item_key = ?`)
+    .run(JSON.stringify(judge), usd, JSON.stringify(usage || null), judge.verdict === 'weak' ? 'pending' : 'none', now, now, key);
 }
-export function saveDeepDone(db, key, { usd }) {
-  db.prepare(`UPDATE forensics SET deep_state = 'done', deep_usd = ?, error = NULL, updated_at = ? WHERE item_key = ?`).run(usd, nowIso(), key);
+/** deep = { diagnosis, root_cause, improvement_ids } — the analysis's conclusion, kept beside the suggestions it produced. */
+export function saveDeepDone(db, key, { usd, deep = null }) {
+  const now = nowIso();
+  db.prepare(`UPDATE forensics SET deep_state = 'done', deep_usd = ?, deep_json = ?, error = NULL, deep_at = ?, updated_at = ? WHERE item_key = ?`)
+    .run(usd, deep ? JSON.stringify(deep) : null, now, now, key);
 }
 export function noteFailure(db, key, error) {
   db.prepare('UPDATE forensics SET attempts = attempts + 1, error = ?, updated_at = ? WHERE item_key = ?').run(String(error).slice(0, 500), nowIso(), key);
 }
 
 export const openImprovements = (db) => db.prepare(`SELECT * FROM improvements WHERE status IN ('open','accepted')`).all();
-/** Apply mergeSuggestions() output: new rows, or +1 evidence on the matching open one (severity keeps its max). */
+/** Apply mergeSuggestions() output: new rows, or +1 evidence on the matching open one (severity keeps its max).
+ *  → the improvement ids this item produced or confirmed (inserted first, then bumped). */
 export function applySuggestions(db, { inserts = [], bumps = [] }) {
+  const ids = [];
   const now = nowIso();
-  const ins = db.prepare(`INSERT INTO improvements (stage, file, fn, change, expected_effect, classes_json, severity, evidence_n, evidence_json, first_seen, last_seen)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`);
+  const ins = db.prepare(`INSERT INTO improvements (stage, file, fn, target, change, expected_effect, classes_json, severity, evidence_n, evidence_json, first_seen, last_seen)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`);
   const get = db.prepare('SELECT evidence_json FROM improvements WHERE id = ?');
   const upd = db.prepare('UPDATE improvements SET evidence_n = evidence_n + 1, evidence_json = ?, severity = MAX(severity, ?), last_seen = ? WHERE id = ?');
   db.transaction(() => {
-    for (const s of inserts) ins.run(s.stage, s.file, s.fn, s.change, s.expected_effect, JSON.stringify(s.classes || []), s.severity, JSON.stringify(s.evidence || []), now, now);
+    for (const s of inserts) ids.push(Number(ins.run(s.stage, s.file, s.fn, targetOf(s), s.change, s.expected_effect, JSON.stringify(s.classes || []), s.severity, JSON.stringify(s.evidence || []), now, now).lastInsertRowid));
     for (const b of bumps) {
+      ids.push(b.id);
       const ev = safeJson(get.get(b.id)?.evidence_json) || [];
       if (ev.includes(b.evidence_key)) continue;
       upd.run(JSON.stringify([...ev, b.evidence_key].slice(-50)), b.severity, now, b.id);
     }
   })();
+  return ids;
 }
 
 // ── reads for the admin routes (read-only open; a missing store reads as empty) ──
@@ -101,9 +122,12 @@ export const listImprovements = ({ status = null, limit = 200 } = {}, opts) => w
   .map((r) => ({ ...r, classes: safeJson(r.classes_json) || [], evidence: safeJson(r.evidence_json) || [] })), { readonly: true }) || [];
 
 export const IMPROVEMENT_STATUSES = ['open', 'accepted', 'done', 'rejected'];
-export function setImprovementStatus(id, status, note = null, opts) {
+/** by = who set it (an admin's email, or 'internal-key' for ops tooling) → reviewed_by/reviewed_at. → rows changed */
+export function setImprovementStatus(id, status, note = null, opts, by = null) {
   if (!IMPROVEMENT_STATUSES.includes(status)) throw Object.assign(new Error(`status must be one of ${IMPROVEMENT_STATUSES.join('|')}`), { statusCode: 400 });
-  return withDb(opts, (db) => db.prepare('UPDATE improvements SET status = ?, status_note = ?, status_at = ? WHERE id = ?').run(status, note, nowIso(), Number(id)).changes);
+  const now = nowIso();
+  return withDb(opts, (db) => db.prepare('UPDATE improvements SET status = ?, status_note = ?, status_at = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?')
+    .run(status, note, now, now, by, Number(id)).changes);
 }
 
 /** Forensic rows (with their judge verdicts) asked in the last `days`; `prevDays` more for the trend. */
@@ -123,3 +147,62 @@ export const improveStats = (days = 1, opts) => withDb(opts, (db) => {
       SUM(judge_state = 'pending') AS judge_pending, SUM(deep_state = 'pending') AS deep_pending
     FROM forensics WHERE updated_at >= ? GROUP BY kind`).all(since);
 }, { readonly: true }) || [];
+
+/** The live improvement report's reads (Chad 11-04: "audits, their conclusions, the solutions") in one read-only open:
+ *  pipeline counts per kind (window by asked_at; backlog all-time; last hour by judged_at/deep_at), improve $ (window, UTC
+ *  today), the latest weak verdicts, the deep analyses, the improvements, and the forensic rows their evidence names.
+ *  Filters: kind (pipeline, audits, conclusions), stage (audits by judge stage, improvements by stage), status (improvements).
+ *  A store written before deep_json/judged_at existed reads them as NULL (the API opens read-only; the worker ALTERs).
+ *  → null when the store does not exist yet. */
+export const improveReportData = ({ days = 7, since = null, kind = null, stage = null, status = null, target = null, limit = 50, now = Date.now() } = {}, opts) => withDb(opts, (db) => {
+  const ts = (ms) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+  const p = { since: since ? ts(Date.parse(since)) : ts(now - days * 86400000), hourAgo: ts(now - 3600000), today: `${ts(now).slice(0, 10)} 00:00:00`, kind, stage, status,
+    lim: Math.min(Number(limit) || 50, 500) };
+  const has = (c) => hasColumn(db, 'forensics', c);
+  const judgedAt = has('judged_at') ? 'COALESCE(judged_at, updated_at)' : 'updated_at';
+  const deepAt = has('deep_at') ? 'COALESCE(deep_at, updated_at)' : 'updated_at';
+  const kindSql = kind ? 'AND kind = @kind' : '';
+  const pipeline = db.prepare(`SELECT kind, COALESCE(SUM(asked_at >= @since), 0) AS items, COALESCE(SUM(asked_at >= @since AND judge_state = 'done'), 0) AS judged,
+      COALESCE(SUM(asked_at >= @since AND json_extract(judge_json, '$.verdict') = 'weak'), 0) AS weak,
+      COALESCE(SUM(asked_at >= @since AND deep_state = 'done'), 0) AS deep_done,
+      SUM(judge_state = 'pending') AS judge_pending, SUM(deep_state = 'pending') AS deep_pending,
+      SUM(judge_state = 'done' AND ${judgedAt} >= @hourAgo) AS judged_last_hour, SUM(deep_state = 'done' AND ${deepAt} >= @hourAgo) AS deep_last_hour,
+      SUM(attempts >= 5 AND (judge_state = 'pending' OR deep_state = 'pending')) AS stuck
+    FROM forensics WHERE 1 = 1 ${kindSql} GROUP BY kind ORDER BY kind`).all(p);
+  const spend = db.prepare(`SELECT
+      ROUND(COALESCE(SUM(CASE WHEN ${judgedAt} >= @since THEN judge_usd END), 0) + COALESCE(SUM(CASE WHEN ${deepAt} >= @since THEN deep_usd END), 0), 4) AS window_usd,
+      ROUND(COALESCE(SUM(CASE WHEN ${judgedAt} >= @today THEN judge_usd END), 0) + COALESCE(SUM(CASE WHEN ${deepAt} >= @today THEN deep_usd END), 0), 4) AS today_usd
+    FROM forensics`).get(p);
+  const row = `item_key, kind, ref_id, session_id, json_extract(payload_json, '$.turn_id') AS turn_id,
+    json_extract(payload_json, '$.question') AS question, asked_at, route`;
+  const audits = db.prepare(`SELECT ${row}, defects_json, judge_json, judge_usd, deep_state, deep_usd, ${judgedAt} AS judged_at
+    FROM forensics WHERE json_extract(judge_json, '$.verdict') = 'weak' ${kindSql} ${stage ? "AND json_extract(judge_json, '$.stage') = @stage" : ''}
+    ORDER BY ${judgedAt} DESC LIMIT @lim`).all(p);
+  const conclusions = db.prepare(`SELECT ${row}, judge_json, ${has('deep_json') ? 'deep_json' : 'NULL AS deep_json'}, deep_usd, ${deepAt} AS deep_at
+    FROM forensics WHERE deep_state = 'done' ${kindSql} ORDER BY ${deepAt} DESC LIMIT @lim`).all(p);
+  // target: 'code' | 'data' | one target name — filtered here (rows from a store not yet evolved read their inferred target)
+  const improvements = db.prepare(`SELECT * FROM improvements WHERE 1 = 1 ${status ? 'AND status = @status' : ''} ${stage ? 'AND stage = @stage' : ''}
+    ${since ? 'AND (last_seen >= @since OR status_at >= @since)' : ''} ORDER BY evidence_n * severity DESC, last_seen DESC`).all(p)
+    .filter((r) => !target || target === targetClass(targetOf(r)) || target === targetOf(r)).slice(0, p.lim);
+  const one = db.prepare(`SELECT ${row}, judge_json FROM forensics WHERE item_key = ?`);
+  const evidence = new Map();
+  for (const k of new Set(improvements.flatMap((r) => safeJson(r.evidence_json) || []))) { const r = one.get(k); if (r) evidence.set(k, r); }
+  return { pipeline, spend, audits, conclusions, improvements, evidence };
+}, { readonly: true });
+
+/** The daily digest's reads (improve.js improveDigest shapes them): verdicts judged since `since`, improve $ since then, every
+ *  improvement seen, created or reviewed since then, and the forensic rows its evidence names (with judged_at, to tell new
+ *  evidence from old). since = ISO. → null when the store does not exist yet. */
+export const improveDigestData = ({ since }, opts) => withDb(opts, (db) => {
+  const p = { since: new Date(Date.parse(since)).toISOString().slice(0, 19).replace('T', ' ') };
+  const has = (c) => hasColumn(db, 'forensics', c);
+  const judgedAt = has('judged_at') ? 'COALESCE(judged_at, updated_at)' : 'updated_at';
+  const deepAt = has('deep_at') ? 'COALESCE(deep_at, updated_at)' : 'updated_at';
+  const judged = db.prepare(`SELECT item_key, kind, judge_json FROM forensics WHERE judge_state = 'done' AND ${judgedAt} >= @since`).all(p);
+  const spend_usd = db.prepare(`SELECT COALESCE(SUM(CASE WHEN ${judgedAt} >= @since THEN judge_usd END), 0) + COALESCE(SUM(CASE WHEN ${deepAt} >= @since THEN deep_usd END), 0) AS usd FROM forensics`).get(p).usd;
+  const improvements = db.prepare(`SELECT * FROM improvements WHERE last_seen >= @since OR first_seen >= @since OR status_at >= @since`).all(p);
+  const one = db.prepare(`SELECT item_key, kind, ref_id, session_id, json_extract(payload_json, '$.turn_id') AS turn_id, ${judgedAt} AS judged_at FROM forensics WHERE item_key = ?`);
+  const evidence = new Map();
+  for (const k of new Set(improvements.flatMap((r) => safeJson(r.evidence_json) || []))) { const r = one.get(k); if (r) evidence.set(k, r); }
+  return { judged, spend_usd, improvements, evidence };
+}, { readonly: true });

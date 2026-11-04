@@ -8,8 +8,20 @@ import { threadsOverview, threadDetail, strategyGaps, turnTrace, parseTurnId } f
 import { tracesForThread, tracesForTurn, childTraces, docTitles } from '../lib/repos/search-trace-repo.js';
 import { auditsSince } from '../lib/repos/audit-store-repo.js';
 import { listAnisThreads, anisThread, anisThreadMessages } from '../lib/repos/anis-threads-repo.js';
-import { forensicsSince, listImprovements, setImprovementStatus, improveStats, IMPROVEMENT_STATUSES } from '../lib/repos/improve-repo.js';
-import { forensicsReport, rankImprovements } from '../lib/audit/improve.js';
+import { forensicsSince, listImprovements, setImprovementStatus, improveStats, improveReportData, improveDigestData, IMPROVEMENT_STATUSES } from '../lib/repos/improve-repo.js';
+import { forensicsReport, rankImprovements, improveReport, improveDigest } from '../lib/audit/improve.js';
+import { TARGETS } from '../lib/audit/improve-targets.js';
+import { capStatus } from '../lib/spend-caps.js';
+
+// since: an ISO time, or a relative '24h' / '7d' / '90m' → ISO; null when absent; throws 400 when unreadable.
+export function parseSince(v, now = Date.now()) {
+  if (v == null || v === '') return null;
+  const rel = String(v).match(/^(\d+)\s*(m|h|d)$/i);
+  const ms = rel ? now - Number(rel[1]) * { m: 60e3, h: 3600e3, d: 86400e3 }[rel[2].toLowerCase()] : Date.parse(v);
+  if (!Number.isFinite(ms)) throw Object.assign(new Error('since must be an ISO time or 24h/7d/90m'), { statusCode: 400 });
+  return new Date(ms).toISOString();
+}
+const TARGET_FILTERS = ['code', 'data', ...TARGETS];
 
 export default async function anisAdminRoutes(fastify) {
   fastify.get('/anis/overview', {
@@ -65,6 +77,33 @@ export default async function anisAdminRoutes(fastify) {
       ...forensicsReport(all.filter((r) => r.asked_at >= cut), all.filter((r) => r.asked_at < cut), { stage: request.query.stage || null, examples: request.query.examples ?? 3 }) };
   });
 
+  // The live improvement report (Chad 11-04, /admin/anis-improve): pipeline + spend tiles, audits (weak verdicts) → conclusions
+  // (deep analyses) → solutions (ranked, with their evidence audits). Spend today = the ai_usage rollup the cap itself reads.
+  fastify.get('/anis/improve-report', {
+    preHandler: requireInternal,
+    schema: { querystring: { type: 'object', properties: { days: { type: 'integer', minimum: 1, maximum: 90, default: 7 },
+      stage: { type: 'string', maxLength: 40 }, status: { type: 'string', enum: IMPROVEMENT_STATUSES }, kind: { type: 'string', enum: ['reply', 'search'] },
+      target: { type: 'string', enum: TARGET_FILTERS }, since: { type: 'string', maxLength: 40 },
+      limit: { type: 'integer', minimum: 1, maximum: 500, default: 50 } } } },
+  }, async (request) => {
+    const q = request.query, days = q.days || 7;
+    const filters = { stage: q.stage || null, status: q.status || null, kind: q.kind || null, target: q.target || null, since: parseSince(q.since) };
+    const cap = (await capStatus().catch(() => [])).find((g) => g.group === 'improve') || null;
+    return improveReport(improveReportData({ days, ...filters, limit: q.limit || 50 }), { days, cap, filters });
+  });
+
+  // The daily digest for Claude Code (Chad 11-04: "easy API access to assessment summaries and code improvement suggestions
+  // ... Claude Code should check these daily"): assessment since `since` (default 24h), new/grown CODE recommendations,
+  // DATA changes proposed/applied. `node scripts/ops/ops.mjs anis-improve-digest --since 24h` prints it as text.
+  fastify.get('/anis/improve-digest', {
+    preHandler: requireInternal,
+    schema: { querystring: { type: 'object', properties: { since: { type: 'string', maxLength: 40 } } } },
+  }, async (request) => {
+    const since = parseSince(request.query.since || '24h');
+    const cap = (await capStatus().catch(() => [])).find((g) => g.group === 'improve') || null;
+    return improveDigest(improveDigestData({ since }), { since, cap });
+  });
+
   fastify.get('/anis/improvements', {
     preHandler: requireInternal,
     schema: { querystring: { type: 'object', properties: { status: { type: 'string', enum: IMPROVEMENT_STATUSES }, limit: { type: 'integer', minimum: 1, maximum: 1000, default: 100 } } } },
@@ -72,9 +111,13 @@ export default async function anisAdminRoutes(fastify) {
 
   fastify.post('/anis/improvements/:id/status', {
     preHandler: requireInternal,
-    schema: { body: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: IMPROVEMENT_STATUSES }, note: { type: 'string', maxLength: 2000 } } } },
+    schema: { body: { type: 'object', required: ['status'], properties: { status: { type: 'string', enum: IMPROVEMENT_STATUSES }, note: { type: 'string', maxLength: 2000 },
+      by: { type: 'string', maxLength: 80 } } } },
   }, async (request, reply) => {
-    const changed = setImprovementStatus(request.params.id, request.body.status, request.body.note ?? null);
+    // reviewed_by: the admin's email; an internal-key caller (ops tooling, Claude Code) may name itself in `by`
+    const u = request.user || {};
+    const by = u.internal ? (request.body.by ? `internal:${request.body.by}` : 'internal-key') : (u.email || u.sub || null);
+    const changed = setImprovementStatus(request.params.id, request.body.status, request.body.note ?? null, undefined, by);
     return changed ? { ok: true, id: Number(request.params.id), status: request.body.status } : reply.code(404).send({ error: 'no such improvement' });
   });
 }

@@ -10,12 +10,14 @@ import WidgetManager from '../../components/admin/WidgetManager.svelte';
 import CompanionControls from '../../components/admin/CompanionControls.svelte';
 import AnisInsights from '../../components/admin/AnisInsights.svelte';
 import AnisThreads from '../../components/admin/AnisThreads.svelte';
+import AnisImprove from '../../components/admin/AnisImprove.svelte';
 import { Content as TrmContent } from '../../../docs/architecture/anis-trm.md';
 
 const about = (await getCollection('agents')).find((a) => a.id === 'agent-anis');
 const { Content: AboutContent } = about ? await render(about) : { Content: null };
 const TABS = [
   ['threads', 'Threads'], ['deployments', 'Deployments'], ['personality', 'Personality Adjustment'], ['assessment', 'Assessment'],
+  ['improvement', 'Improvement'],
   ['activity', 'Activity'], ['costs', 'Costs'], ['system1', 'System-1'], ['trm', 'TRM'], ['about', 'About Anís'],
 ];
 ---
@@ -46,6 +48,10 @@ const TABS = [
         <AnisInsights view={v} client:only="svelte"><IslandSkeleton slot="fallback" /></AnisInsights>
       </section>
     ))}
+    <section id="panel-improvement" role="tabpanel" aria-labelledby="tab-improvement" hidden>
+      <p class="trm-note">Audits → conclusions → solutions, live. Full page: <a href="/admin/anis-improve">/admin/anis-improve</a>.</p>
+      <AnisImprove client:only="svelte"><IslandSkeleton slot="fallback" /></AnisImprove>
+    </section>
     <section id="panel-trm" role="tabpanel" aria-labelledby="tab-trm" hidden>
       <article class="about"><p class="trm-note">Technical Reference Manual — how Anís works, as built. Source: <code>docs/architecture/anis-trm.md</code>.</p><TrmContent /></article>
     </section>
