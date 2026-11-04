@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-04T17:52:19.775Z",
+  "generated": "2026-11-04T18:13:15.507Z",
   "entries": [
     {
       "hash": "abab9e7d",
@@ -2807,27 +2807,6 @@
       "type": "Fixed",
       "description": "The shared GPU — a job waits under a lock until the card has the memory its kind needs (transcribe 3.5 GB, probe 2 GB, grade/dfn 1 GB), so jobs no longer run aorus out of memory and fall to the CPU (a 57-min talk took 9+ min on the CPU fallback)",
       "scope": "media"
-    },
-    {
-      "hash": "d2459f5a",
-      "date": "2026-10-22",
-      "type": "Performance",
-      "description": "Prep and ASR are separate lanes — every ASR slot fed from a buffer of prepped items",
-      "scope": "media"
-    },
-    {
-      "hash": "711d0bf9",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "Collection pages show each book's cover beside its card (width-only transform, no distortion). Deploy 2.187.778",
-      "scope": "library"
-    },
-    {
-      "hash": "55725abb",
-      "date": "2026-10-22",
-      "type": "New",
-      "description": "By-slug collection/religion listings carry cover_url",
-      "scope": "library"
     }
   ],
   "grouped": {
@@ -5660,27 +5639,6 @@
         "type": "Fixed",
         "description": "The shared GPU — a job waits under a lock until the card has the memory its kind needs (transcribe 3.5 GB, probe 2 GB, grade/dfn 1 GB), so jobs no longer run aorus out of memory and fall to the CPU (a 57-min talk took 9+ min on the CPU fallback)",
         "scope": "media"
-      },
-      {
-        "hash": "d2459f5a",
-        "date": "2026-10-22",
-        "type": "Performance",
-        "description": "Prep and ASR are separate lanes — every ASR slot fed from a buffer of prepped items",
-        "scope": "media"
-      },
-      {
-        "hash": "711d0bf9",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "Collection pages show each book's cover beside its card (width-only transform, no distortion). Deploy 2.187.778",
-        "scope": "library"
-      },
-      {
-        "hash": "55725abb",
-        "date": "2026-10-22",
-        "type": "New",
-        "description": "By-slug collection/religion listings carry cover_url",
-        "scope": "library"
       }
     ]
   }
