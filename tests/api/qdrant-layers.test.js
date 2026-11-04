@@ -1,6 +1,6 @@
 // Qdrant search layers: filter mapping, request shapes, and hit shapes (fetch mocked — no network).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, authorKey, resolveQdrantFilters, withQdrantCallLog } from '../../api/lib/search/qdrant-layers.js';
+import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, searchConceptsQdrant, bestPerParagraphQuery, authorKey, resolveQdrantFilters, withQdrantCallLog } from '../../api/lib/search/qdrant-layers.js';
 
 vi.mock('../../api/lib/ai-services.js', () => ({ logAIUsage: () => {} }));   // hermetic: no telemetry writes
 vi.mock('../../api/lib/docs-repo.js', () => ({
@@ -108,12 +108,47 @@ describe('layers', () => {
     expect(typeof log[0].ms).toBe('number');
   });
 
-  it('hype: the hype collection, same query vector model, one hit per paragraph', async () => {
+  it('hype: the hype collection, same query vector model, a plain top-(limit×2) query, best per paragraph, thesis from k=999', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body); calls.push({ url, body });
+      if (url.includes('generativelanguage')) return { ok: true, json: async () => ({ embedding: { values: [0.1, 0.2] } }) };
+      return { ok: true, json: async () => ({ result: { points: [
+        { score: 0.9, payload: { paragraph_id: 11, doc_id: 2, k: 999 } },
+        { score: 0.85, payload: { paragraph_id: 11, doc_id: 2, k: 3 } },   // same paragraph, weaker question
+        { score: 0.8, payload: { paragraph_id: 12, doc_id: 3, k: 1 } },
+      ] } }) };
+    }));
     const r = await searchHypeQdrant('what is the soul?', { limit: 4 });
     expect(calls[0].body.content.parts[0].text).toBe('task: search result | query: what is the soul?');
-    expect(calls[1].url).toContain('/collections/hype/points/query/groups');
-    expect(calls[1].body).toMatchObject({ group_by: 'paragraph_id', group_size: 1, limit: 4 });
-    expect(r.hits).toEqual([{ paragraph_id: 11, doc_id: 2, score: 0.8, thesis: false }]);
+    expect(calls[1].url).toMatch(/\/collections\/hype\/points\/query$/);
+    expect(calls[1].body).toMatchObject({ using: 'literal', limit: 8, params: { quantization: { rescore: true } } });
+    expect(calls[1].body.group_by).toBeUndefined();
+    expect(calls[1].body.with_payload).toContain('k');
+    expect(r.hits).toEqual([{ paragraph_id: 11, doc_id: 2, score: 0.9, thesis: true }, { paragraph_id: 12, doc_id: 3, score: 0.8, thesis: false }]);
+    expect(calls).toHaveLength(2);
+  });
+
+  it('concepts: plain ×2, escalates to ×4, and only a full ×4 page still short of paragraphs uses /query/groups', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body); calls.push({ url, body });
+      if (url.includes('generativelanguage')) return { ok: true, json: async () => ({ embedding: { values: [0.1, 0.2] } }) };
+      if (url.endsWith('/query/groups')) return { ok: true, json: async () => ({ result: { groups: [
+        { hits: [{ score: 0.8, payload: { paragraph_id: 11, doc_id: 2 } }] }, { hits: [{ score: 0.6, payload: { paragraph_id: 13, doc_id: 4 } }] }] } }) };
+      return { ok: true, json: async () => ({ result: { points: Array.from({ length: body.limit }, () => ({ score: 0.8, payload: { paragraph_id: 11, doc_id: 2 } })) } }) };
+    }));
+    const r = await searchConceptsQdrant('clouds as human limitations', { limit: 2 });
+    expect(calls.slice(1).map((c) => [c.url.split('/collections/')[1], c.body.limit])).toEqual([
+      ['concepts/points/query', 4], ['concepts/points/query', 8], ['concepts/points/query/groups', 2]]);
+    expect(calls[3].body).toMatchObject({ group_by: 'paragraph_id', group_size: 1 });
+    expect(r.hits.map((h) => h.paragraph_id)).toEqual([11, 13]);
+  });
+
+  it('bestPerParagraphQuery: a short page (fewer points than asked) is final — no escalation', async () => {
+    const asked = [];
+    const best = await bestPerParagraphQuery(async (n) => { asked.push(n); return { points: [{ payload: { paragraph_id: 1 } }] }; },
+      async () => { throw new Error('no grouped call'); }, 5);
+    expect(asked).toEqual([10]);
+    expect(best).toHaveLength(1);
   });
 
   it('keyword: sparse query from our tokenizer; empty query → no call', async () => {

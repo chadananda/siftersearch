@@ -223,6 +223,19 @@ export function bestPerParagraph(points, limit) {
   return out;
 }
 
+/** Best point per paragraph via plain queries: top limit×2 grouped here; a FULL page short of paragraphs escalates to ×4,
+ *  and only a full ×4 page still short runs `grouped()` (Qdrant's /query/groups). plain(n) → { points }, grouped() → { groups }. */
+export async function bestPerParagraphQuery(plain, grouped, limit) {
+  let res = await plain(limit * 2);
+  let best = bestPerParagraph(res.points || [], limit);
+  if (best.length < limit && (res.points || []).length >= limit * 2) {
+    res = await plain(limit * 4);
+    best = bestPerParagraph(res.points || [], limit);
+  }
+  if (best.length < limit && (res.points || []).length >= limit * 4) best = ((await grouped()).groups || []).map((x) => x.hits[0]);
+  return best;
+}
+
 /** → { hits: [{ paragraph_id, doc_id, score, span: {start, end} }] } — best phrase per paragraph.
  *  A plain top-N query grouped here, not Qdrant's /query/groups: measured 10-09 the grouped query cost 2.0–2.3 s vs
  *  0.6–1.1 s for the plain one (same ranking: best phrase per paragraph). N = limit×2 (11-03: limit 60 held 27–52 distinct
@@ -235,18 +248,9 @@ export async function searchPhrases(query, { limit = 30, filters, timeoutMs, par
   const plain = (n) => queryPhrasesCollection('/collections/phrases/points/query', {
     query: vector, using: 'literal', limit: n, with_payload: payload, params: searchParams(params), filter,
   }, timeoutMs);
-  let res = await plain(limit * 2);
-  let best = bestPerParagraph(res.points || [], limit);
-  if (best.length < limit && (res.points || []).length >= limit * 2) {
-    res = await plain(limit * 4);
-    best = bestPerParagraph(res.points || [], limit);
-  }
-  if (best.length < limit && (res.points || []).length >= limit * 4) {
-    const g = await queryPhrasesCollection('/collections/phrases/points/query/groups', {
-      query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: payload, params: searchParams(params), filter,
-    }, timeoutMs, { groups: true, limit });
-    best = (g.groups || []).map((x) => x.hits[0]);
-  }
+  const best = await bestPerParagraphQuery(plain, () => queryPhrasesCollection('/collections/phrases/points/query/groups', {
+    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: payload, params: searchParams(params), filter,
+  }, timeoutMs, { groups: true, limit }), limit);
   return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, span: { start: p.payload.start, end: p.payload.end }, ...rankFields(p.payload) })) };
 }
 
@@ -262,28 +266,25 @@ export async function searchPhraseSpans(query, paragraphId, { limit = 8, timeout
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score, thesis }] } — HyPE questions (+ thesis) embedded with the SAME Gemini model as
- *  the phrase layer, so one query vector serves both (memoized). The SQLite hyp_questions are the store; `hype` is their index. */
+ *  the phrase layer, so one query vector serves both (memoized). The SQLite hyp_questions are the store; `hype` is their index.
+ *  Plain top-(limit×2) grouped here, like phrases (11-03, 56 trace queries on tower: hype 3.7 vs 7.8 ms server, recall@10
+ *  vs float 0.968 vs 0.963; concepts 4.4 vs 7.0 ms, recall vs exact 0.993 vs 0.991; ×2 always held ≥30 paragraphs). */
 export async function searchHypeQdrant(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.hype } = {}) {
   const vector = await geminiQueryVector(query);
-  const res = await qdrant('/collections/hype/points/query/groups', {
-    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id', 'k', ...RANK_PAYLOAD],
-    params: searchParams(params), filter: toQdrantFilter(filters),
-  }, timeoutMs);
-  return { hits: (res.groups || []).map((g) => {
-    const p = g.hits[0];
-    return { paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999, ...rankFields(p.payload) };
-  }) };
+  const body = { query: vector, using: 'literal', with_payload: ['paragraph_id', 'doc_id', 'k', ...RANK_PAYLOAD], params: searchParams(params), filter: toQdrantFilter(filters) };
+  const best = await bestPerParagraphQuery((n) => qdrant('/collections/hype/points/query', { ...body, limit: n }, timeoutMs),
+    () => qdrant('/collections/hype/points/query/groups', { ...body, group_by: 'paragraph_id', group_size: 1, limit }, timeoutMs), limit);
+  return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, thesis: p.payload.k === 999, ...rankFields(p.payload) })) };
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score }] } — CONCEPT CLAIMS ("the clouds — symbolizes the human limitations…"), one
  *  point per cited claim, best per paragraph; same Gemini vector as phrases/HyPE. Built by the phrase indexer --field concepts. */
 export async function searchConceptsQdrant(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.concept } = {}) {
   const vector = await geminiQueryVector(query);
-  const res = await qdrant('/collections/concepts/points/query/groups', {
-    query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: ['paragraph_id', 'doc_id', ...RANK_PAYLOAD],
-    params: searchParams(params), filter: toQdrantFilter(filters),
-  }, timeoutMs);
-  return { hits: (res.groups || []).map((g) => ({ paragraph_id: g.hits[0].payload.paragraph_id, doc_id: g.hits[0].payload.doc_id, score: g.hits[0].score, ...rankFields(g.hits[0].payload) })) };
+  const body = { query: vector, using: 'literal', with_payload: ['paragraph_id', 'doc_id', ...RANK_PAYLOAD], params: searchParams(params), filter: toQdrantFilter(filters) };
+  const best = await bestPerParagraphQuery((n) => qdrant('/collections/concepts/points/query', { ...body, limit: n }, timeoutMs),
+    () => qdrant('/collections/concepts/points/query/groups', { ...body, group_by: 'paragraph_id', group_size: 1, limit }, timeoutMs), limit);
+  return { hits: best.map((p) => ({ paragraph_id: p.payload.paragraph_id, doc_id: p.payload.doc_id, score: p.score, ...rankFields(p.payload) })) };
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score }] } — BM25 over whole paragraphs with our folding. */
