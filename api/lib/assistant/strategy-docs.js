@@ -15,7 +15,14 @@ const ts = (s) => (s ? Date.parse(String(s).replace(' ', 'T') + (String(s).endsW
  * snapshot = strategiesSnapshot(); activities = activityCatalog(); stats = strategyStats(); branches = id → branchStats(id).
  * → { strategies:[…active, with graph, templates, stats, branches, candidates], summary }
  */
-export function publicStrategies({ snapshot, activities = [], stats = [], branches = () => [], now = Date.now() }) {
+export function publicStrategies({ snapshot, activities = [], stats = [], branches = () => [], promotions = null, now = Date.now() }) {
+  // promotions = strategy_promotions ledger rows (newest first): each candidate shows its latest replay verdict — numbers and
+  // failed rules only (decision.numbers never holds a question).
+  const replayOf = (id, v) => {
+    const p = (promotions || []).find((x) => x.strategy_id === id && Number(x.version) === Number(v) && x.action !== 'rollback' && x.decision);
+    return p ? { action: p.action, promote: !!p.decision.promote, failed: p.decision.failed || [], numbers: p.decision.numbers || null,
+      usd: p.usd ?? null, at: p.created_at ?? null } : null;
+  };
   const act = new Map(activities.map((a) => [a.name, a]));
   const steps = new Map(snapshot.steps.map((s) => [`${s.id}@${s.version}`, s]));
   const byId = new Map();
@@ -42,11 +49,13 @@ export function publicStrategies({ snapshot, activities = [], stats = [], branch
       branches: (branches(id) || []).slice(0, 12).map(branchOut),
       candidates: rows.filter((r) => r.version > active.version || CANDIDATE.has(r.status)).filter((r) => r !== active)
         .map((r) => ({ version: r.version, status: r.status, parent_version: r.parent_version ?? null, created_at: r.created_at ?? null,
-          stats: stat(statOf(id, r.version)), replay: r.replay ?? null })),
+          stats: stat(statOf(id, r.version)), replay: replayOf(id, r.version) ?? r.replay ?? null })),
     });
   }
-  const promotions = snapshot.strategies.filter((r) => r.status === 'active' && r.parent_version != null && r.created_by !== 'seed' && now - ts(r.created_at) <= 30 * DAY).length;
-  return { strategies: out, summary: { active: out.length, candidates: snapshot.strategies.filter((r) => CANDIDATE.has(r.status)).length, promotions_30d: promotions } };
+  const promoted30 = promotions
+    ? promotions.filter((p) => p.action === 'promote' && now - ts(p.created_at) <= 30 * DAY).length   // the ledger, when there is one
+    : snapshot.strategies.filter((r) => r.status === 'active' && r.parent_version != null && r.created_by !== 'seed' && now - ts(r.created_at) <= 30 * DAY).length;
+  return { strategies: out, summary: { active: out.length, candidates: snapshot.strategies.filter((r) => CANDIDATE.has(r.status)).length, promotions_30d: promoted30 } };
 }
 
 /** activities = activityCatalog(); snapshot → which strategies/steps use each; live = activityStats(). */

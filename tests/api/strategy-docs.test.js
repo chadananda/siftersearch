@@ -46,6 +46,21 @@ describe('public shapes', () => {
     expect(pub.summary).toMatchObject({ active: pub.strategies.length, candidates: 1 });
   });
 
+  it('candidates carry their latest replay verdict from the promotions ledger; promotions_30d counts ledger promotes', () => {
+    const snap = fixtureSnapshot();
+    const v = snap.strategies.find((r) => r.id === 'prayer' && r.status === 'candidate').version;
+    const now = Date.now(), iso = new Date(now - 3600_000).toISOString();
+    const promotions = [
+      { strategy_id: 'prayer', version: v, action: 'reject', usd: 1.2, created_at: iso,
+        decision: { promote: false, failed: ['mean score 6.1 vs 6.4: not better by 0.5'], numbers: { n_class: 6, mean_candidate: 6.1, mean_current: 6.4 } } },
+      { strategy_id: 'respond', version: 2, action: 'promote', usd: 2, created_at: iso, decision: { promote: true, failed: [], numbers: {} } },
+    ];
+    const out = publicStrategies({ snapshot: snap, activities: activityCatalog(), stats, branches, promotions, now });
+    const c = out.strategies.find((s) => s.id === 'prayer').candidates[0];
+    expect(c.replay).toMatchObject({ action: 'reject', promote: false, numbers: { n_class: 6 }, usd: 1.2 });
+    expect(out.summary.promotions_30d).toBe(1);
+  });
+
   it('leaks no turn id, question or template text', () => {
     const snap = fixtureSnapshot();
     const json = JSON.stringify(pub);

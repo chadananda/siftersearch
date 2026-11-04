@@ -47,6 +47,8 @@ export const MODEL_ROLES = {
     why: 'Chad 11-04: every search trace and reply judged by Opus 5.5 (pass/weak + weakness classes); improve worker, rubric prompt-cached' },
   'improve-analysis': { provider: 'anthropic', model: 'claude-opus-5-5', reviewed: '2026-11-04', needs: ['judgement', 'code-reasoning', 'json'],
     why: 'Chad 11-04: deep analysis of weak items only → improvement suggestions (stage, file/fn, change, evidence)' },
+  'strategy-design': { provider: 'anthropic', model: 'claude-opus-5-5', reviewed: '2026-11-04', needs: ['judgement', 'json'],
+    why: 'Chad 11-04: strategy graph Phase 3 — Opus designs a candidate strategy (a graph of existing activities) for a ready gap cluster, and writes the fresh class questions its promotion replays; billed improve-strategy-*' },
   'exchange-audit': { provider: 'anthropic', model: 'claude-sonnet-5-5', reviewed: '2026-10-13', needs: ['judgement'], why: 'Anís strategy auditor (was sonnet-4-6)' },
   // ── text processing ──
   'segmentation': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-11', needs: ['arabic', 'index-output', 'batch'],

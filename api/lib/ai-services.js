@@ -108,6 +108,7 @@ export function logAIUsage({
   documentId = null,
   batch = false          // Message Batches / batch API: billed at the model's batch rate (registry `batch`, e.g. 0.5)
 }) {
+  caller = currentAIContext().billTo || caller;   // ai-context billTo: a scope billed to another caller (the strategy dry run → improve-replay), never anis
   // A failure that means "no credit left" alarms immediately (spend-alerts.js; deduped per provider).
   if (!success && errorMessage) {
     const status = Number((/\b(402|403|429)\b/.exec(errorMessage) || [])[1]) || null;

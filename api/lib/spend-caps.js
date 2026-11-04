@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { dailySpendByCaller } from './repos/ai-usage-repo.js';
 import { actionRequired } from './ops/alert.js';
 import { logger } from './logger.js';
+import { currentAIContext } from './ai-context.js';
 
 const CONFIG = JSON.parse(readFileSync(new URL('../../config/spend-caps.json', import.meta.url), 'utf8'));
 const FREE_PROVIDERS = new Set(['ollama', 'lmstudio', 'local']);
@@ -82,6 +83,7 @@ async function alertOnce(group, day, spent, cap, caller, deps) {
 
 /** Throws SpendCapError when `caller`'s group is at its cap today. Free local providers pass. Fails open if spend cannot be read. */
 export async function assertSpendCap(caller, { provider = null, now = Date.now(), deps = {}, cfg = CONFIG } = {}) {
+  caller = currentAIContext().billTo || caller;   // a scope that bills elsewhere (the strategy dry run → improve-replay) checks that group's cap
   if (FREE_PROVIDERS.has(provider) || (cfg.exempt || []).includes(caller)) return;
   const group = groupOf(caller, cfg), day = dayOf(now), cap = capFor(group, day, cfg);
   if (!Number.isFinite(cap)) return;

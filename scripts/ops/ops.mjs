@@ -19,6 +19,7 @@
 //   node scripts/ops/ops.mjs anis-strategy-stats [--days 7] [--json]  (per strategy@version: turns, p50/p95, $/turn, judge score, weak %)
 //   node scripts/ops/ops.mjs anis-branches <strategy> [--days 7] [--json]  (per branch: node:edge path, share, p50, score)
 //   node scripts/ops/ops.mjs anis-step-stats [--days 7] [--json]  (per step@version: runs, p50/p95, $, edge mix, Jev accuracy)
+//   node scripts/ops/ops.mjs anis-gaps | anis-candidates | anis-promote <id@v> [--dry] [--no-wait] | anis-rollback <id>  [--json]  (strategy graph Phase 3: gaps → candidates → replay promotion)
 //   node scripts/ops/ops.mjs jev-gates [--days 7] | jev-bank <gate> [--chosen X --q question --wrong|--right|--unlabelled --since 7d --limit n --state] | jev-label <call_id> <answer> [--q question --basis note] | jev-try <gate> <variant> [--n 200 --params '{json}' --chosen X --stored --since 30d --any --max-usd 2]  (Jev decision-gate bank + tuning; --json for JSON)
 //   (the three print tables; --json prints the API's JSON)
 // Env: SIFTER_API (default: local gateway on tower, public API elsewhere), DEPLOY_SECRET (X-Internal-Key — the key requireInternal checks).
@@ -168,6 +169,32 @@ else if (cmd === 'anis-step-stats') {   // every step@version: runs, latency, ed
   else await new Promise((r) => process.stdout.write(`ANÍS STEP STATS · last ${j.days} days\n${'step@v'.padEnd(30)} ${'runs'.padStart(6)} ${'p50'.padStart(8)} ${'p95'.padStart(8)} ${'$'.padStart(7)} ${'err'.padStart(4)}  edges${' '.repeat(30)}jev acc\n`
     + j.steps.map((s) => `${s.key.padEnd(30)} ${f(s.runs).padStart(6)} ${f(s.p50_ms).padStart(8)} ${f(s.p95_ms).padStart(8)} ${f(s.usd).padStart(7)} ${f(s.errors).padStart(4)}  ${Object.entries(s.edges).sort((a, b) => b[1] - a[1]).map(([e, n]) => `${e}=${n}`).join(' ').padEnd(34)} ${s.jev ? `${f(s.jev.accuracy)} (${s.jev.labelled}/${s.jev.calls})` : ''}`).join('\n') + '\n', r));
 }
+else if (cmd === 'anis-gaps') {   // strategy gaps (internal questions) + clusters (ready = ≥3 questions from ≥2 threads) + design runs
+  const j = await call('GET', `/anis/gaps?limit=${val('--limit') || 50}`);
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`STRATEGY GAPS · ${j.gaps.length} recent · ${j.clusters.length} open clusters · ${j.designs.length} designs\n`
+    + j.clusters.map((c) => `${c.ready ? 'READY' : 'open '} ${String(c.label).padEnd(14)} ${String(c.questions.length).padStart(3)} q ${String(c.threads).padStart(3)} threads  ${c.key}`).join('\n')
+    + `\n-- designs\n${j.designs.map((d) => `#${d.id} ${d.status.padEnd(8)} ${d.strategy_id ? `${d.strategy_id}@${d.version}` : '–'} $${d.usd ?? 0} ${d.errors ? JSON.stringify(d.errors).slice(0, 120) : ''}`).join('\n')}`
+    + `\n-- gaps\n${j.gaps.map((g) => `${g.created_at} ${g.source.padEnd(9)} ${String(g.label).padEnd(14)} ${g.design_id ? `d#${g.design_id}` : 'open'}  ${String(g.question).slice(0, 90)}`).join('\n')}\n`, r));
+}
+else if (cmd === 'anis-candidates') {   // candidate / retired / rolled-back strategy versions + the promotion ledger
+  const j = await call('GET', '/anis/candidates');
+  if (flag('--json')) await out(j);
+  else await new Promise((r) => process.stdout.write(`STRATEGY CANDIDATES · ${j.candidates.length}\n${j.candidates.map((c) => `${`${c.id}@${c.version}`.padEnd(22)} ${c.status.padEnd(11)} parent ${c.parent_version ?? '–'}  ${String(c.description).slice(0, 80)}`).join('\n')}`
+    + `\n-- promotions\n${j.promotions.map((p) => `${p.created_at} ${p.action.padEnd(14)} ${p.strategy_id}@${p.version} $${p.usd ?? 0} ${p.decision?.numbers ? `mean ${p.decision.numbers.mean_candidate} vs ${p.decision.numbers.mean_current}` : ''} ${(p.decision?.failed || []).join('; ').slice(0, 140)}`).join('\n')}\n`, r));
+}
+else if (cmd === 'anis-promote' && name) {   // replay promotion job: fresh class questions + held gap questions + guards → judge both routes → decide
+  const [id, v] = name.split('@');
+  const job = await call('POST', '/anis/promote', { id, version: v ? Number(v) : null, dry: flag('--dry') });
+  if (flag('--no-wait')) await out(job);
+  else {
+    let rec = job;
+    while (rec.status === 'running') { await new Promise((r) => setTimeout(r, 10000)); rec = await call('GET', `/anis/promote/${encodeURIComponent(job.key)}`); }
+    if (flag('--json') || rec.status !== 'done') await out(rec);
+    else { const d = rec.result.decision; await out({ id: rec.result.id, version: rec.result.version, promoted: rec.result.promoted, usd: rec.result.usd, failed: d.failed, numbers: d.numbers }); }
+  }
+}
+else if (cmd === 'anis-rollback' && name) await out(await call('POST', '/anis/rollback', { id: name }));
 else if (cmd === 'jev-gates') {   // every Jev decision gate: calls, answer mix, gold coverage/accuracy, shadow agreement, $ of a 200-call experiment
   const j = await call('GET', `/jev/gates?days=${val('--days') || 7}`);
   if (flag('--json')) await out(j);

@@ -59,6 +59,7 @@ export async function ingest(db, { deps = {} } = {}) {
     const turn = turnFromPath({ question: r.question, reply: r.reply, path: safeJson(r.path_json) || {}, traces: engine.map((t) => traceToSearch(t, titles)) });
     const { reply } = itemsForTurn(turn, { messageId: r.id, sessionId: r.session_id, turnId });
     recordForensic(db, { ...reply, asked_at: String(r.created_at), backfill, priority: priorityOf({ kind: 'reply', backfill }) });
+    await strategyGap({ turnId, threadId: r.session_id, question: r.question, path: safeJson(r.path_json) || {} }, deps);   // free: Jev unsure → a gap row
     setCursor(db, 'reply_id', r.id); n++;
   }
   const traces = await after(Number(getCursor(db, 'trace_id') || 0), { sinceDays: BACKFILL_DAYS, limit: 200 });
@@ -90,6 +91,34 @@ async function callOpus(role, system, user, maxTokens) {
   return { text: res.content, usage: res.usage || {}, usd: costOf(res.usage || {}, model) };
 }
 
+/** Strategy graph Phase 3 (assistant/strategy-improve.js): a turn no strategy served → a gap row in strategies.db (free, never
+ *  breaks the loop). deps.captureGap is the test seam. */
+async function strategyGap(turn, deps = {}) {
+  try {
+    if (deps.captureGap) return deps.captureGap(turn);
+    const [{ captureGap }, { candidatesDb }] = await Promise.all([import('../lib/assistant/strategy-improve.js'), import('../lib/repos/strategy-candidates-repo.js')]);
+    return captureGap(candidatesDb(), turn);
+  } catch (err) { console.error('[improve] strategy gap:', err?.message || err); return 0; }
+}
+
+/** The LOWEST priority unit, run only when judge/deep work is idle: design a candidate for the first ready gap cluster, else
+ *  replay-promote the oldest untried candidate. → 'idle' | 'done' | { wait } */
+export async function strategyWork({ deps = null } = {}) {
+  try {
+    const m = deps || await import('../lib/assistant/strategy-improve.js');
+    const db = deps?.db || (await import('../lib/repos/strategy-candidates-repo.js')).candidatesDb();
+    const d = await m.designStage(db);
+    if (d !== 'idle') { console.log(`[improve] strategy design: ${JSON.stringify({ status: d.status, id: d.id, version: d.version, usd: d.usd })}`); return 'done'; }
+    const p = await m.promotionStage(db);
+    if (p !== 'idle') { console.log(`[improve] strategy promotion: ${JSON.stringify({ id: p.id, version: p.version, promoted: p.promoted, usd: p.usd, failed: p.decision?.failed })}`); return 'done'; }
+    return 'idle';
+  } catch (err) {
+    if (isSpendCap(err)) return { wait: err.retryAfterMs || 60_000 };
+    console.error('[improve] strategy work:', err?.message || err);
+    return 'idle';
+  }
+}
+
 /** Step 2: one unit of LLM work in priority order. → 'idle' | 'done' | { wait: ms } */
 export async function work(db, { call = callOpus, replay = replayCurrent } = {}) {
   const w = nextWork(db);
@@ -102,6 +131,7 @@ export async function work(db, { call = callOpus, replay = replayCurrent } = {})
       saveJudge(db, w.item_key, { judge, usd: r.usd, usage: r.usage });
       // the judge named the right option of a Jev gate → that gate's gold label (labelByRef only labels an option the gate offered)
       if (judge.gate && judge.right && w.item.turn_id) { try { (await import('../lib/repos/jev-calls-repo.js')).labelByRef(judge.gate, w.item.turn_id, judge.right, 'opus-judge'); } catch { /* a label is a bonus, never a failure */ } }
+      if (judge.stage === 'STRATEGY' && w.item.kind === 'reply') await strategyGap({ turnId: w.item.turn_id, threadId: w.item.session_id, question: w.item.question, judge });
     } else {
       const rep = await replay(w.item).catch(() => null);
       const passages = (w.item.writer_passages || w.item.hits || []).filter((h) => h.text);
@@ -149,8 +179,9 @@ export async function main() {
       const fresh = await ingest(db);
       if (!LLM_ON) { await nap(fresh ? 1000 : IDLE_MS); continue; }
       doing = 'judge';
-      const r = await work(db);
+      let r = await work(db);
       if (r === 'done') { judged++; continue; }
+      if (r === 'idle') { doing = 'strategy'; r = await strategyWork(); if (r === 'done') continue; }
       doing = r === 'idle' ? 'idle' : 'spend-cap wait';
       await nap(r === 'idle' ? (fresh ? 1000 : IDLE_MS) : Math.min(r.wait, 15 * 60_000));
     } catch (err) {

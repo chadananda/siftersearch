@@ -30,7 +30,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
 
 const liveLimits = makeLimits();
-async function defaultDeps() {
+export async function defaultDeps() {   // exported for the strategy dry run (strategy-try.js), which swaps the thread/mail deps out
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
     fail: failExchange, strikes: liveStrikes, sleep, lookup: resolveLookup, limits: liveLimits, spendCap: assertSpendCap, card: loadReaderCard, resolve: resolveQuery, reports: makeReports() };

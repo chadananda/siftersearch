@@ -5,6 +5,7 @@
 // {node, step: 'id@v', ms, edge} into s.trace (→ path.steps). A sync activity is not awaited, so the run adds no ticks to it.
 // ANIS_STRATEGY_GRAPH=0 → respond.js / strategies.js run the old code (Phase-1 rollback only).
 import { catalog } from '../../repos/strategies-repo.js';
+import { currentAIContext } from '../../ai-context.js';
 import { STRATEGIES as SEED_STRATEGIES, STEPS as SEED_STEPS, END_NODE } from '../strategy-seed.js';
 import { activities as registry } from './index.js';
 import { GATHERED } from '../respond.js';
@@ -52,7 +53,14 @@ const seedGraph = (id) => {
 };
 const compiledByCatalog = new WeakMap();
 /** The compiled graph of strategy `id` from the current catalog (cached per rev); invalid or absent → the seed's. */
+const compiledByPin = new WeakMap();
 export function graphFor(id) {
+  // a dry run PINS one strategy@version (strategy-try.js, ai-context strategyPin): that row, compiled against the store's steps
+  const pin = currentAIContext().strategyPin;
+  if (pin?.row?.id === id) {
+    if (!compiledByPin.has(pin)) compiledByPin.set(pin, compileGraph(pin.row, (k) => pin.steps.get(k)));
+    return compiledByPin.get(pin);
+  }
   const c = catalog();
   let m = compiledByCatalog.get(c);
   if (!m) { m = new Map(); compiledByCatalog.set(c, m); }

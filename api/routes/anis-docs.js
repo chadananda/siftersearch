@@ -7,6 +7,7 @@ import { strategiesSnapshot } from '../lib/repos/strategies-repo.js';
 import { strategyStats, branchStats, activityStats, toolStats, qualityByTurn } from '../lib/repos/strategy-stats-repo.js';
 import { activityCatalog } from '../lib/assistant/activities/catalog.js';
 import { REGISTRY } from '../lib/assistant/tools.js';
+import { candidatesDb, listPromotions } from '../lib/repos/strategy-candidates-repo.js';
 import { publicStrategies, publicActivities, publicTools } from '../lib/assistant/strategy-docs.js';
 
 const MEMO_MS = 60_000, DAYS = 7;
@@ -16,6 +17,7 @@ export default async function anisDocsRoutes(fastify, { deps = {} } = {}) {
   const snapshot = deps.snapshot || strategiesSnapshot, activities = deps.activities || activityCatalog;
   const sStats = deps.strategyStats || strategyStats, bStats = deps.branchStats || branchStats, quality = deps.quality || qualityByTurn;
   const aStats = deps.activityStats || activityStats, tStats = deps.toolStats || toolStats;
+  const promos = deps.promotions || (() => listPromotions(candidatesDb(), { limit: 500 }));
   const tools = deps.tools || (() => Object.values(REGISTRY).filter((e) => !e.internal));
   const memo = new Map();
   const cached = (key, build) => {
@@ -31,7 +33,7 @@ export default async function anisDocsRoutes(fastify, { deps = {} } = {}) {
     return cached('strategies', () => {
       const q = safe(() => quality(DAYS), new Map());
       return publicStrategies({ snapshot: snapshot(), activities: activities(), stats: safe(() => sStats({ days: DAYS, quality: q }), []),
-        branches: (id) => safe(() => bStats(id, { days: DAYS, quality: q }), []) });
+        branches: (id) => safe(() => bStats(id, { days: DAYS, quality: q }), []), promotions: safe(promos, null) });
     });
   });
   fastify.get('/activities', async (req, reply) => {

@@ -3,11 +3,18 @@
 // name an activity; graph.js runs them. Adding an activity = one entry here (and a test).
 import { RESPOND_ACTIVITIES } from './respond-steps.js';
 import { run as runTool } from '../tools.js';
+import { template, fill } from './templates.js';
 
-// a W3 strategy executor (tools.js REGISTRY kind 'strategy'): s.choice = Jev's choice, s.ctx = the turn's ctx; out → s.out
+// a W3 strategy executor (tools.js REGISTRY kind 'strategy'): s.choice = Jev's choice, s.ctx = the turn's ctx; out → s.out.
+// scope 'strategy' = a designed strategy (Phase 3) may use it. params.how (a template id) = a PARAM VARIANT: that template, filled
+// with {{base}} = the executor's own writer instruction, becomes the writer's instruction (no params = the seed behaviour).
 const executor = (name) => ({
-  kind: 'tool', cls: 'code', edges: ['found', 'empty'],
-  run: (s) => runTool(name, s.choice, s.ctx).then((out) => { s.out = out; return out ? 'found' : 'empty'; }),
+  kind: 'tool', cls: 'code', edges: ['found', 'empty'], scope: 'strategy', params: ['how'],
+  run: (s, params = {}) => runTool(name, s.choice, s.ctx).then((out) => {
+    if (out && params.how && out.format) out = { ...out, format: { ...out.format, how: fill(template(params.how), { base: out.format.how ?? '' }), variant: params.how } };
+    s.out = out;
+    return out ? 'found' : 'empty';
+  }),
 });
 
 // built on first use: respond-steps ↔ respond.js ↔ graph.js form an import cycle, so nothing reads the steps at load time
@@ -22,4 +29,4 @@ export const activities = () => registry ||= ({
 });
 
 /** The registry as data (admin view): name, kind, class, edges. */
-export const activityList = () => Object.entries(activities()).map(([name, a]) => ({ name, kind: a.kind, cls: a.cls, edges: a.edges }));
+export const activityList = () => Object.entries(activities()).map(([name, a]) => ({ name, kind: a.kind, cls: a.cls, edges: a.edges, ...(a.scope ? { scope: a.scope, params: a.params || [] } : {}) }));

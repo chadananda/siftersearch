@@ -38,7 +38,7 @@ export function openStrategiesDb(path = STRATEGIES_DB()) {
   return db;
 }
 
-const bumpRev = (db) => db.prepare(`INSERT INTO meta (key, value) VALUES ('rev', '1')
+export const bumpRev = (db) => db.prepare(`INSERT INTO meta (key, value) VALUES ('rev', '1')
   ON CONFLICT(key) DO UPDATE SET value = CAST(value AS INTEGER) + 1`).run();
 export const revOf = (db) => Number(db.prepare("SELECT value FROM meta WHERE key = 'rev'").get()?.value ?? 0);
 
