@@ -63,7 +63,8 @@ const CASES = [
   { id: 12, kind: 'original of an unpublished English prayer', must: /AB05355|ترک تاجیک|ترک و تاجیک/, messages: [{ role: 'user', content: LILIANE_PRAYER }] },
   // WHAT THE TEACHINGS SAY ON A SOCIAL / LEGAL MATTER (11-04: a taxation letter leaned on Esslemont and talks, said nothing
   // settled it and offered searches it never ran). `teachings`: the reply cites the Writings proper (the job's `cited` tiers),
-  // labels any talk or pilgrim's note it cites as reported speech, and never offers a search (teachingsCheck)
+  // labels any talk or pilgrim's note it cites as reported speech, never offers a search, and its research searched the Writings
+  // in their original Persian/Arabic (originals_searched: research.steps[].originals / originals_search, or a cited original — teachingsCheck)
   { id: 19, kind: 'teachings: consultation', teachings: true, messages: [{ role: 'user', content: 'What do the Bahá\'í teachings say about consultation? Is the decision of the majority binding even when I think it is wrong?' }] },
   { id: 20, kind: 'teachings: work as worship', teachings: true, messages: [{ role: 'user', content: 'Is it true that work is considered worship in the Bahá\'í Faith? Where does that come from?' }] },
   { id: 21, kind: 'teachings: wealth and poverty', teachings: true, messages: [{ role: 'user', content: 'What do the Bahá\'í Writings say about extremes of wealth and poverty, and how they should be adjusted?' }] },

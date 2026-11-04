@@ -3,6 +3,7 @@
 // plain JSON (what POST /api/v1/tools/<name> returns). Old names are input-only aliases. Deps lazy; ctx.deps overrides (tests).
 
 import { CANON } from './work-canon.js';
+import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
 
 // ── shared schemas ──────────────────────────────────────────────────────────────────────────────────────────────────────
 export const FILTERS = { $id: 'AnisToolFilters', type: 'object', additionalProperties: false, description: 'Hard filters, the same for every passage search.',
@@ -100,6 +101,8 @@ const layer = (name, label, fnName, purpose) => ({ name, label, kind: 'tool', la
   input: SEARCH_INPUT(), output: PASSAGES, outputName: 'Passage[]', llmOmit: ['limit'],
   example: { input: { query: 'earth one country mankind citizens', filters: { tradition: "Baha'i" } }, output: { passages: [{ ...P_EX, score: 0.82 }] } },
   run: (a, ctx) => layerSearch(fnName, a, ctx) });
+/** The original-language Writings: the doctrinal writers as writers, language group ar-fa (qdrant-layers: fa and ar map to one group). */
+export const ORIGINALS_FILTER = { author: DOCTRINAL_KEYS, writerOnly: true, language: 'fa' };
 const SEARCH_DESC = 'Search the library (primary texts in English and in their original Arabic/Persian, authorised interpretation, history, scholarship). Phrase the query in the words the texts themselves would use; name an author or work in the query to narrow it.';
 const TRADITION = { type: 'string', description: "e.g. Baha'i, Islam, Christianity — omit for all" };
 const RENDER = { type: 'array', items: { type: 'object', properties: { en: { type: 'string' }, count: { type: 'integer' } } } };
@@ -136,6 +139,17 @@ const ENTRIES = [
       const fast = ctx.fastSearch || (await import('./agent-search.js')).agentSearch();
       const f = engineFilters(a.filters);
       return { passages: (await fast(a.query, a.tradition, a.limit ?? 8, ...(Object.keys(f).length ? [f] : []))).map(toPassage) };
+    } },
+  // the Writings in their ORIGINAL languages (11-04, measured: an English query's fused ranking puts no Persian/Arabic Writing in
+  // its top 8 — English-English phrase matches fill it — while the same query held to the ar-fa group returns 22-29 originals of 30)
+  { name: 'originals_search', label: 'Originals Search', kind: 'tool', outputName: 'Passage[]',
+    description: "Search the Writings of the Báb, Bahá'u'lláh, 'Abdu'l-Bahá and Shoghi Effendi in their ORIGINAL Persian and Arabic. Words in English (the phrase layer matches across languages) or in Persian/Arabic. A hit with no linked translation is the original alone.",
+    purpose: 'The fast engine held to the doctrinal writers and the Arabic/Persian language group: the originals an English search ranks out.',
+    input: SEARCH_INPUT(), output: PASSAGES, llmOmit: ['limit', 'filters'],
+    example: { input: { query: 'kings increase their expenditures and lay the burden on their subjects' }, output: { passages: [{ ...P_EX, id: 88, language: 'ar', text: 'يا معشر الملوك…' }] } },
+    async run(a, ctx = {}) {
+      const fast = ctx.fastSearch || (await import('./agent-search.js')).agentSearch();
+      return { passages: (await fast(a.query, "Baha'i", a.limit ?? 6, { ...engineFilters(a.filters), ...ORIGINALS_FILTER })).map(toPassage) };
     } },
   { name: 'biography_search', label: 'Biography Search', kind: 'tool', outputName: 'Person[]',
     purpose: 'People search: who did, met or wrote something, each person with the cited evidence.',

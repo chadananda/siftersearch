@@ -113,7 +113,7 @@ export default async function anisRoutes(fastify) {
       recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind }, conversationId: r.conversationId ?? null,
       research: ['research', 'agent'].includes(r.plan?.shape) ? { steps: r.plan.steps, ms: r.plan.ms ?? r.timings?.total_ms, usage: r.plan.usage ?? null } : null,
       // the passages the reply cites, each with its standing (source-tier.js) — the battery checks the Writings were cited (11-04)
-      cited: (r.retrieved || []).slice(0, 30).map((p) => ({ title: p.source_title || null, author: p.source_author || null, collection: p.collection || null, tier: sourceTier(p) })) };
+      cited: (r.retrieved || []).slice(0, 30).map((p) => ({ title: p.source_title || null, author: p.source_author || null, collection: p.collection || null, language: p.source_lang || null, tier: sourceTier(p) })) };
   }
   let jobs = null;
   const draftJobs = async () => (jobs ||= (await import('../lib/jobs/async-jobs.js')).jobStore());

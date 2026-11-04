@@ -3,12 +3,13 @@
 // search, a brief without passages is not research, the authoritative written tier is searched and shown first with each
 // passage's standing, and no reply offers a search. Fake model and tools.
 import { describe, it, expect } from 'vitest';
-import { sourceTier, byTier, hasAuthoritative, tierLabel } from '../../api/lib/assistant/source-tier.js';
-import { research, toolRunner, RESEARCH_HOW, RESEARCH_SYSTEM } from '../../api/lib/assistant/researcher.js';
+import { sourceTier, byTier, hasAuthoritative, tierLabel, NO_AUTHORED_ORIGINAL } from '../../api/lib/assistant/source-tier.js';
+import { hasNoAuthoredOriginal } from '../../api/lib/rag/concepts/source-survey.js';
+import { research, toolRunner, RESEARCH_HOW, RESEARCH_SYSTEM, ORIGINALS_QUOTA, isOriginalLanguage } from '../../api/lib/assistant/researcher.js';
 import { HOUSE_STYLE, passageHeader } from '../../api/lib/assistant/prompt.js';
 import { LINT, lintReply } from '../../api/lib/assistant/lint.js';
 import { authorMatches } from '../../api/lib/search.js';
-import { teachingsCheck } from '../../api/lib/assistant/teachings-check.js';
+import { teachingsCheck, originalsSearched } from '../../api/lib/assistant/teachings-check.js';
 
 const B = "Baha'i";
 const TABLET = { id: 1, title: 'Tablets of Bahá’u’lláh Revealed after the Kitáb-i-Aqdas', author: 'Bahá’u’lláh', book_author: 'Bahá’u’lláh', religion: B, collection: 'Core Tablets', text: 'tablet text' };
@@ -46,6 +47,25 @@ describe('source tier (library metadata only)', () => {
     expect(hasAuthoritative([ESSLEMONT, PARIS])).toBe(false);
     expect(hasAuthoritative([ESSLEMONT, GUARDIAN])).toBe(true);
     expect(tierLabel(PARIS)).toMatch(/REPORTED SPEECH/);
+  });
+});
+
+// reported works whose titles don't say "talk", in a collection that doesn't either (Chad 11-04 brief)
+const book = (title, author = '‘Abdu’l-Bahá') => ({ title, author, book_author: author, religion: B, collection: "Baha'i Books", text: 'x' });
+describe('source tier: the talk books and Some Answered Questions are reported speech (by title)', () => {
+  it('Promulgation, SAQ, London, Divine Philosophy, Foundations, Paris Talks → reported; written works stay Writings', () => {
+    for (const t of ['The Promulgation of Universal Peace', 'Some Answered Questions', '‘Abdu’l-Bahá in London', 'Divine Philosophy', 'Foundations of World Unity', 'Paris Talks'])
+      expect(sourceTier(book(t)), t).toBe('reported');
+    expect(sourceTier(book('Words to Mr Pinchot and others, spoken at his estate outside Milford on 1912-Jun-04'))).toBe('reported');
+    expect(sourceTier(book('Tablets of the Divine Plan'))).toBe('writings');
+    expect(sourceTier(book('Selections from the Writings of ‘Abdu’l-Bahá'))).toBe('writings');
+    expect(sourceTier(book('Some Answered Questions', 'Laura Clifford Barney'))).toBe('secondary');   // only a Central Figure's words are "reported"
+    expect(tierLabel(book('Some Answered Questions'))).toMatch(/REPORTED SPEECH .*table talks ‘Abdu’l-Bahá reviewed/);
+  });
+  it('one list: source-survey reads the no-authored-original works from source-tier', () => {
+    expect(NO_AUTHORED_ORIGINAL).toHaveLength(3);
+    expect(hasNoAuthoredOriginal('Paris Talks')).toBe(true);
+    expect(hasNoAuthoredOriginal('Some Answered Questions')).toBe(false);   // SAQ has a Persian original (Mufávaḍát)
   });
 });
 
@@ -97,6 +117,54 @@ describe('researcher: the authoritative tier first', () => {
   });
 });
 
+// the original-language quota (11-04, measured: English queries put no Persian/Arabic Writing in the fused top 8)
+const ORIG_FA = { id: 21, title: 'Lawh-i-Ahl-i-Tharvat', author: 'Bahá’u’lláh', religion: B, collection: 'Core Tablets', language: 'fa', document_id: 70, text: 'ای اهل ثروت و قدرت' };
+const ORIG_AR = { id: 22, title: 'Súriy-i-Haykal', author: 'Bahá’u’lláh', religion: B, collection: 'Core Tablets', language: 'ar', document_id: 71, text: 'انا نراکم فی کل سنة تزدادون مصارفکم' };
+const TRANS_AR = { id: 23, title: 'The Summons of the Lord of Hosts', author: 'Bahá’u’lláh', religion: B, collection: 'Core Tablets', language: 'en', text: 'We see you increasing every year your expenditures', translation: 'authorized — Bahá’í World Centre' };
+const english = (n) => Array.from({ length: n }, (_, i) => ({ id: 100 + i, title: `English ${i}`, author: 'Bahá’u’lláh', religion: B, collection: 'Core Tablets', text: `en ${i}` }));
+describe('researcher: the Writings in their original languages beside the English (per-language quota)', () => {
+  it('a Bahá\'í search keeps up to the quota of originals, each with its linked translation or marked provisional', async () => {
+    const asked = [];
+    const { run } = toolRunner({ search: async () => english(8), originals: async (q) => { asked.push(q); return [ORIG_FA, ORIG_AR, english(1)[0]]; },
+      translationsOf: async (ids) => new Map(ids.map((id) => [id, id === 22 ? [TRANS_AR] : []])) });
+    const out = await run.combined_search({ query: 'taxes burden on subjects', tradition: B });
+    expect(asked).toEqual(['taxes burden on subjects']);   // the same words, no rewriting
+    const heads = out.split('\n').filter((l) => /^\[P\d+\]/.test(l));
+    expect(heads.find((h) => /Tharvat/.test(h))).toMatch(/\(fa\) .*ORIGINAL — no linked translation: .*provisional translation by Anís/);
+    const haykal = heads.find((h) => /Haykal/.test(h));
+    const tref = haykal.match(/linked translation is (P\d+)/)[1];
+    expect(heads.find((h) => h.startsWith(`[${tref}]`))).toMatch(/EXISTING TRANSLATION: authorized/);
+    expect(heads.filter((h) => /English \d/.test(h))).toHaveLength(10 - 2);   // the English cut to make room for the originals
+    expect(ORIGINALS_QUOTA).toBe(3);
+  });
+  it('an original with its own inline English (no aligned translation) shows that English as its translation', async () => {
+    const { run } = toolRunner({ search: async () => [], originals: async () => [{ ...ORIG_FA, english: 'O people of wealth and power' }], translationsOf: async () => new Map() });
+    const out = await run.originals_search({ query: 'wealth' });
+    expect(out).toMatch(/ORIGINAL — its linked translation is P2/);
+    expect(out).toMatch(/\[P2\][^\n]*EXISTING TRANSLATION: translation\nO people of wealth and power/);
+  });
+  it('no originals pass for another tradition; originals_search runs it alone', async () => {
+    let n = 0;
+    const { run } = toolRunner({ search: async () => [BIBLE], originals: async () => { n++; return [ORIG_AR]; } });
+    await run.combined_search({ query: 'x', tradition: 'Christianity' });
+    expect(n).toBe(0);
+    expect(await run.originals_search({ query: 'kings' })).toMatch(/Haykal .*\(ar\).*ORIGINAL/);
+    expect(isOriginalLanguage({ language: 'Fa' }) && isOriginalLanguage({ language: 'ara' }) && !isOriginalLanguage({ language: 'en' })).toBe(true);
+  });
+  it('each research step records how many originals it showed (the battery reads this, never the reply)', async () => {
+    const replies = [{ tool_calls: [call('a', 'combined_search', { query: 'consultation', tradition: B })] }, { content: 'BRIEF:\nReaching for: x\n- y: P1\nKEEP: P1' }];
+    const r = await research({ messages: [{ role: 'user', content: 'q' }], create: async () => ({ choices: [{ message: replies.shift() }] }),
+      tools: { search: async () => [TABLET], originals: async () => [ORIG_FA] } });
+    expect(r.steps[0]).toMatchObject({ tool: 'combined_search', found: 2, originals: 1 });
+  });
+  it('the writer\'s head for an original says what to quote; the prompts say it too', () => {
+    expect(passageHeader({ ...ORIG_FA, source_title: ORIG_FA.title, source_author: ORIG_FA.author, source_lang: 'fa' }, 0)).toMatch(/ORIGINAL \(fa\) .*provisional translation by Anís/);
+    expect(passageHeader({ ...TRANS_AR, source_title: TRANS_AR.title, source_author: TRANS_AR.author, source_lang: 'en' }, 0)).not.toMatch(/ORIGINAL \(/);
+    expect(RESEARCH_HOW('x')).toMatch(/provisional translation by Anís/);
+    expect(RESEARCH_SYSTEM).toMatch(/original Persian and Arabic too/);
+  });
+});
+
 describe('writer: what the texts DO say, at their standing; never an offer to search', () => {
   it('the prompts say so', () => {
     expect(HOUSE_STYLE).toMatch(/NEVER OFFER A SEARCH YOU COULD RUN/);
@@ -125,8 +193,17 @@ describe('writer: what the texts DO say, at their standing; never an offer to se
 });
 
 describe('battery: the teachings class check', () => {
+  it('originals_searched: from the research steps or a cited original, never the reply', () => {
+    expect(originalsSearched({ research: { steps: [{ tool: 'combined_search', found: 8 }] } })).toBe(false);
+    expect(originalsSearched({ research: { steps: [{ tool: 'originals_search', found: 0 }] } })).toBe(true);
+    expect(originalsSearched({ research: { steps: [{ tool: 'combined_search', found: 9, originals: 1 }] } })).toBe(true);
+    expect(originalsSearched({ cited: [{ tier: 'writings', language: 'ar' }] })).toBe(true);
+    expect(originalsSearched({ text: 'in the original Arabic…', cited: [{ tier: 'writings', language: 'en' }] })).toBe(false);
+  });
   it('passes only with the Writings cited, talks named as spoken, and no offer', () => {
-    expect(teachingsCheck({ text: 'In a talk recorded in *Paris Talks*…', cited: [{ tier: 'writings' }, { tier: 'reported' }] }).pass).toBe(true);
+    const steps = [{ tool: 'combined_search', found: 9, originals: 2 }];
+    expect(teachingsCheck({ text: 'In a talk recorded in *Paris Talks*…', cited: [{ tier: 'writings' }, { tier: 'reported' }], research: { steps } }).pass).toBe(true);
+    expect(teachingsCheck({ text: 'In a talk recorded in *Paris Talks*…', cited: [{ tier: 'writings' }, { tier: 'reported' }] }).pass).toBe(false);   // no original-language search
     expect(teachingsCheck({ text: '…', cited: [{ tier: 'secondary' }] }).writings).toBe(false);
     expect(teachingsCheck({ text: 'He explains…', cited: [{ tier: 'writings' }, { tier: 'reported' }] }).reported_labelled).toBe(false);
     expect(teachingsCheck({ text: 'If you like, I can search the tablets.', cited: [{ tier: 'writings' }] }).no_offer).toBe(false);

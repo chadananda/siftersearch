@@ -16,8 +16,14 @@ export { translationLabel, letterVariants };
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
 // the researcher's tools, by canonical name (tools.js registry); the definitions are generated from the registry's schemas
-export const RESEARCH_TOOL_NAMES = ['combined_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_trace', 'document_search', 'web_search'];
+export const RESEARCH_TOOL_NAMES = ['combined_search', 'originals_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_trace', 'document_search', 'web_search'];
 export const TOOLS = llmTools(RESEARCH_TOOL_NAMES);
+/** How many original-language Writings a Bahá'í search keeps beside its English hits (the per-language quota). */
+export const ORIGINALS_QUOTA = 3;
+// a shown passage head in Arabic/Persian: "[P3] Title — Author (fa) · …" (show())
+const ORIGINAL_HEAD = /^\[P\d+\] [^\n]* — [^\n]*?\((?:ar|fa|per|pes)[a-z]*\)/gim;
+/** A passage in Arabic or Persian (the library's codes are not normalised: ar/Ar/ara, fa/Fa/fas/per). Pure. */
+export const isOriginalLanguage = (p) => /^(ar|fa|per|pes)/i.test(String(p?.language || ''));
 
 export const RESEARCH_SYSTEM = `You are the research mind behind Anís, a study companion for the world's sacred texts. The library holds primary texts in English and in their original languages (Arabic, Persian, Hebrew…), authorised interpretation, history and scholarship, and you reach it through tools. Your job: find what a generous, well-read scholar would bring to THIS person's question, then write a BRIEF for the writer.
 - First work out what the person is reaching for, and serve that — read them charitably; never quibble with their wording, spelling or grammar.
@@ -36,7 +42,7 @@ export const RESEARCH_SYSTEM = `You are the research mind behind Anís, a study 
 - An empty tool result means only that this lookup found nothing — never treat it as evidence, and never disown or "correct" an earlier reply unless a passage shows it was wrong.
 - Never conclude "nothing found" while a reasonable search is untried. If the library truly lacks something, say what it does have that helps.
 - A FOLLOW-UP that disputes, narrows or asks for the evidence is a new question: search for what it asks now (11-04: a brief written from the earlier reply alone, with no search, told the reader nothing settled it).
-- WHAT THE TEACHINGS SAY ON A SOCIAL OR LEGAL MATTER (taxation, consultation, work, wealth, punishment, marriage, the arts…): search the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá first, in the words a tablet would use (the matter's own terms and its older names), then Shoghi Effendi; talks and pilgrims' notes after them, as REPORTED SPEECH; commentary last, only as a signpost. Each passage head carries its standing (WRITINGS, SHOGHI EFFENDI, REPORTED SPEECH, UNIVERSAL HOUSE OF JUSTICE, SECONDARY). In the brief, put what the passages DO say first, each point with its standing, then list the sub-questions they leave open as "Open: …".
+- WHAT THE TEACHINGS SAY ON A SOCIAL OR LEGAL MATTER (taxation, consultation, work, wealth, punishment, marriage, the arts…): search the Writings of Bahá'u'lláh, the Báb and 'Abdu'l-Bahá first, in the words a tablet would use (the matter's own terms and its older names), then Shoghi Effendi; the Writings in their original Persian and Arabic too (every Bahá'í search brings the closest originals, each marked ORIGINAL with its linked translation or none; originals_search for more, in English or in the original words); talks and pilgrims' notes after them, as REPORTED SPEECH; commentary last, only as a signpost. Each passage head carries its standing (WRITINGS, SHOGHI EFFENDI, REPORTED SPEECH, UNIVERSAL HOUSE OF JUSTICE, SECONDARY). In the brief, put what the passages DO say first, each point with its standing (for an ORIGINAL, the P# of its linked translation or "no linked translation — provisional"), then list the sub-questions they leave open as "Open: …".
 - Never propose a search for the reader to approve: if one is worth running, run it now.
 When done, reply with no tool call, in exactly this form:
 BRIEF:
@@ -97,7 +103,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
     if (!ps.length) return '(nothing)';
     // each head says the passage's standing (source-tier.js: Writings, Shoghi Effendi, reported speech, the House, commentary)
     const heads = ps.map(([r, p]) => { const tier = tierLabel(p);
-      return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${tier ? ` · ${tier}` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}`; });
+      return `[${r}] ${p.title || '?'} — ${p.author || '?'}${p.language && p.language !== 'en' ? ` (${p.language})` : ''}${tier ? ` · ${tier}` : ''}${p.translation ? ` · EXISTING TRANSLATION: ${p.translation}` : ''}${p.note ? ` · ${p.note}` : ''}`; });
     const texts = ps.map(([, p]) => String(p.text || '').replace(/\s+/g, ' ').trim());
     // + "\n", the " …" a cut adds, and the "\n\n" between passages
     const caps = fitLengths(texts.map((t, i) => Math.min(t.length, ps[i][1].translation ? Math.max(n, 4000) : n)), SHOW_CHARS - heads.reduce((a, h) => a + h.length + 5, 0));
@@ -108,7 +114,33 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
   // whose hits hold no written Writings and nothing of Shoghi Effendi is searched again in those writers' works alone
   // (impl.writings), and every search's passages are shown in tier order, search rank kept within a tier. Metadata, never words.
   const bahaiSearch = (tradition, hits) => /bah/i.test(String(tradition || '')) || hits.filter((p) => /bah/i.test(String(p.religion || ''))).length * 2 > hits.length;
+  // ORIGINAL-LANGUAGE QUOTA (11-04, measured on prod): an English query's fused ranking put NO Persian/Arabic Writing in the
+  // top 8 on six social/legal matters — English-English phrase matches fill the phrase layer, originals reach the fusion only
+  // through HyPE at rank 10-44 — while the same query held to the ar-fa group returns 22-29 originals of 30. So a Bahá'í search
+  // also runs the query over the original-language Writings (impl.originals, in parallel) and keeps up to ORIGINALS_QUOTA of them,
+  // each with its linked translation (impl.translationsOf) or marked as having none. Metadata (language, writer), never words.
+  const originalsFor = async (query, hits, early) => {
+    if (!impl.originals || !(early || (hits.length && bahaiSearch(undefined, hits)))) return [];
+    const seen = new Set(hits.map((p) => p.id).filter((x) => x != null));
+    const got = await Promise.resolve(early || impl.originals(query)).catch(() => []);
+    return (got || []).filter((p) => isOriginalLanguage(p) && (p.id == null || !seen.has(p.id))).slice(0, ORIGINALS_QUOTA);
+  };
+  // an original's head says what to quote: its linked translation (shown next, verbatim) or a provisional rendering of its own
+  const showOriginals = async (orig) => {
+    const ids = orig.map((p) => p.id).filter((x) => x != null);
+    const linked = (ids.length && impl.translationsOf ? await impl.translationsOf(ids).catch(() => null) : null) || new Map();
+    return orig.map((p) => {
+      const ref = add(p);
+      const t = (linked.get?.(p.id) || [])[0] || (p.english ? { ...p, id: `${p.id}-en`, text: p.english, language: 'en', english: undefined, translation: translationLabel(null, null) } : null);
+      const tref = t ? add({ ...t, translation: t.translation || 'translation', title: `${t.title || p.title} (English translation of the original ${ref})` }) : null;
+      const o = found.get(ref);
+      if (o && !o.note) o.note = tref ? `ORIGINAL — its linked translation is ${tref}: quote that verbatim beside this original line`
+        : `ORIGINAL — no linked translation: render the key line yourself, marked "provisional translation by Anís", with the original line beside it, linked to this tablet`;
+      return [ref, tref];
+    }).flat();
+  };
   const searchLibrary = async ({ query, tradition }) => {
+    const early = impl.originals && /bah/i.test(String(tradition || '')) ? impl.originals(query).catch(() => []) : null;
     let hits = (await impl.search(query, tradition)).slice(0, 8);
     if (impl.writings && hits.length !== 0 && bahaiSearch(tradition, hits) && !hasAuthoritative(hits)) {
       const extra = await impl.writings(query).catch(() => []);
@@ -117,9 +149,17 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
     } else if (impl.writings && !hits.length && /bah/i.test(String(tradition || ''))) {
       hits = (await impl.writings(query).catch(() => [])).slice(0, 4);
     }
-    hits = byTier(hits).slice(0, 10);
+    const orig = await originalsFor(query, hits, early);
+    hits = byTier(hits).slice(0, 10 - orig.length);
     searched.push({ query, docs: hits.map((p) => p.document_id).filter((x) => x != null) });
-    return show(hits.map((p) => add(p)));
+    const refs = hits.map((p) => add(p));
+    return show([...refs, ...(await showOriginals(orig))]);
+  };
+  // originals_search: the original-language pass alone, as many as it finds (the researcher's own Persian/Arabic or English words)
+  const searchOriginals = async ({ query }) => {
+    if (!impl.originals) return 'no original-language search here';
+    const orig = ((await impl.originals(query).catch(() => [])) || []).filter(isOriginalLanguage).slice(0, 6);
+    return orig.length ? show(await showOriginals(orig)) : `no Persian/Arabic Writing found for "${query}" — try the matter's own words in Persian or Arabic`;
   };
   // keyed by canonical tool name (tools.js); a call by an old name resolves through canonical()
   // a copyrighted (encumbered) book is never read around — consecutive paragraphs are not a short excerpt (Chad 10-23)
@@ -134,6 +174,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
   const run = {
     combined_search: searchLibrary,
     fused_search: searchLibrary,
+    originals_search: searchOriginals,
     context_lookup: async ({ ref, before = 2, after = 2 }) => {
       const p = found.get(String(ref).toUpperCase());
       if (!p?.document_id) return 'unknown ref';
@@ -332,7 +373,9 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
       return { tc, args, out };
     }));
     for (const { tc, args, out } of outs) {
-      steps.push({ tool: tc.function?.name, args, found: (String(out).match(/^\[[PW]\d+\]/gm) || []).length });
+      // originals: how many of the passages it showed are Arabic/Persian (the battery's originals check reads this, never the reply)
+      const originals = (String(out).match(ORIGINAL_HEAD) || []).length;
+      steps.push({ tool: tc.function?.name, args, found: (String(out).match(/^\[[PW]\d+\]/gm) || []).length, ...(originals ? { originals } : {}) });
       msgs.push({ role: 'tool', tool_call_id: tc.id, content: clipText(out, TOOL_CHARS) });
     }
     if (!wantBrief && (round === maxRounds - 1 || calls >= maxCalls)) break;
@@ -400,7 +443,7 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
   return { passages: kept, brief, steps, ms: Date.now() - t0 };
 }
 
-export const RESEARCH_HOW = (brief) => `Write the reply from this research brief — it says what the person is reaching for and what the answer holds. Give the substance generously: every point of the brief. A study question gets a full, organised answer — a short bold lead for each part, several quoted passages, the distinctions that matter, and specifics (names, dates, references); a quick question gets a direct answer first. When the reader asks for a table, a list or a programme, give exactly that; quote the passages that carry it (exact words, linked as the house style says). A point marked [own] is your knowledge of the language or general background — say it plainly as a scholar friend would, without a source. A point from W# is from the web: name it as such, never as scripture. Never comment on, review or correct your earlier replies unless the reader questioned them — and then only precisely, with the passage. Never write the brief's markers (P#, W#, [own]) — they are notes to you. TRANSLATIONS: a passage marked EXISTING TRANSLATION is quoted verbatim, never re-translated; only lines it does not cover are your own (the brief says which). Give what the passages DO say first, quoted and cited at their standing (REPORTED SPEECH is a talk or recollection — "in a talk recorded in…"; SECONDARY is commentary, never the support); then, for each sub-question the brief marks Open, one plain sentence that the texts here do not settle it. Never write that nothing was found while the brief gives passages. Well-known background is fine to state (Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán). End with the thread to pull, as an invitation to read — never an offer to search ("if you like, I can search…"): the research is done — no summary, no remarks about sources or authority.\n\nBRIEF:\n${brief}`;
+export const RESEARCH_HOW = (brief) => `Write the reply from this research brief — it says what the person is reaching for and what the answer holds. Give the substance generously: every point of the brief. A study question gets a full, organised answer — a short bold lead for each part, several quoted passages, the distinctions that matter, and specifics (names, dates, references); a quick question gets a direct answer first. When the reader asks for a table, a list or a programme, give exactly that; quote the passages that carry it (exact words, linked as the house style says). A point marked [own] is your knowledge of the language or general background — say it plainly as a scholar friend would, without a source. A point from W# is from the web: name it as such, never as scripture. Never comment on, review or correct your earlier replies unless the reader questioned them — and then only precisely, with the passage. Never write the brief's markers (P#, W#, [own]) — they are notes to you. TRANSLATIONS: a passage marked EXISTING TRANSLATION is quoted verbatim, never re-translated; only lines it does not cover are your own (the brief says which). A passage marked ORIGINAL (a Persian or Arabic Writing): quote its key line in its own script with the English beside it — its existing translation verbatim when one is given, else your own short rendering marked "provisional translation by Anís" — and link the tablet (with its PI number when the brief gives one). Give what the passages DO say first, quoted and cited at their standing (REPORTED SPEECH is a talk or recollection — "in a talk recorded in…"; SECONDARY is commentary, never the support); then, for each sub-question the brief marks Open, one plain sentence that the texts here do not settle it. Never write that nothing was found while the brief gives passages. Well-known background is fine to state (Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán). End with the thread to pull, as an invitation to read — never an offer to search ("if you like, I can search…"): the research is done — no summary, no remarks about sources or authority.\n\nBRIEF:\n${brief}`;
 
 /** An EXACT quotation: a quoted run of 6+ words, or a bare 9+ word sentence that is not framed as a keyword/paraphrase ask. Pure (Chad 11-02: "religion science two wings bird quote" is inexact). */
 export const isExactQuote = (text) => { const t = String(text || '').trim(), q = [...t.matchAll(/[“"«]([^”"»]+)[”"»]/g)].some((m) => m[1].trim().split(/\s+/).length >= 6);
@@ -428,6 +471,18 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
     // the authoritative written tier alone: the Báb, Bahá'u'lláh, 'Abdu'l-Bahá and Shoghi Effendi as WRITERS (searchLibrary)
     writings: async (query) => (await passages('fused_search', { query, tradition: "Baha'i", limit: 6, filters: { author: DOCTRINAL_KEYS, writerOnly: true } }))
       .filter((p) => String(p.text || '').length <= 8000).map(shape),
+    // the original-language Writings (the per-language quota and originals_search): the same words, held to the ar-fa group
+    // a hit's own inline English (content translation_text) arrives in `translation`, which the formatter reads as a LABEL:
+    // keep it as `english` (shown as the original's translation when no aligned one is linked), never as a label
+    originals: async (query) => (await passages('originals_search', { query }))
+      .filter((p) => String(p.text || '').length <= 8000).map(shape)
+      .map((p) => (String(p.translation || '').length > 80 ? { ...p, translation: null, english: p.translation } : p)),
+    // each original's linked English translations (content_alignment), best first: id → [Passage + translation label]
+    translationsOf: async (ids) => {
+      const links = await (await import('../passage-links.js')).resolveLinks(ids, { quotedBy: false });
+      return new Map([...links].map(([id, l]) => [id, (l.translations || []).filter((t) => !/^(ar|fa)/i.test(String(t.language || '')))
+        .map((t) => ({ ...shape(t), translation: translationLabel(t.translated_by, t.translation_authority) }))]));
+    },
     // a work by its title (document_search) → { doc, others } (toolRunner's and namedSource's shape)
     work: async (title) => { const r = await runTool('document_search', { title }, ctx); return r?.works?.length ? { doc: r.works[0], others: r.works.slice(1) } : null; },
     // the found passage's own title/author/religion label its neighbours (ctx.meta), as before
@@ -454,5 +509,5 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
         title: `${p.title}${role === 'original' ? tag('original') : role === 'possible_original' ? tag('possible original') : ''}` }));
     },
     web: async (query) => { const r = await runTool('web_search', { query }, ctx); return r.text ? { text: r.text, citations: r.citations.map((url) => ({ url })) } : null; },
-  }, { search: [], probe: [], searchBy: [], writings: [], work: null, around: [], original: [], translation: [], wordStudy: null });
+  }, { search: [], probe: [], searchBy: [], writings: [], originals: [], translationsOf: null, work: null, around: [], original: [], translation: [], wordStudy: null });
 }

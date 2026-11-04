@@ -24,6 +24,7 @@
 import { queryAll } from '../../db.js';
 import { CTAI_WORK_BY_DOC, CTAI_DOC_BY_WORK } from './ctai.js';
 import { englishIsOriginal } from './core-roster.js';
+import { NO_AUTHORED_ORIGINAL } from '../../assistant/source-tier.js';
 
 // Authors who wrote in Arabic or Persian. An English document by one of these is BY DEFINITION a
 // translation, whoever rendered it — which is the population Chad asked to cover, not just the six works
@@ -45,11 +46,7 @@ const ORIGINAL_LANGS = ['ar', 'fa'];
  * ⚠ This is Chad's domain knowledge, not something the data reveals — a document's own metadata cannot say
  * "this was recorded from a talk". Add to it when he identifies more; never infer membership.
  */
-const NO_AUTHORED_ORIGINAL = [
-  /promulgation of universal peace/i,
-  /paris talks/i,
-  /abdu.?l.?bah[áa] in london/i,
-];
+// the list lives with the source tiers (one list of reported works): api/lib/assistant/source-tier.js REPORTED_WORKS
 
 /**
  * Works with no ORIGINAL TO PAIR, for a different reason: there is no authorised English rendering, so the

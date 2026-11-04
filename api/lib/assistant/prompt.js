@@ -138,6 +138,9 @@ export function passageText(p) {
 }
 
 /** The header line the writer credits from: "<title> — <writer>[, as quoted in this work by <author> (…)], <religion> · …". */
+// an Arabic/Persian passage that is not itself a translation (the researcher's original-language quota, 11-04): what to quote
+const originalNote = (p) => (!p.translation && !p.web && /^(ar|fa|per|pes)/i.test(String(p.source_lang || p.language || '')) && !/\(original/i.test(p.source_title || '')
+  ? ` · ORIGINAL (${String(p.source_lang || p.language).toLowerCase()}) — quote its key line in its own script; give its English from a passage here that translates it (verbatim), else your own short rendering marked "provisional translation by Anís"; link the tablet` : '');
 export function passageHeader(p, i) {
   const credit = displayName(creditOf(p)) || creditOf(p), book = displayName(p.book_author, { slug: 'drop' });
   const who = [quotedIn(p) && book ? `${credit}, as quoted in this work by ${book} (credit the words to ${credit}; name ${book} only as the author of the work that quotes them)` : credit, p.religion].filter(Boolean).join(', ');
@@ -146,7 +149,7 @@ export function passageHeader(p, i) {
   const voices = quoted.length ? ` · reports the words of ${quoted.join(', ')} (credit those words to them, as ${credit} records)` : '';
   // the passage's standing from library metadata (source-tier.js) unless a pipeline already set one (position.js)
   const tier = p.standing ? null : tierLabel(p);
-  return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${voices}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${tier ? ` · ${tier}` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}`;
+  return `[${i + 1}] ${p.source_title || 'Untitled'}${who ? ` — ${who}` : ''}${voices}${p.authority ? ` · ${p.authority}` : ''}${p.standing ? ` · [${p.standing}]` : ''}${tier ? ` · ${tier}` : ''}${p.theme ? ` · theme: ${p.theme}` : ''}${p.translation ? ` · EXISTING TRANSLATION (${p.translation}) — quote it verbatim` : ''}${originalNote(p)}`;
 }
 
 export function anisUserPayload({ question, conversation = '', passages = [], conversational = false, entities = null, peopleAnswer = null, target = null, direction = '' }) {

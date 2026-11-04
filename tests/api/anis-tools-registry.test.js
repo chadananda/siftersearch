@@ -72,6 +72,12 @@ describe('each search tool calls only its own layer', () => {
     expect(search).toHaveBeenCalledTimes(1);
     expect(f.passages[0].id).toBe(2);
   });
+  it('originals_search is the fast engine held to the doctrinal writers in the ar-fa group (11-04)', async () => {
+    const fastSearch = vi.fn(async () => [{ id: 5, text: 'يا معشر الملوك', language: 'ar' }]);
+    const r = await tools.run('originals_search', { query: 'kings burden their subjects' }, { fastSearch });
+    expect(fastSearch).toHaveBeenCalledWith('kings burden their subjects', "Baha'i", 6, { author: ['bahaullah', 'thebab', 'abdulbaha', 'shoghieffendi'], writerOnly: true, language: 'fa' });
+    expect(r.passages[0].language).toBe('ar');
+  });
   it('quotation_trace hands sourceHunt the phrase_search and literal_search layers', async () => {
     const deps = layerDeps();
     const sourceHunt = vi.fn(async (q, d) => { await d.phrases('a', {}); await d.keyword('b', {}); return null; });

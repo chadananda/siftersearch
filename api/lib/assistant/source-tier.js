@@ -11,6 +11,21 @@ const HOUSE = /universalhouseofjustice|researchdepartment/;
 const isBahai = (p) => /bah[aá]/i.test(String(p?.religion || ''));
 const keyOf = (s) => foldKey(s);
 
+/** Works by a Central Figure that are REPORTED, not written, though their titles don't say "talk": talks taken down by others,
+ *  and Some Answered Questions (table talks 'Abdu'l-Bahá reviewed). Chad's domain knowledge (08-26, 11-04), by title — the
+ *  metadata cannot reveal it. noOriginal: no authored Persian/Arabic text exists to find (source-survey reads this list). */
+export const REPORTED_WORKS = [
+  { re: /promulgation of universal peace/i, noOriginal: true },
+  { re: /paris talks/i, noOriginal: true },
+  { re: /abdu.?l.?bah[áa] in london/i, noOriginal: true },
+  { re: /some answered questions/i, note: 'table talks ‘Abdu’l-Bahá reviewed' },
+  { re: /divine philosophy/i },
+  { re: /foundations of world unity/i },
+  { re: /\bspoken (?:at|in|to|on|by)\b/i },   // 'Abdu'l-Bahá's recorded Persian talks: "Words to Mr Pinchot and others, spoken at his estate…"
+];
+export const NO_AUTHORED_ORIGINAL = REPORTED_WORKS.filter((w) => w.noOriginal).map((w) => w.re);
+const reportedWork = (title) => REPORTED_WORKS.find((w) => w.re.test(String(title || '')));
+
 /** → 'writings' | 'guardian' | 'reported' | 'house' | 'secondary' for a Bahá'í passage; null for other traditions and web
  *  results (they keep their own standing). p: { author|source_author, book_author, title|source_title, collection, religion }. */
 export function sourceTier(p = {}) {
@@ -23,6 +38,7 @@ export function sourceTier(p = {}) {
   if (isTalk(p.collection)) return 'secondary';                          // a modern speaker's recorded talk: commentary
   if (kind === 'pilgrim-notes' || /pilgrim notes/i.test(String(p.collection || ''))) return 'reported';
   if (kind === 'talk') return central ? 'reported' : 'secondary';       // a Central Figure's spoken words, as recorded
+  if (central && reportedWork(doc.title)) return 'reported';            // Promulgation, SAQ, Paris Talks… (titles that don't say "talk")
   // a Central Figure quoted inside another writer's book is a pointer to the text, not the text (the writer traces it)
   const book = keyOf(p.book_author);
   const ownBook = (k) => ['bahaullah', 'thebab', 'abdulbaha', GUARDIAN].some((w) => k.includes(w)) || HOUSE.test(k);   // "Bahá'u'lláh and 'Abdu'l-Bahá" too
@@ -51,4 +67,8 @@ export const TIER_LABEL = {
   house: 'UNIVERSAL HOUSE OF JUSTICE (law and administration — no doctrinal or interpretive authority)',
   secondary: 'SECONDARY (commentary — a signpost to the Writings, never their support)',
 };
-export const tierLabel = (p) => { const t = sourceTier(p); return t ? TIER_LABEL[t] : null; };
+export const tierLabel = (p) => {
+  const t = sourceTier(p); if (!t) return null;
+  const note = t === 'reported' && reportedWork(p.title ?? p.source_title)?.note;
+  return note ? `${TIER_LABEL[t]} — ${note}` : TIER_LABEL[t];
+};

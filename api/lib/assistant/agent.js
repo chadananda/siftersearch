@@ -12,7 +12,7 @@ import { agentSearch } from './agent-search.js';
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 
 // the agent's tools, by canonical name (tools.js registry): its search is fused_search (no planner), never combined_search under another name
-export const AGENT_TOOL_NAMES = ['fused_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_trace', 'document_search', 'work_notes_lookup', 'web_search'];
+export const AGENT_TOOL_NAMES = ['fused_search', 'originals_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_trace', 'document_search', 'work_notes_lookup', 'web_search'];
 export const AGENT_TOOLS = llmTools(AGENT_TOOL_NAMES);
 export { canonWork };
 
