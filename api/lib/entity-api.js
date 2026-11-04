@@ -44,15 +44,8 @@ async function lookupRows(q, { type = null, limit = 20 } = {}) {
   const keys = [...skeletonKeys(q || '')];
   if (!q || !keys.length) return [];
   const exact = [...new Set([lookupNorm(q), String(q).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()])];
-  const rows = await queryAll(
-    `SELECT lk.entity_id id, ge.canonical_name name, ge.entity_type type, ge.importance importance,
-            COUNT(DISTINCT lk.skeleton_key) shared, MAX(lk.is_canonical) canon,
-            MAX(lk.surface_norm IN (${exact.map(() => '?').join(',')})) exact, json_group_array(DISTINCT lk.surface) surfaces
-       FROM entity_lookup_keys lk JOIN graph_entities ge ON ge.id=lk.entity_id
-      WHERE lk.skeleton_key IN (${keys.map(() => '?').join(',')})${type ? ' AND ge.entity_type=?' : ''}
-        AND ${LIVE_SQL('ge.')}
-      GROUP BY lk.entity_id ORDER BY exact DESC, canon DESC, shared DESC, (ge.importance IS NULL), ge.importance DESC LIMIT ?`,
-    [...exact, ...keys, ...(type ? [type] : []), Math.min(50, +limit || 20)], 'entity:lookup');
+  // On a read-pool thread (search/read-pool.js): the group-by is up to ~100 ms on prod and blocked every in-flight search
+  const rows = await (await import('./search/read-pool.js')).runRead('entity:lookup', { exact, keys, type, limit });
   return rows.map((r) => ({ id: r.id, name: r.name, type: r.type, importance: r.importance, shared_keys: r.shared, canonical_match: !!r.canon,
     exact_match: !!r.exact, surfaces: parse(r.surfaces).filter((x) => x && x !== r.name).sort((a, b) => exact.includes(lookupNorm(b)) - exact.includes(lookupNorm(a))).slice(0, 12) }));
 }

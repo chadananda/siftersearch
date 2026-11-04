@@ -55,7 +55,8 @@ export function authorDocs(name, docs) {
 export async function namedScopes(plan, { find } = {}) {
   const mentions = plan?.mentions || [], spans = plan?.spans || [];
   if (!mentions.length && !spans.length) return [];
-  const lookup = find || (async (q, o) => (await import('../docs-repo.js')).findDocuments(q, o));
+  // on a read-pool thread: the FTS title lookup is up to ~120 ms per name on prod and ran on the serving thread
+  const lookup = find || (async (q, o) => (await import('./read-pool.js')).runRead('docs:find', q, o));
   const fields = ['id', 'title', 'author', 'religion', 'source_site', 'collection'];
   // a span the entity index already resolved is no title: by its matched text, its name, or either without articles
   // ("John the Baptist" span vs "John Baptist" matched — r8 probe)

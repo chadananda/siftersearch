@@ -3,13 +3,49 @@
 // return results for adrianople highlighted. The highlighting should be the search target, not a string match").
 // Names come from the texts: the surfaces the corpus's own mentions use for the entity, plus recorded aliases. Recall
 // is the transliteration-invariant lookup (so a misspelling still lands); a candidate becomes the target only when it
-// is clearly ahead — otherwise search carries on unchanged, never guessing. Deps: entity-api (lookup), db.
-import { queryAll } from './db.js';
+// is clearly ahead — otherwise search carries on unchanged, never guessing. Deps: entity-api (lookup), read pool
+// (entity-names-repo on a thread). Entity names are cached per process AND in data/run/entity-names.json, shared by all
+// API processes (O_EXCL lock, like excluded-docs.js): the surface count is a ~1 s statement for a well-mentioned entity
+// and names change only with the entity pipeline.
+import fs from 'node:fs';
+import path from 'node:path';
 import { skeletonKeys } from './translit-key.js';
 
-const TTL = 60 * 60 * 1000;
+const TTL = Number(process.env.ENTITY_NAMES_TTL_MS) || 12 * 60 * 60 * 1000;
+const SHARED_MAX = 5000, LOCK_STALE_MS = 30_000;
+// Tests get no shared file unless they set one (_setSharedPath), so a test run never writes into data/run.
+const IN_TEST = !!process.env.VITEST || process.env.NODE_ENV === 'test';
+let SHARED = process.env.ENTITY_NAMES_CACHE || (IN_TEST ? null : path.resolve(new URL('.', import.meta.url).pathname, '../../data/run/entity-names.json'));
+export const _setSharedPath = (p) => { SHARED = p; sharedSeen = { mtime: 0, map: {} }; };
 const namesCache = new Map();
-export const clearTargetCache = () => namesCache.clear();
+export const clearTargetCache = () => { namesCache.clear(); sharedSeen = { mtime: 0, map: {} }; };
+let sharedSeen = { mtime: 0, map: {} };
+/** The shared file's entries ({ id: { at, v } }); re-parsed only when another process has rewritten it. */
+function readShared() {
+  if (!SHARED) return sharedSeen.map;
+  try {
+    const { mtimeMs } = fs.statSync(SHARED);
+    if (mtimeMs !== sharedSeen.mtime) sharedSeen = { mtime: mtimeMs, map: JSON.parse(fs.readFileSync(SHARED, 'utf8')) || {} };
+  } catch { /* none yet / torn — the per-process cache still works */ }
+  return sharedSeen.map;
+}
+/** Merge fresh entries into the shared file. Whoever holds the lock writes; a busy lock skips (the entries are still in
+ *  this process's cache, and the next miss elsewhere writes them). Never throws. */
+export function writeShared(entries) {
+  if (!SHARED) return false;
+  const lock = `${SHARED}.lock`;
+  try { if (Date.now() - fs.statSync(lock).mtimeMs > LOCK_STALE_MS) fs.rmSync(lock, { force: true }); } catch { /* no lock */ }
+  let fd;
+  try { fs.mkdirSync(path.dirname(SHARED), { recursive: true }); fd = fs.openSync(lock, 'wx'); } catch { return false; }
+  try {
+    const now = Date.now();
+    const map = Object.fromEntries(Object.entries({ ...readShared(), ...entries }).filter(([, e]) => now - (e?.at || 0) < TTL)
+      .sort((a, b) => b[1].at - a[1].at).slice(0, SHARED_MAX));
+    fs.writeFileSync(`${SHARED}.tmp`, JSON.stringify(map));
+    fs.renameSync(`${SHARED}.tmp`, SHARED);
+    return true;
+  } catch { return false; } finally { fs.closeSync(fd); fs.rmSync(lock, { force: true }); }
+}
 const QWORDS = new Set(['who', 'what', 'where', 'when', 'was', 'is', 'the', 'about', 'tell', 'me', 'in', 'at', 'of', 'history', 'city', 'place', 'person']);
 export const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[ʼʻ'‘’`´]/g, '').toLowerCase().trim();
 
@@ -54,17 +90,22 @@ export function pickTarget(name, cands) {
   return null;
 }
 
-/** The names the texts use for an entity: its mention surfaces (Latin and original script) + recorded aliases. */
-async function namesFor(ids, db = { queryAll }) {
+/** The names the texts use for an entity: its mention surfaces (Latin and original script) + recorded aliases.
+ *  `db` (tests only) runs the three reads in-process through db.queryAll; otherwise they run on a read-pool thread. */
+async function namesFor(ids, db) {
   const out = new Map();
-  const need = ids.filter((id) => { const h = namesCache.get(id); if (h && Date.now() - h.at < TTL) { out.set(id, h.v); return false; } return true; });
+  const now = Date.now();
+  let shared = null;
+  const need = ids.filter((id) => {
+    let h = namesCache.get(id);
+    if (!(h && now - h.at < TTL)) { shared ??= readShared(); h = shared[id]; if (h && now - h.at < TTL) namesCache.set(id, h); else h = null; }
+    if (h) { out.set(id, h.v); return false; }
+    return true;
+  });
   if (need.length) {
-    const ph = need.map(() => '?').join(',');
-    const surf = await db.queryAll(`SELECT entity_id id, surface, COUNT(*) n FROM entity_mentions_v2 WHERE entity_id IN (${ph}) GROUP BY 1, 2 ORDER BY n DESC`, need);
-    const ali = await db.queryAll(`SELECT ge.id, er.aliases FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name AND er.entity_type = ge.entity_type WHERE ge.id IN (${ph})`, need);
-    // Places, works and events are rarely bound as mentions (reconcile types them and never applies the decision), so
-    // their weight in the texts also counts the claims that point AT them ("exiled to Adrianople").
-    const tgt = await db.queryAll(`SELECT target_entity_id id, COUNT(*) n FROM entity_claims WHERE target_entity_id IN (${ph}) GROUP BY 1`, need);
+    const { surfaces: surf, aliases: ali, targets: tgt } = db ? await rowsVia(db, need)
+      : await (await import('./search/read-pool.js')).runRead('entity:names', need);
+    const fresh = {};
     for (const id of need) {
       const s = surf.filter((r) => r.id === id);
       let aliases = [];
@@ -72,11 +113,24 @@ async function namesFor(ids, db = { queryAll }) {
       // Surfaces used at least twice (a one-off surface is often a pronoun or a slip), plus every recorded alias.
       const names = [...new Set([...s.filter((r) => r.n >= 2 || s.length <= 3).map((r) => String(r.surface).trim()), ...aliases])]
         .filter((n) => n.length >= 3 && !/^(he|she|him|his|her|they|it|this|that|there)$/i.test(n)).slice(0, 12);
+      // Places, works and events are rarely bound as mentions (reconcile types them and never applies the decision), so
+      // their weight in the texts also counts the claims that point AT them ("exiled to Adrianople").
       const v = { names, mentions: s.reduce((a, r) => a + r.n, 0) + (tgt.find((r) => r.id === id)?.n || 0) };
-      namesCache.set(id, { at: Date.now(), v }); out.set(id, v);
+      const e = { at: Date.now(), v };
+      namesCache.set(id, e); out.set(id, v); fresh[id] = e;
     }
+    if (!db) writeShared(fresh);
   }
   return out;
+}
+// Test seam: the same three reads as entity-names-repo.entityNameRows, through an injected db.
+async function rowsVia(db, need) {
+  const ph = need.map(() => '?').join(',');
+  return {
+    surfaces: await db.queryAll(`SELECT entity_id id, surface, COUNT(*) n FROM entity_mentions_v2 WHERE entity_id IN (${ph}) GROUP BY 1, 2 ORDER BY n DESC`, need),
+    aliases: await db.queryAll(`SELECT ge.id, er.aliases FROM graph_entities ge LEFT JOIN entity_research er ON er.canonical_name = ge.canonical_name AND er.entity_type = ge.entity_type WHERE ge.id IN (${ph})`, need),
+    targets: await db.queryAll(`SELECT target_entity_id id, COUNT(*) n FROM entity_claims WHERE target_entity_id IN (${ph}) GROUP BY 1`, need),
+  };
 }
 
 /** Resolve a query to its target entity, or null. → { id, name, type, names, matched } */
