@@ -182,3 +182,106 @@ Jev's own error rate.
 | 2-round experiment | 0.45 | measured |
 | Opus judge | 2.70 (W3 0.80, W8 1.52, 2-round 0.38) | measured |
 | **total** | **about 6.5** | against a cap of 8 |
+
+## Two rounds on production search (after the main search speed-up, e4b727df + 4 API instances)
+
+Changes (4340368c, c83c45c8):
+
+1. **Round 2 searches inside the books that round 1 found.** It is code with no model call. Books come first from
+   document_search (searched with the reader's question), then from each search's documents, round-robin by rank. Each book
+   is searched with fused_search (`filters.documentId`, 5 hits), all in parallel. There are 3 books, or 4 at
+   depth=research, and a failed book loses only its own passages.
+2. **Jev's understanding strategy gets the same step.** The W8 goth questions route there.
+3. **The writer's token cap is 2,400 for comparison and understanding.** It was 1,100.
+4. **Reference fixes.** A whole chapter is quoted whole, up to 60 rows. A range in an edition without verse numbers now
+   covers every verse asked for.
+
+Harness: the same `anisTurn`, with search, tools **and the reference/prayer document reads** served by production's public
+API (`/api/documents`). The W3 reference reads are therefore real. CONC=2. Judge: the same blind Opus rejudge against the
+same Perplexity answers. A win means Anís scored at least as well as Perplexity.
+
+| run (measured) | first text p50 / p90 | total p50 / p90 | $ turns | wins | target |
+|---|---|---|---|---|---|
+| **W3, 27** | **4.3 / 7.6 s** | 10.7 / 13.9 s | 0.81 | **18/27** (1 judge error, counted as a loss) | 21/27 |
+| **W8, 42** | **6.6 / 8.5 s** | 12.7 / 15.8 s | 1.91 | **23/42** | 32/42 |
+| W3, the 1-round run above | 6.4 / 8.4 s | 10.3 / 14.6 s | | 14/27 | |
+| W8, the 1-round run above | 9.4 / 14.6 s | 15.6 / 20.6 s | | 14/42 | |
+
+First text p50 by route (measured):
+
+- W3: reference 2.6 s, guidance 3.4 s, prayer 4.0 s, comparison 4.2 s, understanding 6.4 s, other 5.7 s.
+- W8: understanding 4.6 s, researcher 6.9 s.
+
+The W8 researcher path, as offsets from the start of the turn (p50 / p90, 32 turns):
+
+| step | offset |
+|---|---|
+| Haiku plan done | 1.9 / 2.6 s |
+| round-1 searches done | 4.3 / 5.2 s |
+| round 2 (in-book) done | 4.9 / 6.8 s |
+| writer's first chunk | +1.2 / 2.1 s after it starts, with about 16.8k input tokens |
+
+Search (p50 1.8 s, p90 3.0 s, 1.8 per turn) is still the largest step. Round 2 costs about 0.6 s at p50, because fused_search
+inside a book takes 0.4 s.
+
+### Wins by class
+
+| | W3 class | wins | | W8 kind | wins |
+|---|---|---|---|---|---|
+| | comparison | 2/5 | | history (db) | 22/32 |
+| | understanding | 3/4 | | goth (Saiedi) | **1/10** |
+| | prayer | 5/5 | | | |
+| | guidance | 3/4 | | | |
+| | reference | 2/5 | | | |
+| | negative controls | 3/4 | | | |
+
+### Why each class loses (the judge's reasons, abridged)
+
+- **goth: 9 of 10 lost. Round 1 never finds Gate of the Heart.**
+  - Inside the book the search is excellent. Measured: fused_search with documentId 8632 for "Saiedi interpretive revelation
+    modes of revelation" returns ¶165 ("The Báb's interpretation is interpretive revelation…") and ¶185-186 (the four modes),
+    in 0.8 s.
+  - The general search does not surface it. The planned search for "In Gate of the Heart, how does Nader Saiedi divide the
+    Báb's writings into three stages?" returned God Passes By ×4, the Arabic Bayán and Panj Sha'n. Its `_plan` had
+    `prefer: null` and no target work. fused_search across the library returned the *review* of the book (284049), not the
+    book itself.
+  - document_search with `title: "Gate of the Heart"` finds 8632 at once (encumbered: 1). But the researcher's Haiku did not
+    call it in goth-01, although the prompt asks it to. The understanding strategy has no title lookup.
+  - Judge, goth-02: "names none of the modes, and sends the reader off to search again".
+  - Fix candidates (not built):
+    - Jev's search-plan `author`/work slot should name Saiedi / Gate of the Heart for these questions; its plan returns
+      `prefer: null` today.
+    - Alternatively, the live path could pass Jev's named work to document_search, so the work's id joins round 2.
+    - Either way Jev decides. No word rules.
+- **db: 10 of 32 lost.**
+  - The losses are the narrative still told thinly: "leaves out the heart of the night" (db-01), "the siege itself in one
+    thin paragraph" (db-02), and "names no towns between Iṣfahán and Tabríz" (db-24).
+  - Some losses are refusals when the passage was present: db-28 "won't name the siyyid … though both are in the passage
+    right before the quoted lines".
+  - Some are wrong dates: db-19 places the end of Ṭabarsí in autumn 1849, and db-26 dates Nayríz to 1850.
+  - db-32: "cannot tell which Tablet is meant".
+- **W3 reference: 3 of 5 lost.**
+  - Psalm 23 now wins: it is quoted whole.
+  - Isaiah 11:6-9 still gets verses 8-9 only. In this KJV edition chapter 11 is 13 rows for 16 verses, with no verse marks,
+    so the place by position is off by two rows.
+  - Gita 2:47 loses because Arnold's verse translation has no verse numbers, and position lands at the chapter's end.
+  - Áyat al-Kursí loses only on detail (7 vs 8: no Arabic).
+- **W3 comparison: 3 of 5 lost** (missing-side, fasting, afterlife). A thin or declined side: no 3 Nephi 24, calendars not
+  compared, the Gita passage cut off. With the 2,400 cap these are no longer truncations. They are retrieval: one search
+  per side.
+- **guidance (supersede) and the negative-control prayer question:** "mostly says what it cannot determine".
+
+### Spend (this phase, measured)
+
+| item | $ |
+|---|---|
+| turns: W3 0.80, W8 1.91, W3 reference re-run 0.09 | 2.80 |
+| Opus judge: W3 0.81, W8 1.51, W3 rejudge 0.80 | 3.12 |
+| **total** | **5.92**, against the $8 cap for this phase |
+
+**Verdict:**
+
+- Speed: W3 passes (4.3 s). W8 misses the 6 s p50 target by 0.6 s, at 6.6 s.
+- Quality: both batteries fail the gate (18/27 against 21/27, 23/42 against 32/42). Both improved on one round (14/27,
+  14/42).
+- Most of the W8 gap is the goth class. Its cause is finding the book (Jev's plan names no work), not the number of rounds.
