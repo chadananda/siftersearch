@@ -77,6 +77,34 @@ describe('sourceHunt', () => {
     expect(r.tablet.meta.links.oceanoflights).toContain('oceanoflights.org');
   });
 
+  describe('coreOnly (Anís quotation_trace, Chad 11-03: core literature, not secondary commentary)', () => {
+    const B = "Baha'i";
+    const rowsWith = (keep) => async (ids) => ids.filter((i) => keep.includes(i)).map((i) => ROWS[i]).filter(Boolean)
+      .map((r) => ({ ...r, religion: B, collection: r.id === 1 ? 'Bahá’u’lláh' : "Baha'i Books", url: `u/${r.id}` }));
+    it('the line held only by commentary has no origin', async () => {
+      const r = await sourceHunt(QUOTE, deps({ rows: rowsWith([2, 3]) }), { coreOnly: true });
+      expect(r.origin).toBeNull();
+      expect(r.citedBy).toEqual([]);
+      expect(r.considered.length).toBeGreaterThan(0);
+    });
+    it('without coreOnly the same pool still names its best holder (the /sourcehunt page and the API are unchanged)', async () => {
+      const r = await sourceHunt(QUOTE, deps({ rows: rowsWith([2, 3]) }));
+      expect(r.origin).not.toBeNull();
+    });
+    it('a core holder is the origin, and the commentary is still listed as quoting it', async () => {
+      const r = await sourceHunt(QUOTE, deps({ rows: rowsWith([1, 2, 3, 4]) }), { coreOnly: true });
+      expect(r.origin).toMatchObject({ id: 1, title: 'Gleanings' });
+      expect(r.citedBy.map((c) => c.title)).toContain('Lights of Guidance');
+    });
+    it('the best-ranked holder is skipped when it is not core (a Central Figure quoted on a scraped site)', async () => {
+      const rows = async (ids) => (await rowsWith([1, 3])(ids)).map((r) => (r.id === 1 ? { ...r, source_site: 'bahai-library.com', collection: "Baha'i Books" }
+        : { ...r, authors: '[{"name":"Bahá’u’lláh","role":"author"}]', collection: 'Core Publications', source_site: null, book_author: 'Bahá’u’lláh' }));
+      expect((await sourceHunt(QUOTE, deps({ rows }))).origin.id).toBe(1);   // ranked first without the rule
+      const r = await sourceHunt(QUOTE, deps({ rows }), { coreOnly: true });
+      expect(r.origin).toMatchObject({ id: 3 });
+    });
+  });
+
   it('with no linked original, offers cross-lingual candidates labelled as such', async () => {
     const r = await sourceHunt(QUOTE, deps({ links: async (ids, { quotedBy }) => new Map(ids.map((id) => [id, { sources: [], original: null, quotedBy: quotedBy ? { count: 0, passages: [] } : undefined }])) }));
     expect(r.tablet.certain).toBe(false);

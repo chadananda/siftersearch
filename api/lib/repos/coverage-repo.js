@@ -7,7 +7,8 @@ import { queryOne, queryAll, transaction } from '../db.js';
 import { getAuthority } from '../authority.js';
 
 /** Doctrinal core (Chad 10-16: "probably doctrinal core first"): scripture and authoritative interpretation, authority ≥ 8. */
-export const CORE_AUTHORITY = 8;
+import { CORE_AUTHORITY } from '../rights/canonical.js';
+export { CORE_AUTHORITY };
 export const isCore = (doc) => { try { return getAuthority(doc) >= CORE_AUTHORITY; } catch { return false; } };
 
 /** A document shorter than this (paragraphs with text) is a single work — a tablet, a letter, a talk: it needs no TOC. */

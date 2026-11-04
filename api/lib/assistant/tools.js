@@ -304,7 +304,8 @@ const ENTRIES = [
     async run({ quotation }, ctx = {}) {
       const hunt = ctx.sourceHunt || (await import(MOD.hunt)).sourceHunt;
       const via = (name) => async (...args) => (await layerFn(name, ctx))(...args);
-      const r = await hunt(quotation, { phrases: via('phrase_search'), keyword: via('literal_search') }).catch(() => null);
+      // the source must be CORE literature (Chad 11-03); a line held only by commentary has no source here
+      const r = await hunt(quotation, { phrases: via('phrase_search'), keyword: via('literal_search') }, { coreOnly: true }).catch(() => null);
       if (!r?.origin) return { passages: [] };
       const o = r.origin, t = r.tablet?.certain ? r.tablet : null, c0 = !t ? r.tablet?.candidates?.[0] : null, who = r.quoteAuthor || o.author;
       const orig = (x, role) => toPassage({ text: x.text, title: x.meta?.title || x.title, author: who, source_url: x.meta?.links?.oceanoflightsRange || x.rangeUrl || x.url,

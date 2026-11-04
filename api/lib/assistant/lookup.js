@@ -6,6 +6,7 @@ import { detectQuotation, stripMarkup } from '../quote-detect.js';
 import { foldVerbatim } from '../search/verbatim.js';
 import { findTitled, titleCandidates } from './work-request.js';
 import { sectionRange } from './numbering.js';
+import { isCoreLiterature } from '../rights/canonical.js';
 
 const ROMAN = /^(?=[ivxlcdm]+$)m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$/i;
 const romanToInt = (r) => { const v = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 }; let n = 0, p = 0;
@@ -108,7 +109,9 @@ export async function resolveLookup(messages, deps = {}) {
     search ? search(phrase, null, 10).catch(() => []) : []]);
   // a title-match that is a stub (a prayer or fragment whose TITLE is its first line, doc 28444 "Be generous in prosperity…") is the wording itself, not a work
   const book = b && (b.work.doc.paragraph_count ?? 99) >= 20 ? b : null;
-  const ok = hits.map((h) => ({ h, ...holds(h.text, phrase) })).filter((x) => x.near).sort((a, b2) => Number(b2.exact) - Number(a.exact));
+  // only CORE literature makes a quote candidate (Chad 11-03): a line held only by commentary, a talk or a pilgrim note is not
+  // a quotation to source here (those books are still cited later in answers; only this candidate step is scoped)
+  const ok = hits.filter(isCoreLiterature).map((h) => ({ h, ...holds(h.text, phrase) })).filter((x) => x.near).sort((a, b2) => Number(b2.exact) - Number(a.exact));
   const quote = ok.length ? done({ kind: 'quote', phrase, passages: ok.slice(0, 5).map((x) => x.h) }) : null;
   if (!book || !quote) return book || quote;
   const pick = await (deps.pickQuoteOrBook || pickQuoteOrBook)(messages, { book, quote }, { profile: deps.profile, onJev: deps.onJev,

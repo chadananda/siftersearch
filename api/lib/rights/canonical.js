@@ -49,6 +49,27 @@ export function canonicalOf(doc = {}) {
 }
 export const isCanonical = (doc) => canonicalOf(doc).canonical;
 
+// CORE LITERATURE (Chad 11-03, quotation candidates: "It has to be limited to core literature, not secondary commentary") — the
+// Writings of the Báb, Bahá'u'lláh, 'Abdu'l-Bahá and Shoghi Effendi in an AUTHENTICATED book, and other traditions' scripture.
+// No new classification — three existing ones together, each alone is wrong:
+//   the paragraph's writer (WRITER_RE above; content.authors via paragraphDoc `author`) — commentary quoting the line shares it;
+//   the doc's shelf (canonicalOf on the doc alone, writer ignored) — but it admits the House and Administrative;
+//   the doc's authority number (authority.js getAuthority, = paragraphDoc `book_authority`): Bahá'í ≥ 7, the "authenticated text"
+//     line doctrinalFactor draws (OceanLibrary's Shoghi Effendi / 'Abdu'l-Bahá works are 7); other traditions ≥ CORE_AUTHORITY 8
+//     (coverage-repo isCore) unless the copy is OceanLibrary's own.
+// hit { author (the PARAGRAPH's writer), religion, collection, source_site, source_url, book_authority }. A fact missing → not core.
+export const CORE_AUTHORITY = 8;
+export const AUTHENTICATED_AUTHORITY = 7;
+export function isCoreLiterature(hit = {}) {
+  const col = String(hit.collection || '').trim();
+  if (!hit.religion || /^media$/i.test(col) || /pilgrim notes/i.test(col)) return false;   // talks, recollections: commentary
+  const shelf = canonicalOf({ ...hit, author: null });
+  if (!shelf.canonical) return false;
+  const auth = hit.book_authority == null ? NaN : Number(hit.book_authority);
+  if (isBahai(hit.religion)) return WRITER_RE.test(norm(hit.author)) && auth >= AUTHENTICATED_AUTHORITY;
+  return shelf.basis === 'oceanlibrary' || auth >= CORE_AUTHORITY;
+}
+
 // Shelves that hold books (a book is eligible for the ISBN rule; nothing else is).
 export const BOOK_COLLECTIONS = Object.freeze(['Books', "Baha'i Books", 'Reference', 'Study Guides', 'Shaykhi and Babi Studies',
   ...MODERN_OTHER_COLLECTIONS]);

@@ -10,6 +10,9 @@ import { modelFor } from '../../api/lib/model-roles.js';
 const GL = { doc: { id: 8312, title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', religion: "Baha'i" }, score: 1 };
 const P = 'The earth is but one country, and mankind its citizens.';
 const user = (content) => [{ role: 'user', content }];
+// a passage in CORE literature (Chad 11-03: only core matches make a quote candidate) and one in commentary
+const CORE = { author: 'Bahá’u’lláh', religion: "Baha'i", collection: 'Core Publications', book_authority: 8 };
+const COMMENTARY = { author: 'John Huddleston', religion: "Baha'i", collection: "Baha'i Books", book_authority: 5 };
 
 describe('parsing', () => {
   it('reads a numbered reference', () => {
@@ -63,7 +66,7 @@ describe('resolveLookup (mocked deps)', () => {
     expect(r).toBeNull();
   });
   it('quoted words are confirmed by a passage that holds them, exact first', async () => {
-    const hits = [{ text: 'mankind its citizens and the earth' }, { text: `Know that ${P}` }];
+    const hits = [{ ...CORE, text: 'mankind its citizens and the earth' }, { ...CORE, text: `Know that ${P}` }];
     const r = await resolveLookup(user(`"${P}"`), { intent: 'quote', findTitled: async () => null, search: async () => hits });
     expect(r.kind).toBe('quote');
     expect(r.passages[0].text).toContain(P);
@@ -89,7 +92,7 @@ describe('resolveLookup (mocked deps)', () => {
   it('quote intent: a stub document titled with the wording is not a work; the phrase search runs', async () => {
     const STUB = { doc: { id: 9, title: 'Be generous in prosperity', paragraph_count: 2 }, others: [] };
     const r = await resolveLookup(user('"Be generous in prosperity, and thankful in adversity"'), { intent: 'quote', findTitled: async () => STUB,
-      search: async () => [{ text: 'Be generous in prosperity, and thankful in adversity. Be a treasure to the poor' }] });
+      search: async () => [{ ...CORE, text: 'Be generous in prosperity, and thankful in adversity. Be a treasure to the poor' }] });
     expect(r.kind).toBe('quote');
   });
   it('a confident Jev reference choice outranks an "unclear" message kind, and the choice is recorded in the turn meta', async () => {
@@ -101,6 +104,25 @@ describe('resolveLookup (mocked deps)', () => {
     await anisTurn({ messages: user('Gleanings 1'), participant: { id: 's' }, clientKey: 's', onEvent: () => {}, deps });
     expect(seen[0]?.lookup?.kind).toBe('reference');
     expect(closed.path.triage.lookup).toEqual({ choice: 'reference', confidence: 0.99 });
+  });
+  it('quoted words found only in commentary make no quote candidate (Chad 11-03: core literature only)', async () => {
+    const famous = [{ ...COMMENTARY, text: `As Bahá’u’lláh wrote: ${P}` }, { ...CORE, collection: 'Pilgrim Notes', book_authority: 7, text: P },
+      { ...CORE, collection: 'Media', book_authority: 2, text: P }];
+    expect(await resolveLookup(user(`"${P}"`), { intent: 'quote', findTitled: async () => null, search: async () => famous })).toBeNull();
+  });
+  it('a core match makes the candidate, and commentary holding the same words is left out of it', async () => {
+    const hits = [{ ...COMMENTARY, id: 1, text: P }, { ...CORE, id: 2, text: P }];
+    const r = await resolveLookup(user(`"${P}"`), { intent: 'quote', findTitled: async () => null, search: async () => hits });
+    expect(r).toMatchObject({ kind: 'quote' });
+    expect(r.passages.map((h) => h.id)).toEqual([2]);
+  });
+  it('commentary only, but the words are a book title: the book (no quote candidate to contest it), Jev not asked', async () => {
+    let asked = 0;
+    const BOOK = { doc: { id: 77, title: 'The Earth Is But One Country', author: 'John Huddleston', paragraph_count: 900 }, others: [] };
+    const r = await resolveLookup(user('the earth is but one country'), { intent: 'quote', findTitled: async () => BOOK,
+      search: async () => [{ ...COMMENTARY, text: P }], pickQuoteOrBook: async () => { asked++; } });
+    expect(r).toMatchObject({ kind: 'book', work: BOOK });
+    expect(asked).toBe(0);
   });
   it('quoted words not in any passage, or no Jev intent, return null (today\'s path)', async () => {
     expect(await resolveLookup(user(P), { intent: 'quote', findTitled: async () => null, search: async () => [{ text: 'mankind citizens earth' }] })).toBeNull();
@@ -237,7 +259,7 @@ describe('numbered works with no number in the text (gate fix 3: "Some Answered 
 
 describe('a quote that is also a book title (gate fix 5: "the earth is but one country" opened Huddleston)', () => {
   const BOOK = { doc: { id: 77, title: 'The Earth Is But One Country', author: 'John Huddleston', paragraph_count: 900 }, others: [] };
-  const HIT = { id: 3, title: 'Gleanings from the Writings of Bahá’u’lláh', text: `${P} Let not a man glory…` };
+  const HIT = { ...CORE, id: 3, title: 'Gleanings from the Writings of Bahá’u’lláh', text: `${P} Let not a man glory…` };
   const log = () => { const rows = []; return { rows, record: (point, d) => rows.push({ point, ...d }) }; };
   const base = (pick, decisions) => ({ intent: 'quote', findTitled: async () => BOOK, search: async () => [HIT], decisions, pickQuoteOrBook: pick });
   it('both candidates exist: Jev chooses with both in view (the passage), and the choice is logged', async () => {

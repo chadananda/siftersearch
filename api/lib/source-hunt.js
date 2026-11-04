@@ -9,7 +9,8 @@ import { translatedBy } from './authorship/translators.js';
 import { overlap, matchWords } from './passage-links.js';
 import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
-import { authorAuthority } from './authority.js';
+import { authorAuthority, getAuthority } from './authority.js';
+import { isCoreLiterature } from './rights/canonical.js';
 import { segment, cleanText } from './phrases.js';
 
 /** Stored text still carries HTML entities in ~96k paragraphs (mostly the bahai-library.com copies: `&quot;` around a
@@ -207,7 +208,13 @@ export function rankOrigins(cands, quoteAuthor = null, religion = null) {
 // opts.emit(stage, data): each stage's REAL result as soon as it exists — the page's live console replays these (never
 // invented progress). Stages: query · candidates · verbatim · links · writer · targeted · origin · cited · tablet.
 const docBrief = (r) => ({ id: r.doc_id, title: r.title, site: r.source_site || 'library', religion: r.religion || null });
-export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null, religion = null } = {}) {
+// coreOnly (Anís quotation_trace, Chad 11-03): the ORIGIN must be core literature — the Writings in an authenticated book, or
+// scripture (rights/canonical.js isCoreLiterature, judged on the paragraph's writer, the doc's shelf and its getAuthority
+// number, as paragraphDoc's book_authority). No core holder → origin null. Off by default (the /sourcehunt page and the API
+// still name the best holder of any kind). Commentary still competes in ranking and is still listed as citing it.
+const bookAuthority = (c) => { if (c.book_authority != null) return c.book_authority; try { return getAuthority({ ...c, author: c.book_author }); } catch { return null; } };
+const isCoreHolder = (c) => isCoreLiterature({ ...c, author: c.writer, book_authority: bookAuthority(c) });
+export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null, religion = null, coreOnly = false } = {}) {
   const NEED = ['phrases', 'keyword', 'links', 'passages', 'meta', 'rows'];
   let d = NEED.every((k) => deps[k]) ? deps : { ...(await defaultDeps()), ...deps };
   // exclude: { documentIds, titles } — publications that may not be the answer (checking a compilation's own selections: the
@@ -314,7 +321,13 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const lead = rankOrigins(pool, quoteAuthor, religion).slice(0, 8);
   const qc = await d.links(lead.map((c) => c.id), { quotedBy: true }).catch(() => new Map());
   for (const c of lead) c.quotedCount = qc.get(c.id)?.quotedBy?.count || 0;
-  const ranked = rankOrigins(pool, quoteAuthor, religion), origin = ranked[0];
+  const ranked = rankOrigins(pool, quoteAuthor, religion), origin = coreOnly ? ranked.find(isCoreHolder) : ranked[0];
+  if (!origin) {
+    say('origin', { origin: null, candidates: ranked.length, coreOnly: true });
+    return { quote: q.text, quoteAuthor, origin: null, citedBy: [], tablet: null, coreOnly: 'no core-literature holder', ms: Date.now() - t0,
+      considered: ranked.slice(0, 6).map((c) => ({ id: c.id, title: c.title, writer: c.writer, site: c.source_site || 'library', collection: c.collection || null })),
+      ...(degraded.size ? { degraded: [...degraded] } : {}) };
+  }
   // the quote's words in order where the source holds this wording; otherwise (another translation, a paraphrase) the
   // passage's phrases nearest the quote BY MEANING — the same phrase-vector spans that mark the original
   // the citation graph for the origin starts NOW, beside the source highlight (they do not depend on each other)
