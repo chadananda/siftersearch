@@ -50,6 +50,8 @@ export function engineStages(t = {}) {
   const out = {};
   for (const k of Object.keys(ENGINE_BUDGETS)) if (num(t[k]) != null) out[k] = t[k];
   for (const [c, ms] of Object.entries(t.qdrant_by || {})) if (num(ms) != null) out[`qdrant:${c}`] = ms;
+  // Qdrant's own time for that collection's slowest-server call: informational (no budget) — wall − server = our overhead
+  for (const [c, ms] of Object.entries(t.qdrant_server_by || {})) if (num(ms) != null) out[`qsrv:${c}`] = ms;
   return out;
 }
 

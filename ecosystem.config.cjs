@@ -53,8 +53,13 @@ module.exports = {
       cwd: PROJECT_ROOT,
       // ZERO-DOWNTIME DEPLOYS (10-10): fork mode reloads = stop then start, ~30 s of 502s on the site per deploy (Chad saw
       // them in the console). Cluster mode with one instance makes `pm2 reload` / startOrReload start the NEW process,
-      // wait for its 'ready' (api/index.js sends it after listen), then stop the old one. One instance — not a scale-out.
-      instances: 1,
+      // wait for its 'ready' (api/index.js sends it after listen), then stop the old one.
+      // FOUR instances (11-03 search speed: one event loop queued every search behind the others — bare p95 2.8 s at 8
+      // parallel). pm2 cluster round-robins connections on 7845, so the gateway balances with no change; once-per-service
+      // work (migrate, seed, sync worker, grounding supervisor) runs on NODE_APP_INSTANCE 0 only (api/lib/instance.js).
+      // Each instance ≈ 2.6 GB idle (warm indexes) → ~11 GB of tower's 188 GB. The updater scales a running app to this
+      // count after startOrReload (scripts/lib/instance-drift.mjs) — pm2 startOrReload alone never changes it.
+      instances: 4,
       exec_mode: 'cluster',
       watch: false,
       // 188GB RAM box — be generous. The previous 500M (and stale 100M
@@ -63,7 +68,8 @@ module.exports = {
       // PM2 killed the process mid-request. Bumped to 3G (2026-05-04) —
       // 1.5G was still tight enough that a single chat with reranking +
       // search cache + Jafar pipeline could trip it.
-      max_memory_restart: '3G',
+      // 4G (11-03): an idle instance already holds ~2.6 GB of warm indexes, so 3G left ~400 MB of headroom per search.
+      max_memory_restart: '4G',
       // wait_ready is back ON, bounded: the old death spiral (slow Meilisearch) cannot recur because listen_timeout makes
       // pm2 proceed after 60 s even without 'ready' — a slow boot costs the overlap, never a restart loop.
       wait_ready: true,

@@ -1,6 +1,6 @@
 // Qdrant search layers: filter mapping, request shapes, and hit shapes (fetch mocked — no network).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, authorKey, resolveQdrantFilters } from '../../api/lib/search/qdrant-layers.js';
+import { toQdrantFilter, searchPhrases, searchKeywordQdrant, searchHypeQdrant, authorKey, resolveQdrantFilters, withQdrantCallLog } from '../../api/lib/search/qdrant-layers.js';
 
 vi.mock('../../api/lib/ai-services.js', () => ({ logAIUsage: () => {} }));   // hermetic: no telemetry writes
 vi.mock('../../api/lib/docs-repo.js', () => ({
@@ -45,7 +45,7 @@ describe('layers', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('phrases: a plain top-(limit×4) query, best phrase per paragraph kept in score order (no /query/groups)', async () => {
+  it('phrases: a plain top-(limit×2) query, best phrase per paragraph kept in score order (no /query/groups)', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url, init) => {
       const body = JSON.parse(init.body); calls.push({ url, body });
       if (url.includes('generativelanguage')) return { ok: true, json: async () => ({ embedding: { values: [0.1, 0.2] } }) };
@@ -59,7 +59,7 @@ describe('layers', () => {
     expect(calls[0].body.content.parts[0].text).toBe('task: search result | query: the light of justice');
     expect(calls[1].url).toContain('/collections/phrases/points/query');
     expect(calls[1].url).not.toContain('/groups');
-    expect(calls[1].body).toMatchObject({ using: 'literal', limit: 20, params: { quantization: { rescore: true } } });
+    expect(calls[1].body).toMatchObject({ using: 'literal', limit: 10, params: { quantization: { rescore: true } } });
     expect(calls[1].body.group_by).toBeUndefined();
     expect(r.hits).toEqual([
       { paragraph_id: 11, doc_id: 2, score: 0.9, span: { start: 5, end: 40 } },
@@ -78,8 +78,34 @@ describe('layers', () => {
       return { ok: true, json: async () => ({ result: { points: Array.from({ length: 8 }, () => ({ score: 0.8, payload: { paragraph_id: 11, doc_id: 2, start: 5, end: 40 } })) } }) };
     }));
     const r = await searchPhrases('one paragraph dominates', { limit: 2 });
-    expect(calls.at(-1).url).toContain('/collections/phrases/points/query/groups');
+    // ×2 full but short of paragraphs → ×4 plain, still short → grouped (11-03: escalate, never pay ×4 up front)
+    expect(calls.slice(1).map((c) => [c.url.endsWith('/groups') ? 'groups' : 'plain', c.body.limit])).toEqual([['plain', 4], ['plain', 8], ['groups', 2]]);
     expect(r.hits.map((h) => h.paragraph_id)).toEqual([11, 13]);
+  });
+
+  it('phrases: ×2 short of distinct paragraphs, ×4 enough → the ×4 plain answer, no grouped query', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+      const body = JSON.parse(init.body); calls.push({ url, body });
+      if (url.includes('generativelanguage')) return { ok: true, json: async () => ({ embedding: { values: [0.1, 0.2] } }) };
+      const pts = Array.from({ length: body.limit }, (_, i) => ({ score: 1 - i / 100, payload: { paragraph_id: body.limit === 4 ? 11 : 11 + i, doc_id: 2, start: 0, end: 9 } }));
+      return { ok: true, json: async () => ({ result: { points: pts } }) };
+    }));
+    const r = await searchPhrases('mostly one paragraph', { limit: 2 });
+    expect(calls.slice(1).map((c) => c.body.limit)).toEqual([4, 8]);
+    expect(calls.some((c) => c.url.endsWith('/groups'))).toBe(false);
+    expect(r.hits.map((h) => h.paragraph_id)).toEqual([11, 12]);
+  });
+
+  it('every call logs wall ms AND Qdrant\'s own server time, so the trace separates our overhead from Qdrant work', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+      if (url.includes('generativelanguage')) return { ok: true, json: async () => ({ embedding: { values: [0.1, 0.2] } }) };
+      return { ok: true, json: async () => ({ result: { groups: [] }, time: 0.0042 }) };
+    }));
+    const log = [];
+    await withQdrantCallLog(log, () => searchHypeQdrant('server time please', { limit: 3 }));
+    expect(log).toHaveLength(1);
+    expect(log[0]).toMatchObject({ collection: 'hype', server_ms: 4.2 });
+    expect(typeof log[0].ms).toBe('number');
   });
 
   it('hype: the hype collection, same query vector model, one hit per paragraph', async () => {
@@ -162,9 +188,11 @@ describe('metadata documents are not passages', async () => {
 
 describe('SEARCH_PARAMS', async () => {
   const { SEARCH_PARAMS } = await import('../../api/lib/search/qdrant-layers.js');
-  it('phrase and hype rescore at oversampling 2 (measured 29–30/30 top-30 agreement with 4, 11-01); never without rescore', () => {
-    expect(SEARCH_PARAMS.phrase).toMatchObject({ rescore: true, oversampling: 2 });
-    expect(SEARCH_PARAMS.hype).toMatchObject({ rescore: true, oversampling: 2 });
+  // 11-03 (tower, 60 fresh real vectors, vs oversampling 4 at limit×4): phrase ×2 os1 top-30 28.4/30 (current ×4 os2 29.3),
+  // top-10 9.4/10; hype grouped os1 29.7/30 (os2 29.8). Cold cost: phrases 43 → 17 ms, hype 33 → 23 ms. No rescore: 20.8/30.
+  it('phrase and hype rescore at oversampling 1 (measured 11-03); never without rescore', () => {
+    expect(SEARCH_PARAMS.phrase).toMatchObject({ rescore: true, oversampling: 1 });
+    expect(SEARCH_PARAMS.hype).toMatchObject({ rescore: true, oversampling: 1 });
     expect(SEARCH_PARAMS.concept.rescore).toBe(true);
   });
 });
@@ -213,5 +241,26 @@ describe('qdrant transport', () => {
     expect(typeof log[0].ms).toBe('number');
     await searchKeywordQdrant('outside any log', { limit: 3 });
     expect(log).toHaveLength(1);
+  });
+});
+
+describe('query-embedding memo is a true LRU (11-03: a repeated query skips the 300-900 ms Gemini call)', async () => {
+  const { memoGet, memoSet, EMBED_MEMO } = await import('../../api/lib/search/qdrant-layers.js');
+  it('a hit moves the entry to the newest end, so eviction drops the least RECENTLY used, not the oldest inserted', () => {
+    const m = new Map();
+    memoSet(m, 'a', 1, 2, 0); memoSet(m, 'b', 2, 2, 0);
+    expect(memoGet(m, 'a', 1, 1000)).toBe(1);   // touch a
+    memoSet(m, 'c', 3, 2, 2);                    // evicts b, not a
+    expect([...m.keys()]).toEqual(['a', 'c']);
+  });
+  it('an entry past its TTL is a miss and is dropped', () => {
+    const m = new Map();
+    memoSet(m, 'a', 1, 5, 0);
+    expect(memoGet(m, 'a', 1001, 1000)).toBe(undefined);
+    expect(m.size).toBe(0);
+  });
+  it('holds hours, not minutes (a query vector never changes for the same model) and ~2k queries (~50 MB/instance)', () => {
+    expect(EMBED_MEMO.ttlMs).toBeGreaterThanOrEqual(6 * 3600_000);
+    expect(EMBED_MEMO.max).toBeGreaterThanOrEqual(2000);
   });
 });

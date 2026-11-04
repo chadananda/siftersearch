@@ -36,11 +36,29 @@ let hotWarnedAt = 0;
 const hotFailed = (err) => { if (Date.now() - hotWarnedAt > 300000) { hotWarnedAt = Date.now(); console.warn(`qdrant-hot unavailable — phrases from main only: ${err.message}`); } };
 const MODEL = 'gemini-embedding-2', DIMS = 3072;
 
-const memo = new Map();   // query → { at, p }
+// Query vectors, LRU per process (11-03): the same text always embeds to the same vector, so hours of TTL lose nothing;
+// a hit skips the Gemini call (p50 ~325 ms, p95 ~960 ms under load). 2k × 3072 numbers ≈ 50 MB per API instance.
+export const EMBED_MEMO = Object.freeze({ max: 2000, ttlMs: 12 * 3600_000 });
+/** LRU read: a fresh hit moves to the newest end; an expired one is dropped. Pure over (map, now). */
+export function memoGet(map, key, now = Date.now(), ttlMs = EMBED_MEMO.ttlMs) {
+  const hit = map.get(key);
+  if (!hit) return undefined;
+  map.delete(key);
+  if (now - hit.at >= ttlMs) return undefined;
+  map.set(key, hit);
+  return hit.v;
+}
+/** LRU write: evicts the least recently used past `max`. */
+export function memoSet(map, key, v, max = EMBED_MEMO.max, now = Date.now()) {
+  map.delete(key);
+  while (map.size >= max) map.delete(map.keys().next().value);
+  map.set(key, { at: now, v });
+}
+const memo = new Map();   // query → { at, v: Promise<vector> }
 export function geminiQueryVector(text) {
   const key = String(text ?? '');
-  const hit = memo.get(key);
-  if (hit && Date.now() - hit.at < 600000) return hit.p;
+  const hit = memoGet(memo, key);
+  if (hit) return hit;
   const p = resilientFetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:embedContent?key=${process.env.GEMINI_API_KEY}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
     body: JSON.stringify({ model: `models/${MODEL}`, content: { parts: [{ text: `task: search result | query: ${key}` }] }, outputDimensionality: DIMS }),
@@ -54,8 +72,7 @@ export function geminiQueryVector(text) {
     logAIUsage({ provider: 'google', model: MODEL, serviceType: 'embedding', caller: 'search-query', promptTokens: Math.ceil((key.length + 30) / 4) });
     return (await r.json()).embedding.values;
   }).catch((err) => { memo.delete(key); throw err; });
-  if (memo.size >= 500) memo.delete(memo.keys().next().value);
-  memo.set(key, { at: Date.now(), p });
+  memoSet(memo, key, p);
   return p;
 }
 
@@ -115,9 +132,14 @@ export async function resolveQdrantFilters(filters = {}) {
 // 11-01 (tower, read-only bench, 10 random vectors, Bahá'í primary filter, limit 120): oversampling 2 vs 4 → top-30
 // paragraphs agree 29–30/30 on phrases and hype; no rescore → ~22/30. Half the disk reads, and Qdrant is read-bound under
 // the agent's parallel searches (6 at once → 1.4 s each, 30 → 4.8 s). concept: not measured, stays 4.
+// 11-03 (tower, read-only, FRESH real vectors — a repeated vector is served from page cache and times ~5× too fast): the
+// rescore read of on-disk originals is the cost (phrases limit 60: 27 ms with rescore, 10 without; payload ~2 ms; filter 0).
+// oversampling 1 vs 4 (at limit×4): phrase ×2 top-30 28.4/30, top-10 9.4/10 (old ×4 os2: 29.3, 9.7); hype grouped
+// 29.7/30 (os2 29.8). No rescore: 20.8/30 phrase, 24.4 hype — not acceptable. Cost: phrases 43 → 17 ms, hype 33 → 23 ms
+// (conc 8: 155 → 40, 61 → 40). Only originals in RAM (hype ≈ 14–28 GB) get a rescored search near 10 ms.
 export const SEARCH_PARAMS = Object.freeze({
-  phrase: Object.freeze({ rescore: true, oversampling: 2, hnsw_ef: null }),
-  hype: Object.freeze({ rescore: true, oversampling: 2, hnsw_ef: null }),
+  phrase: Object.freeze({ rescore: true, oversampling: 1, hnsw_ef: null }),
+  hype: Object.freeze({ rescore: true, oversampling: 1, hnsw_ef: null }),
   concept: Object.freeze({ rescore: true, oversampling: 4, hnsw_ef: null }),
 });
 const searchParams = (p) => ({ quantization: { rescore: p.rescore, oversampling: p.oversampling }, ...(p.hnsw_ef ? { hnsw_ef: p.hnsw_ef } : {}) });
@@ -139,9 +161,11 @@ async function qdrant(path, body, timeoutMs = 2500, base = QD()) {
     // Qdrant (a payload backfill or build beside it, 2026-10-04) cost 5 s per rung at the old 5 s.
     body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) });
   if (!r.ok) throw new Error(`qdrant ${path} ${r.status} ${(await r.text()).slice(0, 120)}`);
-  const out = (await r.json()).result;
-  callLog.getStore()?.push({ collection: path.split('/')[2] || path, ms: Math.round(performance.now() - t) });
-  return out;
+  const j = await r.json();
+  // server_ms = Qdrant's own time for the request: wall − server_ms is ours (event loop, transport, JSON)
+  callLog.getStore()?.push({ collection: path.split('/')[2] || path, ms: Math.round(performance.now() - t),
+    ...(typeof j.time === 'number' ? { server_ms: Math.round(j.time * 10_000) / 10 } : {}) });
+  return j.result;
 }
 
 /** Qdrant liveness + each search collection's status (green = fully indexed; yellow = optimizing, searches slower). */
@@ -200,17 +224,23 @@ export function bestPerParagraph(points, limit) {
 }
 
 /** → { hits: [{ paragraph_id, doc_id, score, span: {start, end} }] } — best phrase per paragraph.
- *  A plain top-(limit×4) query grouped here, not Qdrant's /query/groups: measured 10-09 the grouped query cost 2.0–2.3 s
- *  vs 0.6–1.1 s for the plain one, which already held 60–101 distinct paragraphs for limit 30 (same ranking: best phrase
- *  per paragraph). Only when fewer than `limit` distinct paragraphs come back does it fall back to the grouped query. */
+ *  A plain top-N query grouped here, not Qdrant's /query/groups: measured 10-09 the grouped query cost 2.0–2.3 s vs
+ *  0.6–1.1 s for the plain one (same ranking: best phrase per paragraph). N = limit×2 (11-03: limit 60 held 27–52 distinct
+ *  paragraphs for limit 30, ≥30 in 97% of 40 fresh vectors, at half the cost of ×4); a FULL page short of paragraphs
+ *  escalates to ×4, and only a full ×4 page still short falls back to the grouped query. */
 export async function searchPhrases(query, { limit = 30, filters, timeoutMs, params = SEARCH_PARAMS.phrase } = {}) {
   const vector = await geminiQueryVector(query);
   const payload = ['paragraph_id', 'doc_id', 'start', 'end', ...RANK_PAYLOAD];
   const filter = toQdrantFilter(filters);
-  const res = await queryPhrasesCollection('/collections/phrases/points/query', {
-    query: vector, using: 'literal', limit: limit * 4, with_payload: payload, params: searchParams(params), filter,
+  const plain = (n) => queryPhrasesCollection('/collections/phrases/points/query', {
+    query: vector, using: 'literal', limit: n, with_payload: payload, params: searchParams(params), filter,
   }, timeoutMs);
+  let res = await plain(limit * 2);
   let best = bestPerParagraph(res.points || [], limit);
+  if (best.length < limit && (res.points || []).length >= limit * 2) {
+    res = await plain(limit * 4);
+    best = bestPerParagraph(res.points || [], limit);
+  }
   if (best.length < limit && (res.points || []).length >= limit * 4) {
     const g = await queryPhrasesCollection('/collections/phrases/points/query/groups', {
       query: vector, using: 'literal', group_by: 'paragraph_id', group_size: 1, limit, with_payload: payload, params: searchParams(params), filter,

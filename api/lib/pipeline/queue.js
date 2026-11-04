@@ -17,6 +17,7 @@ import { logger } from '../logger.js';
 import { DEFAULT_PEAK_WINDOWS, nowInPeak, peakEndsAt } from './peak.js';
 import { spendSince as ledgerSpend } from './spend-ledger.js';
 import fs from 'node:fs';
+import { runsSingletons } from '../instance.js';
 import { coverageSelect, meetsDisambBar, meetsHypeBar, DISAMB_DONE_SQL, HYPE_DONE_SQL, meetsExtractBar, EXTRACT_DONE_SQL, meetsReconcileBar, PROSE_SQL } from './processed.js';
 
 export { nowInPeak, peakEndsAt } from './peak.js';   // re-export so callers/tests import peak logic via the queue
@@ -364,6 +365,9 @@ let _ticking = false;
 // Serialise ticks: the 20s timer and an ad-hoc POST /queue/tick can fire together, and two ticks that both read
 // busy=0 each launch a full budget → 2× over-launch (9 procs against a budget of 5). One tick at a time.
 export async function tick() {
+  // one spawner per service: siftersearch-api runs N pm2 instances (11-03) and a tick on two of them both read the same
+  // free slots (the 2026-08-07 duplicate-spawn runaway) — only instance 0 ticks
+  if (!runsSingletons()) return { started: [], busy: -1, skipped: 'not-singleton' };
   if (_ticking) return { started: [], busy: -1, skipped: 'busy' };
   _ticking = true;
   try { return await _tick(); } finally { _ticking = false; }
@@ -492,6 +496,7 @@ export async function killStrayGroundingProcs() {
 let timer = null;
 /** Start the supervisor loop. Safe to call once at boot; a failed tick never kills it. */
 export function startSupervisor() {
+  if (!runsSingletons()) return null;   // instance 0 only (N pm2 instances, 11-03)
   if (timer) return timer;
   timer = setInterval(() => { tick().catch((e) => logger.warn({ err: e.message }, 'grounding supervisor tick failed')); }, TICK_MS);
   timer.unref?.();

@@ -19,44 +19,12 @@ import { findDocuments, listDocs } from '../lib/docs-repo.js';
 import { findSections, sectionsOfDoc } from '../lib/repos/sections-repo.js';
 import { logger } from '../lib/logger.js';
 import { stripMarkers } from '../lib/markers.js';
-import { nanoid } from 'nanoid';
+import { signDownloadToken, readDownloadToken } from '../lib/download-token.js';
 
-// Download token store (in production, use Redis or DB)
-const downloadTokens = new Map();
-const TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
-
-/**
- * Generate a temporary download token
- */
-function generateDownloadToken(documentId, format, options = {}) {
-  const token = nanoid(32);
-  downloadTokens.set(token, {
-    documentId,
-    format,
-    options,
-    expiresAt: Date.now() + TOKEN_EXPIRY_MS
-  });
-
-  // Cleanup expired tokens periodically
-  setTimeout(() => downloadTokens.delete(token), TOKEN_EXPIRY_MS + 1000);
-
-  return token;
-}
-
-/**
- * Validate and consume a download token
- */
-function validateDownloadToken(token) {
-  const data = downloadTokens.get(token);
-  if (!data) return null;
-
-  if (Date.now() > data.expiresAt) {
-    downloadTokens.delete(token);
-    return null;
-  }
-
-  return data;
-}
+// Download tokens are signed, not stored: any API instance can verify one (lib/download-token.js, 11-03)
+const tokenSecret = () => process.env.INTERNAL_API_KEY || process.env.JWT_SECRET;
+const generateDownloadToken = (documentId, format, options = {}) => signDownloadToken({ documentId, format, options }, tokenSecret());
+const validateDownloadToken = (token) => readDownloadToken(token, tokenSecret());
 
 /**
  * Handle bulk download of multiple documents

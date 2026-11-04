@@ -1704,10 +1704,12 @@ async function multiIndexSearchRun(query, options, qcalls) {
   const merge = Date.now() - _t0 - Math.max(0, ..._stampValues(_stamp));
   const qdrantBy = {};
   for (const c of qcalls) qdrantBy[c.collection] = Math.max(qdrantBy[c.collection] || 0, c.ms);
+  const qdrantServerBy = {};
+  for (const c of qcalls) if (c.server_ms != null) qdrantServerBy[c.collection] = Math.max(qdrantServerBy[c.collection] || 0, c.server_ms);
   // hydrate = SQLite paragraphsByIds (+ highlight); rank = the rest of merge (RRF, rerank, diversify); qdrant = slowest call
   const timings = { ...(_stamp), main_embed: mainResult?._ms?.embed, main_engine: mainResult?._ms?.engine, main_cross: mainResult?._ms?.cross || undefined,
     hydrate: hydrateMs, rank: Math.max(0, merge - hydrateMs), merge, total: Date.now() - _t0,
-    ...(qcalls.length ? { qdrant: Math.max(...qcalls.map((c) => c.ms)), qdrant_calls: qcalls.length, qdrant_by: qdrantBy } : {}) };
+    ...(qcalls.length ? { qdrant: Math.max(...qcalls.map((c) => c.ms)), qdrant_calls: qcalls.length, qdrant_by: qdrantBy, qdrant_server_by: qdrantServerBy } : {}) };
   const layerCounts = {
     main: (mainResult.hits || []).length,
     hype: (hypeResult.hits || []).length,

@@ -15,10 +15,14 @@ import { stopLibraryWatcher } from '../services/library-watcher.js';
 import { config } from './config.js';
 import { initAIProcessingState } from './ai-services.js';
 import { prewarmCache, POPULAR_QUERIES, warmOlDocIdCache, ensureEngineFeatures } from './search.js';
+import { runsSingletons } from './instance.js';
 
 
 export async function startApi({ name = 'siftersearch-api', routes = [], role = 'primary' } = {}) {
   const PRIMARY = role === 'primary';
+  // N pm2 instances (11-03): once-per-service work (migrate, seed, sync worker, engine features) runs on instance 0 only;
+  // per-process caches (search cache, OL ids, indexes) warm on every instance
+  const SINGLETON = PRIMARY && runsSingletons();
   checkEnvironment({ exitOnError: true });
   // Validate all environment variables on startup
   // This will print a detailed report and exit if required vars are missing
@@ -59,7 +63,7 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
         // In single-writer architecture, the unified worker is the authoritative migration runner.
         // API tolerates SQLITE_BUSY — the worker will complete the migration.
         try {
-          const migrationResult = PRIMARY ? await runMigrations() : { applied: 0 };   // the writer migrates; only the primary API helps
+          const migrationResult = SINGLETON ? await runMigrations() : { applied: 0 };   // the writer migrates; only the primary API helps
           if (migrationResult.applied > 0) {
             logger.info(migrationResult, 'Database migrations applied');
           }
@@ -93,7 +97,7 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
 
         // Seed admin user if configured
         try {
-          const adminResult = PRIMARY ? await seedAdminUser() : null;
+          const adminResult = SINGLETON ? await seedAdminUser() : null;
           if (adminResult) {
             logger.info({
               email: adminResult.email,
@@ -106,7 +110,7 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
 
         // Seed the QA/test admin (TEST_ADMIN_EMAIL/PASS) if configured — self-healing test account
         try {
-          const testResult = PRIMARY ? await seedTestUser() : null;
+          const testResult = SINGLETON ? await seedTestUser() : null;
           if (testResult) logger.info({ email: testResult.email, action: testResult.action }, 'Test admin user seeded');
         } catch (err) {
           logger.warn({ err }, 'Failed to seed test admin user');
@@ -159,7 +163,7 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
 
       // Start background content sync worker (keeps Content Table → Meilisearch in sync)
       // Only if Meilisearch is enabled
-      if (PRIMARY && config.search.enabled) {
+      if (SINGLETON && config.search.enabled) {
         try {
           startSyncWorker();
           logger.info('Content sync worker started');
@@ -179,7 +183,7 @@ export async function startApi({ name = 'siftersearch-api', routes = [], role = 
         // Delayed by 5s to let Meilisearch finish any pending tasks first
         setTimeout(async () => {
           // Author/collection filters depend on this; initializeIndexes() does not run in the API.
-          if (config.search.enabled) ensureEngineFeatures().catch(err => logger.warn({ err }, 'ensureEngineFeatures failed'));
+          if (SINGLETON && config.search.enabled) ensureEngineFeatures().catch(err => logger.warn({ err }, 'ensureEngineFeatures failed'));
           // OL doc ID cache — pre-warm immediately to prevent thundering-herd on first search wave
           if (!preboot) {   // preboot already built both before listening
             warmOlDocIdCache().catch(err => logger.warn({ err }, 'Failed to pre-warm OL doc ID cache'));

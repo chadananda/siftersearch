@@ -22,6 +22,7 @@ import { getIntegrationProgress, gradedPlanDocIds } from '../lib/bio.js';
 import { query, queryOne, queryAll, transaction } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { linkFor } from '../lib/source-links.js';
+import { runsSingletons } from '../lib/instance.js';
 
 const parseRun = (rj) => { try { return rj ? JSON.parse(rj) : null; } catch { return null; } };
 // Live only if the run heartbeated within 150s (executor refreshes every 30s). A crashed/killed book stops
@@ -1603,7 +1604,8 @@ export default async function groundingRoutes(fastify) {
 
   // The supervisor + processor live with the control plane: same process, same lifecycle. NEVER under test (they
   // would spawn real books against the real corpus); GROUNDING_SUPERVISOR=0 disables them in any environment.
-  if (process.env.NODE_ENV !== 'test' && process.env.GROUNDING_SUPERVISOR !== '0') {
+  // N pm2 instances (11-03): only instance 0 — a second instance's stray-reaper would kill instance 0's running books.
+  if (process.env.NODE_ENV !== 'test' && process.env.GROUNDING_SUPERVISOR !== '0' && runsSingletons()) {
     await queue.killStrayGroundingProcs(); // clean slate: kill any detached procs a restart left behind, else the fresh
                                      // supervisor re-derives the same books → duplicate-spawn runaway (2026-08-07)
     queue.startSupervisor();     // runs the queue serially

@@ -17,7 +17,7 @@ describe('every stamped stage has a budget', () => {
     const s = src('api/lib/search.js');
     const timed = [...s.matchAll(/timed\('([a-z_]+)'/g)].map((m) => m[1]);
     const line = s.slice(s.indexOf('const timings = { ...(_stamp)'), s.indexOf('const layerCounts'));
-    const keys = [...line.matchAll(/\b([a-z_]+):/g)].map((m) => m[1]).filter((k) => !['qdrant_calls', 'qdrant_by'].includes(k));
+    const keys = [...line.matchAll(/\b([a-z_]+):/g)].map((m) => m[1]).filter((k) => !['qdrant_calls', 'qdrant_by', 'qdrant_server_by'].includes(k));
     // the retired Meili layers (main/hype/entity/keyword) only run with Meili on; they are not budgeted stages
     const retired = new Set(['main', 'hype', 'entity', 'keyword']);
     const stages = [...new Set([...timed, ...keys])].filter((k) => !retired.has(k));
@@ -40,6 +40,14 @@ describe('every stamped stage has a budget', () => {
 });
 
 describe('summaries', () => {
+  it('engineStages reports Qdrant server time per collection as qsrv:<c>, informational (no budget; wall − server = our overhead)', () => {
+    expect(engineStages({ qdrant_by: { phrases: 30 }, qdrant_server_by: { phrases: 21.5 } })).toEqual({ 'qdrant:phrases': 30, 'qsrv:phrases': 21.5 });
+    const rows = summarizeStages('engine', [{ 'qsrv:phrases': 99 }]);
+    expect(rows[0]).toMatchObject({ stage: 'qsrv:phrases', budget: null, over: false });
+  });
+  it('search.js stamps qdrant_server_by from the call log', () => {
+    expect(readFileSync(new URL('../../api/lib/search.js', import.meta.url), 'utf8')).toMatch(/qdrant_server_by: qdrantServerBy/);
+  });
   it('engineStages keeps budgeted numbers and splits qdrant_by per collection; plannedStages drops _ms', () => {
     expect(engineStages({ embed: 300, merge: 50, total: 500, qdrant: 12, qdrant_calls: 5, qdrant_by: { phrases: 12, hype: 7 }, junk: 3 }))
       .toEqual({ embed: 300, merge: 50, total: 500, qdrant: 12, 'qdrant:phrases': 12, 'qdrant:hype': 7 });

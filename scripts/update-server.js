@@ -51,6 +51,7 @@ const execAsync = promisify(exec);
 import { touchesRuntime } from './lib/runtime-files.js';
 import { syntaxProblems } from './lib/syntax-gate.mjs';
 import { importProblems } from './lib/import-gate.mjs';
+import { declaredInstances, scaleTarget, idsToRemove } from './lib/instance-drift.mjs';
 import { recordDeploy } from '../api/lib/ops/deploy-status.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
@@ -423,6 +424,36 @@ async function verifyNewCode() {
  * Is a PM2 process currently online? Used to avoid reviving deliberately-stopped
  * background workers on deploy (startOrReload would otherwise start a stopped one).
  */
+/**
+ * pm2 startOrReload reloads the processes an app already has and NEVER scales it: raising `instances` in
+ * ecosystem.config.cjs (11-03: siftersearch-api 1 → 4) stays at the old count until someone runs `pm2 scale`. After a
+ * successful reload, scale a running app to its declared count and `pm2 save` so a reboot resurrects it. Never throws.
+ */
+async function convergeInstances(name) {
+  try {
+    const req = createRequire(import.meta.url);
+    const p = join(PROJECT_ROOT, 'ecosystem.config.cjs');
+    delete req.cache[req.resolve(p)];
+    const declared = declaredInstances(req(p))[name];
+    const res = await run('pm2 jlist');
+    if (!res.success) return;
+    const procs = JSON.parse(res.stdout).filter((x) => x.name === name);
+    const target = scaleTarget(declared, procs.length);
+    if (target == null) return;
+    log('info', `${name}: ${procs.length} instance(s) running, ${declared} declared — scaling`);
+    if (target > procs.length) {
+      const scaled = await run(`pm2 scale ${name} ${target}`);   // new instances take the free indexes 1..N-1
+      if (!scaled.success) { log('warn', `pm2 scale ${name} ${target} failed: ${scaled.error}`); return; }
+    } else {
+      // down: delete the highest indexes ourselves — pm2 scale would delete the first procs, possibly instance 0
+      for (const id of idsToRemove(procs, target)) await run(`pm2 delete ${id}`);
+    }
+    await run('pm2 save');
+  } catch (err) {
+    log('warn', `instance convergence for ${name} failed: ${err.message}`);
+  }
+}
+
 async function isProcessRunning(name) {
   const res = await run('pm2 jlist');
   if (!res.success) return false;
@@ -606,6 +637,7 @@ async function swapPm2Process(name) {
     for (let i = 0; i < 48 && !(await isProcessRunning(name)); i++) await new Promise((r) => setTimeout(r, 5000));
     lastSwapAt = Date.now();
     if (!(await isProcessRunning(name))) log('warn', `${name} not back online 4 min after the deploy — the watchdog will take over`);
+    else await convergeInstances(name);
     return true;
   }
   log('warn', `startOrReload failed for ${name}, falling back to delete+start`);

@@ -17,6 +17,7 @@ import { logger } from '../logger.js';
 import { enqueue, list, tick } from './queue.js';
 import { getIntegrationProgress } from '../bio.js';
 import { PROSE_SQL, coverageSelect, meetsDisambBar, meetsHypeBar, meetsExtractBar, meetsReconcileBar } from './processed.js';
+import { runsSingletons } from '../instance.js';
 
 const HYPE_MINLEN = Number(process.env.HYPE_MINLEN || 60);   // matches reachedBound / hype-book fragment filter
 const MODES = ['plan', 'override', 'general'];
@@ -220,6 +221,7 @@ let _timer = null;
 // Start the processor loop. Dispatches each interval on the CURRENT mode: plan/general drive from their source;
 // override stands down (the hand-enrolled queue runs as-is). Safe to call once at boot.
 export function startProcessor() {
+  if (!runsSingletons()) return;   // instance 0 only (N pm2 instances, 11-03)
   if (_timer) return;
   const run = () => {
     const mode = getMode();
