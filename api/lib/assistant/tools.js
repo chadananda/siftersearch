@@ -55,7 +55,9 @@ export function translationLabel(by, authority) {
 /** Persian and Arabic spell ی/ي and ک/ك differently; a reader's typing may not match the library's. Pure. */
 export const letterVariants = (s) => [...new Set([String(s), String(s).replace(/ي/g, 'ی').replace(/ك/g, 'ک'), String(s).replace(/ی/g, 'ي').replace(/ک/g, 'ك')])];
 /** Any hit / paragraph / link row → the Passage shape (score, link_site and role kept when present). Pure. */
+// author = the PARAGRAPH's writer; book_author = the WORK's author (a quotation keeps its writer in another's book: own-source.js)
 export const toPassage = (p) => ({ id: p.id, text: p.text || '', title: p.title || p.document?.title || '', author: p.author || p.document?.author || '',
+  book_author: p.book_author || p.document?.author || null,
   source_url: p.source_url || p.readerUrl || p.url || null, document_id: p.document_id ?? p.documentId ?? p.doc_id, paragraph_index: p.paragraph_index ?? p.paragraphIndex,
   religion: p.religion || p.document?.religion || null, collection: p.collection || p.document?.collection || null, language: p.language || p.source_lang || 'en',
   translation: p.translation || (/\(provisional translation\)/i.test(p.title || p.document?.title || '') ? translationLabel('Stephen Phelps', 'provisional-phelps') : null),

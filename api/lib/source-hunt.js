@@ -145,7 +145,7 @@ const isNote = (blocktype) => blocktype === 'footnote';
 const isCanonical = (p) => !p.source_site || p.source_site === 'oceanlibrary.com';
 
 // The doctrinal authors (Chad 10-03: compilations display the Báb, Bahá’u’lláh, ‘Abdu’l-Bahá, Shoghi Effendi; UHJ is not doctrinal).
-const DOCTRINAL = new Set(['The Báb', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'Shoghi Effendi']);
+export const DOCTRINAL = new Set(['The Báb', 'Bahá’u’lláh', '‘Abdu’l-Bahá', 'Shoghi Effendi']);
 
 /** Whose words these are, by VOTE over the verbatim matches: a match WRITTEN by a doctrinal author is strong evidence
  *  (2), a doctrinal author the reader marks as QUOTED in a match is weaker (1); a name merely mentioned never counts — "the
