@@ -18,7 +18,7 @@ export const ENGINE_BUDGETS = Object.freeze({
   qkeyword: { ms: 60, note: 'BM25 sparse, no embedding: 0.7 ms server, 43 ms offset measured' },
   qkeyword_retry: { ms: 500, note: 'retry after a failed keyword call (rare)' },
   concept: { ms: 25, note: 'in-memory lexicon match (29k entries indexed by first word, 89653a25)' },
-  hydrate: { ms: 60, note: 'stub hits read + highlighted on the read pool (search/read-pool.js, 11-04; ~20 ms per read is random I/O on wide rows, plan is a PK lookup; was main-thread SQLite avg 20 / worst 90 ms); wall incl. thread queue' },
+  hydrate: { ms: 60, note: 'stub hits read + highlighted on the read pool (search/read-pool.js, 11-04; ~20 ms per read is random I/O on wide rows, plan is a PK lookup; was main-thread SQLite avg 20 / worst 90 ms); wall incl. thread queue. 11-04 (#167): bodies only, id cache 120 s, highlight moved to the returned top-k; split in hydrate:ids/cached/read/wait' },
   rank: { ms: 60, note: 'RRF + rerank + diversify after hydration (CPU)' },
   merge: { ms: 120, note: 'everything after the last layer: hydrate + rank' },
   main_embed: { ms: 400, note: 'legacy Meili main layer (retired; absent when SEARCH_QDRANT=only)' },
@@ -78,6 +78,8 @@ export function engineStages(t = {}) {
   for (const [c, ms] of Object.entries(t.qdrant_by || {})) if (num(ms) != null) out[`qdrant:${c}`] = ms;
   // Qdrant's own time for that collection's slowest-server call: informational (no budget) — wall − server = our overhead
   for (const [c, ms] of Object.entries(t.qdrant_server_by || {})) if (num(ms) != null) out[`qsrv:${c}`] = ms;
+  // hydrate's split (11-04, digest #167): ids asked / served from the id cache (counts), read inside the thread vs wait for one (ms)
+  for (const [k, v] of Object.entries(t.hydrate_by || {})) if (num(v) != null) out[`hydrate:${k}`] = v;
   return out;
 }
 

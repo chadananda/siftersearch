@@ -25,7 +25,7 @@ beforeAll(async () => {
       filename TEXT, slug TEXT, source_site TEXT, source_url TEXT, deleted_at TEXT, duplicate_of INTEGER);
     CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, paragraph_index INTEGER, text TEXT, heading TEXT, blocktype TEXT,
       translation TEXT, translation_segments TEXT, context TEXT, external_para_id TEXT, pdf_page INTEGER, text_grounded TEXT,
-      authors TEXT, deleted_at TEXT, is_duplicate INTEGER);`);
+      authors TEXT, block_attrs TEXT, deleted_at TEXT, is_duplicate INTEGER);`);
   const r = rng(7);
   const text = () => Array.from({ length: 180 }, () => WORDS[Math.floor(r() * WORDS.length)]).join(' ');
   const insDoc = db.prepare('INSERT INTO docs (id, title, author, religion, collection, language, year, filename, slug) VALUES (?,?,?,?,?,?,?,?,?)');
@@ -86,9 +86,35 @@ describe('search hydration off the event loop', () => {
     expect(h.max / 1e6).toBeLessThan(10);
   }, 30_000);
 
+  it('hydrateBodies: bodies only (no highlight), the split {ids, cached, read, wait}, and a repeat served from the id cache (#167)', async () => {
+    const want = ids(7);
+    process.env.SIFTER_HYDRATE_CACHE_MS = '60000';
+    try {
+      mod.clearHydrateCache();
+      const by1 = {}, first = await mod.hydrateBodies(want, by1);
+      expect(first.length).toBeGreaterThan(100);
+      expect(first[0]._formatted).toBeUndefined();
+      expect(by1).toMatchObject({ ids: want.length, cached: 0 });
+      expect(by1.read).toBeGreaterThanOrEqual(0); expect(by1.wait).toBeGreaterThanOrEqual(0);
+      const by2 = {}, again = await mod.hydrateBodies(want, by2);
+      expect(by2).toMatchObject({ ids: want.length, cached: want.length, read: 0, wait: 0 });
+      const byId = (a) => Object.fromEntries(a.map((d) => [d.id, d]));
+      expect(byId(again)).toEqual(byId(first));
+      const hl = mod.highlightDoc(first[0], QUERY);
+      expect(hl._formatted.text).toContain('<mark>');
+      expect(first[0]._formatted).toBeUndefined();   // the cached copy is never marked
+    } finally { delete process.env.SIFTER_HYDRATE_CACHE_MS; mod.clearHydrateCache(); }
+  }, 30_000);
+
+  it('the id cache is off under test by default (every call reads)', async () => {
+    const by = {}; await mod.hydrateBodies(ids(8), by); const by2 = {}; await mod.hydrateBodies(ids(8), by2);
+    expect(by2.cached).toBe(0);
+  }, 30_000);
+
   it('multiIndexSearch hydrates through the thread pool, never with a main-thread paragraphsByIds', () => {
     const src = readFileSync(join(import.meta.dirname, '../../api/lib/search.js'), 'utf8');
-    expect(src).toMatch(/hydrateParagraphs\(stubIds, query\)/);
+    expect(src).toMatch(/hydrateBodies\(stubIds, hydrateBy\)/);
+    expect(src).toMatch(/e\.hydrated \? highlightDoc\(e\.paragraph, query\)/);   // highlight only the returned top-k
     expect(src).not.toMatch(/paragraphsByIds\(stubIds/);
   });
 });

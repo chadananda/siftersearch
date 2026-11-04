@@ -17,7 +17,7 @@ describe('every stamped stage has a budget', () => {
     const s = src('api/lib/search.js');
     const timed = [...s.matchAll(/timed\('([a-z_]+)'/g)].map((m) => m[1]);
     const line = s.slice(s.indexOf('const timings = { ...(_stamp)'), s.indexOf('const layerCounts'));
-    const keys = [...line.matchAll(/\b([a-z_]+):/g)].map((m) => m[1]).filter((k) => !['qdrant_calls', 'qdrant_by', 'qdrant_server_by'].includes(k));
+    const keys = [...line.matchAll(/\b([a-z_]+):/g)].map((m) => m[1]).filter((k) => !['qdrant_calls', 'qdrant_by', 'qdrant_server_by', 'hydrate_by'].includes(k));
     // the retired Meili layers (main/hype/entity/keyword) only run with Meili on; they are not budgeted stages
     const retired = new Set(['main', 'hype', 'entity', 'keyword']);
     const stages = [...new Set([...timed, ...keys])].filter((k) => !retired.has(k));
@@ -44,6 +44,12 @@ describe('summaries', () => {
     expect(engineStages({ qdrant_by: { phrases: 30 }, qdrant_server_by: { phrases: 21.5 } })).toEqual({ 'qdrant:phrases': 30, 'qsrv:phrases': 21.5 });
     const rows = summarizeStages('engine', [{ 'qsrv:phrases': 99 }]);
     expect(rows[0]).toMatchObject({ stage: 'qsrv:phrases', budget: null, over: false });
+  });
+  it('engineStages reports hydrate\'s split as informational hydrate:<k> rows (ids/cached counts, read/wait ms; digest #167)', () => {
+    expect(engineStages({ hydrate: 90, hydrate_by: { ids: 90, cached: 60, read: 12, wait: 70 } }))
+      .toEqual({ hydrate: 90, 'hydrate:ids': 90, 'hydrate:cached': 60, 'hydrate:read': 12, 'hydrate:wait': 70 });
+    expect(summarizeStages('engine', [{ 'hydrate:wait': 70 }])[0]).toMatchObject({ stage: 'hydrate:wait', budget: null, over: false });
+    expect(readFileSync(new URL('../../api/lib/search.js', import.meta.url), 'utf8')).toMatch(/hydrate_by: hydrateBy/);
   });
   it('search.js stamps qdrant_server_by from the call log', () => {
     expect(readFileSync(new URL('../../api/lib/search.js', import.meta.url), 'utf8')).toMatch(/qdrant_server_by: qdrantServerBy/);

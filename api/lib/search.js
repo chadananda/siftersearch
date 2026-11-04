@@ -1562,15 +1562,17 @@ async function multiIndexSearchRun(query, options, qcalls) {
   // an engine (a Meili fallback here resurrected deleted rows). Stubs only come from main-library ids (Qdrant, HyPE).
   const stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
   const _tHydrate = Date.now();
+  const hydrateBy = {};   // {ids, cached, read, wait} — the hydrate stage's split (digest #167)
   if (stubIds.length > 0) {
     try {
       // OFF the event loop (search/hydrate-thread.js): this synchronous read + highlighting used to run while sibling
       // engine calls' Qdrant fetches were in flight, inflating their wall time ~10x over Qdrant's own (11-04)
-      const { hydrateParagraphs } = await import('./search/hydrate-thread.js');
-      for (const doc of await hydrateParagraphs(stubIds, query)) {
+      // bodies only, cached by id; ranking needs every candidate's text/author/religion, but only the returned top-k are
+      // highlighted (below, after talksAfterCore) — 11-04, digest #167
+      const { hydrateBodies } = await import('./search/hydrate-thread.js');
+      for (const doc of await hydrateBodies(stubIds, hydrateBy)) {
         const e = aggregate.get(doc.id) ?? aggregate.get(String(doc.id));
-        // no engine highlighted this hit (SQLite hydration) → the query terms are marked, as Meili's _formatted did
-        if (e) e.paragraph = { ...doc, _stub: false };
+        if (e) { e.paragraph = { ...doc, _stub: false }; e.hydrated = true; }
       }
     } catch (err) {
       logger.warn({ err: err.message, stubCount: stubIds.length }, 'multiIndexSearch: SQLite hydration failed');
@@ -1684,9 +1686,11 @@ async function multiIndexSearchRun(query, options, qcalls) {
   if (!talksAsked) finalEntries = talksAfterCore(finalEntries, sortedDeduped, { max: 2 });
 
   tallySourceStats(finalEntries);   // win-share telemetry — see SOURCE_STATS above
+  // no engine highlighted a hydrated hit (SQLite) → the query terms are marked, as Meili's _formatted did — top-k only
+  const { highlightDoc } = await import('./search/hydrate-thread.js');
   const hits = finalEntries.map(e => {
     const h = {
-      ...e.paragraph,
+      ...(e.hydrated ? highlightDoc(e.paragraph, query) : e.paragraph),
       _rrfScore: e.score,
       ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
       _layerRanks: { main: e.mainRank, hype: e.hypeRank, entity: e.entityRank, keyword: e.keywordRank ?? null,
@@ -1714,7 +1718,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   for (const c of qcalls) if (c.server_ms != null) qdrantServerBy[c.collection] = Math.max(qdrantServerBy[c.collection] || 0, c.server_ms);
   // hydrate = SQLite paragraphsByIds (+ highlight); rank = the rest of merge (RRF, rerank, diversify); qdrant = slowest call
   const timings = { ...(_stamp), main_embed: mainResult?._ms?.embed, main_engine: mainResult?._ms?.engine, main_cross: mainResult?._ms?.cross || undefined,
-    hydrate: hydrateMs, rank: Math.max(0, merge - hydrateMs), merge, total: Date.now() - _t0,
+    hydrate: hydrateMs, ...(stubIds.length ? { hydrate_by: hydrateBy } : {}), rank: Math.max(0, merge - hydrateMs), merge, total: Date.now() - _t0,
     ...(qcalls.length ? { qdrant: Math.max(...qcalls.map((c) => c.ms)), qdrant_calls: qcalls.length, qdrant_by: qdrantBy, qdrant_server_by: qdrantServerBy } : {}) };
   const layerCounts = {
     main: (mainResult.hits || []).length,

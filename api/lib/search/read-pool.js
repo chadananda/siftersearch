@@ -60,7 +60,7 @@ function spawn() {
       for (const [k, v] of Object.entries(timing)) s[`${k}_ms`] = (s[`${k}_ms`] || 0) + v;
       s.max_ms = Math.max(s.max_ms, timing.total || 0);
     }
-    error ? p.reject(new Error(error)) : p.resolve(value);
+    error ? p.reject(new Error(error)) : p.resolve({ value, timing });
   });
   const fail = (err) => {
     failures++;
@@ -83,10 +83,15 @@ function pick() {
 
 /** Run read task `task` with `args` on a pool thread (in-process when the pool is off). A thread error or timeout falls back
  *  to the in-process read: slower for the loop, never a lost result. */
-export async function runRead(task, ...args) {
+export async function runRead(task, ...args) { return (await runReadTimed(task, ...args)).value; }
+
+/** runRead plus the thread's own timing ({read, highlight, total} ms inside the thread; in-process: measured here), so a
+ *  caller can tell the read from the wait for a thread. */
+export async function runReadTimed(task, ...args) {
   if (!TASKS[task]) throw new Error(`unknown read task ${task}`);
+  const local = async () => { const timing = {}, t0 = performance.now(); const value = await runTask(task, args, timing); timing.total = performance.now() - t0; return { value, timing }; };
   const slot = pick();
-  if (!slot) { statFor(task).inProcess++; return runTask(task, args, null); }
+  if (!slot) { statFor(task).inProcess++; return local(); }
   const id = ++seq;
   try {
     const value = await new Promise((resolve, reject) => {
@@ -99,7 +104,7 @@ export async function runRead(task, ...args) {
     return value;
   } catch {
     statFor(task).fallback++;
-    return runTask(task, args, null);
+    return local();
   }
 }
 
