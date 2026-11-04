@@ -44,14 +44,19 @@ export const getCursor = (db, name) => db.prepare('SELECT value FROM improve_cur
 export const setCursor = (db, name, value) => db.prepare(`INSERT INTO improve_cursor (name, value, updated_at) VALUES (?, ?, ?)
   ON CONFLICT(name) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).run(name, String(value), nowIso());
 
-/** One forensic item (reply or search). Re-recording keeps an existing judge verdict. */
+/** One forensic item (reply or search). Re-recording keeps an existing judge verdict. judge_state: 'pending' (judge it),
+ *  'covered' (a search inside a turn — the reply's judge and deep analysis see it), 'clean' (no turn, no forensic defect). */
 export function recordForensic(db, it) {
-  db.prepare(`INSERT INTO forensics (item_key, kind, ref_id, session_id, asked_at, route, defects_json, payload_json, backfill, priority, created_at, updated_at)
-    VALUES (@item_key, @kind, @ref_id, @session_id, @asked_at, @route, @defects_json, @payload_json, @backfill, @priority, @now, @now)
+  db.prepare(`INSERT INTO forensics (item_key, kind, ref_id, session_id, asked_at, route, defects_json, payload_json, backfill, priority, judge_state, created_at, updated_at)
+    VALUES (@item_key, @kind, @ref_id, @session_id, @asked_at, @route, @defects_json, @payload_json, @backfill, @priority, @judge_state, @now, @now)
     ON CONFLICT(item_key) DO UPDATE SET defects_json = excluded.defects_json, payload_json = excluded.payload_json, updated_at = excluded.updated_at`)
     .run({ item_key: it.key, kind: it.kind, ref_id: String(it.ref_id), session_id: it.session_id ?? null, asked_at: it.asked_at ?? null, route: it.route ?? null,
-      defects_json: JSON.stringify(it.defects || []), payload_json: JSON.stringify(it), backfill: it.backfill ? 1 : 0, priority: it.priority ?? 3, now: nowIso() });
+      defects_json: JSON.stringify(it.defects || []), payload_json: JSON.stringify(it), backfill: it.backfill ? 1 : 0, priority: it.priority ?? 3, judge_state: it.judge_state || 'pending', now: nowIso() });
 }
+
+/** Searches queued before 11-04's judge-the-reply rule: a turn's search waits on nothing — its reply is judged. → rows changed */
+export const deferCoveredSearches = (db) => db.prepare(`UPDATE forensics SET judge_state = 'covered', updated_at = ? WHERE kind = 'search' AND judge_state = 'pending'
+  AND json_extract(payload_json, '$.turn_id') IS NOT NULL`).run(nowIso()).changes;
 
 /** The next unit of LLM work, in priority order (deep on weak replies, judge replies, deep on weak searches, judge searches, backfill). */
 export function nextWork(db, { maxAttempts = 5 } = {}) {

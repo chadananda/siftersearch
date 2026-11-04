@@ -76,9 +76,12 @@ export async function docTitles(ids = []) {
   return new Map(rows.map((r) => [Number(r.id), { title: r.title, author: r.author, collection: r.collection, religion: r.religion }]));
 }
 
-/** "doc" given as words: the documents whose title holds them (at most 50). */
-export const docIdsByTitle = async (text, limit = 50) => (await queryAll('SELECT id FROM docs WHERE title LIKE ? LIMIT ?',
-  [`%${String(text)}%`, Math.min(Math.max(1, limit), 50)], 'search-trace:doc-by-title')).map((r) => Number(r.id));
+/** "doc" given as words: the documents whose title answers them (docs-repo's ranked title/FTS lookup — no LIKE scan), at most 50. */
+export const docIdsByTitle = async (text, limit = 50) => {
+  const { findDocuments } = await import('../docs-repo.js');
+  const r = await findDocuments(String(text), { scope: 'all', fields: ['id'], limit: Math.min(Math.max(1, limit), 50) });
+  return (r?.docs || []).map((d) => Number(d.id));
+};
 
 /**
  * Retention: the ranked lists of searches not made by Anís (the bulk: batteries, the site) are dropped after `keepDays`; the

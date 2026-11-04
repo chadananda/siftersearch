@@ -128,6 +128,20 @@ describe('linkQuotes', () => {
 
 // 11-04 prod: the writer linked the quotation itself to another copy ([*"…"*](other-url)); linkQuotes put its link INSIDE the
 // link text → "[**"…"* ([Title](url))*](other-url)", a nested, broken link. A quotation that is already link text keeps its link.
+describe('linkQuotes, the writer already cited the blockquote after a blank line', () => {
+  const P = [{ text: 'Man must work with his body and his soul, and the work done in the spirit of service is worship.', citation_url: 'https://x/log#p1', source_title: 'Lights of Guidance' }];
+  it('a linked source line after the blank line is the attribution: no second one', () => {
+    const t = '> "Man must work with his body and his soul, and the work done in the spirit of service is worship."\n\n— [*Lights of Guidance*](https://x/log#p1), no. 2101';
+    expect(linkQuotes(t, P)).toEqual({ text: t, linked: 0 });
+  });
+  it('an ordinary paragraph after the blank line still gets the link line', () => {
+    const t = '> Man must work with his body and his soul, and the work done in the spirit of service is worship.\n\nThis is why work matters.';
+    const r = linkQuotes(t, P);
+    expect(r.linked).toBe(1);
+    expect(r.text).toContain('> — [Lights of Guidance](https://x/log#p1)');
+  });
+});
+
 describe('linkQuotes, a quotation that is already a link', () => {
   const P = [{ text: 'It is incumbent upon each one of you to engage in some occupation such as a craft, a trade or the like.', source_title: 'The Kitáb-i-Aqdas', citation_url: 'https://bahai-library.com/aqdas' }];
   it('leaves link text alone even when it links a different copy', () => {

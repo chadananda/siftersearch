@@ -70,7 +70,7 @@ export default async function jevAdminRoutes(fastify, { deps = {} } = {}) {
       baseline: b.baseline === 'stored' ? 'stored' : 'rerun', maxUsd: Number(b.maxUsd) || 2 };
     try { (await import('../lib/jev-tuning/variants.js')).resolveVariant(spec.variant); } catch (e) { return reply.code(400).send({ error: e.message }); }
     const key = `jev-try-${spec.task}-${typeof spec.variant === 'string' ? spec.variant : spec.variant.id}-${Date.now().toString(36)}`;
-    const rec = (await store()).start(key, () => runExperiment(spec, { sample: async (t, o) => r.sampleBank(t, o), rerun, history }), { kind: 'jev-try', spec });
+    const rec = (await store()).start(key, () => runExperiment(spec, { sample: async (t, o) => r.sampleBank(t, o), rerun, history }), { kind: 'jev_try', spec });
     return { key: rec.key, status: rec.status, poll: `/api/admin/jev/experiment/${rec.key}` };
   });
 

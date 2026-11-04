@@ -306,7 +306,10 @@ export function linkQuotes(text, passages) {
     while (j < lines.length && /^\s*>/.test(lines[j])) j++;
     const block = lines.slice(i, j);
     const body = block.map((l) => l.replace(/^\s*>\s?/, '')).join(' ').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_]/g, '');
-    const p = body.split(/\s+/).length >= 5 ? holder(body.replace(/^["“]|["”]$/g, ''), `${block.join('\n')}\n${lines[j] || ''}`) : null;
+    // the writer's own source line may sit after a blank line ("> …\n\n— [*Lights of Guidance*](…)"): a linked one already cites it
+    let k = j; while (k < lines.length && !lines[k].trim()) k++;
+    const cited = k < lines.length && isAttribution(lines[k]) && /\]\(https?:\/\//.test(lines[k]);
+    const p = !cited && body.split(/\s+/).length >= 5 ? holder(body.replace(/^["“]|["”]$/g, ''), `${block.join('\n')}\n${lines[j] || ''}`) : null;
     out.push(...block);
     if (p) { out.push(`> — ${link(p)}`); linked++; }
     i = j - 1;

@@ -4,9 +4,10 @@ import { describe, it, expect } from 'vitest';
 import { CASE_1103 } from '../fixtures/anis-case-1103.js';
 import { judgeMessage, parseJudge, deepMessage, parseSuggestions, mergeSuggestions, sameSuggestion, rankImprovements, priorityOf,
   costOf, projectDaily, turnFromPath, itemsForTurn, forensicsReport, JUDGE_SYSTEM } from '../../api/lib/audit/improve.js';
+import { deferCoveredSearches } from '../../api/lib/repos/improve-repo.js';
 import { openImproveDb, recordForensic, nextWork, saveJudge, openImprovements, applySuggestions, listImprovements, setImprovementStatus,
   forensicsSince, getCursor } from '../../api/lib/repos/improve-repo.js';
-import { work, ingest, traceToSearch, replayHits } from '../../api/workers/improve-worker.js';
+import { work, ingest, traceToSearch, replayHits, searchJudgeState } from '../../api/workers/improve-worker.js';
 import { assertAnthropicAllowed, isImproveAllowed } from '../../api/lib/anthropic-policy.js';
 import { modelFor } from '../../api/lib/model-roles.js';
 import { SpendCapError } from '../../api/lib/spend-caps.js';
@@ -169,6 +170,18 @@ describe('the store and the worker (in-memory; the LLM call injected)', () => {
     const reply = nextWork(db).item;   // the reply's searches are its own traces (planned wrapper skipped), titled + tiered
     expect(reply.searches).toHaveLength(1);
     expect(reply.searches[0]).toMatchObject({ trace_id: 'tr-0', tool: 'fused_search', hits: [{ rank: 1, doc_id: 77, title: 'Gleanings', tier: 'writings' }] });
+  });
+  it('cheap cycle: a turn\'s search is judged through its reply; a turnless search only with a forensic defect', async () => {
+    expect(searchJudgeState({ turn_id: 's:2' }, ['x'])).toBe('covered');
+    expect(searchJudgeState({ turn_id: null }, [])).toBe('clean');
+    expect(searchJudgeState({ turn_id: null }, [['no-results', 'q']])).toBe('pending');
+    const db = openImproveDb(':memory:');
+    await ingest(db, { deps: { anisRepliesAfter: async () => [], tracesForTurn: async () => [], docTitles: async () => new Map(),
+      tracesAfter: async () => [{ id: 900, trace_id: 'tr-1', endpoint: 'multi-index', turn_id: 's:2', query: 'q', created_at: 1762246800, hits_json: '[[5,77,0.9,"bm25","W"]]' }] } });
+    expect(nextWork(db)).toBeNull();   // nothing to pay for: the reply carries this search
+    recordForensic(db, { key: 'search:old', kind: 'search', ref_id: 'old', turn_id: 's:1', defects: [] });   // queued before the rule
+    expect(deferCoveredSearches(db)).toBe(1);
+    expect(nextWork(db)).toBeNull();
   });
   it('traceToSearch reads both hit shapes; replayHits puts Writings first and keeps old_rank', () => {
     expect(traceToSearch({ trace_id: 't', endpoint: 'search', hits_json: JSON.stringify([{ title: 'X', doc_id: 3 }]) }).hits[0]).toMatchObject({ rank: 1, doc_id: 3, title: 'X' });

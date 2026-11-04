@@ -24,7 +24,7 @@ import { anisRepliesAfter } from '../lib/repos/anis-threads-repo.js';
 import { tracesAfter, tracesForTurn, docTitles } from '../lib/repos/search-trace-repo.js';
 import { expandHits } from '../lib/search-trace.js';
 import { openImproveDb, getCursor, setCursor, recordForensic, nextWork, saveJudge, saveDeepDone, noteFailure,
-  openImprovements, applySuggestions } from '../lib/repos/improve-repo.js';
+  openImprovements, applySuggestions, deferCoveredSearches } from '../lib/repos/improve-repo.js';
 
 const BACKFILL_DAYS = Number(process.env.IMPROVE_BACKFILL_DAYS) || 30;
 const IDLE_MS = Number(process.env.IMPROVE_IDLE_MS) || 30_000;
@@ -71,11 +71,17 @@ export async function ingest(db, { deps = {} } = {}) {
     const a = assessSearch(s, { route: routeOf(t.route || safeJson(t.filters_json)?.route), question: t.query });
     recordForensic(db, { key: `search:${t.trace_id}`, kind: 'search', ref_id: t.trace_id, session_id: t.thread_id ?? null, turn_id: t.turn_id ?? null,
       route: t.route ?? null, question: t.query, ...s, defects: a.defects,
-      asked_at: asked, backfill, priority: priorityOf({ kind: 'search', backfill }) });
+      asked_at: asked, backfill, priority: priorityOf({ kind: 'search', backfill }), judge_state: searchJudgeState(t, a.defects) });
     setCursor(db, 'trace_id', t.id); n++;
   }
   return n;
 }
+
+/** Chad 11-04, "make the improvement cycle cheap and effective": a search inside an Anís turn is judged THROUGH its reply (the
+ *  reply judge sees the outcome; a weak reply's deep analysis reads its searches) — 9/9 separately judged searches came back
+ *  'weak' at $0.010 each, duplicating the reply verdict. A search with no turn (public search API) is judged only when the free
+ *  forensic pass found a defect. */
+export const searchJudgeState = (t, defects = []) => t.turn_id ? 'covered' : defects.length ? 'pending' : 'clean';
 
 async function callOpus(role, system, user, maxTokens) {
   const { provider, model } = modelFor(role);
@@ -132,6 +138,7 @@ export function replayHits(j = {}) {
 
 export async function main() {
   const db = openImproveDb();
+  console.log(`[improve] searches judged through their reply: ${deferCoveredSearches(db)} queued turn searches covered`);
   let doing = 'start', judged = 0;
   drainOnSignals(() => { doing = 'draining'; });
   startHeartbeat({ name: 'siftersearch-improve', state: () => ({ doing, judged }) });
