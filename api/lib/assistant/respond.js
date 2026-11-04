@@ -14,7 +14,7 @@ import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
 import { calculateCost } from '../model-registry.js';
-import { preferOwnWork, OWN_SOURCE_MS } from './own-source.js';
+import { preferOwnWork, literalOwnSearch, linkHits } from './own-source.js';
 import { toPassage } from './tools.js';
 import { dropUnverified, createSentenceGate, completeIntroducedQuotes, linkQuotes, fixQuoteSpeakers, saidEarlier, earlierLinkFor, exactLink } from './quotes.js';
 import { guardRows } from '../rights/guard.js';
@@ -727,11 +727,12 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   // OWN SOURCE (own-source.js; Chad's standing rule): the passages are final here — a Central Figure's or Shoghi Effendi's
   // words quoted inside another author's book (production 11-04: "Ye are the fruits of one tree" linked to The Promised Day
-  // Is Come) give their slot to the same words in the writer's own work. One writer-limited search per such passage, in
-  // parallel, capped at OWN_SOURCE_MS; late → the original stays. The quote fast path already ranks its own (lookup.js).
+  // Is Come) give their slot to the same words in the writer's own work. One LITERAL lookup (BM25, writer-limited, no embedding:
+  // the planned search took ~900 ms and was always late, 11-04) per such passage, in parallel, capped at OWN_SOURCE_MS; late →
+  // the original stays. The quote fast path already ranks its own (lookup.js).
   if (!fast && !work && !sourced && !original && !study && res?.passages?.length) {
-    const ownSearch = d.ownSourceSearch || (deps ? null : (await import('./agent-search.js')).agentSearch({ deadlineMs: OWN_SOURCE_MS }));
-    const own = await timed('own-source', () => preferOwnWork(res.passages, { search: ownSearch, shape: toPassage }),
+    const ownDeps = deps ? { search: d.ownSourceSearch || null, link: d.ownSourceLink || null } : { search: literalOwnSearch, link: linkHits };
+    const own = await timed('own-source', () => preferOwnWork(res.passages, { ...ownDeps, shape: toPassage }),
       (r) => ({ swapped: r.swapped.length, searches: r.searches, late: r.late })).catch((err) => { console.warn('anis own-source failed', err?.message); return null; });
     if (own) {
       res.passages = own.passages;

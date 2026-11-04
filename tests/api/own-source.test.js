@@ -2,7 +2,7 @@
 // mankind?" quoted "Ye are the fruits of one tree, and the leaves of one branch" and linked it to The Promised Day Is Come
 // (Shoghi Effendi quoting it), not to Bahá'u'lláh's own work.
 import { describe, it, expect } from 'vitest';
-import { preferOwnWork, quotedSpan, OWN_SOURCE_MS } from '../../api/lib/assistant/own-source.js';
+import { preferOwnWork, quotedSpan, literalOwnSearch, OWN_SOURCE_MS, OWN_SOURCE_HITS } from '../../api/lib/assistant/own-source.js';
 import { toPassage } from '../../api/lib/assistant/tools.js';
 import { anisRespond } from '../../api/lib/assistant/respond.js';
 import { channelFor } from '../../api/lib/assistant/channels.js';
@@ -14,7 +14,7 @@ const base = { religion: "Baha'i", source_site: 'oceanlibrary.com', blocktype: '
 const PROMISED_DAY = toPassage({ ...base, id: 311, document_id: 20901, paragraph_index: 311, title: 'The Promised Day Is Come', author: B,
   book_author: 'Shoghi Effendi', collection: 'Shoghi Effendi', source_url: 'https://oceanlibrary.com/promised-day#311',
   text: `“${W} Deal ye one with another with the utmost love and harmony,” is His counsel to the peoples of the world.` });
-// the writer-limited search hit (agentSearch shape): Bahá'u'lláh's own work holding the same words
+// the writer-limited literal hit (paragraphDoc shape, linked): Bahá'u'lláh's own work holding the same words
 const GLEANINGS = { ...base, id: 1320, document_id: 8312, doc_id: 8312, paragraph_index: 1320, title: 'Gleanings from the Writings of Bahá’u’lláh',
   author: B, book_author: B, collection: 'Bahá’u’lláh', book_authority: 10, year: 1935, source_url: 'https://oceanlibrary.com/gleanings#cxxxii',
   text: `${W} Deal ye one with another with the utmost love and harmony, with friendliness and fellowship.` };
@@ -29,10 +29,14 @@ describe('own source: a Central Figure quoted in another author\'s book → the 
   });
   it('the own work wins: Gleanings takes the Promised Day slot (with its link); the quoting book stays only as context, last', async () => {
     const calls = [];
-    const search = async (q, t, n, f) => { calls.push({ q, f }); return [PROMISED_DAY, GLEANINGS]; };
-    const r = await preferOwnWork([PROMISED_DAY, OTHER], { search, shape: toPassage });
+    const search = async (q, f, o) => { calls.push({ q, f, o }); return [PROMISED_DAY, GLEANINGS]; };
+    const linked = [];
+    const link = async (hits) => { linked.push(...hits.map((h) => h.id)); return hits; };
+    const r = await preferOwnWork([PROMISED_DAY, OTHER], { search, link, shape: toPassage });
     expect(calls).toHaveLength(1);
     expect(calls[0].f).toEqual({ author: B });
+    expect(calls[0].o.timeoutMs).toBeLessThanOrEqual(OWN_SOURCE_MS);   // the search gets what is left of the budget
+    expect(linked).toEqual([1320]);                                     // only the winner is linked
     expect(calls[0].q).not.toContain('is His counsel');           // the span, not the whole paragraph
     expect(r.passages.map((p) => p.id)).toEqual([1320, 77, 311]);
     expect(r.passages[0]).toMatchObject({ title: 'Gleanings from the Writings of Bahá’u’lláh', book_author: B, source_url: 'https://oceanlibrary.com/gleanings#cxxxii' });
@@ -74,6 +78,20 @@ describe('own source: a Central Figure quoted in another author\'s book → the 
     await preferOwnWork([OTHER, uhj], { search: async () => { n++; return []; } });
     expect(n).toBe(0);
   });
+  it('different wording is not the same words: "The world is but one country" never swaps for Gleanings\' "The earth is but one country" (no fuzzy match)', async () => {
+    const pd = toPassage({ ...PROMISED_DAY, text: 'His words: “The world is but one country, and mankind its citizens.”' });
+    expect(quotedSpan(pd.text)).toBe('The world is but one country, and mankind its citizens.');
+    const gl = { ...GLEANINGS, text: 'It is not for him to pride himself who loveth his own country, but rather for him who loveth the whole world. The earth is but one country, and mankind its citizens.' };
+    const r = await preferOwnWork([pd], { search: async () => [gl], shape: toPassage });
+    expect(r.swapped).toEqual([]);
+    expect(r.passages.map((p) => p.id)).toEqual([311]);
+    expect(r.searches).toBe(1);
+  });
+  it('a link later than the budget also keeps the original passage', async () => {
+    const r = await preferOwnWork([PROMISED_DAY], { search: async () => [GLEANINGS], link: async (h) => wait(1000, h), shape: toPassage, budgetMs: 60 });
+    expect(r.passages.map((p) => p.id)).toEqual([311]);
+    expect(r.late).toBe(1);
+  });
   it('several quoted passages search in parallel: wall time ≈ one search, not the sum', async () => {
     const pd2 = { ...PROMISED_DAY, id: 312, paragraph_index: 312 };
     const t0 = Date.now();
@@ -82,6 +100,22 @@ describe('own source: a Central Figure quoted in another author\'s book → the 
     expect(r.searches).toBe(2);
     expect(ms).toBeLessThan(110);
     expect(r.passages.map((p) => p.id)).toEqual([1320, 311, 312]);   // one Gleanings, both quoting passages kept as context
+  });
+});
+
+describe('literalOwnSearch: BM25 inside the writer\'s paragraphs, rows by id, no embedding', () => {
+  it('asks the literal layer for the writer only (writerOnly), OWN_SOURCE_HITS deep, within the time left; rows keep BM25 rank', async () => {
+    const asked = [];
+    const keyword = async (q, o) => { asked.push({ q, o }); return { hits: [{ paragraph_id: 1320 }, { paragraph_id: 5 }, { paragraph_id: 311 }] }; };
+    const byIds = async (ids) => { expect(ids).toEqual([1320, 5, 311]); return [{ id: 311, text: 'b' }, { id: 1320, text: 'a' }]; };
+    const rows = await literalOwnSearch('Ye are the fruits of one tree', { author: B }, { keyword, byIds, timeoutMs: 120 });
+    expect(asked).toEqual([{ q: 'Ye are the fruits of one tree', o: { limit: OWN_SOURCE_HITS, filters: { author: B, writerOnly: true }, timeoutMs: 120 } }]);
+    expect(rows.map((r) => r.id)).toEqual([1320, 311]);   // a hit with no live row is dropped
+  });
+  it('no hits → no row read', async () => {
+    let read = 0;
+    expect(await literalOwnSearch('x y z w v', { author: B }, { keyword: async () => ({ hits: [] }), byIds: async () => { read++; return []; } })).toEqual([]);
+    expect(read).toBe(0);
   });
 });
 
