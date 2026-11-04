@@ -690,8 +690,9 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       profile, decisions: direction.decisions, deps: d,
       // a live chat's strategy gets the same in-book step as its researcher (coordinator 11-03: goth questions route to understanding)
       // and the source Jev named (plan.drawFrom → researcher namedSource), resolved beside the strategy's own search
-      ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn } : {}),
-      ...(live && plan?.drawFrom?.name ? { drawFrom: plan.drawFrom.name, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}) })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
+      // (a comparison's per-side books, named by Jev in the strategy call, use the same source tools)
+      ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}),
+      ...(live && plan?.drawFrom?.name ? { drawFrom: plan.drawFrom.name } : {}) })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
     : null;
   // A POSITION question ("the Bahá'í position on socialism, equality and property") → its themes, each searched, the
   // authoritative texts first (assistant/position.js; Chad 10-19: "extremely shallow and wishy washy")

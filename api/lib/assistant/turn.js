@@ -142,7 +142,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const finish = async (reply, status, extra = {}) => {
     turnDone = true;
     const path = { gate: route.action, kind: route.kind, triage: triageSummary, channel: channel.id, stop: route.stop,
-      strategy: strat ? { choice: strat.strategy?.choice ?? null, sides: strat.sides ?? [], ms: strat.ms ?? null } : null, understood: understood?.phrase ?? null, decisions: decisions.list(), ...extra };
+      strategy: strat ? { choice: strat.strategy?.choice ?? null, sides: strat.sides ?? [], ...(strat.sources && Object.keys(strat.sources).length ? { sources: strat.sources } : {}), ms: strat.ms ?? null } : null, understood: understood?.phrase ?? null, decisions: decisions.list(), ...extra };
     path.meta = turnMeta({ status, path, meter, ms: Date.now() - t0 });
     const jt = jevTimeoutsOf(path.decisions); if (jt) path.meta.jev_timeouts = jt;
     // where the time went (route.timeline in the thread view): stage spans since turn start + each model call's completion

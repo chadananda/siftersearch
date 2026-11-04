@@ -8,6 +8,7 @@ import { jevCall, JEV_LIMITS } from './jev-call.js';
 import { modelFor } from '../model-roles.js';
 import { ENDPOINT, TRADITIONS, MIN_CONFIDENCE } from '../scope-extract.js';
 import { jevProbabilities } from './decision-log.js';
+import { drawFromCriteria } from '../search-plan.js';
 
 export const STRATEGIES = {
   comparison: 'asks how TWO OR MORE religions, scriptures or traditions each treat, teach or differ on something — side by side ("Buddhism and Christianity on forgiveness", "does the Qur’án agree with the Gospels about…", "what do the world religions say about the soul")',
@@ -20,6 +21,10 @@ export const STRATEGIES = {
 const SIDES = { ...Object.fromEntries(Object.entries(TRADITIONS).filter(([k]) => k !== 'none')), none: 'no such tradition in the question' };
 const SIDE_KEYS = ['side_a', 'side_b', 'side_c'];
 const ORD = ['FIRST', 'SECOND', 'THIRD'];
+// the BOOKS a comparison names ("the Book of Mormon", "the Gospels", "the Torah"): each name span of the thread
+// (drawFromCriteria: structure, not meaning) is put to Jev — is it a book to read for one side, and whose? The executor reads it.
+const MAX_BOOK_SPANS = 4;
+const bookAsk = (span) => `In the latest message, is "${span}" a particular BOOK or scripture to be read for one side of the comparison? If so, which tradition's book is it? Answer "none" when it names a tradition, a people, a person or anything other than a book.`;
 
 const choice = (a) => a && { choice: a.choice ?? a.value ?? null, confidence: a.confidence ?? a.distribution?.[a.choice ?? a.value] ?? null, distribution: a.distribution ?? null };
 
@@ -37,6 +42,7 @@ export const stateOf = (messages = [], { profile = {} } = {}) => {
 export async function chooseStrategy(messages, { profile = {}, apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-strategy'), timeoutMs = JEV_LIMITS.strategy.timeoutMs,
   budgetMs = Math.max(timeoutMs, JEV_LIMITS.strategy.budgetMs), onJev = null, min = MIN_CONFIDENCE } = {}) {
   const state = stateOf(messages, { profile });
+  const spans = Object.keys(drawFromCriteria(messages) || {}).filter((k) => k !== 'none').slice(0, MAX_BOOK_SPANS);
   if (!apiKey || !state.trim()) return null;
   const t0 = Date.now();
   const call = await jevCall('strategy', async (signal) => {
@@ -45,6 +51,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
       body: JSON.stringify({ model: modelFor('assistant-triage').model, state, questions: {
         strategy: { type: 'choice', instructions: 'What does the LATEST user message, read in the context of the thread, ask the assistant to do?', criteria: STRATEGIES },
         ...Object.fromEntries(SIDE_KEYS.map((k, i) => [k, { type: 'choice', instructions: `If the latest message compares or asks about several traditions, which is the ${ORD[i]} tradition it names or means? Otherwise "none".`, criteria: SIDES }])),
+        ...Object.fromEntries(spans.map((n, i) => [`book_${i + 1}`, { type: 'choice', instructions: bookAsk(n), criteria: SIDES }])),
       } }),
       signal,
     });
@@ -60,11 +67,17 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     const strategy = confident ? raw : { ...raw, choice: 'other', was: raw.choice ?? null, reason: raw.choice ? 'low-confidence' : 'no-answer' };
     const sideAnswers = SIDE_KEYS.map((k) => choice(a[k])).filter(Boolean);
     const sides = [...new Set(sideAnswers.filter((s) => s.choice && s.choice !== 'none' && SIDES[s.choice] && (s.confidence ?? 0) >= min).map((s) => s.choice))];
+    // each side's book: the span Jev called that side's book, most confident first
+    const books = spans.map((n, i) => ({ name: n, ...choice(a[`book_${i + 1}`]) })).filter((b) => b.choice && sides.includes(b.choice) && (b.confidence ?? 0) >= min)
+      .sort((x, y) => (y.confidence ?? 0) - (x.confidence ?? 0));
+    const sources = {};
+    for (const b of books) if (!sources[b.choice]) sources[b.choice] = b.name;
     const decisions = [
       { point: 'strategy', by: 'jev', saw: state, options: Object.keys(STRATEGIES), probabilities: jevProbabilities(raw), chosen: strategy.choice, reason: strategy.reason ?? null, ms },
-      ...(strategy.choice === 'comparison' ? [{ point: 'sides', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: Object.fromEntries(sideAnswers.map((s, i) => [SIDE_KEYS[i], jevProbabilities(s)])), chosen: sides, reason: sides.length < 2 ? 'fewer than two sides — executor widens' : null, ms }] : []),
+      ...(strategy.choice === 'comparison' ? [{ point: 'sides', by: 'jev', saw: state, options: Object.keys(SIDES), probabilities: Object.fromEntries(sideAnswers.map((s, i) => [SIDE_KEYS[i], jevProbabilities(s)])), chosen: sides, reason: sides.length < 2 ? 'fewer than two sides — executor widens' : null, ms },
+        ...(spans.length ? [{ point: 'side-books', by: 'jev', saw: spans, options: Object.keys(SIDES), probabilities: Object.fromEntries(spans.map((n, i) => [n, jevProbabilities(choice(a[`book_${i + 1}`]) || {})])), chosen: sources, reason: null, ms }] : [])] : []),
     ];
-    return { strategy, sides, ms, decisions };
+    return { strategy, sides, sources, ms, decisions };
   }
 }
 

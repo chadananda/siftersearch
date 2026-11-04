@@ -9,7 +9,7 @@ import { run as runTool } from './tools.js';
 import { booksFound, namedSource } from './researcher.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
-const PER_SIDE = 6, MAX_PASSAGES = 12;
+const PER_SIDE = 6, MAX_PASSAGES = 12, MAX_COMPARED = 18;
 
 export const COMPARISON_HOW = (sides, coverage) => `This is a COMPARISON across ${sides.length ? sides.join(', ') : 'the traditions the passages come from'}. Answer side by side: one short section per tradition, in the order named, built ONLY from that tradition's own passages (the passage header's theme names its tradition) and in its own terms; then two or three sentences on the common ground and the real differences — no false harmony.
 ${Object.entries(coverage).filter(([, c]) => c === 'missing').map(([s]) => `The library returned NOTHING from ${s} on this: say so plainly in that section ("the library has nothing from ${s} on this") — never fill it from another tradition or from memory.`).join('\n')}${Object.entries(coverage).filter(([, c]) => c === 'thin').map(([s]) => `Only a passage or two came from ${s}: say the coverage is thin there.`).join('\n')}`.trim();
@@ -27,6 +27,10 @@ export function interleave(bySide, max = MAX_PASSAGES) {
   return out;
 }
 
+// a passage belongs to a side when its tradition is that side's (data field; a passage with no tradition recorded is kept)
+const foldTrad = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+export const ofSide = (p, side) => !p?.religion || foldTrad(p.religion) === foldTrad(side);
+
 async function searchSide({ search, query, messages, profile, religion, limit = PER_SIDE }) {
   const r = await runTool('combined_search', { query, limit, scope_config: profile?.scope_config, ...(religion ? { filters: { tradition: religion } } : {}),
     messages, defaults: religion ? { religion } : {} }, { search });
@@ -34,7 +38,7 @@ async function searchSide({ search, query, messages, profile, religion, limit = 
 }
 
 export async function comparison(choice, ctx) {
-  const { messages, query, distil, search, profile = {}, decisions = NO_LOG } = ctx;
+  const { messages, query, distil, search, profile = {}, decisions = NO_LOG, searchIn = null, sourceTools = null } = ctx;
   let sides = [...new Set(choice.sides || [])];
   if (sides.length < 2) {
     // Jev named fewer than two sides: the comparative is NEVER narrowed (scope-extract rule 2) — one wide search, the writer covers each tradition the passages come from
@@ -46,23 +50,44 @@ export async function comparison(choice, ctx) {
       format: { id: 'comparison', by: 'strategy:comparison', how: COMPARISON_HOW([], {}) } };
   }
   const t0 = Date.now();
-  const first = await Promise.all(sides.map((s) => searchSide({ search, query, messages, profile, religion: s }).catch(() => [])));
+  const named = choice.sources || {};
+  // per side, in parallel: the side's search, and — when Jev named that side's BOOK ("the Book of Mormon") — the book resolved
+  // (researcher namedSource) and searched inside; then the side's top book searched inside (live chat's book step). Every
+  // passage kept is the side's own tradition (the filter leaked other traditions' passages into a side, p5 afterlife).
+  const sideRun = async (side) => {
+    const name = named[side] && sourceTools ? named[side] : null;
+    // the whole question AND its distilled subject, side by side (the whole comparison question ranks the other side's
+    // vocabulary too: p5 fasting found the Íqán's "sun and moon" for the Bahá'í side; "fasting" alone finds the Tablet on the Fast)
+    const [hits, subj, src] = await Promise.all([
+      searchSide({ search, query, messages, profile, religion: side }).catch(() => []),
+      wider ? searchSide({ search, query: wider, messages, profile, religion: side }).catch(() => []) : [],
+      name ? namedSource(name, query, sourceTools).catch(() => null) : null,
+    ]);
+    const own = dedupe(interleave([hits, subj], Infinity)).filter((p) => ofSide(p, side));
+    const books = searchIn ? booksFound({ works: src?.works || [], searched: [{ query, docs: own.map((p) => p.document_id) }], question: query, n: name ? 2 : 1 }) : [];
+    const inside = (await Promise.all(books.map((b) => searchIn(b.query, b.document_id).catch(() => [])))).map((l) => l.filter((p) => ofSide(p, side)));
+    const fromSource = [...(src?.passages || []).filter((p) => ofSide(p, side)), ...(name ? inside[0] || [] : [])];
+    const all = dedupe([...fromSource, ...own, ...inside.slice(name ? 1 : 0).flat()]);
+    decisions.record(`side:${side}`, { by: name ? 'jev' : 'code', saw: { searched: hits.length, subject: wider ? subj.length : null, other_tradition: hits.length + subj.length - own.length, source: name, source_works: (src?.works || []).map((w) => w.id), books: books.map((b) => b.document_id) },
+      options: ['side search', 'named book + side search'], chosen: `${all.length} passages (${fromSource.length} from the named book)`, reason: name ? 'Jev named this side\'s book' : null });
+    return all;
+  };
+  let wider = distil ? distil(query) : null;
+  if (wider === query) wider = null;
+  const first = await Promise.all(sides.map((s) => sideRun(s).catch((err) => {
+    decisions.record(`side:${s}`, { by: 'code', saw: { error: String(err?.message || err).slice(0, 160) }, options: ['side search'], chosen: '0 passages', reason: 'side failed' }); return []; })));
   const coverage = {}; const final = [];
   for (let i = 0; i < sides.length; i++) {
     let hits = first[i]; let c = coverageOf(hits.length);
-    if (c !== 'covered' && distil) {
-      // thin or missing → once more, wider wording (the distilled subject), same side; what comes back decides
-      const wider = distil(query);
-      const more = wider && wider !== query ? await searchSide({ search, query: wider, messages, profile, religion: sides[i] }).catch(() => []) : [];
-      const merged = dedupe([...hits, ...more]);
-      decisions.record(`widen:${sides[i]}`, { by: 'code', saw: { first: hits.length, wider, more: more.length }, options: ['keep', 'widen'], chosen: wider && wider !== query ? 'widen' : 'keep', reason: `${c} after the first search` });
-      hits = merged; c = coverageOf(hits.length);
+    if (c !== 'covered') {
+      // thin or missing after both wordings → the whole library for that side's tradition is all there is; said so (COMPARISON_HOW)
+      decisions.record(`widen:${sides[i]}`, { by: 'code', saw: { passages: hits.length, wider }, options: ['keep', 'widen'], chosen: wider ? 'widen' : 'keep', reason: `${c} after the question${wider ? ' and its subject' : ''}` });
     }
     coverage[sides[i]] = c;
     decisions.record(`coverage:${sides[i]}`, { by: 'code', saw: hits.length, options: ['covered', 'thin', 'missing'], chosen: c, reason: `${hits.length} passages from ${sides[i]}` });
     final.push(tag(hits, sides[i]));
   }
-  const passages = interleave(final);
+  const passages = interleave(final, Math.min(MAX_COMPARED, PER_SIDE * sides.length));
   return { passages, plan: { shape: 'comparison', comparative: true, sides, coverage, ms: Date.now() - t0 },
     format: { id: 'comparison', by: 'strategy:comparison', how: COMPARISON_HOW(sides, coverage) } };
 }

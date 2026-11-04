@@ -2,7 +2,7 @@
 // covered or said missing), understanding, prayer shelf (Jev picks the occasion), current guidance (newest first), scripture reference.
 import { describe, it, expect } from 'vitest';
 import { chooseStrategy, strategyOf, STRATEGIES } from '../../api/lib/assistant/strategy-choice.js';
-import { comparison, understanding, runStrategy, interleave, COMPARISON_HOW } from '../../api/lib/assistant/strategies.js';
+import { comparison, understanding, runStrategy, interleave, COMPARISON_HOW, ofSide } from '../../api/lib/assistant/strategies.js';
 import { decisionLog, jevProbabilities } from '../../api/lib/assistant/decision-log.js';
 import { prayerShelf, splitPrayers, isAttribution, isHeadingRow } from '../../api/lib/assistant/prayer-shelf.js';
 import { currentGuidance, dateOf, newestFirst } from '../../api/lib/assistant/guidance.js';
@@ -19,14 +19,26 @@ describe('chooseStrategy (Jev decides, never keywords)', () => {
     const f = jev({ strategy: { choice: 'comparison', confidence: 0.86, distribution: { comparison: 0.86, understanding: 0.1 } },
       side_a: { choice: 'Islam', confidence: 0.9 }, side_b: { choice: 'Christian', confidence: 0.8 }, side_c: { choice: 'none', confidence: 0.9 } });
     const s = await chooseStrategy(msgs, { profile: { default_tradition: "Baha'i" }, apiKey: 'k', fetchImpl: f });
-    expect(Object.keys(jev.last.questions)).toEqual(['strategy', 'side_a', 'side_b', 'side_c']);
+    expect(Object.keys(jev.last.questions)).toEqual(['strategy', 'side_a', 'side_b', 'side_c', 'book_1']);
     expect(jev.last.questions.strategy.type).toBe('choice'); expect(Object.keys(jev.last.questions.strategy.criteria)).toEqual(Object.keys(STRATEGIES));
     expect(jev.last.state).toMatch(/Baha'i/); expect(jev.last.state).toMatch(/forgiveness/);
     expect(s.strategy.choice).toBe('comparison'); expect(s.sides).toEqual(['Islam', 'Christian']); expect(strategyOf(s)).toBe('comparison');
-    expect(s.decisions.map((d) => d.point)).toEqual(['strategy', 'sides']);
+    expect(s.decisions.map((d) => d.point)).toEqual(['strategy', 'sides', 'side-books']);
     expect(s.decisions[0]).toMatchObject({ by: 'jev', chosen: 'comparison', probabilities: { comparison: 0.86, understanding: 0.1 } });
     expect(s.decisions[0].options).toEqual(Object.keys(STRATEGIES));
     expect(s.decisions[1].chosen).toEqual(['Islam', 'Christian']);
+  });
+  it('each name span of the thread is put to Jev — a book for one side, and whose? — and becomes that side\'s book', async () => {
+    const m = [{ role: 'user', content: 'How do the Bahá’í writings and the Book of Mormon treat tithing?' }];
+    const f = jev({ strategy: { choice: 'comparison', confidence: 0.9 }, side_a: { choice: "Baha'i", confidence: 0.9 }, side_b: { choice: 'Christian', confidence: 0.8 },
+      book_1: { choice: 'none', confidence: 0.7 }, book_2: { choice: 'Christian', confidence: 0.8 } });
+    const s = await chooseStrategy(m, { apiKey: 'k', fetchImpl: f });
+    expect(jev.last.questions.book_2.instructions).toMatch(/Book of Mormon/); expect(Object.keys(jev.last.questions.book_2.criteria)).toContain('Christian');
+    expect(s.sources).toEqual({ Christian: 'Book of Mormon' });
+    const low = await chooseStrategy(m, { apiKey: 'k', fetchImpl: jev({ strategy: { choice: 'comparison', confidence: 0.9 }, side_a: { choice: 'Christian', confidence: 0.9 }, book_2: { choice: 'Christian', confidence: 0.3 } }) });
+    expect(low.sources).toEqual({});
+    const offSide = await chooseStrategy(m, { apiKey: 'k', fetchImpl: jev({ strategy: { choice: 'comparison', confidence: 0.9 }, side_a: { choice: "Baha'i", confidence: 0.9 }, side_b: { choice: 'Islam', confidence: 0.9 }, book_2: { choice: 'Christian', confidence: 0.9 } }) });
+    expect(offSide.sources).toEqual({});   // a book of a tradition that is not a side is not read
   });
   it('low confidence or no answer → other (fail open), the reason logged; errors → null', async () => {
     const low = await chooseStrategy(msgs, { apiKey: 'k', fetchImpl: jev({ strategy: { choice: 'prayer', confidence: 0.4 } }) });
@@ -44,13 +56,13 @@ describe('chooseStrategy (Jev decides, never keywords)', () => {
 });
 
 describe('comparison executor', () => {
-  it('searches every side in parallel, widens a thin side once, says which side is missing', async () => {
+  it('searches every side in parallel with the question and its subject, says which side is thin or missing', async () => {
     const calls = [];
     const search = async (a) => { calls.push(a); if (a.religion === 'Islam') return { passages: [hit(1, 'Islam'), hit(2, 'Islam'), hit(3, 'Islam')] };
       if (a.religion === 'Christian' && a.query === 'forgiveness') return { passages: [hit(9, 'Christian')] }; return { passages: [] }; };
     const decisions = decisionLog();
     const out = await comparison({ sides: ['Islam', 'Christian', 'Hindu'] }, { messages: msgs, query: 'how do they speak of forgiveness', distil: () => 'forgiveness', search, decisions });
-    expect(calls.filter((c) => c.religion === 'Islam').length).toBe(1);
+    expect(calls.filter((c) => c.religion === 'Islam').map((c) => c.query)).toEqual(['how do they speak of forgiveness', 'forgiveness']);
     expect(calls.filter((c) => c.religion === 'Christian').map((c) => c.query)).toEqual(['how do they speak of forgiveness', 'forgiveness']);
     expect(out.plan.coverage).toEqual({ Islam: 'covered', Christian: 'thin', Hindu: 'missing' });
     expect(out.passages.map((p) => p.theme)).toEqual(['Islam', 'Christian', 'Islam', 'Islam']);
@@ -58,6 +70,26 @@ describe('comparison executor', () => {
     const pts = decisions.list().map((d) => d.point);
     expect(pts).toContain('widen:Christian'); expect(pts).toContain('coverage:Hindu');
     expect(decisions.list().find((d) => d.point === 'coverage:Hindu').chosen).toBe('missing');
+  });
+  it('a side keeps only its own tradition\'s passages (the filter leaked others), and coverage counts those', async () => {
+    const search = async (a) => ({ passages: a.religion === 'Hindu' ? [hit(1, 'Hindu'), hit(2, "Baha'i"), hit(3, 'Hindu'), hit(4, 'Hindu')] : [hit(5, 'Christian'), hit(6, 'Christian'), hit(7, 'Christian')] });
+    const decisions = decisionLog();
+    const out = await comparison({ sides: ['Hindu', 'Christian'] }, { messages: msgs, query: 'q', search, decisions });
+    expect(out.passages.filter((p) => p.theme === 'Hindu').map((p) => p.id)).toEqual([1, 3, 4]);
+    expect(decisions.list().find((d) => d.point === 'side:Hindu').saw.other_tradition).toBe(1);
+    expect(ofSide({ religion: 'Bahá’í' }, "Baha'i")).toBe(true); expect(ofSide({ religion: null }, 'Hindu')).toBe(true);
+  });
+  it('a side whose BOOK Jev named reads that book first (resolved + searched inside), then the side search', async () => {
+    const search = async (a) => ({ passages: a.religion === 'Christian' ? [hit(5, 'Christian')] : [hit(1, "Baha'i"), hit(2, "Baha'i"), hit(3, "Baha'i")] });
+    const inCalls = [];
+    const sourceTools = { work: async (t) => (t === 'Book of Mormon' ? { doc: { id: 21322, title: 'The Book Of Mormon', paragraph_count: 6000 } } : null), probe: async () => [], searchBy: async () => [] };
+    const searchIn = async (q, id) => { inCalls.push(id); return id === 21322 ? [hit(40, 'Christian', { document_id: 21322, paragraph_index: 7 }), hit(41, 'Christian', { document_id: 21322, paragraph_index: 8 })] : []; };
+    const decisions = decisionLog();
+    const out = await comparison({ sides: ["Baha'i", 'Christian'], sources: { Christian: 'Book of Mormon' } }, { messages: msgs, query: 'tithing', search, searchIn, sourceTools, decisions });
+    expect(inCalls).toContain(21322);
+    expect(out.passages.filter((p) => p.theme === 'Christian').map((p) => p.id)).toEqual([40, 41, 5]);
+    expect(out.plan.coverage.Christian).toBe('covered');
+    expect(decisions.list().find((d) => d.point === 'side:Christian')).toMatchObject({ by: 'jev', saw: { source: 'Book of Mormon', source_works: [21322] } });
   });
   it('fewer than two sides → one wide search, never narrowed, logged', async () => {
     const calls = []; const decisions = decisionLog();
