@@ -29,7 +29,7 @@ describe('source tier (library metadata only)', () => {
     expect(sourceTier(TABLET)).toBe('writings');
     expect(sourceTier(SWAB)).toBe('writings');
     expect(sourceTier(PARIS)).toBe('reported');      // Chad 11-04: talks are like pilgrims' notes
-    expect(sourceTier(SAQ)).toBe('reported');
+    expect(sourceTier(SAQ)).toBe('writings');   // reviewed and corrected by 'Abdu'l-Bahá (Chad 11-04)
     expect(sourceTier(PILGRIM)).toBe('reported');
     expect(sourceTier(GUARDIAN)).toBe('guardian');
     expect(sourceTier(HOUSE)).toBe('house');
@@ -52,15 +52,17 @@ describe('source tier (library metadata only)', () => {
 
 // reported works whose titles don't say "talk", in a collection that doesn't either (Chad 11-04 brief)
 const book = (title, author = '‘Abdu’l-Bahá') => ({ title, author, book_author: author, religion: B, collection: "Baha'i Books", text: 'x' });
-describe('source tier: the talk books and Some Answered Questions are reported speech (by title)', () => {
-  it('Promulgation, SAQ, London, Divine Philosophy, Foundations, Paris Talks → reported; written works stay Writings', () => {
-    for (const t of ['The Promulgation of Universal Peace', 'Some Answered Questions', '‘Abdu’l-Bahá in London', 'Divine Philosophy', 'Foundations of World Unity', 'Paris Talks'])
+describe('source tier: the talk books are reported speech (by title); Some Answered Questions is authoritative', () => {
+  it('Promulgation, London, Divine Philosophy, Foundations, Paris Talks → reported; written works and SAQ stay Writings', () => {
+    expect(sourceTier(book('Some Answered Questions'))).toBe('writings');
+    expect(tierLabel(book('The Promulgation of Universal Peace'))).toMatch(/imperfect rendering.*partially understood/);
+    for (const t of ['The Promulgation of Universal Peace', '‘Abdu’l-Bahá in London', 'Divine Philosophy', 'Foundations of World Unity', 'Paris Talks'])
       expect(sourceTier(book(t)), t).toBe('reported');
     expect(sourceTier(book('Words to Mr Pinchot and others, spoken at his estate outside Milford on 1912-Jun-04'))).toBe('reported');
     expect(sourceTier(book('Tablets of the Divine Plan'))).toBe('writings');
     expect(sourceTier(book('Selections from the Writings of ‘Abdu’l-Bahá'))).toBe('writings');
     expect(sourceTier(book('Some Answered Questions', 'Laura Clifford Barney'))).toBe('secondary');   // only a Central Figure's words are "reported"
-    expect(tierLabel(book('Some Answered Questions'))).toMatch(/REPORTED SPEECH .*table talks ‘Abdu’l-Bahá reviewed/);
+    expect(tierLabel(book('Some Answered Questions'))).toMatch(/^WRITINGS .*reviewed and corrected himself/);
   });
   it('one list: source-survey reads the no-authored-original works from source-tier', () => {
     expect(NO_AUTHORED_ORIGINAL).toHaveLength(3);
