@@ -231,7 +231,7 @@ pm2 list
 **Retired 2026-07-10 (pm2-stopped; superseded by the unified enrichment pipeline — do not restart):** `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-graph-extractor`, `siftersearch-graph-promoter`, `siftersearch-graph-resolver`, `siftersearch-graph-validator`. (`siftersearch-db` is defined in ecosystem but not running.)
 
 **External Services:**
-- `meilisearch` - RETIRED 10-21 (user service disabled). `qdrant-next` (user unit, :6333) + `qdrant-hot` (system unit, :6335)
+- `meilisearch` - RETIRED 10-21 (user service disabled). `qdrant-main` (system unit, :6343, /faster/qdrant — QDRANT_URL; qdrant-next :6333 stopped since the 11-02 cutover) + `qdrant-hot` (system unit, :6335)
 - `dropbox` - Runs as systemd user service, syncs to `/tank/dropbox`
 
 **Database:** `~/sifter/siftersearch/data/sifter.db`
