@@ -101,12 +101,31 @@ describe('Clef backends (Workers AI via our edge Worker)', () => {
 describe('record() — calls made outside ask()', () => {
   it('logs the Jev answer under its task and shadows Clef when on; never throws', async () => {
     process.env.INTERNAL_API_KEY = 'ik';
-    const id = mod.record('search-plan', 'user: what is justice?', Q, { answers: { speaker: { choice: 'other' } }, ms: 120, model: 'jev-1' });
+    expect(mod.record('search-plan', 'user: what is justice?', Q, { answers: { speaker: { choice: 'other' } }, ms: 120, model: 'jev-1' })).toBe(true);
+    expect(mod.flushCalls()).toBe(1);
+    const { id } = mod._test.db().prepare("SELECT id FROM calls WHERE task = 'search-plan'").get();
     await new Promise((r) => setTimeout(r, 20));
     expect(mod._test.db().prepare('SELECT task, jev_ms, served_by FROM calls WHERE id = ?').get(id)).toMatchObject({ task: 'search-plan', jev_ms: 120, served_by: 'jev' });
     expect(mod._test.db().prepare('SELECT COUNT(*) n FROM shadow WHERE call_id = ?').get(id).n).toBe(2);
     expect(mod.record(null, 's', Q, {})).toBeNull();
     delete process.env.INTERNAL_API_KEY;
+  });
+  it('never writes on the caller\'s turn: rows queue and flush together in one transaction (11-03)', async () => {
+    const n = () => mod._test.db().prepare("SELECT COUNT(*) n FROM calls WHERE task = 'batch-t'").get().n;
+    process.env.SYSTEMONE_SHADOW = '';
+    for (let i = 0; i < 3; i++) mod.record('batch-t', 's', Q, { answers: { a: i }, ms: i });
+    expect(n()).toBe(0);                                   // nothing written synchronously
+    await new Promise((r) => setTimeout(r, 400));          // the flush timer (FLUSH_MS 250) writes them
+    expect(n()).toBe(3);
+    expect(mod.flushCalls()).toBe(0);                      // queue drained
+  });
+  it('routing.json is read once per TTL, not on every call', () => {
+    writeFileSync(join(dir, 'routing.json'), JSON.stringify({ t: { laya_model: 'ckpt-a' } }));
+    expect(mod.routeFor('t').laya_model).toBe('ckpt-a');
+    writeFileSync(join(dir, 'routing.json'), JSON.stringify({ t: { laya_model: 'ckpt-b' } }));
+    expect(mod.routeFor('t').laya_model).toBe('ckpt-a');   // within the TTL: no re-read
+    mod._test.reset();
+    expect(mod.routeFor('t').laya_model).toBe('ckpt-b');         // reset (or TTL expiry) picks up the edit
   });
   it('shadow budget: sampled at SYSTEMONE_SHADOW_RATE and capped per task × backend × day', () => {
     process.env.SYSTEMONE_SHADOW_RATE = '0.02'; process.env.SYSTEMONE_SHADOW_DAILY = '3';

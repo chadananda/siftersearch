@@ -66,9 +66,20 @@ const clefOn = () => process.env.CLEF !== 'off' && !!clefKey();
 /** Routing per task type (DIR/routing.json): { "<task>": { "laya_model": "<checkpoint trained for this task>",
  *  "primary": "jev"|"clef"|"clef-flash"|"laya", "min_conf": 0.9, "shadow": true, "shadow_backends": ["clef","clef-flash"] } }.
  *  No laya_model → Laya never called. Clef needs the internal key (edge route); without it a clef primary falls back to Jev. */
-export function routeFor(task) {
+// routing.json is read at most every ROUTING_TTL_MS: it was existsSync + readFileSync + JSON.parse on the event loop for
+// EVERY Jev call (each search plan). Edits take effect within the TTL.
+const ROUTING_TTL_MS = 10_000;
+let routing = { at: 0, all: {} };
+function routingTable() {
+  if (Date.now() - routing.at < ROUTING_TTL_MS) return routing.all;
   const path = join(DIR, 'routing.json');
-  const all = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {};
+  let all = {};
+  try { all = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {}; } catch { all = routing.all; }   // a half-written file keeps the last table
+  routing = { at: Date.now(), all };
+  return all;
+}
+export function routeFor(task) {
+  const all = routingTable();
   const envShadow = process.env.SYSTEMONE_SHADOW ?? (clefOn() ? 'clef,clef-flash' : '');
   const r = { primary: 'jev', min_conf: 0.9, shadow: true, laya_model: null,
     shadow_backends: envShadow.split(',').map((x) => x.trim()).filter(Boolean), ...(all[task] || {}) };
@@ -191,9 +202,39 @@ export async function ask(task, state, questions, { ref = null, timeoutMs = 2000
   return { answers: out.answers, served_by: served, id, tokens: jev?.tokens ?? primary?.tokens ?? 0, jev: jev?.answers ?? null, laya: laya?.answers ?? null };
 }
 
+// BATCHED CALL LOG (11-03). record() ran a synchronous INSERT into calls.db (on /tank, busy_timeout 30 s) inside every
+// jevFetch — i.e. on the API event loop once per search plan / Anís triage. Rows now queue and are written by one
+// transaction FLUSH_MS later (many calls → one commit), after the caller's request has moved on; shadows start once the
+// flush has given the row its id. A crash loses at most FLUSH_MS of log rows (training data, never an answer).
+const FLUSH_MS = 250;
+const FLUSH_MAX = 200;
+const pendingCalls = [];   // { row: [...insert params], after(id) }
+let flushTimer = null;
+function queueCall(row, after) {
+  pendingCalls.push({ row, after });
+  if (pendingCalls.length >= FLUSH_MAX) { flushCalls(); return; }
+  if (!flushTimer) { flushTimer = setTimeout(flushCalls, FLUSH_MS); flushTimer.unref?.(); }
+}
+/** Write every queued call row in one transaction, then run each row's follow-up (shadows) with its id. Returns rows written. */
+export function flushCalls() {
+  if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+  if (!pendingCalls.length) return 0;
+  const batch = pendingCalls.splice(0);
+  let ids;
+  try {
+    const calls = db();
+    const ins = calls.prepare(`INSERT INTO calls (task, at, ref, state, questions, jev, jev_tokens, jev_ms, jev_model, served_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'jev')`);
+    ids = calls.transaction(() => batch.map((b) => ins.run(...b.row).lastInsertRowid))();
+  } catch { return 0; }   // logging must never break a caller
+  batch.forEach((b, i) => { try { b.after?.(ids[i]); } catch { /* a shadow start must never break the flush */ } });
+  return batch.length;
+}
+
 /**
  * Log a Jev call made OUTSIDE ask() (latency-critical callers that keep their own fetch — the search planner, Anís triage)
- * and start the Clef shadows for it, exactly as ask() would. Never throws: logging must not break the caller.
+ * and start the Clef shadows for it, exactly as ask() would. Never throws and never writes on the caller's turn: the row
+ * is QUEUED (flushCalls writes it within FLUSH_MS). Returns true when queued, null when there is nothing to log.
  * @param {string} task  task type (training + comparison are per task)
  * @param {{ answers, ms?, model?, tokens?, ref? }} jev  Jev's answers as the caller received them
  */
@@ -202,16 +243,16 @@ export function record(task, state, questions, { answers, ms = null, model = nul
     if (!task || !answers) return null;
     spend('typesafe', 'jev-latest', { input_tokens: tokens || 0 }, task);   // a Jev call made outside ask() is spend too (priced as jev-latest)
     const st = typeof state === 'string' ? state : JSON.stringify(state);
-    const id = db().prepare(`INSERT INTO calls (task, at, ref, state, questions, jev, jev_tokens, jev_ms, jev_model, served_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'jev')`).run(task, Date.now(), ref == null ? null : String(ref), st, JSON.stringify(questions),
-      JSON.stringify(answers), tokens, ms, model).lastInsertRowid;
     const route = routeFor(task);
-    if (route.shadow) for (const b of route.shadow_backends.filter((x) => shadowAllowed(task, x))) {
-      callBackend(b, task, route, st, questions, 20000, 0)
-        .then((r) => recordShadow(id, b, r.answers, r.ms, null))
-        .catch((e) => recordShadow(id, b, null, null, String(e.message || e).slice(0, 300)));
-    }
-    return id;
+    queueCall([task, Date.now(), ref == null ? null : String(ref), st, JSON.stringify(questions), JSON.stringify(answers), tokens, ms, model],
+      (id) => {
+        if (route.shadow) for (const b of route.shadow_backends.filter((x) => shadowAllowed(task, x))) {
+          callBackend(b, task, route, st, questions, 20000, 0)
+            .then((r) => recordShadow(id, b, r.answers, r.ms, null))
+            .catch((e) => recordShadow(id, b, null, null, String(e.message || e).slice(0, 300)));
+        }
+      });
+    return true;
   } catch { return null; }
 }
 
@@ -244,4 +285,4 @@ export function attachGold(task, ref, gold, basis) {
   return db().prepare(`UPDATE calls SET gold = ?, gold_basis = ? WHERE task = ? AND ref = ?`).run(JSON.stringify(gold), basis, task, String(ref)).changes;
 }
 
-export const _test = { db: () => db(), reset: () => { store?.close(); store = null; } };
+export const _test = { db: () => db(), reset: () => { flushCalls(); store?.close(); store = null; routing = { at: 0, all: {} }; } };
