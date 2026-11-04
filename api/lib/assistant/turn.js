@@ -18,6 +18,7 @@ import { chooseStrategy, strategyOf } from './strategy-choice.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
 import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
 import { decisionLog } from './decision-log.js';
+import { openJevTurn, linkJevTurn, jevTurnCalls } from '../systemone.js';   // every Jev call of the turn carries its <thread>:<round> ref
 import { withAIContext, currentAIContext, setAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
 import { phraseStage } from './phrases.js';
@@ -111,6 +112,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   const strategyOn = strategyFn && engine === undefined && research === undefined && !variants;
   onEvent({ type: 'stage', stage: 'understand' });   // the neutral word until a decision exists — never a templated echo of the message
   // a Jev call past its measured limit is retried once within budget and never silent: each one is a jev:timeout decision + meta.jev_timeouts
+  openJevTurn();   // calls made from here (triage, strategy, …) are remembered and stamped with the turn once its thread exists
   const jevTimeouts = []; const onJev = (info) => { jevTimeouts.push(info); };
   const [ex, tri, strat] = await Promise.all([timed('open-log', () => d.open(logArgs)).catch(() => null), timed('triage', () => d.triage(messages, { card: card?.text ?? null, channel: channel.id, onJev })).catch(() => null),
     strategyOn ? timed('strategy', () => strategyFn(messages, { profile, onJev }), (r) => (r ? { choice: r.strategy?.choice, sides: r.sides } : null)).catch(() => null) : null]);
@@ -119,6 +121,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   // every search this turn makes is traced with its thread + turn (search_trace.thread_id / turn_id = "<thread>:<round>")
   if (ex?.conversationId) setAIContext({ trace: { ...(currentAIContext().trace || {}), thread: ex.conversationId, turn: `${ex.conversationId}:${ex.round}`,
     route: [route.action, route.kind].filter(Boolean).join(':') || null } });
+  if (ex?.conversationId) linkJevTurn(`${ex.conversationId}:${ex.round}`);
   const decisions = decisionLog(strat?.decisions || []);   // every strategy decision of the turn (inputs, options, probabilities, branch) → path.decisions
   for (const info of jevTimeouts) decisions.record('jev:timeout', timeoutDecision(info));
   // Jev's OUTCOME field — the turn read with the history and the card — decides what a short or odd message is; its words
@@ -154,6 +157,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     path.meta = turnMeta({ status, path, meter, ms: Date.now() - t0 });
     const jt = jevTimeoutsOf(path.decisions); if (jt) path.meta.jev_timeouts = jt;
     // where the time went (route.timeline in the thread view): stage spans since turn start + each model call's completion
+    try { const jc = jevTurnCalls(); if (jc.length) path.jev_calls = jc; } catch { /* the gate link is bookkeeping */ }   // [{gate, id}] → calls.db rows of this turn's Jev decisions
     path.timeline = timelineOf(timeline, t0); path.llm = meter.map((c) => ({ model: c.model, caller: c.caller ?? null, at: c.at ? c.at - t0 : null }));
     if (ex) await d.close({ ...ex, reply, status, path, channel: channel.id }).catch(() => {});
     // the Observatory terminal: that a turn happened, how it was routed — never its text or who asked

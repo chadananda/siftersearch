@@ -17,6 +17,7 @@ import Database from 'better-sqlite3';
 import { logAIUsage } from './ai-services.js';
 import { assertSpendCap } from './spend-caps.js';   // every Jev / Clef call is SPEND (ai_usage) as well as a log row
 import { noteProviderError } from './spend-alerts.js';   // out-of-credit → immediate email
+import { currentAIContext, setAIContext } from './ai-context.js';
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -94,7 +95,7 @@ export function routeFor(task) {
 /** One ai_usage row per paid System-1 call (Jev: $42/B input; Clef: Workers AI list price — model-registry). */
 function spend(provider, model, usage, caller) {
   try {
-    logAIUsage({ provider, model, serviceType: 'system1', caller: `system1:${caller}`,
+    logAIUsage({ provider, model, serviceType: 'system1', caller: String(caller).startsWith('improve-') ? caller : `system1:${caller}`,   // tuning runs bill the improve group, everything else anis
       promptTokens: usage?.input_tokens ?? usage?.prompt_tokens ?? 0, completionTokens: usage?.output_tokens ?? usage?.completion_tokens ?? 0 });
   } catch { /* spend logging must never break a decision */ }
 }
@@ -182,12 +183,15 @@ export async function ask(task, state, questions, { ref = null, timeoutMs = 2000
     if (route.laya_model && (shadow ?? route.shadow)) { try { laya = await callLaya(task, route.laya_model, state, questions, 8000); } catch { laya = null; } }
   }
   let id = null;
+  const turn = currentAIContext().jevTurn;
+  if (ref == null) ref = turn?.ref ?? null;   // the Anís turn this call belongs to ("<thread>:<round>"), when known
   if (log) {
     id = db().prepare(`INSERT INTO calls (task, at, ref, state, questions, jev, jev_tokens, jev_ms, jev_model, laya, laya_ms, laya_model, served_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(task, Date.now(), ref == null ? null : String(ref),
       typeof state === 'string' ? state : JSON.stringify(state), JSON.stringify(questions),
       jev ? JSON.stringify(jev.answers) : null, jev?.tokens ?? null, jev?.ms ?? null, jev?.model ?? null,
       laya ? JSON.stringify(laya.answers) : null, laya?.ms ?? null, laya?.model ?? null, served).lastInsertRowid;
+    turn?.calls.push({ gate: task, id: Number(id), row: null, linked: ref != null });
     if (primary) recordShadow(id, primary.model, primary.answers, primary.ms, null);   // a Clef-served answer is kept beside the call
     // SHADOWS: the other backends get the same question AFTER the answer is returned — compared, never served
     if (shadow ?? route.shadow) {
@@ -246,8 +250,14 @@ export function record(task, state, questions, { answers, ms = null, model = nul
     spend('typesafe', 'jev-latest', { input_tokens: tokens || 0 }, task);   // a Jev call made outside ask() is spend too (priced as jev-latest)
     const st = typeof state === 'string' ? state : JSON.stringify(state);
     const route = routeFor(task);
-    queueCall([task, Date.now(), ref == null ? null : String(ref), st, JSON.stringify(questions), JSON.stringify(answers), tokens, ms, model],
+    const turn = currentAIContext().jevTurn;
+    if (ref == null) ref = turn?.ref ?? null;
+    const row = [task, Date.now(), ref == null ? null : String(ref), st, JSON.stringify(questions), JSON.stringify(answers), tokens, ms, model];
+    const link = { gate: task, id: null, row, linked: ref != null };   // linkJevTurn() back-fills the ref once the turn's thread is known
+    turn?.calls.push(link);
+    queueCall(row,
       (id) => {
+        link.id = Number(id);
         if (route.shadow) for (const b of route.shadow_backends.filter((x) => shadowAllowed(task, x))) {
           callBackend(b, task, route, st, questions, 20000, 0)
             .then((r) => recordShadow(id, b, r.answers, r.ms, null))
@@ -285,6 +295,43 @@ function recordShadow(id, backend, answers, ms, error) {
 /** Attach a GOLD answer to logged calls (rule-decided or reviewed) — the strongest training targets. */
 export function attachGold(task, ref, gold, basis) {
   return db().prepare(`UPDATE calls SET gold = ?, gold_basis = ? WHERE task = ? AND ref = ?`).run(JSON.stringify(gold), basis, task, String(ref)).changes;
+}
+
+// ── Jev TURN LINK (11-04). Triage and strategy run before the Anís thread/round exists, so a turn opens a scope first
+// (openJevTurn), every call made inside it is remembered, and linkJevTurn("<thread>:<round>") stamps their `ref` — queued rows
+// in place, flushed rows by id. Calls made after the link read the ref directly. ref = the same turn id search_trace carries.
+export const openJevTurn = () => setAIContext({ jevTurn: { ref: null, calls: [] } });
+/** The calls.db ids of this turn's Jev calls, [{gate, id}] (flushes the queue first so ids exist). */
+export function jevTurnCalls() {
+  const t = currentAIContext().jevTurn;
+  if (!t) return [];
+  flushCalls();
+  return t.calls.filter((c) => c.id != null).map((c) => ({ gate: c.gate, id: c.id }));
+}
+export function linkJevTurn(ref) {
+  const t = currentAIContext().jevTurn;
+  if (!t || ref == null) return 0;
+  t.ref = String(ref);
+  const ids = [];
+  for (const c of t.calls) {
+    if (c.linked) continue;
+    c.linked = true;
+    if (c.id == null) { if (c.row) c.row[2] = t.ref; } else ids.push(c.id);
+  }
+  if (ids.length) { try { db().prepare(`UPDATE calls SET ref = ? WHERE id IN (${ids.map(() => '?').join(',')}) AND ref IS NULL`).run(t.ref, ...ids); } catch { /* a link is bookkeeping */ } }
+  return t.calls.length;
+}
+
+/** The calls.db handle for the bank repo (repos/jev-calls-repo.js) — the only other reader. */
+export const callsDb = () => db();
+
+/** Re-ask Jev one stored (or variant) state — the tuning harness. NOT a logged call: no row, no shadow. Billed to the
+ *  improve group (caller `improve-jev-try:<task>`), capped like the rest of it. → { answers, tokens, ms } */
+export async function rerun(task, state, questions, { timeoutMs = 20000 } = {}) {
+  const caller = `improve-jev-try:${task}`;
+  await assertSpendCap(caller, { provider: 'jev' });
+  const r = await callJev(typeof state === 'string' ? state : JSON.stringify(state), questions, timeoutMs, 2, caller);
+  return { answers: r.answers, tokens: r.tokens, ms: r.ms };
 }
 
 export const _test = { db: () => db(), reset: () => { flushCalls(); store?.close(); store = null; routing = { at: 0, all: {} }; } };
