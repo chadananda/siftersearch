@@ -168,6 +168,31 @@ async function qdrant(path, body, timeoutMs = 2500, base = QD()) {
   return j.result;
 }
 
+/** The collections passage search queries (main Qdrant); `phrases` also has its hot copy (phase 0). */
+export const SEARCHED_COLLECTIONS = Object.freeze(['phrases', 'hype', 'concepts', 'paragraphs_kw']);
+
+/** Points per doc for `docIds` in every searched collection (+ the hot phrases copy) — Qdrant facet on the indexed doc_id,
+ *  exact, in chunks. → { collection: Map(docId → points) } (only docs with points appear). A missing hot collection is
+ *  empty; any other failure throws (the caller then keeps its full list). Background use only (excluded-docs.js). */
+export async function docPointCounts(docIds, { timeoutMs = 30000, chunk = 1000 } = {}) {
+  const ids = [...new Set(docIds.map(Number))];
+  const facet = async (coll, base) => {
+    const m = new Map();
+    for (let i = 0; i < ids.length; i += chunk) {
+      const part = ids.slice(i, i + chunk);
+      const r = await qdrant(`/collections/${coll}/facet`, { key: 'doc_id', filter: { must: [{ key: 'doc_id', match: { any: part } }] }, limit: part.length, exact: true }, timeoutMs, base);
+      for (const h of r.hits || []) m.set(Number(h.value), h.count);
+    }
+    return m;
+  };
+  const out = {};
+  for (const c of SEARCHED_COLLECTIONS) out[c] = await facet(c, QD());
+  if (hotUrl()) {
+    try { out[HOT_PHRASES()] = await facet(HOT_PHRASES(), hotUrl()); } catch (err) { if (!/ 404 /.test(err.message)) throw err; out[HOT_PHRASES()] = new Map(); }
+  }
+  return out;
+}
+
 /** Qdrant liveness + each search collection's status (green = fully indexed; yellow = optimizing, searches slower). */
 export async function qdrantHealth(timeoutMs = 3000) {
   try {

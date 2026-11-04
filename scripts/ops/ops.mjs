@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Ops CLI — an HTTP client of the internal API, never the database (Chad 10-11). Reports run server-side.
 //   node scripts/ops/ops.mjs reports                         list reports + recent runs
+//   node scripts/ops/ops.mjs search-excluded                 search exclusion list: metadata + retired duplicates, points left per collection
 //   node scripts/ops/ops.mjs report <name> [--days 14 | --ids 1,2,3 | --params '{json}'] [--wait] [--latest]
 //   node scripts/ops/ops.mjs media held | rejudge [id…] | progress | log [--since 6h|ISO --kind k1,k2 --limit n] | gauges [--host h] [--hours n] [--rows] | health-history <machine> [--from --to] | status <id|slug|words> | stage <stage> [--missing] [--status done] [--after N] | add <url|path>… | redo <id> <stage>…
 //   node scripts/ops/ops.mjs search-latency [--minutes 60]   per-stage p50/p95 vs the search budget (search/latency-budget.js)
@@ -23,6 +24,7 @@ const [cmd, name] = process.argv.slice(2);
 const flag = (k) => process.argv.includes(k);
 const val = (k) => (flag(k) ? process.argv[process.argv.indexOf(k) + 1] : undefined);
 if (cmd === 'reports') await out(await call('GET', '/ops/reports'));
+else if (cmd === 'search-excluded') await out(await call('GET', '/ops/search/excluded'));   // excluded docs + which still have Qdrant points
 else if (cmd === 'report' && name) {
   if (flag('--latest')) await out(await call('GET', `/ops/reports/${name}/latest`));
   else {

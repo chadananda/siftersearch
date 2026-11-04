@@ -42,6 +42,12 @@ export default async function opsReportRoutes(fastify) {
   // an internal API with health for each service"): every service's heartbeat (version, health, work in flight), the ops
   // jobs running now, and the Anís answers being researched (api/lib/service-heartbeat.js, jobs/async-jobs.js)
   // DEPLOY STATUS: every updater attempt (deployed|refused|pending + reason) so the pushing agent can check its own commit — scripts/ops/deploy-check.mjs
+  // SEARCH EXCLUSION (read-only): metadata docs + retired duplicates, and which of them still have points per Qdrant
+  // collection — only those are sent as the search's must_not (api/lib/search/excluded-docs.js). Computed fresh here.
+  fastify.get('/ops/search/excluded', { preHandler: requireInternal }, async () => {
+    const r = await (await import('../lib/search/excluded-docs.js')).computeExclusion();
+    return { ...r, all: undefined, sent: r.sent.length, all_ids: r.all };
+  });
   fastify.get('/ops/deploy', { preHandler: requireInternal }, async () => readDeployStatus(join(process.cwd(), 'data', 'run', 'deploy-status.json')));
   fastify.get('/ops/services', { preHandler: requireInternal }, async () => {
     const { readServices, headCommit } = await import('../lib/service-heartbeat.js');
