@@ -11,6 +11,7 @@
 //   node scripts/ops/ops.mjs anis-improve-digest [--since 24h|ISO] [--json]   DAILY for Claude Code: assessment + new/grown CODE recommendations + DATA changes
 //   node scripts/ops/ops.mjs anis-improve-report [--days 7] [--target code|data|<target>] [--stage S] [--status open] [--since ISO]   audits → conclusions → solutions (JSON)
 //   node scripts/ops/ops.mjs anis-improve-status <id> <accepted|done|rejected|open> [--note "what was done"]   sets status + reviewed_by internal:claude-code
+//   node scripts/ops/ops.mjs anis-improve-scenarios <id> [--write] [--force]   a CODE proposal's acceptance scenarios; --write → tests/behavior/proposed/<id>.json
 //   node scripts/ops/ops.mjs search-replay --class <class> [--days 7]   re-run that class's turns (no LLM) → how many the current code fixes
 //   node scripts/ops/ops.mjs anis-trace <thread|thread:round>  an Anís thread / turn: every search (tool, query, ranked hits), writer passages, citations
 //   node scripts/ops/ops.mjs search-trace [<traceId>] [--query w --tool t --doc id|title --thread id --turn id --endpoint e --days n --limit n --zero --slow ms]
@@ -28,6 +29,7 @@ import dotenv from 'dotenv';
 import { turnText, threadText, traceListText, traceText, replayText } from './trace-format.mjs';
 import { forensicTable, assessSearch } from '../../api/lib/audit/forensics.js';   // pure (no db)
 import { digestText } from '../../api/lib/audit/improve-digest-text.js';   // pure (no db)
+import { writeProposal, proposalFile } from '../../api/lib/audit/behavior-proposal.js';   // pure + fs (no db)
 
 dotenv.config({ path: '.env-secrets', quiet: true }); dotenv.config({ path: '.env-public', quiet: true });
 const API = apiBase();
@@ -86,6 +88,14 @@ else if (cmd === 'anis-forensics') {
   const j = await call('GET', `/anis/improve-digest?since=${encodeURIComponent(val('--since') || '24h')}`);
   if (flag('--json')) await out(j);
   else await new Promise((r) => process.stdout.write(`${digestText(j)}\n`, r));
+} else if (cmd === 'anis-improve-scenarios' && name) {
+  const { improvement } = await call('GET', `/anis/improvements/${Number(name)}`);
+  if (!flag('--write')) await out(proposalFile(improvement) || { id: Number(name), scenarios: [], note: 'no acceptance scenarios on this improvement' });
+  else {
+    const w = writeProposal(decodeURIComponent(new URL('../..', import.meta.url).pathname), improvement, { overwrite: flag('--force') });
+    console.log(w.written ? `wrote ${w.path} — next: node tests/behavior/run.mjs --proposed ${Number(name)} (should FAIL before the fix)` : `not written: ${w.reason} (${w.path})`);
+    if (!w.written) process.exit(w.reason === 'no scenarios' ? 2 : 1);
+  }
 } else if (cmd === 'anis-improve-status' && name) {
   const status = process.argv[4];
   if (!['open', 'accepted', 'done', 'rejected'].includes(status)) { console.error('usage: ops.mjs anis-improve-status <id> <accepted|done|rejected|open> [--note "…"]'); process.exit(2); }

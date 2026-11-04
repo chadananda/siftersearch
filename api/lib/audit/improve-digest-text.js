@@ -25,6 +25,24 @@ export function digestText(j) {
   }
   L.push('', `DATA changes — the system tests and settles these itself (${(j.data || []).length}):`,
     ...(j.data || []).map((x) => `#${x.id} ${x.state} [${x.status}] ${x.target} · ${x.stage} · evidence ${x.evidence_n} — ${x.change}${x.status_note ? ` (${x.status_note})` : ''}`));
-  L.push('', 'Act on CODE items: node scripts/ops/ops.mjs anis-improve-status <id> <done|rejected> --note "<commit or reason>"');
+  const props = j.proposals || [];
+  L.push('', `PROPOSED TOOL IMPROVEMENTS — waiting, with acceptance scenarios (${props.length}):`);
+  for (const p of props) {
+    L.push(`#${p.id} [${p.status}] ${p.target} · ${p.file || '?'}${p.fn ? ` ${p.fn}` : ''} · behaviour: ${p.run}${p.run_at ? ` (${p.run_at})` : ''}${p.stale ? ' · POSSIBLY STALE: its scenarios already pass' : ''}`,
+      `    ${p.change}`);
+    for (const s of p.scenarios) L.push(...scenarioLines(s));
+  }
+  L.push('', ...WORKFLOW);
   return L.join('\n');
 }
+
+/** The test-first loop for a CODE proposal (also tests/behavior/README.md). */
+export const WORKFLOW = [
+  'Workflow for a CODE proposal (tests/behavior/README.md):',
+  '  1. node scripts/ops/ops.mjs anis-improve-scenarios <id> --write      → tests/behavior/proposed/<id>.json',
+  '  2. node tests/behavior/run.mjs --proposed <id>                       → should FAIL (if it passes, the proposal may be stale)',
+  '  3. implement the change',
+  '  4. node tests/behavior/run.mjs --all                                 → the proposal passes, the suite still passes',
+  '  5. git mv tests/behavior/proposed/<id>.json tests/behavior/scenarios/; commit',
+  '  6. node scripts/ops/ops.mjs anis-improve-status <id> done --note "<commit>"   (or rejected --note "<reason>")',
+];

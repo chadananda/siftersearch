@@ -237,7 +237,7 @@ describe('GET /api/admin/anis/improve-report', () => {
     const res = await get('/anis/improve-digest?since=2000-01-01T00:00:00Z');
     expect(res.statusCode).toBe(200);
     const b = res.json();
-    expect(Object.keys(b)).toEqual(['since', 'generated_at', 'available', 'assessment', 'code', 'data']);
+    expect(Object.keys(b)).toEqual(['since', 'generated_at', 'available', 'assessment', 'code', 'data', 'proposals']);
     expect(b.code.map((c) => c.id)).toEqual([1, 2]);
     expect((await get('/anis/improve-digest')).statusCode).toBe(200);
     expect((await get('/anis/improve-digest?since=nope')).statusCode).toBe(400);
@@ -257,7 +257,7 @@ describe('GET /api/admin/anis/improve-report', () => {
     const res = await get('/anis/improve-overview');
     expect(res.statusCode).toBe(200);
     const b = res.json();
-    expect(Object.keys(b)).toEqual(['available', 'generated_at', 'headline', 'flow', 'changes', 'testing', 'waiting', 'spend']);
+    expect(Object.keys(b)).toEqual(['available', 'generated_at', 'headline', 'flow', 'decisions', 'changes', 'testing', 'waiting', 'spend']);
     expect(b.headline.daily).toHaveLength(30);
     expect(b.headline.status.sentence).toMatch(/code behaviour/);
     expect(b.spend).toMatchObject({ today_usd: 1.25, cap_usd: 200 });

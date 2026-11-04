@@ -1,0 +1,509 @@
+{
+  "seeded_from": "tests/quality/routing-fixtures.json",
+  "scenarios": [
+    {
+      "title": "Routing: plan shape quote (1)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-quote-gleanings",
+          "e-quote-bible",
+          "e-quote-dhammapada"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as quote",
+        "examples": [
+          "The earth is but one country, and mankind its citizens",
+          "The Lord is my shepherd; I shall not want",
+          "Hatred is never appeased by hatred in this world"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "quote"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape quote (2)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-quote-quran",
+          "e-quote-gita",
+          "e-source-q"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as quote",
+        "examples": [
+          "There is no compulsion in religion",
+          "You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions",
+          "Where does this come from: Tear asunder, in My Name, the veils that have grievously blinded your vision"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "quote"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape quote (3)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-source-who",
+          "e-halfremembered",
+          "e-topic-tao"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as quote",
+        "examples": [
+          "Who wrote \"Ye are the fruits of one tree, and the leaves of one branch\"?",
+          "something about the leaves of one branch and the fruits of one tree",
+          "the Tao that can be told"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "quote"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape quote (4)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-persian-quote",
+          "e-arabic-quote"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as quote",
+        "examples": [
+          "ای پسر روح در اول قول املک قلبا جیدا",
+          "لا إكراه في الدين"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "quote"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape topic (1)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-topic-bahai-justice",
+          "e-topic-open",
+          "e-topic-sikh"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as topic",
+        "examples": [
+          "What do the Bahá'í writings say about justice?",
+          "what do the scriptures teach about forgiveness",
+          "Sikh teachings on equality"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "topic"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape topic (2)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-topic-jain",
+          "e-ideas-men-women",
+          "e-compare-2"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as topic",
+        "examples": [
+          "Jain view of non-violence",
+          "equality of men and women",
+          "How do Christianity and Islam differ on the nature of Jesus?"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "topic"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape topic (3)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-compare-3",
+          "e-compare-authors",
+          "e-author-bh"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as topic",
+        "examples": [
+          "Compare the golden rule in Judaism, Christianity and Confucianism",
+          "How does 'Abdu'l-Bahá's explanation of the soul compare with Shoghi Effendi's?",
+          "Bahá'u'lláh's words on detachment"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "topic"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape topic (4)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-author-ab",
+          "e-author-se",
+          "e-persian-topic"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as topic",
+        "examples": [
+          "What did Abdul Baha say about education?",
+          "Shoghi Effendi on the Administrative Order",
+          "عدالت در آثار بهائی"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "topic"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape quote | topic (1)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-topic-zoro",
+          "e-ideas-not-traditions"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as quote or topic",
+        "examples": [
+          "Good thoughts, good words, good deeds in Zoroastrianism",
+          "harmony of science and religion"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "quote | topic"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape fact (1)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-subject-not-author",
+          "e-subject-not-author2",
+          "e-fact-date"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as fact",
+        "examples": [
+          "When was the Báb martyred?",
+          "Where did Bahá'u'lláh live in exile?",
+          "In what year did the Declaration of the Báb take place?"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "fact"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape fact (2)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-fact-place",
+          "e-who-met"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as fact",
+        "examples": [
+          "Where is the Shrine of the Báb?",
+          "Did Táhirih meet the Báb?"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "fact"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape define (1)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-define-1",
+          "e-define-2",
+          "e-define-4"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as define",
+        "examples": [
+          "What does Huqúqu'lláh mean?",
+          "define nirvana",
+          "meaning of the word Bahá"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "define"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape enumerate (1)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-enum-1",
+          "e-enum-2",
+          "e-enum-3"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as enumerate",
+        "examples": [
+          "Who were the Letters of the Living?",
+          "list the Hands of the Cause of God",
+          "Who attended the Conference of Badasht?"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "enumerate"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape lookup (1)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-lookup-work",
+          "e-lookup-work2",
+          "e-lookup-person"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as lookup",
+        "examples": [
+          "Kitáb-i-Íqán",
+          "Tao Te Ching",
+          "Mullá Ḥusayn"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "lookup"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape lookup (2)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-misspell-work",
+          "e-misspell-person"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as lookup",
+        "examples": [
+          "kitab i ikan",
+          "Ghoddus"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "lookup"
+        }
+      ]
+    },
+    {
+      "title": "Routing: plan shape converse (1)",
+      "source": {
+        "fixture": "routing-fixtures.json",
+        "ids": [
+          "e-converse-hi",
+          "e-converse-thanks",
+          "e-converse-who"
+        ]
+      },
+      "draft": {
+        "research": false
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "a question the planner should treat as converse",
+        "examples": [
+          "hello!",
+          "thank you, that was helpful",
+          "what are you?"
+        ]
+      },
+      "then": [
+        {
+          "check": "shape",
+          "expect": "converse"
+        }
+      ]
+    }
+  ]
+}

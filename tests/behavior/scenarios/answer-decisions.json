@@ -1,0 +1,102 @@
+{
+  "seeded_from": "tests/quality/answer-decisions.json",
+  "scenarios": [
+    {
+      "title": "A described or paraphrased passage we hold is found in the library (1)",
+      "source": {
+        "fixture": "answer-decisions.json",
+        "ids": [
+          "justice-paraphrase",
+          "justice-paraphrase-likely"
+        ]
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "where a passage is, by paraphrase or description",
+        "examples": [
+          "Abdu'l-Baha defines \"justice\" as every man receiving his due. Where?",
+          "Where does Abdu'l-Baha say justice means each person getting what they are owed?"
+        ]
+      },
+      "then": [
+        {
+          "check": "tool_not_called",
+          "expect": "web_search"
+        },
+        {
+          "check": "source_tier",
+          "expect": "writings"
+        },
+        {
+          "check": "judge",
+          "expect": "Points the reader to the passage the library holds (Some Answered Questions: justice is rendering to each his due) — never says it was not found"
+        }
+      ]
+    },
+    {
+      "title": "A described or paraphrased passage we hold is found in the library (2)",
+      "source": {
+        "fixture": "answer-decisions.json",
+        "ids": [
+          "verbatim-hit",
+          "no-span-high"
+        ]
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "where a passage is, by paraphrase or description",
+        "examples": [
+          "Where is \"justice consists in rendering to each his due\"?",
+          "There's a passage where Abdu'l-Baha compares justice to a workman's wage — where?"
+        ]
+      },
+      "then": [
+        {
+          "check": "tool_not_called",
+          "expect": "web_search"
+        },
+        {
+          "check": "source_tier",
+          "expect": "writings"
+        },
+        {
+          "check": "judge",
+          "expect": "Points the reader to the passage the library holds (Some Answered Questions: justice is rendering to each his due) — never says it was not found"
+        }
+      ]
+    },
+    {
+      "title": "Words the library does not hold are reported as absent (1)",
+      "source": {
+        "fixture": "answer-decisions.json",
+        "ids": [
+          "genuine-absence",
+          "weak-collision"
+        ]
+      },
+      "given": {
+        "reader": "a reader with no earlier conversation",
+        "history": []
+      },
+      "when": {
+        "asks": "where some words are, when the library does not hold them",
+        "examples": [
+          "Where does Baha'u'llah give the exact population of heaven?",
+          "Where is the quote 'little by little, day by day'?"
+        ]
+      },
+      "then": [
+        {
+          "check": "judge",
+          "expect": "Says plainly that the library holds no such passage and attributes the words to no source it cannot show"
+        }
+      ]
+    }
+  ]
+}

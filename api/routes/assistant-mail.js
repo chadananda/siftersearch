@@ -83,7 +83,8 @@ export default async function anisRoutes(fastify) {
     return { ...result, meta: turnMeta({ status: result.status, path: { ...(result.path || {}), format: result.format, recipe: result.recipe }, meter, ms }) };
   }
   // variants (internal A/B, tests/quality/anis-writer-ab.mjs): the writing step once per variant on the same evidence → result.variants
-  async function draftBody({ messages, email = '', research = undefined, engine = undefined, writer = null, attachments = null, reading = null, variants = null }) {
+  // trace (tests/behavior/run.mjs): the result also carries what the turn DID (behavior-trace.js) — read after the reply, off the reply path
+  async function draftBody({ messages, email = '', research = undefined, engine = undefined, writer = null, attachments = null, reading = null, variants = null, trace = false }) {
     // what the reader attached (photos of a page) is read and becomes part of their message (10-23 Liliane's prayer photo)
     if (attachments?.length) messages = await (await import('../lib/assistant/attachments.js')).withAttachments(messages, attachments, { log: logger });
     const { parseLlm } = await import('../lib/assistant/respond.js');
@@ -109,11 +110,12 @@ export default async function anisRoutes(fastify) {
     }
     const r = await anisTurn({ messages, channel: 'email', trusted: true, profile: { persona_name: 'Anís' }, participant: { id: who(email), email }, clientKey: who(email), research, engine, llm,
       ...(Array.isArray(variants) && variants.length ? { variants } : {}) });
-    return { ...(r.variants ? { variants: r.variants, evidence: r.evidence ?? null } : {}), reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
+    const cited = (r.retrieved || []).slice(0, 30).map((p) => ({ title: p.source_title || null, author: p.source_author || null, collection: p.collection || null, language: p.source_lang || null, tier: sourceTier(p) }));
+    return { ...(r.variants ? { variants: r.variants, evidence: r.evidence ?? null } : {}), ...(trace ? { trace: (await import('../lib/assistant/behavior-trace.js')).behaviorTrace(r, cited) } : {}), reply: r.reply, status: r.status, triage: r.path?.triage ?? null, retrieved: r.retrieved?.length ?? 0, format: r.format?.id ?? null,
       recipe: r.plan?.shape ?? null, path: { gate: r.path?.gate, kind: r.path?.kind }, conversationId: r.conversationId ?? null,
       research: ['research', 'agent'].includes(r.plan?.shape) ? { steps: r.plan.steps, ms: r.plan.ms ?? r.timings?.total_ms, usage: r.plan.usage ?? null } : null,
       // the passages the reply cites, each with its standing (source-tier.js) — the battery checks the Writings were cited (11-04)
-      cited: (r.retrieved || []).slice(0, 30).map((p) => ({ title: p.source_title || null, author: p.source_author || null, collection: p.collection || null, language: p.source_lang || null, tier: sourceTier(p) })) };
+      cited };
   }
   let jobs = null;
   const draftJobs = async () => (jobs ||= (await import('../lib/jobs/async-jobs.js')).jobStore());

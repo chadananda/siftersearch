@@ -8,13 +8,14 @@ import { threadsOverview, threadDetail, strategyGaps, turnTrace, parseTurnId } f
 import { tracesForThread, tracesForTurn, childTraces, docTitles } from '../lib/repos/search-trace-repo.js';
 import { auditsSince } from '../lib/repos/audit-store-repo.js';
 import { listAnisThreads, anisThread, anisThreadMessages } from '../lib/repos/anis-threads-repo.js';
-import { forensicsSince, listImprovements, setImprovementStatus, improveStats, improveReportData, improveDigestData, improveOverviewData, IMPROVEMENT_STATUSES } from '../lib/repos/improve-repo.js';
+import { forensicsSince, listImprovements, getImprovement, recordBehaviorRuns, BEHAVIOR_STATES, setImprovementStatus, improveStats, improveReportData, improveDigestData, improveOverviewData, behaviorRunStates, IMPROVEMENT_STATUSES } from '../lib/repos/improve-repo.js';
+import { theoriesDb, listTheories, theoryCounts } from '../lib/repos/jev-theories-repo.js';
 import { improveOverview } from '../lib/audit/improve-overview.js';
 import { candidatesDb, overviewReads } from '../lib/repos/strategy-candidates-repo.js';
 import { readServices } from '../lib/service-heartbeat.js';
-import { forensicsReport, rankImprovements, improveReport, improveDigest } from '../lib/audit/improve.js';
+import { forensicsReport, rankImprovements, improveReport, improveDigest, scenariosOf } from '../lib/audit/improve.js';
 import { TARGETS } from '../lib/audit/improve-targets.js';
-import { capStatus } from '../lib/spend-caps.js';
+import { capStatus, isSpendCap } from '../lib/spend-caps.js';
 
 // since: an ISO time, or a relative '24h' / '7d' / '90m' → ISO; null when absent; throws 400 when unreadable.
 export function parseSince(v, now = Date.now()) {
@@ -115,16 +116,49 @@ export default async function anisAdminRoutes(fastify) {
     const since7 = new Date(now - 7 * 86400000).toISOString().slice(0, 19).replace('T', ' ');
     let strat = { promotions: [], candidates: [], gaps: { open: 0, designed: 0 } };
     try { strat = overviewReads(candidatesDb(), { since: since7 }); } catch (err) { request.log?.warn?.({ err }, 'improve-overview: strategy store unreadable'); }
-    const cap = (await capStatus().catch(() => [])).find((g) => g.group === 'improve') || null;
+    const caps = await capStatus().catch(() => []);
+    const cap = caps.find((g) => g.group === 'improve') || null, anisCap = caps.find((g) => g.group === 'anis') || null;
     let heartbeat = null;
     try { heartbeat = (await readServices()).find((s) => s.name === 'siftersearch-improve') || null; } catch { /* no heartbeat store: unknown */ }
-    return improveOverview({ data: improveOverviewData({ now }), ...strat, cap, heartbeat, now });
+    // the decision-theory loop (jev_theories, strategies.db), the behaviour runs, the cost ladder, the anis spend for $/turn
+    let theories = [], decisions = null, runs = new Map(), ladder = [];
+    try { const tdb = theoriesDb(); theories = listTheories(tdb, { since: new Date(now - 30 * 86400000).toISOString().slice(0, 19).replace('T', ' ') });
+      decisions = theoryCounts(tdb, { since: since7 }); } catch (err) { request.log?.warn?.({ err }, 'improve-overview: theory store unreadable'); }
+    try { runs = behaviorRunStates(); } catch { /* no behaviour runs yet */ }
+    try { ladder = (await import('../lib/assistant/activities/catalog.js')).activityCatalog(); } catch (err) { request.log?.warn?.({ err }, 'improve-overview: activity catalog'); }
+    return improveOverview({ data: improveOverviewData({ now }), ...strat, cap, heartbeat, theories, decisions, runs, ladder, anisCap, now });
   });
 
   fastify.get('/anis/improvements', {
     preHandler: requireInternal,
     schema: { querystring: { type: 'object', properties: { status: { type: 'string', enum: IMPROVEMENT_STATUSES }, limit: { type: 'integer', minimum: 1, maximum: 1000, default: 100 } } } },
   }, async (request) => ({ improvements: rankImprovements(listImprovements({ status: request.query.status || null, limit: request.query.limit || 100 })) }));
+
+  // One improvement with its acceptance scenarios (`ops.mjs anis-improve-scenarios <id> --write` → tests/behavior/proposed/<id>.json).
+  fastify.get('/anis/improvements/:id', { preHandler: requireInternal }, async (request, reply) => {
+    const r = getImprovement(request.params.id);
+    return r ? { improvement: { ...r, scenarios: scenariosOf(r) } } : reply.code(404).send({ error: 'no such improvement' });
+  });
+
+  // Behaviour scenarios (tests/behavior/run.mjs): the judge checks of one reply (Opus, billed improve-behavior-judge) and the run
+  // states the progress page shows on waiting cards. Internal key; the runner never touches a DB.
+  fastify.post('/anis/behavior/judge', {
+    preHandler: requireInternal,
+    schema: { body: { type: 'object', required: ['reply', 'expects'], properties: { question: { type: 'string', maxLength: 4000 }, reply: { type: 'string', maxLength: 60000 },
+      cited: { type: 'array', maxItems: 30 }, expects: { type: 'array', maxItems: 8, items: { type: 'string', maxLength: 400 } } } } },
+  }, async (request, reply) => {
+    const { judgeBehavior } = await import('../lib/audit/behavior-judge.js');
+    try { return await judgeBehavior(request.body); } catch (err) {
+      if (isSpendCap(err)) return reply.code(429).send({ error: err.message, retry_after_ms: err.retryAfterMs ?? null });
+      throw err;
+    }
+  });
+  fastify.post('/anis/behavior/runs', {
+    preHandler: requireInternal,
+    schema: { body: { type: 'object', required: ['runs'], properties: { runs: { type: 'array', maxItems: 500, items: { type: 'object', required: ['scenario', 'state'],
+      properties: { scenario: { type: 'string', maxLength: 200 }, proposal: { type: ['integer', 'null'] }, state: { type: 'string', enum: BEHAVIOR_STATES },
+        checks: { type: 'array' }, commit: { type: ['string', 'null'], maxLength: 64 } } } } } } },
+  }, async (request) => ({ recorded: recordBehaviorRuns(request.body.runs) }));
 
   fastify.post('/anis/improvements/:id/status', {
     preHandler: requireInternal,

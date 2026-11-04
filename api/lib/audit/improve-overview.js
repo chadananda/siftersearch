@@ -4,6 +4,7 @@
 // heartbeat). The state and sentence are deterministic. No question text anywhere (rows carry ids and trace links only).
 import { rankImprovements, scenariosOf } from './improve.js';
 import { targetClass, targetOf } from './improve-targets.js';
+import { runStateOf } from './behavior-proposal.js';
 
 const DAY = 86400000;
 const MIN_SCORED = 5;             // fewer scored items than this → no score for the window (the weak rate stands in)
@@ -59,12 +60,48 @@ export function strategyChanges(promotions = []) {
   });
 }
 
+/** Decision-theory ledger rows (jev-theories-repo listTheories) → timeline entries: tested theories (won | lost) with the accuracy
+ *  before/after on the gate's frozen sets and their sizes; a won theory says whether its candidate was promoted (shipped). */
+export function theoryChanges(theories = []) {
+  return theories.filter((t) => ['won', 'lost'].includes(t.verdict)).map((t) => {
+    const n = t.result || {};
+    return { at: t.created_at, kind: 'theory', id: t.id, gate: t.gate, theory: t.theory?.kind ?? t.kind ?? null, verdict: t.verdict === 'won' ? (n.promoted ? 'shipped' : 'won, not promoted') : 'lost',
+      before: r3(n.before), after: r3(n.after), n_historic: n.n_historic ?? null, n_synthetic: n.n_synthetic ?? null, broken: n.broken ?? null,
+      strategy: t.strategy_id ?? null, version: t.version ?? null, reason: t.verdict === 'lost' ? (n.failed?.[0] ?? null) : n.promoted ? null : (n.promotion_failed?.[0] ?? null),
+      change: t.theory?.what ?? n.label ?? null };
+  });
+}
+
+/** Per Jev gate: Jev's accuracy on its frozen sets (historic + synthetic) from the newest tested theory — the shipped variant's
+ *  accuracy when it shipped, else the baseline's. → [{ gate, accuracy, n, at }] */
+export function gateAccuracy(theories = []) {
+  const out = new Map();
+  for (const t of [...theories].sort((a, b) => (msOf(b.created_at) || 0) - (msOf(a.created_at) || 0))) {
+    const n = t.result || {};
+    if (!['won', 'lost'].includes(t.verdict) || out.has(t.gate) || n.before == null) continue;
+    out.set(t.gate, { gate: t.gate, accuracy: r3(t.verdict === 'won' && n.promoted ? n.after : n.before), n: (n.n_historic || 0) + (n.n_synthetic || 0), at: t.created_at });
+  }
+  return [...out.values()];
+}
+
+/** The cost ladder (code → jev → llm-fast) over the registered activities (catalog rows with `tier`). Shares by count of
+ *  activities, not by calls or dollars (llm_fast_usd_share stays null until per-tier spend is attributed). */
+export function ladderShares(ladder = []) {
+  const n = ladder.length;
+  const count = (t) => ladder.filter((a) => a.tier === t).length;
+  return { activities: n, by_tier: { code: count('code'), jev: count('jev'), 'llm-fast': count('llm-fast') },
+    jev_code_share: n ? r3((count('code') + count('jev')) / n) : null, llm_fast_share: n ? r3(count('llm-fast') / n) : null, llm_fast_usd_share: null,
+    llm_fast: ladder.filter((a) => a.tier === 'llm-fast').map((a) => a.name) };
+}
+
 /**
  * input: { data: improveOverviewData() | null, promotions: ledger rows (+ parent_version, change), candidates: untried candidates
  * [{ id, version, created_at, change }], gaps: { open, designed }, cap: capStatus() row for 'improve', heartbeat: readServices()
- * row for siftersearch-improve, now }. → { available, headline, flow, changes, testing, waiting, spend }
+ * row for siftersearch-improve, theories: listTheories() rows (30 days), decisions: theoryCounts() (7 days), runs: behaviorRunStates(),
+ * ladder: activityCatalog() rows, anisCap: capStatus() row for 'anis', now }. → { available, headline, flow, decisions, changes, testing, waiting, spend }
  */
-export function improveOverview({ data = null, promotions = [], candidates = [], gaps = { open: 0, designed: 0 }, cap = null, heartbeat = null, now = Date.now() } = {}) {
+export function improveOverview({ data = null, promotions = [], candidates = [], gaps = { open: 0, designed: 0 }, cap = null, heartbeat = null,
+  theories = [], decisions = null, runs = new Map(), ladder = [], anisCap = null, now = Date.now() } = {}) {
   const d = data || { daily: [], w7: null, wprev: null, counts: {}, improvements: [], evidence: new Map() };
   const c = d.counts || {};
   const since7 = now - 7 * DAY;
@@ -111,17 +148,25 @@ export function improveOverview({ data = null, promotions = [], candidates = [],
 
   const changesC = code.filter((r) => r.status === 'done' && r.status_at).map((r) => ({ at: r.status_at, kind: 'code', id: r.id,
     scenarios: scenariosOf(r), change: r.change, note: r.status_note ?? null, by: r.reviewed_by ?? null }));
-  const changes = [...changesS, ...changesC].sort((a, b) => (msOf(b.at) || 0) - (msOf(a.at) || 0)).slice(0, 30);
+  const changes = [...changesS, ...changesC, ...theoryChanges(theories)].sort((a, b) => (msOf(b.at) || 0) - (msOf(a.at) || 0)).slice(0, 30);
 
-  const waiting = rankImprovements(openCode).map((r) => ({ id: r.id, target: r.target, stage: r.stage, file: r.file ?? null, scenarios: scenariosOf(r),
-    change: r.change, evidence_n: r.evidence_n || 1, severity: r.severity || 1, age_hours: ageH(r), examples: examplesOf(r.evidence, d.evidence) }));
+  const waiting = rankImprovements(openCode).map((r) => { const scenarios = scenariosOf(r), run = runStateOf(r.id, scenarios, runs);
+    return { id: r.id, target: r.target, stage: r.stage, file: r.file ?? null, scenarios, change: r.change, evidence_n: r.evidence_n || 1, severity: r.severity || 1,
+      age_hours: ageH(r), examples: examplesOf(r.evidence, d.evidence), run: scenarios.length ? run : null }; });
+  const shares = ladderShares(ladder);
+  const replies = c.replies_today || 0;
 
   return {
     available: !!data, generated_at: new Date(now).toISOString(),
     headline: { score_7d: head.score_7d, score_prev_7d: head.score_prev_7d, weak_rate_7d: head.weak_rate_7d, weak_rate_prev_7d: head.weak_rate_prev_7d,
       judged_7d: head.judged_7d, judged_today: head.judged_today, judged_last_hour: head.judged_last_hour, backlog: head.backlog, daily,
-      status: { state, sentence, reason } },
-    flow, changes, testing, waiting,
+      status: { state, sentence, reason },
+      // north star: the share of steps on the cheap rungs (code + Jev), Jev's accuracy per gate on its frozen sets, $ per Anís turn
+      // today (anis spend group ÷ replies recorded today, battery turns included), the llm-fast share
+      ladder: shares, gate_accuracy: gateAccuracy(theories),
+      usd_per_turn: anisCap && replies ? r3((anisCap.spent_usd || 0) / replies) : null, replies_today: replies },
+    flow, decisions: { theories_tested_7d: decisions?.theories_tested_7d ?? 0, shipped_7d: decisions?.shipped_7d ?? 0, synthetic_cases: decisions?.synthetic_cases ?? 0 },
+    changes, testing, waiting,
     spend: { today_usd: r2(cap?.spent_usd ?? c.today_usd ?? 0), cap_usd: cap?.cap_usd ?? null, blocking: !!cap?.blocking },
   };
 }

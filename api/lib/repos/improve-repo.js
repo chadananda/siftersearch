@@ -145,6 +145,12 @@ export const listImprovements = ({ status = null, limit = 200 } = {}, opts) => w
   .all(...(status ? [status] : []), Math.min(Number(limit) || 200, 1000))
   .map((r) => ({ ...r, classes: safeJson(r.classes_json) || [], evidence: safeJson(r.evidence_json) || [] })), { readonly: true }) || [];
 
+/** One improvement by id (the proposal file tests/behavior/proposed/<id>.json is written from it). → row | null */
+export const getImprovement = (id, opts) => withDb(opts, (db) => {
+  const r = db.prepare('SELECT * FROM improvements WHERE id = ?').get(Number(id));
+  return r ? { ...r, classes: safeJson(r.classes_json) || [], evidence: safeJson(r.evidence_json) || [] } : null;
+}, { readonly: true }) || null;
+
 export const IMPROVEMENT_STATUSES = ['open', 'accepted', 'done', 'rejected'];
 /** by = who set it (an admin's email, or 'internal-key' for ops tooling) → reviewed_by/reviewed_at. → rows changed */
 export function setImprovementStatus(id, status, note = null, opts, by = null) {
@@ -228,8 +234,14 @@ export const improveDigestData = ({ since }, opts) => withDb(opts, (db) => {
   const one = db.prepare(`SELECT item_key, kind, ref_id, session_id, json_extract(payload_json, '$.turn_id') AS turn_id, ${judgedAt} AS judged_at FROM forensics WHERE item_key = ?`);
   const evidence = new Map();
   for (const k of new Set(improvements.flatMap((r) => safeJson(r.evidence_json) || []))) { const r = one.get(k); if (r) evidence.set(k, r); }
-  return { judged, spend_usd, improvements, evidence };
+  // proposals with acceptance scenarios still waiting for Claude Code, and the last behaviour run of each scenario (tests/behavior/run.mjs)
+  const proposals = hasColumn(db, 'improvements', 'scenarios_json')
+    ? db.prepare("SELECT * FROM improvements WHERE status IN ('open', 'accepted') AND scenarios_json IS NOT NULL ORDER BY evidence_n * severity DESC LIMIT 100").all() : [];
+  return { judged, spend_usd, improvements, evidence, proposals, runs: lastBehaviorRuns(db) };
 }, { readonly: true });
+const lastBehaviorRuns = (db) => (db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'behavior_runs'").get()
+  ? new Map(db.prepare('SELECT proposal, scenario, state, at FROM behavior_runs WHERE id IN (SELECT MAX(id) FROM behavior_runs GROUP BY proposal, scenario)').all()
+    .map((r) => [`${r.proposal ?? ''}|${r.scenario}`, { state: r.state, at: r.at }])) : new Map());
 
 /** The progress page's reads (improve-overview.js shapes them), one read-only open, no question text:
  *  judged/weak/score per UTC day for 30 days (by judged_at), the last 7 days vs the 7 before, judged in the last hour and
@@ -253,6 +265,7 @@ export const improveOverviewData = ({ now = Date.now() } = {}, opts) => withDb(o
       COALESCE(SUM(judge_state = 'done' AND ${judgedAt} >= @today), 0) AS judged_today,
       COALESCE(SUM(deep_state = 'done' AND ${deepAt} >= @d7), 0) AS diagnosed_7d,
       COALESCE(SUM(attempts < 5 AND (judge_state = 'pending' OR deep_state = 'pending')), 0) AS backlog,
+      COALESCE(SUM(kind = 'reply' AND created_at >= @today), 0) AS replies_today,
       ROUND(COALESCE(SUM(CASE WHEN ${judgedAt} >= @today THEN judge_usd END), 0) + COALESCE(SUM(CASE WHEN ${deepAt} >= @today THEN deep_usd END), 0), 4) AS today_usd
     FROM forensics`).get(p);
   const cols = ['scenarios_json', 'strategy', 'candidate', 'reviewed_by'].map((c) => (has('improvements', c) ? c : `NULL AS ${c}`)).join(', ');
@@ -305,8 +318,4 @@ export function recordBehaviorRuns(rows = [], opts) {
   });
 }
 /** The last run per (proposal, scenario). → Map 'proposal|scenario' → { state, at } (empty when the table is not there yet). */
-export const behaviorRunStates = (opts) => withDb(opts, (db) => {
-  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'behavior_runs'").get()) return new Map();
-  return new Map(db.prepare(`SELECT proposal, scenario, state, at FROM behavior_runs WHERE id IN (SELECT MAX(id) FROM behavior_runs GROUP BY proposal, scenario)`).all()
-    .map((r) => [`${r.proposal ?? ''}|${r.scenario}`, { state: r.state, at: r.at }]));
-}, { readonly: true }) || new Map();
+export const behaviorRunStates = (opts) => withDb(opts, lastBehaviorRuns, { readonly: true }) || new Map();

@@ -40,7 +40,9 @@
   const scoreLines = $derived(h ? line(h.daily.map((d) => d.score), 10) : []);
   const hasScore = $derived(!!h?.daily.some((d) => d.score != null));
   const spendPct = $derived(data?.spend?.cap_usd ? Math.min(100, (100 * (data.spend.today_usd || 0)) / data.spend.cap_usd) : null);
-  const VERDICT_CLASS = { promoted: 'text-success', 'kept current': 'text-muted', 'rolled back': 'text-warning' };
+  const VERDICT_CLASS = { promoted: 'text-success', 'kept current': 'text-muted', 'rolled back': 'text-warning', shipped: 'text-success', 'won, not promoted': 'text-secondary', lost: 'text-muted' };
+  const RUN_CLASS = { passing: 'text-success', failing: 'text-warning', 'never run': 'text-muted' };
+  const DOT = (c) => (c.kind === 'code' ? 'bg-info' : ['promoted', 'shipped'].includes(c.verdict) ? 'bg-success' : 'bg-surface-3');
 </script>
 
 {#snippet scenario(s)}
@@ -81,6 +83,14 @@
       </div>
       <div class="mt-3">
         {#if spendPct != null}<div class="h-1 w-full overflow-hidden rounded bg-surface-3"><div class="h-full rounded {data.spend.blocking ? 'bg-error' : 'bg-accent'}" style="width: {spendPct}%"></div></div>{/if}
+        {#if h.ladder}
+          <p class="mt-2 flex flex-wrap gap-x-4 text-sm text-secondary">
+            <span title="activities on the code and Jev rungs of the cost ladder"><b class="text-primary">{pct(h.ladder.jev_code_share)}</b> code + Jev</span>
+            <span title="activities that still call a fast LLM"><b class="text-primary">{pct(h.ladder.llm_fast_share)}</b> llm-fast</span>
+            <span title="anis spend today ÷ replies recorded today (battery turns included)"><b class="text-primary">{h.usd_per_turn == null ? '–' : `$${h.usd_per_turn.toFixed(3)}`}</b> per turn</span>
+            {#each h.gate_accuracy || [] as g (g.gate)}<span title="Jev's accuracy on this gate's frozen historic + synthetic sets"><code class="text-xs">{g.gate}</code> <b class="text-primary">{pct(g.accuracy)}</b> <span class="text-muted">on {g.n}</span></span>{/each}
+          </p>
+        {/if}
         <p class="mt-1 text-xs text-muted">improve spend today {usd(data.spend.today_usd)}{data.spend.cap_usd != null ? ` of ${usd(data.spend.cap_usd)} cap` : ''}{data.spend.blocking ? ' · cap reached' : ''} · updated {when(data.generated_at)}{failed ? ' · last refresh failed, showing the previous report' : ''}</p>
       </div>
     </section>
@@ -103,6 +113,12 @@
         <p class="flex flex-wrap gap-x-3 text-secondary"><span>open {f.code.open}</span><span>done {f.code.done}</span>{#if f.code.rejected}<span>declined {f.code.rejected}</span>{/if}</p>
         <p class="text-xs text-muted">{f.code.suggested} new this week{f.code.oldest_open_hours != null ? ` · oldest open ${age(f.code.oldest_open_hours)}` : ''}</p>
       </div>
+      {#if data.decisions}
+        <div class="rounded-lg border border-border-subtle bg-surface-1 p-3 text-sm sm:col-span-2">
+          <p class="font-medium text-primary">Jev decisions <span class="font-normal text-muted">(theories tested on frozen historic + synthetic sets)</span></p>
+          <p class="flex flex-wrap gap-x-3 text-secondary"><span>tested {data.decisions.theories_tested_7d}</span><span>shipped {data.decisions.shipped_7d}</span><span>synthetic cases {data.decisions.synthetic_cases}</span></p>
+        </div>
+      {/if}
     </div>
 
     <!-- 3 · what changed -->
@@ -113,9 +129,17 @@
       <ol class="border-l border-border pl-4">
         {#each data.changes as c, i (`${c.kind}:${c.at}:${c.strategy || c.id}:${i}`)}
           <li class="relative py-2">
-            <span class="absolute -left-[1.3rem] top-3.5 h-2 w-2 rounded-full {c.kind === 'code' ? 'bg-info' : c.verdict === 'promoted' ? 'bg-success' : 'bg-surface-3'}"></span>
-            <p class="text-xs text-muted">{when(c.at)} · {c.kind === 'code' ? 'code' : 'strategy'}</p>
-            {#if c.kind === 'strategy'}
+            <span class="absolute -left-[1.3rem] top-3.5 h-2 w-2 rounded-full {DOT(c)}"></span>
+            <p class="text-xs text-muted">{when(c.at)} · {c.kind === 'theory' ? 'Jev decision' : c.kind}</p>
+            {#if c.kind === 'theory'}
+              <p class="text-sm text-primary">
+                <code>{c.gate}</code>{c.theory ? ` · ${c.theory}` : ''} · <span class={VERDICT_CLASS[c.verdict] || ''}>{c.verdict}</span>
+                {#if c.before != null && c.after != null} · accuracy {pct(c.before)} → {pct(c.after)}{/if}
+              </p>
+              <p class="text-xs text-muted">on {c.n_historic ?? 0} historic + {c.n_synthetic ?? 0} synthetic{c.broken ? ` · broke ${c.broken}` : ''}{c.strategy ? ` · ${c.strategy}@v${c.version}` : ''}</p>
+              {#if c.change}<p class="text-sm text-secondary">{c.change}</p>{/if}
+              {#if c.reason}<p class="text-xs text-muted">{c.reason}</p>{/if}
+            {:else if c.kind === 'strategy'}
               <p class="text-sm text-primary">
                 <code>{c.strategy}</code>{c.from_version != null ? `@v${c.from_version} → v${c.version}` : `@v${c.version}`}
                 · <span class={VERDICT_CLASS[c.verdict] || ''}>{c.verdict === 'kept current' ? 'tried, kept current' : c.verdict}</span>
@@ -153,6 +177,7 @@
             <p class="flex flex-wrap gap-x-2 text-xs text-muted">
               <span>#{w.id}</span><span>{w.target}</span><span>{w.stage}</span><span>seen {w.evidence_n}×</span><span>open {age(w.age_hours)}</span>
               {#if w.age_hours != null && w.age_hours > 48}<span class="text-warning">not yet checked</span>{/if}
+              {#if w.run}<span class={RUN_CLASS[w.run.state] || ''}>scenarios {w.run.state}{w.run.at ? ` · ${when(w.run.at)}` : ''}{w.run.state === 'passing' ? ' · possibly stale' : ''}</span>{/if}
             </p>
             {#if w.scenarios.length}
               <div class="mt-2">{#each w.scenarios as s}{@render scenario(s)}{/each}</div>

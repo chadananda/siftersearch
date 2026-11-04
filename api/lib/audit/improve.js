@@ -5,6 +5,7 @@ import { getModel } from '../model-registry.js';
 import { modelFor } from '../model-roles.js';
 import { STAGES, FIX_WHERE, COPY_CLASSES, copyClass, routeOf, forensicPass, forensicQueue } from './forensics.js';
 import { TARGETS, inferTarget, targetOf, targetClass } from './improve-targets.js';
+import { runStateOf } from './behavior-proposal.js';
 
 export const IMPROVE_V = 1;
 export const JUDGE_ROLE = 'search-judge', DEEP_ROLE = 'improve-analysis';
@@ -349,6 +350,11 @@ export function improveDigest(data, { since, cap = null } = {}) {
       top_classes: count(weak.flatMap((v) => v.classes || [])).slice(0, 8).map(([cls, n]) => ({ class: cls, n })),
       spend_usd: +(d.spend_usd || 0).toFixed(4), cap_usd: cap?.cap_usd ?? null, spent_today_usd: cap?.spent_usd ?? null },
     code, data: dataChanges,
+    // proposed tool improvements: every waiting CODE proposal with scenarios + its behaviour run state; one already passing may be stale
+    proposals: (d.proposals || []).map((r) => ({ ...r, target: targetOf(r) })).filter((r) => targetClass(r.target) === 'code').map((r) => {
+      const scenarios = scenariosOf(r), run = runStateOf(r.id, scenarios, d.runs || new Map());
+      return { id: r.id, status: r.status, target: r.target, file: r.file, fn: r.fn, change: r.change, scenarios, run: run.state, run_at: run.at, stale: run.state === 'passing' };
+    }).filter((p) => p.scenarios.length),
   };
 }
 
