@@ -6,8 +6,13 @@
 // Only the ids that still HAVE points in a searched Qdrant collection are sent (a must_not over thousands of ids cost
 // ~10 ms per call, 11-03); no such id → no filter. Refreshed in the background every 10 min (never on the request path);
 // if the point check fails, the whole list is sent (correct, only slower). Deps: docs-repo.js, qdrant-layers.js (facet).
-const REFRESH_MS = 600000, PAGE = 1000, MAX_PAGES = 100;
+// ONE process computes per 10 min, shared via data/run/excluded-docs.json under an O_EXCL lock: the facet over ~10k ids x
+// 5 collections run by all six API processes at once after a deploy timed every search layer out (11-03 23:16).
+import fs from 'fs';
+import path from 'path';
+const REFRESH_MS = 600000, PAGE = 1000, MAX_PAGES = 100, LOCK_STALE_MS = 300000;
 let all = [], ids = [], status = null, at = 0, loading = null;
+let SHARED = process.env.EXCLUDED_DOCS_CACHE || path.resolve(new URL('.', import.meta.url).pathname, '../../../data/run/excluded-docs.json');
 
 export const isTagIndex = (d) => d?.source_site === 'bahai-library.com' && /^(tag: |all tags\b)/i.test(String(d.title || ''));
 
@@ -59,10 +64,29 @@ export async function computeExclusion(deps = {}) {
   }
 }
 
-async function refresh() {
-  const r = await computeExclusion();
-  all = r.all; ids = r.sent;
-  status = { ...r, all: undefined, sent: r.sent.length };
+const adopt = (r) => { all = r.all; ids = r.sent; status = { ...r, all: undefined, sent: r.sent.length }; };
+const readShared = () => { try { return JSON.parse(fs.readFileSync(SHARED, 'utf8')); } catch { return null; } };
+const fresh = (r) => r && Date.now() - Date.parse(r.refreshed_at) < REFRESH_MS;
+
+/** Fresh shared result -> adopt it (no Qdrant work). Otherwise the lock holder computes and writes it; everyone else keeps
+ *  what it has (or adopts a stale shared copy) and looks again in 30 s. deps (tests): computeExclusion's deps. */
+export async function refresh(deps) {
+  const shared = readShared();
+  if (fresh(shared)) return adopt(shared);
+  const lock = `${SHARED}.lock`;
+  try { if (Date.now() - fs.statSync(lock).mtimeMs > LOCK_STALE_MS) fs.rmSync(lock, { force: true }); } catch { /* no lock */ }
+  let fd;
+  try { fs.mkdirSync(path.dirname(SHARED), { recursive: true }); fd = fs.openSync(lock, 'wx'); } catch {
+    if (shared && !all.length) adopt(shared);
+    at = Date.now() - REFRESH_MS + 30000;
+    return;
+  }
+  try {
+    const r = await computeExclusion(deps);
+    adopt(r);
+    fs.writeFileSync(`${SHARED}.tmp`, JSON.stringify(r));
+    fs.renameSync(`${SHARED}.tmp`, SHARED);
+  } finally { fs.closeSync(fd); fs.rmSync(lock, { force: true }); }
 }
 
 /** Doc ids to exclude — only those that still have points (empty until the first refresh lands; then every 10 min). */
@@ -79,3 +103,5 @@ export const meiliExclusion = () => { excludedDocIds(); return all.length ? `doc
 
 /** For tests: set the list directly. */
 export const _setExcluded = (list) => { ids = list.map(Number); all = [...ids]; at = Date.now(); };
+/** For tests: point the shared cache elsewhere and clear state. */
+export const _resetShared = (file) => { SHARED = file; all = []; ids = []; status = null; at = 0; };

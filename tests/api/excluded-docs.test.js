@@ -2,7 +2,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'fs';
 import Database from 'better-sqlite3';
-import { computeExclusion, isTagIndex, TAG_INDEX_SQL, INDEXABLE_DOC_SQL } from '../../api/lib/search/excluded-docs.js';
+import { computeExclusion, isTagIndex, TAG_INDEX_SQL, INDEXABLE_DOC_SQL, refresh, excludedDocIds, _resetShared } from '../../api/lib/search/excluded-docs.js';
+import { mkdtempSync, writeFileSync as wf, existsSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 
 // listDocs fake: metadata [5, 8746]; duplicates 1..2500 in pages of 1000 (paged by afterId)
 // tag pages: 9001 'Tag: Ahmad of Yazd' (kept), 9002 'The Price Tag' (a book, not kept), 9003 'All tags' (kept)
@@ -88,5 +91,33 @@ describe('indexers skip excluded docs', () => {
     }
     // the phrase indexer's upsert also withholds stored units of those docs (units stored before the doc was retired)
     expect(readFileSync(new URL('../../scripts/phrase-index/indexer.mjs', import.meta.url), 'utf8')).toMatch(/duplicate_of IS NOT NULL OR \$\{TAG_INDEX_SQL\}/);
+  });
+});
+
+describe('shared refresh (one process computes; the rest adopt the file)', () => {
+  const pts = () => vi.fn(async () => ({ phrases: new Map([[8746, 10]]) }));
+  it('computes once, writes the file; a second process adopts it with no Qdrant call', async () => {
+    const f = join(mkdtempSync(join(tmpdir(), 'excl-')), 'x.json');
+    _resetShared(f);
+    const a = pts();
+    await refresh({ listDocs, docPointCounts: a });
+    expect(a).toHaveBeenCalledTimes(1);
+    expect(existsSync(f)).toBe(true);
+    expect(existsSync(`${f}.lock`)).toBe(false);
+    _resetShared(f);
+    const b = pts();
+    await refresh({ listDocs, docPointCounts: b });
+    expect(b).not.toHaveBeenCalled();
+    expect(excludedDocIds()).toEqual([8746]);
+  });
+  it('lock held by another process -> no Qdrant call, keeps a stale shared list', async () => {
+    const f = join(mkdtempSync(join(tmpdir(), 'excl-')), 'x.json');
+    wf(f, JSON.stringify({ refreshed_at: new Date(Date.now() - 3600e3).toISOString(), all: [1, 8746], sent: [8746] }));
+    wf(`${f}.lock`, '');
+    _resetShared(f);
+    const c = pts();
+    await refresh({ listDocs, docPointCounts: c });
+    expect(c).not.toHaveBeenCalled();
+    expect(excludedDocIds()).toEqual([8746]);
   });
 });
