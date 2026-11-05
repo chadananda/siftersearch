@@ -55,24 +55,58 @@ export function memoSet(map, key, v, max = EMBED_MEMO.max, now = Date.now()) {
   while (map.size >= max) map.delete(map.keys().next().value);
   map.set(key, { at: now, v });
 }
+// Hedged embed (11-05): Gemini's own time is the query-embed tail (curl from tower ~0.6 s cold; production p50 283 ms,
+// p95 1056 ms while Qdrant answers in <30 ms). A call still pending after `ms` gets a twin; the first good answer wins and
+// the other is aborted. Costs one extra tiny embed on the slow calls only. SIFTER_EMBED_HEDGE_MS=0 turns it off.
+export const EMBED_HEDGE_MS = Number(process.env.SIFTER_EMBED_HEDGE_MS ?? 500);
+export const hedgeStats = { calls: 0, hedged: 0, twinWon: 0 };
+/** start(signal) → Promise. Resolves with the first fulfilment; rejects only when every started attempt has failed. */
+export function hedge(start, ms = EMBED_HEDGE_MS, stats = hedgeStats) {
+  stats.calls++;
+  return new Promise((resolve, reject) => {
+    const ctrls = [], errs = [];
+    let done = false, timer = null;
+    const launch = (i) => {
+      const c = new AbortController(); ctrls.push(c);
+      Promise.resolve().then(() => start(c.signal)).then((v) => {
+        if (done) return;
+        done = true; clearTimeout(timer);
+        if (i === 1) stats.twinWon++;
+        ctrls.forEach((o) => o !== c && o.abort());
+        resolve(v);
+      }, (e) => {
+        if (done) return;
+        errs.push(e);
+        // before the twin is due a failure is final (resilientFetch already retried); after, wait for the other attempt
+        if (timer !== 'fired') { done = true; clearTimeout(timer); reject(e); }
+        else if (errs.length === ctrls.length) { done = true; reject(errs[0]); }
+      });
+    };
+    launch(0);
+    if (ms > 0) timer = setTimeout(() => { if (done) return; timer = 'fired'; stats.hedged++; launch(1); }, ms);
+    else timer = 'fired';
+  });
+}
 const memo = new Map();   // query → { at, v: Promise<vector> }
 export function geminiQueryVector(text) {
   const key = String(text ?? '');
   const hit = memoGet(memo, key);
   if (hit) return hit;
-  const p = assertSpendCap('search-query', { provider: 'google' }).then(() => resilientFetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:embedContent?key=${process.env.GEMINI_API_KEY}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
-    body: JSON.stringify({ model: `models/${MODEL}`, content: { parts: [{ text: `task: search result | query: ${key}` }] }, outputDimensionality: DIMS }),
-  }, { tries: 2, baseMs: 300 })).then(async (r) => {
+  const body = JSON.stringify({ model: `models/${MODEL}`, content: { parts: [{ text: `task: search result | query: ${key}` }] }, outputDimensionality: DIMS });
+  const attempt = (signal) => resilientFetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:embedContent?key=${process.env.GEMINI_API_KEY}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.any([signal, AbortSignal.timeout(8000)]), body,
+  }, { tries: 2, baseMs: 300 }).then(async (r) => {
     if (!r.ok) {
       const text = (await r.text()).slice(0, 300);
       noteProviderError('Gemini', { status: r.status, message: text });
       throw new Error(`gemini ${r.status} ${text.slice(0, 120)}`);
     }
-    // Spend (every uncached query): the response carries no token count, so estimate ~4 chars/token.
+    // Spend (every answered request, a winning or late twin too): no token count in the response, so ~4 chars/token.
     logAIUsage({ provider: 'google', model: MODEL, serviceType: 'embedding', caller: 'search-query', promptTokens: Math.ceil((key.length + 30) / 4) });
     return (await r.json()).embedding.values;
-  }).catch((err) => { memo.delete(key); throw err; });
+  });
+  const p = assertSpendCap('search-query', { provider: 'google' }).then(() => hedge(attempt))
+    .catch((err) => { memo.delete(key); throw err; });
   memoSet(memo, key, p);
   return p;
 }
