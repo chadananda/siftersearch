@@ -4,6 +4,7 @@
  * Hybrid search combining keyword and vector (semantic) search.
  */
 
+import { copyKey, publisherRank } from './search/copy-key.js';
 import { foldVerbatim, isVerbatimQuery, isQuestion } from './search/verbatim.js';
 import { MeiliSearch } from 'meilisearch';
 import { config } from './config.js';
@@ -1624,15 +1625,15 @@ async function multiIndexSearchRun(query, options, qcalls) {
   };
   allSorted.sort((a, b) => rankKey(b) - rankKey(a));
   // DEDUP TOWARD THE CANONICAL (Chad 10-20): one passage standing in several works (the original + quoting copies) keeps
-  // only its most authoritative copy, which inherits the copies' score.
-  const fold160 = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/gi, ' ').toLowerCase().trim().slice(0, 160);
+  // only its most authoritative copy, which inherits the copies' score; equal authority → the better publisher's copy (OceanLibrary)
   const byText = new Map();
   for (const e of allSorted) {
-    const k = fold160(e.paragraph?.text);
+    const k = copyKey(e.paragraph?.text);
     if (k.length < 40) continue;   // too short to call two passages the same
     const kept = byText.get(k);
     if (!kept) { byText.set(k, e); continue; }
-    if ((e._factor ?? 1) > (kept._factor ?? 1)) { e.score += kept.score; e._rankKey = null; byText.set(k, e); kept._dropped = true; }
+    const fe = e._factor ?? 1, fk = kept._factor ?? 1;
+    if (fe > fk || (fe === fk && publisherRank(e.paragraph) < publisherRank(kept.paragraph))) { e.score += kept.score; e._rankKey = null; byText.set(k, e); kept._dropped = true; }
     else { kept.score += e.score; e._dropped = true; }
   }
   for (let i = allSorted.length - 1; i >= 0; i--) if (allSorted[i]._dropped) allSorted.splice(i, 1);
