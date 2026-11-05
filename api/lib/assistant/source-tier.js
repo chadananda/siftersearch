@@ -9,6 +9,10 @@ import { foldKey, isTalk, writingsCompilation } from '../search/doctrinal-rank.j
 const WRITINGS = new Set(['bahaullah', 'thebab', 'bab', 'abdulbaha']);
 const GUARDIAN = 'shoghieffendi';
 const HOUSE = /universalhouseofjustice|researchdepartment/;
+// an author field naming who SUPERVISED or EDITED a volume ("The Universal House of Justice (prepared under its supervision)" —
+// The Bahá'í World): its articles are other people's (11-04: Hatcher's essay in BW XVIII was replied as "the House quotes it")
+const EDITED = /preparedunder|supervision|undertheauspices|editor|editedby/;
+const houseWrote = (k) => HOUSE.test(k) && !EDITED.test(k);
 const isBahai = (p) => /bah[aá]/i.test(String(p?.religion || ''));
 const keyOf = (s) => foldKey(s);
 
@@ -49,14 +53,14 @@ export function sourceTier(p = {}) {
   if (central && reportedWork(doc.title)) return 'reported';            // Promulgation, Paris Talks, London… (titles that don't say "talk")
   // a Central Figure quoted inside another writer's book is a pointer to the text, not the text (the writer traces it)
   const book = keyOf(p.book_author);
-  const ownBook = (k) => ['bahaullah', 'thebab', 'abdulbaha', GUARDIAN].some((w) => k.includes(w)) || HOUSE.test(k);   // "Bahá'u'lláh and 'Abdu'l-Bahá" too
+  const ownBook = (k) => ['bahaullah', 'thebab', 'abdulbaha', GUARDIAN].some((w) => k.includes(w)) || houseWrote(k);   // "Bahá'u'lláh and 'Abdu'l-Bahá" too
   // a compilation of the Writings ("Compilation (Bahá’í Writings)") is the text's home, not another writer's book (11-04 #242)
   const writingsBook = () => writingsCompilation({ ...doc, author: p.book_author, book_author: p.book_author });
   const quotedElsewhere = central && book && book !== author && !ownBook(book) && kind !== 'compilation' && !writingsBook();
   if (quotedElsewhere) return 'secondary';
   if (WRITINGS.has(author)) return 'writings';
   if (author === GUARDIAN) return 'guardian';
-  if (HOUSE.test(author)) return 'house';
+  if (houseWrote(author)) return 'house';
   // a passage of a compilation of the Writings with no writer attributed: not commentary (11-04 digest #242 — "Bahá’í World
   // Faith", "Bahá’í Sacred Writings" were all 'secondary'), not a confirmed Writing either (doctrinal-rank.js writingsCompilation)
   if (writingsCompilation({ ...doc, book_author: p.book_author })) return 'compilation';
@@ -91,6 +95,8 @@ export const TIER_LABEL = {
 export const tierLabel = (p) => {
   const t = sourceTier(p); if (!t) return null;
   const title = p.title ?? p.source_title;
-  const note = (t === 'reported' && reportedWork(title)?.note) || (t === 'writings' && authenticatedWork(title)?.note);
+  const edited = t === 'secondary' && HOUSE.test(keyOf(p.author ?? p.source_author)) && EDITED.test(keyOf(p.author ?? p.source_author));
+  const note = (t === 'reported' && reportedWork(title)?.note) || (t === 'writings' && authenticatedWork(title)?.note)
+    || (edited && 'a volume the House supervised, not its words — the passage is by the article\'s own writer: name that writer if another passage shows who it is, otherwise say "an article in <title>", never "the House says"');
   return note ? `${TIER_LABEL[t]} — ${note}` : TIER_LABEL[t];
 };
