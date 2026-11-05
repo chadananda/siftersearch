@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Seed the behaviour suite from the older fixtures: tests/quality/routing-fixtures.json (planner shapes) and answer-decisions.json
+// Seed the behaviour suite from the older fixtures: tests/quality/routing-fixtures.json (question classes → ROUTING_OUTCOME) and answer-decisions.json
 // (quote found vs genuinely absent) → tests/behavior/scenarios/{routing,answer-decisions}.json, grouped by CLASS (same expectation)
 // into scenarios of 2-3 examples. A class with one case cannot form a scenario (not converted; counted). Per-case tradition /
 // author / comparative expectations are not checks here (counted as dropped details). Pure core; the CLI writes with --write.
@@ -19,17 +19,32 @@ export function chunkSizes(n) {
 const chunk = (xs) => { let i = 0; return chunkSizes(xs.length).map((n) => xs.slice(i, i += n)); };
 const NEW_READER = 'a reader with no earlier conversation';
 
+// What Anís must DO for each planner class (11-05): the old `shape` check tested an internal planner label that newer fast
+// paths pre-empt (quote examples answer via the source hunt, shape 'source') — planner routing is covered by tests/quality.
+// These run on the production default path (no draft override) and judge the reply a reader gets.
+const NO_SEARCH = 'fused_search, combined_search, document_search, web_search, quotation_trace';
+export const ROUTING_OUTCOME = {
+  quote: [{ check: 'judge', expect: 'Names the source of the quoted words (work and author) from a passage the library holds and links that work; when the library does not hold them, says so instead of guessing' }],
+  topic: [{ check: 'judge', expect: "Answers from the primary texts of the tradition asked about, quoting them with citations; for a Bahá'í question the Writings and Shoghi Effendi come before commentary, and the House of Justice is never presented as doctrine" }],
+  'quote | topic': [{ check: 'judge', expect: 'Recognises the words as a known teaching, says where it comes from, and quotes the primary text with a citation' }],
+  fact: [{ check: 'judge', expect: 'States the fact in the first sentence with a library source for it; a short question gets a short answer, not an essay' }],
+  define: [{ check: 'judge', expect: 'Gives the meaning in the first sentence (with the word\'s origin when it is a loan word) from a source the library holds' }],
+  enumerate: [{ check: 'judge', expect: 'Lists the members by name with a library source for the list, and says so where the sources disagree' }],
+  lookup: [{ check: 'judge', expect: 'Resolves the name, spelling variants included, to the book or person meant: a book is linked in the library, a person gets a short sourced identification' }],
+  converse: [{ check: 'tool_not_called', expect: NO_SEARCH }, { check: 'judge', expect: 'A short, natural reply with no search results or citations' }],
+};
+
 /** routing-fixtures.json → { scenarios, counts } */
 export function seedRouting(fx) {
   const groups = new Map();
   for (const c of fx?.cases || []) { const k = [...(c.shapes || [])].sort().join(' | '); (groups.get(k) || groups.set(k, []).get(k)).push(c); }
   const scenarios = [], notConverted = [];
   for (const [shapes, cases] of groups) {
-    if (cases.length < 2) { notConverted.push(...cases.map((c) => ({ id: c.id, reason: `only case of class "${shapes}"` }))); continue; }
-    chunk(cases).forEach((cs, i) => scenarios.push({ title: `Routing: plan shape ${shapes} (${i + 1})`, source: { fixture: 'routing-fixtures.json', ids: cs.map((c) => c.id) },
-      draft: { engine: 'pipeline', research: false },   // the planner path (engine: an email draft otherwise goes to the agent — ANIS_RESEARCH=all), where the plan shape is the route (the researcher's shape is always 'research')
-      given: { reader: NEW_READER, history: [] }, when: { asks: `a question the planner should treat as ${shapes.split(' | ').join(' or ')}`, examples: cs.map((c) => c.query) },
-      then: [{ check: 'shape', expect: shapes }] }));
+    const then = ROUTING_OUTCOME[shapes];
+    if (cases.length < 2 || !then) { notConverted.push(...cases.map((c) => ({ id: c.id, reason: then ? `only case of class "${shapes}"` : `no outcome for class "${shapes}"` }))); continue; }
+    chunk(cases).forEach((cs, i) => scenarios.push({ title: `Answer: ${shapes.split(' | ').join(' or ')} question (${i + 1})`, source: { fixture: 'routing-fixtures.json', ids: cs.map((c) => c.id) },
+      given: { reader: NEW_READER, history: [] }, when: { asks: `a ${shapes.split(' | ').join(' or ')} question`, examples: cs.map((c) => c.query) },
+      then }));
   }
   const dropped = (fx?.cases || []).filter((c) => !notConverted.some((n) => n.id === c.id) && (c.tradition || c.author || c.comparative != null)).length;
   return { scenarios, counts: { cases: (fx?.cases || []).length, converted: (fx?.cases || []).length - notConverted.length, not_converted: notConverted.length,

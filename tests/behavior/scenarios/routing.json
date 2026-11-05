@@ -2,7 +2,7 @@
   "seeded_from": "tests/quality/routing-fixtures.json",
   "scenarios": [
     {
-      "title": "Routing: plan shape quote (1)",
+      "title": "Answer: quote question (1)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -11,16 +11,12 @@
           "e-quote-dhammapada"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as quote",
+        "asks": "a quote question",
         "examples": [
           "The earth is but one country, and mankind its citizens",
           "The Lord is my shepherd; I shall not want",
@@ -29,13 +25,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "quote"
+          "check": "judge",
+          "expect": "Names the source of the quoted words (work and author) from a passage the library holds and links that work; when the library does not hold them, says so instead of guessing"
         }
       ]
     },
     {
-      "title": "Routing: plan shape quote (2)",
+      "title": "Answer: quote question (2)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -44,16 +40,12 @@
           "e-source-q"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as quote",
+        "asks": "a quote question",
         "examples": [
           "There is no compulsion in religion",
           "You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions",
@@ -62,13 +54,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "quote"
+          "check": "judge",
+          "expect": "Names the source of the quoted words (work and author) from a passage the library holds and links that work; when the library does not hold them, says so instead of guessing"
         }
       ]
     },
     {
-      "title": "Routing: plan shape quote (3)",
+      "title": "Answer: quote question (3)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -77,16 +69,12 @@
           "e-topic-tao"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as quote",
+        "asks": "a quote question",
         "examples": [
           "Who wrote \"Ye are the fruits of one tree, and the leaves of one branch\"?",
           "something about the leaves of one branch and the fruits of one tree",
@@ -95,13 +83,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "quote"
+          "check": "judge",
+          "expect": "Names the source of the quoted words (work and author) from a passage the library holds and links that work; when the library does not hold them, says so instead of guessing"
         }
       ]
     },
     {
-      "title": "Routing: plan shape quote (4)",
+      "title": "Answer: quote question (4)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -109,16 +97,12 @@
           "e-arabic-quote"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as quote",
+        "asks": "a quote question",
         "examples": [
           "ای پسر روح در اول قول املک قلبا جیدا",
           "لا إكراه في الدين"
@@ -126,13 +110,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "quote"
+          "check": "judge",
+          "expect": "Names the source of the quoted words (work and author) from a passage the library holds and links that work; when the library does not hold them, says so instead of guessing"
         }
       ]
     },
     {
-      "title": "Routing: plan shape topic (1)",
+      "title": "Answer: topic question (1)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -141,16 +125,12 @@
           "e-topic-sikh"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as topic",
+        "asks": "a topic question",
         "examples": [
           "What do the Bahá'í writings say about justice?",
           "what do the scriptures teach about forgiveness",
@@ -159,13 +139,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "topic"
+          "check": "judge",
+          "expect": "Answers from the primary texts of the tradition asked about, quoting them with citations; for a Bahá'í question the Writings and Shoghi Effendi come before commentary, and the House of Justice is never presented as doctrine"
         }
       ]
     },
     {
-      "title": "Routing: plan shape topic (2)",
+      "title": "Answer: topic question (2)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -174,16 +154,12 @@
           "e-compare-2"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as topic",
+        "asks": "a topic question",
         "examples": [
           "Jain view of non-violence",
           "equality of men and women",
@@ -192,13 +168,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "topic"
+          "check": "judge",
+          "expect": "Answers from the primary texts of the tradition asked about, quoting them with citations; for a Bahá'í question the Writings and Shoghi Effendi come before commentary, and the House of Justice is never presented as doctrine"
         }
       ]
     },
     {
-      "title": "Routing: plan shape topic (3)",
+      "title": "Answer: topic question (3)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -207,16 +183,12 @@
           "e-author-bh"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as topic",
+        "asks": "a topic question",
         "examples": [
           "Compare the golden rule in Judaism, Christianity and Confucianism",
           "How does 'Abdu'l-Bahá's explanation of the soul compare with Shoghi Effendi's?",
@@ -225,13 +197,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "topic"
+          "check": "judge",
+          "expect": "Answers from the primary texts of the tradition asked about, quoting them with citations; for a Bahá'í question the Writings and Shoghi Effendi come before commentary, and the House of Justice is never presented as doctrine"
         }
       ]
     },
     {
-      "title": "Routing: plan shape topic (4)",
+      "title": "Answer: topic question (4)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -240,16 +212,12 @@
           "e-persian-topic"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as topic",
+        "asks": "a topic question",
         "examples": [
           "What did Abdul Baha say about education?",
           "Shoghi Effendi on the Administrative Order",
@@ -258,13 +226,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "topic"
+          "check": "judge",
+          "expect": "Answers from the primary texts of the tradition asked about, quoting them with citations; for a Bahá'í question the Writings and Shoghi Effendi come before commentary, and the House of Justice is never presented as doctrine"
         }
       ]
     },
     {
-      "title": "Routing: plan shape quote | topic (1)",
+      "title": "Answer: quote or topic question (1)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -272,16 +240,12 @@
           "e-ideas-not-traditions"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as quote or topic",
+        "asks": "a quote or topic question",
         "examples": [
           "Good thoughts, good words, good deeds in Zoroastrianism",
           "harmony of science and religion"
@@ -289,13 +253,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "quote | topic"
+          "check": "judge",
+          "expect": "Recognises the words as a known teaching, says where it comes from, and quotes the primary text with a citation"
         }
       ]
     },
     {
-      "title": "Routing: plan shape fact (1)",
+      "title": "Answer: fact question (1)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -304,16 +268,12 @@
           "e-fact-date"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as fact",
+        "asks": "a fact question",
         "examples": [
           "When was the Báb martyred?",
           "Where did Bahá'u'lláh live in exile?",
@@ -322,13 +282,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "fact"
+          "check": "judge",
+          "expect": "States the fact in the first sentence with a library source for it; a short question gets a short answer, not an essay"
         }
       ]
     },
     {
-      "title": "Routing: plan shape fact (2)",
+      "title": "Answer: fact question (2)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -336,16 +296,12 @@
           "e-who-met"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as fact",
+        "asks": "a fact question",
         "examples": [
           "Where is the Shrine of the Báb?",
           "Did Táhirih meet the Báb?"
@@ -353,13 +309,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "fact"
+          "check": "judge",
+          "expect": "States the fact in the first sentence with a library source for it; a short question gets a short answer, not an essay"
         }
       ]
     },
     {
-      "title": "Routing: plan shape define (1)",
+      "title": "Answer: define question (1)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -368,16 +324,12 @@
           "e-define-4"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as define",
+        "asks": "a define question",
         "examples": [
           "What does Huqúqu'lláh mean?",
           "define nirvana",
@@ -386,13 +338,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "define"
+          "check": "judge",
+          "expect": "Gives the meaning in the first sentence (with the word's origin when it is a loan word) from a source the library holds"
         }
       ]
     },
     {
-      "title": "Routing: plan shape enumerate (1)",
+      "title": "Answer: enumerate question (1)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -401,16 +353,12 @@
           "e-enum-3"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as enumerate",
+        "asks": "a enumerate question",
         "examples": [
           "Who were the Letters of the Living?",
           "list the Hands of the Cause of God",
@@ -419,13 +367,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "enumerate"
+          "check": "judge",
+          "expect": "Lists the members by name with a library source for the list, and says so where the sources disagree"
         }
       ]
     },
     {
-      "title": "Routing: plan shape lookup (1)",
+      "title": "Answer: lookup question (1)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -434,16 +382,12 @@
           "e-lookup-person"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as lookup",
+        "asks": "a lookup question",
         "examples": [
           "Kitáb-i-Íqán",
           "Tao Te Ching",
@@ -452,13 +396,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "lookup"
+          "check": "judge",
+          "expect": "Resolves the name, spelling variants included, to the book or person meant: a book is linked in the library, a person gets a short sourced identification"
         }
       ]
     },
     {
-      "title": "Routing: plan shape lookup (2)",
+      "title": "Answer: lookup question (2)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -466,16 +410,12 @@
           "e-misspell-person"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as lookup",
+        "asks": "a lookup question",
         "examples": [
           "kitab i ikan",
           "Ghoddus"
@@ -483,13 +423,13 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "lookup"
+          "check": "judge",
+          "expect": "Resolves the name, spelling variants included, to the book or person meant: a book is linked in the library, a person gets a short sourced identification"
         }
       ]
     },
     {
-      "title": "Routing: plan shape converse (1)",
+      "title": "Answer: converse question (1)",
       "source": {
         "fixture": "routing-fixtures.json",
         "ids": [
@@ -498,16 +438,12 @@
           "e-converse-who"
         ]
       },
-      "draft": {
-        "engine": "pipeline",
-        "research": false
-      },
       "given": {
         "reader": "a reader with no earlier conversation",
         "history": []
       },
       "when": {
-        "asks": "a question the planner should treat as converse",
+        "asks": "a converse question",
         "examples": [
           "hello!",
           "thank you, that was helpful",
@@ -516,8 +452,12 @@
       },
       "then": [
         {
-          "check": "shape",
-          "expect": "converse"
+          "check": "tool_not_called",
+          "expect": "fused_search, combined_search, document_search, web_search, quotation_trace"
+        },
+        {
+          "check": "judge",
+          "expect": "A short, natural reply with no search results or citations"
         }
       ]
     }

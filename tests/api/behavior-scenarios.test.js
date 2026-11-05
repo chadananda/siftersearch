@@ -108,7 +108,10 @@ describe('seeding the suite from the older fixtures', () => {
     expect(r.counts).toMatchObject({ cases: 45, converted: 44, not_converted: 1 });
     expect(r.counts.not_converted_ids[0].id).toBe('e-define-3');
     expect(r.scenarios).toHaveLength(16);
-    expect(r.scenarios.every((s) => s.draft?.research === false && s.then[0].check === 'shape' && s.when.examples.length >= 2)).toBe(true);
+    // behaviour, not the planner label: no shape check, no draft override (the production default path)
+    expect(r.scenarios.every((s) => !s.draft && s.then.length && s.then.every((c) => c.check !== 'shape') && s.when.examples.length >= 2)).toBe(true);
+    const converse = r.scenarios.find((s) => s.title.startsWith('Answer: converse'));
+    expect(converse.then[0]).toMatchObject({ check: 'tool_not_called' });
   });
   it('answer decisions: 6 cases → 6 converted in 3 scenarios', () => {
     const d = seedDecisions(readQ('answer-decisions.json'));
