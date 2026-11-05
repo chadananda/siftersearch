@@ -110,7 +110,10 @@ const layer = (name, label, fnName, purpose) => ({ name, label, kind: 'tool', la
 /** The original-language Writings: the doctrinal writers as writers, language group ar-fa (qdrant-layers: fa and ar map to one group). */
 export const ORIGINALS_FILTER = { author: DOCTRINAL_KEYS, writerOnly: true, language: 'fa' };
 const SEARCH_DESC = 'Search the library (primary texts in English and in their original Arabic/Persian, authorised interpretation, history, scholarship). Phrase the query in the words the texts themselves would use; name an author or work in the query to narrow it.';
+// fused_search has no planner: a name in its query is only more words, so the writer is a field of its own
+const FUSED_DESC = SEARCH_DESC.replace('name an author or work in the query to narrow it', "set author to keep only one writer's own words");
 const TRADITION = { type: 'string', description: "e.g. Baha'i, Islam, Christianity — omit for all" };
+const WRITER = { type: 'string', description: "A writer whose own words are wanted, e.g. 'Abdu'l-Bahá — only passages by that writer, in any book that carries them; omit otherwise" };
 const RENDER = { type: 'array', items: { type: 'object', properties: { en: { type: 'string' }, count: { type: 'integer' } } } };
 
 // ── the registry ────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -137,13 +140,16 @@ const ENTRIES = [
       return { passages: r?.passages || [] };
     } },
   // DECISION FOR CHAD: the agent's no-planner engine (agent-search.js) — named as its own tool so it is not "search_library" under another engine
-  { name: 'fused_search', label: 'Fused Search', kind: 'tool', outputName: 'Passage[]', description: SEARCH_DESC,
+  { name: 'fused_search', label: 'Fused Search', kind: 'tool', outputName: 'Passage[]', description: FUSED_DESC,
     purpose: 'Every layer fused on the query as written: no planner, no LLM, no relaxing (the fast path for a model that writes precise queries).',
-    input: SEARCH_INPUT({ tradition: TRADITION }), output: PASSAGES, llmOmit: ['limit', 'filters'],
+    input: SEARCH_INPUT({ tradition: TRADITION, author: WRITER }), output: PASSAGES, llmOmit: ['limit', 'filters'],
     example: { input: { query: 'the earth is but one country', tradition: "Baha'i" }, output: { passages: [P_EX] } },
     async run(a, ctx = {}) {
       const fast = ctx.fastSearch || (await import('./agent-search.js')).agentSearch();
       const f = engineFilters(a.filters);
+      // the model names the writer; code only resolves the name (alias table). Left in the query, "where does 'Abdu'l-Bahá say
+      // justice is each one's due" ranked other traditions and writers above Some Answered Questions 77 (11-05); held to Him, it is #2
+      if (a.author) f.author = (await import('../search-plan.js')).keywordAuthor(a.author) || String(a.author).trim();
       return { passages: (await fast(a.query, a.tradition, a.limit ?? 8, ...(Object.keys(f).length ? [f] : []))).map(toPassage) };
     } },
   // the Writings in their ORIGINAL languages (11-04, measured: an English query's fused ranking puts no Persian/Arabic Writing in
