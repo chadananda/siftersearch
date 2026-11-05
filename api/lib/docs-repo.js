@@ -127,6 +127,16 @@ export async function docIdsInYearRange({ yearFrom, yearTo, scope = 'live' } = {
   return rows.map((r) => r.id);
 }
 
+/** Live documents whose metadata leaves search unable to tier them (source-tier tier_gap 'no-religion'): religion missing, or
+ *  an author that is only digits (an import's numeric id, e.g. '4461'). Canonical (oceanlibrary + library) by default — the
+ *  books Anís cites. One read for the ops report 'metadata-gaps'. */
+export async function metadataGaps({ scope = 'canonical', limit = 500 } = {}) {
+  const where = [...scopeSql(scope), "COALESCE(d.doc_role, '') <> 'metadata'",
+    "(d.religion IS NULL OR TRIM(d.religion) = '' OR (d.author GLOB '[0-9]*' AND d.author NOT GLOB '*[^0-9]*'))"];
+  return queryAll(`SELECT d.id, d.title, d.author, d.religion, d.collection, d.source_site, d.paragraph_count FROM docs d
+    WHERE ${where.join(' AND ')} ORDER BY d.paragraph_count DESC, d.id LIMIT ?`, [Math.min(5000, Number(limit) || 500)], 'docs-repo:metadata-gaps');
+}
+
 const GROUPABLE = Object.freeze(['religion', 'collection', 'source_site', 'author', 'language']);
 /** Document counts grouped by metadata columns (religion, collection, source_site, author, language) under a scope —
  *  the library shelves' "N more" numbers. Metadata-only docs (doc_role 'metadata') are not books and are not counted. */
