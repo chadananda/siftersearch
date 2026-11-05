@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ENGINE_BUDGETS, PLANNED_BUDGETS, CLAIMS_BUDGETS, QDRANT_CALL_MS, QDRANT_WRONG_MS, engineStages, plannedStages, summarizeStages, summarizeTraceRows,
-  latencyBreaches, latencyChecks, budgetFor } from '../../api/lib/search/latency-budget.js';
+  latencyBreaches, latencyChecks, budgetFor, slowTraces } from '../../api/lib/search/latency-budget.js';
 
 const ROOT = join(import.meta.dirname, '..', '..');
 const src = (f) => readFileSync(join(ROOT, f), 'utf8');
@@ -142,5 +142,22 @@ describe('CPU stages stay inside budget at production size', () => {
     const grp = (n) => Array.from({ length: n }, () => ({ id: Math.floor(r() * 5000), hits: [{ score: r() }] }));
     const a = pts(120), b = pts(120), g1 = grp(30), g2 = grp(30);
     expect(timeIt(() => { mergePoints(a, b); mergeGroups(g1, g2, 30); }, 50)).toBeLessThan(2);
+  });
+});
+
+describe('slowTraces: the trace ids behind a stage tail', () => {
+  const row = (id, srv, endpoint = 'search') => ({ id, endpoint, created_at: id, timings_json: JSON.stringify({ qdrant_server_by: { concepts: srv } }) });
+  it('lists only rows past the judging line, slowest first', () => {
+    const rows = [row(1, 8), row(2, 333), row(3, 120), row(4, 99), { id: 5, endpoint: 'search', timings_json: 'bad' }];
+    expect(slowTraces(rows, 'qsrv:concepts').map((r) => r.id)).toEqual([2, 3]);
+  });
+  it('an explicit --over line and a limit', () => {
+    const rows = [row(1, 8), row(2, 333), row(3, 120), row(4, 99)];
+    expect(slowTraces(rows, 'qsrv:concepts', { overMs: 50, limit: 2 }).map((r) => r.ms)).toEqual([333, 120]);
+  });
+  it('an unjudged stage with no --over lists nothing', () => {
+    const rows = [{ id: 1, endpoint: 'search', created_at: 1, timings_json: JSON.stringify({ qdrant_by: { concepts: 900 } }) }];
+    expect(slowTraces(rows, 'qdrant:concepts')).toEqual([]);
+    expect(slowTraces(rows, 'qdrant:concepts', { overMs: 100 })[0].ms).toBe(900);
   });
 });

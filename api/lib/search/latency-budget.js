@@ -135,6 +135,20 @@ export function summarizeTraceRows(rows = []) {
   return { samples: { engine: engine.length, planned: planned.length }, engine: summarizeStages('engine', engine), planned: summarizeStages('planned', planned) };
 }
 
+/** The traces behind one stage's tail: rows whose `stage` took more than `overMs` (default: its budget/judging line), slowest
+ *  first, at most `limit` → [{ id, ms, created_at }] — so a slow stage is opened trace by trace (`ops.mjs search-trace <id>`). Pure. */
+export function slowTraces(rows = [], stage, { overMs, limit = 20 } = {}) {
+  const out = [];
+  for (const r of rows) {
+    const kind = r.endpoint === 'planned' ? 'planned' : 'engine';
+    let t; try { t = typeof r.timings_json === 'string' ? JSON.parse(r.timings_json) : r.timings_json; } catch { continue; }
+    const ms = num((kind === 'planned' ? plannedStages : engineStages)(t || {})[stage]);
+    const line = overMs ?? budgetFor(kind, stage);
+    if (ms != null && line != null && ms > line) out.push({ id: r.id, ms, created_at: r.created_at });
+  }
+  return out.sort((a, b) => b.ms - a.ms).slice(0, limit);
+}
+
 /**
  * The alarm verdict for a summary: only a USER-VISIBLE breach (the total of a kind) with enough samples is a breach;
  * stage overruns are listed as the cause. One issue per kind, so the alert dedups on `key`. Pure.

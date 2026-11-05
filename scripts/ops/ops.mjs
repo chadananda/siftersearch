@@ -5,7 +5,7 @@
 //   node scripts/ops/ops.mjs report <name> [--days 14 | --ids 1,2,3 | --params '{json}'] [--wait] [--latest]
 //   node scripts/ops/ops.mjs media held | rejudge [id…] | progress | log [--since 6h|ISO --kind k1,k2 --limit n] | gauges [--host h] [--hours n] [--rows] | health-history <machine> [--from --to] | status <id|slug|words> | stage <stage> [--missing] [--status done] [--after N] | add <url|path>… | redo <id> <stage>…
 //   node scripts/ops/ops.mjs spend-caps                      each caller group's spend today vs. its daily cap, and whether it is blocking
-//   node scripts/ops/ops.mjs search-latency [--minutes 60]   per-stage p50/p95 vs the search budget (search/latency-budget.js)
+//   node scripts/ops/ops.mjs search-latency [--minutes 60] [--slow qsrv:concepts [--over ms]]   per-stage p50/p95 vs the search budget (search/latency-budget.js); --slow lists that stage's slowest trace ids
 //   node scripts/ops/ops.mjs anis-forensics [--days 7] [--stage rank] [--json]   stage × class defect queue (replies, searches) + Opus judge tally
 //   node scripts/ops/ops.mjs anis-improvements [--status open] | anis-improvement-status <id> <open|accepted|done|rejected> [note]
 //   node scripts/ops/ops.mjs anis-improve-digest [--since 24h|ISO] [--json]   DAILY for Claude Code: assessment + new/grown CODE recommendations + DATA changes
@@ -63,7 +63,7 @@ else if (cmd === 'report' && name) {
 } else if (cmd === 'run' && name) await out(await call('GET', `/ops/reports/runs/${name}`));   // one run by id (e.g. the media-item jobs a report queued)
 else if (cmd === 'cancel' && name) await out(await call('DELETE', `/ops/reports/runs/${Number(name)}`));
 else if (cmd === 'spend-caps') await out(await call('GET', '/ops/spend-caps'));
-else if (cmd === 'search-latency') await out(await call('GET', `/ops/search-latency?minutes=${val('--minutes') || 60}`));
+else if (cmd === 'search-latency') await out(await call('GET', `/ops/search-latency?minutes=${val('--minutes') || 60}${val('--slow') ? `&slow=${encodeURIComponent(val('--slow'))}` : ''}${val('--over') ? `&over=${val('--over')}` : ''}`));
 else if (cmd === 'anis-forensics') {
   const j = await call('GET', `/anis/forensics?days=${val('--days') || 7}${val('--stage') ? `&stage=${encodeURIComponent(val('--stage'))}` : ''}`);
   if (flag('--json')) await out(j);

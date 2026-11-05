@@ -107,8 +107,11 @@ export default async function opsReportRoutes(fastify) {
   fastify.get('/ops/search-latency', { preHandler: requireInternal }, async (req) => {
     const minutes = Math.min(Math.max(Number(req.query?.minutes) || 60, 1), 7 * 24 * 60);
     const [{ recentTraceTimings }, budget] = await Promise.all([import('../lib/repos/search-trace-repo.js'), import('../lib/search/latency-budget.js')]);
-    const summary = budget.summarizeTraceRows(await recentTraceTimings({ minutes }));
-    return { minutes, ...summary, breaches: budget.latencyBreaches(summary) };
+    const rows = await recentTraceTimings({ minutes });
+    const summary = budget.summarizeTraceRows(rows);
+    // ?slow=<stage>[&over=<ms>]: the trace ids behind that stage's tail, slowest first
+    const slow = req.query?.slow ? { stage: req.query.slow, traces: budget.slowTraces(rows, String(req.query.slow), { overMs: Number(req.query.over) || undefined }) } : undefined;
+    return { minutes, ...summary, breaches: budget.latencyBreaches(summary), ...(slow ? { slow } : {}) };
   });
   fastify.get('/ops/reports', { preHandler: requireInternal }, async () => ({ reports: reportNames(), recent: await recent(20) }));
   fastify.post('/ops/reports/:name', { preHandler: requireInternal }, async (req) => {

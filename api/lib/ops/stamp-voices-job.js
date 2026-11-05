@@ -10,7 +10,9 @@ import { paragraphVoices } from '../authorship/effective.js';
 import { authorKey, qdrantRequest } from '../search/qdrant-layers.js';
 import { isDraining } from '../drain.js';
 
-const COLLECTIONS = ['phrases', 'paragraphs_kw', 'hype'];
+// every collection the author filter (qdrant-layers.js toQdrantFilter) runs on: a collection left out has no voices_fold
+// index, so its author `should` reads payload per candidate (concepts 11-04: p50 32 ms vs 9 ms on author_fold alone)
+export const COLLECTIONS = ['phrases', 'paragraphs_kw', 'hype', 'concepts'];
 
 export async function stampVoicesJob({ span = 100000, collections = COLLECTIONS, after: from = 0 } = {}, deps = {}) {
   const { rows = quotedVoiceRows, top = maxContentId, qd = qdrantRequest, index = ensureIndex, draining = isDraining } = deps;

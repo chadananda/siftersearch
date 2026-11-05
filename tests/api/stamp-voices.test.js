@@ -29,3 +29,10 @@ describe('voices', () => {
     expect(calls.map((c) => c[0])).toEqual(['phrases', 'paragraphs_kw']);
   });
 });
+
+describe('stamp-voices covers every author-filtered collection', () => {
+  it('includes concepts (its author filter reads voices_fold too)', async () => {
+    const { COLLECTIONS } = await import('../../api/lib/ops/stamp-voices-job.js');
+    expect(COLLECTIONS).toEqual(expect.arrayContaining(['phrases', 'paragraphs_kw', 'hype', 'concepts']));
+  });
+});
