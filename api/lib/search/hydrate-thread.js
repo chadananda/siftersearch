@@ -36,7 +36,9 @@ export const clearHydrateCache = () => { cache.clear(); cacheHits = 0; cacheMiss
 export const hydrateCacheStats = () => ({ size: cache.size, hits: cacheHits, misses: cacheMisses, ttl_ms: cacheTtl() });
 
 /** Paragraph bodies for `ids` (paragraphs-repo shape, NOT highlighted), cached by id. Fills `by` with
- *  {ids, cached, read, wait}: ids asked, served from cache, ms inside the read thread, ms waiting for a thread. */
+ *  {ids, cached, read, wait, queue}: ids asked, served from cache, ms inside the read thread, ms of the call outside the thread
+ *  (wall − thread), and of that the ms queued behind the thread's earlier tasks — wait − queue = the reply's way back (clone + a
+ *  busy serving loop). */
 export async function hydrateBodies(ids, by = null) {
   const ttl = cacheTtl(), now = Date.now();
   const out = [], miss = [];
@@ -45,18 +47,19 @@ export async function hydrateBodies(ids, by = null) {
     if (c && now - c.at < ttl) { cache.delete(k); cache.set(k, c); out.push(c.doc); } else miss.push(id);
   }
   cacheHits += out.length; cacheMisses += miss.length;
-  let read = 0, wait = 0;
+  let read = 0, wait = 0, queue = null;
   if (miss.length) {
     const t0 = performance.now();
     const { value, timing } = await runReadTimed('hydrate', miss, null);
     const wall = performance.now() - t0;
     read = timing?.read ?? wall; wait = Math.max(0, wall - (timing?.total ?? wall));
+    if (typeof timing?.queued === 'number') queue = timing.queued;
     for (const doc of value) {
       out.push(doc);
       if (ttl) { cache.set(String(doc.id), { doc, at: now }); if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value); }
     }
   }
-  if (by) Object.assign(by, { ids: ids.length, cached: ids.length - miss.length, read: Math.round(read), wait: Math.round(wait) });
+  if (by) Object.assign(by, { ids: ids.length, cached: ids.length - miss.length, read: Math.round(read), wait: Math.round(wait), ...(queue != null ? { queue: Math.round(queue) } : {}) });
   return out;
 }
 

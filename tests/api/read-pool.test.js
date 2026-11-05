@@ -71,6 +71,15 @@ describe('entity-name reads on the read pool', () => {
     expect(pool.readPoolStats().tasks['entity:names'].thread).toBeGreaterThan(0);
   }, 60_000);
 
+  it('a thread reports how long the task queued behind its earlier tasks (timing.queued, inside the call wall)', async () => {
+    const t0 = performance.now();
+    const { timing } = await pool.runReadTimed('entity:names', ALL);
+    const wall = performance.now() - t0;
+    expect(typeof timing.queued).toBe('number');
+    expect(timing.queued).toBeGreaterThanOrEqual(0);
+    expect(timing.queued + timing.total).toBeLessThanOrEqual(wall + 2);
+  }, 60_000);
+
   it('the surface count is a real block in-process, and the serving loop stays inside the Qdrant budget on the pool', async () => {
     const { entityNameRows } = await import('../../api/lib/repos/entity-names-repo.js');
     const { QDRANT_CALL_MS } = await import('../../api/lib/search/latency-budget.js');

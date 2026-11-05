@@ -27,9 +27,11 @@ async function runTask(task, args, timing) {
 }
 
 if (!isMainThread && workerData?.role === ROLE) {
-  parentPort.on('message', async ({ id, task, args }) => {
+  parentPort.on('message', async ({ id, task, args, sent }) => {
     const timing = {};
     const t0 = performance.now();
+    // ms between the post and this thread taking the task = time queued behind the thread's earlier tasks (epoch clocks agree across threads)
+    if (typeof sent === 'number') timing.queued = Math.max(0, performance.timeOrigin + t0 - sent);
     try { const value = await runTask(task, args, timing); timing.total = performance.now() - t0; parentPort.postMessage({ id, value, timing }); }
     catch (err) { parentPort.postMessage({ id, error: String(err?.message || err) }); }
   });
@@ -98,7 +100,7 @@ export async function runReadTimed(task, ...args) {
       const t = setTimeout(() => { slot.pending.delete(id); reject(new Error('read thread timed out')); }, TIMEOUT_MS);
       t.unref?.();
       slot.pending.set(id, { task, resolve: (v) => { clearTimeout(t); resolve(v); }, reject: (e) => { clearTimeout(t); reject(e); } });
-      slot.worker.postMessage({ id, task, args });
+      slot.worker.postMessage({ id, task, args, sent: performance.timeOrigin + performance.now() });
     });
     statFor(task).thread++;
     return value;
