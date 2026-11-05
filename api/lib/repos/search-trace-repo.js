@@ -6,9 +6,9 @@ import { query, queryAll, queryOne } from '../db.js';
 const now = () => Math.floor(Date.now() / 1000);
 const clampInt = (v, lo, hi, dflt) => Math.min(Math.max(lo, parseInt(v, 10) || dflt), hi);
 
-/** The newest traces of the last `minutes` (at most `limit`): id, endpoint + timings only, newest first. */
+/** The newest traces of the last `minutes` (at most `limit`): trace_id, endpoint + timings only, newest first. */
 export const recentTraceTimings = ({ minutes = 60, limit = 5000 } = {}) => queryAll(
-  `SELECT id, endpoint, timings_json, created_at FROM search_trace WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?`,
+  `SELECT trace_id, endpoint, timings_json, created_at FROM search_trace WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?`,
   [now() - Math.max(1, Number(minutes) || 60) * 60, Math.min(Math.max(1, Number(limit) || 5000), 20000)],
   'search-trace:recent-timings');
 

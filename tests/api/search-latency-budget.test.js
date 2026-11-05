@@ -146,17 +146,17 @@ describe('CPU stages stay inside budget at production size', () => {
 });
 
 describe('slowTraces: the trace ids behind a stage tail', () => {
-  const row = (id, srv, endpoint = 'search') => ({ id, endpoint, created_at: id, timings_json: JSON.stringify({ qdrant_server_by: { concepts: srv } }) });
+  const row = (id, srv, endpoint = 'search') => ({ trace_id: id, endpoint, created_at: id, timings_json: JSON.stringify({ qdrant_server_by: { concepts: srv } }) });
   it('lists only rows past the judging line, slowest first', () => {
-    const rows = [row(1, 8), row(2, 333), row(3, 120), row(4, 99), { id: 5, endpoint: 'search', timings_json: 'bad' }];
-    expect(slowTraces(rows, 'qsrv:concepts').map((r) => r.id)).toEqual([2, 3]);
+    const rows = [row(1, 8), row(2, 333), row(3, 120), row(4, 99), { trace_id: 5, endpoint: 'search', timings_json: 'bad' }];
+    expect(slowTraces(rows, 'qsrv:concepts').map((r) => r.trace_id)).toEqual([2, 3]);
   });
   it('an explicit --over line and a limit', () => {
     const rows = [row(1, 8), row(2, 333), row(3, 120), row(4, 99)];
     expect(slowTraces(rows, 'qsrv:concepts', { overMs: 50, limit: 2 }).map((r) => r.ms)).toEqual([333, 120]);
   });
   it('an unjudged stage with no --over lists nothing', () => {
-    const rows = [{ id: 1, endpoint: 'search', created_at: 1, timings_json: JSON.stringify({ qdrant_by: { concepts: 900 } }) }];
+    const rows = [{ trace_id: 1, endpoint: 'search', created_at: 1, timings_json: JSON.stringify({ qdrant_by: { concepts: 900 } }) }];
     expect(slowTraces(rows, 'qdrant:concepts')).toEqual([]);
     expect(slowTraces(rows, 'qdrant:concepts', { overMs: 100 })[0].ms).toBe(900);
   });
