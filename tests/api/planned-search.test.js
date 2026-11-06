@@ -416,7 +416,7 @@ describe('plannedSearch — a quotation not found verbatim', () => {
   it('a Qur’an verse paraphrased in another rendering finds its verse', async () => {
     const verse = { id: 256, text: 'Let there be no compulsion in religion: Truly the right way has become distinct from error.' };
     const e = byMeaning(verse);
-    const r = await plannedSearch('nobody may be forced into accepting a faith', { planner: planOf({ tradition: 'Islam' }), engine: e.fn, minResults: 1, qdrant: { phrase: true } });
+    const r = await plannedSearch('nobody may be forced into accepting a faith', { planner: planOf({ tradition: 'Islam', shape: 'quote' }), engine: e.fn, minResults: 1, qdrant: { phrase: true } });
     const m = e.calls.filter(meaningCall);
     expect(m).toHaveLength(1);
     expect(m[0].filters).toEqual({ religion: 'Islam' });   // the method changes, never the scope
@@ -426,7 +426,7 @@ describe('plannedSearch — a quotation not found verbatim', () => {
   it('a Hidden Word misquoted with two words swapped finds the Hidden Word', async () => {
     const hw = { id: 1001, text: 'O SON OF SPIRIT! My first counsel is this: Possess a pure, kindly and radiant heart.' };
     const e = byMeaning(hw);
-    const r = await plannedSearch('possess a kindly, pure and radiant heart — my first counsel', { planner: planOf({}), engine: e.fn, minResults: 1, qdrant: { phrase: true } });
+    const r = await plannedSearch('possess a kindly, pure and radiant heart — my first counsel', { planner: planOf({ shape: 'quote' }), engine: e.fn, minResults: 1, qdrant: { phrase: true } });
     expect(e.calls.filter(meaningCall)).toHaveLength(1);
     expect(r.hits[0].id).toBe(1001);
   });

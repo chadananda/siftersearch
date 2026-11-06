@@ -315,7 +315,9 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
   const held = (h) => wordShare(verbatimQ, h?.text ?? h?.snippet) >= QUOTE_HELD;
   const sameAsMain = !layers.keyword && layers.semantic && !layers.hype && !layers.diversify && qdrant.phrase && verbatimQ === subjectQ;
   let meaningHits = [];
-  if (quotation && !sameAsMain && !verbatimHits.some(held) && !r.results.some(held)) {
+  // Only when JEV classed it a quotation (shape quote / plan.quote) — the 6-word wording test is no intent signal (it fired on
+  // "what is the purpose of suffering", a topic question, and its meaning hits pushed the Writings pass out of the lead).
+  if ((plan.shape === 'quote' || quotePhrase) && quotation && !sameAsMain && !verbatimHits.some(held) && !r.results.some(held)) {
     const tm = Date.now();
     meaningHits = await search(plan.filters, verbatimQ, MEANING_ONLY).catch(() => []);
     Object.assign(stages, { quote_meaning_ms: Date.now() - tm, quote_meaning_hits: meaningHits.length });
