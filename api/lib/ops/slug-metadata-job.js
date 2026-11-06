@@ -16,6 +16,16 @@ export const slugSurname = (a) => {
   return SLUG.test(s) && !NOT_NAMES.has(s) && !s.includes('-') ? s : null;
 };
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’ʻʼ'`]/g, '').toLowerCase();
+// title pages and bylines spell the Central Figures every way ('Bahaullah', 'BAHA'U'LLAH'); the library spells them one way
+const FIGURES = { bahaullah: 'Bahá’u’lláh', abdulbaha: '‘Abdu’l-Bahá', thebab: 'The Báb', bab: 'The Báb', shoghieffendi: 'Shoghi Effendi' };
+export const figureName = (a) => FIGURES[fold(a).replace(/[^a-z]/g, '')] || a;
+const GENERIC = new Set(['pdf', 'book', 'books', 'text', 'texts', 'volume', 'vol', 'part', 'issue', 'page', 'edition', 'ocr', 'english']);
+/** The file name was made from the real title: a proposed title sharing none of its words ('memoriam_bw_12' → 'The Baha'i World, Volume XI') is a different text. */
+export const sharesFileWord = (file, title) => {
+  const words = fold(file).split(/[^a-z]+/).filter((w) => w.length >= 4 && !GENERIC.has(w));
+  const t = fold(title);
+  return !words.length || words.some((w) => t.includes(w));
+};
 /** A title that is a file name ('holley_modern_social_religion', '1920-03-06,%20Thomas%20W%20Fleming…'), not a title. */
 export const fileTitle = (t) => isFilenameTitle(t) || /%20|_/.test(String(t || ''));
 const SMALL = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'with', 'de', 'la', 'le', 'des', 'du', 'et']);
@@ -60,6 +70,8 @@ export async function slugMetadataJob({ scope = 'canonical', limit = 500, ids = 
       } else { p.review.push(text.length < 80 ? 'no text' : 'no reply'); if (needTitle) p.title = det.title || null; }
     }
     p.title = unshout(p.title); p.author = unshout(p.author);
+    if (p.author) p.author = figureName(p.author);
+    if (p.title && !sharesFileWord(r.title, p.title)) p.review.push('title shares no word with the file name');
     if (p.author && surname && !fold(p.author).includes(surname)) p.review.push(`author lacks the locator surname '${surname}'`);
     if (needAuthor && !p.author) p.review.push('author unknown');
     if (needTitle && !p.title) p.review.push('title unknown');

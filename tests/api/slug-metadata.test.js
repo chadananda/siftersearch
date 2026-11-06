@@ -1,6 +1,6 @@
 // slug-metadata report: locator title/author → what the book prints; byline first, title page via the role, surname must corroborate.
 import { describe, it, expect } from 'vitest';
-import { slugMetadataJob, slugSurname, slugAuthor, unshout, fileTitle } from '../../api/lib/ops/slug-metadata-job.js';
+import { slugMetadataJob, slugSurname, slugAuthor, unshout, fileTitle, figureName, sharesFileWord } from '../../api/lib/ops/slug-metadata-job.js';
 import { authorFromText } from '../../api/lib/text/source-metadata.js';
 
 const reply = (j) => async () => ({ choices: [{ message: { content: JSON.stringify(j) } }] });
@@ -38,7 +38,9 @@ describe('slug-metadata', () => {
     expect(fileTitle('1920-03-06,%20Thomas%20W%20Fleming%20The_Buckeye_State') && fileTitle('memoriam_bw_12') && !fileTitle('Laws Abrogated by Baha\'u\'llah')).toBe(true);
     const r = await run([{ id: 5, title: 'Tablets of Tarazat', author: 'bahaullah' }], { 5: 'TABLETS ' + 'text '.repeat(40) },
       reply({ title: 'Tablet of Tarazat', author: "Baha'u'llah", kind: 'book', printed: true }));
-    expect(r.proposals[0]).toMatchObject({ author: "Baha'u'llah", title: null, review: [] });
+    expect(r.proposals[0]).toMatchObject({ author: 'Bahá’u’lláh', title: null, review: [] });
+    expect([figureName('BAHAULLAH'), figureName("'Abdu'l-Baha"), figureName('Jane Smith')]).toEqual(['Bahá’u’lláh', '‘Abdu’l-Bahá', 'Jane Smith']);
+    expect([sharesFileWord('memoriam_bw_12', "The Baha'i World, Volume XI"), sharesFileWord('browne_literary_history_persia_3', 'A Literary History of Persia')]).toEqual([false, true]);
   });
   it('a newspaper page with no byline keeps author unknown (review), with its publication', async () => {
     const r = await run([{ id: 3, title: '1920-03-06_cleveland', author: 'newspaper' }], { 3: 'THE CLEVELAND ADVOCATE ' + 'news '.repeat(40) },
