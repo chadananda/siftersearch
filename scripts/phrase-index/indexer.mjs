@@ -31,6 +31,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { unitsOf, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
 import { faShare } from '../../api/lib/arabic-script.js';
+import { dirBytes, hotVerdict } from './hot-space.mjs';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
 import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
@@ -322,6 +323,11 @@ async function upsert() {
   }
   for (;;) {
     if (HOT && pages++ % 20 === 0) {
+      // a snapshot in flight holds a temporary copy in <storage>/tmp: wait for it to finish, then measure (11-05)
+      while (hotVerdict({ free: hotFree(), used: hotUsed(), tmp: dirBytes(join(HOT_PATH, 'storage', 'tmp')), minFree: HOT_MIN_FREE }) === 'snapshot') {
+        note({ phase: 'waiting', reason: 'qdrant-hot snapshot in progress' });
+        await new Promise((r) => setTimeout(r, 15_000));
+      }
       const free = hotFree(), need = hotNeedFree(hotUsed(), HOT_MIN_FREE);
       if (free != null && free < need) { stopped = `hot RAM disk ${HOT_PATH} has ${(free / 1e9).toFixed(1)} GB free (< ${(need / 1e9).toFixed(1)} GB: min ${HOT_MIN_FREE / 1e9} GB and room for a snapshot): fold into main or enlarge before indexing more`; break; }
     }
