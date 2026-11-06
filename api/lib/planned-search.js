@@ -77,7 +77,8 @@ const onSubject = (hit, terms) => {
 // "‘Abdu’l-Bahá ‘Abbás." all led bare-name searches 11-05).
 const MIN_PASSAGE_WORDS = 8;
 const NAME_ONLY_DEPTH = 6;   // author pool depth × limit for a name-only query
-export const notPassage = (h, nameOnly) => foldTok(String(h.text || '').replace(/\{[^}]*\}/g, ' '))
+// Links and URLs are not words: a "Download: [x.pdf](https://…)" preamble led the bare "Bahaullah" page (11-05).
+export const notPassage = (h, nameOnly) => foldTok(String(h.text || '').replace(/\{[^}]*\}/g, ' ').replace(/\[[^\]]*\]\([^)]*\)/g, ' ').replace(/https?:\/\/\S+/g, ' '))
   .split(' ').filter((w) => w && !nameOnly.has(w)).length < MIN_PASSAGE_WORDS;
 
 export function preferAuthor(authorHits, broadHits, aliases, limit, terms = [], quotedIds = new Set(), nameOnly = null) {

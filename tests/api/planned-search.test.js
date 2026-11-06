@@ -370,6 +370,9 @@ describe('preferAuthor — the author, then passages quoting the author, then th
     for (const x of ['Shoghi Rabbani', 'Beloved Guardian,', '\\[on behalf of Guardian\\]', 'With warmest greetings from the Guardian,', 'Shoghi Effendi {language="en"}'])
       expect(notPassage(t(x), se), x).toBe(true);
     expect(notPassage(t('‘Abdu’l-Bahá ‘Abbás.'), ab)).toBe(true);
+    const bh = new Set(['bahaullah']);
+    expect(notPassage(t('_Download: [bahaullah\\_hall\\_tablet_consolation.pdf](https://bahai-library.com/pdf/h/bahaullah_hall_tablet_consolation.pdf)_'), bh)).toBe(true);
+    expect(notPassage(t('See [the Tablet](https://x.org/t) where He saith that the earth is but one country and mankind its citizens.'), bh)).toBe(false);
     expect(notPassage(t("ʻAbdu'l-Bahá"), ab)).toBe(true);
     expect(notPassage(t('The world of humanity is composed of two parts, the body and the soul.'), ab)).toBe(false);
     expect(notPassage(t('The Faith of Bahá’u’lláh is the culmination of a process of progressive revelation.'), se)).toBe(false);
