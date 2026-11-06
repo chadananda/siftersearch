@@ -10,7 +10,7 @@ export const COLLECTIONS = ['phrases', 'paragraphs_kw', 'hype', 'concepts'];
 
 // was { [docId]: old author }: only points still stamped with the OLD author key change — a paragraph with its own writer
 // (a compilation quoting Bahá'u'lláh, content.authors) keeps it. Without `was`, every point of the doc is stamped.
-export async function docAuthorRestampJob({ ids = [], was = {}, batch = 500, collections = COLLECTIONS } = {}, deps = {}) {
+export async function docAuthorRestampJob({ ids = [], was = {}, batch = 100, collections = COLLECTIONS } = {}, deps = {}) {
   const { docs = listDocs, qd = qdrantRequest, draining = isDraining } = deps;
   const out = { docs: 0, groups: 0, calls: 0, errors: 0, missing: 0, failed: [] };
   const all = [...new Set((ids || []).map(Number).filter(Boolean))];
