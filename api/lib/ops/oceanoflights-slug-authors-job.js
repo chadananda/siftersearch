@@ -18,14 +18,16 @@ export function slugFigure(slug) {
 
 export async function oceanoflightsSlugAuthorsJob({ write = false, limit = Infinity, sample = 10 } = {}, deps = {}) {
   const { docs = listDocs, corrections = docCorrectionsJob, enqueue = async (n, p, by) => (await import('../repos/ops-report-repo.js')).enqueue(n, p, by) } = deps;
-  const out = { write, scanned: 0, perFigure: {}, unchanged: {}, sample: [], changed: 0, restamp: null };
+  const out = { write, listed: 0, off_path: [], scanned: 0, perFigure: {}, unchanged: {}, sample: [], changed: 0, restamp: null };
   const fixes = [];
   for (let afterId = 0; ;) {
     const page = (await docs({ scope: 'live', sourceSite: 'oceanoflights.org', authorLike: 'file-%', afterId, fields: ['id', 'title', 'author', 'religion', 'file_path'], limit: 1000, count: false })).docs || [];
     if (!page.length) break;
     afterId = page[page.length - 1].id;
+    out.listed += page.length;
     for (const d of page) {
-      if (!String(d.file_path || '').includes(DIR) || !/^file-/.test(d.author || '')) continue;
+      // listed but skipped: the first few paths shown, so a path-layout change is visible in the dry run
+      if (!String(d.file_path || '').includes(DIR) || !/^file-/.test(d.author || '')) { if (out.off_path.length < 3) out.off_path.push([d.id, d.file_path ?? null]); continue; }
       out.scanned++;
       const f = slugFigure(d.author);
       if (!f) { const p = d.author.split('-').slice(0, 2).join('-'); out.unchanged[p] = (out.unchanged[p] || 0) + 1; continue; }
