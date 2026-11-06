@@ -32,6 +32,7 @@ import { deweyQualityJob } from './dewey-quality-job.js';
 import { deweyCompletenessJob } from './dewey-completeness-job.js';
 import { deweyScoutJob } from './dewey-scout-job.js';
 import { deweyRetitleJob } from './dewey-retitle-job.js';
+import { slugMetadataJob } from './slug-metadata-job.js';
 import { deweyTitleCheckJob } from './dewey-title-check-job.js';
 import { deweyOfferPathsJob } from './dewey-offer-paths-job.js';
 import { unsegmentedDocsJob } from './unsegmented-docs-job.js';
@@ -240,6 +241,7 @@ REPORTS['dewey-reimport'] = deweyReimportJob;   // params: { docs?, all?, limit?
 REPORTS['unsegmented-docs'] = unsegmentedDocsJob;   // params: { minChars? } — documents holding a whole-book 'paragraph': the re-ingest list (read-only)
 REPORTS['dewey-offer-paths'] = deweyOfferPathsJob;   // params: { paths } — files a folder sweep found missing → offers on /dewey (never imported unasked)
 REPORTS['dewey-title-check'] = deweyTitleCheckJob;   // params: { titles: [{ title, author? }] } — the title index against the real library (read-only)
+REPORTS['slug-metadata'] = slugMetadataJob;   // params { scope, limit, ids? } — printed title/author for books whose metadata is a file locator (read-only proposals)
 REPORTS['dewey-retitle'] = deweyRetitleJob;   // params: { limit? } — real titles for imports titled from unreadable pages (read-only proposals)
 REPORTS['dewey-scout'] = deweyScoutJob;   // params: { list, collections?, religion?, limit? } — find works the library lacks and a copy of each (planning/dewey-scouts-plan.md)
 REPORTS['dewey-completeness'] = deweyCompletenessJob;   // params: { since? } — imported PDFs that are only the beginning (read-only)

@@ -53,7 +53,8 @@ export function titleFromText(text, { maxLines = 12 } = {}) {
  */
 export function authorFromText(text, { expectSurname = null, maxChars = 3000 } = {}) {
   const head = String(text || '').slice(0, maxChars);
-  const pats = [/^\s*(?:by|By|BY)[:\s]+([^\n]{3,80})$/m, /^\s*Author[:\s]+([^\n]{3,80})$/mi];
+  // a title page often sets BY on its own line, the name on the next (Holley, The Modern Social Religion, 1913)
+  const pats = [/^[ \t]*(?:by|By|BY)[ \t]*\n[ \t]*([^\n]{3,80})$/m, /^\s*(?:by|By|BY)[:\s]+([^\n]{3,80})$/m, /^\s*Author[:\s]+([^\n]{3,80})$/mi];
   for (const re of pats) {
     const m = re.exec(head);
     if (!m) continue;
