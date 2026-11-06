@@ -141,6 +141,13 @@ export function leadWithTarget(lists, mark, limit) {
   return [...named, ...rest].slice(0, limit);
 }
 
+/** Name-only: the preferred author's own passages (preferAuthor's _authorMatch) first, then the target-led rest. Pure. */
+export function ownWorksFirst(preferred, led, limit) {
+  const seen = new Set(), out = [];
+  for (const h of [...preferred.filter((x) => x._authorMatch), ...led]) if (!seen.has(h.id)) { seen.add(h.id); out.push(h); }
+  return out.slice(0, limit);
+}
+
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 /**
@@ -310,7 +317,12 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
     // ANY form (title, epithet, kunya), which the name keywords cannot reach. Chad 10-12: use every index we build.
     const mentioned = tgt.id ? search(r.scope || plan.filters, subjectQ, { ...KEYWORD_ONLY, entityIds: [tgt.id] }).catch(() => []) : Promise.resolve([]);
     const per = await Promise.all([...names.map((n) => search(r.scope || plan.filters, n, KEYWORD_ONLY).catch(() => [])), mentioned]);
-    hits = leadWithTarget([hits, ...per], (h) => markTarget(h.text, tgt), limit);
+    // A name-only query (Jev set the author; nothing else asked) wants the author's WORKS: they lead, and the paragraphs
+    // that merely name the person follow. Headings go before the cut — leading with "named" paragraphs and dropping the
+    // bare-name ones after slicing left "Shoghi Effendi" with 2 hits about him and none by him (11-05, #135/#262).
+    const lists = nameOnly ? [hits, ...per].map((l) => l.filter((h) => !notPassage(h, nameOnly))) : [hits, ...per];
+    const led = leadWithTarget(lists, (h) => markTarget(h.text, tgt), nameOnly ? limit * 2 : limit);
+    hits = nameOnly ? ownWorksFirst(hits, led, limit) : led;
     stages.target_ms = Date.now() - t1;
   }
   if (hints || plan.lean) {

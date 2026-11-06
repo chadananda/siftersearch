@@ -258,6 +258,21 @@ describe('plannedSearch — search target', () => {
   };
   const eng = async (q) => ({ hits: texts[q] || [] });
 
+  it('a name-only query: the author\'s own works lead; paragraphs that merely name the person follow; headings never fill the page (#135/#262)', async () => {
+    const pref = async (_i, { given } = {}) => ({ ...buildPlan({
+      tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 },
+      author: { choice: 'Shoghi Effendi', confidence: 0.9 }, shape: { choice: 'lookup', confidence: 0.9 },
+    }, { given }), ms: 5 });
+    const se = { id: 7, name: 'Shoghi Effendi', type: 'person', names: ['Shoghi Effendi'] };
+    const own = [1, 2, 3].map((i) => ({ id: i, doc_id: 100 + i, author: 'Shoghi Effendi', text: `The Administrative Order of the Faith of Bahá’u’lláh must be upheld ${i} with steadfastness and love.` }));
+    const about = [{ id: 11, doc_id: 200, author: 'H. Rabbani', text: 'Shoghi Effendi worked late into the night at his desk in Haifa that winter.' },
+      { id: 12, doc_id: 201, author: 'X', text: 'Shoghi Effendi {language="en"}' }];
+    const eng = async (_q, opts) => ({ hits: opts.filters?.author ? own : about });
+    const r = await plannedSearch('Shoghi Effendi', { planner: pref, engine: eng, targeter: async () => se, limit: 8 });
+    expect(r.hits.slice(0, 3).map((h) => h.id)).toEqual([1, 2, 3]);
+    expect(r.hits.map((h) => h.id)).toContain(11);
+    expect(r.hits.map((h) => h.id)).not.toContain(12);
+  });
   it('a misspelled name is searched under the target’s own names; passages naming it lead, marked', async () => {
     const r = await plannedSearch('iderne', { planner: planOf({}), engine: eng, targeter: async () => adrianople });
     expect(r.target.name).toBe('Adrianople');
