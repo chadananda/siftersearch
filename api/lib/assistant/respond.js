@@ -14,6 +14,7 @@ import { questionSubject } from '../planned-search.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
 import { modelFor } from '../model-roles.js';
+import { isSpendCap } from '../spend-caps.js';
 import { calculateCost } from '../model-registry.js';
 import { preferOwnWork, literalOwnSearch, linkHits } from './own-source.js';
 import { toPassage } from './tools.js';
@@ -923,11 +924,19 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
       if (primary) onEvent({ type: 'text', content: cleanLinks(t).replace(/\[\[(?:RENDERINGS|PASSAGES)\]\]\n?/g, '') });   // code fills these in the final text
     }, { asked: readerWords });
     const w0 = Date.now();
-    const raw = await timed(primary ? 'craft' : `craft:${v.id}`, () => d.craft({
+    // a provider at its daily cap (the Anthropic total) never silences Anís: the reply is written by the plain writer
+    // (assistant-answer, another provider) instead; only when that is capped too does the turn get the spend-cap reply
+    const craftWith = (llmUse) => d.craft({
       user_question: question, retrieved_quotes: sourced ? retrieved.map(({ citation_url: _u, ...q }) => q) : retrieved, conversation_summary: conversationSummary(messages, persona),
       persona_name: persona, mission: profile.mission || null, companion_append: comp?.append || '',
-      comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, target: res?._plan?.target || null, direction: { ...direction, format: fmt }, llm: writer,
+      comparative: !!res?._plan?.comparative, conversational, entities: res?.entities || null, peopleAnswer: pa, target: res?._plan?.target || null, direction: { ...direction, format: fmt }, llm: llmUse,
       onChunk: (t) => gate.push(t), ...(v ? { onUsage: (u) => { usage = u; } } : {}),
+    });
+    const capFallback = { ...modelFor('assistant-answer'), caller: 'anis-craft-capped' };
+    const raw = await timed(primary ? 'craft' : `craft:${v.id}`, () => craftWith(writer).catch((err) => {
+      if (!isSpendCap(err) || writer?.provider === capFallback.provider) throw err;
+      console.warn(JSON.stringify({ anis_craft: 'writer at spend cap, plain writer instead', from: `${writer?.provider}:${writer?.model}`, cap: err.message }));
+      return craftWith(capFallback);
     }));
     const writeMs = Date.now() - w0;
     gate.flush();

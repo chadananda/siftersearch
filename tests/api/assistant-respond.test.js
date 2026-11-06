@@ -1,6 +1,7 @@
 // Anis chat layer: conversation + Jev-planned RAW search → ONE fast streamed answer in the site's persona, with
 // the Seeker Companion plan. Transport-neutral (web component streams; email uses the finished text).
 import { describe, it, expect, vi } from 'vitest';
+import { SpendCapError } from '../../api/lib/spend-caps.js';
 import { anisRespond, parseLlm, linkMarkers, searchQueryFor } from '../../api/lib/assistant/respond.js';
 
 const passages = [
@@ -25,6 +26,22 @@ const convo = [
 ];
 
 describe('anisRespond', () => {
+  it('a writer at its provider spend cap hands the reply to the plain writer (another provider), not a refusal', async () => {
+    const used = [];
+    const d = deps({ craft: async (args) => {
+      used.push(args.llm);
+      if (args.llm.provider === 'anthropic') throw new SpendCapError({ group: 'anthropic-total', spent: 49, cap: 20, caller: 'anis-craft' });
+      return 'The earth is one country.';
+    } });
+    const r = await anisRespond({ messages: convo, deps: d, llm: { provider: 'anthropic', model: 'claude-sonnet-5-5' } });
+    expect(used.map((l) => l.provider)).toEqual(['anthropic', 'gemini']);
+    expect(used[1].caller).toBe('anis-craft-capped');
+    expect(r.reply).toContain('one country');
+  });
+  it('a capped plain writer still throws the cap (the turn answers with the spend-cap reply)', async () => {
+    const d = deps({ craft: async () => { throw new SpendCapError({ group: 'anis', spent: 31, cap: 30, caller: 'anis-craft' }); } });
+    await expect(anisRespond({ messages: convo, deps: d, llm: { provider: 'gemini', model: 'gemini-3.5-flash-lite' } })).rejects.toMatchObject({ code: 'SPEND_CAP' });
+  });
   it('searches ONCE with the conversation (planned) and the site default, then crafts ONCE', async () => {
     const d = deps();
     await anisRespond({ messages: convo, profile: { persona_name: 'Anis', default_tradition: "Baha'i" }, deps: d });
