@@ -23,12 +23,14 @@ describe('caller → group', () => {
 });
 
 describe('the dated schedule', () => {
-  it('anis: $30 through 11-07, $20 from 11-08; media 40; other 10; the env overrides', () => {
+  it('anis: $30 through 11-07, $20 from 11-08; media 40 → 20 from 11-06; improve 5 from 11-06; other 10; the env overrides', () => {
     expect(capFor('anis', '2026-11-04')).toBe(30);
     expect(capFor('anis', '2026-11-07')).toBe(30);
     expect(capFor('anis', '2026-11-08')).toBe(20);
     expect(capFor('anis', '2027-01-01')).toBe(20);
     expect(capFor('media', '2026-11-04')).toBe(40);
+    expect(capFor('media', '2026-11-06')).toBe(20);   // Chad 11-06
+    expect(capFor('improve', '2026-11-06')).toBe(5);   // Chad 11-06
     expect(capFor('other', '2026-11-04')).toBe(10);
     expect(capFor('anis', '2026-11-04', undefined, { SPEND_CAP_ANIS_USD: '5' })).toBe(5);
     expect(capFor('anis', '2026-11-03')).toBe(Infinity);   // before the first entry: no cap
@@ -65,8 +67,8 @@ describe('blocking at the cap', () => {
     await assertSpendCap('search-query', { now, deps });   // exempt: counted, never refused
   });
   it('the status lists each group with remaining and blocking; a failed read does not block', async () => {
-    const s = await capStatus({ now, deps: spend({ 'media-x': 40, 'corpus-rag': 1 }) });
-    expect(s.find((g) => g.group === 'media')).toMatchObject({ spent_usd: 40, cap_usd: 40, remaining_usd: 0, blocking: true });
+    const s = await capStatus({ now, deps: spend({ 'media-x': 20, 'corpus-rag': 1 }) });
+    expect(s.find((g) => g.group === 'media')).toMatchObject({ spent_usd: 20, cap_usd: 20, remaining_usd: 0, blocking: true });
     expect(s.find((g) => g.group === 'anis')).toMatchObject({ cap_usd: 20, blocking: false });
     _reset();
     await assertSpendCap('media-x', { now, deps: { byCaller: async () => { throw new Error('db locked'); } } });
