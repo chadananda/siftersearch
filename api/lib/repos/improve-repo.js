@@ -94,8 +94,10 @@ export function saveDeepDone(db, key, { usd, deep = null }) {
   db.prepare(`UPDATE forensics SET deep_state = 'done', deep_usd = ?, deep_json = ?, error = NULL, deep_at = ?, updated_at = ? WHERE item_key = ?`)
     .run(usd, deep ? JSON.stringify(deep) : null, now, now, key);
 }
-export function noteFailure(db, key, error) {
-  db.prepare('UPDATE forensics SET attempts = attempts + 1, error = ?, updated_at = ? WHERE item_key = ?').run(String(error).slice(0, 500), nowIso(), key);
+/** final: the same prompt would fail the same way (reply cut at max_tokens) → park it now instead of paying 4 more retries (11-06:
+ *  ~7,400 paid judge replies were unparseable and retried to 5 attempts). */
+export function noteFailure(db, key, error, { final = false } = {}) {
+  db.prepare(`UPDATE forensics SET attempts = ${final ? 'MAX(attempts + 1, 99)' : 'attempts + 1'}, error = ?, updated_at = ? WHERE item_key = ?`).run(String(error).slice(0, 500), nowIso(), key);
 }
 
 export const openImprovements = (db) => db.prepare(`SELECT * FROM improvements WHERE status IN ('open','accepted')`).all();

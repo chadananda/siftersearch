@@ -7,7 +7,7 @@ import { judgeMessage, parseJudge, deepMessage, parseSuggestions, mergeSuggestio
 import { deferCoveredSearches } from '../../api/lib/repos/improve-repo.js';
 import { openImproveDb, recordForensic, nextWork, saveJudge, openImprovements, applySuggestions, listImprovements, setImprovementStatus,
   forensicsSince, getCursor } from '../../api/lib/repos/improve-repo.js';
-import { work, ingest, traceToSearch, replayHits, searchJudgeState } from '../../api/workers/improve-worker.js';
+import { work, ingest, traceToSearch, replayHits, searchJudgeState, JUDGE_CALL, DEEP_CALL } from '../../api/workers/improve-worker.js';
 import { assertAnthropicAllowed, isImproveAllowed } from '../../api/lib/anthropic-policy.js';
 import { modelFor } from '../../api/lib/model-roles.js';
 import { SpendCapError } from '../../api/lib/spend-caps.js';
@@ -153,6 +153,26 @@ describe('the store and the worker (in-memory; the LLM call injected)', () => {
     expect(nextWork(db)).toMatchObject({ item_key: 'reply:7', attempts: 1 });
     saveJudge(db, 'reply:7', { judge: { verdict: 'pass', classes: [] }, usd: 0.01 });
     expect(nextWork(db).item_key).toBe('search:t-1103');
+  });
+  it('a reply cut at max_tokens is parked at once (no 5x retry); an empty deep analysis is a failure, never deep done', async () => {
+    const db = setup(), seen = [];
+    const cut = async (role, system, user, opts) => { seen.push(opts); return { text: '{"verdict":"we', usd: 0.01, finishReason: 'max_tokens' }; };
+    expect(await work(db, { call: cut })).toBe('done');
+    expect(seen[0]).toEqual(JUDGE_CALL);
+    expect(JUDGE_CALL.maxTokens).toBeGreaterThanOrEqual(2000);   // thinking spends max_tokens on Opus 5.5
+    expect(nextWork(db).item_key).not.toBe('reply:7');           // parked, not retried
+    const weak = { text: '{"verdict":"weak","classes":["x"],"stage":"RANK","severity":3,"why":"w"}', usd: 0.01, finishReason: 'end_turn' };
+    const empty = async (role, s, u, opts) => role === 'search-judge' ? weak : (seen.push(opts), { text: '{"diagnosis":', usd: 0.05, finishReason: 'max_tokens' });
+    const k = nextWork(db).item_key;
+    await work(db, { call: empty, replay: async () => null });   // judge
+    expect(nextWork(db)).toMatchObject({ step: 'deep', item_key: k });
+    await work(db, { call: empty, replay: async () => null });   // deep: truncated, empty
+    expect(seen.at(-1)).toEqual(DEEP_CALL);
+    expect(nextWork(db)?.item_key).not.toBe(k);
+    expect(listImprovements({}, { db })).toHaveLength(0);
+    const db2 = setup();   // an unparseable reply that was NOT cut off still gets its retries
+    await work(db2, { call: async () => ({ text: 'hmm', usd: 0, finishReason: 'end_turn' }) });
+    expect(nextWork(db2)).toMatchObject({ item_key: 'reply:7', attempts: 1 });
   });
   it('ingest: replies and traces after the cursors, each with its own forensic row', async () => {
     const db = openImproveDb(':memory:');

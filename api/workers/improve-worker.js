@@ -85,12 +85,20 @@ export async function ingest(db, { deps = {} } = {}) {
  *  forensic pass found a defect. */
 export const searchJudgeState = (t, defects = []) => t.turn_id ? 'covered' : defects.length ? 'pending' : 'clean';
 
-async function callOpus(role, system, user, maxTokens) {
+/** Output budgets (11-06): Opus 5.5 always thinks and the thinking spends max_tokens. At 600 (judge) / 2000 (deep) the replies
+ *  averaged 574 / 1,852 output tokens: cut off mid-JSON → unparseable → retried 5× (judge), or an empty conclusion saved as done
+ *  (deep: 43 of the last 50 had no diagnosis). Room for thinking + the JSON, and low effort for a rubric verdict. */
+export const JUDGE_CALL = { maxTokens: 4000, effort: 'low' };
+export const DEEP_CALL = { maxTokens: 8000, effort: 'medium' };
+class Truncated extends Error {}
+
+async function callOpus(role, system, user, { maxTokens, effort } = {}) {
   const { provider, model } = modelFor(role);
   const res = await withAIContext({ caller: role === JUDGE_ROLE ? 'improve-judge' : 'improve-analysis', stage: role === JUDGE_ROLE ? 'improve:judge' : 'improve:analysis' },
-    () => chatCompletion([{ role: 'system', content: system }, { role: 'user', content: user }], { provider, model, maxTokens, usePromptCache: true }));
-  return { text: res.content, usage: res.usage || {}, usd: costOf(res.usage || {}, model) };
+    () => chatCompletion([{ role: 'system', content: system }, { role: 'user', content: user }], { provider, model, maxTokens, effort, usePromptCache: true }));
+  return { text: res.content, usage: res.usage || {}, usd: costOf(res.usage || {}, model), finishReason: res.finishReason };
 }
+const cutOff = (r) => r?.finishReason === 'max_tokens';
 
 /** Strategy graph Phase 3 (assistant/strategy-improve.js): a turn no strategy served → a gap row in strategies.db (free, never
  *  breaks the loop). deps.captureGap is the test seam. */
@@ -161,9 +169,9 @@ export async function work(db, { call = callOpus, replay = replayCurrent, edit =
   if (!w) return 'idle';
   try {
     if (w.step === 'judge') {
-      const r = await call(JUDGE_ROLE, JUDGE_SYSTEM, judgeMessage(w.item), 600);
+      const r = await call(JUDGE_ROLE, JUDGE_SYSTEM, judgeMessage(w.item), JUDGE_CALL);
       const judge = parseJudge(r.text);
-      if (!judge) throw new Error(`unparseable judge reply: ${String(r.text).slice(0, 120)}`);
+      if (!judge) throw new (cutOff(r) ? Truncated : Error)(`unparseable judge reply${cutOff(r) ? ' (max_tokens)' : ''}: ${String(r.text).slice(0, 120)}`);
       saveJudge(db, w.item_key, { judge, usd: r.usd, usage: r.usage });
       // the judge named the right option of a Jev gate → that gate's gold label (labelByRef only labels an option the gate offered)
       if (judge.gate && judge.right && w.item.turn_id) { try { (await import('../lib/repos/jev-calls-repo.js')).labelByRef(judge.gate, w.item.turn_id, judge.right, 'opus-judge'); } catch { /* a label is a bonus, never a failure */ } }
@@ -171,8 +179,10 @@ export async function work(db, { call = callOpus, replay = replayCurrent, edit =
     } else {
       const rep = await replay(w.item).catch(() => null);
       const passages = (w.item.writer_passages || w.item.hits || []).filter((h) => h.text);
-      const r = await call(DEEP_ROLE, DEEP_SYSTEM, deepMessage(w.item, w.judge || {}, { replay: rep, passages }), 2000);
+      const r = await call(DEEP_ROLE, DEEP_SYSTEM, deepMessage(w.item, w.judge || {}, { replay: rep, passages }), DEEP_CALL);
       const deep = parseDeep(r.text);   // the conclusion (diagnosis, root cause) is kept with the ids of the fixes it led to
+      // an empty conclusion is a failure, never "deep done" (11-06: 43/50 saved empty, $0.03–0.06 each)
+      if (!deep.diagnosis && !deep.suggestions.length) throw new (cutOff(r) ? Truncated : Error)(`empty deep analysis${cutOff(r) ? ' (max_tokens)' : ''}: ${String(r.text).slice(0, 120)}`);
       const ids = applySuggestions(db, mergeSuggestions(openImprovements(db), deep.suggestions, w.item_key));
       saveDeepDone(db, w.item_key, { usd: r.usd, deep: { diagnosis: deep.diagnosis, root_cause: deep.root_cause, improvement_ids: ids } });
       if (deep.suggestions.some((s) => targetClass(s.target) === 'data')) await edit(db);   // tested in this same cycle
@@ -180,7 +190,7 @@ export async function work(db, { call = callOpus, replay = replayCurrent, edit =
     return 'done';
   } catch (err) {
     if (isSpendCap(err)) return { wait: err.retryAfterMs || 60_000 };   // delayed, never dropped: the row stays pending
-    noteFailure(db, w.item_key, err?.message || err);
+    noteFailure(db, w.item_key, err?.message || err, { final: err instanceof Truncated });
     return 'done';
   }
 }

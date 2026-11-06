@@ -104,7 +104,7 @@ export async function chatCompletion(messages, options = {}) {
       case 'openai':
         return chatOpenAI(messages, { model, temperature, maxTokens, stream });
       case 'anthropic':
-        return chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache: options.usePromptCache, thinking: options.thinking });
+        return chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache: options.usePromptCache, thinking: options.thinking, effort: options.effort });
       case 'ollama':
         return chatOllama(messages, { model, temperature, maxTokens, stream });
       case 'deepseek':
@@ -286,7 +286,7 @@ export function anthropicBatchTransport({ stage = 'hype', client = null } = {}) 
   };
 }
 
-async function chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache = false, thinking }) {
+async function chatAnthropic(messages, { model, temperature, maxTokens, stream, usePromptCache = false, thinking, effort }) {
   const anthropic = getAnthropic();
   if (batchEligible({ provider: 'anthropic', stage: currentAIContext().stage, stream })) {
     return enqueueBatch(anthropicParams(messages, { model, temperature, maxTokens, usePromptCache }));
@@ -313,6 +313,8 @@ async function chatAnthropic(messages, { model, temperature, maxTokens, stream, 
     // thinking from the registry (thinkingParam): Haiku 5.5 thinks by default, so it runs DISABLED unless the caller passes
     // thinking:true (Chad 11-03: fast + cheap; 11-01 a tiny max_tokens came back EMPTY — the budget went to thinking)
     ...((tp) => (tp ? { thinking: tp } : {}))(thinkingParam(model, thinking)),
+    // Opus 5.5 cannot turn thinking off (400); effort (low|medium|high) is the only lever, and thinking spends max_tokens (11-06)
+    ...(effort ? { output_config: { effort } } : {}),
     ...(systemParam !== undefined && { system: systemParam }),
     messages: otherMsgs.map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',
