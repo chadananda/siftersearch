@@ -1327,7 +1327,8 @@ async function multiIndexSearchRun(query, options, qcalls) {
   const qfilters = await resolveQdrantFilters(filters);   // a year range → doc ids (Qdrant points carry no year)
   // the query vector, stamped on its own (memoized: every vector layer awaits this same promise) — the trace then splits
   // a slow layer into embedding vs Qdrant (11-01: Gemini 0.1–0.2 s and cold Qdrant 0.1–0.2 s measured, layers p50 0.7–1.5 s)
-  if (!semanticOff || meiliOff) timed('embed', geminiQueryVector(query)).catch(() => {});
+  const embedBy = {};   // memo hit vs a real Gemini call (ms, hedged, twin won) → informational embed:<k> rows
+  if (!semanticOff || meiliOff) timed('embed', geminiQueryVector(query, embedBy)).catch(() => {});
   // CANON + AUTHORITATIVE passes (described below) start WITH the first wave, not after it (11-01: canon p50 788 ms, of which
   // its own Qdrant query is 15–105 ms — the rest was waiting for the slowest first-wave layer). They count only when the
   // phrase layer itself did not fail, as before.
@@ -1719,7 +1720,7 @@ async function multiIndexSearchRun(query, options, qcalls) {
   for (const c of qcalls) if (c.server_ms != null) qdrantServerBy[c.collection] = Math.max(qdrantServerBy[c.collection] || 0, c.server_ms);
   // hydrate = SQLite paragraphsByIds (+ highlight); rank = the rest of merge (RRF, rerank, diversify); qdrant = slowest call
   const timings = { ...(_stamp), main_embed: mainResult?._ms?.embed, main_engine: mainResult?._ms?.engine, main_cross: mainResult?._ms?.cross || undefined,
-    hydrate: hydrateMs, ...(stubIds.length ? { hydrate_by: hydrateBy } : {}), rank: Math.max(0, merge - hydrateMs), merge, total: Date.now() - _t0,
+    hydrate: hydrateMs, ...(stubIds.length ? { hydrate_by: hydrateBy } : {}), ...(Object.keys(embedBy).length ? { embed_by: embedBy } : {}), rank: Math.max(0, merge - hydrateMs), merge, total: Date.now() - _t0,
     ...(qcalls.length ? { qdrant: Math.max(...qcalls.map((c) => c.ms)), qdrant_calls: qcalls.length, qdrant_by: qdrantBy, qdrant_server_by: qdrantServerBy } : {}) };
   const layerCounts = {
     main: (mainResult.hits || []).length,

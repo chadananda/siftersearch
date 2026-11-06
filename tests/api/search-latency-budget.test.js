@@ -17,7 +17,7 @@ describe('every stamped stage has a budget', () => {
     const s = src('api/lib/search.js');
     const timed = [...s.matchAll(/timed\('([a-z_]+)'/g)].map((m) => m[1]);
     const line = s.slice(s.indexOf('const timings = { ...(_stamp)'), s.indexOf('const layerCounts'));
-    const keys = [...line.matchAll(/\b([a-z_]+):/g)].map((m) => m[1]).filter((k) => !['qdrant_calls', 'qdrant_by', 'qdrant_server_by', 'hydrate_by'].includes(k));
+    const keys = [...line.matchAll(/\b([a-z_]+):/g)].map((m) => m[1]).filter((k) => !['qdrant_calls', 'qdrant_by', 'qdrant_server_by', 'hydrate_by', 'embed_by'].includes(k));
     // the retired Meili layers (main/hype/entity/keyword) only run with Meili on; they are not budgeted stages
     const retired = new Set(['main', 'hype', 'entity', 'keyword']);
     const stages = [...new Set([...timed, ...keys])].filter((k) => !retired.has(k));
@@ -54,6 +54,11 @@ describe('summaries', () => {
       .toEqual({ hydrate: 90, 'hydrate:ids': 90, 'hydrate:cached': 60, 'hydrate:read': 12, 'hydrate:wait': 70 });
     expect(summarizeStages('engine', [{ 'hydrate:wait': 70 }])[0]).toMatchObject({ stage: 'hydrate:wait', budget: null, over: false });
     expect(readFileSync(new URL('../../api/lib/search.js', import.meta.url), 'utf8')).toMatch(/hydrate_by: hydrateBy/);
+  });
+  it('engineStages reports the embed split as informational embed:<k> rows (memo hit vs real call ms / hedged / twin)', () => {
+    expect(engineStages({ embed: 900, embed_by: { memo: 0, call: 880, hedged: 1, twin: 1 } }))
+      .toEqual({ embed: 900, 'embed:memo': 0, 'embed:call': 880, 'embed:hedged': 1, 'embed:twin': 1 });
+    expect(summarizeStages('engine', [{ 'embed:call': 880 }])[0]).toMatchObject({ stage: 'embed:call', budget: null, over: false });
   });
   it('search.js stamps qdrant_server_by from the call log', () => {
     expect(readFileSync(new URL('../../api/lib/search.js', import.meta.url), 'utf8')).toMatch(/qdrant_server_by: qdrantServerBy/);

@@ -88,10 +88,11 @@ export function hedge(start, ms = EMBED_HEDGE_MS, stats = hedgeStats) {
   });
 }
 const memo = new Map();   // query → { at, v: Promise<vector> }
-export function geminiQueryVector(text) {
+// `info` (optional, filled in place) = the trace's embed split: memo 1|0; on a real call also call (ms), hedged, twin 0|1
+export function geminiQueryVector(text, info) {
   const key = String(text ?? '');
   const hit = memoGet(memo, key);
-  if (hit) return hit;
+  if (hit) { if (info) info.memo = 1; return hit; }
   const body = JSON.stringify({ model: `models/${MODEL}`, content: { parts: [{ text: `task: search result | query: ${key}` }] }, outputDimensionality: DIMS });
   const attempt = (signal) => resilientFetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:embedContent?key=${process.env.GEMINI_API_KEY}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.any([signal, AbortSignal.timeout(8000)]), body,
@@ -105,7 +106,12 @@ export function geminiQueryVector(text) {
     logAIUsage({ provider: 'google', model: MODEL, serviceType: 'embedding', caller: 'search-query', promptTokens: Math.ceil((key.length + 30) / 4) });
     return (await r.json()).embedding.values;
   });
-  const p = assertSpendCap('search-query', { provider: 'google' }).then(() => hedge(attempt))
+  const t0 = Date.now(), one = { calls: 0, hedged: 0, twinWon: 0 };
+  const p = assertSpendCap('search-query', { provider: 'google' }).then(() => hedge(attempt, EMBED_HEDGE_MS, one))
+    .finally(() => {
+      for (const k of Object.keys(hedgeStats)) hedgeStats[k] += one[k];
+      if (info) Object.assign(info, { memo: 0, call: Date.now() - t0, hedged: one.hedged, twin: one.twinWon });
+    })
     .catch((err) => { memo.delete(key); throw err; });
   memoSet(memo, key, p);
   return p;

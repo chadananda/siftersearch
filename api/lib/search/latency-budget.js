@@ -12,7 +12,7 @@ export const ENGINE_BUDGETS = Object.freeze({
   phrase: { ms: 450, note: 'embed + phrases query' },
   qhype: { ms: 450, note: 'embed + hype groups query' },
   qconcept: { ms: 450, note: 'embed + concepts groups query' },
-  canon: { ms: 500, note: 'canonical-docs phrases pass, starts with the first wave' },
+  canon: { ms: 500, note: 'OFFSET = embed wait + canonical-docs phrases query (starts with the first wave). 11-05 24h: p50 276 / p95 1769, phrases call wall p50 36 / p95 177 ms; the tail is the embed (p95 1490), see embed:<k>' },
   doctrinal: { ms: 500, note: 'authoritative phrases pass' },
   doctrinal_hype: { ms: 500, note: 'authoritative hype pass' },
   qkeyword: { ms: 60, note: 'BM25 sparse, no embedding: 0.7 ms server, 43 ms offset measured' },
@@ -81,6 +81,8 @@ export function engineStages(t = {}) {
   for (const [c, ms] of Object.entries(t.qdrant_server_by || {})) if (num(ms) != null) out[`qsrv:${c}`] = ms;
   // hydrate's split (11-04, digest #167): ids asked / served from the id cache (counts), read inside the thread vs wait for one (ms)
   for (const [k, v] of Object.entries(t.hydrate_by || {})) if (num(v) != null) out[`hydrate:${k}`] = v;
+  // embed's split (11-05): memo hit (0|1); on a real Gemini call its ms, whether the hedge twin launched / won (0|1)
+  for (const [k, v] of Object.entries(t.embed_by || {})) if (num(v) != null) out[`embed:${k}`] = v;
   return out;
 }
 
