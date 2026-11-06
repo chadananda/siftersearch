@@ -15,7 +15,13 @@ export const slugSurname = (a) => {
   if (/^(pdf|doc|html?)-/.test(s)) { const x = locatorSurname(s); return x && !/^(compilations?|bahai|irfancolloquia|handscause|journal)\b/.test(x) ? x.split(' ')[0] : null; }
   return SLUG.test(s) && !NOT_NAMES.has(s) && !s.includes('-') ? s : null;
 };
-const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’ʻʼ'`]/g, '').toLowerCase();
+/** A title that is a file name ('holley_modern_social_religion', '1920-03-06,%20Thomas%20W%20Fleming…'), not a title. */
+export const fileTitle = (t) => isFilenameTitle(t) || /%20|_/.test(String(t || ''));
+const SMALL = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'with', 'de', 'la', 'le', 'des', 'du', 'et']);
+/** Title pages print in capitals: 'THE MODERN SOCIAL RELIGION' → 'The Modern Social Religion'. Mixed case is left alone. */
+export const unshout = (s) => (!s || /\p{Ll}/u.test(s) ? s : s.toLowerCase().split(' ')
+  .map((w, i) => (i && SMALL.has(w) ? w : w.replace(/(^|[-'’‘(])(\p{L})/gu, (_, a, c) => a + c.toUpperCase()))).join(' '));
 
 const ASK = (title, author, text) => `A library document was imported with metadata taken from its FILE NAME: title "${title}", author "${author}".
 Read the beginning of its text and give the metadata the document itself prints (title page, masthead, byline, heading).
@@ -29,28 +35,34 @@ ${text}`;
 export async function slugMetadataJob({ scope = 'canonical', limit = 500, ids = null, concurrency = 4 } = {}, deps = {}) {
   const { gaps = () => metadataGaps({ scope, limit: 5000 }), paragraphs = (id) => getParagraphs(id, { proseOnly: false, limit: 40 }), create = roleCreate } = deps;
   const want = ids ? new Set(ids.map(Number)) : null;
-  const rows = (await gaps()).filter((r) => (want ? want.has(r.id) : slugAuthor(r.author) || isFilenameTitle(r.title))).slice(0, limit);
+  const rows = (await gaps()).filter((r) => (want ? want.has(r.id) : slugAuthor(r.author) || fileTitle(r.title))).slice(0, limit);
   const out = [];
   const one = async (r) => {
     const text = (await paragraphs(r.id).catch(() => [])).map((p) => p.text).join('\n\n').slice(0, 5000);
     const surname = slugSurname(r.author);
     const det = resolveSourceMetadata({ stubTitle: r.title, stubAuthor: r.author, text });
-    const p = { id: r.id, from: { title: r.title, author: r.author }, title: det.title !== r.title ? det.title : null,
-      author: det.author !== r.author ? det.author : null, source: 'byline', kind: null, publication: null, review: [] };
-    if (!p.title || !p.author) {
+    const needTitle = fileTitle(r.title), needAuthor = slugAuthor(r.author);
+    // the byline rule is trusted for the AUTHOR (explicit, surname-corroborated); its title guess is a first short line
+    // ('A LITERARY'), so the title page read wins for the title
+    const p = { id: r.id, from: { title: r.title, author: r.author }, title: null,
+      author: needAuthor && det.author && det.author !== r.author ? det.author : null, source: 'byline', kind: null, publication: null, review: [] };
+    if (needTitle || (needAuthor && !p.author)) {
       const res = text.length < 80 ? null : await create('dewey-identify', { max_tokens: 300, temperature: 0, messages: [{ role: 'user', content: ASK(r.title, r.author, text) }] }).catch(() => null);
       const m = String(res?.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/);
       let j = null; try { j = m ? JSON.parse(m[0]) : null; } catch { /* unreadable reply → review */ }
       if (j) {
-        if (!p.author && j.author) { p.author = j.author; p.source = 'title-page'; }
-        if (!p.title && j.title) { p.title = j.title; p.source = 'title-page'; }
+        if (needAuthor && !p.author && j.author) { p.author = j.author; p.source = 'title-page'; }
+        if (needTitle) p.title = j.title || det.title || null;
         Object.assign(p, { kind: j.kind || null, publication: j.publication || null });
         if (!j.printed) p.review.push('not printed in the text');
-      } else p.review.push(text.length < 80 ? 'no text' : 'no reply');
+        // a newspaper page carries many articles: whose byline the reader picked is not the page's author
+        if (/newspaper/.test(j.kind || '')) p.review.push('newspaper page');
+      } else { p.review.push(text.length < 80 ? 'no text' : 'no reply'); if (needTitle) p.title = det.title || null; }
     }
+    p.title = unshout(p.title); p.author = unshout(p.author);
     if (p.author && surname && !fold(p.author).includes(surname)) p.review.push(`author lacks the locator surname '${surname}'`);
-    if (!p.author) p.review.push('author unknown');
-    if (!p.title) p.review.push('title unknown');
+    if (needAuthor && !p.author) p.review.push('author unknown');
+    if (needTitle && !p.title) p.review.push('title unknown');
     out.push(p);
   };
   for (let i = 0; i < rows.length; i += concurrency) await Promise.all(rows.slice(i, i + concurrency).map(one));
