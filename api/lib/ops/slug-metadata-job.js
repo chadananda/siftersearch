@@ -19,6 +19,13 @@ const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').rep
 // title pages and bylines spell the Central Figures every way ('Bahaullah', 'BAHA'U'LLAH'); the library spells them one way
 const FIGURES = { bahaullah: 'Bahá’u’lláh', abdulbaha: '‘Abdu’l-Bahá', thebab: 'The Báb', bab: 'The Báb', shoghieffendi: 'Shoghi Effendi' };
 export const figureName = (a) => FIGURES[fold(a).replace(/[^a-z]/g, '')] || a;
+/** 'Hampson, Arthur' → 'Arthur Hampson'; 'Professor E. G. Browne' / 'Dr Graham Hassall' → the name alone. */
+export const personName = (a) => {
+  let n = String(a || '').replace(/^(?:Dr\.?|Prof\.?|Professor|Mr\.?|Mrs\.?|Miss)\s+/i, '').trim();
+  const inv = n.match(/^([^,\s]+(?:[ -][^,\s]+)?),\s*([^,]+)$/);
+  if (inv && !/\b(?:and|y|et|und|Jr|Sr)\b/.test(inv[2]) && !/[&]|\band\b/.test(n)) n = `${inv[2].trim()} ${inv[1]}`;
+  return n;
+};
 const GENERIC = new Set(['pdf', 'book', 'books', 'text', 'texts', 'volume', 'vol', 'part', 'issue', 'page', 'edition', 'ocr', 'english']);
 /** The file name was made from the real title: a proposed title sharing none of its words ('memoriam_bw_12' → 'The Baha'i World, Volume XI') is a different text. */
 export const sharesFileWord = (file, title) => {
@@ -50,22 +57,25 @@ export const issueOf = (file) => {
   if (!d || +d[2] < 1 || +d[2] > 12) return null;
   const page = f.match(/(?:_p|seq-)(\d+)\s*$/)?.[1] || null;
   const after = f.slice(d.index + 10).replace(/^[,\s]+/, '');
-  const column = /_/.test(after) && !page ? after.split(' ').pop().replace(/_+/g, ' ').replace(/\s*\.\.\.\s*.*$/, '').trim() : null;
+  const column = /_/.test(after) && !page ? after.split(' ').pop().replace(/_+/g, ' ').replace(/\s*\.\.\.\s*.*$/, '').replace(/^Article \d+ -- No Title.*$/i, '').trim() || null : null;
+  if (/_/.test(after) && !page && !column) return { date: `${+d[3]} ${MONTHS[+d[2] - 1]} ${d[1]}`, page, series: 'clip', column: '' };
   return { date: `${+d[3]} ${MONTHS[+d[2] - 1]} ${d[1]}`, page, series: column ? 'clip' : fold(f.slice(0, d.index)), column };
 };
 // a newspaper's issue is named from the file name (the reader misreads dates: '1923-05-05' → 'May 6, 1933'); the reader
 // supplies only the publication, voted per series. A page's author is the paper; a clipping's writer is not knowable here.
 const NEWS_REVIEW = new Set(['newspaper page', 'author unknown', 'title shares no word with the file name', 'not printed in the text']);
+// a dated clipping file ('1915-11-27, Thomas W Fleming Brief_News…') is a newspaper item whatever the reader called it
+const isIssue = (p) => { const iss = issueOf(p.from.title); return iss && (p.kind === 'newspaper' || (iss.column != null && p.publication)) ? iss : null; };
 export const settleNewspapers = (props) => {
   const vote = new Map();
   for (const p of props) {
-    const iss = p.kind === 'newspaper' && issueOf(p.from.title);
+    const iss = isIssue(p);
     if (!iss || !p.publication) continue;
     const pub = unshout(p.publication).replace(/\s*\(.*\)\s*$/, '');
     const v = vote.get(iss.series) || new Map(); v.set(pub, (v.get(pub) || 0) + 1); vote.set(iss.series, v);
   }
   for (const p of props) {
-    const iss = p.kind === 'newspaper' && issueOf(p.from.title);
+    const iss = isIssue(p);
     const v = iss && vote.get(iss.series);
     if (!v) continue;
     const pub = [...v].sort((x, y) => y[1] - x[1])[0][0];
@@ -73,7 +83,7 @@ export const settleNewspapers = (props) => {
     p.title = `${head ? `${head}, ` : ''}${pub}, ${iss.date}${iss.page ? `, p. ${iss.page}` : ''}`;
     p.publication = pub;
     p.review = p.review.filter((x) => !NEWS_REVIEW.has(x) && !x.startsWith('author lacks'));
-    if (iss.column) { p.author = null; p.review.push('clipping: writer not established (title only)'); } else p.author = pub;
+    if (iss.column != null) { p.author = null; p.review.push('clipping: writer not established (title only)'); } else p.author = pub;
   }
   return props;
 };
@@ -106,7 +116,12 @@ export async function slugMetadataJob({ scope = 'canonical', limit = 500, ids = 
       } else { p.review.push(text.length < 80 ? 'no text' : 'no reply'); if (needTitle) p.title = det.title || null; }
     }
     p.title = unshout(p.title); p.author = unshout(p.author);
-    if (p.author) p.author = figureName(p.author);
+    if (p.author) p.author = figureName(personName(p.author));
+    // a Central Figure's name carries the Writings' weight in every ranking: only the file's own locator may confirm it
+    if (p.author && Object.values(FIGURES).includes(p.author) && p.author !== r.author && !(surname && fold(p.author).replace(/[^a-z]/g, '').includes(surname)))
+      p.review.push('Central Figure attribution not confirmed by the file');
+    // a journal issue's author is its editor or publisher, not the first article's writer
+    if (p.kind === 'periodical' && p.source === 'title-page') p.review.push('periodical: author is the editor or publisher');
     if (p.title && !sharesFileWord(r.title, p.title)) p.review.push('title shares no word with the file name');
     if (p.author && surname && !fold(p.author).includes(surname)) p.review.push(`author lacks the locator surname '${surname}'`);
     if (needAuthor && !p.author) p.review.push('author unknown');

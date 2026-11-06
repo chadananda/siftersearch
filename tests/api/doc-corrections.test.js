@@ -4,7 +4,7 @@ import { docCorrectionsJob } from '../../api/lib/ops/doc-corrections-job.js';
 
 const docs = { 22546: { id: 22546, title: 'Messages 1986-2001', author: '3819', source_site: 'bahai-library.com', file_path: 'x/3819.md' },
   11313: { id: 11313, title: 'A Prophet in Modern Times', author: 'Peter Terry', file_path: "Baha'i/Baha'i Books/A Prophet.md" } };
-const deps = (log) => ({ get: async (id) => docs[id] || null, setAuthor: async (id, a) => log.push(['author', id, a]), setTranslators: async (id, t) => log.push(['tr', id, t]) });
+const deps = (log) => ({ get: async (id) => docs[id] || null, setAuthor: async (id, a) => log.push(['author', id, a]), setTranslators: async (id, t) => log.push(['tr', id, t]), setTitle: async (id, t) => log.push(['title', id, t]) });
 
 describe('doc-corrections', () => {
   it('dry run changes nothing and flags library files', async () => {
@@ -18,5 +18,11 @@ describe('doc-corrections', () => {
     const log = [];
     await docCorrectionsJob({ write: true, fixes: [{ id: 22546, author: 'Universal House of Justice' }, { id: 11313, author: 'A.L.M. Nicolas', translators: ['Peter Terry'] }] }, deps(log));
     expect(log).toEqual([['author', 22546, 'Universal House of Justice'], ['author', 11313, 'A.L.M. Nicolas'], ['tr', 11313, ['Peter Terry']]]);
+  });
+  it('write applies a title; an unchanged title is no change', async () => {
+    const log = [];
+    const r = await docCorrectionsJob({ write: true, fixes: [{ id: 22546, title: 'Messages from the Universal House of Justice, 1986-2001' }, { id: 11313, title: 'A Prophet in Modern Times' }] }, deps(log));
+    expect(log).toEqual([['title', 22546, 'Messages from the Universal House of Justice, 1986-2001']]);
+    expect(r.changes).toHaveLength(1);
   });
 });
