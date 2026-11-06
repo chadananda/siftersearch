@@ -15,6 +15,9 @@ const WAIT_CAP_MS = 30 * 60_000;   // a waiting queue worker looks again at leas
 
 export const dayOf = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
 
+// the caller every TEST Anís turn bills to (draft from battery*@siftersearch.com, chat with x-sifter-test): the improve budget
+export const TEST_BILL_TO = 'improve-anis-test';
+
 export class SpendCapError extends Error {
   constructor({ group, spent, cap, caller, retryAfterMs, credit = false }) {
     super(credit ? `${caller} is out of credit — work waits and retries` : `spend cap reached: ${group} $${spent.toFixed(2)} of $${cap} today (${caller || 'no caller'}) — waits for the next UTC day`);
@@ -121,16 +124,20 @@ async function alertOnce(group, day, spent, cap, caller, deps) {
   if (alerted.has(k)) return false;
   alerted.add(k);
   return actionRequired({ key: `spend-cap-${group}-${day}`, quietMs: 24 * 3600_000, subject: `SifterSearch: ${group} spend cap reached ($${cap}/day)`,
-    text: `The ${group} group reached its daily cap: $${spent.toFixed(2)} of $${cap} (UTC day ${day}). First refused call: ${caller || 'unnamed'}.\n\nQueue work waits and retries; Anís chat answers that she is at today's limit. `
+    text: `The ${group} group reached its daily cap: $${spent.toFixed(2)} of $${cap} (UTC day ${day}). First refused call: ${caller || 'unnamed'}.\n\nQueue work waits and retries; Test and analysis turns wait; real readers' Anís turns are never refused. `
       + `Nothing fails. The cap resets at 00:00 UTC. To change it: config/spend-caps.json (or SPEND_CAP_${group.toUpperCase()}_USD). One alert per group per day.` }, deps.alert || {});
 }
 
 /** Throws SpendCapError when `caller`'s group is at its cap today. Free local providers pass. Fails open if spend cannot be read. */
 export async function assertSpendCap(caller, { provider = null, now = Date.now(), deps = {}, cfg = CONFIG } = {}) {
-  caller = currentAIContext().billTo || caller;   // a scope that bills elsewhere (the strategy dry run → improve-replay) checks that group's cap
+  const ctx = currentAIContext();
+  caller = ctx.billTo || caller;   // a scope that bills elsewhere (the strategy dry run → improve-replay) checks that group's cap
   if (FREE_PROVIDERS.has(provider) || (cfg.exempt || []).includes(caller)) return;
   const group = groupOf(caller, cfg), day = dayOf(now), cap = capFor(group, day, cfg);
   if (provider && (creditOut.get(provider) || 0) > now) throw new SpendCapError({ group: `${provider}-credit`, spent: 0, cap: 0, caller: provider, retryAfterMs: creditOut.get(provider) - now, credit: true });
+  // a real reader's Anís turn is counted, never refused (Chad 11-06: "we should not be having search limiting on Anis for
+  // organic users"); tests and analysis carry billTo and stop at their own caps
+  if (ctx.organic && !ctx.billTo) return;
   if (Number.isFinite(cap)) {
     const spent = (await spendByGroup({ now, deps }))[group] || 0;
     if (spent >= cap) {

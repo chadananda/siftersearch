@@ -1496,6 +1496,8 @@ export default async function chatRoutes(fastify) {
         let scope_config;
         try { scope_config = chatbot_location ? getScopeForLocation(chatbot_location) : undefined; } catch { scope_config = undefined; }
         const r = await anisTurn({
+          // a harness run (x-sifter-test: tests/quality/anis-conversations.mjs) bills to the improve budget; readers are never capped
+          test: request.headers['x-sifter-test'] === '1',
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
           channel: widget_token ? 'widget-chat' : 'site-chat',
           profile: { persona_name, default_tradition, mission: mission_prompt, scope_config },

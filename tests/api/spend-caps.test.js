@@ -5,8 +5,9 @@ import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 vi.mock('../../api/lib/repos/ai-usage-repo.js', () => ({ dailySpendByCaller: vi.fn(async () => ({})), dailySpendByProvider: vi.fn(async () => ({})) }));
-import { groupOf, capFor, dayOf, assertSpendCap, capStatus, isSpendCap, SpendCapError, waitMs, _reset, providerCapFor, noteCreditOut } from '../../api/lib/spend-caps.js';
+import { groupOf, capFor, dayOf, assertSpendCap, capStatus, isSpendCap, SpendCapError, waitMs, _reset, providerCapFor, noteCreditOut, TEST_BILL_TO } from '../../api/lib/spend-caps.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
+import { withAIContext, currentAIContext } from '../../api/lib/ai-context.js';
 import { SPEND_CAP_REPLY } from '../../api/lib/assistant/limits.js';
 import { makeStrikes } from '../../api/lib/assistant/strikes.js';
 
@@ -14,10 +15,10 @@ const spend = (o) => ({ byCaller: async () => o });
 beforeEach(() => _reset());
 
 describe('caller → group', () => {
-  it('media-*, anis-* (and Jev, sourcehunt, the battery judge), everything else', () => {
+  it('media-*, anis-* (and Jev, sourcehunt), everything else', () => {
     expect(groupOf('media-clean-strong')).toBe('media');
     expect(groupOf('media-assess')).toBe('media');
-    for (const c of ['anis-turn', 'assistant-writer', 'system1:strategy', 'sourcehunt-x', 'battery-judge', 'turn-resolver']) expect(groupOf(c)).toBe('anis');
+    for (const c of ['anis-turn', 'assistant-writer', 'system1:strategy', 'sourcehunt-x', 'turn-resolver']) expect(groupOf(c)).toBe('anis');
     for (const c of ['corpus-rag', 'segmenter', 'embedding', 'hype-batch', '', null, undefined]) expect(groupOf(c)).toBe('other');
   });
 });
@@ -161,6 +162,33 @@ describe('the Anthropic-wide cap (Chad 11-06: "cap anthropic costs to $20/day. w
   });
 });
 
+describe('real readers are never capped; tests and analysis bill to improve (Chad 11-06)', () => {
+  const NOW = Date.parse('2026-11-06T12:00:00Z');
+  const deps = (provider, caller = {}) => ({ byCaller: async () => caller, byProvider: async () => provider, alert: { send: async () => {} } });
+  it('an organic Anís call passes every cap; the same call in a test scope stops at the improve cap', async () => {
+    _reset();
+    await expect(withAIContext({ organic: true }, () => assertSpendCap('anis-agent', { provider: 'anthropic', now: NOW, deps: deps({ anthropic: 50 }, { 'anis-agent': 40 }) }))).resolves.toBeUndefined();
+    _reset();
+    await expect(withAIContext({ organic: false, billTo: TEST_BILL_TO }, () => assertSpendCap('anis-agent', { provider: 'anthropic', now: NOW, deps: deps({ anthropic: 1 }, { [TEST_BILL_TO]: 6 }) })))
+      .rejects.toMatchObject({ group: 'improve' });
+  });
+  it('battery-judge and exchange-audit are analysis: the improve group', () => {
+    expect(groupOf('battery-judge')).toBe('improve');
+    expect(groupOf('exchange-audit')).toBe('improve');
+    expect(groupOf('anis-craft')).toBe('anis');
+  });
+  it('anisTurn marks a reader\'s turn organic and a test turn billed to improve', async () => {
+    const seen = [];
+    const d = { open: async () => ({ conversationId: 'c1', round: 0 }), close: async () => {}, fail: async () => {}, spendCap: async () => { seen.push({ ...currentAIContext() }); },
+      triage: async () => ({ malicious: 0.01, complete: 0.99, stop_request: 0, kind: { choice: 'research', confidence: 0.9 }, stance: { choice: 'curious' } }),
+      respond: async () => ({ reply: 'x', citations: [], retrieved: [], plan: {}, timings: {} }), outputCheck: async () => 0.01, strikes: makeStrikes(), sleep: async () => {} };
+    const turn = (test) => anisTurn({ messages: [{ role: 'user', content: 'What is the Covenant?' }], participant: { id: 's1' }, clientKey: 's1', onEvent: () => {}, deps: d, test });
+    await turn(false); await turn(true);
+    expect(seen[0]).toMatchObject({ organic: true }); expect(seen[0].billTo).toBeUndefined();
+    expect(seen[1]).toMatchObject({ organic: false, billTo: TEST_BILL_TO });
+  });
+});
+
 describe('out of credit → wait, not fail (11-06: 40,375 failed calls in 6 h on an empty balance)', () => {
   const NOW = Date.parse('2026-11-06T12:00:00Z');
   it('the provider\'s credit refusal becomes a SpendCapError, and later calls wait without asking the provider', async () => {
@@ -173,5 +201,16 @@ describe('out of credit → wait, not fail (11-06: 40,375 failed calls in 6 h on
   it('an ordinary error stays an ordinary error', () => {
     expect(noteCreditOut('anthropic', { status: 529, message: 'Overloaded' })).toBe(null);
     expect(noteCreditOut('anthropic', { status: 429, message: 'rate limit: requests per minute' })).toBe(null);
+  });
+});
+
+describe('isTestTurn (mail): the battery sender or test:true is a test turn', () => {
+  it('matches test senders only', async () => {
+    const { isTestTurn } = await import('../../api/routes/assistant-mail.js');
+    expect(isTestTurn({ email: 'battery@siftersearch.com' })).toBe(true);
+    expect(isTestTurn({ email: 'Battery+eval-x@siftersearch.com' })).toBe(true);
+    expect(isTestTurn({ email: 'reader@gmail.com', test: true })).toBe(true);
+    expect(isTestTurn({ email: 'reader@gmail.com' })).toBe(false);
+    expect(isTestTurn({ email: 'battery@gmail.com' })).toBe(false);
   });
 });

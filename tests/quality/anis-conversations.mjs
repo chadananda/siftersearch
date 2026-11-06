@@ -141,7 +141,7 @@ async function anisTurn(messages, uid, conversationId) {
   const out = { text: '', sources: [], citations: [], status: [], stages: [], conversation_id: conversationId, complete: null, error: null };
   try {
     const r = await fetch(`${API}/api/chat/stream`, { method: 'POST', signal: AbortSignal.timeout(240000),
-      headers: { 'content-type': 'application/json', 'x-user-id': uid }, body: JSON.stringify({ messages, ...(conversationId ? { conversationId } : {}) }) });
+      headers: { 'content-type': 'application/json', 'x-user-id': uid, 'x-sifter-test': '1' }, body: JSON.stringify({ messages, ...(conversationId ? { conversationId } : {}) }) });
     if (!r.ok) return { ...out, error: `http ${r.status}`, ms: Date.now() - t0 };
     const dec = new TextDecoder(); let buf = '';
     for await (const part of r.body) {

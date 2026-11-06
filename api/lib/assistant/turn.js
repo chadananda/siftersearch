@@ -3,7 +3,7 @@
 // widget streams onEvent, email uses the returned text. Every non-research reply costs zero LLM tokens.
 // Deps (injectable): exchange-log, triage, canned, strikes, lint, channels, respond.
 import { makeLimits, SPEND_CAP_REPLY } from './limits.js';
-import { assertSpendCap, isSpendCap } from '../spend-caps.js';
+import { assertSpendCap, isSpendCap, TEST_BILL_TO } from '../spend-caps.js';
 import { loadReaderCard } from './reader-card.js';
 import { resolveQuery } from './short-turn.js';
 import { openExchange, closeExchange, failExchange } from './exchange-log.js';
@@ -49,9 +49,13 @@ export async function defaultDeps() {   // exported for the strategy dry run (st
 // (type · models · usd · latency) — what the daily conversation digest shows (Chad 10-22). An outer meter is reused.
 export async function anisTurn(args) {
   const outer = currentAIContext().meter, timeline = currentAIContext().timeline || [];
-  if (Array.isArray(outer)) return withAIContext({ timeline }, () => turnBody(args, outer, timeline));
+  // a TEST turn (args.test, or a scope already billed elsewhere: draft batteries, replays) bills to the improve budget and stops
+  // at its cap; any other turn is a real reader's — counted, never refused for spend (Chad 11-06; spend-caps.js)
+  const billed = currentAIContext().billTo || (args.test ? TEST_BILL_TO : null);
+  const scope = billed ? { billTo: billed, organic: false } : { organic: true };
+  if (Array.isArray(outer)) return withAIContext({ timeline, ...scope }, () => turnBody(args, outer, timeline));
   const meter = [];
-  return withAIContext({ meter, timeline }, () => turnBody(args, meter, timeline));
+  return withAIContext({ meter, timeline, ...scope }, () => turnBody(args, meter, timeline));
 }
 
 async function turnBody({ messages, channel: channelName = 'widget-chat', trusted = false, profile = {}, participant = {},

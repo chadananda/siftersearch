@@ -7,6 +7,11 @@ import { verifyPauseToken, emailHash } from '../lib/assistant/pause-link.js';
 import { rememberCorrespondent } from '../lib/assistant/admin-threads.js';
 import { logger } from '../lib/logger.js';
 import { sourceTier } from '../lib/assistant/source-tier.js';
+import { TEST_BILL_TO } from '../lib/spend-caps.js';
+
+// the address every test harness writes from (tests/quality/*, tests/behavior/run.mjs, scripts/anis/research-battery.mjs)
+const TEST_SENDER = /^battery(?:\+[^@\s]*)?@siftersearch\.com$/i;
+export const isTestTurn = (b) => b?.test === true || TEST_SENDER.test(String(b?.email || '').trim());
 
 const page = (body) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Anís — letters</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:34rem;margin:3rem auto;padding:0 1rem;color:#1d2521;background:#f6f7f5}
@@ -79,7 +84,10 @@ export default async function anisRoutes(fastify) {
   // shown in Chad's daily conversation digest (10-22).
   async function draftFor(b) {
     const { meterTurn, turnMeta } = await import('../lib/assistant/turn-meta.js');
-    const { result, meter, ms } = await meterTurn(() => draftBody(b));
+    // a TEST turn (the batteries, the eval, behaviour scenarios: battery[+tag]@siftersearch.com, or test:true) bills to the
+    // improve budget and stops at its cap; a real reader's letter is never refused for spend (Chad 11-06)
+    const run = () => meterTurn(() => draftBody(b));
+    const { result, meter, ms } = isTestTurn(b) ? await (await import('../lib/ai-context.js')).withAIContext({ billTo: TEST_BILL_TO }, run) : await run();
     return { ...result, meta: turnMeta({ status: result.status, path: { ...(result.path || {}), format: result.format, recipe: result.recipe }, meter, ms }) };
   }
   // variants (internal A/B, tests/quality/anis-writer-ab.mjs): the writing step once per variant on the same evidence → result.variants
