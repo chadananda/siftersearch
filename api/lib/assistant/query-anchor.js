@@ -38,14 +38,18 @@ export function subjectQuery(subject) {
 }
 
 /**
- * One round's tool calls ({ name, args }). When the round holds library searches and NONE carries the subject, the
- * first one's query is rebuilt from the subject. A query in Arabic script (the originals) is never judged.
+ * One round's tool calls ({ name, args }). When the round holds library searches, NONE carries the subject and one carries
+ * an earlier turn's (subject.earlier), the first one's query is rebuilt from the subject. A query in Arabic script (the originals) is never judged.
  * @returns {{ calls: Array, rebuilt: null | { from: string, to: string } }}
  */
 export function anchorSearches(calls, subject) {
   const searches = calls.filter((c) => MODEL_SEARCH.has(c.name) && typeof c.args?.query === 'string');
   if (!searches.length || !subjectTerms(subject).size) return { calls, rebuilt: null };
   if (searches.some((c) => ARABIC.test(c.args.query) || onSubject(c.args.query, subject))) return { calls, rebuilt: null };
+  // Drift = the query is on an EARLIER turn's subject. A query that matches neither (the subject in another language or
+  // transliteration, a correct paraphrase) is left alone — forensics still counts it, code never rewrites it.
+  const earlier = { text: subject?.earlier };
+  if (!subjectTerms(earlier).size || !searches.some((c) => onSubject(c.args.query, earlier))) return { calls, rebuilt: null };
   const to = subjectQuery(subject);
   if (!to) return { calls, rebuilt: null };
   const first = searches[0];
@@ -55,9 +59,11 @@ export function anchorSearches(calls, subject) {
 
 /** Jev's subject for a model loop: the given one, else the last user message (names kept). */
 export function subjectOr(subject, messages) {
-  if (subject?.text) return subject;
-  const last = [...(messages || [])].reverse().find((m) => m.role === 'user');
-  return { text: last ? String(last.content || '') : null, names: subject?.names || [] };
+  const msgs = messages || [];
+  const lastAt = msgs.map((m) => m.role).lastIndexOf('user');
+  const earlier = msgs.slice(0, Math.max(lastAt, 0)).map((m) => (typeof m.content === 'string' ? m.content : '')).join(' ').trim() || null;
+  if (subject?.text) return { ...subject, earlier: subject.earlier ?? earlier };
+  return { text: lastAt >= 0 ? String(msgs[lastAt].content || '') : null, names: subject?.names || [], earlier };
 }
 
 /**

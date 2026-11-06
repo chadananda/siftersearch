@@ -15,7 +15,7 @@ const HISTORY = [
 ];
 
 describe('query-anchor', () => {
-  const B = { text: 'What was Vahid’s part in the upheaval at Nayriz?', names: [] };
+  const B = { text: 'What was Vahid’s part in the upheaval at Nayriz?', names: [], earlier: 'Tell me about Táhirih’s poetry.' };
   it('a query naming the subject is kept; a query on the previous person is rebuilt from the subject', () => {
     expect(onSubject('Vahid Nayriz upheaval', B)).toBe(true);
     const r = anchorSearches([{ name: 'fused_search', args: { query: 'Tahirih poetry' } }], B);
@@ -27,6 +27,11 @@ describe('query-anchor', () => {
     expect(anchorSearches(calls, B).rebuilt).toBeNull();
     expect(anchorSearches([{ name: 'find_work', args: { title: 'Dawn-Breakers' } }], B).rebuilt).toBeNull();
     expect(anchorSearches([{ name: 'fused_search', args: { query: 'وحید نیریز' } }], B).rebuilt).toBeNull();
+  });
+  it('a query on neither subject (another language, a paraphrase) is never rewritten', () => {
+    expect(anchorSearches([{ name: 'fused_search', args: { query: 'Vahid Nayriz' } }], { text: '¿Qué papel tuvo Vahid en Nayriz?', earlier: 'Háblame de Táhirih.' }).rebuilt).toBeNull();
+    expect(anchorSearches([{ name: 'fused_search', args: { query: 'meaning of steadfastness in tests' } }], { text: '¿Qué es la firmeza en las pruebas?', earlier: 'Háblame de Táhirih.' }).rebuilt).toBeNull();
+    expect(anchorSearches([{ name: 'fused_search', args: { query: 'Tahirih poetry' } }], { ...B, earlier: null }).rebuilt).toBeNull();   // first turn: nothing to drift to
   });
   it('a subject with no terms ("and what did he write?" unresolved) never rebuilds', () => {
     expect(anchorSearches([{ name: 'fused_search', args: { query: 'Tahirih poems' } }], { text: 'And what did he write?' }).rebuilt).toBeNull();
