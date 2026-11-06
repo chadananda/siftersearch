@@ -1,6 +1,6 @@
 // plannedSearch: plan (one Jev call) → cache → narrow-then-relax over the multi-index engine with the plan's layers.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { plannedSearch, clearPlannedCache, leadWithTarget } from '../../api/lib/planned-search.js';
+import { plannedSearch, clearPlannedCache, leadWithTarget, notPassage } from '../../api/lib/planned-search.js';
 import { buildPlan, planSearch } from '../../api/lib/search-plan.js';
 
 const planOf = (o) => async (_input, { given } = {}) => ({ ...buildPlan({
@@ -329,13 +329,23 @@ describe('preferAuthor — the author, then passages quoting the author, then th
   it('name-only query: heading paragraphs that are only the name drop out; the author\'s works spread one per book first (#135/#262)', () => {
     const d = (id, doc, author, text) => ({ id, doc_id: doc, author, text });
     const names = new Set(['abdul', 'baha', 'abdu', 'abbas', 'effendi']);
-    const own = [d(1, 10, '‘Abdu’l-Bahá', 'O ye beloved of the Lord!'), d(2, 10, '‘Abdu’l-Bahá', 'Praise be to God, the Lord of all.'),
-      d(3, 11, '‘Abdu’l-Bahá', '‘Abdu’l-Bahá {language="en"}'), d(4, 12, '‘Abdu’l-Bahá', 'The world of humanity is composed of two parts.')];
-    const broad = [d(5, 20, 'Some Scholar', 'Abdul Baha'), d(6, 21, 'Juliet Thompson', '‘Abdu’l-Bahá said to me that morning…')];
+    const own = [d(1, 10, '‘Abdu’l-Bahá', 'O ye beloved of the Lord! The light of His grace hath shone forth.'), d(2, 10, '‘Abdu’l-Bahá', 'Praise be to God, the Lord of all, Who hath created the world.'),
+      d(3, 11, '‘Abdu’l-Bahá', '‘Abdu’l-Bahá {language="en"}'), d(4, 12, '‘Abdu’l-Bahá', 'The world of humanity is composed of two parts, the body and the soul.')];
+    const broad = [d(5, 20, 'Some Scholar', 'Abdul Baha'), d(6, 21, 'Juliet Thompson', '‘Abdu’l-Bahá said to me that morning in the garden of the house…')];
     const out = preferAuthor(own, broad, ['Abdu', 'Abdul'], 10, [], new Set(), names);
     expect(out.map((x) => x.id)).toEqual([1, 4, 2, 6]);
     // a query with a subject keeps the old order and keeps headings (they may be the subject)
     expect(preferAuthor(own, [], ['Abdu', 'Abdul'], 10, []).map((x) => x.id)).toEqual([1, 2, 3, 4]);
+  });
+  it('name-only query: signatures, salutations and headings are not passages; real passages, however short, are', () => {
+    const se = new Set(['shoghi', 'effendi']), ab = new Set(['abdul', 'baha', 'abdu', 'abbas', 'effendi']);
+    const t = (text) => ({ text });
+    for (const x of ['Shoghi Rabbani', 'Beloved Guardian,', '\\[on behalf of Guardian\\]', 'With warmest greetings from the Guardian,', 'Shoghi Effendi {language="en"}'])
+      expect(notPassage(t(x), se), x).toBe(true);
+    expect(notPassage(t('‘Abdu’l-Bahá ‘Abbás.'), ab)).toBe(true);
+    expect(notPassage(t("ʻAbdu'l-Bahá"), ab)).toBe(true);
+    expect(notPassage(t('The world of humanity is composed of two parts, the body and the soul.'), ab)).toBe(false);
+    expect(notPassage(t('The Faith of Bahá’u’lláh is the culmination of a process of progressive revelation.'), se)).toBe(false);
   });
   it('a quoting passage off the subject is not promoted', () => {
     const se = h(2, 'Shoghi Effendi', 'An unrelated paragraph about the Guardianship.');

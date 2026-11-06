@@ -69,13 +69,19 @@ const onSubject = (hit, terms) => {
  * passage as Shoghi Effendi quotes it), marked `_quotes`; then the rest — a compilation, biography or newsletter that
  * quotes them still appears, which is often where a half-remembered tablet actually is. Pure.
  */
+// A name-only query wants passages of the author's works. A heading, signature or salutation is not one: under
+// MIN_PASSAGE_WORDS words besides the name ("Bahá’u’lláh {language="en"}", "Shoghi Rabbani", "Beloved Guardian,",
+// "‘Abdu’l-Bahá ‘Abbás." all led bare-name searches 11-05).
+const MIN_PASSAGE_WORDS = 8;
+export const notPassage = (h, nameOnly) => foldTok(String(h.text || '').replace(/\{[^}]*\}/g, ' '))
+  .split(' ').filter((w) => w && !nameOnly.has(w)).length < MIN_PASSAGE_WORDS;
+
 export function preferAuthor(authorHits, broadHits, aliases, limit, terms = [], quotedIds = new Set(), nameOnly = null) {
   const seen = new Set();
-  // A query that is only the author's name (Jev set the author; nothing else is asked, digest #135/#262): a paragraph that
-  // is only that name is a heading ("Bahá’u’lláh {language="en"}" led 11-05), not a passage — dropped — and the author's
-  // own hits spread over distinct works (one per book first) so the page shows what they wrote, not one book's chunks.
-  const bareName = (h) => nameOnly && foldTok(String(h.text || '').replace(/\{[^}]*\}/g, ' ')).split(' ').every((w) => !w || nameOnly.has(w) || STOP.has(w));
-  if (nameOnly) { authorHits = authorHits.filter((h) => !bareName(h)); broadHits = broadHits.filter((h) => !bareName(h)); }
+  // A query that is only the author's name (Jev set the author; nothing else is asked, digest #135/#262): headings and
+  // signatures are not passages (notPassage) — dropped — and the author's own hits spread over distinct works (one per
+  // book first) so the page shows what they wrote, not one book's chunks.
+  if (nameOnly) { authorHits = authorHits.filter((h) => !notPassage(h, nameOnly)); broadHits = broadHits.filter((h) => !notPassage(h, nameOnly)); }
   const mine = [], quoting = [], others = [];
   // Promoted = BY the author AND on the question's subject; "his words first" means his words on THIS.
   for (const h of [...authorHits.filter((x) => onSubject(x, terms)), ...broadHits]) {
@@ -284,7 +290,8 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
     ? await (voices ?? (engine ? null : quotingParagraphs))?.(r.results.map((h) => h.id), plan.prefer.aliases).catch(() => new Set()) ?? new Set()
     : new Set();
   const terms = plan.prefer ? subjectTerms(query, plan.prefer) : [];
-  let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, terms, quotedIds, terms.length ? null : nameWords(plan.prefer)) : r.results;
+  const nameOnly = plan.prefer && !terms.length ? nameWords(plan.prefer) : null;
+  let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, terms, quotedIds, nameOnly) : r.results;
   // The resolve had the whole passage search to finish in; it waits only until TARGET_MS from the start, so it never
   // adds latency beyond that — and never loses a race it did not need to (a 1s timer from t0 dropped "iderne" on a
   // busy box whose passage search alone took 1.5s, 2026-09-28).
@@ -309,6 +316,8 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
     hits = withNamed(hits, perScope, limit);
     stages.named = scopes.map((x, i) => ({ kind: x.kind, name: x.name, docs: x.docIds.length, hits: perScope[i]?.length || 0 }));
   }
+  // the person-target layer leads with paragraphs that NAME the figure — for a name-only query, the bare headings again
+  if (nameOnly) hits = hits.filter((h) => !notPassage(h, nameOnly));
 
   // Correct sources BEFORE anything formats them: quoted words served from their original work, every checked
   // passage labelled (original / quotation / recollection / commentary) with whose words it carries.
