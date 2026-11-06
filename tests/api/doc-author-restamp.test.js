@@ -19,12 +19,21 @@ describe('doc-author-restamp', () => {
     expect(calls[0]).toEqual(['/collections/a/points/payload?wait=false', { payload: { author: '‘Abdu’l-Bahá', author_fold: 'abdulbaha', religion: "Baha'i" }, filter: { must: [{ key: 'doc_id', match: { any: [1] } }] } }]);
     expect(calls.find(([, b]) => b.filter.must[0].match.any[0] === 4)[1].payload).not.toHaveProperty('religion');
   });
-  it('with was, stamps only points still carrying the old author (paragraph writers kept)', async () => {
+  it('with was, one call per payload matches any old author key (paragraph writers kept)', async () => {
     const calls = [];
     const docs = async ({ ids }) => ({ docs: ids.map((id) => ({ id, author: 'Bahá’u’lláh', religion: "Baha'i" })) });
-    await docAuthorRestampJob({ ids: [1, 2], was: { 1: 'file-bahaullah-a', 2: 'file-bahaullah-b' }, collections: ['a'] }, { docs, qd: async (path, body) => calls.push(body), draining: () => false });
-    expect(calls.map((b) => b.filter.must[1].match.value).sort()).toEqual(['filebahaullaha', 'filebahaullahb']);
+    const r = await docAuthorRestampJob({ ids: [1, 2], was: { 1: 'file-bahaullah-a', 2: 'file-bahaullah-b' }, collections: ['a'] }, { docs, qd: async (path, body) => calls.push(body), draining: () => false });
+    expect(r).toMatchObject({ groups: 1, calls: 1 });
+    expect(calls[0].filter.must).toEqual([{ key: 'doc_id', match: { any: [1, 2] } }, { key: 'author_fold', match: { any: ['filebahaullaha', 'filebahaullahb'] } }]);
     expect(calls[0].payload).toEqual({ author: 'Bahá’u’lláh', author_fold: 'bahaullah', religion: "Baha'i" });
+  });
+  it('retries a failed call once, then records it', async () => {
+    let n = 0;
+    const docs = async ({ ids }) => ({ docs: ids.map((id) => ({ id, author: 'The Báb', religion: "Baha'i" })) });
+    const flaky = await docAuthorRestampJob({ ids: [1], collections: ['a'] }, { docs, qd: async () => { if (n++ === 0) throw new Error('timeout'); }, draining: () => false });
+    expect(flaky).toMatchObject({ calls: 1, errors: 0, failed: [] });
+    const dead = await docAuthorRestampJob({ ids: [1], collections: ['a'] }, { docs, qd: async () => { throw new Error('boom'); }, draining: () => false });
+    expect(dead).toMatchObject({ calls: 0, errors: 1, failed: [{ collection: 'a', ids: [1], error: 'boom' }] });
   });
   it('yields on drain with the remaining ids', async () => {
     const r = await docAuthorRestampJob({ ids: [1, 2] }, { docs: async () => ({ docs: [] }), qd: async () => {}, draining: () => true });
