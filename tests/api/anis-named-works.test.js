@@ -73,6 +73,13 @@ describe('named scopes', () => {
     { id: 20804, title: 'Lights of Guidance: A Bahá\'í Reference File', author: 'Helen Hornby', religion: "Baha'i" },
     { id: 9, title: 'Guidance for Today', author: 'X', religion: "Baha'i" },
   ];
+  it('workDocs: the Writings win over an exact-titled House of Justice letter ("first Hidden Word")', () => {
+    const rows = [{ id: 374, title: 'Hidden Word', author: 'Universal House of Justice', collection: 'Administrative' },
+      { id: 983231, title: 'The Hidden Words', author: 'Abu’l-Qásim Faizí', collection: 'Media' },
+      { id: 20809, title: 'The Hidden Words of Bahá’u’lláh', author: 'Bahá’u’lláh', collection: 'Bahá’u’lláh' }];
+    expect(workDocs('Hidden Word', rows).map((d) => d.id)).toEqual([20809]);
+    expect(workDocs('Hidden Word', rows.filter((d) => d.id !== 20809)).map((d) => d.id)).toEqual([374]);
+  });
   it('workDocs: a bare span must begin the title; a resolved work may match by all its words', () => {
     expect(workDocs('Lights of Guidance', docs).map((d) => d.id)).toEqual([20804]);
     expect(workDocs('Guidance', docs)).toEqual([]);

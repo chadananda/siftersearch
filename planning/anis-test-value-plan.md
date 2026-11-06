@@ -38,4 +38,14 @@ Expected cost: baseline $1.50 + ~2 fixes/day × ~$2 ≈ **$5/day**, inside the p
 ## Status (11-06)
 - Shipped: truncation storm fixed (effort low/medium, Truncated parks), spec #1 Writings pass, spec #2 dedupe-before-pay +
   real files + backfill off (live_from cursor), spec #4 quote-by-meaning (Jev quote shape only), spec #5 query drift.
-- Next: the frozen eval set + code scorer ($0), then restart improve under $5/day. Full design: anis-improve-process-redesign.md.
+- Eval set shipped (tests/quality/anis-eval-set.json, 78 items, 13 classes × 6, half held out; anis-eval.mjs scores by code,
+  `--from-threads` rescores stored replies at $0). **Baseline 11-06: tune 29/39, held 29/39 (58/78) for $0.26, 0 unchecked.**
+  Weakest classes: best-copy-missed 1/6, no-originals-search 2/6, padded-answer 2/6, clipped-quote 3/6. These are the next fixes;
+  each is measured on tune, confirmed on held.
+- Incident: siftersearch-improve was still online after the cap: 36,371 Opus judge + 80 analysis calls in 6 h, all refused by
+  the cap at $0. pm2-stopped + saved (the updater never revives a stopped service). Stays stopped until the eval loop drives it
+  under $5/day.
+- Latency (24 h, search-latency): Qdrant's own time p50 5–10 ms; the query embedding (Gemini API) dominates, p50 254 ms /
+  p95 776 ms, and phrase/canon wait on it; total p50 330 / p95 1,020 ms. Next: a query-embedding cache or local embedder.
+- Metadata: oceanoflights.org docs whose author was a file slug get the Central Figure the slug names (9,732 docs; canary
+  200 verified), Qdrant payload restamped per doc (paragraph writers kept).

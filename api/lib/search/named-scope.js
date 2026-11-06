@@ -3,10 +3,13 @@
 // A work = a document whose TITLE the name answers (title-rank tiers); an author = documents whose author is that name.
 // Deps: docs-repo findDocuments (docs_fts, SQLite) — injected in tests. Never throws.
 import { titleTier, TIER } from '../title-rank.js';
-import { keywordAuthor, traditionsNamed } from '../search-plan.js';
+import { keywordAuthor, traditionsNamed, WRITINGS_AUTHORS } from '../search-plan.js';
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’ʼʻ`']/g, '').replace(/[^a-z0-9]+/gi, ' ').toLowerCase().trim();
 const nWords = (s) => fold(s).split(' ').filter((w) => w.length > 2).length;
+const WRITERS = new Set(WRITINGS_AUTHORS.map(fold));
+/** A Central Figure or Shoghi Effendi is one of the document's authors. */
+const byWriter = (author) => String(author || '').split(/\s*(?:[;&/]|,|\band\b)\s*/i).some((a) => WRITERS.has(fold(a)));
 const DOCS_PER_WORK = 2, DOCS_PER_AUTHOR = 25, MAX_SCOPES = 4;
 
 /** Rows of findDocuments for a name → the work it names: the best title tier, strict for an unresolved span. Pure. */
@@ -21,9 +24,12 @@ export function workDocs(name, docs, { resolved = false } = {}) {
   // recorded talk (collection Media) never stands in for it. r8: talks titled exactly "Kitáb-i-Íqán" out-tiered Bahá'u'lláh's
   // "The Kitáb-i-Íqán", so the scope held Hooper Dunbar and Anís said the Íqán was not in the library.
   const canonical = (d) => d.source_site == null || d.source_site === 'oceanlibrary.com';
+  // The Writings before any other named author: "first Hidden Word" exact-matched a House of Justice letter titled
+  // "Hidden Word" over Bahá'u'lláh's "The Hidden Words of Bahá'u'lláh" (prefix) when both counted as "own" (eval 11-06).
+  const writings = fit.filter((x) => byWriter(x.d.author) && x.d.collection !== 'Media');
   const own = fit.filter((x) => keywordAuthor(` ${x.d.author || ''} `) && x.d.collection !== 'Media');
   const texts = fit.filter((x) => x.d.collection !== 'Media');
-  const pool = own.length ? own : texts.length ? texts : fit;
+  const pool = writings.length ? writings : own.length ? own : texts.length ? texts : fit;
   const best = Math.max(...pool.map((x) => x.tier));
   return pool.filter((x) => x.tier === best)
     .sort((a, b) => Number(canonical(b.d)) - Number(canonical(a.d)) || a.i - b.i)
