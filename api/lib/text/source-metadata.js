@@ -15,7 +15,8 @@
 const LOCATOR_AUTHOR = /^(pdf|doc|docx|html?|txt|rtf|epub|md)[-_]/i;
 const FILENAME_TITLE = /^[a-z0-9]+([_-][a-z0-9]+){2,}$/;      // all-lowercase, underscore/hyphen separated
 
-export const isLocatorAuthor = (a) => LOCATOR_AUTHOR.test(String(a || '').trim());
+const PAGE_ID_AUTHOR = /^\d+$/;                                // a bahai-library.com page id ('1785' for Holley — 11-05: 65 books)
+export const isLocatorAuthor = (a) => LOCATOR_AUTHOR.test(String(a || '').trim()) || PAGE_ID_AUTHOR.test(String(a || '').trim());
 export const isFilenameTitle = (t) => FILENAME_TITLE.test(String(t || '').trim());
 
 /**

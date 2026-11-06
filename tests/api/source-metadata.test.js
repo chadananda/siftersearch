@@ -12,10 +12,10 @@ import {
 } from '../../api/lib/text/source-metadata.js';
 
 describe('recognising a file locator', () => {
-  it.each(['pdf-z-zwemer', 'pdf-s-shams', 'pdf-s-shoghi-effendi', 'docx-a-adams', 'html-b-brown'])(
+  it.each(['pdf-z-zwemer', 'pdf-s-shams', 'pdf-s-shoghi-effendi', 'docx-a-adams', 'html-b-brown', '1785', '4461'])(
     '%s is a locator, not an author', (a) => expect(isLocatorAuthor(a)).toBe(true));
 
-  it.each(['Samuel Zwemer', "Bahá'u'lláh", 'Rúḥíyyih Rabbání', 'Lady Blomfield', 'pdfsmith'])(
+  it.each(['Samuel Zwemer', "Bahá'u'lláh", 'Rúḥíyyih Rabbání', 'Lady Blomfield', 'pdfsmith', '1st Edition Press'])(
     '%s is a real author and must survive', (a) => expect(isLocatorAuthor(a)).toBe(false));
 
   it('recognises a filename slug title', () => {

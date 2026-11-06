@@ -81,7 +81,8 @@ export const REPORTS = {
   async 'metadata-gaps'({ scope = 'canonical', limit = 500 } = {}) {
     const { metadataGaps } = await import('../docs-repo.js');
     const rows = await metadataGaps({ scope, limit });
-    const why = (r) => [!String(r.religion || '').trim() && 'no-religion', /^\d+$/.test(String(r.author || '')) && 'numeric-author'].filter(Boolean);
+    const why = (r) => [!String(r.religion || '').trim() && 'no-religion', /^\d+$/.test(String(r.author || '')) && 'numeric-author',
+      /^[a-z][a-z0-9-]*$/.test(String(r.author || '')) && 'slug-author'].filter(Boolean);
     const counts = {};
     for (const r of rows) for (const w of (r.gaps = why(r))) counts[w] = (counts[w] || 0) + 1;
     return { scope, total: rows.length, truncated: rows.length >= Number(limit), counts, rows };

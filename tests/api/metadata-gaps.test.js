@@ -16,6 +16,9 @@ const ins = mem.prepare('INSERT INTO docs (id,title,author,religion,collection,s
   [7, 'Duplicate Gap', '12', null, null, null, 10, null, null, 1],
   [8, 'Scraped Gap', '12', null, null, 'example.org', 10, null, null, null],
   [9, 'Metadata Row', '12', null, null, null, 0, 'metadata', null, null],
+  [10, 'Slug Author', 'pdf-h-hatcher', "Bahá'í", null, null, 40, null, null, null],
+  [11, 'Lowercase Slug', 'bahaullah', "Bahá'í", null, null, 30, null, null, null],
+  [12, 'Two-word Name', 'bell hooks', "Bahá'í", null, null, 20, null, null, null],
 ].forEach((r) => ins.run(...r));
 
 vi.mock('../../api/lib/db.js', () => ({
@@ -27,12 +30,12 @@ const { metadataGaps } = await import('../../api/lib/docs-repo.js');
 const { REPORTS } = await import('../../api/lib/ops/reports.js');
 
 describe('metadata gaps', () => {
-  it('finds live canonical books with no religion or a digits-only author, biggest first', async () => {
-    expect((await metadataGaps()).map((r) => r.id)).toEqual([1, 2, 3]);
+  it('finds live canonical books with no religion, a digits-only author or a slug author, biggest first', async () => {
+    expect((await metadataGaps()).map((r) => r.id)).toEqual([1, 2, 3, 10, 11]);
   });
   it('the ops report names each gap and counts them', async () => {
     const r = await REPORTS['metadata-gaps']();
-    expect(r.counts).toEqual({ 'numeric-author': 1, 'no-religion': 2 });
+    expect(r.counts).toEqual({ 'numeric-author': 1, 'no-religion': 2, 'slug-author': 2 });
     expect(r.rows.find((x) => x.id === 1).gaps).toEqual(['numeric-author']);
     expect(r.truncated).toBe(false);
   });
