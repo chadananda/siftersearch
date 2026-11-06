@@ -34,7 +34,7 @@ describe('doc-author-restamp', () => {
 
 describe('oceanoflights-slug-authors', () => {
   const D = '/tank/site2rag/websites_md/oceanoflights.org/';
-  const rows = [{ id: 1, title: 't', author: 'file-bahaullah-a', file_path: `${D}a.md` }, { id: 2, title: 't', author: 'file-other-x', file_path: `${D}b.md` }, { id: 3, title: 't', author: 'file-bab-x', file_path: 'elsewhere/c.md' }];
+  const rows = [{ id: 1, title: 't', author: 'file-bahaullah-a', file_path: `../../../../../..${D}a.md` }, { id: 2, title: 't', author: 'file-other-x', file_path: `${D}b.md` }, { id: 3, title: 't', author: 'file-bab-x', file_path: 'elsewhere/c.md' }];
   const docs = async ({ afterId }) => ({ docs: afterId ? [] : rows });
   it('dry run counts and changes nothing', async () => {
     const r = await oceanoflightsSlugAuthorsJob({}, { docs, corrections: async () => { throw new Error('no'); }, enqueue: async () => { throw new Error('no'); } });
