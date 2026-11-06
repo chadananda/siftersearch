@@ -1,6 +1,6 @@
 // slug-metadata report: locator title/author → what the book prints; byline first, title page via the role, surname must corroborate.
 import { describe, it, expect } from 'vitest';
-import { slugMetadataJob, slugSurname, slugAuthor, unshout, fileTitle, figureName, sharesFileWord } from '../../api/lib/ops/slug-metadata-job.js';
+import { slugMetadataJob, slugSurname, slugAuthor, unshout, fileTitle, figureName, sharesFileWord, issueOf } from '../../api/lib/ops/slug-metadata-job.js';
 import { authorFromText } from '../../api/lib/text/source-metadata.js';
 
 const reply = (j) => async () => ({ choices: [{ message: { content: JSON.stringify(j) } }] });
@@ -43,9 +43,24 @@ describe('slug-metadata', () => {
     expect([sharesFileWord('memoriam_bw_12', "The Baha'i World, Volume XI"), sharesFileWord('browne_literary_history_persia_3', 'A Literary History of Persia')]).toEqual([false, true]);
   });
   it('a newspaper page with no byline keeps author unknown (review), with its publication', async () => {
-    const r = await run([{ id: 3, title: '1920-03-06_cleveland', author: 'newspaper' }], { 3: 'THE CLEVELAND ADVOCATE ' + 'news '.repeat(40) },
+    const r = await run([{ id: 3, title: 'cleveland_1920-03-06', author: 'newspaper' }], { 3: 'THE CLEVELAND ADVOCATE ' + 'news '.repeat(40) },
       reply({ title: 'The Cleveland Advocate, 6 March 1920', author: null, kind: 'newspaper', publication: 'The Cleveland Advocate', printed: true }));
-    expect(r.proposals[0]).toMatchObject({ title: 'The Cleveland Advocate, 6 March 1920', author: null, publication: 'The Cleveland Advocate' });
-    expect(r.proposals[0].review).toEqual(expect.arrayContaining(['author unknown', 'newspaper page']));
+    expect(r.proposals[0]).toMatchObject({ title: 'The Cleveland Advocate, 6 March 1920', author: 'The Cleveland Advocate', review: [] });
+  });
+  it('newspaper issues: date and page from the file name, publication voted per series, clippings keep their column', async () => {
+    expect(issueOf('oregon_newspaper_archive_1923-05-05_ed-1_seq-4')).toMatchObject({ date: '5 May 1923', page: '4', column: null });
+    expect(issueOf('journal_constantinople_1848-01-16_p2')).toMatchObject({ date: '16 January 1848', page: '2' });
+    expect(issueOf('1920-03-06,%20Thomas%20W%20Fleming%20The_Buckeye_State')).toMatchObject({ column: 'The Buckeye State', page: null });
+    expect(issueOf('Tablets of Tarazat')).toBe(null);
+    const rows = [{ id: 1, title: 'paper_archive_1923-05-05_seq-4', author: 'newspaper' }, { id: 2, title: 'paper_archive_1923-06-02_seq-1', author: 'newspaper' },
+      { id: 3, title: 'paper_archive_1924-01-05_seq-1', author: 'newspaper' }, { id: 4, title: '1916-07-01,%20Jo%20Doe%20The_Corner_Column', author: 'newspaper' }];
+    const pubs = { 1: 'The Advocate', 2: 'The Advocate', 3: 'Portland Advocate', 4: 'The Daily Planet (Weekend Edition)' };
+    const create = async (role, b) => { const id = +b.messages[0].content.match(/ID(\d)/)[1];
+      return reply({ title: `${pubs[id]}, May 6, 1933`, author: id === 4 ? 'Someone' : null, kind: 'newspaper', publication: pubs[id], printed: true })(); };
+    const r = await run(rows, { 1: 'ID1 ' + 'news '.repeat(40), 2: 'ID2 ' + 'news '.repeat(40), 3: 'ID3 ' + 'news '.repeat(40), 4: 'ID4 ' + 'news '.repeat(40) }, create);
+    expect(r.proposals.map((p) => p.title)).toEqual(['The Advocate, 5 May 1923, p. 4', 'The Advocate, 2 June 1923, p. 1', 'The Advocate, 5 January 1924, p. 1',
+      'The Corner Column, The Daily Planet, 1 July 1916']);
+    expect(r.proposals.map((p) => p.author)).toEqual(['The Advocate', 'The Advocate', 'The Advocate', null]);
+    expect(r.proposals[3].review).toEqual(['clipping: writer not established (title only)']);
   });
 });

@@ -42,6 +42,42 @@ Reply with JSON only: {"title":"…","author":"…"|null,"kind":"…","publicati
 
 ${text}`;
 
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+/** What a newspaper file name says for certain: the issue date, the page, the series, and a clipping's column/headline. */
+export const issueOf = (file) => {
+  const f = decodeURIComponent(String(file || '').replace(/%(?![0-9a-f]{2})/gi, '%25'));
+  const d = f.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!d || +d[2] < 1 || +d[2] > 12) return null;
+  const page = f.match(/(?:_p|seq-)(\d+)\s*$/)?.[1] || null;
+  const after = f.slice(d.index + 10).replace(/^[,\s]+/, '');
+  const column = /_/.test(after) && !page ? after.split(' ').pop().replace(/_+/g, ' ').replace(/\s*\.\.\.\s*.*$/, '').trim() : null;
+  return { date: `${+d[3]} ${MONTHS[+d[2] - 1]} ${d[1]}`, page, series: column ? 'clip' : fold(f.slice(0, d.index)), column };
+};
+// a newspaper's issue is named from the file name (the reader misreads dates: '1923-05-05' → 'May 6, 1933'); the reader
+// supplies only the publication, voted per series. A page's author is the paper; a clipping's writer is not knowable here.
+const NEWS_REVIEW = new Set(['newspaper page', 'author unknown', 'title shares no word with the file name', 'not printed in the text']);
+export const settleNewspapers = (props) => {
+  const vote = new Map();
+  for (const p of props) {
+    const iss = p.kind === 'newspaper' && issueOf(p.from.title);
+    if (!iss || !p.publication) continue;
+    const pub = unshout(p.publication).replace(/\s*\(.*\)\s*$/, '');
+    const v = vote.get(iss.series) || new Map(); v.set(pub, (v.get(pub) || 0) + 1); vote.set(iss.series, v);
+  }
+  for (const p of props) {
+    const iss = p.kind === 'newspaper' && issueOf(p.from.title);
+    const v = iss && vote.get(iss.series);
+    if (!v) continue;
+    const pub = [...v].sort((x, y) => y[1] - x[1])[0][0];
+    const head = iss.column && (p.title && sharesFileWord(iss.column, p.title) && !p.title.includes(pub) ? p.title : unshout(iss.column));
+    p.title = `${head ? `${head}, ` : ''}${pub}, ${iss.date}${iss.page ? `, p. ${iss.page}` : ''}`;
+    p.publication = pub;
+    p.review = p.review.filter((x) => !NEWS_REVIEW.has(x) && !x.startsWith('author lacks'));
+    if (iss.column) { p.author = null; p.review.push('clipping: writer not established (title only)'); } else p.author = pub;
+  }
+  return props;
+};
+
 export async function slugMetadataJob({ scope = 'canonical', limit = 500, ids = null, concurrency = 4 } = {}, deps = {}) {
   const { gaps = () => metadataGaps({ scope, limit: 5000 }), paragraphs = (id) => getParagraphs(id, { proseOnly: false, limit: 40 }), create = roleCreate } = deps;
   const want = ids ? new Set(ids.map(Number)) : null;
@@ -78,6 +114,7 @@ export async function slugMetadataJob({ scope = 'canonical', limit = 500, ids = 
     out.push(p);
   };
   for (let i = 0; i < rows.length; i += concurrency) await Promise.all(rows.slice(i, i + concurrency).map(one));
+  settleNewspapers(out);
   out.sort((a, b) => a.id - b.id);
   return { scope, candidates: rows.length, ready: out.filter((p) => !p.review.length).length, review: out.filter((p) => p.review.length).length, proposals: out };
 }
