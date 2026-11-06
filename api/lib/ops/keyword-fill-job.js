@@ -5,14 +5,14 @@
 // bm25Doc (the one tokenizer, api/lib/keyword-tokens.js) → upsert (id = paragraph id; idempotent) → re-measure the
 // ledger. Supplemental (scraped sites) leaves out page chrome — markup-only lines and texts repeated across ≥10 site
 // documents (api/lib/site-boilerplate.js) — counted as unindexable; that scan runs as keyword-fill-sites in the heavy lane.
-// params { ids?, limit? (documents), scope?, significant?, structured? }. No AI spend. The reports worker queues { significant: true }
+// params { ids?, limit? (documents), scope?, significant?, structured?, marks? }. No AI spend. The reports worker queues { significant: true }
 // every 10 minutes while real gaps exist, so a newly ingested document has BM25 within minutes (Chad 10-16: BM25 first).
 import { existsSync, readFileSync } from 'fs';
 import { bm25DocWithContext } from '../keyword-tokens.js';
 import { paragraphLang } from '../phrase-vectors.js';
 import { paragraphAuthor, paragraphVoices } from '../authorship/effective.js';
 import { authorKey } from '../search/qdrant-layers.js';
-import { keywordGapDocs, keywordRowsForDoc, siteBoilerplateTexts, structuredDocs } from '../repos/keyword-repo.js';
+import { keywordGapDocs, keywordRowsForDoc, markedDocs, siteBoilerplateTexts, structuredDocs } from '../repos/keyword-repo.js';
 import { keepSiteParagraph } from '../site-boilerplate.js';
 import { measureDoc, saveCoverage, saveUnindexable } from '../repos/coverage-repo.js';
 import { hypeVersion } from './coverage-job.js';
@@ -47,9 +47,11 @@ async function upsert(points, fetchImpl = fetch) {
   }
 }
 
-export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary', significant = false, structured = false } = {}, { fetchImpl = fetch } = {}) {
+export async function keywordFillJob({ ids = null, limit = 0, scope = 'primary', significant = false, structured = false, marks = false } = {}, { fetchImpl = fetch } = {}) {
   // structured: re-send every document whose structure was found, so its points carry the section path
   if (structured) ids = await structuredDocs();
+  // marks: re-send every document with a transliteration mark ʻ ʼ ʾ ʿ, tokenised the old way (keyword-tokens.js MARKS)
+  if (marks) ids = await markedDocs();
   const docs = ids?.length ? ids.map((id) => ({ id: Number(id) })) : await keywordGapDocs({ scope, significant });
   const avg = avgLen(), v = await hypeVersion();
   const chrome = scope === 'supplemental' ? await siteBoilerplateTexts() : null;

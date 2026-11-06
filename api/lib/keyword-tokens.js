@@ -5,7 +5,10 @@
 import { crc32 } from 'zlib';
 import { foldArabic } from './arabic-script.js';
 
-export const foldKeyword = (text) => foldArabic(text || '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
+// Transliteration marks ʹ ʺ ʻ ʼ ʾ ʿ (U+02B9-02BF) are LETTERS to \p{L}, so 'ʻAbduʼl-Bahá' was one token 'ʻabduʼl' and never
+// met the ASCII "Abdu'l-Bahá" (abdu|l|baha). They fold to a break like ' ’ ‘ do (11-05; keyword-fill { marks: true } re-sends the docs).
+export const MARKS = /[\u02B9-\u02BF]/gu;
+export const foldKeyword = (text) => foldArabic(text || '').replace(MARKS, ' ').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
 export const tokens = (text) => foldKeyword(text).match(/[\p{L}\p{N}]+/gu) || [];
 export const tokenId = (word) => crc32(word);
 

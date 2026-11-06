@@ -36,3 +36,13 @@ describe('bm25Doc / bm25Query', () => {
   });
   it('empty document → null', () => { expect(bm25Doc('', 10)).toBeNull(); });
 });
+
+describe('transliteration marks (U+02B9-02BF) break a word like an apostrophe', () => {
+  it('scholarly and ASCII spellings tokenise the same', () => {
+    expect(tokens('ʻAbduʼl-Bahá')).toEqual(tokens("Abdu'l-Baha"));
+    expect(tokens('Bahāʼuʼllāh')).toEqual(tokens('Bahá’u’lláh'));
+    expect(tokens('ʿAlī ibn Abī Ṭālib')).toEqual(tokens('Ali ibn Abi Talib'));
+    expect(tokens('Qurʾān')).toEqual(['qur', 'an']);
+  });
+  it('Arabic script is untouched', () => { expect(tokens('بهاء الله')).toHaveLength(2); });
+});

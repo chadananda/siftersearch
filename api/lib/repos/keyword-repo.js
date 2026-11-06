@@ -24,6 +24,12 @@ export async function keywordRowsForDoc(docId) {
     .sort((a, b) => (a.level ?? 9) - (b.level ?? 9)).map((s) => s.title).join(' › ') || null }));
 }
 
+/** Live documents with a transliteration mark (U+02B9-02BF) in a paragraph — re-sent once the keyword tokenizer folded
+ *  them (11-05). One scan of content: heavy, so only from the keyword lane (keyword-fill { marks: true }). */
+export const markedDocs = async () => (await queryAll(`SELECT DISTINCT c.doc_id AS id FROM content c JOIN docs d ON d.id = c.doc_id
+    WHERE d.deleted_at IS NULL AND c.deleted_at IS NULL AND (INSTR(c.text, 'ʻ') OR INSTR(c.text, 'ʼ') OR INSTR(c.text, 'ʾ') OR INSTR(c.text, 'ʿ') OR INSTR(c.text, 'ʹ'))
+    ORDER BY c.doc_id`, [], 'keyword:marked-docs')).map((r) => r.id);
+
 /** Documents whose structure was found (sections > 0) — re-indexed when BM25 starts carrying section paths. */
 export const structuredDocs = async () => (await queryAll('SELECT doc_id AS id FROM doc_structure WHERE sections > 0 ORDER BY doc_id', [], 'keyword:structured')).map((r) => r.id);
 
