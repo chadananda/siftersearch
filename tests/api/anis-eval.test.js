@@ -1,7 +1,7 @@
 // Pure scorer of the frozen Anís eval set (tests/quality/anis-eval.mjs): forensic class check + expect fields; set shape.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-import { scoreItem, rollup, turnOf } from '../quality/anis-eval.mjs';
+import { scoreItem, rollup, turnOf, runFromRound } from '../quality/anis-eval.mjs';
 
 const set = JSON.parse(readFileSync(new URL('../quality/anis-eval-set.json', import.meta.url), 'utf8'));
 const item = (o) => ({ id: 'x-1', class: 'clipped-quote', split: 'tune', question: 'q', expect: {}, ...o });
@@ -68,5 +68,19 @@ describe('turnOf (stored thread round)', () => {
     expect(s.checks.find((c) => c.name === 'tier_first')).toMatchObject({ ok: true, detail: 'writings' });
     const s2 = scoreItem(it1, { reply: 'r', detail: { ...detail, cited: [...detail.cited].reverse() } });
     expect(s2.checks.find((c) => c.name === 'tier_first').ok).toBe(false);
+  });
+});
+
+describe('runFromRound', () => {
+  const thread = { rounds: [
+    { question: { text: 'q' }, reply: { text: 'old', meta: { usd: 0.1 } } },
+    { question: { text: 'other' }, reply: { text: 'x' } },
+    { question: { text: 'q ' }, reply: { text: 'new', route: { strategy: 's' }, cited: [], meta: { usd: 0.005, latency_ms: 16040 } } }] };
+  it('takes the latest round that asked the question, with its cost and latency', () => {
+    expect(runFromRound(item(), thread)).toMatchObject({ reply: 'new', usd: 0.005, ms: 16040, route: { strategy: 's' } });
+    expect(runFromRound(item(), thread, { reply: 'live', ms: 9 })).toMatchObject({ reply: 'live', ms: 9 });
+  });
+  it('no thread → no detail, never throws', () => {
+    expect(runFromRound(item(), null, { reply: 'r' })).toMatchObject({ reply: 'r', detail: null, usd: null });
   });
 });

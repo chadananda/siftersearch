@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Frozen Anís eval set (anis-eval-set.json) scored by CODE ONLY (forensicPass + each item's expect fields); no LLM judge, no Opus.
-//   node tests/quality/anis-eval.mjs [--dry] [--split tune|held] [--class a,b] [--only id,id] [--limit N] [--concurrency 2] [--no-write]
+//   node tests/quality/anis-eval.mjs [--dry] [--from-threads [--days N]] [--split tune|held] [--class a,b] [--only id,id] [--limit N] [--concurrency 2] [--no-write]
 // Prints per-class pass rate for tune and held apart; appends one line to anis-eval-history.json. API_BASE default http://tower-nas:7839;
 // needs INTERNAL_API_KEY (draft) + DEPLOY_SECRET (thread route/meta). Live replies spend the anis cap: use --limit. Pure scorer: scoreItem/rollup.
 import { readFileSync, writeFileSync, existsSync } from 'fs';
@@ -60,6 +60,12 @@ export function rollup(scored = []) {
   return { ...out, total: { tune: tot('tune'), held: tot('held') } };
 }
 
+/** item + stored thread (GET /api/admin/anis/threads/:id) → run: the latest round that asked this item's question. Pure. */
+export function runFromRound(item, thread, { reply = null, ms = null } = {}) {
+  const rp = (thread?.rounds || []).filter((r) => r.reply && String(r.question?.text || '').trim() === item.question.trim()).at(-1)?.reply || null;
+  return { reply: reply ?? rp?.text ?? null, route: rp?.route ?? null, meta: rp?.meta ?? null, detail: rp, usd: rp?.meta?.usd ?? null, ms: ms ?? rp?.meta?.latency_ms ?? null };
+}
+
 // ---- CLI
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const arg = (k) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : null; }, has = (k) => process.argv.includes(`--${k}`), list = (k) => arg(k)?.split(',').filter(Boolean);
@@ -82,6 +88,13 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
   const jfetch = async (url, o = {}) => { const r = await fetch(url, { signal: AbortSignal.timeout(40000), ...o }); return { r, j: await r.json().catch(() => ({})) }; };
   const RUN = Date.now().toString(36); let seq = 0;
+  const thread = (id) => jfetch(`${API}/api/admin/anis/threads/${id}`, { headers: { 'X-Internal-Key': ADMIN } }).then((x) => x.j).catch(() => null);
+  // --from-threads: score the eval conversations already stored (last day) — $0, no new replies. Each item's thread is found by its battery email.
+  const stored = async (item) => {
+    const list = (stored.list ||= await jfetch(`${API}/api/admin/anis/threads?days=${arg('days') || 1}`, { headers: { 'X-Internal-Key': ADMIN } }).then((x) => x.j?.threads || []));
+    const t = list.filter((x) => x.person?.email === `battery+eval-${item.id}@siftersearch.com`).sort((a, b) => String(b.last_at).localeCompare(String(a.last_at)))[0];
+    return t ? runFromRound(item, await thread(t.id), {}) : { error: 'no stored thread' };
+  };
   // one reply: draft job → poll → stored thread round (route + meta). Same endpoints as score-anis-wording.mjs.
   const ask = async (item) => {
     const t0 = Date.now(), job = `eval-${RUN}-${++seq}`, H = { 'content-type': 'application/json', 'X-Internal-Key': KEY };
@@ -93,14 +106,13 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
         await sleep(2500);
         const g = await jfetch(`${API}/api/v1/anis/draft/job/${job}`, { headers: H }).then((x) => x.j).catch(() => ({ status: 'poll-failed' }));
         if (g.status === 'done') {
-          const res = g.result || {}, ms = Date.now() - t0; let route = null, meta = res.meta || null;
-          for (let k = 0; k < 4 && res.conversationId && !route; k++) {
+          const res = g.result || {}, ms = Date.now() - t0;
+          for (let k = 0; k < 4 && res.conversationId; k++) {
             if (k) await sleep(2500);
-            const t = await jfetch(`${API}/api/admin/anis/threads/${res.conversationId}`, { headers: { 'X-Internal-Key': ADMIN } }).then((x) => x.j).catch(() => null);
-            const rp = (t?.rounds || []).filter((r) => r.reply && String(r.question?.text || '').trim() === item.question.trim()).reverse()[0];
-            route = rp?.reply?.route || null; meta = rp?.reply?.meta || meta; detail = rp?.reply || null;
+            const run = runFromRound(item, await thread(res.conversationId), { reply: res.reply, ms });
+            if (run.detail || k === 3) return run;
           }
-          return { reply: res.reply, route, meta, detail, usd: detail?.meta?.usd ?? null, ms };
+          return runFromRound(item, null, { reply: res.reply, ms });
         }
         if (['failed', 'lost'].includes(g.status)) return { error: `job ${g.status} ${g.error || ''}`, ms: Date.now() - t0 };
         if (Date.now() - t0 > 300000) return { error: 'timeout 5 min', ms: Date.now() - t0 };
@@ -108,7 +120,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     } catch (e) { return { error: e.message, ms: Date.now() - t0 }; }
   };
   const scored = [], conc = Number(arg('concurrency') || 2), queue = [...items];
-  await Promise.all(Array.from({ length: conc }, async () => { for (let it; (it = queue.shift());) { const run = await ask(it), s = { ...scoreItem(it, run), usd: run.usd ?? null }; scored.push(s);
+  await Promise.all(Array.from({ length: conc }, async () => { for (let it; (it = queue.shift());) { const run = has('from-threads') ? await stored(it) : await ask(it); if (run.error === 'no stored thread') continue; const s = { ...scoreItem(it, run), usd: run.usd ?? null }; scored.push(s);
     console.log(`${s.pass ? 'PASS' : 'FAIL'} ${s.id} $${s.usd ?? '?'} ${s.checks.map((c) => `${c.ok === false ? '✗' : c.ok === null ? '?' : '✓'}${c.name}${c.ok === false && c.detail != null ? `:${c.detail}` : ''}`).join(' ')}`); } }));
   const r = rollup(scored), usd = +scored.reduce((a, x) => a + (x.usd || 0), 0).toFixed(4), unchecked = scored.reduce((a, x) => a + (x.unchecked || 0), 0);
   console.log(`\ncost $${usd} (${scored.filter((x) => x.usd == null).length} replies without a cost) · ${unchecked} unchecked check(s)`);
