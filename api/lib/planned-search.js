@@ -73,6 +73,7 @@ const onSubject = (hit, terms) => {
 // MIN_PASSAGE_WORDS words besides the name ("Bahá’u’lláh {language="en"}", "Shoghi Rabbani", "Beloved Guardian,",
 // "‘Abdu’l-Bahá ‘Abbás." all led bare-name searches 11-05).
 const MIN_PASSAGE_WORDS = 8;
+const NAME_ONLY_DEPTH = 6;   // author pool depth × limit for a name-only query
 export const notPassage = (h, nameOnly) => foldTok(String(h.text || '').replace(/\{[^}]*\}/g, ' '))
   .split(' ').filter((w) => w && !nameOnly.has(w)).length < MIN_PASSAGE_WORDS;
 
@@ -274,9 +275,13 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
     Promise.all(hinted.names.map((n) => search(plan.filters, n, KEYWORD_ONLY).catch(() => []))).then((l) => l.flat()),
   ]);
   // With a preferred author, the author-matched search runs BESIDE the broad one, never instead of it.
+  // The name alone (#135/#262): the author's top hits are headings and signatures that notPassage drops, so the
+  // author pool is fetched deeper — otherwise "Shoghi Effendi" returned 2 passages.
+  const terms = plan.prefer ? subjectTerms(query, plan.prefer) : [];
+  const nameOnly = plan.prefer && !terms.length ? nameWords(plan.prefer) : null;
   const [r, authorHits, verbatimHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
-    plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(subjectQ, plan.prefer)).catch(() => []) : Promise.resolve([]),
+    plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(subjectQ, plan.prefer), nameOnly ? { limit: limit * NAME_ONLY_DEPTH } : null).catch(() => []) : Promise.resolve([]),
     quotation ? search({}, verbatimQ, KEYWORD_ONLY).catch(() => []) : Promise.resolve([]),
   ]);
   stages.passages_ms = Date.now() - t1;
@@ -289,8 +294,6 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
   const quotedIds = plan.prefer
     ? await (voices ?? (engine ? null : quotingParagraphs))?.(r.results.map((h) => h.id), plan.prefer.aliases).catch(() => new Set()) ?? new Set()
     : new Set();
-  const terms = plan.prefer ? subjectTerms(query, plan.prefer) : [];
-  const nameOnly = plan.prefer && !terms.length ? nameWords(plan.prefer) : null;
   let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, terms, quotedIds, nameOnly) : r.results;
   // The resolve had the whole passage search to finish in; it waits only until TARGET_MS from the start, so it never
   // adds latency beyond that — and never loses a race it did not need to (a 1s timer from t0 dropped "iderne" on a

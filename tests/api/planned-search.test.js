@@ -63,6 +63,17 @@ describe('plannedSearch', () => {
     expect(e.calls).toHaveLength(2);
   });
 
+  it('a name-only query fetches a deeper author pool (headings and signatures drop out of it); a subject query does not (#135/#262)', async () => {
+    const pref = async (_i, { given } = {}) => ({ ...buildPlan({
+      tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 },
+      author: { choice: 'Shoghi Effendi', confidence: 0.9 }, shape: { choice: 'lookup', confidence: 0.9 },
+    }, { given }), ms: 5 });
+    const limits = (q) => { const seen = []; return plannedSearch(q, { planner: pref, limit: 8, engine: async (_q, opts) => { seen.push({ author: !!opts.filters?.author, limit: opts.limit }); return { hits: [] }; } }).then(() => seen); };
+    const bare = (await limits('Shoghi Effendi')).find((c) => c.author);
+    expect(bare.limit).toBeGreaterThan(8);
+    const subject = (await limits('Shoghi Effendi on world order')).find((c) => c.author);
+    expect(subject.limit).toBe(8);
+  });
   it('puts the preferred author first but KEEPS books that quote them', async () => {
     const pref = async (_i, { given } = {}) => ({ ...buildPlan({
       tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 },
