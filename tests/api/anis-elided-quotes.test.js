@@ -65,3 +65,16 @@ describe('restoreElisions — on a reply', () => {
     expect(restoreElisions(t, [hidden, letter])).toEqual({ text: t, restored: 0 });
   });
 });
+
+// clipped-quote residual (11-05): the prayer strategy's "Two more" names each prayer by its opening words, written as a linked
+// incipit ending in "…". The quote sits inside the link text; it runs on to its sentence end and the link survives. Fresh prayer.
+describe('restoreElisions — a linked incipit ("Two more" prayers)', () => {
+  const prayer = { text: 'O Thou kind Lord! Unite all. Let the religions agree and make the nations one, so that they may see each other as one family and the whole earth as one home.' };
+  it('the incipit becomes its whole first sentence, the URL untouched', () => {
+    const t = '- ["O Thou kind Lord! Unite all. Let the religions agree…"](https://oceanlibrary.com/prayers/?paraId=para_41)';
+    const { text, restored } = restoreElisions(t, [prayer]);
+    expect(restored).toBe(1);
+    expect(text).toBe('- ["O Thou kind Lord! Unite all. Let the religions agree and make the nations one, so that they may see each other as one family and the whole earth as one home."](https://oceanlibrary.com/prayers/?paraId=para_41)');
+    expect(text).not.toMatch(/…/);
+  });
+});

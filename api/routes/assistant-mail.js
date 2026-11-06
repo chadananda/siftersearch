@@ -166,6 +166,7 @@ export default async function anisRoutes(fastify) {
       direction: { channel: channelFor('email', { trusted: true }), kind: 'research', research: true } });
     if (!r?.reply || !(r.retrieved?.length)) return { silent: true, reason: 'nothing found worth sending' };
     if (weakLetter(r.reply)) return { silent: true, reason: 'the letter declined or reported a gap — silence beats a weak letter' };
-    return { subject: ask.subject, opening: ask.opening, reply: r.reply, capability: ask.capability, retrieved: r.retrieved.length };
+    const { finalForm } = await import('../lib/assistant/lint.js');   // the same form pass turn.js gives every reply
+    return { subject: ask.subject, opening: ask.opening, reply: finalForm(r.reply), capability: ask.capability, retrieved: r.retrieved.length };
   });
 }

@@ -129,7 +129,8 @@ export function assessSearch(s = {}, { route = null, question = '' } = {}) {
     if (cls === 'stage-over-budget') d.fix_where = `${defectFile(d)} (the ${evidence.stage} stage; its budget is in search/latency-budget.js)`;
     defects.push(d);
   };
-  if (!hits.length) add('RETRIEVAL', 'zero-hits', `${s.tool || 'search'} "${String(s.query || '').slice(0, 80)}" returned nothing`);
+  // a research step stores its count, not its hits: found > 0 is not a zero-hit search
+  if (!hits.length && !(s.found > 0)) add('RETRIEVAL', 'zero-hits', `${s.tool || 'search'} "${String(s.query || '').slice(0, 80)}" returned nothing`);
   // copies of one passage (quote/source routes): the most authoritative copy should lead its lower ones
   if (['quote', 'source'].includes(r)) {
     const copies = hits.filter((h) => !isOriginal(h) && isCopy(h, question || s.query));

@@ -10,7 +10,7 @@ import { openExchange, closeExchange, failExchange } from './exchange-log.js';
 import { triageMessage, routeTriage, outputBreaksPersona, T } from './triage.js';
 import { cannedReply } from './canned.js';
 import { strikes as liveStrikes, tarpitResponse } from './strikes.js';
-import { lintReply } from './lint.js';
+import { lintReply, finalForm } from './lint.js';
 import { channelFor } from './channels.js';
 import { turnMeta } from './turn-meta.js';
 import { progressText } from './progress.js';
@@ -204,7 +204,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { stance: triageSummary?.stance ?? null,
       kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
-    let reply = r.reply;
+    // the form pass on EVERY reply path (agent, craft, sourcehunt, strategies): a closing search offer dropped, brackets in link
+    // text made parens (writer residuals 11-05: titles like "Book of Common Prayer [King's Chapel]" broke their links)
+    let reply = typeof r.reply === 'string' ? finalForm(r.reply) : r.reply;
     // Output check: a reply that abandons the persona or leaks instructions is replaced (the widget reconciles its
     // streamed text to the final reply; email sends only this).
     const broken = await timed('output-check', () => d.outputCheck(reply, { persona: name })).catch(() => null);

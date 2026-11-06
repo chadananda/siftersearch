@@ -1,6 +1,8 @@
 // Anis voice lint — the missing validator for the Companion's FORBIDDEN list and the soul's voice rules. Runs on every
 // final reply; LOGS hits, never blocks (a false positive must not censor an answer — the soul battery is the gate).
-// Pure. Deps: none. One rule BLOCKS: a reply ending in an offer to search loses that offer (dropSearchOffer).
+// Pure. Deps: md-valid. One rule BLOCKS: a reply ending in an offer to search loses that offer (dropSearchOffer); finalForm applies it,
+// with safeLinkText, at every reply's exit.
+import { safeLinkText } from './md-valid.js';
 
 // An offer to run a lookup Anís could run himself: "would you like me to look…", "I can look up X if you'd like", "shall I
 // search…". Not a statement of what was found ("all I could find", "I could find no…") and not an offer to READ with the reader.
@@ -127,3 +129,7 @@ export function mixedScript(text) {
     return hit ? hit[1] : latin;
   });
 }
+
+/** The form pass at every reply's one exit (turn.js; the /outreach letter): a closing offer to search dropped, brackets inside a
+ *  link's text made parens. By form only — it never decides what the reply says. Pure. */
+export function finalForm(text) { return safeLinkText(dropSearchOffer(text).text); }

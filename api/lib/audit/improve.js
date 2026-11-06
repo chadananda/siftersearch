@@ -284,6 +284,8 @@ export const projectDaily = ({ judgeUsd, deepUsd, repliesPerDay, searchesPerDay,
 };
 
 // ── adapters: stored rows → the forensic turn shape ──
+// a step's words: the input its tool takes (query, title, english, original, quotation, word)
+const stepWords = (a = {}) => String(a?.query || a?.q || a?.title || a?.english || a?.original || a?.quotation || a?.word || '');
 const evHit = (e, i) => ({ rank: i + 1, doc_id: e.doc_id ?? e.docId ?? null, title: e.title, author: e.author, language: e.language || e.lang, text: e.text, url: e.url, tier: e.tier });
 /** A chat_messages reply (question, reply text, path_json) + its trace rows (with hits, when introspection stored them) → turn. */
 export function turnFromPath({ question, reply, path = {}, traces = [] }) {
@@ -292,8 +294,11 @@ export function turnFromPath({ question, reply, path = {}, traces = [] }) {
   const steps = p.plan?.research?.steps || [];
   const searches = traces.length
     ? traces.map((t) => ({ trace_id: t.trace_id, tool: t.tool || t.endpoint, query: t.query, filters: t.filters || {}, timings: t.timings || {}, hits: t.hits || [] }))
-    : steps.filter((s) => /search|lookup/.test(s.tool || '')).map((s, i) => ({ trace_id: null, tool: s.tool, query: s.args?.query || s.args?.q || '', filters: s.args || {},
-      hits: i === 0 ? evidence : [] }));
+    // a research step keeps only its COUNT (found), not its hits: the count decides zero-hits. Its words are whichever input the tool
+    // takes (document_search a title, original_lookup the English…) — read as query only, document_search "Kitab-i-Iqan" (3 found) showed as
+    // 'document_search "" returned nothing' (11-05)
+    : steps.filter((s) => /search|lookup/.test(s.tool || '')).map((s, i) => ({ trace_id: null, tool: s.tool, query: stepWords(s.args), filters: s.args || {},
+      ...(Number.isFinite(s.found) ? { found: s.found } : {}), hits: i === 0 && s.found !== 0 ? evidence : [] }));
   if (!searches.length && evidence.length) searches.push({ trace_id: null, tool: p.recipe || 'retrieval', query: p.plan?.search_query || question, filters: {}, hits: evidence });
   const urls = new Set((String(reply || '').match(/\]\((https?:[^)\s]+)\)/g) || []).map((m) => m.slice(2, -1)));
   const cited = evidence.filter((e) => e.url && urls.has(e.url)).map((e) => ({ doc_id: e.doc_id, title: e.title }));

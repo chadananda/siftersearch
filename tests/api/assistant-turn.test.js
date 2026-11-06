@@ -83,6 +83,16 @@ describe('anisTurn', () => {
     expect(h.calls.close[0].path.lint.map((x) => x.id)).toEqual(expect.arrayContaining(['we-bahais', 'generic-praise']));
   });
 
+  // writer residuals 11-05: the form pass runs at the turn's exit for EVERY respond path (sourcehunt, strategies, craft, agent),
+  // not only inside the two writer chains — fresh wording, fresh title
+  it('the final reply: a closing offer to search dropped, brackets in a link title made parens', async () => {
+    const reply = 'The verse is in [*Sacred Harp [1991 Revision]*](https://oceanlibrary.com/sacred-harp/?paraId=para_88).\n\nShall I dig through the hymnals for other settings of it?';
+    const h = harness({ triage: t(), reply });
+    const r = await h.run();
+    expect(r.reply).toBe('The verse is in [*Sacred Harp (1991 Revision)*](https://oceanlibrary.com/sacred-harp/?paraId=para_88).');
+    expect(h.calls.close[0].path.lint.map((x) => x.id)).not.toContain('search-offer');
+  });
+
   it('Jev down → research path (fail open); logging down → still answers', async () => {
     const h = harness({ triage: null });
     h.calls.open = [];

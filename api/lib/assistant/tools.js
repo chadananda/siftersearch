@@ -3,6 +3,7 @@
 // plain JSON (what POST /api/v1/tools/<name> returns). Old names are input-only aliases. Deps lazy; ctx.deps overrides (tests).
 
 import { CANON } from './work-canon.js';
+import { canonicalTradition } from './tradition-name.js';
 import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
 import { currentAIContext, withAIContext } from '../ai-context.js';
 
@@ -42,7 +43,7 @@ const PID = { type: ['integer', 'string'], description: 'Paragraph id (Passage.i
 /** The shared filters → search.js filter keys (religion, collection, author, writerOnly, language, documentId, yearFrom, yearTo). Pure. */
 export function engineFilters(f = {}) {
   const out = {};
-  if (f?.tradition) out.religion = f.tradition;
+  if (f?.tradition) out.religion = canonicalTradition(f.tradition);
   for (const k of ['collection', 'author', 'writerOnly', 'language', 'documentId', 'yearFrom', 'yearTo']) if (f?.[k] != null && f[k] !== '' && f[k] !== false) out[k] = f[k];
   return out;
 }
@@ -133,7 +134,7 @@ const ENTRIES = [
       const search = ctx.search || (await import(MOD.chat)).executeSearch;
       const { documentId, ...f } = engineFilters(a.filters);
       // the LLM's tradition is the planner's default, as before; filters.tradition is a hard filter
-      const defaults = 'defaults' in a ? a.defaults : 'messages' in a ? undefined : a.tradition ? { religion: a.tradition } : {};
+      const defaults = 'defaults' in a ? a.defaults : 'messages' in a ? undefined : a.tradition ? { religion: canonicalTradition(a.tradition) } : {};
       const r = await search({ query: a.query, mode: 'passages', limit: a.limit ?? 8, ...(a.scope_config !== undefined ? { scope_config: a.scope_config } : {}), ...f,
         ...(documentId != null ? { document_id: documentId } : {}),
         plan: { messages: 'messages' in a ? a.messages : [{ role: 'user', content: a.query }], ...(defaults !== undefined ? { defaults } : {}) } });
@@ -150,7 +151,7 @@ const ENTRIES = [
       // the model names the writer; code only resolves the name (alias table). Left in the query, "where does 'Abdu'l-Bahá say
       // justice is each one's due" ranked other traditions and writers above Some Answered Questions 77 (11-05); held to Him, it is #2
       if (a.author) f.author = (await import('../search-plan.js')).keywordAuthor(a.author) || String(a.author).trim();
-      return { passages: (await fast(a.query, a.tradition, a.limit ?? 8, ...(Object.keys(f).length ? [f] : []))).map(toPassage) };
+      return { passages: (await fast(a.query, a.tradition ? canonicalTradition(a.tradition) : a.tradition, a.limit ?? 8, ...(Object.keys(f).length ? [f] : []))).map(toPassage) };
     } },
   // the Writings in their ORIGINAL languages (11-04, measured: an English query's fused ranking puts no Persian/Arabic Writing in
   // its top 8 — English-English phrase matches fill it — while the same query held to the ar-fa group returns 22-29 originals of 30)
@@ -369,10 +370,25 @@ export const label = (name) => resolve(name)?.label || null;
 export const publicNames = () => ENTRIES.filter((e) => !e.internal).map((e) => e.name);
 export const list = () => ENTRIES.filter((e) => !e.internal).map(({ name, label: l, kind, purpose }) => ({ name, label: l, kind, purpose }));
 
-/** run(name, input, ctx) → the tool's plain JSON. An unknown name throws { code: 'unknown_tool' }. */
+/** The first REQUIRED string input (query, title, english…) that is missing or blank, else null: such a call is refused,
+ *  never run — an empty search returns nothing and reads as a library gap. Pure. */
+export function emptyRequired(e, input = {}) {
+  if (e?.kind !== 'tool') return null;   // strategies take Jev's choice, which may legitimately carry no words
+  const props = e?.input?.properties || {};
+  for (const k of e?.input?.required || []) {
+    const t = props[k]?.type;
+    if ((t === 'string' || (Array.isArray(t) && t.includes('string') && !t.includes('integer'))) && !String(input?.[k] ?? '').trim()) return k;
+  }
+  return null;
+}
+
+/** run(name, input, ctx) → the tool's plain JSON. An unknown name throws { code: 'unknown_tool' }; a blank required string
+ *  input throws { code: 'empty_input' }. */
 export async function run(name, input = {}, ctx = {}) {
   const e = resolve(name);
   if (!e) throw Object.assign(new Error(`unknown tool: ${name}`), { code: 'unknown_tool' });
+  const blank = emptyRequired(e, input);
+  if (blank) throw Object.assign(new Error(`${e.name}: "${blank}" is empty — give the words to search for`), { code: 'empty_input' });
   // every search the tool makes is traced with its name (search_trace.tool) — ambient, AsyncLocalStorage (ai-context.js)
   const trace = currentAIContext().trace || {}, t0 = performance.now();
   // each call's wall time → tool_runs (strategy-stats-repo; buffered, off the reply path) — the tools page's live numbers
