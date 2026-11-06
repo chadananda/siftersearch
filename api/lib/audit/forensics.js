@@ -10,12 +10,15 @@ import { teachingsCheck } from '../assistant/teachings-check.js';
 import { budgetFor, engineStages, plannedStages } from '../search/latency-budget.js';
 import { foldKey } from '../search/doctrinal-rank.js';
 import { NEEDS_WRITINGS } from '../search/writings-pass.js';
+import { contentWords } from '../search/verbatim.js';
+import { driftedQueries, MODEL_SEARCH } from '../assistant/query-anchor.js';
 
 export const FORENSIC_V = 1;
 export const STAGES = ['STRATEGY', 'RETRIEVAL', 'RANK', 'SELECTION', 'WRITER', 'LATENCY', 'HOLDINGS'];
 
 /** Where each defect class is fixed: file · function/stage. The work queue prints it beside the count. */
 export const FIX_WHERE = {
+  'query-drift': 'api/lib/assistant/query-anchor.js (Jev subject check) · researcher.js / agent.js first-round search query',
   'no-originals-search': 'api/lib/assistant/researcher.js originals quota · strategies.js route recipe (an originals_search step)',
   'no-writings-pass': 'api/lib/search/writings-pass.js owesWritings · planned-search.js (the Writings pass beside the broad pass)',
   'authority-inversion': 'api/lib/search/doctrinal-rank.js + assistant/source-tier.js (copy authority in the rank of copies of one passage)',
@@ -84,7 +87,7 @@ const copyRank = (h) => COPY_CLASSES.indexOf(copyClass(h));
 const AUTHORITATIVE = (h) => copyRank(h) <= 1 || ['writings', 'guardian'].includes(h.tier);
 
 // a hit carries the passage when its text shares the question's words (quote route); no text → assumed (the trace is the route's)
-const words = (s) => new Set(String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^a-z]+/).filter((w) => w.length > 3));
+const words = contentWords;
 export function isCopy(h, question) {
   const t = h.text ?? h.snippet;
   if (!t || !question) return true;
@@ -170,6 +173,11 @@ export function forensicPass(turn = {}) {
     add('STRATEGY', 'no-originals-search', `${route} route ran no original-language (Persian/Arabic) search`, { tools: searches.map((s) => s.tool) });
   if (owesWritingsPass(route) && searches.length && !searches.some(searchedWritings))
     add('STRATEGY', 'no-writings-pass', `${route} route ran no Writings-filtered pass`, { tools: searches.map((s) => s.tool) });
+
+  // STRATEGY: the model's first searches left Jev's subject (spec #5) — no query shares a term with the resolved turn
+  const modelQs = turn.model_queries ?? (turn.research?.steps || []).filter((x) => MODEL_SEARCH.has(x.tool)).map((x) => x.rebuilt_from ?? x.args?.query);
+  const drifted = driftedQueries(modelQs, { text: turn.subject || turn.question, names: turn.subject_names || [] });
+  if (drifted.length) add('STRATEGY', 'query-drift', `the model's searches carry no term of the subject (${drifted.length} of ${modelQs.length})`, { subject: turn.subject || turn.question, queries: drifted.slice(0, 3) });
 
   // RANK / LATENCY / RETRIEVAL from each search (one defect per class+stage: the worst instance carries the evidence)
   for (const v of perSearch) for (const d of v.defects) {

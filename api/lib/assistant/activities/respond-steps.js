@@ -21,6 +21,7 @@ import { looksLikePositionQuestion, positionResearch } from '../position.js';
 import { looksLikeLanguageQuestion } from '../language.js';
 import { preferOwnWork, literalOwnSearch, linkHits } from '../own-source.js';
 import { toPassage } from '../tools.js';
+import { jevSubject } from '../query-anchor.js';
 
 const fast = (s) => {
   const { direction, question } = s;
@@ -32,7 +33,7 @@ const fast = (s) => {
 const agent = (s) => {
   const { direction, d, deps, messages, onEvent, t0 } = s;
   if (!(!s.fast && !strategyOf(direction.strategy) && agentOn(direction) && !(deps && !d.agentCreate))) return 'skip';
-  return agentRespond({ messages, onEvent, d, t0 }).catch((err) => { console.warn('anis agent failed', err?.message); return null; })
+  return agentRespond({ messages, onEvent, d, t0, subject: jevSubject(direction, null) }).catch((err) => { console.warn('anis agent failed', err?.message); return null; })
     .then((A) => { if (A) { s.done = A; return 'answered'; } return 'fail'; });
 };
 
@@ -96,7 +97,7 @@ const research = (s) => {
     && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
   const set = (R) => { s.researched = R?.passages?.length || R?.brief ? R : null; return researchOn ? (s.researched ? 'found' : 'empty') : 'skip'; };
   if (!researchOn) return set(null);
-  return (d.research || runResearch)({ messages, ...(live || {}), drawFrom: p?.drawFrom?.name || null,
+  return (d.research || runResearch)({ messages, ...(live || {}), drawFrom: p?.drawFrom?.name || null, subject: jevSubject(direction, p),
     create: d.researchCreate || (async (params) => (await import('../../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }).then(set);
 };

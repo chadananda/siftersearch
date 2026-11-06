@@ -8,7 +8,7 @@
 import { planSearch, layersFor, leanTradition, WRITINGS_AUTHORS } from './search-plan.js';
 import { owesWritings, withWritings, WRITINGS_TOOL } from './search/writings-pass.js';
 import { relaxScope } from './search-scope.js';
-import { foldVerbatim, isVerbatimQuery } from './search/verbatim.js';
+import { foldVerbatim, isVerbatimQuery, wordShare } from './search/verbatim.js';
 import { hintPlan, applyHints } from './search/hints.js';
 import { withNamed } from './search/named-scope.js';
 import { correctQuery, vocabulary } from './search/spell.js';
@@ -20,6 +20,10 @@ const TARGET_MS = 1200;
 const NAMED_SCOPE_MS = 800;   // the title/author lookup of named works (docs_fts) — late means no named scopes (stages.named_timeout), never a hang
 const CLAIMS_GRACE_MS = Number(process.env.CLAIMS_GRACE_MS || 1500);
 const KEYWORD_ONLY = { keywordLayer: true, phraseLayer: false, semantic: false, hype: false, diversify: false };
+// a quotation's MEANING pass (spec #4, 11-06): the whole wording by embedding + phrase vectors, no HyPE, no tradition spread
+const MEANING_ONLY = { keywordLayer: false, conceptLayer: false, semantic: true, phraseLayer: true, hype: false, diversify: false };
+/** A hit carries the quotation when it holds this share of its content words (forensics' word test). */
+export const QUOTE_HELD = 0.6;
 const MAX = 500;
 const cache = new Map();
 export const clearPlannedCache = () => cache.clear();
@@ -304,6 +308,18 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
     writingsPass ? writingsSearch().catch(() => []) : Promise.resolve(null),
   ]);
   stages.passages_ms = Date.now() - t1;
+  // A QUOTATION NOT FOUND AS WRITTEN (spec #4, 11-06): a paraphrase, another translation or a misremembered line — the
+  // verbatim pass is keyword-only and exact, and the planned pool may hold nothing carrying QUOTE_HELD of its words. Then
+  // the whole wording is searched by MEANING (semantic + phrase layers) in the plan's scope: a change of method, never of
+  // scope. A quotation already found costs no call; a quote plan whose own pass was that same search is not repeated.
+  const held = (h) => wordShare(verbatimQ, h?.text ?? h?.snippet) >= QUOTE_HELD;
+  const sameAsMain = !layers.keyword && layers.semantic && !layers.hype && !layers.diversify && qdrant.phrase && verbatimQ === subjectQ;
+  let meaningHits = [];
+  if (quotation && !sameAsMain && !verbatimHits.some(held) && !r.results.some(held)) {
+    const tm = Date.now();
+    meaningHits = await search(plan.filters, verbatimQ, MEANING_ONLY).catch(() => []);
+    Object.assign(stages, { quote_meaning_ms: Date.now() - tm, quote_meaning_hits: meaningHits.length });
+  }
   // CLAIMS GRACE starts NOW (the passages are in) and runs beside target / hints / source resolution — it used to start
   // after resolve, so a late claims layer cost resolve + 1.5 s (11-03 bench: 2.2-2.5 s planned searches)
   const claimsGraceP = claimsP ? Promise.race([claimsP, new Promise((ok) => {
@@ -418,6 +434,11 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
 
   // Passages containing the quotation verbatim lead (not over a people answer, whose cited paragraphs ARE the answer).
   if (quotation && !pr?.pattern) {
+    // the meaning pass's passages lead when nothing held the wording (its nearest readings of the line, in rank order)
+    if (meaningHits.length) {
+      const ids = new Set(meaningHits.map((h) => h.id));
+      hits = [...meaningHits, ...hits.filter((h) => !ids.has(h.id))].slice(0, Math.max(limit, 1));
+    }
     const q = foldVerbatim(verbatimQ);
     const exact = [], seen = new Set();
     for (const h of [...hits, ...verbatimHits]) if (!seen.has(h.id) && foldVerbatim(h.text).includes(q)) { seen.add(h.id); exact.push(h); }

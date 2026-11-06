@@ -10,6 +10,7 @@ import { dropSearchOffer } from './lint.js';
 import { dropPreamble } from './work-request.js';
 import { agentSearch } from './agent-search.js';
 import { roleReplyCap } from './reply-cap.js';
+import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 
 const clip = (t, n) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); return s.length > n ? `${s.slice(0, n)}…` : s; };
 
@@ -65,7 +66,10 @@ const STATUS = { fused_search: (a) => `Searching the library: ${clip(a.query, 60
  * One turn: → { reply, retrieved, citations, steps, usage, timings }. create = OpenAI-compatible chat (roleCreate('anis-agent')).
  * impl = libraryTools({ search }) (+ notes for work_notes_lookup, tests).
  */
-export async function agentAnswer({ messages, create, tools: impl, onEvent = () => {}, maxRounds = 8, maxCalls = 24 }) {
+export async function agentAnswer({ messages, create, tools: impl, onEvent = () => {}, maxRounds = 8, maxCalls = 24, subject = null }) {
+  // spec #5 (11-06): the first round's library search must carry Jev's subject (query-anchor.js) — code checks, never intent
+  const subj = subjectOr(subject, messages);
+  let anchored = false;
   const t0 = Date.now();
   const { found, works, add, show, run } = toolRunner(impl, { search: 'fused_search' });
   run.work_notes_lookup = async ({ title }) => {
@@ -84,19 +88,21 @@ export async function agentAnswer({ messages, create, tools: impl, onEvent = () 
     const r = await create({ messages: msgs, ...(last ? {} : { tools: AGENT_TOOLS, tool_choice: 'auto' }), max_tokens: roleReplyCap('anis-agent') });   // the reply's safety ceiling, never a length cut (11-04)
     usage.in += r?.usage?.prompt_tokens || 0; usage.out += r?.usage?.completion_tokens || 0;
     const m = r?.choices?.[0]?.message || {};
-    const tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
+    let tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
     if (!tcs.length) { final = String(m.content || ''); break; }
+    let rebuilt = null;
+    if (!anchored && hasSearch(tcs)) { anchored = true; ({ tcs, rebuilt } = anchorToolCalls(tcs, subj)); }
     msgs.push({ role: 'assistant', content: m.content || '', tool_calls: tcs });
     firstToolMs ??= Date.now() - t0;
     // independent calls run together; results go back in the order asked
-    const outs = await Promise.all(tcs.map(async (tc) => {
+    const outs = await Promise.all(tcs.map(async (tc, i) => {
       let args = {};
       try { args = JSON.parse(tc.function?.arguments || '{}'); } catch { /* bad args → empty */ }
       const name = tc.function?.name, fn = run[canonical(name)];
       onEvent({ type: 'status', text: STATUS[canonical(name)]?.(args) || name });
       const s0 = Date.now();
       const out = fn ? await fn(args).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`) : 'unknown tool';
-      steps.push({ tool: name, args, found: (String(out).match(/^\[[PWB]\d+\]/gm) || []).length, ms: Date.now() - s0 });
+      steps.push({ tool: name, args, found: (String(out).match(/^\[[PWB]\d+\]/gm) || []).length, ms: Date.now() - s0, ...(rebuilt?.index === i ? { rebuilt_from: rebuilt.from } : {}) });
       return { tc, out };
     }));
     calls += tcs.length;

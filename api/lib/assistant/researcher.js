@@ -14,6 +14,7 @@ import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
 import { headOf, PASSAGE_CHARS } from './prompt.js';
 import { byTier, hasAuthoritative, tierLabel } from './source-tier.js';
 import { copyClass, COPY_CLASSES } from '../audit/forensics.js';
+import { anchorToolCalls, hasSearch, subjectOr } from './query-anchor.js';
 export { translationLabel, letterVariants };
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
@@ -351,9 +352,12 @@ async function resolveSource(nm, question, impl, maxAuthors) {
   return { works, passages, authors, name: nm };
 }
 
-export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, perBook = 1, extraMs = Infinity, drawFrom = null, around = null }) {
+export async function research({ messages, create, tools: impl, maxRounds = 6, maxCalls = 10, brief: wantBrief = true, inBooks = 0, perBook = 1, extraMs = Infinity, drawFrom = null, around = null, subject = null }) {
   const t0 = Date.now();
   const { found, works, searched, run, add, addWork, rowsAround } = toolRunner(impl);
+  // spec #5 (11-06): the first round's library search must carry Jev's subject (query-anchor.js) — code checks, never intent
+  const subj = subjectOr(subject, messages);
+  let anchored = false;
   // the source Jev named is resolved BESIDE the planning round (no added wait); its passages and works join before the book step
   const userQ = clipText([...messages].reverse().find((m) => m.role === 'user')?.content, 300);
   const sourceP = drawFrom ? namedSource(drawFrom, userQ, impl).catch((err) => { log.warn({ drawFrom, err: String(err?.message).slice(0, 160) }, 'named source failed'); return null; }) : null;
@@ -376,8 +380,10 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
       try { r = await ask(); } catch (err2) { throw Object.assign(new Error(`round ${round} after ${Date.now() - t0} ms: ${err2?.message}`), { cause: err2 }); }
     }
     const m = r?.choices?.[0]?.message || {};
-    const tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
+    let tcs = (m.tool_calls || []).slice(0, Math.max(0, maxCalls - calls));
     if (!tcs.length) { final = String(m.content || ''); break; }
+    let rebuilt = null;
+    if (!anchored && hasSearch(tcs)) { anchored = true; ({ tcs, rebuilt } = anchorToolCalls(tcs, subj)); }
     msgs.push({ role: 'assistant', content: m.content || '', tool_calls: tcs });
     // a round's calls run IN PARALLEL (11-03: one by one, three searches and a trace cost 6-15 s). P# refs are numbered as
     // the tools return; the steps and tool messages keep the model's order.
@@ -390,10 +396,10 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
       const out = fn ? await withAIContext(step, () => fn(args)).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`) : 'unknown tool';
       return { tc, args, out };
     }));
-    for (const { tc, args, out } of outs) {
+    for (const [i, { tc, args, out }] of outs.entries()) {
       // originals: how many of the passages it showed are Arabic/Persian (the battery's originals check reads this, never the reply)
       const originals = (String(out).match(ORIGINAL_HEAD) || []).length;
-      steps.push({ tool: tc.function?.name, args, found: (String(out).match(/^\[[PW]\d+\]/gm) || []).length, ...(originals ? { originals } : {}) });
+      steps.push({ tool: tc.function?.name, args, found: (String(out).match(/^\[[PW]\d+\]/gm) || []).length, ...(originals ? { originals } : {}), ...(rebuilt?.index === i ? { rebuilt_from: rebuilt.from } : {}) });
       msgs.push({ role: 'tool', tool_call_id: tc.id, content: clipText(out, TOOL_CHARS) });
     }
     if (!wantBrief && (round === maxRounds - 1 || calls >= maxCalls)) break;

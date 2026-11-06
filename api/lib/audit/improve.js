@@ -4,6 +4,7 @@
 import { getModel } from '../model-registry.js';
 import { modelFor } from '../model-roles.js';
 import { STAGES, FIX_WHERE, COPY_CLASSES, copyClass, routeOf, owedClasses, forensicPass, forensicQueue } from './forensics.js';
+import { MODEL_SEARCH } from '../assistant/query-anchor.js';
 import { TARGETS, inferTarget, targetOf, targetClass } from './improve-targets.js';
 import { runStateOf } from './behavior-proposal.js';
 
@@ -236,7 +237,10 @@ export function turnFromPath({ question, reply, path = {}, traces = [] }) {
   if (!searches.length && evidence.length) searches.push({ trace_id: null, tool: p.recipe || 'retrieval', query: p.plan?.search_query || question, filters: {}, hits: evidence });
   const urls = new Set((String(reply || '').match(/\]\((https?:[^)\s]+)\)/g) || []).map((m) => m.slice(2, -1)));
   const cited = evidence.filter((e) => e.url && urls.has(e.url)).map((e) => ({ doc_id: e.doc_id, title: e.title }));
-  return { route: routeOf(p.recipe || p.plan?.shape), strategy: p.strategy?.choice ?? null, question, reply, searches, writer_passages: evidence, cited };
+  // the model's own search queries (before any subject anchor rebuilt one) and Jev's resolved subject: forensics' query-drift
+  const model_queries = steps.filter((s) => MODEL_SEARCH.has(s.tool)).map((s) => s.rebuilt_from ?? s.args?.query).filter(Boolean);
+  return { route: routeOf(p.recipe || p.plan?.shape), strategy: p.strategy?.choice ?? null, question, reply, searches, writer_passages: evidence, cited,
+    subject: p.triage?.query ?? null, model_queries };
 }
 
 /** Forensic + judge item for a reply; one per search (each trace gets its own verdict). */

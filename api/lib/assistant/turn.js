@@ -236,7 +236,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
         // the quote gate's work on the final text: sentences dropped for unverified quotes, introduced quotations placed/rewritten
         quotes_removed: r.quotes_removed ?? 0, quotes_completed: r.quotes_completed ?? null,
         // the researcher's own calls (11-04 mail-1403: a brief with zero searches was invisible in the thread view)
-        research: Array.isArray(r.plan?.steps) ? { ms: r.plan.ms ?? null, steps: r.plan.steps.slice(0, 40).map((s) => ({ tool: s.tool, found: s.found ?? null,
+        research: Array.isArray(r.plan?.steps) ? { ms: r.plan.ms ?? null, steps: r.plan.steps.slice(0, 40).map((s) => ({ tool: s.tool, found: s.found ?? null, ...(s.rebuilt_from ? { rebuilt_from: String(s.rebuilt_from).slice(0, 200) } : {}),
           args: Object.fromEntries(Object.entries(s.args || {}).map(([k, v]) => [k, typeof v === 'string' ? v.slice(0, 200) : v])) })) } : null,
         // the five stages, each with its choice, who made it and the time: strategy (Jev) → phrases → retrieval → selection → format
         stages: { strategy: { choice: r.plan?.shape ?? null, by: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, ms: r.plan?.plan_ms ?? null },

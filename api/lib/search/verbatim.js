@@ -26,3 +26,14 @@ export function verbatimLead(entries, query, textOf) {
   for (const e of entries) (foldVerbatim(textOf(e)).includes(q) ? lead : rest).push(e);
   return lead.length ? [...lead, ...rest] : entries;
 }
+
+/** The content words of a text: folded (no diacritics), Latin letters only, longer than three letters (forensics' word test). Pure. */
+export const contentWords = (s) => new Set(String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .split(/[^a-z]+/).filter((w) => w.length > 3));
+/** Share of the phrase's content words that the text holds (0..1); a phrase with none counts as fully held (1). Pure. */
+export function wordShare(phrase, text) {
+  const q = contentWords(phrase);
+  if (!q.size) return 1;
+  const w = contentWords(text);
+  return [...q].filter((x) => w.has(x)).length / q.size;
+}

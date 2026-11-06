@@ -9,6 +9,7 @@ import { religionsReply } from './library-facts.js';
 import { findWork, workReply, workLead, workOffer, workAboutQuery, aboutWork, WORK_HOW, linkTitles, dropPreamble } from './work-request.js';
 import { readerUrl } from '../source-links.js';
 import { speakerTradition, followUpAsks } from '../search-plan.js';
+import { jevSubject } from './query-anchor.js';
 import { questionSubject } from '../planned-search.js';
 import { timed } from './timeline.js';
 import { textRequest } from './text-request.js';
@@ -550,10 +551,10 @@ export function liveResearch({ channel, depth } = {}) {
     ...(depth === 'research' ? { perBook: 2, extraMs: 800 } : {}) };
 }
 
-export async function agentRespond({ messages, onEvent, d, t0 }) {
+export async function agentRespond({ messages, onEvent, d, t0, subject = null }) {
   const { agentAnswer, agentTools } = await import('./agent.js');
   onEvent({ type: 'stage', stage: 'search' });
-  const A = await agentAnswer({ messages, onEvent,
+  const A = await agentAnswer({ messages, onEvent, subject,
     create: d.agentCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-agent', params)),
     tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }) });   // search_library = the fast direct path; d.search only serves trace_source
   if (!A.reply) return null;
@@ -594,7 +595,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   // answers the whole turn — on a channel listed in ANIS_AGENT ("site-chat", "email", "all") or when the caller asks
   // (direction.engine: 'agent' | 'pipeline'). A failure falls through to the routed pipeline below.
   if (!fast && !strategyOf(direction.strategy) && agentOn(direction) && !(deps && !d.agentCreate)) {
-    const A = await agentRespond({ messages, onEvent, d, t0 }).catch((err) => { console.warn('anis agent failed', err?.message); return null; });
+    const A = await agentRespond({ messages, onEvent, d, t0, subject: jevSubject(direction, null) }).catch((err) => { console.warn('anis agent failed', err?.message); return null; });
     if (A) return A;
   }
   // Conversation (greetings, thanks, questions about Anis) is not a lookup: answer as ourselves, search nothing.
@@ -639,7 +640,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   const live = liveResearch(direction);
   const researchOn = !fast && !conversational && !work && !(live && strategyOf(direction.strategy))
     && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
-  const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}), drawFrom: plan?.drawFrom?.name || null,
+  const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}), drawFrom: plan?.drawFrom?.name || null, subject: jevSubject(direction, plan),
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;
   const researched = R?.passages?.length || R?.brief ? R : null;

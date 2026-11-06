@@ -403,6 +403,49 @@ describe('plannedSearch — quotations (known-item test 10-16)', () => {
   });
 });
 
+// Spec #4 (11-06): a quotation not found as written is searched by MEANING in the plan's scope (fresh, non-battery lines)
+describe('plannedSearch — a quotation not found verbatim', () => {
+  beforeEach(() => clearPlannedCache());
+  const meaningCall = (c) => c.keywordLayer === false && c.semantic === true && c.phraseLayer === true && c.hype === false;
+  // keyword (verbatim / hybrid) passes find only unrelated text; the meaning-only pass finds the passage
+  const byMeaning = (passage) => {
+    const calls = [];
+    const fn = async (_q, opts) => { calls.push(opts); return { hits: meaningCall(opts) ? [passage] : [{ id: 1, text: 'On the fast of the month and its hours of prayer.' }] }; };
+    return { calls, fn };
+  };
+  it('a Qur’an verse paraphrased in another rendering finds its verse', async () => {
+    const verse = { id: 256, text: 'Let there be no compulsion in religion: Truly the right way has become distinct from error.' };
+    const e = byMeaning(verse);
+    const r = await plannedSearch('nobody may be forced into accepting a faith', { planner: planOf({ tradition: 'Islam' }), engine: e.fn, minResults: 1, qdrant: { phrase: true } });
+    const m = e.calls.filter(meaningCall);
+    expect(m).toHaveLength(1);
+    expect(m[0].filters).toEqual({ religion: 'Islam' });   // the method changes, never the scope
+    expect(r.hits[0].id).toBe(256);
+    expect(r.timings.quote_meaning_hits).toBe(1);
+  });
+  it('a Hidden Word misquoted with two words swapped finds the Hidden Word', async () => {
+    const hw = { id: 1001, text: 'O SON OF SPIRIT! My first counsel is this: Possess a pure, kindly and radiant heart.' };
+    const e = byMeaning(hw);
+    const r = await plannedSearch('possess a kindly, pure and radiant heart — my first counsel', { planner: planOf({}), engine: e.fn, minResults: 1, qdrant: { phrase: true } });
+    expect(e.calls.filter(meaningCall)).toHaveLength(1);
+    expect(r.hits[0].id).toBe(1001);
+  });
+  it('a verbatim quotation takes the keyword path and costs no extra call', async () => {
+    const hw = { id: 1002, text: 'O SON OF MAN! Rejoice in the gladness of thine heart, that thou mayest be worthy to meet Me.' };
+    const e = engine(() => [hw]);
+    const r = await plannedSearch('rejoice in the gladness of thine heart, that thou mayest be worthy', { planner: planOf({}), engine: e.fn, minResults: 1, qdrant: { phrase: true } });
+    expect(e.calls.some((c) => c.keywordLayer === true && c.semantic === false)).toBe(true);   // the verbatim pass
+    expect(e.calls.filter(meaningCall)).toHaveLength(0);
+    expect(r.timings.quote_meaning_ms).toBeUndefined();
+    expect(r.hits[0].id).toBe(1002);
+  });
+  it('a question is never re-searched as a quotation', async () => {
+    const e = byMeaning({ id: 5, text: 'x' });
+    await plannedSearch('why is a pure heart counselled first of all?', { planner: planOf({}), engine: e.fn, minResults: 1, qdrant: { phrase: true } });
+    expect(e.calls.filter(meaningCall)).toHaveLength(0);
+  });
+});
+
 describe('plannedSearch — misspellings (spell.js)', () => {
   beforeEach(() => clearPlannedCache());
   it('searches the corrected words and says so', async () => {
