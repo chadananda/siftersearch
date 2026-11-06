@@ -24,6 +24,10 @@ const AUTHORS = {
   'Universal House of Justice': { aliases: ['Universal House of Justice', 'House of Justice'], about: 'messages of the Universal House of Justice' },
   none: { aliases: null, about: 'no single author’s words are asked for — including when a person is only the SUBJECT of the question ("When was the Báb martyred?" is ABOUT the Báb, not BY him)' },
 };
+/** The Writings pass's author filter (search/writings-pass.js): each Writer's canonical name + aliases, the same path as
+ *  planned-search authorFilter (Qdrant matches author_fold exactly). Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi —
+ *  the House carries no doctrinal weight and is not in it. */
+export const WRITINGS_AUTHORS = [...new Set(['Bahá’u’lláh', 'The Báb', '‘Abdu’l-Bahá', 'Shoghi Effendi'].flatMap((a) => [a, ...AUTHORS[a].aliases]))];
 
 export const SMALL_TALK = /\b(hi|hello|hey|greetings|salaam|thanks?|thank you|bye|goodbye|good (morning|afternoon|evening)|how are you|who are you|what are you|your name|what can you|can you help|are you (a|an|ai|real|human|there)|you)\b/i;
 const SHAPES = {

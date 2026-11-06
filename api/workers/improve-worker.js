@@ -17,7 +17,7 @@ import { modelFor } from '../lib/model-roles.js';
 import { isSpendCap } from '../lib/spend-caps.js';
 import { drainOnSignals, isDraining, nap } from '../lib/drain.js';
 import { startHeartbeat } from '../lib/service-heartbeat.js';
-import { assessSearch, routeOf } from '../lib/audit/forensics.js';
+import { assessSearch, routeOf, owedClasses } from '../lib/audit/forensics.js';
 import { JUDGE_SYSTEM, DEEP_SYSTEM, JUDGE_ROLE, DEEP_ROLE, judgeMessage, parseJudge, deepMessage, parseDeep,
   mergeSuggestions, costOf, priorityOf, turnFromPath, itemsForTurn } from '../lib/audit/improve.js';
 import { targetClass } from '../lib/audit/improve-targets.js';
@@ -171,6 +171,8 @@ export async function work(db, { call = callOpus, replay = replayCurrent, edit =
     if (w.step === 'judge') {
       const r = await call(JUDGE_ROLE, JUDGE_SYSTEM, judgeMessage(w.item), JUDGE_CALL);
       const judge = parseJudge(r.text);
+      // a route-owed class only where the route owes it: a routeless search-page search never owes a Writings pass
+      if (judge) judge.classes = owedClasses(judge.classes, w.item.route);
       if (!judge) throw new (cutOff(r) ? Truncated : Error)(`unparseable judge reply${cutOff(r) ? ' (max_tokens)' : ''}: ${String(r.text).slice(0, 120)}`);
       saveJudge(db, w.item_key, { judge, usd: r.usd, usage: r.usage });
       // the judge named the right option of a Jev gate → that gate's gold label (labelByRef only labels an option the gate offered)

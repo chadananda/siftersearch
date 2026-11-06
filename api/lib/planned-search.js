@@ -2,8 +2,11 @@
 // multi-index engine with the plan's layers (keyword for quotes, HyPE, diversity only when unscoped).
 // SEARCH TARGET (search-target.js): a query that NAMES a person or place is searched under every name the texts use
 // for it ("iderne" → Adrianople / Edirne / Adirnih); passages naming the target lead and carry `targetHighlight`.
+// WRITINGS PASS (search/writings-pass.js): on a Jev route that owes the Writings, one more engine call filtered to the
+// Writers runs in the same Promise.all; its hits lead the Bahá'í share only (other traditions' places unchanged).
 // Deps: search-plan, search-scope; search.js + answer-cache.js + search-target.js loaded lazily so this stays unit-testable.
-import { planSearch, layersFor, leanTradition } from './search-plan.js';
+import { planSearch, layersFor, leanTradition, WRITINGS_AUTHORS } from './search-plan.js';
+import { owesWritings, withWritings, WRITINGS_TOOL } from './search/writings-pass.js';
 import { relaxScope } from './search-scope.js';
 import { foldVerbatim, isVerbatimQuery } from './search/verbatim.js';
 import { hintPlan, applyHints } from './search/hints.js';
@@ -235,7 +238,8 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
   const planMs = Date.now() - t0;
 
   const { SEARCH_VERSION = '' } = engine ? {} : await import('./answer-cache.js').catch(() => ({}));
-  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null, qdrant, weights || null, hints || null, scopes.map((x) => x.docIds), plan.lean?.religion || null]);
+  const writingsPass = owesWritings(plan);
+  const key = JSON.stringify([SEARCH_VERSION, fold(query), plan.filters, plan.prefer?.author || null, plan.shape, limit, scope_config || null, entityIds || null, qdrant, weights || null, hints || null, scopes.map((x) => x.docIds), plan.lean?.religion || null, writingsPass]);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) {
     return { ...hit.value, cached: true, timings: { plan_ms: planMs, search_ms: 0, total_ms: Date.now() - t0 } };
@@ -290,10 +294,14 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
   // author pool is fetched deeper — otherwise "Shoghi Effendi" returned 2 passages.
   const terms = plan.prefer ? subjectTerms(query, plan.prefer) : [];
   const nameOnly = plan.prefer && !terms.length ? nameWords(plan.prefer) : null;
-  const [r, authorHits, verbatimHits] = await Promise.all([
+  // The Writings pass: its own trace tool/endpoint (planned:writings), so forensics sees the route ran it.
+  const writingsSearch = () => withAIContext({ trace: { ...(currentAIContext().trace || {}), tool: WRITINGS_TOOL } },
+    () => search({ ...plan.filters, author: WRITINGS_AUTHORS }, subjectQ, { traceEndpoint: WRITINGS_TOOL }));
+  const [r, authorHits, verbatimHits, writingsHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
     plan.prefer ? search({ ...plan.filters, author: authorFilter(plan.prefer) }, withoutAuthor(subjectQ, plan.prefer), nameOnly ? { limit: limit * NAME_ONLY_DEPTH } : null).catch(() => []) : Promise.resolve([]),
     quotation ? search({}, verbatimQ, KEYWORD_ONLY).catch(() => []) : Promise.resolve([]),
+    writingsPass ? writingsSearch().catch(() => []) : Promise.resolve(null),
   ]);
   stages.passages_ms = Date.now() - t1;
   // CLAIMS GRACE starts NOW (the passages are in) and runs beside target / hints / source resolution — it used to start
@@ -306,6 +314,11 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
     ? await (voices ?? (engine ? null : quotingParagraphs))?.(r.results.map((h) => h.id), plan.prefer.aliases).catch(() => new Set()) ?? new Set()
     : new Set();
   let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, terms, quotedIds, nameOnly) : r.results;
+  if (writingsHits) {
+    hits = withWritings(hits, writingsHits, { limit, scoped: /bah/i.test(String(r.scope?.religion || '')) });
+    stages.writings_hits = writingsHits.length;
+    stages.writings_led = hits.filter((h) => h._writings).length;
+  }
   // The resolve had the whole passage search to finish in; it waits only until TARGET_MS from the start, so it never
   // adds latency beyond that — and never loses a race it did not need to (a 1s timer from t0 dropped "iderne" on a
   // busy box whose passage search alone took 1.5s, 2026-09-28).

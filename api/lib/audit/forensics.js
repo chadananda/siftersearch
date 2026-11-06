@@ -9,6 +9,7 @@ import { lintReply } from '../assistant/lint.js';
 import { teachingsCheck } from '../assistant/teachings-check.js';
 import { budgetFor, engineStages, plannedStages } from '../search/latency-budget.js';
 import { foldKey } from '../search/doctrinal-rank.js';
+import { NEEDS_WRITINGS } from '../search/writings-pass.js';
 
 export const FORENSIC_V = 1;
 export const STAGES = ['STRATEGY', 'RETRIEVAL', 'RANK', 'SELECTION', 'WRITER', 'LATENCY', 'HOLDINGS'];
@@ -16,7 +17,7 @@ export const STAGES = ['STRATEGY', 'RETRIEVAL', 'RANK', 'SELECTION', 'WRITER', '
 /** Where each defect class is fixed: file · function/stage. The work queue prints it beside the count. */
 export const FIX_WHERE = {
   'no-originals-search': 'api/lib/assistant/researcher.js originals quota · strategies.js route recipe (an originals_search step)',
-  'no-writings-pass': 'api/lib/assistant/strategies.js route recipe (a writings-filtered pass)',
+  'no-writings-pass': 'api/lib/search/writings-pass.js owesWritings · planned-search.js (the Writings pass beside the broad pass)',
   'authority-inversion': 'api/lib/search/doctrinal-rank.js + assistant/source-tier.js (copy authority in the rank of copies of one passage)',
   'writings-buried': 'api/lib/search/doctrinal-rank.js (Writings below commentary on a doctrinal route)',
   'best-copy-missed': 'search recall (index/filters): the replay with a Writings/originals filter finds it, the route did not',
@@ -37,9 +38,16 @@ export const FIX_WHERE = {
 // ── routes: which tools a route owes (class rules) ─────────────────────────────────────────────────────────────────────
 const DOCTRINAL = new Set(['quote', 'source', 'teachings', 'topic', 'define', 'original', 'best-expression', 'survey-subject', 'examine-position']);
 const NEEDS_ORIGINALS = new Set(['quote', 'source', 'teachings', 'original']);
-const NEEDS_WRITINGS = new Set(['teachings', 'topic', 'best-expression', 'survey-subject', 'examine-position']);
+// NEEDS_WRITINGS lives with the pass itself (search/writings-pass.js) so the rule and the recipe cannot drift
+export { NEEDS_WRITINGS };
 /** route label from a trace ('planned:quote', 'answer(quote)', 'quote') → 'quote'. */
 export const routeOf = (r) => String(r || '').replace(/^planned:/, '').replace(/^answer\((.*)\)$/, '$1').trim().toLowerCase() || null;
+/** A Writings pass is owed ONLY on a route Jev chose in NEEDS_WRITINGS. A search with no route (the search page, the public
+ *  API — 507 of the first 581 no-writings-pass audits) owes none and is never flagged for it. */
+export const owesWritingsPass = (route) => NEEDS_WRITINGS.has(routeOf(route));
+/** The judge's classes for an item, minus the route-owed ones its route does not owe (the judge read "a teachings question
+ *  with no Writings pass" into routeless search-page searches). Pure. */
+export const owedClasses = (classes = [], route = null) => classes.filter((c) => c !== 'no-writings-pass' || owesWritingsPass(route));
 
 const ORIGINAL_LANG = /^(ar|fa|per|pes|ara)/i;
 const isOriginal = (h) => ORIGINAL_LANG.test(String(h?.language || h?.lang || ''));
@@ -160,7 +168,7 @@ export function forensicPass(turn = {}) {
   // STRATEGY: tools the route owes
   if (NEEDS_ORIGINALS.has(route) && searches.length && !searches.some(searchedOriginals) && !(turn.research?.steps || []).some((x) => x.originals > 0 || x.tool === 'originals_search'))
     add('STRATEGY', 'no-originals-search', `${route} route ran no original-language (Persian/Arabic) search`, { tools: searches.map((s) => s.tool) });
-  if (NEEDS_WRITINGS.has(route) && searches.length && !searches.some(searchedWritings))
+  if (owesWritingsPass(route) && searches.length && !searches.some(searchedWritings))
     add('STRATEGY', 'no-writings-pass', `${route} route ran no Writings-filtered pass`, { tools: searches.map((s) => s.tool) });
 
   // RANK / LATENCY / RETRIEVAL from each search (one defect per class+stage: the worst instance carries the evidence)

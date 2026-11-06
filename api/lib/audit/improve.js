@@ -3,7 +3,7 @@
 // deduped into a durable log (evidence count grows instead of duplicates). No I/O here; the worker is api/workers/improve-worker.js.
 import { getModel } from '../model-registry.js';
 import { modelFor } from '../model-roles.js';
-import { STAGES, FIX_WHERE, COPY_CLASSES, copyClass, routeOf, forensicPass, forensicQueue } from './forensics.js';
+import { STAGES, FIX_WHERE, COPY_CLASSES, copyClass, routeOf, owedClasses, forensicPass, forensicQueue } from './forensics.js';
 import { TARGETS, inferTarget, targetOf, targetClass } from './improve-targets.js';
 import { runStateOf } from './behavior-proposal.js';
 
@@ -31,7 +31,8 @@ prints a Tablet is a WEAKER copy of that Tablet, even when its wording matches e
 
 STAGES (every weakness belongs to exactly one; name the stage that must change, not the one where it became visible):
 - STRATEGY: the route chose the wrong searches — a quote/source/teachings question with no original-language
-  (Persian/Arabic) search, a teachings question with no Writings-filtered pass, the wrong route for the question.
+  (Persian/Arabic) search, a teachings/topic ROUTE with no Writings-filtered pass (only an item that names its route owes
+  one — a search with no route never does), the wrong route for the question.
 - RETRIEVAL: the best copy was never retrieved (recall), zero hits, a filter that excluded what was needed.
 - RANK: an authoritative copy ranked below a weaker copy of the same passage, or Writings below commentary on a
   doctrinal route (authority inversion, writings buried).
@@ -259,7 +260,7 @@ export function forensicsReport(rows = [], prevRows = [], { stage = null, exampl
   const judged = rows.filter((r) => r.judge);
   const weak = judged.filter((r) => r.judge.verdict === 'weak');
   const byClass = {};
-  for (const r of weak) for (const c of r.judge.classes || []) byClass[c] = (byClass[c] || 0) + 1;
+  for (const r of weak) for (const c of owedClasses(r.judge.classes || [], r.route)) byClass[c] = (byClass[c] || 0) + 1;
   const usd = rows.reduce((a, r) => a + (r.judge_usd || 0) + (r.deep_usd || 0), 0);
   return {
     replies: forensicQueue(asQ(rows, 'reply'), asQ(prevRows, 'reply'), { stage, examples }),

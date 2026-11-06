@@ -1,7 +1,10 @@
 // plannedSearch: plan (one Jev call) → cache → narrow-then-relax over the multi-index engine with the plan's layers.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { plannedSearch, clearPlannedCache, leadWithTarget, notPassage } from '../../api/lib/planned-search.js';
-import { buildPlan, planSearch } from '../../api/lib/search-plan.js';
+import { buildPlan, planSearch, WRITINGS_AUTHORS } from '../../api/lib/search-plan.js';
+import { sourceTier } from '../../api/lib/assistant/source-tier.js';
+import { currentAIContext } from '../../api/lib/ai-context.js';
+import { owesWritings, withWritings } from '../../api/lib/search/writings-pass.js';
 
 const planOf = (o) => async (_input, { given } = {}) => ({ ...buildPlan({
   tradition: { choice: o.tradition ?? 'none', confidence: 0.95 }, comparative: { noul: 0 },
@@ -445,5 +448,109 @@ describe('prewarmSearch', () => {
     const seen = [], legacy = [];
     await prewarmSearch('justice', { qdrant: { only: false, phrase: false }, vocab: new Set(), vector: async (q) => seen.push(q), legacy: async (q) => legacy.push(q) });
     expect(seen).toHaveLength(0); expect(legacy).toEqual(['justice']);
+  });
+});
+
+// Spec #1 (planning/anis-suggestions-analysis-20261106.md): a Writings pass BESIDE the broad pass on a Jev route that owes
+// one. Fresh class cases (never battery questions): hits carry only metadata, the class rules decide.
+describe('plannedSearch: the Writings pass (spec #1)', () => {
+  beforeEach(() => clearPlannedCache());
+  const BAHAI = 'Bahá’í';
+  const jev = (o = {}) => async (_input, { given } = {}) => ({ ...buildPlan({
+    tradition: { choice: o.tradition ?? 'none', confidence: 0.95 }, comparative: { noul: o.comparative ? 0.9 : 0 },
+    author: { choice: o.author ?? 'none', confidence: 0.95 }, shape: { choice: o.shape ?? 'topic', confidence: 0.9 },
+  }, { given }), provenance: o.provenance ?? 'jev', ms: 5 });
+  const isWritingsCall = (opts) => Array.isArray(opts.filters?.author) && opts.filters.author.length === WRITINGS_AUTHORS.length;
+  const broad = [
+    { id: 1, author: 'A Scholar', title: 'Essays on Suffering', religion: BAHAI },
+    { id: 2, author: 'Augustine', title: 'Confessions', religion: 'Christianity' },
+    { id: 3, author: 'Buddhaghosa', title: 'Path of Purification', religion: 'Buddhism' },
+    { id: 4, author: 'Another Writer', title: 'A Study of Tests', religion: BAHAI },
+    { id: 5, author: 'Thomas Aquinas', title: 'Summa', religion: 'Christianity' },
+  ];
+  const writings = [
+    { id: 20, author: '‘Abdu’l-Bahá', title: 'Paris Talks', religion: BAHAI },              // reported: never leads as a Writing
+    { id: 21, author: 'Shoghi Effendi', title: 'The Advent of Divine Justice', religion: BAHAI },
+    { id: 22, author: 'Bahá’u’lláh', title: 'Gleanings from the Writings of Bahá’u’lláh', religion: BAHAI },
+  ];
+  const twoPass = (broadHits = broad) => {
+    const calls = [], tools = [];
+    let inFlight = 0, maxInFlight = 0;
+    const fn = async (_q, opts) => {
+      calls.push(opts); tools.push(currentAIContext()?.trace?.tool ?? null);
+      inFlight++; maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((ok) => setTimeout(ok, 5));
+      inFlight--;
+      return { hits: isWritingsCall(opts) ? writings : broadHits };
+    };
+    return { calls, tools, fn, max: () => maxInFlight };
+  };
+  const byReligion = (hits) => hits.reduce((a, h) => ({ ...a, [h.religion]: (a[h.religion] || 0) + 1 }), {});
+
+  it('a teachings question on a fresh concept: a Writing is in the top 3, the pass filtered to the four Writers', async () => {
+    const e = twoPass();
+    const r = await plannedSearch('what is the purpose of suffering', { planner: jev(), engine: e.fn });
+    const w = e.calls.find(isWritingsCall);
+    expect(w).toBeTruthy();
+    expect(w.filters.author).toEqual(expect.arrayContaining(['Bahá’u’lláh', 'Bahaullah', 'Báb', '‘Abdu’l-Bahá', 'Abdu', 'Shoghi Effendi', 'Shoghi']));
+    expect(w.filters.author.some((a) => /house|research/i.test(a))).toBe(false);
+    expect(r.hits.slice(0, 3).some((h) => ['writings', 'guardian'].includes(sourceTier(h)))).toBe(true);
+    expect(r.hits[0].id).toBe(22);                                       // tier order: the Writings before the Guardian
+    expect(r.hits.map((h) => h.id)).not.toContain(20);                  // a recorded talk is not a Writing
+  });
+
+  it('unscoped and interfaith comparison: every other tradition keeps its places and its share', async () => {
+    for (const comparative of [false, true]) {
+      clearPlannedCache();
+      const e = twoPass();
+      const r = await plannedSearch('how do the traditions see detachment from the world', { planner: jev({ comparative }), engine: e.fn });
+      expect(e.calls.some(isWritingsCall)).toBe(true);
+      expect(byReligion(r.hits)).toEqual(byReligion(broad));
+      broad.forEach((h, i) => { if (h.religion !== BAHAI) expect(r.hits[i].id).toBe(h.id); });
+      expect(r.hits.filter((h) => h.religion === BAHAI).map((h) => h.id)).toEqual([22, 21]);
+    }
+  });
+
+  it('scoped to the Bahá’í Faith: the Writings lead, the broad hits follow', async () => {
+    const own = [1, 4, 6, 7].map((id) => ({ id, author: 'A Scholar', title: `Study ${id}`, religion: BAHAI }));
+    const e = twoPass(own);
+    const r = await plannedSearch('the wisdom of tests and difficulties', { planner: jev({ tradition: "Baha'i" }), engine: e.fn });
+    expect(r.hits.map((h) => h.id).slice(0, 4)).toEqual([22, 21, 1, 4]);
+  });
+
+  it('a question that names an author: the author pass leads and no Writings pass runs', async () => {
+    const e = twoPass();
+    await plannedSearch('Shoghi Effendi on the oneness of mankind', { planner: jev({ author: 'Shoghi Effendi' }), engine: e.fn });
+    expect(e.calls.some(isWritingsCall)).toBe(false);
+    expect(e.calls.some((c) => Array.isArray(c.filters?.author) && c.filters.author.includes('Shoghi Effendi'))).toBe(true);
+  });
+
+  it('latency: one extra engine call, in parallel with the broad pass, stamped planned:writings', async () => {
+    const off = twoPass();
+    await plannedSearch('the meaning of sacrifice', { planner: jev({ shape: 'fact' }), engine: off.fn });
+    clearPlannedCache();
+    const on = twoPass();
+    await plannedSearch('the meaning of sacrifice', { planner: jev(), engine: on.fn });
+    expect(on.calls.length).toBe(off.calls.length + 1);
+    expect(on.max()).toBeGreaterThanOrEqual(2);
+    const i = on.calls.findIndex(isWritingsCall);
+    expect(on.calls[i].traceEndpoint).toBe('planned:writings');
+    expect(on.tools[i]).toBe('planned:writings');
+  });
+
+  it('only Jev’s route owes it: a backstop default topic, a route that owes none, another tradition run no pass', async () => {
+    for (const o of [{ provenance: 'backstop' }, { shape: 'fact' }, { shape: 'lookup' }, { tradition: 'Buddhist' }]) {
+      clearPlannedCache();
+      const e = twoPass();
+      await plannedSearch('equanimity in hardship', { planner: jev(o), engine: e.fn });
+      expect(e.calls.some(isWritingsCall)).toBe(false);
+    }
+  });
+
+  it('withWritings / owesWritings: no Writing held → the broad list untouched; a quote plan owes none', () => {
+    expect(withWritings(broad, [writings[0]])).toBe(broad);
+    expect(owesWritings({ provenance: 'jev', shape: 'topic', filters: {} })).toBe(true);
+    expect(owesWritings({ provenance: 'jev', shape: 'quote', filters: {} })).toBe(false);
+    expect(owesWritings({ shape: 'topic', filters: {} })).toBe(false);
   });
 });

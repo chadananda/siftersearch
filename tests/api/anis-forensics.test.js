@@ -1,7 +1,8 @@
 // Forensic pass (api/lib/audit/forensics.js): the 11-03 quote case ("Religion is the greatest of all means…") is the
 // definition of forensic — the exact defects, each owned by its stage — plus the class rules on their own and the queue.
 import { describe, it, expect } from 'vitest';
-import { forensicPass, assessSearch, copyClass, forensicQueue, forensicTable, defectLines, routeOf } from '../../api/lib/audit/forensics.js';
+import { forensicPass, assessSearch, copyClass, forensicQueue, forensicTable, defectLines, routeOf, owesWritingsPass, owedClasses, NEEDS_WRITINGS } from '../../api/lib/audit/forensics.js';
+import { NEEDS_WRITINGS as PASS_ROUTES, WRITINGS_TOOL } from '../../api/lib/search/writings-pass.js';
 
 import { CASE_1103, Q } from '../fixtures/anis-case-1103.js';
 
@@ -66,6 +67,31 @@ describe('forensics: class rules', () => {
     expect(f.defects).toEqual([]);
     expect(assessSearch({ tool: 'x', hits: [{ title: 'y' }], timings: { total: 400 } }).verdict).toBe('ok');
     expect(routeOf('answer(quote)')).toBe('quote');
+  });
+});
+
+describe('forensics: the Writings pass is owed only on a Jev route that needs it (spec #1)', () => {
+  const search = (tool) => ({ trace_id: 'w', tool, query: 'forgiveness', filters: {}, hits: [{ rank: 1, doc_id: 3, title: 'Some Essay', author: 'A Scholar' }] });
+  it('one set, shared with the pass itself', () => {
+    expect(NEEDS_WRITINGS).toBe(PASS_ROUTES);
+  });
+  it('a search with no route (the search page) is never flagged', () => {
+    const f = forensicPass({ route: null, question: 'forgiveness', reply: '', searches: [search('multi-index')] });
+    expect(f.defects.map((d) => d.class)).not.toContain('no-writings-pass');
+    expect(owesWritingsPass(null)).toBe(false);
+    expect(owesWritingsPass('planned:topic')).toBe(true);
+    expect(owesWritingsPass('fact')).toBe(false);
+  });
+  it('a topic route without the pass is flagged; with the planned:writings pass it is not', () => {
+    const owed = forensicPass({ route: 'topic', question: 'forgiveness', reply: '', searches: [search('planned:topic')] });
+    expect(owed.defects.map((d) => d.class)).toContain('no-writings-pass');
+    const ran = forensicPass({ route: 'topic', question: 'forgiveness', reply: '', searches: [search('planned:topic'), search(WRITINGS_TOOL)] });
+    expect(ran.defects.map((d) => d.class)).not.toContain('no-writings-pass');
+  });
+  it("the judge's no-writings-pass is dropped where the item's route owes none", () => {
+    expect(owedClasses(['no-writings-pass', 'writings-buried'], null)).toEqual(['writings-buried']);
+    expect(owedClasses(['no-writings-pass'], 'lookup')).toEqual([]);
+    expect(owedClasses(['no-writings-pass'], 'topic')).toEqual(['no-writings-pass']);
   });
 });
 
