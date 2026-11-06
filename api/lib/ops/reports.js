@@ -55,6 +55,7 @@ import { compilationAuthorsJob } from './compilation-authors-job.js';
 import { rightsIsbnJob } from './rights-isbn-job.js';
 import { bookHuntJob, bookHuntApplyJob, bookMetaCoverageReport, rightsPublisherJob, bookAuthorPhotosReport, bookAuthorPhotoSetJob, rightsOpenPublisherJob, excludeRuhiJob } from './book-hunt-job.js';
 import { docCorrectionsJob } from './doc-corrections-job.js';
+import { oceanoflightsSlugAuthorsJob } from './oceanoflights-slug-authors-job.js';
 import { lettersIndexJob } from './letters-index-job.js';
 import { sourceLinksBuildJob } from './source-links-build-job.js';
 export { INDEX_LANES, INDEX_JOB_NAMES };
@@ -251,6 +252,7 @@ REPORTS['dewey-ocr'] = deweyOcrJob;             // params: { id } — a scan's f
 REPORTS['source-links-build'] = sourceLinksBuildJob;   // params { docIds?, limit, write } — compilation quotes of the Central Figures / Shoghi Effendi → their source (SourceHunt)
 REPORTS['letters-index'] = lettersIndexJob;   // params { author, collection } — an author's letters (books, chapters, dated messages) for the letter lookup
 REPORTS['doc-corrections'] = docCorrectionsJob;   // params { fixes: [{ id, author?, title?, translators? }], write } — a person's record corrections
+REPORTS['oceanoflights-slug-authors'] = oceanoflightsSlugAuthorsJob;   // params { write, limit?, sample? } — slug authors on oceanoflights.org → the Central Figure the prefix names; dry by default; write queues doc-author-restamp
 REPORTS['compilation-authors'] = compilationAuthorsJob;   // params { write } — library records crediting a compilation to its first contributor
 REPORTS['rights-isbn'] = rightsIsbnJob;   // params { write, ids?, limit? } — a non-canonical BOOK with its own ISBN → encumbered (Chad 10-23); dry run by default
 REPORTS['book-hunt'] = bookHuntJob;   // params { limit, redo, ids } — ISBN/publisher/year/edition/purchase link/cover/author photo+dates per book (Chad 10-23); resumes

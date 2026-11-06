@@ -84,13 +84,14 @@ function selectList(fields) {
  * still applies, so recall never returns tombstones or husks unless asked for by name.
  */
 export async function listDocs({
-  scope = 'live', author, religion, collection, language, sourceSite, sourceUrls, title, ids, role, filePath, afterId,
+  scope = 'live', author, authorLike, religion, collection, language, sourceSite, sourceUrls, title, ids, role, filePath, afterId,
   excludeCollections, fields, orderBy = 'id', limit = 100, offset = 0, count = true,
 } = {}) {
   const where = scopeSql(scope);
   const params = [];
   if (Array.isArray(author)) { if (author.length) { where.push(`d.author IN (${author.map(() => '?').join(',')})`); params.push(...author); } }   // spelling variants
   else if (author) { where.push('d.author = ?'); params.push(author); }
+  if (authorLike) { where.push('d.author LIKE ?'); params.push(authorLike); }   // prefix match, e.g. 'file-%' (slug authors)
   if (religion) { where.push('d.religion = ?'); params.push(religion); }
   if (collection) { where.push('d.collection = ?'); params.push(collection); }
   if (language) { where.push('d.language = ?'); params.push(language); }
