@@ -8,7 +8,7 @@ import { modelFor, retireDeepSeek } from './model-roles.js';
 import { getModel, thinkingParam } from './model-registry.js';
 import { assertAnthropicAllowed, guardLongContext } from './anthropic-policy.js';
 import { logAIUsage } from './ai-services.js';
-import { assertSpendCap } from './spend-caps.js';
+import { assertSpendCap, noteCreditOut } from './spend-caps.js';
 
 const BASE_URL = { openai: undefined, groq: 'https://api.groq.com/openai/v1', deepseek: 'https://api.deepseek.com/v1',
   gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/', anthropic: 'https://api.anthropic.com/v1/' };
@@ -49,7 +49,7 @@ export async function roleCreate(role, params, opts = {}) {
   guardLongContext({ model, messages: params.messages || [], caller: role });   // the cheap price tier, never silently past it
   const shaped = shapeParams(params, { provider, model });
   if (params.stream) shaped.stream_options = { include_usage: true, ...params.stream_options };
-  const res = await clientFor(provider).chat.completions.create(shaped, opts);
+  const res = await clientFor(provider).chat.completions.create(shaped, opts).catch((err) => { throw noteCreditOut(provider, err) || err; });   // out of credit → wait, not fail
   const log = (usage) => usage && logAIUsage({ provider: provider === 'gemini' ? 'google' : provider, model, serviceType: 'chat',
     caller: role, promptTokens: usage.prompt_tokens ?? 0, completionTokens: usage.completion_tokens ?? 0 });
   if (!params.stream) { log(res?.usage); return res; }
@@ -70,7 +70,7 @@ export async function roleBatchCreate(role, params, { client } = {}) {
   const native = { model, max_tokens: params.max_completion_tokens ?? params.max_tokens, messages: params.messages,
     ...(shaped.temperature != null ? { temperature: shaped.temperature } : {}), ...(shaped.thinking ? { thinking: shaped.thinking } : {}) };
   const c = client || (await import('./anthropic-batch.js')).batchClient();
-  const res = await c.submit({ role, params: native });
+  const res = await c.submit({ role, params: native }).catch((err) => { throw noteCreditOut(provider, err) || err; });
   const u = res?.usage;
   if (u && res.billed !== false) logAIUsage({ provider, model, serviceType: 'chat', caller: role, batch: true,
     promptTokens: u.prompt_tokens ?? 0, completionTokens: u.completion_tokens ?? 0, cachedTokens: u.cached_tokens ?? 0, cacheWriteTokens: u.cache_write_tokens ?? 0 });

@@ -4,8 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-vi.mock('../../api/lib/repos/ai-usage-repo.js', () => ({ dailySpendByCaller: vi.fn(async () => ({})) }));
-import { groupOf, capFor, dayOf, assertSpendCap, capStatus, isSpendCap, SpendCapError, waitMs, _reset } from '../../api/lib/spend-caps.js';
+vi.mock('../../api/lib/repos/ai-usage-repo.js', () => ({ dailySpendByCaller: vi.fn(async () => ({})), dailySpendByProvider: vi.fn(async () => ({})) }));
+import { groupOf, capFor, dayOf, assertSpendCap, capStatus, isSpendCap, SpendCapError, waitMs, _reset, providerCapFor, noteCreditOut } from '../../api/lib/spend-caps.js';
 import { anisTurn } from '../../api/lib/assistant/turn.js';
 import { SPEND_CAP_REPLY } from '../../api/lib/assistant/limits.js';
 import { makeStrikes } from '../../api/lib/assistant/strikes.js';
@@ -122,5 +122,54 @@ describe('Anís at the cap', () => {
   });
   it('any other error still throws', async () => {
     await expect(base({ respond: async () => { throw new Error('boom'); } }).run()).rejects.toThrow('boom');
+  });
+});
+
+describe('the Anthropic-wide cap (Chad 11-06: "cap anthropic costs to $20/day. when it hits that budget, queue up the work")', () => {
+  const NOW = Date.parse('2026-11-06T12:00:00Z');
+  const deps = (provider, caller = {}) => ({ byCaller: async () => caller, byProvider: async () => provider, alert: { send: async () => {} } });
+  it('$20 a day from 11-06; background work stops at $15 so live Anís replies keep the last $5', () => {
+    expect(providerCapFor('anthropic', '2026-11-06')).toEqual({ usd: 20, background_usd: 15 });
+    expect(providerCapFor('anthropic', '2026-11-05')).toBe(null);
+    expect(providerCapFor('openai', '2026-11-06')).toBe(null);
+    expect(providerCapFor('anthropic', '2026-11-06', undefined, { SPEND_CAP_ANTHROPIC_TOTAL_USD: '7' })).toEqual({ usd: 7, background_usd: 7 });
+  });
+  it('every group counts: improve, media and other wait at $15 of Anthropic spend; anis at $20; other providers unaffected', async () => {
+    for (const c of ['improve-judge', 'media-clean-strong', 'segmenter']) {
+      _reset();
+      await expect(assertSpendCap(c, { provider: 'anthropic', now: NOW, deps: deps({ anthropic: 15.01 }) })).rejects.toMatchObject({ code: 'SPEND_CAP', group: 'anthropic-total' });
+    }
+    _reset();
+    await expect(assertSpendCap('improve-judge', { provider: 'anthropic', now: NOW, deps: deps({ anthropic: 14.9 }) })).resolves.toBeUndefined();
+    _reset();
+    await expect(assertSpendCap('anis-agent', { provider: 'anthropic', now: NOW, deps: deps({ anthropic: 19 }) })).resolves.toBeUndefined();
+    _reset();
+    await expect(assertSpendCap('anis-agent', { provider: 'anthropic', now: NOW, deps: deps({ anthropic: 20 }) })).rejects.toMatchObject({ group: 'anthropic-total' });
+    _reset();
+    await expect(assertSpendCap('improve-judge', { provider: 'google', now: NOW, deps: deps({ anthropic: 50 }) })).resolves.toBeUndefined();
+  });
+  it('the refusal is a wait until the next UTC day (queue work keeps its place)', async () => {
+    const err = await assertSpendCap('media-assess', { provider: 'anthropic', now: NOW, deps: deps({ anthropic: 16 }) }).catch((e) => e);
+    expect(isSpendCap(err)).toBe(true);
+    expect(err.retryAfterMs).toBe(waitMs(NOW));
+  });
+  it('capStatus shows the provider row', async () => {
+    const rows = await capStatus({ now: NOW, deps: deps({ anthropic: 16 }) });
+    expect(rows.find((r) => r.group === 'anthropic-total')).toMatchObject({ spent_usd: 16, cap_usd: 20, background_cap_usd: 15, blocking: false, background_blocking: true });
+  });
+});
+
+describe('out of credit → wait, not fail (11-06: 40,375 failed calls in 6 h on an empty balance)', () => {
+  const NOW = Date.parse('2026-11-06T12:00:00Z');
+  it('the provider\'s credit refusal becomes a SpendCapError, and later calls wait without asking the provider', async () => {
+    const e = noteCreditOut('anthropic', { status: 400, message: 'Your credit balance is too low to access the Anthropic API.' }, NOW);
+    expect(isSpendCap(e)).toBe(true);
+    expect(e.credit).toBe(true);
+    await expect(assertSpendCap('improve-judge', { provider: 'anthropic', now: NOW + 60_000, deps: spend({}) })).rejects.toMatchObject({ group: 'anthropic-credit' });
+    await expect(assertSpendCap('improve-judge', { provider: 'anthropic', now: NOW + 16 * 60_000, deps: { ...spend({}), byProvider: async () => ({}) } })).resolves.toBeUndefined();
+  });
+  it('an ordinary error stays an ordinary error', () => {
+    expect(noteCreditOut('anthropic', { status: 529, message: 'Overloaded' })).toBe(null);
+    expect(noteCreditOut('anthropic', { status: 429, message: 'rate limit: requests per minute' })).toBe(null);
   });
 });

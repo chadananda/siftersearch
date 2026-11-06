@@ -2,7 +2,8 @@
 // every paid call and batch submit; at the cap it throws SpendCapError (code SPEND_CAP) and alerts once per group per day.
 // Spend = ai-usage-repo's incremental UTC-day rollup (never a table SUM), cached a few seconds per process. Deps: ai-usage-repo, ops/alert.
 import { readFileSync } from 'fs';
-import { dailySpendByCaller } from './repos/ai-usage-repo.js';
+import { dailySpendByCaller, dailySpendByProvider } from './repos/ai-usage-repo.js';
+import { isExhaustion } from './spend-alerts.js';
 import { actionRequired } from './ops/alert.js';
 import { logger } from './logger.js';
 import { currentAIContext } from './ai-context.js';
@@ -15,9 +16,9 @@ const WAIT_CAP_MS = 30 * 60_000;   // a waiting queue worker looks again at leas
 export const dayOf = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
 
 export class SpendCapError extends Error {
-  constructor({ group, spent, cap, caller, retryAfterMs }) {
-    super(`spend cap reached: ${group} $${spent.toFixed(2)} of $${cap} today (${caller || 'no caller'}) — waits for the next UTC day`);
-    Object.assign(this, { name: 'SpendCapError', code: 'SPEND_CAP', group, spent, cap, caller, retryAfterMs, isBudget: true });
+  constructor({ group, spent, cap, caller, retryAfterMs, credit = false }) {
+    super(credit ? `${caller} is out of credit — work waits and retries` : `spend cap reached: ${group} $${spent.toFixed(2)} of $${cap} today (${caller || 'no caller'}) — waits for the next UTC day`);
+    Object.assign(this, { name: 'SpendCapError', code: 'SPEND_CAP', group, spent, cap, caller, retryAfterMs, credit, isBudget: true });
   }
 }
 export const isSpendCap = (err) => err?.code === 'SPEND_CAP';
@@ -43,9 +44,29 @@ export function capFor(group, day = dayOf(), cfg = CONFIG, env = process.env) {
 /** ms until the next UTC midnight, at most WAIT_CAP_MS and at least a minute — how long a queue worker backs off. Pure. */
 export const waitMs = (now = Date.now()) => Math.max(60_000, Math.min(WAIT_CAP_MS, Date.parse(`${dayOf(now)}T00:00:00Z`) + 86_400_000 - now));
 
+/** The provider-wide cap on a UTC day → { usd, background_usd } or null (none): env SPEND_CAP_<PROVIDER>_TOTAL_USD sets both. Pure. */
+export function providerCapFor(provider, day = dayOf(), cfg = CONFIG, env = process.env) {
+  const o = env[`SPEND_CAP_${String(provider).toUpperCase()}_TOTAL_USD`];
+  if (o != null && o !== '' && Number.isFinite(Number(o))) return { usd: Number(o), background_usd: Number(o) };
+  const e = (cfg.providers?.[provider] || []).filter((x) => x.from <= day).sort((a, b) => (a.from < b.from ? -1 : 1)).at(-1);
+  return e ? { usd: e.usd, background_usd: e.background_usd ?? e.usd } : null;
+}
+
+// ── out of credit: the provider's own refusal becomes a SpendCapError, so queue work waits (never marked failed) and
+// every later call in this process waits too, without asking the provider again, until CREDIT_WAIT_MS has passed.
+// (11-06: an empty Anthropic balance had the improve worker failing ~2 calls a second, 40,375 in 6 h.)
+const CREDIT_WAIT_MS = Number(process.env.SPEND_CREDIT_WAIT_MS) || 15 * 60_000;
+const creditOut = new Map();   // provider → until (ms)
+/** A failed provider call → a SpendCapError to throw instead when it means "no credit left", else null (throw the original). */
+export function noteCreditOut(provider, err, now = Date.now()) {
+  if (!provider || !isExhaustion({ status: err?.status ?? null, message: err?.message || String(err ?? '') })) return null;
+  creditOut.set(provider, now + CREDIT_WAIT_MS);
+  return new SpendCapError({ group: `${provider}-credit`, spent: 0, cap: 0, caller: provider, retryAfterMs: CREDIT_WAIT_MS, credit: true });
+}
+
 // ── today's spend per group: one rollup read per TTL per process (about six API processes share the table; a small overrun is accepted) ──
 let cache = null, inflight = null;
-export const _reset = () => { cache = null; inflight = null; alerted.clear(); };
+export const _reset = () => { cache = null; inflight = null; pcache = null; pinflight = null; alerted.clear(); creditOut.clear(); };
 export async function spendByGroup({ now = Date.now(), deps = {} } = {}) {
   const day = dayOf(now);
   if (cache && cache.day === day && now - cache.at < TTL_MS) return cache.sums;
@@ -61,13 +82,36 @@ export async function spendByGroup({ now = Date.now(), deps = {} } = {}) {
   return inflight;
 }
 
+// ── today's spend per provider: the same cached rollup pattern
+let pcache = null, pinflight = null;
+export async function spendByProvider({ now = Date.now(), deps = {} } = {}) {
+  const day = dayOf(now);
+  if (pcache && pcache.day === day && now - pcache.at < TTL_MS) return pcache.sums;
+  pinflight ||= (async () => {
+    try { pcache = { day, at: now, sums: await (deps.byProvider || dailySpendByProvider)(deps.rollup) }; }
+    catch (err) { logger.warn({ err: err.message }, 'spend caps: could not read today\'s provider spend — not blocking'); pcache ||= { day, at: now, sums: {} }; pcache.at = now; }
+    finally { pinflight = null; }
+    return pcache.sums;
+  })();
+  return pinflight;
+}
+
 /** Each group's spend today against its cap. → [{ group, spent_usd, cap_usd, remaining_usd, blocking }] */
 export async function capStatus({ now = Date.now(), deps = {}, cfg = CONFIG } = {}) {
   const sums = await spendByGroup({ now, deps }), day = dayOf(now);
   return [...new Set([cfg.default, ...Object.keys(cfg.caps), ...Object.keys(sums)])].map((group) => {
     const cap = capFor(group, day, cfg), spent = sums[group] || 0;
     return { group, spent_usd: Math.round(spent * 100) / 100, cap_usd: Number.isFinite(cap) ? cap : null, remaining_usd: Number.isFinite(cap) ? Math.round((cap - spent) * 100) / 100 : null, blocking: spent >= cap };
-  });
+  }).concat(await providerRows({ now, deps, cfg }));
+}
+async function providerRows({ now, deps, cfg }) {
+  const day = dayOf(now), names = Object.keys(cfg.providers || {}).filter((k) => !k.startsWith('_') && k !== 'interactive');
+  if (!names.length) return [];
+  const sums = await spendByProvider({ now, deps });
+  return names.map((p) => providerCapFor(p, day, cfg) && (({ usd, background_usd }) => {
+    const spent = sums[p] || 0, r = (x) => Math.round(x * 100) / 100;
+    return { group: `${p}-total`, spent_usd: r(spent), cap_usd: usd, background_cap_usd: background_usd, remaining_usd: r(usd - spent), blocking: spent >= usd, background_blocking: spent >= background_usd };
+  })(providerCapFor(p, day, cfg))).filter(Boolean);
 }
 
 // ONE alert per group per day, and only when the cap actually refused a call: an in-process flag, then the shared stamp file (key carries the day)
@@ -86,9 +130,19 @@ export async function assertSpendCap(caller, { provider = null, now = Date.now()
   caller = currentAIContext().billTo || caller;   // a scope that bills elsewhere (the strategy dry run → improve-replay) checks that group's cap
   if (FREE_PROVIDERS.has(provider) || (cfg.exempt || []).includes(caller)) return;
   const group = groupOf(caller, cfg), day = dayOf(now), cap = capFor(group, day, cfg);
-  if (!Number.isFinite(cap)) return;
-  const spent = (await spendByGroup({ now, deps }))[group] || 0;
-  if (spent < cap) return;
-  await alertOnce(group, day, spent, cap, caller, deps).catch(() => {});
-  throw new SpendCapError({ group, spent, cap, caller, retryAfterMs: waitMs(now) });
+  if (provider && (creditOut.get(provider) || 0) > now) throw new SpendCapError({ group: `${provider}-credit`, spent: 0, cap: 0, caller: provider, retryAfterMs: creditOut.get(provider) - now, credit: true });
+  if (Number.isFinite(cap)) {
+    const spent = (await spendByGroup({ now, deps }))[group] || 0;
+    if (spent >= cap) {
+      await alertOnce(group, day, spent, cap, caller, deps).catch(() => {});
+      throw new SpendCapError({ group, spent, cap, caller, retryAfterMs: waitMs(now) });
+    }
+  }
+  const pcap = provider && providerCapFor(provider, day, cfg);   // the provider-wide cap: background groups stop first, live replies keep the rest
+  if (!pcap) return;
+  const limit = (cfg.providers?.interactive || []).includes(group) ? pcap.usd : pcap.background_usd;
+  const pspent = (await spendByProvider({ now, deps }))[provider] || 0;
+  if (pspent < limit) return;
+  await alertOnce(`${provider}-total`, day, pspent, limit, caller, deps).catch(() => {});
+  throw new SpendCapError({ group: `${provider}-total`, spent: pspent, cap: limit, caller, retryAfterMs: waitMs(now) });
 }

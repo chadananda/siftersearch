@@ -66,6 +66,12 @@ export async function dailySpendByService(deps) {
   return Object.fromEntries([...sums].map(([k, v]) => [k, v.usd]));
 }
 
+/** Today's (UTC) spend per provider (incremental) — the provider-wide caps' input (spend-caps.js). → { [provider]: usd } */
+export async function dailySpendByProvider(deps) {
+  const sums = await rollupSpend('daily-by-provider', { key: `COALESCE(provider, '')`, dayBound: true }, deps);
+  return Object.fromEntries([...sums].map(([k, v]) => [k, v.usd]));
+}
+
 /** Today's (UTC) spend per caller (incremental) — the spend caps' input (spend-caps.js). → { [caller or '']: usd } */
 export async function dailySpendByCaller(deps) {
   const sums = await rollupSpend('daily-by-caller', { key: `COALESCE(caller, '')`, dayBound: true }, deps);

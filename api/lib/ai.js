@@ -13,7 +13,7 @@ import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { logAIUsage } from './ai-services.js';
-import { assertSpendCap } from './spend-caps.js';
+import { assertSpendCap, noteCreditOut } from './spend-caps.js';
 import { currentAIContext } from './ai-context.js';   // ambient doc/stage attribution for every logged call
 import { getModel, thinkingParam } from './model-registry.js';
 import { assertAnthropicAllowed, guardLongContext } from './anthropic-policy.js';   // fail-closed Anthropic allowlist (Persian plan only)
@@ -136,7 +136,7 @@ export async function chatCompletion(messages, options = {}) {
   } catch (err) {
     logAIUsage({ provider, model, serviceType, caller: caller || options.caller || null, documentId: docId,
       success: false, errorMessage: err.message });
-    throw err;
+    throw noteCreditOut(provider, err) || err;   // out of credit → SpendCapError: queue work waits instead of failing
   }
 }
 
