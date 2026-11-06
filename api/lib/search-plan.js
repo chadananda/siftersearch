@@ -18,7 +18,7 @@ const AUTHOR_MIN_CONFIDENCE = 0.8;
 // filter value for the author-matched half of the search (CONTAINS, apostrophe styles expanded downstream).
 const AUTHORS = {
   'Bahá’u’lláh': { aliases: ['Bahá’u’lláh', 'Bahaullah', 'Husayn-Ali', 'Blessed Beauty'], about: 'the writings and words of Bahá’u’lláh (Mírzá Ḥusayn-‘Alí, the Blessed Beauty)' },
-  'The Báb': { aliases: ['Báb', 'Ali-Muhammad'], about: 'the writings of the Báb (Siyyid ‘Alí-Muḥammad)' },
+  'The Báb': { aliases: ['Báb', 'Ali-Muhammad'], about: 'the writings of the Báb (Siyyid ‘Alí-Muḥammad; written "the Bab", "Bab", "Báb"), however spelled' },
   '‘Abdu’l-Bahá': { aliases: ['Abdu', 'Abdul', 'Abbas Effendi'], about: 'the talks, tablets and writings of ‘Abdu’l-Bahá (‘Abbás Effendi, the Master), however spelled' },
   'Shoghi Effendi': { aliases: ['Shoghi'], about: 'the writings and letters of Shoghi Effendi (the Guardian)' },
   'Universal House of Justice': { aliases: ['Universal House of Justice', 'House of Justice'], about: 'messages of the Universal House of Justice' },

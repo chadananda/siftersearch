@@ -326,6 +326,17 @@ describe('preferAuthor — the author, then passages quoting the author, then th
     const se = h(9, 'Shoghi Effendi', 'quoting: the earth is but one country');
     expect(preferAuthor(own, [se], ['Bahá’u’lláh'], 5, ['earth'], new Set([9])).map((x) => x.id)).toEqual([1, 2, 3, 9, 4]);
   });
+  it('name-only query: heading paragraphs that are only the name drop out; the author\'s works spread one per book first (#135/#262)', () => {
+    const d = (id, doc, author, text) => ({ id, doc_id: doc, author, text });
+    const names = new Set(['abdul', 'baha', 'abdu', 'abbas', 'effendi']);
+    const own = [d(1, 10, '‘Abdu’l-Bahá', 'O ye beloved of the Lord!'), d(2, 10, '‘Abdu’l-Bahá', 'Praise be to God, the Lord of all.'),
+      d(3, 11, '‘Abdu’l-Bahá', '‘Abdu’l-Bahá {language="en"}'), d(4, 12, '‘Abdu’l-Bahá', 'The world of humanity is composed of two parts.')];
+    const broad = [d(5, 20, 'Some Scholar', 'Abdul Baha'), d(6, 21, 'Juliet Thompson', '‘Abdu’l-Bahá said to me that morning…')];
+    const out = preferAuthor(own, broad, ['Abdu', 'Abdul'], 10, [], new Set(), names);
+    expect(out.map((x) => x.id)).toEqual([1, 4, 2, 6]);
+    // a query with a subject keeps the old order and keeps headings (they may be the subject)
+    expect(preferAuthor(own, [], ['Abdu', 'Abdul'], 10, []).map((x) => x.id)).toEqual([1, 2, 3, 4]);
+  });
   it('a quoting passage off the subject is not promoted', () => {
     const se = h(2, 'Shoghi Effendi', 'An unrelated paragraph about the Guardianship.');
     expect(preferAuthor([], [h(3, 'X', 'the earth is one'), se], ['Bahá’u’lláh'], 10, ['earth'], new Set([2])).map((x) => x.id)).toEqual([3, 2]);

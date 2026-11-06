@@ -69,8 +69,13 @@ const onSubject = (hit, terms) => {
  * passage as Shoghi Effendi quotes it), marked `_quotes`; then the rest — a compilation, biography or newsletter that
  * quotes them still appears, which is often where a half-remembered tablet actually is. Pure.
  */
-export function preferAuthor(authorHits, broadHits, aliases, limit, terms = [], quotedIds = new Set()) {
+export function preferAuthor(authorHits, broadHits, aliases, limit, terms = [], quotedIds = new Set(), nameOnly = null) {
   const seen = new Set();
+  // A query that is only the author's name (Jev set the author; nothing else is asked, digest #135/#262): a paragraph that
+  // is only that name is a heading ("Bahá’u’lláh {language="en"}" led 11-05), not a passage — dropped — and the author's
+  // own hits spread over distinct works (one per book first) so the page shows what they wrote, not one book's chunks.
+  const bareName = (h) => nameOnly && foldTok(String(h.text || '').replace(/\{[^}]*\}/g, ' ')).split(' ').every((w) => !w || nameOnly.has(w) || STOP.has(w));
+  if (nameOnly) { authorHits = authorHits.filter((h) => !bareName(h)); broadHits = broadHits.filter((h) => !bareName(h)); }
   const mine = [], quoting = [], others = [];
   // Promoted = BY the author AND on the question's subject; "his words first" means his words on THIS.
   for (const h of [...authorHits.filter((x) => onSubject(x, terms)), ...broadHits]) {
@@ -84,6 +89,11 @@ export function preferAuthor(authorHits, broadHits, aliases, limit, terms = [], 
   // the author's best few, then the quoting passages: a filter-matched list of the author's own paragraphs runs weak fast
   // ("This Youth hath departed out of this country" for "the earth is but one country") and pushed Shoghi Effendi's
   // quotation of the very passage off an 8-hit page (10-09)
+  if (nameOnly) {
+    const books = new Set(), first = [], rest = [];
+    for (const h of mine) { const k = h.doc_id ?? h.document_id ?? h.title; (books.has(k) ? rest : first).push(h); books.add(k); }
+    return [...first, ...quoting, ...rest, ...others].slice(0, limit);
+  }
   return [...mine.slice(0, OWN_FIRST), ...quoting, ...mine.slice(OWN_FIRST), ...others].slice(0, limit);
 }
 const OWN_FIRST = 3;
@@ -273,7 +283,8 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
   const quotedIds = plan.prefer
     ? await (voices ?? (engine ? null : quotingParagraphs))?.(r.results.map((h) => h.id), plan.prefer.aliases).catch(() => new Set()) ?? new Set()
     : new Set();
-  let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, subjectTerms(query, plan.prefer), quotedIds) : r.results;
+  const terms = plan.prefer ? subjectTerms(query, plan.prefer) : [];
+  let hits = plan.prefer ? preferAuthor(authorHits, r.results, plan.prefer.aliases, limit, terms, quotedIds, terms.length ? null : nameWords(plan.prefer)) : r.results;
   // The resolve had the whole passage search to finish in; it waits only until TARGET_MS from the start, so it never
   // adds latency beyond that — and never loses a race it did not need to (a 1s timer from t0 dropped "iderne" on a
   // busy box whose passage search alone took 1.5s, 2026-09-28).
