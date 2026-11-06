@@ -3,15 +3,20 @@
 import { describe, it, expect } from 'vitest';
 import { CASE_1103 } from '../fixtures/anis-case-1103.js';
 import { judgeMessage, parseJudge, deepMessage, parseSuggestions, mergeSuggestions, sameSuggestion, rankImprovements, priorityOf,
-  costOf, projectDaily, turnFromPath, itemsForTurn, forensicsReport, JUDGE_SYSTEM } from '../../api/lib/audit/improve.js';
+  costOf, projectDaily, turnFromPath, itemsForTurn, forensicsReport, JUDGE_SYSTEM, retarget, resolveFile } from '../../api/lib/audit/improve.js';
+import { FIX_WHERE, fixFile, latencyModule } from '../../api/lib/audit/forensics.js';
+import { existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { deferCoveredSearches } from '../../api/lib/repos/improve-repo.js';
 import { openImproveDb, recordForensic, nextWork, saveJudge, openImprovements, applySuggestions, listImprovements, setImprovementStatus,
   forensicsSince, getCursor } from '../../api/lib/repos/improve-repo.js';
-import { work, ingest, traceToSearch, replayHits, searchJudgeState, JUDGE_CALL, DEEP_CALL } from '../../api/workers/improve-worker.js';
+import { work, ingest, traceToSearch, replayHits, searchJudgeState, JUDGE_CALL, DEEP_CALL, backfillDays } from '../../api/workers/improve-worker.js';
 import { assertAnthropicAllowed, isImproveAllowed } from '../../api/lib/anthropic-policy.js';
 import { modelFor } from '../../api/lib/model-roles.js';
 import { SpendCapError } from '../../api/lib/spend-caps.js';
 
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const item = () => itemsForTurn(CASE_1103, { messageId: 7, sessionId: 's1' });
 
 describe('the gate: Opus 5.5 only for the improve stages', () => {
@@ -140,7 +145,9 @@ describe('the store and the worker (in-memory; the LLM call injected)', () => {
     const rows = forensicsSince(3650, {}, { db });
     const rep = forensicsReport(rows, []);
     expect(rep.judge).toMatchObject({ judged: 3, weak: 3, weak_classes: [{ class: 'authority-inversion', n: 3 }] });
-    expect(rep.judge.usd).toBeCloseTo(0.18, 6);
+    // spec #2 d (11-06): the 2nd and 3rd weak items carry the same (class, stage, file) theme → evidence, no deep call
+    expect(calls.filter((c) => c === 'improve-analysis')).toHaveLength(1);
+    expect(rep.judge.usd).toBeCloseTo(0.08, 6);
     expect(rep.replies.queue.find((e) => e.class === 'cited-weaker-copy').n).toBe(2);
   });
   it('a spend cap delays the work (row stays pending); an unparseable verdict is retried, not guessed', async () => {
@@ -216,5 +223,100 @@ describe('the store and the worker (in-memory; the LLM call injected)', () => {
     expect(r.hits.map((h) => h.title)).toEqual(['Gleanings', 'Talk']);
     expect(r.hits[0]).toMatchObject({ old_rank: null, tool: 'fused_search' });
     expect(replayHits({ replays: [] })).toBeNull();
+  });
+});
+
+// Spec #2 (11-06): stop paying Opus to reword known findings; stop saving suggestions nobody can apply. Fresh synthetic items
+// (no battery question): a slow embed stage, a slow hydrate stage, a respond-route weakness.
+describe('spec #2: dedupe before the paid call, applicable targets, real files', () => {
+  const slow = (key, stage, question) => ({ key, kind: 'reply', ref_id: key.split(':')[1], session_id: 's9', route: 'teachings', question,
+    reply: 'r', searches: [], defects: [{ stage: 'LATENCY', class: 'stage-over-budget', detail: `${stage} slow`, evidence: { stage, ms: 900, budget: 120, kind: 'engine' } }] });
+  const judgeWeak = { text: '{"verdict":"weak","classes":["stage-over-budget"],"stage":"LATENCY","severity":2,"why":"slow"}', usd: 0.01 };
+  const deepFor = (file) => ({ text: JSON.stringify({ diagnosis: 'd', root_cause: 'rc', suggestions: [{ stage: 'LATENCY', file, fn: null, target: 'index',
+    change: `cache the ${file} stage output per query`, expected_effect: 'faster', classes: ['stage-over-budget'], severity: 2 }] }), usd: 0.05 });
+  const none = async () => new Set();
+
+  it('a second defect of an open (class, stage, real file) adds evidence and makes NO deep call; a new file still pays', async () => {
+    const db = openImproveDb(':memory:'), deep = [];
+    recordForensic(db, { ...slow('reply:901', 'embed', 'what did the Guardian write about the oneness of mankind?'), asked_at: '2026-11-06 09:00:00', priority: 1 });
+    const call = async (role, s, u) => { if (role === 'search-judge') return judgeWeak; deep.push(u); return deepFor('api/lib/query-embedding.js'); };
+    for (let i = 0; i < 2; i++) await work(db, { call, replay: async () => null, strategies: none });
+    expect(deep).toHaveLength(1);
+    const [row] = listImprovements({}, { db });
+    expect(row).toMatchObject({ file: 'api/lib/query-embedding.js', evidence_n: 1 });
+    expect(JSON.parse(row.themes_json)).toContain('stage-over-budget|LATENCY|api/lib/query-embedding.js');
+
+    recordForensic(db, { ...slow('reply:902', 'main_embed', 'how should a believer approach fasting when travelling?'), asked_at: '2026-11-06 09:05:00', priority: 1 });
+    for (let i = 0; i < 2; i++) await work(db, { call, replay: async () => null, strategies: none });
+    expect(deep).toHaveLength(1);                                     // same theme → $0
+    const [again] = listImprovements({}, { db });
+    expect(again).toMatchObject({ id: row.id, evidence_n: 2 });
+    expect(again.evidence).toEqual(['reply:901', 'reply:902']);
+    const f = db.prepare('SELECT deep_state, deep_usd, deep_json FROM forensics WHERE item_key = ?').get('reply:902');
+    expect(f.deep_state).toBe('done');
+    expect(f.deep_usd).toBe(0);
+    expect(JSON.parse(f.deep_json).deduped[0]).toMatchObject({ class: 'stage-over-budget', file: 'api/lib/query-embedding.js' });
+
+    recordForensic(db, { ...slow('reply:903', 'hydrate', 'is there a prayer for the departed in Persian?'), asked_at: '2026-11-06 09:10:00', priority: 1 });
+    for (let i = 0; i < 2; i++) await work(db, { call, replay: async () => null, strategies: none });
+    expect(deep).toHaveLength(2);                                     // different real module (read-pool.js) → analysed
+  });
+
+  it('a respond-route change named as a DATA target is saved as a CODE target', async () => {
+    const db = openImproveDb(':memory:'), users = [];
+    recordForensic(db, { key: 'reply:911', kind: 'reply', ref_id: '911', route: 'lookup', question: 'which tablet mentions the Most Great Peace first?', reply: 'r', searches: [],
+      defects: [], asked_at: '2026-11-06 10:00:00', priority: 1 });
+    const call = async (role, s, u) => {
+      if (role === 'search-judge') return { text: '{"verdict":"weak","classes":["wrong-route-recipe"],"stage":"STRATEGY","severity":2,"why":"w"}', usd: 0.01 };
+      users.push(u);
+      return { text: JSON.stringify({ diagnosis: 'd', suggestions: [{ stage: 'STRATEGY', file: 'api/lib/assistant/respond.js', fn: null, target: 'strategy', strategy: 'respond',
+        change: 'the lookup route should try the chronology index first', expected_effect: 'earliest mention found', classes: ['wrong-route-recipe'], severity: 2 }] }), usd: 0.05 };
+    };
+    for (let i = 0; i < 2; i++) await work(db, { call, replay: async () => null, strategies: async () => new Set(['guidance', 'reference']) });
+    expect(users[0]).toMatch(/EDITABLE STRATEGIES[^\n]*guidance, reference/);
+    const [row] = listImprovements({}, { db });
+    expect(['strategy', 'step', 'template']).not.toContain(row.target);
+    expect(row.strategy).toBeNull();
+    expect(retarget({ stage: 'STRATEGY', target: 'step', strategy: 'guidance' }, new Set(['guidance'])).target).toBe('step');   // editable: kept
+    expect(retarget({ stage: 'STRATEGY', target: 'strategy', strategy: 'no-such-strategy' }, new Set(['guidance'])).target).not.toBe('strategy');
+  });
+
+  it('a suggestion naming a missing file is not saved with that file; a fn not in the file is dropped', async () => {
+    const db = openImproveDb(':memory:');
+    recordForensic(db, { ...slow('reply:921', 'embed', 'what are the stations of the seven valleys?'), asked_at: '2026-11-06 11:00:00', priority: 1 });
+    const call = async (role) => (role === 'search-judge' ? judgeWeak : { text: JSON.stringify({ diagnosis: 'd', suggestions: [{ stage: 'LATENCY',
+      file: 'api/lib/search/embed-cache-manager.js', fn: 'warmCache', target: 'index', change: 'warm the embedding cache', classes: ['stage-over-budget'], severity: 2 }] }), usd: 0.05 });
+    for (let i = 0; i < 2; i++) await work(db, { call, replay: async () => null, strategies: none });
+    const [row] = listImprovements({}, { db });
+    expect(existsSync(join(ROOT, 'api/lib/search/embed-cache-manager.js'))).toBe(false);
+    expect(row.file).toBe('api/lib/query-embedding.js');              // the theme's real module, not the phantom
+    expect(row.fn).toBeNull();
+    expect(row.change).toMatch(/embed-cache-manager\.js, which does not exist/);
+    const fs = { has: (p) => p === 'api/lib/a.js', source: () => 'export function realOne() {}' };
+    expect(resolveFile({ file: 'api/lib/ghost.js', fn: 'x', change: 'c' }, fs, null)).toMatchObject({ file: null, fn: null });
+    expect(resolveFile({ file: 'api/lib/a.js', fn: 'missingFn', change: 'c' }, fs)).toMatchObject({ file: 'api/lib/a.js', fn: null });
+    expect(resolveFile({ file: 'api/lib/a.js', fn: 'realOne()', change: 'c' }, fs).fn).toBe('realOne()');
+  });
+
+  it('every FIX_WHERE first path and every latency module exists in the repo', () => {
+    for (const cls of Object.keys(FIX_WHERE)) { const f = fixFile(cls); if (f) expect(existsSync(join(ROOT, f)), `${cls} → ${f}`).toBe(true); }
+    expect(fixFile('no-writings-pass')).toBe('api/lib/search/writings-pass.js');
+    for (const stage of ['embed', 'main_embed', 'hydrate', 'qdrant', 'phrase', 'bm25', 'spell', 'total']) for (const kind of ['engine', 'planned'])
+      expect(existsSync(join(ROOT, latencyModule(stage, { kind }))), `${kind}/${stage}`).toBe(true);
+    expect(latencyModule('hydrate')).not.toMatch(/latency-budget/);
+  });
+
+  it('backfill is off by default: the read window is the time since live_from; older rows are never worked', async () => {
+    expect(backfillDays(undefined)).toBe(0);
+    expect(backfillDays('0')).toBe(0);
+    expect(backfillDays('7')).toBe(7);
+    const db = openImproveDb(':memory:'), seen = [];
+    await ingest(db, { deps: { anisRepliesAfter: async (a, o) => (seen.push(o.sinceDays), []), tracesAfter: async (a, o) => (seen.push(o.sinceDays), []) } });
+    expect(getCursor(db, 'live_from')).toMatch(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/);
+    expect(seen).toHaveLength(2);
+    for (const d of seen) expect(d).toBeLessThan(0.01);
+    recordForensic(db, { key: 'reply:1', kind: 'reply', ref_id: '1', asked_at: '2026-10-01 00:00:00', defects: [], priority: 1 });
+    expect(nextWork(db, { since: getCursor(db, 'live_from') })).toBeNull();
+    expect(nextWork(db)).not.toBeNull();
   });
 });

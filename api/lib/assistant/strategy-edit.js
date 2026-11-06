@@ -8,7 +8,7 @@ import { DESIGN_ROLE, designActivities, validateCandidate, parseCandidate, opusC
 import { IMPROVE_CFG } from './strategy-gaps.js';
 
 export const EDIT_CALLER = 'improve-strategy-edit';
-const NOT_EDITABLE = new Set(['other', 'respond']);
+export const NOT_EDITABLE = new Set(['other', 'respond']);
 
 export const EDIT_SYSTEM = `You EDIT one existing RESPONSE STRATEGY of Anís, a research assistant over a Bahá'í and interfaith library.
 A strategy is a small graph of ACTIVITIES (code that already exists); Jev picks a strategy per question by its DESCRIPTION; after the

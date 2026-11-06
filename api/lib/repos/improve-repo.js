@@ -34,7 +34,9 @@ CREATE INDEX IF NOT EXISTS idx_behavior_runs ON behavior_runs(proposal, scenario
 const ADDED_COLUMNS = [['forensics', 'deep_json', 'TEXT'], ['forensics', 'judged_at', 'TEXT'], ['forensics', 'deep_at', 'TEXT'],
   ['improvements', 'target', 'TEXT'], ['improvements', 'reviewed_at', 'TEXT'], ['improvements', 'reviewed_by', 'TEXT'],
   // 11-04 v2: a CODE fix's acceptance scenarios (improve.js parseScenario); a DATA fix's strategy and the candidate (id@version) testing it
-  ['improvements', 'scenarios_json', 'TEXT'], ['improvements', 'strategy', 'TEXT'], ['improvements', 'candidate', 'TEXT']];
+  ['improvements', 'scenarios_json', 'TEXT'], ['improvements', 'strategy', 'TEXT'], ['improvements', 'candidate', 'TEXT'],
+  // 11-06 spec #2: the (class|stage|file) themes a row answers — a weak item whose themes are all open adds evidence, no deep call
+  ['improvements', 'themes_json', 'TEXT']];
 const hasColumn = (db, table, col) => db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === col);
 function evolve(db) {
   for (const [t, c, type] of ADDED_COLUMNS) if (!hasColumn(db, t, c)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} ${type}`);
@@ -77,10 +79,12 @@ export const deferCoveredSearches = (db) => db.prepare(`UPDATE forensics SET jud
   AND json_extract(payload_json, '$.turn_id') IS NOT NULL`).run(nowIso()).changes;
 
 /** The next unit of LLM work, in priority order (deep on weak replies, judge replies, deep on weak searches, judge searches, backfill). */
-export function nextWork(db, { maxAttempts = 5 } = {}) {
+/** since (optional, 'YYYY-MM-DD HH:MM:SS' or ISO): only items asked at or after it — backfill off means rows from before the
+ *  worker went live are never paid for (11-06 redesign: new traces only). */
+export function nextWork(db, { maxAttempts = 5, since = null } = {}) {
   const r = db.prepare(`SELECT *, CASE WHEN deep_state = 'pending' AND backfill = 0 THEN (CASE kind WHEN 'reply' THEN 0 ELSE 2 END) ELSE priority END AS p
-    FROM forensics WHERE attempts < ? AND (judge_state = 'pending' OR deep_state = 'pending')
-    ORDER BY p, asked_at DESC LIMIT 1`).get(maxAttempts);
+    FROM forensics WHERE attempts < ? AND (judge_state = 'pending' OR deep_state = 'pending')${since ? ' AND asked_at >= ?' : ''}
+    ORDER BY p, asked_at DESC LIMIT 1`).get(maxAttempts, ...(since ? [since] : []));
   return r ? { ...r, step: r.deep_state === 'pending' ? 'deep' : 'judge', item: safeJson(r.payload_json), judge: safeJson(r.judge_json) } : null;
 }
 export function saveJudge(db, key, { judge, usd, usage }) {
@@ -106,19 +110,22 @@ export const openImprovements = (db) => db.prepare(`SELECT * FROM improvements W
 export function applySuggestions(db, { inserts = [], bumps = [] }) {
   const ids = [];
   const now = nowIso();
-  const ins = db.prepare(`INSERT INTO improvements (stage, file, fn, target, strategy, change, expected_effect, scenarios_json, classes_json, severity, evidence_n, evidence_json, first_seen, last_seen)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`);
-  const get = db.prepare('SELECT evidence_json FROM improvements WHERE id = ?');
+  const ins = db.prepare(`INSERT INTO improvements (stage, file, fn, target, strategy, change, expected_effect, scenarios_json, classes_json, severity, evidence_n, evidence_json, first_seen, last_seen, themes_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`);
+  const get = db.prepare('SELECT evidence_json, themes_json FROM improvements WHERE id = ?');
+  const setThemes = db.prepare('UPDATE improvements SET themes_json = ? WHERE id = ?');
   // a repeat keeps the first scenarios (first wins); a row written before scenarios existed takes the new ones
   const upd = db.prepare(`UPDATE improvements SET evidence_n = evidence_n + 1, evidence_json = ?, severity = MAX(severity, ?), last_seen = ?,
     scenarios_json = COALESCE(scenarios_json, ?), strategy = COALESCE(strategy, ?) WHERE id = ?`);
   const sj = (xs) => (xs?.length ? JSON.stringify(xs) : null);
   db.transaction(() => {
     for (const s of inserts) ids.push(Number(ins.run(s.stage, s.file, s.fn, targetOf(s), s.strategy ?? null, s.change, s.expected_effect, sj(s.scenarios),
-      JSON.stringify(s.classes || []), s.severity, JSON.stringify(s.evidence || []), now, now).lastInsertRowid));
+      JSON.stringify(s.classes || []), s.severity, JSON.stringify(s.evidence || []), now, now, sj(s.themes)).lastInsertRowid));
     for (const b of bumps) {
       ids.push(b.id);
-      const ev = safeJson(get.get(b.id)?.evidence_json) || [];
+      const row = get.get(b.id), ev = safeJson(row?.evidence_json) || [], th = safeJson(row?.themes_json) || [];
+      const more = (b.themes || []).filter((t) => !th.includes(t));
+      if (more.length) setThemes.run(JSON.stringify([...th, ...more]), b.id);
       if (ev.includes(b.evidence_key)) continue;
       upd.run(JSON.stringify([...ev, b.evidence_key].slice(-50)), b.severity, now, sj(b.scenarios), b.strategy ?? null, b.id);
     }

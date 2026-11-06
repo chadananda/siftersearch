@@ -6,6 +6,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { existsSync, statSync, readFileSync } from 'fs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 dotenv.config({ path: join(ROOT, '.env-secrets'), quiet: true });
@@ -19,7 +20,7 @@ import { drainOnSignals, isDraining, nap } from '../lib/drain.js';
 import { startHeartbeat } from '../lib/service-heartbeat.js';
 import { assessSearch, routeOf, owedClasses } from '../lib/audit/forensics.js';
 import { JUDGE_SYSTEM, DEEP_SYSTEM, JUDGE_ROLE, DEEP_ROLE, judgeMessage, parseJudge, deepMessage, parseDeep,
-  mergeSuggestions, costOf, priorityOf, turnFromPath, itemsForTurn } from '../lib/audit/improve.js';
+  mergeSuggestions, costOf, priorityOf, turnFromPath, itemsForTurn, dedupeTheme, attachThemes, retarget, resolveFile } from '../lib/audit/improve.js';
 import { targetClass } from '../lib/audit/improve-targets.js';
 import { anisRepliesAfter } from '../lib/repos/anis-threads-repo.js';
 import { tracesAfter, tracesForTurn, docTitles } from '../lib/repos/search-trace-repo.js';
@@ -27,7 +28,15 @@ import { expandHits } from '../lib/search-trace.js';
 import { openImproveDb, getCursor, setCursor, recordForensic, nextWork, saveJudge, saveDeepDone, noteFailure,
   openImprovements, applySuggestions, deferCoveredSearches } from '../lib/repos/improve-repo.js';
 
-const BACKFILL_DAYS = Number(process.env.IMPROVE_BACKFILL_DAYS) || 30;
+/** Backfill is OFF by default (11-06 redesign: new traces only — the 30-day default paid Opus to judge a month of history).
+ *  IMPROVE_BACKFILL_DAYS=N (> 0) turns it back on for N days. */
+export const backfillDays = (v = process.env.IMPROVE_BACKFILL_DAYS) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+const BACKFILL_DAYS = backfillDays();
+const sqlNow = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
+/** The first moment this store ran with backfill off (cursor 'live_from', set once). Items asked before it are never paid for. */
+export const liveFrom = (db) => getCursor(db, 'live_from') || (setCursor(db, 'live_from', sqlNow()), getCursor(db, 'live_from'));
+/** The read window in days: the backfill when on, else exactly the time since live_from (so a poll never misses a reply). */
+export const windowDays = (db, days = BACKFILL_DAYS) => (days > 0 ? days : Math.max(0, (Date.now() - Date.parse(`${liveFrom(db).replace(' ', 'T')}Z`)) / 86_400_000));
 const IDLE_MS = Number(process.env.IMPROVE_IDLE_MS) || 30_000;
 const LLM_ON = process.env.IMPROVE_LLM !== '0';   // kill switch: forensics only
 const safeJson = (s) => { if (s && typeof s === 'object') return s; try { return JSON.parse(s); } catch { return null; } };
@@ -43,13 +52,14 @@ export function traceToSearch(t, titles = new Map()) {
 }
 const hitDocs = (rows) => rows.flatMap((t) => (safeJson(t.hits_json) || []).map((h) => (Array.isArray(h) ? h[1] : h?.doc_id))).filter((v) => v != null);
 
-/** Step 1 (free): forensic rows for new replies and new traces since the cursors; first run backfills BACKFILL_DAYS. */
+/** Step 1 (free): forensic rows for new replies and new traces since the cursors; backfills BACKFILL_DAYS only when set. */
 export async function ingest(db, { deps = {} } = {}) {
   const repliesAfter = deps.anisRepliesAfter || anisRepliesAfter, after = deps.tracesAfter || tracesAfter;
   const forTurn = deps.tracesForTurn || tracesForTurn, titlesOf = deps.docTitles || docTitles;
   let n = 0;
-  const bootAt = getCursor(db, 'boot_at') || (setCursor(db, 'boot_at', new Date().toISOString().slice(0, 19).replace('T', ' ')), getCursor(db, 'boot_at'));
-  const replies = await repliesAfter(Number(getCursor(db, 'reply_id') || 0), { sinceDays: BACKFILL_DAYS, limit: 100 });
+  const bootAt = getCursor(db, 'boot_at') || (setCursor(db, 'boot_at', sqlNow()), getCursor(db, 'boot_at'));
+  const sinceDays = windowDays(db, deps.backfillDays ?? BACKFILL_DAYS);
+  const replies = await repliesAfter(Number(getCursor(db, 'reply_id') || 0), { sinceDays, limit: 100 });
   for (const r of replies) {
     const backfill = String(r.created_at) < bootAt;
     const turnId = r.round_index != null ? `${r.session_id}:${r.round_index}` : null;
@@ -63,7 +73,7 @@ export async function ingest(db, { deps = {} } = {}) {
     await strategyGap({ turnId, threadId: r.session_id, question: r.question, path: safeJson(r.path_json) || {} }, deps);   // free: Jev unsure → a gap row
     setCursor(db, 'reply_id', r.id); n++;
   }
-  const traces = await after(Number(getCursor(db, 'trace_id') || 0), { sinceDays: BACKFILL_DAYS, limit: 200 });
+  const traces = await after(Number(getCursor(db, 'trace_id') || 0), { sinceDays, limit: 200 });
   const tTitles = traces.length ? await titlesOf(hitDocs(traces)).catch(() => new Map()) : new Map();
   for (const t of traces) {
     // no stored ranked list (traced before migration 197, or pruned) but it did return hits → nothing to judge; a real zero is kept
@@ -164,8 +174,25 @@ export async function strategyWork({ deps = null, improveDb = null } = {}) {
 }
 
 /** Step 2: one unit of LLM work in priority order. → 'idle' | 'done' | { wait: ms } */
-export async function work(db, { call = callOpus, replay = replayCurrent, edit = editNow } = {}) {
-  const w = nextWork(db);
+/** The strategies a DATA suggestion may edit: the live catalog minus NOT_EDITABLE (respond, other). Empty on error → every
+ *  suggestion is a CODE target, which is never wrong, only slower. */
+async function editableStrategies() {
+  try {
+    const [{ catalog }, { NOT_EDITABLE }] = await Promise.all([import('../lib/repos/strategies-repo.js'), import('../lib/assistant/strategy-edit.js')]);
+    return new Set((catalog()?.strategies || []).map((s) => s.id).filter((id) => id && !NOT_EDITABLE.has(id)));
+  } catch (err) { console.error('[improve] strategy list:', err?.message || err); return new Set(); }
+}
+const repoFs = {
+  has: (p) => { try { return !!p && !p.includes('..') && existsSync(join(ROOT, p)) && statSync(join(ROOT, p)).isFile(); } catch { return false; } },
+  source: (p) => { try { return readFileSync(join(ROOT, p), 'utf8'); } catch { return null; } },
+};
+
+/** Step 2: one unit of LLM work in priority order. → 'idle' | 'done' | { wait: ms }
+ *  Deep step (spec #2, 11-06): a weak item whose every (class, stage, real file) theme is already an open suggestion adds
+ *  evidence to it and makes NO call; otherwise the analyst sees the editable strategies, and each suggestion is retargeted
+ *  (DATA only for an editable strategy) and its file/fn checked against the repo before it is saved. */
+export async function work(db, { call = callOpus, replay = replayCurrent, edit = editNow, strategies = editableStrategies, fs = repoFs, since = null } = {}) {
+  const w = nextWork(db, { since });
   if (!w) return 'idle';
   try {
     if (w.step === 'judge') {
@@ -179,13 +206,25 @@ export async function work(db, { call = callOpus, replay = replayCurrent, edit =
       if (judge.gate && judge.right && w.item.turn_id) { try { (await import('../lib/repos/jev-calls-repo.js')).labelByRef(judge.gate, w.item.turn_id, judge.right, 'opus-judge'); } catch { /* a label is a bonus, never a failure */ } }
       if (judge.stage === 'STRATEGY' && w.item.kind === 'reply') await strategyGap({ turnId: w.item.turn_id, threadId: w.item.session_id, question: w.item.question, judge });
     } else {
+      const judge = w.judge || {}, open = openImprovements(db);
+      const seen = dedupeTheme(w.item, judge, open);
+      if (seen.covered) {   // known weakness: +1 evidence on each open row, $0
+        const rows = seen.ids.map((id) => open.find((o) => o.id === id));
+        const ids = applySuggestions(db, { inserts: [], bumps: rows.map((o) => ({ id: o.id, evidence_key: w.item_key, severity: Math.max(1, Math.min(3, Number(judge.severity) || 1)) })) });
+        saveDeepDone(db, w.item_key, { usd: 0, deep: { diagnosis: null, root_cause: null, improvement_ids: ids, deduped: seen.keys } });
+        return 'done';
+      }
+      const editable = await strategies();
       const rep = await replay(w.item).catch(() => null);
       const passages = (w.item.writer_passages || w.item.hits || []).filter((h) => h.text);
-      const r = await call(DEEP_ROLE, DEEP_SYSTEM, deepMessage(w.item, w.judge || {}, { replay: rep, passages }), DEEP_CALL);
+      const r = await call(DEEP_ROLE, DEEP_SYSTEM, deepMessage(w.item, judge, { replay: rep, passages, editable }), DEEP_CALL);
       const deep = parseDeep(r.text);   // the conclusion (diagnosis, root cause) is kept with the ids of the fixes it led to
       // an empty conclusion is a failure, never "deep done" (11-06: 43/50 saved empty, $0.03–0.06 each)
       if (!deep.diagnosis && !deep.suggestions.length) throw new (cutOff(r) ? Truncated : Error)(`empty deep analysis${cutOff(r) ? ' (max_tokens)' : ''}: ${String(r.text).slice(0, 120)}`);
-      const ids = applySuggestions(db, mergeSuggestions(openImprovements(db), deep.suggestions, w.item_key));
+      const fallback = (s) => seen.keys.find((k) => (s.classes || []).includes(k.class))?.file || seen.keys.find((k) => k.file)?.file || null;
+      const fixed = attachThemes(deep.suggestions.map((s) => retarget(resolveFile(s, fs, fallback(s)), editable)), seen.keys);
+      deep.suggestions = fixed;
+      const ids = applySuggestions(db, mergeSuggestions(open, fixed, w.item_key));
       saveDeepDone(db, w.item_key, { usd: r.usd, deep: { diagnosis: deep.diagnosis, root_cause: deep.root_cause, improvement_ids: ids } });
       if (deep.suggestions.some((s) => targetClass(s.target) === 'data')) await edit(db);   // tested in this same cycle
     }
@@ -228,7 +267,7 @@ export async function main() {
       const fresh = await ingest(db);
       if (!LLM_ON) { await nap(fresh ? 1000 : IDLE_MS); continue; }
       doing = 'judge';
-      let r = await work(db);
+      let r = await work(db, { since: BACKFILL_DAYS > 0 ? null : liveFrom(db) });   // backfill off: rows asked before live_from are never paid for
       if (r === 'done') { judged++; continue; }
       if (r === 'idle') { doing = 'strategy'; r = await strategyWork({ improveDb: db }); if (r === 'done') continue; }
       doing = r === 'idle' ? 'idle' : 'spend-cap wait';

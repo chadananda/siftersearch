@@ -3,7 +3,7 @@
 // deduped into a durable log (evidence count grows instead of duplicates). No I/O here; the worker is api/workers/improve-worker.js.
 import { getModel } from '../model-registry.js';
 import { modelFor } from '../model-roles.js';
-import { STAGES, FIX_WHERE, COPY_CLASSES, copyClass, routeOf, owedClasses, forensicPass, forensicQueue } from './forensics.js';
+import { STAGES, FIX_WHERE, COPY_CLASSES, copyClass, routeOf, owedClasses, forensicPass, forensicQueue, fixFile, defectFile } from './forensics.js';
 import { MODEL_SEARCH } from '../assistant/query-anchor.js';
 import { TARGETS, inferTarget, targetOf, targetClass } from './improve-targets.js';
 import { runStateOf } from './behavior-proposal.js';
@@ -113,7 +113,11 @@ TARGET — who can apply the change. DATA (the live loop may apply it): "strateg
 "step" (one step's parameters inside a strategy), "template" (an answer template or format). CODE (an engineer applies it):
 "activity" (api/lib/assistant/activities), "tool" (a search/lookup tool), "index" (search, ranking, Qdrant/phrase index,
 embeddings), "writer-code" (the writer's prompt, quoting, linting), "other-code". Prefer a DATA target when a strategy
-change alone fixes the class; name a CODE target when it cannot. For a DATA target, "strategy" names the strategy id it edits.
+change alone fixes the class; name a CODE target when it cannot. For a DATA target, "strategy" names the strategy id it edits,
+and it must be one of the EDITABLE STRATEGIES listed below the item. Routes such as quote, lookup, topic or teachings are
+recipes of the respond graph, which is code (respond.js, planned-search.js): a change to one of them is a CODE target.
+FILE: a path from the CODE MAP (or another module you know exists in the repo); never invent a path. "fn" must be a
+function defined in that file, else null. "classes": the judge's class names that this suggestion fixes.
 SCENARIOS — a proposal and its acceptance tests come together. Every CODE suggestion carries 1-3 executable acceptance
 scenarios (a runner replays the examples and checks the trace). given.reader names the reader and the CLASS of context,
 never this question ("a reader asking where a known quotation comes from"); given.history (optional) prior turns as short
@@ -149,7 +153,7 @@ export const scenariosOf = (r) => {
   try { return parseScenarios(typeof v === 'string' ? JSON.parse(v) : v); } catch { return []; }
 };
 
-export function deepMessage(item, judge, { replay = null, passages = [], codeMap = FIX_WHERE } = {}) {
+export function deepMessage(item, judge, { replay = null, passages = [], codeMap = FIX_WHERE, editable = null } = {}) {
   const L = [judgeMessage(item, { maxHits: 20 }), `JUDGE: ${judge.verdict} ${judge.stage || ''} [${(judge.classes || []).join(', ')}] — ${judge.why || ''}`];
   if (replay?.hits?.length) { L.push(`REPLAY (${replay.filter || 'current code'}):`); for (const h of replay.hits.slice(0, 12)) L.push(`  ${compactHit(h, 240)}`); }
   else L.push('REPLAY: none available');
@@ -157,6 +161,7 @@ export function deepMessage(item, judge, { replay = null, passages = [], codeMap
   const relevant = new Set([...(judge.classes || []), ...(item.defects || []).map((d) => d.class)]);
   const map = Object.entries(codeMap).filter(([k]) => !relevant.size || relevant.has(k));
   L.push('CODE MAP:', ...(map.length ? map : Object.entries(codeMap)).map(([k, v]) => `  ${k}: ${v}`));
+  if (editable) L.push(`EDITABLE STRATEGIES (the only ones a DATA target may name): ${[...editable].join(', ') || 'none — every fix is a CODE target'}`);
   return L.join('\n');
 }
 
@@ -170,7 +175,7 @@ export function parseSuggestions(text) {
       change: clip(s.change, 1200), expected_effect: clip(s.expected_effect, 600),
       strategy: typeof s.strategy === 'string' && s.strategy.trim() && s.strategy !== 'null' ? clip(s.strategy.trim(), 80) : null,
       scenarios: parseScenarios(s.scenarios),
-      classes: (Array.isArray(s.classes) ? s.classes : []).map(String).slice(0, 6),
+      classes: (Array.isArray(s.classes) ? s.classes : []).map(kebab).filter(Boolean).slice(0, 6),
       severity: Math.min(3, Math.max(1, Number(s.severity) || 2)) };
   }).filter((s) => s.change);
 }
@@ -195,11 +200,66 @@ export function mergeSuggestions(open = [], incoming = [], evidenceKey) {
   const inserts = [], bumps = [];
   for (const s of incoming) {
     const hit = open.find((o) => sameSuggestion(o, s)) || inserts.find((o) => sameSuggestion(o, s));
-    if (hit?.id != null) { if (!bumps.some((b) => b.id === hit.id)) bumps.push({ id: hit.id, evidence_key: evidenceKey, severity: s.severity, scenarios: s.scenarios?.length ? s.scenarios : null, strategy: s.strategy ?? null }); }
+    if (hit?.id != null) { if (!bumps.some((b) => b.id === hit.id)) bumps.push({ id: hit.id, evidence_key: evidenceKey, severity: s.severity, scenarios: s.scenarios?.length ? s.scenarios : null, strategy: s.strategy ?? null, ...(s.themes?.length ? { themes: s.themes } : {}) }); }
     else if (!hit) inserts.push({ ...s, evidence: [evidenceKey] });
   }
   return { inserts, bumps };
 }
+
+// ── dedup BEFORE the paid call: a weakness already open adds evidence and costs nothing (spec #2 d, 11-06) ──
+const kebab = (s) => String(s || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const themeStr = (k) => `${k.class}|${k.stage || ''}|${k.file || ''}`;
+const parseList = (v) => { if (Array.isArray(v)) return v; try { return JSON.parse(v || '[]') || []; } catch { return []; } };
+/** One weak item → its themes [{ class, stage, file }]: every judge class and every forensic defect, each with the stage it
+ *  failed at and the REAL module that owns the fix (forensics defectFile; null when no module is known). Pure. */
+export function themeKeys(item = {}, judge = {}) {
+  const defects = item.defects || [], keys = new Map();
+  const put = (k) => { if (k.class && !keys.has(themeStr(k))) keys.set(themeStr(k), k); };
+  for (const c of (judge.classes || []).map(kebab).filter(Boolean)) {
+    const ds = defects.filter((d) => d.class === c);
+    if (ds.length) for (const d of ds) put({ class: c, stage: d.stage || judge.stage || null, file: defectFile(d) });
+    else put({ class: c, stage: judge.stage || null, file: fixFile(c) });
+  }
+  for (const d of defects) put({ class: d.class, stage: d.stage || null, file: defectFile(d) });
+  return [...keys.values()];
+}
+/** Does open row r already carry theme k? Its stored themes, or its own (stage, class, file) when it names one. */
+export const coversTheme = (r, k) => parseList(r.themes ?? r.themes_json).includes(themeStr(k))
+  || (r.stage === k.stage && parseList(r.classes ?? r.classes_json).map(kebab).includes(k.class) && (!k.file || fileKey(r.file) === k.file));
+/** → { covered, keys, ids }: covered when EVERY theme of this item is already an open suggestion (then no deep call). */
+export function dedupeTheme(item, judge, open = []) {
+  const keys = themeKeys(item, judge), ids = [];
+  for (const k of keys) { const r = open.find((o) => coversTheme(o, k)); if (!r) return { covered: false, keys, ids: [] }; if (!ids.includes(r.id)) ids.push(r.id); }
+  return { covered: keys.length > 0, keys, ids };
+}
+/** Tag each incoming suggestion with the themes it answers (so the next item of the same theme dedupes against it):
+ *  a suggestion takes the themes whose class it names; themes nobody named go to the first suggestion. Pure. */
+export function attachThemes(suggestions = [], keys = []) {
+  const out = suggestions.map((s) => ({ ...s, themes: keys.filter((k) => (s.classes || []).map(kebab).includes(k.class)).map(themeStr) }));
+  const left = keys.map(themeStr).filter((t) => !out.some((s) => s.themes.includes(t)));
+  if (out.length && left.length) out[0].themes = [...out[0].themes, ...left];
+  return out;
+}
+
+// ── a suggestion has to be applicable: DATA only for an editable strategy, a file that exists, a fn found in it (spec #2 a, b) ──
+/** A DATA target naming a strategy that is not editable (respond, other, or one that does not exist) is a CODE change. Pure. */
+export function retarget(s, editable) {
+  if (!['strategy', 'step', 'template'].includes(s.target)) return s;
+  if (s.strategy && editable?.has?.(s.strategy)) return s;
+  const t = inferTarget({ stage: s.stage, file: s.file });
+  return { ...s, target: ['strategy', 'step', 'template'].includes(t) ? 'other-code' : t, strategy: null };
+}
+/** fs = { has(path) → bool, source(path) → text|null }. A phantom file → the theme's real module (or null); a fn not found in
+ *  the file → null. The original claim is kept in the change text's tail so nothing the analyst said is lost. Pure given fs. */
+export function resolveFile(s, fs, fallback = null) {
+  const f = fileKey(s.file);
+  let file = s.file, fn = s.fn, note = '';
+  if (f && !fs.has(f)) { file = fallback && fs.has(fallback) ? fallback : null; fn = null; note = ` [analyst named ${f}, which does not exist]`; }
+  else if (!f) file = fallback && fs.has(fallback) ? fallback : null;
+  if (file && fn) { const src = fs.source(fileKey(file)) || ''; const name = String(fn).replace(/\(.*$/, '').split('.').pop().trim(); if (!name || !src.includes(name)) fn = null; }
+  return { ...s, file, fn, change: note ? `${s.change}${note}` : s.change };
+}
+
 export const rankImprovements = (rows) => [...rows].map((r) => ({ ...r, score: (r.evidence_n || 1) * (r.severity || 1) }))
   .sort((a, b) => b.score - a.score || String(b.last_seen).localeCompare(String(a.last_seen)));
 

@@ -16,27 +16,45 @@ import { driftedQueries, MODEL_SEARCH } from '../assistant/query-anchor.js';
 export const FORENSIC_V = 1;
 export const STAGES = ['STRATEGY', 'RETRIEVAL', 'RANK', 'SELECTION', 'WRITER', 'LATENCY', 'HOLDINGS'];
 
-/** Where each defect class is fixed: file · function/stage. The work queue prints it beside the count. */
+/** Where each defect class is fixed: file · function/stage. The work queue prints it beside the count, the analyst reads it
+ *  as the code map, and the improve loop keys its dedupe on the FIRST path (fixFile). Every first path is a real module
+ *  (tests/api/anis-improve.test.js checks the disk). 11-06: the old map sent 331 suggestions to doctrinal-rank.js and 190 to
+ *  latency-budget.js when the code to change was the route passes in planned-search.js and the slow stage's own module. */
 export const FIX_WHERE = {
   'query-drift': 'api/lib/assistant/query-anchor.js (Jev subject check) · researcher.js / agent.js first-round search query',
-  'no-originals-search': 'api/lib/assistant/researcher.js originals quota · strategies.js route recipe (an originals_search step)',
+  'no-originals-search': 'api/lib/assistant/researcher.js originals quota · planned-search.js route passes (an originals pass)',
   'no-writings-pass': 'api/lib/search/writings-pass.js owesWritings · planned-search.js (the Writings pass beside the broad pass)',
   'authority-inversion': 'api/lib/search/doctrinal-rank.js + assistant/source-tier.js (copy authority in the rank of copies of one passage)',
-  'writings-buried': 'api/lib/search/doctrinal-rank.js (Writings below commentary on a doctrinal route)',
-  'best-copy-missed': 'search recall (index/filters): the replay with a Writings/originals filter finds it, the route did not',
-  'zero-hits': 'api/lib/search (recall) or the route query',
+  'writings-buried': "api/lib/planned-search.js route passes (the Writings pass leads the Bahá'í part) · search/doctrinal-rank.js",
+  'best-copy-missed': 'api/lib/search.js recall (index/filters) · planned-search.js relax ladder: the replay with a Writings/originals filter finds it, the route did not',
+  'zero-hits': 'api/lib/planned-search.js relax ladder · search-scope.js DROP_ORDER (or the route query)',
   'cited-weaker-copy': 'api/lib/assistant/lookup.js quote route source choice · prompt.js source order',
   'no-writings-cited': 'api/lib/assistant/prompt.js (the Writings first) · researcher.js passage choice',
   'process-talk': 'api/lib/assistant/prompt.js HOUSE_STYLE · lint.js machinery',
   'clipped-quote': 'api/lib/assistant/quotes.js (a quote never ends in a clip)',
-  'malformed-markdown': 'api/lib/assistant/md-valid.js names the defect · the respond.js post-writer step that produced it (quotes.js linkQuotes/markQuotes, linkTitles)',
+  'malformed-markdown': 'api/lib/assistant/respond.js the post-writer step that produced it (quotes.js linkQuotes/markQuotes, linkTitles) · md-valid.js names the defect',
   'bare-link': 'api/lib/assistant/prompt.js citation = link text',
   'search-offer': 'api/lib/assistant/prompt.js · lint.js search-offer',
   'wrong-author': 'api/lib/assistant/prompt.js citation author · library metadata',
   'reported-unlabelled': 'api/lib/assistant/prompt.js (a talk is named as spoken)',
-  'stage-over-budget': 'api/lib/search/latency-budget.js (the stage row names the code)',
+  'stage-over-budget': "api/lib/search.js engine stages · the slow stage's own module (search/read-pool.js hydrate, query-embedding.js embed, search/qdrant-layers.js layers, assistant/tools.js originals_search, planned-search.js planned stages); budgets are targets in search/latency-budget.js",
   'no-authoritative-copy': 'library gap → Dewey intake (nothing authoritative held or found)',
 };
+/** The repo path a defect class is fixed in (FIX_WHERE's first path), or null (a library gap, or a class with no code home). */
+export const fixFile = (cls) => (String(FIX_WHERE[cls] || '').match(/api\/[\w./-]+\.js/) || [])[0] || null;
+const QDRANT_LAYERS = new Set(['qdrant', 'phrase', 'qhype', 'qconcept', 'canon', 'doctrinal', 'doctrinal_hype', 'qkeyword', 'qkeyword_retry']);
+/** A latency stage → the module that owns its time (never the budget table). originals_search runs its own embed/phrase/qhype/canon. */
+export function latencyModule(stage, { tool = null, kind = 'engine' } = {}) {
+  if (/original/i.test(tool || '')) return 'api/lib/assistant/tools.js';
+  if (kind === 'planned') return stage === 'spell' ? 'api/lib/search/spell.js' : 'api/lib/planned-search.js';
+  if (stage === 'embed' || stage === 'main_embed') return 'api/lib/query-embedding.js';
+  if (stage === 'hydrate') return 'api/lib/search/read-pool.js';
+  if (QDRANT_LAYERS.has(stage)) return 'api/lib/search/qdrant-layers.js';
+  return 'api/lib/search.js';
+}
+/** One defect → the real file that owns it: a slow stage's own module, else its class's file (null = no code home). */
+export const defectFile = (d = {}) => (d.class === 'stage-over-budget' && d.evidence?.stage
+  ? latencyModule(d.evidence.stage, { tool: d.evidence.tool, kind: d.evidence.kind }) : fixFile(d.class));
 
 // ── routes: which tools a route owes (class rules) ─────────────────────────────────────────────────────────────────────
 const DOCTRINAL = new Set(['quote', 'source', 'teachings', 'topic', 'define', 'original', 'best-expression', 'survey-subject', 'examine-position']);
@@ -106,7 +124,11 @@ const AGGREGATE = new Set(['total', 'merge', 'search', 'passages']);
 export function assessSearch(s = {}, { route = null, question = '' } = {}) {
   const r = routeOf(route || s.route), hits = (s.hits || []).map((h, i) => ({ ...h, rank: h.rank ?? i + 1 }));
   const defects = [];
-  const add = (stage, cls, detail, evidence = {}) => defects.push({ stage, class: cls, detail, fix_where: FIX_WHERE[cls], evidence: { trace_id: s.trace_id, tool: s.tool, ...evidence } });
+  const add = (stage, cls, detail, evidence = {}) => {
+    const d = { stage, class: cls, detail, fix_where: FIX_WHERE[cls], evidence: { trace_id: s.trace_id, tool: s.tool, ...evidence } };
+    if (cls === 'stage-over-budget') d.fix_where = `${defectFile(d)} (the ${evidence.stage} stage; its budget is in search/latency-budget.js)`;
+    defects.push(d);
+  };
   if (!hits.length) add('RETRIEVAL', 'zero-hits', `${s.tool || 'search'} "${String(s.query || '').slice(0, 80)}" returned nothing`);
   // copies of one passage (quote/source routes): the most authoritative copy should lead its lower ones
   if (['quote', 'source'].includes(r)) {
