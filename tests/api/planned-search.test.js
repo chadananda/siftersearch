@@ -68,9 +68,10 @@ describe('plannedSearch', () => {
       tradition: { choice: "Baha'i", confidence: 0.95 }, comparative: { noul: 0 },
       author: { choice: 'Shoghi Effendi', confidence: 0.9 }, shape: { choice: 'lookup', confidence: 0.9 },
     }, { given }), ms: 5 });
-    const limits = (q) => { const seen = []; return plannedSearch(q, { planner: pref, limit: 8, engine: async (_q, opts) => { seen.push({ author: !!opts.filters?.author, limit: opts.limit }); return { hits: [] }; } }).then(() => seen); };
+    const limits = (q) => { const seen = []; return plannedSearch(q, { planner: pref, limit: 8, engine: async (_q, opts) => { seen.push({ author: opts.filters?.author, limit: opts.limit }); return { hits: [] }; } }).then(() => seen); };
     const bare = (await limits('Shoghi Effendi')).find((c) => c.author);
     expect(bare.limit).toBeGreaterThan(8);
+    expect(bare.author).toContain('Shoghi Effendi');   // the canonical name, not only the short alias (Qdrant matches exactly)
     const subject = (await limits('Shoghi Effendi on world order')).find((c) => c.author);
     expect(subject.limit).toBe(8);
   });

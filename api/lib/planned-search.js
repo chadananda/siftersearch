@@ -30,6 +30,9 @@ const foldTok = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]
   .replace(/[\u2018\u2019\u02bc\u02bb`']/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const STOP = new Set('a an and or of the to in on at for by with from is are be as that this what whats does do did say says said about tell me my his her their its how why when where who which on upon into'.split(' '));
 
+/** The author filter: the canonical name AND the aliases. Qdrant matches author_fold EXACTLY, so the first alias alone
+ *  ('Shoghi' → 'shoghi' ≠ 'shoghieffendi') emptied the author pool for Shoghi Effendi and ‘Abdu’l-Bahá (#135/#262). */
+export const authorFilter = (prefer) => [...new Set([prefer.author, ...(prefer.aliases || [])].filter(Boolean))];
 /** Words that name the preferred author (aliases + label), folded — they are the FILTER, not the subject. */
 function nameWords(prefer) {
   return new Set([prefer.author, ...(prefer.aliases || [])].flatMap((a) => foldTok(a).split(' ')).filter(Boolean));
@@ -281,7 +284,7 @@ async function plannedSearchRun(query, { messages, given = {}, defaults = {}, li
   const nameOnly = plan.prefer && !terms.length ? nameWords(plan.prefer) : null;
   const [r, authorHits, verbatimHits] = await Promise.all([
     relaxScope(plan.filters, search, { min: Math.min(minResults, limit) }),
-    plan.prefer ? search({ ...plan.filters, author: plan.prefer.aliases[0] }, withoutAuthor(subjectQ, plan.prefer), nameOnly ? { limit: limit * NAME_ONLY_DEPTH } : null).catch(() => []) : Promise.resolve([]),
+    plan.prefer ? search({ ...plan.filters, author: authorFilter(plan.prefer) }, withoutAuthor(subjectQ, plan.prefer), nameOnly ? { limit: limit * NAME_ONLY_DEPTH } : null).catch(() => []) : Promise.resolve([]),
     quotation ? search({}, verbatimQ, KEYWORD_ONLY).catch(() => []) : Promise.resolve([]),
   ]);
   stages.passages_ms = Date.now() - t1;
