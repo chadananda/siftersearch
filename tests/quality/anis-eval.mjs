@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Frozen Anís eval set (anis-eval-set.json) scored by CODE ONLY (forensicPass + each item's expect fields); no LLM judge, no Opus.
-//   node tests/quality/anis-eval.mjs [--dry] [--from-threads [--days N]] [--split tune|held] [--class a,b] [--only id,id] [--limit N] [--concurrency 2] [--no-write]
+//   node tests/quality/anis-eval.mjs [--dry] [--from-threads [--days N]] [--split tune|held] [--class a,b] [--only id,id] [--limit N] [--concurrency 2] [--max-usd 1] [--no-write]
 // Prints per-class pass rate for tune and held apart; appends one line to anis-eval-history.json. API_BASE default http://tower-nas:7839;
 // needs INTERNAL_API_KEY (draft) + DEPLOY_SECRET (thread route/meta). Live replies spend the anis cap: use --limit. Pure scorer: scoreItem/rollup.
 import { readFileSync, writeFileSync, existsSync } from 'fs';
@@ -119,11 +119,12 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       }
     } catch (e) { return { error: e.message, ms: Date.now() - t0 }; }
   };
-  const scored = [], conc = Number(arg('concurrency') || 2), queue = [...items];
-  await Promise.all(Array.from({ length: conc }, async () => { for (let it; (it = queue.shift());) { const run = has('from-threads') ? await stored(it) : await ask(it); if (run.error === 'no stored thread') continue; const s = { ...scoreItem(it, run), usd: run.usd ?? null }; scored.push(s);
+  // --max-usd (default $1): stop starting new items once this run has spent it, so one run never takes the day's $5 improve budget.
+  const scored = [], conc = Number(arg('concurrency') || 2), queue = [...items], maxUsd = Number(arg('max-usd') || 1), spent = () => scored.reduce((a, x) => a + (x.usd || 0), 0);
+  await Promise.all(Array.from({ length: conc }, async () => { for (let it; spent() < maxUsd && (it = queue.shift());) { const run = has('from-threads') ? await stored(it) : await ask(it); if (run.error === 'no stored thread') continue; const s = { ...scoreItem(it, run), usd: run.usd ?? null }; scored.push(s);
     console.log(`${s.pass ? 'PASS' : 'FAIL'} ${s.id} $${s.usd ?? '?'} ${s.checks.map((c) => `${c.ok === false ? '✗' : c.ok === null ? '?' : '✓'}${c.name}${c.ok === false && c.detail != null ? `:${c.detail}` : ''}`).join(' ')}`); } }));
   const r = rollup(scored), usd = +scored.reduce((a, x) => a + (x.usd || 0), 0).toFixed(4), unchecked = scored.reduce((a, x) => a + (x.unchecked || 0), 0);
-  console.log(`\ncost $${usd} (${scored.filter((x) => x.usd == null).length} replies without a cost) · ${unchecked} unchecked check(s)`);
+  console.log(`\ncost $${usd} of $${maxUsd} max${queue.length ? ` · stopped at the limit, ${queue.length} item(s) not run` : ''} (${scored.filter((x) => x.usd == null).length} replies without a cost) · ${unchecked} unchecked check(s)`);
   for (const sp of ['tune', 'held']) { console.log(`\n${sp}  ${r.total[sp].pass}/${r.total[sp].n}`); for (const [c, v] of Object.entries(r[sp])) console.log(`  ${c.padEnd(24)} ${v.pass}/${v.n}`); }
   if (!has('no-write')) {
     const H = join(DIR, 'anis-eval-history.json'), hist = existsSync(H) ? JSON.parse(readFileSync(H, 'utf8')) : [];
