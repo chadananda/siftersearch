@@ -5,6 +5,6 @@ Description=SifterSearch RAM disk (tmpfs, 64G, never swapped)
 What=tmpfs
 Where=/srv/qram
 Type=tmpfs
-Options=size=44G,noswap,mode=0750,uid=1000,gid=1000
+Options=size=64G,noswap,mode=0750,uid=1000,gid=1000
 [Install]
 WantedBy=local-fs.target

@@ -3,14 +3,16 @@
 // /tank/…/vectors.db and killed the first one mid-run). params: { docs?: ids[], scope?, maxUsd, budgetKey, field?, store?, collection? }
 // — maxUsd required; field 'hype' | 'concepts' indexes those units into their own store + collection (see the indexer header).
 import { spawn } from 'child_process';
+import { mkdirSync, writeFileSync, rmSync } from 'fs';
+import { dirname, join } from 'path';
 
 const FIELD_TARGET = { hype: ['/tank/sifter/hype-vectors/vectors.db', 'hype'], concepts: ['/tank/sifter/concept-vectors/vectors.db', 'concepts'] };
 // scanOnly: the indexer's own dry run (--scan-only) — what would be embedded and its est_usd; spends nothing, so no maxUsd
-export function indexerArgs({ docs = null, scope = null, maxUsd, budgetKey = 'ops-phrase-index', field = null, limit = 0, scanOnly = false } = {}) {
+export function indexerArgs({ docs = null, docsFile = null, scope = null, maxUsd, budgetKey = 'ops-phrase-index', field = null, limit = 0, scanOnly = false } = {}) {
   if (!scanOnly && !(maxUsd > 0)) throw new Error('phrase-index: maxUsd is required (spend cap)');
   if (field && !FIELD_TARGET[field]) throw new Error(`phrase-index: unknown field '${field}' (hype | concepts)`);
   const [store, collection] = FIELD_TARGET[field] || [];
-  return ['scripts/phrase-index/indexer.mjs', ...(docs?.length ? ['--docs', docs.join(',')] : scope ? ['--scope', scope] : []),
+  return ['scripts/phrase-index/indexer.mjs', ...(docsFile ? ['--docs-file', docsFile] : docs?.length ? ['--docs', docs.join(',')] : scope ? ['--scope', scope] : []),
     ...(field ? ['--field', field, '--store', store, '--collection', collection] : hotArgs()),
     ...(scanOnly ? ['--scan-only'] : ['--embed', '--qdrant', '--max-usd', String(maxUsd)]), '--budget-key', budgetKey, ...(limit > 0 ? ['--limit', String(Math.floor(limit))] : [])];
 }
@@ -26,8 +28,17 @@ export const reconcileArgs = (env = process.env) => {
 
 export const phraseHotReconcileJob = () => phraseIndexJob({}, reconcileArgs());
 
+/** A docs list above this many ids goes to the indexer as a file (11-07: 28,721 ids on argv → spawn E2BIG). */
+export const DOCS_ARGV_MAX = 1000;
+const docsFileFor = (docs) => {
+  const f = join(process.cwd(), 'data', 'run', `phrase-docs-${process.pid}-${Date.now()}.txt`);
+  mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, docs.join('\n'));
+  return f;
+};
+
 export function phraseIndexJob(params = {}, prebuilt = null) {
-  const args = prebuilt || indexerArgs(params);
+  const docsFile = !prebuilt && params.docs?.length > DOCS_ARGV_MAX ? docsFileFor(params.docs) : null;
+  const args = prebuilt || indexerArgs({ ...params, docsFile });
   return new Promise((resolve, reject) => {
     const child = spawn('nice', ['-n', '10', process.execPath, ...args], { cwd: process.cwd(), env: process.env });
     let last = null, tail = '', logged = 0;
@@ -46,6 +57,6 @@ export function phraseIndexJob(params = {}, prebuilt = null) {
       tail = (tail + buf).slice(-2000);
     };
     child.stdout.on('data', take); child.stderr.on('data', (buf) => { tail = (tail + buf).slice(-2000); });   // stderr = progress/wait notes: tail only, never `last`
-    child.on('exit', (code) => (code === 0 ? resolve({ code, last }) : reject(new Error(`indexer exit ${code}: ${(tail.match(/^.*Error: .*$/m)?.[0] || '').slice(0, 400)} … ${tail.slice(-300)}`))));
+    child.on('exit', (code) => { if (docsFile) rmSync(docsFile, { force: true }); return code === 0 ? resolve({ code, last }) : reject(new Error(`indexer exit ${code}: ${(tail.match(/^.*Error: .*$/m)?.[0] || '').slice(0, 400)} … ${tail.slice(-300)}`)); });
   });
 }

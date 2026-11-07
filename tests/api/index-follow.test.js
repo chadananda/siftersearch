@@ -168,3 +168,16 @@ describe('hype-batch onSettled', () => {
     expect(c.errors).toContain('onSettled: queue down');
   });
 });
+
+describe('indexerArgs docsFile (11-07: E2BIG on 28,721 ids)', () => {
+  it('passes --docs-file instead of the inline list', () => {
+    const a = indexerArgs({ docs: [1, 2, 3], docsFile: '/x/ids.txt', scanOnly: true });
+    expect(a).toContain('--docs-file');
+    expect(a[a.indexOf('--docs-file') + 1]).toBe('/x/ids.txt');
+    expect(a).not.toContain('--docs');
+  });
+  it('a short list stays inline', () => {
+    const a = indexerArgs({ docs: [1, 2], scanOnly: true });
+    expect(a[a.indexOf('--docs') + 1]).toBe('1,2');
+  });
+});

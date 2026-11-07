@@ -11,6 +11,7 @@
 //   node scripts/phrase-index/indexer.mjs --scope supplemental --embed --qdrant --max-usd 180
 //   node scripts/phrase-index/indexer.mjs --scope originals --embed     (Bahá'í Arabic-script paragraphs only)
 //   node scripts/phrase-index/indexer.mjs --docs 21380 --embed          (explicit documents, e.g. the Arabic Qur'an)
+//   node scripts/phrase-index/indexer.mjs --docs-file ids.txt --embed   (thousands of documents: argv tops out ~128 KB)
 //   node scripts/phrase-index/indexer.mjs --field original --embed      (originals stored on translations: original_text)
 //   node scripts/phrase-index/indexer.mjs --qdrant                      (upsert anything embedded but not yet sent)
 //   … --monthly-usd 400   stop when this month's Gemini indexing spend (all indexers, /tank/sifter/gemini-spend.db) would pass $400
@@ -26,7 +27,7 @@ import { limiterFromEnv, stateFileFor } from './embed-limiter.mjs';
 import { createSyncEmbedder, watchWait } from './embed-sync.mjs';
 import { createBatchEmbedder, batchStateFileFor } from './embed-batch.mjs';
 import dotenv from 'dotenv';
-import { mkdirSync, statfsSync } from 'fs';
+import { mkdirSync, statfsSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { unitsOf, vecKey, packF16, unpackF16, arabicShare, paragraphLang, estTokens } from '../../api/lib/phrase-vectors.js';
@@ -50,7 +51,7 @@ const SCOPE = arg('scope', 'originals');                  // originals | library
 const SCRIPT = arg('script', 'all');                      // library only: arabic | other | all
 const RELIGION = arg('religion', 'all');                  // library only: bahai | other | all (plan order: Bahá'í first)
 const FIELD = arg('field', 'text');                       // 'original' = the bilingual layer: content.original_text; 'hype' = HyPE questions; 'concepts' = concept claims
-const DOCS = (arg('docs', '') || '').split(',').map(Number).filter(Boolean);
+const DOCS = (arg('docs', '') || (arg('docs-file') ? readFileSync(arg('docs-file'), 'utf8') : '')).split(/[,\s]+/).map(Number).filter(Boolean);   // --docs-file: a list too long for argv (E2BIG)
 const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concurrency', 16), LIMIT = +arg('limit', 0);
 const CHUNK = +arg('chunk', 20000);                       // paragraphs per embed→upsert cycle
 const MAX_USD = +arg('max-usd', 0), BUDGET = arg('budget-key', 'library-build'), PRICE = 0.20;   // $ per 1M tokens (online)
