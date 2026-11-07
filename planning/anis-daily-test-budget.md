@@ -24,3 +24,4 @@
 
 ## Ledger (one line per paid run: date · what · $ · result)
 - 11-07 · 3-item cost probe (stage-over-budget) · $0.26 · 1/3 pass; both fails = max_ms (28.6 s, 25.6 s); the slow turns were the costly ones
+- 11-07 · free forensics on the two slow turns · $0 · whole-turn time is LLM rounds (pre-search ~6 s, between rounds ~5 s, writer ~11-14 s), not search. The 25 s turn max_ms was an invented limit (brief agent), removed from the set; stage-over-budget items now score on forensics' per-search stage defect only. The one real stage defect: an embed of 6.7 s with Qdrant client 2.2 s vs server 25 ms → anís loop stall (2 of 351 embeds >2 s, p99 1.6 s). Added watchStalls (logs any stall ≥1 s with its time) to find the blocker.

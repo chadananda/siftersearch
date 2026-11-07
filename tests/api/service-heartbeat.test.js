@@ -1,9 +1,9 @@
 // Every service reports its version, health and work in hand (docs/architecture/continuous-deploy.md).
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { startHeartbeat, readServices, headCommit } from '../../api/lib/service-heartbeat.js';
+import { startHeartbeat, readServices, headCommit, watchStalls } from '../../api/lib/service-heartbeat.js';
 
 describe('service heartbeat', () => {
   it('a beat is read back with health and version; a silent service is called silent', () => {
@@ -33,5 +33,22 @@ describe('service heartbeat', () => {
     stop();
     const [s] = readServices({ dir });
     expect(s.loop_lag_ms.max).toBeGreaterThanOrEqual(80);
+  });
+});
+
+describe('watchStalls', () => {
+  it('logs a stall of a second or more with its time, not ordinary ticks', () => {
+    vi.useFakeTimers();
+    try {
+      let clock = 0;
+      const logged = [];
+      const stop = watchStalls({ every: 250, stallMs: 1000, name: 'x', now: () => clock, warn: (r) => logged.push(r) });
+      clock += 250; vi.advanceTimersByTime(250);
+      clock += 400; vi.advanceTimersByTime(250);
+      clock += 1500; vi.advanceTimersByTime(250);
+      stop();
+      expect(logged).toHaveLength(1);
+      expect(logged[0]).toMatchObject({ msg: 'event loop stalled', service: 'x', stalled_ms: 1250 });
+    } finally { vi.useRealTimers(); }
   });
 });

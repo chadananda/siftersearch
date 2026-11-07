@@ -28,6 +28,19 @@ export function headCommit(root = process.cwd()) {
   }
 }
 
+// A single loop stall is logged with its clock time, so a slow trace can be matched to what blocked the process (11-07: one
+// anís search saw Qdrant take 2.2 s while Qdrant's own time was 25 ms, and its embed 6.7 s — the loop, not the engines).
+export function watchStalls({ every = 250, stallMs = 1000, name = process.env.name || 'unknown', now = Date.now, warn = (r) => console.warn(JSON.stringify(r)) } = {}) {
+  let last = now();
+  const t = setInterval(() => {
+    const at = now(), stalled = at - last - every;
+    last = at;
+    if (stalled >= stallMs) warn({ msg: 'event loop stalled', service: name, stalled_ms: stalled, ended_at: new Date(at).toISOString() });
+  }, every);
+  t.unref?.();
+  return () => clearInterval(t);
+}
+
 /** Start beating. state() → { inflight, doing, … } merged in each beat. → stop(). */
 export function startHeartbeat({ name = process.env.name || 'unknown', every = 15_000, state = () => ({}), dir = DIR() } = {}) {
   const base = { name, pid: process.pid, commit: headCommit(), started_at: new Date().toISOString() };
@@ -48,7 +61,8 @@ export function startHeartbeat({ name = process.env.name || 'unknown', every = 1
   beat();
   const t = setInterval(beat, every);
   t.unref?.();
-  return () => { clearInterval(t); loop.disable(); };
+  const stopStalls = watchStalls({ name });
+  return () => { clearInterval(t); loop.disable(); stopStalls(); };
 }
 
 /** Every service's last beat, with health: running | draining | silent (no beat for a minute) — and whether it runs HEAD. */
