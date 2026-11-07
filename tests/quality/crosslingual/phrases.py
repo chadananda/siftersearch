@@ -43,14 +43,26 @@ PRON_SUFFIX = re.compile(r'(ها|هم|هن|کم|کن|نا|ه)$')   # noun + pron
 
 def _verbish(b): return bool(AR_VERB.match(b)) and not PRON_SUFFIX.search(b)
 
-def _is_ar_clause_start(w, nxt):
-    b = bare(w)
+INNA = ('ان', 'انا', 'انه', 'انها', 'انهم', 'انک', 'انی', 'اننا', 'انکم')
+AR_PREP_PRON = re.compile(r'^(ل|ب)(ک|ه|ها|هم|کم|نا|ی)$')       # phr-v4: و لک / و له — litany member
+AR_IMPER_OBJ = re.compile(r'^ا(?!ل)([^\s]{3}(ه|ها|هم|نا)|[^\s]{2,5}نی)$')  # phr-v4: imperative + object pronoun (و ادخله)
+NO_INNA_AFTER = {'و', 'ف', 'لو', 'ولو', 'فلو', 'اذ', 'بما', 'کما', 'حیث'}
+def _ta_marbuta(w): return bool(re.search('ة[\u064B-\u065F\u0670]*$', w))
+VOCATIVE_NEXT = {'رب', 'ربی', 'ربنا', 'الهی', 'الهنا', 'محبوبی', 'مقصودی'}
+
+def _opens_after_wa(b, raw, apart):
+    return (b in AR_PARTICLES or b in AR_OPENERS or _verbish(b) or (apart and bool(AR_PREP_PRON.match(b)))
+            or (bool(AR_IMPER_OBJ.match(b)) and not _ta_marbuta(raw) and not re.match('^[وف]?آ', raw) and not re.search('ات(ه|ها|هم|نا)$', b)))
+
+def _is_ar_clause_start(w, nxt, fa=False, last=None):
+    b = bare(w); lb = bare(last) if last else ''
     if b in AR_OPENERS: return True
-    if 'ّ' in w and b in ('ان', 'انا', 'انه', 'انها', 'انهم'): return True      # inna (with shadda), not an/in
-    if len(b) > 1 and b[0] in 'وف':                       # wa-/fa- proclitic
-        rest = b[1:]
-        if rest in AR_PARTICLES or rest in AR_OPENERS or _verbish(rest): return True
-    if b in ('و', 'ف') and nxt and (bare(nxt) in AR_PARTICLES or bare(nxt) in AR_OPENERS or _verbish(bare(nxt))): return True
+    if 'ّ' in w and b in INNA and lb not in NO_INNA_AFTER: return True      # inna (with shadda), not an/in
+    if b == 'ای' and nxt and bare(nxt) in VOCATIVE_NEXT and lb not in VOCATIVE_NEXT: return True
+    if not fa and len(b) > 1 and b[0] in 'وف' and 'ّ' in w and b[1:] in INNA: return True   # فانّک / وانّه
+    if b in ('و', 'ف') and nxt and bare(nxt) in INNA and not nxt.startswith('آ'): return True                            # و انّی / و انک
+    if not fa and len(b) > 1 and b[0] in 'وف' and _opens_after_wa(b[1:], w, False): return True   # wa-/fa- proclitic (Persian has none)
+    if b in ('و', 'ف') and nxt and _opens_after_wa(bare(nxt), nxt, True): return True
     return False
 
 def _rhyme(w):
@@ -93,9 +105,11 @@ def phrases(text, lang='ar'):
             b = bare(w); lb = bare(cur[-1]).rstrip('*')
             fa = any(bare(x) in FA_WORDS or re.search('[پچژگ]', x) for x in cur)
             verb_end = bool(FA_VERB_END.search(lb)) and not lb.startswith('ال')
-            start = _is_ar_clause_start(w, nxt) or b in FA_OPENERS or (fa and (b in FA_OPENERS_LOCAL or (verb_end and len(cur) >= SHORT) or (b == 'و' and nxt is not None and verb_end)))
+            start = _is_ar_clause_start(w, nxt, fa, cur[-1]) or b in FA_OPENERS or (fa and (b in FA_OPENERS_LOCAL or (verb_end and len(cur) >= SHORT) or (b == 'و' and nxt is not None and verb_end)))
             if re.search(r'[.!?؟؛*]$', cur[-1]): start = True      # editorial punctuation: supporting evidence
-        if start:
+        if start and len(cur) > 1 and bare(cur[-1]) in ('و', 'ف'):      # a bare و/ف goes with the clause it opens
+            units.append(cur[:-1]); cur = cur[-1:]
+        elif start:
             units.append(cur); cur = []
         cur.append(w)
     if cur: units.append(cur)

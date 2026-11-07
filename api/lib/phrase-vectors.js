@@ -4,7 +4,7 @@
 //         embedding text, so a vector is never paid for twice and a model/rule change never reuses a stale one.
 import { createHash } from 'crypto';
 /* global Float16Array */   // Node ≥ 24 (ES2025)
-import { segment, cleanText, anchored, SEG_VERSION } from './phrases.js';
+import { segment, cleanText, anchored, segVersion } from './phrases.js';
 
 export const pointId = (paragraphId, k) => Number(paragraphId) * 1000 + k;
 
@@ -12,7 +12,7 @@ export function unitsOf({ id, text, lang }) {
   const clean = cleanText(text);
   const spans = segment(text, lang).slice(0, 999);
   const phr = spans.map((s) => clean.slice(s.start, s.end));
-  return spans.map((s, k) => ({ pointId: pointId(id, k), k, start: s.start, end: s.end, embedText: anchored(phr, k), segV: SEG_VERSION }));
+  return spans.map((s, k) => ({ pointId: pointId(id, k), k, start: s.start, end: s.end, embedText: anchored(phr, k), segV: segVersion(lang) }));
 }
 
 export const vecKey = (model, dims, text) => createHash('sha1').update(`${model}\u0000${dims}\u0000${text}`).digest('hex');

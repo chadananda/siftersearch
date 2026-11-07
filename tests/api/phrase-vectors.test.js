@@ -1,14 +1,14 @@
 // Phrase-indexer pure helpers: units of a paragraph, the vector cache key, half-precision storage, Arabic-script share.
 import { describe, it, expect } from 'vitest';
 import { unitsOf, vecKey, packF16, unpackF16, arabicShare, pointId, paragraphLang, normLang, estTokens } from '../../api/lib/phrase-vectors.js';
-import { segment, SEG_VERSION } from '../../api/lib/phrases.js';
+import { segment, SEG_VERSION, segVersion } from '../../api/lib/phrases.js';
 
 describe('unitsOf', () => {
   const text = 'قل یا قوم ان الذی کان فی هذا الامر قد ظهر و هو الذی ینطق بالحق ثم ذکر ما نزل من قبل فی کتاب مبین';
   it('one unit per phrase, offsets from segment(), embedding text = phrase with neighbours', () => {
     const us = unitsOf({ id: '28513072', text, lang: 'ar' });
     expect(us.map(({ start, end }) => ({ start, end }))).toEqual(segment(text, 'ar'));
-    us.forEach((u, k) => { expect(u.k).toBe(k); expect(u.embedText).toContain(text.slice(u.start, u.end)); expect(u.segV).toBe(SEG_VERSION); });
+    us.forEach((u, k) => { expect(u.k).toBe(k); expect(u.embedText).toContain(text.slice(u.start, u.end)); expect(u.segV).toBe(segVersion('ar')); expect(segVersion('en')).toBe(SEG_VERSION); });
   });
   it('point ids are paragraph_id × 1000 + k', () => {
     expect(unitsOf({ id: '28513072', text, lang: 'ar' })[1].pointId).toBe(28513072001);

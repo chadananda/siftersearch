@@ -6,6 +6,8 @@
 // :edge: offsets index cleanText(text) (⁅s/p⁆ markers removed); HTML comments and <pb/> tags are skipped, never words.
 import { foldArabic, isPersianWord } from './arabic-script.js';
 export const SEG_VERSION = 'phr-v3';
+export const SEG_VERSION_AR = 'phr-v4';   // Arabic-script rules changed 11-07; other languages keep v3 (no re-split, no re-embed)
+export const segVersion = (lang) => (lang === 'ar' || lang === 'fa' ? SEG_VERSION_AR : SEG_VERSION);
 const SHORT = 4;
 const bare = foldArabic;   // decisions on folded forms (vowels, Qur'anic marks, ZWNJ, letter variants); offsets stay on the raw text
 const AR_PARTICLES = new Set(['قد', 'لا', 'لم', 'لن', 'ان', 'انا', 'انه', 'انها', 'انهم', 'اذا', 'اذ', 'لو', 'ما', 'لما', 'لئن', 'لعل', 'کذلک',
@@ -16,18 +18,30 @@ const FA_OPENERS_LOCAL = new Set(['حال', 'ای', 'ولکن', 'لکن']);   //
 const FA_VERB_END = /(است|اند|شود|امد|امدند|داد|دادند|گفت|گفتند|یافت|گشته|گردند|بود|بودند|شد|شده|شدند|نمود|نمودند|نماید|نمایند|کرد|کردند|کند|کنند|فرمود|فرمودند|فرماید|میشود|میگردد|گشت|گردید|گردد|دارد|دارند|نیست|هست|باشد|باشند|خواهد|ید)$/;
 const AR_VERB = /^(ی|ت|ن)\S{2,6}$/;          // imperfect verb shape (yaf'al / taf'al / naf'al)
 const PRON_SUFFIX = /(ها|هم|هن|کم|کن|نا|ه)$/;  // noun + pronoun ("its leaves") — a list item, not a clause
-const INNA = new Set(['ان', 'انا', 'انه', 'انها', 'انهم']);
+const INNA = new Set(['ان', 'انا', 'انه', 'انها', 'انهم', 'انک', 'انی', 'اننا', 'انکم']);
+// phr-v4 (11-07, measured on Core Tablets: litanies and prayers stayed one 80–105-word unit):
+const AR_PREP_PRON = /^(ل|ب)(ک|ه|ها|هم|کم|نا|ی)$/;          // و لک / و له / و بک — a litany member ("wa laka al-mulk… wa laka al-'izza")
+const AR_IMPER_OBJ = /^ا(?!ل)(\S{3}(ه|ها|هم|نا)|\S{2,5}نی)$/;   // imperative + object pronoun (و ادخله، و اجعلنا، و ارفعنی); 3-letter stem: not اجلالک/ابوابها
+const NO_INNA_AFTER = new Set(['و', 'ف', 'لو', 'ولو', 'فلو', 'اذ', 'بما', 'کما', 'حیث']);   // و انّک / و لو انّی: the cut goes before the و, never after it
+const VOCATIVE_NEXT = new Set(['رب', 'ربی', 'ربنا', 'الهی', 'الهنا', 'محبوبی', 'مقصودی']);   // ای ربّ / ای الهی: vocative in Arabic too
 const EN_OPENERS = new Set(['and', 'but', 'or', 'nor', 'for', 'yet', 'so', 'that', 'which', 'who', 'whom', 'whose', 'while',
   'whereas', 'although', 'though', 'because', 'if', 'when', 'whereby', 'wherein', 'lest', 'until', 'unless', 'since', 'as',
   'even', 'inasmuch', 'whilst', 'whereupon', 'wherefore']);
 const verbish = (b) => AR_VERB.test(b) && !PRON_SUFFIX.test(b);
 const opensAr = (b) => AR_PARTICLES.has(b) || AR_OPENERS.has(b) || verbish(b);
-const isArClauseStart = (w, nxt) => {
-  const b = bare(w);
+const endsTaMarbuta = (w) => /ة[\u064B-\u065F\u0670]*$/.test(w);   // واسعة / واضحة: ة folds to ه but is never a pronoun
+const imperObj = (b, raw) => AR_IMPER_OBJ.test(b) && !endsTaMarbuta(raw) && !/^[وف]?آ/.test(raw) && !/ات(ه|ها|هم|نا)$/.test(b);   // not آیاته / کلماتها
+const opensAfterWa = (b, raw, apart) => opensAr(b) || (apart && AR_PREP_PRON.test(b)) || imperObj(b, raw);
+// fa = the clause so far shows Persian: Persian has no attached wa-/fa-, so ویلهلم / فتای are words, not و+verb (phr-v4)
+const isArClauseStart = (w, nxt, fa = false, last = null) => {
+  const b = bare(w), lb = last == null ? '' : bare(last);
   if (AR_OPENERS.has(b)) return true;
-  if (w.includes('ّ') && INNA.has(b)) return true;           // inna with shadda, not an/in
-  if (b.length > 1 && 'وف'.includes(b[0]) && opensAr(b.slice(1))) return true;   // wa-/fa- proclitic
-  return (b === 'و' || b === 'ف') && nxt != null && opensAr(bare(nxt));
+  if (w.includes('ّ') && INNA.has(b) && !NO_INNA_AFTER.has(lb)) return true;   // inna with shadda, not an/in
+  if (b === 'ای' && nxt != null && VOCATIVE_NEXT.has(bare(nxt)) && !VOCATIVE_NEXT.has(lb)) return true;
+  if (!fa && b.length > 1 && 'وف'.includes(b[0]) && w.includes('ّ') && INNA.has(b.slice(1))) return true;   // فانّک / وانّه
+  if ((b === 'و' || b === 'ف') && nxt != null && INNA.has(bare(nxt)) && !nxt.startsWith('آ')) return true;                       // و انّی / و انک (inna, shadda often dropped)
+  if (!fa && b.length > 1 && 'وف'.includes(b[0]) && opensAfterWa(b.slice(1), w, false)) return true;   // wa-/fa- proclitic
+  return (b === 'و' || b === 'ف') && nxt != null && opensAfterWa(bare(nxt), nxt, true);
 };
 const rhyme = (w) => { const b = bare(w); return b.length >= 3 ? b.slice(-2) : null; };
 
@@ -65,11 +79,12 @@ const unitsAr = (words) => {
       const lb = bare(last).replace(/\*+$/, '');
       const fa = persianClause(cur);
       const verbEnd = FA_VERB_END.test(lb) && !lb.startsWith('ال');   // ال…: an Arabic noun (الحمید), not a Persian verb
-      start = isArClauseStart(w, nxt) || FA_OPENERS.has(b)
+      start = isArClauseStart(w, nxt, fa, last) || FA_OPENERS.has(b)
         || (fa && (FA_OPENERS_LOCAL.has(b) || (verbEnd && cur.length >= SHORT) || (b === 'و' && nxt != null && verbEnd)));
       if (/[.!?؟؛*]$/.test(last)) start = true;                      // editorial punctuation: supporting evidence
     }
-    if (start) { units.push(cur); cur = []; }
+    if (start && cur.length > 1 && /^[وف]$/.test(bare(cur.at(-1).w))) { units.push(cur.slice(0, -1)); cur = cur.slice(-1); }   // a bare و/ف goes with the clause it opens
+    else if (start) { units.push(cur); cur = []; }
     cur.push(words[i]);
   }
   if (cur.length) units.push(cur);
