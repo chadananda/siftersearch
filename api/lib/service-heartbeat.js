@@ -35,7 +35,7 @@ export function watchStalls({ every = 250, stallMs = 1000, name = process.env.na
   const t = setInterval(() => {
     const at = now(), stalled = at - last - every;
     last = at;
-    if (stalled >= stallMs) warn({ msg: 'event loop stalled', service: name, stalled_ms: stalled, ended_at: new Date(at).toISOString() });
+    if (stalled >= stallMs) warn({ msg: 'event loop stalled', service: name, stalled_ms: stalled, pid: process.pid, up_s: Math.round(process.uptime()), ended_at: new Date(at).toISOString() });
   }, every);
   t.unref?.();
   return () => clearInterval(t);
