@@ -11,7 +11,9 @@ export const COLLECTIONS = ['phrases', 'paragraphs_kw', 'hype', 'concepts'];
 // was { [docId]: old author }: only points still stamped with the OLD author key change — a paragraph with its own writer
 // (a compilation quoting Bahá'u'lláh, content.authors) keeps it. Without `was`, every point of the doc is stamped.
 export async function docAuthorRestampJob({ ids = [], was = {}, batch = 100, collections = COLLECTIONS } = {}, deps = {}) {
-  const { docs = listDocs, qd = qdrantRequest, draining = isDraining } = deps;
+  // wait=true: each call returns when Qdrant has applied it, so a big restamp paces itself instead of queueing every update at once
+  // (11-07: 236 wait=false calls on 2,785 docs left phrases_f16 optimizing at 13-34 cores and searches at ~500 ms server time).
+  const { docs = listDocs, qd = (path, body) => qdrantRequest(path, body, 120000), draining = isDraining } = deps;
   const out = { docs: 0, groups: 0, calls: 0, errors: 0, missing: 0, failed: [] };
   const all = [...new Set((ids || []).map(Number).filter(Boolean))];
   for (let i = 0; i < all.length; i += 1000) {
@@ -41,7 +43,7 @@ export async function docAuthorRestampJob({ ids = [], was = {}, batch = 100, col
         const must = [{ key: 'doc_id', match: { any: gids } }, ...(olds.length ? [{ key: 'author_fold', match: { any: olds } }] : [])];
         let err = null;
         for (let t = 0; t < 2; t++) {
-          try { await qd(`/collections/${c}/points/payload?wait=false`, { payload, filter: { must } }); err = null; break; } catch (e) { err = e; }
+          try { await qd(`/collections/${c}/points/payload?wait=true`, { payload, filter: { must } }); err = null; break; } catch (e) { err = e; }
         }
         if (err) { out.errors++; out.failed.push({ collection: c, ids: gids, error: String(err?.message || err).slice(0, 200) }); } else out.calls++;
       }

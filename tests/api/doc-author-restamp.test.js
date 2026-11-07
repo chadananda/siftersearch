@@ -17,7 +17,7 @@ describe('doc-author-restamp', () => {
     const docs = async ({ ids }) => ({ docs: ids.map((id) => ({ id, author: id < 3 ? '‘Abdu’l-Bahá' : 'The Báb', religion: id === 4 ? null : "Baha'i" })) });
     const r = await docAuthorRestampJob({ ids: [1, 2, 3, 4], collections: ['a', 'b'], batch: 1 }, { docs, qd: async (path, body) => calls.push([path, body]), draining: () => false });
     expect(r).toMatchObject({ docs: 4, groups: 3, calls: 2 * (2 + 1 + 1), errors: 0 });
-    expect(calls[0]).toEqual(['/collections/a/points/payload?wait=false', { payload: { author: '‘Abdu’l-Bahá', author_fold: 'abdulbaha', religion: "Baha'i" }, filter: { must: [{ key: 'doc_id', match: { any: [1] } }] } }]);
+    expect(calls[0]).toEqual(['/collections/a/points/payload?wait=true', { payload: { author: '‘Abdu’l-Bahá', author_fold: 'abdulbaha', religion: "Baha'i" }, filter: { must: [{ key: 'doc_id', match: { any: [1] } }] } }]);
     expect(calls.find(([, b]) => b.filter.must[0].match.any[0] === 4)[1].payload).not.toHaveProperty('religion');
   });
   it('with was, one call per payload matches any old author key (paragraph writers kept)', async () => {
