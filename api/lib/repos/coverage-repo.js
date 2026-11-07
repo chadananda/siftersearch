@@ -195,10 +195,11 @@ export async function coverageSummary() {
 export const docCoverage = (docId) =>
   queryAll('SELECT layer, total, generated, current, indexed, version, updated_at FROM index_coverage WHERE doc_id = ? ORDER BY layer', [Number(docId)], 'coverage:doc');
 
-/** NEW documents (ingested in the last `days`) that a layer has not reached at all — what follow-through queues next. */
+/** Documents a layer has not reached at all — what follow-through queues next, core first. `days` limits it to docs ingested
+ *  that recently; null = any age (11-07: a 7-day window left 28,721 library tablets of the Central Figures phrase-less for months). */
 export const newDocsMissingLayer = async (layer, { days = 7, limit = 200 } = {}) => (await queryAll(`SELECT i.doc_id AS id FROM index_coverage i JOIN docs d ON d.id = i.doc_id
-    WHERE i.layer = ? AND i.total > 0 AND i.indexed = 0 AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND d.created_at >= ?
-    ORDER BY i.core DESC, i.doc_id LIMIT ?`, [layer, new Date(Date.now() - days * 86400000).toISOString(), limit], 'coverage:new-missing')).map((r) => r.id);
+    WHERE i.layer = ? AND i.total > 0 AND i.indexed = 0 AND d.deleted_at IS NULL AND d.duplicate_of IS NULL${days == null ? '' : ' AND d.created_at >= ?'}
+    ORDER BY i.core DESC, i.doc_id LIMIT ?`, [layer, ...(days == null ? [] : [new Date(Date.now() - days * 86400000).toISOString()]), limit], 'coverage:new-missing')).map((r) => r.id);
 
 /** One layer's rows that HAVE derived data, on live primary-scope documents → [{ doc_id, generated, current, indexed }] —
  *  the index follower's input (ops/index-follow.js; one pass per 30 min from the single-instance indexer). Supplemental

@@ -99,6 +99,19 @@ describe('coverage ledger', () => {
   });
 });
 
+describe('phrase follow-through reaches old gaps (11-07)', () => {
+  it('days: null queues an unreached document of any age, core first; the default keeps the 7-day window', async () => {
+    raw.exec('ALTER TABLE docs ADD COLUMN created_at TEXT;');
+    raw.prepare("UPDATE docs SET created_at = '2026-01-01T00:00:00Z'").run();
+    const row = raw.prepare("INSERT INTO index_coverage (doc_id, layer, total, generated, indexed, core, updated_at) VALUES (?, 'phrase', 5, 5, ?, ?, 0)");
+    row.run(1, 0, 0); row.run(2, 0, 1);
+    expect(await repo.newDocsMissingLayer('phrase')).toEqual([]);
+    expect(await repo.newDocsMissingLayer('phrase', { days: null })).toEqual([2, 1]);
+    raw.prepare("UPDATE index_coverage SET indexed = 3 WHERE doc_id = 2").run();
+    expect(await repo.newDocsMissingLayer('phrase', { days: null })).toEqual([1]);
+  });
+});
+
 describe('coverage totals move by deltas (Chad 10-16: only query changes, never re-sum the DB)', () => {
   const snapshot = () => raw.prepare('SELECT * FROM coverage_totals ORDER BY religion, layer, core').all();
   it('re-measuring a document moves the totals exactly as a full rebuild would', async () => {
