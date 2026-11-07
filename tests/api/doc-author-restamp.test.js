@@ -72,15 +72,22 @@ describe('doc-corrections religion', () => {
 describe('bahai-library-writings-authors', () => {
   it.each([['writings-bahaullah-aqdas-aqdas', 'Bahá’u’lláh'], ['writings-abdulbaha-tab-2', '‘Abdu’l-Bahá'], ['writings-bab-qayyum.taherzadeh', 'The Báb'],
     ['writings-shoghieffendi-wob-36', 'Shoghi Effendi'], ['writings-bahaullah-aqdas-questions', 'Bahá’u’lláh']])('%s → %s', (s, a) => expect(writingsFigure(s)).toEqual({ author: a, religion: "Baha'i" }));
-  it.each(['writings-bahaullah-aqdas-notes', 'writings-bahaullah-slh-notes', 'writings-bahaullah-aqdas-supplements', 'writings-bahaullah-iqan-iq-intr-50', 'writings-bahaullah-pb-about'])(
-    '%s is editorial: religion only', (s) => expect(writingsFigure(s)).toEqual({ religion: "Baha'i" }));
+  it.each(['writings-bahaullah-aqdas-notes', 'writings-bahaullah-slh-notes', 'writings-bahaullah-aqdas-supplements', 'writings-bahaullah-iqan-iq-intr-50', 'writings-bahaullah-pb-about',
+    'writings-bahaullah-aqdas-aqdas2-N19', 'writings-bahaullah-aqdas-aqdas2-Key', 'writings-bahaullah-aqdas-glossary', 'writings-bahaullah-iqan-iq-fwrd-29',
+    'writings-shoghieffendi-gpb-gpb.toc2'])('%s is editorial: religion only', (s) => expect(writingsFigure(s)).toEqual({ religion: "Baha'i" }));
+  it('a title naming an introduction is editorial; aqdas K/QA are the text', () => {
+    expect(writingsFigure('writings-bahaullah-pb-1', "The Proclamation of Bahá'u'lláh: Introduction")).toEqual({ religion: "Baha'i" });
+    expect(writingsFigure('writings-bahaullah-aqdas-aqdas2-K119', 'Kitáb-i-Aqdas K119').author).toBe('Bahá’u’lláh');
+    expect(writingsFigure('writings-bahaullah-aqdas-aqdas2-QA70', 'Kitáb-i-Aqdas QA70').author).toBe('Bahá’u’lláh');
+  });
   it.each(['writings-quran-002', 'bahaullah-x', 'uhj'])('%s unchanged', (s) => expect(writingsFigure(s)).toBeNull());
   it('dry run counts; write corrects then queues the restamp; editorial already Baha\'i is skipped', async () => {
     const rows = [{ id: 1, title: 'Aqdas', author: 'writings-bahaullah-aqdas-aqdas', religion: null }, { id: 2, title: 'Notes', author: 'writings-bahaullah-aqdas-notes', religion: null },
-      { id: 3, title: 'Notes', author: 'writings-bahaullah-slh-notes', religion: "Baha'i" }, { id: 4, title: 'Q', author: 'writings-quran-2', religion: null }];
+      { id: 3, title: 'Notes', author: 'writings-bahaullah-slh-notes', religion: "Baha'i" }, { id: 4, title: 'Q', author: 'writings-quran-2', religion: null },
+      { id: 5, title: 'redirecting', author: 'writings-bahaullah-aqdas', religion: null }, { id: 6, title: 'x', author: 'writings-bahaullah-pb-', religion: null }];
     const docs = async ({ afterId }) => ({ docs: afterId ? [] : rows });
     const dry = await bahaiLibraryWritingsAuthorsJob({}, { docs, corrections: async () => { throw new Error('no'); }, enqueue: async () => { throw new Error('no'); } });
-    expect(dry).toMatchObject({ scanned: 4, perFigure: { 'Bahá’u’lláh': 1 }, editorial: 1, unchanged: { 'writings-quran': 1 }, changed: 2, restamp: null });
+    expect(dry).toMatchObject({ scanned: 6, stubs: 2, perFigure: { 'Bahá’u’lláh': 1 }, editorial: 1, unchanged: { 'writings-quran': 1 }, changed: 2, restamp: null });
     const sent = [], q = [];
     const r = await bahaiLibraryWritingsAuthorsJob({ write: true }, { docs, corrections: async ({ fixes }) => { sent.push(...fixes); return { changes: fixes }; }, enqueue: async (...a) => { q.push(a); return 9; } });
     expect(sent).toEqual([{ id: 1, author: 'Bahá’u’lláh', religion: "Baha'i" }, { id: 2, religion: "Baha'i" }]);
