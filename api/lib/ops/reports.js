@@ -59,6 +59,7 @@ import { oceanoflightsSlugAuthorsJob } from './oceanoflights-slug-authors-job.js
 import { bahaiLibraryWritingsAuthorsJob } from './bahai-library-writings-authors-job.js';
 import { siteReligionDefaultJob } from './site-religion-default-job.js';
 import { docTwinsJob } from './doc-twins-job.js';
+import { excludedPointsPurgeJob } from './excluded-points-purge-job.js';
 import { lettersIndexJob } from './letters-index-job.js';
 import { sourceLinksBuildJob } from './source-links-build-job.js';
 export { INDEX_LANES, INDEX_JOB_NAMES };
@@ -259,6 +260,7 @@ REPORTS['oceanoflights-slug-authors'] = oceanoflightsSlugAuthorsJob;   // params
 REPORTS['bahai-library-writings-authors'] = bahaiLibraryWritingsAuthorsJob;   // params { write, limit?, sample? } — bahai-library.com 'writings-<figure>-…' slugs → the Central Figure (editorial parts: religion only)
 REPORTS['site-religion-default'] = siteReligionDefaultJob;   // params { write, limit?, sample? } — bahai-library.com / oceanoflights docs with no religion → Baha'i (Bible/Qur'an copies → Christian/Islam); dry by default; write queues doc-author-restamp
 REPORTS['doc-twins'] = docTwinsJob;   // params { sites?, write, limit?, afterId?, share? } — scraped second copies (mutual ≥90% same texts) → duplicate_of the better copy; dry by default
+REPORTS['excluded-points-purge'] = excludedPointsPurgeJob;   // params { apply, chunk? } — delete the points of docs search excludes (duplicates, metadata, tag pages); dry by default
 REPORTS['compilation-authors'] = compilationAuthorsJob;   // params { write } — library records crediting a compilation to its first contributor
 REPORTS['rights-isbn'] = rightsIsbnJob;   // params { write, ids?, limit? } — a non-canonical BOOK with its own ISBN → encumbered (Chad 10-23); dry run by default
 REPORTS['book-hunt'] = bookHuntJob;   // params { limit, redo, ids } — ISBN/publisher/year/edition/purchase link/cover/author photo+dates per book (Chad 10-23); resumes
