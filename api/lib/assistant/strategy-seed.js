@@ -1,11 +1,15 @@
 // The checked-in SEED of the strategy graph (Phase 1, planning/anis-strategy-graph-plan.md): the templates, steps and strategies
 // that strategies-repo inserts when a (id, version) row is absent. Bump a row's version to ship a change; the old row stays for
 // rollback. Pure data. Templates use {{slot}} (activities/templates.js fills them); a strategy's `name` is its Jev option key
-// ('other' = the default respond graph). Activities named here are code (activities/index.js).
+// ('unmatched' = the default respond graph, called 'other' before 11-08). Activities named here are code (activities/index.js).
 
 import { NARRATION_TEMPLATES } from './narration-seed.js';
 
 export const SEED_VERSION = 1;
+// The row that catches every message no other strategy names (Chad 11-08: 'unmatched' is clearer than 'general'). Logs and stats written
+// before the rename say 'other': both names mean the same row.
+export const UNMATCHED = 'unmatched';
+export const isUnmatched = (name) => name === UNMATCHED || name === 'other';
 
 // ── Templates: the writer instructions, verbatim from the code they replace (equivalence: tests/api/strategy-graph.test.js) ──
 export const TEMPLATES = [
@@ -95,12 +99,12 @@ const STRATEGY_DESCRIPTIONS = {
   guidance: 'asks what the Universal House of Justice (the Bahá’í world body) has said, says now or has decided on a matter — present-day guidance, letters, messages, policy, elections, institutions',
   reference: 'gives a chapter-and-verse or numbered scripture reference and wants THAT passage: "John 3:16", "Qur’án 2:255", "Sura 24", "Bhagavad Gita chapter 2", "Psalm 23", "Matthew 5", "Isaiah 11:6"',
   compilation: 'asks for a COMPILATION — a gathered selection of passages on a theme, to read together, organized under headings ("compile passages on justice", "a short compilation on prayer and meditation", "gather quotations about the equality of women and men", "put together the writings on consultation")',
-  other: 'none of these: a quote to locate or trace with no further question about it, a book or person to look up, a fact or date, a word’s meaning, a greeting, conversation, or a general question',
+  unmatched: 'none of these: a quote to locate or trace with no further question about it, a book or person to look up, a fact or date, a word’s meaning, a greeting, conversation, or a general question',
 };
 
 const one = (id) => linear([['execute', `strategy.${id}`]]);
-const strategy = (id, name, graph) => ({ id, version: 1, name, description: STRATEGY_DESCRIPTIONS[name], exemplars: [], graph, status: 'active', parent_version: null, created_by: 'seed' });
-// seeded in Jev's option order; 'other' (the respond graph) is always offered last
+const strategy = (id, name, graph, version = 1) => ({ id, version, name, description: STRATEGY_DESCRIPTIONS[name], exemplars: [], graph, status: 'active', parent_version: version > 1 ? version - 1 : null, created_by: 'seed' });
+// seeded in Jev's option order; 'unmatched' (the respond graph) is always offered last. respond@2 = the rename of respond@1 ('other'), same graph.
 export const STRATEGIES = [
   strategy('comparison', 'comparison', one('comparison')),
   strategy('understanding', 'understanding', one('understanding')),
@@ -108,6 +112,6 @@ export const STRATEGIES = [
   strategy('guidance', 'guidance', one('guidance')),
   strategy('reference', 'reference', one('reference')),
   strategy('compilation', 'compilation', one('compilation')),
-  strategy('respond', 'other', RESPOND_GRAPH),
+  strategy('respond', UNMATCHED, RESPOND_GRAPH, 2),
 ];
 export const END_NODE = END;

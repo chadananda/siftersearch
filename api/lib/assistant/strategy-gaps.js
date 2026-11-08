@@ -18,7 +18,7 @@ export function gapOf({ turnId, threadId = null, question, path = {}, judge = nu
   const judged = judge?.verdict === 'weak' && judge.stage === 'STRATEGY';
   if (!unsure && !judged) return null;
   const jevChoice = top?.[0] ?? d?.chosen ?? path?.strategy?.choice ?? null;
-  // the class label: the judge's named right option, else what Jev leaned to (a bare 'other' stays 'other')
+  // the class label: the judge's named right option, else what Jev leaned to (old logs say 'other' for 'unmatched': same row)
   const label = (judged && judge.gate === 'anis-strategy' && judge.right) || jevChoice || 'none';
   return { turn_id: String(turnId), thread_id: threadId != null ? String(threadId) : null, question: String(question), label: String(label),
     source: judged ? 'judge' : 'jev', jev_choice: jevChoice, jev_confidence: top?.[1] ?? null, reason: d?.reason ?? (judged ? 'judge' : null),

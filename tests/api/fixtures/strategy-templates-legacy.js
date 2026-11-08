@@ -23,5 +23,5 @@ export const STRATEGIES = {
   guidance: 'asks what the Universal House of Justice (the Bahá’í world body) has said, says now or has decided on a matter — present-day guidance, letters, messages, policy, elections, institutions',
   reference: 'gives a chapter-and-verse or numbered scripture reference and wants THAT passage: "John 3:16", "Qur’án 2:255", "Sura 24", "Bhagavad Gita chapter 2", "Psalm 23", "Matthew 5", "Isaiah 11:6"',
   compilation: 'asks for a COMPILATION — a gathered selection of passages on a theme, to read together, organized under headings ("compile passages on justice", "a short compilation on prayer and meditation", "gather quotations about the equality of women and men", "put together the writings on consultation")',
-  other: 'none of these: a quote to locate or trace with no further question about it, a book or person to look up, a fact or date, a word’s meaning, a greeting, conversation, or a general question',
+  unmatched: 'none of these: a quote to locate or trace with no further question about it, a book or person to look up, a fact or date, a word’s meaning, a greeting, conversation, or a general question',
 };

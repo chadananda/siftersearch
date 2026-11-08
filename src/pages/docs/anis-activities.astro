@@ -1,7 +1,7 @@
 ---
 // /docs/anis-activities — layer 3 of 3 (Tools → Response Strategies → Activities): the reader-facing activities (reading a
 // book together, a study plan, letters…) from GET /api/v1/anis/activities (edge-cached; plan = planning/anis-strategies.json).
-// Each step links the question class (→ /docs/response-strategies#class-X) or tool (→ /docs/anis-tools#<tool>) it uses.
+// Each step links the strategy (→ /docs/response-strategies#class-X) or tool (→ /docs/anis-tools#<tool>) it uses.
 // Anchors are #<activity id>. The code building steps live on the Response Strategies page (#step-<name>), not here.
 import DocsLayout from '../../layouts/DocsLayout.astro';
 
@@ -74,7 +74,7 @@ const later = list.filter((a) => !/^week 1/i.test(a.when || ''));
     ))}
   </div>
 
-  {data?.source && <p class="note source">Question classes and activities: <code>{data.source.file}</code>{data.source.updated && ` (${data.source.updated})`}.</p>}
+  {data?.source && <p class="note source">Strategies and activities: <code>{data.source.file}</code>{data.source.updated && ` (${data.source.updated})`}.</p>}
 </DocsLayout>
 
 <style>

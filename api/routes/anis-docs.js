@@ -1,9 +1,10 @@
 // PUBLIC reads behind the three docs pages (strategy graph Phase 2), no auth, edge-cached (worker/edge-cache.js API_ROUTES):
 //   GET /api/v1/anis/tools      → the tools.js registry (schemas, the code steps that call each, 7-day calls/p50/p95) merged with
 //                                  the plan's tool rows; plan-only tools as built / planned
-//   GET /api/v1/anis/strategies → every active graph from strategies.db (graph, templates, 7-day numbers, branches, candidates),
-//                                  the code building steps (catalog + 7-day runs/p50/$) and the plan: classes A1–H2 with served-by
-//   GET /api/v1/anis/activities → the reader-facing activities from the plan, steps linked to the classes/tools they use
+//   GET /api/v1/anis/strategies → ONE ordered list of strategies, status built | planned, Unmatched last (a built one with its own
+//                                  graph carries graph, templates, 7-day numbers, branches, candidates), the code building steps
+//                                  (catalog + 7-day runs/p50/$) and the plan's ladder, combining rules and decisions
+//   GET /api/v1/anis/activities → the reader-facing activities from the plan, steps linked to the strategies/tools they use
 // The plan = planning/anis-strategies.json (anis-docs-data.js, mtime-cached).
 // Structure and aggregates only (strategy-docs.js): no turn ids, live questions or prompt text (the plan's curated example
 // phrasings were already public on the retired /docs/anis-strategies page). Each answer is memoised MEMO_MS.
@@ -12,7 +13,7 @@ import { strategyStats, branchStats, activityStats, toolStats, qualityByTurn } f
 import { activityCatalog } from '../lib/assistant/activities/catalog.js';
 import { REGISTRY } from '../lib/assistant/tools.js';
 import { candidatesDb, listPromotions } from '../lib/repos/strategy-candidates-repo.js';
-import { publicStrategies, publicSteps, publicTools, publicStrategyPlan, publicReaderActivities } from '../lib/assistant/strategy-docs.js';
+import { publicStrategies, publicSteps, publicTools, publicStrategyPlan, publicStrategyList, publicReaderActivities } from '../lib/assistant/strategy-docs.js';
 import { loadPlan } from '../lib/assistant/anis-docs-data.js';
 
 const MEMO_MS = 60_000, DAYS = 7;
@@ -41,8 +42,9 @@ export default async function anisDocsRoutes(fastify, { deps = {} } = {}) {
       const snap = snapshot(), acts = activities();
       const pub = publicStrategies({ snapshot: snap, activities: acts, stats: safe(() => sStats({ days: DAYS, quality: q }), []),
         branches: (id) => safe(() => bStats(id, { days: DAYS, quality: q }), []), promotions: safe(promos, null) });
-      return { ...pub, steps: publicSteps({ activities: acts, snapshot: snap, live: safe(() => aStats({ days: DAYS }), {}) }).steps,
-        plan: publicStrategyPlan({ plan: safe(plan, null), strategies: pub.strategies }) };
+      const pl = safe(plan, null);
+      return { ...pub, strategies: publicStrategyList({ plan: pl, strategies: pub.strategies }), steps: publicSteps({ activities: acts, snapshot: snap, live: safe(() => aStats({ days: DAYS }), {}) }).steps,
+        plan: publicStrategyPlan({ plan: pl }) };
     });
   });
   fastify.get('/activities', async (req, reply) => {

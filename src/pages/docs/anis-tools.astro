@@ -73,7 +73,7 @@ const json = (x) => JSON.stringify(x, null, 2);
         <dt>Returns</dt><dd>{t.outputName ? <code>{t.outputName}</code> : 'see schema'}</dd>
         <dt>Called by</dt>
         <dd>{t.activities?.length ? t.activities.map((a, i) => <>{i > 0 && ', '}<a href={`/docs/response-strategies#step-${a}`}>{a}</a></>) : 'the research agents directly'}</dd>
-        {t.plan?.classes?.length > 0 && (<><dt>Question classes</dt><dd>{t.plan.classes.map((c, i) => <>{i > 0 && ' · '}<a href={`/docs/response-strategies#class-${c}`}>{c}</a></>)}</dd></>)}
+        {t.plan?.classes?.length > 0 && (<><dt>Strategies</dt><dd>{t.plan.classes.map((c, i) => <>{i > 0 && ' · '}<a href={`/docs/response-strategies#class-${c}`}>{c}</a></>)}</dd></>)}
         {t.plan?.reader_activities?.length > 0 && (<><dt>Activities</dt><dd>{t.plan.reader_activities.map((a, i) => <>{i > 0 && ' · '}<a href={`/docs/anis-activities#${a}`}>{a.replace(/_/g, ' ')}</a></>)}</dd></>)}
       </dl>
       {t.description && t.description !== t.purpose && <details><summary>Full description</summary><p class="desc">{t.description}</p></details>}
@@ -83,7 +83,7 @@ const json = (x) => JSON.stringify(x, null, 2);
   ))}
 
   {[['built', 'Built-in tools', 'These exist in code and run inside the reply pipeline (decisions, the writer, the citation gate, the fallbacks); no model calls them by name.', built],
-    ['planned', 'Planned tools', 'Partly built or still to build. Each is named by the question classes whose strategies need it.', planned]].map(([key, title, intro, list]) => list.length > 0 && (
+    ['planned', 'Planned tools', 'Partly built or still to build. Each is named by the strategies that need it.', planned]].map(([key, title, intro, list]) => list.length > 0 && (
     <>
       <h2 id={`${key}-tools`}>{title}</h2>
       <p class="note">{intro}</p>
@@ -113,7 +113,7 @@ const json = (x) => JSON.stringify(x, null, 2);
     </>
   )}
 
-  {data?.plan_source && <p class="note source">Question classes, status, cost and planned tools: <code>{data.plan_source.file}</code>{data.plan_source.updated && ` (${data.plan_source.updated})`}.</p>}
+  {data?.plan_source && <p class="note source">Strategies, status, cost and planned tools: <code>{data.plan_source.file}</code>{data.plan_source.updated && ` (${data.plan_source.updated})`}.</p>}
 
   <script>
     import { bindLive, toolsFlat } from '../../lib/anis-docs.js';

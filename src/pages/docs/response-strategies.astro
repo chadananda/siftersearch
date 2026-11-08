@@ -1,7 +1,7 @@
 ---
 // /docs/response-strategies — layer 2 of 3 (Tools → Response Strategies → Activities), from GET /api/v1/anis/strategies
-// (edge-cached). Intro + improvement loop, the cost ladder (plan), one card per active graph (#strategy-<id>), question classes
-// A1–H2 by family with served-by (#class-<id>, plan), the code building steps (#step-<name>), composition + moves, decisions.
+// (edge-cached). Intro + improvement loop, the cost ladder (plan), ONE list of strategies (#strategy-<id>; built first, then planned,
+// Unmatched last; the plan's A1–H2 ids survive only as anchors #class-<id>), the code building steps (#step-<name>), composition, decisions.
 // Every number carries data-live and refreshes through liveRefresh (src/lib/anis-docs.js); SSR reserves its space.
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import { strategiesFlat, show } from '../../lib/anis-docs.js';
@@ -14,11 +14,11 @@ if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, sta
 const m = strategiesFlat(data);
 const strategies = data?.strategies || [];
 const oneLine = (s) => { const t = String(s || '').split(/\s[—–]\s|;\s|\.\s/)[0]; return t.length > 150 ? `${t.slice(0, 147)}…` : t; };
-const label = (s) => (s === 'other' ? 'general (everything else)' : s);
+const label = (s) => (s === 'other' ? 'unmatched' : s);   // logs from before the rename say 'other'
 const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1')).join(' · ');
 const plan = data?.plan || null;
 const steps = data?.steps || [];
-const classById = new Map((plan?.classes || []).map((c) => [c.id, c]));
+const nameOf = new Map(strategies.flatMap((x) => x.patterns.map((p) => [p.id, p.name])));
 const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
 const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui: 'Reader interface' };
 ---
@@ -57,7 +57,7 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
     <ul>
       <li><strong>Every step is measured.</strong> Each step of each strategy records how long it took, what it cost and which way it branched, so every strategy and every path through it has its own numbers.</li>
       <li><strong>Every reply is judged.</strong> A separate judge model scores replies and names what went wrong, so quality joins speed and cost in the numbers below.</li>
-      <li><strong>Gaps become candidates.</strong> When a class of questions is not served well by any strategy, a stronger model designs a candidate strategy from the existing building steps.</li>
+      <li><strong>Gaps become candidates.</strong> When a kind of question is not served well by any strategy, a stronger model designs a candidate strategy from the existing building steps.</li>
       <li><strong>Candidates must win.</strong> A candidate is replayed on fresh questions of that class plus a set of guard questions. It is promoted only if it measurably wins, and the old version is kept so a promotion can be rolled back.</li>
       <li><strong>Weak steps get the same treatment.</strong> A step or branch that scores poorly gets candidate edits, which are replayed and promoted the same way.</li>
       <li><strong>Code problems go to engineers.</strong> Weaknesses that a strategy cannot fix (a building step, a tool, a search index) become recommendations for the engineers.</li>
@@ -105,8 +105,9 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
         and better one step at a time.
       </p>
       <p>
-        When no strategy fits a request, a capable research model answers it directly. That question then becomes material for a
-        new candidate strategy, so the set of strategies grows to cover what readers actually ask, and the answers keep improving.
+        When no strategy fits a request, it goes to <a href="#strategy-respond">Unmatched</a>, the last entry in the list. A capable
+        model answers it and designs a candidate strategy for it. That question becomes material for a new strategy, so the list
+        grows to cover what readers actually ask, and the answers keep improving.
       </p>
       <div class="scroll">
         <table>
@@ -116,14 +117,14 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
       </div>
       <p class="note">Target times: a book, quote or reference ≤ 1 s · other lookups ≤ 3 s · understanding and comparing ≤ 12 s, first words within 2 s · assignments take minutes, with progress shown.</p>
       <ul>
-        <li><strong>Jev</strong>, the fast decision model (about 50 ms), reads each message with its thread and names its class: a lead class and any others. Jev also makes the small yes/no decisions inside a strategy (found? enough? which person?). Jev is never trained: each decision comes with the information it needs, and that context is adjusted until he decides right.</li>
+        <li><strong>Jev</strong>, the fast decision model (about 50 ms), reads each message with its thread and names its strategy: a lead strategy and any others. Jev also makes the small yes/no decisions inside a strategy (found? enough? which person?). Jev is never trained: each decision comes with the information it needs, and that context is adjusted until he decides right.</li>
         <li><strong>Tiers.</strong> The first tier uses only code, tools and Jev. A tier adds a light LLM step only when code cannot do the job, and only after the cheaper tier failed. If every tier fails, the research agent takes the question.</li>
         <li><strong>One writing step, for every answer.</strong> The chosen format shapes the answer; the writing model writes it once, adapting the evidence to Anís's voice and the reader, so answers stay varied and never sound canned. Lookups (find a book, trace a quote, a reference) go through a light writer too, so they stay fast.</li>
-        <li><strong>Switched on only when it matches the agent.</strong> Each strategy is measured on fresh questions of its class, with a held-out set kept aside, against the research agent's answers. It goes live for its class only when it matches or beats the agent within its target time. Until then the agent answers.</li>
+        <li><strong>Switched on only when it matches the agent.</strong> Each strategy is measured on fresh questions of its kind, with a held-out set kept aside, against the research agent's answers. It goes live for its class only when it matches or beats the agent within its target time. Until then the agent answers.</li>
       </ul>
       {plan.grounding_scale && (
         <p class="note">
-          <strong>Grounding</strong> is how many real test questions a class has to measure it with (lead · also). The labels are only
+          <strong>Grounding</strong> is how many real test questions a strategy has to measure it with (lead · also). The labels are only
           test fixtures for measuring Jev's choices:
           {Object.entries(plan.grounding_scale).map(([k, v], i) => <>{i > 0 && ' · '}<span class={`chip g-${k}`}>{k}</span> {v}</>)}.
         </p>
@@ -131,151 +132,64 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
     </section>
   )}
 
-  <h2>The strategies</h2>
-  {!data && <p class="note">The strategy list could not be loaded just now. It will appear on the next visit.</p>}
-  <div id="strategies" class="cards">
-    {strategies.map((s) => {
-      const L = layoutGraph(s.graph);
-      return (
-        <details class="card" id={`strategy-${s.id}`}>
-          <summary>
-            <span class="name">{label(s.name)} <span class="ver">v{s.version}</span></span>
-            <span class="desc">{oneLine(s.description)}</span>
-            <span class="keys">
-              <span>share <strong data-live={`s.${s.id}.share`} data-fmt="share">{show(m, `s.${s.id}.share`, 'share')}</strong></span>
-              <span>score <strong data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</strong></span>
-              <span>p50 <strong data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</strong></span>
-            </span>
-          </summary>
-          <div class="body">
-            {s.description && <p>{s.description}</p>}
-            {s.classes?.length > 0 && (
-              <p class="note">Serves question classes: {s.classes.map((c, i) => <>{i > 0 && ' · '}<a href={`#class-${c}`}>{c}{classById.get(c) ? ` ${classById.get(c).name}` : ''}</a></>)}</p>
-            )}
-            {s.exemplars.length > 0 && (<><h3>Questions it serves</h3><ul>{s.exemplars.map((e) => <li>{e}</li>)}</ul></>)}
+  <section id="strategies-list">
+    <h2>The strategies</h2>
+    <p>
+      One list. A <strong>built</strong> strategy runs today. A <strong>planned</strong> one is a kind of request readers keep
+      making, with its test questions, target time and the answer we want, but no decision tree yet; until it has one, those
+      questions go to <a href="#strategy-respond">Unmatched</a>. Built strategies come first, then planned ones, and Unmatched is last.
+      Some built strategies run inside the shared reply for now; they say so.
+    </p>
+    {!data && <p class="note">The strategy list could not be loaded just now. It will appear on the next visit.</p>}
+    <p class="numbers">
+      <span><strong>{strategies.filter((x) => x.status === 'built').length}</strong> built</span>
+      <span><strong>{strategies.filter((x) => x.status === 'planned').length}</strong> planned</span>
+    </p>
+    <div id="strategies" class="cards">
+      {strategies.map((s) => {
+        const L = s.graph ? layoutGraph(s.graph) : null;
+        const un = s.name === 'unmatched';
+        return (
+          <details class="card" id={`strategy-${s.id}`}>
+            <summary>
+              {s.patterns.map((p) => <span id={`class-${p.id}`} class="anchor"></span>)}
+              <span class="name">{label(s.name)} {s.version && <span class="ver">v{s.version}</span>} <span class={`chip st-${s.status}`}>{s.status}</span>{s.where === 'shared-reply' && <span class="chip">in the shared reply</span>}</span>
+              <span class="desc">{un ? 'Nothing else fits: a smart model builds a candidate strategy for the question, and it is kept only if it wins.' : oneLine(s.description)}</span>
+              <span class="keys">
+                {s.graph ? (
+                  <>
+                    <span>share <strong data-live={`s.${s.id}.share`} data-fmt="share">{show(m, `s.${s.id}.share`, 'share')}</strong></span>
+                    <span>score <strong data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</strong></span>
+                    <span>p50 <strong data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</strong></span>
+                  </>
+                ) : s.status === 'built' ? <span class="muted">numbers are counted with <a href="#strategy-respond">Unmatched</a></span> : <span class="muted">no decision tree yet</span>}
+                {s.target_time && <span>target <strong>{s.target_time}</strong></span>}
+                {(s.tests.lead + s.tests.also) > 0 && <span>test questions <strong>{s.tests.lead.toLocaleString('en-US')} · {s.tests.also.toLocaleString('en-US')}</strong></span>}
+              </span>
+            </summary>
+            <div class="body">
+              {s.description && !un && <p>{s.description}</p>}
+              {s.where === 'shared-reply' && (
+                <p class="note">Built into the shared reply for now. It runs inside <a href={`#strategy-${s.inside.strategy}`}>{label(s.inside.name)}</a> as
+                  the steps {s.inside.nodes.map((n, i) => <>{i > 0 && ', '}<code>{n}</code></>)}; it has no tree of its own yet.</p>
+              )}
+              {s.status === 'planned' && <p class="note">Planned. There is no decision tree yet, so these questions go to <a href="#strategy-respond">Unmatched</a> until one is built.</p>}
+              {un && (
+                <>
+                  <p>
+                    Unmatched takes every message that no other strategy names. It first checks, quickly, whether Jev missed a strategy that
+                    fits. If none does, a smart model designs a candidate strategy for this question from the existing
+                    <a href="#building-steps"> building steps</a>, runs it, and answers. The candidate is then replayed on fresh questions of
+                    the same kind and promoted into the list only if it wins; see <a href="#intro">how strategies improve</a>.
+                  </p>
+                  <p class="note">Until a candidate exists, Unmatched runs the shared reply: the lookups listed above as built into it, then the research agent.</p>
+                </>
+              )}
+              {s.exemplars.length > 0 && (<><h3>Questions it serves</h3><ul>{s.exemplars.map((e) => <li>{e}</li>)}</ul></>)}
 
-            <h3>Last 7 days</h3>
-            <table class="stats">
-              <tbody>
-                <tr><th>Turns</th><td data-live={`s.${s.id}.turns`} data-fmt="n">{show(m, `s.${s.id}.turns`)}</td>
-                  <th>Share of turns</th><td data-live={`s.${s.id}.share`} data-fmt="share">{show(m, `s.${s.id}.share`, 'share')}</td></tr>
-                <tr><th>p50</th><td data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</td>
-                  <th>p95</th><td data-live={`s.${s.id}.p95_ms`} data-fmt="ms">{show(m, `s.${s.id}.p95_ms`, 'ms')}</td></tr>
-                <tr><th>Judge score</th><td data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</td>
-                  <th>Scored replies</th><td data-live={`s.${s.id}.n_scored`} data-fmt="n">{show(m, `s.${s.id}.n_scored`)}</td></tr>
-                <tr><th>Weak</th><td data-live={`s.${s.id}.weak_pct`} data-fmt="pct">{show(m, `s.${s.id}.weak_pct`, 'pct')}</td>
-                  <th>Cost per turn</th><td data-live={`s.${s.id}.usd_per_turn`} data-fmt="usd">{show(m, `s.${s.id}.usd_per_turn`, 'usd')}</td></tr>
-              </tbody>
-            </table>
-
-            <h3>Graph</h3>
-            <div class="graph">
-              <svg viewBox={`0 0 ${L.width} ${L.height}`} width={L.width} height={L.height} role="img" aria-label={`${label(s.name)} strategy graph`}>
-                {L.edges.map((e) => (
-                  <g>
-                    <path d={e.d} class={e.side ? 'stroke-accent' : 'stroke-muted'} fill="none" />
-                    {e.label && <text x={e.lx} y={e.ly} class="elabel fill-secondary">{e.label}</text>}
-                  </g>
-                ))}
-                {L.nodes.map((n) => n.end ? (
-                  <g><rect x={n.x} y={n.y} width={n.w} height={n.h} rx="17" class="fill-surface-2 stroke-border" />
-                    <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-secondary">end</text></g>
-                ) : (
-                  <a href={`#step-${n.activity}`}>
-                    <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="6" class={`fill-surface-1 stroke-border kind-${n.kind}`} />
-                    <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-primary">{n.id}</text>
-                  </a>
-                ))}
-              </svg>
-            </div>
-
-            <h3>Steps</h3>
-            <table>
-              <thead><tr><th>Node</th><th>Step</th><th>Activity</th><th>Kind</th><th>Class</th></tr></thead>
-              <tbody>
-                {s.graph.nodes.map((n) => (
-                  <tr><td>{n.id}</td><td><code>{n.step}@{n.step_version}</code></td>
-                    <td><a href={`#step-${n.activity}`}>{n.activity}</a></td><td>{n.kind}</td><td>{n.cls}</td></tr>
-                ))}
-              </tbody>
-            </table>
-
-            <h3>Templates</h3>
-            {s.templates.length ? <ul>{s.templates.map((t) => <li><code>{t.id}@{t.version}</code></li>)}</ul> : <p class="note">This strategy has no writer templates of its own.</p>}
-
-            <h3>Branches</h3>
-            {s.branches.length ? (
-              <table>
-                <thead><tr><th>Path taken</th><th>Share</th><th>p50</th><th>Score</th></tr></thead>
-                <tbody>
-                  {s.branches.map((b) => (
-                    <tr><td class="path">{branchText(b)}</td>
-                      <td data-live={`b.${s.id}.${b.hash}.share`} data-fmt="share">{show(m, `b.${s.id}.${b.hash}.share`, 'share')}</td>
-                      <td data-live={`b.${s.id}.${b.hash}.p50_ms`} data-fmt="ms">{show(m, `b.${s.id}.${b.hash}.p50_ms`, 'ms')}</td>
-                      <td data-live={`b.${s.id}.${b.hash}.score`} data-fmt="score">{show(m, `b.${s.id}.${b.hash}.score`, 'score')}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : <p class="note">No measured turns in the last 7 days.</p>}
-
-            <h3>Candidate versions</h3>
-            {s.candidates.length ? (
-              <table>
-                <thead><tr><th>Version</th><th>Status</th><th>Replay</th><th>Score</th></tr></thead>
-                <tbody>
-                  {s.candidates.map((c) => (
-                    <tr><td>v{c.version}</td><td>{c.status}</td>
-                      <td>{c.replay ? (c.replay.summary ?? `${c.replay.wins ?? '–'} wins / ${c.replay.n ?? '–'} questions`) : '–'}</td>
-                      <td data-live={`c.${s.id}.${c.version}.score`} data-fmt="score">{show(m, `c.${s.id}.${c.version}.score`, 'score')}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : <p class="note">No candidate versions at the moment.</p>}
-          </div>
-        </details>
-      );
-    })}
-  </div>
-
-  {plan && (
-    <section id="classes">
-      <h2>Question classes</h2>
-      <p>
-        Every kind of question a reader asks falls into one of these classes, found by labelling {plan.classes.reduce((n, c) => n + (c.test_questions?.lead || 0), 0).toLocaleString('en-US')} real
-        messages. Each class has a planned route: the steps it takes, cheapest first, with Jev's decisions marked. A class is
-        served by the active strategy built for it; a class with no graph yet falls back to the general strategy.
-      </p>
-      <div class="scroll">
-        <table class="glance">
-          <thead><tr><th>Class</th><th>Tests (lead · also)</th><th>Tiers</th><th>LLM steps</th><th>Target</th><th>Grounding</th><th>Served by</th></tr></thead>
-          <tbody>
-            {plan.classes.map((c) => (
-              <tr><td><a href={`#class-${c.id}`}><strong>{c.id}</strong> {c.name}</a></td>
-                <td class="nowrap">{c.test_questions ? `${c.test_questions.lead ?? 0} · ${c.test_questions.also ?? 0}` : '–'}</td>
-                <td>{c.tiers.length}</td><td>{c.llm_steps}</td><td class="nowrap">{c.target_time || '–'}</td>
-                <td><span class={`chip g-${c.grounding}`}>{c.grounding}</span></td>
-                <td>{c.served_by ? <a href={`#strategy-${c.served_by.id}`}>{label(c.served_by.name)}</a> : <span class="muted">general (no graph yet)</span>}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {plan.families.map((f) => (
-        <>
-          <h3 class="family" id={`family-${f.id}`}>{f.id}. {f.name}</h3>
-          {f.note && <p class="note">{f.note}</p>}
-          <div class="cards">
-            {f.classes.map((id) => classById.get(id)).filter(Boolean).map((c) => (
-              <details class="card" id={`class-${c.id}`}>
-                <summary>
-                  <span class="name plain">{c.id} {c.name} {c.status && <span class="chip">{c.status}</span>}</span>
-                  <span class="keys">
-                    <span>target <strong>{c.target_time || '–'}</strong></span>
-                    <span>grounding <strong>{c.grounding}</strong></span>
-                    <span>{c.served_by ? <>served by <strong>{label(c.served_by.name)}</strong></> : <span class="muted">no graph yet</span>}</span>
-                  </span>
-                </summary>
-                <div class="body">
+              {s.patterns.map((c) => (
+                <div class="pattern">
+                  {(s.patterns.length > 1 || s.graph) && <h3>{c.name}</h3>}
                   {c.sounds_like.length > 0 && (<><h4>Sounds like</h4><ul class="quotes">{c.sounds_like.map((q) => <li>“{q}”</li>)}</ul>{c.sounds_like_note && <p class="note">{c.sounds_like_note}</p>}</>)}
                   {(c.how_often || c.often_with) && (<><h4>How often</h4><p>{c.how_often}{c.often_with && <><br /><span class="note">Often with: {c.often_with}</span></>}</p></>)}
                   {c.test_questions && (
@@ -291,7 +205,7 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
                     <><h4>Steps by tier</h4>
                       <table class="tiers"><tbody>
                         {c.tiers.map((t) => (
-                          <tr><th>{t.cost}</th><td>{t.steps.map((s, i) => <>{i > 0 && ' · '}{s.href ? <a href={s.href}>{s.label}</a> : s.label}</>)}</td></tr>
+                          <tr><th>{t.cost}</th><td>{t.steps.map((st, i) => <>{i > 0 && ' · '}{st.href ? <a href={st.href}>{st.label}</a> : st.label}</>)}</td></tr>
                         ))}
                       </tbody></table>
                       {c.post && <p class="note">Then: {c.post}</p>}
@@ -303,27 +217,107 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
                         {c.jev.cues?.length > 0 && (<><dt>Cues</dt><dd>{c.jev.cues.join(' · ')}</dd></>)}
                         {c.jev.required_slots?.length > 0 && (<><dt>Needs</dt><dd>{c.jev.required_slots.join(' · ')}</dd></>)}
                         {c.jev.disqualifiers?.length > 0 && (<><dt>Not when</dt><dd>{c.jev.disqualifiers.join(' · ')}</dd></>)}
-                        {c.jev.confusable_with?.length > 0 && (<><dt>Confused with</dt><dd>{c.jev.confusable_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{x}</a></>)}</dd></>)}
-                        {c.jev.composes_with?.length > 0 && (<><dt>Combines with</dt><dd>{c.jev.composes_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{x}</a></>)}</dd></>)}
+                        {c.jev.confusable_with?.length > 0 && (<><dt>Confused with</dt><dd>{c.jev.confusable_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{nameOf.get(x) || x}</a></>)}</dd></>)}
+                        {c.jev.composes_with?.length > 0 && (<><dt>Combines with</dt><dd>{c.jev.composes_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{nameOf.get(x) || x}</a></>)}</dd></>)}
                       </dl>
                       {c.jev.example_phrasings?.length > 0 && (<p class="note">Example phrasings: {c.jev.example_phrasings.map((q) => `“${q}”`).join(' · ')}</p>)}
                       {c.jev.near_misses?.length > 0 && (
                         <><p class="note"><strong>Near misses</strong></p>
-                          <ul class="misses">{c.jev.near_misses.map((n) => <li>“{n.text}” → <strong>{n.goes_to}</strong>{n.why && <>: {n.why}</>}</li>)}</ul></>
+                          <ul class="misses">{c.jev.near_misses.map((n) => <li>“{n.text}” → <strong>{nameOf.get(n.goes_to) || n.goes_to}</strong>{n.why && <>: {n.why}</>}</li>)}</ul></>
                       )}</>
                   )}
                   {c.measure && (<><h4>Measure</h4><p>{c.measure}</p></>)}
-                  <h4>Served by</h4>
-                  <p>{c.served_by ? <><a href={`#strategy-${c.served_by.id}`}>{label(c.served_by.name)}</a><span class="note"> · if every tier fails: {c.fallback}</span></> : c.falls_back}</p>
                   {c.open_questions.length > 0 && (<><h4>Open questions</h4><ul>{c.open_questions.map((q) => <li>{q}</li>)}</ul></>)}
                 </div>
-              </details>
-            ))}
-          </div>
-        </>
-      ))}
-    </section>
-  )}
+              ))}
+
+              {s.graph && (
+                <>
+                  <h3>Last 7 days</h3>
+                  <table class="stats">
+                    <tbody>
+                      <tr><th>Turns</th><td data-live={`s.${s.id}.turns`} data-fmt="n">{show(m, `s.${s.id}.turns`)}</td>
+                        <th>Share of turns</th><td data-live={`s.${s.id}.share`} data-fmt="share">{show(m, `s.${s.id}.share`, 'share')}</td></tr>
+                      <tr><th>p50</th><td data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</td>
+                        <th>p95</th><td data-live={`s.${s.id}.p95_ms`} data-fmt="ms">{show(m, `s.${s.id}.p95_ms`, 'ms')}</td></tr>
+                      <tr><th>Judge score</th><td data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</td>
+                        <th>Scored replies</th><td data-live={`s.${s.id}.n_scored`} data-fmt="n">{show(m, `s.${s.id}.n_scored`)}</td></tr>
+                      <tr><th>Weak</th><td data-live={`s.${s.id}.weak_pct`} data-fmt="pct">{show(m, `s.${s.id}.weak_pct`, 'pct')}</td>
+                        <th>Cost per turn</th><td data-live={`s.${s.id}.usd_per_turn`} data-fmt="usd">{show(m, `s.${s.id}.usd_per_turn`, 'usd')}</td></tr>
+                    </tbody>
+                  </table>
+
+                  <h3>Graph</h3>
+                  <div class="graph">
+                    <svg viewBox={`0 0 ${L.width} ${L.height}`} width={L.width} height={L.height} role="img" aria-label={`${label(s.name)} strategy graph`}>
+                      {L.edges.map((e) => (
+                        <g>
+                          <path d={e.d} class={e.side ? 'stroke-accent' : 'stroke-muted'} fill="none" />
+                          {e.label && <text x={e.lx} y={e.ly} class="elabel fill-secondary">{e.label}</text>}
+                        </g>
+                      ))}
+                      {L.nodes.map((n) => n.end ? (
+                        <g><rect x={n.x} y={n.y} width={n.w} height={n.h} rx="17" class="fill-surface-2 stroke-border" />
+                          <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-secondary">end</text></g>
+                      ) : (
+                        <a href={`#step-${n.activity}`}>
+                          <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="6" class={`fill-surface-1 stroke-border kind-${n.kind}`} />
+                          <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-primary">{n.id}</text>
+                        </a>
+                      ))}
+                    </svg>
+                  </div>
+
+                  <h3>Steps</h3>
+                  <table>
+                    <thead><tr><th>Node</th><th>Step</th><th>Activity</th><th>Kind</th><th>Speed class</th></tr></thead>
+                    <tbody>
+                      {s.graph.nodes.map((n) => (
+                        <tr><td>{n.id}</td><td><code>{n.step}@{n.step_version}</code></td>
+                          <td><a href={`#step-${n.activity}`}>{n.activity}</a></td><td>{n.kind}</td><td>{n.cls}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <h3>Templates</h3>
+                  {s.templates.length ? <ul>{s.templates.map((t) => <li><code>{t.id}@{t.version}</code></li>)}</ul> : <p class="note">This strategy has no writer templates of its own.</p>}
+
+                  <h3>Branches</h3>
+                  {s.branches.length ? (
+                    <table>
+                      <thead><tr><th>Path taken</th><th>Share</th><th>p50</th><th>Score</th></tr></thead>
+                      <tbody>
+                        {s.branches.map((b) => (
+                          <tr><td class="path">{branchText(b)}</td>
+                            <td data-live={`b.${s.id}.${b.hash}.share`} data-fmt="share">{show(m, `b.${s.id}.${b.hash}.share`, 'share')}</td>
+                            <td data-live={`b.${s.id}.${b.hash}.p50_ms`} data-fmt="ms">{show(m, `b.${s.id}.${b.hash}.p50_ms`, 'ms')}</td>
+                            <td data-live={`b.${s.id}.${b.hash}.score`} data-fmt="score">{show(m, `b.${s.id}.${b.hash}.score`, 'score')}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : <p class="note">No measured turns in the last 7 days.</p>}
+
+                  <h3>Candidate versions</h3>
+                  {s.candidates.length ? (
+                    <table>
+                      <thead><tr><th>Version</th><th>Status</th><th>Replay</th><th>Score</th></tr></thead>
+                      <tbody>
+                        {s.candidates.map((c) => (
+                          <tr><td>v{c.version}</td><td>{c.status}</td>
+                            <td>{c.replay ? (c.replay.summary ?? `${c.replay.wins ?? '–'} wins / ${c.replay.n ?? '–'} questions`) : '–'}</td>
+                            <td data-live={`c.${s.id}.${c.version}.score`} data-fmt="score">{show(m, `c.${s.id}.${c.version}.score`, 'score')}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : <p class="note">No candidate versions at the moment.</p>}
+                </>
+              )}
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  </section>
 
   <section id="building-steps">
     <h2>Building steps</h2>
@@ -359,7 +353,7 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
     <section id="composition">
       <h2>Combining strategies</h2>
       {plan.composition.intro && <p>{plan.composition.intro}</p>}
-      {plan.composition.rules.length > 0 && <p><strong>The rule for combining.</strong> Jev names the lead class and the others in one classification.</p>}
+      {plan.composition.rules.length > 0 && <p><strong>The rule for combining.</strong> Jev names the lead strategy and the others in one classification.</p>}
       {plan.composition.rules.length > 0 && <ul>{plan.composition.rules.map((r) => <li>{r}</li>)}</ul>}
       {plan.composition.sets.length > 0 && (
         <>
@@ -403,7 +397,7 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
     </section>
   )}
 
-  {plan && <p class="note source">Question classes: <code>{plan.source.file}</code>{plan.source.updated && ` (${plan.source.updated})`}. Graphs and building steps: the strategy store and the code.</p>}
+  {plan && <p class="note source">Planned strategies: <code>{plan.source.file}</code>{plan.source.updated && ` (${plan.source.updated})`}. Graphs and building steps: the strategy store and the code.</p>}
 
   <script>
     import { bindLive, strategiesFlat } from '../../lib/anis-docs.js';
@@ -424,6 +418,12 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
   .card > summary { cursor: pointer; list-style: none; display: grid; gap: 0.25rem; padding: 0.8rem 1rem; }
   .card > summary::-webkit-details-marker { display: none; }
   .card .name { font-weight: 600; text-transform: capitalize; }
+  .card .name .chip { margin-left: 0.4rem; text-transform: uppercase; }
+  .anchor { position: absolute; }
+  .card > summary { position: relative; }
+  .chip.st-built { color: var(--success); }
+  .chip.st-planned { color: var(--muted); }
+  .pattern + .pattern { border-top: 1px solid var(--border-subtle); margin-top: 1rem; }
   .card .ver { font-weight: 400; font-size: 0.8rem; opacity: 0.7; text-transform: none; }
   .card .desc { font-size: 0.92rem; }
   .card .keys { display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; font-size: 0.88rem; }

@@ -2,13 +2,14 @@
 // strategy → Opus 5.5 (role strategy-design, billed improve-strategy-edit) rewrites that strategy as a candidate VERSION: same id
 // and name, existing steps reused, changed steps/templates as NEW ids. Validated like a design (strategy-design.js
 // validateCandidate, name forced to the target), one retry with the errors. Several suggestions on one strategy → ONE edit.
-// The respond graph ('other') runs respond.* activities no strategy may use, so it is not editable. Deps: strategy-design.
+// The respond graph ('unmatched') runs respond.* activities no strategy may use, so it is not editable. Deps: strategy-design.
 import { activities as registry } from './activities/index.js';
 import { DESIGN_ROLE, designActivities, validateCandidate, parseCandidate, opusCall } from './strategy-design.js';
 import { IMPROVE_CFG } from './strategy-gaps.js';
+import { isUnmatched } from './strategy-seed.js';
 
 export const EDIT_CALLER = 'improve-strategy-edit';
-export const NOT_EDITABLE = new Set(['other', 'respond']);
+export const NOT_EDITABLE = new Set(['other', 'unmatched', 'respond']);
 
 export const EDIT_SYSTEM = `You EDIT one existing RESPONSE STRATEGY of Anís, a research assistant over a Bahá'í and interfaith library.
 A strategy is a small graph of ACTIVITIES (code that already exists); Jev picks a strategy per question by its DESCRIPTION; after the
@@ -29,7 +30,7 @@ Answer with ONE JSON object and nothing else:
 export function groupDataSuggestions(rows, cat) {
   const byKey = new Map();
   for (const r of rows) {
-    const s = r.strategy ? cat.strategies.find((x) => x.id === r.strategy || x.name === r.strategy) : null;
+    const s = r.strategy ? cat.strategies.find((x) => x.id === r.strategy || x.name === r.strategy || (isUnmatched(r.strategy) && isUnmatched(x.name))) : null;
     const key = s ? s.id : `?${r.strategy || ''}`;
     if (!byKey.has(key)) byKey.set(key, { strategy: s || null, name: r.strategy || null, rows: [] });
     byKey.get(key).rows.push(r);

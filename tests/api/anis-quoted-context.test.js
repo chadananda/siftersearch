@@ -31,7 +31,7 @@ describe('what Jev is told: a quotation followed by a question about it is resea
   });
   it('the understanding strategy takes a quoted passage to explain; other keeps only a quote to locate', () => {
     expect(STRATEGIES.understanding).toMatch(/passage the person quotes and asks to have explained/);
-    expect(STRATEGIES.other).toMatch(/quote to locate or trace with no further question about it/);
+    expect(STRATEGIES.unmatched).toMatch(/quote to locate or trace with no further question about it/);
   });
 });
 

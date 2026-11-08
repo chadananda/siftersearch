@@ -10,15 +10,16 @@ import { ENDPOINT, TRADITIONS, MIN_CONFIDENCE } from '../scope-extract.js';
 import { jevProbabilities } from './decision-log.js';
 import { drawFromCriteria } from '../search-plan.js';
 import { catalog } from '../repos/strategies-repo.js';
+import { UNMATCHED, isUnmatched } from './strategy-seed.js';
 
 // Jev's STRATEGY options = the active strategy rows (strategies-repo; seed: strategy-seed.js): option key = row name, criterion =
-// row description, in seeded order with 'other' (the respond graph) last. Built once per catalog rev.
+// row description, in seeded order with 'unmatched' (the respond graph) last. Built once per catalog rev.
 const optionsMemo = new WeakMap();
 export function strategyOptions() {
   const c = catalog();
   if (!optionsMemo.has(c)) {
     const rows = c.strategies.filter((s) => s.description);
-    const ordered = [...rows.filter((s) => s.name !== 'other'), ...rows.filter((s) => s.name === 'other')];
+    const ordered = [...rows.filter((s) => !isUnmatched(s.name)), ...rows.filter((s) => isUnmatched(s.name))];
     optionsMemo.set(c, Object.freeze(Object.fromEntries(ordered.map((s) => [s.name, s.description]))));
   }
   return optionsMemo.get(c);
@@ -49,7 +50,7 @@ export const stateOf = (messages = [], { profile = {} } = {}) => {
 
 /**
  * @returns {Promise<null | { strategy: {choice, confidence, distribution}, sides: string[], ms, decisions: object[] }>}
- *   strategy.choice ∈ STRATEGIES; low confidence → 'other' (fail open: the ordinary pipeline). sides: traditions, in order, for a comparison.
+ *   strategy.choice ∈ STRATEGIES; low confidence → 'unmatched' (fail open: the ordinary pipeline). sides: traditions, in order, for a comparison.
  */
 export async function chooseStrategy(messages, { profile = {}, apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = jevFetch('anis-strategy'), timeoutMs = JEV_LIMITS.strategy.timeoutMs,
   budgetMs = Math.max(timeoutMs, JEV_LIMITS.strategy.budgetMs), onJev = null, min = MIN_CONFIDENCE, options = null } = {}) {
@@ -77,7 +78,7 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
     const ms = Date.now() - t0;
     const raw = choice(a.strategy) || { choice: null, confidence: 0, distribution: null };
     const confident = raw.choice && opts[raw.choice] && (raw.confidence ?? 0) >= min;
-    const strategy = confident ? raw : { ...raw, choice: 'other', was: raw.choice ?? null, reason: raw.choice ? 'low-confidence' : 'no-answer' };
+    const strategy = confident ? raw : { ...raw, choice: UNMATCHED, was: raw.choice ?? null, reason: raw.choice ? 'low-confidence' : 'no-answer' };
     const sideAnswers = SIDE_KEYS.map((k) => choice(a[k])).filter(Boolean);
     const sides = [...new Set(sideAnswers.filter((s) => s.choice && s.choice !== 'none' && SIDES[s.choice] && (s.confidence ?? 0) >= min).map((s) => s.choice))];
     // each side's book: the span Jev called that side's book, most confident first
@@ -95,4 +96,4 @@ export async function chooseStrategy(messages, { profile = {}, apiKey = process.
 }
 
 /** Is there a strategy for code to execute? Pure. */
-export const strategyOf = (s) => (s?.strategy?.choice && s.strategy.choice !== 'other' ? s.strategy.choice : null);
+export const strategyOf = (s) => (s?.strategy?.choice && !isUnmatched(s.strategy.choice) ? s.strategy.choice : null);

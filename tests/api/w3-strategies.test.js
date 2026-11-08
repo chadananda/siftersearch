@@ -40,9 +40,9 @@ describe('chooseStrategy (Jev decides, never keywords)', () => {
     const offSide = await chooseStrategy(m, { apiKey: 'k', fetchImpl: jev({ strategy: { choice: 'comparison', confidence: 0.9 }, side_a: { choice: "Baha'i", confidence: 0.9 }, side_b: { choice: 'Islam', confidence: 0.9 }, book_2: { choice: 'Christian', confidence: 0.9 } }) });
     expect(offSide.sources).toEqual({});   // a book of a tradition that is not a side is not read
   });
-  it('low confidence or no answer → other (fail open), the reason logged; errors → null', async () => {
+  it('low confidence or no answer → unmatched (fail open), the reason logged; errors → null', async () => {
     const low = await chooseStrategy(msgs, { apiKey: 'k', fetchImpl: jev({ strategy: { choice: 'prayer', confidence: 0.4 } }) });
-    expect(low.strategy).toMatchObject({ choice: 'other', was: 'prayer', reason: 'low-confidence' }); expect(strategyOf(low)).toBeNull();
+    expect(low.strategy).toMatchObject({ choice: 'unmatched', was: 'prayer', reason: 'low-confidence' }); expect(strategyOf(low)).toBeNull();
     const none = await chooseStrategy(msgs, { apiKey: 'k', fetchImpl: jev({}) });
     expect(none.strategy.reason).toBe('no-answer');
     expect(await chooseStrategy(msgs, { apiKey: 'k', fetchImpl: async () => { throw new Error('x'); } })).toBeNull();

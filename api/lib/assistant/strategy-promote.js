@@ -8,6 +8,7 @@
 // and for at most jev_guard_max guards. A per-candidate $ cap (config candidate_usd) stops the run (decision: over-budget).
 // Deps (injectable): writeQuestions, tryTurn, judge, jevPick. Config: config/strategy-improve.json.
 import { IMPROVE_CFG } from './strategy-gaps.js';
+import { isUnmatched } from './strategy-seed.js';
 import { DESIGN_ROLE, opusCall } from './strategy-design.js';
 
 export const QUESTIONS_CALLER = 'improve-strategy-questions', JUDGE_CALLER = 'improve-strategy-judge';
@@ -39,7 +40,7 @@ export async function questionSet({ row, held = [], cat, writeQuestions, nFresh 
     const f = frozen.filter((q) => !heldSet.has(q.question) && !hist.some((h) => h.question === q.question));
     return { questions: [...f.filter((q) => q.set === 'fresh'), ...tail, ...f.filter((q) => q.set === 'guard')], usd: 0, fresh: null };
   }
-  const others = cat.strategies.filter((s) => s.id !== row.id && s.name !== 'other' && s.name !== row.name);
+  const others = cat.strategies.filter((s) => s.id !== row.id && !isUnmatched(s.name) && s.name !== row.name);
   const fromExemplars = [];
   for (let i = 0; fromExemplars.length < nGuard && others.some((s) => (s.exemplars || [])[i]); i++)
     for (const s of others) if (s.exemplars?.[i] && fromExemplars.length < nGuard) fromExemplars.push({ question: s.exemplars[i], set: 'guard', of: s.name });

@@ -6,7 +6,7 @@
 // a new candidate VERSION of that strategy. Deps: activities registry, graph compileGraph, strategy-gaps (words), audit/improve costOf.
 import { compileGraph } from './activities/graph.js';
 import { activities as registry } from './activities/index.js';
-import { END_NODE } from './strategy-seed.js';
+import { END_NODE, isUnmatched } from './strategy-seed.js';
 import { IMPROVE_CFG, jaccardWords } from './strategy-gaps.js';
 
 export const DESIGN_ROLE = 'strategy-design';
@@ -14,7 +14,7 @@ export const DESIGN_CALLER = 'improve-strategy-design';
 const MAX_NODES = 6;
 const ID_OK = /^[a-z][a-z0-9_]{2,30}$/;            // a candidate's own option key (model output, never the reader's text)
 const STEP_ID_OK = /^[a-z][a-z0-9_.-]{2,60}$/;
-const RESERVED = new Set(['other', 'respond', 'none']);
+const RESERVED = new Set(['other', 'unmatched', 'respond', 'none']);
 
 export const DESIGN_SYSTEM = `You design RESPONSE STRATEGIES for Anís, a research assistant over a Bahá'í and interfaith library.
 A strategy is a small graph of ACTIVITIES (code that already exists). Jev (a small classifier) picks a strategy per question by its
@@ -41,7 +41,7 @@ export const designActivities = (acts = registry()) => Object.entries(acts).filt
 /** The active strategies nearest a cluster (label first, then description overlap with the questions). */
 export function nearestStrategies(cluster, cat, k = IMPROVE_CFG.design.nearest) {
   const text = cluster.questions.join(' ');
-  return cat.strategies.filter((s) => s.name !== 'other')
+  return cat.strategies.filter((s) => !isUnmatched(s.name))
     .map((s) => ({ s, score: (s.name === cluster.label ? 1 : 0) + jaccardWords(s.description || '', text) }))
     .sort((a, b) => b.score - a.score).slice(0, k).map((x) => x.s);
 }
@@ -148,7 +148,7 @@ export function validateCandidate(c, { cat, acts = registry() } = {}) {
 /** Dedupe against the active strategies (and pending candidates by name): near description or same name → a VERSION of it. */
 export function dedupeTarget(normalized, { cat, pending = [], similarity = IMPROVE_CFG.design.dedupe_similarity } = {}) {
   const s = normalized.strategy;
-  const pool = [...cat.strategies.filter((r) => r.name !== 'other'), ...pending];
+  const pool = [...cat.strategies.filter((r) => !isUnmatched(r.name)), ...pending];
   let best = null;
   for (const r of pool) {
     const sim = r.name === s.name ? 1 : jaccardWords(r.description || '', s.description);

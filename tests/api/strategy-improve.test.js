@@ -133,7 +133,7 @@ describe('the dry run (POST /anis/try)', () => {
       ctx.meter?.push({ usd: 0.02 });
       return { reply: 'R', status: 'ok', path: { steps: ['order'] } };
     };
-    const r = await tryStrategy({ question: 'q', pin, deps: { base, turn, choose: async (m, o) => ({ strategy: { choice: Object.keys(o.options).includes('timeline') ? 'timeline' : 'other' } }) } });
+    const r = await tryStrategy({ question: 'q', pin, deps: { base, turn, choose: async (m, o) => ({ strategy: { choice: Object.keys(o.options).includes('timeline') ? 'timeline' : 'unmatched' } }) } });
     expect(base.open).not.toHaveBeenCalled();
     expect(seen.billTo).toBe('improve-replay');
     expect(seen.choice).toBe('timeline');
@@ -209,24 +209,24 @@ describe('Jev options come from the DB', () => {
     const db = fresh();
     const t = Date.now();
     const before = strategyOptions();
-    expect(Object.keys(before).at(-1)).toBe('other');
+    expect(Object.keys(before).at(-1)).toBe('unmatched');
     const und = catalog({ now: t }).strategies.find((s) => s.name === 'understanding');
     const v2 = saveCandidate(db, { strategy: { ...und, description: 'UNDERSTANDING v2: the reader wants a teaching explained, scripture first.' }, steps: [], templates: [] });
     expect(catalog({ now: t + 60_000 }) && strategyOptions().understanding).toBe(und.description);   // a candidate is not offered
     promote(db, 'understanding', v2.version);
     catalog({ now: t + 120_000 });
     expect(strategyOptions().understanding).toMatch(/^UNDERSTANDING v2/);
-    expect(Object.keys(strategyOptions()).at(-1)).toBe('other');
+    expect(Object.keys(strategyOptions()).at(-1)).toBe('unmatched');
     rollback(db, 'understanding');
     catalog({ now: t + 180_000 });
     expect(strategyOptions().understanding).toBe(und.description);
     expect(listCandidates(db, { status: 'rolled_back' }).map((c) => `${c.id}@${c.version}`)).toEqual(['understanding@2']);
   });
 
-  it('optionsWith adds a candidate (or replaces its version\'s text), other stays last', () => {
+  it('optionsWith adds a candidate (or replaces its version\'s text), unmatched stays last', () => {
     fresh();
     const o = optionsWith({ name: 'timeline', description: 'T' });
-    expect(Object.keys(o).slice(-2)).toEqual(['timeline', 'other']);
+    expect(Object.keys(o).slice(-2)).toEqual(['timeline', 'unmatched']);
   });
 });
 

@@ -8,14 +8,16 @@
 import { withAIContext } from '../ai-context.js';
 import { anisTurn, defaultDeps } from './turn.js';
 import { chooseStrategy, strategyOptions } from './strategy-choice.js';
+import { UNMATCHED, isUnmatched } from './strategy-seed.js';
 
 export const REPLAY_CALLER = 'improve-replay';
 
-/** The Jev option set with `row` added (a version of an existing name replaces its text), 'other' kept last. Pure. */
+/** The Jev option set with `row` added (a version of an existing name replaces its text), 'unmatched' kept last. Pure. */
 export function optionsWith(row, base = strategyOptions()) {
-  const o = Object.fromEntries(Object.entries(base).filter(([k]) => k !== row.name && k !== 'other'));
+  const o = Object.fromEntries(Object.entries(base).filter(([k]) => k !== row.name && !isUnmatched(k)));
   o[row.name] = row.description;
-  if (base.other) o.other = base.other;
+  const last = base[UNMATCHED] ?? base.other;
+  if (last) o[UNMATCHED] = last;
   return o;
 }
 
