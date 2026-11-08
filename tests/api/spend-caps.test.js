@@ -32,7 +32,8 @@ describe('the dated schedule', () => {
     expect(capFor('media', '2026-11-04')).toBe(40);
     expect(capFor('media', '2026-11-06')).toBe(20);   // Chad 11-06
     expect(capFor('improve', '2026-11-06')).toBe(5);   // Chad 11-06
-    expect(capFor('improve', '2026-11-07')).toBe(0);   // Chad 11-07: paused (consolidate)
+    expect(capFor('improve', '2026-11-07')).toBe(5);
+    expect(capFor('media', '2026-11-07')).toBe(0);   // Chad 11-07: media paused
     expect(capFor('other', '2026-11-04')).toBe(10);
     expect(capFor('anis', '2026-11-04', undefined, { SPEND_CAP_ANIS_USD: '5' })).toBe(5);
     expect(capFor('anis', '2026-11-03')).toBe(Infinity);   // before the first entry: no cap
@@ -70,10 +71,10 @@ describe('blocking at the cap', () => {
   });
   it('the status lists each group with remaining and blocking; a failed read does not block', async () => {
     const s = await capStatus({ now, deps: spend({ 'media-x': 20, 'corpus-rag': 1 }) });
-    expect(s.find((g) => g.group === 'media')).toMatchObject({ spent_usd: 20, cap_usd: 20, remaining_usd: 0, blocking: true });
+    expect(s.find((g) => g.group === 'media')).toMatchObject({ spent_usd: 20, cap_usd: 0, remaining_usd: -20, blocking: true });   // media paused from 11-07
     expect(s.find((g) => g.group === 'anis')).toMatchObject({ cap_usd: 20, blocking: false });
     _reset();
-    await assertSpendCap('media-x', { now, deps: { byCaller: async () => { throw new Error('db locked'); } } });
+    await assertSpendCap('corpus-rag', { now, deps: { byCaller: async () => { throw new Error('db locked'); } } });
   });
   it('waits at most 30 minutes and at least a minute', () => {
     expect(waitMs(Date.parse('2026-11-08T00:00:00Z'))).toBe(30 * 60_000);
@@ -86,23 +87,23 @@ describe('one alert per group per day, only when the cap blocks a call', () => {
   const now = Date.parse('2026-11-08T12:00:00Z');
   it('mails once for many refused calls; nothing while under the cap; another group mails again', async () => {
     const sendEmail = vi.fn(async () => {}), alert = { sendEmail, dir: mkdtempSync(join(tmpdir(), 'cap-')), to: 'a@b.c', now };
-    await assertSpendCap('media-assess', { now, deps: { ...spend({ 'media-assess': 10 }), alert } });
+    await assertSpendCap('corpus-rag', { now, deps: { ...spend({ 'corpus-rag': 5 }), alert } });
     expect(sendEmail).not.toHaveBeenCalled();
     _reset();
-    const over = { ...spend({ 'media-assess': 41, 'anis-turn': 25 }), alert };
-    for (let i = 0; i < 5; i++) await assertSpendCap('media-assess', { now, deps: over }).catch(() => {});
+    const over = { ...spend({ 'corpus-rag': 11, 'anis-turn': 25 }), alert };
+    for (let i = 0; i < 5; i++) await assertSpendCap('corpus-rag', { now, deps: over }).catch(() => {});
     expect(sendEmail).toHaveBeenCalledTimes(1);
-    expect(sendEmail.mock.calls[0][0].subject).toMatch(/media spend cap/);
+    expect(sendEmail.mock.calls[0][0].subject).toMatch(/other spend cap/);
     await assertSpendCap('anis-turn', { now, deps: over }).catch(() => {});
     expect(sendEmail).toHaveBeenCalledTimes(2);
     _reset();   // another process: the stamp file still holds the day
-    await assertSpendCap('media-assess', { now, deps: over }).catch(() => {});
+    await assertSpendCap('corpus-rag', { now, deps: over }).catch(() => {});
     expect(sendEmail).toHaveBeenCalledTimes(2);
   });
   it('a group paused at $0 waits but never mails (paused on purpose is not broken)', async () => {
     _reset();
     const sendEmail = vi.fn(async () => {}), alert = { sendEmail, dir: mkdtempSync(join(tmpdir(), 'cap-')), to: 'a@b.c', now };
-    await expect(assertSpendCap('improve-judge', { now, deps: { ...spend({}), alert } })).rejects.toMatchObject({ code: 'SPEND_CAP', group: 'improve' });
+    await expect(assertSpendCap('media-assess', { now, deps: { ...spend({}), alert } })).rejects.toMatchObject({ code: 'SPEND_CAP', group: 'media' });
     expect(sendEmail).not.toHaveBeenCalled();
   });
 });
