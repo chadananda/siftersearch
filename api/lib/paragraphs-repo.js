@@ -192,3 +192,25 @@ export async function paragraphsHeldElsewhere(docId) {
         AND d.duplicate_of IS NULL LIMIT 1) AS other
     FROM content c WHERE c.doc_id = ? AND c.deleted_at IS NULL ORDER BY c.paragraph_index`, [Number(docId)], 'paragraphs-repo:held-elsewhere');
 }
+
+/** The live, non-duplicate documents that share the most of a document's distinct texts word for word (normalized_hash of
+ *  paragraphs ≥ 40 chars) — the doc-twins report (is this a second copy of a text already held?). Uses idx_content_norm_active.
+ *  → { mine: distinct texts, twins: [{ other, shared, theirs }] } (theirs = the other's own distinct texts) */
+export async function docTwins(docId, { top = 3 } = {}) {
+  const id = Number(docId);
+  const [{ n: mine = 0 } = {}] = await queryAll(`SELECT COUNT(DISTINCT normalized_hash) n FROM content WHERE doc_id = ? AND deleted_at IS NULL
+    AND normalized_hash IS NOT NULL AND LENGTH(text) >= 40`, [id], 'paragraphs-repo:twins-mine');
+  if (!mine) return { mine: 0, twins: [] };
+  const rows = await queryAll(`WITH m AS (SELECT DISTINCT normalized_hash h FROM content WHERE doc_id = ? AND deleted_at IS NULL
+      AND normalized_hash IS NOT NULL AND LENGTH(text) >= 40)
+    SELECT o.doc_id other, COUNT(DISTINCT o.normalized_hash) shared FROM m JOIN content o ON o.normalized_hash = m.h AND o.deleted_at IS NULL AND o.doc_id != ?
+      JOIN docs d ON d.id = o.doc_id AND d.deleted_at IS NULL AND d.duplicate_of IS NULL
+    GROUP BY o.doc_id ORDER BY shared DESC LIMIT ?`, [id, id, Math.min(Number(top) || 3, 10)], 'paragraphs-repo:twins');
+  const twins = [];
+  for (const r of rows) {
+    const [{ n: theirs = 0 } = {}] = await queryAll(`SELECT COUNT(DISTINCT normalized_hash) n FROM content WHERE doc_id = ? AND deleted_at IS NULL
+      AND normalized_hash IS NOT NULL AND LENGTH(text) >= 40`, [r.other], 'paragraphs-repo:twins-theirs');
+    twins.push({ other: r.other, shared: r.shared, theirs });
+  }
+  return { mine, twins };
+}
