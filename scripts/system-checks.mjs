@@ -70,6 +70,10 @@ let procs = pm2List();
 // start: the writer finishes its batch first, and 10-19 a fixed 60 s window paged Chad for "siftersearch-worker stopping"
 // during an ordinary deploy.
 const statusOf = (list, name) => { const ps = list.filter((p) => p.name === name); return !ps.length ? 'missing' : ps.every((p) => p.pm2_env?.status === 'online') ? 'online' : ps.map((p) => p.pm2_env?.status).join('/'); };
+// pm2 status 'stopped' only comes from an explicit `pm2 stop` (a crash is 'errored' or a restart): a pause someone ASKED for
+// (Chad 11-08: "if I ask for something, it is wrong to send me an alert message as a critical error"). Its silence, its stale
+// loop sections and its idle pipeline are intended — info, never critical. Money still spent while paused (a billing pod) stays critical.
+const STOPPED_ON_PURPOSE = new Set(procs.filter((p) => p.pm2_env?.status === 'stopped').map((p) => p.name));
 const transitioning = () => REQUIRED.filter((n) => !['online', 'missing'].includes(statusOf(procs, n)));
 for (const until = Date.now() + settleMs(procs, transitioning()); transitioning().length && Date.now() < until;) {
   await new Promise((r) => setTimeout(r, 5000));
@@ -113,7 +117,8 @@ let drainSeen = state.drainSeen || {};
   else {
     // a SILENT service (no heartbeat for 5 min) is not draining — it is not running (10-23: a module that would not load
     // showed as 'draining 13 min'): CRITICAL, with its commit and last beat
-    const silent = services.filter((x) => x.kind !== 'job-state' && (x.health === 'silent' || Number(x.age_s) > 300) && !power?.stopped?.includes(x.name));
+    const silent = services.filter((x) => x.kind !== 'job-state' && (x.health === 'silent' || Number(x.age_s) > 300) && !power?.stopped?.includes(x.name) && !STOPPED_ON_PURPOSE.has(x.name));
+    if (STOPPED_ON_PURPOSE.size) add('Services paused', true, 'info', `stopped on purpose (pm2 stop): ${[...STOPPED_ON_PURPOSE].join(', ')}`);
     add('Services alive', !silent.length, 'critical', silent.length ? silent.map((x) => `${x.name} silent ${Math.round(Number(x.age_s) / 60)} min (last beat ${x.beat_at}, commit ${String(x.commit || '').slice(0, 8)})`).join(' · ') : 'ok');
     // heavy media processing running ON TOWER (Chad 10-24): counted in cores, named by process kind
     try {
@@ -232,7 +237,11 @@ if (db) {
   let h = null; try { h = r.status === 200 ? JSON.parse(r.body) : null; } catch { /* not JSON */ }
   if (!h?.checks) add('Media loop health', true, 'info', `unavailable (${why(r)})`);
   else {
-    for (const c of h.checks) add(c.name, c.ok, c.level, c.detail);
+    const mediaPaused = STOPPED_ON_PURPOSE.has('siftersearch-media');
+    for (const c of h.checks) {
+      if (mediaPaused && !c.ok && /^Media (loop|pipeline)/.test(c.name)) add(c.name, true, 'info', `paused (siftersearch-media pm2-stopped) · ${c.detail}`);
+      else add(c.name, c.ok, c.level, c.detail);
+    }
     const okSections = Object.entries(h.sections || {}).filter(([, s]) => s.state === 'ok').length;
     if (!h.checks.some((c) => c.name.startsWith('Media loop:'))) add('Media loop sections', true, 'info', `${okSections} beating on cadence · ${Object.entries(h.sections || {}).filter(([, s]) => s.state !== 'ok').map(([n, s]) => `${n} ${s.state}`).join(', ') || 'all ok'}`);
     if (h.heals?.length) add('Media loop self-heals', true, 'info', h.heals.map((x) => `${new Date(x.at).toISOString().slice(11, 16)}Z ${x.section}: ${x.why}`).join(' · '));
@@ -575,7 +584,10 @@ const recentlyAlerted = state.alertKey === alertKey && Date.now() - (state.alert
 if (hard.length && !recentlyAlerted) {
   const { actionRequired } = await import('../api/lib/ops/alert.js');
   const sent = await actionRequired({
-    key: 'system-checks-alert', quietMs: 0, pre: true, text,
+    // the alarm carries ONLY what to act on (Chad 11-08: an [ACTION] mail that goes on to list passing checks, warnings and
+    // metrics is wrong). Warnings go to the weekly email; the full report stays in the log.
+    key: 'system-checks-alert', quietMs: 0, pre: true,
+    text: [`${hard.length} to act on (${new Date().toISOString()}):`, ...hard.map((c) => `  ✗ ${c.name}: ${c.detail}`)].join('\n'),
     severity: hard.some((c) => PAGE_CHECKS.has(c.name)) ? 'page' : 'action',
     subject: `SifterSearch ALERT: ${hard[0].name}${hard.length > 1 ? ` (+${hard.length - 1} more)` : ''}`,
   });
