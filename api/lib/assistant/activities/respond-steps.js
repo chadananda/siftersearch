@@ -173,7 +173,7 @@ const strategy = (s) => {
   const { fast: f, researched, sourced, original, study, conversational: c, direction, messages, question, plan: p, d, profile, live } = s;
   if (!(!f && !researched && !sourced && !original && !study && !c && strategyOf(direction.strategy))) { s.strat = null; return 'skip'; }
   return timed('strategy', () => runStrategy(direction.strategy, { messages, question, plan: p, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-    profile, decisions: direction.decisions, deps: d,
+    profile, decisions: direction.decisions, deps: d, channel: direction.channel || null,
     ...(live ? { inBooks: live.inBooks, searchIn: (d.researchTools || libraryTools({ search: d.search })).searchIn, sourceTools: d.researchTools || libraryTools({ search: d.search }) } : {}),
     ...(live && p?.drawFrom?.name ? { drawFrom: p.drawFrom.name } : {}) })).catch((err) => { console.warn('anis strategy failed', err?.message); return null; })
     .then((x) => { s.strat = x; return x ? 'found' : 'empty'; });

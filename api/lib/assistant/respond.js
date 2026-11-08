@@ -700,7 +700,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   // null = nothing found to execute (e.g. the reference did not parse) → the ordinary path; each decision lands in direction.decisions.
   const strat = !fast && !researched && !sourced && !original && !study && !conversational && strategyOf(direction.strategy)
     ? await timed('strategy', () => runStrategy(direction.strategy, { messages, question, plan, query: searchQueryFor(messages), distil: distilQuery, search: d.search,
-      profile, decisions: direction.decisions, deps: d,
+      profile, decisions: direction.decisions, deps: d, channel: direction.channel || null,
       // a live chat's strategy gets the same in-book step as its researcher (coordinator 11-03: goth questions route to understanding)
       // and the source Jev named (plan.drawFrom → researcher namedSource), resolved beside the strategy's own search
       // (a comparison's per-side books, named by Jev in the strategy call, use the same source tools)
