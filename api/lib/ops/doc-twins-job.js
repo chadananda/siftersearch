@@ -10,6 +10,9 @@ export const TWIN_SITES = ['bahai-library.com', 'oceanoflights.org'];
 const TIER = { '': 0, 'oceanlibrary.com': 1, 'oceanoflights.org': 2, 'portlandiator.github.io': 3, 'bahai-library.com': 4 };
 export const siteTier = (s) => TIER[s || ''] ?? 5;
 const realAuthor = (a) => !!a && !/^\d+$/.test(String(a).trim());
+// a doc of 1-2 texts can match another on one boilerplate line ("available as PDF"): it needs the same title as well
+export const SMALL = 3;
+const titleKey = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 /** Pure: is `b` the better copy to keep than `a`? Each { id, source_site, author, texts }. */
 export function betterCopy(a, b) {
@@ -24,6 +27,7 @@ export function secondCopyOf(doc, mine, twins, info, share = 0.9) {
   for (const t of twins) {
     if (!mine || !t.theirs || t.shared / mine < share || t.shared / t.theirs < share) continue;
     const other = info(t.other);
+    if (other && mine < SMALL && titleKey(doc.title) !== titleKey(other.title)) continue;
     if (other && betterCopy({ ...doc, texts: mine }, { ...other, texts: t.theirs })) return { ...t, keep: other };
   }
   return null;

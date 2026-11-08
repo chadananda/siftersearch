@@ -16,6 +16,11 @@ describe('secondCopyOf', () => {
   const info = (id) => ({ 9: lib }[id]);
   it('mutual ≥ 90% → copy of the better doc', () => expect(secondCopyOf(bl, 100, [{ other: 9, shared: 95, theirs: 100 }], info)?.keep.id).toBe(9));
   it('a piece held inside a bigger compilation is not a copy', () => expect(secondCopyOf(bl, 10, [{ other: 9, shared: 10, theirs: 400 }], info)).toBe(null));
+  it('a 1-2 text doc needs the same title too (boilerplate lines match anywhere)', () => {
+    const one = (t) => () => ({ ...lib, title: t });
+    expect(secondCopyOf({ ...bl, title: 'Witnesses' }, 1, [{ other: 9, shared: 1, theirs: 1 }], one('Other Page'))).toBe(null);
+    expect(secondCopyOf({ ...bl, title: 'Witnesses' }, 1, [{ other: 9, shared: 1, theirs: 1 }], one('Witnesses!'))?.keep.id).toBe(9);
+  });
   it('the better copy itself is never marked', () => expect(secondCopyOf(lib, 100, [{ other: 5, shared: 95, theirs: 100 }], () => bl)).toBe(null));
 });
 
