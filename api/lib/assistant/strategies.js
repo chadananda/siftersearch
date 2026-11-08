@@ -9,10 +9,12 @@ import { run as runTool } from './tools.js';
 import { booksFound, namedSource } from './researcher.js';
 import { drawFromCriteria } from '../search-plan.js';
 import { render, template } from './activities/templates.js';
+import { sourceTier, TIER_ORDER } from './source-tier.js';
+import { supports } from './channels.js';
 import { strategyGraphOn, runStrategyGraph } from './activities/graph.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
-const PER_SIDE = 6, MAX_PASSAGES = 12, MAX_COMPARED = 18;
+const PER_SIDE = 6, MAX_PASSAGES = 12, MAX_COMPARED = 18, MAX_COMPILED = 15, COMPILE_POOL = 24;
 
 // the writer's instruction: words = template rows (strategy-seed.js → strategies-repo), slots filled here
 export const COMPARISON_HOW = (sides, coverage) => render('comparison.how', {
@@ -24,6 +26,16 @@ export const COMPARISON_HOW = (sides, coverage) => render('comparison.how', {
 export const UNDERSTANDING_HOW = (religion, coverage) => render('understanding.how', {
   within: religion ? render('understanding.within', { religion }) : '',
   coverage: coverage === 'missing' ? template('understanding.missing') : coverage === 'thin' ? template('understanding.thin') : '',
+}).trim();
+
+// compilation: headings are markdown; a channel that cannot show them (channels.js) gets bold theme labels. ctx.channel is not passed by
+// respond.js yet, so absent = headings.
+export const COMPILATION_HOW = (religion, coverage, channel = null) => render('compilation.how', {
+  within: religion ? render('compilation.within', { religion }) : '',
+  headings: channel && !supports(channel, ['headings'])
+    ? 'a bold theme label (**Theme**) per theme and an italic sub-label where a theme holds distinct aspects (no sub-label for a single passage).'
+    : 'a `##` heading per theme and `###` sub-headings where a theme holds distinct aspects (no sub-heading for a single passage).',
+  coverage: coverage === 'missing' ? template('compilation.missing') : coverage === 'thin' ? template('compilation.thin') : '',
 }).trim();
 
 const tag = (hits, theme) => (hits || []).map((p) => ({ ...p, theme }));
@@ -158,12 +170,43 @@ export async function understanding(choice, ctx) {
   return { passages, plan: { shape: 'understanding', religion, coverage: c, ...(named.length ? { namedWorks: named } : {}) }, format: { id: 'understanding', by: 'strategy:understanding', how: UNDERSTANDING_HOW(religion, c) } };
 }
 
+export async function compilation(choice, ctx) {
+  const { messages, query, distil, search, plan, profile = {}, decisions = NO_LOG, drawFrom = null, sourceTools = null, channel = null } = ctx;
+  const sourceP = drawFrom && sourceTools ? namedSource(drawFrom, query, sourceTools).catch(() => null) : null;
+  const religion = plan?.filters?.religion || profile.default_tradition || null;
+  decisions.record('compilation:scope', { by: plan?.source?.religion === 'jev' ? 'jev' : 'code', saw: { plan: plan?.filters?.religion ?? null, reader: profile.default_tradition ?? null },
+    options: ['one tradition', 'whole library'], chosen: religion || 'whole library', reason: religion ? 'tradition from the plan / reader' : 'no tradition known' });
+  // the theme as asked and its distilled subject, searched wide in parallel
+  const subject = distil ? distil(query) : null;
+  const wordings = [...new Set([query, subject].filter(Boolean))];
+  const run = (q, rel) => searchSide({ search, query: q, messages, profile, religion: rel, limit: COMPILE_POOL }).catch(() => []);
+  let hits = dedupe((await Promise.all(wordings.map((q) => run(q, religion)))).flat());
+  let c = coverageOf(hits.length);
+  if (c !== 'covered' && religion) {
+    const more = await run(subject || query, null);
+    decisions.record('compilation:widen', { by: 'code', saw: { first: hits.length, more: more.length }, options: ['keep', 'widen'], chosen: 'widen', reason: `${c} after the scoped search` });
+    hits = dedupe([...hits, ...more]); c = coverageOf(hits.length);
+  }
+  decisions.record('compilation:coverage', { by: 'code', saw: hits.length, options: ['covered', 'thin', 'missing'], chosen: c, reason: `${hits.length} passages` });
+  const src = sourceP ? await sourceP : null;
+  if (src) {
+    decisions.record('compilation:named-source', { by: 'jev', saw: { name: drawFrom, authors: src.authors, works: src.works.filter((w) => !w.other).map((w) => w.id) },
+      options: ['drawn from the named source'], chosen: `${src.passages.length} passages`, reason: 'Jev named the book or author the compilation is drawn from' });
+    hits = dedupe([...src.passages, ...hits]);
+  }
+  // authority order (source-tier.js: writings > guardian > compilation > reported > house > secondary; other traditions after), search rank kept within a tier
+  const rank = (t) => { const i = TIER_ORDER.indexOf(t); return i < 0 ? TIER_ORDER.length : i; };
+  const passages = hits.map((p, i) => { const t = sourceTier(p); return { p, i, r: rank(t), t }; })
+    .sort((a, b) => a.r - b.r || a.i - b.i).slice(0, MAX_COMPILED).map(({ p, t }) => ({ ...p, theme: t || 'other' }));
+  return { passages, plan: { shape: 'compilation', religion, coverage: c }, format: { id: 'compilation', by: 'strategy:compilation', how: COMPILATION_HOW(religion, c, channel) } };
+}
+
 /** Run the executor for Jev's choice. null = nothing to execute. */
 export async function runStrategy(choice, ctx) {
   const name = strategyOf(choice);
   if (!name) return null;
   const log = ctx.decisions || NO_LOG;
-  // the executors are registry strategies (tools.js): comparison, understanding, prayer, guidance, reference — run by the
+  // the executors are registry strategies (tools.js): comparison, understanding, prayer, guidance, reference, compilation — run by the
   // strategy's graph (activities/graph.js; ANIS_STRATEGY_GRAPH=0 → the registry tool directly, the Phase-1 rollback)
   const viaGraph = strategyGraphOn() ? await runStrategyGraph(name, choice, { ...ctx, decisions: log }) : undefined;
   const out = viaGraph !== undefined ? viaGraph : await runTool(name, choice, { ...ctx, decisions: log });

@@ -15,6 +15,10 @@ export const TEMPLATES = [
   { id: 'understanding.within', version: 1, text: ' within {{religion}}' },
   { id: 'understanding.missing', version: 1, text: 'The library returned nothing on this: say so plainly and do not answer from memory.' },
   { id: 'understanding.thin', version: 1, text: 'Coverage is thin — say what the one or two passages support and no more.' },
+  { id: 'compilation.how', version: 1, text: "The reader asked for a short COMPILATION{{within}}. Organize it by THEME and SUB-THEME that the passages themselves suggest: {{headings}} Under each heading give the passages themselves, verbatim and whole, as block quotations, each followed by its author, work and link; the Writings of Bahá’u’lláh, the Báb and ‘Abdu’l-Bahá first in every section, then Shoghi Effendi, then others (the House of Justice only as guidance, labelled as such). Each passage once. At most one line of introduction; no commentary between passages beyond the headings; no conclusion. Short: about 8-15 passages across 2-5 themes. {{coverage}}" },
+  { id: 'compilation.within', version: 1, text: ' within {{religion}}' },
+  { id: 'compilation.missing', version: 1, text: 'The library returned nothing on this: say so plainly and do not compile from memory.' },
+  { id: 'compilation.thin', version: 1, text: 'Coverage is thin — compile only what the few passages support, under one or two headings, and say the library holds little on this.' },
   { id: 'reference.how', version: 1, text: "The reader gave the reference {{label}}. Quote the passage VERBATIM from the passages (name the translation: the King James Bible, Pickthall's or Yusuf Ali's Qur’án, the Gita's translator), with its link; one line of context at most. {{approx}}{{whole}}" },
   { id: 'reference.approx', version: 1, text: 'This edition does not number the verses: say the chapter is given and the lines quoted are the APPROXIMATE place of the verse asked for.' },
   { id: 'reference.whole', version: 1, text: ' The whole chapter was asked for: quote the whole chapter, every line of the passages in order (a very long chapter: as much as the passages hold, then the link to read on).' },
@@ -55,6 +59,7 @@ export const STEPS = [
   step('strategy.prayer', 'strategy.prayer', { template_id: 'prayer.how', template_version: 1 }),
   step('strategy.guidance', 'strategy.guidance', { template_id: 'guidance.how', template_version: 1 }),
   step('strategy.reference', 'strategy.reference', { template_id: 'reference.how', template_version: 1 }),
+  step('strategy.compilation', 'strategy.compilation', { template_id: 'compilation.how', template_version: 1 }),
 ];
 
 // a linear graph: every node continues to the next whatever its edge, except the edges named in `stops` (→ the end)
@@ -86,6 +91,7 @@ const STRATEGY_DESCRIPTIONS = {
   prayer: 'wants a PRAYER to say — for an occasion, need or person (healing, the departed, protection, children, marriage, unity, morning, evening, the Fast, tests) or a particular prayer by name or opening words',
   guidance: 'asks what the Universal House of Justice (the Bahá’í world body) has said, says now or has decided on a matter — present-day guidance, letters, messages, policy, elections, institutions',
   reference: 'gives a chapter-and-verse or numbered scripture reference and wants THAT passage: "John 3:16", "Qur’án 2:255", "Sura 24", "Bhagavad Gita chapter 2", "Psalm 23", "Matthew 5", "Isaiah 11:6"',
+  compilation: 'asks for a COMPILATION — a gathered selection of passages on a theme, to read together, organized under headings ("compile passages on justice", "a short compilation on prayer and meditation", "gather quotations about the equality of women and men", "put together the writings on consultation")',
   other: 'none of these: a quote to locate or trace with no further question about it, a book or person to look up, a fact or date, a word’s meaning, a greeting, conversation, or a general question',
 };
 
@@ -98,6 +104,7 @@ export const STRATEGIES = [
   strategy('prayer', 'prayer', one('prayer')),
   strategy('guidance', 'guidance', one('guidance')),
   strategy('reference', 'reference', one('reference')),
+  strategy('compilation', 'compilation', one('compilation')),
   strategy('respond', 'other', RESPOND_GRAPH),
 ];
 export const END_NODE = END;

@@ -2,7 +2,7 @@
 // covered or said missing), understanding, prayer shelf (Jev picks the occasion), current guidance (newest first), scripture reference.
 import { describe, it, expect } from 'vitest';
 import { chooseStrategy, strategyOf, STRATEGIES } from '../../api/lib/assistant/strategy-choice.js';
-import { comparison, understanding, runStrategy, interleave, COMPARISON_HOW, ofSide, subjectQuery } from '../../api/lib/assistant/strategies.js';
+import { comparison, understanding, compilation, COMPILATION_HOW, runStrategy, interleave, COMPARISON_HOW, ofSide, subjectQuery } from '../../api/lib/assistant/strategies.js';
 import { decisionLog, jevProbabilities } from '../../api/lib/assistant/decision-log.js';
 import { prayerShelf, splitPrayers, isAttribution, isHeadingRow } from '../../api/lib/assistant/prayer-shelf.js';
 import { currentGuidance, dateOf, newestFirst } from '../../api/lib/assistant/guidance.js';
@@ -381,5 +381,37 @@ describe('anisRespond with a strategy', () => {
     const c = JSON.stringify(crafts[0]);
     expect(c).toMatch(/strategy:comparison|COMPARISON/);
     expect(decisions.list().map((x) => x.point)).toContain('coverage:Islam');
+  });
+});
+
+describe('compilation executor', () => {
+  const bh = (i, extra = {}) => hit(i, "Baha'i", { author: 'Bahá’u’lláh', title: 'Gleanings from the Writings of Bahá’u’lláh', ...extra });
+  const sec = (i) => hit(i, "Baha'i", { author: 'Some Scholar', title: 'A Study' });
+  it('orders the Writings before the rest, caps at 15, dedupes, records its decisions', async () => {
+    const decisions = decisionLog();
+    const search = async () => ({ passages: [...Array.from({ length: 10 }, (_, i) => sec(i + 1)), ...Array.from({ length: 10 }, (_, i) => bh(i + 20)), sec(1)] });
+    const out = await compilation({}, { messages: msgs, query: 'justice', distil: () => 'justice', search, plan: { filters: { religion: "Baha'i" } }, decisions });
+    expect(out.passages.length).toBe(15);
+    expect(out.passages.slice(0, 10).every((p) => p.theme === 'writings')).toBe(true);
+    expect(new Set(out.passages.map((p) => p.id)).size).toBe(15);
+    expect(out.format).toMatchObject({ id: 'compilation', by: 'strategy:compilation' });
+    expect(decisions.list().map((d) => d.point)).toEqual(['compilation:scope', 'compilation:coverage']);
+  });
+  it('widens to the whole library when thin, and says so when missing', async () => {
+    const calls = []; const decisions = decisionLog();
+    const search = async (a) => { calls.push(a); return { passages: a.religion ? [bh(1)] : [bh(2), bh(3)] }; };
+    const out = await compilation({}, { messages: msgs, query: 'q', distil: () => 'subject', search, plan: { filters: { religion: "Baha'i" } }, decisions });
+    expect(calls.some((c) => !c.religion)).toBe(true);
+    expect(decisions.list().map((d) => d.point)).toContain('compilation:widen');
+    expect(out.plan.coverage).toBe('covered');
+    const none = await compilation({}, { messages: msgs, query: 'q', search: async () => ({ passages: [] }), decisions: decisionLog() });
+    expect(none.plan.coverage).toBe('missing'); expect(none.format.how).toContain('nothing on this');
+  });
+  it('the instruction: headings, verbatim whole, never trimmed; bold labels for a channel without headings', () => {
+    const how = COMPILATION_HOW("Baha'i", 'covered');
+    expect(how).toContain('`##` heading'); expect(how).toContain('within Baha\'i'); expect(how).toContain('verbatim and whole');
+    expect(how).not.toMatch(/\{\{/);
+    const plain = COMPILATION_HOW(null, 'thin', { capabilities: [] , id: 'x' });
+    expect(plain).toContain('bold theme label'); expect(plain).toContain('Coverage is thin');
   });
 });

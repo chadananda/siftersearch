@@ -26,7 +26,7 @@ export const ACTIVITY_META = {
   'respond.original_await': { description: 'Waits for the original-language wording.', input: 'original (pending)', output: 'original passage', tools: [] },
   'respond.source_reply': { description: 'Writes the sourced-quotation reply: where the words come from, with links.', input: 'sourced quotation', output: 'a finished reply', tools: [] },
   'respond.term_study': { description: 'Studies a term: how the authorized translations render it, with passages.', input: 'question', output: 'term study', tools: ['rendering_lookup'] },
-  'respond.strategy': { description: "Runs the response strategy Jev chose for the question (comparison, understanding, prayer, guidance, reference).", input: 'direction, plan, messages', output: 'strategy passages + plan', tools: [] },
+  'respond.strategy': { description: "Runs the response strategy Jev chose for the question (comparison, understanding, prayer, guidance, reference, compilation).", input: 'direction, plan, messages', output: 'strategy passages + plan', tools: [] },
   'respond.position': { description: 'Researches what the texts say on a question of position or stance, by theme.', input: 'question', output: 'passages by theme', tools: [] },
   'respond.language': { description: 'Decides whether the question is about language itself (a word, a translation).', input: 'question', output: 'language flag', tools: [] },
   'respond.evidence': { description: 'Collects the evidence the writer gets, from the first branch that holds; otherwise searches the library.', input: 'everything gathered so far', output: 'passages + plan (the edge names the branch)', tools: [] },
@@ -36,6 +36,7 @@ export const ACTIVITY_META = {
   'strategy.prayer': strategyExec('prayer', 'prayer'),
   'strategy.guidance': strategyExec('guidance', 'guidance'),
   'strategy.reference': strategyExec('reference', 'reference'),
+  'strategy.compilation': strategyExec('compilation', 'compilation'),
 };
 
 /** Every registered activity with its catalog entry: name, kind, cls, edges, description, input, output, tools. */

@@ -26,6 +26,7 @@ export const activities = () => registry ||= ({
   'strategy.prayer': executor('prayer'),
   'strategy.guidance': executor('guidance'),
   'strategy.reference': executor('reference'),
+  'strategy.compilation': executor('compilation'),
 });
 
 /** The registry as data (admin view): name, kind, class, edges. */
