@@ -72,6 +72,11 @@
       {
         "from": "2026-11-06",
         "usd": 5
+      },
+      {
+        "from": "2026-11-07",
+        "usd": 0,
+        "_note": "Chad 11-07: \"we cannot keep spending at these rates, so let's consolidate what we have done so far\" — paused until the judge dedupes before Opus (planning/anis-suggestions-analysis-20261106.md spec #2)"
       }
     ]
   },

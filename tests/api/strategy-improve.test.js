@@ -128,7 +128,7 @@ describe('the dry run (POST /anis/try)', () => {
       await deps.open(); await deps.close();
       const s = await deps.strategy([{ role: 'user', content: 'q' }], {});
       // anis spend far over its cap, improve under: passes only because the scope bills improve-replay
-      await assertSpendCap('anis-turn', { deps: { byCaller: async () => ({ 'anis-turn': 999, 'improve-judge': 1 }) } });
+      await assertSpendCap('anis-turn', { now: Date.parse('2026-11-05T12:00:00Z'), deps: { byCaller: async () => ({ 'anis-turn': 999, 'improve-judge': 1 }) } });   // a day improve had budget
       seen = { billTo: ctx.billTo, choice: s.strategy.choice, forced: s.strategy.forced, graph: graphFor('timeline'), how: template('timeline.how') };
       ctx.meter?.push({ usd: 0.02 });
       return { reply: 'R', status: 'ok', path: { steps: ['order'] } };

@@ -32,6 +32,7 @@ describe('the dated schedule', () => {
     expect(capFor('media', '2026-11-04')).toBe(40);
     expect(capFor('media', '2026-11-06')).toBe(20);   // Chad 11-06
     expect(capFor('improve', '2026-11-06')).toBe(5);   // Chad 11-06
+    expect(capFor('improve', '2026-11-07')).toBe(0);   // Chad 11-07: paused (consolidate)
     expect(capFor('other', '2026-11-04')).toBe(10);
     expect(capFor('anis', '2026-11-04', undefined, { SPEND_CAP_ANIS_USD: '5' })).toBe(5);
     expect(capFor('anis', '2026-11-03')).toBe(Infinity);   // before the first entry: no cap
@@ -97,6 +98,12 @@ describe('one alert per group per day, only when the cap blocks a call', () => {
     _reset();   // another process: the stamp file still holds the day
     await assertSpendCap('media-assess', { now, deps: over }).catch(() => {});
     expect(sendEmail).toHaveBeenCalledTimes(2);
+  });
+  it('a group paused at $0 waits but never mails (paused on purpose is not broken)', async () => {
+    _reset();
+    const sendEmail = vi.fn(async () => {}), alert = { sendEmail, dir: mkdtempSync(join(tmpdir(), 'cap-')), to: 'a@b.c', now };
+    await expect(assertSpendCap('improve-judge', { now, deps: { ...spend({}), alert } })).rejects.toMatchObject({ code: 'SPEND_CAP', group: 'improve' });
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 });
 

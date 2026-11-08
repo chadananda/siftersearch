@@ -141,7 +141,7 @@ export async function assertSpendCap(caller, { provider = null, now = Date.now()
   if (Number.isFinite(cap)) {
     const spent = (await spendByGroup({ now, deps }))[group] || 0;
     if (spent >= cap) {
-      await alertOnce(group, day, spent, cap, caller, deps).catch(() => {});
+      if (cap > 0) await alertOnce(group, day, spent, cap, caller, deps).catch(() => {});   // $0 = paused on purpose: no alert (alarm only when broken)
       throw new SpendCapError({ group, spent, cap, caller, retryAfterMs: waitMs(now) });
     }
   }
