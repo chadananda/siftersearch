@@ -7,7 +7,7 @@ import { decisionLog, jevProbabilities } from '../../api/lib/assistant/decision-
 import { prayerShelf, splitPrayers, isAttribution, isHeadingRow } from '../../api/lib/assistant/prayer-shelf.js';
 import { currentGuidance, dateOf, newestFirst } from '../../api/lib/assistant/guidance.js';
 import { scriptureReference, parseScriptureRef, verseRows, roman, REFERENCE_HOW } from '../../api/lib/assistant/scripture-ref.js';
-import { anisRespond } from '../../api/lib/assistant/respond.js';
+import { anisRespond, researchFormat } from '../../api/lib/assistant/respond.js';
 import { PICKTHALL, layoutTotal, quranIndex, quranRange } from '../../api/lib/assistant/numbering.js';
 
 const msgs = [{ role: 'user', content: 'How do the Qur’án and the Gospel each speak of forgiveness?' }];
@@ -413,5 +413,17 @@ describe('compilation executor', () => {
     expect(how).not.toMatch(/\{\{/);
     const plain = COMPILATION_HOW(null, 'thin', { capabilities: [] , id: 'x' });
     expect(plain).toContain('bold theme label'); expect(plain).toContain('Coverage is thin');
+  });
+});
+
+describe('researchFormat — a researched turn keeps the compilation form Jev chose (Chad 11-08)', () => {
+  it('compilation strategy → compilation how with the brief appended', () => {
+    const f = researchFormat({ passages: [{}], brief: 'P1 consultation' }, { strategy: { strategy: { choice: 'compilation' } } }, null, null);
+    expect(f.id).toBe('compilation');
+    expect(f.how).toContain('##');
+    expect(f.how).toContain('P1 consultation');
+  });
+  it('no strategy → the research format', () => {
+    expect(researchFormat({ passages: [{}], brief: 'b' }, {}, null, null).id).toBe('research');
   });
 });

@@ -30,20 +30,24 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
   <section id="intro">
     <h2>What a strategy is</h2>
     <p>
-      Strategies are the middle layer. Below them are the <a href="/docs/anis-tools">tools</a>; above them are the
-      <a href="/docs/anis-activities">activities</a>, such as reading a book together, which reuse them. Every answer is built
-      from <a href="#building-steps">building steps</a>: small pieces of code that each do one thing well, most of them one use of
-      a tool: find a named book, trace a quotation to its source, search the original-language tablets, study how a term is
-      translated, write the reply. Building steps are code. A <strong>strategy</strong> is data: a small graph that says which
-      steps run, in what order, and where each outcome leads next. Strategies live in a database, not in the program, so they can be added,
-      changed, measured and rolled back without a code release.
+      A <strong>response strategy</strong> is a fixed way of answering one kind of request, worked out in advance and tuned
+      for speed and quality. Strategies range from simple to elaborate:
+    </p>
+    <ul>
+      <li><em>"Where does Bahá'u'lláh say '…'?"</em>: find the passage and name its source.</li>
+      <li><em>"Give me a timeline of 'Abdu'l-Bahá's travels, with the major talks marked."</em></li>
+      <li><em>"Build me a compilation of everything 'Abdu'l-Bahá says about taxation, with translations side by side where the original is not in English."</em></li>
+    </ul>
+    <p>
+      Each strategy is a decision tree. Its steps are <a href="#building-steps">building steps</a>: small pieces of code that
+      each do one thing, most of them one use of a <a href="/docs/anis-tools">tool</a> (find a named book, trace a quotation,
+      search the original-language tablets, write the reply). The tree itself is data, kept in a database, so a strategy can be
+      added, changed, measured and rolled back without releasing new code. <a href="/docs/anis-activities">Activities</a>, such
+      as reading a book together, reuse the same strategies.
     </p>
     <p>
-      There are several strategies because questions differ. A request for a prayer, a comparison between two traditions and a
-      chapter-and-verse reference each need different steps. For each question, a fast and inexpensive decision model (Jev) reads
-      the conversation and picks one strategy. After that choice the work is mostly deterministic: the strategy runs its steps,
-      and the large language models are used only where they add something. Because the expensive reasoning is used once, to
-      choose, execution stays cheap and predictable, and the system can serve many readers at once.
+      For each message, Jev, a fast decision model, reads the conversation and picks the strategy that fits. From there the
+      strategy runs its steps.
     </p>
 
     <h2>How strategies improve</h2>
@@ -85,10 +89,24 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
 
   {plan && (
     <section id="ladder">
-      <h2>The strategy of strategies</h2>
+      <h2>How a strategy is built</h2>
       <p>
-        Code first, then Jev, then a fast language model, and never a slow model on the reply path. Each step of every strategy
-        uses the cheapest tier that can do the job, and a costlier tier runs only after a cheaper one could not settle it.
+        Building a strategy starts with a pattern: a kind of request readers keep making, and the answer they want. That answer
+        is turned into a reusable decision tree made of four kinds of step, each roughly ten times slower than the one before:
+      </p>
+      <ol>
+        <li><strong>Code</strong>: plain program logic, such as matching a reference or ordering passages.</li>
+        <li><strong>Tool calls</strong>: a search, a book lookup, a fetch of the original text.</li>
+        <li><strong>Jev decisions</strong>: small judgments such as "was it found?", "is this enough?" or "which person is meant?"</li>
+        <li><strong>Language-model calls</strong>: fast models only, and only for what the cheaper kinds cannot do, such as writing the reply.</li>
+      </ol>
+      <p>
+        A step uses the fastest kind that can do its job. Every step is logged and measured, so each strategy can be made faster
+        and better one step at a time.
+      </p>
+      <p>
+        When no strategy fits a request, a capable research model answers it directly. That question then becomes material for a
+        new candidate strategy, so the set of strategies grows to cover what readers actually ask, and the answers keep improving.
       </p>
       <div class="scroll">
         <table>
