@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { indexerArgs } from '../../api/lib/ops/phrase-index-job.js';
+import { indexerArgs, remeasureAfter } from '../../api/lib/ops/phrase-index-job.js';
 
 describe('phrase-index ops job', () => {
   it('a spend cap is required', () => expect(() => indexerArgs({ docs: [1] })).toThrow(/maxUsd/));
@@ -16,5 +16,13 @@ describe('phrase-index ops job', () => {
   it('limit caps the paragraphs read (bounded benchmark runs)', () => {
     expect(indexerArgs({ docs: [1], maxUsd: 1, limit: 6000 }).slice(-2)).toEqual(['--limit', '6000']);
     expect(indexerArgs({ docs: [1], maxUsd: 1 })).not.toContain('--limit');
+  });
+  it('a docs run re-measures its docs into the ledger; scope and scan-only runs do not', async () => {
+    const calls = []; const q = async (...a) => calls.push(a);
+    expect(await remeasureAfter({ docs: ['7', 9], maxUsd: 1 }, q)).toBe(true);
+    expect(calls).toEqual([['coverage-refresh', { ids: [7, 9] }, 'phrase-index']]);
+    expect(await remeasureAfter({ scope: 'library', maxUsd: 1 }, q)).toBe(false);
+    expect(await remeasureAfter({ docs: [1], scanOnly: true }, q)).toBe(false);
+    expect(calls).toHaveLength(1);
   });
 });

@@ -36,6 +36,15 @@ const docsFileFor = (docs) => {
   return f;
 };
 
+// A docs run re-measures its documents into the coverage ledger (11-08: the ledger lagged 8 h behind, so the follow-through
+// re-queued the same 2,000 indexed docs every 10 minutes — 1,771 of them already had their points)
+export async function remeasureAfter({ docs = null, scanOnly = false } = {}, enqueue = null) {
+  if (scanOnly || !docs?.length) return false;
+  const q = enqueue || (await import('../repos/ops-report-repo.js')).enqueue;
+  await q('coverage-refresh', { ids: docs.map(Number) }, 'phrase-index');
+  return true;
+}
+
 export function phraseIndexJob(params = {}, prebuilt = null) {
   const docsFile = !prebuilt && params.docs?.length > DOCS_ARGV_MAX ? docsFileFor(params.docs) : null;
   const args = prebuilt || indexerArgs({ ...params, docsFile });
@@ -57,6 +66,6 @@ export function phraseIndexJob(params = {}, prebuilt = null) {
       tail = (tail + buf).slice(-2000);
     };
     child.stdout.on('data', take); child.stderr.on('data', (buf) => { tail = (tail + buf).slice(-2000); });   // stderr = progress/wait notes: tail only, never `last`
-    child.on('exit', (code) => { if (docsFile) rmSync(docsFile, { force: true }); return code === 0 ? resolve({ code, last }) : reject(new Error(`indexer exit ${code}: ${(tail.match(/^.*Error: .*$/m)?.[0] || '').slice(0, 400)} … ${tail.slice(-300)}`)); });
+    child.on('exit', (code) => { if (docsFile) rmSync(docsFile, { force: true }); if (code === 0) remeasureAfter(params).catch(() => {}); return code === 0 ? resolve({ code, last }) : reject(new Error(`indexer exit ${code}: ${(tail.match(/^.*Error: .*$/m)?.[0] || '').slice(0, 400)} … ${tail.slice(-300)}`)); });
   });
 }
