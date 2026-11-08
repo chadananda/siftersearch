@@ -90,7 +90,7 @@ export const PLAN_TO_REGISTRY = {
   word_study: 'rendering_lookup', people_search: 'biography_search', web: 'web_search',
 };
 // Seeded strategy id → the question classes (A1–H2) its graph serves; a row carrying `classes` overrides this.
-export const SERVES = { comparison: ['C1', 'C2', 'C3'], understanding: ['B1', 'B2', 'B3'], prayer: ['D2'], guidance: ['D4'], reference: ['A5'], compilation: [] };
+export const SERVES = { comparison: ['C1', 'C2', 'C3'], understanding: ['B1', 'B2', 'B3'], prayer: ['D2'], guidance: ['D4'], reference: ['A5'], compilation: ['F1'] };
 const GENERAL = 'respond';
 const CLASS_ID = /^[A-H]\d$/;
 const TOOLS_PAGE = '/docs/anis-tools', STRAT_PAGE = '/docs/response-strategies', ACT_PAGE = '/docs/anis-activities';
