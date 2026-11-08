@@ -93,7 +93,7 @@ const research = (s) => {
   const { fast: f, conversational: c, work: w, direction, deps, d, messages, plan: p } = s;
   s.live = liveResearch(direction);
   const live = s.live;
-  const researchOn = !f && !c && !w && !(live && strategyOf(direction.strategy))
+  const researchOn = !f && !c && !w && !strategyOf(direction.strategy)   // Jev's strategy first on every channel (Chad 11-08)
     && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
   const set = (R) => { s.researched = R?.passages?.length || R?.brief ? R : null; return researchOn ? (s.researched ? 'found' : 'empty') : 'skip'; };
   if (!researchOn) return set(null);

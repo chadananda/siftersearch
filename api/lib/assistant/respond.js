@@ -31,7 +31,7 @@ import { unmachine, dropQuibbles, dropSearchOffer } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
 import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asksForOriginal, namesTheWork } from './researcher.js';
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
-import { runStrategy, COMPILATION_HOW } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
+import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
 import { strategyOf } from './strategy-choice.js';
 import { gatherByGraph, strategyGraphOn } from './activities/graph.js';   // the strategy graph (Phase 1: the same steps as data)
 import { PASSAGE_CHARS } from './prompt.js';
@@ -544,16 +544,6 @@ export function agentOn(direction = {}, env = process.env.ANIS_AGENT) {
  *  then code searches INSIDE the top books that round found (inBooks; 11-03: one round missed the narrative passages of the
  *  histories and Saiedi's own words). Jev's depth = research widens both and reads each book with a second of the round's queries (perBook, within extraMs:
  *  11-03 smoke, three per book on every turn put the first text at 11-15 s on a loaded tower) — deeper work is the deep_report job. Not live → null (the full loop). Pure. */
-// A researched turn keeps the FORM Jev chose: the researcher only gathers, so a compilation request (Chad 11-08) is written as a
-// themed compilation under headings (strategies.js COMPILATION_HOW) from the researcher's passages + brief, never as a letter.
-export function researchFormat(researched, direction = {}, channel = null, plan = null) {
-  const brief = researched?.brief ? `\n\nBRIEF (research notes; never write its markers P#, W#, [own]):\n${researched.brief}` : '';
-  if (strategyOf(direction.strategy) === 'compilation') {
-    return { id: 'compilation', by: 'researcher+strategy:compilation', how: COMPILATION_HOW(plan?.religion || null, null, channel) + brief };
-  }
-  return { id: 'research', by: 'researcher', how: researched?.brief ? RESEARCH_HOW(researched.brief) : QUICK_RESEARCH_HOW };
-}
-
 export function liveResearch({ channel, depth } = {}) {
   if (!channel?.live) return null;
   // read around the main book's best hits (consecutive passages of the story); Jev's depth = research reads two books wider
@@ -646,10 +636,10 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   // library's tools instead of regexes choosing one lookup. On for a channel listed in ANIS_RESEARCH ("email", "all") or
   // when the caller asks (direction.research); any failure falls back to the routed pipeline below.
   // injected deps without a researcher (a test harness) keep it off; tests opt in with deps.research
-  // On a LIVE chat Jev's strategy comes first (it shapes the answer; the researcher once overrode every W3 strategy) and the
-  // researcher is one parallel round (liveResearch).
+  // Jev's strategy comes first on EVERY channel (Chad 11-08: the channel sets time and options, never which strategy); the
+  // researcher answers only when no strategy fits. On a LIVE chat it is one parallel round (liveResearch).
   const live = liveResearch(direction);
-  const researchOn = !fast && !conversational && !work && !(live && strategyOf(direction.strategy))
+  const researchOn = !fast && !conversational && !work && !strategyOf(direction.strategy)
     && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
   const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}), drawFrom: plan?.drawFrom?.name || null, subject: jevSubject(direction, plan),
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
@@ -878,7 +868,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   const formatP = work ? Promise.resolve({ id: 'work', by: 'title-index', how: WORK_HOW(work) })
     : fast?.kind === 'reference' ? Promise.resolve({ id: 'reference', by: 'lookup-reference', how: referenceHow(fast) })   // the passage itself, verbatim (Chad 11-04)
     : quoteMiss ? Promise.resolve({ id: 'honest_absence', by: 'quote-rule', how: QUOTE_MISS_HOW + (messages.length > 1 ? QUOTE_MISS_THREAD : '') })
-    : researched ? Promise.resolve(researchFormat(researched, direction, channel, plan))
+    : researched ? Promise.resolve({ id: 'research', by: 'researcher', how: researched.brief ? RESEARCH_HOW(researched.brief) : QUICK_RESEARCH_HOW })
     : sourced ? Promise.resolve({ id: 'source', by: 'sourcehunt', how: sourced.how })
     : fast?.origin?.source ? Promise.resolve({ id: 'quote_source', by: 'quote-origin', how: quoteSourceHow(fast.origin) })   // who, the Tablet, the translation, the original
     // ORIGINAL_HOW only with an original in hand: without one the model said the passage was "not found" while the English

@@ -240,8 +240,8 @@ describe('docs pages', () => {
     expect(s).toContain('id={`step-${a.name}`}');
     expect(s).toContain('id={`class-${c.id}`}');
     expect(s).toMatch(/<details class="card"/);
-    for (const h of ['What a strategy is', 'How strategies improve', 'The strategy of strategies', 'Question classes', 'Building steps', 'Combining strategies', 'Follow-up moves', 'Decisions']) expect(s).toContain(h);
-    expect(s.indexOf('The strategy of strategies')).toBeLessThan(s.indexOf('<h2>The strategies</h2>'));
+    for (const h of ['What a strategy is', 'How strategies improve', 'How a strategy is built', 'Question classes', 'Building steps', 'Combining strategies', 'Follow-up moves', 'Decisions']) expect(s).toContain(h);
+    expect(s.indexOf('How a strategy is built')).toBeLessThan(s.indexOf('<h2>The strategies</h2>'));
     expect(s.indexOf('<h2>The strategies</h2>')).toBeLessThan(s.indexOf('<h2>Question classes</h2>'));
     expect(s.indexOf('<h2>Question classes</h2>')).toBeLessThan(s.indexOf('<h2>Building steps</h2>'));
     for (const k of ['summary.active', 'summary.candidates', 'summary.promotions_30d']) expect(s).toContain(k);

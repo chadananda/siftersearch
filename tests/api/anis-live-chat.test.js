@@ -254,6 +254,14 @@ describe('anisRespond on a live channel', () => {
     expect(r.format).toMatchObject({ id: 'research', by: 'researcher' });
   });
 
+  it('email: Jev chose a strategy → the strategy runs there too (Chad 11-08: the channel sets time and options, never the strategy)', async () => {
+    const { d, log } = respondDeps();
+    await anisRespond({ messages: [{ role: 'user', content: 'How do the Qur’án and the Gospel each speak of forgiveness?' }], profile: { default_tradition: "Baha'i" }, deps: d,
+      direction: { channel: channelFor('email', { trusted: true }), research: true, strategy: { strategy: { choice: 'comparison', confidence: 0.9 }, sides: ['Islam', 'Christian'] }, decisions: decisionLog() } });
+    expect(log.research).toHaveLength(0);
+    expect(log.crafts[0].direction.format.id).not.toBe('research');
+  });
+
   it('email keeps the full researcher loop and the thinking writer', async () => {
     const { d, log } = respondDeps();
     await anisRespond({ messages: soulQ, deps: d, direction: { channel: channelFor('email', { trusted: true }), research: true } });
