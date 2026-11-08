@@ -129,7 +129,18 @@ let drainSeen = state.drainSeen || {};
     // paid GPU pods: rented-but-idle, billing with no lane, low efficiency, spend near the cap are CRITICAL (Chad 10-24)
     try {
       const { podChecks } = await import('./lib/pod-checks.mjs');
-      for (const c of podChecks(JSON.parse(r.body).cloud_gpu)) add(c.name, c.ok, 'critical', c.detail);
+      const g = JSON.parse(r.body).cloud_gpu;
+      // the pod list is the media service's ledger; paused (pm2-stopped) it freezes with the last pods it knew (11-08: two
+      // CRITICALs for pod 525, gone from RunPod hours before). RunPod is the truth for "billing": a pod it no longer lists is not live.
+      // If RunPod cannot be asked, the ledger stands (money: rather a false alarm than a silent bill).
+      if (g?.pods?.some((p) => p.live)) {
+        try {
+          const { listPods } = await import('../api/lib/media/cloud.js');
+          const at = new Set((await listPods()).map((p) => p.id));
+          g.pods = g.pods.map((p) => (p.live && p.id && !at.has(p.id) ? { ...p, live: false, status: 'gone from RunPod' } : p));
+        } catch (e) { console.error(`[system-checks] RunPod pod list failed, using the ledger: ${e.message}`); }
+      }
+      for (const c of podChecks(g)) add(c.name, c.ok, 'critical', c.detail);
       const rq = JSON.parse(r.body).remaster_quality;
       if (rq) add('Remaster verdicts', !(rq.published_without_verdict > 0), 'warn', rq.published_without_verdict > 0 ? `${rq.published_without_verdict} published remaster(s) have no quality verdict` : `ok · ${JSON.stringify(rq.by_verdict)}`);
       if (rq) { const poor = rq.insufficient_restoration ?? ((rq.by_grade?.D?.light || 0) + (rq.by_grade?.E?.light || 0)); add('Restoration completeness', poor === 0, 'warn', poor ? `${poor} D/E recordings have only basic cleanup and need full restoration` : 'no D/E recording accepted as a light-only restoration'); }
