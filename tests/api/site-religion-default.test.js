@@ -9,7 +9,11 @@ describe('siteReligion', () => {
     [{ title: 'Sura 2', author: 'writings-quran-002' }, 'Islam'], [{ title: "The Qur'an", author: 'x' }, 'Islam'],
     [{ title: 'lambden_bahai_interpretation_bible', author: 'docs-l-lambden' }, "Baha'i"],
     [{ title: 'Messages to Canada: 1999 edition', author: '2478' }, "Baha'i"], [{ title: 'Star of the West Volume 1', author: 'star' }, "Baha'i"],
-    [{}, "Baha'i"],
+    [{}, "Baha'i"], [{ title: 'Bible, Preferred English Translation of', author: '1310' }, 'Christian'], [{ title: 'BibleTOC', author: 'x' }, 'Christian'],
+    [{ title: 'Bible-Apocrypha-TOChtm', author: 'x' }, 'Christian'], [{ title: "The Qur'an: The Meanings of the Holy Qur'an", author: '2369' }, 'Islam'],
+    [{ title: "Bible Stories and Themes in the Baha'i Writings and Guidance", author: 'compilation' }, "Baha'i"],
+    [{ title: "The Qur'an in Baha'i Writings", author: 'lawson' }, "Baha'i"], [{ title: "The Qur'an and the Baha'i Faith", author: 'lawson' }, "Baha'i"],
+    [{ title: "Qur'an Commentary as Sacred Performance: The Bab's tafsirs", author: 'lawson' }, "Baha'i"],
   ])('%j → %s', (d, r) => expect(siteReligion(d)).toBe(r));
 });
 

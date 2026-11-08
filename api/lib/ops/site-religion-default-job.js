@@ -7,7 +7,10 @@ import { docCorrectionsJob } from './doc-corrections-job.js';
 
 export const SITES = ['bahai-library.com', 'oceanoflights.org'];
 const BIBLE = /^(?:writings-)?bible-/i, QURAN = /^(?:writings-)?(?:quran|koran)-/i;
-const BIBLE_TITLE = /^(?:the\s+)?(?:holy\s+)?bible\b/i, QURAN_TITLE = /^(?:the\s+)?(?:holy\s+)?(?:al[-\s]?)?(?:koran|qur[’']?[aā]n)\b/i;
+// a title that IS the scripture: the name alone or followed by ':' ',' '-' or 'TOC' — 'Bible Stories in the Baha'i Writings',
+// "The Qur'an and the Baha'i Faith", "Qur'an Commentary …" are Baha'i works ABOUT it and keep the default
+const IS = String.raw`(?:\s*$|\s*[:,(-]|toc)`;
+const BIBLE_TITLE = new RegExp(String.raw`^(?:the\s+)?(?:holy\s+)?bible${IS}`, 'i'), QURAN_TITLE = new RegExp(String.raw`^(?:the\s+)?(?:holy\s+)?(?:al[-\s]?)?(?:koran|qur[’']?[aā]n)${IS}`, 'i');
 
 /** A site doc with no religion → the religion it gets. Pure. */
 export function siteReligion({ title = '', author = '' } = {}) {
