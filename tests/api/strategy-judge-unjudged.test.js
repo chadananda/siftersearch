@@ -24,3 +24,12 @@ describe('unjudged verdicts', () => {
     expect(scoreOf(j)).toBeNull();
   });
 });
+
+describe('nodePath', () => {
+  it('compacts a run path: node:edge(count) and the members with filters', async () => {
+    const { nodePath } = await import('../../api/lib/assistant/strategy-promote.js');
+    expect(nodePath({ steps: [{ node: 'gather', edge: 'several', count: 9, members: [{ element: 'search.shelf', skipped: true }, { element: 'search.shelf', filters: { tradition: ['Buddhist'] }, count: 6 }] }, { node: 'rank', edge: 'done' }] }))
+      .toEqual(['gather:several(9) [search.shelf skip; search.shelf {"tradition":["Buddhist"]}→6]', 'rank:done']);
+    expect(nodePath({})).toEqual([]);
+  });
+});

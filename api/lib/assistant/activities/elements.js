@@ -162,7 +162,7 @@ const E = {
   'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['shelf', 'doctrinal', 'language', 'wide'], reads: ['topic'], input: searchInput, take: passages,
     gate: (s, u, p) => !p.wide || hardFiltered(u) }),
   'search.originals': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'originals_search', reads: ['topic', 'search_originals'], input: searchInput, take: passages,
-    gate: (s, u) => u.search_originals !== false }),
+    gate: (s, u) => u.search_originals !== false && (!tradsOf(u) || tradsOf(u).includes("Baha'i")) }),   // the originals index is the Bahá'í Persian/Arabic Writings: a turn scoped to another tradition skips it
   'search.web': retrieval({ edges: ['one', 'none', 'error'], tool: 'web_search', into: 'web_found', thin: () => false, reads: ['topic'],   // never library evidence; the scope goes in as words
     input: (s, p, u) => ({ query: `${text(s, u, p.query, '{{topic}}')}${Array.isArray(u.religions_specified) ? ` (${u.religions_specified.join(', ')})` : ''}` }),
     take: (o) => (o?.text ? [{ site: o.citations?.[0] ? new URL(o.citations[0], 'https://x').host : null, url: o.citations?.[0] ?? null, snippet: o.text, id: o.citations?.[0] ?? o.text }] : []) }),

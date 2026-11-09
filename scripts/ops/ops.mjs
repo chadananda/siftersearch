@@ -188,7 +188,7 @@ else if (cmd === 'anis-promote' && name) {   // replay promotion job: fresh clas
     while (rec.status === 'running') { await new Promise((r) => setTimeout(r, 10000)); rec = await call('GET', `/anis/promote/${encodeURIComponent(job.key)}`); }
     if (flag('--json') || rec.status !== 'done') await out(rec);
     else { const d = rec.result.decision; await out({ id: rec.result.id, version: rec.result.version, promoted: rec.result.promoted, usd: rec.result.usd, failed: d.failed, numbers: d.numbers });
-      if (Array.isArray(rec.result.rows)) await new Promise((r) => process.stdout.write(rec.result.rows.filter((x) => x.cand).map((x) => `${String(x.cand.score).padStart(4)} vs ${String(x.cur?.score).padStart(4)}  ${x.question}\n      cand: ${String(x.cand.why ?? '').slice(0, 300)}\n      cur:  ${String(x.cur?.why ?? '').slice(0, 300)}`).join('\n') + '\n', r)); }
+      if (Array.isArray(rec.result.rows)) await new Promise((r) => process.stdout.write(rec.result.rows.filter((x) => x.cand).map((x) => `${String(x.cand.score).padStart(4)} vs ${String(x.cur?.score).padStart(4)}  ${x.question}\n      cand: ${String(x.cand.why ?? '').slice(0, 300)}${x.cand.nodes?.length ? `\n      cand path: ${x.cand.nodes.join(' → ')}` : ''}\n      cur:  ${String(x.cur?.why ?? '').slice(0, 300)}`).join('\n') + '\n', r)); }
   }
 }
 else if (cmd === 'anis-rollback' && name) await out(await call('POST', '/anis/rollback', { id: name }));

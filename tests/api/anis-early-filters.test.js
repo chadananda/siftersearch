@@ -81,3 +81,15 @@ describe('the judge sees the tree', () => {
     expect(msg).toContain('TREE understanding'); expect(msg).toContain('gather.0 search.shelf "soul after death" filters {"work":"Some Answered Questions"} → 3'); expect(msg).toContain('gather.1 search.shelf (skipped');
   });
 });
+
+describe('search.originals under a tradition scope', () => {
+  it("skips the Bahá'í originals index on a turn scoped to another tradition, runs it for Bahá'í or unscoped", async () => {
+    let called = 0;
+    const tools = { originals_search: async () => { called++; return { passages: [P(1)] }; } };
+    await ELEMENTS['search.originals'].run(mk({ religions_specified: ['Buddhist'], current_user_question: 'anatta' }, { tools }), {});
+    expect(called).toBe(0);
+    await ELEMENTS['search.originals'].run(mk({ religions_specified: ["Bahá'í"], current_user_question: 'soul' }, { tools }), {});
+    await ELEMENTS['search.originals'].run(mk({ current_user_question: 'soul' }, { tools }), {});
+    expect(called).toBe(2);
+  });
+});

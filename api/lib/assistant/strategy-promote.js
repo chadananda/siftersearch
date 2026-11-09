@@ -116,14 +116,18 @@ export async function runPromotion({ pin, held = [], cat, deps, capUsd = IMPROVE
     const [cand, cur] = await Promise.all([deps.tryTurn({ question: q.question, pin }), deps.tryTurn({ question: q.question, pin: null })]);   // side by side: the job fits its 30-min window
     const [jc, ju] = await Promise.all([deps.judge({ question: q.question, reply: cand.reply, path: cand.path }), deps.judge({ question: q.question, reply: cur.reply, path: cur.path })]);
     usd += (cand.usd || 0) + (cur.usd || 0) + (jc?.usd || 0) + (ju?.usd || 0);
-    rows.push({ ...q, cand: { score: scoreOf(jc), ms: cand.ms, usd: cand.usd, jev_pick: cand.jev_pick, why: jc?.why ?? null },
-      cur: { score: scoreOf(ju), ms: cur.ms, usd: cur.usd, why: ju?.why ?? null } });
+    rows.push({ ...q, cand: { score: scoreOf(jc), ms: cand.ms, usd: cand.usd, jev_pick: cand.jev_pick, why: jc?.why ?? null, nodes: nodePath(cand) },
+      cur: { score: scoreOf(ju), ms: cur.ms, usd: cur.usd, why: ju?.why ?? null, nodes: nodePath(cur) } });
     onProgress({ done: rows.length, of: qs.questions.length, usd });
   }
   const decision = stopped ? { promote: false, failed: [`stopped: ${stopped} ($${r3(usd)} of $${capUsd})`], numbers: decidePromotion(rows, { name: row.name, cfg, replay, nodes }).numbers }
     : decidePromotion(rows, { name: row.name, cfg, replay, nodes });
   return { decision, rows, usd: Math.round(usd * 1e6) / 1e6, stopped };
 }
+
+/** The run's node path, compact (node:edge(count), members with their filters and counts): why a row lost is readable from the job record. Pure. */
+export const nodePath = (r) => (Array.isArray(r?.steps) ? r.steps : []).slice(0, 30).map((x) => `${x.node}:${x.edge}${x.count != null ? `(${x.count})` : ''}`
+  + (Array.isArray(x.members) ? ` [${x.members.map((m) => `${m.element}${m.skipped ? ' skip' : ` ${JSON.stringify(m.filters || {})}→${m.count}`}`).join('; ')}]` : ''));
 
 // ── the live deps ──
 /** Opus writes the class + guard questions (billed improve-strategy-questions). */
