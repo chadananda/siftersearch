@@ -19,7 +19,7 @@ import { chooseStrategy, strategyOf } from './strategy-choice.js';
 import { timeoutDecision, jevTimeoutsOf } from './jev-call.js';   // W3: Jev chooses the strategy from context
 import { restate, understoodText, tarpitPhrase } from './understanding.js';   // W3: the "what I understood" line
 import { decisionLog } from './decision-log.js';
-import { emptyState, applyPatch, resolveScope, conversationLayer, readerLayer, siteLayer, treePatch } from './units.js';   // conversation_state + scope layers
+import { emptyState, applyPatch, resolveScope, conversationLayer, readerLayer, siteLayer, treePatch, lastTopic } from './units.js';   // conversation_state + scope layers
 import { openJevTurn, linkJevTurn, jevTurnCalls } from '../systemone.js';   // every Jev call of the turn carries its <thread>:<round> ref
 import { withAIContext, currentAIContext, setAIContext } from '../ai-context.js';
 import { timed, timelineOf } from './timeline.js';
@@ -151,7 +151,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
   if (route.action === 'research' && outcome === 'ask_back' && outcomeC >= T.askBack) Object.assign(route, { action: 'canned', kind: 'unclear', overridden: 'research', by: 'outcome' });
   // Jev's own confident call that this fetches something exact outranks his "unclear" (a bare "Gleanings 1" reads as unclear to the message-kind question)
   if (route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind) && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.8) Object.assign(route, { action: 'research', overridden: route.kind });
-  const lkIntent = lookupOn && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
+  // Jev's refers_back (strategy call, read with the history): a message pointing at the previous reply is never 'unclear' and never a literal quote lookup
+  if (strat?.refersBack && route.action === 'canned' && ['unclear', 'cut_off'].includes(route.kind)) Object.assign(route, { action: 'research', overridden: route.kind, by: 'refers_back' });
+  const lkIntent = lookupOn && !strat?.refersBack && route.action === 'research' && ['book', 'quote', 'reference'].includes(tri?.lookup?.choice) && (tri.lookup.confidence ?? 0) >= 0.6 ? tri.lookup.choice : null;
   const lk = lkIntent ? await timed('lookup', () => d.lookup(messages, { intent: lkIntent, profile, decisions, onJev: (info) => decisions.record('jev:timeout', timeoutDecision(info)) }), (r) => (r ? { kind: r.kind, intent: lkIntent } : { intent: lkIntent })).catch(() => null) : null;
   // a SHORT turn Jev read as a search ("more", "and the Báb?", "in Persian") gets its self-contained query from the history
   // and the card (short-turn.js) — respond.js searches those words, not the bare message
@@ -229,7 +231,7 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
     jobP?.then((j) => { if (j?.researchId && streaming) narrate(onEvent, channel, 'deep_report.queued'); }).catch(() => {});
     // research / llm / variants: a caller's override (the /draft battery compares the researcher, writers and templates before they go live)
     const r = await d.respond({ messages, profile, participant, onEvent, ...(llm ? { llm } : {}), ...(variants ? { variants } : {}), direction: { scope, turnId: ex?.conversationId != null ? `${ex.conversationId}:${ex.round}` : null, stance: triageSummary?.stance ?? null,
-      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, state: stateBefore, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
+      kind: route.kind, guarded: route.action === 'guarded', channel, follow_up: triageSummary?.follow_up ?? null, features: triageSummary?.features ?? null, outcome: tri?.outcome ?? null, depth: triageSummary?.depth ?? null, query: (strat?.refersBack ? lastTopic(stateBefore, messages) : null) ?? resolved?.query ?? null, card: card?.text ?? null, ...(lk && route.action === 'research' ? { lookup: lk } : {}), ...(lkIntent ? { lookupIntent: lkIntent } : {}), strategy: strat, decisions, state: stateBefore, ...(research !== undefined ? { research } : {}), ...(engine ? { engine } : {}) } });
     streaming = false;
     // the form pass on EVERY reply path (agent, craft, sourcehunt, strategies): a closing search offer dropped, brackets in link
     // text made parens (writer residuals 11-05: titles like "Book of Common Prayer [King's Chapel]" broke their links)

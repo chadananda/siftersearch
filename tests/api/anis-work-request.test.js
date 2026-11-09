@@ -5,8 +5,8 @@ import { shortQuestion, anisDirection } from '../../api/lib/assistant/prompt.js'
 import { buildIndex, matchTitle } from '../../api/lib/dewey/title-index.js';
 
 const ROWS = [
-  { id: 1, title: 'The Kitáb-i-Íqán: The Book of Certitude', author: "Bahá'u'lláh", religion: "Bahá'í", collection: 'Core Tablets', slug: 'kitab-i-iqan', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 290 },
-  { id: 2, title: 'The Dawn-Breakers', author: 'Nabíl-i-Zarandí', religion: "Bahá'í", collection: 'Core Publications', slug: 'dawn-breakers', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 2400 },
+  { id: 1, title: 'The Kitáb-i-Íqán: The Book of Certitude', author: "Bahá'u'lláh", religion: "Bahá'í", collection: 'Core Tablets', slug: 'kitab-i-iqan', source_url: 'https://oceanlibrary.com/kitab-i-iqan/', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 290 },
+  { id: 2, title: 'The Dawn-Breakers', author: 'Nabíl-i-Zarandí', religion: "Bahá'í", collection: 'Core Publications', slug: 'dawn-breakers', source_url: 'https://oceanlibrary.com/dawn-breakers/', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 2400 },
   { id: 3, title: 'Memorials of the Faithful', author: "'Abdu'l-Bahá", religion: "Bahá'í", collection: 'Core Tablets', slug: 'memorials', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 300 },
   { id: 4, title: 'Some Answered Questions', author: "'Abdu'l-Bahá", religion: "Bahá'í", collection: 'Core Tablets', slug: 'saq', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 900 },
   { id: 5, title: 'Some Answered Questions: Study Guide', author: 'A. Student', religion: "Bahá'í", collection: 'Study', slug: 'saq-guide', language: 'en', source_site: null, paragraph_count: 80 },
@@ -20,7 +20,8 @@ describe('a request for a book is answered with the book', () => {
     const w = await find('Please locate The Book of Certitude and show me where it appears in the library.');
     expect(w.doc.id).toBe(1);
     const r = workReply(w);
-    expect(r).toContain('(https://siftersearch.com/library/');
+    expect(r).toContain('(https://oceanlibrary.com/kitab-i-iqan/)');
+    expect(r).not.toContain('siftersearch.com');
     expect(r).toContain('kitab-i-iqan');
     expect(r).not.toMatch(/catalog|elsewhere|bahai\.org|Reference Library/i);
   });
@@ -75,20 +76,20 @@ describe('the book reply: link first, what the texts say ABOUT it, then the offe
     } });
     expect(crafted[0].retrieved_quotes.map((q) => q.doc_id)).toEqual([99]);
     expect(crafted[0].direction.format.id).toBe('work');
-    expect(out.reply.split('\n\n')[0]).toContain('/library/');
+    expect(out.reply.split('\n\n')[0]).toContain('](https://oceanlibrary.com/dawn-breakers/)');
     expect(out.reply).toContain('every believer should master');
     expect(out.reply.trim().endsWith('with me”.')).toBe(true);
   });
 });
 
 describe('every italicised book is a link to the library, and the reply never announces itself (Chad 11-01, "Seven Valleys")', () => {
-  const SV = { id: 6, title: 'The Seven Valleys', author: "Bahá'u'lláh", religion: "Bahá'í", collection: 'Core Tablets', slug: 'seven-valleys', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 120 };
+  const SV = { id: 6, title: 'The Seven Valleys', author: "Bahá'u'lláh", religion: "Bahá'í", collection: 'Core Tablets', slug: 'seven-valleys', source_url: 'https://oceanlibrary.com/seven-valleys/', language: 'en', source_site: 'oceanlibrary.com', paragraph_count: 120 };
   const find = async (t) => (/seven valleys/i.test(t) ? { doc: SV, others: [] } : null);
   it('links the first mention, leaves unknown italics and existing links alone', async () => {
     const text = 'It is a quiet joy to turn to *The Seven Valleys*. It draws on *Manṭiqu’ṭ-Ṭayr*. Again *The Seven Valleys*. See [*Gleanings*](https://x/g).';
     const { text: out, linked } = await linkTitles(text, { find });
     expect(linked).toBe(1);
-    expect(out).toContain('[*The Seven Valleys*](https://siftersearch.com/library/');
+    expect(out).toContain('[*The Seven Valleys*](https://oceanlibrary.com/seven-valleys/)');
     expect(out.match(/seven-valleys/g)).toHaveLength(1);
     expect(out).toContain(' *Manṭiqu’ṭ-Ṭayr*.');
     expect(out).toContain('[*Gleanings*](https://x/g)');

@@ -204,10 +204,10 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
     document_search: async ({ title }) => {
       const w = await (impl.work || (async (t) => (await import('./work-request.js')).findTitled([t])))(title).catch(() => null);
       if (!w) return `no work titled "${title}" in the library`;
-      const { readerUrl } = await import('../source-links.js');
+      const { workUrl } = await import('../source-links.js');
       // only the best match is the book asked for; the others (chapter files, namesakes) are listed but take no book-step slot
       // (11-03: The Dawn-Breakers + its Chapter X + Chapter I filled all three slots and crowded out the other histories)
-      return [w.doc, ...w.others].map((x, i) => `[${addWork({ ...x, url: readerUrl(x), ...(i ? { other: true } : {}) })}] ${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${readerUrl(x)}`).join('\n\n');
+      return [w.doc, ...w.others].map((x, i) => `[${addWork({ ...x, url: workUrl(x), ...(i ? { other: true } : {}) })}] ${x.title}${x.author ? ` — ${x.author}` : ''}${x.encumbered === 1 ? ' (copyrighted: opening pages only)' : ''}\nlink: ${workUrl(x) || 'none (no public page: write the title unlinked)'}`).join('\n\n');
     },
     original_lookup: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
     translation_lookup: async ({ original }) => {

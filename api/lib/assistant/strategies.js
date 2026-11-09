@@ -14,6 +14,7 @@ import { sourceTier, TIER_ORDER } from './source-tier.js';
 import { supports } from './channels.js';
 import { strategyGraphOn, runStrategyGraph } from './activities/graph.js';
 import { LOOKUP_STRATEGIES } from './strategy-seed.js';
+import { lastTopic, lastPassages } from './units.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
 const DOCTRINAL = new Set(['writings', 'guardian', 'compilation']);   // source-tier.js tiers a compilation draws on by default
@@ -214,11 +215,24 @@ export async function compilation(choice, ctx) {
   return { passages, plan: { shape: 'compilation', religion, coverage: c }, format: { id: 'compilation', by: 'strategy:compilation', how: COMPILATION_HOW(religion, c, channel) } };
 }
 
+/** The passages the last turn cited, loaded whole and put first (Jev: the message refers back to them). Pure of intent; a failed load costs only itself. */
+export async function withAnchors(passages, state, ctx = {}, log = NO_LOG) {
+  const a = (x) => ({ document_id: x.document_id, paragraph_index: x.paragraph_index, before: 0, after: 0 });
+  const anchors = (await Promise.all(lastPassages(state || undefined).slice(0, 3).map((x) => (ctx.tools?.context_lookup ? ctx.tools.context_lookup(a(x), ctx) : runTool('context_lookup', a(x), ctx)).then((c) => c?.passages?.[0] ?? null, () => null)))).filter(Boolean);
+  if (!anchors.length) return passages;
+  const had = new Set(anchors.map((p) => `${p.document_id}:${p.paragraph_index}`));
+  log.record('refers-back:anchor', { by: 'code', saw: anchors.length, options: ['search only', 'last passages first'], chosen: 'last passages first', reason: 'the message points at the previous reply' });
+  return [...anchors.map((p) => ({ ...p, anchor: true })), ...(passages || []).filter((p) => !had.has(`${p.document_id}:${p.paragraph_index}`))];
+}
+
 /** Run the executor for Jev's choice. null = nothing to execute. */
 export async function runStrategy(choice, ctx) {
   const name = strategyOf(choice);
   if (!name) return null;
   const log = ctx.decisions || NO_LOG;
+  // Jev read the message as pointing at the LAST reply (refers_back): search the last turn's topic, not the glued/literal follow-up, and keep the passages it cited as the anchor
+  const topic = choice?.refersBack ? lastTopic(ctx.state || undefined, ctx.messages || []) : null;
+  if (topic) { ctx = { ...ctx, query: topic }; log.record('refers-back:query', { by: 'jev', saw: { topic }, options: ['glued follow-up', 'last topic'], chosen: 'last topic', reason: 'Jev: the message refers back to the previous reply' }); }
   // a lookup strategy (book, quote_trace, term, original, about) runs over the whole turn (graph.js gatherByGraph), not as an executor here:
   // an Unmatched recheck that lands on one has nothing to execute, so the researcher answers and the gap is already recorded
   if (LOOKUP_STRATEGIES.has(name)) { log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'a lookup strategy runs as the turn gather, not as an executor' }); return null; }
@@ -226,6 +240,7 @@ export async function runStrategy(choice, ctx) {
   // strategy's graph (activities/graph.js; ANIS_STRATEGY_GRAPH=0 → the registry tool directly, the Phase-1 rollback)
   const viaGraph = strategyGraphOn() ? await runStrategyGraph(name, choice, { ...ctx, decisions: log }) : undefined;
   const out = viaGraph !== undefined ? viaGraph : await runTool(name, choice, { ...ctx, decisions: log });
+  if (out && topic && name !== 'comparison') out.passages = await withAnchors(out.passages, ctx.state, ctx, log);
   if (!out) log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'executor found nothing to execute' });
   return out;
 }

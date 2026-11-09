@@ -47,7 +47,7 @@ WRITING:
 export function renderRefs(text, { found, works }) {
   return String(text || '')
     .replace(/\(\s*(\[\[?[PW]\d+(?:\s*[,;]\s*[PW]\d+)*\]\]?)\s*\)/g, '$1')   // "([[P1]])" → one pair of parens
-    .replace(/\*{0,2}\[\[?(B\d+)\]\]?\*{0,2}(?!\()/g, (m, r) => { const w = works.get(r); return w ? `[*${w.title}*](${w.url})` : ''; })
+    .replace(/\*{0,2}\[\[?(B\d+)\]\]?\*{0,2}(?!\()/g, (m, r) => { const w = works.get(r); return w ? (w.url ? `[*${w.title}*](${w.url})` : `*${w.title}*`) : ''; })
     .replace(/\s*\[\[?((?:[PW]\d+)(?:\s*[,;]\s*[PW]\d+)*)\]\]?(?!\()/g, (m, list) => {
       const seen = new Set();
       const links = list.split(/\s*[,;]\s*/).map((r) => found.get(r)).filter((p) => p?.source_url && !seen.has(p.source_url) && seen.add(p.source_url))

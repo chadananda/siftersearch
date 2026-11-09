@@ -7,7 +7,7 @@
 import { extractPhrases, fixedPhrases, hintsOf } from './phrases.js';
 import { religionsReply } from './library-facts.js';
 import { findWork, workReply, workLead, workOffer, workAboutQuery, aboutWork, WORK_HOW, linkTitles, dropPreamble } from './work-request.js';
-import { readerUrl } from '../source-links.js';
+import { workUrl } from '../source-links.js';
 import { speakerTradition, followUpAsks } from '../search-plan.js';
 import { jevSubject } from './query-anchor.js';
 import { questionSubject } from '../planned-search.js';
@@ -32,7 +32,7 @@ import { unmachine, dropQuibbles, dropSearchOffer } from './lint.js';
 import { looksLikeLanguageQuestion, LANGUAGE_HOW } from './language.js';
 import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asksForOriginal, namesTheWork } from './researcher.js';
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
-import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
+import { runStrategy, withAnchors } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
 import { strategyOf } from './strategy-choice.js';
 import { isUnmatched, resolveUnmatched, withStrategyPin, plannerOn } from './unmatched.js';
 import { matchRoute } from './strategy-planner.js';   // Jev found no strategy: reuse / recheck / design one on the fly
@@ -759,6 +759,8 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
       return timed('search', () => d.search({ query: searchQ, mode: 'passages', limit: 8, scope_config: profile.scope_config,
         plan: { messages, defaults: (direction.scope ? direction.scope.religion : profile.default_tradition) ? { religion: direction.scope ? direction.scope.religion : profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
     });
+  // no strategy ran but Jev read the message as pointing at the last reply: its cited passages lead (the actual words)
+  if (direction.strategy?.refersBack && !strat && !fast && res?.passages) res.passages = await withAnchors(res.passages, direction.state, {}, direction.decisions);
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   // OWN SOURCE (own-source.js; Chad's standing rule): the passages are final here — a Central Figure's or Shoghi Effendi's
   // words quoted inside another author's book (production 11-04: "Ye are the fruits of one tree" linked to The Promised Day
@@ -816,7 +818,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
     retrieved.splice(0, retrieved.length, ...aboutWork(work, retrieved).slice(0, 8));
     if (!retrieved.length) {   // nothing speaks of the book: the link and the offer
       const reply = workReply(work);
-      const citations = [work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: readerUrl(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' }));
+      const citations = [work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: workUrl(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' }));
       onEvent({ type: 'sources', sources: citations, plan: res._plan, ms: Date.now() - t0 });
       onEvent({ type: 'stage', stage: 'craft' });
       onEvent({ type: 'text', content: reply });
@@ -874,7 +876,7 @@ export async function anisRespond({ messages, profile = {}, participant = {}, ll
   if (d.upgradeLinks) await timed('upgrade-links', () => Promise.all(retrieved.map(async (q) => { if (q.citation_url) q.citation_url = await d.upgradeLinks(q.citation_url).catch(() => q.citation_url); })));
   const citations = retrieved.map((q) => ({ title: q.source_title, author: q.source_author, url: q.citation_url,
     religion: q.religion, document_id: q.doc_id, paragraph_index: q.paragraph_index, text: q.text.slice(0, 300) }));
-  if (work) citations.unshift(...[work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: readerUrl(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' })));
+  if (work) citations.unshift(...[work.doc, ...work.others].map((x) => ({ title: x.title, author: x.author, url: workUrl(x), religion: x.religion, document_id: x.id, paragraph_index: null, text: '' })));
   // Something useful before the first token (backlog 0023): the sources are known in ~0.2s.
   if (!conversational) {
     onEvent({ type: 'sources', sources: citations, plan: res?._plan || null, ms: searchMs });

@@ -8,7 +8,7 @@ const P = { id: 11, text: 'Foremost among the priceless treasures cast forth fro
   title: 'God Passes By', author: 'Shoghi Effendi', source_url: 'https://oceanlibrary.com/gpb#p1', document_id: 5, paragraph_index: 1 };
 const tools = {
   search: async () => [P],
-  work: async () => ({ doc: { id: 1, title: 'The Kitáb-i-Íqán', author: "Bahá'u'lláh", slug: 'kitab-i-iqan', source_site: 'oceanlibrary.com' }, others: [] }),
+  work: async () => ({ doc: { id: 1, title: 'The Kitáb-i-Íqán', author: "Bahá'u'lláh", slug: 'kitab-i-iqan', source_site: 'oceanlibrary.com', source_url: 'https://oceanlibrary.com/kitab-i-iqan/' }, others: [] }),
   notes: async () => ({ works: [{ title: 'The Kitáb-i-Íqán', notes: [{ quote: 'which is indeed the cynosure of all books', speaker: "Bahá'u'lláh", source_title: 'The Tabernacle of Unity', url: 'https://oceanlibrary.com/tab#p9' }] }] }),
 };
 // a scripted model: round 1 asks for tools in parallel, round 2 writes with refs
@@ -26,7 +26,7 @@ describe('agent: refs become links; nothing else does', () => {
   it('book, passage and note refs render to the library links', async () => {
     const r = await agentAnswer({ messages: [{ role: 'user', content: 'Where can I read the Iqan?' }], tools,
       create: scripted('Here is [[B1]]. Shoghi Effendi writes that it is "Foremost among the priceless treasures cast forth from the billowing ocean" [[P1]]; Bahá’u’lláh calls it "the cynosure of all books" [[P2]].') });
-    expect(r.reply).toMatch(/^Here is \[\*The Kitáb-i-Íqán\*\]\(https:\/\/siftersearch\.com\/library\//);
+    expect(r.reply).toMatch(/^Here is \[\*The Kitáb-i-Íqán\*\]\(https:\/\/oceanlibrary\.com\/kitab-i-iqan\/\)/);
     expect(r.reply).toContain('(https://oceanlibrary.com/gpb#p1)');
     expect(r.reply).toContain('(https://oceanlibrary.com/tab#p9)');
     expect(r.steps.map((s) => s.tool).sort()).toEqual(['document_search', 'fused_search', 'work_notes_lookup']);

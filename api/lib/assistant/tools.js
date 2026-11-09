@@ -250,8 +250,8 @@ const ENTRIES = [
     async run(a, ctx) {
       const w = await (await dep(ctx, 'findTitled', 'works'))([a.title], ...(a.min != null ? [{ min: a.min }] : []));
       if (!w?.doc) return { works: [] };
-      const readerUrl = await dep(ctx, 'readerUrl', 'srcl');
-      return { works: [w.doc, ...(w.others || [])].map((x) => ({ ...x, url: readerUrl(x) })) };
+      const workUrl = await dep(ctx, 'workUrl', 'srcl');
+      return { works: [w.doc, ...(w.others || [])].map((x) => ({ ...x, url: workUrl(x) })) };
     } },
   { name: 'original_lookup', label: 'Original Lookup', kind: 'tool', outputName: 'Passage[]', cost: C(true, 300),
     purpose: 'The Arabic/Persian original of an English passage, then the authorised translations linked to it.',

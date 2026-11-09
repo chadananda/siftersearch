@@ -58,6 +58,15 @@ export function readerUrl(doc, paragraphIndex) {
   return paragraphIndex != null ? `${base}#p${paragraphIndex}` : base;
 }
 
+/** The BOOK-level link a title should carry: the document's publisher page (OceanLibrary first, by linkFor's tiers), never our own
+ *  address. null = the library holds no publisher page for it → the title is written unlinked (public identity: Anís never names
+ *  siftersearch.com; Chad 11-09). Pure. */
+export function workUrl(doc) {
+  if (!doc) return null;
+  const l = linkFor({ ...doc, text: null, external_para_id: null, ilm_id: null, block_attrs: null }, null);
+  return l.tier < SIFTER_TIER ? l.url.replace(/#.*$/, '') : null;
+}
+
 /**
  * The link a result should carry, by policy.
  * @param {object} doc  { id|doc_id, source_url, metadata, religion, collection, slug, filename }

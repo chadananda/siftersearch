@@ -3,7 +3,7 @@
 // "Dawnbreakers" ≡ The Dawn-Breakers, "Book of Certitude" ≡ the Kitáb-i-Íqán's subtitle). No search, no model. Before this,
 // such turns went to passage search and the reply quoted works that MENTION the book and sent readers to "a digital catalog".
 // Pure: workRequest / titleCandidates / workReply. findWork takes the index + listDocs injected (tests) or loads them lazily.
-import { readerUrl } from '../source-links.js';
+import { workUrl } from '../source-links.js';
 import { isCoreLiterature } from '../rights/canonical.js';
 import { getAuthority } from '../authority.js';
 
@@ -116,7 +116,7 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
   if (!pool.length) return null;
   const top = Math.max(...pool.map((h) => h.score));
   const ids = pool.filter((h) => h.score >= top - 0.06).sort((a, b) => b.score - a.score).map((h) => h.doc.id).slice(0, 40);
-  const { docs } = await listDocs({ ids, fields: ['id', 'title', 'author', 'religion', 'collection', 'slug', 'language', 'source_site', 'paragraph_count', 'encumbered'], limit: 40, count: false });
+  const { docs } = await listDocs({ ids, fields: ['id', 'title', 'author', 'religion', 'collection', 'slug', 'language', 'source_site', 'paragraph_count', 'encumbered', 'source_url', 'external_id'], limit: 40, count: false });
   const asked = cands.join(' ');
   const sorted = docs.filter((d) => (d.paragraph_count ?? 1) > 0 && (books.length ? !notBook(d) : true))
     .sort((a, b) => workRank(b, asked) - workRank(a, asked) || (b.paragraph_count || 0) - (a.paragraph_count || 0));
@@ -130,13 +130,13 @@ export async function findTitled(cands, { index = null, match = null, listDocs =
 
 /** The reply's first lines: the work, linked (and other copies). Pure. */
 export function workLead({ doc, others = [] }) {
-  const url = readerUrl(doc);
-  const by = doc.author ? ` by ${doc.author}` : '';
+  const url = workUrl(doc), by = doc.author ? ` by ${doc.author}` : '';
+  const ln = (d, t = `*${d.title}*`) => (workUrl(d) ? `[${t}](${workUrl(d)})` : t);   // no publisher page = the title unlinked, never our own address
   const lines = [doc.encumbered === 1
-    ? `[*${doc.title}*](${url})${by} is in the library. It is still under copyright, so the opening pages are open to read here: [read the opening of *${doc.title}*](${url}).`
-    : `[*${doc.title}*](${url})${by} is here in the library, the full text: [read *${doc.title}*](${url}).`];
-  if (others.length) lines.push(`The library also holds ${others.map((o) => `[*${o.title}*](${readerUrl(o)})`).join(' and ')}.`);
-  return lines.join('\n\n');
+    ? `${ln(doc)}${by} is in the library. It is still under copyright, so the opening pages are open to read here${url ? `: ${ln(doc, `read the opening of *${doc.title}*`)}` : '.'}.`
+    : `${ln(doc)}${by} is here in the library${url ? `, the full text: ${ln(doc, `read *${doc.title}*`)}` : ''}.`];
+  if (others.length) lines.push(`The library also holds ${others.map((o) => ln(o)).join(' and ')}.`);
+  return lines.join('\n\n').replace(/\.\./g, '.');
 }
 /** The closing offer to read it together (never for a copyrighted book). Pure. */
 export const workOffer = ({ doc }) => (doc.encumbered === 1 ? ''
@@ -171,7 +171,7 @@ export async function linkTitles(text, { find = (t, min) => findTitled([t], { mi
   const found = await Promise.all(hits.map((m) => find(m[1], m[1].trim().includes(' ') ? 0.9 : 0.95).catch(() => null)));
   let out = s, shift = 0, linked = 0;
   hits.forEach((m, i) => {
-    const url = found[i]?.doc && readerUrl(found[i].doc);
+    const url = found[i]?.doc && workUrl(found[i].doc);
     if (!url || s.includes(`](${url})`)) return;
     const link = `[${m[0]}](${url})`;
     out = out.slice(0, m.index + shift) + link + out.slice(m.index + shift + m[0].length);
