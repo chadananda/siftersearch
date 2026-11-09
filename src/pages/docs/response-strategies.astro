@@ -1,7 +1,8 @@
 ---
 // /docs/response-strategies — layer 2 of 3 (Tools → Response Strategies → Activities), from GET /api/v1/anis/strategies
-// (edge-cached). Intro + improvement loop, the cost ladder (plan), ONE list of strategies (#strategy-<id>; built first, then planned,
-// Unmatched last; the plan's A1–H2 ids survive only as anchors #class-<id>), the code building steps (#step-<name>), composition, decisions.
+// (edge-cached). Intro + improvement loop, the cost ladder, ONE accordion of strategies (#strategy-<id>; built first, then planned,
+// Unmatched last; the plan's A1–H2 ids survive only as anchors #class-<id>; a hash of an id, a name or a class opens its item), the code
+// building steps (#step-<name>), composition, decisions. The whole list comes from the strategy database (strategies + strategy_specs).
 // Every number carries data-live and refreshes through liveRefresh (src/lib/anis-docs.js); SSR reserves its space.
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import { strategiesFlat, show } from '../../lib/anis-docs.js';
@@ -15,6 +16,7 @@ const m = strategiesFlat(data);
 const strategies = data?.strategies || [];
 const oneLine = (s) => { const t = String(s || '').split(/\s[—–]\s|;\s|\.\s/)[0]; return t.length > 150 ? `${t.slice(0, 147)}…` : t; };
 const label = (s) => (s === 'other' ? 'unmatched' : s);   // logs from before the rename say 'other'
+const badge = (s) => (s.name === 'unmatched' ? 'unmatched' : s.where === 'shared-reply' ? 'built in the general reply' : s.status);
 const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1')).join(' · ');
 const plan = data?.plan || null;
 const steps = data?.steps || [];
@@ -135,7 +137,7 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
   <section id="strategies-list">
     <h2>The strategies</h2>
     <p>
-      One list. A <strong>built</strong> strategy runs today. A <strong>planned</strong> one is a kind of request readers keep
+      One list, kept in the strategy database. Open an entry to see all of it. A <strong>built</strong> strategy runs today. A <strong>planned</strong> one is a kind of request readers keep
       making, with its test questions, target time and the answer we want, but no decision tree yet; until it has one, those
       questions go to <a href="#strategy-respond">Unmatched</a>. Built strategies come first, then planned ones, and Unmatched is last.
       Some built strategies run inside the shared reply for now; they say so.
@@ -150,10 +152,10 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
         const L = s.graph ? layoutGraph(s.graph) : null;
         const un = s.name === 'unmatched';
         return (
-          <details class="card" id={`strategy-${s.id}`}>
+          <details class="card" id={`strategy-${s.id}`} data-name={label(s.name).toLowerCase()}>
             <summary>
               {s.patterns.map((p) => <span id={`class-${p.id}`} class="anchor"></span>)}
-              <span class="name">{label(s.name)} {s.version && <span class="ver">v{s.version}</span>} <span class={`chip st-${s.status}`}>{s.status}</span>{s.where === 'shared-reply' && <span class="chip">in the shared reply</span>}</span>
+              <span class="name">{label(s.name)} {s.version && <span class="ver">v{s.version}</span>} <span class={`chip st-${s.name === 'unmatched' ? 'unmatched' : s.where === 'shared-reply' ? 'shared' : s.status}`}>{badge(s)}</span></span>
               <span class="desc">{un ? 'Nothing else fits: a smart model builds a candidate strategy for the question, and it is kept only if it wins.' : oneLine(s.description)}</span>
               <span class="keys">
                 {s.graph ? (
@@ -397,11 +399,23 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
     </section>
   )}
 
-  {plan && <p class="note source">Planned strategies: <code>{plan.source.file}</code>{plan.source.updated && ` (${plan.source.updated})`}. Graphs and building steps: the strategy store and the code.</p>}
+  {plan && <p class="note source">Every entry, built or planned, is read from the strategy database{plan.source.updated && ` (plan updated ${plan.source.updated})`}. Building steps: the code.</p>}
 
   <script>
     import { bindLive, strategiesFlat } from '../../lib/anis-docs.js';
     bindLive(document.getElementById('strategies')?.parentElement, '/api/v1/anis/strategies', strategiesFlat);
+    // #<id>, #strategy-<id>, #class-<id> or #<name> opens that accordion item and scrolls to it
+    const openHash = () => {
+      const h = decodeURIComponent(location.hash.slice(1));
+      if (!h) return;
+      const el = document.getElementById(h);
+      const d = (el && el.closest('details')) || document.getElementById(`strategy-${h}`) || document.querySelector(`details[data-name="${CSS.escape(h.toLowerCase())}"]`);
+      if (!d || d.tagName !== 'DETAILS') return;
+      d.open = true;
+      d.scrollIntoView();
+    };
+    openHash();
+    addEventListener('hashchange', openHash);
   </script>
 </DocsLayout>
 
@@ -423,6 +437,8 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
   .card > summary { position: relative; }
   .chip.st-built { color: var(--success); }
   .chip.st-planned { color: var(--muted); }
+  .chip.st-shared { color: var(--info); }
+  .chip.st-unmatched { color: var(--warning); }
   .pattern + .pattern { border-top: 1px solid var(--border-subtle); margin-top: 1rem; }
   .card .ver { font-weight: 400; font-size: 0.8rem; opacity: 0.7; text-transform: none; }
   .card .desc { font-size: 0.92rem; }

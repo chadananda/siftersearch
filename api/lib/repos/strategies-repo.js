@@ -7,6 +7,7 @@ import Database from 'better-sqlite3';
 import { mkdirSync } from 'fs';
 import { dirname } from 'path';
 import { TEMPLATES, STEPS, STRATEGIES } from '../assistant/strategy-seed.js';
+import { seedSpecs, SPEC_VERSION } from '../assistant/strategy-specs-seed.js';
 
 export const STRATEGIES_DB = () => process.env.STRATEGIES_DB || (process.env.VITEST ? ':memory:' : '/tank/sifter/anis/strategies.db');
 const REV_CHECK_MS = 15_000;
@@ -25,7 +26,13 @@ CREATE TABLE IF NOT EXISTS strategies (
   id TEXT NOT NULL, version INTEGER NOT NULL, name TEXT NOT NULL, description TEXT, exemplars_json TEXT NOT NULL DEFAULT '[]',
   graph_json TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'active', parent_version INTEGER, created_at TEXT, created_by TEXT,
   PRIMARY KEY (id, version));
+CREATE TABLE IF NOT EXISTS strategy_specs (
+  name TEXT NOT NULL, version INTEGER NOT NULL, kind TEXT NOT NULL, sort INTEGER NOT NULL, spec_json TEXT NOT NULL, created_at TEXT, created_by TEXT,
+  PRIMARY KEY (name, version));
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);`;
+// strategy_specs = the DOCS list (docs-only, never a Jev option or a run): one row per response strategy shown on /docs/response-strategies,
+// kind own-graph | in-reply | planned | unmatched (+ one 'plan' row for the ladder/composition/decisions), in `sort` order. Seeded from
+// strategy-specs-seed.js once per SPEC_VERSION; the docs API reads only these rows.
 
 /** Open (and create + seed) the store. Callers close it; tests pass ':memory:'. */
 export function openStrategiesDb(path = STRATEGIES_DB()) {
@@ -44,6 +51,10 @@ export const revOf = (db) => Number(db.prepare("SELECT value FROM meta WHERE key
 
 /** Insert every seed row whose (id, version) is absent; returns how many were added (any → rev bumps). */
 export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES }) {
+  const specVersion = seed.SPEC_VERSION ?? SPEC_VERSION;
+  // the plan file is read only when this version has no specs yet (or a test passes its own)
+  const specs = seed.SPECS ?? (db.prepare('SELECT 1 FROM strategy_specs WHERE version = ? LIMIT 1').get(specVersion) ? [] : seedSpecs());
+  const spc = db.prepare('INSERT OR IGNORE INTO strategy_specs (name, version, kind, sort, spec_json, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)');
   const at = nowIso();
   const tpl = db.prepare('INSERT OR IGNORE INTO templates (id, version, text, created_at, created_by) VALUES (?, ?, ?, ?, ?)');
   const stp = db.prepare(`INSERT OR IGNORE INTO steps (id, version, activity, params_json, template_id, template_version, budget_ms, budget_usd, created_at, created_by)
@@ -57,10 +68,18 @@ export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES }) {
       s.budget_ms ?? null, s.budget_usd ?? null, at, 'seed').changes;
     for (const s of seed.STRATEGIES) n += str.run(s.id, s.version, s.name, s.description ?? null, JSON.stringify(s.exemplars || []), JSON.stringify(s.graph),
       s.status || 'active', s.parent_version ?? null, at, s.created_by || 'seed').changes;
+    for (const x of specs) n += spc.run(x.name, specVersion, x.kind, x.sort, JSON.stringify(x.spec), at, 'seed').changes;
     if (n) bumpRev(db);
     return n;
   })();
 }
+
+// the docs list: latest version of each spec, in sort order (the 'plan' row is split off by the reader)
+const specList = (rows) => {
+  const latest = new Map();
+  for (const r of rows) if (!latest.has(r.name) || latest.get(r.name).version < r.version) latest.set(r.name, r);
+  return [...latest.values()].sort((a, b) => a.sort - b.sort).map(({ spec_json, spec, ...r }) => ({ ...r, spec: spec ?? safeJson(spec_json, {}) }));
+};
 
 /** Every row, read once (the catalog's source and the admin view). */
 export function readAll(db) {
@@ -106,6 +125,12 @@ export function catalog({ now = Date.now() } = {}) {
 
 /** Tests / admin: drop the cache (and, with a db, use that connection). */
 export function resetStrategiesCache({ db = null } = {}) { cached = null; checkedAt = 0; failed = false; if (db) conn = db; else if (conn) { try { conn.close(); } catch { /* closed */ } conn = null; } }
+
+/** The docs list (strategy_specs, in sort order, the 'plan' row included): read by the public docs API only, never by the reply path. */
+export function strategySpecs() {
+  const c = catalog();
+  return c.source === 'db' && conn ? specList(conn.prepare('SELECT * FROM strategy_specs').all()) : specList(seedSpecs().map((x) => ({ ...x, version: SPEC_VERSION })));
+}
 
 /** The admin read: every row plus the catalog's rev and source. */
 export function strategiesSnapshot() {

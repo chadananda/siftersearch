@@ -1,10 +1,13 @@
 // The PUBLIC shapes behind the three layered Anís docs pages: /docs/anis-tools (foundation) → /docs/response-strategies (ONE list of
-// strategies, building steps) → /docs/anis-activities (reader activities). Graph rows come from strategies.db; the patterns (the plan's
-// A1–H2 ids stay as anchors and keys only), plan tools, reader activities and decisions from planning/anis-strategies.json (anis-docs-data.js).
+// strategies, building steps) → /docs/anis-activities (reader activities). The strategy list is the strategies.db alone: graph rows
+// (strategies) + the docs specs (strategy_specs: patterns, planned entries, the plan half); the plan's A1–H2 ids stay as anchors and keys.
+// Plan tools and reader activities still come from planning/anis-strategies.json (anis-docs-data.js).
 // Pure: rows + stats in, JSON out. What leaves here is structure and aggregates only — never a turn id, a question, a reply
 // or template/prompt text (tests/api/strategy-docs.test.js checks the leak list).
 import { SCHEMAS } from './tools.js';
-import { isUnmatched } from './strategy-seed.js';
+import { PLAN_TO_REGISTRY, SERVES, GENERAL, grounding } from './strategy-specs-seed.js';
+
+export { PLAN_TO_REGISTRY, SERVES, grounding };
 
 const CANDIDATE = new Set(['candidate', 'replay', 'replaying', 'shadow']);
 const exemplarText = (e) => (typeof e === 'string' ? e : e?.description ?? e?.class ?? null);   // class descriptions only, never e.question
@@ -84,24 +87,11 @@ export function publicSteps({ activities = [], snapshot, live = {} }) {
 
 // ---- the plan (planning/anis-strategies.json) joined to the live registry and graphs ----
 
-// Plan tool id → the registry tool that now implements it (the plan predates the canonical _search/_lookup names).
-export const PLAN_TO_REGISTRY = {
-  find_work: 'document_search', about_work: 'work_notes_lookup', bm25: 'literal_search', phrase_semantic: 'phrase_search',
-  hype: 'hype_search', library_search: 'combined_search', read_around: 'context_lookup', source_of: 'quotation_trace',
-  trace_source: 'source_trace', find_original: 'original_lookup', find_translation: 'translation_lookup',
-  word_study: 'rendering_lookup', people_search: 'biography_search', web: 'web_search',
-};
-// Seeded strategy id → the plan patterns (A1–H2) its graph serves; a row carrying `classes` overrides this.
-export const SERVES = { comparison: ['C1', 'C2', 'C3'], understanding: ['B1', 'B2', 'B3'], prayer: ['D2'], guidance: ['D4'], reference: ['A5'], compilation: ['F1'] };
-const GENERAL = 'respond';   // the Unmatched row's id
 const CLASS_ID = /^[A-H]\d$/;
 const TOOLS_PAGE = '/docs/anis-tools', STRAT_PAGE = '/docs/response-strategies', ACT_PAGE = '/docs/anis-activities';
 export const statusClass = (st) => (/^exists|^partly live|^live/.test(st || '') ? 'live' : /^partial|^pages exist/.test(st || '') ? 'partial' : 'later');
 const toolHref = (id) => `${TOOLS_PAGE}#${PLAN_TO_REGISTRY[id] || id}`;
 const classHref = (id) => `${STRAT_PAGE}#class-${id}`;
-const total = (s) => (s.test_questions?.lead || 0) + (s.test_questions?.also || 0);
-export const grounding = (n) => (n >= 100 ? 'strong' : n >= 20 ? 'moderate' : n >= 3 ? 'few' : 'thin');
-const fallbackText = (f) => (f === 'deep_research' ? 'the deep-research job' : f === 'agent' ? 'the research agent' : f);
 const usesOf = (plan) => {   // plan tool id → { classes, reader activities } that use it
   const u = new Map();
   const add = (id, k, v) => { if (!u.has(id)) u.set(id, { classes: [], reader_activities: [] }); const l = u.get(id)[k]; if (!l.includes(v)) l.push(v); };
@@ -136,76 +126,42 @@ export function publicTools({ tools = [], activities = [], live = {}, plan = nul
 }
 const strip = (s) => { if (!s || typeof s !== 'object') return s ?? null; const { $id, ...rest } = s; return rest; };
 
-// Patterns the general reply (the Unmatched graph, id 'respond') already serves through its own branches: plan pattern id → the graph
-// nodes that do it. Built, but not (yet) a strategy of its own.
-export const IN_REPLY = { A2: ['work'], A4: ['read_question', 'hunt', 'hunt_wait', 'source_reply'], A6: ['term'], A7: ['original', 'original_wait'], H1: ['conversational', 'religions'] };
-const firstSentence = (t) => { const x = String(t || '').split(/\.\s/)[0]; return x.length > 160 ? `${x.slice(0, 157)}…` : x; };
-
-/** One plan pattern (A1–H2) in full: what it sounds like, test questions, route, ideal answer, steps by tier, how Jev tells it apart. */
-const patternOf = (s, { by = null, general = null } = {}) => {
-  const sc = s.scenario || {};
-  const step = (st) => ({ kind: st.kind, id: st.id || null, label: st.label, href: !st.id ? null : st.kind === 'use' ? classHref(st.id) : toolHref(st.id) });
-  return {
-    id: s.id, family: s.family, name: s.name, types: s.types || [s.id], target_time: s.target_time ?? null,
-    sounds_like: sc.sounds_like || [], sounds_like_note: sc.sounds_like_note ?? null, how_often: sc.how_often ?? null, often_with: sc.often_with ?? null,
-    route: (sc.route || []).map((r) => ({ jev: !!r.jev, text: r.text })), ideal_answer: sc.ideal_answer ?? null,
-    jev: s.jev || null, test_questions: s.test_questions || null, grounding: grounding(total(s)),
-    tiers: (s.tiers || []).map((t) => ({ cost: t.cost, steps: (t.steps || []).map(step) })),
-    llm_steps: (s.tiers || []).reduce((n, t) => n + (t.steps || []).filter((x) => x.kind === 'llm').length, 0),
-    post: s.post ?? null, format: s.format ?? null, fallback: fallbackText(s.fallback), open_questions: s.open_questions || [], measure: s.measure ?? null,
-    falls_back: by ? null : `no strategy of its own yet: it goes to Unmatched${general ? '' : ' (not active)'}, then ${fallbackText(s.fallback)}`,
-  };
-};
-
 /**
- * Response Strategies page: ONE ordered list. Built strategies with their own graph (seeded order), then patterns built into the shared
- * reply (Unmatched's branches, labelled so), then planned patterns (no tree yet, plan order), then Unmatched last. A card with a graph
- * carries its graph, templates, 7-day stats, branches and candidate versions; every card carries the patterns it serves (the plan's
- * test questions, target, ideal answer) under their A1–H2 ids, which stay as anchors (#class-<id>).
- * strategies = publicStrategies().strategies (active, with `classes`).
+ * Response Strategies page: ONE ordered list, straight from the store. specs = strategySpecs() (the docs rows, in sort order: built with
+ * their own graph, built in the shared reply, planned, Unmatched last); strategies = publicStrategies().strategies (active graph rows).
+ * A card with a graph carries its graph, templates, 7-day stats, branches and candidate versions; every card carries its patterns (test
+ * questions, target, ideal answer) under their A1–H2 ids, which stay as anchors (#class-<id>). An active strategy with no spec (designed
+ * and promoted since the seed) is listed after the other graph-backed ones.
  */
-export function publicStrategyList({ plan, strategies = [] }) {
-  const general = strategies.find((s) => s.id === GENERAL) || null;
-  const rows = strategies.filter((s) => s.id !== GENERAL && !isUnmatched(s.name));
-  const servedBy = new Map();
-  for (const r of rows) for (const c of r.classes || []) if (!servedBy.has(c)) servedBy.set(c, r);
-  const pats = new Map((plan?.strategies || []).map((s) => [s.id, patternOf(s, { by: servedBy.get(s.id), general })]));
+export function publicStrategyList({ specs = [], strategies = [] }) {
+  const byId = new Map(strategies.map((s) => [s.id, s]));
+  const general = byId.get(GENERAL) || null;
+  const listed = specs.filter((x) => x.kind !== 'plan').map((x) => x.spec);
   const sum = (ps, k) => ps.reduce((n, p) => n + (p.test_questions?.[k] || 0), 0);
   const times = (ps) => [...new Set(ps.map((p) => p.target_time).filter(Boolean))].join(' · ') || null;
-  const base = (id, name, status, ps, extra = {}) => ({
-    id, name, status, where: 'own', description: null, patterns: ps, target_time: times(ps), tests: { lead: sum(ps, 'lead'), also: sum(ps, 'also') },
-    classes: ps.map((p) => p.id), version: null, exemplars: [], graph: null, templates: [], stats: null, branches: [], candidates: [], inside: null, ...extra,
-  });
-  const graphCard = (r, ps) => base(r.id, r.name, 'built', ps, { description: r.description, version: r.version, exemplars: r.exemplars, graph: r.graph, templates: r.templates,
-    stats: r.stats, branches: r.branches, candidates: r.candidates });
-  const out = rows.map((r) => graphCard(r, (r.classes || []).map((c) => pats.get(c)).filter(Boolean)));
-  const taken = new Set(rows.flatMap((r) => r.classes || []));
-  // built into the shared reply: each is its own pattern, listed with the Unmatched graph nodes that run it
-  for (const [pid, nodes] of Object.entries(IN_REPLY)) {
-    const p = pats.get(pid);
-    if (!p || !general || taken.has(pid)) continue;
-    taken.add(pid);
-    out.push(base(pid.toLowerCase(), p.name, 'built', [p], { where: 'shared-reply', description: firstSentence(p.ideal_answer) || p.name,
-      inside: { strategy: general.id, name: general.name, nodes } }));
+  const card = (sp, r = null, extra = {}) => {
+    const ps = sp.patterns || [];
+    return { id: sp.id, name: r?.name ?? sp.name, status: sp.status || 'built', where: sp.where ?? null, description: r?.description ?? sp.description ?? null,
+      patterns: ps, target_time: times(ps), tests: { lead: sum(ps, 'lead'), also: sum(ps, 'also') }, classes: ps.map((p) => p.id),
+      version: r?.version ?? null, exemplars: r?.exemplars ?? [], graph: r?.graph ?? null, templates: r?.templates ?? [], stats: r?.stats ?? null,
+      branches: r?.branches ?? [], candidates: r?.candidates ?? [], inside: sp.inside ? { strategy: GENERAL, name: general?.name ?? 'unmatched', nodes: sp.inside.nodes } : null, ...extra };
+  };
+  const out = [];
+  for (const sp of listed) {
+    if (sp.strategy) { const r = byId.get(sp.strategy); if (r) out.push(card(sp, r)); }   // own graph (and Unmatched): only while active
+    else out.push(card(sp));
   }
-  for (const p of pats.values()) {
-    if (taken.has(p.id)) continue;
-    out.push(base(p.id.toLowerCase(), p.name, 'planned', [p], { where: null, description: firstSentence(p.ideal_answer) || p.name }));
-  }
-  if (general) out.push(graphCard(general, []));
+  const known = new Set(listed.map((x) => x.strategy).filter(Boolean));
+  const extras = strategies.filter((r) => r.id !== GENERAL && !known.has(r.id)).map((r) => card({ id: r.id, name: r.name, status: 'built', where: 'own', patterns: [] }, r));
+  const lastOwn = out.reduce((n, c, i) => (c.where === 'own' && c.id !== GENERAL ? i : n), -1);
+  out.splice(lastOwn + 1, 0, ...extras);
   return out;
 }
 
-/** Response Strategies page, the plan half: cost ladder, composition, follow-up moves, decisions (the strategies themselves: publicStrategyList). */
-export function publicStrategyPlan({ plan }) {
-  if (!plan) return null;
-  const c = plan.composition || {};
-  return {
-    source: { file: 'planning/anis-strategies.json', updated: plan.updated ?? null },
-    ladder: plan.cost_ladder || [], grounding_scale: plan.grounding_scale || null,
-    composition: { intro: c.intro ?? null, rules: c.rules || [], sets: c.sets || [], note: c.note ?? null, moves_note: c.moves_note || [], other_moves: c.other_moves || [] },
-    decisions: plan.decisions || [], open_questions: plan.open_questions_for_chad || [],
-  };
+/** Response Strategies page, the plan half (the store's 'plan' spec): cost ladder, composition, follow-up moves, decisions. */
+export function publicStrategyPlan({ specs = [] }) {
+  const p = specs.find((x) => x.kind === 'plan')?.spec;
+  return p ? { source: { store: 'strategies.db', updated: p.updated ?? null }, ...p, updated: undefined } : null;
 }
 
 /** Activities page: the reader-facing activities (plan.activities), each step and reuse linked to the strategy or tool it

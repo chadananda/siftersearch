@@ -3,12 +3,13 @@
 //                                  the plan's tool rows; plan-only tools as built / planned
 //   GET /api/v1/anis/strategies → ONE ordered list of strategies, status built | planned, Unmatched last (a built one with its own
 //                                  graph carries graph, templates, 7-day numbers, branches, candidates), the code building steps
-//                                  (catalog + 7-day runs/p50/$) and the plan's ladder, combining rules and decisions
+//                                  (catalog + 7-day runs/p50/$) and the plan's ladder, combining rules and decisions. All of it from
+//                                  the strategy store (strategies + strategy_specs); the plan file is not read here
 //   GET /api/v1/anis/activities → the reader-facing activities from the plan, steps linked to the strategies/tools they use
-// The plan = planning/anis-strategies.json (anis-docs-data.js, mtime-cached).
+// Tools and activities still read the plan = planning/anis-strategies.json (anis-docs-data.js, mtime-cached).
 // Structure and aggregates only (strategy-docs.js): no turn ids, live questions or prompt text (the plan's curated example
 // phrasings were already public on the retired /docs/anis-strategies page). Each answer is memoised MEMO_MS.
-import { strategiesSnapshot } from '../lib/repos/strategies-repo.js';
+import { strategiesSnapshot, strategySpecs } from '../lib/repos/strategies-repo.js';
 import { strategyStats, branchStats, activityStats, toolStats, qualityByTurn } from '../lib/repos/strategy-stats-repo.js';
 import { activityCatalog } from '../lib/assistant/activities/catalog.js';
 import { REGISTRY } from '../lib/assistant/tools.js';
@@ -25,7 +26,7 @@ export default async function anisDocsRoutes(fastify, { deps = {} } = {}) {
   const aStats = deps.activityStats || activityStats, tStats = deps.toolStats || toolStats;
   const promos = deps.promotions || (() => listPromotions(candidatesDb(), { limit: 500 }));
   const tools = deps.tools || (() => Object.values(REGISTRY).filter((e) => !e.internal));
-  const plan = deps.plan || loadPlan;
+  const plan = deps.plan || loadPlan, specs = deps.specs || strategySpecs;
   const memo = new Map();
   const cached = (key, build) => {
     const hit = memo.get(key);
@@ -42,9 +43,9 @@ export default async function anisDocsRoutes(fastify, { deps = {} } = {}) {
       const snap = snapshot(), acts = activities();
       const pub = publicStrategies({ snapshot: snap, activities: acts, stats: safe(() => sStats({ days: DAYS, quality: q }), []),
         branches: (id) => safe(() => bStats(id, { days: DAYS, quality: q }), []), promotions: safe(promos, null) });
-      const pl = safe(plan, null);
-      return { ...pub, strategies: publicStrategyList({ plan: pl, strategies: pub.strategies }), steps: publicSteps({ activities: acts, snapshot: snap, live: safe(() => aStats({ days: DAYS }), {}) }).steps,
-        plan: publicStrategyPlan({ plan: pl }) };
+      const sp = safe(specs, []);
+      return { ...pub, strategies: publicStrategyList({ specs: sp, strategies: pub.strategies }), steps: publicSteps({ activities: acts, snapshot: snap, live: safe(() => aStats({ days: DAYS }), {}) }).steps,
+        plan: publicStrategyPlan({ specs: sp }) };
     });
   });
   fastify.get('/activities', async (req, reply) => {

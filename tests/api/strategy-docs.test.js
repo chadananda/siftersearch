@@ -5,11 +5,12 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import Fastify from 'fastify';
-import { strategiesSnapshot, resetStrategiesCache } from '../../api/lib/repos/strategies-repo.js';
+import { strategiesSnapshot, strategySpecs, resetStrategiesCache, openStrategiesDb, seedStrategies, catalog } from '../../api/lib/repos/strategies-repo.js';
 import { activities } from '../../api/lib/assistant/activities/index.js';
 import { activityCatalog, ACTIVITY_META } from '../../api/lib/assistant/activities/catalog.js';
 import { REGISTRY } from '../../api/lib/assistant/tools.js';
 import { publicStrategies, publicSteps, publicTools, publicStrategyPlan, publicStrategyList, publicReaderActivities, PLAN_TO_REGISTRY, SERVES } from '../../api/lib/assistant/strategy-docs.js';
+import { strategyOptions } from '../../api/lib/assistant/strategy-choice.js';
 import { isUnmatched } from '../../api/lib/assistant/strategy-seed.js';
 import { loadPlan } from '../../api/lib/assistant/anis-docs-data.js';
 import anisDocsRoutes from '../../api/routes/anis-docs.js';
@@ -125,8 +126,9 @@ describe('the plan (planning/anis-strategies.json) on the three pages', () => {
   });
 
   it('ONE list: built strategies, then built-in-the-reply patterns, then planned ones, Unmatched last; no question-class vocabulary', () => {
-    const list = publicStrategyList({ plan, strategies });
-    const p = publicStrategyPlan({ plan });
+    const specs = strategySpecs();   // the store's docs rows (seeded from the plan file once), not the file
+    const list = publicStrategyList({ specs, strategies });
+    const p = publicStrategyPlan({ specs });
     expect(list.every((s) => ['built', 'planned'].includes(s.status))).toBe(true);
     // every plan pattern lands in exactly one card
     expect(list.flatMap((s) => s.patterns.map((x) => x.id)).sort()).toEqual(plan.strategies.map((s) => s.id).sort());
@@ -167,11 +169,11 @@ describe('the plan (planning/anis-strategies.json) on the three pages', () => {
     expect(p.decisions.some((d) => d.date === '2026-11-03')).toBe(true);
     expect(p.composition.sets.length).toBeGreaterThan(0);
     expect(p.ladder.length).toBeGreaterThan(3);
-    // a row carrying its own classes overrides the default map
-    const own = publicStrategyList({ plan, strategies: [{ id: 'x', name: 'x', classes: ['A1'], graph: { nodes: [], edges: [] }, templates: [], branches: [], candidates: [], exemplars: [] }] });
-    expect(own[0]).toMatchObject({ id: 'x', status: 'built' });
-    expect(own.find((s) => s.id === 'a1')).toBeUndefined();
-    expect(publicStrategyPlan({ plan: null })).toBeNull();
+    // an active strategy with no spec (designed and promoted since the seed) is listed after the graph-backed ones, before the shared-reply entries
+    const extra = publicStrategyList({ specs, strategies: [...strategies, { id: 'x', name: 'x', graph: { nodes: [], edges: [] }, templates: [], branches: [], candidates: [], exemplars: [] }] });
+    expect(extra.findIndex((c) => c.id === 'x')).toBe(extra.findIndex((c) => c.id === 'a2') - 1);
+    expect(extra.find((c) => c.id === 'x')).toMatchObject({ status: 'built', where: 'own', patterns: [] });
+    expect(publicStrategyPlan({ specs: [] })).toBeNull();
   });
 
   it('the rename: respond@2 is Unmatched and keeps the numbers counted under its old name (other)', () => {
@@ -193,6 +195,60 @@ describe('the plan (planning/anis-strategies.json) on the three pages', () => {
     expect(book.reuses.every((x) => x.href)).toBe(true);
     expect(JSON.stringify(r)).not.toContain('respond.');   // no code building step names on the activities page
     expect(publicReaderActivities({ plan: null })).toMatchObject({ activities: [] });
+  });
+});
+
+describe('the strategy list lives in the DB (strategy_specs)', () => {
+  const names = (l) => l.map((c) => c.id);
+
+  it('a temp DB seeded once serves all 36 entries in order, Unmatched last, with nothing read from the plan file afterwards', () => {
+    const db = openStrategiesDb(':memory:');
+    resetStrategiesCache({ db });
+    const rows = db.prepare('SELECT name, kind FROM strategy_specs ORDER BY sort').all();
+    expect(rows.filter((r) => r.kind !== 'plan')).toHaveLength(36);
+    const strategies = publicStrategies({ snapshot: strategiesSnapshot(), activities: activityCatalog() }).strategies;
+    const list = publicStrategyList({ specs: strategySpecs(), strategies });
+    expect(list).toHaveLength(36);
+    expect(list.at(-1)).toMatchObject({ id: 'respond', name: 'unmatched' });
+    expect(list.filter((c) => c.status === 'planned')).toHaveLength(24);
+    expect(list.filter((c) => c.status === 'built')).toHaveLength(12);
+    expect(names(list).slice(0, 6)).toEqual(['comparison', 'understanding', 'prayer', 'guidance', 'reference', 'compilation']);
+    // re-seeding does not touch the plan file or add rows
+    expect(seedStrategies(db)).toBe(0);
+    resetStrategiesCache();
+  });
+
+  it('the docs API reads the rows: a DB seeded with its own specs shows those, whatever the plan file says', async () => {
+    const db = openStrategiesDb(':memory:');
+    db.prepare("INSERT INTO strategy_specs (name, version, kind, sort, spec_json) VALUES ('zzz', 9, 'planned', 99, ?)")
+      .run(JSON.stringify({ id: 'zzz', name: 'Only in the DB', status: 'planned', where: null, description: 'x', patterns: [] }));
+    db.prepare("INSERT INTO strategy_specs (name, version, kind, sort, spec_json) VALUES ('_plan', 9, 'plan', -1, ?)").run(JSON.stringify({ ladder: [{ step: 'db-ladder' }], composition: {}, decisions: [] }));
+    resetStrategiesCache({ db });
+    const f = Fastify();
+    await f.register(anisDocsRoutes, { prefix: '/api/v1/anis', deps: { plan: () => { throw new Error('plan file read'); }, strategyStats: () => [], branchStats: () => [], quality: () => new Map(), activityStats: () => ({}), toolStats: () => ({}) } });
+    await f.ready();
+    const j = (await f.inject({ url: '/api/v1/anis/strategies' })).json();
+    expect(names(j.strategies)).toContain('zzz');
+    expect(j.plan.ladder).toEqual([{ step: 'db-ladder' }]);
+    expect(j.plan.source.store).toBe('strategies.db');
+    expect(JSON.stringify(j)).not.toContain('anis-strategies.json');
+    await f.close();
+    resetStrategiesCache();
+  });
+
+  it('planned entries are never Jev options and never in the catalog', () => {
+    const db = openStrategiesDb(':memory:');
+    resetStrategiesCache({ db });
+    const cat = catalog({ now: Date.now() + 1e6 });
+    const ids = cat.strategies.map((s) => s.id);
+    expect(ids).toEqual(['comparison', 'understanding', 'prayer', 'guidance', 'reference', 'compilation', 'respond']);
+    const planned = strategySpecs().filter((x) => x.kind === 'planned').map((x) => x.name);
+    expect(planned).toHaveLength(24);
+    for (const n of planned) expect(ids).not.toContain(n);
+    const opts = Object.keys(strategyOptions());
+    expect(opts).toContain('prayer');
+    for (const n of planned) expect(opts).not.toContain(n);
+    resetStrategiesCache();
   });
 });
 
@@ -264,7 +320,7 @@ describe('docs pages', () => {
     const s = src(page);
     expect(s).toContain(`'${api}'`);
     if (flat) { expect(s).toContain('bindLive('); expect(s).toContain(flat); expect(s).toMatch(/data-live=/); }
-    expect(s).toMatch(/source\.file|plan_source\.file/);   // footer: planned strategies: planning/anis-strategies.json
+    expect(s).toMatch(/source\.file|plan_source\.file|plan\.source/);   // footer: where the data comes from
     expect(s.split('---').slice(2).join('---')).not.toMatch(/siftersearch/i);   // public copy never names the host site
     expect(s).not.toMatch(/\[var\(--/);   // semantic tokens, no arbitrary Tailwind values
   });
@@ -276,6 +332,7 @@ describe('docs pages', () => {
     expect(s).toContain('id={`class-${p.id}`}');   // the A1–H2 ids survive only as anchors
     expect(s).toContain('id={`strategy-${s.id}`}');
     expect(s).toMatch(/<details class="card"/);
+    expect(s).toContain('hashchange');   // #id / #name / #class-<id> opens its item
     for (const h of ['What a strategy is', 'How strategies improve', 'How a strategy is built', 'Building steps', 'Combining strategies', 'Follow-up moves', 'Decisions']) expect(s).toContain(h);
     expect(s.indexOf('How a strategy is built')).toBeLessThan(s.indexOf('<h2>The strategies</h2>'));
     expect(s.indexOf('<h2>The strategies</h2>')).toBeLessThan(s.indexOf('<h2>Building steps</h2>'));
