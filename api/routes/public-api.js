@@ -964,7 +964,7 @@ export default async function publicApiRoutes(fastify) {
   /**
    * POST /api/v1/tools/search
    *
-   * Unified search tool — same interface that Jafar uses internally.
+   * Unified search tool — same interface that Anís uses internally.
    * Designed for external AI agents and chatbots.
    *
    * Modes:
@@ -1431,45 +1431,21 @@ export default async function publicApiRoutes(fastify) {
     sendEvent({ type: 'session', conversation_id });
 
     try {
-      // Three-stage Jafar pipeline (research → craft → reflection-gate).
-      // Replaces the prior single-LLM-with-tools flow. See api/lib/jafar-pipeline.js.
-      const { runJafarPipeline } = await import('../lib/chat-pipeline.js');
-      const debug = request.headers['x-debug-chat'] === '1' || request.headers['x-debug-chat'] === 'true';
-
-      sendEvent({ type: 'status', message: 'Searching sacred texts...' });
-
-      // Seeker Companion key. WITHOUT this the site's own chat ran on global dials only and logged no
-      // exposure, so the whole per-participant relationship layer (memory, consent, the offer to
-      // remember, "asked recently?") was inert here — it only ever worked on /api/chat/stream.
-      // apiKeyUserId is the KEY OWNER, not the seeker, so it must never be used: it would pool every
-      // visitor into one shared memory bucket.
-      // Verified account, else the temporary session (x-user-id, else the sifter_sid cookie).
+      // The one chat pipeline: the Anís turn (api/lib/assistant/turn.js), adapted to the v1 SSE contract.
+      const { anisTurn } = await import('../lib/assistant/turn.js');
+      const { v1TurnArgs, v1Event, v1Done } = await import('../lib/assistant/v1-chat.js');
       // A signed-in seeker is CONNECTED: the site sends its JWT (no auth hook runs on /v1, so read it here) and a connected
-      // widget carries the signed account cookie. Without this every signed-in visitor was asked to connect with Google.
+      // widget carries the signed account cookie. participant is the seeker (account → x-user-id → sifter_sid), never the key owner.
       if (!request.user && request.headers.authorization?.startsWith('Bearer ')) await optionalAuthenticate(request).catch(() => {});
       const participant_id = resolveParticipant(request);
-      const result = await runJafarPipeline({
-        messages: messages.map(m => ({ role: m.role, content: m.content })),
-        sendEvent,
-        debug,
-        participant_id,
-        authed: !!(request.user?.sub || accountFromCookie(request)),
-      });
-
-      // Pipeline now streams the crafter's chunks via sendEvent → 'text'
-      // events as the model generates. No need to re-emit here. The full
-      // reply is captured in result.reply for persistence and citations.
-      const finalContent = result.reply || '';
-
-      // Build citations from the structured retrieved_quotes used by the crafter
-      // (only the first 8, deduplicated by doc_id+paragraph_index).
-      const seen = new Set();
-      const citations = [];
-      for (const q of (result.research_calls ? [] : [])) { /* no-op */ }
-      // Note: research_calls only has tool meta; the retrieved_quotes themselves
-      // aren't returned by runJafarPipeline (they live inside the closure). For
-      // a minimal citations payload, recompute here.
-      if (citations.length > 0) sendEvent({ type: 'citations', citations });
+      const r = await anisTurn(v1TurnArgs({
+        messages,
+        participant: { id: participant_id, authed: !!(request.user?.sub || accountFromCookie(request)), userId: Number(request.user?.sub) || null, email: request.user?.email || null },
+        clientKey: participant_id || request.ip,
+        test: request.headers['x-sifter-test'] === '1',
+        onEvent: (ev) => { const e = v1Event(ev); if (e) sendEvent(e); },
+      }));
+      const finalContent = r.reply || '';
 
       try {
         const newRound = priorRoundIndex + 1;
@@ -1503,18 +1479,7 @@ export default async function publicApiRoutes(fastify) {
         logger.warn({ err: persistErr.message, conversation_id }, 'failed to persist chat turn');
       }
 
-      sendEvent({
-        type: 'done',
-        processingTimeMs: Date.now() - startTime,
-        conversation_id,
-        final_reply: finalContent,
-        meta: {
-          user_intent: result.user_intent,
-          retrieved_count: result.retrieved_count,
-          gate_passed: result.gate?.pass,
-          retried: result.retried
-        }
-      });
+      sendEvent(v1Done({ r, conversation_id, startTime }));
     } catch (err) {
       logger.error({ err: err.message, stack: err.stack }, 'API chat error');
       sendEvent({ type: 'error', message: err.message || 'Chat failed' });
@@ -1529,7 +1494,7 @@ export default async function publicApiRoutes(fastify) {
    * GET /api/v1/library/find-document
    *
    * Locate a specific named scripture or work by title — the citation lookup.
-   * Same logic as Jafar's find_document_for_citation tool, exposed publicly
+   * Same logic as Anís's find_document_for_citation tool, exposed publicly
    * so any consumer (customer-site chatbot, future tooling) can resolve
    * named works without going through chat.
    *

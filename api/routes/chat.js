@@ -1,5 +1,5 @@
 /**
- * Research Assistant Chat Routes — "Jafar"
+ * Research Assistant Chat Routes — Anís (POST /api/chat/stream)
  *
  * POST /api/chat/stream - Streaming conversational research assistant
  *
@@ -1329,27 +1329,8 @@ async function executeTranslatePassage({ text, source_lang, work_context }) {
 
 // ─── Route ────────────────────────────────────────────────────────────────
 
-// Query-prep prewarm map (perf Layer 3): while the user is still TYPING, the
-// client debounces partials to /chat/prep; a settled-looking partial starts the
-// full pipeline speculatively, and the submit attaches to that in-flight promise
-// instead of starting over — the answer is often ready by the time they hit Enter.
-// In-memory only, short TTL: partials are keystrokes, never logged or persisted.
-const _prewarm = new Map();   // key: persona|normalized-text → { promise, startedAt }
-const _lastPrep = new Map();  // sessionId → last partial (stability = user paused)
-const PREWARM_TTL_MS = 90000;
-const PREWARM_MAX_INFLIGHT = 4;
-const prewarmKey = (persona, text) => `${persona}|${String(text).toLowerCase().replace(/\s+/g, ' ').trim()}`;
-function prewarmSweep() {
-  const now = Date.now();
-  for (const [k, v] of _prewarm) if (now - v.startedAt > PREWARM_TTL_MS) _prewarm.delete(k);
-  if (_lastPrep.size > 2000) _lastPrep.clear();
-}
-
 export default async function chatRoutes(fastify) {
-  // Layer 3: speculative query-prep. Cheap by default (cache probe only); the full
-  // pipeline is started ONLY for a settled-looking partial (ends with terminal
-  // punctuation OR unchanged since the previous prep = the user paused), bounded
-  // globally and deduped. Responses are tiny; partials never enter any log table.
+  // Query-prep: cache probe only (embed + cosine, no LLM). Responses are tiny; partials never enter any log table.
   fastify.post('/prep', {
     schema: {
       body: {
@@ -1363,20 +1344,15 @@ export default async function chatRoutes(fastify) {
       }
     }
   }, async (request) => {
-    prewarmSweep();
-    const { partial, sessionId, widget_token } = request.body;
+    const { partial, widget_token } = request.body;
     const text = String(partial || '').trim();
     if (text.split(/\s+/).length < 3 || text.length < 12) return { status: 'noop' };
 
-    let persona = 'Jafar';
-    let prepDefaultTradition = null;
+    let persona = 'Anís';
     if (widget_token) {
       const prof = await queryOne('SELECT name, config_json FROM widget_profiles WHERE token = ?', [widget_token]).catch(() => null);
-      persona = prof?.name?.trim().slice(0, 60) || 'Jafar';
-      try { prepDefaultTradition = JSON.parse(prof?.config_json || '{}').default_tradition || null; } catch { /* ignore */ }
+      persona = prof?.name?.trim().slice(0, 60) || 'Anís';
     }
-    const key = prewarmKey(persona, text);
-    if (_prewarm.has(key)) return { status: 'warming' };
 
     // Cache probe (embed + cosine — no LLM): already answered → submit hits Stage A.
     try {
@@ -1390,24 +1366,7 @@ export default async function chatRoutes(fastify) {
       if (hit?.entry?.answer_md) return { status: 'cached' };
     } catch { /* prep must never error the client */ }
 
-    // Speculative pipeline start — only for settled-looking partials.
-    const last = sessionId ? _lastPrep.get(sessionId) : null;
-    if (sessionId) _lastPrep.set(sessionId, text);
-    const settled = /[?.!]$/.test(text) || last === text;
-    const inflight = [..._prewarm.values()].filter((v) => v.promise).length;
-    if (!settled || inflight >= PREWARM_MAX_INFLIGHT) return { status: 'noop' };
-
-    const { runJafarPipeline } = await import('../lib/chat-pipeline.js');
-    const promise = runJafarPipeline({
-      messages: [{ role: 'user', content: text }],
-      sendEvent: null, debug: false, chatbot_location: undefined,
-      persona_name: persona === 'Jafar' ? null : persona,
-      default_tradition: prepDefaultTradition,
-      _silent: true   // partials are PREP requests, not searches — zero analytics until submit
-    }).catch((err) => { logger.warn({ err: err.message }, 'prewarm speculative run failed'); return null; });
-    _prewarm.set(key, { promise, startedAt: Date.now() });
-    logger.info({ chars: text.length, persona }, 'query-prep: speculative pipeline started');
-    return { status: 'warming' };
+    return { status: 'noop' };
   });
 
   fastify.post('/stream', {
@@ -1432,7 +1391,7 @@ export default async function chatRoutes(fastify) {
           // Site-scoped chatbot location (e.g. 'bahaiteachings.org'). When
           // set, search is restricted to that site's scope (site-only sites
           // see only their own content; supplemental sites see the default
-          // scope). Default Jafar leaves this null.
+          // scope). Default (null) = the whole library.
           chatbot_location: { type: 'string', maxLength: 128 },
           // Widget embed token — resolves the profile's display name so the
           // assistant introduces itself as that persona (e.g. "Anis").
@@ -1442,14 +1401,11 @@ export default async function chatRoutes(fastify) {
           // treated as guidance, never system authority.
           name: { type: 'string', maxLength: 60 },
           mission: { type: 'string', maxLength: 400 },
-          // 'anis' (default): conversation + planned raw search → one fast streamed answer.
-          // 'jafar': the legacy research→craft→reflect pipeline, kept for side-by-side testing / rollback.
-          engine: { type: 'string', enum: ['anis', 'jafar'] }
         }
       }
     }
   }, async (request, reply) => {
-    const { messages, researchContext, chatbot_location, widget_token, name, mission, engine } = request.body;
+    const { messages, researchContext, chatbot_location, widget_token, name, mission } = request.body;
     let persona_name = null;
     let default_tradition = null;
     let profile_instructions = null;
@@ -1485,64 +1441,27 @@ export default async function chatRoutes(fastify) {
     const sendEvent = rangeLinkSender((json) => reply.raw.write('data: ' + json + '\n\n'));
 
     try {
-      // ANIS (default): chat is a LAYER over raw search — the Jev plan + planned retrieval (no LLM), then ONE fast
-      // streamed answer in the site persona with the Seeker Companion plan. ANIS_ENGINE=jafar rolls back globally.
-      const useAnis = (engine || process.env.ANIS_ENGINE || 'anis') === 'anis';
-      let anisResult = null;
-      if (useAnis) {
-        // One Anis TURN: log first → Jev triage gate (canned replies, hidden tarpit) → research answer → output check.
-        const { anisTurn } = await import('../lib/assistant/turn.js');
-        const { getScopeForLocation } = await import('../lib/search/scope.js');
-        let scope_config;
-        try { scope_config = chatbot_location ? getScopeForLocation(chatbot_location) : undefined; } catch { scope_config = undefined; }
-        const r = await anisTurn({
-          // a harness run (x-sifter-test: tests/quality/anis-conversations.mjs) bills to the improve budget; readers are never capped
-          test: request.headers['x-sifter-test'] === '1',
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
-          channel: widget_token ? 'widget-chat' : 'site-chat',
-          profile: { persona_name, default_tradition, mission: mission_prompt, scope_config },
-          participant: { id: userId, authed: !!(request.user?.sub || accountFromCookie(request)), userId: Number(request.user?.sub) || null, email: request.user?.email || null },
-          conversationId: request.body.conversationId || null,
-          clientKey: userId || request.ip,
-          onEvent: sendEvent,
-        });
-        anisResult = {
-          reply: r.reply, retrieval_quotes: r.retrieved || [], retrieved_count: (r.retrieved || []).length,
-          user_intent: r.status === 'answered' ? (r.plan?.shape || null) : null, gate: { pass: true, picker: 'anis-layer' }, retried: false, timings: r.timings,
-          conversation_id: r.conversationId || null, format: r.format?.id || null,
-        };
-      }
-      // Three-stage Jafar pipeline: research → craft → reflection-gate.
-      // See api/lib/jafar-pipeline.js for the architecture rationale.
-      const { runJafarPipeline } = await import('../lib/chat-pipeline.js');
-
-      const debug = request.headers['x-debug-chat'] === '1' || request.headers['x-debug-chat'] === 'true';
-      // Attach to a prewarmed speculative run when one matches this exact question
-      // (Layer 3): the pipeline started while the user was still typing, so by
-      // Enter the answer is partly or fully computed. Opening turns only.
-      const lastMsg = messages[messages.length - 1]?.content || '';
-      const isOpening = !messages.slice(0, -1).some((m) => m.role === 'user');
-      const pw = (!anisResult && isOpening) ? _prewarm.get(prewarmKey(persona_name || 'Jafar', lastMsg)) : null;
-      let result = anisResult;
-      if (pw?.promise) {
-        _prewarm.delete(prewarmKey(persona_name || 'Jafar', lastMsg));
-        if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
-        result = await pw.promise;
-        if (result) logger.info({ waitedMs: Date.now() - pw.startedAt }, 'query-prep: submit attached to speculative run');
-      }
-      if (!result) {
-        result = await runJafarPipeline({
-          messages: messages.map(m => ({ role: m.role, content: m.content })),
-          sendEvent,
-          debug,
-          chatbot_location,
-          persona_name,
-          default_tradition,
-          mission: mission_prompt,
-          participant_id: userId,  // Seeker Companion: relationship/memory/exposure key (user id or anon id)
-          authed: !!(request.user?.sub || accountFromCookie(request))   // connecting is what grants retention, so "has an id" is not "connected"
-        });
-      }
+      // One chat path: the Anís turn — log first → Jev triage gate → research answer → output check.
+      const { anisTurn } = await import('../lib/assistant/turn.js');
+      const { getScopeForLocation } = await import('../lib/search/scope.js');
+      let scope_config;
+      try { scope_config = chatbot_location ? getScopeForLocation(chatbot_location) : undefined; } catch { scope_config = undefined; }
+      const r = await anisTurn({
+        // a harness run (x-sifter-test: tests/quality/anis-conversations.mjs) bills to the improve budget; readers are never capped
+        test: request.headers['x-sifter-test'] === '1',
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        channel: widget_token ? 'widget-chat' : 'site-chat',
+        profile: { persona_name, default_tradition, mission: mission_prompt, scope_config },
+        participant: { id: userId, authed: !!(request.user?.sub || accountFromCookie(request)), userId: Number(request.user?.sub) || null, email: request.user?.email || null },
+        conversationId: request.body.conversationId || null,
+        clientKey: userId || request.ip,
+        onEvent: sendEvent,
+      });
+      const result = {
+        reply: r.reply, retrieval_quotes: r.retrieved || [], retrieved_count: (r.retrieved || []).length,
+        user_intent: r.status === 'answered' ? (r.plan?.shape || null) : null, gate: { pass: true, picker: 'anis-layer' }, retried: false, timings: r.timings,
+        conversation_id: r.conversationId || null, format: r.format?.id || null,
+      };
 
       // Word-by-word emit so the existing dialogue UI's typing animation
       // still triggers, even though the text is fully buffered before send.
@@ -1571,7 +1490,7 @@ export default async function chatRoutes(fastify) {
           retrieved_count: result.retrieved_count,
           gate_passed: result.gate?.pass,
           retried: result.retried,
-          engine: anisResult ? 'anis' : 'jafar',
+          engine: 'anis',
           ...(result.conversation_id ? { conversation_id: result.conversation_id } : {}),
           ...(result.format ? { format: result.format } : {}),
           ...(result.timings ? { timings: result.timings } : {})

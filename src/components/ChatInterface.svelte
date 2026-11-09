@@ -140,7 +140,7 @@
   let messages = $state([]);
   let input = $state('');
   let loading = $state(false);
-  // Chat mode — the default user experience. Uses /api/chat/stream.
+  // Chat mode — the default user experience. Uses chat.stream (POST /api/v1/chat → the Anís turn).
   // Instant search and research modes are accessible from admin dashboard.
   // Pages that host Anís (the home page) pass showInput={false}: navbar + library summary stay, the chat goes.
   let { showInput = true } = $props();
@@ -1495,7 +1495,7 @@
     return result;
   }
 
-  // Format Jafar's research messages with full markdown (lists, tables, bold, italic, etc.)
+  // Format Anís's research messages with full markdown (lists, tables, bold, italic, etc.)
   function formatResearchText(text) {
     if (!text) return '';
     let result = toCurlyQuotes(text);

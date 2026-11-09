@@ -81,7 +81,7 @@ lintReply (log only)
 ### The `/api/chat/stream` route (`api/routes/chat.js`)
 
 1. Resolves the profile from `widget_token`: `widget_profiles.name` becomes the persona name, and `config_json.default_tradition` and `config_json.instructions` (≤600 chars) become steering. Per-page `name` / `mission` (≤400) override the profile.
-2. `engine` (body) or `ANIS_ENGINE` (env, default `anis`) selects Anís; `jafar` runs the legacy `runJafarPipeline`.
+2. There is one chat pipeline, the Anís turn. `POST /api/v1/chat` is a thin adapter over it (`api/lib/assistant/v1-chat.js`); no `engine` switch exists.
 3. Calls `anisTurn({ channel: widget_token ? 'widget-chat' : 'site-chat', profile: {persona_name, default_tradition, mission, scope_config}, participant: {id: participantId(request), authed, userId}, conversationId, clientKey: userId || request.ip, onEvent: sendEvent })`.
 4. `scope_config = getScopeForLocation(chatbot_location)` (`api/lib/search/scope.js`). This only matters for `site-only` sites, which search only their own index. Every other site gets the default scope.
 5. After the turn, the route **replays** the final reply as word-by-word `chunk` events, then sends `citations` (≤8) and `complete` (with `meta.engine`, `conversation_id`, `format`, `timings`). The widget paces the live `text` stream and swaps in the canonical replay at the end.

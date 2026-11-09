@@ -3,7 +3,7 @@
 <script>
   // SifterChat — Ocean's flagship embeddable companion ("The Illuminated Ocean").
   // Props from the loader: token (profile), api (origin). Config fetched per token; chat rides the
-  // Jafar SSE endpoint. LIVE streaming: the server emits `text` events during craft and REPLAYS the
+  // Anís SSE endpoint. LIVE streaming: the server emits `text` events during craft and REPLAYS the
   // canonical reply as `chunk` events at the end — we pace the live stream word-by-word (ink onto the
   // page) and swap in the canonical text at settle (it may differ: ungrounded links get stripped).
   // Transcript persists in localStorage per token. Soft WebAudio feedback (synthesized, muteable).
