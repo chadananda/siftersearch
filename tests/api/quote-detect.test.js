@@ -1,6 +1,6 @@
 // detectQuotation: deterministic "the user gave us wording to find" rule, independent of Jev.
 import { describe, it, expect } from 'vitest';
-import { detectQuotation, isMeaningQuestion, stripMarkup } from '../../api/lib/quote-detect.js';
+import { detectQuotation, isMeaningQuestion, stripMarkup, stripAskFrame } from '../../api/lib/quote-detect.js';
 
 describe('detectQuotation', () => {
   it('the incident: a find-the-quote request with a quoted span', () => {
@@ -67,5 +67,16 @@ describe('detectQuotation, r6', () => {
   });
   it('a real quotation still counts', () => {
     expect(detectQuotation('Where is "the earth is but one country" from?')?.phrase).toBe('the earth is but one country');
+  });
+});
+
+describe('stripAskFrame: the words out of an unquoted "where does X say ..." turn', () => {
+  it('drops the frame and the named author', () => {
+    expect(stripAskFrame("Where does Bahá'u'lláh say justice is the best beloved?")).toBe('justice is the best beloved');
+    expect(stripAskFrame('Where is it said that the best beloved of all things is justice')).toBe('the best beloved of all things is justice');
+  });
+  it('leaves other messages whole', () => {
+    expect(stripAskFrame('justice is the best beloved')).toBe('justice is the best beloved');
+    expect(stripAskFrame('Where does he say no?')).toBe('Where does he say no?');
   });
 });

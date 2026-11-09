@@ -2,7 +2,7 @@
 // Conversation + Jev-planned RAW search (no LLM in retrieval) → ONE fast streamed answer, in the site's persona,
 // shaped by the Seeker Companion's relationship plan. Transport-neutral: the widget streams onEvent('text'),
 // email uses the returned text. Model: ONE global, switchable setting ANIS_LLM="provider:model[:reasoning_effort]".
-// Deps (lazy, injectable for tests): routes/chat.js executeSearch, jafar-pipeline craftAnswerStream, companion/.
+// Deps (lazy, injectable for tests): routes/chat.js executeSearch, companion/.
 
 import { extractPhrases, fixedPhrases, hintsOf } from './phrases.js';
 import { religionsReply } from './library-facts.js';
@@ -501,7 +501,7 @@ export function conversationSummary(messages, persona) {
 export const anisSearch = (executeSearch) => (args) => executeSearch({ ...args, textChars: Infinity });
 
 async function defaultDeps() {
-  const [{ executeSearch }, { craftAnswerStream, stripUngroundedLinks }, companion, { anisCraft }, { planSearch }] = await Promise.all([
+  const [{ executeSearch }, { stripUngroundedLinks }, companion, { anisCraft }, { planSearch }] = await Promise.all([
     import('../../routes/chat.js'), import('../chat-pipeline.js'), import('../companion/index.js'), import('./craft.js'),
     import('../search-plan.js'),
   ]);
@@ -510,8 +510,7 @@ async function defaultDeps() {
     plan: (messages) => planSearch(messages),
     prewarm: async (messages) => (await import('../planned-search.js')).prewarmSearch(searchQueryFor(messages)),
     search: anisSearch(executeSearch),
-    // Lean Anis prompt by default; ANIS_PROMPT=jafar uses the 12k-token Jafar crafter (comparison / rollback).
-    craft: process.env.ANIS_PROMPT === 'jafar' ? craftAnswerStream : anisCraft,
+    craft: anisCraft,
     stripLinks: stripUngroundedLinks,
     // OceanLibrary paragraph links → range links (lib/ocean-links.js); injected so tests need no database
     upgradeLinks: async (s) => (await import('../ocean-links.js')).upgradeOceanLinks(s),

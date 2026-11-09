@@ -4,7 +4,7 @@
 // Rules: fail open; a comparative is never narrowed; caller-given filters win. Deps: scope-extract.js (TRADITIONS).
 import { modelFor } from './model-roles.js';
 import { TRADITIONS, MIN_CONFIDENCE, ENDPOINT } from './scope-extract.js';
-import { detectQuotation, stripMarkup } from './quote-detect.js';
+import { detectQuotation, stripMarkup, stripAskFrame } from './quote-detect.js';
 import { jevFetch } from './systemone.js';   // logs the call per task (Laya training) + Clef shadow comparison
 import { resolveNamed, resolveNamedAll, objectPhrases, nameSpans } from './named-object.js';
 import { jevState, turnFacts } from './assistant/request-features.js';   // the turn's STRUCTURE + reader card + history, for Jev (11-03)
@@ -267,7 +267,7 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
   const said = messages.slice(0, -1).filter((m) => m.role === 'assistant').map((m) => String(m.content || ''));
   const phraseOf = () => detectQuotation(lastUser, { said })
     || (facts.quoted.length ? { phrase: [...facts.quoted].sort((a, b) => b.length - a.length)[0].slice(0, 400), via: 'quoted' } : null)   // Jev chose quote: a quoted-back span is still the words
-    || { phrase: stripMarkup(lastUser).replace(/\s+/g, ' ').trim().slice(0, 400), via: 'turn' };
+    || { phrase: stripAskFrame(lastUser).replace(/\s+/g, ' ').trim().slice(0, 400), via: 'turn' };
   const quotedBack = () => facts.quoted.length > 0 && facts.quotedBack === facts.quoted.length;   // backstop only (no Jev to read the fact)
   const pushback = said.length > 0 && isPushback(lastUser);
   const ruled = (plan, provenance, reason, extra = {}) => {

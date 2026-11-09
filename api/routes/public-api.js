@@ -37,7 +37,7 @@ import { isTestRequest } from '../lib/test-traffic.js';
 import { hybridSearch, keywordSearch, getStats } from '../lib/search.js';
 import { readLibraryStats, countList, religionCollectionCounts } from '../lib/library/library-stats.js';
 import { findDocuments } from '../lib/docs-repo.js';
-import { executeSearch, SEARCH_TEXT_CHARS, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
+import { executeSearch, SEARCH_TEXT_CHARS, executeLibraryOverview, executeFindDocumentForCitation, executeTool, TOOLS } from './chat.js';
 import { analyzePassagesParallel, unanalyzedResults } from '../lib/parallel-analyzer.js';
 import { keywordTradition } from '../lib/search-plan.js';
 import { logger } from '../lib/logger.js';
@@ -1430,6 +1430,8 @@ export default async function publicApiRoutes(fastify) {
     // for follow-up turns and eventual /chat/save.
     sendEvent({ type: 'session', conversation_id });
 
+    const { sseKeepalive } = await import('../lib/assistant/sse-keepalive.js');
+    const stopKeepalive = sseKeepalive(reply.raw);
     try {
       // The one chat pipeline: the Anís turn (api/lib/assistant/turn.js), adapted to the v1 SSE contract.
       const { anisTurn } = await import('../lib/assistant/turn.js');
@@ -1485,7 +1487,7 @@ export default async function publicApiRoutes(fastify) {
       sendEvent({ type: 'error', message: err.message || 'Chat failed' });
     }
 
-    await sendEvent.flush(); reply.raw.end();
+    stopKeepalive(); await sendEvent.flush(); reply.raw.end();
     logApiSearch({ query: messages[messages.length - 1]?.content, apiKeyId: request.apiKeyId, isTest: isTestRequest(request), resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api_chat' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'chat', false).catch(() => {});
   });

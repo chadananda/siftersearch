@@ -214,7 +214,7 @@ Saved conversations become published dialog pages. The architecture is **API-cen
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/v1/chat` | Chat. Optional `conversation_id` persists the session for later save. Optional `X-Debug-Chat: 1` emits per-stage debug events (`debug_research_call`, `debug_intent`, `debug_gate_fail`). |
+| `POST /api/v1/chat` | Chat. Optional `conversation_id` persists the session for later save. |
 | `POST /api/v1/chat/save` | Run the publish pipeline. Two modes: **LOCAL** (no `domain`/`base_path`) writes to SifterSearch's own `/dialogue/`; **REMOTE** (with `domain`/`base_path`) persists in `published_conversations` and returns `{share_url, fetch_url}`. The remote site exposes `share_url` as a route on its own domain and fetches structured content from `fetch_url` on each visit. |
 | `GET /api/v1/conversations/{slug}?tenant=…` | Public-read fetch (no API key). Content-negotiated: JSON by default, markdown via `?format=md` or `Accept: text/markdown`. ETag + `Cache-Control: public, max-age=300, stale-while-revalidate=86400`. |
 | `GET /api/v1/library/find-document?title=…&religion=…` | The citation lookup as a public endpoint (same logic as Jafar's tool). |

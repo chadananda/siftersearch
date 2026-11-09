@@ -52,3 +52,8 @@ export function detectQuotation(text, { said = [] } = {}) {
   }
   return null;
 }
+
+// The asking frame of an unquoted "where does <who> say <words>?" turn. Jev already chose the quote shape; this only takes the WORDS out of the
+// message (a frame left in the phrase made the hunt demand "where / does / say" from the passage). ≥3 words must remain, else the message stands.
+const FRAME = /^\s*(?:where|in (?:which|what) (?:book|tablet|work|passage|writing|prayer|letter))\s+(?:(?:does|did|do|is|was|can i find|do i find)\s+)?(?:it\s+)?(?:[\p{L}\p{M}'’\u02bc-]+\s+){0,4}?(?:says?|said|states?|stated|writes?|wrote|mentions?|teach(?:es)?|declares?)\s+(?:that\s+)?/iu;
+export const stripAskFrame = (text) => { const t = stripMarkup(text), rest = clean(t.replace(FRAME, '')); return rest !== clean(t) && words(rest) >= 3 ? rest : t; };

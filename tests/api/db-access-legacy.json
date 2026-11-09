@@ -205,7 +205,6 @@
   "scripts/identity-cluster-audit.mjs",
   "scripts/identity-shadow-link.mjs",
   "scripts/index-library.js",
-  "scripts/jafar-dialog.js",
   "scripts/lib/stage-runner.mjs",
   "scripts/library/backfill-verse-pn.mjs",
   "scripts/library/dedupe-doc-rows.mjs",
