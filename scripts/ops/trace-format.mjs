@@ -23,7 +23,10 @@ const writerLines = (t) => [
 /** GET /anis/turns/:id/trace → text. */
 export function turnText(t) {
   return [`TURN ${t.turn}  status ${t.status ?? '?'}  route ${[t.route?.gate, t.route?.kind, t.route?.strategy].filter(Boolean).join(' / ')}`,
-    ` Q: ${cut(t.question, 200)}`, ` A: ${cut(t.reply, 200)}`, ` searches (${t.searches?.length || 0}):`,
+    ` Q: ${cut(t.question, 200)}`, ` A: ${cut(t.reply, 200)}`,
+    ...(t.route?.plan?.stages?.strategy?.strategy !== undefined ? [` strategy ${t.route.plan.stages.strategy.strategy ?? '-'}${t.route.plan.stages.strategy.version != null ? `@${t.route.plan.stages.strategy.version}` : ''}  shape ${t.route.plan.stages.strategy.shape ?? '-'}  jev ${JSON.stringify(t.route.plan.stages.strategy.jev ?? null)}`] : []),
+    ...(t.decisions?.length ? [' decisions:', ...t.decisions.map((d) => `   ${d.point} [${d.by}] -> ${cut(JSON.stringify(d.chosen), 80)}${d.reason ? `  (${cut(d.reason, 80)})` : ''}`)] : []),
+    ` searches (${t.searches?.length || 0}):`,
     ...(t.searches || []).flatMap((s) => searchBlock(s, 20)), ...writerLines(t)].join('\n');
 }
 

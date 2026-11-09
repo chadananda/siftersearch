@@ -12,7 +12,7 @@ import { IMPROVE_CFG, jaccardWords } from './strategy-gaps.js';
 import { UNITS } from './units.js';
 import { isUnmatched } from './strategy-seed.js';
 import { GENERAL_RESEARCH } from './strategy-general.js';
-import { pinFor, rollback, saveCandidate, promote, logDesign } from '../repos/strategy-candidates-repo.js';
+import { pinFor, rollback, saveCandidate, promote, logDesign, foldNearMisses } from '../repos/strategy-candidates-repo.js';
 import { savePlan, planFor, planForType, setTests, logPlanner, startProbation, activeProbation, recordProbationRun, finishProbation, allPlans, getMeta, setMeta, queueReplan, activeProbationByName } from '../repos/strategy-planner-repo.js';
 
 export const LOOPS = Object.freeze({ IMPROVE: 'IMPROVE', EXTEND: 'EXTEND', TOOLS: 'TOOLS' });
@@ -153,7 +153,9 @@ export function validatePlan(j, { cat, acts = registry(), tests = null, requireT
   }
   if (!['lookup', 'answer', 'research'].includes(j.budget_class)) errors.push('budget_class must be lookup|answer|research');
   // v1 structure (steps/templates new, params known, every edge routed, acyclic, reachable, node cap)
-  const v1 = validateCandidate({ name, description: j.description, exemplars: j.exemplars, templates: j.templates, steps, graph: { entry: g.entry, nodes, edges } }, { cat, acts });
+  // the near_misses are not stored anywhere (Jev reads only description + exemplars): fold them into the saved description exactly as editStrategyCard does
+  const description = misses.length ? foldNearMisses(j.description, misses) : j.description;
+  const v1 = validateCandidate({ name, description, exemplars: j.exemplars, templates: j.templates, steps, graph: { entry: g.entry, nodes, edges } }, { cat, acts });
   errors.push(...(v1.errors || []));
   let cost = null;
   if (!errors.length) {

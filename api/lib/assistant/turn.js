@@ -32,6 +32,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const lastUser = (messages) => [...(messages || [])].reverse().find((m) => m.role === 'user')?.content || '';
 
 const liveLimits = makeLimits();
+/** What ran for the turn: { shape, strategy: id, version, graphs, jev: {refers_back, sides, sources, units} } — the trace shows it (admin-threads turnTrace). Pure. */
+export function strategyRun(strat, graphRuns = [], shape = null) {
+  const id = strategyOf(strat), graphs = (graphRuns || []).map((x) => x.graph).filter(Boolean), ran = id ? graphs.find((g) => g.startsWith(`${id}@`)) : null;
+  return { shape, strategy: id, version: ran ? Number(ran.split('@')[1]) : null, graphs,
+    jev: strat ? { picked: strat.strategy?.choice ?? null, was: strat.strategy?.was ?? null, refers_back: !!strat.refersBack, sides: strat.sides ?? [], sources: strat.sources ?? {}, units: strat.units ?? {} } : null };
+}
+
 export async function defaultDeps() {   // exported for the strategy dry run (strategy-try.js), which swaps the thread/mail deps out
   const { anisRespond } = await import('./respond.js');
   return { respond: anisRespond, triage: triageMessage, outputCheck: outputBreaksPersona, open: openExchange, close: closeExchange,
@@ -275,7 +282,9 @@ async function turnBody({ messages, channel: channelName = 'widget-chat', truste
         research: Array.isArray(r.plan?.steps) ? { ms: r.plan.ms ?? null, steps: r.plan.steps.slice(0, 40).map((s) => ({ tool: s.tool, found: s.found ?? null, ...(s.rebuilt_from ? { rebuilt_from: String(s.rebuilt_from).slice(0, 200) } : {}),
           args: Object.fromEntries(Object.entries(s.args || {}).map(([k, v]) => [k, typeof v === 'string' ? v.slice(0, 200) : v])) })) } : null,
         // the five stages, each with its choice, who made it and the time: strategy (Jev) → phrases → retrieval → selection → format
-        stages: { strategy: { choice: r.plan?.shape ?? null, by: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, ms: r.plan?.plan_ms ?? null },
+        stages: { strategy: { choice: r.plan?.shape ?? null, by: r.plan?.provenance ?? null, reason: r.plan?.reason ?? null, ms: r.plan?.plan_ms ?? null,
+            // which strategy@version RAN (Jev's pick, the graph that executed it) beside the search plan's shape, and Jev's decisions for the turn
+            ...strategyRun(strat, currentAIContext().graphRuns, r.plan?.shape) },
           phrases: r.plan?.quote ? { choice: r.plan.quote.phrase, by: r.plan.quote.via } : r.plan?.phrases ? phraseStage(r.plan.phrases) : null,
           retrieval: { choice: r.retrieved?.length ?? 0, by: 'planned-search', ms: r.timings?.search_ms ?? null },
           selection: r.select ? { choice: `${r.select.kept}/${r.select.of}`, by: r.select.by } : null,

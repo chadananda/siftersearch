@@ -149,6 +149,8 @@ export async function turnTrace({ thread, messages, traces, titles }, turnId) {
   const p = safeJson(a?.path_json) || {};
   return { turn: String(turnId), thread: k.thread, round: k.round, question: q?.content ?? null, reply: a?.content ?? null, status: a?.status ?? null,
     route: { gate: p.gate || null, kind: p.kind || null, strategy: p.recipe || p.plan?.shape || null, plan: p.plan || null },
+    // Jev's decisions for the turn (strategy, refers-back, lookup kind, sides, side books, named units), without what he saw
+    decisions: (Array.isArray(p.decisions) ? p.decisions : []).map((d) => ({ point: d.point, by: d.by, chosen: d.chosen, probabilities: d.probabilities ?? null, reason: d.reason ?? null })),
     searches: searchesView(tr, names, 20), ...writerView(p.evidence, a?.content) };
 }
 

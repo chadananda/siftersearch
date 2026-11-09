@@ -283,6 +283,12 @@ async function planCore(input, { given = {}, apiKey = process.env.TYPESAFE_API_K
         Object.assign(out, { shape: 'topic', about: 'texts' }); delete out.quote; out.source = { ...out.source, shape: 'pushback-rule' };
       }
     }
+    // REFERS-BACK RULE (strategy call, Jev read the thread; respond.js marks messages.refersBack): a message pointing at the previous reply whose
+    // "wording" is only its own ask ("what are the actual words?": no quoted span, no detected quotation) hunts nothing literal — the topic of the last turn
+    if (messages.refersBack && out.shape === 'quote' && out.quote?.via === 'turn') {
+      out.overridden = { shape: out.shape, about: out.about, by: 'refers-back-rule' };
+      Object.assign(out, { shape: 'topic', about: 'texts' }); delete out.quote; out.source = { ...out.source, shape: 'refers-back-rule' };
+    }
     // COMPARISON (Jev's field): a comparison Jev also called a definition is a topic across the things compared
     if (out.comparative && out.shape === 'define') {
       out.overridden = { shape: 'define', about: out.about, by: 'comparison-rule' };

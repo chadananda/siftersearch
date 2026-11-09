@@ -756,6 +756,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
       // the phrase replaces the v1 query (a follow-up's prefixed previous question with it); quote marks keep it — planned-search hunts the quote itself
       searchQ = (p?.via === 'named-object' || p?.via === 'haiku') && p.phrase ? p.phrase : direction.query || searchQueryFor(messages);   // direction.query: a short turn resolved from history + card (turn.js, 11-03)
       const hints = hintsOf(p);
+      if (direction.strategy?.refersBack) messages.refersBack = true;   // the search plan reads it (search-plan.js refers-back rule)
       return timed('search', () => d.search({ query: searchQ, mode: 'passages', limit: 8, scope_config: profile.scope_config,
         plan: { messages, defaults: (direction.scope ? direction.scope.religion : profile.default_tradition) ? { religion: direction.scope ? direction.scope.religion : profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
     });

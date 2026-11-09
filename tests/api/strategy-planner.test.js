@@ -54,6 +54,14 @@ describe('abstract + compare', () => {
 });
 
 describe('plan -> a valid tree', () => {
+  it('the near_misses are folded into the saved description ("Not for: ..."), the same text editStrategyCard writes', () => {
+    fresh(); const plan = PLAN(), v = P.validatePlan(plan, ctx());
+    expect(v.ok).toBe(true);
+    const d = v.normalized.strategy.description;
+    expect(d.startsWith(plan.description)).toBe(true);
+    expect(d).toMatch(/ Not for: .+\.$/);
+    for (const m of plan.near_misses) expect(d).toContain(String(m.text).trim().replace(/[.?!]+$/, ''));
+  });
   it('a good v2 plan validates with a run cost and wishes', () => {
     fresh(); const v = P.validatePlan(PLAN(), ctx());
     expect(v.errors).toEqual([]); expect(v.ok).toBe(true);
