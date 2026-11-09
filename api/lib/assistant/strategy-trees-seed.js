@@ -31,7 +31,9 @@ const understanding = tree('understanding', 'anchor', [
     { element: 'search.shelf', params: { quoted: true, k: 4 } },   // the words the reader quotes, literal + phrase layers (free none when none)
     { element: 'search.shelf', params: { authority: 'scripture', k: 6 } }, { element: 'search.shelf', params: { authority: 'interpretation', k: 4 } },
     { element: 'search.hype', params: { k: 6 } }, { element: 'search.originals', params: { k: 4 } }] }, 'tool', ['topic', 'question_frame', 'religions_specified', 'authority_floor', 'named_sources', 'named_work', 'named_person'], ['found_passages', 'missing'],
-    { one: 'rank', several: 'rank', thin: 'widen', none: 'widen', error: '$fallback' }],
+    { one: 'inside', several: 'inside', thin: 'widen', none: 'widen', error: '$fallback' }],
+  // the books found, searched inside with the whole question (one call): a book's deepest passage on this is often not its top hit library-wide
+  ['inside', 'search.shelf', { inside: true, books: 3, k: 6 }, 'tool', ['found_passages', 'current_user_question'], ['found_passages'], { one: 'rank', several: 'rank', thin: 'rank', none: 'rank', error: 'rank' }],
   // the filtered pass was thin: once more with no hard filter (tradition, work, author); free skip when nothing was filtered
   ['widen', 'search.together', { list: [{ element: 'search.shelf', params: { wide: true, scope: 'rank', k: 6 } }, { element: 'search.hype', params: { wide: true, scope: 'rank', k: 6 } }] }, 'tool', ['topic', 'religions_specified', 'named_work', 'named_person'], ['found_passages', 'missing'],
     { one: 'rank', several: 'rank', thin: 'rank', none: 'rank', error: 'rank' }],

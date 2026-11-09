@@ -96,7 +96,11 @@ const personOf = (u) => { const n = flat(u.named_person); return typeof n === 's
 // HARD filters first (Chad 11-09): the tradition, the named work, the named author. `wide` = the widening pass: none of them (run when the filtered pass was thin)
 // by_person: Jev named the person; the author_lookup tool resolves the library's spellings of the name (array = any), the raw name when none resolve
 const authorsOf = async (s, who) => { try { const a = ((await call(s, 'author_lookup', { name: who }))?.authors || []).map((x) => x.author); return a.length ? a : who; } catch { return who; } };
-const searchInput = async (s, p, u, trad) => { const who = !p.wide && p.by_person ? personOf(u) : null, filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(who ? { author: await authorsOf(s, who) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
+// inside: the books the gather already found, searched inside with the whole question (one call, documentId = any of them) —
+// the deep passage a book holds is often not its best-scoring paragraph library-wide (dry run 6: the Sutra Collection's anatta discourse)
+const booksOf = (u, n = 3) => [...new Set((u.found_passages || []).map((x) => Number(x.document_id)).filter(Number.isFinite))].slice(0, n);
+const searchInput = async (s, p, u, trad) => { if (p.inside) return { query: text(s, u, p.query, '{{current_user_question}}'), limit: kOf(p, u) ?? 6, filters: { documentId: booksOf(u, p.books ?? 3) } };
+  const who = !p.wide && p.by_person ? personOf(u) : null, filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(who ? { author: await authorsOf(s, who) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
   // the topic (question minus the named spans) only where a hard filter carries those names; every other pass keeps the whole question
   // (dry run 5, 11-09: "Sufi writers like understand fana" — stripping "Rumi" from unfiltered passes lost him). quoted: the reader's quoted words, literal+phrase
   const named = (p.in_named && namedWork(u)) || who, layers = p.quoted ? ['literal', 'phrase'] : p.layers;
@@ -162,8 +166,8 @@ const E = {
       for (const { x, l } of res) if (l?.original || l?.translations?.length) { n++; x.original = l.original ?? x.original; x.translations = l.translations; }
       return finish(s, p, classify(n, ['one', 'several']), { count: n });
     } },
-  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named', 'by_person', 'wide', 'quoted'], reads: ['topic', 'named_work', 'named_person', 'quoted_words'], input: searchInput, take: passages,
-    gate: (s, u, p) => (!p.in_named || !!namedWork(u)) && (!p.by_person || !!personOf(u)) && (!p.wide || hardFiltered(u)) && (!p.quoted || !!String(flat(u.quoted_words) ?? '').trim()) }),
+  'search.shelf': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'fused_search', params: ['authority', 'doctrinal', 'language', 'author', 'work', 'layers', 'tiers', 'spell', 'in_named', 'by_person', 'wide', 'quoted', 'inside', 'books'], reads: ['topic', 'named_work', 'named_person', 'quoted_words', 'found_passages'], input: searchInput, take: passages,
+    gate: (s, u, p) => (!p.in_named || !!namedWork(u)) && (!p.by_person || !!personOf(u)) && (!p.wide || hardFiltered(u)) && (!p.quoted || !!String(flat(u.quoted_words) ?? '').trim()) && (!p.inside || booksOf(u).length > 0) }),
   'search.hype': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'hype_search', params: ['shelf', 'doctrinal', 'language', 'wide'], reads: ['topic'], input: searchInput, take: passages,
     gate: (s, u, p) => !p.wide || hardFiltered(u) }),
   'search.originals': retrieval({ edges: ['several', 'thin', 'none', 'error'], tool: 'originals_search', reads: ['topic', 'search_originals'], input: searchInput, take: passages,

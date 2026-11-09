@@ -32,7 +32,7 @@ describe('understanding tree', () => {
   const tools = { fused_search: async (i) => ({ passages: [...scripture, ...interp] }) };
   it('clean hit: anchor → gather → rank → stage → around → trace → judge → s_answer, scripture themed first', async () => {
     const s = await run('understanding', 'What is the soul?', { tools, jev: verdict('answers') });
-    expect(path(s)).toEqual(['anchor', 'gather', 'rank', 'stage', 'around', 'trace', 'judge', 's_answer']);
+    expect(path(s)).toEqual(['anchor', 'gather', 'inside', 'rank', 'stage', 'around', 'trace', 'judge', 's_answer']);
     expect(s.out.format).toMatchObject({ id: 'understanding', by: 'strategy:understanding' }); expect(s.out.passages.map((p) => p.theme)).toEqual(['scripture', 'interpretation']);
     expect(s.how).toContain('First sentence answers What is the soul?'); expect(s.how).not.toContain('{{'); expect(s.events.some((e) => e.stage?.startsWith('Reading'))).toBe(true);
   });
@@ -310,7 +310,7 @@ describe('cost per run path (node kinds)', () => {
   const cnt = (s) => s.kinds.reduce((a, k) => ({ ...a, [k]: (a[k] ?? 0) + 1 }), {});
   it('a clean path ends in at most one synthesize node, and direct templates carry none of the LLM kinds', async () => {
     const u = await run('understanding', 'q', { tools: { fused_search: async () => ({ passages: [P(1)] }) }, jev: verdict('answers') });
-    expect(cnt(u)).toEqual({ tool: 4, process: 2, decide: 1, synthesize: 1 });
+    expect(cnt(u)).toEqual({ tool: 5, process: 2, decide: 1, synthesize: 1 });   // + inside (the found books searched inside)
     const p = await run('prayer', 'a prayer for healing', { tools: { prayer_lookup: async () => ({ passages: [P(1)] }) } });
     expect(cnt(p)).toEqual({ tool: 1, synthesize: 1 });   // one code lookup, then the direct reply: no decide, no LLM judgement
     const r = await run('reference', 'John 3:16', { tools: { reference: async () => ({ passages: [P(1)] }) } });

@@ -15,7 +15,7 @@ export const FILTERS = { $id: 'AnisToolFilters', type: 'object', additionalPrope
     author: { type: ['string', 'array'], items: { type: 'string' }, description: "Author (writer or quoted voice), e.g. Bahá'u'lláh; a list = any of them" },
     writerOnly: { type: 'boolean', default: false, description: 'The author must be the writer, not a quoted voice' },
     language: { type: 'string', description: 'ISO code, e.g. en, ar, fa' },
-    documentId: { type: 'integer', description: 'Only this document' },
+    documentId: { type: ['integer', 'array'], items: { type: 'integer' }, maxItems: 10, description: 'Only this document; a list = any of them' },
     work: { type: 'string', description: 'Only this work, by title in any spelling (resolved to its document)' },
     authority: { type: 'array', items: { type: 'string', enum: AUTHORITY_KINDS }, description: 'Only passages of these standings (Passage.authority), e.g. ["scripture","interpretation"]' },
     yearFrom: { type: 'integer', description: 'Documents dated from this year' },

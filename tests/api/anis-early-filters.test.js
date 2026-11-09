@@ -63,6 +63,14 @@ describe('hard filters first, widening when thin', () => {
     // only the pass whose filter carries the name uses the stripped topic; the others keep the whole question (dry run 5)
     expect(s.trace[1].members.filter((m) => m.query && !m.filters?.author).every((m) => m.query === 'Sufi Rumi on fana')).toBe(true);
   });
+  it('inside: searches the books already found (documentId = any of the top 3) with the whole question; free none when nothing was found', async () => {
+    const seen = [], E = ELEMENTS;
+    const s = { ctx: {}, trace: [], question: 'q', tools: { fused_search: async (i) => { seen.push(i); return { passages: [P(9)] }; } }, onEvent: () => {} };
+    const found = [1, 1, 2, 3, 4].map((d, i) => ({ ...P(i + 1), document_id: d }));
+    await E['search.shelf'].run({ ...s, units: { current_user_question: 'what is anatta?', topic: 'anatta', found_passages: found } }, { inside: true, books: 3, k: 6 });
+    expect(seen[0].filters).toEqual({ documentId: [1, 2, 3] }); expect(seen[0].query).toBe('what is anatta?');
+    await E['search.shelf'].run({ ...s, units: { current_user_question: 'q', found_passages: [] } }, { inside: true }); expect(seen.length).toBe(1);
+  });
   it('quoted: the reader\'s quoted words searched literal + phrase; gated free when nothing is quoted', async () => {
     const seen = [], E = ELEMENTS;
     const s = { ctx: {}, trace: [], question: 'q', tools: { fused_search: async (i) => { seen.push(i); return { passages: [P(1)] }; } }, onEvent: () => {} };
