@@ -166,13 +166,13 @@ export function overviewReads(db, { since, limit = 200 } = {}) {
   const label = db.prepare('SELECT cluster_key, label FROM strategy_designs WHERE strategy_id = ? AND version = ? ORDER BY id DESC LIMIT 1');
   const parent = db.prepare('SELECT parent_version FROM strategies WHERE id = ? AND version = ?');
   const change = (id, v) => { const d = label.get(id, v); if (!d) return null;
-    return /^(edit|theory):/.test(String(d.cluster_key)) ? d.label : `new design for the "${d.label || '?'}" gap class`; };
+    return /^(edit|theory|miss):/.test(String(d.cluster_key)) ? d.label : `new design for the "${d.label || '?'}" gap class`; };
   const promotions = listPromotions(db, { limit }).map((p) => ({ ...p, parent_version: p.version != null ? parent.get(p.strategy_id, p.version)?.parent_version ?? null : null,
     change: p.version != null ? change(p.strategy_id, p.version) : null }));
   const tried = new Set(db.prepare('SELECT DISTINCT strategy_id, version FROM strategy_promotions').all().map((r) => `${r.strategy_id}@${r.version}`));
   const candidates = db.prepare("SELECT id, version, parent_version, created_at FROM strategies WHERE status = 'candidate' ORDER BY created_at, version").all()
     .filter((c) => !tried.has(`${c.id}@${c.version}`)).map((c) => ({ ...c, change: change(c.id, c.version) }));
   const gaps = { open: Number(db.prepare('SELECT COUNT(*) AS n FROM strategy_gaps WHERE design_id IS NULL').get().n || 0),
-    designed: Number(db.prepare("SELECT COUNT(*) AS n FROM strategy_designs WHERE cluster_key NOT LIKE 'edit:%' AND cluster_key NOT LIKE 'theory:%' AND created_at >= ?").get(since || '').n || 0) };
+    designed: Number(db.prepare("SELECT COUNT(*) AS n FROM strategy_designs WHERE cluster_key NOT LIKE 'edit:%' AND cluster_key NOT LIKE 'theory:%' AND cluster_key NOT LIKE 'miss:%' AND created_at >= ?").get(since || '').n || 0) };
   return { promotions, candidates, gaps };
 }

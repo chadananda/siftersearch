@@ -145,6 +145,16 @@ async function theoryWork(db, { improveDb, deps }) {
   return 'done';
 }
 
+/** Jev miss → fix (jev-tuning/miss-fix.js): a recheck miss gets its gold label, then one diagnosis + candidate option text + replay per gold group. Spend caps propagate. */
+async function missFixWork(db, { deps }) {
+  if (deps && !deps.missFixStage) return 'idle';
+  const mf = deps?.missFixStage ? { missFixStage: deps.missFixStage, liveMissDeps: deps.liveMissDeps } : await import('../lib/jev-tuning/miss-fix.js');
+  const r = await mf.missFixStage(db, { deps: await mf.liveMissDeps() });
+  if (r === 'idle') return 'idle';
+  console.log(`[improve] jev miss fix: ${JSON.stringify({ gate: r.gate, gold: r.gold, status: r.status, strategies: r.strategies, usd: r.usd })}`);
+  return 'done';
+}
+
 /** The LOWEST priority unit, run only when judge/deep work is idle: design a candidate for the first ready gap cluster, else
  *  edit a strategy from open DATA suggestions (Phase 4), else test a decision theory, else replay-promote the oldest untried candidate. → 'idle' | 'done' | { wait } */
 export async function strategyWork({ deps = null, improveDb = null } = {}) {
@@ -157,6 +167,8 @@ export async function strategyWork({ deps = null, improveDb = null } = {}) {
       const e = await m.editStage(db, { improveDb });
       if (e !== 'idle' && e.status && e.status !== 'capped') { console.log(`[improve] strategy edit: ${JSON.stringify({ status: e.status, id: e.id, version: e.version, settled: e.settled, usd: e.usd })}`); return 'done'; }
     }
+    const f = await missFixWork(db, { deps });
+    if (f === 'done') return 'done';
     const t = await theoryWork(db, { improveDb, deps });
     if (t === 'done') return 'done';
     const p = await m.promotionStage(db);

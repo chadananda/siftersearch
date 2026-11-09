@@ -237,7 +237,7 @@ describe('GET /api/admin/anis/improve-report', () => {
     const res = await get('/anis/improve-digest?since=2000-01-01T00:00:00Z');
     expect(res.statusCode).toBe(200);
     const b = res.json();
-    expect(Object.keys(b)).toEqual(['since', 'generated_at', 'available', 'assessment', 'code', 'data', 'proposals']);
+    expect(Object.keys(b)).toEqual(['since', 'generated_at', 'available', 'assessment', 'code', 'data', 'jev_misses', 'proposals']);
     expect(b.code.map((c) => c.id)).toEqual([1, 2]);
     expect((await get('/anis/improve-digest')).statusCode).toBe(200);
     expect((await get('/anis/improve-digest?since=nope')).statusCode).toBe(400);

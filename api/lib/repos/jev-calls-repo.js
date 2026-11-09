@@ -84,7 +84,7 @@ export function labelCall(id, answer, { q = null, basis = 'manual' } = {}) {
 }
 
 /** An automatic label's basis (the judge's): such gold may be relabelled by a later judge; any other basis is HUMAN gold. Pure. */
-export const isAutoBasis = (basis) => basis == null || /^opus-|judge/.test(String(basis));
+export const isAutoBasis = (basis) => basis == null || /^opus-|judge|recheck/.test(String(basis));
 /** Label every call of `task` made in turn `ref` with the right choice, on the one question that offers it. A call that already
  *  holds HUMAN gold (a basis other than a judge's) is never overwritten. → calls labelled */
 export function labelByRef(task, ref, right, basis = 'opus-judge') {
@@ -96,3 +96,6 @@ export function labelByRef(task, ref, right, basis = 'opus-judge') {
   }
   return n;
 }
+
+/** Calls of one gate made in [from, to) (ms) — a miss rate's denominator. */
+export const countCalls = (task, { from, to }) => Number(callsDb().prepare('SELECT COUNT(*) AS n FROM calls WHERE task = ? AND at >= ? AND at < ?').get(task, from, to)?.n || 0);

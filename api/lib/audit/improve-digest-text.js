@@ -23,6 +23,13 @@ export function digestText(j) {
     else L.push(`    ${c.change}`, ...(c.expected_effect ? [`    → ${c.expected_effect}`] : []));
     L.push(...(c.examples || []).map((e) => `    evidence ${e.turn_id || e.item_key}  ${e.trace || ''}`));
   }
+  const m = j.jev_misses;
+  if (m) {
+    L.push('', `JEV MISSES (${m.gate}) — a miss = Haiku found the strategy Jev missed; each is gold-labelled, diagnosed and fixed in the background:`,
+      `  misses ${m.misses} in ${m.calls} calls (${m.rate ?? '–'} per 100; previous period ${m.prev_rate ?? '–'}) · trend ${m.trend ?? '–'}${m.defect ? ' · DEFECT: the miss rate is not falling' : ''}`,
+      `  fixes tried ${m.fixes_tried} · promoted ${m.promoted} · rejected/dropped ${m.rejected}${Object.keys(m.by_gold || {}).length ? ` · missed strategies: ${Object.entries(m.by_gold).map(([k, n]) => `${k} ${n}`).join(', ')}` : ''}`,
+      ...(m.fixes || []).map((f) => `  ${f.status} ${f.gold} (${f.misses} miss(es))${f.strategies?.length ? ` ${f.strategies.join(', ')}` : ''}${f.why ? ` — ${f.why}` : ''}${f.failed?.length ? ` [${f.failed.join('; ')}]` : ''}`));
+  }
   L.push('', `DATA changes — the system tests and settles these itself (${(j.data || []).length}):`,
     ...(j.data || []).map((x) => `#${x.id} ${x.state} [${x.status}] ${x.target} · ${x.stage} · evidence ${x.evidence_n} — ${x.change}${x.status_note ? ` (${x.status_note})` : ''}`));
   const props = j.proposals || [];

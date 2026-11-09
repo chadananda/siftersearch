@@ -388,7 +388,7 @@ export function improveReport(data, { days = 7, cap = null, filters = {} } = {})
  *  assessment since `since` (judged, weak %, mean severity of weak verdicts — the judge gives no numeric score —, top defect
  *  classes, spend), CODE recommendations that are new or gained evidence since then (with 2 example turns + trace links),
  *  and DATA changes proposed or applied since then. data = improve-repo improveDigestData(). Pure. */
-export function improveDigest(data, { since, cap = null } = {}) {
+export function improveDigest(data, { since, cap = null, jevMisses = null } = {}) {
   const d = data || { judged: [], spend_usd: 0, improvements: [], evidence: new Map() };
   const S = new Date(Date.parse(since)).toISOString().slice(0, 19).replace('T', ' ');   // the store's timestamp format
   const j = (s) => { if (s && typeof s === 'object') return s; try { return JSON.parse(s); } catch { return null; } };
@@ -419,7 +419,7 @@ export function improveDigest(data, { since, cap = null } = {}) {
       by_stage: Object.fromEntries(count(weak.map((v) => v.stage || '?'))),
       top_classes: count(weak.flatMap((v) => v.classes || [])).slice(0, 8).map(([cls, n]) => ({ class: cls, n })),
       spend_usd: +(d.spend_usd || 0).toFixed(4), cap_usd: cap?.cap_usd ?? null, spent_today_usd: cap?.spent_usd ?? null },
-    code, data: dataChanges,
+    code, data: dataChanges, jev_misses: jevMisses,
     // proposed tool improvements: every waiting CODE proposal with scenarios + its behaviour run state; one already passing may be stale
     proposals: (d.proposals || []).map((r) => ({ ...r, target: targetOf(r) })).filter((r) => targetClass(r.target) === 'code').map((r) => {
       const scenarios = scenariosOf(r), run = runStateOf(r.id, scenarios, d.runs || new Map());

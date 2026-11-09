@@ -105,7 +105,10 @@ export default async function anisAdminRoutes(fastify) {
   }, async (request) => {
     const since = parseSince(request.query.since || '24h');
     const cap = (await capStatus().catch(() => [])).find((g) => g.group === 'improve') || null;
-    return improveDigest(improveDigestData({ since }), { since, cap });
+    // Jev misses (jev-tuning/miss-fix.js): this period's miss rate vs the one before, fixes tried/promoted; a store without the table reads as none
+    const jevMisses = await (async () => { try { const [{ missDigest }, { candidatesDb }, { countCalls }] = await Promise.all([import('../lib/jev-tuning/miss-fix.js'),
+      import('../lib/repos/strategy-candidates-repo.js'), import('../lib/repos/jev-calls-repo.js')]); return missDigest(candidatesDb(), { since, countCalls }); } catch { return null; } })();
+    return improveDigest(improveDigestData({ since }), { since, cap, jevMisses });
   });
 
   // The progress page (Chad 11-04, AnisImprove.svelte): headline (7-day score/weak rate, 30 days, a deterministic status sentence),
