@@ -1704,15 +1704,6 @@ async function multiIndexSearchRun(query, options, qcalls) {
     return h;
   });
 
-  logger.info({
-    query: query.slice(0, 80),
-    main_hits: (mainResult.hits || []).length,
-    hype_hits: (hypeResult.hits || []).length,
-    entity_hits: (entityResult.hits || []).length,
-    merged: aggregate.size,
-    returned: hits.length
-  }, 'multi-index search complete');
-
   const merge = Date.now() - _t0 - Math.max(0, ..._stampValues(_stamp));
   const qdrantBy = {};
   for (const c of qcalls) qdrantBy[c.collection] = Math.max(qdrantBy[c.collection] || 0, c.ms);
@@ -1732,6 +1723,19 @@ async function multiIndexSearchRun(query, options, qcalls) {
     concept: (conceptResult.hits || []).length,
     qconcept: (qconceptResult.hits || []).length,
   };
+  // durations in the log line (Chad 11-09): total vs Qdrant's own time (qdrant_server) vs the round trip (qdrant) — a slow
+  // answer is attributed to a stage, never confused with a slow network
+  logger.info({
+    query: query.slice(0, 80),
+    main_hits: (mainResult.hits || []).length,
+    hype_hits: (hypeResult.hits || []).length,
+    entity_hits: (entityResult.hits || []).length,
+    phrase_hits: (phraseResult.hits || []).length,
+    merged: aggregate.size,
+    returned: hits.length,
+    ms: timings.total, embed_ms: timings.main_embed, qdrant_ms: timings.qdrant, qdrant_server_ms: qdrantServerBy && Object.keys(qdrantServerBy).length ? Math.max(...Object.values(qdrantServerBy)) : undefined,
+    hydrate_ms: timings.hydrate, rank_ms: timings.rank,
+  }, 'multi-index search complete');
   // One durable trace row per search (search-trace.js), fire-and-forget: tracing never delays or breaks a search.
   // Restored 11-01 — the live (Qdrant) path stopped calling it and /api/admin/search-trace read 0 rows.
   if (!options.noTrace && process.env.NODE_ENV !== 'test') {
