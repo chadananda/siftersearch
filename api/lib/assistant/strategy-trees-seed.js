@@ -137,7 +137,67 @@ const compilation = tree('compilation', 'c5', [
   ['ot', 'shape', { template: 'compilation.traditions', shared: 'tpl.passages', format: 'compilation', theme_by: ['religion', 'sub_theme'], offers: ['the full compilation by email'] }, 'synthesize', ['found_passages', 'sub_themes', 'missing', 'scope_source', 'reader_card'], ['offers'], { done: END }],
 ], { needs: ['topic', 'amount_wanted', 'output_form', 'named_sources'], units: { absence_template: 'compilation.absence' } });
 
-const T = { understanding, comparison, prayer, guidance, reference, compilation };
+// ── claim_check (rev B 11-09): the claim's criteria planned, each searched in the tradition's own texts → scholarship → web (labelled), each weighed ──
+// Queries are the criterion itself ({{value}}), never stuffed; no criterion is stored anywhere — plan.criteria generates them per claim (default: the claim itself).
+// Cost per run path (code = free; gen = one cheap-tier generator call when wired, free default otherwise; Jev = one cheap-tier call; writer = one synthesis):
+//   k1 → k3 → k4 → k5 → k6            : gen + n criteria × (2 library searches + 1 web search) + n Jev (one per criterion, parallel, tree level) + writer
+//   k1 → k3 → k4 → k7                 : gen + searches + n Jev + writer (every criterion silent)
+//   k1 → k3 → k4 → k5 → k6 (web only) : as the first; rank empty (web only) still shapes — the web finds reach the writer labelled
+//   k1 → k3 → $absence                : gen + searches (nothing anywhere) · k3 error → $fallback (the agent)
+const claim_check = tree('claim_check', 'k1', [
+  ['k1', 'plan.criteria', { n: 4 }, 'process', ['challenged_claim', 'topic'], ['criteria'], { done: 'k3', fail: 'k3' }],
+  ['k3', 'search.fanout', { by: 'criteria', inner: { element: 'search.together', params: { list: [
+    { element: 'search.shelf', params: { query: '{{value}}', doctrinal: true, k: 4 } },   // the tradition's own texts
+    { element: 'search.shelf', params: { query: '{{value}}', authority: ['history', 'scholarship'], k: 3 } },   // scholarship and histories
+    { element: 'search.web', params: { query: '{{value}}' } }] } }, stage: 'Weighing the claim point by point…' }, 'tool', ['criteria', 'religions_specified'], ['found_passages', 'web_found', 'missing'],   // outside evidence, labelled
+    { all: 'k4', some_thin: 'k4', all_none: '$absence', error: '$fallback' }],
+  ['k4', 'judge.criteria', {}, 'decide', ['criteria', 'challenged_claim', 'found_passages', 'web_found'], ['found_passages', 'criterion_verdicts'], { weighed: 'k5', silent: 'k7', empty: '$absence' }],
+  ['k5', 'rank', { by: ['authority'], per: 'side', k: { default: 3, research: 6 }, dedupe: true }, 'process', ['found_passages', 'criteria'], ['found_passages'], { done: 'k6', empty: 'k6' }],
+  ['k6', 'shape', { template: 'claim_check.weighed', shared: 'tpl.passages', format: 'claim_check', theme_by: 'side', offers: ['the evidence for one criterion in full'] }, 'synthesize', ['challenged_claim', 'criteria', 'criterion_verdicts', 'found_passages', 'web_found', 'missing'], ['offers'], { done: END }],
+  ['k7', 'shape', { template: 'claim_check.silent', shared: 'tpl.passages', format: 'claim_check', theme_by: 'side' }, 'synthesize', ['challenged_claim', 'criteria', 'found_passages', 'web_found'], [], { done: END }],
+], { needs: ['topic', 'challenged_claim', 'audience'] });
+
+// ── timeline (rev B 11-09): entries planned, each searched for dated evidence, ONE dated-claims judge, oldest first, a table; undated entries apart ──
+// Any subject (an event, a work, a person, a movement): nothing assumes a "ministry" or one tradition.
+// Cost per run path (gen / Jev as above; judge.timeline = one DeepSeek call per 12 items, in parallel):
+//   l1 → l2 → l3 → l4 → l5   : gen + n entries × 2 library searches + the dated judge + writer
+//   l1 → l2 → l3 → l6        : gen + searches + the dated judge + writer (nothing dated: the entries and passages listed as undated)
+//   l1 → l2 → l3(unjudged) → l4 → l5 : gen + searches + a failed judge (free fallback: dates the passages carry) + writer
+//   l1 → l2 → $absence       : gen + searches · l2 error → $fallback
+const timeline = tree('timeline', 'l1', [
+  ['l1', 'plan.entries', { n: 8 }, 'process', ['topic', 'named_person'], ['entries'], { done: 'l2', fail: 'l2' }],
+  ['l2', 'search.fanout', { by: 'entries', inner: { element: 'search.together', params: { list: [
+    { element: 'search.shelf', params: { query: '{{value}}', k: 4 } }, { element: 'search.hype', params: { query: '{{value}}', k: 3 } }] } }, stage: 'Finding the dates…' }, 'tool', ['entries', 'religions_specified'], ['found_passages', 'missing'],
+    { all: 'l3', some_thin: 'l3', all_none: '$absence', error: '$fallback' }],
+  ['l3', 'judge.timeline', { query: '{{topic}}' }, 'decide', ['found_passages', 'entries', 'topic'], ['found_passages', 'undated_entries'], { matched: 'l4', none: 'l6', unjudged: 'l4' }],
+  ['l4', 'rank', { by: ['history'], k: { default: 12, research: 30 }, dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'l5', empty: '$absence' }],
+  ['l5', 'shape', { template: 'timeline.table', shared: 'tpl.passages', format: 'timeline', theme_by: 'date', offers: ['the timeline with every source in full by email'] }, 'synthesize', ['topic', 'found_passages', 'undated_entries'], ['offers'], { done: END }],
+  ['l6', 'shape', { template: 'timeline.undated', shared: 'tpl.passages', format: 'timeline', theme_by: 'side' }, 'synthesize', ['topic', 'entries', 'found_passages'], [], { done: END }],
+], { needs: ['topic', 'named_person', 'audience'] });
+
+// ── history_fact (rev B 11-09): the histories of the tradition ∥ the web (labelled), weighed in historical precedence; the fact with its date and sources ──
+// Cost per run path (Jev = judge.passages, one cheap-tier call per passage, in parallel):
+//   h1 → h2 → h3 → h4 → h5   : 1 library search + 1 web search + Jev per passage + writer
+//   h1 → h2 → h3 → h4c → h6  : the same; the sources disagree
+//   h1 → h2 → h7 → h8        : 2 searches + writer (no library history: the web finds, labelled)
+//   h1 → h2 → h7 → $absence  : 2 searches (nothing anywhere) · h1 error → $fallback
+const history_fact = tree('history_fact', 'h1', [
+  ['h1', 'search.together', { list: [
+    { element: 'search.shelf', params: { query: '{{topic}}', authority: ['history', 'scholarship'], k: 6 } },   // histories, chronicles, scholarship of the tradition
+    { element: 'search.web', params: { query: '{{topic}}' } }] }, 'tool', ['topic', 'religions_specified'], ['found_passages', 'web_found', 'missing'],
+    { one: 'h2', several: 'h2', thin: 'h2', none: '$absence', error: '$fallback' }],
+  ['h2', 'switch', { on: { unit: 'found_passages' }, cases: { filled: 'library', empty: 'web' }, default: 'web' }, 'decide', ['found_passages'], [], { library: 'h3', web: 'h7' }],
+  ['h3', 'judge.passages', { precedence: ['primary record', 'contemporary account', 'scholarship'], question: 'Does this passage state {{topic}}? A primary record outweighs a contemporary account, which outweighs later scholarship.' }, 'decide', ['found_passages', 'topic'], ['found_passages'],
+    { answers: 'h4', mentions_only: 'h4', conflict: 'h4c', empty: 'h7' }],
+  ['h4', 'rank', { by: ['authority', 'history'], k: { default: 4, research: 8 }, dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h5', empty: 'h7' }],
+  ['h4c', 'rank', { by: ['authority', 'history'], k: { default: 6, research: 10 }, dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 'h6', empty: 'h7' }],
+  ['h5', 'shape', { template: 'history_fact.fact', shared: 'tpl.passages', format: 'history_fact', theme_by: 'authority' }, 'synthesize', ['topic', 'fact_asked', 'found_passages', 'web_found'], [], { done: END }],
+  ['h6', 'shape', { template: 'history_fact.disagree', shared: 'tpl.passages', format: 'history_fact', theme_by: 'authority' }, 'synthesize', ['topic', 'found_passages', 'web_found'], [], { done: END }],
+  ['h7', 'switch', { on: { unit: 'web_found' }, cases: { filled: 'web', empty: 'nothing' }, default: 'nothing' }, 'decide', ['web_found'], [], { web: 'h8', nothing: '$absence' }],
+  ['h8', 'shape', { template: 'history_fact.web', shared: 'tpl.passages', format: 'history_fact' }, 'synthesize', ['topic', 'web_found'], [], { done: END }],
+], { needs: ['topic', 'fact_asked', 'audience'] });
+
+const T = { understanding, comparison, prayer, guidance, reference, compilation, claim_check, timeline, history_fact };
 
 // ── Templates: shared tpl.<shape> wrap the strategy's own text as {{base}}; {{#voice}}…{{/voice}} blocks are kept for that mode only
 // (voice | widget | site | email | pdf | research; why | anchor | thin; or any unit that is filled). ──
@@ -166,8 +226,22 @@ export const TREE_TEMPLATES = [
   { id: 'compilation.grouped', version: 2, text: "A compilation on {{topic}}. One sentence: what it gathers and from which sources. {{scope_clause}} One heading per theme named in the passage headers; under each, the passages in the authority order of their own tradition — {{authority_order}} — never one tradition's ladder applied to another's; passages of lesser standing labelled (recollection, institutional guidance, scholarship). Quote every passage in full, never clipped; the citation text is the link. At most one framing line per section. Conflicting passages sit together, attributed, not reconciled. {{missing_line}}\n{{#voice}}Say how many passages in how many groups; read the strongest (two whole sentences at most) with a spoken citation; offer the email.{{/voice}}\n{{#widget}}Headings as a list; only the first passage quoted, the rest as linked titles; the email offer.{{/widget}}\n{{#email}}A greeting; every passage in full; a sources list; a close.{{/email}}" },   // v2 11-09: the tradition's own tiers, not the Bahá’í ladder
   t('compilation.traditions', "A compilation on {{topic}} across the traditions the library holds. One sentence: what it gathers and from which traditions. {{scope_clause}} One section per tradition, in the order of the passage headers; inside it one heading per theme (a passage header's theme reads \"tradition — theme\"), the passages in that tradition's own authority order — {{authority_order}} — never one tradition's ladder applied to another's, never one tradition ranked above another. Quote every passage in full, never clipped; the citation text is the link. {{missing_line}}\n{{#voice}}Say how many traditions and themes; read the strongest passage (two whole sentences at most) with a spoken citation; offer the email.{{/voice}}\n{{#widget}}Traditions and themes as a list; only the first passage quoted, the rest as linked titles; the email offer.{{/widget}}\n{{#email}}A greeting; every passage in full; a sources list; a close.{{/email}}"),
   t('compilation.absence', "Nothing gathers on {{topic}} within {{religions_specified}}. {{scope_clause}} Give the nearest passages, labelled nearest, and offer a research report by email."),
+  t('claim_check.weighed', "The reader asks whether a claim holds: {{challenged_claim}}. Weigh it criterion by criterion: {{criteria}}. A passage header's theme names its criterion. The verdict per criterion: {{criterion_verdicts}}. For each criterion, one short section: its verdict in plain words, then the evidence in this order: the tradition's own texts quoted and linked; scholarship labelled (\"a scholar, X, writes…\"); web sources labelled as outside the library, never as library evidence. A criterion the evidence is silent on is called silent, never filled from memory. End with one line: where the claim holds, where it does not, where the evidence is silent. Neutral; never argue past the evidence. {{scope_clause}}\n{{#missing}}{{missing_line}}{{/missing}}\n{{#voice}}One sentence per criterion with its verdict and one spoken citation, then offer to send the evidence.{{/voice}}\n{{#widget}}One line per criterion with its verdict and one linked source.{{/widget}}\n{{#email}}A section per criterion with the passages in full.{{/email}}"),
+  t('claim_check.silent', "The sources searched are silent on the claim {{challenged_claim}} at every criterion weighed ({{criteria}}): say so plainly in the first line. Then the nearest passages, labelled nearest, each under its criterion; web sources labelled as outside the library. Never weigh the claim from memory. {{scope_clause}}"),
+  t('timeline.table', "A TIMELINE of {{topic}}. One table, Date · Event · Source, oldest first: one row per passage below; a passage header's theme gives its date and event (as its source states them); the source is the passage's linked italic title. Never add a date or an event the passages do not give. {{scope_clause}}\n{{#undated_entries}}Then, apart from the table, under \"Not dated in the sources found\": {{undated_entries}}. Name them; never give them a date from memory.{{/undated_entries}}\n{{#voice}}No table: say the dates in order, the first few, each with its spoken source, then offer to send the whole timeline.{{/voice}}\n{{#email}}The table, then each source passage in full.{{/email}}"),
+  t('timeline.undated', "None of the sources found states a date for {{topic}} (the entries looked for: {{entries}}): say so plainly in the first line. Then the passages found, under the entry each belongs to (a passage header's theme names it), labelled undated. Never supply a date from memory. {{scope_clause}}"),
+  t('history_fact.fact', "First sentence: the answer about {{topic}} — the date, place or founder — with its source linked. {{#fact_asked}}The reader asks for the {{fact_asked}}.{{/fact_asked}} Weigh the sources in historical precedence: a primary record, then a contemporary account, then later scholarship, each labelled. Where sources disagree, say so and give each with its source. {{scope_clause}}\n{{#web_found}}Web sources are given too: cite them only as outside the library, labelled with their site.{{/web_found}}\n{{#voice}}One sentence with the date and its spoken source; offer to send the sources.{{/voice}}"),
+  t('history_fact.disagree', "The sources disagree on {{topic}}: say so in the first sentence. Then each account with its date and source, in historical precedence (primary record, contemporary account, later scholarship), attributed and linked; say which carries the most weight and why; never reconcile them yourself. {{scope_clause}}\n{{#web_found}}Web sources are given too: labelled as outside the library.{{/web_found}}"),
+  t('history_fact.web', "The library holds no history of {{topic}}: say so in one line. Then the answer from the web sources below, each labelled as outside the library with its site linked; never present them as library evidence. If they disagree, give each. {{scope_clause}}"),
+
 ];
 
+// Jev's option text for the rev-B trees (no STRATEGY_DESCRIPTIONS row): production's current descriptions, verbatim (claim_check@3, timeline@2, history_fact@4)
+export const TREE_DESCRIPTIONS = {
+  claim_check: "Asks whether a contested, critical or loaded claim or label about a religion, its community or its institutions is true or fair. Examples: is it a cult or sect, is it really a religion, is it authoritarian, is it an offshoot of another faith, is a criticism justified. The reader wants the claim weighed against the tradition's own texts and outside evidence, not a general explanation of a teaching.",
+  timeline: "Asks for a TIMELINE or CHRONOLOGY: an ordered list of dated periods or events across several figures, ministries, eras or stages, such as the ministries of successive leaders, the stages of a movement or the key dates of a period. The reader wants many dated entries in time order with sources. This card does not cover one single date or founder, a narrated story of an event, a biography of one person, or an explanation of a teaching.",
+  history_fact: "Asks ONE short historical fact: when or where a religion or movement began, who founded it, or the date of a named event. The reader wants a date, place or founder with its source. Not for: Tell me the story of how Quddús was martyred; Who was Mullá Ḥusayn; Give me a chronology of the Heroic Age; Explain what the Bahá'í teaching on progressive revelation means.",
+};
 export const TREE_STEPS = Object.values(T).flatMap((x) => x.steps);
 // v2 of each executor strategy: a CANDIDATE (the promotion gate on tower decides); v1 (one node) stays active for rollback
 export const TREE_GRAPHS = Object.fromEntries(Object.entries(T).map(([id, x]) => [id, x.graph]));

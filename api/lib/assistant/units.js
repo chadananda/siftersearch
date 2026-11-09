@@ -21,7 +21,8 @@ const ROWS = [
   ['challenge_kind', 'enum', 'jev', 'support', null], ['contested', 'bool', 'jev', false, null], ['about_what', 'enum', 'jev', 'library', null], ['plan_action', 'enum', 'jev', null, null],
   ['reader_state', 'enum', 'jev', 'curious', 'conversation'], ['institution', 'text', 'code', 'a qualified teacher of your tradition', null],
   ['found_passages', 'passages', 'elements', [], null], ['found_records', 'records', 'elements', [], null], ['web_found', 'web', 'elements', [], null], ['found_outcome', 'map', 'elements', {}, null],
-  ['path', 'list', 'engine', [], null], ['sub_themes', 'list', 'elements', null, null], ['widened', 'obj', 'elements', null, null], ['missing', 'list', 'elements', [], null],
+  ['path', 'list', 'engine', [], null], ['sub_themes', 'list', 'elements', null, null], ['criteria', 'list', 'elements', null, null], ['entries', 'list', 'elements', null, null],
+  ['criterion_verdicts', 'list', 'elements', null, null], ['undated_entries', 'list', 'elements', null, null], ['widened', 'obj', 'elements', null, null], ['missing', 'list', 'elements', [], null],
 ];
 export const UNITS = Object.freeze(Object.fromEntries(ROWS.map(([name, type, filled, def, carried]) => [name, Object.freeze({ name, type, filled, default: def, carried })])));
 const ALWAYS_JEV = ['religions_specified', 'authority_floor', 'search_originals', 'reply_language', 'depth', 'reads_scripts', 'reader_state', 'audience'];

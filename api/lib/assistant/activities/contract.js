@@ -18,6 +18,7 @@ const BOOL = ['doctrinal', 'wide', 'quoted', 'by_person', 'in_named', 'spell', '
 const RULES = {
   thin_below: (v) => (isNum(v) && v > 0 && v <= 1) || 'must be a number in (0, 1]: scores run 0-1 (omit it for the default 0.25)',
   min: (v) => (isNum(v) && v >= 0) || 'must be a number >= 0',
+  n: (v) => (Number.isInteger(v) && v > 0) || 'must be a whole number > 0 (how many sub-themes / criteria / entries the light generator plans)',
   k: (v) => (isNum(v) && v > 0) || (v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every((x) => isNum(x) && x > 0)) || 'must be a positive number (or {default, many, research} of them)',
   authority: (v) => (v != null && (Array.isArray(v) ? v.length > 0 : true) && kinds(v)) || `must be one of ${AUTH_KINDS.join('|')} (or a list of them)`,
   shared: (v) => (typeof v === 'string' && !!v.trim()) || 'must be ONE template id (a string), not a list',
@@ -30,6 +31,8 @@ const RULES = {
   by: (v, a) => a !== 'rank' || ([v].flat().length > 0 && [v].flat().every((x) => RANK_BY.includes(x))) || `rank by must be ${RANK_BY.join('|')} (or a list)`,
   ...Object.fromEntries(BOOL.map((n) => [n, (v) => typeof v === 'boolean' || 'must be true or false'])),
 };
+// the light generators (elements.js plan.*): one per planned unit, the same cheap tier and contract (params n, stage; default = the subject itself)
+export const GENERATORS = Object.freeze({ 'plan.subthemes': 'sub_themes', 'plan.criteria': 'criteria', 'plan.entries': 'entries' });
 const ITEM_KEYS = ['element', 'params'];
 
 /** Contract problems of one step's params. → [string]. acts = the registry (nested list/inner elements), slots = extra known slot names. */

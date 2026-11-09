@@ -1,4 +1,4 @@
-// Tree-level model steps the pure tools no longer hold (Chad 11-09): holds (quotation_candidates), timeline (biography_search people), term script (Latin → Arabic for rendering_lookup).
+// Tree-level model steps the pure tools no longer hold (Chad 11-09): holds (quotation_candidates), timeline (biography_search people), dated claims (judgeDated, any subject), term script (Latin → Arabic for rendering_lookup).
 // ONE call over the merged result, never per item. Seams (tests): decide / complete. Deps: source-hunt (quoteWindow, quoteRanges), systemone, ai, ctai-term. Not imported by tools.js (no-LLM ratchet).
 import { quoteWindow, quoteRanges } from '../source-hunt.js';
 
@@ -67,6 +67,26 @@ export async function judgeTimeline({ query, people = [], complete = null } = {}
   const clause = new Map(); for (const m of results.flatMap((r) => (Array.isArray(r?.matches) ? r.matches : []))) if (m?.id != null && !clause.has(String(m.id))) clause.set(String(m.id), cl(m.clause).slice(0, 160).replace(/[\s.;,]+$/, ''));
   const keep = people.filter((p) => clause.has(String(p.id))).map((p) => ({ ...p, clause: clause.get(String(p.id)) }));
   return { people: keep, lead: results.find((r) => r?.lead)?.lead || '', judged: true };
+}
+
+const DT_SYS = `You read a CATALOG of numbered source items about a SUBJECT — one per line: "id|title: text". The subject may be an event, a work, a person, a movement or a period, of any tradition.
+For each item that GIVES A DATE (a year, a date, a reign or an era the text itself states) for something relevant to the SUBJECT, output {"id":<number>, "date":"<the date as the text gives it, e.g. 1844, 23 May 1844, c. 563 BCE>", "year":<the year as a number, negative for BCE>, "event":"<a SHORT phrase naming what happened, in the item's own words where possible>"}.
+Never supply a date the item does not state. Items with no stated date are left out.
+Return ONLY JSON: {"dated":[{"id","date","year","event"}]}`;
+
+/** Dated claims about any subject (event, work, person): passages/records → { items (only those with a date their own text states, each with date/year/event), judged }.
+ *  One call per 12 items, in parallel (one step, not per item). complete as judgeTimeline. All calls failing = judged:false, items untouched. */
+export async function judgeDated({ query, items = [], complete = null } = {}) {
+  const usable = items.map((x, i) => ({ x, i })).filter(({ x }) => String(x?.text ?? x?.snippet ?? x?.statement ?? '').trim());   // chunked, so every item is read
+  if (!usable.length) return { items: [], judged: false };
+  const call = complete || (async (messages, opts) => { const [{ chatCompletion }, { modelFor }] = await Promise.all([import('../ai.js'), import('../model-roles.js')]); return chatCompletion(messages, { ...modelFor('bio-timeline'), ...opts }); });
+  const line = ({ x, i }) => `${i}|${cl(x.title ?? x.name ?? '')}: ${cl(x.text ?? x.snippet ?? x.statement).slice(0, 600)}`;
+  const chunks = []; for (let j = 0; j < usable.length; j += CHUNK) chunks.push(usable.slice(j, j + CHUNK));
+  const results = await Promise.all(chunks.map(async (c) => { try { const r = await call([{ role: 'system', content: DT_SYS }, { role: 'user', content: `SUBJECT: ${query}\n\nCATALOG:\n${c.map(line).join('\n')}` }], { temperature: 0, maxTokens: 6000, responseFormat: { type: 'json_object' } }); return r?.content?.trim() ? looseParse(r.content) : null; } catch { return null; } }));
+  if (results.every((r) => r === null)) return { items, judged: false };
+  const dated = new Map();
+  for (const d of results.flatMap((r) => (Array.isArray(r?.dated) ? r.dated : Array.isArray(r?.matches) ? r.matches : []))) if (d?.id != null && !dated.has(Number(d.id)) && String(d.date ?? d.year ?? '').trim()) dated.set(Number(d.id), { date: cl(d.date ?? d.year), year: Number.isFinite(Number(d.year)) ? Number(d.year) : null, event: cl(d.event).slice(0, 160) });
+  return { items: items.flatMap((x, i) => (dated.has(i) ? [{ ...x, ...dated.get(i) }] : [])), judged: true };
 }
 
 const memo = new Map();   // folded Latin → Arabic script, once resolved (the pure tier: a repeat never asks the model again)

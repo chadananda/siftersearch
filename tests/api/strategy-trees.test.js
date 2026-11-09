@@ -336,6 +336,7 @@ describe('cost per run path (node kinds)', () => {
 });
 
 describe('seeded rows and the ratchet', () => {
+  const HAS_V1 = (id) => STRATEGIES.some((s) => s.id === id && s.version === 1);   // the rev-B trees (claim_check, timeline, history_fact) have no seed v1: production holds their earlier versions
   const latest = (id) => STRATEGIES.filter((s) => s.id === id).sort((a, b) => b.version - a.version)[0];
   it('every strategy of the seed — latest version — is a tree of more than one working node (sanity cap 64, ANIS_MAX_NODES), no new one-node strategies', () => {
     for (const id of new Set(STRATEGIES.map((s) => s.id))) {
@@ -344,8 +345,8 @@ describe('seeded rows and the ratchet', () => {
     }
   });
   it('the six trees: a candidate v2 above the active one-node v1 (rollback), nodes kinded with reads/writes, synthesis edges marked', () => {
-    expect(TREE_IDS.sort()).toEqual(['comparison', 'compilation', 'guidance', 'prayer', 'reference', 'understanding']);
-    for (const id of TREE_IDS) {
+    expect(TREE_IDS.sort()).toEqual(['claim_check', 'comparison', 'compilation', 'guidance', 'history_fact', 'prayer', 'reference', 'timeline', 'understanding']);
+    for (const id of TREE_IDS.filter(HAS_V1)) {
       const v1 = STRATEGIES.find((s) => s.id === id && s.version === 1), v2 = STRATEGIES.find((s) => s.id === id && s.version === 2);
       expect(v1.status).toBe('active'); expect(Object.keys(v1.graph.nodes).length).toBe(1); expect(v2).toMatchObject({ status: 'candidate', parent_version: 1 });
       const steps = new Map(STEPS.map((x) => [`${x.id}@${x.version}`, x]));
@@ -363,7 +364,7 @@ describe('seeded rows and the ratchet', () => {
     expect(impure).toEqual([]);
   });
   it('the tree rows are not live: only the active v1 serves until the promotion gate promotes v2, and ANIS_STRATEGY_GRAPH=0 still rolls back', async () => {
-    for (const id of TREE_IDS) expect(Object.keys(graphFor(id).nodes).length, id).toBe(1);
+    for (const id of TREE_IDS.filter(HAS_V1)) expect(Object.keys(graphFor(id).nodes).length, id).toBe(1);
     expect(strategyGraphOn('0')).toBe(false); expect(strategyGraphOn(undefined)).toBe(true);
     expect(await runStrategyGraph('nope', {}, {})).toBeUndefined();
   });

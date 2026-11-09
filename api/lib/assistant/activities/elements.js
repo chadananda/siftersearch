@@ -10,7 +10,7 @@ import { template, fill } from './templates.js';
 import { AUTH_KINDS } from './contract.js';
 import { standingOf, authorityOrder } from '../tradition-authority.js';
 import { TIER_ORDER } from '../source-tier.js';
-import { judgeHolds, judgeTimeline, termScript } from '../judges.js';
+import { judgeHolds, judgeTimeline, judgeDated, termScript } from '../judges.js';
 
 // ── units, scope, outcomes ──────────────────────────────────────────────────────────────────────────────────────────────
 export const U = (s) => {
@@ -227,7 +227,7 @@ E['search.together'] = { kind: 'tool', cls: 'code', edges: TOGETHER, scope: 'str
     const edge = live.length && live.every((e) => e === 'error') ? 'error' : n > 0 && edges.every((e) => ['thin', 'none', 'error'].includes(e)) && edges.includes('thin') ? 'thin' : classify(n, TOGETHER);
     const note = finish(s, p, edge, { count: n, read: { list: list.map((x) => x.element), edges: edges.join(',') } }); s.note.scope_excluded = u.scope_excluded - x0; s.note.members = members; return note;
   } };
-E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'facets', 'inner', 'tag', 'stage'], reads: SCOPE, writes: ['found_passages', 'found_records', ...OUT],
+E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'facets', 'inner', 'tag', 'stage'], reads: SCOPE, writes: ['found_passages', 'found_records', 'web_found', ...OUT],
   async run(s, p = {}) {   // the inner element once per value (compare_sides, sub_themes…), in parallel, each on its own units; items tagged with their value in field `tag` (default side)
     const u = U(s), values = p.facets ?? u[p.by] ?? [];
     const runs = await Promise.all(values.map(async (v, i) => {
@@ -237,7 +237,7 @@ E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'a
       return { v, own, edge };
     }));
     let n = 0;
-    for (const { v, own } of runs) { for (const k of ['found_passages', 'found_records']) merge(u, k, own[k].map((x) => ({ ...x, [p.tag ?? 'side']: flat(v) }))); n += own.found_passages.length + own.found_records.length; u.scope_excluded += own.scope_excluded; }
+    for (const { v, own } of runs) { for (const k of ['found_passages', 'found_records', 'web_found']) merge(u, k, own[k].map((x) => ({ ...x, [p.tag ?? 'side']: flat(v) }))); n += size(own); u.scope_excluded += own.scope_excluded; }
     const weak = (e) => ['none', 'thin', 'error'].includes(e);
     return finish(s, p, !runs.length || runs.every((r) => r.edge === 'error') ? 'error' : runs.every((r) => r.edge === 'none' || r.edge === 'error') ? 'all_none' : runs.some((r) => weak(r.edge)) ? 'some_thin' : 'all', { count: n, read: { by: p.by, values } });
   } };
@@ -408,15 +408,49 @@ E['judge.holds'] = { kind: 'decision', cls: 'jev', edges: ['holds', 'partial', '
       u.found_outcome[s.node ?? 'judge.holds'] = edge; return edge;
     } catch (err) { s.note = { read: { quotation }, params: p, count: 0, scope_excluded: 0, error: err?.message }; return 'none'; }
   } };
-E['judge.timeline'] = { kind: 'decision', cls: 'jev', edges: ['matched', 'none', 'unjudged'], scope: 'strategy', params: ['query', 'stage'], reads: ['found_records', 'current_user_question'], writes: ['found_records'],
-  async run(s, p = {}) {   // ONE DeepSeek step over the typed people from biography_search: only those whose cited proof does what the question asks stay, each with the book's own clause. No answer → unjudged, people untouched.
+E['judge.timeline'] = { kind: 'decision', cls: 'jev', edges: ['matched', 'none', 'unjudged'], scope: 'strategy', params: ['query', 'stage'], reads: ['found_records', 'found_passages', 'entries', 'current_user_question'], writes: ['found_records', 'found_passages', 'undated_entries'],
+  async run(s, p = {}) {   // ONE step. People (biography_search records with evidence): keep those whose cited proof does what the question asks, with the book's clause (unchanged).
+    // Otherwise DATED CLAIMS about any subject (event, work, person): keep the passages/records whose own text states a date, each with date/year/event (theme "date · event");
+    // planned entries with no dated source → undated_entries (listed apart). No answer → unjudged, everything untouched.
     const u = U(s), query = text(s, u, p.query, '{{current_user_question}}'), people = u.found_records.filter((x) => Array.isArray(x.evidence));
-    if (!people.length) return finish(s, p, 'none');
-    const r = await (s.judges?.timeline || judgeTimeline)({ query, people, ...(s.complete ? { complete: s.complete } : {}) }).catch(() => ({ people, judged: false }));
-    s.note = { read: { query }, params: p, count: r.people.length, scope_excluded: 0, judged: r.judged, lead: r.lead ?? '' };
+    if (people.length) {
+      const r = await (s.judges?.timeline || judgeTimeline)({ query, people, ...(s.complete ? { complete: s.complete } : {}) }).catch(() => ({ people, judged: false }));
+      s.note = { read: { query }, params: p, count: r.people.length, scope_excluded: 0, judged: r.judged, lead: r.lead ?? '' };
+      if (!r.judged) return 'unjudged';
+      u.found_records = [...u.found_records.filter((x) => !Array.isArray(x.evidence)), ...r.people];
+      return r.people.length ? 'matched' : 'none';
+    }
+    const pool = [...u.found_passages, ...u.found_records];
+    if (!pool.length) return finish(s, p, 'none');
+    const r = await (s.judges?.dated || judgeDated)({ query, items: pool, ...(s.complete ? { complete: s.complete } : {}) }).catch(() => ({ items: pool, judged: false }));
+    s.note = { read: { query }, params: p, count: r.judged ? r.items.length : pool.length, scope_excluded: 0, judged: r.judged, dated: true };
     if (!r.judged) return 'unjudged';
-    u.found_records = [...u.found_records.filter((x) => !Array.isArray(x.evidence)), ...r.people];
-    return r.people.length ? 'matched' : 'none';
+    const mark = (x) => ({ ...x, theme: [x.date, x.event].filter(Boolean).join(' · ') });
+    const dated = r.items.map(mark), isRec = new Set(u.found_records.map(key));
+    const entries = (Array.isArray(u.entries) ? u.entries : []).map(flat).filter(Boolean), withDate = new Set(dated.map((x) => flat(x.side)));
+    u.undated_entries = entries.length > 1 ? entries.filter((e) => !withDate.has(e)) : [];
+    if (!dated.length) return 'none';   // nothing dated: the passages stay as found (the undated shape lists them apart)
+    u.found_passages = dated.filter((x) => !isRec.has(key(x))); u.found_records = dated.filter((x) => isRec.has(key(x)));   // only what has a dated source stays
+    return 'matched';
+  } };
+E['judge.criteria'] = { kind: 'decision', cls: 'jev', edges: ['weighed', 'silent', 'empty'], scope: 'strategy', params: ['question', 'stage'], reads: ['criteria', 'challenged_claim', 'found_passages', 'web_found'], writes: ['found_passages', 'criterion_verdicts'],
+  async run(s, p = {}) {   // ONE Jev choice per planned criterion (in parallel, at tree level): do that criterion's own finds (library + web, tagged by search.fanout) support, contradict or say nothing?
+    const u = U(s), subject = flat(u.challenged_claim) || flat(u.topic) || u.current_user_question;
+    const crit = (Array.isArray(u.criteria) && u.criteria.length ? u.criteria : [subject]).map(flat).filter(Boolean);
+    if (!u.found_passages.length && !u.web_found.length) { s.note = { read: { criteria: crit }, params: p, count: 0, scope_excluded: 0 }; return 'empty'; }
+    const options = [{ edge: 'supports', when: 'the evidence given supports this criterion of the claim' }, { edge: 'contradicts', when: 'the evidence given contradicts this criterion of the claim' }, { edge: 'silent', when: 'the evidence given says nothing decisive either way' }];
+    const ask = s.jev || ((q) => defaultJev(s, q)), one = crit.length === 1;
+    const of = (c) => [...u.found_passages.filter((x) => one || flat(x.side) === c).map((x) => `- library, ${x.title || ''}${kindOf(x) ? ` (${kindOf(x)})` : ''}: ${String(x.text || '').slice(0, 300)}`),
+      ...u.web_found.filter((x) => one || flat(x.side) === c).map((x) => `- web, ${x.site || ''}: ${String(x.snippet || '').slice(0, 300)}`)].join('\n');
+    const verdicts = await Promise.all(crit.map((c) => { const ev = of(c); if (!ev) return 'silent';
+      const question = sub(u, String(p.question ?? 'The claim is: {{challenged_claim}}. Weigh this criterion of it against the evidence below: {{value}}').replaceAll('{{value}}', c));
+      return Promise.resolve(ask({ question, options, state: ev, units: u })).then((r) => (options.some((o) => o.edge === r?.choice) ? r.choice : 'unweighed'), () => 'unweighed'); }));
+    u.criterion_verdicts = crit.map((c, i) => `${c}: ${verdicts[i]}`);
+    const v = new Map(crit.map((c, i) => [c, verdicts[i]]));
+    u.found_passages = u.found_passages.map((x) => ({ ...x, criterion_verdict: v.get(one ? crit[0] : flat(x.side)) ?? null }));
+    record(s, `tree:${s.node}`, { saw: crit.join(' | '), options: options.map((o) => o.edge), chosen: verdicts.join(',') });
+    s.note = { read: { criteria: crit }, params: p, count: u.found_passages.length, scope_excluded: 0, verdicts };
+    return verdicts.some((x) => x === 'supports' || x === 'contradicts' || x === 'unweighed') ? 'weighed' : 'silent';
   } };
 E['fill.term_script'] = { kind: 'decision', cls: 'jev', edges: ['filled', 'none'], scope: 'strategy', params: ['term', 'stage'], reads: ['term'], writes: ['term_arabic'],
   async run(s, p = {}) {   // the Arabic-script spelling of a Latin term, for fetch.renderings: already Arabic or remembered = free; otherwise ONE Jev/model call
@@ -429,7 +463,7 @@ E['fill.term_script'] = { kind: 'decision', cls: 'jev', edges: ['filled', 'none'
 
 // ── rank / shape / plan ─────────────────────────────────────────────────────────────────────────────────────────────────
 const ORDER = [...AUTH_KINDS, 'other'];
-const yearOf = (x) => Number(String(x.year ?? x.date ?? '').slice(0, 4)) || 0;
+const yearOf = (x) => Number((String(x.year ?? x.date ?? '').match(/^-?\d{1,4}/) || [])[0]) || 0;   // signed: a BCE year (-563) sorts before a CE one
 const standingRank = (x) => { const i = TIER_ORDER.indexOf(standingOf(x)); return i < 0 ? TIER_ORDER.length : i; };
 export const COMPARE = {
   standing: () => (a, b) => standingRank(a) - standingRank(b),   // tradition-authority: each passage by its own tradition's tiers (Bahá’í: writings > guardian > compilation > reported > house > secondary)
@@ -491,7 +525,8 @@ const writer = (s, id, extra = {}, opts = {}) => {
   const inner = fill(own, sl);
   const how = (opts.shared ? fill(modal(tplText(s, opts.shared), u), { ...sl, base: inner }) : inner).trim();
   const fid = opts.format ?? id;
-  s.out = { passages: u.found_passages.map((x) => { const th = themeOf(x, opts.theme_by); return th === undefined ? x : { ...x, theme: th }; }), records: u.found_records,
+  const web = u.web_found.map((w) => ({ text: w.snippet, title: `Web: ${w.site ?? 'web'}`, author: 'web search', source_url: w.url, web: true, theme: [w.side, 'web (outside the library)'].filter(Boolean).join(' · ') }));   // labelled, never library evidence
+  s.out = { passages: [...u.found_passages.map((x) => { const th = themeOf(x, opts.theme_by); return th === undefined ? x : { ...x, theme: th }; }), ...web], records: u.found_records,
     plan: { shape: fid, ...(opts.plan || {}), ...(Array.isArray(u.compare_sides) && u.compare_sides.length ? { sides: u.compare_sides } : {}) },
     format: { id: fid, by: opts.format ? `strategy:${opts.format}` : 'element:shape', how, variant: id, ...(opts.direct ? { direct: true } : {}) } };
   return how;
@@ -512,6 +547,16 @@ E['plan.subthemes'] = { kind: 'tool', cls: 'llm', edges: ['done', 'fail'], scope
     try { const r = s.tools?.subthemes ? await s.tools.subthemes({ topic, n: p.n ?? 4 }, s.ctx) : null; if (r?.length) { u.sub_themes = r; return 'done'; } } catch { /* falls to the default */ }
     u.sub_themes = [topic]; return 'fail';
   } };
+
+// the same light generator for a claim's CRITERIA (what would make it true or false) and a timeline's ENTRIES (the periods/events it orders): never a stored list
+for (const [name, unit, tool, reads] of [['plan.criteria', 'criteria', 'criteria', ['challenged_claim', 'topic']], ['plan.entries', 'entries', 'entries', ['topic', 'named_person']]]) {
+  E[name] = { kind: 'tool', cls: 'llm', edges: ['done', 'fail'], scope: 'strategy', params: ['n', 'stage'], reads, writes: [unit],
+    async run(s, p = {}) {   // no generator wired → the subject itself is the one criterion / entry (the unit default) and fail
+      const u = U(s), subject = reads.map((k) => flat(u[k])).find((x) => String(x).trim()) || u.current_user_question;
+      try { const r = s.tools?.[tool] ? await s.tools[tool]({ subject, n: p.n ?? 4 }, s.ctx) : null; if (r?.length) { u[unit] = r; return 'done'; } } catch { /* falls to the default */ }
+      u[unit] = [subject]; return 'fail';
+    } };
+}
 
 // ── hand-offs and delivery ──────────────────────────────────────────────────────────────────────────────────────────────
 E['hand.strategy'] = { kind: 'tool', cls: 'code', edges: ['found', 'thin', 'none', 'error'], scope: 'strategy', params: ['name', 'version', 'upto', 'units', 'min', 'stage'], reads: ['found_passages'], writes: ['found_passages', 'found_records', ...OUT],
@@ -611,8 +656,11 @@ export const ELEMENT_META = {
   judge: m('ONE Jev decision over a fixed set of options given as params.', 'question, options', 'an option edge', []),
   'judge.passages': m('Jev says per passage whether it answers, only mentions, or contradicts.', 'found_passages', 'found_passages (verdicts)', []),
   'judge.holds': m('One step over all quotation candidates: does each hold the quoted sentence (same words, or another translation)? Marks holds / partial, with the span; the rest drop. Wording that holds needs no model.', 'found_passages (from fetch.phrase), quoted_words', 'found_passages (verdict, span)', []),
-  'judge.timeline': m('One step over the typed people of fetch.person: keeps those whose cited proof does what the question asks (met, was present, died…), each with the book’s own clause.', 'found_records (people), the question', 'found_records (people, clause)', []),
+  'judge.criteria': m('One Jev choice per planned criterion of a claim: do that criterion’s own finds (library and web) support it, contradict it, or say nothing?', 'criteria, found_passages, web_found', 'criterion_verdicts, found_passages (criterion_verdict)', []),
+  'judge.timeline': m('One step. People from fetch.person: keeps those whose cited proof does what the question asks, with the book’s clause. Any other subject (event, work, person): keeps the passages whose own text states a date, each with date, year and event; planned entries with no dated source go to undated_entries.', 'found_records (people) or found_passages, entries, the question', 'found_records / found_passages (dated), undated_entries', []),
   'fill.term_script': m('Fills the term_arabic unit: a Latin term’s Arabic-script spelling (already Arabic or remembered = no model; otherwise one Jev call), so fetch.renderings can look it up.', 'term', 'term_arabic', []),
+  'plan.criteria': m('A light generator for the criteria a claim is weighed on (default: the claim itself).', 'challenged_claim or topic', 'criteria', []),
+  'plan.entries': m('A light generator for the entries (periods, events) a timeline orders (default: the subject itself).', 'topic or named_person', 'entries', []),
   'plan.subthemes': m('A light generator for the sub-themes a topic splits into (default: the topic itself).', 'topic', 'sub_themes', []),
   rank: m('Orders what was found by authority, standing, date, score… keeps the top few (per a field, or fields), regroups by a field (or nested fields), skips what was already given.', 'found_passages', 'found_passages', []),
   shape: m('Sets the writer’s instruction from a template chosen by what was found, for the mode.', 'found units', 'the writer instruction', []),

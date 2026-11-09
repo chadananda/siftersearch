@@ -4,7 +4,7 @@
 // ('unmatched' = the default respond graph, called 'other' before 11-08). Activities named here are code (activities/index.js).
 
 import { NARRATION_TEMPLATES } from './narration-seed.js';
-import { TREE_TEMPLATES, TREE_STEPS, TREE_GRAPHS, TREE_IDS } from './strategy-trees-seed.js';
+import { TREE_TEMPLATES, TREE_STEPS, TREE_GRAPHS, TREE_IDS, TREE_DESCRIPTIONS } from './strategy-trees-seed.js';
 import { GENERAL_TEMPLATES, GENERAL_STEPS, GENERAL_STRATEGY } from './strategy-general.js';
 
 export const SEED_VERSION = 1;
@@ -172,5 +172,5 @@ export const STRATEGIES = [
   // v2 of the six executors as element trees (strategy-trees-seed.js): CANDIDATES — the promotion gate on tower decides; v1 (one node) stays active for rollback
   GENERAL_STRATEGY,   // the planner's safety net: no description, so never a Jev option
 ];
-export const TREE_STRATEGIES = TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2), status: 'candidate', created_by: 'seed-trees' }));
+export const TREE_STRATEGIES = TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'candidate', created_by: 'seed-trees' }));
 export const END_NODE = END;
