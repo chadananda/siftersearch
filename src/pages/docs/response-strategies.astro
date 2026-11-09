@@ -6,7 +6,7 @@
 // Every number carries data-live and refreshes through liveRefresh (src/lib/anis-docs.js); SSR reserves its space.
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import { strategiesFlat, show } from '../../lib/anis-docs.js';
-import { layoutGraph } from '../../lib/strategy-graph-layout.js';
+import { titleOf, taglineOf, groupOf, GROUPS, orderedSteps, outcomeOf, targetsOf, MODES, MODE_NOTES } from '../../lib/strategy-docs.js';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const soft = (path, ms) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
@@ -14,9 +14,10 @@ const data = await soft('/api/v1/anis/strategies', 8000);
 if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
 const m = strategiesFlat(data);
 const strategies = data?.strategies || [];
+const sorted = [...strategies].sort((x, y) => GROUPS.findIndex((g) => g.key === groupOf(x)) - GROUPS.findIndex((g) => g.key === groupOf(y)));
 const oneLine = (s) => { const t = String(s || '').split(/\s[—–]\s|;\s|\.\s/)[0]; return t.length > 150 ? `${t.slice(0, 147)}…` : t; };
 const label = (s) => (s === 'other' ? 'unmatched' : s);   // logs from before the rename say 'other'
-const badge = (s) => (s.name === 'unmatched' ? 'unmatched' : s.where === 'shared-reply' ? 'built in the general reply' : s.status);
+const badge = (s) => (s.name === 'unmatched' ? 'unmatched' : s.where === 'shared-reply' ? 'in unmatched' : s.status);
 const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1')).join(' · ');
 const plan = data?.plan || null;
 const steps = data?.steps || [];
@@ -137,10 +138,10 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
   <section id="strategies-list">
     <h2>The strategies</h2>
     <p>
-      One list, kept in the strategy database. Open an entry to see all of it. A <strong>built</strong> strategy runs today. A <strong>planned</strong> one is a kind of request readers keep
+      One list, kept in the strategy database. Open an entry to see what Jev reads, the questions it answers, how its answers are
+      shaped, its decision tree and its numbers. A <strong>live</strong> strategy runs today. A <strong>planned</strong> one is a kind of request readers keep
       making, with its test questions, target time and the answer we want, but no decision tree yet; until it has one, those
-      questions go to <a href="#strategy-respond">Unmatched</a>. Built strategies come first, then planned ones, and Unmatched is last.
-      Some built strategies run inside the shared reply for now; they say so.
+      questions go to <a href="#strategy-respond">Unmatched</a>. Some live strategies run inside the shared reply for now; they say so.
     </p>
     {!data && <p class="note">The strategy list could not be loaded just now. It will appear on the next visit.</p>}
     <p class="numbers">
@@ -148,174 +149,208 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
       <span><strong>{strategies.filter((x) => x.status === 'planned').length}</strong> planned</span>
     </p>
     <div id="strategies" class="cards">
-      {strategies.map((s) => {
-        const L = s.graph ? layoutGraph(s.graph) : null;
+      {sorted.map((s, idx) => {
         const un = s.name === 'unmatched';
+        const g = groupOf(s);
+        const tag = taglineOf(s);
+        const unmatched = strategies.find((x) => x.name === 'unmatched');
+        const tree = s.graph ? orderedSteps(s.graph) : [];
+        const lead = s.patterns.find((p) => p.ideal_answer);
         return (
-          <details class="card" id={`strategy-${s.id}`} data-name={label(s.name).toLowerCase()}>
-            <summary>
-              {s.patterns.map((p) => <span id={`class-${p.id}`} class="anchor"></span>)}
-              <span class="name">{label(s.name)} {s.version && <span class="ver">v{s.version}</span>} <span class={`chip st-${s.name === 'unmatched' ? 'unmatched' : s.where === 'shared-reply' ? 'shared' : s.status}`}>{badge(s)}</span></span>
-              <span class="desc">{un ? 'Nothing else fits: a smart model builds a candidate strategy for the question, and it is kept only if it wins.' : oneLine(s.description)}</span>
-              <span class="keys">
+          <>
+            {(idx === 0 || groupOf(sorted[idx - 1]) !== g) && <h3 class="group">{GROUPS.find((x) => x.key === g).label}</h3>}
+            <details class="card" id={`strategy-${s.id}`} data-name={label(s.name).toLowerCase()}>
+              <summary>
+                {s.patterns.map((p) => <span id={`class-${p.id}`} class="anchor"></span>)}
+                <span class="chev" aria-hidden="true"></span>
+                <span class="title">{titleOf(s)}</span>
+                <span class={`tagline${tag.quote ? ' quote' : ''}`}>{tag.text}</span>
+                <span class={`chip st-${un ? 'unmatched' : s.where === 'shared-reply' ? 'shared' : s.status}`}>{badge(s)}</span>
+                <span class="keys">
+                  {s.graph && <>p50 <strong data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</strong> · <strong data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</strong></>}
+                </span>
+              </summary>
+              <div class="body">
+
+                <h3 class="first">The card: what Jev reads</h3>
+                <div class="jevcard">
+                  {s.where === 'shared-reply' ? (
+                    <>
+                      <p class="lead"><strong>{s.name}</strong> is not a separate option for Jev yet. He sends these messages to Unmatched, whose option reads:</p>
+                      <p><code>unmatched</code> <span class="optext">{unmatched?.description}</span></p>
+                    </>
+                  ) : s.status === 'planned' ? (
+                    <>
+                      <p class="lead">Not one of Jev's options yet. The answer drafted for it:</p>
+                      <p class="optext">{lead?.ideal_answer || s.description}</p>
+                    </>
+                  ) : (
+                    <p><code>{label(s.name)}</code> <span class="optext">{s.description}</span></p>
+                  )}
+                  <p class="foot">Jev reads the conversation and picks the option that fits the latest message; below 60% confidence the message goes to Unmatched.</p>
+                </div>
+                {s.where === 'shared-reply' && (
+                  <p class="note">It runs inside <a href={`#strategy-${s.inside.strategy}`}>{label(s.inside.name)}</a> as the steps {s.inside.nodes.map((n, i) => <>{i > 0 && ', '}<code>{n}</code></>)}.</p>
+                )}
+
+                <h3>Questions it answers</h3>
+                {un && (
+                  <p>
+                    Everything no other strategy names. It first checks, quickly, whether Jev missed a strategy that fits. If none does, a smart model
+                    answers in full and designs a candidate strategy for the question from the existing <a href="#building-steps">building steps</a>.
+                    The candidate is replayed on fresh questions of the same kind and joins the list only if it wins; see <a href="#intro">how strategies improve</a>.
+                    {s.where !== 'shared-reply' && ' Until a candidate exists, it runs the shared reply: the lookups listed above as built into it, then the research agent.'}
+                  </p>
+                )}
+                {s.exemplars.length > 0 && <ul class="quotes">{s.exemplars.map((e) => <li>{e}</li>)}</ul>}
+                {s.patterns.map((c) => (
+                  <div class="pattern">
+                    <p class="plead"><strong>{c.name}.</strong> {c.sounds_like.length > 0 ? 'Sounds like:' : ''}</p>
+                    {c.sounds_like.length > 0 && <p class="chips">{c.sounds_like.map((q) => <span class="qchip">“{q}”</span>)}</p>}
+                    {c.jev?.near_misses?.length > 0 && (
+                      <>
+                        <p class="plead"><em>Not this:</em></p>
+                        <ul class="misses">{c.jev.near_misses.map((n) => (
+                          <li>“{n.text}” → {targetsOf(n.goes_to).map((x, i) => <>{i > 0 && ' + '}<a href={`#class-${x}`}>{nameOf.get(x) || x}</a></>)}{n.why && <>: {n.why}</>}</li>
+                        ))}</ul>
+                      </>
+                    )}
+                    {(c.how_often || c.test_questions) && (
+                      <p class="note">{c.how_often}{c.test_questions && <>{c.how_often && ' · '}test questions: {c.test_questions.lead ?? 0} lead · {c.test_questions.also ?? 0} also</>}</p>
+                    )}
+                  </div>
+                ))}
+                {s.patterns.length === 0 && (s.tests.lead + s.tests.also) > 0 && <p class="note">Test questions: {s.tests.lead.toLocaleString('en-US')} lead · {s.tests.also.toLocaleString('en-US')} also.</p>}
+
+                <h3>How the answer is optimized</h3>
+                {s.patterns.filter((c) => c.ideal_answer || c.route.length > 0).map((c) => (
+                  <div class="pattern">
+                    {s.patterns.length > 1 && <p class="plead"><strong>{c.name}</strong></p>}
+                    {c.ideal_answer && <div class="callout"><span class="calloutlabel">The answer we want</span>{c.ideal_answer}</div>}
+                    {c.route.length > 0 && <ol class="route">{c.route.map((r) => <li>{r.jev && <span class="chip jevchip">Jev</span>} {r.text}</li>)}</ol>}
+                    <p class="facts">
+                      {(c.target_time || s.target_time) && <span><b>Target time</b> {c.target_time || s.target_time}</span>}
+                      {c.format && <span><b>Format</b> {c.format}</span>}
+                      {c.post && <span><b>Then</b> {c.post}</span>}
+                    </p>
+                  </div>
+                ))}
+                {un && <p>Unmatched has no single ideal answer: the answer is whatever the question needs, written in full by a strong model. Its route is the decision tree below.</p>}
+                {!un && !s.patterns.some((c) => c.ideal_answer || c.route.length > 0) && <p class="note">No route is written down for this one yet.</p>}
+
+                <h3>By mode</h3>
+                <p>{MODES.sameEverywhere}</p>
+                <div class="modes">
+                  {[MODES.audio, MODES.chat, MODES.email].map((md) => (
+                    <div class="mode">
+                      <p class="modehead"><strong>{md.name}</strong> <span class={`chip ${md.live ? 'st-built' : 'st-planned'}`}>{md.live ? 'Live' : 'Not yet'}</span></p>
+                      <ul>{md.lines.map((l) => <li>{l}</li>)}</ul>
+                    </div>
+                  ))}
+                </div>
+                {MODE_NOTES[s.name] && <p class="note">{MODE_NOTES[s.name]}</p>}
+
+                <h3>Decision tree</h3>
                 {s.graph ? (
                   <>
-                    <span>share <strong data-live={`s.${s.id}.share`} data-fmt="share">{show(m, `s.${s.id}.share`, 'share')}</strong></span>
-                    <span>score <strong data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</strong></span>
-                    <span>p50 <strong data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</strong></span>
+                    <ol class="tree">
+                      {tree.map((n) => (
+                        <li id={`node-${s.id}-${n.id}`}>
+                          <span class="num">{n.n}</span>
+                          <span class="stephead"><a class="stepname" href={`#step-${n.activity}`}>{n.label}</a> <span class={`chip kind-${n.kind}`}>{n.kind}</span></span>
+                          <span class="exits">{n.exits.map((e, i) => <>{i > 0 && ' · '}{e.on} → {e.end ? 'end' : <a href={`#node-${s.id}-${tree.find((x) => x.n === e.to)?.id}`}>{e.to}. {e.toLabel}</a>}</>)}</span>
+                        </li>
+                      ))}
+                    </ol>
+                    {tree.length === 1 && <p class="note">The whole strategy runs as one coded step today; its route is described above.</p>}
+                    {s.templates.length > 0 && <p class="note">Writer templates: {s.templates.map((t) => <code>{t.id}@{t.version}</code>)}</p>}
                   </>
-                ) : s.status === 'built' ? <span class="muted">numbers are counted with <a href="#strategy-respond">Unmatched</a></span> : <span class="muted">no decision tree yet</span>}
-                {s.target_time && <span>target <strong>{s.target_time}</strong></span>}
-                {(s.tests.lead + s.tests.also) > 0 && <span>test questions <strong>{s.tests.lead.toLocaleString('en-US')} · {s.tests.also.toLocaleString('en-US')}</strong></span>}
-              </span>
-            </summary>
-            <div class="body">
-              {s.description && !un && <p>{s.description}</p>}
-              {s.where === 'shared-reply' && (
-                <p class="note">Built into the shared reply for now. It runs inside <a href={`#strategy-${s.inside.strategy}`}>{label(s.inside.name)}</a> as
-                  the steps {s.inside.nodes.map((n, i) => <>{i > 0 && ', '}<code>{n}</code></>)}; it has no tree of its own yet.</p>
-              )}
-              {s.status === 'planned' && <p class="note">Planned. There is no decision tree yet, so these questions go to <a href="#strategy-respond">Unmatched</a> until one is built.</p>}
-              {un && (
-                <>
-                  <p>
-                    Unmatched takes every message that no other strategy names. It first checks, quickly, whether Jev missed a strategy that
-                    fits. If none does, a smart model designs a candidate strategy for this question from the existing
-                    <a href="#building-steps"> building steps</a>, runs it, and answers. The candidate is then replayed on fresh questions of
-                    the same kind and promoted into the list only if it wins; see <a href="#intro">how strategies improve</a>.
-                  </p>
-                  <p class="note">Until a candidate exists, Unmatched runs the shared reply: the lookups listed above as built into it, then the research agent.</p>
-                </>
-              )}
-              {s.exemplars.length > 0 && (<><h3>Questions it serves</h3><ul>{s.exemplars.map((e) => <li>{e}</li>)}</ul></>)}
+                ) : s.where === 'shared-reply' ? (
+                  <p class="note">No tree of its own yet: it runs inside the shared reply (see the card above).</p>
+                ) : <p class="note">No decision tree yet; these questions go to <a href="#strategy-respond">Unmatched</a> until one is built.</p>}
 
-              {s.patterns.map((c) => (
-                <div class="pattern">
-                  {(s.patterns.length > 1 || s.graph) && <h3>{c.name}</h3>}
-                  {c.sounds_like.length > 0 && (<><h4>Sounds like</h4><ul class="quotes">{c.sounds_like.map((q) => <li>“{q}”</li>)}</ul>{c.sounds_like_note && <p class="note">{c.sounds_like_note}</p>}</>)}
-                  {(c.how_often || c.often_with) && (<><h4>How often</h4><p>{c.how_often}{c.often_with && <><br /><span class="note">Often with: {c.often_with}</span></>}</p></>)}
-                  {c.test_questions && (
-                    <><h4>Test questions: {c.test_questions.lead ?? 0} lead · {c.test_questions.also ?? 0} also{c.test_questions.derived && ` · ${c.test_questions.derived}`}</h4>
-                      {c.test_questions.examples?.length > 0 && <p class="note">{c.test_questions.examples.map((q) => `“${q}”`).join(' · ')}</p>}</>
-                  )}
-                  {c.route.length > 0 && (
-                    <><h4>Route</h4>
-                      <ol class="route">{c.route.map((r) => <li class={r.jev ? 'jev' : ''}>{r.jev && <span class="chip">Jev</span>} {r.text}</li>)}</ol></>
-                  )}
-                  {c.ideal_answer && (<><h4>Ideal answer</h4><p>{c.ideal_answer}{c.target_time && <> <span class="note">Target: {c.target_time}.</span></>}</p></>)}
-                  {c.tiers.length > 0 && (
-                    <><h4>Steps by tier</h4>
-                      <table class="tiers"><tbody>
-                        {c.tiers.map((t) => (
-                          <tr><th>{t.cost}</th><td>{t.steps.map((st, i) => <>{i > 0 && ' · '}{st.href ? <a href={st.href}>{st.label}</a> : st.label}</>)}</td></tr>
-                        ))}
-                      </tbody></table>
-                      {c.post && <p class="note">Then: {c.post}</p>}
-                      {c.format && <p class="note">Format: {c.format}</p>}</>
-                  )}
-                  {c.jev && (
-                    <><h4>How Jev tells it apart</h4>
-                      <dl>
-                        {c.jev.cues?.length > 0 && (<><dt>Cues</dt><dd>{c.jev.cues.join(' · ')}</dd></>)}
-                        {c.jev.required_slots?.length > 0 && (<><dt>Needs</dt><dd>{c.jev.required_slots.join(' · ')}</dd></>)}
-                        {c.jev.disqualifiers?.length > 0 && (<><dt>Not when</dt><dd>{c.jev.disqualifiers.join(' · ')}</dd></>)}
-                        {c.jev.confusable_with?.length > 0 && (<><dt>Confused with</dt><dd>{c.jev.confusable_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{nameOf.get(x) || x}</a></>)}</dd></>)}
-                        {c.jev.composes_with?.length > 0 && (<><dt>Combines with</dt><dd>{c.jev.composes_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{nameOf.get(x) || x}</a></>)}</dd></>)}
-                      </dl>
-                      {c.jev.example_phrasings?.length > 0 && (<p class="note">Example phrasings: {c.jev.example_phrasings.map((q) => `“${q}”`).join(' · ')}</p>)}
-                      {c.jev.near_misses?.length > 0 && (
-                        <><p class="note"><strong>Near misses</strong></p>
-                          <ul class="misses">{c.jev.near_misses.map((n) => <li>“{n.text}” → <strong>{nameOf.get(n.goes_to) || n.goes_to}</strong>{n.why && <>: {n.why}</>}</li>)}</ul></>
-                      )}</>
-                  )}
-                  {c.measure && (<><h4>Measure</h4><p>{c.measure}</p></>)}
-                  {c.open_questions.length > 0 && (<><h4>Open questions</h4><ul>{c.open_questions.map((q) => <li>{q}</li>)}</ul></>)}
-                </div>
-              ))}
-
-              {s.graph && (
-                <>
-                  <h3>Last 7 days</h3>
-                  <table class="stats">
-                    <tbody>
-                      <tr><th>Turns</th><td data-live={`s.${s.id}.turns`} data-fmt="n">{show(m, `s.${s.id}.turns`)}</td>
-                        <th>Share of turns</th><td data-live={`s.${s.id}.share`} data-fmt="share">{show(m, `s.${s.id}.share`, 'share')}</td></tr>
-                      <tr><th>p50</th><td data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</td>
-                        <th>p95</th><td data-live={`s.${s.id}.p95_ms`} data-fmt="ms">{show(m, `s.${s.id}.p95_ms`, 'ms')}</td></tr>
-                      <tr><th>Judge score</th><td data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</td>
-                        <th>Scored replies</th><td data-live={`s.${s.id}.n_scored`} data-fmt="n">{show(m, `s.${s.id}.n_scored`)}</td></tr>
-                      <tr><th>Weak</th><td data-live={`s.${s.id}.weak_pct`} data-fmt="pct">{show(m, `s.${s.id}.weak_pct`, 'pct')}</td>
-                        <th>Cost per turn</th><td data-live={`s.${s.id}.usd_per_turn`} data-fmt="usd">{show(m, `s.${s.id}.usd_per_turn`, 'usd')}</td></tr>
-                    </tbody>
-                  </table>
-
-                  <h3>Graph</h3>
-                  <div class="graph">
-                    <svg viewBox={`0 0 ${L.width} ${L.height}`} width={L.width} height={L.height} role="img" aria-label={`${label(s.name)} strategy graph`}>
-                      {L.edges.map((e) => (
-                        <g>
-                          <path d={e.d} class={e.side ? 'stroke-accent' : 'stroke-muted'} fill="none" />
-                          {e.label && <text x={e.lx} y={e.ly} class="elabel fill-secondary">{e.label}</text>}
-                        </g>
+                {s.graph && (
+                  <>
+                    <h3>Statistics: last 7 days</h3>
+                    <div class="tiles">
+                      {[['Turns', 'turns', 'n'], ['Share of turns', 'share', 'share'], ['p50', 'p50_ms', 'ms'], ['p95', 'p95_ms', 'ms'], ['Judge score', 'score', 'score'], ['Scored replies', 'n_scored', 'n'], ['Weak', 'weak_pct', 'pct'], ['Cost per turn', 'usd_per_turn', 'usd']].map(([t, k, f]) => (
+                        <div class="tile"><span class="tl">{t}</span><strong data-live={`s.${s.id}.${k}`} data-fmt={f}>{show(m, `s.${s.id}.${k}`, f)}</strong></div>
                       ))}
-                      {L.nodes.map((n) => n.end ? (
-                        <g><rect x={n.x} y={n.y} width={n.w} height={n.h} rx="17" class="fill-surface-2 stroke-border" />
-                          <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-secondary">end</text></g>
-                      ) : (
-                        <a href={`#step-${n.activity}`}>
-                          <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="6" class={`fill-surface-1 stroke-border kind-${n.kind}`} />
-                          <text x={n.x + n.w / 2} y={n.y + 22} text-anchor="middle" class="fill-primary">{n.id}</text>
-                        </a>
-                      ))}
-                    </svg>
-                  </div>
+                    </div>
+                    <h4>Branches</h4>
+                    {s.branches.length ? (
+                      <div class="scroll"><table>
+                        <thead><tr><th>Path taken</th><th>Share</th><th>p50</th><th>Score</th></tr></thead>
+                        <tbody>
+                          {s.branches.map((b) => (
+                            <tr><td class="path">{branchText(b)}</td>
+                              <td data-live={`b.${s.id}.${b.hash}.share`} data-fmt="share">{show(m, `b.${s.id}.${b.hash}.share`, 'share')}</td>
+                              <td data-live={`b.${s.id}.${b.hash}.p50_ms`} data-fmt="ms">{show(m, `b.${s.id}.${b.hash}.p50_ms`, 'ms')}</td>
+                              <td data-live={`b.${s.id}.${b.hash}.score`} data-fmt="score">{show(m, `b.${s.id}.${b.hash}.score`, 'score')}</td></tr>
+                          ))}
+                        </tbody>
+                      </table></div>
+                    ) : <p class="note">No measured turns in the last 7 days.</p>}
 
-                  <h3>Steps</h3>
-                  <table>
-                    <thead><tr><th>Node</th><th>Step</th><th>Activity</th><th>Kind</th><th>Speed class</th></tr></thead>
-                    <tbody>
-                      {s.graph.nodes.map((n) => (
-                        <tr><td>{n.id}</td><td><code>{n.step}@{n.step_version}</code></td>
-                          <td><a href={`#step-${n.activity}`}>{n.activity}</a></td><td>{n.kind}</td><td>{n.cls}</td></tr>
-                      ))}
-                    </tbody>
-                  </table>
+                    <h3>Versions</h3>
+                    <p>Current version <strong>v{s.version}</strong>.</p>
+                    {s.candidates.length ? (
+                      <div class="scroll"><table>
+                        <thead><tr><th>Version</th><th>Status</th><th>Created</th><th>Outcome</th><th>Mean score: candidate vs current</th></tr></thead>
+                        <tbody>
+                          {s.candidates.map((c) => (
+                            <tr><td>v{c.version}</td><td>{c.status}</td><td class="nowrap">{String(c.created_at || '').slice(0, 10) || '–'}</td>
+                              <td>{outcomeOf(c)}</td>
+                              <td class="nowrap">{c.replay?.numbers?.mean_candidate != null ? `${c.replay.numbers.mean_candidate} vs ${c.replay.numbers.mean_current}` : '–'}
+                                <span data-live={`c.${s.id}.${c.version}.score`} data-fmt="score" hidden>{show(m, `c.${s.id}.${c.version}.score`, 'score')}</span></td></tr>
+                          ))}
+                        </tbody>
+                      </table></div>
+                    ) : <p class="note">No candidate versions at the moment.</p>}
+                  </>
+                )}
 
-                  <h3>Templates</h3>
-                  {s.templates.length ? <ul>{s.templates.map((t) => <li><code>{t.id}@{t.version}</code></li>)}</ul> : <p class="note">This strategy has no writer templates of its own.</p>}
-
-                  <h3>Branches</h3>
-                  {s.branches.length ? (
-                    <table>
-                      <thead><tr><th>Path taken</th><th>Share</th><th>p50</th><th>Score</th></tr></thead>
-                      <tbody>
-                        {s.branches.map((b) => (
-                          <tr><td class="path">{branchText(b)}</td>
-                            <td data-live={`b.${s.id}.${b.hash}.share`} data-fmt="share">{show(m, `b.${s.id}.${b.hash}.share`, 'share')}</td>
-                            <td data-live={`b.${s.id}.${b.hash}.p50_ms`} data-fmt="ms">{show(m, `b.${s.id}.${b.hash}.p50_ms`, 'ms')}</td>
-                            <td data-live={`b.${s.id}.${b.hash}.score`} data-fmt="score">{show(m, `b.${s.id}.${b.hash}.score`, 'score')}</td></tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : <p class="note">No measured turns in the last 7 days.</p>}
-
-                  <h3>Candidate versions</h3>
-                  {s.candidates.length ? (
-                    <table>
-                      <thead><tr><th>Version</th><th>Status</th><th>Replay</th><th>Score</th></tr></thead>
-                      <tbody>
-                        {s.candidates.map((c) => (
-                          <tr><td>v{c.version}</td><td>{c.status}</td>
-                            <td>{c.replay ? (c.replay.summary ?? `${c.replay.wins ?? '–'} wins / ${c.replay.n ?? '–'} questions`) : '–'}</td>
-                            <td data-live={`c.${s.id}.${c.version}.score`} data-fmt="score">{show(m, `c.${s.id}.${c.version}.score`, 'score')}</td></tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : <p class="note">No candidate versions at the moment.</p>}
-                </>
-              )}
-            </div>
-          </details>
+                {s.patterns.some((c) => c.tiers.length || c.jev || c.measure || c.open_questions.length || c.test_questions?.examples?.length) && (
+                  <details class="notes">
+                    <summary>Design notes</summary>
+                    {s.patterns.map((c) => (
+                      <div class="pattern">
+                        <p class="plead"><strong>{c.name}</strong></p>
+                        {c.often_with && <p class="note">Often with: {c.often_with}</p>}
+                        {c.sounds_like_note && <p class="note">{c.sounds_like_note}</p>}
+                        {c.test_questions?.examples?.length > 0 && <p class="note">Test questions{c.test_questions.derived && ` (${c.test_questions.derived})`}: {c.test_questions.examples.map((q) => `“${q}”`).join(' · ')}</p>}
+                        {c.tiers.length > 0 && (
+                          <>
+                            <h4>Steps by tier</h4>
+                            <table class="tiers"><tbody>
+                              {c.tiers.map((t) => (
+                                <tr><th>{t.cost}</th><td>{t.steps.map((st, i) => <>{i > 0 && ' · '}{st.href ? <a href={st.href}>{st.label}</a> : st.label}</>)}</td></tr>
+                              ))}
+                            </tbody></table>
+                          </>
+                        )}
+                        {c.jev && (
+                          <>
+                            <h4>How Jev tells it apart</h4>
+                            <dl>
+                              {c.jev.cues?.length > 0 && (<><dt>Cues</dt><dd>{c.jev.cues.join(' · ')}</dd></>)}
+                              {c.jev.required_slots?.length > 0 && (<><dt>Needs</dt><dd>{c.jev.required_slots.join(' · ')}</dd></>)}
+                              {c.jev.disqualifiers?.length > 0 && (<><dt>Not when</dt><dd>{c.jev.disqualifiers.join(' · ')}</dd></>)}
+                              {c.jev.confusable_with?.length > 0 && (<><dt>Confused with</dt><dd>{c.jev.confusable_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{nameOf.get(x) || x}</a></>)}</dd></>)}
+                              {c.jev.composes_with?.length > 0 && (<><dt>Combines with</dt><dd>{c.jev.composes_with.map((x, i) => <>{i > 0 && ' · '}<a href={`#class-${x}`}>{nameOf.get(x) || x}</a></>)}</dd></>)}
+                            </dl>
+                            {c.jev.example_phrasings?.length > 0 && <p class="note">Example phrasings: {c.jev.example_phrasings.map((q) => `“${q}”`).join(' · ')}</p>}
+                          </>
+                        )}
+                        {c.measure && (<><h4>Measure</h4><p>{c.measure}</p></>)}
+                        {c.open_questions.length > 0 && (<><h4>Open questions</h4><ul>{c.open_questions.map((q) => <li>{q}</li>)}</ul></>)}
+                      </div>
+                    ))}
+                  </details>
+                )}
+              </div>
+            </details>
+          </>
         );
       })}
     </div>
@@ -420,61 +455,99 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
 </DocsLayout>
 
 <style>
-  h3 { margin: 1.6rem 0 0.3rem; font-size: 1rem; }
+  h3 { margin: 1.6rem 0 0.2rem; font-size: 1rem; }
+  h4 { margin: 1.1rem 0 0.2rem; font-size: 0.92rem; }
+  h2 { margin-top: 2.4rem; margin-bottom: 0.3rem; }
   .flow { width: 100%; max-width: 760px; height: auto; margin: 1.2rem 0 0.4rem; font-size: 12px; }
-  .flow rect, .graph rect { stroke-width: 1; }
+  .flow rect { stroke-width: 1; }
   .flow path { stroke-width: 1.5; }
   .numbers { display: flex; flex-wrap: wrap; gap: 0.6rem 1.8rem; margin-top: 1rem; }
   .numbers strong { display: inline-block; min-width: 2.2ch; text-align: right; }
   .note { font-size: 0.92rem; }
-  .cards { display: grid; gap: 0.7rem; margin-top: 0.6rem; }
-  .card { border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-1); }
-  .card > summary { cursor: pointer; list-style: none; display: grid; gap: 0.25rem; padding: 0.8rem 1rem; }
-  .card > summary::-webkit-details-marker { display: none; }
-  .card .name { font-weight: 600; text-transform: capitalize; }
-  .card .name .chip { margin-left: 0.4rem; text-transform: uppercase; }
-  .anchor { position: absolute; }
-  .card > summary { position: relative; }
-  .chip.st-built { color: var(--success); }
-  .chip.st-planned { color: var(--muted); }
-  .chip.st-shared { color: var(--info); }
-  .chip.st-unmatched { color: var(--warning); }
-  .pattern + .pattern { border-top: 1px solid var(--border-subtle); margin-top: 1rem; }
-  .card .ver { font-weight: 400; font-size: 0.8rem; opacity: 0.7; text-transform: none; }
-  .card .desc { font-size: 0.92rem; }
-  .card .keys { display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; font-size: 0.88rem; }
-  .card .keys strong { display: inline-block; min-width: 6ch; }
-  .card .body { padding: 0 1rem 1rem; border-top: 1px solid var(--border-subtle); }
-  .stats td { min-width: 7ch; }
-  .graph { overflow-x: auto; margin-top: 0.4rem; }
-  .graph svg { font-size: 11.5px; max-width: none; }
-  .graph a:hover rect { stroke: var(--accent-primary); }
-  .elabel { font-size: 10px; }
-  .path { font-size: 0.82rem; }
-  h2 { margin-top: 2.4rem; margin-bottom: 0.3rem; }
-  h4 { margin: 1.1rem 0 0.2rem; font-size: 0.92rem; }
-  .family { margin-top: 2rem; }
   .scroll { overflow-x: auto; }
   .nowrap { white-space: nowrap; }
   .muted { opacity: 0.7; }
-  .card .name.plain { text-transform: none; }
   .chip { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border: 1px solid var(--border-default); border-radius: 4px; padding: 0 0.35rem; }
   .chip.g-strong { color: var(--success); }
   .chip.g-moderate { color: var(--info); }
   .chip.g-few { color: var(--warning); }
   .chip.g-thin { color: var(--error); }
-  .glance td, .steps td { vertical-align: top; font-size: 0.9rem; }
+  .chip.st-built { color: var(--success); }
+  .chip.st-planned { color: var(--text-muted); }
+  .chip.st-shared { color: var(--info); }
+  .chip.st-unmatched { color: var(--warning); }
+  .steps td { vertical-align: top; font-size: 0.9rem; }
   .steps tr.group th { text-align: left; padding-top: 1rem; }
   .steps td:nth-child(n+4) { min-width: 6ch; white-space: nowrap; }
-  .route { padding-left: 1.3rem; }
-  .route li.jev { font-weight: 500; }
+  .decisions .date { font-weight: 600; white-space: nowrap; margin-right: 0.4rem; }
+  .source { margin-top: 2.4rem; }
+
+  /* the strategy accordion */
+  .cards { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.6rem; }
+  .cards .group { margin: 1.5rem 0 0; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+  .card { border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-1); min-width: 0; }
+  .card > summary { position: relative; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 1rem; white-space: nowrap; border-radius: 10px; }
+  .card > summary::-webkit-details-marker { display: none; }
+  .card > summary:focus-visible, .notes > summary:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+  .card > summary:hover { background: var(--surface-2); }
+  .anchor { position: absolute; }
+  .chev { flex: none; width: 0.5rem; height: 0.5rem; border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: rotate(-45deg); transition: transform 0.15s; margin-right: 0.1rem; }
+  .card[open] > summary > .chev { transform: rotate(45deg); }
+  .title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+  .tagline { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); font-size: 0.92rem; }
+  .tagline.quote { font-style: italic; }
+  .card > summary .chip { flex: none; min-width: 7.2rem; text-align: center; }
+  .keys { flex: none; font-size: 0.85rem; color: var(--text-secondary); min-width: 17ch; text-align: right; }
+  .keys strong { font-weight: 600; }
+  .card .body { padding: 0 1.2rem 1.2rem; border-top: 1px solid var(--border-subtle); min-width: 0; }
+  .body h3.first { margin-top: 1.1rem; }
+  .jevcard { border: 1px solid var(--border-default); border-left: 4px solid var(--accent-primary); border-radius: 8px; background: var(--surface-2); padding: 0.7rem 1rem; margin: 0.4rem 0; }
+  .jevcard p { margin: 0.35rem 0; }
+  .jevcard code { font-weight: 600; margin-right: 0.3rem; }
+  .jevcard .foot { font-size: 0.85rem; color: var(--text-muted); }
+  .pattern + .pattern { border-top: 1px solid var(--border-subtle); margin-top: 0.9rem; padding-top: 0.2rem; }
+  .plead { margin: 0.6rem 0 0.25rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.2rem 0 0.5rem; }
+  .qchip { border: 1px solid var(--border-default); border-radius: 999px; padding: 0.1rem 0.7rem; font-size: 0.88rem; background: var(--surface-0); }
   .quotes, .misses { font-size: 0.92rem; }
+  .callout { border-left: 4px solid var(--success); background: var(--surface-2); border-radius: 0 8px 8px 0; padding: 0.6rem 1rem; margin: 0.4rem 0 0.7rem; }
+  .calloutlabel { display: block; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.2rem; }
+  .route { padding-left: 1.5rem; list-style: decimal; }
+  .route li { margin: 0.2rem 0; }
+  .jevchip { color: var(--accent-primary); margin-right: 0.2rem; }
+  .facts { display: flex; flex-wrap: wrap; gap: 0.3rem 1.6rem; font-size: 0.9rem; margin: 0.5rem 0 0; }
+  .facts b { font-weight: 600; margin-right: 0.3rem; }
+  .modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; margin: 0.5rem 0; }
+  .mode { border: 1px solid var(--border-default); border-radius: 8px; padding: 0.6rem 0.9rem; background: var(--surface-0); }
+  .mode .modehead { margin: 0 0 0.3rem; display: flex; gap: 0.5rem; align-items: center; }
+  .mode ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; }
+  .tree { list-style: none; padding: 0; margin: 0.4rem 0; display: grid; gap: 0.35rem; }
+  .tree li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); column-gap: 0.4rem; align-items: baseline; padding: 0.3rem 0.6rem; border: 1px solid var(--border-subtle); border-radius: 6px; scroll-margin-top: 5rem; }
+  .tree .num { grid-row: span 2; font-weight: 600; color: var(--text-muted); text-align: right; padding-right: 0.3rem; }
+  .tree .stepname { font-weight: 600; }
+  .tree .exits { font-size: 0.85rem; color: var(--text-secondary); }
+  .chip.kind-Jev { color: var(--accent-primary); }
+  .chip.kind-LLM { color: var(--warning); }
+  .chip.kind-tool { color: var(--info); }
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; margin: 0.5rem 0; }
+  .tile { border: 1px solid var(--border-default); border-radius: 8px; padding: 0.5rem 0.8rem; background: var(--surface-0); display: flex; flex-direction: column; min-height: 4rem; }
+  .tile .tl { font-size: 0.78rem; color: var(--text-muted); }
+  .tile strong { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+  .path { font-size: 0.82rem; }
+  .notes { margin-top: 1.4rem; border-top: 1px solid var(--border-subtle); padding-top: 0.6rem; }
+  .notes > summary { cursor: pointer; font-weight: 600; font-size: 0.92rem; color: var(--text-secondary); }
   .tiers th { text-align: left; white-space: nowrap; vertical-align: top; padding-right: 0.8rem; font-weight: 600; font-size: 0.88rem; }
   .tiers td { font-size: 0.9rem; }
   .body dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.9rem; margin: 0.4rem 0; font-size: 0.92rem; }
   .body dt { font-weight: 600; }
   .body dd { margin: 0; min-width: 0; }
-  .decisions .date { font-weight: 600; white-space: nowrap; margin-right: 0.4rem; }
-  .source { margin-top: 2.4rem; }
-  @media (max-width: 640px) { .body dl { grid-template-columns: 1fr; } .tiers th { white-space: normal; } }
+  @media (max-width: 900px) { .keys { display: none; } .modes { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) {
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tagline { display: none; }
+    .card > summary { padding: 0.7rem 0.8rem; }
+    .card .body { padding: 0 0.8rem 1rem; }
+    .body dl { grid-template-columns: 1fr; }
+    .tiers th { white-space: normal; }
+  }
 </style>
