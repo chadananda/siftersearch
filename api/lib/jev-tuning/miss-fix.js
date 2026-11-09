@@ -2,6 +2,7 @@
 // Jev's gate call → one Opus diagnosis per gold-strategy group → revised option text as a candidate strategy VERSION → replay
 // (experiment.js, stored baseline) on all labelled misses + a labelled-right sample → fixed ≥ 1 and broken = 0 promotes, else logged.
 // Generic over gates (MISS_GATES: one registration per gate). Deps: jev-misses-repo, strategy-candidates-repo, strategy-edit, experiment.
+import { MIN_CONFIDENCE } from '../scope-extract.js';
 import { runExperiment } from './experiment.js';
 import { IMPROVE_CFG } from '../assistant/strategy-gaps.js';
 import { DESIGN_ROLE, parseCandidate } from '../assistant/strategy-design.js';
@@ -45,14 +46,16 @@ export function parseDiagnosis(text) {
     gold_exemplars: list(j.gold_exemplars), confusable: c };
 }
 
-/** Promote iff the replay fixed ≥ 1 target miss and broke nothing (and was not cut short). → { promote, failed, numbers }. Pure. */
-export function decideMissFix(res) {
+/** Promote iff the replay fixed ≥ 1 target miss, broke nothing, dropped no right call below MIN_CONFIDENCE (and was not cut short). → { promote, failed, numbers }. Pure. */
+export function decideMissFix(res, cfg = MISS_CFG) {
   const failed = [], fixed = res?.by_src?.target?.fixed ?? 0, broken = res?.broken ?? 0;
   if (!res?.labelled) failed.push('no labelled row was measured');
   if (fixed < 1) failed.push('fixed none of the target misses');
+  const drops = res?.confidence_drops ?? 0;
   if (broken > 0) failed.push(`broke ${broken} previously right call(s)`);
+  if (drops > (cfg.max_confidence_drops ?? 0)) failed.push(`${drops} right call(s) fall below the Jev confidence floor`);
   if (res?.truncated) failed.push(`stopped: ${res.truncated}`);
-  return { promote: failed.length === 0, failed, numbers: { mean_current: res?.accuracy?.baseline ?? null, mean_candidate: res?.accuracy?.variant ?? null, n_class: res?.labelled ?? 0, fixed, broken,
+  return { promote: failed.length === 0, failed, numbers: { mean_current: res?.accuracy?.baseline ?? null, mean_candidate: res?.accuracy?.variant ?? null, n_class: res?.labelled ?? 0, fixed, broken, confidence_drops: drops,
     n_target: res?.by_src?.target?.n ?? 0, n_regress: res?.by_src?.regress?.n ?? 0, usd: res?.usd ?? 0 } };
 }
 
@@ -101,11 +104,11 @@ async function fixGroup(db, { gate, g, group, deps, cfg }) {
   // (4) replay: the revised options substituted into every labelled miss of this gold + a labelled-right regression sample
   const tIds = new Set(targets.map((c) => c.id));
   const regress = (await deps.right(gate, cfg.regress_n)).filter((c) => c.correct === true && !tIds.has(c.id));
-  const res = await runExperiment({ task: gate, baseline: 'stored', maxUsd: IMPROVE_CFG.theory.max_usd,
+  const res = await runExperiment({ task: gate, baseline: 'stored', maxUsd: IMPROVE_CFG.theory.max_usd, minConfidence: MIN_CONFIDENCE,
     variant: { id: 'reword', params: { question: g.question, options: Object.fromEntries(saved.map((s) => [s.name, s.description])) } },
     rows: [...targets.map((c) => ({ ...c, src: 'target' })), ...regress.map((c) => ({ ...c, src: 'regress' }))] }, { rerun: deps.rerun });
   usd += res.usd || 0;
-  const dec = decideMissFix(res), decision = { failed: dec.failed, numbers: dec.numbers };
+  const dec = decideMissFix(res, cfg), decision = { failed: dec.failed, numbers: dec.numbers };
   // (5) promote or log: a rejected version gets its ledger row so promotionStage never re-tries it
   for (const s of saved) {
     if (dec.promote) promote(db, s.id, s.version, { decision, usd, by: 'improve-miss-fix' });

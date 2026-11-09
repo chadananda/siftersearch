@@ -20,7 +20,7 @@ export function captureGap(db, turn) {
   return g ? (recordGap(db, g), 1) : 0;
 }
 
-/** One design unit: the first ready cluster → a saved candidate (or a logged drop). → 'idle' | { design_id, ... } */
+/** One design unit: the first ready cluster → a saved candidate (or a logged drop / setting-of:<strategy>). → 'idle' | { design_id, ... } */
 export async function designStage(db, { call, cat = catalog(), acts, stats = null } = {}) {
   ensureCandidatesSchema(db);
   const ready = clusterGaps(openGaps(db)).find((c) => c.ready);
@@ -28,6 +28,10 @@ export async function designStage(db, { call, cat = catalog(), acts, stats = nul
   const pending = listCandidates(db);
   const d = await designCandidate(ready, { cat, ...(acts ? { acts } : {}), ...(call ? { call } : {}), stats, pending });
   const turnIds = ready.gaps.map((g) => g.turn_id);
+  if (d.settingOf) {   // a setting of an existing strategy, not a new task: no candidate, logged (the gaps close on this evidence)
+    const id = logDesign(db, { cluster_key: ready.key, label: `${ready.label}: ${d.why || ''}`.slice(0, 300), status: `setting-of:${d.settingOf}`, attempts: d.attempts, usd: d.usd, turn_ids: turnIds });
+    return { design_id: id, status: `setting-of:${d.settingOf}`, usd: d.usd };
+  }
   if (!d.ok) {
     const id = logDesign(db, { cluster_key: ready.key, label: ready.label, status: 'dropped', attempts: d.attempts, usd: d.usd, errors: d.errors, turn_ids: turnIds });
     return { design_id: id, status: 'dropped', errors: d.errors, usd: d.usd };
@@ -45,6 +49,12 @@ export async function localPromotionDeps() {
   return {
     writeQuestions: liveWriteQuestions(), judge: liveJudge(),
     tryTurn: ({ question, pin }) => tryStrategy({ question, pin }),
+    replay: async ({ pin, n }) => {
+      const [{ runExperiment }, calls, sys, { MIN_CONFIDENCE }] = await Promise.all([import('../jev-tuning/experiment.js'), import('../repos/jev-calls-repo.js'), import('../systemone.js'), import('../scope-extract.js')]);
+      return runExperiment({ task: 'anis-strategy', baseline: 'stored', maxUsd: IMPROVE_CFG.theory.max_usd, minConfidence: MIN_CONFIDENCE,
+        variant: { id: 'add-option', params: { question: 'strategy', option: pin.row.name, text: pin.row.description } }, rows: calls.sampleBank('anis-strategy', { n }) },
+        { rerun: (task, state, questions) => sys.rerun(task, state, questions) });
+    },
     jevPick: async ({ question, pin }) => (await chooseStrategy([{ role: 'user', content: question }], { options: optionsWith(pin.row) }))?.strategy?.choice ?? null,
   };
 }

@@ -23,13 +23,17 @@ After the graph ends, the shared writer and quality checks always run; an execut
 You may use ONLY: the listed executor activities; NEW steps that are param variants of them (params.how = a template id whose text
 rewrites the writer instruction, with {{base}} standing for the executor's own instruction); NEW templates (new ids only).
 Edges: each activity returns one of its edges; every edge must be routed (to a node, "$end", or "*" for any). No cycles.
+BEFORE designing, decide what the gap class is (an LLM judgement about the task, never about shared words):
+(a) a NEW TASK Jev can tell apart from the nearest strategies: give "difference", ONE sentence saying what the reader wants done that none of them does; or
+(b) a SETTING of an existing strategy (the same task with another topic, tradition, length, tone, format or source): set "setting_of" to that strategy's name and design nothing.
+Jev must not be confused by another option: when in doubt between (a) and (b), choose (b).
 Answer with ONE JSON object and nothing else:
-{"name":"snake_case_option_key","description":"one or two sentences: the class of request and what this strategy does for it",
+{"setting_of":null,"difference":"one sentence: what this does that the nearest strategies do not (null with setting_of)","name":"snake_case_option_key","description":"one or two sentences: the class of request and what this strategy does for it",
  "exemplars":["3-6 NEW class phrasings you wrote yourself — never copies of the gap questions"],
  "templates":[{"id":"<name>.<part>","text":"..."}],
  "steps":[{"id":"<name>.<part>","activity":"<executor>","params":{"how":"<template id>"}}],
  "graph":{"entry":"<node>","nodes":{"<node>":{"step":"<step id>"}},"edges":[{"from":"<node>","on":"<edge>|*","to":"<node>|$end"}]},
- "why":"one sentence: why the existing strategies do not serve this class"}`;
+ "why":"one sentence: why the existing strategies do not serve this class (for a setting: which strategy and how it is a setting of it)"}`;
 
 const firstJson = (t) => { const s = String(t || ''); const a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a < 0 || b <= a) return null; try { return JSON.parse(s.slice(a, b + 1)); } catch { return null; } };
 export const parseCandidate = (text) => firstJson(text);
@@ -169,14 +173,22 @@ export async function opusCall(role, system, user, maxTokens, caller) {
 }
 
 /** Design one candidate for a ready cluster: call → parse → validate (one retry with the errors) → dedupe.
- *  → { ok, normalized?, dedupe?, errors, attempts, usd } (never throws on a bad answer; a spend cap propagates). */
+ *  → { ok, normalized?, dedupe?, errors, attempts, usd } | { ok:false, settingOf, why } (the cluster is a setting of that strategy) (never throws on a bad answer; a spend cap propagates). */
 export async function designCandidate(cluster, { cat, acts = registry(), call = opusCall, stats = null, pending = [], maxTokens = IMPROVE_CFG.design.max_tokens } = {}) {
   let errors = null, usd = 0, attempts = 0;
   for (; attempts < 2;) {
     attempts++;
     const r = await call(DESIGN_ROLE, DESIGN_SYSTEM, designMessage({ cluster, cat, acts, stats, errors }), maxTokens, DESIGN_CALLER);
     usd += r.usd || 0;
-    const v = validateCandidate(parseCandidate(r.text), { cat, acts });
+    const j = parseCandidate(r.text);
+    // (b) a setting of an existing strategy: no candidate (the caller logs setting-of:<name>); it must name an active strategy
+    if (j?.setting_of) {
+      const owner = cat.strategies.find((s) => s.name === j.setting_of && !isUnmatched(s.name));
+      if (owner) return { ok: false, settingOf: owner.name, why: String(j.why || '').slice(0, 300), errors: [], attempts, usd };
+      errors = [`setting_of "${j.setting_of}" is not an active strategy; name one of the strategies above or set it to null`]; continue;
+    }
+    if (j && !String(j.difference || '').trim()) { errors = ['difference: one sentence saying what this does that the nearest strategies do not (or set setting_of)']; continue; }
+    const v = validateCandidate(j, { cat, acts });
     if (v.ok) { const d = dedupeTarget(v.normalized, { cat, pending }); return { ok: true, ...d, errors: [], attempts, usd }; }
     errors = v.errors;
   }

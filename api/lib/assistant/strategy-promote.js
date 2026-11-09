@@ -6,7 +6,10 @@
 // decidePromotion (pure) promotes when: mean score better by `margin`; no question worse by more than `max_regress`; p50 ms and
 // mean $/turn within ms_ratio / usd_ratio of the current route; Jev picks the candidate for ≥ jev_class_share of class questions
 // and for at most jev_guard_max guards. A per-candidate $ cap (config candidate_usd) stops the run (decision: over-budget).
-// Deps (injectable): writeQuestions, tryTurn, judge, jevPick. Config: config/strategy-improve.json.
+// Also (Chad 11-08, distinguishable): `replay` = the option added to Jev and up to regress_n REAL labelled strategy calls re-asked
+// (jev-tuning/experiment.js, stored baseline): a call that changes away from its label (broken) or falls from ≥ MIN_CONFIDENCE
+// below it (confidence_drops) rejects the candidate.
+// Deps (injectable): writeQuestions, tryTurn, judge, jevPick, replay. Config: config/strategy-improve.json.
 import { IMPROVE_CFG } from './strategy-gaps.js';
 import { isUnmatched } from './strategy-seed.js';
 import { DESIGN_ROLE, opusCall } from './strategy-design.js';
@@ -53,7 +56,7 @@ export async function questionSet({ row, held = [], cat, writeQuestions, nFresh 
 
 /** The decision over measured rows. rows: class rows { set, cand:{score, ms, usd, jev_pick}, cur:{score, ms, usd} } and guard
  *  rows { set:'guard', jev_pick }. → { promote, failed: [reasons], numbers }. Pure. */
-export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote } = {}) {
+export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote, replay = null } = {}) {
   const cls = rows.filter((r) => r.set !== 'guard' && r.cand?.score != null && r.cur?.score != null);
   const guards = rows.filter((r) => r.set === 'guard');
   const failed = [];
@@ -71,7 +74,11 @@ export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote } = {}) 
   if (usdC != null && usdU != null && usdC > Math.max(usdU * cfg.usd_ratio, usdU + 0.001)) failed.push(`$/turn ${r3(usdC)} vs ${r3(usdU)} (max ×${cfg.usd_ratio})`);
   if (cls.length && share < cfg.jev_class_share) failed.push(`Jev picks it for ${picks}/${cls.length} class questions (need ${cfg.jev_class_share})`);
   if (steals > cfg.jev_guard_max) failed.push(`Jev picks it for ${steals} guard question(s) of other strategies (max ${cfg.jev_guard_max})`);
-  return { promote: failed.length === 0, failed, numbers: { n_class: cls.length, n_guard: guards.length, mean_candidate: r3(mc), mean_current: r3(mu),
+  const broken = replay?.broken ?? 0, drops = replay?.confidence_drops ?? 0;
+  if (broken > (cfg.max_replay_broken ?? 0)) failed.push(`re-asking ${replay.labelled} real labelled strategy calls with it added: ${broken} now go to another option (max ${cfg.max_replay_broken ?? 0})`);
+  if (drops > (cfg.max_confidence_drops ?? 0)) failed.push(`${drops} real call(s) fall from confident to below the Jev floor with it added (max ${cfg.max_confidence_drops ?? 0})`);
+  if (replay?.truncated) failed.push(`real-call replay stopped: ${replay.truncated}`);
+  return { promote: failed.length === 0, failed, numbers: { replay_n: replay?.labelled ?? 0, replay_broken: broken, replay_confidence_drops: drops, n_class: cls.length, n_guard: guards.length, mean_candidate: r3(mc), mean_current: r3(mu),
     worst_drop: worst?.drop ?? null, p50_ms_candidate: p50c, p50_ms_current: p50u, usd_turn_candidate: r3(usdC), usd_turn_current: r3(usdU),
     jev_class_picks: picks, jev_guard_steals: steals } };
 }
@@ -88,6 +95,9 @@ export async function runPromotion({ pin, held = [], cat, deps, capUsd = IMPROVE
   const qs = await questionSet({ row, held, cat, writeQuestions: deps.writeQuestions, nFresh: cfg.n_fresh, nGuard: cfg.n_guard, frozen, historic });
   if (qs.fresh?.length && onFreeze) { try { onFreeze(qs.fresh); } catch { /* freezing is a saving, never a failure */ } }
   usd += qs.usd;
+  // the real-call replay: only when the candidate adds or rewords an option (a pinned graph Jev already routes to, keepChoice, adds none)
+  let replay = null;
+  if (deps.replay && !pin.keepChoice) { replay = await deps.replay({ pin, n: cfg.regress_n }); usd += replay?.usd || 0; }
   const rows = [];
   for (const q of qs.questions) {
     if (usd >= capUsd) { stopped = 'over-budget'; break; }
@@ -99,8 +109,8 @@ export async function runPromotion({ pin, held = [], cat, deps, capUsd = IMPROVE
       cur: { score: scoreOf(ju), ms: cur.ms, usd: cur.usd, why: ju?.why ?? null } });
     onProgress({ done: rows.length, of: qs.questions.length, usd });
   }
-  const decision = stopped ? { promote: false, failed: [`stopped: ${stopped} ($${r3(usd)} of $${capUsd})`], numbers: decidePromotion(rows, { name: row.name, cfg }).numbers }
-    : decidePromotion(rows, { name: row.name, cfg });
+  const decision = stopped ? { promote: false, failed: [`stopped: ${stopped} ($${r3(usd)} of $${capUsd})`], numbers: decidePromotion(rows, { name: row.name, cfg, replay }).numbers }
+    : decidePromotion(rows, { name: row.name, cfg, replay });
   return { decision, rows, usd: Math.round(usd * 1e6) / 1e6, stopped };
 }
 

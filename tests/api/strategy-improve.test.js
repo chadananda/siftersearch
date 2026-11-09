@@ -26,7 +26,7 @@ const sure = { decisions: [{ point: 'strategy', reason: 'confident', chosen: 'pr
 
 // a valid design: a param variant of strategy.understanding + its new template, one node
 const GOOD = {
-  name: 'timeline', description: 'The reader wants the HISTORY of a practice or institution told in order, era by era, from the passages.',
+  difference: 'It tells a development in order, era by era; understanding explains a single idea.', name: 'timeline', description: 'The reader wants the HISTORY of a practice or institution told in order, era by era, from the passages.',
   exemplars: ['How did the Nineteen Day Feast develop over time?', 'Trace how the Huqúqu’lláh was introduced, step by step.'],
   templates: [{ id: 'timeline.how', text: 'Tell it as a TIMELINE, oldest first. {{base}}' }],
   steps: [{ id: 'timeline.order', activity: 'strategy.understanding', params: { how: 'timeline.how' } }],

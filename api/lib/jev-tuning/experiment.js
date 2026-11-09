@@ -2,7 +2,7 @@
 // (run as a job from routes/jev-admin.js, never on the reply path). Pure orchestration — Jev, the bank and history are injected.
 // Reports: accuracy vs gold (baseline / variant), flip matrix, fixed/broken, $ and ms. Billed to the improve group (systemone.rerun).
 import { resolveVariant } from './variants.js';
-import { chosenOf, matchesGold } from '../repos/jev-calls-repo.js';
+import { chosenOf, matchesGold, goldMap } from '../repos/jev-calls-repo.js';
 
 export const JEV_USD_PER_TOKEN = 0.000042 / 1000;   // model-registry 'jev-latest' (input $42/B tokens; output free)
 const sig = (c) => JSON.stringify(c);
@@ -10,14 +10,14 @@ const sig = (c) => JSON.stringify(c);
 /** Cost of an N-call run from a gate's average input tokens (variants add tokens: pass extraTokens). calls = 2N unless baseline is stored. */
 export const estimateUsd = (avgTokens, n, { extraTokens = 0, baseline = 'rerun' } = {}) => +(((baseline === 'rerun' ? 2 : 1) * n * (avgTokens + extraTokens) * JEV_USD_PER_TOKEN)).toFixed(4);
 
-/** deps: { sample(task, opts) → bank rows, rerun(task, state, questions) → {answers, tokens, ms}, history? }. `rows` (e.g. historic bank
+/** minConfidence (optional): also counts confidence_drops. deps: { sample(task, opts) → bank rows, rerun(task, state, questions) → {answers, tokens, ms}, history? }. `rows` (e.g. historic bank
  *  rows + a frozen synthetic set, each with src 'historic'|'synthetic') replaces the sample; accuracy is also reported per src. */
-export async function runExperiment({ task, variant = 'baseline', n = 200, filter = {}, baseline = 'rerun', concurrency = 6, maxUsd = 2, rows: given = null }, deps) {
+export async function runExperiment({ task, variant = 'baseline', n = 200, filter = {}, baseline = 'rerun', concurrency = 6, maxUsd = 2, rows: given = null, minConfidence = null }, deps) {
   const v = resolveVariant(variant), rows = given || await deps.sample(task, { n, ...filter });
   const bySrc = {};
   const srcOf = (row) => (bySrc[row.src || 'historic'] ||= { n: 0, base_right: 0, var_right: 0, fixed: 0, broken: 0 });
   const res = { task, variant: { id: v.id, params: v.params }, baseline_mode: baseline, sampled: rows.length, done: 0, errors: 0, skipped: 0, usd: 0, truncated: null,
-    base: { right: 0, wrong: 0, ms: 0, tokens: 0 }, var: { right: 0, wrong: 0, ms: 0, tokens: 0 }, labelled: 0, fixed: 0, broken: 0, changed: 0, flips: {}, examples: [] };
+    base: { right: 0, wrong: 0, ms: 0, tokens: 0 }, var: { right: 0, wrong: 0, ms: 0, tokens: 0 }, labelled: 0, fixed: 0, broken: 0, confidence_drops: 0, changed: 0, flips: {}, examples: [] };
   let next = 0, stop = false;
   const one = async (row) => {
     try {
@@ -32,6 +32,11 @@ export async function runExperiment({ task, variant = 'baseline', n = 200, filte
       if (okB != null) {
         res.labelled++; res.base[okB ? 'right' : 'wrong']++; res.var[okV ? 'right' : 'wrong']++; if (!okB && okV) res.fixed++; if (okB && !okV) res.broken++;
         const t = srcOf(row); t.n++; if (okB) t.base_right++; if (okV) t.var_right++; if (!okB && okV) t.fixed++; if (okB && !okV) t.broken++;
+      }
+      // minConfidence: right at ≥ the floor before, still right, but below it now (Jev would fall to 'unmatched')
+      if (minConfidence != null && okB && okV) {
+        const conf = (a, q) => a?.[q]?.confidence ?? a?.[q]?.distribution?.[a?.[q]?.choice] ?? 0;
+        if (Object.keys(goldMap(row.gold, row.questions) || {}).some((q) => conf(b.answers, q) >= minConfidence && conf(w.answers, q) < minConfidence)) { res.confidence_drops++; const t = srcOf(row); t.confidence_drops = (t.confidence_drops || 0) + 1; }
       }
       if (bk !== vk) {
         res.changed++;

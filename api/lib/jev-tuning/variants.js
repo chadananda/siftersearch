@@ -13,6 +13,14 @@ export const VARIANTS = {
     apply: ({ state, questions, params }) => ({ state, questions: eachQuestion(questions, params.question, (d) => { d.instructions = `${d.instructions || ''} ${params.text}`.trim(); }) }) },
   'option-text': { describe: 'replace one option\'s description. params: {option, text, question?}',
     apply: ({ state, questions, params }) => ({ state, questions: eachQuestion(questions, params.question, (d) => { if (d.criteria && params.option in d.criteria) d.criteria[params.option] = params.text; }) }) },
+  // a CANDIDATE strategy's option added (or an existing option's text replaced) on the strategy question, the last option ('unmatched') kept last
+  'add-option': { describe: 'add/replace one option on a question, before the last option. params: {question, option, text}',
+    apply: ({ state, questions, params }) => ({ state, questions: eachQuestion(questions, params.question, (d) => {
+      if (!d.criteria) return;
+      if (params.option in d.criteria) { d.criteria[params.option] = params.text; return; }
+      const keys = Object.keys(d.criteria), last = keys.pop();
+      d.criteria = Object.fromEntries([...keys.map((k) => [k, d.criteria[k]]), [params.option, params.text], ...(last ? [[last, d.criteria[last]]] : [])]);
+    }) }) },
   'thread-history': { describe: 'add the last N earlier turns of the conversation. params: {turns: 4}',
     async apply({ state, questions, row, params, deps }) {
       const h = await deps.history?.(row, Number(params.turns) || 4);
