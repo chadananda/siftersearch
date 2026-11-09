@@ -10,9 +10,9 @@ export const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, 
   .replace(/['‘’ʼʻ`´]/g, '').toLowerCase().replace(/[^a-z0-9؀-ۿ]+/g, ' ').trim();
 
 // The Central Figures and the Guardian, by name (spaced-normalised; joined forms catch "Abdul-Baha" / "Abdu'l-Bahá").
-const WRITER_RE = /\b(baha ?u ?llah|bahaullah|abdu ?l ?baha|abdul ?baha|shoghi effendi|the bab|bab|nuqtiy i ula|hadrat i bab|siyyid ali muhammad)\b|بهاء ?الله|عبد ?البهاء|شوقی|شوقي|حضرت باب|نقطه اولی/;
+export const WRITER_RE = /\b(baha ?u ?llah|bahaullah|abdu ?l ?baha|abdul ?baha|shoghi effendi|the bab|bab|nuqtiy i ula|hadrat i bab|siyyid ali muhammad)\b|بهاء ?الله|عبد ?البهاء|شوقی|شوقي|حضرت باب|نقطه اولی/;
 // Institutions (Chad 10-20: "everything from institutions") — by author name.
-const INSTITUTION_RE = /\b(universal house of justice|research department|bahai international community|international teaching cent(re|er)|(national|local|regional) spiritual assembly|spiritual assembly of|bahai world cent(re|er)|continental board|board of counsell?ors|office of social and economic development|bahai publishing trust|department of the secretariat|uhj|bic|itc|osed)\b|بیت العدل|بيت العدل|محفل/;
+export const INSTITUTION_RE = /\b(universal house of justice|research department|bahai international community|international teaching cent(re|er)|(national|local|regional) spiritual assembly|spiritual assembly of|bahai world cent(re|er)|continental board|board of counsell?ors|office of social and economic development|bahai publishing trust|department of the secretariat|uhj|bic|itc|osed)\b|بیت العدل|بيت العدل|محفل/;
 
 // Bahá'í shelves whose contents are the Writings, their translations/originals, or institutional texts.
 export const CANONICAL_BAHAI_COLLECTIONS = Object.freeze([

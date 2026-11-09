@@ -15,6 +15,16 @@ export function coverageByScope() {
   } finally { db.close(); }
 }
 
+/** Paragraphs that have ≥1 phrase point, per doc × stamped author (paragraphAuthor at index time) — the tier report's numerator.
+ *  The scope stamp is NOT read: it is wrong for website copies; the report uses the doc's current scope. */
+export function coveredByDocAuthor() {
+  const db = open(STORE);
+  try {
+    return db.prepare(`SELECT CAST(doc_id AS INTEGER) AS doc_id, author, COUNT(DISTINCT paragraph_id) AS paragraphs
+      FROM units WHERE field = 'text' GROUP BY 1, 2`).all();
+  } finally { db.close(); }
+}
+
 /** Gemini embedding spend by month, as the indexer recorded it. */
 export function monthSpend() {
   const db = open(LEDGER);

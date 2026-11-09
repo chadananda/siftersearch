@@ -41,9 +41,11 @@ import { mediaComputeJob, mediaAsrJob, mediaDiarJob, mediaLlmJob, mediaMetaFixJo
 import { mediaGalleryJob, mediaPortraitInventoryJob } from './media-gallery-jobs.js';
 import { vocabBuildJob } from './vocab-job.js';
 import { pipelineSnapshotJob } from './pipeline-snapshot-job.js';
-import { deletionsByDay, hollowDocs, liveParagraphsByScope } from '../repos/integrity-repo.js';
+import { deletionsByDay, hollowDocs, liveParagraphsByDocAuthors } from '../repos/integrity-repo.js';
 import { docLanguageCounts } from '../repos/language-repo.js';
-import { coverageByScope, monthSpend } from '../repos/phrase-store-repo.js';
+import { coveredByDocAuthor, monthSpend } from '../repos/phrase-store-repo.js';
+import { doctrinalTier, TIERS } from '../authority.js';
+import { paragraphAuthor } from '../authorship/effective.js';
 import { normLang } from '../language-codes.js';
 import { spendSince, spendByModel } from '../repos/ai-usage-repo.js';
 import { blockAttrsJob, blockMismatchReport, reingestImpactReport } from './block-attrs-job.js';
@@ -135,21 +137,40 @@ export const REPORTS = {
     const rows = await docLanguageCounts();
     return { labels: rows.sort((a, b) => b.docs - a.docs), not_normalised: rows.filter((r) => r.language && normLang(r.language) !== r.language) };
   },
-  /** Phrase-index coverage vs live paragraphs, per scope × religion, and the $ to finish at the measured cost per paragraph. */
+  /** Phrase-index coverage per religion × doctrinal tier × scope (Chad 11-09: tier = ORDER, everything non-duplicate gets indexed).
+   *  Tier is each paragraph's own author (doctrinalTier) on CURRENT doc data. Live ¶ vs ¶ with ≥1 phrase point, matched per doc ×
+   *  author (the store stamps paragraphAuthor at index time; a re-attributed paragraph can read as missing until re-indexed).
+   *  Also the $ to finish at the measured cost per paragraph. */
   async 'phrase-coverage'() {
     const months = monthSpend();
-    const covered = coverageByScope();
-    const live = await liveParagraphsByScope();
-    const key = (r) => `${r.scope}|${r.religion}`;
-    const cov = new Map(covered.map((r) => [key(r), r.paragraphs]));
+    const covered = coveredByDocAuthor();
+    const live = await liveParagraphsByDocAuthors();
+    const cov = new Map(covered.map((r) => [`${r.doc_id}|${r.author || ''}`, r.paragraphs]));
+    // live ¶ per doc × effective author first (several raw `authors` values can name the same author), then tier + coverage once each
+    const byKey = new Map();
+    for (const r of live) {
+      const author = paragraphAuthor({ authors: r.authors, author: r.doc_author }) || '', k = `${r.doc_id}|${author}`;
+      const e = byKey.get(k) || { ...r, author, paragraphs: 0 };
+      e.paragraphs += r.paragraphs; byKey.set(k, e);
+    }
+    const agg = new Map();
+    for (const [k, r] of byKey) {
+      const tier = doctrinalTier({ religion: r.religion, collection: r.collection, title: r.title, author: r.doc_author }, { author: r.author });
+      const c = Math.min(r.paragraphs, cov.get(k) || 0), g = `${r.religion || 'Other'}|${tier}|${r.scope}`;
+      const row = agg.get(g) || { religion: r.religion || 'Other', tier, scope: r.scope, live: 0, covered: 0 };
+      row.live += r.paragraphs; row.covered += c; agg.set(g, row);
+    }
+    const rows = [...agg.values()].map((r) => ({ ...r, missing: r.live - r.covered }));
+    const order = { core: 0, gray: 1, supplemental: 2 };
+    rows.sort((x, y) => order[x.tier] - order[y.tier] || y.missing - x.missing);
+    const by_tier = Object.fromEntries(TIERS.map((t) => { const rs = rows.filter((r) => r.tier === t);
+      return [t, { live: rs.reduce((n, r) => n + r.live, 0), covered: rs.reduce((n, r) => n + r.covered, 0), missing: rs.reduce((n, r) => n + r.missing, 0) }]; }));
     const spent = months.reduce((n, m) => n + (m.usd || 0), 0);
-    const coveredTotal = covered.reduce((n, r) => n + r.paragraphs, 0);
+    const coveredTotal = rows.reduce((n, r) => n + r.covered, 0);
     const perPara = coveredTotal ? spent / coveredTotal : 0;
-    const rows = live.map((r) => { const c = cov.get(key(r)) || 0; return { scope: r.scope, religion: r.religion, live: r.paragraphs, covered: c, missing: Math.max(0, r.paragraphs - c) }; })
-      .sort((a, b) => b.missing - a.missing);
     const missing = rows.reduce((n, r) => n + r.missing, 0);
     return { months, spent_usd: +spent.toFixed(2), covered_paragraphs: coveredTotal, usd_per_paragraph: +perPara.toFixed(6), missing_paragraphs: missing,
-      est_usd_to_finish: +(missing * perPara).toFixed(0), note: 'upper bound: identical phrase text is embedded once', rows };
+      est_usd_to_finish: +(missing * perPara).toFixed(0), note: 'upper bound: identical phrase text is embedded once', by_tier, rows };
   },
 };
 

@@ -13,7 +13,7 @@ export const keywordGapDocs = ({ scope = 'primary', limit = 100000, significant 
     WHERE i.layer = 'keyword' AND i.indexed < i.total AND COALESCE(d.scope, 'primary') = ? AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND NOT ${TAG_INDEX_SQL}
       AND EXISTS (SELECT 1 FROM doc_structure s WHERE s.doc_id = i.doc_id)   -- structure first (Chad 10-17): BM25 carries the section path
       ${significant ? 'AND (i.indexed = 0 OR i.total - i.indexed > MAX(20, i.total / 50))' : ''}
-    ORDER BY i.core DESC, (i.total - i.indexed) DESC LIMIT ?`, [scope, limit], 'keyword:gap-docs');
+    ORDER BY CASE i.core WHEN 1 THEN 0 WHEN 2 THEN 1 ELSE 2 END, (i.total - i.indexed) DESC LIMIT ?`, [scope, limit], 'keyword:gap-docs');
 
 /** One document's live, non-duplicate, non-empty paragraphs (none for a retired duplicate or a tag index page — search excludes them) with the doc fields the keyword payload carries, each with
  *  its section path from the book's structure (doc_sections: every section whose range holds it, outermost first). */

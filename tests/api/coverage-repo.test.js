@@ -6,7 +6,7 @@ let raw;
 const SCHEMA = `
 CREATE TABLE docs (id INTEGER PRIMARY KEY, title TEXT, language TEXT, religion TEXT, scope TEXT, deleted_at TEXT, duplicate_of INTEGER, author TEXT, collection TEXT, source_site TEXT);  -- production docs has no authority column
 CREATE TABLE content (id INTEGER PRIMARY KEY, doc_id INTEGER, text TEXT DEFAULT 'words', block_attrs TEXT, pdf_page INTEGER, synced INTEGER, embedding BLOB, context TEXT, hyp_questions TEXT, hyp_model TEXT,
-  extract_model TEXT, translation TEXT, deleted_at TEXT, is_duplicate INTEGER);
+  extract_model TEXT, translation TEXT, deleted_at TEXT, is_duplicate INTEGER, authors TEXT);
 CREATE TABLE entity_mentions_v2 (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, status TEXT);
 CREATE TABLE concept_claims (id INTEGER PRIMARY KEY, doc_id INTEGER, para_id TEXT, proof_ok INTEGER);
 CREATE TABLE content_alignment (id INTEGER PRIMARY KEY, trans_id INTEGER, orig_id INTEGER, retired_at INTEGER);
@@ -84,8 +84,16 @@ describe('coverage ledger', () => {
     expect(m.alignment.generated).toBe(1);
     expect(m.translation.total).toBe(0);                 // English book: no translation layer
     expect(repo.LAYERS.every((l) => m[l])).toBe(true);
-    expect(m.text.core).toBe(0);
+    expect(m.text.core).toBe(2);                         // Pilgrim Notes: gray (others' recollections)
     expect((await repo.measureDoc(2, { hypeVersion: 'v15', count }))[0].core).toBe(1);   // doctrinal core flagged
+  });
+  it('a Bahá’í book holding one Guardian paragraph is flagged core; the same book with only the compiler is not', async () => {
+    raw.prepare("INSERT INTO docs VALUES (3, 'Lights of Guidance', 'en', 'Baha''i', 'primary', NULL, NULL, 'Helen Hornby', 'Books', NULL)").run();
+    raw.prepare("INSERT INTO content (id, doc_id, authors) VALUES (10, 3, NULL), (11, 3, ?)").run(JSON.stringify([{ name: 'Shoghi Effendi', role: 'author', basis: 'trailer' }]));
+    expect((await repo.measureDoc(3, { hypeVersion: 'v15', count }))[0].core).toBe(1);
+    raw.prepare('UPDATE content SET authors = NULL WHERE id = 11').run();
+    expect((await repo.measureDoc(3, { hypeVersion: 'v15', count }))[0].core).toBe(0);
+    expect((await repo.coverageSummary()).rows.every((r) => ['core', 'gray', 'supplemental'].includes(r.tier))).toBe(true);
   });
   it('a non-English document counts its translations; save + summary + stalest', async () => {
     const t = (await repo.measureDoc(2, { hypeVersion: 'v15', count })).find((r) => r.layer === 'translation');
@@ -122,7 +130,7 @@ describe('coverage totals move by deltas (Chad 10-16: only query changes, never 
     const byDelta = snapshot();
     await repo.rebuildCoverageTotals();
     expect(snapshot()).toEqual(byDelta);
-    const text = byDelta.find((r) => r.layer === 'text' && r.religion === "Baha'i" && r.core === 0);
+    const text = byDelta.find((r) => r.layer === 'text' && r.religion === "Baha'i" && r.core === 2);   // doc 1 = Pilgrim Notes = gray
     expect(text).toMatchObject({ docs: 1, total: 3, indexed: 3 });
   });
   it('empty until the first rebuild; a retired document leaves the totals at the rebuild', async () => {

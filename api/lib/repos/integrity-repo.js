@@ -29,3 +29,13 @@ export async function liveParagraphsByScope() {
     WHERE c.deleted_at IS NULL AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0
     GROUP BY 1, 2`);
 }
+
+/** Live paragraphs with text per doc × raw `authors` value (the tier is per paragraph author) with the doc fields the tier rule reads
+ *  and the doc's CURRENT scope. Full scan like the rest of this file: call out of process (the ops reports worker) only. */
+export async function liveParagraphsByDocAuthors() {
+  return queryAll(`SELECT c.doc_id, d.religion, d.collection, d.title, d.author AS doc_author, COALESCE(d.scope, 'primary') AS scope,
+      c.authors, COUNT(*) AS paragraphs
+    FROM content c JOIN docs d ON d.id = c.doc_id
+    WHERE c.deleted_at IS NULL AND d.deleted_at IS NULL AND d.duplicate_of IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(c.text) > 0
+    GROUP BY c.doc_id, c.authors`);
+}

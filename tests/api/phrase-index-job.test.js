@@ -13,6 +13,14 @@ describe('phrase-index ops job', () => {
     expect(indexerArgs({ docs: [1], field: 'hype', maxUsd: 1 })).toContain('/tank/sifter/hype-vectors/vectors.db');
     expect(() => indexerArgs({ docs: [1], field: 'phrases', maxUsd: 1 })).toThrow(/unknown field/);
   });
+  it('tier selects paragraphs by doctrinal tier across both scopes; unknown tiers refused; docs win', () => {
+    const a = indexerArgs({ tier: 'core', maxUsd: 5 });
+    expect(a.slice(0, 3)).toEqual(['scripts/phrase-index/indexer.mjs', '--tier', 'core']);
+    expect(a).not.toContain('--scope');
+    expect(indexerArgs({ tier: 'all', maxUsd: 5 })).not.toContain('--tier');
+    expect(indexerArgs({ docs: [1], tier: 'gray', maxUsd: 5 })).not.toContain('--tier');
+    expect(() => indexerArgs({ tier: 'x', maxUsd: 5 })).toThrow(/unknown tier/);
+  });
   it('limit caps the paragraphs read (bounded benchmark runs)', () => {
     expect(indexerArgs({ docs: [1], maxUsd: 1, limit: 6000 }).slice(-2)).toEqual(['--limit', '6000']);
     expect(indexerArgs({ docs: [1], maxUsd: 1 })).not.toContain('--limit');

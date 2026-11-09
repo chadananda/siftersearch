@@ -4,12 +4,24 @@
 // the dashboard reads only this table. Callers: ops coverage-refresh + the reports worker's rolling refresh, admin route.
 // Deps: db.js; Qdrant over HTTP (QDRANT_URL/QDRANT_KEY).
 import { queryOne, queryAll, transaction } from '../db.js';
-import { getAuthority } from '../authority.js';
+import { doctrinalTier } from '../authority.js';
+import { paragraphAuthor } from '../authorship/effective.js';
 
-/** Doctrinal core (Chad 10-16: "probably doctrinal core first"): scripture and authoritative interpretation, authority ≥ 8. */
+/** Doctrinal tier (Chad 11-09; authority.js doctrinalTier, decided per paragraph by its author). The ledger's per-DOC `core` column:
+ *  1 = the document holds ≥1 core paragraph, 2 = gray (no core paragraph), 0 = supplemental. Readers must test `core = 1` for core
+ *  and order core → gray → rest with CORE_ORDER_SQL (a plain `core DESC` would put gray first). Pure. */
 import { CORE_AUTHORITY } from '../rights/canonical.js';
 export { CORE_AUTHORITY };
-export const isCore = (doc) => { try { return getAuthority(doc) >= CORE_AUTHORITY; } catch { return false; } };
+export const TIER_CODE = { core: 1, gray: 2, supplemental: 0 };
+export const CORE_ORDER_SQL = 'CASE i.core WHEN 1 THEN 0 WHEN 2 THEN 1 ELSE 2 END';
+/** doc + the distinct raw `authors` values of its live paragraphs (only Bahá'í tiers vary per paragraph) → 1 | 2 | 0. */
+export function coverageTier(doc, authorRows = []) {
+  try {
+    const tiers = [doctrinalTier(doc), ...authorRows.map((r) => doctrinalTier(doc, { author: paragraphAuthor({ authors: r.authors, author: doc.author }) }))];
+    return tiers.includes('core') ? 1 : tiers.includes('gray') ? 2 : 0;
+  } catch { return 0; }
+}
+export const isCore = (doc, authorRows = []) => coverageTier(doc, authorRows) === 1;
 
 /** A document shorter than this (paragraphs with text) is a single work — a tablet, a letter, a talk: it needs no TOC. */
 export const STRUCTURE_NEEDED_FROM = 60;
@@ -69,7 +81,10 @@ export async function measureDoc(docId, { hypeVersion, count = qdrantCount } = {
   const [kwN, phraseN, hypeN, conceptN] = [known(kw, 'keyword'), known(phrase, 'phrase'), known(hype, 'hype'), known(conceptPts, 'concepts')];
   const kwTotal = Math.max(0, (c?.texted ?? total) - (kwSkip?.n || 0));
   const nonEnglish = !/^en/i.test(String(doc.language || 'en'));
-  const core = isCore(doc) ? 1 : 0;
+  // paragraph authors matter only where a book mixes writers (Bahá'í compilations, Lights of Guidance): one grouped read on doc_id
+  const authorRows = /^bah/i.test(String(doc.religion || '').normalize('NFD').replace(/[̀-ͯ]/g, '')) ? await queryAll(
+    `SELECT authors FROM content WHERE doc_id = ? AND deleted_at IS NULL AND COALESCE(is_duplicate, 0) = 0 AND authors IS NOT NULL GROUP BY authors`, [id], 'coverage:authors') : [];
+  const core = coverageTier(doc, authorRows);
   const row = (layer, generated, current, indexed, version = null, t = total) => ({ layer, total: t, generated: generated || 0, current: current ?? generated ?? 0, indexed: indexed ?? 0, version, core });
   return [
     row('text', total, total, c?.synced),
@@ -117,7 +132,7 @@ export async function saveCoverage(docId, rows, at = Math.floor(Date.now() / 100
     ...rows.map((r) => ({ sql: `INSERT INTO index_coverage (doc_id, layer, total, generated, current, indexed, version, core, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(doc_id, layer) DO UPDATE SET total = excluded.total, generated = excluded.generated,
       current = excluded.current, indexed = excluded.indexed, version = excluded.version, core = excluded.core, updated_at = excluded.updated_at`,
-    args: [id, r.layer, r.total, r.generated, r.current, r.indexed, r.version, r.core ? 1 : 0, at] })),
+    args: [id, r.layer, r.total, r.generated, r.current, r.indexed, r.version, Number(r.core) || 0, at] })),
     { sql: `INSERT INTO coverage_totals (religion, layer, core, docs, total, generated, current, indexed, reached, docs_with)
       SELECT o.religion, o.layer, o.core, 1, o.total, o.generated, o.current, o.indexed, ${REACHED}, ${WITH_DATA} FROM (${DOC_ROWS}) AS o WHERE true
       ON CONFLICT(religion, layer, core) DO UPDATE SET docs = docs + excluded.docs, total = total + excluded.total, generated = generated + excluded.generated,
@@ -127,7 +142,7 @@ export async function saveCoverage(docId, rows, at = Math.floor(Date.now() / 100
 }
 
 const KEYS = ['total', 'generated', 'current', 'indexed', 'version', 'core'];
-const norm = (r, k) => (k === 'core' ? (r.core ? 1 : 0) : k === 'version' ? (r.version ?? null) : Number(r[k] ?? 0));
+const norm = (r, k) => (k === 'core' ? (Number(r.core) || 0) : k === 'version' ? (r.version ?? null) : Number(r[k] ?? 0));
 /** The measured rows equal the stored ledger rows exactly (same layers, same numbers). Pure. */
 export function sameAsStored(rows, stored) {
   if (rows.length !== stored.length) return false;
@@ -188,7 +203,8 @@ export async function coverageSummary() {
     GROUP BY 1, 2, 3, 4`, [], 'coverage:summary');
   const live = await queryOne('SELECT COUNT(*) AS n FROM docs WHERE deleted_at IS NULL AND duplicate_of IS NULL', [], 'coverage:live');
   const measured = await queryOne(`SELECT COUNT(*) AS n FROM index_coverage WHERE layer = 'text'`, [], 'coverage:measured');
-  return { live_docs: live?.n || 0, measured_docs: measured?.n || 0, rows };
+  const tierOf = { 1: 'core', 2: 'gray' };
+  return { live_docs: live?.n || 0, measured_docs: measured?.n || 0, rows: rows.map((r) => ({ ...r, tier: tierOf[r.core] || 'supplemental' })) };
 }
 
 /** One document's ledger rows. */
@@ -199,7 +215,7 @@ export const docCoverage = (docId) =>
  *  that recently; null = any age (11-07: a 7-day window left 28,721 library tablets of the Central Figures phrase-less for months). */
 export const newDocsMissingLayer = async (layer, { days = 7, limit = 200 } = {}) => (await queryAll(`SELECT i.doc_id AS id FROM index_coverage i JOIN docs d ON d.id = i.doc_id
     WHERE i.layer = ? AND i.total > 0 AND i.indexed = 0 AND d.deleted_at IS NULL AND d.duplicate_of IS NULL${days == null ? '' : ' AND d.created_at >= ?'}
-    ORDER BY i.core DESC, i.doc_id LIMIT ?`, [layer, ...(days == null ? [] : [new Date(Date.now() - days * 86400000).toISOString()]), limit], 'coverage:new-missing')).map((r) => r.id);
+    ORDER BY ${CORE_ORDER_SQL}, i.doc_id LIMIT ?`, [layer, ...(days == null ? [] : [new Date(Date.now() - days * 86400000).toISOString()]), limit], 'coverage:new-missing')).map((r) => r.id);
 
 /** One layer's rows that HAVE derived data, on live primary-scope documents → [{ doc_id, generated, current, indexed }] —
  *  the index follower's input (ops/index-follow.js; one pass per 30 min from the single-instance indexer). Supplemental

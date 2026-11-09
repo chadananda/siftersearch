@@ -3,7 +3,10 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('../../api/lib/repos/integrity-repo.js', () => ({
   hollowDocs: async () => [{ id: 1, source: 'library', rows: 0, with_text: null, empty_rows: 0 }, { id: 2, source: 'library', rows: 10, with_text: 9, empty_rows: 1 }],
   deletionsByDay: async () => [{ day: '2026-10-10', source: 'bahai-library.com', paragraphs: 300 }],
-  liveParagraphsByScope: async () => [{ scope: 'primary', religion: "Baha'i", paragraphs: 100 }],
+  liveParagraphsByDocAuthors: async () => [
+    { doc_id: 1, religion: "Baha'i", collection: 'Books', title: 'Lights of Guidance', doc_author: 'Helen Hornby', scope: 'primary', authors: JSON.stringify([{ name: 'Shoghi Effendi', role: 'author' }]), paragraphs: 60 },
+    { doc_id: 1, religion: "Baha'i", collection: 'Books', title: 'Lights of Guidance', doc_author: 'Helen Hornby', scope: 'primary', authors: null, paragraphs: 40 },
+    { doc_id: 2, religion: 'Islam', collection: 'Books', title: 'Sahih Bukhari', doc_author: 'Bukhari', scope: 'supplemental', authors: null, paragraphs: 20 }],
 }));
 vi.mock('../../api/lib/repos/query-health-repo.js', () => ({ slowQueriesByHour: async () => [
   { hour: '2026-10-12 14:00', proc: 'reports', kind: 'write', name: 'ingest', n: 3, worst_ms: 9000 },
@@ -11,7 +14,7 @@ vi.mock('../../api/lib/repos/query-health-repo.js', () => ({ slowQueriesByHour: 
 vi.mock('../../api/lib/repos/translator-repo.js', () => ({ translatorCoverage: async () => ({ byTranslator: [{ translator: 'Shoghi Effendi', basis: 'book', paragraphs: 5 }], translationBy: [], books: { with_translators: 1, docs: 9 } }) }));
 vi.mock('../../api/lib/repos/language-repo.js', () => ({ docLanguageCounts: async () => [{ language: 'en', docs: 5 }, { language: 'En', docs: 2 }] }));
 vi.mock('../../api/lib/repos/phrase-store-repo.js', () => ({
-  coverageByScope: () => [{ scope: 'primary', religion: "Baha'i", paragraphs: 80 }], monthSpend: () => [{ month: '2026-10', usd: 8 }],
+  coveredByDocAuthor: () => [{ doc_id: 1, author: 'Shoghi Effendi', paragraphs: 50 }, { doc_id: 1, author: 'Helen Hornby', paragraphs: 30 }, { doc_id: 2, author: 'Bukhari', paragraphs: 25 }], monthSpend: () => [{ month: '2026-10', usd: 8 }],
 }));
 vi.mock('../../api/lib/repos/schema-repo.js', () => ({
   tableSchema: async (table) => ({ table, nrow: '9 3', triggers: [], indexes: [{ name: 'idx_content_doc', columns: ['doc_id'] }, { name: 'idx_content_doc_deleted', columns: ['deleted_at', 'doc_id'] }] }),
@@ -53,6 +56,10 @@ describe('ops reports (server-side)', () => {
   it('languages flags non-normal labels; phrase coverage prices the gap', async () => {
     expect((await REPORTS.languages()).not_normalised.map((r) => r.language)).toEqual(['En']);
     const c = await REPORTS['phrase-coverage']();
-    expect(c).toMatchObject({ missing_paragraphs: 20, usd_per_paragraph: 0.1, est_usd_to_finish: 2 });
+    // covered 50 (core) + 30 (supplemental) + 20 (gray, clamped to its 20 live) = 100 of 120 live; $8 / 100 ¶
+    expect(c).toMatchObject({ missing_paragraphs: 20, usd_per_paragraph: 0.08, est_usd_to_finish: 2 });
+    expect(c.by_tier).toEqual({ core: { live: 60, covered: 50, missing: 10 }, gray: { live: 20, covered: 20, missing: 0 }, supplemental: { live: 40, covered: 30, missing: 10 } });
+    expect(c.rows[0]).toMatchObject({ religion: "Baha'i", tier: 'core', scope: 'primary' });
+    expect(c.rows.find((r) => r.tier === 'gray')).toMatchObject({ religion: 'Islam', scope: 'supplemental' });   // scope = the doc's CURRENT scope
   });
 });

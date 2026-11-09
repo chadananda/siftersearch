@@ -10,6 +10,8 @@
 //   node scripts/phrase-index/indexer.mjs --scope library --religion bahai --embed --qdrant --max-usd 180 [--scan-only]
 //   node scripts/phrase-index/indexer.mjs --scope supplemental --embed --qdrant --max-usd 180
 //   node scripts/phrase-index/indexer.mjs --scope originals --embed     (Bahá'í Arabic-script paragraphs only)
+//   node scripts/phrase-index/indexer.mjs --tier core|gray|supplemental --embed --qdrant   (doctrinal tier, ORDER not filter: run core, then
+//        gray, then supplemental; BOTH scopes; each PARAGRAPH by its own author — authority.js doctrinalTier; never a --scope)
 //   node scripts/phrase-index/indexer.mjs --docs 21380 --embed          (explicit documents, e.g. the Arabic Qur'an)
 //   node scripts/phrase-index/indexer.mjs --docs-file ids.txt --embed   (thousands of documents: argv tops out ~128 KB)
 //   node scripts/phrase-index/indexer.mjs --field original --embed      (originals stored on translations: original_text)
@@ -35,6 +37,7 @@ import { faShare } from '../../api/lib/arabic-script.js';
 import { dirBytes, hotVerdict } from './hot-space.mjs';
 import { boilerplateTexts, keepSiteParagraph } from '../../api/lib/site-boilerplate.js';
 import { paragraphAuthor } from '../../api/lib/authorship/effective.js';
+import { doctrinalTier } from '../../api/lib/authority.js';
 import { authorKey } from '../../api/lib/search/qdrant-layers.js';
 import { INDEXABLE_DOC_SQL, TAG_INDEX_SQL } from '../../api/lib/search/excluded-docs.js';
 import { parseStoredHypQuestions } from '../../api/lib/search/hype.js';
@@ -49,9 +52,12 @@ const DB = arg('db', join(ROOT, 'data', 'sifter.db'));
 const STORE = arg('store', '/tank/sifter/phrase-vectors/vectors.db');
 const SCOPE = arg('scope', 'originals');                  // originals | library | supplemental
 const SCRIPT = arg('script', 'all');                      // library only: arabic | other | all
+const TIER = arg('tier', 'all');                          // core | gray | supplemental | all (default: unchanged scope behaviour)
+if (!['core', 'gray', 'supplemental', 'all'].includes(TIER)) throw new Error(`--tier must be core|gray|supplemental|all, got '${TIER}'`);
 const RELIGION = arg('religion', 'all');                  // library only: bahai | other | all (plan order: Bahá'í first)
 const FIELD = arg('field', 'text');                       // 'original' = the bilingual layer: content.original_text; 'hype' = HyPE questions; 'concepts' = concept claims
 const DOCS = (arg('docs', '') || (arg('docs-file') ? readFileSync(arg('docs-file'), 'utf8') : '')).split(/[,\s]+/).map(Number).filter(Boolean);   // --docs-file: a list too long for argv (E2BIG)
+const TIER_ON = TIER !== 'all' && !DOCS.length;            // an explicit --docs list wins
 const MODEL = 'gemini-embedding-2', DIMS = 3072, BATCH = 96, CONC = +arg('concurrency', 16), LIMIT = +arg('limit', 0);
 const CHUNK = +arg('chunk', 20000);                       // paragraphs per embed→upsert cycle
 const MAX_USD = +arg('max-usd', 0), BUDGET = arg('budget-key', 'library-build'), PRICE = 0.20;   // $ per 1M tokens (online)
@@ -120,23 +126,28 @@ function source() {
   const col = FIELD === 'original' ? 'c.original_text' : 'c.text';
   const rel = RELIGION === 'bahai' ? " AND d.religion = 'Baha''i'" : RELIGION === 'other' ? " AND d.religion <> 'Baha''i'" : '';
   const claimsOf = "(SELECT json_group_array(cc.statement) FROM concept_claims cc WHERE cc.doc_id = c.doc_id AND cc.para_id = COALESCE(c.external_para_id, 'p' || c.id) AND cc.proof_ok = 1)";
-  const where = FIELD === 'concepts' && !DOCS.length ? 'd.id IN (SELECT DISTINCT doc_id FROM concept_claims)' : DOCS.length ? `d.id IN (${DOCS.join(',')})`
+  // TIER: documents are chosen in JS (the rule is not SQL), both scopes, read one document at a time like --docs. A non-Bahá'í document has
+  // one tier; a Bahá'í document may mix writers (compilations), so it is a candidate for every tier and keep() tests each paragraph.
+  const tierIds = TIER_ON ? src.prepare(`SELECT d.id, d.religion, d.collection, d.title, d.author FROM docs d WHERE d.deleted_at IS NULL AND ${INDEXABLE_DOC_SQL}${rel} ORDER BY d.id`).all()
+    .filter((d) => /^bah/i.test(String(d.religion || '')) || doctrinalTier(d) === TIER).map((d) => d.id) : null;
+  const list = DOCS.length ? DOCS : tierIds;
+  const where = list ? 'd.id = ?' : FIELD === 'concepts' && !DOCS.length ? 'd.id IN (SELECT DISTINCT doc_id FROM concept_claims)'
     : SCOPE === 'library' ? `d.scope = 'primary'${rel}` : SCOPE === 'supplemental' ? `d.scope = 'supplemental'${rel}` : "d.religion = 'Baha''i'";
   // PAGED by content.id, each page its own short read: ONE .iterate() over the whole scope held a single read transaction
   // for the entire build (12–27 h), so the WAL could never be checkpointed — it grew to 12 GB, and the worker restarted the
   // API every 15 min trying to free it (the 2026-10-03 "restart storm"). Never stream a long build through one statement.
   const page = src.prepare(`SELECT c.id, c.doc_id, ${col} AS text, ${FIELD === 'original' ? 'COALESCE(c.original_lang, d.language)' : 'd.language'} AS language,
-      c.authors, d.author, d.religion, d.collection, d.scope${FIELD === 'hype' ? ', c.hyp_questions, c.hyp_thesis' : ''}${FIELD === 'concepts' ? `, ${claimsOf} AS claims` : ''} FROM content c JOIN docs d ON d.id = c.doc_id
+      c.authors, d.author, d.title, d.religion, d.collection, d.scope${FIELD === 'hype' ? ', c.hyp_questions, c.hyp_thesis' : ''}${FIELD === 'concepts' ? `, ${claimsOf} AS claims` : ''} FROM content c JOIN docs d ON d.id = c.doc_id
     WHERE ${where} AND d.deleted_at IS NULL AND ${INDEXABLE_DOC_SQL} AND c.deleted_at IS NULL AND COALESCE(c.is_duplicate, 0) = 0 AND LENGTH(${col}) > 0
       ${FIELD === 'hype' ? "AND (COALESCE(c.hyp_questions, '') <> '' OR COALESCE(c.hyp_thesis, '') <> '')" : ''}
       AND c.id > ? ORDER BY c.id LIMIT 5000`);
   // An explicit --docs list is read ONE DOCUMENT AT A TIME on the doc_id index (10-14): as `d.id IN (<thousands>) …
   // c.id > ? ORDER BY c.id` SQLite walked the whole content table in id order for every 5,000-row page — job 91 read 47 GB
   // in 6 h and wrote nothing after its first hour.
-  const perDoc = DOCS.length ? src.prepare(page.source.replace(where, 'd.id = ?')) : null;
+  const perDoc = list ? page : null;
   const rows = { *iterate() {
     if (perDoc) {
-      for (const id of DOCS) for (let last = 0; ;) { const got = perDoc.all(id, last); if (!got.length) break; yield* got; last = got[got.length - 1].id; }
+      for (const id of list) for (let last = 0; ;) { const got = perDoc.all(id, last); if (!got.length) break; yield* got; last = got[got.length - 1].id; }
       return;
     }
     for (let last = 0; ;) { const got = page.all(last); if (!got.length) return; yield* got; last = got[got.length - 1].id; }
@@ -146,12 +157,14 @@ function source() {
 
 // scraped sites: skip markup-only lines and recurring page chrome (api/lib/site-boilerplate.js); library never filtered
 let BP = null;
-const keep = (text) => {
+const keep = (text, p = null) => {
+  // tier runs span both scopes: site-scraped paragraphs (scope 'supplemental') still get the boilerplate filter
+  if (TIER_ON && p) { if (doctrinalTier(p, { author: paragraphAuthor(p) }) !== TIER) return false; if (p.scope === 'supplemental') { BP ??= boilerplateTexts(new Database(DB, { readonly: true, fileMustExist: true })); if (!keepSiteParagraph(text, BP)) return false; } }
   if (SCOPE === 'supplemental') {
     BP ??= boilerplateTexts(new Database(DB, { readonly: true, fileMustExist: true }));
     if (!keepSiteParagraph(text, BP)) return false;
   }
-  if (SCOPE === 'originals' && !DOCS.length) return arabicShare(text) >= 0.5;
+  if (SCOPE === 'originals' && !DOCS.length && !TIER_ON) return arabicShare(text) >= 0.5;
   if (SCRIPT === 'arabic') return arabicShare(text) >= 0.5;
   if (SCRIPT === 'other') return arabicShare(text) < 0.5;
   return true;
@@ -362,7 +375,7 @@ async function upsert() {
 async function scanOnly() {
   const { src, rows } = source(); const seen = new Set(); let paras = 0, units = 0, tokens = 0;
   for (const p of rows.iterate()) {
-    if (!keep(p.text)) continue;
+    if (!keep(p.text, p)) continue;
     paras++;
     const { seg } = paragraphLang(p.text, p.language);
     for (const u of unitsFor(p, seg)) {
@@ -378,7 +391,7 @@ async function scanOnly() {
 }
 
 async function build() {
-  note({ phase: 'start', docs: DOCS.length ? DOCS : undefined, scope: DOCS.length ? undefined : SCOPE, field: FIELD, embed_mode: EMBED_MODE, target: `${UP.url}/${UP.coll}` });
+  note({ phase: 'start', docs: DOCS.length ? DOCS : undefined, scope: DOCS.length ? undefined : SCOPE, tier: TIER_ON ? TIER : undefined, field: FIELD, embed_mode: EMBED_MODE, target: `${UP.url}/${UP.coll}` });
   if (has('qdrant')) await waiting(`qdrant collection ${UP.coll}`, ensureCollection());
   const { src, rows } = source(); const t0 = Date.now();
   let paras = 0, units = 0, embedded = 0, sent = 0, batch = [], embedTokens = 0, embedMs = 0, shownAt = 0;
@@ -402,7 +415,7 @@ async function build() {
       paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)), timing: timing() });
   };
   for (const p of rows.iterate()) {
-    if (!keep(p.text)) continue;
+    if (!keep(p.text, p)) continue;
     batch.push(p); paras++;
     if (batch.length >= CHUNK) await flush();
     if (stopped || (LIMIT && paras >= LIMIT)) break;

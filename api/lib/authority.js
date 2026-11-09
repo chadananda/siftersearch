@@ -19,6 +19,7 @@ import { readFileSync, readdirSync, statSync } from 'fs';
 import { parse as parseYaml } from 'yaml';
 import { join } from 'path';
 import { config } from './config.js';
+import { norm, WRITER_RE } from './rights/canonical.js';
 
 // Cache for authority values from library meta.yaml files
 let libraryAuthority = null;
@@ -130,24 +131,24 @@ const TITLE_AUTHORITY = [
   // Excluded: "The Qur'an Commentary of...", "Tafsir al-Quran..."
   {
     pattern: /^(the\s+)?(holy\s+|meaning\s+of\s+the\s+glorious\s+|glorious\s+)?qur(?:['\u2019\u02bc-])?[a\u00e1\u00e2\u0101]n(\s*\([^)]*\)|\s*$)/i,
-    authority: 10,
+    authority: 10, kind: 'quran',
   },
   // Koran translations: "The Koran Interpreted", "The Koran (Sale)", etc.
   // Excluded: "Tafsir...", "Commentary..."
   {
     pattern: /^(the\s+)?koran(\s+interpreted|\s+\([^)]*\)|\s*$)/i,
-    authority: 10,
+    authority: 10, kind: 'quran',
   },
   // Complete Bible translations: "The King James Bible", "American Standard Version", etc.
   // Individual Gospels already handled by AUTHOR_AUTHORITY (author=Matthew/Mark/etc.)
   {
     pattern: /^(the\s+)?(holy\s+)?(bible|king\s+james\s+(bible|version)|american\s+standard\s+version|world\s+english\s+bible|douay.rheims\s+bible)(\s*$|\s*[-—(])/i,
-    authority: 10,
+    authority: 10, kind: 'bible',
   },
   // Tao Te Ching translations (when author stored as Unknown/Various)
   { pattern: /^(the\s+)?tao\s+te\s+ching(\s*[-—(]|\s*$)/i, authority: 10 },
   // Psalms and Torah books (when author not stored individually)
-  { pattern: /^(the\s+)?(book\s+of\s+)?(psalms|proverbs|ecclesiastes|song\s+of\s+(solomon|songs))(\s*$|\s*[-—(])/i, authority: 10 },
+  { pattern: /^(the\s+)?(book\s+of\s+)?(psalms|proverbs|ecclesiastes|song\s+of\s+(solomon|songs))(\s*$|\s*[-—(])/i, authority: 10, kind: 'bible' },
   // Bhagavad Gita translations
   { pattern: /^(the\s+)?bhagavad[\s-]?g[iī]t[aā](\s*[-—(]|\s*$)/i, authority: 10 },
   // Analects of Confucius
@@ -364,6 +365,46 @@ export function getAuthority(doc) {
 
   // 7. Return global default
   return DEFAULT_AUTHORITY;
+}
+
+// DOCTRINAL TIER (Chad 11-09: "the division is between doctrinal core and supplemental, which is important historical or
+// philosophical but not core"). core | gray | supplemental, by the TEXT — never by where the copy came from (docs.scope only means
+// "scraped from a website"; a website copy of the Hidden Words is still core). PER PARAGRAPH, by its own author (Chad 11-09:
+// every paragraph by the Báb, Bahá'u'lláh, 'Abdu'l-Bahá or Shoghi Effendi is core whatever book it sits in — Lights of Guidance,
+// a compilation, Paris Talks; a compiler's intro or a UHJ letter in the same book is not). ORDER only: every non-duplicate paragraph is
+// indexed in every tier (phrase indexing is the primary retrieval mechanism). Pure: tables above + the doc's own fields.
+export const TIERS = ['core', 'gray', 'supplemental'];
+// Islam: only the Qur'an is core. Hadith = gray; Shi'i Imams' sayings (Nahj al-Balagha, al-Kafi …) = gray. Tafsir = supplemental.
+const ISLAM_GRAY_TITLE = /\b(sahih|bukhari|sunan|muwatta|tirmidhi|abu dawud|ibn majah|nasai|mishkat|riyad as salihin|hadith|nahj al balagha|al kafi|bihar al anwar|sahifa|sahifah)\b/;
+// Other traditions' secondary canon = gray: Talmud, Mencius, Zhuangzi, Jataka.
+const OTHER_GRAY_TITLE = /\b(talmud|mishnah|jataka|buddhist birth stories|mencius|zhuangzi|chuang tzu)\b/;
+const GRAY_AUTHORS = new Set(['Mencius', 'Zhuangzi', 'Chuang Tzu']);
+const isScriptureAuthor = (a) => !!a && (AUTHOR_AUTHORITY[a] ?? 0) >= 7 && !GRAY_AUTHORS.has(a) && a !== 'Muhammad'
+  && !WRITER_RE.test(norm(a)) && !/universal house of justice|research department|^compilation/i.test(a);
+
+/** doc: { religion, collection, title, author }; para: { author } = the paragraph's own writer (paragraphAuthor: content.authors, else
+ *  the doc's author). No para → the doc's own author/title decide. */
+export function doctrinalTier(doc = {}, para = null) {
+  if (isTalkCollection(doc.collection)) return 'supplemental';   // media transcripts: modern speakers' talks
+  const rel = norm(doc.religion), title = String(doc.title || ''), t = norm(title);
+  const author = doc.author ? normalizeApostrophes(String(doc.author)) : '', a = norm(author);
+  if (/pilgrim notes/.test(norm(doc.collection)) || /\bpilgrims? notes?\b/.test(t)) return 'gray';
+  const titleCore = (kinds) => TITLE_AUTHORITY.some(({ pattern, authority, kind }) => authority >= 10 && kinds.includes(kind) && (pattern.test(title) || pattern.test(author)));
+  if (/^bah/.test(rel)) {
+    // the paragraph's own writer decides when known: a Central Figure or the Guardian = core; "Compilation (Bahá'í Writings)" = made
+    // of their texts = core; anyone else (compiler's intro, UHJ letter, scholar) = supplemental. Some Answered Questions via its title.
+    const w = para?.author ? norm(para.author) : null;
+    if (w != null) return WRITER_RE.test(w) || /^compilation/.test(w) ? 'core' : 'supplemental';
+    return titleCore([undefined]) || /^compilation/.test(a) || WRITER_RE.test(a) ? 'core' : 'supplemental';
+  }
+  if (/^(islam|muslim)/.test(rel)) {
+    if (titleCore(['quran'])) return 'core';
+    if (ISLAM_GRAY_TITLE.test(t)) return 'gray';
+    return author === 'Muhammad' ? 'core' : 'supplemental';   // OceanLibrary Qur'an surahs carry author "Muhammad"
+  }
+  if (/^christ/.test(rel)) return titleCore(['bible']) || isScriptureAuthor(author) ? 'core' : 'supplemental';   // only the Bible
+  if (OTHER_GRAY_TITLE.test(t) || GRAY_AUTHORS.has(author)) return 'gray';
+  return titleCore(['quran', 'bible', undefined]) || isScriptureAuthor(author) ? 'core' : 'supplemental';
 }
 
 // Site registry hook. Wired at boot from api/index.js + worker startup so
