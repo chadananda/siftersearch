@@ -66,7 +66,7 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
     let out, inp;
     let raw, pick = null;
     try {
-      inp = input(s, p, u, t?.length === 1 ? t[0] : undefined);
+      inp = await input(s, p, u, t?.length === 1 ? t[0] : undefined);
       if (!p.doctrinal) { out = await call(s, tool, inp); raw = take(out, p, u) || []; }
       else {
         const fused = tool === 'fused_search', n1 = { ...inp, filters: { ...inp.filters, authority: DOC_AUTH }, ...(fused ? { tiers: ['authority'], min_results: DOC_MIN } : {}) };
@@ -94,7 +94,9 @@ const namedWork = (u) => (typeof u.named_work === 'string' && u.named_work.trim(
   : Array.isArray(u.named_sources) && u.named_sources.length ? { documentId: u.named_sources[0] } : null);
 const personOf = (u) => { const n = flat(u.named_person); return typeof n === 'string' && n.trim() && !Number.isFinite(Number(n)) ? n.trim() : null; };
 // HARD filters first (Chad 11-09): the tradition, the named work, the named author. `wide` = the widening pass: none of them (run when the filtered pass was thin)
-const searchInput = (s, p, u, trad) => { const filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(p.by_person ? { author: personOf(u) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
+// by_person: Jev named the person; the author_lookup tool resolves the library's spellings of the name (array = any), the raw name when none resolve
+const authorsOf = async (s, who) => { try { const a = ((await call(s, 'author_lookup', { name: who }))?.authors || []).map((x) => x.author); return a.length ? a : who; } catch { return who; } };
+const searchInput = async (s, p, u, trad) => { const who = !p.wide && p.by_person ? personOf(u) : null, filters = p.wide ? {} : { ...(trad ? { tradition: trad } : {}), ...(p.in_named ? namedWork(u) : {}), ...(who ? { author: await authorsOf(s, who) } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
   return { query: text(s, u, p.query, '{{topic}}'), limit: kOf(p, u) ?? 8, ...(Object.keys(filters).length ? { filters } : {}), ...(Array.isArray(p.layers) && p.layers.length ? { layers: p.layers } : {}), ...(Array.isArray(p.tiers) && p.tiers.length ? { tiers: p.tiers } : {}), ...(p.spell ? { spell: true } : {}) }; };
 // a pass ran with hard filters (so a thin result has something to widen from)
 const hardFiltered = (u) => !!(namedWork(u) || personOf(u) || tradsOf(u));

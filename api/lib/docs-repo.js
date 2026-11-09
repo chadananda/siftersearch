@@ -154,6 +154,15 @@ export async function groupCounts(groupBy, { scope = 'live', religion, collectio
     params, 'docs-repo:group-counts');
 }
 
+let _authors = { at: 0, rows: null };
+/** Live docs' distinct authors → [{ author, n }], cached in-process (TTL ms; default 10 min) so name resolution never costs a query per turn. */
+export async function distinctAuthors({ ttl = 600000, now = Date.now() } = {}) {
+  if (_authors.rows && now - _authors.at < ttl) return _authors.rows;
+  const rows = (await groupCounts(['author'])).filter((r) => r.author).map((r) => ({ author: r.author, n: r.n }));
+  _authors = { at: now, rows };
+  return rows;
+}
+
 /** Set (or clear) a document's cover — the image-service URL from api/lib/covers.js. Live docs only. */
 export async function setDocCover(docId, url) {
   if (url != null && !/^\/img\/covers\/\d+\?v=[0-9a-f]+$/.test(url)) throw new Error(`setDocCover: not an image-service URL: ${url}`);

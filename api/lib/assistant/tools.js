@@ -20,6 +20,16 @@ export function canonWork(title, canon = CANON) {
   return canon.find((w) => [w.title, ...(w.aliases || [])].some((a) => fold(a).replace(/^the /, '') === q))
     || canon.find((w) => [w.title, ...(w.aliases || [])].some((a) => { const f = fold(a).replace(/^the /, ''); return f.length > 5 && (q.includes(f) || f.includes(q)); })) || null;
 }
+// folded token run: "Saint Augustine of Hippo" → ['saint','augustine','of','hippo'] (apostrophes dropped, so Bahá'u'lláh is one token)
+const toks = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\u2018\u2019\u02bc\u02bb`']/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+/** The library authors whose name CONTAINS the person's name as a whole token run (augustine ⊂ Augustine of Hippo; ali ⊄ Baha'ali), exact first, then by documents. Pure. */
+export function matchAuthors(name, rows, cap = 12) {
+  const q = toks(name), k = q.join('');
+  if (!q.length) return [];
+  const hit = (a) => { const t = toks(a); for (let i = 0; i + q.length <= t.length; i++) if (q.every((w, j) => t[i + j] === w)) return true; return false; };
+  return (rows || []).filter((r) => hit(r.author)).map((r) => ({ author: r.author, key: toks(r.author).join(''), docs: r.n ?? 0 }))
+    .sort((a, b) => (b.key === k) - (a.key === k) || b.docs - a.docs).slice(0, cap);
+}
 let NOTES = null;
 export const loadNotes = async () => (NOTES ??= (await import('./work-notes.json', { with: { type: 'json' } })).default);
 
@@ -356,6 +366,13 @@ const ENTRIES = [
       if (!w) return { work: null, notes: [] };
       return { work: w.title, notes: ((await (ctx.notes || loadNotes)())?.works || []).find((x) => x.title === w.title)?.notes || [] };
     } },
+  { name: 'author_lookup', label: 'Author Lookup', kind: 'tool', outputName: 'Authors', cost: C(false, 5),
+    purpose: 'The library’s author strings for a person’s name (Augustine → Augustine of Hippo, Saint Augustine).',
+    description: "The library's own author names for a person a reader names (any spelling variant): use them as the author filter of a search so the person's works are found under whatever name the library holds them.",
+    input: { type: 'object', additionalProperties: false, required: ['name'], properties: { name: str('The person, as named', 200) } },
+    output: { type: 'object', required: ['authors'], properties: { authors: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['author', 'key', 'docs'], properties: { author: { type: 'string' }, key: { type: 'string' }, docs: { type: 'integer' } } } } } },
+    example: { input: { name: 'Augustine' }, output: { authors: [{ author: 'Augustine of Hippo', key: 'augustineofhippo', docs: 4 }] } },
+    async run({ name }, ctx = {}) { return { authors: matchAuthors(name, await (await dep(ctx, 'distinctAuthors', 'docs'))()) }; } },
   // a signpost's recorded quote links, else a pure fused_search held to the authoritative standings (scripture, Guardian): no planner, no model
   { name: 'source_trace', label: 'Source Trace', kind: 'tool', refInput: true, outputName: 'Passage[]', cost: C(true, 300),
     purpose: 'The primary passages a signpost (a House letter, a scholar, a compilation) quotes or rests on.',
