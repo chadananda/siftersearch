@@ -1,6 +1,20 @@
 {
-  "generated": "2026-11-09T15:37:05.902Z",
+  "generated": "2026-11-09T19:11:25.337Z",
   "entries": [
+    {
+      "hash": "450c9f410",
+      "date": "2026-11-09",
+      "type": "Docs",
+      "description": "/docs/response-strategies builds from the strategy DB, drawing each strategy's newest tree",
+      "scope": null
+    },
+    {
+      "hash": "a1271acad",
+      "date": "2026-11-09",
+      "type": "Other",
+      "description": "Count the fallback ordinal only when the MD has no para_N",
+      "scope": null
+    },
     {
       "hash": "70ff86cb4",
       "date": "2026-11-09",
@@ -1764,206 +1778,24 @@
       "type": "Test",
       "description": "Docs-order ratchet spares primary-key order; media index asserts the drawing-leads portrait",
       "scope": null
-    },
-    {
-      "hash": "c8c4bda75",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "A grade's RAM need follows the recording's length and rate (19:15 the OOM killer took one on aorus at 7.7 GB — the fixed 2 GB budget let it in); health reports 'rerendered' beside 'published' (first publications only)",
-      "scope": "media"
-    },
-    {
-      "hash": "d45b61052",
-      "date": "2026-10-23",
-      "type": "Other",
-      "description": "'Mr. Khazeh' confirmed as the Hand of the Cause Jalál Kházeh (the only Kházeh)",
-      "scope": "media"
-    },
-    {
-      "hash": "739b009ac",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Ruhi books are refused at every door — ingesters, Dewey intake, scouts/pulse, book requests (Chad 10-23)",
-      "scope": "dewey"
-    },
-    {
-      "hash": "8bffb4d4b",
-      "date": "2026-10-23",
-      "type": "Docs",
-      "description": "Applied counts for Chad's 10-23 rulings",
-      "scope": "rights"
-    },
-    {
-      "hash": "c41c972b1",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "A per-document rights ruling (rights_reason) survives re-ingest and collection meta changes",
-      "scope": "rights"
-    },
-    {
-      "hash": "c9fcfc97d",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "Bob Harris's photo was a namesake (Counsellor Robert Harris, 1987) — removed from the gallery and R2; Chad's present-day photo is his primary (origin supplied). Rule: a modern speaker's gallery needs an identity anchor (talk still, portrait in use, or a photo Chad supplied); a caption that only names him is held (gallery.js identityProblem, enforced in speaker_gallery_publish.mjs). Sketch script: named per-photo notes (vintage) for Curtis Kelsey's takes.",
-      "scope": "media"
-    },
-    {
-      "hash": "ac092b207",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The ISBN rule never limits a book from an institutional publisher (Publishing Trust / ABS / Wilmette) unless forced",
-      "scope": "rights"
-    },
-    {
-      "hash": "05cc55b78",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "Heat guard on the compute hosts (10-23: aorus GPU 88 °C throttling, CPU Tctl 95 °C; boss Tctl 99.9 °C)",
-      "scope": "media"
-    },
-    {
-      "hash": "d004b77d6",
-      "date": "2026-10-23",
-      "type": "Test",
-      "description": "Case 17 checks only that the House is never cast as interpreting — Shoghi Effendi's own letter on suicide exists and rightly leads (live run: 7, no authority errors; case 18: 8.5)",
-      "scope": "anis battery"
-    },
-    {
-      "hash": "981f55bbb",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Pen-and-ink courtroom-sketch portraits are the speakers' primary portrait (Chad 10-23, style A)",
-      "scope": "media"
-    },
-    {
-      "hash": "0530a04c0",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Night schema maintenance — named steps over /api/admin/ops/maintenance, run one at a time inside a writer drain (scripts/ops/db-maintenance.sh)",
-      "scope": "ops"
-    },
-    {
-      "hash": "fcf9a9467",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The exclusion rules' cache follows the data files' modification times — Chad's decisions change data without a code push, and a long-running service kept the old rules",
-      "scope": "media"
-    },
-    {
-      "hash": "25b8d57a6",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Chad's decisions 10-23 — 19 speakers dropped (curation, given name + surname), historian/modern tags, the unsure ranked last; confirmed identities (Furútan, Nakhjavání, Grossmann → Hartmut, Taherzadeh, Sabri → Isobel, Khamsí incl. Khamsi-Dunbar, Faizi → Abu'l-Qásim, Dr. Mohajer → Payman → excluded); the held Remey clip dropped; re-runs of published talks get their own tower slot",
-      "scope": "media"
-    },
-    {
-      "hash": "08cd958d7",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "Doctrine = the Writings > Shoghi Effendi > pilgrims' notes; NOTHING after the Guardian interprets; the House has legal authority, primary on law and administration (Chad 10-23, a decision)",
-      "scope": "anis authority"
-    },
-    {
-      "hash": "903a1417c",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Chad's 10-23 rulings — Publishing Trusts / ABS / Wilmette institutional (open), Ruhi books excluded, per-book exceptions",
-      "scope": "rights"
-    },
-    {
-      "hash": "18526a4c4",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Invented second speakers go back to the main speaker — voice-checked per paragraph (titanet: the other speaker ≥ 0.85 AND the paragraph ≥ 0.80 against the main voice); a real questioner stays",
-      "scope": "media"
-    },
-    {
-      "hash": "764c5c763",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "A drain never waits on a transcription or diarization slot (DrainAbort while waiting) — 18:00 one diarization waiting for a slot held the media drain 12+ min, so no lane claimed work and aorus sat idle",
-      "scope": "media"
-    },
-    {
-      "hash": "a306474df",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "RAM guard on the compute hosts + intelligibility dominates the remaster QA",
-      "scope": "media"
-    },
-    {
-      "hash": "1ede244f8",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The listening copy is the ORIGINAL with transparent processing only (Chad 10-23 by ear: the DFN and restored copies 'badly mangled' words) + fullband Ogg; jobs/tmp on the hosts' data volumes",
-      "scope": "media"
-    },
-    {
-      "hash": "35e3a46c6",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Host resource monitoring for tower, aorus and boss in system-checks (10-23: aorus's disk filled and nothing alerted)",
-      "scope": "ops"
-    },
-    {
-      "hash": "afa701979",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Remaster QA decisions (not wired until Chad's OK on Ioas) — listening pick by perceived quality with bandwidth/roll-off, clipping, loudness, ASR, voice-similarity and artefact vetoes, never worse than the original; per-talk verdict pass-auto / needs-work / review; the Ioas numbers are the test fixture",
-      "scope": "media"
-    },
-    {
-      "hash": "c9297d251",
-      "date": "2026-10-23",
-      "type": "Docs",
-      "description": "Restoration + remaster QA gate policy (Chad 10-23: check every talk's fix) — grade-chosen chain, pick by perceived quality with bandwidth/voice/artefact vetoes, never worse than the original, verdict per talk, review queue, digest samples",
-      "scope": "media"
-    },
-    {
-      "hash": "58b39077f",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The transcription cap counts what the HOST is running (gate 'running transcribe', ≤ every 15 s) — after a restart a new dispatch could take a re-attached job's slot (16:4x: three transcriptions on aorus, cap 2), the twin of the diarization cap fix",
-      "scope": "media"
-    },
-    {
-      "hash": "41712f247",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "Pilgrims' notes are relative, never \"no authority\" — below the written text, above all scholarship; no reflex Bahá'í truisms (Chad 10-23)",
-      "scope": "anis"
-    },
-    {
-      "hash": "f1214feaf",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "First-hand speakers — International Bahá'í Council members (verified list; Furútan was not one) and pilgrims of the Guardian's time ranked with the Hands; ITC hunt finished (Khamsí 3, Sabri 1, Yazdí 1 new talk; Carney, Mayberry, Bopp none); Banani's 1956 pilgrimage memoirs ×7, Mottahedeh 1; a Remey clip held (undated, Covenant-breaker channel)",
-      "scope": "media"
-    },
-    {
-      "hash": "d8ead9b2d",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "'compute idle' uses the feed's own pause rule — prepped + ASR in hand (queued AND transcribing) ≥ 3 × the ASR slots (18); 17:09 it counted only prepped + asr_queued (10) against a fixed 12 and flagged the feed's correct pause (20 in hand) as idle",
-      "scope": "checks"
-    },
-    {
-      "hash": "5586c56a8",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The import gate refused ITSELF — late('${p}') in its own error message read as a missing file; non-literal late() paths are skipped",
-      "scope": "deploy"
-    },
-    {
-      "hash": "0e0021469",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The import gate checks only code the updater reloads (api/, scripts/, worker/, no *.test.js) — 16:52 it refused every deploy because test files import vitest, a dev dependency not installed on tower",
-      "scope": "deploy"
     }
   ],
   "grouped": {
     "2026-11-09": [
+      {
+        "hash": "450c9f410",
+        "date": "2026-11-09",
+        "type": "Docs",
+        "description": "/docs/response-strategies builds from the strategy DB, drawing each strategy's newest tree",
+        "scope": null
+      },
+      {
+        "hash": "a1271acad",
+        "date": "2026-11-09",
+        "type": "Other",
+        "description": "Count the fallback ordinal only when the MD has no para_N",
+        "scope": null
+      },
       {
         "hash": "70ff86cb4",
         "date": "2026-11-09",
@@ -3755,202 +3587,6 @@
         "type": "Test",
         "description": "Docs-order ratchet spares primary-key order; media index asserts the drawing-leads portrait",
         "scope": null
-      },
-      {
-        "hash": "c8c4bda75",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "A grade's RAM need follows the recording's length and rate (19:15 the OOM killer took one on aorus at 7.7 GB — the fixed 2 GB budget let it in); health reports 'rerendered' beside 'published' (first publications only)",
-        "scope": "media"
-      },
-      {
-        "hash": "d45b61052",
-        "date": "2026-10-23",
-        "type": "Other",
-        "description": "'Mr. Khazeh' confirmed as the Hand of the Cause Jalál Kházeh (the only Kházeh)",
-        "scope": "media"
-      },
-      {
-        "hash": "739b009ac",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Ruhi books are refused at every door — ingesters, Dewey intake, scouts/pulse, book requests (Chad 10-23)",
-        "scope": "dewey"
-      },
-      {
-        "hash": "8bffb4d4b",
-        "date": "2026-10-23",
-        "type": "Docs",
-        "description": "Applied counts for Chad's 10-23 rulings",
-        "scope": "rights"
-      },
-      {
-        "hash": "c41c972b1",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "A per-document rights ruling (rights_reason) survives re-ingest and collection meta changes",
-        "scope": "rights"
-      },
-      {
-        "hash": "c9fcfc97d",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "Bob Harris's photo was a namesake (Counsellor Robert Harris, 1987) — removed from the gallery and R2; Chad's present-day photo is his primary (origin supplied). Rule: a modern speaker's gallery needs an identity anchor (talk still, portrait in use, or a photo Chad supplied); a caption that only names him is held (gallery.js identityProblem, enforced in speaker_gallery_publish.mjs). Sketch script: named per-photo notes (vintage) for Curtis Kelsey's takes.",
-        "scope": "media"
-      },
-      {
-        "hash": "ac092b207",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The ISBN rule never limits a book from an institutional publisher (Publishing Trust / ABS / Wilmette) unless forced",
-        "scope": "rights"
-      },
-      {
-        "hash": "05cc55b78",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "Heat guard on the compute hosts (10-23: aorus GPU 88 °C throttling, CPU Tctl 95 °C; boss Tctl 99.9 °C)",
-        "scope": "media"
-      },
-      {
-        "hash": "d004b77d6",
-        "date": "2026-10-23",
-        "type": "Test",
-        "description": "Case 17 checks only that the House is never cast as interpreting — Shoghi Effendi's own letter on suicide exists and rightly leads (live run: 7, no authority errors; case 18: 8.5)",
-        "scope": "anis battery"
-      },
-      {
-        "hash": "981f55bbb",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Pen-and-ink courtroom-sketch portraits are the speakers' primary portrait (Chad 10-23, style A)",
-        "scope": "media"
-      },
-      {
-        "hash": "0530a04c0",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Night schema maintenance — named steps over /api/admin/ops/maintenance, run one at a time inside a writer drain (scripts/ops/db-maintenance.sh)",
-        "scope": "ops"
-      },
-      {
-        "hash": "fcf9a9467",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The exclusion rules' cache follows the data files' modification times — Chad's decisions change data without a code push, and a long-running service kept the old rules",
-        "scope": "media"
-      },
-      {
-        "hash": "25b8d57a6",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Chad's decisions 10-23 — 19 speakers dropped (curation, given name + surname), historian/modern tags, the unsure ranked last; confirmed identities (Furútan, Nakhjavání, Grossmann → Hartmut, Taherzadeh, Sabri → Isobel, Khamsí incl. Khamsi-Dunbar, Faizi → Abu'l-Qásim, Dr. Mohajer → Payman → excluded); the held Remey clip dropped; re-runs of published talks get their own tower slot",
-        "scope": "media"
-      },
-      {
-        "hash": "08cd958d7",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "Doctrine = the Writings > Shoghi Effendi > pilgrims' notes; NOTHING after the Guardian interprets; the House has legal authority, primary on law and administration (Chad 10-23, a decision)",
-        "scope": "anis authority"
-      },
-      {
-        "hash": "903a1417c",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Chad's 10-23 rulings — Publishing Trusts / ABS / Wilmette institutional (open), Ruhi books excluded, per-book exceptions",
-        "scope": "rights"
-      },
-      {
-        "hash": "18526a4c4",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Invented second speakers go back to the main speaker — voice-checked per paragraph (titanet: the other speaker ≥ 0.85 AND the paragraph ≥ 0.80 against the main voice); a real questioner stays",
-        "scope": "media"
-      },
-      {
-        "hash": "764c5c763",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "A drain never waits on a transcription or diarization slot (DrainAbort while waiting) — 18:00 one diarization waiting for a slot held the media drain 12+ min, so no lane claimed work and aorus sat idle",
-        "scope": "media"
-      },
-      {
-        "hash": "a306474df",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "RAM guard on the compute hosts + intelligibility dominates the remaster QA",
-        "scope": "media"
-      },
-      {
-        "hash": "1ede244f8",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The listening copy is the ORIGINAL with transparent processing only (Chad 10-23 by ear: the DFN and restored copies 'badly mangled' words) + fullband Ogg; jobs/tmp on the hosts' data volumes",
-        "scope": "media"
-      },
-      {
-        "hash": "35e3a46c6",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Host resource monitoring for tower, aorus and boss in system-checks (10-23: aorus's disk filled and nothing alerted)",
-        "scope": "ops"
-      },
-      {
-        "hash": "afa701979",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Remaster QA decisions (not wired until Chad's OK on Ioas) — listening pick by perceived quality with bandwidth/roll-off, clipping, loudness, ASR, voice-similarity and artefact vetoes, never worse than the original; per-talk verdict pass-auto / needs-work / review; the Ioas numbers are the test fixture",
-        "scope": "media"
-      },
-      {
-        "hash": "c9297d251",
-        "date": "2026-10-23",
-        "type": "Docs",
-        "description": "Restoration + remaster QA gate policy (Chad 10-23: check every talk's fix) — grade-chosen chain, pick by perceived quality with bandwidth/voice/artefact vetoes, never worse than the original, verdict per talk, review queue, digest samples",
-        "scope": "media"
-      },
-      {
-        "hash": "58b39077f",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The transcription cap counts what the HOST is running (gate 'running transcribe', ≤ every 15 s) — after a restart a new dispatch could take a re-attached job's slot (16:4x: three transcriptions on aorus, cap 2), the twin of the diarization cap fix",
-        "scope": "media"
-      },
-      {
-        "hash": "41712f247",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "Pilgrims' notes are relative, never \"no authority\" — below the written text, above all scholarship; no reflex Bahá'í truisms (Chad 10-23)",
-        "scope": "anis"
-      },
-      {
-        "hash": "f1214feaf",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "First-hand speakers — International Bahá'í Council members (verified list; Furútan was not one) and pilgrims of the Guardian's time ranked with the Hands; ITC hunt finished (Khamsí 3, Sabri 1, Yazdí 1 new talk; Carney, Mayberry, Bopp none); Banani's 1956 pilgrimage memoirs ×7, Mottahedeh 1; a Remey clip held (undated, Covenant-breaker channel)",
-        "scope": "media"
-      },
-      {
-        "hash": "d8ead9b2d",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "'compute idle' uses the feed's own pause rule — prepped + ASR in hand (queued AND transcribing) ≥ 3 × the ASR slots (18); 17:09 it counted only prepped + asr_queued (10) against a fixed 12 and flagged the feed's correct pause (20 in hand) as idle",
-        "scope": "checks"
-      },
-      {
-        "hash": "5586c56a8",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The import gate refused ITSELF — late('${p}') in its own error message read as a missing file; non-literal late() paths are skipped",
-        "scope": "deploy"
-      },
-      {
-        "hash": "0e0021469",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The import gate checks only code the updater reloads (api/, scripts/, worker/, no *.test.js) — 16:52 it refused every deploy because test files import vitest, a dev dependency not installed on tower",
-        "scope": "deploy"
       }
     ]
   }
