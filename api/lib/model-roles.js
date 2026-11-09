@@ -23,6 +23,8 @@ export const MODEL_ROLES = {
     why: 'the "what I understood" line: one noun phrase restating the resolved request from Jev\'s decision (System One has no free-text type)' },
   'anis-unmatched-recheck': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-08', needs: ['fast', 'json', 'tiny-output'],
     why: 'Chad 11-08: before a new strategy is built for an Unmatched question, a fast model checks whether Jev simply failed to pick a good one (active strategies + pending candidates named; one name or null)' },
+  'anis-tree-generator': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-09', needs: ['fast', 'json', 'tiny-output'],
+    why: 'a strategy tree\'s light generators (judges.js generateList): the sub-topics a topic splits into, the points that would make a claim true or false, the periods a timeline holds; one call per plan.* step' },
   'assistant-phrases': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-11-01', needs: ['fast', 'tiny-output'],
     why: 'name the search phrase (wording, person, work, term) of a specific question that has no quote marks; Jev still routes' },
   'deep-research-rerank': { provider: 'anthropic', model: 'claude-haiku-5-5', reviewed: '2026-10-13', needs: ['ranking', 'json'],

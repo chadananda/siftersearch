@@ -10,7 +10,8 @@ import { template, fill } from './templates.js';
 import { AUTH_KINDS } from './contract.js';
 import { standingOf, authorityOrder } from '../tradition-authority.js';
 import { TIER_ORDER } from '../source-tier.js';
-import { judgeHolds, judgeTimeline, judgeDated, termScript } from '../judges.js';
+import { judgeHolds, judgeTimeline, judgeDated, termScript, generateList } from '../judges.js';
+import { currentAIContext } from '../../ai-context.js';
 
 // ── units, scope, outcomes ──────────────────────────────────────────────────────────────────────────────────────────────
 export const U = (s) => {
@@ -541,20 +542,29 @@ E.shape = { kind: 'writer', cls: 'code', edges: ['done'], scope: 'strategy', par
     s.note = { read: { template: id, mode: modeOf(u) }, params: p, count: n, scope_excluded: 0, ...(p.direct ? { direct: true } : {}) };
     return 'done';
   } };
-E['plan.subthemes'] = { kind: 'tool', cls: 'llm', edges: ['done', 'fail'], scope: 'strategy', params: ['n', 'stage'], reads: ['topic'], writes: ['sub_themes'],
-  async run(s, p = {}) {   // the one light generator: no generator wired yet → sub_themes = [topic] (the unit default) and fail
-    const u = U(s), topic = u.topic ?? u.current_user_question;
-    try { const r = s.tools?.subthemes ? await s.tools.subthemes({ topic, n: p.n ?? 4 }, s.ctx) : null; if (r?.length) { u.sub_themes = r; return 'done'; } } catch { /* falls to the default */ }
-    u.sub_themes = [topic]; return 'fail';
-  } };
-
-// the same light generator for a claim's CRITERIA (what would make it true or false) and a timeline's ENTRIES (the periods/events it orders): never a stored list
-for (const [name, unit, tool, reads] of [['plan.criteria', 'criteria', 'criteria', ['challenged_claim', 'topic']], ['plan.entries', 'entries', 'entries', ['topic', 'named_person']]]) {
+// The light generators (Chad 11-09: wired, so a compilation / claim / timeline fans out over a real list): plan.subthemes → sub_themes,
+// plan.criteria → criteria (what would make THIS claim true or false, as searchable questions), plan.entries → entries (the periods/events a timeline holds).
+// Source: s.tools[name] (a seam) else judges.js generateList (ONE model call, metered to the turn's caller; its cost is on the trace step).
+// Never a stored list. Failure or empty → the subject itself (the unit default) and 'fail', as before.
+const tradOf = (u) => { const r = [u.religions_specified].flat().filter((x) => x && x !== 'all'); return r.length ? r.join(', ') : null; };
+for (const [name, unit, kind, reads, what] of [['plan.subthemes', 'sub_themes', 'subthemes', ['topic'], 'sub-themes a topic splits into'],
+  ['plan.criteria', 'criteria', 'criteria', ['challenged_claim', 'topic'], 'points that would make a claim true or false'], ['plan.entries', 'entries', 'entries', ['topic', 'named_person'], 'periods/events a timeline holds']]) {
   E[name] = { kind: 'tool', cls: 'llm', edges: ['done', 'fail'], scope: 'strategy', params: ['n', 'stage'], reads, writes: [unit],
-    async run(s, p = {}) {   // no generator wired → the subject itself is the one criterion / entry (the unit default) and fail
-      const u = U(s), subject = reads.map((k) => flat(u[k])).find((x) => String(x).trim()) || u.current_user_question;
-      try { const r = s.tools?.[tool] ? await s.tools[tool]({ subject, n: p.n ?? 4 }, s.ctx) : null; if (r?.length) { u[unit] = r; return 'done'; } } catch { /* falls to the default */ }
-      u[unit] = [subject]; return 'fail';
+    async run(s, p = {}) {
+      const u = U(s), subject = reads.map((k) => flat(u[k])).find((x) => String(x).trim()) || u.current_user_question, n = p.n ?? 4, tradition = tradOf(u);
+      const meter = currentAIContext().meter, m0 = Array.isArray(meter) ? meter.length : 0;
+      let items = [], via = 'model', error = null;
+      try {
+        if (s.tools?.[kind]) { via = 'tool'; items = (await s.tools[kind]({ subject, topic: subject, n, tradition }, s.ctx)) || []; }
+        else { const r = await (s.judges?.generate || generateList)({ kind, subject, n, tradition, ...(s.complete ? { complete: s.complete } : {}) }); items = r?.items || []; error = r?.ok ? null : r?.error ?? 'no items'; }
+      } catch (err) { error = err?.message || String(err); items = []; }
+      const ok = Array.isArray(items) && items.length > 0, edge = ok ? 'done' : 'fail';
+      u[unit] = ok ? items : [subject];
+      const calls = Array.isArray(meter) ? meter.slice(m0) : [], usd = calls.reduce((a, c) => a + (Number(c.usd) || 0), 0);
+      s.note = { read: { subject: trim(subject), tradition }, params: p, count: u[unit].length, generator: via, ...(calls.length ? { llm: { calls: calls.length, usd: Math.round(usd * 1e6) / 1e6, model: calls[0].model } } : {}), ...(error ? { error: String(error).slice(0, 200) } : {}) };
+      (s.direction?.decisions ?? s.ctx?.decisions)?.record?.(`plan:${unit}`, { by: via === 'tool' ? 'code' : 'model', saw: { subject: trim(subject), tradition, n }, options: ['done', 'fail'], chosen: edge,
+        reason: ok ? `${u[unit].length} ${what}` : `generator gave nothing (${String(error ?? 'empty').slice(0, 120)}); the subject itself is the one item` });
+      return edge;
     } };
 }
 

@@ -18,7 +18,7 @@ const NODES = (g) => Object.values(g.nodes).filter((n) => !n.shared);
 
 async function run(id, q, { tools = {}, choice = {}, jev, channel = 'site-chat', agentRun, extra = {} } = {}) {
   const g = graphFor(id, 2), events = [];
-  const s = { choice, ctx: {}, trace: [], question: q, messages: [], tools: { ...EMPTY, ...tools }, jev, agentRun, templates: TPL, onEvent: (e) => events.push(e), ...extra };
+  const s = { choice, ctx: {}, trace: [], question: q, messages: [], tools: { ...EMPTY, ...tools }, jev, agentRun, templates: TPL, onEvent: (e) => events.push(e), judges: { generate: async () => ({ items: [], ok: false, error: 'no model in tests' }) }, ...extra };   // the light generator's model is never called in tests
   s.units = entryUnits(g, choice, { query: q, question: q, channel: { id: channel }, messages: [] });
   Object.assign(s.units, extra.units || {});
   await runGraph(g, s);

@@ -1,4 +1,4 @@
-// Tree-level model steps the pure tools no longer hold (Chad 11-09): holds (quotation_candidates), timeline (biography_search people), dated claims (judgeDated, any subject), term script (Latin → Arabic for rendering_lookup).
+// Tree-level model steps the pure tools no longer hold (Chad 11-09): holds (quotation_candidates), timeline (biography_search people), dated claims (judgeDated, any subject), the light generators (generateList: sub-themes / criteria / timeline entries), term script (Latin → Arabic for rendering_lookup).
 // ONE call over the merged result, never per item. Seams (tests): decide / complete. Deps: source-hunt (quoteWindow, quoteRanges), systemone, ai, ctai-term. Not imported by tools.js (no-LLM ratchet).
 import { quoteWindow, quoteRanges } from '../source-hunt.js';
 
@@ -87,6 +87,33 @@ export async function judgeDated({ query, items = [], complete = null } = {}) {
   const dated = new Map();
   for (const d of results.flatMap((r) => (Array.isArray(r?.dated) ? r.dated : Array.isArray(r?.matches) ? r.matches : []))) if (d?.id != null && !dated.has(Number(d.id)) && String(d.date ?? d.year ?? '').trim()) dated.set(Number(d.id), { date: cl(d.date ?? d.year), year: Number.isFinite(Number(d.year)) ? Number(d.year) : null, event: cl(d.event).slice(0, 160) });
   return { items: items.flatMap((x, i) => (dated.has(i) ? [{ ...x, ...dated.get(i) }] : [])), judged: true };
+}
+
+// The light generators a tree plans with (plan.subthemes / plan.criteria / plan.entries): a short list the tree fans out over.
+// Never a stored list; the tradition is context only (never assumed). One call, JSON out.
+const GEN_ASK = {
+  subthemes: (n) => `Split the SUBJECT (a topic) into at most ${n} sub-topics a reader studying it would want covered. Divide by topic and sub-topic, NEVER by author, book or source. Keep to what the teachings say about it (doctrinal) unless the subject itself asks for history, practice or opinion. Each item: a short searchable phrase.`,
+  criteria: (n) => `The SUBJECT is a claim someone made or asked about. List at most ${n} points of evidence that would make THIS claim true or false — what a reader must find in the sources to settle it, covering both what would confirm it and what would refute it. Each item: one question someone could search the sources for (e.g. "What do the texts say about …?"). Do not answer the questions.`,
+  entries: (n) => `List at most ${n} periods or events that a timeline of the SUBJECT should contain, in chronological order. Each item: a short searchable phrase naming the period or event. Never put a date in the item (the sources supply the dates).`,
+};
+const GEN_SYS = (kind, n, tradition) => `${GEN_ASK[kind](n)}
+TRADITION: ${tradition ? `${tradition} (context only; the subject may still concern another tradition)` : 'not specified — do not assume any tradition'}.
+Write the items in the language of the SUBJECT. Return ONLY JSON: {"items":["…"]}`;
+
+/** A tree's light generator: kind ∈ subthemes|criteria|entries → { items (≤ n distinct short strings), ok }. ONE model call (role anis-tree-generator),
+ *  billed to the turn's caller like every chat call (ai.js meters it; ai-context meter gets its cost). Failure / empty / unparsable → { items: [], ok: false, error }. */
+export async function generateList({ kind, subject, n = 4, tradition = null, complete = null } = {}) {
+  if (!GEN_ASK[kind]) throw new Error(`generateList: unknown kind ${kind}`);
+  const subj = cl(subject), size = Number.isInteger(n) && n > 0 ? n : 4;
+  if (!subj) return { items: [], ok: false, error: 'no subject' };
+  const call = complete || (async (messages, opts) => { const [{ chatCompletion }, { modelFor }] = await Promise.all([import('../ai.js'), import('../model-roles.js')]); return chatCompletion(messages, { ...modelFor('anis-tree-generator'), ...opts }); });
+  try {
+    const r = await call([{ role: 'system', content: GEN_SYS(kind, size, tradition) }, { role: 'user', content: `SUBJECT: ${subj}` }], { temperature: 0, maxTokens: 4000, responseFormat: { type: 'json_object' } });   // Haiku thinks first: ≥ 4000
+    const j = r?.content?.trim() ? looseParse(r.content) : null, list = Array.isArray(j) ? j : j?.items;
+    const seen = new Set(), items = [];
+    for (const x of Array.isArray(list) ? list : []) { const t = cl(typeof x === 'string' ? x : x?.item ?? x?.text ?? x?.question ?? ''); if (t && !seen.has(t.toLowerCase())) { seen.add(t.toLowerCase()); items.push(t); } }
+    return items.length ? { items: items.slice(0, size), ok: true } : { items: [], ok: false, error: 'empty answer' };
+  } catch (err) { return { items: [], ok: false, error: err?.message || String(err) }; }
 }
 
 const memo = new Map();   // folded Latin → Arabic script, once resolved (the pure tier: a repeat never asks the model again)

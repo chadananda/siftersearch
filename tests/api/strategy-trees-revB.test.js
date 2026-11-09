@@ -7,6 +7,8 @@ import { TEMPLATES } from '../../api/lib/assistant/strategy-seed.js';
 import { TREE_GRAPHS, TREE_STEPS, TREE_TEMPLATES, TREE_DESCRIPTIONS } from '../../api/lib/assistant/strategy-trees-seed.js';
 import { validateCandidate } from '../../api/lib/assistant/strategy-design.js';
 import { catalog } from '../../api/lib/repos/strategies-repo.js';
+import { generateList } from '../../api/lib/assistant/judges.js';
+import { withAIContext, currentAIContext } from '../../api/lib/ai-context.js';
 import { judgeTimeline } from '../../api/lib/assistant/judges.js';
 
 const TPL = Object.fromEntries(TEMPLATES.map((t) => [t.id, t.text]));
@@ -17,7 +19,7 @@ const NEW = ['claim_check', 'timeline', 'history_fact'];
 
 async function run(id, q, { tools = {}, units = {}, jev, extra = {} } = {}) {
   const g = graphFor(id, 2);
-  const s = { choice: { units }, ctx: {}, trace: [], question: q, messages: [], tools: { ...EMPTY, ...tools }, jev, templates: TPL, onEvent: () => {}, ...extra };
+  const s = { choice: { units }, ctx: {}, trace: [], question: q, messages: [], tools: { ...EMPTY, ...tools }, jev, templates: TPL, onEvent: () => {}, judges: { generate: async () => ({ items: [], ok: false, error: 'no model in tests' }) }, ...extra };
   s.units = entryUnits(g, { units }, { query: q, question: q, channel: { id: 'site-chat' }, messages: [] });
   await runGraph(g, s);
   s.how = s.out?.format?.how ?? '';
@@ -27,7 +29,7 @@ const stored = (id) => JSON.stringify([TREE_STEPS.filter((x) => x.id.startsWith(
 
 describe('plan.criteria / plan.entries: light generators, the subject itself by default', () => {
   it('generator wired → its list; none → [subject] and fail', async () => {
-    const mk = (tools, units) => ({ node: 'n', question: 'q', tools, units: { ...units }, ctx: {} });
+    const mk = (tools, units) => ({ node: 'n', question: 'q', tools, units: { ...units }, ctx: {}, judges: { generate: async () => ({ items: [], ok: false, error: 'no model in tests' }) } });
     let s = mk({ criteria: async ({ subject }) => [`${subject} a`, `${subject} b`] }, { challenged_claim: 'c' });
     expect(await ELEMENTS['plan.criteria'].run(s, { n: 2 })).toBe('done'); expect(s.units.criteria).toEqual(['c a', 'c b']);
     s = mk({}, { challenged_claim: 'c', topic: 't' }); expect(await ELEMENTS['plan.criteria'].run(s, {})).toBe('fail'); expect(s.units.criteria).toEqual(['c']);
@@ -124,5 +126,48 @@ describe('every rev-B tree passes validateCandidate', () => {
     // every declared edge of every node is routed somewhere (no edge falls to $fallback by omission)
     for (const [nid, n] of Object.entries(g.nodes)) { const st = steps.find((x) => x.id === n.step), el = ELEMENTS[st.activity], outs = el.edgesFor ? el.edgesFor(st.params) : el.edges;
       for (const e of outs) expect(g.edges.some((x) => x.from === nid && (x.on === e || x.on === '*')), `${id}.${nid} edge ${e}`).toBe(true); }
+  });
+});
+
+describe('the light generators, wired (Result 2): one model call each, metered, the subject itself on failure', () => {
+  const reply = (items) => async () => ({ content: JSON.stringify({ items }) });
+  it('generateList: each kind → a list; the tradition is context only, never assumed; n bounds the list', async () => {
+    const seen = [];
+    const complete = async (messages) => { seen.push(messages); return { content: JSON.stringify({ items: ['a', 'b', 'A', 'c'] }) }; };
+    for (const kind of ['subthemes', 'criteria', 'entries']) {
+      const r = await generateList({ kind, subject: 'the covenant', n: 2, tradition: "Baha'i", complete });
+      expect(r).toEqual({ items: ['a', 'b'], ok: true });
+    }
+    expect(seen[0][0].content).toMatch(/NEVER by author/); expect(seen[1][0].content).toMatch(/true or false/); expect(seen[2][0].content).toMatch(/timeline/);
+    expect(seen.every((m) => m[0].content.includes("Baha'i (context only") && m[1].content === 'SUBJECT: the covenant')).toBe(true);
+    await generateList({ kind: 'criteria', subject: 'the Buddha taught no self', complete });
+    expect(seen.at(-1)[0].content).toContain('do not assume any tradition');
+    expect(await generateList({ kind: 'entries', subject: 'x', complete: async () => { throw new Error('timeout'); } })).toEqual({ items: [], ok: false, error: 'timeout' });
+    expect((await generateList({ kind: 'entries', subject: 'x', complete: async () => ({ content: 'no json' }) })).ok).toBe(false);
+  });
+  for (const [name, unit, units, items] of [['plan.subthemes', 'sub_themes', { topic: 'justice' }, ['equity', 'trustworthiness']],
+    ['plan.criteria', 'criteria', { challenged_claim: 'X is a cult', topic: 'X' }, ['Does X have a living leader whose word is beyond question?', 'What do X\'s texts say about leaving?']],
+    ['plan.entries', 'entries', { topic: 'the life of the Buddha' }, ['birth at Lumbini', 'the enlightenment', 'the first sermon']]]) {
+    it(`${name}: no seam → the model generator → done, the unit holds its list, the step carries the call and its cost`, async () => {
+      const meter = [], decisions = [];
+      const complete = async (messages, opts) => { expect(opts.responseFormat).toEqual({ type: 'json_object' }); currentAIContext().meter.push({ model: 'claude-haiku-5-5', usd: 0.0004 }); return { content: JSON.stringify({ items }) }; };
+      const s = { node: 'g1', question: 'q', tools: {}, units: { ...units, religions_specified: ["Baha'i"] }, ctx: { decisions: { record: (pt, d) => decisions.push([pt, d]) } }, complete };
+      const edge = await withAIContext({ meter }, () => ELEMENTS[name].run(s, { n: 3 }));
+      expect(edge).toBe('done'); expect(s.units[unit]).toEqual(items.slice(0, 3));
+      expect(s.note).toMatchObject({ generator: 'model', count: items.slice(0, 3).length, llm: { calls: 1, usd: 0.0004, model: 'claude-haiku-5-5' }, read: { tradition: "Baha'i" } });
+      expect(decisions[0]).toEqual([`plan:${unit}`, expect.objectContaining({ by: 'model', chosen: 'done' })]);
+    });
+    it(`${name}: model error → the subject itself and fail (unchanged)`, async () => {
+      const s = { node: 'g1', question: 'q', tools: {}, units: { ...units }, ctx: {}, complete: async () => { throw new Error('upstream 529'); } };
+      expect(await ELEMENTS[name].run(s, {})).toBe('fail');
+      expect(s.units[unit]).toEqual([Object.values(units)[0]]); expect(s.note).toMatchObject({ generator: 'model', error: 'upstream 529' });
+    });
+  }
+  it('claim_check end to end: the generated criteria are what the tree fans out over', async () => {
+    const q = [];
+    const s = await run('claim_check', 'is X a cult', { tools: { fused_search: async (i) => { q.push(i.query); return { passages: [] }; } }, units: { challenged_claim: 'X is a cult' },
+      jev: async () => ({ choice: 'silent' }), extra: { judges: {}, complete: reply(['Does X control its members?', 'Can members leave freely?']) } });
+    expect(s.trace[0]).toMatchObject({ node: 'k1', edge: 'done' }); expect(s.units.criteria.length).toBe(2);
+    expect(q.slice(0, 4).sort()).toEqual(['Can members leave freely?', 'Can members leave freely?', 'Does X control its members?', 'Does X control its members?']);   // two library tiers per generated criterion (then $absence's own search of the question)
   });
 });

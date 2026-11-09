@@ -7,7 +7,7 @@ import { activities } from '../../api/lib/assistant/activities/index.js';
 import { activityCatalog } from '../../api/lib/assistant/activities/catalog.js';
 
 const P = (i, x = {}) => ({ id: i, text: `Passage ${i}`, document_id: 100 + i, paragraph_index: i, religion: "Baha'i", authority: 'scripture', score: 0.9, ...x });
-const mk = (tools = {}, units = {}, extra = {}) => ({ node: 'n', question: 'what is love', tools, units: { ...units }, ctx: {}, templates: {}, ...extra });
+const mk = (tools = {}, units = {}, extra = {}) => ({ node: 'n', question: 'what is love', tools, units: { ...units }, ctx: {}, templates: {}, judges: { generate: async () => ({ items: [], ok: false, error: 'no model in tests' }) }, ...extra });
 const go = async (name, s, params = {}) => { const edge = await ELEMENTS[name].run(s, params); return { edge, u: s.units, note: s.note }; };
 const ret = (hits) => async () => ({ passages: hits });
 const boom = async () => { throw new Error('down'); };
