@@ -185,7 +185,7 @@ Results are reranked by authority (canonical sources rise) and by a cross-encode
 deterministic layer returns the cited passages instantly; an AI layer then composes a
 grounded, quoted, link-per-point answer from *only* those passages. Relational questions
 ("who met whom") are answered from the entity layer's cited claims rather than from chunks. The
-Jafar chat agent wraps all of this in a tool-using research loop. → [06](06-retrieval.md)
+Anís, the chat agent, runs strategies over all of this. → [06](06-retrieval.md)
 
 ---
 
@@ -198,7 +198,7 @@ Jafar chat agent wraps all of this in a tool-using research loop. → [06](06-re
 | [03 — Disambiguation & segmentation](03-disambiguation-and-segmentation.md) | Making chunks self-contained; segmenting boundary-less scripts. |
 | [04 — HyPE](04-hype.md) | Hypothetical Prompt Embeddings: closing the question↔statement vocabulary gap. |
 | [05 — The entity knowledge layer](05-entity-knowledge-layer.md) | Mentions → claims → entities; provenance; the identity principles; biography search. |
-| [06 — Retrieval](06-retrieval.md) | Hybrid search, cross-tradition federation, authority reranking, the deterministic/AI split, biography search, the Jafar chat agent. |
+| [06 — Retrieval](06-retrieval.md) | Hybrid search, cross-tradition federation, authority reranking, the deterministic/AI split, biography search, the Anís chat agent. |
 | [07 — Embeddings & the vector index](07-embeddings-and-vector-index.md) | Model choice, Matryoshka 512-dim truncation, binary quantization, the vector-index config. |
 | [08 — Operations & stability](08-operations-and-stability.md) | Convergent pipelines, the failure modes and their fixes, tiered AI providers, monitoring and proof, deployment. |
 | [09 — Appendix: schema & config](09-appendix-schema-and-config.md) | Full table schemas, the model registry, thresholds, environment configuration. |
@@ -223,8 +223,7 @@ relevant chapter:
 - `docs/content-pipeline.md`, `docs/architecture-content-pipeline.md`, `docs/sync-architecture.md`
   — ingestion and sync internals (→ [02](02-ingestion.md), [08](08-operations-and-stability.md)).
 - `docs/disambiguation-methodology.md` — disambiguation practice (→ [03](03-disambiguation-and-segmentation.md)).
-- `docs/jafar-chat-assistant.md`, `docs/jafar-system-prompt-v2.md` — the chat agent
-  (→ [06](06-retrieval.md) §Jafar).
+- `docs/architecture/anis-trm.md` — the chat agent, Anís (→ [06](06-retrieval.md) §3).
 - `docs/sites-integration.md` — external-site ingestion (→ [02](02-ingestion.md) §6).
 
 Where those older documents disagree with this set on a specific number or model name, this set is

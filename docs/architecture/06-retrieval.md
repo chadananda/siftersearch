@@ -119,42 +119,15 @@ a scar from a real failure:
 
 ---
 
-## 3. Jafar: the chat agent
+## 3. Anís: the chat agent
 
-`api/lib/jafar-pipeline.js` wraps retrieval in a conversational, tool-using agent named Jafar, in a
-deliberate **three-stage** shape that structurally defends grounding better than prompt rules alone:
-
-1. **Research** — gather material. A dispatcher classifies the question (catalog query, single named
-   work, historical event, multi-tradition comparison, person lookup, broad passage search, …) and
-   routes it to the right tools. The modern path is **deterministic**: it calls tools directly by
-   routing rules (no LLM planning loop) for speed and predictability; a legacy path uses an LLM with
-   function-calling and a bounded number of tool rounds. Everything retrieved lands in a
-   `retrieved_quotes[]` array, each quote carrying its citation URL, source, tradition, and
-   provenance.
-
-2. **Craft** — compose the answer. A separate model, given the user's message and *only* the
-   retrieved quotes, writes a short, friendly, grounded reply — every assertion riding on a
-   retrieved quote, with markdown citation links and block quotes for longer passages. It is
-   **isolated from the tools**, so it cannot go fetch or invent anything; it can only phrase what
-   Research found.
-
-3. **Reflect** — a grounding gate judges the draft against its quotes; on failure it feeds the
-   issues back for one retry. This catches ungrounded sentences before they reach the user.
-
-The three-stage split costs ~3× the tokens and a couple of seconds versus a single LLM call. That is
-paid deliberately: *structural isolation of "find" from "phrase" defends grounding far better than
-asking one model to do both and trust it not to hallucinate.*
-
-### Jafar's tools
-
-`search` (hybrid/documents/count/read modes), `library_overview` and `library_count` (catalog
-questions), `find_document_for_citation` (hard-resolves ~120 canonical works to their exact doc,
-including start/end paragraphs inside compilations), `read_document_for_question` (a single-document
-QA sub-agent that reads a work and returns relevant excerpts with deep-links), `translate_passage`
-(JAFAR-grounded translation using a Bahá'í-terminology concordance), and the entity tools
-`entity_lookup` / `entity_dossier` / `entity_search` (the biography layer of
-[05](05-entity-knowledge-layer.md)). A political-topic guardrail short-circuits research and returns
-a polite redirect. Per-site **scope** threading isolates external-site chatbots to their own content.
+The chat agent is **Anís** (the Ocean AI Research Assistant). One transport-neutral turn function,
+`anisTurn()` (`api/lib/assistant/turn.js`), serves the widget, the site chat (`POST /api/chat/stream`)
+and email. Jev (System-1) reads the turn with its history and chooses a strategy; the strategy's tree
+of activities (search, fetch, rank, judge, shape) runs on this retrieval stack; one writer call phrases
+only what was found, and code guards quotes, links and format. A turn no strategy fits goes to
+**Unmatched**, which plans a new strategy. Full reference: [anis-trm.md](anis-trm.md).
+(Jafar is the CTAI.info agent, not part of SifterSearch.)
 
 ---
 
@@ -173,7 +146,7 @@ user question
   → AI layer (phrasing only):
       analyze ONLY those passages → grounded answer + per-point citation links
       (backend bulk = DeepSeek; live answer = fast GPT-turbo/Haiku class)
-  → [chat] Jafar: Research (deterministic tools) → Craft (isolated) → Reflect (grounding gate)
+  → [chat] Anís: Jev picks a strategy → its tree runs → one writer call → code guards
 ```
 
 Relevance comes from hybrid + HyPE + RRF; authority from the rerank hierarchy; diversity from
