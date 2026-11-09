@@ -9,7 +9,8 @@ import { translatedBy } from './authorship/translators.js';
 import { overlap, matchWords } from './passage-links.js';
 import { firstPerson } from './authorship/reader.js';
 import { paragraphAuthor } from './authorship/effective.js';
-import { authorAuthority, getAuthority } from './authority.js';
+import { authorAuthority, getAuthority, doctrinalTier } from './authority.js';
+import { canonicalTradition } from './assistant/tradition-name.js';
 import { isCoreLiterature } from './rights/canonical.js';
 import { keyFactor, foldKey } from './search/doctrinal-rank.js';
 import { segment, cleanText } from './phrases.js';
@@ -234,7 +235,11 @@ const isCoreHolder = (c) => isCoreLiterature({ ...c, author: c.writer, book_auth
 const isCoreOrigin = (c) => isCoreHolder(c) || guardianWritings(c);
 // opts.prefer(candidate): the work the seeker NAMED ("in the Dawn-Breakers …") — the best-ranked holder it accepts is the origin,
 // ahead of coreOnly (the reader chose the book; Anís respond.js passes Jev's draw_from span)
-export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null, religion = null, coreOnly = false, prefer = null } = {}) {
+export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = null, religion = null, coreOnly = false, prefer = null, tradition = null } = {}) {
+  // tradition (Anís quote_trace, 11-09): the reader's tradition. Another than Bahá'í → its texts are searched as a layer, core = THAT
+  // tradition's own core (doctrinalTier), and no Bahá'í doctrinal layer or tablet. Absent → unchanged (the Bahá'í defaults below).
+  const trad = tradition ? canonicalTradition(tradition) : null, otherTrad = !!trad && trad !== "Baha'i";
+  if (otherTrad && !religion) religion = trad;
   const NEED = ['phrases', 'keyword', 'links', 'passages', 'meta', 'rows'];
   let d = NEED.every((k) => deps[k]) ? deps : { ...(await defaultDeps()), ...deps };
   // exclude: { documentIds, titles } — publications that may not be the answer (checking a compilation's own selections: the
@@ -253,7 +258,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
 
   // 1. candidates BY MEANING: phrase vectors (cross-lingual, cross-translation) and BM25, over the whole library + sites —
   // and the same restricted to the doctrinal writers, so a line quoted by dozens of books cannot crowd out its own source
-  const DOC = { author: [...DOCTRINAL], religion: "Baha'i" };
+  const DOC = otherTrad ? null : { author: [...DOCTRINAL], religion: "Baha'i" };
   // … and, when the seeker named another tradition, inside that tradition's texts (its scripture is crowded out by the
   // Bahá'í books that quote it)
   const none = Promise.resolve({ hits: [] });
@@ -265,8 +270,8 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const [ph, kw, phD, kwD, phR, kwR] = await Promise.all([
     layer('phrase', () => d.phrases(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS })),
     layer('keyword', () => d.keyword(q.match, { limit: CANDIDATES, filters: {}, timeoutMs: QD_MS })),
-    layer('phrase', () => d.phrases(q.match, { limit: 20, filters: DOC, timeoutMs: QD_MS })),
-    layer('keyword', () => d.keyword(q.match, { limit: 10, filters: DOC, timeoutMs: QD_MS })),
+    DOC ? layer('phrase', () => d.phrases(q.match, { limit: 20, filters: DOC, timeoutMs: QD_MS })) : none,
+    DOC ? layer('keyword', () => d.keyword(q.match, { limit: 10, filters: DOC, timeoutMs: QD_MS })) : none,
     religion ? layer('phrase', () => d.phrases(q.match, { limit: 20, filters: { religion }, timeoutMs: QD_MS })) : none,
     religion ? layer('keyword', () => d.keyword(q.match, { limit: 10, filters: { religion }, timeoutMs: QD_MS })) : none,
   ]);
@@ -318,7 +323,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   const quoteAuthor = quoteAuthorOf(pool);
   say('writer', { quoteAuthor });
   if (quoteAuthor) {
-    const f = { author: quoteAuthor, religion: "Baha'i" };
+    const f = { author: quoteAuthor, religion: otherTrad ? trad : pool.find((c) => c.writer === quoteAuthor)?.religion || "Baha'i" };
     const [p2, k2] = await Promise.all([
       layer('phrase', () => d.phrases(q.match, { limit: 20, filters: f, timeoutMs: QD_MS })),
       layer('keyword', () => d.keyword(q.match, { limit: 20, filters: f, timeoutMs: QD_MS })),
@@ -336,7 +341,7 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
     }
     say('targeted', { searched: more.length, pool: pool.length });
   }
-  if (!pool.length) return { quote: q.text, origin: null, citedBy: [], unsure: unsure0, tablet: await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0, ...(degraded.size ? { degraded: [...degraded] } : {}) };
+  if (!pool.length) return { quote: q.text, origin: null, citedBy: [], unsure: unsure0, tablet: otherTrad ? null : await tabletGuess(d, q, null, quoteAuthor), ms: Date.now() - t0, ...(degraded.size ? { degraded: [...degraded] } : {}) };
 
   // how many paragraphs the link graph records as quoting each leading candidate — the original is quoted, the compilation
   // that reprints it rarely is (the tiebreak when publication years are missing)
@@ -345,7 +350,16 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   for (const c of lead) c.quotedCount = qc.get(c.id)?.quotedBy?.count || 0;
   const ranked = rankOrigins(pool, quoteAuthor, religion);
   const named = prefer ? ranked.find((c) => { try { return !!prefer(c); } catch { return false; } }) : null;
-  const origin = named || (coreOnly ? ranked.find(isCoreOrigin) : ranked[0]);
+  // another tradition: core = its own core (scripture, its founders), else the writer's own work in that tradition (Rumi's Masnavi) labelled own_work
+  // no tradition named: a non-Bahá'í text holding the words verbatim (its own core, or the writer's own work: the Gita, Rumi) that ranks above the
+  // Bahá'í core pick is the source — a Bahá'í book quoting Rumi is not where Rumi's line comes from. Bahá'í quotes have no such holder: unchanged.
+  const tierCore = (c) => isCoreHolder(c) || doctrinalTier({ religion: c.religion, collection: c.collection, title: c.pubTitle || c.title, author: c.book_author }) === 'core';
+  const ownCore = (c) => sameTradition(c.religion, trad) && tierCore(c);
+  const foreign = (c) => !!c.religion && !/^bah/i.test(c.religion) && (c.overlap || 0) >= VERBATIM && (c.ownWork || tierCore(c));
+  const bahaiPick = ranked.find(isCoreOrigin), foreignPick = !trad ? ranked.find(foreign) : null;
+  const coreOf = otherTrad ? (ranked.find(ownCore) || ranked.find((c) => c.ownWork && sameTradition(c.religion, trad)))
+    : foreignPick && (!bahaiPick || ranked.indexOf(foreignPick) < ranked.indexOf(bahaiPick)) ? foreignPick : bahaiPick;
+  const origin = named || (coreOnly ? coreOf : ranked[0]);
   if (!origin) {
     say('origin', { origin: null, candidates: ranked.length, coreOnly: true });
     return { quote: q.text, quoteAuthor, origin: null, citedBy: [], unsure: unsure0, tablet: null, coreOnly: 'no core-literature holder', ms: Date.now() - t0,
@@ -356,12 +370,13 @@ export async function sourceHunt(raw, deps = {}, { emit = () => {}, exclude = nu
   // passage's phrases nearest the quote BY MEANING — the same phrase-vector spans that mark the original
   // the citation graph for the origin starts NOW, beside the source highlight (they do not depend on each other)
   const fullP = d.links([origin.id], { quotedBy: true }).then((m) => m.get(origin.id) || {}).catch(() => ({}));
-  const tabletP = fullP.then((full) => tabletGuess(d, q, full, quoteAuthor));   // the original, as soon as the graph names it
+  const bahaiOrigin = !origin.religion || /^bah/i.test(origin.religion);   // the tablet guess is the Bahá'í Persian/Arabic pairing: another tradition's original comes from its work family
+  const tabletP = bahaiOrigin ? fullP.then((full) => tabletGuess(d, q, full, quoteAuthor)) : Promise.resolve(null);   // the original, as soon as the graph names it
   // highlight BY MEANING (the clause decision) — any translation; the exact word run only when no decision is available
   const byMeaning = await meaningRanges(d, q, origin.id, origin.text, 'en');
   const exactAll = byMeaning.highlightBy === 'decision' ? [] : quoteRanges(origin.text, q.text);
   const hl = byMeaning.highlightBy === 'decision' ? byMeaning : exactAll.length ? { highlight: exactAll, highlightBy: 'wording' } : byMeaning;
-  const originOut = { religion: origin.religion || null, id: origin.id, documentId: origin.doc_id, title: origin.pubTitle || origin.title, author: origin.writer, bookAuthor: origin.book_author,
+  const originOut = { religion: origin.religion || null, ...(coreOnly && !named && origin.religion && !/^bah/i.test(origin.religion) && !tierCore(origin) ? { tier: 'own_work' } : {}), id: origin.id, documentId: origin.doc_id, title: origin.pubTitle || origin.title, author: origin.writer, bookAuthor: origin.book_author,
     translated_by: translatedBy(origin),
     text: origin.text, highlight: hl.highlight, highlightBy: hl.highlightBy,
     url: origin.url, rangeUrl: textFragment(origin.url, origin.text, hl.highlight, 4, origin.doc_id), site: siteOf(origin.url, origin.source_site), overlap: +origin.overlap.toFixed(2) };

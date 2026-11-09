@@ -4,7 +4,7 @@
 // ('unmatched' = the default respond graph, called 'other' before 11-08). Activities named here are code (activities/index.js).
 
 import { NARRATION_TEMPLATES } from './narration-seed.js';
-import { TREE_TEMPLATES, TREE_STEPS, TREE_GRAPHS, TREE_IDS, TREE_DESCRIPTIONS } from './strategy-trees-seed.js';
+import { TREE_TEMPLATES, TREE_STEPS, TREE_GRAPHS, TREE_IDS, TREE_DESCRIPTIONS, LOOKUP_TREE_STEPS, LOOKUP_TREE_GRAPHS, LOOKUP_TREE_IDS } from './strategy-trees-seed.js';
 import { GENERAL_TEMPLATES, GENERAL_STEPS, GENERAL_STRATEGY } from './strategy-general.js';
 
 export const SEED_VERSION = 1;
@@ -83,6 +83,7 @@ export const STEPS = [
   step('strategy.reference', 'strategy.reference', { template_id: 'reference.how', template_version: 1 }),
   step('strategy.compilation', 'strategy.compilation', { template_id: 'compilation.how', template_version: 1 }),
   ...TREE_STEPS,
+  ...LOOKUP_TREE_STEPS,
 ];
 
 // a linear graph: every node continues to the next whatever its edge, except the edges named in `stops` (→ the end)
@@ -144,8 +145,8 @@ const STRATEGY_DESCRIPTIONS = {
   compilation: 'asks for a COMPILATION — a gathered selection of passages on a theme, to read together, organized under headings ("compile passages on justice", "a short compilation on prayer and meditation", "gather quotations about the equality of women and men", "put together the writings on consultation")',
   book: 'asks to find, open or get a particular BOOK or work by its title or author, or what a named book is about ("find the Kitáb-i-Íqán", "do you have Gleanings", "where can I read Paris Talks", "what is God Passes By about")',
   quote_trace: 'has a quotation, or a few words of one, and wants to know where it comes from, who said it or where in the library it can be found ("where is this from: …", "who said …", "is this really from ‘Abdu’l-Bahá?", "find the source of this quote")',
-  term: 'asks what a single WORD or term means, its root or sense, or how it is rendered in Persian, Arabic or translation ("what does ‘irfán mean", "the Arabic word for station", "how is the word tawḥíd translated")',
-  original: 'asks for the ORIGINAL-language wording (Persian or Arabic) of a passage or an existing translation of it, to read side by side ("what is the Persian of …", "show me the Arabic original of this prayer")',
+  term: 'asks what a single WORD or term of any tradition means, its root or sense, or how it is rendered in its original language or in translation ("what does ‘irfán mean", "what is wu wei", "the Arabic word for station", "how is dharma translated")',
+  original: 'asks for the ORIGINAL-language wording of a passage (Persian, Arabic, Hebrew, Greek, Sanskrit, Pali, Chinese…) or an existing translation of it, to read side by side ("what is the Persian of …", "show me the Arabic of this verse of the Qur’án", "the Hebrew of Psalm 23")',
   about: 'greets, thanks or chats with Anís, or asks about Anís itself or the library — who or what it is, what it can do, what it holds, which religions or languages it covers',
   unmatched: 'none of these',
 };
@@ -172,5 +173,6 @@ export const STRATEGIES = [
   // v2 of the six executors as element trees (strategy-trees-seed.js): CANDIDATES — the promotion gate on tower decides; v1 (one node) stays active for rollback
   GENERAL_STRATEGY,   // the planner's safety net: no description, so never a Jev option
 ];
-export const TREE_STRATEGIES = TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'candidate', created_by: 'seed-trees' }));
+export const TREE_STRATEGIES = [...TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'candidate', created_by: 'seed-trees' })),
+  ...LOOKUP_TREE_IDS.map((id) => ({ ...strategy(id, id, LOOKUP_TREE_GRAPHS[id], 2, TREE_DESCRIPTIONS[id]), status: 'candidate', created_by: 'seed-trees' }))];   // quote_trace, term, original: v2 trees above the v1 lookup graphs
 export const END_NODE = END;

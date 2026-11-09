@@ -1,0 +1,107 @@
+// editions.js — a passage's other-language EDITIONS (its original, its existing translations), any tradition. Never translates.
+// Providers in order: recorded links (passage-links resolveLinks: the Bahá'í Persian/Arabic pairing, CTAI) → the work family
+// (alignment-repo workFamily) aligned BY REFERENCE (chapter heading number + verse marker / place in the chapter) → by MEANING
+// (cross-lingual phrase vectors inside the member edition). Deps injected (tests); defaults are the live repos and layer.
+import { headingNumber } from './lookup.js';
+import { verseSpan } from './scripture-ref.js';
+
+const LANG = { ar: 'Arabic', fa: 'Persian', he: 'Hebrew', grc: 'Greek', el: 'Greek', sa: 'Sanskrit', pi: 'Pali', zh: 'Chinese', pa: 'Punjabi', ae: 'Avestan', en: 'English', fr: 'French', de: 'German', es: 'Spanish', ur: 'Urdu', tr: 'Turkish', ru: 'Russian', ja: 'Japanese', bo: 'Tibetan' };
+/** A stored language value ('en', 'En', 'Eng', 'Arabic') → its lower-case code where known; the raw value lower-cased otherwise. Pure. */
+export const langCode = (l) => { const s = String(l || '').trim().toLowerCase(); if (!s) return null; if (LANG[s]) return s;
+  const byName = Object.entries(LANG).find(([k, n]) => n.toLowerCase() === s || (s.length === 3 && n.toLowerCase().startsWith(s))); return byName ? byName[0] : s; };
+export const langName = (l) => LANG[langCode(l)] || (l ? String(l) : null);
+// the languages a tradition's core texts were written in — named ONLY in an honest absence ("the library holds no Arabic edition"), never searched by
+export const ORIGINAL_LANGS = { "Baha'i": ['fa', 'ar'], Islam: ['ar'], Christian: ['he', 'grc'], Judaism: ['he'], Hindu: ['sa'], Buddhist: ['pi', 'sa'], Tao: ['zh'], Confucian: ['zh'], Sikh: ['pa'], Zoroastrian: ['ae'], Jain: ['sa'] };
+
+// a chapter heading's number: lookup.js headingNumber, else 'Sura 2' / 'Surah 2: Al-Baqarah' / 'Psalm 23' (structure, not intent)
+const chapterNo = (h) => headingNumber(h) ?? (Number(String(h || '').match(/\b(?:s[uū]rah?|chapter|psalm|canto|book)\s+(\d+)/i)?.[1]) || null);
+const text0 = (r) => !/^heading/i.test(r?.blocktype || '') && String(r?.text || '').trim().length > 0;
+const CHAPTER_MAX = 400;   // the repo's own range read; a longer chapter aligns by meaning
+/** The rows of the chapter numbered n in a doc (heading starts → its run), book text only; null = no such chapter, or ambiguous. */
+async function chapterRows(docId, n, d) {
+  const s = (await d.headingStarts(docId).catch(() => [])).filter((r) => chapterNo(r.heading) === n);
+  if (s.length !== 1) return null;
+  const rows = await d.paragraphsInRange(docId, s[0].paragraph_index, s[0].paragraph_index + CHAPTER_MAX, { limit: CHAPTER_MAX }).catch(() => []);
+  const out = [];
+  for (const r of rows) { if (r.heading && chapterNo(r.heading) !== n) break; out.push(r); }
+  return out.filter(text0);
+}
+/** By reference: the source row's chapter (heading number) and verse (its marker, else its place in the chapter) → the same place in the member. */
+export async function alignByReference(src, member, d) {
+  const n = chapterNo(src.heading) ?? (Number(String(src.context || '').match(/\bChapter\s+(\d+)/i)?.[1]) || null);
+  if (n == null) return null;
+  const [mine, theirs] = await Promise.all([chapterRows(src.doc_id, n, d), chapterRows(member.id, n, d)]);
+  if (!theirs?.length) return null;
+  const v = verseSpan(src);
+  if (v && theirs.some(verseSpan)) {
+    const hit = theirs.filter((r) => { const s = verseSpan(r); return s && s[1] >= v[0] && s[0] <= v[1]; });
+    return hit.length ? { rows: hit, by: 'reference', exact: true, ref: `${n}:${v[0]}` } : null;
+  }
+  const i = mine?.findIndex((r) => r.id === src.id) ?? -1;
+  if (i < 0) return null;
+  if (mine.length === theirs.length) return { rows: [theirs[i]], by: 'reference', exact: true, ref: `${n}:${i + 1}` };
+  const j = Math.min(theirs.length - 1, Math.round(i * theirs.length / mine.length));   // different paragraphing: the nearest rows, marked approximate
+  return { rows: theirs.slice(Math.max(0, j - 1), j + 2), by: 'reference', exact: false, ref: `${n}:~${i + 1}` };
+}
+/** By meaning: the member's paragraph nearest the source by cross-lingual phrase vectors (one search inside that edition). */
+export async function alignByMeaning(src, member, d) {
+  const r = await d.phrases(String(src.text).slice(0, 600), { limit: 2, filters: { documentId: member.id } }).catch(() => ({ hits: [] }));
+  const top = r?.hits?.[0];
+  if (!top) return null;
+  const row = (await d.paragraphsByIds([top.paragraph_id]).catch(() => []))[0];
+  return row ? { rows: [row], by: 'meaning', exact: false, score: top.score ?? null } : null;
+}
+
+const NEED = ['resolveLinks', 'workFamily', 'headingStarts', 'paragraphsInRange', 'paragraphsByIds', 'phrases'];
+const defaults = async () => {
+  const [plinks, al, pr, layers] = await Promise.all([import('../passage-links.js'), import('../repos/alignment-repo.js'), import('../paragraphs-repo.js'), import('../search/qdrant-layers.js')]);
+  return { resolveLinks: plinks.resolveLinks, workFamily: al.workFamily, headingStarts: pr.headingStarts, paragraphsInRange: pr.paragraphsInRange, paragraphsByIds: pr.paragraphsByIds, phrases: layers.searchPhrases };
+};
+const asPassage = (row, m, role, how) => ({ id: row.id, document_id: row.doc_id ?? m.id, paragraph_index: row.paragraph_index ?? null, text: row.text, title: m.title, author: m.author,
+  religion: m.religion ?? null, collection: m.collection ?? null, language: langCode(m.language), role, aligned_by: how.by, exact: !!how.exact,
+  ...(how.ref ? { ref: how.ref } : {}), ...(how.score != null ? { score: how.score } : {}), basis: m.basis });
+
+/** paragraphId → { passages: [{…, role 'original'|'translation', aligned_by 'link'|'reference'|'meaning', exact}], self, family, missing_language }.
+ *  want 'original' = an edition in another language (the recorded original first); 'translations' = the other editions. */
+export async function editionsOf(paragraphId, { want = 'original', limit = 3 } = {}, deps = {}) {
+  const d = NEED.every((k) => deps[k]) ? deps : { ...(await defaults()), ...deps };
+  const id = Number(paragraphId), src = (await d.paragraphsByIds([id]).catch(() => []))[0];
+  if (!src) return { passages: [], self: null, family: [], missing_language: null };
+  const found = [], seen = new Set([id]), role = want === 'original' ? 'original' : 'translation';
+  const push = (p) => { if (p?.text && !seen.has(p.id)) { seen.add(p.id); found.push(p); } };
+  // 1. recorded links (the Bahá'í Persian/Arabic pairing is one provider)
+  const l = (await d.resolveLinks([id], { quotedBy: false }).catch(() => new Map())).get(id);
+  for (const p of (want === 'original' ? [l?.original].filter(Boolean) : l?.translations || [])) {
+    push({ id: p.id, document_id: p.documentId ?? p.doc_id ?? null, text: p.text, title: p.document?.title ?? p.title ?? null, author: p.document?.author ?? p.author ?? null,
+      religion: p.document?.religion ?? p.religion ?? null, language: langCode(p.language || p.document?.language), role, aligned_by: 'link', exact: true, basis: 'recorded link' });
+  }
+  // 2–3. the work family: each other-language member aligned by reference, else by meaning
+  const fam = await d.workFamily(src.doc_id).catch(() => ({ self: null, members: [] }));
+  const selfLang = langCode(fam.self?.language), origId = Number(fam.self?.original_doc_id) || null;
+  const members = (fam.members || []).filter((m) => langCode(m.language) !== selfLang)
+    // a recorded direction decides where it is known: this doc's original is its original_doc_id; the rest of the recorded family are translations
+    .filter((m) => m.basis !== 'original_doc_id' || (want === 'original') === (m.id === origId));
+  for (const m of members) {
+    if (found.length >= limit) break;
+    const how = (await alignByReference(src, m, d).catch(() => null)) || (await alignByMeaning(src, m, d).catch(() => null));
+    for (const r of how?.rows || []) push(asPassage(r, m, role, how));
+  }
+  const trad = fam.self?.religion ?? null, have = new Set(found.map((x) => x.language));
+  const missing = want === 'original' && !found.length ? (ORIGINAL_LANGS[trad] || []).filter((x) => x !== selfLang && !have.has(x)).map(langName).join(' or ') || null : null;
+  return { passages: found, self: fam.self ? { id: fam.self.id, title: fam.self.title, language: selfLang, religion: trad } : null,
+    family: (fam.members || []).map((m) => ({ id: m.id, title: m.title, language: langCode(m.language), basis: m.basis })), missing_language: missing };
+}
+
+/** paragraphId → its place in its work: { chapter, verse, exact } from the heading number + the verse marker, else its place in the chapter
+ *  (marked approximate); null when the work has no numbered chapters. Read-only; deps injected (tests). */
+export async function referenceOf(paragraphId, deps = {}) {
+  const d = NEED.every((k) => deps[k]) ? deps : { ...(await defaults()), ...deps };
+  const row = (await d.paragraphsByIds([Number(paragraphId)]).catch(() => []))[0];
+  if (!row) return null;
+  const n = chapterNo(row.heading) ?? (Number(String(row.context || '').match(/\bChapter\s+(\d+)/i)?.[1]) || null);
+  if (n == null) return null;
+  const v = verseSpan(row);
+  if (v) return { chapter: n, verse: v[0] === v[1] ? `${v[0]}` : `${v[0]}-${v[1]}`, exact: true };
+  const i = (await chapterRows(row.doc_id, n, d).catch(() => null))?.findIndex((r) => r.id === row.id) ?? -1;
+  return { chapter: n, verse: i >= 0 ? `${i + 1}` : null, exact: false };
+}

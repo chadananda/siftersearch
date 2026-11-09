@@ -93,6 +93,8 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
     return finish(s, p, classify(items.length, edges, thin ? thin(items, p) : items.length > 0 && items.every((x) => typeof x.score === 'number' && x.score < (p.thin_below ?? 0.25))), { count: items.length, excluded, read: { query: inp }, search: inp && typeof inp === 'object' ? { query: inp.query, filters: inp.filters ?? {} } : null });
   },
 });
+// the passage whose editions fetch.edition looks up: the one that holds the quotation, else the traced source, else the first with a paragraph id
+const editionAnchor = (u) => { const ok = u.found_passages.filter((x) => Number.isFinite(Number(x.id))); return ok.find((x) => x.verdict === 'holds') ?? ok.find((x) => x.role === 'source' || x.traced) ?? ok[0] ?? null; };
 // in_named: search INSIDE the work the question names (named_work title, else the first named source id); gated off when none is named
 const namedWork = (u) => (typeof u.named_work === 'string' && u.named_work.trim() ? { work: u.named_work.trim() }
   : u.named_work != null && Number.isFinite(Number(u.named_work)) ? { documentId: Number(u.named_work) }
@@ -128,7 +130,7 @@ const E = {
     gate: (s, u, p) => !!(u.scripture_reference || parseScriptureRef(text(s, u, p.query))),
     input: (s, p, u) => ({ question: text(s, u, p.query), decisions: s.direction?.decisions ?? s.ctx?.decisions, deps: s.ctx?.deps }), take: passages }),
   'fetch.phrase': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'quotation_candidates', rank: true, params: ['mode', 'words'], reads: ['quoted_words', 'quoted_clean'],
-    input: (s, p, u) => ({ quotation: text(s, u, p.words, '{{quoted_clean}}', '{{quoted_words}}') }), take: passages,
+    input: (s, p, u, trad) => ({ quotation: text(s, u, p.words, '{{quoted_clean}}', '{{quoted_words}}'), ...(trad ? { tradition: trad } : {}) }), take: passages,   // tradition: that tradition's own core (none = every tradition)
     thin: (items, p) => p.mode === 'close' && !items.some((x) => x.role === 'source') }),
   'fetch.person': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'biography_search', rank: true, params: ['name'], reads: ['named_person'], into: 'found_records',
     input: (s, p, u) => ({ query: text(s, u, p.name, '{{named_person}}') }), take: (o) => o?.people, thin: () => false }),
@@ -136,6 +138,13 @@ const E = {
     gate: (s, u, p) => /[\u0600-\u06FF]/.test(text(s, u, p.term, '{{term_arabic}}', '{{term}}')),   // Arabic script only: Latin → Arabic is the term_arabic unit (Jev), not the tool
     input: (s, p, u) => ({ term_arabic: text(s, u, p.term, '{{term_arabic}}', '{{term}}'), ...(p.translator ? { translator: p.translator } : {}) }), take: (o) => (o?.found ? o.passages : []), thin: () => false,
     after: (o, u) => { if (o?.found) merge(u, 'found_records', [{ term: o.term, transliteration: o.transliteration, root: o.root, meaning: o.meaning, renderings: o.renderings }]); } }),
+  // the found passage's other editions in its work family (editions.js): want=original → its own-language edition, want=translations → the parallel
+  // translations, aligned by reference (sura:ayah, chapter:verse) else by meaning; never translated. No edition → a record naming the missing language.
+  'fetch.edition': { ...retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'edition_lookup', rank: true, params: ['want'], reads: ['found_passages'], thin: () => false,
+    gate: (s, u) => !!editionAnchor(u),
+    input: (s, p, u) => ({ paragraph_id: editionAnchor(u).id, want: p.want === 'translations' ? 'translations' : 'original' }), take: (o) => o?.passages || [],
+    after: (o, u, items) => { if (!items.length && o) merge(u, 'found_records', [{ kind: 'absence', missing_language: o.missing_language ?? null, searched: o.self?.title ?? null, family: (o.family || []).length }]); } }),
+  writes: ['found_passages', 'found_records', ...OUT] },
   // a prayer of ANY tradition (11-09): mode 'named' = the name (named_work) or opening words (incipit / quoted_words) across the tradition's whole scope,
   // scripture included; mode 'need' = what it is for (occasion, else the question) by meaning, core first, plus the tradition's prayer works. Tradition =
   // religions_specified (one) → the named work's → none (each tradition, kept only with real hits). What was searched is written to found_records (the honest absence).
@@ -637,6 +646,7 @@ export const ELEMENT_META = {
   'fetch.original': m('Finds the Arabic or Persian original of an English passage.', 'quoted_words or found_passages', 'found_passages', ['original_lookup']),
   'fetch.translation': m('Finds the existing English translations of an original-language text.', 'quoted_words or found_passages', 'found_passages', ['translation_lookup']),
   'fetch.renderings': m('How the authorized translator rendered a word, with counts and paired passages.', 'term', 'found_passages + found_records', ['rendering_lookup']),
+  'fetch.edition': m('The found passage in the other editions of its work family, any tradition and language: its original-language edition (want=original) or its parallel translations (want=translations), aligned by reference number, else by meaning; never translated. None held → a record naming the missing language.', 'found_passages', 'found_passages + found_records (absence)', ['edition_lookup']),
   'fetch.align': m('Attaches each passage’s recorded original and translations.', 'found_passages', 'found_passages (annotated)', ['links_lookup']),
   'fetch.anchor': m('Loads the passage the question is about: the one pointed at, the reader’s place, or the last evidence.', 'referent, reader_position, previous_evidence', 'found_passages', ['context_lookup']),
   'fetch.prayer': m('Candidate prayers of the tradition in scope (or the named work’s; none known = each tradition, kept only with real hits), scripture included: mode named = by name or opening words across the whole tradition; mode need = by meaning, core first, plus its prayer works. Headings only rank. Writes what was searched to found_records. No match = none.', 'named_work, incipit, quoted_words (named); occasion (need)', 'found_passages + found_records', ['prayer_lookup']),

@@ -74,7 +74,7 @@ import { translatorCoverage } from '../repos/translator-repo.js';
 import { auditsSince } from '../repos/audit-store-repo.js';
 import { strategyGaps } from '../assistant/admin-threads.js';
 import { reingestCarryJob, carryVerifyReport, carryRepairJob } from './carry-job.js';
-import { translationAudit, originalAudit } from '../repos/alignment-repo.js';
+import { translationAudit, originalAudit, workFamilyCoverage } from '../repos/alignment-repo.js';
 import { CTAI_DOC_BY_WORK } from '../rag/concepts/ctai.js';
 
 export const REPORTS = {
@@ -177,6 +177,16 @@ export const REPORTS = {
 
 /** CTAI works (Chad 10-11: originals "properly paragraphed FROM THE ENGLISH … aligned … matching display ids … ingested
  *  with links between aligned paragraphs"): per English host doc, alignment health; per original, coverage + pn match. */
+// work-families (Anís original/term/quote_trace, 11-09): what links a work's editions across languages, per tradition. A tradition
+// with other-language docs but no recorded or aligned pairs falls back to same-author candidates and meaning search (editions.js).
+REPORTS['work-families'] = async () => {
+  const c = await workFamilyCoverage(), sum = (rows, k) => Object.fromEntries(rows.map((r) => [r.religion, r[k]]));
+  const rec = sum(c.recorded, 'docs'), al = sum(c.aligned, 'pairs'), au = sum(c.authors, 'authors'), byTrad = {};
+  for (const r of c.languages) (byTrad[r.religion] ||= {})[r.language] = r.docs;
+  const traditions = Object.entries(byTrad).map(([religion, langs]) => ({ religion, languages: langs, recorded: rec[religion] || 0, aligned_pairs: al[religion] || 0,
+    multilingual_authors: au[religion] || 0, linked: !!(rec[religion] || al[religion]) }));
+  return { traditions, missing: traditions.filter((t) => Object.keys(t.languages).length > 1 && !t.linked).map((t) => t.religion) };
+};
 REPORTS['ctai-audit'] = async () => {
   const hosts = {};
   for (const [work, doc] of Object.entries(CTAI_DOC_BY_WORK)) (hosts[doc] ||= []).push(work);
@@ -425,7 +435,7 @@ export const LANES = { archive: ['archive-adopt', 'archive-sample', 'archive-rep
   books: ['book-hunt'],   // an hour of polite catalogue lookups must not hold up intake or the quick lane
   authorship: ['paragraph-authors'],
   linking: ['source-links-build'],   // hours of hunting must not hold up the quick lane or intake   // hours of classification must not hold up intake or the quick lane   // hours of polite searching and downloading must not hold up intake or OCR
-  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'spend-by-model', 'languages', 'ctai-audit', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'triggers', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
+  quick: ['pipeline-snapshot', 'doc-overlap', 'spend', 'spend-by-model', 'languages', 'ctai-audit', 'work-families', 'carry-verify', 'carry-repair', 'block-mismatch', 'retire-duplicates', 'section-author', 'slow-queries', 'write-stats', 'triggers', 'table-schema', 'translator-coverage', 'strategy-gaps', 'structure-summary', 'refs-assign', 'section-findability', 'dewey-research', 'dewey-retitle', 'dewey-title-check'] };
 export const HEAVY = new Set(LANES.heavy);
 // the media pipeline runs in its OWN service (siftersearch-media, OPS_ONLY): hours of transcription never share a drain with these lanes
 export const MEDIA_JOBS = ['media-scan', 'media-item', 'media-vocab', 'media-speakers', 'media-playback', 'media-grade', 'media-short', 'media-shorts-moments', 'media-portraits-extend', 'media-fetch', 'media-rank', 'media-stages-sync', 'media-quote-audit', 'media-compute', 'media-asr', 'media-diar', 'media-llm', 'media-meta-fix', 'media-identity', 'media-relink', 'media-safe-listening', 'media-speaker-merge', 'media-talk-identities', 'media-remaster', 'media-remaster-revert', 'media-cloud-remaster', 'media-cloud-order', 'media-quiet-repair', 'media-light-backfill', 'media-preview', 'media-remaster-quality', 'media-remaster-review-pack', 'media-remaster-decide', 'media-remaster-rejudge', 'media-trim-audit'];

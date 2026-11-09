@@ -12,6 +12,15 @@ import { FILTERS, PASSAGE, WORK, ERROR, SCHEMAS, PASSAGES, str, LIMIT, PID, nul,
 import { ToolError, toToolError } from './tool-error.js';
 export { FILTERS, PASSAGE, WORK, ERROR, SCHEMAS, engineFilters, translationLabel, letterVariants, toPassage, dedupePassages };
 
+// another tradition than the Bahá'í: original_lookup / translation_lookup go to its work family (editions.js)
+const otherTradition = (t) => !!t && canonicalTradition(t) !== "Baha'i";
+/** words → the library's passage holding them (phrase vectors, in the tradition when named) → its editions. Never a translation. */
+async function viaEditions(words, tradition, want, ctx) {
+  const hit = (await run('phrase_search', { query: String(words).slice(0, 600), limit: 3, ...(tradition ? { filters: { tradition: canonicalTradition(tradition) } } : {}) }, ctx))?.passages?.[0];
+  if (!hit?.id || !Number.isFinite(Number(hit.id))) return { passages: [] };
+  const r = await (ctx?.deps?.editionsOf || (await import('./editions.js')).editionsOf)(Number(hit.id), { want }, ctx?.deps?.editions || {});
+  return { passages: dedupePassages([toPassage(hit), ...(r.passages || []).map((x) => ({ ...toPassage(x), role: x.role }))]) };
+}
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`ʻʼ]/g, "'").toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim();
 /** The canon entry a reader's title names (any alias, accents and "the" ignored), or null. */
 export function canonWork(title, canon = CANON) {
@@ -277,9 +286,10 @@ const ENTRIES = [
   { name: 'original_lookup', label: 'Original Lookup', kind: 'tool', outputName: 'Passage[]', cost: C(true, 300),
     purpose: 'The Arabic/Persian original of an English passage, then the authorised translations linked to it.',
     description: 'The original-language (Arabic/Persian) text of an English passage, and the authorised translations linked to that original. Give the English words (a sentence or two).',
-    input: { type: 'object', additionalProperties: false, required: ['english'], properties: { english: str('The English words (a sentence or two)') } }, output: PASSAGES,
+    input: { type: 'object', additionalProperties: false, required: ['english'], properties: { english: str('The English words (a sentence or two)'), tradition: { ...nul('string'), description: 'Another tradition than the Bahá’í: its own work family is used (editions aligned by verse/section, else meaning)' } } }, output: PASSAGES,
     example: { input: { english: 'The earth is but one country' }, output: { passages: [{ ...P_EX, id: 88, language: 'ar', text: 'ليس الفخر لمن يحب الوطن' }, P_EX] } },
     async run(a, ctx) {
+      if (otherTradition(a.tradition)) return viaEditions(a.english, a.tradition, 'original', ctx);   // the Bahá'í pairing below is one provider
       const findOriginals = await dep(ctx, 'findOriginals', 'plinks'), resolveLinks = await dep(ctx, 'resolveLinks', 'plinks');
       const r = await findOriginals(a.english, { limit: 10, search: await dep(ctx, 'hybridSearch', 'search') });
       const o = r?.originals?.[0];
@@ -290,11 +300,12 @@ const ENTRIES = [
   { name: 'translation_lookup', label: 'Translation Lookup', kind: 'tool', outputName: 'Passage[]', cost: C(true, 400),
     purpose: 'Existing English translations of an Arabic/Persian text: the library’s copy of the original and the translations linked to it.',
     description: "An EXISTING English translation of an Arabic/Persian text (a prayer, tablet or passage the reader gives in the original): the library's original paragraph and the translations linked to it — authorized (Shoghi Effendi, the Bahá'í World Centre), published, or Stephen Phelps' provisional renderings. Give the original text (a line or more, in Arabic script). Call it BEFORE translating anything yourself.",
-    input: { type: 'object', additionalProperties: false, required: ['original'], properties: { original: str('The original text (a line or more, Arabic script)', 20000) } }, output: PASSAGES,
+    input: { type: 'object', additionalProperties: false, required: ['original'], properties: { original: str('The original text (a line or more, Arabic script)', 20000), tradition: { ...nul('string'), description: 'Another tradition than the Bahá’í: its own work family is used (editions aligned by verse/section, else meaning)' } } }, output: PASSAGES,
     example: { input: { original: 'الهی الهی' }, output: { passages: [{ ...P_EX, language: 'fa', text: 'الهی الهی …' }, { ...P_EX, translation: 'provisional — Stephen Phelps (public domain)' }] } },
     // an original → the library's copy of it (verbatim, either spelling of ی/ک) → the English linked to it: aligned
     // translation paragraphs and the English stored beside the original (CTAI side-by-side, Phelps)
-    async run({ original }, ctx) {
+    async run({ original, tradition = null }, ctx) {
+      if (otherTradition(tradition) || !/[؀-ۿ]/.test(original)) return viaEditions(original, tradition, 'translations', ctx);   // Hebrew, Chinese, Sanskrit… or another tradition: its work family
       const findOriginals = await dep(ctx, 'findOriginals', 'plinks'), overlap = ctx?.deps?.overlap || (await import(MOD.plinks)).overlap;
       const hybridSearch = await dep(ctx, 'hybridSearch', 'search');
       const out = [], seen = new Set();
@@ -409,19 +420,34 @@ const ENTRIES = [
       if (out.length < 2) out.push(...(await run('fused_search', { query: String(a.text).slice(0, 500), limit: 4, filters: { tradition: a.tradition ? canonicalTradition(a.tradition) : "Baha'i", authority: ['scripture', 'interpretation'] } }, ctx)).passages);
       return { passages: dedupePassages(out).slice(0, 4) };
     } },
+  // edition_lookup (11-09): a passage's other-language editions for ANY tradition — recorded links, else the work family aligned by reference, else by meaning. Never translates.
+  { name: 'edition_lookup', label: 'Edition Lookup', kind: 'tool', refInput: true, outputName: 'Editions', cost: C(true, 300),
+    purpose: 'A passage’s original-language edition, or its existing translations, in any tradition: recorded links, else the same work in another language aligned by verse/section, else by meaning.',
+    description: "The SAME passage in the work's other editions (give its ref, e.g. P3): want 'original' = the edition in the language it was written in (the Arabic Qur'án, the Hebrew Bible, the Chinese Tao Te Ching, a Persian tablet), 'translations' = the library's other translations of it, aligned by verse or section number where both editions carry it, else by meaning. Never a new translation. missing_language names the original language the library does not hold.",
+    input: { type: 'object', additionalProperties: false, required: ['paragraph_id'], properties: { paragraph_id: PID,
+      want: { type: 'string', enum: ['original', 'translations'], default: 'original', description: 'original = its original-language edition; translations = its other translations' } } },
+    output: { type: 'object', required: ['passages'], properties: { passages: { type: 'array', items: PASSAGE }, self: { type: ['object', 'null'], additionalProperties: true },
+      family: { type: 'array', items: { type: 'object', additionalProperties: true } }, missing_language: nul('string') } },
+    example: { input: { paragraph_id: 1201, want: 'original' }, output: { passages: [{ ...P_EX, id: 88, language: 'ar', text: 'بسم الله الرحمن الرحيم', role: 'original' }], self: { id: 12, title: 'The Qur’an (Pickthall)', language: 'en', religion: 'Islam' }, family: [{ id: 40, title: 'القرآن', language: 'ar', basis: 'author' }], missing_language: null } },
+    async run(a, ctx = {}) {
+      const ed = ctx?.deps?.editionsOf || (await import('./editions.js')).editionsOf;
+      const r = await ed(Number(a.paragraph_id), { want: a.want || 'original' }, ctx?.deps?.editions || {});
+      return { passages: dedupePassages((r.passages || []).map((x) => ({ ...toPassage(x), role: x.role, aligned_by: x.aligned_by, exact: x.exact, ...(x.ref ? { ref: x.ref } : {}) }))), self: r.self ?? null, family: r.family || [], missing_language: r.missing_language ?? null };
+    } },
   // quotation_candidates: the sourcehunt engine with NO model — phrase + keyword layers, holds() on the wording, links; the decision is a tree node (judge.passages)
   { name: 'quotation_candidates', label: 'Quotation Candidates', kind: 'tool', outputName: 'Passage[]', cost: C(true, 900),
     purpose: 'Where a quotation may come from: the passage holding its words (source), the original tablet, works quoting it — each with a containment score; deterministic, no model.',
     description: 'Candidates for where a quotation comes from: its published source (core literature), the original-language tablet, other works quoting it; each with a score (the share of the quotation’s words the passage holds). Judging which candidate is right is the caller’s decision.',
-    input: { type: 'object', additionalProperties: false, required: ['quotation'], properties: { quotation: str('The quotation as the reader gave it') } }, output: PASSAGES,
+    input: { type: 'object', additionalProperties: false, required: ['quotation'], properties: { quotation: str('The quotation as the reader gave it'),
+      tradition: { ...nul('string'), description: 'The tradition the reader named (any): its own core is the source, its own-language edition the original. Absent = the whole library' } } }, output: PASSAGES,
     example: { input: { quotation: 'The earth is but one country, and mankind its citizens' },
       output: { passages: [{ ...P_EX, role: 'source', score: 1 }, { ...P_EX, id: 88, language: 'ar', text: 'ليس الفخر …', role: 'original', score: 0.9 }] } },
-    async run({ quotation }, ctx = {}) {
+    async run({ quotation, tradition = null }, ctx = {}) {
       const hunt = ctx.sourceHunt || (await import(MOD.hunt)).sourceHunt;
       const { contentContainment } = await import(MOD.hunt);
       const via = (name) => async (...args) => (await layerFn(name, ctx))(...args);
       // the source must be CORE literature (Chad 11-03); a line held only by commentary has no source here. decide:null = wording only, no Jev
-      const r = await hunt(quotation, { phrases: via('phrase_search'), keyword: via('literal_search'), decide: null }, { coreOnly: true });
+      const r = await hunt(quotation, { phrases: via('phrase_search'), keyword: via('literal_search'), decide: null }, { coreOnly: true, ...(tradition ? { tradition: canonicalTradition(tradition) } : {}) });
       if (r?.error) throw new ToolError('invalid_input', r.error, false);
       const sc0 = (x) => Math.round(contentContainment(quotation, x?.text || '') * 100) / 100;
       // rows the wording did not hold (cross-translation holders among them): handed on as role 'candidate' for the tree-level judge.holds
@@ -429,10 +455,20 @@ const ENTRIES = [
       if (!r?.origin) return { passages: dedupePassages(maybe) };
       const o = r.origin, t = r.tablet?.certain ? r.tablet : null, c0 = !t ? r.tablet?.candidates?.[0] : null, who = r.quoteAuthor || o.author;
       const sc = (x) => Math.round(contentContainment(quotation, x?.text || '') * 100) / 100;
+      // the original's language is its document's metadata (any language the library holds); the script guess only where the doc records none
+      const { langCode } = await import('./editions.js');
+      const docLang = await (await dep(ctx, 'getLinkMeta', 'docs'))([t?.documentId, c0?.documentId].filter(Boolean)).catch(() => new Map());
       const orig = (x, role) => toPassage({ text: x.text, title: x.meta?.title || x.title, author: who, source_url: x.meta?.links?.oceanoflightsRange || x.rangeUrl || x.url,
-        document_id: x.documentId, language: /[پچژگ]/.test(x.text || '') ? 'fa' : 'ar', role, score: sc(x) });
-      return { passages: dedupePassages([toPassage({ text: o.text, title: o.title, author: who, source_url: o.rangeUrl || o.url, document_id: o.documentId, role: 'source', score: sc(o) }),
-        ...(t ? [orig(t, 'original')] : c0?.text ? [orig(c0, 'possible_original')] : []),
+        document_id: x.documentId, language: langCode(docLang.get(x.documentId)?.language || x.meta?.language) || (/[پچژگ]/.test(x.text || '') ? 'fa' : 'ar'), role, score: sc(x) });
+      // another tradition's source: its original is the work family's own-language edition (editions.js), never the Bahá'í tablet guess
+      const foreign = !t && !c0 && o.religion && !/^bah/i.test(o.religion) && o.id
+        ? ((await (ctx?.deps?.editionsOf || (await import('./editions.js')).editionsOf)(o.id, { want: 'original', limit: 1 }, ctx?.deps?.editions || {}).catch(() => null))?.passages || []).slice(0, 2) : [];
+      // another tradition's source carries its book + chapter:verse (KJV 'The Gospel of John 3:16'); read from the row's heading and verse marker
+      const where = o.religion && !/^bah/i.test(o.religion) && o.id
+        ? await (ctx?.deps?.referenceOf || (await import('./editions.js')).referenceOf)(o.id, ctx?.deps?.editions || {}).catch(() => null) : null;
+      const ref = where?.chapter != null ? `${o.title} ${where.chapter}${where.verse ? `:${where.verse}` : ''}${where.exact ? '' : ' (approx.)'}` : null;
+      return { passages: dedupePassages([{ ...toPassage({ id: o.id, text: o.text, title: o.title, author: who, religion: o.religion, source_url: o.rangeUrl || o.url, document_id: o.documentId, role: 'source', score: sc(o), ...(o.tier ? { tier: o.tier } : {}) }), ...(ref ? { ref } : {}) },
+        ...(t ? [orig(t, 'original')] : c0?.text ? [orig(c0, 'possible_original')] : []), ...foreign.map((x) => toPassage({ ...x, role: 'original' })),
         ...(r.citedBy || []).slice(0, 3).map((c) => toPassage({ text: c.text || c.excerpt || `${c.title} quotes it${c.paragraphs ? ` (${c.paragraphs} paragraphs)` : ''}.`,
           title: c.title, author: c.author, source_url: c.rangeUrl || c.url, document_id: c.documentId, role: 'cited_by', score: sc(c) })), ...maybe]) };
     } },

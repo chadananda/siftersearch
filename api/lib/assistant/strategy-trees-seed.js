@@ -199,6 +199,65 @@ const history_fact = tree('history_fact', 'h1', [
 
 const T = { understanding, comparison, prayer, guidance, reference, compilation, claim_check, timeline, history_fact };
 
+// ── the three tradition-general lookups (planning/anis-strategy-review-20261109.md): v2 candidates above their v1 lookup graphs. Tradition first
+// (religions_specified, none = every tradition), each tradition's own core and editions; the Bahá'í pairing / CTAI are one provider each. Never translate. ──
+// quote_trace — cost per run path:
+//   q1 → q2 → q3 → q4 → q5 : code + ≤1 Jev (judge.holds; wording alone holds with no model) + writer
+//   q1 none → qw → qx      : code + 1 web call + writer         · qw none/error → $absence : code + web call
+//   q2 none → qw → qx      : code + ≤1 Jev + web call + writer   · q1 error → $fallback
+const quote_trace = tree('quote_trace', 'q1', [
+  ['q1', 'fetch.phrase', { mode: 'close' }, 'tool', ['quoted_words', 'quoted_clean', 'religions_specified'], ['found_passages'], { one: 'q2', several: 'q2', thin: 'q2', none: 'qw', error: '$fallback' }],
+  ['q2', 'judge.holds', {}, 'decide', ['found_passages', 'quoted_clean', 'quoted_words'], ['found_passages'], { holds: 'q3', partial: 'q3', none: 'qw' }],
+  ['q3', 'read.source', {}, 'tool', ['found_passages'], ['found_passages'], { traced: 'q4', kept: 'q4' }],
+  ['q4', 'fetch.edition', { want: 'original' }, 'tool', ['found_passages'], ['found_passages', 'found_records'], { one: 'q5', several: 'q5', none: 'q5', error: 'q5' }],
+  ['q5', 'shape', { template: 'quote_trace.source', shared: 'tpl.passages', format: 'quote_trace', offers: ['the passage in its context'] }, 'synthesize', ['found_passages', 'found_records', 'quoted_words', 'religions_specified'], ['offers'], { done: END }],
+  ['qw', 'search.web', { query: '{{quoted_words}}' }, 'tool', ['quoted_words', 'religions_specified'], ['web_found'], { one: 'qx', none: '$absence', error: '$absence' }],
+  ['qx', 'shape', { template: 'quote_trace.web', shared: 'tpl.passages', format: 'quote_trace' }, 'synthesize', ['web_found', 'quoted_words'], [], { done: END }],
+], { needs: ['quoted_words', 'quoted_clean'], units: { absence_template: 'quote_trace.absence' } });
+
+// term — cost per run path:
+//   t1 → t2 → t3 → sw → rk → t4 → t5 → t6|t7           : code + 1 Jev (t5) + writer
+//   Bahá'í: t1 → t1b → t1c → t2 …                      : + ≤1 Jev (t1b; an Arabic-script or remembered term is free) + the CTAI call (code)
+//   no tradition: t1 → t1c (CTAI gated to Arabic script, free otherwise) → t2 …
+//   sw nothing → $absence : code · sw errored → $fallback
+const term = tree('term', 't1', [
+  ['t1', 'switch', { on: { value: 'religions_specified' }, cases: { "Baha'i": 'bahai', "Bahá'í": 'bahai', Bahai: 'bahai', none: 'any' }, default: 'other' }, 'decide', ['religions_specified'], [], { bahai: 't1b', any: 't1c', other: 't2' }],
+  ['t1b', 'fill.term_script', {}, 'decide', ['term'], ['term_arabic'], { filled: 't1c', none: 't2' }],
+  ['t1c', 'fetch.renderings', {}, 'tool', ['term'], ['found_passages', 'found_records'], { one: 't2', several: 't2', none: 't2', error: 't2' }],   // CTAI: the Bahá'í provider, labelled Bahá'í-only
+  // definitions: the tradition's authoritative interpretation, and its glossaries and dictionaries (no doc-class filter yet: they sit in scholarship, labelled)
+  ['t2', 'search.together', { list: [{ element: 'search.shelf', params: { authority: 'interpretation', query: '{{term}}', k: 4 } }, { element: 'search.shelf', params: { authority: 'scholarship', query: '{{term}}', k: 3 } }] },
+    'tool', ['term', 'religions_specified'], ['found_passages', 'missing'], { one: 't3', several: 't3', thin: 't3', none: 't3', error: 't3' }],
+  // usage: the term's own occurrences in the tradition's core (literal + phrase)
+  ['t3', 'search.shelf', { authority: 'scripture', query: '{{term}}', layers: ['literal', 'phrase'], k: 6 }, 'tool', ['term', 'religions_specified'], ['found_passages'], { one: 'sw', several: 'sw', thin: 'sw', none: 'sw', error: 'sw' }],
+  ['sw', 'switch', { on: { evidence: true }, cases: { have: 'have', errored: 'errored', nothing: 'nothing' }, default: 'nothing' }, 'decide', ['found_passages', 'found_outcome'], [], { have: 'rk', errored: '$fallback', nothing: '$absence' }],
+  ['rk', 'rank', { by: ['authority'], k: { default: 6, research: 10 }, dedupe: true }, 'process', ['found_passages'], ['found_passages'], { done: 't4', empty: '$absence' }],
+  // renderings: the top core passage in the parallel translations of its work, aligned by verse/section, else by meaning
+  ['t4', 'fetch.edition', { want: 'translations' }, 'tool', ['found_passages'], ['found_passages', 'found_records'], { one: 't5', several: 't5', none: 't5', error: 't5' }],
+  ['t5', 'judge', { question: 'Do the passages found DEFINE or explain {{term}}, or do they only use it?', default: 'uses', options: [
+    { edge: 'defines', when: 'at least one passage defines or explains what the term means' }, { edge: 'uses', when: 'the passages only use the term without explaining it' }] },
+    'decide', ['term', 'found_passages'], ['path'], { defines: 't6', uses: 't7' }],
+  ['t6', 'shape', { template: 'term.meaning', shared: 'tpl.passages', format: 'term', offers: ['more passages that use it'] }, 'synthesize', ['term', 'found_passages', 'found_records', 'religions_specified'], ['offers'], { done: END }],
+  ['t7', 'shape', { template: 'term.usage', shared: 'tpl.passages', format: 'term', offers: ['more passages that use it'] }, 'synthesize', ['term', 'found_passages', 'found_records', 'religions_specified'], ['offers'], { done: END }],
+], { needs: ['term'], units: { absence_template: 'term.absence' } });
+
+// original — cost per run path:
+//   o1 one → o3 → o4 → o5                    : code + writer
+//   o1 thin/error → o2 → o2j → o3 → o4 → o5  : code + ≤1 Jev (judge.holds) + writer
+//   o3 none → o6 (names the missing language) : code + writer · o1 none / o2 none / o2j none → $absence : code
+const original = tree('original', 'o1', [
+  ['o1', 'fetch.anchor', {}, 'tool', ['referent', 'reader_position', 'previous_evidence', 'quoted_words'], ['found_passages'], { one: 'o3', thin: 'o2', none: '$absence', error: 'o2' }],
+  ['o2', 'fetch.phrase', { mode: 'close' }, 'tool', ['quoted_words', 'quoted_clean', 'religions_specified'], ['found_passages'], { one: 'o2j', several: 'o2j', thin: 'o2j', none: '$absence', error: '$fallback' }],
+  ['o2j', 'judge.holds', {}, 'decide', ['found_passages', 'quoted_clean', 'quoted_words'], ['found_passages'], { holds: 'o3', partial: 'o3', none: '$absence' }],
+  // its work → the work family's original-language edition, aligned by reference, else by meaning (recorded Bahá'í links first)
+  ['o3', 'fetch.edition', { want: 'original' }, 'tool', ['found_passages'], ['found_passages', 'found_records'], { one: 'o4', several: 'o4', none: 'o6', error: '$fallback' }],
+  ['o4', 'fetch.edition', { want: 'translations' }, 'tool', ['found_passages'], ['found_passages', 'found_records'], { one: 'o5', several: 'o5', none: 'o5', error: 'o5' }],
+  ['o5', 'shape', { template: 'original.side_by_side', shared: 'tpl.one_passage', format: 'original' }, 'synthesize', ['found_passages', 'found_records'], [], { done: END }],
+  ['o6', 'shape', { template: 'original.none', shared: 'tpl.one_passage', format: 'original' }, 'synthesize', ['found_passages', 'found_records'], [], { done: END }],
+], { needs: ['quoted_words', 'referent'], units: { absence_template: 'original.absence' } });
+
+// the lookup trees: seeded as v2 CANDIDATES above their v1 lookup graphs (strategy-seed.js LOOKUP_GRAPHS)
+const L = { quote_trace, term, original };
+
 // ── Templates: shared tpl.<shape> wrap the strategy's own text as {{base}}; {{#voice}}…{{/voice}} blocks are kept for that mode only
 // (voice | widget | site | email | pdf | research; why | anchor | thin; or any unit that is filled). ──
 const t = (id, text) => ({ id, version: 1, text });
@@ -234,6 +293,16 @@ export const TREE_TEMPLATES = [
   t('history_fact.disagree', "The sources disagree on {{topic}}: say so in the first sentence. Then each account with its date and source, in historical precedence (primary record, contemporary account, later scholarship), attributed and linked; say which carries the most weight and why; never reconcile them yourself. {{scope_clause}}\n{{#web_found}}Web sources are given too: labelled as outside the library.{{/web_found}}"),
   t('history_fact.web', "The library holds no history of {{topic}}: say so in one line. Then the answer from the web sources below, each labelled as outside the library with its site linked; never present them as library evidence. If they disagree, give each. {{scope_clause}}"),
 
+
+  t('quote_trace.source', "Where the quotation comes from. First line: the source — work and author as a linked italic title — with the passage quoted whole and linked. The source is the best published edition holding it; if it was found first in a book quoting it, name that book after the source (\"quoted in …\"). Then the other works that quote it, by linked italic title. The earliest and most authoritative occurrence comes first, by the source tradition's own authority. If the attribution the reader gave differs from the source found, say so plainly in one line. If an original-language edition is given, show it beside the passage, aligned, never translated by you; if a record names a missing language, one line: the library holds no edition in that language. {{scope_clause}}"),
+  t('quote_trace.web', "Say plainly: these words are not in the library. Then, labelled as from the open web, what the web attributes them to, with the site linked; never quote a web page as a library source. One line offering to search with other wording."),
+  t('quote_trace.absence', "Say plainly that the library does not hold these words ({{widened_clause}}), and the web search found no attribution either. Never guess an author. Offer to search with other wording."),
+  t('term.meaning', "What {{term}} means in its own tradition. First sentence: the meaning, from the passages that define or explain it (the tradition's authoritative interpretation first). Then how the tradition's own core texts use it: one or two passages quoted and linked. Then its renderings: the same passage in the parallel translations given, each translator named; a rendering record from the authorized Bahá'í translator is labelled as such and applies to the Bahá'í texts only. Glossaries and scholarship last, labelled (\"a glossary in …\", \"a scholar, X, writes…\"). Never translate it yourself. {{scope_clause}}"),
+  t('term.usage', "Say the library's texts use {{term}} without defining it. Then how its own core texts use it: two or three passages quoted and linked, from which the sense can be seen — let the passages show it, labelled as usage, not a definition. Then its renderings in the parallel translations given, each translator named. Scholarship labelled. Never invent a definition or translate it yourself. {{scope_clause}}"),
+  t('term.absence', "Say plainly that the library's texts do not use or define {{term}} ({{widened_clause}}). Never define it from your own knowledge as if it were the library's. Offer a wider search."),
+  t('original.side_by_side', "The original-language text first, verbatim and whole, linked, with its work and language named. Then the existing translation beside it, linked, translator named; if several translations are given, each after it, named. If an edition was aligned approximately (by meaning, or by position in the chapter), say so in one line. Never translate anything yourself."),
+  t('original.none', "Say plainly that the library holds no original-language edition of this work — name the language the record gives (e.g. \"no Arabic edition of this book is in the library\"). Then the passage as the library holds it, linked, translator named. Never translate it into the original yourself."),
+  t('original.absence', "Say plainly that the passage could not be found in the library ({{widened_clause}}), so its original cannot be shown. Ask for a few more words of it or the book it is from."),
 ];
 
 // Jev's option text for the rev-B trees (no STRATEGY_DESCRIPTIONS row): production's current descriptions, verbatim (claim_check@3, timeline@2, history_fact@4)
@@ -246,3 +315,7 @@ export const TREE_STEPS = Object.values(T).flatMap((x) => x.steps);
 // v2 of each executor strategy: a CANDIDATE (the promotion gate on tower decides); v1 (one node) stays active for rollback
 export const TREE_GRAPHS = Object.fromEntries(Object.entries(T).map(([id, x]) => [id, x.graph]));
 export const TREE_IDS = Object.keys(T);
+// the lookup trees (quote_trace, term, original): v2 candidates of the LOOKUP strategies
+export const LOOKUP_TREE_STEPS = Object.values(L).flatMap((x) => x.steps);
+export const LOOKUP_TREE_GRAPHS = Object.fromEntries(Object.entries(L).map(([id, x]) => [id, x.graph]));
+export const LOOKUP_TREE_IDS = Object.keys(L);

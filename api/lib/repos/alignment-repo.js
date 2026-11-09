@@ -44,3 +44,40 @@ export async function insertLinks(links, basis, method) {
       args: [l.transId, l.origId, l.transDoc, l.origDoc, basis, method] })), 'ops:ctai-link');
   }
 }
+
+// ── work family (Anís original / term / quote_trace, 11-09): the other-language editions of ONE work, for any tradition ──────
+const FAM_COLS = 'd.id, d.title, d.author, d.language, d.religion, d.collection';
+/** One doc's work family: other editions/translations of the same work, each with the BASIS that ties it —
+ *  `original_doc_id` (recorded: this doc's original, or its siblings/translations), `alignment` (content_alignment doc pairs),
+ *  `author` (same author + tradition, another language: a CANDIDATE only — the caller aligns or rejects it). Best basis first. */
+export async function workFamily(docId, { limit = 12 } = {}) {
+  const id = Number(docId), n = Math.max(1, Math.min(Number(limit) || 12, 50));
+  const self = await queryOne(`SELECT id, title, author, language, religion, collection, original_doc_id FROM docs WHERE id = ? AND deleted_at IS NULL`, [id], 'alignment-repo:family-self');
+  if (!self) return { self: null, members: [] };
+  const root = Number(self.original_doc_id) || id;
+  const recorded = await queryAll(`SELECT ${FAM_COLS}, 'original_doc_id' AS basis FROM docs d WHERE d.deleted_at IS NULL AND d.id != ? AND (d.id = ? OR d.original_doc_id = ?) LIMIT ?`,
+    [id, root, root, n], 'alignment-repo:family-recorded');
+  const aligned = await queryAll(`SELECT ${FAM_COLS}, 'alignment' AS basis, x.links FROM (
+      SELECT orig_doc AS doc, COUNT(*) AS links FROM content_alignment WHERE trans_doc = ? AND retired_at IS NULL GROUP BY orig_doc
+      UNION ALL SELECT trans_doc, COUNT(*) FROM content_alignment WHERE orig_doc = ? AND retired_at IS NULL GROUP BY trans_doc) x
+    JOIN docs d ON d.id = x.doc AND d.deleted_at IS NULL ORDER BY x.links DESC LIMIT ?`, [id, id, n], 'alignment-repo:family-aligned');
+  const byAuthor = self.author ? await queryAll(`SELECT ${FAM_COLS}, 'author' AS basis FROM docs d WHERE d.deleted_at IS NULL AND d.duplicate_of IS NULL
+      AND d.author = ? AND COALESCE(d.religion, '') = COALESCE(?, '') AND d.id != ? AND LOWER(COALESCE(d.language, '')) != LOWER(COALESCE(?, '')) LIMIT ?`,
+    [self.author, self.religion, id, self.language, n], 'alignment-repo:family-author') : [];
+  const seen = new Set(), members = [];
+  for (const m of [...recorded, ...aligned, ...byAuthor]) if (!seen.has(m.id)) { seen.add(m.id); members.push(m); }
+  return { self, members: members.slice(0, n) };
+}
+
+/** What links editions today, per tradition (the work-families ops report): recorded original_doc_id, aligned doc pairs,
+ *  authors held in more than one language, and the tradition × language doc counts. Whole-table: a REPORT, never a request path. */
+export async function workFamilyCoverage() {
+  const recorded = await queryAll(`SELECT COALESCE(religion, '?') AS religion, COUNT(*) AS docs FROM docs WHERE deleted_at IS NULL AND original_doc_id IS NOT NULL GROUP BY 1 ORDER BY 2 DESC`, [], 'alignment-repo:fam-recorded');
+  const aligned = await queryAll(`SELECT COALESCE(d.religion, '?') AS religion, COUNT(*) AS pairs FROM (SELECT DISTINCT trans_doc, orig_doc FROM content_alignment WHERE retired_at IS NULL) p
+    JOIN docs d ON d.id = p.trans_doc GROUP BY 1 ORDER BY 2 DESC`, [], 'alignment-repo:fam-aligned');
+  const authors = await queryAll(`SELECT religion, COUNT(*) AS authors FROM (SELECT COALESCE(religion, '?') AS religion, author FROM docs
+      WHERE deleted_at IS NULL AND author IS NOT NULL AND author != '' GROUP BY 1, 2 HAVING COUNT(DISTINCT LOWER(COALESCE(language, ''))) > 1) GROUP BY 1 ORDER BY 2 DESC`, [], 'alignment-repo:fam-authors');
+  const languages = await queryAll(`SELECT COALESCE(religion, '?') AS religion, LOWER(COALESCE(language, '?')) AS language, COUNT(*) AS docs FROM docs
+    WHERE deleted_at IS NULL GROUP BY 1, 2 ORDER BY 1, 3 DESC`, [], 'alignment-repo:fam-languages');
+  return { recorded, aligned, authors, languages };
+}
