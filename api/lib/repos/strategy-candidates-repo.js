@@ -202,7 +202,10 @@ export const fixSlots = (v, key = '') => {
   if (Array.isArray(v)) return v.map((x) => fixSlots(x, key));
   return v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fixSlots(x, k)])) : v;
 };
-/** Strategy `id` at `version` (default newest) → corrected slot syntax as a NEW candidate version; nothing to fix and the row is a candidate = that row stands (re-run: no @n+1).
+/** A search.shelf step gated on BOTH a named work (in_named) and a named person (by_person) is skipped unless the question names both: drop in_named (the person filter stays). Pure. */
+export const fixGates = (p, activity = '') => (activity === 'search.shelf' && p && p.in_named && p.by_person ? Object.fromEntries(Object.entries(p).filter(([k]) => k !== 'in_named')) : p);
+
+/** Strategy `id` at `version` (default newest) → corrected slot syntax (and fixGates) as a NEW candidate version; nothing to fix and the row is a candidate = that row stands (re-run: no @n+1).
  *  → { id, version (the target, null when nothing applies), fixed: [step ids], saved: bool, activatable: bool (a candidate whose parent is the ACTIVE version) } */
 export function fixStrategySlots(db, id, { version = null, by = 'ops-slot-fix' } = {}) {
   const row = strategyRow(db, id, version);
@@ -211,7 +214,7 @@ export function fixStrategySlots(db, id, { version = null, by = 'ops-slot-fix' }
   for (const [nid, n] of Object.entries(graph.nodes || {})) {
     const st = db.prepare('SELECT * FROM steps WHERE id = ? AND version = ?').get(n.step, n.step_version);
     if (!st) continue;
-    const params = safeJson(st.params_json, {}), fixed = fixSlots(params);
+    const params = safeJson(st.params_json, {}), fixed = fixGates(fixSlots(params), st.activity);
     if (JSON.stringify(fixed) === JSON.stringify(params)) continue;
     const v = maxVersion(db, 'steps', st.id) + 1 + steps.filter((x) => x.id === st.id).length;
     steps.push({ id: st.id, version: v, activity: st.activity, params: fixed, template_id: st.template_id, template_version: st.template_version });

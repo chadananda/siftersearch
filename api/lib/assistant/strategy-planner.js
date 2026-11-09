@@ -136,6 +136,11 @@ export function validatePlan(j, { cat, acts = registry(), tests = null, requireT
   for (const nid of loopNodes) if (kinds[nid] === 'decide' || kinds[nid] === 'process' || kinds[nid] === 'rank') errors.push(`node ${nid}: a ${kinds[nid]} node inside a loop; ${wish}`);
   const hands = Object.entries(nodesIn).filter(([, n]) => n?.element === 'hand.strategy');
   for (const [nid, n] of hands) if (hands.length > 1 || n.params?.units || n.params?.each || n.params?.per) errors.push(`node ${nid}: hand.strategy fan-out per item/side/tier runs decide/process nodes in a loop; ${wish}`);
+  // one search step never needs a named WORK and a named PERSON together (a gate: a question naming only the person would skip it); by_person is the author filter, so a node reading named_person sets it
+  for (const [nid, n] of Object.entries(nodesIn)) {
+    if (n?.element === 'search.shelf' && n.params?.in_named && n.params?.by_person) errors.push(`node ${nid}: in_named and by_person on one search.shelf gate on a named work AND a named person; use two nodes (one in_named, one by_person)`);
+    if (n?.element === 'search.shelf' && (n.reads || []).includes('named_person') && !n.params?.by_person && !n.params?.wide) errors.push(`node ${nid}: reads named_person but params.by_person is not set, so the author filter is never applied`);
+  }
   for (const [nid, n] of Object.entries(nodesIn)) if (/dedup/i.test(String(n?.element)) || n?.params?.dedupe) errors.push(`node ${nid}: dedup is never a tree node (tools return deduped results)`);
   if (kinds[g.entry] === 'synthesize') errors.push('the entry node cannot be a synthesize node');
   // the card

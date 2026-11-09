@@ -19,7 +19,7 @@ import { extractPhrases, fixedPhrases, hintsOf } from '../phrases.js';
 import { research as runResearch, libraryTools } from '../researcher.js';
 import { followUpAsks } from '../../search-plan.js';
 import { termQuestion, resolveTerm, ctaiTerm } from '../ctai-term.js';
-import { runStrategy } from '../strategies.js';
+import { runStrategy, withAnchors } from '../strategies.js';
 import { looksLikePositionQuestion, positionResearch } from '../position.js';
 import { looksLikeLanguageQuestion } from '../language.js';
 import { preferOwnWork, literalOwnSearch, linkHits } from '../own-source.js';
@@ -244,9 +244,13 @@ const evidence = (s) => {
     s.phrased = x;
     s.searchQ = (x?.via === 'named-object' || x?.via === 'haiku') && x.phrase ? x.phrase : direction.query || searchQueryFor(messages);
     const hints = hintsOf(x);
+    if (direction.strategy?.refersBack) messages.refersBack = true;   // the search plan reads it (search-plan.js refers-back rule)
     return timed('search', () => d.search({ query: s.searchQ, mode: 'passages', limit: 8, scope_config: profile.scope_config,
       plan: { messages, defaults: profile.default_tradition ? { religion: profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
-  }).then((r) => done(r, 'search'));
+  })
+    // Jev read the message as pointing at the last reply: the passages it cited lead (the actual words), also in a fresh conversation (the reply's own links)
+    .then(async (r) => { if (direction.strategy?.refersBack && !f && r?.passages) r.passages = await withAnchors(r.passages, direction.state, { messages }, direction.decisions); return r; })
+    .then((r) => done(r, 'search'));
 };
 
 const ownSource = (s) => {

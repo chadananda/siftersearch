@@ -15,6 +15,7 @@ import { supports } from './channels.js';
 import { strategyGraphOn, runStrategyGraph } from './activities/graph.js';
 import { LOOKUP_STRATEGIES } from './strategy-seed.js';
 import { lastTopic, lastPassages } from './units.js';
+import { withReplyContext } from './reply-anchors.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
 const DOCTRINAL = new Set(['writings', 'guardian', 'compilation']);   // source-tier.js tiers a compilation draws on by default
@@ -82,7 +83,11 @@ export async function comparison(choice, ctx) {
   if (sides.length < 2) {
     // Jev named fewer than two sides: the comparative is NEVER narrowed (scope-extract rule 2) — one wide search, the writer covers each tradition the passages come from
     decisions.record('sides:fallback', { by: 'code', saw: sides, options: ['per-side searches', 'one wide search'], chosen: 'one wide search', reason: `${sides.length} side(s) from Jev` });
-    const hits = await searchSide({ search, query, messages, profile, religion: null, limit: MAX_PASSAGES });
+    // a side Jev gave a BOOK ("the Gita") is still read in that book, even with one side named
+    const booked = await Promise.all(Object.values(choice.sources || {}).filter((n) => n && sourceTools).map((n) => namedSource(n, query, sourceTools).catch(() => null)));
+    const fromBooks = booked.flatMap((b) => b?.passages || []);
+    const wide = await searchSide({ search, query, messages, profile, religion: null, limit: MAX_PASSAGES });
+    const hits = dedupe([...fromBooks, ...wide]);
     const byTrad = {}; for (const p of hits) byTrad[p.religion || 'unknown'] = (byTrad[p.religion || 'unknown'] || 0) + 1;
     decisions.record('coverage', { by: 'code', saw: byTrad, options: ['covered', 'thin', 'missing'], chosen: coverageOf(hits.length), reason: `${hits.length} passages, ${Object.keys(byTrad).length} traditions` });
     return { passages: hits.map((p) => ({ ...p, theme: p.religion || null })), plan: { shape: 'comparison', comparative: true, sides: [], wide: true, coverage: byTrad },
@@ -218,6 +223,7 @@ export async function compilation(choice, ctx) {
 /** The passages the last turn cited, loaded whole and put first (Jev: the message refers back to them). Pure of intent; a failed load costs only itself. */
 export async function withAnchors(passages, state, ctx = {}, log = NO_LOG) {
   const a = (x) => ({ document_id: x.document_id, paragraph_index: x.paragraph_index, before: 0, after: 0 });
+  if (!lastPassages(state || undefined).length && ctx.messages) state = (await withReplyContext({ refersBack: true }, { state: state || undefined, messages: ctx.messages }, ctx.replyIo || {})).ctx.state;   // fresh conversation: the previous reply's links
   const anchors = (await Promise.all(lastPassages(state || undefined).slice(0, 3).map((x) => (ctx.tools?.context_lookup ? ctx.tools.context_lookup(a(x), ctx) : runTool('context_lookup', a(x), ctx)).then((c) => c?.passages?.[0] ?? null, () => null)))).filter(Boolean);
   if (!anchors.length) return passages;
   const had = new Set(anchors.map((p) => `${p.document_id}:${p.paragraph_index}`));
@@ -230,6 +236,12 @@ export async function runStrategy(choice, ctx) {
   const name = strategyOf(choice);
   if (!name) return null;
   const log = ctx.decisions || NO_LOG;
+  // a fresh conversation (history only in `messages`, no state.given): the previous reply's own links are the anchor, and the other side of "how does that compare with X"
+  if (choice?.refersBack) {
+    const r = await withReplyContext(choice, ctx, ctx.replyIo || {});
+    if (r.ctx !== ctx || r.choice !== choice) log.record('refers-back:reply-links', { by: 'code', saw: { given: (r.ctx.state?.given || []).length, sides: r.choice.sides }, options: ['state only', 'previous reply links'], chosen: 'previous reply links', reason: 'Jev: the message refers back; the conversation state is empty or names one side' });
+    ctx = r.ctx; choice = r.choice;
+  }
   // Jev read the message as pointing at the LAST reply (refers_back): search the last turn's topic, not the glued/literal follow-up, and keep the passages it cited as the anchor
   const topic = choice?.refersBack ? lastTopic(ctx.state || undefined, ctx.messages || []) : null;
   if (topic) { ctx = { ...ctx, query: topic }; log.record('refers-back:query', { by: 'jev', saw: { topic }, options: ['glued follow-up', 'last topic'], chosen: 'last topic', reason: 'Jev: the message refers back to the previous reply' }); }

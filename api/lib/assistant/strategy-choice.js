@@ -43,8 +43,8 @@ const bookAsk = (span) => `In the latest message, is "${span}" a particular BOOK
 
 // Early filters (Chad 11-09): what each name span IS (a work, a person, neither) and which tradition the question is about are Jev's answers in this SAME call
 // (typed choices only); code resolves them — a span becomes named_work / named_person, the topic is the question minus those spans (a search phrase, not the whole question).
-const KINDS = { work: 'a written WORK: a book, tablet, treatise or scripture (its title)', person: 'a PERSON or author whose own teaching or writing the reader asks about (the words they said or wrote, "X on grace", "what X teaches")', neither: 'a concept, place, event, tradition, or a person the question is ABOUT (who they were, their life, story, childhood, death), anything else' };
-const kindAsk = (span) => `In the latest message, what does "${span}" name — a written work, a person whose own teaching or writing is asked about (not a person whose life or story is asked about), or neither?`;
+const KINDS = { work: 'a written WORK: a book, tablet, treatise or scripture (its title)', person: 'a PERSON or author whose own teaching or writing the reader asks about (the words they said or wrote, "X on grace", "what X teaches")', neither: 'a concept, place, event, tradition, or a person the question is ABOUT (who they were, their life, story, childhood, death), anything else — including an ordinary word (a verb such as Trace, Compare, Find, Show) that is capitalised only because it STARTS the sentence' };
+const kindAsk = (span) => `In the latest message, what does "${span}" name — a written work, a person whose own teaching or writing is asked about (not a person whose life or story is asked about), or neither? A capitalised first word of the message is a name only when it really is one; an ordinary command word is neither.`;
 const SUBJECT_ASK = 'Does the latest message ask about the texts, teachers or teachings of one particular religion or tradition ("Buddhist anatta", "Sufi Rumi on fana", "Augustine on grace")? Choose it. "none" when it names no tradition.';
 const FRAME = /^(?:according to|as (?:stated|explained|written|said) (?:in|by)|per|by|from|in|on)\s+/i;
 const FUNCTION_WORDS = /^(?:who|what|whom|whose|which|when|where|why|how|was|were|is|are|am|be|did|do|does|the|a|an|of|to|in|on|and|or|about|tell|me)\W*$/i;   // question/function words carry no search content
@@ -52,7 +52,8 @@ const frameless = (n) => String(n).replace(FRAME, '').trim();
 /** Jev's span kinds → { named_work, named_person, topic } (units for the tree's `request`). Pure. */
 export function namedUnits(a = {}, spans = [], question = '', min = MIN_CONFIDENCE) {
   const kinds = spans.map((n, i) => ({ name: frameless(n), raw: n, ...choice(a[`kind_${i + 1}`]) })).filter((k) => k.name && ['work', 'person'].includes(k.choice) && (k.confidence ?? 0) >= min);
-  const work = kinds.find((k) => k.choice === 'work'), person = kinds.find((k) => k.choice === 'person');
+  const best = (c) => kinds.filter((k) => k.choice === c).sort((x, y) => (y.confidence ?? 0) - (x.confidence ?? 0))[0];   // the highest-confidence span of each kind
+  const work = best('work'), person = best('person');
   const rest = kinds.reduce((q, k) => q.replace(k.raw, '\u0000'), String(question)).replace(/(?:\b(?:according to|as (?:stated|explained|written|said) (?:in|by)|in|from|by|on|per)\s+)?\u0000(?:['’]s\b)?[\s,;:'"’‘“”()-]*/gi, ' ')
     // remnants of a removed span (structure): lone quote/apostrophe tokens, a dangling "?" or "Who was ?"-style gap
     .replace(/(^|\s)['"’‘“”]+(?=\s|$)/g, ' ').replace(/\s+([?!.,;:])/g, '$1').replace(/^[?!.,;:\s]+/, '').replace(/\s+/g, ' ').trim();
@@ -64,7 +65,8 @@ const choice = (a) => a && { choice: a.choice ?? a.value ?? null, confidence: a.
 
 /** The thread as Jev sees it (last turns, clipped). Pure. */
 export const stateOf = (messages = [], { profile = {} } = {}) => {
-  const lines = messages.slice(-4).map((m) => `${m.role}: ${String(m.content || '').slice(0, 800)}`);
+  const recent = messages.slice(-4), lastReply = recent.map((m) => m.role).lastIndexOf('assistant');   // the previous reply is read WHOLE ("the second one" needs every item); the rest is clipped
+  const lines = recent.map((m, i) => `${m.role}: ${i === lastReply ? String(m.content || '') : String(m.content || '').slice(0, 800)}`);
   if (profile.default_tradition) lines.unshift(`reader: usually asks about ${profile.default_tradition}`);
   return lines.join('\n');
 };

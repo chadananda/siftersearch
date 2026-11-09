@@ -493,7 +493,8 @@ export function conversationSummary(messages, persona) {
   // enough to CHECK a claim about them (r9: at 400 chars Anís could not see what he had said, so he conceded errors he never
   // made — 11 capitulation defects in the r8 replay)
   const lastAt = prior.map((m) => m.role).lastIndexOf('assistant');
-  return prior.map((m, i) => `${m.role === 'user' ? 'Seeker' : persona}: ${m.content.slice(0, i === lastAt ? 1800 : m.role === 'assistant' ? 1000 : 500)}`).join('\n');
+  // the reply the seeker answers is given WHOLE ("the second one" needs every item, in order; a clipped reply made the writer say it was cut off)
+  return prior.map((m, i) => `${m.role === 'user' ? 'Seeker' : persona}: ${i === lastAt ? m.content : m.content.slice(0, m.role === 'assistant' ? 1000 : 500)}`).join('\n');
 }
 
 /** Anís' search: executeSearch with the full paragraph (≤ 8000, filtered upstream) — he cuts for himself (prompt.js
@@ -761,7 +762,7 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
         plan: { messages, defaults: (direction.scope ? direction.scope.religion : profile.default_tradition) ? { religion: direction.scope ? direction.scope.religion : profile.default_tradition } : {}, ...(hints ? { hints } : {}) } }));
     });
   // no strategy ran but Jev read the message as pointing at the last reply: its cited passages lead (the actual words)
-  if (direction.strategy?.refersBack && !strat && !fast && res?.passages) res.passages = await withAnchors(res.passages, direction.state, {}, direction.decisions);
+  if (direction.strategy?.refersBack && !strat && !fast && res?.passages) res.passages = await withAnchors(res.passages, direction.state, { messages }, direction.decisions);
   if (phrased && res?._plan && !res._plan.quote) res._plan = { ...res._plan, phrases: phrased };
   // OWN SOURCE (own-source.js; Chad's standing rule): the passages are final here — a Central Figure's or Shoghi Effendi's
   // words quoted inside another author's book (production 11-04: "Ye are the fruits of one tree" linked to The Promised Day

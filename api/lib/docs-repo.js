@@ -619,6 +619,22 @@ export const OCEAN_BOOKS_SQL = (n) => `SELECT id, source_url, external_id FROM d
     AND deleted_at IS NULL AND external_id IS NOT NULL`;
 export const OCEAN_PARAS_SQL = (n) => `SELECT external_para_id pid, text, block_attrs FROM content
   WHERE doc_id = ? AND external_para_id IN (${Array(n).fill('?').join(',')}) AND deleted_at IS NULL`;
+/** OceanLibrary [[slug, paraId]] -> [{ slug, pid, document_id, paragraph_index, religion }] (the same two indexed probes as oceanParagraphs; structure only, no text). */
+export async function oceanParaRefs(pairs) {
+  const bySlug = new Map();
+  for (const [s, p] of pairs || []) (bySlug.get(s) || bySlug.set(s, new Set()).get(s)).add(p);
+  if (!bySlug.size) return [];
+  const slugOf = (u) => String(u).replace(/\/$/, '').split('/').pop(), out = [];
+  const urls = [...bySlug.keys()].slice(0, 20).flatMap((s) => [`https://oceanlibrary.com/${s}`, `https://oceanlibrary.com/${s}/`]);
+  const docs = await queryAll(`SELECT id, source_url, religion FROM docs WHERE source_url IN (${urls.map(() => '?').join(',')}) AND source_site = 'oceanlibrary.com' AND deleted_at IS NULL AND external_id IS NOT NULL`, urls, 'docs-repo:ocean-para-refs-books');
+  for (const d of docs) {
+    const slug = slugOf(d.source_url), pids = [...(bySlug.get(slug) || [])].slice(0, 20);
+    if (!pids.length) continue;
+    for (const r of await queryAll(`SELECT external_para_id pid, paragraph_index FROM content WHERE doc_id = ? AND external_para_id IN (${pids.map(() => '?').join(',')}) AND deleted_at IS NULL`, [d.id, ...pids], 'docs-repo:ocean-para-refs'))
+      out.push({ slug, pid: r.pid, document_id: d.id, paragraph_index: r.paragraph_index, religion: d.religion ?? null });
+  }
+  return out;
+}
 export async function oceanParagraphs(pairs) {
   const bySlug = new Map();
   for (const [s, p] of pairs || []) (bySlug.get(s) || bySlug.set(s, new Set()).get(s)).add(p);
