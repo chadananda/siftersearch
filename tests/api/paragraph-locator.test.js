@@ -9,7 +9,7 @@ import { passageHeader } from '../../api/lib/assistant/prompt.js';
 describe('paragraphLocator', () => {
   it('traditional numbers: Gleanings section (continuations keep the section), Hidden Words, Íqán / Aqdas paragraph, Q&A', () => {
     expect(paragraphLocator({ pn: 'CXVII' })).toBe('CXVII');
-    expect(paragraphLocator({ pn: 'CXVII.2', heading: 'CXVII' })).toBe('CXVII');
+    expect(paragraphLocator({ pn: 'CXVII.2', heading: 'CXVII' })).toBe('CXVII.2');
     expect(paragraphLocator({ pn: 'Arabic 5' })).toBe('Arabic 5');
     expect(paragraphLocator({ pn: 12 })).toBe('¶12');
     expect(paragraphLocator({ pn: 'Q&A 3' })).toBe('Q&A 3');
@@ -29,8 +29,8 @@ describe('the locator reaches search hits and Anís passages', () => {
   it('paragraphDoc carries it (from the row pn + heading), toPassage passes it to the writer', () => {
     const d = paragraphDoc({ id: 1, doc_id: 2, paragraph_index: 3, text: 't', heading: 'CXVII', pn: 'CXVII.2' },
       { title: 'Gleanings from the Writings of Bahá’u’lláh', author: 'Bahá’u’lláh', religion: 'Bahá’í' }, 10);
-    expect(d.locator).toBe('CXVII');
-    expect(toPassage(d).locator).toBe('CXVII');
+    expect(d.locator).toBe('CXVII.2');
+    expect(toPassage(d).locator).toBe('CXVII.2');
     expect(toPassage({ id: 1, text: 't' })).not.toHaveProperty('locator');
   });
   it('the writer sees it in the passage header', () => {

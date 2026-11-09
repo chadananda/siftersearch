@@ -8,7 +8,9 @@ import { passageHeader } from '../../api/lib/assistant/prompt.js';
 describe('placeOf', () => {
   it('book with a traditional number or section: the locator', () => {
     expect(placeOf({ locator: 'CXVII', paragraph_index: 40 })).toBe('CXVII');
-    expect(placeOf({ locator: 'The Seven Valleys', paragraph_index: 9 })).toBe('The Seven Valleys');
+    expect(placeOf({ locator: 'The Seven Valleys', paragraph_index: 9 })).toBe('The Seven Valleys, ¶9');   // heading only → paragraph added
+    expect(placeOf({ locator: 'CXVII.2', paragraph_index: 41 })).toBe('CXVII.2');   // chapter.paragraph
+    expect(placeOf({ locator: 'Arabic 5', paragraph_index: 7 })).toBe('Arabic 5');
   });
   it('flat doc: paragraph number only', () => expect(placeOf({ paragraph_index: 12 })).toBe('¶12'));
   it('container: subdocument first, then locator or paragraph', () => {

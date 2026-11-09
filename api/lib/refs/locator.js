@@ -4,7 +4,7 @@
 // no index walk and no backfill. Pure. Deps: sections.js (heading cleanup).
 import { isNoiseHeading, cleanHeading } from '../sections.js';
 
-const ROMAN_PN = /^([IVXLCDM]+)(?:\.\d+)?$/;   // Gleanings: "CXVII" opens the section, "CXVII.2" continues it
+const ROMAN_PN = /^([IVXLCDM]+)(?:\.\d+)?$/;   // Gleanings: "CXVII" opens the section, "CXVII.2" continues it (cited as is)
 const MAX_HEADING = 80;
 const same = (a, b) => String(a || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim() === String(b || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
@@ -13,7 +13,7 @@ export function paragraphLocator({ pn = null, heading = null, title = null } = {
   const n = pn == null ? '' : String(pn).trim();
   if (n) {
     const roman = n.match(ROMAN_PN);
-    if (roman) return roman[1];
+    if (roman) return n;   // chapter.paragraph (Chad 11-09): "CXVII.2", not only the chapter
     if (/^\d+$/.test(n)) return `¶${n}`;
     return n;   // "Arabic 5", "Persian 3", "Q&A 3"
   }
