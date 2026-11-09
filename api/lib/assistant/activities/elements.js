@@ -133,8 +133,12 @@ const E = {
     gate: (s, u, p) => /[\u0600-\u06FF]/.test(text(s, u, p.term, '{{term_arabic}}', '{{term}}')),   // Arabic script only: Latin → Arabic is the term_arabic unit (Jev), not the tool
     input: (s, p, u) => ({ term_arabic: text(s, u, p.term, '{{term_arabic}}', '{{term}}'), ...(p.translator ? { translator: p.translator } : {}) }), take: (o) => (o?.found ? o.passages : []), thin: () => false,
     after: (o, u) => { if (o?.found) merge(u, 'found_records', [{ term: o.term, transliteration: o.transliteration, root: o.root, meaning: o.meaning, renderings: o.renderings }]); } }),
-  'fetch.prayer': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'prayer_lookup', params: ['key', 'value'], reads: ['occasion', 'incipit'],   // the prayer book's own headings and attribution lines; no heading/incipit match = none (p2 then searches the shelf)
-    input: (s, p, u) => { const inc = p.key === 'incipit' || (!p.key && u.incipit); return { [inc ? 'incipit' : 'occasion']: text(s, u, p.value, inc ? '{{incipit}}' : '{{occasion}}') }; }, take: passages, thin: () => false }),
+  'fetch.prayer': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'prayer_lookup', params: ['key', 'value'], reads: ['occasion', 'incipit'],   // the tradition's prayer works, their own headings and attribution lines; no match = none (t2 then searches the shelf)
+    input: (s, p, u, trad) => { const inc = p.key === 'incipit' || (!p.key && u.incipit); return { [inc ? 'incipit' : 'occasion']: text(s, u, p.value, inc ? '{{incipit}}' : '{{occasion}}'), ...(trad ? { tradition: trad } : {}), ...(namedWork(u) ? { work: namedWork(u).work } : {}) }; }, take: passages, thin: () => false }),
+  // the prayer works the library has for the tradition (or one per tradition when none is known): the absence answer lists them, and names the tradition when it has none
+  'fetch.prayer_works': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'prayer_lookup', into: 'found_records', reads: ['religions_specified', 'named_work'],
+    input: (s, p, u, trad) => ({ list: true, ...(trad ? { tradition: trad } : {}), ...(namedWork(u) ? { work: namedWork(u).work } : {}) }),
+    take: (o) => (o?.works?.length ? o.works.map((w) => ({ title: w.title, name: w.title, tradition: w.tradition, url: w.url || null, document_id: w.id })) : [{ name: `${o?.tradition || 'this tradition'}: no prayer work in the library`, tradition: o?.tradition || null, none: true }]), thin: () => false }),
   'fetch.guidance': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'fused_search', reads: ['topic'], thin: () => false,
     input: (s, p, u) => ({ query: text(s, u, p.query, '{{topic}}'), filters: { author: 'Universal House of Justice' }, limit: kOf(p, u) ?? 6 }), take: passages }),
   'fetch.work_notes': retrieval({ edges: ['one', 'none', 'error'], tool: 'work_notes_lookup', rank: true, params: ['work'], reads: ['named_work'], into: 'found_records',
@@ -280,7 +284,7 @@ E.switch = { kind: 'decision', cls: 'code', edges: [], edgesFor: (p) => [...new 
     const kinds = () => { const ps = u.found_passages; const g = ps.some((x) => kindOf(x) === 'guidance' || /House of Justice/i.test(x.author || '')); return g ? 'has_guidance' : 'writings_only'; };
     const errored = () => Object.values(u.found_outcome).includes('error');
     const v = on.evidence ? (u.found_passages.length ? (on.mix ? kinds() : 'have') : errored() ? 'errored' : 'nothing') : on.first_filled ? on.first_filled.find((k) => filled(u[k])) ?? 'none' : on.count ? (() => { const n = (u[on.count] ?? []).length; return n > 1 ? 'many' : String(n); })()
-      : on.outcome ? u.found_outcome[on.outcome] ?? 'none' : on.unit ? (filled(u[on.unit]) ? 'filled' : 'empty') : on.value ? String(flat(u[on.value]) || 'none') : 'none';
+      : on.spread ? (new Set(u.found_passages.map((x) => x.religion).filter(Boolean)).size > 1 ? 'several' : 'one') : on.outcome ? u.found_outcome[on.outcome] ?? 'none' : on.unit ? (filled(u[on.unit]) ? 'filled' : 'empty') : on.value ? String(flat(u[on.value]) || 'none') : 'none';
     s.note = { read: { on, value: v }, params: p, count: 0, scope_excluded: 0 };
     return (p.cases || {})[v] ?? p.default ?? 'default';
   } };
@@ -322,6 +326,20 @@ E['judge.passages'] = { kind: 'decision', cls: 'jev', edges: ['answers', 'mentio
     return edge;
   } };
 
+E['judge.prayer'] = { kind: 'decision', cls: 'jev', edges: ['picked', 'none', 'unjudged'], scope: 'strategy', params: ['stage'], reads: ['found_passages', 'occasion', 'current_user_question'], writes: ['found_passages'],
+  async run(s, p = {}) {   // ONE typed Jev choice (prayer-shelf pickOccasion) among the prayers found — never a judge per prayer; the chosen goes first. No answer → unjudged (list untouched)
+    const u = U(s), found = u.found_passages.slice(0, 8).map((x, i) => ({ key: `found:${i}`, text: String(x.text || '').replace(/\s+/g, ' ').trim().slice(0, 220), heading: x.occasion || x.title || null }));
+    if (!found.length) return finish(s, p, 'none');
+    try {
+      const pick = await (s.judges?.prayer || (async () => { const [{ pickOccasion }, { jevFetch }] = await Promise.all([import('../prayer-shelf.js'), import('../../systemone.js')]); return pickOccasion(s.messages || [], [], { profile: s.profile ?? s.ctx?.profile ?? {}, fetchImpl: jevFetch('anis-prayer-occasion'), found }); }))({ found });
+      s.note = { read: { found: found.length }, params: p, count: found.length, scope_excluded: 0, confidence: pick?.confidence ?? null };
+      if (!pick?.choice) return 'unjudged';
+      const i = found.findIndex((f) => f.key === pick.choice);
+      if (i < 0 || pick.choice === 'none' || (pick.confidence ?? 0) < (await import('../../scope-extract.js')).MIN_CONFIDENCE) return 'none';
+      u.found_passages = [u.found_passages[i], ...u.found_passages.filter((_, j) => j !== i)];
+      return 'picked';
+    } catch (err) { s.note = { read: { found: found.length }, params: p, count: 0, scope_excluded: 0, error: err?.message }; return 'unjudged'; }
+  } };
 E['judge.holds'] = { kind: 'decision', cls: 'jev', edges: ['holds', 'partial', 'none'], scope: 'strategy', params: ['quotation', 'stage'], reads: ['found_passages', 'quoted_clean', 'quoted_words'], writes: ['found_passages'],
   async run(s, p = {}) {   // ONE call over every candidate from quotation_candidates (never per item): holds / partial / no + the span; a candidate that does not hold drops. Wording alone holds without a model.
     const u = U(s), quotation = text(s, u, p.quotation, '{{quoted_clean}}', '{{quoted_words}}');
@@ -500,7 +518,9 @@ export const ELEMENT_META = {
   'fetch.renderings': m('How the authorized translator rendered a word, with counts and paired passages.', 'term', 'found_passages + found_records', ['rendering_lookup']),
   'fetch.align': m('Attaches each passage’s recorded original and translations.', 'found_passages', 'found_passages (annotated)', ['links_lookup']),
   'fetch.anchor': m('Loads the passage the question is about: the one pointed at, the reader’s place, or the last evidence.', 'referent, reader_position, previous_evidence', 'found_passages', ['context_lookup']),
-  'fetch.prayer': m('Serves a prayer from the prayer book by its occasion heading or its opening words: the first in full, then two more. No heading match = none.', 'occasion or incipit', 'found_passages', ['prayer_lookup']),
+  'fetch.prayer': m('Serves a prayer from the prayer works of the tradition in scope (or the named work’s tradition; none known = a prayer from several traditions) by occasion heading, a need their prayers answer, or opening words: the first in full, then two more. No match = none.', 'occasion or incipit', 'found_passages', ['prayer_lookup']),
+  'fetch.prayer_works': m('Lists the prayer works the library has for the tradition (one per tradition when none is known); a tradition with none is named as having none.', 'religions_specified or named_work', 'found_records', ['prayer_lookup']),
+  'judge.prayer': m('ONE typed Jev choice among the prayers found (the chosen goes first); not a judge per prayer.', 'found_passages', 'found_passages (the chosen first)', []),
   'fetch.guidance': m('Finds the House of Justice’s guidance on a subject.', 'topic', 'found_passages', ['fused_search']),
   'fetch.collection': m('A prepared topic collection (index not built yet: answers none at no cost).', 'id, key', 'found_records', []),
   'fetch.events': m('Dated claims about a subject from the entity graph (not built yet: answers none).', 'subject', 'found_records', []),

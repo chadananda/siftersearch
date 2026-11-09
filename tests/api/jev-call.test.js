@@ -74,13 +74,13 @@ describe('the Jev callers retry and report', () => {
   it('prayer occasion: a timeout is a jev:timeout decision beside prayer:occasion', async () => {
     process.env.TYPESAFE_API_KEY = 'k';
     const decisions = decisionLog();
-    const deps = { findTitled: async () => ({ doc: { id: 20762, title: 'Bahá’í Prayers' } }),
+    const deps = { findTitled: async () => ({ doc: { id: 20762, title: 'Bahá’í Prayers' } }), findDocuments: async () => ({ docs: [{ id: 20762, title: 'Bahá’í Prayers', religion: "Baha'i", collection: 'Bahá’u’lláh', paragraph_count: 900 }] }),
       sectionsOfDoc: async () => [{ title: 'For The Departed', level: 2, start_index: 106, end_index: 126, paragraphs: 21 }],
       fetchImpl: flaky(1, { occasion: { choice: 'For The Departed', confidence: 0.9 } }),
       paragraphsInRange: async () => [{ id: 1, paragraph_index: 107, text: 'O my God! This is Thy servant…' }, { id: 2, paragraph_index: 108, text: '_—Bahá’u’lláh_' }],
       withLinks: async (h) => h, searchPhrases: async () => ({ hits: [] }), searchKeywordQdrant: async () => ({ hits: [] }),
       resolveQdrantFilters: async (f) => f, paragraphsByIds: async () => [] };
-    const out = await prayerShelf({ messages: msgs, query: 'q', search: async () => ({ passages: [] }), decisions, deps });
+    const out = await prayerShelf({ messages: msgs, query: 'q', scope: { religion: "Baha'i" }, search: async () => ({ passages: [] }), decisions, deps });
     expect(out.plan.occasion).toBe('For The Departed');
     expect(decisions.list().find((d) => d.point === 'jev:timeout')).toMatchObject({ saw: 'occasion', chosen: 'answered on retry' });
   });

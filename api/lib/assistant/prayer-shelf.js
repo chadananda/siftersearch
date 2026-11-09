@@ -1,5 +1,6 @@
-// PRAYER SHELF (W3; planning/anis-strategies.json D2): Jev said the reader wants a prayer. Code finds the prayer book and, side by
-// side, lists its occasion sections and searches the book BY MEANING (phrase vectors) and by the literal words. JEV then picks, in
+// PRAYER SHELF (W3; planning/anis-strategies.json D2): Jev said the reader wants a prayer. Code finds the prayer work of the reader's
+// TRADITION (scope → site default; prayer-works.js — every tradition has prayers, none is "the" prayer book; no tradition known = one
+// prayer from each of several traditions, no Jev call) and, side by side, lists its occasion sections and searches the book BY MEANING (phrase vectors) and by the literal words. JEV then picks, in
 // one typed choice over the book's own section titles AND the prayers the search found (no synonym map, no keywords), what holds
 // the prayer the reader asks for. A need no heading names ("travelling safely", "before an exam") is met by a found prayer; a
 // heading is served with the found prayer inside it first, else its first prayer. Prayers are split on their attribution lines;
@@ -13,12 +14,13 @@ import { stateOf } from './strategy-choice.js';
 import { run as runTool } from './tools.js';
 import { jevCall, JEV_LIMITS, timeoutDecision } from './jev-call.js';
 import { render } from './activities/templates.js';
-import { PRAYER_BOOK, isAttribution, isHeadingRow, splitPrayers, prayerAt, sectionAt, foundCandidates } from './prayer-sections.js';
-export { PRAYER_BOOK };
+import { prayerWorksOf, prayerWorksAcross, traditionOf } from './prayer-works.js';
+import { isAttribution, isHeadingRow, splitPrayers, prayerAt, sectionAt, foundCandidates } from './prayer-sections.js';
 const MAX_OCCASIONS = 40;
 // the book searched by meaning (phrase vectors: a prayer's own words for the need) and by the literal words; each one Qdrant call
 const MEANING_HITS = 6, LITERAL_HITS = 3, EXCERPT = 220;
 
+export const PRAYER_SEVERAL = (occasion) => render('prayer.several', { occasion: occasion ? render('prayer.occasion', { occasion }) : '' });
 export const PRAYER_HOW = (occasion) => render('prayer.how', { occasion: occasion ? render('prayer.occasion', { occasion }) : '' });   // words = template rows
 
 export { isAttribution, isHeadingRow, splitPrayers, prayerAt, sectionAt, foundCandidates };
@@ -47,9 +49,13 @@ export async function pickOccasion(messages, titles, { profile, fetchImpl, apiKe
 
 export async function prayerShelf(ctx) {
   const { messages, query, profile = {}, decisions = NO_LOG, deps = {} } = ctx;
-  const w = (await runTool('document_search', { title: PRAYER_BOOK, min: 0.9 }, { deps }).catch(() => null))?.works?.[0];
-  const doc = w && /prayers/i.test(w.title) ? w : null;
-  decisions.record('prayer:book', { by: 'code', saw: PRAYER_BOOK, chosen: doc ? `${doc.id} ${doc.title}` : null, reason: doc ? 'title index' : 'no prayer book in the index' });
+  // the tradition: the layered scope (Jev this turn / conversation / site default, turn.js) else the host default, as strategies.js reads it
+  const tradition = traditionOf({ scope: ctx.scope || null, defaultTradition: ctx.scope ? null : profile.default_tradition });
+  const findDocuments = deps.findDocuments || (await import('../docs-repo.js')).findDocuments;
+  if (!tradition) return prayersOfSeveral(ctx, { findDocuments });
+  const works = await prayerWorksOf(tradition, { findDocuments });
+  const doc = works[0] || null;
+  decisions.record('prayer:book', { by: 'code', saw: { tradition, works: works.slice(0, 4).map((w) => w.title) }, chosen: doc ? `${doc.id} ${doc.title}` : null, reason: doc ? `${tradition}: the best prayer work in the catalogue` : `no prayer work of ${tradition} in the catalogue` });
   if (!doc) return null;
   const sectionsOfDoc = deps.sectionsOfDoc || (await import('../repos/sections-repo.js')).sectionsOfDoc;
   // the sections and the book searched (by meaning + the literal words) side by side: a need no heading names is found by its words
@@ -76,7 +82,7 @@ export async function prayerShelf(ctx) {
   // a section's prayers, read once per section (a found paragraph outside every section: the window around it)
   const reads = new Map();
   const prayersOf = (s, pi) => { const [a, b] = s ? [s.start_index, s.end_index] : [Math.max(0, pi - 20), pi + 20]; const k = `${a}-${b}`;
-    if (!reads.has(k)) reads.set(k, paragraphsInRange(doc.id, a, b).catch(() => []).then(splitPrayers)); return reads.get(k); };
+    if (!reads.has(k)) reads.set(k, paragraphsInRange(doc.id, a, b).catch(() => []).then((r) => splitPrayers(r, { max: 14 }))); return reads.get(k); };
   // the found candidates, Jev's most probable first, then search order. A found prayer's weight is its own probability plus its
   // heading's: the two name the same prayer, so Jev splits his belief between them (11-04: "For The Departed" 0.59 beside its
   // own Prayer for the Dead; "found:439" 0.5 beside "Protection")
@@ -125,4 +131,26 @@ export async function prayerShelf(ctx) {
   // found paragraphs no prayer run holds: the passages as found (this book only)
   if (!found.length) return null;
   return { passages: found.map((f) => ({ ...f.p, theme: 'prayer' })), plan: { shape: 'prayer', book: doc.id, occasion: null, searched: true }, format: { id: 'prayer', by: 'strategy:prayer', how: PRAYER_HOW(null) } };
+}
+
+/** No tradition known: the interfaith library answers with a prayer from several traditions — each tradition's best prayer work searched by meaning for the need,
+ *  the prayer holding the best hit given in full. No Jev call (nothing to choose between within one work); tradition order, those with a hit first. */
+async function prayersOfSeveral(ctx, { findDocuments }) {
+  const { query, deps = {}, decisions = NO_LOG } = ctx;
+  const works = await prayerWorksAcross({ findDocuments });
+  const paragraphsInRange = deps.paragraphsInRange || (await import('../paragraphs-repo.js')).paragraphsInRange;
+  const withLinks = deps.withLinks || (await import('../hit-links.js')).withLinks;
+  const got = (await Promise.all(works.map(async (doc) => {
+    const meaning = query ? await runTool('phrase_search', { query, limit: 4, filters: { documentId: doc.id } }, { deps }).catch(() => null) : null;
+    const f = foundCandidates(doc.id, [meaning?.passages || []], [])[0];
+    if (!f) return null;
+    const prayer = prayerAt(splitPrayers(await paragraphsInRange(doc.id, Math.max(0, f.p.paragraph_index - 20), f.p.paragraph_index + 20).catch(() => []), { max: 14 }), f.p.paragraph_index);
+    return prayer ? { doc, prayer } : null;
+  }))).filter(Boolean).slice(0, 4);
+  decisions.record('prayer:book', { by: 'code', saw: { tradition: null, works: works.map((w) => `${w.tradition}: ${w.title}`) }, chosen: got.length ? `${got.length} traditions` : null, reason: 'no tradition known: a prayer from several traditions' });
+  if (!got.length) return null;
+  const chosen = got.flatMap(({ doc, prayer }) => prayer.map((r) => ({ r, doc })));
+  const linked = await withLinks(chosen.map(({ r, doc }) => ({ id: r.id, doc_id: doc.id, paragraph_index: r.paragraph_index, text: r.text, title: doc.title }))).catch(() => chosen.map(({ r }) => r));
+  return { passages: chosen.map(({ r, doc }, i) => hit({ ...r, url: linked[i]?.url || null }, doc, 'prayer')), plan: { shape: 'prayer', several: got.map((g) => g.doc.tradition), occasion: null },
+    format: { id: 'prayer', by: 'strategy:prayer', how: PRAYER_SEVERAL(null) } };
 }

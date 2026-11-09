@@ -110,33 +110,50 @@ describe('comparison tree', () => {
   });
 });
 
-describe('prayer tree', () => {
-  const prayer = [P(1, { authority: 'prayer', occasion: 'healing' })];
+describe('prayer tree (tradition first, 11-09)', () => {
+  const prayer = [P(1, { authority: 'prayer', occasion: 'healing', religion: 'Christian' })];
   const q = 'a prayer for healing';
   const nth = (...calls) => { let n = 0; return async () => ({ passages: calls[Math.min(n++, calls.length - 1)] }); };
-  it('clean hit: the index answers in one step, no Jev decision, a direct template (no synthesis)', async () => {
+  const judge = (answer) => ({ judges: { prayer: async () => answer } });
+  it('clean hit: the tradition\'s prayer works answer in one step, no Jev decision, a direct template (no synthesis)', async () => {
     const s = await run('prayer', q, { tools: { prayer_lookup: async () => ({ passages: prayer }) } });
-    expect(path(s)).toEqual(['p1', 'p5']); expect(s.out.format).toMatchObject({ id: 'prayer', direct: true }); expect(s.how).toContain('IN FULL'); expect(s.out.passages[0].id).toBe(1);
+    expect(path(s)).toEqual(['p1', 'p1b', 'p5']); expect(s.out.format).toMatchObject({ id: 'prayer', direct: true }); expect(s.how).toContain('IN FULL'); expect(s.out.passages[0].id).toBe(1);
   });
-  it('several: p1 several → rank → p5', async () => {
-    const s = await run('prayer', q, { tools: { prayer_lookup: async () => ({ passages: [P(1), P(2, { occasion: 'healing' }), P(3)] }) } });
-    expect(path(s)).toEqual(['p1', 'p4', 'p5']);
+  it('the tradition in scope (a unit, not a word) and the named work reach the tool', async () => {
+    let seen; const tools = { prayer_lookup: async (i) => { seen = i; return { passages: prayer }; } };
+    await run('prayer', q, { tools, extra: { units: { religions_specified: ['Christianity'], named_work: 'Book of Common Prayer' } } });
+    expect(seen).toMatchObject({ tradition: 'Christian', work: 'Book of Common Prayer' });
+    await run('prayer', q, { tools }); expect(seen.tradition).toBeUndefined();   // no tradition known: the tool answers from several
   });
-  it('thin: the shelf search then Jev: fits → rank → p5; near → p7', async () => {
-    const t = { prayer_lookup: async () => ({ passages: [] }), hype_search: nth([P(1), P(2)]) };
-    expect(path(await run('prayer', q, { tools: t, jev: verdict('fits') }))).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
-    const near = await run('prayer', q, { tools: { prayer_lookup: async () => ({ passages: [] }), hype_search: nth([P(1), P(2)]) }, jev: verdict('near') });
-    expect(path(near)).toEqual(['p1', 'p2', 'p3', 'p7']); expect(near.how).toContain("didn't find a prayer written for");
+  it('lookup returns prayers of several traditions → the several-traditions shape (p8), each in full', async () => {
+    const s = await run('prayer', q, { tools: { prayer_lookup: async () => ({ passages: [P(1, { religion: 'Christian' }), P(2, { religion: 'Islam' })] }) } });
+    expect(path(s)).toEqual(['p1', 'p1b', 'p8']); expect(s.how).toContain('several traditions'); expect(s.how).not.toContain('{{'); expect(s.out.format).toMatchObject({ id: 'prayer', direct: true });
   });
-  it('none after all tiers: the prayer books → $absence with the prayer absence template', async () => {
-    const s = await run('prayer', q, { jev: verdict('fits') }); expect(path(s)).toEqual(['p1', 'p2', 'p6', '$absence']); expect(s.how).toContain("can't find a prayer"); expect(s.how).not.toContain('{{');
+  it('one tradition with several prayers → p5 (the lookup already ordered them: lead in full, two offered)', async () => {
+    const s = await run('prayer', q, { tools: { prayer_lookup: async () => ({ passages: [P(1, { religion: 'Christian' }), P(2, { religion: 'Christian' }), P(3, { religion: 'Christian' })] }) } });
+    expect(path(s)).toEqual(['p1', 'p1b', 'p5']);
+  });
+  it('thin: the shelf search then ONE typed Jev choice among the found prayers: picked → p5 (chosen first); no answer → rank; none → absence', async () => {
+    const t = () => ({ prayer_lookup: async () => ({ passages: [] }), hype_search: nth([P(1), P(2)]) });
+    const picked = await run('prayer', q, { tools: t(), extra: judge({ choice: 'found:1', confidence: 0.9 }) });
+    expect(path(picked)).toEqual(['p1', 'p2', 'p3', 'p5']); expect(picked.out.passages[0].id).toBe(2);
+    expect(path(await run('prayer', q, { tools: t(), extra: judge(null) }))).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
+    expect(path(await run('prayer', q, { tools: t(), extra: judge({ choice: 'none', confidence: 0.9 }) }))).toEqual(['p1', 'p2', 'p3', 'p6', '$absence']);
+    expect(path(await run('prayer', q, { tools: t(), extra: judge({ choice: 'found:1', confidence: 0.1 }) }))).toEqual(['p1', 'p2', 'p3', 'p6', '$absence']);
+  });
+  it('none after all tiers: the tradition\'s prayer works → $absence naming the tradition when it has none, listing the works when it has some', async () => {
+    const none = await run('prayer', q, { tools: { prayer_lookup: async (i) => (i.list ? { passages: [], occasions: [], works: [], tradition: 'Hindu' } : { passages: [] }) }, extra: { units: { religions_specified: ['Hindu'] } } });
+    expect(path(none)).toEqual(['p1', 'p2', 'p6', '$absence']); expect(none.how).toContain("can't find a prayer"); expect(none.how).not.toContain('{{');
+    expect(none.units.found_records[0]).toMatchObject({ tradition: 'Hindu', none: true }); expect(none.units.found_records[0].name).toMatch(/Hindu/);
+    const some = await run('prayer', q, { tools: { prayer_lookup: async (i) => (i.list ? { passages: [], works: [{ id: 5, title: 'Buddhist Prayers', tradition: 'Buddhist' }], tradition: 'Buddhist' } : { passages: [] }) } });
+    expect(some.units.found_records.map((r) => r.title)).toEqual(['Buddhist Prayers']);
   });
   it('error: p1 → p2 → $fallback → $unavailable', async () => {
     const s = await run('prayer', q, { tools: { prayer_lookup: boom, hype_search: boom }, agentRun: async () => null }); expect(path(s)).toEqual(['p1', 'p2', '$fallback', '$unavailable']);
   });
-  it('conflicting sources: two translations of one prayer — the standard-occasion one first', async () => {
-    const s = await run('prayer', q, { tools: { hype_search: async () => ({ passages: [P(7, { occasion: 'other' }), P(8, { occasion: 'healing' })] }) }, extra: { units: { occasion: 'healing' } }, jev: verdict('fits') });   // judge mocked: unmocked it made a real Jev call (flaky)
-    expect(path(s)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']); expect(s.out.passages[0].id).toBe(8);
+  it('conflicting sources: two translations of one prayer — Jev\'s choice first', async () => {
+    const s = await run('prayer', q, { tools: { hype_search: async () => ({ passages: [P(7, { occasion: 'other' }), P(8, { occasion: 'healing' })] }) }, extra: { units: { occasion: 'healing' }, ...judge({ choice: 'found:1', confidence: 0.9 }) } });
+    expect(path(s)).toEqual(['p1', 'p2', 'p3', 'p5']); expect(s.out.passages[0].id).toBe(8);
   });
 });
 
@@ -312,7 +329,7 @@ describe('cost per run path (node kinds)', () => {
     const u = await run('understanding', 'q', { tools: { fused_search: async () => ({ passages: [P(1)] }) }, jev: verdict('answers') });
     expect(cnt(u)).toEqual({ tool: 5, process: 2, decide: 1, synthesize: 1 });   // + inside (the found books searched inside)
     const p = await run('prayer', 'a prayer for healing', { tools: { prayer_lookup: async () => ({ passages: [P(1)] }) } });
-    expect(cnt(p)).toEqual({ tool: 1, synthesize: 1 });   // one code lookup, then the direct reply: no decide, no LLM judgement
+    expect(cnt(p)).toEqual({ tool: 1, decide: 1, synthesize: 1 });   // one code lookup, one code switch (one tradition or several), then the direct reply: no LLM
     const r = await run('reference', 'John 3:16', { tools: { reference: async () => ({ passages: [P(1)] }) } });
     expect(r.kinds.filter((k) => k === 'decide').length).toBe(0); expect(r.kinds.at(-1)).toBe('synthesize');
     const g = await run('guidance', 'q', { tools: { fused_search: async () => ({ passages: [P(1, { author: 'Universal House of Justice', date: '2020-01-01' })] }) }, jev: verdict('current') });

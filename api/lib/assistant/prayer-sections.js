@@ -1,6 +1,4 @@
-// Prayer-book structure, pure (no model): attribution lines, headings, prayers split on them, the section holding a paragraph. Used by prayer-shelf.js (Jev picks) and the prayer_lookup tool.
-
-export const PRAYER_BOOK = 'Bahá’í Prayers';
+// Prayer-work structure, pure (no model), any tradition's: attribution lines, headings, prayers split on them, the section holding a paragraph. Used by prayer-shelf.js (Jev picks) and the prayer_lookup tool.
 
 /** An attribution line closes a prayer: "_—Bahá’u’lláh_", "—‘Abdu’l-Bahá", "— The Báb". Pure. */
 export const isAttribution = (text) => /^[\s_*]*[—–-]\s*\S/.test(String(text || '')) && String(text || '').replace(/[_*]/g, '').trim().length < 60;
@@ -11,8 +9,9 @@ export const isAttribution = (text) => /^[\s_*]*[—–-]\s*\S/.test(String(text
 export const isHeadingRow = (r) => r?.blocktype === 'heading' || r?.heading === true || /^\s*#/.test(String(r?.text || ''))
   || (typeof r?.heading === 'string' && r.heading.trim() !== '' && String(r.text || '').trim() === r.heading.trim());
 
-/** Section rows → prayers: runs of paragraphs, each ending at an attribution line (a run without one is kept too). Pure. */
-export function splitPrayers(rows = []) {
+/** Section rows → prayers: runs of paragraphs, each ending at an attribution line (a run without one is kept too; one longer than
+ *  `max` with no attribution is a text that is not split into prayers — a psalter, a liturgy — so each paragraph stands alone). Pure. */
+export function splitPrayers(rows = [], { max = Infinity } = {}) {
   const prayers = []; let cur = [];
   for (const r of rows) {
     if (!String(r.text || '').trim() || isHeadingRow(r)) continue;
@@ -20,7 +19,7 @@ export function splitPrayers(rows = []) {
     if (isAttribution(r.text)) { prayers.push(cur); cur = []; }
   }
   if (cur.length) prayers.push(cur);
-  return prayers.filter((p) => p.some((r) => !isAttribution(r.text)));
+  return prayers.filter((p) => p.some((r) => !isAttribution(r.text))).flatMap((p) => (p.length > max && !isAttribution(p.at(-1).text) ? p.map((r) => [r]) : [p]));
 }
 
 /** The prayer (a splitPrayers run) holding paragraph `pi`, or null. Pure. */

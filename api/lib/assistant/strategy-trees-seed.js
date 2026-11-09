@@ -62,16 +62,22 @@ const comparison = tree('comparison', 'sides', [
   ['s_wide', 'shape', { template: 'comparison.wide', shared: 'tpl.sides', format: 'comparison', theme_by: 'religion', plan: { comparative: true, wide: true } }, 'synthesize', ['found_passages'], [], { done: END }],
 ], { needs: ['compare_sides', 'topic', 'quoted_words'] });
 
-// ── prayer (DE D2): the index, then the prayer shelf judged, then the prayer books ──
+// ── prayer (DE D2, 11-09 rev): the TRADITION first, then its prayer works; the prayers of every tradition are in the library ──
+// Cost per run path (code = free, Jev = one cheap-tier call, no Opus, no writer: every shape is direct):
+//   p1 → p1b → p5|p8                  : code only (catalogue lookup + the works' own headings / meaning + literal search)
+//   p1 → p2 → p3 → p5                 : code + 1 Jev (the typed choice among the found prayers)
+//   p1 → p2 → p3 → p4 → p5            : code + 1 Jev attempt (no answer → rank by code)
+//   p1 → p2 → p3|p2 → p6 → $absence   : code (+ 1 Jev); the absence template names the tradition and lists its prayer works
+// Tradition, as units never words: religions_specified (Jev this turn / conversation / site default) → the named work's tradition → none = several traditions (p8).
 const prayer = tree('prayer', 'p1', [
-  ['p1', 'fetch.prayer', {}, 'tool', ['named_work', 'quoted_words', 'occasion', 'incipit'], ['found_passages'], { one: 'p5', several: 'p4', none: 'p2', error: 'p2' }],
-  ['p2', 'search.hype', { shelf: 'prayer', query: '{{occasion}}', k: 6 }, 'tool', ['occasion', 'current_user_question'], ['found_passages'], { several: 'p3', thin: 'p3', none: 'p6', error: '$fallback' }],
-  ['p3', 'judge', { question: 'Does this prayer fit {{occasion}}?', default: 'fits', options: [
-    { edge: 'fits', when: 'the prayer was written for this occasion or need' }, { edge: 'near', when: 'the prayer is on the same theme but not for this occasion' }, { edge: 'no', when: 'the prayer is unrelated' }] }, 'decide', ['occasion', 'found_passages'], ['found_passages'], { fits: 'p4', near: 'p7', no: 'p6' }],
+  ['p1', 'fetch.prayer', {}, 'tool', ['religions_specified', 'named_work', 'quoted_words', 'occasion', 'incipit'], ['found_passages'], { one: 'p1b', several: 'p1b', none: 'p2', error: 'p2' }],
+  ['p1b', 'switch', { on: { spread: true }, cases: { several: 'several', one: 'one' }, default: 'one' }, 'decide', ['found_passages'], [], { several: 'p8', one: 'p5' }],
+  ['p2', 'search.hype', { shelf: 'prayer', query: '{{occasion}}', k: 6 }, 'tool', ['occasion', 'current_user_question'], ['found_passages'], { one: 'p3', several: 'p3', thin: 'p3', none: 'p6', error: '$fallback' }],
+  ['p3', 'judge.prayer', {}, 'decide', ['occasion', 'found_passages'], ['found_passages'], { picked: 'p5', none: 'p6', unjudged: 'p4' }],
   ['p4', 'rank', { by: ['occasion', 'audience', 'authority'], k: 3 }, 'process', ['found_passages', 'audience', 'channel'], ['found_passages'], { done: 'p5', empty: 'p6' }],
   ['p5', 'shape', { template: 'prayer.one', shared: 'tpl.one_passage', format: 'prayer', direct: true, offers: ['two other prayers'] }, 'synthesize', ['found_passages', 'occasion'], ['offers'], { done: END }],
-  ['p6', 'fetch.collection', { id: 'prayer-books', key: 'religions_specified' }, 'tool', ['religions_specified'], ['found_records', 'missing'], { one: '$absence', thin: '$absence', none: '$absence', error: '$fallback' }],
-  ['p7', 'shape', { template: 'prayer.near', shared: 'tpl.one_passage', format: 'prayer', direct: true }, 'synthesize', ['found_passages', 'occasion'], [], { done: END }],
+  ['p6', 'fetch.prayer_works', {}, 'tool', ['religions_specified', 'named_work'], ['found_records', 'missing'], { one: '$absence', several: '$absence', thin: '$absence', none: '$absence', error: '$fallback' }],
+  ['p8', 'shape', { template: 'prayer.many', shared: 'tpl.one_passage', format: 'prayer', direct: true, offers: ['more prayers from one of these traditions'] }, 'synthesize', ['found_passages', 'occasion'], ['offers'], { done: END }],
 ], { needs: ['occasion', 'named_work', 'quoted_words', 'incipit', 'audience'], units: { absence_template: 'prayer.absence' } });
 
 // ── guidance (DE D4): the House of Justice's messages by date, the texts behind them, one currency judgement ──
@@ -131,6 +137,7 @@ export const TREE_TEMPLATES = [
   t('comparison.sides', "A COMPARISON of {{compare_sides}} on {{topic}}. First line frames it neutrally. One section per side, in the order named, built only from that side's own passages (a passage header's theme names its side), each in its own terms and its own scripture's words, quoted and linked; no side described in another's vocabulary. Equal treatment is the same structure per side, not equal word counts. {{missing_sides}} Then \"Shared\" and \"Different\", each point tied to a cited passage. Never rank the traditions. {{scope_clause}}\n{{#quoted_words}}Quote it on its side first, then the other side's closest teaching.{{/quoted_words}}"),
   t('comparison.wide', "This is a COMPARISON across the traditions the passages come from (a passage header's theme names its tradition). One short section per tradition, built only from that tradition's own passages; say plainly where a tradition is thin. Then what is shared and what differs. Never rank the traditions. {{scope_clause}}"),
   t('prayer.one', "First line: what the prayer is for and who revealed or wrote it (\"A prayer for {{occasion}}, revealed by …\"). {{scope_clause}} Then the FIRST prayer passage IN FULL, verbatim, as one block quotation, every paragraph, nothing shortened, linked, translator named. Then at most two alternatives as linked italic titles with their first words. No commentary.\n{{#voice}}The prayer in full, then: \"I can send you two others.\"{{/voice}}\n{{#widget}}The prayer and one alternative.{{/widget}}\n{{#email}}The prayer in full with the original beside it where held; two alternatives in full.{{/email}}"),
+  t('prayer.many', "No tradition was named, so these are prayers from several traditions of the library for {{occasion}}; say so in one line. {{scope_clause}} Then, one tradition at a time (a passage header's religion names it), its prayer IN FULL, verbatim, as one block quotation, every paragraph, linked, with the work it comes from as a linked italic title. No tradition ranked above another. Offer more from any one of them. Never compose a prayer."),
   t('prayer.near', "\"I didn't find a prayer written for {{occasion}}; this one, for its own occasion, is close:\" then the first passage in full, linked. Nothing else."),
   t('prayer.absence', "\"I can't find a prayer for {{occasion}} in the library.\" {{scope_clause}} Then the prayer books given, each as a linked italic title, and the nearest prayer by title if any. Never compose a prayer."),
   t('guidance.current', "First line: the current guidance on {{topic}} in one sentence, the issuing body and date. {{scope_clause}} Then two to five points, each with its dated passage linked. If a later message replaces an earlier one: \"This replaces the guidance of <earlier date>.\" Then \"The texts behind it:\" one or two passages. Never present guidance as scripture; letters written on behalf of an institution are labelled.\n{{#voice}}The first line, one passage of at most two sentences, then: \"Shall I send you the guidance and the texts behind it?\"{{/voice}}\n{{#site}}The points as a short list.{{/site}}\n{{#email}}The passages in full, each dated and linked.{{/email}}"),
