@@ -152,7 +152,7 @@ describe('runStrategy', () => {
     const decisions = decisionLog();
     const out = await runStrategy({ strategy: { choice: 'prayer', confidence: 0.9 } }, { messages: msgs, query: 'q', search: async () => ({ passages: [] }), decisions, deps: { findDocuments: async () => ({ docs: [] }) } });
     expect(out).toBeNull();
-    expect(decisions.list().map((d) => d.point)).toEqual(['prayer:book', 'prayer:fallthrough']);
+    expect(decisions.list().map((d) => d.point)).toEqual(['prayer:occasion', 'prayer:book', 'prayer:fallthrough']);   // no tradition → the several-traditions occasion choice is logged first
   });
 });
 

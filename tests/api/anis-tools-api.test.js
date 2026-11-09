@@ -1,10 +1,11 @@
 // CONTRACT for the Anís tools API (POST /api/v1/tools/<name>, GET /api/v1/tools): every registry tool is a documented,
 // validated, authenticated route; old names are input-only aliases. Runs against the SERVED OpenAPI document.
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import Ajv from 'ajv';
 import { REGISTRY, publicNames } from '../../api/lib/assistant/tools.js';
 
-const KEY = 'test-anis-tools-key';
+// before every import: tools.js → authority.js → config.js reads PUBLIC_API_KEYS once, at import
+const KEY = vi.hoisted(() => (process.env.PUBLIC_API_KEYS = 'test-anis-tools-key'));
 
 describe('Anís tools API', () => {
   let server, spec, apiSchema;   // routes imported after the env is set (config reads PUBLIC_API_KEYS at import)
