@@ -82,19 +82,18 @@ describe('executor level: the active v1 strategies use the last topic, not the g
 describe('title links: the publisher page, never siftersearch.com', () => {
   const ocean = { id: 21310, title: 'God Passes By', author: 'Shoghi Effendi', religion: 'Baha\'i', collection: 'Core', slug: 'god-passes-by', source_url: 'https://oceanlibrary.com/god-passes-by/' };
   const bare = { id: 20910, title: 'Selections from the Writings of ‘Abdu’l-Bahá', author: '‘Abdu’l-Bahá', religion: 'Baha\'i', collection: 'Core', slug: 'selections' };
-  it('workUrl: OceanLibrary when the doc has it; null (not siftersearch) when it has none', () => {
+  it('workUrl: OceanLibrary when the doc has it; our library reader when it has no online source (Chad 11-09)', () => {
     expect(workUrl(ocean)).toBe('https://oceanlibrary.com/god-passes-by/');
-    expect(workUrl(bare)).toBeNull();
+    expect(workUrl(bare)).toMatch(/^https:\/\/siftersearch\.com\/library\//);
   });
-  it('linkTitles links an italic title to the publisher page, leaves an unpublished one unlinked, and counts', async () => {
+  it('linkTitles links an italic title to its online source, else to our library reader, and counts', async () => {
     const find = async (t) => (/God Passes/.test(t) ? { doc: ocean } : { doc: bare });
     const r = await linkTitles('See *God Passes By* and *Selections from the Writings*.', { find });
-    expect(r.text).toBe('See [*God Passes By*](https://oceanlibrary.com/god-passes-by/) and *Selections from the Writings*.');
-    expect(r.linked).toBe(1); expect(r.text).not.toMatch(/siftersearch\.com/);
+    expect(r.text).toMatch(/^See \[\*God Passes By\*\]\(https:\/\/oceanlibrary\.com\/god-passes-by\/\) and \[\*Selections from the Writings\*\]\(https:\/\/siftersearch\.com\/library\//);
+    expect(r.linked).toBe(2);
   });
-  it('workLead (the book asked for) never carries a siftersearch link', () => {
-    expect(workLead({ doc: ocean, others: [bare] })).not.toMatch(/siftersearch\.com/);
-    expect(workLead({ doc: bare, others: [] })).not.toMatch(/\]\(|siftersearch/);
+  it('workLead (the book asked for) links OceanLibrary when it has it, else our library reader', () => {
+    expect(workLead({ doc: bare, others: [] })).toMatch(/\]\(https:\/\/siftersearch\.com\/library\//);
     expect(workLead({ doc: ocean })).toMatch(/\[\*God Passes By\*\]\(https:\/\/oceanlibrary\.com\/god-passes-by\/\)/);
   });
 });
