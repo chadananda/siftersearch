@@ -223,3 +223,27 @@ export function fixStrategySlots(db, id, { version = null, by = 'ops-slot-fix' }
   const active = db.prepare("SELECT MAX(version) AS v FROM strategies WHERE id = ? AND status = 'active'").get(id)?.v ?? null;
   return { id, version: target.version, fixed: steps.map((x) => x.id), saved, activatable: target.status === 'candidate' && active != null && target.parent_version === active };
 }
+
+// ── card edit (description / exemplars / near_misses of a saved strategy, graph untouched) ──
+/** Strategy `id`'s newest (or `version`) graph + a rewritten CARD as a NEW candidate version. near_misses are not stored anywhere (Jev reads only
+ *  description + exemplars), so they are validated like the planner's (>=3, {text, goes_to: "unmatched" | an existing strategy id}) and folded
+ *  into the description as "Not for: ..." so Jev sees them. → { id, version, description, activatable } (throws on an invalid card) */
+export function editStrategyCard(db, id, { description, near_misses, exemplars, version = null, by = 'strategy-card' } = {}) {
+  const row = strategyRow(db, id, version);
+  if (!row) throw new Error(`no strategy ${id}${version != null ? '@' + version : ''}`);
+  let desc = String(description ?? row.description ?? '').trim();
+  if (near_misses != null) {
+    const ids = new Set(db.prepare('SELECT DISTINCT id FROM strategies').all().map((r) => r.id));
+    const misses = Array.isArray(near_misses) ? near_misses : [];
+    if (misses.length < 3) throw new Error('card: at least 3 near_misses');
+    for (const m of misses) if (!String(m?.example || m?.text || '').trim() || !(m?.goes_to === 'unmatched' || ids.has(m?.goes_to))) throw new Error(`card: near_miss ${JSON.stringify(String(m?.example || m?.text || '').slice(0, 40))} must go to an existing strategy or "unmatched"`);
+    desc = `${desc} Not for: ${misses.map((m) => String(m.example || m.text).trim().replace(/[.?!]+$/, '')).join('; ')}.`;
+  }
+  if (desc.length < 20 || desc.length > 600) throw new Error(`description must be 20-600 characters (is ${desc.length})`);
+  const ex = Array.isArray(exemplars) ? exemplars.map((x) => String(x).trim()).filter(Boolean) : row.exemplars;
+  if (ex.length < 2) throw new Error('exemplars: at least 2 class phrasings');
+  const sv = saveCandidate(db, { strategy: { id, name: row.name, description: desc, exemplars: ex, graph: row.graph }, steps: [] }, { by });
+  const target = strategyRow(db, id, sv.version);
+  const active = db.prepare("SELECT MAX(version) AS v FROM strategies WHERE id = ? AND status = 'active'").get(id)?.v ?? null;
+  return { id, version: sv.version, description: desc, activatable: active != null && target.parent_version === active };
+}

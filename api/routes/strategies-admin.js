@@ -10,6 +10,7 @@
 //   POST /anis/try {question, history?, strategy?:{id, version}, caller?, jev_only?} → { reply, path, steps, ms, usd, jev_pick }
 //        the full-reply DRY RUN: no thread, no mail, billed to an improve-* caller (default improve-replay)
 //   POST /anis/promote {id, version, dry?} → job (async-jobs); GET /anis/promote/:key polls it
+//   POST /anis/strategy-card {id, description?, near_misses?, exemplars?} → new card version (activated provisionally when it replaces the live one)
 //   POST /anis/strategy-fix {id, version?} → { id, version|null, fixed[] }: slot syntax ({x}, from:x → {{x}}) of the newest graph as a new candidate version
 //   POST /anis/rollback {id} → { id, rolled_back, restored }
 // Deps: repos/strategies-repo + strategy-stats-repo + strategy-candidates-repo (strategies.db), improve-repo + jev-calls-repo
@@ -103,6 +104,21 @@ export default async function strategiesAdminRoutes(fastify, { deps = {} } = {})
       // a mechanical repair of a LIVE tree (parent = the active version): active at once on probation, no judge, no spend
       if (r.activatable) {
         (deps.promote || (await repo()).promote)(d, r.id, r.version, { by: 'strategy-fix', decision: { provisional: true, mechanical: 'slot-syntax' } });
+        await (deps.startProbation || (async (...a) => (await import('../lib/repos/strategy-planner-repo.js')).startProbation(...a)))(d, r.id, r.version, { need: IMPROVE_CFG.planner.probation.runs, provisional: true });
+        r.activated = true;
+      }
+      return r;
+    } catch (err) { return reply.code(409).send({ error: err.message }); }
+  });
+
+  // rewrites a strategy's card (description / near_misses / exemplars) as a NEW candidate version over the same graph; a live one goes active on probation
+  fastify.post('/anis/strategy-card', { preHandler: requireInternal }, async (request, reply) => {
+    const b = request.body || {};
+    if (!b.id) return reply.code(400).send({ error: 'id is required' });
+    try {
+      const d = await db(), r = (await repo()).editStrategyCard(d, b.id, { description: b.description, near_misses: b.near_misses, exemplars: b.exemplars, version: b.version ?? null, by: 'strategy-card' });
+      if (r.activatable) {
+        (deps.promote || (await repo()).promote)(d, r.id, r.version, { by: 'strategy-card', decision: { provisional: true, card_edit: true } });
         await (deps.startProbation || (async (...a) => (await import('../lib/repos/strategy-planner-repo.js')).startProbation(...a)))(d, r.id, r.version, { need: IMPROVE_CFG.planner.probation.runs, provisional: true });
         r.activated = true;
       }
