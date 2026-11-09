@@ -90,8 +90,9 @@ describe('summaries', () => {
       { endpoint: 'planned', timings_json: JSON.stringify({ plan_ms: 300, total_ms: 1200, total: 1200 }) },
       { endpoint: 'planned:topic', timings_json: JSON.stringify({ embed: 200, total: 400 }) },
       { endpoint: 'multi-index', timings_json: '{bad' },
+      { endpoint: 'planned', route: 'replay:current', timings_json: JSON.stringify({ total: 9000 }) },
     ]);
-    expect(s.samples).toEqual({ engine: 1, planned: 1 });
+    expect(s.samples).toEqual({ engine: 1, planned: 1, replay: 1 });
     expect(s.planned.find((r) => r.stage === 'total')).toMatchObject({ p95: 1200, budget: 1000, over: true });
   });
   it('a breach is a user-visible TOTAL over budget × 1.5 with enough samples; stage overruns are its causes', () => {

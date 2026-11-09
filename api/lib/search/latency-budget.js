@@ -129,12 +129,15 @@ export function summarizeStages(kind, samples = []) {
  */
 export function summarizeTraceRows(rows = []) {
   const engine = [], planned = [];
+  let replay = 0;
   for (const r of rows) {
+    // strategy tests replay stored searches in bursts (strategy-try.js, route 'replay:…'): counted, never judged as readers
+    if (String(r.route || '').startsWith('replay:')) { replay++; continue; }
     let t; try { t = typeof r.timings_json === 'string' ? JSON.parse(r.timings_json) : r.timings_json; } catch { continue; }
     if (!t || typeof t !== 'object') continue;
     if (r.endpoint === 'planned') planned.push(plannedStages(t)); else engine.push(engineStages(t));
   }
-  return { samples: { engine: engine.length, planned: planned.length }, engine: summarizeStages('engine', engine), planned: summarizeStages('planned', planned) };
+  return { samples: { engine: engine.length, planned: planned.length, replay }, engine: summarizeStages('engine', engine), planned: summarizeStages('planned', planned) };
 }
 
 /** The traces behind one stage's tail: rows whose `stage` took more than `overMs` (default: its budget/judging line), slowest
