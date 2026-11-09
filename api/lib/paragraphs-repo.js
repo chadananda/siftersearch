@@ -53,7 +53,8 @@ export async function paragraphsByIds(ids) {
     const rows = await queryAll(`
       SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype, c.translation, c.translation_segments,
              c.context, c.external_para_id, c.pdf_page, c.text_grounded, c.authors, json_extract(c.block_attrs, '$.pn') AS pn, c.block_attrs,
-             CASE WHEN COALESCE(c.blocktype, 'paragraph') LIKE 'heading%' THEN NULL ELSE (SELECT COUNT(*) FROM content x WHERE x.doc_id = c.doc_id
+             CASE WHEN COALESCE(c.blocktype, 'paragraph') LIKE 'heading%' OR json_extract(c.block_attrs, '$.id') LIKE 'para_%'
+               OR c.external_para_id LIKE 'para_%' THEN NULL ELSE (SELECT COUNT(*) FROM content x WHERE x.doc_id = c.doc_id
                AND x.paragraph_index <= c.paragraph_index AND x.deleted_at IS NULL AND COALESCE(x.blocktype, 'paragraph') NOT LIKE 'heading%') END AS para_ord,
              d.title AS d_title, d.author AS d_author, d.religion AS d_religion, d.collection AS d_collection,
              d.language AS d_language, d.year AS d_year, d.filename AS d_filename, d.slug AS d_slug,
