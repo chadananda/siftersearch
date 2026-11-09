@@ -14,6 +14,7 @@ import { supports } from './channels.js';
 import { strategyGraphOn, runStrategyGraph } from './activities/graph.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
+const DOCTRINAL = new Set(['writings', 'guardian', 'compilation']);   // source-tier.js tiers a compilation draws on by default
 const PER_SIDE = 6, MAX_PASSAGES = 12, MAX_COMPARED = 18, MAX_COMPILED = 15, COMPILE_POOL = 24;
 
 // the writer's instruction: words = template rows (strategy-seed.js → strategies-repo), slots filled here
@@ -196,8 +197,18 @@ export async function compilation(choice, ctx) {
   }
   // authority order (source-tier.js: writings > guardian > compilation > reported > house > secondary; other traditions after), search rank kept within a tier
   const rank = (t) => { const i = TIER_ORDER.indexOf(t); return i < 0 ? TIER_ORDER.length : i; };
-  const passages = hits.map((p, i) => { const t = sourceTier(p); return { p, i, r: rank(t), t }; })
-    .sort((a, b) => a.r - b.r || a.i - b.i).slice(0, MAX_COMPILED).map(({ p, t }) => ({ ...p, theme: t || 'other' }));
+  const ranked = hits.map((p, i) => { const t = sourceTier(p); return { p, i, r: rank(t), t }; }).sort((a, b) => a.r - b.r || a.i - b.i);
+  // Chad 11-09: a compilation is interpretive and DOCTRINAL by default — the Writings, Shoghi Effendi, compilations of the Writings.
+  // Talks, the House and studies join only from the source the reader named (Jev's drawFrom) or when the doctrine is thin.
+  const named = new Set((src?.passages || []).map((p) => `${p.document_id}:${p.paragraph_index}`));
+  const doctrinal = ranked.filter(({ t }) => !t || DOCTRINAL.has(t));
+  const others = ranked.length - doctrinal.length;
+  const keepAll = doctrinal.length < COVER.covered;
+  if (others) decisions.record('compilation:sources', { by: 'code', saw: { doctrinal: doctrinal.length, other: others }, options: ['doctrinal', 'all'],
+    chosen: keepAll ? 'all' : 'doctrinal', reason: keepAll ? 'too few doctrinal passages' : 'doctrinal by default; only the named source adds others' });
+  // no `theme` from the tier: the writer read "theme: writings" as the heading and grouped by author (11-09). Topics come from the passages.
+  const passages = ranked.filter(({ p, t }) => keepAll || !t || DOCTRINAL.has(t) || named.has(`${p.document_id}:${p.paragraph_index}`))
+    .slice(0, MAX_COMPILED).map(({ p }) => p);
   return { passages, plan: { shape: 'compilation', religion, coverage: c }, format: { id: 'compilation', by: 'strategy:compilation', how: COMPILATION_HOW(religion, c, channel) } };
 }
 

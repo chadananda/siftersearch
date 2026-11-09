@@ -391,11 +391,18 @@ describe('compilation executor', () => {
     const decisions = decisionLog();
     const search = async () => ({ passages: [...Array.from({ length: 10 }, (_, i) => sec(i + 1)), ...Array.from({ length: 10 }, (_, i) => bh(i + 20)), sec(1)] });
     const out = await compilation({}, { messages: msgs, query: 'justice', distil: () => 'justice', search, plan: { filters: { religion: "Baha'i" } }, decisions });
-    expect(out.passages.length).toBe(15);
-    expect(out.passages.slice(0, 10).every((p) => p.theme === 'writings')).toBe(true);
-    expect(new Set(out.passages.map((p) => p.id)).size).toBe(15);
+    // doctrinal by default (Chad 11-09): the 10 Writings passages only; the study is left out
+    expect(out.passages.length).toBe(10);
+    expect(out.passages.every((p) => p.source_author === 'Bahá’u’lláh' || p.author === 'Bahá’u’lláh')).toBe(true);
+    expect(out.passages.some((p) => 'theme' in p)).toBe(false);   // never the tier as a "theme": the writer grouped by author
     expect(out.format).toMatchObject({ id: 'compilation', by: 'strategy:compilation' });
-    expect(decisions.list().map((d) => d.point)).toEqual(['compilation:scope', 'compilation:coverage']);
+    expect(decisions.list().map((d) => d.point)).toEqual(['compilation:scope', 'compilation:coverage', 'compilation:sources']);
+  });
+  it('caps at 15 and dedupes; keeps other kinds only when the doctrine is thin', async () => {
+    const many = await compilation({}, { messages: msgs, query: 'justice', search: async () => ({ passages: [...Array.from({ length: 20 }, (_, i) => bh(i + 20)), bh(20)] }), plan: { filters: { religion: "Baha'i" } }, decisions: decisionLog() });
+    expect(many.passages.length).toBe(15); expect(new Set(many.passages.map((p) => p.id)).size).toBe(15);
+    const thin = await compilation({}, { messages: msgs, query: 'q', search: async () => ({ passages: [bh(1), sec(2), sec(3), sec(4)] }), decisions: decisionLog() });
+    expect(thin.passages.map((p) => p.id)[0]).toBe(bh(1).id); expect(thin.passages.length).toBe(4);
   });
   it('widens to the whole library when thin, and says so when missing', async () => {
     const calls = []; const decisions = decisionLog();
@@ -410,6 +417,7 @@ describe('compilation executor', () => {
   it('the instruction: headings, verbatim whole, never trimmed; bold labels for a channel without headings', () => {
     const how = COMPILATION_HOW("Baha'i", 'covered');
     expect(how).toContain('`##` heading'); expect(how).toContain('within Baha\'i'); expect(how).toContain('verbatim and whole');
+    expect(how).toContain('TOPIC and SUB-TOPIC'); expect(how).toContain('never by author'); expect(how).toContain('doctrinal');
     expect(how).not.toMatch(/\{\{/);
     const plain = COMPILATION_HOW(null, 'thin', { capabilities: [] , id: 'x' });
     expect(plain).toContain('bold theme label'); expect(plain).toContain('Coverage is thin');
