@@ -1,0 +1,14 @@
+---
+// Full-screen flow canvas for one Anís strategy (id or name in the path). Component fetches the public strategies API itself.
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import IslandSkeleton from '../../../components/common/IslandSkeleton.astro';
+import StrategyCanvas from '../../../components/anis/StrategyCanvas.svelte';
+const { name } = Astro.params;
+---
+
+<AdminLayout title={`Strategy ${name}`}>
+  <div class="p-4">
+    <h1 class="text-xl font-semibold text-primary"><a class="text-accent" href="/admin/anis">Anís</a> / strategy {name}</h1>
+    <StrategyCanvas client:only="svelte" name={name} height="calc(100vh - 120px)"><IslandSkeleton slot="fallback" /></StrategyCanvas>
+  </div>
+</AdminLayout>

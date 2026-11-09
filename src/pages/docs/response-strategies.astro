@@ -5,6 +5,7 @@
 // building steps (#step-<name>), composition, decisions. The whole list comes from the strategy database (strategies + strategy_specs).
 // Every number carries data-live and refreshes through liveRefresh (src/lib/anis-docs.js); SSR reserves its space.
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import StrategyCanvas from '../../components/anis/StrategyCanvas.svelte';
 import { strategiesFlat, show } from '../../lib/anis-docs.js';
 import { titleOf, taglineOf, groupOf, GROUPS, orderedSteps, outcomeOf, targetsOf, MODES, MODE_NOTES } from '../../lib/strategy-docs.js';
 
@@ -253,6 +254,8 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
                 <h3>Decision tree</h3>
                 {s.graph ? (
                   <>
+                    <StrategyCanvas client:only="svelte" name={s.id} />
+                    <p class="note">Click a step for its prompt, parameters and numbers. The same tree as a list:</p>
                     <ol class="tree">
                       {tree.map((n) => (
                         <li id={`node-${s.id}-${n.id}`}>
