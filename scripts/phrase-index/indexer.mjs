@@ -223,8 +223,10 @@ const T = { unitize_ms: 0, lookup_ms: 0, embed_ms: 0, qdrant_ms: 0, sqlite_ms: 0
 const cpu0 = process.cpuUsage();
 const timing = () => { const c = process.cpuUsage(cpu0); return { ...Object.fromEntries(Object.entries(T).map(([k, v]) => [k, Math.round(v)])), cpu_ms: Math.round((c.user + c.system) / 1000) }; };
 let stopped = null;
-async function embedPending(pending) {
-  const entries = [...pending.entries()]; let next = 0, done = 0;
+// onProgress(done, tokens): called after every embedded job, so a long chunk is never silent (11-09: a dense 20K-paragraph chunk
+// embedded ~130K texts over ~35 min while the progress line still showed the previous chunk's numbers)
+async function embedPending(pending, onProgress = null) {
+  const entries = [...pending.entries()]; let next = 0, done = 0, toks = 0;
   async function worker() {
     while (next < entries.length && !stopped) {
       let take = BATCH; if (batcher) { let tk = 0; take = 0; while (take < JOB_REQS && next + take < entries.length && (tk += estTokens(entries[next + take][1])) < batcher.stats.cap_tokens / 4) take++; take = Math.max(1, take); }
@@ -242,7 +244,7 @@ async function embedPending(pending) {
       // The shared ledger (ai_usage) is where all spend is read (analytics, Anís costs). gemini-spend.db stays as this
       // script's own monthly cap counter; until 10-10 it was the ONLY record, so $322 of vectors never showed (Chad 10-10).
       logAIUsage({ provider: 'google', model: MODEL, serviceType: 'embedding', promptTokens: tokens, batch: vs.mode === 'batch', caller: `phrase-index:${BUDGET}` });
-      done += chunk.length;
+      done += chunk.length; toks += tokens; onProgress?.(done, toks);
     }
   }
   await Promise.all(Array.from({ length: CONC }, worker));
@@ -379,13 +381,22 @@ async function build() {
   note({ phase: 'start', docs: DOCS.length ? DOCS : undefined, scope: DOCS.length ? undefined : SCOPE, field: FIELD, embed_mode: EMBED_MODE, target: `${UP.url}/${UP.coll}` });
   if (has('qdrant')) await waiting(`qdrant collection ${UP.coll}`, ensureCollection());
   const { src, rows } = source(); const t0 = Date.now();
-  let paras = 0, units = 0, embedded = 0, sent = 0, batch = [];
+  let paras = 0, units = 0, embedded = 0, sent = 0, batch = [], embedTokens = 0, embedMs = 0, shownAt = 0;
   const flush = async () => {
     let t1 = Date.now();
     const r = unitize(batch); units += r.units; batch = []; T.unitize_ms += Date.now() - t1; t1 = Date.now();
     note({ phase: 'unitized', paragraphs: paras, units: r.units, to_embed: r.pending.size });
-    if (has('embed')) embedded += await embedPending(r.pending);
-    T.embed_ms += Date.now() - t1;
+    // mid-chunk progress: the same 'chunk' line (the parent shows it in the activity feed) with live counts, at most once a minute;
+    // embed_tokens_per_hour = tokens embedded / time spent embedding (Gemini's real throughput, re-reads excluded)
+    const progress = (done, toks) => {
+      if (Date.now() - shownAt < 60000) return; shownAt = Date.now();
+      const ms = embedMs + (Date.now() - t1);
+      log({ phase: 'chunk', paragraphs: paras, units, embedded: embedded + done, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
+        paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)), in_chunk: `${done}/${r.pending.size}`,
+        embed_tokens_per_hour: ms > 0 ? Math.round((embedTokens + toks) / (ms / 3.6e6)) : 0 });
+    };
+    if (has('embed')) { let toks = 0; embedded += await embedPending(r.pending, (d, t) => { toks = t; progress(d, t); }); embedTokens += toks; }
+    T.embed_ms += Date.now() - t1; embedMs += Date.now() - t1;
     if (has('qdrant')) { note({ phase: 'upserting', embedded }); sent += await waiting(`qdrant upsert to ${UP.coll}`, upsert()); }
     log({ phase: 'chunk', paragraphs: paras, units, embedded, upserted: sent, spent: spentRow(), month_usd: +monthSpent().toFixed(2),
       paras_per_hour: Math.round(paras / ((Date.now() - t0) / 3.6e6)), timing: timing() });
