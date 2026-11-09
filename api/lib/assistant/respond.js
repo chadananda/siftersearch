@@ -33,7 +33,8 @@ import { research as runResearch, libraryTools, RESEARCH_HOW, isExactQuote, asks
 import { looksLikePositionQuestion, positionResearch, POSITION_HOW } from './position.js';
 import { runStrategy } from './strategies.js';   // W3: executes the strategy Jev chose (comparison / understanding / prayer / guidance / reference)
 import { strategyOf } from './strategy-choice.js';
-import { isUnmatched, resolveUnmatched, withStrategyPin } from './unmatched.js';   // Jev found no strategy: reuse / recheck / design one on the fly
+import { isUnmatched, resolveUnmatched, withStrategyPin, plannerOn } from './unmatched.js';
+import { matchRoute } from './strategy-planner.js';   // Jev found no strategy: reuse / recheck / design one on the fly
 import { narrate } from './narrate.js';   // humanized status lines on live channels
 import { gatherByGraph, strategyGraphOn } from './activities/graph.js';   // the strategy graph (Phase 1: the same steps as data)
 import { PASSAGE_CHARS } from './prompt.js';
@@ -657,7 +658,10 @@ async function legacyGather({ messages, question, direction, profile, onEvent, d
   // and the direction then names it, so every gate below treats the turn as strategy-chosen; any failure leaves the researcher
   const unmatchedFn = researchWant && isUnmatched(direction.strategy) ? (d.unmatched || (deps ? null : resolveUnmatched)) : null;
   const pre = unmatchedFn ? await unmatchedFn({ direction, messages, question, onEvent, run: runStrat }).catch((err) => { console.warn('anis unmatched failed', err?.message); return null; }) : null;
-  const researchOn = researchWant && !strategyOf(direction.strategy);
+  // route record (Chad 11-09): one pure entry, every turn logged with its kind/source; a matched turn costs no gate call and no Opus call
+  try { const mr = unmatchedFn ? null : matchRoute({ strategy: direction.strategy }); if (mr) direction.decisions?.record?.('route', { by: 'code', saw: question, chosen: mr.name, reason: `route: ${mr.kind} ${mr.source}` }); } catch { /* a log never fails a turn */ }
+  // planner on: a query is answered ONLY by a strategy (matched, planned now, or the stored general_research tree) and a non-query is conversational: the free research agent is no fallback
+  const researchOn = researchWant && !strategyOf(direction.strategy) && !(unmatchedFn && plannerOn());
   const R = researchOn ? await (d.research || runResearch)({ messages, ...(live || {}), narrate: (key, slots) => narrate(onEvent, direction.channel, key, slots), drawFrom: plan?.drawFrom?.name || null, subject: jevSubject(direction, plan),
     create: d.researchCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-researcher', params)),
     tools: d.researchTools || libraryTools({ search: d.search }) }).catch((err) => { console.warn('anis research failed', err?.message); return null; }) : null;

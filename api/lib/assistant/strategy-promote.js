@@ -9,7 +9,8 @@
 // Also (Chad 11-08, distinguishable): `replay` = the option added to Jev and up to regress_n REAL labelled strategy calls re-asked
 // (jev-tuning/experiment.js, stored baseline): a call that changes away from its label (broken) or falls from ≥ MIN_CONFIDENCE
 // below it (confidence_drops) rejects the candidate.
-// Deps (injectable): writeQuestions, tryTurn, judge, jevPick, replay. Config: config/strategy-improve.json.
+// Planner (11-09): deps.nodeTests({pin}) runs the node tests (every decide edge); a decide node under node_pass_bar rejects the candidate naming it;
+// a cost/time cut at equal quality (promote.equal_eps, saving) is promotable without the margin. Deps (injectable): writeQuestions, tryTurn, judge, jevPick, replay, nodeTests. Config: config/strategy-improve.json.
 import { IMPROVE_CFG } from './strategy-gaps.js';
 import { isUnmatched } from './strategy-seed.js';
 import { DESIGN_ROLE, opusCall } from './strategy-design.js';
@@ -56,7 +57,7 @@ export async function questionSet({ row, held = [], cat, writeQuestions, nFresh 
 
 /** The decision over measured rows. rows: class rows { set, cand:{score, ms, usd, jev_pick}, cur:{score, ms, usd} } and guard
  *  rows { set:'guard', jev_pick }. → { promote, failed: [reasons], numbers }. Pure. */
-export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote, replay = null } = {}) {
+export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote, replay = null, nodes = null, nodeBar = IMPROVE_CFG.planner?.node_pass_bar ?? 0.8 } = {}) {
   const cls = rows.filter((r) => r.set !== 'guard' && r.cand?.score != null && r.cur?.score != null);
   const guards = rows.filter((r) => r.set === 'guard');
   const failed = [];
@@ -68,7 +69,9 @@ export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote, replay 
   const picks = cls.filter((r) => r.cand.jev_pick === name).length;
   const steals = guards.filter((r) => r.jev_pick === name).length;
   const share = cls.length ? picks / cls.length : 0;
-  if (cls.length && !(mc - mu >= cfg.margin)) failed.push(`mean score ${r3(mc)} vs ${r3(mu)}: not better by ${cfg.margin}`);
+  // IMPROVE edits that cut cost/time at equal quality are promotable: quality within equal_eps of the current route and $/turn or p50 down by `saving`
+  const saving = cfg.saving ?? 0.2, costSaving = cls.length > 0 && mc - mu >= -(cfg.equal_eps ?? 0.2) && ((usdU > 0 && usdC <= usdU * (1 - saving)) || (p50u > 0 && p50c <= p50u * (1 - saving)));
+  if (cls.length && !(mc - mu >= cfg.margin) && !costSaving) failed.push(`mean score ${r3(mc)} vs ${r3(mu)}: not better by ${cfg.margin}`);
   if (worst && worst.drop > cfg.max_regress) failed.push(`regression of ${worst.drop} on one question (max ${cfg.max_regress})`);
   if (p50c != null && p50u != null && p50c > p50u * cfg.ms_ratio) failed.push(`p50 ${p50c} ms vs ${p50u} ms (max ×${cfg.ms_ratio})`);
   if (usdC != null && usdU != null && usdC > Math.max(usdU * cfg.usd_ratio, usdU + 0.001)) failed.push(`$/turn ${r3(usdC)} vs ${r3(usdU)} (max ×${cfg.usd_ratio})`);
@@ -78,7 +81,10 @@ export function decidePromotion(rows, { name, cfg = IMPROVE_CFG.promote, replay 
   if (broken > (cfg.max_replay_broken ?? 0)) failed.push(`re-asking ${replay.labelled} real labelled strategy calls with it added: ${broken} now go to another option (max ${cfg.max_replay_broken ?? 0})`);
   if (drops > (cfg.max_confidence_drops ?? 0)) failed.push(`${drops} real call(s) fall from confident to below the Jev floor with it added (max ${cfg.max_confidence_drops ?? 0})`);
   if (replay?.truncated) failed.push(`real-call replay stopped: ${replay.truncated}`);
-  return { promote: failed.length === 0, failed, numbers: { replay_n: replay?.labelled ?? 0, replay_broken: broken, replay_confidence_drops: drops, n_class: cls.length, n_guard: guards.length, mean_candidate: r3(mc), mean_current: r3(mu),
+  // node tests (planner): any decide node under its pass bar rejects the candidate, naming the node
+  const weak = Object.entries(nodes?.nodes || {}).filter(([, n]) => n.rate < nodeBar).map(([node, n]) => ({ node, rate: n.rate, pass: n.pass, total: n.total }));
+  for (const w of weak) failed.push(`node ${w.node}: ${w.pass}/${w.total} node tests pass (${w.rate}; bar ${nodeBar})`);
+  return { promote: failed.length === 0, failed, nodes: nodes ? { rate: nodes.rate, per_node: nodes.nodes, failed: nodes.failed, weak } : null, cost_saving: costSaving, numbers: { replay_n: replay?.labelled ?? 0, replay_broken: broken, replay_confidence_drops: drops, n_class: cls.length, n_guard: guards.length, mean_candidate: r3(mc), mean_current: r3(mu),
     worst_drop: worst?.drop ?? null, p50_ms_candidate: p50c, p50_ms_current: p50u, usd_turn_candidate: r3(usdC), usd_turn_current: r3(usdU),
     jev_class_picks: picks, jev_guard_steals: steals } };
 }
@@ -98,6 +104,8 @@ export async function runPromotion({ pin, held = [], cat, deps, capUsd = IMPROVE
   // the real-call replay: only when the candidate adds or rewords an option (a pinned graph Jev already routes to, keepChoice, adds none)
   let replay = null;
   if (deps.replay && !pin.keepChoice) { replay = await deps.replay({ pin, n: cfg.regress_n }); usd += replay?.usd || 0; }
+  // node tests: every decide edge of the planned tree (Jev replayed on its test inputs; tools vs fixtures)
+  const nodes = deps.nodeTests ? await deps.nodeTests({ pin }).catch((e) => ({ nodes: {}, failed: [{ node: '(runner)', edge: null, got: String(e?.message || e) }], rate: null })) : null;
   const rows = [];
   for (const q of qs.questions) {
     if (usd >= capUsd) { stopped = 'over-budget'; break; }
@@ -109,8 +117,8 @@ export async function runPromotion({ pin, held = [], cat, deps, capUsd = IMPROVE
       cur: { score: scoreOf(ju), ms: cur.ms, usd: cur.usd, why: ju?.why ?? null } });
     onProgress({ done: rows.length, of: qs.questions.length, usd });
   }
-  const decision = stopped ? { promote: false, failed: [`stopped: ${stopped} ($${r3(usd)} of $${capUsd})`], numbers: decidePromotion(rows, { name: row.name, cfg, replay }).numbers }
-    : decidePromotion(rows, { name: row.name, cfg, replay });
+  const decision = stopped ? { promote: false, failed: [`stopped: ${stopped} ($${r3(usd)} of $${capUsd})`], numbers: decidePromotion(rows, { name: row.name, cfg, replay, nodes }).numbers }
+    : decidePromotion(rows, { name: row.name, cfg, replay, nodes });
   return { decision, rows, usd: Math.round(usd * 1e6) / 1e6, stopped };
 }
 

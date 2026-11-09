@@ -124,7 +124,7 @@ describe('design: a new task, or a setting of an existing strategy?', () => {
     path: { decisions: [{ point: 'strategy', reason: 'low-confidence', chosen: 'other', probabilities: { understanding: 0.4, other: 0.35 } }] } }));
   it('setting_of an active strategy: no candidate saved, logged as setting-of:<X>, the gaps closed', async () => {
     const db = fresh(); gaps(db);
-    const r = await designStage(db, { call: async () => reply({ setting_of: 'understanding', difference: null, why: 'the same explanation with a historical topic' }) });
+    const r = await designStage(db, { planner: false, call: async () => reply({ setting_of: 'understanding', difference: null, why: 'the same explanation with a historical topic' }) });
     expect(r).toMatchObject({ status: 'setting-of:understanding' });
     expect(listDesigns(db)[0]).toMatchObject({ status: 'setting-of:understanding', strategy_id: null });
     expect(db.prepare("SELECT COUNT(*) AS n FROM strategies WHERE status = 'candidate'").get().n).toBe(0);

@@ -92,3 +92,4 @@ data/spend-ledger.json*
 
 # generated soul-battery reports
 tests/assistant/reports/
+__pycache__/

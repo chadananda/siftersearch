@@ -4,12 +4,82 @@
   "edits_per_day": 10,
   "gaps": { "similarity": 0.12, "min_questions": 3, "min_threads": 2 },
   "design": { "dedupe_similarity": 0.45, "max_tokens": 3000, "nearest": 3 },
-  "promote": { "n_fresh": 12, "n_guard": 6, "margin": 0.5, "max_regress": 2, "ms_ratio": 1.5, "usd_ratio": 1.5, "jev_class_share": 0.6, "jev_guard_max": 0, "regress_n": 60, "max_replay_broken": 0, "max_confidence_drops": 0 },
+  "promote": { "n_fresh": 12, "n_guard": 6, "margin": 0.5, "max_regress": 2, "ms_ratio": 1.5, "usd_ratio": 1.5, "jev_class_share": 0.6, "jev_guard_max": 0, "regress_n": 60, "max_replay_broken": 0, "max_confidence_drops": 0, "equal_eps": 0.2, "saving": 0.2 },
   "theory": { "_doc": "jev-tuning/theories.js: a weak gate verdict → Opus theories → tested on historic + frozen synthetic gold.", "synthetic_n": 40, "historic_n": 140, "margin": 0.05, "max_broken": 2, "token_ratio": 1.5, "max_usd": 1, "per_day": 6, "diagnose_max_tokens": 1500, "synthetic_max_tokens": 6000,
     "promote": { "margin": -0.3, "jev_class_share": 0, "jev_guard_max": 999 },
     "gates": { "_doc": "per-gate overrides of the theory rules: the strategy gate may break nothing and drop no call below the Jev floor; its promotion keeps the guard.", "anis-strategy": { "max_broken": 0, "max_confidence_drops": 0, "promote": { "jev_guard_max": 0 } } } },
   "unmatched": { "_doc": "unmatched.js: a live Unmatched turn. a pending candidate is reused only when the recheck model names it (never by word overlap); the timeouts are safety bounds on the LLM calls (any failure falls back to the researcher).", "recheck_min_confidence": 0.6, "recheck_max_tokens": 120, "recheck_timeout_ms": 8000, "design_timeout_ms": 120000 },
   "miss_fix": { "_doc": "jev-tuning/miss-fix.js: sample sizes of the replay (the experiment spend is theory.max_usd, through the improve ledger).", "targets_max": 40, "regress_n": 60, "max_confidence_drops": 0 },
+  "planner": {
+    "_doc": "strategy-planner.js: Opus PLANS a tree once per challenge type; the tree must be cheap and fast to RUN. Costs are per node kind, checked on every run PATH (class budget) - never per tree size. max_nodes only catches runaway output.",
+    "max_tokens": 9000,
+    "abstract_max_tokens": 1500,
+    "compare_max_tokens": 1500,
+    "tests_max_tokens": 6000,
+    "fast_max_tokens": 12000,
+    "fast_timeout_ms": 180000,
+    "gate_timeout_ms": 8000,
+    "max_nodes": 64,
+    "max_paths": 3000,
+    "node_pass_bar": 0.8,
+    "node_min_tests_per_edge": 1,
+    "node_cost": {
+      "rank": { "usd": 0.0001, "ms": 60 }, "decide": {
+        "usd": 0.0002,
+        "ms": 350
+      },
+      "tool": {
+        "usd": 0.0005,
+        "ms": 450
+      },
+      "process": {
+        "usd": 0.004,
+        "ms": 900
+      },
+      "synthesize": {
+        "usd": 0.02,
+        "ms": 6000
+      }
+    },
+    "budgets": {
+      "lookup": {
+        "expected_usd": 0.01,
+        "worst_usd": 0.05,
+        "expected_ms": 3000,
+        "worst_ms": 12000
+      },
+      "answer": {
+        "expected_usd": 0.03,
+        "worst_usd": 0.1,
+        "expected_ms": 6000,
+        "worst_ms": 20000
+      },
+      "research": {
+        "expected_usd": 0.06,
+        "worst_usd": 0.2,
+        "expected_ms": 12000,
+        "worst_ms": 40000
+      }
+    },
+    "default_mix": {
+      "clean": 0.6,
+      "several": 0.15,
+      "thin": 0.1,
+      "none": 0.08,
+      "error": 0.02,
+      "conflict": 0.05
+    },
+    "probation": {
+      "runs": 50,
+      "regress": 1.0,
+      "node_floor": 0.5,
+      "node_min_runs": 5,
+      "weak_node_runs": 10,
+      "weak_below": 0.7,
+      "min_scored": 5,
+      "floor": 5
+    }
+  },
   "class_sets": { "historic_n": 6 },
   "llm_fast": { "every_days": 7 }
 }

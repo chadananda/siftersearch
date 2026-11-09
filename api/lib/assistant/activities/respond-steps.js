@@ -8,7 +8,8 @@ import {
   originalWording, huntSource, fillTags, evidenceOf, searchQueryFor, distilQuery,
 } from '../respond.js';
 import { strategyOf } from '../strategy-choice.js';
-import { isUnmatched, resolveUnmatched, withStrategyPin } from '../unmatched.js';
+import { isUnmatched, resolveUnmatched, withStrategyPin, plannerOn } from '../unmatched.js';
+import { matchRoute } from '../strategy-planner.js';
 import { narrate } from '../narrate.js';
 import { timed } from '../timeline.js';
 import { textRequest } from '../text-request.js';
@@ -112,7 +113,7 @@ const research = (s) => {
   const live = s.live;
   const want = !f && !c && !w && (direction.research ?? ((!deps || d.research) ? researchEnabled(direction.channel) : false));
   const go = () => {
-    const researchOn = want && !strategyOf(direction.strategy);   // Jev's strategy first on every channel (Chad 11-08)
+    const researchOn = want && !strategyOf(direction.strategy) && !(unmatchedFn && plannerOn());   // Jev's strategy first on every channel (Chad 11-08); planner on: a query is answered only by a strategy (no free research agent)
     const set = (R) => { s.researched = R?.passages?.length || R?.brief ? R : null; return researchOn ? (s.researched ? 'found' : 'empty') : 'skip'; };
     if (!researchOn) return set(null);
     return (d.research || runResearch)({ messages, ...(live || {}), narrate: (key, slots) => narrate(onEvent, direction.channel, key, slots), drawFrom: p?.drawFrom?.name || null, subject: jevSubject(direction, p),
@@ -122,6 +123,8 @@ const research = (s) => {
   // UNMATCHED (Jev found no strategy) where the researcher would answer: reuse / recheck / design a strategy (unmatched.js) — it runs now,
   // and the direction then names it, so every gate below treats the turn as strategy-chosen; any failure leaves the researcher
   const unmatchedFn = want && isUnmatched(direction.strategy) ? (d.unmatched || (deps ? null : resolveUnmatched)) : null;
+  // route record (Chad 11-09): a matched turn is logged with its kind/source and costs no gate call and no Opus call
+  try { const mr = unmatchedFn ? null : matchRoute({ strategy: direction.strategy }); if (mr) direction.decisions?.record?.('route', { by: 'code', saw: question, chosen: mr.name, reason: `route: ${mr.kind} ${mr.source}` }); } catch { /* a log never fails a turn */ }
   if (!unmatchedFn) return go();
   return unmatchedFn({ direction, messages, question, onEvent, run: (choice) => runStrat(s, choice) }).catch((err) => { console.warn('anis unmatched failed', err?.message); return null; })
     .then((pre) => { s.pre = pre; return go(); });

@@ -105,12 +105,12 @@ describe('design validation (fake Opus)', () => {
     const near = { ...GOOD, name: 'understanding_deep', description: und.description };
     const qs = ['How did the Nineteen Day Feast develop over time?', 'How did the Feast develop over the decades since 1844?', 'How did the Nineteen Day Feast develop through its history?'];
     qs.forEach((q, i) => captureGap(db, { turnId: `t${i}`, threadId: `th${i % 2}`, question: q, path: unsure() }));
-    const r = await designStage(db, { call: async () => reply(near) });
+    const r = await designStage(db, { planner: false, call: async () => reply(near) });
     expect(r).toMatchObject({ status: 'version', id: 'understanding', version: 2 });
     expect(strategyRow(db, 'understanding', 2)).toMatchObject({ status: 'candidate', parent_version: 1, name: 'understanding' });
     expect(openGaps(db)).toHaveLength(0);                                   // the cluster's gaps are closed by the design
     expect(listDesigns(db)[0]).toMatchObject({ status: 'version', strategy_id: 'understanding', version: 2 });
-    expect(await designStage(db, { call: async () => { throw new Error('not called'); } })).toBe('idle');
+    expect(await designStage(db, { planner: false, call: async () => { throw new Error('not called'); } })).toBe('idle');
   });
 });
 

@@ -203,17 +203,17 @@ describe('the plan (planning/anis-strategies.json) on the three pages', () => {
 describe('the strategy list lives in the DB (strategy_specs)', () => {
   const names = (l) => l.map((c) => c.id);
 
-  it('a temp DB seeded once serves all 36 entries in order, Unmatched last, with nothing read from the plan file afterwards', () => {
+  it('a temp DB seeded once serves all 36 specs (37 listed with general_research) in order, Unmatched last, with nothing read from the plan file afterwards', () => {
     const db = openStrategiesDb(':memory:');
     resetStrategiesCache({ db });
     const rows = db.prepare('SELECT name, kind FROM strategy_specs ORDER BY sort').all();
     expect(rows.filter((r) => r.kind !== 'plan')).toHaveLength(36);
     const strategies = publicStrategies({ snapshot: strategiesSnapshot(), activities: activityCatalog() }).strategies;
     const list = publicStrategyList({ specs: strategySpecs(), strategies });
-    expect(list).toHaveLength(36);
+    expect(list).toHaveLength(37);
     expect(list.at(-1)).toMatchObject({ id: 'respond', name: 'unmatched' });
     expect(list.filter((c) => c.status === 'planned')).toHaveLength(24);
-    expect(list.filter((c) => c.status === 'built')).toHaveLength(12);
+    expect(list.filter((c) => c.status === 'built')).toHaveLength(13);
     expect(names(list).slice(0, 6)).toEqual(['comparison', 'understanding', 'prayer', 'guidance', 'reference', 'compilation']);
     // re-seeding does not touch the plan file or add rows
     expect(seedStrategies(db)).toBe(0);
@@ -243,7 +243,7 @@ describe('the strategy list lives in the DB (strategy_specs)', () => {
     resetStrategiesCache({ db });
     const cat = catalog({ now: Date.now() + 1e6 });
     const ids = cat.strategies.map((s) => s.id);
-    expect(ids).toEqual(['comparison', 'understanding', 'prayer', 'guidance', 'reference', 'compilation', 'book', 'quote_trace', 'term', 'original', 'about', 'respond']);
+    expect(ids).toEqual(['comparison', 'understanding', 'prayer', 'guidance', 'reference', 'compilation', 'book', 'quote_trace', 'term', 'original', 'about', 'respond', 'general_research']);
     const planned = strategySpecs().filter((x) => x.kind === 'planned').map((x) => x.name);
     expect(planned).toHaveLength(24);
     for (const n of planned) expect(ids).not.toContain(n);

@@ -1,3 +1,4 @@
+process.env.ANIS_UNMATCHED_PLANNER = '0';   // these tests hold the emergency-rollback path; the planner path is in strategy-planner.test.js
 // Unmatched runtime (unmatched.js: recheck / design a strategy for a turn Jev could not match) and the spoken progress lines
 // (narrate.js: live channels only). Fake recheck + fake Opus; a real in-memory strategies store.
 import { describe, it, expect, afterEach, vi } from 'vitest';

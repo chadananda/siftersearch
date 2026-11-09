@@ -11,12 +11,13 @@ import { IMPROVE_CFG, jaccardWords } from './strategy-gaps.js';
 
 export const DESIGN_ROLE = 'strategy-design';
 export const DESIGN_CALLER = 'improve-strategy-design';
-const MAX_NODES = Number(process.env.ANIS_MAX_NODES) || 64;   // working nodes; the shared ends ($absence $fallback $unavailable) are not nodes
+const MAX_NODES = Number(process.env.ANIS_MAX_NODES) || IMPROVE_CFG.planner?.max_nodes || 64;   // working nodes, a sanity cap (config planner.max_nodes; env override); the shared ends ($absence $fallback $unavailable) are not nodes
 const ID_OK = /^[a-z][a-z0-9_]{2,30}$/;            // a candidate's own option key (model output, never the reader's text)
 const STEP_ID_OK = /^[a-z][a-z0-9_.-]{2,60}$/;
 const RESERVED = new Set(['other', 'unmatched', 'respond', 'none']);
 
-export const DESIGN_SYSTEM = `You design RESPONSE STRATEGIES for Anís, a research assistant over a Bahá'í and interfaith library.
+/** v1 (opaque executors, one retry): kept for the rollback; strategy-planner.js's DESIGN_SYSTEM (below) is the live prompt. */
+export const DESIGN_SYSTEM_V1 = `You design RESPONSE STRATEGIES for Anís, a research assistant over a Bahá'í and interfaith library.
 A strategy is a small graph of ACTIVITIES (code that already exists). Jev (a small classifier) picks a strategy per question by its
 DESCRIPTION, so the description must name the CLASS of request (what the reader wants done), never one particular question.
 After the graph ends, the shared writer and quality checks always run; an executor's output (passages + a writer instruction) feeds them.
@@ -34,6 +35,32 @@ Answer with ONE JSON object and nothing else:
  "steps":[{"id":"<name>.<part>","activity":"<executor>","params":{"how":"<template id>"}}],
  "graph":{"entry":"<node>","nodes":{"<node>":{"step":"<step id>"}},"edges":[{"from":"<node>","on":"<edge>|*","to":"<node>|$end"}]},
  "why":"one sentence: why the existing strategies do not serve this class (for a setting: which strategy and how it is a setting of it)"}`;
+
+/** v2 (Chad 11-09, planning/anis-strategy-trees.md §1): deep thinking PLANS a tree once per challenge type; the tree is RUN many times, cheaply.
+ *  Built from ELEMENTS (never opaque executors); every node tagged decide|process|tool|synthesize; costs are checked per run PATH. */
+export const DESIGN_SYSTEM = `You PLAN RESPONSE STRATEGIES (decision trees) for Anís, a research assistant over a Bahá'í and interfaith library.
+You think deeply ONCE per kind of request; the tree you write is then RUN thousands of times by cheap parts, so it must be fast and cheap on the path a turn actually takes.
+A tree is a state machine of ELEMENTS (generic, listed below), never code you invent. Jev (a small classifier) picks a strategy per turn by its CARD (description), so the card names the CLASS of request (what the reader wants done), never one question, tradition or topic.
+METHOD, in order:
+1. ABSTRACT the challenge into a type: the task (free of tradition, topic and length), the units it needs, the output shape, notes per mode (voice, widget, site, email, pdf).
+2. COMPARE with the strategies listed: "duplicate" (an existing one already serves it), "setting_of" (the same task with another topic, tradition, length, tone, format or source: name that strategy and give "sets", a patch of units/scope), or "new" (a task Jev can tell apart: give "difference"). When in doubt between new and setting_of, choose setting_of. For duplicate and setting_of design nothing.
+3. NODES. Every node: {"element","kind","params","reads","writes"}. kind is decide (a Jev or code decision), rank (re-ranking: a decide-type node, Jev or code, at tree level), process (a light transform or small-model step), tool (fetch, search, read: pure JSON in -> JSON out, no LLM), synthesize (the smart writer; ONLY behind a decide node's "needed?" edge, and cheapest tier unless depth is the task). Read and write units BY NAME. The scope (tradition, source, language) comes from units, never from names you hard-code.
+3b. TOOLS OVER DECISIONS (Chad 11-09): anything a tool can do is never a decision or a light-LLM step. Put the weight on ONE merged tool call that queries and merges the data (compare_search{sides[]}, tiered fused_search, quotation_candidates and the other merged elements, when listed) and DECIDE ONCE on the merged result. No loops with decide or process nodes: no hand.strategy fan-out per item, side or tier, no cycle through a decide or process node. When you want such a loop, plan the tree without it and record a WISH for the merged tool. Dedup is never a node: tools return deduped results (no dedupe param, no dedup element). Re-ranking is its own node, kind rank.
+4. QUALITY-MAXIMISING STRUCTURE. Size is not cost: use as many branches as raise answer quality or lower expected cost. Cheapest probe first (code, BM25, a known index), escalating only when a cheaper tier returns thin. Independent searches in parallel (search.together / search.fanout). Verification: is the passage real, is the citation the best published source, do the originals agree. Handle conflict. Exit early once the evidence suffices. Different shapes for different outcomes.
+5. ROUTE EVERY OUTCOME: each node's every edge (found, several, thin, none, error, conflict as its element offers) goes to a node, "$absence" (nothing found), "$fallback" (the research fallback), "$unavailable" (could not search) or "$end". "error"/"fail" edges never go to $absence. No cycles. Use "*" for any other edge.
+6. SHAPE nodes carry templates with a block for EACH mode: voice, widget, site, email, pdf. New template ids only ("<name>.<part>").
+7. BUDGET per run PATH. Name budget_class (lookup|answer|research) and path_mix (weights over clean, several, thin, none, error, conflict). Code computes cost and time per path from the node kinds and rejects a tree whose expected or worst path exceeds the class budget. Prefer decide, tool and code nodes; a process (small-model) node only where code cannot do the job.
+8. CARD: description (how to tell a query fits), 3-6 exemplars you write, near_misses (3-6 {text, goes_to, why}: requests that look alike but belong to another existing strategy or "unmatched").
+9. WISHES: if a better or cheaper tree needs an element that does not exist, add it to "wishes" {element, inputs, outputs, replaces, saves:{usd,ms,quality}} and still plan the tree with TODAY's elements.
+10. TESTS are planned later: but name for every decide node what its edges mean, in "why".
+Answer with ONE JSON object and nothing else:
+{"type":{"task":"...","inputs":["unit"],"output":"...","modes":{"voice":"...","widget":"...","site":"...","email":"...","pdf":"..."}},
+ "verdict":"new"|"setting_of"|"duplicate","of":"<existing strategy name or null>","sets":{"unit":"value"},"difference":"one sentence (new)",
+ "name":"snake_case","description":"...","exemplars":["..."],"near_misses":[{"text":"...","goes_to":"<strategy|unmatched>","why":"..."}],
+ "needs":[{"unit":"<unit>","required":true,"default":null}],"templates":[{"id":"<name>.<part>","text":"voice: ... widget: ... site: ... email: ... pdf: ..."}],
+ "budget_class":"lookup|answer|research","path_mix":{"clean":0.6,"several":0.15,"thin":0.1,"none":0.08,"error":0.02,"conflict":0.05},"est":{"expected_usd":0,"expected_ms":0,"worst_usd":0,"worst_ms":0},
+ "graph":{"entry":"<node>","nodes":{"<node>":{"element":"<element>","kind":"decide|rank|process|tool|synthesize","params":{},"reads":["unit"],"writes":["unit"]}},"edges":[{"from":"<node>","on":"<edge>|*","to":"<node>|$absence|$fallback|$unavailable|$end"}]},
+ "wishes":[],"why":"one sentence"}`;
 
 const firstJson = (t) => { const s = String(t || ''); const a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a < 0 || b <= a) return null; try { return JSON.parse(s.slice(a, b + 1)); } catch { return null; } };
 export const parseCandidate = (text) => firstJson(text);
@@ -178,7 +205,7 @@ export async function designCandidate(cluster, { cat, acts = registry(), call = 
   let errors = null, usd = 0, attempts = 0;
   for (; attempts < 2;) {
     attempts++;
-    const r = await call(DESIGN_ROLE, DESIGN_SYSTEM, designMessage({ cluster, cat, acts, stats, errors }), maxTokens, DESIGN_CALLER);
+    const r = await call(DESIGN_ROLE, DESIGN_SYSTEM_V1, designMessage({ cluster, cat, acts, stats, errors }), maxTokens, DESIGN_CALLER);
     usd += r.usd || 0;
     const j = parseCandidate(r.text);
     // (b) a setting of an existing strategy: no candidate (the caller logs setting-of:<name>); it must name an active strategy
