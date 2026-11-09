@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-09T19:23:41.779Z",
+  "generated": "2026-11-09T19:54:09.523Z",
   "entries": [
+    {
+      "hash": "8f53b2460",
+      "date": "2026-11-09",
+      "type": "Other",
+      "description": "Keepalive wired into /stream and /v1/chat; Jafar prompt and ANIS_PROMPT rollback removed; quote hunt takes the words out of 'where does X say ...'",
+      "scope": null
+    },
     {
       "hash": "450c9f410",
       "date": "2026-11-09",
@@ -1708,52 +1715,17 @@
       "type": "Docs",
       "description": "Persistent transcription worker deferred (Chad: remastering first) — design + draft patch kept; the 're-align to the listening copy' step planned (alignment only, a stage after web via redo; word indexes unchanged, times recomputed downstream)",
       "scope": "media"
-    },
-    {
-      "hash": "ae8f96387",
-      "date": "2026-10-23",
-      "type": "Performance",
-      "description": "A finished transcription is noticed within 2–8 s (poll 2 s growing to 8 s; was 15 s) — the 15 s poll held aorus's second slot after short talks ended (21:05: 1 of 2 slots busy most of the time)",
-      "scope": "media"
-    },
-    {
-      "hash": "d1bdd796a",
-      "date": "2026-10-23",
-      "type": "Performance",
-      "description": "No idle gaps on aorus between short talks — a GPU reservation ends with its job (or once a reading 30 s later shows it resident), a freed slot forces a fresh GPU reading and wakes the waiting transcriptions, which re-check every 5 s (20:50: 30–40 s gaps — a stale reading plus a 90 s hold for a job already done)",
-      "scope": "media"
-    },
-    {
-      "hash": "72f0a7538",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "GPU memory budgeted at dispatch on aorus + a full card never fails a job outright",
-      "scope": "media"
-    },
-    {
-      "hash": "d91b40aa2",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Remaster pilot prep — 10 muffled talks (bw 1.1–3.3 kHz) cut to 60 s, MF2SE wet done; chain_muffled.py encodes the r2/r3 chains with fallback rungs (MF2SE 35 %, then original); tube/tube3 importable",
-      "scope": "media"
-    },
-    {
-      "hash": "54a9055e2",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "No slot wait can hang a drain (slotWait: probe, encode, offload, conversion, tower, light, re-run, prescreen slots all give way with DrainAbort) — 19:44 two compute jobs held the media drain 9+ min, so no ASR was dispatched and aorus's GPU sat idle; a diarization not yet started moves off a full host (19:41: five queued for aorus's one slot while boss had room)",
-      "scope": "media"
-    },
-    {
-      "hash": "2471822bc",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Remaster R&D round 3 (Chad's r2 pick 'still muddy, loud sibilants') — deeper mud cut, lower presence lift, split-band de-esser; picks r1/r2 recorded; VoiceRestore + AudioSR findings",
-      "scope": "media"
     }
   ],
   "grouped": {
     "2026-11-09": [
+      {
+        "hash": "8f53b2460",
+        "date": "2026-11-09",
+        "type": "Other",
+        "description": "Keepalive wired into /stream and /v1/chat; Jafar prompt and ANIS_PROMPT rollback removed; quote hunt takes the words out of 'where does X say ...'",
+        "scope": null
+      },
       {
         "hash": "450c9f410",
         "date": "2026-11-09",
@@ -3488,48 +3460,6 @@
         "date": "2026-10-23",
         "type": "Docs",
         "description": "Persistent transcription worker deferred (Chad: remastering first) — design + draft patch kept; the 're-align to the listening copy' step planned (alignment only, a stage after web via redo; word indexes unchanged, times recomputed downstream)",
-        "scope": "media"
-      },
-      {
-        "hash": "ae8f96387",
-        "date": "2026-10-23",
-        "type": "Performance",
-        "description": "A finished transcription is noticed within 2–8 s (poll 2 s growing to 8 s; was 15 s) — the 15 s poll held aorus's second slot after short talks ended (21:05: 1 of 2 slots busy most of the time)",
-        "scope": "media"
-      },
-      {
-        "hash": "d1bdd796a",
-        "date": "2026-10-23",
-        "type": "Performance",
-        "description": "No idle gaps on aorus between short talks — a GPU reservation ends with its job (or once a reading 30 s later shows it resident), a freed slot forces a fresh GPU reading and wakes the waiting transcriptions, which re-check every 5 s (20:50: 30–40 s gaps — a stale reading plus a 90 s hold for a job already done)",
-        "scope": "media"
-      },
-      {
-        "hash": "72f0a7538",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "GPU memory budgeted at dispatch on aorus + a full card never fails a job outright",
-        "scope": "media"
-      },
-      {
-        "hash": "d91b40aa2",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Remaster pilot prep — 10 muffled talks (bw 1.1–3.3 kHz) cut to 60 s, MF2SE wet done; chain_muffled.py encodes the r2/r3 chains with fallback rungs (MF2SE 35 %, then original); tube/tube3 importable",
-        "scope": "media"
-      },
-      {
-        "hash": "54a9055e2",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "No slot wait can hang a drain (slotWait: probe, encode, offload, conversion, tower, light, re-run, prescreen slots all give way with DrainAbort) — 19:44 two compute jobs held the media drain 9+ min, so no ASR was dispatched and aorus's GPU sat idle; a diarization not yet started moves off a full host (19:41: five queued for aorus's one slot while boss had room)",
-        "scope": "media"
-      },
-      {
-        "hash": "2471822bc",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Remaster R&D round 3 (Chad's r2 pick 'still muddy, loud sibilants') — deeper mud cut, lower presence lift, split-band de-esser; picks r1/r2 recorded; VoiceRestore + AudioSR findings",
         "scope": "media"
       }
     ]
