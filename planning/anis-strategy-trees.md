@@ -145,9 +145,9 @@ JSON schema (appended to the prompt by code; validated by `validateCandidate`):
 
 ## §1b Unmatched at run time (Chad 11-09)
 
-**The whole mechanism, one rule (Chad 11-09):** every turn → Jev decides: **not a query** (feedback, thanks, "that's a good
-point" — nothing to research) → conversational reply, no strategy; **a query** → research is done ONLY by response strategies:
-a card matches → run it; none fits → the planner designs a tree now, runs it for this turn, saves it as a candidate. No
+**The whole mechanism, one rule (Chad 11-09):** every turn → Jev matches the cards: a card matches → run it (no extra call); **Unmatched** → its FIRST node is one Jev
+decide: "a research query that needs a new strategy?" — **no** (feedback, thanks, "that's a good point") → conversational
+reply, no strategy; **yes** → research is done ONLY by response strategies: the planner designs a tree now, runs it for this turn, saves it as a candidate. No
 free-agent research path: the planner's safety net is itself a stored `general_research` tree (its use is logged as a planner
 defect). One pure entry `route(turn) → conversational | strategy {name, version, source: matched|planned|fallback}`, logged
 every turn, so test tools can be built around it. Two loops: **IMPROVE** = efficiency + quality of existing trees (node-level
