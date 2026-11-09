@@ -67,7 +67,7 @@ describe('the book reply: link first, what the texts say ABOUT it, then the offe
     const { anisRespond } = await import('../../api/lib/assistant/respond.js');
     const crafted = [];
     const passages = rows.map((r, i) => ({ text: r.text, title: 'T', author: 'A', document_id: r.doc_id, paragraph_index: i, source_url: r.citation_url }));
-    const out = await anisRespond({ messages: [{ role: 'user', content: 'where can I read Dawnbreakers?' }], deps: {
+    const out = await anisRespond({ messages: [{ role: 'user', content: 'where can I read Dawnbreakers?' }], direction: { strategy: { strategy: { choice: 'book', confidence: 0.9 }, sides: [] } }, deps: {
       plan: async () => ({ shape: 'lookup' }), findWork: async () => work,
       search: async () => ({ passages, _plan: { shape: 'topic' } }),
       craft: async (a) => { crafted.push(a); return 'Shoghi Effendi held that it is a narrative ["every believer should master"](https://x/about#1).'; },
@@ -148,7 +148,7 @@ describe('a book reply never carries an unsourced middle (11-01 live: "Dawnbreak
   it('a crafted middle with no passage link is dropped: link + offer only', async () => {
     const { anisRespond } = await import('../../api/lib/assistant/respond.js');
     const work = { doc: ROWS[1], others: [] };
-    const out = await anisRespond({ messages: [{ role: 'user', content: 'Dawnbreakers' }], deps: {
+    const out = await anisRespond({ messages: [{ role: 'user', content: 'Dawnbreakers' }], direction: { strategy: { strategy: { choice: 'book', confidence: 0.9 }, sides: [] } }, deps: {
       plan: async () => ({ shape: 'lookup' }), findWork: async () => work,
       search: async () => ({ passages: [{ text: 'The Dawn-Breakers of Nabíl is a narrative every believer should master.', title: 'T', author: 'A', document_id: 99, paragraph_index: 0, source_url: 'https://x/about#1' }], _plan: { shape: 'topic' } }),
       craft: async () => 'I didn’t find a passage that says this directly in this search. Could you tell me a little more about what you’re looking for?',
@@ -181,6 +181,7 @@ describe('respond: findWork is core-only unless Jev\'s lookup intent is book', (
         companion: async () => ({}), sourceHunt: async () => null, phrases: async () => null, findWork: async (q, opts) => { seen.push(opts); return null; } } });
     return seen[0];
   };
-  it('no book intent → coreOnly', async () => { expect(await run({})).toMatchObject({ coreOnly: true }); });
+  it('no book intent → coreOnly', async () => { expect(await run({ strategy: { strategy: { choice: 'book', confidence: 0.9 }, sides: [] } })).toMatchObject({ coreOnly: true }); });
+  it('Unmatched runs no book lookup at all', async () => { expect(await run({})).toBeUndefined(); });
   it('Jev said book (no lookup result) → every book', async () => { expect((await run({ lookupIntent: 'book' }))?.coreOnly).toBeFalsy(); });
 });

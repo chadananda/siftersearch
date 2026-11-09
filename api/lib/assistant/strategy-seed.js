@@ -44,6 +44,7 @@ const step = (id, activity, extra = {}) => ({ id, version: 1, activity, params: 
 export const STEPS = [
   step('respond.fast', 'respond.fast'),
   step('respond.agent', 'respond.agent'),
+  step('respond.agent-fallback', 'respond.agent', { params: { fallback: true } }),
   step('respond.plan', 'respond.plan'),
   step('respond.conversational', 'respond.conversational'),
   step('respond.religions', 'respond.religions'),
@@ -54,6 +55,7 @@ export const STEPS = [
   step('respond.read-question', 'respond.read_question'),
   step('respond.original-start', 'respond.original_start'),
   step('respond.hunt-start', 'respond.hunt_start'),
+  step('respond.hunt-start-own', 'respond.hunt_start', { params: { own: true } }),
   step('respond.hunt-await', 'respond.hunt_await'),
   step('respond.original-await', 'respond.original_await'),
   step('respond.source-reply', 'respond.source_reply'),
@@ -85,14 +87,41 @@ function linear(order, stops = {}) {
 
 // THE RESPOND GRAPH = respond.js's former cascade (l.598–762 at abab9e7d), in its order. Each node's activity keeps its predicate
 // exactly; the edge it returns is recorded (path.steps) and, for 'answered', ends the gather with a finished reply.
-export const RESPOND_GRAPH = linear([
+const RESPOND_ORDER = [
   ['fast', 'respond.fast'], ['agent', 'respond.agent'], ['plan', 'respond.plan'], ['conversational', 'respond.conversational'],
   ['religions', 'respond.religions'], ['work', 'respond.work'], ['stage_search', 'respond.stage-search'], ['phrases', 'respond.phrases-start'],
   ['research', 'respond.research'], ['read_question', 'respond.read-question'], ['original', 'respond.original-start'], ['hunt', 'respond.hunt-start'],
   ['hunt_wait', 'respond.hunt-await'], ['original_wait', 'respond.original-await'], ['source_reply', 'respond.source-reply'],
   ['term', 'respond.term-study'], ['strategy', 'respond.strategy'], ['position', 'respond.position'], ['language', 'respond.language'],
   ['evidence', 'respond.evidence'], ['own_source', 'respond.own-source'],
-], { agent: ['answered'], religions: ['answered'], source_reply: ['answered'] });
+];
+export const RESPOND_GRAPH = linear(RESPOND_ORDER, { agent: ['answered'], religions: ['answered'], source_reply: ['answered'] });
+
+// respond@3 = Unmatched WITHOUT the five lookups (Chad 11-09: the pre-built decision trees are strategies of their own; Unmatched holds none).
+// respond@2 (RESPOND_GRAPH above) stays as the prior version for rollback.
+const LIFTED_NODES = new Set(['work', 'read_question', 'hunt', 'hunt_wait', 'source_reply', 'term', 'original', 'original_wait', 'conversational', 'religions']);
+export const RESPOND_UNMATCHED_GRAPH = (() => {
+  const order = RESPOND_ORDER.filter(([node]) => !LIFTED_NODES.has(node));
+  return linear(order, { agent: ['answered'] });
+})();
+
+// THE FIVE LOOKUPS as strategies of their own: the respond graph's nodes for that class, run over the same turn state (gatherByGraph),
+// then — nothing found — the research agent (respond.agent-fallback), then the ordinary search tail. Each answers or hands on; never empty.
+const STAGE = [['stage_search', 'respond.stage-search'], ['phrases', 'respond.phrases-start']];   // the phrase call starts BEFORE a hunt/original, as in the cascade
+const FALLBACK = [['agent_fallback', 'respond.agent-fallback']];
+// before = the lookup nodes that run ahead of the search stage (book, about); after = those that run beside the phrase call (the rest)
+const lookup = (before, after, stops = {}) => linear([['fast', 'respond.fast'], ['plan', 'respond.plan'], ...before, ...(after.length ? [] : FALLBACK), ...STAGE, ...after,
+  ...(after.length ? FALLBACK : []), ['evidence', 'respond.evidence'], ['own_source', 'respond.own-source']], { agent_fallback: ['answered'], ...stops });
+export const LOOKUP_GRAPHS = {
+  book: lookup([['work', 'respond.work']], []),
+  quote_trace: lookup([], [['read_question', 'respond.read-question'], ['hunt', 'respond.hunt-start-own'], ['hunt_wait', 'respond.hunt-await'], ['source_reply', 'respond.source-reply']], { source_reply: ['answered'] }),
+  term: lookup([], [['term', 'respond.term-study']]),
+  original: lookup([], [['read_question', 'respond.read-question'], ['original', 'respond.original-start'], ['hunt', 'respond.hunt-start-own'], ['hunt_wait', 'respond.hunt-await'],
+    ['original_wait', 'respond.original-await'], ['source_reply', 'respond.source-reply']], { source_reply: ['answered'] }),
+  about: lookup([['conversational', 'respond.conversational'], ['religions', 'respond.religions']], [], { religions: ['answered'] }),
+};
+/** Strategies whose graph runs over the whole turn state (gatherByGraph) instead of a registry executor. */
+export const LOOKUP_STRATEGIES = new Set(Object.keys(LOOKUP_GRAPHS));
 
 const STRATEGY_DESCRIPTIONS = {
   comparison: 'asks how TWO OR MORE religions, scriptures or traditions each treat, teach or differ on something — side by side ("Buddhism and Christianity on forgiveness", "does the Qur’án agree with the Gospels about…", "what do the world religions say about the soul")',
@@ -101,11 +130,18 @@ const STRATEGY_DESCRIPTIONS = {
   guidance: 'asks what the Universal House of Justice (the Bahá’í world body) has said, says now or has decided on a matter — present-day guidance, letters, messages, policy, elections, institutions',
   reference: 'gives a chapter-and-verse or numbered scripture reference and wants THAT passage: "John 3:16", "Qur’án 2:255", "Sura 24", "Bhagavad Gita chapter 2", "Psalm 23", "Matthew 5", "Isaiah 11:6"',
   compilation: 'asks for a COMPILATION — a gathered selection of passages on a theme, to read together, organized under headings ("compile passages on justice", "a short compilation on prayer and meditation", "gather quotations about the equality of women and men", "put together the writings on consultation")',
-  unmatched: 'none of these: a quote to locate or trace with no further question about it, a book or person to look up, a fact or date, a word’s meaning, a greeting, conversation, or a general question',
+  book: 'asks to find, open or get a particular BOOK or work by its title or author, or what a named book is about ("find the Kitáb-i-Íqán", "do you have Gleanings", "where can I read Paris Talks", "what is God Passes By about")',
+  quote_trace: 'has a quotation, or a few words of one, and wants to know where it comes from, who said it or where in the library it can be found ("where is this from: …", "who said …", "is this really from ‘Abdu’l-Bahá?", "find the source of this quote")',
+  term: 'asks what a single WORD or term means, its root or sense, or how it is rendered in Persian, Arabic or translation ("what does ‘irfán mean", "the Arabic word for station", "how is the word tawḥíd translated")',
+  original: 'asks for the ORIGINAL-language wording (Persian or Arabic) of a passage or an existing translation of it, to read side by side ("what is the Persian of …", "show me the Arabic original of this prayer")',
+  about: 'greets, thanks or chats with Anís, or asks about Anís itself or the library — who or what it is, what it can do, what it holds, which religions or languages it covers',
+  unmatched: 'none of these',
 };
+// the text respond@1/@2 carried (kept for those prior versions)
+const UNMATCHED_V2 = 'none of these: a quote to locate or trace with no further question about it, a book or person to look up, a fact or date, a word’s meaning, a greeting, conversation, or a general question';
 
 const one = (id) => linear([['execute', `strategy.${id}`]]);
-const strategy = (id, name, graph, version = 1) => ({ id, version, name, description: STRATEGY_DESCRIPTIONS[name], exemplars: [], graph, status: 'active', parent_version: version > 1 ? version - 1 : null, created_by: 'seed' });
+const strategy = (id, name, graph, version = 1, description = STRATEGY_DESCRIPTIONS[name]) => ({ id, version, name, description, exemplars: [], graph, status: 'active', parent_version: version > 1 ? version - 1 : null, created_by: 'seed' });
 // seeded in Jev's option order; 'unmatched' (the respond graph) is always offered last. respond@2 = the rename of respond@1 ('other'), same graph.
 export const STRATEGIES = [
   strategy('comparison', 'comparison', one('comparison')),
@@ -114,6 +150,12 @@ export const STRATEGIES = [
   strategy('guidance', 'guidance', one('guidance')),
   strategy('reference', 'reference', one('reference')),
   strategy('compilation', 'compilation', one('compilation')),
-  strategy('respond', UNMATCHED, RESPOND_GRAPH, 2),
+  strategy('book', 'book', LOOKUP_GRAPHS.book),
+  strategy('quote_trace', 'quote_trace', LOOKUP_GRAPHS.quote_trace),
+  strategy('term', 'term', LOOKUP_GRAPHS.term),
+  strategy('original', 'original', LOOKUP_GRAPHS.original),
+  strategy('about', 'about', LOOKUP_GRAPHS.about),
+  strategy('respond', UNMATCHED, RESPOND_GRAPH, 2, UNMATCHED_V2),
+  strategy('respond', UNMATCHED, RESPOND_UNMATCHED_GRAPH, 3),
 ];
 export const END_NODE = END;

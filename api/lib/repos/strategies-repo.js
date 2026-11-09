@@ -76,6 +76,9 @@ export function seedStrategies(db, seed = { TEMPLATES, STEPS, STRATEGIES }) {
 
 // the docs list: latest version of each spec, in sort order (the 'plan' row is split off by the reader)
 const specList = (rows) => {
+  // every seed version re-inserts the WHOLE list, so a name absent from the newest version was dropped (the a2…h1 shared-reply entries at v2)
+  const top = rows.reduce((m, r) => Math.max(m, r.version), 0);
+  rows = rows.filter((r) => r.version === top);
   const latest = new Map();
   for (const r of rows) if (!latest.has(r.name) || latest.get(r.name).version < r.version) latest.set(r.name, r);
   return [...latest.values()].sort((a, b) => a.sort - b.sort).map(({ spec_json, spec, ...r }) => ({ ...r, spec: spec ?? safeJson(spec_json, {}) }));

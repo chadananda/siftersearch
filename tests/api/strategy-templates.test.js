@@ -30,11 +30,15 @@ describe('strategy templates render exactly the old code text', () => {
       { label: 'Gleanings 5', exact: false, approx: { unit: 'verse', chapter: 3 } }, { exact: false, approx: { unit: 'verse' } }, { exact: false }, { exact: true, approx: { unit: 'v', chapter: 1 } }];
     for (const r of rs) expect(referenceHow(r)).toBe(OLD.referenceHow(r));
   });
-  it("Jev's strategy options = the rows, same keys, same order, same words", () => {
-    expect(strategyOptions()).toEqual(OLD.STRATEGIES);
-    expect(Object.keys(strategyOptions())).toEqual(Object.keys(OLD.STRATEGIES));
-    expect(Object.keys(STRATEGIES)).toEqual(Object.keys(OLD.STRATEGIES));
-    expect({ ...STRATEGIES }).toEqual(OLD.STRATEGIES);
+  it("Jev's strategy options = the rows: the six executors' old words unchanged, then the five lookups, 'none of these' last", () => {
+    const { unmatched, ...six } = OLD.STRATEGIES;
+    const keys = Object.keys(six);
+    const LOOKUPS = ['book', 'quote_trace', 'term', 'original', 'about'];
+    for (const o of [strategyOptions(), { ...STRATEGIES }]) {
+      expect(Object.keys(o)).toEqual([...keys, ...LOOKUPS, 'unmatched']);
+      for (const k of keys) expect(o[k]).toBe(six[k]);
+      expect(o.unmatched).toBe('none of these');
+    }
   });
   it('fill: one pass, $ safe, slot values never re-expanded', () => {
     expect(fill('a {{x}} b {{y}}', { x: '$& {{y}}' })).toBe('a $& {{y}} b ');

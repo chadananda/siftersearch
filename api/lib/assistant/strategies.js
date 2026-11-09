@@ -12,6 +12,7 @@ import { render, template } from './activities/templates.js';
 import { sourceTier, TIER_ORDER } from './source-tier.js';
 import { supports } from './channels.js';
 import { strategyGraphOn, runStrategyGraph } from './activities/graph.js';
+import { LOOKUP_STRATEGIES } from './strategy-seed.js';
 
 export const COVER = { covered: 3, thin: 1 };   // passages per side: ≥3 covered, 1–2 thin (widen once), 0 missing
 const PER_SIDE = 6, MAX_PASSAGES = 12, MAX_COMPARED = 18, MAX_COMPILED = 15, COMPILE_POOL = 24;
@@ -206,6 +207,9 @@ export async function runStrategy(choice, ctx) {
   const name = strategyOf(choice);
   if (!name) return null;
   const log = ctx.decisions || NO_LOG;
+  // a lookup strategy (book, quote_trace, term, original, about) runs over the whole turn (graph.js gatherByGraph), not as an executor here:
+  // an Unmatched recheck that lands on one has nothing to execute, so the researcher answers and the gap is already recorded
+  if (LOOKUP_STRATEGIES.has(name)) { log.record(`${name}:fallthrough`, { by: 'code', chosen: 'ordinary path', reason: 'a lookup strategy runs as the turn gather, not as an executor' }); return null; }
   // the executors are registry strategies (tools.js): comparison, understanding, prayer, guidance, reference, compilation — run by the
   // strategy's graph (activities/graph.js; ANIS_STRATEGY_GRAPH=0 → the registry tool directly, the Phase-1 rollback)
   const viaGraph = strategyGraphOn() ? await runStrategyGraph(name, choice, { ...ctx, decisions: log }) : undefined;

@@ -143,7 +143,7 @@ describe('respond: library facts and named objects', () => {
   });
   it('a library question is answered from the stats with no search', async () => {
     const d = base({ plan: async () => ({ shape: 'fact', library: 'religions' }), libraryStats: async () => ({ religionCounts: { Islam: 489, Hindu: 126 } }) });
-    const r = await anisRespond({ messages: [{ role: 'user', content: 'which religions are in the library' }], deps: d });
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'which religions are in the library' }], deps: d, direction: { strategy: { strategy: { choice: 'about', confidence: 0.9 }, sides: [] } } });
     expect(d.calls.search).toHaveLength(0);
     expect(r.reply).toContain('Islam');
     expect(r.plan).toMatchObject({ shape: 'fact', library: 'religions' });
@@ -151,7 +151,7 @@ describe('respond: library facts and named objects', () => {
   it('a named work is searched by its library name, never source-hunted, no phrase model call', async () => {
     const named = { type: 'work', id: 9, name: 'Most Holy Book', matched: 'most holy book' };
     const d = base({ plan: async () => ({ shape: 'lookup', named }) });
-    const r = await anisRespond({ messages: [{ role: 'user', content: 'most holy book source' }], deps: d, direction: { kind: 'source_lookup' } });
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'most holy book source' }], deps: d, direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(d.calls.hunt).toBe(0);
     expect(d.calls.phrases).toBe(0);
     expect(d.calls.search[0].query).toBe('Most Holy Book');
@@ -180,7 +180,7 @@ describe('source hunt: a tradition the seeker names', () => {
     const d = { search: async () => { calls.search++; return { passages: [], _plan: { shape: 'quote' } }; }, craft: async () => 'ok', companion: async () => ({}),
       plan: async () => ({ shape: 'quote' }), phrases: async () => null,
       sourceHunt: async (q, _d, opts) => { calls.opts = opts; return { origin: { religion: "Baha'i", title: 'Abdu’l-Bahá in London', text: 'x' }, citedBy: [] }; } };
-    const r = await anisRespond({ messages: [{ role: 'user', content: 'where does the Buddha say that hatred is never ended by more hatred' }], deps: d, direction: { kind: 'source_lookup' } });
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'where does the Buddha say that hatred is never ended by more hatred' }], deps: d, direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(calls.opts).toEqual({ coreOnly: true, religion: 'Buddhist' });
     expect(calls.search).toBe(1);
     expect(r.plan?.shape).not.toBe('source');
@@ -190,14 +190,14 @@ describe('source hunt: a tradition the seeker names', () => {
     const d = { search: async () => { calls.search++; return { passages: [], _plan: { shape: 'quote' } }; }, craft: async () => 'ok', companion: async () => ({}),
       plan: async () => ({ shape: 'quote' }), phrases: async () => null,
       sourceHunt: async (q, _d, opts) => { calls.opts = opts; return { origin: { religion: "Baha'i", title: "Love's Odyssey", text: 'x' }, citedBy: [] }; } };
-    const r = await anisRespond({ messages: [{ role: 'user', content: 'Could you please help me find where Jesus said God helps those who help themselves?' }], deps: d, direction: { kind: 'source_lookup' } });
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'Could you please help me find where Jesus said God helps those who help themselves?' }], deps: d, direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(calls.opts).toEqual({ coreOnly: true, religion: 'Christian' });
     expect(calls.search).toBe(1);
     expect(r.plan?.shape).not.toBe('source');
   });
 });
 describe('source hunt: a saying credited to a founder, found only outside scripture', () => {
-  const run = (origin, content) => anisRespond({ messages: [{ role: 'user', content }], direction: { kind: 'source_lookup' },
+  const run = (origin, content) => anisRespond({ messages: [{ role: 'user', content }], direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } },
     deps: { search: async () => ({ passages: [], _plan: { shape: 'quote' } }), craft: async () => 'ok', companion: async () => ({}),
       plan: async () => ({ shape: 'quote' }), phrases: async () => null, upgradeLinks: async (x) => x,
       sourceHunt: async () => ({ origin: { religion: 'Christian', text: 'God helps those who help themselves', ...origin }, citedBy: [] }) } });
@@ -227,7 +227,7 @@ describe('speakerTradition: the tradition a named founder or scripture belongs t
 // r5 (xp-no-compulsion): Sura II was the origin, but the reply said "These are the words of The Báb" — the hunt's quote-author
 // vote counted the Báb's writings that quote the verse. Another tradition's scripture is credited to that scripture.
 describe('source hunt: another tradition\'s scripture keeps its own voice', () => {
-  const run = (hunt) => anisRespond({ messages: [{ role: 'user', content: 'Let there be no compulsion in religion' }], direction: { kind: 'source_lookup' },
+  const run = (hunt) => anisRespond({ messages: [{ role: 'user', content: 'Let there be no compulsion in religion' }], direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } },
     deps: { search: async () => ({ passages: [], _plan: { shape: 'quote' } }), craft: async () => 'ok', companion: async () => ({}),
       plan: async () => ({ shape: 'quote' }), phrases: async () => null, upgradeLinks: async (x) => x, sourceHunt: async () => hunt } });
   it('a Qur’án verse is the Qur’án, not the Bahá’í writer who quotes it', async () => {

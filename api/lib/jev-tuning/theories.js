@@ -130,7 +130,8 @@ export function theoryHome(gate, cat) {
   const acts = new Set(activitiesForGate(gate));
   if (!acts.size) return null;
   const stepOf = (k) => cat.steps?.byKey?.get?.(k);
-  for (const row of cat.strategies || []) {
+  // the general (Unmatched) graph first: the lookup graphs share the same decision steps, but a theory is tested on the whole stream
+  for (const row of [...(cat.strategies || [])].sort((x, y) => (y.id === 'respond') - (x.id === 'respond'))) {
     const nodes = Object.entries(row.graph?.nodes || {}).filter(([, n]) => acts.has(stepOf(`${n.step}@${n.step_version}`)?.activity));
     if (nodes.length) return { row, step: stepOf(`${nodes[0][1].step}@${nodes[0][1].step_version}`), nodes: nodes.map(([id]) => id) };
   }

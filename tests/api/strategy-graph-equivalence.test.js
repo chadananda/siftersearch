@@ -7,6 +7,12 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { writeFileSync } from 'node:fs';
 import { anisRespond } from '../../api/lib/assistant/respond.js';
 import { decisionLog } from '../../api/lib/assistant/decision-log.js';
+import { withAIContext } from '../../api/lib/ai-context.js';
+import { STRATEGIES, STEPS } from '../../api/lib/assistant/strategy-seed.js';
+
+// respond@2 = the whole cascade as graph nodes; respond@3 (Unmatched without the five lookups) differs from the cascade BY DESIGN
+// (tests/api/strategy-lookups.test.js), so the equivalence is held on the retained @2 row, pinned.
+const PIN = { row: STRATEGIES.find((x) => x.id === 'respond' && x.version === 2), steps: new Map(STEPS.map((x) => [`${x.id}@${x.version}`, x])) };
 
 const P = (i, extra = {}) => ({ id: i, text: `Passage ${i}: the earth is but one country, and mankind its citizens.`, title: 'Gleanings', author: 'Bahá’u’lláh',
   religion: "Baha'i", document_id: 8300 + i, paragraph_index: i, source_url: `https://x/g#${i}`, citation_url: `https://x/g#${i}`, ...extra });
@@ -100,8 +106,9 @@ async function turn(c, graph) {
   const dir = direction(c);
   let r, err = null;
   try {
-    r = await anisRespond({ messages: [{ role: 'user', content: question(c) }], profile: { persona_name: 'Anís', default_tradition: "Baha'i" },
+    const go = () => anisRespond({ messages: [{ role: 'user', content: question(c) }], profile: { persona_name: 'Anís', default_tradition: "Baha'i" },
       deps: world(c, log), direction: dir, onEvent: (e) => log.push(['event', norm(e)]) });
+    r = await withAIContext({ strategyPin: PIN }, go);
   } catch (e) { err = e.message; }
   warn.mockRestore();
   return { log, reply: norm(r), err, decisions: norm(dir.decisions.list()), steps: r?.steps || null };

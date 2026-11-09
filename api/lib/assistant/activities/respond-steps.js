@@ -32,9 +32,12 @@ const fast = (s) => {
   return s.fast ? 'lookup' : 'none';
 };
 
-const agent = (s) => {
+// params.fallback (the five lookup strategies, strategy-seed.js LOOKUP_GRAPHS): the research agent as their LAST node — it runs when the
+// lookup found nothing (nothing in s.fast/work/sourced/original/study, not a conversation), whatever strategy Jev chose
+const agent = (s, params = {}) => {
   const { direction, d, deps, messages, onEvent, t0 } = s;
-  if (!(!s.fast && !strategyOf(direction.strategy) && agentOn(direction) && !(deps && !d.agentCreate))) return 'skip';
+  const open = params.fallback ? !(s.fast || s.work || s.sourced || s.original || s.study || s.conversational) : !s.fast && !strategyOf(direction.strategy);
+  if (!(open && agentOn(direction) && !(deps && !d.agentCreate))) return 'skip';
   return agentRespond({ messages, onEvent, d, t0, subject: jevSubject(direction, null) }).catch((err) => { console.warn('anis agent failed', err?.message); return null; })
     .then((A) => { if (A) { s.done = A; return 'answered'; } return 'fail'; });
 };
@@ -136,13 +139,14 @@ const originalStart = (s) => {
   return s.originalP ? 'started' : 'skip';
 };
 
-const huntStart = (s) => {
+// params.own: the lookup strategy owns the hunt, so its reply is the template reply (as in Unmatched), not evidence for the writer
+const huntStart = (s, params = {}) => {
   const { question, quoted, fast: f, researched, work: w, plan: p, direction, messages, wantsOriginal, d } = s;
   const separate = quoted !== trimTalk(question.trim()) && quoted !== question.trim();
   const huntable = !f && !researched && !w && !p?.named && ((direction.kind === 'source_lookup' && quoted.split(/\s+/).length >= 4 && (separate || messages.length <= 1))
     || looksLikeSourceQuestion(question) || (wantsOriginal && quoted !== question.trim() && quoted.split(/\s+/).length >= 8));
   s.asks = huntable ? followUpAsks(question) : [];
-  s.huntAsEvidence = s.asks.length > 0 || !!strategyOf(direction.strategy);
+  s.huntAsEvidence = s.asks.length > 0 || (!params.own && !!strategyOf(direction.strategy));
   s.huntP = huntable ? timed('source-hunt', () => huntSource(d, question, { named: p?.drawFrom?.name || null })).catch(() => null) : null;
   return !huntable ? 'skip' : s.huntAsEvidence ? 'evidence' : 'template';
 };

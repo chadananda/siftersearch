@@ -16,7 +16,7 @@ const deps = (calls, origin = { religion: "Baha'i", title: 'Dawn of a New Day', 
 describe('multi-ask follow-ups (r6-after equality-sexes T2, seed-21 T2/T4, seed-39 T3/T5, seed-66 T5, golden-rule T5)', () => {
   it('a quotation plus author/recipient/date asks: the hunt is evidence, the ordinary pipeline answers every ask', async () => {
     const calls = { search: 0, hunt: 0 };
-    const r = await anisRespond({ messages: thread(EQ_T2), deps: deps(calls), direction: { kind: 'source_lookup' } });
+    const r = await anisRespond({ messages: thread(EQ_T2), deps: deps(calls), direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(calls.hunt).toBe(1);
     expect(calls.search).toBe(1);
     expect(r.format?.id).not.toBe('source');
@@ -26,7 +26,7 @@ describe('multi-ask follow-ups (r6-after equality-sexes T2, seed-21 T2/T4, seed-
   });
   it('a plain "where is this from" keeps the source template', async () => {
     const calls = { search: 0, hunt: 0 };
-    const r = await anisRespond({ messages: [{ role: 'user', content: 'Where is this from: "The wisdom of it will be fully revealed in the future"?' }], deps: deps(calls), direction: { kind: 'source_lookup' } });
+    const r = await anisRespond({ messages: [{ role: 'user', content: 'Where is this from: "The wisdom of it will be fully revealed in the future"?' }], deps: deps(calls), direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(calls.hunt).toBe(1);
     expect(calls.search).toBe(0);
     expect(r.format?.id).toBe('source');
@@ -34,7 +34,7 @@ describe('multi-ask follow-ups (r6-after equality-sexes T2, seed-21 T2/T4, seed-
   it('px-smoke return-iqan T3: in a thread, the triage kind alone does not hunt the reader\'s own sentence', async () => {
     const calls = { search: 0, hunt: 0 };
     const t3 = 'That Augustine passage on Plato and the resurrection doesn\'t answer what I asked about KI 154 and Phelps, so let me set it aside. Can you quote the exact sentence in the Íqán where Bahá\'u\'lláh says John the Baptist was Elijah?';
-    await anisRespond({ messages: thread(t3), deps: deps(calls), direction: { kind: 'source_lookup' } });
+    await anisRespond({ messages: thread(t3), deps: deps(calls), direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
     expect(calls.hunt).toBe(0);
     expect(calls.search).toBe(1);
   });
@@ -78,7 +78,7 @@ describe('source template: inexact asks do not go to the tablet', () => {
   const mk = (calls) => ({ ...deps(calls, origin), sourceHunt: async () => ({ origin, tablet, citedBy: [] }),
     search: async (a) => { calls.search++; calls.q = a.query; return { passages: [{ text: 'Science and religion are twin wings.', title: 'The Promulgation of Universal Peace', source_url: 'https://oceanlibrary.com/pup/?paraId=p5', document_id: 8 },
       { text: 'dup', title: 'Paris Talks', source_url: 'https://oceanlibrary.com/pt/?paraId=p1', document_id: 1 }], _plan: { shape: 'fact' } }; } });
-  const ask = (content, calls) => anisRespond({ messages: [{ role: 'user', content }], deps: mk(calls), direction: { kind: 'source_lookup' } });
+  const ask = (content, calls) => anisRespond({ messages: [{ role: 'user', content }], deps: mk(calls), direction: { kind: 'source_lookup', strategy: { strategy: { choice: 'quote_trace', confidence: 0.9 }, sides: [] } } });
   it('keywords: main source + a similar passage, no Persian, no Phelps', async () => {
     const calls = { search: 0, hunt: 0 };
     const r = await ask('religion science two wings bird quote', calls);

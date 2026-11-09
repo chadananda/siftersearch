@@ -45,7 +45,7 @@ describe('strategies store', () => {
     resetStrategiesCache({ db: { prepare: () => { throw new Error('disk gone'); } } });
     const c = catalog({ now: 5 });
     expect(c.source).toBe('seed');
-    expect(c.strategies.map((s) => s.id)).toEqual(SEED.STRATEGIES.map((s) => s.id));
+    expect(c.strategies.map((s) => s.id)).toEqual([...new Set(SEED.STRATEGIES.map((s) => s.id))]);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });

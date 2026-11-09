@@ -7,7 +7,8 @@
 // `enrich` runs inside ctx.jevEnrich — the ONLY way a tested Jev theory reaches the reply path (jev-tuning/enrich.js).
 import { catalog } from '../../repos/strategies-repo.js';
 import { currentAIContext, withAIContext } from '../../ai-context.js';
-import { STRATEGIES as SEED_STRATEGIES, STEPS as SEED_STEPS, END_NODE } from '../strategy-seed.js';
+import { STRATEGIES as SEED_STRATEGIES, STEPS as SEED_STEPS, END_NODE, LOOKUP_STRATEGIES } from '../strategy-seed.js';
+import { strategyOf } from '../strategy-choice.js';
 import { activities as registry } from './index.js';
 import { GATHERED } from '../respond.js';
 
@@ -103,11 +104,12 @@ export async function runGraph(g, s) {
 // what anisRespond reads after gathering (the old cascade's locals), or the reply an early step answered with
 const GATHER_KEYS = ['fast', 'plan', 'conversational', 'work', 'live', 'researched', 'wantsOriginal', 'asks', 'huntAsEvidence', 'huntP', 'sourced', 'original',
   'study', 'strat', 'position', 'language', 'res', 'searchQ'];
-/** anisRespond's gather by the 'respond' graph. */
+/** anisRespond's gather: by the lookup strategy's graph when Jev chose one (book, quote_trace, term, original, about), else the 'respond' graph (Unmatched). */
 export async function gatherByGraph(s) {
-  await runGraph(graphFor('respond'), s);
+  const own = strategyOf(s.direction?.strategy);
+  await runGraph((LOOKUP_STRATEGIES.has(own) && graphFor(own)) || graphFor('respond'), s);
   if (s.done) return s.done;
-  return { [GATHERED]: true, ...Object.fromEntries(GATHER_KEYS.map((k) => [k, s[k]])) };
+  return { [GATHERED]: true, ...Object.fromEntries(GATHER_KEYS.map((k) => [k, s[k]])), asks: s.asks || [] };   // asks: Unmatched has no hunt node now
 }
 
 /** A W3 strategy's executor by its graph (strategies.js runStrategy). → the executor's output (null = nothing to execute). */
