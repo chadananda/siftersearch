@@ -368,6 +368,26 @@ one engine, traced the same way.
   (its params, its option text, a missing tier), not just the strategy.
 * **Display:** the admin view draws the tree with this turn's path highlighted; each node expands to its inputs, tool call,
   outputs and feedback. The docs page draws the same tree from the row, without a run.
+* **The view is a flow canvas like n8n (Chad 11-09):** "display the decision tree in manner similar to n8n with flow and
+  fields and tools and decisions. With quick popup drill-in to see llm prompts and decision prompts and testing stats and
+  inputs and outputs."
+  - **Canvas:** left-to-right flow. One card per node, showing the element icon, the node id, the tool it calls and the
+    units it reads → writes (field chips). Edges are labelled with their outcome (one · several · thin · none · error ·
+    a judge option) and carry per-edge counts (how often each branch is taken).
+  - **Decision nodes** (`judge`, `switch`, `rank`) look different from tool nodes. The shared ends (`$absence`,
+    `$fallback`, `$unavailable`) are small terminal pills. A `hand.strategy` node opens the callee's tree.
+  - **Popup drill-in** (one click, no page change), with tabs:
+    - **Prompt:** the exact LLM or Jev prompt, its options and the model.
+    - **Params:** the static params and the unit bindings.
+    - **Stats:** runs, edge split, p50 ms, $ per run, error rate, and test results (the stored replay cases and the
+      5 test phrasings, pass/fail).
+    - **Samples:** recent inputs → outputs (units in with their layer, tool params, top results, edge taken).
+    - **Feedback:** node-level hooks such as probe mismatches, judge verdicts and reader reactions.
+  - **Run overlay:** opened from a conversation turn, it shows the same canvas with that turn's path lit and dims the
+    rest. Each node's popup then shows that turn's actual values.
+  - **Built with** `@xyflow/svelte` (Svelte Flow) and dagre auto-layout, read-only at first. The canvas renders from the
+    strategy row plus the run trace; there is no hand-maintained layout. Editing in the canvas can come later and would
+    save a candidate version through the promotion gate.
 * **Exists already:** the graph engine records each decision and per-step metrics (branch taken, ms, $) per strategy step.
   **New:** per-node unit/param recording (values + layer), node-level feedback rows, and the tree view (admin + docs).
 
