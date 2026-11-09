@@ -99,7 +99,10 @@ export async function promoteCandidate(db, { id, version, dry = false, deps = nu
     logPromotion(db, { strategy_id: id, version: pin.version, action: 'reject', decision, usd: run.usd, by });
   }
   else logPromotion(db, { strategy_id: id, version: pin.version, action: dry ? 'dry' : run.decision.promote ? 'already-active' : 'reject', decision, usd: run.usd, by });
-  return { id, version: pin.version, promoted, decision: run.decision, usd: run.usd + planUsd, rows: run.rows.length };
+  // rows WITH question text + the judge's why go back in the job result only (never the ledger): what IMPROVE and a reviewer read to see why a tree lost
+  const rows = run.rows.map((r) => ({ question: r.question, set: r.set, of: r.of ?? null, jev_pick: r.jev_pick ?? r.cand?.jev_pick ?? null,
+    cand: r.cand ? { score: r.cand.score, ms: r.cand.ms, why: r.cand.why ?? null } : null, cur: r.cur ? { score: r.cur.score, ms: r.cur.ms, why: r.cur.why ?? null } : null }));
+  return { id, version: pin.version, promoted, decision: run.decision, usd: run.usd + planUsd, rows };
 }
 
 /** The worker's promotion unit: the oldest candidate with no ledger row yet. → 'idle' | result */

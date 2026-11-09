@@ -183,7 +183,9 @@ describe('promotion decision (fake Opus + fake judge, score 0-10)', () => {
       judge: async ({ reply: text }) => ({ verdict: text.startsWith('cand') ? 'pass' : 'weak', score: text.startsWith('cand') ? 9 : 6, usd: 0.01 }),
       jevPick: async () => 'prayer' };
     const r = await promoteCandidate(db, { id: saved.id, version: saved.version, deps, by: 'test' });
-    expect(r).toMatchObject({ promoted: true, rows: 3 + 6 });
+    expect(r).toMatchObject({ promoted: true });
+    expect(r.rows).toHaveLength(3 + 6);
+    expect(r.rows.find((x) => x.cand)).toHaveProperty('question');
     expect(r.usd).toBeCloseTo(0.04 + 3 * (0.02 * 2 + 0.01 * 2), 6);
     expect(strategyRow(db, 'timeline', 1).status).toBe('active');
     expect(listPromotions(db)[0]).toMatchObject({ action: 'promote', strategy_id: 'timeline', version: 1 });

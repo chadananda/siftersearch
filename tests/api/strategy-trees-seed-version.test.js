@@ -18,6 +18,7 @@ describe('tree seed versions', () => {
     expect(tree('guidance')).toEqual([2]);
     expect(seedStrategies(db, seed)).toBe(0);
     expect(tree('understanding')).toEqual([4]);
-    expect(JSON.parse(db.prepare("SELECT graph_json FROM strategies WHERE id = 'understanding' AND version = 4").get().graph_json).nodes.length).toBeGreaterThan(1);
+    const g = JSON.parse(db.prepare("SELECT graph_json FROM strategies WHERE id = 'understanding' AND version = 4").get().graph_json);
+    expect(Object.keys(g.nodes).length).toBeGreaterThan(1);
   });
 });

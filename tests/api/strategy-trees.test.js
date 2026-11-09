@@ -135,8 +135,8 @@ describe('prayer tree', () => {
     const s = await run('prayer', q, { tools: { prayer_lookup: boom, hype_search: boom }, agentRun: async () => null }); expect(path(s)).toEqual(['p1', 'p2', '$fallback', '$unavailable']);
   });
   it('conflicting sources: two translations of one prayer — the standard-occasion one first', async () => {
-    const s = await run('prayer', q, { tools: { hype_search: async () => ({ passages: [P(7, { occasion: 'other' }), P(8, { occasion: 'healing' })] }) }, extra: { units: { occasion: 'healing' } } });
-    expect(s.out.passages[0].id).toBe(8);
+    const s = await run('prayer', q, { tools: { hype_search: async () => ({ passages: [P(7, { occasion: 'other' }), P(8, { occasion: 'healing' })] }) }, extra: { units: { occasion: 'healing' } }, jev: verdict('fits') });   // judge mocked: unmocked it made a real Jev call (flaky)
+    expect(path(s)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']); expect(s.out.passages[0].id).toBe(8);
   });
 });
 
