@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { CHANNELS, DEPTH_FRAME, supports } from '../../api/lib/assistant/channels.js';
-import { MODES, MODE_NOTES, titleOf, taglineOf, groupOf, orderedSteps, humanStep, outcomeOf, targetsOf } from '../../src/lib/strategy-docs.js';
+import { MODES, MODE_NOTES, titleOf, taglineOf, groupOf, treeBadge, orderedSteps, humanStep, outcomeOf, targetsOf } from '../../src/lib/strategy-docs.js';
 
 describe('mode copy matches channels.js', () => {
   it('chat word counts and frames', () => {
@@ -32,19 +32,24 @@ describe('mode copy matches channels.js', () => {
 });
 
 describe('titles, groups, steps', () => {
-  it('titles and taglines', () => {
-    expect(titleOf({ name: 'guidance' })).toBe('House of Justice guidance');
-    expect(titleOf({ name: 'other' })).toBe('Unmatched');
+  it('titles and taglines come from the row, not a hard-coded list', () => {
+    expect(titleOf({ name: 'quote_trace' })).toBe('Quote trace');
     expect(titleOf({ name: 'Find a book' })).toBe('Find a book');
-    expect(taglineOf({ name: 'prayer' }).quote).toBe(false);
-    expect(taglineOf({ name: 'A fact', patterns: [{ sounds_like: ['When was the Báb born?'] }] })).toEqual({ text: '“When was the Báb born?”', quote: true });
-    for (const n of ['comparison', 'understanding', 'prayer', 'guidance', 'reference', 'compilation', 'unmatched']) expect(taglineOf({ name: n }).text.length).toBeLessThanOrEqual(90);
+    expect(taglineOf({ name: 'prayer', status: 'built', description: 'wants a PRAYER to say — for an occasion' })).toEqual({ text: 'wants a PRAYER to say', quote: false });
+    expect(taglineOf({ name: 'A fact', status: 'planned', description: 'The fact first', patterns: [{ sounds_like: ['When was the Báb born?'] }] })).toEqual({ text: '“When was the Báb born?”', quote: true });
+    expect(taglineOf({ name: 'x', status: 'built', description: 'a'.repeat(300) }).text.length).toBeLessThanOrEqual(140);
+  });
+  it('tree badge: newest status, live version beside it when they differ', () => {
+    expect(treeBadge({ version: 1, newest: { version: 6, status: 'candidate' } })).toEqual({ status: 'candidate', text: 'candidate v6 · live v1' });
+    expect(treeBadge({ version: 3, newest: { version: 3, status: 'active' } }).text).toBe('active v3');
+    expect(treeBadge({ version: null, newest: { version: 2, status: 'retired' } }).text).toBe('retired v2 · not live');
+    expect(treeBadge({ newest: null })).toBe(null);
   });
   it('groups', () => {
     expect(groupOf({ name: 'prayer', status: 'built', where: 'own' })).toBe('live');
     expect(groupOf({ name: 'x', status: 'built', where: 'shared-reply' })).toBe('shared');
     expect(groupOf({ name: 'x', status: 'planned' })).toBe('planned');
-    expect(groupOf({ name: 'unmatched', status: 'built', where: 'own' })).toBe('unmatched');
+    expect(groupOf({ name: 'respond', status: 'built', where: 'own', general: true })).toBe('unmatched');
   });
   it('step list: flow order, readable labels, exits', () => {
     expect(humanStep('respond.read_question')).toBe('Read question');
@@ -67,6 +72,10 @@ describe('page keeps its live keys and the narrow width is gone', () => {
   it('data-live keys', () => {
     for (const k of ['s.${s.id}.p50_ms', 's.${s.id}.score', 's.${s.id}.${k}', 'b.${s.id}.${b.hash}.share', 'c.${s.id}.${c.version}.score', 'a.${a.name}.runs']) expect(page).toContain(k);
     for (const k of ['turns', 'share', 'p50_ms', 'p95_ms', 'score', 'n_scored', 'weak_pct', 'usd_per_turn']) expect(page).toContain(`'${k}'`);
+  });
+  it('lists no strategy by id or name', () => {
+    expect(page).not.toMatch(/'(comparison|understanding|prayer|guidance|reference|compilation)'/);
+    expect(page).not.toContain('strategy-respond');
   });
   it('docs width', () => {
     expect(readFileSync(new URL('../../src/layouts/DocsLayout.astro', import.meta.url), 'utf8')).toMatch(/\.article \{[^}]*max-width: 90rem/);

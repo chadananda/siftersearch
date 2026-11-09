@@ -1,32 +1,32 @@
 // Presentation copy + pure helpers for /docs/response-strategies (titles, one-line taglines, mode copy, step list from a graph).
 // Copy lives here for now; move it into strategy_specs later. MODES must match api/lib/assistant/channels.js (tests/api/strategy-docs-ui.test.js).
-const TITLES = { comparison: 'Comparison', understanding: 'Understanding', prayer: 'Prayer', guidance: 'House of Justice guidance', reference: 'Scripture reference', compilation: 'Compilation', unmatched: 'Unmatched' };
-const TAGLINES = {
-  comparison: 'How two or more religions treat the same topic, side by side',
-  understanding: 'A teaching, concept or passage explained in depth, within one tradition',
-  prayer: 'A prayer to say, for an occasion, a need or a person',
-  guidance: 'What the Universal House of Justice has said or decided on a matter',
-  reference: 'The passage at a chapter-and-verse reference',
-  compilation: 'A gathered selection of passages on a theme, under headings',
-  unmatched: 'Everything else: answered in full, and a new strategy designed from it',
-};
 const cap = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
-export const titleOf = (s) => TITLES[s.name === 'other' ? 'unmatched' : s.name] || cap(s.name);
-/** { text, quote }: quote = the first example question (planned and shared-reply rows), otherwise a fixed sentence. */
+// titles and taglines come from the DB row itself (name, description = the option text Jev reads); nothing is listed here by id
+export const titleOf = (s) => cap(String(s.name || '').replace(/[_-]+/g, ' ').trim());
+const clip = (t, n) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
+/** { text, quote }: planned rows quote their first example question; built ones show the first clause of their description. */
 export function taglineOf(s) {
-  const t = TAGLINES[s.name === 'other' ? 'unmatched' : s.name];
-  if (t) return { text: t, quote: false };
   const q = s.patterns?.[0]?.sounds_like?.[0];
+  if (s.status === 'planned' && q) return { text: `“${q}”`, quote: true };
+  const d = String(s.description || '').split(/\s[—–]\s|;\s|\.\s/)[0].trim();
+  if (d) return { text: clip(d, 140), quote: false };
   return q ? { text: `“${q}”`, quote: true } : { text: '', quote: false };
 }
 export const GROUPS = [
-  { key: 'live', label: 'Live', test: (s) => s.name !== 'unmatched' && s.where !== 'shared-reply' && s.status === 'built' },
+  { key: 'live', label: 'Live', test: (s) => !s.general && s.where !== 'shared-reply' && s.status === 'built' },
   { key: 'shared', label: 'Inside Unmatched for now', test: (s) => s.where === 'shared-reply' },
   { key: 'planned', label: 'Planned', test: (s) => s.status === 'planned' },
-  { key: 'unmatched', label: 'When nothing fits', test: (s) => s.name === 'unmatched' },
+  { key: 'unmatched', label: 'When nothing fits', test: (s) => !!s.general },
 ];
 export const groupOf = (s) => (GROUPS.find((g) => g.test(s)) || GROUPS[2]).key;
 
+/** Status badge of a strategy's newest tree: { status, text } — "candidate v6 · live v1" when it is not the live version. */
+export function treeBadge(s) {
+  const n = s.newest;
+  if (!n) return null;
+  const live = s.version;
+  return { status: n.status, text: `${n.status} v${n.version}${n.version === live ? '' : ` · ${live != null ? `live v${live}` : 'not live'}`}` };
+}
 /** "respond.read_question" → "Read question". */
 export const humanStep = (activity) => cap(String(activity || '').split('.').pop().replace(/[_-]+/g, ' ').trim());
 /** Chip for a graph node: Jev / LLM by speed class, else tool by kind, else code. */

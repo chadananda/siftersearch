@@ -65,6 +65,22 @@ describe('public shapes', () => {
     expect(out.summary.promotions_30d).toBe(1);
   });
 
+  it('every strategy row is listed with its newest tree, status and versions (live version kept apart)', () => {
+    const snap = fixtureSnapshot();
+    const out = publicStrategies({ snapshot: snap, activities: activityCatalog(), stats, branches });
+    const p = out.strategies.find((s) => s.id === 'prayer');
+    const cand = snap.strategies.find((r) => r.id === 'prayer' && r.status === 'candidate');
+    expect(p.version).toBe(cand.version - 1);
+    expect(p.newest).toMatchObject({ version: cand.version, status: 'candidate' });
+    expect(p.newest.graph.nodes.length).toBeGreaterThan(0);
+    expect(p.versions.map((v) => v.version)).toEqual([cand.version, cand.version - 1]);
+    // an id with no active row at all is still listed (live version null), drawn from its newest row
+    const orphan = { ...snap.strategies.find((r) => r.id === 'prayer' && r.status === 'active'), id: 'orphan', status: 'retired', version: 4 };
+    const o = publicStrategies({ snapshot: { ...snap, strategies: [...snap.strategies, orphan] }, activities: activityCatalog(), stats, branches });
+    expect(o.strategies.find((s) => s.id === 'orphan')).toMatchObject({ version: null, newest: { version: 4, status: 'retired' } });
+    expect(o.summary.active).toBe(out.summary.active);
+  });
+
   it('leaks no turn id, question or template text', () => {
     const snap = fixtureSnapshot();
     const json = JSON.stringify(pub);

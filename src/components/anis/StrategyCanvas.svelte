@@ -1,6 +1,6 @@
 <!-- n8n-style flow canvas for one Anís strategy (xyflow + dagre via src/lib/strategy-canvas.js). Fetches the edge-cached public
      /api/v1/anis/strategies by `name` (or takes `strategy`+`steps`), lazy when inside a closed <details>. Node click → popup tabs
-     Prompt · Params · Stats · Samples · Feedback. `run` = {path,values} lights a path; `samples`/`feedback` are the hooks for the run trace. -->
+     Prompt · Params · Stats · Samples · Feedback. `newest` draws the newest version instead of the live one; `run` = {path,values} lights a path; `samples`/`feedback` are the hooks for the run trace. -->
 <script>
   import { onMount } from 'svelte';
   import { SvelteFlow, Background, Controls, MiniMap } from '@xyflow/svelte';
@@ -9,12 +9,14 @@
   import EndNode from './EndNode.svelte';
   import { buildFlow } from '../../lib/strategy-canvas.js';
   import { fmt } from '../../lib/anis-docs.js';
-  let { name = '', strategy: strategyProp = null, steps: stepsProp = null, run = null, samples = null, feedback = null, height = '460px' } = $props();
+  let { name = '', strategy: strategyProp = null, steps: stepsProp = null, run = null, samples = null, feedback = null, newest = false, height = '460px' } = $props();
   const nodeTypes = { step: StepNode, end: EndNode };
   const API = import.meta.env.PUBLIC_API_URL ?? 'https://api.siftersearch.com';
   let root = $state(), data = $state(null), failed = $state(false), nodes = $state.raw([]), edges = $state.raw([]), picked = $state(null), tab = $state('prompt');
   const TABS = [['prompt', 'Prompt'], ['params', 'Params'], ['stats', 'Stats'], ['samples', 'Samples'], ['feedback', 'Feedback']];
-  const strategy = $derived(strategyProp || data?.strategies?.find((s) => s.id === name || s.name === name) || null);
+  const found = $derived(strategyProp || data?.strategies?.find((s) => s.id === name || s.name === name) || null);
+  // newest: draw the strategy's newest version (any status) instead of the live one
+  const strategy = $derived(newest && found?.newest?.graph ? { ...found, graph: found.newest.graph } : found);
   const steps = $derived(stepsProp || data?.steps || []);
   $effect(() => {
     if (!strategy?.graph) { nodes = []; edges = []; return; }

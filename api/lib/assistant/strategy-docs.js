@@ -40,11 +40,9 @@ export function publicStrategies({ snapshot, activities = [], stats = [], branch
   const byId = new Map();
   for (const r of snapshot.strategies) { if (!byId.has(r.id)) byId.set(r.id, []); byId.get(r.id).push(r); }
   const statOf = (id, v) => stats.find((s) => s.strategy === id && Number(s.version) === Number(v)) || null;
-  const out = [];
-  for (const [id, rows] of byId) {
-    const active = rows.filter((r) => r.status === 'active').sort((a, b) => b.version - a.version)[0];
-    if (!active) continue;
-    const g = active.graph || { nodes: {}, edges: [] };
+  // a row's graph in the public shape (step → activity, kind, class, template names only)
+  const graphOf = (r) => {
+    const g = r.graph || { nodes: {}, edges: [] };
     const nodes = Object.entries(g.nodes || {}).map(([nid, n]) => {
       const st = steps.get(`${n.step}@${n.step_version}`);
       const a = act.get(st?.activity) || {};
@@ -52,16 +50,29 @@ export function publicStrategies({ snapshot, activities = [], stats = [], branch
         template: st?.template_id ? { id: st.template_id, version: st.template_version } : null };
     });
     const templates = [...new Map(nodes.filter((n) => n.template).map((n) => [`${n.template.id}@${n.template.version}`, n.template])).values()];
+    return { graph: { entry: g.entry, nodes, edges: (g.edges || []).map((e) => ({ from: e.from, on: e.on, to: e.to })) }, templates };
+  };
+  const out = [];
+  for (const [id, rows] of byId) {
+    // every strategy id is listed: the live (newest ACTIVE) row when there is one, else only its newest version
+    const active = rows.filter((r) => r.status === 'active').sort((a, b) => b.version - a.version)[0] ?? null;
+    const newest = [...rows].sort((a, b) => b.version - a.version)[0];
+    const base = active ?? newest;
+    const { graph, templates } = graphOf(base);
+    const nw = newest === base ? { graph, templates } : graphOf(newest);
     out.push({
-      id, version: active.version, name: active.name, description: active.description ?? null,
-      classes: Array.isArray(active.classes) ? active.classes : (SERVES[id] || []),
-      exemplars: (active.exemplars || []).map(exemplarText).filter(Boolean),
-      graph: { entry: g.entry, nodes, edges: (g.edges || []).map((e) => ({ from: e.from, on: e.on, to: e.to })) },
-      templates,
+      id, version: active?.version ?? null, name: base.name, description: base.description ?? null,
+      classes: Array.isArray(base.classes) ? base.classes : (SERVES[id] || []),
+      exemplars: (base.exemplars || []).map(exemplarText).filter(Boolean),
+      graph, templates,
+      // the newest tree of any status (what the docs page draws), and every version with its verdict
+      newest: { version: newest.version, status: newest.status, created_at: newest.created_at ?? null, graph: nw.graph, templates: nw.templates },
+      versions: rows.map((r) => ({ version: r.version, status: r.status, parent_version: r.parent_version ?? null, created_at: r.created_at ?? null,
+        stats: stat(statOf(id, r.version)), replay: replayOf(id, r.version) ?? r.replay ?? null })).sort((a, b) => b.version - a.version),
       // a seed row that only renames its parent (respond@2 = respond@1 'other') keeps the parent's numbers until it has its own
-      stats: stat(statOf(id, active.version) || (active.created_by === 'seed' ? ancestorStat(rows, active, (v) => statOf(id, v)) : null)),
+      stats: stat(active ? statOf(id, active.version) || (active.created_by === 'seed' ? ancestorStat(rows, active, (v) => statOf(id, v)) : null) : null),
       branches: (branches(id) || []).slice(0, 12).map(branchOut),
-      candidates: rows.filter((r) => r.version > active.version || CANDIDATE.has(r.status)).filter((r) => r !== active)
+      candidates: rows.filter((r) => r !== active && ((active && r.version > active.version) || CANDIDATE.has(r.status)))
         .map((r) => ({ version: r.version, status: r.status, parent_version: r.parent_version ?? null, created_at: r.created_at ?? null,
           stats: stat(statOf(id, r.version)), replay: replayOf(id, r.version) ?? r.replay ?? null })),
     });
@@ -69,7 +80,7 @@ export function publicStrategies({ snapshot, activities = [], stats = [], branch
   const promoted30 = promotions
     ? promotions.filter((p) => p.action === 'promote' && now - ts(p.created_at) <= 30 * DAY).length   // the ledger, when there is one
     : snapshot.strategies.filter((r) => r.status === 'active' && r.parent_version != null && r.created_by !== 'seed' && now - ts(r.created_at) <= 30 * DAY).length;
-  return { strategies: out, summary: { active: out.length, candidates: snapshot.strategies.filter((r) => CANDIDATE.has(r.status)).length, promotions_30d: promoted30 } };
+  return { strategies: out, summary: { active: out.filter((x) => x.version != null).length, candidates: snapshot.strategies.filter((r) => CANDIDATE.has(r.status)).length, promotions_30d: promoted30 } };
 }
 
 /** The code building steps: activities = activityCatalog(); snapshot → which strategies/steps use each; live = activityStats(). */
@@ -145,6 +156,7 @@ export function publicStrategyList({ specs = [], strategies = [] }) {
     const ps = sp.patterns || [];
     return { id: sp.id, name: r?.name ?? sp.name, status: sp.status || 'built', where: sp.where ?? null, description: r?.description ?? sp.description ?? null,
       patterns: ps, target_time: times(ps), tests: { lead: sum(ps, 'lead'), also: sum(ps, 'also') }, classes: ps.map((p) => p.id),
+      general: r?.id === GENERAL, newest: r?.newest ?? null, versions: r?.versions ?? [],
       version: r?.version ?? null, exemplars: r?.exemplars ?? [], graph: r?.graph ?? null, templates: r?.templates ?? [], stats: r?.stats ?? null,
       branches: r?.branches ?? [], candidates: r?.candidates ?? [], inside: sp.inside ? { strategy: GENERAL, name: general?.name ?? 'unmatched', nodes: sp.inside.nodes } : null, ...extra };
   };

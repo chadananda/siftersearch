@@ -1,13 +1,13 @@
 ---
 // /docs/response-strategies — layer 2 of 3 (Tools → Response Strategies → Activities), from GET /api/v1/anis/strategies
-// (edge-cached). Intro + improvement loop, the cost ladder, ONE accordion of strategies (#strategy-<id>; built first, then planned,
-// Unmatched last; the plan's A1–H2 ids survive only as anchors #class-<id>; a hash of an id, a name or a class opens its item), the code
-// building steps (#step-<name>), composition, decisions. The whole list comes from the strategy database (strategies + strategy_specs).
+// (edge-cached). Short mechanism + the three loops, the cost ladder, ONE accordion of every strategy in the strategy database
+// (#strategy-<id>; live first, planned, Unmatched last; each draws its NEWEST tree with a status badge; a hash of an id, a name or a
+// class opens its item), the code building steps (#step-<name>), composition, decisions. Nothing is listed here by id or name.
 // Every number carries data-live and refreshes through liveRefresh (src/lib/anis-docs.js); SSR reserves its space.
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import StrategyCanvas from '../../components/anis/StrategyCanvas.svelte';
 import { strategiesFlat, show } from '../../lib/anis-docs.js';
-import { titleOf, taglineOf, groupOf, GROUPS, orderedSteps, outcomeOf, targetsOf, MODES, MODE_NOTES } from '../../lib/strategy-docs.js';
+import { titleOf, taglineOf, groupOf, GROUPS, orderedSteps, outcomeOf, targetsOf, treeBadge, MODES, MODE_NOTES } from '../../lib/strategy-docs.js';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const soft = (path, ms) => fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(ms) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
@@ -16,15 +16,15 @@ if (data) Astro.response.headers.set('Cache-Control', 'public, s-maxage=120, sta
 const m = strategiesFlat(data);
 const strategies = data?.strategies || [];
 const sorted = [...strategies].sort((x, y) => GROUPS.findIndex((g) => g.key === groupOf(x)) - GROUPS.findIndex((g) => g.key === groupOf(y)));
-const oneLine = (s) => { const t = String(s || '').split(/\s[—–]\s|;\s|\.\s/)[0]; return t.length > 150 ? `${t.slice(0, 147)}…` : t; };
-const label = (s) => (s === 'other' ? 'unmatched' : s);   // logs from before the rename say 'other'
-const badge = (s) => (s.name === 'unmatched' ? 'unmatched' : s.where === 'shared-reply' ? 'in unmatched' : s.status);
+const badge = (s) => (s.general ? 'unmatched' : s.where === 'shared-reply' ? 'in unmatched' : s.status);
+const generalId = strategies.find((x) => x.general)?.id;
+const cap = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
+const day = (t) => String(t || '').slice(0, 10) || '–';
 const branchText = (b) => b.branch.map((p) => p.replace(/:([^:]*)$/, ' → $1')).join(' · ');
 const plan = data?.plan || null;
 const steps = data?.steps || [];
 const nameOf = new Map(strategies.flatMap((x) => x.patterns.map((p) => [p.id, p.name])));
 const stepGroups = [...new Set(steps.map((a) => a.name.split('.')[0]))];
-const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui: 'Reader interface' };
 ---
 
 <DocsLayout title="Response Strategies" description="How the Ocean AI Research Assistant chooses a way to answer each question, and how those strategies are measured and improved" activeSection="response-strategies">
@@ -34,38 +34,29 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
   <section id="intro">
     <h2>What a strategy is</h2>
     <p>
-      A <strong>response strategy</strong> is a fixed way of answering one kind of request, worked out in advance and tuned
-      for speed and quality. Strategies range from simple to elaborate:
-    </p>
-    <ul>
-      <li><em>"Where does Bahá'u'lláh say '…'?"</em>: find the passage and name its source.</li>
-      <li><em>"Give me a timeline of 'Abdu'l-Bahá's travels, with the major talks marked."</em></li>
-      <li><em>"Build me a compilation of everything 'Abdu'l-Bahá says about taxation, with translations side by side where the original is not in English."</em></li>
-    </ul>
-    <p>
-      Each strategy is a decision tree. Its steps are <a href="#building-steps">building steps</a>: small pieces of code that
-      each do one thing, most of them one use of a <a href="/docs/anis-tools">tool</a> (find a named book, trace a quotation,
-      search the original-language tablets, write the reply). The tree itself is data, kept in a database, so a strategy can be
-      added, changed, measured and rolled back without releasing new code. <a href="/docs/anis-activities">Activities</a>, such
-      as reading a book together, reuse the same strategies.
-    </p>
-    <p>
-      For each message, Jev, a fast decision model, reads the conversation and picks the strategy that fits. From there the
-      strategy runs its steps.
+      A <strong>response strategy</strong> is a decision tree for one kind of request, worked out in advance and tuned for speed and
+      quality. Its steps are <a href="#building-steps">building steps</a>, most of them one use of a <a href="/docs/anis-tools">tool</a>
+      (an element: find a named book, trace a quotation, search the original-language tablets, write the reply). The trees are data in a
+      database, so a strategy can be added, changed, measured and rolled back without releasing code. This page is generated from that database:
+      every strategy in it is listed below, drawn at its newest version.
+      <a href="/docs/anis-activities">Activities</a>, such as reading a book together, reuse the same strategies.
     </p>
 
+    <h2>How a turn is answered</h2>
+    <ol>
+      <li><strong>Jev</strong>, a fast decision model, reads the conversation once and returns the strategy that fits the latest message, with the filter units it found: <code>named_work</code>, <code>named_person</code>, <code>religions_specified</code>, <code>topic</code>.</li>
+      <li><strong>A matched strategy</strong> runs its tree: code, tool calls and small Jev decisions, with one writing step at the end. No expensive planning model runs on a matched turn.</li>
+      <li><strong>Unmatched.</strong> When nothing fits, a gate decides whether the message is a research question or only conversation. A conversational message is answered directly. A research question goes to the planner: a strong model designs a tree for it from the existing elements, the tree runs for this reader, and it is saved as a candidate on probation.</li>
+    </ol>
+
     <h2>How strategies improve</h2>
-    <p>
-      The strategies are not fixed. A measurement and improvement loop runs alongside them:
-    </p>
+    <p>Three loops run alongside the strategies. Every step records its time, cost and branch, and a separate judge scores replies, so each strategy and path has its own numbers below.</p>
     <ul>
-      <li><strong>Every step is measured.</strong> Each step of each strategy records how long it took, what it cost and which way it branched, so every strategy and every path through it has its own numbers.</li>
-      <li><strong>Every reply is judged.</strong> A separate judge model scores replies and names what went wrong, so quality joins speed and cost in the numbers below.</li>
-      <li><strong>Gaps become candidates.</strong> When a kind of question is not served well by any strategy, a stronger model designs a candidate strategy from the existing building steps.</li>
-      <li><strong>Candidates must win.</strong> A candidate is replayed on fresh questions of that class plus a set of guard questions. It is promoted only if it measurably wins, and the old version is kept so a promotion can be rolled back.</li>
-      <li><strong>Weak steps get the same treatment.</strong> A step or branch that scores poorly gets candidate edits, which are replayed and promoted the same way.</li>
-      <li><strong>Code problems go to engineers.</strong> Weaknesses that a strategy cannot fix (a building step, a tool, a search index) become recommendations for the engineers.</li>
+      <li><strong>Improve.</strong> A cheaper or better tree is designed for a kind of request that already has a strategy, and dry-run against the current tree on questions of that class. It is promoted only if it measurably wins; the old version is kept so a promotion can be rolled back.</li>
+      <li><strong>Extend.</strong> Questions that reach Unmatched become material for a new kind of strategy, so the list grows to cover what readers ask.</li>
+      <li><strong>Tools.</strong> When a tree wants an element that does not exist yet, the wish is recorded; once the <a href="/docs/anis-tools">tool catalog</a> changes, those trees are planned again.</li>
     </ul>
+    <p>Weaknesses that no tree can fix (an element, a tool, a search index) become recommendations for the engineers.</p>
 
     <svg class="flow" viewBox="0 0 760 120" role="img" aria-label="The improvement loop: question, Jev picks a strategy, the steps run and are measured, the judge scores the reply, a candidate is designed and replayed, and promoted only if it wins">
       <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fill-muted" /></marker></defs>
@@ -86,7 +77,6 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
       <span><strong data-live="summary.promotions_30d" data-fmt="n">{show(m, 'summary.promotions_30d')}</strong> promotions in the last 30 days</span>
     </p>
     <p class="note">
-      Each step names a <a href="#building-steps">building step</a>; building steps call the <a href="/docs/anis-tools">tools</a>.
       The numbers below cover the last 7 days. The judge score is out of 10 and is the mean of the replies that have one.
     </p>
   </section>
@@ -94,38 +84,13 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
   {plan && (
     <section id="ladder">
       <h2>How a strategy is built</h2>
-      <p>
-        Building a strategy starts with a pattern: a kind of request readers keep making, and the answer they want. That answer
-        is turned into a reusable decision tree made of four kinds of step, each roughly ten times slower than the one before:
-      </p>
-      <ol>
-        <li><strong>Code</strong>: plain program logic, such as matching a reference or ordering passages.</li>
-        <li><strong>Tool calls</strong>: a search, a book lookup, a fetch of the original text.</li>
-        <li><strong>Jev decisions</strong>: small judgments such as "was it found?", "is this enough?" or "which person is meant?"</li>
-        <li><strong>Language-model calls</strong>: fast models only, and only for what the cheaper kinds cannot do, such as writing the reply.</li>
-      </ol>
-      <p>
-        A step uses the fastest kind that can do its job. Every step is logged and measured, so each strategy can be made faster
-        and better one step at a time.
-      </p>
-      <p>
-        When no strategy fits a request, it goes to <a href="#strategy-respond">Unmatched</a>, the last entry in the list. A capable
-        model answers it and designs a candidate strategy for it. That question becomes material for a new strategy, so the list
-        grows to cover what readers actually ask, and the answers keep improving.
-      </p>
+      <p>A step uses the cheapest kind that can do its job; each kind is roughly ten times slower than the one before.</p>
       <div class="scroll">
         <table>
           <thead><tr><th>Tier</th><th>Cost</th><th>Used for</th></tr></thead>
           <tbody>{plan.ladder.map((l) => <tr><td><strong>{l.step}</strong></td><td class="nowrap">{l.cost}</td><td>{l.examples}</td></tr>)}</tbody>
         </table>
       </div>
-      <p class="note">Target times: a book, quote or reference ≤ 1 s · other lookups ≤ 3 s · understanding and comparing ≤ 12 s, first words within 2 s · assignments take minutes, with progress shown.</p>
-      <ul>
-        <li><strong>Jev</strong>, the fast decision model (about 50 ms), reads each message with its thread and names its strategy: a lead strategy and any others. Jev also makes the small yes/no decisions inside a strategy (found? enough? which person?). Jev is never trained: each decision comes with the information it needs, and that context is adjusted until he decides right.</li>
-        <li><strong>Tiers.</strong> The first tier uses only code, tools and Jev. A tier adds a light LLM step only when code cannot do the job, and only after the cheaper tier failed. If every tier fails, the research agent takes the question.</li>
-        <li><strong>One writing step, for every answer.</strong> The chosen format shapes the answer; the writing model writes it once, adapting the evidence to Anís's voice and the reader, so answers stay varied and never sound canned. Lookups (find a book, trace a quote, a reference) go through a light writer too, so they stay fast.</li>
-        <li><strong>Switched on only when it matches the agent.</strong> Each strategy is measured on fresh questions of its kind, with a held-out set kept aside, against the research agent's answers. It goes live for its class only when it matches or beats the agent within its target time. Until then the agent answers.</li>
-      </ul>
       {plan.grounding_scale && (
         <p class="note">
           <strong>Grounding</strong> is how many real test questions a strategy has to measure it with (lead · also). The labels are only
@@ -139,10 +104,9 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
   <section id="strategies-list">
     <h2>The strategies</h2>
     <p>
-      One list, kept in the strategy database. Open an entry to see what Jev reads, the questions it answers, how its answers are
-      shaped, its decision tree and its numbers. A <strong>live</strong> strategy runs today. A <strong>planned</strong> one is a kind of request readers keep
-      making, with its test questions, target time and the answer we want, but no decision tree yet; until it has one, those
-      questions go to <a href="#strategy-respond">Unmatched</a>. Some live strategies run inside the shared reply for now; they say so.
+      Every strategy in the database, each drawn at its newest version. The badge gives that version's status (active, candidate, probation or retired),
+      and the live version beside it when it differs. Open an entry to see what Jev reads, its questions, decision tree, numbers and version history.
+      A <strong>planned</strong> entry is a kind of request readers keep making, with its test questions and the answer we want, but no tree yet.
     </p>
     {!data && <p class="note">The strategy list could not be loaded just now. It will appear on the next visit.</p>}
     <p class="numbers">
@@ -151,24 +115,25 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
     </p>
     <div id="strategies" class="cards">
       {sorted.map((s, idx) => {
-        const un = s.name === 'unmatched';
+        const un = !!s.general;
+        const tb = treeBadge(s);
         const g = groupOf(s);
         const tag = taglineOf(s);
-        const unmatched = strategies.find((x) => x.name === 'unmatched');
-        const tree = s.graph ? orderedSteps(s.graph) : [];
+        const unmatched = strategies.find((x) => x.general);
+        const tree = s.newest ? orderedSteps(s.newest.graph) : [];
         const lead = s.patterns.find((p) => p.ideal_answer);
         return (
           <>
             {(idx === 0 || groupOf(sorted[idx - 1]) !== g) && <h3 class="group">{GROUPS.find((x) => x.key === g).label}</h3>}
-            <details class="card" id={`strategy-${s.id}`} data-name={label(s.name).toLowerCase()}>
+            <details class="card" id={`strategy-${s.id}`} data-name={String(s.name).toLowerCase()}>
               <summary>
                 {s.patterns.map((p) => <span id={`class-${p.id}`} class="anchor"></span>)}
                 <span class="chev" aria-hidden="true"></span>
                 <span class="title">{titleOf(s)}</span>
                 <span class={`tagline${tag.quote ? ' quote' : ''}`}>{tag.text}</span>
-                <span class={`chip st-${un ? 'unmatched' : s.where === 'shared-reply' ? 'shared' : s.status}`}>{badge(s)}</span>
+                <span class={`chip ${tb ? 'wide ' : ''}st-${tb ? tb.status : un ? 'unmatched' : s.where === 'shared-reply' ? 'shared' : s.status}`}>{tb ? tb.text : badge(s)}</span>
                 <span class="keys">
-                  {s.graph && <>p50 <strong data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</strong> · <strong data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</strong></>}
+                  {s.version != null && <>p50 <strong data-live={`s.${s.id}.p50_ms`} data-fmt="ms">{show(m, `s.${s.id}.p50_ms`, 'ms')}</strong> · <strong data-live={`s.${s.id}.score`} data-fmt="score">{show(m, `s.${s.id}.score`, 'score')}</strong></>}
                 </span>
               </summary>
               <div class="body">
@@ -186,21 +151,20 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
                       <p class="optext">{lead?.ideal_answer || s.description}</p>
                     </>
                   ) : (
-                    <p><code>{label(s.name)}</code> <span class="optext">{s.description}</span></p>
+                    <p><code>{s.name}</code> <span class="optext">{s.description}</span></p>
                   )}
-                  <p class="foot">Jev reads the conversation and picks the option that fits the latest message; below 60% confidence the message goes to Unmatched.</p>
+                  <p class="foot">Jev reads the conversation and picks the option that fits the latest message; when none fits it goes to Unmatched.</p>
                 </div>
                 {s.where === 'shared-reply' && (
-                  <p class="note">It runs inside <a href={`#strategy-${s.inside.strategy}`}>{label(s.inside.name)}</a> as the steps {s.inside.nodes.map((n, i) => <>{i > 0 && ', '}<code>{n}</code></>)}.</p>
+                  <p class="note">It runs inside <a href={`#strategy-${s.inside.strategy}`}>{s.inside.name}</a> as the steps {s.inside.nodes.map((n, i) => <>{i > 0 && ', '}<code>{n}</code></>)}.</p>
                 )}
 
                 <h3>Questions it answers</h3>
                 {un && (
                   <p>
-                    Everything no other strategy names. It first checks, quickly, whether Jev missed a strategy that fits. If none does, a smart model
-                    answers in full and designs a candidate strategy for the question from the existing <a href="#building-steps">building steps</a>.
-                    The candidate is replayed on fresh questions of the same kind and joins the list only if it wins; see <a href="#intro">how strategies improve</a>.
-                    {s.where !== 'shared-reply' && ' Until a candidate exists, it runs the shared reply: the lookups listed above as built into it, then the research agent.'}
+                    Everything no other strategy names. A gate first decides whether it is a research question or only conversation. A research question goes
+                    to the planner, which designs a tree for it from the <a href="#building-steps">building steps</a>, runs it, and saves it as a candidate on
+                    probation; see <a href="#intro">how strategies improve</a>.
                   </p>
                 )}
                 {s.exemplars.length > 0 && <ul class="quotes">{s.exemplars.map((e) => <li>{e}</li>)}</ul>}
@@ -236,7 +200,7 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
                     </p>
                   </div>
                 ))}
-                {un && <p>Unmatched has no single ideal answer: the answer is whatever the question needs, written in full by a strong model. Its route is the decision tree below.</p>}
+                {un && <p>Unmatched has no single ideal answer: the planned tree is whatever the question needs. Its route is the decision tree below.</p>}
                 {!un && !s.patterns.some((c) => c.ideal_answer || c.route.length > 0) && <p class="note">No route is written down for this one yet.</p>}
 
                 <h3>By mode</h3>
@@ -252,10 +216,10 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
                 {MODE_NOTES[s.name] && <p class="note">{MODE_NOTES[s.name]}</p>}
 
                 <h3>Decision tree</h3>
-                {s.graph ? (
+                {s.newest ? (
                   <>
-                    <StrategyCanvas client:only="svelte" name={s.id} />
-                    <p class="note">Click a step for its prompt, parameters and numbers. The same tree as a list:</p>
+                    <StrategyCanvas client:only="svelte" name={s.id} newest={true} />
+                    <p class="note">{tb.text}. Click a step for its prompt, parameters and numbers. The same tree as a list:</p>
                     <ol class="tree">
                       {tree.map((n) => (
                         <li id={`node-${s.id}-${n.id}`}>
@@ -265,16 +229,16 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
                         </li>
                       ))}
                     </ol>
-                    {tree.length === 1 && <p class="note">The whole strategy runs as one coded step today; its route is described above.</p>}
-                    {s.templates.length > 0 && <p class="note">Writer templates: {s.templates.map((t) => <code>{t.id}@{t.version}</code>)}</p>}
+                    {tree.length === 1 && <p class="note">This version runs as one coded step; a newer tree may replace it.</p>}
+                    {s.newest.templates.length > 0 && <p class="note">Writer templates: {s.newest.templates.map((t) => <code>{t.id}@{t.version}</code>)}</p>}
                   </>
                 ) : s.where === 'shared-reply' ? (
                   <p class="note">No tree of its own yet: it runs inside the shared reply (see the card above).</p>
-                ) : <p class="note">No decision tree yet; these questions go to <a href="#strategy-respond">Unmatched</a> until one is built.</p>}
+                ) : <p class="note">No decision tree yet; these questions go to <a href={`#strategy-${generalId}`}>Unmatched</a> until one is built.</p>}
 
-                {s.graph && (
+                {s.newest && (
                   <>
-                    <h3>Statistics: last 7 days</h3>
+                    <h3>Statistics: last 7 days{s.version != null ? ` (live v${s.version})` : ''}</h3>
                     <div class="tiles">
                       {[['Turns', 'turns', 'n'], ['Share of turns', 'share', 'share'], ['p50', 'p50_ms', 'ms'], ['p95', 'p95_ms', 'ms'], ['Judge score', 'score', 'score'], ['Scored replies', 'n_scored', 'n'], ['Weak', 'weak_pct', 'pct'], ['Cost per turn', 'usd_per_turn', 'usd']].map(([t, k, f]) => (
                         <div class="tile"><span class="tl">{t}</span><strong data-live={`s.${s.id}.${k}`} data-fmt={f}>{show(m, `s.${s.id}.${k}`, f)}</strong></div>
@@ -295,21 +259,20 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
                       </table></div>
                     ) : <p class="note">No measured turns in the last 7 days.</p>}
 
-                    <h3>Versions</h3>
-                    <p>Current version <strong>v{s.version}</strong>.</p>
-                    {s.candidates.length ? (
+                    <details class="notes">
+                      <summary>Versions ({s.versions.length})</summary>
                       <div class="scroll"><table>
-                        <thead><tr><th>Version</th><th>Status</th><th>Created</th><th>Outcome</th><th>Mean score: candidate vs current</th></tr></thead>
+                        <thead><tr><th>Version</th><th>Status</th><th>Created</th><th>Verdict</th><th>Mean score: candidate vs current</th></tr></thead>
                         <tbody>
-                          {s.candidates.map((c) => (
-                            <tr><td>v{c.version}</td><td>{c.status}</td><td class="nowrap">{String(c.created_at || '').slice(0, 10) || '–'}</td>
+                          {s.versions.map((c) => (
+                            <tr><td>{s.id}@{c.version}</td><td>{c.status}{c.version === s.version ? ' (live)' : ''}</td><td class="nowrap">{day(c.created_at)}</td>
                               <td>{outcomeOf(c)}</td>
                               <td class="nowrap">{c.replay?.numbers?.mean_candidate != null ? `${c.replay.numbers.mean_candidate} vs ${c.replay.numbers.mean_current}` : '–'}
                                 <span data-live={`c.${s.id}.${c.version}.score`} data-fmt="score" hidden>{show(m, `c.${s.id}.${c.version}.score`, 'score')}</span></td></tr>
                           ))}
                         </tbody>
                       </table></div>
-                    ) : <p class="note">No candidate versions at the moment.</p>}
+                    </details>
                   </>
                 )}
 
@@ -372,12 +335,12 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
         <thead><tr><th>Step</th><th>Tier</th><th>What it does</th><th>Runs</th><th>p50</th><th>Cost</th></tr></thead>
         {stepGroups.map((g) => (
           <tbody>
-            <tr class="group"><th colspan="6">{GROUP_TITLE[g] || g}</th></tr>
+            <tr class="group"><th colspan="6">{cap(g)} steps</th></tr>
             {steps.filter((a) => a.name.split('.')[0] === g).map((a) => (
               <tr id={`step-${a.name}`}>
                 <td><code>{a.name}</code></td><td>{a.kind}{a.cls && <span class="muted"> · {a.cls}</span>}</td>
                 <td>{a.description}{a.tools?.length > 0 && <><br /><span class="note">Tools: {a.tools.map((t, i) => <>{i > 0 && ', '}<a href={`/docs/anis-tools#${t}`}>{t}</a></>)}</span></>}
-                  {a.used_by?.length > 0 && <><br /><span class="note">In: {[...new Map(a.used_by.map((u) => [u.strategy, u])).values()].map((u, i) => <>{i > 0 && ', '}<a href={`#strategy-${u.strategy}`}>{label(u.name)}</a></>)}</span></>}</td>
+                  {a.used_by?.length > 0 && <><br /><span class="note">In: {[...new Map(a.used_by.map((u) => [u.strategy, u])).values()].map((u, i) => <>{i > 0 && ', '}<a href={`#strategy-${u.strategy}`}>{u.name}</a></>)}</span></>}</td>
                 <td data-live={`a.${a.name}.runs`} data-fmt="n">{show(m, `a.${a.name}.runs`)}</td>
                 <td data-live={`a.${a.name}.p50_ms`} data-fmt="ms">{show(m, `a.${a.name}.p50_ms`, 'ms')}</td>
                 <td data-live={`a.${a.name}.usd`} data-fmt="usd">{show(m, `a.${a.name}.usd`, 'usd')}</td>
@@ -479,6 +442,10 @@ const GROUP_TITLE = { respond: 'Reply steps', strategy: 'Strategy executors', ui
   .chip.st-planned { color: var(--text-muted); }
   .chip.st-shared { color: var(--info); }
   .chip.st-unmatched { color: var(--warning); }
+  .chip.st-active { color: var(--success); }
+  .chip.st-candidate, .chip.st-probation { color: var(--info); }
+  .chip.st-retired, .chip.st-rolled_back { color: var(--text-muted); }
+  .card > summary .chip.wide { min-width: 13.5rem; }
   .steps td { vertical-align: top; font-size: 0.9rem; }
   .steps tr.group th { text-align: left; padding-top: 1rem; }
   .steps td:nth-child(n+4) { min-width: 6ch; white-space: nowrap; }
