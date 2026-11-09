@@ -129,3 +129,19 @@ describe('quoted_words: the reader\'s own quotation marks fill the unit (single 
     expect(u.quoted_words).toBe('The earth is but one country, and mankind its citizens.');
   });
 });
+
+describe('namedUnits: topic remnants after a removed span (11-09 widget turns)', () => {
+  const p = (n = 1) => ({ kind_1: ans('person') });
+  it('"the Báb\'s childhood" with Báb removed leaves no lone "s"', () => {
+    expect(namedUnits(p(), ['the Báb'], 'What is the story of the Báb\'s childhood in Shiraz?').topic).toBe('What is the story of childhood in Shiraz?');
+  });
+  it('a bare "Who was Ṭáhirih?" with the span removed has no topic (falls back to the whole question)', () => {
+    expect(namedUnits(p(), ['Ṭáhirih'], 'Who was Ṭáhirih?').topic).toBeUndefined();
+  });
+  it('lone apostrophe tokens are dropped', () => {
+    expect(namedUnits(p(), ["'Abdu'l-Bahá"], 'Trace how \'Abdu\'l-Bahá uses "Most Great Justice" across his talks').topic).toBe('Trace how uses "Most Great Justice" across his talks');
+  });
+  it('a person the question is ABOUT is "neither" (Jev) and the question stays whole', () => {
+    expect(namedUnits({ kind_1: ans('neither') }, ['Ṭáhirih'], 'Who was Ṭáhirih?')).toEqual({});
+  });
+});
