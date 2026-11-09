@@ -207,7 +207,7 @@ else if (cmd === 'anis-try') {   // one question through one strategy version (o
     + (r.steps || []).map((x) => `  ${x.graph ? `${x.graph} ` : ''}${x.node}:${x.edge}${x.count != null ? `(${x.count})` : ''}${Array.isArray(x.members) ? ` [${x.members.map((m) => `${m.element}${m.skipped ? ' skip' : ` ${JSON.stringify(m.filters || {})}→${m.count}`}`).join('; ')}]` : ''}`).join('\n')
     + `\n-- reply\n${String(r.reply || '').slice(0, 1500)}\n`, res));
 }
-else if (cmd === 'anis-strategy-fix' && name) await out(await call('POST', '/anis/strategy-fix', { id: name }));
+else if (cmd === 'anis-strategy-fix' && name) await out(await call('POST', '/anis/strategy-fix', { id: name, version: val('--version') ? Number(val('--version')) : null }));
 else if (cmd === 'anis-rollback' && name) await out(await call('POST', '/anis/rollback', { id: name }));
 else if (cmd === 'jev-gates') {   // every Jev decision gate: calls, answer mix, gold coverage/accuracy, shadow agreement, $ of a 200-call experiment
   const j = await call('GET', `/jev/gates?days=${val('--days') || 7}`);

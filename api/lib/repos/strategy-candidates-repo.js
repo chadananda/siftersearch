@@ -202,21 +202,24 @@ export const fixSlots = (v, key = '') => {
   if (Array.isArray(v)) return v.map((x) => fixSlots(x, key));
   return v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fixSlots(x, k)])) : v;
 };
-/** Newest version of strategy `id` → a NEW candidate version whose pinned steps carry corrected slot syntax. → { id, version, fixed: [step ids] } | { id, version: null, fixed: [] } (nothing to fix) */
-export function fixStrategySlots(db, id, { by = 'ops-slot-fix' } = {}) {
-  const row = strategyRow(db, id);
-  if (!row) throw new Error(`no strategy ${id}`);
+/** Strategy `id` at `version` (default newest) → corrected slot syntax as a NEW candidate version; nothing to fix and the row is a candidate = that row stands (re-run: no @n+1).
+ *  → { id, version (the target, null when nothing applies), fixed: [step ids], saved: bool, activatable: bool (a candidate whose parent is the ACTIVE version) } */
+export function fixStrategySlots(db, id, { version = null, by = 'ops-slot-fix' } = {}) {
+  const row = strategyRow(db, id, version);
+  if (!row) throw new Error(`no strategy ${id}${version != null ? '@' + version : ''}`);
   const graph = JSON.parse(JSON.stringify(row.graph)), steps = [];
   for (const [nid, n] of Object.entries(graph.nodes || {})) {
     const st = db.prepare('SELECT * FROM steps WHERE id = ? AND version = ?').get(n.step, n.step_version);
     if (!st) continue;
     const params = safeJson(st.params_json, {}), fixed = fixSlots(params);
     if (JSON.stringify(fixed) === JSON.stringify(params)) continue;
-    const version = maxVersion(db, 'steps', st.id) + 1;
-    steps.push({ id: st.id, version, activity: st.activity, params: fixed, template_id: st.template_id, template_version: st.template_version });
-    graph.nodes[nid] = { ...n, step_version: version };
+    const v = maxVersion(db, 'steps', st.id) + 1 + steps.filter((x) => x.id === st.id).length;
+    steps.push({ id: st.id, version: v, activity: st.activity, params: fixed, template_id: st.template_id, template_version: st.template_version });
+    graph.nodes[nid] = { ...n, step_version: v };
   }
-  if (!steps.length) return { id, version: null, fixed: [] };
-  const saved = saveCandidate(db, { strategy: { id, name: row.name, description: row.description, exemplars: row.exemplars, graph }, steps }, { by });
-  return { ...saved, fixed: steps.map((x) => x.id) };
+  let target = row, saved = false;
+  if (steps.length) { const sv = saveCandidate(db, { strategy: { id, name: row.name, description: row.description, exemplars: row.exemplars, graph }, steps }, { by }); target = strategyRow(db, id, sv.version); saved = true; }
+  else if (row.status !== 'candidate') return { id, version: null, fixed: [], saved: false, activatable: false };
+  const active = db.prepare("SELECT MAX(version) AS v FROM strategies WHERE id = ? AND status = 'active'").get(id)?.v ?? null;
+  return { id, version: target.version, fixed: steps.map((x) => x.id), saved, activatable: target.status === 'candidate' && active != null && target.parent_version === active };
 }

@@ -10,13 +10,14 @@
 //   POST /anis/try {question, history?, strategy?:{id, version}, caller?, jev_only?} → { reply, path, steps, ms, usd, jev_pick }
 //        the full-reply DRY RUN: no thread, no mail, billed to an improve-* caller (default improve-replay)
 //   POST /anis/promote {id, version, dry?} → job (async-jobs); GET /anis/promote/:key polls it
-//   POST /anis/strategy-fix {id} → { id, version|null, fixed[] }: slot syntax ({x}, from:x → {{x}}) of the newest graph as a new candidate version
+//   POST /anis/strategy-fix {id, version?} → { id, version|null, fixed[] }: slot syntax ({x}, from:x → {{x}}) of the newest graph as a new candidate version
 //   POST /anis/rollback {id} → { id, rolled_back, restored }
 // Deps: repos/strategies-repo + strategy-stats-repo + strategy-candidates-repo (strategies.db), improve-repo + jev-calls-repo
 // (read, via the stats repo), assistant/strategy-{gaps,try,improve}, async-jobs.
 import { requireInternal } from '../lib/auth.js';
 import { strategiesSnapshot } from '../lib/repos/strategies-repo.js';
 import { strategyStats, branchStats, stepStats } from '../lib/repos/strategy-stats-repo.js';
+import { IMPROVE_CFG } from '../lib/assistant/strategy-gaps.js';
 import { activityList } from '../lib/assistant/activities/index.js';
 
 const daysOf = (q) => Math.min(90, Math.max(0.04, Number(q?.days) || 7));
@@ -97,7 +98,16 @@ export default async function strategiesAdminRoutes(fastify, { deps = {} } = {})
   fastify.post('/anis/strategy-fix', { preHandler: requireInternal }, async (request, reply) => {
     const b = request.body || {};
     if (!b.id) return reply.code(400).send({ error: 'id is required' });
-    try { return (await repo()).fixStrategySlots(await db(), b.id, { by: 'ops' }); } catch (err) { return reply.code(409).send({ error: err.message }); }
+    try {
+      const d = await db(), r = (await repo()).fixStrategySlots(d, b.id, { version: b.version ?? null, by: 'strategy-fix' });
+      // a mechanical repair of a LIVE tree (parent = the active version): active at once on probation, no judge, no spend
+      if (r.activatable) {
+        (deps.promote || (await repo()).promote)(d, r.id, r.version, { by: 'strategy-fix', decision: { provisional: true, mechanical: 'slot-syntax' } });
+        await (deps.startProbation || (async (...a) => (await import('../lib/repos/strategy-planner-repo.js')).startProbation(...a)))(d, r.id, r.version, { need: IMPROVE_CFG.planner.probation.runs, provisional: true });
+        r.activated = true;
+      }
+      return r;
+    } catch (err) { return reply.code(409).send({ error: err.message }); }
   });
 
   fastify.post('/anis/rollback', { preHandler: requireInternal }, async (request, reply) => {
