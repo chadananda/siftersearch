@@ -2,6 +2,10 @@
 // is never silent — it is reported (onJev) so the turn logs it as a decision (jev:timeout) and in its meta. Limits measured
 // from the launch-gate battery (tests/quality/reports/launch-gate-20261103, 11-03): strategy answered p50 199 / p95 814 /
 // max 2732 ms (8 no-answers at the old 900 ms limit); triage p50 179 / p90 875 / p95 1682 ms (censored at 1500).
+// Re-measured 11-09 (`ops.mjs jev-gates --days 1`, answered calls, censored at the limit): strategy p50 281 / p90 782 / p95 852 /
+// max 995 (n 330); triage p50 299 / p90 1050 / p95 1231 / max 1487 (n 307). Latency does not track call size (ms~tokens r 0.07);
+// slow calls come in slow MOMENTS (a slow strategy call's triage was slow 4/6 turns, 0/57 otherwise), so the retry is the remedy.
+// Until 11-09 the retry never ran: an attempt ends a few ms past its limit, so elapsed + limit always exceeded a 2×limit budget.
 export const JEV_LIMITS = Object.freeze({
   triage: { timeoutMs: 1500, budgetMs: 3000 },
   strategy: { timeoutMs: 1000, budgetMs: 2000 },
@@ -13,7 +17,8 @@ const isTimeout = (e) => e?.name === 'TimeoutError' || (e?.name === 'AbortError'
 
 /**
  * attempt(signal) → the parsed answer (or null). → { call, value, attempts, timeouts: [{ attempt, ms }], timeoutMs, error, ms }.
- * A timeout retries once when elapsed + timeoutMs ≤ budgetMs; any other error (or a null answer) ends the call.
+ * A timeout retries once when the limits already spent + timeoutMs ≤ budgetMs (counted by limit, not wall time: an aborted attempt
+ * ends a few ms past its limit); any other error (or a null answer) ends the call.
  */
 export async function jevCall(call, attempt, { timeoutMs, budgetMs = timeoutMs, retries = 1, onJev = null, now = Date.now, signalFor = (ms) => AbortSignal.timeout(ms) } = {}) {
   const t0 = now(); const timeouts = []; let value = null, error = null, attempts = 0;
@@ -23,7 +28,7 @@ export async function jevCall(call, attempt, { timeoutMs, budgetMs = timeoutMs, 
     try { value = await attempt(signalFor(timeoutMs)); break; } catch (e) {
       if (!isTimeout(e)) { error = e?.message || String(e); break; }
       timeouts.push({ attempt: attempts, ms: now() - ta });
-      if (now() - t0 + timeoutMs > budgetMs) break;
+      if (attempts * timeoutMs + timeoutMs > budgetMs) break;
     }
   }
   const info = { call, value: value ?? null, attempts, timeouts, timeoutMs, error, ms: now() - t0 };

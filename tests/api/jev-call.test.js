@@ -30,6 +30,11 @@ describe('jevCall', () => {
     const r2 = await jevCall('triage', async () => { throw timeoutErr(); }, { timeoutMs: 10, budgetMs: 1000, onJev: (i) => seen.push(i) });
     expect(r2.attempts).toBe(2); expect(r2.timeouts).toHaveLength(2); expect(timeoutDecision(seen[0]).chosen).toBe('fail open');
   });
+  it('an attempt that aborts a few ms past its limit still gets the retry the budget was sized for (11-09: it never ran)', async () => {
+    let clock = 0; const now = () => clock; let n = 0;
+    const r = await jevCall('strategy', async () => { if (++n === 1) { clock += 1003; throw timeoutErr(); } clock += 300; return { ok: 1 }; }, { timeoutMs: 1000, budgetMs: 2000, now });
+    expect(r).toMatchObject({ value: { ok: 1 }, attempts: 2 });
+  });
   it('any other error ends the call without a retry or a timeout report', async () => {
     const seen = []; let n = 0;
     const r = await jevCall('x', async () => { n++; throw new Error('500'); }, { timeoutMs: 10, budgetMs: 1000, onJev: (i) => seen.push(i) });
