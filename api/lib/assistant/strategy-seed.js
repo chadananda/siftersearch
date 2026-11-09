@@ -5,6 +5,7 @@
 
 import { NARRATION_TEMPLATES } from './narration-seed.js';
 import { TREE_TEMPLATES, TREE_STEPS, TREE_GRAPHS, TREE_IDS } from './strategy-trees-seed.js';
+import { GENERAL_TEMPLATES, GENERAL_STEPS, GENERAL_STRATEGY } from './strategy-general.js';
 
 export const SEED_VERSION = 1;
 // The row that catches every message no other strategy names (Chad 11-08: 'unmatched' is clearer than 'general'). Logs and stats written
@@ -39,11 +40,13 @@ export const TEMPLATES = [
   { id: 'guidance.dates', version: 1, text: ': {{dates}}' },
   ...NARRATION_TEMPLATES,
   ...TREE_TEMPLATES,
+  ...GENERAL_TEMPLATES,
 ];
 
 // ── Steps: one use of an activity, with its params. Phase 1 params are empty except where an activity reads them. ──
 const step = (id, activity, extra = {}) => ({ id, version: 1, activity, params: {}, template_id: null, template_version: null, budget_ms: null, budget_usd: null, ...extra });
 export const STEPS = [
+  ...GENERAL_STEPS,
   step('respond.fast', 'respond.fast'),
   step('respond.agent', 'respond.agent'),
   step('respond.agent-fallback', 'respond.agent', { params: { fallback: true } }),
@@ -161,6 +164,7 @@ export const STRATEGIES = [
   strategy('respond', UNMATCHED, RESPOND_GRAPH, 2, UNMATCHED_V2),
   strategy('respond', UNMATCHED, RESPOND_UNMATCHED_GRAPH, 3),
   // v2 of the six executors as element trees (strategy-trees-seed.js): CANDIDATES — the promotion gate on tower decides; v1 (one node) stays active for rollback
+  GENERAL_STRATEGY,   // the planner's safety net: no description, so never a Jev option
 ];
 export const TREE_STRATEGIES = TREE_IDS.map((id) => ({ ...strategy(id, id, TREE_GRAPHS[id], 2), status: 'candidate', created_by: 'seed-trees' }));
 export const END_NODE = END;

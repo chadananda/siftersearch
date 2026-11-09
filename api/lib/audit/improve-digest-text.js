@@ -39,6 +39,13 @@ export function digestText(j) {
       `    ${p.change}`);
     for (const s of p.scenarios) L.push(...scenarioLines(s));
   }
+  if (j.tools) {
+    const t = j.tools;
+    L.push('', `TOOLS wishlist (loop TOOLS) - elements the planner wished for, most wanted first (${t.wishlist?.length || 0}); catalog ${t.catalog?.version || '?'}${t.catalog?.queued?.length ? `, re-plans queued for ${t.catalog.queued.join(', ')}` : ''}:`);
+    if (t.gherkin) L.push(...t.gherkin.split('\n').map((x) => `  ${x}`));
+    for (const r of t.repeat_plans || []) L.push(`  DEFECT: type ${r.type_key} was planned ${r.plans} times (the first plan should have matched)`);
+    for (const p of t.probations || []) L.push(`  probation ${p.id}@${p.version}: ${p.runs}/${p.need} runs, mean ${p.mean == null ? 'n/a' : p.mean.toFixed(1)}${p.baseline != null ? ` (baseline ${p.baseline})` : ''}`);
+  }
   L.push('', ...WORKFLOW);
   return L.join('\n');
 }

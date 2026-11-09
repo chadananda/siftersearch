@@ -10,6 +10,8 @@ import { designCandidate, opusCall } from './strategy-design.js';
 import { IMPROVE_CFG } from './strategy-gaps.js';
 import { withAIContext } from '../ai-context.js';
 import { narrate } from './narrate.js';
+import { route, planUnmatched, activateProvisional, logFallbackDefect, GENERAL_RESEARCH } from './strategy-planner.js';
+import { logPlanner } from '../repos/strategy-planner-repo.js';
 
 const CFG = IMPROVE_CFG.unmatched;
 export const RECHECK_ROLE = 'anis-unmatched-recheck';
@@ -17,6 +19,8 @@ export const RECHECK_CALLER = 'unmatched-recheck';
 export const DESIGN_CALLER = 'unmatched-design';
 
 /** Jev's answer is "no strategy": the default key today ('other'), 'unmatched' once renamed. A missing answer (Jev down) is not. Pure. */
+/** ANIS_UNMATCHED_PLANNER (default on). 0 = the emergency rollback to the earlier behaviour (recheck, v1 design, researcher). */
+export const plannerOn = () => process.env.ANIS_UNMATCHED_PLANNER !== '0';
 export const isUnmatched = (s) => ['other', 'unmatched'].includes(s?.strategy?.choice);
 
 /** Run fn with the direction's candidate strategy pinned (a candidate is in no catalog; graphFor/template read the pin). */
@@ -66,9 +70,45 @@ export async function resolveUnmatched({ direction, messages, question, onEvent 
     rec('unmatched:fallback', { chosen: 'researcher', reason: `${via} ${choice}: executor found nothing`, ms: Date.now() - t0 });
     return null;
   };
+  // The two paths (Chad 11-09): not a query -> conversational (no planner); a query -> a strategy ONLY: recheck/pending candidate, else a tree planned now,
+  // run this turn and saved (EXTEND loop); a planner failure runs the stored general_research tree and is logged as a defect against the planner.
+  const planned = async () => {
+    const r = await route({ question, messages, strategy: null }, { cat, gate: io.gate, record: (x) => rec('route', { by: 'code', chosen: x.kind === 'strategy' ? `${x.name}@${x.version}` : 'conversational', reason: JSON.stringify(x).slice(0, 300), ms: Date.now() - t0 }),
+      defect: (why) => { try { logFallbackDefect(db, { question, why }); } catch { /* a log never fails a turn */ } },
+      reuse: async () => {
+        const pending = listCandidates(db);
+        const options = [...cat.strategies.filter((s) => s.description && !['other', 'unmatched'].includes(s.name)).map((s) => ({ name: s.name, description: s.description })), ...pending.map((c) => ({ name: c.id, description: c.description, candidate: c }))];
+        const re = await (io.recheck || haikuRecheck)({ question, thread: threadOf(messages), options }).catch((err) => { console.warn('anis unmatched recheck failed', err?.message); return null; });
+        const hit = re?.strategy && re.confidence >= CFG.recheck_min_confidence ? options.find((o) => o.name === re.strategy) : null;
+        rec('unmatched:recheck', { by: 'llm', options: options.map((o) => o.name), chosen: hit?.name ?? null, probabilities: re?.strategy ? { [re.strategy]: re.confidence } : null, ms: Date.now() - t0 });
+        if (!hit) return null;
+        recordGap(db, { turn_id: turnId, thread_id: null, question, label: hit.name, source: 'recheck', jev_choice: jev.choice, jev_confidence: jev.confidence ?? null, reason: 'unmatched:recheck' });
+        narrate(onEvent, channel, 'unmatched.recheck_fit', {}, io);
+        const pin = hit.candidate ? pinFor(db, hit.candidate.id, hit.candidate.version) : null;
+        return hit.candidate && !pin ? null : { name: hit.name, version: pin?.version ?? null, pin };
+      },
+      plan: async () => {
+        narrate(onEvent, channel, 'unmatched.new', {}, io); narrate(onEvent, channel, 'unmatched.planning', {}, io);
+        recordGap(db, { turn_id: turnId, thread_id: null, question, label: 'unmatched', source: 'unmatched', jev_choice: jev.choice, jev_confidence: jev.confidence ?? null, reason: 'unmatched:plan' });
+        const p = await (io.plan || ((turn) => planUnmatched(turn, { db, cat, listCandidates, ...(io.call ? { call: io.call } : {}) })))({ question, messages });
+        if (p?.ok) narrate(onEvent, channel, 'unmatched.planned', {}, io);
+        return p;
+      } });
+    if (r.kind === 'conversational') return { via: 'conversational', name: null, out: null, route: r };
+    if (r.source === 'matched') return await adopt(r.name, 'recheck', r.pin ? { pin: r.pin } : {});
+    if (r.source === 'planned') {
+      if (r.sets) direction.strategy = { ...direction.strategy, strategy: { ...jev, sets: r.sets } };   // setting_of: the existing strategy runs with these settings
+      const out = await adopt(r.name, r.sets ? 'setting_of' : 'design', r.pin ? { pin: r.pin } : {});
+      if (out && r.saved) { try { activateProvisional(db, r.saved); } catch (err) { console.warn('anis provisional promotion failed', err?.message); } }   // joins Jev's cards, on probation
+      return out;
+    }
+    try { logPlanner(db, { kind: 'route', loop: 'EXTEND', strategy_id: GENERAL_RESEARCH, note: r.defect }); } catch { /* log only */ }
+    return await adopt(GENERAL_RESEARCH, 'fallback', {});
+  };
   try {
     db = io.db || candidatesDb(); cat = io.cat || catalog();
     const pending = listCandidates(db);
+    if (plannerOn()) return await planned();
     // (a) RECHECK: did Jev simply fail to pick a good strategy? The active strategies AND the pending candidates, by description — an
     // earlier on-the-fly design is reused only when the model picks it (never by word overlap: intent is never word parsing, Chad 11-03)
     const options = [...cat.strategies.filter((s) => s.description && !['other', 'unmatched'].includes(s.name)).map((s) => ({ name: s.name, description: s.description })),
