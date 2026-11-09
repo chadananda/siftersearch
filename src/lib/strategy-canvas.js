@@ -3,7 +3,7 @@
 import dagre from '@dagrejs/dagre';
 import { humanStep, stepKind } from './strategy-docs.js';
 
-export const NODE_W = 230, NODE_H = 96, PILL_W = 64, PILL_H = 28;
+export const NODE_W = 280, NODE_H = 96, PILL_W = 64, PILL_H = 28;
 const END = '$end';
 
 /** Per-edge turn counts from branches ("node:edge" paths with .turns) → Map("from|on" → turns). */

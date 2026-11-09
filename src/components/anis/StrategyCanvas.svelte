@@ -40,13 +40,13 @@
   {#if failed}<p class="p-4 text-muted">The strategy graph could not be loaded.</p>
   {:else if !strategy?.graph}<p class="p-4 text-muted">{data ? 'This strategy has no graph yet.' : 'Loading the graph…'}</p>
   {:else}
-    <SvelteFlow bind:nodes bind:edges {nodeTypes} fitView minZoom={0.2} nodesDraggable={false} nodesConnectable={false} onnodeclick={pick} proOptions={{ hideAttribution: true }}>
+    <SvelteFlow bind:nodes bind:edges {nodeTypes} fitView fitViewOptions={{ maxZoom: 1, padding: 0.15 }} minZoom={0.2} nodesDraggable={false} nodesConnectable={false} onnodeclick={pick} proOptions={{ hideAttribution: true }}>
       <Background /><Controls showLock={false} />
       {#if nodes.length > 12}<MiniMap />{/if}
     </SvelteFlow>
   {/if}
   {#if picked}
-    <aside class="absolute right-0 top-0 bottom-0 w-[min(380px,100%)] overflow-auto border-l border-border bg-surface-1 p-3 text-sm shadow-lg z-10">
+    <aside class="absolute right-0 top-0 bottom-0 w-[min(380px,100%)] overflow-auto border-l border-border p-3 text-sm shadow-lg z-10 canvas-panel">
       <div class="flex items-center gap-2">
         <h4 class="m-0 font-semibold text-primary">{picked.title}</h4>
         <span class="rounded bg-surface-3 px-1.5 text-xs text-secondary">{picked.kind}</span>
@@ -93,4 +93,6 @@
     --xy-handle-background-color: var(--text-muted); --xy-attribution-background-color: transparent;
   }
   div :global(.svelte-flow__node) { padding: 0; border: 0; background: transparent; }
+  /* surface tokens are translucent: stack two layers + blur so the canvas does not show through the drill-in */
+  .canvas-panel { background-color: var(--surface-0); background-image: linear-gradient(var(--surface-1), var(--surface-1)); backdrop-filter: blur(12px); }
 </style>
