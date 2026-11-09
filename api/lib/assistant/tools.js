@@ -136,6 +136,22 @@ const ENTRIES = [
       }
       return { passages, query_used: query, relaxed: passages.some((p) => p.tier && p.tier !== 'strict') ? dropped : [] };
     } },
+  // ONE call for a comparison: the same query held to each side's filters, per-side results deduped; the understanding judge runs once at tree level
+  { name: 'compare_search', label: 'Compare Search', kind: 'tool', outputName: 'Side[]', cost: C(true, 400),
+    description: 'Search the same question inside each side of a comparison (a tradition, an author, a work…) in one call; results come back per side, each deduped.',
+    purpose: 'Replaces a per-side search loop: one merged query per side, returned side by side (a side with no hits is an empty side, not an error).',
+    input: { type: 'object', additionalProperties: false, required: ['query', 'sides'], properties: { query: str('The question, as written'),
+      sides: { type: 'array', minItems: 2, maxItems: 8, items: { type: 'object', additionalProperties: false, required: ['label', 'filters'], properties: { label: str('The side’s name, e.g. Islam'), filters: FILTERS } } },
+      k: { type: 'integer', minimum: 1, maximum: 10, default: 3, description: 'Passages kept per side' }, layers: LAYERS, tiers: TIERS } },
+    output: { type: 'object', required: ['sides'], properties: { sides: { type: 'array', items: { type: 'object', required: ['label', 'passages'], properties: { label: { type: 'string' }, passages: { type: 'array', items: PASSAGE }, relaxed: { type: 'array', items: { type: 'string' } } } } } } },
+    example: { input: { query: 'forgiveness', sides: [{ label: 'Islam', filters: { tradition: 'Islam' } }, { label: 'Christianity', filters: { tradition: 'Christianity' } }], k: 3 }, output: { sides: [{ label: 'Islam', passages: [{ ...P_EX, found_by: ['literal'] }], relaxed: [] }, { label: 'Christianity', passages: [], relaxed: [] }] } },
+    async run(a, ctx = {}) {
+      const k = a.k ?? 3, sides = await Promise.all(a.sides.map(async (s) => {
+        const r = await run('fused_search', { query: a.query, limit: k, filters: s.filters, ...(a.layers ? { layers: a.layers } : {}), ...(a.tiers ? { tiers: a.tiers } : {}) }, ctx);
+        return { label: s.label, passages: r.passages.map((p) => ({ ...p, side: s.label })), relaxed: r.relaxed };
+      }));
+      return { sides };
+    } },
   // the Writings in their ORIGINAL languages (11-04, measured: an English query's fused ranking puts no Persian/Arabic Writing in
   // its top 8 — English-English phrase matches fill it — while the same query held to the ar-fa group returns 22-29 originals of 30)
   { name: 'originals_search', label: 'Originals Search', kind: 'tool', outputName: 'Passage[]', cost: C(true, 250),

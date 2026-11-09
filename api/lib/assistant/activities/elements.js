@@ -172,6 +172,15 @@ E['search.fanout'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'a
     const weak = (e) => ['none', 'thin', 'error'].includes(e);
     return finish(s, p, !runs.length || runs.every((r) => r.edge === 'error') ? 'error' : runs.every((r) => r.edge === 'none' || r.edge === 'error') ? 'all_none' : runs.some((r) => weak(r.edge)) ? 'some_thin' : 'all', { count: n, read: { by: p.by, values } });
   } };
+E['search.compare'] = { kind: 'tool', cls: 'code', edges: ['all', 'some_thin', 'all_none', 'error'], scope: 'strategy', params: ['by', 'k', 'tiers', 'stage'], reads: SCOPE, writes: ['found_passages', ...OUT],
+  async run(s, p = {}) {   // compare_search: ONE call for every side (the same query held to each side's filters); items tagged with their side. No judge inside — the tree decides once after.
+    const u = U(s), values = u[p.by ?? 'compare_sides'] ?? [];
+    let r; try { r = await call(s, 'compare_search', { query: text(s, u, p.query, '{{topic}}'), sides: values.map((v) => ({ label: flat(v), filters: { tradition: canonicalTradition(flat(v)) } })), k: kOf(p, u) ?? 3, ...(p.tiers ? { tiers: p.tiers } : {}) }); } catch (e) { return finish(s, p, 'error', { error: e?.message }); }
+    const sides = r?.sides ?? []; let n = 0;
+    for (const sd of sides) { merge(u, 'found_passages', sd.passages.map((x) => ({ ...x, side: sd.label }))); n += sd.passages.length; }
+    const empty = (sd) => !sd.passages.length;
+    return finish(s, p, !sides.length || sides.every(empty) ? 'all_none' : sides.some(empty) ? 'some_thin' : 'all', { count: n, read: { by: p.by ?? 'compare_sides', values } });
+  } };
 E.probe = { kind: 'decision', cls: 'code', edges: ['match', 'adjust', 'mismatch'], scope: 'strategy', params: ['step', 'sample', 'expect', 'target', 'stage'], reads: SCOPE, writes: ['param_overrides'],
   async run(s, p = {}) {   // run a search step on a small sample; do the hits match what the plan expects? partial → adjust the target node's params; none → mismatch (recorded on the node)
     const u = U(s), own = { ...u, found_passages: [], found_records: [], web_found: [], found_outcome: {}, missing: [], path: [], scope_excluded: 0 }, ex = p.expect || {};
@@ -409,6 +418,7 @@ export const ELEMENT_META = {
   'search.originals': m('Searches the original-language Writings.', 'topic, search_originals', 'found_passages', ['originals_search']),
   'search.web': m('Searches the open web; results are labelled and never quoted as library evidence.', 'topic, scope as words', 'web_found', ['web_search']),
   'search.together': m('Runs cheap independent tiers in parallel and merges their results in one step.', 'list of fetch/search steps', 'found_passages, found_records', []),
+  'search.compare': m('One call for every side of a comparison (compare_search): the same question held to each side, results tagged by side; the tree judges once afterward.', 'compare_sides, topic', 'found_passages tagged by side', ['compare_search']),
   'search.fanout': m('Runs one step once per value (each side of a comparison, each sub-theme), in parallel.', 'by (a unit) or facets', 'found_passages tagged by value', []),
   probe: m('Runs a search step on a small sample and checks the hits are what the plan expects; adjusts or flags a mismatch.', 'step, expect', 'param_overrides', []),
   'read.around': m('Reads the paragraphs around each passage that will be quoted.', 'found_passages', 'found_passages (context)', ['context_lookup']),

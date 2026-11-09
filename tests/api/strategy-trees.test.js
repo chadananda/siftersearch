@@ -72,13 +72,14 @@ describe('understanding tree', () => {
 });
 
 describe('comparison tree', () => {
-  const byTrad = (m) => ({ fused_search: lib(m), hype_search: lib(m) });
+  const cmpTool = (m) => async (i) => ({ sides: await Promise.all(i.sides.map(async (sd) => ({ label: sd.label, passages: (await lib(m)({ filters: sd.filters })).passages.slice(0, i.k), relaxed: [] }))) });
+  const byTrad = (m) => ({ compare_search: cmpTool(m), fused_search: lib(m), hype_search: lib(m) });
   const both = { Islam: [P(1, { religion: 'Islam' }), P(2, { religion: 'Islam' })], Christianity: [P(3, { religion: 'Christianity' })] };
   const choice = { sides: ['Islam', 'Christianity'] };
   const jev = verdict('answers');
-  it('clean hit: understanding v2 per side (evidence only), one rank per side, the sides shape', async () => {
+  it('clean hit: ONE compare_search for all sides, the judge once, one rank per side, the sides shape', async () => {
     const s = await run('comparison', 'Islam and Christianity on forgiveness', { tools: byTrad(both), choice, jev });
-    expect(path(s)).toEqual(['sides', 'stage', 'fan', 'rank', 's_sides']); expect(s.units.found_outcome.fan).toBe('all');
+    expect(path(s)).toEqual(['sides', 'stage', 'cmp', 'judge', 'rank', 's_sides']); expect(s.units.found_outcome.cmp).toBe('all');
     expect(s.out.plan).toMatchObject({ shape: 'comparison', comparative: true, sides: ['Islam', 'Christianity'] }); expect(s.out.format.id).toBe('comparison');
     expect(new Set(s.out.passages.map((p) => p.theme))).toEqual(new Set(['Islam', 'Christianity'])); expect(s.how).toContain('COMPARISON of Islam, Christianity');
     expect(s.events.filter((e) => e.type === 'stage').length).toBe(1);   // the sub-runs stay quiet
@@ -90,14 +91,14 @@ describe('comparison tree', () => {
   });
   it('thin: a side with nothing says so plainly', async () => {
     const s = await run('comparison', 'q', { tools: byTrad({ Islam: both.Islam }), choice, jev });
-    expect(s.units.found_outcome.fan).toBe('some_thin'); expect(s.how).toContain('NOTHING from Christianity');
+    expect(s.units.found_outcome.cmp).toBe('some_thin'); expect(s.how).toContain('NOTHING from Christianity');
   });
   it('none after all tiers: all_none → $absence once for the whole comparison', async () => {
-    const s = await run('comparison', 'q', { choice, jev }); expect(path(s)).toEqual(['sides', 'stage', 'fan', '$absence']); expect(s.how).toContain('does not hold');
+    const s = await run('comparison', 'q', { choice, jev }); expect(path(s)).toEqual(['sides', 'stage', 'cmp', '$absence']); expect(s.how).toContain('does not hold');
   });
   it('error: every side errored → $fallback → $unavailable (not a false absence)', async () => {
-    const s = await run('comparison', 'q', { tools: { fused_search: boom, hype_search: boom, originals_search: boom }, choice, jev, agentRun: async () => null });
-    expect(path(s)).toEqual(['sides', 'stage', 'fan', '$fallback', '$unavailable']); expect(s.how).toContain("couldn't search");
+    const s = await run('comparison', 'q', { tools: { compare_search: boom, fused_search: boom, hype_search: boom, originals_search: boom }, choice, jev, agentRun: async () => null });
+    expect(path(s)).toEqual(['sides', 'stage', 'cmp', '$fallback', '$unavailable']); expect(s.how).toContain("couldn't search");
   });
   it('conflicting sources inside a side: the verdict travels with the passage; disagreement between sides is the content', async () => {
     const s = await run('comparison', 'q', { tools: byTrad(both), choice, jev: async ({ state }) => ({ choice: /Passage 2/.test(state) ? 'contradicts' : 'answers' }) });
@@ -302,9 +303,9 @@ describe('seeded rows and the ratchet', () => {
       expect(() => graphFor(id, 2)).not.toThrow();
     }
   });
-  it('tools never call an LLM: the only tool node that wraps one (comparison.fan → understanding\'s Jev judge) is tagged impure', () => {
+  it('tools never call an LLM: no seeded tool node wraps one (comparison.fan was the last, replaced by compare_search 11-09)', () => {
     const impure = TREE_IDS.flatMap((id) => Object.entries(latest(id).graph.nodes).filter(([, n]) => n.impure).map(([k, n]) => { expect(n.kind).toBe('tool'); return `${id}.${k}`; }));
-    expect(impure).toEqual(['comparison.fan']);
+    expect(impure).toEqual([]);
   });
   it('the tree rows are not live: only the active v1 serves until the promotion gate promotes v2, and ANIS_STRATEGY_GRAPH=0 still rolls back', async () => {
     for (const id of TREE_IDS) expect(Object.keys(graphFor(id).nodes).length, id).toBe(1);

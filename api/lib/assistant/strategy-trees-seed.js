@@ -39,12 +39,13 @@ const understanding = tree('understanding', 'anchor', [
   ['s_conflict', 'shape', { template: 'understanding.conflict', shared: 'tpl.passages', format: 'understanding', theme_by: 'authority' }, 'synthesize', ['found_passages'], [], { done: END }],
 ], { needs: ['topic', 'question_frame', 'quoted_words', 'named_work', 'audience'] });
 
-// ── comparison (BC §2): understanding v2 per side (evidence only), then one rank and the sides shape ──
+// ── comparison (BC §2): ONE compare_search for all sides, the understanding judge once, one rank, the sides shape ──
 const comparison = tree('comparison', 'sides', [
   ['sides', 'switch', { on: { count: 'compare_sides' }, cases: { many: 'sides' }, default: 'wide' }, 'decide', ['compare_sides'], [], { sides: 'stage', wide: 'wide' }],
-  ['stage', 'ui.stage', { stage: 'Reading each side in its own scripture…' }, 'process', ['channel'], [], { emitted: 'fan' }],
-  ['fan', 'search.fanout', { by: 'compare_sides', inner: { element: 'hand.strategy', params: { name: 'understanding', version: 2, upto: 'evidence', units: { religions_specified: ['{{value}}'] } } } }, 'tool', ['compare_sides', 'topic', 'quoted_words'], ['found_passages', 'missing'],
-    { all: 'rank', some_thin: 'rank', all_none: '$absence', error: '$fallback' }, true],   // impure: the understanding sub-tree runs its Jev judge inside (tools never call an LLM) — to split into per-side judge nodes
+  ['stage', 'ui.stage', { stage: 'Reading each side in its own scripture…' }, 'process', ['channel'], [], { emitted: 'cmp' }],
+  ['cmp', 'search.compare', { by: 'compare_sides', k: { default: 3, many: 1 } }, 'tool', ['compare_sides', 'topic', 'quoted_words'], ['found_passages', 'missing'],
+    { all: 'judge', some_thin: 'judge', all_none: '$absence', error: '$fallback' }],   // ONE compare_search call for all sides — no per-side sub-strategy, no Jev inside a tool or a loop
+  ['judge', 'judge.passages', {}, 'decide', ['current_user_question', 'found_passages'], ['found_passages'], { answers: 'rank', mentions_only: 'rank', conflict: 'rank', empty: '$absence' }],   // the understanding judge, once, at tree level
   ['rank', 'rank', { by: ['authority'], per: 'side', k: { default: 3, many: 1 } }, 'process', ['found_passages', 'compare_sides'], ['found_passages'], { done: 's_sides', empty: '$absence' }],
   ['s_sides', 'shape', { template: 'comparison.sides', shared: 'tpl.sides', format: 'comparison', theme_by: 'side', plan: { comparative: true }, offers: ['go deeper on one side'] }, 'synthesize', ['found_passages', 'compare_sides', 'topic', 'quoted_words'], ['offers'], { done: END }],
   // fewer than two sides named: the comparative is never narrowed — one wide search, the writer covers each tradition the passages come from
@@ -86,7 +87,7 @@ const guidance = tree('guidance', 'g1', [
 // ── reference (A §A5): the numbered passage; never a Jev decision (the edition is code: rank.copy) ──
 const reference = tree('reference', 'f', [
   ['f', 'fetch.reference', {}, 'tool', ['scripture_reference', 'translation_wanted'], ['found_passages'], { one: 'ra', several: 'rk', none: 'p', error: 'p' }],
-  ['rk', 'rank', { by: ['copy'], best: 'translation' }, 'process', ['found_passages', 'translation_wanted', 'reply_language'], ['found_passages'], { done: 'ra', empty: 'p' }],
+  ['rk', 'rank', { by: ['copy'], best: 'translation' }, 'process', ['found_passages', 'translation_wanted', 'reply_language'], ['found_passages'], { done: 'ra', empty: 'w' }],   // empty → the work lookup (never back to p: no cycle through a process node)
   ['p', 'fetch.phrase', { mode: 'close', words: '{{incipit}}', scope: 'rank' }, 'tool', ['incipit', 'named_work'], ['found_passages'], { one: 'ra', several: 'rk', thin: 'w', none: 'w', error: 'w' }],
   ['w', 'fetch.work', { title: '{{named_work}}', scope: 'rank' }, 'tool', ['named_work'], ['found_records'], { one: 'o_w', several: 'o_w', none: '$absence', error: '$fallback' }],
   ['ra', 'read.around', {}, 'tool', ['found_passages'], ['found_passages'], { done: 'o' }],
