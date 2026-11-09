@@ -38,7 +38,7 @@ describe('scope', () => {
 
 describe('search.* / fetch.* retrieval paths', () => {
   const cases = [['search.shelf', 'fused_search'], ['search.hype', 'hype_search'], ['search.originals', 'originals_search'], ['fetch.guidance', 'fused_search'], ['fetch.prayer', 'hype_search'],
-    ['fetch.original', 'original_lookup'], ['fetch.translation', 'translation_lookup'], ['fetch.phrase', 'quotation_trace']];
+    ['fetch.original', 'original_lookup'], ['fetch.translation', 'translation_lookup'], ['fetch.phrase', 'quotation_candidates']];
   for (const [name, tool] of cases) {
     it(`${name}: several / none / error, scope_excluded, note`, async () => {
       const many = await go(name, mk({ [tool]: ret([P(1), P(2, { religion: 'Islam' }), P(3)]) }, { religions_specified: ["Baha'i"] }));
@@ -59,7 +59,7 @@ describe('search.* / fetch.* retrieval paths', () => {
     expect((await go('search.originals', mk({ originals_search: ret([P(1), P(2)]) }, { search_originals: false }))).edge).toBe('none');
   });
   it('fetch.phrase close mode without a source is thin', async () => {
-    expect((await go('fetch.phrase', mk({ quotation_trace: ret([P(1, { role: 'quote' }), P(2, { role: 'quote' })]) }), { mode: 'close' })).edge).toBe('thin');
+    expect((await go('fetch.phrase', mk({ quotation_candidates: ret([P(1, { role: 'quote' }), P(2, { role: 'quote' })]) }), { mode: 'close' })).edge).toBe('thin');
   });
   it('search.web fills web_found only', async () => {
     const r = await go('search.web', mk({ web_search: async () => ({ text: 'summary', citations: ['https://example.org/a'] }) }));
@@ -72,14 +72,14 @@ describe('search.* / fetch.* retrieval paths', () => {
 describe('named-thing, reference, not-built, facts', () => {
   it('fetch.work / person / renderings / work_notes', async () => {
     expect((await go('fetch.work', mk({ document_search: async () => ({ works: [{ id: 1, title: 'A' }] }) }, { named_work: 'A' }))).edge).toBe('one');
-    expect((await go('fetch.work', mk({ document_search: async () => ({ works: [{ id: 1 }, { id: 2 }] }) }))).edge).toBe('several');
-    expect((await go('fetch.work', mk({ document_search: async () => ({ works: [] }) }))).edge).toBe('none');
-    expect((await go('fetch.work', mk({ document_search: boom }))).edge).toBe('error');
+    expect((await go('fetch.work', mk({ document_search: async () => ({ works: [{ id: 1 }, { id: 2 }] }) }, { named_work: 'A' }))).edge).toBe('several');
+    expect((await go('fetch.work', mk({ document_search: async () => ({ works: [] }) }, { named_work: 'A' }))).edge).toBe('none');
+    expect((await go('fetch.work', mk({ document_search: boom }, { named_work: 'A' }))).edge).toBe('error');
     expect((await go('fetch.person', mk({ biography_search: async () => ({ people: [{ id: 1, name: 'X' }] }) }))).edge).toBe('one');
     expect((await go('fetch.person', mk({ biography_search: async () => ({ people: [] }) }))).edge).toBe('none');
-    const rr = await go('fetch.renderings', mk({ rendering_lookup: async () => ({ found: true, term: 'x', passages: [P(1), P(2)], renderings: [] }) }));
+    const rr = await go('fetch.renderings', mk({ rendering_lookup: async () => ({ found: true, term: 'x', passages: [P(1), P(2)], renderings: [] }) }, { term: 'كلمة' }));
     expect(rr.edge).toBe('several'); expect(rr.u.found_records.length).toBe(1);
-    expect((await go('fetch.renderings', mk({ rendering_lookup: async () => ({ found: false }) }))).edge).toBe('none');
+    expect((await go('fetch.renderings', mk({ rendering_lookup: async () => ({ found: false }) }, { term: 'كلمة' }))).edge).toBe('none');
     expect((await go('fetch.work_notes', mk({ work_notes_lookup: async () => ({ work: 'W', notes: [{ text: 'n' }] }) }))).edge).toBe('one');
     expect((await go('fetch.work_notes', mk({ work_notes_lookup: boom }))).edge).toBe('error');
   });

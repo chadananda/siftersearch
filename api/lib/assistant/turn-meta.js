@@ -11,7 +11,7 @@ export function turnType({ status, gate, kind, recipe, format } = {}) {
   if (status === 'canned') return `canned${kind ? ` (${kind})` : ''}`;
   if (status === 'failed') return 'failed';
   // a recipe that is one registry tool/strategy is named by its registry label (mirrored in worker/mail/drafting.js RECIPE)
-  return { define: label('rendering_lookup'), source: label('quotation_trace'), original: label('original_lookup'), research: 'research answer',
+  return { define: label('rendering_lookup'), source: label('quotation_candidates'), original: label('original_lookup'), research: 'research answer',
     language: 'language answer', position: 'position answer' }[recipe] || (recipe ? `answer (${recipe})` : 'answer');
 }
 

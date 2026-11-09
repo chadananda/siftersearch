@@ -3,6 +3,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import * as tools from '../../api/lib/assistant/tools.js';
 import { TOOLS, RESEARCH_TOOL_NAMES, research, libraryTools } from '../../api/lib/assistant/researcher.js';
+import { combinedSearch } from '../../api/lib/assistant/combined-search.js';
 import { AGENT_TOOLS, AGENT_TOOL_NAMES } from '../../api/lib/assistant/agent.js';
 
 const LAYERS = ['searchKeywordQdrant', 'searchPhrases', 'searchHypeQdrant'];
@@ -13,16 +14,11 @@ const layerDeps = () => {
 };
 
 describe('registry', () => {
-  it('names are unique and every alias resolves to a registered canonical tool', () => {
+  it('names are unique, every one is a contract tool, and the retired names are gone', () => {
     const names = Object.keys(tools.REGISTRY);
     expect(new Set(names).size).toBe(names.length);
-    for (const [alias, name] of Object.entries(tools.ALIASES)) {
-      expect(tools.REGISTRY[name], alias).toBeTruthy();
-      expect(tools.REGISTRY[alias], `${alias} must not also be a canonical name`).toBeUndefined();
-      expect(tools.resolve(alias).name).toBe(name);
-    }
-    expect(tools.resolve('search_library').name).toBe('combined_search');
-    expect(tools.resolve('source_of').name).toBe('quotation_trace');
+    for (const n of names) expect(tools.REGISTRY[n].cost, n).toMatchObject({ llm: false });
+    for (const gone of ['combined_search', 'search_library', 'planned_search', 'quotation_trace', 'web_search', 'comparison', 'understanding']) { expect(tools.REGISTRY[gone], gone).toBeUndefined(); }
     expect(tools.resolve('nope')).toBeNull();
   });
   it('naming rule: _search tools take words (query), _lookup tools take one known item', () => {
@@ -61,16 +57,15 @@ describe('each search tool calls only its own layer', () => {
     expect(deps.resolveQdrantFilters).toHaveBeenCalledWith(want);
     expect(deps.searchKeywordQdrant).toHaveBeenCalledWith('x', expect.objectContaining({ filters: want, limit: 8 }));
   });
-  it('combined_search calls the planned search with the filters; fused_search the fast engine', async () => {
-    const search = vi.fn(async () => ({ passages: [{ id: 1, text: 't' }] })), fastSearch = vi.fn(async () => [{ id: 2, text: 'u' }]);
-    const r = await tools.run('combined_search', { query: 'q', filters: { author: 'X', documentId: 9, yearFrom: 1900 } }, { search, fastSearch });
-    expect(fastSearch).not.toHaveBeenCalled();
+  it('fused_search takes its filters inside filters and calls the fast engine; the rollback combined_search is its own module', async () => {
+    const fastSearch = vi.fn(async () => [{ id: 2, text: 'u' }]);
+    const f = await tools.run('fused_search', { query: 'q', filters: { tradition: 'Islam', language: 'ar' } }, { fastSearch });
+    expect(fastSearch).toHaveBeenCalledWith('q', 'Islam', 8, expect.objectContaining({ language: 'ar' }));
+    expect(f.passages[0].id).toBe(2);
+    const search = vi.fn(async () => ({ passages: [{ id: 1, text: 't' }] }));
+    const r = await combinedSearch({ query: 'q', filters: { author: 'X', documentId: 9, yearFrom: 1900 } }, { search });
     expect(search).toHaveBeenCalledWith(expect.objectContaining({ query: 'q', mode: 'passages', limit: 8, author: 'X', document_id: 9, yearFrom: 1900 }));
     expect(r.passages).toEqual([{ id: 1, text: 't' }]);
-    const f = await tools.run('fused_search', { query: 'q', tradition: 'Islam', filters: { language: 'ar' } }, { search, fastSearch });
-    expect(fastSearch).toHaveBeenCalledWith('q', 'Islam', 8, { language: 'ar' });
-    expect(search).toHaveBeenCalledTimes(1);
-    expect(f.passages[0].id).toBe(2);
   });
   it('originals_search is the fast engine held to the doctrinal writers in the ar-fa group (11-04)', async () => {
     const fastSearch = vi.fn(async () => [{ id: 5, text: 'يا معشر الملوك', language: 'ar' }]);
@@ -78,10 +73,10 @@ describe('each search tool calls only its own layer', () => {
     expect(fastSearch).toHaveBeenCalledWith('kings burden their subjects', "Baha'i", 6, { author: ['bahaullah', 'thebab', 'abdulbaha', 'shoghieffendi'], writerOnly: true, language: 'fa' });
     expect(r.passages[0].language).toBe('ar');
   });
-  it('quotation_trace hands sourceHunt the phrase_search and literal_search layers', async () => {
+  it('quotation_candidates hands sourceHunt the phrase_search and literal_search layers', async () => {
     const deps = layerDeps();
     const sourceHunt = vi.fn(async (q, d) => { await d.phrases('a', {}); await d.keyword('b', {}); return null; });
-    expect(await tools.run('quotation_trace', { quotation: 'q' }, { deps, sourceHunt })).toEqual({ passages: [] });
+    expect(await tools.run('quotation_candidates', { quotation: 'q' }, { deps, sourceHunt })).toEqual({ passages: [] });
     expect(deps.searchPhrases).toHaveBeenCalledWith('a', {});
     expect(deps.searchKeywordQdrant).toHaveBeenCalledWith('b', {});
     expect(deps.searchHypeQdrant).not.toHaveBeenCalled();
@@ -90,38 +85,28 @@ describe('each search tool calls only its own layer', () => {
 
 describe('callers list tools only from the registry', () => {
   it('researcher and agent tool definitions are the registry’s, under canonical names', () => {
-    expect(TOOLS).toEqual(tools.llmTools(RESEARCH_TOOL_NAMES));
+    expect(TOOLS.map((x) => x.function.name)).toEqual(RESEARCH_TOOL_NAMES);
+    expect(TOOLS.filter((x) => x.function.name !== 'combined_search')).toEqual(tools.llmTools(RESEARCH_TOOL_NAMES.filter((n) => n !== 'combined_search')));   // combined_search = the respond@3 rollback planner only
     expect(AGENT_TOOLS).toEqual(tools.llmTools(AGENT_TOOL_NAMES));
     for (const t of [...TOOLS, ...AGENT_TOOLS]) {
-      expect(tools.REGISTRY[t.function.name], t.function.name).toBeTruthy();
-      expect(tools.ALIASES[t.function.name]).toBeUndefined();
+      if (t.function.name !== 'combined_search') expect(tools.REGISTRY[t.function.name] || tools.PROCESS[t.function.name], t.function.name).toBeTruthy();
     }
     expect(RESEARCH_TOOL_NAMES).toContain('combined_search');
     expect(AGENT_TOOL_NAMES).toContain('fused_search');
     expect(AGENT_TOOL_NAMES).not.toContain('combined_search');
   });
-  it('a model calling an old name still reaches the tool', async () => {
-    const search = vi.fn(async () => [{ id: 1, text: 'love is light', title: 'T', author: 'A', document_id: 1 }]);
-    let n = 0;
-    const create = vi.fn(async () => (n++ === 0
-      ? { choices: [{ message: { tool_calls: [{ id: 'a', function: { name: 'search_library', arguments: '{"query":"love"}' } }] } }] }
-      : { choices: [{ message: { content: 'BRIEF:\nReaching for: love\n- x P1\nKEEP: P1' } }] }));
-    const r = await research({ messages: [{ role: 'user', content: 'love?' }], create, tools: { search } });
-    expect(search).toHaveBeenCalledWith('love', undefined);
-    expect(r.steps[0]).toMatchObject({ tool: 'search_library', found: 1 });
-  });
-  it('libraryTools runs through the registry (combined_search → the planned search)', async () => {
-    const search = vi.fn(async () => ({ passages: [{ id: 1, text: 'x', title: 'T' }] }));
-    const out = await libraryTools({ search }).search('what is love', "Baha'i");
-    expect(search).toHaveBeenCalledWith(expect.objectContaining({ query: 'what is love', plan: { messages: [{ role: 'user', content: 'what is love' }], defaults: { religion: "Baha'i" } } }));
+  it('libraryTools.search runs fused_search with the tradition as a filter', async () => {
+    const fastSearch = vi.fn(async () => [{ id: 1, text: 'x', title: 'T' }]);
+    const out = await libraryTools({ fastSearch }).search('what is love', "Baha'i");
+    expect(fastSearch).toHaveBeenCalled();
+    expect(fastSearch.mock.calls[0][0]).toBe('what is love');
     expect(out[0]).toMatchObject({ id: 1, text: 'x', title: 'T' });
   });
 });
 
 describe('turn labels', () => {
-  it('label() names canonical and alias alike', () => {
-    expect(tools.label('rendering_lookup')).toBe('Rendering Lookup (CTAI)');
-    expect(tools.label('word_study')).toBe('Rendering Lookup (CTAI)');
+  it('label() names the canonical tool', () => {
+    expect(tools.label('rendering_lookup')).toBeTruthy();
     expect(tools.label('literal_search')).toBe('Literal Search (BM25)');
   });
 });

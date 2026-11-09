@@ -27,13 +27,13 @@ describe('labels', () => {
 });
 
 describe('the researcher looks for an existing translation first', () => {
-  it('the system prompt orders it: translation_lookup, then quotation_trace with a draft line, rendering_lookup before translating fresh', () => {
+  it('the system prompt orders it: translation_lookup, then quotation_candidates with a draft line, rendering_lookup before translating fresh', () => {
     expect(RESEARCH_SYSTEM).toMatch(/FIRST look for an existing translation — translation_lookup/);
     expect(RESEARCH_SYSTEM).toMatch(/provisional translation by Anís/);
   });
-  it('find_translation shows the whole existing translation, labelled', async () => {
+  it('translation_lookup shows the whole existing translation, labelled', async () => {
     const seen = [];
-    const replies = [{ tool_calls: [call('a', 'find_translation', { original: PRAYER })] }, { content: 'BRIEF:\nReaching for: the prayer line by line\n- Phelps covers every line: P1\nKEEP: P1' }];
+    const replies = [{ tool_calls: [call('a', 'translation_lookup', { original: PRAYER })] }, { content: 'BRIEF:\nReaching for: the prayer line by line\n- Phelps covers every line: P1\nKEEP: P1' }];
     const create = async (p) => { seen.push(p); return { choices: [{ message: replies.shift() }] }; };
     const r = await research({ messages: [{ role: 'user', content: `Please translate: ${PRAYER}` }], create, tools: { translation: async () => [PHELPS] } });
     const shown = String(seen[1].messages.at(-1).content);
@@ -42,11 +42,11 @@ describe('the researcher looks for an existing translation first', () => {
     expect(r.passages[0].translation).toMatch(/Phelps/);
   });
   it('nothing linked → it says how to look further, never "no translation exists"', async () => {
-    const replies = [{ tool_calls: [call('a', 'find_translation', { original: PRAYER })] }, { content: 'BRIEF:\nReaching for: x\nKEEP:' }];
+    const replies = [{ tool_calls: [call('a', 'translation_lookup', { original: PRAYER })] }, { content: 'BRIEF:\nReaching for: x\nKEEP:' }];
     const seen = [];
     const create = async (p) => { seen.push(p); return { choices: [{ message: replies.shift() }] }; };
     await research({ messages: [{ role: 'user', content: 'q' }], create, tools: { translation: async () => [] } });
-    expect(String(seen[1].messages.at(-1).content)).toMatch(/call quotation_trace with it/);
+    expect(String(seen[1].messages.at(-1).content)).toMatch(/call quotation_candidates with it/);
   });
 });
 

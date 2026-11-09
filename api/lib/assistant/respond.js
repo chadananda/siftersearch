@@ -559,14 +559,14 @@ export async function agentRespond({ messages, onEvent, d, t0, subject = null })
   onEvent({ type: 'stage', stage: 'search' });
   const A = await agentAnswer({ messages, onEvent, subject,
     create: d.agentCreate || (async (params) => (await import('../role-client.js')).roleCreate('anis-agent', params)),
-    tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }) });   // search_library = the fast direct path; d.search only serves trace_source
+    tools: d.agentTools || agentTools({ search: d.search, fastSearch: d.fastSearch }) });   // fused_search = the fast direct path; d.search only serves trace_source
   if (!A.reply) return null;
   onEvent({ type: 'sources', sources: A.citations, plan: { shape: 'agent' }, ms: Date.now() - t0 });
   onEvent({ type: 'stage', stage: 'craft' });
   onEvent({ type: 'text', content: A.reply });
   return { reply: A.reply, quotes_removed: A.quotes_removed, quotes_recredited: A.quotes_recredited, quotes_linked: A.quotes_linked,
     citations: A.citations, retrieved: A.retrieved, evidence: evidenceOf(A.retrieved),
-    plan: { shape: 'agent', steps: A.steps, usage: A.usage }, search_query: A.steps.find((s) => s.tool === 'search_library')?.args?.query ?? null,
+    plan: { shape: 'agent', steps: A.steps, usage: A.usage }, search_query: A.steps.find((s) => s.tool === 'fused_search')?.args?.query ?? null,
     select: null, format: { id: 'agent', by: 'agent' }, profile: null,
     timings: { search_ms: A.timings.first_tool_ms ?? 0, first_token_ms: Date.now() - t0, total_ms: Date.now() - t0 } };
 }

@@ -6,6 +6,7 @@
 import { strategyOf } from './strategy-choice.js';
 import { NO_LOG } from './decision-log.js';
 import { run as runTool } from './tools.js';
+import { combinedSearch } from './combined-search.js';
 import { booksFound, namedSource } from './researcher.js';
 import { drawFromCriteria } from '../search-plan.js';
 import { render, template } from './activities/templates.js';
@@ -68,7 +69,7 @@ export function subjectQuery(query, messages) {
 }
 
 async function searchSide({ search, query, messages, profile, religion, limit = PER_SIDE }) {
-  const r = await runTool('combined_search', { query, limit, scope_config: profile?.scope_config, ...(religion ? { filters: { tradition: religion } } : {}),
+  const r = await combinedSearch({ query, limit, scope_config: profile?.scope_config, ...(religion ? { filters: { tradition: religion } } : {}),
     messages, defaults: religion ? { religion } : {} }, { search });
   return r?.passages || [];
 }

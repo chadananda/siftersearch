@@ -23,7 +23,7 @@ export const ACTIVITY_META = {
   'respond.research': { description: 'Runs the research loop: several searches from different angles, read, then search again where the best source is still missing.', input: 'messages, plan', output: 'researched passages + brief', tools: RESEARCH_TOOL_NAMES },
   'respond.read_question': { description: 'Reads the question for an original-language request or a quotation inside it.', input: 'question', output: 'wants original / quoted text', tools: [] },
   'respond.original_start': { description: 'Starts finding the original-language wording of the passage asked about, in the background.', input: 'question, messages', output: 'original (pending)', tools: [] },
-  'respond.hunt_start': { description: 'Starts tracing where a quotation comes from, in the background, when the question quotes or asks for a source.', input: 'question, quoted text, plan', output: 'source hunt (pending)', tools: ['quotation_trace'] },
+  'respond.hunt_start': { description: 'Starts tracing where a quotation comes from, in the background, when the question quotes or asks for a source.', input: 'question, quoted text, plan', output: 'source hunt (pending)', tools: ['quotation_candidates'] },
   'respond.hunt_await': { description: 'Waits for the source hunt when its result is the answer.', input: 'source hunt', output: 'sourced quotation', tools: [] },
   'respond.original_await': { description: 'Waits for the original-language wording.', input: 'original (pending)', output: 'original passage', tools: [] },
   'respond.source_reply': { description: 'Writes the sourced-quotation reply: where the words come from, with links.', input: 'sourced quotation', output: 'a finished reply', tools: [] },

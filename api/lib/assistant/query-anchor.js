@@ -3,8 +3,8 @@
 // intent. Code only checks a term is shared and, if none is, rebuilds the round's first search from that subject.
 import { contentWords } from '../search/verbatim.js';
 
-/** Model tool names that search the library by a free-text query (tools.js ALIASES included). */
-export const MODEL_SEARCH = new Set(['fused_search', 'combined_search', 'search_library', 'planned_search']);
+/** Model tool names that search the library by a free-text query. */
+export const MODEL_SEARCH = new Set(['fused_search', 'combined_search']);
 // request / function words: shared, they prove nothing about the subject
 const STOP = new Set(['what', 'which', 'does', 'did', 'about', 'tell', 'quote', 'quotes', 'passage', 'passages', 'find', 'show',
   'give', 'please', 'library', 'said', 'says', 'mean', 'means', 'there', 'their', 'they', 'them', 'this', 'that', 'these',

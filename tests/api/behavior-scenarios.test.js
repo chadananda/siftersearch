@@ -22,13 +22,13 @@ const SCEN = { title: 'Asked for a book, gives the book', given: { reader: 'a ne
   then: [{ check: 'links_book', expect: 'yes' }, { check: 'tool_not_called', expect: 'web_search' }] };
 
 describe('behaviour checks', () => {
-  const trace = { strategy: 'quote-trace', shape: 'quote', tools: ['quotation_trace', 'fused_search'],
+  const trace = { strategy: 'quote-trace', shape: 'quote', tools: ['quotation_candidates', 'fused_search'],
     cited: [{ title: 'Gleanings', tier: 'writings', language: 'en' }, { title: 'Lawh', tier: 'writings', language: 'ar' }],
     reply: 'Read [Gleanings](https://oceanlibrary.com/library/gleanings).' };
   it('mechanical checks decide; judge stays pending', () => {
     const r = evaluateChecks(trace, [
       { check: 'strategy', expect: 'quote-trace | lookup' }, { check: 'shape', expect: 'define or quote' },
-      { check: 'tool_called', expect: 'quotation_trace on the quoted words' }, { check: 'tool_not_called', expect: 'web_search' },
+      { check: 'tool_called', expect: 'quotation_candidates on the quoted words' }, { check: 'tool_not_called', expect: 'web_search' },
       { check: 'source_tier', expect: 'writings first' }, { check: 'cites_original', expect: 'yes' }, { check: 'links_book', expect: 'yes' },
       { check: 'judge', expect: 'answers plainly' }]);
     expect(r.map((x) => x.pass)).toEqual([true, true, true, true, true, true, true, null]);
@@ -66,8 +66,8 @@ describe('behaviour checks', () => {
   });
   it('behaviorTrace reads what the turn did', () => {
     const t = behaviorTrace({ path: { strategy: { choice: 'lookup' }, decisions: [{ point: 'depth', by: 'jev', chosen: 'short', extra: 1 }] },
-      plan: { shape: 'research', steps: [{ tool: 'fused_search', found: 3 }, { tool: 'fused_search' }, { tool: 'quotation_trace' }] }, format: { id: 'brief' } }, [{ title: 'X' }]);
-    expect(t).toMatchObject({ strategy: 'lookup', shape: 'research', format: 'brief', tools: ['fused_search', 'quotation_trace'], cited: [{ title: 'X' }] });
+      plan: { shape: 'research', steps: [{ tool: 'fused_search', found: 3 }, { tool: 'fused_search' }, { tool: 'quotation_candidates' }] }, format: { id: 'brief' } }, [{ title: 'X' }]);
+    expect(t).toMatchObject({ strategy: 'lookup', shape: 'research', format: 'brief', tools: ['fused_search', 'quotation_candidates'], cited: [{ title: 'X' }] });
     expect(t.decisions).toEqual([{ point: 'depth', by: 'jev', chosen: 'short' }]);
     expect(behaviorTrace({}).tools).toEqual([]);
   });
@@ -153,7 +153,7 @@ describe('proposals: anis-improve-scenarios --write, run state, the digest', () 
   });
   it('the store: a proposal is read by id, runs are recorded, the digest lists it and flags a passing one as possibly stale', () => {
     const db = openImproveDb(':memory:');
-    const [id] = applySuggestions(db, { inserts: [{ stage: 'research', file: 'api/lib/assistant/researcher.js', fn: 'plan', target: 'tool', change: 'call quotation_trace first',
+    const [id] = applySuggestions(db, { inserts: [{ stage: 'research', file: 'api/lib/assistant/researcher.js', fn: 'plan', target: 'tool', change: 'call quotation_candidates first',
       expected_effect: 'quotes found', scenarios: [SCEN], classes: ['quote'], severity: 2, evidence: ['reply:1'] }] });
     const imp = getImprovement(id, { db });
     expect(imp.id).toBe(id);

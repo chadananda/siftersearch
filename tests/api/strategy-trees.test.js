@@ -10,9 +10,9 @@ const STRATEGIES = [...BASE, ...TREE_STRATEGIES];
 const TPL = Object.fromEntries(TEMPLATES.map((t) => [t.id, t.text]));
 const P = (i, x = {}) => ({ id: i, text: `Passage ${i}`, document_id: 100 + i, paragraph_index: i, religion: "Baha'i", authority: 'scripture', score: 0.9, ...x });
 const NONE = async () => ({ passages: [] }), boom = async () => { throw new Error('down'); };
-const EMPTY = { fused_search: NONE, hype_search: NONE, originals_search: NONE, reference: NONE, quotation_trace: NONE, document_search: async () => ({ works: [] }), context_lookup: async () => ({ passages: [] }), source_trace: NONE };
+const EMPTY = { fused_search: NONE, hype_search: NONE, originals_search: NONE, reference: NONE, quotation_candidates: NONE, document_search: async () => ({ works: [] }), context_lookup: async () => ({ passages: [] }), source_trace: NONE };
 const CAN = { Christianity: 'Christian' };   // the scope hands tools the canonical tradition name
-const lib = (by) => async (i) => ({ passages: by[i.tradition] ?? by[Object.keys(CAN).find((k) => CAN[k] === i.tradition)] ?? by['*'] ?? [] });
+const lib = (by) => async (i) => { const tr = i.filters?.tradition ?? i.tradition; return { passages: by[tr] ?? by[Object.keys(CAN).find((k) => CAN[k] === tr)] ?? by['*'] ?? [] }; };
 const path = (s) => s.trace.map((t) => t.node);
 const NODES = (g) => Object.values(g.nodes).filter((n) => !n.shared);
 
@@ -181,12 +181,12 @@ describe('reference tree', () => {
     expect(eds.out.passages.map((p) => p.id)).toEqual([2]);
   });
   it('thin: the reference is not found, the opening words are close, then the work is opened', async () => {
-    const s = await run('reference', 'John 3:16', { tools: { quotation_trace: async () => ({ passages: [P(1)] }), document_search: async () => ({ works: [{ id: 5, title: 'Gospel of John' }] }) }, extra: { units: { incipit: 'For God so loved', named_work: 'John' } } });
+    const s = await run('reference', 'John 3:16', { tools: { quotation_candidates: async () => ({ passages: [P(1)] }), document_search: async () => ({ works: [{ id: 5, title: 'Gospel of John' }] }) }, extra: { units: { incipit: 'For God so loved', named_work: 'John' } } });
     expect(path(s)).toEqual(['f', 'p', 'w', 'o_w']); expect(s.how).toContain('directly yet');
   });
   it('none after all tiers: $absence', async () => { const s = await run('reference', 'John 3:16', {}); expect(path(s)).toEqual(['f', 'p', 'w', '$absence']); });
   it('error: reference, phrase and work all down → $fallback → $unavailable', async () => {
-    const s = await run('reference', 'John 3:16', { tools: { reference: boom, quotation_trace: boom, document_search: boom }, agentRun: async () => null });
+    const s = await run('reference', 'John 3:16', { tools: { reference: boom, quotation_candidates: boom, document_search: boom }, agentRun: async () => null });
     expect(path(s)).toEqual(['f', 'p', 'w', '$fallback', '$unavailable']);
   });
   it('conflicting numbering: several editions → the preferred one and the template names the other numbering', async () => {

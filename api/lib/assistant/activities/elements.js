@@ -67,7 +67,8 @@ const retrieval = ({ edges, tool, input, take, into = 'found_passages', rank = f
     return finish(s, p, classify(items.length, edges, thin ? thin(items, p) : items.length > 0 && items.every((x) => typeof x.score === 'number' && x.score < (p.thin_below ?? 0.25))), { count: items.length, excluded, read: { query: inp } });
   },
 });
-const searchInput = (s, p, u, trad) => ({ query: text(s, u, p.query, '{{topic}}'), limit: kOf(p, u) ?? 8, ...(trad ? { tradition: trad } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { filters: { language: p.language } } : {}) });
+const searchInput = (s, p, u, trad) => { const filters = { ...(trad ? { tradition: trad } : {}), ...(p.author ? { author: p.author } : {}), ...(p.language ? { language: p.language } : {}), ...(p.work ? { work: p.work } : {}) };
+  return { query: text(s, u, p.query, '{{topic}}'), limit: kOf(p, u) ?? 8, ...(Object.keys(filters).length ? { filters } : {}) }; };
 const passages = (o) => o?.passages;
 const notBuilt = (tool, edges) => ({ kind: 'tool', cls: 'code', edges, scope: 'strategy', params: [...CMN, 'id', 'key', 'subject', 'date'], reads: SCOPE, writes: ['found_records', ...OUT],
   async run(s, p = {}) {   // index not built yet: still called (a hook may serve it), else none at no cost so the tree does not change when it arrives
@@ -83,18 +84,19 @@ const E = {
   'fetch.reference': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'reference', rank: true, reads: ['scripture_reference'], thin: () => false,
     gate: (s, u, p) => !!(u.scripture_reference || parseScriptureRef(text(s, u, p.query))),
     input: (s, p, u) => ({ question: text(s, u, p.query), decisions: s.direction?.decisions ?? s.ctx?.decisions, deps: s.ctx?.deps }), take: passages }),
-  'fetch.phrase': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'quotation_trace', rank: true, params: ['mode', 'words'], reads: ['quoted_words', 'quoted_clean'],
+  'fetch.phrase': retrieval({ edges: ['one', 'several', 'thin', 'none', 'error'], tool: 'quotation_candidates', rank: true, params: ['mode', 'words'], reads: ['quoted_words', 'quoted_clean'],
     input: (s, p, u) => ({ quotation: text(s, u, p.words, '{{quoted_clean}}', '{{quoted_words}}') }), take: passages,
     thin: (items, p) => p.mode === 'close' && !items.some((x) => x.role === 'source') }),
   'fetch.person': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'biography_search', rank: true, params: ['name'], reads: ['named_person'], into: 'found_records',
     input: (s, p, u) => ({ query: text(s, u, p.name, '{{named_person}}') }), take: (o) => o?.people, thin: () => false }),
   'fetch.renderings': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'rendering_lookup', rank: true, params: ['term', 'translator'], reads: ['term'],
-    input: (s, p, u) => ({ word: text(s, u, p.term, '{{term}}') }), take: (o) => (o?.found ? o.passages : []), thin: () => false,
+    gate: (s, u, p) => /[\u0600-\u06FF]/.test(text(s, u, p.term, '{{term_arabic}}', '{{term}}')),   // Arabic script only: Latin → Arabic is the term_arabic unit (Jev), not the tool
+    input: (s, p, u) => ({ term_arabic: text(s, u, p.term, '{{term_arabic}}', '{{term}}'), ...(p.translator ? { translator: p.translator } : {}) }), take: (o) => (o?.found ? o.passages : []), thin: () => false,
     after: (o, u) => { if (o?.found) merge(u, 'found_records', [{ term: o.term, transliteration: o.transliteration, root: o.root, meaning: o.meaning, renderings: o.renderings }]); } }),
   'fetch.prayer': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'hype_search', params: ['key', 'value'], reads: ['occasion', 'incipit'],   // HyPE over the prayer shelf until the index exists
     input: (s, p, u) => ({ query: `prayer ${text(s, u, p.value, p.key === 'incipit' || (!p.key && u.incipit) ? '{{incipit}}' : '{{occasion}}')}`, limit: kOf(p, u) ?? 6 }), take: passages, thin: () => false }),
   'fetch.guidance': retrieval({ edges: ['one', 'several', 'none', 'error'], tool: 'fused_search', reads: ['topic'], thin: () => false,
-    input: (s, p, u) => ({ query: text(s, u, p.query, '{{topic}}'), author: 'Universal House of Justice', limit: kOf(p, u) ?? 6 }), take: passages }),
+    input: (s, p, u) => ({ query: text(s, u, p.query, '{{topic}}'), filters: { author: 'Universal House of Justice' }, limit: kOf(p, u) ?? 6 }), take: passages }),
   'fetch.work_notes': retrieval({ edges: ['one', 'none', 'error'], tool: 'work_notes_lookup', rank: true, params: ['work'], reads: ['named_work'], into: 'found_records',
     input: (s, p, u) => ({ title: text(s, u, p.work, '{{named_work}}') }), take: (o) => (o?.work ? o.notes.map((n) => ({ ...n, work: o.work })) : []), thin: () => false }),
   'fetch.collection': notBuilt('collection', ['one', 'thin', 'none', 'error']),
@@ -387,7 +389,7 @@ const m = (description, input, output, tools = []) => ({ description, input, out
 export const ELEMENT_META = {
   'fetch.work': m('Finds a work by its title in any spelling; named works are ranked by the scope, never filtered.', 'named_work or title', 'found_records (works)', ['document_search']),
   'fetch.reference': m('Reads a numbered reference (Bible, Qur’án, Gita) and returns that passage.', 'the question or scripture_reference', 'found_passages', ['reference']),
-  'fetch.phrase': m('Traces quoted words to the passage that holds them (exact, or close wording).', 'quoted_words', 'found_passages', ['quotation_trace']),
+  'fetch.phrase': m('Traces quoted words to the passage that holds them (exact, or close wording).', 'quoted_words', 'found_passages', ['quotation_candidates']),
   'fetch.person': m('Finds the person record the question names (several bearers of a name come back as several).', 'named_person', 'found_records (people)', ['biography_search']),
   'fetch.original': m('Finds the Arabic or Persian original of an English passage.', 'quoted_words or found_passages', 'found_passages', ['original_lookup']),
   'fetch.translation': m('Finds the existing English translations of an original-language text.', 'quoted_words or found_passages', 'found_passages', ['translation_lookup']),

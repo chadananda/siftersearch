@@ -6,9 +6,9 @@ import { agentSearch } from '../../api/lib/assistant/agent-search.js';
 
 const never = () => new Promise(() => {});
 describe('slow library calls degrade', () => {
-  it('withDeadline returns the fallback on a hang or a throw, the value otherwise', async () => {
-    expect(await withDeadline(never, 20, 'x')).toBe('x');
-    expect(await withDeadline(async () => { throw new Error('boom'); }, 50, 'y')).toBe('y');
+  it('withDeadline: a hang is a timeout ERROR (retryable), a throw is kept, the value passes', async () => {
+    await expect(withDeadline(never, 20, 'x')).rejects.toMatchObject({ code: 'timeout', retryable: true });
+    await expect(withDeadline(async () => { throw new Error('boom'); }, 50, 'y')).rejects.toThrow('boom');
     expect(await withDeadline(async () => 7, 50, 'z')).toBe(7);
   });
   it('libraryTools.search/around degrade to an empty list when search hangs', async () => {
@@ -20,8 +20,7 @@ describe('slow library calls degrade', () => {
       expect(Date.now() - t0).toBeLessThan(1000);
     } finally { delete process.env.ANIS_TOOL_DEADLINE_MS; }
   });
-  it('agentSearch returns an empty hit list when multiIndexSearch hangs', async () => {
-    const r = await agentSearch({ multiIndexSearch: never, deadlineMs: 30 })('q');
-    expect(r).toEqual([]);
+  it('agentSearch throws a timeout error (never an empty list) when multiIndexSearch hangs', async () => {
+    await expect(agentSearch({ multiIndexSearch: never, deadlineMs: 30 })('q')).rejects.toMatchObject({ code: 'timeout' });
   });
 });

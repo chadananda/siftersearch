@@ -9,6 +9,7 @@ import { logger } from '../logger.js';
 import { withDeadlines } from './deadline.js';
 import { currentAIContext, withAIContext } from '../ai-context.js';
 import { run as runTool, llmTools, canonical, toPassage, translationLabel, letterVariants } from './tools.js';
+import { combinedSearch, COMBINED_TOOL } from './combined-search.js';
 import { authorMatch, fold, mainKey } from '../dewey/title-index.js';
 import { DOCTRINAL_KEYS } from '../search/doctrinal-rank.js';
 import { headOf, PASSAGE_CHARS } from './prompt.js';
@@ -19,8 +20,9 @@ export { translationLabel, letterVariants };
 const log = logger.child ? logger.child({ mod: 'anis-researcher' }) : logger;
 
 // the researcher's tools, by canonical name (tools.js registry); the definitions are generated from the registry's schemas
-export const RESEARCH_TOOL_NAMES = ['combined_search', 'originals_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_trace', 'document_search', 'web_search'];
-export const TOOLS = llmTools(RESEARCH_TOOL_NAMES);
+export const RESEARCH_TOOL_NAMES = ['combined_search', 'originals_search', 'context_lookup', 'original_lookup', 'translation_lookup', 'rendering_lookup', 'source_trace', 'quotation_candidates', 'document_search', 'web_search'];
+const canon = (n) => (n === 'combined_search' ? n : canonical(n));   // the rollback planner search is not a registry tool
+export const TOOLS = RESEARCH_TOOL_NAMES.flatMap((n) => (n === 'combined_search' ? [COMBINED_TOOL] : llmTools([n])));
 // THE ENGLISH BESIDE AN ORIGINAL (11-04 digest #147): of an original's linked English copies, the translation of that work
 // (Shoghi Effendi's first, then another translation of the Writing) is its rendering; a compilation, or a letter or talk quoting
 // it, is only the fallback, and says what it is. Stable among equals (the links arrive best first). Pure.
@@ -50,8 +52,8 @@ export const RESEARCH_SYSTEM = `You are the research mind behind Anís, a study 
 - Well-known background is yours to give too: e.g. Shoghi Effendi translated Gleanings, The Hidden Words, the Kitáb-i-Íqán and Prayers and Meditations — never doubt such a fact for want of a passage.
 - A passage from the House, a scholar, a memoir or a compilation that states a teaching is a SIGNPOST, never the support: source_trace it and cite the primary passage it points to.
 - Your own knowledge of LANGUAGE (what an Arabic/Persian/Hebrew word means, other words for the idea, roots, grammar) and well-known general background may go in the brief, marked [own]. Facts about people, events, dates and teachings need a passage (P#) — or a web result (W#), named as such.
-- TRANSLATING (Chad 10-23: "when doing a translation, please use CTAI or use existing translation text to inform the translation"): when the reader gives an Arabic/Persian text to translate or read line by line, FIRST look for an existing translation — translation_lookup with the original; if that finds none, write your own rough English of one distinctive sentence and call quotation_trace with it (it finds published and Phelps' provisional translations in other wordings). Use what exists VERBATIM, in this order: an authorized translation (Shoghi Effendi, the Bahá'í World Centre / Universal House of Justice), then a published one, then Stephen Phelps' provisional rendering (public domain — label it so). Only for lines no translation covers, translate yourself, after rendering_lookup on the key terms so you use Shoghi Effendi's renderings of them; mark those lines "provisional translation by Anís". In the brief, give the existing translation's FULL text with its P#, and say which lines each source covers.
-- FINDING THE ORIGINAL of an English translation the library may not hold (10-23 Liliane: a prayer in an older translation; the tablet WAS in the library and was missed): (1) original_lookup and quotation_trace with its most distinctive sentences; (2) if they do not land, render 2–3 of its most distinctive clauses into the Persian/Arabic the author would have written — 'Abdu'l-Bahá's prayers are mostly Persian; names and pairs survive translation ("the Turks … the Persians" = ترک … تاجیک, "the East … embrace the West" = شرق دست در آغوش غرب) — and combined_search each; (3) the moment ANY passage shows original wording that matches — a tablet, or a memoir or compilation quoting it — call translation_lookup with that exact original line: it finds the library's own tablet (Phelps' inventory, PI number) and its translations. Confirm by reading the candidate whole: the right tablet matches the English line after line, not one shared image. A closing "‘Ayn ‘Ayn" (ع ع) is 'Abdu'l-Bahá's signature.
+- TRANSLATING (Chad 10-23: "when doing a translation, please use CTAI or use existing translation text to inform the translation"): when the reader gives an Arabic/Persian text to translate or read line by line, FIRST look for an existing translation — translation_lookup with the original; if that finds none, write your own rough English of one distinctive sentence and call quotation_candidates with it (it finds published and Phelps' provisional translations in other wordings). Use what exists VERBATIM, in this order: an authorized translation (Shoghi Effendi, the Bahá'í World Centre / Universal House of Justice), then a published one, then Stephen Phelps' provisional rendering (public domain — label it so). Only for lines no translation covers, translate yourself, after rendering_lookup on the key terms so you use Shoghi Effendi's renderings of them; mark those lines "provisional translation by Anís". In the brief, give the existing translation's FULL text with its P#, and say which lines each source covers.
+- FINDING THE ORIGINAL of an English translation the library may not hold (10-23 Liliane: a prayer in an older translation; the tablet WAS in the library and was missed): (1) original_lookup and quotation_candidates with its most distinctive sentences; (2) if they do not land, render 2–3 of its most distinctive clauses into the Persian/Arabic the author would have written — 'Abdu'l-Bahá's prayers are mostly Persian; names and pairs survive translation ("the Turks … the Persians" = ترک … تاجیک, "the East … embrace the West" = شرق دست در آغوش غرب) — and combined_search each; (3) the moment ANY passage shows original wording that matches — a tablet, or a memoir or compilation quoting it — call translation_lookup with that exact original line: it finds the library's own tablet (Phelps' inventory, PI number) and its translations. Confirm by reading the candidate whole: the right tablet matches the English line after line, not one shared image. A closing "‘Ayn ‘Ayn" (ع ع) is 'Abdu'l-Bahá's signature.
 - When you name candidate words (other Arabic/Persian words for an idea), check each in rendering_lookup, in Arabic script, so the brief can say how Shoghi Effendi rendered them.
 - Earlier replies in the conversation are context, not something to audit: never review or correct them unless the reader questions them (you cannot see how an earlier chart or count was built — 10-19 three "corrections" of Lal's chart were all false). If the reader does question one, say precisely what was wrong, with the passage.
 - An empty tool result means only that this lookup found nothing — never treat it as evidence, and never disown or "correct" an earlier reply unless a passage shows it was wrong.
@@ -157,7 +159,8 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       return [ref, tref];
     }).flat();
   };
-  const searchLibrary = async ({ query, tradition }) => {
+  const searchLibrary = async ({ query, tradition: tr, filters }) => {
+    const tradition = tr ?? filters?.tradition;
     const early = impl.originals && /bah/i.test(String(tradition || '')) ? impl.originals(query).catch(() => []) : null;
     let hits = (await impl.search(query, tradition)).slice(0, 8);
     if (impl.writings && hits.length !== 0 && bahaiSearch(tradition, hits) && !hasAuthoritative(hits)) {
@@ -184,7 +187,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
   // rowsAround → the neighbouring passages, or the copyright notice (a string); readAround also adds them for the model
   const COPYRIGHT = 'this book is under copyright: quote only the excerpt you already have (with its link); its neighbouring paragraphs are not available';
   const rowsAround = async (p, before, after) => {
-    const enc = await (impl.encumberedAmong || (await import('../repos/rights-repo.js')).encumberedAmong)([p.document_id]).catch(() => new Set());
+    const enc = await (impl.encumberedAmong || (await import('../repos/rights-repo.js')).encumberedAmong)([p.document_id]).catch(() => new Set([Number(p.document_id)]));   // fails CLOSED: unknown rights = copyrighted
     if (enc.has(Number(p.document_id))) return COPYRIGHT;
     return impl.around(p, Math.min(5, before), Math.min(5, after));
   };
@@ -209,7 +212,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
     original_lookup: async ({ english }) => show((await impl.original(english)).map((x) => add(x))),
     translation_lookup: async ({ original }) => {
       const found = impl.translation ? await impl.translation(original) : [];
-      if (!found.some((x) => x.translation)) return `no linked translation found from the original wording${found.length ? ` (the original: ${show(found.map((x) => add(x)))})` : ''} — draft an English rendering of one distinctive sentence and call quotation_trace with it`;
+      if (!found.some((x) => x.translation)) return `no linked translation found from the original wording${found.length ? ` (the original: ${show(found.map((x) => add(x)))})` : ''} — draft an English rendering of one distinctive sentence and call quotation_candidates with it`;
       return show(found.map((x) => add(x)), 4000);
     },
     rendering_lookup: async ({ word }) => {
@@ -223,7 +226,7 @@ export function toolRunner(impl, { search: searchName = 'combined_search' } = {}
       if (!p) return 'unknown ref';
       return show((await impl.trace(p)).map((x) => add(x)));
     },
-    quotation_trace: async ({ quotation }) => {
+    quotation_candidates: async ({ quotation }) => {
       const r = show((await impl.sourceOf(quotation)).map((x) => add(x)));
       return r === '(nothing)' ? `no published source found for that wording — ${searchName} with its most distinctive phrase; if that finds nothing either, say plainly that the library holds no source for it` : r;
     },
@@ -392,8 +395,8 @@ export async function research({ messages, create, tools: impl, maxRounds = 6, m
     const outs = await Promise.all(tcs.map(async (tc) => {
       let args = {};
       try { args = JSON.parse(tc.function?.arguments || '{}'); } catch { /* bad args → empty */ }
-      const fn = run[canonical(tc.function?.name)];
-      const step = { trace: { ...(currentAIContext().trace || {}), step: canonical(tc.function?.name) || tc.function?.name } };   // search_trace.step
+      const fn = run[canon(tc.function?.name)];
+      const step = { trace: { ...(currentAIContext().trace || {}), step: canon(tc.function?.name) || tc.function?.name } };   // search_trace.step
       const out = fn ? await withAIContext(step, () => fn(args)).catch((err) => `tool failed: ${String(err.message).slice(0, 160)}`) : 'unknown tool';
       return { tc, args, out };
     }));
@@ -487,7 +490,7 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
   const ctx = { search, fastSearch, sourceHunt: hunt };
   const passages = async (name, input) => (await runTool(name, input, ctx)).passages;
   return withDeadlines({
-    search: async (query, tradition) => (await passages(fastSearch ? 'fused_search' : 'combined_search', { query, ...(tradition ? { tradition } : {}) }))
+    search: async (query, tradition) => (fastSearch ? await passages('fused_search', { query, ...(tradition ? { filters: { tradition } } : {}) }) : (await combinedSearch({ query, ...(tradition ? { tradition } : {}) }, ctx)).passages)
       .filter((p) => String(p.text || '').length <= 8000).map(shape),
     // inside one book: the query as written, no planner (the book IS the scope) — research's book step
     searchIn: async (query, documentId) => (await passages('fused_search', { query, limit: 5, filters: { documentId: Number(documentId) } }))
@@ -498,7 +501,7 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
     searchBy: async (query, author) => (await passages('fused_search', { query, limit: 6, filters: { author } }))
       .filter((p) => String(p.text || '').length <= 8000).map(shape),
     // the authoritative written tier alone: the Báb, Bahá'u'lláh, 'Abdu'l-Bahá and Shoghi Effendi as WRITERS (searchLibrary)
-    writings: async (query) => (await passages('fused_search', { query, tradition: "Baha'i", limit: 6, filters: { author: DOCTRINAL_KEYS, writerOnly: true } }))
+    writings: async (query) => (await passages('fused_search', { query, limit: 6, filters: { tradition: "Baha'i", author: DOCTRINAL_KEYS, writerOnly: true } }))
       .filter((p) => String(p.text || '').length <= 8000).map(shape),
     // the original-language Writings (the per-language quota and originals_search): the same words, held to the ar-fa group
     // a hit's own inline English (content translation_text) arrives in `translation`, which the formatter reads as a LABEL:
@@ -520,7 +523,10 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
     original: (english) => passages('original_lookup', { english }),
     translation: (original) => passages('translation_lookup', { original }),
     wordStudy: async (word) => {
-      const s = await runTool('rendering_lookup', { word }, ctx);
+      // the lookup takes Arabic script; a Latin spelling is turned into Arabic here (a model step of the researcher, not the tool's)
+      const term = /[؀-ۿ]/.test(word) ? word : await (await import('./ctai-term.js')).resolveTerm(word).catch(() => null);
+      if (!term) return null;
+      const s = await runTool('rendering_lookup', { term_arabic: term }, ctx);
       if (!s.found) return null;
       const bars = (s.renderings || []).map((x) => `${x.en} ${x.count}`).join(' · ');
       // say WHAT the counts are (10-19 audit: root-wide counts were presented as the phrase's)
@@ -530,11 +536,11 @@ export function libraryTools({ search, fastSearch, sourceHunt: hunt }) {
         passages: s.passages };
     },
     trace: (p) => passages('source_trace', { paragraph_id: p.id, text: String(p.text) }),
-    // quotation_trace (the sourcehunt strategy): the origin, the certain original (else the top possible one), up to 3 works quoting it;
+    // quotation_candidates (the sourcehunt strategy): the origin, the certain original (else the top possible one), up to 3 works quoting it;
     // the original is labelled for the writer, and only offered when the reader quoted exactly (Chad 11-02)
     sourceOf: async (quotation) => {
       const tag = (label) => (isExactQuote(quotation) ? ` (${label})` : ` (${label} — give only if the reader asked for it)`);
-      return (await passages('quotation_trace', { quotation })).map(({ role, ...p }) => shape({ ...p,
+      return (await passages('quotation_candidates', { quotation })).map(({ role, ...p }) => shape({ ...p,
         title: `${p.title}${role === 'original' ? tag('original') : role === 'possible_original' ? tag('possible original') : ''}` }));
     },
     web: async (query) => { const r = await runTool('web_search', { query }, ctx); return r.text ? { text: r.text, citations: r.citations.map((url) => ({ url })) } : null; },

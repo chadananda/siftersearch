@@ -13,9 +13,9 @@ const PATH = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', PLA
 // Plan tool id → the registry tool that now implements it (the plan predates the canonical _search/_lookup names).
 export const PLAN_TO_REGISTRY = {
   find_work: 'document_search', about_work: 'work_notes_lookup', bm25: 'literal_search', phrase_semantic: 'phrase_search',
-  hype: 'hype_search', library_search: 'combined_search', read_around: 'context_lookup', source_of: 'quotation_trace',
+  hype: 'hype_search', library_search: 'fused_search', read_around: 'context_lookup', source_of: 'quotation_candidates',
   trace_source: 'source_trace', find_original: 'original_lookup', find_translation: 'translation_lookup',
-  word_study: 'rendering_lookup', people_search: 'biography_search', web: 'web_search',
+  word_study: 'rendering_lookup', people_search: 'biography_search',
 };
 // Seeded strategy id → the plan patterns (A1–H2) its graph serves.
 export const SERVES = { comparison: ['C1', 'C2', 'C3'], understanding: ['B1', 'B2', 'B3'], prayer: ['D2'], guidance: ['D4'], reference: ['A5'], compilation: ['F1'],
