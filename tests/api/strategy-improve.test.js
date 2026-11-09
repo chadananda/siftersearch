@@ -204,6 +204,20 @@ describe('promotion decision (fake Opus + fake judge, score 0-10)', () => {
     expect(r.decision.promote).toBe(false);
     expect(r.rows).toHaveLength(2);
   });
+
+  it('a turn that throws (LLM timeout) leaves that row unjudged; the run goes on', async () => {
+    const db = fresh();
+    const saved = saveCandidate(db, validateCandidate(GOOD, { cat: catalog() }).normalized);
+    let n = 0;
+    const deps = { writeQuestions: async () => ({ class: ['c1', 'c2'], guard: [], usd: 0 }),
+      tryTurn: async ({ pin }) => { if (pin && n++ === 0) throw new Error('Request timed out.'); return { reply: 'x', path: {}, ms: 1, usd: 0 }; },
+      judge: async () => ({ verdict: 'pass', score: 8, usd: 0 }), jevPick: async () => null };
+    const r = await runPromotion({ pin: pinFor(db, saved.id, saved.version), cat: catalog(), deps });
+    expect(r.rows).toHaveLength(2);
+    expect(r.rows[0].cand.score).toBeNull();
+    expect(r.rows[0].cand.why).toMatch(/timed out/);
+    expect(r.rows[1].cand.score).toBe(scoreOf({ verdict: 'pass', score: 8 }));
+  });
 });
 
 describe('Jev options come from the DB', () => {

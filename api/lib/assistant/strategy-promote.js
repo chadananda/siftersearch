@@ -113,8 +113,11 @@ export async function runPromotion({ pin, held = [], cat, deps, capUsd = IMPROVE
   for (const q of qs.questions) {
     if (usd >= capUsd) { stopped = 'over-budget'; break; }
     if (q.set === 'guard') { rows.push({ ...q, jev_pick: await deps.jevPick({ question: q.question, pin }).catch(() => null) }); continue; }
-    const [cand, cur] = await Promise.all([deps.tryTurn({ question: q.question, pin }), deps.tryTurn({ question: q.question, pin: null })]);   // side by side: the job fits its 30-min window
-    const [jc, ju] = await Promise.all([deps.judge({ question: q.question, reply: cand.reply, path: cand.path }), deps.judge({ question: q.question, reply: cur.reply, path: cur.path })]);
+    // side by side: the job fits its 30-min window. A turn that throws (an LLM timeout) is that row's failure, unjudged — never the whole run's
+    const turnOf = (pinned) => deps.tryTurn({ question: q.question, pin: pinned }).catch((e) => ({ reply: '', path: null, ms: null, usd: 0, error: String(e?.message || e).slice(0, 200) }));
+    const [cand, cur] = await Promise.all([turnOf(pin), turnOf(null)]);
+    const judgeOf = (t) => (t.error ? Promise.resolve({ verdict: null, score: null, usd: 0, why: `unjudged: the turn failed (${t.error})` }) : deps.judge({ question: q.question, reply: t.reply, path: t.path }));
+    const [jc, ju] = await Promise.all([judgeOf(cand), judgeOf(cur)]);
     usd += (cand.usd || 0) + (cur.usd || 0) + (jc?.usd || 0) + (ju?.usd || 0);
     rows.push({ ...q, cand: { score: scoreOf(jc), ms: cand.ms, usd: cand.usd, jev_pick: cand.jev_pick, why: jc?.why ?? null, nodes: nodePath(cand) },
       cur: { score: scoreOf(ju), ms: cur.ms, usd: cur.usd, why: ju?.why ?? null, nodes: nodePath(cur) } });

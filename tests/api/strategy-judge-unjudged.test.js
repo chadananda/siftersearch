@@ -33,3 +33,4 @@ describe('nodePath', () => {
     expect(nodePath({})).toEqual([]);
   });
 });
+
