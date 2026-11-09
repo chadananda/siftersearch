@@ -193,6 +193,16 @@ else if (cmd === 'anis-promote' && name) {   // replay promotion job: fresh clas
       if (Array.isArray(rec.result.rows)) await new Promise((r) => process.stdout.write(rec.result.rows.filter((x) => x.cand).map((x) => `${String(x.cand.score).padStart(4)} vs ${String(x.cur?.score).padStart(4)}  ${x.question}\n      cand: ${String(x.cand.why ?? '').slice(0, 300)}${x.cand.nodes?.length ? `\n      cand path: ${x.cand.nodes.join(' → ')}` : ''}\n      cur:  ${String(x.cur?.why ?? '').slice(0, 300)}`).join('\n') + '\n', r)); }
   }
 }
+else if (cmd === 'anis-try') {   // one question through one strategy version (or the live route): reply head + the node path (steps with filters, counts)
+  const q = val('--question'); const pin = val('--strategy');
+  if (!q) { console.error('usage: ops.mjs anis-try --question "…" [--strategy id@v] [--json]'); process.exit(2); }
+  const [sid, sv] = (pin || '').split('@');
+  const r = await call('POST', '/anis/try', { question: q, ...(pin ? { strategy: { id: sid, version: sv ? Number(sv) : null } } : {}) });
+  if (flag('--json')) await out(r);
+  else await new Promise((res) => process.stdout.write(`${pin || 'current'} · ${r.ms} ms · $${r.usd} · jev ${JSON.stringify(r.jev_pick ?? null)}\n`
+    + (r.steps || []).map((x) => `  ${x.graph ? `${x.graph} ` : ''}${x.node}:${x.edge}${x.count != null ? `(${x.count})` : ''}${Array.isArray(x.members) ? ` [${x.members.map((m) => `${m.element}${m.skipped ? ' skip' : ` ${JSON.stringify(m.filters || {})}→${m.count}`}`).join('; ')}]` : ''}`).join('\n')
+    + `\n-- reply\n${String(r.reply || '').slice(0, 1500)}\n`, res));
+}
 else if (cmd === 'anis-rollback' && name) await out(await call('POST', '/anis/rollback', { id: name }));
 else if (cmd === 'jev-gates') {   // every Jev decision gate: calls, answer mix, gold coverage/accuracy, shadow agreement, $ of a 200-call experiment
   const j = await call('GET', `/jev/gates?days=${val('--days') || 7}`);
