@@ -12,9 +12,19 @@ export const TRADITIONS = RELIGIONS.filter((r) => r !== 'Other');
 export const prayerScore = (d) => (/prayers/i.test(d.title || '') ? 5 : /prayer/i.test(d.title || '') ? 4 : 0) + (KIND.test(d.collection || '') ? 2 : 0) + (KIND.test(d.title || '') ? 1 : 0);
 
 /** The prayer works of ONE tradition, best first (score, then size: the big books before single tablets). Talks (collection "Media") are never prayer books. */
+// The catalogue changes by ingest, not by turn: one tradition's works are found once per process per hour (the several-traditions path is ~90 FTS reads).
+const CACHE = new Map(); const CACHE_MS = 3600_000;
 export async function prayerWorksOf(tradition, { findDocuments, language = null, limit = 12 } = {}) {
   const religion = canonicalTradition(tradition);
   if (!religion || !findDocuments) return [];
+  const key = `${religion}|${language || ''}|${limit}`, hit = CACHE.get(key);
+  if (hit && hit.fn === findDocuments && Date.now() - hit.at < CACHE_MS) return hit.works;
+  const works = await findWorks(religion, { findDocuments, language, limit });
+  if (works.length) CACHE.set(key, { at: Date.now(), fn: findDocuments, works });
+  return works;
+}
+
+async function findWorks(religion, { findDocuments, language, limit }) {
   const rows = await Promise.all(PRAYER_TERMS.map((t) => Promise.resolve().then(() => findDocuments(t, { religion, ...(language ? { language } : {}), fields: FIELDS, limit: 200 })).then((r) => r?.docs || []).catch(() => [])));
   const seen = new Map(); for (const d of rows.flat()) if (!seen.has(d.id)) seen.set(d.id, d);
   return [...seen.values()].filter((d) => d.collection !== 'Media' && (d.paragraph_count ?? 1) > 0 && prayerScore(d) > 0)
