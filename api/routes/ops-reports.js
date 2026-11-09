@@ -89,8 +89,8 @@ export default async function opsReportRoutes(fastify) {
   // writers drained around each (a DROP frees a whole b-tree inside the single writer). No arbitrary SQL. maintenance-repo.js
   fastify.get('/ops/maintenance', { preHandler: requireInternal }, async () => {
     const { MAINTENANCE_STEPS, existing } = await import('../lib/repos/maintenance-repo.js');
-    const present = new Set(await existing(MAINTENANCE_STEPS.filter((s) => s.kind === 'index' || s.kind === 'table').map((s) => s.name)));
-    return { steps: MAINTENANCE_STEPS.map((s) => ({ name: s.name, kind: s.kind, why: s.why, ...(s.kind === 'index' || s.kind === 'table' ? { exists: present.has(s.name) } : {}) })) };
+    const present = new Set(await existing(MAINTENANCE_STEPS.filter((s) => ['index', 'table', 'create-index'].includes(s.kind)).map((s) => s.name)));
+    return { steps: MAINTENANCE_STEPS.map((s) => ({ name: s.name, kind: s.kind, why: s.why, ...(['index', 'table', 'create-index'].includes(s.kind) ? { exists: present.has(s.name) } : {}) })) };
   });
   fastify.post('/ops/maintenance/:step', { preHandler: requireInternal }, async (req) =>
     (await import('../lib/repos/maintenance-repo.js')).runMaintenanceStep(req.params.step));

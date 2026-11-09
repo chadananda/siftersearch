@@ -89,6 +89,16 @@ describe('running a step', () => {
     expect(r).toMatchObject({ kind: 'probe', rows: 200, rolled_back: true, error: null });
     expect(content.prepare('SELECT COUNT(*) n, MAX(id) m FROM content').get()).toEqual(before);
   });
+  it('builds the #n ordinal index once; the ordinal COUNT then reads only that index', async () => {
+    const r = await repo.runMaintenanceStep('idx_content_doc_para_ord');
+    expect(r).toMatchObject({ kind: 'create-index', built: true, error: null });
+    expect((await repo.runMaintenanceStep('idx_content_doc_para_ord')).skipped).toBe('already built');
+    const { PARA_ORD_INDEX } = await import('../../api/lib/paragraphs-repo.js');
+    expect(PARA_ORD_INDEX).toBe('idx_content_doc_para_ord');
+    const plan = content.prepare(`EXPLAIN QUERY PLAN SELECT COUNT(*) FROM content x INDEXED BY ${PARA_ORD_INDEX} WHERE x.doc_id = 1
+      AND x.paragraph_index <= 2000 AND x.deleted_at IS NULL AND COALESCE(x.blocktype, 'paragraph') NOT LIKE 'heading%'`).all().map((p) => p.detail).join(' ');
+    expect(plan).toMatch(/COVERING INDEX idx_content_doc_para_ord/);
+  });
   it('analyze runs with a bounded sample', async () => {
     const r = await repo.runMaintenanceStep('analyze-content');
     expect(r.error).toBeNull();

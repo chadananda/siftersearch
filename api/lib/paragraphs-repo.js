@@ -45,6 +45,21 @@ export function paragraphDoc(p, doc, authority = null) {
 }
 
 /** Search documents for paragraph ids, from SQLite (live rows only). Ids not found (site-only stores) are simply absent. */
+// The fallback "#n" (1-based ordinal among a doc's non-heading blocks) is a COUNT over the paragraphs before this one. Without
+// a covering index it reads every row of the document per hit: search hydrate went from p50 36 ms to ~1 s (11-09, 84929d6b).
+// So it runs only once idx_content_doc_para_ord exists (maintenance step of that name) — rechecked every 10 min until then.
+export const PARA_ORD_INDEX = 'idx_content_doc_para_ord';
+const PARA_ORD_SQL = `CASE WHEN COALESCE(c.blocktype, 'paragraph') LIKE 'heading%' OR json_extract(c.block_attrs, '$.id') LIKE 'para_%'
+               OR c.external_para_id LIKE 'para_%' THEN NULL ELSE (SELECT COUNT(*) FROM content x INDEXED BY ${PARA_ORD_INDEX} WHERE x.doc_id = c.doc_id
+               AND x.paragraph_index <= c.paragraph_index AND x.deleted_at IS NULL AND COALESCE(x.blocktype, 'paragraph') NOT LIKE 'heading%') END AS para_ord`;
+let ordIndex = { ready: false, at: 0 };
+async function ordinalIndexReady(now = Date.now()) {
+  if (ordIndex.ready || now - ordIndex.at < 10 * 60000) return ordIndex.ready;
+  const rows = await queryAll('SELECT 1 FROM sqlite_master WHERE type = ? AND name = ?', ['index', PARA_ORD_INDEX], 'search:para-ord-index');
+  ordIndex = { ready: rows.length > 0, at: now };
+  return ordIndex.ready;
+}
+
 export async function paragraphsByIds(ids) {
   const want = [...new Set(ids.map(Number).filter(Number.isInteger))];
   const out = [];
@@ -53,9 +68,7 @@ export async function paragraphsByIds(ids) {
     const rows = await queryAll(`
       SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype, c.translation, c.translation_segments,
              c.context, c.external_para_id, c.pdf_page, c.text_grounded, c.authors, json_extract(c.block_attrs, '$.pn') AS pn, c.block_attrs,
-             CASE WHEN COALESCE(c.blocktype, 'paragraph') LIKE 'heading%' OR json_extract(c.block_attrs, '$.id') LIKE 'para_%'
-               OR c.external_para_id LIKE 'para_%' THEN NULL ELSE (SELECT COUNT(*) FROM content x WHERE x.doc_id = c.doc_id
-               AND x.paragraph_index <= c.paragraph_index AND x.deleted_at IS NULL AND COALESCE(x.blocktype, 'paragraph') NOT LIKE 'heading%') END AS para_ord,
+             ${(await ordinalIndexReady()) ? PARA_ORD_SQL : 'NULL AS para_ord'},
              d.title AS d_title, d.author AS d_author, d.religion AS d_religion, d.collection AS d_collection,
              d.language AS d_language, d.year AS d_year, d.filename AS d_filename, d.slug AS d_slug,
              d.source_site AS d_source_site, d.source_url AS d_source_url

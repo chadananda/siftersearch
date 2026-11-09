@@ -30,6 +30,10 @@ export const MAINTENANCE_STEPS = [
     sql: TRIGGERS.map((t) => `DROP TRIGGER IF EXISTS ${t}`) },
   ...TELEMETRY_MOVED.map((t) => ({ kind: 'table', name: t, why: 'written to telemetry.db since db-write-path-20261023; the sifter.db copy is dead',
     sql: [`DROP TABLE IF EXISTS ${t}`] })),
+  // BUILT, not dropped: the covering index the fallback "#n" COUNT needs (paragraphs-repo.js PARA_ORD_INDEX) — the read
+  // leaves the ordinal out until it exists (a per-hit full-document walk cost search hydrate ~1 s, 11-09)
+  { kind: 'create-index', name: 'idx_content_doc_para_ord', why: 'paragraph #n ordinal: index-only COUNT per cited hit instead of reading every row of the doc',
+    sql: ['CREATE INDEX IF NOT EXISTS idx_content_doc_para_ord ON content(doc_id, paragraph_index, blocktype, deleted_at) WHERE deleted_at IS NULL'] },
   { kind: 'analyze', name: 'analyze-content', why: 'planner statistics after the drops (approximate: analysis_limit 1000 — a full ANALYZE reads every index)',
     sql: ['PRAGMA analysis_limit = 1000', 'ANALYZE content', 'PRAGMA analysis_limit = 0'] },
   { kind: 'probe', name: 'probe-after', why: 'per-row INSERT cost after (rolled back)' },
@@ -43,7 +47,7 @@ export async function existing(names) {
   if (!names.length) return [];
   return (await queryAll(`SELECT name FROM sqlite_master WHERE name IN (${names.map(() => '?').join(',')})`, names, 'maintenance:exists')).map((r) => r.name);
 }
-const objectNames = (step) => (step.kind === 'triggers' ? TRIGGERS : step.kind === 'index' || step.kind === 'table' ? [step.name] : []);
+const objectNames = (step) => (step.kind === 'triggers' ? TRIGGERS : ['index', 'table', 'create-index'].includes(step.kind) ? [step.name] : []);
 
 /** The telemetry tables may go only when telemetry.db holds all three and is being written now. */
 export async function telemetryStoreLive({ maxAgeMin = 30 } = {}) {
@@ -73,6 +77,17 @@ export async function writeProbe({ rows = 200 } = {}) {
 }
 
 /** Run one named step. → { step, kind, ms, freed_bytes, existed, remaining, ... } */
+/** A create step: skip if built; else build in the writer (a long build outlives the client's timeout — wait for it to appear). */
+async function buildIndex(step, existed) {
+  if (existed.length) return { step: step.name, kind: step.kind, ms: 0, existed, skipped: 'already built' };
+  const t0 = Date.now();
+  let error = null;
+  try { await transaction(step.sql.map((sql) => ({ sql })), `maintenance:${step.name}`); } catch (e) { error = e.message; }
+  let built = (await existing([step.name])).length > 0;
+  while (error && !built && Date.now() - t0 < 30 * 60000) { await new Promise((r) => setTimeout(r, 5000)); built = (await existing([step.name])).length > 0; }
+  return { step: step.name, kind: step.kind, why: step.why, ms: Date.now() - t0, built, error: built ? null : error };
+}
+
 export async function runMaintenanceStep(name) {
   const step = stepNamed(name);
   if (!step) throw Object.assign(new Error(`unknown maintenance step ${name}`), { statusCode: 404 });
@@ -83,6 +98,7 @@ export async function runMaintenanceStep(name) {
   }
   const names = objectNames(step);
   const existed = await existing(names);
+  if (step.kind === 'create-index') return buildIndex(step, existed);
   if (names.length && !existed.length) return { step: name, kind: step.kind, ms: 0, existed: [], skipped: 'already gone' };
   const [ps, before] = [await pageSize(), await freelist()];
   const t0 = Date.now();
