@@ -1,6 +1,13 @@
 {
-  "generated": "2026-11-08T23:22:35.180Z",
+  "generated": "2026-11-09T00:14:35.087Z",
   "entries": [
+    {
+      "hash": "85aa36a1",
+      "date": "2026-11-08",
+      "type": "Other",
+      "description": "Unmatched runtime (reuse / Haiku recheck / on-the-fly Opus candidate design, fallback to researcher) + spoken progress lines for live channels",
+      "scope": null
+    },
     {
       "hash": "5059959a",
       "date": "2026-11-07",
@@ -2170,72 +2177,18 @@
       "type": "Fixed",
       "description": "A transcription's 16 kHz conversion gets its own two slots — it holds an ASR host slot while converting, and behind 16 prep runs' probe conversions it waited ~30 min (13:13 dispatch → 13:43 start), so aorus's slots read 'taken' with nothing running there",
       "scope": "media"
-    },
-    {
-      "hash": "4dd1e10b",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "The transcription stage's language ID goes straight to aorus, not through the probe pool — 16 prep runs' probes filled it and ASR workers waited there while aorus's transcription slots sat empty (13:29: aorus idle, 6 talks waiting; my 12:35 change)",
-      "scope": "media"
-    },
-    {
-      "hash": "f084ffe3",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Author-photo audit (one face + identity vs reference, else by eye) and publish to R2 with credit/licence — no hotlinks",
-      "scope": "books"
-    },
-    {
-      "hash": "115c685e",
-      "date": "2026-10-23",
-      "type": "Performance",
-      "description": "Diarization on aorus's GPU first — sherpa-onnx built for CUDA in venv-diar (install-time download into user space; runtime offline)",
-      "scope": "media"
-    },
-    {
-      "hash": "d6f499de",
-      "date": "2026-10-23",
-      "type": "New",
-      "description": "Author-photo audit jobs, no auto-applied unverified portraits, daily Google Books retry pass",
-      "scope": "books"
-    },
-    {
-      "hash": "7c734853",
-      "date": "2026-10-23",
-      "type": "Docs",
-      "description": "Hunt + publisher-rule dry run (34 would be encumbered; 63 Publishing-Trust books to review; not applied) · reader shows 'b. 1921' for an unknown death year",
-      "scope": "books"
-    },
-    {
-      "hash": "5a9b5b7b",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "'G. Ronald' is George Ronald, 'Bahá'í Pub. Trust' a Publishing Trust; a Trust named at any confidence sends an ISBN-only book to review",
-      "scope": "books"
-    },
-    {
-      "hash": "aeb8848b",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "A citation's tail or an acknowledgement is not the imprint (hunt v3)",
-      "scope": "books"
-    },
-    {
-      "hash": "412367ed",
-      "date": "2026-10-23",
-      "type": "Fixed",
-      "description": "Re-attached diarizations count toward the host cap (12:29: after a restart aorus ran 2 CPU diarizations, cap 1); the 12-window language ID runs on aorus first (on a loaded boss it held ASR lane workers before they dispatched)",
-      "scope": "media"
-    },
-    {
-      "hash": "e365b595",
-      "date": "2026-10-23",
-      "type": "Docs",
-      "description": "Liliane letter reviews — 8 letters, verdicts, re-runs, two reflections sent (#909, #910), runbook",
-      "scope": "anis"
     }
   ],
   "grouped": {
+    "2026-11-08": [
+      {
+        "hash": "85aa36a1",
+        "date": "2026-11-08",
+        "type": "Other",
+        "description": "Unmatched runtime (reuse / Haiku recheck / on-the-fly Opus candidate design, fallback to researcher) + spoken progress lines for live channels",
+        "scope": null
+      }
+    ],
     "2026-11-07": [
       {
         "hash": "5059959a",
@@ -4430,69 +4383,6 @@
         "type": "Fixed",
         "description": "A transcription's 16 kHz conversion gets its own two slots — it holds an ASR host slot while converting, and behind 16 prep runs' probe conversions it waited ~30 min (13:13 dispatch → 13:43 start), so aorus's slots read 'taken' with nothing running there",
         "scope": "media"
-      },
-      {
-        "hash": "4dd1e10b",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "The transcription stage's language ID goes straight to aorus, not through the probe pool — 16 prep runs' probes filled it and ASR workers waited there while aorus's transcription slots sat empty (13:29: aorus idle, 6 talks waiting; my 12:35 change)",
-        "scope": "media"
-      },
-      {
-        "hash": "f084ffe3",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Author-photo audit (one face + identity vs reference, else by eye) and publish to R2 with credit/licence — no hotlinks",
-        "scope": "books"
-      },
-      {
-        "hash": "115c685e",
-        "date": "2026-10-23",
-        "type": "Performance",
-        "description": "Diarization on aorus's GPU first — sherpa-onnx built for CUDA in venv-diar (install-time download into user space; runtime offline)",
-        "scope": "media"
-      },
-      {
-        "hash": "d6f499de",
-        "date": "2026-10-23",
-        "type": "New",
-        "description": "Author-photo audit jobs, no auto-applied unverified portraits, daily Google Books retry pass",
-        "scope": "books"
-      },
-      {
-        "hash": "7c734853",
-        "date": "2026-10-23",
-        "type": "Docs",
-        "description": "Hunt + publisher-rule dry run (34 would be encumbered; 63 Publishing-Trust books to review; not applied) · reader shows 'b. 1921' for an unknown death year",
-        "scope": "books"
-      },
-      {
-        "hash": "5a9b5b7b",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "'G. Ronald' is George Ronald, 'Bahá'í Pub. Trust' a Publishing Trust; a Trust named at any confidence sends an ISBN-only book to review",
-        "scope": "books"
-      },
-      {
-        "hash": "aeb8848b",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "A citation's tail or an acknowledgement is not the imprint (hunt v3)",
-        "scope": "books"
-      },
-      {
-        "hash": "412367ed",
-        "date": "2026-10-23",
-        "type": "Fixed",
-        "description": "Re-attached diarizations count toward the host cap (12:29: after a restart aorus ran 2 CPU diarizations, cap 1); the 12-window language ID runs on aorus first (on a loaded boss it held ASR lane workers before they dispatched)",
-        "scope": "media"
-      },
-      {
-        "hash": "e365b595",
-        "date": "2026-10-23",
-        "type": "Docs",
-        "description": "Liliane letter reviews — 8 letters, verdicts, re-runs, two reflections sent (#909, #910), runbook",
-        "scope": "anis"
       }
     ]
   }
