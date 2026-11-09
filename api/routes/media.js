@@ -540,7 +540,7 @@ export default async function mediaRoutes(fastify) {
       const prog = shapeProgress(await importProgress(), SOURCES);
       const [C, W] = await Promise.all([import('../lib/media/cloud.js'), import('../lib/media/worker-cards.js')]);
       const q = (await readJson(join(dirname(C.STATE_FILE), 'remaster-quality.json'))) || {};
-      restoredMemo = { at: Date.now(), value: { ...restoredShape(prog, q), workers: W.workerCards((await readJson(C.STATE_FILE)) || {}) } };
+      restoredMemo = { at: Date.now(), value: { ...restoredShape(prog, q), workers: W.workerCards((await readJson(C.STATE_FILE)) || {}, Date.now(), { paused: await C.rentalPauseReason().catch(() => null) }) } };
     }
     pub(reply, 30);
     return restoredMemo.value;

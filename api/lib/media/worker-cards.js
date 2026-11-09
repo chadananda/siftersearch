@@ -94,7 +94,11 @@ export function healthView(h, now = Date.now()) {
   };
 }
 
-export function workerCards(st = {}, now = Date.now()) {
+/** paused: the operator's media pause (cloud.js rentalPauseReason). The lane state is then frozen at its last tick (11-09: the page still
+ *  showed pod 525 "Podpanda" hours after RunPod deleted it, and Aorus "2 at work" with nothing running), so every machine shows paused and
+ *  no pod card is drawn from the frozen ledger (a pod billing while paused is system-checks' job: it asks RunPod). */
+export function workerCards(st = {}, now = Date.now(), { paused = null } = {}) {
+  if (paused) return MACHINES.map((m) => ({ ...m, status: 'paused', jobs: 0, speed: null, speed_by_type: null, gauges: null, health: null }));
   const sp = speeds(st.done, now, Object.fromEntries(Object.values(st.pods || {}).filter((p) => p.created).map((p) => [p.name, p.created])), st.step_log);
   const homeJobs = {};
   for (const h of Object.keys(st.home || {})) homeJobs[base(h)] = (homeJobs[base(h)] || 0) + 1;

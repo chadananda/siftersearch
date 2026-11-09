@@ -113,3 +113,15 @@ describe('home and tower dials (Chad 10-30: aorus looked offline while working)'
     expect(b.cpus).toEqual([75, 10]);
   });
 });
+
+describe('workerCards while media is paused', () => {
+  it('shows every machine paused and no pod from the frozen ledger (11-09: Podpanda shown hours after RunPod deleted pod 525)', () => {
+    const now = Date.now();
+    const st = { pods: { a: { id: 'x', name: 'sifter-unipase-525', status: 'ready', created: now - 3600_000 } }, q_lan: { leased: { aorus: 2 } } };
+    expect(podName('sifter-unipase-525')).toBe('Podpanda');
+    expect(workerCards(st, now).some((c) => c.name === 'Podpanda')).toBe(true);
+    const cards = workerCards(st, now, { paused: 'Chad 11-08: media paused' });
+    expect(cards.map((c) => c.key)).toEqual(['tower', 'boss', 'aorus']);
+    expect(cards.every((c) => c.status === 'paused' && c.jobs === 0)).toBe(true);
+  });
+});
