@@ -3,7 +3,7 @@
 // take the reference before them of the same kind, with the new locator. Applied at ingest (ingester.js) — the library file
 // keeps its wording. Pure.
 
-const LOCATOR = /[,\s]+(?:pp?\.|pages?|¶)\s*[\divxlc][\divxlc\s,\-–]*$/i;   // the trailing page / paragraph locator
+const LOCATOR = /[,\s]+(?:pp?\.|pages?|¶|#)\s*[\divxlc][\divxlc\s,\-–]*$/i;   // the trailing page / paragraph locator
 const IBID = /^ibid\b\.?\s*,?\s*(.*?)\s*$/i;
 const withLocator = (ref, loc) => (loc ? `${ref.replace(LOCATOR, '')}, ${loc}` : ref);
 

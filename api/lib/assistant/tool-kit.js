@@ -36,8 +36,8 @@ export const PASSAGE = { $id: 'AnisPassage', type: 'object', additionalPropertie
   tier: nul('string'), side: nul('string'),
   translation: { ...nul('string'), description: 'What kind of translation this is (authorized / published / provisional)' },
   role: { ...nul('string'), description: 'quotation_candidates: source | original | possible_original | cited_by | candidate (unjudged near match; judge.holds turns it into source, holder or near)' },
-  place: { ...nul('string'), description: 'Where in the work the citation points, from locator/subdocument/paragraph_index (refs/place.js): "CXVII", "Tablet of Ahmad, ¶4"' }, subdocument: nul('string'),
-  locator: { ...nul('string'), description: 'Where in the work to cite it: traditional number (Gleanings CXVII, Hidden Words Arabic 5, Íqán ¶12) or the section heading' } } };
+  place: { ...nul('string'), description: 'Where in the work the citation points, from locator/subdocument/para_no (refs/place.js): "#117.2", "Tablet of Ahmad, #4"' }, subdocument: nul('string'),
+  locator: { ...nul('string'), description: 'Where in the work to cite it: traditional number (Gleanings #117.2, Hidden Words Arabic #5, Íqán #12) or the section heading' } } };
 export const WORK = { $id: 'AnisWork', type: 'object', additionalProperties: true, required: ['id', 'title'], properties: {
   id: { type: 'integer' }, title: { type: 'string' }, author: nul('string'), religion: nul('string'), collection: nul('string'),
   url: nul('string'), encumbered: { ...nul('integer'), description: '1 = copyrighted: opening pages only' } } };
@@ -84,7 +84,7 @@ export const toPassage = (p) => {
     source_url: p.source_url || p.readerUrl || p.url || null, document_id: p.document_id ?? p.documentId ?? p.doc_id, paragraph_index: p.paragraph_index ?? p.paragraphIndex,
     religion: rel, collection: p.collection || p.document?.collection || null, language: p.language || p.source_lang || 'en',
     translation: p.translation || (/\(provisional translation\)/i.test(title) ? translationLabel('Stephen Phelps', 'provisional-phelps') : null) };
-  const kind = authorityKind({ ...p, ...base }), place = placeOf({ locator: p.locator, subdocument: p.subdocument, paragraph_index: base.paragraph_index });
+  const kind = authorityKind({ ...p, ...base }), place = placeOf({ locator: p.locator, subdocument: p.subdocument, para_no: p.para_no ?? null });
   const year = Number(p.year ?? p.document?.year) || null, translator = p.translator ?? p.translated_by ?? titleTranslator(title) ?? null;
   const o = p.original && typeof p.original === 'object' ? p.original : null;
   return { ...base, authority: kind, year, translator, edition: p.edition ?? null,

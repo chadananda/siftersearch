@@ -7,6 +7,7 @@ import { authorAuthority, getAuthority } from './authority.js';
 import { paragraphAuthor } from './authorship/effective.js';
 import { olCiteTitle } from './library/ol-works.js';
 import { paragraphLocator } from './refs/locator.js';
+import { paraNum } from './sections.js';
 
 /** Paragraph row + its doc row → the search document (no vectors). `authority` = the doc's, when the caller has it. */
 export function paragraphDoc(p, doc, authority = null) {
@@ -30,6 +31,9 @@ export function paragraphDoc(p, doc, authority = null) {
     religion: doc.religion, collection: doc.collection, language: doc.language,
     year: doc.year ? parseInt(doc.year, 10) : null, authority: paraAuthority, book_authority: docAuthority,
     heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
+    // display "#n": the MD's own para_N (block_attrs id / external_para_id), else the 1-based ordinal among non-heading blocks
+    // (para_ord, computed by the read); null for headings
+    para_no: /^heading/.test(p.blocktype || '') ? null : paraNum(p.block_attrs, p.external_para_id) ?? (Number.isInteger(p.para_ord) ? p.para_ord : null),
     // where in the work a reader cites it: traditional number (block_attrs.pn: Gleanings CXVII, Arabic 5, Íqán ¶12) else the
     // nearest section heading; null when neither (refs/locator.js, digest #156)
     locator: paragraphLocator({ pn: p.pn, heading: p.heading, title: doc.title }),
@@ -48,7 +52,9 @@ export async function paragraphsByIds(ids) {
     const chunk = want.slice(i, i + 500);
     const rows = await queryAll(`
       SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype, c.translation, c.translation_segments,
-             c.context, c.external_para_id, c.pdf_page, c.text_grounded, c.authors, json_extract(c.block_attrs, '$.pn') AS pn,
+             c.context, c.external_para_id, c.pdf_page, c.text_grounded, c.authors, json_extract(c.block_attrs, '$.pn') AS pn, c.block_attrs,
+             CASE WHEN COALESCE(c.blocktype, 'paragraph') LIKE 'heading%' THEN NULL ELSE (SELECT COUNT(*) FROM content x WHERE x.doc_id = c.doc_id
+               AND x.paragraph_index <= c.paragraph_index AND x.deleted_at IS NULL AND COALESCE(x.blocktype, 'paragraph') NOT LIKE 'heading%') END AS para_ord,
              d.title AS d_title, d.author AS d_author, d.religion AS d_religion, d.collection AS d_collection,
              d.language AS d_language, d.year AS d_year, d.filename AS d_filename, d.slug AS d_slug,
              d.source_site AS d_source_site, d.source_url AS d_source_url

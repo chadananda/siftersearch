@@ -1,15 +1,14 @@
-// Where IN the work a citation points (Chad 11-09: at minimum chapter.paragraph): "<subdocument>, <locator>[, ¶n]". Pure. Deps: none.
-// locator = refs/locator.js (traditional number "CXVII.2"/"Arabic 5"/"¶12", or a section heading → ¶n added); subdocument = a part inside a container work, if the row carries one.
-// Unknown fields are omitted, never invented. paragraph_index is the block index in the document (no per-chapter number is stored).
+// Where IN the work a citation points (Chad 11-09): "<subdocument>, <locator>[, #n]". Pure. Deps: none.
+// locator = refs/locator.js ("#117.2", "Arabic #5", "#12", or a section heading); para_no = 1-based ordinal among the doc's
+// NON-heading blocks (paragraphs-repo), shown as "#n" only when the locator has no paragraph number. Never "¶", never 0-based.
+// Unknown fields are omitted, never invented. paragraph_index (block index, URL anchors) is NOT displayed.
 const clean = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
 
-/** {locator, subdocument, paragraph_index} → "Tablet of Ahmad, ¶4" | "CXVII" | "¶12" | null. */
-export function placeOf({ locator = null, subdocument = null, paragraph_index = null } = {}) {
-  const loc = clean(locator), sub = clean(subdocument), n = Number.isInteger(paragraph_index) && paragraph_index >= 0 ? `¶${paragraph_index}` : '';
-  // a locator that is only a heading (no paragraph number in it) still gets the paragraph: "The Seven Valleys, ¶12"
-  const paraLevel = /^¶\d+$|\d$|^[IVXLCDM]+$/.test(loc);   // "CXVII" alone = that chapter's opening paragraph
-  const place = [sub && sub !== loc ? sub : '', loc, loc && paraLevel ? '' : n].filter(Boolean).join(', ');
-  return place || null;
+/** {locator, subdocument, para_no} → "Tablet of Ahmad, #4" | "#117.2" | "The Seven Valleys, #9" | "#12" | null. */
+export function placeOf({ locator = null, subdocument = null, para_no = null } = {}) {
+  const loc = clean(locator), sub = clean(subdocument), n = Number.isInteger(para_no) && para_no >= 1 ? `#${para_no}` : '';
+  const paraLevel = /^#\d|\s#\d/.test(loc);   // the locator already names the paragraph
+  return [sub && sub !== loc ? sub : '', loc, loc && paraLevel ? '' : n].filter(Boolean).join(', ') || null;
 }
 
 /** The citation text: title, then where in it. Link text stays the whole of it. */
